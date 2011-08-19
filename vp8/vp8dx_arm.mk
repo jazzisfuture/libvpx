@@ -11,4 +11,3 @@
 
 #VP8_DX_SRCS list is modified according to different platforms.
 
-VP8_DX_SRCS-$(ARCH_ARM)  += decoder/arm/arm_dsystemdependent.c
