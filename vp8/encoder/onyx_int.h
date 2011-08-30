@@ -610,8 +610,10 @@ typedef struct VP8_COMP
     int *lf_ref_frame;
 
     int force_next_frame_intra; /* force next frame to intra when kf_auto says so */
-
     int droppable;
+#if CONFIG_REALTIME_ONLY
+    MACROBLOCK_COPY_REF *mb_copy_ref; /* keep tracks of copy references for ZEROMV */
+#endif
 } VP8_COMP;
 
 void control_data_rate(VP8_COMP *cpi);

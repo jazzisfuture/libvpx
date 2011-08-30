@@ -311,6 +311,9 @@ static void dealloc_compressor_data(VP8_COMP *cpi)
 
     vpx_free(cpi->twopass.this_frame_stats);
     cpi->twopass.this_frame_stats = 0;
+#else
+    vpx_free(cpi->mb_copy_ref);
+    cpi->mb_copy_ref = 0;
 #endif
 }
 
@@ -1342,6 +1345,11 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
     if(!cpi->twopass.total_stats || !cpi->twopass.this_frame_stats)
         vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate firstpass stats");
+#else
+    cpi->mb_copy_ref = vpx_calloc(sizeof(MACROBLOCK_COPY_REF), cm->mb_rows * cm->mb_cols);
+    if (!cpi->mb_copy_ref)
+        vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate macroblock copy reference");
 #endif
 
 #if CONFIG_MULTITHREAD

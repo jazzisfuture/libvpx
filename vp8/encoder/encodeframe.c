@@ -434,6 +434,10 @@ void encode_mb_row(VP8_COMP *cpi,
         x->rddiv = cpi->RDDIV;
         x->rdmult = cpi->RDMULT;
 
+#if CONFIG_REALTIME_ONLY
+        x->mb_copy_ref = cpi->mb_copy_ref + cm->mb_cols * mb_row + mb_col;
+#endif
+
         //Copy current mb to a buffer
         RECON_INVOKE(&xd->rtcd->recon, copy16x16)(x->src.y_buffer, x->src.y_stride, x->thismb, 16);
 
@@ -1301,14 +1305,36 @@ int vp8cx_encode_inter_macroblock
             // Clear mb_skip_coeff if mb_no_coeff_skip is not set
             if (!cpi->common.mb_no_coeff_skip)
                 xd->mode_info_context->mbmi.mb_skip_coeff = 0;
-
         }
         else
+#if CONFIG_REALTIME_ONLY
+          /* Reconstruct the macroblock if any one of the condition is met:
+           * 1. This macroblock is not copied in the last frame.
+           * 2. This is not a ZEROMV.
+           * 3. Macroblock in the last frame doesn't reference this buffer.
+           *
+           * If none of the conditions is met then the macroblock referenced by
+           * ref_fb_idx and new_fb_idx has the same content and a copy can be
+           * skipped.
+           */
+        if (xd->mode_info_context->mbmi.mode != ZEROMV ||
+            !x->mb_copy_ref->last_fb_copy ||
+            x->mb_copy_ref->last_ref_fb_idx != cpi->common.new_fb_idx)
+#endif
+        {
             vp8_build_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
-                                           xd->dst.u_buffer, xd->dst.v_buffer,
-                                           xd->dst.y_stride, xd->dst.uv_stride);
-
+                                               xd->dst.u_buffer, xd->dst.v_buffer,
+                                               xd->dst.y_stride, xd->dst.uv_stride);
+        }
+#if CONFIG_REALTIME_ONLY
+        x->mb_copy_ref->last_ref_fb_idx = ref_fb_idx;
+#endif
     }
+
+#if CONFIG_REALTIME_ONLY
+    x->mb_copy_ref->last_fb_copy = x->skip && (xd->mode_info_context->mbmi.ref_frame == INTER_FRAME) &&
+        (xd->mode_info_context->mbmi.mode == ZEROMV);
+#endif
 
     if (!x->skip)
         vp8_tokenize_mb(cpi, xd, t);

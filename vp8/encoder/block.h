@@ -27,6 +27,15 @@ typedef struct
 
 typedef struct
 {
+  /* Sets to 1 if this macroblock is copied from the same macroblock in the
+   * last frame.
+   */
+  char last_fb_copy;
+  int last_ref_fb_idx;
+} MACROBLOCK_COPY_REF;
+
+typedef struct
+{
     // 16 Y blocks, 4 U blocks, 4 V blocks each with 16 entries
     short *src_diff;
     short *coeff;
@@ -108,6 +117,10 @@ typedef struct
 
     int vector_range;    // Used to monitor limiting range of recent vectors to guide search.
     int skip;
+
+#if CONFIG_REALTIME_ONLY
+    MACROBLOCK_COPY_REF *mb_copy_ref;
+#endif
 
     int encode_breakout;
 
