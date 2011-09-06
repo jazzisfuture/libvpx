@@ -30,6 +30,7 @@
 #include "vp8/common/threading.h"
 #include "vpx_ports/vpx_timer.h"
 #include "temporal_filter.h"
+#include "mbgraph.h"
 #if ARCH_ARM
 #include "vpx_ports/arm.h"
 #endif
@@ -314,54 +315,6 @@ static void dealloc_compressor_data(VP8_COMP *cpi)
 #endif
 }
 
-static void enable_segmentation(VP8_PTR ptr)
-{
-    VP8_COMP *cpi = (VP8_COMP *)(ptr);
-
-    // Set the appropriate feature bit
-    cpi->mb.e_mbd.segmentation_enabled = 1;
-    cpi->mb.e_mbd.update_mb_segmentation_map = 1;
-    cpi->mb.e_mbd.update_mb_segmentation_data = 1;
-}
-static void disable_segmentation(VP8_PTR ptr)
-{
-    VP8_COMP *cpi = (VP8_COMP *)(ptr);
-
-    // Clear the appropriate feature bit
-    cpi->mb.e_mbd.segmentation_enabled = 0;
-}
-
-// Valid values for a segment are 0 to 3
-// Segmentation map is arrange as [Rows][Columns]
-static void set_segmentation_map(VP8_PTR ptr, unsigned char *segmentation_map)
-{
-    VP8_COMP *cpi = (VP8_COMP *)(ptr);
-
-    // Copy in the new segmentation map
-    vpx_memcpy(cpi->segmentation_map, segmentation_map, (cpi->common.mb_rows * cpi->common.mb_cols));
-
-    // Signal that the map should be updated.
-    cpi->mb.e_mbd.update_mb_segmentation_map = 1;
-    cpi->mb.e_mbd.update_mb_segmentation_data = 1;
-}
-
-// The values given for each segment can be either deltas (from the default value chosen for the frame) or absolute values.
-//
-// Valid range for abs values is (0-127 for MB_LVL_ALT_Q) , (0-63 for SEGMENT_ALT_LF)
-// Valid range for delta values are (+/-127 for MB_LVL_ALT_Q) , (+/-63 for SEGMENT_ALT_LF)
-//
-// abs_delta = SEGMENT_DELTADATA (deltas) abs_delta = SEGMENT_ABSDATA (use the absolute values given).
-//
-//
-static void set_segment_data(VP8_PTR ptr, signed char *feature_data, unsigned char abs_delta)
-{
-    VP8_COMP *cpi = (VP8_COMP *)(ptr);
-
-    cpi->mb.e_mbd.mb_segement_abs_delta = abs_delta;
-    vpx_memcpy(cpi->segment_feature_data, feature_data, sizeof(cpi->segment_feature_data));
-}
-
-
 static void segmentation_test_function(VP8_PTR ptr)
 {
     VP8_COMP *cpi = (VP8_COMP *)(ptr);
@@ -393,10 +346,10 @@ static void segmentation_test_function(VP8_PTR ptr)
     }*/
 
     // Set the segmentation Map
-    set_segmentation_map(ptr, seg_map);
+    vp8_set_segmentation_map(ptr, seg_map);
 
     // Activate segmentation.
-    enable_segmentation(ptr);
+    vp8_enable_segmentation(ptr);
 
     // Set up the quant segment data
     feature_data[MB_LVL_ALT_Q][0] = 0;
@@ -411,7 +364,7 @@ static void segmentation_test_function(VP8_PTR ptr)
 
     // Initialise the feature data structure
     // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
-    set_segment_data(ptr, &feature_data[0][0], SEGMENT_DELTADATA);
+    vp8_set_segment_data(ptr, &feature_data[0][0], SEGMENT_DELTADATA);
 
     // Delete sementation map
         vpx_free(seg_map);
@@ -485,10 +438,10 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
     }
 
     // Set the segmentation Map
-    set_segmentation_map((VP8_PTR)cpi, seg_map);
+    vp8_set_segmentation_map((VP8_PTR)cpi, seg_map);
 
     // Activate segmentation.
-    enable_segmentation((VP8_PTR)cpi);
+    vp8_enable_segmentation((VP8_PTR)cpi);
 
     // Set up the quant segment data
     feature_data[MB_LVL_ALT_Q][0] = 0;
@@ -504,7 +457,7 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
 
     // Initialise the feature data structure
     // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
-    set_segment_data((VP8_PTR)cpi, &feature_data[0][0], SEGMENT_DELTADATA);
+    vp8_set_segment_data((VP8_PTR)cpi, &feature_data[0][0], SEGMENT_DELTADATA);
 
     // Delete sementation map
         vpx_free(seg_map);
@@ -1888,6 +1841,14 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf)
     }
 #endif
 
+    for (i = 0; i < sizeof(cpi->mbgraph_stats) / sizeof(cpi->mbgraph_stats[0]); i++)
+    {
+        CHECK_MEM_ERROR(cpi->mbgraph_stats[i].mb_stats,
+                        vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols *
+                                   sizeof(*cpi->mbgraph_stats[i].mb_stats),
+                                   1));
+    }
+
     // Should we use the cyclic refresh method.
     // Currently this is tied to error resilliant mode
     cpi->cyclic_refresh_mode_enabled = cpi->oxcf.error_resilient_mode;
@@ -2119,6 +2080,7 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf)
 void vp8_remove_compressor(VP8_PTR *ptr)
 {
     VP8_COMP *cpi = (VP8_COMP *)(*ptr);
+    int i;
 
     if (!cpi)
         return;
@@ -2321,6 +2283,10 @@ void vp8_remove_compressor(VP8_PTR *ptr)
     vpx_free(cpi->mb.ss);
     vpx_free(cpi->tok);
     vpx_free(cpi->cyclic_refresh_map);
+    for (i = 0; i < sizeof(cpi->mbgraph_stats) / sizeof(cpi->mbgraph_stats[0]); i++)
+    {
+        vpx_free(cpi->mbgraph_stats[i].mb_stats);
+    }
 
     vp8_remove_common(&cpi->common);
     vpx_free(cpi);
@@ -3342,13 +3308,6 @@ static void encode_frame_to_data_rate
         }
     }
 
-    // Test code for segmentation
-    //if ( (cm->frame_type == KEY_FRAME) || ((cm->current_video_frame % 2) == 0))
-    //if ( (cm->current_video_frame % 2) == 0 )
-    //  enable_segmentation((VP8_PTR)cpi);
-    //else
-    //  disable_segmentation((VP8_PTR)cpi);
-
 #if 0
     // Experimental code for lagged compress and one pass
     // Initialise one_pass GF frames stats
@@ -3370,6 +3329,20 @@ static void encode_frame_to_data_rate
 #endif
 
     update_rd_ref_frame_probs(cpi);
+
+    if (cpi->pass == 2)
+    {
+        // For now, restrict mbgraph to ARFs only - can extend later on
+        if (cm->frame_type != KEY_FRAME && cm->refresh_alt_ref_frame)
+        {
+            vp8_update_mbgraph_stats(cpi);
+        }
+        else
+        {
+            cpi->mbgraph_use_arf_segmentation = 0;
+            vp8_disable_segmentation((VP8_PTR) cpi);
+        }
+    }
 
     if (cpi->drop_frames_allowed)
     {
@@ -5040,15 +5013,15 @@ int vp8_set_roimap(VP8_PTR comp, unsigned char *map, unsigned int rows, unsigned
 
     if (!map)
     {
-        disable_segmentation((VP8_PTR)cpi);
+        vp8_disable_segmentation((VP8_PTR)cpi);
         return 0;
     }
 
     // Set the segmentation Map
-    set_segmentation_map((VP8_PTR)cpi, map);
+    vp8_set_segmentation_map((VP8_PTR)cpi, map);
 
     // Activate segmentation.
-    enable_segmentation((VP8_PTR)cpi);
+    vp8_enable_segmentation((VP8_PTR)cpi);
 
     // Set up the quant segment data
     feature_data[MB_LVL_ALT_Q][0] = delta_q[0];
@@ -5069,7 +5042,7 @@ int vp8_set_roimap(VP8_PTR comp, unsigned char *map, unsigned int rows, unsigned
 
     // Initialise the feature data structure
     // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
-    set_segment_data((VP8_PTR)cpi, &feature_data[0][0], SEGMENT_DELTADATA);
+    vp8_set_segment_data((VP8_PTR)cpi, &feature_data[0][0], SEGMENT_DELTADATA);
 
     return 0;
 }

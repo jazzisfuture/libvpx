@@ -22,6 +22,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/systemdependent.h"
 #include "encodemv.h"
+#include "segmentation.h"
 
 
 #define MIN_BPB_FACTOR          0.01
@@ -1218,31 +1219,29 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var)
     }
 }
 
-
-int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
+static int regulate_q_internal(VP8_COMP *cpi, int target_bits_per_frame, int sgmnt)
 {
     int Q = cpi->active_worst_quality;
-
-    // Reset Zbin OQ value
-    cpi->zbin_over_quant = 0;
 
     if (cpi->oxcf.fixed_q >= 0)
     {
         Q = cpi->oxcf.fixed_q;
 
-        if (cpi->common.frame_type == KEY_FRAME)
+        if (!sgmnt)
         {
+            if (cpi->common.frame_type == KEY_FRAME)
+            {
             Q = cpi->oxcf.key_q;
-        }
-        else if (cpi->common.refresh_alt_ref_frame)
-        {
+            }
+            else if (cpi->common.refresh_alt_ref_frame)
+            {
             Q = cpi->oxcf.alt_q;
-        }
-        else if (cpi->common.refresh_golden_frame)
-        {
+            }
+            else if (cpi->common.refresh_golden_frame)
+            {
             Q = cpi->oxcf.gold_q;
+            }
         }
-
     }
     else
     {
@@ -1292,7 +1291,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
 
         // If we are at MAXQ then enable Q over-run which seeks to claw back additional bits through things like
         // the RD multiplier and zero bin size.
-        if (Q >= MAXQ)
+        if (!sgmnt && Q >= MAXQ)
         {
             int zbin_oqmax;
 
@@ -1348,6 +1347,59 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
     return Q;
 }
 
+int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
+{
+    int Q;
+
+    // Reset Zbin OQ value
+    cpi->zbin_over_quant = 0;
+
+    Q = regulate_q_internal(cpi, target_bits_per_frame, 0);
+
+    if (cpi->common.frame_type != KEY_FRAME &&
+        cpi->mbgraph_use_arf_segmentation &&
+        cpi->common.refresh_alt_ref_frame &&
+        !cpi->common.refresh_golden_frame)
+    {
+        // set Q so that it's as calculated above for the MBs that were
+        // not skipped, and much lower for the others.
+        int bits = cpi->min_frame_bandwidth + cpi->twopass.gf_group_bits /
+                            cpi->frames_till_gf_update_due;
+        int high_q = regulate_q_internal(cpi, bits, 1);
+
+        if (high_q >= 80) {
+            // at such high Q, most coefficients are likely zero anyway, and thus we
+            // would be enabling segmentation just to subsequently ignore Q again.
+            // Therefore, just disable segmentation at all and instead force skipping
+            // coefficients for these blocks.
+            // I suppose a FIXME here is that I could just calculate the actual cost
+            // and calculate this for real...
+            vp8_disable_segmentation((VP8_PTR) cpi);
+        } else {
+            signed char feature_data[MB_LVL_MAX][MAX_MB_SEGMENTS];
+
+            // Set up the quant segment data
+            feature_data[MB_LVL_ALT_Q][0] = 0;
+            feature_data[MB_LVL_ALT_Q][1] = high_q - Q;
+            feature_data[MB_LVL_ALT_Q][2] = 0;
+            feature_data[MB_LVL_ALT_Q][3] = 0;
+
+            // Set up the loop segment data
+            feature_data[MB_LVL_ALT_LF][0] = 0;
+            feature_data[MB_LVL_ALT_LF][1] = 0;
+            feature_data[MB_LVL_ALT_LF][2] = 0;
+            feature_data[MB_LVL_ALT_LF][3] = 0;
+
+            // Initialise the feature data structure
+            // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
+            vp8_set_segment_data((VP8_PTR) cpi, &feature_data[0][0], SEGMENT_DELTADATA);
+
+            vp8_enable_segmentation((VP8_PTR) cpi);
+        }
+    }
+
+    return Q;
+}
 
 static int estimate_keyframe_frequency(VP8_COMP *cpi)
 {

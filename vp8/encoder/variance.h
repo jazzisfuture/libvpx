@@ -323,6 +323,11 @@ extern prototype_ssimpf(vp8_ssimpf)
 #endif
 extern prototype_ssimpf(vp8_ssimpf_8x8)
 
+#ifndef vp8_variance_satd16x16
+#define vp8_variance_satd16x16 vp8_satd16x16_c
+#endif
+extern prototype_variance(vp8_variance_satd16x16);
+
 typedef prototype_sad(*vp8_sad_fn_t);
 typedef prototype_sad_multi_same_address(*vp8_sad_multi_fn_t);
 typedef prototype_sad_multi_same_address_1(*vp8_sad_multi1_fn_t);
@@ -386,6 +391,7 @@ typedef struct
     vp8_ssimpf_fn_t          ssimpf;
 #endif
 
+    vp8_variance_fn_t        satd16x16;
 } vp8_variance_rtcd_vtable_t;
 
 typedef struct

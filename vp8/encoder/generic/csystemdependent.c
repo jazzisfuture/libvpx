@@ -102,6 +102,8 @@ void vp8_cmachine_specific_config(VP8_COMP *cpi)
     cpi->rtcd.variance.ssimpf                = ssim_parms_c;
 #endif
 
+    cpi->rtcd.variance.satd16x16             = vp8_satd16x16_c;
+
 #if ARCH_X86 || ARCH_X86_64
     vp8_arch_x86_encoder_init(cpi);
 #endif

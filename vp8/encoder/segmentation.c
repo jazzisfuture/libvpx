@@ -62,3 +62,41 @@ void vp8_update_gf_useage_maps(VP8_COMP *cpi, VP8_COMMON *cm, MACROBLOCK *x)
         }
     }
 }
+
+void vp8_enable_segmentation(VP8_PTR ptr)
+{
+    VP8_COMP *cpi = (VP8_COMP *)(ptr);
+
+    // Set the appropriate feature bit
+    cpi->mb.e_mbd.segmentation_enabled = 1;
+    cpi->mb.e_mbd.update_mb_segmentation_map = 1;
+    cpi->mb.e_mbd.update_mb_segmentation_data = 1;
+}
+
+void vp8_disable_segmentation(VP8_PTR ptr)
+{
+    VP8_COMP *cpi = (VP8_COMP *)(ptr);
+
+    // Clear the appropriate feature bit
+    cpi->mb.e_mbd.segmentation_enabled = 0;
+}
+
+void vp8_set_segmentation_map(VP8_PTR ptr, unsigned char *segmentation_map)
+{
+    VP8_COMP *cpi = (VP8_COMP *)(ptr);
+
+    // Copy in the new segmentation map
+    vpx_memcpy(cpi->segmentation_map, segmentation_map, (cpi->common.mb_rows * cpi->common.mb_cols));
+
+    // Signal that the map should be updated.
+    cpi->mb.e_mbd.update_mb_segmentation_map = 1;
+    cpi->mb.e_mbd.update_mb_segmentation_data = 1;
+}
+
+void vp8_set_segment_data(VP8_PTR ptr, signed char *feature_data, unsigned char abs_delta)
+{
+    VP8_COMP *cpi = (VP8_COMP *)(ptr);
+
+    cpi->mb.e_mbd.mb_segement_abs_delta = abs_delta;
+    vpx_memcpy(cpi->segment_feature_data, feature_data, sizeof(cpi->segment_feature_data));
+}

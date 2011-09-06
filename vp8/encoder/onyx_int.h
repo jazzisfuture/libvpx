@@ -127,6 +127,21 @@ typedef struct
 
 } ONEPASS_FRAMESTATS;
 
+typedef struct
+{
+    struct {
+        int err;
+        union {
+            int_mv mv;
+            MB_PREDICTION_MODE mode;
+        } m;
+    } ref[MAX_REF_FRAMES];
+} MBGRAPH_MB_STATS;
+
+typedef struct
+{
+    MBGRAPH_MB_STATS *mb_stats;
+} MBGRAPH_FRAME_STATS;
 
 typedef enum
 {
@@ -419,6 +434,11 @@ typedef struct VP8_COMP
     ONEPASS_FRAMESTATS one_pass_frame_stats[MAX_LAG_BUFFERS];
     int one_pass_frame_index;
 #endif
+    MBGRAPH_FRAME_STATS mbgraph_stats[MAX_LAG_BUFFERS];
+    int mbgraph_n_frames;             // number of frames filled in the above
+    int mbgraph_use_arf_segmentation; // set if part of an ARF is considered to be a
+                                      // poor predictor, and thus coeffs are skipped
+                                      // or coded at a higher Q using MB-segmentation
 
     int decimation_factor;
     int decimation_count;
