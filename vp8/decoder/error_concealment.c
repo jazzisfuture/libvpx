@@ -293,21 +293,21 @@ static void estimate_mb_mvs(const B_OVERLAP *block_overlaps,
     filtered_mv->row = 0;
     for (row = 0; row < 4; ++row)
     {
-        mb_to_top_edge = mb_to_top_edge + ((row*4)<<3);
-        mb_to_bottom_edge = mb_to_bottom_edge - ((row*4)<<3);
+        int this_b_to_top_edge = mb_to_top_edge + ((row*4)<<3);
+        int this_b_to_bottom_edge = mb_to_bottom_edge - ((row*4)<<3);
         for (col = 0; col < 4; ++col)
         {
             int i = row * 4 + col;
-            mb_to_left_edge = mb_to_left_edge + ((col*4)<<3);
-            mb_to_right_edge = mb_to_right_edge - ((col*4)<<3);
+            int this_b_to_left_edge = mb_to_left_edge + ((col*4)<<3);
+            int this_b_to_right_edge = mb_to_right_edge - ((col*4)<<3);
             /* Estimate vectors for all blocks which are overlapped by this type */
             /* Interpolate/extrapolate the rest of the block's MVs */
             estimate_mv(block_overlaps[i].overlaps, &(bmi[i]));
             mi->mbmi.need_to_clamp_mvs = vp8_check_mv_bounds(&bmi[i].mv,
-                                                             mb_to_left_edge,
-                                                             mb_to_right_edge,
-                                                             mb_to_top_edge,
-                                                             mb_to_bottom_edge);
+                                                         this_b_to_left_edge,
+                                                         this_b_to_right_edge,
+                                                         this_b_to_top_edge,
+                                                         this_b_to_bottom_edge);
             if (bmi[i].mv.as_int != 0)
             {
                 ++non_zero_count;
