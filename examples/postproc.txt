@@ -40,7 +40,7 @@ deadline, and the codec may exceed it doing its regular processing. In
 these cases, no additional postprocessing will be done.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 /* Decode the frame with 15ms deadline */
-if(vpx_codec_decode(&codec, frame, frame_sz, NULL, 15000))
+if(vpx_codec_decode(&codec, buf, buf_sz, NULL, 15000))
     die_codec(&codec, "Failed to decode frame");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 

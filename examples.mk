@@ -13,28 +13,15 @@
 # tree directly, and GEN_EXAMPLES are files that are created from the
 # examples folder.
 UTILS-$(CONFIG_DECODERS)    += vpxdec.c
-vpxdec.SRCS                 += md5_utils.c md5_utils.h
 vpxdec.SRCS                 += vpx_ports/vpx_timer.h
 vpxdec.SRCS                 += vpx/vpx_integer.h
 vpxdec.SRCS                 += args.c args.h vpx_ports/config.h
-vpxdec.SRCS                 += tools_common.c tools_common.h
-vpxdec.SRCS                 += nestegg/halloc/halloc.h
-vpxdec.SRCS                 += nestegg/halloc/src/align.h
-vpxdec.SRCS                 += nestegg/halloc/src/halloc.c
-vpxdec.SRCS                 += nestegg/halloc/src/hlist.h
-vpxdec.SRCS                 += nestegg/halloc/src/macros.h
-vpxdec.SRCS                 += nestegg/include/nestegg/nestegg.h
-vpxdec.SRCS                 += nestegg/src/nestegg.c
 vpxdec.GUID                  = BA5FE66F-38DD-E034-F542-B1578C5FB950
 vpxdec.DESCRIPTION           = Full featured decoder
 UTILS-$(CONFIG_ENCODERS)    += vpxenc.c
-vpxenc.SRCS                 += args.c args.h y4minput.c y4minput.h
-vpxenc.SRCS                 += tools_common.c tools_common.h
+vpxenc.SRCS                 += args.c args.h
 vpxenc.SRCS                 += vpx_ports/config.h vpx_ports/mem_ops.h
 vpxenc.SRCS                 += vpx_ports/mem_ops_aligned.h
-vpxenc.SRCS                 += libmkv/EbmlIDs.h
-vpxenc.SRCS                 += libmkv/EbmlWriter.c
-vpxenc.SRCS                 += libmkv/EbmlWriter.h
 vpxenc.GUID                  = 548DEC74-7A15-4B2B-AFC3-AA102E7C25C1
 vpxenc.DESCRIPTION           = Full featured encoder
 
@@ -59,7 +46,6 @@ GEN_EXAMPLES-$(CONFIG_DECODERS) += postproc.c
 postproc.GUID                    = 65E33355-F35E-4088-884D-3FD4905881D7
 postproc.DESCRIPTION             = Decoder postprocessor control
 GEN_EXAMPLES-$(CONFIG_DECODERS) += decode_to_md5.c
-decode_to_md5.SRCS              += md5_utils.h md5_utils.c
 decode_to_md5.GUID               = 59120B9B-2735-4BFE-B022-146CA340FE42
 decode_to_md5.DESCRIPTION        = Frame by frame MD5 checksum
 
@@ -166,6 +152,7 @@ BINS-$(NOT_MSVS)           += $(addprefix $(BUILD_PFX),$(ALL_EXAMPLES:.c=))
 
 
 # Instantiate linker template for all examples.
+IO_LIB=$(if $(CONFIG_DEBUG_LIBS),vpxio_g,vpxio)
 CODEC_LIB=$(if $(CONFIG_DEBUG_LIBS),vpx_g,vpx)
 CODEC_LIB_SUF=$(if $(CONFIG_SHARED),.so,.a)
 $(foreach bin,$(BINS-yes),\
@@ -173,7 +160,7 @@ $(foreach bin,$(BINS-yes),\
         $(LIB_PATH)/lib$(CODEC_LIB)$(CODEC_LIB_SUF)))\
     $(if $(BUILD_OBJS),$(eval $(call linker_template,$(bin),\
         $(call objs,$($(notdir $(bin)).SRCS)) \
-        -l$(CODEC_LIB) $(addprefix -l,$(CODEC_EXTRA_LIBS))\
+        -l$(IO_LIB) -l$(CODEC_LIB) $(addprefix -l,$(CODEC_EXTRA_LIBS))\
         )))\
     $(if $(LIPO_OBJS),$(eval $(call lipo_bin_template,$(bin))))\
     )
@@ -197,6 +184,7 @@ INSTALL_MAPS += %         %
 
 # Set up additional MSVS environment
 ifeq ($(CONFIG_MSVS),yes)
+IO_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxiomt,vpxiomd)
 CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd)
 # This variable uses deferred expansion intentionally, since the results of
 # $(wildcard) may change during the course of the Make.
@@ -222,7 +210,7 @@ $(1): $($(1:.vcproj=).SRCS)
             --proj-guid=$$($$(@:.vcproj=).GUID)\
             $$(if $$(CONFIG_STATIC_MSVCRT),--static-crt) \
             --out=$$@ $$(INTERNAL_CFLAGS) $$(CFLAGS) \
-            $$(INTERNAL_LDFLAGS) $$(LDFLAGS) -l$$(CODEC_LIB) -lwinmm $$^
+            $$(INTERNAL_LDFLAGS) $$(LDFLAGS) -l$$(IO_LIB) -l$$(CODEC_LIB) -lwinmm $$^
 endef
 PROJECTS-$(CONFIG_MSVS) += $(ALL_EXAMPLES:.c=.vcproj)
 INSTALL-BINS-$(CONFIG_MSVS) += $(foreach p,$(VS_PLATFORMS),\

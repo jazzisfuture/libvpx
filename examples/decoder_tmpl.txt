@@ -33,7 +33,7 @@ if(vpx_codec_dec_init(&codec, interface, NULL, flags))
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 /* Decode the frame */
-if(vpx_codec_decode(&codec, frame, frame_sz, NULL, 0))
+if(vpx_codec_decode(&codec, buf, buf_sz, NULL, 0))
     die_codec(&codec, "Failed to decode frame");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 
@@ -44,14 +44,7 @@ while((img = vpx_codec_get_frame(&codec, &iter))) {
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_DX
-for(plane=0; plane < 3; plane++) {
-    unsigned char *buf =img->planes[plane];
-
-    for(y=0; y<img->d_h >> (plane?1:0); y++) {
-        if(fwrite(buf, 1, img->d_w >> (plane?1:0), outfile));
-        buf += img->stride[plane];
-    }
-}
+vpxio_write_img(&output_ctx, img);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_DX
 
 

@@ -63,9 +63,22 @@ ifeq ($(CONFIG_DECODERS),yes)
   CODEC_DOC_SECTIONS += decoder
 endif
 
+IO_SRCS-yes += libmkv/EbmlWriter.c
+IO_SRCS-yes += nestegg/halloc/src/halloc.c
+IO_SRCS-yes += md5_utils.c
+IO_SRCS-yes += nestegg/src/nestegg.c
+IO_SRCS-yes += tools_common.c
+IO_SRCS-yes += vpx_io/vpxio.c
+IO_SRCS-yes += vpx_io/vpxio_i420.c
+IO_SRCS-yes += vpx_io/vpxio_ivf.c
+IO_SRCS-yes += vpx_io/vpxio_raw.c
+IO_SRCS-yes += vpx_io/vpxio_webm.c
+IO_SRCS-yes += vpx_io/vpxio_y4m.c
+IO_SRCS-yes += y4minput.c
 
 ifeq ($(CONFIG_MSVS),yes)
-CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd)
+CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd,vpxiomt,vpxiomd)
+IO_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxiomt,vpxiomd)
 # This variable uses deferred expansion intentionally, since the results of
 # $(wildcard) may change during the course of the Make.
 VS_PLATFORMS = $(foreach d,$(wildcard */Release/$(CODEC_LIB).lib),$(word 1,$(subst /, ,$(d))))
@@ -132,21 +145,23 @@ CODEC_SRCS=$(call enabled,CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(call enabled,CODEC_EXPORTS)
 
+IO_SRCS=$(call enabled,IO_SRCS)
+INSTALL-SRCS-yes += $(IO_SRCS)
 
 # Generate a list of all enabled sources, in particular for exporting to gyp
 # based build systems.
 libvpx_srcs.txt:
-	@echo "    [CREATE] $@"
-	@echo $(CODEC_SRCS) | xargs -n1 echo | sort -u > $@
+    @echo "    [CREATE] $@"
+    @echo $(CODEC_SRCS) | xargs -n1 echo | sort -u > $@
 
 
 ifeq ($(CONFIG_EXTERNAL_BUILD),yes)
 ifeq ($(CONFIG_MSVS),yes)
 
 obj_int_extract.vcproj: $(SRC_PATH_BARE)/build/make/obj_int_extract.c
-	@cp $(SRC_PATH_BARE)/build/x86-msvs/obj_int_extract.bat .
-	@echo "    [CREATE] $@"
-	$(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
+    @cp $(SRC_PATH_BARE)/build/x86-msvs/obj_int_extract.bat .
+    @echo "    [CREATE] $@"
+    $(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
     --exe \
     --target=$(TOOLCHAIN) \
     --name=obj_int_extract \
@@ -161,17 +176,17 @@ PROJECTS-$(BUILD_LIBVPX) += obj_int_extract.vcproj
 PROJECTS-$(BUILD_LIBVPX) += obj_int_extract.bat
 
 vpx.def: $(call enabled,CODEC_EXPORTS)
-	@echo "    [CREATE] $@"
-	$(SRC_PATH_BARE)/build/make/gen_msvs_def.sh\
+    @echo "    [CREATE] $@"
+    $(SRC_PATH_BARE)/build/make/gen_msvs_def.sh\
             --name=vpx\
             --out=$@ $^
 CLEAN-OBJS += vpx.def
 
 vpx.vcproj: $(CODEC_SRCS) vpx.def
-	@echo "    [CREATE] $@"
-	$(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
-			--lib \
-			--target=$(TOOLCHAIN) \
+    @echo "    [CREATE] $@"
+    $(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
+            --lib \
+            --target=$(TOOLCHAIN) \
             $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
             --name=vpx \
             --proj-guid=DCE19DAF-69AC-46DB-B14A-39F0FAA5DB74 \
@@ -180,7 +195,19 @@ vpx.vcproj: $(CODEC_SRCS) vpx.def
             --out=$@ $(CFLAGS) $^ \
             --src-path-bare="$(SRC_PATH_BARE)" \
 
-PROJECTS-$(BUILD_LIBVPX) += vpx.vcproj
+vpxio.vcproj: $(IO_SRCS)
+    @echo "    [CREATE] $@"
+    $(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
+            --lib \
+            --target=$(TOOLCHAIN) \
+            $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
+            --name=vpxio \
+            --proj-guid=8EB28B7C-D0E0-42A7-82C1-A86F01676CE9 \
+            --ver=$(CONFIG_VS_VERSION) \
+            --out=$@ $(CFLAGS) $^ \
+            --src-path-bare="$(SRC_PATH_BARE)" \
+
+PROJECTS-$(BUILD_LIBVPX) += vpx.vcproj vpxio.vcproj
 
 vpx.vcproj: vpx_config.asm
 
@@ -204,16 +231,16 @@ LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, \
                              libvpx.so.$(VERSION_MAJOR).$(VERSION_MINOR))
 
 libvpx.ver: $(call enabled,CODEC_EXPORTS)
-	@echo "    [CREATE] $@"
-	$(qexec)echo "{ global:" > $@
-	$(qexec)for f in $?; do awk '{print $$2";"}' < $$f >>$@; done
-	$(qexec)echo "local: *; };" >> $@
+    @echo "    [CREATE] $@"
+    $(qexec)echo "{ global:" > $@
+    $(qexec)for f in $?; do awk '{print $$2";"}' < $$f >>$@; done
+    $(qexec)echo "local: *; };" >> $@
 CLEAN-OBJS += libvpx.ver
 
 define libvpx_symlink_template
 $(1): $(2)
-	@echo "    [LN]      $$@"
-	$(qexec)ln -sf $(LIBVPX_SO) $$@
+    @echo "    [LN]      $$@"
+    $(qexec)ln -sf $(LIBVPX_SO) $$@
 endef
 
 $(eval $(call libvpx_symlink_template,\
@@ -228,23 +255,30 @@ INSTALL-LIBS-$(CONFIG_SHARED) += $(LIBSUBDIR)/$(LIBVPX_SO)
 
 LIBS-$(BUILD_LIBVPX) += vpx.pc
 vpx.pc: config.mk libs.mk
-	@echo "    [CREATE] $@"
-	$(qexec)echo '# pkg-config file from libvpx $(VERSION_STRING)' > $@
-	$(qexec)echo 'prefix=$(PREFIX)' >> $@
-	$(qexec)echo 'exec_prefix=$${prefix}' >> $@
-	$(qexec)echo 'libdir=$${prefix}/lib' >> $@
-	$(qexec)echo 'includedir=$${prefix}/include' >> $@
-	$(qexec)echo '' >> $@
-	$(qexec)echo 'Name: vpx' >> $@
-	$(qexec)echo 'Description: WebM Project VPx codec implementation' >> $@
-	$(qexec)echo 'Version: $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)' >> $@
-	$(qexec)echo 'Requires:' >> $@
-	$(qexec)echo 'Conflicts:' >> $@
-	$(qexec)echo 'Libs: -L$${libdir} -lvpx' >> $@
-	$(qexec)echo 'Cflags: -I$${includedir}' >> $@
+    @echo "    [CREATE] $@"
+    $(qexec)echo '# pkg-config file from libvpx $(VERSION_STRING)' > $@
+    $(qexec)echo 'prefix=$(PREFIX)' >> $@
+    $(qexec)echo 'exec_prefix=$${prefix}' >> $@
+    $(qexec)echo 'libdir=$${prefix}/lib' >> $@
+    $(qexec)echo 'includedir=$${prefix}/include' >> $@
+    $(qexec)echo '' >> $@
+    $(qexec)echo 'Name: vpx' >> $@
+    $(qexec)echo 'Description: WebM Project VPx codec implementation' >> $@
+    $(qexec)echo 'Version: $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)' >> $@
+    $(qexec)echo 'Requires:' >> $@
+    $(qexec)echo 'Conflicts:' >> $@
+    $(qexec)echo 'Libs: -L$${libdir} -lvpx' >> $@
+    $(qexec)echo 'Cflags: -I$${includedir}' >> $@
 INSTALL-LIBS-yes += $(LIBSUBDIR)/pkgconfig/vpx.pc
 INSTALL_MAPS += $(LIBSUBDIR)/pkgconfig/%.pc %.pc
 CLEAN-OBJS += vpx.pc
+
+LIBVPXIO_OBJS=$(call objs,$(IO_SRCS))
+OBJS-$(BUILD_LIBVPX) += $(LIBVPXIO_OBJS)
+LIBS-$(if $(BUILD_LIBVPX),$(CONFIG_STATIC)) += $(BUILD_PFX)libvpxio.a $(BUILD_PFX)libvpxio_g.a
+$(BUILD_PFX)libvpxio_g.a: $(LIBVPXIO_OBJS)
+
+
 endif
 
 LIBS-$(LIPO_LIBVPX) += libvpx.a
@@ -256,16 +290,16 @@ $(eval $(if $(LIPO_LIBVPX),$(call lipo_lib_template,libvpx.a)))
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)
 # YASM
 $(BUILD_PFX)vpx_config.asm: $(BUILD_PFX)vpx_config.h
-	@echo "    [CREATE] $@"
-	@egrep "#define [A-Z0-9_]+ [01]" $< \
-	    | awk '{print $$2 " equ " $$3}' > $@
+    @echo "    [CREATE] $@"
+    @egrep "#define [A-Z0-9_]+ [01]" $< \
+        | awk '{print $$2 " equ " $$3}' > $@
 else
 ADS2GAS=$(if $(filter yes,$(CONFIG_GCC)),| $(ASM_CONVERSION))
 $(BUILD_PFX)vpx_config.asm: $(BUILD_PFX)vpx_config.h
-	@echo "    [CREATE] $@"
-	@egrep "#define [A-Z0-9_]+ [01]" $< \
-	    | awk '{print $$2 " EQU " $$3}' $(ADS2GAS) > $@
-	@echo "        END" $(ADS2GAS) >> $@
+    @echo "    [CREATE] $@"
+    @egrep "#define [A-Z0-9_]+ [01]" $< \
+        | awk '{print $$2 " EQU " $$3}' $(ADS2GAS) > $@
+    @echo "        END" $(ADS2GAS) >> $@
 CLEAN-OBJS += $(BUILD_PFX)vpx_config.asm
 endif
 
@@ -281,38 +315,38 @@ $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
 
 ifeq ($(filter icc gcc,$(TGT_CC)), $(TGT_CC))
     $(BUILD_PFX)asm_com_offsets.asm: $(BUILD_PFX)$(VP8_PREFIX)common/asm_com_offsets.c.S
-	grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
+    grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
     $(BUILD_PFX)$(VP8_PREFIX)common/asm_com_offsets.c.S: $(VP8_PREFIX)common/asm_com_offsets.c
     CLEAN-OBJS += $(BUILD_PFX)asm_com_offsets.asm $(BUILD_PFX)$(VP8_PREFIX)common/asm_com_offsets.c.S
 
     $(BUILD_PFX)asm_enc_offsets.asm: $(BUILD_PFX)$(VP8_PREFIX)encoder/asm_enc_offsets.c.S
-	grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
+    grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
     $(BUILD_PFX)$(VP8_PREFIX)encoder/asm_enc_offsets.c.S: $(VP8_PREFIX)encoder/asm_enc_offsets.c
     CLEAN-OBJS += $(BUILD_PFX)asm_enc_offsets.asm $(BUILD_PFX)$(VP8_PREFIX)encoder/asm_enc_offsets.c.S
 
     $(BUILD_PFX)asm_dec_offsets.asm: $(BUILD_PFX)$(VP8_PREFIX)decoder/asm_dec_offsets.c.S
-	grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
+    grep EQU $< | tr -d '$$\#' $(ADS2GAS) > $@
     $(BUILD_PFX)$(VP8_PREFIX)decoder/asm_dec_offsets.c.S: $(VP8_PREFIX)decoder/asm_dec_offsets.c
     CLEAN-OBJS += $(BUILD_PFX)asm_dec_offsets.asm $(BUILD_PFX)$(VP8_PREFIX)decoder/asm_dec_offsets.c.S
 else
   ifeq ($(filter rvct,$(TGT_CC)), $(TGT_CC))
     asm_com_offsets.asm: obj_int_extract
     asm_com_offsets.asm: $(VP8_PREFIX)common/asm_com_offsets.c.o
-	./obj_int_extract rvds $< $(ADS2GAS) > $@
+    ./obj_int_extract rvds $< $(ADS2GAS) > $@
     OBJS-yes += $(VP8_PREFIX)common/asm_com_offsets.c.o
     CLEAN-OBJS += asm_com_offsets.asm
     $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)asm_com_offsets.asm
 
     asm_enc_offsets.asm: obj_int_extract
     asm_enc_offsets.asm: $(VP8_PREFIX)encoder/asm_enc_offsets.c.o
-	./obj_int_extract rvds $< $(ADS2GAS) > $@
+    ./obj_int_extract rvds $< $(ADS2GAS) > $@
     OBJS-yes += $(VP8_PREFIX)encoder/asm_enc_offsets.c.o
     CLEAN-OBJS += asm_enc_offsets.asm
     $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)asm_enc_offsets.asm
 
     asm_dec_offsets.asm: obj_int_extract
     asm_dec_offsets.asm: $(VP8_PREFIX)decoder/asm_dec_offsets.c.o
-	./obj_int_extract rvds $< $(ADS2GAS) > $@
+    ./obj_int_extract rvds $< $(ADS2GAS) > $@
     OBJS-yes += $(VP8_PREFIX)decoder/asm_dec_offsets.c.o
     CLEAN-OBJS += asm_dec_offsets.asm
     $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)asm_dec_offsets.asm
@@ -330,9 +364,9 @@ CODEC_DOC_SRCS += vpx/vpx_codec.h \
 CLEAN-OBJS += libs.doxy
 DOCS-yes += libs.doxy
 libs.doxy: $(CODEC_DOC_SRCS)
-	@echo "    [CREATE] $@"
-	@rm -f $@
-	@echo "INPUT += $^" >> $@
-	@echo "PREDEFINED = VPX_CODEC_DISABLE_COMPAT" >> $@
-	@echo "INCLUDE_PATH += ." >> $@;
-	@echo "ENABLED_SECTIONS += $(sort $(CODEC_DOC_SECTIONS))" >> $@
+    @echo "    [CREATE] $@"
+    @rm -f $@
+    @echo "INPUT += $^" >> $@
+    @echo "PREDEFINED = VPX_CODEC_DISABLE_COMPAT" >> $@
+    @echo "INCLUDE_PATH += ." >> $@;
+    @echo "ENABLED_SECTIONS += $(sort $(CODEC_DOC_SECTIONS))" >> $@
