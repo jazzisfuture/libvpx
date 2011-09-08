@@ -14,7 +14,7 @@ vpx.sln: $(wildcard *.vcproj)
 	$(SRC_PATH_BARE)/build/make/gen_msvs_sln.sh \
             $(if $(filter %vpx.vcproj,$^),\
                 $(foreach vcp,$(filter-out %vpx.vcproj %obj_int_extract.vcproj,$^),\
-                  --dep=$(vcp:.vcproj=):vpx)) \
+                  --dep=$(vcp:.vcproj=):vpx --dep=$(vcp:.vcproj=):vpxio)) \
             --dep=vpx:obj_int_extract \
             --ver=$(CONFIG_VS_VERSION)\
             --out=$@ $^

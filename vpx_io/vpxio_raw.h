@@ -1,0 +1,5 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int vpxio_read_pkt_raw(struct vpxio_ctx *input_ctx,
+                       uint8_t **buf,
+                       size_t *buf_sz,
+                       size_t *buf_alloc_sz);

@@ -15,7 +15,7 @@ Algorithm for your use. Our implmentation only changes the interface of this
 reference code. You must include the `md5_utils.h` header for access to these
 functions.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ EXTRA_INCLUDES
-#include "md5_utils.h"
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ EXTRA_INCLUDES
 
 
@@ -25,24 +25,6 @@ Each row of the image is passed to the MD5 accumulator. First the Y plane
 is processed, then U, then V. It is important to honor the image's `stride`
 values.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_DX
-unsigned char  md5_sum[16];
-MD5Context     md5;
-int            i;
-
-MD5Init(&md5);
-
-for(plane=0; plane < 3; plane++) {
-    unsigned char *buf =img->planes[plane];
-
-    for(y=0; y<img->d_h >> (plane?1:0); y++) {
-        MD5Update(&md5, buf, img->d_w >> (plane?1:0));
-        buf += img->stride[plane];
-    }
-}
-
-MD5Final(md5_sum, &md5);
-for(i=0; i<16; i++)
-    fprintf(outfile, "%02x",md5_sum[i]);
-fprintf(outfile, "  img-%dx%d-%04d.i420\n", img->d_w, img->d_h,
-        frame_cnt);
+vpxio_set_md5(&output_ctx, FRAME_OUT_MD5);
+vpxio_write_img(&output_ctx, img);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_DX
