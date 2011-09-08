@@ -51,18 +51,16 @@ if(vpx_codec_enc_init(&codec, interface, &cfg, 0))
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
-frame_avail = read_frame(infile, &raw);
-if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt,
-                    1, flags, VPX_DL_REALTIME))
+frame_avail = vpxio_read_img(&input_ctx, &raw);
+if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt * 33,
+                    33, flags, VPX_DL_REALTIME))
     die_codec(&codec, "Failed to encode frame");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_FRAME
 case VPX_CODEC_CX_FRAME_PKT:
-    write_ivf_frame_header(outfile, pkt);
-    if(fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz,
-              outfile));
+    vpxio_write_pkt(&output_ctx, pkt);
     break;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PROCESS_FRAME
 
