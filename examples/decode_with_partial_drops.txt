@@ -51,7 +51,7 @@ int next_packet(struct parsed_header* hdr, int pos, int length, int mtu)
     return mtu;
 }
 
-void throw_packets(unsigned char* frame, int* size, int loss_rate,
+void throw_packets(unsigned char* frame, size_t* size, int loss_rate,
                    int* thrown, int* kept)
 {
     unsigned char loss_frame[256*1024];
@@ -205,23 +205,23 @@ switch (mode)
 case 0:
     if (m - (frame_cnt-1)%m <= n)
     {
-        frame_sz = 0;
+        buf_sz = 0;
     }
     break;
 case 1:
     if (frame_cnt >= n && frame_cnt <= m)
     {
-        frame_sz = 0;
+        buf_sz = 0;
     }
     break;
 case 2:
-    throw_packets(frame, &frame_sz, n, &thrown_frame, &kept_frame);
+    throw_packets(buf, &buf_sz, n, &thrown_frame, &kept_frame);
     break;
 default: break;
 }
 if (mode < 2)
 {
-    if (frame_sz == 0)
+    if (buf_sz == 0)
     {
         putc('X', stdout);
         thrown_frame++;
