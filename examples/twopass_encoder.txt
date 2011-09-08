@@ -41,9 +41,9 @@ Encoding a frame in two pass mode is identical to the simple encoder
 example, except the deadline is set to VPX_DL_BEST_QUALITY to get the
 best quality possible. VPX_DL_GOOD_QUALITY could also be used.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
-frame_avail = read_frame(infile, &raw);
-if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt,
-                    1, flags, VPX_DL_BEST_QUALITY))
+frame_avail = vpxio_read_img(&input_ctx, &raw);
+if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt * 33,
+                    33, flags, VPX_DL_BEST_QUALITY))
     die_codec(&codec, "Failed to encode frame");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
 
