@@ -19,12 +19,9 @@
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
+#include "vpx_io/vpxio.h"
 #define interface (vpx_codec_vp8_dx())
 @EXTRA_INCLUDES
-
-
-#define IVF_FILE_HDR_SZ  (32)
-#define IVF_FRAME_HDR_SZ (12)
 
 static unsigned int mem_get_le32(const unsigned char *mem) {
     return (mem[3] << 24)|(mem[2] << 16)|(mem[1] << 8)|(mem[0]);
@@ -45,51 +42,42 @@ static void die(const char *fmt, ...) {
 @HELPERS
 
 int main(int argc, char **argv) {
-    FILE            *infile, *outfile;
+    struct vpxio_ctx *input_ctx = NULL, *output_ctx = NULL;
     vpx_codec_ctx_t  codec;
     int              flags = 0, frame_cnt = 0;
-    unsigned char    file_hdr[IVF_FILE_HDR_SZ];
-    unsigned char    frame_hdr[IVF_FRAME_HDR_SZ];
-    unsigned char    frame[256*1024];
+    uint8_t               *buf = NULL;
+    size_t                 buf_sz = 0, buf_alloc_sz = 0;
     vpx_codec_err_t  res;
 @@@@EXTRA_VARS
 
     (void)res;
     /* Open files */
 @@@@USAGE
-    if(!(infile = fopen(argv[1], "rb")))
-        die("Failed to open %s for reading", argv[1]);
-    if(!(outfile = fopen(argv[2], "wb")))
-        die("Failed to open %s for writing", argv[2]);
-
-    /* Read file header */
-    if(!(fread(file_hdr, 1, IVF_FILE_HDR_SZ, infile) == IVF_FILE_HDR_SZ
-         && file_hdr[0]=='D' && file_hdr[1]=='K' && file_hdr[2]=='I'
-         && file_hdr[3]=='F'))
-        die("%s is not an IVF file.", argv[1]);
+    /* Open input file */
+    if ((input_ctx = vpxio_open_src(input_ctx, argv[1])) == NULL){
+        printf("Failed to open input file: %s", vpxio_get_file_name(input_ctx));
+        return EXIT_FAILURE;
+    }
+    /* Open output file */
+    vpxio_open_y4m_dst(output_ctx, argv[2],
+                       vpxio_get_width(input_ctx),
+                       vpxio_get_height(input_ctx),
+                       vpxio_get_framerate(input_ctx));
 
     printf("Using %s\n",vpx_codec_iface_name(interface));
 @@@@DEC_INIT
 
     /* Read each frame */
-    while(fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, infile) == IVF_FRAME_HDR_SZ) {
-        int               frame_sz = mem_get_le32(frame_hdr);
+    while(!vpxio_read_pkt(input_ctx, &buf, &buf_sz, &buf_alloc_sz)){
         vpx_codec_iter_t  iter = NULL;
         vpx_image_t      *img;
 
-
         frame_cnt++;
-        if(frame_sz > sizeof(frame))
-            die("Frame %d data too big for example code buffer", frame_sz);
-        if(fread(frame, 1, frame_sz, infile) != frame_sz)
-            die("Frame %d failed to read complete frame", frame_cnt);
-
 @@@@@@@@PRE_DECODE
 @@@@@@@@DECODE
 
         /* Write decoded data to disk */
 @@@@@@@@GET_FRAME
-            unsigned int plane, y;
 
 @@@@@@@@@@@@PROCESS_DX
         }
@@ -97,7 +85,7 @@ int main(int argc, char **argv) {
     printf("Processed %d frames.\n",frame_cnt);
 @@@@DESTROY
 
-    fclose(outfile);
-    fclose(infile);
+    vpxio_close(input_ctx);
+    vpxio_close(output_ctx);
     return EXIT_SUCCESS;
 }

@@ -63,9 +63,12 @@ ifeq ($(CONFIG_DECODERS),yes)
   CODEC_DOC_SECTIONS += decoder
 endif
 
+include $(SRC_PATH_BARE)/vpx_io/vpxio.mk
+IO_SRCS-yes += $(call enabled,VPXIO_SRCS)
 
 ifeq ($(CONFIG_MSVS),yes)
-CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd)
+CODEC_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxmt,vpxmd,vpxiomt,vpxiomd)
+IO_LIB=$(if $(CONFIG_STATIC_MSVCRT),vpxiomt,vpxiomd)
 # This variable uses deferred expansion intentionally, since the results of
 # $(wildcard) may change during the course of the Make.
 VS_PLATFORMS = $(foreach d,$(wildcard */Release/$(CODEC_LIB).lib),$(word 1,$(subst /, ,$(d))))
@@ -132,6 +135,8 @@ CODEC_SRCS=$(call enabled,CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(call enabled,CODEC_EXPORTS)
 
+IO_SRCS=$(call enabled,IO_SRCS)
+INSTALL-SRCS-yes += $(IO_SRCS)
 
 # Generate a list of all enabled sources, in particular for exporting to gyp
 # based build systems.
@@ -180,7 +185,19 @@ vpx.vcproj: $(CODEC_SRCS) vpx.def
             --out=$@ $(CFLAGS) $^ \
             --src-path-bare="$(SRC_PATH_BARE)" \
 
-PROJECTS-$(BUILD_LIBVPX) += vpx.vcproj
+vpxio.vcproj: $(IO_SRCS)
+	@echo "    [CREATE] $@"
+	$(SRC_PATH_BARE)/build/make/gen_msvs_proj.sh \
+			--lib \
+			--target=$(TOOLCHAIN) \
+            $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
+            --name=vpxio \
+            --proj-guid=8EB28B7C-D0E0-42A7-82C1-A86F01676CE9 \
+            --ver=$(CONFIG_VS_VERSION) \
+            --out=$@ $(CFLAGS) $^ \
+            --src-path-bare="$(SRC_PATH_BARE)" \
+
+PROJECTS-$(BUILD_LIBVPX) += vpx.vcproj vpxio.vcproj
 
 vpx.vcproj: vpx_config.asm
 
@@ -245,9 +262,15 @@ vpx.pc: config.mk libs.mk
 INSTALL-LIBS-yes += $(LIBSUBDIR)/pkgconfig/vpx.pc
 INSTALL_MAPS += $(LIBSUBDIR)/pkgconfig/%.pc %.pc
 CLEAN-OBJS += vpx.pc
+
+LIBVPXIO_OBJS=$(call objs,$(IO_SRCS))
+OBJS-$(BUILD_LIBVPX) += $(LIBVPXIO_OBJS)
+LIBS-$(if $(BUILD_LIBVPX),$(CONFIG_STATIC)) += $(BUILD_PFX)libvpxio.a $(BUILD_PFX)libvpxio_g.a
+$(BUILD_PFX)libvpxio_g.a: $(LIBVPXIO_OBJS)
 endif
 
 LIBS-$(LIPO_LIBVPX) += libvpx.a
+LIBS-$(LIPO_LIBVPX) += libvpxio.a
 $(eval $(if $(LIPO_LIBVPX),$(call lipo_lib_template,libvpx.a)))
 
 #
