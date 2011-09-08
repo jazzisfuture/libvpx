@@ -47,7 +47,7 @@ The reference frame is updated on the frame specified on the command
 line.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
-frame_avail = read_frame(infile, &raw);
+frame_avail = vpxio_read_img(input_ctx, &raw);
 
 if(frame_cnt + 1 == update_frame_num) {
     vpx_ref_frame_t ref;
@@ -58,9 +58,9 @@ if(frame_cnt + 1 == update_frame_num) {
     if(vpx_codec_control(&codec, VP8_SET_REFERENCE, &ref))
         die_codec(&codec, "Failed to set reference frame");
 }
-
-if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt,
-                    1, flags, VPX_DL_REALTIME))
+/* Duration 33 and pts (frame_cnt * 33) used to produce 30 fps clip.*/
+if(vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt * 33,
+                    33, flags, VPX_DL_REALTIME))
     die_codec(&codec, "Failed to encode frame");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ENCODE_FRAME
 
