@@ -25,11 +25,8 @@
 #if CONFIG_VP8_DECODER
 #include "vpx/vp8dx.h"
 #endif
-#if CONFIG_MD5
-#include "md5_utils.h"
-#endif
-#include "tools_common.h"
-#include "nestegg/include/nestegg/nestegg.h"
+
+#include "vpx_io/vpxio.h"
 
 #if CONFIG_OS_SUPPORT
 #if defined(_WIN32)
@@ -177,450 +174,6 @@ void die(const char *fmt, ...)
     usage_exit();
 }
 
-static unsigned int mem_get_le16(const void *vmem)
-{
-    unsigned int  val;
-    const unsigned char *mem = (const unsigned char *)vmem;
-
-    val = mem[1] << 8;
-    val |= mem[0];
-    return val;
-}
-
-static unsigned int mem_get_le32(const void *vmem)
-{
-    unsigned int  val;
-    const unsigned char *mem = (const unsigned char *)vmem;
-
-    val = mem[3] << 24;
-    val |= mem[2] << 16;
-    val |= mem[1] << 8;
-    val |= mem[0];
-    return val;
-}
-
-enum file_kind
-{
-    RAW_FILE,
-    IVF_FILE,
-    WEBM_FILE
-};
-
-struct input_ctx
-{
-    enum file_kind  kind;
-    FILE           *infile;
-    nestegg        *nestegg_ctx;
-    nestegg_packet *pkt;
-    unsigned int    chunk;
-    unsigned int    chunks;
-    unsigned int    video_track;
-};
-
-#define IVF_FRAME_HDR_SZ (sizeof(uint32_t) + sizeof(uint64_t))
-#define RAW_FRAME_HDR_SZ (sizeof(uint32_t))
-static int read_frame(struct input_ctx      *input,
-                      uint8_t               **buf,
-                      size_t                *buf_sz,
-                      size_t                *buf_alloc_sz)
-{
-    char            raw_hdr[IVF_FRAME_HDR_SZ];
-    size_t          new_buf_sz;
-    FILE           *infile = input->infile;
-    enum file_kind  kind = input->kind;
-    if(kind == WEBM_FILE)
-    {
-        if(input->chunk >= input->chunks)
-        {
-            unsigned int track;
-
-            do
-            {
-                /* End of this packet, get another. */
-                if(input->pkt)
-                    nestegg_free_packet(input->pkt);
-
-                if(nestegg_read_packet(input->nestegg_ctx, &input->pkt) <= 0
-                   || nestegg_packet_track(input->pkt, &track))
-                    return 1;
-
-            } while(track != input->video_track);
-
-            if(nestegg_packet_count(input->pkt, &input->chunks))
-                return 1;
-            input->chunk = 0;
-        }
-
-        if(nestegg_packet_data(input->pkt, input->chunk, buf, buf_sz))
-            return 1;
-        input->chunk++;
-
-        return 0;
-    }
-    /* For both the raw and ivf formats, the frame size is the first 4 bytes
-     * of the frame header. We just need to special case on the header
-     * size.
-     */
-    else if (fread(raw_hdr, kind==IVF_FILE
-                   ? IVF_FRAME_HDR_SZ : RAW_FRAME_HDR_SZ, 1, infile) != 1)
-    {
-        if (!feof(infile))
-            fprintf(stderr, "Failed to read frame size\n");
-
-        new_buf_sz = 0;
-    }
-    else
-    {
-        new_buf_sz = mem_get_le32(raw_hdr);
-
-        if (new_buf_sz > 256 * 1024 * 1024)
-        {
-            fprintf(stderr, "Error: Read invalid frame size (%u)\n",
-                    (unsigned int)new_buf_sz);
-            new_buf_sz = 0;
-        }
-
-        if (kind == RAW_FILE && new_buf_sz > 256 * 1024)
-            fprintf(stderr, "Warning: Read invalid frame size (%u)"
-                    " - not a raw file?\n", (unsigned int)new_buf_sz);
-
-        if (new_buf_sz > *buf_alloc_sz)
-        {
-            uint8_t *new_buf = realloc(*buf, 2 * new_buf_sz);
-
-            if (new_buf)
-            {
-                *buf = new_buf;
-                *buf_alloc_sz = 2 * new_buf_sz;
-            }
-            else
-            {
-                fprintf(stderr, "Failed to allocate compressed data buffer\n");
-                new_buf_sz = 0;
-            }
-        }
-    }
-
-    *buf_sz = new_buf_sz;
-
-    if (*buf_sz)
-    {
-        if (fread(*buf, 1, *buf_sz, infile) != *buf_sz)
-        {
-            fprintf(stderr, "Failed to read full frame\n");
-            return 1;
-        }
-
-        return 0;
-    }
-
-    return 1;
-}
-
-void *out_open(const char *out_fn, int do_md5)
-{
-    void *out = NULL;
-
-    if (do_md5)
-    {
-#if CONFIG_MD5
-        MD5Context *md5_ctx = out = malloc(sizeof(MD5Context));
-        (void)out_fn;
-        MD5Init(md5_ctx);
-#endif
-    }
-    else
-    {
-        FILE *outfile = out = strcmp("-", out_fn) ? fopen(out_fn, "wb")
-                                                  : set_binary_mode(stdout);
-
-        if (!outfile)
-        {
-            fprintf(stderr, "Failed to output file");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    return out;
-}
-
-void out_put(void *out, const uint8_t *buf, unsigned int len, int do_md5)
-{
-    if (do_md5)
-    {
-#if CONFIG_MD5
-        MD5Update(out, buf, len);
-#endif
-    }
-    else
-    {
-        if(fwrite(buf, 1, len, out));
-    }
-}
-
-void out_close(void *out, const char *out_fn, int do_md5)
-{
-    if (do_md5)
-    {
-#if CONFIG_MD5
-        uint8_t md5[16];
-        int i;
-
-        MD5Final(md5, out);
-        free(out);
-
-        for (i = 0; i < 16; i++)
-            printf("%02x", md5[i]);
-
-        printf("  %s\n", out_fn);
-#endif
-    }
-    else
-    {
-        fclose(out);
-    }
-}
-
-unsigned int file_is_ivf(FILE *infile,
-                         unsigned int *fourcc,
-                         unsigned int *width,
-                         unsigned int *height,
-                         unsigned int *fps_den,
-                         unsigned int *fps_num)
-{
-    char raw_hdr[32];
-    int is_ivf = 0;
-
-    if (fread(raw_hdr, 1, 32, infile) == 32)
-    {
-        if (raw_hdr[0] == 'D' && raw_hdr[1] == 'K'
-            && raw_hdr[2] == 'I' && raw_hdr[3] == 'F')
-        {
-            is_ivf = 1;
-
-            if (mem_get_le16(raw_hdr + 4) != 0)
-                fprintf(stderr, "Error: Unrecognized IVF version! This file may not"
-                        " decode properly.");
-
-            *fourcc = mem_get_le32(raw_hdr + 8);
-            *width = mem_get_le16(raw_hdr + 12);
-            *height = mem_get_le16(raw_hdr + 14);
-            *fps_num = mem_get_le32(raw_hdr + 16);
-            *fps_den = mem_get_le32(raw_hdr + 20);
-
-            /* Some versions of vpxenc used 1/(2*fps) for the timebase, so
-             * we can guess the framerate using only the timebase in this
-             * case. Other files would require reading ahead to guess the
-             * timebase, like we do for webm.
-             */
-            if(*fps_num < 1000)
-            {
-                /* Correct for the factor of 2 applied to the timebase in the
-                 * encoder.
-                 */
-                if(*fps_num&1)*fps_den<<=1;
-                else *fps_num>>=1;
-            }
-            else
-            {
-                /* Don't know FPS for sure, and don't have readahead code
-                 * (yet?), so just default to 30fps.
-                 */
-                *fps_num = 30;
-                *fps_den = 1;
-            }
-        }
-    }
-
-    if (!is_ivf)
-        rewind(infile);
-
-    return is_ivf;
-}
-
-
-unsigned int file_is_raw(FILE *infile,
-                         unsigned int *fourcc,
-                         unsigned int *width,
-                         unsigned int *height,
-                         unsigned int *fps_den,
-                         unsigned int *fps_num)
-{
-    unsigned char buf[32];
-    int is_raw = 0;
-    vpx_codec_stream_info_t si;
-
-    si.sz = sizeof(si);
-
-    if (fread(buf, 1, 32, infile) == 32)
-    {
-        int i;
-
-        if(mem_get_le32(buf) < 256 * 1024 * 1024)
-            for (i = 0; i < sizeof(ifaces) / sizeof(ifaces[0]); i++)
-                if(!vpx_codec_peek_stream_info(ifaces[i].iface,
-                                               buf + 4, 32 - 4, &si))
-                {
-                    is_raw = 1;
-                    *fourcc = ifaces[i].fourcc;
-                    *width = si.w;
-                    *height = si.h;
-                    *fps_num = 30;
-                    *fps_den = 1;
-                    break;
-                }
-    }
-
-    rewind(infile);
-    return is_raw;
-}
-
-
-static int
-nestegg_read_cb(void *buffer, size_t length, void *userdata)
-{
-    FILE *f = userdata;
-
-    if(fread(buffer, 1, length, f) < length)
-    {
-        if (ferror(f))
-            return -1;
-        if (feof(f))
-            return 0;
-    }
-    return 1;
-}
-
-
-static int
-nestegg_seek_cb(int64_t offset, int whence, void * userdata)
-{
-    switch(whence) {
-        case NESTEGG_SEEK_SET: whence = SEEK_SET; break;
-        case NESTEGG_SEEK_CUR: whence = SEEK_CUR; break;
-        case NESTEGG_SEEK_END: whence = SEEK_END; break;
-    };
-    return fseek(userdata, offset, whence)? -1 : 0;
-}
-
-
-static int64_t
-nestegg_tell_cb(void * userdata)
-{
-    return ftell(userdata);
-}
-
-
-static void
-nestegg_log_cb(nestegg * context, unsigned int severity, char const * format,
-               ...)
-{
-    va_list ap;
-
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-}
-
-
-static int
-webm_guess_framerate(struct input_ctx *input,
-                     unsigned int     *fps_den,
-                     unsigned int     *fps_num)
-{
-    unsigned int i;
-    uint64_t     tstamp=0;
-
-    /* Guess the framerate. Read up to 1 second, or 50 video packets,
-     * whichever comes first.
-     */
-    for(i=0; tstamp < 1000000000 && i < 50;)
-    {
-        nestegg_packet * pkt;
-        unsigned int track;
-
-        if(nestegg_read_packet(input->nestegg_ctx, &pkt) <= 0)
-            break;
-
-        nestegg_packet_track(pkt, &track);
-        if(track == input->video_track)
-        {
-            nestegg_packet_tstamp(pkt, &tstamp);
-            i++;
-        }
-
-        nestegg_free_packet(pkt);
-    }
-
-    if(nestegg_track_seek(input->nestegg_ctx, input->video_track, 0))
-        goto fail;
-
-    *fps_num = (i - 1) * 1000000;
-    *fps_den = tstamp / 1000;
-    return 0;
-fail:
-    nestegg_destroy(input->nestegg_ctx);
-    input->nestegg_ctx = NULL;
-    rewind(input->infile);
-    return 1;
-}
-
-
-static int
-file_is_webm(struct input_ctx *input,
-             unsigned int     *fourcc,
-             unsigned int     *width,
-             unsigned int     *height,
-             unsigned int     *fps_den,
-             unsigned int     *fps_num)
-{
-    unsigned int i, n;
-    int          track_type = -1;
-
-    nestegg_io io = {nestegg_read_cb, nestegg_seek_cb, nestegg_tell_cb,
-                     input->infile};
-    nestegg_video_params params;
-
-    if(nestegg_init(&input->nestegg_ctx, io, NULL))
-        goto fail;
-
-    if(nestegg_track_count(input->nestegg_ctx, &n))
-        goto fail;
-
-    for(i=0; i<n; i++)
-    {
-        track_type = nestegg_track_type(input->nestegg_ctx, i);
-
-        if(track_type == NESTEGG_TRACK_VIDEO)
-            break;
-        else if(track_type < 0)
-            goto fail;
-    }
-
-    if(nestegg_track_codec_id(input->nestegg_ctx, i) != NESTEGG_CODEC_VP8)
-    {
-        fprintf(stderr, "Not VP8 video, quitting.\n");
-        exit(1);
-    }
-
-    input->video_track = i;
-
-    if(nestegg_track_video_params(input->nestegg_ctx, i, &params))
-        goto fail;
-
-    *fps_den = 0;
-    *fps_num = 0;
-    *fourcc = VP8_FOURCC;
-    *width = params.width;
-    *height = params.height;
-    return 1;
-fail:
-    input->nestegg_ctx = NULL;
-    rewind(input->infile);
-    return 0;
-}
-
 
 void show_progress(int frame_in, int frame_out, unsigned long dx_time)
 {
@@ -630,95 +183,27 @@ void show_progress(int frame_in, int frame_out, unsigned long dx_time)
 }
 
 
-void generate_filename(const char *pattern, char *out, size_t q_len,
-                       unsigned int d_w, unsigned int d_h,
-                       unsigned int frame_in)
-{
-    const char *p = pattern;
-    char *q = out;
-
-    do
-    {
-        char *next_pat = strchr(p, '%');
-
-        if(p == next_pat)
-        {
-            size_t pat_len;
-
-            // parse the pattern
-            q[q_len - 1] = '\0';
-            switch(p[1])
-            {
-            case 'w': snprintf(q, q_len - 1, "%d", d_w); break;
-            case 'h': snprintf(q, q_len - 1, "%d", d_h); break;
-            case '1': snprintf(q, q_len - 1, "%d", frame_in); break;
-            case '2': snprintf(q, q_len - 1, "%02d", frame_in); break;
-            case '3': snprintf(q, q_len - 1, "%03d", frame_in); break;
-            case '4': snprintf(q, q_len - 1, "%04d", frame_in); break;
-            case '5': snprintf(q, q_len - 1, "%05d", frame_in); break;
-            case '6': snprintf(q, q_len - 1, "%06d", frame_in); break;
-            case '7': snprintf(q, q_len - 1, "%07d", frame_in); break;
-            case '8': snprintf(q, q_len - 1, "%08d", frame_in); break;
-            case '9': snprintf(q, q_len - 1, "%09d", frame_in); break;
-            default:
-                die("Unrecognized pattern %%%c\n", p[1]);
-            }
-
-            pat_len = strlen(q);
-            if(pat_len >= q_len - 1)
-                die("Output filename too long.\n");
-            q += pat_len;
-            p += 2;
-            q_len -= pat_len;
-        }
-        else
-        {
-            size_t copy_len;
-
-            // copy the next segment
-            if(!next_pat)
-                copy_len = strlen(p);
-            else
-                copy_len = next_pat - p;
-
-            if(copy_len >= q_len - 1)
-                die("Output filename too long.\n");
-
-            memcpy(q, p, copy_len);
-            q[copy_len] = '\0';
-            q += copy_len;
-            p += copy_len;
-            q_len -= copy_len;
-        }
-    } while(*p);
-}
-
-
 int main(int argc, const char **argv_)
 {
+    vpxio_ctx_t input_ctx;
+    vpxio_ctx_t output_ctx;
+
     vpx_codec_ctx_t          decoder;
     char                  *fn = NULL;
     int                    i;
     uint8_t               *buf = NULL;
     size_t                 buf_sz = 0, buf_alloc_sz = 0;
-    FILE                  *infile;
-    int                    frame_in = 0, frame_out = 0, flipuv = 0, noblit = 0, do_md5 = 0, progress = 0;
+    int                    frame_in = 0, frame_out = 0, flipuv = 0, noblit = 0;
+    int                    do_md5 = 0, progress = 0;
     int                    stop_after = 0, postproc = 0, summary = 0, quiet = 1;
     int                    ec_enabled = 0;
     vpx_codec_iface_t       *iface = NULL;
-    unsigned int           fourcc;
+    unsigned int           fourcc = 0;
     unsigned long          dx_time = 0;
     struct arg               arg;
     char                   **argv, **argi, **argj;
     const char             *outfile_pattern = 0;
-    char                    outfile[PATH_MAX];
-    int                     single_file;
     int                     use_y4m = 1;
-    unsigned int            width;
-    unsigned int            height;
-    unsigned int            fps_den;
-    unsigned int            fps_num;
-    void                   *out = NULL;
     vpx_codec_dec_cfg_t     cfg = {0};
 #if CONFIG_VP8_DECODER
     vp8_postproc_cfg_t      vp8_pp_cfg = {0};
@@ -727,7 +212,6 @@ int main(int argc, const char **argv_)
     int                     vp8_dbg_color_b_modes = 0;
     int                     vp8_dbg_display_mv = 0;
 #endif
-    struct input_ctx        input = {0};
     int                     frames_corrupted = 0;
     int                     dec_flags = 0;
 
@@ -870,93 +354,21 @@ int main(int argc, const char **argv_)
     if (!fn)
         usage_exit();
 
-    /* Open file */
-    infile = strcmp(fn, "-") ? fopen(fn, "rb") : set_binary_mode(stdin);
+    /* Open input file */
+    if (!vpxio_open_src(&input_ctx, argv[0]))
+    {
+        printf("Failed to open input file: %s", vpxio_get_file_name(&input_ctx));
+        return 0;
+    }
 
-    if (!infile)
-    {
-        fprintf(stderr, "Failed to open file '%s'",
-                strcmp(fn, "-") ? fn : "stdin");
-        return EXIT_FAILURE;
-    }
-#if CONFIG_OS_SUPPORT
-    /* Make sure we don't dump to the terminal, unless forced to with -o - */
-    if(!outfile_pattern && isatty(fileno(stdout)) && !do_md5 && !noblit)
-    {
-        fprintf(stderr,
-                "Not dumping raw video to your terminal. Use '-o -' to "
-                "override.\n");
-        return EXIT_FAILURE;
-    }
-#endif
-    input.infile = infile;
-    if(file_is_ivf(infile, &fourcc, &width, &height, &fps_den,
-                   &fps_num))
-        input.kind = IVF_FILE;
-    else if(file_is_webm(&input, &fourcc, &width, &height, &fps_den, &fps_num))
-        input.kind = WEBM_FILE;
-    else if(file_is_raw(infile, &fourcc, &width, &height, &fps_den, &fps_num))
-        input.kind = RAW_FILE;
+    /* Open output file */
+    if (use_y4m)
+        vpxio_open_y4m_dst(&output_ctx, outfile_pattern, vpxio_get_width(&input_ctx), 
+        vpxio_get_height(&input_ctx), vpxio_get_framerate(&input_ctx).den, 
+        vpxio_get_framerate(&input_ctx).num);
     else
-    {
-        fprintf(stderr, "Unrecognized input file type.\n");
-        return EXIT_FAILURE;
-    }
-
-    /* If the output file is not set or doesn't have a sequence number in
-     * it, then we only open it once.
-     */
-    outfile_pattern = outfile_pattern ? outfile_pattern : "-";
-    single_file = 1;
-    {
-        const char *p = outfile_pattern;
-        do
-        {
-            p = strchr(p, '%');
-            if(p && p[1] >= '1' && p[1] <= '9')
-            {
-                // pattern contains sequence number, so it's not unique.
-                single_file = 0;
-                break;
-            }
-            if(p)
-                p++;
-        } while(p);
-    }
-
-    if(single_file && !noblit)
-    {
-        generate_filename(outfile_pattern, outfile, sizeof(outfile)-1,
-                          width, height, 0);
-        out = out_open(outfile, do_md5);
-    }
-
-    if (use_y4m && !noblit)
-    {
-        char buffer[128];
-        if (!single_file)
-        {
-            fprintf(stderr, "YUV4MPEG2 not supported with output patterns,"
-                            " try --i420 or --yv12.\n");
-            return EXIT_FAILURE;
-        }
-
-        if(input.kind == WEBM_FILE)
-            if(webm_guess_framerate(&input, &fps_den, &fps_num))
-            {
-                fprintf(stderr, "Failed to guess framerate -- error parsing "
-                                "webm file?\n");
-                return EXIT_FAILURE;
-            }
-
-
-        /*Note: We can't output an aspect ratio here because IVF doesn't
-           store one, and neither does VP8.
-          That will have to wait until these tools support WebM natively.*/
-        sprintf(buffer, "YUV4MPEG2 C%s W%u H%u F%u:%u I%c\n",
-                "420jpeg", width, height, fps_num, fps_den, 'p');
-        out_put(out, (unsigned char *)buffer, strlen(buffer), do_md5);
-    }
+        vpxio_open_i420_dst(&output_ctx, outfile_pattern, vpxio_get_width(&input_ctx), 
+        vpxio_get_height(&input_ctx));
 
     /* Try to determine the codec from the fourcc. */
     for (i = 0; i < sizeof(ifaces) / sizeof(ifaces[0]); i++)
@@ -1024,7 +436,7 @@ int main(int argc, const char **argv_)
 #endif
 
     /* Decode file */
-    while (!read_frame(&input, &buf, &buf_sz, &buf_alloc_sz))
+    while (!vpxio_read_pkt(&input_ctx, &buf, (size_t *)&buf_sz, (size_t *)&buf_alloc_sz))
     {
         vpx_codec_iter_t  iter = NULL;
         vpx_image_t    *img;
@@ -1066,50 +478,7 @@ int main(int argc, const char **argv_)
         if (!noblit)
         {
             if (img)
-            {
-                unsigned int y;
-                char out_fn[PATH_MAX];
-                uint8_t *buf;
-
-                if (!single_file)
-                {
-                    size_t len = sizeof(out_fn)-1;
-
-                    out_fn[len] = '\0';
-                    generate_filename(outfile_pattern, out_fn, len-1,
-                                      img->d_w, img->d_h, frame_in);
-                    out = out_open(out_fn, do_md5);
-                }
-                else if(use_y4m)
-                    out_put(out, (unsigned char *)"FRAME\n", 6, do_md5);
-
-                buf = img->planes[VPX_PLANE_Y];
-
-                for (y = 0; y < img->d_h; y++)
-                {
-                    out_put(out, buf, img->d_w, do_md5);
-                    buf += img->stride[VPX_PLANE_Y];
-                }
-
-                buf = img->planes[flipuv?VPX_PLANE_V:VPX_PLANE_U];
-
-                for (y = 0; y < (1 + img->d_h) / 2; y++)
-                {
-                    out_put(out, buf, (1 + img->d_w) / 2, do_md5);
-                    buf += img->stride[VPX_PLANE_U];
-                }
-
-                buf = img->planes[flipuv?VPX_PLANE_U:VPX_PLANE_V];
-
-                for (y = 0; y < (1 + img->d_h) / 2; y++)
-                {
-                    out_put(out, buf, (1 + img->d_w) / 2, do_md5);
-                    buf += img->stride[VPX_PLANE_V];
-                }
-
-                if (!single_file)
-                    out_close(out, out_fn, do_md5);
-            }
+                vpxio_write_img(&output_ctx, img);
         }
 
         if (stop_after && frame_in >= stop_after)
@@ -1133,14 +502,8 @@ fail:
         return EXIT_FAILURE;
     }
 
-    if (single_file && !noblit)
-        out_close(out, outfile, do_md5);
-
-    if(input.nestegg_ctx)
-        nestegg_destroy(input.nestegg_ctx);
-    if(input.kind != WEBM_FILE)
-        free(buf);
-    fclose(infile);
+    vpxio_close(&input_ctx);
+    vpxio_close(&output_ctx);
     free(argv);
 
     return frames_corrupted ? EXIT_FAILURE : EXIT_SUCCESS;
