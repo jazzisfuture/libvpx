@@ -309,6 +309,9 @@ static void dealloc_compressor_data(VP8_COMP *cpi)
     vpx_free(cpi->twopass.total_stats);
     cpi->twopass.total_stats = 0;
 
+    vpx_free(cpi->twopass.total_left_stats);
+    cpi->twopass.total_left_stats = 0;
+
     vpx_free(cpi->twopass.this_frame_stats);
     cpi->twopass.this_frame_stats = 0;
 #endif
@@ -1335,11 +1338,16 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
 
     cpi->twopass.total_stats = vpx_calloc(1, sizeof(FIRSTPASS_STATS));
 
+    vpx_free(cpi->twopass.total_left_stats);
+    cpi->twopass.total_left_stats = vpx_calloc(1, sizeof(FIRSTPASS_STATS));
+
         vpx_free(cpi->twopass.this_frame_stats);
 
     cpi->twopass.this_frame_stats = vpx_calloc(1, sizeof(FIRSTPASS_STATS));
 
-    if(!cpi->twopass.total_stats || !cpi->twopass.this_frame_stats)
+    if( !cpi->twopass.total_stats ||
+        !cpi->twopass.total_left_stats ||
+        !cpi->twopass.this_frame_stats)
         vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate firstpass stats");
 #endif
@@ -3511,12 +3519,13 @@ static void encode_frame_to_data_rate
                  (cpi->avg_frame_qindex < cpi->active_worst_quality) )
             {
                 Q = cpi->avg_frame_qindex;
+            }
 
-                if ( (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY) &&
-                     (Q < cpi->oxcf.cq_level) )
-                {
-                    Q = cpi->oxcf.cq_level;
-                }
+            // For constrained quality dont allow Q less than the cq level
+            if ( (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY) &&
+                 (Q < cpi->cq_target_quality) )
+            {
+                Q = cpi->cq_target_quality;
             }
 
             if ( cpi->pass == 2 )
@@ -3527,6 +3536,13 @@ static void encode_frame_to_data_rate
                     cpi->active_best_quality = gf_high_motion_minq[Q];
                 else
                     cpi->active_best_quality = gf_mid_motion_minq[Q];
+
+                // Constrained quality use slightly lower active best.
+                if ( cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY )
+                {
+                    cpi->active_best_quality =
+                        cpi->active_best_quality * 15/16;
+                }
             }
             // One pass more conservative
             else
@@ -3537,7 +3553,7 @@ static void encode_frame_to_data_rate
             cpi->active_best_quality = inter_minq[Q];
 
             // For the constant/constrained quality mode we dont want
-            // the quality to rise above the cq level.
+            // q to fall below the cq level.
             if ((cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY) &&
                 (cpi->active_best_quality < cpi->cq_target_quality) )
             {
@@ -3590,8 +3606,9 @@ static void encode_frame_to_data_rate
 
     if (cpi->active_best_quality < cpi->best_quality)
         cpi->active_best_quality = cpi->best_quality;
-    else if (cpi->active_best_quality > cpi->active_worst_quality)
-        cpi->active_best_quality = cpi->active_worst_quality;
+
+    else if ( cpi->active_worst_quality < cpi->active_best_quality )
+        cpi->active_worst_quality = cpi->active_best_quality;
 
     // Determine initial Q to try
     Q = vp8_regulate_q(cpi, cpi->this_frame_target);
