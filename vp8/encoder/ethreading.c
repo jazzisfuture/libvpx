@@ -522,6 +522,8 @@ void vp8cx_create_encoder_threads(VP8_COMP *cpi)
             sem_init(&cpi->h_event_start_lpf, 0, 0);
             sem_init(&cpi->h_event_end_lpf, 0, 0);
 
+            cpi->wait_lpf = 0;
+
             lpfthd->ptr1 = (void *)cpi;
             pthread_create(&cpi->h_filter_thread, 0, loopfilter_thread, lpfthd);
         }

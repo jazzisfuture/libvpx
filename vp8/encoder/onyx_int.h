@@ -495,6 +495,7 @@ typedef struct VP8_COMP
     sem_t h_event_end_encoding;
     sem_t h_event_start_lpf;
     sem_t h_event_end_lpf;
+    int wait_lpf;
 #endif
 
     TOKENLIST *tplist;

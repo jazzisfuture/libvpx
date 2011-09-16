@@ -3764,6 +3764,15 @@ static void encode_frame_to_data_rate
             vp8_setup_key_frame(cpi);
         }
 
+#if CONFIG_MULTITHREAD
+        /* wait for loopfilter thread done (for last picture) */
+        if (cpi->b_multi_threaded && cpi->wait_lpf)
+        {
+            sem_wait(&cpi->h_event_end_lpf);
+            cpi->wait_lpf = 0;
+        }
+#endif
+
         // transform / motion compensation build reconstruction frame
         vp8_encode_frame(cpi);
 
@@ -4112,6 +4121,7 @@ static void encode_frame_to_data_rate
     if (cpi->b_multi_threaded)
     {
         sem_post(&cpi->h_event_start_lpf); /* start loopfilter in separate thread */
+        cpi->wait_lpf = 1;
     }
     else
 #endif
@@ -4136,10 +4146,11 @@ static void encode_frame_to_data_rate
     vp8_pack_bitstream(cpi, dest, size);
 
 #if CONFIG_MULTITHREAD
-    /* wait for loopfilter thread done */
-    if (cpi->b_multi_threaded)
+    /* if PSNR packets are generated we have to wait for the lpf */
+    if (cpi->b_multi_threaded && cpi->b_calculate_psnr)
     {
         sem_wait(&cpi->h_event_end_lpf);
+        cpi->wait_lpf = 0;
     }
 #endif
 
