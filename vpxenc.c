@@ -931,6 +931,8 @@ static const arg_def_t rt_dl            = ARG_DEF(NULL, "rt", 0,
         "Use Realtime Quality Deadline");
 static const arg_def_t verbosearg       = ARG_DEF("v", "verbose", 0,
         "Show encoder parameters");
+static const arg_def_t summaryarg       = ARG_DEF(NULL, "summary", 0,
+        "Show timing summary");
 static const arg_def_t psnrarg          = ARG_DEF(NULL, "psnr", 0,
         "Show PSNR in status line");
 static const arg_def_t framerate        = ARG_DEF(NULL, "fps", 1,
@@ -946,7 +948,7 @@ static const arg_def_t *main_args[] =
     &debugmode,
     &outputfile, &codecarg, &passes, &pass_arg, &fpf_name, &limit, &deadline,
     &best_dl, &good_dl, &rt_dl,
-    &verbosearg, &psnrarg, &use_ivf, &q_hist_n, &rate_hist_n,
+    &verbosearg, &summaryarg, &psnrarg, &use_ivf, &q_hist_n, &rate_hist_n,
     NULL
 };
 
@@ -1454,7 +1456,7 @@ int main(int argc, const char **argv_)
     int                      arg_limit = 0;
     static const arg_def_t **ctrl_args = no_args;
     static const int        *ctrl_args_map = NULL;
-    int                      verbose = 0, show_psnr = 0;
+    int                      verbose = 0, show_psnr = 0, summary = 0;
     int                      arg_use_i420 = 1;
     unsigned long            cx_time = 0;
     unsigned int             file_type, fourcc;
@@ -1541,6 +1543,8 @@ int main(int argc, const char **argv_)
         }
         else if (arg_match(&arg, &verbosearg, argi))
             verbose = 1;
+        else if (arg_match(&arg, &summaryarg, argi))
+            summary = 1;
         else if (arg_match(&arg, &limit, argi))
             arg_limit = arg_parse_uint(&arg);
         else if (arg_match(&arg, &psnrarg, argi))
@@ -2052,7 +2056,6 @@ int main(int argc, const char **argv_)
                 }
             }
 
-            fflush(stdout);
         }
 
         fprintf(stderr,
@@ -2064,19 +2067,32 @@ int main(int argc, const char **argv_)
                cx_time > 9999999 ? "ms" : "us",
                (float)frames_in * 1000000.0 / (float)cx_time);
 
+        if(summary)
+        {
+            fprintf(stdout,
+                   "\nPass %d/%d frame %4d/%-4d %7ldB %7ldb/f %7"PRId64"b/s"
+                   " %7lu %s (%.2f fps)\n", pass + 1,
+                   arg_passes, frames_in, frames_out, nbytes,
+                   nbytes * 8 / frames_in,
+                   nbytes * 8 *(int64_t)arg_framerate.num / arg_framerate.den / frames_in,
+                   cx_time > 9999999 ? cx_time / 1000 : cx_time,
+                   cx_time > 9999999 ? "ms" : "us",
+                   (float)frames_in * 1000000.0 / (float)cx_time);
+        }
+
         if ( (show_psnr) && (psnr_count>0) )
         {
-            int i;
             double ovpsnr = vp8_mse2psnr(psnr_samples_total, 255.0,
                                          psnr_sse_total);
 
-            fprintf(stderr, "\nPSNR (Overall/Avg/Y/U/V)");
+            fprintf(stdout, "\nPSNR (Overall/Avg/Y/U/V)");
 
-            fprintf(stderr, " %.3lf", ovpsnr);
-            for (i = 0; i < 4; i++)
-            {
-                fprintf(stderr, " %.3lf", psnr_totals[i]/psnr_count);
-            }
+            fprintf(stdout, " %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+                    ovpsnr,
+                    psnr_totals[0]/psnr_count,
+                    psnr_totals[1]/psnr_count,
+                    psnr_totals[2]/psnr_count,
+                    psnr_totals[3]/psnr_count );
         }
 
         vpx_codec_destroy(&encoder);
