@@ -2056,7 +2056,7 @@ int main(int argc, const char **argv_)
         }
 
         fprintf(stderr,
-               "\rPass %d/%d frame %4d/%-4d %7ldB %7ldb/f %7"PRId64"b/s"
+               "\nPass %d/%d frame %4d/%-4d %7ldB %7ldb/f %7"PRId64"b/s"
                " %7lu %s (%.2f fps)\033[K", pass + 1,
                arg_passes, frames_in, frames_out, nbytes, nbytes * 8 / frames_in,
                nbytes * 8 *(int64_t)arg_framerate.num / arg_framerate.den / frames_in,
