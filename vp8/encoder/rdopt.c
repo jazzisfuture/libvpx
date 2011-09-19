@@ -135,7 +135,7 @@ const MV_REFERENCE_FRAME vp8_ref_frame_order[MAX_MODES] =
 
 static void fill_token_costs(
     unsigned int c      [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS],
-    const vp8_prob p    [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES]
+    const vp8_prob p    [BLOCK_TYPES] [COEF_BANDS_EXT] [PREV_COEF_CONTEXTS] [ENTROPY_NODES]
 )
 {
     int i, j, k;
@@ -288,7 +288,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, int Qvalue)
 
     fill_token_costs(
         cpi->mb.token_costs,
-        (const vp8_prob( *)[8][3][11]) cpi->common.fc.coef_probs
+        (const vp8_prob( *)[COEF_BANDS_EXT] [PREV_COEF_CONTEXTS] [ENTROPY_NODES]) cpi->common.fc.coef_probs
     );
 
     vp8_init_mode_costs(cpi);
