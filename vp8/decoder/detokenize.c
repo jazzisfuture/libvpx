@@ -8,7 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
+/*
+ *  Detokenization of each 16-coefficient block is done using a
+ *  finite state machine.
+ *
+ *  Each node of the machine specifies:
+ *   * the index in the coefficient probabilities array where
+ *       the decoding probability can be found;
+ *   * the next state depending on the value of the decoded bit;
+ *   * what to add to the decoded token value if the bit is 1;
+ *   * if the token value needs to be negated if the bit is 1;
+ *   * whether or not to move to the next destination address,
+ *       and by how much.
+ *
+ *  The approach reduces the number of branch mispredictions at
+ *  the expense of use of the data cache.
+ */
 #include "vp8/common/type_aliases.h"
 #include "vp8/common/blockd.h"
 #include "onyxd_int.h"
@@ -19,54 +34,144 @@
 #define BOOL_DATA UINT8
 
 #define OCB_X PREV_COEF_CONTEXTS * ENTROPY_NODES
-DECLARE_ALIGNED(16, static const unsigned char, coef_bands_x[16]) =
+
+/* This switches between the faster 8-byte and the slower, but more cache
+   friendly, 6-byte version of the FSM node. The latter could be faster
+   on some platforms. */
+#if 1
+typedef struct
 {
-    0 * OCB_X, 1 * OCB_X, 2 * OCB_X, 3 * OCB_X,
-    6 * OCB_X, 4 * OCB_X, 5 * OCB_X, 6 * OCB_X,
-    6 * OCB_X, 6 * OCB_X, 6 * OCB_X, 6 * OCB_X,
-    6 * OCB_X, 6 * OCB_X, 6 * OCB_X, 7 * OCB_X
+    /* Index in the probabilities array to use for decoding of the bit. */
+    INT16 prob;
+    /* Value to add if the decoded bit is 1. */
+    INT16 add_one;
+
+    /* Value by which the destination pointer needs to be adjusted (applied
+       before processing the bit). */
+    INT8 dest_inc;
+    /* -1 if this is the sign bit. The value is xor'ed with this if the
+       decoded bit is 1, and it is also used to clear the token value before
+       decoding the next token. */
+    INT8 sign;
+
+    /* Offset to add to the state index in the FSM if the bit is 1. */
+    INT8 on_one;
+    /* Offset to add to the state index in the FSM if the bit is 0. */
+    INT8 on_zero;
+} DETOKENIZE_FSM;
+#define NODE(prob, add_one, dest_inc, sign, on_one, on_zero) \
+    { prob, add_one, dest_inc, sign, on_one, on_zero }
+
+#define GET_PROB(ptr) (ptr->prob)
+#define GET_DEST_INC(ptr) (ptr->dest_inc)
+#define GET_ADD_ONE(ptr) (ptr->add_one)
+#define GET_SIGN(ptr) (ptr->sign)
+#define GET_ON_ONE(ptr) (ptr->on_one)
+#define GET_ON_ZERO(ptr) (ptr->on_zero)
+#define GET_JUMP(ptr, val) ((&ptr->on_zero)[val])
+#else
+typedef struct
+{
+    /* at least 5 bytes, using 6 to avoid difficult reconstruction */
+    INT16 prob_dest;     /* u12 prob + s4 dest_inc */
+    INT16 add_one_sign;  /* u11 add_one + u4 reserved + s1 sign */
+
+    INT8 on_one;    /* s7 bits */
+    INT8 on_zero;   /* s7 bits */
+} DETOKENIZE_FSM;
+#define NODE(prob, add_one, dest_inc, sign, on_one, on_zero) \
+    { prob + ((dest_inc)<<12), add_one + ((sign)<<15), on_one, on_zero }
+
+#define GET_PROB(ptr) (ptr->prob_dest & 0xfff)
+#define GET_DEST_INC(ptr) (ptr->prob_dest >> 12)
+#define GET_ADD_ONE(ptr) (ptr->add_one_sign & 0x7fff)
+#define GET_SIGN(ptr) (ptr->add_one_sign >> 15)
+#define GET_ON_ONE(ptr) (ptr->on_one)
+#define GET_ON_ZERO(ptr) (ptr->on_zero)
+#define GET_JUMP(ptr, val) ((&ptr->on_zero)[val])
+#endif
+
+#define TREE_NODE(pos_idx, ctx_val, offset, on_zero, on_one, add_one) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES + offset, add_one, 0, 0, on_one, on_zero)
+#define EOB_NODE(c, pos_idx, ctx_val, dest_inc) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES, 0, dest_inc, 0, 1, -c)
+#define ZERO_NODE(pos_idx, ctx_val, on_zero, on_one, dest_inc) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES + 1, 1, dest_inc, 0, on_one, on_zero)
+#define LIT_NODE(offset, next, add) \
+    NODE(8 * OCB_X + offset, add, 0, 0, next, next)
+#define SIGN_NODE(next, dest_inc) \
+    NODE(8 * OCB_X + 26, 1, 0, -1, next, next)
+
+DECLARE_ALIGNED(16, static DETOKENIZE_FSM, detokenize_fsm[]) =
+{
+#define TREE(c, pos_idx, ctx_val, next_0, dest_inc) \
+    EOB_NODE (c, pos_idx, ctx_val, dest_inc), \
+    ZERO_NODE(pos_idx, ctx_val, ctx_val*11 + next_0, 1, 0), \
+    TREE_NODE(pos_idx, ctx_val,  2, ctx_val*11 + 36, 1, 1), \
+    TREE_NODE(pos_idx, ctx_val,  3, 1, 3, 3), \
+    TREE_NODE(pos_idx, ctx_val,  4, ctx_val*11 + 33, 1, 1), \
+    TREE_NODE(pos_idx, ctx_val,  5, ctx_val*11 + 32, ctx_val*11 + 32, 1), \
+    TREE_NODE(pos_idx, ctx_val,  6, 1, 2, 6), \
+    TREE_NODE(pos_idx, ctx_val,  7, ctx_val*11 + 4, ctx_val*11 + 5, 2), \
+    TREE_NODE(pos_idx, ctx_val,  8, 1, 2, 24), \
+    TREE_NODE(pos_idx, ctx_val,  9, ctx_val*11 + 5, ctx_val*11 + 8, 8), \
+    TREE_NODE(pos_idx, ctx_val, 10, ctx_val*11 + 11, ctx_val*11 + 16, 32)
+
+#define PROCESS_TOKEN(c, pos_idx, next_pos, next_0, next_1, next_2, dest_inc) \
+    ZERO_NODE(pos_idx, 0, 62, 2*11+3, dest_inc), \
+    TREE(c, pos_idx, 2, next_0, dest_inc), \
+    TREE(c, pos_idx, 1, next_0, dest_inc), \
+    TREE(c, pos_idx, 0, next_0, dest_inc), \
+    LIT_NODE(0, 26, 1), \
+    LIT_NODE(1, 1, 2), \
+    LIT_NODE(2, 24, 1), \
+    LIT_NODE(3, 1, 4), \
+    LIT_NODE(4, 1, 2), \
+    LIT_NODE(5, 21, 1), \
+    LIT_NODE(6, 1, 8), \
+    LIT_NODE(7, 1, 4), \
+    LIT_NODE(8, 1, 2), \
+    LIT_NODE(9, 17, 1), \
+    LIT_NODE(10, 1, 16), \
+    LIT_NODE(11, 1, 8), \
+    LIT_NODE(12, 1, 4), \
+    LIT_NODE(13, 1, 2), \
+    LIT_NODE(14, 12, 1), \
+    LIT_NODE(15, 1, 1024), \
+    LIT_NODE(16, 1, 512), \
+    LIT_NODE(17, 1, 256), \
+    LIT_NODE(18, 1, 128), \
+    LIT_NODE(19, 1, 64), \
+    LIT_NODE(20, 1, 32), \
+    LIT_NODE(21, 1, 16), \
+    LIT_NODE(22, 1, 8), \
+    LIT_NODE(23, 1, 4), \
+    LIT_NODE(24, 1, 2), \
+    LIT_NODE(25, 1, 1), \
+    SIGN_NODE(next_2, dest_inc), \
+    SIGN_NODE(next_1, dest_inc)
+
+
+    PROCESS_TOKEN(0, 0, 1, 38, 2 + 1*11, 3, 0),
+    PROCESS_TOKEN(1, 1, 2, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(2, 2, 3, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(3, 3, 6, 38, 2 + 1*11, 3, 4),
+    PROCESS_TOKEN(4, 6, 4, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(5, 4, 5, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(6, 5, 6, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(7, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(8, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(9, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(10, 6, 6, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(11, 6, 6, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(12, 6, 6, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(13, 6, 6, 38, 2 + 1*11, 3, 4),
+    PROCESS_TOKEN(14, 6, 7, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(15, 7, 7, -16, -16, -16, 1),
 };
-#define EOB_CONTEXT_NODE            0
-#define ZERO_CONTEXT_NODE           1
-#define ONE_CONTEXT_NODE            2
-#define LOW_VAL_CONTEXT_NODE        3
-#define TWO_CONTEXT_NODE            4
-#define THREE_CONTEXT_NODE          5
-#define HIGH_LOW_CONTEXT_NODE       6
-#define CAT_ONE_CONTEXT_NODE        7
-#define CAT_THREEFOUR_CONTEXT_NODE  8
-#define CAT_THREE_CONTEXT_NODE      9
-#define CAT_FIVE_CONTEXT_NODE       10
 
-#define CAT1_MIN_VAL    5
-#define CAT2_MIN_VAL    7
-#define CAT3_MIN_VAL   11
-#define CAT4_MIN_VAL   19
-#define CAT5_MIN_VAL   35
-#define CAT6_MIN_VAL   67
-
-#define CAT1_PROB0    159
-#define CAT2_PROB0    145
-#define CAT2_PROB1    165
-
-#define CAT3_PROB0 140
-#define CAT3_PROB1 148
-#define CAT3_PROB2 173
-
-#define CAT4_PROB0 135
-#define CAT4_PROB1 140
-#define CAT4_PROB2 155
-#define CAT4_PROB3 176
-
-#define CAT5_PROB0 130
-#define CAT5_PROB1 134
-#define CAT5_PROB2 141
-#define CAT5_PROB3 157
-#define CAT5_PROB4 180
-
-static const unsigned char cat6_prob[12] =
-{ 129, 130, 133, 140, 153, 177, 196, 230, 243, 254, 254, 0 };
-
+#define TOKEN_SIZE 62
+#define TREE_SIZE 11
 
 void vp8_reset_mb_tokens_context(MACROBLOCKD *x)
 {
@@ -79,305 +184,283 @@ void vp8_reset_mb_tokens_context(MACROBLOCKD *x)
     }
     else
     {
-        vpx_memset(x->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES)-1);
-        vpx_memset(x->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES)-1);
+        vpx_memset(x->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
+        vpx_memset(x->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
     }
 }
 
 DECLARE_ALIGNED(16, extern const unsigned char, vp8_norm[256]);
-#define FILL \
-    if(count < 0) \
-        VP8DX_BOOL_DECODER_FILL(count, value, bufptr, bufend);
 
 #define NORMALIZE \
-    /*if(range < 0x80)*/                            \
     { \
-        shift = vp8_norm[range]; \
+        int shift = vp8_norm[range]; \
         range <<= shift; \
         value <<= shift; \
         count -= shift; \
     }
 
-#define DECODE_AND_APPLYSIGN(value_to_sign) \
-    split = (range + 1) >> 1; \
-    bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8); \
-    FILL \
-    if ( value < bigsplit ) \
+/* Main operation of the FSM loop. There are three versions of it because
+   the best implementation changes with processors and compilers. */
+
+/* Using an explicit if. */
+#define PROCESS_BIT1(token) \
+    if (value >= bigsplit) \
     { \
-        range = split; \
-        v= value_to_sign; \
-    } \
-    else \
-    { \
+        fsm_add = GET_ON_ONE(state); \
+        token ^= GET_SIGN(state); \
+        token += GET_ADD_ONE(state); \
+        value -= bigsplit; \
         range = range-split; \
-        value = value-bigsplit; \
-        v = -value_to_sign; \
-    } \
-    range +=range;                   \
-    value +=value;                   \
-    count--;
-
-#define DECODE_AND_BRANCH_IF_ZERO(probability,branch) \
-    { \
-        split = 1 +  ((( probability*(range-1) ) )>> 8); \
-        bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8); \
-        FILL \
-        if ( value < bigsplit ) \
-        { \
-            range = split; \
-            NORMALIZE \
-            goto branch; \
-        } \
-        value -= bigsplit; \
-        range = range - split; \
-        NORMALIZE \
+    } else { \
+        fsm_add = GET_ON_ZERO(state); \
+        range = split; \
     }
 
-#define DECODE_AND_LOOP_IF_ZERO(probability,branch) \
+/* Letting the compiler choose how to create a mask. */
+#define PROCESS_BIT2(token) \
     { \
-        split = 1 + ((( probability*(range-1) ) ) >> 8); \
-        bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8); \
-        FILL \
-        if ( value < bigsplit ) \
-        { \
-            range = split; \
-            NORMALIZE \
-            Prob = coef_probs; \
-            if(c<15) {\
-            ++c; \
-            Prob += coef_bands_x[c]; \
-            goto branch; \
-            } goto BLOCK_FINISHED; /*for malformed input */\
-        } \
-        value -= bigsplit; \
-        range = range - split; \
-        NORMALIZE \
+        VP8_BD_VALUE mask = (value >= bigsplit) ? -1 : 0; \
+        fsm_add = GET_JUMP(state, mask); \
+        range = split + ((range - 2*split) & mask); \
+        value -= bigsplit & mask; \
+        token ^= GET_SIGN(state) & mask; \
+        token += GET_ADD_ONE(state) & mask; \
     }
 
-#define DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val) \
-    DECODE_AND_APPLYSIGN(val) \
-    Prob = coef_probs + (ENTROPY_NODES*2); \
-    if(c < 15){\
-        qcoeff_ptr [ scan[c] ] = (INT16) v; \
-        ++c; \
-        goto DO_WHILE; }\
-    qcoeff_ptr [ 15 ] = (INT16) v; \
-    goto BLOCK_FINISHED;
+/* Creating a mask using arithmetic shifts. */
+#define PROCESS_BIT3(token) \
+    { \
+        VP8_BD_VALUE mask = ((long signed int)(split - 1 - (value>>(VP8_BD_VALUE_SIZE - 8)))) >> 8;\
+        fsm_add = GET_JUMP(state, mask); \
+        range = split + ((range - 2*split) & mask); \
+        value -= bigsplit & mask; \
+        token ^= GET_SIGN(state) & mask; \
+        token += GET_ADD_ONE(state) & mask; \
+    }
 
+/* Fill bits from the buffer. */
 
-#define DECODE_EXTRABIT_AND_ADJUST_VAL(prob, bits_count)\
-    split = 1 +  (((range-1) * prob) >> 8); \
-    bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8); \
-    FILL \
-    if(value >= bigsplit)\
-    {\
-        range = range-split;\
-        value = value-bigsplit;\
-        val += ((UINT16)1<<bits_count);\
-    }\
-    else\
-    {\
-        range = split;\
-    }\
-    NORMALIZE
+/* Standard branchy version that only accesses bufptr and bufend if
+   filling needs to be done. */
+#define FILL_BITS1(bufptr, bufend) \
+    if(__builtin_expect(count < 0, 0)) \
+        VP8DX_BOOL_DECODER_FILL(count, value, bufptr, bufend);
 
-int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *x)
+/* Branchless fill, compiler generates mask. */
+#define FILL_BITS2(bufptr, bufend) \
+    if (__builtin_expect(bufptr < bufend, 1)) { \
+        int mask = (count >= 8) ? 0 : -1; \
+        count -= 8*mask; \
+        bufptr -= mask; \
+        value |= (VP8_BD_VALUE)(bufptr[-1]) << (VP8_BD_VALUE_SIZE - 8 - count); \
+    }
+
+/* Branchless fill, mask generated with shifts. */
+#define FILL_BITS3(bufptr, bufend) \
+    if (__builtin_expect(bufptr < bufend, 1)) { \
+        int mask = (count-8) >> 31; \
+        count -= 8*mask; \
+        bufptr -= mask; \
+        value |= (VP8_BD_VALUE)(bufptr[-1]) << (VP8_BD_VALUE_SIZE - 8 - count); \
+    }
+
+#define CALC_SPLITS(prob) \
+    split = 1 +  ((( coef_probs[prob]*(range-1) ) )>> 8); \
+    bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8);
+
+/* Switch controls whether or not to declare and use shadows of the
+   buffer pointers. Branchless fills do not work well without them. */
+#if 0
+#define DECLARE_BUFPTR \
+    const BOOL_DATA *bufend  = bc->user_buffer_end; \
+    const BOOL_DATA *bufptr  = bc->user_buffer;
+
+#define APPLY_BUFPTR \
+    bc->user_buffer = bufptr;
+
+#define FILL_BITS(bufptr, bufend) FILL_BITS1(bufptr, bufend)
+#else
+#define DECLARE_BUFPTR
+#define APPLY_BUFPTR
+#define FILL_BITS(bufptr, bufend) FILL_BITS1(bc->user_buffer, bc->user_buffer_end)
+#endif
+
+/* Switch controls if the token value is prepared in a register (avoiding
+   reads from cache, but still writing on every node). Because of the
+   freed register, 32-bit x86 should work better with direct writes. */
+#if 1
+#define DECLARE_TOKEN INT16 token = 0; INT16 sign = 0;
+#define STORE_TOKEN *dest = token;
+#define CLEAR_TOKEN_ON_LAST_SIGN \
+    token &= ~sign; \
+    sign = GET_SIGN(state);
+#define PROCESS_BIT PROCESS_BIT3(token)
+#else
+#define DECLARE_TOKEN
+#define STORE_TOKEN
+#define CLEAR_TOKEN_ON_LAST_SIGN
+#define PROCESS_BIT PROCESS_BIT3(*dest)
+#endif
+
+static int vp8_apply_detok_fsm(INT16* dest,
+                               DETOKENIZE_FSM *state, const vp8_prob *coef_probs,
+                               BOOL_DECODER *bc)
 {
-    ENTROPY_CONTEXT *A = (ENTROPY_CONTEXT *)x->above_context;
-    ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)x->left_context;
-    const FRAME_CONTEXT * const fc = &dx->common.fc;
-
-    BOOL_DECODER *bc = x->current_bc;
-
-    char *eobs = x->eobs;
-
-    ENTROPY_CONTEXT *a;
-    ENTROPY_CONTEXT *l;
-    int i;
-
-    int eobtotal = 0;
-
-    register int count;
-
-    const BOOL_DATA *bufptr;
-    const BOOL_DATA *bufend;
-    register unsigned int range;
-    VP8_BD_VALUE value;
-    const int *scan;
-    register unsigned int shift;
-    UINT32 split;
+    VP8_BD_VALUE split;
     VP8_BD_VALUE bigsplit;
-    INT16 *qcoeff_ptr;
+    long fsm_add;
 
-    const vp8_prob *coef_probs;
-    int type;
-    int stop;
-    INT16 val, bits_count;
-    INT16 c;
-    INT16 v;
-    const vp8_prob *Prob;
+    DECLARE_BUFPTR
+    VP8_BD_VALUE value   = bc->value;
+    int count   = bc->count;
+    VP8_BD_VALUE range   = bc->range;
 
-    type = 3;
-    i = 0;
-    stop = 16;
+    /* The first bit processed is a zero node. It won't have sign or dest_inc. */
+    DECLARE_TOKEN
 
-    scan = vp8_default_zig_zag1d;
-    qcoeff_ptr = &x->qcoeff[0];
-
-    if (x->mode_info_context->mbmi.mode != B_PRED &&
-        x->mode_info_context->mbmi.mode != SPLITMV)
-    {
-        i = 24;
-        stop = 24;
-        type = 1;
-        qcoeff_ptr += 24*16;
-        eobtotal -= 16;
-    }
-
-    bufend  = bc->user_buffer_end;
-    bufptr  = bc->user_buffer;
-    value   = bc->value;
-    count   = bc->count;
-    range   = bc->range;
-
-
-    coef_probs = fc->coef_probs [type] [ 0 ] [0];
-
-BLOCK_LOOP:
-    a = A + vp8_block2above[i];
-    l = L + vp8_block2left[i];
-
-    c = (INT16)(!type);
-
-    /*Dest = ((A)!=0) + ((B)!=0);*/
-    VP8_COMBINEENTROPYCONTEXTS(v, *a, *l);
-    Prob = coef_probs;
-    Prob += v * ENTROPY_NODES;
-
-DO_WHILE:
-    Prob += coef_bands_x[c];
-    DECODE_AND_BRANCH_IF_ZERO(Prob[EOB_CONTEXT_NODE], BLOCK_FINISHED);
-
-CHECK_0_:
-    DECODE_AND_LOOP_IF_ZERO(Prob[ZERO_CONTEXT_NODE], CHECK_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[ONE_CONTEXT_NODE], ONE_CONTEXT_NODE_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[LOW_VAL_CONTEXT_NODE],
-                              LOW_VAL_CONTEXT_NODE_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[HIGH_LOW_CONTEXT_NODE],
-                              HIGH_LOW_CONTEXT_NODE_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[CAT_THREEFOUR_CONTEXT_NODE],
-                              CAT_THREEFOUR_CONTEXT_NODE_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[CAT_FIVE_CONTEXT_NODE],
-                              CAT_FIVE_CONTEXT_NODE_0_);
-
-    val = CAT6_MIN_VAL;
-    bits_count = 10;
+    NORMALIZE
+    CALC_SPLITS(GET_PROB(state))
+    FILL_BITS(bufptr, bufend)
+    PROCESS_BIT
 
     do
     {
-        DECODE_EXTRABIT_AND_ADJUST_VAL(cat6_prob[bits_count], bits_count);
-        bits_count -- ;
-    }
-    while (bits_count >= 0);
+        NORMALIZE
 
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
+        state += fsm_add;
+        STORE_TOKEN
+        CLEAR_TOKEN_ON_LAST_SIGN
 
-CAT_FIVE_CONTEXT_NODE_0_:
-    val = CAT5_MIN_VAL;
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT5_PROB4, 4);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT5_PROB3, 3);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT5_PROB2, 2);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT5_PROB1, 1);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT5_PROB0, 0);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
+        dest += GET_DEST_INC(state);
 
-CAT_THREEFOUR_CONTEXT_NODE_0_:
-    DECODE_AND_BRANCH_IF_ZERO(Prob[CAT_THREE_CONTEXT_NODE],
-                              CAT_THREE_CONTEXT_NODE_0_);
-    val = CAT4_MIN_VAL;
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT4_PROB3, 3);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT4_PROB2, 2);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT4_PROB1, 1);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT4_PROB0, 0);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
+        CALC_SPLITS(GET_PROB(state))
+        FILL_BITS(bufptr, bufend)
+        PROCESS_BIT
+    } while (fsm_add > 0);
 
-CAT_THREE_CONTEXT_NODE_0_:
-    val = CAT3_MIN_VAL;
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT3_PROB2, 2);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT3_PROB1, 1);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT3_PROB0, 0);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
+    /* finish iteration */
+    STORE_TOKEN
 
-HIGH_LOW_CONTEXT_NODE_0_:
-    DECODE_AND_BRANCH_IF_ZERO(Prob[CAT_ONE_CONTEXT_NODE],
-                              CAT_ONE_CONTEXT_NODE_0_);
+    NORMALIZE
+    FILL_BITS(bufptr, bufend)
 
-    val = CAT2_MIN_VAL;
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT2_PROB1, 1);
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT2_PROB0, 0);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
-
-CAT_ONE_CONTEXT_NODE_0_:
-    val = CAT1_MIN_VAL;
-    DECODE_EXTRABIT_AND_ADJUST_VAL(CAT1_PROB0, 0);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(val);
-
-LOW_VAL_CONTEXT_NODE_0_:
-    DECODE_AND_BRANCH_IF_ZERO(Prob[TWO_CONTEXT_NODE], TWO_CONTEXT_NODE_0_);
-    DECODE_AND_BRANCH_IF_ZERO(Prob[THREE_CONTEXT_NODE], THREE_CONTEXT_NODE_0_);
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(4);
-
-THREE_CONTEXT_NODE_0_:
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(3);
-
-TWO_CONTEXT_NODE_0_:
-    DECODE_SIGN_WRITE_COEFF_AND_CHECK_EXIT(2);
-
-ONE_CONTEXT_NODE_0_:
-    DECODE_AND_APPLYSIGN(1);
-    Prob = coef_probs + ENTROPY_NODES;
-
-    if (c < 15)
-    {
-        qcoeff_ptr [ scan[c] ] = (INT16) v;
-        ++c;
-        goto DO_WHILE;
-    }
-
-    qcoeff_ptr [ 15 ] = (INT16) v;
-BLOCK_FINISHED:
-    *a = *l = ((eobs[i] = c) != !type);   /* any nonzero data? */
-    eobtotal += c;
-    qcoeff_ptr += 16;
-
-    i++;
-
-    if (i < stop)
-        goto BLOCK_LOOP;
-
-    if (i == 25)
-    {
-        type = 0;
-        i = 0;
-        stop = 16;
-        coef_probs = fc->coef_probs [type] [ 0 ] [0];
-        qcoeff_ptr -= (24*16 + 16);
-        goto BLOCK_LOOP;
-    }
-
-    if (i == 16)
-    {
-        type = 2;
-        coef_probs = fc->coef_probs [type] [ 0 ] [0];
-        stop = 24;
-        goto BLOCK_LOOP;
-    }
-
-    FILL
-    bc->user_buffer = bufptr;
+    APPLY_BUFPTR
     bc->value = value;
     bc->count = count;
     bc->range = range;
-    return eobtotal;
+    return -fsm_add;
+}
 
+/* Special version of vp8dx_decode_bool exiting fast if the
+   decoded bit is 0, and leaving normalization and filling to
+   the detokenization FSM loop if the bit is 1. */
+static int decode_eob(BOOL_DECODER *bc, int probability)
+{
+    unsigned split = 1 + (((bc->range - 1) * probability) >> 8);
+    VP8_BD_VALUE bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8);
+
+    if (bc->value < bigsplit)
+    {
+        int shift = vp8_norm[split];
+        bc->range = split << shift;
+        bc->value <<= shift;
+        bc->count -= shift;
+
+        if (bc->count < 0)
+            vp8dx_bool_decoder_fill(bc);
+
+        return 0;
+    }
+    else
+    {
+        bc->value -= bigsplit;
+        bc->range -= split;
+        return 1;
+    }
+}
+
+static inline int vp8_detokenize_block(MACROBLOCKD *x, int nonzeros, int i,
+                                       INT16* qcoeff_ptr, const vp8_prob *coef_probs)
+{
+    BOOL_DECODER *bc = x->current_bc;
+
+    ENTROPY_CONTEXT *a = ((ENTROPY_CONTEXT *)x->above_context) + vp8_block2above[i];
+    ENTROPY_CONTEXT *l = ((ENTROPY_CONTEXT *)x->left_context) + vp8_block2left[i];
+
+    int ctx_val = *a + *l;
+
+    /* As the detokenization FSM loop has a longish setup, we prefer to check
+       for EOB explicitly before running the FSM. */
+    if (decode_eob(bc, coef_probs[ctx_val*ENTROPY_NODES + nonzeros * OCB_X]))
+    {
+        *a = *l = 1;
+        return vp8_apply_detok_fsm(qcoeff_ptr + nonzeros,
+                                   detokenize_fsm + nonzeros*TOKEN_SIZE + (2 - ctx_val)*TREE_SIZE + 2,
+                                   coef_probs, bc);
+    }
+    else
+    {
+        *a = *l = 0;
+        return nonzeros;
+    }
+}
+
+
+int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *x)
+{
+    const VP8_COMMON *const oc = & dx->common;
+    char *eobs = x->eobs;
+
+    int i;
+    int nonzeros;
+    int eobtotal = 0;
+
+    INT16 *qcoeff_ptr;
+    const vp8_prob *coef_probs;
+
+    qcoeff_ptr = &x->qcoeff[0];
+
+    if (x->mode_info_context->mbmi.mode != B_PRED && x->mode_info_context->mbmi.mode != SPLITMV)
+    {
+        coef_probs = oc->fc.coef_probs [1] [ 0 ] [0];
+        nonzeros = vp8_detokenize_block(x, 0, 24, qcoeff_ptr + 24 * 16, coef_probs);
+        eobs[24] = nonzeros;
+        eobtotal += nonzeros - 16;
+
+        coef_probs = oc->fc.coef_probs [0] [ 0 ] [0];
+
+        for (i = 0; i < 16; ++i)
+        {
+            nonzeros = vp8_detokenize_block(x, 1, i, qcoeff_ptr, coef_probs);
+            eobs[i] = nonzeros;
+            eobtotal += nonzeros;
+            qcoeff_ptr += 16;
+        }
+
+    }
+    else
+    {
+        coef_probs = oc->fc.coef_probs [3] [ 0 ] [0];
+
+        for (i = 0; i < 16; ++i)
+        {
+            nonzeros = vp8_detokenize_block(x, 0, i, qcoeff_ptr, coef_probs);
+            eobs[i] = nonzeros;
+            eobtotal += nonzeros;
+            qcoeff_ptr += 16;
+        }
+    }
+
+    coef_probs = oc->fc.coef_probs [2] [ 0 ] [0];
+
+    for (i = 16; i < 24; ++i)
+    {
+        nonzeros = vp8_detokenize_block(x, 0, i, qcoeff_ptr, coef_probs);
+        eobs[i] = nonzeros;
+        eobtotal += nonzeros;
+        qcoeff_ptr += 16;
+    }
+
+
+    return eobtotal;
 }
