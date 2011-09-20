@@ -1264,18 +1264,28 @@ int vp8cx_encode_inter_macroblock
 
     if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME)
     {
-        vp8_encode_intra16x16mbuv(IF_RTCD(&cpi->rtcd), x);
-
-        if (xd->mode_info_context->mbmi.mode == B_PRED)
+        if (!x->skip)
         {
-            vp8_encode_intra4x4mby(IF_RTCD(&cpi->rtcd), x);
+            vp8_encode_intra16x16mbuv(IF_RTCD(&cpi->rtcd), x);
+
+            if (xd->mode_info_context->mbmi.mode == B_PRED)
+            {
+                vp8_encode_intra4x4mby(IF_RTCD(&cpi->rtcd), x);
+            }
+            else
+            {
+                vp8_encode_intra16x16mby(IF_RTCD(&cpi->rtcd), x);
+            }
+
+            sum_intra_stats(cpi, x);
         }
         else
         {
-            vp8_encode_intra16x16mby(IF_RTCD(&cpi->rtcd), x);
+            assert(xd->mode_info_context->mbmi.mode != B_PRED);
+            RECON_INVOKE(&cpi->rtcd.common->recon, build_intra_predictors_mby_s)(&x->e_mbd);
+            RECON_INVOKE(&cpi->rtcd.common->recon, build_intra_predictors_mbuv_s)(&x->e_mbd);
         }
 
-        sum_intra_stats(cpi, x);
     }
     else
     {
@@ -1304,10 +1314,12 @@ int vp8cx_encode_inter_macroblock
 
         }
         else
+        {
+            assert(xd->mode_info_context->mbmi.mode != SPLITMV);
             vp8_build_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
                                            xd->dst.u_buffer, xd->dst.v_buffer,
                                            xd->dst.y_stride, xd->dst.uv_stride);
-
+        }
     }
 
     if (!x->skip)

@@ -22,6 +22,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/systemdependent.h"
 #include "encodemv.h"
+#include "segmentation.h"
 
 
 #define MIN_BPB_FACTOR          0.01
@@ -1218,37 +1219,34 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var)
     }
 }
 
-
-int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
+static int regulate_q_internal(VP8_COMP *cpi, int target_bits_per_mb, int sgmnt)
 {
     int Q = cpi->active_worst_quality;
-
-    // Reset Zbin OQ value
-    cpi->zbin_over_quant = 0;
 
     if (cpi->oxcf.fixed_q >= 0)
     {
         Q = cpi->oxcf.fixed_q;
 
-        if (cpi->common.frame_type == KEY_FRAME)
+        if (!sgmnt)
         {
-            Q = cpi->oxcf.key_q;
+            if (cpi->common.frame_type == KEY_FRAME)
+            {
+                Q = cpi->oxcf.key_q;
+            }
+            else if (cpi->common.refresh_alt_ref_frame)
+            {
+                Q = cpi->oxcf.alt_q;
+            }
+            else if (cpi->common.refresh_golden_frame)
+            {
+                Q = cpi->oxcf.gold_q;
+            }
         }
-        else if (cpi->common.refresh_alt_ref_frame)
-        {
-            Q = cpi->oxcf.alt_q;
-        }
-        else if (cpi->common.refresh_golden_frame)
-        {
-            Q = cpi->oxcf.gold_q;
-        }
-
     }
     else
     {
         int i;
         int last_error = INT_MAX;
-        int target_bits_per_mb;
         int bits_per_mb_at_this_q;
         double correction_factor;
 
@@ -1263,14 +1261,8 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
                 correction_factor = cpi->rate_correction_factor;
         }
 
-        // Calculate required scaling factor based on target frame size and size of frame produced using previous Q
-        if (target_bits_per_frame >= (INT_MAX >> BPER_MB_NORMBITS))
-            target_bits_per_mb = (target_bits_per_frame / cpi->common.MBs) << BPER_MB_NORMBITS;       // Case where we would overflow int
-        else
-            target_bits_per_mb = (target_bits_per_frame << BPER_MB_NORMBITS) / cpi->common.MBs;
-
         i = cpi->active_best_quality;
-
+        
         do
         {
             bits_per_mb_at_this_q = (int)(.5 + correction_factor * vp8_bits_per_mb[cpi->common.frame_type][i]);
@@ -1289,10 +1281,9 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
         }
         while (++i <= cpi->active_worst_quality);
 
-
         // If we are at MAXQ then enable Q over-run which seeks to claw back additional bits through things like
         // the RD multiplier and zero bin size.
-        if (Q >= MAXQ)
+        if (!sgmnt && Q >= MAXQ)
         {
             int zbin_oqmax;
 
@@ -1348,6 +1339,105 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
     return Q;
 }
 
+static int calculate_bits_per_mb(VP8_COMP *cpi, int bits_per_frame, int n_mbs)
+{
+    int bits_per_mb;
+
+    // Calculate required scaling factor based on target frame size and size of frame produced using previous Q
+    if (bits_per_frame >= (INT_MAX >> BPER_MB_NORMBITS))
+        bits_per_mb = (bits_per_frame / n_mbs) << BPER_MB_NORMBITS; // Case where we would overflow int
+    else
+        bits_per_mb = (bits_per_frame << BPER_MB_NORMBITS) / n_mbs;
+
+    return bits_per_mb;
+}
+
+static int calculate_bits_per_frame(VP8_COMP *cpi, int bits_per_mb, int n_mbs)
+{
+    int bits_per_frame;
+
+    if (bits_per_mb >= INT_MAX / n_mbs)
+        bits_per_frame = (bits_per_mb >> BPER_MB_NORMBITS) * n_mbs;
+    else
+        bits_per_frame = (bits_per_mb * n_mbs) >> BPER_MB_NORMBITS;
+
+    return bits_per_frame;
+}
+
+int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame)
+{
+    int Q;
+    int target_bits_per_mb = calculate_bits_per_mb(cpi, target_bits_per_frame,
+                                                   cpi->common.MBs);
+
+    // Reset Zbin OQ value
+    cpi->zbin_over_quant = 0;
+
+    if (cpi->common.frame_type != KEY_FRAME &&
+        cpi->mbgraph_use_arf_segmentation &&
+        cpi->common.refresh_alt_ref_frame &&
+        !cpi->common.refresh_golden_frame)
+    {
+        // set Q so that it's as calculated above for the MBs that were
+        // not skipped, and much lower for the others.
+        int high_q_frame_bits = cpi->min_frame_bandwidth + cpi->twopass.gf_group_bits /
+                                cpi->frames_till_gf_update_due;
+        int high_q_bits_per_mb = calculate_bits_per_mb(cpi, high_q_frame_bits, cpi->common.MBs);
+        int high_q_n_mbs = cpi->mbgraph_use_arf_segmentation;
+        int high_q;
+        int high_q_sum_bits = calculate_bits_per_frame(cpi, high_q_bits_per_mb, high_q_n_mbs);
+
+        // lower the Q for the "normal" predictive blocks so that the overall
+        // bitrate for this frame still approximately reaches the target
+        Q      = regulate_q_internal(cpi,
+                                     calculate_bits_per_mb(cpi,
+                                                           target_bits_per_frame - high_q_sum_bits,
+                                                           cpi->common.MBs - high_q_n_mbs),
+                                     0);
+        high_q = regulate_q_internal(cpi, high_q_bits_per_mb, 1);
+
+        if (high_q >= 80 || high_q <= Q)
+        {
+            // at such high Q, most coefficients are likely zero anyway, and thus we
+            // would be enabling segmentation just to subsequently ignore Q again.
+            // Therefore, just disable segmentation at all and instead force skipping
+            // coefficients for these blocks.
+            // I suppose a FIXME here is that I could just calculate the actual cost
+            // and calculate this for real...
+            vp8_disable_segmentation((VP8_PTR) cpi);
+            cpi->zbin_over_quant = 0;
+            Q = regulate_q_internal(cpi, target_bits_per_mb, 0);
+        }
+        else
+        {
+            signed char feature_data[MB_LVL_MAX][MAX_MB_SEGMENTS];
+
+            // Set up the quant segment data
+            feature_data[MB_LVL_ALT_Q][0] = 0;
+            feature_data[MB_LVL_ALT_Q][1] = high_q - Q;
+            feature_data[MB_LVL_ALT_Q][2] = 0;
+            feature_data[MB_LVL_ALT_Q][3] = 0;
+
+            // Set up the loop segment data
+            feature_data[MB_LVL_ALT_LF][0] = 0;
+            feature_data[MB_LVL_ALT_LF][1] = 0;
+            feature_data[MB_LVL_ALT_LF][2] = 0;
+            feature_data[MB_LVL_ALT_LF][3] = 0;
+
+            // Initialise the feature data structure
+            // SEGMENT_DELTADATA    0, SEGMENT_ABSDATA      1
+            vp8_set_segment_data((VP8_PTR) cpi, &feature_data[0][0], SEGMENT_DELTADATA);
+
+            vp8_enable_segmentation((VP8_PTR) cpi);
+        }
+    }
+    else
+    {
+        Q = regulate_q_internal(cpi, target_bits_per_mb, 0);
+    }
+
+    return Q;
+}
 
 static int estimate_keyframe_frequency(VP8_COMP *cpi)
 {
