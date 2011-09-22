@@ -220,21 +220,21 @@ sym(vp8_short_idct4x4llm_1_mmx):
     pop         rbp
     ret
 
-;void vp8_dc_only_idct_add_mmx(short input_dc, unsigned char *pred_ptr, unsigned char *dst_ptr, int pitch, int stride)
+;void vp8_dc_only_idct_add_mmx(
+;short input_dc,
+;unsigned char *dst_ptr,
+;int stride)
 global sym(vp8_dc_only_idct_add_mmx)
 sym(vp8_dc_only_idct_add_mmx):
     push        rbp
     mov         rbp, rsp
-    SHADOW_ARGS_TO_STACK 5
+    SHADOW_ARGS_TO_STACK 3
     GET_GOT     rbx
-    push        rsi
     push        rdi
     ; end prolog
 
-        mov         rsi,            arg(1) ;s -- prediction
-        mov         rdi,            arg(2) ;d -- destination
-        movsxd      rax,            dword ptr arg(4) ;stride
-        movsxd      rdx,            dword ptr arg(3) ;pitch
+        mov         rdi,            arg(1) ;d -- destination
+        movsxd      rdx,            dword ptr arg(2) ;pitch
         pxor        mm0,            mm0
 
         movd        mm5,            arg(0) ;input_dc
@@ -246,35 +246,33 @@ sym(vp8_dc_only_idct_add_mmx):
         punpcklwd   mm5,            mm5
         punpckldq   mm5,            mm5
 
-        movd        mm1,            [rsi]
+        movd        mm1,            [rdi]
         punpcklbw   mm1,            mm0
         paddsw      mm1,            mm5
         packuswb    mm1,            mm0              ; pack and unpack to saturate
         movd        [rdi],          mm1
 
-        movd        mm2,            [rsi+rdx]
+        movd        mm2,            [rdi+rdx]
         punpcklbw   mm2,            mm0
         paddsw      mm2,            mm5
         packuswb    mm2,            mm0              ; pack and unpack to saturate
-        movd        [rdi+rax],      mm2
+        movd        [rdi+rdx],      mm2
 
-        movd        mm3,            [rsi+2*rdx]
+        movd        mm3,            [rdi+2*rdx]
         punpcklbw   mm3,            mm0
         paddsw      mm3,            mm5
         packuswb    mm3,            mm0              ; pack and unpack to saturate
-        movd        [rdi+2*rax],    mm3
+        movd        [rdi+2*rdx],    mm3
 
-        add         rdi,            rax
-        add         rsi,            rdx
-        movd        mm4,            [rsi+2*rdx]
+        add         rdi,            rdx
+        movd        mm4,            [rdi+2*rdx]
         punpcklbw   mm4,            mm0
         paddsw      mm4,            mm5
         packuswb    mm4,            mm0              ; pack and unpack to saturate
-        movd        [rdi+2*rax],    mm4
+        movd        [rdi+2*rdx],    mm4
 
     ; begin epilog
     pop rdi
-    pop rsi
     RESTORE_GOT
     UNSHADOW_ARGS
     pop         rbp
