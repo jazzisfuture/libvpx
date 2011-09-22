@@ -31,8 +31,8 @@ void vp8_dequantize_b_c(BLOCKD *d)
     }
 }
 
-void vp8_dequant_idct_add_c(short *input, short *dq, unsigned char *pred,
-                            unsigned char *dest, int pitch, int stride)
+void vp8_dequant_idct_add_c(short *input, short *dq,
+                            unsigned char *dest, int stride)
 {
     short output[16];
     short *diff_ptr = output;
@@ -53,7 +53,7 @@ void vp8_dequant_idct_add_c(short *input, short *dq, unsigned char *pred,
     {
         for (c = 0; c < 4; c++)
         {
-            int a = diff_ptr[c] + pred[c];
+            int a = diff_ptr[c] + dest[c];
 
             if (a < 0)
                 a = 0;
@@ -66,7 +66,6 @@ void vp8_dequant_idct_add_c(short *input, short *dq, unsigned char *pred,
 
         dest += stride;
         diff_ptr += 4;
-        pred += pitch;
     }
 }
 
