@@ -15,7 +15,6 @@
 
     ARM
     REQUIRE8
-    PRESERVE8
 
     AREA    |.text|, CODE, READONLY
 
@@ -29,7 +28,7 @@
 
 |vp8cx_pack_tokens_into_partitions_armv5| PROC
     push    {r4-r11, lr}
-    sub     sp, sp, #44
+    sub     sp, sp, #48
 
     ; Compute address of cpi->common.mb_rows
     ldr     r4, _VP8_COMP_common_
@@ -47,6 +46,13 @@
     sub     r2, r2, #1                  ; num_part - 1
     add     r2, r2, r2, lsl #1          ; 3*(num_part - 1)
     str     r2, [r3]
+
+    ldr     r4, _VP8_COMP_partition_sz_
+    add     r4, r0, r4
+    str     r4, [sp, #44]
+    ldr     r6, [r4, #0]
+    add     r6, r6, r2
+    str     r6, [r4]                    ; cpi->partition_sz[0] += *size
 
     add     r2, r2, r1                  ; cx_data + *size
     str     r2, [sp, #40]               ; ptr
@@ -93,7 +99,7 @@ mb_row_loop
 
 while_p_lt_stop
     ldrb    r6, [r1, #tokenextra_token] ; t
-    ldr     r4, [sp, #80]               ; vp8_coef_encodings
+    ldr     r4, [sp, #84]               ; vp8_coef_encodings
     mov     lr, #0
     add     r4, r4, r6, lsl #3          ; a = vp8_coef_encodings + t
     ldr     r9, [r1, #tokenextra_context_tree]   ; pp
@@ -109,7 +115,7 @@ while_p_lt_stop
     subne   r8, r8, #1                  ; --n
 
     rsb     r4, r8, #32                 ; 32-n
-    ldr     r10, [sp, #88]              ; vp8_coef_tree
+    ldr     r10, [sp, #92]              ; vp8_coef_tree
 
     ; v is kept in r12 during the token pack loop
     lsl     r12, r6, r4                ; r12 = v << 32 - n
@@ -185,7 +191,7 @@ token_high_bit_not_set
     ; r10 is used earlier in the loop, but r10 is used as
     ; temp variable here.  So after r10 is used, reload
     ; vp8_coef_tree_dcd into r10
-    ldr     r10, [sp, #88]              ; vp8_coef_tree
+    ldr     r10, [sp, #92]              ; vp8_coef_tree
 
 token_count_lt_zero
     lsl     r2, r2, r6                  ; lowvalue <<= shift
@@ -194,7 +200,7 @@ token_count_lt_zero
     bne     token_loop
 
     ldrb    r6, [r1, #tokenextra_token] ; t
-    ldr     r7, [sp, #84]                ; vp8_extra_bits
+    ldr     r7, [sp, #88]                ; vp8_extra_bits
     ; Add t * sizeof (vp8_extra_bit_struct) to get the desired
     ;  element.  Here vp8_extra_bit_struct == 16
     add     r12, r7, r6, lsl #4         ; b = vp8_extra_bits + t
@@ -412,9 +418,15 @@ token_count_lt_zero_se
     add     r11, r11, r4                ; *size += w->pos
     str     r11, [r10]
 
+    ldr     r10, [sp, #28]              ; i
+
+    ldr     r9, [sp, #44]
+    add     r9, r9, r10, lsl #2
+    add     r9, r9, #4
+    str     r4, [r9]                    ; cpi->partition_sz[i + 1] = w->pos
+
     ldr     r9, [sp, #20]               ; num_parts
     sub     r9, r9, #1
-    ldr     r10, [sp, #28]              ; i
     cmp     r10, r9                     ; if(i<(num_part - 1))
     bge     skip_write_partition
 
@@ -449,7 +461,7 @@ skip_write_partition
     bgt     numparts_loop
 
 
-    add     sp, sp, #44
+    add     sp, sp, #48
     pop     {r4-r11, pc}
     ENDP
 
@@ -461,5 +473,7 @@ _VP8_COMP_tplist_
     DCD     vp8_comp_tplist
 _VP8_COMP_bc2_
     DCD     vp8_comp_bc2
+_VP8_COMP_partition_sz_
+    DCD     vp8_comp_partition_sz
 
     END

@@ -69,6 +69,7 @@ DEFINE(vp8_extra_bit_struct_base_val,           offsetof(vp8_extra_bit_struct, b
 DEFINE(vp8_comp_tplist,                         offsetof(VP8_COMP, tplist));
 DEFINE(vp8_comp_common,                         offsetof(VP8_COMP, common));
 DEFINE(vp8_comp_bc2,                            offsetof(VP8_COMP, bc2));
+DEFINE(vp8_comp_partition_sz,                   offsetof(VP8_COMP, partition_sz));
 
 DEFINE(tokenlist_start,                         offsetof(TOKENLIST, start));
 DEFINE(tokenlist_stop,                          offsetof(TOKENLIST, stop));
