@@ -25,15 +25,18 @@
 static const int cospi8sqrt2minus1 = 20091;
 static const int sinpi8sqrt2      = 35468;
 static const int rounding = 0;
-void vp8_short_idct4x4llm_c(short *input, short *output, int pitch)
+
+
+void vp8_short_idct4x4llm_c(short *input, unsigned char *pred, int pitch,
+                            unsigned char *dst, int stride)
 {
-    int i;
+    int i, r, c;
     int a1, b1, c1, d1;
 
+    short idct_output[16];
     short *ip = input;
-    short *op = output;
+    short *op = idct_output;
     int temp1, temp2;
-    int shortpitch = pitch >> 1;
 
     for (i = 0; i < 4; i++)
     {
@@ -48,19 +51,17 @@ void vp8_short_idct4x4llm_c(short *input, short *output, int pitch)
         temp2 = (ip[12] * sinpi8sqrt2 + rounding) >> 16;
         d1 = temp1 + temp2;
 
-        op[shortpitch*0] = a1 + d1;
-        op[shortpitch*3] = a1 - d1;
-
-        op[shortpitch*1] = b1 + c1;
-        op[shortpitch*2] = b1 - c1;
+        op[0] = a1 + d1;
+        op[4] = b1 + c1;
+        op[8] = b1 - c1;
+        op[12] = a1 - d1;
 
         ip++;
         op++;
     }
 
-    ip = output;
-    op = output;
-
+    ip = idct_output;
+    op = idct_output;
     for (i = 0; i < 4; i++)
     {
         a1 = ip[0] + ip[2];
@@ -74,33 +75,34 @@ void vp8_short_idct4x4llm_c(short *input, short *output, int pitch)
         temp2 = (ip[3] * sinpi8sqrt2 + rounding) >> 16;
         d1 = temp1 + temp2;
 
-
         op[0] = (a1 + d1 + 4) >> 3;
-        op[3] = (a1 - d1 + 4) >> 3;
-
         op[1] = (b1 + c1 + 4) >> 3;
         op[2] = (b1 - c1 + 4) >> 3;
+        op[3] = (a1 - d1 + 4) >> 3;
 
-        ip += shortpitch;
-        op += shortpitch;
+        ip += 4;
+        op += 4;
     }
-}
 
-void vp8_short_idct4x4llm_1_c(short *input, short *output, int pitch)
-{
-    int i;
-    int a1;
-    short *op = output;
-    int shortpitch = pitch >> 1;
-    a1 = ((input[0] + 4) >> 3);
-
-    for (i = 0; i < 4; i++)
+    // Add prediction to IDCT output, saturate and write to the destination
+    ip = idct_output;
+    for (r = 0; r < 4; r++)
     {
-        op[0] = a1;
-        op[1] = a1;
-        op[2] = a1;
-        op[3] = a1;
-        op += shortpitch;
+        for (c = 0; c < 4; c++)
+        {
+            temp1 = ip[c] + pred[c] ;
+
+            if (temp1 < 0)
+                temp1 = 0;
+
+            if (temp1 > 255)
+                temp1 = 255;
+
+            dst[c] = (unsigned char) temp1 ;
+        }
+        ip += 4;
+        dst += stride;
+        pred += pitch;
     }
 }
 

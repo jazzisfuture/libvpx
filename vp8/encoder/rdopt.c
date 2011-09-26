@@ -660,8 +660,8 @@ static int rd_pick_intra4x4block(
     }
     b->bmi.as_mode = (B_PREDICTION_MODE)(*best_mode);
 
-    IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff, b->diff, 32);
-    RECON_INVOKE(IF_RTCD(&cpi->rtcd.common->recon), recon)(best_predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+    IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff,
+        best_predictor, 16, *(b->base_dst) + b->dst, b->dst_stride);
 
     return best_rd;
 }
