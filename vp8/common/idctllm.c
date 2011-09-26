@@ -86,24 +86,6 @@ void vp8_short_idct4x4llm_c(short *input, short *output, int pitch)
     }
 }
 
-void vp8_short_idct4x4llm_1_c(short *input, short *output, int pitch)
-{
-    int i;
-    int a1;
-    short *op = output;
-    int shortpitch = pitch >> 1;
-    a1 = ((input[0] + 4) >> 3);
-
-    for (i = 0; i < 4; i++)
-    {
-        op[0] = a1;
-        op[1] = a1;
-        op[2] = a1;
-        op[3] = a1;
-        op += shortpitch;
-    }
-}
-
 void vp8_dc_only_idct_add_c(short input_dc, unsigned char *pred_ptr, unsigned char *dst_ptr, int pitch, int stride)
 {
     int a1 = ((input_dc + 4) >> 3);

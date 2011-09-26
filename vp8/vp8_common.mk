@@ -64,7 +64,6 @@ VP8_COMMON_SRCS-yes += common/mbpitch.c
 VP8_COMMON_SRCS-yes += common/modecont.c
 VP8_COMMON_SRCS-yes += common/modecontext.c
 VP8_COMMON_SRCS-yes += common/quant_common.c
-VP8_COMMON_SRCS-yes += common/recon.c
 VP8_COMMON_SRCS-yes += common/reconinter.c
 VP8_COMMON_SRCS-yes += common/reconintra.c
 VP8_COMMON_SRCS-yes += common/reconintra4x4.c
