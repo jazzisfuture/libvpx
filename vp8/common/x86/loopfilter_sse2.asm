@@ -272,56 +272,6 @@
 %endmacro
 
 
-;void vp8_loop_filter_horizontal_edge_sse2
-;(
-;    unsigned char *src_ptr,
-;    int            src_pixel_step,
-;    const char    *blimit,
-;    const char    *limit,
-;    const char    *thresh,
-;    int            count
-;)
-global sym(vp8_loop_filter_horizontal_edge_sse2)
-sym(vp8_loop_filter_horizontal_edge_sse2):
-    push        rbp
-    mov         rbp, rsp
-    SHADOW_ARGS_TO_STACK 6
-    SAVE_XMM 7
-    GET_GOT     rbx
-    push        rsi
-    push        rdi
-    ; end prolog
-
-    ALIGN_STACK 16, rax
-    sub         rsp, 32     ; reserve 32 bytes
-    %define t0 [rsp + 0]    ;__declspec(align(16)) char t0[16];
-    %define t1 [rsp + 16]   ;__declspec(align(16)) char t1[16];
-
-        mov         rsi,                    arg(0)           ;src_ptr
-        movsxd      rax,                    dword ptr arg(1) ;src_pixel_step
-
-        mov         rdx,                    arg(3)           ;limit
-        movdqa      xmm7,                   XMMWORD PTR [rdx]
-
-        lea         rdi,                    [rsi+rax]        ; rdi points to row +1 for indirect addressing
-
-        ; calculate breakout conditions and high edge variance
-        LFH_FILTER_AND_HEV_MASK 1
-        ; filter and write back the result
-        B_FILTER 1
-
-    add rsp, 32
-    pop rsp
-    ; begin epilog
-    pop rdi
-    pop rsi
-    RESTORE_GOT
-    RESTORE_XMM
-    UNSHADOW_ARGS
-    pop         rbp
-    ret
-
-
 ;void vp8_loop_filter_horizontal_edge_uv_sse2
 ;(
 ;    unsigned char *src_ptr,
@@ -1004,73 +954,6 @@ sym(vp8_mbloop_filter_horizontal_edge_uv_sse2):
 
         movd        [rdi+2*rcx+2],      %2
 %endmacro
-
-
-;void vp8_loop_filter_vertical_edge_sse2
-;(
-;    unsigned char *src_ptr,
-;    int            src_pixel_step,
-;    const char    *blimit,
-;    const char    *limit,
-;    const char    *thresh,
-;    int            count
-;)
-global sym(vp8_loop_filter_vertical_edge_sse2)
-sym(vp8_loop_filter_vertical_edge_sse2):
-    push        rbp
-    mov         rbp, rsp
-    SHADOW_ARGS_TO_STACK 6
-    SAVE_XMM 7
-    GET_GOT     rbx
-    push        rsi
-    push        rdi
-    ; end prolog
-
-    ALIGN_STACK 16, rax
-    sub             rsp, 96      ; reserve 96 bytes
-    %define t0      [rsp + 0]    ;__declspec(align(16)) char t0[16];
-    %define t1      [rsp + 16]   ;__declspec(align(16)) char t1[16];
-    %define srct    [rsp + 32]   ;__declspec(align(16)) char srct[64];
-
-        mov         rsi,        arg(0)                  ; src_ptr
-        movsxd      rax,        dword ptr arg(1)        ; src_pixel_step
-
-        lea         rsi,        [rsi - 4]
-        lea         rdi,        [rsi + rax]             ; rdi points to row +1 for indirect addressing
-        lea         rcx,        [rax*2+rax]
-
-        ;transpose 16x8 to 8x16, and store the 8-line result on stack.
-        TRANSPOSE_16X8 1, 1
-
-        ; calculate filter mask and high edge variance
-        LFV_FILTER_MASK_HEV_MASK 1
-
-        ; start work on filters
-        B_FILTER 2
-
-        ; tranpose and write back - only work on q1, q0, p0, p1
-        BV_TRANSPOSE
-        ; store 16-line result
-
-        lea         rdx,        [rax]
-        neg         rdx
-
-        BV_WRITEBACK xmm1, xmm5
-
-        lea         rsi,        [rsi+rdx*8]
-        lea         rdi,        [rdi+rdx*8]
-        BV_WRITEBACK xmm2, xmm6
-
-    add rsp, 96
-    pop rsp
-    ; begin epilog
-    pop rdi
-    pop rsi
-    RESTORE_GOT
-    RESTORE_XMM
-    UNSHADOW_ARGS
-    pop         rbp
-    ret
 
 
 ;void vp8_loop_filter_vertical_edge_uv_sse2
