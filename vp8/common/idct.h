@@ -20,8 +20,8 @@
 
 #define prototype_idct_scalar_add(sym) \
     void sym(short input, \
-             unsigned char *pred, unsigned char *output, \
-             int pitch, int stride)
+             unsigned char *output, \
+             int stride)
 
 #if ARCH_X86 || ARCH_X86_64
 #include "x86/idct_x86.h"

@@ -579,7 +579,7 @@ void vp8_optimize_mbuv(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd)
 
 void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
 {
-    vp8_build_inter_predictors_mb(&x->e_mbd);
+    vp8_build_inter_predictors_mb_e(&x->e_mbd);
 
     vp8_subtract_mb(rtcd, x);
 
