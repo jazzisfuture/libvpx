@@ -27,7 +27,7 @@
     void sym(MACROBLOCKD *x)
 
 #define prototype_intra4x4_predict(sym) \
-    void sym(BLOCKD *x, int b_mode, unsigned char *predictor)
+    void sym(BLOCKD *x, int b_mode, unsigned char *predictor, int stride)
 
 struct vp8_recon_rtcd_vtable;
 
