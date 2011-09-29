@@ -411,11 +411,69 @@ static unsigned int read_partition_size(const unsigned char *cx_size)
     return size;
 }
 
-static void setup_token_decoder_partition_input(VP8D_COMP *pbi)
+static int read_is_valid(const unsigned char *start,
+                         size_t               len,
+                         const unsigned char *end)
+{
+    return (start + len > start && start + len <= end);
+}
+
+static unsigned int read_available_partition_size(
+                                       VP8D_COMP *pbi,
+                                       const unsigned char *cx_data,
+                                       const unsigned char *partition_start,
+                                       const unsigned char *data_end,
+                                       const unsigned char *chunk_end,
+                                       int i,
+                                       int num_part)
+{
+    VP8_COMMON* pc = &pbi->common;
+    const unsigned char *partition_size_ptr = cx_data + i * 3;
+    unsigned int partition_size;
+    ptrdiff_t bytes_left = chunk_end - partition_start;
+    /* Calculate the length of this partition. The last partition
+     * size is implicit. If the partition size can't be read, then
+     * either use the remaining data in the buffer (for EC mode)
+     * or throw an error.
+     */
+    if (i < num_part - 1)
+    {
+        if (read_is_valid(partition_size_ptr, 3, data_end))
+            partition_size = read_partition_size(partition_size_ptr);
+        else if (pbi->ec_active)
+            partition_size = bytes_left;
+        else
+            vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+                               "Truncated partition size data");
+    }
+    else
+        partition_size = bytes_left;
+
+    /* Validate the calculated partition length. If the buffer
+     * described by the partition can't be fully read, then restrict
+     * it to the portion that can be (for EC mode) or throw an error.
+     */
+    if (!read_is_valid(partition_start, partition_size, chunk_end))
+    {
+        if (pbi->ec_active)
+            partition_size = bytes_left;
+        else
+            vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+                               "Truncated packet or corrupt partition "
+                               "%d length", i + 1);
+    }
+    return partition_size;
+}
+
+
+static void setup_token_decoder_partition_input(VP8D_COMP *pbi,
+                                                const unsigned char *cx_data)
 {
     vp8_reader *bool_decoder = &pbi->bc2;
     int part_idx = 1;
     int num_token_partitions;
+    const unsigned char *first_part_end = pbi->partitions[0] +
+                                          pbi->partition_sizes[0];
 
     TOKEN_PARTITION multi_token_partition =
             (TOKEN_PARTITION)vp8_read_literal(&pbi->bc, 2);
@@ -427,14 +485,61 @@ static void setup_token_decoder_partition_input(VP8D_COMP *pbi)
                            "Partitions missing");
     assert(vp8dx_bool_error(&pbi->bc) ||
            multi_token_partition == pbi->common.multi_token_partition);
-    if (pbi->num_partitions > 2)
+    if (num_token_partitions > 1)
     {
-        CHECK_MEM_ERROR(pbi->mbc, vpx_malloc((pbi->num_partitions - 1) *
+        CHECK_MEM_ERROR(pbi->mbc, vpx_malloc(num_token_partitions *
                                              sizeof(vp8_reader)));
         bool_decoder = pbi->mbc;
     }
 
-    for (; part_idx < pbi->num_partitions; ++part_idx)
+    /* Check for hidden partitions */
+    for (part_idx = 0; part_idx < pbi->num_partitions; ++part_idx)
+    {
+        ptrdiff_t            partition_size;
+        unsigned int         chunk_size = pbi->partition_sizes[part_idx];
+        const unsigned char *chunk_end = pbi->partitions[part_idx] + chunk_size;
+        /* Special case for handling the first partition size,
+           which isn't stored in the bitstream */
+        if (part_idx == 0)
+        {
+            ptrdiff_t first_part_size =
+              cx_data - pbi->partitions[0] + 3 * (num_token_partitions - 1);
+            if (first_part_size < pbi->partition_sizes[0])
+              pbi->partition_sizes[0] = first_part_size;
+            chunk_size -= pbi->partition_sizes[0];
+            if (chunk_size > 0)
+            {
+                /* The chunk contains an additional partition. Move to next. */
+                part_idx++;
+                pbi->partitions[part_idx] = pbi->partitions[0] +
+                  pbi->partition_sizes[0];
+            }
+        }
+        /* Split the chunk into partitions read from the bitstream */
+        while (chunk_size > 0)
+        {
+            partition_size = read_available_partition_size(
+                                                 pbi,
+                                                 cx_data,
+                                                 pbi->partitions[part_idx],
+                                                 first_part_end,
+                                                 chunk_end,
+                                                 part_idx - 1,
+                                                 num_token_partitions);
+            pbi->partition_sizes[part_idx] = partition_size;
+            chunk_size -= partition_size;
+            assert(part_idx <= num_token_partitions);
+            if (chunk_size > 0)
+            {
+                /* The chunk contains an additional partition. Move to next. */
+                part_idx++;
+                pbi->partitions[part_idx] = pbi->partitions[part_idx - 1] +
+                  partition_size;
+            }
+        }
+    }
+
+    for (part_idx = 1; part_idx < pbi->num_partitions; ++part_idx)
     {
         if (vp8dx_start_decode(bool_decoder,
                                pbi->partitions[part_idx],
@@ -453,22 +558,12 @@ static void setup_token_decoder_partition_input(VP8D_COMP *pbi)
 #endif
 }
 
-
-static int read_is_valid(const unsigned char *start,
-                         size_t               len,
-                         const unsigned char *end)
-{
-    return (start + len > start && start + len <= end);
-}
-
-
 static void setup_token_decoder(VP8D_COMP *pbi,
                                 const unsigned char *cx_data)
 {
     int num_part;
     int i;
     VP8_COMMON          *pc = &pbi->common;
-    const unsigned char *user_data_end = pbi->Source + pbi->source_sz;
     vp8_reader          *bool_decoder;
     const unsigned char *partition;
 
@@ -495,42 +590,16 @@ static void setup_token_decoder(VP8D_COMP *pbi,
 
     for (i = 0; i < num_part; i++)
     {
-        const unsigned char *partition_size_ptr = cx_data + i * 3;
-        ptrdiff_t            partition_size, bytes_left;
+        const unsigned char *user_data_end = pbi->Source + pbi->source_sz;
+        ptrdiff_t            partition_size;
 
-        bytes_left = user_data_end - partition;
-
-        /* Calculate the length of this partition. The last partition
-         * size is implicit. If the partition size can't be read, then
-         * either use the remaining data in the buffer (for EC mode)
-         * or throw an error.
-         */
-        if (i < num_part - 1)
-        {
-            if (read_is_valid(partition_size_ptr, 3, user_data_end))
-                partition_size = read_partition_size(partition_size_ptr);
-            else if (pbi->ec_active)
-                partition_size = bytes_left;
-            else
-                vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                                   "Truncated partition size data");
-        }
-        else
-            partition_size = bytes_left;
-
-        /* Validate the calculated partition length. If the buffer
-         * described by the partition can't be fully read, then restrict
-         * it to the portion that can be (for EC mode) or throw an error.
-         */
-        if (!read_is_valid(partition, partition_size, user_data_end))
-        {
-            if (pbi->ec_active)
-                partition_size = bytes_left;
-            else
-                vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                                   "Truncated packet or corrupt partition "
-                                   "%d length", i + 1);
-        }
+        partition_size = read_available_partition_size(pbi,
+                                                       cx_data,
+                                                       partition,
+                                                       user_data_end,
+                                                       user_data_end,
+                                                       i,
+                                                       num_part);
 
         if (vp8dx_start_decode(bool_decoder, partition, partition_size))
             vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
@@ -876,7 +945,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 
     if (pbi->input_partition)
     {
-        setup_token_decoder_partition_input(pbi);
+        setup_token_decoder_partition_input(pbi, data + 
+                                            first_partition_length_in_bytes);
     }
     else
     {
