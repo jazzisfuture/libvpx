@@ -456,7 +456,7 @@ void encode_mb_row(VP8_COMP *cpi,
             vp8_activity_masking(cpi, x);
 
         // Is segmentation enabled
-        // MB level adjutment to quantizer
+        // MB level adjustment to quantizer
         if (xd->segmentation_enabled)
         {
             // Code to set segment id in xd->mbmi.segment_id for current MB (with range checking)
@@ -505,6 +505,9 @@ void encode_mb_row(VP8_COMP *cpi,
             // Special case code for cyclic refresh
             // If cyclic update enabled then copy xd->mbmi.segment_id; (which may have been updated based on mode
             // during vp8cx_encode_inter_macroblock()) back into the global sgmentation map
+#if ENABLE_LAYERS
+            if (cpi->current_layer == 0)
+#endif
             if (cpi->cyclic_refresh_mode_enabled && xd->segmentation_enabled)
             {
                 cpi->segmentation_map[map_index+mb_col] = xd->mode_info_context->mbmi.segment_id;
@@ -648,6 +651,32 @@ void init_encode_frame_mb_context(VP8_COMP *cpi)
                                         + vp8_cost_one(255)
                                         + vp8_cost_one(128);
     }
+#if ENABLE_LAYERS
+    else if ((cpi->oxcf.number_of_layers > 1) &&
+               (cpi->ref_frame_flags == VP8_GOLD_FLAG))
+    {
+        xd->ref_frame_cost[LAST_FRAME]    = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_zero(1);
+        xd->ref_frame_cost[GOLDEN_FRAME]  = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_one(1)
+                                        + vp8_cost_zero(255);
+        xd->ref_frame_cost[ALTREF_FRAME]  = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_one(1)
+                                        + vp8_cost_one(255);
+    }
+    else if ((cpi->oxcf.number_of_layers > 1) &&
+                (cpi->ref_frame_flags == VP8_ALT_FLAG))
+    {
+        xd->ref_frame_cost[LAST_FRAME]    = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_zero(1);
+        xd->ref_frame_cost[GOLDEN_FRAME]  = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_one(1)
+                                        + vp8_cost_zero(1);
+        xd->ref_frame_cost[ALTREF_FRAME]  = vp8_cost_one(cpi->prob_intra_coded)
+                                        + vp8_cost_one(1)
+                                        + vp8_cost_one(1);
+    }
+#endif
     else
     {
         xd->ref_frame_cost[LAST_FRAME]    = vp8_cost_one(cpi->prob_intra_coded)
@@ -937,7 +966,12 @@ void vp8_encode_frame(VP8_COMP *cpi)
     // Adjust the projected reference frame useage probability numbers to reflect
     // what we have just seen. This may be usefull when we make multiple itterations
     // of the recode loop rather than continuing to use values from the previous frame.
+#if ENABLE_LAYERS
+    if ((cm->frame_type != KEY_FRAME) && ((cpi->oxcf.number_of_layers > 1) ||
+        (!cm->refresh_alt_ref_frame && !cm->refresh_golden_frame)))
+#else
     if ((cm->frame_type != KEY_FRAME) && !cm->refresh_alt_ref_frame && !cm->refresh_golden_frame)
+#endif
     {
         const int *const rfct = cpi->count_mb_ref_frame_usage;
         const int rf_intra = rfct[INTRA_FRAME];
@@ -1220,7 +1254,11 @@ int vp8cx_encode_inter_macroblock
     if (xd->segmentation_enabled)
     {
         // If cyclic update enabled
+#if ENABLE_LAYERS
+        if (cpi->current_layer == 0 && cpi->cyclic_refresh_mode_enabled)
+#else
         if (cpi->cyclic_refresh_mode_enabled)
+#endif
         {
             // Clear segment_id back to 0 if not coded (last frame 0,0)
             if ((xd->mode_info_context->mbmi.segment_id == 1) &&
