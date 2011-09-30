@@ -116,7 +116,35 @@ static void tokenize2nd_order_b
 
     VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
-    for (c = 0; c < b->eob; c++)
+    if(!b->eob)
+    {
+        /* c = band for this case */
+        t->Token = DCT_EOB_TOKEN;
+        t->context_tree = cpi->common.fc.coef_probs [1] [0] [pt];
+        t->skip_eob_node = 0;
+
+        ++cpi->coef_counts       [1] [0] [pt] [DCT_EOB_TOKEN];
+        t++;
+        *tp = t;
+        *a = *l = 0;
+        return;
+    }
+    {
+        v = qcoeff_ptr[0];
+
+        t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+        token    = vp8_dct_value_tokens_ptr[v].Token;
+        t->Token = token;
+
+        t->context_tree = cpi->common.fc.coef_probs [1] [0] [pt];
+        t->skip_eob_node = 0;
+        ++cpi->coef_counts       [1] [0] [pt] [token];
+        pt = vp8_prev_token_class[token];
+        t++;
+        c = 1;
+    }
+
+    for (; c < b->eob; c++)
     {
         rc = vp8_default_zig_zag1d[c];
         band = vp8_coef_bands[c];
@@ -128,7 +156,7 @@ static void tokenize2nd_order_b
         t->Token = token;
         t->context_tree = cpi->common.fc.coef_probs [1] [band] [pt];
 
-        t->skip_eob_node = ((pt == 0) && (band > 0));
+        t->skip_eob_node = ((pt == 0));
 
         ++cpi->coef_counts       [1] [band] [pt] [token];
 
@@ -141,7 +169,7 @@ static void tokenize2nd_order_b
         t->Token = DCT_EOB_TOKEN;
         t->context_tree = cpi->common.fc.coef_probs [1] [band] [pt];
 
-        t->skip_eob_node = ((pt == 0) && (band > 0));
+        t->skip_eob_node = ((pt == 0));
 
         ++cpi->coef_counts       [1] [band] [pt] [DCT_EOB_TOKEN];
 
@@ -149,8 +177,7 @@ static void tokenize2nd_order_b
     }
 
     *tp = t;
-    pt = (c != 0); /* 0 <-> all coeff data is zero */
-    *a = *l = pt;
+    *a = *l = 1;
 
 }
 
@@ -178,6 +205,7 @@ static void tokenize1st_order_b
     /* Luma */
     for (block = 0; block < 16; block++, b++)
     {
+        unsigned int bstart;
         tmp1 = vp8_block2above[block];
         tmp2 = vp8_block2left[block];
         qcoeff_ptr = b->qcoeff;
@@ -186,7 +214,38 @@ static void tokenize1st_order_b
 
         VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
+        bstart =
         c = type ? 0 : 1;
+
+        if(c >= b->eob)
+        {
+            /* c = band for this case */
+            t->Token = DCT_EOB_TOKEN;
+            t->context_tree = cpi->common.fc.coef_probs [type] [c] [pt];
+            t->skip_eob_node = 0;
+
+            ++cpi->coef_counts       [type] [c] [pt] [DCT_EOB_TOKEN];
+            t++;
+            *tp = t;
+            *a = *l = 0;
+            continue;
+        }
+
+        {
+            /* c = band for this case */
+            v = qcoeff_ptr[c];
+
+            t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+            token    = vp8_dct_value_tokens_ptr[v].Token;
+            t->Token = token;
+
+            t->context_tree = cpi->common.fc.coef_probs [type] [c] [pt];
+            t->skip_eob_node = 0;
+            ++cpi->coef_counts       [type] [c] [pt] [token];
+            pt = vp8_prev_token_class[token];
+            t++;
+            c++;
+        }
 
         for (; c < b->eob; c++)
         {
@@ -200,9 +259,7 @@ static void tokenize1st_order_b
             t->Token = token;
             t->context_tree = cpi->common.fc.coef_probs [type] [band] [pt];
 
-            t->skip_eob_node = pt == 0 &&
-                ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+            t->skip_eob_node = pt == 0 && (c > bstart);
             ++cpi->coef_counts       [type] [band] [pt] [token];
 
             pt = vp8_prev_token_class[token];
@@ -214,18 +271,15 @@ static void tokenize1st_order_b
             t->Token = DCT_EOB_TOKEN;
             t->context_tree = cpi->common.fc.coef_probs [type] [band] [pt];
 
-            t->skip_eob_node = pt == 0 &&
-                ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+            t->skip_eob_node = pt == 0 && (c > bstart);
             ++cpi->coef_counts       [type] [band] [pt] [DCT_EOB_TOKEN];
 
             t++;
         }
         *tp = t;
-        pt = (c != !type); /* 0 <-> all coeff data is zero */
-        *a = *l = pt;
-
+        *a = *l = 1;
     }
+
     /* Chroma */
     for (block = 16; block < 24; block++, b++)
     {
@@ -237,7 +291,36 @@ static void tokenize1st_order_b
 
         VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
-        for (c = 0; c < b->eob; c++)
+        if(!b->eob)
+        {
+            /* c = band for this case */
+            t->Token = DCT_EOB_TOKEN;
+            t->context_tree = cpi->common.fc.coef_probs [2] [0] [pt];
+            t->skip_eob_node = 0;
+
+            ++cpi->coef_counts       [2] [0] [pt] [DCT_EOB_TOKEN];
+            t++;
+            *tp = t;
+            *a = *l = 0;
+            continue;
+        }
+
+        {
+            v = qcoeff_ptr[0];
+
+            t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+            token    = vp8_dct_value_tokens_ptr[v].Token;
+            t->Token = token;
+
+            t->context_tree = cpi->common.fc.coef_probs [2] [0] [pt];
+            t->skip_eob_node = 0;
+            ++cpi->coef_counts       [2] [0] [pt] [token];
+            pt = vp8_prev_token_class[token];
+            t++;
+            c = 1;
+        }
+
+        for (; c < b->eob; c++)
         {
             rc = vp8_default_zig_zag1d[c];
             band = vp8_coef_bands[c];
@@ -249,7 +332,7 @@ static void tokenize1st_order_b
             t->Token = token;
             t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
-            t->skip_eob_node = ((pt == 0) && (band > 0));
+            t->skip_eob_node = (pt == 0);
 
             ++cpi->coef_counts       [2] [band] [pt] [token];
 
@@ -262,17 +345,15 @@ static void tokenize1st_order_b
             t->Token = DCT_EOB_TOKEN;
             t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
-            t->skip_eob_node = ((pt == 0) && (band > 0));
+            t->skip_eob_node = (pt == 0);
 
             ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
 
             t++;
         }
         *tp = t;
-        pt = (c != 0); /* 0 <-> all coeff data is zero */
-        *a = *l = pt;
+        *a = *l = 1;
     }
-
 }
 
 
