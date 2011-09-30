@@ -56,6 +56,10 @@
 #define VP8_TEMPORAL_ALT_REF 1
 #endif
 
+#if ENABLE_LAYERS
+#define MAX_PERIODICITY 16
+#endif
+
 typedef struct
 {
     int kf_indicated;
@@ -237,6 +241,50 @@ enum
     BLOCK_16X16,
     BLOCK_MAX_SEGMENTS
 };
+
+typedef struct
+{
+    // Layer configuration
+    double frame_rate;
+    int target_bandwidth;
+
+    // Layer specific coding parameters
+    int starting_buffer_level;
+    int optimal_buffer_level;
+    int maximum_buffer_size;
+
+    int buffer_level;
+    int bits_off_target;
+
+    long long total_actual_bits;
+    int total_target_vs_actual;
+
+    int worst_quality;
+    int active_worst_quality;
+    int best_quality;
+    int active_best_quality;
+
+    int ni_av_qi;
+    int ni_tot_qi;
+    int ni_frames;
+    int avg_frame_qindex;
+
+    double rate_correction_factor;
+    double key_frame_rate_correction_factor;
+    double gf_rate_correction_factor;
+
+    int zbin_over_quant;
+
+    int inter_frame_target;
+    INT64 total_byte_count;
+
+    int filter_level;
+
+    int last_frame_percent_intra;
+
+    int count_mb_ref_frame_usage[MAX_REF_FRAMES];
+
+} LAYER_CONTEXT;
 
 typedef struct VP8_COMP
 {
@@ -610,6 +658,22 @@ typedef struct VP8_COMP
     int force_next_frame_intra; /* force next frame to intra when kf_auto says so */
 
     int droppable;
+
+#if ENABLE_LAYERS
+    // Coding layer state variables
+    unsigned int current_layer;
+    LAYER_CONTEXT layer_context[5];
+
+    long long frames_in_layer[5];
+    long long bytes_in_layer[5];
+    double sum_psnr[5];
+    double sum_psnr_p[5];
+    double total_error2[5];
+    double total_error2_p[5];
+    double sum_ssim[5];
+    double sum_weights[5];
+#endif
+
 } VP8_COMP;
 
 void control_data_rate(VP8_COMP *cpi);

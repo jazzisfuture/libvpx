@@ -32,6 +32,10 @@ extern "C" {
 #define VPX_ENCODER_H
 #include "vpx_codec.h"
 
+#define ENABLE_LAYERS 1
+#if ENABLE_LAYERS
+#define MAXIMUM_PERIODICITY 16
+#endif
 
     /*!\brief Current ABI version number
      *
@@ -591,6 +595,49 @@ extern "C" {
          * equal to kf_max_dist for a fixed interval.
          */
         unsigned int           kf_max_dist;
+
+#if ENABLE_LAYERS
+        /*
+         * Temporal scalability settings (ts)
+         */
+
+        /*!\brief Number of coding layers
+         *
+         * This value specifies the number of coding layers to be used.
+         */
+        unsigned int           ts_number_layers;
+
+        /*!\brief Target bitrate for each layer
+         *
+         * These values specify the target coding bitrate for each coding layer.
+         */
+        unsigned int           ts_target_bitrate[5];
+
+        /*!\brief Frame rate decimation factor for each layer
+         *
+         * These values specify the frame rate decimation factors to apply
+         * to each layer.
+         */
+        unsigned int           ts_rate_decimator[5];
+
+        /*!\brief Length of the sequence defining frame layer membership
+         *
+         * This value specifies the length of the sequence that defines the
+         * membership of frames to layers. For example, if ts_periodicity=8 then
+         * frames are assigned to coding layers with a repeated sequence of
+         * length 8.
+         */
+        unsigned int           ts_periodicity;
+
+        /*!\brief Template defining the membership of frames to coding layers
+         *
+         * This array defines the membership of frames to coding layers. For a
+         * 2-layer encoding that assigns even numbered frames to one layer (0)
+         * and odd numbered frames to a second layer (1) with ts_periodicity=8,
+         * then ts_layer_id = (0,1,0,1,0,1,0,1).
+         */
+        unsigned int           ts_layer_id[MAXIMUM_PERIODICITY];
+#endif
 
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 

@@ -436,7 +436,8 @@ static void calc_iframe_target_size(VP8_COMP *cpi)
 }
 
 
-//  Do the best we can to define the parameteres for the next GF based on what information we have available.
+//  Do the best we can to define the parameters for the next GF based on what
+// information we have available.
 static void calc_gf_params(VP8_COMP *cpi)
 {
     int Q = (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME] : cpi->oxcf.fixed_q;
@@ -622,7 +623,11 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
 
 
     // Special alt reference frame case
+#if ENABLE_LAYERS
+    if((cpi->common.refresh_alt_ref_frame) && (cpi->oxcf.number_of_layers == 1))
+#else
     if (cpi->common.refresh_alt_ref_frame)
+#endif
     {
         if (cpi->pass == 2)
         {
@@ -812,12 +817,54 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
                     percent_low = 0;
 
                 // lower the target bandwidth for this frame.
-                cpi->this_frame_target -= (cpi->this_frame_target * percent_low)
-                                          / 200;
+#if ENABLE_LAYERS
+                // Experimental code to restore buffer fullness in 8 frame intervals
+                if (cpi->oxcf.number_of_layers > 1)
+                {
+                    cpi->this_frame_target -= (cpi->oxcf.optimal_buffer_level
+                                                          - cpi->buffer_level)/8;
+
+                    if (cpi->this_frame_target < min_frame_target)
+                        cpi->this_frame_target = min_frame_target;
+                }
+                else
+#endif
+                {
+                    int percent_low = 0;
+
+                    // Decide whether or not we need to adjust the frame data
+                    // rate target.
+                    //
+                    // If we are are below the optimal buffer fullness level and
+                    // adherence to buffering constraints is important to the
+                    // end usage then adjust the per frame target.
+                    if ((cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) &&
+                        (cpi->buffer_level < cpi->oxcf.optimal_buffer_level))
+                    {
+                        percent_low =
+                          (cpi->oxcf.optimal_buffer_level - cpi->buffer_level) /
+                                                      one_percent_bits;
+                    }
+                    // Are we overshooting the long term clip data rate...
+                    else if (cpi->bits_off_target < 0)
+                    {
+                        // Adjust per frame data target downwards to compensate.
+                        percent_low = (int)(100 * -cpi->bits_off_target /
+                                           (cpi->total_byte_count * 8));
+                    }
+
+                    if (percent_low > cpi->oxcf.under_shoot_pct)
+                        percent_low = cpi->oxcf.under_shoot_pct;
+                    else if (percent_low < 0)
+                        percent_low = 0;
+
+                      cpi->this_frame_target -=
+                              (cpi->this_frame_target * percent_low) / 200;
+                }
 
                 // Are we using allowing control of active_worst_allowed_q
                 // according to buffer level.
-                if (cpi->auto_worst_q)
+                if (cpi->auto_worst_q && cpi->ni_frames > 150)
                 {
                     int critical_buffer_level;
 
@@ -834,7 +881,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
                             (cpi->buffer_level < cpi->bits_off_target)
                             ? cpi->buffer_level : cpi->bits_off_target;
                     }
-                    // For local file playback short term buffering contraints
+                    // For local file playback short term buffering constraints
                     // are less of an issue
                     else
                     {
@@ -904,12 +951,16 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
                 else if (percent_high < 0)
                     percent_high = 0;
 
+#if ENABLE_LAYERS
+                cpi->this_frame_target += (cpi->buffer_level - cpi->oxcf.optimal_buffer_level);
+#else
                 cpi->this_frame_target += (cpi->this_frame_target *
-                                           percent_high) / 200;
+                                                     percent_high) / 200;
+#endif
 
-
-                // Are we allowing control of active_worst_allowed_q according to bufferl level.
-                if (cpi->auto_worst_q)
+                // Are we allowing control of active_worst_allowed_q according
+                // to buffer level.
+                if (cpi->auto_worst_q && cpi->ni_frames > 150)
                 {
                     // When using the relaxed buffer model stick to the user specified value
                     cpi->active_worst_quality = cpi->ni_av_qi;
@@ -1421,8 +1472,16 @@ void vp8_adjust_key_frame_context(VP8_COMP *cpi)
          * bits allocated than those following other gfs.
          */
         overspend = (cpi->projected_frame_size - cpi->per_frame_bandwidth);
-        cpi->kf_overspend_bits += overspend * 7 / 8;
-        cpi->gf_overspend_bits += overspend * 1 / 8;
+#if ENABLE_LAYERS
+        if (cpi->oxcf.number_of_layers > 1)
+            cpi->kf_overspend_bits += overspend;
+        else
+#else
+        {
+            cpi->kf_overspend_bits += overspend * 7 / 8;
+            cpi->gf_overspend_bits += overspend * 1 / 8;
+        }
+#endif
 
         /* Work out how much to try and recover per frame. */
         cpi->kf_bitrate_adjustment = cpi->kf_overspend_bits
@@ -1452,7 +1511,13 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit, 
         }
         else
         {
+#if ENABLE_LAYERS
+            if (cpi->oxcf.number_of_layers > 1 ||
+                cpi->common.refresh_alt_ref_frame ||
+                cpi->common.refresh_golden_frame)
+#else
             if (cpi->common.refresh_alt_ref_frame || cpi->common.refresh_golden_frame)
+#endif
             {
                 *frame_over_shoot_limit  = cpi->this_frame_target * 9 / 8;
                 *frame_under_shoot_limit = cpi->this_frame_target * 7 / 8;
