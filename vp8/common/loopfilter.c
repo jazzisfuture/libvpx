@@ -322,7 +322,12 @@ void vp8_loop_filter_frame
             const int seg = mode_info_context->mbmi.segment_id;
             const int ref_frame = mode_info_context->mbmi.ref_frame;
 
-            filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
+            if (cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[(mb_row - 1) * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col - 1] > 1)
+                filter_level = 0;
+            else
+                filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
             if (filter_level)
             {
@@ -433,7 +438,12 @@ void vp8_loop_filter_frame_yonly
             const int seg = mode_info_context->mbmi.segment_id;
             const int ref_frame = mode_info_context->mbmi.ref_frame;
 
-            filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
+            if (cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[(mb_row - 1) * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col - 1] > 1)
+                filter_level = 0;
+            else
+                filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
             if (filter_level)
             {
@@ -566,7 +576,13 @@ void vp8_loop_filter_partial_frame
                            mode_info_context->mbmi.mode != SPLITMV &&
                            mode_info_context->mbmi.mb_skip_coeff);
 
-            if (alt_flt_enabled)
+            // If this mb and surrounding mbs have been using ZEROMV and has no residue for more than
+            // once then they have been filtered already.
+            if (cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[(mb_row - 1) * cm->inter_zz_skip_stride + mb_col] > 1 &&
+                cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col - 1] > 1)
+                filter_level = 0;
+            else if (alt_flt_enabled)
                 filter_level = lvl_seg[mode_info_context->mbmi.segment_id];
             else
                 filter_level = default_filt_lvl;

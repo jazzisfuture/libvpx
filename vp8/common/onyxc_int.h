@@ -123,6 +123,7 @@ typedef struct VP8Common
     int mb_rows;
     int mb_cols;
     int mode_info_stride;
+    int inter_zz_skip_stride;
 
     /* profile settings */
     int mb_no_coeff_skip;
@@ -149,7 +150,9 @@ typedef struct VP8Common
     MODE_INFO *mi;  /* Corresponds to upper left visible macroblock */
     MODE_INFO *prev_mip; /* MODE_INFO array 'mip' from last decoded frame */
     MODE_INFO *prev_mi;  /* 'mi' from last frame (points into prev_mip) */
-
+    char *inter_zz_skip_count_p; /* Count the number of times a mb is
+                                    using ZEROMV and skip, max value is. */
+    char *inter_zz_skip_count;   /* Corresponds to upper left visible mb */
 
     INTERPOLATIONFILTERTYPE mcomp_filter_type;
     LOOPFILTERTYPE filter_type;

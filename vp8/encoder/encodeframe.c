@@ -525,6 +525,19 @@ void encode_mb_row(VP8_COMP *cpi,
             }
         }
 
+        if (cm->frame_type != KEY_FRAME &&
+            xd->mode_info_context->mbmi.mode == ZEROMV &&
+            xd->mode_info_context->mbmi.ref_frame == LAST_FRAME &&
+            x->skip)
+        {
+          if (cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col] < 2)
+                ++cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col];
+        }
+        else
+        {
+            cm->inter_zz_skip_count[mb_row * cm->inter_zz_skip_stride + mb_col] = 0;
+        }
+
         cpi->tplist[mb_row].stop = *tp;
 
         // Increment pointer into gf useage flags structure.
