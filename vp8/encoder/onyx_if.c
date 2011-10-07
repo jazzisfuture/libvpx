@@ -3490,9 +3490,9 @@ static void encode_frame_to_data_rate
             if ( cpi->pass == 2 )
             {
                 if (cpi->gfu_boost > 600)
-                   cpi->active_best_quality = kf_low_motion_minq[Q];
+                   cpi->active_best_quality = kf_low_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
                 else
-                   cpi->active_best_quality = kf_high_motion_minq[Q];
+                   cpi->active_best_quality = kf_high_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
 
                 // Special case for key frames forced because we have reached
                 // the maximum key frame interval. Here force the Q to a range
@@ -3507,7 +3507,7 @@ static void encode_frame_to_data_rate
             }
             // One pass more conservative
             else
-               cpi->active_best_quality = kf_high_motion_minq[Q];
+               cpi->active_best_quality = kf_high_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
         }
 
         else if (cm->refresh_golden_frame || cpi->common.refresh_alt_ref_frame)
@@ -3531,11 +3531,11 @@ static void encode_frame_to_data_rate
             if ( cpi->pass == 2 )
             {
                 if ( cpi->gfu_boost > 1000 )
-                    cpi->active_best_quality = gf_low_motion_minq[Q];
+                    cpi->active_best_quality = gf_low_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
                 else if ( cpi->gfu_boost < 400 )
-                    cpi->active_best_quality = gf_high_motion_minq[Q];
+                    cpi->active_best_quality = gf_high_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
                 else
-                    cpi->active_best_quality = gf_mid_motion_minq[Q];
+                    cpi->active_best_quality = gf_mid_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
 
                 // Constrained quality use slightly lower active best.
                 if ( cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY )
@@ -3546,11 +3546,11 @@ static void encode_frame_to_data_rate
             }
             // One pass more conservative
             else
-                cpi->active_best_quality = gf_high_motion_minq[Q];
+                cpi->active_best_quality = gf_high_motion_minq[Q < QINDEX_RANGE ? Q : MAXQ];
         }
         else
         {
-            cpi->active_best_quality = inter_minq[Q];
+            cpi->active_best_quality = inter_minq[Q < QINDEX_RANGE ? Q : MAXQ];
 
             // For the constant/constrained quality mode we dont want
             // q to fall below the cq level.
