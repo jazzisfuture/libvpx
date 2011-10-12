@@ -33,7 +33,7 @@ void vp8cx_pack_mb_row_tokens_armv5(VP8_COMP *cpi, vp8_writer *w,
     vp8cx_pack_mb_row_tokens_armv5(a,b,vp8_coef_encodings,vp8_extra_bits,vp8_coef_tree)
 #else
 # define pack_tokens(a,b,c)                  pack_tokens_c(a,b,c)
-# define pack_tokens_into_partitions(a,b,c,d)  pack_tokens_into_partitions_c(a,b,c,d)
+# define pack_tokens_into_partitions(a,b,c,d,e)  pack_tokens_into_partitions_c(a,b,c,d,e)
 # define pack_mb_row_tokens(a,b)               pack_mb_row_tokens_c(a,b)
 #endif
 #endif
