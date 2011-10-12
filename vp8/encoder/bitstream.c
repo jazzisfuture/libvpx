@@ -357,12 +357,18 @@ static void write_partition_size(unsigned char *cx_data, int size)
     *(cx_data + 2) = csize;
 
 }
-
-static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data, int num_part, int *size)
+int write_is_valid(const unsigned char *start,
+                         size_t               len,
+                         const unsigned char *end)
+{
+    return (start + len > start && start + len < end);
+}
+static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data, unsigned char * cx_data_end, int num_part, int *size)
 {
 
     int i;
     unsigned char *ptr = cx_data;
+    unsigned char *ptr_end = cx_data_end;
     unsigned int shift;
     vp8_writer *w = &cpi->bc2;
     *size = 3 * (num_part - 1);
@@ -371,7 +377,7 @@ static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data,
 
     for (i = 0; i < num_part; i++)
     {
-        vp8_start_encode(w, ptr);
+        vp8_start_encode(w, ptr, ptr_end);
         {
             unsigned int split;
             int count = w->count;
@@ -437,7 +443,12 @@ static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data,
                                 w->buffer[x] += 1;
                             }
 
-                            w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                            if (write_is_valid(w->buffer + w->pos, 1, cx_data_end))
+                                w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                            else
+                                vpx_internal_error(&cpi->common.error,
+                                        VPX_CODEC_CORRUPT_FRAME,
+                                        "Truncated packet or corrupt partition ");
                             lowvalue <<= offset;
                             shift = count;
                             lowvalue &= 0xffffff;
@@ -497,7 +508,12 @@ static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data,
                                         w->buffer[x] += 1;
                                     }
 
-                                    w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                                    if (write_is_valid(w->buffer + w->pos, 1, cx_data_end))
+                                        w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                                    else
+                                        vpx_internal_error(&cpi->common.error,
+                                        VPX_CODEC_CORRUPT_FRAME,
+                                        "Truncated packet or corrupt partition ");
                                     lowvalue <<= offset;
                                     shift = count;
                                     lowvalue &= 0xffffff;
@@ -543,7 +559,12 @@ static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data,
                             if (!++count)
                             {
                                 count = -8;
-                                w->buffer[w->pos++] = (lowvalue >> 24);
+                                if (write_is_valid(w->buffer + w->pos, 1, cx_data_end))
+                                    w->buffer[w->pos++] = (lowvalue >> 24);
+                                else
+                                     vpx_internal_error(&cpi->common.error,
+                                        VPX_CODEC_CORRUPT_FRAME,
+                                        "Truncated packet or corrupt partition ");
                                 lowvalue &= 0xffffff;
                             }
                         }
@@ -1526,7 +1547,7 @@ static void put_delta_q(vp8_writer *bc, int delta_q)
         vp8_write_bit(bc, 0);
 }
 
-void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
+void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest_end, unsigned long *size)
 {
     int i, j;
     VP8_HEADER oh;
@@ -1536,6 +1557,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     int extra_bytes_packed = 0;
 
     unsigned char *cx_data = dest;
+    unsigned char *cx_data_end = dest_end;
     const int *mb_feature_data_bits;
 
     oh.show_frame = (int) pc->show_frame;
@@ -1560,6 +1582,11 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     {
         int v;
 
+        if (!write_is_valid(cx_data - 3, 7, cx_data_end))
+            vpx_internal_error(&cpi->common.error,
+                               VPX_CODEC_CORRUPT_FRAME,
+                               "Truncated packet or corrupt partition ");
+
         // Start / synch code
         cx_data[0] = 0x9D;
         cx_data[1] = 0x01;
@@ -1576,7 +1603,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
         extra_bytes_packed = 7;
         cx_data += extra_bytes_packed ;
 
-        vp8_start_encode(bc, cx_data);
+        vp8_start_encode(bc, cx_data, cx_data_end);
 
         // signal clr type
         vp8_write_bit(bc, pc->clr_type);
@@ -1584,7 +1611,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
 
     }
     else
-        vp8_start_encode(bc, cx_data);
+        vp8_start_encode(bc, cx_data, cx_data_end);
 
 
     // Signal whether or not Segmentation is enabled
@@ -1841,13 +1868,13 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
         int asize;
         num_part = 1 << pc->multi_token_partition;
 
-        pack_tokens_into_partitions(cpi, cx_data + bc->pos, num_part, &asize);
+        pack_tokens_into_partitions(cpi, cx_data + bc->pos, cx_data_end, num_part, &asize);
 
         *size += asize;
     }
     else
     {
-        vp8_start_encode(&cpi->bc2, cx_data + bc->pos);
+        vp8_start_encode(&cpi->bc2, cx_data + bc->pos, cx_data_end);
 
 #if CONFIG_MULTITHREAD
         if (cpi->b_multi_threaded)
