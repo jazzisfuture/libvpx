@@ -20,6 +20,7 @@
 #define __INC_BOOLHUFF_H
 
 #include "vpx_ports/mem.h"
+#include "vpx/internal/vpx_codec_internal.h"
 
 typedef struct
 {
@@ -29,17 +30,21 @@ typedef struct
     int count;
     unsigned int pos;
     unsigned char *buffer;
+    unsigned char *buffer_end;
+    struct vpx_internal_error_info  error;
 
     // Variables used to track bit costs without outputing to the bitstream
     unsigned int  measure_cost;
     unsigned long bit_counter;
 } BOOL_CODER;
 
-extern void vp8_start_encode(BOOL_CODER *bc, unsigned char *buffer);
+extern void vp8_start_encode(BOOL_CODER *bc, unsigned char *buffer, unsigned char *buffer_end);
 
 extern void vp8_encode_value(BOOL_CODER *br, int data, int bits);
 extern void vp8_stop_encode(BOOL_CODER *bc);
 extern const unsigned int vp8_prob_cost[256];
+
+extern int write_is_valid(const unsigned char *start, size_t len,const unsigned char *end);
 
 
 DECLARE_ALIGNED(16, extern const unsigned char, vp8_norm[256]);
@@ -96,7 +101,13 @@ static void vp8_encode_bool(BOOL_CODER *br, int bit, int probability)
             br->buffer[x] += 1;
         }
 
-        br->buffer[br->pos++] = (lowvalue >> (24 - offset));
+        if (write_is_valid(br->buffer + br->pos, 1, br->buffer_end))
+            br->buffer[br->pos++] = (lowvalue >> (24 - offset));
+        else
+            vpx_internal_error(&br->error,
+                               VPX_CODEC_CORRUPT_FRAME,
+                               "Truncated packet or corrupt partition ");
+
         lowvalue <<= offset;
         shift = count;
         lowvalue &= 0xffffff;
