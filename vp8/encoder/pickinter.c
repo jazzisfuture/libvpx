@@ -409,7 +409,9 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     BLOCKD *d = &x->e_mbd.block[0];
     MACROBLOCKD *xd = &x->e_mbd;
     MB_MODE_INFO best_mbmode;
-
+#if REUSE_PARTITION
+    int curr_index = cpi->curr_index;
+#endif
     int_mv best_ref_mv;
     int_mv mode_mv[MB_MODE_COUNT];
     MB_PREDICTION_MODE this_mode;
@@ -895,6 +897,10 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     }
 
     update_mvcount(cpi, &x->e_mbd, &frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame]);
+#if REUSE_PARTITION
+    if(cpi->oxcf.reuse_info!=NULL)
+        ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame].as_mv = frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame].as_mv;
+#endif
 }
 
 

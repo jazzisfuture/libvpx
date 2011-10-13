@@ -34,7 +34,7 @@ extern "C" {
 
 #define MAX_PERIODICITY 16
 #define MAX_LAYERS       5
-
+#define REUSE_PARTITION 1
     /*!\brief Current ABI version number
      *
      * \internal
@@ -634,6 +634,15 @@ extern "C" {
          * then ts_layer_id = (0,1,0,1,0,1,0,1).
          */
         unsigned int           ts_layer_id[MAX_PERIODICITY];
+
+#if REUSE_PARTITION
+        unsigned int          copy_flag;
+        void                  *reuse_info;
+        void                  *reuse_prob;
+        long int              *fp_size;
+        unsigned char         *q_data;
+        unsigned char         *reuse_map;
+#endif
 
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
