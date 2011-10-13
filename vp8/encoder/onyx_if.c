@@ -508,58 +508,69 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
     // Create a temporary map for segmentation data.
     CHECK_MEM_ERROR(seg_map, vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
 
-    cpi->cyclic_refresh_q = Q;
-
-    for (i = Q; i > 0; i--)
+#if CONFIG_REUSE_PARTITION
+    if(cpi->oxcf.copy_flag==1)
     {
-        if (vp8_bits_per_mb[cpi->common.frame_type][i] >= ((vp8_bits_per_mb[cpi->common.frame_type][Q]*(Q + 128)) / 64))
-            //if ( vp8_bits_per_mb[cpi->common.frame_type][i] >= ((vp8_bits_per_mb[cpi->common.frame_type][Q]*((2*Q)+96))/64) )
+#endif
+        cpi->cyclic_refresh_q = Q;
+
+        for (i = Q; i > 0; i--)
         {
-            break;
-        }
-    }
-
-    cpi->cyclic_refresh_q = i;
-
-    // Only update for inter frames
-    if (cpi->common.frame_type != KEY_FRAME)
-    {
-        // Cycle through the macro_block rows
-        // MB loop to set local segmentation map
-        for (i = cpi->cyclic_refresh_mode_index; i < mbs_in_frame; i++)
-        {
-            // If the MB is as a candidate for clean up then mark it for possible boost/refresh (segment 1)
-            // The segment id may get reset to 0 later if the MB gets coded anything other than last frame 0,0
-            // as only (last frame 0,0) MBs are eligable for refresh : that is to say Mbs likely to be background blocks.
-            if (cpi->cyclic_refresh_map[i] == 0)
+            if (vp8_bits_per_mb[cpi->common.frame_type][i] >= ((vp8_bits_per_mb[cpi->common.frame_type][Q]*(Q + 128)) / 64))
+                //if ( vp8_bits_per_mb[cpi->common.frame_type][i] >= ((vp8_bits_per_mb[cpi->common.frame_type][Q]*((2*Q)+96))/64) )
             {
-                seg_map[i] = 1;
-            }
-            else
-            {
-                seg_map[i] = 0;
-
-                // Skip blocks that have been refreshed recently anyway.
-                if (cpi->cyclic_refresh_map[i] < 0)
-                    //cpi->cyclic_refresh_map[i] = cpi->cyclic_refresh_map[i] / 16;
-                    cpi->cyclic_refresh_map[i]++;
-            }
-
-
-            if (block_count > 0)
-                block_count--;
-            else
                 break;
-
+            }
         }
 
-        // If we have gone through the frame reset to the start
-        cpi->cyclic_refresh_mode_index = i;
+        cpi->cyclic_refresh_q = i;
 
-        if (cpi->cyclic_refresh_mode_index >= mbs_in_frame)
-            cpi->cyclic_refresh_mode_index = 0;
+        // Only update for inter frames
+        if (cpi->common.frame_type != KEY_FRAME)
+        {
+            // Cycle through the macro_block rows
+            // MB loop to set local segmentation map
+            for (i = cpi->cyclic_refresh_mode_index; i < mbs_in_frame; i++)
+            {
+                // If the MB is as a candidate for clean up then mark it for possible boost/refresh (segment 1)
+                // The segment id may get reset to 0 later if the MB gets coded anything other than last frame 0,0
+                // as only (last frame 0,0) MBs are eligable for refresh : that is to say Mbs likely to be background blocks.
+                if (cpi->cyclic_refresh_map[i] == 0)
+                {
+                    seg_map[i] = 1;
+                }
+                else
+                {
+                    seg_map[i] = 0;
+
+                    // Skip blocks that have been refreshed recently anyway.
+                    if (cpi->cyclic_refresh_map[i] < 0)
+                        //cpi->cyclic_refresh_map[i] = cpi->cyclic_refresh_map[i] / 16;
+                        cpi->cyclic_refresh_map[i]++;
+                }
+
+
+                if (block_count > 0)
+                    block_count--;
+                else
+                    break;
+
+            }
+
+            // If we have gone through the frame reset to the start
+            cpi->cyclic_refresh_mode_index = i;
+
+            if (cpi->cyclic_refresh_mode_index >= mbs_in_frame)
+                cpi->cyclic_refresh_mode_index = 0;
+        }
+#if CONFIG_REUSE_PARTITION
+        vpx_memcpy(cpi->oxcf.reuse_map,seg_map,(cpi->common.mb_rows * cpi->common.mb_cols));
+        cpi->oxcf.fp_size[3] =(cpi->cyclic_refresh_q - Q);
     }
+    else
+        vpx_memcpy(seg_map,cpi->oxcf.reuse_map,(cpi->common.mb_rows * cpi->common.mb_cols));
 
+#endif
     // Set the segmentation Map
     set_segmentation_map((VP8_PTR)cpi, seg_map);
 
@@ -568,7 +579,11 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
 
     // Set up the quant segment data
     feature_data[MB_LVL_ALT_Q][0] = 0;
+#if CONFIG_REUSE_PARTITION
+    feature_data[MB_LVL_ALT_Q][1] = cpi->oxcf.fp_size[3];
+#else
     feature_data[MB_LVL_ALT_Q][1] = (cpi->cyclic_refresh_q - Q);
+#endif
     feature_data[MB_LVL_ALT_Q][2] = 0;
     feature_data[MB_LVL_ALT_Q][3] = 0;
 
@@ -4431,12 +4446,25 @@ static void encode_frame_to_data_rate
     // Update rate control heuristics
     cpi->total_byte_count += (*size);
     cpi->projected_frame_size = (*size) << 3;
+#if CONFIG_REUSE_PARTITION
+    if(cpi->oxcf.copy_flag==0)
+    {
+        cpi->total_byte_count += cpi->oxcf.fp_size[0];
+        cpi->projected_frame_size = (cpi->oxcf.fp_size[0]+(*size)) << 3;
+    }
+#endif
 
     if (cpi->oxcf.number_of_layers > 1)
     {
         int i;
         for (i=cpi->current_layer+1; i<cpi->oxcf.number_of_layers; i++)
-          cpi->layer_context[i].total_byte_count += (*size);
+        {
+            cpi->layer_context[i].total_byte_count += (*size);
+#if CONFIG_REUSE_PARTITION
+            if(cpi->oxcf.copy_flag==0)
+                cpi->layer_context[i].total_byte_count += cpi->oxcf.fp_size[0];
+#endif
+        }
     }
 
     if (!active_worst_qchanged)
@@ -5207,6 +5235,11 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
     if (cpi->pass != 1)
     {
         cpi->bytes += *size;
+#if CONFIG_REUSE_PARTITION
+        if(cpi->oxcf.copy_flag==0)
+            cpi->bytes += cpi->oxcf.fp_size[0];
+#endif
+
 
         if (cm->show_frame)
         {
@@ -5292,6 +5325,10 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
                              cpi->frames_in_layer[i]++;
 
                              cpi->bytes_in_layer[i] += *size;
+#if CONFIG_REUSE_PARTITION
+                             if(cpi->oxcf.copy_flag==0)
+                                 cpi->bytes_in_layer[i] += (long long)cpi->oxcf.fp_size[0];
+#endif
                              cpi->sum_psnr[i]       += frame_psnr;
                              cpi->sum_psnr_p[i]     += frame_psnr2;
                              cpi->total_error2[i]   += sq_error;

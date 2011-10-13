@@ -43,7 +43,7 @@ extern "C" {
      * types, removing or reassigning enums, adding/removing/rearranging
      * fields to structures
      */
-#define VPX_ENCODER_ABI_VERSION (3 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+#define VPX_ENCODER_ABI_VERSION (4 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 
     /*! \brief Encoder capabilities bitfield
@@ -634,6 +634,57 @@ extern "C" {
          * then ts_layer_id = (0,1,0,1,0,1,0,1).
          */
         unsigned int           ts_layer_id[MAX_PERIODICITY];
+
+        /*
+         * Reuse Partition settings
+         */
+
+        /*!\brief Flag describing if the mode and mvs are copied
+         *
+         * This flag describes if mode and motion vectors are copied between
+         * multiple encodes. If set to 0, mode and motion vectors are not
+         * calculated and copied from the first encode. If set to 1, mode and
+         * motion vectors will be calculated.
+         */
+        unsigned int           copy_flag;
+
+        /*!\brief Pointer where it stores the mode and motion vector data
+         *
+         * This value points to the location where mode and motion vector
+         * data are stored for reuse with multiple encodes.
+         */
+        void                  *reuse_info;
+
+        /*!\brief Pointer where it stores the coefficient probabilities
+         *
+         * This value points to the location where coefficient probabilities
+         * are stored for reuse with multiple encodes.
+         */
+        void                  *reuse_prob;
+
+        /*!\brief Pointer to store signalling data between encodes
+         *
+         * This value points to the location where signalling data is
+         * stored. It contains the byte positions between encodes as
+         * well as the first partition size of the first encode.
+         */
+        long int              *fp_size;
+
+        /*!\brief Pointer to store quant, loop filter data between encodes
+         *
+         * This value points to the location where quantization, loop filter
+         * and other necessary data from the first partition of second or
+         * higher encodes are stored. Apart from the values in q_data, the
+         * first partition is reused for subsequent encodes.
+         */
+        unsigned char         *q_data;
+
+        /*!\brief Pointer to store segmentation map between encodes
+         *
+         * This value points to the location where segmentation map is
+         * stored between multiple encodes.
+         */
+        unsigned char         *reuse_map;
 
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 

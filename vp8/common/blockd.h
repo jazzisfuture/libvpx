@@ -20,7 +20,7 @@ void vpx_log(const char *format, ...);
 #include "treecoder.h"
 #include "subpixel.h"
 #include "vpx_ports/mem.h"
-
+#include "entropymv.h"
 #define TRUE    1
 #define FALSE   0
 
@@ -169,6 +169,23 @@ typedef struct
     MB_MODE_INFO mbmi;
     union b_mode_info bmi[16];
 } MODE_INFO;
+
+#if CONFIG_REUSE_PARTITION
+typedef struct
+{
+  unsigned char reuse_fc_coef_probs[4] [8] [3] [12-1];
+} REUSE_PROB;
+
+typedef struct
+{
+    MB_MODE_INFO mbmi;
+    union b_mode_info bmi[16];
+    int_mv frame_best_ref_mv[4];
+    int intra_error;
+    int rate;
+    int distortion;
+} REUSE_INFO;
+#endif
 
 typedef struct
 {

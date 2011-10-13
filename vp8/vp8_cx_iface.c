@@ -361,7 +361,14 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
                           sizeof(cfg.ts_rate_decimator));
         memcpy (oxcf->layer_id, cfg.ts_layer_id, sizeof(cfg.ts_layer_id));
     }
-
+#if CONFIG_REUSE_PARTITION
+    oxcf->copy_flag              = cfg.copy_flag;
+    oxcf->reuse_info             = cfg.reuse_info;
+    oxcf->reuse_prob             = cfg.reuse_prob;
+    oxcf->fp_size                = cfg.fp_size;
+    oxcf->q_data                 = cfg.q_data;
+    oxcf->reuse_map              = cfg.reuse_map;
+#endif
     //oxcf->delete_first_pass_file = cfg.g_delete_firstpassfile;
     //strcpy(oxcf->first_pass_file, cfg.g_firstpass_file);
 
@@ -1181,6 +1188,14 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
         {0},                /* ts_rate_decimator */
         0,                  /* ts_periodicity */
         {0},                /* ts_layer_id */
+#if CONFIG_REUSE_PARTITION
+       1,                 /*copy_flag */
+       NULL,              /*reuse_info*/
+       NULL,              /*reuse_prob*/
+       0,                 /*first partition size*/
+       NULL,              /*quant_data*/
+       NULL               /*reuse_map*/
+#endif
     }},
     { -1, {NOT_IMPLEMENTED}}
 };

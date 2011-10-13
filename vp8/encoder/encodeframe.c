@@ -471,7 +471,9 @@ void encode_mb_row(VP8_COMP *cpi,
             xd->mode_info_context->mbmi.segment_id = 0;         // Set to Segment 0 by default
 
         x->active_ptr = cpi->active_map + map_index + mb_col;
-
+#if CONFIG_REUSE_PARTITION
+        cpi->curr_index = map_index+mb_col;
+#endif
         if (cm->frame_type == KEY_FRAME)
         {
             *totalrate += vp8cx_encode_intra_macro_block(cpi, x, tp);
@@ -745,6 +747,10 @@ void vp8_encode_frame(VP8_COMP *cpi)
     cpi->intra_error = 0;
     cpi->skip_true_count = 0;
     cpi->skip_false_count = 0;
+
+#if CONFIG_REUSE_PARTITION
+    cpi->curr_index = 0;
+#endif
 
 #if 0
     // Experimental code
@@ -1148,7 +1154,31 @@ int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t)
     if (cpi->sf.RD && cpi->compressor_speed != 2)
         vp8_rd_pick_intra_mode(cpi, x, &rate);
     else
+    {
+#if CONFIG_REUSE_PARTITION
+        int curr_index = cpi->curr_index;
+        int i;
+        if(cpi->oxcf.copy_flag==1)
+        {
+            vp8_pick_intra_mode(cpi, x, &rate);
+            if(cpi->oxcf.reuse_info!=NULL)
+            {
+                vpx_memcpy(&((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi, &x->e_mbd.mode_info_context->mbmi, sizeof(MB_MODE_INFO));
+                for (i = 0; i < 16; i++)
+                    ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].bmi[i].as_mode = x->e_mbd.block[i].bmi.as_mode;
+            }
+        }
+        else
+        {
+            vpx_memcpy(&x->e_mbd.mode_info_context->mbmi, &((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi, sizeof(MB_MODE_INFO));
+            for ( i = 0; i < 16; i++)
+                x->e_mbd.block[i].bmi.as_mode = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].bmi[i].as_mode;
+        }
+#else
         vp8_pick_intra_mode(cpi, x, &rate);
+#endif
+    }
+
 
     if(cpi->oxcf.tuning == VP8_TUNE_SSIM)
     {
@@ -1172,6 +1202,21 @@ extern int cnt_pm;
 #endif
 
 extern void vp8_fix_contexts(MACROBLOCKD *x);
+
+#if CONFIG_REUSE_PARTITION
+static void reuse_update_mvcount(VP8_COMP *cpi, MACROBLOCKD *xd, int_mv *best_ref_mv)
+{
+    /* Split MV modes currently not supported when RD is nopt enabled,
+     * therefore, only need to modify MVcount in NEWMV mode. */
+    if (xd->mode_info_context->mbmi.mode == NEWMV)
+    {
+        cpi->MVcount[0][mv_max+((xd->mode_info_context->mbmi.mv.as_mv.row -
+                                      best_ref_mv->as_mv.row) >> 1)]++;
+        cpi->MVcount[1][mv_max+((xd->mode_info_context->mbmi.mv.as_mv.col -
+                                      best_ref_mv->as_mv.col) >> 1)]++;
+    }
+}
+#endif
 
 int vp8cx_encode_inter_macroblock
 (
@@ -1224,9 +1269,41 @@ int vp8cx_encode_inter_macroblock
 
     }
     else
+    {
+#if CONFIG_REUSE_PARTITION
+        int curr_index = cpi->curr_index;
+        int ref_frame, i;
+        if(cpi->oxcf.copy_flag==1)
+        {
+            vp8_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
+                                &distortion, &intra_error);
+            if(cpi->oxcf.reuse_info!=NULL)
+            {
+                vpx_memcpy(&((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi, &x->e_mbd.mode_info_context->mbmi, sizeof(MB_MODE_INFO));
+                for (i = 0; i < 16; i++)
+                    ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].bmi[i].as_mode = x->e_mbd.block[i].bmi.as_mode;
+                ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].rate = rate;
+                ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].distortion = distortion;
+                ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].intra_error = intra_error;
+                ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi.ref_frame = xd->mode_info_context->mbmi.ref_frame;
+            }
+        }
+        else
+        {
+            vpx_memcpy(&x->e_mbd.mode_info_context->mbmi,&((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi, sizeof(MB_MODE_INFO));
+            ref_frame = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].mbmi.ref_frame;
+            for ( i = 0; i < 16; i++)
+                x->e_mbd.block[i].bmi.as_mode = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].bmi[i].as_mode;
+            reuse_update_mvcount(cpi, &x->e_mbd, &((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].frame_best_ref_mv[ref_frame]);
+            rate = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].rate;
+            distortion = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].distortion;
+            intra_error = ((REUSE_INFO *)cpi->oxcf.reuse_info)[curr_index].intra_error;
+        }
+#else
         vp8_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
-                            &distortion, &intra_error);
-
+                                    &distortion, &intra_error);
+#endif
+    }
     cpi->prediction_error += distortion;
     cpi->intra_error += intra_error;
 
