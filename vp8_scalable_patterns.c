@@ -21,11 +21,18 @@
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
+
 #define interface (vpx_codec_vp8_cx())
 #define fourcc    0x30385056
 
 #define IVF_FILE_HDR_SZ  (32)
 #define IVF_FRAME_HDR_SZ (12)
+
+#if REUSE_PARTITION
+#define NUM_ENCODES 2
+#else
+#define NUM_ENCODES 1
+#endif
 
 static void mem_put_le16(char *mem, unsigned int val) {
     mem[0] = val;
@@ -113,16 +120,39 @@ static void write_ivf_frame_header(FILE *outfile,
 
     if(fwrite(header, 1, 12, outfile));
 }
+#if REUSE_PARTITION
+REUSE_INFO * alloc_mode_mv_buffer(int width, int height)
+{
+    REUSE_INFO *ri;
+   int MBs,mb_rows,mb_cols;
+    /* our internal buffers are always multiples of 16 */
+   if ((width & 0xf) != 0)
+       width += 16 - (width & 0xf);
 
+   if ((height & 0xf) != 0)
+       height += 16 - (height & 0xf);
+
+    mb_rows = height >> 4;
+    mb_cols = width >> 4;
+    MBs = mb_rows * mb_cols;
+    ri = vpx_calloc(MBs, sizeof(REUSE_INFO));
+    if (!ri)
+    {
+      vpx_free(ri);
+    }
+    return ri;
+}
+#else
 static int mode_to_num_layers[7] = {2, 2, 3, 3, 3, 3, 5};
+#endif
 
 int main(int argc, char **argv) {
-    FILE                *infile, *outfile[MAX_LAYERS];
-    vpx_codec_ctx_t      codec;
-    vpx_codec_enc_cfg_t  cfg;
-    int                  frame_cnt = 0;
+    FILE                *infile;
+    vpx_codec_ctx_t      codec[NUM_ENCODES];
+    vpx_codec_enc_cfg_t  cfg[NUM_ENCODES];
+    int                  frame_cnt[NUM_ENCODES]={0};
     vpx_image_t          raw;
-    vpx_codec_err_t      res;
+    vpx_codec_err_t      res[NUM_ENCODES];
     unsigned int         width;
     unsigned int         height;
     int                  frame_avail;
@@ -131,9 +161,21 @@ int main(int argc, char **argv) {
     int                  i;
 
     int                  layering_mode = 0;
+#if REUSE_PARTITION
+    FILE                *outfile[NUM_ENCODES];
+    FILE                *speedfile;
+    //FILE                *datafile;
+    long int             *fp_size;
+    unsigned char        *q_data,*mv_data;
+    unsigned char        *reuse_map;
+    static int            add_size = 32;
+    long int              datasize = 0;
+#else
+    FILE                 *outfile[MAX_LAYERS];
+    int                  j;
     int                  frames_in_layer[MAX_LAYERS] = {0};
     int                  layer_flags[MAX_PERIODICITY] = {0};
-
+#endif
     // Check usage and arguments
     if (argc < 7)
         die("Usage: %s <infile> <outfile> <width> <height> <mode> "
@@ -149,7 +191,11 @@ int main(int argc, char **argv) {
     if (layering_mode<0 || layering_mode>6)
         die ("Invalid mode (0..6) %s", argv[5]);
 
+#if REUSE_PARTITION
+    if (argc != 6+NUM_ENCODES)
+#else
     if (argc != 6+mode_to_num_layers[layering_mode])
+#endif
         die ("Invalid number of arguments");
 
     if (!vpx_img_alloc (&raw, VPX_IMG_FMT_I420, width, height, 1))
@@ -157,46 +203,78 @@ int main(int argc, char **argv) {
 
     printf("Using %s\n",vpx_codec_iface_name(interface));
 
-    // Populate encoder configuration
-    res = vpx_codec_enc_config_default(interface, &cfg, 0);
-    if(res) {
-        printf("Failed to get config: %s\n", vpx_codec_err_to_string(res));
-        return EXIT_FAILURE;
+    for (i=0; i< NUM_ENCODES; i++)
+    {
+        // Populate encoder configuration
+        res[i] = vpx_codec_enc_config_default(interface, &cfg[i], 0);
+        if(res[i]) {
+            printf("Failed to get config: %s\n", vpx_codec_err_to_string(res[i]));
+            return EXIT_FAILURE;
+        }
     }
 
     // Update the default configuration with our settings
-    cfg.g_w = width;
-    cfg.g_h = height;
+    cfg[0].g_w = width;
+    cfg[0].g_h = height;
 
+#if REUSE_PARTITION
+
+   if(!(speedfile = fopen("speed.stt","a")))
+        die("Failed to open speed.stt for writing");
+
+   //if(!(datafile = fopen("datafile.txt", "wb")))
+       // die("Failed to open datafile for writing");
+
+   if ((width & 0xf) != 0)
+       width += 16 - (width & 0xf);
+
+   if ((height & 0xf) != 0)
+       height += 16 - (height & 0xf);
+
+    cfg[0].reuse_info = alloc_mode_mv_buffer(width, height);
+    cfg[0].reuse_prob = vpx_calloc(1, sizeof(REUSE_PROB));
+    mv_data = vpx_calloc(10000, sizeof(unsigned char));                  //
+    q_data = vpx_calloc(50, sizeof(unsigned char));
+    reuse_map = vpx_calloc((height >> 4) * (width >> 4), 1);
+    cfg[0].copy_flag = 1;
+    fp_size = vpx_calloc(6, sizeof(long int));
+
+    /*cfg[0].fp_size = fp_size;
+    cfg[0].q_data = q_data;
+    cfg[0].reuse_map = reuse_map;*/
+#else
     for (i=6; i<6+mode_to_num_layers[layering_mode]; i++)
-        if (!sscanf(argv[i], "%d", &cfg.ts_target_bitrate[i-6]))
+        if (!sscanf(argv[i], "%d", &cfg[0].ts_target_bitrate[i-6]))
             die ("Invalid data rate %s", argv[i]);
+#endif
 
     // Real time parameters
-    cfg.rc_dropframe_thresh = 0;
-    cfg.rc_end_usage        = VPX_CBR;
-    cfg.rc_resize_allowed   = 0;
-    cfg.rc_min_quantizer    = 4;
-    cfg.rc_max_quantizer    = 63;
-    cfg.rc_undershoot_pct   = 98;
-    cfg.rc_overshoot_pct    = 100;
-    cfg.rc_buf_initial_sz   = 500;
-    cfg.rc_buf_optimal_sz   = 600;
-    cfg.rc_buf_sz           = 1000;
+    cfg[0].rc_dropframe_thresh = 0;
+    cfg[0].rc_end_usage        = VPX_CBR;
+    cfg[0].rc_resize_allowed   = 0;
+    cfg[0].rc_min_quantizer    = 4;
+    cfg[0].rc_max_quantizer    = 63;
+    cfg[0].rc_undershoot_pct   = 98;
+    cfg[0].rc_overshoot_pct    = 100;
+    cfg[0].rc_buf_initial_sz   = 500;
+    cfg[0].rc_buf_optimal_sz   = 600;
+    cfg[0].rc_buf_sz           = 1000;
 
     // Enable error resilient mode
-    cfg.g_error_resilient = 1;
-    cfg.g_lag_in_frames   = 0;
-    cfg.kf_mode           = VPX_KF_DISABLED;
+    cfg[0].g_error_resilient = 1;
+    cfg[0].g_lag_in_frames   = 0;
+    cfg[0].kf_mode           = VPX_KF_DISABLED;
 
     // Disable automatic keyframe placement
-    cfg.kf_min_dist = cfg.kf_max_dist = 1000;
+    cfg[0].kf_min_dist = cfg[0].kf_max_dist = 1000;
 
     // Temporal scaling parameters:
     // NOTE: The 3 prediction frames cannot be used interchangebly due to
     // differences in the way they are handled throughout the code. The
     // frames should be allocated to layers in the order LAST, GF, ARF.
     // Other combinations work, but may produce slightly inferior results.
+
+#if !REUSE_PARTITION
     switch (layering_mode)
     {
 
@@ -204,11 +282,11 @@ int main(int argc, char **argv) {
     {
         // 2-layers, 2-frame period
         int ids[2] = {0,1};
-        cfg.ts_number_layers     = 2;
-        cfg.ts_periodicity       = 2;
-        cfg.ts_rate_decimator[0] = 2;
-        cfg.ts_rate_decimator[1] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 2;
+        cfg[0].ts_periodicity       = 2;
+        cfg[0].ts_rate_decimator[0] = 2;
+        cfg[0].ts_rate_decimator[1] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, Intra-layer prediction enabled
         layer_flags[0] = VPX_EFLAG_FORCE_KF  |
@@ -231,11 +309,11 @@ int main(int argc, char **argv) {
     {
         // 2-layers, 3-frame period
         int ids[3] = {0,1,1};
-        cfg.ts_number_layers     = 2;
-        cfg.ts_periodicity       = 3;
-        cfg.ts_rate_decimator[0] = 3;
-        cfg.ts_rate_decimator[1] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 2;
+        cfg[0].ts_periodicity       = 3;
+        cfg[0].ts_rate_decimator[0] = 3;
+        cfg[0].ts_rate_decimator[1] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, Intra-layer prediction enabled
         layer_flags[0] = VPX_EFLAG_FORCE_KF  |
@@ -252,12 +330,12 @@ int main(int argc, char **argv) {
     {
         // 3-layers, 6-frame period
         int ids[6] = {0,2,2,1,2,2};
-        cfg.ts_number_layers     = 3;
-        cfg.ts_periodicity       = 6;
-        cfg.ts_rate_decimator[0] = 6;
-        cfg.ts_rate_decimator[1] = 3;
-        cfg.ts_rate_decimator[2] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 3;
+        cfg[0].ts_periodicity       = 6;
+        cfg[0].ts_rate_decimator[0] = 6;
+        cfg[0].ts_rate_decimator[1] = 3;
+        cfg[0].ts_rate_decimator[2] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, 2=ARF, Intra-layer prediction enabled
         layer_flags[0] = VPX_EFLAG_FORCE_KF  |
@@ -276,12 +354,12 @@ int main(int argc, char **argv) {
     {
         // 3-layers, 4-frame period
         int ids[6] = {0,2,1,2};
-        cfg.ts_number_layers     = 3;
-        cfg.ts_periodicity       = 4;
-        cfg.ts_rate_decimator[0] = 4;
-        cfg.ts_rate_decimator[1] = 2;
-        cfg.ts_rate_decimator[2] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 3;
+        cfg[0].ts_periodicity       = 4;
+        cfg[0].ts_rate_decimator[0] = 4;
+        cfg[0].ts_rate_decimator[1] = 2;
+        cfg[0].ts_rate_decimator[2] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, 2=ARF, Intra-layer prediction disabled
         layer_flags[0] = VPX_EFLAG_FORCE_KF  |
@@ -295,19 +373,19 @@ int main(int argc, char **argv) {
                          VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_GF |
                          VP8_EFLAG_NO_UPD_ARF;
         break;
-        cfg.ts_rate_decimator[2] = 1;
+        cfg[0].ts_rate_decimator[2] = 1;
     }
 
     case 4:
     {
         // 3-layers, 4-frame period
         int ids[6] = {0,2,1,2};
-        cfg.ts_number_layers     = 3;
-        cfg.ts_periodicity       = 4;
-        cfg.ts_rate_decimator[0] = 4;
-        cfg.ts_rate_decimator[1] = 2;
-        cfg.ts_rate_decimator[2] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 3;
+        cfg[0].ts_periodicity       = 4;
+        cfg[0].ts_rate_decimator[0] = 4;
+        cfg[0].ts_rate_decimator[1] = 2;
+        cfg[0].ts_rate_decimator[2] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, 2=ARF, Intra-layer prediction enabled in layer 1,
         // disabled in layer 2
@@ -327,12 +405,12 @@ int main(int argc, char **argv) {
     {
         // 3-layers, 4-frame period
         int ids[6] = {0,2,1,2};
-        cfg.ts_number_layers     = 3;
-        cfg.ts_periodicity       = 4;
-        cfg.ts_rate_decimator[0] = 4;
-        cfg.ts_rate_decimator[1] = 2;
-        cfg.ts_rate_decimator[2] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 3;
+        cfg[0].ts_periodicity       = 4;
+        cfg[0].ts_rate_decimator[0] = 4;
+        cfg[0].ts_rate_decimator[1] = 2;
+        cfg[0].ts_rate_decimator[2] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         // 0=L, 1=GF, 2=ARF, Intra-layer prediction enabled
         layer_flags[0] = VPX_EFLAG_FORCE_KF  |
@@ -351,14 +429,14 @@ int main(int argc, char **argv) {
 
         // 5-layers, 16-frame period
         int ids[16] = {0,4,3,4,2,4,3,4,1,4,3,4,2,4,3,4};
-        cfg.ts_number_layers     = 5;
-        cfg.ts_periodicity       = 16;
-        cfg.ts_rate_decimator[0] = 16;
-        cfg.ts_rate_decimator[1] = 8;
-        cfg.ts_rate_decimator[2] = 4;
-        cfg.ts_rate_decimator[3] = 2;
-        cfg.ts_rate_decimator[4] = 1;
-        memcpy(cfg.ts_layer_id, ids, sizeof(ids));
+        cfg[0].ts_number_layers     = 5;
+        cfg[0].ts_periodicity       = 16;
+        cfg[0].ts_rate_decimator[0] = 16;
+        cfg[0].ts_rate_decimator[1] = 8;
+        cfg[0].ts_rate_decimator[2] = 4;
+        cfg[0].ts_rate_decimator[3] = 2;
+        cfg[0].ts_rate_decimator[4] = 1;
+        memcpy(cfg[0].ts_layer_id, ids, sizeof(ids));
 
         layer_flags[0]  = VPX_EFLAG_FORCE_KF;
         layer_flags[1]  =
@@ -386,80 +464,160 @@ int main(int argc, char **argv) {
     default:
         break;
     }
+#endif
 
     // Open input file
     if(!(infile = fopen(argv[1], "rb")))
         die("Failed to open %s for reading", argv[1]);
 
     // Open an output file for each stream
-    for (i=0; i<cfg.ts_number_layers; i++)
+#if REUSE_PARTITION
+    for (i=0; i<NUM_ENCODES; i++)
+#else
+    for (i=0; i<cfg[0].ts_number_layers; i++)
+#endif
     {
         char file_name[512];
         sprintf (file_name, "%s_%d.ivf", argv[2], i);
         if (!(outfile[i] = fopen(file_name, "wb")))
             die("Failed to open %s for writing", file_name);
-        write_ivf_file_header(outfile[i], &cfg, 0);
     }
 
-    // Initialize codec
-    if (vpx_codec_enc_init (&codec, interface, &cfg, 0))
-        die_codec (&codec, "Failed to initialize encoder");
+#if REUSE_PARTITION
+    for (i=1; i<NUM_ENCODES; i++)
+    {
+        memcpy(&cfg[i], &cfg[0], sizeof(vpx_codec_enc_cfg_t));
+        cfg[i].copy_flag = 0;
+    }
+#endif
 
-    // Cap CPU & first I-frame size
-    vpx_codec_control (&codec, VP8E_SET_CPUUSED, -6);
-    vpx_codec_control (&codec, VP8E_SET_MAX_INTRA_BITRATE_PCT, 600);
+    for (i=0; i<NUM_ENCODES; i++)
+    {
+#if REUSE_PARTITION
+        if (!sscanf(argv[6+i], "%d", &cfg[i].rc_target_bitrate))
+            die ("Invalid data rate %s", argv[6+i]);
+        cfg[i].fp_size = fp_size;
+        cfg[i].q_data = q_data;
+        cfg[i].reuse_map = reuse_map;
+#endif
+        write_ivf_file_header(outfile[i], &cfg[i], 0);
+        // Initialize codec
+        if (vpx_codec_enc_init (&codec[i], interface, &cfg[i], 0))
+            die_codec (&codec[i], "Failed to initialize encoder");
+
+        // Cap CPU & first I-frame size
+        vpx_codec_control (&codec[i], VP8E_SET_CPUUSED, -6);
+        vpx_codec_control (&codec[i], VP8E_SET_MAX_INTRA_BITRATE_PCT, 600);
+    }
 
     frame_avail = 1;
     while (frame_avail || got_data) {
-        vpx_codec_iter_t iter = NULL;
-        const vpx_codec_cx_pkt_t *pkt;
-
-        flags = layer_flags[frame_cnt % cfg.ts_periodicity];
-
+        vpx_codec_iter_t iter[NUM_ENCODES] = {NULL};
+        const vpx_codec_cx_pkt_t *pkt[NUM_ENCODES];
+#if !REUSE_PARTITION
+        flags = layer_flags[frame_cnt[0] % cfg[0].ts_periodicity];
+#endif
         frame_avail = read_frame(infile, &raw);
-        if (vpx_codec_encode(&codec, frame_avail? &raw : NULL, frame_cnt,
-                            1, flags, VPX_DL_REALTIME))
-            die_codec(&codec, "Failed to encode frame");
+        for (i=0; i< NUM_ENCODES; i++)
+        {
+            if (vpx_codec_encode(&codec[i], frame_avail? &raw : NULL, frame_cnt[i],
+                                1, flags, VPX_DL_REALTIME))
+                die_codec(&codec[i], "Failed to encode frame");
 
-        // Reset KF flag
-        layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
+#if !REUSE_PARTITION
+            // Reset KF flag
+            layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
+#endif
+            got_data = 0;
+            while ( (pkt[i] = vpx_codec_get_cx_data(&codec[i], &iter[i])) ) {
+                got_data = 1;
+                switch (pkt[i]->kind) {
+                case VPX_CODEC_CX_FRAME_PKT:
+#if REUSE_PARTITION
+                        if(cfg[i].copy_flag==1)
+                        {
+                            write_ivf_frame_header(outfile[i], pkt[i]);
+                            vpx_memcpy(mv_data,pkt[i]->data.frame.buf,*fp_size);
+                            datasize +=pkt[i]->data.raw.sz;
+                        }
+                        else
+                        {
+                            int frame_size;
+                            write_ivf_frame_header(outfile[i], pkt[i]);
+                            datasize +=pkt[i]->data.raw.sz;
+                            frame_size = pkt[i]->data.frame.sz + *fp_size;
+                            if(!fseek(outfile[i], add_size , SEEK_SET));
+                            if(fwrite(&frame_size, 1, 4, outfile[i]));
+                            if(!fseek(outfile[i], add_size + 12 , SEEK_SET));
+                            vpx_memcpy(mv_data+3+fp_size[2],q_data+3+fp_size[2],fp_size[4]);
+                            if(fwrite(mv_data, 1, *fp_size,outfile[i]));
+                            add_size += 12 + frame_size;
+                            //fwrite(q_data+3+fp_size[2],1,fp_size[4],datafile);
 
-        got_data = 0;
-        while ( (pkt = vpx_codec_get_cx_data(&codec, &iter)) ) {
-            got_data = 1;
-            switch (pkt->kind) {
-            case VPX_CODEC_CX_FRAME_PKT:
-                for (i=cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity];
-                                              i<cfg.ts_number_layers; i++)
-                {
-                    write_ivf_frame_header(outfile[i], pkt);
-                    if (fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz,
-                              outfile[i]));
-                    frames_in_layer[i]++;
+                        }
+                        //printf("datasize %ld\n",datasize);
+                        if(fwrite(pkt[i]->data.frame.buf, 1, pkt[i]->data.frame.sz,
+                                  outfile[i]));
+#else
+                    for (j=cfg[i].ts_layer_id[frame_cnt[i] % cfg[i].ts_periodicity];
+                                                  j<cfg[i].ts_number_layers; j++)
+                    {
+                        write_ivf_frame_header(outfile[j], pkt[i]);
+                        if (fwrite(pkt[i]->data.frame.buf, 1, pkt[i]->data.frame.sz,
+                                  outfile[j]));
+                        frames_in_layer[j]++;
+                    }
+#endif
+                    break;
+                default:
+                    break;
                 }
-                break;
-            default:
-                break;
+                printf (pkt[i]->kind == VPX_CODEC_CX_FRAME_PKT
+                        && (pkt[i]->data.frame.flags & VPX_FRAME_IS_KEY)? "K":".");
+                fflush (stdout);
             }
-            printf (pkt->kind == VPX_CODEC_CX_FRAME_PKT
-                    && (pkt->data.frame.flags & VPX_FRAME_IS_KEY)? "K":".");
-            fflush (stdout);
+            frame_cnt[i]++;
         }
-        frame_cnt++;
     }
     printf ("\n");
     fclose (infile);
 
-    printf ("Processed %d frames.\n",frame_cnt-1);
-    if (vpx_codec_destroy(&codec))
-            die_codec (&codec, "Failed to destroy codec");
+#if REUSE_PARTITION
+    vpx_free(cfg[0].reuse_info);
+    cfg[0].reuse_info = NULL;
+    vpx_free(cfg[0].reuse_prob);
+    cfg[0].reuse_prob = NULL;
+    vpx_free(cfg[0].fp_size);
+    cfg[0].fp_size = NULL;
+    vpx_free(mv_data);
+    vpx_free(cfg[0].q_data);
+    cfg[0].q_data = NULL;
+    vpx_free(cfg[0].reuse_map);
+    cfg[0].reuse_map = NULL;
+    fprintf(speedfile,"%ld\n", datasize);
+    fclose(speedfile);
+#endif
 
-    // Try to rewrite the output file headers with the actual frame count
-    for (i=0; i<cfg.ts_number_layers; i++)
+    for (i=0; i< NUM_ENCODES; i++)
     {
+
+        printf ("Processed %d frames.\n",frame_cnt[i]-1);
+        if (vpx_codec_destroy(&codec[i]))
+                die_codec (&codec[i], "Failed to destroy codec");
+
+        // Try to rewrite the output file headers with the actual frame count
+#if REUSE_PARTITION
         if (!fseek(outfile[i], 0, SEEK_SET))
-            write_ivf_file_header (outfile[i], &cfg, frames_in_layer[i]);
-        fclose (outfile[i]);
+                write_ivf_file_header (outfile[i], &cfg[i], frame_cnt[i]-1);
+            fclose (outfile[i]);
+#else
+        for (j=0; j<cfg[0].ts_number_layers; j++)
+        {
+            if (!fseek(outfile[j], 0, SEEK_SET))
+                write_ivf_file_header (outfile[j], &cfg[i], frames_in_layer[j]);
+            fclose (outfile[j]);
+        }
+#endif
     }
 
     return EXIT_SUCCESS;

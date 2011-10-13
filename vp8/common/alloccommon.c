@@ -189,8 +189,11 @@ void vp8_create_common(VP8_COMMON *oci)
 
     vp8_init_mbmode_probs(oci);
     vp8_default_bmode_probs(oci->fc.bmode_prob);
-
+#if REUSE_PARTITION
+    oci->mb_no_coeff_skip = 0;
+#else
     oci->mb_no_coeff_skip = 1;
+#endif
     oci->no_lpf = 0;
     oci->filter_type = NORMAL_LOOPFILTER;
     oci->use_bilinear_mc_filter = 0;

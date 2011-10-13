@@ -25,6 +25,7 @@
 
 #include "defaultcoefcounts.h"
 
+void reuse_coef_probs(VP8_COMP *);
 const int vp8cx_base_skip_false_prob[128] =
 {
     255, 255, 255, 255, 255, 255, 255, 255,
@@ -1506,6 +1507,22 @@ static void update_coef_probs(VP8_COMP *cpi)
     while (++i < BLOCK_TYPES);
 
 }
+
+#if REUSE_PARTITION
+void reuse_coef_probs(VP8_COMP *cpi)
+{
+    if(cpi->oxcf.copy_flag==1)
+    {
+        vpx_memcpy(&cpi->oxcf.reuse_prob->reuse_fc_coef_probs,&cpi->common.fc.coef_probs,sizeof(cpi->common.fc.coef_probs));
+    }
+    else
+    {
+        vpx_memcpy(&cpi->common.fc.coef_probs,&cpi->oxcf.reuse_prob->reuse_fc_coef_probs,sizeof(cpi->common.fc.coef_probs));
+    }
+
+}
+#endif
+
 #ifdef PACKET_TESTING
 FILE *vpxlogc = 0;
 #endif
@@ -1534,9 +1551,17 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     vp8_writer *const bc = & cpi->bc;
     MACROBLOCKD *const xd = & cpi->mb.e_mbd;
     int extra_bytes_packed = 0;
-
-    unsigned char *cx_data = dest;
+    unsigned char *cx_data;
     const int *mb_feature_data_bits;
+
+#if REUSE_PARTITION
+    if(cpi->oxcf.copy_flag==1)
+        cx_data = dest;
+    else
+        cx_data = cpi->oxcf.q_data;
+#else
+    cx_data = dest;
+#endif
 
     oh.show_frame = (int) pc->show_frame;
     oh.type = (int)pc->frame_type;
@@ -1781,59 +1806,85 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
         active_section = 7;
 
 #endif
+#if REUSE_PARTITION
+    cpi->oxcf.fp_size[1] = bc->pos;
+    cpi->oxcf.fp_size[2] = extra_bytes_packed;
 
-    vp8_clear_system_state();  //__asm emms;
-
-    //************************************************
-    // save a copy for later refresh
+    if(cpi->oxcf.copy_flag==1)
     {
-        vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
-    }
-
-    update_coef_probs(cpi);
-
-#ifdef ENTROPY_STATS
-    active_section = 2;
+        cpi->oxcf.fp_size[4] = bc->pos + 2;
 #endif
 
-    // Write out the mb_no_coeff_skip flag
-    vp8_write_bit(bc, pc->mb_no_coeff_skip);
+        vp8_clear_system_state();  //__asm emms;
 
-    if (pc->frame_type == KEY_FRAME)
-    {
-        write_kfmodes(cpi);
+        //************************************************
+        // save a copy for later refresh
+        {
+            vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
+        }
+
+        update_coef_probs(cpi);
+
 
 #ifdef ENTROPY_STATS
-        active_section = 8;
+        active_section = 2;
 #endif
+
+        // Write out the mb_no_coeff_skip flag
+        vp8_write_bit(bc, pc->mb_no_coeff_skip);
+
+        if (pc->frame_type == KEY_FRAME)
+        {
+            write_kfmodes(cpi);
+
+#ifdef ENTROPY_STATS
+            active_section = 8;
+#endif
+        }
+        else
+        {
+            pack_inter_mode_mvs(cpi);
+
+#ifdef ENTROPY_STATS
+            active_section = 1;
+#endif
+        }
+
+#if REUSE_PARTITION
+        reuse_coef_probs(cpi);
+#endif
+        vp8_stop_encode(bc);
+
+        oh.first_partition_length_in_bytes = cpi->bc.pos;
+
+        /* update frame tag */
+        {
+            int v = (oh.first_partition_length_in_bytes << 5) |
+                    (oh.show_frame << 4) |
+                    (oh.version << 1) |
+                    oh.type;
+
+            dest[0] = v;
+            dest[1] = v >> 8;
+            dest[2] = v >> 16;
+        }
+
+        *size = VP8_HEADER_SIZE + extra_bytes_packed + cpi->bc.pos;
+        cpi->partition_sz[0] = *size;
+
+#if REUSE_PARTITION
+        cpi->oxcf.fp_size[0] = *size;
     }
     else
     {
-        pack_inter_mode_mvs(cpi);
-
-#ifdef ENTROPY_STATS
-        active_section = 1;
+        vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
+        reuse_coef_probs(cpi);
+        vp8_stop_encode(bc);
+        bc->pos = 0;
+        cx_data = dest;
+    }
 #endif
-    }
 
-    vp8_stop_encode(bc);
-
-    oh.first_partition_length_in_bytes = cpi->bc.pos;
-
-    /* update frame tag */
-    {
-        int v = (oh.first_partition_length_in_bytes << 5) |
-                (oh.show_frame << 4) |
-                (oh.version << 1) |
-                oh.type;
-
-        dest[0] = v;
-        dest[1] = v >> 8;
-        dest[2] = v >> 16;
-    }
-
-    *size = VP8_HEADER_SIZE + extra_bytes_packed + cpi->bc.pos;
-    cpi->partition_sz[0] = *size;
 
     if (pc->multi_token_partition != ONE_PARTITION)
     {
