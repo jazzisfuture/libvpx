@@ -206,6 +206,14 @@ extern "C"
         unsigned int rate_decimator[MAX_PERIODICITY];
         unsigned int periodicity;
         unsigned int layer_id[MAX_PERIODICITY];
+#if REUSE_PARTITION
+        unsigned int copy_flag;
+        REUSE_INFO   *reuse_info;
+        REUSE_PROB   *reuse_prob;
+        long int     *fp_size;
+        unsigned char *q_data;
+        unsigned char *reuse_map;
+#endif
 
     } VP8_CONFIG;
 

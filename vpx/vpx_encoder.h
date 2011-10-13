@@ -31,7 +31,7 @@ extern "C" {
 #ifndef VPX_ENCODER_H
 #define VPX_ENCODER_H
 #include "vpx_codec.h"
-
+#include "vp8/common/blockd.h"
 #define MAX_PERIODICITY 16
 #define MAX_LAYERS       5
 
@@ -634,6 +634,15 @@ extern "C" {
          * then ts_layer_id = (0,1,0,1,0,1,0,1).
          */
         unsigned int           ts_layer_id[MAX_PERIODICITY];
+
+#if REUSE_PARTITION
+        unsigned int          copy_flag;
+        REUSE_INFO            *reuse_info;
+        REUSE_PROB            *reuse_prob;
+        long int              *fp_size;
+        unsigned char         *q_data;
+        unsigned char         *reuse_map;
+#endif
 
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
