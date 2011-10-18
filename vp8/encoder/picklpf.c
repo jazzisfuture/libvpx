@@ -57,11 +57,14 @@ vp8_yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst
 
     linestocopy <<= 4;
 
-    yoffset  = ystride * ((yheight >> 5) * 16 - 8);
+    /* partial filter can modify 3 pixels above => copy 3 extra lines */
+    linestocopy += 3;
+
+    yoffset  = ystride * ((yheight >> 5) * 16 - 3);
     src_y = src_ybc->y_buffer + yoffset;
     dst_y = dst_ybc->y_buffer + yoffset;
 
-    vpx_memcpy(dst_y, src_y, ystride *(linestocopy + 16));
+    vpx_memcpy(dst_y, src_y, ystride * linestocopy);
 }
 
 static int vp8_calc_partial_ssl_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest, int Fraction, const vp8_variance_rtcd_vtable_t *rtcd)
