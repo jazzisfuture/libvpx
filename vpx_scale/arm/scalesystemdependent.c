@@ -20,7 +20,7 @@ extern void vp8_yv12_extend_frame_borders_neon(YV12_BUFFER_CONFIG *ybf);
 
 void (*vp8_yv12_copy_frame_yonly_ptr)(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
 extern void vp8_yv12_copy_frame_yonly(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
-extern void vp8_yv12_copy_frame_yonly_neon(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
+extern void vp8_yv12_copy_frame_yonly_no_extend_frame_borders_neon(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
 
 void (*vp8_yv12_copy_frame_ptr)(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
 extern void vp8_yv12_copy_frame(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc);
@@ -89,7 +89,7 @@ void vp8_scale_machine_specific_config()
 #endif
     {
         vp8_yv12_extend_frame_borders_ptr = vp8_yv12_extend_frame_borders_neon;
-        vp8_yv12_copy_frame_yonly_ptr     = vp8_yv12_copy_frame_yonly_neon;
+        vp8_yv12_copy_frame_yonly_ptr     = vp8_yv12_copy_frame_yonly_no_extend_frame_borders_neon
         vp8_yv12_copy_frame_ptr           = vp8_yv12_copy_frame_neon;
     }
 #endif

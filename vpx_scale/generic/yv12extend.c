@@ -275,6 +275,4 @@ vp8_yv12_copy_frame_yonly(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_y
         source += src_ybc->y_stride;
         dest   += dst_ybc->y_stride;
     }
-
-    extend_frame_borders_yonly(dst_ybc);
 }
