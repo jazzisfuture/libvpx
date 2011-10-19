@@ -577,6 +577,16 @@ void vp8_optimize_mbuv(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd)
     }
 }
 
+int is_buffer_all_zero(short *buf, int count)
+{
+    int non_zero_cnt = 0;
+    int i; 
+    for(i=0;i<count;i++)
+        non_zero_cnt += (buf[i]!=0);
+
+    return (non_zero_cnt==0);
+}
+
 void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
 {
     vp8_build_inter_predictors_mb(&x->e_mbd);
@@ -591,6 +601,15 @@ void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
         optimize_mb(x, rtcd);
 
     vp8_inverse_transform_mb(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+
+    if(x->e_mbd.mode_info_context->mbmi.mode != SPLITMV &&
+        x->e_mbd.block[24].eob!=0 &&
+        is_buffer_all_zero(x->e_mbd.diff, 256) )
+    {
+        x->e_mbd.block[24].eob = 0;
+        vpx_memset(&x->e_mbd.qcoeff[384],0,32);
+        vpx_memset(&x->e_mbd.dqcoeff[384],0,32);
+    }
 
     RECON_INVOKE(&rtcd->common->recon, recon_mb)
         (IF_RTCD(&rtcd->common->recon), &x->e_mbd);

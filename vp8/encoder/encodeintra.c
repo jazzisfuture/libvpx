@@ -89,6 +89,7 @@ void vp8_encode_intra4x4mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *mb)
     return;
 }
 
+extern int is_buffer_all_zero(short *buf, int count);
 void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
 {
     BLOCK *b = &x->block[0];
@@ -105,6 +106,16 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
         vp8_optimize_mby(x, rtcd);
 
     vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+
+    if(x->e_mbd.mode_info_context->mbmi.mode != B_PRED &&
+        x->e_mbd.block[24].eob!=0 &&
+        is_buffer_all_zero(x->e_mbd.diff, 256) )
+    {
+        x->e_mbd.block[24].eob = 0;
+        vpx_memset(&x->e_mbd.qcoeff[384],0,32);
+        vpx_memset(&x->e_mbd.dqcoeff[384],0,32);
+    }
+
 
     RECON_INVOKE(&rtcd->common->recon, recon_mby)
         (IF_RTCD(&rtcd->common->recon), &x->e_mbd);
