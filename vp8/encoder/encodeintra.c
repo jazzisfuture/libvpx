@@ -89,13 +89,15 @@ void vp8_encode_intra4x4mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *mb)
     return;
 }
 
+extern void vp8_check_reset_2nd_coeffs(MACROBLOCKD *xd);
 void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
 {
     BLOCK *b = &x->block[0];
 
     RECON_INVOKE(&rtcd->common->recon, build_intra_predictors_mby)(&x->e_mbd);
 
-    ENCODEMB_INVOKE(&rtcd->encodemb, submby)(x->src_diff, *(b->base_src), x->e_mbd.predictor, b->src_stride);
+    ENCODEMB_INVOKE(&rtcd->encodemb, submby)(x->src_diff, *(b->base_src),
+        x->e_mbd.predictor, b->src_stride);
 
     vp8_transform_intra_mby(x);
 
@@ -105,6 +107,9 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
         vp8_optimize_mby(x, rtcd);
 
     vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+
+    if(x->e_mbd.mode_info_context->mbmi.mode != B_PRED )
+        vp8_check_reset_2nd_coeffs(&x->e_mbd);
 
     RECON_INVOKE(&rtcd->common->recon, recon_mby)
         (IF_RTCD(&rtcd->common->recon), &x->e_mbd);
