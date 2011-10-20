@@ -26,7 +26,6 @@ DEFINE(detok_L,                                 offsetof(DETOK, L));
 DEFINE(detok_qcoeff_start_ptr,                  offsetof(DETOK, qcoeff_start_ptr));
 DEFINE(detok_current_bc,                        offsetof(DETOK, current_bc));
 DEFINE(detok_coef_probs,                        offsetof(DETOK, coef_probs));
-DEFINE(detok_eob,                               offsetof(DETOK, eob));
 
 DEFINE(bool_decoder_user_buffer_end,            offsetof(BOOL_DECODER, user_buffer_end));
 DEFINE(bool_decoder_user_buffer,                offsetof(BOOL_DECODER, user_buffer));

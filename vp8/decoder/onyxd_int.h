@@ -58,8 +58,6 @@ typedef struct
 
     vp8_prob const *coef_probs[4];
 
-    UINT8 eob[25];
-
 } DETOK;
 
 typedef struct VP8Decompressor
