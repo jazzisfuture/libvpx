@@ -577,6 +577,30 @@ void vp8_optimize_mbuv(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd)
     }
 }
 
+static int is_buffer_all_zero(short *buf, int count)
+{
+    int i;
+    for(i=0;i<count;i++)
+    {
+        if(buf[i])
+            return 0;
+    }
+    return 1;
+}
+
+void vp8_check_reset_2nd_coeffs(MACROBLOCKD *xd)
+{
+    BLOCKD *bd = &xd->block[24];
+    if(bd->eob!=0 && is_buffer_all_zero(xd->diff, 256))
+    {
+        int eob_pos = (bd->eob<16)? vp8_default_zig_zag1d[bd->eob]:16;
+        vpx_memset(bd->qcoeff,0,eob_pos);
+        vpx_memset(bd->dqcoeff,0,eob_pos);
+        bd->eob = 0;
+    }
+}
+
+
 static void recon_dcblock(MACROBLOCKD *x)
 {
     BLOCKD *b = &x->block[24];
@@ -636,8 +660,8 @@ static void inverse_transform_mb(const vp8_idct_rtcd_vtable_t *rtcd,
                              *(b->base_dst) + b->dst, b->dst_stride);
         }
     }
-
 }
+
 void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
 {
     vp8_build_inter_predictors_mb_e(&x->e_mbd);
@@ -652,6 +676,9 @@ void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x)
         optimize_mb(x, rtcd);
 
     inverse_transform_mb(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+
+    if(x->e_mbd.mode_info_context->mbmi.mode != SPLITMV)
+        vp8_check_reset_2nd_coeffs(&x->e_mbd);
 
 }
 
