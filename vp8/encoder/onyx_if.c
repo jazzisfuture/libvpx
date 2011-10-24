@@ -4907,13 +4907,16 @@ static int frame_is_reference(const VP8_COMP *cpi)
 }
 
 
-int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned long *size, unsigned char *dest, unsigned char *dest_end, int64_t *time_stamp, int64_t *time_end, int flush)
+int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags,
+                            unsigned long *size, unsigned char *dest,
+                            unsigned char *dest_end, int64_t *time_stamp,
+                            int64_t *time_end, int flush)
 {
 #if HAVE_ARMV7
     int64_t store_reg[8];
 #endif
     VP8_COMP *cpi = (VP8_COMP *) ptr;
-    VP8_COMMON *cm = &cpi->common;
+    VP8_COMMON *cm;
     struct vpx_usec_timer  tsctimer;
     struct vpx_usec_timer  ticktimer;
     struct vpx_usec_timer  cmptimer;
@@ -4922,13 +4925,7 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
     if (!cpi)
         return -1;
 
-    if (setjmp(cpi->common.error.jmp)){
-        cpi->common.error.setjmp = 0;
-        return VPX_CODEC_CORRUPT_FRAME;
-    }
-
-    cpi->bc.error = &cpi->common.error;
-    cpi->common.error.setjmp = 1;
+    cm = &cpi->common;
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
@@ -4938,6 +4935,24 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
         vp8_push_neon(store_reg);
     }
 #endif
+
+    if (setjmp(cm->error.jmp))
+    {
+        cm->error.setjmp = 0;
+
+#if HAVE_ARMV7
+#if CONFIG_RUNTIME_CPU_DETECT
+        if (cm->rtcd.flags & HAS_NEON)
+#endif
+        {
+            vp8_pop_neon(store_reg);
+        }
+#endif
+
+        return VPX_CODEC_CORRUPT_FRAME;
+    }
+
+    cm->error.setjmp = 1;
 
     vpx_usec_timer_start(&cmptimer);
 

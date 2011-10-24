@@ -24,17 +24,20 @@
 
 ; r0 BOOL_CODER *br
 ; r1 unsigned char *source
-
+; r2 unsigned char *buffer_end
+; r3 struct vpx_internal_error_info *error
 |vp8_start_encode| PROC
+    str     r1,  [r0, #vp8_writer_buffer]
+    str     r2,  [r0, #vp8_writer_buffer_end]
+    str     r3,  [r0, #vp8_writer_error]
     mov     r12, #0
-    mov     r3,  #255
+    mov     r1,  #255
     mvn     r2,  #23
     str     r12, [r0, #vp8_writer_lowvalue]
-    str     r3,  [r0, #vp8_writer_range]
+    str     r1,  [r0, #vp8_writer_range]
     str     r12, [r0, #vp8_writer_value]
     str     r2,  [r0, #vp8_writer_count]
     str     r12, [r0, #vp8_writer_pos]
-    str     r1,  [r0, #vp8_writer_buffer]
     bx      lr
     ENDP
 

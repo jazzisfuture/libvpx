@@ -38,7 +38,9 @@ typedef struct
     unsigned long bit_counter;
 } BOOL_CODER;
 
-extern void vp8_start_encode(BOOL_CODER *bc, unsigned char *buffer, unsigned char *buffer_end);
+extern void vp8_start_encode(BOOL_CODER *bc, unsigned char *buffer,
+                             unsigned char *buffer_end,
+                             struct vpx_internal_error_info *error);
 
 extern void vp8_encode_value(BOOL_CODER *br, int data, int bits);
 extern void vp8_stop_encode(BOOL_CODER *bc);
@@ -56,7 +58,7 @@ static int validate_buffer(const unsigned char *start,
         return 1;
     else
         vpx_internal_error(error, VPX_CODEC_CORRUPT_FRAME,
-            "Truncated packet or corrupt partition ");
+            "Output buffer overflow");
 
     return 0;
 }

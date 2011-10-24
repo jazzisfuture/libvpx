@@ -367,12 +367,15 @@ static void pack_tokens_into_partitions_c(VP8_COMP *cpi, unsigned char *cx_data,
     unsigned int shift;
     vp8_writer *w = &cpi->bc2;
     *size = 3 * (num_part - 1);
+
+    validate_buffer(ptr, *size, ptr_end, w->error);
+
     cpi->partition_sz[0] += *size;
     ptr = cx_data + (*size);
 
     for (i = 0; i < num_part; i++)
     {
-        vp8_start_encode(w, ptr, ptr_end);
+        vp8_start_encode(w, ptr, ptr_end, &cpi->common.error);
         {
             unsigned int split;
             int count = w->count;
@@ -1602,7 +1605,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         extra_bytes_packed = 7;
         cx_data += extra_bytes_packed ;
 
-        vp8_start_encode(bc, cx_data, cx_data_end);
+        vp8_start_encode(bc, cx_data, cx_data_end, &pc->error);
 
         // signal clr type
         vp8_write_bit(bc, pc->clr_type);
@@ -1610,7 +1613,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
 
     }
     else
-        vp8_start_encode(bc, cx_data, cx_data_end);
+        vp8_start_encode(bc, cx_data, cx_data_end, &pc->error);
 
 
     // Signal whether or not Segmentation is enabled
@@ -1844,8 +1847,12 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
 
     vp8_stop_encode(bc);
 
-    oh.first_partition_length_in_bytes = cpi->bc.pos;
+    /* 19 bits reserved for first partition length */
+    if (bc->pos >> 19 != 0)
+        vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+            "First partition length overflow");
 
+    oh.first_partition_length_in_bytes = bc->pos;
     /* update frame tag */
     {
         int v = (oh.first_partition_length_in_bytes << 5) |
@@ -1858,7 +1865,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         dest[2] = v >> 16;
     }
 
-    *size = VP8_HEADER_SIZE + extra_bytes_packed + cpi->bc.pos;
+    *size = VP8_HEADER_SIZE + extra_bytes_packed + bc->pos;
     cpi->partition_sz[0] = *size;
 
     if (pc->multi_token_partition != ONE_PARTITION)
@@ -1867,13 +1874,15 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         int asize;
         num_part = 1 << pc->multi_token_partition;
 
-        pack_tokens_into_partitions(cpi, cx_data + bc->pos, cx_data_end, num_part, &asize);
+        pack_tokens_into_partitions(cpi, cx_data + bc->pos, cx_data_end,
+                                    num_part, &asize);
 
         *size += asize;
     }
     else
     {
-        vp8_start_encode(&cpi->bc2, cx_data + bc->pos, cx_data_end);
+        vp8_start_encode(&cpi->bc2, cx_data + bc->pos, cx_data_end,
+                         &pc->error);
 
 #if CONFIG_MULTITHREAD
         if (cpi->b_multi_threaded)

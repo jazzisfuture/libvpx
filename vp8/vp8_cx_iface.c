@@ -810,7 +810,11 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
                                                   !img);
 
             if(comp_data_state == VPX_CODEC_CORRUPT_FRAME)
+            {
+                VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
+                update_error_state(ctx, &cpi->common.error);
                 return VPX_CODEC_CORRUPT_FRAME;
+            }
             else if(comp_data_state == -1)
                 break;
 
