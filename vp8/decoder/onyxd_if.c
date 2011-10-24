@@ -17,7 +17,6 @@
 #include "onyxd_int.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/alloccommon.h"
-#include "vpx_scale/yv12extend.h"
 #include "vp8/common/loopfilter.h"
 #include "vp8/common/swapyv12buffer.h"
 #include "vp8/common/g_common.h"

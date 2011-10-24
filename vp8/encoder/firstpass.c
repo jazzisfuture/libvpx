@@ -21,7 +21,6 @@
 #include "encodemb.h"
 #include "vp8/common/extend.h"
 #include "vp8/common/systemdependent.h"
-#include "vpx_scale/yv12extend.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/swapyv12buffer.h"
 #include <stdio.h>
