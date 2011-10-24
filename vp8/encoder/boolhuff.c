@@ -40,7 +40,9 @@ const unsigned int vp8_prob_cost[256] =
     22,   21,   19,   18,   16,   15,   13,   12,   10,    9,    7,    6,    4,    3,    1,   1
 };
 
-void vp8_start_encode(BOOL_CODER *br, unsigned char *source, unsigned char *source_end)
+void vp8_start_encode(BOOL_CODER *br, unsigned char *source,
+                      unsigned char *source_end,
+                      struct vpx_internal_error_info *error)
 {
 
     br->lowvalue   = 0;
@@ -50,6 +52,7 @@ void vp8_start_encode(BOOL_CODER *br, unsigned char *source, unsigned char *sour
     br->buffer     = source;
     br->buffer_end = source_end;
     br->pos        = 0;
+    br->error      = error;
 }
 
 void vp8_stop_encode(BOOL_CODER *br)
