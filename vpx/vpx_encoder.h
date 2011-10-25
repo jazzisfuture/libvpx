@@ -635,6 +635,36 @@ extern "C" {
          */
         unsigned int           ts_layer_id[MAX_PERIODICITY];
 
+        /*
+         * Multi-resolution encoding support
+         */
+
+        /*!\brief Number of total resolutions encoded
+         *
+         * This value specifies the number of total resolutions need to be
+         * encoded.
+         */
+        unsigned int           mr_total_resoutions;
+
+        /*!\brief Current encoder ID
+         *
+         * This value specifies the current encoder ID.
+         */
+        unsigned int           mr_encoder_id;
+
+        /*!\brief Down-sampling factor
+         *
+         * This value specifies the down-sampling factor from current higher
+         * level to the lower level. For example, 8/3 means 3*higher_level_
+         * image_width equals 8*lower_level_image_width.
+         */
+        struct vpx_rational    mr_down_sampling_factor;
+
+        /*!\brief memory location to store low-resolution encoder's mode info.
+         *
+         * This value specifies the mode info storing location.
+         */
+        void*                  mr_low_res_mode_info;
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
 
