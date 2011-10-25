@@ -635,6 +635,36 @@ extern "C" {
          */
         unsigned int           ts_layer_id[MAX_PERIODICITY];
 
+        /*
+         * Multi-resolution encoding support
+         */
+
+        /*!\brief Number of total resolutions encoded
+         *
+         * This value specifies the number of total resolutions need to be
+         * encoded.
+         */
+        unsigned int           mr_total_resoutions;
+
+        /*!\brief Current encoder ID
+         *
+         * This value specifies the current encoder ID.
+         */
+        unsigned int           mr_encoder_id;
+
+        /*!\brief Down-sampling factor
+         *
+         * This value specifies the down-sampling factor from current higher
+         * level to the lower level. For example, 8/3 means 3*higher_level_
+         * image_width equals 8*lower_level_image_width.
+         */
+        struct vpx_rational    mr_down_sampling_factor;
+
+        /*!\brief memory location to store low-resolution encoder's mode info.
+         *
+         * This value specifies the mode info storing location.
+         */
+        void*                  mr_low_res_mode_info;
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
 
@@ -673,6 +703,44 @@ extern "C" {
      */
 #define vpx_codec_enc_init(ctx, iface, cfg, flags) \
     vpx_codec_enc_init_ver(ctx, iface, cfg, flags, VPX_ENCODER_ABI_VERSION)
+
+
+    /*!\brief Initialize multi-encoder instance
+     *
+     * Initializes multi-encoder context using the given interface. Applications
+     * should call the vpx_codec_enc_init_multi convenience macro instead of this
+     * function directly, to ensure that the ABI version number parameter
+     * is properly initialized.
+     *
+     * In XMA mode (activated by setting VPX_CODEC_USE_XMA in the flags
+     * parameter), the storage pointed to by the cfg parameter must be
+     * kept readable and stable until all memory maps have been set.
+     *
+     * \param[in]    ctx     Pointer to this instance's context.
+     * \param[in]    iface   Pointer to the algorithm interface to use.
+     * \param[in]    cfg     Configuration to use, if known. May be NULL.
+     * \param[in]    flags   Bitfield of VPX_CODEC_USE_* flags
+     * \param[in]    ver     ABI version number. Must be set to
+     *                       VPX_ENCODER_ABI_VERSION
+     * \retval #VPX_CODEC_OK
+     *     The decoder algorithm initialized.
+     * \retval #VPX_CODEC_MEM_ERROR
+     *     Memory allocation failed.
+     */
+    vpx_codec_err_t vpx_codec_enc_init_multi_ver(vpx_codec_ctx_t      *ctx,
+                                                 vpx_codec_iface_t    *iface,
+                                                 vpx_codec_enc_cfg_t  *cfg,
+                                                 int                   num_enc,
+                                                 vpx_codec_flags_t     flags,
+                                                 int                   ver);
+
+
+    /*!\brief Convenience macro for vpx_codec_enc_init_multi_ver()
+     *
+     * Ensures the ABI version parameter is properly set.
+     */
+#define vpx_codec_enc_init_multi(ctx, iface, cfg, num_enc, flags) \
+    vpx_codec_enc_init_multi_ver(ctx, iface, cfg, num_enc, flags, VPX_ENCODER_ABI_VERSION)
 
 
     /*!\brief Get a default configuration

@@ -264,6 +264,10 @@ typedef vpx_fixed_buf_t *
 typedef vpx_image_t *
 (*vpx_codec_get_preview_frame_fn_t)(vpx_codec_alg_priv_t   *ctx);
 
+typedef vpx_codec_err_t
+(*vpx_codec_get_mem_location_fn_t)(const vpx_codec_enc_cfg_t     *cfg,
+                                   void **mem_loc);
+
 /*!\brief usage configuration mapping
  *
  * This structure stores the mapping between usage identifiers and
@@ -309,8 +313,9 @@ struct vpx_codec_iface
         vpx_codec_encode_fn_t              encode;        /**< \copydoc ::vpx_codec_encode_fn_t */
         vpx_codec_get_cx_data_fn_t         get_cx_data;   /**< \copydoc ::vpx_codec_get_cx_data_fn_t */
         vpx_codec_enc_config_set_fn_t      cfg_set;       /**< \copydoc ::vpx_codec_enc_config_set_fn_t */
-        vpx_codec_get_global_headers_fn_t  get_glob_hdrs; /**< \copydoc ::vpx_codec_enc_config_set_fn_t */
+        vpx_codec_get_global_headers_fn_t  get_glob_hdrs; /**< \copydoc ::vpx_codec_get_global_headers_fn_t */
         vpx_codec_get_preview_frame_fn_t   get_preview;   /**< \copydoc ::vpx_codec_get_preview_frame_fn_t */
+        vpx_codec_get_mem_location_fn_t    get_mem_loc;   /**< \copydoc ::vpx_codec_get_mem_location_fn_t */
     } enc;
 };
 

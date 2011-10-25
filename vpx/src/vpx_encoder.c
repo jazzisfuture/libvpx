@@ -66,6 +66,80 @@ vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t      *ctx,
     return SAVE_STATUS(ctx, res);
 }
 
+vpx_codec_err_t vpx_codec_enc_init_multi_ver(vpx_codec_ctx_t      *ctx,
+                                             vpx_codec_iface_t    *iface,
+                                             vpx_codec_enc_cfg_t  *cfg,
+                                             int                   num_enc,
+                                             vpx_codec_flags_t     flags,
+                                             int                   ver)
+{
+    vpx_codec_err_t res = 0;
+
+    if (ver != VPX_ENCODER_ABI_VERSION)
+        res = VPX_CODEC_ABI_MISMATCH;
+    else if (!ctx || !iface || !cfg)
+        res = VPX_CODEC_INVALID_PARAM;
+    else if (iface->abi_version != VPX_CODEC_INTERNAL_ABI_VERSION)
+        res = VPX_CODEC_ABI_MISMATCH;
+    else if (!(iface->caps & VPX_CODEC_CAP_ENCODER))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_XMA) && !(iface->caps & VPX_CODEC_CAP_XMA))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_PSNR)
+             && !(iface->caps & VPX_CODEC_CAP_PSNR))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_OUTPUT_PARTITION)
+             && !(iface->caps & VPX_CODEC_CAP_OUTPUT_PARTITION))
+        res = VPX_CODEC_INCAPABLE;
+    else
+    {
+        int i;
+        void *mem_loc = NULL;
+
+        res = iface->enc.get_mem_loc(cfg, &mem_loc);
+        if (res)
+        {
+            if (ctx)
+                ctx->err = res;
+
+            //free(ctx);   //??? not need
+            return res;
+        }
+
+        for (i = 0; i < num_enc; i++)
+        {
+            cfg->mr_low_res_mode_info = mem_loc;
+            ctx->iface = iface;
+            ctx->name = iface->name;
+            ctx->priv = NULL;
+            ctx->init_flags = flags;
+            ctx->config.enc = cfg;
+            res = ctx->iface->init(ctx);
+
+            if (res)
+            {
+                ctx->err_detail = ctx->priv ? ctx->priv->err_detail : NULL;
+                vpx_codec_destroy(ctx);
+            }
+
+            if (ctx->priv)
+                ctx->priv->iface = ctx->iface;
+
+            if (ctx)
+                ctx->err = res;
+
+            if (res)
+                return res;   //free ctx????
+
+            ctx++;
+            cfg++;
+        }
+
+        return res;
+    }
+
+    return SAVE_STATUS(ctx, res);
+}
 
 
 vpx_codec_err_t  vpx_codec_enc_config_default(vpx_codec_iface_t    *iface,
