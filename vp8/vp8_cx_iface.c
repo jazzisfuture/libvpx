@@ -16,6 +16,7 @@
 #include "vpx/vp8e.h"
 #include "vp8/encoder/firstpass.h"
 #include "vp8/common/onyx.h"
+#include "vp8/common/blockd.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -237,6 +238,19 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
         RANGE_CHECK_HI(cfg, ts_layer_id[i], cfg->ts_number_layers-1);
     }
 
+#if CONFIG_MULTI_RES_ENCODING
+    RANGE_CHECK(cfg, mr_total_resoutions, 1, 16);
+    RANGE_CHECK(cfg, mr_encoder_id, 0, 15);
+    RANGE_CHECK(cfg, mr_down_sampling_factor.num, 1, 1000000000);
+    RANGE_CHECK(cfg, mr_down_sampling_factor.den, 1, cfg->mr_down_sampling_factor.num);
+#else
+    /* validate the following members to be sure that they are not modified. */
+    RANGE_CHECK(cfg, mr_total_resoutions, 1, 1);
+    RANGE_CHECK(cfg, mr_encoder_id, 0, 0);
+    RANGE_CHECK(cfg, mr_down_sampling_factor.num, 1, 1);
+    RANGE_CHECK(cfg, mr_down_sampling_factor.den, 1, 1);
+#endif
+
     return VPX_CODEC_OK;
 }
 
@@ -361,6 +375,14 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
                           sizeof(cfg.ts_rate_decimator));
         memcpy (oxcf->layer_id, cfg.ts_layer_id, sizeof(cfg.ts_layer_id));
     }
+
+#if CONFIG_MULTI_RES_ENCODING
+        oxcf->mr_total_resoutions         = cfg.mr_total_resoutions;
+        oxcf->mr_encoder_id               = cfg.mr_encoder_id;
+        oxcf->mr_down_sampling_factor.num = cfg.mr_down_sampling_factor.num;
+        oxcf->mr_down_sampling_factor.den = cfg.mr_down_sampling_factor.den;
+        oxcf->mr_low_res_mode_info        = cfg.mr_low_res_mode_info;
+#endif
 
     //oxcf->delete_first_pass_file = cfg.g_delete_firstpassfile;
     //strcpy(oxcf->first_pass_file, cfg.g_firstpass_file);
@@ -1110,6 +1132,25 @@ static vpx_codec_err_t vp8e_set_scalemode(vpx_codec_alg_priv_t *ctx,
         return VPX_CODEC_INVALID_PARAM;
 }
 
+static vpx_codec_err_t vp8e_get_mem_loc(const vpx_codec_enc_cfg_t *cfg,
+                                        void **mem_loc)
+{
+    vpx_codec_err_t res;
+
+    int mb_rows = (cfg->g_w >>4) + ((cfg->g_w & 15)?1:0);
+    int mb_cols = (cfg->g_h >>4) + ((cfg->g_h & 15)?1:0);
+
+    *mem_loc = calloc(mb_rows*mb_cols, sizeof(LOWER_RES_INFO));
+    if(!(*mem_loc))
+    {
+        free(*mem_loc);
+        res = VPX_CODEC_MEM_ERROR;
+    }
+    else
+        res = VPX_CODEC_OK;
+
+    return res;
+}
 
 static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
 {
@@ -1197,6 +1238,13 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
         {0},                /* ts_rate_decimator */
         0,                  /* ts_periodicity */
         {0},                /* ts_layer_id */
+/* Currently, the following members are in cfg with/without MULTI_RES_ENCODING. */
+//#if CONFIG_MULTI_RES_ENCODING
+        1,
+        0,
+        {1, 1},
+        NULL,
+//#endif
     }},
     { -1, {NOT_IMPLEMENTED}}
 };
@@ -1230,6 +1278,7 @@ CODEC_INTERFACE(vpx_codec_vp8_cx) =
         vp8e_set_config,
         NOT_IMPLEMENTED,
         vp8e_get_preview,
+        vp8e_get_mem_loc,
     } /* encoder functions */
 };
 
@@ -1314,5 +1363,6 @@ vpx_codec_iface_t vpx_enc_vp8_algo =
         vp8e_set_config,
         NOT_IMPLEMENTED,
         vp8e_get_preview,
+        vp8e_get_mem_loc,
     } /* encoder functions */
 };
