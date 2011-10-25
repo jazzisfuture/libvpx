@@ -56,6 +56,9 @@
 #define VP8_TEMPORAL_ALT_REF 1
 #endif
 
+#define MAX(x,y) (((x)>(y))?(x):(y))
+#define MIN(x,y) (((x)<(y))?(x):(y))
+
 typedef struct
 {
     int kf_indicated;

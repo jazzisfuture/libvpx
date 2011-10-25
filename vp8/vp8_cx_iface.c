@@ -218,6 +218,12 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     }
 #endif
 
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+    RANGE_CHECK(cfg, mr_total_resoutions, 1, 3);
+    RANGE_CHECK(cfg, mr_encoder_id, 0, 2);
+    RANGE_CHECK(cfg, mr_down_sampling_factor, 1, 4);   //???
+#endif
+
     return VPX_CODEC_OK;
 }
 
@@ -329,6 +335,13 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
                                    && cfg.kf_min_dist != cfg.kf_max_dist;
     //oxcf->kf_min_dist         = cfg.kf_min_dis;
     oxcf->key_freq               = cfg.kf_max_dist;
+
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        oxcf->mr_total_resoutions = cfg.mr_total_resoutions;
+        oxcf->mr_encoder_id       = cfg.mr_encoder_id;
+        oxcf->mr_down_sampling_factor = cfg.mr_down_sampling_factor;
+        oxcf->mr_low_res_mode_info    = cfg.mr_low_res_mode_info;
+#endif
 
     //oxcf->delete_first_pass_file = cfg.g_delete_firstpassfile;
     //strcpy(oxcf->first_pass_file, cfg.g_firstpass_file);
@@ -1142,6 +1155,13 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
 #if VPX_ENCODER_ABI_VERSION == (1 + VPX_CODEC_ABI_VERSION)
         1,                  /* g_delete_first_pass_file */
         "vp8.fpf"           /* first pass filename */
+#endif
+
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        1,
+        0,
+        1,
+        NULL,
 #endif
     }},
     { -1, {NOT_IMPLEMENTED}}

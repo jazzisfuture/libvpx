@@ -32,6 +32,7 @@ extern "C" {
 #define VPX_ENCODER_H
 #include "vpx_codec.h"
 
+#define ENABLE_MULTI_RESOLUTION_ENCODING 1
 
     /*!\brief Current ABI version number
      *
@@ -592,6 +593,36 @@ extern "C" {
          */
         unsigned int           kf_max_dist;
 
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        /*
+         * Multi-resolution encoding support
+         */
+
+        /*!\brief Number of total resolutions encoded
+         *
+         * This value specifies the number of total resolutions need to be encoded.
+         */
+        unsigned int           mr_total_resoutions;
+
+        /*!\brief Current encoder ID
+         *
+         * This value specifies the current encoder ID.
+         */
+        unsigned int           mr_encoder_id;
+
+        /*!\brief Down-sampling factor
+         *
+         * This value specifies the down-sampling factor from current level to
+         * the lower level.
+         */
+        unsigned int           mr_down_sampling_factor;
+
+        /*!\brief memory location to store low-resolution encoder's mode info.
+         *
+         * This value specifies the mode info storing location.
+         */
+        void*                  mr_low_res_mode_info;
+#endif
     } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
 

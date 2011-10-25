@@ -19,6 +19,7 @@ extern "C"
 
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx/vp8cx.h"
+#include "vpx/vpx_encoder.h"
 #include "vpx_scale/yv12config.h"
 #include "type_aliases.h"
 #include "ppflags.h"
@@ -198,6 +199,20 @@ extern "C"
         struct vpx_codec_pkt_list  *output_pkt_list;
 
         vp8e_tuning tuning;
+
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        /* Number of total resolutions encoded */
+        unsigned int mr_total_resoutions;
+
+        /* Current encoder ID */
+        unsigned int mr_encoder_id;
+
+        /* Down-sampling factor */
+        unsigned int mr_down_sampling_factor;
+
+        /* Memory location to store low-resolution encoder's mode info */
+        void* mr_low_res_mode_info;
+#endif
     } VP8_CONFIG;
 
 
