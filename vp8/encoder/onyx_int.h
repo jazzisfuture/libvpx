@@ -58,6 +58,9 @@
 
 #define MAX_PERIODICITY 16
 
+#define MAX(x,y) (((x)>(y))?(x):(y))
+#define MIN(x,y) (((x)<(y))?(x):(y))
+
 typedef struct
 {
     int kf_indicated;

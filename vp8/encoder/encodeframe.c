@@ -48,8 +48,8 @@ extern void vp8cx_init_mbrthread_data(VP8_COMP *cpi,
                                       int count);
 void vp8_build_block_offsets(MACROBLOCK *x);
 void vp8_setup_block_ptrs(MACROBLOCK *x);
-int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t, int recon_yoffset, int recon_uvoffset);
-int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t);
+int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t, int recon_yoffset, int recon_uvoffset, int mb_row, int mb_col);
+int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t, int mb_row, int mb_col);
 static void adjust_act_zbin( VP8_COMP *cpi, MACROBLOCK *x );
 
 #ifdef MODE_STATS
@@ -474,14 +474,14 @@ void encode_mb_row(VP8_COMP *cpi,
 
         if (cm->frame_type == KEY_FRAME)
         {
-            *totalrate += vp8cx_encode_intra_macro_block(cpi, x, tp);
+            *totalrate += vp8cx_encode_intra_macro_block(cpi, x, tp, mb_row, mb_col);
 #ifdef MODE_STATS
             y_modes[xd->mbmi.mode] ++;
 #endif
         }
         else
         {
-            *totalrate += vp8cx_encode_inter_macroblock(cpi, x, tp, recon_yoffset, recon_uvoffset);
+            *totalrate += vp8cx_encode_inter_macroblock(cpi, x, tp, recon_yoffset, recon_uvoffset, mb_row, mb_col);
 
 #ifdef MODE_STATS
             inter_y_modes[xd->mbmi.mode] ++;
@@ -1141,7 +1141,7 @@ static void adjust_act_zbin( VP8_COMP *cpi, MACROBLOCK *x )
 #endif
 }
 
-int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t)
+int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t, int mb_row, int mb_col)
 {
     int rate;
 
@@ -1176,7 +1176,8 @@ extern void vp8_fix_contexts(MACROBLOCKD *x);
 int vp8cx_encode_inter_macroblock
 (
     VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t,
-    int recon_yoffset, int recon_uvoffset
+    int recon_yoffset, int recon_uvoffset,
+    int mb_row, int mb_col
 )
 {
     MACROBLOCKD *const xd = &x->e_mbd;
@@ -1224,8 +1225,25 @@ int vp8cx_encode_inter_macroblock
 
     }
     else
+    {
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        if (cpi->oxcf.mr_encoder_id ==0)
+        {
+            /* Lowest-resolution encoding */
+            vp8_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
+                                    &distortion, &intra_error);
+
+        }else
+        {
+            /* Higher-resolution encoding */
+            vp8_mr_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
+                                &distortion, &intra_error, mb_row, mb_col);
+        }
+#else
         vp8_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
                             &distortion, &intra_error);
+#endif
+    }
 
     cpi->prediction_error += distortion;
     cpi->intra_error += intra_error;
