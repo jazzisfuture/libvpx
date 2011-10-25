@@ -21,6 +21,7 @@
 #include "vpx_scale/vpxscale.h"
 #include "vp8/common/extend.h"
 #include "ratectrl.h"
+#include "pickinter.h"
 #include "vp8/common/quant_common.h"
 #include "segmentation.h"
 #include "vp8/common/g_common.h"
@@ -4340,7 +4341,11 @@ static void encode_frame_to_data_rate
 
     // This frame's MVs are saved and will be used in next frame's MV prediction.
     // Last frame has one more line(add to bottom) and one more column(add to right) than cm->mip. The edge elements are initialized to 0.
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+    if(!cpi->oxcf.mr_encoder_id && cm->show_frame)      //do not save for altref frame
+#else
     if(cm->show_frame)   //do not save for altref frame
+#endif
     {
         int mb_row;
         int mb_col;
@@ -4362,6 +4367,10 @@ static void encode_frame_to_data_rate
             }
         }
     }
+
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+    vp8_cal_dissimilarity(cpi);
+#endif
 
     // Update the GF useage maps.
     // This is done after completing the compression of a frame when all

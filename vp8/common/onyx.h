@@ -207,6 +207,19 @@ extern "C"
         unsigned int periodicity;
         unsigned int layer_id[MAX_PERIODICITY];
 
+#if ENABLE_MULTI_RESOLUTION_ENCODING
+        /* Number of total resolutions encoded */
+        unsigned int mr_total_resoutions;
+
+        /* Current encoder ID */
+        unsigned int mr_encoder_id;
+
+        /* Down-sampling factor */
+        unsigned int mr_down_sampling_factor;
+
+        /* Memory location to store low-resolution encoder's mode info */
+        void* mr_low_res_mode_info;
+#endif
     } VP8_CONFIG;
 
 
