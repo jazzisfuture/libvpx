@@ -130,5 +130,12 @@ void vp8_arch_x86_common_init(VP8_COMMON *ctx)
     }
 #endif
 
+#if HAVE_SSE4_1
+    if (flags & HAS_SSE4_1)
+    {
+        rtcd->recon.intra4x4_predict = vp8_intra4x4_predict_sse4;
+    }
+#endif /* HAVE_SSE4_1 */
+
 #endif
 }

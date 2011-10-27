@@ -13,6 +13,7 @@
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/asm_offsets.h"
 #include "vpx_scale/yv12config.h"
+#include "blockd.h"
 
 BEGIN
 
@@ -28,6 +29,21 @@ DEFINE(yv12_buffer_config_u_buffer,             offsetof(YV12_BUFFER_CONFIG, u_b
 DEFINE(yv12_buffer_config_v_buffer,             offsetof(YV12_BUFFER_CONFIG, v_buffer));
 DEFINE(yv12_buffer_config_border,               offsetof(YV12_BUFFER_CONFIG, border));
 DEFINE(VP8BORDERINPIXELS_VAL,                   VP8BORDERINPIXELS);
+
+/* vp8_intra4x4_predict */
+DEFINE(blockd_base_dst,                         offsetof(BLOCKD, base_dst));
+DEFINE(blockd_dst,                              offsetof(BLOCKD, dst));
+DEFINE(blockd_dst_stride,                       offsetof(BLOCKD, dst_stride));
+DEFINE(B_DC_PRED_VAL,                           B_DC_PRED);
+DEFINE(B_TM_PRED_VAL,                           B_TM_PRED);
+DEFINE(B_VE_PRED_VAL,                           B_VE_PRED);
+DEFINE(B_HE_PRED_VAL,                           B_HE_PRED);
+DEFINE(B_LD_PRED_VAL,                           B_LD_PRED);
+DEFINE(B_RD_PRED_VAL,                           B_RD_PRED);
+DEFINE(B_VR_PRED_VAL,                           B_VR_PRED);
+DEFINE(B_VL_PRED_VAL,                           B_VL_PRED);
+DEFINE(B_HD_PRED_VAL,                           B_HD_PRED);
+DEFINE(B_HU_PRED_VAL,                           B_HU_PRED);
 
 END
 
