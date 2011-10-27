@@ -69,6 +69,7 @@ extern prototype_build_intra_predictors(vp8_build_intra_predictors_mbuv_ssse3);
 extern prototype_build_intra_predictors(vp8_build_intra_predictors_mbuv_s_ssse3);
 extern prototype_build_intra_predictors(vp8_build_intra_predictors_mby_ssse3);
 extern prototype_build_intra_predictors(vp8_build_intra_predictors_mby_s_ssse3);
+extern prototype_intra4x4_predict(vp8_intra4x4_predict_ssse3);
 
 #if !CONFIG_RUNTIME_CPU_DETECT
 #undef  vp8_recon_build_intra_predictors_mbuv
@@ -83,6 +84,10 @@ extern prototype_build_intra_predictors(vp8_build_intra_predictors_mby_s_ssse3);
 #undef  vp8_recon_build_intra_predictors_mby_s
 #define vp8_recon_build_intra_predictors_mby_s vp8_build_intra_predictors_mby_s_ssse3
 
-#endif
-#endif
+#undef vp8_recon_intra4x4_predict
+#define vp8_recon_intra4x4_predict vp8_intra4x4_predict_ssse3
+
+#endif /* !CONFIG_RUNTIME_CPU_DETECT */
+#endif /* HAVE_SSSE3 */
+
 #endif

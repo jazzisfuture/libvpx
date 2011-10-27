@@ -139,8 +139,10 @@ void vp8_arch_x86_common_init(VP8_COMMON *ctx)
             vp8_build_intra_predictors_mby_ssse3;
         rtcd->recon.build_intra_predictors_mby_s =
             vp8_build_intra_predictors_mby_s_ssse3;
+
+        rtcd->recon.intra4x4_predict = vp8_intra4x4_predict_ssse3;
     }
-#endif
+#endif /* HAVE_SSSE3 */
 
 #endif
 }
