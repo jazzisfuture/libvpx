@@ -13,7 +13,7 @@
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/asm_offsets.h"
 #include "vpx_scale/yv12config.h"
-#include "vp8/common/blockd.h"
+#include "blockd.h"
 
 BEGIN
 
@@ -35,8 +35,9 @@ END
 /* add asserts for any offset that is not supported by assembly code */
 /* add asserts for any size that is not supported by assembly code */
 
-#if HAVE_MEDIA
-/* switch case in vp8_intra4x4_predict_armv6 is based on these enumerated values */
+#if HAVE_MEDIA || HAS_SSSE3
+/* switch cases in vp8_intra4x4_predict_armv6 and _ssse3 are based on these
+ * enumerated values */
 ct_assert(B_DC_PRED, B_DC_PRED == 0);
 ct_assert(B_TM_PRED, B_TM_PRED == 1);
 ct_assert(B_VE_PRED, B_VE_PRED == 2);
