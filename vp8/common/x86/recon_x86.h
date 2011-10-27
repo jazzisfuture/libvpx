@@ -69,4 +69,14 @@ extern prototype_build_intra_predictors(vp8_build_intra_predictors_mbuv_s_ssse3)
 
 #endif
 #endif
+
+#if HAVE_SSE4_1
+extern prototype_intra4x4_predict(vp8_intra4x4_predict_sse4);
+
+#if !CONFIG_RUNTIME_CPU_DETECT
+#undef vp8_recon_intra4x4_predict
+#define vp8_recon_intra4x4_predict vp8_intra4x4_predict_sse4
+
+#endif /* !CONFIG_RUNTIME_CPU_DETECT */
+#endif /* HAVE_SSE4_1 */
 #endif
