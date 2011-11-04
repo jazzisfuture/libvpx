@@ -1165,6 +1165,15 @@ int vp8cx_encode_intra_macro_block(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t)
     sum_intra_stats(cpi, x);
     vp8_tokenize_mb(cpi, &x->e_mbd, t);
 
+    {
+        const VP8_ENCODER_RTCD *rtcd = IF_RTCD(&cpi->rtcd);
+
+        if (x->e_mbd.mode_info_context->mbmi.mode != B_PRED)
+            vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+
+        vp8_inverse_transform_mbuv(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    }
+
     return rate;
 }
 #ifdef SPEEDSTATS
@@ -1337,7 +1346,17 @@ int vp8cx_encode_inter_macroblock
     }
 
     if (!x->skip)
+    {
+        const VP8_ENCODER_RTCD *rtcd = IF_RTCD(&cpi->rtcd);
+
         vp8_tokenize_mb(cpi, xd, t);
+        if (x->e_mbd.mode_info_context->mbmi.mode != B_PRED)
+        {
+          vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct),
+                                      &x->e_mbd);
+        }
+        vp8_inverse_transform_mbuv(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    }
     else
     {
         if (cpi->common.mb_no_coeff_skip)
