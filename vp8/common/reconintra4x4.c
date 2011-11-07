@@ -14,20 +14,20 @@
 #include "vpx_mem/vpx_mem.h"
 #include "reconintra.h"
 
-void vp8_intra4x4_predict(BLOCKD *x,
+void vp8_intra4x4_predict(unsigned char *dst, int dst_stride,
                           int b_mode,
                           unsigned char *predictor, int stride)
 {
     int i, r, c;
 
-    unsigned char *Above = *(x->base_dst) + x->dst - x->dst_stride;
+    unsigned char *Above = dst - dst_stride;
     unsigned char Left[4];
     unsigned char top_left = Above[-1];
 
-    Left[0] = (*(x->base_dst))[x->dst - 1];
-    Left[1] = (*(x->base_dst))[x->dst - 1 + x->dst_stride];
-    Left[2] = (*(x->base_dst))[x->dst - 1 + 2 * x->dst_stride];
-    Left[3] = (*(x->base_dst))[x->dst - 1 + 3 * x->dst_stride];
+    Left[0] = dst[-1];
+    Left[1] = dst[-1 + dst_stride];
+    Left[2] = dst[-1 + 2 * dst_stride];
+    Left[3] = dst[-1 + 3 * dst_stride];
 
     switch (b_mode)
     {
@@ -316,5 +316,3 @@ void vp8_intra_prediction_down_copy(MACROBLOCKD *x)
     *dst_ptr1 = *src_ptr;
     *dst_ptr2 = *src_ptr;
 }
-
-
