@@ -88,6 +88,8 @@
 %define sym(x) x
 %elifidn __OUTPUT_FORMAT__,x64
 %define sym(x) x
+%elifidn __OUTPUT_FORMAT__,win64
+%define sym(x) x
 %else
 %define sym(x) _ %+ x
 %endif
