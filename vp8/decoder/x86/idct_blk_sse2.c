@@ -26,36 +26,6 @@ void vp8_idct_dequant_full_2x_sse2
             (short *q, short *dq ,
              unsigned char *dst, int dst_stride);
 
-void vp8_dequant_dc_idct_add_y_block_sse2
-            (short *q, short *dq,
-             unsigned char *dst, int stride, char *eobs, short *dc)
-{
-    int i;
-
-    for (i = 0; i < 4; i++)
-    {
-        if (((short *)(eobs))[0])
-        {
-            if (((short *)(eobs))[0] & 0xfefe)
-                vp8_idct_dequant_dc_full_2x_sse2 (q, dq, dst, stride, dc);
-            else
-                vp8_idct_dequant_dc_0_2x_sse2 (q, dq, dst, stride, dc);
-        }
-
-        if (((short *)(eobs))[1])
-        {
-            if (((short *)(eobs))[1] & 0xfefe)
-                vp8_idct_dequant_dc_full_2x_sse2 (q+32, dq, dst+8, stride, dc+2);
-            else
-                vp8_idct_dequant_dc_0_2x_sse2 (q+32, dq, dst+8, stride, dc+2);
-        }
-        q    += 64;
-        dc   += 4;
-        dst  += stride*4;
-        eobs += 4;
-    }
-}
-
 void vp8_dequant_idct_add_y_block_sse2
             (short *q, short *dq,
              unsigned char *dst, int stride, char *eobs)
