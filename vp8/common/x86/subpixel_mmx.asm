@@ -212,6 +212,7 @@ sym(vp8_filter_block1dc_v6_mmx):
 ;   unsigned char *dst_ptr,
 ;    int dst_pitch
 ;)
+extern sym(vp8_bilinear_filters_x86_8)
 global sym(vp8_bilinear_predict8x8_mmx)
 sym(vp8_bilinear_predict8x8_mmx):
     push        rbp
@@ -222,14 +223,14 @@ sym(vp8_bilinear_predict8x8_mmx):
     push        rdi
     ; end prolog
 
-    ;const short *HFilter = bilinear_filters_mmx[xoffset];
-    ;const short *VFilter = bilinear_filters_mmx[yoffset];
+    ;const short *HFilter = vp8_bilinear_filters_x86_8[xoffset];
+    ;const short *VFilter = vp8_bilinear_filters_x86_8[yoffset];
 
         movsxd      rax,        dword ptr arg(2) ;xoffset
         mov         rdi,        arg(4) ;dst_ptr           ;
 
         shl         rax,        5 ; offset * 32
-        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_mmx))]
+        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_x86_8))]
 
         add         rax,        rcx ; HFilter
         mov         rsi,        arg(0) ;src_ptr              ;
@@ -369,6 +370,7 @@ sym(vp8_bilinear_predict8x8_mmx):
 ;    unsigned char *dst_ptr,
 ;    int dst_pitch
 ;)
+extern sym(vp8_bilinear_filters_x86_8)
 global sym(vp8_bilinear_predict8x4_mmx)
 sym(vp8_bilinear_predict8x4_mmx):
     push        rbp
@@ -379,13 +381,13 @@ sym(vp8_bilinear_predict8x4_mmx):
     push        rdi
     ; end prolog
 
-    ;const short *HFilter = bilinear_filters_mmx[xoffset];
-    ;const short *VFilter = bilinear_filters_mmx[yoffset];
+    ;const short *HFilter = vp8_bilinear_filters_x86_8[xoffset];
+    ;const short *VFilter = vp8_bilinear_filters_x86_8[yoffset];
 
         movsxd      rax,        dword ptr arg(2) ;xoffset
         mov         rdi,        arg(4) ;dst_ptr           ;
 
-        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_mmx))]
+        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_x86_8))]
         shl         rax,        5
 
         mov         rsi,        arg(0) ;src_ptr              ;
@@ -524,6 +526,7 @@ sym(vp8_bilinear_predict8x4_mmx):
 ;    unsigned char *dst_ptr,
 ;    int dst_pitch
 ;)
+extern sym(vp8_bilinear_filters_x86_8)
 global sym(vp8_bilinear_predict4x4_mmx)
 sym(vp8_bilinear_predict4x4_mmx):
     push        rbp
@@ -534,13 +537,13 @@ sym(vp8_bilinear_predict4x4_mmx):
     push        rdi
     ; end prolog
 
-    ;const short *HFilter = bilinear_filters_mmx[xoffset];
-    ;const short *VFilter = bilinear_filters_mmx[yoffset];
+    ;const short *HFilter = vp8_bilinear_filters_x86_8[xoffset];
+    ;const short *VFilter = vp8_bilinear_filters_x86_8[yoffset];
 
         movsxd      rax,        dword ptr arg(2) ;xoffset
         mov         rdi,        arg(4) ;dst_ptr           ;
 
-        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_mmx))]
+        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_x86_8))]
         shl         rax,        5
 
         add         rax,        rcx ; HFilter
@@ -699,29 +702,3 @@ sym(vp8_six_tap_mmx):
     times 8 dw 0
 
 
-align 16
-global HIDDEN_DATA(sym(vp8_bilinear_filters_mmx))
-sym(vp8_bilinear_filters_mmx):
-    times 8 dw 128
-    times 8 dw 0
-
-    times 8 dw 112
-    times 8 dw 16
-
-    times 8 dw 96
-    times 8 dw 32
-
-    times 8 dw 80
-    times 8 dw 48
-
-    times 8 dw 64
-    times 8 dw 64
-
-    times 8 dw 48
-    times 8 dw 80
-
-    times 8 dw 32
-    times 8 dw 96
-
-    times 8 dw 16
-    times 8 dw 112

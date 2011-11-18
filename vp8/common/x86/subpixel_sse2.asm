@@ -961,7 +961,7 @@ sym(vp8_unpack_block1d16_h6_sse2):
 ;    unsigned char *dst_ptr,
 ;    int dst_pitch
 ;)
-extern sym(vp8_bilinear_filters_mmx)
+extern sym(vp8_bilinear_filters_x86_8)
 global sym(vp8_bilinear_predict16x16_sse2)
 sym(vp8_bilinear_predict16x16_sse2):
     push        rbp
@@ -973,10 +973,10 @@ sym(vp8_bilinear_predict16x16_sse2):
     push        rdi
     ; end prolog
 
-    ;const short *HFilter = bilinear_filters_mmx[xoffset]
-    ;const short *VFilter = bilinear_filters_mmx[yoffset]
+    ;const short *HFilter = vp8_bilinear_filters_x86_8[xoffset]
+    ;const short *VFilter = vp8_bilinear_filters_x86_8[yoffset]
 
-        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_mmx))]
+        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_x86_8))]
         movsxd      rax,        dword ptr arg(2) ;xoffset
 
         cmp         rax,        0      ;skip first_pass filter if xoffset=0
@@ -1230,7 +1230,7 @@ sym(vp8_bilinear_predict16x16_sse2):
 ;    unsigned char *dst_ptr,
 ;    int dst_pitch
 ;)
-extern sym(vp8_bilinear_filters_mmx)
+extern sym(vp8_bilinear_filters_x86_8)
 global sym(vp8_bilinear_predict8x8_sse2)
 sym(vp8_bilinear_predict8x8_sse2):
     push        rbp
@@ -1245,9 +1245,9 @@ sym(vp8_bilinear_predict8x8_sse2):
     ALIGN_STACK 16, rax
     sub         rsp, 144                         ; reserve 144 bytes
 
-    ;const short *HFilter = bilinear_filters_mmx[xoffset]
-    ;const short *VFilter = bilinear_filters_mmx[yoffset]
-        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_mmx))]
+    ;const short *HFilter = vp8_bilinear_filters_x86_8[xoffset]
+    ;const short *VFilter = vp8_bilinear_filters_x86_8[yoffset]
+        lea         rcx,        [GLOBAL(sym(vp8_bilinear_filters_x86_8))]
 
         mov         rsi,        arg(0) ;src_ptr
         movsxd      rdx,        dword ptr arg(1) ;src_pixels_per_line
