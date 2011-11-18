@@ -135,7 +135,19 @@ void vp8_half_vert_variance16x_h_sse2
     unsigned int *sumsquared
 );
 
-DECLARE_ALIGNED(16, extern short, vp8_vp7_bilinear_filters_mmx[8][8]);
+/* sse2-specific copy of vp8/common/filter.c:vp8_bilinear_filters with
+ * duplicated values */
+DECLARE_ALIGNED(16, static const short, bilinear_filters_mmx[8][8]) =
+{
+    { 128, 128, 128, 128,  0,  0,  0,  0 },
+    { 112, 112, 112, 112, 16, 16, 16, 16 },
+    {  96, 96, 96, 96, 32, 32, 32, 32 },
+    {  80, 80, 80, 80, 48, 48, 48, 48 },
+    {  64, 64, 64, 64, 64, 64, 64, 64 },
+    {  48, 48, 48, 48, 80, 80, 80, 80 },
+    {  32, 32, 32, 32, 96, 96, 96, 96 },
+    {  16, 16, 16, 16, 112, 112, 112, 112 }
+};
 
 unsigned int vp8_variance4x4_wmt(
     const unsigned char *src_ptr,
@@ -262,7 +274,7 @@ unsigned int vp8_sub_pixel_variance4x4_wmt
     vp8_filter_block2d_bil4x4_var_mmx(
         src_ptr, src_pixels_per_line,
         dst_ptr, dst_pixels_per_line,
-        vp8_vp7_bilinear_filters_mmx[xoffset], vp8_vp7_bilinear_filters_mmx[yoffset],
+        bilinear_filters_mmx[xoffset], bilinear_filters_mmx[yoffset],
         &xsum, &xxsum
     );
     *sse = xxsum;
