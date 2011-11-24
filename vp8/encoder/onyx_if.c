@@ -4575,14 +4575,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
     cm = &cpi->common;
 
-    if (setjmp(cpi->common.error.jmp))
-    {
-        cpi->common.error.setjmp = 0;
-        return VPX_CODEC_CORRUPT_FRAME;
-    }
-
-    cpi->common.error.setjmp = 1;
-
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
     if (cm->rtcd.flags & HAS_NEON)
@@ -4591,6 +4583,24 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
         vp8_push_neon(store_reg);
     }
 #endif
+
+    if (setjmp(cm->error.jmp))
+    {
+        cm->error.setjmp = 0;
+
+#if HAVE_ARMV7
+#if CONFIG_RUNTIME_CPU_DETECT
+        if (cm->rtcd.flags & HAS_NEON)
+#endif
+        {
+            vp8_pop_neon(store_reg);
+        }
+#endif
+
+        return VPX_CODEC_CORRUPT_FRAME;
+    }
+
+    cm->error.setjmp = 1;
 
     vpx_usec_timer_start(&cmptimer);
 
