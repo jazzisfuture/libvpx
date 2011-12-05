@@ -1890,7 +1890,7 @@ int main(int argc, const char **argv_)
                 memset(&raw, 0, sizeof(raw));
             else
                 vpx_img_alloc(&raw, arg_use_i420 ? VPX_IMG_FMT_I420 : VPX_IMG_FMT_YV12,
-                              cfg.g_w, cfg.g_h, 1);
+                              cfg.g_w, cfg.g_h, 1, 1);
 
             init_rate_histogram(&rate_hist, &cfg, &arg_framerate);
         }

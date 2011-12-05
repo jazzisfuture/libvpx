@@ -170,7 +170,8 @@ extern "C" {
                                vpx_img_fmt_t fmt,
                                unsigned int d_w,
                                unsigned int d_h,
-                               unsigned int align);
+                               unsigned int buf_align,
+                               unsigned int stride_align);
 
     /*!\brief Open a descriptor, using existing storage for the underlying image
      *

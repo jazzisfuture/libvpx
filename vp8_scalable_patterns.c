@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     if (argc != 6+mode_to_num_layers[layering_mode])
         die ("Invalid number of arguments");
 
-    if (!vpx_img_alloc (&raw, VPX_IMG_FMT_I420, width, height, 1))
+    if (!vpx_img_alloc (&raw, VPX_IMG_FMT_I420, width, height, 1, 1))
         die ("Failed to allocate image", width, height);
 
     printf("Using %s\n",vpx_codec_iface_name(interface));
