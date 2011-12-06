@@ -929,7 +929,8 @@ static void calc_pframe_target_size(VP8_COMP *cpi)
             cpi->active_best_quality = cpi->best_quality;
 
             // Worst quality obviously must not be better than best quality
-            if (cpi->active_worst_quality <= cpi->active_best_quality)
+            if (cpi->active_worst_quality <= cpi->active_best_quality &&
+                cpi->active_worst_quality < 127)
                 cpi->active_worst_quality = cpi->active_best_quality + 1;
 
         }
