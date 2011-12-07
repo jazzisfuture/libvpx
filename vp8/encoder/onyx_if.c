@@ -5216,6 +5216,33 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
         vpx_memcpy(&cm->fc, &cm->lfc, sizeof(cm->fc));
     }
 
+    // Save the contexts separately for alt ref, gold and last.
+    // (TODO jbb -> Optimize this with pointers to avoid extra copies. )
+    if(cm->refresh_alt_ref_frame)
+    {
+      vpx_memcpy(&cpi->lfc_a, &cm->fc, sizeof(cm->fc));
+      vpx_memcpy(&cpi->count_mb_ref_frame_usage_a,
+                 &cpi->count_mb_ref_frame_usage,
+                 sizeof(cpi->count_mb_ref_frame_usage));
+    }
+
+    if(cm->refresh_golden_frame)
+    {
+      vpx_memcpy(&cpi->lfc_g, &cm->fc, sizeof(cm->fc));
+      vpx_memcpy(&cpi->count_mb_ref_frame_usage_g,
+                 &cpi->count_mb_ref_frame_usage,
+                 sizeof(cpi->count_mb_ref_frame_usage));
+    }
+
+    if(cm->refresh_last_frame)
+    {
+      vpx_memcpy(&cpi->lfc_n, &cm->fc, sizeof(cm->fc));
+      vpx_memcpy(&cpi->count_mb_ref_frame_usage_l,
+                 &cpi->count_mb_ref_frame_usage,
+                 sizeof(cpi->count_mb_ref_frame_usage));
+    }
+
+
     // if its a dropped frame honor the requests on subsequent frames
     if (*size > 0)
     {
