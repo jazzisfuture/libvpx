@@ -495,15 +495,15 @@ typedef struct VP8_COMP
     int prob_intra_coded;
     int prob_last_coded;
     int prob_gf_coded;
+    int prob_intra_coded_rf[MAX_REF_FRAMES];
+    int prob_last_coded_rf[MAX_REF_FRAMES];
+    int prob_gf_coded_rf[MAX_REF_FRAMES];
     int prob_skip_false;
     int last_skip_false_probs[3];
     int last_skip_probs_q[3];
     int recent_ref_frame_usage[MAX_REF_FRAMES];
 
     int count_mb_ref_frame_usage[MAX_REF_FRAMES];
-    int count_mb_ref_frame_usage_g[MAX_REF_FRAMES];
-    int count_mb_ref_frame_usage_a[MAX_REF_FRAMES];
-    int count_mb_ref_frame_usage_l[MAX_REF_FRAMES];
     int this_frame_percent_intra;
     int last_frame_percent_intra;
 
