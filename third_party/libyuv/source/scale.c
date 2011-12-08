@@ -40,10 +40,6 @@ void SetUseReferenceImpl(int use) {
   use_reference_impl_ = use;
 }
 
-// TODO: The preprocessor definitions for Win64 are not right in build system.
-// Disable optimized code for now.
-#define YUV_DISABLE_ASM
-
 /**
  * NEON downscalers with interpolation.
  *
@@ -3095,10 +3091,7 @@ static void ScalePlaneDown2(int src_width, int src_height,
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   } else
 #endif
-/* TODO: Force to call C version all the time in ordert to get matching results
- * in multi-resolution encoder example.
- */
-#if 0 //defined(HAS_SCALEROWDOWN2_SSE2)
+#if defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 16) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
