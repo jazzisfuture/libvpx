@@ -19,6 +19,18 @@
 #include "vp8/common/pragmas.h"
 #include "vp8/common/onyxc_int.h"
 
+#if HAVE_MMX
+void vp8_dequantize_b_impl_mmx(short *sq, short *dq, short *q);
+
+void vp8_dequantize_b_mmx(BLOCKD *d)
+{
+    short *sq = (short *) d->qcoeff;
+    short *dq = (short *) d->dqcoeff;
+    short *q = (short *) d->dequant;
+    vp8_dequantize_b_impl_mmx(sq, dq, q);
+}
+#endif
+
 void vp8_arch_x86_common_init(VP8_COMMON *ctx)
 {
 #if CONFIG_RUNTIME_CPU_DETECT
@@ -37,6 +49,11 @@ void vp8_arch_x86_common_init(VP8_COMMON *ctx)
 
     if (flags & HAS_MMX)
     {
+        rtcd->dequant.block               = vp8_dequantize_b_mmx;
+        rtcd->dequant.idct_add            = vp8_dequant_idct_add_mmx;
+        rtcd->dequant.idct_add_y_block    = vp8_dequant_idct_add_y_block_mmx;
+        rtcd->dequant.idct_add_uv_block   = vp8_dequant_idct_add_uv_block_mmx;
+
         rtcd->idct.idct16       = vp8_short_idct4x4llm_mmx;
         rtcd->idct.idct1_scalar_add = vp8_dc_only_idct_add_mmx;
         rtcd->idct.iwalsh16     = vp8_short_inv_walsh4x4_mmx;
@@ -81,6 +98,9 @@ void vp8_arch_x86_common_init(VP8_COMMON *ctx)
             vp8_build_intra_predictors_mbuv_sse2;
         rtcd->recon.build_intra_predictors_mbuv_s =
             vp8_build_intra_predictors_mbuv_s_sse2;
+
+        rtcd->dequant.idct_add_y_block    = vp8_dequant_idct_add_y_block_sse2;
+        rtcd->dequant.idct_add_uv_block   = vp8_dequant_idct_add_uv_block_sse2;
 
         rtcd->idct.iwalsh16     = vp8_short_inv_walsh4x4_sse2;
 

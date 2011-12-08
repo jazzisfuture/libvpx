@@ -16,7 +16,9 @@
 #include "treereader.h"
 #include "vp8/common/onyxc_int.h"
 #include "vp8/common/threading.h"
-#include "dequantize.h"
+//#include "dequantize.h"
+
+
 #if CONFIG_ERROR_CONCEALMENT
 #include "ec_types.h"
 #endif
@@ -94,7 +96,7 @@ typedef struct VP8Decompressor
     DATARATE dr[16];
 
 #if CONFIG_RUNTIME_CPU_DETECT
-    vp8_dequant_rtcd_vtable_t        dequant;
+//    vp8_dequant_rtcd_vtable_t        dequant;
 #endif
 
 

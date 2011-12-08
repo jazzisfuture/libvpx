@@ -68,7 +68,19 @@ static int get_cpu_count()
 void vp8_machine_specific_config(VP8_COMMON *ctx)
 {
 #if CONFIG_RUNTIME_CPU_DETECT
+//    pbi->mb.rtcd                               = &pbi->common.rtcd;
+#endif
+
+#if CONFIG_RUNTIME_CPU_DETECT
     VP8_COMMON_RTCD *rtcd = &ctx->rtcd;
+
+
+    rtcd->dequant.block             = vp8_dequantize_b_c;
+    rtcd->dequant.idct_add          = vp8_dequant_idct_add_c;
+    rtcd->dequant.idct_add_y_block  = vp8_dequant_idct_add_y_block_c;
+    rtcd->dequant.idct_add_uv_block =
+        vp8_dequant_idct_add_uv_block_c;
+
 
     rtcd->idct.idct16       = vp8_short_idct4x4llm_c;
     rtcd->idct.idct1_scalar_add = vp8_dc_only_idct_add_c;
