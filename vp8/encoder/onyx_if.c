@@ -70,6 +70,7 @@ extern void vp8_yv12_copy_src_frame_func_neon(YV12_BUFFER_CONFIG *src_ybc, YV12_
 #endif
 
 int vp8_estimate_entropy_savings(VP8_COMP *cpi);
+
 int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest, const vp8_variance_rtcd_vtable_t *rtcd);
 
 extern void vp8_temporal_filter_prepare_c(VP8_COMP *cpi, int distance);
@@ -5221,25 +5222,28 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
     if(cm->refresh_alt_ref_frame)
     {
       vpx_memcpy(&cpi->lfc_a, &cm->fc, sizeof(cm->fc));
-      vpx_memcpy(&cpi->count_mb_ref_frame_usage_a,
-                 &cpi->count_mb_ref_frame_usage,
-                 sizeof(cpi->count_mb_ref_frame_usage));
+
+      cpi->prob_intra_coded_rf[ALTREF_FRAME] = cpi->prob_intra_coded;
+      cpi->prob_last_coded_rf[ALTREF_FRAME] = cpi->prob_last_coded;
+      cpi->prob_gf_coded_rf[ALTREF_FRAME] = cpi->prob_gf_coded;
     }
 
     if(cm->refresh_golden_frame)
     {
       vpx_memcpy(&cpi->lfc_g, &cm->fc, sizeof(cm->fc));
-      vpx_memcpy(&cpi->count_mb_ref_frame_usage_g,
-                 &cpi->count_mb_ref_frame_usage,
-                 sizeof(cpi->count_mb_ref_frame_usage));
+
+      cpi->prob_intra_coded_rf[GOLDEN_FRAME] = cpi->prob_intra_coded;
+      cpi->prob_last_coded_rf[GOLDEN_FRAME] = cpi->prob_last_coded;
+      cpi->prob_gf_coded_rf[GOLDEN_FRAME] = cpi->prob_gf_coded;
     }
 
     if(cm->refresh_last_frame)
     {
       vpx_memcpy(&cpi->lfc_n, &cm->fc, sizeof(cm->fc));
-      vpx_memcpy(&cpi->count_mb_ref_frame_usage_l,
-                 &cpi->count_mb_ref_frame_usage,
-                 sizeof(cpi->count_mb_ref_frame_usage));
+
+      cpi->prob_intra_coded_rf[LAST_FRAME] = cpi->prob_intra_coded;
+      cpi->prob_last_coded_rf[LAST_FRAME] = cpi->prob_last_coded;
+      cpi->prob_gf_coded_rf[LAST_FRAME] = cpi->prob_gf_coded;
     }
 
 
