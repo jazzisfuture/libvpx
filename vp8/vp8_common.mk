@@ -57,7 +57,6 @@ VP8_COMMON_SRCS-yes += common/swapyv12buffer.h
 VP8_COMMON_SRCS-yes += common/systemdependent.h
 VP8_COMMON_SRCS-yes += common/threading.h
 VP8_COMMON_SRCS-yes += common/treecoder.h
-VP8_COMMON_SRCS-yes += common/invtrans.c
 VP8_COMMON_SRCS-yes += common/loopfilter.c
 VP8_COMMON_SRCS-yes += common/loopfilter_filters.c
 VP8_COMMON_SRCS-yes += common/mbpitch.c
@@ -69,6 +68,16 @@ VP8_COMMON_SRCS-yes += common/reconintra.c
 VP8_COMMON_SRCS-yes += common/reconintra4x4.c
 VP8_COMMON_SRCS-yes += common/setupintrarecon.c
 VP8_COMMON_SRCS-yes += common/swapyv12buffer.c
+
+VP8_COMMON_SRCS-yes += common/dequantize.c
+VP8_COMMON_SRCS-yes += common/dequantize.h
+VP8_COMMON_SRCS-yes += common/idct_blk.c
+
+VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/dequantize_x86.h
+VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/dequantize_mmx.asm
+VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/idct_blk_mmx.c
+VP8_COMMON_SRCS-$(HAVE_SSE2) += common/x86/idct_blk_sse2.c
+
 VP8_COMMON_SRCS-$(CONFIG_POSTPROC_VISUALIZER) += common/textblit.c
 VP8_COMMON_SRCS-yes += common/treecoder.c
 
