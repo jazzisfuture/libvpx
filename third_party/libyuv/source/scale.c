@@ -40,9 +40,10 @@ void SetUseReferenceImpl(int use) {
   use_reference_impl_ = use;
 }
 
-// TODO: The preprocessor definitions for Win64 are not right in build system.
-// Disable optimized code for now.
-#define YUV_DISABLE_ASM
+/*
+ * Webm note: Defining YUV_DISABLE_ASM allows to use c version scaler.
+ * #define YUV_DISABLE_ASM
+ */
 
 /**
  * NEON downscalers with interpolation.
@@ -511,7 +512,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     !defined(YUV_DISABLE_ASM)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif defined(OSX) && defined(__i386__)
+#elif (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && defined(__i386__)
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
@@ -1621,7 +1622,7 @@ void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown8Int_SSE2             \n"
 "_ScaleRowDown8Int_SSE2:                       \n"
 #else
@@ -1692,7 +1693,7 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown34_SSSE3              \n"
 "_ScaleRowDown34_SSSE3:                        \n"
 #else
@@ -1730,7 +1731,7 @@ void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown34_1_Int_SSSE3        \n"
 "_ScaleRowDown34_1_Int_SSSE3:                  \n"
 #else
@@ -1791,7 +1792,7 @@ void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown34_0_Int_SSSE3        \n"
 "_ScaleRowDown34_0_Int_SSSE3:                  \n"
 #else
@@ -1855,7 +1856,7 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown38_SSSE3              \n"
 "_ScaleRowDown38_SSSE3:                        \n"
 #else
@@ -1891,7 +1892,7 @@ void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown38_3_Int_SSSE3        \n"
 "_ScaleRowDown38_3_Int_SSSE3:                  \n"
 #else
@@ -1955,7 +1956,7 @@ void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleRowDown38_2_Int_SSSE3        \n"
 "_ScaleRowDown38_2_Int_SSSE3:                  \n"
 #else
@@ -2002,7 +2003,7 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                                   int src_height);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleAddRows_SSE2                 \n"
 "_ScaleAddRows_SSE2:                           \n"
 #else
@@ -2053,7 +2054,7 @@ void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                      int dst_width, int source_y_fraction);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleFilterRows_SSE2              \n"
 "_ScaleFilterRows_SSE2:                        \n"
 #else
@@ -2148,7 +2149,7 @@ void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                       int dst_width, int source_y_fraction);
   asm(
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)
     ".globl _ScaleFilterRows_SSSE3             \n"
 "_ScaleFilterRows_SSSE3:                       \n"
 #else
@@ -3095,10 +3096,7 @@ static void ScalePlaneDown2(int src_width, int src_height,
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   } else
 #endif
-/* TODO: Force to call C version all the time in ordert to get matching results
- * in multi-resolution encoder example.
- */
-#if 0 //defined(HAS_SCALEROWDOWN2_SSE2)
+#if defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 16) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
