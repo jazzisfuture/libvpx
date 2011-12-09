@@ -291,7 +291,6 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, int Qvalue)
     {
       // build token cost array for the type of frame we have now
       FRAME_CONTEXT *l = &cpi->lfc_n;
-      int flags[2] = {1, 1};
 
       if(cpi->common.refresh_alt_ref_frame)
         l = &cpi->lfc_a;

@@ -642,30 +642,23 @@ void init_encode_frame_mb_context(VP8_COMP *cpi)
     vpx_memset(cm->above_context, 0,
                sizeof(ENTROPY_CONTEXT_PLANES) * cm->mb_cols);
 
-    if (cm->refresh_alt_ref_frame)
-      frame_type = ALTREF_FRAME;
-    else if (cm->refresh_golden_frame)
-      frame_type = GOLDEN_FRAME;
-    else
-      frame_type = LAST_FRAME;
-
     // Special case treatment when GF and ARF are not sensible options for reference
     if (cpi->ref_frame_flags == VP8_LAST_FLAG)
         vp8_calc_ref_frame_costs(xd->ref_frame_cost,
-                                 cpi->prob_intra_coded_rf[frame_type],255,128);
+                                 cpi->prob_intra_coded,255,128);
     else if ((cpi->oxcf.number_of_layers > 1) &&
                (cpi->ref_frame_flags == VP8_GOLD_FLAG))
         vp8_calc_ref_frame_costs(xd->ref_frame_cost,
-                                 cpi->prob_intra_coded_rf[frame_type],1,255);
+                                 cpi->prob_intra_coded,1,255);
     else if ((cpi->oxcf.number_of_layers > 1) &&
                 (cpi->ref_frame_flags == VP8_ALT_FLAG))
         vp8_calc_ref_frame_costs(xd->ref_frame_cost,
-                                 cpi->prob_intra_coded_rf[frame_type],1,1);
+                                 cpi->prob_intra_coded,1,1);
     else
         vp8_calc_ref_frame_costs(xd->ref_frame_cost,
-                                 cpi->prob_intra_coded_rf[frame_type],
-                                 cpi->prob_last_coded_rf[frame_type],
-                                 cpi->prob_gf_coded_rf[frame_type]);
+                                 cpi->prob_intra_coded,
+                                 cpi->prob_last_coded,
+                                 cpi->prob_gf_coded);
 
     xd->fullpixel_mask = 0xffffffff;
     if(cm->full_pixel)
@@ -947,31 +940,7 @@ void vp8_encode_frame(VP8_COMP *cpi)
     if ((cm->frame_type != KEY_FRAME) && ((cpi->oxcf.number_of_layers > 1) ||
         (!cm->refresh_alt_ref_frame && !cm->refresh_golden_frame)))
     {
-        const int *const rfct = cpi->count_mb_ref_frame_usage;
-        const int rf_intra = rfct[INTRA_FRAME];
-        const int rf_inter = rfct[LAST_FRAME] + rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME];
-
-        if ((rf_intra + rf_inter) > 0)
-        {
-            cpi->prob_intra_coded = (rf_intra * 255) / (rf_intra + rf_inter);
-
-            if (cpi->prob_intra_coded < 1)
-                cpi->prob_intra_coded = 1;
-
-            if ((cm->frames_since_golden > 0) || cpi->source_alt_ref_active)
-            {
-                cpi->prob_last_coded = rf_inter ? (rfct[LAST_FRAME] * 255) / rf_inter : 128;
-
-                if (cpi->prob_last_coded < 1)
-                    cpi->prob_last_coded = 1;
-
-                cpi->prob_gf_coded = (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME])
-                                     ? (rfct[GOLDEN_FRAME] * 255) / (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME]) : 128;
-
-                if (cpi->prob_gf_coded < 1)
-                    cpi->prob_gf_coded = 1;
-            }
-        }
+      vp8_convert_rfct_to_prob(cpi);
     }
 
 #if 0

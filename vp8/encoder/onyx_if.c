@@ -2998,47 +2998,6 @@ static void update_rd_ref_frame_probs(VP8_COMP *cpi)
 {
     VP8_COMMON *cm = &cpi->common;
 
-#if 0
-    const int *const rfct = cpi->recent_ref_frame_usage;
-    const int rf_intra = rfct[INTRA_FRAME];
-    const int rf_inter = rfct[LAST_FRAME] + rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME];
-
-    if (cm->frame_type == KEY_FRAME)
-    {
-        cpi->prob_intra_coded = 255;
-        cpi->prob_last_coded  = 128;
-        cpi->prob_gf_coded  = 128;
-    }
-    else if (!(rf_intra + rf_inter))
-    {
-        // This is a trap in case this function is called with cpi->recent_ref_frame_usage[] blank.
-        cpi->prob_intra_coded = 63;
-        cpi->prob_last_coded  = 128;
-        cpi->prob_gf_coded    = 128;
-    }
-    else
-    {
-        cpi->prob_intra_coded = (rf_intra * 255) / (rf_intra + rf_inter);
-
-        if (cpi->prob_intra_coded < 1)
-            cpi->prob_intra_coded = 1;
-
-        if ((cm->frames_since_golden > 0) || cpi->source_alt_ref_active)
-        {
-            cpi->prob_last_coded = rf_inter ? (rfct[LAST_FRAME] * 255) / rf_inter : 128;
-
-            if (cpi->prob_last_coded < 1)
-                cpi->prob_last_coded = 1;
-
-            cpi->prob_gf_coded = (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME])
-                                 ? (rfct[GOLDEN_FRAME] * 255) / (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME]) : 128;
-
-            if (cpi->prob_gf_coded < 1)
-                cpi->prob_gf_coded = 1;
-        }
-    }
-
-#else
     const int *const rfct = cpi->count_mb_ref_frame_usage;
     const int rf_intra = rfct[INTRA_FRAME];
     const int rf_inter = rfct[LAST_FRAME] + rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME];
@@ -3051,59 +3010,9 @@ static void update_rd_ref_frame_probs(VP8_COMP *cpi)
     }
     else if (!(rf_intra + rf_inter))
     {
-        if (cpi->oxcf.number_of_layers > 1)
-        {
-            if (cpi->ref_frame_flags == VP8_LAST_FLAG)
-            {
-                cpi->prob_intra_coded = 63;
-                cpi->prob_last_coded  = 255;
-                cpi->prob_gf_coded    = 128;
-            }
-            else if (cpi->ref_frame_flags == VP8_GOLD_FLAG)
-            {
-                cpi->prob_intra_coded = 63;
-                cpi->prob_last_coded  = 1;
-                cpi->prob_gf_coded    = 255;
-            }
-            else if (cpi->ref_frame_flags == VP8_ALT_FLAG)
-            {
-                cpi->prob_intra_coded = 63;
-                cpi->prob_last_coded  = 1;
-                cpi->prob_gf_coded    = 1;
-            }
-            else
-            {
-                cpi->prob_intra_coded = 63;
-                cpi->prob_last_coded  = 128;
-                cpi->prob_gf_coded    = 128;
-            }
-        }
-        else
-        {
-            // This is a trap in case this function is called with
-            // cpi->recent_ref_frame_usage[] blank.
-            cpi->prob_intra_coded = 63;
-            cpi->prob_last_coded  = 128;
-            cpi->prob_gf_coded    = 128;
-        }
-    }
-    else
-    {
-        cpi->prob_intra_coded = (rf_intra * 255) / (rf_intra + rf_inter);
-
-        if (cpi->prob_intra_coded < 1)
-            cpi->prob_intra_coded = 1;
-
-        cpi->prob_last_coded = rf_inter ? (rfct[LAST_FRAME] * 255) / rf_inter : 128;
-
-        if (cpi->prob_last_coded < 1)
-            cpi->prob_last_coded = 1;
-
-        cpi->prob_gf_coded = (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME])
-                             ? (rfct[GOLDEN_FRAME] * 255) / (rfct[GOLDEN_FRAME] + rfct[ALTREF_FRAME]) : 128;
-
-        if (cpi->prob_gf_coded < 1)
-            cpi->prob_gf_coded = 1;
+        cpi->prob_intra_coded = 63;
+        cpi->prob_last_coded  = 128;
+        cpi->prob_gf_coded    = 128;
     }
 
     // update reference frame costs since we can do better than what we got last frame.
@@ -3118,7 +3027,6 @@ static void update_rd_ref_frame_probs(VP8_COMP *cpi)
         else if (cpi->common.frames_since_golden == 0)
         {
             cpi->prob_last_coded = 214;
-            cpi->prob_gf_coded = 1;
         }
         else if (cpi->common.frames_since_golden == 1)
         {
@@ -3127,14 +3035,14 @@ static void update_rd_ref_frame_probs(VP8_COMP *cpi)
         }
         else if (cpi->source_alt_ref_active)
         {
-            //int dist = cpi->common.frames_till_alt_ref_frame + cpi->common.frames_since_golden;
             cpi->prob_gf_coded -= 20;
 
             if (cpi->prob_gf_coded < 10)
                 cpi->prob_gf_coded = 10;
         }
+        if (!cpi->source_alt_ref_active)
+            cpi->prob_gf_coded = 255;
     }
-#endif
 }
 
 
@@ -5220,32 +5128,13 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
     // Save the contexts separately for alt ref, gold and last.
     // (TODO jbb -> Optimize this with pointers to avoid extra copies. )
     if(cm->refresh_alt_ref_frame)
-    {
       vpx_memcpy(&cpi->lfc_a, &cm->fc, sizeof(cm->fc));
 
-      cpi->prob_intra_coded_rf[ALTREF_FRAME] = cpi->prob_intra_coded;
-      cpi->prob_last_coded_rf[ALTREF_FRAME] = cpi->prob_last_coded;
-      cpi->prob_gf_coded_rf[ALTREF_FRAME] = cpi->prob_gf_coded;
-    }
-
     if(cm->refresh_golden_frame)
-    {
       vpx_memcpy(&cpi->lfc_g, &cm->fc, sizeof(cm->fc));
 
-      cpi->prob_intra_coded_rf[GOLDEN_FRAME] = cpi->prob_intra_coded;
-      cpi->prob_last_coded_rf[GOLDEN_FRAME] = cpi->prob_last_coded;
-      cpi->prob_gf_coded_rf[GOLDEN_FRAME] = cpi->prob_gf_coded;
-    }
-
     if(cm->refresh_last_frame)
-    {
       vpx_memcpy(&cpi->lfc_n, &cm->fc, sizeof(cm->fc));
-
-      cpi->prob_intra_coded_rf[LAST_FRAME] = cpi->prob_intra_coded;
-      cpi->prob_last_coded_rf[LAST_FRAME] = cpi->prob_last_coded;
-      cpi->prob_gf_coded_rf[LAST_FRAME] = cpi->prob_gf_coded;
-    }
-
 
     // if its a dropped frame honor the requests on subsequent frames
     if (*size > 0)
