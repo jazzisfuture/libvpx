@@ -1743,26 +1743,23 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     int distortion_uv;
     int best_yrd = INT_MAX;
 
-    //int all_rds[MAX_MODES];        // Experimental debug code.
-    //int all_rates[MAX_MODES];
-    //int all_dist[MAX_MODES];
-    //int intermodecost[MAX_MODES];
-
     MB_PREDICTION_MODE uv_intra_mode;
     int_mv mvp;
     int near_sadidx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
     int saddone=0;
     int sr=0;    //search range got from mv_pred(). It uses step_param levels. (0-7)
 
-    int_mv frame_nearest_mv[4];
-    int_mv frame_near_mv[4];
-    int_mv frame_best_ref_mv[4];
-    int frame_mdcounts[4][4];
     int frame_lf_or_gf[4];
     unsigned char *y_buffer[4];
     unsigned char *u_buffer[4];
     unsigned char *v_buffer[4];
     int ref_frame_map[4];
+
+    int_mv frame_nearest_mv;
+    int_mv frame_near_mv;
+    int_mv frame_best_ref_mv;
+    int found_near_mvs = 0;
+    int sign_bias = 0;
 
     vpx_memset(&best_mbmode, 0, sizeof(best_mbmode));
     vpx_memset(&best_bmodes, 0, sizeof(best_bmodes));
@@ -1783,13 +1780,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     {
         YV12_BUFFER_CONFIG *lst_yv12 = &cpi->common.yv12_fb[cpi->common.lst_fb_idx];
 
-        vp8_find_near_mvs(&x->e_mbd, x->e_mbd.mode_info_context, &frame_nearest_mv[LAST_FRAME], &frame_near_mv[LAST_FRAME],
-                          &frame_best_ref_mv[LAST_FRAME], frame_mdcounts[LAST_FRAME], LAST_FRAME, cpi->common.ref_frame_sign_bias);
-
         y_buffer[LAST_FRAME] = lst_yv12->y_buffer + recon_yoffset;
         u_buffer[LAST_FRAME] = lst_yv12->u_buffer + recon_uvoffset;
         v_buffer[LAST_FRAME] = lst_yv12->v_buffer + recon_uvoffset;
-
         frame_lf_or_gf[LAST_FRAME] = 0;
     }
 
@@ -1797,13 +1790,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     {
         YV12_BUFFER_CONFIG *gld_yv12 = &cpi->common.yv12_fb[cpi->common.gld_fb_idx];
 
-        vp8_find_near_mvs(&x->e_mbd, x->e_mbd.mode_info_context, &frame_nearest_mv[GOLDEN_FRAME], &frame_near_mv[GOLDEN_FRAME],
-                          &frame_best_ref_mv[GOLDEN_FRAME], frame_mdcounts[GOLDEN_FRAME], GOLDEN_FRAME, cpi->common.ref_frame_sign_bias);
-
         y_buffer[GOLDEN_FRAME] = gld_yv12->y_buffer + recon_yoffset;
         u_buffer[GOLDEN_FRAME] = gld_yv12->u_buffer + recon_uvoffset;
         v_buffer[GOLDEN_FRAME] = gld_yv12->v_buffer + recon_uvoffset;
-
         frame_lf_or_gf[GOLDEN_FRAME] = 1;
     }
 
@@ -1811,13 +1800,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     {
         YV12_BUFFER_CONFIG *alt_yv12 = &cpi->common.yv12_fb[cpi->common.alt_fb_idx];
 
-        vp8_find_near_mvs(&x->e_mbd, x->e_mbd.mode_info_context, &frame_nearest_mv[ALTREF_FRAME], &frame_near_mv[ALTREF_FRAME],
-                          &frame_best_ref_mv[ALTREF_FRAME], frame_mdcounts[ALTREF_FRAME], ALTREF_FRAME, cpi->common.ref_frame_sign_bias);
-
         y_buffer[ALTREF_FRAME] = alt_yv12->y_buffer + recon_yoffset;
         u_buffer[ALTREF_FRAME] = alt_yv12->u_buffer + recon_uvoffset;
         v_buffer[ALTREF_FRAME] = alt_yv12->v_buffer + recon_uvoffset;
-
         frame_lf_or_gf[ALTREF_FRAME] = 1;
     }
 
@@ -1839,13 +1824,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
         int disable_skip = 0;
         int other_cost = 0;
         int this_ref_frame = ref_frame_map[vp8_ref_frame_order[mode_index]];
-
-        // Experimental debug code.
-        // Record of rd values recorded for this MB. -1 indicates not measured
-        //all_rds[mode_index] = -1;
-        //all_rates[mode_index] = -1;
-        //all_dist[mode_index] = -1;
-        //intermodecost[mode_index] = -1;
 
         // Test best rd so far against threshold for trying this mode.
         if (best_rd <= cpi->rd_threshes[mode_index])
@@ -1873,16 +1851,42 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
                 continue;
         }
 
+        if (x->e_mbd.mode_info_context->mbmi.ref_frame != INTRA_FRAME &&
+            !found_near_mvs)
+        {
+            int ref_frame = x->e_mbd.mode_info_context->mbmi.ref_frame;
+            vp8_find_near_mvs(&x->e_mbd, x->e_mbd.mode_info_context,
+                              &frame_nearest_mv, &frame_near_mv,
+                              &frame_best_ref_mv, mdcounts, ref_frame,
+                              cpi->common.ref_frame_sign_bias);
+            found_near_mvs = 1;
+            sign_bias = cpi->common.ref_frame_sign_bias[ref_frame];
+        }
+
         /* everything but intra */
         if (x->e_mbd.mode_info_context->mbmi.ref_frame)
         {
             x->e_mbd.pre.y_buffer = y_buffer[x->e_mbd.mode_info_context->mbmi.ref_frame];
             x->e_mbd.pre.u_buffer = u_buffer[x->e_mbd.mode_info_context->mbmi.ref_frame];
             x->e_mbd.pre.v_buffer = v_buffer[x->e_mbd.mode_info_context->mbmi.ref_frame];
-            mode_mv[NEARESTMV] = frame_nearest_mv[x->e_mbd.mode_info_context->mbmi.ref_frame];
-            mode_mv[NEARMV] = frame_near_mv[x->e_mbd.mode_info_context->mbmi.ref_frame];
-            best_ref_mv = frame_best_ref_mv[x->e_mbd.mode_info_context->mbmi.ref_frame];
-            vpx_memcpy(mdcounts, frame_mdcounts[x->e_mbd.mode_info_context->mbmi.ref_frame], sizeof(mdcounts));
+
+            if (sign_bias ==
+                cpi->common.ref_frame_sign_bias[x->e_mbd.mode_info_context->mbmi.ref_frame])
+            {
+                mode_mv[NEARESTMV].as_int = frame_nearest_mv.as_int;
+                mode_mv[NEARMV].as_int = frame_near_mv.as_int;
+                best_ref_mv.as_int = frame_best_ref_mv.as_int;
+            }
+            else
+            {
+                mode_mv[NEARESTMV].as_mv.row = (-1) * frame_nearest_mv.as_mv.row;
+                mode_mv[NEARESTMV].as_mv.col = (-1) * frame_nearest_mv.as_mv.col;
+                mode_mv[NEARMV].as_mv.row = (-1) * frame_near_mv.as_mv.row;
+                mode_mv[NEARMV].as_mv.col = (-1) * frame_near_mv.as_mv.col;
+                best_ref_mv.as_mv.row = (-1) * frame_best_ref_mv.as_mv.row;
+                best_ref_mv.as_mv.col = (-1) * frame_best_ref_mv.as_mv.col;
+            }
+
             lf_or_gf = frame_lf_or_gf[x->e_mbd.mode_info_context->mbmi.ref_frame];
         }
 
@@ -2286,11 +2290,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
             this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
         }
 
-        // Experimental debug code.
-        //all_rds[mode_index] = this_rd;
-        //all_rates[mode_index] = rate2;
-        //all_dist[mode_index] = distortion2;
-
         // Keep record of best intra distortion
         if ((x->e_mbd.mode_info_context->mbmi.ref_frame == INTRA_FRAME) &&
             (this_rd < best_intra_rd) )
@@ -2418,10 +2417,14 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
                                       x->partition_info->bmi[15].mv.as_int;
     }
 
-    rd_update_mvcount(cpi, x, &frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame]);
+    if (sign_bias
+        != cpi->common.ref_frame_sign_bias[xd->mode_info_context->mbmi.ref_frame])
+    {
+        frame_best_ref_mv.as_mv.row *= -1;
+        frame_best_ref_mv.as_mv.col *= -1;
+    }
 
-
-
+    rd_update_mvcount(cpi, x, &frame_best_ref_mv);
 }
 
 void vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x, int *rate_)
