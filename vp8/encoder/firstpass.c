@@ -268,7 +268,7 @@ static void avg_stats(FIRSTPASS_STATS *section)
 static double calculate_modified_err(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
 {
     double av_err = ( cpi->twopass.total_stats->ssim_weighted_pred_err /
-                      cpi->twopass.total_stats->count );
+                      DOUBLE_DIVIDE_CHECK(cpi->twopass.total_stats->count) );
     double this_err = this_frame->ssim_weighted_pred_err;
     double modified_err;
 
