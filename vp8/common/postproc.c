@@ -12,6 +12,7 @@
 #include "vpx_config.h"
 #include "vpx_scale/yv12config.h"
 #include "postproc.h"
+#include "common.h"
 #include "vpx_scale/yv12extend.h"
 #include "vpx_scale/vpxscale.h"
 #include "systemdependent.h"
@@ -120,7 +121,6 @@ const short vp8_rv[] =
     5, 8, 8, 12, 13, 5, 14, 10, 12, 13,
     0, 9, 5, 5, 11, 10, 13, 9, 10, 13,
 };
-
 
 extern void vp8_blit_text(const char *msg, unsigned char *address, const int pitch);
 extern void vp8_blit_line(int x0, int x1, int y0, int y1, unsigned char *image, const int pitch);
@@ -323,11 +323,11 @@ static void vp8_deblock_and_de_macro_block(YV12_BUFFER_CONFIG         *source,
 }
 
 void vp8_deblock(YV12_BUFFER_CONFIG         *source,
-                        YV12_BUFFER_CONFIG         *post,
-                        int                         q,
-                        int                         low_var_thresh,
-                        int                         flag,
-                        vp8_postproc_rtcd_vtable_t *rtcd)
+                 YV12_BUFFER_CONFIG         *post,
+                 int                         q,
+                 int                         low_var_thresh,
+                 int                         flag,
+                 vp8_postproc_rtcd_vtable_t *rtcd)
 {
     double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
     int ppl = (int)(level + .5);
@@ -671,6 +671,232 @@ static void constrain_line (int x0, int *x1, int y0, int *y1, int width, int hei
     }
 }
 
+static void multiframe_quality_enhance_block
+(
+    int blksize,
+    int qcurr,
+    int qprev,
+    unsigned char *y,
+    unsigned char *u,
+    unsigned char *v,
+    int y_stride,
+    int uv_stride,
+    unsigned char *yd,
+    unsigned char *ud,
+    unsigned char *vd,
+    int yd_stride,
+    int uvd_stride
+)
+{
+    int i, j;
+    unsigned char *yp = y;
+    unsigned char *ydp = yd;
+    unsigned char *up = u;
+    unsigned char *udp = ud;
+    unsigned char *vp = v;
+    unsigned char *vdp = vd;
+    double sad = 0.0;
+    double sum = 0.0;
+    double var = 0.0;
+    double thr = 0.0;
+    int blksizeby2 = blksize >> 1;
+    double invblksizesq = 1.0/(blksize * blksize);
+    for (i = 0; i < blksize; ++i)
+    {
+        for (j = 0; j < blksize; ++j)
+        {
+            var += (*yp) * (*yp);
+            sum += (*yp);
+            sad += fabs(*yp++ - *ydp++);
+        }
+        yp += y_stride - blksize;
+        ydp += yd_stride - blksize;
+    }
+    var = invblksizesq * (var - sum * sum * invblksizesq);
+    sad *= invblksizesq;
+    thr = 6.0 + 0.05 * var;
+    if (thr > 12.0) thr = 12.0;
+    // These thresholds should be adapted later based on qcurr and qprev
+    if (sad < thr)
+    {
+        double factor = sad / thr;
+        /* if factor is very small just keep the data in postproc buffer  */
+        if (factor >= 0.08) {
+            double oneminusfactor = 1.0 - factor;
+            for (yp = y, ydp = yd, i = 0; i < blksize;
+                 ++i, yp += y_stride - blksize, ydp += yd_stride - blksize)
+            {
+                for (j = 0; j < blksize; ++j)
+                    *ydp++ = (int)((*yp++) * factor + (*ydp) * oneminusfactor + 0.5);
+            }
+            for (up = u, udp = ud, i = 0; i < blksizeby2;
+                 ++i, up += uv_stride - blksizeby2, udp += uvd_stride - blksizeby2)
+            {
+                for (j = 0; j < blksizeby2; ++j)
+                    *udp++ = (int)((*up++) * factor + (*udp) * oneminusfactor + 0.5);
+            }
+            for (vp = v, vdp = vd, i = 0; i < blksizeby2;
+                 ++i, vp += uv_stride - blksizeby2, vdp += uvd_stride - blksizeby2)
+            {
+                for (j = 0; j < blksizeby2; ++j)
+                    *vdp++ = (int)((*vp++) * factor + (*vdp) * oneminusfactor + 0.5);
+            }
+        }
+    }
+    else
+    {
+        // just copy the current frame to destination
+        for (yp = y, ydp = yd, i = 0; i < blksize; ++i, yp += y_stride, ydp += yd_stride)
+            vpx_memcpy(ydp, yp, blksize);
+        for (up = u, udp = ud, i = 0; i < blksizeby2; ++i, up += uv_stride, udp += uvd_stride)
+            vpx_memcpy(udp, up, blksizeby2);
+        for (vp = v, vdp = vd, i = 0; i < blksizeby2; ++i, vp += uv_stride, vdp += uvd_stride)
+            vpx_memcpy(vdp, vp, blksizeby2);
+    }
+}
+
+void vp8_multiframe_quality_enhance
+(
+    VP8_COMMON *cm
+)
+{
+    YV12_BUFFER_CONFIG *show = cm->frame_to_show;
+    YV12_BUFFER_CONFIG *dest = &cm->post_proc_buffer;
+
+    FRAME_TYPE frame_type = cm->frame_type;
+    /* Point at base of Mb MODE_INFO list has motion vectors etc */
+    const MODE_INFO *mode_info_context = cm->mi;
+    int qcurr = cm->base_qindex;
+    int qprev = cm->postproc_state.last_base_qindex;
+
+    int mb_row;
+    int mb_col;
+
+    unsigned char *y_ptr, *u_ptr, *v_ptr;
+    unsigned char *yd_ptr, *ud_ptr, *vd_ptr;
+
+    /* Set up the buffer pointers */
+    y_ptr = show->y_buffer;
+    u_ptr = show->u_buffer;
+    v_ptr = show->v_buffer;
+    yd_ptr = dest->y_buffer;
+    ud_ptr = dest->u_buffer;
+    vd_ptr = dest->v_buffer;
+
+    /* postprocess each macro block */
+    for (mb_row = 0; mb_row < cm->mb_rows; mb_row++)
+    {
+        for (mb_col = 0; mb_col < cm->mb_cols; mb_col++)
+        {
+            /* if motion is high there will likely be no benefit */
+            if (abs(mode_info_context->mbmi.mv.as_mv.row) <= 10 &&
+                abs(mode_info_context->mbmi.mv.as_mv.col) <= 10 &&
+                mode_info_context->mbmi.mode != B_PRED)
+            {
+                multiframe_quality_enhance_block(16,
+                                                 qcurr,
+                                                 qprev,
+                                                 y_ptr,
+                                                 u_ptr,
+                                                 v_ptr,
+                                                 show->y_stride,
+                                                 show->uv_stride,
+                                                 yd_ptr,
+                                                 ud_ptr,
+                                                 vd_ptr,
+                                                 dest->y_stride,
+                                                 dest->uv_stride);
+            }
+            else if (mode_info_context->mbmi.mode == B_PRED)
+            {
+                multiframe_quality_enhance_block(8,
+                                                 qcurr,
+                                                 qprev,
+                                                 y_ptr,
+                                                 u_ptr,
+                                                 v_ptr,
+                                                 show->y_stride,
+                                                 show->uv_stride,
+                                                 yd_ptr,
+                                                 ud_ptr,
+                                                 vd_ptr,
+                                                 dest->y_stride,
+                                                 dest->uv_stride);
+                multiframe_quality_enhance_block(8,
+                                                 qcurr,
+                                                 qprev,
+                                                 y_ptr+8,
+                                                 u_ptr+4,
+                                                 v_ptr+4,
+                                                 show->y_stride,
+                                                 show->uv_stride,
+                                                 yd_ptr+8,
+                                                 ud_ptr+4,
+                                                 vd_ptr+4,
+                                                 dest->y_stride,
+                                                 dest->uv_stride);
+                multiframe_quality_enhance_block(8,
+                                                 qcurr,
+                                                 qprev,
+                                                 y_ptr+show->y_stride*8,
+                                                 u_ptr+show->uv_stride*4,
+                                                 v_ptr+show->uv_stride*4,
+                                                 show->y_stride,
+                                                 show->uv_stride,
+                                                 yd_ptr+dest->y_stride*8,
+                                                 ud_ptr+dest->uv_stride*4,
+                                                 vd_ptr+dest->uv_stride*4,
+                                                 dest->y_stride,
+                                                 dest->uv_stride);
+                multiframe_quality_enhance_block(8,
+                                                 qcurr,
+                                                 qprev,
+                                                 y_ptr+show->y_stride*8+8,
+                                                 u_ptr+show->uv_stride*4+4,
+                                                 v_ptr+show->uv_stride*4+4,
+                                                 show->y_stride,
+                                                 show->uv_stride,
+                                                 yd_ptr+dest->y_stride*8+8,
+                                                 ud_ptr+dest->uv_stride*4+4,
+                                                 vd_ptr+dest->uv_stride*4+4,
+                                                 dest->y_stride,
+                                                 dest->uv_stride);
+            }
+            else
+            {
+                unsigned char *yp = y_ptr;
+                unsigned char *up = u_ptr;
+                unsigned char *vp = v_ptr;
+                unsigned char *ydp = yd_ptr;
+                unsigned char *udp = ud_ptr;
+                unsigned char *vdp = vd_ptr;
+                int i;
+                for (i = 0; i < 16; ++i, yp += show->y_stride, ydp += dest->y_stride)
+                    vpx_memcpy(ydp, yp, 16);
+                for (i = 0; i < 8; ++i, up += show->uv_stride, udp += dest->uv_stride)
+                    vpx_memcpy(udp, up, 8);
+                for (i = 0; i < 8; ++i, vp += show->uv_stride, vdp += dest->uv_stride)
+                    vpx_memcpy(vdp, vp, 8);
+            }
+            y_ptr += 16;
+            u_ptr += 8;
+            v_ptr += 8;
+            yd_ptr += 16;
+            ud_ptr += 8;
+            vd_ptr += 8;
+            mode_info_context++;     /* step to next MB */
+        }
+
+        y_ptr += show->y_stride  * 16 - 16 * cm->mb_cols;
+        u_ptr += show->uv_stride *  8 - 8 * cm->mb_cols;
+        v_ptr += show->uv_stride *  8 - 8 * cm->mb_cols;
+        yd_ptr += dest->y_stride  * 16 - 16 * cm->mb_cols;
+        ud_ptr += dest->uv_stride *  8 - 8 * cm->mb_cols;
+        vd_ptr += dest->uv_stride *  8 - 8 * cm->mb_cols;
+
+        mode_info_context++;         /* Skip border mb */
+    }
+}
 
 #if CONFIG_RUNTIME_CPU_DETECT
 #define RTCD_VTABLE(oci) (&(oci)->rtcd.postproc)
@@ -699,8 +925,8 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
         dest->y_width = oci->Width;
         dest->y_height = oci->Height;
         dest->uv_height = dest->y_height / 2;
+        oci->postproc_state.last_base_qindex = oci->base_qindex;
         return 0;
-
     }
 
 #if ARCH_X86||ARCH_X86_64
@@ -716,6 +942,12 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     {
         vp8_deblock(oci->frame_to_show, &oci->post_proc_buffer,
                     q, 1, 0, RTCD_VTABLE(oci));
+    }
+    else if ((flags & VP8D_MFQE) &&
+             oci->current_video_frame >= 2 &&
+             oci->base_qindex - oci->postproc_state.last_base_qindex >= 20)
+    {
+        vp8_multiframe_quality_enhance(oci);
     }
     else
     {
@@ -1105,5 +1337,6 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     dest->y_width = oci->Width;
     dest->y_height = oci->Height;
     dest->uv_height = dest->y_height / 2;
+    oci->postproc_state.last_base_qindex = oci->base_qindex;
     return 0;
 }
