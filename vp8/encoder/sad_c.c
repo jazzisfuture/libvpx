@@ -24,6 +24,7 @@ unsigned int vp8_sad16x16_c(
     int r, c;
     unsigned int sad = 0;
 
+    (void)max_sad;
     for (r = 0; r < 16; r++)
     {
         for (c = 0; c < 16; c++)
@@ -74,7 +75,7 @@ unsigned int vp8_sad8x8_c(
     int  ref_stride,
     int max_sad)
 {
-
+    (void)max_sad;
     return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 8, 8);
 }
 
@@ -86,9 +87,8 @@ unsigned int vp8_sad16x8_c(
     int  ref_stride,
     int max_sad)
 {
-
+    (void)max_sad;
     return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 16, 8);
-
 }
 
 
@@ -99,7 +99,7 @@ unsigned int vp8_sad8x16_c(
     int  ref_stride,
     int max_sad)
 {
-
+    (void)max_sad;
     return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 8, 16);
 }
 
@@ -111,7 +111,7 @@ unsigned int vp8_sad4x4_c(
     int  ref_stride,
     int max_sad)
 {
-
+    (void)max_sad;
     return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 4, 4);
 }
 

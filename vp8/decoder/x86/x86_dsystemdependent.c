@@ -15,5 +15,5 @@
 
 void vp8_arch_x86_decode_init(VP8D_COMP *pbi)
 {
-
+    (void)pbi;
 }

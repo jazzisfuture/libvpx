@@ -109,8 +109,7 @@ void mb_init_dequantizer(VP8D_COMP *pbi, MACROBLOCKD *xd)
 #define RTCD_VTABLE(x) NULL
 #endif
 
-static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
-                              unsigned int mb_idx)
+static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd)
 {
     MB_PREDICTION_MODE mode;
     int i;
@@ -394,7 +393,7 @@ decode_mb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mb_row, MACROBLOCKD *xd)
             xd->corrupted |= pc->yv12_fb[ref_fb_idx].corrupted;
         }
 
-        decode_macroblock(pbi, xd, mb_row * pc->mb_cols  + mb_col);
+        decode_macroblock(pbi, xd);
 
         /* check if the boolean decoder has suffered an error */
         xd->corrupted |= vp8dx_bool_error(xd->current_bc);

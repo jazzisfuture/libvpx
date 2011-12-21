@@ -271,6 +271,8 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
                                        struct vp8_extracfg vp8_cfg,
                                        vpx_codec_priv_enc_mr_cfg_t *mr_cfg)
 {
+    (void)mr_cfg;
+
     oxcf->multi_threaded         = cfg.g_threads;
     oxcf->Version               = cfg.g_profile;
 
@@ -531,6 +533,8 @@ static vpx_codec_err_t vp8e_mr_alloc_mem(const vpx_codec_enc_cfg_t *cfg,
 {
     vpx_codec_err_t res = 0;
 
+    (void)cfg;
+    (void)mem_loc;
 #if CONFIG_MULTI_RES_ENCODING
     int mb_rows = ((cfg->g_w + 15) >>4);
     int mb_cols = ((cfg->g_h + 15) >>4);
@@ -956,6 +960,7 @@ static vpx_codec_err_t vp8e_set_reference(vpx_codec_alg_priv_t *ctx,
 {
     vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
+    (void)ctr_id;
     if (data)
     {
         vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
@@ -977,6 +982,7 @@ static vpx_codec_err_t vp8e_get_reference(vpx_codec_alg_priv_t *ctx,
 
     vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
+    (void)ctr_id;
     if (data)
     {
         vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
@@ -996,8 +1002,8 @@ static vpx_codec_err_t vp8e_set_previewpp(vpx_codec_alg_priv_t *ctx,
 {
 #if CONFIG_POSTPROC
     vp8_postproc_cfg_t *data = va_arg(args, vp8_postproc_cfg_t *);
-    (void)ctr_id;
 
+    (void)ctr_id;
     if (data)
     {
         ctx->preview_ppcfg = *((vp8_postproc_cfg_t *)data);
@@ -1073,6 +1079,7 @@ static vpx_codec_err_t vp8e_update_entropy(vpx_codec_alg_priv_t *ctx,
         va_list args)
 {
     int update = va_arg(args, int);
+    (void)ctr_id;
     vp8_update_entropy(ctx->cpi, update);
     return VPX_CODEC_OK;
 
@@ -1083,6 +1090,7 @@ static vpx_codec_err_t vp8e_update_reference(vpx_codec_alg_priv_t *ctx,
         va_list args)
 {
     int update = va_arg(args, int);
+    (void)ctr_id;
     vp8_update_reference(ctx->cpi, update);
     return VPX_CODEC_OK;
 }
@@ -1092,6 +1100,7 @@ static vpx_codec_err_t vp8e_use_reference(vpx_codec_alg_priv_t *ctx,
         va_list args)
 {
     int reference_flag = va_arg(args, int);
+    (void)ctr_id;
     vp8_use_as_reference(ctx->cpi, reference_flag);
     return VPX_CODEC_OK;
 }
@@ -1102,6 +1111,7 @@ static vpx_codec_err_t vp8e_set_roi_map(vpx_codec_alg_priv_t *ctx,
 {
     vpx_roi_map_t *data = va_arg(args, vpx_roi_map_t *);
 
+    (void)ctr_id;
     if (data)
     {
         vpx_roi_map_t *roi = (vpx_roi_map_t *)data;
@@ -1122,6 +1132,7 @@ static vpx_codec_err_t vp8e_set_activemap(vpx_codec_alg_priv_t *ctx,
 {
     vpx_active_map_t *data = va_arg(args, vpx_active_map_t *);
 
+    (void)ctr_id;
     if (data)
     {
 
@@ -1143,6 +1154,7 @@ static vpx_codec_err_t vp8e_set_scalemode(vpx_codec_alg_priv_t *ctx,
 
     vpx_scaling_mode_t *data =  va_arg(args, vpx_scaling_mode_t *);
 
+    (void)ctr_id;
     if (data)
     {
         int res;

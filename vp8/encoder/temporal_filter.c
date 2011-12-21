@@ -143,8 +143,7 @@ static int vp8_temporal_filter_find_matching_mb_c
     VP8_COMP *cpi,
     YV12_BUFFER_CONFIG *arf_frame,
     YV12_BUFFER_CONFIG *frame_ptr,
-    int mb_offset,
-    int error_thresh
+    int mb_offset
 )
 {
     MACROBLOCK *x = &cpi->mb;
@@ -309,8 +308,7 @@ static void vp8_temporal_filter_iterate_c
                       (cpi,
                        cpi->frames[alt_ref_index],
                        cpi->frames[frame],
-                       mb_y_offset,
-                       THRESH_LOW);
+                       mb_y_offset);
 
 #endif
                 // Assign higher weight to matching MB if it's error

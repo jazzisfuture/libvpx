@@ -133,8 +133,7 @@ static int input_stats(VP8_COMP *cpi, FIRSTPASS_STATS *fps)
     return 1;
 }
 
-static void output_stats(const VP8_COMP            *cpi,
-                         struct vpx_codec_pkt_list *pktlist,
+static void output_stats(struct vpx_codec_pkt_list *pktlist,
                          FIRSTPASS_STATS            *stats)
 {
     struct vpx_codec_cx_pkt pkt;
@@ -390,7 +389,7 @@ void vp8_init_first_pass(VP8_COMP *cpi)
 
 void vp8_end_first_pass(VP8_COMP *cpi)
 {
-    output_stats(cpi, cpi->output_pkt_list, &cpi->twopass.total_stats);
+    output_stats(cpi->output_pkt_list, &cpi->twopass.total_stats);
 }
 
 static void zz_motion_search( VP8_COMP *cpi, MACROBLOCK * x, YV12_BUFFER_CONFIG * recon_buffer, int * best_motion_err, int recon_yoffset )
@@ -807,7 +806,7 @@ void vp8_first_pass(VP8_COMP *cpi)
         memcpy(&cpi->twopass.this_frame_stats,
                &fps,
                sizeof(FIRSTPASS_STATS));
-        output_stats(cpi, cpi->output_pkt_list, &cpi->twopass.this_frame_stats);
+        output_stats(cpi->output_pkt_list, &cpi->twopass.this_frame_stats);
         accumulate_stats(&cpi->twopass.total_stats, &fps);
     }
 
@@ -1328,11 +1327,12 @@ void vp8_init_second_pass(VP8_COMP *cpi)
 
 void vp8_end_second_pass(VP8_COMP *cpi)
 {
+    (void)cpi;
 }
 
 // This function gives and estimate of how badly we believe
 // the prediction quality is decaying from frame to frame.
-static double get_prediction_decay_rate(VP8_COMP *cpi, FIRSTPASS_STATS *next_frame)
+static double get_prediction_decay_rate(FIRSTPASS_STATS *next_frame)
 {
     double prediction_decay_rate;
     double motion_decay;
@@ -1397,7 +1397,7 @@ static int detect_transition_to_still(
             if (EOF == input_stats(cpi, &tmp_next_frame))
                 break;
 
-            decay_rate = get_prediction_decay_rate(cpi, &tmp_next_frame);
+            decay_rate = get_prediction_decay_rate(&tmp_next_frame);
             if ( decay_rate < 0.999 )
                 break;
         }
@@ -1452,7 +1452,6 @@ static BOOL detect_flash( VP8_COMP *cpi, int offset )
 
 // Update the motion related elements to the GF arf boost calculation
 static void accumulate_frame_motion_stats(
-    VP8_COMP *cpi,
     FIRSTPASS_STATS * this_frame,
     double * this_frame_mv_in_out,
     double * mv_in_out_accumulator,
@@ -1557,7 +1556,7 @@ static int calc_arf_boost(
             break;
 
         // Update the motion related elements to the boost calculation
-        accumulate_frame_motion_stats( cpi, &this_frame,
+        accumulate_frame_motion_stats(&this_frame,
             &this_frame_mv_in_out, &mv_in_out_accumulator,
             &abs_mv_in_out_accumulator, &mv_ratio_accumulator );
 
@@ -1574,7 +1573,7 @@ static int calc_arf_boost(
         {
             decay_accumulator =
                 decay_accumulator *
-                get_prediction_decay_rate(cpi, &this_frame);
+                get_prediction_decay_rate(&this_frame);
             decay_accumulator =
                 decay_accumulator < 0.1 ? 0.1 : decay_accumulator;
         }
@@ -1607,7 +1606,7 @@ static int calc_arf_boost(
             break;
 
         // Update the motion related elements to the boost calculation
-        accumulate_frame_motion_stats( cpi, &this_frame,
+        accumulate_frame_motion_stats(&this_frame,
             &this_frame_mv_in_out, &mv_in_out_accumulator,
             &abs_mv_in_out_accumulator, &mv_ratio_accumulator );
 
@@ -1624,7 +1623,7 @@ static int calc_arf_boost(
         {
             decay_accumulator =
                 decay_accumulator *
-                get_prediction_decay_rate(cpi, &this_frame);
+                get_prediction_decay_rate(&this_frame);
             decay_accumulator =
                 decay_accumulator < 0.1 ? 0.1 : decay_accumulator;
         }
@@ -1728,7 +1727,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         flash_detected = detect_flash(cpi, 0);
 
         // Update the motion related elements to the boost calculation
-        accumulate_frame_motion_stats( cpi, &next_frame,
+        accumulate_frame_motion_stats(&next_frame,
             &this_frame_mv_in_out, &mv_in_out_accumulator,
             &abs_mv_in_out_accumulator, &mv_ratio_accumulator );
 
@@ -1738,7 +1737,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         // Cumulative effect of prediction quality decay
         if ( !flash_detected )
         {
-            loop_decay_rate = get_prediction_decay_rate(cpi, &next_frame);
+            loop_decay_rate = get_prediction_decay_rate(&next_frame);
             decay_accumulator = decay_accumulator * loop_decay_rate;
             decay_accumulator =
                 decay_accumulator < 0.1 ? 0.1 : decay_accumulator;
@@ -2654,7 +2653,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
             }
 
             // How fast is prediction quality decaying
-            loop_decay_rate = get_prediction_decay_rate(cpi, &next_frame);
+            loop_decay_rate = get_prediction_decay_rate(&next_frame);
 
             // We want to know something about the recent past... rather than
             // as used elsewhere where we are concened with decay in prediction
@@ -2838,7 +2837,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
             r = RMAX;
 
         // How fast is prediction quality decaying
-        loop_decay_rate = get_prediction_decay_rate(cpi, &next_frame);
+        loop_decay_rate = get_prediction_decay_rate(&next_frame);
 
         decay_accumulator = decay_accumulator * loop_decay_rate;
         decay_accumulator = decay_accumulator < 0.1 ? 0.1 : decay_accumulator;

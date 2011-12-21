@@ -53,6 +53,7 @@ int vp8_skip_fractional_mv_step(MACROBLOCK *mb, BLOCK *b, BLOCKD *d,
                                 int *mvcost[2], int *distortion,
                                 unsigned int *sse)
 {
+    (void) mb;
     (void) b;
     (void) d;
     (void) ref_mv;
@@ -462,8 +463,7 @@ void get_lower_res_motion_info(VP8_COMP *cpi, MACROBLOCKD *xd, int *dissim,
 
 void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                          int recon_uvoffset, int *returnrate,
-                         int *returndistortion, int *returnintra, int mb_row,
-                         int mb_col)
+                         int *returndistortion, int *returnintra)
 {
     BLOCK *b = &x->block[0];
     BLOCKD *d = &x->e_mbd.block[0];

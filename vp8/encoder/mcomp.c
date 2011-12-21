@@ -856,6 +856,10 @@ int vp8_hex_search
     int dia_range = 8;
 
     int_mv fcenter_mv;
+
+    (void)search_param;
+    (void)mvcost;
+
     fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
     fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
 
