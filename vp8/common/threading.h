@@ -61,7 +61,7 @@
 #define sem_init(sem, sem_attr1, sem_init_value) (int)((*sem = CreateSemaphore(NULL,0,32768,NULL))==NULL)
 #define sem_wait(sem) (int)(WAIT_OBJECT_0 != WaitForSingleObject(*sem,INFINITE))
 #define sem_post(sem) ReleaseSemaphore(*sem,1,NULL)
-#define sem_destroy(sem) if(*sem)((int)(CloseHandle(*sem))==TRUE)
+#define sem_destroy(sem) if(*sem)((int)(CloseHandle(*sem))==1)
 #define thread_sleep(nms) Sleep(nms)
 
 #else
