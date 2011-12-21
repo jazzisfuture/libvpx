@@ -820,7 +820,7 @@ static int rd_cost_mbuv(MACROBLOCK *mb)
 
 
 static int rd_inter16x16_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
-                            int *distortion, int fullpixel)
+                            int *distortion)
 {
     vp8_build_inter16x16_predictors_mbuv(&x->e_mbd);
     ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), submbuv)(x->src_diff,
@@ -837,7 +837,7 @@ static int rd_inter16x16_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
 }
 
 static int rd_inter4x4_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
-                          int *distortion, int fullpixel)
+                          int *distortion)
 {
     vp8_build_inter4x4_predictors_mbuv(&x->e_mbd);
     ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), submbuv)(x->src_diff,
@@ -1975,7 +1975,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             if (tmp_rd < best_yrd)
             {
                 // Now work out UV cost and add it in
-                rd_inter4x4_uv(cpi, x, &rate_uv, &distortion_uv, cpi->common.full_pixel);
+                rd_inter4x4_uv(cpi, x, &rate_uv, &distortion_uv);
                 rate2 += rate_uv;
                 distortion2 += distortion_uv;
             }
@@ -2226,7 +2226,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             distortion2 += distortion;
 
             // UV cost and distortion
-            rd_inter16x16_uv(cpi, x, &rate_uv, &distortion_uv, cpi->common.full_pixel);
+            rd_inter16x16_uv(cpi, x, &rate_uv, &distortion_uv);
             rate2 += rate_uv;
             distortion2 += distortion_uv;
             break;

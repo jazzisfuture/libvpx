@@ -80,6 +80,7 @@ static unsigned long vp8_priv_sz(const vpx_codec_dec_cfg_t *si, vpx_codec_flags_
      * known)
      */
     (void)si;
+    (void)flags;
     return sizeof(vpx_codec_alg_priv_t);
 }
 
@@ -179,6 +180,7 @@ static void *mmap_lkup(vpx_codec_alg_priv_t *ctx, unsigned int id)
 static void vp8_finalize_mmaps(vpx_codec_alg_priv_t *ctx)
 {
     /* nothing to clean up */
+    (void)ctx;
 }
 
 static vpx_codec_err_t vp8_init(vpx_codec_ctx_t *ctx,
@@ -596,12 +598,13 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t   *img,
 
 
 static vpx_codec_err_t vp8_set_reference(vpx_codec_alg_priv_t *ctx,
-        int ctr_id,
+        int ctrl_id,
         va_list args)
 {
 
     vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
+    (void)ctrl_id;
     if (data)
     {
         vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
@@ -617,12 +620,13 @@ static vpx_codec_err_t vp8_set_reference(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t vp8_get_reference(vpx_codec_alg_priv_t *ctx,
-        int ctr_id,
+        int ctrl_id,
         va_list args)
 {
 
     vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
+    (void)ctrl_id;
     if (data)
     {
         vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
@@ -638,12 +642,13 @@ static vpx_codec_err_t vp8_get_reference(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t vp8_set_postproc(vpx_codec_alg_priv_t *ctx,
-                                        int ctr_id,
+                                        int ctrl_id,
                                         va_list args)
 {
 #if CONFIG_POSTPROC
     vp8_postproc_cfg_t *data = va_arg(args, vp8_postproc_cfg_t *);
 
+    (void)ctrl_id;
     if (data)
     {
         ctx->postproc_cfg_set = 1;
@@ -654,6 +659,9 @@ static vpx_codec_err_t vp8_set_postproc(vpx_codec_alg_priv_t *ctx,
         return VPX_CODEC_INVALID_PARAM;
 
 #else
+    (void)ctx;
+    (void)ctrl_id;
+    (void)args;
     return VPX_CODEC_INCAPABLE;
 #endif
 }
@@ -677,6 +685,9 @@ static vpx_codec_err_t vp8_set_dbg_options(vpx_codec_alg_priv_t *ctx,
 
     return VPX_CODEC_OK;
 #else
+    (void)ctx;
+    (void)ctrl_id;
+    (void)args;
     return VPX_CODEC_INCAPABLE;
 #endif
 }
@@ -688,6 +699,7 @@ static vpx_codec_err_t vp8_get_last_ref_updates(vpx_codec_alg_priv_t *ctx,
     int *update_info = va_arg(args, int *);
     VP8D_COMP *pbi = (VP8D_COMP *)ctx->pbi;
 
+    (void)ctrl_id;
     if (update_info)
     {
         *update_info = pbi->common.refresh_alt_ref_frame * (int) VP8_ALTR_FRAME
@@ -708,6 +720,7 @@ static vpx_codec_err_t vp8_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
 
     int *corrupted = va_arg(args, int *);
 
+    (void)ctrl_id;
     if (corrupted)
     {
         VP8D_COMP *pbi = (VP8D_COMP *)ctx->pbi;

@@ -318,10 +318,11 @@ static void decode_split_mv(vp8_reader *const bc, MODE_INFO *mi,
     mbmi->partitioning = s;
 }
 
-static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
-                            int mb_row, int mb_col)
+static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, int mb_col)
 {
     vp8_reader *const bc = & pbi->bc;
+    MB_MODE_INFO *mbmi = &mi->mbmi;
+
     mbmi->ref_frame = (MV_REFERENCE_FRAME) vp8_read(bc, pbi->prob_intra);
     if (mbmi->ref_frame)    /* inter MB */
     {
@@ -593,8 +594,7 @@ static void read_mb_features(vp8_reader *r, MB_MODE_INFO *mi, MACROBLOCKD *x)
     }
 }
 
-static void decode_mb_mode_mvs(VP8D_COMP *pbi, MODE_INFO *mi,
-                               MB_MODE_INFO *mbmi, int mb_row, int mb_col)
+static void decode_mb_mode_mvs(VP8D_COMP *pbi, MODE_INFO *mi, int mb_col)
 {
     /* Read the Macroblock segmentation map if it is being updated explicitly
      * this frame (reset to 0 above by default)
@@ -615,7 +615,7 @@ static void decode_mb_mode_mvs(VP8D_COMP *pbi, MODE_INFO *mi,
     if(pbi->common.frame_type == KEY_FRAME)
         read_kf_modes(pbi, mi);
     else
-        read_mb_modes_mv(pbi, mi, &mi->mbmi, mb_row, mb_col);
+        read_mb_modes_mv(pbi, mi, mb_col);
 
 }
 
@@ -640,7 +640,7 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi)
             int mb_num = mb_row * pbi->common.mb_cols + mb_col;
 #endif
 
-            decode_mb_mode_mvs(pbi, mi, &mi->mbmi, mb_row, mb_col);
+            decode_mb_mode_mvs(pbi, mi, mb_col);
 
 #if CONFIG_ERROR_CONCEALMENT
             /* look for corruption. set mvs_corrupt_from_mb to the current
