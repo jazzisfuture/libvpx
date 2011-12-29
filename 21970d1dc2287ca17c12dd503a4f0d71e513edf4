@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Scott LaVarnway <slavarnway@google.com>
+Submitted-at: Thu, 27 Oct 2011 05:14:00 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/10713
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Scott LaVarnway <slavarnway@google.com>
 Submitted-at: Thu, 27 Oct 2011 06:14:00 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/10713
 Project: webm/libvpx
