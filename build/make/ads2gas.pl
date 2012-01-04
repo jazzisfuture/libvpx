@@ -130,10 +130,10 @@ while (<STDIN>)
     s/\sARM/.arm/g;
 
     # REQUIRE8 Stack is required to be 8-byte aligned
-    s/\sREQUIRE8/.eabi_attribute Tag_ABI_align_needed, 1/g;
+    s/\sREQUIRE8/.eabi_attribute 24, 1 \@Tag_ABI_align_needed/g;
 
     # PRESERVE8 Stack 8-byte align is preserved
-    s/\sPRESERVE8/.eabi_attribute Tag_ABI_align_preserved, 1/g;
+    s/\sPRESERVE8/.eabi_attribute 25, 1 \@Tag_ABI_align_preserved/g;
 
     # Use PROC and ENDP to give the symbols a .size directive.
     # This makes them show up properly in debugging tools like gdb and valgrind.
