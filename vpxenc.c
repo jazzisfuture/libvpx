@@ -1473,6 +1473,7 @@ int main(int argc, const char **argv_)
     y4m_input                y4m;
     struct vpx_rational      arg_framerate = {30, 1};
     int                      arg_have_framerate = 0;
+    int                      arg_have_kf_max_dist = 0;
     int                      write_webm = 1;
     EbmlGlobal               ebml = {0};
     uint32_t                 hash = 0;
@@ -1694,7 +1695,10 @@ int main(int argc, const char **argv_)
         else if (arg_match(&arg, &kf_min_dist, argi))
             cfg.kf_min_dist = arg_parse_uint(&arg);
         else if (arg_match(&arg, &kf_max_dist, argi))
+        {
             cfg.kf_max_dist = arg_parse_uint(&arg);
+            arg_have_kf_max_dist = 1;
+        }
         else if (arg_match(&arg, &kf_disabled, argi))
             cfg.kf_mode = VPX_KF_DISABLED;
         else
@@ -1839,6 +1843,16 @@ int main(int argc, const char **argv_)
             fprintf(stderr, "Specify stream dimensions with --width (-w) "
                             " and --height (-h).\n");
             return EXIT_FAILURE;
+        }
+
+        /* Use a max keyframe interval of 5 seconds, if none was
+         * specified on the command line.which is a
+         */
+        if (!arg_have_kf_max_dist)
+        {
+            double framerate = (double)arg_framerate.num/arg_framerate.den;
+            if (framerate > 0.0)
+                cfg.kf_max_dist = 5.0*framerate;
         }
 
 #define SHOW(field) fprintf(stderr, "    %-28s = %d\n", #field, cfg.field)
