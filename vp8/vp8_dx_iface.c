@@ -700,6 +700,23 @@ static vpx_codec_err_t vp8_get_last_ref_updates(vpx_codec_alg_priv_t *ctx,
         return VPX_CODEC_INVALID_PARAM;
 }
 
+static vpx_codec_err_t vp8_get_last_ref_used(vpx_codec_alg_priv_t *ctx,
+                                                int ctrl_id,
+                                                va_list args)
+{
+    int *used_info = va_arg(args, int *);
+    VP8D_COMP *pbi = (VP8D_COMP *)ctx->pbi;
+
+    if (used_info)
+    {
+        *used_info = pbi->ref_frames_used;
+
+        return VPX_CODEC_OK;
+    }
+    else
+        return VPX_CODEC_INVALID_PARAM;
+}
+
 
 static vpx_codec_err_t vp8_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
                                                int ctrl_id,
@@ -731,6 +748,7 @@ vpx_codec_ctrl_fn_map_t vp8_ctf_maps[] =
     {VP8_SET_DBG_DISPLAY_MV,        vp8_set_dbg_options},
     {VP8D_GET_LAST_REF_UPDATES,     vp8_get_last_ref_updates},
     {VP8D_GET_FRAME_CORRUPTED,      vp8_get_frame_corrupted},
+    {VP8D_GET_LAST_REF_USED,        vp8_get_last_ref_used},
     { -1, NULL},
 };
 
