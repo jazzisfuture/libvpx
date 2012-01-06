@@ -42,6 +42,7 @@ COMPILING THE APPLICATIONS/LIBRARIES:
   --help output of the configure script. As of this writing, the list of
   available targets is:
 
+    armv5te-android-gcc
     armv5te-linux-rvct
     armv5te-linux-gcc
     armv5te-symbian-gcc
@@ -53,6 +54,7 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     iwmmxt-linux-gcc
     iwmmxt2-linux-rvct
     iwmmxt2-linux-gcc
+    armv7-android-gcc
     armv7-linux-rvct
     armv7-linux-gcc
     mips32-linux-gcc
