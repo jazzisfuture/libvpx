@@ -477,7 +477,11 @@ process_common_cmdline() {
         --libdir=*)
         libdir="${optval}"
         ;;
-        --libc|--as|--prefix|--libdir)
+        --sdk-path=*)
+        [ -d "${optval}" ] || die "Not a directory: ${optval}"
+        sdk_path="${optval}"
+        ;;
+        --libc|--as|--prefix|--libdir|--sdk-path)
         die "Option ${opt} requires argument"
         ;;
         --help|-h) show_help
@@ -740,8 +744,33 @@ process_common_toolchain() {
             disable multithread
             disable os_support
             ;;
+
+        android*)
+            SDK_PATH=${sdk_path}
+            TOOLCHAIN_PATH=${SDK_PATH}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-
+            CC=${TOOLCHAIN_PATH}gcc
+            AR=${TOOLCHAIN_PATH}ar
+            LD=${TOOLCHAIN_PATH}ld
+            AS=${TOOLCHAIN_PATH}as
+            STRIP=${TOOLCHAIN_PATH}strip
+            NM=${TOOLCHAIN_PATH}nm
+
+            if [ -z "${alt_libc}" ]; then
+                alt_libc=${SDK_PATH}/platforms/android-9/arch-arm
+            fi
+
+            add_cflags  "--sysroot=${alt_libc}"
+            add_ldflags  "--sysroot=${alt_libc}"
+
+            enable pic
+          ;;
+
         darwin*)
-            SDK_PATH=/Developer/Platforms/iPhoneOS.platform/Developer
+            if [ -z "${sdk_path}" ]; then
+                SDK_PATH=/Developer/Platforms/iPhoneOS.platform/Developer
+            else
+                SDK_PATH=${sdk_path}
+            fi
             TOOLCHAIN_PATH=${SDK_PATH}/usr/bin
             CC=${TOOLCHAIN_PATH}/gcc
             AR=${TOOLCHAIN_PATH}/ar
@@ -759,10 +788,11 @@ process_common_toolchain() {
             add_cflags -arch ${tgt_isa}
             add_ldflags -arch_only ${tgt_isa}
 
-            add_cflags  "-isysroot ${SDK_PATH}/SDKs/iPhoneOS5.0.sdk"
+            if [ -z "${alt_libc}" ]; then
+                alt_libc=${SDK_PATH}/SDKs/iPhoneOS5.0.sdk
+            fi
 
-            # This should be overridable
-            alt_libc=${SDK_PATH}/SDKs/iPhoneOS5.0.sdk
+            add_cflags  "-isysroot ${alt_libc}"
 
             # Add the paths for the alternate libc
             for d in usr/include; do
@@ -1001,6 +1031,7 @@ EOF
     if enabled multithread; then
         case ${toolchain} in
             *-win*);;
+            *-android-gcc);;
             *) check_header pthread.h && add_extralibs -lpthread
         esac
     fi
