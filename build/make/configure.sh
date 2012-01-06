@@ -1088,8 +1088,10 @@ process() {
     fi
     post_process_common_cmdline
     post_process_cmdline
-    process_toolchain
-    process_detect
+    if ! disabled bypass_compiler ; then
+        process_toolchain
+        process_detect
+    fi
     process_targets
 
     OOT_INSTALLS="${OOT_INSTALLS}"

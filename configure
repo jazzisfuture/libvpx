@@ -45,6 +45,7 @@ Advanced options:
   ${toggle_small}                 favor smaller size over speed
   ${toggle_postproc_visualizer}   macro block / block level visualizers
   ${toggle_multi_res_encoding}    enable multiple-resolution encoding
+  ${toggle_bypass_compiler}       create .mk files for inclusion into other build systems
 
 Codecs:
   Codecs can be selectively enabled or disabled individually, or by family:
@@ -265,6 +266,7 @@ CONFIG_LIST="
     os_support
     unit_tests
     multi_res_encoding
+    bypass_compiler
 "
 CMDLINE_SELECT="
     extra_warnings
@@ -308,6 +310,7 @@ CMDLINE_SELECT="
     postproc_visualizer
     unit_tests
     multi_res_encoding
+    bypass_compiler
 "
 
 process_cmdline() {
