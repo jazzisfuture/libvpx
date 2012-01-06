@@ -25,6 +25,7 @@ Advanced options:
   ${toggle_unit_tests}            build unit tests
   --libc=PATH                     path to alternate libc
   --as={yasm|nasm|auto}           use specified assembler [auto, yasm preferred]
+  --sdk-path=PATH                 path to root of sdk (iOS, android builds only)
   ${toggle_fast_unaligned}        don't use unaligned accesses, even when
                                   supported by hardware [auto]
   ${toggle_codec_srcs}            in/exclude codec library source code
@@ -93,6 +94,7 @@ all_platforms="${all_platforms} iwmmxt-linux-rvct"
 all_platforms="${all_platforms} iwmmxt-linux-gcc"
 all_platforms="${all_platforms} iwmmxt2-linux-rvct"
 all_platforms="${all_platforms} iwmmxt2-linux-gcc"
+all_platforms="${all_platforms} armv7-android-gcc"   #neon Cortex-A8
 all_platforms="${all_platforms} armv7-darwin-gcc"    #neon Cortex-A8
 all_platforms="${all_platforms} armv7-linux-rvct"    #neon Cortex-A8
 all_platforms="${all_platforms} armv7-linux-gcc"     #neon Cortex-A8
