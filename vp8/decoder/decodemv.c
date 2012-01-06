@@ -358,9 +358,9 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         nmv[0].as_int = nmv[1].as_int = nmv[2].as_int = 0;
         cnt[0] = cnt[1] = cnt[2] = cnt[3] = 0;
 
-        /* Process above */
         if (above->mbmi.ref_frame != INTRA_FRAME)
         {
+            /* Process above */
             if (above->mbmi.mv.as_int)
             {
                 (++nmv)->as_int = above->mbmi.mv.as_int;
@@ -370,11 +370,8 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
             }
 
             *cntx += 2;
-        }
 
-        /* Process left */
-        if (left->mbmi.ref_frame != INTRA_FRAME)
-        {
+            /* Process left */
             if (left->mbmi.mv.as_int)
             {
                 int_mv this_mv;
@@ -393,11 +390,8 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
             }
             else
                 cnt[CNT_INTRA] += 2;
-        }
 
-        /* Process above left */
-        if (aboveleft->mbmi.ref_frame != INTRA_FRAME)
-        {
+            /* Process above left */
             if (aboveleft->mbmi.mv.as_int)
             {
                 int_mv this_mv;
