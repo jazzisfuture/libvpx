@@ -15,6 +15,13 @@
 #include "onyxd_int.h"
 #include "vp8/common/findnearmv.h"
 
+typedef enum vpx_ref_frame_type
+{
+    VP8_LAST_FRAME = 1,
+    VP8_GOLD_FRAME = 2,
+    VP8_ALTR_FRAME = 4
+} vpx_ref_frame_type_t;
+
 #if CONFIG_DEBUG
 #include <assert.h>
 #endif
@@ -575,7 +582,12 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
         mbmi->uv_mode = read_uv_mode(bc, pbi->common.fc.uv_mode_prob);
     }
-
+    pbi->ref_frames_used |=
+        ( mbmi->ref_frame == LAST_FRAME ? VP8_LAST_FRAME :
+          mbmi->ref_frame == GOLDEN_FRAME ? VP8_GOLD_FRAME :
+          mbmi->ref_frame == ALTREF_FRAME ? VP8_ALTR_FRAME :
+          0
+        );
 }
 
 static void read_mb_features(vp8_reader *r, MB_MODE_INFO *mi, MACROBLOCKD *x)
@@ -625,6 +637,7 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi)
     int mb_row = -1;
 
     mb_mode_mv_init(pbi);
+    pbi->ref_frames_used = 0;
 
     while (++mb_row < pbi->common.mb_rows)
     {

@@ -111,6 +111,8 @@ typedef struct VP8D_COMP
     int independent_partitions;
     int frame_corrupt_residual;
 
+    int ref_frames_used;
+
 } VP8D_COMP;
 
 int vp8_decode_frame(VP8D_COMP *cpi);
