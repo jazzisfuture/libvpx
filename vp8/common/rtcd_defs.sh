@@ -148,3 +148,38 @@ if [ "$CONFIG_POSTPROC" = "yes" ]; then
     prototype void vp8_blend_b "unsigned char *y, unsigned char *u, unsigned char *v, int y1, int u1, int v1, int alpha, int stride"
     # no asm yet
 fi
+
+#
+# Subpixel
+#
+prototype void vp8_sixtap_predict16x16 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_sixtap_predict16x16 mmx sse2 ssse3 v6 neon
+vp8_sixtap_predict16x16_v6=vp8_sixtap_predict16x16_armv6
+
+prototype void vp8_sixtap_predict8x8 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_sixtap_predict8x8 mmx sse2 ssse3 v6 neon
+vp8_sixtap_predict8x8_v6=vp8_sixtap_predict8x8_armv6
+
+prototype void vp8_sixtap_predict8x4 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_sixtap_predict8x4 mmx sse2 ssse3 v6 neon
+vp8_sixtap_predict8x4_v6=vp8_sixtap_predict8x4_armv6
+
+prototype void vp8_sixtap_predict4x4 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_sixtap_predict4x4 mmx ssse3 v6 neon
+vp8_sixtap_predict4x4_v6=vp8_sixtap_predict4x4_armv6
+
+prototype void vp8_bilinear_predict16x16 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_bilinear_predict16x16 mmx sse2 ssse3 v6 neon
+vp8_bilinear_predict16x16_v6=vp8_bilinear_predict16x16_armv6
+
+prototype void vp8_bilinear_predict8x8 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_bilinear_predict8x8 mmx sse2 ssse3 v6 neon
+vp8_bilinear_predict8x8_v6=vp8_bilinear_predict8x8_armv6
+
+prototype void vp8_bilinear_predict8x4 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_bilinear_predict8x4 mmx v6 neon
+vp8_bilinear_predict8x4_v6=vp8_bilinear_predict8x4_armv6
+
+prototype void vp8_bilinear_predict4x4 "unsigned char *src, int src_pitch, int xofst, int yofst, unsigned char *dst, int dst_pitch"
+specialize vp8_bilinear_predict4x4 mmx v6 neon
+vp8_bilinear_predict4x4_v6=vp8_bilinear_predict4x4_armv6
