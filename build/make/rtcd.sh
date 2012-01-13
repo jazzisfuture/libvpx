@@ -112,7 +112,7 @@ determine_indirection() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     for opt in "$@"; do
@@ -132,7 +132,7 @@ declare_function_pointers() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     for opt in "$@"; do
@@ -153,7 +153,7 @@ set_function_pointers() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     if $(eval "echo \$${fn}_indirect"); then

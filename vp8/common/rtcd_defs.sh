@@ -1,6 +1,7 @@
 common_forward_decls() {
 cat <<EOF
 struct blockd;
+struct macroblockd;
 struct loop_filter_info;
 EOF
 }
@@ -89,3 +90,31 @@ specialize vp8_short_inv_walsh4x4 mmx sse2 v6 neon
 #idct1_scalar_add
 prototype void vp8_dc_only_idct_add "short input, unsigned char *pred, int pred_stride, unsigned char *dst, int dst_stride"
 specialize vp8_dc_only_idct_add	mmx v6 neon
+
+#
+# RECON
+#
+prototype void vp8_copy_mem16x16 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
+specialize vp8_copy_mem16x16 mmx sse2 v6 neon
+
+prototype void vp8_copy_mem8x8 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
+specialize vp8_copy_mem8x8 mmx v6 neon
+
+prototype void vp8_copy_mem8x4 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
+specialize vp8_copy_mem8x4 mmx v6 neon
+
+prototype void vp8_build_intra_predictors_mby "struct macroblockd *x"
+specialize vp8_build_intra_predictors_mby sse2 ssse3 neon
+
+prototype void vp8_build_intra_predictors_mby_s "struct macroblockd *x"
+specialize vp8_build_intra_predictors_mby_s sse2 ssse3 neon
+
+prototype void vp8_build_intra_predictors_mbuv "struct macroblockd *x"
+specialize vp8_build_intra_predictors_mbuv sse2 ssse3
+
+prototype void vp8_build_intra_predictors_mbuv_s "struct macroblockd *x"
+specialize vp8_build_intra_predictors_mbuv_s sse2 ssse3
+
+prototype void vp8_intra4x4_predict "unsigned char *src, int src_stride, int b_mode, unsigned char *dst, int dst_stride"
+specialize vp8_intra4x4_predict v6
+vp8_intra4x4_predict_v6=vp8_intra4x4_predict_armv6
