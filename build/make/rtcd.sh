@@ -57,11 +57,15 @@ for f in $defs_file; do [ -f "$f" ] || usage; done
 # Routines for the RTCD DSL to call
 #
 prototype() {
-  local rtyp="$1"
+  local rtyp
+  case "$1" in
+    unsigned) rtyp="$1 "; shift;;
+  esac
+  rtyp="${rtyp}$1"
   local fn="$2"
   local args="$3"
 
-  eval "${2}_rtyp='$1'"
+  eval "${2}_rtyp='$rtyp'"
   eval "${2}_args='$3'"
   ALL_FUNCS="$ALL_FUNCS $fn"
   specialize $fn c
