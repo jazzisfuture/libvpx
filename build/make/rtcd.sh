@@ -34,7 +34,7 @@ for opt; do
     --disable-*) eval "disable_${opt#--disable-}=true";;
     --sym) die_argument_required;;
     --sym=*) symbol=${optval};;
-    --rtcd=*) CONFIG_RUNTIME_CPU_DETECT=${optval};;
+    --config=*) config_file=${optval};;
     -h|--help)
       usage
       ;;
@@ -50,6 +50,9 @@ done
 for f in $defs_file; do [ -f "$f" ] || usage; done
 [ -n "$arch" ] || usage
 
+# Import the configuration
+[ -f "$config_file" ] && eval $(grep CONFIG_ "$config_file")
+
 #
 # Routines for the RTCD DSL to call
 #
@@ -61,12 +64,13 @@ prototype() {
   eval "${2}_rtyp='$1'"
   eval "${2}_args='$3'"
   ALL_FUNCS="$ALL_FUNCS $fn"
+  specialize $fn c
 }
 
 specialize() {
   local fn="$1"
   shift
-  for opt in c "$@"; do
+  for opt in "$@"; do
     eval "${fn}_${opt}=${fn}_${opt}"
   done
 }
