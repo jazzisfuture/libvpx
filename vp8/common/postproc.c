@@ -724,18 +724,18 @@ static void multiframe_quality_enhance_block
     unsigned int act, sse, sad, thr;
     if (blksize == 16)
     {
-        act = vp8_variance_var16x16(y, y_stride, VP8_ZEROS, 0, &sse);
-        sad = vp8_variance_sad16x16(y, y_stride, yd, yd_stride, 0);
+        act = vp8_variance16x16(y, y_stride, VP8_ZEROS, 0, &sse);
+        sad = vp8_sad16x16(y, y_stride, yd, yd_stride, 0);
     }
     else if (blksize == 8)
     {
-        act = vp8_variance_var8x8(y, y_stride, VP8_ZEROS, 0, &sse);
-        sad = vp8_variance_sad8x8(y, y_stride, yd, yd_stride, 0);
+        act = vp8_variance8x8(y, y_stride, VP8_ZEROS, 0, &sse);
+        sad = vp8_sad8x8(y, y_stride, yd, yd_stride, 0);
     }
     else
     {
-        act = vp8_variance_var4x4(y, y_stride, VP8_ZEROS, 0, &sse);
-        sad = vp8_variance_sad4x4(y, y_stride, yd, yd_stride, 0);
+        act = vp8_variance4x4(y, y_stride, VP8_ZEROS, 0, &sse);
+        sad = vp8_sad4x4(y, y_stride, yd, yd_stride, 0);
     }
 
     thr = 6 * blksizesq + (act >> 3);
