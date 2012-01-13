@@ -112,7 +112,7 @@ determine_indirection() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     for opt in "$@"; do
@@ -132,7 +132,7 @@ declare_function_pointers() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     for opt in "$@"; do
@@ -153,7 +153,7 @@ set_function_pointers() {
   for fn in $ALL_FUNCS; do
     local n=""
     local rtyp="$(eval "echo \$${fn}_rtyp")"
-    local args="$(eval "echo \$${fn}_args")"
+    local args="$(eval "echo \"\$${fn}_args\"")"
     local dfn="$(eval "echo \$${fn}_default")"
     dfn=$(eval "echo \$${dfn}")
     if $(eval "echo \$${fn}_indirect"); then
@@ -264,11 +264,11 @@ EOF
 require c
 case $arch in
   x86)
-    ALL_ARCHS=$(filter mmx sse sse2 sse3 sse4_1)
+    ALL_ARCHS=$(filter mmx sse sse2 sse3 ssse3 sse4_1)
     x86
     ;;
   x86_64)
-    ALL_ARCHS=$(filter mmx sse sse2 sse3 sse4_1)
+    ALL_ARCHS=$(filter mmx sse sse2 sse3 ssse3 sse4_1)
     require $(filter mmx sse sse2)
     x86
     ;;
