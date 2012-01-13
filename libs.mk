@@ -330,7 +330,7 @@ CLEAN-OBJS += $(BUILD_PFX)vpx_version.h
 $(OBJS-yes:.o=.d): vpx_rtcd.h
 vpx_rtcd.h: $(sort $(filter %rtcd_defs.sh,$(CODEC_SRCS)))
 	$(SRC_PATH_BARE)/build/make/rtcd.sh --arch=$(TGT_ISA) --sym=vpx_rtcd \
-      --rtcd=$(CONFIG_RUNTIME_CPU_DETECT) $^ > $@
+      --config=$(target)$(if $(FAT_ARCHS),,-$(TOOLCHAIN)).mk $^ > $@
 CLEAN-OBJS += $(BUILD_PFX)vpx_rtcd.h
 
 CODEC_DOC_SRCS += vpx/vpx_codec.h \
