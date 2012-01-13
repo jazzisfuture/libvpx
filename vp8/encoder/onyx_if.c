@@ -1003,10 +1003,6 @@ void vp8_set_speed_features(VP8_COMP *cpi)
     if (cpi->sf.improved_quant != last_improved_quant)
         vp8cx_init_quantizer(cpi);
 
-#if CONFIG_RUNTIME_CPU_DETECT
-    cpi->mb.e_mbd.rtcd = &cpi->common.rtcd;
-#endif
-
     if (cpi->sf.iterative_sub_pixel == 1)
     {
         cpi->find_fractional_mv_step = vp8_find_best_sub_pixel_step_iteratively;
@@ -4515,7 +4511,7 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags, YV12_BUFFER_C
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->rtcd.flags & HAS_NEON)
+    if (cm->cpu_caps & HAS_NEON)
 #endif
     {
         vp8_push_neon(store_reg);
@@ -4532,7 +4528,7 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags, YV12_BUFFER_C
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->rtcd.flags & HAS_NEON)
+    if (cm->cpu_caps & HAS_NEON)
 #endif
     {
         vp8_pop_neon(store_reg);
@@ -4583,7 +4579,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->rtcd.flags & HAS_NEON)
+    if (cm->cpu_caps & HAS_NEON)
 #endif
     {
         vp8_push_neon(store_reg);
@@ -4658,7 +4654,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
-        if (cm->rtcd.flags & HAS_NEON)
+        if (cm->cpu_caps & HAS_NEON)
 #endif
         {
             vp8_pop_neon(store_reg);
@@ -5035,7 +5031,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->rtcd.flags & HAS_NEON)
+    if (cm->cpu_caps & HAS_NEON)
 #endif
     {
         vp8_pop_neon(store_reg);
