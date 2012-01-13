@@ -61,12 +61,13 @@ prototype() {
   eval "${2}_rtyp='$1'"
   eval "${2}_args='$3'"
   ALL_FUNCS="$ALL_FUNCS $fn"
+  specialize $fn c
 }
 
 specialize() {
   local fn="$1"
   shift
-  for opt in c "$@"; do
+  for opt in "$@"; do
     eval "${fn}_${opt}=${fn}_${opt}"
   done
 }
