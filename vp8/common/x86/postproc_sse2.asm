@@ -139,6 +139,21 @@ sym(vp8_post_proc_down_and_across_xmm):
         sub         rsi,        rdx
         sub         rdi,        rdx
 
+        ; dup the first byte into the left border 8 times
+        movq        xmm1,   [rdi]
+        pxor        xmm2,   xmm2
+        pshufb      xmm1,   xmm2
+
+        mov         rdx,    -8
+        movq        [rdi+rdx], xmm1
+
+        ; dup the last byte into the right border
+        movsxd      rdx,    dword arg(5)
+        movq        xmm1,   [rdi + rdx + -1]
+        pshufb      xmm1,   xmm2
+        movq        [rdi+rdx], xmm1
+
+
         xor         rdx,        rdx
         movq        mm0,        QWORD PTR [rdi-8];
 
@@ -287,11 +302,39 @@ sym(vp8_mbpost_proc_down_xmm):
             pxor        xmm0,       xmm0        ;
 
             movsxd      rax,        dword ptr arg(1) ;pitch       ;
+
+            ; this copies the last row down into the border 8 rows
+            mov         rdi,        rsi
+            mov         rdx,        arg(2)
+            sub         rdx,        9
+            imul        rdx,        rax
+            lea         rdi,        [rdi+rdx]
+            movq        xmm1,       QWORD ptr[rdi]              ; first row
+            mov         rcx,        8
+.init_borderd                                                    ; initialize borders
+            lea         rdi,        [rdi + rax]
+            movq        [rdi],      xmm1
+
+            dec         rcx
+            jne         .init_borderd
+
             neg         rax                                     ; rax = -pitch
+
+            ; this copies the first row up into the border 8 rows
+            mov         rdi,        rsi
+            movq        xmm1,       QWORD ptr[rdi]              ; first row
+            mov         rcx,        8
+.init_border                                                    ; initialize borders
+            lea         rdi,        [rdi + rax]
+            movq        [rdi],      xmm1
+
+            dec         rcx
+            jne         .init_border
+
+
 
             lea         rsi,        [rsi + rax*8];              ; rdi = s[-pitch*8]
             neg         rax
-
 
             pxor        xmm5,       xmm5
             pxor        xmm6,       xmm6        ;
@@ -480,7 +523,23 @@ sym(vp8_mbpost_proc_across_ip_xmm):
         xor         rdx,    rdx ;sumsq=0;
         xor         rcx,    rcx ;sum=0;
         mov         rsi,    arg(0); s
+
+        ; dup the first byte into the left border
+        movq        xmm1,   [rsi]
+        pxor        xmm2,   xmm2
+        pshufb      xmm1,   xmm2
+
         mov         rdi,    -8
+        movq        [rsi+rdi], xmm1
+
+        ; dup the last byte into the right border
+        movsxd      rdx,    dword arg(3)
+        movq        xmm1,   [rsi + rdx + -1]
+        pshufb      xmm1,   xmm2
+        movq        [rsi+rdx], xmm1
+
+
+
 .ip_var_loop:
         ;for(i=-8;i<=6;i++)
         ;{
