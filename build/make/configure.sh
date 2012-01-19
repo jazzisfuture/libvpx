@@ -671,9 +671,16 @@ process_common_toolchain() {
     case ${toolchain} in
     arm*)
         # on arm, isa versions are supersets
-        enabled armv7a && soft_enable armv7 ### DEBUG
-        enabled armv7 && soft_enable armv6
-        enabled armv7 || enabled armv6 && soft_enable armv5te
+        case ${tgt_isa} in
+        armv7)
+            soft_enable armv6
+            soft_enable armv5te
+        ;;
+        armv6)
+            soft_enable armv5te
+        ;;
+        esac
+
         enabled armv7 || enabled armv6 && soft_enable fast_unaligned
 
         asm_conversion_cmd="cat"
@@ -687,8 +694,7 @@ process_common_toolchain() {
             arch_int=${arch_int%%te}
             check_add_asflags --defsym ARCHITECTURE=${arch_int}
             tune_cflags="-mtune="
-            if enabled armv7
-            then
+            if [ "${tgt_isa}" == "armv7" ]; then
                 check_add_cflags -march=armv7-a -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp  #-ftree-vectorize
                 check_add_asflags -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp  #-march=armv7-a
             else
