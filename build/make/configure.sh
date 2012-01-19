@@ -671,9 +671,16 @@ process_common_toolchain() {
     case ${toolchain} in
     arm*)
         # on arm, isa versions are supersets
-        enabled armv7a && soft_enable armv7 ### DEBUG
-        enabled armv7 && soft_enable armv6
-        enabled armv7 || enabled armv6 && soft_enable armv5te
+        case ${tgt_isa} in
+        armv7)
+            soft_enable armv6
+            soft_enable armv5te
+        ;;
+        armv6)
+            soft_enable armv5te
+        ;;
+        esac
+
         enabled armv7 || enabled armv6 && soft_enable fast_unaligned
 
         asm_conversion_cmd="cat"
