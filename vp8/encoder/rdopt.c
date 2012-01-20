@@ -465,7 +465,7 @@ int VP8_UVSSE(MACROBLOCK *x, const vp8_variance_rtcd_vtable_t *rtcd)
     int mv_row = x->e_mbd.mode_info_context->mbmi.mv.as_mv.row;
     int mv_col = x->e_mbd.mode_info_context->mbmi.mv.as_mv.col;
     int offset;
-    int pre_stride = x->e_mbd.block[16].pre_stride;
+    int pre_stride = x->e_mbd.pre.uv_stride;
 
     if (mv_row < 0)
         mv_row -= 1;
@@ -644,6 +644,8 @@ static int rd_pick_intra4x4block(
      * */
     DECLARE_ALIGNED_ARRAY(16, unsigned char,  best_predictor, 16*4);
     DECLARE_ALIGNED_ARRAY(16, short, best_dqcoeff, 16);
+    int dst_stride = x->e_mbd.dst.y_stride;
+    unsigned char *base_dst = x->e_mbd.dst.y_buffer;
 
     for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++)
     {
@@ -653,7 +655,7 @@ static int rd_pick_intra4x4block(
         rate = bmode_costs[mode];
 
         RECON_INVOKE(&cpi->rtcd.common->recon, intra4x4_predict)
-                     (*(b->base_dst) + b->dst, b->dst_stride,
+                     (base_dst + b->offset, dst_stride,
                       mode, b->predictor, 16);
         ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), subb)(be, b, 16);
         x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
@@ -684,7 +686,7 @@ static int rd_pick_intra4x4block(
     b->bmi.as_mode = (B_PREDICTION_MODE)(*best_mode);
 
     IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff,
-        best_predictor, 16, *(b->base_dst) + b->dst, b->dst_stride);
+        best_predictor, 16, base_dst + b->offset, dst_stride);
 
     return best_rd;
 }
@@ -1017,6 +1019,9 @@ static unsigned int vp8_encode_inter_mb_segment(MACROBLOCK *x, int const *labels
 {
     int i;
     unsigned int distortion = 0;
+    int pre_stride = x->e_mbd.pre.y_stride;
+    unsigned char *base_pre = x->e_mbd.pre.y_buffer;
+
 
     for (i = 0; i < 16; i++)
     {
@@ -1026,7 +1031,7 @@ static unsigned int vp8_encode_inter_mb_segment(MACROBLOCK *x, int const *labels
             BLOCK *be = &x->block[i];
 
 
-            vp8_build_inter_predictors_b(bd, 16, x->e_mbd.subpixel_predict);
+            vp8_build_inter_predictors_b(bd, 16, base_pre, pre_stride, x->e_mbd.subpixel_predict);
             ENCODEMB_INVOKE(rtcd, subb)(be, bd, 16);
             x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
 

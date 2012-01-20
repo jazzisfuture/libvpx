@@ -65,9 +65,11 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
 {
     BLOCKD *b = &x->e_mbd.block[ib];
     BLOCK *be = &x->block[ib];
+    int dst_stride = x->e_mbd.dst.y_stride;
+    unsigned char *base_dst = x->e_mbd.dst.y_buffer;
 
     RECON_INVOKE(&rtcd->common->recon, intra4x4_predict)
-                (*(b->base_dst) + b->dst, b->dst_stride,
+                (base_dst + b->offset, dst_stride,
                  b->bmi.as_mode, b->predictor, 16);
 
     ENCODEMB_INVOKE(&rtcd->encodemb, subb)(be, b, 16);
@@ -79,13 +81,13 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
     if (*b->eob > 1)
     {
         IDCT_INVOKE(IF_RTCD(&rtcd->common->idct), idct16)(b->dqcoeff,
-            b->predictor, 16, *(b->base_dst) + b->dst, b->dst_stride);
+            b->predictor, 16, base_dst + b->offset, dst_stride);
     }
     else
     {
         IDCT_INVOKE(IF_RTCD(&rtcd->common->idct), idct1_scalar_add)
-            (b->dqcoeff[0], b->predictor, 16, *(b->base_dst) + b->dst,
-                b->dst_stride);
+            (b->dqcoeff[0], b->predictor, 16, base_dst + b->offset,
+                dst_stride);
     }
 }
 
