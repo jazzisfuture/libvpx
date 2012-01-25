@@ -134,12 +134,48 @@ void vp8_find_near_mvs
     best_mv->as_int = near_mvs[0].as_int;
     nearest->as_int = near_mvs[CNT_NEAREST].as_int;
     nearby->as_int = near_mvs[CNT_NEAR].as_int;
-
-    //TODO: move clamp outside findnearmv
-    vp8_clamp_mv2(nearest, xd);
-    vp8_clamp_mv2(nearby, xd);
-    vp8_clamp_mv2(best_mv, xd);
 }
+
+
+static void invert_mv(int_mv *out, int_mv *in)
+{
+    out->as_mv.row = in->as_mv.row * -1;
+    out->as_mv.col = in->as_mv.col * -1;
+}
+
+
+int vp8_find_near_mvs_bias
+(
+    MACROBLOCKD *xd,
+    const MODE_INFO *here,
+    int_mv mode_mv_sb[2][MB_MODE_COUNT],
+    int_mv best_mv_sb[2],
+    int cnt[4],
+    int refframe,
+    int *ref_frame_sign_bias
+)
+{
+    int sign_bias = ref_frame_sign_bias[refframe];
+
+    vp8_find_near_mvs(xd,
+                      here,
+                      &mode_mv_sb[sign_bias][NEARESTMV],
+                      &mode_mv_sb[sign_bias][NEARMV],
+                      &best_mv_sb[sign_bias],
+                      cnt,
+                      refframe,
+                      ref_frame_sign_bias);
+
+    invert_mv(&mode_mv_sb[!sign_bias][NEARESTMV],
+              &mode_mv_sb[sign_bias][NEARESTMV]);
+    invert_mv(&mode_mv_sb[!sign_bias][NEARMV],
+              &mode_mv_sb[sign_bias][NEARMV]);
+    invert_mv(&best_mv_sb[!sign_bias],
+              &best_mv_sb[sign_bias]);
+
+    return sign_bias;
+}
+
 
 vp8_prob *vp8_mv_ref_probs(
     vp8_prob p[VP8_MVREFS-1], const int near_mv_ref_ct[4]
