@@ -693,6 +693,78 @@ static void constrain_line (int x0, int *x1, int y0, int *y1, int width, int hei
 }
 
 
+/* Calculate the SAD between src1 and src2 as well as the variance across src2
+ * and return both variables via pointers
+ *
+ * Variance is calculated for 16x16, 8x8 and 4x4.
+ * Combinations such as 16x8 are not supported.
+ */
+static void variance_plus_sad(unsigned char *src1,
+                              int stride1,
+                              unsigned char *src2,
+                              int stride2,
+                              int block_size,
+                              unsigned int *variance,
+                              unsigned int *sad)
+{
+  int r, c;
+  int sum_src2 = 0;
+  unsigned int sum_squared_src2 = 0;
+
+  *sad = 0;
+
+  for (r = 0; r < block_size; r++)
+  {
+    for (c = 0; c < block_size; c++)
+    {
+      *sad += abs(src1[c] - src2[c]);
+
+      sum_src2 += src2[c];
+      sum_squared_src2 += src2[c] * src2[c];
+    }
+    src1 += stride1;
+    src2 += stride2;
+  }
+
+  switch (block_size)
+  {
+  case 16:
+    *variance = sum_squared_src2 - ((sum_src2 * sum_src2) >> 8);
+    break;
+  case 8:
+    *variance = sum_squared_src2 - ((sum_src2 * sum_src2) >> 6);
+    break;
+  case 4:
+  default:
+    *variance = sum_squared_src2 - ((sum_src2 * sum_src2) >> 4);
+    break;
+  }
+}
+
+static void combine_weighted_blocks(unsigned char *src,
+                                    int src_stride,
+                                    unsigned char *dst,
+                                    int dst_stride,
+                                    int block_size,
+                                    int src_weight)
+{
+  int dst_weight = (1 << MFQE_PRECISION) - src_weight;
+  int rounding_bit = 1 << (MFQE_PRECISION - 1);
+  int r, c;
+
+  for (r = 0; r < block_size; r++)
+  {
+    for (c = 0; c < block_size; c++)
+    {
+      dst[c] = (src[c] * src_weight +
+                dst[c] * dst_weight +
+                rounding_bit) >> MFQE_PRECISION;
+    }
+    src += src_stride;
+    dst += dst_stride;
+  }
+}
+
 static void multiframe_quality_enhance_block
 (
     int blksize, /* Currently only values supported are 16, 8, 4 */
@@ -710,14 +782,10 @@ static void multiframe_quality_enhance_block
     int uvd_stride
 )
 {
-    static const unsigned char VP8_ZEROS[16]=
-    {
-         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-    };
-    int blksizeby2 = blksize >> 1;
+    int uvblksize = blksize >> 1;
     int qdiff = qcurr - qprev;
 
-    int i, j;
+    int i;
     unsigned char *yp;
     unsigned char *ydp;
     unsigned char *up;
@@ -725,50 +793,60 @@ static void multiframe_quality_enhance_block
     unsigned char *vp;
     unsigned char *vdp;
 
-    unsigned int act, sse, sad, thr;
+    unsigned int act, sad, thr;
+
+    variance_plus_sad(y, y_stride, yd, yd_stride, blksize, &act, &sad);
+
+    /* This fixup could potentially be added to variance_plus_sad.
+     * There could alse be multiple variance_plus_sad functions:
+     * 16x16, 8x8, etc
+     */
+
     if (blksize == 16)
     {
-        act = (vp8_variance16x16(yd, yd_stride, VP8_ZEROS, 0, &sse)+128)>>8;
-        sad = (vp8_sad16x16(y, y_stride, yd, yd_stride, 0)+128)>>8;
+        act = (act + 128) >> 8;
+        sad = (sad + 128) >> 8;
     }
     else if (blksize == 8)
     {
-        act = (vp8_variance8x8(yd, yd_stride, VP8_ZEROS, 0, &sse)+32)>>6;
-        sad = (vp8_sad8x8(y, y_stride, yd, yd_stride, 0)+32)>>6;
+        act = (act + 32) >> 6;
+        sad = (sad + 32) >> 6;
     }
     else
     {
-        act = (vp8_variance4x4(yd, yd_stride, VP8_ZEROS, 0, &sse)+8)>>4;
-        sad = (vp8_sad4x4(y, y_stride, yd, yd_stride, 0)+8)>>4;
+        act = (act + 8) >> 4;
+        sad = (sad + 8) >> 4;
     }
+
     /* thr = qdiff/8 + log2(act) + log4(qprev) */
     thr = (qdiff>>3);
     while (act>>=1) thr++;
     while (qprev>>=2) thr++;
     if (sad < thr)
     {
-        static const int roundoff = (1 << (MFQE_PRECISION - 1));
+        /*
+         * option 2:
+         * 2 functions: y supports 16, 8, 4
+         *  takes: y, yd, y_stride, yd_stride, blksize, ifactor
+         *  6 arguments
+         *
+         *              uv supports  8, 4, 2
+         *  takes u, ud, v, vd, uv_stride, uvd_stride, uvblksize, ifactor
+         *  8 arguments
+         */
         int ifactor = (sad << MFQE_PRECISION) / thr;
         ifactor >>= (qdiff >> 5);
-        // TODO: SIMD optimize this section
+
         if (ifactor)
         {
-            int icfactor = (1 << MFQE_PRECISION) - ifactor;
-            for (yp = y, ydp = yd, i = 0; i < blksize; ++i, yp += y_stride, ydp += yd_stride)
-            {
-                for (j = 0; j < blksize; ++j)
-                    ydp[j] = (int)((yp[j] * ifactor + ydp[j] * icfactor + roundoff) >> MFQE_PRECISION);
-            }
-            for (up = u, udp = ud, i = 0; i < blksizeby2; ++i, up += uv_stride, udp += uvd_stride)
-            {
-                for (j = 0; j < blksizeby2; ++j)
-                    udp[j] = (int)((up[j] * ifactor + udp[j] * icfactor + roundoff) >> MFQE_PRECISION);
-            }
-            for (vp = v, vdp = vd, i = 0; i < blksizeby2; ++i, vp += uv_stride, vdp += uvd_stride)
-            {
-                for (j = 0; j < blksizeby2; ++j)
-                    vdp[j] = (int)((vp[j] * ifactor + vdp[j] * icfactor + roundoff) >> MFQE_PRECISION);
-            }
+            combine_weighted_blocks(y, y_stride, yd, yd_stride,
+                                    blksize, ifactor);
+
+            combine_weighted_blocks(u, uv_stride, ud, uvd_stride,
+                                    uvblksize, ifactor);
+
+            combine_weighted_blocks(v, uv_stride, vd, uvd_stride,
+                                    uvblksize, ifactor);
         }
     }
     else
@@ -782,19 +860,22 @@ static void multiframe_quality_enhance_block
         else if (blksize == 8)
         {
             vp8_copy_mem8x8(y, y_stride, yd, yd_stride);
-            for (up = u, udp = ud, i = 0; i < blksizeby2; ++i, up += uv_stride, udp += uvd_stride)
-                vpx_memcpy(udp, up, blksizeby2);
-            for (vp = v, vdp = vd, i = 0; i < blksizeby2; ++i, vp += uv_stride, vdp += uvd_stride)
-                vpx_memcpy(vdp, vp, blksizeby2);
+
+            /* consider adding 4x4 recon copy */
+            for (up = u, udp = ud, i = 0; i < uvblksize; ++i, up += uv_stride, udp += uvd_stride)
+                vpx_memcpy(udp, up, uvblksize);
+            for (vp = v, vdp = vd, i = 0; i < uvblksize; ++i, vp += uv_stride, vdp += uvd_stride)
+                vpx_memcpy(vdp, vp, uvblksize);
         }
         else
         {
+            /* 4x4 recon copy plus 2x2? */
             for (yp = y, ydp = yd, i = 0; i < blksize; ++i, yp += y_stride, ydp += yd_stride)
                 vpx_memcpy(ydp, yp, blksize);
-            for (up = u, udp = ud, i = 0; i < blksizeby2; ++i, up += uv_stride, udp += uvd_stride)
-                vpx_memcpy(udp, up, blksizeby2);
-            for (vp = v, vdp = vd, i = 0; i < blksizeby2; ++i, vp += uv_stride, vdp += uvd_stride)
-                vpx_memcpy(vdp, vp, blksizeby2);
+            for (up = u, udp = ud, i = 0; i < uvblksize; ++i, up += uv_stride, udp += uvd_stride)
+                vpx_memcpy(udp, up, uvblksize);
+            for (vp = v, vdp = vd, i = 0; i < uvblksize; ++i, vp += uv_stride, vdp += uvd_stride)
+                vpx_memcpy(vdp, vp, uvblksize);
         }
     }
 }
