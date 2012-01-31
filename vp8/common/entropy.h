@@ -63,6 +63,13 @@ extern vp8_extra_bit_struct vp8_extra_bits[12];    /* indexed by token value */
    position within the 4x4 DCT. */
 
 #define COEF_BANDS 8
+
+
+/* When bands are stored in memory an additional slot is used to store
+   the non-changing offset decode probabilities. */
+
+#define COEF_BANDS_EXT (COEF_BANDS+1)
+
 extern DECLARE_ALIGNED(16, const unsigned char, vp8_coef_bands[16]);
 
 /* Inside dimension is 3-valued measure of nearby complexity, that is,

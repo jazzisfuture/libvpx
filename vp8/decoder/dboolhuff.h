@@ -18,6 +18,7 @@
 #include "vpx/vpx_integer.h"
 
 typedef size_t VP8_BD_VALUE;
+typedef ptrdiff_t VP8_BD_VALUE_SIGNED;
 
 # define VP8_BD_VALUE_SIZE ((int)sizeof(VP8_BD_VALUE)*CHAR_BIT)
 /*This is meant to be a large, positive constant that can still be efficiently
@@ -52,8 +53,8 @@ void vp8dx_bool_decoder_fill(BOOL_DECODER *br);
     do \
     { \
         int shift = VP8_BD_VALUE_SIZE - 8 - ((_count) + 8); \
-        int loop_end, x; \
-        size_t bits_left = ((_bufend)-(_bufptr))*CHAR_BIT; \
+        ptrdiff_t loop_end, x; \
+        ptrdiff_t bits_left = ((_bufend)-(_bufptr))*CHAR_BIT; \
         \
         x = shift + CHAR_BIT - bits_left; \
         loop_end = 0; \
