@@ -221,6 +221,8 @@ int main(int argc, char **argv)
        dsf[1] controls down sampling from level 1 to level 2;
        dsf[2] is not used. */
     vpx_rational_t dsf[NUM_ENCODERS] = {{2, 1}, {2, 1}, {1, 1}};
+    /* Encode starting from which resolution level. Normally it is 0. */
+    int                  sid = 0;
 
     if(argc!= (5+NUM_ENCODERS))
         die("Usage: %s <width> <height> <infile> <outfile(s)> <output psnr?>\n",
@@ -233,6 +235,21 @@ int main(int argc, char **argv)
 
     if(width < 16 || width%2 || height <16 || height%2)
         die("Invalid resolution: %ldx%ld", width, height);
+
+    /* adjust total encoders */
+    for (i=0; i<NUM_ENCODERS; i++)
+    {
+        if (target_bitrate[i])
+            break;
+        else
+            sid += 1;
+    }
+
+    if (sid >= NUM_ENCODERS)
+    {
+        printf("Total number of encoders is 0!");
+        return 0;
+    }
 
     /* Open input video file for encoding */
     if(!(infile = fopen(argv[3], "rb")))
@@ -321,17 +338,14 @@ int main(int argc, char **argv)
     else
         read_frame_p = read_frame_by_row;
 
-    for (i=0; i< NUM_ENCODERS; i++)
-        write_ivf_file_header(outfile[i], &cfg[i], 0);
-
     /* Initialize multi-encoder */
-    if(vpx_codec_enc_init_multi(&codec[0], interface, &cfg[0], NUM_ENCODERS,
-                                (show_psnr ? VPX_CODEC_USE_PSNR : 0), &dsf[0]))
-        die_codec(&codec[0], "Failed to initialize encoder");
+    if(vpx_codec_enc_init_multi(&codec[sid], interface, &cfg[sid], sid,NUM_ENCODERS,
+                                (show_psnr ? VPX_CODEC_USE_PSNR : 0), &dsf[sid]))
+        die_codec(&codec[sid], "Failed to initialize encoder");
 
     /* The extra encoding configuration parameters can be set as follows. */
     /* Set encoding speed */
-    for ( i=0; i<NUM_ENCODERS; i++)
+    for ( i=sid; i<NUM_ENCODERS; i++)
     {
         int speed = -6;
         if(vpx_codec_control(&codec[i], VP8E_SET_CPUUSED, speed))
@@ -341,11 +355,11 @@ int main(int argc, char **argv)
      * better performance. */
     {
         unsigned int static_thresh = 1000;
-        if(vpx_codec_control(&codec[0], VP8E_SET_STATIC_THRESHOLD, static_thresh))
-            die_codec(&codec[0], "Failed to set static threshold");
+        if(vpx_codec_control(&codec[sid], VP8E_SET_STATIC_THRESHOLD, static_thresh))
+            die_codec(&codec[sid], "Failed to set static threshold");
     }
     /* Set static thresh = 0 for other encoders for better quality */
-    for ( i=1; i<NUM_ENCODERS; i++)
+    for ( i=sid+1; i<NUM_ENCODERS; i++)
     {
         unsigned int static_thresh = 0;
         if(vpx_codec_control(&codec[i], VP8E_SET_STATIC_THRESHOLD, static_thresh))
@@ -354,6 +368,9 @@ int main(int argc, char **argv)
 
     frame_avail = 1;
     got_data = 0;
+
+    for (i=sid ; i< NUM_ENCODERS; i++)
+        write_ivf_file_header(outfile[i], &cfg[i], 0);
 
     while(frame_avail || got_data)
     {
@@ -381,11 +398,11 @@ int main(int argc, char **argv)
         }
 
         /* Encode each frame at multi-levels */
-        if(vpx_codec_encode(&codec[0], frame_avail? &raw[0] : NULL,
+        if(vpx_codec_encode(&codec[sid], frame_avail? &raw[sid] : NULL,
             frame_cnt, 1, flags, arg_deadline))
-            die_codec(&codec[0], "Failed to encode frame");
+            die_codec(&codec[sid], "Failed to encode frame");
 
-        for (i=NUM_ENCODERS-1; i>=0 ; i--)
+        for (i=NUM_ENCODERS-1; i>=sid ; i--)
         {
             got_data = 0;
 
@@ -428,7 +445,7 @@ int main(int argc, char **argv)
 
     fclose(infile);
 
-    for (i=0; i< NUM_ENCODERS; i++)
+    for (i=sid; i< NUM_ENCODERS; i++)
     {
         printf("Processed %ld frames.\n",(long int)frame_cnt-1);
 
@@ -454,8 +471,11 @@ int main(int argc, char **argv)
         /* Try to rewrite the file header with the actual frame count */
         if(!fseek(outfile[i], 0, SEEK_SET))
             write_ivf_file_header(outfile[i], &cfg[i], frame_cnt-1);
-        fclose(outfile[i]);
+    }
 
+    for (i=0; i< NUM_ENCODERS; i++)
+    {
+        fclose(outfile[i]);
         vpx_img_free(&raw[i]);
     }
 
