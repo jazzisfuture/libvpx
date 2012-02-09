@@ -13,6 +13,8 @@
 #include "vp8/common/common.h"
 #include "vp8/common/extend.h"
 
+#include "bitstream.h"
+
 #if CONFIG_MULTITHREAD
 
 extern int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
@@ -74,6 +76,10 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
             MACROBLOCK *x = &mbri->mb;
             MACROBLOCKD *xd = &x->e_mbd;
             TOKENEXTRA *tp ;
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+            TOKENEXTRA *tp_start = cpi->tok + (1 + ithread) * (16 * 24);
+            const int num_part = (1 << cm->multi_token_partition);
+#endif
 
             int *segment_counts = mbri->segment_counts;
             int *totalrate = &mbri->totalrate;
@@ -92,8 +98,12 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                 int recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
                 int map_index = (mb_row * cm->mb_cols);
                 volatile int *last_row_current_mb_col;
-
+#if  (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
+                vp8_writer *w = &cpi->bc[1 + (mb_row % num_part)];
+#else
                 tp = cpi->tok + (mb_row * (cm->mb_cols * 16 * 24));
+                cpi->tplist[mb_row].start = tp;
+#endif
 
                 last_row_current_mb_col = &cpi->mt_current_mb_col[mb_row - 1];
 
@@ -106,10 +116,6 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                 xd->up_available = (mb_row != 0);
                 recon_yoffset = (mb_row * recon_y_stride * 16);
                 recon_uvoffset = (mb_row * recon_uv_stride * 8);
-
-                cpi->tplist[mb_row].start = tp;
-
-                //printf("Thread mb_row = %d\n", mb_row);
 
                 // Set the mb activity pointer to the start of the row.
                 x->mb_activity_ptr = &cpi->mb_activity_map[map_index];
@@ -125,6 +131,10 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                             thread_sleep(0);
                         }
                     }
+
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+                    tp = tp_start;
+#endif
 
                     // Distance of Mb to the various image edges.
                     // These specified to 8th pel as they are always compared to values that are in 1/8th pel units
@@ -223,8 +233,16 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
 
                         }
                     }
-                    cpi->tplist[mb_row].stop = tp;
 
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+                    /* pack tokens for this MB */
+                    {
+                        int tok_count = tp - tp_start;
+                        pack_tokens(w, tp_start, tok_count);
+                    }
+#else
+                    cpi->tplist[mb_row].stop = tp;
+#endif
                     // Increment pointer into gf useage flags structure.
                     x->gf_active_ptr++;
 
@@ -247,15 +265,17 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                     x->partition_info++;
                     xd->above_context++;
 
+                    if (mb_col == (cm->mb_cols - 1))
+                    {
+                        //extend the recon for intra prediction
+                        vp8_extend_mb_row( &cm->yv12_fb[dst_fb_idx],
+                                            xd->dst.y_buffer + 16,
+                                            xd->dst.u_buffer + 8,
+                                            xd->dst.v_buffer + 8);
+                    }
+
                     cpi->mt_current_mb_col[mb_row] = mb_col;
                 }
-
-                //extend the recon for intra prediction
-                vp8_extend_mb_row(
-                    &cm->yv12_fb[dst_fb_idx],
-                    xd->dst.y_buffer + 16,
-                    xd->dst.u_buffer + 8,
-                    xd->dst.v_buffer + 8);
 
                 // this is to account for the border
                 xd->mode_info_context++;
@@ -271,7 +291,6 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
 
                 if (mb_row == cm->mb_rows - 1)
                 {
-                    //SetEvent(cpi->h_event_main);
                     sem_post(&cpi->h_event_end_encoding); /* signal frame encoding end */
                 }
             }
