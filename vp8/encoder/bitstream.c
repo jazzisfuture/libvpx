@@ -24,6 +24,7 @@
 #include "bitstream.h"
 
 #include "defaultcoefcounts.h"
+#include "vp8/common/common.h"
 
 const int vp8cx_base_skip_false_prob[128] =
 {
@@ -159,7 +160,7 @@ static void write_split(vp8_writer *bc, int x)
     );
 }
 
-static void pack_tokens_c(vp8_writer *w, const TOKENEXTRA *p, int xcount)
+void vp8_pack_tokens_c(vp8_writer *w, const TOKENEXTRA *p, int xcount)
 {
     const TOKENEXTRA *const stop = p + xcount;
     unsigned int split;
@@ -810,6 +811,208 @@ static void pack_mb_row_tokens_c(VP8_COMP *cpi, vp8_writer *w)
 
 }
 
+void vp8_pack_one_mb_row_tokens_c(VP8_COMP *cpi, vp8_writer *w, int mb_row)
+{
+
+    unsigned int split;
+    int count = w->count;
+    unsigned int range = w->range;
+    unsigned int lowvalue = w->lowvalue;
+    unsigned int shift;
+
+    const TOKENEXTRA *p    = cpi->tplist[mb_row].start;
+    const TOKENEXTRA *stop = cpi->tplist[mb_row].stop;
+
+    while (p < stop)
+    {
+        const int t = p->Token;
+        const vp8_token *const a = vp8_coef_encodings + t;
+        const vp8_extra_bit_struct *const b = vp8_extra_bits + t;
+        int i = 0;
+        const unsigned char *pp = p->context_tree;
+        int v = a->value;
+        int n = a->Len;
+
+        if (p->skip_eob_node)
+        {
+            n--;
+            i = 2;
+        }
+
+        do
+        {
+            const int bb = (v >> --n) & 1;
+            split = 1 + (((range - 1) * pp[i>>1]) >> 8);
+            i = vp8_coef_tree[i+bb];
+
+            if (bb)
+            {
+                lowvalue += split;
+                range = range - split;
+            }
+            else
+            {
+                range = split;
+            }
+
+            shift = vp8_norm[range];
+            range <<= shift;
+            count += shift;
+
+            if (count >= 0)
+            {
+                int offset = shift - count;
+
+                if ((lowvalue << (offset - 1)) & 0x80000000)
+                {
+                    int x = w->pos - 1;
+
+                    while (x >= 0 && w->buffer[x] == 0xff)
+                    {
+                        w->buffer[x] = (unsigned char)0;
+                        x--;
+                    }
+
+                    w->buffer[x] += 1;
+                }
+
+                validate_buffer(w->buffer + w->pos,
+                                1,
+                                w->buffer_end,
+                                w->error);
+
+                w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                lowvalue <<= offset;
+                shift = count;
+                lowvalue &= 0xffffff;
+                count -= 8 ;
+            }
+
+            lowvalue <<= shift;
+        }
+        while (n);
+
+
+        if (b->base_val)
+        {
+            const int e = p->Extra, L = b->Len;
+
+            if (L)
+            {
+                const unsigned char *pp = b->prob;
+                int v = e >> 1;
+                int n = L;              /* number of bits in v, assumed nonzero */
+                int i = 0;
+
+                do
+                {
+                    const int bb = (v >> --n) & 1;
+                    split = 1 + (((range - 1) * pp[i>>1]) >> 8);
+                    i = b->tree[i+bb];
+
+                    if (bb)
+                    {
+                        lowvalue += split;
+                        range = range - split;
+                    }
+                    else
+                    {
+                        range = split;
+                    }
+
+                    shift = vp8_norm[range];
+                    range <<= shift;
+                    count += shift;
+
+                    if (count >= 0)
+                    {
+                        int offset = shift - count;
+
+                        if ((lowvalue << (offset - 1)) & 0x80000000)
+                        {
+                            int x = w->pos - 1;
+
+                            while (x >= 0 && w->buffer[x] == 0xff)
+                            {
+                                w->buffer[x] = (unsigned char)0;
+                                x--;
+                            }
+
+                            w->buffer[x] += 1;
+                        }
+
+                        validate_buffer(w->buffer + w->pos,
+                                        1,
+                                        w->buffer_end,
+                                        w->error);
+
+                        w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+                        lowvalue <<= offset;
+                        shift = count;
+                        lowvalue &= 0xffffff;
+                        count -= 8 ;
+                    }
+
+                    lowvalue <<= shift;
+                }
+                while (n);
+            }
+
+            {
+                split = (range + 1) >> 1;
+
+                if (e & 1)
+                {
+                    lowvalue += split;
+                    range = range - split;
+                }
+                else
+                {
+                    range = split;
+                }
+
+                range <<= 1;
+
+                if ((lowvalue & 0x80000000))
+                {
+                    int x = w->pos - 1;
+
+                    while (x >= 0 && w->buffer[x] == 0xff)
+                    {
+                        w->buffer[x] = (unsigned char)0;
+                        x--;
+                    }
+
+                    w->buffer[x] += 1;
+
+                }
+
+                lowvalue  <<= 1;
+
+                if (!++count)
+                {
+                    count = -8;
+
+                    validate_buffer(w->buffer + w->pos,
+                                    1,
+                                    w->buffer_end,
+                                    w->error);
+
+                    w->buffer[w->pos++] = (lowvalue >> 24);
+                    lowvalue &= 0xffffff;
+                }
+            }
+
+        }
+
+        ++p;
+    }
+
+    w->count = count;
+    w->lowvalue = lowvalue;
+    w->range = range;
+}
+
 static void write_mv_ref
 (
     vp8_writer *w, MB_PREDICTION_MODE m, const vp8_prob *p
@@ -1167,6 +1370,7 @@ static void write_kfmodes(VP8_COMP *cpi)
     }
 }
 
+#if 0
 /* This function is used for debugging probability trees. */
 static void print_prob_tree(vp8_prob
      coef_probs[BLOCK_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES])
@@ -1198,6 +1402,7 @@ static void print_prob_tree(vp8_prob
     fprintf(f, "}\n");
     fclose(f);
 }
+#endif
 
 static void sum_probs_over_prev_coef_context(
         const unsigned int probs[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS],
@@ -1326,13 +1531,14 @@ static int default_coef_context_savings(VP8_COMP *cpi)
                 //unsigned int branch_ct   [ENTROPY_NODES] [2];
 
                 int t = 0;      /* token/prob index */
-
+                const unsigned int * coef_counts;
+                coef_counts = cpi->coef_counts [i][j][k];
 
                 vp8_tree_probs_from_distribution(
                     MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
                     cpi->frame_coef_probs [i][j][k],
                     cpi->frame_branch_ct [i][j][k],
-                    cpi->coef_counts [i][j][k],
+                    coef_counts,
                     256, 1
                 );
 
@@ -1432,10 +1638,33 @@ int vp8_estimate_entropy_savings(VP8_COMP *cpi)
     return savings;
 }
 
-static void update_coef_probs(VP8_COMP *cpi)
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+int vp8_update_coef_context(VP8_COMP *cpi)
+{
+    int savings = 0;
+
+
+    if (cpi->common.frame_type == KEY_FRAME)
+    {
+        /* Reset to default counts/probabilities at key frames */
+        vp8_copy(cpi->coef_counts, default_coef_counts);
+    }
+
+    if (cpi->oxcf.error_resilient_mode & VPX_ERROR_RESILIENT_PARTITIONS)
+        savings += independent_coef_context_savings(cpi);
+    else
+        savings += default_coef_context_savings(cpi);
+
+    return savings;
+}
+#endif
+
+void vp8_update_coef_probs(VP8_COMP *cpi)
 {
     int i = 0;
+#if !(CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
     vp8_writer *const w = cpi->bc;
+#endif
     int savings = 0;
 
     vp8_clear_system_state(); //__asm emms;
@@ -1515,7 +1744,11 @@ static void update_coef_probs(VP8_COMP *cpi)
                         cpi->common.frame_type == KEY_FRAME && newp != *Pold)
                         u = 1;
 
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+                    cpi->update_probs[i][j][k][t] = u;
+#else
                     vp8_write(w, u, upd);
+#endif
 
 
 #ifdef ENTROPY_STATS
@@ -1527,7 +1760,9 @@ static void update_coef_probs(VP8_COMP *cpi)
                         /* send/use new probability */
 
                         *Pold = newp;
+#if !(CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
                         vp8_write_literal(w, newp, 8);
+#endif
 
                         savings += s;
 
@@ -1556,6 +1791,50 @@ static void update_coef_probs(VP8_COMP *cpi)
     while (++i < BLOCK_TYPES);
 
 }
+
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+static void pack_coef_probs(VP8_COMP *cpi)
+{
+    int i = 0;
+    vp8_writer *const w = cpi->bc;
+
+    do
+    {
+        int j = 0;
+
+        do
+        {
+            int k = 0;
+
+            do
+            {
+                int t = 0;      /* token/prob index */
+
+                do
+                {
+                    const vp8_prob newp = cpi->common.fc.coef_probs [i][j][k][t];
+                    const vp8_prob upd = vp8_coef_update_probs [i][j][k][t];
+
+                    const char u = cpi->update_probs[i][j][k][t] ;
+
+                    vp8_write(w, u, upd);
+
+                    if (u)
+                    {
+                        /* send/use new probability */
+                        vp8_write_literal(w, newp, 8);
+                    }
+                }
+                while (++t < ENTROPY_NODES);
+            }
+            while (++k < PREV_COEF_CONTEXTS);
+        }
+        while (++j < COEF_BANDS);
+    }
+    while (++i < BLOCK_TYPES);
+}
+#endif
+
 #ifdef PACKET_TESTING
 FILE *vpxlogc = 0;
 #endif
@@ -1818,6 +2097,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         vp8_write_bit(bc, pc->ref_frame_sign_bias[ALTREF_FRAME]);
     }
 
+#if !(CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
     if (cpi->oxcf.error_resilient_mode & VPX_ERROR_RESILIENT_PARTITIONS)
     {
         if (pc->frame_type == KEY_FRAME)
@@ -1825,6 +2105,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         else
             pc->refresh_entropy_probs = 0;
     }
+#endif
 
     vp8_write_bit(bc, pc->refresh_entropy_probs);
 
@@ -1842,13 +2123,17 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
 
     vp8_clear_system_state();  //__asm emms;
 
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+    pack_coef_probs(cpi);
+#else
     if (pc->refresh_entropy_probs == 0)
     {
         // save a copy for later refresh
         vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
     }
 
-    update_coef_probs(cpi);
+    vp8_update_coef_probs(cpi);
+#endif
 
 #ifdef ENTROPY_STATS
     active_section = 2;
@@ -1896,6 +2181,45 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
 
     cpi->partition_sz[0] = *size;
 
+#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
+    {
+        const int num_part = (1 << pc->multi_token_partition);
+        unsigned char * dp = cpi->partition_d[0] + cpi->partition_sz[0];
+
+        if (num_part > 1)
+        {
+            /* write token part sizes (all but last) if more than 1 */
+            validate_buffer(dp, 3 * (num_part - 1), cpi->partition_d_end[0],
+                            &pc->error);
+
+            cpi->partition_sz[0] += 3*(num_part-1);
+
+            for(i = 1; i < num_part; i++)
+            {
+                write_partition_size(dp, cpi->partition_sz[i]);
+                dp += 3;
+            }
+        }
+
+        if (!cpi->output_partition)
+        {
+            /* concatenate partition buffers */
+            for(i = 0; i < num_part; i++)
+            {
+                vpx_memmove(dp, cpi->partition_d[i+1], cpi->partition_sz[i+1]);
+                cpi->partition_d[i+1] = dp;
+                dp += cpi->partition_sz[i+1];
+            }
+        }
+
+        /* update total size */
+        *size = 0;
+        for(i = 0; i < num_part+1; i++)
+        {
+            *size += cpi->partition_sz[i];
+        }
+    }
+#else
     if (pc->multi_token_partition != ONE_PARTITION)
     {
         int num_part = 1 << pc->multi_token_partition;
@@ -1945,6 +2269,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
         *size += cpi->bc[1].pos;
         cpi->partition_sz[1] = cpi->bc[1].pos;
     }
+#endif
 }
 
 #ifdef ENTROPY_STATS
