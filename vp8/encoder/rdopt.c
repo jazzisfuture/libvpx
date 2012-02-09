@@ -1729,7 +1729,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int best_mode_index = 0;
 
     int i;
-    int mode_index;
+    int mode_index_;
     int mdcounts[4];
     int rate;
     int distortion;
@@ -1788,15 +1788,20 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     rd_pick_intra_mbuv_mode(cpi, x, &uv_intra_rate, &uv_intra_rate_tokenonly, &uv_intra_distortion);
     uv_intra_mode = x->e_mbd.mode_info_context->mbmi.uv_mode;
 
-    for (mode_index = 0; mode_index < MAX_MODES; mode_index++)
+    for (mode_index_ = 0; mode_index_ < MAX_MODES; mode_index_++)
     {
+        int mode_index = cpi->sorted_mode_order[mode_index_].index;
         int this_rd = INT_MAX;
         int disable_skip = 0;
         int other_cost = 0;
         int this_ref_frame = ref_frame_map[vp8_ref_frame_order[mode_index]];
+        int breakout_thresh;
 
         // Test best rd so far against threshold for trying this mode.
-        if (best_rd <= cpi->rd_threshes[mode_index])
+        breakout_thresh = cpi->rd_threshes[mode_index];
+        if(mode_index_ > 12)
+            breakout_thresh += breakout_thresh * (mode_index_- 12);
+        if (best_rd <= breakout_thresh)
             continue;
 
         if (this_ref_frame < 0)
@@ -1879,6 +1884,8 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
             vp8_update_zbin_extra(cpi, x);
         }
+
+cpi->all_mode_updates++;
 
         switch (this_mode)
         {
@@ -2249,6 +2256,8 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         {
             // Note index of best mode so far
             best_mode_index = mode_index;
+            cpi->best_update_index[mode_index_]++;
+cpi->best_mode_updates++;
 
             if (this_mode <= B_PRED)
             {

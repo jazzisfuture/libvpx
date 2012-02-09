@@ -278,6 +278,13 @@ typedef struct
 
 } LAYER_CONTEXT;
 
+
+struct sorted_mode_order_entry
+{
+    int count;
+    int index;
+};
+
 typedef struct VP8_COMP
 {
 
@@ -679,6 +686,9 @@ typedef struct VP8_COMP
     int    mr_low_res_mb_cols;
 #endif
 
+    struct sorted_mode_order_entry sorted_mode_order[MAX_MODES];
+    int best_mode_updates, all_mode_updates;
+    int best_update_index[MAX_MODES];
 } VP8_COMP;
 
 void control_data_rate(VP8_COMP *cpi);

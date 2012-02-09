@@ -470,7 +470,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int mdcounts[4];
     int best_rd = INT_MAX; // 1 << 30;
     int best_intra_rd = INT_MAX;
-    int mode_index;
+    int mode_index_;
     int rate;
     int rate2;
     int distortion2;
@@ -538,13 +538,18 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
     // if we encode a new mv this is important
     // find the best new motion vector
-    for (mode_index = 0; mode_index < MAX_MODES; mode_index++)
+    for (mode_index_ = 0; mode_index_ < MAX_MODES; mode_index_++)
     {
+        int mode_index = cpi->sorted_mode_order[mode_index_].index;
         int frame_cost;
         int this_rd = INT_MAX;
         int this_ref_frame = ref_frame_map[vp8_ref_frame_order[mode_index]];
+        int breakout_thresh;
 
-        if (best_rd <= cpi->rd_threshes[mode_index])
+        breakout_thresh = cpi->rd_threshes[mode_index];
+        if(mode_index_ > 12)
+            breakout_thresh += breakout_thresh * (mode_index_- 12);
+        if (best_rd <= breakout_thresh)
             continue;
 
         if (this_ref_frame < 0)
@@ -653,6 +658,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                 continue;
         }
 
+cpi->all_mode_updates++;
         switch (this_mode)
         {
         case B_PRED:
@@ -946,6 +952,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         {
             // Note index of best mode
             best_mode_index = mode_index;
+            cpi->best_update_index[mode_index_]++;
+cpi->best_mode_updates++;
 
             *returnrate = rate2;
             *returndistortion = distortion2;
@@ -1010,6 +1018,9 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
         cpi->error_bins[this_rdbin] ++;
     }
+
+    // Note how often each mode chosen as best
+    cpi->mode_chosen_counts[best_mode_index] ++;
 
     if (cpi->is_src_frame_alt_ref &&
         (best_mbmode.mode != ZEROMV || best_mbmode.ref_frame != ALTREF_FRAME))

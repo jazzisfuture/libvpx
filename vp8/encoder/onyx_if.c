@@ -678,7 +678,7 @@ void vp8_set_speed_features(VP8_COMP *cpi)
     int ref_frames;
 
     // Initialise default mode frequency sampling variables
-    for (i = 0; i < MAX_MODES; i ++)
+    for (i = 0; 0&&i < MAX_MODES; i ++)
     {
         cpi->mode_check_freq[i] = 0;
         cpi->mode_test_hit_counts[i] = 0;
@@ -4584,6 +4584,14 @@ static int frame_is_reference(const VP8_COMP *cpi)
 }
 
 
+static int cmp_sorted_mode_order(const void *p1, const void *p2)
+{
+    const struct sorted_mode_order_entry *e1 = p1, *e2 = p2;
+
+    return e2->count - e1->count;
+}
+
+
 int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned long *size, unsigned char *dest, unsigned char *dest_end, int64_t *time_stamp, int64_t *time_end, int flush)
 {
 #if HAVE_NEON
@@ -4825,6 +4833,20 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
         assert(i < NUM_YV12_BUFFERS );
     }
+
+    /* Optimize mode selection order */
+    {
+        int i;
+
+        for(i=0; i<MAX_MODES; i++)
+        {
+            cpi->sorted_mode_order[i].index = i;
+            cpi->sorted_mode_order[i].count = cpi->mode_chosen_counts[i];
+        }
+        qsort(cpi->sorted_mode_order+1, MAX_MODES-1,
+              sizeof(cpi->sorted_mode_order[0]), cmp_sorted_mode_order);
+    }
+
 #if !(CONFIG_REALTIME_ONLY)
 
     if (cpi->pass == 1)
