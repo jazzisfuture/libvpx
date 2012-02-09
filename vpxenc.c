@@ -485,6 +485,13 @@ static void write_ivf_frame_header(FILE *outfile,
     if(fwrite(header, 1, 12, outfile));
 }
 
+static void write_ivf_frame_size(FILE *outfile, size_t size)
+{
+    char             header[4];
+    mem_put_le32(header, size);
+    fwrite(header, 1, 4, outfile);
+}
+
 
 typedef off_t EbmlLoc;
 
@@ -941,7 +948,6 @@ static double vp8_mse2psnr(double Samples, double Peak, double Mse)
 
 
 #include "args.h"
-
 static const arg_def_t debugmode = ARG_DEF("D", "debug", 0,
         "Debug mode (makes output deterministic)");
 static const arg_def_t outputfile = ARG_DEF("o", "output", 1,
@@ -976,6 +982,8 @@ static const arg_def_t framerate        = ARG_DEF(NULL, "fps", 1,
         "Stream frame rate (rate/scale)");
 static const arg_def_t use_ivf          = ARG_DEF(NULL, "ivf", 0,
         "Output IVF (default is WebM)");
+static const arg_def_t out_part = ARG_DEF("P", "output-partitions", 0,
+        "Makes encoder output partitions. Requires IVF output!");
 static const arg_def_t q_hist_n         = ARG_DEF(NULL, "q-hist", 1,
         "Show quantizer histogram (n-buckets)");
 static const arg_def_t rate_hist_n         = ARG_DEF(NULL, "rate-hist", 1,
@@ -985,7 +993,7 @@ static const arg_def_t *main_args[] =
     &debugmode,
     &outputfile, &codecarg, &passes, &pass_arg, &fpf_name, &limit, &deadline,
     &best_dl, &good_dl, &rt_dl,
-    &verbosearg, &psnrarg, &use_ivf, &q_hist_n, &rate_hist_n,
+    &verbosearg, &psnrarg, &use_ivf, &out_part, &q_hist_n, &rate_hist_n,
     NULL
 };
 
@@ -1491,6 +1499,7 @@ struct global_config
     int                       have_framerate;
     struct vpx_rational       framerate;
     int                       write_webm;
+    int                       out_part;
     int                       debug;
     int                       show_q_hist_buckets;
     int                       show_rate_hist_buckets;
@@ -1572,6 +1581,8 @@ static void parse_global_config(struct global_config *global, char **argv)
         }
         else if (arg_match(&arg, &use_ivf, argi))
             global->write_webm = 0;
+        else if (arg_match(&arg,&out_part, argi))
+            global->out_part = 1;
         else if (arg_match(&arg, &outputfile, argi))
             global->out_fn = arg.val;
         else if (arg_match(&arg, &debugmode, argi))
@@ -1998,11 +2009,15 @@ int main(int argc, const char **argv_)
         else
             write_ivf_file_header(outfile, &cfg, global.codec->fourcc, 0);
 
+        {
+            int flags = 0;
+            flags |= global.show_psnr ? VPX_CODEC_USE_PSNR : 0;
+            flags |= global.out_part ? VPX_CODEC_USE_OUTPUT_PARTITION : 0;
 
-        /* Construct Encoder Context */
-        vpx_codec_enc_init(&encoder, global.codec->iface, &cfg,
-                           global.show_psnr ? VPX_CODEC_USE_PSNR : 0);
-        ctx_exit_on_error(&encoder, "Failed to initialize encoder");
+            /* Construct Encoder Context */
+            vpx_codec_enc_init(&encoder, global.codec->iface, &cfg,flags);
+            ctx_exit_on_error(&encoder, "Failed to initialize encoder");
+        }
 
         /* Note that we bypass the vpx_codec_control wrapper macro because
          * we're being clever to store the control IDs in an array. Real
@@ -2068,12 +2083,18 @@ int main(int argc, const char **argv_)
 
             while ((pkt = vpx_codec_get_cx_data(&encoder, &iter)))
             {
+                static size_t fsize = 0;
+                static off_t ivf_header_pos = 0;
+
                 got_data = 1;
 
                 switch (pkt->kind)
                 {
                 case VPX_CODEC_CX_FRAME_PKT:
-                    frames_out++;
+                    if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT))
+                    {
+                        frames_out++;
+                    }
                     fprintf(stderr, " %6luF",
                             (unsigned long)pkt->data.frame.sz);
 
@@ -2089,10 +2110,33 @@ int main(int argc, const char **argv_)
                     }
                     else
                     {
-                        write_ivf_frame_header(outfile, pkt);
-                        if(fwrite(pkt->data.frame.buf, 1,
-                                  pkt->data.frame.sz, outfile));
+                        if (pkt->data.frame.partition_id <= 0)
+                        {
+                            ivf_header_pos = ftello(outfile);
+                            fsize = pkt->data.frame.sz;
+
+                            write_ivf_frame_header(outfile, pkt);
+                        }
+                        else
+                        {
+                            fsize += pkt->data.frame.sz;
+
+                            if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT))
+                            {
+                                off_t currpos = ftello(outfile);
+
+                                fseeko(outfile, ivf_header_pos, SEEK_SET);
+
+                                write_ivf_frame_size(outfile, fsize);
+
+                                fseeko(outfile, currpos, SEEK_SET);
+                            }
+                        }
+
+                        fwrite(pkt->data.frame.buf, 1,
+                               pkt->data.frame.sz, outfile);
                     }
+
                     nbytes += pkt->data.raw.sz;
                     break;
                 case VPX_CODEC_STATS_PKT:
