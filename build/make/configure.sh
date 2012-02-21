@@ -635,18 +635,20 @@ process_common_toolchain() {
 
     # Handle darwin variants. Newer SDKs allow targeting older
     # platforms, so find the newest SDK available.
-    if [ -d "/Developer/SDKs/MacOSX10.4u.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.4u.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.5.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.5.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.6.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.6.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.7.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.7.sdk"
-    fi
+    case ${toolchain} in
+        *-darwin*)
+            OSX_SDK_ROOTS="/Developer/SDKs"
+            OSX_SDK_ROOTS="$OSX_SDK_ROOTS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs"
+            OSX_SDK_VERSIONS="MacOSX10.4u.sdk MacOSX10.5.sdk MacOSX10.6.sdk"
+            OSX_SDK_VERSIONS="$OSX_SDK_VERSIONS MacOSX10.7.sdk"
+            for v in $OSX_SDK_VERSIONS; do
+                for r in $OSX_SDK_ROOTS; do
+                    [ -d "${r}/${v}" ] && osx_sdk_dir="${r}/${v}"
+                done
+            done
+            [ -d "$osx_sdk_dir" ] || die "Unable to determine path to OSX SDK"
+            ;;
+    esac
 
     case ${toolchain} in
         *-darwin8-*)
