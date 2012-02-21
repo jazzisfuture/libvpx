@@ -635,42 +635,39 @@ process_common_toolchain() {
 
     # Handle darwin variants. Newer SDKs allow targeting older
     # platforms, so find the newest SDK available.
-    if [ -d "/Developer/SDKs/MacOSX10.4u.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.4u.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.5.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.5.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.6.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.6.sdk"
-    fi
-    if [ -d "/Developer/SDKs/MacOSX10.7.sdk" ]; then
-        osx_sdk_dir="/Developer/SDKs/MacOSX10.7.sdk"
+    case ${toolchain} in
+        *-darwin*)
+            if test -z "$DEVELOPER_DIR"; then
+                DEVELOPER_DIR=`xcode-select -print-path`
+            fi
+            OSX_SDK_ROOTS="$DEVELOPER_DIR/SDKs"
+            OSX_SDK_VERSIONS="MacOSX10.4u.sdk MacOSX10.5.sdk MacOSX10.6.sdk MacOSX10.7.sdk"
+            for v in $OSX_SDK_VERSIONS; do
+                [ -d "${OSX_SDK_ROOTS}/${v}" ] && osx_sdk_dir="${OSX_SDK_ROOTS}/${v}"
+            done
+            ;;
+    esac
+
+    if [ -d "${osx_sdk_dir}" ]; then
+        add_cflags  "-isysroot ${osx_sdk_dir}"
+        add_ldflags "-isysroot ${osx_sdk_dir}"
     fi
 
     case ${toolchain} in
         *-darwin8-*)
-            add_cflags  "-isysroot ${osx_sdk_dir}"
             add_cflags  "-mmacosx-version-min=10.4"
-            add_ldflags "-isysroot ${osx_sdk_dir}"
             add_ldflags "-mmacosx-version-min=10.4"
             ;;
         *-darwin9-*)
-            add_cflags  "-isysroot ${osx_sdk_dir}"
             add_cflags  "-mmacosx-version-min=10.5"
-            add_ldflags "-isysroot ${osx_sdk_dir}"
             add_ldflags "-mmacosx-version-min=10.5"
             ;;
         *-darwin10-*)
-            add_cflags  "-isysroot ${osx_sdk_dir}"
             add_cflags  "-mmacosx-version-min=10.6"
-            add_ldflags "-isysroot ${osx_sdk_dir}"
             add_ldflags "-mmacosx-version-min=10.6"
             ;;
         *-darwin11-*)
-            add_cflags  "-isysroot ${osx_sdk_dir}"
             add_cflags  "-mmacosx-version-min=10.7"
-            add_ldflags "-isysroot ${osx_sdk_dir}"
             add_ldflags "-mmacosx-version-min=10.7"
             ;;
     esac
