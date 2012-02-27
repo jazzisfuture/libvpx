@@ -3129,7 +3129,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
 
         }
 
-        if (resample_trigger)
+        if (resample_trigger && cpi->oxcf.lag_in_frames < 2)
         {
             while ((kf_q >= cpi->worst_quality) && (scale_val < 6))
             {
