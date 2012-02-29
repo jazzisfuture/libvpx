@@ -2362,6 +2362,7 @@ int main(int argc, const char **argv_)
 
         frame_avail = 1;
         got_data = 0;
+        cx_time = 0;
 
         while (frame_avail || got_data)
         {
