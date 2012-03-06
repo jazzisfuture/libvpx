@@ -33,9 +33,7 @@
 #include "rdopt.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/systemdependent.h"
-#if CONFIG_TEMPORAL_DENOISING
 #include "denoising.h"
-#endif
 
 extern void vp8_update_zbin_extra(VP8_COMP *cpi, MACROBLOCK *x);
 
@@ -1812,11 +1810,8 @@ static int calculate_final_rd_costs(int this_rd,
                                     RATE_DISTORTION* rd,
                                     int* other_cost,
                                     int disable_skip,
-                                    int uv_intra_tteob,
-                                    int intra_rd_penalty,
                                     VP8_COMP *cpi, MACROBLOCK *x)
 {
-    MB_PREDICTION_MODE this_mode = x->e_mbd.mode_info_context->mbmi.mode;
     // Where skip is allowable add in the default per mb cost for the no skip case.
     // where we then decide to skip we have to delete this and replace it with the
     // cost of signallying a skip
@@ -1837,24 +1832,15 @@ static int calculate_final_rd_costs(int this_rd,
         // Test for the condition where skip block will be activated because there are no non zero coefficients and make any necessary adjustment for rate
         if (cpi->common.mb_no_coeff_skip)
         {
-            int i;
             int tteob;
-            int has_y2_block = (this_mode!=SPLITMV && this_mode!=B_PRED);
+            int i;
 
             tteob = 0;
-            if(has_y2_block)
-                tteob += x->e_mbd.eobs[24];
 
-            for (i = 0; i < 16; i++)
-                tteob += (x->e_mbd.eobs[i] > has_y2_block);
-
-            if (x->e_mbd.mode_info_context->mbmi.ref_frame)
+            for (i = 0; i <= 24; i++)
             {
-                for (i = 16; i < 24; i++)
-                    tteob += x->e_mbd.eobs[i];
+                tteob += x->e_mbd.eobs[i];
             }
-            else
-                tteob += uv_intra_tteob;
 
             if (tteob == 0)
             {
@@ -1876,9 +1862,6 @@ static int calculate_final_rd_costs(int this_rd,
         }
         // Calculate the final RD estimate for this mode
         this_rd = RDCOST(x->rdmult, x->rddiv, rd->rate2, rd->distortion2);
-        if (this_rd < INT_MAX && x->e_mbd.mode_info_context->mbmi.ref_frame
-                                 == INTRA_FRAME)
-            this_rd += intra_rd_penalty;
     }
     return this_rd;
 }
@@ -1931,8 +1914,14 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int rate;
     RATE_DISTORTION rd;
     int uv_intra_rate, uv_intra_distortion, uv_intra_rate_tokenonly;
+<<<<<<< HEAD
     int uv_intra_tteob = 0;
     int uv_intra_done = 0;
+    int rate_y, UNINITIALIZED_IS_SAFE(rate_uv);
+    int distortion_uv;
+    int best_yrd = INT_MAX;
+=======
+>>>>>>> 0fc4431... Adds a motion compensated temporal denoiser to the encoder.
 
     MB_PREDICTION_MODE uv_intra_mode = 0;
     int_mv mvp;
@@ -2342,19 +2331,64 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         }
 
         this_rd = calculate_final_rd_costs(this_rd, &rd, &other_cost,
-                                           disable_skip, uv_intra_tteob,
-                                           intra_rd_penalty, cpi, x);
+                                           disable_skip, cpi, x);
 
         // Keep record of best intra distortion
         if ((x->e_mbd.mode_info_context->mbmi.ref_frame == INTRA_FRAME) &&
             (this_rd < best_mode.intra_rd) )
         {
+<<<<<<< HEAD
+            // Test for the condition where skip block will be activated because there are no non zero coefficients and make any necessary adjustment for rate
+            if (cpi->common.mb_no_coeff_skip)
+            {
+                int tteob;
+                int has_y2_block = (this_mode!=SPLITMV && this_mode!=B_PRED);
+
+                tteob = 0;
+                if(has_y2_block)
+                    tteob += x->e_mbd.eobs[24];
+
+                for (i = 0; i < 16; i++)
+                    tteob += (x->e_mbd.eobs[i] > has_y2_block);
+
+                if (x->e_mbd.mode_info_context->mbmi.ref_frame)
+                {
+                    for (i = 16; i < 24; i++)
+                        tteob += x->e_mbd.eobs[i];
+                }
+                else
+                    tteob += uv_intra_tteob;
+
+                if (tteob == 0)
+                {
+                    rate2 -= (rate_y + rate_uv);
+                    //for best_yrd calculation
+                    rate_uv = 0;
+
+                    // Back out no skip flag costing and add in skip flag costing
+                    if (cpi->prob_skip_false)
+                    {
+                        int prob_skip_cost;
+
+                        prob_skip_cost = vp8_cost_bit(cpi->prob_skip_false, 1);
+                        prob_skip_cost -= vp8_cost_bit(cpi->prob_skip_false, 0);
+                        rate2 += prob_skip_cost;
+                        other_cost += prob_skip_cost;
+                    }
+                }
+            }
+            // Calculate the final RD estimate for this mode
+            this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+            if (this_rd < INT_MAX && x->e_mbd.mode_info_context->mbmi.ref_frame
+                                     == INTRA_FRAME)
+                this_rd += intra_rd_penalty;
+=======
           best_mode.intra_rd = this_rd;
             *returnintra = rd.distortion2 ;
+>>>>>>> 0fc4431... Adds a motion compensated temporal denoiser to the encoder.
         }
 
-#if CONFIG_TEMPORAL_DENOISING
-        if (cpi->oxcf.noise_sensitivity)
+        if (cpi->oxcf.temporal_denoising != 0)
         {
           // Store the best NEWMV in x for later use in the denoiser.
           // We are restricted to the LAST_FRAME since the denoiser only keeps
@@ -2368,7 +2402,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                 x->e_mbd.mode_info_context->mbmi.need_to_clamp_mvs;
           }
         }
-#endif
 
         // Did this mode help.. i.i is it the new best mode
         if (this_rd < best_mode.rd || x->skip)
@@ -2436,8 +2469,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[best_mode_index] ++;
 
-#if CONFIG_TEMPORAL_DENOISING
-    if (cpi->oxcf.noise_sensitivity)
+    if (cpi->oxcf.temporal_denoising != 0)
     {
       if (x->e_mbd.best_sse_inter_mode == DC_PRED) {
         // No best MV found.
@@ -2464,8 +2496,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         x->e_mbd.mode_info_context->mbmi.mv.as_int = 0;
         this_rd = evaluate_inter_mode_rd(mdcounts, &rd, &disable_skip, cpi, x);
         this_rd = calculate_final_rd_costs(this_rd, &rd, &other_cost,
-                                           disable_skip, uv_intra_tteob,
-                                           intra_rd_penalty, cpi, x);
+                                           disable_skip, cpi, x);
         if (this_rd < best_mode.rd || x->skip)
         {
             // Note index of best mode so far
@@ -2476,7 +2507,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         }
       }
     }
-#endif
 
     if (cpi->is_src_frame_alt_ref &&
         (best_mode.mbmode.mode != ZEROMV || best_mode.mbmode.ref_frame != ALTREF_FRAME))
