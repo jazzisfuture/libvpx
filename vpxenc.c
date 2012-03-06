@@ -1103,6 +1103,8 @@ static const arg_def_t *kf_args[] =
 #if CONFIG_VP8_ENCODER
 static const arg_def_t noise_sens = ARG_DEF(NULL, "noise-sensitivity", 1,
                                     "Noise sensitivity (frames to blur)");
+static const arg_def_t temporal_denoising = ARG_DEF(NULL, "temporal-denoising",
+                                    1, "Enable temporal denoising");
 static const arg_def_t sharpness = ARG_DEF(NULL, "sharpness", 1,
                                    "Filter sharpness (0-7)");
 static const arg_def_t static_thresh = ARG_DEF(NULL, "static-thresh", 1,
@@ -1140,15 +1142,15 @@ static const arg_def_t max_intra_rate_pct = ARG_DEF(NULL, "max-intra-rate", 1,
 
 static const arg_def_t *vp8_args[] =
 {
-    &cpu_used, &auto_altref, &noise_sens, &sharpness, &static_thresh,
-    &token_parts, &arnr_maxframes, &arnr_strength, &arnr_type,
+    &cpu_used, &auto_altref, &noise_sens, &temporal_denoising, &sharpness,
+    &static_thresh, &token_parts, &arnr_maxframes, &arnr_strength, &arnr_type,
     &tune_ssim, &cq_level, &max_intra_rate_pct, NULL
 };
 static const int vp8_arg_ctrl_map[] =
 {
     VP8E_SET_CPUUSED, VP8E_SET_ENABLEAUTOALTREF,
-    VP8E_SET_NOISE_SENSITIVITY, VP8E_SET_SHARPNESS, VP8E_SET_STATIC_THRESHOLD,
-    VP8E_SET_TOKEN_PARTITIONS,
+    VP8E_SET_NOISE_SENSITIVITY, VP8E_SET_TEMPORAL_DENOISING, VP8E_SET_SHARPNESS,
+    VP8E_SET_STATIC_THRESHOLD, VP8E_SET_TOKEN_PARTITIONS,
     VP8E_SET_ARNR_MAXFRAMES, VP8E_SET_ARNR_STRENGTH , VP8E_SET_ARNR_TYPE,
     VP8E_SET_TUNING, VP8E_SET_CQ_LEVEL, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0
 };

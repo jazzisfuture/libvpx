@@ -28,6 +28,7 @@
 #include "mcomp.h"
 #include "vp8/common/findnearmv.h"
 #include "lookahead.h"
+#include "vp8/encoder/denoising.h"
 
 //#define SPEEDSTATS 1
 #define MIN_GF_INTERVAL             4
@@ -660,6 +661,8 @@ typedef struct VP8_COMP
     int force_next_frame_intra; /* force next frame to intra when kf_auto says so */
 
     int droppable;
+
+    VP8_DENOISER denoiser;
 
     // Coding layer state variables
     unsigned int current_layer;
