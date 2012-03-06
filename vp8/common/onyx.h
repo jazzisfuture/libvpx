@@ -225,6 +225,8 @@ extern "C"
         /* Memory location to store low-resolution encoder's mode info */
         void* mr_low_res_mode_info;
 #endif
+        int temporal_denoising;  // parameter used for enabling temporal
+                                 // denoising. Recommended for real-time apps.
     } VP8_CONFIG;
 
 
