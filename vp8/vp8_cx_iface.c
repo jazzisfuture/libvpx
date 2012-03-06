@@ -31,6 +31,7 @@ struct vp8_extracfg
     int                         cpu_used;                    /** available cpu percentage in 1/16*/
     unsigned int                enable_auto_alt_ref;           /** if encoder decides to uses alternate reference frame */
     unsigned int                noise_sensitivity;
+    unsigned int                temporal_denoising;
     unsigned int                Sharpness;
     unsigned int                static_thresh;
     unsigned int                token_partitions;
@@ -64,6 +65,7 @@ static const struct extraconfig_map extracfg_map[] =
 #endif
             0,                          /* enable_auto_alt_ref */
             0,                          /* noise_sensitivity */
+            0,                          /* temporal_denoising */
             0,                          /* Sharpness */
             0,                          /* static_thresh */
             VP8_ONE_TOKENPARTITION,     /* token_partitions */
@@ -188,6 +190,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK(vp8_cfg, noise_sensitivity,  0, 0);
 #endif
 
+    RANGE_CHECK(vp8_cfg, temporal_denoising, 0, 1);
     RANGE_CHECK(vp8_cfg, token_partitions,   VP8_ONE_TOKENPARTITION, VP8_EIGHT_TOKENPARTITION);
     RANGE_CHECK_HI(vp8_cfg, Sharpness,       7);
     RANGE_CHECK(vp8_cfg, arnr_max_frames, 0, 15);
@@ -386,6 +389,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
     oxcf->encode_breakout        = vp8_cfg.static_thresh;
     oxcf->play_alternate         = vp8_cfg.enable_auto_alt_ref;
     oxcf->noise_sensitivity      = vp8_cfg.noise_sensitivity;
+    oxcf->temporal_denoising     = vp8_cfg.temporal_denoising;
     oxcf->Sharpness              = vp8_cfg.Sharpness;
     oxcf->token_partitions       = vp8_cfg.token_partitions;
 
@@ -402,6 +406,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
         printf("Current VP8 Settings: \n");
         printf("target_bandwidth: %d\n", oxcf->target_bandwidth);
         printf("noise_sensitivity: %d\n", oxcf->noise_sensitivity);
+        printf("temporal_denoising: %d\n", oxcf->temporal_denoising);
         printf("Sharpness: %d\n",    oxcf->Sharpness);
         printf("cpu_used: %d\n",  oxcf->cpu_used);
         printf("Mode: %d\n",     oxcf->Mode);
@@ -504,6 +509,7 @@ static vpx_codec_err_t set_param(vpx_codec_alg_priv_t *ctx,
         MAP(VP8E_SET_CPUUSED,               xcfg.cpu_used);
         MAP(VP8E_SET_ENABLEAUTOALTREF,      xcfg.enable_auto_alt_ref);
         MAP(VP8E_SET_NOISE_SENSITIVITY,     xcfg.noise_sensitivity);
+        MAP(VP8E_SET_TEMPORAL_DENOISING,    xcfg.temporal_denoising);
         MAP(VP8E_SET_SHARPNESS,             xcfg.Sharpness);
         MAP(VP8E_SET_STATIC_THRESHOLD,      xcfg.static_thresh);
         MAP(VP8E_SET_TOKEN_PARTITIONS,      xcfg.token_partitions);
@@ -1181,6 +1187,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_SET_ENCODING_MODE,            set_param},
     {VP8E_SET_CPUUSED,                  set_param},
     {VP8E_SET_NOISE_SENSITIVITY,        set_param},
+    {VP8E_SET_TEMPORAL_DENOISING,       set_param},
     {VP8E_SET_ENABLEAUTOALTREF,         set_param},
     {VP8E_SET_SHARPNESS,                set_param},
     {VP8E_SET_STATIC_THRESHOLD,         set_param},

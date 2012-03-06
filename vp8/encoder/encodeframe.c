@@ -28,6 +28,7 @@
 #include <limits.h>
 #include "vp8/common/invtrans.h"
 #include "vpx_ports/vpx_timer.h"
+#include "denoising.h"
 
 extern void vp8_stuff_mb(VP8_COMP *cpi, MACROBLOCKD *x, TOKENEXTRA **t) ;
 extern void vp8_calc_ref_frame_costs(int *ref_frame_cost,
@@ -1130,6 +1131,9 @@ int vp8cx_encode_inter_macroblock
     else
         x->encode_breakout = cpi->oxcf.encode_breakout;
 
+    // Reset the best_last_mode for each macroblock.
+    vpx_memset(&x->e_mbd.best_sse_mode, 0, sizeof(MODE_INFO));
+
     if (cpi->sf.RD)
     {
         int zbin_mode_boost_enabled = cpi->zbin_mode_boost_enabled;
@@ -1267,9 +1271,11 @@ int vp8cx_encode_inter_macroblock
 
         }
         else
+        {
             vp8_build_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
                                            xd->dst.u_buffer, xd->dst.v_buffer,
                                            xd->dst.y_stride, xd->dst.uv_stride);
+        }
 
     }
 

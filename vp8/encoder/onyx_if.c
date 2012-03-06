@@ -3103,6 +3103,7 @@ void loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
     }
 
     vp8_yv12_extend_frame_borders_ptr(cm->frame_to_show);
+    vp8_yv12_extend_frame_borders(&cm->yv12_running_avg);
 
 }
 

@@ -33,6 +33,7 @@
 #include "rdopt.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/systemdependent.h"
+#include "denoising.h"
 
 extern void vp8_update_zbin_extra(VP8_COMP *cpi, MACROBLOCK *x);
 
@@ -2244,6 +2245,17 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             *returnintra = distortion2 ;
         }
 
+        // Store the best NEWMV in x for later use in the denoiser.
+        // We are restricted to the LAST_FRAME since the denoiser only keeps
+        // one filter state.
+        if (x->e_mbd.mode_info_context->mbmi.mode == NEWMV &&
+            x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
+        {
+          vpx_memcpy(&x->e_mbd.best_sse_mode,
+                     x->e_mbd.mode_info_context,
+                     sizeof(MODE_INFO));
+        }
+
         // Did this mode help.. i.i is it the new best mode
         if (this_rd < best_rd || x->skip)
         {
@@ -2327,6 +2339,19 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[best_mode_index] ++;
 
+    if (x->e_mbd.best_sse_mode.mbmi.ref_frame == INTRA_FRAME) {
+      // No best MV found.
+      vpx_memcpy(&x->e_mbd.best_sse_mode.mbmi,
+                 &best_mbmode,
+                 sizeof(MB_MODE_INFO));
+    }
+
+    if (cpi->oxcf.temporal_denoising != 0)
+    {
+      vp8_denoiser_denoise_mb(cpi, x, 0, 0,
+                              recon_yoffset, recon_uvoffset);
+      // TODO(holmer): Reevalute ZEROMV if the current mode is INTRA.
+    }
 
     if (cpi->is_src_frame_alt_ref &&
         (best_mbmode.mode != ZEROMV || best_mbmode.ref_frame != ALTREF_FRAME))
@@ -2338,7 +2363,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         x->e_mbd.mode_info_context->mbmi.mb_skip_coeff =
                                         (cpi->common.mb_no_coeff_skip);
         x->e_mbd.mode_info_context->mbmi.partitioning = 0;
-
         return;
     }
 
