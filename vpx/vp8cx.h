@@ -143,6 +143,7 @@ enum vp8e_enc_control_id
     VP8E_SET_CPUUSED           = 13,
     VP8E_SET_ENABLEAUTOALTREF,       /**< control function to enable vp8 to automatic set and use altref frame */
     VP8E_SET_NOISE_SENSITIVITY,      /**< control function to set noise sensitivity */
+    VP8E_SET_TEMPORAL_DENOISING,     /**< control function to set temporal denoising */
     VP8E_SET_SHARPNESS,              /**< control function to set sharpness */
     VP8E_SET_STATIC_THRESHOLD,       /**< control function to set the threshold for macroblocks treated static */
     VP8E_SET_TOKEN_PARTITIONS,       /**< control function to set the number of token partitions  */
@@ -296,6 +297,7 @@ VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED,            int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF,   unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_NOISE_SENSITIVITY,  unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_TEMPORAL_DENOISING, unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_SHARPNESS,          unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_STATIC_THRESHOLD,   unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_TOKEN_PARTITIONS,   vp8e_token_partitions)
