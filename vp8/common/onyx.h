@@ -109,6 +109,8 @@ extern "C"
         int target_bandwidth;    // bandwidth to be used in kilobits per second
 
         int noise_sensitivity;   // parameter used for applying pre processing blur: recommendation 0
+        int temporal_denoising;  // parameter used for enabling temporal
+                                 // denoising. Recommended for real-time apps.
         int Sharpness;          // parameter used for sharpening output: recommendation 0:
         int cpu_used;
         unsigned int rc_max_intra_bitrate_pct;

@@ -1130,6 +1130,9 @@ int vp8cx_encode_inter_macroblock
     else
         x->encode_breakout = cpi->oxcf.encode_breakout;
 
+    // Reset the best_last_mode for each macroblock.
+    vpx_memset(&x->e_mbd.best_sse_mode, 0, sizeof(MODE_INFO));
+
     if (cpi->sf.RD)
     {
         int zbin_mode_boost_enabled = cpi->zbin_mode_boost_enabled;

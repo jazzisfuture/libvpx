@@ -37,9 +37,11 @@ static void update_mode_info_border(MODE_INFO *mi, int rows, int cols)
 void vp8_de_alloc_frame_buffers(VP8_COMMON *oci)
 {
     int i;
-
     for (i = 0; i < NUM_YV12_BUFFERS; i++)
         vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[i]);
+
+    vp8_yv12_de_alloc_frame_buffer(&oci->yv12_running_avg);
+    vp8_yv12_de_alloc_frame_buffer(&oci->yv12_mc_running_avg);
 
     vp8_yv12_de_alloc_frame_buffer(&oci->temp_scale_frame);
     vp8_yv12_de_alloc_frame_buffer(&oci->post_proc_buffer);
@@ -80,6 +82,25 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height)
             return 1;
         }
     }
+
+    oci->yv12_running_avg.flags = 0;
+    if (vp8_yv12_alloc_frame_buffer(&(oci->yv12_running_avg), width,
+                                    height, VP8BORDERINPIXELS) < 0)
+    {
+        vp8_de_alloc_frame_buffers(oci);
+        return 1;
+    }
+    oci->yv12_mc_running_avg.flags = 0;
+    if (vp8_yv12_alloc_frame_buffer(&(oci->yv12_mc_running_avg), width,
+                                    height, VP8BORDERINPIXELS) < 0)
+    {
+        vp8_de_alloc_frame_buffers(oci);
+        return 1;
+    }
+    vpx_memset(oci->yv12_running_avg.buffer_alloc, 0,
+               oci->yv12_running_avg.frame_size);
+    vpx_memset(oci->yv12_mc_running_avg.buffer_alloc, 0,
+               oci->yv12_mc_running_avg.frame_size);
 
     oci->new_fb_idx = 0;
     oci->lst_fb_idx = 1;

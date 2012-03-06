@@ -89,6 +89,8 @@ typedef struct VP8Common
     YV12_BUFFER_CONFIG *frame_to_show;
 
     YV12_BUFFER_CONFIG yv12_fb[NUM_YV12_BUFFERS];
+    YV12_BUFFER_CONFIG yv12_running_avg;
+    YV12_BUFFER_CONFIG yv12_mc_running_avg;
     int fb_idx_ref_cnt[NUM_YV12_BUFFERS];
     int new_fb_idx, lst_fb_idx, gld_fb_idx, alt_fb_idx;
 
