@@ -47,7 +47,6 @@ VP8_CX_SRCS-yes += encoder/firstpass.c
 VP8_CX_SRCS-yes += encoder/block.h
 VP8_CX_SRCS-yes += encoder/boolhuff.h
 VP8_CX_SRCS-yes += encoder/bitstream.h
-VP8_CX_SRCS-yes += encoder/denoiser_table.h
 VP8_CX_SRCS-yes += encoder/denoising.h
 VP8_CX_SRCS-yes += encoder/denoising.c
 VP8_CX_SRCS-yes += encoder/encodeintra.h

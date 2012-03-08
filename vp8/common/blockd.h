@@ -215,7 +215,9 @@ typedef struct macroblockd
     MODE_INFO *mode_info_context;
     int mode_info_stride;
 
-    MODE_INFO best_sse_mode;
+    MB_PREDICTION_MODE best_sse_inter_mode;
+    int_mv best_sse_mv;
+    unsigned char need_to_clamp_best_mvs;
 
     FRAME_TYPE frame_type;
 

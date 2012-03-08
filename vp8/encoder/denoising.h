@@ -12,9 +12,18 @@
 #define VP8_ENCODER_DENOISING_H_
 
 #include "block.h"
-#include "onyx_int.h"
 
-void vp8_denoiser_denoise_mb(VP8_COMP *cpi,
+typedef struct vp8_denoiser
+{
+  YV12_BUFFER_CONFIG yv12_running_avg;
+  YV12_BUFFER_CONFIG yv12_mc_running_avg;
+} VP8_DENOISER;
+
+int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height);
+
+void vp8_denoiser_free(VP8_DENOISER *denoiser);
+
+void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
                              MACROBLOCK *x,
                              unsigned int best_sse,
                              unsigned int zero_mv_sse,

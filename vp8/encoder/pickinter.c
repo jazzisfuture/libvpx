@@ -451,6 +451,48 @@ void get_lower_res_motion_info(VP8_COMP *cpi, MACROBLOCKD *xd, int *dissim,
 }
 #endif
 
+static void check_for_encode_breakout(unsigned int sse, MACROBLOCK* x)
+{
+    if (sse < x->encode_breakout)
+    {
+        // Check u and v to make sure skip is ok
+        int sse2 = 0;
+
+        sse2 = VP8_UVSSE(x);
+
+        if (sse2 * 2 < x->encode_breakout)
+            x->skip = 1;
+        else
+            x->skip = 0;
+    }
+}
+
+static int evaluate_inter_mode(unsigned int* sse, int rate2, int* distortion2, VP8_COMP *cpi, MACROBLOCK *x)
+{
+    MB_PREDICTION_MODE this_mode = x->e_mbd.mode_info_context->mbmi.mode;
+    int_mv mv = x->e_mbd.mode_info_context->mbmi.mv;
+    int this_rd;
+    /* Exit early and don't compute the distortion if this macroblock
+     * is marked inactive. */
+    if (cpi->active_map_enabled && x->active_ptr[0] == 0)
+    {
+        *sse = 0;
+        *distortion2 = 0;
+        x->skip = 1;
+        return INT_MAX;
+    }
+
+    if((this_mode != NEWMV) ||
+        !(cpi->sf.half_pixel_search) || cpi->common.full_pixel==1)
+        *distortion2 = get_inter_mbpred_error(x,
+                                              &cpi->fn_ptr[BLOCK_16X16],
+                                              sse, mv);
+
+    this_rd = RDCOST(x->rdmult, x->rddiv, rate2, *distortion2);
+
+    check_for_encode_breakout(*sse, x);
+    return this_rd;
+}
 
 void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                          int recon_uvoffset, int *returnrate,
@@ -489,9 +531,6 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     unsigned char *plane[4][3];
     int ref_frame_map[4];
     int sign_bias = 0;
-
-    int have_subp_search = cpi->sf.half_pixel_search;  /* In real-time mode,
-                                       when Speed >= 15, no sub-pixel search. */
 
 #if CONFIG_MULTI_RES_ENCODING
     int dissim = INT_MAX;
@@ -907,59 +946,34 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             rate2 += vp8_cost_mv_ref(this_mode, mdcounts);
             x->e_mbd.mode_info_context->mbmi.mv.as_int =
                                                     mode_mv[this_mode].as_int;
+            this_rd = evaluate_inter_mode(&sse, rate2, &distortion2, cpi, x);
 
-            /* Exit early and don't compute the distortion if this macroblock
-             * is marked inactive. */
-            if (cpi->active_map_enabled && x->active_ptr[0] == 0)
-            {
-                sse = 0;
-                distortion2 = 0;
-                x->skip = 1;
-                break;
-            }
-
-            if((this_mode != NEWMV) ||
-                !(have_subp_search) || cpi->common.full_pixel==1)
-                distortion2 = get_inter_mbpred_error(x,
-                                                     &cpi->fn_ptr[BLOCK_16X16],
-                                                     &sse, mode_mv[this_mode]);
-
-            this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
-
-            if (sse < x->encode_breakout)
-            {
-                // Check u and v to make sure skip is ok
-                int sse2 = 0;
-
-                sse2 = VP8_UVSSE(x);
-
-                if (sse2 * 2 < x->encode_breakout)
-                    x->skip = 1;
-                else
-                    x->skip = 0;
-            }
             break;
         default:
             break;
         }
 
-        // Store for later use by denoiser.
-        if (this_mode == ZEROMV &&
-            x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
+        if (cpi->oxcf.temporal_denoising)
         {
-          zero_mv_sse = sse;
-        }
+          // Store for later use by denoiser.
+          if (this_mode == ZEROMV &&
+              x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
+          {
+            zero_mv_sse = sse;
+          }
 
-        // Store the best NEWMV in x for later use in the denoiser.
-        // We are restricted to the LAST_FRAME since the denoiser only keeps
-        // one filter state.
-        if (x->e_mbd.mode_info_context->mbmi.mode == NEWMV &&
-            x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
-        {
-          best_sse = sse;
-          vpx_memcpy(&x->e_mbd.best_sse_mode,
-                     x->e_mbd.mode_info_context,
-                     sizeof(MODE_INFO));
+          // Store the best NEWMV in x for later use in the denoiser.
+          // We are restricted to the LAST_FRAME since the denoiser only keeps
+          // one filter state.
+          if (x->e_mbd.mode_info_context->mbmi.mode == NEWMV &&
+              x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
+          {
+            best_sse = sse;
+            x->e_mbd.best_sse_inter_mode = NEWMV;
+            x->e_mbd.best_sse_mv = x->e_mbd.mode_info_context->mbmi.mv;
+            x->e_mbd.need_to_clamp_best_mvs =
+                x->e_mbd.mode_info_context->mbmi.need_to_clamp_mvs;
+          }
         }
 
         if (this_rd < best_rd || x->skip)
@@ -1031,56 +1045,33 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         cpi->error_bins[this_rdbin] ++;
     }
 
-    if (x->e_mbd.best_sse_mode.mbmi.ref_frame == INTRA_FRAME) {
-      // No best MV found.
-      vpx_memcpy(&x->e_mbd.best_sse_mode.mbmi,
-                 &best_mbmode,
-                 sizeof(MB_MODE_INFO));
-      best_sse = best_rd_sse;
-    }
 
     if (cpi->oxcf.temporal_denoising != 0)
     {
-      vp8_denoiser_denoise_mb(cpi, x, best_sse, zero_mv_sse,
+      if (x->e_mbd.best_sse_inter_mode == DC_PRED) {
+        // No best MV found.
+        x->e_mbd.best_sse_inter_mode = best_mbmode.mode;
+        x->e_mbd.best_sse_mv = best_mbmode.mv;
+        x->e_mbd.need_to_clamp_best_mvs = best_mbmode.need_to_clamp_mvs;
+        best_sse = best_rd_sse;
+      }
+      vp8_denoiser_denoise_mb(&cpi->denoiser, x, best_sse, zero_mv_sse,
                               recon_yoffset, recon_uvoffset);
 
       // Reevaluate ZEROMV after denoising.
       if (best_mbmode.ref_frame == INTRA_FRAME)
       {
         int this_rd = 0;
+        rate2 = 0;
+        distortion2 = 0;
         x->e_mbd.mode_info_context->mbmi.ref_frame = LAST_FRAME;
         rate2 += x->ref_frame_cost[x->e_mbd.mode_info_context->mbmi.ref_frame];
         this_mode = ZEROMV;
         rate2 += vp8_cost_mv_ref(this_mode, mdcounts);
         x->e_mbd.mode_info_context->mbmi.mode = this_mode;
         x->e_mbd.mode_info_context->mbmi.uv_mode = DC_PRED;
-        x->e_mbd.mode_info_context->mbmi.mv.as_int = mode_mv[this_mode].as_int;
-
-        /* Exit early and don't compute the distortion if this macroblock
-         * is marked inactive. */
-        if (!cpi->active_map_enabled || x->active_ptr[0] != 0)
-        {
-          if((this_mode != NEWMV) ||
-              !(have_subp_search) || cpi->common.full_pixel==1)
-              distortion2 = get_inter_mbpred_error(x,
-                                                   &cpi->fn_ptr[BLOCK_16X16],
-                                                   &sse, mode_mv[this_mode]);
-
-          this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
-
-          if (sse < x->encode_breakout)
-          {
-              // Check u and v to make sure skip is ok
-              int sse2 = 0;
-
-              sse2 = VP8_UVSSE(x);
-
-              if (sse2 * 2 < x->encode_breakout)
-                  x->skip = 1;
-              else
-                  x->skip = 0;
-          }
-        }
+        x->e_mbd.mode_info_context->mbmi.mv.as_int = 0;
+        this_rd = evaluate_inter_mode(&sse, rate2, &distortion2, cpi, x);
 
         if (this_rd < best_rd || x->skip)
         {
