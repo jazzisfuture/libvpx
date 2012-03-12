@@ -392,8 +392,13 @@ static void calc_iframe_target_size(VP8_COMP *cpi)
         int Q = (cpi->common.frame_flags & FRAMEFLAGS_KEY)
                 ? cpi->avg_frame_qindex : cpi->ni_av_qi;
 
-        // Boost depends somewhat on frame rate
-        kf_boost = (int)(2 * cpi->output_frame_rate - 16);
+        int initial_boost = 24; // Corresponds to: |2.5 * per_frame_bandwidth|
+        // Boost depends somewhat on frame rate: only used for 1 layer case.
+        if (cpi->oxcf.number_of_layers == 1) {
+          kf_boost = MAX(initial_boost, (int)(2 * cpi->output_frame_rate - 16));
+        }
+        else
+          kf_boost = initial_boost;
 
         // adjustment up based on q
         kf_boost = kf_boost * kf_boost_qadjustment[Q] / 100;
