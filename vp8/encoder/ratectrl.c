@@ -392,21 +392,68 @@ static void calc_iframe_target_size(VP8_COMP *cpi)
         int Q = (cpi->common.frame_flags & FRAMEFLAGS_KEY)
                 ? cpi->avg_frame_qindex : cpi->ni_av_qi;
 
-        // Boost depends somewhat on frame rate
-        kf_boost = (int)(2 * cpi->output_frame_rate - 16);
+        int initial_boost = 24; // Corresponds to: |2.5 * per_frame_bandwidth|
+        // Boost depends somewhat on frame rate: only used for 1 layer case.
+        if (cpi->oxcf.number_of_layers == 1) {
+          kf_boost = MAX(initial_boost, (int)(2 * cpi->output_frame_rate - 16));
+        }
+        else {
+          kf_boost = initial_boost;
+        }
 
-        // adjustment up based on q
+        // adjustment up based on q: this factor ranges from ~1.2 to 2.2.
         kf_boost = kf_boost * kf_boost_qadjustment[Q] / 100;
 
-        // frame separation adjustment ( down)
+        // frame separation adjustment (down)
         if (cpi->frames_since_key  < cpi->output_frame_rate / 2)
+        {
             kf_boost = (int)(kf_boost
                        * cpi->frames_since_key / (cpi->output_frame_rate / 2));
+        }
 
+        // Minimal target size is |2* per_frame_bandwidth|.
         if (kf_boost < 16)
-            kf_boost = 16;
+          kf_boost = 16;
 
         target = ((16 + kf_boost) * cpi->per_frame_bandwidth) >> 4;
+
+        // Boost based on Q and buffer level.
+        if (cpi->buffered_mode &&
+            cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER)
+        {
+          // Check if the projected size based on the average/recent Q is
+          // larger than the current target size.
+          int project_size_avgQ = (int)(((.5 + cpi->key_frame_rate_correction_factor *
+              vp8_bits_per_mb[KEY_FRAME][Q]) * cpi->common.MBs) / (1 << BPER_MB_NORMBITS));
+
+          if (project_size_avgQ > target) {
+            // Increase target size if the buffer allows it.
+            // The buffer condition is based on threshold for frame drops:
+            // (buffer_level + per_frame_bandwidth - key_size) > threshold_buffer.
+            // Set threshold to be 0.5 * buffer_level.
+            // Target size should then not exceed:
+            float threshold_buffer = 0.5;
+            float target_size_buffer = (1.0 - threshold_buffer) * cpi->buffer_level
+                + cpi->per_frame_bandwidth;
+
+            int diff = project_size_avgQ - target;
+
+            // Check if we can increase size by at most: |boost_proj_size| * |per_frame_bandwidth|.
+            float boost_proj_size = 2.0;
+            int target_size_new = target +
+                MIN(diff, (int)(boost_proj_size * cpi->per_frame_bandwidth));
+            if (target_size_new < target_size_buffer) {
+              target = target_size_new;
+            }
+            else {
+              int target_size_new = target +
+                  MIN(diff, (int)(0.5 * boost_proj_size * cpi->per_frame_bandwidth));
+              if (target_size_new < target_size_buffer) {
+                target = target_size_new;
+              }
+            }
+          }
+        }
     }
 
 
