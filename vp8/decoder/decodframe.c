@@ -156,6 +156,18 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     /* do prediction */
     if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME)
     {
+
+        //if(1)
+        if(xd->mode_info_context->mbmi.uv_mode == V_PRED)
+          vp8_build_intra_predictors_mbuv_s_sse2(xd,
+                                            xd->recon_above[1],
+                                            xd->recon_above[2],
+                                            xd->recon_left[1],
+                                            xd->recon_left[2],
+                                            xd->recon_left_stride[1],
+                                            xd->dst.u_buffer, xd->dst.v_buffer,
+                                            xd->dst.uv_stride);
+        else
         vp8_build_intra_predictors_mbuv_s(xd,
                                           xd->recon_above[1],
                                           xd->recon_above[2],

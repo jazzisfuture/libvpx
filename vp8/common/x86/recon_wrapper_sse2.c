@@ -29,6 +29,8 @@ extern build_intra_predictors_mbuv_prototype(vp8_intra_pred_uv_tm_sse2);
 extern build_intra_predictors_mbuv_prototype(vp8_intra_pred_uv_tm_ssse3);
 
 static void vp8_build_intra_predictors_mbuv_x86(MACROBLOCKD *x,
+                                                unsigned char * uabove_row,
+                                                unsigned char * vabove_row,
                                                 unsigned char *dst_u,
                                                 unsigned char *dst_v,
                                                 int dst_stride,
@@ -37,7 +39,6 @@ static void vp8_build_intra_predictors_mbuv_x86(MACROBLOCKD *x,
 {
     int mode = x->mode_info_context->mbmi.uv_mode;
     build_intra_predictors_mbuv_fn_t fn;
-    int src_stride = x->dst.uv_stride;
 
     switch (mode) {
         case  V_PRED: fn = vp8_intra_pred_uv_ve_mmx; break;
@@ -59,34 +60,29 @@ static void vp8_build_intra_predictors_mbuv_x86(MACROBLOCKD *x,
         default: return;
     }
 
-    fn(dst_u, dst_stride, x->dst.u_buffer, src_stride);
-    fn(dst_v, dst_stride, x->dst.v_buffer, src_stride);
+    fn(dst_u, dst_stride, uabove_row, dst_stride);
+    fn(dst_v, dst_stride, vabove_row, dst_stride);
 }
 
-void vp8_build_intra_predictors_mbuv_sse2(MACROBLOCKD *x)
+void vp8_build_intra_predictors_mbuv_s_sse2(MACROBLOCKD *x,
+                                            unsigned char * uabove_row,
+                                            unsigned char * vabove_row,
+                                            unsigned char * uleft,
+                                            unsigned char * vleft,
+                                            int left_stride,
+                                            unsigned char * upred_ptr,
+                                            unsigned char * vpred_ptr,
+                                            int pred_stride)
 {
-    vp8_build_intra_predictors_mbuv_x86(x, &x->predictor[256],
-                                        &x->predictor[320], 8,
+    vp8_build_intra_predictors_mbuv_x86(x,
+                                        uabove_row, vabove_row,
+                                        upred_ptr,
+                                        vpred_ptr, pred_stride,
                                         vp8_intra_pred_uv_tm_sse2,
                                         vp8_intra_pred_uv_ho_mmx2);
 }
 
-void vp8_build_intra_predictors_mbuv_ssse3(MACROBLOCKD *x)
-{
-    vp8_build_intra_predictors_mbuv_x86(x, &x->predictor[256],
-                                        &x->predictor[320], 8,
-                                        vp8_intra_pred_uv_tm_ssse3,
-                                        vp8_intra_pred_uv_ho_ssse3);
-}
-
-void vp8_build_intra_predictors_mbuv_s_sse2(MACROBLOCKD *x)
-{
-    vp8_build_intra_predictors_mbuv_x86(x, x->dst.u_buffer,
-                                        x->dst.v_buffer, x->dst.uv_stride,
-                                        vp8_intra_pred_uv_tm_sse2,
-                                        vp8_intra_pred_uv_ho_mmx2);
-}
-
+#if 0
 void vp8_build_intra_predictors_mbuv_s_ssse3(MACROBLOCKD *x)
 {
     vp8_build_intra_predictors_mbuv_x86(x, x->dst.u_buffer,
@@ -94,6 +90,7 @@ void vp8_build_intra_predictors_mbuv_s_ssse3(MACROBLOCKD *x)
                                         vp8_intra_pred_uv_tm_ssse3,
                                         vp8_intra_pred_uv_ho_ssse3);
 }
+#endif
 
 extern build_intra_predictors_mbuv_prototype(vp8_intra_pred_y_dc_sse2);
 extern build_intra_predictors_mbuv_prototype(vp8_intra_pred_y_dctop_sse2);
@@ -134,18 +131,6 @@ static void vp8_build_intra_predictors_mby_x86(MACROBLOCKD *x,
 
     fn(dst_y, dst_stride, x->dst.y_buffer, src_stride);
     return;
-}
-
-void vp8_build_intra_predictors_mby_sse2(MACROBLOCKD *x)
-{
-    vp8_build_intra_predictors_mby_x86(x, x->predictor, 16,
-                                       vp8_intra_pred_y_tm_sse2);
-}
-
-void vp8_build_intra_predictors_mby_ssse3(MACROBLOCKD *x)
-{
-    vp8_build_intra_predictors_mby_x86(x, x->predictor, 16,
-                                       vp8_intra_pred_y_tm_ssse3);
 }
 
 void vp8_build_intra_predictors_mby_s_sse2(MACROBLOCKD *x)

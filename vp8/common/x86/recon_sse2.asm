@@ -440,7 +440,7 @@ sym(vp8_intra_pred_uv_ve_mmx):
     ; read from top
     mov         rax,        arg(2) ;src;
     movsxd      rdx,        dword ptr arg(3) ;src_stride;
-    sub         rax,        rdx
+;    sub         rax,        rdx
     movq        mm1,        [rax]
 
     ; write out
