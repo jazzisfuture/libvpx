@@ -120,6 +120,7 @@ VP8_COMMON_SRCS-$(HAVE_SSE2) += common/x86/loopfilter_block_sse2.asm
 endif
 
 # common (c)
+$(warning $(ARCH_ARM))
 VP8_COMMON_SRCS-$(ARCH_ARM)  += common/arm/filter_arm.c
 VP8_COMMON_SRCS-$(ARCH_ARM)  += common/arm/loopfilter_arm.c
 VP8_COMMON_SRCS-$(ARCH_ARM)  += common/arm/reconintra_arm.c
