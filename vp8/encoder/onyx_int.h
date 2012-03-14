@@ -317,6 +317,7 @@ typedef struct VP8_COMP
     YV12_BUFFER_CONFIG *Source;
     YV12_BUFFER_CONFIG *un_scaled_source;
     YV12_BUFFER_CONFIG scaled_source;
+    YV12_BUFFER_CONFIG last_frame_source;
 
     int source_alt_ref_pending; // frame in src_buffers has been identified to be encoded as an alt ref
     int source_alt_ref_active;  // an alt ref frame has been encoded and is usable

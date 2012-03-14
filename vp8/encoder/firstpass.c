@@ -379,15 +379,35 @@ static int frame_max_bits(VP8_COMP *cpi)
 
 void vp8_init_first_pass(VP8_COMP *cpi)
 {
+    VP8_COMMON *cm = & cpi->common;
+    int width = cm->Width;
+    int height = cm->Height;
+
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+    if (vp8_yv12_alloc_frame_buffer(&cpi->last_frame_source,
+                                    width, height, VP8BORDERINPIXELS))
+        vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate last frame source buffer");
+
     zero_stats(&cpi->twopass.total_stats);
 }
 
 void vp8_end_first_pass(VP8_COMP *cpi)
 {
+    vp8_yv12_de_alloc_frame_buffer(&cpi->last_frame_source);
     output_stats(cpi, cpi->output_pkt_list, &cpi->twopass.total_stats);
 }
 
-static void zz_motion_search( VP8_COMP *cpi, MACROBLOCK * x, YV12_BUFFER_CONFIG * recon_buffer, int * best_motion_err, int recon_yoffset )
+static void zz_motion_search( VP8_COMP *cpi, MACROBLOCK * x,
+                              YV12_BUFFER_CONFIG * raw_buffer,
+                              int * raw_motion_err,
+                              YV12_BUFFER_CONFIG * recon_buffer,
+                              int * best_motion_err, int recon_yoffset)
 {
     MACROBLOCKD * const xd = & x->e_mbd;
     BLOCK *b = &x->block[0];
@@ -395,15 +415,22 @@ static void zz_motion_search( VP8_COMP *cpi, MACROBLOCK * x, YV12_BUFFER_CONFIG 
 
     unsigned char *src_ptr = (*(b->base_src) + b->src);
     int src_stride = b->src_stride;
+    unsigned char *raw_ptr;
+    int raw_stride = raw_buffer->y_stride;
     unsigned char *ref_ptr;
     int ref_stride = x->e_mbd.pre.y_stride;
 
+    // Set up pointers for this macro block raw buffer
+    raw_ptr = (unsigned char *)(raw_buffer->y_buffer + recon_yoffset
+                                + d->offset);
+    vp8_mse16x16 ( src_ptr, src_stride, raw_ptr, raw_stride,
+                   (unsigned int *)(raw_motion_err));
+
     // Set up pointers for this macro block recon buffer
     xd->pre.y_buffer = recon_buffer->y_buffer + recon_yoffset;
-
     ref_ptr = (unsigned char *)(xd->pre.y_buffer + d->offset );
-
-    vp8_mse16x16 ( src_ptr, src_stride, ref_ptr, ref_stride, (unsigned int *)(best_motion_err));
+    vp8_mse16x16 ( src_ptr, src_stride, ref_ptr, ref_stride,
+                   (unsigned int *)(best_motion_err));
 }
 
 static void first_pass_motion_search(VP8_COMP *cpi, MACROBLOCK *x,
@@ -595,11 +622,17 @@ void vp8_first_pass(VP8_COMP *cpi)
                 MV tmp_mv = {0, 0};
                 int tmp_err;
                 int motion_error = INT_MAX;
+                int raw_motion_error = INT_MAX;
 
                 // Simple 0,0 motion with no mv overhead
-                zz_motion_search( cpi, x, lst_yv12, &motion_error, recon_yoffset );
+                zz_motion_search( cpi, x, &cpi->last_frame_source,
+                                  &raw_motion_error, lst_yv12, &motion_error,
+                                  recon_yoffset );
                 d->bmi.mv.as_mv.row = 0;
                 d->bmi.mv.as_mv.col = 0;
+
+                if (raw_motion_error < cpi->oxcf.encode_breakout)
+                    goto skip_motion_search;
 
                 // Test last reference frame using the previous best mv as the
                 // starting point (best reference) for the search
@@ -648,6 +681,7 @@ void vp8_first_pass(VP8_COMP *cpi)
                     xd->pre.v_buffer = lst_yv12->v_buffer + recon_uvoffset;
                 }
 
+skip_motion_search:
                 /* Intra assumed best */
                 best_ref_mv.as_int = 0;
 
@@ -804,6 +838,8 @@ void vp8_first_pass(VP8_COMP *cpi)
         output_stats(cpi, cpi->output_pkt_list, &cpi->twopass.this_frame_stats);
         accumulate_stats(&cpi->twopass.total_stats, &fps);
     }
+
+    vp8_yv12_copy_frame_ptr(cpi->Source, &cpi->last_frame_source);
 
     // Copy the previous Last Frame into the GF buffer if specific conditions for doing so are met
     if ((cm->current_video_frame > 0) &&
