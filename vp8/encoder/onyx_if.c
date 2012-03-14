@@ -357,6 +357,7 @@ static void dealloc_compressor_data(VP8_COMP *cpi)
 
     vp8_yv12_de_alloc_frame_buffer(&cpi->pick_lf_lvl_frame);
     vp8_yv12_de_alloc_frame_buffer(&cpi->scaled_source);
+    vp8_yv12_de_alloc_frame_buffer(&cpi->last_frame_scaled_source);
     dealloc_raw_frame_buffers(cpi);
 
     vpx_free(cpi->tok);
@@ -1107,6 +1108,10 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
         vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate scaled source buffer");
 
+    if (vp8_yv12_alloc_frame_buffer(&cpi->last_frame_scaled_source,
+                                    width, height, VP8BORDERINPIXELS))
+        vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate last frame scaled source buffer");
 
         vpx_free(cpi->tok);
 
@@ -2565,7 +2570,10 @@ void vp8_write_yuv_frame(const char *name, YV12_BUFFER_CONFIG *s)
 #endif
 
 
-static void scale_and_extend_source(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
+
+static void scale_and_extend_source(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi,
+                                    YV12_BUFFER_CONFIG *scaled_source,
+                                    YV12_BUFFER_CONFIG *source)
 {
     VP8_COMMON *cm = &cpi->common;
 
@@ -2585,15 +2593,15 @@ static void scale_and_extend_source(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
         Scale2Ratio(cm->horiz_scale, &hr, &hs);
         Scale2Ratio(cm->vert_scale, &vr, &vs);
 
-        vp8_scale_frame(sd, &cpi->scaled_source, cm->temp_scale_frame.y_buffer,
+        vp8_scale_frame(sd, scaled_source, cm->temp_scale_frame.y_buffer,
                         tmp_height, hs, hr, vs, vr, 0);
 
-        vp8_yv12_extend_frame_borders(&cpi->scaled_source);
-        cpi->Source = &cpi->scaled_source;
+        vp8_yv12_extend_frame_borders(scaled_source);
+        source = scaled_source;
 #endif
     }
     else
-        cpi->Source = sd;
+        source = sd;
 }
 
 
@@ -2637,7 +2645,8 @@ static void resize_key_frame(VP8_COMP *cpi)
             cm->Width = new_width;
             cm->Height = new_height;
             vp8_alloc_compressor_data(cpi);
-            scale_and_extend_source(cpi->un_scaled_source, cpi);
+            scale_and_extend_source(cpi->un_scaled_source, cpi,
+                                    &cpi->scaled_source, cpi->Source);
         }
     }
 
@@ -2915,12 +2924,17 @@ static int decide_key_frame(VP8_COMP *cpi)
 #if !(CONFIG_REALTIME_ONLY)
 static void Pass1Encode(VP8_COMP *cpi, unsigned long *size, unsigned char *dest, unsigned int *frame_flags)
 {
+    VP8_COMMON *cm = &cpi->common;
     (void) size;
     (void) dest;
     (void) frame_flags;
     vp8_set_quantizer(cpi, 26);
 
-    scale_and_extend_source(cpi->un_scaled_source, cpi);
+    scale_and_extend_source(cpi->un_scaled_source, cpi, &cpi->scaled_source,
+                            cpi->Source);
+    if (cm->current_video_frame > 0)
+        scale_and_extend_source(cpi->last_frame_unscaled_source, cpi,
+                               &cpi->last_frame_scaled_source, cpi->LastSource);
     vp8_first_pass(cpi);
 }
 #endif
@@ -3588,7 +3602,8 @@ static void encode_frame_to_data_rate
     loop_count = 0;
 
 
-    scale_and_extend_source(cpi->un_scaled_source, cpi);
+    scale_and_extend_source(cpi->un_scaled_source, cpi, &cpi->scaled_source,
+                            cpi->Source);
 #if !(CONFIG_REALTIME_ONLY) && CONFIG_POSTPROC
 
     if (cpi->oxcf.noise_sensitivity > 0)
@@ -4702,7 +4717,8 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
         cpi->source_alt_ref_pending)
     {
         if ((cpi->source = vp8_lookahead_peek(cpi->lookahead,
-                                              cpi->frames_till_gf_update_due)))
+                                              cpi->frames_till_gf_update_due,
+                                              PEEK_FORWARD)))
         {
             cpi->alt_ref_source = cpi->source;
             if (cpi->oxcf.arnr_max_frames > 0)
@@ -4724,6 +4740,16 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
     if (!cpi->source)
     {
+        /* Read last frame source if we are encoding first pass. */
+
+        if (cpi->pass == 1 && cm->current_video_frame > 0)
+        {
+            if((cpi->last_source = vp8_lookahead_peek(cpi->lookahead, 1,
+                                                      PEEK_BACKWARD)) == NULL)
+              return -1;
+        }
+
+
         if ((cpi->source = vp8_lookahead_pop(cpi->lookahead, flush)))
         {
             cm->show_frame = 1;
@@ -4743,6 +4769,12 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
         *time_stamp = cpi->source->ts_start;
         *time_end = cpi->source->ts_end;
         *frame_flags = cpi->source->flags;
+
+        if (cpi->pass == 1 && cm->current_video_frame > 0)
+        {
+            cpi->LastSource = &cpi->last_source->img;
+            cpi->last_frame_unscaled_source = cpi->LastSource;
+        }
     }
     else
     {
