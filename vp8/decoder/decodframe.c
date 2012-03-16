@@ -316,6 +316,29 @@ static int get_delta_q(vp8_reader *bc, int prev, int *q_update)
 FILE *vpxlog = 0;
 #endif
 
+#if HAVE_SSE
+static void prefetch_ref_mb(MACROBLOCKD *xd)
+{
+    MODE_INFO *mode_info_context = xd->mode_info_context;
+    unsigned char *ptr = xd->pre.y_buffer;
+    int pre_stride = xd->pre.y_stride;
+
+    if(mode_info_context->mbmi.mode > B_PRED
+        && mode_info_context->mbmi.mode < SPLITMV
+    )
+    {
+        int_mv _16x16mv;
+        int offset;
+
+        _16x16mv.as_int = mode_info_context->mbmi.mv.as_int;
+        offset = ( _16x16mv.as_mv.row >> 3) * pre_stride + (_16x16mv.as_mv.col >> 3);
+        offset = (offset + 31)&-32;
+
+        vp8_prefetch_sse(ptr+offset, pre_stride, 16);
+    }
+}
+#endif
+
 static void decode_mb_rows(VP8D_COMP *pbi)
 {
     VP8_COMMON *const pc = & pbi->common;
@@ -441,6 +464,9 @@ static void decode_mb_rows(VP8D_COMP *pbi)
             xd->pre.u_buffer = ref_buffer[xd->mode_info_context->mbmi.ref_frame][1] + recon_uvoffset;
             xd->pre.v_buffer = ref_buffer[xd->mode_info_context->mbmi.ref_frame][2] + recon_uvoffset;
 
+#if HAVE_SSE
+            prefetch_ref_mb(xd);
+#endif
             /* propagate errors from reference frames */
             xd->corrupted |= ref_fb_corrupted[xd->mode_info_context->mbmi.ref_frame];
 

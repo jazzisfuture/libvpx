@@ -116,6 +116,35 @@ sym(vp8_copy_mem16x16_sse2):
     ret
 
 
+;void vp8_prefetch_sse(
+;    unsigned char *src,
+;    int src_stride,
+;    int height
+;    )
+global sym(vp8_prefetch_sse)
+sym(vp8_prefetch_sse):
+    push        rbp
+    mov         rbp, rsp
+    SHADOW_ARGS_TO_STACK 3
+
+    mov         rdx,        arg(0) ;src;
+    movsxd      rax,        dword ptr arg(1) ;src_stride
+    movsxd      rcx,        dword ptr arg(2) ;height
+
+    shr         rcx, 1
+
+.loop
+    prefetcht0  [rdx]
+    prefetcht0  [rdx + rax]
+    lea         rdx, [rdx + rax*2]
+    dec         rcx
+    jge         .loop
+
+    ; begin epilog
+    UNSHADOW_ARGS
+    pop         rbp
+    ret
+
 ;void vp8_intra_pred_uv_dc_mmx2(
 ;    unsigned char *dst,
 ;    int dst_stride
