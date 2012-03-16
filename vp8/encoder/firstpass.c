@@ -47,6 +47,8 @@ extern const int vp8_gf_boost_qadjustment[QINDEX_RANGE];
 #define IIFACTOR   1.5
 #define IIKFACTOR1 1.40
 #define IIKFACTOR2 1.5
+#define II_THRESHOLD 10.0
+
 #define RMAX       14.0
 #define GF_RMAX    48.0
 
@@ -270,6 +272,11 @@ static double calculate_modified_err(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         modified_err = av_err * pow((this_err / DOUBLE_DIVIDE_CHECK(av_err)), POW1);
     else
         modified_err = av_err * pow((this_err / DOUBLE_DIVIDE_CHECK(av_err)), POW2);
+
+    // Adjust the modified error based on the use of intra.
+    // 0.1 is a temporary threshold to exclude key frames.
+    if (this_frame->pcnt_inter > 0.1)
+        modified_err = modified_err * pow(1.0/this_frame->pcnt_inter, 0.50);
 
     return modified_err;
 }
@@ -1497,14 +1504,28 @@ static double calc_frame_boost(
     double this_frame_mv_in_out )
 {
     double frame_boost;
+    double ii_factor;
 
-    // Underlying boost factor is based on inter intra error ratio
-    if (this_frame->intra_error > cpi->twopass.gf_intra_err_min)
-        frame_boost = (IIFACTOR * this_frame->intra_error /
-                      DOUBLE_DIVIDE_CHECK(this_frame->coded_error));
-    else
-        frame_boost = (IIFACTOR * cpi->twopass.gf_intra_err_min /
-                      DOUBLE_DIVIDE_CHECK(this_frame->coded_error));
+    frame_boost = this_frame->intra_error /
+                  DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
+
+    if ( (this_frame->intra_error < cpi->twopass.gf_intra_err_min) &&
+         (frame_boost < II_THRESHOLD) )
+    {
+        frame_boost = cpi->twopass.gf_intra_err_min /
+                      DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
+
+        if ( frame_boost > II_THRESHOLD )
+            frame_boost = II_THRESHOLD;
+    }
+
+    // A factor that takes some account of absolute spatial complexity
+    ii_factor = pow((this_frame->coded_error /
+                    (double)cpi->common.MBs),-0.1) + 1.0;
+    ii_factor = (ii_factor > 2.0) ? 2.0 : ii_factor;
+
+    frame_boost = (ii_factor * frame_boost);
+
 
     // Increase boost for frames where new data coming into frame
     // (eg zoom out). Slightly reduce boost if there is a net balance
@@ -1892,11 +1913,12 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
 
         allocation_chunks = (i * 100) + Boost;
 
-        // Normalize Altboost and allocations chunck down to prevent overflow
-        while (Boost > 1000)
+        // Adjustment to prevent overflow.
+        if ( Boost >= 1024 )
         {
-            Boost /= 2;
-            allocation_chunks /= 2;
+            int divisor = (Boost >> 10);
+            Boost /= divisor;
+            allocation_chunks /= divisor;
         }
 
         // Calculate the number of bits to be spent on the arf based on the
@@ -2076,11 +2098,12 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
                 (cpi->baseline_gf_interval * 100) + (Boost - 100);
         }
 
-        // Normalize Altboost and allocations chunck down to prevent overflow
-        while (Boost > 1000)
+        // Adjustment to prevent overflow.
+        if ( Boost >= 1024 )
         {
-            Boost /= 2;
-            allocation_chunks /= 2;
+            int divisor = (Boost >> 10);
+            Boost /= divisor;
+            allocation_chunks /= divisor;
         }
 
         // Calculate the number of bits to be spent on the gf or arf based on
@@ -2817,16 +2840,31 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
     for (i = 0 ; i < cpi->twopass.frames_to_key ; i++)
     {
         double r;
+        double ii_ratio;
+        double ii_factor;
 
         if (EOF == input_stats(cpi, &next_frame))
             break;
 
-        if (next_frame.intra_error > cpi->twopass.kf_intra_err_min)
-            r = (IIKFACTOR2 * next_frame.intra_error /
-                     DOUBLE_DIVIDE_CHECK(next_frame.coded_error));
-        else
-            r = (IIKFACTOR2 * cpi->twopass.kf_intra_err_min /
-                     DOUBLE_DIVIDE_CHECK(next_frame.coded_error));
+        ii_ratio = next_frame.intra_error /
+                   DOUBLE_DIVIDE_CHECK(next_frame.coded_error);
+
+        if ( (next_frame.intra_error < cpi->twopass.kf_intra_err_min) &&
+             (ii_ratio < II_THRESHOLD) )
+        {
+            ii_ratio = cpi->twopass.kf_intra_err_min /
+                       DOUBLE_DIVIDE_CHECK(next_frame.coded_error);
+
+            if ( ii_ratio > II_THRESHOLD )
+                ii_ratio = II_THRESHOLD;
+        }
+
+        // A factor that takes some account of absolute spatial complexity
+        ii_factor = pow((next_frame.coded_error /
+                        (double)cpi->common.MBs),-0.1) + 1.0;
+        ii_factor = (ii_factor > 2.0) ? 2.0 : ii_factor;
+
+        r = (ii_factor * ii_ratio);
 
         if (r > RMAX)
             r = RMAX;
@@ -2919,23 +2957,6 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         int Counter = cpi->twopass.frames_to_key;
         int alt_kf_bits;
         YV12_BUFFER_CONFIG *lst_yv12 = &cpi->common.yv12_fb[cpi->common.lst_fb_idx];
-        // Min boost based on kf interval
-#if 0
-
-        while ((kf_boost < 48) && (Counter > 0))
-        {
-            Counter -= 2;
-            kf_boost ++;
-        }
-
-#endif
-
-        if (kf_boost < 48)
-        {
-            kf_boost += ((Counter + 1) >> 1);
-
-            if (kf_boost > 48) kf_boost = 48;
-        }
 
         // bigger frame sizes need larger kf boosts, smaller frames smaller boosts...
         if ((lst_yv12->y_width * lst_yv12->y_height) > (320 * 240))
@@ -2943,12 +2964,10 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         else if ((lst_yv12->y_width * lst_yv12->y_height) < (320 * 240))
             kf_boost -= 4 * (320 * 240) / (lst_yv12->y_width * lst_yv12->y_height);
 
-        kf_boost = (int)((double)kf_boost * 100.0) >> 4;                          // Scale 16 to 100
+        kf_boost = (int)((double)kf_boost * 100.0) >> 4;  // Scale 16 to 100
 
-        // Adjustment to boost based on recent average q
-        //kf_boost = kf_boost * vp8_kf_boost_qadjustment[cpi->ni_av_qi] / 100;
-
-        if (kf_boost < 250)                                                      // Min KF boost
+        // At the very least it should get a normal frames worth of bits.
+        if (kf_boost < 250)
             kf_boost = 250;
 
         // We do three calculations for kf size.
