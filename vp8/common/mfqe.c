@@ -27,7 +27,7 @@
 #include <stdlib.h>
 
 
-static inline void filter_by_weight(unsigned char *src, int src_stride,
+static __inline void filter_by_weight(unsigned char *src, int src_stride,
                                     unsigned char *dst, int dst_stride,
                                     int block_size, int src_weight)
 {
@@ -69,7 +69,7 @@ void vp8_filter_by_weight4x4_c(unsigned char *src, int src_stride,
     filter_by_weight(src, src_stride, dst, dst_stride, 4, src_weight);
 }
 
-static inline void apply_ifactor(unsigned char *y_src,
+static __inline void apply_ifactor(unsigned char *y_src,
                                  int y_src_stride,
                                  unsigned char *y_dst,
                                  int y_dst_stride,
