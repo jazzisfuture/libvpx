@@ -178,6 +178,7 @@ static void multiframe_quality_enhance_block
     }
 }
 
+#if CONFIG_POSTPROC
 void vp8_multiframe_quality_enhance
 (
     VP8_COMMON *cm
@@ -269,3 +270,4 @@ void vp8_multiframe_quality_enhance
         mode_info_context++;         /* Skip border mb */
     }
 }
+#endif
