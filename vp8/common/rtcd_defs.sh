@@ -138,6 +138,9 @@ prototype void vp8_intra4x4_predict "unsigned char *src, int src_stride, int b_m
 specialize vp8_intra4x4_predict media ssse3
 vp8_intra4x4_predict_media=vp8_intra4x4_predict_armv6
 
+prototype void vp8_intra4x4_predict_d "unsigned char *Above, unsigned char *yleft, int left_stride, int b_mode, unsigned char *dst, int dst_stride, unsigned char top_left"
+#specialize vp8_intra4x4_predict_d ssse3
+
 #
 # Postproc
 #
