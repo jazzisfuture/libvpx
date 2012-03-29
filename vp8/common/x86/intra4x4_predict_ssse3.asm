@@ -11,53 +11,24 @@
 
 %include "vpx_ports/x86_abi_support.asm"
 
-;void vp8_intra4x4_predict_ssse3
+;void vp8_intra4x4_predict_d_ssse3
 ;(
-;    unsigned char *src,
-;    int            src_stride,
+;    unsigned char *Above,
+;    unsigned char *y_left,
+;    int            left_stride,
 ;    int            b_mode,
 ;    unsigned char *dst,
-;    int            dst_stride
+;    int            dst_stride,
+;    unsigned char  top_left
 ;)
-global sym(vp8_intra4x4_predict_ssse3)
-sym(vp8_intra4x4_predict_ssse3):
-
-%if ABI_IS_32BIT
+global sym(vp8_intra4x4_predict_d_ssse3)
+sym(vp8_intra4x4_predict_d_ssse3):
   push        rbp
   mov         rbp, rsp
+  SHADOW_ARGS_TO_STACK 7
   GET_GOT     rbx
   push        rsi
   push        rdi
-
-    %define     src         rcx
-    %define     src_stride  rdx
-    %define     low_byte    al
-
-    mov         src, arg(0)
-    mov         src_stride, arg(1)
-
-    %define     b_mode      rax
-    %define     dst         rsi
-    %define     dst_stride  rdi
-%else
-  %ifidn __OUTPUT_FORMAT__,x64
-    %define     src         rax
-    %define     src_stride  rcx
-    %define     b_mode      rdx
-    %define     dst         r8
-    %define     dst_stride  r9
-
-    %define     low_byte    r10b
-  %else
-    %define     src         rdi
-    %define     src_stride  rsi
-    %define     b_mode      rdx
-    %define     dst         rcx
-    %define     dst_stride  r8
-
-    %define     low_byte    r9b
-  %endif
-%endif
 
     ; defined in vp8/common/block.h and guarded in
     ; vp8/common/asm_com_offsets.c
@@ -76,80 +47,72 @@ sym(vp8_intra4x4_predict_ssse3):
                                             ; isn't used with aligned
                                             ; instructions
 
-    sub         rsp, 24                     ; when generating pp[] we only need
-                                            ; to write out 13 bytes but must
-                                            ; write out 24 (movdqu [pp+4])
-    %define     pp          rsp             ; pp[13]
+    sub         rsp, 13                     ; pp[]
 
     ; Typically, we don't bother macro-izing the return. However, this function
     ; returns after each case and has non-trivial cleanup.
     %macro CLEAN_AND_RETURN 0
-      add         rsp, 24
-      %if ABI_IS_32BIT
-        pop         rdi
-        pop         rsi
-        RESTORE_GOT
-        pop         rbp
-      %endif
+      add         rsp, 13
+      pop         rdi
+      pop         rsi
+      RESTORE_GOT
+      UNSHADOW_ARGS
+      pop         rbp
       ret
     %endmacro
 
-    sub         src, 1                      ; start in Left[0]
-    ; Grab Left[2] so we can move src. Otherwise the offset is a pain
-    mov         low_byte, [src + 2 * src_stride] ; Left[2]
-    sub         src, src_stride             ; back up to top_left
-    ; We could try and save a cycle by postponing this write but in 32bit the
-    ; low_byte is overloaded as b_mode
-    mov         [pp + 1], low_byte          ; pp[1]
+    ; Build the "easy" set: top_left, Above[0-7]
+    mov         al, arg(6)                  ; top_left
+    mov         [rsp + 4], al               ; pp[4]
 
-    movdqu      xmm4, [src]                 ; top_left A[0-7]
-    movdqu      [pp + 4], xmm4
+    mov         rcx, arg(0)                 ; Above
+    movq        xmm4, [rcx]                 ; A[0-7]
+    movq        [rsp + 5], xmm4
 
-%if ABI_IS_32BIT
-    mov         b_mode, arg(2)
-    mov         dst, arg(3)
-    mov         dst_stride, arg(4)
-%endif
+    mov         rdx, arg(3)                 ; b_mode
+    mov         rsi, arg(4)                 ; dst
+    mov         rdi, arg(5)                 ; dst_stride
 
 ; If we don't need Left, jump to the front of the line. Only VE, LD, and VL
 ; will work
-    cmp         b_mode, B_VE_PRED
-    je                 .B_VE_PRED
-    cmp         b_mode, B_LD_PRED
-    je                 .B_LD_PRED
-    cmp         b_mode, B_VL_PRED
-    je                 .B_VL_PRED
+    cmp         rdx, B_VE_PRED
+    je              .B_VE_PRED
+    cmp         rdx, B_LD_PRED
+    je              .B_LD_PRED
+    cmp         rdx, B_VL_PRED
+    je              .B_VL_PRED
 
-    mov         low_byte, [src + src_stride] ; Left[0]
-    mov         [pp + 3], low_byte          ; pp[3]
-    mov         low_byte, [src + 2 * src_stride] ; Left[1]
-    mov         [pp + 2], low_byte          ; pp[2]
+    mov         rcx, arg(1)                 ; y_left
+    mov         rdx, arg(2)                 ; left_stride
+    mov         al, [rcx]                   ; Left[0]
+    mov         [rsp + 3], al               ; pp[3]
+    mov         al, [rcx + rdx]             ; Left[1]
+    mov         [rsp + 2], al               ; rsp[2]
+    mov         al, [rcx + 2 * rdx]         ; Left[2]
+    mov         [rsp + 1], al               ; rsp[1]
+    add         rcx, rdx
+    mov         al, [rcx + 2 * rdx]         ; Left[3]
+    mov         [rsp], al                   ; rsp[0]
 
 
-    mov         low_byte, [src + 4 * src_stride] ; Left[3]
-    mov         [pp], low_byte              ; pp[0]
+    ; rsp[] = { Left[3-0], top_left, Above[0-7] }
 
+    mov         rdx, arg(3)                  ; b_mode
 
-    ; pp[] = { Left[3-0], top_left, Above[0-7] }
-
-%if ABI_IS_32BIT
-    mov         b_mode, arg(2)
-%endif
-
-    cmp         b_mode, B_DC_PRED
-    je                 .B_DC_PRED
-    cmp         b_mode, B_TM_PRED
-    je                 .B_TM_PRED
-    cmp         b_mode, B_HE_PRED
-    je                 .B_HE_PRED
-    cmp         b_mode, B_RD_PRED
-    je                 .B_RD_PRED
-    cmp         b_mode, B_VR_PRED
-    je                 .B_VR_PRED
-    cmp         b_mode, B_HD_PRED
-    je                 .B_HD_PRED
-    cmp         b_mode, B_HU_PRED
-    je                 .B_HU_PRED
+    cmp         rdx, B_DC_PRED
+    je              .B_DC_PRED
+    cmp         rdx, B_TM_PRED
+    je              .B_TM_PRED
+    cmp         rdx, B_HE_PRED
+    je              .B_HE_PRED
+    cmp         rdx, B_RD_PRED
+    je              .B_RD_PRED
+    cmp         rdx, B_VR_PRED
+    je              .B_VR_PRED
+    cmp         rdx, B_HD_PRED
+    je              .B_HD_PRED
+    cmp         rdx, B_HU_PRED
+    je              .B_HU_PRED
 
     CLEAN_AND_RETURN
 
@@ -158,8 +121,8 @@ sym(vp8_intra4x4_predict_ssse3):
     pxor        xmm4, xmm4                  ; zero
     movdqa      xmm5, [GLOBAL(t1)]
 
-    movd        xmm0, [pp]                  ; L
-    movd        xmm1, [pp + 5]              ; A
+    movd        xmm0, [rsp]                 ; L
+    movd        xmm1, [rsp + 5]             ; A
 
     psllq       xmm1, 32
 
@@ -183,11 +146,11 @@ sym(vp8_intra4x4_predict_ssse3):
 
     pshufb      xmm0, xmm4
 
-    movd        [dst], xmm0                 ; dst[0]
-    add         dst, dst_stride
-    movd        [dst], xmm0                 ; dst[1]
-    movd        [dst + dst_stride], xmm0    ; dst[2]
-    movd        [dst + 2 * dst_stride], xmm0 ; dst[3]
+    movd        [rsi], xmm0                 ; dst[0]
+    add         rsi, rdi
+    movd        [rsi], xmm0                 ; dst[1]
+    movd        [rsi + rdi], xmm0           ; dst[2]
+    movd        [rsi + 2 * rdi], xmm0       ; dst[3]
 
     CLEAN_AND_RETURN
 
@@ -198,9 +161,9 @@ sym(vp8_intra4x4_predict_ssse3):
 ; exploit movd 0'ing 0x04
     pxor        xmm3, xmm3                  ; zero
 
-    movd        xmm0, [pp]                  ; L
-    movd        xmm1, [pp + 5]              ; A
-    movd        xmm2, [pp + 4]              ; top_left
+    movd        xmm0, [rsp]                 ; L
+    movd        xmm1, [rsp + 5]             ; A
+    movd        xmm2, [rsp + 4]             ; top_left
 
     pshufb      xmm0, [GLOBAL(tm_left_extract)]
     pshufb      xmm1, [GLOBAL(tm_above_extract)]
@@ -218,21 +181,21 @@ sym(vp8_intra4x4_predict_ssse3):
 
     pshufd      xmm1, xmm0, 0x0b
 
-    movd        [dst], xmm1                 ; dst[0]
-    add         dst, dst_stride
+    movd        [rsi], xmm1                 ; dst[0]
+    add         rsi, rdi
     psrlq       xmm1, 32
-    movd        [dst], xmm1                 ; dst[1]
+    movd        [rsi], xmm1                 ; dst[1]
 
-    movd        [dst + 2 * dst_stride], xmm0 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm0       ; dst[3]
     psrlq       xmm0, 32
-    movd        [dst + dst_stride], xmm0    ; dst[2]
+    movd        [rsi + rdi], xmm0           ; dst[2]
 
     CLEAN_AND_RETURN
 
 .B_VE_PRED:
-    movd        xmm0, [pp+5]                ; A[0-3]
-    movd        xmm2, [pp+4]                ; top_left A[0-2]
-    movd        xmm3, [pp+6]                ; A[1-4]
+    movd        xmm0, [rsp + 5]             ; A[0-3]
+    movd        xmm2, [rsp + 4]             ; top_left A[0-2]
+    movd        xmm3, [rsp + 6]             ; A[1-4]
     pshufb      xmm0, [GLOBAL(tm_above_extract)]
     pshufb      xmm2, [GLOBAL(tm_above_extract)]
     pshufb      xmm3, [GLOBAL(tm_above_extract)]
@@ -245,18 +208,18 @@ sym(vp8_intra4x4_predict_ssse3):
 
     packuswb    xmm0, xmm0
 
-    movd        [dst], xmm0                 ; dst[0]
-    add         dst, dst_stride
-    movd        [dst], xmm0                 ; dst[1]
-    movd        [dst + dst_stride], xmm0    ; dst[2]
-    movd        [dst + 2 * dst_stride], xmm0 ; dst[3]
+    movd        [rsi], xmm0                 ; dst[0]
+    add         rsi, rdi
+    movd        [rsi], xmm0                 ; dst[1]
+    movd        [rsi + rdi], xmm0           ; dst[2]
+    movd        [rsi + 2 * rdi], xmm0       ; dst[3]
 
     CLEAN_AND_RETURN
 
 .B_HE_PRED:
-    movd        xmm0, [pp]                  ; L[3-0]
+    movd        xmm0, [rsp]                 ; L[3-0]
     movdqa      xmm1, xmm0
-    movd        xmm2, [pp+1]                ; L[2-0] top_left
+    movd        xmm2, [rsp + 1]             ; L[2-0] top_left
     pshufb      xmm0, [GLOBAL(tm_above_extract)]
     pshufb      xmm1, [GLOBAL(tm_he_dup_extract)] ; L[3] L[3-1]
     pshufb      xmm2, [GLOBAL(tm_above_extract)]
@@ -272,21 +235,21 @@ sym(vp8_intra4x4_predict_ssse3):
 
     pshufd      xmm1, xmm0, 0x0b
 
-    movd        [dst], xmm1                 ; dst[0]
-    add         dst, dst_stride
+    movd        [rsi], xmm1                 ; dst[0]
+    add         rsi, rdi
     psrlq       xmm1, 32
-    movd        [dst], xmm1                 ; dst[1]
+    movd        [rsi], xmm1                 ; dst[1]
 
-    movd        [dst + 2 * dst_stride], xmm0 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm0       ; dst[3]
     psrlq       xmm0, 32
-    movd        [dst + dst_stride], xmm0    ; dst[2]
+    movd        [rsi + rdi], xmm0           ; dst[2]
 
     CLEAN_AND_RETURN
 
 .B_LD_PRED:
     pxor        xmm3, xmm3
 
-    movq        xmm0, [pp+5]                ; A[0-6]
+    movq        xmm0, [rsp + 5]             ; A[0-6]
     movdqa      xmm1, xmm0
     movdqa      xmm2, xmm0
 
@@ -303,14 +266,14 @@ sym(vp8_intra4x4_predict_ssse3):
     psrlw       xmm1, 2                     ; >>= 2
 
     packuswb    xmm1, xmm1
-    movd        [dst], xmm1                 ; dst[0]
-    add         dst, dst_stride
+    movd        [rsi], xmm1                 ; dst[0]
+    add         rsi, rdi
     psrlq       xmm1, 8
-    movd        [dst], xmm1                 ; dst[1]
+    movd        [rsi], xmm1                 ; dst[1]
     psrlq       xmm1, 8
-    movd        [dst + dst_stride], xmm1    ; dst[2]
+    movd        [rsi + rdi], xmm1           ; dst[2]
     psrlq       xmm1, 8
-    movd        [dst + 2 * dst_stride], xmm1 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm1       ; dst[3]
 
     CLEAN_AND_RETURN
 
@@ -318,9 +281,9 @@ sym(vp8_intra4x4_predict_ssse3):
 ; similar to LD_PRED. write out in reverse
     pxor        xmm3, xmm3
 
-    movq        xmm0, [pp]                  ; L[3-0] top_left A[0-1]
-    movq        xmm1, [pp + 1]              ; L[2-0] top_left A[0-2]
-    movq        xmm2, [pp + 2]              ; L[1-0] top_left A[0-3]
+    movq        xmm0, [rsp]                 ; L[3-0] top_left A[0-1]
+    movq        xmm1, [rsp + 1]             ; L[2-0] top_left A[0-2]
+    movq        xmm2, [rsp + 2]             ; L[1-0] top_left A[0-3]
 
     punpcklbw   xmm0, xmm3
     punpcklbw   xmm1, xmm3
@@ -335,24 +298,24 @@ sym(vp8_intra4x4_predict_ssse3):
     packuswb    xmm1, xmm3
     movdqa      xmm2, xmm1
     psrlq       xmm1, 24
-    movd        [dst], xmm1                 ; dst[0]
-    add         dst, dst_stride
+    movd        [rsi], xmm1                 ; dst[0]
+    add         rsi, rdi
 
-    movd        [dst + 2 * dst_stride], xmm2 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm2       ; dst[3]
     psrlq       xmm2, 8
-    movd        [dst + dst_stride], xmm2    ; dst[2]
+    movd        [rsi + rdi], xmm2           ; dst[2]
     psrlq       xmm2, 8
-    movd        [dst], xmm2                 ; dst[1]
+    movd        [rsi], xmm2                 ; dst[1]
 
     CLEAN_AND_RETURN
 
 .B_VR_PRED:
-    ; pp[1-8] = { L[2-0], top_left, A[0-3]
+    ; rsp[1-8] = { L[2-0], top_left, A[0-3]
     pxor        xmm0, xmm0
 
-    movq        xmm1, [pp + 1]              ; 123456
-    movq        xmm2, [pp + 2]              ; 234567
-    movq        xmm3, [pp + 3]              ; 345678
+    movq        xmm1, [rsp + 1]             ; 123456
+    movq        xmm2, [rsp + 2]             ; 234567
+    movq        xmm3, [rsp + 3]             ; 345678
 
     punpcklbw   xmm1, xmm0
     punpcklbw   xmm2, xmm0
@@ -368,8 +331,8 @@ sym(vp8_intra4x4_predict_ssse3):
     packuswb    xmm4, xmm0
     psrlq       xmm4, 16                    ; 4567+5678+1>>1
 
-    movd        [dst], xmm4                 ; dst[0]
-    add         dst, dst_stride
+    movd        [rsi], xmm4                 ; dst[0]
+    add         rsi, rdi
 
     psllq       xmm4, 8                     ; _456+_567+1>>1 out[2]
 
@@ -384,23 +347,23 @@ sym(vp8_intra4x4_predict_ssse3):
     pand        xmm2, [GLOBAL(first_element)] ; 2+2*3+4
 
     psrlq       xmm3, 16
-    movd        [dst], xmm3                 ; dst[1]
+    movd        [rsi], xmm3                 ; dst[1]
 
     por         xmm4, xmm2
-    movd        [dst + dst_stride], xmm4    ; dst[2]
+    movd        [rsi + rdi], xmm4           ; dst[2]
 
     psllq       xmm3, 8
     por         xmm3, xmm1
-    movd        [dst + 2 * dst_stride], xmm3 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm3       ; dst[3]
 
     CLEAN_AND_RETURN
 
 .B_VL_PRED:
     pxor        xmm3, xmm3
 
-    movq        xmm0, [pp + 5]              ; A[0-5]
-    movq        xmm1, [pp + 6]              ; A[1-6]
-    movq        xmm2, [pp + 7]              ; A[2-7]
+    movq        xmm0, [rsp + 5]             ; A[0-5]
+    movq        xmm1, [rsp + 6]             ; A[1-6]
+    movq        xmm2, [rsp + 7]             ; A[2-7]
 
     punpcklbw   xmm0, xmm3
     punpcklbw   xmm1, xmm3
@@ -413,36 +376,36 @@ sym(vp8_intra4x4_predict_ssse3):
     paddusw     xmm0, [GLOBAL(t1)]          ; += 1
     psrlw       xmm0, 1                     ; >>= 1
     packuswb    xmm0, xmm3
-    movd        [dst], xmm0                 ; dst[0]
+    movd        [rsi], xmm0                 ; dst[0]
 
-    add         dst, dst_stride
+    add         rsi, rdi
 
     paddusw     xmm1, [GLOBAL(t2)]          ; += 2
     psrlw       xmm1, 2                     ; >>= 2
     packuswb    xmm1, xmm3
-    movd        [dst], xmm1                 ; dst[1]
+    movd        [rsi], xmm1                 ; dst[1]
 
     movdqa      xmm2, xmm1
     psrlq       xmm2, 32
     psllq       xmm2, 24
     psrld       xmm0, 8                     ; also clears high bits
     por         xmm0, xmm2
-    movd        [dst + dst_stride], xmm0    ; dst[2]
+    movd        [rsi + rdi], xmm0           ; dst[2]
 
     psrlq       xmm2, 32                    ; clear low bits, move to the bottom
     psllq       xmm2, 24                    ; put 8 in high
     psrld       xmm1, 8                     ; clear high bits
     por         xmm1, xmm2
-    movd        [dst + 2 * dst_stride], xmm1 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm1       ; dst[3]
 
     CLEAN_AND_RETURN
 
 .B_HD_PRED:
     pxor        xmm3, xmm3
 
-    movq        xmm0, [pp]                  ; L[3-0] top_left A[0-5]
-    movq        xmm1, [pp + 1]              ; A[1-6]
-    movq        xmm2, [pp + 2]              ; A[2-7]
+    movq        xmm0, [rsp]                 ; L[3-0] top_left A[0-5]
+    movq        xmm1, [rsp + 1]             ; A[1-6]
+    movq        xmm2, [rsp + 2]             ; A[2-7]
 
     punpcklbw   xmm0, xmm3
     punpcklbw   xmm1, xmm3
@@ -469,20 +432,20 @@ sym(vp8_intra4x4_predict_ssse3):
     movdqa      xmm1, xmm0
     psrlq       xmm0, 48
     por         xmm0, xmm2
-    movd        [dst], xmm0
-    add         dst, dst_stride
+    movd        [rsi], xmm0
+    add         rsi, rdi
 
-    movd        [dst + 2 * dst_stride], xmm1 ; dst[3]
+    movd        [rsi + 2 * rdi], xmm1       ; dst[3]
     psrlq       xmm1, 16
-    movd        [dst + dst_stride], xmm1    ; dst[2]
+    movd        [rsi + rdi], xmm1           ; dst[2]
     psrlq       xmm1, 16
-    movd        [dst], xmm1                 ; dst[1]
+    movd        [rsi], xmm1                 ; dst[1]
 
     CLEAN_AND_RETURN
 
 .B_HU_PRED:
     pxor        xmm4, xmm4
-    movd        xmm0, [pp]                  ; L[3-0]
+    movd        xmm0, [rsp]                 ; L[3-0]
 
     movdqa      xmm1, xmm0
     movdqa      xmm2, xmm0
@@ -517,17 +480,17 @@ sym(vp8_intra4x4_predict_ssse3):
 
     pshufb       xmm0, [GLOBAL(reverse)]
 
-    movd         [dst], xmm0                ; dst[0]
-    add          dst, dst_stride
+    movd         [rsi], xmm0                ; dst[0]
+    add          rsi, rdi
     psrlq        xmm0, 16
-    movd         [dst], xmm0                ; dst[1]
+    movd         [rsi], xmm0                ; dst[1]
     psrlq        xmm0, 16
 
-    movd         [dst + 2 * dst_stride], xmm5 ; dst[3]
+    movd         [rsi + 2 * rdi], xmm5      ; dst[3]
 
     pslld        xmm5, 16
     por          xmm0, xmm5
-    movd         [dst + dst_stride], xmm0   ; dst[2]
+    movd         [rsi + rdi], xmm0          ; dst[2]
 
     CLEAN_AND_RETURN
 
