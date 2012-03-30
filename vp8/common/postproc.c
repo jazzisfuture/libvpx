@@ -726,7 +726,8 @@ static void multiframe_quality_enhance_block
     unsigned char *vp;
     unsigned char *vdp;
 
-    unsigned int act, sse, sad, thr;
+    unsigned int act, sse, sad, thr, uvsad = UINT_MAX;
+
     if (blksize == 16)
     {
         act = (vp8_variance16x16(yd, yd_stride, VP8_ZEROS, 0, &sse)+128)>>8;
@@ -746,7 +747,32 @@ static void multiframe_quality_enhance_block
     thr = (qdiff>>3);
     while (act>>=1) thr++;
     while (qprev>>=2) thr++;
+
     if (sad < thr)
+    {
+        unsigned int uvsad;
+
+        if (blksize == 16)
+        {
+            uvsad = (vp8_sad8x8(u, uv_stride, ud, uvd_stride, INT_MAX) + 32)
+                    >> 6;
+
+            if (uvsad < thr)
+                uvsad = (vp8_sad8x8(v, uv_stride, vd, uvd_stride, INT_MAX) + 32)
+                        >> 6;
+        }
+        else
+        {
+            uvsad = (vp8_sad4x4(u, uv_stride, ud, uvd_stride, INT_MAX) + 8)
+                    >> 4;
+
+            if (uvsad < thr)
+                uvsad = (vp8_sad4x4(v, uv_stride, vd, uvd_stride, INT_MAX) + 8)
+                        >> 4;
+        }
+    }
+
+    if (uvsad < thr)
     {
         static const int roundoff = (1 << (MFQE_PRECISION - 1));
         int ifactor = (sad << MFQE_PRECISION) / thr;
