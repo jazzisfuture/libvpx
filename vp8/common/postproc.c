@@ -726,30 +726,130 @@ static void multiframe_quality_enhance_block
     unsigned char *vp;
     unsigned char *vdp;
 
-    unsigned int act, sse, sad, thr;
+    unsigned int act_sum = 0, sse, sad_sum = 0, thr, uvsad = UINT_MAX;
+    unsigned int act[4], sad[4];
+
     if (blksize == 16)
     {
-        act = (vp8_variance16x16(yd, yd_stride, VP8_ZEROS, 0, &sse)+128)>>8;
-        sad = (vp8_sad16x16(y, y_stride, yd, yd_stride, INT_MAX)+128)>>8;
+        act[0] = (vp8_variance8x8(yd, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 32) >> 6;
+        act_sum = act[0];
+        sad[0] = (vp8_sad8x8(y, y_stride,
+                             yd, yd_stride, INT_MAX) + 32) >> 6;
+        sad_sum = sad[0];
+
+        act[1] = (vp8_variance8x8(yd + 8, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 32) >> 6;
+        act_sum += act[1];
+        sad[1] = (vp8_sad8x8(y + 8, y_stride,
+                             yd + 8, yd_stride, INT_MAX) + 32) >> 6;
+        sad_sum = sad[1];
+
+        act[2] = (vp8_variance8x8(yd + 8 * yd_stride, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 32) >> 6;
+        act_sum += act[2];
+        sad[2] = (vp8_sad8x8(y + 8 * y_stride, y_stride,
+                             yd + 8 * yd_stride, yd_stride, INT_MAX) + 32) >> 6;
+        sad_sum = sad[2];
+
+        act[3] = (vp8_variance8x8(yd + 8 * yd_stride + 8, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 32) >> 6;
+        act_sum += act[3];
+        sad[3] = (vp8_sad8x8(y + 8 * y_stride + 8, y_stride,
+                             yd + 8 * y_stride + 8, yd_stride, INT_MAX)
+                  + 32) >> 6;
+        sad_sum = sad[3];
     }
     else if (blksize == 8)
     {
-        act = (vp8_variance8x8(yd, yd_stride, VP8_ZEROS, 0, &sse)+32)>>6;
-        sad = (vp8_sad8x8(y, y_stride, yd, yd_stride, INT_MAX)+32)>>6;
+        act[0] = (vp8_variance4x4(yd, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 4) >> 4;
+        act_sum = act[0];
+        sad[0] = (vp8_sad4x4(y, y_stride,
+                             yd, yd_stride, INT_MAX) + 4) >> 4;
+        sad_sum = sad[0];
+
+        act[1] = (vp8_variance4x4(yd + 4, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 4) >> 4;
+        act_sum += act[1];
+        sad[1] = (vp8_sad4x4(y + 4, y_stride,
+                             yd + 4, yd_stride, INT_MAX) + 4) >> 4;
+        sad_sum = sad[1];
+
+        act[2] = (vp8_variance4x4(yd + 4 * yd_stride, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 4) >> 4;
+        act_sum += act[2];
+        sad[2] = (vp8_sad4x4(y + 4 * y_stride, y_stride,
+                             yd + 4 * yd_stride, yd_stride, INT_MAX) + 4) >> 4;
+        sad_sum = sad[2];
+
+        act[3] = (vp8_variance4x4(yd + 4 * yd_stride + 4, yd_stride,
+                                  VP8_ZEROS, 0, &sse) + 4) >> 4;
+        act_sum += act[3];
+        sad[3] = (vp8_sad4x4(y + 4 * y_stride + 4, y_stride,
+                             yd + 4 * y_stride + 4, yd_stride, INT_MAX)
+                  + 4) >> 4;
+        sad_sum = sad[3];
     }
     else
     {
-        act = (vp8_variance4x4(yd, yd_stride, VP8_ZEROS, 0, &sse)+8)>>4;
-        sad = (vp8_sad4x4(y, y_stride, yd, yd_stride, INT_MAX)+8)>>4;
+        act_sum = (vp8_variance4x4(yd, yd_stride, VP8_ZEROS, 0, &sse) + 8) >> 4;
+        sad_sum = (vp8_sad4x4(y, y_stride, yd, yd_stride, INT_MAX) + 8) >> 4;
     }
+
     /* thr = qdiff/8 + log2(act) + log4(qprev) */
-    thr = (qdiff>>3);
-    while (act>>=1) thr++;
-    while (qprev>>=2) thr++;
-    if (sad < thr)
+    thr = (qdiff >> 3);
+
+    while (qprev >>= 2) thr++;
+
+    if (blksize > 4)
+    {
+        unsigned int base_thr = thr, this_thr, this_act;
+        int i;
+
+        for (i = 0; i < 4; i++)
+        {
+            this_thr = base_thr;
+            this_act = act[i];
+
+            while (this_act >>= 1) this_thr++;
+
+            if (sad[i] >= this_thr || act[i] < 16)
+            {
+                sad_sum = UINT_MAX;
+                break;
+            }
+        }
+    }
+
+    while (act_sum >>= 1) thr++;
+
+    if (sad_sum < thr)
+    {
+        if (blksize == 16)
+        {
+            uvsad = (vp8_sad8x8(u, uv_stride, ud, uvd_stride, INT_MAX) + 32)
+                    >> 6;
+
+            if (uvsad < thr)
+                uvsad = (vp8_sad8x8(v, uv_stride, vd, uvd_stride, INT_MAX) + 32)
+                        >> 6;
+        }
+        else
+        {
+            uvsad = (vp8_sad4x4(u, uv_stride, ud, uvd_stride, INT_MAX) + 8)
+                    >> 4;
+
+            if (uvsad < thr)
+                uvsad = (vp8_sad4x4(v, uv_stride, vd, uvd_stride, INT_MAX) + 8)
+                        >> 4;
+        }
+    }
+
+    if (uvsad < thr)
     {
         static const int roundoff = (1 << (MFQE_PRECISION - 1));
-        int ifactor = (sad << MFQE_PRECISION) / thr;
+        int ifactor = (sad_sum << MFQE_PRECISION) / thr;
         ifactor >>= (qdiff >> 5);
         // TODO: SIMD optimize this section
         if (ifactor)
