@@ -26,7 +26,6 @@
 #include <limits.h>
 #include <stdlib.h>
 
-
 static void filter_by_weight(unsigned char *src, int src_stride,
                              unsigned char *dst, int dst_stride,
                              int block_size, int src_weight)
@@ -96,6 +95,28 @@ static void apply_ifactor(unsigned char *y_src,
     }
 }
 
+static unsigned int int_sqrt(unsigned int x)
+{
+    unsigned int y = x;
+    unsigned int p = 0;
+    unsigned int guess, guesssq;
+    while (y>>=1) p++;
+
+    guess=(1<<p);
+    while (p)
+    {
+        if (x<guess*guess)
+            guess -= (1<<p);
+        p--;
+        guess |= (1<<p);
+    }
+    guesssq = guess*guess;
+    if (abs(x-guesssq) > abs(x-guesssq-2*guess-1)) return guess+1;
+    else if (abs(x-guesssq) > abs(x-guesssq+2*guess-1)) return guess-1;
+    else return guess;
+}
+
+#define USE_SSD
 static void multiframe_quality_enhance_block
 (
     int blksize, /* Currently only values supported are 16 and 8 */
@@ -127,25 +148,57 @@ static void multiframe_quality_enhance_block
     unsigned char *vp;
     unsigned char *vdp;
 
-    unsigned int act, sad, thr, sse;
+    unsigned int act, actd, sad, usad, vsad, thr, sse;
 
     if (blksize == 16)
     {
-        act = (vp8_variance16x16(yd, yd_stride, VP8_ZEROS, 0, &sse)+128)>>8;
+        actd = (vp8_variance16x16(yd, yd_stride, VP8_ZEROS, 0, &sse)+128)>>8;
+        act = (vp8_variance16x16(y, y_stride, VP8_ZEROS, 0, &sse)+128)>>8;
+#ifdef USE_SSD
+        sad = (vp8_variance16x16(y, y_stride, yd, yd_stride, &sse));
+        sad = (sse + 128)>>8;
+        sad = int_sqrt(sad);
+        usad = (vp8_variance8x8(u, uv_stride, ud, uvd_stride, &sse));
+        usad = (sse + 32)>>6;
+        usad = int_sqrt(usad);
+        vsad = (vp8_variance8x8(v, uv_stride, vd, uvd_stride, &sse));
+        vsad = (sse + 32)>>6;
+        vsad = int_sqrt(vsad);
+#else
         sad = (vp8_sad16x16(y, y_stride, yd, yd_stride, INT_MAX)+128)>>8;
+        usad = (vp8_sad8x8(u, uv_stride, ud, uvd_stride, INT_MAX)+32)>>6;
+        vsad = (vp8_sad8x8(v, uv_stride, vd, uvd_stride, INT_MAX)+32)>>6;
+#endif
     }
     else /* if (blksize == 8) */
     {
-        act = (vp8_variance8x8(yd, yd_stride, VP8_ZEROS, 0, &sse)+32)>>6;
+        actd = (vp8_variance8x8(yd, yd_stride, VP8_ZEROS, 0, &sse)+32)>>6;
+        act = (vp8_variance8x8(y, y_stride, VP8_ZEROS, 0, &sse)+32)>>6;
+#ifdef USE_SSD
+        sad = (vp8_variance8x8(y, y_stride, yd, yd_stride, &sse));
+        sad = (sse + 32)>>6;
+        sad = int_sqrt(sad);
+        usad = (vp8_variance4x4(u, uv_stride, ud, uvd_stride, &sse));
+        usad = (sse + 8)>>4;
+        usad = int_sqrt(usad);
+        vsad = (vp8_variance4x4(v, uv_stride, vd, uvd_stride, &sse));
+        vsad = (sse + 8)>>4;
+        vsad = int_sqrt(vsad);
+#else
         sad = (vp8_sad8x8(y, y_stride, yd, yd_stride, INT_MAX)+32)>>6;
+        usad = (vp8_sad4x4(u, uv_stride, ud, uvd_stride, INT_MAX)+8)>>4;
+        vsad = (vp8_sad4x4(v, uv_stride, vd, uvd_stride, INT_MAX)+8)>>4;
+#endif
     }
 
     /* thr = qdiff/8 + log2(act) + log4(qprev) */
-    thr = (qdiff>>3);
-    while (act>>=1) thr++;
+    thr = (qdiff>>4);
+    while (actd>>=1) thr++;
     while (qprev>>=2) thr++;
 
-    if (sad < thr)
+    if (sad < thr &&
+        /* additional checks for color mismatch and excessive block flatness */
+        usad < thr / 2 && vsad < thr / 2 && act > 8)
     {
         int ifactor = (sad << MFQE_PRECISION) / thr;
         ifactor >>= (qdiff >> 5);
@@ -178,6 +231,45 @@ static void multiframe_quality_enhance_block
     }
 }
 
+static int qualify_inter_mb(const MODE_INFO *mode_info_context, int *map)
+{
+    if (mode_info_context->mbmi.mb_skip_coeff)
+        map[0] = map[1] = map[2] = map[3] = 1;
+    else if (mode_info_context->mbmi.mode==SPLITMV)
+    {
+        static int ndx[4][4] =
+        {
+            {0, 1, 4, 5},
+            {2, 3, 6, 7},
+            {8, 9, 12, 13},
+            {11, 12, 14, 15}
+        };
+        int i, j;
+        for (i=0; i<4; ++i)
+        {
+            map[j] = 1;
+            for (j=0; j<4 && map[j]; ++j)
+            map[j] &= (mode_info_context->bmi[ndx[i][j]].as_mode==ZERO4X4 ||
+                       ((mode_info_context->bmi[ndx[i][j]].as_mode==NEW4X4 ||
+                         mode_info_context->bmi[ndx[i][j]].as_mode==LEFT4X4 ||
+                         mode_info_context->bmi[ndx[i][j]].as_mode==ABOVE4X4) &&
+                        mode_info_context->bmi[ndx[i][j]].mv.as_mv.row <= 1 &&
+                        mode_info_context->bmi[ndx[i][j]].mv.as_mv.col <= 1));
+        }
+    }
+    else
+    {
+        map[0] = map[1] = map[2] = map[3] =
+            (mode_info_context->mbmi.mode==ZEROMV ||
+             ((mode_info_context->mbmi.mode==NEARESTMV ||
+               mode_info_context->mbmi.mode==NEARMV ||
+               mode_info_context->mbmi.mode==NEWMV) &&
+              abs(mode_info_context->mbmi.mv.as_mv.row) <= 1 &&
+              abs(mode_info_context->mbmi.mv.as_mv.col) <= 1));
+    }
+    return (map[0]+map[1]+map[2]+map[3]);
+}
+
 void vp8_multiframe_quality_enhance
 (
     VP8_COMMON *cm
@@ -191,6 +283,7 @@ void vp8_multiframe_quality_enhance
     const MODE_INFO *mode_info_context = cm->mi;
     int mb_row;
     int mb_col;
+    int map[4], totmap;
     int qcurr = cm->base_qindex;
     int qprev = cm->postproc_state.last_base_qindex;
 
@@ -211,29 +304,50 @@ void vp8_multiframe_quality_enhance
         for (mb_col = 0; mb_col < cm->mb_cols; mb_col++)
         {
             /* if motion is high there will likely be no benefit */
-            if (((frame_type == INTER_FRAME &&
-                  abs(mode_info_context->mbmi.mv.as_mv.row) <= 10 &&
-                  abs(mode_info_context->mbmi.mv.as_mv.col) <= 10) ||
-                 (frame_type == KEY_FRAME)))
+            if ((frame_type == INTER_FRAME &&
+                 (totmap = qualify_inter_mb(mode_info_context, map))) ||
+                (frame_type == KEY_FRAME))
             {
-                if (mode_info_context->mbmi.mode == B_PRED || mode_info_context->mbmi.mode == SPLITMV)
+                if (totmap < 4)
                 {
                     int i, j;
                     for (i=0; i<2; ++i)
                         for (j=0; j<2; ++j)
-                            multiframe_quality_enhance_block(8, qcurr, qprev,
-                                                             y_ptr + 8*(i*show->y_stride+j),
-                                                             u_ptr + 4*(i*show->uv_stride+j),
-                                                             v_ptr + 4*(i*show->uv_stride+j),
-                                                             show->y_stride,
-                                                             show->uv_stride,
-                                                             yd_ptr + 8*(i*dest->y_stride+j),
-                                                             ud_ptr + 4*(i*dest->uv_stride+j),
-                                                             vd_ptr + 4*(i*dest->uv_stride+j),
-                                                             dest->y_stride,
-                                                             dest->uv_stride);
+                        {
+                            if (map[i*2+j])
+                            {
+                                multiframe_quality_enhance_block(8, qcurr, qprev,
+                                                                 y_ptr + 8*(i*show->y_stride+j),
+                                                                 u_ptr + 4*(i*show->uv_stride+j),
+                                                                 v_ptr + 4*(i*show->uv_stride+j),
+                                                                 show->y_stride,
+                                                                 show->uv_stride,
+                                                                 yd_ptr + 8*(i*dest->y_stride+j),
+                                                                 ud_ptr + 4*(i*dest->uv_stride+j),
+                                                                 vd_ptr + 4*(i*dest->uv_stride+j),
+                                                                 dest->y_stride,
+                                                                 dest->uv_stride);
+                            }
+                            else
+                            {
+                                /* copy a 8x8 block */
+                                int k;
+                                unsigned char *up = u_ptr + 4*(i*show->uv_stride+j);
+                                unsigned char *udp = ud_ptr + 4*(i*dest->uv_stride+j);
+                                unsigned char *vp = v_ptr + 4*(i*show->uv_stride+j);
+                                unsigned char *vdp = vd_ptr + 4*(i*dest->uv_stride+j);
+                                vp8_copy_mem8x8(y_ptr + 8*(i*show->y_stride+j), show->y_stride,
+                                                yd_ptr + 8*(i*dest->y_stride+j), dest->y_stride);
+                                for (k = 0; k < 4; ++k, up += show->uv_stride, udp += dest->uv_stride,
+                                                        vp += show->uv_stride, vdp += dest->uv_stride)
+                                {
+                                    vpx_memcpy(udp, up, 4);
+                                    vpx_memcpy(vdp, vp, 4);
+                                }
+                            }
+                        }
                 }
-                else
+                else /* totmap = 4 */
                 {
                     multiframe_quality_enhance_block(16, qcurr, qprev, y_ptr,
                                                      u_ptr, v_ptr,
