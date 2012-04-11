@@ -203,6 +203,7 @@ ARCH_EXT_LIST="
     neon
 
     mips32
+    dspr2
 
     mmx
     sse
