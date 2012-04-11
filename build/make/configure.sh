@@ -881,14 +881,21 @@ process_common_toolchain() {
         esac
     ;;
     mips*)
-        CROSS=${CROSS:-mipsel-linux-uclibc-}
+        CROSS=${CROSS:-mips-linux-gnu-}
         link_with_cc=gcc
         setup_gnu_toolchain
         tune_cflags="-mtune="
         check_add_cflags -march=${tgt_isa}
-    check_add_asflags -march=${tgt_isa}
-    check_add_asflags -KPIC
-    ;;
+        check_add_asflags -march=${tgt_isa}
+        check_add_asflags -KPIC
+
+        case ${tgt_isa} in
+        mips_dspr2*)
+            disable fast_unaligned
+            check_add_cflags -mips32r2 -mdspr2
+        ;;
+        esac
+        ;;
     ppc*)
         enable ppc
         bits=${tgt_isa##ppc}

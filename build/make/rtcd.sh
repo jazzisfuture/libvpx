@@ -279,6 +279,29 @@ EOF
 }
 
 
+mips() {
+  determine_indirection c $ALL_ARCHS
+  cat <<EOF
+$(common_top)
+#include "vpx_config.h"
+
+void ${symbol:-rtcd}(void);
+
+#ifdef RTCD_C
+void ${symbol:-rtcd}(void)
+{
+$(set_function_pointers c)
+#if HAVE_MIPS_DSPR2
+#include "vp8/common/mips/inc_mips.h"
+dsputil_static_init();
+#endif
+}
+#endif
+$(common_bottom)
+EOF
+
+}
+
 unoptimized() {
   determine_indirection c
   cat <<EOF
@@ -311,6 +334,14 @@ case $arch in
     REQUIRES=${REQUIRES:-mmx sse sse2}
     require $(filter $REQUIRES)
     x86
+    ;;
+  mips32)
+    ALL_ARCHS=$(filter mips32)
+    mips
+    ;;
+  mips_dspr2)
+    ALL_ARCHS=$(filter mips32 dspr2)
+    mips
     ;;
   armv5te)
     ALL_ARCHS=$(filter edsp)
