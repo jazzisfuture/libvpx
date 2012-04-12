@@ -101,6 +101,13 @@ CLEAN_FILES="${CLEAN_FILES} ${ORIG_COMMIT_MSG} ${NEW_COMMIT_MSG}"
 # Preconditions
 [ $# -lt 2 ] || usage
 
+# Check that astyle supports pad-header and align-pointer=name
+
+if ! astyle --pad-header --align-pointer=name < /dev/null ; then
+  log "astyle not installed or too old"
+  exit 1
+fi
+
 if ! git diff --quiet HEAD; then
   log "Working tree is dirty, commit your changes first"
   exit 1
