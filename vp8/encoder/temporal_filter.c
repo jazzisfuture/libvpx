@@ -135,7 +135,6 @@ void vp8_temporal_filter_apply_c
 }
 
 #if ALT_REF_MC_ENABLED
-static int dummy_cost[2*mv_max+1];
 
 static int vp8_temporal_filter_find_matching_mb_c
 (
@@ -156,9 +155,6 @@ static int vp8_temporal_filter_find_matching_mb_c
     BLOCKD *d = &x->e_mbd.block[0];
     int_mv best_ref_mv1;
     int_mv best_ref_mv1_full; /* full-pixel value of best_ref_mv1 */
-
-    int *mvcost[2]    = { &dummy_cost[mv_max+1], &dummy_cost[mv_max+1] };
-    int *mvsadcost[2] = { &dummy_cost[mv_max+1], &dummy_cost[mv_max+1] };
 
     // Save input state
     unsigned char **base_src = b->base_src;
@@ -202,7 +198,7 @@ static int vp8_temporal_filter_find_matching_mb_c
         step_param,
         sadpb,
         &cpi->fn_ptr[BLOCK_16X16],
-        mvsadcost, mvcost, &best_ref_mv1);
+        x->mvsadcost, x->mvcost, &best_ref_mv1);
 
 #if ALT_REF_SUBPEL_ENABLED
     // Try sub-pixel MC?
@@ -213,7 +209,7 @@ static int vp8_temporal_filter_find_matching_mb_c
         bestsme = cpi->find_fractional_mv_step(x, b, d,
                     &d->bmi.mv, &best_ref_mv1,
                     x->errorperbit, &cpi->fn_ptr[BLOCK_16X16],
-                    mvcost, &distortion, &sse);
+                    x->mvcost, &distortion, &sse);
     }
 #endif
 
