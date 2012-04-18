@@ -8,12 +8,173 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
+/*
+ *  Detokenization of each 16-coefficient block is done using a
+ *  finite state machine.
+ *
+ *  Each node of the machine specifies:
+ *   * the index in the coefficient probabilities array where
+ *       the decoding probability can be found;
+ *   * the next state depending on the value of the decoded bit;
+ *   * what to add to the decoded token value if the bit is 1;
+ *   * if the token value needs to be negated if the bit is 1;
+ *   * whether or not to move to the next destination address,
+ *       and by how much.
+ *
+ *  The approach reduces the number of branch mispredictions at
+ *  the expense of use of the data cache.
+ */
 #include "vp8/common/blockd.h"
 #include "onyxd_int.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 #include "detokenize.h"
+
+
+#ifdef _MSC_VER
+#define __builtin_expect(x, y) x
+#endif
+
+#define BOOL_DATA unsigned char
+
+#define OCB_X PREV_COEF_CONTEXTS * ENTROPY_NODES
+
+/* This switches between the faster 8-byte and the slower, but more cache
+   friendly, 6-byte version of the FSM node. The latter could be faster
+   on some platforms. */
+#if 1
+typedef struct
+{
+    /* Index in the probabilities array to use for decoding of the bit. */
+    unsigned short prob;
+    /* Value to add if the decoded bit is 1. */
+    short add_one;
+
+    /* Value by which the destination pointer needs to be adjusted (applied
+       before processing the bit). */
+    char dest_inc;
+    /* -1 if this is the sign bit. The value is xor'ed with this if the
+       decoded bit is 1, and it is also used to clear the token value before
+       decoding the next token. */
+    char sign;
+
+    /* Offset to add to the state index in the FSM if the bit is 1. */
+    char on_one;
+    /* Offset to add to the state index in the FSM if the bit is 0. */
+    char on_zero;
+} DETOKENIZE_FSM;
+#define NODE(prob, add_one, dest_inc, sign, on_one, on_zero) \
+    { prob, add_one, dest_inc, sign, on_one, on_zero }
+
+#define GET_PROB(ptr) (ptr->prob)
+#define GET_DEST_INC(ptr) (ptr->dest_inc)
+#define GET_ADD_ONE(ptr) (ptr->add_one)
+#define GET_SIGN(ptr) (ptr->sign)
+#define GET_ON_ONE(ptr) (ptr->on_one)
+#define GET_ON_ZERO(ptr) (ptr->on_zero)
+#define GET_JUMP(ptr, val) ((&ptr->on_zero)[val])
+#else
+typedef struct
+{
+    /* at least 5 bytes, using 6 to avoid difficult reconstruction */
+    INT16 prob_dest;     /* u12 prob + s4 dest_inc */
+    INT16 add_one_sign;  /* u11 add_one + u4 reserved + s1 sign */
+
+    INT8 on_one;    /* s7 bits */
+    INT8 on_zero;   /* s7 bits */
+} DETOKENIZE_FSM;
+#define NODE(prob, add_one, dest_inc, sign, on_one, on_zero) \
+    { prob + ((dest_inc)<<12), add_one + ((sign)<<15), on_one, on_zero }
+
+#define GET_PROB(ptr) (ptr->prob_dest & 0xfff)
+#define GET_DEST_INC(ptr) (ptr->prob_dest >> 12)
+#define GET_ADD_ONE(ptr) (ptr->add_one_sign & 0x7fff)
+#define GET_SIGN(ptr) (ptr->add_one_sign >> 15)
+#define GET_ON_ONE(ptr) (ptr->on_one)
+#define GET_ON_ZERO(ptr) (ptr->on_zero)
+#define GET_JUMP(ptr, val) ((&ptr->on_zero)[val])
+#endif
+
+#define TREE_NODE(pos_idx, ctx_val, offset, on_zero, on_one, add_one) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES + offset, add_one, 0, 0, on_one, on_zero)
+#define EOB_NODE(c, pos_idx, ctx_val, dest_inc) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES, 0, dest_inc, 0, 1, -c)
+#define ZERO_NODE(pos_idx, ctx_val, on_zero, on_one, dest_inc) \
+    NODE(pos_idx * OCB_X + ctx_val * ENTROPY_NODES + 1, 1, dest_inc, 0, on_one, on_zero)
+#define LIT_NODE(offset, next, add) \
+    NODE(8 * OCB_X + offset, add, 0, 0, next, next)
+#define SIGN_NODE(next, dest_inc) \
+    NODE(8 * OCB_X + 26, 1, 0, -1, next, next)
+
+DECLARE_ALIGNED(16, static DETOKENIZE_FSM, detokenize_fsm[]) =
+{
+#define TREE(c, pos_idx, ctx_val, next_0, dest_inc) \
+    EOB_NODE (c, pos_idx, ctx_val, dest_inc), \
+    ZERO_NODE(pos_idx, ctx_val, ctx_val*11 + next_0, 1, 0), \
+    TREE_NODE(pos_idx, ctx_val,  2, ctx_val*11 + 36, 1, 1), \
+    TREE_NODE(pos_idx, ctx_val,  3, 1, 3, 3), \
+    TREE_NODE(pos_idx, ctx_val,  4, ctx_val*11 + 33, 1, 1), \
+    TREE_NODE(pos_idx, ctx_val,  5, ctx_val*11 + 32, ctx_val*11 + 32, 1), \
+    TREE_NODE(pos_idx, ctx_val,  6, 1, 2, 6), \
+    TREE_NODE(pos_idx, ctx_val,  7, ctx_val*11 + 4, ctx_val*11 + 5, 2), \
+    TREE_NODE(pos_idx, ctx_val,  8, 1, 2, 24), \
+    TREE_NODE(pos_idx, ctx_val,  9, ctx_val*11 + 5, ctx_val*11 + 8, 8), \
+    TREE_NODE(pos_idx, ctx_val, 10, ctx_val*11 + 11, ctx_val*11 + 16, 32)
+
+#define PROCESS_TOKEN(c, pos_idx, next_pos, next_0, next_1, next_2, dest_inc) \
+    ZERO_NODE(pos_idx, 0, 62, 2*11+3, dest_inc), \
+    TREE(c, pos_idx, 2, next_0, dest_inc), \
+    TREE(c, pos_idx, 1, next_0, dest_inc), \
+    TREE(c, pos_idx, 0, next_0, dest_inc), \
+    LIT_NODE(0, 26, 1), \
+    LIT_NODE(1, 1, 2), \
+    LIT_NODE(2, 24, 1), \
+    LIT_NODE(3, 1, 4), \
+    LIT_NODE(4, 1, 2), \
+    LIT_NODE(5, 21, 1), \
+    LIT_NODE(6, 1, 8), \
+    LIT_NODE(7, 1, 4), \
+    LIT_NODE(8, 1, 2), \
+    LIT_NODE(9, 17, 1), \
+    LIT_NODE(10, 1, 16), \
+    LIT_NODE(11, 1, 8), \
+    LIT_NODE(12, 1, 4), \
+    LIT_NODE(13, 1, 2), \
+    LIT_NODE(14, 12, 1), \
+    LIT_NODE(15, 1, 1024), \
+    LIT_NODE(16, 1, 512), \
+    LIT_NODE(17, 1, 256), \
+    LIT_NODE(18, 1, 128), \
+    LIT_NODE(19, 1, 64), \
+    LIT_NODE(20, 1, 32), \
+    LIT_NODE(21, 1, 16), \
+    LIT_NODE(22, 1, 8), \
+    LIT_NODE(23, 1, 4), \
+    LIT_NODE(24, 1, 2), \
+    LIT_NODE(25, 1, 1), \
+    SIGN_NODE(next_2, dest_inc), \
+    SIGN_NODE(next_1, dest_inc)
+
+
+    PROCESS_TOKEN(0, 0, 1, 38, 2 + 1*11, 3, 0),
+    PROCESS_TOKEN(1, 1, 2, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(2, 2, 3, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(3, 3, 6, 38, 2 + 1*11, 3, 4),
+    PROCESS_TOKEN(4, 6, 4, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(5, 4, 5, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(6, 5, 6, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(7, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(8, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(9, 6, 6, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(10, 6, 6, 38, 2 + 1*11, 3, 1),
+    PROCESS_TOKEN(11, 6, 6, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(12, 6, 6, 38, 2 + 1*11, 3, -3),
+    PROCESS_TOKEN(13, 6, 6, 38, 2 + 1*11, 3, 4),
+    PROCESS_TOKEN(14, 6, 7, 38, 2 + 1*11, 3, 3),
+    PROCESS_TOKEN(15, 7, 7, -16, -16, -16, 1),
+};
+
+#define TOKEN_SIZE 62
 
 void vp8_reset_mb_tokens_context(MACROBLOCKD *x)
 {
@@ -30,215 +191,295 @@ void vp8_reset_mb_tokens_context(MACROBLOCKD *x)
     }
 }
 
-/*
-    ------------------------------------------------------------------------------
-    Residual decoding (Paragraph 13.2 / 13.3)
-*/
-static const uint8_t kBands[16 + 1] = {
-  0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7,
-  0  /* extra entry as sentinel */
-};
+DECLARE_ALIGNED(16, extern const unsigned char, vp8_norm[256]);
 
-static const uint8_t kCat3[] = { 173, 148, 140, 0 };
-static const uint8_t kCat4[] = { 176, 155, 140, 135, 0 };
-static const uint8_t kCat5[] = { 180, 157, 141, 134, 130, 0 };
-static const uint8_t kCat6[] =
-  { 254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0 };
-static const uint8_t* const kCat3456[] = { kCat3, kCat4, kCat5, kCat6 };
-static const uint8_t kZigzag[16] = {
-  0, 1, 4, 8,  5, 2, 3, 6,  9, 12, 13, 10,  7, 11, 14, 15
-};
+#define NORMALIZE \
+    { \
+        unsigned char shift = vp8_norm[range]; \
+        range <<= shift; \
+        value <<= shift; \
+        count -= shift; \
+    }
 
-#define VP8GetBit vp8dx_decode_bool
-#define NUM_PROBAS  11
-#define NUM_CTX  3
+/* Main operation of the FSM loop. There are three versions of it because
+   the best implementation changes with processors and compilers. */
 
-typedef const uint8_t (*ProbaArray)[NUM_CTX][NUM_PROBAS];  // for const-casting
+/* Using an explicit if. */
+#define PROCESS_BIT1(token) \
+    if (value >= bigsplit) \
+    { \
+        fsm_add = GET_ON_ONE(state); \
+        token = (token ^ GET_SIGN(state)) + GET_ADD_ONE(state); \
+        value -= bigsplit; \
+        range = range-split; \
+    } else { \
+        fsm_add = GET_ON_ZERO(state); \
+        range = split; \
+    }
 
-static int GetSigned(BOOL_DECODER *br, int value_to_sign)
+/* Letting the compiler choose how to create a mask. */
+#define PROCESS_BIT2(token) \
+    { \
+        VP8_BD_VALUE mask = (value >= bigsplit) ? -1 : 0; \
+        fsm_add = GET_JUMP(state, mask); \
+        range = split + ((range - 2*split) & mask); \
+        value -= bigsplit & mask; \
+        token = (token ^ (GET_SIGN(state) & mask)) + (GET_ADD_ONE(state) & mask); \
+    }
+
+/* Creating a mask using arithmetic shifts. */
+#define PROCESS_BIT3(token) \
+    { \
+        VP8_BD_VALUE mask = ((VP8_BD_VALUE_SIGNED)(split - 1 - (value>>(VP8_BD_VALUE_SIZE - 8)))) >> 8;\
+        fsm_add = GET_JUMP(state, mask); \
+        range = split + ((range - 2*split) & mask); \
+        value -= bigsplit & mask; \
+        token = (token ^ (GET_SIGN(state) & mask)) + (GET_ADD_ONE(state) & mask); \
+    }
+
+
+/* Switch controls if the token value is prepared in a register (avoiding
+   reads from cache, but still writing on every node). Because of the
+   freed register, 32-bit x86 should work better with direct writes. */
+#ifndef _MSC_VER
+#define DECLARE_TOKEN short token = 0; short sign = 0;
+#define STORE_TOKEN *dest = token;
+#define CLEAR_TOKEN_ON_LAST_SIGN \
+    token &= ~sign; \
+    sign = GET_SIGN(state);
+#define PROCESS_BIT PROCESS_BIT3(token)
+#else
+#define DECLARE_TOKEN
+#define STORE_TOKEN
+#define CLEAR_TOKEN_ON_LAST_SIGN
+#define PROCESS_BIT PROCESS_BIT3(*dest)
+#endif
+
+/* Fill bits from the buffer. */
+
+/* Standard branchy version that only accesses bufptr and bufend if
+   filling needs to be done. */
+#define FILL_BITS1(bufptr, bufend) \
+    if(__builtin_expect(count < 0, 0)) \
+        VP8DX_BOOL_DECODER_FILL(count, value, bufptr, bufend);
+
+/* Branchless fill, compiler generates mask. */
+#define FILL_BITS2(bufptr, bufend) \
+    if (__builtin_expect(bufptr < bufend, 1)) { \
+        int mask = (count >= 8) ? 0 : -1; \
+        count -= 8*mask; \
+        bufptr -= mask; \
+        value |= (VP8_BD_VALUE)(bufptr[-1]) << (VP8_BD_VALUE_SIZE - 8 - count); \
+    }
+
+/* Branchless fill, mask generated with shifts. */
+#define FILL_BITS3(bufptr, bufend) \
+    if (__builtin_expect(bufptr < bufend, 1)) { \
+        int mask = (count-8) >> 31; \
+        count -= 8*mask; \
+        bufptr -= mask; \
+        value |= (VP8_BD_VALUE)(bufptr[-1]) << (VP8_BD_VALUE_SIZE - 8 - count); \
+    }
+
+#define CALC_SPLITS(prob) \
+    split = 1 +  ((( coef_probs[prob]*(range-1) ) )>> 8); \
+    bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8);
+
+/* Switch controls whether or not to declare and use shadows of the
+   buffer pointers. Branchless fills do not work well without them. */
+#if 0
+#define DECLARE_BUFPTR \
+    const BOOL_DATA *bufend  = bc->user_buffer_end; \
+    const BOOL_DATA *bufptr  = bc->user_buffer;
+
+#define APPLY_BUFPTR \
+    bc->user_buffer = bufptr;
+
+#define FILL_BITS(bufptr, bufend) FILL_BITS1(bufptr, bufend)
+#else
+#define DECLARE_BUFPTR
+#define APPLY_BUFPTR
+#define FILL_BITS(bufptr, bufend) FILL_BITS1(bc->user_buffer, bc->user_buffer_end)
+#endif
+
+static int vp8_apply_detok_fsm(short* dest,
+                               DETOKENIZE_FSM *state, const vp8_prob *coef_probs,
+                               BOOL_DECODER *bc, VP8_BD_VALUE split,
+                               const vp8_prob *coef_probs_end)
 {
-    int split = (br->range + 1) >> 1;
-    VP8_BD_VALUE bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8);
-    int v;
+    VP8_BD_VALUE bigsplit;
+    ptrdiff_t fsm_add;
 
-    if(br->count < 0)
-        vp8dx_bool_decoder_fill(br);
+    DECLARE_BUFPTR
+    VP8_BD_VALUE value   = bc->value - (split << (VP8_BD_VALUE_SIZE - 8));
+    int count   = bc->count;
+    VP8_BD_VALUE range   = bc->range - split;
 
-    if ( br->value < bigsplit )
+    /* The first bit processed is a zero node. It won't have sign or dest_inc. */
+    DECLARE_TOKEN
+
+    NORMALIZE
+    CALC_SPLITS(GET_PROB(state))
+    FILL_BITS(bufptr, bufend)
+    PROCESS_BIT
+
+    do
     {
-        br->range = split;
-        v= value_to_sign;
-    }
-    else
-    {
-        br->range = br->range-split;
-        br->value = br->value-bigsplit;
-        v = -value_to_sign;
-    }
-    br->range +=br->range;
-    br->value +=br->value;
-    br->count--;
+        NORMALIZE
 
-    return v;
+        state += fsm_add;
+        STORE_TOKEN
+        CLEAR_TOKEN_ON_LAST_SIGN
+
+        dest += GET_DEST_INC(state);
+
+        /* safety check for malformed data */
+        if((GET_PROB(state) + coef_probs) >= coef_probs_end)
+            goto fail;
+
+        CALC_SPLITS(GET_PROB(state))
+        FILL_BITS(bufptr, bufend)
+        PROCESS_BIT
+    }
+    while (fsm_add > 0);
+
+    /* finish iteration */
+    STORE_TOKEN
+
+    NORMALIZE
+    FILL_BITS(bufptr, bufend)
+
+fail:
+    APPLY_BUFPTR
+    bc->value = value;
+    bc->count = count;
+    bc->range = (unsigned int) range;
+    return (int) - fsm_add;
 }
-/*
-   Returns the position of the last non-zero coeff plus one
-   (and 0 if there's no coeff at all)
-*/
-static int GetCoeffs(BOOL_DECODER *br, ProbaArray prob,
-                     int ctx, int n, int16_t* out)
-{
-    const uint8_t* p = prob[n][ctx];
-    if (!VP8GetBit(br, p[0]))
-    {   /* first EOB is more a 'CBP' bit. */
-        return 0;
-    }
-    while (1)
-    {
-        ++n;
-        if (!VP8GetBit(br, p[1]))
-        {
-            p = prob[kBands[n]][0];
-        }
-        else
-        {  /* non zero coeff */
-            int v, j;
-            if (!VP8GetBit(br, p[2]))
-            {
-                p = prob[kBands[n]][1];
-                v = 1;
-            }
-            else
-            {
-                if (!VP8GetBit(br, p[3]))
-                {
-                    if (!VP8GetBit(br, p[4]))
-                    {
-                        v = 2;
-                    }
-                    else
-                    {
-                        v = 3 + VP8GetBit(br, p[5]);
-                    }
-                }
-                else
-                {
-                    if (!VP8GetBit(br, p[6]))
-                    {
-                        if (!VP8GetBit(br, p[7]))
-                        {
-                            v = 5 + VP8GetBit(br, 159);
-                        } else
-                        {
-                            v = 7 + 2 * VP8GetBit(br, 165);
-                            v += VP8GetBit(br, 145);
-                        }
-                    }
-                    else
-                    {
-                        const uint8_t* tab;
-                        const int bit1 = VP8GetBit(br, p[8]);
-                        const int bit0 = VP8GetBit(br, p[9 + bit1]);
-                        const int cat = 2 * bit1 + bit0;
-                        v = 0;
-                        for (tab = kCat3456[cat]; *tab; ++tab)
-                        {
-                            v += v + VP8GetBit(br, *tab);
-                        }
-                        v += 3 + (8 << cat);
-                    }
-                }
-                p = prob[kBands[n]][2];
-            }
-            j = kZigzag[n - 1];
 
-            out[j] = GetSigned(br, v);
-
-            if (n == 16 || !VP8GetBit(br, p[0]))
-            {   /* EOB */
-                return n;
-            }
-        }
-        if (n == 16)
-        {
-            return 16;
-        }
+/**
+ * Decodes a block, starting with a quick check if the initial bit is an EOB.
+ * If it is, which happens quite often, the detokenization function call is
+ * skipped, improving performance significantly.
+ *
+ * A macro to ensure the code is inlined.
+ */
+#define DETOKENIZE(nz, i, aofs, lofs) \
+    { \
+        size_t ctx_ofs = (a[aofs] + l[lofs]); \
+        unsigned split = 1 + (((bc->range - 1) * coef_probs[ctx_ofs + nz * OCB_X]) >> 8); \
+        VP8_BD_VALUE bigsplit = (VP8_BD_VALUE)split << (VP8_BD_VALUE_SIZE - 8); \
+        \
+        if (bc->value < bigsplit) { \
+            unsigned char shift = vp8_norm[split]; \
+            a[aofs] = l[lofs] = 0; \
+            eobs[i] = nz; \
+            eobtotal += nz; \
+            bc->range = split << shift; \
+            bc->value <<= shift; \
+            bc->count -= shift; \
+            \
+            if (__builtin_expect(bc->count < 0, 0)) \
+                vp8dx_bool_decoder_fill(bc); \
+        } else { \
+            a[aofs] = l[lofs] = ENTROPY_NODES; \
+            eobtotal += eobs[i] = vp8_apply_detok_fsm(qcoeff_ptr + i*16 + nz, \
+                                  detokenize_fsm + nz*TOKEN_SIZE + (2*ENTROPY_NODES - ctx_ofs) + 2, \
+                                  coef_probs, bc, split, coef_probs_end); \
+        } \
     }
+
+/** Quickly check if four blocks are EOB only, skip if they are and do full
+ *  processing if they are not. */
+#define FASTCHECK4(nz, i, lofs) \
+{ \
+  const vp8_prob* prob = coef_probs + nz * OCB_X; \
+  unsigned split = (((bc->range - 1) * prob[(a[0]+l[lofs])]) >> 8); \
+  split = (((split) * prob[a[1]]) >> 8); \
+  split = (((split) * prob[a[2]]) >> 8); \
+  split = 1 + (((split) * prob[a[3]]) >> 8); \
+  \
+  if (split >= 0x80 && (bc->value >> (VP8_BD_VALUE_SIZE - 8)) < split) { \
+    l[lofs] = a[0] = a[1] = a[2] = a[3] = 0; \
+    eobs[i] = eobs[i+1] = eobs[i+2] = eobs[i+3] = nz; \
+    eobtotal += 4*nz; \
+    bc->range = split; \
+  } else { \
+    DETOKENIZE(nz, (i+0), 0, lofs) \
+    DETOKENIZE(nz, (i+1), 1, lofs) \
+    DETOKENIZE(nz, (i+2), 2, lofs) \
+    DETOKENIZE(nz, (i+3), 3, lofs) \
+  } \
+}
+
+/** Quickly check if four blocks are EOB only, skip if they are and do full
+ *  processing if they are not. */
+#define FASTCHECK22(i, alofs) \
+{ \
+  const vp8_prob* prob = coef_probs; \
+  unsigned split = (((bc->range - 1) * prob[(a[alofs]+l[alofs])]) >> 8); \
+  split = (((split) * prob[a[alofs+1]]) >> 8); \
+  split = (((split) * prob[l[alofs+1]]) >> 8); \
+  split = 1 + (((split) * prob[0]) >> 8); \
+  \
+  if ((split >= 0x80) && (bc->value >> (VP8_BD_VALUE_SIZE - 8)) < split) { \
+    l[alofs] = l[alofs+1] = a[alofs] = a[alofs+1] = 0; \
+    ((int*)(eobs+i))[0] = 0; \
+    bc->range = split; \
+  } else { \
+    DETOKENIZE(0, (i+0), alofs+0, alofs+0) \
+    DETOKENIZE(0, (i+1), alofs+1, alofs+0) \
+    DETOKENIZE(0, (i+2), alofs+0, alofs+1) \
+    DETOKENIZE(0, (i+3), alofs+1, alofs+1) \
+  } \
 }
 
 int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *x)
 {
-    BOOL_DECODER *bc = x->current_bc;
-    const FRAME_CONTEXT * const fc = &dx->common.fc;
+    const VP8_COMMON *const oc = & dx->common;
     char *eobs = x->eobs;
 
-    int i;
-    int nonzeros;
     int eobtotal = 0;
 
     short *qcoeff_ptr;
-    ProbaArray coef_probs;
-    ENTROPY_CONTEXT *a_ctx = ((ENTROPY_CONTEXT *)x->above_context);
-    ENTROPY_CONTEXT *l_ctx = ((ENTROPY_CONTEXT *)x->left_context);
-    ENTROPY_CONTEXT *a;
-    ENTROPY_CONTEXT *l;
-    int skip_dc = 0;
+    const vp8_prob *coef_probs;
+
+    unsigned char *a = ((unsigned char  *)x->above_context);
+    unsigned char *l = ((unsigned char  *)x->left_context);
+
+    BOOL_DECODER *bc = x->current_bc;
+    vp8_prob *coef_probs_end = oc->fc.coef_probs + sizeof(oc->fc.coef_probs);
 
     qcoeff_ptr = &x->qcoeff[0];
 
-    if (!x->mode_info_context->mbmi.is_4x4)
+    if (x->mode_info_context->mbmi.mode != B_PRED && x->mode_info_context->mbmi.mode != SPLITMV)
     {
-        a = a_ctx + 8;
-        l = l_ctx + 8;
+        coef_probs = oc->fc.coef_probs [1] [ 0 ] [0];
+        DETOKENIZE(0, 24, 8, 8);
+        eobtotal -= 16;
 
-        coef_probs = fc->coef_probs [1];
+        coef_probs = oc->fc.coef_probs [0] [ 0 ] [0];
 
-        nonzeros = GetCoeffs(bc, coef_probs, (*a + *l), 0, qcoeff_ptr + 24 * 16);
-        *a = *l = (nonzeros > 0);
-
-        eobs[24] = nonzeros;
-        eobtotal += nonzeros - 16;
-
-        coef_probs = fc->coef_probs [0];
-        skip_dc = 1;
+        FASTCHECK4(1, 0, 0);
+        FASTCHECK4(1, 4, 1);
+        FASTCHECK4(1, 8, 2);
+        FASTCHECK4(1, 12, 3);
     }
     else
     {
-        coef_probs = fc->coef_probs [3];
-        skip_dc = 0;
+        coef_probs = oc->fc.coef_probs [3] [ 0 ] [0];
+
+        FASTCHECK4(0, 0, 0);
+        FASTCHECK4(0, 4, 1);
+        FASTCHECK4(0, 8, 2);
+        FASTCHECK4(0, 12, 3);
     }
 
-    for (i = 0; i < 16; ++i)
-    {
-        a = a_ctx + (i&3);
-        l = l_ctx + ((i&0xc)>>2);
+    coef_probs = oc->fc.coef_probs [2] [ 0 ] [0];
 
-        nonzeros = GetCoeffs(bc, coef_probs, (*a + *l), skip_dc, qcoeff_ptr);
-        *a = *l = (nonzeros > 0);
 
-        nonzeros += skip_dc;
-        eobs[i] = nonzeros;
-        eobtotal += nonzeros;
-        qcoeff_ptr += 16;
-    }
-
-    coef_probs = fc->coef_probs [2];
-
-    a_ctx += 4;
-    l_ctx += 4;
-    for (i = 16; i < 24; ++i)
-    {
-        a = a_ctx + ((i > 19)<<1) + (i&1);
-        l = l_ctx + ((i > 19)<<1) + ((i&3)>1);
-
-        nonzeros = GetCoeffs(bc, coef_probs, (*a + *l), 0, qcoeff_ptr);
-        *a = *l = (nonzeros > 0);
-
-        eobs[i] = nonzeros;
-        eobtotal += nonzeros;
-        qcoeff_ptr += 16;
-    }
+    FASTCHECK22(16, 4);
+    FASTCHECK22(20, 6)
 
     return eobtotal;
 }
-
