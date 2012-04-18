@@ -82,6 +82,48 @@ static int get_cpu_count()
 }
 #endif
 
+
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+static pthread_mutex_t once_lock = PTHREAD_MUTEX_INITIALIZER;
+static int once_done;
+static int once_begin(void)
+{
+    pthread_mutex_lock(&once_lock);
+    return !once_done;
+}
+static void once_end(void)
+{
+    once_done = 1;
+    pthread_mutex_unlock(&once_lock);
+}
+
+
+#elif defined(_WIN32)
+static CRITICAL_SECTION once_lock = {(void *) - 1, -1, 0, 0, 0, 0};
+static int once_done;
+static int once_begin(void)
+{
+    EnterCriticalSection(&once_lock);
+    return !once_done;
+}
+static void once_end(void)
+{
+    once_done = 1;
+    LeaveCriticalSection(&once_lock);
+}
+
+
+#else
+/* No-op version that performs no synchronization. As long as your platform
+ * provides atomic loads/stores of pointers, no synchronization is strictly
+ * necessary.
+ */
+static int once_begin(void) {return 1;}
+static void once_end(void) {}
+#endif
+
+
 void vp8_machine_specific_config(VP8_COMMON *ctx)
 {
 #if CONFIG_MULTITHREAD
@@ -94,5 +136,9 @@ void vp8_machine_specific_config(VP8_COMMON *ctx)
     ctx->cpu_caps = x86_simd_caps();
 #endif
 
-    vpx_rtcd();
+    if(once_begin())
+    {
+        vpx_rtcd();
+    }
+    once_end();
 }
