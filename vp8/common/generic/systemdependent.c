@@ -82,6 +82,53 @@ static int get_cpu_count()
 }
 #endif
 
+
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+static void once(void (*func)(void))
+{
+    static pthread_once_t lock = PTHREAD_ONCE_INIT;
+    pthread_once(&lock, func);
+}
+
+
+#elif defined(_WIN32)
+static void once(void (*func)(void))
+{
+    static CRITICAL_SECTION lock = {(void *) - 1, -1, 0, 0, 0, 0};
+    static int done;
+
+    EnterCriticalSection(&lock);
+
+    if (!done)
+    {
+        func();
+        done = 1;
+    }
+
+    LeaveCriticalSection(&lock);
+}
+
+
+#else
+/* No-op version that performs no synchronization. vpx_rtcd() is idempotent,
+ * so as long as your platform provides atomic loads/stores of pointers
+ * no synchronization is strictly necessary.
+ */
+
+static void once(void (*func)(void))
+{
+    static int done;
+
+    if(!done)
+    {
+        func();
+        done = 1;
+    }
+}
+#endif
+
+
 void vp8_machine_specific_config(VP8_COMMON *ctx)
 {
 #if CONFIG_MULTITHREAD
@@ -94,5 +141,5 @@ void vp8_machine_specific_config(VP8_COMMON *ctx)
     ctx->cpu_caps = x86_simd_caps();
 #endif
 
-    vpx_rtcd();
+    once(vpx_rtcd());
 }
