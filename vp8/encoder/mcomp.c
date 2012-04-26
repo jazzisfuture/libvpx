@@ -34,17 +34,23 @@ int vp8_mv_bit_cost(int_mv *mv, int_mv *ref, int *mvcost[2], int Weight)
 
 static int mv_err_cost(int_mv *mv, int_mv *ref, int *mvcost[2], int error_per_bit)
 {
-    return ((mvcost[0][(mv->as_mv.row - ref->as_mv.row) >> 1] +
-        mvcost[1][(mv->as_mv.col - ref->as_mv.col) >> 1])
-        * error_per_bit + 128) >> 8;
+    // Ignore mv costing if mvcost is NULL
+    if (mvcost)
+        return ((mvcost[0][(mv->as_mv.row - ref->as_mv.row) >> 1] +
+                 mvcost[1][(mv->as_mv.col - ref->as_mv.col) >> 1])
+                 * error_per_bit + 128) >> 8;
+    return 0;
 }
 
 static int mvsad_err_cost(int_mv *mv, int_mv *ref, int *mvsadcost[2], int error_per_bit)
 {
-    /* Calculate sad error cost on full pixel basis. */
-    return ((mvsadcost[0][(mv->as_mv.row - ref->as_mv.row)] +
-        mvsadcost[1][(mv->as_mv.col - ref->as_mv.col)])
-        * error_per_bit + 128) >> 8;
+    // Calculate sad error cost on full pixel basis.
+    // Ignore mv costing if mvsadcost is NULL
+    if (mvsadcost)
+        return ((mvsadcost[0][(mv->as_mv.row - ref->as_mv.row)] +
+                 mvsadcost[1][(mv->as_mv.col - ref->as_mv.col)])
+                * error_per_bit + 128) >> 8;
+    return 0;
 }
 
 void vp8_init_dsmotion_compensation(MACROBLOCK *x, int stride)
