@@ -199,6 +199,10 @@ common_top() {
   local outfile_basename=$(basename ${symbol:-rtcd.h})
   local include_guard=$(echo $outfile_basename | tr '[a-z]' '[A-Z]' | tr -c '[A-Z]' _)
   cat <<EOF
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ${include_guard}
 #define ${include_guard}
 
@@ -216,6 +220,10 @@ EOF
 
 common_bottom() {
   cat <<EOF
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 EOF
 }
