@@ -148,7 +148,7 @@ static int vp8_temporal_filter_find_matching_mb_c
 {
     MACROBLOCK *x = &cpi->mb;
     int step_param;
-    int further_steps;
+    //int further_steps;
     int sadpb = x->sadperbit16;
     int bestsme = INT_MAX;
 
@@ -184,15 +184,13 @@ static int vp8_temporal_filter_find_matching_mb_c
     // Further step/diamond searches as necessary
     if (cpi->Speed < 8)
     {
-        step_param = cpi->sf.first_step +
-                    (cpi->Speed > 5);
-        further_steps =
-            (cpi->sf.max_step_search_steps - 1)-step_param;
+        step_param = cpi->sf.first_step + (cpi->Speed > 5);
+        //further_steps = (cpi->sf.max_step_search_steps - 1)-step_param;
     }
     else
     {
         step_param = cpi->sf.first_step + 2;
-        further_steps = 0;
+        //further_steps = 0;
     }
 
     /*cpi->sf.search_method == HEX*/

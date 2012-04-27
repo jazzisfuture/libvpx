@@ -20,7 +20,7 @@ typedef enum
 static void setup_macroblock(MACROBLOCKD *x, BLOCKSET bs)
 {
     int block;
-
+/*
     unsigned char **y, **u, **v;
 
     if (bs == DEST)
@@ -35,7 +35,7 @@ static void setup_macroblock(MACROBLOCKD *x, BLOCKSET bs)
         u = &x->pre.u_buffer;
         v = &x->pre.v_buffer;
     }
-
+*/
     for (block = 0; block < 16; block++) /* y blocks */
     {
         x->block[block].offset =

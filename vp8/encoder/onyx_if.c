@@ -1030,8 +1030,10 @@ void vp8_set_speed_features(VP8_COMP *cpi)
 
 static void alloc_raw_frame_buffers(VP8_COMP *cpi)
 {
+#if VP8_TEMPORAL_ALT_REF
     int width = (cpi->oxcf.Width + 15) & ~15;
     int height = (cpi->oxcf.Height + 15) & ~15;
+#endif
 
     cpi->lookahead = vp8_lookahead_init(cpi->oxcf.Width, cpi->oxcf.Height,
                                         cpi->oxcf.lag_in_frames);
@@ -3180,20 +3182,22 @@ static void encode_frame_to_data_rate
 
     int Loop = 0;
     int loop_count;
-    int this_q;
-    int last_zbin_oq;
 
+    VP8_COMMON *cm = &cpi->common;
+    int active_worst_qchanged = 0;
+
+#if !(CONFIG_REALTIME_ONLY)
+    //int last_zbin_oq;
     int q_low;
     int q_high;
     int zbin_oq_high;
     int zbin_oq_low = 0;
     int top_index;
     int bottom_index;
-    VP8_COMMON *cm = &cpi->common;
-    int active_worst_qchanged = 0;
-
     int overshoot_seen = 0;
     int undershoot_seen = 0;
+#endif
+
     int drop_mark = cpi->oxcf.drop_frames_water_mark * cpi->oxcf.optimal_buffer_level / 100;
     int drop_mark75 = drop_mark * 2 / 3;
     int drop_mark50 = drop_mark / 4;
@@ -3288,6 +3292,7 @@ static void encode_frame_to_data_rate
         // If segmentation is enabled force a map update for key frames
         if (cpi->mb.e_mbd.segmentation_enabled)
         {
+
             cpi->mb.e_mbd.update_mb_segmentation_map = 1;
             cpi->mb.e_mbd.update_mb_segmentation_data = 1;
         }
@@ -3321,6 +3326,7 @@ static void encode_frame_to_data_rate
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_intra_error = 0.0;
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_coded_error = 0.0;
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_pcnt_inter = 0.0;
+
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_pcnt_motion = 0.0;
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_mvr = 0.0;
         cpi->one_pass_frame_stats[cpi->one_pass_frame_index ].frame_mvr_abs = 0.0;
@@ -3353,6 +3359,7 @@ static void encode_frame_to_data_rate
         {
             cpi->decimation_factor = 1;
         }
+
 
         //vpx_log("Encoder: Decimation Factor: %d \n",cpi->decimation_factor);
     }
@@ -3387,6 +3394,7 @@ static void encode_frame_to_data_rate
             cpi->decimation_count --;
 
             cpi->bits_off_target += cpi->av_per_frame_bandwidth;
+
             if (cpi->bits_off_target > cpi->oxcf.maximum_buffer_size)
                 cpi->bits_off_target = cpi->oxcf.maximum_buffer_size;
 
@@ -3419,6 +3427,7 @@ static void encode_frame_to_data_rate
         else
             cpi->decimation_count = cpi->decimation_factor;
     }
+
 
     // Decide how big to make the frame
     if (!vp8_pick_frame_size(cpi))
@@ -3453,6 +3462,7 @@ static void encode_frame_to_data_rate
             }
 
             cpi->active_worst_quality -= Adjustment;
+
 
             if(cpi->active_worst_quality < cpi->active_best_quality)
                 cpi->active_worst_quality = cpi->active_best_quality;
@@ -3595,7 +3605,9 @@ static void encode_frame_to_data_rate
 
     // Determine initial Q to try
     Q = vp8_regulate_q(cpi, cpi->this_frame_target);
-    last_zbin_oq = cpi->zbin_over_quant;
+
+#if !(CONFIG_REALTIME_ONLY)
+    //last_zbin_oq = cpi->zbin_over_quant;
 
     // Set highest allowed value for Zbin over quant
     if (cm->frame_type == KEY_FRAME)
@@ -3607,6 +3619,7 @@ static void encode_frame_to_data_rate
     }
     else
         zbin_oq_high = ZBIN_OQ_MAX;
+#endif
 
     // Setup background Q adjustment for error resilient mode.
     // For multi-layer encodes only enable this for the base layer.
@@ -3615,18 +3628,12 @@ static void encode_frame_to_data_rate
 
     vp8_compute_frame_size_bounds(cpi, &frame_under_shoot_limit, &frame_over_shoot_limit);
 
-    // Limit Q range for the adaptive loop.
-    bottom_index = cpi->active_best_quality;
-    top_index    = cpi->active_worst_quality;
-    q_low  = cpi->active_best_quality;
-    q_high = cpi->active_worst_quality;
-
     vp8_save_coding_context(cpi);
 
     loop_count = 0;
 
-
     scale_and_extend_source(cpi->un_scaled_source, cpi);
+
 #if !(CONFIG_REALTIME_ONLY) && CONFIG_POSTPROC && !(CONFIG_TEMPORAL_DENOISING)
 
     if (cpi->oxcf.noise_sensitivity > 0)
@@ -3690,7 +3697,6 @@ static void encode_frame_to_data_rate
             */
 
         vp8_set_quantizer(cpi, Q);
-        this_q = Q;
 
         // setup skip prob for costing in mode/mv decision
         if (cpi->common.mb_no_coeff_skip)
@@ -3795,6 +3801,7 @@ static void encode_frame_to_data_rate
 
             /* cpi->projected_frame_size is not needed for RT mode */
         }
+
 #else
         // transform / motion compensation build reconstruction frame
         vp8_encode_frame(cpi);
@@ -3842,12 +3849,6 @@ static void encode_frame_to_data_rate
 
                 vp8_compute_frame_size_bounds(cpi, &frame_under_shoot_limit, &frame_over_shoot_limit);
 
-                // Limit Q range for the adaptive loop.
-                bottom_index = cpi->active_best_quality;
-                top_index    = cpi->active_worst_quality;
-                q_low  = cpi->active_best_quality;
-                q_high = cpi->active_worst_quality;
-
                 loop_count++;
                 Loop = 1;
 
@@ -3872,7 +3873,6 @@ static void encode_frame_to_data_rate
             while ((cpi->active_worst_quality < cpi->worst_quality) && (over_size_percent > 0))
             {
                 cpi->active_worst_quality++;
-                top_index = cpi->active_worst_quality;
                 over_size_percent = (int)(over_size_percent * 0.96);        // Assume 1 qstep = about 4% on frame size.
             }
 
@@ -3883,6 +3883,12 @@ static void encode_frame_to_data_rate
             active_worst_qchanged = 0;
 
 #if !(CONFIG_REALTIME_ONLY)
+        // Limit Q range for the adaptive loop.
+        bottom_index = cpi->active_best_quality;
+        top_index    = cpi->active_worst_quality;
+        q_low  = cpi->active_best_quality;
+        q_high = cpi->active_worst_quality;
+
         // Special case handling for forced key frames
         if ( (cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced )
         {
@@ -4036,7 +4042,7 @@ static void encode_frame_to_data_rate
 
             //Loop = (Q != last_q) || (last_zbin_oq != cpi->zbin_over_quant);
             Loop = Q != last_q;
-            last_zbin_oq = cpi->zbin_over_quant;
+            //last_zbin_oq = cpi->zbin_over_quant;
         }
         else
 #endif

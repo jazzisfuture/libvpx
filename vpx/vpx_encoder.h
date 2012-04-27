@@ -32,8 +32,8 @@ extern "C" {
 #define VPX_ENCODER_H
 #include "vpx_codec.h"
 
-#define MAX_PERIODICITY 16
-#define MAX_LAYERS       5
+#define MAX_PERIODICITY 16 /**< Max length of the sequence defining frame layer membership */
+#define MAX_LAYERS       5 /**< Max number of coding layers */
 
     /*!\brief Current ABI version number
      *
