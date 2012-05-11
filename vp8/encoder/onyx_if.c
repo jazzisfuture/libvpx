@@ -4158,7 +4158,7 @@ static void encode_frame_to_data_rate
 
 #if CONFIG_MULTITHREAD
     /* if PSNR packets are generated we have to wait for the lpf */
-    if (cpi->b_lpf_running && cpi->b_calculate_psnr)
+    if (cpi->b_multi_threaded || (cpi->b_lpf_running && cpi->b_calculate_psnr))
     {
         sem_wait(&cpi->h_event_end_lpf);
         cpi->b_lpf_running = 0;
