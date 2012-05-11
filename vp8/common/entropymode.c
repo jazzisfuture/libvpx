@@ -160,7 +160,13 @@ const vp8_tree_index vp8_small_mvtree [14] =
 void vp8_init_mbmode_probs(VP8_COMMON *x)
 {
     vpx_memcpy(x->fc.ymode_prob, vp8_ymode_prob, sizeof(vp8_ymode_prob));
+<<<<<<< HEAD   (c7ca38 Merge "vp8e - boolcoder unit test")
     vpx_memcpy(x->fc.uv_mode_prob, vp8_uv_mode_prob, sizeof(vp8_uv_mode_prob));
+=======
+    vpx_memcpy(x->kf_ymode_prob, vp8_kf_ymode_prob, sizeof(vp8_kf_ymode_prob));
+    vpx_memcpy(x->fc.uv_mode_prob, vp8_uv_mode_prob, sizeof(vp8_uv_mode_prob));
+    vpx_memcpy(x->kf_uv_mode_prob, vp8_kf_uv_mode_prob, sizeof(vp8_kf_uv_mode_prob));
+>>>>>>> BRANCH (297dc9 Update CHANGELOG for v1.1.0 (Eider) release)
     vpx_memcpy(x->fc.sub_mv_ref_prob, sub_mv_ref_prob, sizeof(sub_mv_ref_prob));
 }
 
@@ -169,4 +175,11 @@ void vp8_default_bmode_probs(vp8_prob p [VP8_BINTRAMODES-1])
     vpx_memcpy(p, vp8_bmode_prob, sizeof(vp8_bmode_prob));
 }
 
+<<<<<<< HEAD   (c7ca38 Merge "vp8e - boolcoder unit test")
 
+=======
+void vp8_kf_default_bmode_probs(vp8_prob p [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES-1])
+{
+    vpx_memcpy(p, vp8_kf_bmode_prob, sizeof(vp8_kf_bmode_prob));
+}
+>>>>>>> BRANCH (297dc9 Update CHANGELOG for v1.1.0 (Eider) release)

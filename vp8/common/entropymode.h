@@ -66,6 +66,7 @@ extern const struct vp8_token_struct vp8_sub_mv_ref_encoding_array[VP8_SUBMVREFS
 extern const vp8_tree_index vp8_small_mvtree[];
 
 extern const struct vp8_token_struct vp8_small_mvencodings[8];
+<<<<<<< HEAD   (c7ca38 Merge "vp8e - boolcoder unit test")
 
 /* Key frame default mode probs */
 extern const vp8_prob vp8_kf_bmode_prob[VP8_BINTRAMODES][VP8_BINTRAMODES]
@@ -73,6 +74,8 @@ extern const vp8_prob vp8_kf_bmode_prob[VP8_BINTRAMODES][VP8_BINTRAMODES]
 extern const vp8_prob vp8_kf_uv_mode_prob[VP8_UV_MODES-1];
 extern const vp8_prob vp8_kf_ymode_prob[VP8_YMODES-1];
 
+=======
+>>>>>>> BRANCH (297dc9 Update CHANGELOG for v1.1.0 (Eider) release)
 
 void vp8_init_mbmode_probs(VP8_COMMON *x);
 void vp8_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES-1]);

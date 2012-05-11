@@ -31,6 +31,7 @@
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
 #include "bitstream.h"
 #endif
+#include "encodeframe.h"
 
 extern void vp8_stuff_mb(VP8_COMP *cpi, MACROBLOCKD *x, TOKENEXTRA **t) ;
 extern void vp8_calc_ref_frame_costs(int *ref_frame_cost,
@@ -46,6 +47,7 @@ extern void vp8cx_init_mbrthread_data(VP8_COMP *cpi,
                                       MB_ROW_COMP *mbr_ei,
                                       int mb_row,
                                       int count);
+<<<<<<< HEAD   (c7ca38 Merge "vp8e - boolcoder unit test")
 void vp8_build_block_offsets(MACROBLOCK *x);
 void vp8_setup_block_ptrs(MACROBLOCK *x);
 int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t,
@@ -53,6 +55,8 @@ int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t,
                                   int mb_row, int mb_col);
 int vp8cx_encode_intra_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
                                    TOKENEXTRA **t);
+=======
+>>>>>>> BRANCH (297dc9 Update CHANGELOG for v1.1.0 (Eider) release)
 static void adjust_act_zbin( VP8_COMP *cpi, MACROBLOCK *x );
 
 #ifdef MODE_STATS
@@ -596,7 +600,7 @@ void encode_mb_row(VP8_COMP *cpi,
     x->partition_info++;
 }
 
-void init_encode_frame_mb_context(VP8_COMP *cpi)
+static void init_encode_frame_mb_context(VP8_COMP *cpi)
 {
     MACROBLOCK *const x = & cpi->mb;
     VP8_COMMON *const cm = & cpi->common;
