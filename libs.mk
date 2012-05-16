@@ -346,8 +346,10 @@ CODEC_DOC_SRCS += vpx/vpx_codec.h \
 ##
 ## libvpx test directives
 ##
+include $(SRC_PATH_BARE)/test/test.mk
+LIBVPX_TEST_SRCS=$(addprefix test/,$(call enabled,LIBVPX_TEST_SRCS))
+LIBVPX_TEST_BINS=./test_libvpx
 
-ifeq ($(CONFIG_UNIT_TESTS),yes)
 ifeq ($(CONFIG_EXTERNAL_BUILD),yes)
 ifeq ($(CONFIG_MSVS),yes)
 
@@ -403,25 +405,23 @@ OBJS-$(BUILD_LIBVPX) += $(GTEST_OBJS)
 LIBS-$(BUILD_LIBVPX) += $(BUILD_PFX)libgtest.a $(BUILD_PFX)libgtest_g.a
 $(BUILD_PFX)libgtest_g.a: $(GTEST_OBJS)
 
-LIBVPX_TEST_SRCS=$(filter %_test.cc,$(call enabled,CODEC_SRCS))
 LIBVPX_TEST_OBJS=$(call objs,$(LIBVPX_TEST_SRCS))
 $(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src
 $(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src/include
-LIBVPX_TEST_BINS=$(sort $(LIBVPX_TEST_OBJS:.cc.o=))
 OBJS-$(BUILD_LIBVPX) += $(LIBVPX_TEST_OBJS)
 
 $(foreach bin,$(LIBVPX_TEST_BINS),\
     $(if $(BUILD_LIBVPX),$(eval $(bin): libvpx.a libgtest.a ))\
     $(if $(BUILD_LIBVPX),$(eval $(call linkerxx_template,$(bin),\
-        $(bin).cc.o \
+        $(LIBVPX_TEST_OBJS) \
         -L. -lvpx -lgtest -lpthread -lm)\
         )))\
     $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
 
+BINS-yes += $(LIBVPX_TEST_BINS)
 test:: $(LIBVPX_TEST_BINS)
 	@set -e; for t in $(LIBVPX_TEST_BINS); do $$t; done
 
-endif
 endif
 
 ##
