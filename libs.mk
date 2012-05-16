@@ -329,7 +329,6 @@ CLEAN-OBJS += $(BUILD_PFX)vpx_version.h
 #
 # Rule to generate runtime cpu detection files
 #
-$(OBJS-yes:.o=.d): $(BUILD_PFX)vpx_rtcd.h
 $(BUILD_PFX)vpx_rtcd.h: $(SRC_PATH_BARE)/$(sort $(filter %rtcd_defs.sh,$(CODEC_SRCS)))
 	@echo "    [CREATE] $@"
 	$(qexec)$(SRC_PATH_BARE)/build/make/rtcd.sh --arch=$(TGT_ISA) \
@@ -346,8 +345,10 @@ CODEC_DOC_SRCS += vpx/vpx_codec.h \
 ##
 ## libvpx test directives
 ##
+-include $(SRC_PATH_BARE)/test/test.mk
+LIBVPX_TEST_SRCS=$(addprefix test/,$(call enabled,LIBVPX_TEST_SRCS))
+LIBVPX_TEST_BINS=./test_libvpx
 
-ifeq ($(CONFIG_UNIT_TESTS),yes)
 ifeq ($(CONFIG_EXTERNAL_BUILD),yes)
 ifeq ($(CONFIG_MSVS),yes)
 
@@ -394,26 +395,27 @@ test::
 endif
 else
 
-include $(SRC_PATH_BARE)/third_party/googletest/gtest.mk
+-include $(SRC_PATH_BARE)/third_party/googletest/gtest.mk
 GTEST_SRCS := $(addprefix third_party/googletest/src/,$(call enabled,GTEST_SRCS))
 GTEST_OBJS=$(call objs,$(GTEST_SRCS))
-$(GTEST_OBJS) $(GTEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src
-$(GTEST_OBJS) $(GTEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src/include
+$(GTEST_OBJS) $(GTEST_OBJS:.o=.d): CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src
+$(GTEST_OBJS) $(GTEST_OBJS:.o=.d): CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src/include
 OBJS-$(BUILD_LIBVPX) += $(GTEST_OBJS)
 LIBS-$(BUILD_LIBVPX) += $(BUILD_PFX)libgtest.a $(BUILD_PFX)libgtest_g.a
 $(BUILD_PFX)libgtest_g.a: $(GTEST_OBJS)
 
-LIBVPX_TEST_SRCS=$(filter %_test.cc,$(call enabled,CODEC_SRCS))
 LIBVPX_TEST_OBJS=$(call objs,$(LIBVPX_TEST_SRCS))
-$(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src
-$(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src/include
-LIBVPX_TEST_BINS=$(sort $(LIBVPX_TEST_OBJS:.cc.o=))
+$(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src
+$(LIBVPX_TEST_OBJS) $(LIBVPX_TEST_OBJS:.o=.d): CXXFLAGS += -I$(SRC_PATH_BARE)/third_party/googletest/src/include
 OBJS-$(BUILD_LIBVPX) += $(LIBVPX_TEST_OBJS)
+INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(patsubst $(SRC_PATH_BARE)/%,%,\
+    $(shell find $(SRC_PATH_BARE)/third_party/googletest -type f))
+INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(LIBVPX_TEST_SRCS)
 
 $(foreach bin,$(LIBVPX_TEST_BINS),\
     $(if $(BUILD_LIBVPX),$(eval $(bin): libvpx.a libgtest.a ))\
     $(if $(BUILD_LIBVPX),$(eval $(call linkerxx_template,$(bin),\
-        $(bin).cc.o \
+        $(LIBVPX_TEST_OBJS) \
         -L. -lvpx -lgtest -lpthread -lm)\
         )))\
     $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
@@ -422,7 +424,9 @@ test:: $(LIBVPX_TEST_BINS)
 	@set -e; for t in $(LIBVPX_TEST_BINS); do $$t; done
 
 endif
-endif
+
+## Generate vpx_rtcd.h for all objects.
+$(OBJS-yes:.o=.d): $(BUILD_PFX)vpx_rtcd.h
 
 ##
 ## documentation directives

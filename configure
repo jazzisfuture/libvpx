@@ -22,7 +22,6 @@ show_help(){
 Advanced options:
   ${toggle_libs}                  don't build libraries
   ${toggle_examples}              don't build examples
-  ${toggle_unit_tests}            build unit tests
   --libc=PATH                     path to alternate libc
   --as={yasm|nasm|auto}           use specified assembler [auto, yasm preferred]
   --sdk-path=PATH                 path to root of sdk (iOS, android builds only)
@@ -271,7 +270,6 @@ CONFIG_LIST="
     small
     postproc_visualizer
     os_support
-    unit_tests
     multi_res_encoding
     temporal_denoising
 "
@@ -316,7 +314,6 @@ CMDLINE_SELECT="
     static
     small
     postproc_visualizer
-    unit_tests
     multi_res_encoding
     temporal_denoising
 "
@@ -523,12 +520,12 @@ process_toolchain() {
     if enabled gcc; then
         enabled werror && check_add_cflags -Werror
         check_add_cflags -Wall
-        check_add_cflags -Wdeclaration-after-statement
+        check_add_cflags_only -Wdeclaration-after-statement
         check_add_cflags -Wdisabled-optimization
         check_add_cflags -Wpointer-arith
         check_add_cflags -Wtype-limits
         check_add_cflags -Wcast-qual
-        check_add_cflags -Wimplicit-function-declaration
+        check_add_cflags_only -Wimplicit-function-declaration
         check_add_cflags -Wuninitialized
         check_add_cflags -Wunused-variable
         check_add_cflags -Wunused-but-set-variable

@@ -169,6 +169,17 @@ add_cflags() {
 }
 
 
+add_cxxflags() {
+    CXXFLAGS="${CXXFLAGS} $@"
+}
+
+
+add_c_and_cxx_flags() {
+    CFLAGS="${CFLAGS} $@"
+    CXXFLAGS="${CXXFLAGS} $@"
+}
+
+
 add_ldflags() {
     LDFLAGS="${LDFLAGS} $@"
 }
@@ -277,6 +288,13 @@ check_cc() {
     check_cmd ${CC} ${CFLAGS} "$@" -c -o ${TMP_O} ${TMP_C}
 }
 
+check_cxx() {
+    log check_cxx "$@"
+    cat >${TMP_C}
+    log_file ${TMP_C}
+    check_cmd ${CXX} ${CXXFLAGS} "$@" -c -o ${TMP_O} ${TMP_C}
+}
+
 check_cpp() {
     log check_cpp "$@"
     cat > ${TMP_C}
@@ -310,7 +328,19 @@ int x;
 EOF
 }
 
+check_cxxflags() {
+    log check_cxxflags "$@"
+    check_cxx "$@" <<EOF
+int x;
+EOF
+}
+
 check_add_cflags() {
+    check_cflags "$@" && add_cflags "$@"
+    check_cxxflags "$@" && add_cxxflags "$@"
+}
+
+check_add_cflags_only() {
     check_cflags "$@" && add_cflags "$@"
 }
 
@@ -367,7 +397,9 @@ true
 
 write_common_target_config_mk() {
     local CC=${CC}
+    local CXX=${CXX}
     enabled ccache && CC="ccache ${CC}"
+    enabled ccache && CXX="ccache ${CXX}"
     print_webm_license $1 "##" ""
 
     cat >> $1 << EOF
@@ -379,6 +411,7 @@ TOOLCHAIN=${toolchain}
 ASM_CONVERSION=${asm_conversion_cmd:-${source_path}/build/make/ads2gas.pl}
 
 CC=${CC}
+CXX=${CXX}
 AR=${AR}
 LD=${LD}
 AS=${AS}
@@ -386,6 +419,7 @@ STRIP=${STRIP}
 NM=${NM}
 
 CFLAGS  = ${CFLAGS}
+CXXFLAGS  = ${CXXFLAGS}
 ARFLAGS = -rus\$(if \$(quiet),c,v)
 LDFLAGS = ${LDFLAGS}
 ASFLAGS = ${ASFLAGS}
@@ -538,6 +572,7 @@ post_process_cmdline() {
 
 setup_gnu_toolchain() {
         CC=${CC:-${CROSS}gcc}
+        CXX=${CXX:-${CROSS}g++}
         AR=${AR:-${CROSS}ar}
         LD=${LD:-${CROSS}${link_with_cc:-ld}}
         AS=${AS:-${CROSS}as}
@@ -662,29 +697,29 @@ process_common_toolchain() {
     esac
 
     if [ -d "${osx_sdk_dir}" ]; then
-        add_cflags  "-isysroot ${osx_sdk_dir}"
+        add_c_and_cxx_flags  "-isysroot ${osx_sdk_dir}"
         add_ldflags "-isysroot ${osx_sdk_dir}"
     fi
 
     case ${toolchain} in
         *-darwin8-*)
-            add_cflags  "-mmacosx-version-min=10.4"
+            add_c_and_cxx_flags  "-mmacosx-version-min=10.4"
             add_ldflags "-mmacosx-version-min=10.4"
             ;;
         *-darwin9-*)
-            add_cflags  "-mmacosx-version-min=10.5"
+            add_c_and_cxx_flags  "-mmacosx-version-min=10.5"
             add_ldflags "-mmacosx-version-min=10.5"
             ;;
         *-darwin10-*)
-            add_cflags  "-mmacosx-version-min=10.6"
+            add_c_and_cxx_flags  "-mmacosx-version-min=10.6"
             add_ldflags "-mmacosx-version-min=10.6"
             ;;
         *-darwin11-*)
-            add_cflags  "-mmacosx-version-min=10.7"
+            add_c_and_cxx_flags  "-mmacosx-version-min=10.7"
             add_ldflags "-mmacosx-version-min=10.7"
             ;;
         *-darwin12-*)
-            add_cflags  "-mmacosx-version-min=10.8"
+            add_c_and_cxx_flags  "-mmacosx-version-min=10.8"
             add_ldflags "-mmacosx-version-min=10.8"
             ;;
     esac
@@ -774,9 +809,9 @@ process_common_toolchain() {
             arch_int=${arch_int%%te}
             check_add_asflags --pd "\"ARCHITECTURE SETA ${arch_int}\""
             enabled debug && add_asflags -g
-            add_cflags --gnu
-            add_cflags --enum_is_int
-            add_cflags --wchar32
+            add_c_and_cxx_flags --gnu
+            add_c_and_cxx_flags --enum_is_int
+            add_c_and_cxx_flags --wchar32
         ;;
         esac
 
@@ -791,6 +826,7 @@ process_common_toolchain() {
             COMPILER_LOCATION=`find "${SDK_PATH}" \
                                -name "arm-linux-androideabi-gcc*" -print -quit`
             TOOLCHAIN_PATH=${COMPILER_LOCATION%/*}/arm-linux-androideabi-
+            CXX=${TOOLCHAIN_PATH}g++
             CC=${TOOLCHAIN_PATH}gcc
             AR=${TOOLCHAIN_PATH}ar
             LD=${TOOLCHAIN_PATH}gcc
@@ -807,10 +843,10 @@ process_common_toolchain() {
                           awk '{ print $1 }' | tail -1`
             fi
 
-            add_cflags "--sysroot=${alt_libc}"
+            add_c_and_cxx_flags "--sysroot=${alt_libc}"
             add_ldflags "--sysroot=${alt_libc}"
 
-            add_cflags "-I${SDK_PATH}/sources/android/cpufeatures/"
+            add_c_and_cxx_flags "-I${SDK_PATH}/sources/android/cpufeatures/"
 
             enable pic
             soft_enable realtime_only
@@ -827,6 +863,7 @@ process_common_toolchain() {
                 SDK_PATH=${sdk_path}
             fi
             TOOLCHAIN_PATH=${SDK_PATH}/usr/bin
+            CXX=${TOOLCHAIN_PATH}/g++
             CC=${TOOLCHAIN_PATH}/gcc
             AR=${TOOLCHAIN_PATH}/ar
             LD=${TOOLCHAIN_PATH}/arm-apple-darwin10-llvm-gcc-4.2
@@ -840,19 +877,19 @@ process_common_toolchain() {
             # options that were put in above
             ASFLAGS="-version -arch ${tgt_isa} -g"
 
-            add_cflags -arch ${tgt_isa}
+            add_c_and_cxx_flags -arch ${tgt_isa}
             add_ldflags -arch_only ${tgt_isa}
 
             if [ -z "${alt_libc}" ]; then
                 alt_libc=${SDK_PATH}/SDKs/iPhoneOS5.1.sdk
             fi
 
-            add_cflags  "-isysroot ${alt_libc}"
+            add_c_and_cxx_flags  "-isysroot ${alt_libc}"
 
             # Add the paths for the alternate libc
             for d in usr/include; do
                 try_dir="${alt_libc}/${d}"
-                [ -d "${try_dir}" ] && add_cflags -I"${try_dir}"
+                [ -d "${try_dir}" ] && add_c_and_cxx_flags -I"${try_dir}"
             done
 
             for d in lib usr/lib usr/lib/system; do
@@ -878,12 +915,12 @@ process_common_toolchain() {
                 # create configuration file (uses path to CodeSourcery GCC)
                 armcc --arm_linux_configure --arm_linux_config_file=arm_linux.cfg
 
-                add_cflags --arm_linux_paths --arm_linux_config_file=arm_linux.cfg
+                add_c_and_cxx_flags --arm_linux_paths --arm_linux_config_file=arm_linux.cfg
                 add_asflags --no_hide_all --apcs=/interwork
                 add_ldflags --arm_linux_paths --arm_linux_config_file=arm_linux.cfg
-                enabled pic && add_cflags --apcs=/fpic
+                enabled pic && add_c_and_cxx_flags --apcs=/fpic
                 enabled pic && add_asflags --apcs=/fpic
-                enabled shared && add_cflags --shared
+                enabled shared && add_c_and_cxx_flags --shared
             fi
         ;;
 
@@ -905,7 +942,7 @@ process_common_toolchain() {
         setup_gnu_toolchain
         add_asflags -force_cpusubtype_ALL -I"\$(dir \$<)darwin"
         soft_enable altivec
-        enabled altivec && add_cflags -maltivec
+        enabled altivec && add_c_and_cxx_flags -maltivec
 
         case "$tgt_os" in
         linux*)
@@ -914,10 +951,10 @@ process_common_toolchain() {
         darwin*)
             darwin_arch="-arch ppc"
             enabled ppc64 && darwin_arch="${darwin_arch}64"
-            add_cflags  ${darwin_arch} -m${bits} -fasm-blocks
+            add_c_and_cxx_flags  ${darwin_arch} -m${bits} -fasm-blocks
             add_asflags ${darwin_arch} -force_cpusubtype_ALL -I"\$(dir \$<)darwin"
             add_ldflags ${darwin_arch} -m${bits}
-            enabled altivec && add_cflags -faltivec
+            enabled altivec && add_c_and_cxx_flags -faltivec
         ;;
         esac
     ;;
@@ -934,9 +971,10 @@ process_common_toolchain() {
 
         case  ${tgt_os} in
             win*)
-                enabled gcc && add_cflags -fno-common
+                enabled gcc && add_c_and_cxx_flags -fno-common
                 ;;
             solaris*)
+                CXX=${CXX:-${CROSS}g++}
                 CC=${CC:-${CROSS}gcc}
                 LD=${LD:-${CROSS}gcc}
                 CROSS=${CROSS:-g}
@@ -952,9 +990,9 @@ process_common_toolchain() {
                 CC=${CC:-icc}
                 LD=${LD:-icc}
                 setup_gnu_toolchain
-                add_cflags -use-msasm -use-asm
+                add_c_and_cxx_flags -use-msasm -use-asm
                 add_ldflags -i-static
-                enabled x86_64 && add_cflags -ipo -no-prec-div -static -xSSE2 -axSSE2
+                enabled x86_64 && add_c_and_cxx_flags -ipo -no-prec-div -static -xSSE2 -axSSE2
                 enabled x86_64 && AR=xiar
                 case ${tune_cpu} in
                     atom*)
@@ -967,7 +1005,7 @@ process_common_toolchain() {
                 esac
                 ;;
             gcc*)
-                add_cflags  -m${bits}
+                add_c_and_cxx_flags  -m${bits}
                 add_ldflags -m${bits}
                 link_with_cc=gcc
                 tune_cflags="-march="
@@ -1006,13 +1044,13 @@ process_common_toolchain() {
             darwin*)
                 add_asflags -f macho${bits}
                 enabled x86 && darwin_arch="-arch i386" || darwin_arch="-arch x86_64"
-                add_cflags  ${darwin_arch}
+                add_c_and_cxx_flags  ${darwin_arch}
                 add_ldflags ${darwin_arch}
                 # -mdynamic-no-pic is still a bit of voodoo -- it was required at
                 # one time, but does not seem to be now, and it breaks some of the
                 # code that still relies on inline assembly.
-                # enabled icc && ! enabled pic && add_cflags -fno-pic -mdynamic-no-pic
-                enabled icc && ! enabled pic && add_cflags -fno-pic
+                # enabled icc && ! enabled pic && add_c_and_cxx_flags -fno-pic -mdynamic-no-pic
+                enabled icc && ! enabled pic && add_c_and_cxx_flags -fno-pic
             ;;
             os2)
                 add_asflags -f aout
@@ -1091,8 +1129,8 @@ EOF
 
     # glibc needs these
     if enabled linux; then
-        add_cflags -D_LARGEFILE_SOURCE
-        add_cflags -D_FILE_OFFSET_BITS=64
+        add_c_and_cxx_flags -D_LARGEFILE_SOURCE
+        add_c_and_cxx_flags -D_FILE_OFFSET_BITS=64
     fi
 
     # append any user defined extra cflags
