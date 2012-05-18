@@ -209,6 +209,12 @@ specialize vp8_bilinear_predict4x4 mmx media neon
 vp8_bilinear_predict4x4_media=vp8_bilinear_predict4x4_armv6
 
 #
+# Denoiser filter
+#
+prototype void denoiser_filter "struct yv12_buffer_config* mc_running_avg, struct yv12_buffer_config* running_avg, struct macroblock* signal, unsigned int motion_magnitude2, int y_offset, int uv_offset"
+specialize denoiser_filter sse2
+
+#
 # Whole-pixel Variance
 #
 prototype unsigned int vp8_variance4x4 "const unsigned char *src_ptr, int source_stride, const unsigned char *ref_ptr, int  ref_stride, unsigned int *sse"
