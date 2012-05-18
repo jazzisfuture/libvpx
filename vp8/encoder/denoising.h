@@ -12,6 +12,11 @@
 #define VP8_ENCODER_DENOISING_H_
 
 #include "block.h"
+static const unsigned int NOISE_MOTION_THRESHOLD = 20 * 20;
+static const unsigned int NOISE_DIFF2_THRESHOLD = 75;
+// SSE_DIFF_THRESHOLD is selected as ~95% confidence assuming var(noise) ~= 100.
+static const unsigned int SSE_DIFF_THRESHOLD = 16 * 16 * 20;
+static const unsigned int SSE_THRESHOLD = 16 * 16 * 40;
 
 typedef struct vp8_denoiser
 {
