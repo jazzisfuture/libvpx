@@ -101,6 +101,15 @@ VP8_CX_SRCS-$(HAVE_MMX) += encoder/x86/vp8_enc_stubs_mmx.c
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/dct_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/fwalsh_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/quantize_sse2.asm
+
+ifeq ($(HAVE_SSE2), yes)
+  CFLAGS+= -D__SSE2__
+endif
+
+ifeq ($(CONFIG_TEMPORAL_DENOISING),yes)
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/denoising_sse2.c
+endif 
+
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/subtract_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/temporal_filter_apply_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp8_enc_stubs_sse2.c
