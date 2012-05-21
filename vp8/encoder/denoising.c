@@ -17,7 +17,9 @@
 
 
 static const unsigned int NOISE_MOTION_THRESHOLD = 20 * 20;
-// SSE_DIFF_THRESHOLD is selected as ~95% confidence assuming var(noise) ~= 100.
+/* SSE_DIFF_THRESHOLD is selected as ~95% confidence assuming
+ * var(noise) ~= 100.
+ */
 static const unsigned int SSE_DIFF_THRESHOLD = 16 * 16 * 20;
 static const unsigned int SSE_THRESHOLD = 16 * 16 * 40;
 
@@ -34,15 +36,15 @@ static unsigned int denoiser_motion_compensate(YV12_BUFFER_CONFIG *src,
     int mv_col;
     int mv_row;
     int sse_diff = zero_mv_sse - best_sse;
-    // Compensate the running average.
+    /* Compensate the running average. */
     filter_xd.pre.y_buffer = src->y_buffer + recon_yoffset;
     filter_xd.pre.u_buffer = src->u_buffer + recon_uvoffset;
     filter_xd.pre.v_buffer = src->v_buffer + recon_uvoffset;
-    // Write the compensated running average to the destination buffer.
+    /* Write the compensated running average to the destination buffer. */
     filter_xd.dst.y_buffer = dst->y_buffer + recon_yoffset;
     filter_xd.dst.u_buffer = dst->u_buffer + recon_uvoffset;
     filter_xd.dst.v_buffer = dst->v_buffer + recon_uvoffset;
-    // Use the best MV for the compensation.
+    /* Use the best MV for the compensation. */
     filter_xd.mode_info_context->mbmi.ref_frame = LAST_FRAME;
     filter_xd.mode_info_context->mbmi.mode = filter_xd.best_sse_inter_mode;
     filter_xd.mode_info_context->mbmi.mv = filter_xd.best_sse_mv;
@@ -55,11 +57,12 @@ static unsigned int denoiser_motion_compensate(YV12_BUFFER_CONFIG *src,
         (mv_row *mv_row + mv_col *mv_col <= NOISE_MOTION_THRESHOLD &&
          sse_diff < SSE_DIFF_THRESHOLD))
     {
-        // Handle intra blocks as referring to last frame with zero motion and
-        // let the absolute pixel difference affect the filter factor.
-        // Also consider small amount of motion as being random walk due to
-        // noise, if it doesn't mean that we get a much bigger error.
-        // Note that any changes to the mode info only affects the denoising.
+        /* Handle intra blocks as referring to last frame with zero motion and
+         * let the absolute pixel difference affect the filter factor.
+         * Also consider small amount of motion as being random walk due to
+         * noise, if it doesn't mean that we get a much bigger error.
+         * Note that any changes to the mode info only affects the denoising.
+         */
         filter_xd.mode_info_context->mbmi.ref_frame = LAST_FRAME;
         filter_xd.mode_info_context->mbmi.mode = ZEROMV;
         filter_xd.mode_info_context->mbmi.mv.as_int = 0;
@@ -85,18 +88,20 @@ static unsigned int denoiser_motion_compensate(YV12_BUFFER_CONFIG *src,
     return best_sse;
 }
 
-// The filtering coefficients used for denoizing are adjusted for static
-// blocks, or blocks with very small motion vectors. This is done through
-// the motion magnitude parameter.
-//
-// There are currently 2048 possible mapping from absolute difference to
-// filter coefficient depending on the motion magnitude. Each mapping is
-// in a LUT table. All these tables are staticly allocated but they are only
-// filled on their first use.
-//
-// Each entry is a pair of 16b values, the coefficient and its complement
-// to 256. Each of these value should only be 8b but they are 16b wide to
-// avoid slow partial register manipulations.
+/*
+ * The filtering coefficients used for denoizing are adjusted for static
+ * blocks, or blocks with very small motion vectors. This is done through
+ * the motion magnitude parameter.
+ *
+ * There are currently 2048 possible mapping from absolute difference to
+ * filter coefficient depending on the motion magnitude. Each mapping is
+ * in a LUT table. All these tables are staticly allocated but they are only
+ * filled on their first use.
+ *
+ * Each entry is a pair of 16b values, the coefficient and its complement
+ * to 256. Each of these value should only be 8b but they are 16b wide to
+ * avoid slow partial register manipulations.
+ */
 enum {num_motion_magnitude_adjustments = 2048};
 
 static union coeff_pair filter_coeff_LUT[num_motion_magnitude_adjustments][256];
@@ -160,7 +165,7 @@ void vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
 
     for (r = 0; r < 16; ++r)
     {
-        // Calculate absolute differences
+        /* Calculate absolute differences */
         unsigned char abs_diff[16];
 
         union coeff_pair filter_coefficient[16];
@@ -172,13 +177,13 @@ void vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
             abs_diff[c] = absdiff;
         }
 
-        // Use LUT to get filter coefficients (two 16b value; f and 256-f)
+        /* Use LUT to get filter coefficients (two 16b value; f and 256-f) */
         for (c = 0; c < 16; ++c)
         {
             filter_coefficient[c] = LUT[abs_diff[c]];
         }
 
-        // Filtering...
+        /* Filtering... */
         for (c = 0; c < 16; ++c)
         {
             const uint16_t state = (uint16_t)(mc_running_avg_y[c]);
@@ -188,10 +193,11 @@ void vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
                     filter_coefficient[c].as_short[1] * sample + 128) >> 8;
         }
 
-        // Depending on the magnitude of the difference between the signal and
-        // filtered version, either replace the signal by the filtered one or
-        // update the filter state with the signal when the change in a pixel
-        // isn't classified as noise.
+        /* Depending on the magnitude of the difference between the signal and
+         * filtered version, either replace the signal by the filtered one or
+         * update the filter state with the signal when the change in a pixel
+         * isn't classified as noise.
+         */
         for (c = 0; c < 16; ++c)
         {
             const int diff = sig[c] - running_avg_y[c];
@@ -206,7 +212,7 @@ void vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
             }
         }
 
-        // Update pointers for next iteration.
+        /* Update pointers for next iteration. */
         sig += sig_stride;
         mc_running_avg_y += mc_avg_y_stride;
         running_avg_y += avg_y_stride;
@@ -259,7 +265,7 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     int mv_row;
     int mv_col;
     unsigned int motion_magnitude2;
-    // Motion compensate the running average.
+    /* Motion compensate the running average. */
     best_sse = denoiser_motion_compensate(&denoiser->yv12_running_avg,
                                           &denoiser->yv12_mc_running_avg,
                                           x,
@@ -275,15 +281,16 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     if (best_sse > SSE_THRESHOLD ||
         motion_magnitude2 > 8 * NOISE_MOTION_THRESHOLD)
     {
-        // No filtering of this block since it differs too much from the
-        // predictor, or the motion vector magnitude is considered too big.
+        /* No filtering of this block since it differs too much from the
+         * predictor, or the motion vector magnitude is considered too big.
+         */
         vp8_copy_mem16x16(x->thismb, 16,
                           denoiser->yv12_running_avg.y_buffer + recon_yoffset,
                           denoiser->yv12_running_avg.y_stride);
         return;
     }
 
-    // Filter.
+    /* Filter. */
     vp8_denoiser_filter(&denoiser->yv12_mc_running_avg,
                         &denoiser->yv12_running_avg, x, motion_magnitude2,
                         recon_yoffset, recon_uvoffset);
