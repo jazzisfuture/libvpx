@@ -3146,7 +3146,7 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
     if (cm->filter_level > 0)
     {
         vp8cx_set_alt_lf_level(cpi, cm->filter_level);
-        vp8_loop_filter_frame(cm, &cpi->mb.e_mbd);
+        vp8_loop_filter_frame(cm, &cpi->mb.e_mbd, cm->frame_type);
     }
 
     vp8_yv12_extend_frame_borders(cm->frame_to_show);
