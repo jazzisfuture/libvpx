@@ -2385,9 +2385,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
           if (x->e_mbd.mode_info_context->mbmi.mode == NEWMV &&
               x->e_mbd.mode_info_context->mbmi.ref_frame == LAST_FRAME)
           {
-            x->e_mbd.best_sse_inter_mode = NEWMV;
-            x->e_mbd.best_sse_mv = x->e_mbd.mode_info_context->mbmi.mv;
-            x->e_mbd.need_to_clamp_best_mvs =
+            x->best_sse_inter_mode = NEWMV;
+            x->best_sse_mv = x->e_mbd.mode_info_context->mbmi.mv;
+            x->need_to_clamp_best_mvs =
                 x->e_mbd.mode_info_context->mbmi.need_to_clamp_mvs;
           }
         }
@@ -2462,11 +2462,11 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 #if CONFIG_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity)
     {
-      if (x->e_mbd.best_sse_inter_mode == DC_PRED) {
+      if (x->best_sse_inter_mode == DC_PRED) {
         // No best MV found.
-        x->e_mbd.best_sse_inter_mode = best_mode.mbmode.mode;
-        x->e_mbd.best_sse_mv = best_mode.mbmode.mv;
-        x->e_mbd.need_to_clamp_best_mvs = best_mode.mbmode.need_to_clamp_mvs;
+        x->best_sse_inter_mode = best_mode.mbmode.mode;
+        x->best_sse_mv = best_mode.mbmode.mv;
+        x->need_to_clamp_best_mvs = best_mode.mbmode.need_to_clamp_mvs;
       }
 
       // TODO(holmer): No SSEs are calculated in rdopt.c. What else can be used?
