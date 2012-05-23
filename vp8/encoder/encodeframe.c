@@ -1177,6 +1177,8 @@ int vp8cx_encode_inter_macroblock
 
 #if CONFIG_TEMPORAL_DENOISING
     // Reset the best sse mode/mv for each macroblock.
+    x->e_mbd.best_reference_frame = INTRA_FRAME;
+    x->e_mbd.best_zeromv_reference_frame = INTRA_FRAME;
     x->e_mbd.best_sse_inter_mode = 0;
     x->e_mbd.best_sse_mv.as_int = 0;
     x->e_mbd.need_to_clamp_best_mvs = 0;
