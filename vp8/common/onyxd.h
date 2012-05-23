@@ -35,12 +35,6 @@ extern "C"
         int     error_concealment;
         int     input_fragments;
     } VP8D_CONFIG;
-    typedef enum
-    {
-        VP8_LAST_FLAG = 1,
-        VP8_GOLD_FLAG = 2,
-        VP8_ALT_FLAG = 4
-    } VP8_REFFRAME;
 
     typedef enum
     {
