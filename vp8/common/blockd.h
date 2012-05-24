@@ -219,6 +219,7 @@ typedef struct macroblockd
 #if CONFIG_TEMPORAL_DENOISING
     MB_PREDICTION_MODE best_sse_inter_mode;
     int_mv best_sse_mv;
+    MV_REFERENCE_FRAME best_reference_frame;
     unsigned char need_to_clamp_best_mvs;
 #endif
 

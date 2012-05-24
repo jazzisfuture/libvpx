@@ -3153,7 +3153,37 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
 #if CONFIG_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity)
     {
-      vp8_yv12_extend_frame_borders(&cpi->denoiser.yv12_running_avg);
+        vp8_yv12_extend_frame_borders(&cpi->denoiser.yv12_running_avg[0]);
+
+
+        /* we shouldn't have to keep multiple copies as we know in advance which
+         * buffer we should start - for now to get something up and running
+         * I've chosen to copy the buffers
+         */
+        if (cm->frame_type == KEY_FRAME)
+        {
+            int i;
+            for (i = 1; i < MAX_REF_FRAMES - 1; i++)
+                vp8_yv12_copy_frame(
+                        &cpi->denoiser.yv12_running_avg[LAST_FRAME - 1],
+                        &cpi->denoiser.yv12_running_avg[i]);
+        }
+        else /* For non key frames */
+        {
+            if (cm->refresh_alt_ref_frame || cm->copy_buffer_to_arf)
+            {
+                vp8_yv12_copy_frame(
+                        &cpi->denoiser.yv12_running_avg[LAST_FRAME - 1],
+                        &cpi->denoiser.yv12_running_avg[ALTREF_FRAME - 1]);
+            }
+            if (cm->refresh_golden_frame || cm->copy_buffer_to_gf)
+            {
+                vp8_yv12_copy_frame(
+                        &cpi->denoiser.yv12_running_avg[LAST_FRAME - 1],
+                        &cpi->denoiser.yv12_running_avg[GOLDEN_FRAME - 1]);
+            }
+        }
+
     }
 #endif
 }
