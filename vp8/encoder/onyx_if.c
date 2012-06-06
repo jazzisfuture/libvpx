@@ -3801,8 +3801,15 @@ static void encode_frame_to_data_rate
 
         if (cm->frame_type == KEY_FRAME)
         {
+            int width = cpi->common.Width;
+            int height = cpi->common.Height;
             resize_key_frame(cpi);
             vp8_setup_key_frame(cpi);
+            // Reset Q if frame size has changed.
+            if (width != cpi->common.Width || height != cpi->common.Height) {
+              Q = vp8_regulate_q(cpi, cpi->this_frame_target);
+              vp8_set_quantizer(cpi, Q);
+            }
         }
 
 
