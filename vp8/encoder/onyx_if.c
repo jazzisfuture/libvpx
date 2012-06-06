@@ -3801,8 +3801,18 @@ static void encode_frame_to_data_rate
 
         if (cm->frame_type == KEY_FRAME)
         {
+            int width = cpi->common.Width;
+            int height = cpi->common.Height;
             resize_key_frame(cpi);
             vp8_setup_key_frame(cpi);
+            // If the frame size has changed, need to reset Q, quantizer,
+            // and background refresh.
+            if (width != cpi->common.Width || height != cpi->common.Height) {
+              Q = vp8_regulate_q(cpi, cpi->this_frame_target);
+              if (cpi->cyclic_refresh_mode_enabled && (cpi->current_layer==0))
+                cyclic_background_refresh(cpi, Q, 0);
+              vp8_set_quantizer(cpi, Q);
+            }
         }
 
 
