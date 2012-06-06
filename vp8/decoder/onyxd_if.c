@@ -105,6 +105,192 @@ struct VP8D_COMP * vp8dx_create_decompressor(VP8D_CONFIG *oxcf)
     return pbi;
 }
 
+void vp8dx_remove_ref_frames(VP8_COMMON *oci)
+{
+    int i;
+    for (i = 1; i < NUM_YV12_BUFFERS; i++)
+        vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[i]);
+}
+
+int vp8dx_create_ref_frames(VP8D_COMP *pbi, int width, int height)
+{
+    int i;
+    VP8_COMMON *const oci = & pbi->common;
+
+    vp8dx_remove_ref_frames(oci);
+
+    /* our internal buffers are always multiples of 16 */
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+    for (i = 1; i < NUM_YV12_BUFFERS; i++)
+    {
+        oci->fb_idx_ref_cnt[i] = 0;
+        oci->yv12_fb[i].flags = 0;
+        if (vp8_yv12_alloc_frame_buffer(&oci->yv12_fb[i], width, height,
+                                        VP8BORDERINPIXELS) < 0)
+        {
+            vp8dx_remove_ref_frames(oci);
+            return 1;
+        }
+    }
+
+///    oci->new_fb_idx = 0;
+    oci->lst_fb_idx = 1;
+    oci->gld_fb_idx = 2;
+    oci->alt_fb_idx = 3;
+
+///    oci->fb_idx_ref_cnt[0] = 1;
+    oci->fb_idx_ref_cnt[1] = 1;
+    oci->fb_idx_ref_cnt[2] = 1;
+    oci->fb_idx_ref_cnt[3] = 1;
+
+    return 0;
+}
+
+void vp8dx_remove_decoder_frame(VP8_COMMON *oci)
+{
+    vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[0]);
+
+    vp8_yv12_de_alloc_frame_buffer(&oci->temp_scale_frame);
+#if CONFIG_POSTPROC
+    vp8_yv12_de_alloc_frame_buffer(&oci->post_proc_buffer);
+    if (oci->post_proc_buffer_int_used)
+        vp8_yv12_de_alloc_frame_buffer(&oci->post_proc_buffer_int);
+#endif
+
+    vpx_free(oci->above_context);
+    vpx_free(oci->mip);
+#if CONFIG_ERROR_CONCEALMENT
+    vpx_free(oci->prev_mip);
+    oci->prev_mip = NULL;
+#endif
+
+    oci->above_context = NULL;
+    oci->mip = NULL;
+}
+
+int vp8dx_create_decoder_frame(VP8D_COMP *pbi, int width, int height)
+{
+    VP8_COMMON *const oci = & pbi->common;
+#if CONFIG_MULTITHREAD
+    int prev_mb_rows = oci->mb_rows;
+    int i;
+#endif
+
+    vp8dx_remove_decoder_frame(oci);
+
+    /* our internal buffers are always multiples of 16 */
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+/*TODO: use MV_REFERENCE_FRAME enums */
+    oci->fb_idx_ref_cnt[0] = 0;
+    oci->yv12_fb[0].flags = 0;
+    if (vp8_yv12_alloc_frame_buffer(&oci->yv12_fb[0], width, height,
+                                    VP8BORDERINPIXELS) < 0)
+    {
+        vp8dx_remove_decoder_frame(oci);
+        return 1;
+    }
+
+    oci->new_fb_idx = 0;
+    oci->fb_idx_ref_cnt[0] = 1;
+
+    if (vp8_yv12_alloc_frame_buffer(&oci->temp_scale_frame,   width, 16, VP8BORDERINPIXELS) < 0)
+    {
+        vp8dx_remove_decoder_frame(oci);
+        return 1;
+    }
+
+#if CONFIG_POSTPROC
+    if (vp8_yv12_alloc_frame_buffer(&oci->post_proc_buffer, width, height, VP8BORDERINPIXELS) < 0)
+    {
+        vp8dx_remove_decoder_frame(oci);
+        return 1;
+    }
+
+    oci->post_proc_buffer_int_used = 0;
+    vpx_memset(&oci->postproc_state, 0, sizeof(oci->postproc_state));
+    vpx_memset((&oci->post_proc_buffer)->buffer_alloc,128,(&oci->post_proc_buffer)->frame_size);
+#endif
+
+    oci->mb_rows = height >> 4;
+    oci->mb_cols = width >> 4;
+    oci->MBs = oci->mb_rows * oci->mb_cols;
+    oci->mode_info_stride = oci->mb_cols + 1;
+    oci->mip = vpx_calloc((oci->mb_cols + 1) * (oci->mb_rows + 1), sizeof(MODE_INFO));
+
+    if (!oci->mip)
+    {
+        vp8dx_remove_decoder_frame(oci);
+        return 1;
+    }
+
+    oci->mi = oci->mip + oci->mode_info_stride + 1;
+
+    oci->above_context = vpx_calloc(sizeof(ENTROPY_CONTEXT_PLANES) * oci->mb_cols, 1);
+
+    if (!oci->above_context)
+    {
+        vp8dx_remove_decoder_frame(oci);
+        return 1;
+    }
+
+    /* allocate memory for last frame MODE_INFO array */
+#if CONFIG_ERROR_CONCEALMENT
+    if (pbi->ec_enabled)
+    {
+        /* old prev_mip was released by vp8dx_remove_decoder_frame() */
+        pc->prev_mip = vpx_calloc(
+                           (pc->mb_cols + 1) * (pc->mb_rows + 1),
+                           sizeof(MODE_INFO));
+
+        if (!pc->prev_mip)
+        {
+            vp8dx_remove_decoder_frame(pc);
+            vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate"
+                               "last frame MODE_INFO array");
+        }
+
+        pc->prev_mi = pc->prev_mip + pc->mode_info_stride + 1;
+
+        if (vp8_alloc_overlap_lists(pbi))
+            vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate overlap lists "
+                               "for error concealment");
+    }
+#endif
+
+#if CONFIG_MULTITHREAD
+      if (pbi->b_multithreaded_rd)
+          vp8mt_alloc_temp_buffers(pbi, width, prev_mb_rows);
+#endif
+
+    /* here we are only interested in the strides */
+    vpx_memcpy(&pbi->mb.pre, &oci->yv12_fb[0], sizeof(YV12_BUFFER_CONFIG));
+    vpx_memcpy(&pbi->mb.dst, &oci->yv12_fb[0], sizeof(YV12_BUFFER_CONFIG));
+    //TODO: remove duplication in pre and dst
+
+#if CONFIG_MULTITHREAD
+    for (i = 0; i < pbi->allocated_decoding_thread_count; i++)
+    {
+        pbi->mb_row_di[i].mbd.dst = oci->yv12_fb[0];
+        vp8_build_block_doffsets(&pbi->mb_row_di[i].mbd);
+    }
+#endif
+
+    vp8_build_block_doffsets(&pbi->mb);
+
+    return 0;
+}
 
 void vp8dx_remove_decompressor(VP8D_COMP *pbi)
 {
@@ -290,14 +476,6 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, unsigned long size, const unsi
     VP8_COMMON *cm = &pbi->common;
     int retcode = 0;
 
-    /*if(pbi->ready_for_new_data == 0)
-        return -1;*/
-
-    if (pbi == 0)
-    {
-        return -1;
-    }
-
     pbi->common.error.error_code = VPX_CODEC_OK;
 
     if (pbi->num_fragments == 0)
@@ -383,6 +561,13 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, unsigned long size, const unsi
 #endif
 
     cm->new_fb_idx = get_free_fb (cm);
+
+    /* setup reference frames for vp8_decode_frame */
+    pbi->dec_fb_ref[INTRA_FRAME]  = &cm->yv12_fb[cm->new_fb_idx];
+    pbi->dec_fb_ref[LAST_FRAME]   = &cm->yv12_fb[cm->lst_fb_idx];
+    pbi->dec_fb_ref[GOLDEN_FRAME] = &cm->yv12_fb[cm->gld_fb_idx];
+    pbi->dec_fb_ref[ALTREF_FRAME] = &cm->yv12_fb[cm->alt_fb_idx];
+
 
     if (setjmp(pbi->common.error.jmp))
     {

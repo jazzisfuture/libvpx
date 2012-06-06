@@ -70,6 +70,7 @@ struct vpx_codec_alg_priv
     vpx_image_t             img;
     int                     img_setup;
     int                     img_avail;
+    YV12_BUFFER_CONFIG      yv12_frame_buffers[8]; //TODO: make dynamic
 };
 
 static unsigned long vp8_priv_sz(const vpx_codec_dec_cfg_t *si, vpx_codec_flags_t flags)
@@ -263,8 +264,9 @@ static vpx_codec_err_t vp8_peek_si(const uint8_t         *data,
             if (!(si->h | si->w))
                 res = VPX_CODEC_UNSUP_BITSTREAM;
         }
-        else
+/*        else
             res = VPX_CODEC_UNSUP_BITSTREAM;
+*/
     }
 
     return res;
@@ -341,6 +343,9 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
                                   long                    deadline)
 {
     vpx_codec_err_t res = VPX_CODEC_OK;
+    unsigned int resolution_change = 0;
+    unsigned int w, h;
+    vpx_codec_stream_info_t new_si;
 
     ctx->img_avail = 0;
 
@@ -348,10 +353,29 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
      * validate that we have a buffer that does not wrap around the top
      * of the heap.
      */
-    if (!ctx->si.h)
-        res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
+//    if (!ctx->si.h)
+  //      res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
+#if 1
+    w = ctx->si.w;
+    h = ctx->si.h;
 
+    res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
 
+    if(!ctx->decoder_init && !ctx->si.is_kf)
+        res = VPX_CODEC_UNSUP_BITSTREAM;
+
+    if ((ctx->si.h != h) || (ctx->si.w != w))
+        resolution_change = 1;
+#else
+    res = ctx->base.iface->dec.peek_si(data, data_sz, &new_si);
+    if(ctx->si.is_kf)
+    {
+        resolution_change = ((ctx->si.h != new_si.h) || (ctx->si.w != new_si.w));
+        ctx->si = new_si;
+    }
+    else if(!ctx->decoder_init)
+        res = VPX_CODEC_UNSUP_BITSTREAM;
+#endif
     /* Perform deferred allocations, if required */
     if (!res && ctx->defer_alloc)
     {
@@ -450,6 +474,27 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
             flags.display_mv_flag       = ctx->dbg_display_mv_flag;
 #endif
         }
+
+        if(resolution_change)
+        {
+            /* the resolution changed, so we must re-create the internal
+             * decoder buffers
+             */
+            vp8dx_create_decoder_frame(ctx->pbi, ctx->si.w, ctx->si.h);
+            vp8dx_create_ref_frames(ctx->pbi, ctx->si.w, ctx->si.h);
+
+            /* width/height needs to be set so we do not reallocate in
+             * vp8_decode_frame() */
+            ctx->pbi->common.Width = ctx->si.w;
+            ctx->pbi->common.Height = ctx->si.h;
+
+            /* required to get past the first get_free_fb() call */
+            ctx->pbi->common.fb_idx_ref_cnt[0] = 0;
+        }
+
+
+        //TODO: setup dec_fb_ref here
+
 
         if (vp8dx_receive_compressed_data(ctx->pbi, data_sz, data, deadline))
         {
