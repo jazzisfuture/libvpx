@@ -183,6 +183,7 @@ typedef struct
 typedef struct
 {
     FRAME_TYPE frame_type;
+    int is_frame_dropped;
     LOWER_RES_MB_INFO *mb_info;
 } LOWER_RES_FRAME_INFO;
 #endif

@@ -684,6 +684,8 @@ typedef struct VP8_COMP
 #if CONFIG_MULTI_RES_ENCODING
     /* Number of MBs per row at lower-resolution level */
     int    mr_low_res_mb_cols;
+    /* Indicate if this frame is dropped in lower res */
+    int    mr_low_res_drop_frame;
 #endif
 
     struct rd_costs_struct
