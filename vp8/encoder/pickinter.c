@@ -542,7 +542,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     int_mv parent_ref_mv;
     MB_PREDICTION_MODE parent_mode = 0;
 
-    if (cpi->oxcf.mr_encoder_id)
+    if (cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail)
         get_lower_res_motion_info(cpi, xd, &dissim, &parent_ref_frame,
                                   &parent_mode, &parent_ref_mv, mb_row, mb_col);
 #endif
@@ -600,7 +600,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         x->e_mbd.mode_info_context->mbmi.ref_frame = this_ref_frame;
 
 #if CONFIG_MULTI_RES_ENCODING
-        if (cpi->oxcf.mr_encoder_id)
+        if (cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail)
         {
             /* If parent MB is intra, child MB is intra. */
             if (!parent_ref_frame && this_ref_frame)
@@ -630,7 +630,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
 
 #if CONFIG_MULTI_RES_ENCODING
-            if (cpi->oxcf.mr_encoder_id)
+            if (cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail)
             {
                 if (vp8_mode_order[mode_index] == NEARESTMV &&
                     mode_mv[NEARESTMV].as_int ==0)
@@ -783,7 +783,14 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             step_param = cpi->sf.first_step + speed_adjust;
 
 #if CONFIG_MULTI_RES_ENCODING
-            if (cpi->oxcf.mr_encoder_id)
+            /* If lower-res drops this frame, then higher-res encoder does
+               motion search without any previous knowledge. Also, since
+               last frame motion info is not stored, then we can not
+               use improved_mv_pred. */
+            if (cpi->oxcf.mr_encoder_id && !cpi->mr_low_res_mv_avail)
+                cpi->sf.improved_mv_pred = 0;
+
+            if (cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail)
             {
                 /* Use parent MV as predictor. Adjust search range
                  * accordingly.
@@ -827,7 +834,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
 
 #if CONFIG_MULTI_RES_ENCODING
-            if (cpi->oxcf.mr_encoder_id && dissim <= 2 &&
+            if (cpi->oxcf.mr_encoder_id && cpi->mr_low_res_mv_avail &&
+                dissim <= 2 &&
                 MAX(abs(best_ref_mv.as_mv.row - parent_ref_mv.as_mv.row),
                     abs(best_ref_mv.as_mv.col - parent_ref_mv.as_mv.col)) <= 4)
             {
@@ -864,7 +872,10 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                  * change the behavior in lowest-resolution encoder.
                  * Will improve it later.
                  */
-                if (!cpi->oxcf.mr_encoder_id)
+                 /* Set step_param to 0 to ensure large-range motion search
+                    when encoder drops this frame at lower-resolution.
+                  */
+                if (!cpi->oxcf.mr_encoder_id || !cpi->mr_low_res_mv_avail)
                     step_param = 0;
 #endif
                     bestsme = vp8_hex_search(x, b, d, &mvp_full, &d->bmi.mv,
