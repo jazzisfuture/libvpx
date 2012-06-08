@@ -3317,6 +3317,8 @@ static void encode_frame_to_data_rate
     {
         cm->frame_type =
             ((LOWER_RES_FRAME_INFO*)cpi->oxcf.mr_low_res_mode_info)->frame_type;
+        cpi->mr_low_res_drop_frame =
+        ((LOWER_RES_FRAME_INFO*)cpi->oxcf.mr_low_res_mode_info)->is_frame_dropped;
     }
 #endif
 
@@ -3437,6 +3439,10 @@ static void encode_frame_to_data_rate
             if (cpi->bits_off_target > cpi->oxcf.maximum_buffer_size)
                 cpi->bits_off_target = cpi->oxcf.maximum_buffer_size;
 
+#if CONFIG_MULTI_RES_ENCODING
+            vp8_store_drop_frame_info(cpi);
+#endif
+
             cm->current_video_frame++;
             cpi->frames_since_key++;
 
@@ -3470,6 +3476,10 @@ static void encode_frame_to_data_rate
     // Decide how big to make the frame
     if (!vp8_pick_frame_size(cpi))
     {
+        /*TODO: 2 drop_frame and return code could be put together. */
+#if CONFIG_MULTI_RES_ENCODING
+        vp8_store_drop_frame_info(cpi);
+#endif
         cm->current_video_frame++;
         cpi->frames_since_key++;
         return;

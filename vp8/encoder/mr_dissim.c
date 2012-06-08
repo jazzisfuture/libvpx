@@ -69,6 +69,7 @@ void vp8_cal_dissimilarity(VP8_COMP *cpi)
                       = (LOWER_RES_FRAME_INFO*)cpi->oxcf.mr_low_res_mode_info;
 
         store_info->frame_type = cm->frame_type;
+        store_info->is_frame_dropped = 0;
 
         if(cm->frame_type != KEY_FRAME)
         {
@@ -201,5 +202,28 @@ void vp8_cal_dissimilarity(VP8_COMP *cpi)
                 }
             }
         }
+    }
+}
+
+/* This function is called only when this frame is dropped at current
+   resolution level. */
+void vp8_store_drop_frame_info(VP8_COMP *cpi)
+{
+    /* If the frame is dropped in lower-resolution encoding, this information
+       is passed to higher resolution level so that the encoder knows there
+       is no mode & motion info available.
+     */
+    if (cpi->oxcf.mr_total_resolutions >1
+        && cpi->oxcf.mr_encoder_id < (cpi->oxcf.mr_total_resolutions - 1))
+    {
+        /* Store info for show/no-show frames for supporting alt_ref.
+         * If parent frame is alt_ref, child has one too.
+         */
+        LOWER_RES_FRAME_INFO* store_info
+                      = (LOWER_RES_FRAME_INFO*)cpi->oxcf.mr_low_res_mode_info;
+
+        /* Set frame_type to be INTER_FRAME since we won't drop key frame. */
+        store_info->frame_type = INTER_FRAME;
+        store_info->is_frame_dropped = 1;
     }
 }
