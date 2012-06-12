@@ -856,7 +856,7 @@ process_common_toolchain() {
             enable pic
             soft_enable realtime_only
             if [ ${tgt_isa} == "armv7" ]; then
-                enable runtime_cpu_detect
+                soft_enable runtime_cpu_detect
             fi
           ;;
 
