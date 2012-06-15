@@ -7,4 +7,5 @@ LIBVPX_TEST_SRCS-yes += idctllm_test.cc
 LIBVPX_TEST_SRCS-yes += keyframe_test.cc
 LIBVPX_TEST_SRCS-yes += resize_test.cc
 LIBVPX_TEST_SRCS-yes += test_libvpx.cc
+LIBVPX_TEST_SRCS-yes += set_roi.cc
 LIBVPX_TEST_SRCS-yes += video_source.h
