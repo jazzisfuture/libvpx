@@ -21,6 +21,7 @@ all: .DEFAULT
 clean:: .DEFAULT
 install:: .DEFAULT
 test:: .DEFAULT
+testdata:: .DEFAULT
 
 
 # Note: md5sum is not installed on OS X, but openssl is. Openssl may not be
