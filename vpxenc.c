@@ -599,7 +599,7 @@ Ebml_StartSubElement(EbmlGlobal *glob, EbmlLoc *ebmlLoc,
 {
     /* todo this is always taking 8 bytes, this may need later optimization */
     /* this is a key that says length unknown */
-    uint64_t unknownLen = 0x01FFFFFFFFFFFFFF;
+    uint64_t unknownLen = ~(((uint64_t)(0xFE))<<56);
 
     Ebml_WriteID(glob, class_id);
     *ebmlLoc = ftello(glob->stream);
@@ -617,7 +617,7 @@ Ebml_EndSubElement(EbmlGlobal *glob, EbmlLoc *ebmlLoc)
 
     /* Calculate the size of this element */
     size = pos - *ebmlLoc - 8;
-    size |= 0x0100000000000000;
+    size |= ((uint64_t)0x01)<<56;
 
     /* Seek back to the beginning of the element and write the new size */
     fseeko(glob->stream, *ebmlLoc, SEEK_SET);
