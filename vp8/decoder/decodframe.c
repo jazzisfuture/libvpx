@@ -799,8 +799,6 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 
             if (Width != pc->Width  ||  Height != pc->Height)
             {
-                int prev_mb_rows = pc->mb_rows;
-
                 if (pc->Width <= 0)
                 {
                     pc->Width = Width;
@@ -851,7 +849,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 #if CONFIG_MULTITHREAD
 
                 if (pbi->b_multithreaded_rd)
-                    vp8mt_alloc_temp_buffers(pbi, pc->Width, prev_mb_rows);
+                    vp8mt_alloc_temp_buffers(pbi, pc->Width, pc->mb_rows);
 
 #endif
                 frame_size_change = 1;
