@@ -135,6 +135,13 @@ specialize vp8_intra4x4_predict media
 vp8_intra4x4_predict_media=vp8_intra4x4_predict_armv6
 
 #
+# Prefetch
+#
+#prefetch_ref_mb(MACROBLOCKD *xd)
+prototype void vp8_prefetch "unsigned char *src, int src_stride, int height"
+specialize vp8_prefetch sse
+
+#
 # Postproc
 #
 if [ "$CONFIG_POSTPROC" = "yes" ]; then
