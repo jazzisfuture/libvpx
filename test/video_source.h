@@ -20,7 +20,8 @@ class VideoSource {
   virtual ~VideoSource() {}
 
   // Prepare the stream for reading, rewind/open as necessary.
-  virtual void Begin() = 0;
+  // Returns 0 for success and non 0 for failure..
+  virtual int Begin() = 0;
 
   // Advance the cursor to the next frame
   virtual void Next() = 0;
@@ -50,9 +51,10 @@ class DummyVideoSource : public VideoSource {
 
   virtual ~DummyVideoSource() { vpx_img_free(img_); }
 
-  virtual void Begin() {
+  virtual int Begin() {
     frame_ = 0;
     FillFrame();
+    return 0;
   }
 
   virtual void Next() {
