@@ -42,7 +42,7 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
     res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_, 0);
-    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+    ASSERT_EQ(VPX_CODEC_OK, res)<< EncoderError();
   }
 
   // Handle frame resizing
@@ -106,7 +106,10 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
     bool again;
 
-    for (video->Begin(), again = true; again; video->Next()) {
+    if(video->Begin())
+      return;
+
+    for (again = true; again; video->Next()) {
       again = video->img() != NULL;
 
       PreEncodeFrameHook(video);
