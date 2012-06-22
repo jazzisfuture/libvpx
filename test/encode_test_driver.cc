@@ -104,9 +104,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
     BeginPassHook(pass);
     Encoder encoder(cfg_, deadline_, &stats_);
 
-    bool again;
 
-    for (video->Begin(), again = true; again; video->Next()) {
+    ASSERT_EQ(0, video->Begin())
+        << "VideoSource::Begin failed (maybe missing file?).";
+
+    for (bool again = true; again; video->Next()) {
       again = video->img() != NULL;
 
       PreEncodeFrameHook(video);
