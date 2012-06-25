@@ -605,6 +605,8 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
                                    vpx_enc_frame_flags_t  flags,
                                    unsigned long          deadline)
 {
+    int a ;
+
     vpx_codec_err_t res = VPX_CODEC_OK;
 
     if (img)

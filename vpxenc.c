@@ -1463,6 +1463,39 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2)
     int match = 1;
     int i;
 
+//    // locate the position of mismatch block
+//    int j, k ;
+//    int pos_x, pos_y ;
+//    unsigned char *ptr1, *ptr2 ;
+//    unsigned char bufa[4], bufb[4] ;
+//    for (j = 0; j < img1->d_h; j++)
+//    {
+//      if( memcmp(img1->planes[VPX_PLANE_Y]+j*img1->stride[VPX_PLANE_Y],
+//                 img2->planes[VPX_PLANE_Y]+j*img2->stride[VPX_PLANE_Y],
+//                 img1->d_w) )
+//      {
+//        for (i = 0; i < img1->d_w; i+=4)
+//        {
+//          if( memcmp(img1->planes[VPX_PLANE_Y]+j*img1->stride[VPX_PLANE_Y]+i,
+//                     img2->planes[VPX_PLANE_Y]+j*img2->stride[VPX_PLANE_Y]+i,
+//                     4) )
+//          {
+//            ptr1 = img1->planes[VPX_PLANE_Y] + j*img1->stride[VPX_PLANE_Y] + i ;
+//            ptr2 = img2->planes[VPX_PLANE_Y] + j*img2->stride[VPX_PLANE_Y] + i ;
+//            for (k = 0; k < 4; k++)
+//            {
+//              bufa[k] = ptr1[k] ;
+//              bufb[k] = ptr2[k] ;
+//            }
+//            pos_x = i ;
+//            pos_y = j ;
+//          }
+//        }
+//      }
+//
+//    }
+//    // end of testing module
+
     match &= (img1->fmt == img2->fmt);
     match &= (img1->w == img2->w);
     match &= (img1->h == img2->h);
