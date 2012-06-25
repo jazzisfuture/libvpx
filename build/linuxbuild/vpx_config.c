@@ -1,0 +1,2 @@
+static const char* const cfg = "--enable-internal-stats --enable-experimental --enable-uvintra --enable-newentropy --enable-high-precision-mv --enable-sixteenth-subpel-uv --enable-enhanced-interp --enable-expanded-coef-context --enable-newintramodes --enable-adaptive-entropy --enable-newupdate --enable-pred-filter --enable-hybridtransform --enable-debug --disable-optimizations";
+const char *vpx_codec_build_config(void) {return cfg;}
