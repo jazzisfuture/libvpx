@@ -50,6 +50,10 @@
 extern void vp8cx_mb_init_quantizer(VP8_COMP *cpi, MACROBLOCK *x);
 extern void vp8_update_zbin_extra(VP8_COMP *cpi, MACROBLOCK *x);
 
+#if CONFIG_HYBRIDTRANSFORM
+extern void vp8_ht_quantize_b(BLOCK *b, BLOCKD *d) ;
+#endif
+
 #if CONFIG_HIGH_PRECISION_MV
 #define XMVCOST (x->e_mbd.allow_high_precision_mv?x->mvcost_hp:x->mvcost)
 #else
@@ -592,9 +596,41 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, int type, ENTROPY_CONTEXT *a, 
     int cost = 0;
     short *qcoeff_ptr = b->qcoeff;
 
-    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+#if CONFIG_HYBRIDTRANSFORM
+    int QIndex = mb->q_index ;
+    int active_ht = ( QIndex < ACTIVE_HT ) &&
+        ( (mb->e_mbd.mode_info_context->mbmi.mode_rdopt == B_PRED   ) ||
+          (mb->e_mbd.mode_info_context->mbmi.mode_rdopt == I8X8_PRED) ) ;
 
-# define QC( I)  ( qcoeff_ptr [vp8_default_zig_zag1d[I]] )
+    int const *pt_scan ;
+
+    if( (type == PLANE_TYPE_Y_WITH_DC) && active_ht )
+    {
+      switch (b->bmi.as_mode.tx_type) {
+        case ADST_DCT :
+          pt_scan = vp8_row_scan ;
+          break ;
+
+        case DCT_ADST :
+          pt_scan = vp8_col_scan ;
+          break ;
+
+        default :
+          pt_scan = vp8_default_zig_zag1d ;
+          break ;
+      }
+    }
+    else
+    {
+      pt_scan = vp8_default_zig_zag1d ;
+    }
+
+    #define  QC(I)  ( qcoeff_ptr [pt_scan[I]] )
+#else
+    # define QC(I)  ( qcoeff_ptr [vp8_default_zig_zag1d[I]] )
+#endif
+
+    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
     for (; c < eob; c++)
     {
@@ -887,6 +923,12 @@ static int rd_pick_intra4x4block(
     DECLARE_ALIGNED_ARRAY(16, unsigned char,  best_predictor, 16*4);
     DECLARE_ALIGNED_ARRAY(16, short, best_dqcoeff, 16);
 
+#if CONFIG_HYBRIDTRANSFORM
+    int QIndex = x->q_index ;
+    int active_ht = ( QIndex < ACTIVE_HT ) ;
+    TX_TYPE best_tx_type ;
+#endif
+
     for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++)
     {
 #if CONFIG_COMP_INTRA_PRED
@@ -919,8 +961,46 @@ static int rd_pick_intra4x4block(
             }
 #endif
         ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), subb)(be, b, 16);
+
+#if CONFIG_HYBRIDTRANSFORM
+        if(active_ht)
+        {
+          b->bmi.as_mode.test = mode ;
+          switch(mode) {
+            // case B_DC_PRED :
+            case B_TM_PRED :
+            case B_RD_PRED :
+              b->bmi.as_mode.tx_type = ADST_ADST ;
+              break ;
+
+            case B_VE_PRED :
+            case B_VR_PRED :
+              b->bmi.as_mode.tx_type = ADST_DCT ;
+              break ;
+
+            case B_HE_PRED :
+            case B_HD_PRED :
+            case B_HU_PRED :
+              b->bmi.as_mode.tx_type = DCT_ADST ;
+              break ;
+
+            default :
+              b->bmi.as_mode.tx_type = DCT_DCT ;
+              break ;
+          }
+
+          vp8_fht4x4_c( be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type ) ;
+          vp8_ht_quantize_b( be, b ) ;
+        }
+        else
+        {
+          x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32) ;
+          x->quantize_b(be, b) ;
+        }
+#else
         x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
         x->quantize_b(be, b);
+#endif
 
         tempa = ta;
         templ = tl;
@@ -939,6 +1019,10 @@ static int rd_pick_intra4x4block(
             *bestdistortion = distortion;
             best_rd = this_rd;
             *best_mode = mode;
+#if CONFIG_HYBRIDTRANSFORM
+            best_tx_type = b->bmi.as_mode.tx_type ;
+#endif
+
 #if CONFIG_COMP_INTRA_PRED
             *best_second_mode = mode2;
 #endif
@@ -956,7 +1040,23 @@ static int rd_pick_intra4x4block(
     b->bmi.as_mode.second = (B_PREDICTION_MODE)(*best_second_mode);
 #endif
 
+#if CONFIG_HYBRIDTRANSFORM
+    b->bmi.as_mode.tx_type = best_tx_type ;
+
+    // inverse transform
+    if(active_ht)
+    {
+      vp8_iht4x4llm_c(best_dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type );
+    }
+    else
+    {
+      IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff,
+                                                                  b->diff, 32);
+    }
+#else
     IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff, b->diff, 32);
+#endif
+
     RECON_INVOKE(IF_RTCD(&cpi->rtcd.common->recon), recon)(best_predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
 
     return best_rd;
@@ -1123,6 +1223,8 @@ static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
 #endif
     return best_rd;
 }
+
+
 static int rd_pick_intra8x8block(
     VP8_COMP *cpi,
     MACROBLOCK *x,
@@ -1248,7 +1350,9 @@ static int rd_pick_intra8x8block(
 #if CONFIG_COMP_INTRA_PRED
     b->bmi.as_mode.second = (*best_second_mode);
 #endif
+
     vp8_encode_intra8x8 (IF_RTCD(&cpi->rtcd), x, ib);
+
     *(a + vp8_block2above[ib])   = besta0;
     *(a + vp8_block2above[ib+1]) = besta1;
     *(l + vp8_block2above[ib])   = bestl0;
@@ -2977,6 +3081,13 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
         xd->mode_info_context->mbmi.pred_filter_enabled = 0;
 #endif
 
+        // current coding mode under rate-distortion optimization test loop
+#if CONFIG_HYBRIDTRANSFORM
+        xd->mode_info_context->mbmi.mode_rdopt = this_mode ;
+#endif
+
+
+
 #if CONFIG_COMP_INTRA_PRED
         xd->mode_info_context->mbmi.second_mode = (MB_PREDICTION_MODE) (DC_PRED - 1);
         xd->mode_info_context->mbmi.second_uv_mode = (MB_PREDICTION_MODE) (DC_PRED - 1);
@@ -3993,10 +4104,19 @@ int vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x)
     rd_pick_intra_mbuv_mode(cpi, x, &rateuv, &rateuv_tokenonly, &distuv);
     rate = rateuv;
 
+    // current macroblock under rate-distortion optimization test loop
+#if CONFIG_HYBRIDTRANSFORM
+    xd->mode_info_context->mbmi.mode_rdopt = DC_PRED ;
+#endif
+
     error16x16 = rd_pick_intra16x16mby_mode(cpi, x,
                                             &rate16x16, &rate16x16_tokenonly,
                                             &dist16x16);
     mode16x16 = xd->mode_info_context->mbmi.mode;
+
+#if CONFIG_HYBRIDTRANSFORM
+    xd->mode_info_context->mbmi.mode_rdopt = I8X8_PRED ;
+#endif
 
     error8x8 = rd_pick_intra8x8mby_modes(cpi, x,
                 &rate8x8, &rate8x8_tokenonly,
@@ -4012,6 +4132,10 @@ int vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x)
     mode8x8[1][3]= xd->mode_info_context->bmi[10].as_mode.second;
 #endif
 
+#if CONFIG_HYBRIDTRANSFORM
+    xd->mode_info_context->mbmi.mode_rdopt = B_PRED ;
+#endif
+
     error4x4 = rd_pick_intra4x4mby_modes(cpi, x,
                                          &rate4x4, &rate4x4_tokenonly,
                                          &dist4x4, error16x16,
@@ -4019,6 +4143,7 @@ int vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x)
                                          0,
 #endif
                                          0);
+
 #if CONFIG_COMP_INTRA_PRED
     error4x4d = rd_pick_intra4x4mby_modes(cpi, x,
                                          &rate4x4d, &rate4x4_tokenonly,

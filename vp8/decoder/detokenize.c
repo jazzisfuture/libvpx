@@ -294,11 +294,66 @@ int get_token(int v)
     else return DCT_VAL_CATEGORY6;
 }
 
+#if CONFIG_HYBRIDTRANSFORM
+void static count_tokens_adaptive_scan(MACROBLOCKD *xd, INT16 *qcoeff_ptr, int block, int type,
+                         ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
+                         int eob, int seg_eob, FRAME_CONTEXT *fc)
+{
+    int c, pt, token, band;
+    const int *scan ;
+
+    int QIndex = xd->q_index ;
+    int active_ht = ( QIndex < ACTIVE_HT ) && ( xd->mode_info_context->mbmi.mode == B_PRED ) ;
+
+    if(active_ht)
+    {
+      switch (xd->block[block].bmi.as_mode.first) {
+        case B_VE_PRED :
+        case B_VR_PRED :
+          scan = vp8_row_scan ;
+          break ;
+
+        case B_HE_PRED :
+        case B_HD_PRED :
+        case B_HU_PRED :
+          scan = vp8_col_scan ;
+          break ;
+
+        default :
+          scan = vp8_default_zig_zag1d ;
+          break ;
+      }
+    }
+    else
+    {
+      scan = vp8_default_zig_zag1d ;
+    }
+
+
+    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+    for (c = !type; c < eob; ++c)
+    {
+        int rc = scan[c];
+        int v = qcoeff_ptr[rc];
+        band = vp8_coef_bands[c];
+        token = get_token(v);
+        fc->coef_counts[type][band][pt][token]++;
+        pt = vp8_prev_token_class[token];
+    }
+    if (eob < seg_eob)
+    {
+        band = vp8_coef_bands[c];
+        fc->coef_counts[type][band][pt][DCT_EOB_TOKEN]++;
+    }
+}
+#endif
+
 void static count_tokens(INT16 *qcoeff_ptr, int block, int type,
                          ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                          int eob, int seg_eob, FRAME_CONTEXT *fc)
 {
     int c, pt, token, band;
+
     VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
     for (c = !type; c < eob; ++c)
     {
@@ -709,6 +764,11 @@ int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *xd)
     int seg_eob = 16;
     int segment_id = xd->mode_info_context->mbmi.segment_id;
 
+#if CONFIG_HYBRIDTRANSFORM
+    int QIndex = xd->q_index ;
+    int active_ht = ( QIndex < ACTIVE_HT ) && ( xd->mode_info_context->mbmi.mode == B_PRED ) ;
+#endif
+
     if ( segfeature_active( xd, segment_id, SEG_LVL_EOB ) )
     {
         seg_eob = get_segdata( xd, segment_id, SEG_LVL_EOB );
@@ -719,6 +779,8 @@ int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *xd)
     stop = 16;
 
     scan = vp8_default_zig_zag1d;
+
+
     qcoeff_ptr = &xd->qcoeff[0];
     if (xd->mode_info_context->mbmi.mode != B_PRED &&
         xd->mode_info_context->mbmi.mode != I8X8_PRED &&
@@ -741,6 +803,33 @@ int vp8_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *xd)
     coef_probs = fc->coef_probs [type] [ 0 ] [0];
 
 BLOCK_LOOP:
+
+#if CONFIG_HYBRIDTRANSFORM
+    if(active_ht)
+    {
+      switch (xd->block[i].bmi.as_mode.first) {
+        case B_VE_PRED :
+        case B_VR_PRED :
+          scan = vp8_row_scan ;
+          break ;
+
+        case B_HE_PRED :
+        case B_HD_PRED :
+        case B_HU_PRED :
+          scan = vp8_col_scan ;
+          break ;
+
+        default :
+          scan = vp8_default_zig_zag1d ;
+          break ;
+      }
+    }
+    else
+    {
+      scan = vp8_default_zig_zag1d ;
+    }
+#endif
+
     a = A + vp8_block2above[i];
     l = L + vp8_block2left[i];
 
@@ -848,7 +937,13 @@ ONE_CONTEXT_NODE_0_:
     ++c;
 BLOCK_FINISHED:
 #if CONFIG_ADAPTIVE_ENTROPY
+
+#if CONFIG_HYBRIDTRANSFORM
+    count_tokens_adaptive_scan(xd, qcoeff_ptr, i, type, a, l, c, seg_eob, &dx->common.fc);
+#else
     count_tokens(qcoeff_ptr, i, type, a, l, c, seg_eob, &dx->common.fc);
+#endif
+
 #endif
     *a = *l = ((eobs[i] = c) != !type);   /* any nonzero data? */
 
