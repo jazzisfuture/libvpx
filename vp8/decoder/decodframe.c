@@ -134,6 +134,10 @@ void mb_init_dequantizer(VP8D_COMP *pbi, MACROBLOCKD *xd)
     else
         QIndex = pc->base_qindex;
 
+#if CONFIG_HYBRIDTRANSFORM
+    xd->q_index = QIndex ;
+#endif
+
     /* Set up the block level dequant pointers */
     for (i = 0; i < 16; i++)
     {
@@ -229,6 +233,11 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     MB_PREDICTION_MODE mode;
     int i;
     int tx_type;
+
+#if CONFIG_HYBRIDTRANSFORM
+    int QIndex = xd->q_index ;
+    int active_ht = ( QIndex < ACTIVE_HT ) ;
+#endif
 
     if(pbi->common.frame_type == KEY_FRAME)
     {
@@ -411,6 +420,17 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
             }
 #endif
 
+
+#if CONFIG_HYBRIDTRANSFORM
+            if(active_ht)
+            {
+              vp8_ht_dequant_idct_add_c( (B_PREDICTION_MODE)b_mode, b->qcoeff, b->dequant, b->predictor, *(b->base_dst) + b->dst, 16, b->dst_stride) ;
+            }
+            else
+            {
+              vp8_dequant_idct_add_c(b->qcoeff, b->dequant, b->predictor, *(b->base_dst) + b->dst, 16, b->dst_stride);
+            }
+#else
             if (xd->eobs[i] > 1)
             {
                 DEQUANT_INVOKE(&pbi->dequant, idct_add)
@@ -424,6 +444,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
                     *(b->base_dst) + b->dst, 16, b->dst_stride);
                 ((int *)b->qcoeff)[0] = 0;
             }
+#endif
         }
     }
     else if (mode == SPLITMV)

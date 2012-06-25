@@ -76,6 +76,16 @@ extern prototype_dequant_block(vp8_dequant_block);
 #endif
 extern prototype_dequant_idct_add(vp8_dequant_idct_add);
 
+#if CONFIG_HYBRIDTRANSFORM
+// declare dequantization and inverse transform module of hybrid transform decoder
+#ifndef vp8_ht_dequant_idct_add
+#define vp8_ht_dequant_idct_add vp8_ht_dequant_idct_add_c
+#endif
+extern void vp8_ht_dequant_idct_add(B_PREDICTION_MODE b_mode, short *input, short *dq, unsigned char *pred,
+                               unsigned char *dest, int pitch, int stride) ;
+
+#endif
+
 #ifndef vp8_dequant_dc_idct_add
 #define vp8_dequant_dc_idct_add vp8_dequant_dc_idct_add_c
 #endif
