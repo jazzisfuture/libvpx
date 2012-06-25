@@ -1371,6 +1371,10 @@ static void show_rate_histogram(struct rate_hist          *hist,
 static int compare_img(vpx_image_t *img1, vpx_image_t *img2) {
   int match = 1;
   int i;
+  // ==========================
+  int j, pos;
+  int enc_rec, dec_rec;
+  // ==========================
 
   match &= (img1->fmt == img2->fmt);
   match &= (img1->w == img2->w);
@@ -1380,6 +1384,22 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2) {
     match &= (memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
                      img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
                      img1->d_w) == 0);
+
+  // ===============================================
+  // observation purpose, to be removed
+  if (match == 0) {
+    for(j = 0; j < img1->d_h; j++)
+      for(i = 0; i < img1->d_h; i ++) {
+        if( memcmp(img1->planes[VPX_PLANE_Y] + j * img1->stride[VPX_PLANE_Y] + i,
+               img2->planes[VPX_PLANE_Y] + j * img2->stride[VPX_PLANE_Y] + i,
+               1) != 0 ) {
+          pos = j;
+          enc_rec = *(img1->planes[VPX_PLANE_Y] + j * img1->stride[VPX_PLANE_Y] + i);
+          dec_rec = *(img2->planes[VPX_PLANE_Y] + j * img2->stride[VPX_PLANE_Y] + i);
+        }
+    }
+  }
+  // ===============================================
 
   for (i = 0; i < img1->d_h / 2; i++)
     match &= (memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
