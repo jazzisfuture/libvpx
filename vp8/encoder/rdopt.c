@@ -296,10 +296,10 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, int QIndex)
     if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME))
     {
         if (cpi->twopass.next_iiratio > 31)
-            cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 4;
+            cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 2;
         else
             cpi->RDMULT +=
-                (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+                (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 2;
     }
 
     if (cpi->RDMULT < 7)
