@@ -135,6 +135,15 @@ specialize vp8_intra4x4_predict media
 vp8_intra4x4_predict_media=vp8_intra4x4_predict_armv6
 
 #
+# Prefetch (decoder only)
+#
+
+if [ "$CONFIG_VP8_DECODER" = "yes" ]; then
+    prototype void vp8_prefetch "unsigned char *src, int src_stride, int height"
+    specialize vp8_prefetch sse
+fi
+
+#
 # Postproc
 #
 if [ "$CONFIG_POSTPROC" = "yes" ]; then
