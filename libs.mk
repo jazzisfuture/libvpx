@@ -360,6 +360,7 @@ LIBVPX_TEST_BINS=./test_libvpx
 LIBVPX_TEST_DATA=$(addprefix $(LIBVPX_TEST_DATA_PATH)/,\
                      $(call enabled,LIBVPX_TEST_DATA))
 libvpx_test_data_url=http://downloads.webmproject.org/test_data/libvpx/$(1)
+BINS-yes += $(LIBVPX_TEST_BINS)
 
 $(LIBVPX_TEST_DATA):
 	@echo "    [DOWNLOAD] $@"
@@ -369,8 +370,12 @@ $(LIBVPX_TEST_DATA):
 testdata:: $(LIBVPX_TEST_DATA)
 	$(qexec)if [ -x "$$(which sha1sum)" ]; then\
             echo "Checking test data:";\
-            (cd $(LIBVPX_TEST_DATA_PATH); sha1sum -c)\
-                < $(SRC_PATH_BARE)/test/test-data.sha1; \
+            if [ -n "$(LIBVPX_TEST_DATA)" ]; then\
+                for f in $(call enabled,LIBVPX_TEST_DATA); do\
+                    grep $$f $(SRC_PATH_BARE)/test/test-data.sha1 |\
+                        (cd $(LIBVPX_TEST_DATA_PATH); sha1sum -c);\
+                done; \
+            fi; \
         else\
             echo "Skipping test data integrity check, sha1sum not found.";\
         fi
