@@ -90,7 +90,7 @@ static const int xC7S1 =  3196;
 #define IN_SHIFT (FINAL_SHIFT+1)
 
 
-void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
+void vp8_short_fdct8x8_c(short *block, short *coefs, int pitch) {
   int loop;
   int short_pitch = pitch >> 1;
   int is07, is12, is34, is56;
@@ -103,18 +103,17 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
 
   int  InterData[64];
   int  *ip = InterData;
-  short *op = OutputData;
 
   for (loop = 0; loop < 8; loop++) {
     // Pre calculate some common sums and differences.
-    is07 = (InputData[0] + InputData[7]) << IN_SHIFT;
-    is12 = (InputData[1] + InputData[2]) << IN_SHIFT;
-    is34 = (InputData[3] + InputData[4]) << IN_SHIFT;
-    is56 = (InputData[5] + InputData[6]) << IN_SHIFT;
-    id07 = (InputData[0] - InputData[7]) << IN_SHIFT;
-    id12 = (InputData[1] - InputData[2]) << IN_SHIFT;
-    id34 = (InputData[3] - InputData[4]) << IN_SHIFT;
-    id56 = (InputData[5] - InputData[6]) << IN_SHIFT;
+    is07 = (block[0] + block[7]) << IN_SHIFT;
+    is12 = (block[1] + block[2]) << IN_SHIFT;
+    is34 = (block[3] + block[4]) << IN_SHIFT;
+    is56 = (block[5] + block[6]) << IN_SHIFT;
+    id07 = (block[0] - block[7]) << IN_SHIFT;
+    id12 = (block[1] - block[2]) << IN_SHIFT;
+    id34 = (block[3] - block[4]) << IN_SHIFT;
+    id56 = (block[5] - block[6]) << IN_SHIFT;
 
     is0734 = is07 + is34;
     is1256 = is12 + is56;
@@ -202,7 +201,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     ip[5] = temp1 + temp2;
 
     // Increment data pointer for next row
-    InputData += short_pitch;
+    block += short_pitch ;
     ip += 8;
   }
 
@@ -239,8 +238,8 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp1 >>= SHIFT_BITS;
 
     temp2 >>= SHIFT_BITS;
-    op[0 * 8] = (temp1 + FINAL_ROUNDING) >> FINAL_SHIFT;
-    op[4 * 8] = (temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[0 * 8] = (temp1 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[4 * 8] = (temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     // Define inputs to rotation for outputs 2 and 6
     irot_input_x = id12 - id56;
@@ -253,7 +252,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC2S6 * irot_input_y;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[2 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[2 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     temp1 = xC6S2 * irot_input_y;
     DOROUND(temp1);
@@ -261,7 +260,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC2S6 * irot_input_x;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[6 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[6 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     // Define inputs to rotation for outputs 1 and 7
     irot_input_x = icommon_product1 + id07;
@@ -274,7 +273,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC7S1 * irot_input_y;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[1 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[1 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     temp1 = xC7S1 * irot_input_x;
     DOROUND(temp1);
@@ -282,7 +281,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC1S7 * irot_input_y;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[7 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[7 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     // Define inputs to rotation for outputs 3 and 5
     irot_input_x = id07 - icommon_product1;
@@ -295,7 +294,7 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC5S3 * irot_input_y;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[3 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[3 * 8] = (temp1 - temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
 
     temp1 = xC5S3 * irot_input_x;
@@ -304,11 +303,11 @@ void vp8_short_fdct8x8_c(short *InputData, short *OutputData, int pitch) {
     temp2 = xC3S5 * irot_input_y;
     DOROUND(temp2);
     temp2 >>= SHIFT_BITS;
-    op[5 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
+    coefs[5 * 8] = (temp1 + temp2 + FINAL_ROUNDING) >> FINAL_SHIFT;
 
     // Increment data pointer for next column.
     ip++;
-    op++;
+    coefs++;
   }
 }
 
