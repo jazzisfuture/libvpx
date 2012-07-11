@@ -124,6 +124,8 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(vpx_codec_ctx_t      *ctx,
                 if(mr_cfg.mr_encoder_id)
                     cfg->kf_mode = VPX_KF_DISABLED;
 
+
+
                 ctx->iface = iface;
                 ctx->name = iface->name;
                 ctx->priv = NULL;
