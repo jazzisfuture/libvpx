@@ -148,7 +148,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK_HI(cfg, rc_max_quantizer,   63);
     RANGE_CHECK_HI(cfg, rc_min_quantizer,   cfg->rc_max_quantizer);
     RANGE_CHECK_HI(cfg, g_threads,          64);
-#if !(CONFIG_REALTIME_ONLY)
+#if !(CONFIG_REALTIME_ONLY) && !(CONFIG_MULTI_RES_ENCODING)
     RANGE_CHECK_HI(cfg, g_lag_in_frames,    25);
 #else
     RANGE_CHECK_HI(cfg, g_lag_in_frames,    0);
@@ -162,7 +162,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK_HI(cfg, rc_dropframe_thresh,   100);
     RANGE_CHECK_HI(cfg, rc_resize_up_thresh,   100);
     RANGE_CHECK_HI(cfg, rc_resize_down_thresh, 100);
-#if !(CONFIG_REALTIME_ONLY)
+#if !(CONFIG_REALTIME_ONLY) && !(CONFIG_MULTI_RES_ENCODING)
     RANGE_CHECK(cfg,        g_pass,         VPX_RC_ONE_PASS, VPX_RC_LAST_PASS);
 #else
     RANGE_CHECK(cfg,        g_pass,         VPX_RC_ONE_PASS, VPX_RC_ONE_PASS);
