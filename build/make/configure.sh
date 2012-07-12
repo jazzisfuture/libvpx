@@ -947,6 +947,10 @@ process_common_toolchain() {
         setup_gnu_toolchain
         tune_cflags="-mtune="
         if enabled dspr2; then
+            if check_cflags -EB; then
+                echo "dspr2 optimizations are available only for little endian platforms"
+                exit 1
+            fi
             check_add_cflags -mips32r2 -mdspr2
             disable fast_unaligned
         fi
