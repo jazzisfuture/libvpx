@@ -946,7 +946,14 @@ process_common_toolchain() {
         link_with_cc=gcc
         setup_gnu_toolchain
         tune_cflags="-mtune="
+        if check_cflags -EL; then
+            disable unit_tests
+        fi
         if enabled dspr2; then
+            if check_cflags -EB; then
+                echo "dspr2 optimizations are available only for little endian platforms"
+                exit 1
+            fi
             check_add_cflags -mips32r2 -mdspr2
             disable fast_unaligned
         fi
