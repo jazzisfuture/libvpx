@@ -27,17 +27,19 @@
 #define IVF_FRAME_HDR_SZ (12)
 
 static unsigned int mem_get_le32(const unsigned char *mem) {
-    return (mem[3] << 24)|(mem[2] << 16)|(mem[1] << 8)|(mem[0]);
+  return (mem[3] << 24) | (mem[2] << 16) | (mem[1] << 8) | (mem[0]);
 }
 
 static void die(const char *fmt, ...) {
-    va_list ap;
+  va_list ap;
 
-    va_start(ap, fmt);
-    vprintf(fmt, ap);
-    if(fmt[strlen(fmt)-1] != '\n')
-        printf("\n");
-    exit(EXIT_FAILURE);
+  va_start(ap, fmt);
+  vprintf(fmt, ap);
+
+  if (fmt[strlen(fmt) - 1] != '\n')
+    printf("\n");
+
+  exit(EXIT_FAILURE);
 }
 
 @DIE_CODEC
@@ -45,59 +47,63 @@ static void die(const char *fmt, ...) {
 @HELPERS
 
 int main(int argc, char **argv) {
-    FILE            *infile, *outfile;
-    vpx_codec_ctx_t  codec;
-    int              flags = 0, frame_cnt = 0;
-    unsigned char    file_hdr[IVF_FILE_HDR_SZ];
-    unsigned char    frame_hdr[IVF_FRAME_HDR_SZ];
-    unsigned char    frame[256*1024];
-    vpx_codec_err_t  res;
-@@@@EXTRA_VARS
+  FILE            *infile, *outfile;
+  vpx_codec_ctx_t  codec;
+  int              flags = 0, frame_cnt = 0;
+  unsigned char    file_hdr[IVF_FILE_HDR_SZ];
+  unsigned char    frame_hdr[IVF_FRAME_HDR_SZ];
+  unsigned char    frame[256 * 1024];
+  vpx_codec_err_t  res;
+  @@@@EXTRA_VARS
 
-    (void)res;
-    /* Open files */
-@@@@USAGE
-    if(!(infile = fopen(argv[1], "rb")))
-        die("Failed to open %s for reading", argv[1]);
-    if(!(outfile = fopen(argv[2], "wb")))
-        die("Failed to open %s for writing", argv[2]);
+  (void)res;
+  /* Open files */
+  @@@@USAGE
 
-    /* Read file header */
-    if(!(fread(file_hdr, 1, IVF_FILE_HDR_SZ, infile) == IVF_FILE_HDR_SZ
-         && file_hdr[0]=='D' && file_hdr[1]=='K' && file_hdr[2]=='I'
-         && file_hdr[3]=='F'))
-        die("%s is not an IVF file.", argv[1]);
+  if (!(infile = fopen(argv[1], "rb")))
+    die("Failed to open %s for reading", argv[1]);
 
-    printf("Using %s\n",vpx_codec_iface_name(interface));
-@@@@DEC_INIT
+  if (!(outfile = fopen(argv[2], "wb")))
+    die("Failed to open %s for writing", argv[2]);
 
-    /* Read each frame */
-    while(fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, infile) == IVF_FRAME_HDR_SZ) {
-        int               frame_sz = mem_get_le32(frame_hdr);
-        vpx_codec_iter_t  iter = NULL;
-        vpx_image_t      *img;
+  /* Read file header */
+  if (!(fread(file_hdr, 1, IVF_FILE_HDR_SZ, infile) == IVF_FILE_HDR_SZ
+        && file_hdr[0] == 'D' && file_hdr[1] == 'K' && file_hdr[2] == 'I'
+        && file_hdr[3] == 'F'))
+    die("%s is not an IVF file.", argv[1]);
+
+  printf("Using %s\n", vpx_codec_iface_name(interface));
+  @@@@DEC_INIT
+
+  /* Read each frame */
+  while (fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, infile) == IVF_FRAME_HDR_SZ) {
+    int               frame_sz = mem_get_le32(frame_hdr);
+    vpx_codec_iter_t  iter = NULL;
+    vpx_image_t      *img;
 
 
-        frame_cnt++;
-        if(frame_sz > sizeof(frame))
-            die("Frame %d data too big for example code buffer", frame_sz);
-        if(fread(frame, 1, frame_sz, infile) != frame_sz)
-            die("Frame %d failed to read complete frame", frame_cnt);
+    frame_cnt++;
 
-@@@@@@@@PRE_DECODE
-@@@@@@@@DECODE
+    if (frame_sz > sizeof(frame))
+      die("Frame %d data too big for example code buffer", frame_sz);
 
-        /* Write decoded data to disk */
-@@@@@@@@GET_FRAME
-            unsigned int plane, y;
+    if (fread(frame, 1, frame_sz, infile) != frame_sz)
+      die("Frame %d failed to read complete frame", frame_cnt);
 
-@@@@@@@@@@@@PROCESS_DX
-        }
-    }
-    printf("Processed %d frames.\n",frame_cnt);
+    @@@@@@@@PRE_DECODE
+    @@@@@@@@DECODE
+
+    /* Write decoded data to disk */
+    @@@@@@@@GET_FRAME
+    unsigned int plane, y;
+
+    @@@@@@@@@@@@PROCESS_DX
+  }
+}
+printf("Processed %d frames.\n", frame_cnt);
 @@@@DESTROY
 
-    fclose(outfile);
-    fclose(infile);
-    return EXIT_SUCCESS;
+fclose(outfile);
+fclose(infile);
+return EXIT_SUCCESS;
 }

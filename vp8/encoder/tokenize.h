@@ -17,25 +17,23 @@
 
 void vp8_tokenize_initialize();
 
-typedef struct
-{
-    short Token;
-    short Extra;
+typedef struct {
+  short Token;
+  short Extra;
 } TOKENVALUE;
 
-typedef struct
-{
-    const vp8_prob *context_tree;
-    short           Extra;
-    unsigned char   Token;
-    unsigned char   skip_eob_node;
+typedef struct {
+  const vp8_prob *context_tree;
+  short           Extra;
+  unsigned char   Token;
+  unsigned char   skip_eob_node;
 } TOKENEXTRA;
 
 int rd_cost_mby(MACROBLOCKD *);
 
-extern int mby_is_skippable(MACROBLOCKD *x,int has_y2_block);
+extern int mby_is_skippable(MACROBLOCKD *x, int has_y2_block);
 extern int mbuv_is_skippable(MACROBLOCKD *x);
-extern int mb_is_skippable(MACROBLOCKD *x,int has_y2_block);
+extern int mb_is_skippable(MACROBLOCKD *x, int has_y2_block);
 extern int mby_is_skippable_8x8(MACROBLOCKD *x);
 extern int mbuv_is_skippable_8x8(MACROBLOCKD *x);
 extern int mb_is_skippable_8x8(MACROBLOCKD *x);
@@ -44,8 +42,8 @@ extern int mb_is_skippable_8x8(MACROBLOCKD *x);
 void init_context_counters();
 void print_context_counters();
 
-extern INT64 context_counters[BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS];
-extern INT64 context_counters_8x8[BLOCK_TYPES_8X8] [COEF_BANDS] [PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS];
+extern INT64 context_counters[BLOCK_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
+extern INT64 context_counters_8x8[BLOCK_TYPES_8X8][COEF_BANDS][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
 
 #endif
 extern const int *vp8_dct_value_cost_ptr;
