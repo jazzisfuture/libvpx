@@ -1395,11 +1395,9 @@ void vp8_encode_frame(VP8_COMP *cpi)
                     cpi->rd_prediction_type_threshes[frame_type][0] &&
                  cpi->rd_prediction_type_threshes[frame_type][1] >
                     cpi->rd_prediction_type_threshes[frame_type][2] &&
-                 check_dual_ref_flags(cpi))
+                 check_dual_ref_flags(cpi) && cpi->static_mb_pct == 100)
             pred_type = COMP_PREDICTION_ONLY;
         else if (cpi->rd_prediction_type_threshes[frame_type][0] >
-                    cpi->rd_prediction_type_threshes[frame_type][1] &&
-                 cpi->rd_prediction_type_threshes[frame_type][0] >
                     cpi->rd_prediction_type_threshes[frame_type][2])
             pred_type = SINGLE_PREDICTION_ONLY;
         else
