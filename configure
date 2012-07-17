@@ -225,6 +225,7 @@ EXPERIMENT_LIST="
     pred_filter
     lossless
     hybridtransform
+    tx16x16
 "
 CONFIG_LIST="
     external_build

@@ -120,7 +120,7 @@ extern double vp8_calc_ssimg
 
 #endif
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
@@ -1152,10 +1152,16 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   }
 
   if (cpi->sf.improved_dct) {
+#if CONFIG_TX16X16
+    cpi->mb.vp8_short_fdct16x16 = FDCT_INVOKE(&cpi->rtcd.fdct, short16x16);
+#endif
     cpi->mb.vp8_short_fdct8x8 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x8);
     cpi->mb.vp8_short_fdct8x4 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x4);
     cpi->mb.vp8_short_fdct4x4 = FDCT_INVOKE(&cpi->rtcd.fdct, short4x4);
   } else {
+#if CONFIG_TX16X16
+    cpi->mb.vp8_short_fdct16x16 = FDCT_INVOKE(&cpi->rtcd.fdct, short16x16);
+#endif
     cpi->mb.vp8_short_fdct8x8 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x8);
     cpi->mb.vp8_short_fdct8x4   = FDCT_INVOKE(&cpi->rtcd.fdct, fast8x4);
     cpi->mb.vp8_short_fdct4x4   = FDCT_INVOKE(&cpi->rtcd.fdct, fast4x4);
@@ -1168,6 +1174,9 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   cpi->mb.quantize_b      = vp8_regular_quantize_b;
   cpi->mb.quantize_b_pair = vp8_regular_quantize_b_pair;
   cpi->mb.quantize_b_8x8  = vp8_regular_quantize_b_8x8;
+#if CONFIG_TX16X16
+  cpi->mb.quantize_b_16x16= vp8_regular_quantize_b_16x16;
+#endif
   cpi->mb.quantize_b_2x2  = vp8_regular_quantize_b_2x2;
 
   vp8cx_init_quantizer(cpi);
@@ -3584,6 +3593,9 @@ static void encode_frame_to_data_rate
   update_reference_frames(cm);
   vp8_copy(cpi->common.fc.coef_counts, cpi->coef_counts);
   vp8_copy(cpi->common.fc.coef_counts_8x8, cpi->coef_counts_8x8);
+#if CONFIG_TX16X16
+  vp8_copy(cpi->common.fc.coef_counts_16x16, cpi->coef_counts_16x16);
+#endif
   vp8_adapt_coef_probs(&cpi->common);
   if (cpi->common.frame_type != KEY_FRAME) {
     vp8_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
@@ -3693,7 +3705,7 @@ static void encode_frame_to_data_rate
   // in this frame.
   update_base_skip_probs(cpi);
 
-#if 0// 1 && CONFIG_INTERNAL_STATS
+//#if 0// 1 && CONFIG_INTERNAL_STATS
   {
     FILE *f = fopen("tmp.stt", "a");
     int recon_err;
@@ -3764,7 +3776,7 @@ static void encode_frame_to_data_rate
 
     fclose(f);
 
-    if (0) {
+    if (1) {
       FILE *fmodes = fopen("Modes.stt", "a");
       int i;
 
@@ -3782,7 +3794,7 @@ static void encode_frame_to_data_rate
     }
   }
 
-#endif
+//#endif
 
 #if 0
   // Debug stats for segment feature experiments.
@@ -3875,7 +3887,8 @@ static void encode_frame_to_data_rate
   }
 #endif
 #ifdef OUTPUT_YUV_REC
-  vp8_write_yuv_rec_frame(cm);
+    // Skips alt-ref frames
+    if (cm->show_frame) vp8_write_yuv_rec_frame(cm);
 #endif
 
   if (cm->show_frame) {
