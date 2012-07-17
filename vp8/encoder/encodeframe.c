@@ -1204,6 +1204,9 @@ static void encode_frame_internal(VP8_COMP *cpi) {
 #endif
   vp8_zero(cpi->coef_counts);
   vp8_zero(cpi->coef_counts_8x8);
+#if CONFIG_TX16X16
+  vp8_zero(cpi->coef_counts_16x16);
+#endif
 
   vp8cx_frame_init_quantizer(cpi);
 
@@ -1509,6 +1512,16 @@ void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
   }
 
   /* test code: set transform size based on mode selection */
+#if CONFIG_TX16X16
+  if (x->e_mbd.mode_info_context->mbmi.mode == DC_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == V_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == H_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == TM_PRED) {
+    x->e_mbd.mode_info_context->mbmi.txfm_size = TX_16X16;
+    cpi->t16x16_count++;
+  }
+  else
+#endif
   if (cpi->common.txfm_mode == ALLOW_8X8
       && x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED
       && x->e_mbd.mode_info_context->mbmi.mode != B_PRED) {
@@ -1542,12 +1555,9 @@ extern int cnt_pm;
 
 extern void vp8_fix_contexts(MACROBLOCKD *x);
 
-void vp8cx_encode_inter_macroblock
-(
-  VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t,
-  int recon_yoffset, int recon_uvoffset,
-  int output_enabled
-) {
+void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
+                                    TOKENEXTRA **t, int recon_yoffset,
+                                    int recon_uvoffset, int output_enabled) {
   VP8_COMMON *cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   unsigned char *segment_id = &xd->mode_info_context->mbmi.segment_id;
@@ -1556,10 +1566,8 @@ void vp8cx_encode_inter_macroblock
 
   x->skip = 0;
 
-  if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
-    // Adjust the zbin based on this MB rate.
-    adjust_act_zbin(cpi, x);
-  }
+  if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
+    adjust_act_zbin(cpi, x); // Adjust the zbin based on this MB rate.
 
   {
     // Experimental code. Special case for gf and arf zeromv modes.
@@ -1592,6 +1600,19 @@ void vp8cx_encode_inter_macroblock
   set_pred_flag(xd, PRED_REF, ref_pred_flag);
 
   /* test code: set transform size based on mode selection */
+#if CONFIG_TX16X16
+  if (x->e_mbd.mode_info_context->mbmi.mode == DC_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == V_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == H_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == TM_PRED ||
+      x->e_mbd.mode_info_context->mbmi.mode == NEWMV ||
+      x->e_mbd.mode_info_context->mbmi.mode == ZEROMV ||
+      x->e_mbd.mode_info_context->mbmi.mode == NEARMV ||
+      x->e_mbd.mode_info_context->mbmi.mode == NEARESTMV) {
+    x->e_mbd.mode_info_context->mbmi.txfm_size = TX_16X16;
+    cpi->t16x16_count++;
+  } else
+#endif
   if (cpi->common.txfm_mode == ALLOW_8X8
       && x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED
       && x->e_mbd.mode_info_context->mbmi.mode != B_PRED

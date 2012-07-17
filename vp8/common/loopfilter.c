@@ -331,7 +331,11 @@ void vp8_loop_filter_frame
             vp8_loop_filter_mbv_c
             (y_ptr, u_ptr, v_ptr, post->y_stride, post->uv_stride, &lfi);
 
-          if (!skip_lf) {
+          if (!skip_lf
+#if CONFIG_TX16X16
+              && tx_type != TX_16X16
+#endif
+              ) {
             if (tx_type == TX_8X8)
               vp8_loop_filter_bv8x8_c
               (y_ptr, u_ptr, v_ptr, post->y_stride, post->uv_stride, &lfi);
@@ -346,7 +350,11 @@ void vp8_loop_filter_frame
             vp8_loop_filter_mbh_c
             (y_ptr, u_ptr, v_ptr, post->y_stride, post->uv_stride, &lfi);
 
-          if (!skip_lf) {
+          if (!skip_lf
+#if CONFIG_TX16X16
+              && tx_type != TX_16X16
+#endif
+              ) {
             if (tx_type == TX_8X8)
               vp8_loop_filter_bh8x8_c
               (y_ptr, u_ptr, v_ptr, post->y_stride, post->uv_stride, &lfi);
@@ -355,6 +363,7 @@ void vp8_loop_filter_frame
               (y_ptr, u_ptr, v_ptr, post->y_stride, post->uv_stride, &lfi);
           }
         } else {
+          // FIXME: Not 8x8 aware
           if (mb_col > 0)
             LF_INVOKE(&cm->rtcd.loopfilter, simple_mb_v)
             (y_ptr, post->y_stride, lfi_n->mblim[filter_level]);
@@ -433,7 +442,6 @@ void vp8_loop_filter_frame_yonly
       const int seg = mode_info_context->mbmi.segment_id;
       const int ref_frame = mode_info_context->mbmi.ref_frame;
       int tx_type = mode_info_context->mbmi.txfm_size;
-
       filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
       if (filter_level) {
@@ -448,7 +456,11 @@ void vp8_loop_filter_frame_yonly
             vp8_loop_filter_mbv_c
             (y_ptr, 0, 0, post->y_stride, 0, &lfi);
 
-          if (!skip_lf) {
+          if (!skip_lf
+#if CONFIG_TX16X16
+              && tx_type != TX_16X16
+#endif
+              ) {
             if (tx_type == TX_8X8)
               vp8_loop_filter_bv8x8_c
               (y_ptr, 0, 0, post->y_stride, 0, &lfi);
@@ -462,7 +474,11 @@ void vp8_loop_filter_frame_yonly
             vp8_loop_filter_mbh_c
             (y_ptr, 0, 0, post->y_stride, 0, &lfi);
 
-          if (!skip_lf) {
+          if (!skip_lf
+#if CONFIG_TX16X16
+              && tx_type != TX_16X16
+#endif
+              ) {
             if (tx_type == TX_8X8)
               vp8_loop_filter_bh8x8_c
               (y_ptr, 0, 0, post->y_stride, 0, &lfi);
@@ -471,6 +487,7 @@ void vp8_loop_filter_frame_yonly
               (y_ptr, 0, 0, post->y_stride, 0, &lfi);
           }
         } else {
+          // FIXME: Not 8x8 aware
           if (mb_col > 0)
             LF_INVOKE(&cm->rtcd.loopfilter, simple_mb_v)
             (y_ptr, post->y_stride, lfi_n->mblim[filter_level]);

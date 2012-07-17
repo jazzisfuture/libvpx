@@ -65,12 +65,17 @@ extern vp8_extra_bit_struct vp8_extra_bits[12];    /* indexed by token value */
 
 #define BLOCK_TYPES_8X8 3
 
+#define BLOCK_TYPES_16X16 4
+
 /* Middle dimension is a coarsening of the coefficient's
    position within the 4x4 DCT. */
 
 #define COEF_BANDS 8
-extern DECLARE_ALIGNED(16, const unsigned char, vp8_coef_bands[16]);
-extern DECLARE_ALIGNED(64, const unsigned char, vp8_coef_bands_8x8[64]);
+extern DECLARE_ALIGNED(16, const int, vp8_coef_bands[16]);
+extern DECLARE_ALIGNED(64, const int, vp8_coef_bands_8x8[64]);
+#if CONFIG_TX16X16
+extern DECLARE_ALIGNED(16, const int, vp8_coef_bands_16x16[256]);
+#endif
 
 /* Inside dimension is 3-valued measure of nearby complexity, that is,
    the extent to which nearby coefficients are nonzero.  For the first
@@ -115,8 +120,11 @@ extern DECLARE_ALIGNED(16, const int, vp8_row_scan[16]);
 
 extern short vp8_default_zig_zag_mask[16];
 extern DECLARE_ALIGNED(64, const int, vp8_default_zig_zag1d_8x8[64]);
-extern short vp8_default_zig_zag_mask_8x8[64];// int64_t
 void vp8_coef_tree_initialize(void);
+
+#if CONFIG_TX16X16
+extern DECLARE_ALIGNED(16, const int, vp8_default_zig_zag1d_16x16[256]);
+#endif
 
 #if CONFIG_ADAPTIVE_ENTROPY
 void vp8_adapt_coef_probs(struct VP8Common *);
