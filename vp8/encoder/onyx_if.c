@@ -82,16 +82,16 @@ static void set_default_lf_deltas(VP8_COMP *cpi);
 extern const int vp8_gf_interval_table[101];
 
 #if CONFIG_ENHANCED_INTERP
-#define SEARCH_BEST_FILTER 0            /* to search exhaustively for best filter */
+#define SEARCH_BEST_FILTER 1            /* to search for best filter */
 #define RESET_FOREACH_FILTER 0          /* whether to reset the encoder state
-before trying each new filter */
+                                         * before trying each new filter */
+#define SHARP_FILTER_QTHRESH 0         /* Q threshold for 8-tap sharp filter */
 #endif
 #if CONFIG_HIGH_PRECISION_MV
 #define ALTREF_HIGH_PRECISION_MV 1      /* whether to use high precision mv for altref computation */
-#define HIGH_PRECISION_MV_QTHRESH 200   /* Q threshold for use of high precision mv */
-/* Choose a very high value for now so
- * that HIGH_PRECISION is always chosen
- */
+#define HIGH_PRECISION_MV_QTHRESH 200   /* Q threshold for use of high precision mv
+                                         * Choose a very high value for now so
+                                         * that HIGH_PRECISION is always chosen */
 #endif
 
 #if CONFIG_INTERNAL_STATS
@@ -730,6 +730,14 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
 
       sf->thresh_mult[THR_V_PRED   ] = 1000;
       sf->thresh_mult[THR_H_PRED   ] = 1000;
+#if CONFIG_NEWINTRAMODES
+      sf->thresh_mult[THR_D45_PRED ] = 1000;
+      sf->thresh_mult[THR_D135_PRED] = 1000;
+      sf->thresh_mult[THR_D117_PRED] = 1000;
+      sf->thresh_mult[THR_D153_PRED] = 1000;
+      sf->thresh_mult[THR_D27_PRED ] = 1000;
+      sf->thresh_mult[THR_D63_PRED ] = 1000;
+#endif
       sf->thresh_mult[THR_B_PRED   ] = 2000;
       sf->thresh_mult[THR_I8X8_PRED] = 2000;
       sf->thresh_mult[THR_TM       ] = 1000;
@@ -2936,7 +2944,13 @@ static void encode_frame_to_data_rate
 #endif
 
   /* list of filters to search over */
-  int mcomp_filters_to_search[] = {EIGHTTAP, EIGHTTAP_SHARP, SIXTAP};
+  int mcomp_filters_to_search[] = {
+#if CONFIG_SWITCHABLE_INTERP
+    EIGHTTAP, SWITCHABLE
+#else
+    EIGHTTAP, EIGHTTAP_SHARP, SIXTAP,
+#endif
+  };
   int mcomp_filters = sizeof(mcomp_filters_to_search) / sizeof(*mcomp_filters_to_search);
   int mcomp_filter_index = 0;
   INT64 mcomp_filter_cost[4];
@@ -3163,8 +3177,10 @@ static void encode_frame_to_data_rate
     if (sf->search_best_filter) {
       cm->mcomp_filter_type = mcomp_filters_to_search[0];
       mcomp_filter_index = 0;
-    } else
-      cm->mcomp_filter_type = EIGHTTAP;
+    } else {
+      cm->mcomp_filter_type =
+          (Q < SHARP_FILTER_QTHRESH ? EIGHTTAP_SHARP : EIGHTTAP);
+    }
 #endif
 #if CONFIG_HIGH_PRECISION_MV
     /* TODO: Decide this more intelligently */

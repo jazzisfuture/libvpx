@@ -24,6 +24,9 @@ typedef enum {
 #if CONFIG_NEWENTROPY
   PRED_MBSKIP = 3,
 #endif
+#if CONFIG_SWITCHABLE_INTERP
+  PRED_SWITCHABLE_INTERP = 4,
+#endif
 
 } PRED_ID;
 
@@ -35,6 +38,10 @@ extern unsigned char get_pred_context(VP8_COMMON *const cm,
 extern vp8_prob get_pred_prob(VP8_COMMON *const cm,
                               MACROBLOCKD *const xd,
                               PRED_ID pred_id);
+
+extern vp8_prob *get_pred_probs(VP8_COMMON *const cm,
+                                MACROBLOCKD *const xd,
+                                PRED_ID pred_id);
 
 extern unsigned char get_pred_flag(MACROBLOCKD *const xd,
                                    PRED_ID pred_id);
