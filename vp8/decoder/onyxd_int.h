@@ -44,6 +44,8 @@ typedef struct VP8D_COMP
 {
     DECLARE_ALIGNED(16, MACROBLOCKD, mb);
 
+    YV12_BUFFER_CONFIG *dec_fb_ref[NUM_YV12_BUFFERS];
+
     DECLARE_ALIGNED(16, VP8_COMMON, common);
 
     vp8_reader bc, bc2;
@@ -128,4 +130,41 @@ int vp8_decode_frame(VP8D_COMP *cpi);
     } while(0)
 #endif
 
+
+//TODO: some of these are duplicates.....  can we remove from pbi?
+typedef struct node_s
+{
+    YV12_BUFFER_CONFIG yv12_fb;
+    unsigned int is_key;
+    unsigned int is_gld;
+    unsigned int is_alt;
+    unsigned int is_decoded;
+    unsigned int is_refresh_last;
+    unsigned int show;
+
+    unsigned int frame_id; /* for testing/debugging */
+
+    int64_t last_time_stamp;
+
+    struct node_s *next;
+    struct node_s *prev;
+} FBNODE;
+
+typedef struct s_frame_buffers
+{
+    FBNODE *free_alloc;
+
+    FBNODE *free;
+
+    FBNODE *decoded;
+
+    FBNODE *decoded_head;
+    FBNODE *decoded_to_show;
+
+    unsigned int decoded_size;
+    unsigned int max_allocated_frames;
+} FRAME_BUFFERS;
+
+extern FBNODE * vp8_get_available(FRAME_BUFFERS *fb);
+extern FBNODE * vp8_get_decoded(FRAME_BUFFERS *fb, FBNODE *);
 #endif
