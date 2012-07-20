@@ -13,6 +13,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += i420_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += set_roi.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += video_source.h
 
 ##
