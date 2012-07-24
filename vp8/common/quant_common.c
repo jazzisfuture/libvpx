@@ -109,6 +109,7 @@ int vp8_ac2quant(int QIndex, int Delta)
     else if (QIndex < 0)
         QIndex = 0;
 
+    // x*101581>>16 = x*155/100
     retval = (ac_qlookup[ QIndex ] * 101581) >> 16;
 
     if (retval < 8)
