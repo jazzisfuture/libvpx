@@ -1383,7 +1383,6 @@ static void update_layer_contexts (VP8_COMP *cpi)
 
             lc->active_worst_quality         = oxcf->worst_allowed_q;
             lc->active_best_quality          = oxcf->best_allowed_q;
-            lc->avg_frame_qindex             = oxcf->worst_allowed_q;
 
             prev_layer_frame_rate = lc->frame_rate;
         }
@@ -4347,7 +4346,6 @@ static void encode_frame_to_data_rate
     cpi->total_target_vs_actual += (cpi->this_frame_target - cpi->projected_frame_size);
 
     cpi->buffer_level = cpi->bits_off_target;
-
     // Propagate values to higher temporal layers
     if (cpi->oxcf.number_of_layers > 1)
     {
