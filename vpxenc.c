@@ -1407,7 +1407,7 @@ int main(int argc, const char **argv_) {
   int                    pass, one_pass_only = 0;
   stats_io_t             stats;
   vpx_image_t            raw;
-  struct codec_item  *codec = codecs;
+  const struct codec_item  *codec = codecs;
   int                    frame_avail, got_data;
 
   struct arg               arg;
