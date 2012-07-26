@@ -166,6 +166,94 @@ static void vp8_kfread_modes(VP8D_COMP *pbi,
 
 }
 
+#if CONFIG_NEWMVENTROPY
+static int read_nmv_component(vp8_reader *r,
+                              const nmv_component *mvcomp,
+                              int usehp) {
+  int v, s, z, c, o, d, e;
+  s = vp8_read(r, mvcomp->sign);
+  c = vp8_treed_read(r, vp8_mv_class_tree, mvcomp->classes);
+  if (c == MV_CLASS_0) {
+    d = vp8_treed_read(r, vp8_mv_class0_tree, mvcomp->class0);
+  } else {
+    int i, b;
+    d = 0;
+    b = c + CLASS0_BITS - 1;  /* number of bits */
+    for (i = 0; i < b; ++i)
+      d |= (vp8_read(r, mvcomp->bits[i]) << i);
+  }
+  o = d << 1;
+  if (usehp) {
+    if (c == MV_CLASS_0) {
+      e = vp8_read(r, mvcomp->class0_hp[d]);
+    } else {
+      e = vp8_read(r, mvcomp->bits_hp);
+    }
+    o += e;
+  } else {
+    ++o;  /* Note if hp is not used, the default value of the hp bit is 1 */
+  }
+  z = vp8_get_mv_mag(c, o);
+  v = (s ? -(z + 1) : (z + 1));
+  return v;
+}
+
+static void read_nmv(vp8_reader *r, MV *mv, const nmv_context *mvctx,
+                     int usehp) {
+  MV_JOINT_TYPE j = vp8_treed_read(r, vp8_mv_joint_tree, mvctx->joints);
+  mv->row = mv-> col = 0;
+  if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
+    mv->row = read_nmv_component(r, &mvctx->comps[0], usehp);
+  }
+  if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
+    mv->col = read_nmv_component(r, &mvctx->comps[1], usehp);
+  }
+}
+
+static void update_nmv(vp8_reader *bc, vp8_prob *const p,
+                       const vp8_prob upd_p) {
+  if (vp8_read(bc, upd_p)) {
+    *p = vp8_read_literal(bc, 8);
+  }
+}
+
+static void read_nmvprobs(vp8_reader *bc, nmv_context *mvctx,
+                          int usehp) {
+  int i, j;
+  for (j = 0; j < MV_JOINTS - 1; ++j) {
+    update_nmv(bc, &mvctx->joints[j],
+               vp8_nmv_update_probs.joints[j]);
+  }
+  for (i = 0; i < 2; ++i) {
+    update_nmv(bc, &mvctx->comps[i].sign,
+               vp8_nmv_update_probs.comps[i].sign);
+    for (j = 0; j < MV_CLASSES - 1; ++j) {
+      update_nmv(bc, &mvctx->comps[i].classes[j],
+                 vp8_nmv_update_probs.comps[i].classes[j]);
+    }
+    for (j = 0; j < CLASS0_SIZE - 1; ++j) {
+      update_nmv(bc, &mvctx->comps[i].class0[j],
+                 vp8_nmv_update_probs.comps[i].class0[j]);
+    }
+    for (j = 0; j < MV_OFFSET_BITS; ++j) {
+      update_nmv(bc, &mvctx->comps[i].bits[j],
+                 vp8_nmv_update_probs.comps[i].bits[j]);
+    }
+  }
+  if (usehp) {
+    for (i = 0; i < 2; ++i) {
+      for (j = 0; j < CLASS0_SIZE; ++j) {
+        update_nmv(bc, &mvctx->comps[i].class0_hp[j],
+                   vp8_nmv_update_probs.comps[i].class0_hp[j]);
+      }
+      update_nmv(bc, &mvctx->comps[i].bits_hp,
+                 vp8_nmv_update_probs.comps[i].bits_hp);
+    }
+  }
+}
+
+#else
+
 static int read_mvcomponent(vp8_reader *r, const MV_CONTEXT *mvc) {
   const vp8_prob *const p = (const vp8_prob *) mvc;
   int x = 0;
@@ -204,7 +292,6 @@ static void read_mv(vp8_reader *r, MV *mv, const MV_CONTEXT *mvc) {
   // for (i=0; i<MVPcount;++i) printf("  %d", (&mvc[0])->prob[i]); printf("\n");
 #endif
 }
-
 
 static void read_mvcontexts(vp8_reader *bc, MV_CONTEXT *mvc) {
   int i = 0;
@@ -280,6 +367,8 @@ static void read_mvcontexts_hp(vp8_reader *bc, MV_CONTEXT_HP *mvc) {
     } while (++p < pstop);
   } while (++i < 2);
 }
+
+#endif  /* CONFIG_NEWMVENTROPY */
 
 // Read the referncence frame
 static MV_REFERENCE_FRAME read_ref_frame(VP8D_COMP *pbi,
@@ -444,8 +533,12 @@ static void read_switchable_interp_probs(VP8D_COMP *pbi) {
 static void mb_mode_mv_init(VP8D_COMP *pbi) {
   VP8_COMMON *const cm = & pbi->common;
   vp8_reader *const bc = & pbi->bc;
+#if CONFIG_NEWMVENTROPY
+  nmv_context *const nmvc = &pbi->common.fc.nmvc;
+#else
   MV_CONTEXT *const mvc = pbi->common.fc.mvc;
   MV_CONTEXT_HP *const mvc_hp = pbi->common.fc.mvc_hp;
+#endif
   MACROBLOCKD *const xd  = & pbi->mb;
 
   vpx_memset(cm->mbskip_pred_probs, 0, sizeof(cm->mbskip_pred_probs));
@@ -491,10 +584,14 @@ static void mb_mode_mv_init(VP8D_COMP *pbi) {
         cm->fc.ymode_prob[i] = (vp8_prob) vp8_read_literal(bc, 8);
       } while (++i < VP8_YMODES - 1);
     }
+#if CONFIG_NEWMVENTROPY
+    read_nmvprobs(bc, nmvc, xd->allow_high_precision_mv);
+#else
     if (xd->allow_high_precision_mv)
       read_mvcontexts_hp(bc, mvc_hp);
     else
       read_mvcontexts(bc, mvc);
+#endif
   }
 }
 
@@ -556,8 +653,12 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                              int mb_row, int mb_col) {
   VP8_COMMON *const cm = & pbi->common;
   vp8_reader *const bc = & pbi->bc;
+#if CONFIG_NEWMVENTROPY
+  nmv_context *const nmvc = &pbi->common.fc.nmvc;
+#else
   MV_CONTEXT *const mvc = pbi->common.fc.mvc;
   MV_CONTEXT_HP *const mvc_hp = pbi->common.fc.mvc_hp;
+#endif
   const int mis = pbi->common.mode_info_stride;
   MACROBLOCKD *const xd  = & pbi->mb;
 
@@ -776,6 +877,11 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
           switch (blockmode) {
             case NEW4X4:
+#if CONFIG_NEWMVENTROPY
+              read_nmv(bc, &blockmv.as_mv, nmvc, xd->allow_high_precision_mv);
+              vp8_increment_nmv(&blockmv.as_mv, &cm->fc.NMVcount,
+                                xd->allow_high_precision_mv);
+#else
               if (xd->allow_high_precision_mv) {
                 read_mv_hp(bc, &blockmv.as_mv, (const MV_CONTEXT_HP *) mvc_hp);
                 cm->fc.MVcount_hp[0][mv_max_hp + (blockmv.as_mv.row)]++;
@@ -785,10 +891,17 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                 cm->fc.MVcount[0][mv_max + (blockmv.as_mv.row >> 1)]++;
                 cm->fc.MVcount[1][mv_max + (blockmv.as_mv.col >> 1)]++;
               }
+#endif  /* CONFIG_NEWMVENTROPY */
               blockmv.as_mv.row += best_mv.as_mv.row;
               blockmv.as_mv.col += best_mv.as_mv.col;
 
               if (mbmi->second_ref_frame) {
+#if CONFIG_NEWMVENTROPY
+                read_nmv(bc, &secondmv.as_mv, nmvc,
+                         xd->allow_high_precision_mv);
+                vp8_increment_nmv(&secondmv.as_mv, &cm->fc.NMVcount,
+                                  xd->allow_high_precision_mv);
+#else
                 if (xd->allow_high_precision_mv) {
                   read_mv_hp(bc, &secondmv.as_mv, (const MV_CONTEXT_HP *) mvc_hp);
                   cm->fc.MVcount_hp[0][mv_max_hp + (secondmv.as_mv.row)]++;
@@ -798,6 +911,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                   cm->fc.MVcount[0][mv_max + (secondmv.as_mv.row >> 1)]++;
                   cm->fc.MVcount[1][mv_max + (secondmv.as_mv.col >> 1)]++;
                 }
+#endif  /* CONFIG_NEWMVENTROPY */
                 secondmv.as_mv.row += best_mv_second.as_mv.row;
                 secondmv.as_mv.col += best_mv_second.as_mv.col;
               }
@@ -902,6 +1016,11 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         break;
 
       case NEWMV:
+#if CONFIG_NEWMVENTROPY
+        read_nmv(bc, &mv->as_mv, nmvc, xd->allow_high_precision_mv);
+        vp8_increment_nmv(&mv->as_mv, &cm->fc.NMVcount,
+                          xd->allow_high_precision_mv);
+#else
         if (xd->allow_high_precision_mv) {
           read_mv_hp(bc, &mv->as_mv, (const MV_CONTEXT_HP *) mvc_hp);
           cm->fc.MVcount_hp[0][mv_max_hp + (mv->as_mv.row)]++;
@@ -911,6 +1030,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           cm->fc.MVcount[0][mv_max + (mv->as_mv.row >> 1)]++;
           cm->fc.MVcount[1][mv_max + (mv->as_mv.col >> 1)]++;
         }
+#endif  /* CONFIG_NEWMVENTROPY */
         mv->as_mv.row += best_mv.as_mv.row;
         mv->as_mv.col += best_mv.as_mv.col;
 
@@ -925,6 +1045,12 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                       mb_to_top_edge,
                                                       mb_to_bottom_edge);
         if (mbmi->second_ref_frame) {
+#if CONFIG_NEWMVENTROPY
+          read_nmv(bc, &mbmi->second_mv.as_mv, nmvc,
+                   xd->allow_high_precision_mv);
+          vp8_increment_nmv(&mbmi->second_mv.as_mv, &cm->fc.NMVcount,
+                            xd->allow_high_precision_mv);
+#else
           if (xd->allow_high_precision_mv) {
             read_mv_hp(bc, &mbmi->second_mv.as_mv,
                        (const MV_CONTEXT_HP *) mvc_hp);
@@ -935,6 +1061,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
             cm->fc.MVcount[0][mv_max + (mbmi->second_mv.as_mv.row >> 1)]++;
             cm->fc.MVcount[1][mv_max + (mbmi->second_mv.as_mv.col >> 1)]++;
           }
+#endif  /* CONFIG_NEWMVENTROPY */
           mbmi->second_mv.as_mv.row += best_mv_second.as_mv.row;
           mbmi->second_mv.as_mv.col += best_mv_second.as_mv.col;
           mbmi->need_to_clamp_secondmv |= vp8_check_mv_bounds(&mbmi->second_mv,
