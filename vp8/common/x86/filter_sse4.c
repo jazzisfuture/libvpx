@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "vpx_ports/x86.h"
 #include <assert.h> // for alignment checks
-#include <smmintrin.h> // SSE4.1
 #include "vp8/common/filter.h"
 #include "vpx_ports/mem.h" // for DECLARE_ALIGNED
 #include "vpx_rtcd.h"
+#include <smmintrin.h> // SSE4.1
 
 // TODO(cd): After cleanup, commit faster versions for non 4x4 size. This is
 //           just a quick partial snapshot so that other can already use some

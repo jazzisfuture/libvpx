@@ -27,10 +27,13 @@
 #include "vp8/common/seg_common.h"
 #include "vp8/common/pred_common.h"
 #include "vp8/common/entropy.h"
+#include "vp8/encoder/encodemv.h"
 
 #if defined(SECTIONBITS_OUTPUT)
 unsigned __int64 Sectionbits[500];
 #endif
+
+//int final_packing = 0;
 
 #ifdef ENTROPY_STATS
 int intra_mode_stats [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES];
@@ -544,6 +547,18 @@ static void write_sub_mv_ref
                   vp8_sub_mv_ref_encoding_array - LEFT4X4 + m);
 }
 
+#if CONFIG_NEWMVENTROPY
+static void write_nmv (vp8_writer *w, const MV *mv, const int_mv *ref,
+                       const nmv_context *nmvc, int usehp) {
+  MV e;
+  e.row = mv->row - ref->as_mv.row;
+  e.col = mv->col - ref->as_mv.col;
+
+  vp8_encode_nmv(w, &e, nmvc, usehp);
+}
+
+#else
+
 static void write_mv
 (
   vp8_writer *w, const MV *mv, const int_mv *ref, const MV_CONTEXT *mvc
@@ -565,6 +580,7 @@ static void write_mv_hp
 
   vp8_encode_motion_vector_hp(w, &e, mvc);
 }
+#endif  /* CONFIG_NEWMVENTROPY */
 
 // This function writes the current macro block's segnment id to the bitstream
 // It should only be called if a segment map update is indicated.
@@ -717,8 +733,12 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
   int i;
   VP8_COMMON *const pc = & cpi->common;
   vp8_writer *const w = & cpi->bc;
+#if CONFIG_NEWMVENTROPY
+  const nmv_context *nmvc = &pc->fc.nmvc;
+#else
   const MV_CONTEXT *mvc = pc->fc.mvc;
   const MV_CONTEXT_HP *mvc_hp = pc->fc.mvc_hp;
+#endif
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   MODE_INFO *m;
   MODE_INFO *prev_m;
@@ -733,6 +753,8 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 
   int row_delta[4] = { 0, +1,  0, -1};
   int col_delta[4] = { +1, -1, +1, +1};
+
+  //final_packing = !cpi->dummy_packing;
 
   cpi->mb.partition_info = cpi->mb.pi;
 
@@ -794,10 +816,14 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 
   update_mbintra_mode_probs(cpi);
 
+#if CONFIG_NEWMVENTROPY
+  vp8_write_nmvprobs(cpi, xd->allow_high_precision_mv);
+#else
   if (xd->allow_high_precision_mv)
     vp8_write_mvprobs_hp(cpi);
   else
     vp8_write_mvprobs(cpi);
+#endif
 
   mb_row = 0;
   for (row = 0; row < pc->mb_rows; row += 2) {
@@ -1007,16 +1033,30 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
                 active_section = 5;
 #endif
 
-                if (xd->allow_high_precision_mv)
+#if CONFIG_NEWMVENTROPY
+                write_nmv(w, &mi->mv[0].as_mv, &best_mv,
+                          (const nmv_context*) nmvc,
+                          xd->allow_high_precision_mv);
+#else
+                if (xd->allow_high_precision_mv) {
                   write_mv_hp(w, &mi->mv[0].as_mv, &best_mv, mvc_hp);
-                else
+                } else {
                   write_mv(w, &mi->mv[0].as_mv, &best_mv, mvc);
+                }
+#endif
 
                 if (mi->second_ref_frame) {
-                  if (xd->allow_high_precision_mv)
+#if CONFIG_NEWMVENTROPY
+                  write_nmv(w, &mi->mv[1].as_mv, &best_second_mv,
+                            (const nmv_context*) nmvc,
+                            xd->allow_high_precision_mv);
+#else
+                  if (xd->allow_high_precision_mv) {
                     write_mv_hp(w, &mi->mv[1].as_mv, &best_second_mv, mvc_hp);
-                  else
+                  } else {
                     write_mv(w, &mi->mv[1].as_mv, &best_second_mv, mvc);
+                  }
+#endif
                 }
                 break;
               case SPLITMV: {
@@ -1058,6 +1098,11 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #ifdef ENTROPY_STATS
                     active_section = 11;
 #endif
+#if CONFIG_NEWMVENTROPY
+                    write_nmv(w, &blockmv.as_mv, &best_mv,
+                              (const nmv_context*) nmvc,
+                              xd->allow_high_precision_mv);
+#else
                     if (xd->allow_high_precision_mv) {
                       write_mv_hp(w, &blockmv.as_mv, &best_mv,
                                   (const MV_CONTEXT_HP *) mvc_hp);
@@ -1065,8 +1110,16 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
                       write_mv(w, &blockmv.as_mv, &best_mv,
                                (const MV_CONTEXT *) mvc);
                     }
+#endif
 
                     if (mi->second_ref_frame) {
+#if CONFIG_NEWMVENTROPY
+                      write_nmv(w,
+                                &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
+                                &best_second_mv,
+                                (const nmv_context*) nmvc,
+                                xd->allow_high_precision_mv);
+#else
                       if (xd->allow_high_precision_mv) {
                         write_mv_hp(w, &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                     &best_second_mv, (const MV_CONTEXT_HP *) mvc_hp);
@@ -1074,6 +1127,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
                         write_mv(w, &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                  &best_second_mv, (const MV_CONTEXT *) mvc);
                       }
+#endif
                     }
                   }
                 } while (++j < cpi->mb.partition_info->count);
@@ -2202,8 +2256,12 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
   vp8_copy(cpi->common.fc.pre_sub_mv_ref_prob, cpi->common.fc.sub_mv_ref_prob);
   vp8_copy(cpi->common.fc.pre_mbsplit_prob, cpi->common.fc.mbsplit_prob);
   vp8_copy(cpi->common.fc.pre_i8x8_mode_prob, cpi->common.fc.i8x8_mode_prob);
+#if CONFIG_NEWMVENTROPY
+  cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
+#else
   vp8_copy(cpi->common.fc.pre_mvc, cpi->common.fc.mvc);
   vp8_copy(cpi->common.fc.pre_mvc_hp, cpi->common.fc.mvc_hp);
+#endif
   vp8_zero(cpi->sub_mv_ref_count);
   vp8_zero(cpi->mbsplit_count);
   vp8_zero(cpi->common.fc.mv_ref_ct)

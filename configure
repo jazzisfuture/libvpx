@@ -227,6 +227,7 @@ EXPERIMENT_LIST="
     tx16x16
     newbestrefmv
     rotation
+    newmventropy
 "
 CONFIG_LIST="
     external_build
