@@ -15,6 +15,22 @@
 #include "block.h"
 #include "variance.h"
 
+#if CONFIG_NEWMVENTROPY
+#define MVCOSTS mvjcost, mvcost
+#define MVSADCOSTS mvjsadcost, mvsadcost
+#define DEC_MVCOSTS int *mvjcost, int *mvcost[2]
+#define DEC_MVSADCOSTS int *mvjsadcost, int *mvsadcost[2]
+#define NULLMVCOST NULL, NULL
+#define XMVCOST x->nmvjointcost, (x->e_mbd.allow_high_precision_mv?x->nmvcost_hp:x->nmvcost)
+#else
+#define MVCOSTS mvcost
+#define MVSADCOSTS mvsadcost
+#define DEC_MVCOSTS int *mvcost[2]
+#define DEC_MVSADCOSTS int *mvsadcost[2]
+#define NULLMVCOST NULL
+#define XMVCOST (x->e_mbd.allow_high_precision_mv?x->mvcost_hp:x->mvcost)
+#endif
+
 #ifdef ENTROPY_STATS
 extern void init_mv_ref_counts();
 extern void accum_mv_refs(MB_PREDICTION_MODE, const int near_mv_ref_cts[4]);
@@ -25,7 +41,7 @@ extern void accum_mv_refs(MB_PREDICTION_MODE, const int near_mv_ref_cts[4]);
 #define MAX_FULL_PEL_VAL ((1 << (MAX_MVSEARCH_STEPS)) - 1)      // Max full pel mv specified in 1 pel units
 #define MAX_FIRST_STEP (1 << (MAX_MVSEARCH_STEPS-1))            // Maximum size of the first step in full pel units
 
-extern int vp8_mv_bit_cost(int_mv *mv, int_mv *ref, int *mvcost[2],
+extern int vp8_mv_bit_cost(int_mv *mv, int_mv *ref, DEC_MVCOSTS,
                            int Weight, int ishp);
 extern void vp8_init_dsmotion_compensation(MACROBLOCK *x, int stride);
 extern void vp8_init3smotion_compensation(MACROBLOCK *x,  int stride);
@@ -41,14 +57,14 @@ extern int vp8_hex_search
   int search_param,
   int error_per_bit,
   const vp8_variance_fn_ptr_t *vf,
-  int *mvsadcost[2],
-  int *mvcost[2],
+  DEC_MVSADCOSTS,
+  DEC_MVCOSTS,
   int_mv *center_mv
 );
 
 typedef int (fractional_mv_step_fp)
 (MACROBLOCK *x, BLOCK *b, BLOCKD *d, int_mv *bestmv, int_mv *ref_mv,
- int error_per_bit, const vp8_variance_fn_ptr_t *vfp, int *mvcost[2],
+ int error_per_bit, const vp8_variance_fn_ptr_t *vfp, DEC_MVCOSTS,
  int *distortion, unsigned int *sse);
 extern fractional_mv_step_fp vp8_find_best_sub_pixel_step_iteratively;
 extern fractional_mv_step_fp vp8_find_best_sub_pixel_step;
@@ -65,7 +81,7 @@ extern fractional_mv_step_fp vp8_skip_fractional_mv_step;
    int sad_per_bit, \
    int distance, \
    vp8_variance_fn_ptr_t *fn_ptr, \
-   int *mvcost[2], \
+   DEC_MVSADCOSTS, \
    int_mv *center_mv \
   )
 
@@ -79,7 +95,7 @@ extern fractional_mv_step_fp vp8_skip_fractional_mv_step;
    int sad_per_bit, \
    int distance, \
    vp8_variance_fn_ptr_t *fn_ptr, \
-   int *mvcost[2], \
+   DEC_MVSADCOSTS, \
    int_mv *center_mv \
   )
 
@@ -95,7 +111,7 @@ extern fractional_mv_step_fp vp8_skip_fractional_mv_step;
    int sad_per_bit, \
    int *num00, \
    vp8_variance_fn_ptr_t *fn_ptr, \
-   int *mvcost[2], \
+   DEC_MVSADCOSTS, \
    int_mv *center_mv \
   )
 

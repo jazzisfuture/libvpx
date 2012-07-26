@@ -59,6 +59,10 @@ typedef struct frame_contexts {
   MV_CONTEXT_HP mvc_hp[2];
   MV_CONTEXT pre_mvc[2];
   MV_CONTEXT_HP pre_mvc_hp[2];
+#if CONFIG_NEWMVENTROPY
+  nmv_context nmvc;
+  nmv_context pre_nmvc;
+#endif
   vp8_prob pre_bmode_prob [VP8_BINTRAMODES - 1];
   vp8_prob pre_ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
   vp8_prob pre_uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
@@ -90,6 +94,9 @@ typedef struct frame_contexts {
 #endif
   unsigned int MVcount [2] [MVvals];
   unsigned int MVcount_hp [2] [MVvals_hp];
+#if CONFIG_NEWMVENTROPY
+  nmv_context_counts NMVcount;
+#endif
 #if CONFIG_SWITCHABLE_INTERP
   vp8_prob switchable_interp_prob[VP8_SWITCHABLE_FILTERS+1]
                                  [VP8_SWITCHABLE_FILTERS-1];

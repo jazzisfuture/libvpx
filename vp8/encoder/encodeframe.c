@@ -1126,6 +1126,9 @@ static void encode_frame_internal(VP8_COMP *cpi) {
 
   vp8_zero(cpi->MVcount);
   vp8_zero(cpi->MVcount_hp);
+#if CONFIG_NEWMVENTROPY
+  vp8_zero(cpi->NMVcount);
+#endif
   vp8_zero(cpi->coef_counts);
   vp8_zero(cpi->coef_counts_8x8);
 #if CONFIG_TX16X16
