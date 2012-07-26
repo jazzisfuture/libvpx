@@ -712,10 +712,10 @@ void vp8_build_1st_inter16x16_predictors_mbuv(MACROBLOCKD *xd,
                   Temp, len, len, len);
 
         // Sub-pel filter
-        x->subpixel_predict8x8(pTemp, len,
-                               _o16x16mv.as_mv.col & 15,
-                               _o16x16mv.as_mv.row & 15,
-                               pDst, dst_uvstride);
+        xd->subpixel_predict8x8(pTemp, len,
+                                _o16x16mv.as_mv.col & 15,
+                                _o16x16mv.as_mv.row & 15,
+                                pDst, dst_uvstride);
       } else {
         filter_mb(pSrc, pre_stride, pDst, dst_uvstride, 8, 8);
       }
