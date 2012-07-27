@@ -360,7 +360,6 @@ LIBVPX_TEST_BINS=./test_libvpx
 LIBVPX_TEST_DATA=$(addprefix $(LIBVPX_TEST_DATA_PATH)/,\
                      $(call enabled,LIBVPX_TEST_DATA))
 libvpx_test_data_url=http://downloads.webmproject.org/test_data/libvpx/$(1)
-BINS-yes += $(LIBVPX_TEST_BINS)
 
 $(LIBVPX_TEST_DATA):
 	@echo "    [DOWNLOAD] $@"
