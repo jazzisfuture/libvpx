@@ -1119,6 +1119,26 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
                     vpx_calloc(sizeof(unsigned int),
                     cm->mb_rows * cm->mb_cols));
 
+    /* allocate memory for storing last frame's MVs for MV prediction. */
+    CHECK_MEM_ERROR(cpi->lfmv,
+            vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2),
+            sizeof(int_mv)));
+    CHECK_MEM_ERROR(cpi->lf_ref_frame_sign_bias,
+            vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2),
+            sizeof(int)));
+    CHECK_MEM_ERROR(cpi->lf_ref_frame,
+            vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2),
+                    sizeof(int)));
+
+    /* Create the encoder segmentation map and set all entries to 0 */
+    CHECK_MEM_ERROR(cpi->segmentation_map,
+            vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
+
+    CHECK_MEM_ERROR(cpi->active_map,
+            vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
+    vpx_memset(cpi->active_map , 1,
+            (cpi->common.mb_rows * cpi->common.mb_cols));
+
 #if CONFIG_MULTITHREAD
     if (width < 640)
         cpi->mt_sync_range = 1;
@@ -1767,16 +1787,6 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     cpi->alt_is_last  = 0 ;
     cpi->gold_is_alt  = 0 ;
 
-    /* allocate memory for storing last frame's MVs for MV prediction. */
-    CHECK_MEM_ERROR(cpi->lfmv, vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2), sizeof(int_mv)));
-    CHECK_MEM_ERROR(cpi->lf_ref_frame_sign_bias, vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2), sizeof(int)));
-    CHECK_MEM_ERROR(cpi->lf_ref_frame, vpx_calloc((cpi->common.mb_rows+2) * (cpi->common.mb_cols+2), sizeof(int)));
-
-    /* Create the encoder segmentation map and set all entries to 0 */
-    CHECK_MEM_ERROR(cpi->segmentation_map, vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
-
-    CHECK_MEM_ERROR(cpi->active_map, vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
-    vpx_memset(cpi->active_map , 1, (cpi->common.mb_rows * cpi->common.mb_cols));
     cpi->active_map_enabled = 0;
 
 #if 0
