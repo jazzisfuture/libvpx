@@ -120,7 +120,7 @@ extern double vp8_calc_ssimg
 
 #endif
 
-// #define OUTPUT_YUV_REC
+//#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
@@ -1737,6 +1737,9 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
   cm->prob_last_coded               = 128;
   cm->prob_gf_coded                 = 128;
   cm->prob_intra_coded              = 63;
+#if CONFIG_SUPERBLOCKS
+  cm->sb_coded                      = 200;
+#endif
   for (i = 0; i < COMP_PRED_CONTEXTS; i++)
     cm->prob_comppred[i]         = 128;
 
@@ -1922,6 +1925,16 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
   init_mv_ref_counts();
 #endif
 
+  cpi->fn_ptr[BLOCK_32X32].sdf            = VARIANCE_INVOKE(&cpi->rtcd.variance, sad32x32);
+  cpi->fn_ptr[BLOCK_32X32].vf             = VARIANCE_INVOKE(&cpi->rtcd.variance, var32x32);
+  cpi->fn_ptr[BLOCK_32X32].svf            = VARIANCE_INVOKE(&cpi->rtcd.variance, subpixvar32x32);
+  cpi->fn_ptr[BLOCK_32X32].svf_halfpix_h  = VARIANCE_INVOKE(&cpi->rtcd.variance, halfpixvar32x32_h);
+  cpi->fn_ptr[BLOCK_32X32].svf_halfpix_v  = VARIANCE_INVOKE(&cpi->rtcd.variance, halfpixvar32x32_v);
+  cpi->fn_ptr[BLOCK_32X32].svf_halfpix_hv = VARIANCE_INVOKE(&cpi->rtcd.variance, halfpixvar32x32_hv);
+  cpi->fn_ptr[BLOCK_32X32].sdx3f          = VARIANCE_INVOKE(&cpi->rtcd.variance, sad32x32x3);
+  cpi->fn_ptr[BLOCK_32X32].sdx8f          = VARIANCE_INVOKE(&cpi->rtcd.variance, sad32x32x8);
+  cpi->fn_ptr[BLOCK_32X32].sdx4df         = VARIANCE_INVOKE(&cpi->rtcd.variance, sad32x32x4d);
+
   cpi->fn_ptr[BLOCK_16X16].sdf            = VARIANCE_INVOKE(&cpi->rtcd.variance, sad16x16);
   cpi->fn_ptr[BLOCK_16X16].vf             = VARIANCE_INVOKE(&cpi->rtcd.variance, var16x16);
   cpi->fn_ptr[BLOCK_16X16].svf            = VARIANCE_INVOKE(&cpi->rtcd.variance, subpixvar16x16);
@@ -1931,7 +1944,7 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
   cpi->fn_ptr[BLOCK_16X16].sdx3f          = VARIANCE_INVOKE(&cpi->rtcd.variance, sad16x16x3);
   cpi->fn_ptr[BLOCK_16X16].sdx8f          = VARIANCE_INVOKE(&cpi->rtcd.variance, sad16x16x8);
   cpi->fn_ptr[BLOCK_16X16].sdx4df         = VARIANCE_INVOKE(&cpi->rtcd.variance, sad16x16x4d);
-
+  
   cpi->fn_ptr[BLOCK_16X8].sdf            = VARIANCE_INVOKE(&cpi->rtcd.variance, sad16x8);
   cpi->fn_ptr[BLOCK_16X8].vf             = VARIANCE_INVOKE(&cpi->rtcd.variance, var16x8);
   cpi->fn_ptr[BLOCK_16X8].svf            = VARIANCE_INVOKE(&cpi->rtcd.variance, subpixvar16x8);
@@ -3630,6 +3643,40 @@ static void encode_frame_to_data_rate
   // build the bitstream
   cpi->dummy_packing = 0;
   vp8_pack_bitstream(cpi, dest, size);
+#if 0
+  printf("\nFrame %d\n", cm->current_video_frame);
+  {
+    static const char mode_letter[MB_MODE_COUNT] = {
+      [DC_PRED] = 'D',
+      [V_PRED] = 'V',
+      [H_PRED] = 'H',
+#if CONFIG_NEWINTRAMODES
+      [D45_PRED] = '4',
+      [D135_PRED] = '3',
+      [D117_PRED] = '1',
+      [D153_PRED] = '5',
+      [D27_PRED] = '2',
+      [D63_PRED] = '6',
+#endif
+      [TM_PRED] = 'T',
+      [NEARESTMV] = 'N',
+      [NEARMV] = 'O',
+      [ZEROMV] = 'Z',
+      [NEWMV] = 'M',
+    };
+    int mb_row, mb_col;
+    for (mb_row = 0; mb_row < cm->mb_rows; mb_row += 2) {
+      MODE_INFO *m = cm->mi + mb_row * cm->mode_info_stride;
+      for (mb_col = 0; mb_col < cm->mb_cols; mb_col += 2, m += 2) {
+        printf(" %c ",
+               m->mbmi.encoded_as_sb ?
+               (m->mbmi.second_ref_frame ? tolower(mode_letter[m->mbmi.mode]) : mode_letter[m->mbmi.mode]) : '-');
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
+#endif
 
 #if CONFIG_PRED_FILTER
   // Select the prediction filtering mode to use for the
@@ -3750,7 +3797,7 @@ static void encode_frame_to_data_rate
   // in this frame.
   update_base_skip_probs(cpi);
 
-#if 0// 1 && CONFIG_INTERNAL_STATS
+#if 0 // 1 && CONFIG_INTERNAL_STATS
   {
     FILE *f = fopen("tmp.stt", "a");
     int recon_err;
@@ -3821,7 +3868,7 @@ static void encode_frame_to_data_rate
 
     fclose(f);
 
-    if (0) {
+    if (1) {
       FILE *fmodes = fopen("Modes.stt", "a");
       int i;
 
@@ -3932,7 +3979,7 @@ static void encode_frame_to_data_rate
   }
 #endif
 #ifdef OUTPUT_YUV_REC
-  vp8_write_yuv_rec_frame(cm);
+  if (cm->show_frame) vp8_write_yuv_rec_frame(cm);
 #endif
 
   if (cm->show_frame) {

@@ -74,7 +74,9 @@ typedef struct {
   int best_mode_index;
   int rddiv;
   int rdmult;
-
+  int hybrid_pred_diff;
+  int comp_pred_diff;
+  int single_pred_diff;
 } PICK_MODE_CONTEXT;
 
 typedef struct {
@@ -160,7 +162,9 @@ typedef struct {
   int optimize;
   int q_index;
 
+#if CONFIG_SUPERBLOCKS
   int encode_as_sb;
+#endif
 
   // Structure to hold context for each of the 4 MBs within a SB:
   // when encoded as 4 independent MBs:

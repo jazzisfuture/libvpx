@@ -299,12 +299,12 @@ MV_REFERENCE_FRAME get_pred_ref(VP8_COMMON *const cm,
   above_left_in_image = (m - 1 - cm->mode_info_stride)->mbmi.mb_in_image;
 
   // Adjust scores for candidate reference frames based on neigbours
-  if (frame_allowed[left] && left_in_image) {
+  if (left_in_image && frame_allowed[left]) {
     ref_score[left] += 16;
     if (above_left_in_image && (left == above_left))
       ref_score[left] += 4;
   }
-  if (frame_allowed[above] && above_in_image) {
+  if (above_in_image && frame_allowed[above]) {
     ref_score[above] += 16;
     if (above_left_in_image && (above == above_left))
       ref_score[above] += 4;

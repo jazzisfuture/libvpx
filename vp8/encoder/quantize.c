@@ -195,6 +195,7 @@ void vp8_regular_quantize_b_2x2(BLOCK *b, BLOCKD *d) {
   for (i = 0; i < b->eob_max_offset_8x8; i++) {
     rc   = vp8_default_zig_zag1d[i];
     z    = coeff_ptr[rc];
+    //printf("[%d] = %d -> ", i, z);
 
     zbin_boost_ptr = &b->zrun_zbin_boost[zbin_zrun_index];
     zbin_zrun_index += 4;
@@ -210,12 +211,13 @@ void vp8_regular_quantize_b_2x2(BLOCK *b, BLOCKD *d) {
       x  = (y ^ sz) - sz;                         // get the sign back
       qcoeff_ptr[rc]  = x;                        // write to destination
       dqcoeff_ptr[rc] = x * dequant_ptr[rc];      // dequantized value
+      //printf("%d\n", i, dqcoeff_ptr[rc]);
 
       if (y) {
         eob = i;                                  // last nonzero coeffs
         zbin_zrun_index = 0;
       }
-    }
+    } //else printf("0\n");
   }
 
   d->eob = eob + 1;
@@ -271,7 +273,8 @@ void vp8_regular_quantize_b_8x8(BLOCK *b, BLOCKD *d) {
 
 void vp8_quantize_mby_8x8(MACROBLOCK *x) {
   int i;
-  int has_2nd_order = (x->e_mbd.mode_info_context->mbmi.mode != B_PRED
+  int has_2nd_order = (   /*x->encode_as_sb == 0
+                       &&*/ x->e_mbd.mode_info_context->mbmi.mode != B_PRED
                        && x->e_mbd.mode_info_context->mbmi.mode != SPLITMV);
   for (i = 0; i < 16; i ++) {
     x->e_mbd.block[i].eob = 0;
