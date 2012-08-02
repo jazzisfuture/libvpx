@@ -46,6 +46,12 @@ int dec_debug = 0;
 
 #define COEFCOUNT_TESTING
 
+#if CONFIG_HTRANS8X8
+extern void vp8_ht_dequant_idct_add_8x8_c(TX_TYPE tx_type, short *input,
+                                          short *dq, unsigned char *pred,
+                                          unsigned char *dest,
+                                          int pitch, int stride);
+#endif
 
 static int merge_index(int v, int n, int modulus) {
   int max1 = (n - 1 - modulus / 2) / modulus + 1;
@@ -382,7 +388,30 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       (b, i8x8mode, b->predictor);
 
 #if CONFIG_HTRANS8X8
-      vp8_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
+      switch (pred_mode_conv(i8x8mode)) {
+        case B_TM_PRED :
+        case B_RD_PRED :
+          b->bmi.as_mode.tx_type = ADST_ADST;
+          break;
+
+        case B_VE_PRED :
+        case B_VR_PRED :
+          b->bmi.as_mode.tx_type = ADST_DCT;
+          break;
+
+        case B_HE_PRED :
+        case B_HD_PRED :
+        case B_HU_PRED :
+          b->bmi.as_mode.tx_type = DCT_ADST;
+          break;
+
+        default :
+          b->bmi.as_mode.tx_type = DCT_DCT;
+          break;
+      }
+      vp8_ht_dequant_idct_add_8x8_c(b->bmi.as_mode.tx_type,
+                                    q, dq, pre, dst, 16, stride);
+      // vp8_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
       q += 64;
 #else
       for (j = 0; j < 4; j++) {
