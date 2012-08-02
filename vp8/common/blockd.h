@@ -180,6 +180,50 @@ typedef enum {
   B_MODE_COUNT
 } B_PREDICTION_MODE;
 
+#if CONFIG_HTRANS8X8
+// convert MB_PREDICTION_MODE to B_PREDICTION_MODE
+static B_PREDICTION_MODE pred_mode_conv(MB_PREDICTION_MODE mode) {
+  B_PREDICTION_MODE b_mode;
+  switch (mode) {
+    case DC_PRED:
+      b_mode = B_DC_PRED;
+      break;
+    case V_PRED:
+      b_mode = B_VE_PRED;
+      break;
+    case H_PRED:
+      b_mode = B_HE_PRED;
+      break;
+    case TM_PRED:
+      b_mode = B_TM_PRED;
+      break;
+    case D45_PRED:
+      b_mode = B_LD_PRED;
+      break;
+    case D135_PRED:
+      b_mode = B_RD_PRED;
+      break;
+    case D117_PRED:
+      b_mode = B_VR_PRED;
+      break;
+    case D153_PRED:
+      b_mode = B_HD_PRED;
+      break;
+    case D27_PRED:
+      b_mode = B_VL_PRED;
+      break;
+    case D63_PRED:
+      b_mode = B_HU_PRED;
+      break;
+    default :
+      // for debug purpose, to be removed after full testing
+      printf("MB_PREDICTION_MODE conversion failed\n");
+      break;
+  }
+  return b_mode;
+}
+#endif
+
 #define VP8_BINTRAMODES (B_HU_PRED + 1)  /* 10 */
 #define VP8_SUBMVREFS (1 + NEW4X4 - LEFT4X4)
 
