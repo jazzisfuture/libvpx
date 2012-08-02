@@ -638,7 +638,7 @@ static int rd_pick_intra4x4block(
     int *bestratey,
     int *bestdistortion)
 {
-    B_PREDICTION_MODE mode;
+    union b_mode_info mode;
     int best_rd = INT_MAX;
     int rate = 0;
     int distortion;
@@ -659,14 +659,14 @@ static int rd_pick_intra4x4block(
     unsigned char *yleft = dst - 1;
     unsigned char top_left = Above[-1];
 
-    for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++)
+    for (mode.as_mode = B_DC_PRED; mode.as_mode <= B_HU_PRED; mode.as_mode++)
     {
         int this_rd;
         int ratey;
 
-        rate = bmode_costs[mode];
+        rate = bmode_costs[mode.mv.as_int];
 
-        vp8_intra4x4_predict(Above, yleft, dst_stride, mode,
+        vp8_intra4x4_predict(Above, yleft, dst_stride, mode.mv.as_int,
                              b->predictor, 16, top_left);
         vp8_subtract_b(be, b, 16);
         x->short_fdct4x4(be->src_diff, be->coeff, 32);
@@ -687,14 +687,14 @@ static int rd_pick_intra4x4block(
             *bestratey = ratey;
             *bestdistortion = distortion;
             best_rd = this_rd;
-            *best_mode = mode;
+            *best_mode = mode.as_mode;
             *a = tempa;
             *l = templ;
             copy_predictor(best_predictor, b->predictor);
             vpx_memcpy(best_dqcoeff, b->dqcoeff, 32);
         }
     }
-    b->bmi.as_mode = (B_PREDICTION_MODE)(*best_mode);
+    b->bmi.as_mode = *best_mode;
 
     vp8_short_idct4x4llm(best_dqcoeff, best_predictor, 16, dst, dst_stride);
 
