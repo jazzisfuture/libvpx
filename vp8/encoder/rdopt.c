@@ -1221,7 +1221,9 @@ static int64_t rd_pick_intra8x8block(
       vp8_subtract_4b_c(be, b, 16);
 
 #if CONFIG_HTRANS8X8
-      x->vp8_short_fdct8x8(be->src_diff, (x->block + idx)->coeff, 32);
+      txfm_map(b, pred_mode_conv(mode));
+      vp8_fht8x8_c(be->src_diff, (x->block + idx)->coeff, 32, b->bmi.as_mode.tx_type);
+//    x->vp8_short_fdct8x8(be->src_diff, (x->block + idx)->coeff, 32);
       x->quantize_b_8x8(x->block + idx, xd->block + idx);
 
       // compute quantization mse of 8x8 block

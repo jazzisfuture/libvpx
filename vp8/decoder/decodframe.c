@@ -46,7 +46,6 @@ int dec_debug = 0;
 
 #define COEFCOUNT_TESTING
 
-
 static int merge_index(int v, int n, int modulus) {
   int max1 = (n - 1 - modulus / 2) / modulus + 1;
   if (v < max1) v = v * modulus + modulus / 2;
@@ -382,7 +381,10 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       (b, i8x8mode, b->predictor);
 
 #if CONFIG_HTRANS8X8
-      vp8_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
+      txfm_map(b, pred_mode_conv(i8x8mode));
+      vp8_ht_dequant_idct_add_8x8_c(b->bmi.as_mode.tx_type,
+                                    q, dq, pre, dst, 16, stride);
+      // vp8_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
       q += 64;
 #else
       for (j = 0; j < 4; j++) {

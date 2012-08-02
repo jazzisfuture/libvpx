@@ -313,9 +313,18 @@ void vp8_encode_intra8x8(const VP8_ENCODER_RTCD *rtcd,
 
     // generate residual blocks
     vp8_subtract_4b_c(be, b, 16);
-    x->vp8_short_fdct8x8(be->src_diff, (x->block + idx)->coeff, 32);
+
+    txfm_map(b, pred_mode_conv(b->bmi.as_mode.first));
+
+    vp8_fht8x8_c(be->src_diff, (x->block + idx)->coeff, 32,
+                 b->bmi.as_mode.tx_type);
     x->quantize_b_8x8(x->block + idx, xd->block + idx);
-    vp8_short_idct8x8_c(xd->block[idx].dqcoeff, xd->block[ib].diff, 32);
+    vp8_iht8x8llm_c(xd->block[idx].dqcoeff, xd->block[ib].diff, 32,
+                    b->bmi.as_mode.tx_type);
+
+//    x->vp8_short_fdct8x8(be->src_diff, (x->block + idx)->coeff, 32);
+//    x->quantize_b_8x8(x->block + idx, xd->block + idx);
+//    vp8_short_idct8x8_c(xd->block[idx].dqcoeff, xd->block[ib].diff, 32);
 
     // reconstruct submacroblock
     for (i = 0; i < 4; i++) {
