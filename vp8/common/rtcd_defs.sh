@@ -144,8 +144,8 @@ specialize vp8_build_intra_predictors_mby_s sse2 ssse3
 prototype void vp8_build_intra_predictors_mbuv_s "struct macroblockd *x, unsigned char * uabove_row, unsigned char * vabove_row,  unsigned char *uleft, unsigned char *vleft, int left_stride, unsigned char * upred_ptr, unsigned char * vpred_ptr, int pred_stride"
 specialize vp8_build_intra_predictors_mbuv_s sse2 ssse3
 
-prototype void vp8_intra4x4_predict "unsigned char *above, unsigned char *left, int left_stride, int b_mode, unsigned char *dst, int dst_stride, unsigned char top_left"
-# No existing specializations
+prototype void vp8_intra4x4_predict "unsigned char *Above, unsigned char *yleft, int left_stride, int b_mode, unsigned char *dst, int dst_stride, unsigned char top_left"
+vp8_intra4x4_predict_media=vp8_intra4x4_predict_armv6
 
 #
 # Postproc
