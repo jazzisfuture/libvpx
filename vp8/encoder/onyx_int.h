@@ -449,7 +449,9 @@ typedef struct VP8_COMP {
   int rd_thresh_mult[MAX_MODES];
   int rd_baseline_thresh[MAX_MODES];
   int rd_threshes[MAX_MODES];
-  int64_t rd_single_diff, rd_comp_diff, rd_hybrid_diff;
+  int64_t rd_comp_pred_diff[3];
+  int rd_tx_type_threshes[4][NB_TX_TYPES];
+  int64_t rd_tx_diff[NB_TX_TYPES];
   int rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];
   int comp_pred_count[COMP_PRED_CONTEXTS];
   int single_pred_count[COMP_PRED_CONTEXTS];
@@ -614,11 +616,7 @@ typedef struct VP8_COMP {
   int gf_update_recommended;
   int skip_true_count[3];
   int skip_false_count[3];
-  int t4x4_count;
-  int t8x8_count;
-#if CONFIG_TX16X16
-  int t16x16_count;
-#endif
+  int txfm_count[TX_SIZE_MAX];
 
   unsigned char *segmentation_map;
 
@@ -754,7 +752,6 @@ typedef struct VP8_COMP {
   unsigned int switchable_interp_count[VP8_SWITCHABLE_FILTERS+1]
                                       [VP8_SWITCHABLE_FILTERS];
 #endif
-
 } VP8_COMP;
 
 void control_data_rate(VP8_COMP *cpi);

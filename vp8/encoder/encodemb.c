@@ -817,8 +817,8 @@ void optimize_b_8x8(MACROBLOCK *mb, int i, int type,
         rate1 +=
           mb->token_costs_8x8[type][band][pt][tokens[next][1].token];
       }
-      rd_cost0 = RDCOST_8x8(rdmult, rddiv, rate0, error0);
-      rd_cost1 = RDCOST_8x8(rdmult, rddiv, rate1, error1);
+      rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0);
+      rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);
       if (rd_cost0 == rd_cost1) {
         rd_cost0 = RDTRUNC_8x8(rdmult, rddiv, rate0, error0);
         rd_cost1 = RDTRUNC_8x8(rdmult, rddiv, rate1, error1);
@@ -875,8 +875,8 @@ void optimize_b_8x8(MACROBLOCK *mb, int i, int type,
         }
       }
 
-      rd_cost0 = RDCOST_8x8(rdmult, rddiv, rate0, error0);
-      rd_cost1 = RDCOST_8x8(rdmult, rddiv, rate1, error1);
+      rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0);
+      rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);
       if (rd_cost0 == rd_cost1) {
         rd_cost0 = RDTRUNC_8x8(rdmult, rddiv, rate0, error0);
         rd_cost1 = RDTRUNC_8x8(rdmult, rddiv, rate1, error1);
@@ -929,8 +929,8 @@ void optimize_b_8x8(MACROBLOCK *mb, int i, int type,
   t1 = tokens[next][1].token;
   rate0 += mb->token_costs_8x8[type][band][pt][t0];
   rate1 += mb->token_costs_8x8[type][band][pt][t1];
-  rd_cost0 = RDCOST_8x8(rdmult, rddiv, rate0, error0);
-  rd_cost1 = RDCOST_8x8(rdmult, rddiv, rate1, error1);
+  rd_cost0 = RDCOST(rdmult, rddiv, rate0, error0);
+  rd_cost1 = RDCOST(rdmult, rddiv, rate1, error1);
   if (rd_cost0 == rd_cost1) {
     rd_cost0 = RDTRUNC_8x8(rdmult, rddiv, rate0, error0);
     rd_cost1 = RDTRUNC_8x8(rdmult, rddiv, rate1, error1);
