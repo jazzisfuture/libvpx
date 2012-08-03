@@ -556,7 +556,6 @@ static void write_mv
   vp8_encode_motion_vector(w, &e, mvc);
 }
 
-#if CONFIG_HIGH_PRECISION_MV
 static void write_mv_hp
 (
   vp8_writer *w, const MV *mv, const int_mv *ref, const MV_CONTEXT_HP *mvc
@@ -567,7 +566,6 @@ static void write_mv_hp
 
   vp8_encode_motion_vector_hp(w, &e, mvc);
 }
-#endif
 
 // This function writes the current macro block's segnment id to the bitstream
 // It should only be called if a segment map update is indicated.
@@ -721,9 +719,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
   VP8_COMMON *const pc = & cpi->common;
   vp8_writer *const w = & cpi->bc;
   const MV_CONTEXT *mvc = pc->fc.mvc;
-#if CONFIG_HIGH_PRECISION_MV
   const MV_CONTEXT_HP *mvc_hp = pc->fc.mvc_hp;
-#endif
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   MODE_INFO *m;
   MODE_INFO *prev_m;
@@ -799,11 +795,9 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 
   update_mbintra_mode_probs(cpi);
 
-#if CONFIG_HIGH_PRECISION_MV
   if (xd->allow_high_precision_mv)
     vp8_write_mvprobs_hp(cpi);
   else
-#endif
     vp8_write_mvprobs(cpi);
 
   mb_row = 0;
@@ -1007,23 +1001,17 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
                 active_section = 5;
 #endif
 
-#if CONFIG_HIGH_PRECISION_MV
                 if (xd->allow_high_precision_mv) {
                   write_mv_hp(w, &mi->mv.as_mv, &best_mv, mvc_hp);
-                } else
-#endif
-                {
+                } else {
                   write_mv(w, &mi->mv.as_mv, &best_mv, mvc);
                 }
 
                 if (mi->second_ref_frame) {
-#if CONFIG_HIGH_PRECISION_MV
                   if (xd->allow_high_precision_mv) {
                     write_mv_hp(w, &mi->second_mv.as_mv,
                                 &best_second_mv, mvc_hp);
-                  } else
-#endif
-                  {
+                  } else {
                     write_mv(w, &mi->second_mv.as_mv,
                              &best_second_mv, mvc);
                   }
@@ -1068,25 +1056,19 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #ifdef ENTROPY_STATS
                     active_section = 11;
 #endif
-#if CONFIG_HIGH_PRECISION_MV
                     if (xd->allow_high_precision_mv) {
                       write_mv_hp(w, &blockmv.as_mv, &best_mv,
                                   (const MV_CONTEXT_HP *) mvc_hp);
-                    } else
-#endif
-                    {
+                    } else {
                       write_mv(w, &blockmv.as_mv, &best_mv,
                                (const MV_CONTEXT *) mvc);
                     }
 
                     if (mi->second_ref_frame) {
-#if CONFIG_HIGH_PRECISION_MV
                       if (xd->allow_high_precision_mv) {
                         write_mv_hp(w, &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                     &best_second_mv, (const MV_CONTEXT_HP *) mvc_hp);
-                      } else
-#endif
-                      {
+                      } else {
                         write_mv(w, &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                  &best_second_mv, (const MV_CONTEXT *) mvc);
                       }
@@ -2334,10 +2316,8 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     vp8_write_bit(bc, pc->ref_frame_sign_bias[GOLDEN_FRAME]);
     vp8_write_bit(bc, pc->ref_frame_sign_bias[ALTREF_FRAME]);
 
-#if CONFIG_HIGH_PRECISION_MV
     // Signal whether to allow high MV precision
     vp8_write_bit(bc, (xd->allow_high_precision_mv) ? 1 : 0);
-#endif
 #if CONFIG_SWITCHABLE_INTERP
     if (pc->mcomp_filter_type == SWITCHABLE) {
       /* Check to see if only one of the filters is actually used */
@@ -2393,9 +2373,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
   vp8_copy(cpi->common.fc.pre_mbsplit_prob, cpi->common.fc.mbsplit_prob);
   vp8_copy(cpi->common.fc.pre_i8x8_mode_prob, cpi->common.fc.i8x8_mode_prob);
   vp8_copy(cpi->common.fc.pre_mvc, cpi->common.fc.mvc);
-#if CONFIG_HIGH_PRECISION_MV
   vp8_copy(cpi->common.fc.pre_mvc_hp, cpi->common.fc.mvc_hp);
-#endif
   vp8_zero(cpi->sub_mv_ref_count);
   vp8_zero(cpi->mbsplit_count);
   vp8_zero(cpi->common.fc.mv_ref_ct)
