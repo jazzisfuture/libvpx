@@ -120,7 +120,7 @@ extern double vp8_calc_ssimg
 
 #endif
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
@@ -3762,7 +3762,7 @@ static void encode_frame_to_data_rate
   // in this frame.
   update_base_skip_probs(cpi);
 
-#if 0// 1 && CONFIG_INTERNAL_STATS
+//#if 0// 1 && CONFIG_INTERNAL_STATS
   {
     FILE *f = fopen("tmp.stt", "a");
     int recon_err;
@@ -3833,7 +3833,7 @@ static void encode_frame_to_data_rate
 
     fclose(f);
 
-    if (0) {
+    if (1) {
       FILE *fmodes = fopen("Modes.stt", "a");
       int i;
 
@@ -3851,7 +3851,7 @@ static void encode_frame_to_data_rate
     }
   }
 
-#endif
+//#endif
 
 #if 0
   // Debug stats for segment feature experiments.
@@ -3944,7 +3944,8 @@ static void encode_frame_to_data_rate
   }
 #endif
 #ifdef OUTPUT_YUV_REC
-  vp8_write_yuv_rec_frame(cm);
+    // Skips alt-ref frames
+    if (cm->show_frame) vp8_write_yuv_rec_frame(cm);
 #endif
 
   if (cm->show_frame) {

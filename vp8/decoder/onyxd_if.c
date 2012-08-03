@@ -38,7 +38,6 @@ extern void vp8cx_init_de_quantizer(VP8D_COMP *pbi);
 static int get_free_fb(VP8_COMMON *cm);
 static void ref_cnt_fb(int *buf, int *idx, int new_idx);
 
-#if CONFIG_DEBUG
 void vp8_recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
   FILE *yuv_file = fopen((char *)name, "ab");
   unsigned char *src = s->y_buffer;
@@ -67,7 +66,7 @@ void vp8_recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
 
   fclose(yuv_file);
 }
-#endif
+// #endif
 // #define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER
 void write_dx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
@@ -445,10 +444,10 @@ int vp8dx_receive_compressed_data(VP8D_PTR ptr, unsigned long size, const unsign
     vp8_yv12_extend_frame_borders_ptr(cm->frame_to_show);
   }
 
-#if CONFIG_DEBUG
+// #if CONFIG_DEBUG
   if (cm->show_frame)
     vp8_recon_write_yuv_frame("recon.yuv", cm->frame_to_show);
-#endif
+// #endif
 
   vp8_clear_system_state();
 
