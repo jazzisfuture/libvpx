@@ -982,8 +982,7 @@ static int64_t rd_pick_intra4x4block(
       if(active_ht) {
         b->bmi.as_mode.test = mode;
         txfm_map(b, mode);
-
-        vp8_fht4x4_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type);
+        vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
         vp8_ht_quantize_b(be, b);
       } else {
         x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
@@ -1036,7 +1035,7 @@ static int64_t rd_pick_intra4x4block(
 
   // inverse transform
   if(active_ht) {
-    vp8_iht4x4llm_c(best_dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type );
+    vp8_ihtllm_c(best_dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type, 4);
   } else {
     IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff,
                                                                 b->diff, 32);
@@ -1275,8 +1274,8 @@ static int64_t rd_pick_intra8x8block(
 
 #if CONFIG_HYBRIDTRANSFORM8X8
       txfm_map(b, pred_mode_conv(mode));
-      vp8_fht8x8_c(be->src_diff, (x->block + idx)->coeff, 32, b->bmi.as_mode.tx_type);
-//    x->vp8_short_fdct8x8(be->src_diff, (x->block + idx)->coeff, 32);
+      vp8_fht_c(be->src_diff, (x->block + idx)->coeff, 32,
+                b->bmi.as_mode.tx_type, 8);
       x->quantize_b_8x8(x->block + idx, xd->block + idx);
 
       // compute quantization mse of 8x8 block
@@ -1287,8 +1286,7 @@ static int64_t rd_pick_intra8x8block(
       tl0 = *(l + vp8_block2left_8x8 [idx]);
 
       rate_t = cost_coeffs_8x8(x, xd->block + idx, PLANE_TYPE_Y_WITH_DC,
-                               &ta0,
-                               &tl0);
+                               &ta0, &tl0);
       rate += rate_t;
       ta1 = ta0;
       tl1 = tl0;
