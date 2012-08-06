@@ -2797,7 +2797,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     vp8_find_best_ref_mvs(&x->e_mbd,
                           y_buffer[LAST_FRAME],
                           lst_yv12->y_stride,
-                          &frame_best_ref_mv[LAST_FRAME]);
+                          &frame_best_ref_mv[LAST_FRAME],
+                          &frame_nearest_mv[LAST_FRAME],
+                          &frame_near_mv[LAST_FRAME]);
     ref_mv[LAST_FRAME].as_int = frame_best_ref_mv[LAST_FRAME].as_int;
 #endif
   }
@@ -2817,7 +2819,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     vp8_find_best_ref_mvs(&x->e_mbd,
                           y_buffer[GOLDEN_FRAME],
                           gld_yv12->y_stride,
-                          &frame_best_ref_mv[GOLDEN_FRAME]);
+                          &frame_best_ref_mv[GOLDEN_FRAME],
+                          &frame_nearest_mv[GOLDEN_FRAME],
+                          &frame_near_mv[GOLDEN_FRAME]);
     ref_mv[GOLDEN_FRAME].as_int = frame_best_ref_mv[GOLDEN_FRAME].as_int;
 #endif
   }
@@ -2837,7 +2841,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     vp8_find_best_ref_mvs(&x->e_mbd,
                           y_buffer[ALTREF_FRAME],
                           alt_yv12->y_stride,
-                          &frame_best_ref_mv[ALTREF_FRAME]);
+                          &frame_best_ref_mv[ALTREF_FRAME],
+                          &frame_nearest_mv[ALTREF_FRAME],
+                          &frame_near_mv[ALTREF_FRAME]);
     ref_mv[ALTREF_FRAME].as_int = frame_best_ref_mv[ALTREF_FRAME].as_int;
 #endif
   }
