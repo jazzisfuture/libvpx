@@ -279,8 +279,7 @@ void vp8cx_initialize_me_consts(VP8_COMP *cpi, int QIndex) {
 
 
 void vp8_initialize_rd_consts(VP8_COMP *cpi, int QIndex) {
-  int q;
-  int i;
+  int q, i;
 
   vp8_clear_system_state();  // __asm emms;
 
@@ -438,31 +437,17 @@ void vp8_auto_select_speed(VP8_COMP *cpi) {
   }
 }
 
-int vp8_block_error_c(short *coeff, short *dqcoeff) {
-  int i;
-  int error = 0;
+int vp8_block_error_c(short *coeff, short *dqcoeff, int tx_type) {
+  int i, error = 0;
+  int eob[2] = {16, 64};
 
-  for (i = 0; i < 16; i++) {
+  for (i = 0; i < eob[tx_type]; i++) {
     int this_diff = coeff[i] - dqcoeff[i];
     error += this_diff * this_diff;
   }
 
   return error;
 }
-
-#if CONFIG_HYBRIDTRANSFORM8X8
-int vp8_submb_error_c(short *coeff, short *dqcoeff) {
-  int i;
-  int error = 0;
-
-  for (i = 0; i < 64; i++) {
-    int this_diff = coeff[i] - dqcoeff[i];
-    error += this_diff * this_diff;
-  }
-
-  return error;
-}
-#endif
 
 int vp8_mbblock_error_c(MACROBLOCK *mb, int dc) {
   BLOCK  *be;
@@ -500,7 +485,7 @@ int vp8_mbuverror_c(MACROBLOCK *mb) {
     be = &mb->block[i];
     bd = &mb->e_mbd.block[i];
 
-    error += vp8_block_error_c(be->coeff, bd->dqcoeff);
+    error += vp8_block_error_c(be->coeff, bd->dqcoeff, TX_4X4);
   }
 
   return error;
@@ -727,7 +712,7 @@ static void macro_block_yrd(MACROBLOCK *mb,
   // Distortion
   d = ENCODEMB_INVOKE(&rtcd->encodemb, mberr)(mb, 1);
 
-  d += ENCODEMB_INVOKE(&rtcd->encodemb, berr)(mb_y2->coeff, x_y2->dqcoeff);
+  d += ENCODEMB_INVOKE(&rtcd->encodemb, berr)(mb_y2->coeff, x_y2->dqcoeff, TX_4X4);
 
   *Distortion = (d >> 2);
   // rate
@@ -787,7 +772,7 @@ static void macro_block_yrd_8x8(MACROBLOCK *mb,
   mb->e_mbd.dqcoeff[192] = 0;
 
   d = ENCODEMB_INVOKE(&rtcd->encodemb, mberr)(mb, 0);
-  d += ENCODEMB_INVOKE(&rtcd->encodemb, berr)(mb_y2->coeff, x_y2->dqcoeff);
+  d += ENCODEMB_INVOKE(&rtcd->encodemb, berr)(mb_y2->coeff, x_y2->dqcoeff, TX_4X4);
 
   *Distortion = (d >> 2);
   // rate
@@ -953,7 +938,7 @@ static int64_t rd_pick_intra4x4block(
         ratey = cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC, &tempa, &templ, TX_4X4);
         rate += ratey;
         distortion = ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)(
-            be->coeff, b->dqcoeff) >> 2;
+            be->coeff, b->dqcoeff, TX_4X4) >> 2;
 
         this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
@@ -1233,8 +1218,8 @@ static int64_t rd_pick_intra8x8block(
       x->quantize_b_8x8(x->block + idx, xd->block + idx);
 
       // compute quantization mse of 8x8 block
-      distortion = vp8_submb_error_c((x->block + idx)->coeff,
-                                     (xd->block + idx)->dqcoeff)>>2;
+      distortion = vp8_block_error_c((x->block + idx)->coeff,
+                                     (xd->block + idx)->dqcoeff, TX_8X8)>>2;
 
       ta0 = *(a + vp8_block2above_8x8[idx]);
       tl0 = *(l + vp8_block2left_8x8 [idx]);
@@ -1254,13 +1239,13 @@ static int64_t rd_pick_intra8x8block(
                          xd->block + ib + 4, xd->block + ib + 5);
 
       distortion = ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)
-                   ((x->block + ib)->coeff, (xd->block + ib)->dqcoeff) >> 2;
+                   ((x->block + ib)->coeff, (xd->block + ib)->dqcoeff, TX_4X4) >> 2;
       distortion += ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)
-                    ((x->block + ib + 1)->coeff, (xd->block + ib + 1)->dqcoeff) >> 2;
+                    ((x->block + ib + 1)->coeff, (xd->block + ib + 1)->dqcoeff, TX_4X4) >> 2;
       distortion += ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)
-                    ((x->block + ib + 4)->coeff, (xd->block + ib + 4)->dqcoeff) >> 2;
+                    ((x->block + ib + 4)->coeff, (xd->block + ib + 4)->dqcoeff, TX_4X4) >> 2;
       distortion += ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)
-                    ((x->block + ib + 5)->coeff, (xd->block + ib + 5)->dqcoeff) >> 2;
+                    ((x->block + ib + 5)->coeff, (xd->block + ib + 5)->dqcoeff, TX_4X4) >> 2;
 
       ta0 = *(a + vp8_block2above[ib]);
       ta1 = *(a + vp8_block2above[ib + 1]);
@@ -1760,7 +1745,7 @@ static unsigned int vp8_encode_inter_mb_segment(
       x->quantize_b(be, bd);
       thisdistortion = ENCODEMB_INVOKE(&rtcd->encodemb, berr)(
                          be->coeff,
-                         bd->dqcoeff) / 4;
+                         bd->dqcoeff, TX_4X4) / 4;
       distortion += thisdistortion;
     }
   }
