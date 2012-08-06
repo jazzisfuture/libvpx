@@ -147,7 +147,9 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd, const BLOCKD *const b, TO
     t->context_tree = cpi->common.fc.coef_probs_16x16[type][band][pt];
 
     t->skip_eob_node = pt == 0 && ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts_16x16[type][band][pt][x];
   } while (pt = vp8_prev_token_class[x], ++t, c < eob  &&  ++c < seg_eob);
 
@@ -213,7 +215,9 @@ static void tokenize2nd_order_b_8x8
              x, vp8_coef_encodings[x].Len, t->skip_eob_node, eob, c, band, type,
              cpi->count, mb_row_debug, mb_col_debug);
 #endif
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts_8x8       [type] [band] [pt] [x];
   } while (pt = vp8_prev_token_class[x], ++t, c < eob  &&  ++c < seg_eob);
 
@@ -261,6 +265,9 @@ static void tokenize2nd_order_b(MACROBLOCKD *xd, TOKENEXTRA **tp,
 
     t->skip_eob_node = ((pt == 0) && (band > 0));
 
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts       [1] [band] [pt] [token];
 
     pt = vp8_prev_token_class[token];
@@ -274,6 +281,9 @@ static void tokenize2nd_order_b(MACROBLOCKD *xd, TOKENEXTRA **tp,
 
     t->skip_eob_node = ((pt == 0) && (band > 0));
 
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts       [1] [band] [pt] [DCT_EOB_TOKEN];
 
     t++;
@@ -324,6 +334,9 @@ static void tokenize1st_order_b_8x8
     t->context_tree = cpi->common.fc.coef_probs_8x8[type][band][pt];
 
     t->skip_eob_node = pt == 0 && ((band > 0 && type > 0) || (band > 1 && type == 0));
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts_8x8[type][band][pt][x];
 
     pt = vp8_prev_token_class[x];
@@ -336,7 +349,9 @@ static void tokenize1st_order_b_8x8
 
     t->context_tree = cpi->common.fc.coef_probs_8x8 [type] [band] [pt];
     t->skip_eob_node = pt == 0 && ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts_8x8[type][band][pt][DCT_EOB_TOKEN];
     ++t;
   }
@@ -427,7 +442,9 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
 
       t->skip_eob_node = pt == 0 &&
           ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [type] [band] [pt] [token];
 
       pt = vp8_prev_token_class[token];
@@ -441,7 +458,9 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
 
       t->skip_eob_node = pt == 0 &&
           ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [type] [band] [pt] [DCT_EOB_TOKEN];
 
       t++;
@@ -477,7 +496,9 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [token];
 
       pt = vp8_prev_token_class[token];
@@ -490,7 +511,9 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
 
       t++;
@@ -556,7 +579,9 @@ static void tokenize1st_order_chroma
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [token];
 
       pt = vp8_prev_token_class[token];
@@ -569,7 +594,9 @@ static void tokenize1st_order_chroma
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
 
       t++;
@@ -626,7 +653,9 @@ static void tokenize1st_order_b
 
       t->skip_eob_node = pt == 0 &&
                          ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [type] [band] [pt] [token];
 
       pt = vp8_prev_token_class[token];
@@ -640,7 +669,9 @@ static void tokenize1st_order_b
 
       t->skip_eob_node = pt == 0 &&
                          ((band > 0 && type > 0) || (band > 1 && type == 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [type] [band] [pt] [DCT_EOB_TOKEN];
 
       t++;
@@ -670,7 +701,9 @@ static void tokenize1st_order_b
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [token];
 
       pt = vp8_prev_token_class[token];
@@ -683,7 +716,9 @@ static void tokenize1st_order_b
       t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
 
       t->skip_eob_node = ((pt == 0) && (band > 0));
-
+#if CONFIG_NEWBESTREFMV
+      if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
       ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
 
       t++;
@@ -804,6 +839,9 @@ void vp8_tokenize_mb(VP8_COMP *cpi, MACROBLOCKD *x, TOKENEXTRA **t) {
   }
 
   if (x->mode_info_context->mbmi.mb_skip_coeff) {
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     cpi->skip_true_count[mb_skip_context] += skip_inc;
     if (!cpi->common.mb_no_coeff_skip) {
 #if CONFIG_TX16X16
@@ -821,7 +859,9 @@ void vp8_tokenize_mb(VP8_COMP *cpi, MACROBLOCKD *x, TOKENEXTRA **t) {
 
     return;
   }
-
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   cpi->skip_false_count[mb_skip_context] += skip_inc;
 
   plane_type = 3;
@@ -1202,6 +1242,9 @@ static __inline void stuff2nd_order_b_8x8
   ++t;
 
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts_8x8       [1] [0] [pt] [DCT_EOB_TOKEN];
   pt = 0;
   *a = *l = pt;
@@ -1231,6 +1274,9 @@ static __inline void stuff1st_order_b_8x8
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts_8x8       [0] [1] [pt] [DCT_EOB_TOKEN];
   pt = 0; /* 0 <-> all coeff data is zero */
   *a = *l = pt;
@@ -1262,6 +1308,9 @@ void stuff1st_order_buv_8x8
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts_8x8[2] [0] [pt] [DCT_EOB_TOKEN];
   pt = 0; /* 0 <-> all coeff data is zero */
   *a = *l = pt;
@@ -1315,6 +1364,9 @@ void stuff1st_order_b_16x16(const BLOCKD *const b, TOKENEXTRA **tp, const FRAME_
     t->skip_eob_node = 0;
     ++t;
     *tp = t;
+#if CONFIG_NEWBESTREFMV
+    if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
     ++cpi->coef_counts_16x16[3][1][pt][DCT_EOB_TOKEN];
     pt = 0; /* 0 <-> all coeff data is zero */
     *a = *l = pt;
@@ -1359,6 +1411,9 @@ static __inline void stuff2nd_order_b
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts       [1] [0] [pt] [DCT_EOB_TOKEN];
 
   pt = 0;
@@ -1382,6 +1437,9 @@ static __inline void stuff1st_order_b
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts       [0] [1] [pt] [DCT_EOB_TOKEN];
   pt = 0; /* 0 <-> all coeff data is zero */
   *a = *l = pt;
@@ -1404,6 +1462,9 @@ void stuff1st_order_buv
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+#if CONFIG_NEWBESTREFMV
+  if(cpi->mb.e_mbd.donotchangestats == 0)
+#endif
   ++cpi->coef_counts[2] [0] [pt] [DCT_EOB_TOKEN];
   pt = 0; /* 0 <-> all coeff data is zero */
   *a = *l = pt;
