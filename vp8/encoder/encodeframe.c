@@ -1471,8 +1471,12 @@ void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
   if (output_enabled) {
     // Tokenize
     sum_intra_stats(cpi, x);
-    vp8_tokenize_mb(cpi, &x->e_mbd, t);
+    vp8_tokenize_mb(cpi, &x->e_mbd, t, 0);
   }
+#if CONFIG_NEWBESTREFMV
+  else
+    vp8_tokenize_mb(cpi, &x->e_mbd, t, 1);
+#endif
 }
 #ifdef SPEEDSTATS
 extern int cnt_pm;
@@ -1628,8 +1632,9 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
       fflush(stdout);
     }
 #endif
-    if (output_enabled)
-      vp8_tokenize_mb(cpi, xd, t);
+
+    vp8_tokenize_mb(cpi, xd, t, !output_enabled);
+
 #ifdef ENC_DEBUG
     if (enc_debug) {
       printf("Tokenized\n");
@@ -1644,12 +1649,14 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
       0;
     if (cpi->common.mb_no_coeff_skip) {
       xd->mode_info_context->mbmi.mb_skip_coeff = 1;
-      cpi->skip_true_count[mb_skip_context]++;
+      if (output_enabled)
+        cpi->skip_true_count[mb_skip_context]++;
       vp8_fix_contexts(xd);
     } else {
-      vp8_stuff_mb(cpi, xd, t);
+      vp8_stuff_mb(cpi, xd, t, !output_enabled);
       xd->mode_info_context->mbmi.mb_skip_coeff = 0;
-      cpi->skip_false_count[mb_skip_context]++;
+      if (output_enabled)
+        cpi->skip_false_count[mb_skip_context]++;
     }
   }
 }
