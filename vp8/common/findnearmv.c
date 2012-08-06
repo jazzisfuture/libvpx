@@ -10,6 +10,7 @@
 
 
 #include "findnearmv.h"
+#include <limits.h>
 
 const unsigned char vp8_mbsplit_offset[4][16] = {
   { 0,  8,  0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0},
@@ -17,6 +18,15 @@ const unsigned char vp8_mbsplit_offset[4][16] = {
   { 0,  2,  8, 10,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0},
   { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15}
 };
+
+static void lower_mv_precision(int_mv *mv)
+{
+  if (mv->as_mv.row & 1)
+    mv->as_mv.row += (mv->as_mv.row > 0 ? -1 : 1);
+  if (mv->as_mv.col & 1)
+    mv->as_mv.col += (mv->as_mv.col > 0 ? -1 : 1);
+}
+
 
 /* Predict motion vectors using those from already-decoded nearby blocks.
    Note that we only consider one 4x4 subblock from each candidate 16x16
@@ -43,16 +53,30 @@ void vp8_find_near_mvs
   int             *cntx = cnt;
   enum {CNT_INTRA, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV};
 
+#if CONFIG_NEWBESTREFMV
+  int_mv          *ref_mv = xd->ref_mv;
+#endif
+
   /* Zero accumulators */
   mv[0].as_int = mv[1].as_int = mv[2].as_int = 0;
   cnt[0] = cnt[1] = cnt[2] = cnt[3] = 0;
+#if CONFIG_NEWBESTREFMV
+  ref_mv[0].as_int = ref_mv[1].as_int
+                   = ref_mv[2].as_int
+                   = ref_mv[3].as_int
+                   = 0;
+#endif
 
   /* Process above */
   if (above->mbmi.ref_frame != INTRA_FRAME) {
     if (above->mbmi.mv.as_int) {
-      (++mv)->as_int = above->mbmi.mv.as_int;
+      ++ mv;
+      mv->as_int = above->mbmi.mv.as_int;
       mv_bias(ref_frame_sign_bias[above->mbmi.ref_frame],
               refframe, mv, ref_frame_sign_bias);
+#if CONFIG_NEWBESTREFMV
+      ref_mv[0].as_int = mv->as_int;
+#endif
       ++cntx;
     }
     *cntx += 2;
@@ -65,9 +89,12 @@ void vp8_find_near_mvs
       this_mv.as_int = left->mbmi.mv.as_int;
       mv_bias(ref_frame_sign_bias[left->mbmi.ref_frame],
               refframe, &this_mv, ref_frame_sign_bias);
-
+#if CONFIG_NEWBESTREFMV
+      ref_mv[1].as_int = this_mv.as_int;
+#endif
       if (this_mv.as_int != mv->as_int) {
-        (++mv)->as_int = this_mv.as_int;
+        ++mv;
+        mv->as_int = this_mv.as_int;
         ++cntx;
       }
       *cntx += 2;
@@ -79,9 +106,21 @@ void vp8_find_near_mvs
       (lf_here->mbmi.ref_frame == LAST_FRAME && refframe == LAST_FRAME)) {
     if (aboveleft->mbmi.mv.as_int) {
       third = aboveleft;
+#if CONFIG_NEWBESTREFMV
+      ref_mv[2].as_int = aboveleft->mbmi.mv.as_int;
+      mv_bias(ref_frame_sign_bias[aboveleft->mbmi.ref_frame],
+              refframe, (ref_mv+2), ref_frame_sign_bias);
+#endif
     } else if (lf_here->mbmi.mv.as_int) {
       third = lf_here;
     }
+#if CONFIG_NEWBESTREFMV
+    if(lf_here->mbmi.mv.as_int){
+      ref_mv[3].as_int = lf_here->mbmi.mv.as_int;
+      mv_bias(ref_frame_sign_bias[lf_here->mbmi.ref_frame],
+              refframe, (ref_mv+3), ref_frame_sign_bias);
+    }
+#endif
     if (third) {
       int_mv this_mv;
       this_mv.as_int = third->mbmi.mv.as_int;
@@ -89,7 +128,8 @@ void vp8_find_near_mvs
               refframe, &this_mv, ref_frame_sign_bias);
 
       if (this_mv.as_int != mv->as_int) {
-        (++mv)->as_int = this_mv.as_int;
+        ++mv;
+        mv->as_int = this_mv.as_int;
         ++cntx;
       }
       *cntx += 1;
@@ -135,18 +175,9 @@ void vp8_find_near_mvs
    */
 #if CONFIG_HIGH_PRECISION_MV
   if (!xd->allow_high_precision_mv) {
-    if (best_mv->as_mv.row & 1)
-      best_mv->as_mv.row += (best_mv->as_mv.row > 0 ? -1 : 1);
-    if (best_mv->as_mv.col & 1)
-      best_mv->as_mv.col += (best_mv->as_mv.col > 0 ? -1 : 1);
-    if (nearest->as_mv.row & 1)
-      nearest->as_mv.row += (nearest->as_mv.row > 0 ? -1 : 1);
-    if (nearest->as_mv.col & 1)
-      nearest->as_mv.col += (nearest->as_mv.col > 0 ? -1 : 1);
-    if (nearby->as_mv.row & 1)
-      nearby->as_mv.row += (nearby->as_mv.row > 0 ? -1 : 1);
-    if (nearby->as_mv.col & 1)
-      nearby->as_mv.col += (nearby->as_mv.col > 0 ? -1 : 1);
+    lower_mv_precision(best_mv);
+    lower_mv_precision(nearest);
+    lower_mv_precision(nearby);
   }
 #endif
 
@@ -165,3 +196,69 @@ vp8_prob *vp8_mv_ref_probs(VP8_COMMON *pc,
   p[3] = pc->fc.vp8_mode_contexts [near_mv_ref_ct[3]] [3];
   return p;
 }
+
+#if CONFIG_NEWBESTREFMV
+/* check a list of motion vectors by sad score using a number rows of pixels
+ * above and a number cols of pixels in the left to select the one with best
+ * score to use as ref motion vector
+ */
+void vp8_find_best_ref_mvs(MACROBLOCKD *xd,
+                           unsigned char *ref_y_buffer,
+                           int ref_y_stride,
+                           int_mv *best_mv){
+  int_mv *ref_mv = xd->ref_mv;
+  int bestsad = INT_MAX;
+  int i;
+  unsigned char *above_src;
+  unsigned char *left_src;
+  unsigned char *above_ref;
+  unsigned char *left_ref;
+  int sad;
+
+  above_src = xd->dst.y_buffer - xd->dst.y_stride * 2;
+  left_src  = xd->dst.y_buffer - 2;
+  above_ref = ref_y_buffer - ref_y_stride * 2;
+  left_ref  = ref_y_buffer - 2;
+
+  bestsad = vp8_sad16x2_c(above_src, xd->dst.y_stride,
+                          above_ref, ref_y_stride,
+                          INT_MAX);
+  bestsad += vp8_sad2x16_c(left_src, xd->dst.y_stride,
+                           left_ref, ref_y_stride,
+                           INT_MAX);
+  best_mv->as_int = 0;
+
+  for(i = 0; i < 4; ++i){
+    if(ref_mv[i].as_int){
+      int_mv this_mv;
+      int offset=0;
+      int row_offset, col_offset;
+      this_mv.as_int = ref_mv[i].as_int;
+      vp8_clamp_mv3(&this_mv, xd);
+
+      row_offset = (this_mv.as_mv.row > 0) ?
+        ((this_mv.as_mv.row + 3) >> 3):((this_mv.as_mv.row + 4) >> 3);
+      col_offset = (this_mv.as_mv.col > 0) ?
+        ((this_mv.as_mv.col + 3) >> 3):((this_mv.as_mv.col + 4) >> 3);
+      offset = ref_y_stride * row_offset + col_offset;
+
+      sad = vp8_sad16x2_c(above_src, xd->dst.y_stride,
+        above_ref + offset, ref_y_stride,INT_MAX);
+
+      sad += vp8_sad2x16_c(left_src, xd->dst.y_stride,
+        left_ref + offset, ref_y_stride,INT_MAX);
+
+      if(sad<bestsad){
+        bestsad = sad;
+        best_mv ->as_int = this_mv.as_int;
+      }
+    }
+  }
+#if CONFIG_HIGH_PRECISION_MV
+  if (!xd->allow_high_precision_mv)
+    lower_mv_precision(best_mv);
+#endif
+  vp8_clamp_mv2(best_mv, xd);
+}
+
+#endif
