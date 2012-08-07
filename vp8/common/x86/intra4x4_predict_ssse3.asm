@@ -61,7 +61,6 @@ sym(vp8_intra4x4_predict_ssse3):
       ret
     %endmacro
 
-    ; Build the "easy" set: top_left, Above[0-7]
     mov         al, arg(6)                  ; top_left
     mov         [rsp + 4], al               ; pp[4]
 
@@ -69,18 +68,8 @@ sym(vp8_intra4x4_predict_ssse3):
     movq        xmm4, [rcx]                 ; A[0-7]
     movq        [rsp + 5], xmm4
 
-    mov         rdx, arg(3)                 ; b_mode
     mov         rsi, arg(4)                 ; dst
     mov         rdi, arg(5)                 ; dst_stride
-
-; If we don't need Left, jump to the front of the line. Only VE, LD, and VL
-; will work
-    cmp         rdx, B_VE_PRED
-    je              .B_VE_PRED
-    cmp         rdx, B_LD_PRED
-    je              .B_LD_PRED
-    cmp         rdx, B_VL_PRED
-    je              .B_VL_PRED
 
     mov         rcx, arg(1)                 ; y_left
     mov         rdx, arg(2)                 ; left_stride
@@ -94,25 +83,43 @@ sym(vp8_intra4x4_predict_ssse3):
     mov         al, [rcx + 2 * rdx]         ; Left[3]
     mov         [rsp], al                   ; rsp[0]
 
-
+    ; rbx = GLOBAL()
+    ; rsi = dst
+    ; rdi = dst_stride
     ; rsp[] = { Left[3-0], top_left, Above[0-7] }
 
+    ; We assume b_mode is valid. Otherwise it needs to be
+    ; validated within 0-9 inclusive.
     mov         rdx, arg(3)                  ; b_mode
 
-    cmp         rdx, B_DC_PRED
-    je              .B_DC_PRED
-    cmp         rdx, B_TM_PRED
-    je              .B_TM_PRED
-    cmp         rdx, B_HE_PRED
-    je              .B_HE_PRED
-    cmp         rdx, B_RD_PRED
-    je              .B_RD_PRED
-    cmp         rdx, B_VR_PRED
-    je              .B_VR_PRED
-    cmp         rdx, B_HD_PRED
-    je              .B_HD_PRED
-    cmp         rdx, B_HU_PRED
-    je              .B_HU_PRED
+    ; TODO: move the table to the end of the function.
+    ; That may have a detrimental effect on cache, so
+    ; this may be the better choice.
+    jmp         .intra4x4_skiptable
+.intra4x4_jumptable:
+    dd .B_DC_PRED - .intra4x4_do_jump
+    dd .B_TM_PRED - .intra4x4_do_jump
+    dd .B_VE_PRED - .intra4x4_do_jump
+    dd .B_HE_PRED - .intra4x4_do_jump
+    dd .B_LD_PRED - .intra4x4_do_jump
+    dd .B_RD_PRED - .intra4x4_do_jump
+    dd .B_VR_PRED - .intra4x4_do_jump
+    dd .B_VL_PRED - .intra4x4_do_jump
+    dd .B_HD_PRED - .intra4x4_do_jump
+    dd .B_HU_PRED - .intra4x4_do_jump
+.intra4x4_skiptable:
+
+    ; Collect the current address.
+    call .intra4x4_do_jump
+.intra4x4_do_jump:
+    pop         rcx                         ; do_jump address
+    mov         rax, .intra4x4_jumptable - .intra4x4_do_jump
+    add         rax, rcx                    ; absolute address of jumptable
+
+    movsxd      rax, dword[rax + 4 * rdx]   ; b_mode offset into table
+    add         rcx, rax
+
+    jmp         rcx
 
     CLEAN_AND_RETURN
 
