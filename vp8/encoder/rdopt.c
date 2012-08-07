@@ -41,6 +41,10 @@
 #include "vp8/common/seg_common.h"
 #include "vp8/common/pred_common.h"
 
+#if CONFIG_NEW_MVREF
+#include "vp8/common/mvref_common.h"
+#endif
+
 #if CONFIG_RUNTIME_CPU_DETECT
 #define IF_RTCD(x)  (x)
 #else
@@ -3262,6 +3266,49 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
           mc_search_result[x->e_mbd.mode_info_context->mbmi.ref_frame].as_int = d->bmi.as_mv.first.as_int;
 
           mode_mv[NEWMV].as_int = d->bmi.as_mv.first.as_int;
+
+#if CONFIG_NEW_MVREF
+          // Update stats on relative distance of chosen vector to the
+          // possible best reference vectors.
+          {
+            unsigned int distance;
+            int ref = x->e_mbd.mode_info_context->mbmi.ref_frame;
+            int i;
+            int best_i = 0;
+
+            find_mv_refs(xd, x->e_mbd.mode_info_context,
+                         x->e_mbd.prev_mode_info_context,
+                         x->e_mbd.mode_info_context->mbmi.ref_mvs[ref],
+                         cpi->common.ref_frame_sign_bias );
+
+            distance = mv_distance(&mode_mv[NEWMV], &best_ref_mv);
+            cpi->mv_ref_sum_distance[ref][CUR_BEST] += distance;
+
+            distance =
+              mv_distance(&mode_mv[NEWMV],
+                          &x->e_mbd.mode_info_context->mbmi.ref_mvs[ref][0]);
+            cpi->mv_ref_sum_distance[ref][NEW_BEST] += distance;
+
+            for (i = 1; i < MAX_MV_REFS; ++i ) {
+              unsigned int distance2;
+              distance2 =
+                mv_distance(&mode_mv[NEWMV],
+                            &x->e_mbd.mode_info_context->mbmi.ref_mvs[ref][i]);
+              if (distance2 < distance) {
+                distance = distance2;
+                best_i = i;
+              }
+            }
+            x->e_mbd.mode_info_context->mbmi.mv_ref_index[ref] = best_i;
+            cpi->mv_ref_sum_distance[ref][BEST_SELECTED] += distance;
+            cpi->best_ref_index_counts[best_i]++;
+
+            // Temp
+            x->e_mbd.mode_info_context->mbmi.mv_ref_index[ref] = 0;
+            x->e_mbd.mode_info_context->mbmi.ref_mvs[ref][0].as_int =
+              best_ref_mv.as_int;
+          }
+#endif
 
           // Add the new motion vector cost to our rolling cost variable
           rate2 += vp8_mv_bit_cost(&mode_mv[NEWMV], &best_ref_mv,
