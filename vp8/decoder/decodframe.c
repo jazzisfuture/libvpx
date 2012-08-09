@@ -239,6 +239,10 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   int active_ht;
 #endif
 
+#if CONFIG_HTRANS16
+  int active_ht16;
+#endif
+
   // re-initialize macroblock dequantizer before detokenization
   if (xd->segmentation_enabled)
     mb_init_dequantizer(pbi, xd);
@@ -391,6 +395,10 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   }
 #endif
 
+#if CONFIG_HTRANS16
+  active_ht16 = (QIndex < ACTIVE_HT16);
+#endif
+
   /* do prediction */
   if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
 #if CONFIG_SUPERBLOCKS
@@ -539,9 +547,26 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
 #if CONFIG_TX16X16
     if (tx_type == TX_16X16) {
+#if CONFIG_HTRANS16
+      if (mode < I8X8_PRED && active_ht16) {
+        BLOCKD *bd = &xd->block[0];
+        TX_TYPE txfm;
+        txfm_map(bd, pred_mode_conv(mode));
+        txfm = bd->bmi.as_mode.tx_type;
+
+        vp8_ht_dequant_idct_add_16x16_c(txfm, xd->qcoeff,
+                                        xd->block[0].dequant, xd->predictor,
+                                        xd->dst.y_buffer, 16, xd->dst.y_stride);
+      } else {
+        vp8_dequant_idct_add_16x16_c(xd->qcoeff, xd->block[0].dequant,
+                                     xd->predictor, xd->dst.y_buffer,
+                                     16, xd->dst.y_stride);
+      }
+#else
       vp8_dequant_idct_add_16x16_c(xd->qcoeff, xd->block[0].dequant,
                                    xd->predictor, xd->dst.y_buffer,
                                    16, xd->dst.y_stride);
+#endif
     }
     else
 #endif

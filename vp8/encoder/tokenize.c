@@ -873,8 +873,17 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
   if (tx_type == TX_16X16) {
     ENTROPY_CONTEXT * A = (ENTROPY_CONTEXT *)xd->above_context;
     ENTROPY_CONTEXT * L = (ENTROPY_CONTEXT *)xd->left_context;
+
+#if CONFIG_HTRANS16
+    tokenize1st_order_b_16x16(xd, xd->block, t,
+                              ((xd->mode_info_context->mbmi.mode < I8X8_PRED) ?
+                                    PLANE_TYPE_Y_INTRA :
+                                    PLANE_TYPE_Y_WITH_DC),
+                              xd->frame_type, A, L, cpi, dry_run);
+#else
     tokenize1st_order_b_16x16(xd, xd->block, t, 3,
                               xd->frame_type, A, L, cpi, dry_run);
+#endif
     for (b = 1; b < 16; b++) {
       *(A + vp8_block2above[b]) = *(A);
       *(L + vp8_block2left[b] ) = *(L);

@@ -67,6 +67,7 @@ extern vp8_extra_bit_struct vp8_extra_bits[12];    /* indexed by token value */
 #else
 #define BLOCK_TYPES_8X8 3
 #endif
+
 #define BLOCK_TYPES_16X16 4
 
 /* Middle dimension is a coarsening of the coefficient's

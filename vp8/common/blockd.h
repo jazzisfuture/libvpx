@@ -57,6 +57,10 @@ typedef struct {
 #define PLANE_TYPE_UV         2
 #define PLANE_TYPE_Y_WITH_DC  3
 
+#if CONFIG_HTRANS16
+#define PLANE_TYPE_Y_INTRA    2
+#endif
+
 typedef char ENTROPY_CONTEXT;
 typedef struct {
   ENTROPY_CONTEXT y1[4];
@@ -159,6 +163,10 @@ typedef enum {
 #define ACTIVE_HT 110                // quantization stepsize threshold
 #endif
 
+#if CONFIG_HTRANS16
+#define ACTIVE_HT16 300
+#endif
+
 typedef enum {
   B_DC_PRED,          /* average of above and left pixels */
   B_TM_PRED,
@@ -247,6 +255,7 @@ union b_mode_info {
 #if CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HYBRIDTRANSFORM
     B_PREDICTION_MODE test;
     TX_TYPE           tx_type;
+    int              *tx_scan;
 #endif
 
 #if CONFIG_COMP_INTRA_PRED
@@ -463,9 +472,10 @@ typedef struct MacroBlockD {
 
 } MACROBLOCKD;
 
-#if CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HYBRIDTRANSFORM
+#if CONFIG_HYBRIDTRANSFORM || CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HTRANS16
 // transform mapping
 static void txfm_map(BLOCKD *b, B_PREDICTION_MODE bmode) {
+  // map transform type
   switch (bmode) {
     case B_TM_PRED :
     case B_RD_PRED :

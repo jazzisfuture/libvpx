@@ -1382,6 +1382,28 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2) {
                      img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
                      img1->d_w) == 0);
 
+//  // ==========================================================================
+//  // the following codes are designed for debug/observation purpose
+//  // to be removed before code review
+//  if (!match) {
+//    int a = 1;
+//    int j, k;
+//    unsigned char *ptenc, *ptdec;
+//    for (j = 0; j < img1->d_h; j++)
+//      for (k = 0; k < img1->d_w; k += 4) {
+//        ptenc = img1->planes[VPX_PLANE_Y] + j * img1->stride[VPX_PLANE_Y] + k;
+//        ptdec = img2->planes[VPX_PLANE_Y] + j * img2->stride[VPX_PLANE_Y] + k;
+//        a &= (memcmp(ptenc, ptdec, 4) == 0);
+//        if (!a) {
+//          printf("\n");
+//          printf("rec_enc: %d   %d   %d   %d \n", ptenc[0], ptenc[1], ptenc[2], ptenc[3]);
+//          printf("rec_dec: %d   %d   %d   %d \n", ptdec[0], ptdec[1], ptdec[2], ptdec[3]);
+//          a = 1;
+//        }
+//      }
+//  }
+//  // ==========================================================================
+
   for (i = 0; i < img1->d_h / 2; i++)
     match &= (memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
                      img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],

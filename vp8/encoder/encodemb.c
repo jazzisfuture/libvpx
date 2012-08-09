@@ -898,6 +898,11 @@ void optimize_b_16x16(MACROBLOCK *mb, int i, int type,
   int best, band, pt;
   int err_mult = plane_rd_mult[type];
 
+#if CONFIG_HTRANS16
+  if (mb->e_mbd.mode_info_context->mbmi.mode < I8X8_PRED)
+    type = PLANE_TYPE_Y_INTRA;
+#endif
+
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   rdmult = mb->rdmult * err_mult;
   if (mb->e_mbd.mode_info_context->mbmi.ref_frame == INTRA_FRAME)
