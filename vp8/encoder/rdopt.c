@@ -3458,8 +3458,18 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     }
 #endif
 
-    if (x->skip)
+    // The commented code might actually help in some cases.
+    // Explore later.
+    if (x->skip/* && !mode_excluded*/)
       break;
+    /*else if (x->skip && cm->comp_pred_mode == HYBRID_PREDICTION) {
+      if (xd->mode_info_context->mbmi.second_ref_frame)
+        break;
+      else
+        // now do the comppred counterpart of this, see if it gives
+        // a better rd, and use the best of these two modes
+        ;
+    }*/
   }
 
 #if CONFIG_PRED_FILTER
