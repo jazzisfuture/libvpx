@@ -4252,9 +4252,9 @@ static void encode_frame_to_data_rate
      * right) than cm->mip. The edge elements are initialized to 0.
      */
 #if CONFIG_MULTI_RES_ENCODING
-    if(!cpi->oxcf.mr_encoder_id && cm->show_frame)
+    if(!cpi->oxcf.mr_encoder_id && cpi->sf.improved_mv_pred && cm->show_frame)
 #else
-    if(cm->show_frame)   /* do not save for altref frame */
+    if(cpi->sf.improved_mv_pred && cm->show_frame)   /* do not save for altref frame */
 #endif
     {
         int mb_row;
