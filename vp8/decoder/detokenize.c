@@ -417,6 +417,12 @@ int vp8_decode_mb_tokens_16x16(VP8D_COMP *pbi, MACROBLOCKD *xd) {
   INT16 *qcoeff_ptr = &xd->qcoeff[0];
 
   type = PLANE_TYPE_Y_WITH_DC;
+
+#if CONFIG_HTRANS16
+  if (xd->mode_info_context->mbmi.mode < I8X8_PRED)
+      type = PLANE_TYPE_Y_INTRA;
+#endif
+
   if (seg_active)
       seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
   else

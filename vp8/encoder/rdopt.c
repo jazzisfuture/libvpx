@@ -620,6 +620,13 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, int type,
       scan = vp8_default_zig_zag1d_16x16;
       band = vp8_coef_bands_16x16;
       default_eob = 256;
+#if CONFIG_HTRANS16
+      // NOTE: the following code segment assumes only Y component will run into
+      //       this point
+      if (mb->e_mbd.mode_info_context->mbmi.mode_rdopt < I8X8_PRED) {
+        type = PLANE_TYPE_Y_INTRA;
+      }
+#endif
       break;
 #endif
     default:
@@ -813,8 +820,28 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
     mb->e_mbd.predictor,
     mb->block[0].src_stride);
 
+#if CONFIG_HTRANS16
+  if ((mb->e_mbd.mode_info_context->mbmi.mode_rdopt < I8X8_PRED) &&
+      (mb->q_index < ACTIVE_HT16)) {
+    BLOCKD *b  = &mb->e_mbd.block[0];
+    BLOCK  *be = &mb->block[0];
+    txfm_map(b, pred_mode_conv(mb->e_mbd.mode_info_context->mbmi.mode_rdopt));
+    vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 16);
+  } else
+    vp8_transform_mby_16x16(mb);
+#else
   vp8_transform_mby_16x16(mb);
+#endif
+
   vp8_quantize_mby_16x16(mb);
+#if CONFIG_HTRANS16
+  // TODO(jingning) is it possible to quickly determine whether to force
+  //                trailing coefficients to be zero, instead of running trellis
+  //                optimization in the rate-distortion optimization loop?
+  if (mb->e_mbd.mode_info_context->mbmi.mode_rdopt < I8X8_PRED)
+    vp8_optimize_mby_16x16(mb, rtcd);
+#endif
+
   d = ENCODEMB_INVOKE(&rtcd->encodemb, mberr)(mb, 0);
 
   *Distortion = (d >> 2);
@@ -1188,9 +1215,17 @@ static int64_t rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
   int64_t best_rd = INT64_MAX;
   int64_t this_rd;
 
+#if CONFIG_HTRANS16
+  int best_txtype, rd_txtype;
+#endif
+
   // Y Search for 16x16 intra prediction mode
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     mbmi->mode = mode;
+#if CONFIG_HTRANS16
+    mbmi->mode_rdopt = mode;
+#endif
+
 #if CONFIG_COMP_INTRA_PRED
     for (mode2 = DC_PRED - 1; mode2 != TM_PRED + 1; mode2++) {
       mbmi->second_mode = mode2;
@@ -1217,6 +1252,10 @@ static int64_t rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
 
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
+#if CONFIG_HTRANS16
+      rd_txtype = x->e_mbd.block[0].bmi.as_mode.tx_type;
+#endif
+
       if (this_rd < best_rd) {
         mode_selected = mode;
 #if CONFIG_COMP_INTRA_PRED
@@ -1226,6 +1265,9 @@ static int64_t rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
         *Rate = rate;
         *rate_y = ratey;
         *Distortion = distortion;
+#if CONFIG_HTRANS16
+        best_txtype = rd_txtype;
+#endif
       }
 #if CONFIG_COMP_INTRA_PRED
     }
@@ -1233,6 +1275,10 @@ static int64_t rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
   }
 
   mbmi->mode = mode_selected;
+#if CONFIG_HTRANS16
+  x->e_mbd.block[0].bmi.as_mode.tx_type = best_txtype;
+#endif
+
 #if CONFIG_COMP_INTRA_PRED
   mbmi->second_mode = mode2_selected;
 #endif
@@ -2996,6 +3042,10 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   unsigned int ref_costs[MAX_REF_FRAMES];
   int_mv seg_mvs[BLOCK_MAX_SEGMENTS - 1][16 /* n_blocks */][MAX_REF_FRAMES - 1];
 
+#if CONFIG_HTRANS16
+  int best_txtype, rd_txtype;
+#endif
+
   vpx_memset(mode8x8, 0, sizeof(mode8x8));
   vpx_memset(&frame_mv, 0, sizeof(frame_mv));
   vpx_memset(&best_mbmode, 0, sizeof(best_mbmode));
@@ -3221,10 +3271,14 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
           // FIXME compound intra prediction
           RECON_INVOKE(&cpi->common.rtcd.recon, build_intra_predictors_mby)
               (&x->e_mbd);
+
 #if CONFIG_TX16X16
           // FIXME: breaks lossless since 4x4 isn't allowed
           macro_block_yrd_16x16(x, &rate_y, &distortion,
                                 IF_RTCD(&cpi->rtcd));
+#if CONFIG_HTRANS16
+          rd_txtype = x->e_mbd.block[0].bmi.as_mode.tx_type;
+#endif
           rate2 += rate_y;
           distortion2 += distortion;
           rate2 += x->mbmode_cost[x->e_mbd.frame_type][mbmi->mode];
@@ -3485,6 +3539,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
           if (flag)
             continue;
         case ZEROMV:
+
         default:
           break;
       }
@@ -3693,6 +3748,10 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
           // Note index of best mode so far
           best_mode_index = mode_index;
 
+#if CONFIG_HTRANS16
+          best_txtype = rd_txtype;
+#endif
+
           if (this_mode <= B_PRED) {
             if (cpi->common.txfm_mode == ALLOW_8X8
                 && this_mode != B_PRED
@@ -3844,6 +3903,11 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     }
   }
 
+#if CONFIG_HTRANS16
+  if (best_mbmode.mode < I8X8_PRED)
+    xd->mode_info_context->bmi[0].as_mode.tx_type = best_txtype;
+#endif
+
   if (best_mbmode.mode == I8X8_PRED)
     set_i8x8_block_modes(x, mode8x8);
 
@@ -3918,7 +3982,12 @@ void vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x,
   int mode8x8[2][4];
   int dist;
 
+#if CONFIG_HTRANS16
+  int best_txtype;
+#endif
+
   mbmi->ref_frame = INTRA_FRAME;
+
   rd_pick_intra_mbuv_mode(cpi, x, &rateuv, &rateuv_tokenonly, &distuv);
   rate = rateuv;
 
@@ -3930,8 +3999,11 @@ void vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x,
   error16x16 = rd_pick_intra16x16mby_mode(cpi, x, &rate16x16,
                                           &rate16x16_tokenonly, &dist16x16);
   mode16x16 = mbmi->mode;
+#if CONFIG_HTRANS16
+  best_txtype = xd->block[0].bmi.as_mode.tx_type;
+#endif
 
-#if CONFIG_HYBRIDTRANSFORM
+#if CONFIG_HYBRIDTRANSFORM || CONFIG_HYBRIDTRANSFORM8X8
   mbmi->mode_rdopt = I8X8_PRED;
 #endif
 
@@ -3983,6 +4055,10 @@ void vp8_rd_pick_intra_mode(VP8_COMP *cpi, MACROBLOCK *x,
       mbmi->mode = mode16x16;
       rate += rate16x16;
       dist = dist16x16;
+#if CONFIG_HTRANS16
+      // save this into supermacroblock coding decision buffer
+      xd->mode_info_context->bmi[0].as_mode.tx_type = best_txtype;
+#endif
     }
   } else {
     if (error4x4 < error8x8) {
