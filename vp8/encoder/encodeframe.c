@@ -391,9 +391,9 @@ static void update_state(VP8_COMP *cpi, MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
     vpx_memcpy(x->partition_info, &ctx->partition_info,
                sizeof(PARTITION_INFO));
 
-    xd->mode_info_context->mbmi.mv.as_int =
+    xd->mode_info_context->mbmi.mv[0].as_int =
       x->partition_info->bmi[15].mv.as_int;
-    xd->mode_info_context->mbmi.second_mv.as_int =
+    xd->mode_info_context->mbmi.mv[1].as_int =
       x->partition_info->bmi[15].second_mv.as_int;
   }
 
