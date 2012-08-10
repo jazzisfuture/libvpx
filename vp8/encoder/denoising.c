@@ -36,12 +36,19 @@ static const unsigned int SSE_THRESHOLD = 16 * 16 * 40;
  * to 256. Each of these value should only be 8b but they are 16b wide to
  * avoid slow partial register manipulations.
  */
-enum {num_motion_magnitude_adjustments = 2048};
+
+/* Can be reduced to 256 */
+enum {num_motion_magnitude_adjustments = 256};  //2048};
 
 static union coeff_pair filter_coeff_LUT[num_motion_magnitude_adjustments][256];
 static uint8_t filter_coeff_LUT_initialized[num_motion_magnitude_adjustments] =
     { 0 };
 
+static unsigned char clamp_to_127(int t)
+{
+    t = (t > 127 ? 127 : t);
+    return (unsigned char) t;
+}
 
 union coeff_pair *vp8_get_filter_coeff_LUT(unsigned int motion_magnitude)
 {
@@ -61,18 +68,17 @@ union coeff_pair *vp8_get_filter_coeff_LUT(unsigned int motion_magnitude)
 
         for (absdiff = 0; absdiff < 256; ++absdiff)
         {
-            unsigned int filter_coefficient;
-            filter_coefficient = (255 << 8) / (256 + ((absdiff * 330) >> 3));
-            filter_coefficient += filter_coefficient /
-                                  (3 + motion_magnitude_adjustment);
+            unsigned char filter_coefficient;
+            unsigned char delta;
 
-            if (filter_coefficient > 255)
-            {
-                filter_coefficient = 255;
-            }
+            /* Lower filter_coefficient's precision to one half, namely, the
+             * maximum value is 127. This will make optimization easier. */
+            filter_coefficient = (255 << 7) / (256 + ((absdiff * 330) >> 3));
+            delta = filter_coefficient / (3 + motion_magnitude_adjustment);
+            filter_coefficient = clamp_to_127(filter_coefficient + delta);
 
             LUT[absdiff].as_short[0] = filter_coefficient ;
-            LUT[absdiff].as_short[1] = 256 - filter_coefficient;
+            LUT[absdiff].as_short[1] = 128 - filter_coefficient;
         }
 
         filter_coeff_LUT_initialized[motion_magnitude_adjustment] = 1;
@@ -90,8 +96,6 @@ int vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
                           int y_offset,
                           int uv_offset)
 {
-    unsigned char filtered_buf[16*16];
-    unsigned char *filtered = filtered_buf;
     unsigned char *sig = signal->thismb;
     int sig_stride = 16;
     unsigned char *mc_running_avg_y = mc_running_avg->y_buffer + y_offset;
@@ -101,20 +105,44 @@ int vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
     const union coeff_pair *LUT = vp8_get_filter_coeff_LUT(motion_magnitude);
     int r, c;
     int sum_diff = 0;
+    unsigned char abs_diff_buf[256];
+    unsigned char *abs_diff = abs_diff_buf;
 
     for (r = 0; r < 16; ++r)
     {
-        /* Calculate absolute differences */
-        unsigned char abs_diff[16];
-
-        union coeff_pair filter_coefficient[16];
-
         for (c = 0; c < 16; ++c)
         {
             int absdiff = sig[c] - mc_running_avg_y[c];
+
+            sum_diff += absdiff;
+            /* Calculate absolute differences */
             absdiff = absdiff > 0 ? absdiff : -absdiff;
             abs_diff[c] = absdiff;
         }
+        abs_diff += 16;
+        sig += sig_stride;
+        mc_running_avg_y += mc_avg_y_stride;
+    }
+
+    /* Note: This check was moved from after filtering to before filtering.
+     * This probably changed its original purpose. Let me know if it is not
+     * ok.
+     * Moreover, put this check here probably overlaps with the check of
+     * SSE_THRESHOLD. Maybe this check should be removed. */
+    /* SUM_DIFF_THRESHOLD = (16 * 16 * 2). Here, increase the threshold since
+     * we compare the unfiltered values. Use 640 instead. */
+    if (abs(sum_diff) > 640)
+    {
+        return COPY_BLOCK;
+    }
+
+    abs_diff = abs_diff_buf;
+    sig = signal->thismb;
+    mc_running_avg_y = mc_running_avg->y_buffer + y_offset;
+
+    for (r = 0; r < 16; ++r)
+    {
+        union coeff_pair filter_coefficient[16];
 
         /* Use LUT to get filter coefficients (two 16b value; f and 256-f) */
         for (c = 0; c < 16; ++c)
@@ -129,41 +157,21 @@ int vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
             const uint16_t sample = (uint16_t)(sig[c]);
 
             running_avg_y[c] = (filter_coefficient[c].as_short[0] * state +
-                    filter_coefficient[c].as_short[1] * sample + 128) >> 8;
+                    filter_coefficient[c].as_short[1] * sample + 64) >> 7;
         }
 
-        /* Depending on the magnitude of the difference between the signal and
-         * filtered version, either replace the signal by the filtered one or
-         * update the filter state with the signal when the change in a pixel
-         * isn't classified as noise.
+        /* Removed the NOISE_DIFF2_THRESHOLD checking after filtering since
+         * (diff * diff < NOISE_DIFF2_THRESHOLD) is always true.
          */
-        for (c = 0; c < 16; ++c)
-        {
-            const int diff = sig[c] - running_avg_y[c];
-            sum_diff += diff;
-
-            if (diff * diff < NOISE_DIFF2_THRESHOLD)
-            {
-                filtered[c] = running_avg_y[c];
-            }
-            else
-            {
-                filtered[c] = sig[c];
-                running_avg_y[c] = sig[c];
-            }
-        }
 
         /* Update pointers for next iteration. */
+        abs_diff += 16;
         sig += sig_stride;
-        filtered += 16;
         mc_running_avg_y += mc_avg_y_stride;
         running_avg_y += avg_y_stride;
     }
-    if (abs(sum_diff) > SUM_DIFF_THRESHOLD)
-    {
-        return COPY_BLOCK;
-    }
-    vp8_copy_mem16x16(filtered_buf, 16, signal->thismb, sig_stride);
+
+    vp8_copy_mem16x16(running_avg->y_buffer + y_offset, avg_y_stride, signal->thismb, sig_stride);
     return FILTER_BLOCK;
 }
 
@@ -322,7 +330,7 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     if (decision == FILTER_BLOCK)
     {
         /* Filter. */
-        decision = vp8_denoiser_filter(&denoiser->yv12_mc_running_avg,
+        decision = vp8_denoiser_filter_c(&denoiser->yv12_mc_running_avg,
                                        &denoiser->yv12_running_avg[LAST_FRAME],
                                        x,
                                        motion_magnitude2,
