@@ -255,8 +255,8 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
     vp8_build_component_cost_table_hp(cpi->mb.mvcost_hp, (const MV_CONTEXT_HP *) cpi->common.fc.mvc_hp, flag);
   }
 
-
-  cpi->common.txfm_mode = ALLOW_8X8;
+  // FIXME
+  cpi->common.txfm_mode = TX_IMPLIED;
 
 #if CONFIG_LOSSLESS
   if (cpi->oxcf.lossless)
@@ -286,8 +286,7 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
 
 }
 void vp8_setup_inter_frame(VP8_COMP *cpi) {
-
-  cpi->common.txfm_mode = ALLOW_8X8;
+  cpi->common.txfm_mode = TX_IMPLIED;
 
 #if CONFIG_LOSSLESS
   if (cpi->oxcf.lossless)

@@ -221,13 +221,21 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         xd->mode_info_context->mbmi.mode == NEWMV ||
         xd->mode_info_context->mbmi.mode == ZEROMV ||
         xd->mode_info_context->mbmi.mode == NEARMV ||
-        xd->mode_info_context->mbmi.mode == NEARESTMV)
-      xd->mode_info_context->mbmi.txfm_size = TX_16X16;
-    else if (pbi->common.txfm_mode == ALLOW_8X8 &&
+        xd->mode_info_context->mbmi.mode == NEARESTMV) {
+      if (pbi->common.txfm_mode == ONLY_4X4)
+        xd->mode_info_context->mbmi.txfm_size = TX_4X4;
+      else if (pbi->common.txfm_mode == TX_IMPLIED)
+        xd->mode_info_context->mbmi.txfm_size = TX_8X8;
+      else if (pbi->common.txfm_mode == TX_16X16_ONLY)
+        xd->mode_info_context->mbmi.txfm_size = TX_16X16;
+      else
+        ; // Respect encoder's choice
+    }
+    else if (pbi->common.txfm_mode >= TX_IMPLIED &&
         xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED)
 #else
-      if (pbi->common.txfm_mode == ALLOW_8X8 &&
+      if (pbi->common.txfm_mode >= TX_IMPLIED &&
           xd->mode_info_context->mbmi.mode != I8X8_PRED &&
           xd->mode_info_context->mbmi.mode != B_PRED)
 #endif
@@ -241,13 +249,20 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         xd->mode_info_context->mbmi.mode == ZEROMV ||
         xd->mode_info_context->mbmi.mode == NEARMV ||
         xd->mode_info_context->mbmi.mode == NEARESTMV) {
-      xd->mode_info_context->mbmi.txfm_size = TX_16X16;
-    } else if (pbi->common.txfm_mode == ALLOW_8X8 &&
+      if (pbi->common.txfm_mode == ONLY_4X4)
+        xd->mode_info_context->mbmi.txfm_size = TX_4X4;
+      else if (pbi->common.txfm_mode == TX_IMPLIED)
+        xd->mode_info_context->mbmi.txfm_size = TX_8X8;
+      else if (pbi->common.txfm_mode == TX_16X16_ONLY)
+        xd->mode_info_context->mbmi.txfm_size = TX_16X16;
+      else
+        ; // Respect encoder's choice
+    } else if (pbi->common.txfm_mode >= TX_IMPLIED &&
         xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED &&
         xd->mode_info_context->mbmi.mode != SPLITMV) {
 #else
-    if (pbi->common.txfm_mode == ALLOW_8X8 &&
+    if (pbi->common.txfm_mode >= TX_IMPLIED &&
         xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED &&
         xd->mode_info_context->mbmi.mode != SPLITMV) {
@@ -842,7 +857,7 @@ static void read_coef_probs2(VP8D_COMP *pbi) {
           }
     }
   }
-  if (pbi->common.txfm_mode == ALLOW_8X8) {
+  if (pbi->common.txfm_mode >= TX_IMPLIED) {
     for (l = 0; l < ENTROPY_NODES; l++) {
       if (vp8_read(bc, grpupd)) {
         for (i = 0; i < BLOCK_TYPES_8X8; i++)
@@ -888,7 +903,7 @@ static void read_coef_probs(VP8D_COMP *pbi) {
         }
   }
 
-  if (pbi->common.txfm_mode == ALLOW_8X8 && vp8_read_bit(bc)) {
+  if (pbi->common.txfm_mode >= TX_IMPLIED && vp8_read_bit(bc)) {
     // read coef probability tree
     for (i = 0; i < BLOCK_TYPES_8X8; i++)
       for (j = !i; j < COEF_BANDS; j++)
@@ -1152,7 +1167,11 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   }
 
   /* Read the loop filter level and type */
-  pc->txfm_mode = (TXFM_MODE) vp8_read_bit(bc);
+  pc->txfm_mode = (TXFM_MODE) vp8_read_literal(bc, 2);
+  if (pc->txfm_mode == TX_PERMB) {
+    pc->prob_4x4 = vp8_read_literal(bc, 8);
+    pc->prob_8x8 = vp8_read_literal(bc, 8);
+  }
 
   pc->filter_type = (LOOPFILTERTYPE) vp8_read_bit(bc);
   pc->filter_level = vp8_read_literal(bc, 6);

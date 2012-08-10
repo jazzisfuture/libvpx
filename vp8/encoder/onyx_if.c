@@ -1736,6 +1736,8 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
   cm->prob_last_coded               = 128;
   cm->prob_gf_coded                 = 128;
   cm->prob_intra_coded              = 63;
+  cm->prob_4x4 = 128;
+  cm->prob_8x8 = 128;
   for (i = 0; i < COMP_PRED_CONTEXTS; i++)
     cm->prob_comppred[i]         = 128;
 

@@ -59,6 +59,20 @@ static int vp8_read_uv_mode(vp8_reader *bc, const vp8_prob *p) {
   return i;
 }
 
+static void vp8_read_tx_mode(vp8_reader *const bc, MODE_INFO *m,
+                             VP8_COMMON *const cm) {
+  int tmp = vp8_read(bc, cm->prob_4x4);
+  if (tmp == 0)
+    m->mbmi.txfm_size = TX_4X4;
+  else {
+    tmp = vp8_read(bc, cm->prob_8x8);
+    if (tmp == 0)
+      m->mbmi.txfm_size = TX_8X8;
+    else
+      m->mbmi.txfm_size = TX_16X16;
+  }
+}
+
 // This function reads the current macro block's segnent id from the bitstream
 // It should only be called if a segment map update is indicated.
 static void vp8_read_mb_segid(vp8_reader *r, MB_MODE_INFO *mi, MACROBLOCKD *x) {
@@ -111,6 +125,8 @@ static void vp8_kfread_modes(VP8D_COMP *pbi,
 
   y_mode = (MB_PREDICTION_MODE) vp8_kfread_ymode(bc,
                                                  pbi->common.kf_ymode_prob[pbi->common.kf_ymode_probs_index]);
+  if (cm->txfm_mode == TX_PERMB && y_mode <= TM_PRED)
+    vp8_read_tx_mode(bc, m, cm);
 #if CONFIG_COMP_INTRA_PRED
   m->mbmi.second_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
 #endif
@@ -1016,6 +1032,13 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #endif
   }
 
+  if (cm->txfm_mode == TX_PERMB &&
+      (mbmi->mode <= TM_PRED ||
+       mbmi->mode == NEWMV ||
+       mbmi->mode == NEARMV ||
+       mbmi->mode == NEARESTMV ||
+       mbmi->mode == ZEROMV))
+    vp8_read_tx_mode(bc, mi, cm);
 }
 
 void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
