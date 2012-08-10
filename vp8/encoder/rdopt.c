@@ -2648,9 +2648,7 @@ void setup_buffer_inter(VP8_COMP *cpi, MACROBLOCK *x, int idx, int frame_type,
 }
 
 void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int recon_uvoffset,
-                            int *returnrate, int *returndistortion, int64_t *returnintra,
-                            int64_t *best_single_rd_diff, int64_t *best_comp_rd_diff,
-                            int64_t *best_hybrid_rd_diff) {
+                            int *returnrate, int *returndistortion, int64_t *returnintra) {
   VP8_COMMON *cm = &cpi->common;
   BLOCK *b = &x->block[0];
   BLOCKD *d = &x->e_mbd.block[0];
@@ -2668,6 +2666,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   int mdcounts[4];
   int rate, distortion;
   int rate2, distortion2;
+  int64_t best_single_rd_diff, best_comp_rd_diff, best_hybrid_rd_diff;
   int64_t best_rd = INT64_MAX, best_intra_rd = INT64_MAX;
   int64_t best_comp_rd = INT64_MAX;
   int64_t best_single_rd = INT64_MAX;
@@ -3510,12 +3509,8 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
       (cpi->common.mb_no_coeff_skip) ? 1 : 0;
     x->e_mbd.mode_info_context->mbmi.partitioning = 0;
 
-    *best_single_rd_diff = *best_comp_rd_diff = *best_hybrid_rd_diff = 0;
-
-    store_coding_context(x, xd->mb_index, best_mode_index, &best_partition,
-                         &frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame],
-                         &frame_best_ref_mv[xd->mode_info_context->mbmi.second_ref_frame]);
-    return;
+    best_single_rd_diff = best_comp_rd_diff = best_hybrid_rd_diff = 0;
+    goto end;
   }
 
   // macroblock modes
@@ -3553,17 +3548,23 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   }
 
   if (best_single_rd == INT64_MAX)
-    *best_single_rd_diff = INT_MIN;
+    best_single_rd_diff = INT_MIN;
   else
-    *best_single_rd_diff = best_rd - best_single_rd;
+    best_single_rd_diff = best_rd - best_single_rd;
   if (best_comp_rd == INT64_MAX)
-    *best_comp_rd_diff = INT_MIN;
+    best_comp_rd_diff = INT_MIN;
   else
-    *best_comp_rd_diff   = best_rd - best_comp_rd;
+    best_comp_rd_diff   = best_rd - best_comp_rd;
   if (best_hybrid_rd == INT64_MAX)
-    *best_hybrid_rd_diff = INT_MIN;
+    best_hybrid_rd_diff = INT_MIN;
   else
-    *best_hybrid_rd_diff = best_rd - best_hybrid_rd;
+    best_hybrid_rd_diff = best_rd - best_hybrid_rd;
+
+end:
+  // TODO Save these to add in only if MB coding mode is selected?
+  cpi->rd_single_diff += best_single_rd_diff;
+  cpi->rd_comp_diff   += best_comp_rd_diff;
+  cpi->rd_hybrid_diff += best_hybrid_rd_diff;
 
   store_coding_context(x, xd->mb_index, best_mode_index, &best_partition,
                        &frame_best_ref_mv[xd->mode_info_context->mbmi.ref_frame],
@@ -3694,16 +3695,10 @@ int vp8cx_pick_mode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
   // For now this codebase is limited to a single rd encode path
   {
     int zbin_mode_boost_enabled = cpi->zbin_mode_boost_enabled;
-    int64_t single, compound, hybrid;
 
     vp8_rd_pick_inter_mode(cpi, x, recon_yoffset, recon_uvoffset, &rate,
-                           &distortion, &intra_error, &single, &compound,
-                           &hybrid);
+                           &distortion, &intra_error);
 
-    // TODO Save these to add in only if MB coding mode is selected?
-    cpi->rd_single_diff += single;
-    cpi->rd_comp_diff   += compound;
-    cpi->rd_hybrid_diff += hybrid;
     if (xd->mode_info_context->mbmi.ref_frame) {
       unsigned char pred_context;
 
