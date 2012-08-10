@@ -114,10 +114,12 @@ typedef enum {
   NB_PREDICTION_TYPES    = 3,
 } COMPPREDMODE_TYPE;
 
-/* TODO: allows larger transform */
 typedef enum {
-  ONLY_4X4            = 0,
-  ALLOW_8X8           = 1
+  ONLY_4X4            = 0, // Also signals lossless
+  TX_8X8_ONLY         = 1, // Transform size implied as 8x8 for 16x16 pred types
+  TX_16X16_ONLY       = 2, // Transform size implied as 16x16 for 16x16 pred types
+  TX_PERMB            = 3, // Signal transform type per MB
+  NB_TX_TYPES         = 4
 } TXFM_MODE;
 
 typedef struct VP8_COMMON_RTCD {
@@ -294,6 +296,8 @@ typedef struct VP8Common {
   // 2=specified per MB (1=filtered, 0=non-filtered)
   vp8_prob prob_pred_filter_off;
 #endif
+  // Used for transform size selection
+  vp8_prob prob_4x4, prob_8x8;
 
 } VP8_COMMON;
 

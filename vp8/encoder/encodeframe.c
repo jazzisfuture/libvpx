@@ -1382,6 +1382,8 @@ static void encode_frame_internal(VP8_COMP *cpi) {
   init_encode_frame_mb_context(cpi);
 
   vpx_memset(cpi->rd_comp_pred_diff, 0, sizeof(cpi->rd_comp_pred_diff));
+  vpx_memset(cpi->rd_tx_diff, 0, sizeof(cpi->rd_tx_diff));
+  vpx_memset(cpi->txfm_count, 0, sizeof(cpi->txfm_count));
   vpx_memset(cpi->single_pred_count, 0, sizeof(cpi->single_pred_count));
   vpx_memset(cpi->comp_pred_count, 0, sizeof(cpi->comp_pred_count));
 
@@ -1446,7 +1448,7 @@ static int check_dual_ref_flags(VP8_COMP *cpi) {
 
 void vp8_encode_frame(VP8_COMP *cpi) {
   if (cpi->sf.RD) {
-    int i, frame_type, pred_type;
+    int i, frame_type, pred_type, tx_type;
 
     /*
      * This code does a single RD pass over the whole frame assuming
@@ -1457,6 +1459,9 @@ void vp8_encode_frame(VP8_COMP *cpi) {
      * that for subsequent frames. If the difference is above a certain
      * threshold, it will actually re-encode the current frame using
      * that different coding mode.
+     *
+     * The code is now also chooses between only 4x4, only 8x8,
+     * only 16x16, or selected per macroblock (on 16x16 block).
      */
     if (cpi->common.frame_type == KEY_FRAME)
       frame_type = 0;
@@ -1481,13 +1486,49 @@ void vp8_encode_frame(VP8_COMP *cpi) {
     else
       pred_type = HYBRID_PREDICTION;
 
+    // Because this should be zeroed, the effect should be that the first
+    // frame always uses 16x16 only. We want to ensure PERMB isn't used
+    // on the first frame, because it can be a horrible choice.
+    // To force 16x16, comment out the following lines of code
+    // and change txfm_mode to TX_16X16_ONLY.
+    if (cpi->rd_tx_type_threshes[frame_type][2] >=
+                 cpi->rd_tx_type_threshes[frame_type][0] &&
+             cpi->rd_tx_type_threshes[frame_type][2] >=
+                 cpi->rd_tx_type_threshes[frame_type][1] &&
+             cpi->rd_tx_type_threshes[frame_type][2] >=
+                 cpi->rd_tx_type_threshes[frame_type][3])
+      tx_type = TX_16X16_ONLY;
+    else if (cpi->rd_tx_type_threshes[frame_type][1] >=
+                 cpi->rd_tx_type_threshes[frame_type][0] &&
+             cpi->rd_tx_type_threshes[frame_type][1] >=
+                 cpi->rd_tx_type_threshes[frame_type][2] &&
+             cpi->rd_tx_type_threshes[frame_type][1] >=
+                 cpi->rd_tx_type_threshes[frame_type][3])
+      tx_type = TX_8X8_ONLY;
+    else if (cpi->rd_tx_type_threshes[frame_type][0] >=
+                 cpi->rd_tx_type_threshes[frame_type][1] &&
+             cpi->rd_tx_type_threshes[frame_type][0] >=
+                 cpi->rd_tx_type_threshes[frame_type][2] &&
+             cpi->rd_tx_type_threshes[frame_type][0] >=
+                 cpi->rd_tx_type_threshes[frame_type][3])
+      tx_type = ONLY_4X4;
+    else
+      tx_type = TX_PERMB;
+
     cpi->common.comp_pred_mode = pred_type;
+    cpi->common.txfm_mode = tx_type;
     encode_frame_internal(cpi);
 
     for (i = 0; i < NB_PREDICTION_TYPES; ++i) {
-      int diff = cpi->rd_comp_pred_diff[i] / cpi->common.MBs;
-      cpi->rd_prediction_type_threshes[frame_type][i] += diff;
+      cpi->rd_prediction_type_threshes[frame_type][i] +=
+          cpi->rd_comp_pred_diff[i] / cpi->common.MBs;
       cpi->rd_prediction_type_threshes[frame_type][i] >>= 1;
+    }
+    for (i = 0; i < NB_TX_TYPES; ++i) {
+      cpi->rd_tx_type_threshes[frame_type][i] +=
+          3*cpi->rd_tx_diff[i] / cpi->common.MBs;
+      cpi->rd_tx_type_threshes[frame_type][i] >>= 2;
+      //cpi->rd_tx_type_threshes[frame_type][i] = cpi->rd_tx_diff[i];
     }
 
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
@@ -1505,6 +1546,29 @@ void vp8_encode_frame(VP8_COMP *cpi) {
         cpi->common.comp_pred_mode = COMP_PREDICTION_ONLY;
       }
     }
+    if (cpi->common.txfm_mode == TX_PERMB) {
+      int used_count = !!cpi->txfm_count[0] + !!cpi->txfm_count[1] + !!cpi->txfm_count[2];
+      if (used_count == 1) {
+        if (cpi->txfm_count[TX_4X4] != 0) {
+          cpi->common.txfm_mode = ONLY_4X4;
+          cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_4X4;
+        }
+        else if (cpi->txfm_count[TX_8X8] != 0) {
+          cpi->common.txfm_mode = TX_8X8_ONLY;
+          cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_8X8;
+        }
+        else {
+          cpi->common.txfm_mode = TX_16X16;
+          cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_16X16;
+        }
+      }
+    }
+    /*printf("\n%d\n", cpi->common.txfm_mode);
+    for (i = 0; i < 4; ++i) printf("%"PRId64" ", cpi->rd_tx_type_threshes[frame_type][i]);
+    printf("\n");
+    for (i = 0; i < 4; ++i) printf("%"PRId64" ", cpi->rd_tx_diff[i]);
+    printf("\n\n");*/
+
   } else {
     encode_frame_internal(cpi);
   }
@@ -1827,19 +1891,24 @@ void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
   /* test code: set transform size based on mode selection */
 #if CONFIG_TX16X16
   if (mbmi->mode <= TM_PRED) {
-    mbmi->txfm_size = TX_16X16;
-    cpi->t16x16_count++;
+    if (cpi->common.txfm_mode == ONLY_4X4)
+      mbmi->txfm_size = TX_4X4;
+    else if (cpi->common.txfm_mode == TX_8X8_ONLY)
+      mbmi->txfm_size = TX_8X8;
+    else if (cpi->common.txfm_mode == TX_16X16_ONLY)
+      mbmi->txfm_size = TX_16X16;
+    else
+      ; // Respect RD choice
+    cpi->txfm_count[mbmi->txfm_size]++;
   }
   else
 #endif
-  if (cpi->common.txfm_mode == ALLOW_8X8
-      && mbmi->mode != I8X8_PRED
-      && mbmi->mode != B_PRED) {
+  if (cpi->common.txfm_mode == TX_8X8_ONLY
+      && x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED
+      && x->e_mbd.mode_info_context->mbmi.mode != B_PRED) {
     mbmi->txfm_size = TX_8X8;
-    cpi->t8x8_count++;
   } else {
     mbmi->txfm_size = TX_4X4;
-    cpi->t4x4_count++;
   }
 
   if (mbmi->mode == I8X8_PRED) {
@@ -1923,21 +1992,29 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
 
   /* test code: set transform size based on mode selection */
 #if CONFIG_TX16X16
-  if (mbmi->mode <= TM_PRED || mbmi->mode == NEWMV || mbmi->mode == ZEROMV ||
-      mbmi->mode == NEARMV ||  mbmi->mode == NEARESTMV) {
-    mbmi->txfm_size = TX_16X16;
-    cpi->t16x16_count++;
+  if (mbmi->mode <= TM_PRED ||
+      mbmi->mode == NEWMV ||
+      mbmi->mode == ZEROMV ||
+      mbmi->mode == NEARMV ||
+      mbmi->mode == NEARESTMV) {
+    if (cpi->common.txfm_mode == ONLY_4X4)
+      mbmi->txfm_size = TX_4X4;
+    else if (cpi->common.txfm_mode == TX_8X8_ONLY)
+      mbmi->txfm_size = TX_8X8;
+    else if (cpi->common.txfm_mode == TX_16X16_ONLY)
+      mbmi->txfm_size = TX_16X16;
+    else
+      ; // Respect RD choice
+    cpi->txfm_count[mbmi->txfm_size]++;
   } else
 #endif
-  if (cpi->common.txfm_mode == ALLOW_8X8
+  if (cpi->common.txfm_mode == TX_8X8_ONLY
       && mbmi->mode != I8X8_PRED
       && mbmi->mode != B_PRED
       && mbmi->mode != SPLITMV) {
     mbmi->txfm_size = TX_8X8;
-    cpi->t8x8_count++;
   } else {
     mbmi->txfm_size = TX_4X4;
-    cpi->t4x4_count++;
   }
 
   if (mbmi->ref_frame == INTRA_FRAME) {
