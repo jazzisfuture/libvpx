@@ -23,66 +23,29 @@ static const unsigned int SSE_DIFF_THRESHOLD = 16 * 16 * 20;
 static const unsigned int SSE_THRESHOLD = 16 * 16 * 40;
 
 /*
- * The filtering coefficients used for denoizing are adjusted for static
- * blocks, or blocks with very small motion vectors. This is done through
- * the motion magnitude parameter.
+ * The filter function was modified to reduce the computational complexity.
+ * Step 1:
+ * Instead of applying tap coefficients for each pixel, we calculated the
+ * pixel adjustments vs. pixel diff value ahead of time.
+ *     adjustment = filtered_value - current_raw
+ *                = filter_coefficient * diff
+ * where
+ *     filter_coefficient = (255 << 8) / (256 + ((absdiff * 330) >> 3));
  *
- * There are currently 2048 possible mapping from absolute difference to
- * filter coefficient depending on the motion magnitude. Each mapping is
- * in a LUT table. All these tables are staticly allocated but they are only
- * filled on their first use.
- *
- * Each entry is a pair of 16b values, the coefficient and its complement
- * to 256. Each of these value should only be 8b but they are 16b wide to
- * avoid slow partial register manipulations.
+ * Step 2:
+ * The adjustment vs. diff curve becomes flat very quick when diff increases.
+ * This allowed us to use only several levels to approximate the curve without
+ * changing the filtering algorithm too much.
+ * The levels used are:
+ * diff             adjustment
+ * [-255, -16]           -6
+ * [-15, -8]             -4
+ * [-7, -2]              -2
+ * [-1, 1]                0
+ * [2, 7]                 2
+ * [8, 15]                4
+ * [16, 255]              6
  */
-enum {num_motion_magnitude_adjustments = 2048};
-
-static union coeff_pair filter_coeff_LUT[num_motion_magnitude_adjustments][256];
-static uint8_t filter_coeff_LUT_initialized[num_motion_magnitude_adjustments] =
-    { 0 };
-
-
-union coeff_pair *vp8_get_filter_coeff_LUT(unsigned int motion_magnitude)
-{
-    union coeff_pair *LUT;
-    unsigned int motion_magnitude_adjustment = motion_magnitude >> 3;
-
-    if (motion_magnitude_adjustment >= num_motion_magnitude_adjustments)
-    {
-        motion_magnitude_adjustment = num_motion_magnitude_adjustments - 1;
-    }
-
-    LUT = filter_coeff_LUT[motion_magnitude_adjustment];
-
-    if (!filter_coeff_LUT_initialized[motion_magnitude_adjustment])
-    {
-        int absdiff;
-
-        for (absdiff = 0; absdiff < 256; ++absdiff)
-        {
-            unsigned int filter_coefficient;
-            filter_coefficient = (255 << 8) / (256 + ((absdiff * 330) >> 3));
-            filter_coefficient += filter_coefficient /
-                                  (3 + motion_magnitude_adjustment);
-
-            if (filter_coefficient > 255)
-            {
-                filter_coefficient = 255;
-            }
-
-            LUT[absdiff].as_short[0] = filter_coefficient ;
-            LUT[absdiff].as_short[1] = 256 - filter_coefficient;
-        }
-
-        filter_coeff_LUT_initialized[motion_magnitude_adjustment] = 1;
-    }
-
-    return LUT;
-}
-
-
-
 int vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
                           YV12_BUFFER_CONFIG *running_avg,
                           MACROBLOCK *signal,
@@ -90,83 +53,67 @@ int vp8_denoiser_filter_c(YV12_BUFFER_CONFIG *mc_running_avg,
                           int y_offset,
                           int uv_offset)
 {
-    unsigned char filtered_buf[16*16];
-    unsigned char *filtered = filtered_buf;
     unsigned char *sig = signal->thismb;
     int sig_stride = 16;
     unsigned char *mc_running_avg_y = mc_running_avg->y_buffer + y_offset;
     int mc_avg_y_stride = mc_running_avg->y_stride;
     unsigned char *running_avg_y = running_avg->y_buffer + y_offset;
     int avg_y_stride = running_avg->y_stride;
-    const union coeff_pair *LUT = vp8_get_filter_coeff_LUT(motion_magnitude);
     int r, c;
     int sum_diff = 0;
 
     for (r = 0; r < 16; ++r)
     {
-        /* Calculate absolute differences */
-        unsigned char abs_diff[16];
-
-        union coeff_pair filter_coefficient[16];
-
         for (c = 0; c < 16; ++c)
         {
-            int absdiff = sig[c] - mc_running_avg_y[c];
-            absdiff = absdiff > 0 ? absdiff : -absdiff;
-            abs_diff[c] = absdiff;
-        }
+            int diff = 0;
+            int adjustment = 0;
+            int absdiff = 0;
 
-        /* Use LUT to get filter coefficients (two 16b value; f and 256-f) */
-        for (c = 0; c < 16; ++c)
-        {
-            filter_coefficient[c] = LUT[abs_diff[c]];
-        }
+            diff = mc_running_avg_y[c] - sig[c];
+            absdiff = abs(diff) >> 1;
 
-        /* Filtering... */
-        for (c = 0; c < 16; ++c)
-        {
-            const uint16_t state = (uint16_t)(mc_running_avg_y[c]);
-            const uint16_t sample = (uint16_t)(sig[c]);
+            if(absdiff == 0)
+                adjustment = 0;
+            else if(absdiff >= 1 && absdiff <= 3)
+                adjustment = 2;
+            else if(absdiff >= 4 && absdiff <= 7)
+                adjustment = 4;
+            else
+                adjustment = 6;
 
-            running_avg_y[c] = (filter_coefficient[c].as_short[0] * state +
-                    filter_coefficient[c].as_short[1] * sample + 128) >> 8;
-        }
-
-        /* Depending on the magnitude of the difference between the signal and
-         * filtered version, either replace the signal by the filtered one or
-         * update the filter state with the signal when the change in a pixel
-         * isn't classified as noise.
-         */
-        for (c = 0; c < 16; ++c)
-        {
-            const int diff = sig[c] - running_avg_y[c];
-            sum_diff += diff;
-
-            if (diff * diff < NOISE_DIFF2_THRESHOLD)
+            if(diff > 0)
             {
-                filtered[c] = running_avg_y[c];
+                if ((sig[c] + adjustment) > 255)
+                    running_avg_y[c] = 255;
+                else
+                    running_avg_y[c] = sig[c] + adjustment;
+
+                sum_diff += adjustment;
             }
             else
             {
-                filtered[c] = sig[c];
-                running_avg_y[c] = sig[c];
+                if ((sig[c] - adjustment) < 0)
+                    running_avg_y[c] = 0;
+                else
+                    running_avg_y[c] = sig[c] - adjustment;
+
+                sum_diff -= adjustment;
             }
         }
 
         /* Update pointers for next iteration. */
         sig += sig_stride;
-        filtered += 16;
         mc_running_avg_y += mc_avg_y_stride;
         running_avg_y += avg_y_stride;
     }
+
     if (abs(sum_diff) > SUM_DIFF_THRESHOLD)
-    {
         return COPY_BLOCK;
-    }
-    vp8_copy_mem16x16(filtered_buf, 16, signal->thismb, sig_stride);
+
+    vp8_copy_mem16x16(running_avg->y_buffer + y_offset, avg_y_stride, signal->thismb, sig_stride);
     return FILTER_BLOCK;
 }
-
 
 int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height)
 {
