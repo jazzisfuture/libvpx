@@ -69,6 +69,7 @@ void vp8_recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
 }
 #endif
 // #define WRITE_RECON_BUFFER 1
+#define WRITE_RECON_BUFFER 0
 #if WRITE_RECON_BUFFER
 void write_dx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
 
