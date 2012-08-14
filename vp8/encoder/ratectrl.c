@@ -256,7 +256,7 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
   }
 
   // FIXME
-  cpi->common.txfm_mode = TX_IMPLIED;
+  cpi->common.txfm_mode = TX_8X8_ONLY;
 
 #if CONFIG_LOSSLESS
   if (cpi->oxcf.lossless)
@@ -286,7 +286,7 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
 
 }
 void vp8_setup_inter_frame(VP8_COMP *cpi) {
-  cpi->common.txfm_mode = TX_IMPLIED;
+  cpi->common.txfm_mode = TX_8X8_ONLY;
 
 #if CONFIG_LOSSLESS
   if (cpi->oxcf.lossless)

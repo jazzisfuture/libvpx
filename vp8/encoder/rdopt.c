@@ -827,8 +827,8 @@ static void macroblock_yrd_all(MACROBLOCK *mb, VP8_COMP *cpi,
   rd_tmp = RDCOST(mb->rdmult, mb->rddiv, ratey_16x16, distortion_16x16);
 
   macro_block_yrd_8x8(mb, &ratey_8x8, &distortion_8x8, rtcd, 0);
-  tx_rate[TX_IMPLIED] = ratey_8x8;
-  tx_dist[TX_IMPLIED] = distortion_8x8;
+  tx_rate[TX_8X8_ONLY] = ratey_8x8;
+  tx_dist[TX_8X8_ONLY] = distortion_8x8;
   if (RDCOST(mb->rdmult, mb->rddiv, ratey_8x8, distortion_8x8) < rd_tmp) {
     mb->e_mbd.mode_info_context->mbmi.txfm_size = TX_8X8;
     ratey = ratey_8x8;
@@ -862,7 +862,7 @@ static void macroblock_yrd_all(MACROBLOCK *mb, VP8_COMP *cpi,
     *Distortion = distortion_4x4;
     //mb->e_mbd.mode_info_context->mbmi.txfm_size = TX_4X4;
   }
-  else if (cpi->common.txfm_mode == TX_IMPLIED) {
+  else if (cpi->common.txfm_mode == TX_8X8_ONLY) {
     *Rate = ratey_8x8;
     *Distortion = distortion_8x8;
     //mb->e_mbd.mode_info_context->mbmi.txfm_size = TX_8X8;
@@ -2687,7 +2687,7 @@ static void inter_mode_cost(VP8_COMP *cpi, MACROBLOCK *x, int this_mode,
   }
   else {
 #endif
-    if (cpi->common.txfm_mode >= TX_IMPLIED)
+    if (cpi->common.txfm_mode == TX_8X8_ONLY)
       macro_block_yrd_8x8(x, rate_y, distortion, IF_RTCD(&cpi->rtcd), 1);
     else
       macro_block_yrd(x, rate_y, distortion, IF_RTCD(&cpi->rtcd), 1);
@@ -2699,18 +2699,21 @@ static void inter_mode_cost(VP8_COMP *cpi, MACROBLOCK *x, int this_mode,
   *distortion2 += *distortion;
 
   // UV cost and distortion
-  if (cpi->common.txfm_mode >= TX_IMPLIED
 #if CONFIG_TX16X16
-      || this_mode == ZEROMV ||
-      this_mode == NEARESTMV ||
-      this_mode == NEARMV ||
-      this_mode == NEWMV
-#endif
-      )
+  if (cpi->common.txfm_mode == TX_8X8_ONLY ||
+      cpi->common.txfm_mode == TX_16X16_ONLY ||
+      (cpi->common.txfm_mode == TX_PERMB && x->e_mbd.mode_info_context->mbmi.txfm_size != TX_4X4))
     rd_inter16x16_uv_8x8(cpi, x, rate_uv, distortion_uv,
                          cpi->common.full_pixel);
   else
     rd_inter16x16_uv(cpi, x, rate_uv, distortion_uv, cpi->common.full_pixel);
+#else
+  if (cpi->common.txfm_mode == TX_8X8_ONLY)
+    rd_inter16x16_uv_8x8(cpi, x, rate_uv, distortion_uv,
+                         cpi->common.full_pixel);
+  else
+    rd_inter16x16_uv(cpi, x, rate_uv, distortion_uv, cpi->common.full_pixel);
+#endif
   *rate2 += *rate_uv;
   *distortion2 += *distortion_uv;
 }
@@ -2780,7 +2783,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   int uv_intra_skippable = 0, uv_intra_skippable_8x8 = 0;
   int uv_intra_rate_8x8 = 0, uv_intra_distortion_8x8 = 0, uv_intra_rate_tokenonly_8x8 = 0;
   int rate_y, UNINITIALIZED_IS_SAFE(rate_uv);
-  int distortion_uv;
+  int distortion_uv = 0;
   int64_t best_yrd = INT64_MAX;
 #if CONFIG_PRED_FILTER
   int best_filter_state;
@@ -2876,7 +2879,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   uv_intra_skippable = mbuv_is_skippable(&x->e_mbd);
 
   /* rough estimate for now */
-  if (cpi->common.txfm_mode >= TX_IMPLIED) {
+  if (cpi->common.txfm_mode >= TX_8X8_ONLY) {
     rd_pick_intra_mbuv_mode_8x8(cpi, x, &uv_intra_rate_8x8,
                                 &uv_intra_rate_tokenonly_8x8,
                                 &uv_intra_distortion_8x8);
@@ -3401,7 +3404,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
         }
         else
 #endif
-        if ((cpi->common.txfm_mode >= TX_IMPLIED) && has_y2) {
+        if (cpi->common.txfm_mode == TX_8X8_ONLY && has_y2) {
           if (mbmi->ref_frame != INTRA_FRAME)
             mb_skippable = mb_is_skippable_8x8(&x->e_mbd);
           else
@@ -3484,7 +3487,9 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
           best_mode_index = mode_index;
 
           if (this_mode <= B_PRED) {
-            if (cpi->common.txfm_mode >= TX_IMPLIED
+            if ((cpi->common.txfm_mode == TX_8X8_ONLY ||
+                 cpi->common.txfm_mode == TX_16X16_ONLY ||
+                 (cpi->common.txfm_mode == TX_PERMB && mbmi->txfm_size != TX_4X4))
                 && this_mode != B_PRED
                 && this_mode != I8X8_PRED)
               mbmi->uv_mode = uv_intra_mode_8x8;

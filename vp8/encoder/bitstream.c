@@ -1322,7 +1322,8 @@ void build_coeff_contexts(VP8_COMP *cpi) {
   }
 
 
-  if (cpi->common.txfm_mode >= TX_IMPLIED) {
+  if (cpi->common.txfm_mode == TX_8X8_ONLY ||
+      cpi->common.txfm_mode == TX_PERMB) {
     for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
       for (j = 0; j < COEF_BANDS; ++j) {
         for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
@@ -1457,7 +1458,8 @@ static void update_coef_probs2(VP8_COMP *cpi) {
     }
   }
 
-  if (cpi->common.txfm_mode >= TX_IMPLIED) {
+  if (cpi->common.txfm_mode == TX_8X8_ONLY ||
+      cpi->common.txfm_mode == TX_PERMB) {
     for (t = 0; t < ENTROPY_NODES; ++t) {
       /* dry run to see if there is any udpate at all needed */
       savings = 0;
@@ -1644,7 +1646,8 @@ static void update_coef_probs(VP8_COMP *cpi) {
 
 
   /* do not do this if not even allowed */
-  if (cpi->common.txfm_mode >= TX_IMPLIED) {
+  if (cpi->common.txfm_mode == TX_8X8_ONLY ||
+      cpi->common.txfm_mode == TX_PERMB) {
     /* dry run to see if update is necessary */
     update[0] = update[1] = 0;
     savings = 0;

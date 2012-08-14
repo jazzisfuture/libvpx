@@ -115,8 +115,8 @@ typedef enum {
 } COMPPREDMODE_TYPE;
 
 typedef enum {
-  ONLY_4X4            = 0,
-  TX_IMPLIED          = 1, // Change name to TX_8X8_ONLY
+  ONLY_4X4            = 0, // Also signals lossless
+  TX_8X8_ONLY         = 1, // Transform size implied as 8x8 for 16x16 pred types
   TX_16X16_ONLY       = 2, // Transform size implied as 16x16 for 16x16 pred types
   TX_PERMB            = 3, // Signal transform type per MB
   NB_TX_TYPES         = 4
