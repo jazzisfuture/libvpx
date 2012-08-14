@@ -1269,7 +1269,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
                  cpi->rd_tx_type_threshes[frame_type][2] &&
              cpi->rd_tx_type_threshes[frame_type][1] >=
                  cpi->rd_tx_type_threshes[frame_type][3])
-      tx_type = TX_IMPLIED; // Actually 8x8 only
+      tx_type = TX_8X8_ONLY;
     else if (cpi->rd_tx_type_threshes[frame_type][0] >=
                  cpi->rd_tx_type_threshes[frame_type][1] &&
              cpi->rd_tx_type_threshes[frame_type][0] >=
@@ -1311,23 +1311,29 @@ void vp8_encode_frame(VP8_COMP *cpi) {
         cpi->common.comp_pred_mode = COMP_PREDICTION_ONLY;
       }
     }
-    if (cpi->common.comp_pred_mode == TX_PERMB) {
+    if (cpi->common.txfm_mode == TX_PERMB) {
       int used_count = !!cpi->txfm_count[0] + !!cpi->txfm_count[1] + !!cpi->txfm_count[2];
       if (used_count == 1) {
         if (cpi->txfm_count[TX_4X4] != 0) {
-          cpi->common.comp_pred_mode = ONLY_4X4;
+          cpi->common.txfm_mode = ONLY_4X4;
           cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_4X4;
         }
         else if (cpi->txfm_count[TX_8X8] != 0) {
-          cpi->common.comp_pred_mode = TX_IMPLIED;
+          cpi->common.txfm_mode = TX_8X8_ONLY;
           cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_8X8;
         }
         else {
-          cpi->common.comp_pred_mode = TX_16X16;
+          cpi->common.txfm_mode = TX_16X16;
           cpi->mb.e_mbd.mode_info_context->mbmi.mode = TX_16X16;
         }
       }
     }
+    /*printf("\n%d\n", cpi->common.txfm_mode);
+    for (i = 0; i < 4; ++i) printf("%"PRId64" ", cpi->rd_tx_type_threshes[frame_type][i]);
+    printf("\n");
+    for (i = 0; i < 4; ++i) printf("%"PRId64" ", cpi->rd_tx_diff[i]);
+    printf("\n\n");*/
+
   } else {
     encode_frame_internal(cpi);
   }
@@ -1491,7 +1497,7 @@ void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
   if (mbmi->mode <= TM_PRED) {
     if (cpi->common.txfm_mode == ONLY_4X4)
       mbmi->txfm_size = TX_4X4;
-    else if (cpi->common.txfm_mode == TX_IMPLIED)
+    else if (cpi->common.txfm_mode == TX_8X8_ONLY)
       mbmi->txfm_size = TX_8X8;
     else if (cpi->common.txfm_mode == TX_16X16_ONLY)
       mbmi->txfm_size = TX_16X16;
@@ -1501,7 +1507,7 @@ void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
   }
   else
 #endif
-  if (cpi->common.txfm_mode >= TX_IMPLIED
+  if (cpi->common.txfm_mode == TX_8X8_ONLY
       && x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED
       && x->e_mbd.mode_info_context->mbmi.mode != B_PRED) {
     mbmi->txfm_size = TX_8X8;
@@ -1594,7 +1600,7 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
       mbmi->mode == NEARESTMV) {
     if (cpi->common.txfm_mode == ONLY_4X4)
       mbmi->txfm_size = TX_4X4;
-    else if (cpi->common.txfm_mode == TX_IMPLIED)
+    else if (cpi->common.txfm_mode == TX_8X8_ONLY)
       mbmi->txfm_size = TX_8X8;
     else if (cpi->common.txfm_mode == TX_16X16_ONLY)
       mbmi->txfm_size = TX_16X16;
@@ -1603,7 +1609,7 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
     cpi->txfm_count[mbmi->txfm_size]++;
   } else
 #endif
-  if (cpi->common.txfm_mode >= TX_IMPLIED
+  if (cpi->common.txfm_mode == TX_8X8_ONLY
       && mbmi->mode != I8X8_PRED
       && mbmi->mode != B_PRED
       && mbmi->mode != SPLITMV) {

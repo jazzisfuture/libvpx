@@ -448,7 +448,7 @@ typedef struct VP8_COMP {
   int64_t rd_comp_pred_diff[NB_PREDICTION_TYPES];
   int64_t rd_tx_type_threshes[4][NB_TX_TYPES];
   int64_t rd_tx_diff[NB_TX_TYPES];
-  int rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];
+  int64_t rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];
   int comp_pred_count[COMP_PRED_CONTEXTS];
   int single_pred_count[COMP_PRED_CONTEXTS];
 
