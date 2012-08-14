@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if CONFIG_ROTATION
+#if defined (CONFIG_ROTATION) && CONFIG_ROTATION
 typedef struct {
   int y;
   int x;

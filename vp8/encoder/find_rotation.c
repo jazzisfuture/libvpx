@@ -11,7 +11,7 @@
 #include "block.h"
 #include "variance.h"
 
-#if CONFIG_ROTATION
+#if defined (CONFIG_ROTATION) && CONFIG_ROTATION
 
 int vp8_find_best_rotation(MACROBLOCK *x, BLOCK *b, BLOCKD *d, int_mv *bestmv,
                            int_mv *ref_mv, int *bri, int error_per_bit,
