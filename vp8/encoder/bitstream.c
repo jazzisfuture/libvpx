@@ -28,6 +28,10 @@
 #include "vp8/common/pred_common.h"
 #include "vp8/common/entropy.h"
 
+#if CONFIG_NEW_MVREF
+#include "vp8/common/mvref_common.h"
+#endif
+
 #if defined(SECTIONBITS_OUTPUT)
 unsigned __int64 Sectionbits[500];
 #endif
@@ -713,6 +717,34 @@ static void update_ref_probs(VP8_COMP *const cpi) {
   compute_mod_refprobs(cm);
 }
 
+#if CONFIG_NEW_MVREF
+// Measure the distance of each reference candidate from the actual
+// residual vector and return the nearest
+static int pick_best_mv_ref( int_mv target_mv,
+                              int_mv * mv_ref_list,
+                              int_mv * best_ref ) {
+
+  int i;
+  int best_index = 0;
+  unsigned int distance, distance2;
+
+  distance = mv_distance(&target_mv, &mv_ref_list[0]);
+
+  for (i = 1; i < MAX_MV_REFS; ++i ) {
+    distance2 =
+      mv_distance(&target_mv, &mv_ref_list[i]);
+    if (distance2 < distance) {
+      distance = distance2;
+      best_index = i;
+    }
+  }
+
+  (*best_ref).as_int = mv_ref_list[best_index].as_int;
+
+  return best_index;
+}
+#endif
+
 static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
   int i;
   VP8_COMMON *const pc = & cpi->common;
@@ -1007,12 +1039,28 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
                 active_section = 5;
 #endif
 
+#if 0 //CONFIG_NEW_MVREF
+                find_mv_refs(xd, m, prev_m, FIRST_REF,
+                             mi->ref_mvs[rf],
+                             cpi->common.ref_frame_sign_bias );
+
+                pick_best_mv_ref( mi->mv[0], mi->ref_mvs[rf], &best_mv);
+#endif
                 if (xd->allow_high_precision_mv)
                   write_mv_hp(w, &mi->mv[0].as_mv, &best_mv, mvc_hp);
                 else
                   write_mv(w, &mi->mv[0].as_mv, &best_mv, mvc);
 
                 if (mi->second_ref_frame) {
+#if 0 //CONFIG_NEW_MVREF
+                  find_mv_refs(xd, m, prev_m, SECOND_REF,
+                               mi->ref_mvs[mi->second_ref_frame],
+                               cpi->common.ref_frame_sign_bias );
+
+                  pick_best_mv_ref( mi->mv[1],
+                                    mi->ref_mvs[mi->second_ref_frame],
+                                    &best_second_mv);
+#endif
                   if (xd->allow_high_precision_mv)
                     write_mv_hp(w, &mi->mv[1].as_mv, &best_second_mv, mvc_hp);
                   else
