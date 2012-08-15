@@ -356,12 +356,13 @@ ifeq ($(CONFIG_UNIT_TESTS),yes)
 LIBVPX_TEST_DATA_PATH ?= .
 
 include $(SRC_PATH_BARE)/test/test.mk
+NOT_MSVS = $(if $(CONFIG_MSVS),,yes)
 LIBVPX_TEST_SRCS=$(addprefix test/,$(call enabled,LIBVPX_TEST_SRCS))
 LIBVPX_TEST_BINS=./test_libvpx
 LIBVPX_TEST_DATA=$(addprefix $(LIBVPX_TEST_DATA_PATH)/,\
                      $(call enabled,LIBVPX_TEST_DATA))
 libvpx_test_data_url=http://downloads.webmproject.org/test_data/libvpx/$(1)
-BINS-yes += $(LIBVPX_TEST_BINS)
+BINS-$(NOT_MSVS) += $(LIBVPX_TEST_BINS)
 
 $(LIBVPX_TEST_DATA):
 	@echo "    [DOWNLOAD] $@"
