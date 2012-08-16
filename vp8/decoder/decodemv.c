@@ -41,11 +41,20 @@ static int vp8_read_ymode(vp8_reader *bc, const vp8_prob *p) {
   return i;
 }
 
+#if CONFIG_SUPERBLOCKS
+static int vp8_sb_kfread_ymode(vp8_reader *bc, const vp8_prob *p) {
+  const int i = vp8_treed_read(bc, vp8_uv_mode_tree, p);
+
+  return i;
+}
+#endif
+
 static int vp8_kfread_ymode(vp8_reader *bc, const vp8_prob *p) {
   const int i = vp8_treed_read(bc, vp8_kf_ymode_tree, p);
 
   return i;
 }
+
 static int vp8_read_i8x8_mode(vp8_reader *bc, const vp8_prob *p) {
   const int i = vp8_treed_read(bc, vp8_i8x8_mode_tree, p);
 
@@ -112,6 +121,12 @@ static void vp8_kfread_modes(VP8D_COMP *pbi,
       m->mbmi.mb_skip_coeff = 0;
   }
 
+#if CONFIG_SUPERBLOCKS
+  if (m->mbmi.encoded_as_sb) {
+    y_mode = (MB_PREDICTION_MODE) vp8_sb_kfread_ymode(bc,
+                                                   pbi->common.sb_kf_ymode_prob[pbi->common.kf_ymode_probs_index]);
+  } else
+#endif
   y_mode = (MB_PREDICTION_MODE) vp8_kfread_ymode(bc,
                                                  pbi->common.kf_ymode_prob[pbi->common.kf_ymode_probs_index]);
 #if CONFIG_COMP_INTRA_PRED
@@ -398,6 +413,14 @@ static MV_REFERENCE_FRAME read_ref_frame(VP8D_COMP *pbi,
   return (MV_REFERENCE_FRAME)ref_frame;
 }
 
+#if CONFIG_SUPERBLOCKS
+static MB_PREDICTION_MODE read_sb_mv_ref(vp8_reader *bc, const vp8_prob *p) {
+  const int i = vp8_treed_read(bc, vp8_sb_mv_ref_tree, p);
+
+  return (MB_PREDICTION_MODE)i;
+}
+#endif
+
 static MB_PREDICTION_MODE read_mv_ref(vp8_reader *bc, const vp8_prob *p) {
   const int i = vp8_treed_read(bc, vp8_mv_ref_tree, p);
 
@@ -537,14 +560,35 @@ static void read_mb_segment_id(VP8D_COMP *pbi,
         // Else .... decode it explicitly
         else {
           vp8_read_mb_segid(bc, mbmi, xd);
-          cm->last_frame_seg_map[index] = mbmi->segment_id;
         }
-
       }
       // Normal unpredicted coding mode
       else {
         vp8_read_mb_segid(bc, mbmi, xd);
+      }
+#if CONFIG_SUPERBLOCKS
+      if (mbmi->encoded_as_sb) {
+        cm->last_frame_seg_map[index] =
+        cm->last_frame_seg_map[index + 1] =
+        cm->last_frame_seg_map[index + cm->mb_cols] =
+        cm->last_frame_seg_map[index + cm->mb_cols + 1] = mbmi->segment_id;
+      } else
+#endif
+      {
         cm->last_frame_seg_map[index] = mbmi->segment_id;
+      }
+    } else {
+#if CONFIG_SUPERBLOCKS
+      if (mbmi->encoded_as_sb) {
+        mbmi->segment_id =
+              cm->last_frame_seg_map[index] &&
+              cm->last_frame_seg_map[index + 1] &&
+              cm->last_frame_seg_map[index + cm->mb_cols] &&
+              cm->last_frame_seg_map[index + cm->mb_cols + 1];
+      } else
+#endif
+      {
+        mbmi->segment_id = cm->last_frame_seg_map[index];
       }
     }
   } else {
@@ -667,6 +711,11 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mbmi->mode =
         get_segdata(xd, mbmi->segment_id, SEG_LVL_MODE);
     } else {
+#if CONFIG_SUPERBLOCKS
+      if (mbmi->encoded_as_sb) {
+        mbmi->mode = read_sb_mv_ref(bc, mv_ref_p);
+      } else
+#endif
       mbmi->mode = read_mv_ref(bc, mv_ref_p);
 
       vp8_accum_mv_refs(&pbi->common, mbmi->mode, rct);
@@ -963,6 +1012,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mbmi->mode = (MB_PREDICTION_MODE)
                    get_segdata(xd, mbmi->segment_id, SEG_LVL_MODE);
     else {
+      // FIXME write using SB mode tree
       mbmi->mode = (MB_PREDICTION_MODE)
                    vp8_read_ymode(bc, pbi->common.fc.ymode_prob);
       pbi->common.fc.ymode_counts[mbmi->mode]++;
@@ -1045,6 +1095,9 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
     int mb_row = (sb_row << 1);
 
     for (sb_col = 0; sb_col < sb_cols; sb_col++) {
+#if CONFIG_SUPERBLOCKS
+      mi->mbmi.encoded_as_sb = vp8_read(&pbi->bc, cm->sb_coded);
+#endif
       for (i = 0; i < 4; i++) {
 
         int dy = row_delta[i];
@@ -1059,6 +1112,10 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
           prev_mi += offset_extended;
           continue;
         }
+#if CONFIG_SUPERBLOCKS
+        if (i)
+          mi->mbmi.encoded_as_sb = 0;
+#endif
 
         // Make sure the MacroBlockD mode info pointer is set correctly
         xd->mode_info_context = mi;
@@ -1073,6 +1130,17 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
         else
           read_mb_modes_mv(pbi, mi, &mi->mbmi, prev_mi, mb_row,
                            mb_col);
+
+#if CONFIG_SUPERBLOCKS
+        if (mi->mbmi.encoded_as_sb) {
+          assert(!i);
+          mb_col += 2;
+          mi[1] = mi[cm->mode_info_stride] = mi[cm->mode_info_stride + 1] = mi[0];
+          mi += 2;
+          prev_mi += 2;
+          break;
+        }
+#endif
 
         /* next macroblock */
         mb_row += dy;
