@@ -59,6 +59,7 @@ static unsigned int do_16x16_motion_iteration
   ref_full.as_mv.row = ref_mv->as_mv.row >> 3;
 
   /*cpi->sf.search_method == HEX*/
+  dst_mv->as_int = 0;
   best_err = vp8_hex_search(
       x, b, d,
       &ref_full, dst_mv,

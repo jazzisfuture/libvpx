@@ -845,8 +845,10 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
     } else {
       vp8_fix_contexts(xd);
     }
+
     if (dry_run)
       *t = t_backup;
+
     return;
   }
 

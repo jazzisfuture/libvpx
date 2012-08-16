@@ -293,6 +293,11 @@ typedef struct {
     INTERPOLATIONFILTERTYPE interp_filter;
 #endif
 
+#if CONFIG_SUPERBLOCKS
+  // FIXME need a SB array of 4 MB_MODE_INFOs that
+  // only needs one encoded_as_sb.
+  unsigned char encoded_as_sb;
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
