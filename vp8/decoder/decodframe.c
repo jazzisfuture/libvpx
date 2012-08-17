@@ -372,8 +372,10 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   if (mode == I8X8_PRED) {
     for (i = 0; i < 4; i++) {
       int ib = vp8_i8x8_block[i];
+#if !CONFIG_HYBRIDTRANSFORM8X8
       const int iblock[4] = {0, 1, 4, 5};
       int j;
+#endif
       int i8x8mode;
       BLOCKD *b;
 
@@ -401,6 +403,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
                                     q, dq, pre, dst, 16, stride);
       q += 64;
 #else
+      {
       for (j = 0; j < 4; j++) {
         b = &xd->block[ib + iblock[j]];
         if (xd->eobs[ib + iblock[j]] > 1) {
@@ -413,6 +416,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
            *(b->base_dst) + b->dst, 16, b->dst_stride);
           ((int *)b->qcoeff)[0] = 0;
         }
+      }
       }
 #endif
 

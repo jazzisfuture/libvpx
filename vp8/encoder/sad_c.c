@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include <stdlib.h>
 #include "vpx_ports/config.h"
 #include "vpx/vpx_integer.h"
