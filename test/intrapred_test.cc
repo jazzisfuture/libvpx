@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include "test/acm_random.h"
+#include "test/mem.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 extern "C" {
 #include "vpx_config.h"
@@ -21,6 +22,7 @@ extern "C" {
 namespace {
 
 using libvpx_test::ACMRandom;
+using libvpx_test::AlignAddr;
 
 class IntraPredBase {
  protected:
@@ -217,12 +219,23 @@ typedef void (*intra_pred_y_fn_t)(MACROBLOCKD *x,
 class IntraPredYTest : public ::testing::TestWithParam<intra_pred_y_fn_t>,
     protected IntraPredBase {
  protected:
+  static const int kDataAlignment = 16;
   static const int kBlockSize = 16;
   static const int kStride = kBlockSize * 3;
+  // We use 48 so that the data pointer of the first pixel in each row of
+  // each macroblock is 16-byte aligned, and this gives us access to the
+  // top-left and top-right corner pixels belonging to the top-left/right
+  // macroblocks.
+  // We use 17 lines so we have one line above us for top-prediction.
+  static const int kDataBufferSize = kStride * (kBlockSize + 1)
+                                   + kDataAlignment - 1;
+
+  IntraPredYTest()
+      : data_array_aligned_(AlignAddr<uint8_t, kDataAlignment>(data_array_)) {}
 
   virtual void SetUp() {
     pred_fn_ = GetParam();
-    SetupMacroblock(data_array_, kBlockSize, kStride, 1);
+    SetupMacroblock(data_array_aligned_, kBlockSize, kStride, 1);
   }
 
   virtual void Predict(MB_PREDICTION_MODE mode) {
@@ -232,12 +245,8 @@ class IntraPredYTest : public ::testing::TestWithParam<intra_pred_y_fn_t>,
   }
 
   intra_pred_y_fn_t pred_fn_;
-  // We use 48 so that the data pointer of the first pixel in each row of
-  // each macroblock is 16-byte aligned, and this gives us access to the
-  // top-left and top-right corner pixels belonging to the top-left/right
-  // macroblocks.
-  // We use 17 lines so we have one line above us for top-prediction.
-  DECLARE_ALIGNED(16, uint8_t, data_array_[kStride * (kBlockSize + 1)]);
+  uint8_t data_array_[kDataBufferSize];
+  uint8_t* data_array_aligned_;
 };
 
 TEST_P(IntraPredYTest, IntraPredTests) {
@@ -272,11 +281,23 @@ class IntraPredUVTest : public ::testing::TestWithParam<intra_pred_uv_fn_t>,
     protected IntraPredBase {
  protected:
   static const int kBlockSize = 8;
+  static const int kDataAlignment = 8;
   static const int kStride = kBlockSize * 3;
+  // We use 24 so that the data pointer of the first pixel in each row of
+  // each macroblock is 8-byte aligned, and this gives us access to the
+  // top-left and top-right corner pixels belonging to the top-left/right
+  // macroblocks.
+  // We use 9 lines so we have one line above us for top-prediction.
+  // [0] = U, [1] = V
+  static const int kDataBufferSize = 2 * kStride * (kBlockSize + 1)
+                                   + kDataAlignment - 1;
+
+  IntraPredUVTest()
+      : data_array_aligned_(AlignAddr<uint8_t, kDataAlignment>(data_array_)) {}
 
   virtual void SetUp() {
     pred_fn_ = GetParam();
-    SetupMacroblock(data_array_, kBlockSize, kStride, 2);
+    SetupMacroblock(data_array_aligned_, kBlockSize, kStride, 2);
   }
 
   virtual void Predict(MB_PREDICTION_MODE mode) {
@@ -287,13 +308,8 @@ class IntraPredUVTest : public ::testing::TestWithParam<intra_pred_uv_fn_t>,
   }
 
   intra_pred_uv_fn_t pred_fn_;
-  // We use 24 so that the data pointer of the first pixel in each row of
-  // each macroblock is 8-byte aligned, and this gives us access to the
-  // top-left and top-right corner pixels belonging to the top-left/right
-  // macroblocks.
-  // We use 9 lines so we have one line above us for top-prediction.
-  // [0] = U, [1] = V
-  DECLARE_ALIGNED(8, uint8_t, data_array_[2 * kStride * (kBlockSize + 1)]);
+  uint8_t data_array_[kDataBufferSize];
+  uint8_t* data_array_aligned_;
 };
 
 TEST_P(IntraPredUVTest, IntraPredTests) {
