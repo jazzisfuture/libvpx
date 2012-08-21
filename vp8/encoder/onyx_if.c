@@ -1103,7 +1103,6 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
     }
 
     /* Data used for real time vc mode to see if gf needs refreshing */
-    cpi->inter_zz_count = 0;
     cpi->gf_bad_count = 0;
     cpi->gf_update_recommended = 0;
 
@@ -4294,6 +4293,30 @@ static void encode_frame_to_data_rate
                     cpi->lf_ref_frame[mb_col + mb_row*(cm->mode_info_stride+1)] = tmp->mbmi.ref_frame;
                     tmp++;
                 }
+            }
+        }
+    }
+
+    /* Count last ref frame 0,0 usage on current encoded frame. */
+    {
+        int mb_row;
+        int mb_col;
+        /* Point to beginning of MODE_INFO arrays. */
+        MODE_INFO *tmp = cm->mi;
+
+        cpi->inter_zz_count = 0;
+
+        if(cm->frame_type != KEY_FRAME)
+        {
+            for (mb_row = 0; mb_row < cm->mb_rows; mb_row ++)
+            {
+                for (mb_col = 0; mb_col < cm->mb_cols; mb_col ++)
+                {
+                    if(tmp->mbmi.mode == ZEROMV && tmp->mbmi.ref_frame == LAST_FRAME)
+                        cpi->inter_zz_count++;
+                    tmp++;
+                }
+                tmp++;
             }
         }
     }
