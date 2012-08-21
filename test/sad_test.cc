@@ -20,6 +20,7 @@ extern "C" {
 }
 
 #include "test/acm_random.h"
+#include "test/mem.h"
 #include "test/util.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
@@ -31,10 +32,18 @@ typedef unsigned int (*sad_m_by_n_fn_t)(const unsigned char *source_ptr,
                                         unsigned int max_sad);
 
 using libvpx_test::ACMRandom;
+using libvpx_test::AlignAddr;
 
 namespace {
 class SADTest : public PARAMS(int, int, sad_m_by_n_fn_t) {
-  protected:
+ protected:
+  static const int kDataAlignment = 16;
+  static const int kDataBufferSize = 16 * 32 + kDataAlignment - 1;
+
+  SADTest()
+      : source_data_aligned_(AlignAddr<uint8_t, kDataAlignment>(source_data_)),
+        reference_data_aligned_(AlignAddr<uint8_t, kDataAlignment>(reference_data_)) {}
+
   virtual void SetUp() {
     sad_fn_ = GET_PARAM(2);
     height_ = GET_PARAM(1);
@@ -46,8 +55,8 @@ class SADTest : public PARAMS(int, int, sad_m_by_n_fn_t) {
 
   sad_m_by_n_fn_t sad_fn_;
   virtual unsigned int SAD(unsigned int max_sad) {
-    return sad_fn_(source_data_, source_stride_,
-                   reference_data_, reference_stride_,
+    return sad_fn_(source_data_aligned_, source_stride_,
+                   reference_data_aligned_, reference_stride_,
                    max_sad);
   }
 
@@ -58,8 +67,8 @@ class SADTest : public PARAMS(int, int, sad_m_by_n_fn_t) {
 
     for (int h = 0; h < height_; ++h) {
       for (int w = 0; w < width_; ++w) {
-        sad += abs(source_data_[h * source_stride_ + w]
-               - reference_data_[h * reference_stride_ + w]);
+        sad += abs(source_data_aligned_[h * source_stride_ + w]
+               - reference_data_aligned_[h * reference_stride_ + w]);
       }
       if (sad > max_sad) {
         break;
@@ -100,31 +109,33 @@ class SADTest : public PARAMS(int, int, sad_m_by_n_fn_t) {
 
   // Handle blocks up to 16x16 with stride up to 32
   int height_, width_;
-  DECLARE_ALIGNED(16, uint8_t, source_data_[16*32]);
+  uint8_t source_data_[kDataBufferSize];
+  uint8_t* source_data_aligned_;
   int source_stride_;
-  DECLARE_ALIGNED(16, uint8_t, reference_data_[16*32]);
+  uint8_t reference_data_[kDataBufferSize];
+  uint8_t* reference_data_aligned_;
   int reference_stride_;
 
   ACMRandom rnd_;
 };
 
 TEST_P(SADTest, MaxRef) {
-  FillConstant(source_data_, source_stride_, 0);
-  FillConstant(reference_data_, reference_stride_, 255);
+  FillConstant(source_data_aligned_, source_stride_, 0);
+  FillConstant(reference_data_aligned_, reference_stride_, 255);
   CheckSad(UINT_MAX);
 }
 
 TEST_P(SADTest, MaxSrc) {
-  FillConstant(source_data_, source_stride_, 255);
-  FillConstant(reference_data_, reference_stride_, 0);
+  FillConstant(source_data_aligned_, source_stride_, 255);
+  FillConstant(reference_data_aligned_, reference_stride_, 0);
   CheckSad(UINT_MAX);
 }
 
 TEST_P(SADTest, ShortRef) {
   int tmp_stride = reference_stride_;
   reference_stride_ >>= 1;
-  FillRandom(source_data_, source_stride_);
-  FillRandom(reference_data_, reference_stride_);
+  FillRandom(source_data_aligned_, source_stride_);
+  FillRandom(reference_data_aligned_, reference_stride_);
   CheckSad(UINT_MAX);
   reference_stride_ = tmp_stride;
 }
@@ -134,8 +145,8 @@ TEST_P(SADTest, UnalignedRef) {
   // certain types of searches.
   int tmp_stride = reference_stride_;
   reference_stride_ -= 1;
-  FillRandom(source_data_, source_stride_);
-  FillRandom(reference_data_, reference_stride_);
+  FillRandom(source_data_aligned_, source_stride_);
+  FillRandom(reference_data_aligned_, reference_stride_);
   CheckSad(UINT_MAX);
   reference_stride_ = tmp_stride;
 }
@@ -143,8 +154,8 @@ TEST_P(SADTest, UnalignedRef) {
 TEST_P(SADTest, ShortSrc) {
   int tmp_stride = source_stride_;
   source_stride_ >>= 1;
-  FillRandom(source_data_, source_stride_);
-  FillRandom(reference_data_, reference_stride_);
+  FillRandom(source_data_aligned_, source_stride_);
+  FillRandom(reference_data_aligned_, reference_stride_);
   CheckSad(UINT_MAX);
   source_stride_ = tmp_stride;
 }
@@ -152,8 +163,8 @@ TEST_P(SADTest, ShortSrc) {
 TEST_P(SADTest, MaxSAD) {
   // Verify that, when max_sad is set, the implementation does not return a
   // value lower than the reference.
-  FillConstant(source_data_, source_stride_, 255);
-  FillConstant(reference_data_, reference_stride_, 0);
+  FillConstant(source_data_aligned_, source_stride_, 255);
+  FillConstant(reference_data_aligned_, reference_stride_, 0);
   CheckSad(128);
 }
 
