@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "test/acm_random.h"
+#include "test/mem.h"
 #include "test/util.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 extern "C" {
@@ -22,6 +23,9 @@ extern "C" {
 }
 
 namespace {
+
+using libvpx_test::ACMRandom;
+using libvpx_test::AlignAddr;
 
 typedef void (*sixtap_predict_fn_t)(uint8_t *src_ptr,
                                     int  src_pixels_per_line,
@@ -36,6 +40,16 @@ class SixtapPredictTest : public PARAMS(int, int, sixtap_predict_fn_t) {
   // need 5 extra pixels outside of the macroblock.
   static const int kSrcStride = 21;
   static const int kDstStride = 16;
+  static const int kDataAlignment = 16;
+  static const int kSrcSize = kSrcStride * kSrcStride + 1;
+  static const int kDstSize = kDstStride * kDstStride;
+  static const int kSrcDataBufferSize = kSrcSize + kDataAlignment - 1;
+  static const int kDstDataBufferSize = kDstSize + kDataAlignment - 1;
+
+  SixtapPredictTest()
+      : src_aligned_(AlignAddr<uint8_t, kDataAlignment>(src_)),
+        dst_aligned_(AlignAddr<uint8_t, kDataAlignment>(dst_)),
+        dst_c_aligned_(AlignAddr<uint8_t, kDataAlignment>(dst_c_)) {}
 
   virtual void SetUp() {
     width_ = GET_PARAM(0);
@@ -52,17 +66,18 @@ class SixtapPredictTest : public PARAMS(int, int, sixtap_predict_fn_t) {
   // The src stores the macroblock we will filter on, and makes it 1 byte larger
   // in order to test unaligned access. The result is stored in dst and dst_c(c
   // reference code result).
-  DECLARE_ALIGNED(16, uint8_t, src_[kSrcStride * kSrcStride + 1]);
-  DECLARE_ALIGNED(16, uint8_t, dst_[kDstStride * kDstStride]);
-  DECLARE_ALIGNED(16, uint8_t, dst_c_[kDstStride * kDstStride]);
+  uint8_t src_[kSrcSize + kDataAlignment - 1];
+  uint8_t dst_[kDstSize + kDataAlignment - 1];
+  uint8_t dst_c_[kDstSize + kDataAlignment - 1];
+
+  uint8_t* src_aligned_;
+  uint8_t* dst_aligned_;
+  uint8_t* dst_c_aligned_;
 };
 
 TEST_P(SixtapPredictTest, TestWithPresetData) {
-  const size_t src_size = sizeof(src_) / sizeof(uint8_t);
-  const size_t dst_size = sizeof(dst_) / sizeof(uint8_t);
-
   // Test input
-  static const uint8_t test_data[src_size] = {
+  static const uint8_t test_data[kSrcSize] = {
     216, 184, 4, 191, 82, 92, 41, 0, 1, 226, 236, 172, 20, 182, 42, 226, 177,
     79, 94, 77, 179, 203, 206, 198, 22, 192, 19, 75, 17, 192, 44, 233, 120,
     48, 168, 203, 141, 210, 203, 143, 180, 184, 59, 201, 110, 102, 171, 32,
@@ -94,7 +109,7 @@ TEST_P(SixtapPredictTest, TestWithPresetData) {
   };
 
   // Expected result
-  static const uint8_t expected_dst[dst_size] = {
+  static const uint8_t expected_dst[kDstSize] = {
     117, 102, 74, 135, 42, 98, 175, 206, 70, 73, 222, 197, 50, 24, 39, 49, 38,
     105, 90, 47, 169, 40, 171, 215, 200, 73, 109, 141, 53, 85, 177, 164, 79,
     208, 124, 89, 212, 18, 81, 145, 151, 164, 217, 153, 91, 154, 102, 102,
@@ -117,22 +132,18 @@ TEST_P(SixtapPredictTest, TestWithPresetData) {
   uint8_t *src = const_cast<uint8_t*>(test_data);
 
   sixtap_predict_(&src[kSrcStride * 2 + 2 + 1], kSrcStride,
-                  2, 2, dst_, kDstStride);
+                  2, 2, dst_aligned_, kDstStride);
 
   for (int i = 0; i < height_; ++i)
     for (int j = 0; j < width_; ++j)
-      ASSERT_EQ(expected_dst[i * kDstStride + j], dst_[i * kDstStride + j])
-          << "i==" << (i * width_ + j);
+      ASSERT_EQ(expected_dst[i * kDstStride + j],
+                dst_aligned_[i * kDstStride + j]) << "i==" << (i * width_ + j);
 }
 
-using libvpx_test::ACMRandom;
-
 TEST_P(SixtapPredictTest, TestWithRandomData) {
-  const size_t src_size = sizeof(src_) / sizeof(uint8_t);
-
   ACMRandom rnd(ACMRandom::DeterministicSeed());
-  for (size_t i = 0; i < src_size; ++i)
-    src_[i] = rnd.Rand8();
+  for (int i = 0; i < kSrcSize; ++i)
+    src_aligned_[i] = rnd.Rand8();
 
   // Run tests for all possible offsets.
   for (int xoffset = 0; xoffset < 8; ++xoffset) {
@@ -140,16 +151,18 @@ TEST_P(SixtapPredictTest, TestWithRandomData) {
       // Call c reference function.
       // Move start point to next pixel to test if the function reads
       // unaligned data correctly.
-      vp8_sixtap_predict16x16_c(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
-                                xoffset, yoffset, dst_c_, kDstStride);
+      vp8_sixtap_predict16x16_c(
+          &src_aligned_[kSrcStride * 2 + 2 + 1], kSrcStride,
+          xoffset, yoffset, dst_c_aligned_, kDstStride);
 
       // Run test.
-      sixtap_predict_(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
-                      xoffset, yoffset, dst_, kDstStride);
+      sixtap_predict_(&src_aligned_[kSrcStride * 2 + 2 + 1], kSrcStride,
+                      xoffset, yoffset, dst_aligned_, kDstStride);
 
       for (int i = 0; i < height_; ++i)
         for (int j = 0; j < width_; ++j)
-          ASSERT_EQ(dst_c_[i * kDstStride + j], dst_[i * kDstStride + j])
+          ASSERT_EQ(dst_c_aligned_[i * kDstStride + j],
+                    dst_aligned_[i * kDstStride + j])
               << "i==" << (i * width_ + j);
     }
   }
