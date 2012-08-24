@@ -657,6 +657,24 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                       prev_mi,
                       &nearest, &nearby, &best_mv, rct,
                       mbmi->ref_frame, cm->ref_frame_sign_bias);
+
+#if CONFIG_NEW_MVREF
+      // Update stats on relative distance of chosen vector to the
+      // possible best reference vectors.
+      {
+        int i;
+        MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
+
+        find_mv_refs(xd, mi, prev_mi,
+                     ref_frame, mbmi->ref_mvs[ref_frame],
+                     cm->ref_frame_sign_bias );
+
+        // Copy over the candidates.
+        vpx_memcpy(xd->ref_mv, mbmi->ref_mvs[ref_frame],
+                   (MAX_MV_REFS * sizeof(int_mv)) );
+      }
+#endif
+
 #if CONFIG_NEWBESTREFMV
     {
       int ref_fb_idx;
@@ -763,6 +781,23 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                           rct,
                           mbmi->second_ref_frame,
                           cm->ref_frame_sign_bias);
+
+#if CONFIG_NEW_MVREF
+        // Update stats on relative distance of chosen vector to the
+        // possible best reference vectors.
+        {
+          MV_REFERENCE_FRAME ref_frame = mbmi->second_ref_frame;
+
+          find_mv_refs(xd, mi, prev_mi,
+                       ref_frame, mbmi->ref_mvs[ref_frame],
+                       cm->ref_frame_sign_bias );
+
+          // Copy over the mv candidates
+          vpx_memcpy(xd->ref_mv, mbmi->ref_mvs[ref_frame],
+                    (MAX_MV_REFS * sizeof(int_mv)) );
+        }
+#endif
+
         vp8_find_best_ref_mvs(xd,
                               xd->second_pre.y_buffer,
                               recon_y_stride,
