@@ -12,9 +12,13 @@
 #include <string>
 #include <vector>
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "vpx_config.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
-
+#if CONFIG_VP8_DECODER
+#include "vpx/vpx_decoder.h"
+#include "vpx/vp8dx.h"
+#endif
 namespace libvpx_test {
 
 class VideoSource;
@@ -51,7 +55,6 @@ class CxDataIterator {
   vpx_codec_ctx_t  *encoder_;
   vpx_codec_iter_t  iter_;
 };
-
 
 // Implements an in-memory store for libvpx twopass statistics
 class TwopassStatsStore {
@@ -92,6 +95,9 @@ class Encoder {
     return CxDataIterator(&encoder_);
   }
 
+  const vpx_image_t *GetPreviewFrame() {
+    return vpx_codec_get_preview_frame(&encoder_);
+  }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
   void EncodeFrame(VideoSource *video, unsigned long flags);
@@ -127,7 +133,6 @@ class Encoder {
   unsigned long        deadline_;
   TwopassStatsStore   *stats_;
 };
-
 
 // Common test functionality for all Encoder tests.
 //
