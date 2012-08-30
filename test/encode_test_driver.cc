@@ -13,6 +13,23 @@
 
 namespace libvpx_test {
 
+void Decoder::DecodeFrame(const vpx_codec_cx_pkt_t *pkt ) {
+  if(pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
+    if(!decoder_.priv) {
+      const vpx_codec_err_t res = vpx_codec_dec_init(&decoder_,
+                                                     &vpx_codec_vp8_dx_algo,
+                                                     &cfg_, 0);
+      ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+    }
+    const vpx_codec_err_t res = vpx_codec_decode(&decoder_,
+                                  reinterpret_cast<const uint8_t*>
+                                  (pkt->data.frame.buf),
+                                  pkt->data.frame.sz,
+                                  NULL, 0);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+}
+
 void Encoder::EncodeFrame(VideoSource *video, unsigned long flags) {
   if (video->img())
     EncodeFrameInternal(*video, flags);
@@ -92,6 +109,30 @@ void EncoderTest::SetMode(TestMode mode) {
     passes_ = 1;
 }
 
+// The function should return "true" most of the time, therefore no early
+// break-out is implemented within the match checking process.
+static bool compare_img(const vpx_image_t *img1,
+                        const vpx_image_t *img2) {
+  bool match = (img1->fmt == img2->fmt) &&
+               (img1->d_w == img2->d_w) &&
+               (img1->d_h == img2->d_h);
+
+  unsigned int i;
+  for (i = 0; i < img1->d_h; ++i)
+    match = ( memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
+                     img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
+                     img1->d_w) == 0) && match;
+  for (i = 0; i < img1->d_h / 2; ++i)
+    match = ( memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
+                     img1->d_w / 2) == 0) && match;
+  for (i = 0; i < img1->d_h / 2; ++i)
+    match = ( memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
+                     img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
+                     img1->d_w / 2) == 0) && match;
+  return match;
+}
+
 void EncoderTest::RunLoop(VideoSource *video) {
   for (unsigned int pass = 0; pass < passes_; pass++) {
     last_pts_ = 0;
@@ -105,8 +146,10 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
     BeginPassHook(pass);
     Encoder encoder(cfg_, deadline_, &stats_);
+    Decoder decoder(dec_cfg_);
 
     bool again;
+    bool has_cxdata = false;
     for (again = true, video->Begin(); again; video->Next()) {
       again = video->img() != NULL;
 
@@ -121,10 +164,24 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
         if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
           continue;
+        if (test_decode_) {
+          has_cxdata = true;
+          decoder.DecodeFrame(pkt);
+        }
 
         ASSERT_GE(pkt->data.frame.pts, last_pts_);
         last_pts_ = pkt->data.frame.pts;
         FramePktHook(pkt);
+      }
+
+      if (test_decode_ && has_cxdata) {
+        const vpx_image_t *img_enc = encoder.GetPreviewFrame();
+        DxDataIterator dec_iter = decoder.GetDxData();
+        const vpx_image_t *img_dec = dec_iter.Next();
+        if(img_enc && img_dec) {
+          const bool res = compare_img(img_enc, img_dec);
+          ASSERT_TRUE(res)<< "Encoder/Decoder mismatch found.";
+        }
       }
 
       if (!Continue())
@@ -137,5 +194,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
       break;
   }
 }
+
+
+
 
 }  // namespace libvpx_test
