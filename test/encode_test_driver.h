@@ -14,7 +14,11 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
-
+#include "vpx_config.h"
+#if CONFIG_VP8_DECODER
+#include "vpx/vpx_decoder.h"
+#include "vpx/vp8dx.h"
+#endif
 namespace libvpx_test {
 
 class VideoSource;
@@ -52,7 +56,23 @@ class CxDataIterator {
   vpx_codec_iter_t  iter_;
 };
 
+#if CONFIG_VP8_DECODER
+// Provides an object to handle decoding output
+class DxDataIterator {
+ public:
+  explicit DxDataIterator(vpx_codec_ctx_t *decoder)
+    : decoder_(decoder), iter_(NULL) {}
 
+  const vpx_image_t *Next() {
+    return vpx_codec_get_frame(decoder_, &iter_);
+  }
+
+ private:
+  vpx_codec_ctx_t  *decoder_;
+  vpx_codec_iter_t  iter_;
+};
+
+#endif
 // Implements an in-memory store for libvpx twopass statistics
 class TwopassStatsStore {
  public:
@@ -92,6 +112,9 @@ class Encoder {
     return CxDataIterator(&encoder_);
   }
 
+  const vpx_image_t *GetPreviewFrame() {
+    return vpx_codec_get_preview_frame(&encoder_);
+  }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
   void EncodeFrame(VideoSource *video, unsigned long flags);
@@ -128,7 +151,49 @@ class Encoder {
   TwopassStatsStore   *stats_;
 };
 
+#if CONFIG_VP8_DECODER
+// Provides a simplified interface to manage one video decoding.
+//
+// TODO: similar to Encoder class, the exact services should be
+// added as more tests are added.
+class Decoder {
+ public:
+  Decoder (vpx_codec_dec_cfg_t cfg, unsigned long deadline = 0)
+    : cfg_(cfg), deadline_(deadline) {
+    memset(&decoder_, 0, sizeof(decoder_));
+  }
 
+  ~Decoder () {
+    vpx_codec_destroy(&decoder_);
+  }
+
+  void DecodeFrame(const vpx_codec_cx_pkt_t *pkt);
+
+  DxDataIterator GetDxData() {
+    return DxDataIterator(&decoder_);
+  }
+
+  void set_deadline(unsigned long deadline) {
+    deadline_ = deadline;
+  }
+
+  void Control(int ctrl_id, int arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&decoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+
+ protected:
+  const char *DecodeError() {
+    const char *detail = vpx_codec_error_detail(&decoder_);
+    return detail ? detail : vpx_codec_error(&decoder_);
+  }
+
+  vpx_codec_ctx_t     decoder_;
+  vpx_codec_dec_cfg_t cfg_;
+  unsigned int        deadline_;
+};
+
+#endif
 // Common test functionality for all Encoder tests.
 //
 // This class is a mixin which provides the main loop common to all
@@ -138,7 +203,8 @@ class Encoder {
 // classes directly, so that tests can be parameterized differently.
 class EncoderTest {
  protected:
-  EncoderTest() : abort_(false), flags_(0), last_pts_(0) {}
+  EncoderTest(bool test_decode = CONFIG_VP8_DECODER)
+   : abort_(false), test_decode_(test_decode), flags_(0), last_pts_(0) {}
 
   virtual ~EncoderTest() {}
 
@@ -147,6 +213,10 @@ class EncoderTest {
     const vpx_codec_err_t res = vpx_codec_enc_config_default(
                                     &vpx_codec_vp8_cx_algo, &cfg_, 0);
     ASSERT_EQ(VPX_CODEC_OK, res);
+#if CONFIG_VP8_DECODER
+    if (test_decode_)
+      memset ( &dec_cfg_, 0, sizeof(dec_cfg_));
+#endif
   }
 
   // Map the TestMode enum to the deadline_ and passes_ variables.
@@ -172,7 +242,11 @@ class EncoderTest {
   virtual bool Continue() const { return !abort_; }
 
   bool                 abort_;
+  bool                 test_decode_;
   vpx_codec_enc_cfg_t  cfg_;
+#if CONFIG_VP8_DECODER
+  vpx_codec_dec_cfg_t  dec_cfg_;
+#endif
   unsigned int         passes_;
   unsigned long        deadline_;
   TwopassStatsStore    stats_;
