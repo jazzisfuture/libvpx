@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
@@ -51,10 +52,20 @@ int main(int argc, char **argv) {
     unsigned char    file_hdr[IVF_FILE_HDR_SZ];
     unsigned char    frame_hdr[IVF_FRAME_HDR_SZ];
     unsigned char    frame[256*1024];
+    unsigned int seed= time(NULL);
     vpx_codec_err_t  res;
 @@@@EXTRA_VARS
 
     (void)res;
+
+    if(argc>3)
+    {
+      seed=atoi(argv[3]);
+      argc--;
+    }
+
+    printf("seed = %d\n\n",seed);
+    srand(seed);
     /* Open files */
 @@@@USAGE
     if(!(infile = fopen(argv[1], "rb")))
@@ -76,6 +87,7 @@ int main(int argc, char **argv) {
         int               frame_sz = mem_get_le32(frame_hdr);
         vpx_codec_iter_t  iter = NULL;
         vpx_image_t      *img;
+        int i;
 
 
         frame_cnt++;
@@ -83,6 +95,9 @@ int main(int argc, char **argv) {
             die("Frame %d data too big for example code buffer", frame_sz);
         if(fread(frame, 1, frame_sz, infile) != frame_sz)
             die("Frame %d failed to read complete frame", frame_cnt);
+        for (i=10; i < frame_sz; ++i) {
+          frame[i] = rand() % 256;
+        }
 
 @@@@@@@@PRE_DECODE
 @@@@@@@@DECODE

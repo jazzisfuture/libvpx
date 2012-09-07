@@ -34,7 +34,7 @@ if(vpx_codec_dec_init(&codec, interface, NULL, flags))
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 /* Decode the frame */
 if(vpx_codec_decode(&codec, frame, frame_sz, NULL, 0))
-    die_codec(&codec, "Failed to decode frame");
+    continue;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECODE
 
 
