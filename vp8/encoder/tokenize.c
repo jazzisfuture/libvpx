@@ -822,7 +822,10 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
       break;
 #endif
     case TX_8X8:
-      xd->mode_info_context->mbmi.mb_skip_coeff = mb_is_skippable_8x8(xd);
+      if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
+        xd->mode_info_context->mbmi.mb_skip_coeff = mb_is_skippable(xd, 0);
+      else
+        xd->mode_info_context->mbmi.mb_skip_coeff = mb_is_skippable_8x8(xd);
       break;
     default:
       xd->mode_info_context->mbmi.mb_skip_coeff = mb_is_skippable(xd, has_y2_block);
@@ -838,9 +841,12 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
         vp8_stuff_mb_16x16(cpi, xd, t, dry_run);
       else
 #endif
-      if (tx_type == TX_8X8)
-        vp8_stuff_mb_8x8(cpi, xd, t, dry_run);
-      else
+      if (tx_type == TX_8X8) {
+        if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
+          vp8_stuff_mb(cpi, xd, t, dry_run);
+        else
+          vp8_stuff_mb_8x8(cpi, xd, t, dry_run);
+      } else
         vp8_stuff_mb(cpi, xd, t, dry_run);
     } else {
       vp8_fix_contexts(xd);
@@ -895,6 +901,10 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
   if (tx_type == TX_8X8) {
     ENTROPY_CONTEXT *A = (ENTROPY_CONTEXT *)xd->above_context;
     ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
+#if CONFIG_HYBRIDTRANSFORM8X8
+    if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
+      plane_type = PLANE_TYPE_Y_WITH_DC;
+#endif
     for (b = 0; b < 16; b += 4) {
       tokenize1st_order_b_8x8(xd,
                               xd->block + b, t, plane_type, xd->frame_type,
@@ -904,21 +914,34 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
       *(A + vp8_block2above_8x8[b] + 1) = *(A + vp8_block2above_8x8[b]);
       *(L + vp8_block2left_8x8[b] + 1)  = *(L + vp8_block2left_8x8[b]);
     }
-    for (b = 16; b < 24; b += 4) {
-      tokenize1st_order_b_8x8(xd,
-                              xd->block + b, t, 2, xd->frame_type,
-                              A + vp8_block2above_8x8[b],
-                              L + vp8_block2left_8x8[b],
-                              cpi, dry_run);
-      *(A + vp8_block2above_8x8[b] + 1) = *(A + vp8_block2above_8x8[b]);
-      *(L + vp8_block2left_8x8[b] + 1) = *(L + vp8_block2left_8x8[b]);
+#if CONFIG_HYBRIDTRANSFORM8X8
+    if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
+        tokenize1st_order_chroma(xd, t, PLANE_TYPE_UV, cpi, dry_run);
+    } else
+#endif
+    {
+      for (b = 16; b < 24; b += 4) {
+        tokenize1st_order_b_8x8(xd,
+                                xd->block + b, t, 2, xd->frame_type,
+                                A + vp8_block2above_8x8[b],
+                                L + vp8_block2left_8x8[b],
+                                cpi, dry_run);
+        *(A + vp8_block2above_8x8[b] + 1) = *(A + vp8_block2above_8x8[b]);
+        *(L + vp8_block2left_8x8[b] + 1) = *(L + vp8_block2left_8x8[b]);
+      }
     }
   } else {
 #if CONFIG_HYBRIDTRANSFORM
     if(active_ht) {
       tokenize1st_order_ht(xd, t, plane_type, cpi, dry_run);
-    } else {
+    } else
+#endif
+    {
+      tokenize1st_order_b(xd, t, plane_type, cpi, dry_run);
+    }
+  }
 
+  /*
 #if CONFIG_HYBRIDTRANSFORM8X8
       if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
         ENTROPY_CONTEXT *A = (ENTROPY_CONTEXT *)xd->above_context;
@@ -946,6 +969,7 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
     tokenize1st_order_b(xd, t, plane_type, cpi, dry_run);
 #endif
   }
+  */
   if (dry_run)
     *t = t_backup;
 }
