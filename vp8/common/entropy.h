@@ -21,6 +21,8 @@
 //#define SUBMVREF_COUNT 5
 //#define VP8_NUMMBSPLITS 4
 
+extern const int vp8_i8x8_block[4];
+
 /* Coefficient token alphabet */
 
 #define ZERO_TOKEN              0       /* 0         Extra Bits 0+0 */
