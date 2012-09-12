@@ -256,11 +256,11 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         xd->mode_info_context->mbmi.mode == NEARESTMV)
       xd->mode_info_context->mbmi.txfm_size = TX_16X16;
     else if (pbi->common.txfm_mode == ALLOW_8X8 &&
-        xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+        //xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED)
 #else
       if (pbi->common.txfm_mode == ALLOW_8X8 &&
-          xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+          //xd->mode_info_context->mbmi.mode != I8X8_PRED &&
           xd->mode_info_context->mbmi.mode != B_PRED)
 #endif
       xd->mode_info_context->mbmi.txfm_size = TX_8X8;
@@ -275,12 +275,12 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         xd->mode_info_context->mbmi.mode == NEARESTMV) {
       xd->mode_info_context->mbmi.txfm_size = TX_16X16;
     } else if (pbi->common.txfm_mode == ALLOW_8X8 &&
-        xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+        //xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED &&
         xd->mode_info_context->mbmi.mode != SPLITMV) {
 #else
     if (pbi->common.txfm_mode == ALLOW_8X8 &&
-        xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+        //xd->mode_info_context->mbmi.mode != I8X8_PRED &&
         xd->mode_info_context->mbmi.mode != B_PRED &&
         xd->mode_info_context->mbmi.mode != SPLITMV) {
 #endif
@@ -291,11 +291,13 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     }
   }
 
+    /*
 #if CONFIG_HYBRIDTRANSFORM8X8
   if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
     xd->mode_info_context->mbmi.txfm_size = TX_8X8;
   }
 #endif
+*/
 #if CONFIG_SUPERBLOCKS
   if (xd->mode_info_context->mbmi.encoded_as_sb) {
     xd->mode_info_context->mbmi.txfm_size = TX_8X8;
@@ -452,8 +454,8 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       unsigned char *dst = *(xd->block[ib].base_dst) + xd->block[ib].dst;
       int stride = xd->dst.y_stride;
 
-      tx_type = TX_4X4;
-      xd->mode_info_context->mbmi.txfm_size = TX_4X4;
+      //tx_type = TX_4X4;
+      //xd->mode_info_context->mbmi.txfm_size = TX_4X4;
 #endif
 
       b = &xd->block[ib];
@@ -665,7 +667,8 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 #if CONFIG_SUPERBLOCKS
     if (!xd->mode_info_context->mbmi.encoded_as_sb) {
 #endif
-      if (tx_type == TX_8X8
+      if ((tx_type == TX_8X8 &&
+           xd->mode_info_context->mbmi.mode != I8X8_PRED)
 #if CONFIG_TX16X16 || CONFIG_HYBRIDTRANSFORM16X16
       || tx_type == TX_16X16
 #endif
