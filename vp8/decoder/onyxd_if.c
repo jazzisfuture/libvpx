@@ -89,8 +89,6 @@ struct VP8D_COMP * vp8dx_create_decompressor(VP8D_CONFIG *oxcf)
      */
     pbi->ec_active = 0;
 
-    pbi->decoded_key_frame = 0;
-
     pbi->input_fragments = oxcf->input_fragments;
     pbi->num_fragments = 0;
 

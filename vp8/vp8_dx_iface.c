@@ -352,8 +352,13 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
      * of the heap.
      */
     if (!ctx->si.h)
+    {
         res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
 
+        /* "A stream must start with a complete key frame" */
+        if(!res && !ctx->decoder_init && !ctx->si.is_kf)
+            res = VPX_CODEC_UNSUP_BITSTREAM;
+    }
 
     /* Perform deferred allocations, if required */
     if (!res && ctx->defer_alloc)

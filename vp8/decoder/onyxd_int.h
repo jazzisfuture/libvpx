@@ -94,7 +94,6 @@ typedef struct VP8D_COMP
     int ec_enabled;
     int ec_active;
     int input_fragments;
-    int decoded_key_frame;
     int independent_partitions;
     int frame_corrupt_residual;
 

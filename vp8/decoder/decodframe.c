@@ -958,7 +958,7 @@ static void init_frame(VP8D_COMP *pbi)
             xd->subpixel_predict16x16   = vp8_bilinear_predict16x16;
         }
 
-        if (pbi->decoded_key_frame && pbi->ec_enabled && !pbi->ec_active)
+        if (pbi->ec_enabled)
             pbi->ec_active = 1;
     }
 
@@ -1133,8 +1133,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
           vpx_memcpy(&xd->dst, &pc->yv12_fb[pc->new_fb_idx], sizeof(YV12_BUFFER_CONFIG));
         }
     }
-    if ((!pbi->decoded_key_frame && pc->frame_type != KEY_FRAME) ||
-        pc->Width == 0 || pc->Height == 0)
+    if (pc->Width == 0 || pc->Height == 0)
     {
         return -1;
     }
@@ -1434,16 +1433,6 @@ int vp8_decode_frame(VP8D_COMP *pbi)
     pc->yv12_fb[pc->new_fb_idx].corrupted = vp8dx_bool_error(bc);
     /* 2. Check the macroblock information */
     pc->yv12_fb[pc->new_fb_idx].corrupted |= corrupt_tokens;
-
-    if (!pbi->decoded_key_frame)
-    {
-        if (pc->frame_type == KEY_FRAME &&
-            !pc->yv12_fb[pc->new_fb_idx].corrupted)
-            pbi->decoded_key_frame = 1;
-        else
-            vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
-                               "A stream must start with a complete key frame");
-    }
 
     /* vpx_log("Decoder: Frame Decoded, Size Roughly:%d bytes  \n",bc->pos+pbi->bc2.pos); */
 
