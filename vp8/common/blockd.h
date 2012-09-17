@@ -487,14 +487,12 @@ static TX_TYPE get_tx_type(MACROBLOCKD *xd, BLOCKD *b) {
     if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
         xd->q_index < ACTIVE_HT16)
       tx_type = b->bmi.as_mode.tx_type;
-    return tx_type;
   }
 #endif
 #if CONFIG_HYBRIDTRANSFORM8X8
   if (xd->mode_info_context->mbmi.txfm_size  == TX_8X8) {
     if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
       tx_type = b->bmi.as_mode.tx_type;
-    return tx_type;
   }
 #endif
 #if CONFIG_HYBRIDTRANSFORM
@@ -502,9 +500,9 @@ static TX_TYPE get_tx_type(MACROBLOCKD *xd, BLOCKD *b) {
     if (xd->mode_info_context->mbmi.mode == B_PRED &&
         xd->q_index < ACTIVE_HT)
       tx_type = b->bmi.as_mode.tx_type;
-    return tx_type;
   }
 #endif
+  return tx_type;
 }
 #endif
 
