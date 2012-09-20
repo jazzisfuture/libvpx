@@ -72,6 +72,24 @@ static void vp8_read_mb_segid(vp8_reader *r, MB_MODE_INFO *mi,
   }
 }
 
+#if CONFIG_NEW_MVREF
+int vp8_read_mv_ref_id(vp8_reader *r,
+                       vp8_prob * ref_id_probs)
+{
+  int ref_index = 0;
+
+  if (vp8_read(r, ref_id_probs[0])) {
+    ref_index++;
+    if (vp8_read(r, ref_id_probs[1])) {
+      ref_index++;
+      if (vp8_read(r, ref_id_probs[2]))
+        ref_index++;
+    }
+  }
+  return ref_index;
+}
+#endif
+
 extern const int vp8_i8x8_block[4];
 static void vp8_kfread_modes(VP8D_COMP *pbi,
                              MODE_INFO *m,
@@ -650,6 +668,12 @@ static void mb_mode_mv_init(VP8D_COMP *pbi) {
         cm->fc.ymode_prob[i] = (vp8_prob) vp8_read_literal(bc, 8);
       } while (++i < VP8_YMODES - 1);
     }
+
+#if CONFIG_NEW_MVREF
+  // Temp defaults probabilities for ecnoding the MV ref id signal
+  vpx_memset(xd->mb_mv_ref_id_probs, 192, sizeof(xd->mb_mv_ref_id_probs));
+#endif
+
 #if CONFIG_NEWMVENTROPY
     read_nmvprobs(bc, nmvc, xd->allow_high_precision_mv);
 #else
@@ -812,6 +836,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     int recon_uv_stride, recon_uvoffset;
 #endif
 
+
     vp8_find_near_mvs(xd, mi,
                       prev_mi,
                       &nearest, &nearby, &best_mv, rct,
@@ -840,13 +865,9 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       xd->pre.u_buffer = cm->yv12_fb[ref_fb_idx].u_buffer + recon_uvoffset;
       xd->pre.v_buffer = cm->yv12_fb[ref_fb_idx].v_buffer + recon_uvoffset;
 
-      // Update stats on relative distance of chosen vector to the
-      // possible best reference vectors.
-      {
-        find_mv_refs(xd, mi, prev_mi,
-                     ref_frame, mbmi->ref_mvs[ref_frame],
-                     cm->ref_frame_sign_bias );
-      }
+      find_mv_refs(xd, mi, prev_mi,
+                   ref_frame, mbmi->ref_mvs[ref_frame],
+                   cm->ref_frame_sign_bias );
 
       vp8_find_best_ref_mvs(xd,
                             xd->pre.y_buffer,
@@ -934,15 +955,10 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                           mbmi->second_ref_frame,
                           cm->ref_frame_sign_bias);
 
-        // Update stats on relative distance of chosen vector to the
-        // possible best reference vectors.
-        {
-          MV_REFERENCE_FRAME ref_frame = mbmi->second_ref_frame;
-
-          find_mv_refs(xd, mi, prev_mi,
-                       ref_frame, mbmi->ref_mvs[ref_frame],
-                       cm->ref_frame_sign_bias );
-        }
+        find_mv_refs(xd, mi, prev_mi,
+                     mbmi->second_ref_frame,
+                     mbmi->ref_mvs[mbmi->second_ref_frame],
+                     cm->ref_frame_sign_bias );
 
         vp8_find_best_ref_mvs(xd,
                               xd->second_pre.y_buffer,
@@ -1136,12 +1152,46 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         break;
 
       case NEWMV:
+
+#if CONFIG_NEW_MVREF
+        {
+          int best_index;
+          MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
+
+          // Encode the index of the choice.
+          best_index =
+            vp8_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
+
+          best_mv.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+#if 0
+  {
+    FILE *f = fopen("mvrefiddec.stt", "a");
+    int i;
+
+    fprintf(f, "%3d %3d %8d %8d %8d %8d %8d %8d %8d %8d",
+            ref_frame, best_index,
+            mbmi->ref_mvs[ref_frame][0].as_mv.row,
+            mbmi->ref_mvs[ref_frame][0].as_mv.col,
+            mbmi->ref_mvs[ref_frame][1].as_mv.row,
+            mbmi->ref_mvs[ref_frame][1].as_mv.col,
+            mbmi->ref_mvs[ref_frame][2].as_mv.row,
+            mbmi->ref_mvs[ref_frame][2].as_mv.col,
+            mbmi->ref_mvs[ref_frame][3].as_mv.row,
+            mbmi->ref_mvs[ref_frame][3].as_mv.col);
+    fclose(f);
+  }
+#endif
+        }
+#endif
+
 #if CONFIG_NEWMVENTROPY
         read_nmv(bc, &mv->as_mv, &best_mv.as_mv, nmvc);
         read_nmv_fp(bc, &mv->as_mv, &best_mv.as_mv, nmvc,
                     xd->allow_high_precision_mv);
+
         vp8_increment_nmv(&mv->as_mv, &best_mv.as_mv, &cm->fc.NMVcount,
                           xd->allow_high_precision_mv);
+
 #else
         if (xd->allow_high_precision_mv) {
           read_mv_hp(bc, &mv->as_mv, (const MV_CONTEXT_HP *) mvc_hp);
@@ -1153,8 +1203,34 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           cm->fc.MVcount[1][mv_max + (mv->as_mv.col >> 1)]++;
         }
 #endif  /* CONFIG_NEWMVENTROPY */
+
+#if CONFIG_NEW_MVREF
+#if 0
+  {
+    FILE *f = fopen("mvrefiddec.stt", "a");
+    int i;
+
+    fprintf(f, " %8d %8d",
+            mv->as_mv.row, mv->as_mv.col);
+    fclose(f);
+  }
+#endif
+#endif
         mv->as_mv.row += best_mv.as_mv.row;
         mv->as_mv.col += best_mv.as_mv.col;
+
+#if CONFIG_NEW_MVREF
+#if 0
+  {
+    FILE *f = fopen("mvrefiddec.stt", "a");
+    int i;
+
+    fprintf(f, " %8d %8d",
+            mv->as_mv.row, mv->as_mv.col);
+    fclose(f);
+  }
+#endif
+#endif
 
         /* Don't need to check this on NEARMV and NEARESTMV modes
          * since those modes clamp the MV. The NEWMV mode does not,
@@ -1166,7 +1242,32 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                       mb_to_right_edge,
                                                       mb_to_top_edge,
                                                       mb_to_bottom_edge);
+{
+  FILE *f = fopen("mvrefiddec.stt", "a");
+  int i;
+
+  if ( mbmi->need_to_clamp_mvs )
+    fprintf(f, " clamped\n",
+            mv->as_mv.row, mv->as_mv.col);
+  else
+    fprintf(f, "\n",
+            mv->as_mv.row, mv->as_mv.col);
+  fclose(f);
+}
+
         if (mbmi->second_ref_frame) {
+#if CONFIG_NEW_MVREF
+        {
+          int best_index;
+          MV_REFERENCE_FRAME ref_frame = mbmi->second_ref_frame;
+
+          // Encode the index of the choice.
+          best_index =
+            vp8_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
+          best_mv_second.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+        }
+#endif
+
 #if CONFIG_NEWMVENTROPY
           read_nmv(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc);
           read_nmv_fp(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc,
@@ -1184,6 +1285,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
             cm->fc.MVcount[1][mv_max + (mbmi->mv[1].as_mv.col >> 1)]++;
           }
 #endif  /* CONFIG_NEWMVENTROPY */
+
           mbmi->mv[1].as_mv.row += best_mv_second.as_mv.row;
           mbmi->mv[1].as_mv.col += best_mv_second.as_mv.col;
           mbmi->need_to_clamp_secondmv |=

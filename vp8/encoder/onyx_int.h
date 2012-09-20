@@ -793,7 +793,7 @@ typedef struct VP8_COMP {
 #endif
 
 #if CONFIG_NEW_MVREF
-  unsigned int best_ref_index_counts[MAX_MV_REFS];
+  unsigned int best_ref_index_counts[MAX_REF_FRAMES][MAX_MV_REFS];
 #endif
 
 } VP8_COMP;

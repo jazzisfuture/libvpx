@@ -2697,124 +2697,6 @@ void vp8_cal_sad(VP8_COMP *cpi, MACROBLOCKD *xd, MACROBLOCK *x, int recon_yoffse
   }
 }
 
-void rd_update_mvcount(VP8_COMP *cpi, MACROBLOCK *x,
-                       int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
-  MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
-#if CONFIG_NEWMVENTROPY
-  MV mv;
-#endif
-
-  if (mbmi->mode == SPLITMV) {
-    int i;
-
-    for (i = 0; i < x->partition_info->count; i++) {
-      if (x->partition_info->bmi[i].mode == NEW4X4) {
-        if (x->e_mbd.allow_high_precision_mv) {
-#if CONFIG_NEWMVENTROPY
-          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
-                    - best_ref_mv->as_mv.row);
-          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
-                    - best_ref_mv->as_mv.col);
-          vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
-            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
-                      - second_best_ref_mv->as_mv.row);
-            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
-                      - second_best_ref_mv->as_mv.col);
-            vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv,
-                              &cpi->NMVcount, 1);
-          }
-#else
-          cpi->MVcount_hp[0][mv_max_hp + (x->partition_info->bmi[i].mv.as_mv.row
-                                          - best_ref_mv->as_mv.row)]++;
-          cpi->MVcount_hp[1][mv_max_hp + (x->partition_info->bmi[i].mv.as_mv.col
-                                          - best_ref_mv->as_mv.col)]++;
-          if (mbmi->second_ref_frame) {
-            cpi->MVcount_hp[0][mv_max_hp + (x->partition_info->bmi[i].second_mv.as_mv.row
-                                            - second_best_ref_mv->as_mv.row)]++;
-            cpi->MVcount_hp[1][mv_max_hp + (x->partition_info->bmi[i].second_mv.as_mv.col
-                                            - second_best_ref_mv->as_mv.col)]++;
-          }
-#endif
-        } else {
-#if CONFIG_NEWMVENTROPY
-          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
-                    - best_ref_mv->as_mv.row);
-          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
-                    - best_ref_mv->as_mv.col);
-          vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
-            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
-                      - second_best_ref_mv->as_mv.row);
-            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
-                      - second_best_ref_mv->as_mv.col);
-            vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv,
-                              &cpi->NMVcount, 0);
-          }
-#else
-          cpi->MVcount[0][mv_max + ((x->partition_info->bmi[i].mv.as_mv.row
-                                     - best_ref_mv->as_mv.row) >> 1)]++;
-          cpi->MVcount[1][mv_max + ((x->partition_info->bmi[i].mv.as_mv.col
-                                     - best_ref_mv->as_mv.col) >> 1)]++;
-          if (mbmi->second_ref_frame) {
-            cpi->MVcount[0][mv_max + ((x->partition_info->bmi[i].second_mv.as_mv.row
-                                       - second_best_ref_mv->as_mv.row) >> 1)]++;
-            cpi->MVcount[1][mv_max + ((x->partition_info->bmi[i].second_mv.as_mv.col
-                                       - second_best_ref_mv->as_mv.col) >> 1)]++;
-          }
-#endif
-        }
-      }
-    }
-  } else if (mbmi->mode == NEWMV) {
-    if (x->e_mbd.allow_high_precision_mv) {
-#if CONFIG_NEWMVENTROPY
-      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
-      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
-      vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      if (mbmi->second_ref_frame) {
-        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
-        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
-        vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      }
-#else
-      cpi->MVcount_hp[0][mv_max_hp + (mbmi->mv[0].as_mv.row
-                                      - best_ref_mv->as_mv.row)]++;
-      cpi->MVcount_hp[1][mv_max_hp + (mbmi->mv[0].as_mv.col
-                                      - best_ref_mv->as_mv.col)]++;
-      if (mbmi->second_ref_frame) {
-        cpi->MVcount_hp[0][mv_max_hp + (mbmi->mv[1].as_mv.row
-                                        - second_best_ref_mv->as_mv.row)]++;
-        cpi->MVcount_hp[1][mv_max_hp + (mbmi->mv[1].as_mv.col
-                                        - second_best_ref_mv->as_mv.col)]++;
-      }
-#endif
-    } else {
-#if CONFIG_NEWMVENTROPY
-      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
-      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
-      vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      if (mbmi->second_ref_frame) {
-        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
-        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
-        vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      }
-#else
-      cpi->MVcount[0][mv_max + ((mbmi->mv[0].as_mv.row
-                                 - best_ref_mv->as_mv.row) >> 1)]++;
-      cpi->MVcount[1][mv_max + ((mbmi->mv[0].as_mv.col
-                                 - best_ref_mv->as_mv.col) >> 1)]++;
-      if (mbmi->second_ref_frame) {
-        cpi->MVcount[0][mv_max + ((mbmi->mv[1].as_mv.row
-                                   - second_best_ref_mv->as_mv.row) >> 1)]++;
-        cpi->MVcount[1][mv_max + ((mbmi->mv[1].as_mv.col
-                                   - second_best_ref_mv->as_mv.col) >> 1)]++;
-      }
-#endif
-    }
-  }
-}
-
 static void set_i8x8_block_modes(MACROBLOCK *x, int modes[2][4]) {
   int i;
   MACROBLOCKD *xd = &x->e_mbd;
@@ -3049,9 +2931,6 @@ void setup_buffer_inter(VP8_COMP *cpi, MACROBLOCK *x, int idx, int frame_type,
                         int recon_yoffset, int recon_uvoffset,
                         int_mv frame_nearest_mv[4], int_mv frame_near_mv[4],
                         int_mv frame_best_ref_mv[4],
-#if CONFIG_NEWBESTREFMV
-                        int_mv ref_mv[MAX_REF_FRAMES],
-#endif
                         int frame_mdcounts[4][4],
                         unsigned char *y_buffer[4], unsigned char *u_buffer[4],
                         unsigned char *v_buffer[4]) {
@@ -3071,15 +2950,11 @@ void setup_buffer_inter(VP8_COMP *cpi, MACROBLOCK *x, int idx, int frame_type,
   v_buffer[frame_type] = yv12->v_buffer + recon_uvoffset;
 
 #if CONFIG_NEWBESTREFMV
-  // Update stats on relative distance of chosen vector to the
-  // possible best reference vectors.
-  {
-    find_mv_refs(xd, xd->mode_info_context,
-                 xd->prev_mode_info_context,
-                 frame_type,
-                 mbmi->ref_mvs[frame_type],
-                 cpi->common.ref_frame_sign_bias );
-  }
+  find_mv_refs(xd, xd->mode_info_context,
+               xd->prev_mode_info_context,
+               frame_type,
+               mbmi->ref_mvs[frame_type],
+               cpi->common.ref_frame_sign_bias );
 
   vp8_find_best_ref_mvs(xd, y_buffer[frame_type],
                         yv12->y_stride,
@@ -3087,7 +2962,6 @@ void setup_buffer_inter(VP8_COMP *cpi, MACROBLOCK *x, int idx, int frame_type,
                         &frame_best_ref_mv[frame_type],
                         &frame_nearest_mv[frame_type],
                         &frame_near_mv[frame_type]);
-  ref_mv[frame_type].as_int = frame_best_ref_mv[frame_type].as_int;
 #endif
 }
 
@@ -3126,9 +3000,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   int64_t best_yrd = INT64_MAX;
 #if CONFIG_PRED_FILTER
   int best_filter_state;
-#endif
-#if CONFIG_NEWBESTREFMV
-  int_mv ref_mv[MAX_REF_FRAMES] = {{0}};
 #endif
 
 #if CONFIG_SWITCHABLE_INTERP
@@ -3178,9 +3049,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     setup_buffer_inter(cpi, x, cpi->common.lst_fb_idx, LAST_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
-#if CONFIG_NEWBESTREFMV
-                       ref_mv,
-#endif
                        frame_mdcounts, y_buffer, u_buffer, v_buffer);
   }
 
@@ -3188,9 +3056,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     setup_buffer_inter(cpi, x, cpi->common.gld_fb_idx, GOLDEN_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
-#if CONFIG_NEWBESTREFMV
-                       ref_mv,
-#endif
                        frame_mdcounts, y_buffer, u_buffer, v_buffer);
   }
 
@@ -3198,9 +3063,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     setup_buffer_inter(cpi, x, cpi->common.alt_fb_idx, ALTREF_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
-#if CONFIG_NEWBESTREFMV
-                       ref_mv,
-#endif
                        frame_mdcounts, y_buffer, u_buffer, v_buffer);
   }
 
@@ -3257,10 +3119,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     mbmi->ref_frame = vp8_mode_order[mode_index].ref_frame;
     mbmi->second_ref_frame = vp8_mode_order[mode_index].second_ref_frame;
     is_comp_pred = x->e_mbd.mode_info_context->mbmi.second_ref_frame != 0;
-#if CONFIG_NEWBESTREFMV
-    mbmi->ref_mv = ref_mv[mbmi->ref_frame];
-    mbmi->second_ref_mv = ref_mv[mbmi->second_ref_frame];
-#endif
+
 #if CONFIG_PRED_FILTER
     mbmi->pred_filter_enabled = 0;
 #endif
@@ -3974,10 +3833,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
 
   // macroblock modes
   vpx_memcpy(mbmi, &best_mbmode, sizeof(MB_MODE_INFO));
-#if CONFIG_NEWBESTREFMV
-  mbmi->ref_mv = ref_mv[best_mbmode.ref_frame];
-  mbmi->second_ref_mv = ref_mv[best_mbmode.second_ref_frame];
-#endif
+
   if (best_mbmode.mode == B_PRED) {
     for (i = 0; i < 16; i++) {
       xd->mode_info_context->bmi[i].as_mode = best_bmodes[i].as_mode;
