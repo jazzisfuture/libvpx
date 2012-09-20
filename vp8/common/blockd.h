@@ -44,6 +44,7 @@ void vpx_log(const char *format, ...);
 /* Segment Feature Masks */
 #define SEGMENT_DELTADATA   0
 #define SEGMENT_ABSDATA     1
+
 #if CONFIG_NEWBESTREFMV || CONFIG_NEW_MVREF
 #define MAX_MV_REFS 19
 #endif
@@ -275,10 +276,9 @@ typedef struct {
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used
-#if CONFIG_NEWBESTREFMV
-  int_mv ref_mv, second_ref_mv;
+#if CONFIG_NEWBESTREFMV || CONFIG_NEW_MVREF
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REFS];
-  int mv_ref_index[MAX_REF_FRAMES];
+  //int mv_ref_index[MAX_REF_FRAMES];
 #endif
 
   unsigned char partitioning;
@@ -386,6 +386,9 @@ typedef struct MacroBlockD {
   // Probability Tree used to code Segment number
   vp8_prob mb_segment_tree_probs[MB_FEATURE_TREE_PROBS];
 
+#if CONFIG_NEW_MVREF
+  vp8_prob mb_mv_ref_id_probs[MAX_REF_FRAMES][3];
+#endif
 
   // Segment features
   signed char segment_feature_data[MAX_MB_SEGMENTS][SEG_LVL_MAX];
@@ -442,10 +445,6 @@ typedef struct MacroBlockD {
 #endif
 
   int mb_index;   // Index of the MB in the SB (0..3)
-
-#if CONFIG_NEWBESTREFMV
-  int_mv ref_mv[MAX_MV_REFS];
-#endif
 
 #if CONFIG_HYBRIDTRANSFORM || CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HYBRIDTRANSFORM16X16
   int q_index;
