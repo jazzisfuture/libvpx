@@ -733,6 +733,7 @@ int main(int argc, const char **argv_)
     struct input_ctx        input = {0};
     int                     frames_corrupted = 0;
     int                     dec_flags = 0;
+    int                     frame_avail, got_data;
 
     /* Parse command line */
     exec_name = argv_[0];
@@ -1032,13 +1033,24 @@ int main(int argc, const char **argv_)
     }
 #endif
 
+    frame_avail = 1;
+    got_data = 0;
+
     /* Decode file */
-    while (!read_frame(&input, &buf, &buf_sz, &buf_alloc_sz))
+    while (frame_avail || got_data)
     {
         vpx_codec_iter_t  iter = NULL;
         vpx_image_t    *img;
         struct vpx_usec_timer timer;
         int                   corrupted;
+
+        frame_avail = 0;
+        if (!stop_after || frame_in < stop_after)
+        {
+            if(!read_frame(&input, &buf, &buf_sz, &buf_alloc_sz))
+            {
+                frame_avail = 1;
+                frame_in++;
 
         vpx_usec_timer_start(&timer);
 
@@ -1056,20 +1068,24 @@ int main(int argc, const char **argv_)
         vpx_usec_timer_mark(&timer);
         dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
 
-        ++frame_in;
-
-        if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
-        {
-            fprintf(stderr, "Failed VP8_GET_FRAME_CORRUPTED: %s\n",
-                    vpx_codec_error(&decoder));
-            goto fail;
+                if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
+                {
+                    fprintf(stderr, "Failed VP8_GET_FRAME_CORRUPTED: %s\n",
+                            vpx_codec_error(&decoder));
+                    goto fail;
+                }
+                frames_corrupted += corrupted;
+            }
         }
-        frames_corrupted += corrupted;
 
         vpx_usec_timer_start(&timer);
 
+        got_data = 0;
         if ((img = vpx_codec_get_frame(&decoder, &iter)))
+        {
             ++frame_out;
+            got_data = 1;
+        }
 
         vpx_usec_timer_mark(&timer);
         dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
@@ -1125,9 +1141,6 @@ int main(int argc, const char **argv_)
                     out_close(out, out_fn, do_md5);
             }
         }
-
-        if (stop_after && frame_in >= stop_after)
-            break;
     }
 
     if (summary || progress)
