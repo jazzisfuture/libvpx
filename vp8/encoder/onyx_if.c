@@ -457,12 +457,13 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
     int mbs_in_frame = cpi->common.mb_rows * cpi->common.mb_cols;
 
     cpi->cyclic_refresh_q = Q / 2;
+    
+    // Set every macroblock to be eligible for update.
+    // For key frame this will reset the seg map.
+    vpx_memset(cpi->segmentation_map, 0, mbs_in_frame);
 
     if (cpi->common.frame_type != KEY_FRAME)
-    {
-        // set every macroblock to eligible for update
-        vpx_memset(cpi->segmentation_map, 0, mbs_in_frame);
-
+    {      
         /* Cycle through the macro_block rows */
         /* MB loop to set local segmentation map */
         i = cpi->cyclic_refresh_mode_index;
