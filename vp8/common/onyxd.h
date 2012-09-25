@@ -35,6 +35,7 @@ extern "C"
         int     max_threads;
         int     error_concealment;
         int     input_fragments;
+        int     max_frame_threads;
     } VP8D_CONFIG;
 
     typedef enum

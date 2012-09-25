@@ -33,6 +33,19 @@ typedef struct
     MACROBLOCKD  mbd;
 } MB_ROW_DEC;
 
+#define MAX_FB_MT_DEC 32
+
+typedef struct s_frame_buffers
+{
+    /*
+     * this struct will be populated with frame buffer management
+     * info in future commits. */
+
+    /* decoder instances */
+    struct VP8D_COMP *pbi[MAX_FB_MT_DEC];
+
+} FRAME_BUFFERS;
+
 typedef struct VP8D_COMP
 {
     DECLARE_ALIGNED(16, MACROBLOCKD, mb);
@@ -103,6 +116,9 @@ typedef struct VP8D_COMP
 } VP8D_COMP;
 
 int vp8_decode_frame(VP8D_COMP *cpi);
+
+int vp8_create_decoder_instances(FRAME_BUFFERS *fb, VP8D_CONFIG *oxcf);
+int vp8_remove_decoder_instances(FRAME_BUFFERS *fb, int max_frame_threads);
 
 #if CONFIG_DEBUG
 #define CHECK_MEM_ERROR(lval,expr) do {\

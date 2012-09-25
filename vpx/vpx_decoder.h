@@ -101,6 +101,7 @@ extern "C" {
     typedef struct vpx_codec_dec_cfg
     {
         unsigned int threads; /**< Maximum number of threads to use, default 1 */
+        unsigned int framethreads;
         unsigned int w;      /**< Width */
         unsigned int h;      /**< Height */
     } vpx_codec_dec_cfg_t; /**< alias for struct vpx_codec_dec_cfg */
