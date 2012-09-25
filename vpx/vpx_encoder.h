@@ -829,6 +829,12 @@ extern "C" {
      * \retval #VPX_CODEC_INVALID_PARAM
      *     A parameter was NULL, the image format is unsupported, etc.
      */
+    vpx_codec_err_t  vpx_codec_encode_multi(vpx_codec_ctx_t          *ctx,
+                                            const vpx_image_t        *img,
+                                            vpx_codec_pts_t          *pts,
+                                            unsigned long            *duration,
+                                            vpx_enc_frame_flags_t    *flags,
+                                            unsigned long            *deadline);
     vpx_codec_err_t  vpx_codec_encode(vpx_codec_ctx_t            *ctx,
                                       const vpx_image_t          *img,
                                       vpx_codec_pts_t             pts,
