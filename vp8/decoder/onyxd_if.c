@@ -571,3 +571,37 @@ int vp8dx_references_buffer( VP8_COMMON *oci, int ref_frame )
     return 0;
 
 }
+
+int vp8_create_decoder_instances(struct frame_buffers *fb, VP8D_CONFIG *oxcf)
+{
+    if(!fb->use_frame_threads)
+    {
+        /* decoder instance for single thread mode */
+        fb->pbi[0] = vp8dx_create_decompressor(oxcf);
+        if(!fb->pbi[0])
+            return VPX_CODEC_ERROR;
+    }
+    else
+    {
+        /* TODO : create frame threads and decoder instances for each
+         * thread here */
+    }
+
+    return 0;
+}
+
+int vp8_remove_decoder_instances(struct frame_buffers *fb)
+{
+    if(!fb->use_frame_threads)
+    {
+        /* decoder instance for single thread mode */
+        vp8dx_remove_decompressor(fb->pbi[0]);
+    }
+    else
+    {
+        /* TODO : remove frame threads and decoder instances for each
+         * thread here */
+    }
+
+    return 0;
+}

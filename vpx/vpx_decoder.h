@@ -57,6 +57,8 @@ extern "C" {
                                                        packet loss */
 #define VPX_CODEC_CAP_INPUT_FRAGMENTS   0x100000 /**< Can receive encoded frames
                                                     one fragment at a time */
+#define VPX_CODEC_CAP_FRAME_THREADING   0x200000 /**< Can support frame-based
+                                                      multi-threading */
 
     /*! \brief Initialization-time Feature Enabling
      *
@@ -71,6 +73,8 @@ extern "C" {
 #define VPX_CODEC_USE_INPUT_FRAGMENTS   0x40000 /**< The input frame should be
                                                     passed to the decoder one
                                                     fragment at a time */
+#define VPX_CODEC_USE_FRAME_THREADING   0x80000 /**< Enable frame-based
+                                                     multi-threading */
 
     /*!\brief Stream properties
      *
@@ -101,6 +105,7 @@ extern "C" {
     typedef struct vpx_codec_dec_cfg
     {
         unsigned int threads; /**< Maximum number of threads to use, default 1 */
+        unsigned int framethreads;
         unsigned int w;      /**< Width */
         unsigned int h;      /**< Height */
     } vpx_codec_dec_cfg_t; /**< alias for struct vpx_codec_dec_cfg */
