@@ -188,8 +188,8 @@ extern "C"
 
   int vp8_use_as_reference(VP8_PTR comp, int ref_frame_flags);
   int vp8_update_reference(VP8_PTR comp, int ref_frame_flags);
-  int vp8_get_reference(VP8_PTR comp, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd);
-  int vp8_set_reference(VP8_PTR comp, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd);
+  int vp8_get_reference(VP8_PTR comp, int ref_index, YV12_BUFFER_CONFIG *sd);
+  int vp8_set_reference(VP8_PTR comp, int ref_index, YV12_BUFFER_CONFIG *sd);
   int vp8_update_entropy(VP8_PTR comp, int update);
   int vp8_set_roimap(VP8_PTR comp, unsigned char *map, unsigned int rows, unsigned int cols, int delta_q[4], int delta_lf[4], unsigned int threshold[4]);
   int vp8_set_active_map(VP8_PTR comp, unsigned char *map, unsigned int rows, unsigned int cols);

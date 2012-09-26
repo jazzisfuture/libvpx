@@ -282,8 +282,8 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
   // interval before next GF
   cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
 
-  cpi->common.refresh_golden_frame = TRUE;
-  cpi->common.refresh_alt_ref_frame = TRUE;
+  cpi->refresh_golden_frame = TRUE;
+  cpi->refresh_alt_ref_frame = TRUE;
 
   vp8_init_mode_contexts(&cpi->common);
   vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
@@ -300,7 +300,7 @@ void vp8_setup_inter_frame(VP8_COMP *cpi) {
     cpi->common.txfm_mode = ONLY_4X4;
 #endif
 
-  if (cpi->common.refresh_alt_ref_frame) {
+  if (cpi->refresh_alt_ref_frame) {
     vpx_memcpy(&cpi->common.fc,
                &cpi->common.lfc_a,
                sizeof(cpi->common.fc));
@@ -379,7 +379,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
 
 
   // Special alt reference frame case
-  if (cpi->common.refresh_alt_ref_frame) {
+  if (cpi->refresh_alt_ref_frame) {
     // Per frame bit target for the alt ref frame
     cpi->per_frame_bandwidth = cpi->twopass.gf_bits;
     cpi->this_frame_target = cpi->per_frame_bandwidth;
@@ -398,7 +398,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
   if (cpi->this_frame_target < min_frame_target)
     cpi->this_frame_target = min_frame_target;
 
-  if (!cpi->common.refresh_alt_ref_frame)
+  if (!cpi->refresh_alt_ref_frame)
     // Note the baseline target data rate for this inter frame.
     cpi->inter_frame_target = cpi->this_frame_target;
 
@@ -407,7 +407,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
     // int Boost = 0;
     int Q = (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME] : cpi->oxcf.fixed_q;
 
-    cpi->common.refresh_golden_frame = TRUE;
+    cpi->refresh_golden_frame = TRUE;
 
     calc_gf_params(cpi);
 
@@ -452,7 +452,7 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var) {
   if (cpi->common.frame_type == KEY_FRAME) {
     rate_correction_factor = cpi->key_frame_rate_correction_factor;
   } else {
-    if (cpi->common.refresh_alt_ref_frame || cpi->common.refresh_golden_frame)
+    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       rate_correction_factor = cpi->gf_rate_correction_factor;
     else
       rate_correction_factor = cpi->rate_correction_factor;
@@ -526,7 +526,7 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var) {
   if (cpi->common.frame_type == KEY_FRAME)
     cpi->key_frame_rate_correction_factor = rate_correction_factor;
   else {
-    if (cpi->common.refresh_alt_ref_frame || cpi->common.refresh_golden_frame)
+    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       cpi->gf_rate_correction_factor = rate_correction_factor;
     else
       cpi->rate_correction_factor = rate_correction_factor;
@@ -550,7 +550,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
   if (cpi->common.frame_type == KEY_FRAME)
     correction_factor = cpi->key_frame_rate_correction_factor;
   else {
-    if (cpi->common.refresh_alt_ref_frame || cpi->common.refresh_golden_frame)
+    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       correction_factor = cpi->gf_rate_correction_factor;
     else
       correction_factor = cpi->rate_correction_factor;
@@ -591,7 +591,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
 
     if (cpi->common.frame_type == KEY_FRAME)
       zbin_oqmax = 0; // ZBIN_OQ_MAX/16
-    else if (cpi->common.refresh_alt_ref_frame || (cpi->common.refresh_golden_frame && !cpi->source_alt_ref_active))
+    else if (cpi->refresh_alt_ref_frame || (cpi->refresh_golden_frame && !cpi->source_alt_ref_active))
       zbin_oqmax = 16;
     else
       zbin_oqmax = ZBIN_OQ_MAX;
@@ -691,7 +691,7 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit, 
       *frame_over_shoot_limit  = cpi->this_frame_target * 9 / 8;
       *frame_under_shoot_limit = cpi->this_frame_target * 7 / 8;
     } else {
-      if (cpi->common.refresh_alt_ref_frame || cpi->common.refresh_golden_frame) {
+      if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) {
         *frame_over_shoot_limit  = cpi->this_frame_target * 9 / 8;
         *frame_under_shoot_limit = cpi->this_frame_target * 7 / 8;
       } else {

@@ -76,24 +76,14 @@ typedef struct vp8_postproc_cfg {
   int noise_level;            /**< the strength of additive noise, valid range [0, 16] */
 } vp8_postproc_cfg_t;
 
-/*!\brief reference frame type
- *
- * The set of macros define the type of VP8 reference frames
- */
-typedef enum vpx_ref_frame_type {
-  VP8_LAST_FRAME = 1,
-  VP8_GOLD_FRAME = 2,
-  VP8_ALTR_FRAME = 4
-} vpx_ref_frame_type_t;
-
 /*!\brief reference frame data struct
  *
  * define the data struct to access vp8 reference frames
  */
 
 typedef struct vpx_ref_frame {
-  vpx_ref_frame_type_t  frame_type;   /**< which reference frame */
-  vpx_image_t           img;          /**< reference frame data in image format */
+  int           ref_index;   /**< which reference frame */
+  vpx_image_t   img;         /**< reference frame data in image format */
 } vpx_ref_frame_t;
 
 

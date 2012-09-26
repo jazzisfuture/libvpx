@@ -296,12 +296,12 @@ void update_base_skip_probs(VP8_COMP *cpi) {
   if (cm->frame_type != KEY_FRAME) {
     update_skip_probs(cpi);
 
-    if (cm->refresh_alt_ref_frame) {
+    if (cpi->refresh_alt_ref_frame) {
       int k;
       for (k = 0; k < MBSKIP_CONTEXTS; ++k)
         cpi->last_skip_false_probs[2][k] = cm->mbskip_pred_probs[k];
       cpi->last_skip_probs_q[2] = cm->base_qindex;
-    } else if (cpi->common.refresh_golden_frame) {
+    } else if (cpi->refresh_golden_frame) {
       int k;
       for (k = 0; k < MBSKIP_CONTEXTS; ++k)
         cpi->last_skip_false_probs[1][k] = cm->mbskip_pred_probs[k];
@@ -473,7 +473,7 @@ static void init_seg_features(VP8_COMP *cpi) {
   }
 
   // If this is an alt ref frame
-  else if (cm->refresh_alt_ref_frame) {
+  else if (cpi->refresh_alt_ref_frame) {
     // Clear down the global segmentation map
     vpx_memset(cpi->segmentation_map, 0, (cm->mb_rows * cm->mb_cols));
     xd->update_mb_segmentation_map = 0;
@@ -691,6 +691,7 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   int Speed = cpi->Speed;
   int i;
   VP8_COMMON *cm = &cpi->common;
+  YV12_BUFFER_CONFIG *last_frame = &cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]];
 
   // Only modes 0 and 1 supported for now in experimental code basae
   if (Mode > 1)
@@ -1197,9 +1198,9 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   }
 
   if (cpi->sf.search_method == NSTEP) {
-    vp8_init3smotion_compensation(&cpi->mb, cm->yv12_fb[cm->lst_fb_idx].y_stride);
+    vp8_init3smotion_compensation(&cpi->mb, last_frame->y_stride);
   } else if (cpi->sf.search_method == DIAMOND) {
-    vp8_init_dsmotion_compensation(&cpi->mb, cm->yv12_fb[cm->lst_fb_idx].y_stride);
+    vp8_init_dsmotion_compensation(&cpi->mb, last_frame->y_stride);
   }
 
   if (cpi->sf.improved_dct) {
@@ -1289,14 +1290,14 @@ static int vp8_alloc_partition_data(VP8_COMP *cpi) {
 
 void vp8_alloc_compressor_data(VP8_COMP *cpi) {
   VP8_COMMON *cm = & cpi->common;
-
+  int i;
   int width = cm->Width;
   int height = cm->Height;
 
   if (vp8_alloc_frame_buffers(cm, width, height))
     vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate frame buffers");
-
+  
   if (vp8_alloc_partition_data(cpi))
     vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate partition data");
@@ -1560,8 +1561,8 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
 
   // cpi->use_golden_frame_only = 0;
   // cpi->use_last_frame_only = 0;
-  cm->refresh_golden_frame = 0;
-  cm->refresh_last_frame = 1;
+  cpi->refresh_golden_frame = 0;
+  cpi->refresh_last_frame = 1;
   cm->refresh_entropy_probs = 1;
 
   setup_features(cpi);
@@ -1666,10 +1667,10 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
   }
 
   if (((cm->Width + 15) & 0xfffffff0) !=
-      cm->yv12_fb[cm->lst_fb_idx].y_width ||
+      cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]].y_width ||
       ((cm->Height + 15) & 0xfffffff0) !=
-      cm->yv12_fb[cm->lst_fb_idx].y_height ||
-      cm->yv12_fb[cm->lst_fb_idx].y_width == 0) {
+      cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]].y_height ||
+      cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]].y_width == 0) {
     alloc_raw_frame_buffers(cpi);
     vp8_alloc_compressor_data(cpi);
   }
@@ -1905,7 +1906,7 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
 
   cpi->source_alt_ref_pending = FALSE;
   cpi->source_alt_ref_active = FALSE;
-  cpi->common.refresh_alt_ref_frame = 0;
+  cpi->refresh_alt_ref_frame = 0;
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
@@ -2159,7 +2160,7 @@ void vp8_remove_compressor(VP8_PTR *ptr) {
       print_mode_contexts(&cpi->common);
 #endif
       if (cpi->b_calculate_psnr) {
-        YV12_BUFFER_CONFIG *lst_yv12 = &cpi->common.yv12_fb[cpi->common.lst_fb_idx];
+        YV12_BUFFER_CONFIG *lst_yv12 = &cpi->common.yv12_fb[cpi->common.active_ref_idx[LST_FB_IDX]];
         double samples = 3.0 / 2 * cpi->count * lst_yv12->y_width * lst_yv12->y_height;
         double total_psnr = vp8_mse2psnr(samples, 255.0, cpi->total_sq_error);
         double total_psnr2 = vp8_mse2psnr(samples, 255.0, cpi->total_sq_error2);
@@ -2486,54 +2487,35 @@ int vp8_update_reference(VP8_PTR ptr, int ref_frame_flags) {
   if (ref_frame_flags > 7)
     return -1;
 
-  cpi->common.refresh_golden_frame = 0;
-  cpi->common.refresh_alt_ref_frame = 0;
-  cpi->common.refresh_last_frame   = 0;
+  cpi->refresh_golden_frame = 0;
+  cpi->refresh_alt_ref_frame = 0;
+  cpi->refresh_last_frame   = 0;
 
   if (ref_frame_flags & VP8_LAST_FLAG)
-    cpi->common.refresh_last_frame = 1;
+    cpi->refresh_last_frame = 1;
 
   if (ref_frame_flags & VP8_GOLD_FLAG)
-    cpi->common.refresh_golden_frame = 1;
+    cpi->refresh_golden_frame = 1;
 
   if (ref_frame_flags & VP8_ALT_FLAG)
-    cpi->common.refresh_alt_ref_frame = 1;
+    cpi->refresh_alt_ref_frame = 1;
 
   return 0;
 }
 
-int vp8_get_reference(VP8_PTR ptr, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd) {
+int vp8_get_reference(VP8_PTR ptr, int ref_index, YV12_BUFFER_CONFIG *sd) {
   VP8_COMP *cpi = (VP8_COMP *)(ptr);
   VP8_COMMON *cm = &cpi->common;
-  int ref_fb_idx;
-
-  if (ref_frame_flag == VP8_LAST_FLAG)
-    ref_fb_idx = cm->lst_fb_idx;
-  else if (ref_frame_flag == VP8_GOLD_FLAG)
-    ref_fb_idx = cm->gld_fb_idx;
-  else if (ref_frame_flag == VP8_ALT_FLAG)
-    ref_fb_idx = cm->alt_fb_idx;
-  else
-    return -1;
+  int ref_fb_idx = cm->active_ref_idx[ref_index];
 
   vp8_yv12_copy_frame_ptr(&cm->yv12_fb[ref_fb_idx], sd);
 
   return 0;
 }
-int vp8_set_reference(VP8_PTR ptr, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd) {
+int vp8_set_reference(VP8_PTR ptr, int ref_index, YV12_BUFFER_CONFIG *sd) {
   VP8_COMP *cpi = (VP8_COMP *)(ptr);
   VP8_COMMON *cm = &cpi->common;
-
-  int ref_fb_idx;
-
-  if (ref_frame_flag == VP8_LAST_FLAG)
-    ref_fb_idx = cm->lst_fb_idx;
-  else if (ref_frame_flag == VP8_GOLD_FLAG)
-    ref_fb_idx = cm->gld_fb_idx;
-  else if (ref_frame_flag == VP8_ALT_FLAG)
-    ref_fb_idx = cm->alt_fb_idx;
-  else
-    return -1;
+  int ref_fb_idx = cm->active_ref_idx[ref_index];
 
   vp8_yv12_copy_frame_ptr(sd, &cm->yv12_fb[ref_fb_idx]);
 
@@ -2627,13 +2609,13 @@ static void update_golden_frame_stats(VP8_COMP *cpi) {
   VP8_COMMON *cm = &cpi->common;
 
   // Update the Golden frame usage counts.
-  if (cm->refresh_golden_frame) {
+  if (cpi->refresh_golden_frame) {
     // Update data structure that monitors level of reference to last GF
     vpx_memset(cpi->gf_active_flags, 1, (cm->mb_rows * cm->mb_cols));
     cpi->gf_active_count = cm->mb_rows * cm->mb_cols;
 
     // this frame refreshes means next frames don't unless specified by user
-    cm->refresh_golden_frame = 0;
+    cpi->refresh_golden_frame = 0;
     cpi->common.frames_since_golden = 0;
 
     // if ( cm->frame_type == KEY_FRAME )
@@ -2655,7 +2637,7 @@ static void update_golden_frame_stats(VP8_COMP *cpi) {
     // ******** Fixed Q test code only ************
     // If we are going to use the ALT reference for the next group of frames set a flag to say so.
     if (cpi->oxcf.fixed_q >= 0 &&
-        cpi->oxcf.play_alternate && !cpi->common.refresh_alt_ref_frame) {
+        cpi->oxcf.play_alternate && !cpi->refresh_alt_ref_frame) {
       cpi->source_alt_ref_pending = TRUE;
       cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
     }
@@ -2667,7 +2649,7 @@ static void update_golden_frame_stats(VP8_COMP *cpi) {
     if (cpi->frames_till_gf_update_due > 0)
       cpi->frames_till_gf_update_due--;
 
-  } else if (!cpi->common.refresh_alt_ref_frame) {
+  } else if (!cpi->refresh_alt_ref_frame) {
     // Decrement count down till next gf
     if (cpi->frames_till_gf_update_due > 0)
       cpi->frames_till_gf_update_due--;
@@ -2809,8 +2791,8 @@ static BOOL recode_loop_test(VP8_COMP *cpi,
   if ((cpi->sf.recode_loop == 1) ||
       ((cpi->sf.recode_loop == 2) &&
        ((cm->frame_type == KEY_FRAME) ||
-        cm->refresh_golden_frame ||
-        cm->refresh_alt_ref_frame))) {
+        cpi->refresh_golden_frame ||
+        cpi->refresh_alt_ref_frame))) {
     // General over and under shoot tests
     if (((cpi->projected_frame_size > high_limit) && (q < maxq)) ||
         ((cpi->projected_frame_size < low_limit) && (q > minq))) {
@@ -2837,23 +2819,23 @@ static BOOL recode_loop_test(VP8_COMP *cpi,
   return force_recode;
 }
 
-void update_reference_frames(VP8_COMMON *cm) {
+void update_reference_frames(VP8_COMP *cpi, VP8_COMMON *cm) {
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
 
   if (cm->frame_type == KEY_FRAME) {
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[GLD_FB_IDX], cm->new_fb_idx);
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[ALT_FB_IDX], cm->new_fb_idx);
   } else { /* For non key frames */
-    if (cm->refresh_alt_ref_frame)
-      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
+    if (cpi->refresh_alt_ref_frame)
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[ALT_FB_IDX], cm->new_fb_idx);
 
-    if (cm->refresh_golden_frame)
-      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
+    if (cpi->refresh_golden_frame)
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[GLD_FB_IDX], cm->new_fb_idx);
   }
 
-  if (cm->refresh_last_frame)
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->lst_fb_idx, cm->new_fb_idx);
+  if (cpi->refresh_last_frame)
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[LST_FB_IDX], cm->new_fb_idx);
 }
 
 void loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
@@ -2999,7 +2981,7 @@ static void encode_frame_to_data_rate
 
   // For an alt ref frame in 2 pass we skip the call to the second
   // pass function that sets the target bandwidth so must set it here
-  if (cpi->common.refresh_alt_ref_frame) {
+  if (cpi->refresh_alt_ref_frame) {
     cpi->per_frame_bandwidth = cpi->twopass.gf_bits;                           // Per frame bit target for the alt ref frame
     cpi->target_bandwidth = cpi->twopass.gf_bits * cpi->output_frame_rate;      // per second target bitrate
   }
@@ -3111,7 +3093,7 @@ static void encode_frame_to_data_rate
     }
   }
 
-  else if (cm->refresh_golden_frame || cpi->common.refresh_alt_ref_frame) {
+  else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
     int high = 2000;
     int low = 400;
 
@@ -3189,7 +3171,7 @@ static void encode_frame_to_data_rate
   // Set highest allowed value for Zbin over quant
   if (cm->frame_type == KEY_FRAME)
     zbin_oq_high = 0; // ZBIN_OQ_MAX/16
-  else if (cm->refresh_alt_ref_frame || (cm->refresh_golden_frame && !cpi->source_alt_ref_active))
+  else if (cpi->refresh_alt_ref_frame || (cpi->refresh_golden_frame && !cpi->source_alt_ref_active))
     zbin_oq_high = 16;
   else
     zbin_oq_high = ZBIN_OQ_MAX;
@@ -3296,12 +3278,12 @@ static void encode_frame_to_data_rate
           cm->mbskip_pred_probs[k] = cpi->base_skip_false_prob[Q][k];
 
         if (cm->frame_type != KEY_FRAME) {
-          if (cpi->common.refresh_alt_ref_frame) {
+          if (cpi->refresh_alt_ref_frame) {
             for (k = 0; k < MBSKIP_CONTEXTS; k++) {
               if (cpi->last_skip_false_probs[2][k] != 0)
                 cm->mbskip_pred_probs[k] = cpi->last_skip_false_probs[2][k];
             }
-          } else if (cpi->common.refresh_golden_frame) {
+          } else if (cpi->refresh_golden_frame) {
             for (k = 0; k < MBSKIP_CONTEXTS; k++) {
               if (cpi->last_skip_false_probs[1][k] != 0)
                 cm->mbskip_pred_probs[k] = cpi->last_skip_false_probs[1][k];
@@ -3662,12 +3644,12 @@ static void encode_frame_to_data_rate
   vp8_update_gf_useage_maps(cpi, cm, &cpi->mb);
 
   if (cm->frame_type == KEY_FRAME)
-    cm->refresh_last_frame = 1;
+    cpi->refresh_last_frame = 1;
 
 #if 0
   {
     FILE *f = fopen("gfactive.stt", "a");
-    fprintf(f, "%8d %8d %8d %8d %8d\n", cm->current_video_frame, (100 * cpi->gf_active_count) / (cpi->common.mb_rows * cpi->common.mb_cols), cpi->this_iiratio, cpi->next_iiratio, cm->refresh_golden_frame);
+    fprintf(f, "%8d %8d %8d %8d %8d\n", cm->current_video_frame, (100 * cpi->gf_active_count) / (cpi->common.mb_rows * cpi->common.mb_cols), cpi->this_iiratio, cpi->next_iiratio, cpi->refresh_golden_frame);
     fclose(f);
   }
 #endif
@@ -3701,7 +3683,7 @@ static void encode_frame_to_data_rate
     select_pred_filter_mode(cpi);
 #endif
 
-  update_reference_frames(cm);
+  update_reference_frames(cpi, cm);
   vp8_copy(cpi->common.fc.coef_counts, cpi->coef_counts);
   vp8_copy(cpi->common.fc.coef_counts_8x8, cpi->coef_counts_8x8);
 #if CONFIG_TX16X16 || CONFIG_HYBRIDTRANSFORM16X16
@@ -3725,7 +3707,7 @@ static void encode_frame_to_data_rate
     vp8_copy(cpi->common.fc.MVcount_hp, cpi->MVcount_hp);
     vp8_adapt_mv_probs(&cpi->common);
 #endif  /* CONFIG_NEWMVENTROPY */
-    vp8_update_mode_context(&cpi->common);
+    vp8_update_mode_context(&cpi->common, cpi->refresh_alt_ref_frame);
   }
 
   /* Move storing frame_type out of the above loop since it is also
@@ -3752,8 +3734,8 @@ static void encode_frame_to_data_rate
   if ((cm->base_qindex < cpi->last_boosted_qindex) ||
       ((cpi->static_mb_pct < 100) &&
        ((cm->frame_type == KEY_FRAME) ||
-        cm->refresh_alt_ref_frame ||
-        (cm->refresh_golden_frame && !cpi->is_src_frame_alt_ref)))) {
+        cpi->refresh_alt_ref_frame ||
+        (cpi->refresh_golden_frame && !cpi->is_src_frame_alt_ref)))) {
     cpi->last_boosted_qindex = cm->base_qindex;
   }
 
@@ -3766,7 +3748,7 @@ static void encode_frame_to_data_rate
     cpi->avg_frame_qindex = (2 + 3 * cpi->avg_frame_qindex + cm->base_qindex) >> 2;
 
   // Keep a record from which we can calculate the average Q excluding GF updates and key frames
-  if ((cm->frame_type != KEY_FRAME) && !cm->refresh_golden_frame && !cm->refresh_alt_ref_frame) {
+  if ((cm->frame_type != KEY_FRAME) && !cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
     cpi->ni_frames++;
     cpi->tot_q += vp8_convert_qindex_to_q(Q);
     cpi->avg_q = cpi->tot_q / (double)cpi->ni_frames;
@@ -3808,7 +3790,7 @@ static void encode_frame_to_data_rate
 
     if (cpi->twopass.kf_group_bits < 0)
       cpi->twopass.kf_group_bits = 0;
-  } else if (cm->refresh_golden_frame || cm->refresh_alt_ref_frame) {
+  } else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
     cpi->twopass.gf_group_bits += cpi->this_frame_target - cpi->projected_frame_size;
 
     if (cpi->twopass.gf_group_bits < 0)
@@ -3863,7 +3845,7 @@ static void encode_frame_to_data_rate
               vp8_convert_qindex_to_q(cpi->cq_target_quality),
               cpi->zbin_over_quant,
               // cpi->avg_frame_qindex, cpi->zbin_over_quant,
-              cm->refresh_golden_frame, cm->refresh_alt_ref_frame,
+              cpi->refresh_golden_frame, cpi->refresh_alt_ref_frame,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
@@ -3893,7 +3875,7 @@ static void encode_frame_to_data_rate
               vp8_convert_qindex_to_q(cpi->cq_target_quality),
               cpi->zbin_over_quant,
               // cpi->avg_frame_qindex, cpi->zbin_over_quant,
-              cm->refresh_golden_frame, cm->refresh_alt_ref_frame,
+              cpi->refresh_golden_frame, cpi->refresh_alt_ref_frame,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
@@ -3909,8 +3891,8 @@ static void encode_frame_to_data_rate
 
       fprintf(fmodes, "%6d:%1d:%1d:%1d ",
               cpi->common.current_video_frame,
-              cm->frame_type, cm->refresh_golden_frame,
-              cm->refresh_alt_ref_frame);
+              cm->frame_type, cpi->refresh_golden_frame,
+              cpi->refresh_alt_ref_frame);
 
       for (i = 0; i < MAX_MODES; i++)
         fprintf(fmodes, "%5d ", cpi->mode_chosen_counts[i]);
@@ -3929,33 +3911,33 @@ static void encode_frame_to_data_rate
 #endif
 
   // If this was a kf or Gf note the Q
-  if ((cm->frame_type == KEY_FRAME) || cm->refresh_golden_frame || cm->refresh_alt_ref_frame)
+  if ((cm->frame_type == KEY_FRAME) || cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
     cm->last_kf_gf_q = cm->base_qindex;
 
-  if (cm->refresh_golden_frame == 1)
+  if (cpi->refresh_golden_frame == 1)
     cm->frame_flags = cm->frame_flags | FRAMEFLAGS_GOLDEN;
   else
     cm->frame_flags = cm->frame_flags&~FRAMEFLAGS_GOLDEN;
 
-  if (cm->refresh_alt_ref_frame == 1)
+  if (cpi->refresh_alt_ref_frame == 1)
     cm->frame_flags = cm->frame_flags | FRAMEFLAGS_ALTREF;
   else
     cm->frame_flags = cm->frame_flags&~FRAMEFLAGS_ALTREF;
 
 
-  if (cm->refresh_last_frame & cm->refresh_golden_frame) // both refreshed
+  if (cpi->refresh_last_frame & cpi->refresh_golden_frame) // both refreshed
     cpi->gold_is_last = 1;
-  else if (cm->refresh_last_frame ^ cm->refresh_golden_frame) // 1 refreshed but not the other
+  else if (cpi->refresh_last_frame ^ cpi->refresh_golden_frame) // 1 refreshed but not the other
     cpi->gold_is_last = 0;
 
-  if (cm->refresh_last_frame & cm->refresh_alt_ref_frame) // both refreshed
+  if (cpi->refresh_last_frame & cpi->refresh_alt_ref_frame) // both refreshed
     cpi->alt_is_last = 1;
-  else if (cm->refresh_last_frame ^ cm->refresh_alt_ref_frame) // 1 refreshed but not the other
+  else if (cpi->refresh_last_frame ^ cpi->refresh_alt_ref_frame) // 1 refreshed but not the other
     cpi->alt_is_last = 0;
 
-  if (cm->refresh_alt_ref_frame & cm->refresh_golden_frame) // both refreshed
+  if (cpi->refresh_alt_ref_frame & cpi->refresh_golden_frame) // both refreshed
     cpi->gold_is_alt = 1;
-  else if (cm->refresh_alt_ref_frame ^ cm->refresh_golden_frame) // 1 refreshed but not the other
+  else if (cpi->refresh_alt_ref_frame ^ cpi->refresh_golden_frame) // 1 refreshed but not the other
     cpi->gold_is_alt = 0;
 
   cpi->ref_frame_flags = VP8_ALT_FLAG | VP8_GOLD_FLAG | VP8_LAST_FLAG;
@@ -3969,7 +3951,7 @@ static void encode_frame_to_data_rate
   if (cpi->gold_is_alt)
     cpi->ref_frame_flags &= ~VP8_ALT_FLAG;
 
-  if (cpi->oxcf.play_alternate && cm->refresh_alt_ref_frame && (cm->frame_type != KEY_FRAME))
+  if (cpi->oxcf.play_alternate && cpi->refresh_alt_ref_frame && (cm->frame_type != KEY_FRAME))
     // Update the alternate reference frame stats as appropriate.
     update_alt_ref_frame_stats(cpi);
   else
@@ -4008,8 +3990,8 @@ static void encode_frame_to_data_rate
     FILE *recon_file;
     sprintf(filename, "enc%04d.yuv", (int) cm->current_video_frame);
     recon_file = fopen(filename, "wb");
-    fwrite(cm->yv12_fb[cm->lst_fb_idx].buffer_alloc,
-           cm->yv12_fb[cm->lst_fb_idx].frame_size, 1, recon_file);
+    fwrite(cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]].buffer_alloc,
+           cm->yv12_fb[cm->active_ref_idx[LST_FB_IDX]].frame_size, 1, recon_file);
     fclose(recon_file);
   }
 #endif
@@ -4028,13 +4010,13 @@ static void encode_frame_to_data_rate
 
 static void Pass2Encode(VP8_COMP *cpi, unsigned long *size, unsigned char *dest, unsigned int *frame_flags) {
 
-  if (!cpi->common.refresh_alt_ref_frame)
+  if (!cpi->refresh_alt_ref_frame)
     vp8_second_pass(cpi);
 
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
   cpi->twopass.bits_left -= 8 * *size;
 
-  if (!cpi->common.refresh_alt_ref_frame) {
+  if (!cpi->refresh_alt_ref_frame) {
     double lower_bounds_min_rate = FRAME_OVERHEAD_BITS * cpi->oxcf.frame_rate;
     double two_pass_min_rate = (double)(cpi->oxcf.target_bandwidth
                                         * cpi->oxcf.two_pass_vbrmin_section / 100);
@@ -4096,8 +4078,8 @@ static int frame_is_reference(const VP8_COMP *cpi) {
   const VP8_COMMON *cm = &cpi->common;
   const MACROBLOCKD *xd = &cpi->mb.e_mbd;
 
-  return cm->frame_type == KEY_FRAME || cm->refresh_last_frame
-         || cm->refresh_golden_frame || cm->refresh_alt_ref_frame
+  return cm->frame_type == KEY_FRAME || cpi->refresh_last_frame
+         || cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame
          || cm->refresh_entropy_probs
          || xd->mode_ref_lf_delta_update
          || xd->update_mb_segmentation_map || xd->update_mb_segmentation_data;
@@ -4142,9 +4124,9 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
         force_src_buffer = &cpi->alt_ref_buffer;
       }
       cm->frames_till_alt_ref_frame = cpi->frames_till_gf_update_due;
-      cm->refresh_alt_ref_frame = 1;
-      cm->refresh_golden_frame = 0;
-      cm->refresh_last_frame = 0;
+      cpi->refresh_alt_ref_frame = 1;
+      cpi->refresh_golden_frame = 0;
+      cpi->refresh_last_frame = 0;
       cm->show_frame = 0;
       cpi->source_alt_ref_pending = FALSE;   // Clear Pending altf Ref flag.
       cpi->is_src_frame_alt_ref = 0;
@@ -4193,7 +4175,7 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
   }
 
   // adjust frame rates based on timestamps given
-  if (!cm->refresh_alt_ref_frame) {
+  if (!cpi->refresh_alt_ref_frame) {
     int64_t this_duration;
     int step = 0;
 
@@ -4248,13 +4230,13 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
 
 #if 0
 
-  if (cm->refresh_alt_ref_frame) {
-    // cm->refresh_golden_frame = 1;
-    cm->refresh_golden_frame = 0;
-    cm->refresh_last_frame = 0;
+  if (cpi->refresh_alt_ref_frame) {
+    // cpi->refresh_golden_frame = 1;
+    cpi->refresh_golden_frame = 0;
+    cpi->refresh_last_frame = 0;
   } else {
-    cm->refresh_golden_frame = 0;
-    cm->refresh_last_frame = 1;
+    cpi->refresh_golden_frame = 0;
+    cpi->refresh_last_frame = 1;
   }
 
 #endif
@@ -4273,7 +4255,7 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
   cm->new_fb_idx = INT_MAX;
 
   if (cm->refresh_entropy_probs) {
-    if (cm->refresh_alt_ref_frame)
+    if (cpi->refresh_alt_ref_frame)
       vpx_memcpy(&cm->lfc_a, &cm->fc, sizeof(cm->fc));
     else
       vpx_memcpy(&cm->lfc, &cm->fc, sizeof(cm->fc));
@@ -4285,9 +4267,9 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
 
     // return to normal state
     cm->refresh_entropy_probs = 1;
-    cm->refresh_alt_ref_frame = 0;
-    cm->refresh_golden_frame = 0;
-    cm->refresh_last_frame = 1;
+    cpi->refresh_alt_ref_frame = 0;
+    cpi->refresh_golden_frame = 0;
+    cpi->refresh_last_frame = 1;
     cm->frame_type = INTER_FRAME;
 
   }
@@ -4417,7 +4399,7 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
 int vp8_get_preview_raw_frame(VP8_PTR comp, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t *flags) {
   VP8_COMP *cpi = (VP8_COMP *) comp;
 
-  if (cpi->common.refresh_alt_ref_frame)
+  if (cpi->refresh_alt_ref_frame)
     return -1;
   else {
     int ret;

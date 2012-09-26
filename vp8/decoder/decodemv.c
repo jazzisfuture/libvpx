@@ -870,7 +870,11 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #endif
       mbmi->mode = read_mv_ref(bc, mv_ref_p);
 
-      vp8_accum_mv_refs(&pbi->common, mbmi->mode, rct);
+      // TODO(jkoleszar) -- Not sure what the right thing to do here is when
+      // more references are available. For now, just hard code the index
+      // of the alt ref frame used by the encoder to keep the existing
+      // behavior
+      vp8_accum_mv_refs(&pbi->common, mbmi->mode, rct, pbi->refresh_frame_flags & 0x4);
     }
 
 #if CONFIG_PRED_FILTER

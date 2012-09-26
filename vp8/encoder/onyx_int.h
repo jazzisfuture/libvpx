@@ -59,6 +59,10 @@
 
 #define VP8_TEMPORAL_ALT_REF 1
 
+#define LST_FB_IDX 0
+#define GLD_FB_IDX 1
+#define ALT_FB_IDX 2
+
 typedef struct {
 #if CONFIG_NEWMVENTROPY
   nmv_context nmvc;
@@ -432,7 +436,9 @@ typedef struct VP8_COMP {
   int alt_is_last;  // Alt reference frame same as last ( short circuit altref search)
   int gold_is_alt;  // don't do both alt and gold search ( just do gold).
 
-  // int refresh_alt_ref_frame;
+  int refresh_last_frame;       /* Two state 0 = NO, 1 = YES */
+  int refresh_golden_frame;     /* Two state 0 = NO, 1 = YES */
+  int refresh_alt_ref_frame;     /* Two state 0 = NO, 1 = YES */
   YV12_BUFFER_CONFIG last_frame_uf;
 
   TOKENEXTRA *tok;

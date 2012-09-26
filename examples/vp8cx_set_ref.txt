@@ -52,8 +52,8 @@ frame_avail = read_frame(infile, &raw);
 if(frame_cnt + 1 == update_frame_num) {
     vpx_ref_frame_t ref;
 
-    ref.frame_type = VP8_LAST_FRAME;
-    ref.img        = raw;
+    ref.ref_index = 0;
+    ref.img       = raw;
 
     if(vpx_codec_control(&codec, VP8_SET_REFERENCE, &ref))
         die_codec(&codec, "Failed to set reference frame");
