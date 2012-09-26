@@ -900,8 +900,6 @@ static void init_frame(VP8D_COMP *pbi) {
     /* All buffers are implicitly updated on key frames. */
     pc->refresh_golden_frame = 1;
     pc->refresh_alt_ref_frame = 1;
-    pc->copy_buffer_to_gf = 0;
-    pc->copy_buffer_to_arf = 0;
 
     /* Note that Golden and Altref modes cannot be used on a key frame so
      * ref_frame_sign_bias[] is undefined and meaningless
@@ -1359,17 +1357,6 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
                  pc->fc.mode_context,
                  sizeof(pc->fc.vp8_mode_contexts));
     }
-
-    /* Buffer to buffer copy flags. */
-    pc->copy_buffer_to_gf = 0;
-
-    if (!pc->refresh_golden_frame)
-      pc->copy_buffer_to_gf = vp8_read_literal(bc, 2);
-
-    pc->copy_buffer_to_arf = 0;
-
-    if (!pc->refresh_alt_ref_frame)
-      pc->copy_buffer_to_arf = vp8_read_literal(bc, 2);
 
     pc->ref_frame_sign_bias[GOLDEN_FRAME] = vp8_read_bit(bc);
     pc->ref_frame_sign_bias[ALTREF_FRAME] = vp8_read_bit(bc);

@@ -2369,19 +2369,6 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     vp8_write_bit(bc, pc->refresh_golden_frame);
     vp8_write_bit(bc, pc->refresh_alt_ref_frame);
 
-    // For inter frames the current default behavior is that when
-    // cm->refresh_golden_frame is set we copy the old GF over to
-    // the ARF buffer. This is purely an encoder decision at present.
-    if (pc->refresh_golden_frame)
-      pc->copy_buffer_to_arf  = 2;
-
-    // If not being updated from current frame should either GF or ARF be updated from another buffer
-    if (!pc->refresh_golden_frame)
-      vp8_write_literal(bc, pc->copy_buffer_to_gf, 2);
-
-    if (!pc->refresh_alt_ref_frame)
-      vp8_write_literal(bc, pc->copy_buffer_to_arf, 2);
-
     // Indicate reference frame sign bias for Golden and ARF frames (always 0 for last frame buffer)
     vp8_write_bit(bc, pc->ref_frame_sign_bias[GOLDEN_FRAME]);
     vp8_write_bit(bc, pc->ref_frame_sign_bias[ALTREF_FRAME]);

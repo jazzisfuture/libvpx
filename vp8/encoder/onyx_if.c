@@ -2852,51 +2852,14 @@ void update_reference_frames(VP8_COMMON *cm) {
     cm->alt_fb_idx = cm->gld_fb_idx = cm->new_fb_idx;
   } else { /* For non key frames */
     if (cm->refresh_alt_ref_frame) {
-      assert(!cm->copy_buffer_to_arf);
-
       cm->yv12_fb[cm->new_fb_idx].flags |= VP8_ALT_FLAG;
       cm->yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALT_FLAG;
       cm->alt_fb_idx = cm->new_fb_idx;
-    } else if (cm->copy_buffer_to_arf) {
-      assert(!(cm->copy_buffer_to_arf & ~0x3));
-
-      if (cm->copy_buffer_to_arf == 1) {
-        if (cm->alt_fb_idx != cm->lst_fb_idx) {
-          yv12_fb[cm->lst_fb_idx].flags |= VP8_ALT_FLAG;
-          yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALT_FLAG;
-          cm->alt_fb_idx = cm->lst_fb_idx;
-        }
-      } else { /* if (cm->copy_buffer_to_arf == 2) */
-        if (cm->alt_fb_idx != cm->gld_fb_idx) {
-          yv12_fb[cm->gld_fb_idx].flags |= VP8_ALT_FLAG;
-          yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALT_FLAG;
-          cm->alt_fb_idx = cm->gld_fb_idx;
-        }
-      }
     }
-
     if (cm->refresh_golden_frame) {
-      assert(!cm->copy_buffer_to_gf);
-
       cm->yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FLAG;
       cm->yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FLAG;
       cm->gld_fb_idx = cm->new_fb_idx;
-    } else if (cm->copy_buffer_to_gf) {
-      assert(!(cm->copy_buffer_to_arf & ~0x3));
-
-      if (cm->copy_buffer_to_gf == 1) {
-        if (cm->gld_fb_idx != cm->lst_fb_idx) {
-          yv12_fb[cm->lst_fb_idx].flags |= VP8_GOLD_FLAG;
-          yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FLAG;
-          cm->gld_fb_idx = cm->lst_fb_idx;
-        }
-      } else { /* if (cm->copy_buffer_to_gf == 2) */
-        if (cm->alt_fb_idx != cm->gld_fb_idx) {
-          yv12_fb[cm->alt_fb_idx].flags |= VP8_GOLD_FLAG;
-          yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FLAG;
-          cm->gld_fb_idx = cm->alt_fb_idx;
-        }
-      }
     }
   }
 
@@ -3054,10 +3017,6 @@ static void encode_frame_to_data_rate
     cpi->per_frame_bandwidth = cpi->twopass.gf_bits;                           // Per frame bit target for the alt ref frame
     cpi->target_bandwidth = cpi->twopass.gf_bits * cpi->output_frame_rate;      // per second target bitrate
   }
-
-  // Default turn off buffer to buffer copying
-  cm->copy_buffer_to_gf = 0;
-  cm->copy_buffer_to_arf = 0;
 
   // Clear zbin over-quant value and mode boost values.
   cpi->zbin_over_quant = 0;
@@ -4153,7 +4112,6 @@ static int frame_is_reference(const VP8_COMP *cpi) {
 
   return cm->frame_type == KEY_FRAME || cm->refresh_last_frame
          || cm->refresh_golden_frame || cm->refresh_alt_ref_frame
-         || cm->copy_buffer_to_gf || cm->copy_buffer_to_arf
          || cm->refresh_entropy_probs
          || xd->mode_ref_lf_delta_update
          || xd->update_mb_segmentation_map || xd->update_mb_segmentation_data;
