@@ -63,7 +63,6 @@ extern "C"
     YUV_TYPE clrtype;
 
     int corrupted;
-    int flags;
   } YV12_BUFFER_CONFIG;
 
   int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height, int border);

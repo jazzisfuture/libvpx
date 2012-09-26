@@ -2838,36 +2838,22 @@ static BOOL recode_loop_test(VP8_COMP *cpi,
 }
 
 void update_reference_frames(VP8_COMMON *cm) {
-  YV12_BUFFER_CONFIG *yv12_fb = cm->yv12_fb;
-
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
 
   if (cm->frame_type == KEY_FRAME) {
-    yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FLAG | VP8_ALT_FLAG;
-
-    yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FLAG;
-    yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALT_FLAG;
-
-    cm->alt_fb_idx = cm->gld_fb_idx = cm->new_fb_idx;
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
   } else { /* For non key frames */
-    if (cm->refresh_alt_ref_frame) {
-      cm->yv12_fb[cm->new_fb_idx].flags |= VP8_ALT_FLAG;
-      cm->yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALT_FLAG;
-      cm->alt_fb_idx = cm->new_fb_idx;
-    }
-    if (cm->refresh_golden_frame) {
-      cm->yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FLAG;
-      cm->yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FLAG;
-      cm->gld_fb_idx = cm->new_fb_idx;
-    }
+    if (cm->refresh_alt_ref_frame)
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
+
+    if (cm->refresh_golden_frame)
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
   }
 
-  if (cm->refresh_last_frame) {
-    cm->yv12_fb[cm->new_fb_idx].flags |= VP8_LAST_FLAG;
-    cm->yv12_fb[cm->lst_fb_idx].flags &= ~VP8_LAST_FLAG;
-    cm->lst_fb_idx = cm->new_fb_idx;
-  }
+  if (cm->refresh_last_frame)
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->lst_fb_idx, cm->new_fb_idx);
 }
 
 void loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm) {
@@ -4273,23 +4259,18 @@ int vp8_get_compressed_data(VP8_PTR ptr, unsigned int *frame_flags, unsigned lon
 
 #endif
   /* find a free buffer for the new frame */
-  {
-    int i = 0;
-    for (; i < NUM_YV12_BUFFERS; i++) {
-      if (!cm->yv12_fb[i].flags) {
-        cm->new_fb_idx = i;
-        break;
-      }
-    }
+  cm->new_fb_idx = get_free_fb(cm);
 
-    assert(i < NUM_YV12_BUFFERS);
-  }
   if (cpi->pass == 1) {
     Pass1Encode(cpi, size, dest, frame_flags);
   } else if (cpi->pass == 2) {
     Pass2Encode(cpi, size, dest, frame_flags);
   } else
     encode_frame_to_data_rate(cpi, size, dest, frame_flags);
+
+  /* Release the reference to the new frame */
+  cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
+  cm->new_fb_idx = INT_MAX;
 
   if (cm->refresh_entropy_probs) {
     if (cm->refresh_alt_ref_frame)

@@ -35,8 +35,6 @@
 
 extern void vp8_init_loop_filter(VP8_COMMON *cm);
 extern void vp8cx_init_de_quantizer(VP8D_COMP *pbi);
-static int get_free_fb(VP8_COMMON *cm);
-static void ref_cnt_fb(int *buf, int *idx, int new_idx);
 
 #if CONFIG_DEBUG
 void vp8_recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
@@ -244,26 +242,6 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_PTR ptr, VP8_REFFRAME ref_frame_flag, Y
 extern void vp8_push_neon(int64_t *store);
 extern void vp8_pop_neon(int64_t *store);
 #endif
-
-static int get_free_fb(VP8_COMMON *cm) {
-  int i;
-  for (i = 0; i < NUM_YV12_BUFFERS; i++)
-    if (cm->fb_idx_ref_cnt[i] == 0)
-      break;
-
-  assert(i < NUM_YV12_BUFFERS);
-  cm->fb_idx_ref_cnt[i] = 1;
-  return i;
-}
-
-static void ref_cnt_fb(int *buf, int *idx, int new_idx) {
-  if (buf[*idx] > 0)
-    buf[*idx]--;
-
-  *idx = new_idx;
-
-  buf[new_idx]++;
-}
 
 /* If any buffer copy / swapping is signalled it should be done here. */
 static int swap_frame_buffers(VP8_COMMON *cm) {

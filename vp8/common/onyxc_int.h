@@ -39,7 +39,7 @@ void vp8_initialize_common(void);
 
 #define QINDEX_RANGE (MAXQ + 1)
 
-#define NUM_YV12_BUFFERS 4
+#define NUM_YV12_BUFFERS 9
 
 #define COMP_PRED_CONTEXTS   2
 
@@ -302,5 +302,26 @@ typedef struct VP8Common {
 #endif
 
 } VP8_COMMON;
+
+static int get_free_fb(VP8_COMMON *cm) {
+  int i;
+  for (i = 0; i < NUM_YV12_BUFFERS; i++)
+    if (cm->fb_idx_ref_cnt[i] == 0)
+      break;
+
+  assert(i < NUM_YV12_BUFFERS);
+  cm->fb_idx_ref_cnt[i] = 1;
+  return i;
+}
+
+static void ref_cnt_fb(int *buf, int *idx, int new_idx) {
+  if (buf[*idx] > 0)
+    buf[*idx]--;
+
+  *idx = new_idx;
+
+  buf[new_idx]++;
+}
+
 
 #endif
