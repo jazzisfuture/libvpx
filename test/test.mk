@@ -32,6 +32,7 @@ ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),yesyes)
 LIBVPX_TEST_SRCS-yes                   += boolcoder_test.cc
 endif
 
+LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += subtract_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += fdct4x4_test.cc
 LIBVPX_TEST_SRCS-yes                   += idctllm_test.cc
 LIBVPX_TEST_SRCS-yes                   += intrapred_test.cc
