@@ -66,10 +66,12 @@ void vp8_entropy_mode_init(void);
 struct VP8Common;
 void vp8_init_mbmode_probs(struct VP8Common *x);
 extern void vp8_init_mode_contexts(struct VP8Common *pc);
-extern void vp8_update_mode_context(struct VP8Common *pc);;
+extern void vp8_update_mode_context(struct VP8Common *pc,
+                                    int use_alt_ref_cnts);
 extern void vp8_accum_mv_refs(struct VP8Common *pc,
                               MB_PREDICTION_MODE m,
-                              const int ct[4]);
+                              const int ct[4],
+                              int use_alt_ref_cnts);
 
 void vp8_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES - 1]);
 void vp8_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]);

@@ -2034,8 +2034,8 @@ int main(int argc, const char **argv_) {
         }
       }
       if (test_decode && test_decode_frame) {
-        ref_enc.frame_type = VP8_LAST_FRAME;
-        ref_dec.frame_type = VP8_LAST_FRAME;
+        ref_enc.ref_index = 0;
+        ref_dec.ref_index = 0;
 
         vpx_codec_control(&encoder,
                           VP8_COPY_REFERENCE,

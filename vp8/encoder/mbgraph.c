@@ -465,7 +465,7 @@ void vp8_update_mbgraph_stats
 ) {
   VP8_COMMON *const cm = &cpi->common;
   int i, n_frames = vp8_lookahead_depth(cpi->lookahead);
-  YV12_BUFFER_CONFIG *golden_ref = &cm->yv12_fb[cm->gld_fb_idx];
+  YV12_BUFFER_CONFIG *golden_ref = &cm->yv12_fb[cm->active_ref_idx[GLD_FB_IDX]];
 
   // we need to look ahead beyond where the ARF transitions into
   // being a GF - so exit if we don't look ahead beyond that

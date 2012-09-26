@@ -2645,8 +2645,8 @@ void vp8_cal_sad(VP8_COMP *cpi, MACROBLOCKD *xd, MACROBLOCK *x, int recon_yoffse
 
   if (cpi->common.last_frame_type != KEY_FRAME) {
     // calculate sad for last frame 5 nearby MBs.
-    unsigned char *pre_y_buffer = cpi->common.yv12_fb[cpi->common.lst_fb_idx].y_buffer + recon_yoffset;
-    int pre_y_stride = cpi->common.yv12_fb[cpi->common.lst_fb_idx].y_stride;
+    unsigned char *pre_y_buffer = cpi->common.yv12_fb[cpi->common.active_ref_idx[LST_FB_IDX]].y_buffer + recon_yoffset;
+    int pre_y_stride = cpi->common.yv12_fb[cpi->common.active_ref_idx[LST_FB_IDX]].y_stride;
 
     if (xd->mb_to_top_edge == 0) near_sad[4] = INT_MAX;
     if (xd->mb_to_left_edge == 0) near_sad[5] = INT_MAX;
@@ -3149,7 +3149,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   }
 
   if (cpi->ref_frame_flags & VP8_LAST_FLAG) {
-    setup_buffer_inter(cpi, x, cpi->common.lst_fb_idx, LAST_FRAME,
+    setup_buffer_inter(cpi, x, cpi->common.active_ref_idx[LST_FB_IDX], LAST_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
 #if CONFIG_NEWBESTREFMV
@@ -3159,7 +3159,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   }
 
   if (cpi->ref_frame_flags & VP8_GOLD_FLAG) {
-    setup_buffer_inter(cpi, x, cpi->common.gld_fb_idx, GOLDEN_FRAME,
+    setup_buffer_inter(cpi, x, cpi->common.active_ref_idx[GLD_FB_IDX], GOLDEN_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
 #if CONFIG_NEWBESTREFMV
@@ -3169,7 +3169,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
   }
 
   if (cpi->ref_frame_flags & VP8_ALT_FLAG) {
-    setup_buffer_inter(cpi, x, cpi->common.alt_fb_idx, ALTREF_FRAME,
+    setup_buffer_inter(cpi, x, cpi->common.active_ref_idx[ALT_FB_IDX], ALTREF_FRAME,
                        recon_yoffset, recon_uvoffset, frame_mv[NEARESTMV],
                        frame_mv[NEARMV], frame_best_ref_mv,
 #if CONFIG_NEWBESTREFMV
@@ -4203,7 +4203,7 @@ int64_t vp8_rd_pick_inter_mode_sb(VP8_COMP *cpi, MACROBLOCK *x,
   unsigned char *u_buffer[4];
   unsigned char *v_buffer[4];
   static const int flag_list[4] = { 0, VP8_LAST_FLAG, VP8_GOLD_FLAG, VP8_ALT_FLAG };
-  int idx_list[4] = { 0, cpi->common.lst_fb_idx, cpi->common.gld_fb_idx, cpi->common.alt_fb_idx };
+  int idx_list[4] = { 0, cpi->common.active_ref_idx[LST_FB_IDX], cpi->common.active_ref_idx[GLD_FB_IDX], cpi->common.active_ref_idx[ALT_FB_IDX] };
   int mdcounts[4];
   int near_sadidx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int saddone = 0;
