@@ -1081,7 +1081,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
             {
               write_mv_ref(w, mode, mv_ref_p);
             }
-            vp8_accum_mv_refs(&cpi->common, mode, ct);
+            vp8_accum_mv_refs(&cpi->common, mode, ct, cpi->refresh_alt_ref_frame);
           }
 
 #if CONFIG_PRED_FILTER
@@ -2366,8 +2366,9 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
   // When there is a key frame all reference buffers are updated using the new key frame
   if (pc->frame_type != KEY_FRAME) {
     // Should the GF or ARF be updated using the transmitted frame or buffer
-    vp8_write_bit(bc, pc->refresh_golden_frame);
-    vp8_write_bit(bc, pc->refresh_alt_ref_frame);
+    vp8_write_bit(bc, cpi->refresh_alt_ref_frame);
+    vp8_write_bit(bc, cpi->refresh_golden_frame);
+    vp8_write_bit(bc, cpi->refresh_last_frame);
 
     // Indicate reference frame sign bias for Golden and ARF frames (always 0 for last frame buffer)
     vp8_write_bit(bc, pc->ref_frame_sign_bias[GOLDEN_FRAME]);
@@ -2405,9 +2406,6 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
   }
 
   vp8_write_bit(bc, pc->refresh_entropy_probs);
-
-  if (pc->frame_type != KEY_FRAME)
-    vp8_write_bit(bc, pc->refresh_last_frame);
 
 #ifdef ENTROPY_STATS
   if (pc->frame_type == INTER_FRAME)
@@ -2461,7 +2459,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
 #endif
   } else {
     pack_inter_mode_mvs(cpi);
-    vp8_update_mode_context(&cpi->common);
+    vp8_update_mode_context(&cpi->common, cpi->refresh_alt_ref_frame);
 
 #ifdef ENTROPY_STATS
     active_section = 1;

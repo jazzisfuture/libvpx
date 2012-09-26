@@ -168,22 +168,11 @@ void vp8dx_remove_decompressor(VP8D_PTR ptr) {
 }
 
 
-vpx_codec_err_t vp8dx_get_reference(VP8D_PTR ptr, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd) {
+vpx_codec_err_t vp8dx_get_reference(VP8D_PTR ptr, int ref_index,
+                                    YV12_BUFFER_CONFIG *sd) {
   VP8D_COMP *pbi = (VP8D_COMP *) ptr;
   VP8_COMMON *cm = &pbi->common;
-  int ref_fb_idx;
-
-  if (ref_frame_flag == VP8_LAST_FLAG)
-    ref_fb_idx = cm->lst_fb_idx;
-  else if (ref_frame_flag == VP8_GOLD_FLAG)
-    ref_fb_idx = cm->gld_fb_idx;
-  else if (ref_frame_flag == VP8_ALT_FLAG)
-    ref_fb_idx = cm->alt_fb_idx;
-  else {
-    vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
-                       "Invalid reference frame");
-    return pbi->common.error.error_code;
-  }
+  int ref_fb_idx = cm->active_ref_idx[ref_index];
 
   if (cm->yv12_fb[ref_fb_idx].y_height != sd->y_height ||
       cm->yv12_fb[ref_fb_idx].y_width != sd->y_width ||
@@ -198,23 +187,12 @@ vpx_codec_err_t vp8dx_get_reference(VP8D_PTR ptr, VP8_REFFRAME ref_frame_flag, Y
 }
 
 
-vpx_codec_err_t vp8dx_set_reference(VP8D_PTR ptr, VP8_REFFRAME ref_frame_flag, YV12_BUFFER_CONFIG *sd) {
+vpx_codec_err_t vp8dx_set_reference(VP8D_PTR ptr, int ref_index,
+                                    YV12_BUFFER_CONFIG *sd) {
   VP8D_COMP *pbi = (VP8D_COMP *) ptr;
   VP8_COMMON *cm = &pbi->common;
-  int *ref_fb_ptr = NULL;
+  int *ref_fb_ptr = &cm->active_ref_idx[ref_index];
   int free_fb;
-
-  if (ref_frame_flag == VP8_LAST_FLAG)
-    ref_fb_ptr = &cm->lst_fb_idx;
-  else if (ref_frame_flag == VP8_GOLD_FLAG)
-    ref_fb_ptr = &cm->gld_fb_idx;
-  else if (ref_frame_flag == VP8_ALT_FLAG)
-    ref_fb_ptr = &cm->alt_fb_idx;
-  else {
-    vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
-                       "Invalid reference frame");
-    return pbi->common.error.error_code;
-  }
 
   if (cm->yv12_fb[*ref_fb_ptr].y_height != sd->y_height ||
       cm->yv12_fb[*ref_fb_ptr].y_width != sd->y_width ||
@@ -244,28 +222,19 @@ extern void vp8_pop_neon(int64_t *store);
 #endif
 
 /* If any buffer copy / swapping is signalled it should be done here. */
-static int swap_frame_buffers(VP8_COMMON *cm) {
-  int err = 0;
+static int swap_frame_buffers(VP8D_COMP *pbi) {
+  VP8_COMMON *cm = &pbi->common;
+  int ref_index = 0, mask;
 
-  /* The alternate reference frame or golden frame can be updated
-   *  using the new frame.
-   */
-  if (cm->refresh_golden_frame)
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
-
-  if (cm->refresh_alt_ref_frame)
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
-
-  if (cm->refresh_last_frame) {
-    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->lst_fb_idx, cm->new_fb_idx);
-
-    cm->frame_to_show = &cm->yv12_fb[cm->lst_fb_idx];
-  } else
-    cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
-
+  for(mask = pbi->refresh_frame_flags; mask; mask >>= 1)
+  {
+    if (mask & 1)
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[ref_index], cm->new_fb_idx);
+    ref_index++;
+  }
+  cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
   cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
-
-  return err;
+  return 0;
 }
 
 /*
@@ -310,7 +279,7 @@ int vp8dx_receive_compressed_data(VP8D_PTR ptr, unsigned long size, const unsign
      * any of the reference buffers, but we act conservative and
      * mark only the last buffer as corrupted.
      */
-    cm->yv12_fb[cm->lst_fb_idx].corrupted = 1;
+    cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
   }
 
 #if HAVE_ARMV7
@@ -339,7 +308,7 @@ int vp8dx_receive_compressed_data(VP8D_PTR ptr, unsigned long size, const unsign
      * any of the reference buffers, but we act conservative and
      * mark only the last buffer as corrupted.
      */
-    cm->yv12_fb[cm->lst_fb_idx].corrupted = 1;
+    cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
 
     if (cm->fb_idx_ref_cnt[cm->new_fb_idx] > 0)
       cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
@@ -367,7 +336,7 @@ int vp8dx_receive_compressed_data(VP8D_PTR ptr, unsigned long size, const unsign
   }
 
   {
-    if (swap_frame_buffers(cm)) {
+    if (swap_frame_buffers(pbi)) {
 #if HAVE_ARMV7
 #if CONFIG_RUNTIME_CPU_DETECT
       if (cm->rtcd.flags & HAS_NEON)

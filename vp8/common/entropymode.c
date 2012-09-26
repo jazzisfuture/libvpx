@@ -417,10 +417,11 @@ void vp8_init_mode_contexts(VP8_COMMON *pc) {
 
 void vp8_accum_mv_refs(VP8_COMMON *pc,
                        MB_PREDICTION_MODE m,
-                       const int ct[4]) {
+                       const int ct[4],
+                       int use_alt_ref_cnts) {
   int (*mv_ref_ct)[4][2];
 
-  if (pc->refresh_alt_ref_frame)
+  if (use_alt_ref_cnts)
     mv_ref_ct = pc->fc.mv_ref_ct_a;
   else
     mv_ref_ct = pc->fc.mv_ref_ct;
@@ -449,12 +450,12 @@ void vp8_accum_mv_refs(VP8_COMMON *pc,
 
 #define MVREF_COUNT_SAT 20
 #define MVREF_MAX_UPDATE_FACTOR 144
-void vp8_update_mode_context(VP8_COMMON *pc) {
+void vp8_update_mode_context(VP8_COMMON *pc, int use_alt_ref_cnts) {
   int i, j;
   int (*mv_ref_ct)[4][2];
   int (*mode_context)[4];
 
-  if (pc->refresh_alt_ref_frame) {
+  if (use_alt_ref_cnts) {
     mv_ref_ct = pc->fc.mv_ref_ct_a;
     mode_context = pc->fc.mode_context_a;
   } else {

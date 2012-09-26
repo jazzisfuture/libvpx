@@ -87,6 +87,7 @@ typedef struct VP8Decompressor {
   vp8_dequant_rtcd_vtable_t        dequant;
 #endif
 
+  int refresh_frame_flags;
   vp8_prob prob_skip_false;
 
   int decoded_key_frame;

@@ -823,12 +823,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
 
       /* Select the appropriate reference frame for this MB */
-      if (ref_frame == LAST_FRAME)
-        ref_fb_idx = cm->lst_fb_idx;
-      else if (ref_frame == GOLDEN_FRAME)
-        ref_fb_idx = cm->gld_fb_idx;
-      else
-        ref_fb_idx = cm->alt_fb_idx;
+      ref_fb_idx = cm->active_ref_idx[ref_frame - 1];
 
       recon_y_stride = cm->yv12_fb[ref_fb_idx].y_stride  ;
       recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
@@ -870,7 +865,11 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #endif
       mbmi->mode = read_mv_ref(bc, mv_ref_p);
 
-      vp8_accum_mv_refs(&pbi->common, mbmi->mode, rct);
+      // TODO(jkoleszar) -- Not sure what the right thing to do here is when
+      // more references are available. For now, just hard code the index
+      // of the alt ref frame used by the encoder to keep the existing
+      // behavior
+      vp8_accum_mv_refs(&pbi->common, mbmi->mode, rct, pbi->refresh_frame_flags & 0x4);
     }
 
 #if CONFIG_PRED_FILTER
@@ -914,13 +913,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       if (mbmi->second_ref_frame) {
         int second_ref_fb_idx;
         /* Select the appropriate reference frame for this MB */
-        if (mbmi->second_ref_frame == LAST_FRAME)
-          second_ref_fb_idx = cm->lst_fb_idx;
-        else if (mbmi->second_ref_frame ==
-          GOLDEN_FRAME)
-          second_ref_fb_idx = cm->gld_fb_idx;
-        else
-          second_ref_fb_idx = cm->alt_fb_idx;
+        second_ref_fb_idx = cm->active_ref_idx[mbmi->second_ref_frame - 1];
 
         xd->second_pre.y_buffer =
           cm->yv12_fb[second_ref_fb_idx].y_buffer + recon_yoffset;
