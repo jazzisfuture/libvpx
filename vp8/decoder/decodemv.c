@@ -23,15 +23,9 @@
 #include <assert.h>
 #endif
 
-// #define DEBUG_DEC_MV
-#ifdef DEBUG_DEC_MV
-int dec_mvcount = 0;
-#endif
-
 static int vp8_read_bmode(vp8_reader *bc, const vp8_prob *p) {
   return vp8_treed_read(bc, vp8_bmode_tree, p);
 }
-
 
 static int vp8_read_ymode(vp8_reader *bc, const vp8_prob *p) {
   return vp8_treed_read(bc, vp8_ymode_tree, p);
@@ -191,7 +185,7 @@ static int read_nmv_component(vp8_reader *r,
   o = d << 3;
 
   z = vp8_get_mv_mag(c, o);
-  v = (s ? -(z + 1) : (z + 1));
+  v = (s ? -(z + 4) : (z + 4));
   return v;
 }
 
@@ -203,6 +197,7 @@ static int read_nmv_component_fp(vp8_reader *r,
   int s, z, c, o, d, e, f;
   s = v < 0;
   z = (s ? -v : v) - 1;       /* magnitude - 1 */
+  z &= (~7);
 
   c = vp8_get_mv_class(z, &o);
   d = o >> 3;
@@ -226,6 +221,9 @@ static int read_nmv_component_fp(vp8_reader *r,
   }
   z = vp8_get_mv_mag(c, o);
   v = (s ? -(z + 1) : (z + 1));
+#ifdef ABSOLUTE_FPEL
+  v = vp8_inv_absolute_component(v, rv, usehp);
+#endif
   return v;
 }
 
@@ -253,7 +251,12 @@ static void read_nmv_fp(vp8_reader *r, MV *mv, const MV *ref,
     mv->col = read_nmv_component_fp(r, mv->col, ref->col, &mvctx->comps[1],
                                     usehp);
   }
-  //printf("  %d: %d %d ref: %d %d\n", usehp, mv->row, mv-> col, ref->row, ref->col);
+  /*
+  printf("mv (%d) %d %d [%d %d] -> %d %d\n",
+         usehp, mv->row, mv->col, ref->row, ref->col,
+         vp8_absolute_component(mv->row, ref->row, usehp),
+         vp8_absolute_component(mv->col, ref->col, usehp));
+         */
 }
 
 static void update_nmv(vp8_reader *bc, vp8_prob *const p,
@@ -349,12 +352,6 @@ static int read_mvcomponent(vp8_reader *r, const MV_CONTEXT *mvc) {
 static void read_mv(vp8_reader *r, MV *mv, const MV_CONTEXT *mvc) {
   mv->row = (short)(read_mvcomponent(r,   mvc) << 1);
   mv->col = (short)(read_mvcomponent(r, ++mvc) << 1);
-#ifdef DEBUG_DEC_MV
-  int i;
-  printf("%d (np): %d %d\n", dec_mvcount++, mv->row, mv->col);
-  // for (i=0; i<MVPcount;++i) printf("  %d", (&mvc[-1])->prob[i]); printf("\n");
-  // for (i=0; i<MVPcount;++i) printf("  %d", (&mvc[0])->prob[i]); printf("\n");
-#endif
 }
 
 static void read_mvcontexts(vp8_reader *bc, MV_CONTEXT *mvc) {
@@ -406,12 +403,6 @@ static int read_mvcomponent_hp(vp8_reader *r, const MV_CONTEXT_HP *mvc) {
 static void read_mv_hp(vp8_reader *r, MV *mv, const MV_CONTEXT_HP *mvc) {
   mv->row = (short)(read_mvcomponent_hp(r,   mvc));
   mv->col = (short)(read_mvcomponent_hp(r, ++mvc));
-#ifdef DEBUG_DEC_MV
-  int i;
-  printf("%d (hp): %d %d\n", dec_mvcount++, mv->row, mv->col);
-  // for (i=0; i<MVPcount_hp;++i) printf("  %d", (&mvc[-1])->prob[i]); printf("\n");
-  // for (i=0; i<MVPcount_hp;++i) printf("  %d", (&mvc[0])->prob[i]); printf("\n");
-#endif
 }
 
 static void read_mvcontexts_hp(vp8_reader *bc, MV_CONTEXT_HP *mvc) {

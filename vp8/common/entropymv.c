@@ -118,11 +118,45 @@ int vp8_get_mv_mag(MV_CLASS_TYPE c, int offset) {
   return mv_class_base(c) + offset;
 }
 
+#ifdef ABSOLUTE_FPEL
+#define absolute_fpel(dif_fpel, ref_fpel) \
+    (((dif_fpel) + (ref_fpel)) & 7)
+
+#define inv_absolute_fpel(abs_fpel, ref_fpel) \
+    (((abs_fpel) - (ref_fpel)) & 7)
+
+inline int vp8_absolute_component(int diff, int ref, int usehp) {
+  if (diff == 0) {
+    return 0;
+  } else if (diff > 0) {
+    return (((diff - 1) & (~7)) | absolute_fpel(diff - 1, ref + 1)) + 1
+        + !usehp;
+  } else {
+    return ((diff & (~7)) | absolute_fpel(diff, ref));
+  }
+}
+
+inline int vp8_inv_absolute_component(int abs, int ref, int usehp) {
+  if (abs == 0) {
+    return 0;
+  } else if (abs > 0) {
+    abs -= !usehp;
+    return (((abs - 1) & (~7)) | inv_absolute_fpel(abs - 1, ref + 1)) + 1;
+  } else {
+    return ((abs & (~7)) | inv_absolute_fpel(abs, ref));
+  }
+}
+#endif
+
 static void increment_nmv_component_count(int v,
+                                          int r,
                                           nmv_component_counts *mvcomp,
                                           int incr,
                                           int usehp) {
   assert (v != 0);            /* should not be zero */
+#ifdef ABSOLUTE_FPEL
+  v = vp8_absolute_component(v, r, usehp);
+#endif
   mvcomp->mvcount[MV_MAX + v] += incr;
 }
 
@@ -201,10 +235,12 @@ void vp8_increment_nmv(const MV *mv, const MV *ref, nmv_context_counts *mvctx,
   mvctx->joints[j]++;
   usehp = usehp && vp8_use_nmv_hp(ref);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    increment_nmv_component_count(mv->row, &mvctx->comps[0], 1, usehp);
+    increment_nmv_component_count(mv->row, ref->row, &mvctx->comps[0], 1,
+                                  usehp);
   }
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
-    increment_nmv_component_count(mv->col, &mvctx->comps[1], 1, usehp);
+    increment_nmv_component_count(mv->col, ref->col, &mvctx->comps[1], 1,
+                                  usehp);
   }
 }
 

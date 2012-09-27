@@ -29,6 +29,7 @@ int vp8_use_nmv_hp(const MV *ref);
 
 #define VP8_NMV_UPDATE_PROB  255
 //#define MV_GROUP_UPDATE
+#define ABSOLUTE_FPEL
 
 #define LOW_PRECISION_MV_UPDATE  /* Use 7 bit forward update */
 
@@ -128,6 +129,11 @@ void vp8_counts_to_nmv_context(
     unsigned int (*branch_ct_fp)[4 - 1][2],
     unsigned int (*branch_ct_class0_hp)[2],
     unsigned int (*branch_ct_hp)[2]);
+
+#ifdef ABSOLUTE_FPEL
+inline int vp8_absolute_component(int diff, int ref, int usehp);
+inline int vp8_inv_absolute_component(int diff, int ref, int usehp);
+#endif
 
 #else  /* CONFIG_NEWMVENTROPY */
 

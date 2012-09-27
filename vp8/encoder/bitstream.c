@@ -37,7 +37,7 @@
 unsigned __int64 Sectionbits[500];
 #endif
 
-//int final_packing = 0;
+int final_packing = 0;
 
 #ifdef ENTROPY_STATS
 int intra_mode_stats [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES];
@@ -839,7 +839,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
   int row_delta[4] = { 0, +1,  0, -1};
   int col_delta[4] = { +1, -1, +1, +1};
 
-  //final_packing = !cpi->dummy_packing;
+  final_packing = !cpi->dummy_packing;
 
   cpi->mb.partition_info = cpi->mb.pi;
 
