@@ -20,7 +20,7 @@
 extern unsigned int active_section;
 #endif
 
-//extern int final_packing;
+extern int final_packing;
 
 #if CONFIG_NEWMVENTROPY
 
@@ -62,6 +62,9 @@ static void encode_nmv_component_fp(vp8_writer *w,
                                     const nmv_component *mvcomp,
                                     int usehp) {
   int s, z, c, o, d, f, e;
+#ifdef ABSOLUTE_FPEL
+  v = vp8_absolute_component(v, r, usehp);
+#endif
   assert (v != 0);            /* should not be zero */
   s = v < 0;
   z = (s ? -v : v) - 1;       /* magnitude - 1 */
@@ -516,7 +519,7 @@ void vp8_encode_nmv(vp8_writer *w, const MV *mv, const MV *ref,
   vp8_write_token(w, vp8_mv_joint_tree, mvctx->joints,
                   vp8_mv_joint_encodings + j);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component(w, mv->row, ref->col, &mvctx->comps[0]);
+    encode_nmv_component(w, mv->row, ref->row, &mvctx->comps[0]);
   }
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
     encode_nmv_component(w, mv->col, ref->col, &mvctx->comps[1]);
@@ -533,6 +536,14 @@ void vp8_encode_nmv_fp(vp8_writer *w, const MV *mv, const MV *ref,
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
     encode_nmv_component_fp(w, mv->col, ref->col, &mvctx->comps[1], usehp);
   }
+  /*
+  if (final_packing) {
+    printf("mv (%d) %d %d [%d %d] -> %d %d\n",
+           usehp, mv->row, mv->col, ref->row, ref->col,
+           vp8_absolute_component(mv->row, ref->row, usehp),
+           vp8_absolute_component(mv->col, ref->col, usehp));
+  }
+  */
 }
 
 void vp8_build_nmv_cost_table(int *mvjoint,

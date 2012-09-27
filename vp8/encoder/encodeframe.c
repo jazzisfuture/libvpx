@@ -1297,6 +1297,7 @@ static void encode_frame_internal(VP8_COMP *cpi) {
   TOKENEXTRA *tp = cpi->tok;
   int totalrate;
 
+  // printf("encode_frame_internal\n");
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
   // this frame which may be updated with each iteration of the recode loop.

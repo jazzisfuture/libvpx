@@ -48,6 +48,10 @@ int vp8_mv_bit_cost(int_mv *mv, int_mv *ref, DEC_MVCOSTS,
   v.row = (mv->as_mv.row - ref->as_mv.row);
   v.col = (mv->as_mv.col - ref->as_mv.col);
 #if CONFIG_NEWMVENTROPY
+#ifdef ABSOLUTE_FPEL
+  v.row = vp8_absolute_component(v.row, ref->as_mv.row, ishp);
+  v.col = vp8_absolute_component(v.col, ref->as_mv.col, ishp);
+#endif
   return ((mvjcost[vp8_get_mv_joint(v)] +
            mvcost[0][v.row] + mvcost[1][v.col]) *
           Weight) >> 7;
@@ -65,6 +69,10 @@ static int mv_err_cost(int_mv *mv, int_mv *ref, DEC_MVCOSTS,
     v.row = (mv->as_mv.row - ref->as_mv.row);
     v.col = (mv->as_mv.col - ref->as_mv.col);
 #if CONFIG_NEWMVENTROPY
+#ifdef ABSOLUTE_FPEL
+    v.row = vp8_absolute_component(v.row, ref->as_mv.row, ishp);
+    v.col = vp8_absolute_component(v.col, ref->as_mv.col, ishp);
+#endif
     return ((mvjcost[vp8_get_mv_joint(v)] +
              mvcost[0][v.row] + mvcost[1][v.col]) *
             error_per_bit + 128) >> 8;
@@ -84,6 +92,10 @@ static int mvsad_err_cost(int_mv *mv, int_mv *ref, DEC_MVSADCOSTS,
     v.row = (mv->as_mv.row - ref->as_mv.row);
     v.col = (mv->as_mv.col - ref->as_mv.col);
 #if CONFIG_NEWMVENTROPY
+#ifdef ABSOLUTE_FPEL
+    v.row = vp8_absolute_component(v.row, ref->as_mv.row, 1);
+    v.col = vp8_absolute_component(v.col, ref->as_mv.col, 1);
+#endif
     return ((mvjsadcost[vp8_get_mv_joint(v)] +
              mvsadcost[0][v.row] + mvsadcost[1][v.col]) *
             error_per_bit + 128) >> 8;
