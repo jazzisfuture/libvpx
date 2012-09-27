@@ -1120,6 +1120,8 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi)
     CHECK_MEM_ERROR(cpi->segmentation_map,
                     vpx_calloc(cm->mb_rows * cm->mb_cols,
                     sizeof(*cpi->segmentation_map)));
+    cpi->cyclic_refresh_mode_index = 0;
+
     vpx_free(cpi->active_map);
     CHECK_MEM_ERROR(cpi->active_map,
                     vpx_calloc(cm->mb_rows * cm->mb_cols,
