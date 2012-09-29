@@ -12,6 +12,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += altref_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += config_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += error_resilience_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += i420_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
@@ -35,6 +36,7 @@ endif
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += fdct4x4_test.cc
 LIBVPX_TEST_SRCS-yes                   += idctllm_test.cc
 LIBVPX_TEST_SRCS-yes                   += intrapred_test.cc
+
 LIBVPX_TEST_SRCS-$(CONFIG_POSTPROC)    += pp_filter_test.cc
 LIBVPX_TEST_SRCS-yes                   += sad_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += set_roi.cc

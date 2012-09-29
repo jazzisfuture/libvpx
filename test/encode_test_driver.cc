@@ -44,7 +44,8 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
-    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_, 0);
+    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_,
+                             VPX_CODEC_USE_PSNR);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
 
@@ -123,6 +124,7 @@ static bool compare_img(const vpx_image_t *img1,
 }
 
 void EncoderTest::RunLoop(VideoSource *video) {
+  TwopassStatsStore stats;
 #if CONFIG_VP8_DECODER
   vpx_codec_dec_cfg_t dec_cfg = {0};
 #endif
@@ -137,7 +139,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
       cfg_.g_pass = VPX_RC_LAST_PASS;
 
     BeginPassHook(pass);
-    Encoder encoder(cfg_, deadline_, &stats_);
+    Encoder encoder(cfg_, deadline_, &stats);
 #if CONFIG_VP8_DECODER
     Decoder decoder(dec_cfg);
     bool has_cxdata = false;
@@ -155,8 +157,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
       while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
         again = true;
 
-        if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
-          continue;
+      if (pkt->kind == VPX_CODEC_PSNR_PKT) {
+        PSNRPktHook(pkt);
+        continue;
+      } else if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
+        continue;
 #if CONFIG_VP8_DECODER
         has_cxdata = true;
         decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
