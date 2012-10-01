@@ -176,7 +176,6 @@ class EncoderTest {
   vpx_codec_enc_cfg_t  cfg_;
   unsigned int         passes_;
   unsigned long        deadline_;
-  TwopassStatsStore    stats_;
   unsigned long        flags_;
   vpx_codec_pts_t      last_pts_;
 };

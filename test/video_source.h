@@ -41,6 +41,11 @@ class VideoSource {
 
   // Get the current frame counter, starting at 0.
   virtual unsigned int frame() const = 0;
+
+  // Get the current file limit.
+  virtual unsigned int limit() const = 0;
+
+
 };
 
 
@@ -68,6 +73,8 @@ class DummyVideoSource : public VideoSource {
 
   // Models a stream where Timebase = 1/FPS, so pts == frame.
   virtual vpx_codec_pts_t pts() const { return frame_; }
+
+  virtual unsigned int limit() const { return limit_; }
 
   virtual unsigned long duration() const { return 1; }
 
