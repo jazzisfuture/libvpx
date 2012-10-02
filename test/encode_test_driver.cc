@@ -16,9 +16,10 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 namespace libvpx_test {
-void Encoder::EncodeFrame(VideoSource *video, unsigned long flags) {
+void Encoder::EncodeFrame(VideoSource *video, unsigned long init_flags,
+                          unsigned long frame_flags) {
   if (video->img())
-    EncodeFrameInternal(*video, flags);
+    EncodeFrameInternal(*video, init_flags, frame_flags);
   else
     Flush();
 
@@ -34,7 +35,8 @@ void Encoder::EncodeFrame(VideoSource *video, unsigned long flags) {
 }
 
 void Encoder::EncodeFrameInternal(const VideoSource &video,
-                                  unsigned long flags) {
+                                  unsigned long init_flags,
+                                  unsigned long frame_flags) {
   vpx_codec_err_t res;
   const vpx_image_t *img = video.img();
 
@@ -44,7 +46,8 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
-    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_, 0);
+    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_,
+                             init_flags);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
 
@@ -59,7 +62,7 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
   // Encode the frame
   res = vpx_codec_encode(&encoder_,
                          video.img(), video.pts(), video.duration(),
-                         flags, deadline_);
+                         frame_flags, deadline_);
   ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
 }
 
@@ -149,7 +152,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
       PreEncodeFrameHook(video);
       PreEncodeFrameHook(video, &encoder);
-      encoder.EncodeFrame(video, flags_);
+      encoder.EncodeFrame(video, init_flags_, frame_flags_);
 
       CxDataIterator iter = encoder.GetCxData();
 

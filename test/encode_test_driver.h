@@ -96,11 +96,12 @@ class Encoder {
   }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
-  void EncodeFrame(VideoSource *video, unsigned long flags);
+  void EncodeFrame(VideoSource *video, unsigned long init_flags,
+                   unsigned long frame_flags);
 
   // Convenience wrapper for EncodeFrame()
   void EncodeFrame(VideoSource *video) {
-    EncodeFrame(video, 0);
+    EncodeFrame(video, 0, 0);
   }
 
   void Control(int ctrl_id, int arg) {
@@ -119,7 +120,8 @@ class Encoder {
   }
 
   // Encode an image
-  void EncodeFrameInternal(const VideoSource &video, unsigned long flags);
+  void EncodeFrameInternal(const VideoSource &video, unsigned long init_flags,
+                           unsigned long frame_flags);
 
   // Flush the encoder on EOS
   void Flush();
@@ -139,7 +141,8 @@ class Encoder {
 // classes directly, so that tests can be parameterized differently.
 class EncoderTest {
  protected:
-  EncoderTest() : abort_(false), flags_(0), last_pts_(0) {}
+  EncoderTest() : abort_(false), init_flags_(0), frame_flags_(0),
+                  last_pts_(0) {}
 
   virtual ~EncoderTest() {}
 
@@ -177,7 +180,8 @@ class EncoderTest {
   unsigned int         passes_;
   unsigned long        deadline_;
   TwopassStatsStore    stats_;
-  unsigned long        flags_;
+  unsigned long        init_flags_;
+  unsigned long        frame_flags_;
   vpx_codec_pts_t      last_pts_;
 };
 
