@@ -123,6 +123,7 @@ static bool compare_img(const vpx_image_t *img1,
 }
 
 void EncoderTest::RunLoop(VideoSource *video) {
+  TwopassStatsStore stats;
 #if CONFIG_VP8_DECODER
   vpx_codec_dec_cfg_t dec_cfg = {0};
 #endif
@@ -137,7 +138,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
       cfg_.g_pass = VPX_RC_LAST_PASS;
 
     BeginPassHook(pass);
-    Encoder encoder(cfg_, deadline_, &stats_);
+    Encoder encoder(cfg_, deadline_, &stats);
 #if CONFIG_VP8_DECODER
     Decoder decoder(dec_cfg);
     bool has_cxdata = false;
