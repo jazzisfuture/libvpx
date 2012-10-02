@@ -480,6 +480,31 @@ static void check_for_encode_breakout(unsigned int sse, MACROBLOCK* x)
     }
 }
 
+static int is_skin(MACROBLOCK *x)
+{
+    // Check whether a pixel in the center of the macroblock is
+    // skin colored.
+    int y = x->src.y_buffer[7 * x->src.y_stride+7];
+    int cb = x->src.u_buffer[3 * x->src.uv_stride + 3];
+    int cr = x->src.v_buffer[3 * x->src.uv_stride + 3];
+
+    x->is_skin = 0;
+    if (y < 40 || y > 220)
+    {
+      return 0;
+    }
+    if ((cr + cb >= 249) &&
+        (cb >= 100-y/10) &&
+        (cr + cb*3/4 <= 250) &&
+        (cb <= 128) &&
+        (cr - cb >= 2 + y/10))
+    {
+        x->is_skin = 1;
+        return 1;
+    }
+    return 0;
+}
+
 static int evaluate_inter_mode(unsigned int* sse, int rate2, int* distortion2,
                                VP8_COMP *cpi, MACROBLOCK *x, int rd_adj)
 {
@@ -504,9 +529,13 @@ static int evaluate_inter_mode(unsigned int* sse, int rate2, int* distortion2,
 
     this_rd = RDCOST(x->rdmult, x->rddiv, rate2, *distortion2);
 
+
     /* Adjust rd to bias to ZEROMV */
     if(this_mode == ZEROMV)
     {
+        if(x->is_skin)
+          rd_adj = 100;
+
         /* Bias to ZEROMV on LAST_FRAME reference when it is available. */
         if ((cpi->ref_frame_flags & VP8_LAST_FRAME &
             cpi->common.refresh_last_frame)
@@ -614,6 +643,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
                                   &parent_mode, &parent_ref_mv, mb_row, mb_col);
 #endif
 
+    is_skin(x);
     mode_mv = mode_mv_sb[sign_bias];
     best_ref_mv.as_int = 0;
     vpx_memset(mode_mv_sb, 0, sizeof(mode_mv_sb));

@@ -281,7 +281,8 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     mv_row = x->best_sse_mv.as_mv.row;
     mv_col = x->best_sse_mv.as_mv.col;
     motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
-    if (best_sse > SSE_THRESHOLD || motion_magnitude2
+
+    if (x->is_skin || best_sse > SSE_THRESHOLD || motion_magnitude2
            > 8 * NOISE_MOTION_THRESHOLD)
     {
         decision = COPY_BLOCK;

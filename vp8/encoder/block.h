@@ -119,6 +119,8 @@ typedef struct macroblock
     int optimize;
     int q_index;
 
+    int is_skin;
+
 #if CONFIG_TEMPORAL_DENOISING
     MB_PREDICTION_MODE best_sse_inter_mode;
     int_mv best_sse_mv;
