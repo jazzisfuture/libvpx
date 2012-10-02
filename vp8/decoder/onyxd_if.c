@@ -172,7 +172,7 @@ vpx_codec_err_t vp8dx_get_reference(VP8D_PTR ptr, int ref_index,
                                     YV12_BUFFER_CONFIG *sd) {
   VP8D_COMP *pbi = (VP8D_COMP *) ptr;
   VP8_COMMON *cm = &pbi->common;
-  int ref_fb_idx = cm->active_ref_idx[ref_index];
+  int ref_fb_idx = cm->ref_frame_map[ref_index];
 
   if (cm->yv12_fb[ref_fb_idx].y_height != sd->y_height ||
       cm->yv12_fb[ref_fb_idx].y_width != sd->y_width ||
@@ -191,7 +191,7 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_PTR ptr, int ref_index,
                                     YV12_BUFFER_CONFIG *sd) {
   VP8D_COMP *pbi = (VP8D_COMP *) ptr;
   VP8_COMMON *cm = &pbi->common;
-  int *ref_fb_ptr = &cm->active_ref_idx[ref_index];
+  int *ref_fb_ptr = &cm->ref_frame_map[ref_index];
   int free_fb;
 
   if (cm->yv12_fb[*ref_fb_ptr].y_height != sd->y_height ||
@@ -229,9 +229,13 @@ static int swap_frame_buffers(VP8D_COMP *pbi) {
   for(mask = pbi->refresh_frame_flags; mask; mask >>= 1)
   {
     if (mask & 1)
-      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->active_ref_idx[ref_index], cm->new_fb_idx);
+      ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->ref_frame_map[ref_index], cm->new_fb_idx);
     ref_index++;
   }
+  
+  // Debugging, invalidate these references until the next frame starts
+  cm->active_ref_idx[0] = cm->active_ref_idx[1] = cm->active_ref_idx[2] = INT_MAX;
+
   cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
   cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
   return 0;

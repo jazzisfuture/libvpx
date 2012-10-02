@@ -87,14 +87,14 @@ int vp8_alloc_frame_buffers(VP8_COMMON *oci, int width, int height) {
     }
   }
 
-  oci->new_fb_idx = 0;
+  oci->new_fb_idx = NUM_YV12_BUFFERS - 1;
   for (i=0; i < 3; i++)
       oci->active_ref_idx[i] = i + 1;
 
-  oci->fb_idx_ref_cnt[0] = 1;
-  oci->fb_idx_ref_cnt[1] = 1;
-  oci->fb_idx_ref_cnt[2] = 1;
-  oci->fb_idx_ref_cnt[3] = 1;
+  for(i=0; i<NUM_YV12_BUFFERS - 1; i++) {
+    oci->ref_frame_map[i] = i;
+    oci->fb_idx_ref_cnt[i] = 1;
+  }
 
   if (vp8_yv12_alloc_frame_buffer(&oci->temp_scale_frame,   width, 16, VP8BORDERINPIXELS) < 0) {
     vp8_de_alloc_frame_buffers(oci);

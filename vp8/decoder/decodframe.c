@@ -675,8 +675,9 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
   int sb_col;
   int mb_row, mb_col;
   int recon_yoffset, recon_uvoffset;
-  int ref_fb_idx = pc->active_ref_idx[0];
   int dst_fb_idx = pc->new_fb_idx;
+  // assume all refs have the same stride, 0 not special in this instance.
+  int ref_fb_idx = pc->active_ref_idx[0];
   int recon_y_stride = pc->yv12_fb[ref_fb_idx].y_stride;
   int recon_uv_stride = pc->yv12_fb[ref_fb_idx].uv_stride;
   int row_delta[4] = { 0, +1,  0, -1};
@@ -769,6 +770,11 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
           pc->yv12_fb[second_ref_fb_idx].u_buffer + recon_uvoffset;
         xd->second_pre.v_buffer =
           pc->yv12_fb[second_ref_fb_idx].v_buffer + recon_uvoffset;
+
+        if (xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME) {
+          /* propagate errors from reference frames */
+          xd->corrupted |= pc->yv12_fb[second_ref_fb_idx].corrupted;
+        }
       }
 
       if (xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME) {
@@ -889,7 +895,7 @@ static void init_frame(VP8D_COMP *pbi) {
     vpx_memset(xd->mode_lf_deltas, 0, sizeof(xd->mode_lf_deltas));
 
     /* All buffers are implicitly updated on key frames. */
-    pbi->refresh_frame_flags = 0x7;
+    pbi->refresh_frame_flags = 0xFF;
 
     /* Note that Golden and Altref modes cannot be used on a key frame so
      * ref_frame_sign_bias[] is undefined and meaningless
@@ -1331,9 +1337,16 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
    * For all non key frames the GF and ARF refresh flags and sign bias
    * flags must be set explicitly.
    */
+  if (pc->frame_type == KEY_FRAME)
+    pc->active_ref_idx[0] = pc->active_ref_idx[1] = pc->active_ref_idx[2] = pc->new_fb_idx;
   if (pc->frame_type != KEY_FRAME) {
     /* Should the GF or ARF be updated from the current frame */
-    pbi->refresh_frame_flags = vp8_read_literal(bc, 3);
+    pbi->refresh_frame_flags = vp8_read_literal(bc, 8);
+
+    // TODO(jkoleszar) Should we signal all 3 or make one (last) implicit?
+    pc->active_ref_idx[0] = pc->ref_frame_map[vp8_read_literal(bc, 3)];
+    pc->active_ref_idx[1] = pc->ref_frame_map[vp8_read_literal(bc, 3)];
+    pc->active_ref_idx[2] = pc->ref_frame_map[vp8_read_literal(bc, 3)];
 
     // TODO(jkoleszar) What's the right thing to do here with more refs?
     if (pbi->refresh_frame_flags & 0x4) {
@@ -1423,7 +1436,6 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   read_coef_probs(pbi);
 #endif
 
-  vpx_memcpy(&xd->pre, &pc->yv12_fb[pc->active_ref_idx[0]], sizeof(YV12_BUFFER_CONFIG));
   vpx_memcpy(&xd->dst, &pc->yv12_fb[pc->new_fb_idx], sizeof(YV12_BUFFER_CONFIG));
 
   // Create the segmentation map structure and set to 0
