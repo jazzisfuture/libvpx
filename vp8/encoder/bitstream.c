@@ -2366,9 +2366,19 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
   // When there is a key frame all reference buffers are updated using the new key frame
   if (pc->frame_type != KEY_FRAME) {
     // Should the GF or ARF be updated using the transmitted frame or buffer
+    vp8_write_bit(bc, 0); // ref slot unused
+    vp8_write_bit(bc, 0); // ref slot unused
+    vp8_write_bit(bc, 0); // ref slot unused
+    vp8_write_bit(bc, 0); // ref slot unused
+    vp8_write_bit(bc, 0); // ref slot unused
     vp8_write_bit(bc, cpi->refresh_alt_ref_frame);
     vp8_write_bit(bc, cpi->refresh_golden_frame);
     vp8_write_bit(bc, cpi->refresh_last_frame);
+    
+    // Signal reference frame selection.
+    vp8_write_literal(bc, 0, 3);
+    vp8_write_literal(bc, 1, 3);
+    vp8_write_literal(bc, 2, 3);
 
     // Indicate reference frame sign bias for Golden and ARF frames (always 0 for last frame buffer)
     vp8_write_bit(bc, pc->ref_frame_sign_bias[GOLDEN_FRAME]);

@@ -163,6 +163,7 @@ typedef struct VP8Common {
 
   YV12_BUFFER_CONFIG yv12_fb[NUM_YV12_BUFFERS];
   int fb_idx_ref_cnt[NUM_YV12_BUFFERS]; // reference counts
+  int ref_frame_map[NUM_YV12_BUFFERS - 1]; // map fb index to ref frame slot
   int active_ref_idx[3]; // each frame can reference 3 buffers
   int new_fb_idx;
 
