@@ -1060,7 +1060,16 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   xd->corrupted = 0;
   pc->yv12_fb[pc->new_fb_idx].corrupted = 0;
 
-  if (data_end - data < 3) {
+  if ((data_end - data == 1) && ((data[0] & 0x11) == 0)) {
+    // TODO(jkoleszar): Maybe rearrange the header so these bits come
+    // together. Intent is to use the unused "invisible keyframe"
+    // sequence.
+    int frame_to_show = (data[0] >> 1) & 7;
+
+    ref_cnt_fb(pc->fb_idx_ref_cnt, &pc->new_fb_idx, frame_to_show);
+    pbi->refresh_frame_flags = 0;
+    return 0;
+  } else if (data_end - data < 3) {
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet");
   } else {
