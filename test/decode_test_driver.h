@@ -16,8 +16,10 @@
 #include "vpx_config.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
+
 namespace libvpx_test {
 
+class CompressedVideoSource;
 
 // Provides an object to handle decoding output
 class DxDataIterator {
@@ -40,12 +42,12 @@ class DxDataIterator {
 // added as more tests are added.
 class Decoder {
  public:
-  Decoder (vpx_codec_dec_cfg_t cfg, unsigned long deadline = 0)
+  Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline = 0)
     : cfg_(cfg), deadline_(deadline) {
     memset(&decoder_, 0, sizeof(decoder_));
   }
 
-  ~Decoder () {
+  ~Decoder() {
     vpx_codec_destroy(&decoder_);
   }
 
@@ -75,5 +77,20 @@ class Decoder {
   unsigned int        deadline_;
 };
 
+// Common test functionality for all Decoder tests.
+class DecoderTest {
+ protected:
+  DecoderTest() {}
+
+  virtual ~DecoderTest() {}
+ public:
+  // Main loop.
+  virtual void RunLoop(CompressedVideoSource *video);
+
+  // Hook to be called on every decompressed frame.
+  virtual void DecompressedFrameHook(const vpx_image_t *img) {}
+};
+
 }  // namespace libvpx_test
-#endif /* TEST_DECODE_TEST_DRIVER_H_ */
+
+#endif  // TEST_DECODE_TEST_DRIVER_H_
