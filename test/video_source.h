@@ -128,6 +128,23 @@ class RandomVideoSource : public DummyVideoSource {
   int seed_;
 };
 
+// Abstract base class for test video sources, which provide a stream of
+// encoded images to the decoder.
+class DecoderVideoSource {
+ public:
+  virtual ~DecoderVideoSource() {}
+
+  // Prepare the stream for reading, rewind/open as necessary.
+  virtual void Begin() = 0;
+
+  // Advance the cursor to the next frame
+  virtual void Next() = 0;
+
+  virtual unsigned char *cxdata() = 0;
+
+  virtual unsigned int GetFrameSize() const = 0;
+};
+
 }  // namespace libvpx_test
 
 #endif  // TEST_VIDEO_SOURCE_H_

@@ -13,6 +13,9 @@
 #include <cstdlib>
 
 #include "test/video_source.h"
+extern "C" {
+#include "vpx_mem/vpx_mem.h"
+}
 
 namespace libvpx_test {
 
@@ -113,6 +116,95 @@ class I420VideoSource : public VideoSource {
   unsigned int height_;
   unsigned int framerate_numerator_;
   unsigned int framerate_denominator_;
+};
+
+#define IVF_FILE_HDR_SZ  (32)
+#define IVF_FRAME_HDR_SZ (12)
+#define CODE_BUFFER_SIZE (256*1024)
+
+static unsigned int mem_get_le32(const unsigned char *mem) {
+  return (mem[3] << 24)|(mem[2] << 16)|(mem[1] << 8)|(mem[0]);
+}
+
+// This class extends VideoSource to allow parsing of ivf files,
+// so that we can do actual file decodes.
+class IVFVideoSource : public DecoderVideoSource {
+ public:
+  IVFVideoSource(const std::string &file_name, unsigned int frame,
+                 bool end_of_file)
+  : file_name_(file_name),
+  frame_(frame),
+  end_of_file_(end_of_file) {
+    // allocates a frame_buffer.
+    AllocCodeBuffer();
+  }
+
+  virtual ~IVFVideoSource() {
+    vpx_free(frame_buf_);
+    if (input_file_)
+    fclose(input_file_);
+  }
+
+  virtual void Begin() {
+    std::string path_to_source = file_name_;
+    const char *kDataPath = getenv("LIBVPX_TEST_DATA_PATH");
+    if (kDataPath) {
+      path_to_source = kDataPath;
+      path_to_source += "/";
+      path_to_source += file_name_;
+    }
+
+    input_file_ = fopen(path_to_source.c_str(), "rb");
+    ASSERT_TRUE(input_file_) << "Input file open failed.";
+
+    // Read file header
+    ASSERT_TRUE(fread(file_hdr, 1, IVF_FILE_HDR_SZ, input_file_)
+        == IVF_FILE_HDR_SZ && file_hdr[0] == 'D' && file_hdr[1] == 'K'
+        && file_hdr[2] == 'I' && file_hdr[3] == 'F')
+        << "Input is not an IVF file.";
+
+    FillFrame();
+  }
+
+  virtual void Next() {
+    ++frame_;
+    FillFrame();
+  }
+
+  void AllocCodeBuffer() {
+    frame_buf_ = (unsigned char *)vpx_calloc(CODE_BUFFER_SIZE,
+                                             sizeof(unsigned char));
+    ASSERT_TRUE(frame_buf_) << "Allocate failed";
+  }
+
+  virtual void FillFrame() {
+    // Read a frame from input_file.
+    if (!(fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, input_file_)
+        == IVF_FRAME_HDR_SZ)) {
+      end_of_file_ = true;
+    } else {
+      end_of_file_ = false;
+
+    frame_sz = mem_get_le32(frame_hdr);
+    ASSERT_TRUE(frame_sz <= CODE_BUFFER_SIZE)
+        << "Frame is too big for allocated code buffer";
+    ASSERT_TRUE(fread(frame_buf_, 1, frame_sz, input_file_) == frame_sz)
+        << "Failed to read complete frame";
+    }
+  }
+
+  virtual unsigned char *cxdata() {return (end_of_file_) ? NULL : frame_buf_;}
+  virtual unsigned int GetFrameSize() const {return frame_sz;}
+
+ protected:
+  std::string file_name_;
+  FILE *input_file_;
+  unsigned char *frame_buf_;
+  unsigned int frame_sz;
+  unsigned int frame_;
+  bool end_of_file_;
+  unsigned char file_hdr[IVF_FILE_HDR_SZ];
+  unsigned char frame_hdr[IVF_FRAME_HDR_SZ];
 };
 
 }  // namespace libvpx_test

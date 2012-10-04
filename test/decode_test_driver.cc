@@ -9,6 +9,7 @@
  */
 #include "test/decode_test_driver.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "test/video_source.h"
 
 namespace libvpx_test {
 #if CONFIG_VP8_DECODER
@@ -23,6 +24,26 @@ void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
   const vpx_codec_err_t res_dec = vpx_codec_decode(&decoder_,
                                                    cxdata, size, NULL, 0);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << DecodeError();
+}
+
+void DecoderTest::RunLoop(DecoderVideoSource *video) {
+  vpx_codec_dec_cfg_t dec_cfg = {0};
+  Decoder decoder(dec_cfg);
+
+  bool again;
+  for (again = true, video->Begin(); again; video->Next()) {
+    again = video->cxdata() != NULL;
+    if (!again)
+    continue;
+
+    decoder.DecodeFrame(video->cxdata(), video->GetFrameSize());
+
+    DxDataIterator dec_iter = decoder.GetDxData();
+    const vpx_image_t *img = dec_iter.Next();
+
+    if (img)
+      MD5Hook(img);
+  }
 }
 #endif
 }  // namespace libvpx_test

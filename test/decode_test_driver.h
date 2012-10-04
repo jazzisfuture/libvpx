@@ -16,8 +16,10 @@
 #include "vpx_config.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
+
 namespace libvpx_test {
 
+class DecoderVideoSource;
 
 // Provides an object to handle decoding output
 class DxDataIterator {
@@ -75,5 +77,20 @@ class Decoder {
   unsigned int        deadline_;
 };
 
+// Common test functionality for all Decoder tests.
+class DecoderTest {
+ protected:
+  DecoderTest() {}
+
+  virtual ~DecoderTest() {}
+ public:
+  // Main loop.
+  virtual void RunLoop(DecoderVideoSource *video);
+
+  // Hook to be called on every decompressed frame.
+  virtual void MD5Hook(const vpx_image_t *img) {}
+};
+
 }  // namespace libvpx_test
-#endif /* TEST_DECODE_TEST_DRIVER_H_ */
+
+#endif  // TEST_DECODE_TEST_DRIVER_H_

@@ -353,7 +353,7 @@ CODEC_DOC_SRCS += vpx/vpx_codec.h \
 ## libvpx test directives
 ##
 ifeq ($(CONFIG_UNIT_TESTS),yes)
-LIBVPX_TEST_DATA_PATH ?= .
+export LIBVPX_TEST_DATA_PATH := ./test/testdata
 
 include $(SRC_PATH_BARE)/test/test.mk
 LIBVPX_TEST_SRCS=$(addprefix test/,$(call enabled,LIBVPX_TEST_SRCS))
@@ -363,6 +363,7 @@ LIBVPX_TEST_DATA=$(addprefix $(LIBVPX_TEST_DATA_PATH)/,\
 libvpx_test_data_url=http://downloads.webmproject.org/test_data/libvpx/$(1)
 
 $(LIBVPX_TEST_DATA):
+	@mkdir -p "$(LIBVPX_TEST_DATA_PATH)"
 	@echo "    [DOWNLOAD] $@"
 	$(qexec)trap 'rm -f $@' INT TERM &&\
             curl -L -o $@ $(call libvpx_test_data_url,$(@F))
