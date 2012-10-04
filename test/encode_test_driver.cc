@@ -163,8 +163,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
           case VPX_CODEC_CX_FRAME_PKT:
 #if CONFIG_VP8_DECODER
             has_cxdata = true;
-            decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
-                                pkt->data.frame.sz);
+            decoder.DecodeFrame(
+                reinterpret_cast<const uint8_t*>(pkt->data.frame.buf),
+                pkt->data.frame.sz);
 #endif
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
