@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx_config.h"
-#include "test/encode_test_driver.h"
 #if CONFIG_VP8_DECODER
 #include "test/decode_test_driver.h"
 #endif
+#include "test/encode_test_driver.h"
 #include "test/video_source.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 
 namespace libvpx_test {
 void Encoder::EncodeFrame(VideoSource *video, const unsigned long frame_flags) {
@@ -107,19 +107,19 @@ static bool compare_img(const vpx_image_t *img1,
   const unsigned int height_y = img1->d_h;
   unsigned int i;
   for (i = 0; i < height_y; ++i)
-    match = ( memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
-                     img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
-                     width_y) == 0) && match;
+    match = (memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
+                    img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
+                    width_y) == 0) && match;
   const unsigned int width_uv  = (img1->d_w + 1) >> 1;
   const unsigned int height_uv = (img1->d_h + 1) >> 1;
   for (i = 0; i <  height_uv; ++i)
-    match = ( memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
-                     img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
-                     width_uv) == 0) && match;
+    match = (memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
+                    img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
+                    width_uv) == 0) && match;
   for (i = 0; i < height_uv; ++i)
-    match = ( memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
-                     img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
-                     width_uv) == 0) && match;
+    match = (memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
+                    img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
+                    width_uv) == 0) && match;
   return match;
 }
 
@@ -146,8 +146,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
     Decoder decoder(dec_cfg);
     bool has_cxdata = false;
 #endif
-    bool again;
-    for (again = true, video->Begin(); again; video->Next()) {
+    video->Begin();
+    for (bool again = true; again; video->Next()) {
       again = video->img() != NULL;
 
       PreEncodeFrameHook(video);
@@ -163,8 +163,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
           case VPX_CODEC_CX_FRAME_PKT:
 #if CONFIG_VP8_DECODER
             has_cxdata = true;
-            decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
-                                pkt->data.frame.sz);
+            decoder.DecodeFrame(
+                reinterpret_cast<const uint8_t*>(pkt->data.frame.buf),
+                pkt->data.frame.sz);
 #endif
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
@@ -185,7 +186,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
         const vpx_image_t *img_enc = encoder.GetPreviewFrame();
         DxDataIterator dec_iter = decoder.GetDxData();
         const vpx_image_t *img_dec = dec_iter.Next();
-        if(img_enc && img_dec) {
+        if (img_enc && img_dec) {
           const bool res = compare_img(img_enc, img_dec);
           ASSERT_TRUE(res)<< "Encoder/Decoder mismatch found.";
         }
