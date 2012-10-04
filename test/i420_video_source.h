@@ -45,16 +45,7 @@ class I420VideoSource : public VideoSource {
   }
 
   virtual void Begin() {
-    std::string path_to_source = file_name_;
-    const char *kDataPath = getenv("LIBVPX_TEST_DATA_PATH");
-    if (kDataPath) {
-      path_to_source = kDataPath;
-      path_to_source += "/";
-      path_to_source += file_name_;
-    }
-
-    input_file_ = fopen(path_to_source.c_str(), "rb");
-    ASSERT_TRUE(input_file_) << "File open failed.";
+    OpenTestDataFile(file_name_, &input_file_);
 
     if (start_) {
       fseek(input_file_, raw_sz_ * start_, SEEK_SET);
