@@ -82,6 +82,7 @@ class I420VideoSource : public VideoSource {
   }
 
   virtual unsigned int frame() const { return frame_; }
+  virtual unsigned int limit() const { return limit_; }
 
   void SetSize(unsigned int width, unsigned int height) {
     if (width != width_ || height != height_) {
