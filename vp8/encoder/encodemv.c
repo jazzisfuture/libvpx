@@ -516,7 +516,7 @@ void vp8_encode_nmv(vp8_writer *w, const MV *mv, const MV *ref,
   vp8_write_token(w, vp8_mv_joint_tree, mvctx->joints,
                   vp8_mv_joint_encodings + j);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component(w, mv->row, ref->col, &mvctx->comps[0]);
+    encode_nmv_component(w, mv->row, ref->row, &mvctx->comps[0]);
   }
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
     encode_nmv_component(w, mv->col, ref->col, &mvctx->comps[1]);

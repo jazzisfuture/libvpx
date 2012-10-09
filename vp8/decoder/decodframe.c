@@ -39,7 +39,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-
 #define COEFCOUNT_TESTING
 
 static int merge_index(int v, int n, int modulus) {
