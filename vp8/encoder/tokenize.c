@@ -454,17 +454,37 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
 
   /* Luma */
   for (block = 0; block < 16; block++, b++) {
-    B_PREDICTION_MODE b_mode;
+    //B_PREDICTION_MODE b_mode;
     TX_TYPE tx_type = DCT_DCT;
 
     if( xd->mode_info_context->mbmi.mode == B_PRED ) {
-      b_mode = b->bmi.as_mode.first;
+      /*
+      b_mode =
+#if CONFIG_NEWBINTRAMODES
+          b->bmi.as_mode.first == B_CONTEXT_PRED ?  b->bmi.as_mode.context :
+#endif
+          b->bmi.as_mode.first;
+      */
       tx_type = get_tx_type(xd, b);
     }
 
     // assign scanning order for luma components coded in intra4x4 mode
     if( (xd->mode_info_context->mbmi.mode == B_PRED) &&
         (type == PLANE_TYPE_Y_WITH_DC) ) {
+      switch(tx_type) {
+        case ADST_DCT :
+          pt_scan = vp8_row_scan;
+          break;
+
+        case DCT_ADST :
+          pt_scan = vp8_col_scan;
+          break;
+
+        default :
+          pt_scan = vp8_default_zig_zag1d;
+          break;
+      }
+      /*
       switch(b_mode) {
         case B_VE_PRED :
         case B_VR_PRED :
@@ -481,6 +501,7 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
           pt_scan = vp8_default_zig_zag1d;
           break;
       }
+      */
     } else {
       pt_scan = vp8_default_zig_zag1d;
     }
@@ -533,6 +554,8 @@ static void tokenize1st_order_ht(   MACROBLOCKD *xd,
 
       t->skip_eob_node = pt == 0 &&
           ((band > 0 && type > 0) || (band > 1 && type == 0));
+      if (vp8_coef_encodings[t->Token].Len - t->skip_eob_node <= 0)
+        printf("c %d eob %d segeob %d token %d skip %d type %d band %d\n", c, b->eob, seg_eob, t->Token, t->skip_eob_node, type, band);
       assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
       if (!dry_run) {
         if (tx_type != DCT_DCT)

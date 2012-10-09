@@ -207,7 +207,7 @@ static int read_nmv_component(vp8_reader *r,
   o = d << 3;
 
   z = vp8_get_mv_mag(c, o);
-  v = (s ? -(z + 1) : (z + 1));
+  v = (s ? -(z + 8) : (z + 8));
   return v;
 }
 
@@ -219,6 +219,7 @@ static int read_nmv_component_fp(vp8_reader *r,
   int s, z, c, o, d, e, f;
   s = v < 0;
   z = (s ? -v : v) - 1;       /* magnitude - 1 */
+  z &= ~7;
 
   c = vp8_get_mv_class(z, &o);
   d = o >> 3;

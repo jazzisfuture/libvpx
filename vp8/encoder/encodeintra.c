@@ -65,10 +65,13 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
   BLOCK *be = &x->block[ib];
 
 #if CONFIG_HYBRIDTRANSFORM
-    int QIndex = x->q_index;
-    int active_ht = (QIndex < ACTIVE_HT);
+  int QIndex = x->q_index;
+  int active_ht = (QIndex < ACTIVE_HT);
 #endif
 
+#if CONFIG_NEWBINTRAMODES
+  b->bmi.as_mode.context = vp8_find_bpred_context(b);
+#endif
 
 #if CONFIG_COMP_INTRA_PRED
   if (b->bmi.as_mode.second == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
@@ -87,7 +90,11 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
 #if CONFIG_HYBRIDTRANSFORM
   if (active_ht) {
     b->bmi.as_mode.test = b->bmi.as_mode.first;
-    txfm_map(b, b->bmi.as_mode.first);
+    txfm_map(b,
+#if CONFIG_NEWBINTRAMODES
+             b->bmi.as_mode.first == B_CONTEXT_PRED ? b->bmi.as_mode.context :
+#endif
+             b->bmi.as_mode.first);
     vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
     vp8_ht_quantize_b(be, b);
     vp8_inverse_htransform_b(IF_RTCD(&rtcd->common->idct), b, 32) ;

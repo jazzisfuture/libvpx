@@ -25,6 +25,11 @@ void d27_predictor(unsigned char *ypred_ptr, int y_stride, int n,
                    unsigned char *yabove_row, unsigned char *yleft_col);
 void d64_predictor(unsigned char *ypred_ptr, int y_stride, int n,
                    unsigned char *yabove_row, unsigned char *yleft_col);
+void corner_predictor(unsigned char *ypred_ptr, int y_stride, int n,
+                      unsigned char *yabove_row, unsigned char *yleft_col);
+B_PREDICTION_MODE vp8_find_dominant_direction(unsigned char *ptr,
+                                              int stride, int n);
+B_PREDICTION_MODE vp8_find_bpred_context(BLOCKD *x);
 
 extern void init_intra_left_above_pixels(MACROBLOCKD *xd);
 

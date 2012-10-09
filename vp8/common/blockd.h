@@ -161,8 +161,8 @@ typedef enum {
   B_DC_PRED,          /* average of above and left pixels */
   B_TM_PRED,
 
-  B_VE_PRED,           /* vertical prediction */
-  B_HE_PRED,           /* horizontal prediction */
+  B_VE_PRED,          /* vertical prediction */
+  B_HE_PRED,          /* horizontal prediction */
 
   B_LD_PRED,
   B_RD_PRED,
@@ -171,6 +171,9 @@ typedef enum {
   B_VL_PRED,
   B_HD_PRED,
   B_HU_PRED,
+#if CONFIG_NEWBINTRAMODES
+  B_CONTEXT_PRED,
+#endif
 
   LEFT4X4,
   ABOVE4X4,
@@ -224,7 +227,7 @@ static B_PREDICTION_MODE pred_mode_conv(MB_PREDICTION_MODE mode) {
 }
 #endif
 
-#define VP8_BINTRAMODES (B_HU_PRED + 1)  /* 10 */
+#define VP8_BINTRAMODES (LEFT4X4)  /* 10 */
 #define VP8_SUBMVREFS (1 + NEW4X4 - LEFT4X4)
 
 /* For keyframes, intra block modes are predicted by the (already decoded)
@@ -238,9 +241,11 @@ union b_mode_info {
     B_PREDICTION_MODE test;
     TX_TYPE           tx_type;
 #endif
-
 #if CONFIG_COMP_INTRA_PRED
     B_PREDICTION_MODE second;
+#endif
+#if CONFIG_NEWBINTRAMODES
+    B_PREDICTION_MODE context;
 #endif
   } as_mode;
   struct {
@@ -467,6 +472,12 @@ static void txfm_map(BLOCKD *b, B_PREDICTION_MODE bmode) {
     case B_HU_PRED :
       b->bmi.as_mode.tx_type = DCT_ADST;
       break;
+
+#if CONFIG_NEWBINTRAMODES
+    case B_CONTEXT_PRED:
+      assert(0);
+      break;
+#endif
 
     default :
       b->bmi.as_mode.tx_type = DCT_DCT;

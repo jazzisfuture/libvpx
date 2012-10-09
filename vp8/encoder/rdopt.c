@@ -1172,7 +1172,10 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
   DECLARE_ALIGNED_ARRAY(16, unsigned char,  best_predictor, 16 * 4);
   DECLARE_ALIGNED_ARRAY(16, short, best_dqcoeff, 16);
 
-  for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++) {
+#if CONFIG_NEWBINTRAMODES
+  b->bmi.as_mode.context = vp8_find_bpred_context(b);
+#endif
+  for (mode = B_DC_PRED; mode < LEFT4X4; mode++) {
 #if CONFIG_COMP_INTRA_PRED
     for (mode2 = (allow_comp ? 0 : (B_DC_PRED - 1));
                    mode2 != (allow_comp ? (mode + 1) : 0); mode2++) {
@@ -1183,7 +1186,12 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
       // TODO Temporarily ignore modes that need the above-right data. SB
       // encoding means this data is not available for the bottom right MB
       // Do we need to do this for mode2 also?
-      if (mode == B_LD_PRED || mode == B_VL_PRED)
+      if (mode == B_LD_PRED || mode == B_VL_PRED
+#if CONFIG_NEWBINTRAMODES
+          || (mode == B_CONTEXT_PRED &&
+              (b->bmi.as_mode.context == B_VL_PRED || b->bmi.as_mode.context == B_LD_PRED))
+#endif
+          )
         continue;
       rate = bmode_costs[mode];
 
@@ -1204,7 +1212,11 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 #if CONFIG_HYBRIDTRANSFORM
       if (active_ht) {
         b->bmi.as_mode.test = mode;
-        txfm_map(b, mode);
+        txfm_map(b,
+#if CONFIG_NEWBINTRAMODES
+                 mode == B_CONTEXT_PRED ? b->bmi.as_mode.context :
+#endif
+                 mode);
         vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
         vp8_ht_quantize_b(be, b);
       } else {
@@ -1212,38 +1224,38 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
         x->quantize_b(be, b);
       }
 #else
-        x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
-        x->quantize_b(be, b);
+      x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
+      x->quantize_b(be, b);
 #endif
 
-        tempa = ta;
-        templ = tl;
+      tempa = ta;
+      templ = tl;
 
-        ratey = cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC, &tempa, &templ, TX_4X4);
-        rate += ratey;
-        distortion = ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)(
-            be->coeff, b->dqcoeff, 16) >> 2;
+      ratey = cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC, &tempa, &templ, TX_4X4);
+      rate += ratey;
+      distortion = ENCODEMB_INVOKE(IF_RTCD(&cpi->rtcd.encodemb), berr)(
+          be->coeff, b->dqcoeff, 16) >> 2;
 
-        this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
+      this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
-        if (this_rd < best_rd) {
-          *bestrate = rate;
-          *bestratey = ratey;
-          *bestdistortion = distortion;
-          best_rd = this_rd;
-          *best_mode = mode;
+      if (this_rd < best_rd) {
+        *bestrate = rate;
+        *bestratey = ratey;
+        *bestdistortion = distortion;
+        best_rd = this_rd;
+        *best_mode = mode;
 #if CONFIG_HYBRIDTRANSFORM
-          best_tx_type = b->bmi.as_mode.tx_type ;
+        best_tx_type = b->bmi.as_mode.tx_type ;
 #endif
 
 #if CONFIG_COMP_INTRA_PRED
-          *best_second_mode = mode2;
+        *best_second_mode = mode2;
 #endif
-          *a = tempa;
-          *l = templ;
-          copy_predictor(best_predictor, b->predictor);
-          vpx_memcpy(best_dqcoeff, b->dqcoeff, 32);
-        }
+        *a = tempa;
+        *l = templ;
+        copy_predictor(best_predictor, b->predictor);
+        vpx_memcpy(best_dqcoeff, b->dqcoeff, 32);
+      }
 #if CONFIG_COMP_INTRA_PRED
     }
 #endif
@@ -1261,7 +1273,7 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
     vp8_ihtllm_c(best_dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type, 4);
   else
     IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff,
-                                                                b->diff, 32);
+                                                          b->diff, 32);
 #else
   IDCT_INVOKE(IF_RTCD(&cpi->rtcd.common->idct), idct16)(best_dqcoeff, b->diff, 32);
 #endif
@@ -1320,6 +1332,9 @@ static int64_t rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rat
 
       bmode_costs  = mb->bmode_costs[A][L];
     }
+#if CONFIG_NEWBINTRAMODES
+    mic->bmi[i].as_mode.context = vp8_find_bpred_context(xd->block + i);
+#endif
 
     total_rd += rd_pick_intra4x4block(
                   cpi, mb, mb->block + i, xd->block + i, &best_mode,
@@ -1336,6 +1351,10 @@ static int64_t rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rat
     mic->bmi[i].as_mode.first = best_mode;
 #if CONFIG_COMP_INTRA_PRED
     mic->bmi[i].as_mode.second = best_second_mode;
+#endif
+
+#if 0//CONFIG_NEWBINTRAMODES
+    printf("%d %d\n", mic->bmi[i].as_mode.first, mic->bmi[i].as_mode.context);
 #endif
 
     if (total_rd >= best_rd)
@@ -4113,6 +4132,10 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     for (i = 0; i < 16; i++) {
       xd->mode_info_context->bmi[i].as_mode = best_bmodes[i].as_mode;
       xd->block[i].bmi.as_mode = xd->mode_info_context->bmi[i].as_mode;
+#if 0//CONFIG_NEWBINTRAMODES
+      if (xd->block[i].bmi.as_mode.first == B_CONTEXT_PRED)
+      assert(xd->mode_info_context->bmi[i].as_mode.context == vp8_find_bpred_context(&xd->block[i]));
+#endif
     }
   }
 

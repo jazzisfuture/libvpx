@@ -14,6 +14,81 @@
 #include "vpx_mem/vpx_mem.h"
 #include "reconintra.h"
 
+#if CONFIG_NEWBINTRAMODES
+static int find_grad_measure(unsigned char *ptr, int stride, int n, int t,
+                             int dx, int dy) {
+  int i, j;
+  int count = 0, gsum = 0, gdiv;
+  unsigned char *x = ptr - t - stride * t;
+  /* TODO: Make this code more efficient by breaking up into two loops */
+  for (i = -t; i < n; ++i)
+    for (j = -t; j < n; ++j) {
+      int g;
+      if (i >= 0 && j >= 0) continue;
+      if (i + dy >= 0 && j + dx >= 0) continue;
+      if (i + dy < -t || i + dy >= n || j + dx < -t || j + dx >= n) continue;
+      g = abs(x[(i + dy) * stride + j + dx] - x[i * stride + j]);
+      gsum += g;
+      count++;
+    }
+  gsum += (count >> 1);
+  gsum /= count;
+  gsum *= gsum;
+  gdiv = (dx * dx + dy * dy);
+  return (gsum + (gdiv >> 1)) / gdiv;
+}
+
+B_PREDICTION_MODE vp8_find_dominant_direction(
+    unsigned char *ptr, int stride, int n) {
+  int g[8], i, imin, imax;
+  g[0] = find_grad_measure(ptr, stride, n, 4,  1, 0);
+  g[1] = find_grad_measure(ptr, stride, n, 4,  2, 1);
+  g[2] = find_grad_measure(ptr, stride, n, 4,  1, 1);
+  g[3] = find_grad_measure(ptr, stride, n, 4,  1, 2);
+  g[4] = find_grad_measure(ptr, stride, n, 4,  0, 1);
+  g[5] = find_grad_measure(ptr, stride, n, 4, -1, 2);
+  g[6] = find_grad_measure(ptr, stride, n, 4, -1, 1);
+  g[7] = find_grad_measure(ptr, stride, n, 4, -2, 1);
+  imin = 0;
+  for (i = 1; i < 8; i++)
+    imin = (g[i] < g[imin] ? i : imin);
+  imax = 0;
+  for (i = 1; i < 8; i++)
+    imax = (g[i] > g[imax] ? i : imax);
+  /*
+  printf("%d %d %d %d %d %d %d %d = %d %d\n",
+         g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], imin, imax);
+         */
+  if (g[imax] - g[imin] < 16)
+    return B_DC_PRED;
+  switch (imin) {
+    case 0:
+      return B_HE_PRED;
+    case 1:
+      return B_HD_PRED;
+    case 2:
+      return B_RD_PRED;
+    case 3:
+      return B_VR_PRED;
+    case 4:
+      return B_VE_PRED;
+    case 5:
+      return B_VL_PRED;
+    case 6:
+      return B_LD_PRED;
+    case 7:
+      return B_HU_PRED;
+  }
+  return B_DC_PRED;
+}
+
+B_PREDICTION_MODE vp8_find_bpred_context(BLOCKD *x) {
+  unsigned char *ptr = *(x->base_dst) + x->dst;
+  int stride = x->dst_stride;
+  return vp8_find_dominant_direction(ptr, stride, 4);
+}
+#endif
+
 void vp8_intra4x4_predict(BLOCKD *x,
                           int b_mode,
                           unsigned char *predictor) {
@@ -27,6 +102,11 @@ void vp8_intra4x4_predict(BLOCKD *x,
   Left[1] = (*(x->base_dst))[x->dst - 1 + x->dst_stride];
   Left[2] = (*(x->base_dst))[x->dst - 1 + 2 * x->dst_stride];
   Left[3] = (*(x->base_dst))[x->dst - 1 + 3 * x->dst_stride];
+
+#if CONFIG_NEWBINTRAMODES
+  if (b_mode == B_CONTEXT_PRED)
+    b_mode = x->bmi.as_mode.context;
+#endif
 
   switch (b_mode) {
     case B_DC_PRED: {
@@ -271,7 +351,15 @@ void vp8_intra4x4_predict(BLOCKD *x,
     }
     break;
 
-
+#if CONFIG_NEWBINTRAMODES
+    case B_CONTEXT_PRED:
+    break;
+    /*
+    case B_CORNER_PRED:
+    corner_predictor(predictor, 16, 4, Above, Left);
+    break;
+    */
+#endif
   }
 }
 
@@ -312,5 +400,3 @@ void vp8_intra_prediction_down_copy(MACROBLOCKD *xd) {
   *dst_ptr1 = *src_ptr;
   *dst_ptr2 = *src_ptr;
 }
-
-

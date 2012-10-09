@@ -69,8 +69,13 @@ static const unsigned int kf_uv_mode_cts [VP8_YMODES] [VP8_UV_MODES] = {
 };
 
 static const unsigned int bmode_cts[VP8_BINTRAMODES] = {
+#if CONFIG_NEWBINTRAMODES
+  /* DC    TM     VE     HE   LD    RD    VR    VL    HD    HU  CONTEXT*/
+  43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723,  50000
+#else
   /* DC    TM     VE     HE   LD    RD    VR    VL    HD    HU */
   43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723
+#endif
 };
 
 typedef enum {
@@ -149,15 +154,28 @@ const vp8_prob vp8_mbsplit_probs [VP8_NUMMBSPLITS - 1] = { 110, 111, 150};
 
 const vp8_tree_index vp8_bmode_tree[VP8_BINTRAMODES * 2 - 2] = /* INTRAMODECONTEXTNODE value */
 {
-  -B_DC_PRED, 2,                             /* 0 = DC_NODE */
-  -B_TM_PRED, 4,                            /* 1 = TM_NODE */
-  -B_VE_PRED, 6,                           /* 2 = VE_NODE */
-  8, 12,                                  /* 3 = COM_NODE */
-  -B_HE_PRED, 10,                        /* 4 = HE_NODE */
-  -B_RD_PRED, -B_VR_PRED,               /* 5 = RD_NODE */
-  -B_LD_PRED, 14,                        /* 6 = LD_NODE */
-  -B_VL_PRED, 16,                      /* 7 = VL_NODE */
-  -B_HD_PRED, -B_HU_PRED             /* 8 = HD_NODE */
+#if CONFIG_NEWBINTRAMODES
+  -B_DC_PRED, 2,                      /* 0 = DC_NODE */
+  -B_TM_PRED, 4,                      /* 1 = TM_NODE */
+  -B_VE_PRED, 6,                      /* 2 = VE_NODE */
+  8, 12,                              /* 3 = COM_NODE */
+  -B_HE_PRED, 10,                     /* 4 = HE_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE */
+  -B_LD_PRED, 14,                     /* 6 = LD_NODE */
+  -B_VL_PRED, 16,                     /* 7 = VL_NODE */
+  -B_HD_PRED, 18,                     /* 8 = HD_NODE */
+  -B_HU_PRED, -B_CONTEXT_PRED         /* 9 = HU_PRED, CONTEXT_PRED */
+#else
+  -B_DC_PRED, 2,                      /* 0 = DC_NODE */
+  -B_TM_PRED, 4,                      /* 1 = TM_NODE */
+  -B_VE_PRED, 6,                      /* 2 = VE_NODE */
+  8, 12,                              /* 3 = COM_NODE */
+  -B_HE_PRED, 10,                     /* 4 = HE_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE */
+  -B_LD_PRED, 14,                     /* 6 = LD_NODE */
+  -B_VL_PRED, 16,                     /* 7 = VL_NODE */
+  -B_HD_PRED, -B_HU_PRED              /* 8 = HD_NODE */
+#endif
 };
 
 /* Again, these trees use the same probability indices as their
