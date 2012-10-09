@@ -2697,6 +2697,7 @@ void vp8_cal_sad(VP8_COMP *cpi, MACROBLOCKD *xd, MACROBLOCK *x, int recon_yoffse
   }
 }
 
+#if 0
 void rd_update_mvcount(VP8_COMP *cpi, MACROBLOCK *x,
                        int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
   MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
@@ -2814,6 +2815,7 @@ void rd_update_mvcount(VP8_COMP *cpi, MACROBLOCK *x,
     }
   }
 }
+#endif
 
 static void set_i8x8_block_modes(MACROBLOCK *x, int modes[2][4]) {
   int i;
@@ -3256,13 +3258,15 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     mbmi->uv_mode = DC_PRED;
     mbmi->ref_frame = vp8_mode_order[mode_index].ref_frame;
     mbmi->second_ref_frame = vp8_mode_order[mode_index].second_ref_frame;
-    is_comp_pred = x->e_mbd.mode_info_context->mbmi.second_ref_frame != 0;
+//if (mbmi->second_ref_frame) // TODO(agrange) Remove this temp fix
+//  continue;
+    is_comp_pred = mbmi->second_ref_frame != 0;
 #if CONFIG_NEWBESTREFMV
     mbmi->ref_mv = ref_mv[mbmi->ref_frame];
     mbmi->second_ref_mv = ref_mv[mbmi->second_ref_frame];
 #endif
 #if CONFIG_PRED_FILTER
-    mbmi->pred_filter_enabled = 0;
+    mbmi->pred_filter_enabled = vp8_mode_order[mode_index].pred_filter_flag;
 #endif
 #if CONFIG_SWITCHABLE_INTERP
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
@@ -3584,17 +3588,32 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
             x->mv_row_max = tmp_row_max;
 
             if (bestsme < INT_MAX) {
-              int dis; /* TODO: use dis in distortion calculation later. */
-              unsigned int sse;
-              cpi->find_fractional_mv_step(x, b, d, &tmp_mv, &best_ref_mv,
-                                           x->errorperbit,
-                                           &cpi->fn_ptr[BLOCK_16X16],
-                                           XMVCOST, &dis, &sse);
+#if CONFIG_PRED_FILTER
+              if (mbmi->pred_filter_enabled)
+              {
+                /* (0,0) is handled by ZEROMV mode so ignore here. */
+                if (tmp_mv.as_int == 0)
+                  continue;
+                /* Convert whole pel mv to 1/8th pel units. */
+                tmp_mv.as_mv.row <<= 3;
+                tmp_mv.as_mv.col <<= 3;
+              }
+              else
+#endif
+              {
+                int dis;
+                unsigned int sse;
+                cpi->find_fractional_mv_step(x, b, d, &tmp_mv, &best_ref_mv,
+                                             x->errorperbit,
+                                             &cpi->fn_ptr[BLOCK_16X16],
+                                             XMVCOST, &dis, &sse);
+              }
             }
             d->bmi.as_mv.first.as_int = tmp_mv.as_int;
             frame_mv[NEWMV][refs[0]].as_int = d->bmi.as_mv.first.as_int;
 
             // Add the new motion vector cost to our rolling cost variable
+            // TODO(agrange) Modify the costing function
             rate2 += vp8_mv_bit_cost(&tmp_mv, &best_ref_mv,
                                      XMVCOST, 96,
                                      x->e_mbd.allow_high_precision_mv);
@@ -3628,19 +3647,18 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
       if (flag)
         continue;
 
-#if CONFIG_PRED_FILTER
-      // Filtered prediction:
-      xd->mode_info_context->mbmi.pred_filter_enabled =
-        vp8_mode_order[mode_index].pred_filter_flag;
-      rate2 += vp8_cost_bit(cpi->common.prob_pred_filter_off,
-                            xd->mode_info_context->mbmi.pred_filter_enabled);
-#endif
 #if CONFIG_SWITCHABLE_INTERP
-      if (cpi->common.mcomp_filter_type == SWITCHABLE)
-        rate2 += SWITCHABLE_INTERP_RATE_FACTOR * x->switchable_interp_costs
-            [get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
-            [vp8_switchable_interp_map[
-            x->e_mbd.mode_info_context->mbmi.interp_filter]];
+#if CONFIG_PRED_FILTER
+      if (this_mode != SPLITMV)
+        rate2 += vp8_cost_bit(cpi->common.prob_pred_filter_off,
+                              xd->mode_info_context->mbmi.pred_filter_enabled);
+      if (!mbmi->pred_filter_enabled)
+#endif
+        if (cpi->common.mcomp_filter_type == SWITCHABLE)
+          rate2 += SWITCHABLE_INTERP_RATE_FACTOR * x->switchable_interp_costs
+              [get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
+              [vp8_switchable_interp_map[
+              x->e_mbd.mode_info_context->mbmi.interp_filter]];
 #endif
 
       /* We don't include the cost of the second reference here, because there are only
@@ -3821,8 +3839,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     // Ignore modes where the prediction filter state doesn't
     // match the state signaled at the frame level
     if ((cm->pred_filter_mode == 2) ||
-        (cm->pred_filter_mode ==
-         mbmi->pred_filter_enabled)) {
+        (cm->pred_filter_mode == mbmi->pred_filter_enabled)) {
 #endif
       // Did this mode help.. i.e. is it the new best mode
       if (this_rd < best_rd || x->skip) {
@@ -3928,12 +3945,15 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
     ++cpi->pred_filter_off_count;
 #endif
 #if CONFIG_SWITCHABLE_INTERP
-  if (cpi->common.mcomp_filter_type == SWITCHABLE &&
-      best_mbmode.mode >= NEARESTMV &&
-      best_mbmode.mode <= SPLITMV) {
-    ++cpi->switchable_interp_count
-        [get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
-        [vp8_switchable_interp_map[best_mbmode.interp_filter]];
+#if CONFIG_PRED_FILTER
+  if (!mbmi->pred_filter_enabled)
+#endif
+    if (cpi->common.mcomp_filter_type == SWITCHABLE &&
+        best_mbmode.mode >= NEARESTMV &&
+        best_mbmode.mode <= SPLITMV) {
+      ++cpi->switchable_interp_count
+          [get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
+          [vp8_switchable_interp_map[best_mbmode.interp_filter]];
   }
 #endif
 
