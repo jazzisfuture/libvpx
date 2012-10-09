@@ -18,6 +18,7 @@
 void vp8_init_mode_costs(VP8_COMP *c) {
   VP8_COMMON *x = &c->common;
   {
+    const vp8_tree_p KT = vp8_kf_bmode_tree;
     const vp8_tree_p T = vp8_bmode_tree;
 
     int i = 0;
@@ -26,9 +27,9 @@ void vp8_init_mode_costs(VP8_COMP *c) {
       int j = 0;
 
       do {
-        vp8_cost_tokens((int *)c->mb.bmode_costs[i][j], x->kf_bmode_prob[i][j], T);
-      } while (++j < VP8_BINTRAMODES);
-    } while (++i < VP8_BINTRAMODES);
+        vp8_cost_tokens((int *)c->mb.bmode_costs[i][j], x->kf_bmode_prob[i][j], KT);
+      } while (++j < VP8_KF_BINTRAMODES);
+    } while (++i < VP8_KF_BINTRAMODES);
 
     vp8_cost_tokens((int *)c->mb.inter_bmode_costs, x->fc.bmode_prob, T);
   }

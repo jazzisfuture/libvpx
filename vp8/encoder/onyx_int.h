@@ -104,7 +104,7 @@ typedef struct {
 
   vp8_prob ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
   vp8_prob uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
-  vp8_prob bmode_prob [VP8_BINTRAMODES - 1];
+  vp8_prob bmode_prob [VP8_NKF_BINTRAMODES - 1];
   vp8_prob i8x8_mode_prob [VP8_I8X8_MODES - 1];
   vp8_prob sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
   vp8_prob mbsplit_prob [VP8_NUMMBSPLITS - 1];
@@ -535,7 +535,7 @@ typedef struct VP8_COMP {
   int sb_ymode_count [VP8_I32X32_MODES];
 #endif
   int ymode_count [VP8_YMODES];        /* intra MB type cts this frame */
-  int bmode_count [VP8_BINTRAMODES];
+  int bmode_count [VP8_NKF_BINTRAMODES];
   int i8x8_mode_count [VP8_I8X8_MODES];
   int sub_mv_ref_count [SUBMVREF_COUNT][VP8_SUBMVREFS];
   int mbsplit_count [VP8_NUMMBSPLITS];

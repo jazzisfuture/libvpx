@@ -29,9 +29,18 @@ int dec_mvcount = 0;
 #endif
 
 static int vp8_read_bmode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp8_bmode_tree, p);
+  B_PREDICTION_MODE m = vp8_treed_read(bc, vp8_bmode_tree, p);
+#if CONFIG_NEWBINTRAMODES
+  if (m == B_CONTEXT_PRED - CONTEXT_PRED_REPLACEMENTS)
+    m = B_CONTEXT_PRED;
+  assert(m < B_CONTEXT_PRED - CONTEXT_PRED_REPLACEMENTS || m == B_CONTEXT_PRED);
+#endif
+  return m;
 }
 
+static int vp8_read_kf_bmode(vp8_reader *bc, const vp8_prob *p) {
+  return vp8_treed_read(bc, vp8_kf_bmode_tree, p);
+}
 
 static int vp8_read_ymode(vp8_reader *bc, const vp8_prob *p) {
   return vp8_treed_read(bc, vp8_ymode_tree, p);
@@ -144,19 +153,19 @@ static void kfread_modes(VP8D_COMP *pbi,
   if ((m->mbmi.mode = y_mode) == B_PRED) {
     int i = 0;
 #if CONFIG_COMP_INTRA_PRED
-    int use_comp_pred = vp8_read(bc, 128);
+    int use_comp_pred = vp8_read(bc, DEFAULT_COMP_INTRA_PROB);
 #endif
     do {
       const B_PREDICTION_MODE A = above_block_mode(m, i, mis);
       const B_PREDICTION_MODE L = left_block_mode(m, i);
 
       m->bmi[i].as_mode.first =
-        (B_PREDICTION_MODE) vp8_read_bmode(
+        (B_PREDICTION_MODE) vp8_read_kf_bmode(
           bc, pbi->common.kf_bmode_prob [A] [L]);
 #if CONFIG_COMP_INTRA_PRED
       if (use_comp_pred) {
         m->bmi[i].as_mode.second =
-          (B_PREDICTION_MODE) vp8_read_bmode(
+          (B_PREDICTION_MODE) vp8_read_kf_bmode(
             bc, pbi->common.kf_bmode_prob [A] [L]);
       } else {
         m->bmi[i].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
@@ -1079,19 +1088,15 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     if (mbmi->mode == B_PRED) {
       int j = 0;
 #if CONFIG_COMP_INTRA_PRED
-      int use_comp_pred = vp8_read(bc, 128);
+      int use_comp_pred = vp8_read(bc, DEFAULT_COMP_INTRA_PROB);
 #endif
       do {
-        mi->bmi[j].as_mode.first = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);
-        /*
-        {
-          int p;
-          for (p = 0; p < VP8_BINTRAMODES - 1; ++p)
-            printf(" %d", pbi->common.fc.bmode_prob[p]);
-          printf("\nbmode[%d][%d]: %d\n", pbi->common.current_video_frame, j, mi->bmi[j].as_mode.first);
-        }
-        */
-        pbi->common.fc.bmode_counts[mi->bmi[j].as_mode.first]++;
+        int m;
+        m = mi->bmi[j].as_mode.first = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);
+#if CONFIG_NEWBINTRAMODES
+        if (m == B_CONTEXT_PRED) m -= CONTEXT_PRED_REPLACEMENTS;
+#endif
+        pbi->common.fc.bmode_counts[m]++;
 #if CONFIG_COMP_INTRA_PRED
         if (use_comp_pred) {
           mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);

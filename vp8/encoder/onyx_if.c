@@ -136,7 +136,7 @@ extern int skip_false_count;
 
 
 #ifdef ENTROPY_STATS
-extern int intra_mode_stats[VP8_BINTRAMODES][VP8_BINTRAMODES][VP8_BINTRAMODES];
+extern int intra_mode_stats[VP8_KF_BINTRAMODES][VP8_KF_BINTRAMODES][VP8_KF_BINTRAMODES];
 #endif
 
 #ifdef NMV_STATS
@@ -2139,7 +2139,7 @@ void vp8_remove_compressor(VP8_PTR *ptr) {
         int i;
 
         fprintf(f, "B: ");
-        for (i = 0; i < VP8_BINTRAMODES; i++)
+        for (i = 0; i < VP8_NKF_BINTRAMODES; i++)
           fprintf(f, "%8d, ", b_modes[i]);
 
         fprintf(f, "\n");
@@ -2178,17 +2178,17 @@ void vp8_remove_compressor(VP8_PTR *ptr) {
 
       fprintf(fmode, "\n#include \"entropymode.h\"\n\n");
       fprintf(fmode, "const unsigned int vp8_kf_default_bmode_counts ");
-      fprintf(fmode, "[VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES] =\n{\n");
+      fprintf(fmode, "[VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES] =\n{\n");
 
-      for (i = 0; i < 10; i++) {
+      for (i = 0; i < VP8_KF_BINTRAMODES; i++) {
 
         fprintf(fmode, "    { // Above Mode :  %d\n", i);
 
-        for (j = 0; j < 10; j++) {
+        for (j = 0; j < VP8_KF_BINTRAMODES; j++) {
 
           fprintf(fmode, "        {");
 
-          for (k = 0; k < VP8_BINTRAMODES; k++) {
+          for (k = 0; k < VP8_KF_BINTRAMODES; k++) {
             if (!intra_mode_stats[i][j][k])
               fprintf(fmode, " %5d, ", 1);
             else

@@ -21,5 +21,7 @@ int vp8_decode_mb_tokens_8x8(VP8D_COMP* const, MACROBLOCKD* const,
                              BOOL_DECODER* const);
 int vp8_decode_mb_tokens_16x16(VP8D_COMP* const, MACROBLOCKD* const,
                                BOOL_DECODER* const);
+int vp8_decode_coefs_4x4(VP8D_COMP *dx, MACROBLOCKD *xd, BOOL_DECODER* const bc,
+                         int type, int i);
 
 #endif /* DETOKENIZE_H */

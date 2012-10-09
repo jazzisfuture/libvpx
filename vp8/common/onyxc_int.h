@@ -44,7 +44,7 @@ void vp8_initialize_common(void);
 #define COMP_PRED_CONTEXTS   2
 
 typedef struct frame_contexts {
-  vp8_prob bmode_prob [VP8_BINTRAMODES - 1];
+  vp8_prob bmode_prob [VP8_NKF_BINTRAMODES - 1];
   vp8_prob ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
   vp8_prob uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
   vp8_prob i8x8_mode_prob [VP8_I8X8_MODES - 1];
@@ -59,13 +59,13 @@ typedef struct frame_contexts {
 
   nmv_context nmvc;
   nmv_context pre_nmvc;
-  vp8_prob pre_bmode_prob [VP8_BINTRAMODES - 1];
+  vp8_prob pre_bmode_prob [VP8_NKF_BINTRAMODES - 1];
   vp8_prob pre_ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
   vp8_prob pre_uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
   vp8_prob pre_i8x8_mode_prob [VP8_I8X8_MODES - 1];
   vp8_prob pre_sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
   vp8_prob pre_mbsplit_prob [VP8_NUMMBSPLITS - 1];
-  unsigned int bmode_counts [VP8_BINTRAMODES];
+  unsigned int bmode_counts [VP8_NKF_BINTRAMODES];
   unsigned int ymode_counts [VP8_YMODES];   /* interframe intra mode probs */
   unsigned int uv_mode_counts [VP8_YMODES][VP8_UV_MODES];
   unsigned int i8x8_mode_counts [VP8_I8X8_MODES];   /* interframe intra mode probs */
@@ -241,7 +241,9 @@ typedef struct VP8Common {
 
   /* keyframe block modes are predicted by their above, left neighbors */
 
-  vp8_prob kf_bmode_prob [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1];
+  vp8_prob kf_bmode_prob [VP8_KF_BINTRAMODES]
+                         [VP8_KF_BINTRAMODES]
+                         [VP8_KF_BINTRAMODES - 1];
   vp8_prob kf_ymode_prob[8][VP8_YMODES - 1]; /* keyframe "" */
 #if CONFIG_SUPERBLOCKS
   vp8_prob sb_kf_ymode_prob[8][VP8_I32X32_MODES - 1];

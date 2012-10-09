@@ -224,6 +224,7 @@ EXPERIMENT_LIST="
     switchable_interp
     newbestrefmv
     new_mvref
+    newbintramodes
 "
 CONFIG_LIST="
     external_build

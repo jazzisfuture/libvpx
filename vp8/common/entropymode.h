@@ -17,6 +17,9 @@
 
 #define SUBMVREF_COUNT 5
 #define VP8_NUMMBSPLITS 4
+#if CONFIG_COMP_INTRA_PRED
+#define DEFAULT_COMP_INTRA_PROB  32
+#endif
 
 typedef const int vp8_mbsplit[16];
 
@@ -32,10 +35,11 @@ extern const vp8_prob vp8_sub_mv_ref_prob [VP8_SUBMVREFS - 1];
 extern const vp8_prob vp8_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
 
 
-extern const unsigned int vp8_kf_default_bmode_counts [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES];
+extern const unsigned int vp8_kf_default_bmode_counts [VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES];
 
 
 extern const vp8_tree_index vp8_bmode_tree[];
+extern const vp8_tree_index vp8_kf_bmode_tree[];
 
 extern const vp8_tree_index  vp8_ymode_tree[];
 extern const vp8_tree_index  vp8_kf_ymode_tree[];
@@ -47,7 +51,8 @@ extern const vp8_tree_index  vp8_mv_ref_tree[];
 extern const vp8_tree_index  vp8_sb_mv_ref_tree[];
 extern const vp8_tree_index  vp8_sub_mv_ref_tree[];
 
-extern struct vp8_token_struct vp8_bmode_encodings   [VP8_BINTRAMODES];
+extern struct vp8_token_struct vp8_bmode_encodings   [VP8_NKF_BINTRAMODES];
+extern struct vp8_token_struct vp8_kf_bmode_encodings   [VP8_KF_BINTRAMODES];
 extern struct vp8_token_struct vp8_ymode_encodings   [VP8_YMODES];
 extern struct vp8_token_struct vp8_sb_kf_ymode_encodings [VP8_I32X32_MODES];
 extern struct vp8_token_struct vp8_kf_ymode_encodings [VP8_YMODES];
@@ -71,8 +76,8 @@ extern void vp8_accum_mv_refs(struct VP8Common *pc,
                               MB_PREDICTION_MODE m,
                               const int ct[4]);
 
-void vp8_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES - 1]);
-void vp8_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]);
+void vp8_default_bmode_probs(vp8_prob dest [VP8_NKF_BINTRAMODES - 1]);
+void vp8_kf_default_bmode_probs(vp8_prob dest [VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES] [VP8_KF_BINTRAMODES - 1]);
 
 void vp8_adapt_mode_probs(struct VP8Common *);
 
