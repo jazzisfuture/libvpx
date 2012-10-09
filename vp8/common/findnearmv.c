@@ -225,11 +225,17 @@ void vp8_find_best_ref_mvs(MACROBLOCKD *xd,
   best_mv->as_int = nearest->as_int = near->as_int = 0;
   vpx_memset(sorted_mvs, 0, sizeof(sorted_mvs));
 
+#if 0
   above_src = xd->dst.y_buffer - xd->dst.y_stride * 3;
   left_src  = xd->dst.y_buffer - 3;
   above_ref = ref_y_buffer - ref_y_stride * 3;
   left_ref  = ref_y_buffer - 3;
-
+#else
+  above_src = xd->dst.y_buffer - xd->dst.y_stride * 2;
+  above_ref = ref_y_buffer - ref_y_stride * 2;
+  above_src -= 4;
+  above_ref -= 4;
+#endif
   //for(i = 0; i < MAX_MV_REFS; ++i) {
   // Limit search to the predicted best 4
   for(i = 0; i < 4; ++i) {
@@ -259,12 +265,16 @@ void vp8_find_best_ref_mvs(MACROBLOCKD *xd,
       ((this_mv.as_mv.col + 3) >> 3):((this_mv.as_mv.col + 4) >> 3);
     offset = ref_y_stride * row_offset + col_offset;
 
+#if 0
     sad = vp8_sad16x3_c(above_src, xd->dst.y_stride,
                         above_ref + offset, ref_y_stride, INT_MAX);
 
     sad += vp8_sad3x16_c(left_src, xd->dst.y_stride,
                          left_ref + offset, ref_y_stride, INT_MAX);
-
+#else
+    sad = vp8_sad16x2_c(above_src, xd->dst.y_stride,
+                        above_ref + offset, ref_y_stride, INT_MAX);
+#endif
     // Add the entry to our list and then resort the list on score.
     sad_scores[i] = sad;
     sorted_mvs[i].as_int = this_mv.as_int;

@@ -114,6 +114,15 @@ unsigned int vp8_sad16x3_c(
   int max_sad){
   return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 16, 3);
 }
+unsigned int vp8_sad16x2_c(
+  const unsigned char *src_ptr,
+  int  src_stride,
+  const unsigned char *ref_ptr,
+  int  ref_stride,
+  int max_sad){
+  return sad_mx_n_c(src_ptr, src_stride, ref_ptr, ref_stride, 16, 2);
+}
+
 #endif
 
 void vp8_sad32x32x3_c(const unsigned char *src_ptr,
