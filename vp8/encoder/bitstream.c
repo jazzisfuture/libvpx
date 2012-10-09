@@ -368,6 +368,124 @@ static void update_refpred_stats(VP8_COMP *cpi) {
   }
 }
 
+void update_mvcount(VP8_COMP *cpi, MACROBLOCK *x,
+                       int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
+  MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
+#if CONFIG_NEWMVENTROPY
+  MV mv;
+#endif
+
+  if (mbmi->mode == SPLITMV) {
+    int i;
+
+    for (i = 0; i < x->partition_info->count; i++) {
+      if (x->partition_info->bmi[i].mode == NEW4X4) {
+        if (x->e_mbd.allow_high_precision_mv) {
+#if CONFIG_NEWMVENTROPY
+          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
+                    - best_ref_mv->as_mv.row);
+          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
+                    - best_ref_mv->as_mv.col);
+          vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
+                      - second_best_ref_mv->as_mv.row);
+            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
+                      - second_best_ref_mv->as_mv.col);
+            vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv,
+                              &cpi->NMVcount, 1);
+          }
+#else
+          cpi->MVcount_hp[0][mv_max_hp + (x->partition_info->bmi[i].mv.as_mv.row
+                                          - best_ref_mv->as_mv.row)]++;
+          cpi->MVcount_hp[1][mv_max_hp + (x->partition_info->bmi[i].mv.as_mv.col
+                                          - best_ref_mv->as_mv.col)]++;
+          if (mbmi->second_ref_frame) {
+            cpi->MVcount_hp[0][mv_max_hp + (x->partition_info->bmi[i].second_mv.as_mv.row
+                                            - second_best_ref_mv->as_mv.row)]++;
+            cpi->MVcount_hp[1][mv_max_hp + (x->partition_info->bmi[i].second_mv.as_mv.col
+                                            - second_best_ref_mv->as_mv.col)]++;
+          }
+#endif
+        } else {
+#if CONFIG_NEWMVENTROPY
+          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
+                    - best_ref_mv->as_mv.row);
+          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
+                    - best_ref_mv->as_mv.col);
+          vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
+                      - second_best_ref_mv->as_mv.row);
+            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
+                      - second_best_ref_mv->as_mv.col);
+            vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv,
+                              &cpi->NMVcount, 0);
+          }
+#else
+          cpi->MVcount[0][mv_max + ((x->partition_info->bmi[i].mv.as_mv.row
+                                     - best_ref_mv->as_mv.row) >> 1)]++;
+          cpi->MVcount[1][mv_max + ((x->partition_info->bmi[i].mv.as_mv.col
+                                     - best_ref_mv->as_mv.col) >> 1)]++;
+          if (mbmi->second_ref_frame) {
+            cpi->MVcount[0][mv_max + ((x->partition_info->bmi[i].second_mv.as_mv.row
+                                       - second_best_ref_mv->as_mv.row) >> 1)]++;
+            cpi->MVcount[1][mv_max + ((x->partition_info->bmi[i].second_mv.as_mv.col
+                                       - second_best_ref_mv->as_mv.col) >> 1)]++;
+          }
+#endif
+        }
+      }
+    }
+  } else if (mbmi->mode == NEWMV) {
+    if (x->e_mbd.allow_high_precision_mv) {
+#if CONFIG_NEWMVENTROPY
+      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
+      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
+      vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
+      if (mbmi->second_ref_frame) {
+        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
+        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
+        vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 1);
+      }
+#else
+      cpi->MVcount_hp[0][mv_max_hp + (mbmi->mv[0].as_mv.row
+                                      - best_ref_mv->as_mv.row)]++;
+      cpi->MVcount_hp[1][mv_max_hp + (mbmi->mv[0].as_mv.col
+                                      - best_ref_mv->as_mv.col)]++;
+      if (mbmi->second_ref_frame) {
+        cpi->MVcount_hp[0][mv_max_hp + (mbmi->mv[1].as_mv.row
+                                        - second_best_ref_mv->as_mv.row)]++;
+        cpi->MVcount_hp[1][mv_max_hp + (mbmi->mv[1].as_mv.col
+                                        - second_best_ref_mv->as_mv.col)]++;
+      }
+#endif
+    } else {
+#if CONFIG_NEWMVENTROPY
+      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
+      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
+      vp8_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
+      if (mbmi->second_ref_frame) {
+        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
+        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
+        vp8_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 0);
+      }
+#else
+      cpi->MVcount[0][mv_max + ((mbmi->mv[0].as_mv.row
+                                 - best_ref_mv->as_mv.row) >> 1)]++;
+      cpi->MVcount[1][mv_max + ((mbmi->mv[0].as_mv.col
+                                 - best_ref_mv->as_mv.col) >> 1)]++;
+      if (mbmi->second_ref_frame) {
+        cpi->MVcount[0][mv_max + ((mbmi->mv[1].as_mv.row
+                                   - second_best_ref_mv->as_mv.row) >> 1)]++;
+        cpi->MVcount[1][mv_max + ((mbmi->mv[1].as_mv.col
+                                   - second_best_ref_mv->as_mv.col) >> 1)]++;
+      }
+#endif
+    }
+  }
+}
+
 static void write_ymode(vp8_writer *bc, int m, const vp8_prob *p) {
   vp8_write_token(bc, vp8_ymode_tree, p, vp8_ymode_encodings + m);
 }
@@ -650,13 +768,24 @@ static void write_sub_mv_ref
 
 #if CONFIG_NEWMVENTROPY
 static void write_nmv (vp8_writer *w, const MV *mv, const int_mv *ref,
-                       const nmv_context *nmvc, int usehp) {
+                       const nmv_context *nmvc, int usehp,
+                       const int pred_filter_enabled) {
   MV e;
+  unsigned int write_fp = 1;
+
   e.row = mv->row - ref->as_mv.row;
   e.col = mv->col - ref->as_mv.col;
 
   vp8_encode_nmv(w, &e, &ref->as_mv, nmvc);
-  vp8_encode_nmv_fp(w, &e, &ref->as_mv, nmvc, usehp);
+
+  if (pred_filter_enabled) {
+    const unsigned int z0 = ref->as_mv.row * (ref->as_mv.row < 0 ? -1 : 1);
+    const unsigned int z1 = ref->as_mv.col * (ref->as_mv.col < 0 ? -1 : 1);
+    write_fp = ((z0 | z1) & 7) ? 1 : 0;
+  }
+
+  if (write_fp)
+    vp8_encode_nmv_fp(w, &e, &ref->as_mv, nmvc, usehp);
 }
 
 #else
@@ -883,9 +1012,6 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
   // Write prediction filter on/off probability if signaling at MB level
   if (pc->pred_filter_mode == 2)
     vp8_write_literal(w, pc->prob_pred_filter_off, 8);
-
-  // printf("pred_filter_mode:%d  prob_pred_filter_off:%d\n",
-  //       pc->pred_filter_mode, pc->prob_pred_filter_off);
 #endif
 #if CONFIG_SWITCHABLE_INTERP
   if (pc->mcomp_filter_type == SWITCHABLE)
@@ -1075,6 +1201,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 
             vp8_find_near_mvs(xd, m, prev_m, &n1, &n2, &best_mv, ct,
                               rf, cpi->common.ref_frame_sign_bias);
+
 #if CONFIG_NEWBESTREFMV
             best_mv.as_int = mi->ref_mv.as_int;
 #endif
@@ -1105,12 +1232,13 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #if CONFIG_PRED_FILTER
           // Is the prediction filter enabled
           if (mode >= NEARESTMV && mode < SPLITMV) {
-            if (cpi->common.pred_filter_mode == 2)
+            if (cpi->common.pred_filter_mode == 2) {
               vp8_write(w, mi->pred_filter_enabled,
                         pc->prob_pred_filter_off);
-            else
+            } else {
               assert(mi->pred_filter_enabled ==
                      cpi->common.pred_filter_mode);
+            }
           }
 #endif
 #if CONFIG_SWITCHABLE_INTERP
@@ -1128,6 +1256,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
             }
           }
 #endif
+
           if (mi->second_ref_frame &&
               (mode == NEWMV || mode == SPLITMV)) {
             int_mv n1, n2;
@@ -1173,7 +1302,13 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #if CONFIG_NEWMVENTROPY
                 write_nmv(w, &mi->mv[0].as_mv, &best_mv,
                           (const nmv_context*) nmvc,
-                          xd->allow_high_precision_mv);
+                          xd->allow_high_precision_mv,
+#if CONFIG_PRED_FILTER
+                          mi->pred_filter_enabled
+#else
+                          0
+#endif
+                         );
 #else
                 if (xd->allow_high_precision_mv) {
                   write_mv_hp(w, &mi->mv[0].as_mv, &best_mv, mvc_hp);
@@ -1200,7 +1335,13 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #if CONFIG_NEWMVENTROPY
                   write_nmv(w, &mi->mv[1].as_mv, &best_second_mv,
                             (const nmv_context*) nmvc,
-                            xd->allow_high_precision_mv);
+                            xd->allow_high_precision_mv,
+#if CONFIG_PRED_FILTER
+                            mi->pred_filter_enabled
+#else
+                            0
+#endif
+                           );
 #else
                   if (xd->allow_high_precision_mv) {
                     write_mv_hp(w, &mi->mv[1].as_mv, &best_second_mv, mvc_hp);
@@ -1252,7 +1393,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #if CONFIG_NEWMVENTROPY
                     write_nmv(w, &blockmv.as_mv, &best_mv,
                               (const nmv_context*) nmvc,
-                              xd->allow_high_precision_mv);
+                              xd->allow_high_precision_mv, 0);
 #else
                     if (xd->allow_high_precision_mv) {
                       write_mv_hp(w, &blockmv.as_mv, &best_mv,
@@ -1267,9 +1408,8 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #if CONFIG_NEWMVENTROPY
                       write_nmv(w,
                                 &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
-                                &best_second_mv,
-                                (const nmv_context*) nmvc,
-                                xd->allow_high_precision_mv);
+                                &best_second_mv, (const nmv_context*) nmvc,
+                                xd->allow_high_precision_mv, 0);
 #else
                       if (xd->allow_high_precision_mv) {
                         write_mv_hp(w, &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
@@ -1287,6 +1427,12 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
               default:
                 break;
             }
+          }
+
+          // Update the mvcounts used to tune mv probs but only if this is
+          // the real pack run.
+          if ( !cpi->dummy_packing ) {
+            update_mvcount(cpi, x, &best_mv, &best_second_mv);
           }
         }
 
@@ -2719,6 +2865,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
 #if CONFIG_SWITCHABLE_INTERP
     if (pc->mcomp_filter_type == SWITCHABLE) {
       /* Check to see if only one of the filters is actually used */
+#if 1
       int count[VP8_SWITCHABLE_FILTERS];
       int i, j, c = 0;
       for (i = 0; i < VP8_SWITCHABLE_FILTERS; ++i) {
@@ -2737,6 +2884,21 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
           }
         }
       }
+#else
+      // AWG Cleaned-up version of above code
+      int i, j, c = 0, idx = -1;
+      for (i = 0; i < VP8_SWITCHABLE_FILTERS; ++i) {
+        for (j = 0; j <= VP8_SWITCHABLE_FILTERS; ++j) {
+          idx = i;
+          ++c;
+          break;
+        }
+      }
+      if (c == 1) {
+        /* Only one filter is used. So set the filter at frame level */
+        pc->mcomp_filter_type = vp8_switchable_interp[idx];
+      }
+#endif
     }
     // Signal the type of subpel filter to use
     vp8_write_bit(bc, (pc->mcomp_filter_type == SWITCHABLE));

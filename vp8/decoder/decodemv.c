@@ -191,7 +191,7 @@ static int read_nmv_component(vp8_reader *r,
   o = d << 3;
 
   z = vp8_get_mv_mag(c, o);
-  v = (s ? -(z + 1) : (z + 1));
+  v = (s ? -(z + 8) : (z + 8));
   return v;
 }
 
@@ -203,6 +203,7 @@ static int read_nmv_component_fp(vp8_reader *r,
   int s, z, c, o, d, e, f;
   s = v < 0;
   z = (s ? -v : v) - 1;       /* magnitude - 1 */
+  z &= ~7;
 
   c = vp8_get_mv_class(z, &o);
   d = o >> 3;
@@ -230,7 +231,10 @@ static int read_nmv_component_fp(vp8_reader *r,
 }
 
 static void read_nmv(vp8_reader *r, MV *mv, const MV *ref,
-                     const nmv_context *mvctx) {
+                     const nmv_context *mvctx, int usehp,
+                     const int pred_filter_enabled) {
+  unsigned int read_fp = 1;
+
   MV_JOINT_TYPE j = vp8_treed_read(r, vp8_mv_joint_tree, mvctx->joints);
   mv->row = mv-> col = 0;
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
@@ -239,19 +243,24 @@ static void read_nmv(vp8_reader *r, MV *mv, const MV *ref,
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
     mv->col = read_nmv_component(r, ref->col, &mvctx->comps[1]);
   }
-}
 
-static void read_nmv_fp(vp8_reader *r, MV *mv, const MV *ref,
-                        const nmv_context *mvctx, int usehp) {
-  MV_JOINT_TYPE j = vp8_get_mv_joint(*mv);
-  usehp = usehp && vp8_use_nmv_hp(ref);
-  if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    mv->row = read_nmv_component_fp(r, mv->row, ref->row, &mvctx->comps[0],
-                                    usehp);
+  if (pred_filter_enabled) {
+    const unsigned int z0 = ref->row * (ref->row < 0 ? -1 : 1);
+    const unsigned int z1 = ref->col * (ref->col < 0 ? -1 : 1);
+    read_fp = ((z0 | z1) & 7) ? 1 : 0;
   }
-  if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
-    mv->col = read_nmv_component_fp(r, mv->col, ref->col, &mvctx->comps[1],
-                                    usehp);
+
+  if (read_fp) {
+    j = vp8_get_mv_joint(*mv);
+    usehp = usehp && vp8_use_nmv_hp(ref);
+    if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
+      mv->row = read_nmv_component_fp(r, mv->row, ref->row, &mvctx->comps[0],
+                                      usehp);
+    }
+    if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
+      mv->col = read_nmv_component_fp(r, mv->col, ref->col, &mvctx->comps[1],
+                                      usehp);
+    }
   }
   //printf("  %d: %d %d ref: %d %d\n", usehp, mv->row, mv-> col, ref->row, ref->col);
 }
@@ -618,8 +627,9 @@ static void mb_mode_mv_init(VP8D_COMP *pbi) {
 #if CONFIG_PRED_FILTER
     cm->pred_filter_mode = (vp8_prob)vp8_read_literal(bc, 2);
 
-    if (cm->pred_filter_mode == 2)
+    if (cm->pred_filter_mode == 2) {
       cm->prob_pred_filter_off = (vp8_prob)vp8_read_literal(bc, 8);
+    }
 #endif
 #if CONFIG_SWITCHABLE_INTERP
     if (cm->mcomp_filter_type == SWITCHABLE)
@@ -876,9 +886,10 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #if CONFIG_PRED_FILTER
     if (mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV) {
       // Is the prediction filter enabled
-      if (cm->pred_filter_mode == 2)
+      if (cm->pred_filter_mode == 2) {
         mbmi->pred_filter_enabled =
           vp8_read(bc, cm->prob_pred_filter_off);
+      }
       else
         mbmi->pred_filter_enabled = cm->pred_filter_mode;
     }
@@ -890,7 +901,6 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         mbmi->interp_filter = vp8_switchable_interp[
             vp8_treed_read(bc, vp8_switchable_interp_tree,
                            get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
-        //printf("Reading: %d\n", mbmi->interp_filter);
       } else {
         mbmi->interp_filter = cm->mcomp_filter_type;
       }
@@ -995,9 +1005,8 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           switch (blockmode) {
             case NEW4X4:
 #if CONFIG_NEWMVENTROPY
-              read_nmv(bc, &blockmv.as_mv, &best_mv.as_mv, nmvc);
-              read_nmv_fp(bc, &blockmv.as_mv, &best_mv.as_mv, nmvc,
-                          xd->allow_high_precision_mv);
+              read_nmv(bc, &blockmv.as_mv, &best_mv.as_mv, nmvc,
+                       xd->allow_high_precision_mv, 0);
               vp8_increment_nmv(&blockmv.as_mv, &best_mv.as_mv,
                                 &cm->fc.NMVcount, xd->allow_high_precision_mv);
 #else
@@ -1016,9 +1025,9 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
               if (mbmi->second_ref_frame) {
 #if CONFIG_NEWMVENTROPY
-                read_nmv(bc, &secondmv.as_mv, &best_mv_second.as_mv, nmvc);
-                read_nmv_fp(bc, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
-                            xd->allow_high_precision_mv);
+                read_nmv(bc, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
+                         xd->allow_high_precision_mv, 0);
+
                 vp8_increment_nmv(&secondmv.as_mv, &best_mv_second.as_mv,
                                   &cm->fc.NMVcount, xd->allow_high_precision_mv);
 #else
@@ -1137,9 +1146,14 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
       case NEWMV:
 #if CONFIG_NEWMVENTROPY
-        read_nmv(bc, &mv->as_mv, &best_mv.as_mv, nmvc);
-        read_nmv_fp(bc, &mv->as_mv, &best_mv.as_mv, nmvc,
-                    xd->allow_high_precision_mv);
+        read_nmv(bc, &mv->as_mv, &best_mv.as_mv, nmvc,
+                 xd->allow_high_precision_mv,
+#if CONFIG_PRED_FILTER
+                 mbmi->pred_filter_enabled
+#else
+                 0
+#endif
+                );
         vp8_increment_nmv(&mv->as_mv, &best_mv.as_mv, &cm->fc.NMVcount,
                           xd->allow_high_precision_mv);
 #else
@@ -1168,9 +1182,14 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                       mb_to_bottom_edge);
         if (mbmi->second_ref_frame) {
 #if CONFIG_NEWMVENTROPY
-          read_nmv(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc);
-          read_nmv_fp(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc,
-                      xd->allow_high_precision_mv);
+          read_nmv(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc,
+                   xd->allow_high_precision_mv,
+#if CONFIG_PRED_FILTER
+                   mbmi->pred_filter_enabled
+#else
+                   0
+#endif
+                  );
           vp8_increment_nmv(&mbmi->mv[1].as_mv, &best_mv_second.as_mv,
                             &cm->fc.NMVcount, xd->allow_high_precision_mv);
 #else
@@ -1310,7 +1329,6 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
         if (i)
           mi->mbmi.encoded_as_sb = 0;
 #endif
-
         // Make sure the MacroBlockD mode info pointer is set correctly
         xd->mode_info_context = mi;
         xd->prev_mode_info_context = prev_mi;
