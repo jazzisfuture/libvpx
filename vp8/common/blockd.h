@@ -495,6 +495,20 @@ static TX_TYPE get_tx_type(MACROBLOCKD *xd, const BLOCKD *b) {
     bb = xd->block + ib;
     if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
       tx_type = bb->bmi.as_mode.tx_type;
+    else if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
+             xd->q_index < ACTIVE_HT16) {
+      int tx = bb->bmi.as_mode.tx_type, tx2;
+      txfm_map(bb, pred_mode_conv(xd->mode_info_context->mbmi.mode));
+      tx2 = bb->bmi.as_mode.tx_type;
+      bb->bmi.as_mode.tx_type = tx;
+      if (ib == 0) {
+        tx_type = tx2;
+      } else if (ib == 2 && (tx2 == ADST_ADST || tx2 == ADST_DCT)) {
+        tx_type = ADST_DCT;
+      } else if (ib == 8 && (tx2 == ADST_ADST || tx2 == DCT_ADST)) {
+        tx_type = DCT_ADST;
+      }
+    }
     return tx_type;
   }
 #endif
@@ -503,6 +517,36 @@ static TX_TYPE get_tx_type(MACROBLOCKD *xd, const BLOCKD *b) {
     if (xd->mode_info_context->mbmi.mode == B_PRED &&
         xd->q_index < ACTIVE_HT) {
       tx_type = b->bmi.as_mode.tx_type;
+    } else if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
+      BLOCKD *bb;
+      int sb = (ib & 4) + (ib & 1), tx, tx2;
+      ib = (ib & 8) + (ib & 2);
+      bb = xd->block + ib;
+      tx = b->bmi.as_mode.tx_type;
+      txfm_map(xd->block + ib + sb, pred_mode_conv(bb->bmi.as_mode.first));
+      tx2 = b->bmi.as_mode.tx_type;
+      (xd->block + ib + sb)->bmi.as_mode.tx_type = tx;
+      if (sb == 0) {
+        tx_type = tx2;
+      } else if (sb == 1 && (tx2 == ADST_ADST || tx2 == ADST_DCT)) {
+        tx_type = ADST_DCT;
+      } else if (sb == 4 && (tx2 == ADST_ADST || tx2 == DCT_ADST)) {
+        tx_type = DCT_ADST;
+      } else {
+        tx_type = DCT_DCT;
+      }
+    } else if (xd->mode_info_context->mbmi.mode <= TM_PRED) {
+      int tx = b->bmi.as_mode.tx_type, tx2;
+      txfm_map(xd->block + ib, pred_mode_conv(xd->mode_info_context->mbmi.mode));
+      tx2 = b->bmi.as_mode.tx_type;
+      (xd->block + ib)->bmi.as_mode.tx_type = tx;
+      if (ib == 0) {
+        tx_type = tx2;
+      } else if ((ib & 0xC) == 0 && (tx2 == ADST_ADST || tx2 == ADST_DCT)) {
+        tx_type = ADST_DCT;
+      } else if ((ib & 0x3) == 0 && (tx2 == ADST_ADST || tx2 == DCT_ADST)) {
+        tx_type = DCT_ADST;
+      }
     }
     return tx_type;
   }
