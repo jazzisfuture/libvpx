@@ -238,7 +238,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   tx_type = xd->mode_info_context->mbmi.txfm_size;
   mode = xd->mode_info_context->mbmi.mode;
 
-#if CONFIG_HYBRIDTRANSFORM
+#if 0//CONFIG_HYBRIDTRANSFORM
   // parse transform types for intra 4x4 mode
   QIndex = xd->q_index;
   active_ht = (QIndex < ACTIVE_HT);
@@ -246,11 +246,12 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     for (i = 0; i < 16; i++) {
       BLOCKD *b = &xd->block[i];
       int b_mode = xd->mode_info_context->bmi[i].as_mode.first;
-      if(active_ht)
-        txfm_map(b, b_mode);
+      //if(active_ht)
+      //  txfm_map(b, b_mode);
     } // loop over 4x4 blocks
   }
 #endif
+
 
 #if CONFIG_HYBRIDTRANSFORM8X8
   if (mode == I8X8_PRED) {
@@ -292,7 +293,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       eobtotal = vp8_decode_mb_tokens_16x16(pbi, xd);
     else if (tx_type == TX_8X8)
       eobtotal = vp8_decode_mb_tokens_8x8(pbi, xd);
-    else
+    else if (mode != B_PRED)
       eobtotal = vp8_decode_mb_tokens(pbi, xd);
   }
 
@@ -334,7 +335,9 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     } else
 #endif
     if (mode != I8X8_PRED) {
-      vp8_build_intra_predictors_mbuv(xd);
+      if (mode != B_PRED) {
+        vp8_build_intra_predictors_mbuv(xd);
+      }
       if (mode != B_PRED) {
         vp8_build_intra_predictors_mby(xd);
       }
@@ -410,10 +413,31 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
     }
   } else if (mode == B_PRED) {
     for (i = 0; i < 16; i++) {
-      BLOCKD *b = &xd->block[i];
-      int b_mode = xd->mode_info_context->bmi[i].as_mode.first;
+      int b_mode;
 #if CONFIG_COMP_INTRA_PRED
-      int b_mode2 = xd->mode_info_context->bmi[i].as_mode.second;
+      int b_mode2;
+#endif
+      BLOCKD *b = &xd->block[i];
+      b_mode = xd->mode_info_context->bmi[i].as_mode.first;
+#if CONFIG_NEWBINTRAMODES
+      xd->mode_info_context->bmi[i].as_mode.context = b->bmi.as_mode.context =
+          vp8_find_bpred_context(b);
+      //printf("%d: %d %d\n", i, b_mode, xd->mode_info_context->bmi[i].as_mode.context);
+      //b_mode = (b_mode == B_CONTEXT_PRED ? xd->mode_info_context->bmi[i].as_mode.context : b_mode);
+#endif
+#if CONFIG_HYBRIDTRANSFORM
+      active_ht = (xd->q_index < ACTIVE_HT);
+      if (active_ht)
+        txfm_map(b,
+#if CONFIG_NEWBINTRAMODES
+                 b_mode == B_CONTEXT_PRED ? xd->mode_info_context->bmi[i].as_mode.context :
+#endif
+                 b_mode);
+#endif
+      if (!xd->mode_info_context->mbmi.mb_skip_coeff)
+        eobtotal += vp8_decode_coefs_4x4(pbi, xd, PLANE_TYPE_Y_WITH_DC, i);
+#if CONFIG_COMP_INTRA_PRED
+      b_mode2 = xd->mode_info_context->bmi[i].as_mode.second;
 
       if (b_mode2 == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
 #endif
@@ -446,6 +470,15 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       }
 #endif
     }
+    if (!xd->mode_info_context->mbmi.mb_skip_coeff) {
+      for (i = 16; i < 24; ++i)
+        eobtotal += vp8_decode_coefs_4x4(pbi, xd, PLANE_TYPE_UV, i);
+    }
+    vp8_build_intra_predictors_mbuv(xd);
+    DEQUANT_INVOKE(&pbi->dequant, idct_add_uv_block)
+        (xd->qcoeff + 16 * 16, xd->block[16].dequant,
+         xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,
+         xd->dst.uv_stride, xd->eobs + 16);
   } else if (mode == SPLITMV) {
     DEQUANT_INVOKE(&pbi->dequant, idct_add_y_block)
     (xd->qcoeff, xd->block[0].dequant,
@@ -569,7 +602,8 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
           (xd->qcoeff + 16 * 16, xd->block[16].dequant,
            xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,
            xd->dst.uv_stride, xd->eobs + 16, xd); //
-    else if (xd->mode_info_context->mbmi.mode != I8X8_PRED)
+    else if (xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+             xd->mode_info_context->mbmi.mode != B_PRED)
       DEQUANT_INVOKE(&pbi->dequant, idct_add_uv_block)
           (xd->qcoeff + 16 * 16, xd->block[16].dequant,
            xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,

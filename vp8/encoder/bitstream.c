@@ -1054,6 +1054,10 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
 #endif
               write_bmode(w, m->bmi[j].as_mode.first,
                           pc->fc.bmode_prob);
+#if 0//CONFIG_NEWBINTRAMODES
+              if (!cpi->dummy_packing)
+                printf("%d: %d %d\n", j, m->bmi[j].as_mode.first, m->bmi[j].as_mode.context);
+#endif
 #if CONFIG_COMP_INTRA_PRED
               if (uses_second) {
                 write_bmode(w, mode2, pc->fc.bmode_prob);
@@ -1454,7 +1458,10 @@ static void write_kfmodes(VP8_COMP *cpi) {
 #endif
 
             write_bmode(bc, bm, c->kf_bmode_prob [A] [L]);
-            // printf("    mode: %d\n", bm);
+#if 0//CONFIG_NEWBINTRAMODES
+            if (!cpi->dummy_packing)
+              printf("%d: %d %d\n", i, bm, m->bmi[i].as_mode.context);
+#endif
 #if CONFIG_COMP_INTRA_PRED
             if (uses_second) {
               write_bmode(bc, bm2, c->kf_bmode_prob [A] [L]);

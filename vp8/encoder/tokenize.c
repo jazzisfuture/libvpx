@@ -466,14 +466,16 @@ static void tokenize1st_order_ht_4x4(MACROBLOCKD *xd,
 
     // assign scanning order for luma components coded in intra4x4 mode
     if ((xd->mode_info_context->mbmi.mode == B_PRED) &&
-        (type == PLANE_TYPE_Y_WITH_DC)) {
-      switch (tx_type) {
-        case ADST_DCT:
+        (type == PLANE_TYPE_Y_WITH_DC) ) {
+      switch(tx_type) {
+        case ADST_DCT :
           pt_scan = vp8_row_scan;
           break;
-        case DCT_ADST:
+
+        case DCT_ADST :
           pt_scan = vp8_col_scan;
           break;
+
         default :
           pt_scan = vp8_default_zig_zag1d;
           break;
