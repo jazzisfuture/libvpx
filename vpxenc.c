@@ -710,7 +710,8 @@ static void
 write_webm_file_header(EbmlGlobal                *glob,
                        const vpx_codec_enc_cfg_t *cfg,
                        const struct vpx_rational *fps,
-                       stereo_format_t            stereo_fmt)
+                       stereo_format_t            stereo_fmt,
+                       int                        alpha_mode)
 {
     {
         EbmlLoc start;
@@ -756,6 +757,7 @@ write_webm_file_header(EbmlGlobal                *glob,
                     Ebml_SerializeUnsigned(glob, PixelHeight, pixelHeight);
                     Ebml_SerializeUnsigned(glob, StereoMode, stereo_fmt);
                     Ebml_SerializeFloat(glob, FrameRate, frameRate);
+                    Ebml_SerializeUnsigned(glob, AlphaMode, alpha_mode);
                     Ebml_EndSubElement(glob, &videoStart);
                 }
                 Ebml_EndSubElement(glob, &start); /* Track Entry */
@@ -971,6 +973,8 @@ static const arg_def_t use_yv12 = ARG_DEF(NULL, "yv12", 0,
                                   "Input file is YV12 ");
 static const arg_def_t use_i420 = ARG_DEF(NULL, "i420", 0,
                                   "Input file is I420 (default)");
+static const arg_def_t alpha_mode = ARG_DEF(NULL, "alpha", 0,
+                                   "Input file contains an alpha plane ");
 static const arg_def_t codecarg = ARG_DEF(NULL, "codec", 1,
                                   "Codec to use");
 static const arg_def_t passes           = ARG_DEF("p", "passes", 1,
@@ -1041,7 +1045,7 @@ static const arg_def_t lag_in_frames    = ARG_DEF(NULL, "lag-in-frames", 1,
 
 static const arg_def_t *global_args[] =
 {
-    &use_yv12, &use_i420, &usage, &threads, &profile,
+    &use_yv12, &use_i420, &alpha_mode, &usage, &threads, &profile,
     &width, &height, &stereo_mode, &timebase, &framerate, &error_resilient,
     &lag_in_frames, NULL
 };
@@ -1506,6 +1510,7 @@ struct global_config
     int                       usage;
     int                       deadline;
     int                       use_i420;
+    int                       alpha_mode;
     int                       verbose;
     int                       limit;
     int                       show_psnr;
@@ -1581,6 +1586,7 @@ static void parse_global_config(struct global_config *global, char **argv)
     global->codec = codecs;
     global->passes = 1;
     global->use_i420 = 1;
+    global->alpha_mode = 0;
 
     for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step)
     {
@@ -1630,6 +1636,8 @@ static void parse_global_config(struct global_config *global, char **argv)
             global->use_i420 = 0;
         else if (arg_match(&arg, &use_i420, argi))
             global->use_i420 = 1;
+        else if (arg_match(&arg, &alpha_mode, argi))
+            global->alpha_mode = 1;
         else if (arg_match(&arg, &verbosearg, argi))
             global->verbose = 1;
         else if (arg_match(&arg, &limit, argi))
@@ -2086,7 +2094,8 @@ static void open_output_file(struct stream_state *stream,
         stream->ebml.stream = stream->file;
         write_webm_file_header(&stream->ebml, &stream->config.cfg,
                                &global->framerate,
-                               stream->config.stereo_fmt);
+                               stream->config.stereo_fmt,
+                               global->alpha_mode);
     }
     else
         write_ivf_file_header(stream->file, &stream->config.cfg,
