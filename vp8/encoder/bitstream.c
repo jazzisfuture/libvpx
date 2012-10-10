@@ -1291,7 +1291,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
         }
 
 #if CONFIG_TX_SELECT
-        if (((rf == INTRA_FRAME && mode <= TM_PRED) ||
+        if (((rf == INTRA_FRAME && mode <= I8X8_PRED) ||
              (rf != INTRA_FRAME && mode != SPLITMV)) &&
             pc->txfm_mode == TX_MODE_SELECT &&
             !((pc->mb_no_coeff_skip && mi->mb_skip_coeff) ||
@@ -1301,7 +1301,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
           // FIXME(rbultje) code ternary symbol once all experiments are merged
           vp8_write(w, sz != TX_4X4, pc->prob_tx[0]);
 #if CONFIG_TX16X16
-          if (sz != TX_4X4)
+          if (sz != TX_4X4 && mode != I8X8_PRED)
             vp8_write(w, sz != TX_8X8, pc->prob_tx[1]);
 #endif
         }
@@ -1487,7 +1487,7 @@ static void write_kfmodes(VP8_COMP *cpi) {
           write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
 
 #if CONFIG_TX_SELECT
-        if (ym <= TM_PRED && c->txfm_mode == TX_MODE_SELECT &&
+        if (ym <= I8X8_PRED && c->txfm_mode == TX_MODE_SELECT &&
             !((c->mb_no_coeff_skip && m->mbmi.mb_skip_coeff) ||
               (segfeature_active(xd, segment_id, SEG_LVL_EOB) &&
                get_segdata(xd, segment_id, SEG_LVL_EOB) == 0))) {
@@ -1495,7 +1495,7 @@ static void write_kfmodes(VP8_COMP *cpi) {
           // FIXME(rbultje) code ternary symbol once all experiments are merged
           vp8_write(bc, sz != TX_4X4, c->prob_tx[0]);
 #if CONFIG_TX16X16
-          if (sz != TX_4X4)
+          if (sz != TX_4X4 && ym <= TM_PRED)
             vp8_write(bc, sz != TX_8X8, c->prob_tx[1]);
 #endif
         }
@@ -2653,9 +2653,11 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
 #if CONFIG_TX_SELECT
   {
 #if CONFIG_TX16X16
-    int cnt = cpi->txfm_count[0] + cpi->txfm_count[1] + cpi->txfm_count[2];
+    int cnt = cpi->txfm_count[0] + cpi->txfm_count[1] + cpi->txfm_count[2] +
+              cpi->txfm_count_8x8p[0] + cpi->txfm_count_8x8p[1];
     if (cnt && pc->txfm_mode == TX_MODE_SELECT) {
-      int prob = (255 * (cpi->txfm_count[1] + cpi->txfm_count[2]) + (cnt >> 1)) / cnt;
+      int cnt_non_4x4 = cpi->txfm_count[1] + cpi->txfm_count[2] + cpi->txfm_count_8x8p[1];
+      int prob = (255 * cnt_non_4x4 + (cnt >> 1)) / cnt;
       if (prob <= 1) {
         pc->prob_tx[0] = 1;
       } else if (prob >= 255) {
@@ -2667,7 +2669,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
     } else {
       pc->prob_tx[0] = 128;
     }
-    cnt -= cpi->txfm_count[0];
+    cnt = cpi->txfm_count[1] + cpi->txfm_count[2];
     if (cnt && pc->txfm_mode == TX_MODE_SELECT) {
       int prob = (255 * cpi->txfm_count[2] + (cnt >> 1)) / cnt;
       if (prob <= 1) {
@@ -2687,9 +2689,10 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
       vp8_write_literal(bc, pc->prob_tx[1], 8);
     }
 #else
-    int cnt = cpi->txfm_count[0] + cpi->txfm_count[1];
+    int cnt = cpi->txfm_count[0] + cpi->txfm_count[1] +
+              cpi->txfm_count_8x8p[0] + cpi->txfm_count_8x8p[1];
     if (cnt && pc->txfm_mode == TX_MODE_SELECT) {
-      int prob = (255 * cpi->txfm_count[1] + (cnt >> 1)) / cnt;
+      int prob = (255 * (cpi->txfm_count[1] + cpi->txfm_count_8x8p[1]) + (cnt >> 1)) / cnt;
       if (prob <= 1) {
         pc->prob_tx[0] = 1;
       } else if (prob >= 255) {
