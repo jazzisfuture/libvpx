@@ -338,10 +338,18 @@ void vp8_deblock(VP8_COMMON                 *cm,
 
     /* The pixel thresholds are adjusted according to if or not the macroblock
      * is a skipped block.  */
-    unsigned char *ylimits = (unsigned char *)vpx_memalign(16, 16 * cm->mb_cols);
-    unsigned char *uvlimits = (unsigned char *)vpx_memalign(16, 8 * cm->mb_cols);
+    unsigned char *ylimits;
+    unsigned char *uvlimits;
     (void) low_var_thresh;
     (void) flag;
+
+    if (!(ylimits = (unsigned char *)vpx_memalign(16, 16 * cm->mb_cols)))
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate ylimits buffer");
+
+    if (!(uvlimits = (unsigned char *)vpx_memalign(16, 8 * cm->mb_cols)))
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate uvlimits buffer");
 
     if (ppl > 0)
     {
@@ -381,7 +389,11 @@ void vp8_deblock(VP8_COMMON                 *cm,
                 post->v_buffer + 8 * mbr * post->uv_stride, source->uv_stride,
                 post->uv_stride, source->uv_width, uvlimits, 8);
         }
+    } else
+    {
+        vp8_yv12_copy_frame(source, post);
     }
+
     vpx_free(ylimits);
     vpx_free(uvlimits);
 }
@@ -397,13 +409,16 @@ void vp8_de_noise(YV12_BUFFER_CONFIG         *source,
     int ppl = (int)(level + .5);
     int mb_rows = source->y_width >> 4;
     int mb_cols = source->y_height >> 4;
-    unsigned char *limits = (unsigned char *)vpx_memalign(16, 16 * mb_cols);
+    unsigned char *limits;
     int mbr, mbc;
     (void) post;
     (void) low_var_thresh;
     (void) flag;
 
     /* TODO: The original code don't filter the 2 outer rows and columns. */
+    if (!(limits = (unsigned char *)vpx_memalign(16, 16 * mb_cols)))
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate limits buffer");
     vpx_memset(limits, (unsigned char)ppl, 16 * mb_cols);
 
     for (mbr = 0; mbr < mb_rows; mbr++)
