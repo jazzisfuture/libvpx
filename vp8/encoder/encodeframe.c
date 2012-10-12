@@ -1596,23 +1596,6 @@ void vp8_encode_frame(VP8_COMP *cpi) {
         cpi->common.comp_pred_mode = COMP_PREDICTION_ONLY;
       }
     }
-
-#if CONFIG_TX_SELECT
-    if (cpi->common.txfm_mode == TX_MODE_SELECT) {
-      const int count4x4 = cpi->txfm_count[TX_4X4] + cpi->txfm_count_8x8p[TX_4X4];
-      const int count8x8 = cpi->txfm_count[TX_8X8];
-      const int count8x8_8x8p = cpi->txfm_count_8x8p[TX_8X8];
-      const int count16x16 = cpi->txfm_count[TX_16X16];
-
-      if (count4x4 == 0 && count16x16 == 0) {
-        cpi->common.txfm_mode = ALLOW_8X8;
-      } else if (count8x8 == 0 && count16x16 == 0 && count8x8_8x8p == 0) {
-        cpi->common.txfm_mode = ONLY_4X4;
-      } else if (count8x8 == 0 && count4x4 == 0) {
-        cpi->common.txfm_mode = ALLOW_16X16;
-      }
-    }
-#endif
   } else {
     encode_frame_internal(cpi);
   }
