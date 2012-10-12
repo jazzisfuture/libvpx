@@ -10,13 +10,11 @@
 
 
 #include "vpx_ports/config.h"
-#include "recon.h"
 #include "vpx_mem/vpx_mem.h"
 #include "reconintra.h"
 
-void vp8_intra4x4_predict(BLOCKD *x,
-                          int b_mode,
-                          unsigned char *predictor) {
+void vp8_intra4x4_predict_c(BLOCKD *x, int b_mode,
+                            unsigned char *predictor) {
   int i, r, c;
 
   unsigned char *Above = *(x->base_dst) + x->dst - x->dst_stride;
