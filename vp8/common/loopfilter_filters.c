@@ -167,6 +167,19 @@ static __inline signed char vp8_flatmask(uc thresh,
   return flat;
 }
 
+
+static __inline unsigned char avg_8_pts(uc x0, uc x1, uc x2, uc x3, uc x4,
+                                        uc x5, uc x6, uc x7) {
+  unsigned char a = (x0 + x1 + 1) >> 1;
+  unsigned char b = (x2 + x3 + 1) >> 1;
+  unsigned char c = (x4 + x5 + 1) >> 1;
+  unsigned char d = (x6 + x7 + 1) >> 1;
+  unsigned char e = (a + b + 1) >> 1;
+  unsigned char f = (c + d + 1) >> 1;
+
+  return (e + f + 1) >> 1;
+}
+
 static __inline void vp8_mbfilter(signed char mask, uc hev, uc flat,
                                   uc *op4, uc *op3, uc *op2, uc *op1, uc *op0,
                                   uc *oq0, uc *oq1, uc *oq2, uc *oq3, uc *oq4) {
@@ -189,12 +202,12 @@ static __inline void vp8_mbfilter(signed char mask, uc hev, uc flat,
     q3 = *oq3;
     q4 = *oq4;
 
-    *op2 = (p4 + p4 + p3 + p2 + p2 + p1 + p0 + q0 + 4) >> 3;
-    *op1 = (p4 + p3 + p2 + p1 + p1 + p0 + q0 + q1 + 4) >> 3;
-    *op0 = (p3 + p2 + p1 + p0 + p0 + q0 + q1 + q2 + 4) >> 3;
-    *oq0 = (p2 + p1 + p0 + q0 + q0 + q1 + q2 + q3 + 4) >> 3;
-    *oq1 = (p1 + p0 + q0 + q1 + q1 + q2 + q3 + q4 + 4) >> 3;
-    *oq2 = (p0 + q0 + q1 + q2 + q2 + q3 + q4 + q4 + 4) >> 3;
+    *op2 = avg_8_pts(p4, p4, p3, p2, p2, p1, p0, q0);
+    *op1 = avg_8_pts(p4, p3, p2, p1, p1, p0, q0, q1);
+    *op0 = avg_8_pts(p3, p2, p1, p0, p0, q0, q1, q2);
+    *oq0 = avg_8_pts(p2, p1, p0, q0, q0, q1, q2, q3);
+    *oq1 = avg_8_pts(p1, p0, q0, q1, q1, q2, q3, q4);
+    *oq2 = avg_8_pts(p0, q0, q1, q2, q2, q3, q4, q4);
   } else {
     signed char ps0, qs0;
     signed char ps1, qs1;
