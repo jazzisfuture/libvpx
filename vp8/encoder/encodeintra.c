@@ -28,10 +28,6 @@
 #define IF_RTCD(x) NULL
 #endif
 
-#if CONFIG_HYBRIDTRANSFORM
-extern void vp8_ht_quantize_b(BLOCK *b, BLOCKD *d);
-#endif
-
 int vp8_encode_intra(VP8_COMP *cpi, MACROBLOCK *x, int use_16x16_pred) {
   int i;
   int intra_pred_var = 0;
@@ -88,17 +84,17 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
     b->bmi.as_mode.test = b->bmi.as_mode.first;
     txfm_map(b, b->bmi.as_mode.first);
     vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
-    vp8_ht_quantize_b(be, b);
+    vp8_ht_quantize_b_4x4(be, b);
     vp8_ihtllm_c(b->dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type, 4);
   } else {
     x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32) ;
-    x->quantize_b(be, b) ;
-    vp8_inverse_transform_b(IF_RTCD(&rtcd->common->idct), b, 32) ;
+    x->quantize_b_4x4(be, b) ;
+    vp8_inverse_transform_b_4x4(IF_RTCD(&rtcd->common->idct), b, 32) ;
   }
 #else
   x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
-  x->quantize_b(be, b);
-  vp8_inverse_transform_b(IF_RTCD(&rtcd->common->idct), b, 32);
+  x->quantize_b_4x4(be, b);
+  vp8_inverse_transform_b_4x4(IF_RTCD(&rtcd->common->idct), b, 32);
 #endif
 
   vp8_recon_b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
@@ -155,14 +151,14 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   else if (tx_type == TX_8X8)
     vp8_transform_intra_mby_8x8(x);
   else
-    vp8_transform_intra_mby(x);
+    vp8_transform_intra_mby_4x4(x);
 
   if (tx_type == TX_16X16)
     vp8_quantize_mby_16x16(x);
   else if (tx_type == TX_8X8)
     vp8_quantize_mby_8x8(x);
   else
-    vp8_quantize_mby(x);
+    vp8_quantize_mby_4x4(x);
 
   if (x->optimize) {
     if (tx_type == TX_16X16)
@@ -170,7 +166,7 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
     else if (tx_type == TX_8X8)
       vp8_optimize_mby_8x8(x, rtcd);
     else
-      vp8_optimize_mby(x, rtcd);
+      vp8_optimize_mby_4x4(x, rtcd);
   }
 
   if (tx_type == TX_16X16)
@@ -189,7 +185,7 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   else if (tx_type == TX_8X8)
     vp8_inverse_transform_mby_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
   else
-    vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    vp8_inverse_transform_mby_4x4(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
 
   vp8_recon_mby(&x->e_mbd);
 
@@ -212,24 +208,24 @@ void vp8_encode_intra16x16mbuv(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   if (tx_type == TX_8X8)
     vp8_transform_mbuv_8x8(x);
   else
-    vp8_transform_mbuv(x);
+    vp8_transform_mbuv_4x4(x);
 
   if (tx_type == TX_8X8)
     vp8_quantize_mbuv_8x8(x);
   else
-    vp8_quantize_mbuv(x);
+    vp8_quantize_mbuv_4x4(x);
 
   if (x->optimize) {
     if (tx_type == TX_8X8)
       vp8_optimize_mbuv_8x8(x, rtcd);
     else
-      vp8_optimize_mbuv(x, rtcd);
+      vp8_optimize_mbuv_4x4(x, rtcd);
   }
 
   if (tx_type == TX_8X8)
     vp8_inverse_transform_mbuv_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
   else
-    vp8_inverse_transform_mbuv(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    vp8_inverse_transform_mbuv_4x4(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
 
   vp8_recon_intra_mbuv(&x->e_mbd);
 }
@@ -277,8 +273,8 @@ void vp8_encode_intra8x8(const VP8_ENCODER_RTCD *rtcd,
       be = &x->block[ib + iblock[i]];
       ENCODEMB_INVOKE(&rtcd->encodemb, subb)(be, b, 16);
       x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
-      x->quantize_b(be, b);
-      vp8_inverse_transform_b(IF_RTCD(&rtcd->common->idct), b, 32);
+      x->quantize_b_4x4(be, b);
+      vp8_inverse_transform_b_4x4(IF_RTCD(&rtcd->common->idct), b, 32);
     }
   }
 
@@ -319,9 +315,9 @@ void vp8_encode_intra_uv4x4(const VP8_ENCODER_RTCD *rtcd,
 
   x->vp8_short_fdct4x4(be->src_diff, be->coeff, 16);
 
-  x->quantize_b(be, b);
+  x->quantize_b_4x4(be, b);
 
-  vp8_inverse_transform_b(IF_RTCD(&rtcd->common->idct), b, 16);
+  vp8_inverse_transform_b_4x4(IF_RTCD(&rtcd->common->idct), b, 16);
 
   vp8_recon_uv_b_c(b->predictor,b->diff, *(b->base_dst) + b->dst, b->dst_stride);
 }
