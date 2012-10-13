@@ -189,17 +189,15 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd,
   *a = *l = pt;
 }
 
-static void tokenize2nd_order_b_8x8
-(
-  MACROBLOCKD *xd,
-  const BLOCKD *const b,
-  TOKENEXTRA **tp,
-  const int type,     /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
-  const FRAME_TYPE frametype,
-  ENTROPY_CONTEXT *a,
-  ENTROPY_CONTEXT *l,
-  VP8_COMP *cpi,
-  int dry_run) {
+static void tokenize2nd_order_b_8x8(MACROBLOCKD *xd,
+                                    const BLOCKD *const b,
+                                    TOKENEXTRA **tp,
+                                    const int type,     /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
+                                    const FRAME_TYPE frametype,
+                                    ENTROPY_CONTEXT *a,
+                                    ENTROPY_CONTEXT *l,
+                                    VP8_COMP *cpi,
+                                    int dry_run) {
   int pt; /* near block/prev token context index */
   int c = 0;          /* start at DC */
   const int eob = b->eob;     /* one beyond last nonzero coeff */
@@ -244,11 +242,9 @@ static void tokenize2nd_order_b_8x8
       ++cpi->coef_counts_8x8       [type] [band] [pt] [x];
   } while (pt = vp8_prev_token_class[x], ++t, c < eob  &&  ++c < seg_eob);
 
-
   *tp = t;
   pt = (c != !type); /* 0 <-> all coeff data is zero */
   *a = *l = pt;
-
 }
 
 static void tokenize2nd_order_b_4x4(MACROBLOCKD *xd,
@@ -256,34 +252,36 @@ static void tokenize2nd_order_b_4x4(MACROBLOCKD *xd,
                                     VP8_COMP *cpi,
                                     int dry_run) {
   int pt;             /* near block/prev token context index */
-  int c;              /* start at DC */
+  int c = 0;          /* start at DC */
   TOKENEXTRA *t = *tp;/* store tokens starting here */
-  const BLOCKD *b;
-  const short *qcoeff_ptr;
+  const BLOCKD *b = xd->block + 24;
+  const short *qcoeff_ptr = b->qcoeff;
   ENTROPY_CONTEXT *a;
   ENTROPY_CONTEXT *l;
   int band, rc, v, token;
-
+  int eob = b->eob;
   int seg_eob = 16;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
 
   if (segfeature_active(xd, segment_id, SEG_LVL_EOB))
     seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
 
-  b = xd->block + 24;
-  qcoeff_ptr = b->qcoeff;
   a = (ENTROPY_CONTEXT *)xd->above_context + 8;
   l = (ENTROPY_CONTEXT *)xd->left_context + 8;
 
   VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
-  for (c = 0; c < b->eob; c++) {
-    rc = vp8_default_zig_zag1d[c];
+  do {
     band = vp8_coef_bands[c];
-    v = qcoeff_ptr[rc];
 
-    t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-    token    = vp8_dct_value_tokens_ptr[v].Token;
+    if (c < eob) {
+      rc = vp8_default_zig_zag1d[c];
+      v = qcoeff_ptr[rc];
+
+      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+      token    = vp8_dct_value_tokens_ptr[v].Token;
+    } else
+      token    = DCT_EOB_TOKEN;
 
     t->Token = token;
     t->context_tree = cpi->common.fc.coef_probs [1] [band] [pt];
@@ -293,43 +291,22 @@ static void tokenize2nd_order_b_4x4(MACROBLOCKD *xd,
 
     if (!dry_run)
       ++cpi->coef_counts       [1] [band] [pt] [token];
-
-    pt = vp8_prev_token_class[token];
-    t++;
-  }
-
-  if (c < seg_eob) {
-    band = vp8_coef_bands[c];
-    t->Token = DCT_EOB_TOKEN;
-    t->context_tree = cpi->common.fc.coef_probs [1] [band] [pt];
-
-    t->skip_eob_node = ((pt == 0) && (band > 0));
-    assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-    if (!dry_run)
-      ++cpi->coef_counts       [1] [band] [pt] [DCT_EOB_TOKEN];
-
-    t++;
-  }
-
+  } while (pt = vp8_prev_token_class[token], ++t, c < eob && ++c < seg_eob);
 
   *tp = t;
   pt = (c != 0); /* 0 <-> all coeff data is zero */
   *a = *l = pt;
-
 }
 
-static void tokenize1st_order_b_8x8
-(
-  MACROBLOCKD *xd,
-  const BLOCKD *const b,
-  TOKENEXTRA **tp,
-  const int type,     /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
-  const FRAME_TYPE frametype,
-  ENTROPY_CONTEXT *a,
-  ENTROPY_CONTEXT *l,
-  VP8_COMP *cpi,
-  int dry_run) {
+static void tokenize1st_order_b_8x8(MACROBLOCKD *xd,
+                                    const BLOCKD *const b,
+                                    TOKENEXTRA **tp,
+                                    const int type,     /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
+                                    const FRAME_TYPE frametype,
+                                    ENTROPY_CONTEXT *a,
+                                    ENTROPY_CONTEXT *l,
+                                    VP8_COMP *cpi,
+                                    int dry_run) {
   int pt; /* near block/prev token context index */
   int c = type ? 0 : 1;       /* start at DC unless type 0 */
   TOKENEXTRA *t = *tp;        /* store tokens starting here */
@@ -338,25 +315,29 @@ static void tokenize1st_order_b_8x8
   TX_TYPE tx_type = xd->mode_info_context->mbmi.mode == I8X8_PRED ?
       get_tx_type(xd, b) : DCT_DCT;
 #endif
-
+  int eob = b->eob;
   int seg_eob = 64;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
+  int x;
 
   if (segfeature_active(xd, segment_id, SEG_LVL_EOB))
     seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
 
   VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
-  //if (!dry_run) printf("8: %d\n", tx_type);
-  for (; c < b->eob; ++c) {
+  do {
     const int band = vp8_coef_bands_8x8[c];
-    int rc = vp8_default_zig_zag1d_8x8[c];
-    int v = qcoeff_ptr[rc], x;
 
-    assert(-DCT_MAX_VALUE <= v  &&  v < (DCT_MAX_VALUE));
+    if (c < eob) {
+      int rc = vp8_default_zig_zag1d_8x8[c];
+      int v = qcoeff_ptr[rc];
 
-    t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-    x        = vp8_dct_value_tokens_ptr[v].Token;
+      assert(-DCT_MAX_VALUE <= v  &&  v < (DCT_MAX_VALUE));
+
+      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+      x        = vp8_dct_value_tokens_ptr[v].Token;
+    } else
+      x = DCT_EOB_TOKEN;
 
     t->Token = x;
 #if CONFIG_HYBRIDTRANSFORM8X8
@@ -377,43 +358,75 @@ static void tokenize1st_order_b_8x8
 #endif
         ++cpi->coef_counts_8x8[type][band][pt][x];
     }
-
-    pt = vp8_prev_token_class[x];
-    ++t;
-  }
-
-  if (c < seg_eob) {
-    const int band = vp8_coef_bands_8x8[c];
-    t->Token = DCT_EOB_TOKEN;
-
-#if CONFIG_HYBRIDTRANSFORM8X8
-    if (tx_type != DCT_DCT)
-      t->context_tree = cpi->common.fc.hybrid_coef_probs_8x8 [type] [band] [pt];
-    else
-#endif
-      t->context_tree = cpi->common.fc.coef_probs_8x8 [type] [band] [pt];
-
-    t->skip_eob_node = pt == 0 && ((band > 0 && type > 0) || (band > 1 && type == 0));
-    if (vp8_coef_encodings[t->Token].Len - t->skip_eob_node <= 0) {
-      printf("type %d, seg-eob %d, eob %d, pt %d, c %d band %d\n", type, seg_eob, b->eob, pt, c, band);
-      fflush(stdout);
-    }
-    assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-    if (!dry_run) {
-#if CONFIG_HYBRIDTRANSFORM8X8
-      if (tx_type != DCT_DCT)
-        ++cpi->hybrid_coef_counts_8x8[type][band][pt][DCT_EOB_TOKEN];
-      else
-#endif
-        ++cpi->coef_counts_8x8[type][band][pt][DCT_EOB_TOKEN];
-    }
-    ++t;
-  }
+  } while (pt = vp8_prev_token_class[x], ++t, c < eob && ++c < seg_eob);
 
   *tp = t;
   pt = (c != !type); /* 0 <-> all coeff data is zero */
   *a = *l = pt;
+}
+
+static void tokenize1st_order_chroma_4x4(MACROBLOCKD *xd,
+                                         TOKENEXTRA **tp,
+                                         int type,           /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
+                                         VP8_COMP *cpi,
+                                         int dry_run) {
+  unsigned int block;
+  const BLOCKD *b = xd->block + 16;
+  int pt;             /* near block/prev token context index */
+  int c;
+  int token;
+  TOKENEXTRA *t = *tp;/* store tokens starting here */
+  const short *qcoeff_ptr;
+  ENTROPY_CONTEXT *a;
+  ENTROPY_CONTEXT *l;
+  int band, rc, v;
+  int tmp1, tmp2;
+  int seg_eob = 16;
+  int segment_id = xd->mode_info_context->mbmi.segment_id;
+
+  if (segfeature_active(xd, segment_id, SEG_LVL_EOB)) {
+    seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
+  }
+
+  /* Chroma */
+  for (block = 16; block < 24; block++, b++) {
+    int eob = b->eob;
+
+    tmp1 = vp8_block2above[block];
+    tmp2 = vp8_block2left[block];
+    qcoeff_ptr = b->qcoeff;
+    a = (ENTROPY_CONTEXT *)xd->above_context + tmp1;
+    l = (ENTROPY_CONTEXT *)xd->left_context + tmp2;
+    c = 0;
+
+    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+
+    do {
+      band = vp8_coef_bands[c];
+
+      if (c < eob) {
+        rc = vp8_default_zig_zag1d[c];
+        v = qcoeff_ptr[rc];
+
+        t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+        token    = vp8_dct_value_tokens_ptr[v].Token;
+      } else
+        token = DCT_EOB_TOKEN;
+
+      t->Token = token;
+      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
+
+      t->skip_eob_node = ((pt == 0) && (band > 0));
+      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
+
+      if (!dry_run)
+        ++cpi->coef_counts       [2] [band] [pt] [token];
+    } while (pt = vp8_prev_token_class[token], ++t, c < eob && ++c < seg_eob);
+
+    *tp = t;
+    pt = (c != 0); /* 0 <-> all coeff data is zero */
+    *a = *l = pt;
+  }
 }
 
 #if CONFIG_HYBRIDTRANSFORM
@@ -423,7 +436,7 @@ static void tokenize1st_order_ht_4x4(MACROBLOCKD *xd,
                                      VP8_COMP *cpi,
                                      int dry_run) {
   unsigned int block;
-  const BLOCKD *b;
+  const BLOCKD *b = xd->block;
   int pt;             /* near block/prev token context index */
   int c;
   int token;
@@ -443,33 +456,25 @@ static void tokenize1st_order_ht_4x4(MACROBLOCKD *xd,
     seg_eob = get_segdata( xd, segment_id, SEG_LVL_EOB );
   }
 
-  b = xd->block;
-
   /* Luma */
   for (block = 0; block < 16; block++, b++) {
-    B_PREDICTION_MODE b_mode;
+    int eob = b->eob;
     TX_TYPE tx_type = DCT_DCT;
 
     if( xd->mode_info_context->mbmi.mode == B_PRED ) {
-      b_mode = b->bmi.as_mode.first;
       tx_type = get_tx_type(xd, b);
     }
 
     // assign scanning order for luma components coded in intra4x4 mode
-    if( (xd->mode_info_context->mbmi.mode == B_PRED) &&
-        (type == PLANE_TYPE_Y_WITH_DC) ) {
-      switch(b_mode) {
-        case B_VE_PRED :
-        case B_VR_PRED :
+    if ((xd->mode_info_context->mbmi.mode == B_PRED) &&
+        (type == PLANE_TYPE_Y_WITH_DC)) {
+      switch (tx_type) {
+        case ADST_DCT:
           pt_scan = vp8_row_scan;
           break;
-
-        case B_HE_PRED :
-        case B_HD_PRED :
-        case B_HU_PRED :
+        case DCT_ADST:
           pt_scan = vp8_col_scan;
           break;
-
         default :
           pt_scan = vp8_default_zig_zag1d;
           break;
@@ -487,13 +492,17 @@ static void tokenize1st_order_ht_4x4(MACROBLOCKD *xd,
 
     c = type ? 0 : 1;
 
-    for (; c < b->eob; c++) {
-      rc = pt_scan[c];
+    do {
       band = vp8_coef_bands[c];
-      v = qcoeff_ptr[rc];
 
-      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-      token    = vp8_dct_value_tokens_ptr[v].Token;
+      if (c < eob) {
+        rc = pt_scan[c];
+        v = qcoeff_ptr[rc];
+
+        t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+        token    = vp8_dct_value_tokens_ptr[v].Token;
+      } else
+        token = DCT_EOB_TOKEN;
 
       t->Token = token;
       if (tx_type != DCT_DCT)
@@ -511,179 +520,24 @@ static void tokenize1st_order_ht_4x4(MACROBLOCKD *xd,
         else
           ++cpi->coef_counts       [type] [band] [pt] [token];
       }
-
-      pt = vp8_prev_token_class[token];
-      t++;
-    }
-
-    if (c < seg_eob) {
-      band = vp8_coef_bands[c];
-      t->Token = DCT_EOB_TOKEN;
-      if (tx_type != DCT_DCT)
-        t->context_tree = cpi->common.fc.hybrid_coef_probs [type] [band] [pt];
-      else
-        t->context_tree = cpi->common.fc.coef_probs [type] [band] [pt];
-
-      t->skip_eob_node = pt == 0 &&
-          ((band > 0 && type > 0) || (band > 1 && type == 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-      if (!dry_run) {
-        if (tx_type != DCT_DCT)
-          ++cpi->hybrid_coef_counts[type] [band] [pt] [DCT_EOB_TOKEN];
-        else
-          ++cpi->coef_counts       [type] [band] [pt] [DCT_EOB_TOKEN];
-      }
-
-      t++;
-    }
+    } while (pt = vp8_prev_token_class[token], ++t, c < eob && ++c < seg_eob);
 
     *tp = t;
     pt = (c != !type); /* 0 <-> all coeff data is zero */
     *a = *l = pt;
   }
 
-  // reset scanning order for chroma components
-  pt_scan = vp8_default_zig_zag1d ;
-
-  /* Chroma */
-  for (block = 16; block < 24; block++, b++) {
-    tmp1 = vp8_block2above[block];
-    tmp2 = vp8_block2left[block];
-    qcoeff_ptr = b->qcoeff;
-    a = (ENTROPY_CONTEXT *)xd->above_context + tmp1;
-    l = (ENTROPY_CONTEXT *)xd->left_context + tmp2;
-
-    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
-
-    for (c = 0; c < b->eob; c++) {
-      rc = pt_scan[c];
-      band = vp8_coef_bands[c];
-      v = qcoeff_ptr[rc];
-
-      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-      token    = vp8_dct_value_tokens_ptr[v].Token;
-
-      t->Token = token;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [token];
-
-      pt = vp8_prev_token_class[token];
-      t++;
-  }
-
-    if (c < seg_eob) {
-      band = vp8_coef_bands[c];
-      t->Token = DCT_EOB_TOKEN;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
-      t++;
-    }
-
-    *tp = t;
-    pt = (c != 0); /* 0 <-> all coeff data is zero */
-    *a = *l = pt;
-  }
+  tokenize1st_order_chroma_4x4(xd, tp, PLANE_TYPE_UV, cpi, dry_run);
 }
 #endif
 
-
-static void tokenize1st_order_chroma_4x4
-(
-  MACROBLOCKD *xd,
-  TOKENEXTRA **tp,
-  int type,           /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
-  VP8_COMP *cpi,
-  int dry_run) {
+static void tokenize1st_order_b_4x4(MACROBLOCKD *xd,
+                                    TOKENEXTRA **tp,
+                                    int type,           /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
+                                    VP8_COMP *cpi,
+                                    int dry_run) {
   unsigned int block;
-  const BLOCKD *b;
-  int pt;             /* near block/prev token context index */
-  int c;
-  int token;
-  TOKENEXTRA *t = *tp;/* store tokens starting here */
-  const short *qcoeff_ptr;
-  ENTROPY_CONTEXT *a;
-  ENTROPY_CONTEXT *l;
-  int band, rc, v;
-  int tmp1, tmp2;
-
-  int seg_eob = 16;
-  int segment_id = xd->mode_info_context->mbmi.segment_id;
-
-  if (segfeature_active(xd, segment_id, SEG_LVL_EOB)) {
-    seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
-  }
-
-  b = xd->block;
-  b += 16;
-
-  /* Chroma */
-  for (block = 16; block < 24; block++, b++) {
-    tmp1 = vp8_block2above[block];
-    tmp2 = vp8_block2left[block];
-    qcoeff_ptr = b->qcoeff;
-    a = (ENTROPY_CONTEXT *)xd->above_context + tmp1;
-    l = (ENTROPY_CONTEXT *)xd->left_context + tmp2;
-
-    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
-
-    for (c = 0; c < b->eob; c++) {
-      rc = vp8_default_zig_zag1d[c];
-      band = vp8_coef_bands[c];
-      v = qcoeff_ptr[rc];
-
-      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-      token    = vp8_dct_value_tokens_ptr[v].Token;
-
-      t->Token = token;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [token];
-
-      pt = vp8_prev_token_class[token];
-      t++;
-    }
-
-    if (c < seg_eob) {
-      band = vp8_coef_bands[c];
-      t->Token = DCT_EOB_TOKEN;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
-
-      t++;
-    }
-    *tp = t;
-    pt = (c != 0); /* 0 <-> all coeff data is zero */
-    *a = *l = pt;
-  }
-}
-
-static void tokenize1st_order_b_4x4
-(
-  MACROBLOCKD *xd,
-  TOKENEXTRA **tp,
-  int type,           /* which plane: 0=Y no DC, 1=Y2, 2=UV, 3=Y with DC */
-  VP8_COMP *cpi,
-  int dry_run) {
-  unsigned int block;
-  const BLOCKD *b;
+  const BLOCKD *b = xd->block;
   int pt;             /* near block/prev token context index */
   int band, rc, v, c, token;
   TOKENEXTRA *t = *tp;/* store tokens starting here */
@@ -697,9 +551,10 @@ static void tokenize1st_order_b_4x4
     seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
   }
 
-  b = xd->block;
   /* Luma */
   for (block = 0; block < 16; block++, b++) {
+    int eob = b->eob;
+
     qcoeff_ptr = b->qcoeff;
     a = (ENTROPY_CONTEXT *)xd->above_context + vp8_block2above[block];
     l = (ENTROPY_CONTEXT *)xd->left_context + vp8_block2left[block];
@@ -709,13 +564,17 @@ static void tokenize1st_order_b_4x4
 
     assert(b->eob <= 16);
 
-    for (; c < b->eob; c++) {
-      rc = vp8_default_zig_zag1d[c];
+    do {
       band = vp8_coef_bands[c];
-      v = qcoeff_ptr[rc];
 
-      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-      token    = vp8_dct_value_tokens_ptr[v].Token;
+      if (c < eob) {
+        rc = vp8_default_zig_zag1d[c];
+        v = qcoeff_ptr[rc];
+
+        t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
+        token    = vp8_dct_value_tokens_ptr[v].Token;
+      } else
+        token = DCT_EOB_TOKEN;
 
       t->Token = token;
       t->context_tree = cpi->common.fc.coef_probs [type] [band] [pt];
@@ -725,78 +584,16 @@ static void tokenize1st_order_b_4x4
       assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
       if (!dry_run)
         ++cpi->coef_counts       [type] [band] [pt] [token];
+    } while (pt = vp8_prev_token_class[token], ++t, c < eob && ++c < seg_eob);
 
-      pt = vp8_prev_token_class[token];
-      t++;
-    }
-
-    if (c < seg_eob) {
-      band = vp8_coef_bands[c];
-      t->Token = DCT_EOB_TOKEN;
-      t->context_tree = cpi->common.fc.coef_probs [type] [band] [pt];
-
-      t->skip_eob_node = pt == 0 &&
-                         ((band > 0 && type > 0) || (band > 1 && type == 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-      if (!dry_run)
-        ++cpi->coef_counts       [type] [band] [pt] [DCT_EOB_TOKEN];
-
-      t++;
-    }
     *tp = t;
     pt = (c != !type); /* 0 <-> all coeff data is zero */
     *a = *l = pt;
 
   }
-  /* Chroma */
-  for (block = 16; block < 24; block++, b++) {
-    qcoeff_ptr = b->qcoeff;
-    a = (ENTROPY_CONTEXT *)xd->above_context + vp8_block2above[block];
-    l = (ENTROPY_CONTEXT *)xd->left_context + vp8_block2left[block];
 
-    VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
-
-    assert(b->eob <= 16);
-    for (c = 0; c < b->eob; c++) {
-      rc = vp8_default_zig_zag1d[c];
-      band = vp8_coef_bands[c];
-      v = qcoeff_ptr[rc];
-
-      t->Extra = vp8_dct_value_tokens_ptr[v].Extra;
-      token    = vp8_dct_value_tokens_ptr[v].Token;
-
-      t->Token = token;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [token];
-
-      pt = vp8_prev_token_class[token];
-      t++;
-    }
-
-    if (c < seg_eob) {
-      band = vp8_coef_bands[c];
-      t->Token = DCT_EOB_TOKEN;
-      t->context_tree = cpi->common.fc.coef_probs [2] [band] [pt];
-
-      t->skip_eob_node = ((pt == 0) && (band > 0));
-      assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
-
-      if (!dry_run)
-        ++cpi->coef_counts       [2] [band] [pt] [DCT_EOB_TOKEN];
-
-      t++;
-    }
-    *tp = t;
-    pt = (c != 0); /* 0 <-> all coeff data is zero */
-    *a = *l = pt;
-  }
+  tokenize1st_order_chroma_4x4(xd, tp, PLANE_TYPE_UV, cpi, dry_run);
 }
-
 
 int mby_is_skippable_4x4(MACROBLOCKD *xd, int has_y2_block) {
   int skip = 1;
