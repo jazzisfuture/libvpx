@@ -1883,9 +1883,8 @@ void vp8cx_encode_intra_super_block(VP8_COMP *cpi,
     }
     vp8_inverse_transform_mby_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
     vp8_inverse_transform_mbuv_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
-    vp8_recon_mby_s_c(IF_RTCD(&rtcd->common->recon), &x->e_mbd,
-                      dst + x_idx * 16 + y_idx * 16 * dst_y_stride);
-    vp8_recon_mbuv_s_c(IF_RTCD(&rtcd->common->recon), &x->e_mbd,
+    vp8_recon_mby_s_c(&x->e_mbd, dst + x_idx * 16 + y_idx * 16 * dst_y_stride);
+    vp8_recon_mbuv_s_c(&x->e_mbd,
                        udst + x_idx * 8 + y_idx * 8 * dst_uv_stride,
                        vdst + x_idx * 8 + y_idx * 8 * dst_uv_stride);
 
