@@ -152,7 +152,7 @@ void vp8_build_dcblock_8x8(MACROBLOCK *x) {
   src_diff_ptr[8] = x->coeff[12 * 16];
 }
 
-void vp8_transform_mbuv(MACROBLOCK *x) {
+void vp8_transform_mbuv_4x4(MACROBLOCK *x) {
   int i;
 
   for (i = 16; i < 24; i += 2) {
@@ -162,7 +162,7 @@ void vp8_transform_mbuv(MACROBLOCK *x) {
 }
 
 
-void vp8_transform_intra_mby(MACROBLOCK *x) {
+void vp8_transform_intra_mby_4x4(MACROBLOCK *x) {
   int i;
 
   for (i = 0; i < 16; i += 2) {
@@ -180,7 +180,7 @@ void vp8_transform_intra_mby(MACROBLOCK *x) {
 }
 
 
-static void transform_mb(MACROBLOCK *x) {
+static void transform_mb_4x4(MACROBLOCK *x) {
   int i;
   MB_PREDICTION_MODE mode = x->e_mbd.mode_info_context->mbmi.mode;
 
@@ -206,7 +206,7 @@ static void transform_mb(MACROBLOCK *x) {
 }
 
 
-static void transform_mby(MACROBLOCK *x) {
+static void transform_mby_4x4(MACROBLOCK *x) {
   int i;
 
   for (i = 0; i < 16; i += 2) {
@@ -676,7 +676,7 @@ static void check_reset_8x8_2nd_coeffs(MACROBLOCKD *xd, int type,
   }
 }
 
-static void optimize_mb(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
+static void optimize_mb_4x4(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
   int b;
   int type;
   int has_2nd_order;
@@ -714,7 +714,7 @@ static void optimize_mb(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
 }
 
 
-void vp8_optimize_mby(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
+void vp8_optimize_mby_4x4(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
   int b;
   int type;
   int has_2nd_order;
@@ -754,7 +754,7 @@ void vp8_optimize_mby(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
   }
 }
 
-void vp8_optimize_mbuv(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
+void vp8_optimize_mbuv_4x4(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
   int b;
   ENTROPY_CONTEXT_PLANES t_above, t_left;
   ENTROPY_CONTEXT *ta;
@@ -1106,14 +1106,14 @@ void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   else if (tx_type == TX_8X8)
     vp8_transform_mb_8x8(x);
   else
-    transform_mb(x);
+    transform_mb_4x4(x);
 
   if (tx_type == TX_16X16)
     vp8_quantize_mb_16x16(x);
   else if (tx_type == TX_8X8)
     vp8_quantize_mb_8x8(x);
   else
-    vp8_quantize_mb(x);
+    vp8_quantize_mb_4x4(x);
 
   if (x->optimize) {
     if (tx_type == TX_16X16)
@@ -1121,7 +1121,7 @@ void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
     else if (tx_type == TX_8X8)
       optimize_mb_8x8(x, rtcd);
     else
-      optimize_mb(x, rtcd);
+      optimize_mb_4x4(x, rtcd);
   }
 
   if (tx_type == TX_16X16)
@@ -1130,7 +1130,7 @@ void vp8_encode_inter16x16(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   if (tx_type == TX_8X8)
     vp8_inverse_transform_mb_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
   else
-    vp8_inverse_transform_mb(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    vp8_inverse_transform_mb_4x4(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
 
   if (tx_type == TX_8X8) {
 #ifdef ENC_DEBUG
@@ -1204,9 +1204,9 @@ void vp8_encode_inter16x16y(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   else if (tx_type == TX_8X8)
     vp8_transform_mby_8x8(x);
   else
-    transform_mby(x);
+    transform_mby_4x4(x);
 
-  vp8_quantize_mby(x);
+  vp8_quantize_mby_4x4(x);
 
   if (tx_type == TX_16X16)
     vp8_inverse_transform_mby_16x16(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
@@ -1214,7 +1214,7 @@ void vp8_encode_inter16x16y(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
   if (tx_type == TX_8X8)
     vp8_inverse_transform_mby_8x8(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
   else
-    vp8_inverse_transform_mby(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
+    vp8_inverse_transform_mby_4x4(IF_RTCD(&rtcd->common->idct), &x->e_mbd);
 
   RECON_INVOKE(&rtcd->common->recon, recon_mby)
   (IF_RTCD(&rtcd->common->recon), &x->e_mbd);
