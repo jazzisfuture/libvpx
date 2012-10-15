@@ -139,12 +139,18 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd,
 #endif
   int seg_eob = 256;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
+    int eob2 = 0;
 
   if (segfeature_active(xd, segment_id, SEG_LVL_EOB))
     seg_eob = get_segdata(xd, segment_id, SEG_LVL_EOB);
 
   VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
+  {
+    int i;
+    for (i = c; i < seg_eob; ++i)
+      if (qcoeff_ptr[vp8_default_zig_zag1d_16x16[i]]) eob2 = i;
+  }
   do {
     const int band = vp8_coef_bands_16x16[c];
     int x;
@@ -171,6 +177,7 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd,
 
     t->skip_eob_node = pt == 0 && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                    (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
 #if CONFIG_HYBRIDTRANSFORM16X16
       if (tx_type != DCT_DCT)

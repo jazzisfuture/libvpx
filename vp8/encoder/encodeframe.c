@@ -1928,7 +1928,7 @@ void vp8cx_encode_intra_super_block(VP8_COMP *cpi,
     update_sb_skip_coeff_state(cpi, x, ta, tl, tp, t, skip);
   }
 }
-#endif
+#endif /* CONFIG_SUPERBLOCKS */
 
 void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
                                     MACROBLOCK *x,
