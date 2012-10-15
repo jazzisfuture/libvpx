@@ -236,10 +236,6 @@ static B_PREDICTION_MODE pred_mode_conv(MB_PREDICTION_MODE mode) {
 union b_mode_info {
   struct {
     B_PREDICTION_MODE first;
-#if CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HYBRIDTRANSFORM || CONFIG_HYBRIDTRANSFORM16X16
-    TX_TYPE           tx_type;
-#endif
-
 #if CONFIG_COMP_INTRA_PRED
     B_PREDICTION_MODE second;
 #endif
@@ -446,63 +442,65 @@ typedef struct MacroBlockD {
 
 #if CONFIG_HYBRIDTRANSFORM || CONFIG_HYBRIDTRANSFORM8X8 || CONFIG_HYBRIDTRANSFORM16X16
 // transform mapping
-static void txfm_map(BLOCKD *b, B_PREDICTION_MODE bmode) {
+static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
   // map transform type
   switch (bmode) {
     case B_TM_PRED :
     case B_RD_PRED :
-      b->bmi.as_mode.tx_type = ADST_ADST;
-      break;
+      return ADST_ADST;
 
     case B_VE_PRED :
     case B_VR_PRED :
-      b->bmi.as_mode.tx_type = ADST_DCT;
-      break;
+      return ADST_DCT;
 
     case B_HE_PRED :
     case B_HD_PRED :
     case B_HU_PRED :
-      b->bmi.as_mode.tx_type = DCT_ADST;
+      return DCT_ADST;
       break;
 
     default :
-      b->bmi.as_mode.tx_type = DCT_DCT;
       break;
   }
+
+  return DCT_DCT;
 }
 
 static TX_TYPE get_tx_type(MACROBLOCKD *xd, const BLOCKD *b) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   TX_TYPE tx_type = DCT_DCT;
   int ib = (b - xd->block);
-  if (ib >= 16) return tx_type;
-#if CONFIG_HYBRIDTRANSFORM16X16
-  if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
-    if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
-        xd->q_index < ACTIVE_HT16)
-      tx_type = b->bmi.as_mode.tx_type;
+
+  if (ib >= 16)
     return tx_type;
+
+#if CONFIG_HYBRIDTRANSFORM16X16
+  if (mbmi->txfm_size == TX_16X16) {
+    if (mbmi->mode < I8X8_PRED && xd->q_index < ACTIVE_HT16) {
+      return txfm_map(pred_mode_conv(mbmi->mode));
+    }
   }
 #endif
 #if CONFIG_HYBRIDTRANSFORM8X8
-  if (xd->mode_info_context->mbmi.txfm_size  == TX_8X8) {
-    BLOCKD *bb;
-    ib = (ib & 8) + ((ib & 4) >> 1);
-    bb = xd->block + ib;
-    if (xd->mode_info_context->mbmi.mode == I8X8_PRED)
-      tx_type = bb->bmi.as_mode.tx_type;
-    return tx_type;
+  if (mbmi->txfm_size == TX_8X8) {
+    if (mbmi->mode == I8X8_PRED) {
+      BLOCKD *bb;
+      ib = (ib & 8) + ((ib & 4) >> 1);
+      bb = xd->block + ib;
+
+      return txfm_map(pred_mode_conv(bb->bmi.as_mode.first));
+    }
   }
 #endif
 #if CONFIG_HYBRIDTRANSFORM
-  if (xd->mode_info_context->mbmi.txfm_size  == TX_4X4) {
-    if (xd->mode_info_context->mbmi.mode == B_PRED &&
-        xd->q_index < ACTIVE_HT) {
-      tx_type = b->bmi.as_mode.tx_type;
+  if (mbmi->txfm_size == TX_4X4) {
+    if (mbmi->mode == B_PRED && xd->q_index < ACTIVE_HT) {
+      return txfm_map(b->bmi.as_mode.first);
     }
-    return tx_type;
   }
 #endif
-  return tx_type;
+
+  return DCT_DCT;
 }
 #endif
 

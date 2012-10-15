@@ -313,7 +313,9 @@ void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
                         (mb->e_mbd.mode_info_context->mbmi.mode == B_PRED);
 
         if((type == PLANE_TYPE_Y_WITH_DC) && active_ht) {
-          switch (d->bmi.as_mode.tx_type) {
+          TX_TYPE tx_type = txfm_map(d->bmi.as_mode.first);
+
+          switch (tx_type) {
             case ADST_DCT:
               scan = vp8_row_scan;
               break;

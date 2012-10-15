@@ -16,6 +16,9 @@
 #define prototype_quantize_block(sym) \
   void (sym)(BLOCK *b,BLOCKD *d)
 
+#define prototype_ht_quantize_block(sym) \
+  void (sym)(BLOCK *b,BLOCKD *d, TX_TYPE tx_type)
+
 #define prototype_quantize_block_pair(sym) \
   void (sym)(BLOCK *b1, BLOCK *b2, BLOCKD *d1, BLOCKD *d2)
 
@@ -31,7 +34,7 @@
 #endif
 
 #if CONFIG_HYBRIDTRANSFORM
-extern prototype_quantize_block(vp8_ht_quantize_b_4x4);
+extern prototype_ht_quantize_block(vp8_ht_quantize_b_4x4);
 #endif
 
 #ifndef vp8_quantize_quantb_4x4
