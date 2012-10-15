@@ -115,11 +115,6 @@ void vp8_arch_x86_encoder_init(VP8_COMP *cpi) {
     cpi->rtcd.variance.mse16x16              = vp8_mse16x16_mmx;
     cpi->rtcd.variance.getmbss               = vp8_get_mb_ss_mmx;
 
-    cpi->rtcd.fdct.short4x4                  = vp8_short_fdct4x4_mmx;
-    cpi->rtcd.fdct.short8x4                  = vp8_short_fdct8x4_mmx;
-    cpi->rtcd.fdct.fast4x4                   = vp8_short_fdct4x4_mmx;
-    cpi->rtcd.fdct.fast8x4                   = vp8_short_fdct8x4_mmx;
-
     cpi->rtcd.fdct.walsh_short4x4            = vp8_short_walsh4x4_c;
 
     cpi->rtcd.encodemb.berr                  = vp8_block_error_mmx;
@@ -158,11 +153,6 @@ void vp8_arch_x86_encoder_init(VP8_COMP *cpi) {
 
     cpi->rtcd.variance.mse16x16              = vp8_mse16x16_wmt;
     cpi->rtcd.variance.getmbss               = vp8_get_mb_ss_sse2;
-
-    cpi->rtcd.fdct.short4x4                  = vp8_short_fdct4x4_sse2;
-    cpi->rtcd.fdct.short8x4                  = vp8_short_fdct8x4_sse2;
-    cpi->rtcd.fdct.fast4x4                   = vp8_short_fdct4x4_sse2;
-    cpi->rtcd.fdct.fast8x4                   = vp8_short_fdct8x4_sse2;
 
     cpi->rtcd.fdct.walsh_short4x4            = vp8_short_walsh4x4_sse2;
 
