@@ -171,6 +171,7 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd,
 
     t->skip_eob_node = pt == 0 && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                    (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
 #if CONFIG_HYBRIDTRANSFORM16X16
       if (tx_type != DCT_DCT)
