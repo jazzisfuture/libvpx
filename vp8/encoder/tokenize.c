@@ -171,6 +171,7 @@ static void tokenize1st_order_b_16x16(MACROBLOCKD *xd,
 
     t->skip_eob_node = pt == 0 && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                    (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    assert(vp8_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
 #if CONFIG_HYBRIDTRANSFORM16X16
       if (tx_type != DCT_DCT)
@@ -310,8 +311,7 @@ static void tokenize1st_order_b_8x8(MACROBLOCKD *xd,
   TOKENEXTRA *t = *tp;        /* store tokens starting here */
   const short *qcoeff_ptr = b->qcoeff;
 #if CONFIG_HYBRIDTRANSFORM8X8
-  TX_TYPE tx_type = xd->mode_info_context->mbmi.mode == I8X8_PRED ?
-      get_tx_type(xd, b) : DCT_DCT;
+  TX_TYPE tx_type = get_tx_type(xd, b); //xd->mode_info_context->mbmi.mode == I8X8_PRED ?  get_tx_type(xd, b) : DCT_DCT;
 #endif
   const int eob = b->eob;
   int seg_eob = 64;
@@ -674,12 +674,6 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
   int skip_inc;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
 
-#if CONFIG_HYBRIDTRANSFORM
-    int QIndex = cpi->mb.q_index;
-    int active_ht = (QIndex < ACTIVE_HT) &&
-                    (xd->mode_info_context->mbmi.mode == B_PRED);
-#endif
-
   if (!segfeature_active(xd, segment_id, SEG_LVL_EOB) ||
       (get_segdata(xd, segment_id, SEG_LVL_EOB) != 0)) {
     skip_inc = 1;
@@ -785,11 +779,10 @@ void vp8_tokenize_mb(VP8_COMP *cpi,
     }
   } else {
 #if CONFIG_HYBRIDTRANSFORM
-    if (active_ht)
-      tokenize1st_order_ht_4x4(xd, t, plane_type, cpi, dry_run);
-    else
+    tokenize1st_order_ht_4x4(xd, t, plane_type, cpi, dry_run);
+#else
+    tokenize1st_order_b_4x4(xd, t, plane_type, cpi, dry_run);
 #endif
-      tokenize1st_order_b_4x4(xd, t, plane_type, cpi, dry_run);
   }
   if (dry_run)
     *t = t_backup;

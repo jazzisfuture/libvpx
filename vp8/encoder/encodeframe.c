@@ -1064,7 +1064,8 @@ static void encode_sb(VP8_COMP *cpi,
       
       (*tp)->Token = EOSB_TOKEN;
       (*tp)++;
-      cpi->tplist[mb_row].stop = *tp;
+      //cpi->tplist[mb_row].stop = *tp;
+      if (mb_row < cm->mb_rows) cpi->tplist[mb_row].stop = *tp;
       break;
     }
 #endif
@@ -1088,7 +1089,7 @@ static void encode_sb(VP8_COMP *cpi,
 #endif
     (*tp)->Token = EOSB_TOKEN;
     (*tp)++;
-    cpi->tplist[mb_row].stop = *tp;
+    if (mb_row < cm->mb_rows) cpi->tplist[mb_row].stop = *tp;
   }
 
   // debug output
@@ -1931,7 +1932,7 @@ void vp8cx_encode_intra_super_block(VP8_COMP *cpi,
     update_sb_skip_coeff_state(cpi, x, ta, tl, tp, t, skip);
   }
 }
-#endif
+#endif /* CONFIG_SUPERBLOCKS */
 
 void vp8cx_encode_intra_macro_block(VP8_COMP *cpi,
                                     MACROBLOCK *x,
