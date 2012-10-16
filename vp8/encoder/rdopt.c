@@ -464,9 +464,9 @@ int vp8_mbuverror_c(MACROBLOCK *mb)
 
 int VP8_UVSSE(MACROBLOCK *x)
 {
-    unsigned char *uptr, *vptr;
-    unsigned char *upred_ptr = (*(x->block[16].base_src) + x->block[16].src);
-    unsigned char *vpred_ptr = (*(x->block[20].base_src) + x->block[20].src);
+    uint8_t *uptr, *vptr;
+    uint8_t *upred_ptr = (*(x->block[16].base_src) + x->block[16].src);
+    uint8_t *vpred_ptr = (*(x->block[20].base_src) + x->block[20].src);
     int uv_stride = x->block[16].src_stride;
 
     unsigned int sse1 = 0;
@@ -615,65 +615,52 @@ static void macro_block_yrd( MACROBLOCK *mb,
     *Rate = vp8_rdcost_mby(mb);
 }
 
-static void copy_predictor(unsigned char *dst, const unsigned char *predictor)
-{
-    const unsigned int *p = (const unsigned int *)predictor;
-    unsigned int *d = (unsigned int *)dst;
-    d[0] = p[0];
-    d[4] = p[4];
-    d[8] = p[8];
-    d[12] = p[12];
+static void copy_predictor(uint8_t *dst, const uint8_t *predictor) {
+    vpx_memcpy(dst, predictor, 16 * sizeof(*dst));
 }
-static int rd_pick_intra4x4block(
-    VP8_COMP *cpi,
-    MACROBLOCK *x,
-    BLOCK *be,
-    BLOCKD *b,
-    B_PREDICTION_MODE *best_mode,
-    const int *bmode_costs,
-    ENTROPY_CONTEXT *a,
-    ENTROPY_CONTEXT *l,
 
-    int *bestrate,
-    int *bestratey,
-    int *bestdistortion)
-{
+static int rd_pick_intra4x4block(VP8_COMP *cpi,
+                                 MACROBLOCK *x,
+                                 BLOCK *be,
+                                 BLOCKD *b,
+                                 B_PREDICTION_MODE *best_mode,
+                                 const int *bmode_costs,
+                                 ENTROPY_CONTEXT *a,
+                                 ENTROPY_CONTEXT *l,
+                                 int *bestrate,
+                                 int *bestratey,
+                                 int *bestdistortion) {
     B_PREDICTION_MODE mode;
     int best_rd = INT_MAX;
-    int rate = 0;
-    int distortion;
 
-    ENTROPY_CONTEXT ta = *a, tempa = *a;
-    ENTROPY_CONTEXT tl = *l, templ = *l;
+    ENTROPY_CONTEXT ta = *a, tl = *l;
     /*
      * The predictor buffer is a 2d buffer with a stride of 16.  Create
      * a temp buffer that meets the stride requirements, but we are only
      * interested in the left 4x4 block
      * */
-    DECLARE_ALIGNED_ARRAY(16, unsigned char,  best_predictor, 16*4);
-    DECLARE_ALIGNED_ARRAY(16, short, best_dqcoeff, 16);
-    int dst_stride = x->e_mbd.dst.y_stride;
-    unsigned char *dst = x->e_mbd.dst.y_buffer + b->offset;
+    DECLARE_ALIGNED_ARRAY(16, uint8_t,  best_predictor, 16*4);
+    DECLARE_ALIGNED_ARRAY(16, int16_t, best_dqcoeff, 16);
+    const int dst_stride = x->e_mbd.dst.y_stride;
+    uint8_t* dst = x->e_mbd.dst.y_buffer + b->offset;
 
-    unsigned char *Above = dst - dst_stride;
-    unsigned char *yleft = dst - 1;
-    unsigned char top_left = Above[-1];
+    uint8_t* const above = dst - dst_stride;
+    uint8_t* const left = dst - 1;
+    const int top_left = above[-1];
 
     for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++)
     {
+        int distortion;
         int this_rd;
         int ratey;
+        int rate = bmode_costs[mode];
+        ENTROPY_CONTEXT tempa = ta, templ = tl;
 
-        rate = bmode_costs[mode];
-
-        vp8_intra4x4_predict(Above, yleft, dst_stride, mode,
+        vp8_intra4x4_predict(above, left, dst_stride, mode,
                              b->predictor, 16, top_left);
         vp8_subtract_b(be, b, 16);
         x->short_fdct4x4(be->src_diff, be->coeff, 32);
         x->quantize_b(be, b);
-
-        tempa = ta;
-        templ = tl;
 
         ratey = cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC, &tempa, &templ);
         rate += ratey;
@@ -691,7 +678,7 @@ static int rd_pick_intra4x4block(
             *a = tempa;
             *l = templ;
             copy_predictor(best_predictor, b->predictor);
-            vpx_memcpy(best_dqcoeff, b->dqcoeff, 32);
+            vpx_memcpy(best_dqcoeff, b->dqcoeff, 16 * sizeof(*best_dqcoeff));
         }
     }
     b->bmi.as_mode = *best_mode;
@@ -701,9 +688,10 @@ static int rd_pick_intra4x4block(
     return best_rd;
 }
 
-static int rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rate,
-                                     int *rate_y, int *Distortion, int best_rd)
-{
+static int rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb,
+                                     int *rate_ptr, int *rate_y_ptr,
+                                     int *distortion_ptr,
+                                     int best_rd) {
     MACROBLOCKD *const xd = &mb->e_mbd;
     int i;
     int cost = mb->mbmode_cost [xd->frame_type] [B_PRED];
@@ -711,19 +699,14 @@ static int rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rate,
     int tot_rate_y = 0;
     int64_t total_rd = 0;
     ENTROPY_CONTEXT_PLANES t_above, t_left;
-    ENTROPY_CONTEXT *ta;
-    ENTROPY_CONTEXT *tl;
-    const int *bmode_costs;
+    ENTROPY_CONTEXT* const ta = (ENTROPY_CONTEXT *)&t_above;
+    ENTROPY_CONTEXT* const tl = (ENTROPY_CONTEXT *)&t_left;
+    const int* bmode_costs = mb->inter_bmode_costs;
 
     vpx_memcpy(&t_above, mb->e_mbd.above_context, sizeof(ENTROPY_CONTEXT_PLANES));
     vpx_memcpy(&t_left, mb->e_mbd.left_context, sizeof(ENTROPY_CONTEXT_PLANES));
 
-    ta = (ENTROPY_CONTEXT *)&t_above;
-    tl = (ENTROPY_CONTEXT *)&t_left;
-
     intra_prediction_down_copy(xd, xd->dst.y_buffer - xd->dst.y_stride + 16);
-
-    bmode_costs = mb->inter_bmode_costs;
 
     for (i = 0; i < 16; i++)
     {
@@ -736,8 +719,7 @@ static int rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rate,
         {
             const B_PREDICTION_MODE A = above_block_mode(mic, i, mis);
             const B_PREDICTION_MODE L = left_block_mode(mic, i);
-
-            bmode_costs  = mb->bmode_costs[A][L];
+            bmode_costs = mb->bmode_costs[A][L];
         }
 
         total_rd += rd_pick_intra4x4block(
@@ -758,24 +740,19 @@ static int rd_pick_intra4x4mby_modes(VP8_COMP *cpi, MACROBLOCK *mb, int *Rate,
     if(total_rd >= (int64_t)best_rd)
         return INT_MAX;
 
-    *Rate = cost;
-    *rate_y = tot_rate_y;
-    *Distortion = distortion;
+    *rate_ptr = cost;
+    *rate_y_ptr = tot_rate_y;
+    *distortion_ptr = distortion;
 
     return RDCOST(mb->rdmult, mb->rddiv, cost, distortion);
 }
 
 
-static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
-                                      MACROBLOCK *x,
-                                      int *Rate,
-                                      int *rate_y,
-                                      int *Distortion)
-{
+static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi, MACROBLOCK *x,
+                                      int *rate_ptr, int *rate_y_ptr,
+                                      int *distortion_ptr) {
     MB_PREDICTION_MODE mode;
     MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(mode_selected);
-    int rate, ratey;
-    int distortion;
     int best_rd = INT_MAX;
     int this_rd;
     MACROBLOCKD *xd = &x->e_mbd;
@@ -783,6 +760,8 @@ static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
     /* Y Search for 16x16 intra prediction mode */
     for (mode = DC_PRED; mode <= TM_PRED; mode++)
     {
+        int distortion;
+        int rate, ratey;
         xd->mode_info_context->mbmi.mode = mode;
 
         vp8_build_intra_predictors_mby_s(xd,
@@ -793,8 +772,7 @@ static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
                                          16);
 
         macro_block_yrd(x, &ratey, &distortion);
-        rate = ratey + x->mbmode_cost[xd->frame_type]
-                                     [xd->mode_info_context->mbmi.mode];
+        rate = ratey + x->mbmode_cost[xd->frame_type][mode];
 
         this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
@@ -802,9 +780,9 @@ static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
         {
             mode_selected = mode;
             best_rd = this_rd;
-            *Rate = rate;
-            *rate_y = ratey;
-            *Distortion = distortion;
+            *rate_ptr = rate;
+            *rate_y_ptr = ratey;
+            *distortion_ptr = distortion;
         }
     }
 
@@ -812,32 +790,27 @@ static int rd_pick_intra16x16mby_mode(VP8_COMP *cpi,
     return best_rd;
 }
 
-static int rd_cost_mbuv(MACROBLOCK *mb)
-{
+static int rd_cost_mbuv(MACROBLOCK *mb) {
     int b;
     int cost = 0;
-    MACROBLOCKD *x = &mb->e_mbd;
+    MACROBLOCKD* x = &mb->e_mbd;
     ENTROPY_CONTEXT_PLANES t_above, t_left;
-    ENTROPY_CONTEXT *ta;
-    ENTROPY_CONTEXT *tl;
+    ENTROPY_CONTEXT* const ta = (ENTROPY_CONTEXT*)&t_above;
+    ENTROPY_CONTEXT* const tl = (ENTROPY_CONTEXT*)&t_left;
 
-    vpx_memcpy(&t_above, mb->e_mbd.above_context, sizeof(ENTROPY_CONTEXT_PLANES));
-    vpx_memcpy(&t_left, mb->e_mbd.left_context, sizeof(ENTROPY_CONTEXT_PLANES));
+    vpx_memcpy(&t_above, mb->e_mbd.above_context, sizeof(t_above));
+    vpx_memcpy(&t_left, mb->e_mbd.left_context, sizeof(t_left));
 
-    ta = (ENTROPY_CONTEXT *)&t_above;
-    tl = (ENTROPY_CONTEXT *)&t_left;
-
-    for (b = 16; b < 24; b++)
+    for (b = 16; b < 24; b++) {
         cost += cost_coeffs(mb, x->block + b, PLANE_TYPE_UV,
-                    ta + vp8_block2above[b], tl + vp8_block2left[b]);
-
+                            ta + vp8_block2above[b], tl + vp8_block2left[b]);
+    }
     return cost;
 }
 
 
-static int rd_inter16x16_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
-                            int *distortion, int fullpixel)
-{
+static int rd_inter16x16_uv(VP8_COMP *cpi, MACROBLOCK *x,
+                            int *rate_ptr, int *distortion_ptr, int fullpixel) {
     vp8_build_inter16x16_predictors_mbuv(&x->e_mbd);
     vp8_subtract_mbuv(x->src_diff,
         x->src.u_buffer, x->src.v_buffer, x->src.uv_stride,
@@ -846,10 +819,10 @@ static int rd_inter16x16_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
     vp8_transform_mbuv(x);
     vp8_quantize_mbuv(x);
 
-    *rate       = rd_cost_mbuv(x);
-    *distortion = vp8_mbuverror(x) / 4;
+    *rate_ptr       = rd_cost_mbuv(x);
+    *distortion_ptr = vp8_mbuverror(x) / 4;
 
-    return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
+    return RDCOST(x->rdmult, x->rddiv, *rate_ptr, *distortion_ptr);
 }
 
 static int rd_inter4x4_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
@@ -869,18 +842,19 @@ static int rd_inter4x4_uv(VP8_COMP *cpi, MACROBLOCK *x, int *rate,
     return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
 }
 
-static void rd_pick_intra_mbuv_mode(VP8_COMP *cpi, MACROBLOCK *x, int *rate, int *rate_tokenonly, int *distortion)
-{
+static void rd_pick_intra_mbuv_mode(VP8_COMP *cpi, MACROBLOCK *x,
+                                    int *rate, int *rate_tokenonly,
+                                    int *distortion) {
     MB_PREDICTION_MODE mode;
     MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(mode_selected);
     int best_rd = INT_MAX;
     int UNINITIALIZED_IS_SAFE(d), UNINITIALIZED_IS_SAFE(r);
-    int rate_to;
     MACROBLOCKD *xd = &x->e_mbd;
 
     for (mode = DC_PRED; mode <= TM_PRED; mode++)
     {
         int rate;
+        int rate_token;
         int distortion;
         int this_rd;
 
@@ -902,8 +876,8 @@ static void rd_pick_intra_mbuv_mode(VP8_COMP *cpi, MACROBLOCK *x, int *rate, int
         vp8_transform_mbuv(x);
         vp8_quantize_mbuv(x);
 
-        rate_to = rd_cost_mbuv(x);
-        rate = rate_to + x->intra_uv_mode_cost[xd->frame_type][xd->mode_info_context->mbmi.uv_mode];
+        rate_token = rd_cost_mbuv(x);
+        rate = rate_token + x->intra_uv_mode_cost[xd->frame_type][mode];
 
         distortion = vp8_mbuverror(x) / 4;
 
@@ -914,14 +888,13 @@ static void rd_pick_intra_mbuv_mode(VP8_COMP *cpi, MACROBLOCK *x, int *rate, int
             best_rd = this_rd;
             d = distortion;
             r = rate;
-            *rate_tokenonly = rate_to;
+            *rate_tokenonly = rate_token;
             mode_selected = mode;
         }
     }
 
     *rate = r;
     *distortion = d;
-
     xd->mode_info_context->mbmi.uv_mode = mode_selected;
 }
 
