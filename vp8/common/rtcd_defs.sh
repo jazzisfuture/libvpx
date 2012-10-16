@@ -36,59 +36,87 @@ specialize vp8_copy_mem16x16 mmx sse2 media neon dspr2
 vp8_copy_mem16x16_media=vp8_copy_mem16x16_v6
 vp8_copy_mem16x16_dspr2=vp8_copy_mem16x16_dspr2
 
-
 prototype void vp8_copy_mem8x8 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
 specialize vp8_copy_mem8x8 mmx media neon dspr2
 vp8_copy_mem8x8_media=vp8_copy_mem8x8_v6
 vp8_copy_mem8x8_dspr2=vp8_copy_mem8x8_dspr2
+
 prototype void vp8_copy_mem8x4 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
+specialize vp8_copy_mem8x4 mmx
+
 prototype void vp8_intra4x4_predict "unsigned char *Above, unsigned char *yleft, int left_stride, B_PREDICTION_MODE b_mode, unsigned char *dst, int dst_stride, unsigned char top_left"
+specialize vp8_intra4x4_predict
+
 prototype void vp8_avg_mem16x16 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
 specialize vp8_avg_mem16x16
+
 prototype void vp8_avg_mem8x8 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
 specialize vp8_avg_mem8x8
+
 prototype void vp8_copy_mem8x4 "unsigned char *src, int src_pitch, unsigned char *dst, int dst_pitch"
 specialize vp8_copy_mem8x4 mmx media neon dspr2
 vp8_copy_mem8x4_media=vp8_copy_mem8x4_v6
 vp8_copy_mem8x4_dspr2=vp8_copy_mem8x4_dspr2
+
 prototype void vp8_recon_b "unsigned char *pred_ptr, short *diff_ptr, unsigned char *dst_ptr, int stride"
 specialize vp8_recon_b
+
 prototype void vp8_recon_uv_b "unsigned char *pred_ptr, short *diff_ptr, unsigned char *dst_ptr, int stride"
 specialize vp8_recon_uv_b
+
 prototype void vp8_recon2b "unsigned char *pred_ptr, short *diff_ptr, unsigned char *dst_ptr, int stride"
-specialize vp8_recon2b
+specialize vp8_recon2b sse2
+
 prototype void vp8_recon4b "unsigned char *pred_ptr, short *diff_ptr, unsigned char *dst_ptr, int stride"
-specialize vp8_recon4b
+specialize vp8_recon4b sse2
+
 prototype void vp8_recon_mb "MACROBLOCKD *x"
 specialize vp8_recon_mb
+
 prototype void vp8_recon_mby "MACROBLOCKD *x"
 specialize vp8_recon_mby
+
 prototype void vp8_build_intra_predictors_mby_s "MACROBLOCKD *x"
+specialize vp8_build_intra_predictors_mby_s
+
 prototype void vp8_build_intra_predictors_sby_s "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_sby_s;
+
 prototype void vp8_build_intra_predictors_sbuv_s "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_sbuv_s;
+
 prototype void vp8_build_intra_predictors_mby "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_mby;
+
 prototype void vp8_build_comp_intra_predictors_mby "MACROBLOCKD *x"
 specialize vp8_build_comp_intra_predictors_mby;
+
 prototype void vp8_build_intra_predictors_mby_s "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_mby_s;
+
 prototype void vp8_build_intra_predictors_mbuv "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_mbuv;
+
 prototype void vp8_build_intra_predictors_mbuv_s "MACROBLOCKD *x"
 specialize vp8_build_intra_predictors_mbuv_s;
+
 prototype void vp8_build_comp_intra_predictors_mbuv "MACROBLOCKD *x"
 specialize vp8_build_comp_intra_predictors_mbuv;
+
 prototype void vp8_intra4x4_predict "BLOCKD *x, int b_mode, unsigned char *predictor"
 specialize vp8_intra4x4_predict;
+
 prototype void vp8_comp_intra4x4_predict "BLOCKD *x, int b_mode, int second_mode, unsigned char *predictor"
 specialize vp8_comp_intra4x4_predict;
+
 prototype void vp8_intra8x8_predict "BLOCKD *x, int b_mode, unsigned char *predictor"
 specialize vp8_intra8x8_predict;
+
 prototype void vp8_comp_intra8x8_predict "BLOCKD *x, int b_mode, int second_mode, unsigned char *predictor"
 specialize vp8_comp_intra8x8_predict;
+
 prototype void vp8_intra_uv4x4_predict "BLOCKD *x, int b_mode, unsigned char *predictor"
 specialize vp8_intra_uv4x4_predict;
+
 prototype void vp8_comp_intra_uv4x4_predict "BLOCKD *x, int b_mode, int second_mode, unsigned char *predictor"
 specialize vp8_comp_intra_uv4x4_predict;
