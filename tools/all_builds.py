@@ -5,7 +5,8 @@ import subprocess
 import sys
 
 LONG_OPTIONS = ["shard=", "shards="]
-BASE_COMMAND = "./configure --enable-internal-stats --enable-experimental"
+CONFIGURE_FILE = "../libvpx-experimental/configure"
+BASE_COMMAND = CONFIGURE_FILE + " --enable-internal-stats --enable-experimental"
 
 def RunCommand(command):
   run = subprocess.Popen(command, shell=True)
@@ -16,7 +17,7 @@ def RunCommand(command):
 
 def list_of_experiments():
   experiments = []
-  configure_file = open("configure")
+  configure_file = open(CONFIGURE_FILE)
   list_start = False
   for line in configure_file.read().split("\n"):
     if line == 'EXPERIMENT_LIST="':
@@ -56,17 +57,17 @@ def main(argv):
   configs += ["%s --enable-%s" % (base_command, e) for e in experiments]
   my_configs = zip(configs, range(len(configs)))
   my_configs = filter(lambda x: x[1] % shards == shard, my_configs)
-  my_configs = [e[0] for e in my_configs]
 
   # Run configs for this shard
-  for config in my_configs:
-    test_build(config)
+  for config, index in my_configs:
+    test_build(config, index)
 
-def test_build(configure_command):
+def test_build(configure_command, index):
   print "\033[34m\033[47mTesting %s\033[0m" % (configure_command)
   RunCommand(configure_command)
   RunCommand("make clean")
-  RunCommand("make")
+  RunCommand("make -j")
+  RunCommand("cp libvpx.a libvpx.a.%d"%index)
 
 if __name__ == "__main__":
   main(sys.argv)
