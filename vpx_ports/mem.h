@@ -30,10 +30,13 @@
  * modified name, then defines val to be a pointer, and aligns that pointer
  * within the array.
  */
+#if defined(_MSC_VER)
+#define DECLARE_ALIGNED_ARRAY(a,typ,val,n) __declspec(align(a)) typ val[n]
+#else
 #define DECLARE_ALIGNED_ARRAY(a,typ,val,n)\
   typ val##_[(n)+(a)/sizeof(typ)+1];\
   typ *val = (typ*)((((intptr_t)val##_)+(a)-1)&((intptr_t)-(a)))
-
+#endif
 
 /* Indicates that the usage of the specified variable has been audited to assure
  * that it's safe to use uninitialized. Silences 'may be used uninitialized'
