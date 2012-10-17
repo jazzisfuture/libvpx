@@ -1,0 +1,7 @@
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 17 Oct 2012 15:14:17 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/35833
+Project: webm/libvpx
+Branch: refs/heads/experimental
