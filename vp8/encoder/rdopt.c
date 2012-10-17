@@ -2229,12 +2229,21 @@ static int64_t encode_inter_mb_segment_8x8(MACROBLOCK *x,
                                            int which_label,
                                            int *labelyrate,
                                            int *distortion,
+                                           int64_t *otherrd,
                                            ENTROPY_CONTEXT *ta,
                                            ENTROPY_CONTEXT *tl,
                                            const VP8_ENCODER_RTCD *rtcd) {
   int i, j;
   MACROBLOCKD *xd = &x->e_mbd;
   const int iblock[4] = { 0, 1, 4, 5 };
+  int othercost = 0, otherdist = 0;
+  ENTROPY_CONTEXT_PLANES tac, tlc;
+  ENTROPY_CONTEXT *tacp = (ENTROPY_CONTEXT *) &tac, *tlcp = (ENTROPY_CONTEXT *) &tlc;
+
+  if (otherrd) {
+    memcpy(&tac, ta, sizeof(ENTROPY_CONTEXT_PLANES));
+    memcpy(&tlc, tl, sizeof(ENTROPY_CONTEXT_PLANES));
+  }
 
   *distortion = 0;
   *labelyrate = 0;
@@ -2242,8 +2251,9 @@ static int64_t encode_inter_mb_segment_8x8(MACROBLOCK *x,
     int ib = vp8_i8x8_block[i];
 
     if (labels[ib] == which_label) {
-      BLOCKD *bd = &xd->block[ib];
-      BLOCK *be = &x->block[ib];
+      int idx = (ib & 8) + ((ib & 2) << 1);
+      BLOCKD *bd = &xd->block[ib], *bd2 = &xd->block[idx];
+      BLOCK *be = &x->block[ib], *be2 = &x->block[idx];
       int thisdistortion;
 
       vp8_build_inter_predictors4b(xd, bd, 16);
@@ -2251,24 +2261,64 @@ static int64_t encode_inter_mb_segment_8x8(MACROBLOCK *x,
         vp8_build_2nd_inter_predictors4b(xd, bd, 16);
       vp8_subtract_4b_c(be, bd, 16);
 
-      for (j = 0; j < 4; j += 2) {
-        bd = &xd->block[ib + iblock[j]];
-        be = &x->block[ib + iblock[j]];
-        x->vp8_short_fdct8x4(be->src_diff, be->coeff, 32);
-        x->quantize_b_4x4_pair(be, be + 1, bd, bd + 1);
-        thisdistortion = vp8_block_error_c(be->coeff, bd->dqcoeff, 32);
+      if (xd->mode_info_context->mbmi.txfm_size == TX_4X4) {
+        if (otherrd) {
+          x->vp8_short_fdct8x8(be->src_diff, be2->coeff, 32);
+          x->quantize_b_8x8(be2, bd2);
+          thisdistortion = vp8_block_error_c(be2->coeff, bd2->dqcoeff, 64);
+          otherdist += thisdistortion;
+          othercost += cost_coeffs(x, bd2, PLANE_TYPE_Y_WITH_DC,
+                                     tacp + vp8_block2above_8x8[idx],
+                                     tlcp + vp8_block2left_8x8[idx], TX_8X8);
+        }
+        for (j = 0; j < 4; j += 2) {
+          bd = &xd->block[ib + iblock[j]];
+          be = &x->block[ib + iblock[j]];
+          x->vp8_short_fdct8x4(be->src_diff, be->coeff, 32);
+          x->quantize_b_4x4_pair(be, be + 1, bd, bd + 1);
+          thisdistortion = vp8_block_error_c(be->coeff, bd->dqcoeff, 32);
+          *distortion += thisdistortion;
+          *labelyrate += cost_coeffs(x, bd, PLANE_TYPE_Y_WITH_DC,
+                                     ta + vp8_block2above[ib + iblock[j]],
+                                     tl + vp8_block2left[ib + iblock[j]], TX_4X4);
+          *labelyrate += cost_coeffs(x, bd + 1, PLANE_TYPE_Y_WITH_DC,
+                                     ta + vp8_block2above[ib + iblock[j] + 1],
+                                     tl + vp8_block2left[ib + iblock[j]],
+                                     TX_4X4);
+        }
+      } else /* 8x8 */ {
+        if (otherrd) {
+          for (j = 0; j < 4; j += 2) {
+            BLOCKD *bd3 = &xd->block[ib + iblock[j]];
+            BLOCK *be3 = &x->block[ib + iblock[j]];
+            x->vp8_short_fdct8x4(be3->src_diff, be3->coeff, 32);
+            x->quantize_b_4x4_pair(be3, be3 + 1, bd3, bd3 + 1);
+            thisdistortion = vp8_block_error_c(be3->coeff, bd3->dqcoeff, 32);
+            otherdist += thisdistortion;
+            othercost += cost_coeffs(x, bd3, PLANE_TYPE_Y_WITH_DC,
+                                       tacp + vp8_block2above[ib + iblock[j]],
+                                       tlcp + vp8_block2left[ib + iblock[j]], TX_4X4);
+            othercost += cost_coeffs(x, bd3 + 1, PLANE_TYPE_Y_WITH_DC,
+                                       tacp + vp8_block2above[ib + iblock[j] + 1],
+                                       tlcp + vp8_block2left[ib + iblock[j]],
+                                       TX_4X4);
+          }
+        }
+        x->vp8_short_fdct8x8(be->src_diff, be2->coeff, 32);
+        x->quantize_b_8x8(be2, bd2);
+        thisdistortion = vp8_block_error_c(be2->coeff, bd2->dqcoeff, 64);
         *distortion += thisdistortion;
-        *labelyrate += cost_coeffs(x, bd, PLANE_TYPE_Y_WITH_DC,
-                                   ta + vp8_block2above[ib + iblock[j]],
-                                   tl + vp8_block2left[ib + iblock[j]], TX_4X4);
-        *labelyrate += cost_coeffs(x, bd + 1, PLANE_TYPE_Y_WITH_DC,
-                                   ta + vp8_block2above[ib + iblock[j] + 1],
-                                   tl + vp8_block2left[ib + iblock[j]],
-                                   TX_4X4);
+        *labelyrate += cost_coeffs(x, bd2, PLANE_TYPE_Y_WITH_DC,
+                                   ta + vp8_block2above_8x8[idx],
+                                   tl + vp8_block2left_8x8[idx], TX_8X8);
       }
     }
   }
   *distortion >>= 2;
+  if (otherrd) {
+    othercost >>= 2;
+    *otherrd = RDCOST(x->rdmult, x->rddiv, othercost, otherdist);
+  }
   return RDCOST(x->rdmult, x->rddiv, *labelyrate, *distortion);
 }
 
@@ -2280,6 +2330,7 @@ typedef struct {
   int_mv mvp;
 
   int64_t segment_rd;
+  TX_SIZE txfm_size;
   int segment_num;
   int r;
   int d;
@@ -2306,9 +2357,11 @@ int mv_check_bounds(MACROBLOCK *x, int_mv *mv) {
   return r;
 }
 
-static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
-                             BEST_SEG_INFO *bsi, unsigned int segmentation,
-                             int_mv seg_mvs[16 /* n_blocks */][MAX_REF_FRAMES - 1]) {
+static void rd_check_segment_txsize(VP8_COMP *cpi, MACROBLOCK *x,
+                                    BEST_SEG_INFO *bsi, unsigned int segmentation,
+                                    TX_SIZE tx_size, int64_t *otherrds,
+                                    int64_t *rds, int *completed,
+                                    int_mv seg_mvs[16 /* n_blocks */][MAX_REF_FRAMES - 1]) {
   int i, j;
   int const *labels;
   int br = 0, bd = 0;
@@ -2316,12 +2369,12 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
 
   int label_count;
-  int64_t this_segment_rd = 0;
+  int64_t this_segment_rd = 0, other_segment_rd;
   int label_mv_thresh;
   int rate = 0;
   int sbr = 0, sbd = 0;
   int segmentyrate = 0;
-  uint8_t best_eobs[16];
+  uint8_t best_eobs[16] = { 0 };
 
   vp8_variance_fn_ptr_t *v_fn_ptr;
 
@@ -2353,16 +2406,18 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
   rate += vp8_cost_mv_ref(cpi, SPLITMV, bsi->mdcounts);
   this_segment_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
   br += rate;
+  other_segment_rd = this_segment_rd;
 
-  for (i = 0; i < label_count; i++) {
+  mbmi->txfm_size = tx_size;
+  for (i = 0; i < label_count && this_segment_rd < bsi->segment_rd; i++) {
     int_mv mode_mv[B_MODE_COUNT], second_mode_mv[B_MODE_COUNT];
-    int64_t best_label_rd = INT64_MAX;
+    int64_t best_label_rd = INT64_MAX, best_other_rd = INT64_MAX;
     B_PREDICTION_MODE mode_selected = ZERO4X4;
     int bestlabelyrate = 0;
 
     // search for the best motion vector on this segment
     for (this_mode = LEFT4X4; this_mode <= NEW4X4; this_mode ++) {
-      int64_t this_rd;
+      int64_t this_rd, other_rd;
       int distortion;
       int labelyrate;
       ENTROPY_CONTEXT_PLANES t_above_s, t_left_s;
@@ -2484,10 +2539,11 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
         this_rd = encode_inter_mb_segment(x, labels, i, &labelyrate,
                                           &distortion,
                                           ta_s, tl_s, IF_RTCD(&cpi->rtcd));
+        other_rd = this_rd;
       } else {
         this_rd = encode_inter_mb_segment_8x8(x, labels, i, &labelyrate,
-                                              &distortion, ta_s, tl_s,
-                                              IF_RTCD(&cpi->rtcd));
+                                              &distortion, &other_rd,
+                                              ta_s, tl_s, IF_RTCD(&cpi->rtcd));
       }
       this_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
       rate += labelyrate;
@@ -2498,9 +2554,20 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
         bestlabelyrate = labelyrate;
         mode_selected = this_mode;
         best_label_rd = this_rd;
-        for (j = 0; j < 16; j++)
-          if (labels[j] == i)
-            best_eobs[j] = x->e_mbd.block[j].eob;
+        if (x->e_mbd.mode_info_context->mbmi.txfm_size == TX_4X4) {
+          for (j = 0; j < 16; j++)
+            if (labels[j] == i)
+              best_eobs[j] = x->e_mbd.block[j].eob;
+        } else {
+          for (j = 0; j < 4; j++) {
+            int ib = vp8_i8x8_block[j], idx = j * 4;
+
+            if (labels[ib] == i)
+              best_eobs[idx] = x->e_mbd.block[idx].eob;
+          }
+        }
+        if (other_rd < best_other_rd)
+          best_other_rd = other_rd;
 
         vpx_memcpy(ta_b, ta_s, sizeof(ENTROPY_CONTEXT_PLANES));
         vpx_memcpy(tl_b, tl_s, sizeof(ENTROPY_CONTEXT_PLANES));
@@ -2512,18 +2579,18 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
     vpx_memcpy(tl, tl_b, sizeof(ENTROPY_CONTEXT_PLANES));
 
     labels2mode(x, labels, i, mode_selected, &mode_mv[mode_selected],
-                &second_mode_mv[mode_selected], seg_mvs[i], bsi->ref_mv, bsi->second_ref_mv, XMVCOST);
+                &second_mode_mv[mode_selected], seg_mvs[i],
+                bsi->ref_mv, bsi->second_ref_mv, XMVCOST);
 
     br += sbr;
     bd += sbd;
     segmentyrate += bestlabelyrate;
     this_segment_rd += best_label_rd;
-
-    if (this_segment_rd >= bsi->segment_rd) {
-      break;
-    }
-
-
+    other_segment_rd += best_other_rd;
+    if (rds)
+      rds[i] = this_segment_rd;
+    if (otherrds)
+      rds[i] = other_segment_rd;
   } /* for each label */
 
   if (this_segment_rd < bsi->segment_rd) {
@@ -2532,6 +2599,7 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
     bsi->segment_yrate = segmentyrate;
     bsi->segment_rd = this_segment_rd;
     bsi->segment_num = segmentation;
+    bsi->txfm_size = mbmi->txfm_size;
 
     // store everything needed to come back to this!!
     for (i = 0; i < 16; i++) {
@@ -2544,6 +2612,96 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
       bsi->eobs[i] = best_eobs[i];
     }
   }
+
+  if (completed) {
+    *completed = i;
+  }
+}
+
+static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
+                             BEST_SEG_INFO *bsi, unsigned int segmentation,
+                             int_mv seg_mvs[16 /* n_blocks */][MAX_REF_FRAMES - 1],
+                             int64_t txfm_cache[NB_TXFM_MODES]) {
+#if CONFIG_TX_SELECT
+  int i, n, c = vp8_mbsplit_count[segmentation];
+
+  if (segmentation == BLOCK_4X4) {
+    int64_t rd[16];
+
+    rd_check_segment_txsize(cpi, x, bsi, segmentation, TX_4X4, NULL,
+                            rd, &n, seg_mvs);
+    if (n == c) {
+      for (i = 0; i < NB_TXFM_MODES; i++) {
+        if (rd[c - 1] < txfm_cache[i])
+          txfm_cache[i] = rd[c - 1];
+      }
+    }
+  } else {
+    int64_t diff, base_rd;
+    int cost4x4 = vp8_cost_bit(cpi->common.prob_tx[0], 0);
+    int cost8x8 = vp8_cost_bit(cpi->common.prob_tx[0], 1);
+
+    if (cpi->common.txfm_mode == TX_MODE_SELECT) {
+      int64_t rd4x4[4], rd8x8[4];
+      int n4x4, n8x8, nmin;
+
+      rd_check_segment_txsize(cpi, x, bsi, segmentation,
+                              TX_4X4, NULL, rd4x4, &n4x4, seg_mvs);
+      rd_check_segment_txsize(cpi, x, bsi, segmentation,
+                              TX_8X8, NULL, rd8x8, &n8x8, seg_mvs);
+      n = n4x4 > n8x8 ? n4x4 : n8x8;
+      if (n == c) {
+        nmin = n4x4 < n8x8 ? n4x4 : n8x8;
+        diff = rd8x8[nmin - 1] - rd4x4[nmin - 1];
+        if (n == n4x4) {
+          base_rd = rd4x4[c - 1];
+        } else {
+          base_rd = rd8x8[c - 1] - diff;
+        }
+      }
+    } else {
+      int64_t rd[4], otherrd[4];
+
+      if (cpi->common.txfm_mode == ONLY_4X4) {
+        rd_check_segment_txsize(cpi, x, bsi, segmentation, TX_4X4, otherrd,
+                                rd, &n, seg_mvs);
+        if (n == c) {
+          base_rd = rd[c - 1];
+          diff = otherrd[c - 1] - rd[c - 1];
+        }
+      } else /* use 8x8 transform */ {
+        rd_check_segment_txsize(cpi, x, bsi, segmentation, TX_8X8, otherrd,
+                                rd, &n, seg_mvs);
+        if (n == c) {
+          diff = rd[c - 1] - otherrd[c - 1];
+          base_rd = otherrd[c - 1];
+        }
+      }
+    }
+
+    if (n == c) {
+      if (base_rd < txfm_cache[ONLY_4X4]) {
+        txfm_cache[ONLY_4X4] = base_rd;
+      }
+      if (base_rd + diff < txfm_cache[1]) {
+        txfm_cache[ALLOW_8X8] = txfm_cache[ALLOW_16X16] = base_rd + diff;
+      }
+      if (diff < 0) {
+        base_rd += diff + RDCOST(x->rdmult, x->rddiv, cost8x8, 0);
+      } else {
+        base_rd += RDCOST(x->rdmult, x->rddiv, cost4x4, 0);
+      }
+      if (base_rd < txfm_cache[TX_MODE_SELECT]) {
+        txfm_cache[TX_MODE_SELECT] = base_rd;
+      }
+    }
+  }
+#else
+  rd_check_segment_txsize(cpi, x, bsi, segmentation,
+                          (segmentation == BLOCK_4X4 ||
+                           cpi->common.txfm_mode == ONLY_4X4) ? TX_4X4 : TX_8X8,
+                          NULL, NULL, NULL, seg_mvs);
+#endif
 }
 
 static __inline
@@ -2564,12 +2722,15 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
                                            int *mdcounts, int *returntotrate,
                                            int *returnyrate, int *returndistortion,
                                            int *skippable, int mvthresh,
-                                           int_mv seg_mvs[BLOCK_MAX_SEGMENTS - 1][16 /* n_blocks */][MAX_REF_FRAMES - 1]) {
+                                           int_mv seg_mvs[BLOCK_MAX_SEGMENTS - 1][16 /* n_blocks */][MAX_REF_FRAMES - 1],
+                                           int64_t txfm_cache[NB_TXFM_MODES]) {
   int i;
   BEST_SEG_INFO bsi;
   MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
 
   vpx_memset(&bsi, 0, sizeof(bsi));
+  for (i = 0; i < NB_TXFM_MODES; i++)
+    txfm_cache[i] = INT64_MAX;
 
   bsi.segment_rd = best_rd;
   bsi.ref_mv = best_ref_mv;
@@ -2577,6 +2738,7 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
   bsi.mvp.as_int = best_ref_mv->as_int;
   bsi.mvthresh = mvthresh;
   bsi.mdcounts = mdcounts;
+  bsi.txfm_size = TX_4X4;
 
   for (i = 0; i < 16; i++)
     bsi.modes[i] = ZERO4X4;
@@ -2584,14 +2746,14 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
   if (cpi->compressor_speed == 0) {
     /* for now, we will keep the original segmentation order
        when in best quality mode */
-    rd_check_segment(cpi, x, &bsi, BLOCK_16X8, seg_mvs[BLOCK_16X8]);
-    rd_check_segment(cpi, x, &bsi, BLOCK_8X16, seg_mvs[BLOCK_8X16]);
-    rd_check_segment(cpi, x, &bsi, BLOCK_8X8,  seg_mvs[BLOCK_8X8]);
-    rd_check_segment(cpi, x, &bsi, BLOCK_4X4,  seg_mvs[BLOCK_4X4]);
+    rd_check_segment(cpi, x, &bsi, BLOCK_16X8, seg_mvs[BLOCK_16X8], txfm_cache);
+    rd_check_segment(cpi, x, &bsi, BLOCK_8X16, seg_mvs[BLOCK_8X16], txfm_cache);
+    rd_check_segment(cpi, x, &bsi, BLOCK_8X8,  seg_mvs[BLOCK_8X8], txfm_cache);
+    rd_check_segment(cpi, x, &bsi, BLOCK_4X4,  seg_mvs[BLOCK_4X4], txfm_cache);
   } else {
     int sr;
 
-    rd_check_segment(cpi, x, &bsi, BLOCK_8X8, seg_mvs[BLOCK_8X8]);
+    rd_check_segment(cpi, x, &bsi, BLOCK_8X8, seg_mvs[BLOCK_8X8], txfm_cache);
 
 
     if (bsi.segment_rd < best_rd) {
@@ -2617,7 +2779,7 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
         sr = MAXF((abs(bsi.sv_mvp[1].as_mv.row - bsi.sv_mvp[3].as_mv.row)) >> 3, (abs(bsi.sv_mvp[1].as_mv.col - bsi.sv_mvp[3].as_mv.col)) >> 3);
         vp8_cal_step_param(sr, &bsi.sv_istep[1]);
 
-        rd_check_segment(cpi, x, &bsi, BLOCK_8X16, seg_mvs[BLOCK_8X16]);
+        rd_check_segment(cpi, x, &bsi, BLOCK_8X16, seg_mvs[BLOCK_8X16], txfm_cache);
       }
 
       /* block 16X8 */
@@ -2628,14 +2790,14 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
         sr = MAXF((abs(bsi.sv_mvp[2].as_mv.row - bsi.sv_mvp[3].as_mv.row)) >> 3, (abs(bsi.sv_mvp[2].as_mv.col - bsi.sv_mvp[3].as_mv.col)) >> 3);
         vp8_cal_step_param(sr, &bsi.sv_istep[1]);
 
-        rd_check_segment(cpi, x, &bsi, BLOCK_16X8, seg_mvs[BLOCK_16X8]);
+        rd_check_segment(cpi, x, &bsi, BLOCK_16X8, seg_mvs[BLOCK_16X8], txfm_cache);
       }
 
       /* If 8x8 is better than 16x8/8x16, then do 4x4 search */
       /* Not skip 4x4 if speed=0 (good quality) */
       if (cpi->sf.no_skip_block4x4_search || bsi.segment_num == BLOCK_8X8) { /* || (sv_segment_rd8x8-bsi.segment_rd) < sv_segment_rd8x8>>5) */
         bsi.mvp.as_int = bsi.sv_mvp[0].as_int;
-        rd_check_segment(cpi, x, &bsi, BLOCK_4X4, seg_mvs[BLOCK_4X4]);
+        rd_check_segment(cpi, x, &bsi, BLOCK_4X4, seg_mvs[BLOCK_4X4], txfm_cache);
       }
 
       /* restore UMV window */
@@ -2659,9 +2821,12 @@ static int vp8_rd_pick_best_mbsegmentation(VP8_COMP *cpi, MACROBLOCK *x,
   *returntotrate = bsi.r;
   *returndistortion = bsi.d;
   *returnyrate = bsi.segment_yrate;
-  *skippable = mby_is_skippable_4x4(&x->e_mbd, 0);
+  *skippable = bsi.txfm_size == TX_4X4 ?
+                    mby_is_skippable_4x4(&x->e_mbd, 0) :
+                    mby_is_skippable_8x8(&x->e_mbd, 0);
 
   /* save partitions */
+  mbmi->txfm_size = bsi.txfm_size;
   mbmi->partitioning = bsi.segment_num;
   x->partition_info->count = vp8_mbsplit_count[bsi.segment_num];
 
@@ -3731,12 +3896,12 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
               (mbmi->ref_frame == GOLDEN_FRAME) ?
           cpi->rd_threshes[THR_NEWG] : this_rd_thresh;
 
-      mbmi->txfm_size = TX_4X4; // FIXME use 8x8 in case of 8x8/8x16/16x8
       tmp_rd = vp8_rd_pick_best_mbsegmentation(cpi, x, &best_ref_mv,
                                                second_ref, best_yrd, mdcounts,
                                                &rate, &rate_y, &distortion,
                                                &skippable,
-                                               this_rd_thresh, seg_mvs);
+                                               this_rd_thresh, seg_mvs,
+                                               txfm_cache);
       rate2 += rate;
       distortion2 += distortion;
 
@@ -4133,7 +4298,7 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset, int
       if (!mode_excluded && this_rd != INT64_MAX) {
         for (i = 0; i < NB_TXFM_MODES; i++) {
           int64_t adj_rd;
-          if (this_mode != B_PRED && this_mode != SPLITMV) {
+          if (this_mode != B_PRED) {
             adj_rd = this_rd + txfm_cache[i] - txfm_cache[cm->txfm_mode];
           } else {
             adj_rd = this_rd;
