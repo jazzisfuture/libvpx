@@ -15,8 +15,8 @@
 #include "onyxd_int.h"
 
 void vp8_reset_mb_tokens_context(MACROBLOCKD *xd);
-int vp8_decode_mb_tokens(VP8D_COMP *, MACROBLOCKD *);
-int vp8_decode_mb_tokens_8x8(VP8D_COMP *, MACROBLOCKD *);
-int vp8_decode_mb_tokens_16x16(VP8D_COMP *, MACROBLOCKD *);
+int vp8_decode_mb_tokens(VP8D_COMP *, MACROBLOCKD *, BOOL_DECODER *);
+int vp8_decode_mb_tokens_8x8(VP8D_COMP *, MACROBLOCKD *, BOOL_DECODER *);
+int vp8_decode_mb_tokens_16x16(VP8D_COMP *, MACROBLOCKD *, BOOL_DECODER *);
 
 #endif /* DETOKENIZE_H */
