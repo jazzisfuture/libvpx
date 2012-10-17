@@ -2048,6 +2048,7 @@ int main(int argc, const char **argv_) {
                                      &ref_dec.img);
         if (!enc_dec_match && first_bad_frame < 0) {
           first_bad_frame = frames_out - 1;
+          break;
         }
       }
 

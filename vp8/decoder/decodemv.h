@@ -14,5 +14,6 @@
 void vpx_decode_mb_mode_mv(VP8D_COMP *pbi,
                            MACROBLOCKD *xd,
                            int mb_row,
-                           int mb_col);
-void vpx_decode_mode_mvs_init(VP8D_COMP *pbi);
+                           int mb_col,
+                           BOOL_DECODER *bc);
+void vpx_decode_mode_mvs_init(VP8D_COMP *pbi, BOOL_DECODER *bc);
