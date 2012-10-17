@@ -28,35 +28,35 @@ extern unsigned int active_section;
 nmv_context_counts tnmvcounts;
 #endif
 
-static void encode_nmv_component(vp8_writer *w,
+static void encode_nmv_component(vp8_writer *bc,
                                  int v,
                                  int r,
                                  const nmv_component *mvcomp) {
   int s, z, c, o, d;
   assert (v != 0);            /* should not be zero */
   s = v < 0;
-  vp8_write(w, s, mvcomp->sign);
+  vp8_write(bc, s, mvcomp->sign);
   z = (s ? -v : v) - 1;       /* magnitude - 1 */
 
   c = vp8_get_mv_class(z, &o);
 
-  vp8_write_token(w, vp8_mv_class_tree, mvcomp->classes,
+  vp8_write_token(bc, vp8_mv_class_tree, mvcomp->classes,
                   vp8_mv_class_encodings + c);
 
   d = (o >> 3);               /* int mv data */
 
   if (c == MV_CLASS_0) {
-    vp8_write_token(w, vp8_mv_class0_tree, mvcomp->class0,
+    vp8_write_token(bc, vp8_mv_class0_tree, mvcomp->class0,
                     vp8_mv_class0_encodings + d);
   } else {
     int i, b;
     b = c + CLASS0_BITS - 1;  /* number of bits */
     for (i = 0; i < b; ++i)
-      vp8_write(w, ((d >> i) & 1), mvcomp->bits[i]);
+      vp8_write(bc, ((d >> i) & 1), mvcomp->bits[i]);
   }
 }
 
-static void encode_nmv_component_fp(vp8_writer *w,
+static void encode_nmv_component_fp(vp8_writer *bc,
                                     int v,
                                     int r,
                                     const nmv_component *mvcomp,
@@ -74,18 +74,18 @@ static void encode_nmv_component_fp(vp8_writer *w,
 
   /* Code the fractional pel bits */
   if (c == MV_CLASS_0) {
-    vp8_write_token(w, vp8_mv_fp_tree, mvcomp->class0_fp[d],
+    vp8_write_token(bc, vp8_mv_fp_tree, mvcomp->class0_fp[d],
                     vp8_mv_fp_encodings + f);
   } else {
-    vp8_write_token(w, vp8_mv_fp_tree, mvcomp->fp,
+    vp8_write_token(bc, vp8_mv_fp_tree, mvcomp->fp,
                     vp8_mv_fp_encodings + f);
   }
   /* Code the high precision bit */
   if (usehp) {
     if (c == MV_CLASS_0) {
-      vp8_write(w, e, mvcomp->class0_hp);
+      vp8_write(bc, e, mvcomp->class0_hp);
     } else {
-      vp8_write(w, e, mvcomp->hp);
+      vp8_write(bc, e, mvcomp->hp);
     }
   }
 }
@@ -177,7 +177,7 @@ static int update_nmv_savings(const unsigned int ct[2],
 }
 
 static int update_nmv(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   const unsigned int ct[2],
   vp8_prob *const cur_p,
   const vp8_prob new_p,
@@ -199,15 +199,15 @@ static int update_nmv(
 
   if (cur_b - mod_b > cost) {
     *cur_p = mod_p;
-    vp8_write(w, 1, upd_p);
+    vp8_write(bc, 1, upd_p);
 #ifdef LOW_PRECISION_MV_UPDATE
-    vp8_write_literal(w, mod_p >> 1, 7);
+    vp8_write_literal(bc, mod_p >> 1, 7);
 #else
-    vp8_write_literal(w, mod_p, 8);
+    vp8_write_literal(bc, mod_p, 8);
 #endif
     return 1;
   } else {
-    vp8_write(w, 0, upd_p);
+    vp8_write(bc, 0, upd_p);
     return 0;
   }
 }
@@ -443,37 +443,37 @@ void vp8_write_nmvprobs(VP8_COMP * cpi, int usehp) {
     }
   }
   if (savings <= 0) {
-    vp8_write_bit(w, 0);
+    vp8_write_bit(bc, 0);
     return;
   }
-  vp8_write_bit(w, 1);
+  vp8_write_bit(bc, 1);
 #endif
 
   for (j = 0; j < MV_JOINTS - 1; ++j) {
-    update_nmv(w, branch_ct_joint[j],
+    update_nmv(bc, branch_ct_joint[j],
                &cpi->common.fc.nmvc.joints[j],
                prob.joints[j],
                VP8_NMV_UPDATE_PROB);
   }
   for (i = 0; i < 2; ++i) {
-    update_nmv(w, branch_ct_sign[i],
+    update_nmv(bc, branch_ct_sign[i],
                &cpi->common.fc.nmvc.comps[i].sign,
                prob.comps[i].sign,
                VP8_NMV_UPDATE_PROB);
     for (j = 0; j < MV_CLASSES - 1; ++j) {
-      update_nmv(w, branch_ct_classes[i][j],
+      update_nmv(bc, branch_ct_classes[i][j],
                  &cpi->common.fc.nmvc.comps[i].classes[j],
                  prob.comps[i].classes[j],
                  VP8_NMV_UPDATE_PROB);
     }
     for (j = 0; j < CLASS0_SIZE - 1; ++j) {
-      update_nmv(w, branch_ct_class0[i][j],
+      update_nmv(bc, branch_ct_class0[i][j],
                  &cpi->common.fc.nmvc.comps[i].class0[j],
                  prob.comps[i].class0[j],
                  VP8_NMV_UPDATE_PROB);
     }
     for (j = 0; j < MV_OFFSET_BITS; ++j) {
-      update_nmv(w, branch_ct_bits[i][j],
+      update_nmv(bc, branch_ct_bits[i][j],
                  &cpi->common.fc.nmvc.comps[i].bits[j],
                  prob.comps[i].bits[j],
                  VP8_NMV_UPDATE_PROB);
@@ -483,14 +483,14 @@ void vp8_write_nmvprobs(VP8_COMP * cpi, int usehp) {
     for (j = 0; j < CLASS0_SIZE; ++j) {
       int k;
       for (k = 0; k < 3; ++k) {
-        update_nmv(w, branch_ct_class0_fp[i][j][k],
+        update_nmv(bc, branch_ct_class0_fp[i][j][k],
                    &cpi->common.fc.nmvc.comps[i].class0_fp[j][k],
                    prob.comps[i].class0_fp[j][k],
                    VP8_NMV_UPDATE_PROB);
       }
     }
     for (j = 0; j < 3; ++j) {
-      update_nmv(w, branch_ct_fp[i][j],
+      update_nmv(bc, branch_ct_fp[i][j],
                  &cpi->common.fc.nmvc.comps[i].fp[j],
                  prob.comps[i].fp[j],
                  VP8_NMV_UPDATE_PROB);
@@ -498,11 +498,11 @@ void vp8_write_nmvprobs(VP8_COMP * cpi, int usehp) {
   }
   if (usehp) {
     for (i = 0; i < 2; ++i) {
-      update_nmv(w, branch_ct_class0_hp[i],
+      update_nmv(bc, branch_ct_class0_hp[i],
                  &cpi->common.fc.nmvc.comps[i].class0_hp,
                  prob.comps[i].class0_hp,
                  VP8_NMV_UPDATE_PROB);
-      update_nmv(w, branch_ct_hp[i],
+      update_nmv(bc, branch_ct_hp[i],
                  &cpi->common.fc.nmvc.comps[i].hp,
                  prob.comps[i].hp,
                  VP8_NMV_UPDATE_PROB);
@@ -510,28 +510,28 @@ void vp8_write_nmvprobs(VP8_COMP * cpi, int usehp) {
   }
 }
 
-void vp8_encode_nmv(vp8_writer *w, const MV *mv, const MV *ref,
+void vp8_encode_nmv(vp8_writer *bc, const MV *mv, const MV *ref,
                     const nmv_context *mvctx) {
   MV_JOINT_TYPE j = vp8_get_mv_joint(*mv);
-  vp8_write_token(w, vp8_mv_joint_tree, mvctx->joints,
+  vp8_write_token(bc, vp8_mv_joint_tree, mvctx->joints,
                   vp8_mv_joint_encodings + j);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component(w, mv->row, ref->col, &mvctx->comps[0]);
+    encode_nmv_component(bc, mv->row, ref->col, &mvctx->comps[0]);
   }
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component(w, mv->col, ref->col, &mvctx->comps[1]);
+    encode_nmv_component(bc, mv->col, ref->col, &mvctx->comps[1]);
   }
 }
 
-void vp8_encode_nmv_fp(vp8_writer *w, const MV *mv, const MV *ref,
+void vp8_encode_nmv_fp(vp8_writer *bc, const MV *mv, const MV *ref,
                        const nmv_context *mvctx, int usehp) {
   MV_JOINT_TYPE j = vp8_get_mv_joint(*mv);
   usehp = usehp && vp8_use_nmv_hp(ref);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component_fp(w, mv->row, ref->row, &mvctx->comps[0], usehp);
+    encode_nmv_component_fp(bc, mv->row, ref->row, &mvctx->comps[0], usehp);
   }
   if (j == MV_JOINT_HNZVZ || j == MV_JOINT_HNZVNZ) {
-    encode_nmv_component_fp(w, mv->col, ref->col, &mvctx->comps[1], usehp);
+    encode_nmv_component_fp(bc, mv->col, ref->col, &mvctx->comps[1], usehp);
   }
 }
 
@@ -552,7 +552,7 @@ void vp8_build_nmv_cost_table(int *mvjoint,
 #else  /* CONFIG_NEWMVENTROPY */
 
 static void encode_mvcomponent(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   const int v,
   const struct mv_context *mvc
 ) {
@@ -560,37 +560,37 @@ static void encode_mvcomponent(
   const int x = v < 0 ? -v : v;
 
   if (x < mvnum_short) {   // Small
-    vp8_write(w, 0, p [mvpis_short]);
-    vp8_treed_write(w, vp8_small_mvtree, p + MVPshort, x, mvnum_short_bits);
+    vp8_write(bc, 0, p [mvpis_short]);
+    vp8_treed_write(bc, vp8_small_mvtree, p + MVPshort, x, mvnum_short_bits);
     if (!x)
       return;         // no sign bit
   } else {                // Large
     int i = 0;
 
-    vp8_write(w, 1, p [mvpis_short]);
+    vp8_write(bc, 1, p [mvpis_short]);
 
     do
-      vp8_write(w, (x >> i) & 1, p [MVPbits + i]);
+      vp8_write(bc, (x >> i) & 1, p [MVPbits + i]);
 
     while (++i < mvnum_short_bits);
 
     i = mvlong_width - 1;  /* Skip bit 3, which is sometimes implicit */
 
     do
-      vp8_write(w, (x >> i) & 1, p [MVPbits + i]);
+      vp8_write(bc, (x >> i) & 1, p [MVPbits + i]);
 
     while (--i > mvnum_short_bits);
 
     if (x & ~((2 << mvnum_short_bits) - 1))
-      vp8_write(w, (x >> mvnum_short_bits) & 1, p [MVPbits + mvnum_short_bits]);
+      vp8_write(bc, (x >> mvnum_short_bits) & 1, p [MVPbits + mvnum_short_bits]);
   }
 
-  vp8_write(w, v < 0, p [MVPsign]);
+  vp8_write(bc, v < 0, p [MVPsign]);
 }
 
-void vp8_encode_motion_vector(vp8_writer *w, const MV *mv, const MV_CONTEXT *mvc) {
-  encode_mvcomponent(w, mv->row >> 1, &mvc[0]);
-  encode_mvcomponent(w, mv->col >> 1, &mvc[1]);
+void vp8_encode_motion_vector(vp8_writer *bc, const MV *mv, const MV_CONTEXT *mvc) {
+  encode_mvcomponent(bc, mv->row >> 1, &mvc[0]);
+  encode_mvcomponent(bc, mv->col >> 1, &mvc[1]);
 }
 
 
@@ -682,7 +682,7 @@ __inline static void calc_prob(vp8_prob *p, const unsigned int ct[2]) {
 }
 
 static void update(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   const unsigned int ct[2],
   vp8_prob *const cur_p,
   const vp8_prob new_p,
@@ -695,16 +695,16 @@ static void update(
 
   if (cur_b - new_b > cost) {
     *cur_p = new_p;
-    vp8_write(w, 1, update_p);
-    vp8_write_literal(w, new_p >> 1, 7);
+    vp8_write(bc, 1, update_p);
+    vp8_write_literal(bc, new_p >> 1, 7);
     *updated = 1;
 
   } else
-    vp8_write(w, 0, update_p);
+    vp8_write(bc, 0, update_p);
 }
 
 static void write_component_probs(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   struct mv_context *cur_mvc,
   const struct mv_context *default_mvc_,
   const struct mv_context *update_mvc,
@@ -800,9 +800,9 @@ static void write_component_probs(
     while (++j < mvlong_width);
   }
 
-  update(w, is_short_ct, Pcur + mvpis_short, Pnew[mvpis_short], *Pupdate++, updated);
+  update(bc, is_short_ct, Pcur + mvpis_short, Pnew[mvpis_short], *Pupdate++, updated);
 
-  update(w, sign_ct, Pcur + MVPsign, Pnew[MVPsign], *Pupdate++, updated);
+  update(bc, sign_ct, Pcur + MVPsign, Pnew[MVPsign], *Pupdate++, updated);
 
   {
     const vp8_prob *const new_p = Pnew + MVPshort;
@@ -812,7 +812,7 @@ static void write_component_probs(
 
     do
 
-      update(w, short_bct[j], cur_p + j, new_p[j], *Pupdate++, updated);
+      update(bc, short_bct[j], cur_p + j, new_p[j], *Pupdate++, updated);
 
     while (++j < mvnum_short - 1);
   }
@@ -825,24 +825,23 @@ static void write_component_probs(
 
     do
 
-      update(w, bit_ct[j], cur_p + j, new_p[j], *Pupdate++, updated);
+      update(bc, bit_ct[j], cur_p + j, new_p[j], *Pupdate++, updated);
 
     while (++j < mvlong_width);
   }
 }
 
-void vp8_write_mvprobs(VP8_COMP *cpi) {
-  vp8_writer *const w  = &cpi->bc;
+void vp8_write_mvprobs(VP8_COMP* const cpi, vp8_writer* const bc) {
   MV_CONTEXT *mvc = cpi->common.fc.mvc;
   int flags[2] = {0, 0};
 #ifdef ENTROPY_STATS
   active_section = 4;
 #endif
   write_component_probs(
-    w, &mvc[0], &vp8_default_mv_context[0], &vp8_mv_update_probs[0], cpi->MVcount[0], 0, &flags[0]
+    bc, &mvc[0], &vp8_default_mv_context[0], &vp8_mv_update_probs[0], cpi->MVcount[0], 0, &flags[0]
   );
   write_component_probs(
-    w, &mvc[1], &vp8_default_mv_context[1], &vp8_mv_update_probs[1], cpi->MVcount[1], 1, &flags[1]
+    bc, &mvc[1], &vp8_default_mv_context[1], &vp8_mv_update_probs[1], cpi->MVcount[1], 1, &flags[1]
   );
 
   if (flags[0] || flags[1])
@@ -855,7 +854,7 @@ void vp8_write_mvprobs(VP8_COMP *cpi) {
 
 
 static void encode_mvcomponent_hp(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   const int v,
   const struct mv_context_hp *mvc
 ) {
@@ -863,41 +862,41 @@ static void encode_mvcomponent_hp(
   const int x = v < 0 ? -v : v;
 
   if (x < mvnum_short_hp) {   // Small
-    vp8_write(w, 0, p [mvpis_short_hp]);
-    vp8_treed_write(w, vp8_small_mvtree_hp, p + MVPshort_hp, x,
+    vp8_write(bc, 0, p [mvpis_short_hp]);
+    vp8_treed_write(bc, vp8_small_mvtree_hp, p + MVPshort_hp, x,
                     mvnum_short_bits_hp);
     if (!x)
       return;         // no sign bit
   } else {                // Large
     int i = 0;
 
-    vp8_write(w, 1, p [mvpis_short_hp]);
+    vp8_write(bc, 1, p [mvpis_short_hp]);
 
     do
-      vp8_write(w, (x >> i) & 1, p [MVPbits_hp + i]);
+      vp8_write(bc, (x >> i) & 1, p [MVPbits_hp + i]);
 
     while (++i < mvnum_short_bits_hp);
 
     i = mvlong_width_hp - 1;  /* Skip bit 3, which is sometimes implicit */
 
     do
-      vp8_write(w, (x >> i) & 1, p [MVPbits_hp + i]);
+      vp8_write(bc, (x >> i) & 1, p [MVPbits_hp + i]);
 
     while (--i > mvnum_short_bits_hp);
 
     if (x & ~((2 << mvnum_short_bits_hp) - 1))
-      vp8_write(w, (x >> mvnum_short_bits_hp) & 1,
+      vp8_write(bc, (x >> mvnum_short_bits_hp) & 1,
                 p [MVPbits_hp + mvnum_short_bits_hp]);
   }
 
-  vp8_write(w, v < 0, p [MVPsign_hp]);
+  vp8_write(bc, v < 0, p [MVPsign_hp]);
 }
 
-void vp8_encode_motion_vector_hp(vp8_writer *w, const MV *mv,
+void vp8_encode_motion_vector_hp(vp8_writer *bc, const MV *mv,
                                  const MV_CONTEXT_HP *mvc) {
 
-  encode_mvcomponent_hp(w, mv->row, &mvc[0]);
-  encode_mvcomponent_hp(w, mv->col, &mvc[1]);
+  encode_mvcomponent_hp(bc, mv->row, &mvc[0]);
+  encode_mvcomponent_hp(bc, mv->col, &mvc[1]);
 }
 
 
@@ -978,7 +977,7 @@ void vp8_build_component_cost_table_hp(int *mvcost[2],
 
 
 static void write_component_probs_hp(
-  vp8_writer *const w,
+  vp8_writer *const bc,
   struct mv_context_hp *cur_mvc,
   const struct mv_context_hp *default_mvc_,
   const struct mv_context_hp *update_mvc,
@@ -1074,10 +1073,10 @@ static void write_component_probs_hp(
     while (++j < mvlong_width_hp);
   }
 
-  update(w, is_short_ct, Pcur + mvpis_short_hp, Pnew[mvpis_short_hp],
+  update(bc, is_short_ct, Pcur + mvpis_short_hp, Pnew[mvpis_short_hp],
          *Pupdate++, updated);
 
-  update(w, sign_ct, Pcur + MVPsign_hp, Pnew[MVPsign_hp], *Pupdate++,
+  update(bc, sign_ct, Pcur + MVPsign_hp, Pnew[MVPsign_hp], *Pupdate++,
          updated);
 
   {
@@ -1088,7 +1087,7 @@ static void write_component_probs_hp(
 
     do
 
-      update(w, short_bct[j], cur_p + j, new_p[j], *Pupdate++, updated);
+      update(bc, short_bct[j], cur_p + j, new_p[j], *Pupdate++, updated);
 
     while (++j < mvnum_short_hp - 1);
   }
@@ -1101,25 +1100,24 @@ static void write_component_probs_hp(
 
     do
 
-      update(w, bit_ct[j], cur_p + j, new_p[j], *Pupdate++, updated);
+      update(bc, bit_ct[j], cur_p + j, new_p[j], *Pupdate++, updated);
 
     while (++j < mvlong_width_hp);
   }
 }
 
-void vp8_write_mvprobs_hp(VP8_COMP *cpi) {
-  vp8_writer *const w  = &cpi->bc;
+void vp8_write_mvprobs_hp(VP8_COMP* const cpi, vp8_writer* const bc) {
   MV_CONTEXT_HP *mvc = cpi->common.fc.mvc_hp;
   int flags[2] = {0, 0};
 #ifdef ENTROPY_STATS
   active_section = 4;
 #endif
   write_component_probs_hp(
-    w, &mvc[0], &vp8_default_mv_context_hp[0], &vp8_mv_update_probs_hp[0],
+    bc, &mvc[0], &vp8_default_mv_context_hp[0], &vp8_mv_update_probs_hp[0],
     cpi->MVcount_hp[0], 0, &flags[0]
   );
   write_component_probs_hp(
-    w, &mvc[1], &vp8_default_mv_context_hp[1], &vp8_mv_update_probs_hp[1],
+    bc, &mvc[1], &vp8_default_mv_context_hp[1], &vp8_mv_update_probs_hp[1],
     cpi->MVcount_hp[1], 1, &flags[1]
   );
 
