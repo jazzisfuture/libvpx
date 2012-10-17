@@ -206,7 +206,8 @@ static void skip_recon_mb(VP8D_COMP *pbi, MACROBLOCKD *xd) {
 }
 
 static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
-                              unsigned int mb_col) {
+                              unsigned int mb_col,
+                              BOOL_DECODER* const bc) {
   int eobtotal = 0;
   MB_PREDICTION_MODE mode;
   int i;
@@ -283,17 +284,17 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       xd->left_context--;
     }
 #endif
-  } else if (!vp8dx_bool_error(xd->current_bc)) {
+  } else if (!vp8dx_bool_error(bc)) {
     for (i = 0; i < 25; i++) {
       xd->block[i].eob = 0;
       xd->eobs[i] = 0;
     }
     if (tx_type == TX_16X16)
-      eobtotal = vp8_decode_mb_tokens_16x16(pbi, xd);
+      eobtotal = vp8_decode_mb_tokens_16x16(pbi, xd, bc);
     else if (tx_type == TX_8X8)
-      eobtotal = vp8_decode_mb_tokens_8x8(pbi, xd);
+      eobtotal = vp8_decode_mb_tokens_8x8(pbi, xd, bc);
     else
-      eobtotal = vp8_decode_mb_tokens(pbi, xd);
+      eobtotal = vp8_decode_mb_tokens(pbi, xd, bc);
   }
 
   //mode = xd->mode_info_context->mbmi.mode;
@@ -305,7 +306,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
   if (eobtotal == 0 && mode != B_PRED && mode != SPLITMV
       && mode != I8X8_PRED
-      && !vp8dx_bool_error(xd->current_bc)
+      && !vp8dx_bool_error(bc)
      ) {
     /* Special case:  Force the loopfilter to skip when eobtotal and
      * mb_skip_coeff are zero.
@@ -492,7 +493,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
           xd->mode_info_context += (n & 1);
           xd->mode_info_context += (n >> 1) * pc->mode_info_stride;
           if (!orig_skip_flag) {
-            eobtotal = vp8_decode_mb_tokens_8x8(pbi, xd);
+            eobtotal = vp8_decode_mb_tokens_8x8(pbi, xd, bc);
             if (eobtotal == 0) // skip loopfilter
               xd->mode_info_context->mbmi.mb_skip_coeff = 1;
           } else {
@@ -604,7 +605,8 @@ FILE *vpxlog = 0;
 
 /* Decode a row of Superblocks (2x2 region of MBs) */
 static void
-decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
+decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd,
+              BOOL_DECODER* const bc) {
   int i;
   int sb_col;
   int mb_row, mb_col;
@@ -627,7 +629,7 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
     MODE_INFO *mi = xd->mode_info_context;
 
 #if CONFIG_SUPERBLOCKS
-    mi->mbmi.encoded_as_sb = vp8_read(&pbi->bc, pc->sb_coded);
+    mi->mbmi.encoded_as_sb = vp8_read(bc, pc->sb_coded);
 #endif
 
     // Process the 4 MBs within the SB in the order:
@@ -676,7 +678,7 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
       if (i)
         mi->mbmi.encoded_as_sb = 0;
 #endif
-      vpx_decode_mb_mode_mv(pbi, xd, mb_row, mb_col);
+      vpx_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, bc);
 
       update_blockd_bmi(xd);
 
@@ -724,7 +726,7 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
         mi[pc->mode_info_stride + 1] = mi[0];
       }
 #endif
-      decode_macroblock(pbi, xd, mb_col);
+      decode_macroblock(pbi, xd, mb_col, bc);
 #if CONFIG_SUPERBLOCKS
       if (xd->mode_info_context->mbmi.encoded_as_sb) {
         mi[1].mbmi.txfm_size = mi[0].mbmi.txfm_size;
@@ -734,7 +736,7 @@ decode_sb_row(VP8D_COMP *pbi, VP8_COMMON *pc, int mbrow, MACROBLOCKD *xd) {
 #endif
 
       /* check if the boolean decoder has suffered an error */
-      xd->corrupted |= vp8dx_bool_error(xd->current_bc);
+      xd->corrupted |= vp8dx_bool_error(bc);
 
 #if CONFIG_SUPERBLOCKS
       if (mi->mbmi.encoded_as_sb) {
@@ -773,21 +775,17 @@ static int read_is_valid(const unsigned char *start,
 
 
 static void setup_token_decoder(VP8D_COMP *pbi,
-                                const unsigned char *cx_data) {
+                                const unsigned char *cx_data,
+                                BOOL_DECODER* const bool_decoder) {
   VP8_COMMON          *pc = &pbi->common;
   const unsigned char *user_data_end = pbi->Source + pbi->source_sz;
-  vp8_reader          *bool_decoder;
   const unsigned char *partition;
 
   ptrdiff_t            partition_size;
   ptrdiff_t            bytes_left;
 
-  // Dummy read for now
-  vp8_read_literal(&pbi->bc, 2);
-
   // Set up pointers to token partition
   partition = cx_data;
-  bool_decoder = &pbi->bc2;
   bytes_left = user_data_end - partition;
   partition_size = bytes_left;
 
@@ -926,9 +924,8 @@ static void read_coef_probs2(VP8D_COMP *pbi) {
 }
 #endif
 
-static void read_coef_probs(VP8D_COMP *pbi) {
+static void read_coef_probs(VP8D_COMP *pbi, BOOL_DECODER* const bc) {
   int i, j, k, l;
-  vp8_reader *const bc = &pbi->bc;
   VP8_COMMON *const pc = &pbi->common;
 
   {
@@ -1053,7 +1050,8 @@ static void read_coef_probs(VP8D_COMP *pbi) {
 }
 
 int vp8_decode_frame(VP8D_COMP *pbi) {
-  vp8_reader *const bc = &pbi->bc;
+  BOOL_DECODER header_bc, residual_bc;
+  vp8_reader *const bc = &header_bc;
   VP8_COMMON *const pc = &pbi->common;
   MACROBLOCKD *const xd  = &pbi->mb;
   const unsigned char *data = (const unsigned char *)pbi->Source;
@@ -1313,9 +1311,10 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
     }
   }
 
-  setup_token_decoder(pbi, data + first_partition_length_in_bytes);
+  // Dummy read for now
+  vp8_read_literal(bc, 2);
 
-  xd->current_bc = &pbi->bc2;
+  setup_token_decoder(pbi, data + first_partition_length_in_bytes, &residual_bc);
 
   /* Read the default quantizers. */
   {
@@ -1463,7 +1462,7 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   vp8_zero(pbi->common.fc.mv_ref_ct);
   vp8_zero(pbi->common.fc.mv_ref_ct_a);
 
-  read_coef_probs(pbi);
+  read_coef_probs(pbi, bc);
 
   vpx_memcpy(&xd->pre, &pc->yv12_fb[pc->lst_fb_idx], sizeof(YV12_BUFFER_CONFIG));
   vpx_memcpy(&xd->dst, &pc->yv12_fb[pc->new_fb_idx], sizeof(YV12_BUFFER_CONFIG));
@@ -1486,7 +1485,7 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   /* Read the mb_no_coeff_skip flag */
   pc->mb_no_coeff_skip = (int)vp8_read_bit(bc);
 
-  vpx_decode_mode_mvs_init(pbi);
+  vpx_decode_mode_mvs_init(pbi, bc);
 
   vpx_memset(pc->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * pc->mb_cols);
 
@@ -1496,7 +1495,7 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
 
   /* Decode a row of superblocks */
   for (mb_row = 0; mb_row < pc->mb_rows; mb_row += 2) {
-    decode_sb_row(pbi, pc, mb_row, xd);
+    decode_sb_row(pbi, pc, mb_row, xd, &residual_bc);
   }
   corrupt_tokens |= xd->corrupted;
 
