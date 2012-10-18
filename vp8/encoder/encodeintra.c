@@ -74,7 +74,7 @@ void vp8_encode_intra4x4block(const VP8_ENCODER_RTCD *rtcd,
 #if CONFIG_HYBRIDTRANSFORM
   if (x->q_index < ACTIVE_HT) {
     txfm_map(b, b->bmi.as_mode.first);
-    vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
+    vp8_fht_c(be->src_diff, 32, be->coeff, b->bmi.as_mode.tx_type, 4);
     vp8_ht_quantize_b_4x4(be, b);
     vp8_ihtllm_c(b->dqcoeff, b->diff, 32, b->bmi.as_mode.tx_type, 4);
   } else
@@ -129,7 +129,7 @@ void vp8_encode_intra16x16mby(const VP8_ENCODER_RTCD *rtcd, MACROBLOCK *x) {
       BLOCKD  *bd = &xd->block[0];
       txfm_map(bd, pred_mode_conv(xd->mode_info_context->mbmi.mode));
       txfm_type = bd->bmi.as_mode.tx_type;
-      vp8_fht_c(b->src_diff, b->coeff, 32, txfm_type, 16);
+      vp8_fht_c(b->src_diff, 32, b->coeff, txfm_type, 16);
       vp8_quantize_mby_16x16(x);
       if (x->optimize)
         vp8_optimize_mby_16x16(x, rtcd);
@@ -221,7 +221,7 @@ void vp8_encode_intra8x8(const VP8_ENCODER_RTCD *rtcd,
 
 #if CONFIG_HYBRIDTRANSFORM8X8
     txfm_map(b, pred_mode_conv(b->bmi.as_mode.first));
-    vp8_fht_c(be->src_diff, (x->block + idx)->coeff, 32,
+    vp8_fht_c(be->src_diff, 32, (x->block + idx)->coeff,
               b->bmi.as_mode.tx_type, 8);
     x->quantize_b_8x8(x->block + idx, xd->block + idx);
     vp8_ihtllm_c(xd->block[idx].dqcoeff, xd->block[ib].diff, 32,
