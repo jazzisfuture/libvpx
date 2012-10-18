@@ -884,7 +884,7 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
     BLOCKD *b  = &mb->e_mbd.block[0];
     BLOCK  *be = &mb->block[0];
     txfm_map(b, pred_mode_conv(mb->e_mbd.mode_info_context->mbmi.mode));
-    vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 16);
+    vp8_fht_c(be->src_diff, 32, be->coeff, b->bmi.as_mode.tx_type, 16);
   } else
     vp8_transform_mby_16x16(mb);
 #else
@@ -1200,7 +1200,7 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 #if CONFIG_HYBRIDTRANSFORM
       if (active_ht) {
         txfm_map(b, mode);
-        vp8_fht_c(be->src_diff, be->coeff, 32, b->bmi.as_mode.tx_type, 4);
+        vp8_fht_c(be->src_diff, 32, be->coeff, b->bmi.as_mode.tx_type, 4);
         vp8_ht_quantize_b_4x4(be, b);
       } else {
         x->vp8_short_fdct4x4(be->src_diff, be->coeff, 32);
@@ -1556,7 +1556,7 @@ static int64_t rd_pick_intra8x8block(VP8_COMP *cpi, MACROBLOCK *x, int ib,
       if (xd->mode_info_context->mbmi.txfm_size == TX_8X8) {
 #if CONFIG_HYBRIDTRANSFORM8X8
         txfm_map(b, pred_mode_conv(mode));
-        vp8_fht_c(be->src_diff, (x->block + idx)->coeff, 32,
+        vp8_fht_c(be->src_diff, 32, (x->block + idx)->coeff,
                   b->bmi.as_mode.tx_type, 8);
 
 #else
