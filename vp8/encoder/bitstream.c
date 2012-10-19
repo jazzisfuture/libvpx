@@ -1786,16 +1786,17 @@ static void update_coef_probs2(VP8_COMP *cpi) {
 }
 #endif
 
-static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
+static void update_coef_probs_common(
+    vp8_writer* const bc,
+    vp8_prob new_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
+                                 [PREV_COEF_CONTEXTS][ENTROPY_NODES],
+    vp8_prob old_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
+                                 [PREV_COEF_CONTEXTS][ENTROPY_NODES],
+    unsigned int frame_branch_ct[BLOCK_TYPES][COEF_BANDS]
+                                [PREV_COEF_CONTEXTS][ENTROPY_NODES][2]) {
   int i, j, k, t;
   int update[2] = {0, 0};
   int savings;
-
-  vp8_clear_system_state(); // __asm emms;
-
-  // Build the cofficient contexts based on counts collected in encode loop
-  build_coeff_contexts(cpi);
-
   // vp8_prob bestupd = find_coef_update_prob(cpi);
 
   /* dry run to see if there is any udpate at all needed */
@@ -1805,8 +1806,8 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
       int prev_coef_savings[ENTROPY_NODES] = {0};
       for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
         for (t = 0; t < ENTROPY_NODES; ++t) {
-          vp8_prob newp = cpi->frame_coef_probs [i][j][k][t];
-          vp8_prob *Pold = cpi->common.fc.coef_probs [i][j][k] + t;
+          vp8_prob newp = new_frame_coef_probs[i][j][k][t];
+          const vp8_prob *Pold = old_frame_coef_probs[i][j][k] + t;
           const vp8_prob upd = COEF_UPDATE_PROB;
           int s = prev_coef_savings[t];
           int u = 0;
@@ -1814,7 +1815,7 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
             continue;
 #if defined(SEARCH_NEWP)
           s = prob_diff_update_savings_search(
-                cpi->frame_branch_ct [i][j][k][t],
+                frame_branch_ct[i][j][k][t],
                 *Pold, &newp, upd);
           if (s > 0 && newp != *Pold)
             u = 1;
@@ -1824,7 +1825,7 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
             savings -= (int)(vp8_cost_zero(upd));
 #else
           s = prob_update_savings(
-                cpi->frame_branch_ct [i][j][k][t],
+                frame_branch_ct[i][j][k][t],
                 *Pold, newp, upd);
           if (s > 0)
             u = 1;
@@ -1850,8 +1851,8 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
         for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
           // calc probs and branch cts for this frame only
           for (t = 0; t < ENTROPY_NODES; ++t) {
-            vp8_prob newp = cpi->frame_coef_probs [i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.coef_probs [i][j][k] + t;
+            vp8_prob newp = new_frame_coef_probs [i][j][k][t];
+            vp8_prob *Pold = old_frame_coef_probs[i][j][k] + t;
             const vp8_prob upd = COEF_UPDATE_PROB;
             int s = prev_coef_savings[t];
             int u = 0;
@@ -1860,13 +1861,13 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
 
 #if defined(SEARCH_NEWP)
             s = prob_diff_update_savings_search(
-                  cpi->frame_branch_ct [i][j][k][t],
+                  frame_branch_ct[i][j][k][t],
                   *Pold, &newp, upd);
             if (s > 0 && newp != *Pold)
               u = 1;
 #else
             s = prob_update_savings(
-                  cpi->frame_branch_ct [i][j][k][t],
+                  frame_branch_ct[i][j][k][t],
                   *Pold, newp, upd);
             if (s > 0)
               u = 1;
@@ -1886,400 +1887,51 @@ static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
       }
     }
   }
+}
+
+static void update_coef_probs(VP8_COMP* const cpi, vp8_writer* const bc) {
+  vp8_clear_system_state(); // __asm emms;
+
+  // Build the cofficient contexts based on counts collected in encode loop
+  build_coeff_contexts(cpi);
+
+  update_coef_probs_common(bc,
+                           cpi->frame_coef_probs,
+                           cpi->common.fc.coef_probs,
+                           cpi->frame_branch_ct);
 
 #if CONFIG_HYBRIDTRANSFORM
-  savings = 0;
-  update[0] = update[1] = 0;
-  for (i = 0; i < BLOCK_TYPES; ++i) {
-    for (j = !i; j < COEF_BANDS; ++j) {
-      int prev_coef_savings[ENTROPY_NODES] = {0};
-      for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-        for (t = 0; t < ENTROPY_NODES; ++t) {
-          vp8_prob newp = cpi->frame_hybrid_coef_probs [i][j][k][t];
-          vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs [i][j][k] + t;
-          const vp8_prob upd = COEF_UPDATE_PROB;
-          int s = prev_coef_savings[t];
-          int u = 0;
-          if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-            continue;
-#if defined(SEARCH_NEWP)
-          s = prob_diff_update_savings_search(
-                cpi->frame_hybrid_branch_ct [i][j][k][t],
-                *Pold, &newp, upd);
-          if (s > 0 && newp != *Pold)
-            u = 1;
-          if (u)
-            savings += s - (int)(vp8_cost_zero(upd));
-          else
-            savings -= (int)(vp8_cost_zero(upd));
-#else
-          s = prob_update_savings(
-                cpi->frame_hybrid_branch_ct [i][j][k][t],
-                *Pold, newp, upd);
-          if (s > 0)
-            u = 1;
-          if (u)
-            savings += s;
-#endif
-
-          update[u]++;
-        }
-      }
-    }
-  }
-
-  // printf("Update %d %d, savings %d\n", update[0], update[1], savings);
-  /* Is coef updated at all */
-  if (update[1] == 0 || savings < 0) {
-    vp8_write_bit(bc, 0);
-  } else {
-    vp8_write_bit(bc, 1);
-    for (i = 0; i < BLOCK_TYPES; ++i) {
-      for (j = !i; j < COEF_BANDS; ++j) {
-        int prev_coef_savings[ENTROPY_NODES] = {0};
-        for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-          // calc probs and branch cts for this frame only
-          for (t = 0; t < ENTROPY_NODES; ++t) {
-            vp8_prob newp = cpi->frame_hybrid_coef_probs [i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs [i][j][k] + t;
-            const vp8_prob upd = COEF_UPDATE_PROB;
-            int s = prev_coef_savings[t];
-            int u = 0;
-            if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-              continue;
-
-#if defined(SEARCH_NEWP)
-            s = prob_diff_update_savings_search(
-                  cpi->frame_hybrid_branch_ct [i][j][k][t],
-                  *Pold, &newp, upd);
-            if (s > 0 && newp != *Pold)
-              u = 1;
-#else
-            s = prob_update_savings(
-                  cpi->frame_hybrid_branch_ct [i][j][k][t],
-                  *Pold, newp, upd);
-            if (s > 0)
-              u = 1;
-#endif
-            vp8_write(bc, u, upd);
-#ifdef ENTROPY_STATS
-            if (!cpi->dummy_packing)
-              ++ hybrid_tree_update_hist [i][j][k][t] [u];
-#endif
-            if (u) {
-              /* send/use new probability */
-              write_prob_diff_update(bc, newp, *Pold);
-              *Pold = newp;
-            }
-          }
-        }
-      }
-    }
-  }
+  update_coef_probs_common(bc,
+                           cpi->frame_hybrid_coef_probs,
+                           cpi->common.fc.hybrid_coef_probs,
+                           cpi->frame_hybrid_branch_ct);
 #endif
 
   /* do not do this if not even allowed */
   if (cpi->common.txfm_mode != ONLY_4X4) {
-    /* dry run to see if update is necessary */
-    update[0] = update[1] = 0;
-    savings = 0;
-    for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
-      for (j = !i; j < COEF_BANDS; ++j) {
-        for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-          // calc probs and branch cts for this frame only
-          for (t = 0; t < ENTROPY_NODES; ++t) {
-            const unsigned int *ct  = cpi->frame_branch_ct_8x8 [i][j][k][t];
-            vp8_prob newp = cpi->frame_coef_probs_8x8 [i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.coef_probs_8x8 [i][j][k] + t;
-            const vp8_prob oldp = *Pold;
-            int s, u;
-            const vp8_prob upd = COEF_UPDATE_PROB_8X8;
-            if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-              continue;
-#if defined(SEARCH_NEWP)
-            s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-            u = s > 0 && newp != oldp ? 1 : 0;
-            if (u)
-              savings += s - (int)(vp8_cost_zero(upd));
-            else
-              savings -= (int)(vp8_cost_zero(upd));
-#else
-            s = prob_update_savings(ct, oldp, newp, upd);
-            u = s > 0 ? 1 : 0;
-            if (u)
-              savings += s;
-#endif
-            update[u]++;
-          }
-        }
-      }
-    }
+    update_coef_probs_common(bc,
+                             cpi->frame_coef_probs_8x8,
+                             cpi->common.fc.coef_probs_8x8,
+                             cpi->frame_branch_ct_8x8);
 
-    if (update[1] == 0 || savings < 0) {
-      vp8_write_bit(bc, 0);
-    } else {
-      vp8_write_bit(bc, 1);
-      for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
-        for (j = !i; j < COEF_BANDS; ++j) {
-          for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-            for (t = 0; t < ENTROPY_NODES; ++t) {
-              const unsigned int *ct  = cpi->frame_branch_ct_8x8 [i][j][k][t];
-              vp8_prob newp = cpi->frame_coef_probs_8x8 [i][j][k][t];
-              vp8_prob *Pold = cpi->common.fc.coef_probs_8x8 [i][j][k] + t;
-              const vp8_prob oldp = *Pold;
-              const vp8_prob upd = COEF_UPDATE_PROB_8X8;
-              int s, u;
-              if (k >= 3 && ((i == 0 && j == 1) ||
-                             (i > 0 && j == 0)))
-                continue;
-#if defined(SEARCH_NEWP)
-              s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-              u = s > 0 && newp != oldp ? 1 : 0;
-#else
-              s = prob_update_savings(ct, oldp, newp, upd);
-              u = s > 0 ? 1 : 0;
-#endif
-              vp8_write(bc, u, upd);
-#ifdef ENTROPY_STATS
-              if (!cpi->dummy_packing)
-                ++ tree_update_hist_8x8 [i][j][k][t] [u];
-#endif
-              if (u) {
-                /* send/use new probability */
-                write_prob_diff_update(bc, newp, oldp);
-                *Pold = newp;
-              }
-            }
-          }
-        }
-      }
-    }
 #if CONFIG_HYBRIDTRANSFORM8X8
-    update[0] = update[1] = 0;
-    savings = 0;
-    for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
-      for (j = !i; j < COEF_BANDS; ++j) {
-        for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-          // calc probs and branch cts for this frame only
-          for (t = 0; t < ENTROPY_NODES; ++t) {
-            const unsigned int *ct  = cpi->frame_hybrid_branch_ct_8x8 [i][j][k][t];
-            vp8_prob newp = cpi->frame_hybrid_coef_probs_8x8 [i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs_8x8 [i][j][k] + t;
-            const vp8_prob oldp = *Pold;
-            int s, u;
-            const vp8_prob upd = COEF_UPDATE_PROB_8X8;
-            if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-              continue;
-#if defined(SEARCH_NEWP)
-            s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-            u = s > 0 && newp != oldp ? 1 : 0;
-            if (u)
-              savings += s - (int)(vp8_cost_zero(upd));
-            else
-              savings -= (int)(vp8_cost_zero(upd));
-#else
-            s = prob_update_savings(ct, oldp, newp, upd);
-            u = s > 0 ? 1 : 0;
-            if (u)
-              savings += s;
-#endif
-            update[u]++;
-          }
-        }
-      }
-    }
-
-    if (update[1] == 0 || savings < 0) {
-      vp8_write_bit(bc, 0);
-    } else {
-      vp8_write_bit(bc, 1);
-      for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
-        for (j = !i; j < COEF_BANDS; ++j) {
-          for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-            for (t = 0; t < ENTROPY_NODES; ++t) {
-              const unsigned int *ct  = cpi->frame_hybrid_branch_ct_8x8 [i][j][k][t];
-              vp8_prob newp = cpi->frame_hybrid_coef_probs_8x8 [i][j][k][t];
-              vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs_8x8 [i][j][k] + t;
-              const vp8_prob oldp = *Pold;
-              const vp8_prob upd = COEF_UPDATE_PROB_8X8;
-              int s, u;
-              if (k >= 3 && ((i == 0 && j == 1) ||
-                             (i > 0 && j == 0)))
-                continue;
-#if defined(SEARCH_NEWP)
-              s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-              u = s > 0 && newp != oldp ? 1 : 0;
-#else
-              s = prob_update_savings(ct, oldp, newp, upd);
-              u = s > 0 ? 1 : 0;
-#endif
-              vp8_write(bc, u, upd);
-#ifdef ENTROPY_STATS
-              if (!cpi->dummy_packing)
-                ++ hybrid_tree_update_hist_8x8 [i][j][k][t] [u];
-#endif
-              if (u) {
-                /* send/use new probability */
-                write_prob_diff_update(bc, newp, oldp);
-                *Pold = newp;
-              }
-            }
-          }
-        }
-      }
-    }
+    update_coef_probs_common(bc,
+                             cpi->frame_hybrid_coef_probs_8x8,
+                             cpi->common.fc.hybrid_coef_probs_8x8,
+                             cpi->frame_hybrid_branch_ct_8x8);
 #endif
   }
 
   if (cpi->common.txfm_mode > ALLOW_8X8) {
-  /* dry run to see if update is necessary */
-  update[0] = update[1] = 0;
-  savings = 0;
-  for (i = 0; i < BLOCK_TYPES_16X16; ++i) {
-    for (j = !i; j < COEF_BANDS; ++j) {
-      for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-        // calc probs and branch cts for this frame only
-        for (t = 0; t < ENTROPY_NODES; ++t) {
-          const unsigned int *ct  = cpi->frame_branch_ct_16x16[i][j][k][t];
-          vp8_prob newp = cpi->frame_coef_probs_16x16[i][j][k][t];
-          vp8_prob *Pold = cpi->common.fc.coef_probs_16x16[i][j][k] + t;
-          const vp8_prob oldp = *Pold;
-          int s, u;
-          const vp8_prob upd = COEF_UPDATE_PROB_16X16;
-          if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-            continue;
-#if defined(SEARCH_NEWP)
-          s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-          u = s > 0 && newp != oldp ? 1 : 0;
-          if (u)
-            savings += s - (int)(vp8_cost_zero(upd));
-          else
-            savings -= (int)(vp8_cost_zero(upd));
-#else
-          s = prob_update_savings(ct, oldp, newp, upd);
-          u = s > 0 ? 1 : 0;
-          if (u)
-            savings += s;
-#endif
-          update[u]++;
-        }
-      }
-    }
-  }
-
-  if (update[1] == 0 || savings < 0) {
-    vp8_write_bit(bc, 0);
-  } else {
-    vp8_write_bit(bc, 1);
-    for (i = 0; i < BLOCK_TYPES_16X16; ++i) {
-      for (j = !i; j < COEF_BANDS; ++j) {
-        for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-          for (t = 0; t < ENTROPY_NODES; ++t) {
-            const unsigned int *ct  = cpi->frame_branch_ct_16x16[i][j][k][t];
-            vp8_prob newp = cpi->frame_coef_probs_16x16[i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.coef_probs_16x16[i][j][k] + t;
-            const vp8_prob oldp = *Pold;
-            const vp8_prob upd = COEF_UPDATE_PROB_16X16;
-            int s, u;
-            if (k >= 3 && ((i == 0 && j == 1) ||
-                           (i > 0 && j == 0)))
-              continue;
-#if defined(SEARCH_NEWP)
-            s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-            u = s > 0 && newp != oldp ? 1 : 0;
-#else
-            s = prob_update_savings(ct, oldp, newp, upd);
-            u = s > 0 ? 1 : 0;
-#endif
-            vp8_write(bc, u, upd);
-#ifdef ENTROPY_STATS
-            if (!cpi->dummy_packing)
-              ++tree_update_hist_16x16[i][j][k][t][u];
-#endif
-            if (u) {
-              /* send/use new probability */
-              write_prob_diff_update(bc, newp, oldp);
-              *Pold = newp;
-            }
-          }
-        }
-      }
-    }
-  }
+    update_coef_probs_common(bc,
+                             cpi->frame_coef_probs_16x16,
+                             cpi->common.fc.coef_probs_16x16,
+                             cpi->frame_branch_ct_16x16);
 #if CONFIG_HYBRIDTRANSFORM16X16
-  update[0] = update[1] = 0;
-  savings = 0;
-  for (i = 0; i < BLOCK_TYPES_16X16; ++i) {
-    for (j = !i; j < COEF_BANDS; ++j) {
-      for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-        // calc probs and branch cts for this frame only
-        for (t = 0; t < ENTROPY_NODES; ++t) {
-          const unsigned int *ct  = cpi->frame_hybrid_branch_ct_16x16[i][j][k][t];
-          vp8_prob newp = cpi->frame_hybrid_coef_probs_16x16[i][j][k][t];
-          vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs_16x16[i][j][k] + t;
-          const vp8_prob oldp = *Pold;
-          int s, u;
-          const vp8_prob upd = COEF_UPDATE_PROB_16X16;
-          if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-            continue;
-#if defined(SEARCH_NEWP)
-          s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-          u = s > 0 && newp != oldp ? 1 : 0;
-          if (u)
-            savings += s - (int)(vp8_cost_zero(upd));
-          else
-            savings -= (int)(vp8_cost_zero(upd));
-#else
-          s = prob_update_savings(ct, oldp, newp, upd);
-          u = s > 0 ? 1 : 0;
-          if (u)
-            savings += s;
-#endif
-          update[u]++;
-        }
-      }
-    }
-  }
-
-  if (update[1] == 0 || savings < 0) {
-    vp8_write_bit(bc, 0);
-  } else {
-    vp8_write_bit(bc, 1);
-    for (i = 0; i < BLOCK_TYPES_16X16; ++i) {
-      for (j = !i; j < COEF_BANDS; ++j) {
-        for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-          for (t = 0; t < ENTROPY_NODES; ++t) {
-            const unsigned int *ct  = cpi->frame_hybrid_branch_ct_16x16[i][j][k][t];
-            vp8_prob newp = cpi->frame_hybrid_coef_probs_16x16[i][j][k][t];
-            vp8_prob *Pold = cpi->common.fc.hybrid_coef_probs_16x16[i][j][k] + t;
-            const vp8_prob oldp = *Pold;
-            const vp8_prob upd = COEF_UPDATE_PROB_16X16;
-            int s, u;
-            if (k >= 3 && ((i == 0 && j == 1) ||
-                           (i > 0 && j == 0)))
-              continue;
-#if defined(SEARCH_NEWP)
-            s = prob_diff_update_savings_search(ct, oldp, &newp, upd);
-            u = s > 0 && newp != oldp ? 1 : 0;
-#else
-            s = prob_update_savings(ct, oldp, newp, upd);
-            u = s > 0 ? 1 : 0;
-#endif
-            vp8_write(bc, u, upd);
-#ifdef ENTROPY_STATS
-            if (!cpi->dummy_packing)
-              ++hybrid_tree_update_hist_16x16[i][j][k][t][u];
-#endif
-            if (u) {
-              /* send/use new probability */
-              write_prob_diff_update(bc, newp, oldp);
-              *Pold = newp;
-            }
-          }
-        }
-      }
-    }
-  }
+    update_coef_probs_common(bc,
+                             cpi->frame_hybrid_coef_probs_16x16,
+                             cpi->common.fc.hybrid_coef_probs_16x16,
+                             cpi->frame_hybrid_branch_ct_16x16);
 #endif
   }
 }
