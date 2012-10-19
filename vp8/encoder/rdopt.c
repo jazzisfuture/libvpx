@@ -1175,11 +1175,18 @@ static int64_t rd_pick_intra4x4block(VP8_COMP *cpi, MACROBLOCK *x, BLOCK *be,
       int64_t this_rd;
       int ratey;
 
-      // TODO Temporarily ignore modes that need the above-right data. SB
-      // encoding means this data is not available for the bottom right MB
-      // Do we need to do this for mode2 also?
-      if (mode == B_LD_PRED || mode == B_VL_PRED)
-        continue;
+      // TODO(debargha/agrange): Temporarily ignore modes that need the
+      // above-right data for blocks on the right column of a MB. For SB
+      // encoding, this data is not available for the top right 4x4 block
+      // of the bottom right MB only; so ideally we should need to skip
+      // these modes for only this 4x4 block within the SB.
+      // However there seems to be a bug because of which all right
+      // blocks of all MBs need to skip these modes to prevent a mismatch.
+      // So this is just a temporary fix for now.
+      if (((b - xd->block) & 3) == 3) {  // blocks on the right column of MB
+        if (mode == B_LD_PRED || mode == B_VL_PRED)
+          continue;
+      }
       b->bmi.as_mode.first = mode;
       rate = bmode_costs[mode];
 
