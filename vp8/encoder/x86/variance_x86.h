@@ -117,7 +117,6 @@ extern prototype_sad(vp8_sad8x8_wmt);
 extern prototype_sad(vp8_sad8x16_wmt);
 extern prototype_sad(vp8_sad16x8_wmt);
 extern prototype_sad(vp8_sad16x16_wmt);
-extern prototype_sad(vp8_copy32xn_sse2);
 extern prototype_variance(vp8_variance4x4_wmt);
 extern prototype_variance(vp8_variance8x8_wmt);
 extern prototype_variance(vp8_variance8x16_wmt);
@@ -232,7 +231,6 @@ extern prototype_sad_multi_dif_address(vp8_sad16x8x4d_sse3);
 extern prototype_sad_multi_dif_address(vp8_sad8x16x4d_sse3);
 extern prototype_sad_multi_dif_address(vp8_sad8x8x4d_sse3);
 extern prototype_sad_multi_dif_address(vp8_sad4x4x4d_sse3);
-extern prototype_sad(vp8_copy32xn_sse3);
 
 #if !CONFIG_RUNTIME_CPU_DETECT
 
