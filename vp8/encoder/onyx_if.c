@@ -85,6 +85,7 @@ static void set_default_lf_deltas(VP8_COMP *cpi);
 
 extern const int vp8_gf_interval_table[101];
 
+#define DEFAULT_INTERP_FILTER           EIGHTTAP //SWITCHABLE
 #define SEARCH_BEST_FILTER 0            /* to search exhaustively for
                                            best filter */
 #define RESET_FOREACH_FILTER 0          /* whether to reset the encoder state
@@ -1617,7 +1618,7 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
   cpi->cq_target_quality = cpi->oxcf.cq_level;
 
   if (!cm->use_bilinear_mc_filter)
-    cm->mcomp_filter_type = EIGHTTAP;
+    cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
   else
     cm->mcomp_filter_type = BILINEAR;
 
@@ -2935,11 +2936,7 @@ static void encode_frame_to_data_rate
 
   /* list of filters to search over */
   int mcomp_filters_to_search[] = {
-#if CONFIG_SWITCHABLE_INTERP
     EIGHTTAP, EIGHTTAP_SHARP, SIXTAP, SWITCHABLE
-#else
-    EIGHTTAP, EIGHTTAP_SHARP, SIXTAP,
-#endif
   };
   int mcomp_filters = sizeof(mcomp_filters_to_search) / sizeof(*mcomp_filters_to_search);
   int mcomp_filter_index = 0;
@@ -3166,12 +3163,7 @@ static void encode_frame_to_data_rate
       cm->mcomp_filter_type = mcomp_filters_to_search[0];
       mcomp_filter_index = 0;
     } else {
-#if CONFIG_SWITCHABLE_INTERP
-      cm->mcomp_filter_type = SWITCHABLE;
-#else
-      cm->mcomp_filter_type =
-          (Q < SHARP_FILTER_QTHRESH ? EIGHTTAP_SHARP : EIGHTTAP);
-#endif
+      cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
     }
     /* TODO: Decide this more intelligently */
     xd->allow_high_precision_mv = (Q < HIGH_PRECISION_MV_QTHRESH);
@@ -3484,7 +3476,6 @@ static void encode_frame_to_data_rate
     if (cpi->is_src_frame_alt_ref)
       Loop = FALSE;
 
-#if CONFIG_SWITCHABLE_INTERP
     if (cm->frame_type != KEY_FRAME &&
         !sf->search_best_filter &&
         cm->mcomp_filter_type == SWITCHABLE) {
@@ -3516,7 +3507,6 @@ static void encode_frame_to_data_rate
         }
       }
     }
-#endif
 
     if (Loop == FALSE && cm->frame_type != KEY_FRAME && sf->search_best_filter) {
       if (mcomp_filter_index < mcomp_filters) {
