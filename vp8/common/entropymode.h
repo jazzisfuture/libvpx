@@ -76,7 +76,6 @@ void vp8_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES
 
 void vp8_adapt_mode_probs(struct VP8Common *);
 
-#if CONFIG_SWITCHABLE_INTERP
 #define VP8_SWITCHABLE_FILTERS 2 /* number of switchable filters */
 extern const  INTERPOLATIONFILTERTYPE vp8_switchable_interp
                   [VP8_SWITCHABLE_FILTERS];
@@ -87,5 +86,4 @@ extern struct vp8_token_struct vp8_switchable_interp_encodings
                   [VP8_SWITCHABLE_FILTERS];
 extern const  vp8_prob vp8_switchable_interp_prob
                   [VP8_SWITCHABLE_FILTERS+1][VP8_SWITCHABLE_FILTERS-1];
-#endif
 #endif

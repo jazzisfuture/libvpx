@@ -22,9 +22,7 @@ typedef enum {
   PRED_REF = 1,
   PRED_COMP = 2,
   PRED_MBSKIP = 3,
-#if CONFIG_SWITCHABLE_INTERP
   PRED_SWITCHABLE_INTERP = 4,
-#endif
 } PRED_ID;
 
 
