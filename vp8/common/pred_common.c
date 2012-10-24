@@ -224,9 +224,13 @@ void set_pred_flag(MACROBLOCKD *const xd,
       xd->mode_info_context->mbmi.seg_id_predicted = pred_flag;
 #if CONFIG_SUPERBLOCKS
       if (xd->mode_info_context->mbmi.encoded_as_sb) {
-        xd->mode_info_context[1].mbmi.seg_id_predicted = pred_flag;
-        xd->mode_info_context[xd->mode_info_stride].mbmi.seg_id_predicted = pred_flag;
-        xd->mode_info_context[xd->mode_info_stride+1].mbmi.seg_id_predicted = pred_flag;
+        if (xd->mb_to_right_edge > 0)
+          xd->mode_info_context[1].mbmi.seg_id_predicted = pred_flag;
+        if (xd->mb_to_bottom_edge > 0) {
+          xd->mode_info_context[xd->mode_info_stride].mbmi.seg_id_predicted = pred_flag;
+          if (xd->mb_to_right_edge > 0)
+            xd->mode_info_context[xd->mode_info_stride+1].mbmi.seg_id_predicted = pred_flag;
+        }
       }
 #endif
       break;
@@ -235,15 +239,30 @@ void set_pred_flag(MACROBLOCKD *const xd,
       xd->mode_info_context->mbmi.ref_predicted = pred_flag;
 #if CONFIG_SUPERBLOCKS
       if (xd->mode_info_context->mbmi.encoded_as_sb) {
-        xd->mode_info_context[1].mbmi.ref_predicted = pred_flag;
-        xd->mode_info_context[xd->mode_info_stride].mbmi.ref_predicted = pred_flag;
-        xd->mode_info_context[xd->mode_info_stride+1].mbmi.ref_predicted = pred_flag;
+        if (xd->mb_to_right_edge > 0)
+          xd->mode_info_context[1].mbmi.ref_predicted = pred_flag;
+        if (xd->mb_to_bottom_edge > 0) {
+          xd->mode_info_context[xd->mode_info_stride].mbmi.ref_predicted = pred_flag;
+          if (xd->mb_to_right_edge > 0)
+            xd->mode_info_context[xd->mode_info_stride+1].mbmi.ref_predicted = pred_flag;
+        }
       }
 #endif
       break;
 
     case PRED_MBSKIP:
       xd->mode_info_context->mbmi.mb_skip_coeff = pred_flag;
+#if CONFIG_SUPERBLOCKS
+      if (xd->mode_info_context->mbmi.encoded_as_sb) {
+        if (xd->mb_to_right_edge > 0)
+          xd->mode_info_context[1].mbmi.mb_skip_coeff = pred_flag;
+        if (xd->mb_to_bottom_edge > 0) {
+          xd->mode_info_context[xd->mode_info_stride].mbmi.mb_skip_coeff = pred_flag;
+          if (xd->mb_to_right_edge > 0)
+            xd->mode_info_context[xd->mode_info_stride+1].mbmi.mb_skip_coeff = pred_flag;
+        }
+      }
+#endif
       break;
 
     default:
@@ -257,10 +276,29 @@ void set_pred_flag(MACROBLOCKD *const xd,
 // peredict various bitstream signals.
 
 // Macroblock segment id prediction function
-unsigned char get_pred_mb_segid(const VP8_COMMON *const cm, int MbIndex) {
+unsigned char get_pred_mb_segid(const VP8_COMMON *const cm,
+                                const MACROBLOCKD *const xd, int MbIndex) {
   // Currently the prediction for the macroblock segment ID is
   // the value stored for this macroblock in the previous frame.
-  return cm->last_frame_seg_map[MbIndex];
+#if CONFIG_SUPERBLOCKS
+  if (!xd->mode_info_context->mbmi.encoded_as_sb) {
+#endif
+    return cm->last_frame_seg_map[MbIndex];
+#if CONFIG_SUPERBLOCKS
+  } else {
+    int seg_id = cm->last_frame_seg_map[MbIndex];
+    int mb_col = MbIndex % cm->mb_cols;
+    int mb_row = MbIndex / cm->mb_cols;
+    if (mb_col + 1 < cm->mb_cols)
+      seg_id = seg_id && cm->last_frame_seg_map[MbIndex + 1];
+    if (mb_row + 1 < cm->mb_rows) {
+      seg_id = seg_id && cm->last_frame_seg_map[MbIndex + cm->mb_cols];
+      if (mb_col + 1 < cm->mb_cols)
+        seg_id = seg_id && cm->last_frame_seg_map[MbIndex + cm->mb_cols + 1];
+    }
+    return seg_id;
+  }
+#endif
 }
 
 MV_REFERENCE_FRAME get_pred_ref(const VP8_COMMON *const cm,
