@@ -669,11 +669,24 @@ write_webm_block(EbmlGlobal                *glob,
                  const vpx_codec_enc_cfg_t *cfg,
                  const vpx_codec_cx_pkt_t  *pkt) {
   unsigned long  block_length;
+  unsigned long  vint_block_length;
+  unsigned long  packed_block_length;
+  unsigned char  control_byte;
   unsigned char  track_number;
   unsigned short block_timecode = 0;
   unsigned char  flags;
   int64_t        pts_ms;
   int            start_cluster = 0, is_keyframe;
+  struct packed_frame {
+    unsigned short int is_packed;
+    unsigned long int block_length;
+    unsigned char track_number;
+    unsigned short block_timecode;
+    unsigned char flags;
+    void *buf;
+    size_t buf_size;
+  };
+  static struct packed_frame altref_frame;
 
   /* Calculate the PTS of this frame in milliseconds */
   pts_ms = pkt->data.frame.pts * 1000
@@ -721,27 +734,68 @@ write_webm_block(EbmlGlobal                *glob,
     }
   }
 
-  /* Write the Simple Block */
-  Ebml_WriteID(glob, SimpleBlock);
-
   block_length = pkt->data.frame.sz + 4;
-  block_length |= 0x10000000;
-  Ebml_Serialize(glob, &block_length, sizeof(block_length), 4);
-
   track_number = 1;
   track_number |= 0x80;
-  Ebml_Write(glob, &track_number, 1);
-
-  Ebml_Serialize(glob, &block_timecode, sizeof(block_timecode), 2);
-
   flags = 0;
   if (is_keyframe)
     flags |= 0x80;
   if (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
     flags |= 0x08;
-  Ebml_Write(glob, &flags, 1);
 
-  Ebml_Write(glob, pkt->data.frame.buf, pkt->data.frame.sz);
+  /* simply save the frame in memory if its an altref */
+  if(pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE) {
+    altref_frame.is_packed = 1;
+    altref_frame.block_length = block_length;
+    altref_frame.track_number = track_number;
+    altref_frame.block_timecode = block_timecode;
+    altref_frame.flags = flags;
+    altref_frame.buf_size = pkt->data.frame.sz;
+    altref_frame.buf = malloc(altref_frame.buf_size);
+    memcpy(altref_frame.buf, (const void *)pkt->data.frame.buf, altref_frame.buf_size);
+  }
+  else {
+    /* Write the Simple Block */
+    Ebml_WriteID(glob, SimpleBlock);
+    if(!altref_frame.is_packed) { /* not a packed frame */
+      control_byte = 0;
+      vint_block_length = block_length + 5;
+      vint_block_length |= 0x10000000;
+      Ebml_Serialize(glob, &vint_block_length, sizeof(vint_block_length), 4);
+      Ebml_Write(glob, &control_byte, 1);
+      Ebml_Serialize(glob, &block_length, sizeof(block_length), 4);
+      Ebml_Write(glob, &track_number, 1);
+      Ebml_Serialize(glob, &block_timecode, sizeof(block_timecode), 2);
+      Ebml_Write(glob, &flags, 1);
+      Ebml_Write(glob, pkt->data.frame.buf, (unsigned long)pkt->data.frame.sz);
+    }
+    else {
+      control_byte = 1;
+      packed_block_length = block_length + altref_frame.block_length + 8 + 2; /* 8 for lengths and 2 for control byte */
+      packed_block_length |= 0x10000000;
+      Ebml_Serialize(glob, &packed_block_length, sizeof(packed_block_length), 4);
+
+      /* write the first frame */
+      Ebml_Write(glob, &control_byte, 1);
+      Ebml_Serialize(glob, &(altref_frame.block_length), sizeof(altref_frame.block_length), 4);
+      Ebml_Write(glob, &(altref_frame.track_number), 1);
+      Ebml_Serialize(glob, &(altref_frame.block_timecode), sizeof(altref_frame.block_timecode), 2);
+      Ebml_Write(glob, &(altref_frame.flags), 1);
+      Ebml_Write(glob, altref_frame.buf, (unsigned long)altref_frame.buf_size);
+
+      /* write the current frame */
+      Ebml_Write(glob, &control_byte, 1);
+      Ebml_Serialize(glob, &block_length, sizeof(block_length), 4);
+      Ebml_Write(glob, &track_number, 1);
+      Ebml_Serialize(glob, &block_timecode, sizeof(block_timecode), 2);
+      Ebml_Write(glob, &flags, 1);
+      Ebml_Write(glob, pkt->data.frame.buf, (unsigned long)pkt->data.frame.sz);
+
+      free(altref_frame.buf);
+      memset(&altref_frame, 0, sizeof(altref_frame));
+    }
+  }
+
 }
 
 

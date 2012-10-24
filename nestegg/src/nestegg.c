@@ -1841,9 +1841,17 @@ int
 nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
 {
   int r;
-  uint64_t id, size;
+  uint64_t id, size, control_byte, frame_size;
+  static unsigned short int frame_stored;
+  static nestegg_packet *stored_pkt;
 
   *pkt = NULL;
+
+  if(frame_stored) {
+    *pkt = stored_pkt;
+    frame_stored = 0;
+    return 1;
+  }
 
   for (;;) {
     r = ne_peek_element(ctx, &id, &size);
@@ -1856,10 +1864,36 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
       if (r != 1)
         return r;
 
-      /* the only suspend fields are blocks and simple blocks, which we
-         handle directly. */
-      r = ne_read_block(ctx, id, size, pkt);
-      return r;
+      r = ne_read_uint(ctx->io, &control_byte, 1);
+      if (r != 1)
+        return r;
+
+      if(control_byte & 0x01) {
+        /* read the first frame */
+        r = ne_read_uint(ctx->io, &frame_size, 4);
+        if(r != 1)
+          return r;
+        r = ne_read_block(ctx, id, frame_size, pkt);
+
+        /* read the second frame */
+        stored_pkt = NULL;
+        r = ne_read_uint(ctx->io, &control_byte, 1);
+        if (r != 1)
+          return r;
+        r = ne_read_uint(ctx->io, &frame_size, 4);
+        if(r != 1)
+          return r;
+        r = ne_read_block(ctx, id, frame_size, &stored_pkt);
+        frame_stored = 1;
+        return r;
+      }
+      else {
+        r = ne_read_uint(ctx->io, &frame_size, 4);
+        if(r != 1)
+          return r;
+        r = ne_read_block(ctx, id, frame_size, pkt);
+        return r;
+      }
     }
 
     r =  ne_parse(ctx, NULL);
