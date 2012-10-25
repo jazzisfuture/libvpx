@@ -3031,7 +3031,51 @@ static int recode_loop_test( VP8_COMP *cpi,
     return force_recode;
 }
 
-static void update_reference_frames(VP8_COMP *cpi)
+static void decide_suppression_altr_gf_pred(VP8_COMP *cpi)
+{
+    cpi->suppress_golden_pred = 0;
+    cpi->suppress_altr_pred = 0;
+
+    /* If we are using LAST as a prediction, along with GF or ALTR, then allow
+     * for suppression of prediction from GF/ALTR, if:
+     * (1) the QP difference between ALTR/GF and LAST is above some threshold.
+     * (2) GF/ALTR was last updated by key frame, and the distance to last key
+     * frame is above threshold.
+     */
+
+    // Threshold on the delta QP.
+    int threshold_qp = 30;
+    // Threshold on distance (in frame num) to last (key frame) update.
+    int threshold_key = (int)(2 * cpi->output_frame_rate); // ~2secs
+
+    if (cpi->ref_frame_flags & VP8_LAST_FRAME)
+    {
+        // Check for golden.
+        if ((cpi->ref_frame_flags & VP8_GOLD_FRAME) &&
+            cpi->golden_last_updated_on_key)
+        {
+            int delta_qp =  cpi->golden_qp - cpi->last_qp;
+            if (delta_qp > threshold_qp &&
+                cpi->frames_since_key > threshold_key)
+            {
+                cpi->suppress_golden_pred = 1;
+            }
+        }
+       // Check for alt ref.
+       if ((cpi->ref_frame_flags & VP8_ALTR_FRAME) &&
+           cpi->altr_last_updated_on_key)
+       {
+           int delta_qp =  cpi->altr_qp - cpi->last_qp;
+           if (delta_qp > threshold_qp &&
+               cpi->frames_since_key > threshold_key)
+           {
+               cpi->suppress_altr_pred = 1;
+           }
+       }
+    }
+}
+
+static void update_reference_frames(VP8_COMP *cpi, int Q)
 {
     VP8_COMMON *cm = &cpi->common;
     YV12_BUFFER_CONFIG *yv12_fb = cm->yv12_fb;
@@ -3048,6 +3092,8 @@ static void update_reference_frames(VP8_COMP *cpi)
         yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
 
         cm->alt_fb_idx = cm->gld_fb_idx = cm->new_fb_idx;
+        cpi->golden_qp = cpi->altr_qp = Q;
+        cpi->golden_last_updated_on_key = cpi->altr_last_updated_on_key = 1;
 
 #if CONFIG_MULTI_RES_ENCODING
         cpi->current_ref_frames[GOLDEN_FRAME] = cm->current_video_frame;
@@ -3063,6 +3109,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             cm->yv12_fb[cm->new_fb_idx].flags |= VP8_ALTR_FRAME;
             cm->yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
             cm->alt_fb_idx = cm->new_fb_idx;
+            cpi->altr_qp = Q;
+            cpi->altr_last_updated_on_key = 0;
 
 #if CONFIG_MULTI_RES_ENCODING
             cpi->current_ref_frames[ALTREF_FRAME] = cm->current_video_frame;
@@ -3079,6 +3127,8 @@ static void update_reference_frames(VP8_COMP *cpi)
                     yv12_fb[cm->lst_fb_idx].flags |= VP8_ALTR_FRAME;
                     yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
                     cm->alt_fb_idx = cm->lst_fb_idx;
+                    cpi->altr_qp = cpi->last_qp;
+                    cpi->altr_last_updated_on_key = 0;
 
 #if CONFIG_MULTI_RES_ENCODING
                     cpi->current_ref_frames[ALTREF_FRAME] =
@@ -3093,6 +3143,9 @@ static void update_reference_frames(VP8_COMP *cpi)
                     yv12_fb[cm->gld_fb_idx].flags |= VP8_ALTR_FRAME;
                     yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
                     cm->alt_fb_idx = cm->gld_fb_idx;
+                    cpi->altr_qp = cpi->golden_qp;
+                    cpi->altr_last_updated_on_key =
+                        cpi->golden_last_updated_on_key;
 
 #if CONFIG_MULTI_RES_ENCODING
                     cpi->current_ref_frames[ALTREF_FRAME] =
@@ -3109,6 +3162,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             cm->yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FRAME;
             cm->yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
             cm->gld_fb_idx = cm->new_fb_idx;
+            cpi->golden_qp = Q;
+            cpi->golden_last_updated_on_key = 0;
 
 #if CONFIG_MULTI_RES_ENCODING
             cpi->current_ref_frames[GOLDEN_FRAME] = cm->current_video_frame;
@@ -3125,6 +3180,8 @@ static void update_reference_frames(VP8_COMP *cpi)
                     yv12_fb[cm->lst_fb_idx].flags |= VP8_GOLD_FRAME;
                     yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
                     cm->gld_fb_idx = cm->lst_fb_idx;
+                    cpi->golden_qp =cpi->last_qp;
+                    cpi->golden_last_updated_on_key = 0;
 
 #if CONFIG_MULTI_RES_ENCODING
                     cpi->current_ref_frames[GOLDEN_FRAME] =
@@ -3139,6 +3196,9 @@ static void update_reference_frames(VP8_COMP *cpi)
                     yv12_fb[cm->alt_fb_idx].flags |= VP8_GOLD_FRAME;
                     yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
                     cm->gld_fb_idx = cm->alt_fb_idx;
+                    cpi->golden_qp = cpi->altr_qp;
+                    cpi->golden_last_updated_on_key =
+                        cpi->altr_last_updated_on_key;
 
 #if CONFIG_MULTI_RES_ENCODING
                     cpi->current_ref_frames[GOLDEN_FRAME] =
@@ -3154,6 +3214,7 @@ static void update_reference_frames(VP8_COMP *cpi)
         cm->yv12_fb[cm->new_fb_idx].flags |= VP8_LAST_FRAME;
         cm->yv12_fb[cm->lst_fb_idx].flags &= ~VP8_LAST_FRAME;
         cm->lst_fb_idx = cm->new_fb_idx;
+        cpi->last_qp = Q;
 
 #if CONFIG_MULTI_RES_ENCODING
         cpi->current_ref_frames[LAST_FRAME] = cm->current_video_frame;
@@ -3928,7 +3989,7 @@ static void encode_frame_to_data_rate
             vp8_setup_key_frame(cpi);
         }
 
-
+        decide_suppression_altr_gf_pred(cpi);
 
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
         {
@@ -4357,7 +4418,7 @@ static void encode_frame_to_data_rate
         vp8_loopfilter_frame(cpi, cm);
     }
 
-    update_reference_frames(cpi);
+    update_reference_frames(cpi, Q);
 
 #if !(CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
     if (cpi->oxcf.error_resilient_mode)

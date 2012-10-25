@@ -539,6 +539,18 @@ typedef struct VP8_COMP
     int cyclic_refresh_q;
     signed char *cyclic_refresh_map;
 
+    /* Parameters for controlling the suppression of temporal prediction off the
+     * GF or ARF, based on the QP of the GF/ARF relative to LAST, and optionally
+     * to distance from last key frame update.
+    */
+    int golden_last_updated_on_key;
+    int altr_last_updated_on_key;
+    int golden_qp;
+    int altr_qp;
+    int last_qp;
+    int suppress_golden_pred;
+    int suppress_altr_pred;
+
 #if CONFIG_MULTITHREAD
     /* multithread data */
     int * mt_current_mb_col;

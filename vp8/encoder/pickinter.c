@@ -517,6 +517,15 @@ static int evaluate_inter_mode(unsigned int* sse, int rate2, int* distortion2,
         this_rd = ((int64_t)this_rd) * rd_adj / 100;
     }
 
+    // Adjust the rd to suppress long term prediction.
+    if ((x->e_mbd.mode_info_context->mbmi.ref_frame == ALTREF_FRAME &&
+        cpi->suppress_altr_pred) ||
+        (x->e_mbd.mode_info_context->mbmi.ref_frame == GOLDEN_FRAME &&
+            cpi->suppress_golden_pred))
+    {
+       this_rd = MIN(((int64_t)this_rd) * 120 / 100, INT_MAX);
+    }
+
     check_for_encode_breakout(*sse, x);
     return this_rd;
 }
