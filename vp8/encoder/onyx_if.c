@@ -185,34 +185,24 @@ static int inter_minq[QINDEX_RANGE];
 // formulaic approach to facilitate easier adjustment of the Q tables.
 // The formulae were derived from computing a 3rd order polynomial best
 // fit to the original data (after plotting real maxq vs minq (not q index))
-int calculate_minq_index(double maxq,
-                         double x3, double x2, double x, double c) {
+static int calculate_minq_index(double maxq,
+                                double x3, double x2, double x1, double c) {
   int i;
-  double minqtarget;
-  double thisq;
 
-  minqtarget = ((x3 * maxq * maxq * maxq) +
-                (x2 * maxq * maxq) +
-                (x * maxq) +
-                c);
-
-  if (minqtarget > maxq)
-    minqtarget = maxq;
+  double minqtarget = c + maxq * (x1 + maxq * (x2 + maxq * x3));
+  if (minqtarget > maxq) minqtarget = maxq;
 
   for (i = 0; i < QINDEX_RANGE; i++) {
-    thisq = vp8_convert_qindex_to_q(i);
-    if (minqtarget <= vp8_convert_qindex_to_q(i))
-      return i;
+    const double thisq = vp8_convert_qindex_to_q(i);
+    if (minqtarget <= thisq) return i;
   }
   return QINDEX_RANGE - 1;
 }
 
-void init_minq_luts() {
+static void init_minq_luts() {
   int i;
-  double maxq;
-
   for (i = 0; i < QINDEX_RANGE; i++) {
-    maxq = vp8_convert_qindex_to_q(i);
+    const double maxq = vp8_convert_qindex_to_q(i);
 
 
     kf_low_motion_minq[i] = calculate_minq_index(maxq,
@@ -244,69 +234,51 @@ void init_minq_luts() {
   }
 }
 
-void init_base_skip_probs() {
+static int clip_proba(double proba) {
+  return (proba < 1.) ? 1 : (proba > 255.) ? 255 : (int)proba;
+}
+
+static void init_base_skip_probs() {
   int i;
-  double q;
-  int skip_prob, t;
-
   for (i = 0; i < QINDEX_RANGE; i++) {
-    q = vp8_convert_qindex_to_q(i);
-
-    // Exponential decay caluclation of baseline skip prob with clamping
+    // Exponential decay calculation of baseline skip prob with clamping.
     // Based on crude best fit of old table.
-    t = (int)(564.25 * pow(2.71828, (-0.012 * q)));
+    const double q = vp8_convert_qindex_to_q(i);
+    const int t = (int)(564.25 * pow(2.71828, (-0.012 * q)));
 
-    skip_prob = t;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][1] = skip_prob;
-
-    skip_prob = t * 0.75;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][2] = skip_prob;
-
-    skip_prob = t * 1.25;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][0] = skip_prob;
+    vp8cx_base_skip_false_prob[i][0] = clip_proba(t * 1.25);
+    vp8cx_base_skip_false_prob[i][1] = clip_proba(t * 1.00);
+    vp8cx_base_skip_false_prob[i][2] = clip_proba(t * 0.75);
   }
 }
-void update_base_skip_probs(VP8_COMP *cpi) {
-  VP8_COMMON *cm = &cpi->common;
+
+static void update_base_skip_probs(VP8_COMP *cpi) {
+  const VP8_COMMON* const cm = &cpi->common;
 
   if (cm->frame_type != KEY_FRAME) {
+    int k;
+    int index;
     update_skip_probs(cpi);
 
     if (cm->refresh_alt_ref_frame) {
-      int k;
-      for (k = 0; k < MBSKIP_CONTEXTS; ++k)
-        cpi->last_skip_false_probs[2][k] = cm->mbskip_pred_probs[k];
-      cpi->last_skip_probs_q[2] = cm->base_qindex;
-    } else if (cpi->common.refresh_golden_frame) {
-      int k;
-      for (k = 0; k < MBSKIP_CONTEXTS; ++k)
-        cpi->last_skip_false_probs[1][k] = cm->mbskip_pred_probs[k];
-      cpi->last_skip_probs_q[1] = cm->base_qindex;
+      index = 2;
+    } else if (cm->refresh_golden_frame) {
+      index = 1;
     } else {
-      int k;
-      for (k = 0; k < MBSKIP_CONTEXTS; ++k)
-        cpi->last_skip_false_probs[0][k] = cm->mbskip_pred_probs[k];
-      cpi->last_skip_probs_q[0] = cm->base_qindex;
+      index = 0;
 
-      // update the baseline table for the current q
-      for (k = 0; k < MBSKIP_CONTEXTS; ++k)
+      // Additionally, update the baseline table for the current q.
+      for (k = 0; k < MBSKIP_CONTEXTS; ++k) {
         cpi->base_skip_false_prob[cm->base_qindex][k] =
           cm->mbskip_pred_probs[k];
+      }
     }
+    for (k = 0; k < MBSKIP_CONTEXTS; ++k) {
+      cpi->last_skip_false_probs[index][k] =
+          cm->mbskip_pred_probs[k];
+    }
+    cpi->last_skip_probs_q[index] = cm->base_qindex;
   }
-
 }
 
 void vp8_initialize() {
@@ -324,12 +296,9 @@ void vp8_initialize() {
     init_done = 1;
   }
 }
-#ifdef PACKET_TESTING
-extern FILE *vpxlogc;
-#endif
 
 static void setup_features(VP8_COMP *cpi) {
-  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  MACROBLOCKD* const xd = &cpi->mb.e_mbd;
 
   // Set up default state for MB feature flags
 
@@ -349,9 +318,7 @@ static void setup_features(VP8_COMP *cpi) {
   vpx_memset(xd->last_mode_lf_deltas, 0, sizeof(xd->mode_lf_deltas));
 
   set_default_lf_deltas(cpi);
-
 }
-
 
 static void dealloc_compressor_data(VP8_COMP *cpi) {
   vpx_free(cpi->tplist);
@@ -416,7 +383,7 @@ static void dealloc_compressor_data(VP8_COMP *cpi) {
 // Computes a q delta (in "q index" terms) to get from a starting q value
 // to a target value
 // target q value
-static int compute_qdelta(VP8_COMP *cpi, double qstart, double qtarget) {
+static int compute_qdelta(const VP8_COMP *cpi, double qstart, double qtarget) {
   int i;
   int start_index = cpi->worst_quality;
   int target_index = cpi->worst_quality;
@@ -439,14 +406,11 @@ static int compute_qdelta(VP8_COMP *cpi, double qstart, double qtarget) {
 }
 
 static void init_seg_features(VP8_COMP *cpi) {
-  VP8_COMMON *cm = &cpi->common;
+  const VP8_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
 
-  int high_q = (int)(cpi->avg_q > 48.0);
-  int qi_delta;
 
-  // Disable and clear down for KF
-  if (cm->frame_type == KEY_FRAME) {
+  if (cm->frame_type == KEY_FRAME) {  // Disable and clear down for KF
     // Clear down the global segmentation map
     vpx_memset(cpi->segmentation_map, 0, (cm->mb_rows * cm->mb_cols));
     xd->update_mb_segmentation_map = 0;
@@ -458,10 +422,7 @@ static void init_seg_features(VP8_COMP *cpi) {
 
     // Clear down the segment features.
     clearall_segfeatures(xd);
-  }
-
-  // If this is an alt ref frame
-  else if (cm->refresh_alt_ref_frame) {
+  } else if (cm->refresh_alt_ref_frame) {
     // Clear down the global segmentation map
     vpx_memset(cpi->segmentation_map, 0, (cm->mb_rows * cm->mb_cols));
     xd->update_mb_segmentation_map = 0;
@@ -479,6 +440,7 @@ static void init_seg_features(VP8_COMP *cpi) {
     // If segmentation was enabled set those features needed for the
     // arf itself.
     if (xd->segmentation_enabled) {
+      int qi_delta;
       xd->update_mb_segmentation_map = 1;
       xd->update_mb_segmentation_data = 1;
 
@@ -491,26 +453,12 @@ static void init_seg_features(VP8_COMP *cpi) {
 
       // Where relevant assume segment data is delta data
       xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-
     }
   }
-  // All other frames if segmentation has been enabled
+  // all other frames if segmentation has been enabled
   else if (xd->segmentation_enabled) {
-    /*
-            int i;
-
-            // clears prior frame seg lev refs
-            for (i = 0; i < MAX_MB_SEGMENTS; i++)
-            {
-                // only do it if the force drop the background stuff is off
-                if(!segfeature_active(xd, i, SEG_LVL_MODE))
-                {
-                    disable_segfeature(xd,i,SEG_LVL_REF_FRAME);
-                    set_segdata( xd,i, SEG_LVL_REF_FRAME, 0xffffff);
-                }
-            }
-    */
-
+    const int high_q = (int)(cpi->avg_q > 48.0);
+    int qi_delta;
     // First normal frame in a valid gf or alt ref group
     if (cpi->common.frames_since_golden == 0) {
       // Set up segment features for normal frames in an af group
@@ -675,14 +623,14 @@ static void set_default_lf_deltas(VP8_COMP *cpi) {
 
 void vp8_set_speed_features(VP8_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
-  int Mode = cpi->compressor_speed;
+  int mode = cpi->compressor_speed;
   int Speed = cpi->Speed;
   int i;
   VP8_COMMON *cm = &cpi->common;
 
-  // Only modes 0 and 1 supported for now in experimental code basae
-  if (Mode > 1)
-    Mode = 1;
+  // Only modes 0 and 1 supported for now in experimental code base
+  if (mode > 1)
+    mode = 1;
 
   // Initialise default mode frequency sampling variables
   for (i = 0; i < MAX_MODES; i ++) {
@@ -715,7 +663,7 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   for (i = 0; i < MAX_MODES; i++)
     sf->thresh_mult[i] = 0;
 
-  switch (Mode) {
+  switch (mode) {
     case 0: // best quality mode
 #if CONFIG_PRED_FILTER
       sf->thresh_mult[THR_ZEROMV        ] = 0;
@@ -1381,7 +1329,8 @@ int vp8_reverse_trans(int x) {
       return i;
 
   return 63;
-};
+}
+
 void vp8_new_frame_rate(VP8_COMP *cpi, double framerate) {
   if (framerate < .1)
     framerate = 30;
@@ -1417,12 +1366,10 @@ void vp8_new_frame_rate(VP8_COMP *cpi, double framerate) {
     cpi->max_gf_interval = cpi->twopass.static_scene_max_gf_interval;
 }
 
-
-static int
-rescale(int val, int num, int denom) {
-  int64_t llnum = num;
-  int64_t llden = denom;
-  int64_t llval = val;
+static int rescale(int val, int num, int denom) {
+  const int64_t llnum = num;
+  const int64_t llden = denom;
+  const int64_t llval = val;
 
   return llval * llnum / llden;
 }
@@ -1478,11 +1425,7 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
   VP8_COMP *cpi = (VP8_COMP *)(ptr);
   VP8_COMMON *cm = &cpi->common;
 
-  if (!cpi)
-    return;
-
-  if (!oxcf)
-    return;
+  if (cpi == NULL || oxcf == NULL) return;
 
   if (cm->version != oxcf->Version) {
     cm->version = oxcf->Version;
@@ -1492,7 +1435,7 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
   cpi->oxcf = *oxcf;
 
   switch (cpi->oxcf.Mode) {
-      // Real time and one pass deprecated in test code base
+    // Real time and one pass deprecated in test code base
     case MODE_FIRSTPASS:
       cpi->pass = 1;
       cpi->compressor_speed = 1;
@@ -1552,7 +1495,6 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
 
   {
     int i;
-
     for (i = 0; i < MAX_MB_SEGMENTS; i++)
       cpi->segment_encode_breakout[i] = cpi->oxcf.encode_breakout;
   }
@@ -1688,41 +1630,39 @@ void vp8_change_config(VP8_PTR ptr, VP8_CONFIG *oxcf) {
 #define M_LOG2_E 0.693147180559945309417
 #define log2f(x) (log (x) / (float) M_LOG2_E)
 
-static void cal_nmvjointsadcost(int *mvjointsadcost) {
+static void calc_nmvjointsadcost(int *mvjointsadcost) {
   mvjointsadcost[0] = 600;
   mvjointsadcost[1] = 300;
   mvjointsadcost[2] = 300;
   mvjointsadcost[0] = 300;
 }
 
-static void cal_nmvsadcosts(int *mvsadcost[2]) {
-  int i = 1;
+static void calc_nmvsadcosts(int *mvsadcost[2]) {
+  int i;
 
-  mvsadcost [0] [0] = 0;
-  mvsadcost [1] [0] = 0;
-
-  do {
-    double z = 256 * (2 * (log2f(8 * i) + .6));
-    mvsadcost [0][i] = (int) z;
-    mvsadcost [1][i] = (int) z;
-    mvsadcost [0][-i] = (int) z;
-    mvsadcost [1][-i] = (int) z;
-  } while (++i <= MV_MAX);
+  mvsadcost[0][0] = 0;
+  mvsadcost[1][0] = 0;
+  for (i = 1; i < MV_MAX; ++i) {
+    const double z = 256 * (2 * (log2f(8 * i) + .6));
+    mvsadcost[0][i] =
+      mvsadcost[1][i] =
+      mvsadcost[0][-i] =
+      mvsadcost[1][-i] = (int) z;
+  }
 }
 
-static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
-  int i = 1;
+static void calc_nmvsadcosts_hp(int *mvsadcost[2]) {
+  int i;
 
-  mvsadcost [0] [0] = 0;
-  mvsadcost [1] [0] = 0;
-
-  do {
-    double z = 256 * (2 * (log2f(8 * i) + .6));
-    mvsadcost [0][i] = (int) z;
-    mvsadcost [1][i] = (int) z;
-    mvsadcost [0][-i] = (int) z;
-    mvsadcost [1][-i] = (int) z;
-  } while (++i <= MV_MAX);
+  mvsadcost[0][0] = 0;
+  mvsadcost[1][0] = 0;
+  for (i = 0; i < MV_MAX; ++i) {
+    const double z = 256 * (2 * (log2f(8 * i) + .6));
+    mvsadcost[0][i] =
+      mvsadcost[1][i] =
+      mvsadcost[0][-i] =
+      mvsadcost[1][-i] = (int) z;
+  }
 }
 
 VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
@@ -1906,18 +1846,18 @@ VP8_PTR vp8_create_compressor(VP8_CONFIG *oxcf) {
   cpi->gf_rate_correction_factor  = 1.0;
   cpi->twopass.est_max_qcorrection_factor  = 1.0;
 
-  cal_nmvjointsadcost(cpi->mb.nmvjointsadcost);
+  calc_nmvjointsadcost(cpi->mb.nmvjointsadcost);
   cpi->mb.nmvcost[0] = &cpi->mb.nmvcosts[0][MV_MAX];
   cpi->mb.nmvcost[1] = &cpi->mb.nmvcosts[1][MV_MAX];
   cpi->mb.nmvsadcost[0] = &cpi->mb.nmvsadcosts[0][MV_MAX];
   cpi->mb.nmvsadcost[1] = &cpi->mb.nmvsadcosts[1][MV_MAX];
-  cal_nmvsadcosts(cpi->mb.nmvsadcost);
+  calc_nmvsadcosts(cpi->mb.nmvsadcost);
 
   cpi->mb.nmvcost_hp[0] = &cpi->mb.nmvcosts_hp[0][MV_MAX];
   cpi->mb.nmvcost_hp[1] = &cpi->mb.nmvcosts_hp[1][MV_MAX];
   cpi->mb.nmvsadcost_hp[0] = &cpi->mb.nmvsadcosts_hp[0][MV_MAX];
   cpi->mb.nmvsadcost_hp[1] = &cpi->mb.nmvsadcosts_hp[1][MV_MAX];
-  cal_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
+  calc_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
 
   for (i = 0; i < KEY_FRAME_CONTEXT; i++) {
     cpi->prior_key_frame_distance[i] = (int)cpi->output_frame_rate;
@@ -2183,7 +2123,7 @@ void vp8_remove_compressor(VP8_PTR *ptr) {
 
       fprintf(fmode, "\n#include \"entropymode.h\"\n\n");
       fprintf(fmode, "const unsigned int vp8_kf_default_bmode_counts ");
-      fprintf(fmode, "[VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES] =\n{\n");
+      fprintf(fmode, "[VP8_BINTRAMODES][VP8_BINTRAMODES][VP8_BINTRAMODES] =\n{\n");
 
       for (i = 0; i < 10; i++) {
 
