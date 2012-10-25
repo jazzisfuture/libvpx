@@ -185,34 +185,25 @@ static int inter_minq[QINDEX_RANGE];
 // formulaic approach to facilitate easier adjustment of the Q tables.
 // The formulae were derived from computing a 3rd order polynomial best
 // fit to the original data (after plotting real maxq vs minq (not q index))
-int calculate_minq_index(double maxq,
-                         double x3, double x2, double x, double c) {
+static int calculate_minq_index(double maxq,
+                                double x3, double x2, double x1, double c) {
   int i;
-  double minqtarget;
-  double thisq;
 
-  minqtarget = ((x3 * maxq * maxq * maxq) +
-                (x2 * maxq * maxq) +
-                (x * maxq) +
-                c);
-
+  double minqtarget = c + maxq * (x1 + maxq * (x2 + maxq * x3));
   if (minqtarget > maxq)
     minqtarget = maxq;
 
   for (i = 0; i < QINDEX_RANGE; i++) {
-    thisq = vp8_convert_qindex_to_q(i);
-    if (minqtarget <= vp8_convert_qindex_to_q(i))
-      return i;
+    const double thisq = vp8_convert_qindex_to_q(i);
+    if (minqtarget <= thisq) return i;
   }
   return QINDEX_RANGE - 1;
 }
 
-void init_minq_luts() {
+static void init_minq_luts() {
   int i;
-  double maxq;
-
   for (i = 0; i < QINDEX_RANGE; i++) {
-    maxq = vp8_convert_qindex_to_q(i);
+    const double maxq = vp8_convert_qindex_to_q(i);
 
 
     kf_low_motion_minq[i] = calculate_minq_index(maxq,
@@ -244,40 +235,26 @@ void init_minq_luts() {
   }
 }
 
-void init_base_skip_probs() {
+static int clip_proba(double proba) {
+  return (proba < 1.) ? 1 : (proba > 255.) ? 255 : (int)proba;
+}
+
+static void init_base_skip_probs() {
   int i;
-  double q;
-  int skip_prob, t;
-
   for (i = 0; i < QINDEX_RANGE; i++) {
-    q = vp8_convert_qindex_to_q(i);
+    const double q = vp8_convert_qindex_to_q(i);
+    int t;
 
-    // Exponential decay caluclation of baseline skip prob with clamping
+    // Exponential decay calculation of baseline skip prob with clamping.
     // Based on crude best fit of old table.
     t = (int)(564.25 * pow(2.71828, (-0.012 * q)));
 
-    skip_prob = t;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][1] = skip_prob;
-
-    skip_prob = t * 0.75;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][2] = skip_prob;
-
-    skip_prob = t * 1.25;
-    if (skip_prob < 1)
-      skip_prob = 1;
-    else if (skip_prob > 255)
-      skip_prob = 255;
-    vp8cx_base_skip_false_prob[i][0] = skip_prob;
+    vp8cx_base_skip_false_prob[i][0] = clip_proba(t * 1.25);
+    vp8cx_base_skip_false_prob[i][1] = clip_proba(t * 1.00);
+    vp8cx_base_skip_false_prob[i][2] = clip_proba(t * 0.75);
   }
 }
+
 void update_base_skip_probs(VP8_COMP *cpi) {
   VP8_COMMON *cm = &cpi->common;
 
