@@ -106,6 +106,17 @@ vpx_codec_err_t vpx_codec_get_stream_info(vpx_codec_ctx_t         *ctx,
   return SAVE_STATUS(ctx, res);
 }
 
+void read_frame_length(const uint8_t *data, uint64_t *length, int *offset) {
+  uint64_t value = 0;
+  int i = -1;
+  do {
+      i++;
+      value |= (data[i] & 0x7F) << (i * 7);
+  } while (data[i] >> 7);
+  *offset = ++i;
+  *length = value;
+}
+
 
 vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  const uint8_t        *data,
@@ -113,6 +124,9 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  void       *user_priv,
                                  long        deadline) {
   vpx_codec_err_t res;
+  int offset = 1;
+  uint64_t altref_length = 0, pkt_length = 0;
+  int altref_offset, pkt_offset;
 
   /* Sanity checks */
   /* NULL data ptr allowed if data_sz is 0 too */
@@ -121,8 +135,17 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
   else if (!ctx->iface || !ctx->priv)
     res = VPX_CODEC_ERROR;
   else {
-    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data, data_sz,
-                                 user_priv, deadline);
+    if (data[0] & 0x01) {
+      read_frame_length(data + offset, &altref_length, &altref_offset);
+      offset += altref_offset;
+      res = ctx->iface->dec.decode(ctx->priv->alg_priv, data + offset,
+                                   altref_length, user_priv, deadline);
+      offset += altref_length + 1;
+    }
+    read_frame_length(data + offset, &pkt_length, &pkt_offset);
+    offset += pkt_offset;
+    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data + offset,
+                                 pkt_length, user_priv, deadline);
   }
 
   return SAVE_STATUS(ctx, res);
