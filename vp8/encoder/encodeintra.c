@@ -16,7 +16,7 @@
 #include "vp8/common/reconintra4x4.h"
 #include "encodemb.h"
 #include "vp8/common/invtrans.h"
-#include "dct.h"
+#include "./vpx_rtcd.h"
 #include "vp8/common/g_common.h"
 #include "encodeintra.h"
 

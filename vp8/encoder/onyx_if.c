@@ -167,9 +167,6 @@ extern unsigned int inter_uv_modes[VP8_UV_MODES];
 extern unsigned int inter_b_modes[B_MODE_COUNT];
 #endif
 
-extern void (*vp8_short_fdct4x4)(short *input, short *output, int pitch);
-extern void (*vp8_short_fdct8x4)(short *input, short *output, int pitch);
-
 extern void vp8cx_init_quantizer(VP8_COMP *cpi);
 
 int vp8cx_base_skip_false_prob[QINDEX_RANGE][3];
@@ -1191,20 +1188,19 @@ void vp8_set_speed_features(VP8_COMP *cpi) {
   }
 
   if (cpi->sf.improved_dct) {
-    cpi->mb.vp8_short_fdct16x16 = FDCT_INVOKE(&cpi->rtcd.fdct, short16x16);
-    cpi->mb.vp8_short_fdct8x8 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x8);
-    cpi->mb.vp8_short_fdct8x4 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x4);
-    cpi->mb.vp8_short_fdct4x4 = FDCT_INVOKE(&cpi->rtcd.fdct, short4x4);
+    cpi->mb.vp8_short_fdct16x16 = vp8_short_fdct16x16;
+    cpi->mb.vp8_short_fdct8x8 = vp8_short_fdct8x8;
+    cpi->mb.vp8_short_fdct8x4 = vp8_short_fdct8x4;
+    cpi->mb.vp8_short_fdct4x4 = vp8_short_fdct4x4;
   } else {
-    cpi->mb.vp8_short_fdct16x16 = FDCT_INVOKE(&cpi->rtcd.fdct, short16x16);
-    cpi->mb.vp8_short_fdct8x8 = FDCT_INVOKE(&cpi->rtcd.fdct, short8x8);
-    cpi->mb.vp8_short_fdct8x4   = FDCT_INVOKE(&cpi->rtcd.fdct, fast8x4);
-    cpi->mb.vp8_short_fdct4x4   = FDCT_INVOKE(&cpi->rtcd.fdct, fast4x4);
+    cpi->mb.vp8_short_fdct16x16 = vp8_short_fdct16x16;
+    cpi->mb.vp8_short_fdct8x8 = vp8_short_fdct8x8;
+    cpi->mb.vp8_short_fdct8x4   = vp8_short_fdct8x4;
+    cpi->mb.vp8_short_fdct4x4   = vp8_short_fdct4x4_c;
   }
 
-  cpi->mb.short_walsh4x4 = FDCT_INVOKE(&cpi->rtcd.fdct, walsh_short4x4);
-  cpi->mb.short_fhaar2x2 = FDCT_INVOKE(&cpi->rtcd.fdct, haar_short2x2);
-
+  cpi->mb.short_walsh4x4 = vp8_short_walsh4x4;
+  cpi->mb.short_fhaar2x2 = vp8_short_fhaar2x2;
 
   cpi->mb.quantize_b_4x4      = vp8_regular_quantize_b_4x4;
   cpi->mb.quantize_b_4x4_pair = vp8_regular_quantize_b_4x4_pair;
