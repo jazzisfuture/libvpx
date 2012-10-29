@@ -106,6 +106,24 @@ vpx_codec_err_t vpx_codec_get_stream_info(vpx_codec_ctx_t         *ctx,
   return SAVE_STATUS(ctx, res);
 }
 
+int read_frame_length(const uint8_t *data, uint64_t *length, int *offset,
+                      int max_length) {
+  uint64_t value = 0;
+  int i = -1;
+  do {
+      i++;
+      value |= (data[i] & 0x7F) << (i * 7);
+      if (i > max_length) {
+          *offset = -1;
+          *length = -1;
+          return VPX_CODEC_UNSUP_BITSTREAM;
+      }
+  } while (data[i] >> 7);
+  *offset = ++i;
+  *length = value;
+  return 0;
+}
+
 
 vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  const uint8_t        *data,
@@ -113,6 +131,9 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  void       *user_priv,
                                  long        deadline) {
   vpx_codec_err_t res;
+  int offset = 0;
+  uint64_t altref_length = 0, pkt_length = 0;
+  int altref_offset, pkt_offset;
 
   /* Sanity checks */
   /* NULL data ptr allowed if data_sz is 0 too */
@@ -121,8 +142,24 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
   else if (!ctx->iface || !ctx->priv)
     res = VPX_CODEC_ERROR;
   else {
-    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data, data_sz,
-                                 user_priv, deadline);
+    while (data[offset++] & 0x01) {
+      res = read_frame_length(data + offset, &altref_length, &altref_offset,
+                              data_sz);
+      if (res != 0) {
+        return SAVE_STATUS(ctx, res);
+      }
+      offset += altref_offset;
+      res = ctx->iface->dec.decode(ctx->priv->alg_priv, data + offset,
+                                   altref_length, user_priv, deadline);
+      offset += altref_length;
+    }
+    res = read_frame_length(data + offset, &pkt_length, &pkt_offset, data_sz);
+    if (res != 0) {
+      return SAVE_STATUS(ctx, res);
+    }
+    offset += pkt_offset;
+    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data + offset,
+                                 pkt_length, user_priv, deadline);
   }
 
   return SAVE_STATUS(ctx, res);
