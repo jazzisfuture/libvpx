@@ -567,6 +567,30 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t  *ctx,
   }
 }
 
+unsigned char *prepend_metadata(unsigned char *cx_data, unsigned long *cx_size,
+                                unsigned char control_byte) {
+  unsigned char *data = malloc(*cx_size + 9);
+  int offset = 0, size, length;
+  unsigned char chunk;
+  /* control byte */
+  data[offset] = control_byte;
+  offset += 1;
+  /* length */
+  size = *cx_size;
+  length = 0;
+  do {
+    chunk = size & 0x7F;
+    size >>= 7;
+    chunk |= (!!size) << 7;
+    data[offset] = chunk;
+    offset += 1;
+    length += 1;
+  } while (size);
+  /* data */
+  memcpy(data + offset, cx_data, *cx_size);
+  *cx_size += length + 1;
+  return data;
+}
 
 static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
                                    const vpx_image_t     *img,
@@ -640,8 +664,10 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
     unsigned int lib_flags;
     YV12_BUFFER_CONFIG sd;
     int64_t dst_time_stamp, dst_end_time_stamp;
-    unsigned long size, cx_data_sz;
-    unsigned char *cx_data;
+    unsigned long size, cx_data_sz, buf_size;
+    unsigned char *cx_data, *buf;
+    static unsigned char *altref_cx_data = NULL;
+    static unsigned long altref_size = 0;
 
     /* Set up internal flags */
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR)
@@ -680,6 +706,14 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
         vpx_codec_pts_t    round, delta;
         vpx_codec_cx_pkt_t pkt;
         VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
+
+        if(!cpi->common.show_frame) {
+          altref_size = size;
+          altref_cx_data = prepend_metadata(cx_data, &altref_size, 0x01);
+          cx_data += size;
+          cx_data_sz -= size;
+          continue;
+        }
 
         /* Add the frame packet to the list of returned packets. */
         round = 1000000 * ctx->cfg.g_timebase.num / 2 - 1;
@@ -734,8 +768,18 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
         }
         else*/
         {
-          pkt.data.frame.buf = cx_data;
-          pkt.data.frame.sz  = size;
+          buf_size = size;
+          pkt.data.frame.buf = prepend_metadata(cx_data, &buf_size, 0x00);
+          pkt.data.frame.sz  = buf_size;
+          if(altref_size) {
+            pkt.data.frame.sz = buf_size + altref_size;
+            buf = malloc(pkt.data.frame.sz);
+            memcpy(buf, altref_cx_data, altref_size);
+            memcpy(buf + altref_size, pkt.data.frame.buf, buf_size);
+            pkt.data.frame.buf = buf;
+            free(altref_cx_data);
+            altref_size = 0;
+          }
           pkt.data.frame.partition_id = -1;
           vpx_codec_pkt_list_add(&ctx->pkt_list.head, &pkt);
           cx_data += size;
