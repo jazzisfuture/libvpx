@@ -1395,7 +1395,6 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2) {
   return match;
 }
 
-
 #define ARG_CTRL_CNT_MAX 10
 
 int main(int argc, const char **argv_) {
@@ -1993,7 +1992,6 @@ int main(int argc, const char **argv_) {
               if (!ebml.debug)
                 hash = murmur(pkt->data.frame.buf,
                               pkt->data.frame.sz, hash);
-
               write_webm_block(&ebml, &cfg, pkt);
             } else {
               write_ivf_frame_header(outfile, pkt);

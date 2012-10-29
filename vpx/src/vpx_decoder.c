@@ -106,6 +106,29 @@ vpx_codec_err_t vpx_codec_get_stream_info(vpx_codec_ctx_t         *ctx,
   return SAVE_STATUS(ctx, res);
 }
 
+static int read_frame_length(const uint8_t *data, uint64_t size, uint64_t *length, int *offset) {
+  uint64_t value = 0, index, i = 0;
+  do {
+    size -= value + i;
+    i = 0;
+    value = 0;
+    do {
+      index = size - 1 - i;
+      if(data + index < data) {
+          *length = -1;
+          return -1;
+      }
+      value <<= 7;
+      value |= (data[index] & 0x7F);
+      i++;
+    } while (!(data[index] >> 7));
+  } while (value + i < size);
+  *length = value;
+  if(offset)
+    *offset = i;
+  return 0;
+}
+
 
 vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  const uint8_t        *data,
@@ -113,6 +136,11 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
                                  void       *user_priv,
                                  long        deadline) {
   vpx_codec_err_t res;
+  int offset = 0;
+  uint64_t length = 0;
+  unsigned char altref_frame;
+  unsigned int cx_size = data_sz;
+  uint8_t *cx_data = data;
 
   /* Sanity checks */
   /* NULL data ptr allowed if data_sz is 0 too */
@@ -121,8 +149,18 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
   else if (!ctx->iface || !ctx->priv)
     res = VPX_CODEC_ERROR;
   else {
-    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data, data_sz,
-                                 user_priv, deadline);
+    do {
+      altref_frame = !(*cx_data & 0x10);
+      res = read_frame_length(cx_data, cx_size, &length, &offset);
+      if (res != 0)
+        return SAVE_STATUS(ctx, VPX_CODEC_UNSUP_BITSTREAM);
+      res = ctx->iface->dec.decode(ctx->priv->alg_priv, cx_data,
+                                         length, user_priv, deadline);
+      if (res != 0)
+        return SAVE_STATUS(ctx, res);
+      cx_data += offset + length;
+      cx_size -= offset + length;
+    } while (cx_data - data <= data_sz && altref_frame);
   }
 
   return SAVE_STATUS(ctx, res);
