@@ -1395,6 +1395,66 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2) {
   return match;
 }
 
+void store_packet(const vpx_codec_cx_pkt_t *pkt,
+                  vpx_codec_cx_pkt_t **altref_pkt) {
+  *altref_pkt = malloc(sizeof(**altref_pkt));
+  (*altref_pkt)->kind = pkt->kind;
+  (*altref_pkt)->data.frame.buf = malloc(pkt->data.frame.sz);
+  memcpy((*altref_pkt)->data.frame.buf, pkt->data.frame.buf,
+         pkt->data.frame.sz);
+  (*altref_pkt)->data.frame.sz = pkt->data.frame.sz;
+  (*altref_pkt)->data.frame.pts = pkt->data.frame.pts;
+  (*altref_pkt)->data.frame.duration = pkt->data.frame.duration;
+  (*altref_pkt)->data.frame.flags = pkt->data.frame.flags;
+  (*altref_pkt)->data.frame.partition_id = pkt->data.frame.partition_id;
+}
+
+void prepend_metadata(vpx_codec_cx_pkt_t *pkt, unsigned char control_byte) {
+  void *data = malloc(pkt->data.frame.sz + 9);
+  int offset = 0, size, length;
+  unsigned char chunk;
+  /* control byte */
+  memcpy((unsigned char *)data, &control_byte, 1);
+  offset += 1;
+  /* length */
+  size = pkt->data.frame.sz;
+  length = 0;
+  do {
+    chunk = size & 0x7F;
+    size >>= 7;
+    chunk |= (!!size) << 7;
+    memcpy((unsigned char *)data + offset, &chunk, 1);
+    offset += 1;
+    length += 1;
+  } while (size);
+  /* data */
+  memcpy((unsigned char *)data + offset, pkt->data.frame.buf,
+         pkt->data.frame.sz);
+  pkt->data.frame.sz += length + 1;
+  pkt->data.frame.buf = data;
+}
+
+void pack_frames(const vpx_codec_cx_pkt_t **pkt,
+                 vpx_codec_cx_pkt_t **altref_pkt) {
+  vpx_codec_cx_pkt_t *packed_pkt;
+  packed_pkt = malloc(sizeof(*packed_pkt));
+  packed_pkt->kind = (*pkt)->kind;
+  packed_pkt->data.frame.sz = (*pkt)->data.frame.sz +
+                                     (*altref_pkt)->data.frame.sz;
+  packed_pkt->data.frame.buf = malloc(packed_pkt->data.frame.sz);
+  packed_pkt->data.frame.pts = (*pkt)->data.frame.pts;
+  packed_pkt->data.frame.duration = (*pkt)->data.frame.duration;
+  packed_pkt->data.frame.flags = (*pkt)->data.frame.flags;
+  packed_pkt->data.frame.partition_id = (*pkt)->data.frame.partition_id;
+  memcpy((unsigned char *)packed_pkt->data.frame.buf,
+         (*altref_pkt)->data.frame.buf, (*altref_pkt)->data.frame.sz);
+  memcpy((unsigned char *)packed_pkt->data.frame.buf +
+  (*altref_pkt)->data.frame.sz, (*pkt)->data.frame.buf, (*pkt)->data.frame.sz);
+  free((*altref_pkt)->data.frame.buf);
+  free(*altref_pkt);
+  *altref_pkt = NULL;
+  *pkt = packed_pkt;
+}
 
 #define ARG_CTRL_CNT_MAX 10
 
@@ -1443,6 +1503,7 @@ int main(int argc, const char **argv_) {
   vpx_ref_frame_t          ref_enc;
   vpx_ref_frame_t          ref_dec;
   vpx_codec_dec_cfg_t      dec_cfg = {0};
+  vpx_codec_cx_pkt_t       *altref_pkt = NULL;
   int                      enc_dec_match = 1;
   int                      first_bad_frame = -1;
   int                      test_decode_frame = 0;
@@ -1994,7 +2055,17 @@ int main(int argc, const char **argv_) {
                 hash = murmur(pkt->data.frame.buf,
                               pkt->data.frame.sz, hash);
 
-              write_webm_block(&ebml, &cfg, pkt);
+              prepend_metadata(pkt,
+                (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE) ? 0x01 : 0x00);
+              if (altref_pkt != NULL) {
+                pack_frames(&pkt, &altref_pkt);
+              }
+              if (pkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE) {
+                store_packet(pkt, &altref_pkt);
+              }
+              if (altref_pkt == NULL) {
+                write_webm_block(&ebml, &cfg, pkt);
+              }
             } else {
               write_ivf_frame_header(outfile, pkt);
               if (fwrite(pkt->data.frame.buf, 1,
