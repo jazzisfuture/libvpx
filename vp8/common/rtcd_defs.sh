@@ -27,13 +27,10 @@ prototype void vp8_filter_block2d_16x16_8 "const unsigned char *src_ptr, const u
 # At the very least, MSVC 2008 has compiler bug exhibited by this code; code
 # compiles warning free but a dissassembly of generated code show bugs. To be
 # on the safe side, only enabled when compiled with 'gcc'.
-if [ "$CONFIG_GCC" = "yes" ]; then
-    specialize vp8_filter_block2d_4x4_8 sse4_1 sse2
-    specialize vp8_filter_block2d_8x4_8 ssse3 #sse4_1 sse2
-    specialize vp8_filter_block2d_8x8_8 ssse3 #sse4_1 sse2
-    specialize vp8_filter_block2d_16x16_8 ssse3 #sse4_1 sse2
-fi
-
+specialize vp8_filter_block2d_4x4_8 sse4_1 sse2
+specialize vp8_filter_block2d_8x4_8 ssse3 #sse4_1 sse2
+specialize vp8_filter_block2d_8x8_8 ssse3 #sse4_1 sse2
+specialize vp8_filter_block2d_16x16_8 ssse3 #sse4_1 sse2
 
 #
 # RECON

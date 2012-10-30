@@ -87,6 +87,7 @@ VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/postproc_x86.h
 VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/x86_systemdependent.c
 VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/vp8_asm_stubs.c
 VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/loopfilter_x86.c
+VP8_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/sadmxn_x86.c
 VP8_COMMON_SRCS-$(CONFIG_POSTPROC) += common/postproc.h
 VP8_COMMON_SRCS-$(CONFIG_POSTPROC) += common/postproc.c
 VP8_COMMON_SRCS-$(HAVE_MMX) += common/x86/idctllm_mmx.asm
