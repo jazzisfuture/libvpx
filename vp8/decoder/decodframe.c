@@ -129,23 +129,29 @@ static void mb_init_dequantizer(VP8D_COMP *pbi, MACROBLOCKD *xd) {
     pbi->common.rtcd.idct.idct1_scalar_add  = vp8_dc_only_inv_walsh_add_c;
     pbi->common.rtcd.idct.iwalsh1      = vp8_short_inv_walsh4x4_1_lossless_c;
     pbi->common.rtcd.idct.iwalsh16     = vp8_short_inv_walsh4x4_lossless_c;
-    pbi->dequant.idct_add            = vp8_dequant_idct_add_lossless_c;
-    pbi->dequant.dc_idct_add         = vp8_dequant_dc_idct_add_lossless_c;
-    pbi->dequant.dc_idct_add_y_block = vp8_dequant_dc_idct_add_y_block_lossless_c;
-    pbi->dequant.idct_add_y_block    = vp8_dequant_idct_add_y_block_lossless_c;
-    pbi->dequant.idct_add_uv_block   = vp8_dequant_idct_add_uv_block_lossless_c;
+    pbi->idct_add            = vp8_dequant_idct_add_lossless_c;
+    pbi->dc_idct_add         = vp8_dequant_dc_idct_add_lossless_c;
+    pbi->dc_idct_add_y_block = vp8_dequant_dc_idct_add_y_block_lossless_c;
+    pbi->idct_add_y_block    = vp8_dequant_idct_add_y_block_lossless_c;
+    pbi->idct_add_uv_block   = vp8_dequant_idct_add_uv_block_lossless_c;
   } else {
     pbi->common.rtcd.idct.idct1        = vp8_short_idct4x4llm_1_c;
     pbi->common.rtcd.idct.idct16       = vp8_short_idct4x4llm_c;
     pbi->common.rtcd.idct.idct1_scalar_add  = vp8_dc_only_idct_add_c;
     pbi->common.rtcd.idct.iwalsh1      = vp8_short_inv_walsh4x4_1_c;
     pbi->common.rtcd.idct.iwalsh16     = vp8_short_inv_walsh4x4_c;
-    pbi->dequant.idct_add            = vp8_dequant_idct_add_c;
-    pbi->dequant.dc_idct_add         = vp8_dequant_dc_idct_add_c;
-    pbi->dequant.dc_idct_add_y_block = vp8_dequant_dc_idct_add_y_block_c;
-    pbi->dequant.idct_add_y_block    = vp8_dequant_idct_add_y_block_c;
-    pbi->dequant.idct_add_uv_block   = vp8_dequant_idct_add_uv_block_c;
+    pbi->idct_add            = vp8_dequant_idct_add;
+    pbi->dc_idct_add         = vp8_dequant_dc_idct_add;
+    pbi->dc_idct_add_y_block = vp8_dequant_dc_idct_add_y_block;
+    pbi->idct_add_y_block    = vp8_dequant_idct_add_y_block;
+    pbi->idct_add_uv_block   = vp8_dequant_idct_add_uv_block;
   }
+#else
+  pbi->idct_add            = vp8_dequant_idct_add;
+  pbi->dc_idct_add         = vp8_dequant_dc_idct_add;
+  pbi->dc_idct_add_y_block = vp8_dequant_dc_idct_add_y_block;
+  pbi->idct_add_y_block    = vp8_dequant_idct_add_y_block;
+  pbi->idct_add_uv_block   = vp8_dequant_idct_add_uv_block;
 #endif
 
   for (i = 16; i < 24; i++) {
@@ -335,23 +341,18 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       } else {
         for (j = 0; j < 4; j++) {
           b = &xd->block[ib + iblock[j]];
-          vp8_dequant_idct_add_c(b->qcoeff, b->dequant, b->predictor,
+          vp8_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                                  *(b->base_dst) + b->dst, 16, b->dst_stride);
         }
       }
-
       b = &xd->block[16 + i];
       vp8_intra_uv4x4_predict(b, i8x8mode, b->predictor);
-      DEQUANT_INVOKE(&pbi->dequant, idct_add)(b->qcoeff, b->dequant,
-                                              b->predictor,
-                                              *(b->base_dst) + b->dst, 8,
-                                              b->dst_stride);
+      pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
+                    *(b->base_dst) + b->dst, 8, b->dst_stride);
       b = &xd->block[20 + i];
       vp8_intra_uv4x4_predict(b, i8x8mode, b->predictor);
-      DEQUANT_INVOKE(&pbi->dequant, idct_add)(b->qcoeff, b->dequant,
-                                              b->predictor,
-                                              *(b->base_dst) + b->dst, 8,
-                                              b->dst_stride);
+      pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
+                    *(b->base_dst) + b->dst, 8, b->dst_stride);
     }
   } else if (mode == B_PRED) {
     for (i = 0; i < 16; i++) {
@@ -375,18 +376,17 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
                                   b->dequant, b->predictor,
                                   *(b->base_dst) + b->dst, 16, b->dst_stride);
       } else {
-        vp8_dequant_idct_add_c(b->qcoeff, b->dequant, b->predictor,
+        vp8_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                                *(b->base_dst) + b->dst, 16, b->dst_stride);
       }
     }
   } else if (mode == SPLITMV) {
     if (tx_size == TX_8X8) {
-      vp8_dequant_idct_add_y_block_8x8_c(xd->qcoeff, xd->block[0].dequant,
+      vp8_dequant_idct_add_y_block_8x8(xd->qcoeff, xd->block[0].dequant,
                                          xd->predictor, xd->dst.y_buffer,
                                          xd->dst.y_stride, xd->eobs, xd);
     } else {
-      DEQUANT_INVOKE(&pbi->dequant,
-                     idct_add_y_block)(xd->qcoeff, xd->block[0].dequant,
+      pbi->idct_add_y_block(xd->qcoeff, xd->block[0].dequant,
                                        xd->predictor, xd->dst.y_buffer,
                                        xd->dst.y_stride, xd->eobs);
     }
@@ -401,7 +401,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
                                         xd->block[0].dequant, xd->predictor,
                                         xd->dst.y_buffer, 16, xd->dst.y_stride);
       } else {
-        vp8_dequant_idct_add_16x16_c(xd->qcoeff, xd->block[0].dequant,
+        vp8_dequant_idct_add_16x16(xd->qcoeff, xd->block[0].dequant,
                                      xd->predictor, xd->dst.y_buffer,
                                      16, xd->dst.y_stride);
       }
@@ -437,7 +437,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         if (xd->mode_info_context->mbmi.mb_skip_coeff)
           continue; // only happens for SBs, which are already in dest buffer
 #endif
-      DEQUANT_INVOKE(&pbi->dequant, block_2x2)(b);
+      vp8_dequantize_b_2x2(b);
       IDCT_INVOKE(RTCD_VTABLE(idct), ihaar2)(&b->dqcoeff[0], b->diff, 8);
       ((int *)b->qcoeff)[0] = 0;// 2nd order block are set to 0 after inverse transform
       ((int *)b->qcoeff)[1] = 0;
@@ -461,7 +461,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
           xd->dst.uv_stride, xd->eobs + 16, xd);
       } else
 #endif
-        DEQUANT_INVOKE(&pbi->dequant, dc_idct_add_y_block_8x8)(xd->qcoeff,
+        vp8_dequant_dc_idct_add_y_block_8x8(xd->qcoeff,
           xd->block[0].dequant, xd->predictor, xd->dst.y_buffer,
           xd->dst.y_stride, xd->eobs, xd->block[24].diff, xd);
 #if CONFIG_SUPERBLOCKS
@@ -469,7 +469,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
       xd->mode_info_context = orig;
 #endif
     } else {
-      DEQUANT_INVOKE(&pbi->dequant, block)(b);
+      vp8_dequantize_b(b);
       if (xd->eobs[24] > 1) {
         IDCT_INVOKE(RTCD_VTABLE(idct), iwalsh16)(&b->dqcoeff[0], b->diff);
         ((int *)b->qcoeff)[0] = 0;
@@ -485,10 +485,9 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         ((int *)b->qcoeff)[0] = 0;
       }
 
-      DEQUANT_INVOKE(&pbi->dequant, dc_idct_add_y_block)
-      (xd->qcoeff, xd->block[0].dequant,
-       xd->predictor, xd->dst.y_buffer,
-       xd->dst.y_stride, xd->eobs, xd->block[24].diff);
+      pbi->dc_idct_add_y_block(xd->qcoeff, xd->block[0].dequant, xd->predictor,
+                               xd->dst.y_buffer, xd->dst.y_stride, xd->eobs,
+                               xd->block[24].diff);
     }
   }
 
@@ -500,13 +499,12 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
          xd->mode_info_context->mbmi.mode != SPLITMV)
         || tx_size == TX_16X16
        )
-      DEQUANT_INVOKE(&pbi->dequant, idct_add_uv_block_8x8) //
+      vp8_dequant_idct_add_uv_block_8x8
           (xd->qcoeff + 16 * 16, xd->block[16].dequant,
            xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,
            xd->dst.uv_stride, xd->eobs + 16, xd); //
     else if (xd->mode_info_context->mbmi.mode != I8X8_PRED)
-      DEQUANT_INVOKE(&pbi->dequant, idct_add_uv_block)
-          (xd->qcoeff + 16 * 16, xd->block[16].dequant,
+      pbi->idct_add_uv_block(xd->qcoeff + 16 * 16, xd->block[16].dequant,
            xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,
            xd->dst.uv_stride, xd->eobs + 16);
 #if CONFIG_SUPERBLOCKS

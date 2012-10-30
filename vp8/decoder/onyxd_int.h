@@ -71,9 +71,11 @@ typedef struct VP8Decompressor {
 
   DETOK detoken;
 
-#if CONFIG_RUNTIME_CPU_DETECT
-  vp8_dequant_rtcd_vtable_t        dequant;
-#endif
+  vp8_dequant_idct_add_fn_t            idct_add;
+  vp8_dequant_dc_idct_add_fn_t         dc_idct_add;
+  vp8_dequant_dc_idct_add_y_block_fn_t dc_idct_add_y_block;
+  vp8_dequant_idct_add_y_block_fn_t    idct_add_y_block;
+  vp8_dequant_idct_add_uv_block_fn_t   idct_add_uv_block;
 
   vp8_prob prob_skip_false;
 

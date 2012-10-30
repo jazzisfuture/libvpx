@@ -28,9 +28,6 @@ extern prototype_dequant_idct_add_y_block(vp8_dequant_idct_add_y_block_mmx);
 extern prototype_dequant_idct_add_uv_block(vp8_dequant_idct_add_uv_block_mmx);
 
 #if !CONFIG_RUNTIME_CPU_DETECT
-#undef  vp8_dequant_block
-#define vp8_dequant_block vp8_dequantize_b_mmx
-
 #undef  vp8_dequant_idct_add
 #define vp8_dequant_idct_add vpx_dequant_idct_add_mmx
 
