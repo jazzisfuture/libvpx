@@ -1013,7 +1013,8 @@ static void encode_sb(VP8_COMP *cpi,
 
 #if CONFIG_SUPERBLOCKS
       if (xd->mode_info_context->mbmi.encoded_as_sb)
-        vp9cx_encode_inter_superblock(cpi, x, tp, recon_yoffset, recon_uvoffset, mb_col, mb_row);
+        vp9cx_encode_inter_superblock(cpi, x, tp, recon_yoffset, recon_uvoffset,
+                                      mb_col, mb_row);
       else
 #endif
         vp9cx_encode_inter_macroblock(cpi, x, tp,
@@ -1984,9 +1985,9 @@ extern int cnt_pm;
 
 extern void vp9_fix_contexts(MACROBLOCKD *xd);
 
-void vp9cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
-                                    TOKENEXTRA **t, int recon_yoffset,
-                                    int recon_uvoffset, int output_enabled) {
+void vp9cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
+                                   TOKENEXTRA **t, int recon_yoffset,
+                                   int recon_uvoffset, int output_enabled) {
   VP8_COMMON *cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO * mbmi = &xd->mode_info_context->mbmi;

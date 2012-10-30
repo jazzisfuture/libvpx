@@ -349,7 +349,8 @@ void vp9_regular_quantize_b_16x16(BLOCK *b, BLOCKD *d) {
  * these two C functions if corresponding optimized routine is not available.
  * NEON optimized version implements currently the fast quantization for pair
  * of blocks. */
-void vp9_regular_quantize_b_4x4_pair(BLOCK *b1, BLOCK *b2, BLOCKD *d1, BLOCKD *d2) {
+void vp9_regular_quantize_b_4x4_pair(BLOCK *b1, BLOCK *b2,
+                                     BLOCKD *d1, BLOCKD *d2) {
   vp9_regular_quantize_b_4x4(b1, d1);
   vp9_regular_quantize_b_4x4(b2, d2);
 }
