@@ -33,21 +33,17 @@ extern void vp8_yv12_copy_frame_yonly_no_extend_frame_borders_neon(YV12_BUFFER_C
 #define IF_RTCD(x) NULL
 #endif
 
-extern void
-(*vp9_yv12_copy_partial_frame_ptr)(YV12_BUFFER_CONFIG *src_ybc,
-                                   YV12_BUFFER_CONFIG *dst_ybc,
-                                   int Fraction);
+extern void(*vp9_yv12_copy_partial_frame_ptr)(YV12_BUFFER_CONFIG *src_ybc,
+                                              YV12_BUFFER_CONFIG *dst_ybc,
+                                              int fraction);
 
-extern void vp8_loop_filter_frame_segment
-(
-  VP8_COMMON *cm,
-  MACROBLOCKD *xd,
-  int default_filt_lvl,
-  int segment
-);
+extern void vp8_loop_filter_frame_segment(VP8_COMMON *cm,
+                                          MACROBLOCKD *xd,
+                                          int default_filt_lvl,
+                                          int segment);
 
-void
-vp9_yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst_ybc, int Fraction) {
+void vp9_yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc,
+                                 YV12_BUFFER_CONFIG *dst_ybc, int Fraction) {
   unsigned char *src_y, *dst_y;
   int yheight;
   int ystride;
@@ -72,6 +68,7 @@ vp9_yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc, YV12_BUFFER_CONFIG *dst
 
   vpx_memcpy(dst_y, src_y, ystride * (linestocopy + 16));
 }
+
 static int vp8_calc_partial_ssl_err(YV12_BUFFER_CONFIG *source,
                                     YV12_BUFFER_CONFIG *dest, int Fraction) {
   int i, j;
@@ -226,7 +223,8 @@ void vp9cx_pick_filter_level_fast(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi) {
       filt_err = vp8_calc_partial_ssl_err(sd, cm->frame_to_show, 3);
 
       //  Re-instate the unfiltered frame
-      vp9_yv12_copy_partial_frame_ptr(&cpi->last_frame_uf, cm->frame_to_show, 3);
+      vp9_yv12_copy_partial_frame_ptr(&cpi->last_frame_uf,
+                                      cm->frame_to_show, 3);
 
       // Update the best case record or exit loop.
       if (filt_err < best_err) {
