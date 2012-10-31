@@ -175,6 +175,10 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
   vp9_copy(cc->coef_probs_16x16, cm->fc.coef_probs_16x16);
   vp9_copy(cc->hybrid_coef_probs_16x16, cm->fc.hybrid_coef_probs_16x16);
   vp9_copy(cc->switchable_interp_prob, cm->fc.switchable_interp_prob);
+#if CONFIG_COMP_INTRA_PRED
+  cc->intraintra_prob = cm->fc.intraintra_prob;
+  cc->intraintra_b_prob = cm->fc.intraintra_b_prob;
+#endif
 }
 
 void vp9_restore_coding_context(VP9_COMP *cpi) {
@@ -231,6 +235,10 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->fc.coef_probs_16x16, cc->coef_probs_16x16);
   vp9_copy(cm->fc.hybrid_coef_probs_16x16, cc->hybrid_coef_probs_16x16);
   vp9_copy(cm->fc.switchable_interp_prob, cc->switchable_interp_prob);
+#if CONFIG_COMP_INTRA_PRED
+  cm->fc.intraintra_prob = cc->intraintra_prob;
+  cm->fc.intraintra_b_prob = cc->intraintra_b_prob;
+#endif
 }
 
 
@@ -240,7 +248,7 @@ void vp9_setup_key_frame(VP9_COMP *cpi) {
   vp9_default_coef_probs(& cpi->common);
   vp9_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
   vp9_init_mbmode_probs(& cpi->common);
-  vp9_default_bmode_probs(cm->fc.bmode_prob);
+  vp9_default_bmode_probs(cm);
 
   vp9_init_mv_probs(& cpi->common);
 

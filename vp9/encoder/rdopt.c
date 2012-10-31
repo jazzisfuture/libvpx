@@ -58,6 +58,11 @@
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
+#if CONFIG_COMP_INTRA_PRED
+/* Factor to weigh the rdcost for intraintra modes */
+#define INTRAINTRA_RD_FACTOR  0.95
+#endif
+
 static const int auto_speed_thresh[17] = {
   1000,
   200,
@@ -1027,8 +1032,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 
   for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++) {
 #if CONFIG_COMP_INTRA_PRED
-    for (mode2 = (allow_comp ? 0 : (B_DC_PRED - 1));
-                   mode2 != (allow_comp ? (mode + 1) : 0); mode2++) {
+    for (mode2 = B_DC_PRED - 1;
+         mode2 != (allow_comp ? (mode + 1) : 0); mode2++) {
 #endif
       int64_t this_rd;
       int ratey;
@@ -1038,11 +1043,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 
 #if CONFIG_COMP_INTRA_PRED
       if (mode2 == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
+        if (allow_comp) rate += vp9_cost_zero(cpi->common.fc.intraintra_b_prob);
 #endif
         vp9_intra4x4_predict(b, mode, b->predictor);
 #if CONFIG_COMP_INTRA_PRED
       } else {
         vp9_comp_intra4x4_predict(b, mode, mode2, b->predictor);
+        if (allow_comp) rate += vp9_cost_one(cpi->common.fc.intraintra_b_prob);
         rate += bmode_costs[mode2];
       }
 #endif
@@ -1177,7 +1184,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb, int *Rat
     return INT64_MAX;
 
 #if CONFIG_COMP_INTRA_PRED
-  cost += vp9_cost_bit(128, allow_comp);
+  cost += vp9_cost_bit(cpi->common.fc.intraintra_prob, allow_comp);
 #endif
   *Rate = cost;
   *rate_y += tot_rate_y;
@@ -3740,11 +3747,32 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           // Note the rate value returned here includes the cost of coding
           // the BPRED mode : x->mbmode_cost[xd->frame_type][BPRED];
           mbmi->txfm_size = TX_4X4;
-          tmp_rd = rd_pick_intra4x4mby_modes(cpi, x, &rate, &rate_y, &distortion, best_yrd,
+          tmp_rd = rd_pick_intra4x4mby_modes(cpi, x,
+                                             &rate, &rate_y,
+                                             &distortion, best_yrd,
 #if CONFIG_COMP_INTRA_PRED
                                              0,
 #endif
                                              0);
+#if CONFIG_COMP_INTRA_PRED
+          {
+            int64_t tmp_rdd;
+            tmp_rdd = rd_pick_intra4x4mby_modes(cpi, x,
+                                                &rate, &rate_y,
+                                                &distortion, best_yrd,
+                                                1, 0);
+            //mbmi->use_intraintra = tmp_rdd < tmp_rd;
+            mbmi->use_intraintra = (tmp_rdd < tmp_rd * INTRAINTRA_RD_FACTOR);
+            if (!mbmi->use_intraintra) {
+              tmp_rd = rd_pick_intra4x4mby_modes(cpi, x,
+                                                 &rate, &rate_y,
+                                                 &distortion, best_yrd,
+                                                 0, 0);
+            } else {
+              tmp_rd = tmp_rdd;
+            }
+          }
+#endif
           rate2 += rate;
           distortion2 += distortion;
 
@@ -4320,7 +4348,8 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTRA_PRED
   error4x4d = rd_pick_intra4x4mby_modes(cpi, x,
                                         &rate4x4d, &rate4x4_tokenonly,
-                                        &dist4x4d, error16x16, 1, 0);
+                                        &dist4x4d, error16x16, 1,
+                                        0);
 #endif
 
   mbmi->mb_skip_coeff = 0;
@@ -4339,12 +4368,14 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (error4x4 < error16x16) {
       rate = rateuv;
 #if CONFIG_COMP_INTRA_PRED
-      rate += (error4x4d < error4x4) ? rate4x4d : rate4x4;
-      if (error4x4d >= error4x4) // FIXME save original modes etc.
+      //mbmi->use_intraintra = (error4x4d < error4x4);
+      mbmi->use_intraintra = (error4x4d < error4x4 * INTRAINTRA_RD_FACTOR);
+      rate += (mbmi->use_intraintra ? rate4x4d : rate4x4);
+      if (!mbmi->use_intraintra) // FIXME save original modes etc.
         error4x4 = rd_pick_intra4x4mby_modes(cpi, x, &rate4x4,
                                              &rate4x4_tokenonly,
                                              &dist4x4, error16x16, 0,
-                                             cpi->update_context);
+                                             0);
 #else
       rate += rate4x4;
 #endif
@@ -4368,12 +4399,14 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (error4x4 < error8x8) {
       rate = rateuv;
 #if CONFIG_COMP_INTRA_PRED
-      rate += (error4x4d < error4x4) ? rate4x4d : rate4x4;
-      if (error4x4d >= error4x4) // FIXME save original modes etc.
+      //mbmi->use_intraintra = (error4x4d < error4x4);
+      mbmi->use_intraintra = (error4x4d < error4x4 * INTRAINTRA_RD_FACTOR);
+      rate += (mbmi->use_intraintra ? rate4x4d : rate4x4);
+      if (!mbmi->use_intraintra) // FIXME save original modes etc.
         error4x4 = rd_pick_intra4x4mby_modes(cpi, x, &rate4x4,
                                              &rate4x4_tokenonly,
                                              &dist4x4, error16x16, 0,
-                                             cpi->update_context);
+                                             0);
 #else
       rate += rate4x4;
 #endif
