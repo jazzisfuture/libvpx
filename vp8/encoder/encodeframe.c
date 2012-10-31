@@ -1272,6 +1272,10 @@ static void init_encode_frame_mb_context(VP8_COMP *cpi) {
 
   vp8_zero(cpi->count_mb_ref_frame_usage)
   vp8_zero(cpi->bmode_count)
+#if CONFIG_COMP_INTRA_PRED
+  vp8_zero(cpi->intraintra_count)
+  vp8_zero(cpi->intraintra_b_count)
+#endif
   vp8_zero(cpi->ymode_count)
   vp8_zero(cpi->i8x8_mode_count)
   vp8_zero(cpi->y_uv_mode_count)
@@ -1758,10 +1762,23 @@ static void sum_intra_stats(VP8_COMP *cpi, MACROBLOCK *x) {
     cpi->i8x8_mode_count[xd->block[8].bmi.as_mode.first]++;
     cpi->i8x8_mode_count[xd->block[10].bmi.as_mode.first]++;
   }
-  if (m == B_PRED) {
+  if (m == B_PRED && cpi->common.frame_type != KEY_FRAME) {
     int b = 0;
+#if CONFIG_COMP_INTRA_PRED
+    ++cpi->intraintra_count[xd->mode_info_context->mbmi.use_intraintra];
+#endif
     do {
-      ++ cpi->bmode_count[xd->block[b].bmi.as_mode.first];
+      ++cpi->bmode_count[xd->block[b].bmi.as_mode.first];
+#if CONFIG_COMP_INTRA_PRED
+      if (xd->mode_info_context->mbmi.use_intraintra) {
+        if (xd->block[b].bmi.as_mode.second != B_DC_PRED - 1) {
+          ++cpi->intraintra_b_count[1];
+          ++cpi->bmode_count[xd->block[b].bmi.as_mode.second];
+        } else {
+          ++cpi->intraintra_b_count[0];
+        }
+      }
+#endif
     } while (++b < 16);
   }
 }
@@ -2171,7 +2188,8 @@ void vp8cx_encode_inter_macroblock (VP8_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_SUPERBLOCKS
 void vp8cx_encode_inter_superblock(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t,
-                                   int recon_yoffset, int recon_uvoffset, int mb_col, int mb_row) {
+                                   int recon_yoffset, int recon_uvoffset,
+                                   int mb_col, int mb_row) {
   const int output_enabled = 1;
   VP8_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;

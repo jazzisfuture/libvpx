@@ -282,11 +282,18 @@ void vp8_comp_intra4x4_predict_c(BLOCKD *x,
   int i, j;
 
   vp8_intra4x4_predict(x, b_mode, predictor[0]);
-  vp8_intra4x4_predict(x, b_mode2, predictor[1]);
-
-  for (i = 0; i < 16 * 4; i += 16) {
-    for (j = i; j < i + 4; j++) {
-      out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+  if (b_mode2 != B_DC_PRED - 1) {
+    vp8_intra4x4_predict(x, b_mode2, predictor[1]);
+    for (i = 0; i < 16 * 4; i += 16) {
+      for (j = i; j < i + 4; j++) {
+        out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+      }
+    }
+  } else {
+    for (i = 0; i < 16 * 4; i += 16) {
+      for (j = i; j < i + 4; j++) {
+        out_predictor[j] = predictor[0][j];
+      }
     }
   }
 }

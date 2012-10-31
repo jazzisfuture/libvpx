@@ -112,6 +112,11 @@ typedef struct {
   vp8_prob switchable_interp_prob[VP8_SWITCHABLE_FILTERS + 1]
                                  [VP8_SWITCHABLE_FILTERS - 1];
 
+#if CONFIG_COMP_INTRA_PRED
+  vp8_prob intraintra_prob;
+  vp8_prob intraintra_b_prob;
+#endif
+
   int mv_ref_ct[6][4][2];
   int mode_context[6][4];
   int mv_ref_ct_a[6][4][2];
@@ -536,6 +541,10 @@ typedef struct VP8_COMP {
 #endif
   int ymode_count [VP8_YMODES];        /* intra MB type cts this frame */
   int bmode_count [VP8_BINTRAMODES];
+#if CONFIG_COMP_INTRA_PRED
+  unsigned int intraintra_count[2];
+  unsigned int intraintra_b_count[2];
+#endif
   int i8x8_mode_count [VP8_I8X8_MODES];
   int sub_mv_ref_count [SUBMVREF_COUNT][VP8_SUBMVREFS];
   int mbsplit_count [VP8_NUMMBSPLITS];

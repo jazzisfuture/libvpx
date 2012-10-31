@@ -1017,10 +1017,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi, vp8_writer *const bc) {
           if (mode == B_PRED) {
             int j = 0;
 #if CONFIG_COMP_INTRA_PRED
-            int uses_second =
-              m->bmi[0].as_mode.second !=
-              (B_PREDICTION_MODE)(B_DC_PRED - 1);
-            vp8_write(bc, uses_second, 128);
+            vp8_write(bc, mi->use_intraintra, pc->fc.intraintra_prob);
 #endif
             do {
 #if CONFIG_COMP_INTRA_PRED
@@ -1037,8 +1034,13 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi, vp8_writer *const bc) {
               }
               */
 #if CONFIG_COMP_INTRA_PRED
-              if (uses_second) {
-                write_bmode(bc, mode2, pc->fc.bmode_prob);
+              if (mi->use_intraintra) {
+                if (mode2 != B_DC_PRED - 1) {
+                  vp8_write(bc, 1, pc->fc.intraintra_b_prob);
+                  write_bmode(bc, mode2, pc->fc.bmode_prob);
+                } else {
+                  vp8_write(bc, 0, pc->fc.intraintra_b_prob);
+                }
               }
 #endif
             } while (++j < 16);
@@ -1362,10 +1364,7 @@ static void write_mb_modes_kf(const VP8_COMMON  *c,
     const int mis = c->mode_info_stride;
     int i = 0;
 #if CONFIG_COMP_INTRA_PRED
-    int uses_second =
-      m->bmi[0].as_mode.second !=
-      (B_PREDICTION_MODE)(B_DC_PRED - 1);
-    vp8_write(bc, uses_second, 128);
+    vp8_write(bc, m->mbmi.use_intraintra, c->fc.intraintra_prob);
 #endif
     do {
       const B_PREDICTION_MODE A = above_block_mode(m, i, mis);
@@ -1382,8 +1381,13 @@ static void write_mb_modes_kf(const VP8_COMMON  *c,
       write_bmode(bc, bm, c->kf_bmode_prob [A] [L]);
       // printf("    mode: %d\n", bm);
 #if CONFIG_COMP_INTRA_PRED
-      if (uses_second) {
-        write_bmode(bc, bm2, c->kf_bmode_prob [A] [L]);
+      if (m->mbmi.use_intraintra) {
+        if (bm2 != B_DC_PRED - 1) {
+          vp8_write(bc, 1, c->fc.intraintra_b_prob);
+          write_bmode(bc, bm2, c->kf_bmode_prob [A] [L]);
+        } else {
+          vp8_write(bc, 0, c->fc.intraintra_b_prob);
+        }
       }
 #endif
     } while (++i < 16);
@@ -2242,6 +2246,15 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned long *size)
 #endif
     if (pc->mcomp_filter_type == SWITCHABLE)
       update_switchable_interp_probs(cpi, &header_bc);
+
+#if CONFIG_COMP_INTRA_PRED
+    pc->fc.intraintra_prob =
+        vp8_bin_prob_from_distribution(cpi->intraintra_count);
+    vp8_write_literal(&header_bc, pc->fc.intraintra_prob, 8);
+    pc->fc.intraintra_b_prob =
+        vp8_bin_prob_from_distribution(cpi->intraintra_b_count);
+    vp8_write_literal(&header_bc, pc->fc.intraintra_b_prob, 8);
+#endif
 
     vp8_write_literal(&header_bc, pc->prob_intra_coded, 8);
     vp8_write_literal(&header_bc, pc->prob_last_coded, 8);

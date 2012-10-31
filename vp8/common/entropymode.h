@@ -71,7 +71,7 @@ extern void vp8_accum_mv_refs(struct VP8Common *pc,
                               MB_PREDICTION_MODE m,
                               const int ct[4]);
 
-void vp8_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES - 1]);
+void vp8_default_bmode_probs(struct VP8Common *pc);
 void vp8_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]);
 
 void vp8_adapt_mode_probs(struct VP8Common *);

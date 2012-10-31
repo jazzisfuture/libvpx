@@ -178,6 +178,10 @@ void vp8_save_coding_context(VP8_COMP *cpi) {
   vp8_copy(cc->coef_probs_16x16, cm->fc.coef_probs_16x16);
   vp8_copy(cc->hybrid_coef_probs_16x16, cm->fc.hybrid_coef_probs_16x16);
   vp8_copy(cc->switchable_interp_prob, cm->fc.switchable_interp_prob);
+#if CONFIG_COMP_INTRA_PRED
+  cc->intraintra_prob = cm->fc.intraintra_prob;
+  cc->intraintra_b_prob = cm->fc.intraintra_b_prob;
+#endif
 }
 
 void vp8_restore_coding_context(VP8_COMP *cpi) {
@@ -234,6 +238,10 @@ void vp8_restore_coding_context(VP8_COMP *cpi) {
   vp8_copy(cm->fc.coef_probs_16x16, cc->coef_probs_16x16);
   vp8_copy(cm->fc.hybrid_coef_probs_16x16, cc->hybrid_coef_probs_16x16);
   vp8_copy(cm->fc.switchable_interp_prob, cc->switchable_interp_prob);
+#if CONFIG_COMP_INTRA_PRED
+  cm->fc.intraintra_prob = cc->intraintra_prob;
+  cm->fc.intraintra_b_prob = cc->intraintra_b_prob;
+#endif
 }
 
 
@@ -243,7 +251,7 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
   vp8_default_coef_probs(& cpi->common);
   vp8_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
   vp8_init_mbmode_probs(& cpi->common);
-  vp8_default_bmode_probs(cm->fc.bmode_prob);
+  vp8_default_bmode_probs(cm);
 
   vp8_init_mv_probs(& cpi->common);
 

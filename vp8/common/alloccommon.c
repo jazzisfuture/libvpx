@@ -188,7 +188,7 @@ void vp8_create_common(VP8_COMMON *oci) {
 
   vp8_init_mbmode_probs(oci);
 
-  vp8_default_bmode_probs(oci->fc.bmode_prob);
+  vp8_default_bmode_probs(oci);
 
   oci->txfm_mode = ONLY_4X4;
   oci->mb_no_coeff_skip = 1;

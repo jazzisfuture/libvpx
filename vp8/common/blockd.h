@@ -212,6 +212,7 @@ typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
 #if CONFIG_COMP_INTRA_PRED
   MB_PREDICTION_MODE second_mode, second_uv_mode;
+  int use_intraintra;
 #endif
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   TX_SIZE txfm_size;

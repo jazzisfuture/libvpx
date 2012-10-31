@@ -144,7 +144,9 @@ static void kfread_modes(VP8D_COMP *pbi,
   if ((m->mbmi.mode = y_mode) == B_PRED) {
     int i = 0;
 #if CONFIG_COMP_INTRA_PRED
-    int use_comp_pred = vp8_read(bc, 128);
+    m->mbmi.use_intraintra =
+        vp8_read(bc, pbi->common.fc.intraintra_prob);
+    pbi->common.fc.intraintra_counts[m->mbmi.use_intraintra]++;
 #endif
     do {
       const B_PREDICTION_MODE A = above_block_mode(m, i, mis);
@@ -154,10 +156,14 @@ static void kfread_modes(VP8D_COMP *pbi,
         (B_PREDICTION_MODE) vp8_read_bmode(
           bc, pbi->common.kf_bmode_prob [A] [L]);
 #if CONFIG_COMP_INTRA_PRED
-      if (use_comp_pred) {
-        m->bmi[i].as_mode.second =
-          (B_PREDICTION_MODE) vp8_read_bmode(
-            bc, pbi->common.kf_bmode_prob [A] [L]);
+      if (m->mbmi.use_intraintra) {
+        if (vp8_read(bc, pbi->common.fc.intraintra_b_prob)) {
+          m->bmi[i].as_mode.second =
+              (B_PREDICTION_MODE) vp8_read_bmode(
+                  bc, pbi->common.kf_bmode_prob [A] [L]);
+        } else {
+          m->bmi[i].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
+        }
       } else {
         m->bmi[i].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
       }
@@ -528,6 +534,11 @@ static void mb_mode_mv_init(VP8D_COMP *pbi, vp8_reader *bc) {
 #endif
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
+
+#if CONFIG_COMP_INTRA_PRED
+    cm->fc.intraintra_prob  = (vp8_prob)vp8_read_literal(bc, 8);
+    cm->fc.intraintra_b_prob  = (vp8_prob)vp8_read_literal(bc, 8);
+#endif
     // Decode the baseline probabilities for decoding reference frame
     cm->prob_intra_coded = (vp8_prob)vp8_read_literal(bc, 8);
     cm->prob_last_coded  = (vp8_prob)vp8_read_literal(bc, 8);
@@ -1094,7 +1105,9 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     if (mbmi->mode == B_PRED) {
       int j = 0;
 #if CONFIG_COMP_INTRA_PRED
-      int use_comp_pred = vp8_read(bc, 128);
+      mbmi->use_intraintra =
+          vp8_read(bc, pbi->common.fc.intraintra_prob);
+      pbi->common.fc.intraintra_counts[mbmi->use_intraintra]++;
 #endif
       do {
         mi->bmi[j].as_mode.first = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);
@@ -1108,8 +1121,15 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         */
         pbi->common.fc.bmode_counts[mi->bmi[j].as_mode.first]++;
 #if CONFIG_COMP_INTRA_PRED
-        if (use_comp_pred) {
-          mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);
+        if (mbmi->use_intraintra) {
+          if (vp8_read(bc, pbi->common.fc.intraintra_b_prob)) {
+            mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)vp8_read_bmode(bc, pbi->common.fc.bmode_prob);
+            pbi->common.fc.bmode_counts[mi->bmi[j].as_mode.second]++;
+            pbi->common.fc.intraintra_b_counts[1]++;
+          } else {
+            mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
+            pbi->common.fc.intraintra_b_counts[0]++;
+          }
         } else {
           mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
         }

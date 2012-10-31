@@ -14,6 +14,11 @@
 #include "vpx_mem/vpx_mem.h"
 
 
+#if CONFIG_COMP_INTRA_PRED
+#define DEFAULT_INTRAINTRA_PROB   192
+#define DEFAULT_INTRAINTRA_B_PROB   192
+#endif
+
 const unsigned int kf_y_mode_cts[8][VP8_YMODES] = {
   /* DC V   H  D45 135 117 153 D27 D63 TM i8x8 BPRED */
   {12,  6,  5,  5,  5,  5,  5,  5,  5,  2, 22, 200},
@@ -314,9 +319,14 @@ static void intra_bmode_probs_from_distribution(
     vp8_bmode_tree, p, branch_ct, events, 256, 1);
 }
 
-void vp8_default_bmode_probs(vp8_prob p [VP8_BINTRAMODES - 1]) {
+void vp8_default_bmode_probs(VP8_COMMON *x) {
+
   unsigned int branch_ct [VP8_BINTRAMODES - 1] [2];
-  intra_bmode_probs_from_distribution(p, branch_ct, bmode_cts);
+  intra_bmode_probs_from_distribution(x->fc.bmode_prob, branch_ct, bmode_cts);
+#if CONFIG_COMP_INTRA_PRED
+  x->fc.intraintra_prob = DEFAULT_INTRAINTRA_PROB;
+  x->fc.intraintra_b_prob = DEFAULT_INTRAINTRA_B_PROB;
+#endif
 }
 
 void vp8_kf_default_bmode_probs(vp8_prob p [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]) {

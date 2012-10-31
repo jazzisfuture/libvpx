@@ -359,7 +359,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 #if CONFIG_COMP_INTRA_PRED
       int b_mode2 = xd->mode_info_context->bmi[i].as_mode.second;
 
-      if (b_mode2 == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
+      if (!xd->mode_info_context->mbmi.use_intraintra) {
 #endif
         vp8_intra4x4_predict(b, b_mode, b->predictor);
 #if CONFIG_COMP_INTRA_PRED
@@ -743,7 +743,7 @@ static void init_frame(VP8D_COMP *pbi) {
     vp8_init_mv_probs(pc);
 
     vp8_init_mbmode_probs(pc);
-    vp8_default_bmode_probs(pc->fc.bmode_prob);
+    vp8_default_bmode_probs(pc);
 
     vp8_default_coef_probs(pc);
     vp8_kf_default_bmode_probs(pc->kf_bmode_prob);
@@ -1244,6 +1244,10 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   vp8_zero(pbi->common.fc.ymode_counts);
   vp8_zero(pbi->common.fc.uv_mode_counts);
   vp8_zero(pbi->common.fc.bmode_counts);
+#if CONFIG_COMP_INTRA_PRED
+  vp8_zero(pbi->common.fc.intraintra_counts);
+  vp8_zero(pbi->common.fc.intraintra_b_counts);
+#endif
   vp8_zero(pbi->common.fc.i8x8_mode_counts);
   vp8_zero(pbi->common.fc.sub_mv_ref_counts);
   vp8_zero(pbi->common.fc.mbsplit_counts);
