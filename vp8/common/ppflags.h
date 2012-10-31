@@ -33,6 +33,6 @@ typedef struct {
   int display_mb_modes_flag;
   int display_b_modes_flag;
   int display_mv_flag;
-} vp8_ppflags_t;
+} vp9_ppflags_t;
 
 #endif
