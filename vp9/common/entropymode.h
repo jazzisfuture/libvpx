@@ -17,6 +17,12 @@
 
 #define SUBMVREF_COUNT 5
 #define VP9_NUMMBSPLITS 4
+#if CONFIG_COMP_INTRA_PRED
+#define VP9_DEF_INTRAINTRA_PROB   251
+#define VP9_DEF_INTRAINTRA_B_PROB   240
+#define VP9_UPD_INTRAINTRA_PROB   240
+#define VP9_UPD_INTRAINTRA_B_PROB   240
+#endif
 
 typedef const int vp9_mbsplit[16];
 
@@ -76,7 +82,7 @@ extern void vp9_accum_mv_refs(struct VP9Common *pc,
                               MB_PREDICTION_MODE m,
                               const int ct[4]);
 
-void vp9_default_bmode_probs(vp9_prob dest[VP9_BINTRAMODES - 1]);
+void vp9_default_bmode_probs(struct VP9Common *);
 
 void vp9_kf_default_bmode_probs(vp9_prob dest[VP9_BINTRAMODES][VP9_BINTRAMODES]
                                              [VP9_BINTRAMODES - 1]);

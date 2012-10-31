@@ -305,9 +305,13 @@ static void intra_bmode_probs_from_distribution(
                                    events, 256, 1);
 }
 
-void vp9_default_bmode_probs(vp9_prob p [VP9_BINTRAMODES - 1]) {
+void vp9_default_bmode_probs(VP9_COMMON *x) {
   unsigned int branch_ct [VP9_BINTRAMODES - 1] [2];
-  intra_bmode_probs_from_distribution(p, branch_ct, bmode_cts);
+  intra_bmode_probs_from_distribution(x->fc.bmode_prob, branch_ct, bmode_cts);
+#if CONFIG_COMP_INTRA_PRED
+  x->fc.intraintra_prob = VP9_DEF_INTRAINTRA_PROB;
+  x->fc.intraintra_b_prob = VP9_DEF_INTRAINTRA_B_PROB;
+#endif
 }
 
 void vp9_kf_default_bmode_probs(vp9_prob p[VP9_BINTRAMODES][VP9_BINTRAMODES]
@@ -611,4 +615,31 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     else if (prob > 255) cm->fc.mbsplit_prob[t] = 255;
     else cm->fc.mbsplit_prob[t] = prob;
   }
+#if CONFIG_COMP_INTRA_PRED
+  //if (cm->use_intraintra) {
+  {
+    vp9_prob intraintra_prob, intraintra_b_prob;
+    int prob;
+    //printf("%d %d > %d %d\n", cm->fc.intraintra_counts[0], cm->fc.intraintra_counts[1],
+    //       cm->fc.intraintra_b_counts[0], cm->fc.intraintra_b_counts[1]);
+    intraintra_prob = vp9_bin_prob_from_distribution(cm->fc.intraintra_counts);
+    count = cm->fc.intraintra_counts[0] + cm->fc.intraintra_counts[1];
+    count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+    factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
+    prob = ((int)cm->fc.pre_intraintra_prob * (256 - factor) +
+            (int)intraintra_prob * factor + 128) >> 8;
+    if (prob <= 0) cm->fc.intraintra_prob = 1;
+    else if (prob > 255) cm->fc.intraintra_prob = 255;
+    else cm->fc.intraintra_prob = prob;
+    intraintra_b_prob = vp9_bin_prob_from_distribution(cm->fc.intraintra_b_counts);
+    count = cm->fc.intraintra_b_counts[0] + cm->fc.intraintra_b_counts[1];
+    count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+    factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
+    prob = ((int)cm->fc.pre_intraintra_b_prob * (256 - factor) +
+            (int)intraintra_b_prob * factor + 128) >> 8;
+    if (prob <= 0) cm->fc.intraintra_b_prob = 1;
+    else if (prob > 255) cm->fc.intraintra_b_prob = 255;
+    else cm->fc.intraintra_b_prob = prob;
+  }
+#endif
 }

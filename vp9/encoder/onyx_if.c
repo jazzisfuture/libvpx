@@ -3611,6 +3611,10 @@ static void encode_frame_to_data_rate
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
     vp9_copy(cpi->common.fc.uv_mode_counts, cpi->y_uv_mode_count);
     vp9_copy(cpi->common.fc.bmode_counts, cpi->bmode_count);
+#if CONFIG_COMP_INTRA_PRED
+    vp9_copy(cpi->common.fc.intraintra_counts, cpi->intraintra_count);
+    vp9_copy(cpi->common.fc.intraintra_b_counts, cpi->intraintra_b_count);
+#endif
     vp9_copy(cpi->common.fc.i8x8_mode_counts, cpi->i8x8_mode_count);
     vp9_copy(cpi->common.fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
     vp9_copy(cpi->common.fc.mbsplit_counts, cpi->mbsplit_count);

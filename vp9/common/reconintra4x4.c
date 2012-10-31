@@ -278,15 +278,37 @@ void vp9_intra4x4_predict_c(BLOCKD *x, int b_mode,
 void vp9_comp_intra4x4_predict_c(BLOCKD *x,
                                int b_mode, int b_mode2,
                                unsigned char *out_predictor) {
-  unsigned char predictor[2][4 * 16];
+  unsigned char predictor[3][4 * 16];
   int i, j;
 
   vp9_intra4x4_predict(x, b_mode, predictor[0]);
+  assert (b_mode2 != B_DC_PRED - 1);
   vp9_intra4x4_predict(x, b_mode2, predictor[1]);
-
-  for (i = 0; i < 16 * 4; i += 16) {
-    for (j = i; j < i + 4; j++) {
-      out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+  if (1) { //(b_mode  != B_TM_PRED && b_mode2 != B_TM_PRED) {
+    vp9_intra4x4_predict(x, B_TM_PRED, predictor[2]);
+    for (i = 0; i < 16 * 4; i += 16) {
+      for (j = i; j < i + 4; j++) {
+        if (abs(predictor[0][j] - predictor[1][j]) > 128) {
+          /*
+          if ((predictor[2][j] >= predictor[0][j] && predictor[2][j] <= predictor[1][j]) ||
+              (predictor[2][j] >= predictor[1][j] && predictor[2][j] <= predictor[0][j])) {
+            out_predictor[j] = predictor[2][j];
+          } else */
+          if (abs(predictor[2][j] - predictor[0][j]) < abs(predictor[2][j] - predictor[1][j])) {
+            out_predictor[j] = predictor[0][j];
+          } else {
+            out_predictor[j] = predictor[1][j];
+          }
+        } else {
+          out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+        }
+      }
+    }
+  } else {
+    for (i = 0; i < 16 * 4; i += 16) {
+      for (j = i; j < i + 4; j++) {
+          out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+      }
     }
   }
 }
