@@ -1,5 +1,6 @@
 common_forward_decls() {
 cat <<EOF
+#include "vp8/common/blockd.h"
 
 struct loop_filter_info;
 struct blockd;
@@ -448,6 +449,9 @@ if [ "$CONFIG_INTERNAL_STATS" = "yes" ]; then
 fi
 
 # fdct functions
+prototype void vp8_fht "const int16_t *input, int pitch, int16_t *output, TX_TYPE tx_type, int tx_dim"
+specialize vp8_fht
+
 prototype void vp8_short_fdct8x8 "short *InputData, short *OutputData, int pitch"
 specialize vp8_short_fdct8x8
 
