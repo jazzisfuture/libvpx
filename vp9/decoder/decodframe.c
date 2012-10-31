@@ -359,12 +359,15 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
 #if CONFIG_COMP_INTRA_PRED
       int b_mode2 = xd->mode_info_context->bmi[i].as_mode.second;
 
-      if (b_mode2 == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
+      if (!xd->mode_info_context->mbmi.use_intraintra) {
 #endif
         vp9_intra4x4_predict(b, b_mode, b->predictor);
 #if CONFIG_COMP_INTRA_PRED
       } else {
-        vp9_comp_intra4x4_predict(b, b_mode, b_mode2, b->predictor);
+        if (b_mode2 != B_DC_PRED - 1)
+          vp9_comp_intra4x4_predict(b, b_mode, b_mode2, b->predictor);
+        else
+          vp9_intra4x4_predict(b, b_mode, b->predictor);
       }
 #endif
 
@@ -743,7 +746,7 @@ static void init_frame(VP9D_COMP *pbi) {
     vp9_init_mv_probs(pc);
 
     vp9_init_mbmode_probs(pc);
-    vp9_default_bmode_probs(pc->fc.bmode_prob);
+    vp9_default_bmode_probs(pc);
 
     vp9_default_coef_probs(pc);
     vp9_kf_default_bmode_probs(pc->kf_bmode_prob);
@@ -1235,6 +1238,10 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
   vp9_copy(pbi->common.fc.pre_sub_mv_ref_prob, pbi->common.fc.sub_mv_ref_prob);
   vp9_copy(pbi->common.fc.pre_mbsplit_prob, pbi->common.fc.mbsplit_prob);
   pbi->common.fc.pre_nmvc = pbi->common.fc.nmvc;
+#if CONFIG_COMP_INTRA_PRED
+  pbi->common.fc.pre_intraintra_prob = pbi->common.fc.intraintra_prob;
+  pbi->common.fc.pre_intraintra_b_prob = pbi->common.fc.intraintra_b_prob;
+#endif
   vp9_zero(pbi->common.fc.coef_counts);
   vp9_zero(pbi->common.fc.hybrid_coef_counts);
   vp9_zero(pbi->common.fc.coef_counts_8x8);
@@ -1250,6 +1257,10 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
   vp9_zero(pbi->common.fc.NMVcount);
   vp9_zero(pbi->common.fc.mv_ref_ct);
   vp9_zero(pbi->common.fc.mv_ref_ct_a);
+#if CONFIG_COMP_INTRA_PRED
+  vp9_zero(pbi->common.fc.intraintra_counts);
+  vp9_zero(pbi->common.fc.intraintra_b_counts);
+#endif
 
   read_coef_probs(pbi, &header_bc);
 

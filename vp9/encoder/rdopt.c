@@ -58,6 +58,11 @@
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
+#if CONFIG_COMP_INTRA_PRED
+/* Factor to weigh the rdcost for intraintra modes */
+#define INTRAINTRA_RD_FACTOR  0.95
+#endif
+
 static const int auto_speed_thresh[17] = {
   1000,
   200,
@@ -1027,8 +1032,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 
   for (mode = B_DC_PRED; mode <= B_HU_PRED; mode++) {
 #if CONFIG_COMP_INTRA_PRED
-    for (mode2 = (allow_comp ? 0 : (B_DC_PRED - 1));
-                   mode2 != (allow_comp ? (mode + 1) : 0); mode2++) {
+    for (mode2 = B_DC_PRED - 1;
+         mode2 != (allow_comp ? (mode + 1) : 0); mode2++) {
 #endif
       int64_t this_rd;
       int ratey;
@@ -1038,11 +1043,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 
 #if CONFIG_COMP_INTRA_PRED
       if (mode2 == (B_PREDICTION_MODE)(B_DC_PRED - 1)) {
+        if (allow_comp) rate += vp9_cost_zero(cpi->common.fc.intraintra_b_prob);
 #endif
         vp9_intra4x4_predict(b, mode, b->predictor);
 #if CONFIG_COMP_INTRA_PRED
       } else {
         vp9_comp_intra4x4_predict(b, mode, mode2, b->predictor);
+        if (allow_comp) rate += vp9_cost_one(cpi->common.fc.intraintra_b_prob);
         rate += bmode_costs[mode2];
       }
 #endif
@@ -1177,7 +1184,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb, int *Rat
     return INT64_MAX;
 
 #if CONFIG_COMP_INTRA_PRED
-  cost += vp9_cost_bit(128, allow_comp);
+  cost += vp9_cost_bit(cpi->common.fc.intraintra_prob, allow_comp);
 #endif
   *Rate = cost;
   *rate_y += tot_rate_y;
@@ -2251,6 +2258,8 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
       ENTROPY_CONTEXT_PLANES t_above_s, t_left_s;
       ENTROPY_CONTEXT *ta_s;
       ENTROPY_CONTEXT *tl_s;
+      int sadpb;
+      int_mv mvp_full;
 
       vpx_memcpy(&t_above_s, &t_above, sizeof(ENTROPY_CONTEXT_PLANES));
       vpx_memcpy(&t_left_s, &t_left, sizeof(ENTROPY_CONTEXT_PLANES));
@@ -2293,43 +2302,39 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
 
         further_steps = (MAX_MVSEARCH_STEPS - 1) - step_param;
 
-        {
-          int sadpb = x->sadperbit4;
-          int_mv mvp_full;
+        sadpb = x->sadperbit4;
+        mvp_full.as_mv.row = bsi->mvp.as_mv.row >> 3;
+        mvp_full.as_mv.col = bsi->mvp.as_mv.col >> 3;
 
-          mvp_full.as_mv.row = bsi->mvp.as_mv.row >> 3;
-          mvp_full.as_mv.col = bsi->mvp.as_mv.col >> 3;
+        // find first label
+        n = vp9_mbsplit_offset[segmentation][i];
 
-          // find first label
-          n = vp9_mbsplit_offset[segmentation][i];
+        c = &x->block[n];
+        e = &x->e_mbd.block[n];
 
-          c = &x->block[n];
-          e = &x->e_mbd.block[n];
+        bestsme = vp9_full_pixel_diamond(cpi, x, c, e, &mvp_full, step_param,
+                                         sadpb, further_steps, 0, v_fn_ptr,
+                                         bsi->ref_mv, &mode_mv[NEW4X4]);
 
-          bestsme = vp9_full_pixel_diamond(cpi, x, c, e, &mvp_full, step_param,
-                                           sadpb, further_steps, 0, v_fn_ptr,
-                                           bsi->ref_mv, &mode_mv[NEW4X4]);
+        sseshift = segmentation_to_sseshift[segmentation];
 
-          sseshift = segmentation_to_sseshift[segmentation];
+        // Should we do a full search (best quality only)
+        if ((cpi->compressor_speed == 0) && (bestsme >> sseshift) > 4000) {
+          /* Check if mvp_full is within the range. */
+          clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max,
+                   x->mv_row_min, x->mv_row_max);
 
-          // Should we do a full search (best quality only)
-          if ((cpi->compressor_speed == 0) && (bestsme >> sseshift) > 4000) {
-            /* Check if mvp_full is within the range. */
-            clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max,
-                     x->mv_row_min, x->mv_row_max);
+          thissme = cpi->full_search_sad(x, c, e, &mvp_full,
+                                         sadpb, 16, v_fn_ptr,
+                                         XMVCOST, bsi->ref_mv);
 
-            thissme = cpi->full_search_sad(x, c, e, &mvp_full,
-                                           sadpb, 16, v_fn_ptr,
-                                           XMVCOST, bsi->ref_mv);
-
-            if (thissme < bestsme) {
-              bestsme = thissme;
-              mode_mv[NEW4X4].as_int = e->bmi.as_mv.first.as_int;
-            } else {
-              /* The full search result is actually worse so re-instate the
-               * previous best vector */
-              e->bmi.as_mv.first.as_int = mode_mv[NEW4X4].as_int;
-            }
+          if (thissme < bestsme) {
+            bestsme = thissme;
+            mode_mv[NEW4X4].as_int = e->bmi.as_mv.first.as_int;
+          } else {
+            /* The full search result is actually worse so re-instate the
+             * previous best vector */
+            e->bmi.as_mv.first.as_int = mode_mv[NEW4X4].as_int;
           }
         }
 
@@ -3736,15 +3741,35 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           break;
         case B_PRED: {
           int64_t tmp_rd;
+#if CONFIG_COMP_INTRA_PRED
+          int64_t tmp_rdd;
+#endif
 
           // Note the rate value returned here includes the cost of coding
           // the BPRED mode : x->mbmode_cost[xd->frame_type][BPRED];
           mbmi->txfm_size = TX_4X4;
-          tmp_rd = rd_pick_intra4x4mby_modes(cpi, x, &rate, &rate_y, &distortion, best_yrd,
+          tmp_rd = rd_pick_intra4x4mby_modes(cpi, x,
+                                             &rate, &rate_y,
+                                             &distortion, best_yrd,
 #if CONFIG_COMP_INTRA_PRED
                                              0,
 #endif
                                              0);
+#if CONFIG_COMP_INTRA_PRED
+          tmp_rdd = rd_pick_intra4x4mby_modes(cpi, x,
+                                              &rate, &rate_y,
+                                              &distortion, best_yrd,
+                                              1, 0);
+          mbmi->use_intraintra = (tmp_rdd < tmp_rd * INTRAINTRA_RD_FACTOR);
+          if (!mbmi->use_intraintra) {
+            tmp_rd = rd_pick_intra4x4mby_modes(cpi, x,
+                                               &rate, &rate_y,
+                                               &distortion, best_yrd,
+                                               0, 0);
+          } else {
+            tmp_rd = tmp_rdd;
+          }
+#endif
           rate2 += rate;
           distortion2 += distortion;
 
@@ -4320,7 +4345,8 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTRA_PRED
   error4x4d = rd_pick_intra4x4mby_modes(cpi, x,
                                         &rate4x4d, &rate4x4_tokenonly,
-                                        &dist4x4d, error16x16, 1, 0);
+                                        &dist4x4d, error16x16, 1,
+                                        0);
 #endif
 
   mbmi->mb_skip_coeff = 0;
@@ -4339,12 +4365,12 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (error4x4 < error16x16) {
       rate = rateuv;
 #if CONFIG_COMP_INTRA_PRED
-      rate += (error4x4d < error4x4) ? rate4x4d : rate4x4;
-      if (error4x4d >= error4x4) // FIXME save original modes etc.
+      mbmi->use_intraintra = (error4x4d < error4x4 * INTRAINTRA_RD_FACTOR);
+      rate += (mbmi->use_intraintra ? rate4x4d : rate4x4);
+      if (!mbmi->use_intraintra)  // FIXME save original modes etc.
         error4x4 = rd_pick_intra4x4mby_modes(cpi, x, &rate4x4,
                                              &rate4x4_tokenonly,
-                                             &dist4x4, error16x16, 0,
-                                             cpi->update_context);
+                                             &dist4x4, error16x16, 0, 0);
 #else
       rate += rate4x4;
 #endif
@@ -4368,12 +4394,12 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (error4x4 < error8x8) {
       rate = rateuv;
 #if CONFIG_COMP_INTRA_PRED
-      rate += (error4x4d < error4x4) ? rate4x4d : rate4x4;
-      if (error4x4d >= error4x4) // FIXME save original modes etc.
+      mbmi->use_intraintra = (error4x4d < error4x4 * INTRAINTRA_RD_FACTOR);
+      rate += (mbmi->use_intraintra ? rate4x4d : rate4x4);
+      if (!mbmi->use_intraintra)  // FIXME save original modes etc.
         error4x4 = rd_pick_intra4x4mby_modes(cpi, x, &rate4x4,
                                              &rate4x4_tokenonly,
-                                             &dist4x4, error16x16, 0,
-                                             cpi->update_context);
+                                             &dist4x4, error16x16, 0, 0);
 #else
       rate += rate4x4;
 #endif

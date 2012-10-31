@@ -1264,6 +1264,10 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   vp9_zero(cpi->count_mb_ref_frame_usage)
   vp9_zero(cpi->bmode_count)
+#if CONFIG_COMP_INTRA_PRED
+  vp9_zero(cpi->intraintra_count)
+  vp9_zero(cpi->intraintra_b_count)
+#endif
   vp9_zero(cpi->ymode_count)
   vp9_zero(cpi->i8x8_mode_count)
   vp9_zero(cpi->y_uv_mode_count)
@@ -1751,8 +1755,21 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
   }
   if (m == B_PRED) {
     int b = 0;
+#if CONFIG_COMP_INTRA_PRED
+    ++cpi->intraintra_count[xd->mode_info_context->mbmi.use_intraintra];
+#endif
     do {
-      ++ cpi->bmode_count[xd->block[b].bmi.as_mode.first];
+      ++cpi->bmode_count[xd->block[b].bmi.as_mode.first];
+#if CONFIG_COMP_INTRA_PRED
+      if (xd->mode_info_context->mbmi.use_intraintra) {
+        if (xd->block[b].bmi.as_mode.second != B_DC_PRED - 1) {
+          ++cpi->intraintra_b_count[1];
+          ++cpi->bmode_count[xd->block[b].bmi.as_mode.second];
+        } else {
+          ++cpi->intraintra_b_count[0];
+        }
+      }
+#endif
     } while (++b < 16);
   }
 }
