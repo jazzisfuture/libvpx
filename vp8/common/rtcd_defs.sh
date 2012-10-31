@@ -448,6 +448,9 @@ if [ "$CONFIG_INTERNAL_STATS" = "yes" ]; then
 fi
 
 # fdct functions
+prototype void vp8_fht "const short *input, int pitch, short *output, int tx_type, int tx_dim"
+specialize vp8_fht
+
 prototype void vp8_short_fdct8x8 "short *InputData, short *OutputData, int pitch"
 specialize vp8_short_fdct8x8
 
