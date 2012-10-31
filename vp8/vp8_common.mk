@@ -115,15 +115,15 @@ endif
 
 VP8_COMMON_SRCS-$(HAVE_SSE4_1) += common/x86/filter_sse4.c
 ifeq ($(HAVE_SSE4_1),yes)
-vp8/common/x86/filter_sse4.c.o: CFLAGS += -msse4
+vp8_common_x86_filter_sse4.c.o vp8_common_x86_filter_sse4.c.d: CFLAGS += -msse4
 endif
 
 VP8_COMMON_SRCS-$(HAVE_SSE2) += common/x86/filter_sse2.c
 VP8_COMMON_SRCS-$(HAVE_SSE2) += common/x86/sadmxn_x86.c
 ifeq ($(HAVE_SSE2),yes)
-vp8/common/x86/filter_sse2.c.o: CFLAGS += -msse2
-vp8/common/x86/loopfilter_x86.c.o: CFLAGS += -msse2
-vp8/common/x86/sadmxn_x86.c.o: CFLAGS += -msse2
+vp8_common_x86_filter_sse2.c.o vp8_common_x86_filter_sse2.c.d: CFLAGS += -msse2
+vp8_common_x86_loopfilter_x86.c.o vp8_common_x86_loopfilter_x86.c.d: CFLAGS += -msse2
+vp8_common_x86_sadmxn_x86.c.o vp8_common_x86_sadmxn_x86.c.d: CFLAGS += -msse2
 endif
 
 VP8_COMMON_SRCS-$(ARCH_ARM)  += common/arm/arm_systemdependent.c
