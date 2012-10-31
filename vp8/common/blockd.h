@@ -321,10 +321,10 @@ typedef struct macroblockd {
   /* are enabled and when enabled the proabilities used to decode the per MB flags in MB_MODE_INFO */
 
   // Probability Tree used to code Segment number
-  vp8_prob mb_segment_tree_probs[MB_FEATURE_TREE_PROBS];
+  vp9_prob mb_segment_tree_probs[MB_FEATURE_TREE_PROBS];
 
 #if CONFIG_NEW_MVREF
-  vp8_prob mb_mv_ref_id_probs[MAX_REF_FRAMES][3];
+  vp9_prob mb_mv_ref_id_probs[MAX_REF_FRAMES][3];
 #endif
 
   // Segment features

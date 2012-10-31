@@ -1149,7 +1149,7 @@ void encode_sb_row(VP9_COMP *cpi,
 #endif
     pick_mb_modes(cpi, cm, mb_row, mb_col, x, xd, tp, &mb_rate, &mb_dist);
 #if CONFIG_SUPERBLOCKS
-    mb_rate += vp8_cost_bit(cm->sb_coded, 0);
+    mb_rate += vp9_cost_bit(cm->sb_coded, 0);
 #endif
 
     x->src.y_buffer -= 32;
@@ -1176,7 +1176,7 @@ void encode_sb_row(VP9_COMP *cpi,
       /* Pick a mode assuming that it applies to all 4 of the MBs in the SB */
       xd->mode_info_context->mbmi.encoded_as_sb = 1;
       pick_sb_modes(cpi, cm, mb_row, mb_col, x, xd, tp, &sb_rate, &sb_dist);
-      sb_rate += vp8_cost_bit(cm->sb_coded, 1);
+      sb_rate += vp9_cost_bit(cm->sb_coded, 1);
     }
 
     /* Decide whether to encode as a SB or 4xMBs */

@@ -96,8 +96,8 @@ void vp9_find_near_mvs
   int *ref_frame_sign_bias
 );
 
-vp8_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
-                           vp8_prob p[VP8_MVREFS - 1], const int near_mv_ref_ct[4]
+vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
+                           vp9_prob p[VP8_MVREFS - 1], const int near_mv_ref_ct[4]
                           );
 
 extern const unsigned char vp9_mbsplit_offset[4][16];

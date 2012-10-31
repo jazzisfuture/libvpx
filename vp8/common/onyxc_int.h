@@ -44,27 +44,27 @@ void vp9_initialize_common(void);
 #define COMP_PRED_CONTEXTS   2
 
 typedef struct frame_contexts {
-  vp8_prob bmode_prob [VP8_BINTRAMODES - 1];
-  vp8_prob ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
-  vp8_prob uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
-  vp8_prob i8x8_mode_prob [VP8_I8X8_MODES - 1];
-  vp8_prob sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
-  vp8_prob mbsplit_prob [VP8_NUMMBSPLITS - 1];
-  vp8_prob coef_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob hybrid_coef_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob hybrid_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob hybrid_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob bmode_prob [VP8_BINTRAMODES - 1];
+  vp9_prob ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
+  vp9_prob uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
+  vp9_prob i8x8_mode_prob [VP8_I8X8_MODES - 1];
+  vp9_prob sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
+  vp9_prob mbsplit_prob [VP8_NUMMBSPLITS - 1];
+  vp9_prob coef_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob hybrid_coef_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob hybrid_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob hybrid_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
 
   nmv_context nmvc;
   nmv_context pre_nmvc;
-  vp8_prob pre_bmode_prob [VP8_BINTRAMODES - 1];
-  vp8_prob pre_ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
-  vp8_prob pre_uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
-  vp8_prob pre_i8x8_mode_prob [VP8_I8X8_MODES - 1];
-  vp8_prob pre_sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
-  vp8_prob pre_mbsplit_prob [VP8_NUMMBSPLITS - 1];
+  vp9_prob pre_bmode_prob [VP8_BINTRAMODES - 1];
+  vp9_prob pre_ymode_prob [VP8_YMODES - 1]; /* interframe intra mode probs */
+  vp9_prob pre_uv_mode_prob [VP8_YMODES][VP8_UV_MODES - 1];
+  vp9_prob pre_i8x8_mode_prob [VP8_I8X8_MODES - 1];
+  vp9_prob pre_sub_mv_ref_prob [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
+  vp9_prob pre_mbsplit_prob [VP8_NUMMBSPLITS - 1];
   unsigned int bmode_counts [VP8_BINTRAMODES];
   unsigned int ymode_counts [VP8_YMODES];   /* interframe intra mode probs */
   unsigned int uv_mode_counts [VP8_YMODES][VP8_UV_MODES];
@@ -72,19 +72,19 @@ typedef struct frame_contexts {
   unsigned int sub_mv_ref_counts [SUBMVREF_COUNT][VP8_SUBMVREFS];
   unsigned int mbsplit_counts [VP8_NUMMBSPLITS];
 
-  vp8_prob pre_coef_probs [BLOCK_TYPES] [COEF_BANDS]
+  vp9_prob pre_coef_probs [BLOCK_TYPES] [COEF_BANDS]
       [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob pre_hybrid_coef_probs [BLOCK_TYPES] [COEF_BANDS]
-      [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-
-  vp8_prob pre_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS]
-      [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob pre_hybrid_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS]
+  vp9_prob pre_hybrid_coef_probs [BLOCK_TYPES] [COEF_BANDS]
       [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
 
-  vp8_prob pre_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS]
+  vp9_prob pre_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS]
       [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
-  vp8_prob pre_hybrid_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS]
+  vp9_prob pre_hybrid_coef_probs_8x8 [BLOCK_TYPES_8X8] [COEF_BANDS]
+      [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+
+  vp9_prob pre_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS]
+      [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
+  vp9_prob pre_hybrid_coef_probs_16x16 [BLOCK_TYPES_16X16] [COEF_BANDS]
       [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
 
   unsigned int coef_counts [BLOCK_TYPES] [COEF_BANDS]
@@ -103,7 +103,7 @@ typedef struct frame_contexts {
       [PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS];
 
   nmv_context_counts NMVcount;
-  vp8_prob switchable_interp_prob[VP8_SWITCHABLE_FILTERS + 1]
+  vp9_prob switchable_interp_prob[VP8_SWITCHABLE_FILTERS + 1]
                                  [VP8_SWITCHABLE_FILTERS - 1];
 
   int mode_context[6][4];
@@ -241,37 +241,37 @@ typedef struct VP9Common {
 
   /* keyframe block modes are predicted by their above, left neighbors */
 
-  vp8_prob kf_bmode_prob [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1];
-  vp8_prob kf_ymode_prob[8][VP8_YMODES - 1]; /* keyframe "" */
+  vp9_prob kf_bmode_prob [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1];
+  vp9_prob kf_ymode_prob[8][VP8_YMODES - 1]; /* keyframe "" */
 #if CONFIG_SUPERBLOCKS
-  vp8_prob sb_kf_ymode_prob[8][VP8_I32X32_MODES - 1];
+  vp9_prob sb_kf_ymode_prob[8][VP8_I32X32_MODES - 1];
 #endif
   int kf_ymode_probs_index;
   int kf_ymode_probs_update;
-  vp8_prob kf_uv_mode_prob[VP8_YMODES] [VP8_UV_MODES - 1];
+  vp9_prob kf_uv_mode_prob[VP8_YMODES] [VP8_UV_MODES - 1];
 
-  vp8_prob prob_intra_coded;
-  vp8_prob prob_last_coded;
-  vp8_prob prob_gf_coded;
+  vp9_prob prob_intra_coded;
+  vp9_prob prob_last_coded;
+  vp9_prob prob_gf_coded;
 #if CONFIG_SUPERBLOCKS
-  vp8_prob sb_coded;
+  vp9_prob sb_coded;
 #endif
 
   // Context probabilities when using predictive coding of segment id
-  vp8_prob segment_pred_probs[PREDICTION_PROBS];
+  vp9_prob segment_pred_probs[PREDICTION_PROBS];
   unsigned char temporal_update;
 
   // Context probabilities for reference frame prediction
   unsigned char ref_scores[MAX_REF_FRAMES];
-  vp8_prob ref_pred_probs[PREDICTION_PROBS];
-  vp8_prob mod_refprobs[MAX_REF_FRAMES][PREDICTION_PROBS];
+  vp9_prob ref_pred_probs[PREDICTION_PROBS];
+  vp9_prob mod_refprobs[MAX_REF_FRAMES][PREDICTION_PROBS];
 
-  vp8_prob prob_comppred[COMP_PRED_CONTEXTS];
+  vp9_prob prob_comppred[COMP_PRED_CONTEXTS];
 
   // FIXME contextualize
-  vp8_prob prob_tx[TX_SIZE_MAX - 1];
+  vp9_prob prob_tx[TX_SIZE_MAX - 1];
 
-  vp8_prob mbskip_pred_probs[MBSKIP_CONTEXTS];
+  vp9_prob mbskip_pred_probs[MBSKIP_CONTEXTS];
 
   FRAME_CONTEXT lfc_a; /* last alt ref entropy */
   FRAME_CONTEXT lfc; /* last frame entropy */
@@ -306,7 +306,7 @@ typedef struct VP9Common {
   int pred_filter_mode;   // 0=disabled at the frame level (no MB filtered)
   // 1=enabled at the frame level (all MB filtered)
   // 2=specified per MB (1=filtered, 0=non-filtered)
-  vp8_prob prob_pred_filter_off;
+  vp9_prob prob_pred_filter_off;
 #endif
 
 } VP9_COMMON;

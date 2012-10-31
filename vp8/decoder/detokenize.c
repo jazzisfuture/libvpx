@@ -297,7 +297,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                         const int *coef_bands) {
   FRAME_CONTEXT *const fc = &dx->common.fc;
   int tmp, c = (type == PLANE_TYPE_Y_NO_DC);
-  const vp8_prob *prob, *coef_probs;
+  const vp9_prob *prob, *coef_probs;
 
   switch (block_type) {
     default:

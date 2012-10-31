@@ -97,13 +97,13 @@ static void build_nmv_component_cost_table(int *mvcost,
   int class0_fp_cost[CLASS0_SIZE][4], fp_cost[4];
   int class0_hp_cost[2], hp_cost[2];
 
-  sign_cost[0] = vp8_cost_zero(mvcomp->sign);
-  sign_cost[1] = vp8_cost_one(mvcomp->sign);
+  sign_cost[0] = vp9_cost_zero(mvcomp->sign);
+  sign_cost[1] = vp9_cost_one(mvcomp->sign);
   vp9_cost_tokens(class_cost, mvcomp->classes, vp9_mv_class_tree);
   vp9_cost_tokens(class0_cost, mvcomp->class0, vp9_mv_class0_tree);
   for (i = 0; i < MV_OFFSET_BITS; ++i) {
-    bits_cost[i][0] = vp8_cost_zero(mvcomp->bits[i]);
-    bits_cost[i][1] = vp8_cost_one(mvcomp->bits[i]);
+    bits_cost[i][0] = vp9_cost_zero(mvcomp->bits[i]);
+    bits_cost[i][1] = vp9_cost_one(mvcomp->bits[i]);
   }
 
   for (i = 0; i < CLASS0_SIZE; ++i)
@@ -111,10 +111,10 @@ static void build_nmv_component_cost_table(int *mvcost,
   vp9_cost_tokens(fp_cost, mvcomp->fp, vp9_mv_fp_tree);
 
   if (usehp) {
-    class0_hp_cost[0] = vp8_cost_zero(mvcomp->class0_hp);
-    class0_hp_cost[1] = vp8_cost_one(mvcomp->class0_hp);
-    hp_cost[0] = vp8_cost_zero(mvcomp->hp);
-    hp_cost[1] = vp8_cost_one(mvcomp->hp);
+    class0_hp_cost[0] = vp9_cost_zero(mvcomp->class0_hp);
+    class0_hp_cost[1] = vp9_cost_one(mvcomp->class0_hp);
+    hp_cost[0] = vp9_cost_zero(mvcomp->hp);
+    hp_cost[1] = vp9_cost_one(mvcomp->hp);
   }
   mvcost[0] = 0;
   for (v = 1; v <= MV_MAX; ++v) {
@@ -151,49 +151,49 @@ static void build_nmv_component_cost_table(int *mvcost,
 }
 
 static int update_nmv_savings(const unsigned int ct[2],
-                              const vp8_prob cur_p,
-                              const vp8_prob new_p,
-                              const vp8_prob upd_p) {
+                              const vp9_prob cur_p,
+                              const vp9_prob new_p,
+                              const vp9_prob upd_p) {
 
 #ifdef LOW_PRECISION_MV_UPDATE
-  vp8_prob mod_p = new_p | 1;
+  vp9_prob mod_p = new_p | 1;
 #else
-  vp8_prob mod_p = new_p;
+  vp9_prob mod_p = new_p;
 #endif
-  const int cur_b = vp8_cost_branch256(ct, cur_p);
-  const int mod_b = vp8_cost_branch256(ct, mod_p);
+  const int cur_b = vp9_cost_branch256(ct, cur_p);
+  const int mod_b = vp9_cost_branch256(ct, mod_p);
   const int cost = 7 * 256 +
 #ifndef LOW_PRECISION_MV_UPDATE
       256 +
 #endif
-      (vp8_cost_one(upd_p) - vp8_cost_zero(upd_p));
+      (vp9_cost_one(upd_p) - vp9_cost_zero(upd_p));
   if (cur_b - mod_b - cost > 0) {
     return cur_b - mod_b - cost;
   } else {
-    return -vp8_cost_zero(upd_p);
+    return -vp9_cost_zero(upd_p);
   }
 }
 
 static int update_nmv(
   vp8_writer *const bc,
   const unsigned int ct[2],
-  vp8_prob *const cur_p,
-  const vp8_prob new_p,
-  const vp8_prob upd_p) {
+  vp9_prob *const cur_p,
+  const vp9_prob new_p,
+  const vp9_prob upd_p) {
 
 #ifdef LOW_PRECISION_MV_UPDATE
-  vp8_prob mod_p = new_p | 1;
+  vp9_prob mod_p = new_p | 1;
 #else
-  vp8_prob mod_p = new_p;
+  vp9_prob mod_p = new_p;
 #endif
 
-  const int cur_b = vp8_cost_branch256(ct, *cur_p);
-  const int mod_b = vp8_cost_branch256(ct, mod_p);
+  const int cur_b = vp9_cost_branch256(ct, *cur_p);
+  const int mod_b = vp9_cost_branch256(ct, mod_p);
   const int cost = 7 * 256 +
 #ifndef LOW_PRECISION_MV_UPDATE
       256 +
 #endif
-      (vp8_cost_one(upd_p) - vp8_cost_zero(upd_p));
+      (vp9_cost_one(upd_p) - vp9_cost_zero(upd_p));
 
   if (cur_b - mod_b > cost) {
     *cur_p = mod_p;

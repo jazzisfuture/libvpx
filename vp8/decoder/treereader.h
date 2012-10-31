@@ -20,17 +20,17 @@ typedef BOOL_DECODER vp8_reader;
 
 #define vp8_read vp8dx_decode_bool
 #define vp8_read_literal vp8_decode_value
-#define vp8_read_bit( R) vp8_read( R, vp8_prob_half)
+#define vp8_read_bit( R) vp8_read( R, vp9_prob_half)
 
 
 /* Intent of tree data structure is to make decoding trivial. */
 
-static int vp8_treed_read(
+static int vp9_treed_read(
   vp8_reader *const r,        /* !!! must return a 0 or 1 !!! */
-  vp8_tree t,
-  const vp8_prob *const p
+  vp9_tree t,
+  const vp9_prob *const p
 ) {
-  register vp8_tree_index i = 0;
+  register vp9_tree_index i = 0;
 
   while ((i = t[ i + vp8_read(r, p[i >> 1])]) > 0);
 

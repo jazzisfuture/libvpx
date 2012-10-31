@@ -104,10 +104,10 @@ unsigned char vp9_get_pred_context(const VP9_COMMON *const cm,
 
 // This function returns a context probability for coding a given
 // prediction signal
-vp8_prob vp9_get_pred_prob(const VP9_COMMON *const cm,
+vp9_prob vp9_get_pred_prob(const VP9_COMMON *const cm,
                           const MACROBLOCKD *const xd,
                           PRED_ID pred_id) {
-  vp8_prob pred_probability;
+  vp9_prob pred_probability;
   int pred_context;
 
   // Get the appropriate prediction context
@@ -144,10 +144,10 @@ vp8_prob vp9_get_pred_prob(const VP9_COMMON *const cm,
 
 // This function returns a context probability ptr for coding a given
 // prediction signal
-const vp8_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
+const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
                                    const MACROBLOCKD *const xd,
                                    PRED_ID pred_id) {
-  const vp8_prob *pred_probability;
+  const vp9_prob *pred_probability;
   int pred_context;
 
   // Get the appropriate prediction context
@@ -377,26 +377,26 @@ MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
 
 // Functions to computes a set of modified reference frame probabilities
 // to use when the prediction of the reference frame value fails
-void vp9_calc_ref_probs(int *count, vp8_prob *probs) {
+void vp9_calc_ref_probs(int *count, vp9_prob *probs) {
   int tot_count;
 
   tot_count = count[0] + count[1] + count[2] + count[3];
   if (tot_count) {
-    probs[0] = (vp8_prob)((count[0] * 255 + (tot_count >> 1)) / tot_count);
+    probs[0] = (vp9_prob)((count[0] * 255 + (tot_count >> 1)) / tot_count);
     probs[0] += !probs[0];
   } else
     probs[0] = 128;
 
   tot_count -= count[0];
   if (tot_count) {
-    probs[1] = (vp8_prob)((count[1] * 255 + (tot_count >> 1)) / tot_count);
+    probs[1] = (vp9_prob)((count[1] * 255 + (tot_count >> 1)) / tot_count);
     probs[1] += !probs[1];
   } else
     probs[1] = 128;
 
   tot_count -= count[1];
   if (tot_count) {
-    probs[2] = (vp8_prob)((count[2] * 255 + (tot_count >> 1)) / tot_count);
+    probs[2] = (vp9_prob)((count[2] * 255 + (tot_count >> 1)) / tot_count);
     probs[2] += !probs[2];
   } else
     probs[2] = 128;

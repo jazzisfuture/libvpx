@@ -24,28 +24,28 @@ extern vp9_mbsplit vp9_mbsplits [VP8_NUMMBSPLITS];
 
 extern const int vp9_mbsplit_count [VP8_NUMMBSPLITS];    /* # of subsets */
 
-extern const vp8_prob vp9_mbsplit_probs [VP8_NUMMBSPLITS - 1];
+extern const vp9_prob vp9_mbsplit_probs [VP8_NUMMBSPLITS - 1];
 
 extern int vp9_mv_cont(const int_mv *l, const int_mv *a);
 
-extern const vp8_prob vp9_sub_mv_ref_prob [VP8_SUBMVREFS - 1];
-extern const vp8_prob vp9_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
+extern const vp9_prob vp9_sub_mv_ref_prob [VP8_SUBMVREFS - 1];
+extern const vp9_prob vp9_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
 
 
 extern const unsigned int vp9_kf_default_bmode_counts[VP8_BINTRAMODES][VP8_BINTRAMODES][VP8_BINTRAMODES];
 
 
-extern const vp8_tree_index vp9_bmode_tree[];
+extern const vp9_tree_index vp9_bmode_tree[];
 
-extern const vp8_tree_index  vp9_ymode_tree[];
-extern const vp8_tree_index  vp9_kf_ymode_tree[];
-extern const vp8_tree_index  vp9_uv_mode_tree[];
+extern const vp9_tree_index  vp9_ymode_tree[];
+extern const vp9_tree_index  vp9_kf_ymode_tree[];
+extern const vp9_tree_index  vp9_uv_mode_tree[];
 #define vp8_sb_ymode_tree vp9_uv_mode_tree
-extern const vp8_tree_index  vp9_i8x8_mode_tree[];
-extern const vp8_tree_index  vp9_mbsplit_tree[];
-extern const vp8_tree_index  vp9_mv_ref_tree[];
-extern const vp8_tree_index  vp9_sb_mv_ref_tree[];
-extern const vp8_tree_index  vp9_sub_mv_ref_tree[];
+extern const vp9_tree_index  vp9_i8x8_mode_tree[];
+extern const vp9_tree_index  vp9_mbsplit_tree[];
+extern const vp9_tree_index  vp9_mv_ref_tree[];
+extern const vp9_tree_index  vp9_sb_mv_ref_tree[];
+extern const vp9_tree_index  vp9_sub_mv_ref_tree[];
 
 extern struct vp8_token_struct vp8_bmode_encodings   [VP8_BINTRAMODES];
 extern struct vp8_token_struct vp8_ymode_encodings   [VP8_YMODES];
@@ -71,8 +71,8 @@ extern void vp9_accum_mv_refs(struct VP9Common *pc,
                               MB_PREDICTION_MODE m,
                               const int ct[4]);
 
-void vp9_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES - 1]);
-void vp9_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]);
+void vp9_default_bmode_probs(vp9_prob dest [VP8_BINTRAMODES - 1]);
+void vp9_kf_default_bmode_probs(vp9_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES] [VP8_BINTRAMODES - 1]);
 
 void vp9_adapt_mode_probs(struct VP9Common *);
 
@@ -80,10 +80,10 @@ void vp9_adapt_mode_probs(struct VP9Common *);
 extern const  INTERPOLATIONFILTERTYPE vp9_switchable_interp
                   [VP8_SWITCHABLE_FILTERS];
 extern const  int vp9_switchable_interp_map[SWITCHABLE + 1];
-extern const  vp8_tree_index vp9_switchable_interp_tree
+extern const  vp9_tree_index vp9_switchable_interp_tree
                   [2*(VP8_SWITCHABLE_FILTERS - 1)];
 extern struct vp8_token_struct vp9_switchable_interp_encodings
                   [VP8_SWITCHABLE_FILTERS];
-extern const  vp8_prob vp9_switchable_interp_prob
+extern const  vp9_prob vp9_switchable_interp_prob
                   [VP8_SWITCHABLE_FILTERS + 1][VP8_SWITCHABLE_FILTERS - 1];
 #endif

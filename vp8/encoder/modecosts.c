@@ -17,7 +17,7 @@
 
 void vp9_init_mode_costs(VP9_COMP *c) {
   VP9_COMMON *x = &c->common;
-  const vp8_tree_p T = vp9_bmode_tree;
+  const vp9_tree_p T = vp9_bmode_tree;
   int i, j;
 
   for (i = 0; i < VP8_BINTRAMODES; i++) {

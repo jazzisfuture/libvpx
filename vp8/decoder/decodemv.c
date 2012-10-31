@@ -28,32 +28,32 @@
 int dec_mvcount = 0;
 #endif
 
-static int vp8_read_bmode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_bmode_tree, p);
+static int vp8_read_bmode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_bmode_tree, p);
 }
 
 
-static int vp8_read_ymode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_ymode_tree, p);
+static int vp8_read_ymode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_ymode_tree, p);
 }
 
 #if CONFIG_SUPERBLOCKS
-static int vp8_sb_kfread_ymode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_uv_mode_tree, p);
+static int vp8_sb_kfread_ymode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_uv_mode_tree, p);
 }
 #endif
 
-static int vp8_kfread_ymode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_kf_ymode_tree, p);
+static int vp8_kfread_ymode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_kf_ymode_tree, p);
 }
 
-static int vp8_read_i8x8_mode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_i8x8_mode_tree, p);
+static int vp8_read_i8x8_mode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_i8x8_mode_tree, p);
 }
 
 
-static int vp8_read_uv_mode(vp8_reader *bc, const vp8_prob *p) {
-  return vp8_treed_read(bc, vp9_uv_mode_tree, p);
+static int vp8_read_uv_mode(vp8_reader *bc, const vp9_prob *p) {
+  return vp9_treed_read(bc, vp9_uv_mode_tree, p);
 }
 
 // This function reads the current macro block's segnent id from the bitstream
@@ -74,7 +74,7 @@ static void vp8_read_mb_segid(vp8_reader *r, MB_MODE_INFO *mi,
 
 #if CONFIG_NEW_MVREF
 int vp8_read_mv_ref_id(vp8_reader *r,
-                       vp8_prob * ref_id_probs) {
+                       vp9_prob * ref_id_probs) {
   int ref_index = 0;
 
   if (vp8_read(r, ref_id_probs[0])) {
@@ -213,9 +213,9 @@ static int read_nmv_component(vp8_reader *r,
                               const nmv_component *mvcomp) {
   int v, s, z, c, o, d;
   s = vp8_read(r, mvcomp->sign);
-  c = vp8_treed_read(r, vp9_mv_class_tree, mvcomp->classes);
+  c = vp9_treed_read(r, vp9_mv_class_tree, mvcomp->classes);
   if (c == MV_CLASS_0) {
-    d = vp8_treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
+    d = vp9_treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
   } else {
     int i, b;
     d = 0;
@@ -244,9 +244,9 @@ static int read_nmv_component_fp(vp8_reader *r,
   d = o >> 3;
 
   if (c == MV_CLASS_0) {
-    f = vp8_treed_read(r, vp9_mv_fp_tree, mvcomp->class0_fp[d]);
+    f = vp9_treed_read(r, vp9_mv_fp_tree, mvcomp->class0_fp[d]);
   } else {
-    f = vp8_treed_read(r, vp9_mv_fp_tree, mvcomp->fp);
+    f = vp9_treed_read(r, vp9_mv_fp_tree, mvcomp->fp);
   }
   o += (f << 1);
 
@@ -267,7 +267,7 @@ static int read_nmv_component_fp(vp8_reader *r,
 
 static void read_nmv(vp8_reader *r, MV *mv, const MV *ref,
                      const nmv_context *mvctx) {
-  MV_JOINT_TYPE j = vp8_treed_read(r, vp9_mv_joint_tree, mvctx->joints);
+  MV_JOINT_TYPE j = vp9_treed_read(r, vp9_mv_joint_tree, mvctx->joints);
   mv->row = mv-> col = 0;
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
     mv->row = read_nmv_component(r, ref->row, &mvctx->comps[0]);
@@ -292,8 +292,8 @@ static void read_nmv_fp(vp8_reader *r, MV *mv, const MV *ref,
   //printf("  %d: %d %d ref: %d %d\n", usehp, mv->row, mv-> col, ref->row, ref->col);
 }
 
-static void update_nmv(vp8_reader *bc, vp8_prob *const p,
-                       const vp8_prob upd_p) {
+static void update_nmv(vp8_reader *bc, vp9_prob *const p,
+                       const vp9_prob upd_p) {
   if (vp8_read(bc, upd_p)) {
 #ifdef LOW_PRECISION_MV_UPDATE
     *p = (vp8_read_literal(bc, 7) << 1) | 1;
@@ -381,7 +381,7 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
   if (!seg_ref_active || (seg_ref_count > 1)) {
     // Values used in prediction model coding
     unsigned char prediction_flag;
-    vp8_prob pred_prob;
+    vp9_prob pred_prob;
     MV_REFERENCE_FRAME pred_ref;
 
     // Get the context probability the prediction flag
@@ -402,7 +402,7 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
     }
     // else decode the explicitly coded value
     else {
-      vp8_prob mod_refprobs[PREDICTION_PROBS];
+      vp9_prob mod_refprobs[PREDICTION_PROBS];
       vpx_memcpy(mod_refprobs,
                  cm->mod_refprobs[pred_ref], sizeof(mod_refprobs));
 
@@ -467,17 +467,17 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
 }
 
 #if CONFIG_SUPERBLOCKS
-static MB_PREDICTION_MODE read_sb_mv_ref(vp8_reader *bc, const vp8_prob *p) {
-  return (MB_PREDICTION_MODE) vp8_treed_read(bc, vp9_sb_mv_ref_tree, p);
+static MB_PREDICTION_MODE read_sb_mv_ref(vp8_reader *bc, const vp9_prob *p) {
+  return (MB_PREDICTION_MODE) vp9_treed_read(bc, vp9_sb_mv_ref_tree, p);
 }
 #endif
 
-static MB_PREDICTION_MODE read_mv_ref(vp8_reader *bc, const vp8_prob *p) {
-  return (MB_PREDICTION_MODE) vp8_treed_read(bc, vp9_mv_ref_tree, p);
+static MB_PREDICTION_MODE read_mv_ref(vp8_reader *bc, const vp9_prob *p) {
+  return (MB_PREDICTION_MODE) vp9_treed_read(bc, vp9_mv_ref_tree, p);
 }
 
-static B_PREDICTION_MODE sub_mv_ref(vp8_reader *bc, const vp8_prob *p) {
-  return (B_PREDICTION_MODE) vp8_treed_read(bc, vp9_sub_mv_ref_tree, p);
+static B_PREDICTION_MODE sub_mv_ref(vp8_reader *bc, const vp9_prob *p) {
+  return (B_PREDICTION_MODE) vp9_treed_read(bc, vp9_sub_mv_ref_tree, p);
 }
 
 #ifdef VPX_MODE_COUNT
@@ -521,17 +521,17 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp8_reader *bc) {
       cm->kf_ymode_probs_index = vp8_read_literal(bc, 3);
   } else {
 #if CONFIG_PRED_FILTER
-    cm->pred_filter_mode = (vp8_prob)vp8_read_literal(bc, 2);
+    cm->pred_filter_mode = (vp9_prob)vp8_read_literal(bc, 2);
 
     if (cm->pred_filter_mode == 2)
-      cm->prob_pred_filter_off = (vp8_prob)vp8_read_literal(bc, 8);
+      cm->prob_pred_filter_off = (vp9_prob)vp8_read_literal(bc, 8);
 #endif
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
     // Decode the baseline probabilities for decoding reference frame
-    cm->prob_intra_coded = (vp8_prob)vp8_read_literal(bc, 8);
-    cm->prob_last_coded  = (vp8_prob)vp8_read_literal(bc, 8);
-    cm->prob_gf_coded    = (vp8_prob)vp8_read_literal(bc, 8);
+    cm->prob_intra_coded = (vp9_prob)vp8_read_literal(bc, 8);
+    cm->prob_last_coded  = (vp9_prob)vp8_read_literal(bc, 8);
+    cm->prob_gf_coded    = (vp9_prob)vp8_read_literal(bc, 8);
 
     // Computes a modified set of probabilities for use when reference
     // frame prediction fails.
@@ -543,14 +543,14 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp8_reader *bc) {
     if (cm->comp_pred_mode == HYBRID_PREDICTION) {
       int i;
       for (i = 0; i < COMP_PRED_CONTEXTS; i++)
-        cm->prob_comppred[i] = (vp8_prob)vp8_read_literal(bc, 8);
+        cm->prob_comppred[i] = (vp9_prob)vp8_read_literal(bc, 8);
     }
 
     if (vp8_read_bit(bc)) {
       int i = 0;
 
       do {
-        cm->fc.ymode_prob[i] = (vp8_prob) vp8_read_literal(bc, 8);
+        cm->fc.ymode_prob[i] = (vp9_prob) vp8_read_literal(bc, 8);
       } while (++i < VP8_YMODES - 1);
     }
 
@@ -581,7 +581,7 @@ static void read_mb_segment_id(VP9D_COMP *pbi,
       if (cm->temporal_update) {
         // Get the context based probability for reading the
         // prediction status flag
-        vp8_prob pred_prob =
+        vp9_prob pred_prob =
           vp9_get_pred_prob(cm, xd, PRED_SEG_ID);
 
         // Read the prediction status flag
@@ -712,7 +712,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     int rct[4];
     int_mv nearest, nearby, best_mv;
     int_mv nearest_second, nearby_second, best_mv_second;
-    vp8_prob mv_ref_p [VP8_MVREFS - 1];
+    vp9_prob mv_ref_p [VP8_MVREFS - 1];
 
 #if CONFIG_NEWBESTREFMV
     int recon_y_stride, recon_yoffset;
@@ -790,7 +790,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     {
       if (cm->mcomp_filter_type == SWITCHABLE) {
         mbmi->interp_filter = vp9_switchable_interp[
-            vp8_treed_read(bc, vp9_switchable_interp_tree,
+            vp9_treed_read(bc, vp9_switchable_interp_tree,
                            vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
       } else {
         mbmi->interp_filter = cm->mcomp_filter_type;
@@ -862,7 +862,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     switch (mbmi->mode) {
       case SPLITMV: {
         const int s = mbmi->partitioning =
-                        vp8_treed_read(bc, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
+                        vp9_treed_read(bc, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
         const int num_p = vp9_mbsplit_count [s];
         int j = 0;
         cm->fc.mbsplit_counts[s]++;
@@ -1181,7 +1181,7 @@ void vp9_decode_mode_mvs_init(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
   if (pbi->common.mb_no_coeff_skip) {
     int k;
     for (k = 0; k < MBSKIP_CONTEXTS; ++k)
-      cm->mbskip_pred_probs[k] = (vp8_prob)vp8_read_literal(bc, 8);
+      cm->mbskip_pred_probs[k] = (vp9_prob)vp8_read_literal(bc, 8);
   }
 
   mb_mode_mv_init(pbi, bc);

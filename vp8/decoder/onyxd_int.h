@@ -36,7 +36,7 @@ typedef struct {
   int const *scan;
   int const *scan_8x8;
   UINT8 const *ptr_block2leftabove;
-  vp8_tree_index const *vp9_coef_tree_ptr;
+  vp9_tree_index const *vp9_coef_tree_ptr;
   unsigned char *norm_ptr;
   UINT8 *ptr_coef_bands_x;
   UINT8 *ptr_coef_bands_x_8x8;
@@ -46,9 +46,9 @@ typedef struct {
 
   INT16 *qcoeff_start_ptr;
 
-  vp8_prob const *coef_probs[BLOCK_TYPES];
-  vp8_prob const *coef_probs_8x8[BLOCK_TYPES_8X8];
-  vp8_prob const *coef_probs_16X16[BLOCK_TYPES_16X16];
+  vp9_prob const *coef_probs[BLOCK_TYPES];
+  vp9_prob const *coef_probs_8x8[BLOCK_TYPES_8X8];
+  vp9_prob const *coef_probs_16X16[BLOCK_TYPES_16X16];
 
   UINT8 eob[25];
 
@@ -77,7 +77,7 @@ typedef struct VP9Decompressor {
   vp9_dequant_idct_add_y_block_fn_t    idct_add_y_block;
   vp9_dequant_idct_add_uv_block_fn_t   idct_add_uv_block;
 
-  vp8_prob prob_skip_false;
+  vp9_prob prob_skip_false;
 
   int decoded_key_frame;
 

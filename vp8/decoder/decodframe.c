@@ -67,9 +67,9 @@ static int inv_remap_prob(int v, int m) {
   return i;
 }
 
-static vp8_prob read_prob_diff_update(vp8_reader *const bc, int oldp) {
+static vp9_prob read_prob_diff_update(vp8_reader *const bc, int oldp) {
   int delp = vp9_decode_term_subexp(bc, SUBEXP_PARAM, 255);
-  return (vp8_prob)inv_remap_prob(delp, oldp);
+  return (vp9_prob)inv_remap_prob(delp, oldp);
 }
 
 void vp9_init_de_quantizer(VP9D_COMP *pbi) {
@@ -811,7 +811,7 @@ static void init_frame(VP9D_COMP *pbi) {
 
 #if 0
 static void read_coef_probs2(VP9D_COMP *pbi) {
-  const vp8_prob grpupd = 192;
+  const vp9_prob grpupd = 192;
   int i, j, k, l;
   vp8_reader *const bc = &pbi->bc;
   VP9_COMMON *const pc = &pbi->common;
@@ -825,7 +825,7 @@ static void read_coef_probs2(VP9D_COMP *pbi) {
                            (i > 0 && j == 0)))
               continue;
             {
-              vp8_prob *const p = pc->fc.coef_probs [i][j][k] + l;
+              vp9_prob *const p = pc->fc.coef_probs [i][j][k] + l;
               int u = vp8_read(bc, COEF_UPDATE_PROB);
               if (u) *p = read_prob_diff_update(bc, *p);
             }
@@ -842,7 +842,7 @@ static void read_coef_probs2(VP9D_COMP *pbi) {
                              (i > 0 && j == 0)))
                 continue;
               {
-                vp8_prob *const p = pc->fc.coef_probs_8x8 [i][j][k] + l;
+                vp9_prob *const p = pc->fc.coef_probs_8x8 [i][j][k] + l;
 
                 int u = vp8_read(bc, COEF_UPDATE_PROB_8X8);
                 if (u) *p = read_prob_diff_update(bc, *p);
@@ -856,7 +856,7 @@ static void read_coef_probs2(VP9D_COMP *pbi) {
 
 static void read_coef_probs_common(
     BOOL_DECODER* const bc,
-    vp8_prob coef_probs[BLOCK_TYPES][COEF_BANDS]
+    vp9_prob coef_probs[BLOCK_TYPES][COEF_BANDS]
                        [PREV_COEF_CONTEXTS][ENTROPY_NODES]) {
   int i, j, k, l;
 
@@ -869,7 +869,7 @@ static void read_coef_probs_common(
                          (i > 0 && j == 0)))
             continue;
           for (l = 0; l < ENTROPY_NODES; l++) {
-            vp8_prob *const p = coef_probs[i][j][k] + l;
+            vp9_prob *const p = coef_probs[i][j][k] + l;
 
             if (vp8_read(bc, COEF_UPDATE_PROB)) {
               *p = read_prob_diff_update(bc, *p);
@@ -1010,7 +1010,7 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
       // block.
       for (i = 0; i < MB_FEATURE_TREE_PROBS; i++) {
           xd->mb_segment_tree_probs[i] = vp8_read_bit(&header_bc) ?
-              (vp8_prob)vp8_read_literal(&header_bc, 8) : 255;
+              (vp9_prob)vp8_read_literal(&header_bc, 8) : 255;
       }
 
       // Read the prediction probs needed to decode the segment id
@@ -1018,7 +1018,7 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
       for (i = 0; i < PREDICTION_PROBS; i++) {
         if (pc->temporal_update) {
           pc->segment_pred_probs[i] = vp8_read_bit(&header_bc) ?
-              (vp8_prob)vp8_read_literal(&header_bc, 8) : 255;
+              (vp9_prob)vp8_read_literal(&header_bc, 8) : 255;
         } else {
           pc->segment_pred_probs[i] = 255;
         }
@@ -1070,7 +1070,7 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
   } else {
     for (i = 0; i < PREDICTION_PROBS; i++) {
       if (vp8_read_bit(&header_bc))
-        pc->ref_pred_probs[i] = (vp8_prob)vp8_read_literal(&header_bc, 8);
+        pc->ref_pred_probs[i] = (vp9_prob)vp8_read_literal(&header_bc, 8);
     }
   }
 

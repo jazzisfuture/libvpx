@@ -41,13 +41,13 @@ extern const int vp9_i8x8_block[4];
 #define ENTROPY_NODES 11
 #define EOSB_TOKEN              127     /* Not signalled, encoder only */
 
-extern const vp8_tree_index vp9_coef_tree[];
+extern const vp9_tree_index vp9_coef_tree[];
 
 extern struct vp8_token_struct vp8_coef_encodings[MAX_ENTROPY_TOKENS];
 
 typedef struct {
-  vp8_tree_p tree;
-  const vp8_prob *prob;
+  vp9_tree_p tree;
+  const vp9_prob *prob;
   int Len;
   int base_val;
 } vp8_extra_bit_struct;

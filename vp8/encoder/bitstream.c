@@ -74,8 +74,8 @@ extern unsigned int active_section;
 int count_mb_seg[4] = { 0, 0, 0, 0 };
 #endif
 
-#define vp8_cost_upd  ((int)(vp8_cost_one(upd) - vp8_cost_zero(upd)) >> 8)
-#define vp8_cost_upd256  ((int)(vp8_cost_one(upd) - vp8_cost_zero(upd)))
+#define vp9_cost_upd  ((int)(vp9_cost_one(upd) - vp9_cost_zero(upd)) >> 8)
+#define vp9_cost_upd256  ((int)(vp9_cost_one(upd) - vp9_cost_zero(upd)))
 
 #define SEARCH_NEWP
 static int update_bits[255];
@@ -107,12 +107,12 @@ static int remap_prob(int v, int m) {
 }
 
 static void write_prob_diff_update(vp8_writer *const bc,
-                                   vp8_prob newp, vp8_prob oldp) {
+                                   vp9_prob newp, vp9_prob oldp) {
   int delp = remap_prob(newp, oldp);
   vp9_encode_term_subexp(bc, delp, SUBEXP_PARAM, 255);
 }
 
-static int prob_diff_update_cost(vp8_prob newp, vp8_prob oldp) {
+static int prob_diff_update_cost(vp9_prob newp, vp9_prob oldp) {
   int delp = remap_prob(newp, oldp);
   return update_bits[delp] * 256;
 }
@@ -121,9 +121,9 @@ static void update_mode(
   vp8_writer *const bc,
   int n,
   vp8_token tok               [/* n */],
-  vp8_tree tree,
-  vp8_prob Pnew               [/* n-1 */],
-  vp8_prob Pcur               [/* n-1 */],
+  vp9_tree tree,
+  vp9_prob Pnew               [/* n-1 */],
+  vp9_prob Pcur               [/* n-1 */],
   unsigned int bct            [/* n-1 */] [2],
   const unsigned int num_events[/* n */]
 ) {
@@ -137,8 +137,8 @@ static void update_mode(
   );
 
   do {
-    new_b += vp8_cost_branch(bct[i], Pnew[i]);
-    old_b += vp8_cost_branch(bct[i], Pcur[i]);
+    new_b += vp9_cost_branch(bct[i], Pnew[i]);
+    old_b += vp9_cost_branch(bct[i], Pcur[i]);
   } while (++i < n);
 
   if (new_b + (n << 8) < old_b) {
@@ -147,7 +147,7 @@ static void update_mode(
     vp8_write_bit(bc, 1);
 
     do {
-      const vp8_prob p = Pnew[i];
+      const vp9_prob p = Pnew[i];
 
       vp8_write_literal(bc, Pcur[i] = p ? p : 1, 8);
     } while (++i < n);
@@ -160,7 +160,7 @@ static void update_mbintra_mode_probs(VP9_COMP* const cpi,
   VP9_COMMON *const cm = &cpi->common;
 
   {
-    vp8_prob Pnew   [VP8_YMODES - 1];
+    vp9_prob Pnew   [VP8_YMODES - 1];
     unsigned int bct [VP8_YMODES - 1] [2];
 
     update_mode(
@@ -221,7 +221,7 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int i;
   int tot_count;
-  vp8_prob new_pred_probs[PREDICTION_PROBS];
+  vp9_prob new_pred_probs[PREDICTION_PROBS];
   int old_cost, new_cost;
 
   // Set the prediction probability structures to defaults
@@ -242,12 +242,12 @@ static void update_refpred_stats(VP9_COMP *cpi) {
       // Decide whether or not to update the reference frame probs.
       // Returned costs are in 1/256 bit units.
       old_cost =
-        (cpi->ref_pred_count[i][0] * vp8_cost_zero(cm->ref_pred_probs[i])) +
-        (cpi->ref_pred_count[i][1] * vp8_cost_one(cm->ref_pred_probs[i]));
+        (cpi->ref_pred_count[i][0] * vp9_cost_zero(cm->ref_pred_probs[i])) +
+        (cpi->ref_pred_count[i][1] * vp9_cost_one(cm->ref_pred_probs[i]));
 
       new_cost =
-        (cpi->ref_pred_count[i][0] * vp8_cost_zero(new_pred_probs[i])) +
-        (cpi->ref_pred_count[i][1] * vp8_cost_one(new_pred_probs[i]));
+        (cpi->ref_pred_count[i][0] * vp9_cost_zero(new_pred_probs[i])) +
+        (cpi->ref_pred_count[i][1] * vp9_cost_one(new_pred_probs[i]));
 
       // Cost saving must be >= 8 bits (2048 in these units)
       if ((old_cost - new_cost) >= 2048) {
@@ -324,72 +324,72 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
   }
 }
 
-static void write_ymode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void write_ymode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_ymode_tree, p, vp8_ymode_encodings + m);
 }
 
-static void kfwrite_ymode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void kfwrite_ymode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_kf_ymode_tree, p, vp8_kf_ymode_encodings + m);
 }
 
 #if CONFIG_SUPERBLOCKS
-static void sb_kfwrite_ymode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void sb_kfwrite_ymode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_uv_mode_tree, p, vp8_sb_kf_ymode_encodings + m);
 }
 #endif
 
-static void write_i8x8_mode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void write_i8x8_mode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_i8x8_mode_tree, p, vp8_i8x8_mode_encodings + m);
 }
 
-static void write_uv_mode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void write_uv_mode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_uv_mode_tree, p, vp8_uv_mode_encodings + m);
 }
 
 
-static void write_bmode(vp8_writer *bc, int m, const vp8_prob *p) {
+static void write_bmode(vp8_writer *bc, int m, const vp9_prob *p) {
   vp8_write_token(bc, vp9_bmode_tree, p, vp8_bmode_encodings + m);
 }
 
-static void write_split(vp8_writer *bc, int x, const vp8_prob *p) {
+static void write_split(vp8_writer *bc, int x, const vp9_prob *p) {
   vp8_write_token(
     bc, vp9_mbsplit_tree, p, vp9_mbsplit_encodings + x
   );
 }
 
 static int prob_update_savings(const unsigned int *ct,
-                               const vp8_prob oldp, const vp8_prob newp,
-                               const vp8_prob upd) {
-  const int old_b = vp8_cost_branch256(ct, oldp);
-  const int new_b = vp8_cost_branch256(ct, newp);
-  const int update_b = 2048 + vp8_cost_upd256;
+                               const vp9_prob oldp, const vp9_prob newp,
+                               const vp9_prob upd) {
+  const int old_b = vp9_cost_branch256(ct, oldp);
+  const int new_b = vp9_cost_branch256(ct, newp);
+  const int update_b = 2048 + vp9_cost_upd256;
   return (old_b - new_b - update_b);
 }
 
 static int prob_diff_update_savings(const unsigned int *ct,
-                                    const vp8_prob oldp, const vp8_prob newp,
-                                    const vp8_prob upd) {
-  const int old_b = vp8_cost_branch256(ct, oldp);
-  const int new_b = vp8_cost_branch256(ct, newp);
+                                    const vp9_prob oldp, const vp9_prob newp,
+                                    const vp9_prob upd) {
+  const int old_b = vp9_cost_branch256(ct, oldp);
+  const int new_b = vp9_cost_branch256(ct, newp);
   const int update_b = (newp == oldp ? 0 :
-                        prob_diff_update_cost(newp, oldp) + vp8_cost_upd256);
+                        prob_diff_update_cost(newp, oldp) + vp9_cost_upd256);
   return (old_b - new_b - update_b);
 }
 
 static int prob_diff_update_savings_search(const unsigned int *ct,
-                                           const vp8_prob oldp, vp8_prob *bestp,
-                                           const vp8_prob upd) {
-  const int old_b = vp8_cost_branch256(ct, oldp);
+                                           const vp9_prob oldp, vp9_prob *bestp,
+                                           const vp9_prob upd) {
+  const int old_b = vp9_cost_branch256(ct, oldp);
   int new_b, update_b, savings, bestsavings, step;
-  vp8_prob newp, bestnewp;
+  vp9_prob newp, bestnewp;
 
   bestsavings = 0;
   bestnewp = oldp;
 
   step = (*bestp > oldp ? -1 : 1);
   for (newp = *bestp; newp != oldp; newp += step) {
-    new_b = vp8_cost_branch256(ct, newp);
-    update_b = prob_diff_update_cost(newp, oldp) + vp8_cost_upd256;
+    new_b = vp9_cost_branch256(ct, newp);
+    update_b = prob_diff_update_cost(newp, oldp) + vp9_cost_upd256;
     savings = old_b - new_b - update_b;
     if (savings > bestsavings) {
       bestsavings = savings;
@@ -581,7 +581,7 @@ static void write_partition_size(unsigned char *cx_data, int size) {
 
 static void write_mv_ref
 (
-  vp8_writer *bc, MB_PREDICTION_MODE m, const vp8_prob *p
+  vp8_writer *bc, MB_PREDICTION_MODE m, const vp9_prob *p
 ) {
 #if CONFIG_DEBUG
   assert(NEARESTMV <= m  &&  m <= SPLITMV);
@@ -592,7 +592,7 @@ static void write_mv_ref
 
 #if CONFIG_SUPERBLOCKS
 static void write_sb_mv_ref(vp8_writer *bc, MB_PREDICTION_MODE m,
-                            const vp8_prob *p) {
+                            const vp9_prob *p) {
 #if CONFIG_DEBUG
   assert(NEARESTMV <= m  &&  m < SPLITMV);
 #endif
@@ -603,7 +603,7 @@ static void write_sb_mv_ref(vp8_writer *bc, MB_PREDICTION_MODE m,
 
 static void write_sub_mv_ref
 (
-  vp8_writer *bc, B_PREDICTION_MODE m, const vp8_prob *p
+  vp8_writer *bc, B_PREDICTION_MODE m, const vp9_prob *p
 ) {
 #if CONFIG_DEBUG
   assert(LEFT4X4 <= m  &&  m <= NEW4X4);
@@ -623,27 +623,27 @@ static void write_nmv(vp8_writer *bc, const MV *mv, const int_mv *ref,
 }
 
 #if CONFIG_NEW_MVREF
-static int vp9_cost_mv_ref_id(vp8_prob * ref_id_probs, int mv_ref_id) {
+static int vp9_cost_mv_ref_id(vp9_prob * ref_id_probs, int mv_ref_id) {
   int cost;
 
   // Encode the index for the MV reference.
   switch (mv_ref_id) {
     case 0:
-      cost = vp8_cost_zero(ref_id_probs[0]);
+      cost = vp9_cost_zero(ref_id_probs[0]);
       break;
     case 1:
-      cost = vp8_cost_one(ref_id_probs[0]);
-      cost += vp8_cost_zero(ref_id_probs[1]);
+      cost = vp9_cost_one(ref_id_probs[0]);
+      cost += vp9_cost_zero(ref_id_probs[1]);
       break;
     case 2:
-      cost = vp8_cost_one(ref_id_probs[0]);
-      cost += vp8_cost_one(ref_id_probs[1]);
-      cost += vp8_cost_zero(ref_id_probs[2]);
+      cost = vp9_cost_one(ref_id_probs[0]);
+      cost += vp9_cost_one(ref_id_probs[1]);
+      cost += vp9_cost_zero(ref_id_probs[2]);
       break;
     case 3:
-      cost = vp8_cost_one(ref_id_probs[0]);
-      cost += vp8_cost_one(ref_id_probs[1]);
-      cost += vp8_cost_one(ref_id_probs[2]);
+      cost = vp9_cost_one(ref_id_probs[0]);
+      cost += vp9_cost_one(ref_id_probs[1]);
+      cost += vp9_cost_one(ref_id_probs[2]);
       break;
 
       // TRAP.. This should not happen
@@ -656,7 +656,7 @@ static int vp9_cost_mv_ref_id(vp8_prob * ref_id_probs, int mv_ref_id) {
 }
 
 static void vp8_write_mv_ref_id(vp8_writer *w,
-                                vp8_prob * ref_id_probs,
+                                vp9_prob * ref_id_probs,
                                 int mv_ref_id) {
   // Encode the index for the MV reference.
   switch (mv_ref_id) {
@@ -811,7 +811,7 @@ static void encode_ref_frame(vp8_writer *const bc,
   if (!seg_ref_active || (seg_ref_count > 1)) {
     // Values used in prediction model coding
     unsigned char prediction_flag;
-    vp8_prob pred_prob;
+    vp9_prob pred_prob;
     MV_REFERENCE_FRAME pred_rf;
 
     // Get the context probability the prediction flag
@@ -829,7 +829,7 @@ static void encode_ref_frame(vp8_writer *const bc,
 
     // If not predicted correctly then code value explicitly
     if (!prediction_flag) {
-      vp8_prob mod_refprobs[PREDICTION_PROBS];
+      vp9_prob mod_refprobs[PREDICTION_PROBS];
 
       vpx_memcpy(mod_refprobs,
                  cm->mod_refprobs[pred_rf], sizeof(mod_refprobs));
@@ -903,7 +903,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp8_writer *const bc) {
   int row, col;
 
   // Values used in prediction model coding
-  vp8_prob pred_prob;
+  vp9_prob pred_prob;
   unsigned char prediction_flag;
 
   int row_delta[4] = { 0, +1,  0, -1};
@@ -1060,7 +1060,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp8_writer *const bc) {
           int_mv best_mv, best_second_mv;
           int ct[4];
 
-          vp8_prob mv_ref_p [VP8_MVREFS - 1];
+          vp9_prob mv_ref_p [VP8_MVREFS - 1];
 
           {
             int_mv n1, n2;
@@ -1487,7 +1487,7 @@ static void write_kfmodes(VP9_COMP* const cpi, vp8_writer* const bc) {
 
 
 /* This function is used for debugging probability trees. */
-static void print_prob_tree(vp8_prob
+static void print_prob_tree(vp9_prob
                             coef_probs[BLOCK_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES]) {
   /* print coef probability tree */
   int i, j, k, l;
@@ -1565,7 +1565,7 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
         for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
           /* at every context */
           /* calc probs and branch cts for this frame only */
-          // vp8_prob new_p           [ENTROPY_NODES];
+          // vp9_prob new_p           [ENTROPY_NODES];
           // unsigned int branch_ct   [ENTROPY_NODES] [2];
           if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
             continue;
@@ -1589,7 +1589,7 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
         for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
           /* at every context */
           /* calc probs and branch cts for this frame only */
-          // vp8_prob new_p           [ENTROPY_NODES];
+          // vp9_prob new_p           [ENTROPY_NODES];
           // unsigned int branch_ct   [ENTROPY_NODES] [2];
           if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
             continue;
@@ -1652,16 +1652,16 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
 
 static void update_coef_probs_common(
     vp8_writer* const bc,
-    vp8_prob new_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
+    vp9_prob new_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
                                  [PREV_COEF_CONTEXTS][ENTROPY_NODES],
-    vp8_prob old_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
+    vp9_prob old_frame_coef_probs[BLOCK_TYPES][COEF_BANDS]
                                  [PREV_COEF_CONTEXTS][ENTROPY_NODES],
     unsigned int frame_branch_ct[BLOCK_TYPES][COEF_BANDS]
                                 [PREV_COEF_CONTEXTS][ENTROPY_NODES][2]) {
   int i, j, k, t;
   int update[2] = {0, 0};
   int savings;
-  // vp8_prob bestupd = find_coef_update_prob(cpi);
+  // vp9_prob bestupd = find_coef_update_prob(cpi);
 
   /* dry run to see if there is any udpate at all needed */
   savings = 0;
@@ -1670,9 +1670,9 @@ static void update_coef_probs_common(
       int prev_coef_savings[ENTROPY_NODES] = {0};
       for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
         for (t = 0; t < ENTROPY_NODES; ++t) {
-          vp8_prob newp = new_frame_coef_probs[i][j][k][t];
-          const vp8_prob oldp = old_frame_coef_probs[i][j][k][t];
-          const vp8_prob upd = COEF_UPDATE_PROB;
+          vp9_prob newp = new_frame_coef_probs[i][j][k][t];
+          const vp9_prob oldp = old_frame_coef_probs[i][j][k][t];
+          const vp9_prob upd = COEF_UPDATE_PROB;
           int s = prev_coef_savings[t];
           int u = 0;
           if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
@@ -1684,9 +1684,9 @@ static void update_coef_probs_common(
           if (s > 0 && newp != oldp)
             u = 1;
           if (u)
-            savings += s - (int)(vp8_cost_zero(upd));
+            savings += s - (int)(vp9_cost_zero(upd));
           else
-            savings -= (int)(vp8_cost_zero(upd));
+            savings -= (int)(vp9_cost_zero(upd));
 #else
           s = prob_update_savings(
                 frame_branch_ct[i][j][k][t],
@@ -1715,9 +1715,9 @@ static void update_coef_probs_common(
         for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
           // calc probs and branch cts for this frame only
           for (t = 0; t < ENTROPY_NODES; ++t) {
-            vp8_prob newp = new_frame_coef_probs[i][j][k][t];
-            vp8_prob *oldp = old_frame_coef_probs[i][j][k] + t;
-            const vp8_prob upd = COEF_UPDATE_PROB;
+            vp9_prob newp = new_frame_coef_probs[i][j][k][t];
+            vp9_prob *oldp = old_frame_coef_probs[i][j][k] + t;
+            const vp9_prob upd = COEF_UPDATE_PROB;
             int s = prev_coef_savings[t];
             int u = 0;
             if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
@@ -2320,7 +2320,7 @@ void print_tree_update_probs() {
   int Sum;
   fprintf(f, "\n/* Update probabilities for token entropy tree. */\n\n");
 
-  fprintf(f, "const vp8_prob\n"
+  fprintf(f, "const vp9_prob\n"
           "vp8_coef_update_probs[BLOCK_TYPES]\n"
           "                     [COEF_BANDS]\n"
           "                     [PREV_COEF_CONTEXTS]\n"
@@ -2344,7 +2344,7 @@ void print_tree_update_probs() {
   }
   fprintf(f, "};\n");
 
-  fprintf(f, "const vp8_prob\n"
+  fprintf(f, "const vp9_prob\n"
           "vp8_coef_update_probs_8x8[BLOCK_TYPES_8X8]\n"
           "                         [COEF_BANDS]\n"
           "                         [PREV_COEF_CONTEXTS]\n"
@@ -2367,7 +2367,7 @@ void print_tree_update_probs() {
     fprintf(f, "  },\n");
   }
 
-  fprintf(f, "const vp8_prob\n"
+  fprintf(f, "const vp9_prob\n"
           "vp8_coef_update_probs_16x16[BLOCK_TYPES_16X16]\n"
           "                           [COEF_BANDS]\n"
           "                           [PREV_COEF_CONTEXTS]\n"

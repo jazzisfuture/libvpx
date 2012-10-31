@@ -16,7 +16,7 @@
 void vp8cx_pack_tokens_armv5(vp8_writer *w, const TOKENEXTRA *p, int xcount,
                              vp8_token *,
                              vp8_extra_bit_struct *,
-                             const vp8_tree_index *);
+                             const vp9_tree_index *);
 # define pack_tokens(a,b,c)                  \
   vp8cx_pack_tokens_armv5(a,b,c,vp8_coef_encodings,vp8_extra_bits,vp9_coef_tree)
 #else
