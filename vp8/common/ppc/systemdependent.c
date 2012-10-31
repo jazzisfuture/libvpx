@@ -128,7 +128,7 @@ void vp8_clear_c(void) {
 
 void vp9_machine_specific_config(void) {
   // Pure C:
-  vp8_clear_system_state                = vp8_clear_c;
+  vp9_clear_system_state                = vp8_clear_c;
   vp9_recon_b                          = vp9_recon_b_c;
   vp9_recon4b                         = vp9_recon4b_c;
   vp9_recon2b                         = vp9_recon2b_c;

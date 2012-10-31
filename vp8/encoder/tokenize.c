@@ -59,7 +59,7 @@ const int *vp9_dct_value_cost_ptr;
 static void fill_value_tokens() {
 
   TOKENVALUE *const t = dct_value_tokens + DCT_MAX_VALUE;
-  vp8_extra_bit_struct *const e = vp9_extra_bits;
+  vp9_extra_bit_struct *const e = vp9_extra_bits;
 
   int i = -DCT_MAX_VALUE;
   int sign = 1;
@@ -88,16 +88,16 @@ static void fill_value_tokens() {
     // initialize the cost for extra bits for all possible coefficient value.
     {
       int cost = 0;
-      vp8_extra_bit_struct *p = vp9_extra_bits + t[i].Token;
+      vp9_extra_bit_struct *p = vp9_extra_bits + t[i].Token;
 
       if (p->base_val) {
         const int extra = t[i].Extra;
         const int Length = p->Len;
 
         if (Length)
-          cost += vp8_treed_cost(p->tree, p->prob, extra >> 1, Length);
+          cost += vp9_treed_cost(p->tree, p->prob, extra >> 1, Length);
 
-        cost += vp8_cost_bit(vp8_prob_half, extra & 1); /* sign */
+        cost += vp9_cost_bit(vp9_prob_half, extra & 1); /* sign */
         dct_value_cost[i + DCT_MAX_VALUE] = cost;
       }
 
@@ -127,11 +127,11 @@ static void tokenize_b(VP9_COMP *cpi,
   int segment_id = xd->mode_info_context->mbmi.segment_id;
   const int *bands, *scan;
   unsigned int (*counts)[COEF_BANDS][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
-  vp8_prob (*probs)[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
+  vp9_prob (*probs)[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
   const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                           get_tx_type(xd, b) : DCT_DCT;
 
-  VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+  VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
   switch (tx_size) {
     default:
     case TX_4X4:
@@ -455,7 +455,7 @@ void print_context_counters() {
   fprintf(f, "#include \"entropy.h\"\n");
   fprintf(f, "\n/* *** GENERATED FILE: DO NOT EDIT *** */\n\n");
   fprintf(f, "static const unsigned int\n"
-          "vp8_default_coef_counts[BLOCK_TYPES]\n"
+          "vp9_default_coef_counts[BLOCK_TYPES]\n"
           "                      [COEF_BANDS]\n"
           "                      [PREV_COEF_CONTEXTS]\n"
           "                      [MAX_ENTROPY_TOKENS]={\n");
@@ -486,7 +486,7 @@ void print_context_counters() {
   } while (++type < BLOCK_TYPES);
   fprintf(f, "\n};\n");
 
-  fprintf(f, "static const unsigned int\nvp8_default_coef_counts_8x8"
+  fprintf(f, "static const unsigned int\nvp9_default_coef_counts_8x8"
           "[BLOCK_TYPES_8X8] [COEF_BANDS]"
           "[PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS] = {");
   type = 0;
@@ -519,7 +519,7 @@ void print_context_counters() {
   } while (++type < BLOCK_TYPES_8X8);
   fprintf(f, "\n};\n");
 
-  fprintf(f, "static const unsigned int\nvp8_default_coef_counts_16x16"
+  fprintf(f, "static const unsigned int\nvp9_default_coef_counts_16x16"
           "[BLOCK_TYPES_16X16] [COEF_BANDS]"
           "[PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS] = {");
   type = 0;
@@ -552,7 +552,7 @@ void print_context_counters() {
   } while (++type < BLOCK_TYPES_16X16);
   fprintf(f, "\n};\n");
 
-  fprintf(f, "static const vp8_prob\n"
+  fprintf(f, "static const vp9_prob\n"
           "vp9_default_coef_probs[BLOCK_TYPES] [COEF_BANDS] \n"
           "[PREV_COEF_CONTEXTS] [ENTROPY_NODES] = {");
   type = 0;
@@ -565,7 +565,7 @@ void print_context_counters() {
       do {
         unsigned int branch_ct [ENTROPY_NODES] [2];
         unsigned int coef_counts[MAX_ENTROPY_TOKENS];
-        vp8_prob coef_probs[ENTROPY_NODES];
+        vp9_prob coef_probs[ENTROPY_NODES];
         for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
           coef_counts[t] = context_counters [type] [band] [pt] [t];
         vp9_tree_probs_from_distribution(
@@ -587,7 +587,7 @@ void print_context_counters() {
   } while (++type < BLOCK_TYPES);
   fprintf(f, "\n};\n");
 
-  fprintf(f, "static const vp8_prob\n"
+  fprintf(f, "static const vp9_prob\n"
           "vp9_default_coef_probs_8x8[BLOCK_TYPES_8X8] [COEF_BANDS]\n"
           "[PREV_COEF_CONTEXTS] [ENTROPY_NODES] = {");
   type = 0;
@@ -600,7 +600,7 @@ void print_context_counters() {
       do {
         unsigned int branch_ct [ENTROPY_NODES] [2];
         unsigned int coef_counts[MAX_ENTROPY_TOKENS];
-        vp8_prob coef_probs[ENTROPY_NODES];
+        vp9_prob coef_probs[ENTROPY_NODES];
         for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
           coef_counts[t] = context_counters_8x8[type] [band] [pt] [t];
         vp9_tree_probs_from_distribution(
@@ -620,7 +620,7 @@ void print_context_counters() {
   } while (++type < BLOCK_TYPES_8X8);
   fprintf(f, "\n};\n");
 
-  fprintf(f, "static const vp8_prob\n"
+  fprintf(f, "static const vp9_prob\n"
           "vp9_default_coef_probs_16x16[BLOCK_TYPES_16X16] [COEF_BANDS]\n"
           "[PREV_COEF_CONTEXTS] [ENTROPY_NODES] = {");
   type = 0;
@@ -633,7 +633,7 @@ void print_context_counters() {
       do {
         unsigned int branch_ct [ENTROPY_NODES] [2];
         unsigned int coef_counts[MAX_ENTROPY_TOKENS];
-        vp8_prob coef_probs[ENTROPY_NODES];
+        vp9_prob coef_probs[ENTROPY_NODES];
         for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
           coef_counts[t] = context_counters_16x16[type] [band] [pt] [t];
         vp9_tree_probs_from_distribution(
@@ -678,12 +678,12 @@ static __inline void stuff_b(VP9_COMP *cpi,
                              int dry_run) {
   const int *bands;
   unsigned int (*counts)[COEF_BANDS][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
-  vp8_prob (*probs)[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
+  vp9_prob (*probs)[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
   int pt, band;
   TOKENEXTRA *t = *tp;
   const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                           get_tx_type(xd, b) : DCT_DCT;
-  VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+  VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 
   switch (tx_size) {
     default:
