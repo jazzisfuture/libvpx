@@ -84,7 +84,7 @@ void vp9_init_de_quantizer(VP8D_COMP *pbi) {
 
     /* all the ac values =; */
     for (i = 1; i < 16; i++) {
-      int rc = vp8_default_zig_zag1d[i];
+      int rc = vp9_default_zig_zag1d[i];
 
       pc->Y1dequant[Q][rc] = (short)vp9_ac_yquant(Q);
       pc->Y2dequant[Q][rc] = (short)vp9_ac2quant(Q, pc->y2ac_delta_q);

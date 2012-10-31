@@ -49,7 +49,7 @@ DECLARE_ALIGNED(16, const unsigned char, vp8_norm[256]) = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-DECLARE_ALIGNED(16, const int, vp8_coef_bands[16]) = {
+DECLARE_ALIGNED(16, const int, vp9_coef_bands[16]) = {
   0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7
 };
 
@@ -57,7 +57,7 @@ DECLARE_ALIGNED(16, cuchar, vp8_prev_token_class[MAX_ENTROPY_TOKENS]) = {
   0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 0
 };
 
-DECLARE_ALIGNED(16, const int, vp8_default_zig_zag1d[16]) = {
+DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d[16]) = {
   0,  1,  4,  8,
   5,  2,  3,  6,
   9, 12, 13, 10,
@@ -78,7 +78,7 @@ DECLARE_ALIGNED(16, const int, vp8_row_scan[16]) = {
 };
 
 
-DECLARE_ALIGNED(64, const int, vp8_coef_bands_8x8[64]) = { 0, 1, 2, 3, 5, 4, 4, 5,
+DECLARE_ALIGNED(64, const int, vp9_coef_bands_8x8[64]) = { 0, 1, 2, 3, 5, 4, 4, 5,
                                                            5, 3, 6, 3, 5, 4, 6, 6,
                                                            6, 5, 5, 6, 6, 6, 6, 6,
                                                            6, 6, 6, 6, 6, 6, 6, 6,
@@ -87,7 +87,7 @@ DECLARE_ALIGNED(64, const int, vp8_coef_bands_8x8[64]) = { 0, 1, 2, 3, 5, 4, 4, 
                                                            7, 7, 7, 7, 7, 7, 7, 7,
                                                            7, 7, 7, 7, 7, 7, 7, 7
                                                          };
-DECLARE_ALIGNED(64, const int, vp8_default_zig_zag1d_8x8[64]) = {
+DECLARE_ALIGNED(64, const int, vp9_default_zig_zag1d_8x8[64]) = {
   0,  1,  8, 16,  9,  2,  3, 10, 17, 24, 32, 25, 18, 11,  4,  5,
   12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13,  6,  7, 14, 21, 28,
   35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
@@ -95,7 +95,7 @@ DECLARE_ALIGNED(64, const int, vp8_default_zig_zag1d_8x8[64]) = {
 };
 
 // Table can be optimized.
-DECLARE_ALIGNED(16, const int, vp8_coef_bands_16x16[256]) = {
+DECLARE_ALIGNED(16, const int, vp9_coef_bands_16x16[256]) = {
     0, 1, 2, 3, 5, 4, 4, 5, 5, 3, 6, 3, 5, 4, 6, 6,
     6, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
     6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
@@ -113,7 +113,7 @@ DECLARE_ALIGNED(16, const int, vp8_coef_bands_16x16[256]) = {
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
 };
-DECLARE_ALIGNED(16, const int, vp8_default_zig_zag1d_16x16[256]) = {
+DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_16x16[256]) = {
       0,   1,  16,  32,  17,   2,   3,  18,  33,  48,  64,  49,  34,  19,   4,   5,
      20,  35,  50,  65,  80,  96,  81,  66,  51,  36,  21,   6,   7,  22,  37,  52,
      67,  82,  97, 112, 128, 113,  98,  83,  68,  53,  38,  23,   8,   9,  24,  39,
@@ -135,7 +135,7 @@ DECLARE_ALIGNED(16, const int, vp8_default_zig_zag1d_16x16[256]) = {
 
 /* Array indices are identical to previously-existing CONTEXT_NODE indices */
 
-const vp8_tree_index vp8_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
+const vp8_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
 {
   -DCT_EOB_TOKEN, 2,                             /* 0 = EOB */
   -ZERO_TOKEN, 4,                               /* 1 = ZERO */
@@ -222,7 +222,7 @@ void vp9_default_coef_probs(VP8_COMMON *pc) {
 
 void vp9_coef_tree_initialize() {
   init_bit_trees();
-  vp9_tokens_from_tree(vp8_coef_encodings, vp8_coef_tree);
+  vp9_tokens_from_tree(vp8_coef_encodings, vp9_coef_tree);
 }
 
 // #define COEF_COUNT_TESTING
@@ -319,7 +319,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.coef_counts [i][j][k],
           256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
@@ -341,7 +341,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.hybrid_coef_counts [i][j][k],
           256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
@@ -363,7 +363,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.coef_counts_8x8 [i][j][k],
           256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
@@ -385,7 +385,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.hybrid_coef_counts_8x8 [i][j][k],
           256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
@@ -408,7 +408,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.coef_counts_16x16[i][j][k], 256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
           int prob;
@@ -430,7 +430,7 @@ void vp9_adapt_coef_probs(VP8_COMMON *cm) {
         if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
           continue;
         vp9_tree_probs_from_distribution(
-          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp8_coef_tree,
+          MAX_ENTROPY_TOKENS, vp8_coef_encodings, vp9_coef_tree,
           coef_probs, branch_ct, cm->fc.hybrid_coef_counts_16x16[i][j][k], 256, 1);
         for (t = 0; t < ENTROPY_NODES; ++t) {
           int prob;

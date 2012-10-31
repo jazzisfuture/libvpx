@@ -61,7 +61,7 @@ DEFINE(vp8_extra_bit_struct_sz,                 sizeof(vp8_extra_bit_struct));
 DEFINE(vp8_token_value,                         offsetof(vp8_token, value));
 DEFINE(vp8_token_len,                           offsetof(vp8_token, Len));
 
-DEFINE(vp8_extra_bit_struct_tree,               offsetof(vp8_extra_bit_struct, tree));
+DEFINE(vp9_extra_bit_struct_tree,               offsetof(vp8_extra_bit_struct, tree));
 DEFINE(vp8_extra_bit_struct_prob,               offsetof(vp8_extra_bit_struct, prob));
 DEFINE(vp8_extra_bit_struct_len,                offsetof(vp8_extra_bit_struct, Len));
 DEFINE(vp8_extra_bit_struct_base_val,           offsetof(vp8_extra_bit_struct, base_val));

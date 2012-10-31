@@ -303,8 +303,8 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   switch (tx_size) {
     default:
     case TX_4X4:
-      scan = vp8_default_zig_zag1d;
-      bands = vp8_coef_bands;
+      scan = vp9_default_zig_zag1d;
+      bands = vp9_coef_bands;
       default_eob = 16;
       // TODO: this isn't called (for intra4x4 modes), but will be left in
       // since it could be used later
@@ -321,17 +321,17 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
               break;
 
             default:
-              scan = vp8_default_zig_zag1d;
+              scan = vp9_default_zig_zag1d;
               break;
           }
         } else {
-          scan = vp8_default_zig_zag1d;
+          scan = vp9_default_zig_zag1d;
         }
       }
       break;
     case TX_8X8:
-      scan = vp8_default_zig_zag1d_8x8;
-      bands = vp8_coef_bands_8x8;
+      scan = vp9_default_zig_zag1d_8x8;
+      bands = vp9_coef_bands_8x8;
       default_eob = 64;
       break;
   }
@@ -524,7 +524,7 @@ static void check_reset_2nd_coeffs(MACROBLOCKD *xd,
     return;
 
   for (i = 0; i < bd->eob; i++) {
-    int coef = bd->dqcoeff[vp8_default_zig_zag1d[i]];
+    int coef = bd->dqcoeff[vp9_default_zig_zag1d[i]];
     sum += (coef >= 0) ? coef : -coef;
     if (sum >= SUM_2ND_COEFF_THRESH)
       return;
@@ -532,7 +532,7 @@ static void check_reset_2nd_coeffs(MACROBLOCKD *xd,
 
   if (sum < SUM_2ND_COEFF_THRESH) {
     for (i = 0; i < bd->eob; i++) {
-      int rc = vp8_default_zig_zag1d[i];
+      int rc = vp9_default_zig_zag1d[i];
       bd->qcoeff[rc] = 0;
       bd->dqcoeff[rc] = 0;
     }
@@ -594,15 +594,15 @@ void vp9_optimize_mby_4x4(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
 
   for (b = 0; b < 16; b++) {
     optimize_b(x, b, type,
-               ta + vp8_block2above[b], tl + vp8_block2left[b], rtcd, TX_4X4);
+               ta + vp9_block2above[b], tl + vp9_block2left[b], rtcd, TX_4X4);
   }
 
   if (has_2nd_order) {
     b = 24;
     optimize_b(x, b, PLANE_TYPE_Y2,
-               ta + vp8_block2above[b], tl + vp8_block2left[b], rtcd, TX_4X4);
+               ta + vp9_block2above[b], tl + vp9_block2left[b], rtcd, TX_4X4);
     check_reset_2nd_coeffs(&x->e_mbd,
-                           ta + vp8_block2above[b], tl + vp8_block2left[b]);
+                           ta + vp9_block2above[b], tl + vp9_block2left[b]);
   }
 }
 
@@ -623,7 +623,7 @@ void vp9_optimize_mbuv_4x4(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
 
   for (b = 16; b < 24; b++) {
     optimize_b(x, b, PLANE_TYPE_UV,
-               ta + vp8_block2above[b], tl + vp8_block2left[b], rtcd, TX_4X4);
+               ta + vp9_block2above[b], tl + vp9_block2left[b], rtcd, TX_4X4);
   }
 }
 
@@ -651,17 +651,17 @@ void vp9_optimize_mby_8x8(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
   type = has_2nd_order ? PLANE_TYPE_Y_NO_DC : PLANE_TYPE_Y_WITH_DC;
   for (b = 0; b < 16; b += 4) {
     optimize_b(x, b, type,
-               ta + vp8_block2above_8x8[b], tl + vp8_block2left_8x8[b],
+               ta + vp9_block2above_8x8[b], tl + vp9_block2left_8x8[b],
                rtcd, TX_8X8);
-    ta[vp8_block2above_8x8[b] + 1] = ta[vp8_block2above_8x8[b]];
-    tl[vp8_block2left_8x8[b] + 1]  = tl[vp8_block2left_8x8[b]];
+    ta[vp9_block2above_8x8[b] + 1] = ta[vp9_block2above_8x8[b]];
+    tl[vp9_block2left_8x8[b] + 1]  = tl[vp9_block2left_8x8[b]];
   }
 
   // 8x8 always have 2nd roder haar block
   if (has_2nd_order) {
     check_reset_8x8_2nd_coeffs(&x->e_mbd,
-                               ta + vp8_block2above_8x8[24],
-                               tl + vp8_block2left_8x8[24]);
+                               ta + vp9_block2above_8x8[24],
+                               tl + vp9_block2left_8x8[24]);
   }
 }
 
@@ -682,10 +682,10 @@ void vp9_optimize_mbuv_8x8(MACROBLOCK *x, const VP8_ENCODER_RTCD *rtcd) {
 
   for (b = 16; b < 24; b += 4) {
     optimize_b(x, b, PLANE_TYPE_UV,
-               ta + vp8_block2above_8x8[b], tl + vp8_block2left_8x8[b],
+               ta + vp9_block2above_8x8[b], tl + vp9_block2left_8x8[b],
                rtcd, TX_8X8);
-    ta[vp8_block2above_8x8[b] + 1] = ta[vp8_block2above_8x8[b]];
-    tl[vp8_block2left_8x8[b] + 1]  = tl[vp8_block2left_8x8[b]];
+    ta[vp9_block2above_8x8[b] + 1] = ta[vp9_block2above_8x8[b]];
+    tl[vp9_block2left_8x8[b] + 1]  = tl[vp9_block2left_8x8[b]];
   }
 }
 
@@ -728,7 +728,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
   for (i = eob; i-- > 0;) {
     int base_bits, d2, dx;
 
-    rc = vp8_default_zig_zag1d_16x16[i];
+    rc = vp9_default_zig_zag1d_16x16[i];
     x = qcoeff_ptr[rc];
     /* Only add a trellis state for non-zero coefficients. */
     if (x) {
@@ -741,7 +741,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       t0 = (vp8_dct_value_tokens_ptr + x)->Token;
       /* Consider both possible successor states. */
       if (next < 256) {
-        band = vp8_coef_bands_16x16[i + 1];
+        band = vp9_coef_bands_16x16[i + 1];
         pt = vp8_prev_token_class[t0];
         rate0 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][0].token];
         rate1 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][1].token];
@@ -786,7 +786,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       else
         t0=t1 = (vp8_dct_value_tokens_ptr + x)->Token;
       if (next < 256) {
-        band = vp8_coef_bands_16x16[i + 1];
+        band = vp9_coef_bands_16x16[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
             pt = vp8_prev_token_class[t0];
             rate0 += mb->token_costs[TX_16X16][type][band][pt]
@@ -820,7 +820,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
      *  add a new trellis node, but we do need to update the costs.
      */
     else {
-      band = vp8_coef_bands_16x16[i + 1];
+      band = vp9_coef_bands_16x16[i + 1];
       t0 = tokens[next][0].token;
       t1 = tokens[next][1].token;
       /* Update the cost of each path if we're past the EOB token. */
@@ -837,7 +837,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
   }
 
   /* Now pick the best path through the whole trellis. */
-  band = vp8_coef_bands_16x16[i + 1];
+  band = vp9_coef_bands_16x16[i + 1];
   VP8_COMBINEENTROPYCONTEXTS(pt, *a, *l);
   rate0 = tokens[next][0].rate;
   rate1 = tokens[next][1].rate;
@@ -855,7 +855,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
     x = tokens[i][best].qc;
     if (x)
       final_eob = i;
-    rc = vp8_default_zig_zag1d_16x16[i];
+    rc = vp9_default_zig_zag1d_16x16[i];
     qcoeff_ptr[rc] = x;
     dqcoeff_ptr[rc] = (x * dequant_ptr[rc!=0]);
 
