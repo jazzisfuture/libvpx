@@ -40,11 +40,11 @@ void vp9_ht_quantize_b_4x4(BLOCK *b, BLOCKD *d, TX_TYPE tx_type) {
 
   switch (tx_type) {
     case ADST_DCT :
-      pt_scan = vp8_row_scan;
+      pt_scan = vp9_row_scan;
       break;
 
     case DCT_ADST :
-      pt_scan = vp8_col_scan;
+      pt_scan = vp9_col_scan;
       break;
 
     default :

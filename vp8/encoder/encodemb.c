@@ -313,11 +313,11 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
         if (tx_type != DCT_DCT) {
           switch (tx_type) {
             case ADST_DCT:
-              scan = vp8_row_scan;
+              scan = vp9_row_scan;
               break;
 
             case DCT_ADST:
-              scan = vp8_col_scan;
+              scan = vp9_col_scan;
               break;
 
             default:
@@ -376,7 +376,7 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < default_eob) {
         band = bands[i + 1];
-        pt = vp8_prev_token_class[t0];
+        pt = vp9_prev_token_class[t0];
         rate0 +=
           mb->token_costs[tx_size][type][band][pt][tokens[next][0].token];
         rate1 +=
@@ -424,12 +424,12 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       if (next < default_eob) {
         band = bands[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
-          pt = vp8_prev_token_class[t0];
+          pt = vp9_prev_token_class[t0];
           rate0 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][0].token];
         }
         if (t1 != DCT_EOB_TOKEN) {
-          pt = vp8_prev_token_class[t1];
+          pt = vp9_prev_token_class[t1];
           rate1 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][1].token];
         }
@@ -742,7 +742,7 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < 256) {
         band = vp9_coef_bands_16x16[i + 1];
-        pt = vp8_prev_token_class[t0];
+        pt = vp9_prev_token_class[t0];
         rate0 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][0].token];
         rate1 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][1].token];
       }
@@ -788,12 +788,12 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       if (next < 256) {
         band = vp9_coef_bands_16x16[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
-            pt = vp8_prev_token_class[t0];
+            pt = vp9_prev_token_class[t0];
             rate0 += mb->token_costs[TX_16X16][type][band][pt]
                 [tokens[next][0].token];
         }
         if (t1!=DCT_EOB_TOKEN) {
-            pt = vp8_prev_token_class[t1];
+            pt = vp9_prev_token_class[t1];
             rate1 += mb->token_costs[TX_16X16][type][band][pt]
                 [tokens[next][1].token];
         }

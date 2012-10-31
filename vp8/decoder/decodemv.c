@@ -89,7 +89,7 @@ int vp8_read_mv_ref_id(vp8_reader *r,
 }
 #endif
 
-extern const int vp8_i8x8_block[4];
+extern const int vp9_i8x8_block[4];
 static void kfread_modes(VP8D_COMP *pbi,
                          MODE_INFO *m,
                          int mb_row,
@@ -168,7 +168,7 @@ static void kfread_modes(VP8D_COMP *pbi,
     int i;
     int mode8x8;
     for (i = 0; i < 4; i++) {
-      int ib = vp8_i8x8_block[i];
+      int ib = vp9_i8x8_block[i];
       mode8x8 = vp8_read_i8x8_mode(bc, pbi->common.fc.i8x8_mode_prob);
       m->bmi[ib + 0].as_mode.first = mode8x8;
       m->bmi[ib + 1].as_mode.first = mode8x8;
@@ -789,7 +789,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     if (mbmi->mode >= NEARESTMV && mbmi->mode <= SPLITMV)
     {
       if (cm->mcomp_filter_type == SWITCHABLE) {
-        mbmi->interp_filter = vp8_switchable_interp[
+        mbmi->interp_filter = vp9_switchable_interp[
             vp8_treed_read(bc, vp9_switchable_interp_tree,
                            vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
       } else {
@@ -1121,7 +1121,7 @@ static void read_mb_modes_mv(VP8D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       int i;
       int mode8x8;
       for (i = 0; i < 4; i++) {
-        int ib = vp8_i8x8_block[i];
+        int ib = vp9_i8x8_block[i];
         mode8x8 = vp8_read_i8x8_mode(bc, pbi->common.fc.i8x8_mode_prob);
         mi->bmi[ib + 0].as_mode.first = mode8x8;
         mi->bmi[ib + 1].as_mode.first = mode8x8;

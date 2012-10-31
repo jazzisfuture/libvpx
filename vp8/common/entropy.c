@@ -28,9 +28,9 @@ typedef vp8_prob Prob;
 
 #include "coefupdateprobs.h"
 
-const int vp8_i8x8_block[4] = {0, 2, 8, 10};
+const int vp9_i8x8_block[4] = {0, 2, 8, 10};
 
-DECLARE_ALIGNED(16, const unsigned char, vp8_norm[256]) = {
+DECLARE_ALIGNED(16, const unsigned char, vp9_norm[256]) = {
   0, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
   3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
@@ -53,7 +53,7 @@ DECLARE_ALIGNED(16, const int, vp9_coef_bands[16]) = {
   0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7
 };
 
-DECLARE_ALIGNED(16, cuchar, vp8_prev_token_class[MAX_ENTROPY_TOKENS]) = {
+DECLARE_ALIGNED(16, cuchar, vp9_prev_token_class[MAX_ENTROPY_TOKENS]) = {
   0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 0
 };
 
@@ -64,13 +64,13 @@ DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d[16]) = {
   7, 11, 14, 15,
 };
 
-DECLARE_ALIGNED(16, const int, vp8_col_scan[16]) = {
+DECLARE_ALIGNED(16, const int, vp9_col_scan[16]) = {
   0, 4,  8, 12,
   1, 5,  9, 13,
   2, 6, 10, 14,
   3, 7, 11, 15
 };
-DECLARE_ALIGNED(16, const int, vp8_row_scan[16]) = {
+DECLARE_ALIGNED(16, const int, vp9_row_scan[16]) = {
   0,   1,  2,  3,
   4,   5,  6,  7,
   8,   9, 10, 11,

@@ -142,9 +142,9 @@ static void tokenize_b(VP8_COMP *cpi,
         counts = cpi->hybrid_coef_counts;
         probs = cpi->common.fc.hybrid_coef_probs;
         if (tx_type == ADST_DCT) {
-          scan = vp8_row_scan;
+          scan = vp9_row_scan;
         } else if (tx_type == DCT_ADST) {
-          scan = vp8_col_scan;
+          scan = vp9_col_scan;
         }
       } else {
         counts = cpi->coef_counts;
@@ -210,7 +210,7 @@ static void tokenize_b(VP8_COMP *cpi,
     if (!dry_run) {
       ++counts[type][band][pt][token];
     }
-    pt = vp8_prev_token_class[token];
+    pt = vp9_prev_token_class[token];
     ++t;
   } while (c < eob && ++c < seg_eob);
 

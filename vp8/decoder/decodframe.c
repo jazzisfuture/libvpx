@@ -309,7 +309,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
   /* dequantization and idct */
   if (mode == I8X8_PRED) {
     for (i = 0; i < 4; i++) {
-      int ib = vp8_i8x8_block[i];
+      int ib = vp9_i8x8_block[i];
       const int iblock[4] = {0, 1, 4, 5};
       int j;
       int i8x8mode;

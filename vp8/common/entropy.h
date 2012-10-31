@@ -21,7 +21,7 @@
 //#define SUBMVREF_COUNT 5
 //#define VP8_NUMMBSPLITS 4
 
-extern const int vp8_i8x8_block[4];
+extern const int vp9_i8x8_block[4];
 
 /* Coefficient token alphabet */
 
@@ -98,14 +98,14 @@ extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_16x16[256]);
 #define SUBEXP_PARAM                4   /* Subexponential code parameter */
 #define MODULUS_PARAM               13  /* Modulus parameter */
 
-extern DECLARE_ALIGNED(16, const unsigned char, vp8_prev_token_class[MAX_ENTROPY_TOKENS]);
+extern DECLARE_ALIGNED(16, const unsigned char, vp9_prev_token_class[MAX_ENTROPY_TOKENS]);
 
 struct VP8Common;
 void vp9_default_coef_probs(struct VP8Common *);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d[16]);
 
-extern DECLARE_ALIGNED(16, const int, vp8_col_scan[16]);
-extern DECLARE_ALIGNED(16, const int, vp8_row_scan[16]);
+extern DECLARE_ALIGNED(16, const int, vp9_col_scan[16]);
+extern DECLARE_ALIGNED(16, const int, vp9_row_scan[16]);
 
 extern short vp8_default_zig_zag_mask[16];
 extern DECLARE_ALIGNED(64, const int, vp9_default_zig_zag1d_8x8[64]);

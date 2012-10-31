@@ -113,11 +113,11 @@ void vp9_reset_mb_tokens_context(MACROBLOCKD *xd) {
   }
 }
 
-DECLARE_ALIGNED(16, extern const unsigned char, vp8_norm[256]);
+DECLARE_ALIGNED(16, extern const unsigned char, vp9_norm[256]);
 
 // #define PREV_CONTEXT_INC(val) (2+((val)>2))
-// #define PREV_CONTEXT_INC(val) (vp8_prev_token_class[(val)])
-#define PREV_CONTEXT_INC(val) (vp8_prev_token_class[(val)>10?10:(val)])
+// #define PREV_CONTEXT_INC(val) (vp9_prev_token_class[(val)])
+#define PREV_CONTEXT_INC(val) (vp9_prev_token_class[(val)>10?10:(val)])
 
 static int get_token(int v) {
   if (v < 0) v = -v;
@@ -145,11 +145,11 @@ void static count_tokens_adaptive_scan(const MACROBLOCKD *xd, INT16 *qcoeff_ptr,
 
   switch(tx_type) {
     case ADST_DCT :
-      scan = vp8_row_scan;
+      scan = vp9_row_scan;
       break;
 
     case DCT_ADST :
-      scan = vp8_col_scan;
+      scan = vp9_col_scan;
       break;
 
     default :
@@ -167,7 +167,7 @@ void static count_tokens_adaptive_scan(const MACROBLOCKD *xd, INT16 *qcoeff_ptr,
       fc->hybrid_coef_counts[type][band][pt][token]++;
     else
       fc->coef_counts[type][band][pt][token]++;
-    pt = vp8_prev_token_class[token];
+    pt = vp9_prev_token_class[token];
   }
 
   if (eob < seg_eob) {
@@ -190,7 +190,7 @@ void static count_tokens(INT16 *qcoeff_ptr, int block, PLANE_TYPE type,
     band = vp9_coef_bands[c];
     token = get_token(v);
     fc->coef_counts[type][band][pt][token]++;
-    pt = vp8_prev_token_class[token];
+    pt = vp9_prev_token_class[token];
   }
   if (eob < seg_eob) {
     band = vp9_coef_bands[c];
@@ -213,7 +213,7 @@ void static count_tokens_8x8(INT16 *qcoeff_ptr, int block, PLANE_TYPE type,
       fc->hybrid_coef_counts_8x8[type][band][pt][token]++;
     else
       fc->coef_counts_8x8[type][band][pt][token]++;
-    pt = vp8_prev_token_class[token];
+    pt = vp9_prev_token_class[token];
   }
   if (eob < seg_eob) {
     band = (type == 1 ? vp9_coef_bands[c] : vp9_coef_bands_8x8[c]);
@@ -239,7 +239,7 @@ void static count_tokens_16x16(INT16 *qcoeff_ptr, int block, PLANE_TYPE type,
       fc->hybrid_coef_counts_16x16[type][band][pt][token]++;
     else
       fc->coef_counts_16x16[type][band][pt][token]++;
-    pt = vp8_prev_token_class[token];
+    pt = vp9_prev_token_class[token];
   }
   if (eob < seg_eob) {
     int band = vp9_coef_bands_16x16[c];
@@ -615,11 +615,11 @@ int vp9_decode_mb_tokens(VP8D_COMP *dx, MACROBLOCKD *xd,
     tx_type = get_tx_type(xd, &xd->block[i]);
     switch(tx_type) {
       case ADST_DCT :
-        scan = vp8_row_scan;
+        scan = vp9_row_scan;
         break;
 
       case DCT_ADST :
-        scan = vp8_col_scan;
+        scan = vp9_col_scan;
         break;
 
       default :

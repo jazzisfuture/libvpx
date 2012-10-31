@@ -113,7 +113,7 @@ typedef struct {
 
 void vp9_increment_nmv(const MV *mv, const MV *ref, nmv_context_counts *mvctx,
                        int usehp);
-extern const nmv_context vp8_default_nmv_context;
+extern const nmv_context vp9_default_nmv_context;
 void vp9_counts_to_nmv_context(
     nmv_context_counts *NMVcount,
     nmv_context *prob,

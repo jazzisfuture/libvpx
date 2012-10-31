@@ -205,7 +205,7 @@ static void update_switchable_interp_probs(VP8_COMP *cpi,
   for (j = 0; j <= VP8_SWITCHABLE_FILTERS; ++j) {
     vp9_tree_probs_from_distribution(
         VP8_SWITCHABLE_FILTERS,
-        vp8_switchable_interp_encodings, vp9_switchable_interp_tree,
+        vp9_switchable_interp_encodings, vp9_switchable_interp_tree,
         pc->fc.switchable_interp_prob[j], branch_ct,
         cpi->switchable_interp_count[j], 256, 1);
     for (i = 0; i < VP8_SWITCHABLE_FILTERS - 1; ++i) {
@@ -443,7 +443,7 @@ static void pack_mb_tokens(vp8_writer* const bc,
         range = split;
       }
 
-      shift = vp8_norm[range];
+      shift = vp9_norm[range];
       range <<= shift;
       count += shift;
 
@@ -493,7 +493,7 @@ static void pack_mb_tokens(vp8_writer* const bc,
             range = split;
           }
 
-          shift = vp8_norm[range];
+          shift = vp9_norm[range];
           range <<= shift;
           count += shift;
 
@@ -1113,8 +1113,8 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi, vp8_writer *const bc) {
               vp8_write_token(bc, vp9_switchable_interp_tree,
                               vp9_get_pred_probs(&cpi->common, xd,
                                                  PRED_SWITCHABLE_INTERP),
-                              vp8_switchable_interp_encodings +
-                              vp8_switchable_interp_map[mi->interp_filter]);
+                              vp9_switchable_interp_encodings +
+                              vp9_switchable_interp_map[mi->interp_filter]);
             } else {
               assert (mi->interp_filter ==
                       cpi->common.mcomp_filter_type);
@@ -2163,7 +2163,7 @@ void vp9_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
         /* Only one filter is used. So set the filter at frame level */
         for (i = 0; i < VP8_SWITCHABLE_FILTERS; ++i) {
           if (count[i]) {
-            pc->mcomp_filter_type = vp8_switchable_interp[i];
+            pc->mcomp_filter_type = vp9_switchable_interp[i];
             break;
           }
         }

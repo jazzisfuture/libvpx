@@ -28,8 +28,8 @@ extern const vp8_prob vp9_mbsplit_probs [VP8_NUMMBSPLITS - 1];
 
 extern int vp9_mv_cont(const int_mv *l, const int_mv *a);
 
-extern const vp8_prob vp8_sub_mv_ref_prob [VP8_SUBMVREFS - 1];
-extern const vp8_prob vp8_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
+extern const vp8_prob vp9_sub_mv_ref_prob [VP8_SUBMVREFS - 1];
+extern const vp8_prob vp9_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1];
 
 
 extern const unsigned int vp9_kf_default_bmode_counts[VP8_BINTRAMODES][VP8_BINTRAMODES][VP8_BINTRAMODES];
@@ -77,13 +77,13 @@ void vp9_kf_default_bmode_probs(vp8_prob dest [VP8_BINTRAMODES] [VP8_BINTRAMODES
 void vp9_adapt_mode_probs(struct VP8Common *);
 
 #define VP8_SWITCHABLE_FILTERS 2 /* number of switchable filters */
-extern const  INTERPOLATIONFILTERTYPE vp8_switchable_interp
+extern const  INTERPOLATIONFILTERTYPE vp9_switchable_interp
                   [VP8_SWITCHABLE_FILTERS];
-extern const  int vp8_switchable_interp_map[SWITCHABLE + 1];
+extern const  int vp9_switchable_interp_map[SWITCHABLE + 1];
 extern const  vp8_tree_index vp9_switchable_interp_tree
                   [2*(VP8_SWITCHABLE_FILTERS - 1)];
-extern struct vp8_token_struct vp8_switchable_interp_encodings
+extern struct vp8_token_struct vp9_switchable_interp_encodings
                   [VP8_SWITCHABLE_FILTERS];
-extern const  vp8_prob vp8_switchable_interp_prob
+extern const  vp8_prob vp9_switchable_interp_prob
                   [VP8_SWITCHABLE_FILTERS + 1][VP8_SWITCHABLE_FILTERS - 1];
 #endif

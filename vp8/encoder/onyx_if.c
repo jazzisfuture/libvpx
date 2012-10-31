@@ -3484,7 +3484,7 @@ static void encode_frame_to_data_rate
         /* Mostly one filter is used. So set the filter at frame level */
         for (i = 0; i < VP8_SWITCHABLE_FILTERS; ++i) {
           if (count[i]) {
-            cm->mcomp_filter_type = vp8_switchable_interp[i];
+            cm->mcomp_filter_type = vp9_switchable_interp[i];
             Loop = TRUE;  /* Make sure to loop since the filter changed */
             break;
           }

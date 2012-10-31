@@ -101,9 +101,9 @@ int vp9_mv_cont(const int_mv *l, const int_mv *a) {
   return SUBMVREF_NORMAL;
 }
 
-const vp8_prob vp8_sub_mv_ref_prob [VP8_SUBMVREFS - 1] = { 180, 162, 25};
+const vp8_prob vp9_sub_mv_ref_prob [VP8_SUBMVREFS - 1] = { 180, 162, 25};
 
-const vp8_prob vp8_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1] = {
+const vp8_prob vp9_sub_mv_ref_prob2 [SUBMVREF_COUNT][VP8_SUBMVREFS - 1] = {
   { 147, 136, 18 },
   { 106, 145, 1  },
   { 179, 121, 1  },
@@ -299,10 +299,10 @@ void vp9_init_mbmode_probs(VP8_COMMON *x) {
     x->fc.i8x8_mode_prob, bct, i8x8_mode_cts,
     256, 1);
 
-  vpx_memcpy(x->fc.sub_mv_ref_prob, vp8_sub_mv_ref_prob2, sizeof(vp8_sub_mv_ref_prob2));
+  vpx_memcpy(x->fc.sub_mv_ref_prob, vp9_sub_mv_ref_prob2, sizeof(vp9_sub_mv_ref_prob2));
   vpx_memcpy(x->fc.mbsplit_prob, vp9_mbsplit_probs, sizeof(vp9_mbsplit_probs));
-  vpx_memcpy(x->fc.switchable_interp_prob, vp8_switchable_interp_prob,
-             sizeof(vp8_switchable_interp_prob));
+  vpx_memcpy(x->fc.switchable_interp_prob, vp9_switchable_interp_prob,
+             sizeof(vp9_switchable_interp_prob));
 }
 
 
@@ -340,11 +340,11 @@ const vp8_tree_index vp9_switchable_interp_tree[VP8_SWITCHABLE_FILTERS*2-2] = {
   -0, 2,
   -1, -2
 };
-struct vp8_token_struct vp8_switchable_interp_encodings[VP8_SWITCHABLE_FILTERS];
-const INTERPOLATIONFILTERTYPE vp8_switchable_interp[VP8_SWITCHABLE_FILTERS] = {
+struct vp8_token_struct vp9_switchable_interp_encodings[VP8_SWITCHABLE_FILTERS];
+const INTERPOLATIONFILTERTYPE vp9_switchable_interp[VP8_SWITCHABLE_FILTERS] = {
   EIGHTTAP, SIXTAP, EIGHTTAP_SHARP};
-const int vp8_switchable_interp_map[SWITCHABLE+1] = {1, -1, 0, 2, -1};
-const vp8_prob vp8_switchable_interp_prob [VP8_SWITCHABLE_FILTERS+1]
+const int vp9_switchable_interp_map[SWITCHABLE+1] = {1, -1, 0, 2, -1};
+const vp8_prob vp9_switchable_interp_prob [VP8_SWITCHABLE_FILTERS+1]
                                           [VP8_SWITCHABLE_FILTERS-1] = {
   {248, 192}, { 32, 248}, { 32,  32}, {192, 160}
 };
@@ -352,16 +352,16 @@ const vp8_prob vp8_switchable_interp_prob [VP8_SWITCHABLE_FILTERS+1]
 const vp8_tree_index vp9_switchable_interp_tree[VP8_SWITCHABLE_FILTERS*2-2] = {
   -0, -1,
 };
-struct vp8_token_struct vp8_switchable_interp_encodings[VP8_SWITCHABLE_FILTERS];
-const vp8_prob vp8_switchable_interp_prob [VP8_SWITCHABLE_FILTERS+1]
+struct vp8_token_struct vp9_switchable_interp_encodings[VP8_SWITCHABLE_FILTERS];
+const vp8_prob vp9_switchable_interp_prob [VP8_SWITCHABLE_FILTERS+1]
                                           [VP8_SWITCHABLE_FILTERS-1] = {
   {248},
   { 64},
   {192},
 };
-const INTERPOLATIONFILTERTYPE vp8_switchable_interp[VP8_SWITCHABLE_FILTERS] = {
+const INTERPOLATIONFILTERTYPE vp9_switchable_interp[VP8_SWITCHABLE_FILTERS] = {
   EIGHTTAP, EIGHTTAP_SHARP};
-const int vp8_switchable_interp_map[SWITCHABLE+1] = {-1, -1, 0, 1, -1}; //8, 8s
+const int vp9_switchable_interp_map[SWITCHABLE+1] = {-1, -1, 0, 1, -1}; //8, 8s
 #endif
 
 void vp9_entropy_mode_init() {
@@ -374,7 +374,7 @@ void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(vp8_uv_mode_encodings,  vp9_uv_mode_tree);
   vp9_tokens_from_tree(vp8_i8x8_mode_encodings,  vp9_i8x8_mode_tree);
   vp9_tokens_from_tree(vp9_mbsplit_encodings, vp9_mbsplit_tree);
-  vp9_tokens_from_tree(vp8_switchable_interp_encodings,
+  vp9_tokens_from_tree(vp9_switchable_interp_encodings,
                        vp9_switchable_interp_tree);
 
   vp9_tokens_from_tree_offset(vp8_mv_ref_encoding_array,
@@ -392,10 +392,10 @@ void vp9_init_mode_contexts(VP8_COMMON *pc) {
   vpx_memset(pc->fc.mv_ref_ct_a, 0, sizeof(pc->fc.mv_ref_ct_a));
 
   vpx_memcpy(pc->fc.mode_context,
-             default_vp8_mode_contexts,
+             vp9_default_mode_contexts,
              sizeof(pc->fc.mode_context));
   vpx_memcpy(pc->fc.mode_context_a,
-             default_vp8_mode_contexts,
+             vp9_default_mode_contexts_a,
              sizeof(pc->fc.mode_context_a));
 
 }

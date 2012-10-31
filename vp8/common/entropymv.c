@@ -58,7 +58,7 @@ const vp8_tree_index vp9_mv_fp_tree [2 * 4 - 2] = {
 };
 struct vp8_token_struct vp8_mv_fp_encodings[4];
 
-const nmv_context vp8_default_nmv_context = {
+const nmv_context vp9_default_nmv_context = {
   {32, 64, 96},
   {
     { /* vert component */
@@ -461,5 +461,5 @@ void vp9_entropy_mv_init() {
 }
 
 void vp9_init_mv_probs(VP8_COMMON *cm) {
-  vpx_memcpy(&cm->fc.nmvc, &vp8_default_nmv_context, sizeof(nmv_context));
+  vpx_memcpy(&cm->fc.nmvc, &vp9_default_nmv_context, sizeof(nmv_context));
 }
