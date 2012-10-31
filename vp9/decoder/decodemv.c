@@ -142,7 +142,9 @@ static void kfread_modes(VP9D_COMP *pbi,
   if ((m->mbmi.mode = y_mode) == B_PRED) {
     int i = 0;
 #if CONFIG_COMP_INTRA_PRED
-    int use_comp_pred = vp9_read(bc, 128);
+    m->mbmi.use_intraintra = (pbi->common.use_intraintra ?
+                              vp9_read(bc, pbi->common.fc.intraintra_prob) : 0);
+    pbi->common.fc.intraintra_counts[m->mbmi.use_intraintra]++;
 #endif
     do {
       const B_PREDICTION_MODE A = above_block_mode(m, i, mis);
@@ -152,10 +154,14 @@ static void kfread_modes(VP9D_COMP *pbi,
         (B_PREDICTION_MODE) read_bmode(
           bc, pbi->common.kf_bmode_prob [A] [L]);
 #if CONFIG_COMP_INTRA_PRED
-      if (use_comp_pred) {
-        m->bmi[i].as_mode.second =
-          (B_PREDICTION_MODE) read_bmode(
-            bc, pbi->common.kf_bmode_prob [A] [L]);
+      if (m->mbmi.use_intraintra) {
+        if (vp9_read(bc, pbi->common.fc.intraintra_b_prob)) {
+          m->bmi[i].as_mode.second =
+              (B_PREDICTION_MODE) read_bmode(
+                  bc, pbi->common.kf_bmode_prob[A][L]);
+        } else {
+          m->bmi[i].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
+        }
       } else {
         m->bmi[i].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
       }
@@ -526,6 +532,7 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
 #endif
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
+
     // Decode the baseline probabilities for decoding reference frame
     cm->prob_intra_coded = (vp9_prob)vp9_read_literal(bc, 8);
     cm->prob_last_coded  = (vp9_prob)vp9_read_literal(bc, 8);
@@ -553,12 +560,23 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
     }
 
 #if CONFIG_NEW_MVREF
-  // Temp defaults probabilities for ecnoding the MV ref id signal
-  vpx_memset(xd->mb_mv_ref_id_probs, 192, sizeof(xd->mb_mv_ref_id_probs));
+    // Temp defaults probabilities for ecnoding the MV ref id signal
+    vpx_memset(xd->mb_mv_ref_id_probs, 192, sizeof(xd->mb_mv_ref_id_probs));
 #endif
 
     read_nmvprobs(bc, nmvc, xd->allow_high_precision_mv);
   }
+#if CONFIG_COMP_INTRA_PRED
+  cm->use_intraintra = vp9_read_bit(bc);
+  //  printf("DFrame %d: %d\n", cm->current_video_frame, cm->use_intraintra);
+  if (cm->use_intraintra) {
+    if (vp9_read(bc, VP9_UPD_INTRAINTRA_PROB))
+      cm->fc.intraintra_prob  = (vp9_prob)vp9_read_literal(bc, 8);
+    if (vp9_read(bc, VP9_UPD_INTRAINTRA_B_PROB))
+      cm->fc.intraintra_b_prob  = (vp9_prob)vp9_read_literal(bc, 8);
+  }
+  //  printf("\n%d %d\n", cm->fc.intraintra_prob, cm->fc.intraintra_b_prob);
+#endif
 }
 
 // This function either reads the segment id for the current macroblock from
@@ -1092,7 +1110,9 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     if (mbmi->mode == B_PRED) {
       int j = 0;
 #if CONFIG_COMP_INTRA_PRED
-      int use_comp_pred = vp9_read(bc, 128);
+      mbmi->use_intraintra = (pbi->common.use_intraintra ?
+                              vp9_read(bc, pbi->common.fc.intraintra_prob) : 0);
+      pbi->common.fc.intraintra_counts[mbmi->use_intraintra]++;
 #endif
       do {
         mi->bmi[j].as_mode.first = (B_PREDICTION_MODE)read_bmode(bc, pbi->common.fc.bmode_prob);
@@ -1106,8 +1126,16 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         */
         pbi->common.fc.bmode_counts[mi->bmi[j].as_mode.first]++;
 #if CONFIG_COMP_INTRA_PRED
-        if (use_comp_pred) {
-          mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)read_bmode(bc, pbi->common.fc.bmode_prob);
+        if (mbmi->use_intraintra) {
+          if (vp9_read(bc, pbi->common.fc.intraintra_b_prob)) {
+            mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)read_bmode(
+                bc, pbi->common.fc.bmode_prob);
+            pbi->common.fc.bmode_counts[mi->bmi[j].as_mode.second]++;
+            pbi->common.fc.intraintra_b_counts[1]++;
+          } else {
+            mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
+            pbi->common.fc.intraintra_b_counts[0]++;
+          }
         } else {
           mi->bmi[j].as_mode.second = (B_PREDICTION_MODE)(B_DC_PRED - 1);
         }

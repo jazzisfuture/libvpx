@@ -276,24 +276,37 @@ void vp9_intra4x4_predict_c(BLOCKD *x, int b_mode,
 
 #if CONFIG_COMP_INTRA_PRED
 void vp9_comp_intra4x4_predict_c(BLOCKD *x,
-                               int b_mode, int b_mode2,
-                               unsigned char *out_predictor) {
-  unsigned char predictor[2][4 * 16];
+                                 int b_mode, int b_mode2,
+                                 unsigned char *out_predictor) {
+  static const int pdiff_thresh = 32;
+  static const int pdiff_softrange = 128;
+  unsigned char predictor[3][4 * 16];
   int i, j;
 
   vp9_intra4x4_predict(x, b_mode, predictor[0]);
+  assert(b_mode2 != B_DC_PRED - 1);
   vp9_intra4x4_predict(x, b_mode2, predictor[1]);
-
+  vp9_intra4x4_predict(x, B_TM_PRED, predictor[2]);
   for (i = 0; i < 16 * 4; i += 16) {
     for (j = i; j < i + 4; j++) {
+      int pdiff = abs(predictor[0][j] - predictor[1][j]);
       out_predictor[j] = (predictor[0][j] + predictor[1][j] + 1) >> 1;
+      if (pdiff > pdiff_thresh) {
+        int s = (abs(predictor[2][j] - predictor[1][j]) <
+                 abs(predictor[2][j] - predictor[0][j]));
+        int scale = pdiff - pdiff_thresh;
+        if (scale > pdiff_softrange) scale = pdiff_softrange;
+        out_predictor[j] = (out_predictor[j] * (pdiff_softrange - scale) +
+                            predictor[s][j] * scale + pdiff_softrange / 2) /
+            pdiff_softrange;
+      }
     }
   }
 }
 #endif
 
-/* copy 4 bytes from the above right down so that the 4x4 prediction modes using pixels above and
- * to the right prediction have filled in pixels to use.
+/* copy 4 bytes from the above right down so that the 4x4 prediction modes
+ * using pixels above and to the right prediction have filled in pixels to use.
  */
 void vp9_intra_prediction_down_copy(MACROBLOCKD *xd) {
   int extend_edge = (xd->mb_to_right_edge == 0 && xd->mb_index < 2);

@@ -189,7 +189,7 @@ void vp9_create_common(VP9_COMMON *oci) {
 
   vp9_init_mbmode_probs(oci);
 
-  vp9_default_bmode_probs(oci->fc.bmode_prob);
+  vp9_default_bmode_probs(oci);
 
   oci->txfm_mode = ONLY_4X4;
   oci->mb_no_coeff_skip = 1;

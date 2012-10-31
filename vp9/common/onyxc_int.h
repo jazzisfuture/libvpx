@@ -106,6 +106,15 @@ typedef struct frame_contexts {
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
                                  [VP9_SWITCHABLE_FILTERS - 1];
 
+#if CONFIG_COMP_INTRA_PRED
+  unsigned int intraintra_counts[2];
+  unsigned int intraintra_b_counts[2];
+  vp9_prob intraintra_prob;
+  vp9_prob pre_intraintra_prob;
+  vp9_prob intraintra_b_prob;
+  vp9_prob pre_intraintra_b_prob;
+#endif
+
   int mode_context[6][4];
   int mode_context_a[6][4];
   int vp8_mode_contexts[6][4];
@@ -309,6 +318,9 @@ typedef struct VP9Common {
   vp9_prob prob_pred_filter_off;
 #endif
 
+#if CONFIG_COMP_INTRA_PRED
+  int use_intraintra;
+#endif
 } VP9_COMMON;
 
 #endif  // __INC_ONYX_INT_H

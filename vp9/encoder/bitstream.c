@@ -396,6 +396,21 @@ static int prob_diff_update_savings_search(const unsigned int *ct,
   return bestsavings;
 }
 
+static void vp9_cond_prob_update(vp9_writer *bc, vp9_prob *oldp, vp9_prob upd,
+                                 unsigned int *ct) {
+  vp9_prob newp;
+  int savings;
+  newp = get_binary_prob(ct[0], ct[1]);
+  savings = prob_update_savings(ct, *oldp, newp, upd);
+  if (savings > 0) {
+    vp9_write(bc, 1, upd);
+    vp9_write_literal(bc, newp, 8);
+    *oldp = newp;
+  } else {
+    vp9_write(bc, 0, upd);
+  }
+}
+
 static void pack_mb_tokens(vp9_writer* const bc,
                            TOKENEXTRA **tp,
                            const TOKENEXTRA *const stop) {
@@ -1011,10 +1026,8 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
           if (mode == B_PRED) {
             int j = 0;
 #if CONFIG_COMP_INTRA_PRED
-            int uses_second =
-              m->bmi[0].as_mode.second !=
-              (B_PREDICTION_MODE)(B_DC_PRED - 1);
-            vp9_write(bc, uses_second, 128);
+            if (pc->use_intraintra)
+              vp9_write(bc, mi->use_intraintra, pc->fc.intraintra_prob);
 #endif
             do {
 #if CONFIG_COMP_INTRA_PRED
@@ -1031,8 +1044,13 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
               }
               */
 #if CONFIG_COMP_INTRA_PRED
-              if (uses_second) {
-                write_bmode(bc, mode2, pc->fc.bmode_prob);
+              if (pc->use_intraintra && mi->use_intraintra) {
+                if (mode2 != B_DC_PRED - 1) {
+                  vp9_write(bc, 1, pc->fc.intraintra_b_prob);
+                  write_bmode(bc, mode2, pc->fc.bmode_prob);
+                } else {
+                  vp9_write(bc, 0, pc->fc.intraintra_b_prob);
+                }
               }
 #endif
             } while (++j < 16);
@@ -1356,10 +1374,8 @@ static void write_mb_modes_kf(const VP9_COMMON  *c,
     const int mis = c->mode_info_stride;
     int i = 0;
 #if CONFIG_COMP_INTRA_PRED
-    int uses_second =
-      m->bmi[0].as_mode.second !=
-      (B_PREDICTION_MODE)(B_DC_PRED - 1);
-    vp9_write(bc, uses_second, 128);
+    if (c->use_intraintra)
+      vp9_write(bc, m->mbmi.use_intraintra, c->fc.intraintra_prob);
 #endif
     do {
       const B_PREDICTION_MODE A = above_block_mode(m, i, mis);
@@ -1376,8 +1392,13 @@ static void write_mb_modes_kf(const VP9_COMMON  *c,
       write_bmode(bc, bm, c->kf_bmode_prob [A] [L]);
       // printf("    mode: %d\n", bm);
 #if CONFIG_COMP_INTRA_PRED
-      if (uses_second) {
-        write_bmode(bc, bm2, c->kf_bmode_prob [A] [L]);
+      if (c->use_intraintra && m->mbmi.use_intraintra) {
+        if (bm2 != B_DC_PRED - 1) {
+          vp9_write(bc, 1, c->fc.intraintra_b_prob);
+          write_bmode(bc, bm2, c->kf_bmode_prob[A][L]);
+        } else {
+          vp9_write(bc, 0, c->fc.intraintra_b_prob);
+        }
       }
 #endif
     } while (++i < 16);
@@ -2196,6 +2217,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_copy(cpi->common.fc.pre_mbsplit_prob, cpi->common.fc.mbsplit_prob);
   vp9_copy(cpi->common.fc.pre_i8x8_mode_prob, cpi->common.fc.i8x8_mode_prob);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
+#if CONFIG_COMP_INTRA_PRED
+  cpi->common.fc.pre_intraintra_prob = cpi->common.fc.intraintra_prob;
+  cpi->common.fc.pre_intraintra_b_prob = cpi->common.fc.intraintra_b_prob;
+#endif
   vp9_zero(cpi->sub_mv_ref_count);
   vp9_zero(cpi->mbsplit_count);
   vp9_zero(cpi->common.fc.mv_ref_ct)
@@ -2272,6 +2297,26 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
 
     vp9_write_nmvprobs(cpi, xd->allow_high_precision_mv, &header_bc);
   }
+
+#if CONFIG_COMP_INTRA_PRED
+  pc->use_intraintra = (cpi->intraintra_count[1] > 0);
+  vp9_write_bit(&header_bc, pc->use_intraintra);
+  if (pc->use_intraintra) {
+    vp9_cond_prob_update(&header_bc,
+                         &pc->fc.intraintra_prob,
+                         VP9_UPD_INTRAINTRA_PROB,
+                         cpi->intraintra_count);
+    vp9_cond_prob_update(&header_bc,
+                         &pc->fc.intraintra_b_prob,
+                         VP9_UPD_INTRAINTRA_B_PROB,
+                         cpi->intraintra_b_count);
+  }
+    /*
+    printf("  [%d %d] [%d %d]\n",
+           cpi->intraintra_count[0], cpi->intraintra_count[1],
+           cpi->intraintra_b_count[0], cpi->intraintra_b_count[1]);
+           */
+#endif
 
   vp9_stop_encode(&header_bc);
 
