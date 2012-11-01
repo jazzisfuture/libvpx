@@ -71,11 +71,11 @@ int vp9_decode_uniform(BOOL_DECODER *br, int n) {
   int l = get_unsigned_bits(n);
   int m = (1 << l) - n;
   if (!l) return 0;
-  v = vp9_decode_value(br, l - 1);
+  v = decode_value(br, l - 1);
   if (v < m)
     return v;
   else
-    return (v << 1) - m + vp9_decode_value(br, 1);
+    return (v << 1) - m + decode_value(br, 1);
 }
 
 int vp9_decode_term_subexp(BOOL_DECODER *br, int k, int num_syms) {
@@ -87,11 +87,11 @@ int vp9_decode_term_subexp(BOOL_DECODER *br, int k, int num_syms) {
       word = vp9_decode_uniform(br, num_syms - mk) + mk;
       break;
     } else {
-      if (vp9_decode_value(br, 1)) {
+      if (decode_value(br, 1)) {
         i++;
         mk += a;
       } else {
-        word = vp9_decode_value(br, b) + mk;
+        word = decode_value(br, b) + mk;
         break;
       }
     }

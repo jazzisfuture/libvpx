@@ -76,7 +76,7 @@ int vp9_inv_recenter_nonneg(int v, int m);
   while(0) \
 
 
-static int vp9dx_decode_bool(BOOL_DECODER *br, int probability) {
+static int decode_bool(BOOL_DECODER *br, int probability) {
   unsigned int bit = 0;
   VP9_BD_VALUE value;
   unsigned int split;
@@ -115,18 +115,18 @@ static int vp9dx_decode_bool(BOOL_DECODER *br, int probability) {
   return bit;
 }
 
-static int vp9_decode_value(BOOL_DECODER *br, int bits) {
+static int decode_value(BOOL_DECODER *br, int bits) {
   int z = 0;
   int bit;
 
   for (bit = bits - 1; bit >= 0; bit--) {
-    z |= (vp9dx_decode_bool(br, 0x80) << bit);
+    z |= (decode_bool(br, 0x80) << bit);
   }
 
   return z;
 }
 
-static int vp9dx_bool_error(BOOL_DECODER *br) {
+static int bool_error(BOOL_DECODER *br) {
   /* Check if we have reached the end of the buffer.
    *
    * Variable 'count' stores the number of bits in the 'value' buffer, minus

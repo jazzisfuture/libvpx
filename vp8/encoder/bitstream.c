@@ -135,8 +135,8 @@ static void update_mode(
   );
 
   do {
-    new_b += vp9_cost_branch(bct[i], Pnew[i]);
-    old_b += vp9_cost_branch(bct[i], Pcur[i]);
+    new_b += cost_branch(bct[i], Pnew[i]);
+    old_b += cost_branch(bct[i], Pcur[i]);
   } while (++i < n);
 
   if (new_b + (n << 8) < old_b) {
@@ -323,43 +323,41 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 static void write_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_ymode_tree, p, vp9_ymode_encodings + m);
+  write_token(bc, vp9_ymode_tree, p, vp9_ymode_encodings + m);
 }
 
 static void kfwrite_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_kf_ymode_tree, p, vp9_kf_ymode_encodings + m);
+  write_token(bc, vp9_kf_ymode_tree, p, vp9_kf_ymode_encodings + m);
 }
 
 #if CONFIG_SUPERBLOCKS
 static void sb_kfwrite_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_uv_mode_tree, p, vp9_sb_kf_ymode_encodings + m);
+  write_token(bc, vp9_uv_mode_tree, p, vp9_sb_kf_ymode_encodings + m);
 }
 #endif
 
 static void write_i8x8_mode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_i8x8_mode_tree, p, vp9_i8x8_mode_encodings + m);
+  write_token(bc, vp9_i8x8_mode_tree, p, vp9_i8x8_mode_encodings + m);
 }
 
 static void write_uv_mode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_uv_mode_tree, p, vp9_uv_mode_encodings + m);
+  write_token(bc, vp9_uv_mode_tree, p, vp9_uv_mode_encodings + m);
 }
 
 
 static void write_bmode(vp9_writer *bc, int m, const vp9_prob *p) {
-  vp9_write_token(bc, vp9_bmode_tree, p, vp9_bmode_encodings + m);
+  write_token(bc, vp9_bmode_tree, p, vp9_bmode_encodings + m);
 }
 
 static void write_split(vp9_writer *bc, int x, const vp9_prob *p) {
-  vp9_write_token(
-    bc, vp9_mbsplit_tree, p, vp9_mbsplit_encodings + x
-  );
+  write_token(bc, vp9_mbsplit_tree, p, vp9_mbsplit_encodings + x);
 }
 
 static int prob_update_savings(const unsigned int *ct,
                                const vp9_prob oldp, const vp9_prob newp,
                                const vp9_prob upd) {
-  const int old_b = vp9_cost_branch256(ct, oldp);
-  const int new_b = vp9_cost_branch256(ct, newp);
+  const int old_b = cost_branch256(ct, oldp);
+  const int new_b = cost_branch256(ct, newp);
   const int update_b = 2048 + vp9_cost_upd256;
   return (old_b - new_b - update_b);
 }
@@ -367,8 +365,8 @@ static int prob_update_savings(const unsigned int *ct,
 static int prob_diff_update_savings(const unsigned int *ct,
                                     const vp9_prob oldp, const vp9_prob newp,
                                     const vp9_prob upd) {
-  const int old_b = vp9_cost_branch256(ct, oldp);
-  const int new_b = vp9_cost_branch256(ct, newp);
+  const int old_b = cost_branch256(ct, oldp);
+  const int new_b = cost_branch256(ct, newp);
   const int update_b = (newp == oldp ? 0 :
                         prob_diff_update_cost(newp, oldp) + vp9_cost_upd256);
   return (old_b - new_b - update_b);
@@ -377,7 +375,7 @@ static int prob_diff_update_savings(const unsigned int *ct,
 static int prob_diff_update_savings_search(const unsigned int *ct,
                                            const vp9_prob oldp, vp9_prob *bestp,
                                            const vp9_prob upd) {
-  const int old_b = vp9_cost_branch256(ct, oldp);
+  const int old_b = cost_branch256(ct, oldp);
   int new_b, update_b, savings, bestsavings, step;
   vp9_prob newp, bestnewp;
 
@@ -386,7 +384,7 @@ static int prob_diff_update_savings_search(const unsigned int *ct,
 
   step = (*bestp > oldp ? -1 : 1);
   for (newp = *bestp; newp != oldp; newp += step) {
-    new_b = vp9_cost_branch256(ct, newp);
+    new_b = cost_branch256(ct, newp);
     update_b = prob_diff_update_cost(newp, oldp) + vp9_cost_upd256;
     savings = old_b - new_b - update_b;
     if (savings > bestsavings) {
@@ -584,8 +582,8 @@ static void write_mv_ref
 #if CONFIG_DEBUG
   assert(NEARESTMV <= m  &&  m <= SPLITMV);
 #endif
-  vp9_write_token(bc, vp9_mv_ref_tree, p,
-                  vp9_mv_ref_encoding_array - NEARESTMV + m);
+  write_token(bc, vp9_mv_ref_tree, p,
+              vp9_mv_ref_encoding_array - NEARESTMV + m);
 }
 
 #if CONFIG_SUPERBLOCKS
@@ -594,8 +592,8 @@ static void write_sb_mv_ref(vp9_writer *bc, MB_PREDICTION_MODE m,
 #if CONFIG_DEBUG
   assert(NEARESTMV <= m  &&  m < SPLITMV);
 #endif
-  vp9_write_token(bc, vp9_sb_mv_ref_tree, p,
-                  vp9_sb_mv_ref_encoding_array - NEARESTMV + m);
+  write_token(bc, vp9_sb_mv_ref_tree, p,
+              vp9_sb_mv_ref_encoding_array - NEARESTMV + m);
 }
 #endif
 
@@ -606,8 +604,8 @@ static void write_sub_mv_ref
 #if CONFIG_DEBUG
   assert(LEFT4X4 <= m  &&  m <= NEW4X4);
 #endif
-  vp9_write_token(bc, vp9_sub_mv_ref_tree, p,
-                  vp9_sub_mv_ref_encoding_array - LEFT4X4 + m);
+  write_token(bc, vp9_sub_mv_ref_tree, p,
+              vp9_sub_mv_ref_encoding_array - LEFT4X4 + m);
 }
 
 static void write_nmv(vp9_writer *bc, const MV *mv, const int_mv *ref,
@@ -992,8 +990,8 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
             skip_coeff &= m[mis + 1].mbmi.mb_skip_coeff;
           }
 #endif
-          vp9_encode_bool(bc, skip_coeff,
-                          vp9_get_pred_prob(pc, xd, PRED_MBSKIP));
+          vp9_write(bc, skip_coeff,
+                    vp9_get_pred_prob(pc, xd, PRED_MBSKIP));
         }
 
         // Encode the reference frame.
@@ -1106,10 +1104,10 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
           if (mode >= NEARESTMV && mode <= SPLITMV)
           {
             if (cpi->common.mcomp_filter_type == SWITCHABLE) {
-              vp9_write_token(bc, vp9_switchable_interp_tree,
-                              vp9_get_pred_probs(&cpi->common, xd,
-                                                 PRED_SWITCHABLE_INTERP),
-                              vp9_switchable_interp_encodings +
+              write_token(bc, vp9_switchable_interp_tree,
+                          vp9_get_pred_probs(&cpi->common, xd,
+                                             PRED_SWITCHABLE_INTERP),
+                          vp9_switchable_interp_encodings +
                               vp9_switchable_interp_map[mi->interp_filter]);
             } else {
               assert (mi->interp_filter ==
@@ -1339,8 +1337,8 @@ static void write_mb_modes_kf(const VP9_COMMON  *c,
           skip_coeff &= m[mis + 1].mbmi.mb_skip_coeff;
         }
 #endif
-        vp9_encode_bool(bc, skip_coeff,
-                    vp9_get_pred_prob(c, xd, PRED_MBSKIP));
+        vp9_write(bc, skip_coeff,
+                  vp9_get_pred_prob(c, xd, PRED_MBSKIP));
   }
 
 #if CONFIG_SUPERBLOCKS

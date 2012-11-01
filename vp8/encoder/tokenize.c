@@ -95,7 +95,7 @@ static void fill_value_tokens() {
         const int Length = p->Len;
 
         if (Length)
-          cost += vp9_treed_cost(p->tree, p->prob, extra >> 1, Length);
+          cost += treed_cost(p->tree, p->prob, extra >> 1, Length);
 
         cost += vp9_cost_bit(vp9_prob_half, extra & 1); /* sign */
         dct_value_cost[i + DCT_MAX_VALUE] = cost;

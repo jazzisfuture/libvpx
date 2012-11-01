@@ -29,29 +29,29 @@ int dec_mvcount = 0;
 #endif
 
 static int read_bmode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_bmode_tree, p);
+  return treed_read(bc, vp9_bmode_tree, p);
 }
 
 static int read_ymode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_ymode_tree, p);
+  return treed_read(bc, vp9_ymode_tree, p);
 }
 
 #if CONFIG_SUPERBLOCKS
 static int read_kf_sb_ymode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_uv_mode_tree, p);
+  return treed_read(bc, vp9_uv_mode_tree, p);
 }
 #endif
 
 static int read_kf_ymode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_kf_ymode_tree, p);
+  return treed_read(bc, vp9_kf_ymode_tree, p);
 }
 
 static int read_i8x8_mode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_i8x8_mode_tree, p);
+  return treed_read(bc, vp9_i8x8_mode_tree, p);
 }
 
 static int read_uv_mode(vp9_reader *bc, const vp9_prob *p) {
-  return vp9_treed_read(bc, vp9_uv_mode_tree, p);
+  return treed_read(bc, vp9_uv_mode_tree, p);
 }
 
 // This function reads the current macro block's segnent id from the bitstream
@@ -211,9 +211,9 @@ static int read_nmv_component(vp9_reader *r,
                               const nmv_component *mvcomp) {
   int v, s, z, c, o, d;
   s = vp9_read(r, mvcomp->sign);
-  c = vp9_treed_read(r, vp9_mv_class_tree, mvcomp->classes);
+  c = treed_read(r, vp9_mv_class_tree, mvcomp->classes);
   if (c == MV_CLASS_0) {
-    d = vp9_treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
+    d = treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
   } else {
     int i, b;
     d = 0;
@@ -242,9 +242,9 @@ static int read_nmv_component_fp(vp9_reader *r,
   d = o >> 3;
 
   if (c == MV_CLASS_0) {
-    f = vp9_treed_read(r, vp9_mv_fp_tree, mvcomp->class0_fp[d]);
+    f = treed_read(r, vp9_mv_fp_tree, mvcomp->class0_fp[d]);
   } else {
-    f = vp9_treed_read(r, vp9_mv_fp_tree, mvcomp->fp);
+    f = treed_read(r, vp9_mv_fp_tree, mvcomp->fp);
   }
   o += (f << 1);
 
@@ -265,7 +265,7 @@ static int read_nmv_component_fp(vp9_reader *r,
 
 static void read_nmv(vp9_reader *r, MV *mv, const MV *ref,
                      const nmv_context *mvctx) {
-  MV_JOINT_TYPE j = vp9_treed_read(r, vp9_mv_joint_tree, mvctx->joints);
+  MV_JOINT_TYPE j = treed_read(r, vp9_mv_joint_tree, mvctx->joints);
   mv->row = mv-> col = 0;
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
     mv->row = read_nmv_component(r, ref->row, &mvctx->comps[0]);
@@ -466,16 +466,16 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
 
 #if CONFIG_SUPERBLOCKS
 static MB_PREDICTION_MODE read_sb_mv_ref(vp9_reader *bc, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE) vp9_treed_read(bc, vp9_sb_mv_ref_tree, p);
+  return (MB_PREDICTION_MODE) treed_read(bc, vp9_sb_mv_ref_tree, p);
 }
 #endif
 
 static MB_PREDICTION_MODE read_mv_ref(vp9_reader *bc, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE) vp9_treed_read(bc, vp9_mv_ref_tree, p);
+  return (MB_PREDICTION_MODE) treed_read(bc, vp9_mv_ref_tree, p);
 }
 
 static B_PREDICTION_MODE sub_mv_ref(vp9_reader *bc, const vp9_prob *p) {
-  return (B_PREDICTION_MODE) vp9_treed_read(bc, vp9_sub_mv_ref_tree, p);
+  return (B_PREDICTION_MODE) treed_read(bc, vp9_sub_mv_ref_tree, p);
 }
 
 #ifdef VPX_MODE_COUNT
@@ -788,8 +788,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     {
       if (cm->mcomp_filter_type == SWITCHABLE) {
         mbmi->interp_filter = vp9_switchable_interp[
-            vp9_treed_read(bc, vp9_switchable_interp_tree,
-                           vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
+            treed_read(bc, vp9_switchable_interp_tree,
+                       vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
       } else {
         mbmi->interp_filter = cm->mcomp_filter_type;
       }
@@ -860,7 +860,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     switch (mbmi->mode) {
       case SPLITMV: {
         const int s = mbmi->partitioning =
-                        vp9_treed_read(bc, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
+                        treed_read(bc, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
         const int num_p = vp9_mbsplit_count [s];
         int j = 0;
         cm->fc.mbsplit_counts[s]++;
@@ -977,24 +977,24 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       case NEARMV:
         mv->as_int = nearby.as_int;
         /* Clip "next_nearest" so that it does not extend to far out of image */
-        vp9_clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
-                     mb_to_top_edge, mb_to_bottom_edge);
+        clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
+                 mb_to_top_edge, mb_to_bottom_edge);
         if (mbmi->second_ref_frame) {
           mbmi->mv[1].as_int = nearby_second.as_int;
-          vp9_clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
-                       mb_to_top_edge, mb_to_bottom_edge);
+          clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
+                   mb_to_top_edge, mb_to_bottom_edge);
         }
         break;
 
       case NEARESTMV:
         mv->as_int = nearest.as_int;
         /* Clip "next_nearest" so that it does not extend to far out of image */
-        vp9_clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
-                     mb_to_top_edge, mb_to_bottom_edge);
+        clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
+                 mb_to_top_edge, mb_to_bottom_edge);
         if (mbmi->second_ref_frame) {
           mbmi->mv[1].as_int = nearest_second.as_int;
-          vp9_clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
-                       mb_to_top_edge, mb_to_bottom_edge);
+          clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
+                   mb_to_top_edge, mb_to_bottom_edge);
         }
         break;
 
