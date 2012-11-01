@@ -802,21 +802,21 @@ void vp8_short_idct16x16_c(short *input, short *output, int pitch) {
 }
 #endif
 
-static const double C1 = 0.995184726672197;
-static const double C2 = 0.98078528040323;
-static const double C3 = 0.956940335732209;
-static const double C4 = 0.923879532511287;
-static const double C5 = 0.881921264348355;
-static const double C6 = 0.831469612302545;
-static const double C7 = 0.773010453362737;
-static const double C8 = 0.707106781186548;
-static const double C9 = 0.634393284163646;
-static const double C10 = 0.555570233019602;
-static const double C11 = 0.471396736825998;
-static const double C12 = 0.38268343236509;
-static const double C13 = 0.290284677254462;
-static const double C14 = 0.195090322016128;
-static const double C15 = 0.098017140329561;
+static const float C1 = 0.995184726672197;
+static const float C2 = 0.98078528040323;
+static const float C3 = 0.956940335732209;
+static const float C4 = 0.923879532511287;
+static const float C5 = 0.881921264348355;
+static const float C6 = 0.831469612302545;
+static const float C7 = 0.773010453362737;
+static const float C8 = 0.707106781186548;
+static const float C9 = 0.634393284163646;
+static const float C10 = 0.555570233019602;
+static const float C11 = 0.471396736825998;
+static const float C12 = 0.38268343236509;
+static const float C13 = 0.290284677254462;
+static const float C14 = 0.195090322016128;
+static const float C15 = 0.098017140329561;
 
 
 static void butterfly_16x16_idct_1d(double input[16], double output[16]) {
