@@ -36,14 +36,14 @@ static void encode_nmv_component(vp9_writer* const bc,
 
   c = vp9_get_mv_class(z, &o);
 
-  vp9_write_token(bc, vp9_mv_class_tree, mvcomp->classes,
-                  vp9_mv_class_encodings + c);
+  write_token(bc, vp9_mv_class_tree, mvcomp->classes,
+              vp9_mv_class_encodings + c);
 
   d = (o >> 3);               /* int mv data */
 
   if (c == MV_CLASS_0) {
-    vp9_write_token(bc, vp9_mv_class0_tree, mvcomp->class0,
-                    vp9_mv_class0_encodings + d);
+    write_token(bc, vp9_mv_class0_tree, mvcomp->class0,
+                vp9_mv_class0_encodings + d);
   } else {
     int i, b;
     b = c + CLASS0_BITS - 1;  /* number of bits */
@@ -70,11 +70,11 @@ static void encode_nmv_component_fp(vp9_writer *bc,
 
   /* Code the fractional pel bits */
   if (c == MV_CLASS_0) {
-    vp9_write_token(bc, vp9_mv_fp_tree, mvcomp->class0_fp[d],
-                    vp9_mv_fp_encodings + f);
+    write_token(bc, vp9_mv_fp_tree, mvcomp->class0_fp[d],
+                vp9_mv_fp_encodings + f);
   } else {
-    vp9_write_token(bc, vp9_mv_fp_tree, mvcomp->fp,
-                    vp9_mv_fp_encodings + f);
+    write_token(bc, vp9_mv_fp_tree, mvcomp->fp,
+                vp9_mv_fp_encodings + f);
   }
   /* Code the high precision bit */
   if (usehp) {
@@ -158,8 +158,8 @@ static int update_nmv_savings(const unsigned int ct[2],
 #else
   vp9_prob mod_p = new_p;
 #endif
-  const int cur_b = vp9_cost_branch256(ct, cur_p);
-  const int mod_b = vp9_cost_branch256(ct, mod_p);
+  const int cur_b = cost_branch256(ct, cur_p);
+  const int mod_b = cost_branch256(ct, mod_p);
   const int cost = 7 * 256 +
 #ifndef LOW_PRECISION_MV_UPDATE
       256 +
@@ -185,8 +185,8 @@ static int update_nmv(
   vp9_prob mod_p = new_p;
 #endif
 
-  const int cur_b = vp9_cost_branch256(ct, *cur_p);
-  const int mod_b = vp9_cost_branch256(ct, mod_p);
+  const int cur_b = cost_branch256(ct, *cur_p);
+  const int mod_b = cost_branch256(ct, mod_p);
   const int cost = 7 * 256 +
 #ifndef LOW_PRECISION_MV_UPDATE
       256 +
@@ -509,8 +509,8 @@ void vp9_write_nmvprobs(VP9_COMP* const cpi, int usehp, vp9_writer* const bc) {
 void vp9_encode_nmv(vp9_writer* const bc, const MV* const mv,
                     const MV* const ref, const nmv_context* const mvctx) {
   MV_JOINT_TYPE j = vp9_get_mv_joint(*mv);
-  vp9_write_token(bc, vp9_mv_joint_tree, mvctx->joints,
-                  vp9_mv_joint_encodings + j);
+  write_token(bc, vp9_mv_joint_tree, mvctx->joints,
+              vp9_mv_joint_encodings + j);
   if (j == MV_JOINT_HZVNZ || j == MV_JOINT_HNZVNZ) {
     encode_nmv_component(bc, mv->row, ref->col, &mvctx->comps[0]);
   }

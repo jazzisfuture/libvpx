@@ -1959,8 +1959,8 @@ int vp9_cost_mv_ref(VP9_COMP *cpi,
     vp9_prob p [VP9_MVREFS - 1];
     assert(NEARESTMV <= m  &&  m <= SPLITMV);
     vp9_mv_ref_probs(pc, p, near_mv_ref_ct);
-    return vp9_cost_token(vp9_mv_ref_tree, p,
-                          vp9_mv_ref_encoding_array - NEARESTMV + m);
+    return cost_token(vp9_mv_ref_tree, p,
+                      vp9_mv_ref_encoding_array - NEARESTMV + m);
   } else
     return 0;
 }
@@ -2293,8 +2293,8 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
   label_mv_thresh = 1 * bsi->mvthresh / label_count;
 
   // Segmentation method overheads
-  rate = vp9_cost_token(vp9_mbsplit_tree, vp9_mbsplit_probs,
-                        vp9_mbsplit_encodings + segmentation);
+  rate = cost_token(vp9_mbsplit_tree, vp9_mbsplit_probs,
+                    vp9_mbsplit_encodings + segmentation);
   rate += vp9_cost_mv_ref(cpi, SPLITMV, bsi->mdcounts);
   this_segment_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
   br += rate;

@@ -241,7 +241,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
         xd->left_context--;
     }
 #endif
-  } else if (!vp9dx_bool_error(bc)) {
+  } else if (!bool_error(bc)) {
     for (i = 0; i < 25; i++) {
       xd->block[i].eob = 0;
       xd->eobs[i] = 0;
@@ -262,7 +262,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
 
   if (eobtotal == 0 && mode != B_PRED && mode != SPLITMV
       && mode != I8X8_PRED
-      && !vp9dx_bool_error(bc)) {
+      && !bool_error(bc)) {
     /* Special case:  Force the loopfilter to skip when eobtotal and
      * mb_skip_coeff are zero.
      * */
@@ -666,7 +666,7 @@ decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc, int mbrow, MACROBLOCKD *xd,
       decode_macroblock(pbi, xd, mb_row, mb_col, bc);
 
       /* check if the boolean decoder has suffered an error */
-      xd->corrupted |= vp9dx_bool_error(bc);
+      xd->corrupted |= bool_error(bc);
 
 #if CONFIG_SUPERBLOCKS
       if (mi->mbmi.encoded_as_sb) {
@@ -1290,7 +1290,7 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
 
   /* Collect information about decoder corruption. */
   /* 1. Check first boolean decoder for errors. */
-  pc->yv12_fb[pc->new_fb_idx].corrupted = vp9dx_bool_error(&header_bc);
+  pc->yv12_fb[pc->new_fb_idx].corrupted = bool_error(&header_bc);
   /* 2. Check the macroblock information */
   pc->yv12_fb[pc->new_fb_idx].corrupted |= corrupt_tokens;
 
