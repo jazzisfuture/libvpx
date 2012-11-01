@@ -31,7 +31,7 @@ CODEC_SRCS-yes += $(addprefix vpx_scale/,$(call enabled,SCALE_SRCS))
 
 
 ifeq ($(CONFIG_VP8_ENCODER),yes)
-  VP8_PREFIX=vp8/
+  VP8_PREFIX=vp9/
   include $(SRC_PATH_BARE)/$(VP8_PREFIX)vp8cx.mk
   CODEC_SRCS-yes += $(addprefix $(VP8_PREFIX),$(call enabled,VP8_CX_SRCS))
   CODEC_EXPORTS-yes += $(addprefix $(VP8_PREFIX),$(VP8_CX_EXPORTS))
@@ -44,7 +44,7 @@ ifeq ($(CONFIG_VP8_ENCODER),yes)
 endif
 
 ifeq ($(CONFIG_VP8_DECODER),yes)
-  VP8_PREFIX=vp8/
+  VP8_PREFIX=vp9/
   include $(SRC_PATH_BARE)/$(VP8_PREFIX)vp8dx.mk
   CODEC_SRCS-yes += $(addprefix $(VP8_PREFIX),$(call enabled,VP8_DX_SRCS))
   CODEC_EXPORTS-yes += $(addprefix $(VP8_PREFIX),$(VP8_DX_EXPORTS))
