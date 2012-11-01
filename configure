@@ -167,7 +167,7 @@ done
 
 if ! enabled alt_tree_layout; then
 # development environment
-[ -d ${source_path}/vp8 ] && CODECS="${CODECS} vp8_encoder vp8_decoder"
+[ -d ${source_path}/vp9 ] && CODECS="${CODECS} vp8_encoder vp8_decoder"
 else
 # customer environment
 [ -f ${source_path}/../include/vpx/vp8cx.h ] && CODECS="${CODECS} vp8_encoder"
