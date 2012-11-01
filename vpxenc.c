@@ -2034,6 +2034,7 @@ int main(int argc, const char **argv_) {
         }
       }
       if (test_decode && test_decode_frame) {
+        int frame_enc_dec_match;
         ref_enc.frame_type = VP8_LAST_FRAME;
         ref_dec.frame_type = VP8_LAST_FRAME;
 
@@ -2044,10 +2045,17 @@ int main(int argc, const char **argv_) {
                           VP8_COPY_REFERENCE,
                           &ref_dec);
 
-        enc_dec_match &= compare_img(&ref_enc.img,
-                                     &ref_dec.img);
-        if (!enc_dec_match && first_bad_frame < 0) {
-          first_bad_frame = frames_out - 1;
+
+        frame_enc_dec_match = compare_img(&ref_enc.img,
+                                             &ref_dec.img);
+        enc_dec_match &= frame_enc_dec_match;
+
+        if (!frame_enc_dec_match) {
+          if (first_bad_frame < 0) {
+            first_bad_frame = frames_out - 1;
+          }
+          fprintf(stderr,
+                  "\nEnc-Dec mismatch happened on frame %d\n", frames_out - 1);
         }
       }
 
