@@ -18,8 +18,8 @@
 #include "vpx_config.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vpx_integer.h"
-#if CONFIG_VP8_DECODER
-#include "vpx/vp8dx.h"
+#if CONFIG_VP9_DECODER
+#include "vpx/vp9dx.h"
 #endif
 
 static char *exec_name;
@@ -29,8 +29,8 @@ static const struct {
   const char *name;
   const vpx_codec_iface_t *iface;
 } ifaces[] = {
-#if CONFIG_VP8_DECODER
-  {"vp8",  &vpx_codec_vp8_dx_algo},
+#if CONFIG_VP9_DECODER
+  {"vp9",  &vpx_codec_vp8_dx_algo},
 #endif
 };
 

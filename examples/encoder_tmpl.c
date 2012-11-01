@@ -18,7 +18,7 @@
 #include <string.h>
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
-#include "vpx/vp8cx.h"
+#include "vpx/vp9cx.h"
 #define interface (vpx_codec_vp8_cx())
 #define fourcc    0x30385056
 @EXTRA_INCLUDES
