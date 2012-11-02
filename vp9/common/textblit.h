@@ -8,11 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef __INC_RECONINTRA_H
-#define __INC_RECONINTRA_H
+#ifndef __INC_TEXTBLIT_H
+#define __INC_TEXTBLIT_H
 
-#include "blockd.h"
+#include <stdlib.h>
 
-extern void vp9_recon_intra_mbuv(MACROBLOCKD *xd);
+extern void vp9_blit_text(const char *msg, unsigned char *address,
+                          const int pitch);
+extern void vp9_blit_line(int x0, int x1, int y0, int y1,
+                          unsigned char *image, const int pitch);
 
-#endif  // __INC_RECONINTRA_H
+#endif  // __INC_TEXTBLIT_H
