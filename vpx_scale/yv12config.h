@@ -42,7 +42,7 @@ extern "C"
   }
             YUV_TYPE;
 
-  typedef struct {
+  typedef struct YV12_BUFFER_CONFIG {
     int   y_width;
     int   y_height;
     int   y_stride;
