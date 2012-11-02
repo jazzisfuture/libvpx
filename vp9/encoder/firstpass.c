@@ -513,8 +513,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
     recon_uvoffset = (mb_row * recon_uv_stride * 8);
 
     // Set up limit values for motion vectors to prevent them extending outside the UMV borders
-    x->mv_row_min = -((mb_row * 16) + (VP8BORDERINPIXELS - 16));
-    x->mv_row_max = ((cm->mb_rows - 1 - mb_row) * 16) + (VP8BORDERINPIXELS - 16);
+    x->mv_row_min = -((mb_row * 16) + (VP9BORDERINPIXELS - 16));
+    x->mv_row_max = ((cm->mb_rows - 1 - mb_row) * 16)
+                    + (VP9BORDERINPIXELS - 16);
 
 
     // for each macroblock col in image
@@ -544,8 +545,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
       intra_error += (int64_t)this_error;
 
       // Set up limit values for motion vectors to prevent them extending outside the UMV borders
-      x->mv_col_min = -((mb_col * 16) + (VP8BORDERINPIXELS - 16));
-      x->mv_col_max = ((cm->mb_cols - 1 - mb_col) * 16) + (VP8BORDERINPIXELS - 16);
+      x->mv_col_min = -((mb_col * 16) + (VP9BORDERINPIXELS - 16));
+      x->mv_col_max = ((cm->mb_cols - 1 - mb_col) * 16)
+                      + (VP9BORDERINPIXELS - 16);
 
       // Other than for the first frame do a motion search
       if (cm->current_video_frame > 0) {
@@ -764,7 +766,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
        (cpi->twopass.this_frame_stats->pcnt_inter > 0.20) &&
        ((cpi->twopass.this_frame_stats->intra_error /
          cpi->twopass.this_frame_stats->coded_error) > 2.0))) {
-    vp8_yv12_copy_frame_ptr(lst_yv12, gld_yv12);
+    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
     cpi->twopass.sr_update_lag = 1;
   } else
     cpi->twopass.sr_update_lag++;
@@ -775,7 +777,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   // Special case for the first frame. Copy into the GF buffer as a second reference.
   if (cm->current_video_frame == 0) {
-    vp8_yv12_copy_frame_ptr(lst_yv12, gld_yv12);
+    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
   }
 
 
