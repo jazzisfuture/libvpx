@@ -22,6 +22,6 @@ extern int vp8cx_encode_inter_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
         int recon_yoffset, int recon_uvoffset,
         int mb_row, int mb_col);
 
-extern int vp8cx_encode_intra_macroblock(const VP8_COMP *cpi, MACROBLOCK *x,
+extern int vp8cx_encode_intra_macroblock(VP8_COMP *cpi, MACROBLOCK *x,
         TOKENEXTRA **t);
 #endif
