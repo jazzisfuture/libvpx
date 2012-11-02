@@ -18,6 +18,7 @@
 #include "mcomp.h"
 #include "firstpass.h"
 #include "vpx_scale/vpxscale.h"
+#include "encodeframe.h"
 #include "encodemb.h"
 #include "vp9/common/extend.h"
 #include "vp9/common/systemdependent.h"
@@ -25,6 +26,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/common/swapyv12buffer.h"
 #include <stdio.h>
+#include "quantize.h"
 #include "rdopt.h"
 #include "ratectrl.h"
 #include "vp9/common/quant_common.h"
@@ -38,17 +40,6 @@
 #else
 #define IF_RTCD(x) NULL
 #endif
-
-extern void vp9_build_block_offsets(MACROBLOCK *x);
-
-extern void vp9_setup_block_ptrs(MACROBLOCK *x);
-
-extern void vp9_frame_init_quantizer(VP9_COMP *cpi);
-
-extern void vp9_set_mbmode_and_mvs(MACROBLOCK *x, MB_PREDICTION_MODE mb,
-                                   int_mv *mv);
-
-extern void vp9_alloc_compressor_data(VP9_COMP *cpi);
 
 #define IIFACTOR   12.5
 #define IIKFACTOR1 12.5

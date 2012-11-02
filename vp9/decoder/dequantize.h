@@ -38,6 +38,20 @@ extern void vp9_dequant_idct_add_uv_block_lossless_c(short *q, short *dq,
                                                      int stride, char *eobs);
 #endif
 
+void vp9_dequant_idct_add_8x8_c(short *input, short *dq, unsigned char *pred,
+                                unsigned char *dest, int pitch, int stride);
+
+void vp9_dequant_dc_idct_add_8x8_c(short *input, short *dq, unsigned char *pred,
+                                   unsigned char *dest, int pitch, int stride,
+                                   int Dc);
+
+void vp9_dequant_dc_idct_add_c(short *input, short *dq, unsigned char *pred,
+                               unsigned char *dest, int pitch, int stride,
+                               int Dc);
+
+void vp9_dequant_idct_add_c(short *input, short *dq, unsigned char *pred,
+                            unsigned char *dest, int pitch, int stride);
+
 typedef void (*vp9_dequant_idct_add_fn_t)(short *input, short *dq,
     unsigned char *pred, unsigned char *output, int pitch, int stride);
 typedef void(*vp9_dequant_dc_idct_add_fn_t)(short *input, short *dq,
