@@ -29,7 +29,7 @@ void idct_dequant_0_2x_neon
 
 void vp8_dequant_dc_idct_add_y_block_neon
 (short *q, short *dq, unsigned char *pre,
- unsigned char *dst, int stride, char *eobs, short *dc) {
+ unsigned char *dst, int stride, unsigned short *eobs, short *dc) {
   int i;
 
   for (i = 0; i < 4; i++) {
@@ -53,7 +53,7 @@ void vp8_dequant_dc_idct_add_y_block_neon
 
 void vp8_dequant_idct_add_y_block_neon
 (short *q, short *dq, unsigned char *pre,
- unsigned char *dst, int stride, char *eobs) {
+ unsigned char *dst, int stride, unsigned short *eobs) {
   int i;
 
   for (i = 0; i < 4; i++) {
@@ -76,7 +76,7 @@ void vp8_dequant_idct_add_y_block_neon
 
 void vp8_dequant_idct_add_uv_block_neon
 (short *q, short *dq, unsigned char *pre,
- unsigned char *dstu, unsigned char *dstv, int stride, char *eobs) {
+ unsigned char *dstu, unsigned char *dstv, int stride, unsigned short *eobs) {
   if (((short *)eobs)[0] & 0xfefe)
     idct_dequant_full_2x_neon(q, dq, pre, dstu, 8, stride);
   else
