@@ -8,8 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdlib.h>
-
+#include "vp9/common/textblit.h"
 
 void vp9_blit_text(const char *msg, unsigned char *address, const int pitch) {
   int letter_bitmap;
