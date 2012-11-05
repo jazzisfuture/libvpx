@@ -455,8 +455,6 @@ typedef struct VP8_COMP
     int ymode_count [VP8_YMODES];        /* intra MB type cts this frame */
     int uv_mode_count[VP8_UV_MODES];     /* intra MB type cts this frame */
 
-    unsigned int MVcount [2] [MVvals];  /* (row,col) MV cts this frame */
-
     vp8_prob frame_coef_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
     char update_probs [BLOCK_TYPES] [COEF_BANDS] [PREV_COEF_CONTEXTS] [ENTROPY_NODES];
 

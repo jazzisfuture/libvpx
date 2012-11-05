@@ -474,6 +474,7 @@ void vp8cx_init_mbrthread_data(VP8_COMP *cpi,
 
         vp8_zero(mb->coef_counts);
         mb->skip_true_count = 0;
+        vp8_zero(mb->MVcount);
     }
 }
 
