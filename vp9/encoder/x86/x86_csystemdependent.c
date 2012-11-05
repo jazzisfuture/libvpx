@@ -16,6 +16,7 @@
 
 
 #if HAVE_MMX
+extern void vp9_short_fdct4x4_mmx(short *input, short *output, int pitch);
 void vp9_short_fdct8x4_mmx(short *input, short *output, int pitch) {
   vp9_short_fdct4x4_mmx(input,   output,    pitch);
   vp9_short_fdct4x4_mmx(input + 4, output + 16, pitch);

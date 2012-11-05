@@ -1269,7 +1269,7 @@ void vp9_short_idct16x16_c(short *input, short *output, int pitch) {
         out2[j*16 + i] = temp_out[j];
     }
     for (i = 0; i < 16*16; ++i)
-      output[i] = round(out2[i]/128);
+      output[i] =(int16_t) round(out2[i]/128);
   }
   vp9_clear_system_state(); // Make it simd safe : __asm emms;
 }
