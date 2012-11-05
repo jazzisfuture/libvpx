@@ -45,7 +45,7 @@ void vpx_log(const char *format, ...);
 #define SEGMENT_DELTADATA   0
 #define SEGMENT_ABSDATA     1
 #if CONFIG_NEWBESTREFMV || CONFIG_NEW_MVREF
-#define MAX_MV_REFS 19
+#define MAX_MV_REFS 9
 #endif
 
 typedef struct {
