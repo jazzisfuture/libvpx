@@ -177,7 +177,8 @@ enum vp8e_enc_control_id
      * to a keyframe, set this to 450.
      *
      */
-    VP8E_SET_MAX_INTRA_BITRATE_PCT
+    VP8E_SET_MAX_INTRA_BITRATE_PCT,
+    VP8E_SET_FRAME_FLAGS            /**< control function to set the reference and update frame flags */
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -277,6 +278,7 @@ VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_ENTROPY,            int)
 VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_REFERENCE,          int)
 VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_USE_REFERENCE,          int)
 
+VPX_CTRL_USE_TYPE(VP8E_SET_FRAME_FLAGS,        int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP,            vpx_roi_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP,          vpx_active_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)

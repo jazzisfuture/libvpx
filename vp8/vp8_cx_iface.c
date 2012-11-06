@@ -740,30 +740,9 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t  *ctx,
     }
 }
 
-
-static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
-                                   const vpx_image_t     *img,
-                                   vpx_codec_pts_t        pts,
-                                   unsigned long          duration,
-                                   vpx_enc_frame_flags_t  flags,
-                                   unsigned long          deadline)
+static vpx_codec_err_t set_reference_and_update(vpx_codec_alg_priv_t *ctx,
+                                                int flags)
 {
-    vpx_codec_err_t res = VPX_CODEC_OK;
-
-    if (!ctx->cfg.rc_target_bitrate)
-        return res;
-
-    if (!ctx->cfg.rc_target_bitrate)
-        return res;
-
-    if (img)
-        res = validate_img(ctx, img);
-
-    if (!res)
-        res = validate_config(ctx, &ctx->cfg, &ctx->vp8_cfg, 1);
-
-    pick_quickcompress_mode(ctx, duration, deadline);
-    vpx_codec_pkt_list_init(&ctx->pkt_list);
 
     /* Handle Flags */
     if (((flags & VP8_EFLAG_NO_UPD_GF) && (flags & VP8_EFLAG_FORCE_GF))
@@ -812,6 +791,35 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
     {
         vp8_update_entropy(ctx->cpi, 0);
     }
+
+    return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
+                                   const vpx_image_t     *img,
+                                   vpx_codec_pts_t        pts,
+                                   unsigned long          duration,
+                                   vpx_enc_frame_flags_t  flags,
+                                   unsigned long          deadline)
+{
+    vpx_codec_err_t res = VPX_CODEC_OK;
+
+    if (!ctx->cfg.rc_target_bitrate)
+        return res;
+
+    if (!ctx->cfg.rc_target_bitrate)
+        return res;
+
+    if (img)
+        res = validate_img(ctx, img);
+
+    if (!res)
+        res = validate_config(ctx, &ctx->cfg, &ctx->vp8_cfg, 1);
+
+    pick_quickcompress_mode(ctx, duration, deadline);
+    vpx_codec_pkt_list_init(&ctx->pkt_list);
+
+    res = set_reference_and_update(ctx, flags);
 
     /* Handle fixed keyframe intervals */
     if (ctx->cfg.kf_mode == VPX_KF_AUTO
@@ -1127,6 +1135,15 @@ static vpx_codec_err_t vp8e_use_reference(vpx_codec_alg_priv_t *ctx,
     return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t vp8e_set_frame_flags(vpx_codec_alg_priv_t *ctx,
+                                            int ctr_id,
+                                            va_list args)
+{
+    int frame_flags = va_arg(args, int);
+    return set_reference_and_update(ctx, frame_flags);
+}
+
+
 static vpx_codec_err_t vp8e_set_roi_map(vpx_codec_alg_priv_t *ctx,
                                         int ctr_id,
                                         va_list args)
@@ -1202,6 +1219,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_UPD_ENTROPY,                  vp8e_update_entropy},
     {VP8E_UPD_REFERENCE,                vp8e_update_reference},
     {VP8E_USE_REFERENCE,                vp8e_use_reference},
+    {VP8E_SET_FRAME_FLAGS,              vp8e_set_frame_flags},
     {VP8E_SET_ROI_MAP,                  vp8e_set_roi_map},
     {VP8E_SET_ACTIVEMAP,                vp8e_set_activemap},
     {VP8E_SET_SCALEMODE,                vp8e_set_scalemode},
