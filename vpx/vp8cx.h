@@ -126,6 +126,7 @@ enum vp8e_enc_control_id
     VP8E_UPD_ENTROPY           = 5,  /**< control function to set mode of entropy update in encoder */
     VP8E_UPD_REFERENCE,              /**< control function to set reference update mode in encoder */
     VP8E_USE_REFERENCE,              /**< control function to set which reference frame encoder can use */
+    VP8E_SET_FRAME_FLAGS,            /**< control function to set the reference and update frame flags */
     VP8E_SET_ROI_MAP,                /**< control function to pass an ROI map to encoder */
     VP8E_SET_ACTIVEMAP,              /**< control function to pass an Active map to encoder */
     VP8E_SET_SCALEMODE         = 11, /**< control function to set encoder scaling mode */
@@ -277,6 +278,7 @@ VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_ENTROPY,            int)
 VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_REFERENCE,          int)
 VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_USE_REFERENCE,          int)
 
+VPX_CTRL_USE_TYPE(VP8E_SET_FRAME_FLAGS,        int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP,            vpx_roi_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP,          vpx_active_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)

@@ -1516,12 +1516,6 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
     cpi->baseline_gf_interval =
         cpi->oxcf.alt_freq ? cpi->oxcf.alt_freq : DEFAULT_GF_INTERVAL;
 
-    cpi->ref_frame_flags = VP8_ALTR_FRAME | VP8_GOLD_FRAME | VP8_LAST_FRAME;
-
-    cm->refresh_golden_frame = 0;
-    cm->refresh_last_frame = 1;
-    cm->refresh_entropy_probs = 1;
-
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
     cpi->oxcf.token_partitions = 3;
 #endif
