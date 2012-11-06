@@ -467,7 +467,7 @@ static TX_TYPE get_tx_type_8x8(const MACROBLOCKD *xd, const BLOCKD *b) {
   TX_TYPE tx_type = DCT_DCT;
   if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
       xd->q_index < ACTIVE_HT8) {
-    tx_type = txfm_map(pred_mode_conv(b->bmi.as_mode.first));
+    tx_type = txfm_map(b->bmi.as_mode.first);
   }
   return tx_type;
 }
