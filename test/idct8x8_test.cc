@@ -15,12 +15,15 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 extern "C" {
-#include "vp9/encoder/dct.h"
 #include "vp9/common/idct.h"
 }
 
 #include "acm_random.h"
 #include "vpx/vpx_integer.h"
+
+extern "C" {
+void vp9_short_fdct8x8_c(short *InputData, short *OutputData, int pitch);
+}
 
 using libvpx_test::ACMRandom;
 
@@ -99,7 +102,7 @@ void reference_idct_2d(double input[64], int16_t output[64]) {
     output[i] = round(out2[i]/32);
 }
 
-TEST(VP8Idct8x8Test, AccuracyCheck) {
+TEST(VP9Idct8x8Test, AccuracyCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 10000;
   for (int i = 0; i < count_test_block; ++i) {
@@ -112,7 +115,7 @@ TEST(VP8Idct8x8Test, AccuracyCheck) {
       input[j] = rnd.Rand8() - rnd.Rand8();
 
     const int pitch = 16;
-    vp8_short_fdct8x8_c(input, output_c, pitch);
+    vp9_short_fdct8x8_c(input, output_c, pitch);
     reference_dct_2d(input, output_r);
 
     for (int j = 0; j < 64; ++j) {
@@ -140,7 +143,7 @@ TEST(VP8Idct8x8Test, AccuracyCheck) {
     reference_dct_2d(input, output_r);
     for (int j = 0; j < 64; ++j)
       coeff[j] = round(output_r[j]);
-    vp8_short_idct8x8_c(coeff, output_c, pitch);
+    vp9_short_idct8x8_c(coeff, output_c, pitch);
     for (int j = 0; j < 64; ++j) {
       const int diff = output_c[j] -input[j];
       const int error = diff * diff;

@@ -15,7 +15,6 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 extern "C" {
-#include "vp9/encoder/dct.h"
 #include "vp9/common/idct.h"
 }
 
@@ -24,9 +23,13 @@ extern "C" {
 
 using libvpx_test::ACMRandom;
 
+extern "C" {
+void vp9_short_fdct8x8_c(short *InputData, short *OutputData, int pitch);
+}
+
 namespace {
 
-TEST(VP8Fdct8x8Test, SignBiasCheck) {
+TEST(VP9Fdct8x8Test, SignBiasCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   int16_t test_input_block[64];
   int16_t test_output_block[64];
@@ -41,7 +44,7 @@ TEST(VP8Fdct8x8Test, SignBiasCheck) {
     for (int j = 0; j < 64; ++j)
       test_input_block[j] = rnd.Rand8() - rnd.Rand8();
 
-    vp8_short_fdct8x8_c(test_input_block, test_output_block, pitch);
+    vp9_short_fdct8x8_c(test_input_block, test_output_block, pitch);
 
     for (int j = 0; j < 64; ++j) {
       if (test_output_block[j] < 0)
@@ -66,7 +69,7 @@ TEST(VP8Fdct8x8Test, SignBiasCheck) {
     for (int j = 0; j < 64; ++j)
       test_input_block[j] = (rnd.Rand8() >> 4) - (rnd.Rand8() >> 4);
 
-    vp8_short_fdct8x8_c(test_input_block, test_output_block, pitch);
+    vp9_short_fdct8x8_c(test_input_block, test_output_block, pitch);
 
     for (int j = 0; j < 64; ++j) {
       if (test_output_block[j] < 0)
@@ -85,7 +88,7 @@ TEST(VP8Fdct8x8Test, SignBiasCheck) {
   }
 };
 
-TEST(VP8Fdct8x8Test, RoundTripErrorCheck) {
+TEST(VP9Fdct8x8Test, RoundTripErrorCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   int max_error = 0;
   double total_error = 0;
@@ -100,7 +103,7 @@ TEST(VP8Fdct8x8Test, RoundTripErrorCheck) {
       test_input_block[j] = rnd.Rand8() - rnd.Rand8();
 
     const int pitch = 16;
-    vp8_short_fdct8x8_c(test_input_block, test_temp_block, pitch);
+    vp9_short_fdct8x8_c(test_input_block, test_temp_block, pitch);
     for (int j = 0; j < 64; ++j){
         if(test_temp_block[j] > 0) {
           test_temp_block[j] += 2;
@@ -112,7 +115,7 @@ TEST(VP8Fdct8x8Test, RoundTripErrorCheck) {
           test_temp_block[j] *= 4;
         }
     }
-    vp8_short_idct8x8_c(test_temp_block, test_output_block, pitch);
+    vp9_short_idct8x8_c(test_temp_block, test_output_block, pitch);
 
     for (int j = 0; j < 64; ++j) {
       const int diff = test_input_block[j] - test_output_block[j];
@@ -130,7 +133,7 @@ TEST(VP8Fdct8x8Test, RoundTripErrorCheck) {
       << "Error: 8x8 FDCT/IDCT has average roundtrip error > 1/5 per block";
 };
 
-TEST(VP8Fdct8x8Test, ExtremalCheck) {
+TEST(VP9Fdct8x8Test, ExtremalCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   int max_error = 0;
   double total_error = 0;
@@ -145,8 +148,8 @@ TEST(VP8Fdct8x8Test, ExtremalCheck) {
       test_input_block[j] = rnd.Rand8() % 2 ? 255 : -255;
 
     const int pitch = 16;
-    vp8_short_fdct8x8_c(test_input_block, test_temp_block, pitch);
-    vp8_short_idct8x8_c(test_temp_block, test_output_block, pitch);
+    vp9_short_fdct8x8_c(test_input_block, test_temp_block, pitch);
+    vp9_short_idct8x8_c(test_temp_block, test_output_block, pitch);
 
     for (int j = 0; j < 64; ++j) {
       const int diff = test_input_block[j] - test_output_block[j];
