@@ -290,11 +290,11 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     if (decision == FILTER_BLOCK)
     {
         /* Filter. */
-        decision = vp8_denoiser_filter(&denoiser->yv12_mc_running_avg,
-                                       &denoiser->yv12_running_avg[LAST_FRAME],
-                                       x,
-                                       motion_magnitude2,
-                                       recon_yoffset, recon_uvoffset);
+        decision = vp8_denoiser_filter_c(&denoiser->yv12_mc_running_avg,
+                                         &denoiser->yv12_running_avg[LAST_FRAME],
+                                         x,
+                                         motion_magnitude2,
+                                         recon_yoffset, recon_uvoffset);
     }
     if (decision == COPY_BLOCK)
     {
