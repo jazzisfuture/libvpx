@@ -601,8 +601,13 @@ int parse_coff(uint8_t *buf, size_t sz) {
   uint8_t *ptr;
   uint32_t symoffset;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   char **sectionlist;  // this array holds all section names in their correct order.
   // it is used to check if the symbol is in .bss or .rdata section.
+=======
+    char **sectionlist;  //this array holds all section names in their correct order.
+    //it is used to check if the symbol is in .bss or .rdata section.
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   nsections = get_le16(buf + 2);
   symtab_ptr = get_le32(buf + 8);
@@ -723,7 +728,117 @@ int parse_coff(uint8_t *buf, size_t sz) {
 
   free(sectionlist);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   return 0;
+=======
+    ptr = buf + 20;     //section header
+
+    for (i = 0; i < nsections; i++)
+    {
+        char sectionname[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        strncpy(sectionname, ptr, 8);
+        //log_msg("COFF: Parsing section %s\n",sectionname);
+
+        sectionlist[i] = malloc(strlen(sectionname) + 1);
+
+        if (sectionlist[i] == NULL)
+        {
+            log_msg("Allocating storage for %s failed\n", sectionname);
+            goto bail;
+        }
+        strcpy(sectionlist[i], sectionname);
+
+        if (!strcmp(sectionname, ".rdata")) sectionrawdata_ptr = get_le32(ptr + 20);
+
+        ptr += 40;
+    }
+
+    //log_msg("COFF: Symbol table at offset %u\n", symtab_ptr);
+    //log_msg("COFF: raw data pointer ofset for section .rdata is %u\n", sectionrawdata_ptr);
+
+    /*  The compiler puts the data with non-zero offset in .rdata section, but puts the data with
+        zero offset in .bss section. So, if the data in in .bss section, set offset=0.
+        Note from Wiki: In an object module compiled from C, the bss section contains
+        the local variables (but not functions) that were declared with the static keyword,
+        except for those with non-zero initial values. (In C, static variables are initialized
+        to zero by default.) It also contains the non-local (both extern and static) variables
+        that are also initialized to zero (either explicitly or by default).
+        */
+    //move to symbol table
+    /* COFF symbol table:
+        offset      field
+        0           Name(*)
+        8           Value
+        12          SectionNumber
+        14          Type
+        16          StorageClass
+        17          NumberOfAuxSymbols
+        */
+    ptr = buf + symtab_ptr;
+
+    for (i = 0; i < symtab_sz; i++)
+    {
+        int16_t section = get_le16(ptr + 12); //section number
+
+        if (section > 0 && ptr[16] == 2)
+        {
+            //if(section > 0 && ptr[16] == 3 && get_le32(ptr+8)) {
+
+            if (get_le32(ptr))
+            {
+                char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+                strncpy(name, ptr, 8);
+                //log_msg("COFF: Parsing symbol %s\n",name);
+                /* The 64bit Windows compiler doesn't prefix with an _.
+                 * Check what's there, and bump if necessary
+                 */
+                if (name[0] == '_')
+                    printf("%-40s EQU ", name + 1);
+                else
+                    printf("%-40s EQU ", name);
+            }
+            else
+            {
+                //log_msg("COFF: Parsing symbol %s\n",
+                //        buf + strtab_ptr + get_le32(ptr+4));
+                if ((buf + strtab_ptr + get_le32(ptr + 4))[0] == '_')
+                    printf("%-40s EQU ",
+                           buf + strtab_ptr + get_le32(ptr + 4) + 1);
+                else
+                    printf("%-40s EQU ", buf + strtab_ptr + get_le32(ptr + 4));
+            }
+
+            if (!(strcmp(sectionlist[section-1], ".bss")))
+            {
+                symoffset = 0;
+            }
+            else
+            {
+                symoffset = get_le32(buf + sectionrawdata_ptr + get_le32(ptr + 8));
+            }
+
+            //log_msg("      Section: %d\n",section);
+            //log_msg("      Class:   %d\n",ptr[16]);
+            //log_msg("      Address: %u\n",get_le32(ptr+8));
+            //log_msg("      Offset: %u\n", symoffset);
+
+            printf("%5d\n", symoffset);
+        }
+
+        ptr += 18;
+    }
+
+    printf("    END\n");
+
+    for (i = 0; i < nsections; i++)
+    {
+        free(sectionlist[i]);
+    }
+
+    free(sectionlist);
+
+    return 0;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 bail:
 
   for (i = 0; i < nsections; i++) {

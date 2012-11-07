@@ -74,19 +74,34 @@ vpx_usec_timer_mark(struct vpx_usec_timer *t) {
 
 
 static int64_t
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 vpx_usec_timer_elapsed(struct vpx_usec_timer *t) {
+=======
+vpx_usec_timer_elapsed(struct vpx_usec_timer *t)
+{
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #if defined(_WIN32)
   LARGE_INTEGER freq, diff;
 
   diff.QuadPart = t->end.QuadPart - t->begin.QuadPart;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   QueryPerformanceFrequency(&freq);
   return diff.QuadPart * 1000000 / freq.QuadPart;
+=======
+    QueryPerformanceFrequency(&freq);
+    return diff.QuadPart * 1000000 / freq.QuadPart;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #else
   struct timeval diff;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   timersub(&t->end, &t->begin, &diff);
   return diff.tv_sec * 1000000 + diff.tv_usec;
+=======
+    timersub(&t->end, &t->begin, &diff);
+    return diff.tv_sec * 1000000 + diff.tv_usec;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #endif
 }
 

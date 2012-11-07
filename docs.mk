@@ -21,9 +21,12 @@ CODEC_DOX :=    mainpage.dox \
 		usage_dx.dox \
 
 # Other doxy files sourced in Markdown
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 TXT_DOX-$(CONFIG_VP9)          += vp8_api1_migration.dox
 vp8_api1_migration.dox.DESC     = VP8 API 1.x Migration
 
+=======
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 TXT_DOX = $(call enabled,TXT_DOX)
 
 %.dox: %.txt

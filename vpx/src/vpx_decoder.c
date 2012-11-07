@@ -25,6 +25,7 @@ vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t      *ctx,
                                        int                   ver) {
   vpx_codec_err_t res;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   if (ver != VPX_DECODER_ABI_VERSION)
     res = VPX_CODEC_ABI_MISMATCH;
   else if (!ctx || !iface)
@@ -51,9 +52,44 @@ vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t      *ctx,
     ctx->init_flags = flags;
     ctx->config.dec = cfg;
     res = VPX_CODEC_OK;
+=======
+    if (ver != VPX_DECODER_ABI_VERSION)
+        res = VPX_CODEC_ABI_MISMATCH;
+    else if (!ctx || !iface)
+        res = VPX_CODEC_INVALID_PARAM;
+    else if (iface->abi_version != VPX_CODEC_INTERNAL_ABI_VERSION)
+        res = VPX_CODEC_ABI_MISMATCH;
+    else if ((flags & VPX_CODEC_USE_XMA) && !(iface->caps & VPX_CODEC_CAP_XMA))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_POSTPROC) && !(iface->caps & VPX_CODEC_CAP_POSTPROC))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_ERROR_CONCEALMENT) &&
+            !(iface->caps & VPX_CODEC_CAP_ERROR_CONCEALMENT))
+        res = VPX_CODEC_INCAPABLE;
+    else if ((flags & VPX_CODEC_USE_INPUT_FRAGMENTS) &&
+            !(iface->caps & VPX_CODEC_CAP_INPUT_FRAGMENTS))
+        res = VPX_CODEC_INCAPABLE;
+    else if (!(iface->caps & VPX_CODEC_CAP_DECODER))
+        res = VPX_CODEC_INCAPABLE;
+    else
+    {
+        memset(ctx, 0, sizeof(*ctx));
+        ctx->iface = iface;
+        ctx->name = iface->name;
+        ctx->priv = NULL;
+        ctx->init_flags = flags;
+        ctx->config.dec = cfg;
+        res = VPX_CODEC_OK;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (!(flags & VPX_CODEC_USE_XMA)) {
       res = ctx->iface->init(ctx, NULL);
+=======
+        if (!(flags & VPX_CODEC_USE_XMA))
+        {
+            res = ctx->iface->init(ctx, NULL);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       if (res) {
         ctx->err_detail = ctx->priv ? ctx->priv->err_detail : NULL;

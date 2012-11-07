@@ -49,6 +49,7 @@
 static const char *exec_name;
 
 #define VP8_FOURCC (0x00385056)
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 static const struct {
   char const *name;
   const vpx_codec_iface_t *(*iface)(void);
@@ -57,6 +58,18 @@ static const struct {
 } ifaces[] = {
 #if CONFIG_VP9_DECODER
   {"vp9",  vpx_codec_vp8_dx,   VP8_FOURCC, 0x00FFFFFF},
+=======
+static const struct
+{
+    char const *name;
+    vpx_codec_iface_t *iface;
+    unsigned int             fourcc;
+    unsigned int             fourcc_mask;
+} ifaces[] =
+{
+#if CONFIG_VP8_DECODER
+    {"vp8",  &vpx_codec_vp8_dx_algo,   VP8_FOURCC, 0x00FFFFFF},
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #endif
 };
 
@@ -122,14 +135,28 @@ static const arg_def_t pp_disp_mb_modes = ARG_DEF(NULL, "pp-dbg-mb-modes", 1,
 static const arg_def_t pp_disp_b_modes = ARG_DEF(NULL, "pp-dbg-b-modes", 1,
                                                  "Display only selected block modes");
 static const arg_def_t pp_disp_mvs = ARG_DEF(NULL, "pp-dbg-mvs", 1,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                                              "Draw only selected motion vectors");
 static const arg_def_t mfqe = ARG_DEF(NULL, "mfqe", 0,
                                       "Enable multiframe quality enhancement");
+=======
+                                       "Draw only selected motion vectors");
+static const arg_def_t mfqe = ARG_DEF(NULL, "mfqe", 0,
+                                       "Enable multiframe quality enhancement");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 static const arg_def_t *vp8_pp_args[] = {
   &addnoise_level, &deblock, &demacroblock_level, &pp_debug_info,
   &pp_disp_ref_frame, &pp_disp_mb_modes, &pp_disp_b_modes, &pp_disp_mvs, &mfqe,
   NULL
+=======
+static const arg_def_t *vp8_pp_args[] =
+{
+    &addnoise_level, &deblock, &demacroblock_level, &pp_debug_info,
+    &pp_disp_ref_frame, &pp_disp_mb_modes, &pp_disp_b_modes, &pp_disp_mvs, &mfqe,
+    NULL
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 };
 #endif
 
@@ -143,6 +170,7 @@ static void usage_exit() {
   fprintf(stderr, "\nVP8 Postprocessing Options:\n");
   arg_show_usage(stderr, vp8_pp_args);
 #endif
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   fprintf(stderr,
           "\nOutput File Patterns:\n\n"
           "  The -o argument specifies the name of the file(s) to "
@@ -159,6 +187,24 @@ static void usage_exit() {
           "not specified, the output will be\n  directed to stdout.\n"
          );
   fprintf(stderr, "\nIncluded decoders:\n\n");
+=======
+    fprintf(stderr,
+            "\nOutput File Patterns:\n\n"
+            "  The -o argument specifies the name of the file(s) to "
+            "write to. If the\n  argument does not include any escape "
+            "characters, the output will be\n  written to a single file. "
+            "Otherwise, the filename will be calculated by\n  expanding "
+            "the following escape characters:\n");
+    fprintf(stderr,
+            "\n\t%%w   - Frame width"
+            "\n\t%%h   - Frame height"
+            "\n\t%%<n> - Frame number, zero padded to <n> places (1..9)"
+            "\n\n  Pattern arguments are only supported in conjunction "
+            "with the --yv12 and\n  --i420 options. If the -o option is "
+            "not specified, the output will be\n  directed to stdout.\n"
+            );
+    fprintf(stderr, "\nIncluded decoders:\n\n");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   for (i = 0; i < sizeof(ifaces) / sizeof(ifaces[0]); i++)
     fprintf(stderr, "    %-6s - %s\n",
@@ -295,7 +341,22 @@ static int read_frame(struct input_ctx      *input,
     return 0;
   }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   return 1;
+=======
+    if (!feof(infile))
+    {
+        if (fread(*buf, 1, *buf_sz, infile) != *buf_sz)
+        {
+            fprintf(stderr, "Failed to read full frame\n");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    return 1;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 void *out_open(const char *out_fn, int do_md5) {
@@ -325,9 +386,17 @@ void out_put(void *out, const uint8_t *buf, unsigned int len, int do_md5) {
 #if CONFIG_MD5
     MD5Update(out, buf, len);
 #endif
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   } else {
     (void) fwrite(buf, 1, len, out);
   }
+=======
+    }
+    else
+    {
+        (void) fwrite(buf, 1, len, out);
+    }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 void out_close(void *out, const char *out_fn, int do_md5) {
@@ -450,6 +519,7 @@ nestegg_read_cb(void *buffer, size_t length, void *userdata) {
 
 
 static int
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 nestegg_seek_cb(int64_t offset, int whence, void *userdata) {
   switch (whence) {
     case NESTEGG_SEEK_SET:
@@ -463,6 +533,16 @@ nestegg_seek_cb(int64_t offset, int whence, void *userdata) {
       break;
   };
   return fseek(userdata, (long)offset, whence) ? -1 : 0;
+=======
+nestegg_seek_cb(int64_t offset, int whence, void * userdata)
+{
+    switch(whence) {
+        case NESTEGG_SEEK_SET: whence = SEEK_SET; break;
+        case NESTEGG_SEEK_CUR: whence = SEEK_CUR; break;
+        case NESTEGG_SEEK_END: whence = SEEK_END; break;
+    };
+    return fseek(userdata, (long)offset, whence)? -1 : 0;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -510,12 +590,18 @@ webm_guess_framerate(struct input_ctx *input,
     nestegg_free_packet(pkt);
   }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   if (nestegg_track_seek(input->nestegg_ctx, input->video_track, 0))
     goto fail;
 
   *fps_num = (i - 1) * 1000000;
   *fps_den = (unsigned int)(tstamp / 1000);
   return 0;
+=======
+    *fps_num = (i - 1) * 1000000;
+    *fps_den = (unsigned int)(tstamp / 1000);
+    return 0;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 fail:
   nestegg_destroy(input->nestegg_ctx);
   input->nestegg_ctx = NULL;
@@ -534,12 +620,23 @@ file_is_webm(struct input_ctx *input,
   unsigned int i, n;
   int          track_type = -1;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   nestegg_io io = {nestegg_read_cb, nestegg_seek_cb, nestegg_tell_cb, 0};
   nestegg_video_params params;
+=======
+    nestegg_io io = {nestegg_read_cb, nestegg_seek_cb, nestegg_tell_cb, 0};
+    nestegg_video_params params;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   io.userdata = input->infile;
   if (nestegg_init(&input->nestegg_ctx, io, NULL))
     goto fail;
+=======
+    io.userdata = input->infile;
+    if(nestegg_init(&input->nestegg_ctx, io, NULL))
+        goto fail;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (nestegg_track_count(input->nestegg_ctx, &n))
     goto fail;
@@ -595,6 +692,7 @@ void generate_filename(const char *pattern, char *out, size_t q_len,
     if (p == next_pat) {
       size_t pat_len;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       /* parse the pattern */
       q[q_len - 1] = '\0';
       switch (p[1]) {
@@ -634,6 +732,26 @@ void generate_filename(const char *pattern, char *out, size_t q_len,
         default:
           die("Unrecognized pattern %%%c\n", p[1]);
       }
+=======
+            /* parse the pattern */
+            q[q_len - 1] = '\0';
+            switch(p[1])
+            {
+            case 'w': snprintf(q, q_len - 1, "%d", d_w); break;
+            case 'h': snprintf(q, q_len - 1, "%d", d_h); break;
+            case '1': snprintf(q, q_len - 1, "%d", frame_in); break;
+            case '2': snprintf(q, q_len - 1, "%02d", frame_in); break;
+            case '3': snprintf(q, q_len - 1, "%03d", frame_in); break;
+            case '4': snprintf(q, q_len - 1, "%04d", frame_in); break;
+            case '5': snprintf(q, q_len - 1, "%05d", frame_in); break;
+            case '6': snprintf(q, q_len - 1, "%06d", frame_in); break;
+            case '7': snprintf(q, q_len - 1, "%07d", frame_in); break;
+            case '8': snprintf(q, q_len - 1, "%08d", frame_in); break;
+            case '9': snprintf(q, q_len - 1, "%09d", frame_in); break;
+            default:
+                die("Unrecognized pattern %%%c\n", p[1]);
+            }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       pat_len = strlen(q);
       if (pat_len >= q_len - 1)
@@ -644,11 +762,19 @@ void generate_filename(const char *pattern, char *out, size_t q_len,
     } else {
       size_t copy_len;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       /* copy the next segment */
       if (!next_pat)
         copy_len = strlen(p);
       else
         copy_len = next_pat - p;
+=======
+            /* copy the next segment */
+            if(!next_pat)
+                copy_len = strlen(p);
+            else
+                copy_len = next_pat - p;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       if (copy_len >= q_len - 1)
         die("Output filename too long.\n");
@@ -749,6 +875,7 @@ int main(int argc, const char **argv_) {
     else if (arg_match(&arg, &verbosearg, argi))
       quiet = 0;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 #if CONFIG_VP9_DECODER
     else if (arg_match(&arg, &addnoise_level, argi)) {
       postproc = 1;
@@ -766,6 +893,34 @@ int main(int argc, const char **argv_) {
       vp8_pp_cfg.post_proc_flag |= VP8_MFQE;
     } else if (arg_match(&arg, &pp_debug_info, argi)) {
       unsigned int level = arg_parse_uint(&arg);
+=======
+#if CONFIG_VP8_DECODER
+        else if (arg_match(&arg, &addnoise_level, argi))
+        {
+            postproc = 1;
+            vp8_pp_cfg.post_proc_flag |= VP8_ADDNOISE;
+            vp8_pp_cfg.noise_level = arg_parse_uint(&arg);
+        }
+        else if (arg_match(&arg, &demacroblock_level, argi))
+        {
+            postproc = 1;
+            vp8_pp_cfg.post_proc_flag |= VP8_DEMACROBLOCK;
+            vp8_pp_cfg.deblocking_level = arg_parse_uint(&arg);
+        }
+        else if (arg_match(&arg, &deblock, argi))
+        {
+            postproc = 1;
+            vp8_pp_cfg.post_proc_flag |= VP8_DEBLOCK;
+        }
+        else if (arg_match(&arg, &mfqe, argi))
+        {
+            postproc = 1;
+            vp8_pp_cfg.post_proc_flag |= VP8_MFQE;
+        }
+        else if (arg_match(&arg, &pp_debug_info, argi))
+        {
+            unsigned int level = arg_parse_uint(&arg);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       postproc = 1;
       vp8_pp_cfg.post_proc_flag &= ~0x7;
@@ -910,6 +1065,7 @@ int main(int argc, const char **argv_) {
       break;
     }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   dec_flags = (postproc ? VPX_CODEC_USE_POSTPROC : 0) |
               (ec_enabled ? VPX_CODEC_USE_ERROR_CONCEALMENT : 0);
   if (vpx_codec_dec_init(&decoder, iface ? iface :  ifaces[0].iface(), &cfg,
@@ -917,6 +1073,28 @@ int main(int argc, const char **argv_) {
     fprintf(stderr, "Failed to initialize decoder: %s\n", vpx_codec_error(&decoder));
     return EXIT_FAILURE;
   }
+=======
+    /* If the output file is not set or doesn't have a sequence number in
+     * it, then we only open it once.
+     */
+    outfile_pattern = outfile_pattern ? outfile_pattern : "-";
+    single_file = 1;
+    {
+        const char *p = outfile_pattern;
+        do
+        {
+            p = strchr(p, '%');
+            if(p && p[1] >= '1' && p[1] <= '9')
+            {
+                /* pattern contains sequence number, so it's not unique. */
+                single_file = 0;
+                break;
+            }
+            if(p)
+                p++;
+        } while(p);
+    }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (!quiet)
     fprintf(stderr, "%s\n", decoder.name);
@@ -935,11 +1113,22 @@ int main(int argc, const char **argv_) {
     return EXIT_FAILURE;
   }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   if (vp8_dbg_color_mb_modes
       && vpx_codec_control(&decoder, VP8_SET_DBG_COLOR_MB_MODES, vp8_dbg_color_mb_modes)) {
     fprintf(stderr, "Failed to configure macro block visualizer: %s\n", vpx_codec_error(&decoder));
     return EXIT_FAILURE;
   }
+=======
+        /*Note: We can't output an aspect ratio here because IVF doesn't
+           store one, and neither does VP8.
+          That will have to wait until these tools support WebM natively.*/
+        sprintf(buffer, "YUV4MPEG2 C%s W%u H%u F%u:%u I%c\n",
+                "420jpeg", width, height, fps_num, fps_den, 'p');
+        out_put(out, (unsigned char *)buffer,
+                (unsigned int)strlen(buffer), do_md5);
+    }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (vp8_dbg_color_b_modes
       && vpx_codec_control(&decoder, VP8_SET_DBG_COLOR_B_MODES, vp8_dbg_color_b_modes)) {
@@ -963,12 +1152,19 @@ int main(int argc, const char **argv_) {
     arg_skip--;
   }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /* Decode file */
   while (!read_frame(&input, &buf, &buf_sz, &buf_alloc_sz)) {
     vpx_codec_iter_t  iter = NULL;
     vpx_image_t    *img;
     struct vpx_usec_timer timer;
     int                   corrupted;
+=======
+        if (vpx_codec_decode(&decoder, buf, (unsigned int)buf_sz, NULL, 0))
+        {
+            const char *detail = vpx_codec_error_detail(&decoder);
+            fprintf(stderr, "Failed to decode frame: %s\n", vpx_codec_error(&decoder));
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
     vpx_usec_timer_start(&timer);
 
@@ -976,10 +1172,90 @@ int main(int argc, const char **argv_) {
       const char *detail = vpx_codec_error_detail(&decoder);
       fprintf(stderr, "Failed to decode frame: %s\n", vpx_codec_error(&decoder));
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       if (detail)
         fprintf(stderr, "  Additional information: %s\n", detail);
+=======
+        vpx_usec_timer_mark(&timer);
+        dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       goto fail;
+=======
+        ++frame_in;
+
+        if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
+        {
+            fprintf(stderr, "Failed VP8_GET_FRAME_CORRUPTED: %s\n",
+                    vpx_codec_error(&decoder));
+            goto fail;
+        }
+        frames_corrupted += corrupted;
+
+        vpx_usec_timer_start(&timer);
+
+        if ((img = vpx_codec_get_frame(&decoder, &iter)))
+            ++frame_out;
+
+        vpx_usec_timer_mark(&timer);
+        dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
+
+        if (progress)
+            show_progress(frame_in, frame_out, dx_time);
+
+        if (!noblit)
+        {
+            if (img)
+            {
+                unsigned int y;
+                char out_fn[PATH_MAX];
+                uint8_t *buf;
+
+                if (!single_file)
+                {
+                    size_t len = sizeof(out_fn)-1;
+
+                    out_fn[len] = '\0';
+                    generate_filename(outfile_pattern, out_fn, len-1,
+                                      img->d_w, img->d_h, frame_in);
+                    out = out_open(out_fn, do_md5);
+                }
+                else if(use_y4m)
+                    out_put(out, (unsigned char *)"FRAME\n", 6, do_md5);
+
+                buf = img->planes[VPX_PLANE_Y];
+
+                for (y = 0; y < img->d_h; y++)
+                {
+                    out_put(out, buf, img->d_w, do_md5);
+                    buf += img->stride[VPX_PLANE_Y];
+                }
+
+                buf = img->planes[flipuv?VPX_PLANE_V:VPX_PLANE_U];
+
+                for (y = 0; y < (1 + img->d_h) / 2; y++)
+                {
+                    out_put(out, buf, (1 + img->d_w) / 2, do_md5);
+                    buf += img->stride[VPX_PLANE_U];
+                }
+
+                buf = img->planes[flipuv?VPX_PLANE_U:VPX_PLANE_V];
+
+                for (y = 0; y < (1 + img->d_h) / 2; y++)
+                {
+                    out_put(out, buf, (1 + img->d_w) / 2, do_md5);
+                    buf += img->stride[VPX_PLANE_V];
+                }
+
+                if (!single_file)
+                    out_close(out, out_fn, do_md5);
+            }
+        }
+
+        if (stop_after && frame_in >= stop_after)
+            break;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
     vpx_usec_timer_mark(&timer);

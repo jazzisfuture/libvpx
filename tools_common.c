@@ -20,10 +20,18 @@
 #endif
 #endif
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 FILE *set_binary_mode(FILE *stream) {
   (void)stream;
 #if defined(_WIN32) || defined(__OS2__)
   _setmode(_fileno(stream), _O_BINARY);
+=======
+FILE* set_binary_mode(FILE *stream)
+{
+    (void)stream;
+#if defined(_WIN32) || defined(__OS2__)
+    _setmode(_fileno(stream), _O_BINARY);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #endif
   return stream;
 }
