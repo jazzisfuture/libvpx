@@ -496,36 +496,106 @@ void vp9_ht_dequant_idct_add_16x16_c(TX_TYPE tx_type, short *input, short *dq,
 }
 
 void vp9_dequant_idct_add_16x16_c(short *input, short *dq, unsigned char *pred,
-                                  unsigned char *dest, int pitch, int stride) {
+                                  unsigned char *dest, int pitch, int stride,
+                                  unsigned short eobs) {
   short output[256];
   short *diff_ptr = output;
   int r, c, i;
 
-  input[0]= input[0] * dq[0];
+  /* The calculation can be simplified if there are not many non-zero dct
+   * coefficients. Use eobs to separate different cases. */
+  if (eobs == 0) {
+    /* All 0 DCT coefficient */
+    vp9_copy_mem16x16(pred, pitch, dest, stride);
+  } else if (eobs == 1) {
+    /* DC only DCT coefficient. */
+    short out;
 
-  // recover quantizer for 4 4x4 blocks
-  for (i = 1; i < 256; i++)
-    input[i] = input[i] * dq[1];
+    out = (input[0] * dq[0] + 2) >> 2;
+    out = (out + 2) >> 2;
+    out = (out + 4) >> 3;
 
-  // the idct halves ( >> 1) the pitch
-  vp9_short_idct16x16_c(input, output, 32);
+    input[0] = 0;
 
-  vpx_memset(input, 0, 512);
+    for (r = 0; r < 16; r++) {
+      for (c = 0; c < 16; c++) {
+        int a = out + pred[c];
 
-  for (r = 0; r < 16; r++) {
-    for (c = 0; c < 16; c++) {
-      int a = diff_ptr[c] + pred[c];
+        if (a < 0)
+          a = 0;
+        else if (a > 255)
+          a = 255;
 
-      if (a < 0)
-        a = 0;
-      else if (a > 255)
-        a = 255;
+        dest[c] = (unsigned char) a;
+      }
 
-      dest[c] = (unsigned char) a;
+      dest += stride;
+      pred += pitch;
     }
 
-    dest += stride;
-    diff_ptr += 16;
-    pred += pitch;
+  } else if (eobs <= 10) {
+    input[0]= input[0] * dq[0];
+    input[1] = input[1] * dq[1];
+    input[2] = input[2] * dq[1];
+    input[3] = input[3] * dq[1];
+    input[16] = input[16] * dq[1];
+    input[17] = input[17] * dq[1];
+    input[18] = input[18] * dq[1];
+    input[32] = input[32] * dq[1];
+    input[33] = input[33] * dq[1];
+    input[48] = input[48] * dq[1];
+
+    // the idct halves ( >> 1) the pitch
+    vp9_short_idct10_16x16_c(input, output, 32);
+
+    input[0] = input[1] = input[2] = input[3] = 0;
+    input[16] = input[17] = input[18] = 0;
+    input[32] = input[33] = 0;
+    input[48] = 0;
+
+    for (r = 0; r < 16; r++) {
+      for (c = 0; c < 16; c++) {
+        int a = diff_ptr[c] + pred[c];
+
+        if (a < 0)
+          a = 0;
+        else if (a > 255)
+          a = 255;
+
+        dest[c] = (unsigned char) a;
+      }
+
+      dest += stride;
+      diff_ptr += 16;
+      pred += pitch;
+    }
+  }else {
+    input[0]= input[0] * dq[0];
+
+    // recover quantizer for 4 4x4 blocks
+    for (i = 1; i < 256; i++)
+      input[i] = input[i] * dq[1];
+
+    // the idct halves ( >> 1) the pitch
+    vp9_short_idct16x16_c(input, output, 32);
+
+    vpx_memset(input, 0, 512);
+
+    for (r = 0; r < 16; r++) {
+      for (c = 0; c < 16; c++) {
+        int a = diff_ptr[c] + pred[c];
+
+        if (a < 0)
+          a = 0;
+        else if (a > 255)
+          a = 255;
+
+        dest[c] = (unsigned char) a;
+      }
+
+      dest += stride;
+      diff_ptr += 16;
+      pred += pitch;
+    }
   }
 }
