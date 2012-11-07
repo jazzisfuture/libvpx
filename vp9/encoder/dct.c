@@ -19,21 +19,21 @@
 
 // TODO: these transforms can be converted into integer forms to reduce
 //       the complexity
-static const float dct_4[16] = {
+static const double dct_4[16] = {
   0.500000000000000,  0.500000000000000,  0.500000000000000,  0.500000000000000,
   0.653281482438188,  0.270598050073099, -0.270598050073099, -0.653281482438188,
   0.500000000000000, -0.500000000000000, -0.500000000000000,  0.500000000000000,
   0.270598050073099, -0.653281482438188,  0.653281482438188, -0.270598050073099
 };
 
-static const float adst_4[16] = {
+static const double adst_4[16] = {
   0.228013428883779,  0.428525073124360,  0.577350269189626,  0.656538502008139,
   0.577350269189626,  0.577350269189626,  0.000000000000000, -0.577350269189626,
   0.656538502008139, -0.228013428883779, -0.577350269189626,  0.428525073124359,
   0.428525073124360, -0.656538502008139,  0.577350269189626, -0.228013428883779
 };
 
-static const float dct_8[64] = {
+static const double dct_8[64] = {
   0.353553390593274,   0.353553390593274,   0.353553390593274,   0.353553390593274,
   0.353553390593274,   0.353553390593274,   0.353553390593274,   0.353553390593274,
   0.490392640201615,   0.415734806151273,   0.277785116509801,   0.097545161008064,
@@ -52,7 +52,7 @@ static const float dct_8[64] = {
   0.490392640201615,  -0.415734806151273,   0.277785116509801,  -0.097545161008064
 };
 
-static const float adst_8[64] = {
+static const double adst_8[64] = {
   0.089131608307533,   0.175227946595735,   0.255357107325376,   0.326790388032145,
   0.387095214016349,   0.434217976756762,   0.466553967085785,   0.483002021635509,
   0.255357107325376,   0.434217976756762,   0.483002021635509,   0.387095214016349,
@@ -124,7 +124,7 @@ static const int16_t adst_i8[64] = {
    15288, -12684,   8368,  -2921
 };
 
-static const float dct_16[256] = {
+static const double dct_16[256] = {
   0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,
   0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,  0.250000,
   0.351851,  0.338330,  0.311806,  0.273300,  0.224292,  0.166664,  0.102631,  0.034654,
@@ -159,7 +159,7 @@ static const float dct_16[256] = {
   0.351851, -0.338330,  0.311806, -0.273300,  0.224292, -0.166664,  0.102631, -0.034654
 };
 
-static const float adst_16[256] = {
+static const double adst_16[256] = {
   0.033094,  0.065889,  0.098087,  0.129396,  0.159534,  0.188227,  0.215215,  0.240255,
   0.263118,  0.283599,  0.301511,  0.316693,  0.329007,  0.338341,  0.344612,  0.347761,
   0.098087,  0.188227,  0.263118,  0.316693,  0.344612,  0.344612,  0.316693,  0.263118,
@@ -520,7 +520,7 @@ void vp9_short_fhaar2x2_c(short *input, short *output, int pitch) {
 }
 
 /* For test */
-#define TEST_INT 1
+#define TEST_INT 0
 #if TEST_INT
 #define vp9_fht_int_c vp9_fht_c
 #else
@@ -532,23 +532,23 @@ void vp9_fht_float_c(const int16_t *input, int pitch, int16_t *output,
   vp9_clear_system_state();  // Make it simd safe : __asm emms;
   {
     int i, j, k;
-    float bufa[256], bufb[256];  // buffers are for floating-point test purpose
+    double bufa[256], bufb[256];  // buffers are for floating-point test purpose
                                  // the implementation could be simplified in
                                  // conjunction with integer transform
     const int16_t *ip = input;
     int16_t *op = output;
 
-    float *pfa = &bufa[0];
-    float *pfb = &bufb[0];
+    double *pfa = &bufa[0];
+    double *pfb = &bufb[0];
 
     // pointers to vertical and horizontal transforms
-    const float *ptv, *pth;
+    const double *ptv, *pth;
 
     assert(tx_type != DCT_DCT);
     // load and convert residual array into floating-point
     for (j = 0; j < tx_dim; j++) {
       for (i = 0; i < tx_dim; i++) {
-        pfa[i] = (float)ip[i];
+        pfa[i] = (double)ip[i];
       }
       pfa += tx_dim;
       ip  += pitch / 2;
@@ -901,7 +901,7 @@ void vp9_short_walsh8x4_x8_c(short *input, short *output, int pitch) {
 }
 #endif
 
-#define TEST_INT_16x16_DCT 1
+#define TEST_INT_16x16_DCT 0
 #if !TEST_INT_16x16_DCT
 static const double C1 = 0.995184726672197;
 static const double C2 = 0.98078528040323;
