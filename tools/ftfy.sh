@@ -29,6 +29,7 @@ log() {
 
 
 vpx_style() {
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   for f; do
     case "$f" in
       *.h|*.c|*.cc)
@@ -121,6 +122,100 @@ git show > "${ORIG_DIFF}"
 
 # Apply the style guide on new and modified files and collect its diff
 for f in $(git diff HEAD^ --name-only -M90 --diff-filter=AM); do
+=======
+  astyle --style=bsd --min-conditional-indent=0 --break-blocks \
+         --pad-oper --pad-header --unpad-paren \
+         --align-pointer=name \
+         --indent-preprocessor --convert-tabs --indent-labels \
+         --suffix=none --quiet "$@"
+  sed -i "" 's/[[:space:]]\{1,\},/,/g' "$@"
+}
+
+
+apply() {
+  [ $INTERSECT_RESULT -ne 0 ] && patch -p1 < "$1"
+}
+
+
+commit() {
+  LAST_CHANGEID=$(git show | awk '/Change-Id:/{print $2}')
+  if [ -z "$LAST_CHANGEID" ]; then
+    log "HEAD doesn't have a Change-Id, unable to generate a new commit"
+    exit 1
+  fi
+
+  # Build a deterministic Change-Id from the parent's
+  NEW_CHANGEID=${LAST_CHANGEID}-styled
+  NEW_CHANGEID=I$(echo $NEW_CHANGEID | git hash-object --stdin)
+
+  # Commit, preserving authorship from the parent commit.
+  git commit -a -C HEAD > /dev/null
+  git commit --amend -F- << EOF
+Cosmetic: Fix whitespace in change ${LAST_CHANGEID:0:9}
+
+Change-Id: ${NEW_CHANGEID}
+EOF
+}
+
+
+show_commit_msg_diff() {
+  if [ $DIFF_MSG_RESULT -ne 0 ]; then
+    log "Modified commit message:"
+    diff -u "$ORIG_COMMIT_MSG" "$NEW_COMMIT_MSG" | tail -n +3
+  fi
+}
+
+
+amend() {
+  show_commit_msg_diff
+  if [ $DIFF_MSG_RESULT -ne 0 ] || [ $INTERSECT_RESULT -ne 0 ]; then
+    git commit -a --amend -F "$NEW_COMMIT_MSG"
+  fi
+}
+
+
+diff_msg() {
+  git log -1 --format=%B > "$ORIG_COMMIT_MSG"
+  "${dirname_self}"/wrap-commit-msg.py \
+      < "$ORIG_COMMIT_MSG" > "$NEW_COMMIT_MSG"
+  cmp -s "$ORIG_COMMIT_MSG" "$NEW_COMMIT_MSG"
+  DIFF_MSG_RESULT=$?
+}
+
+
+# Temporary files
+ORIG_DIFF=orig.diff.$$
+MODIFIED_DIFF=modified.diff.$$
+FINAL_DIFF=final.diff.$$
+ORIG_COMMIT_MSG=orig.commit-msg.$$
+NEW_COMMIT_MSG=new.commit-msg.$$
+CLEAN_FILES="${ORIG_DIFF} ${MODIFIED_DIFF} ${FINAL_DIFF}"
+CLEAN_FILES="${CLEAN_FILES} ${ORIG_COMMIT_MSG} ${NEW_COMMIT_MSG}"
+
+# Preconditions
+[ $# -lt 2 ] || usage
+
+# Check that astyle supports pad-header and align-pointer=name
+if ! astyle --pad-header --align-pointer=name < /dev/null; then
+  log "Install astyle v1.24 or newer"
+  exit 1
+fi
+
+if ! git diff --quiet HEAD; then
+  log "Working tree is dirty, commit your changes first"
+  exit 1
+fi
+
+# Need to be in the root
+cd "$(git rev-parse --show-toplevel)"
+
+# Collect the original diff
+git show > "${ORIG_DIFF}"
+
+# Apply the style guide on new and modified files and collect its diff
+for f in $(git diff HEAD^ --name-only -M90 --diff-filter=AM \
+           | grep '\.[ch]$'); do
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
   case "$f" in
     third_party/*) continue;;
     nestegg/*) continue;;

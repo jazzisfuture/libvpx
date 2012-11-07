@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
 #if ARCH_X86 || ARCH_X86_64
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   int simd_caps = x86_simd_caps();
   if (!(simd_caps & HAS_MMX))
     append_gtest_filter(":-MMX/*");
@@ -38,6 +39,20 @@ int main(int argc, char **argv) {
   if (!(simd_caps & HAS_SSSE3))
     append_gtest_filter(":-SSSE3/*");
   if (!(simd_caps & HAS_SSE4_1))
+=======
+  const int simd_caps = x86_simd_caps();
+  if(!(simd_caps & HAS_MMX))
+    append_gtest_filter(":-MMX/*");
+  if(!(simd_caps & HAS_SSE))
+    append_gtest_filter(":-SSE/*");
+  if(!(simd_caps & HAS_SSE2))
+    append_gtest_filter(":-SSE2/*");
+  if(!(simd_caps & HAS_SSE3))
+    append_gtest_filter(":-SSE3/*");
+  if(!(simd_caps & HAS_SSSE3))
+    append_gtest_filter(":-SSSE3/*");
+  if(!(simd_caps & HAS_SSE4_1))
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     append_gtest_filter(":-SSE4_1/*");
 #endif
 

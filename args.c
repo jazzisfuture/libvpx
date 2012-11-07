@@ -118,8 +118,13 @@ void arg_show_usage(FILE *fp, const struct arg_def *const *defs) {
       snprintf(option_text, 37, "-%s%s",
                def->short_name, short_val);
     else if (def->long_name)
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       snprintf(option_text, 37, "          --%s%s",
                def->long_name, long_val);
+=======
+    {
+        const size_t name_len = strlen(def->long_name);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
     fprintf(fp, "  %-37s\t%s\n", option_text, def->desc);
 

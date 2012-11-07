@@ -19,6 +19,13 @@ namespace libvpx_test {
 
 class ACMRandom {
  public:
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+  ACMRandom() {
+    Reset(DeterministicSeed());
+  }
+
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
   explicit ACMRandom(int seed) {
     Reset(seed);
   }

@@ -75,7 +75,11 @@ typedef struct vpx_codec_priv_enc_mr_cfg vpx_codec_priv_enc_mr_cfg_t;
  *     Memory operation failed.
  */
 typedef vpx_codec_err_t (*vpx_codec_init_fn_t)(vpx_codec_ctx_t *ctx,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                                                vpx_codec_priv_enc_mr_cfg_t *data);
+=======
+                                             vpx_codec_priv_enc_mr_cfg_t *data);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 /*!\brief destroy function pointer prototype
  *
@@ -165,9 +169,16 @@ typedef vpx_codec_err_t (*vpx_codec_control_fn_t)(vpx_codec_alg_priv_t  *ctx,
  * mapping. This implies that ctrl_id values chosen by the algorithm
  * \ref MUST be non-zero.
  */
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 typedef const struct vpx_codec_ctrl_fn_map {
   int                    ctrl_id;
   vpx_codec_control_fn_t   fn;
+=======
+typedef const struct vpx_codec_ctrl_fn_map
+{
+    int                    ctrl_id;
+    vpx_codec_control_fn_t   fn;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 } vpx_codec_ctrl_fn_map_t;
 
 /*!\brief decode data function pointer prototype
@@ -269,6 +280,10 @@ typedef vpx_codec_err_t
 (*vpx_codec_enc_mr_get_mem_loc_fn_t)(const vpx_codec_enc_cfg_t     *cfg,
                                      void **mem_loc);
 
+typedef vpx_codec_err_t
+(*vpx_codec_enc_mr_get_mem_loc_fn_t)(const vpx_codec_enc_cfg_t     *cfg,
+                                   void **mem_loc);
+
 /*!\brief usage configuration mapping
  *
  * This structure stores the mapping between usage identifiers and
@@ -279,9 +294,16 @@ typedef vpx_codec_err_t
  * one mapping must be present, in addition to the end-of-list.
  *
  */
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 typedef const struct vpx_codec_enc_cfg_map {
   int                 usage;
   vpx_codec_enc_cfg_t cfg;
+=======
+typedef const struct vpx_codec_enc_cfg_map
+{
+    int                 usage;
+    vpx_codec_enc_cfg_t cfg;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 } vpx_codec_enc_cfg_map_t;
 
 #define NOT_IMPLEMENTED 0
@@ -290,6 +312,7 @@ typedef const struct vpx_codec_enc_cfg_map {
  *
  * All decoders \ref MUST expose a variable of this type.
  */
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 struct vpx_codec_iface {
   const char               *name;        /**< Identification String  */
   int                       abi_version; /**< Implemented ABI version */
@@ -314,6 +337,35 @@ struct vpx_codec_iface {
     vpx_codec_get_preview_frame_fn_t   get_preview;   /**< \copydoc ::vpx_codec_get_preview_frame_fn_t */
     vpx_codec_enc_mr_get_mem_loc_fn_t  mr_get_mem_loc;   /**< \copydoc ::vpx_codec_enc_mr_get_mem_loc_fn_t */
   } enc;
+=======
+struct vpx_codec_iface
+{
+    const char               *name;        /**< Identification String  */
+    int                       abi_version; /**< Implemented ABI version */
+    vpx_codec_caps_t          caps;    /**< Decoder capabilities */
+    vpx_codec_init_fn_t       init;    /**< \copydoc ::vpx_codec_init_fn_t */
+    vpx_codec_destroy_fn_t    destroy;     /**< \copydoc ::vpx_codec_destroy_fn_t */
+    vpx_codec_ctrl_fn_map_t  *ctrl_maps;   /**< \copydoc ::vpx_codec_ctrl_fn_map_t */
+    vpx_codec_get_mmap_fn_t   get_mmap;    /**< \copydoc ::vpx_codec_get_mmap_fn_t */
+    vpx_codec_set_mmap_fn_t   set_mmap;    /**< \copydoc ::vpx_codec_set_mmap_fn_t */
+    struct vpx_codec_dec_iface
+    {
+        vpx_codec_peek_si_fn_t    peek_si;     /**< \copydoc ::vpx_codec_peek_si_fn_t */
+        vpx_codec_get_si_fn_t     get_si;      /**< \copydoc ::vpx_codec_peek_si_fn_t */
+        vpx_codec_decode_fn_t     decode;      /**< \copydoc ::vpx_codec_decode_fn_t */
+        vpx_codec_get_frame_fn_t  get_frame;   /**< \copydoc ::vpx_codec_get_frame_fn_t */
+    } dec;
+    struct vpx_codec_enc_iface
+    {
+        vpx_codec_enc_cfg_map_t           *cfg_maps;      /**< \copydoc ::vpx_codec_enc_cfg_map_t */
+        vpx_codec_encode_fn_t              encode;        /**< \copydoc ::vpx_codec_encode_fn_t */
+        vpx_codec_get_cx_data_fn_t         get_cx_data;   /**< \copydoc ::vpx_codec_get_cx_data_fn_t */
+        vpx_codec_enc_config_set_fn_t      cfg_set;       /**< \copydoc ::vpx_codec_enc_config_set_fn_t */
+        vpx_codec_get_global_headers_fn_t  get_glob_hdrs; /**< \copydoc ::vpx_codec_get_global_headers_fn_t */
+        vpx_codec_get_preview_frame_fn_t   get_preview;   /**< \copydoc ::vpx_codec_get_preview_frame_fn_t */
+        vpx_codec_enc_mr_get_mem_loc_fn_t  mr_get_mem_loc;   /**< \copydoc ::vpx_codec_enc_mr_get_mem_loc_fn_t */
+    } enc;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 };
 
 /*!\brief Callback function pointer / user data pair storage */
@@ -334,6 +386,7 @@ typedef struct vpx_codec_priv_cb_pair {
  * structure can be made the first member of the algorithm specific structure,
  * and the pointer cast to the proper type.
  */
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 struct vpx_codec_priv {
   unsigned int                    sz;
   vpx_codec_iface_t              *iface;
@@ -362,6 +415,40 @@ struct vpx_codec_priv_enc_mr_cfg {
   unsigned int           mr_encoder_id;
   struct vpx_rational    mr_down_sampling_factor;
   void                  *mr_low_res_mode_info;
+=======
+struct vpx_codec_priv
+{
+    unsigned int                    sz;
+    vpx_codec_iface_t              *iface;
+    struct vpx_codec_alg_priv      *alg_priv;
+    const char                     *err_detail;
+    vpx_codec_flags_t               init_flags;
+    struct
+    {
+        vpx_codec_priv_cb_pair_t    put_frame_cb;
+        vpx_codec_priv_cb_pair_t    put_slice_cb;
+    } dec;
+    struct
+    {
+        int                         tbd;
+        struct vpx_fixed_buf        cx_data_dst_buf;
+        unsigned int                cx_data_pad_before;
+        unsigned int                cx_data_pad_after;
+        vpx_codec_cx_pkt_t          cx_data_pkt;
+        unsigned int                total_encoders;
+    } enc;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+};
+
+/*
+ * Multi-resolution encoding internal configuration
+ */
+struct vpx_codec_priv_enc_mr_cfg
+{
+    unsigned int           mr_total_resolutions;
+    unsigned int           mr_encoder_id;
+    struct vpx_rational    mr_down_sampling_factor;
+    void*                  mr_low_res_mode_info;
 };
 
 #undef VPX_CTRL_USE_TYPE
