@@ -372,6 +372,77 @@ void vp9_build_intra_predictors_internal(unsigned char *src, int src_stride,
   }
 }
 
+#if CONFIG_COMP_INTERINTRA_PRED
+void vp9_build_interintra_16x16_predictors_mb(MACROBLOCKD *xd,
+                                              unsigned char *ypred,
+                                              unsigned char *upred,
+                                              unsigned char *vpred,
+                                              int ystride, int uvstride) {
+  vp9_build_interintra_16x16_predictors_mby(xd, ypred, ystride);
+  vp9_build_interintra_16x16_predictors_mbuv(xd, upred, vpred, uvstride);
+}
+
+void vp9_build_interintra_16x16_predictors_mby(MACROBLOCKD *xd,
+                                               unsigned char *ypred,
+                                               int ystride) {
+  static const int scale_bits = 7;
+  unsigned char intrapredictor[256];
+  int i, j;
+  vp9_build_intra_predictors_internal(
+      xd->dst.y_buffer, xd->dst.y_stride,
+      intrapredictor, 16,
+      xd->mode_info_context->mbmi.interintra_mode, 16,
+      xd->up_available, xd->left_available);
+  for (i = 0; i < 16; ++i) {
+    for (j = 0; j < 16; ++j) {
+      int scale = (1 << scale_bits) / (i * j + 1);
+      ypred[i * ystride + j] =
+          (((1 << scale_bits) - scale) * ypred[i * ystride + j] +
+           (scale) * intrapredictor[i * 16 + j] + (1 << (scale_bits - 1)))
+          >> scale_bits;
+    }
+  }
+}
+
+void vp9_build_interintra_16x16_predictors_mbuv(MACROBLOCKD *xd,
+                                                unsigned char *upred,
+                                                unsigned char *vpred,
+                                                int uvstride) {
+  static const int scale_bits = 5;
+  int i, j;
+  unsigned char uintrapredictor[64];
+  unsigned char vintrapredictor[64];
+  vp9_build_intra_predictors_internal(
+      xd->dst.u_buffer, xd->dst.uv_stride,
+      uintrapredictor, 8,
+      xd->mode_info_context->mbmi.interintra_uv_mode, 8,
+      xd->up_available, xd->left_available);
+  vp9_build_intra_predictors_internal(
+      xd->dst.v_buffer, xd->dst.uv_stride,
+      vintrapredictor, 8,
+      xd->mode_info_context->mbmi.interintra_uv_mode, 8,
+      xd->up_available, xd->left_available);
+  for (i = 0; i < 8; ++i) {
+    for (j = 0; j < 8; ++j) {
+      int scale = (1 << scale_bits) / (i * j + 1);
+      upred[i * uvstride + j] =
+          (((1 << scale_bits) - scale) * upred[i * uvstride + j] +
+           (scale) * uintrapredictor[i * 8 + j] + (1 << (scale_bits - 1)))
+          >> scale_bits;
+    }
+  }
+  for (i = 0; i < 8; ++i) {
+    for (j = 0; j < 8; ++j) {
+      int scale = (1 << scale_bits) / (i * j + 1);
+      vpred[i * uvstride + j] =
+          (((1 << scale_bits) - scale) * vpred[i * uvstride + j] +
+           (scale) * vintrapredictor[i * 8 + j] + (1 << (scale_bits - 1)))
+          >> scale_bits;
+    }
+  }
+}
+#endif
+
 void vp9_build_intra_predictors_mby(MACROBLOCKD *xd) {
   vp9_build_intra_predictors_internal(xd->dst.y_buffer, xd->dst.y_stride,
                                       xd->predictor, 16,
