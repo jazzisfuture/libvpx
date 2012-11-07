@@ -280,7 +280,7 @@ typedef struct macroblockd {
   DECLARE_ALIGNED(16, unsigned char,  predictor[384]);
   DECLARE_ALIGNED(16, short, qcoeff[400]);
   DECLARE_ALIGNED(16, short, dqcoeff[400]);
-  DECLARE_ALIGNED(16, char,  eobs[25]);
+  DECLARE_ALIGNED(16, unsigned short,  eobs[25]);
 
   /* 16 Y blocks, 4 U, 4 V, 1 DC 2nd order block, each with 16 entries. */
   BLOCKD block[25];
@@ -467,7 +467,10 @@ static TX_TYPE get_tx_type_8x8(const MACROBLOCKD *xd, const BLOCKD *b) {
   TX_TYPE tx_type = DCT_DCT;
   if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
       xd->q_index < ACTIVE_HT8) {
-    tx_type = txfm_map(pred_mode_conv(b->bmi.as_mode.first));
+    // TODO(rbultje): MB_PREDICTION_MODE / B_PREDICTION_MODE should be merged
+    // or the relationship otherwise modified to address this type conversion.
+    tx_type = txfm_map(pred_mode_conv(
+                  (MB_PREDICTION_MODE)b->bmi.as_mode.first));
   }
   return tx_type;
 }
@@ -483,7 +486,7 @@ static TX_TYPE get_tx_type_16x16(const MACROBLOCKD *xd, const BLOCKD *b) {
 
 static TX_TYPE get_tx_type(const MACROBLOCKD *xd, const BLOCKD *b) {
   TX_TYPE tx_type = DCT_DCT;
-  int ib = (b - xd->block);
+  int ib = (int)(b - xd->block);
   if (ib >= 16)
     return tx_type;
   if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
