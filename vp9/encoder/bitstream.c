@@ -274,7 +274,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
           mv.col = (x->partition_info->bmi[i].mv.as_mv.col
                     - best_ref_mv->as_mv.col);
           vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame > 0) {
             mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
                       - second_best_ref_mv->as_mv.row);
             mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
@@ -288,7 +288,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
           mv.col = (x->partition_info->bmi[i].mv.as_mv.col
                     - best_ref_mv->as_mv.col);
           vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame > 0) {
             mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
                       - second_best_ref_mv->as_mv.row);
             mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
@@ -304,7 +304,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
       mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
       mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
       vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      if (mbmi->second_ref_frame) {
+      if (mbmi->second_ref_frame > 0) {
         mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
         mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
         vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 1);
@@ -313,7 +313,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
       mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
       mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
       vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      if (mbmi->second_ref_frame) {
+      if (mbmi->second_ref_frame > 0) {
         mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
         mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
         vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 0);
@@ -1114,7 +1114,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                       cpi->common.mcomp_filter_type);
             }
           }
-          if (mi->second_ref_frame &&
+          if (mi->second_ref_frame > 0 &&
               (mode == NEWMV || mode == SPLITMV)) {
             int_mv n1, n2;
 
@@ -1133,7 +1133,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
           // does the feature use compound prediction or not
           // (if not specified at the frame/segment level)
           if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
-            vp9_write(bc, mi->second_ref_frame != INTRA_FRAME,
+            vp9_write(bc, mi->second_ref_frame > INTRA_FRAME,
                       vp9_get_pred_prob(pc, xd, PRED_COMP));
           }
 
@@ -1165,7 +1165,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                           (const nmv_context*) nmvc,
                           xd->allow_high_precision_mv);
 
-                if (mi->second_ref_frame) {
+                if (mi->second_ref_frame > 0) {
 #if CONFIG_NEW_MVREF
                   unsigned int best_index;
                   MV_REFERENCE_FRAME sec_ref_frame = mi->second_ref_frame;
@@ -1230,7 +1230,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                               (const nmv_context*) nmvc,
                               xd->allow_high_precision_mv);
 
-                    if (mi->second_ref_frame) {
+                    if (mi->second_ref_frame > 0) {
                       write_nmv(bc,
                                 &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                 &best_second_mv,
@@ -2167,6 +2167,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_bit(&header_bc, (pc->mcomp_filter_type == SWITCHABLE));
     if (pc->mcomp_filter_type != SWITCHABLE)
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
+#if CONFIG_COMP_INTERINTRA_PRED
+    vp9_write_bit(&header_bc, pc->use_interintra);
+#endif
   }
 
   vp9_write_bit(&header_bc, pc->refresh_entropy_probs);

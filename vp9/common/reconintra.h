@@ -14,5 +14,9 @@
 #include "blockd.h"
 
 extern void vp9_recon_intra_mbuv(MACROBLOCKD *xd);
+#if CONFIG_COMP_INTERINTRA_PRED
+extern void vp9_build_interintra_16x16_predictors_mby(MACROBLOCKD *xd);
+extern void vp9_build_interintra_16x16_predictors_mbuv(MACROBLOCKD *xd);
+#endif
 
 #endif  // __INC_RECONINTRA_H

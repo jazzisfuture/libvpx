@@ -779,6 +779,13 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->thresh_mult[THR_COMP_SPLITGA  ] = 5000;
       sf->thresh_mult[THR_COMP_SPLITLG  ] = 5000;
 
+#if CONFIG_COMP_INTERINTRA_PRED
+      sf->thresh_mult[THR_COMP_INTERINTRA_ZEROLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEARLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEWLA  ] = 2000;
+#endif
+
       sf->first_step = 0;
       sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
       sf->search_best_filter = SEARCH_BEST_FILTER;
@@ -903,6 +910,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->thresh_mult[THR_COMP_SPLITLA  ] = 1700;
       sf->thresh_mult[THR_COMP_SPLITGA  ] = 4500;
       sf->thresh_mult[THR_COMP_SPLITLG  ] = 4500;
+#if CONFIG_COMP_INTERINTRA_PRED
+      sf->thresh_mult[THR_COMP_INTERINTRA_ZEROLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEARLA  ] = 2000;
+      sf->thresh_mult[THR_COMP_INTERINTRA_NEWLA  ] = 2000;
+#endif
 
       if (Speed > 0) {
         /* Disable coefficient optimization above speed 0 */
@@ -993,6 +1006,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->thresh_mult[THR_COMP_NEWLG    ] = 2000;
         sf->thresh_mult[THR_COMP_NEWLA    ] = 2000;
         sf->thresh_mult[THR_COMP_NEWGA    ] = 2000;
+#if CONFIG_COMP_INTERINTRA_PRED
+        sf->thresh_mult[THR_COMP_INTERINTRA_ZEROLA  ] = 2000;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTLA  ] = 2000;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEARLA  ] = 2000;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEWLA  ] = 2000;
+#endif
       }
 
       if (Speed > 2) {
@@ -1068,6 +1087,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->thresh_mult[THR_COMP_NEWLG    ] = 2500;
         sf->thresh_mult[THR_COMP_NEWLA    ] = 2500;
         sf->thresh_mult[THR_COMP_NEWGA    ] = 2500;
+#if CONFIG_COMP_INTERINTRA_PRED
+        sf->thresh_mult[THR_COMP_INTERINTRA_ZEROLA  ] = 2500;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTLA  ] = 2500;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEARLA  ] = 2500;
+        sf->thresh_mult[THR_COMP_INTERINTRA_NEWLA  ] = 2500;
+#endif
 
         sf->improved_dct = 0;
 
@@ -1147,6 +1172,14 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     sf->thresh_mult[THR_COMP_NEWGA    ] = INT_MAX;
     sf->thresh_mult[THR_COMP_SPLITGA  ] = INT_MAX;
   }
+#if CONFIG_COMP_INTERINTRA_PRED
+  if ((cpi->ref_frame_flags & VP9_LAST_FLAG) != VP9_LAST_FLAG) {
+    sf->thresh_mult[THR_COMP_INTERINTRA_ZEROLA   ] = INT_MAX;
+    sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTLA] = INT_MAX;
+    sf->thresh_mult[THR_COMP_INTERINTRA_NEARLA   ] = INT_MAX;
+    sf->thresh_mult[THR_COMP_INTERINTRA_NEWLA    ] = INT_MAX;
+  }
+#endif
 
   // Slow quant, dct and trellis not worthwhile for first pass
   // so make sure they are always turned off.
@@ -3123,6 +3156,12 @@ static void encode_frame_to_data_rate
     /* TODO: Decide this more intelligently */
     xd->allow_high_precision_mv = (Q < HIGH_PRECISION_MV_QTHRESH);
   }
+
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (cm->frame_type != KEY_FRAME) {
+    cm->use_interintra = 0;
+  }
+#endif
 
 #if CONFIG_POSTPROC
 
