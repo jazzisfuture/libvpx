@@ -311,6 +311,9 @@ typedef struct VP9Common {
   // 2=specified per MB (1=filtered, 0=non-filtered)
   vp9_prob prob_pred_filter_off;
 #endif
+#if CONFIG_COMP_INTERINTRA_PRED
+  int use_interintra;
+#endif
 
 } VP9_COMMON;
 
