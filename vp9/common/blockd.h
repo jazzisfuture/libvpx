@@ -213,6 +213,10 @@ typedef struct {
 #if CONFIG_COMP_INTRA_PRED
   MB_PREDICTION_MODE second_mode, second_uv_mode;
 #endif
+#if CONFIG_COMP_INTERINTRA_PRED
+  int use_interintra;
+  MB_PREDICTION_MODE interintra_mode, interintra_uv_mode;
+#endif
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used

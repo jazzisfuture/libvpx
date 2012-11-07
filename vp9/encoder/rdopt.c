@@ -3148,7 +3148,7 @@ static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
   }
 }
 
-static void inter_mode_cost(VP9_COMP *cpi, MACROBLOCK *x, int this_mode,
+static void inter_mode_cost(VP9_COMP *cpi, MACROBLOCK *x,
                             int *rate2, int *distortion2, int *rate_y,
                             int *distortion, int* rate_uv, int *distortion_uv,
                             int *skippable, int64_t txfm_cache[NB_TXFM_MODES]) {
@@ -3359,6 +3359,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_build_1st_inter16x16_predictors_mby(xd, xd->predictor, 16, 0);
     if (is_comp_pred)
       vp9_build_2nd_inter16x16_predictors_mby(xd, xd->predictor, 16);
+#if CONFIG_COMP_INTERINTRA_PRED
+    if (mbmi->interintra_mode != -1) {
+      vp9_build_interintra_16x16_predictors_mby(xd);
+    }
+#endif
   } else {
 #if CONFIG_SUPERBLOCKS
     vp9_build_inter32x32_predictors_sb(xd,
@@ -3433,7 +3438,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       if (is_comp_pred)
         vp9_build_2nd_inter16x16_predictors_mbuv(xd, &xd->predictor[256],
                                                  &xd->predictor[320], 8);
-      inter_mode_cost(cpi, x, this_mode, rate2, distortion,
+#if CONFIG_COMP_INTERINTRA_PRED
+      if (mbmi->interintra_uv_mode != -1) {
+        vp9_build_interintra_16x16_predictors_mbuv(xd);
+      }
+#endif
+      inter_mode_cost(cpi, x, rate2, distortion,
                       rate_y, distortion_y, rate_uv, distortion_uv,
                       skippable, txfm_cache);
     } else {
@@ -3489,6 +3499,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_pred_diff[NB_PREDICTION_TYPES];
   int64_t best_pred_rd[NB_PREDICTION_TYPES];
   int64_t best_rd = INT64_MAX, best_intra_rd = INT64_MAX;
+#if CONFIG_COMP_INTERINTRA_PRED
+  int64_t best_intra16_rd = INT64_MAX;
+  int best_intra16_mode = -1, best_intra16_uv_mode = -1;
+#endif
 #if CONFIG_PRED_FILTER
   int64_t best_overall_rd = INT64_MAX;
 #endif
@@ -3631,6 +3645,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->second_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->second_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
 #endif
+#if CONFIG_COMP_INTERINTRA_PRED
+    mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+    mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+#endif
 
     // If the segment reference frame feature is enabled....
     // then do nothing if the current ref frame is not allowed..
@@ -3716,6 +3734,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           mbmi->ref_frame = INTRA_FRAME;
           // FIXME compound intra prediction
           vp9_build_intra_predictors_mby(&x->e_mbd);
+          //vp9_build_intra_predictors_mbuv(&x->e_mbd);
           macro_block_yrd(cpi, x, &rate_y, &distortion, &skippable, txfm_cache);
           rate2 += rate_y;
           distortion2 += distortion;
@@ -3907,6 +3926,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->mode = this_mode;
     }
     else {
+#if CONFIG_COMP_INTERINTRA_PRED
+      mbmi->interintra_mode = -1;//best_intra16_mode;
+      mbmi->interintra_uv_mode = -1;//best_intra16_uv_mode;
+#endif
       this_rd = handle_inter_mode(cpi, x, BLOCK_16X16,
                                   &saddone, near_sadidx, mdcounts, txfm_cache,
                                   &rate2, &distortion2, &skippable,
@@ -3982,6 +4005,16 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       best_intra_rd = this_rd;
       *returnintra = distortion2;
     }
+#if CONFIG_COMP_INTERINTRA_PRED
+    if ((mbmi->ref_frame == INTRA_FRAME) &&
+        (this_mode >= DC_PRED && this_mode <= TM_PRED) &&
+        (this_rd < best_intra16_rd)) {
+      best_intra16_rd = this_rd;
+      best_intra16_mode = this_mode;
+      best_intra16_uv_mode = (mbmi->txfm_size != TX_4X4 ?
+                              uv_intra_mode_8x8 : uv_intra_mode);
+    }
+#endif
 
     if (!disable_skip && mbmi->ref_frame == INTRA_FRAME)
       for (i = 0; i < NB_PREDICTION_TYPES; ++i)

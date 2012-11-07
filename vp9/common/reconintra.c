@@ -331,6 +331,58 @@ void vp9_build_intra_predictors_internal(unsigned char *src, int src_stride,
   }
 }
 
+#if CONFIG_COMP_INTERINTRA_PRED
+void vp9_build_interintra_16x16_predictors_mby(MACROBLOCKD *xd) {
+  unsigned char intrapredictor[256];
+  int i, j;
+  vp9_build_intra_predictors_internal(
+      xd->dst.y_buffer, xd->dst.y_stride,
+      intrapredictor, 16,
+      xd->mode_info_context->mbmi.interintra_mode, 16,
+      xd->up_available, xd->left_available);
+  for (i = 0; i < 16; ++i) {
+    for (j = 0; j < 16; ++j) {
+      int scale = 64 / (i * j + 1);
+      xd->predictor[i * 16 + j] =
+          (scale * xd->predictor[i * 16 + j] +
+           (64 - scale) * intrapredictor[i * 16 + j] + 32) >> 6;
+    }
+  }
+}
+
+void vp9_build_interintra_16x16_predictors_mbuv(MACROBLOCKD *xd) {
+  int i, j;
+  unsigned char uintrapredictor[64];
+  unsigned char vintrapredictor[64];
+  vp9_build_intra_predictors_internal(
+      xd->dst.u_buffer, xd->dst.uv_stride,
+      uintrapredictor, 8,
+      xd->mode_info_context->mbmi.interintra_uv_mode, 8,
+      xd->up_available, xd->left_available);
+  vp9_build_intra_predictors_internal(
+      xd->dst.v_buffer, xd->dst.uv_stride,
+      vintrapredictor, 8,
+      xd->mode_info_context->mbmi.interintra_uv_mode, 8,
+      xd->up_available, xd->left_available);
+  for (i = 0; i < 8; ++i) {
+    for (j = 0; j < 8; ++j) {
+      int scale = 16 / (i * j + 1);
+      xd->predictor[i * 8 + j + 256] =
+          ((16 - scale) * xd->predictor[i * 8 + j + 256] +
+           (scale) * uintrapredictor[i * 8 + j] + 8) >> 4;
+    }
+  }
+  for (i = 0; i < 8; ++i) {
+    for (j = 0; j < 8; ++j) {
+      int scale = 16 / (i * j + 1);
+      xd->predictor[i * 8 + j + 320] =
+          ((16 - scale) * xd->predictor[i * 8 + j + 320] +
+           (scale) * vintrapredictor[i * 8 + j] + 8) >> 4;
+    }
+  }
+}
+#endif
+
 void vp9_build_intra_predictors_mby(MACROBLOCKD *xd) {
   vp9_build_intra_predictors_internal(xd->dst.y_buffer, xd->dst.y_stride,
                                       xd->predictor, 16,
