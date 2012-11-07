@@ -169,6 +169,7 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_CQ_LEVEL,
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /*!\brief Max data rate for Intra frames
    *
    * This value controls additional clamping on the maximum size of a
@@ -186,6 +187,21 @@ enum vp8e_enc_control_id {
 
   /* TODO(jkoleszar): Move to vp9cx.h */
   VP9E_SET_LOSSLESS
+=======
+    /*!\brief Max data rate for Intra frames
+     *
+     * This value controls additional clamping on the maximum size of a
+     * keyframe. It is expressed as a percentage of the average
+     * per-frame bitrate, with the special (and default) value 0 meaning
+     * unlimited, or no additional clamping beyond the codec's built-in
+     * algorithm.
+     *
+     * For example, to allocate no more than 4.5 frames worth of bitrate
+     * to a keyframe, set this to 450.
+     *
+     */
+    VP8E_SET_MAX_INTRA_BITRATE_PCT
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -206,6 +222,7 @@ typedef enum vpx_scaling_mode_1d {
  *
  */
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 typedef struct vpx_roi_map {
   unsigned char *roi_map;      /**< specify an id between 0 and 3 for each 16x16 region within a frame */
   unsigned int   rows;         /**< number of rows */
@@ -213,6 +230,16 @@ typedef struct vpx_roi_map {
   int     delta_q[4];          /**< quantizer delta [-63, 63] off baseline for regions with id between 0 and 3*/
   int     delta_lf[4];         /**< loop filter strength delta [-63, 63] for regions with id between 0 and 3 */
   unsigned int   static_threshold[4];/**< threshold for region to be treated as static */
+=======
+typedef struct vpx_roi_map
+{
+    unsigned char *roi_map;      /**< specify an id between 0 and 3 for each 16x16 region within a frame */
+    unsigned int   rows;         /**< number of rows */
+    unsigned int   cols;         /**< number of cols */
+    int     delta_q[4];          /**< quantizer delta [-63, 63] off baseline for regions with id between 0 and 3*/
+    int     delta_lf[4];         /**< loop filter strength delta [-63, 63] for regions with id between 0 and 3 */
+    unsigned int   static_threshold[4];/**< threshold for region to be treated as static */
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 } vpx_roi_map_t;
 
 /*!\brief  vpx active region map
@@ -245,11 +272,20 @@ typedef struct vpx_scaling_mode {
  *
  */
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 typedef enum {
   VP8_ONE_TOKENPARTITION   = 0,
   VP8_TWO_TOKENPARTITION   = 1,
   VP8_FOUR_TOKENPARTITION  = 2,
   VP8_EIGHT_TOKENPARTITION = 3
+=======
+typedef enum
+{
+    VP8_ONE_TOKENPARTITION   = 0,
+    VP8_TWO_TOKENPARTITION   = 1,
+    VP8_FOUR_TOKENPARTITION  = 2,
+    VP8_EIGHT_TOKENPARTITION = 3
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 } vp8e_token_partitions;
 
 
@@ -291,10 +327,17 @@ VPX_CTRL_USE_TYPE(VP8E_SET_STATIC_THRESHOLD,   unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_TOKEN_PARTITIONS,   int) /* vp8e_token_partitions */
 
 VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_MAXFRAMES,     unsigned int)
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_STRENGTH,     unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_TYPE,     unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_TUNING,             int) /* vp8e_tuning */
 VPX_CTRL_USE_TYPE(VP8E_SET_CQ_LEVEL,      unsigned int)
+=======
+VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_STRENGTH ,     unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_TYPE     ,     unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_TUNING,             int) /* vp8e_tuning */
+VPX_CTRL_USE_TYPE(VP8E_SET_CQ_LEVEL     ,      unsigned int)
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER,     int *)
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64,  int *)

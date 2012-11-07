@@ -72,6 +72,7 @@ typedef long off_t;
 
 /* Swallow warnings about unused results of fread/fwrite */
 static size_t wrap_fread(void *ptr, size_t size, size_t nmemb,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                          FILE *stream) {
   return fread(ptr, size, nmemb, stream);
 }
@@ -80,12 +81,25 @@ static size_t wrap_fread(void *ptr, size_t size, size_t nmemb,
 static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
                           FILE *stream) {
   return fwrite(ptr, size, nmemb, stream);
+=======
+                         FILE *stream)
+{
+    return fread(ptr, size, nmemb, stream);
+}
+#define fread wrap_fread
+
+static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
+                          FILE *stream)
+{
+    return fwrite(ptr, size, nmemb, stream);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 #define fwrite wrap_fwrite
 
 
 static const char *exec_name;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 static const struct codec_item {
   char const              *name;
   const vpx_codec_iface_t *(*iface)(void);
@@ -97,12 +111,24 @@ static const struct codec_item {
 #endif
 #if CONFIG_VP9_ENCODER && !CONFIG_VP9_DECODER
   {"vp9", &vpx_codec_vp8_cx, NULL, 0x30385056},
+=======
+static const struct codec_item
+{
+    char const              *name;
+    vpx_codec_iface_t       *iface;
+    unsigned int             fourcc;
+} codecs[] =
+{
+#if CONFIG_VP8_ENCODER
+    {"vp8",  &vpx_codec_vp8_cx_algo, 0x30385056},
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #endif
 };
 
 static void usage_exit();
 
 #define LOG_ERROR(label) do \
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   {\
     const char *l=label;\
     va_list ap;\
@@ -117,13 +143,60 @@ static void usage_exit();
 void die(const char *fmt, ...) {
   LOG_ERROR(NULL);
   usage_exit();
+=======
+{\
+    const char *l=label;\
+    va_list ap;\
+    va_start(ap, fmt);\
+    if(l)\
+        fprintf(stderr, "%s: ", l);\
+    vfprintf(stderr, fmt, ap);\
+    fprintf(stderr, "\n");\
+    va_end(ap);\
+} while(0)
+
+void die(const char *fmt, ...)
+{
+    LOG_ERROR(NULL);
+    usage_exit();
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+}
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+
+void fatal(const char *fmt, ...)
+{
+    LOG_ERROR("Fatal");
+    exit(EXIT_FAILURE);
 }
 
 
+void warn(const char *fmt, ...)
+{
+    LOG_ERROR("Warning");
+}
+
+
+static void ctx_exit_on_error(vpx_codec_ctx_t *ctx, const char *s, ...)
+{
+    va_list ap;
+
+    va_start(ap, s);
+    if (ctx->err)
+    {
+        const char *detail = vpx_codec_error_detail(ctx);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 void fatal(const char *fmt, ...) {
   LOG_ERROR("Fatal");
   exit(EXIT_FAILURE);
 }
+=======
+        vfprintf(stderr, s, ap);
+        fprintf(stderr, ": %s\n", vpx_codec_error(ctx));
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 
 void warn(const char *fmt, ...) {
@@ -175,12 +248,60 @@ int stats_open_file(stats_io_t *stats, const char *fpf, int pass) {
     struct stat stat_buf;
     int fd;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     fd = open(fpf, O_RDONLY);
     stats->file = fdopen(fd, "rb");
     fstat(fd, &stat_buf);
     stats->buf.sz = stat_buf.st_size;
     stats->buf.buf = mmap(NULL, stats->buf.sz, PROT_READ, MAP_PRIVATE,
                           fd, 0);
+=======
+        fd = open(fpf, O_RDONLY);
+        stats->file = fdopen(fd, "rb");
+        fstat(fd, &stat_buf);
+        stats->buf.sz = stat_buf.st_size;
+        stats->buf.buf = mmap(NULL, stats->buf.sz, PROT_READ, MAP_PRIVATE,
+                              fd, 0);
+        res = (stats->buf.buf != NULL);
+#else
+        size_t nbytes;
+
+        stats->file = fopen(fpf, "rb");
+
+        if (fseek(stats->file, 0, SEEK_END))
+            fatal("First-pass stats file must be seekable!");
+
+        stats->buf.sz = stats->buf_alloc_sz = ftell(stats->file);
+        rewind(stats->file);
+
+        stats->buf.buf = malloc(stats->buf_alloc_sz);
+
+        if (!stats->buf.buf)
+            fatal("Failed to allocate first-pass stats buffer (%lu bytes)",
+                  (unsigned long)stats->buf_alloc_sz);
+
+        nbytes = fread(stats->buf.buf, 1, stats->buf.sz, stats->file);
+        res = (nbytes == stats->buf.sz);
+#endif
+    }
+
+    return res;
+}
+
+int stats_open_mem(stats_io_t *stats, int pass)
+{
+    int res;
+    stats->pass = pass;
+
+    if (!pass)
+    {
+        stats->buf.sz = 0;
+        stats->buf_alloc_sz = 64 * 1024;
+        stats->buf.buf = malloc(stats->buf_alloc_sz);
+    }
+
+    stats->buf_ptr = stats->buf.buf;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     res = (stats->buf.buf != NULL);
 #else
     size_t nbytes;
@@ -242,6 +363,7 @@ void stats_close(stats_io_t *stats, int last_pass) {
   }
 }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 void stats_write(stats_io_t *stats, const void *pkt, size_t len) {
   if (stats->file) {
     (void) fwrite(pkt, 1, len, stats->file);
@@ -249,13 +371,43 @@ void stats_write(stats_io_t *stats, const void *pkt, size_t len) {
     if (stats->buf.sz + len > stats->buf_alloc_sz) {
       size_t  new_sz = stats->buf_alloc_sz + 64 * 1024;
       char   *new_ptr = realloc(stats->buf.buf, new_sz);
+=======
+void stats_write(stats_io_t *stats, const void *pkt, size_t len)
+{
+    if (stats->file)
+    {
+        (void) fwrite(pkt, 1, len, stats->file);
+    }
+    else
+    {
+        if (stats->buf.sz + len > stats->buf_alloc_sz)
+        {
+            size_t  new_sz = stats->buf_alloc_sz + 64 * 1024;
+            char   *new_ptr = realloc(stats->buf.buf, new_sz);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       if (new_ptr) {
         stats->buf_ptr = new_ptr + (stats->buf_ptr - (char *)stats->buf.buf);
         stats->buf.buf = new_ptr;
         stats->buf_alloc_sz = new_sz;
       } else
         fatal("Failed to realloc firstpass stats buffer.");
+=======
+            if (new_ptr)
+            {
+                stats->buf_ptr = new_ptr + (stats->buf_ptr - (char *)stats->buf.buf);
+                stats->buf.buf = new_ptr;
+                stats->buf_alloc_sz = new_sz;
+            }
+            else
+                fatal("Failed to realloc firstpass stats buffer.");
+        }
+
+        memcpy(stats->buf_ptr, pkt, len);
+        stats->buf.sz += len;
+        stats->buf_ptr += len;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
     memcpy(stats->buf_ptr, pkt, len);
@@ -303,6 +455,7 @@ struct input_state {
 };
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 #define IVF_FRAME_HDR_SZ (4+8) /* 4 byte size + 8 byte timestamp */
 static int read_frame(struct input_state *input, vpx_image_t *img) {
   FILE *f = input->file;
@@ -311,6 +464,31 @@ static int read_frame(struct input_state *input, vpx_image_t *img) {
   struct detect_buffer *detect = &input->detect;
   int plane = 0;
   int shortread = 0;
+=======
+struct input_state
+{
+    char                 *fn;
+    FILE                 *file;
+    y4m_input             y4m;
+    struct detect_buffer  detect;
+    enum video_file_type  file_type;
+    unsigned int          w;
+    unsigned int          h;
+    struct vpx_rational   framerate;
+    int                   use_i420;
+};
+
+
+#define IVF_FRAME_HDR_SZ (4+8) /* 4 byte size + 8 byte timestamp */
+static int read_frame(struct input_state *input, vpx_image_t *img)
+{
+    FILE *f = input->file;
+    enum video_file_type file_type = input->file_type;
+    y4m_input *y4m = &input->y4m;
+    struct detect_buffer *detect = &input->detect;
+    int plane = 0;
+    int shortread = 0;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (file_type == FILE_TYPE_Y4M) {
     if (y4m_input_fetch_frame(y4m, f, img) < 1)
@@ -319,11 +497,65 @@ static int read_frame(struct input_state *input, vpx_image_t *img) {
     if (file_type == FILE_TYPE_IVF) {
       char junk[IVF_FRAME_HDR_SZ];
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       /* Skip the frame header. We know how big the frame should be. See
        * write_ivf_frame_header() for documentation on the frame header
        * layout.
        */
       (void) fread(junk, 1, IVF_FRAME_HDR_SZ, f);
+=======
+            /* Skip the frame header. We know how big the frame should be. See
+             * write_ivf_frame_header() for documentation on the frame header
+             * layout.
+             */
+            (void) fread(junk, 1, IVF_FRAME_HDR_SZ, f);
+        }
+
+        for (plane = 0; plane < 3; plane++)
+        {
+            unsigned char *ptr;
+            int w = (plane ? (1 + img->d_w) / 2 : img->d_w);
+            int h = (plane ? (1 + img->d_h) / 2 : img->d_h);
+            int r;
+
+            /* Determine the correct plane based on the image format. The for-loop
+             * always counts in Y,U,V order, but this may not match the order of
+             * the data on disk.
+             */
+            switch (plane)
+            {
+            case 1:
+                ptr = img->planes[img->fmt==VPX_IMG_FMT_YV12? VPX_PLANE_V : VPX_PLANE_U];
+                break;
+            case 2:
+                ptr = img->planes[img->fmt==VPX_IMG_FMT_YV12?VPX_PLANE_U : VPX_PLANE_V];
+                break;
+            default:
+                ptr = img->planes[plane];
+            }
+
+            for (r = 0; r < h; r++)
+            {
+                size_t needed = w;
+                size_t buf_position = 0;
+                const size_t left = detect->buf_read - detect->position;
+                if (left > 0)
+                {
+                    const size_t more = (left < needed) ? left : needed;
+                    memcpy(ptr, detect->buf + detect->position, more);
+                    buf_position = more;
+                    needed -= more;
+                    detect->position += more;
+                }
+                if (needed > 0)
+                {
+                    shortread |= (fread(ptr + buf_position, 1, needed, f) < needed);
+                }
+
+                ptr += img->stride[plane];
+            }
+        }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
     for (plane = 0; plane < 3; plane++) {
@@ -382,6 +614,7 @@ unsigned int file_is_y4m(FILE      *infile,
 
 #define IVF_FILE_HDR_SZ (32)
 unsigned int file_is_ivf(struct input_state *input,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                          unsigned int *fourcc) {
   char raw_hdr[IVF_FILE_HDR_SZ];
   int is_ivf = 0;
@@ -389,6 +622,16 @@ unsigned int file_is_ivf(struct input_state *input,
   unsigned int *width = &input->w;
   unsigned int *height = &input->h;
   struct detect_buffer *detect = &input->detect;
+=======
+                         unsigned int *fourcc)
+{
+    char raw_hdr[IVF_FILE_HDR_SZ];
+    int is_ivf = 0;
+    FILE *infile = input->file;
+    unsigned int *width = &input->w;
+    unsigned int *height = &input->h;
+    struct detect_buffer *detect = &input->detect;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (memcmp(detect->buf, "DKIF", 4) != 0)
     return 0;
@@ -401,9 +644,15 @@ unsigned int file_is_ivf(struct input_state *input,
     {
       is_ivf = 1;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       if (mem_get_le16(raw_hdr + 4) != 0)
         warn("Unrecognized IVF version! This file may not decode "
              "properly.");
+=======
+            if (mem_get_le16(raw_hdr + 4) != 0)
+                warn("Unrecognized IVF version! This file may not decode "
+                     "properly.");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       *fourcc = mem_get_le32(raw_hdr + 8);
     }
@@ -442,7 +691,11 @@ static void write_ivf_file_header(FILE *outfile,
   mem_put_le32(header + 24, frame_cnt);         /* length */
   mem_put_le32(header + 28, 0);                 /* unused */
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   (void) fwrite(header, 1, 32, outfile);
+=======
+    (void) fwrite(header, 1, 32, outfile);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -454,11 +707,19 @@ static void write_ivf_frame_header(FILE *outfile,
   if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
     return;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   pts = pkt->data.frame.pts;
   mem_put_le32(header, (int)pkt->data.frame.sz);
   mem_put_le32(header + 4, pts & 0xFFFFFFFF);
   mem_put_le32(header + 8, pts >> 32);
+=======
+    pts = pkt->data.frame.pts;
+    mem_put_le32(header, (int)pkt->data.frame.sz);
+    mem_put_le32(header + 4, pts & 0xFFFFFFFF);
+    mem_put_le32(header + 8, pts >> 32);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   (void) fwrite(header, 1, 12, outfile);
 }
 
@@ -466,6 +727,16 @@ static void write_ivf_frame_size(FILE *outfile, size_t size) {
   char             header[4];
   mem_put_le32(header, (int)size);
   (void) fwrite(header, 1, 4, outfile);
+=======
+    (void) fwrite(header, 1, 12, outfile);
+}
+
+static void write_ivf_frame_size(FILE *outfile, size_t size)
+{
+    char             header[4];
+    mem_put_le32(header, (int)size);
+    (void) fwrite(header, 1, 4, outfile);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -509,13 +780,24 @@ struct EbmlGlobal {
 };
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 void Ebml_Write(EbmlGlobal *glob, const void *buffer_in, unsigned long len) {
   (void) fwrite(buffer_in, 1, len, glob->stream);
+=======
+void Ebml_Write(EbmlGlobal *glob, const void *buffer_in, unsigned long len)
+{
+    (void) fwrite(buffer_in, 1, len, glob->stream);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 #define WRITE_BUFFER(s) \
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   for(i = len-1; i>=0; i--)\
   { \
+=======
+for(i = len-1; i>=0; i--)\
+{ \
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     x = (char)(*(const s *)buffer_in >> (i * CHAR_BIT)); \
     Ebml_Write(glob, &x, 1); \
   }
@@ -561,10 +843,18 @@ static void Ebml_SerializeUnsigned32(EbmlGlobal *glob, unsigned long class_id, u
 
 static void
 Ebml_StartSubElement(EbmlGlobal *glob, EbmlLoc *ebmlLoc,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                      unsigned long class_id) {
   /* todo this is always taking 8 bytes, this may need later optimization */
   /* this is a key that says length unknown */
   uint64_t unknownLen = LITERALU64(0x01FFFFFF, 0xFFFFFFFF);
+=======
+                          unsigned long class_id)
+{
+    /* todo this is always taking 8 bytes, this may need later optimization */
+    /* this is a key that says length unknown */
+    uint64_t unknownLen = LITERALU64(0x01FFFFFF, 0xFFFFFFFF);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   Ebml_WriteID(glob, class_id);
   *ebmlLoc = ftello(glob->stream);
@@ -579,9 +869,15 @@ Ebml_EndSubElement(EbmlGlobal *glob, EbmlLoc *ebmlLoc) {
   /* Save the current stream pointer */
   pos = ftello(glob->stream);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /* Calculate the size of this element */
   size = pos - *ebmlLoc - 8;
   size |= LITERALU64(0x01000000, 0x00000000);
+=======
+    /* Calculate the size of this element */
+    size = pos - *ebmlLoc - 8;
+    size |= LITERALU64(0x01000000,0x00000000);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   /* Seek back to the beginning of the element and write the new size */
   fseeko(glob->stream, *ebmlLoc, SEEK_SET);
@@ -640,7 +936,16 @@ write_webm_seek_info(EbmlGlobal *ebml) {
               vpx_codec_version_str(),
               sizeof(version_string) - 1 - strlen(version_string));
     }
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+    {
+        /* segment info */
+        EbmlLoc startInfo;
+        uint64_t frame_time;
+        char version_string[64];
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     frame_time = (uint64_t)1000 * ebml->framerate.den
                  / ebml->framerate.num;
     ebml->segment_info_pos = ftello(ebml->stream);
@@ -652,6 +957,30 @@ write_webm_seek_info(EbmlGlobal *ebml) {
     Ebml_SerializeString(ebml, 0x5741, version_string);
     Ebml_EndSubElement(ebml, &startInfo);
   }
+=======
+        /* Assemble version string */
+        if(ebml->debug)
+            strcpy(version_string, "vpxenc");
+        else
+        {
+            strcpy(version_string, "vpxenc ");
+            strncat(version_string,
+                    vpx_codec_version_str(),
+                    sizeof(version_string) - 1 - strlen(version_string));
+        }
+
+        frame_time = (uint64_t)1000 * ebml->framerate.den
+                     / ebml->framerate.num;
+        ebml->segment_info_pos = ftello(ebml->stream);
+        Ebml_StartSubElement(ebml, &startInfo, Info);
+        Ebml_SerializeUnsigned(ebml, TimecodeScale, 1000000);
+        Ebml_SerializeFloat(ebml, Segment_Duration,
+                            (double)(ebml->last_pts_ms + frame_time));
+        Ebml_SerializeString(ebml, 0x4D80, version_string);
+        Ebml_SerializeString(ebml, 0x5741, version_string);
+        Ebml_EndSubElement(ebml, &startInfo);
+    }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -687,17 +1016,37 @@ write_webm_file_header(EbmlGlobal                *glob,
         uint64_t     trackID = 0;
 
         EbmlLoc start;
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
         Ebml_StartSubElement(glob, &start, TrackEntry);
         Ebml_SerializeUnsigned(glob, TrackNumber, trackNumber);
         glob->track_id_pos = ftello(glob->stream);
         Ebml_SerializeUnsigned32(glob, TrackUID, trackID);
         Ebml_SerializeUnsigned(glob, TrackType, 1);
         Ebml_SerializeString(glob, CodecID, "V_VP8");
+=======
+        Ebml_StartSubElement(glob, &start, EBML);
+        Ebml_SerializeUnsigned(glob, EBMLVersion, 1);
+        Ebml_SerializeUnsigned(glob, EBMLReadVersion, 1);
+        Ebml_SerializeUnsigned(glob, EBMLMaxIDLength, 4);
+        Ebml_SerializeUnsigned(glob, EBMLMaxSizeLength, 8);
+        Ebml_SerializeString(glob, DocType, "webm");
+        Ebml_SerializeUnsigned(glob, DocTypeVersion, 2);
+        Ebml_SerializeUnsigned(glob, DocTypeReadVersion, 2);
+        Ebml_EndSubElement(glob, &start);
+    }
+    {
+        Ebml_StartSubElement(glob, &glob->startSegment, Segment);
+        glob->position_reference = ftello(glob->stream);
+        glob->framerate = *fps;
+        write_webm_seek_info(glob);
+
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
         {
           unsigned int pixelWidth = cfg->g_w;
           unsigned int pixelHeight = cfg->g_h;
           float        frameRate   = (float)fps->num / (float)fps->den;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
           EbmlLoc videoStart;
           Ebml_StartSubElement(glob, &videoStart, Video);
           Ebml_SerializeUnsigned(glob, PixelWidth, pixelWidth);
@@ -705,10 +1054,39 @@ write_webm_file_header(EbmlGlobal                *glob,
           Ebml_SerializeUnsigned(glob, StereoMode, stereo_fmt);
           Ebml_SerializeFloat(glob, FrameRate, frameRate);
           Ebml_EndSubElement(glob, &videoStart);
+=======
+                EbmlLoc start;
+                Ebml_StartSubElement(glob, &start, TrackEntry);
+                Ebml_SerializeUnsigned(glob, TrackNumber, trackNumber);
+                glob->track_id_pos = ftello(glob->stream);
+                Ebml_SerializeUnsigned32(glob, TrackUID, trackID);
+                Ebml_SerializeUnsigned(glob, TrackType, 1);
+                Ebml_SerializeString(glob, CodecID, "V_VP8");
+                {
+                    unsigned int pixelWidth = cfg->g_w;
+                    unsigned int pixelHeight = cfg->g_h;
+                    float        frameRate   = (float)fps->num/(float)fps->den;
+
+                    EbmlLoc videoStart;
+                    Ebml_StartSubElement(glob, &videoStart, Video);
+                    Ebml_SerializeUnsigned(glob, PixelWidth, pixelWidth);
+                    Ebml_SerializeUnsigned(glob, PixelHeight, pixelHeight);
+                    Ebml_SerializeUnsigned(glob, StereoMode, stereo_fmt);
+                    Ebml_SerializeFloat(glob, FrameRate, frameRate);
+                    Ebml_EndSubElement(glob, &videoStart);
+                }
+                Ebml_EndSubElement(glob, &start); /* Track Entry */
+            }
+            Ebml_EndSubElement(glob, &trackStart);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
         }
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
         Ebml_EndSubElement(glob, &start); /* Track Entry */
       }
       Ebml_EndSubElement(glob, &trackStart);
+=======
+        /* segment element is open */
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
     /* segment element is open */
   }
@@ -733,17 +1111,26 @@ write_webm_block(EbmlGlobal                *glob,
     pts_ms = glob->last_pts_ms + 1;
   glob->last_pts_ms = pts_ms;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /* Calculate the relative time of this block */
   if (pts_ms - glob->cluster_timecode > SHRT_MAX)
     start_cluster = 1;
   else
     block_timecode = (unsigned short)pts_ms - glob->cluster_timecode;
+=======
+    /* Calculate the relative time of this block */
+    if(pts_ms - glob->cluster_timecode > SHRT_MAX)
+        start_cluster = 1;
+    else
+        block_timecode = (unsigned short)pts_ms - glob->cluster_timecode;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   is_keyframe = (pkt->data.frame.flags & VPX_FRAME_IS_KEY);
   if (start_cluster || is_keyframe) {
     if (glob->cluster_open)
       Ebml_EndSubElement(glob, &glob->startCluster);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     /* Open the new cluster */
     block_timecode = 0;
     glob->cluster_open = 1;
@@ -751,17 +1138,35 @@ write_webm_block(EbmlGlobal                *glob,
     glob->cluster_pos = ftello(glob->stream);
     Ebml_StartSubElement(glob, &glob->startCluster, Cluster); /* cluster */
     Ebml_SerializeUnsigned(glob, Timecode, glob->cluster_timecode);
+=======
+        /* Open the new cluster */
+        block_timecode = 0;
+        glob->cluster_open = 1;
+        glob->cluster_timecode = (uint32_t)pts_ms;
+        glob->cluster_pos = ftello(glob->stream);
+        Ebml_StartSubElement(glob, &glob->startCluster, Cluster); /* cluster */
+        Ebml_SerializeUnsigned(glob, Timecode, glob->cluster_timecode);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
     /* Save a cue point if this is a keyframe. */
     if (is_keyframe) {
       struct cue_entry *cue, *new_cue_list;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       new_cue_list = realloc(glob->cue_list,
                              (glob->cues + 1) * sizeof(struct cue_entry));
       if (new_cue_list)
         glob->cue_list = new_cue_list;
       else
         fatal("Failed to realloc cue list.");
+=======
+            new_cue_list = realloc(glob->cue_list,
+                                   (glob->cues+1) * sizeof(struct cue_entry));
+            if(new_cue_list)
+                glob->cue_list = new_cue_list;
+            else
+                fatal("Failed to realloc cue list.");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
       cue = &glob->cue_list[glob->cues];
       cue->time = glob->cluster_timecode;
@@ -773,9 +1178,15 @@ write_webm_block(EbmlGlobal                *glob,
   /* Write the Simple Block */
   Ebml_WriteID(glob, SimpleBlock);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   block_length = (unsigned long)pkt->data.frame.sz + 4;
   block_length |= 0x10000000;
   Ebml_Serialize(glob, &block_length, sizeof(block_length), 4);
+=======
+    block_length = (unsigned long)pkt->data.frame.sz + 4;
+    block_length |= 0x10000000;
+    Ebml_Serialize(glob, &block_length, sizeof(block_length), 4);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   track_number = 1;
   track_number |= 0x80;
@@ -790,7 +1201,11 @@ write_webm_block(EbmlGlobal                *glob,
     flags |= 0x08;
   Ebml_Write(glob, &flags, 1);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   Ebml_Write(glob, pkt->data.frame.buf, (unsigned long)pkt->data.frame.sz);
+=======
+    Ebml_Write(glob, pkt->data.frame.buf, (unsigned long)pkt->data.frame.sz);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -813,13 +1228,34 @@ write_webm_file_footer(EbmlGlobal *glob, long hash) {
       Ebml_StartSubElement(glob, &start, CuePoint);
       {
         EbmlLoc start;
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+        unsigned int i;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
         Ebml_SerializeUnsigned(glob, CueTime, cue->time);
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
         Ebml_StartSubElement(glob, &start, CueTrackPositions);
         Ebml_SerializeUnsigned(glob, CueTrack, 1);
         Ebml_SerializeUnsigned64(glob, CueClusterPosition,
                                  cue->loc - glob->position_reference);
+=======
+            Ebml_StartSubElement(glob, &start, CuePoint);
+            {
+                EbmlLoc start;
+
+                Ebml_SerializeUnsigned(glob, CueTime, cue->time);
+
+                Ebml_StartSubElement(glob, &start, CueTrackPositions);
+                Ebml_SerializeUnsigned(glob, CueTrack, 1);
+                Ebml_SerializeUnsigned64(glob, CueClusterPosition,
+                                         cue->loc - glob->position_reference);
+                Ebml_EndSubElement(glob, &start);
+            }
+            Ebml_EndSubElement(glob, &start);
+        }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
         Ebml_EndSubElement(glob, &start);
       }
       Ebml_EndSubElement(glob, &start);
@@ -897,8 +1333,15 @@ static double vp8_mse2psnr(double Samples, double Peak, double Mse) {
   else
     psnr = MAX_PSNR;      /* Limit to prevent / 0 */
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   if (psnr > MAX_PSNR)
     psnr = MAX_PSNR;
+=======
+    if ((double)Mse > 0.0)
+        psnr = 10.0 * log10(Peak * Peak * Samples / Mse);
+    else
+        psnr = 60;      /* Limit to prevent / 0 */
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   return psnr;
 }
@@ -932,9 +1375,15 @@ static const arg_def_t best_dl          = ARG_DEF(NULL, "best", 0,
 static const arg_def_t good_dl          = ARG_DEF(NULL, "good", 0,
                                                   "Use Good Quality Deadline");
 static const arg_def_t rt_dl            = ARG_DEF(NULL, "rt", 0,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                                                   "Use Realtime Quality Deadline");
 static const arg_def_t quietarg         = ARG_DEF("q", "quiet", 0,
                                                   "Do not print encode progress");
+=======
+        "Use Realtime Quality Deadline");
+static const arg_def_t quietarg         = ARG_DEF("q", "quiet", 0,
+        "Do not print encode progress");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 static const arg_def_t verbosearg       = ARG_DEF("v", "verbose", 0,
                                                   "Show encoder parameters");
 static const arg_def_t psnrarg          = ARG_DEF(NULL, "psnr", 0,
@@ -944,12 +1393,19 @@ static const arg_def_t recontest        = ARG_DEF(NULL, "test-decode", 0,
 static const arg_def_t framerate        = ARG_DEF(NULL, "fps", 1,
                                                   "Stream frame rate (rate/scale)");
 static const arg_def_t use_ivf          = ARG_DEF(NULL, "ivf", 0,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                                                   "Output IVF (default is WebM)");
 static const arg_def_t out_part = ARG_DEF("P", "output-partitions", 0,
                                           "Makes encoder output partitions. Requires IVF output!");
+=======
+        "Output IVF (default is WebM)");
+static const arg_def_t out_part = ARG_DEF("P", "output-partitions", 0,
+        "Makes encoder output partitions. Requires IVF output!");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 static const arg_def_t q_hist_n         = ARG_DEF(NULL, "q-hist", 1,
                                                   "Show quantizer histogram (n-buckets)");
 static const arg_def_t rate_hist_n         = ARG_DEF(NULL, "rate-hist", 1,
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
                                                      "Show rate histogram (n-buckets)");
 static const arg_def_t *main_args[] = {
   &debugmode,
@@ -957,6 +1413,16 @@ static const arg_def_t *main_args[] = {
   &deadline, &best_dl, &good_dl, &rt_dl,
   &quietarg, &verbosearg, &psnrarg, &use_ivf, &out_part, &q_hist_n, &rate_hist_n,
   NULL
+=======
+        "Show rate histogram (n-buckets)");
+static const arg_def_t *main_args[] =
+{
+    &debugmode,
+    &outputfile, &codecarg, &passes, &pass_arg, &fpf_name, &limit, &deadline,
+    &best_dl, &good_dl, &rt_dl,
+    &quietarg, &verbosearg, &psnrarg, &use_ivf, &out_part, &q_hist_n, &rate_hist_n,
+    NULL
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 };
 
 static const arg_def_t usage            = ARG_DEF("u", "usage", 1,
@@ -1219,10 +1685,59 @@ static int merge_hist_buckets(struct hist_bucket *bucket,
       if (i > merge_bucket)
         bucket[i] = bucket[i + 1];
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       if (bucket[i].count < bucket[small_bucket].count)
         small_bucket = i;
       if (bucket[i].count > bucket[big_bucket].count)
         big_bucket = i;
+=======
+        /* merge the small bucket with an adjacent one. */
+        if(small_bucket == 0)
+            merge_bucket = 1;
+        else if(small_bucket == last_bucket)
+            merge_bucket = last_bucket - 1;
+        else if(bucket[small_bucket - 1].count < bucket[small_bucket + 1].count)
+            merge_bucket = small_bucket - 1;
+        else
+            merge_bucket = small_bucket + 1;
+
+        assert(abs(merge_bucket - small_bucket) <= 1);
+        assert(small_bucket < buckets);
+        assert(big_bucket < buckets);
+        assert(merge_bucket < buckets);
+
+        if(merge_bucket < small_bucket)
+        {
+            bucket[merge_bucket].high = bucket[small_bucket].high;
+            bucket[merge_bucket].count += bucket[small_bucket].count;
+        }
+        else
+        {
+            bucket[small_bucket].high = bucket[merge_bucket].high;
+            bucket[small_bucket].count += bucket[merge_bucket].count;
+            merge_bucket = small_bucket;
+        }
+
+        assert(bucket[merge_bucket].low != bucket[merge_bucket].high);
+
+        buckets--;
+
+        /* Remove the merge_bucket from the list, and find the new small
+         * and big buckets while we're at it
+         */
+        big_bucket = small_bucket = 0;
+        for(i=0; i < buckets; i++)
+        {
+            if(i > merge_bucket)
+                bucket[i] = bucket[i+1];
+
+            if(bucket[i].count < bucket[small_bucket].count)
+                small_bucket = i;
+            if(bucket[i].count > bucket[big_bucket].count)
+                big_bucket = i;
+        }
+
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
   }
@@ -1276,11 +1791,19 @@ static void show_histogram(const struct hist_bucket *bucket,
     int j;
     float pct;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     pct = (float)(100.0 * bucket[i].count / total);
     len = HIST_BAR_MAX * bucket[i].count / scale;
     if (len < 1)
       len = 1;
     assert(len <= HIST_BAR_MAX);
+=======
+        pct = (float)(100.0 * bucket[i].count / total);
+        len = HIST_BAR_MAX * bucket[i].count / scale;
+        if(len < 1)
+            len = 1;
+        assert(len <= HIST_BAR_MAX);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
     if (bucket[i].low == bucket[i].high)
       fprintf(stderr, pat1, bucket[i].low, "");
@@ -1339,9 +1862,15 @@ static void init_rate_histogram(struct rate_hist          *hist,
    */
   hist->samples = cfg->rc_buf_sz * 5 / 4 * fps->num / fps->den / 1000;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /* prevent division by zero */
   if (hist->samples == 0)
     hist->samples = 1;
+=======
+    /* prevent division by zero */
+    if (hist->samples == 0)
+      hist->samples=1;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   hist->pts = calloc(hist->samples, sizeof(*hist->pts));
   hist->sz = calloc(hist->samples, sizeof(*hist->sz));
@@ -1368,9 +1897,15 @@ static void update_rate_histogram(struct rate_hist          *hist,
   now = pkt->data.frame.pts * 1000
         * (uint64_t)cfg->g_timebase.num / (uint64_t)cfg->g_timebase.den;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   idx = hist->frames++ % hist->samples;
   hist->pts[idx] = now;
   hist->sz[idx] = (int)pkt->data.frame.sz;
+=======
+    idx = hist->frames++ % hist->samples;
+    hist->pts[idx] = now;
+    hist->sz[idx] = (int)pkt->data.frame.sz;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   if (now < cfg->rc_buf_initial_sz)
     return;
@@ -1390,6 +1925,7 @@ static void update_rate_histogram(struct rate_hist          *hist,
   if (now == then)
     return;
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   avg_bitrate = sum_sz * 8 * 1000 / (now - then);
   idx = (int)(avg_bitrate * (RATE_BINS / 2) / (cfg->rc_target_bitrate * 1000));
   if (idx < 0)
@@ -1402,6 +1938,20 @@ static void update_rate_histogram(struct rate_hist          *hist,
     hist->bucket[idx].high = (int)avg_bitrate;
   hist->bucket[idx].count++;
   hist->total++;
+=======
+    avg_bitrate = sum_sz * 8 * 1000 / (now - then);
+    idx = (int)(avg_bitrate * (RATE_BINS/2) / (cfg->rc_target_bitrate * 1000));
+    if(idx < 0)
+        idx = 0;
+    if(idx > RATE_BINS-1)
+        idx = RATE_BINS-1;
+    if(hist->bucket[idx].low > avg_bitrate)
+        hist->bucket[idx].low = (int)avg_bitrate;
+    if(hist->bucket[idx].high < avg_bitrate)
+        hist->bucket[idx].high = (int)avg_bitrate;
+    hist->bucket[idx].count++;
+    hist->total++;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }
 
 
@@ -1422,9 +1972,21 @@ static void show_rate_histogram(struct rate_hist          *hist,
   show_histogram(hist->bucket, buckets, hist->total, scale);
 }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+#define NELEMENTS(x) (sizeof(x)/sizeof(x[0]))
+#define ARG_CTRL_CNT_MAX NELEMENTS(vp8_arg_ctrl_map)
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 static int compare_img(vpx_image_t *img1, vpx_image_t *img2)
+=======
+
+/* Configuration elements common to all streams */
+struct global_config
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 {
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   int match = 1;
   int i;
 
@@ -1449,10 +2011,95 @@ static int compare_img(vpx_image_t *img1, vpx_image_t *img2)
 
   return match;
 }
+=======
+    const struct codec_item  *codec;
+    int                       passes;
+    int                       pass;
+    int                       usage;
+    int                       deadline;
+    int                       use_i420;
+    int                       quiet;
+    int                       verbose;
+    int                       limit;
+    int                       show_psnr;
+    int                       have_framerate;
+    struct vpx_rational       framerate;
+    int                       out_part;
+    int                       debug;
+    int                       show_q_hist_buckets;
+    int                       show_rate_hist_buckets;
+};
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 #define NELEMENTS(x) (sizeof(x)/sizeof(x[0]))
 #define ARG_CTRL_CNT_MAX NELEMENTS(vp8_arg_ctrl_map)
+=======
+/* Per-stream configuration */
+struct stream_config
+{
+    struct vpx_codec_enc_cfg  cfg;
+    const char               *out_fn;
+    const char               *stats_fn;
+    stereo_format_t           stereo_fmt;
+    int                       arg_ctrls[ARG_CTRL_CNT_MAX][2];
+    int                       arg_ctrl_cnt;
+    int                       write_webm;
+    int                       have_kf_max_dist;
+};
+
+
+struct stream_state
+{
+    int                       index;
+    struct stream_state      *next;
+    struct stream_config      config;
+    FILE                     *file;
+    struct rate_hist          rate_hist;
+    EbmlGlobal                ebml;
+    uint32_t                  hash;
+    uint64_t                  psnr_sse_total;
+    uint64_t                  psnr_samples_total;
+    double                    psnr_totals[4];
+    int                       psnr_count;
+    int                       counts[64];
+    vpx_codec_ctx_t           encoder;
+    unsigned int              frames_out;
+    uint64_t                  cx_time;
+    size_t                    nbytes;
+    stats_io_t                stats;
+};
+
+
+void validate_positive_rational(const char          *msg,
+                                struct vpx_rational *rat)
+{
+    if (rat->den < 0)
+    {
+        rat->num *= -1;
+        rat->den *= -1;
+    }
+
+    if (rat->num < 0)
+        die("Error: %s must be positive\n", msg);
+
+    if (!rat->den)
+        die("Error: %s has zero denominator\n", msg);
+}
+
+
+static void parse_global_config(struct global_config *global, char **argv)
+{
+    char       **argi, **argj;
+    struct arg   arg;
+
+    /* Initialize default parameters */
+    memset(global, 0, sizeof(*global));
+    global->codec = codecs;
+    global->passes = 1;
+    global->use_i420 = 1;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 
 /* Configuration elements common to all streams */
@@ -1478,6 +2125,7 @@ struct global_config {
 };
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 /* Per-stream configuration */
 struct stream_config {
   struct vpx_codec_enc_cfg  cfg;
@@ -1489,8 +2137,23 @@ struct stream_config {
   int                       write_webm;
   int                       have_kf_max_dist;
 };
+=======
+            if (k >= 0)
+                global->codec = codecs + k;
+            else
+                die("Error: Unrecognized argument (%s) to --codec\n",
+                    arg.val);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+        }
+        else if (arg_match(&arg, &passes, argi))
+        {
+            global->passes = arg_parse_uint(&arg);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 struct stream_state {
   int                       index;
   struct stream_state      *next;
@@ -1514,7 +2177,16 @@ struct stream_state {
   vpx_ref_frame_t           ref_dec;
   int                       mismatch_seen;
 };
+=======
+            if (global->passes < 1 || global->passes > 2)
+                die("Error: Invalid number of passes (%d)\n", global->passes);
+        }
+        else if (arg_match(&arg, &pass_arg, argi))
+        {
+            global->pass = arg_parse_uint(&arg);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 
 void validate_positive_rational(const char          *msg,
                                 struct vpx_rational *rat) {
@@ -1618,10 +2290,55 @@ static void parse_global_config(struct global_config *global, char **argv) {
       warn("Assuming --pass=%d implies --passes=%d\n",
            global->pass, global->pass);
       global->passes = global->pass;
+=======
+            if (global->pass < 1 || global->pass > 2)
+                die("Error: Invalid pass selected (%d)\n",
+                    global->pass);
+        }
+        else if (arg_match(&arg, &usage, argi))
+            global->usage = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &deadline, argi))
+            global->deadline = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &best_dl, argi))
+            global->deadline = VPX_DL_BEST_QUALITY;
+        else if (arg_match(&arg, &good_dl, argi))
+            global->deadline = VPX_DL_GOOD_QUALITY;
+        else if (arg_match(&arg, &rt_dl, argi))
+            global->deadline = VPX_DL_REALTIME;
+        else if (arg_match(&arg, &use_yv12, argi))
+            global->use_i420 = 0;
+        else if (arg_match(&arg, &use_i420, argi))
+            global->use_i420 = 1;
+        else if (arg_match(&arg, &quietarg, argi))
+            global->quiet = 1;
+        else if (arg_match(&arg, &verbosearg, argi))
+            global->verbose = 1;
+        else if (arg_match(&arg, &limit, argi))
+            global->limit = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &psnrarg, argi))
+            global->show_psnr = 1;
+        else if (arg_match(&arg, &framerate, argi))
+        {
+            global->framerate = arg_parse_rational(&arg);
+            validate_positive_rational(arg.name, &global->framerate);
+            global->have_framerate = 1;
+        }
+        else if (arg_match(&arg,&out_part, argi))
+            global->out_part = 1;
+        else if (arg_match(&arg, &debugmode, argi))
+            global->debug = 1;
+        else if (arg_match(&arg, &q_hist_n, argi))
+            global->show_q_hist_buckets = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &rate_hist_n, argi))
+            global->show_rate_hist_buckets = arg_parse_uint(&arg);
+        else
+            argj++;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
   }
 }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 
 void open_input_file(struct input_state *input) {
   unsigned int fourcc;
@@ -1661,7 +2378,21 @@ void open_input_file(struct input_state *input) {
         break;
       default:
         fatal("Unsupported fourcc (%08x) in IVF", fourcc);
+=======
+    /* Validate global config */
+
+    if (global->pass)
+    {
+        /* DWIM: Assume the user meant passes=2 if pass=2 is specified */
+        if (global->pass > global->passes)
+        {
+            warn("Assuming --pass=%d implies --passes=%d\n",
+                 global->pass, global->pass);
+            global->passes = global->pass;
+        }
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   } else {
     input->file_type = FILE_TYPE_RAW;
   }
@@ -1687,19 +2418,47 @@ static struct stream_state *new_stream(struct global_config *global,
     prev->next = stream;
   } else {
     vpx_codec_err_t  res;
+=======
+}
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     /* Populate encoder configuration */
     res = vpx_codec_enc_config_default(global->codec->iface(),
                                        &stream->config.cfg,
                                        global->usage);
     if (res)
       fatal("Failed to get config: %s\n", vpx_codec_err_to_string(res));
+=======
 
+void open_input_file(struct input_state *input)
+{
+    unsigned int fourcc;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     /* Change the default timebase to a high enough value so that the
      * encoder will always create strictly increasing timestamps.
-     */
-    stream->config.cfg.g_timebase.den = 1000;
+=======
+    /* Parse certain options from the input file, if possible */
+    input->file = strcmp(input->fn, "-") ? fopen(input->fn, "rb")
+                                         : set_binary_mode(stdin);
 
+    if (!input->file)
+        fatal("Failed to open input file");
+
+    /* For RAW input sources, these bytes will applied on the first frame
+     *  in read_frame().
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+     */
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+    stream->config.cfg.g_timebase.den = 1000;
+=======
+    input->detect.buf_read = fread(input->detect.buf, 1, 4, input->file);
+    input->detect.position = 0;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     /* Never use the library's default resolution, require it be parsed
      * from the file or set on the command line.
      */
@@ -1751,8 +2510,117 @@ static int parse_stream_params(struct global_config *global,
     } else if (!strcmp(*argj, "--")) {
       eos_mark_found = 1;
       continue;
+=======
+    if (input->detect.buf_read == 4
+        && file_is_y4m(input->file, &input->y4m, input->detect.buf))
+    {
+        if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4) >= 0)
+        {
+            input->file_type = FILE_TYPE_Y4M;
+            input->w = input->y4m.pic_w;
+            input->h = input->y4m.pic_h;
+            input->framerate.num = input->y4m.fps_n;
+            input->framerate.den = input->y4m.fps_d;
+            input->use_i420 = 0;
+        }
+        else
+            fatal("Unsupported Y4M stream.");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+    }
+    else if (input->detect.buf_read == 4 && file_is_ivf(input, &fourcc))
+    {
+        input->file_type = FILE_TYPE_IVF;
+        switch (fourcc)
+        {
+        case 0x32315659:
+            input->use_i420 = 0;
+            break;
+        case 0x30323449:
+            input->use_i420 = 1;
+            break;
+        default:
+            fatal("Unsupported fourcc (%08x) in IVF", fourcc);
+        }
+    }
+    else
+    {
+        input->file_type = FILE_TYPE_RAW;
+    }
+}
+
+
+static void close_input_file(struct input_state *input)
+{
+    fclose(input->file);
+    if (input->file_type == FILE_TYPE_Y4M)
+        y4m_input_close(&input->y4m);
+}
+
+static struct stream_state *new_stream(struct global_config *global,
+                                       struct stream_state  *prev)
+{
+    struct stream_state *stream;
+
+    stream = calloc(1, sizeof(*stream));
+    if(!stream)
+        fatal("Failed to allocate new stream.");
+    if(prev)
+    {
+        memcpy(stream, prev, sizeof(*stream));
+        stream->index++;
+        prev->next = stream;
+    }
+    else
+    {
+        vpx_codec_err_t  res;
+
+        /* Populate encoder configuration */
+        res = vpx_codec_enc_config_default(global->codec->iface,
+                                           &stream->config.cfg,
+                                           global->usage);
+        if (res)
+            fatal("Failed to get config: %s\n", vpx_codec_err_to_string(res));
+
+        /* Change the default timebase to a high enough value so that the
+         * encoder will always create strictly increasing timestamps.
+         */
+        stream->config.cfg.g_timebase.den = 1000;
+
+        /* Never use the library's default resolution, require it be parsed
+         * from the file or set on the command line.
+         */
+        stream->config.cfg.g_w = 0;
+        stream->config.cfg.g_h = 0;
+
+        /* Initialize remaining stream parameters */
+        stream->config.stereo_fmt = STEREO_FORMAT_MONO;
+        stream->config.write_webm = 1;
+        stream->ebml.last_pts_ms = -1;
+
+        /* Allows removal of the application version from the EBML tags */
+        stream->ebml.debug = global->debug;
     }
 
+    /* Output files must be specified for each stream */
+    stream->config.out_fn = NULL;
+
+    stream->next = NULL;
+    return stream;
+}
+
+
+static int parse_stream_params(struct global_config *global,
+                               struct stream_state  *stream,
+                               char **argv)
+{
+    char                   **argi, **argj;
+    struct arg               arg;
+    static const arg_def_t **ctrl_args = no_args;
+    static const int        *ctrl_args_map = NULL;
+    struct stream_config    *config = &stream->config;
+    int                      eos_mark_found = 0;
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (0);
     else if (arg_match(&arg, &outputfile, argi))
       config->out_fn = arg.val;
@@ -1891,8 +2759,16 @@ static void validate_stream_config(struct stream_state *stream) {
       if (!strcmp(a, b) && strcmp(a, "/dev/null") && strcmp(a, ":nul"))
         fatal("Stream %d: duplicate output file (from stream %d)",
               streami->index, stream->index);
+=======
+    /* Handle codec specific options */
+    if (global->codec->iface == &vpx_codec_vp8_cx_algo)
+    {
+        ctrl_args = vp8_args;
+        ctrl_args_map = vp8_arg_ctrl_map;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     /* Check for two streams sharing a stats file. */
     if (streami != stream) {
       const char *a = stream->config.stats_fn;
@@ -1914,7 +2790,13 @@ static void set_stream_dimensions(struct stream_state *stream,
   stream->config.cfg.g_w = w;
   stream->config.cfg.g_h = h;
 }
+=======
+    for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step)
+    {
+        arg.argv_step = 1;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
 
 static void set_default_kf_interval(struct stream_state  *stream,
                                     struct global_config *global) {
@@ -2202,8 +3084,23 @@ static void get_cx_data(struct stream_state  *stream,
             stream->psnr_totals[i] += pkt->data.psnr.psnr[i];
           }
           stream->psnr_count++;
+=======
+        /* Once we've found an end-of-stream marker (--) we want to continue
+         * shifting arguments but not consuming them.
+         */
+        if (eos_mark_found)
+        {
+            argj++;
+            continue;
+        }
+        else if (!strcmp(*argj, "--"))
+        {
+            eos_mark_found = 1;
+            continue;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
         }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
         break;
       default:
         break;
@@ -2365,18 +3262,594 @@ int main(int argc, const char **argv_) {
       FOREACH_STREAM(init_rate_histogram(&stream->rate_hist,
                                          &stream->config.cfg,
                                          &global.framerate));
+=======
+        if (0);
+        else if (arg_match(&arg, &outputfile, argi))
+            config->out_fn = arg.val;
+        else if (arg_match(&arg, &fpf_name, argi))
+            config->stats_fn = arg.val;
+        else if (arg_match(&arg, &use_ivf, argi))
+            config->write_webm = 0;
+        else if (arg_match(&arg, &threads, argi))
+            config->cfg.g_threads = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &profile, argi))
+            config->cfg.g_profile = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &width, argi))
+            config->cfg.g_w = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &height, argi))
+            config->cfg.g_h = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &stereo_mode, argi))
+            config->stereo_fmt = arg_parse_enum_or_int(&arg);
+        else if (arg_match(&arg, &timebase, argi))
+        {
+            config->cfg.g_timebase = arg_parse_rational(&arg);
+            validate_positive_rational(arg.name, &config->cfg.g_timebase);
+        }
+        else if (arg_match(&arg, &error_resilient, argi))
+            config->cfg.g_error_resilient = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &lag_in_frames, argi))
+            config->cfg.g_lag_in_frames = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &dropframe_thresh, argi))
+            config->cfg.rc_dropframe_thresh = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &resize_allowed, argi))
+            config->cfg.rc_resize_allowed = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &resize_up_thresh, argi))
+            config->cfg.rc_resize_up_thresh = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &resize_down_thresh, argi))
+            config->cfg.rc_resize_down_thresh = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &end_usage, argi))
+            config->cfg.rc_end_usage = arg_parse_enum_or_int(&arg);
+        else if (arg_match(&arg, &target_bitrate, argi))
+            config->cfg.rc_target_bitrate = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &min_quantizer, argi))
+            config->cfg.rc_min_quantizer = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &max_quantizer, argi))
+            config->cfg.rc_max_quantizer = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &undershoot_pct, argi))
+            config->cfg.rc_undershoot_pct = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &overshoot_pct, argi))
+            config->cfg.rc_overshoot_pct = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &buf_sz, argi))
+            config->cfg.rc_buf_sz = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &buf_initial_sz, argi))
+            config->cfg.rc_buf_initial_sz = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &buf_optimal_sz, argi))
+            config->cfg.rc_buf_optimal_sz = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &bias_pct, argi))
+        {
+            config->cfg.rc_2pass_vbr_bias_pct = arg_parse_uint(&arg);
+
+            if (global->passes < 2)
+                warn("option %s ignored in one-pass mode.\n", arg.name);
+        }
+        else if (arg_match(&arg, &minsection_pct, argi))
+        {
+            config->cfg.rc_2pass_vbr_minsection_pct = arg_parse_uint(&arg);
+
+            if (global->passes < 2)
+                warn("option %s ignored in one-pass mode.\n", arg.name);
+        }
+        else if (arg_match(&arg, &maxsection_pct, argi))
+        {
+            config->cfg.rc_2pass_vbr_maxsection_pct = arg_parse_uint(&arg);
+
+            if (global->passes < 2)
+                warn("option %s ignored in one-pass mode.\n", arg.name);
+        }
+        else if (arg_match(&arg, &kf_min_dist, argi))
+            config->cfg.kf_min_dist = arg_parse_uint(&arg);
+        else if (arg_match(&arg, &kf_max_dist, argi))
+        {
+            config->cfg.kf_max_dist = arg_parse_uint(&arg);
+            config->have_kf_max_dist = 1;
+        }
+        else if (arg_match(&arg, &kf_disabled, argi))
+            config->cfg.kf_mode = VPX_KF_DISABLED;
+        else
+        {
+            int i, match = 0;
+
+            for (i = 0; ctrl_args[i]; i++)
+            {
+                if (arg_match(&arg, ctrl_args[i], argi))
+                {
+                    int j;
+                    match = 1;
+
+                    /* Point either to the next free element or the first
+                    * instance of this control.
+                    */
+                    for(j=0; j<config->arg_ctrl_cnt; j++)
+                        if(config->arg_ctrls[j][0] == ctrl_args_map[i])
+                            break;
+
+                    /* Update/insert */
+                    assert(j < ARG_CTRL_CNT_MAX);
+                    if (j < ARG_CTRL_CNT_MAX)
+                    {
+                        config->arg_ctrls[j][0] = ctrl_args_map[i];
+                        config->arg_ctrls[j][1] = arg_parse_enum_or_int(&arg);
+                        if(j == config->arg_ctrl_cnt)
+                            config->arg_ctrl_cnt++;
+                    }
+
+                }
+            }
+
+            if (!match)
+                argj++;
+        }
+    }
+
+    return eos_mark_found;
+}
+
+
+#define FOREACH_STREAM(func)\
+do\
+{\
+    struct stream_state  *stream;\
+\
+    for(stream = streams; stream; stream = stream->next)\
+        func;\
+}while(0)
+
+
+static void validate_stream_config(struct stream_state *stream)
+{
+    struct stream_state *streami;
+
+    if(!stream->config.cfg.g_w || !stream->config.cfg.g_h)
+        fatal("Stream %d: Specify stream dimensions with --width (-w) "
+              " and --height (-h)", stream->index);
+
+    for(streami = stream; streami; streami = streami->next)
+    {
+        /* All streams require output files */
+        if(!streami->config.out_fn)
+            fatal("Stream %d: Output file is required (specify with -o)",
+                  streami->index);
+
+        /* Check for two streams outputting to the same file */
+        if(streami != stream)
+        {
+            const char *a = stream->config.out_fn;
+            const char *b = streami->config.out_fn;
+            if(!strcmp(a,b) && strcmp(a, "/dev/null") && strcmp(a, ":nul"))
+                fatal("Stream %d: duplicate output file (from stream %d)",
+                      streami->index, stream->index);
+        }
+
+        /* Check for two streams sharing a stats file. */
+        if(streami != stream)
+        {
+            const char *a = stream->config.stats_fn;
+            const char *b = streami->config.stats_fn;
+            if(a && b && !strcmp(a,b))
+                fatal("Stream %d: duplicate stats file (from stream %d)",
+                      streami->index, stream->index);
+        }
+    }
+}
+
+
+static void set_stream_dimensions(struct stream_state *stream,
+                                  unsigned int w,
+                                  unsigned int h)
+{
+    if ((stream->config.cfg.g_w && stream->config.cfg.g_w != w)
+        ||(stream->config.cfg.g_h && stream->config.cfg.g_h != h))
+        fatal("Stream %d: Resizing not yet supported", stream->index);
+    stream->config.cfg.g_w = w;
+    stream->config.cfg.g_h = h;
+}
+
+
+static void set_default_kf_interval(struct stream_state  *stream,
+                                    struct global_config *global)
+{
+    /* Use a max keyframe interval of 5 seconds, if none was
+     * specified on the command line.
+     */
+    if (!stream->config.have_kf_max_dist)
+    {
+        double framerate = (double)global->framerate.num/global->framerate.den;
+        if (framerate > 0.0)
+            stream->config.cfg.kf_max_dist = (unsigned int)(5.0*framerate);
+    }
+}
+
+
+static void show_stream_config(struct stream_state  *stream,
+                               struct global_config *global,
+                               struct input_state   *input)
+{
+
+#define SHOW(field) \
+    fprintf(stderr, "    %-28s = %d\n", #field, stream->config.cfg.field)
+
+    if(stream->index == 0)
+    {
+        fprintf(stderr, "Codec: %s\n",
+                vpx_codec_iface_name(global->codec->iface));
+        fprintf(stderr, "Source file: %s Format: %s\n", input->fn,
+                input->use_i420 ? "I420" : "YV12");
+    }
+    if(stream->next || stream->index)
+        fprintf(stderr, "\nStream Index: %d\n", stream->index);
+    fprintf(stderr, "Destination file: %s\n", stream->config.out_fn);
+    fprintf(stderr, "Encoder parameters:\n");
+
+    SHOW(g_usage);
+    SHOW(g_threads);
+    SHOW(g_profile);
+    SHOW(g_w);
+    SHOW(g_h);
+    SHOW(g_timebase.num);
+    SHOW(g_timebase.den);
+    SHOW(g_error_resilient);
+    SHOW(g_pass);
+    SHOW(g_lag_in_frames);
+    SHOW(rc_dropframe_thresh);
+    SHOW(rc_resize_allowed);
+    SHOW(rc_resize_up_thresh);
+    SHOW(rc_resize_down_thresh);
+    SHOW(rc_end_usage);
+    SHOW(rc_target_bitrate);
+    SHOW(rc_min_quantizer);
+    SHOW(rc_max_quantizer);
+    SHOW(rc_undershoot_pct);
+    SHOW(rc_overshoot_pct);
+    SHOW(rc_buf_sz);
+    SHOW(rc_buf_initial_sz);
+    SHOW(rc_buf_optimal_sz);
+    SHOW(rc_2pass_vbr_bias_pct);
+    SHOW(rc_2pass_vbr_minsection_pct);
+    SHOW(rc_2pass_vbr_maxsection_pct);
+    SHOW(kf_mode);
+    SHOW(kf_min_dist);
+    SHOW(kf_max_dist);
+}
+
+
+static void open_output_file(struct stream_state *stream,
+                             struct global_config *global)
+{
+    const char *fn = stream->config.out_fn;
+
+    stream->file = strcmp(fn, "-") ? fopen(fn, "wb") : set_binary_mode(stdout);
+
+    if (!stream->file)
+        fatal("Failed to open output file");
+
+    if(stream->config.write_webm && fseek(stream->file, 0, SEEK_CUR))
+        fatal("WebM output to pipes not supported.");
+
+    if(stream->config.write_webm)
+    {
+        stream->ebml.stream = stream->file;
+        write_webm_file_header(&stream->ebml, &stream->config.cfg,
+                               &global->framerate,
+                               stream->config.stereo_fmt);
+    }
+    else
+        write_ivf_file_header(stream->file, &stream->config.cfg,
+                              global->codec->fourcc, 0);
+}
+
+
+static void close_output_file(struct stream_state *stream,
+                              unsigned int         fourcc)
+{
+    if(stream->config.write_webm)
+    {
+        write_webm_file_footer(&stream->ebml, stream->hash);
+        free(stream->ebml.cue_list);
+        stream->ebml.cue_list = NULL;
+    }
+    else
+    {
+        if (!fseek(stream->file, 0, SEEK_SET))
+            write_ivf_file_header(stream->file, &stream->config.cfg,
+                                  fourcc,
+                                  stream->frames_out);
+    }
+
+    fclose(stream->file);
+}
+
+
+static void setup_pass(struct stream_state  *stream,
+                       struct global_config *global,
+                       int                   pass)
+{
+    if (stream->config.stats_fn)
+    {
+        if (!stats_open_file(&stream->stats, stream->config.stats_fn,
+                             pass))
+            fatal("Failed to open statistics store");
+    }
+    else
+    {
+        if (!stats_open_mem(&stream->stats, pass))
+            fatal("Failed to open statistics store");
+    }
+
+    stream->config.cfg.g_pass = global->passes == 2
+        ? pass ? VPX_RC_LAST_PASS : VPX_RC_FIRST_PASS
+        : VPX_RC_ONE_PASS;
+    if (pass)
+        stream->config.cfg.rc_twopass_stats_in = stats_get(&stream->stats);
+
+    stream->cx_time = 0;
+    stream->nbytes = 0;
+    stream->frames_out = 0;
+}
+
+
+static void initialize_encoder(struct stream_state  *stream,
+                               struct global_config *global)
+{
+    int i;
+    int flags = 0;
+
+    flags |= global->show_psnr ? VPX_CODEC_USE_PSNR : 0;
+    flags |= global->out_part ? VPX_CODEC_USE_OUTPUT_PARTITION : 0;
+
+    /* Construct Encoder Context */
+    vpx_codec_enc_init(&stream->encoder, global->codec->iface,
+                        &stream->config.cfg, flags);
+    ctx_exit_on_error(&stream->encoder, "Failed to initialize encoder");
+
+    /* Note that we bypass the vpx_codec_control wrapper macro because
+     * we're being clever to store the control IDs in an array. Real
+     * applications will want to make use of the enumerations directly
+     */
+    for (i = 0; i < stream->config.arg_ctrl_cnt; i++)
+    {
+        int ctrl = stream->config.arg_ctrls[i][0];
+        int value = stream->config.arg_ctrls[i][1];
+        if (vpx_codec_control_(&stream->encoder, ctrl, value))
+            fprintf(stderr, "Error: Tried to set control %d = %d\n",
+                    ctrl, value);
+
+        ctx_exit_on_error(&stream->encoder, "Failed to control codec");
+    }
+}
+
+
+static void encode_frame(struct stream_state  *stream,
+                         struct global_config *global,
+                         struct vpx_image     *img,
+                         unsigned int          frames_in)
+{
+    vpx_codec_pts_t frame_start, next_frame_start;
+    struct vpx_codec_enc_cfg *cfg = &stream->config.cfg;
+    struct vpx_usec_timer timer;
+
+    frame_start = (cfg->g_timebase.den * (int64_t)(frames_in - 1)
+                  * global->framerate.den)
+                  / cfg->g_timebase.num / global->framerate.num;
+    next_frame_start = (cfg->g_timebase.den * (int64_t)(frames_in)
+                        * global->framerate.den)
+                        / cfg->g_timebase.num / global->framerate.num;
+    vpx_usec_timer_start(&timer);
+    vpx_codec_encode(&stream->encoder, img, frame_start,
+                     (unsigned long)(next_frame_start - frame_start),
+                     0, global->deadline);
+    vpx_usec_timer_mark(&timer);
+    stream->cx_time += vpx_usec_timer_elapsed(&timer);
+    ctx_exit_on_error(&stream->encoder, "Stream %d: Failed to encode frame",
+                      stream->index);
+}
+
+
+static void update_quantizer_histogram(struct stream_state *stream)
+{
+    if(stream->config.cfg.g_pass != VPX_RC_FIRST_PASS)
+    {
+        int q;
+
+        vpx_codec_control(&stream->encoder, VP8E_GET_LAST_QUANTIZER_64, &q);
+        ctx_exit_on_error(&stream->encoder, "Failed to read quantizer");
+        stream->counts[q]++;
+    }
+}
+
+
+static void get_cx_data(struct stream_state  *stream,
+                        struct global_config *global,
+                        int                  *got_data)
+{
+    const vpx_codec_cx_pkt_t *pkt;
+    const struct vpx_codec_enc_cfg *cfg = &stream->config.cfg;
+    vpx_codec_iter_t iter = NULL;
+
+    while ((pkt = vpx_codec_get_cx_data(&stream->encoder, &iter)))
+    {
+        static size_t fsize = 0;
+        static off_t ivf_header_pos = 0;
+
+        *got_data = 1;
+
+        switch (pkt->kind)
+        {
+        case VPX_CODEC_CX_FRAME_PKT:
+            if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT))
+            {
+                stream->frames_out++;
+            }
+            if (!global->quiet)
+                fprintf(stderr, " %6luF",
+                        (unsigned long)pkt->data.frame.sz);
+
+            update_rate_histogram(&stream->rate_hist, cfg, pkt);
+            if(stream->config.write_webm)
+            {
+                /* Update the hash */
+                if(!stream->ebml.debug)
+                    stream->hash = murmur(pkt->data.frame.buf,
+                                          (int)pkt->data.frame.sz,
+                                          stream->hash);
+
+                write_webm_block(&stream->ebml, cfg, pkt);
+            }
+            else
+            {
+                if (pkt->data.frame.partition_id <= 0)
+                {
+                    ivf_header_pos = ftello(stream->file);
+                    fsize = pkt->data.frame.sz;
+
+                    write_ivf_frame_header(stream->file, pkt);
+                }
+                else
+                {
+                    fsize += pkt->data.frame.sz;
+
+                    if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT))
+                    {
+                        off_t currpos = ftello(stream->file);
+                        fseeko(stream->file, ivf_header_pos, SEEK_SET);
+                        write_ivf_frame_size(stream->file, fsize);
+                        fseeko(stream->file, currpos, SEEK_SET);
+                    }
+                }
+
+                (void) fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz,
+                              stream->file);
+            }
+            stream->nbytes += pkt->data.raw.sz;
+            break;
+        case VPX_CODEC_STATS_PKT:
+            stream->frames_out++;
+            fprintf(stderr, " %6luS",
+                   (unsigned long)pkt->data.twopass_stats.sz);
+            stats_write(&stream->stats,
+                        pkt->data.twopass_stats.buf,
+                        pkt->data.twopass_stats.sz);
+            stream->nbytes += pkt->data.raw.sz;
+            break;
+        case VPX_CODEC_PSNR_PKT:
+
+            if (global->show_psnr)
+            {
+                int i;
+
+                stream->psnr_sse_total += pkt->data.psnr.sse[0];
+                stream->psnr_samples_total += pkt->data.psnr.samples[0];
+                for (i = 0; i < 4; i++)
+                {
+                    if (!global->quiet)
+                        fprintf(stderr, "%.3f ", pkt->data.psnr.psnr[i]);
+                    stream->psnr_totals[i] += pkt->data.psnr.psnr[i];
+                }
+                stream->psnr_count++;
+            }
+
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+
+static void show_psnr(struct stream_state  *stream)
+{
+    int i;
+    double ovpsnr;
+
+    if (!stream->psnr_count)
+        return;
+
+    fprintf(stderr, "Stream %d PSNR (Overall/Avg/Y/U/V)", stream->index);
+    ovpsnr = vp8_mse2psnr((double)stream->psnr_samples_total, 255.0,
+                          (double)stream->psnr_sse_total);
+    fprintf(stderr, " %.3f", ovpsnr);
+
+    for (i = 0; i < 4; i++)
+    {
+        fprintf(stderr, " %.3f", stream->psnr_totals[i]/stream->psnr_count);
+    }
+    fprintf(stderr, "\n");
+}
+
+
+float usec_to_fps(uint64_t usec, unsigned int frames)
+{
+    return (float)(usec > 0 ? frames * 1000000.0 / (float)usec : 0);
+}
+
+
+int main(int argc, const char **argv_)
+{
+    int                    pass;
+    vpx_image_t            raw;
+    int                    frame_avail, got_data;
+
+    struct input_state       input = {0};
+    struct global_config     global;
+    struct stream_state     *streams = NULL;
+    char                   **argv, **argi;
+    unsigned long            cx_time = 0;
+    int                      stream_cnt = 0;
+
+    exec_name = argv_[0];
+
+    if (argc < 3)
+        usage_exit();
+
+    /* Setup default input stream settings */
+    input.framerate.num = 30;
+    input.framerate.den = 1;
+    input.use_i420 = 1;
+
+    /* First parse the global configuration values, because we want to apply
+     * other parameters on top of the default configuration provided by the
+     * codec.
+     */
+    argv = argv_dup(argc - 1, argv_ + 1);
+    parse_global_config(&global, argv);
+
+    {
+        /* Now parse each stream's parameters. Using a local scope here
+         * due to the use of 'stream' as loop variable in FOREACH_STREAM
+         * loops
+         */
+        struct stream_state *stream = NULL;
+
+        do
+        {
+            stream = new_stream(&global, stream);
+            stream_cnt++;
+            if(!streams)
+                streams = stream;
+        } while(parse_stream_params(&global, stream, argv));
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
     FOREACH_STREAM(open_output_file(stream, &global));
     FOREACH_STREAM(setup_pass(stream, &global, pass));
     FOREACH_STREAM(initialize_encoder(stream, &global));
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     frame_avail = 1;
     got_data = 0;
+=======
+    /* Handle non-option arguments */
+    input.fn = argv[0];
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     while (frame_avail || got_data) {
       struct vpx_usec_timer timer;
+=======
+    if (!input.fn)
+        usage_exit();
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       if (!global.limit || frames_in < global.limit) {
         frame_avail = read_frame(&input, &raw);
 
@@ -2410,20 +3883,182 @@ int main(int argc, const char **argv_) {
         cx_time += (unsigned long)vpx_usec_timer_elapsed(&timer);
 
         FOREACH_STREAM(update_quantizer_histogram(stream));
+=======
+    for (pass = global.pass ? global.pass - 1 : 0; pass < global.passes; pass++)
+    {
+        int frames_in = 0;
 
+        open_input_file(&input);
+
+        /* If the input file doesn't specify its w/h (raw files), try to get
+         * the data from the first stream's configuration.
+         */
+        if(!input.w || !input.h)
+            FOREACH_STREAM({
+                if(stream->config.cfg.g_w && stream->config.cfg.g_h)
+                {
+                    input.w = stream->config.cfg.g_w;
+                    input.h = stream->config.cfg.g_h;
+                    break;
+                }
+            });
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
+
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+        /* Update stream configurations from the input file's parameters */
+        FOREACH_STREAM(set_stream_dimensions(stream, input.w, input.h));
+        FOREACH_STREAM(validate_stream_config(stream));
+
+        /* Ensure that --passes and --pass are consistent. If --pass is set and
+         * --passes=2, ensure --fpf was set.
+         */
+        if (global.pass && global.passes == 2)
+            FOREACH_STREAM({
+                if(!stream->config.stats_fn)
+                    die("Stream %d: Must specify --fpf when --pass=%d"
+                        " and --passes=2\n", stream->index, global.pass);
+            });
+
+
+        /* Use the frame rate from the file only if none was specified
+         * on the command-line.
+         */
+        if (!global.have_framerate)
+            global.framerate = input.framerate;
+
+        FOREACH_STREAM(set_default_kf_interval(stream, &global));
+
+        /* Show configuration */
+        if (global.verbose && pass == 0)
+            FOREACH_STREAM(show_stream_config(stream, &global, &input));
+
+        if(pass == (global.pass ? global.pass - 1 : 0)) {
+            if (input.file_type == FILE_TYPE_Y4M)
+                /*The Y4M reader does its own allocation.
+                  Just initialize this here to avoid problems if we never read any
+                   frames.*/
+                memset(&raw, 0, sizeof(raw));
+            else
+                vpx_img_alloc(&raw,
+                              input.use_i420 ? VPX_IMG_FMT_I420
+                                             : VPX_IMG_FMT_YV12,
+                              input.w, input.h, 32);
+
+            FOREACH_STREAM(init_rate_histogram(&stream->rate_hist,
+                                               &stream->config.cfg,
+                                               &global.framerate));
+        }
+
+        FOREACH_STREAM(open_output_file(stream, &global));
+        FOREACH_STREAM(setup_pass(stream, &global, pass));
+        FOREACH_STREAM(initialize_encoder(stream, &global));
+
+        frame_avail = 1;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
         got_data = 0;
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
         if (global.test_decode)
           FOREACH_STREAM(test_decode(stream, frames_in));
       }
+=======
+        while (frame_avail || got_data)
+        {
+            struct vpx_usec_timer timer;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
       fflush(stdout);
+=======
+            if (!global.limit || frames_in < global.limit)
+            {
+                frame_avail = read_frame(&input, &raw);
+
+                if (frame_avail)
+                    frames_in++;
+
+                if (!global.quiet)
+                {
+                    if(stream_cnt == 1)
+                        fprintf(stderr,
+                                "\rPass %d/%d frame %4d/%-4d %7"PRId64"B \033[K",
+                                pass + 1, global.passes, frames_in,
+                                streams->frames_out, (int64_t)streams->nbytes);
+                    else
+                        fprintf(stderr,
+                                "\rPass %d/%d frame %4d %7lu %s (%.2f fps)\033[K",
+                                pass + 1, global.passes, frames_in,
+                                cx_time > 9999999 ? cx_time / 1000 : cx_time,
+                                cx_time > 9999999 ? "ms" : "us",
+                                usec_to_fps(cx_time, frames_in));
+                }
+
+            }
+            else
+                frame_avail = 0;
+
+            vpx_usec_timer_start(&timer);
+            FOREACH_STREAM(encode_frame(stream, &global,
+                                        frame_avail ? &raw : NULL,
+                                        frames_in));
+            vpx_usec_timer_mark(&timer);
+            cx_time += (unsigned long)vpx_usec_timer_elapsed(&timer);
+
+            FOREACH_STREAM(update_quantizer_histogram(stream));
+
+            got_data = 0;
+            FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
+
+            fflush(stdout);
+        }
+
+        if(stream_cnt > 1)
+            fprintf(stderr, "\n");
+
+        if (!global.quiet)
+            FOREACH_STREAM(fprintf(
+                stderr,
+                "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7lub/f %7"PRId64"b/s"
+                " %7"PRId64" %s (%.2f fps)\033[K\n", pass + 1,
+                global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
+                frames_in ? (unsigned long)(stream->nbytes * 8 / frames_in) : 0,
+                frames_in ? (int64_t)stream->nbytes * 8
+                            * (int64_t)global.framerate.num / global.framerate.den
+                            / frames_in
+                          : 0,
+                stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
+                stream->cx_time > 9999999 ? "ms" : "us",
+                usec_to_fps(stream->cx_time, frames_in));
+            );
+
+        if (global.show_psnr)
+            FOREACH_STREAM(show_psnr(stream));
+
+        FOREACH_STREAM(vpx_codec_destroy(&stream->encoder));
+
+        close_input_file(&input);
+
+        FOREACH_STREAM(close_output_file(stream, global.codec->fourcc));
+
+        FOREACH_STREAM(stats_close(&stream->stats, global.passes-1));
+
+        if (global.pass)
+            break;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     }
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (stream_cnt > 1)
       fprintf(stderr, "\n");
+=======
+    if (global.show_q_hist_buckets)
+        FOREACH_STREAM(show_q_histogram(stream->counts,
+                                        global.show_q_hist_buckets));
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (!global.quiet)
       FOREACH_STREAM(fprintf(
                        stderr,
@@ -2439,7 +4074,15 @@ int main(int argc, const char **argv_) {
                        stream->cx_time > 9999999 ? "ms" : "us",
                        usec_to_fps(stream->cx_time, frames_in));
                     );
+=======
+    if (global.show_rate_hist_buckets)
+        FOREACH_STREAM(show_rate_histogram(&stream->rate_hist,
+                                           &stream->config.cfg,
+                                           global.show_rate_hist_buckets));
+    FOREACH_STREAM(destroy_rate_histogram(&stream->rate_hist));
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (global.show_psnr)
       FOREACH_STREAM(show_psnr(stream));
 
@@ -2491,4 +4134,10 @@ int main(int argc, const char **argv_) {
   free(argv);
   free(streams);
   return EXIT_SUCCESS;
+=======
+    vpx_img_free(&raw);
+    free(argv);
+    free(streams);
+    return EXIT_SUCCESS;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 }

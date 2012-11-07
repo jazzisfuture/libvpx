@@ -69,6 +69,26 @@ typedef enum {
                 : "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) \
                 : "a" (func));
 #endif
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+#if ARCH_X86_64
+#define cpuid(func,ax,bx,cx,dx)\
+    asm volatile (\
+                  "xchg %rsi, %rbx \n\t" \
+                  "cpuid           \n\t" \
+                  "movl %ebx, %edi \n\t" \
+                  "xchg %rsi, %rbx \n\t" \
+                  : "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) \
+                  : "a"  (func));
+#else
+#define cpuid(func,ax,bx,cx,dx)\
+    asm volatile (\
+                  "pushl %ebx       \n\t" \
+                  "cpuid            \n\t" \
+                  "movl %ebx, %edi  \n\t" \
+                  "popl %ebx        \n\t" \
+                  : "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) \
+                  : "a" (func));
+#endif
 #else
 #if ARCH_X86_64
 void __cpuid(int CPUInfo[4], int info_type);
@@ -150,6 +170,7 @@ unsigned __int64 __rdtsc(void);
 static unsigned int
 x86_readtsc(void) {
 #if defined(__GNUC__) && __GNUC__
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   unsigned int tsc;
   __asm__ __volatile__("rdtsc\n\t":"=a"(tsc):);
   return tsc;
@@ -157,9 +178,22 @@ x86_readtsc(void) {
   unsigned int tsc;
   asm volatile("rdtsc\n\t":"=a"(tsc):);
   return tsc;
+=======
+    unsigned int tsc;
+    __asm__ __volatile__("rdtsc\n\t":"=a"(tsc):);
+    return tsc;
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+    unsigned int tsc;
+    asm volatile("rdtsc\n\t":"=a"(tsc):);
+    return tsc;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #else
 #if ARCH_X86_64
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   return (unsigned int)__rdtsc();
+=======
+    return (unsigned int)__rdtsc();
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #else
   __asm  rdtsc;
 #endif
@@ -169,10 +203,17 @@ x86_readtsc(void) {
 
 #if defined(__GNUC__) && __GNUC__
 #define x86_pause_hint()\
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   __asm__ __volatile__ ("pause \n\t")
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #define x86_pause_hint()\
   asm volatile ("pause \n\t")
+=======
+    __asm__ __volatile__ ("pause \n\t")
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+#define x86_pause_hint()\
+    asm volatile ("pause \n\t")
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 #else
 #if ARCH_X86_64
 #define x86_pause_hint()\
@@ -204,6 +245,19 @@ x87_get_control_word(void) {
   unsigned short mode;
   asm volatile("fstcw %0\n\t":"=m"( *&mode):);
   return mode;
+}
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+static void
+x87_set_control_word(unsigned short mode)
+{
+    asm volatile("fldcw %0" : : "m"(*&mode));
+}
+static unsigned short
+x87_get_control_word(void)
+{
+    unsigned short mode;
+    asm volatile("fstcw %0\n\t":"=m"(*&mode):);
+    return mode;
 }
 #elif ARCH_X86_64
 /* No fldcw intrinsics on Windows x64, punt to external asm */

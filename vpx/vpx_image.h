@@ -147,6 +147,7 @@ extern "C" {
     unsigned int h; /**< height */
   } vpx_image_rect_t; /**< alias for struct vpx_image_rect */
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /*!\brief Open a descriptor, allocating storage for the underlying image
    *
    * Returns a descriptor for storing an image of the given format. The
@@ -170,6 +171,31 @@ extern "C" {
                              unsigned int d_w,
                              unsigned int d_h,
                              unsigned int align);
+=======
+    /*!\brief Open a descriptor, allocating storage for the underlying image
+     *
+     * Returns a descriptor for storing an image of the given format. The
+     * storage for the descriptor is allocated on the heap.
+     *
+     * \param[in]    img       Pointer to storage for descriptor. If this parameter
+     *                         is NULL, the storage for the descriptor will be
+     *                         allocated on the heap.
+     * \param[in]    fmt       Format for the image
+     * \param[in]    d_w       Width of the image
+     * \param[in]    d_h       Height of the image
+     * \param[in]    align     Alignment, in bytes, of the image buffer and
+     *                         each row in the image(stride).
+     *
+     * \return Returns a pointer to the initialized image descriptor. If the img
+     *         parameter is non-null, the value of the img parameter will be
+     *         returned.
+     */
+    vpx_image_t *vpx_img_alloc(vpx_image_t  *img,
+                               vpx_img_fmt_t fmt,
+                               unsigned int d_w,
+                               unsigned int d_h,
+                               unsigned int align);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   /*!\brief Open a descriptor, using existing storage for the underlying image
    *

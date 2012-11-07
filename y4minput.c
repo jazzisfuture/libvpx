@@ -672,7 +672,15 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip) {
       ret = (int)fread(buffer + i, 1, 1, _fin);
       if (ret < 1)return -1;
     }
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
     if (buffer[i] == '\n')break;
+=======
+    else{
+      ret=(int)fread(buffer+i,1,1,_fin);
+      if(ret<1)return -1;
+    }
+    if(buffer[i]=='\n')break;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
   }
   /*We skipped too much header data.*/
   if (_nskip > 0)return -1;
@@ -815,10 +823,17 @@ int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *_img) {
   int  c_sz;
   int  ret;
   /*Read and skip the frame header.*/
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   ret = (int)fread(frame, 1, 6, _fin);
   if (ret < 6)return 0;
   if (memcmp(frame, "FRAME", 5)) {
     fprintf(stderr, "Loss of framing in Y4M input data\n");
+=======
+  ret=(int)fread(frame,1,6,_fin);
+  if(ret<6)return 0;
+  if(memcmp(frame,"FRAME",5)){
+    fprintf(stderr,"Loss of framing in Y4M input data\n");
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
     return -1;
   }
   if (frame[5] != '\n') {
