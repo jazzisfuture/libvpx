@@ -54,9 +54,15 @@ extern "C" {
 #define VPX_CODEC_CAP_PUT_FRAME  0x20000 /**< Will issue put_frame callbacks */
 #define VPX_CODEC_CAP_POSTPROC   0x40000 /**< Can postprocess decoded frame */
 #define VPX_CODEC_CAP_ERROR_CONCEALMENT   0x80000 /**< Can conceal errors due to
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   packet loss */
 #define VPX_CODEC_CAP_INPUT_FRAGMENTS   0x100000 /**< Can receive encoded frames
   one fragment at a time */
+=======
+                                                       packet loss */
+#define VPX_CODEC_CAP_INPUT_FRAGMENTS   0x100000 /**< Can receive encoded frames
+                                                    one fragment at a time */
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   /*! \brief Initialization-time Feature Enabling
    *
@@ -67,10 +73,17 @@ extern "C" {
    */
 #define VPX_CODEC_USE_POSTPROC   0x10000 /**< Postprocess decoded frame */
 #define VPX_CODEC_USE_ERROR_CONCEALMENT 0x20000 /**< Conceal errors in decoded
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   frames */
 #define VPX_CODEC_USE_INPUT_FRAGMENTS   0x40000 /**< The input frame should be
   passed to the decoder one
   fragment at a time */
+=======
+                                                     frames */
+#define VPX_CODEC_USE_INPUT_FRAGMENTS   0x40000 /**< The input frame should be
+                                                    passed to the decoder one
+                                                    fragment at a time */
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   /*!\brief Stream properties
    *
@@ -104,6 +117,7 @@ extern "C" {
   } vpx_codec_dec_cfg_t; /**< alias for struct vpx_codec_dec_cfg */
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /*!\brief Initialize a decoder instance
    *
    * Initializes a decoder context using the given interface. Applications
@@ -135,6 +149,39 @@ extern "C" {
                                          vpx_codec_dec_cfg_t  *cfg,
                                          vpx_codec_flags_t     flags,
                                          int                   ver);
+=======
+    /*!\brief Initialize a decoder instance
+     *
+     * Initializes a decoder context using the given interface. Applications
+     * should call the vpx_codec_dec_init convenience macro instead of this
+     * function directly, to ensure that the ABI version number parameter
+     * is properly initialized.
+     *
+     * If the library was configured with --disable-multithread, this call
+     * is not thread safe and should be guarded with a lock if being used
+     * in a multithreaded context.
+     *
+     * In XMA mode (activated by setting VPX_CODEC_USE_XMA in the flags
+     * parameter), the storage pointed to by the cfg parameter must be
+     * kept readable and stable until all memory maps have been set.
+     *
+     * \param[in]    ctx     Pointer to this instance's context.
+     * \param[in]    iface   Pointer to the algorithm interface to use.
+     * \param[in]    cfg     Configuration to use, if known. May be NULL.
+     * \param[in]    flags   Bitfield of VPX_CODEC_USE_* flags
+     * \param[in]    ver     ABI version number. Must be set to
+     *                       VPX_DECODER_ABI_VERSION
+     * \retval #VPX_CODEC_OK
+     *     The decoder algorithm initialized.
+     * \retval #VPX_CODEC_MEM_ERROR
+     *     Memory allocation failed.
+     */
+    vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t      *ctx,
+                                           vpx_codec_iface_t    *iface,
+                                           vpx_codec_dec_cfg_t  *cfg,
+                                           vpx_codec_flags_t     flags,
+                                           int                   ver);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
   /*!\brief Convenience macro for vpx_codec_dec_init_ver()
    *
@@ -184,6 +231,7 @@ extern "C" {
                                             vpx_codec_stream_info_t *si);
 
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /*!\brief Decode data
    *
    * Processes a buffer of coded data. If the processing results in a new
@@ -219,6 +267,43 @@ extern "C" {
                                    unsigned int            data_sz,
                                    void               *user_priv,
                                    long                deadline);
+=======
+    /*!\brief Decode data
+     *
+     * Processes a buffer of coded data. If the processing results in a new
+     * decoded frame becoming available, PUT_SLICE and PUT_FRAME events may be
+     * generated, as appropriate. Encoded data \ref MUST be passed in DTS (decode
+     * time stamp) order. Frames produced will always be in PTS (presentation
+     * time stamp) order.
+     * If the decoder is configured with VPX_CODEC_USE_INPUT_FRAGMENTS enabled,
+     * data and data_sz can contain a fragment of the encoded frame. Fragment
+     * \#n must contain at least partition \#n, but can also contain subsequent
+     * partitions (\#n+1 - \#n+i), and if so, fragments \#n+1, .., \#n+i must
+     * be empty. When no more data is available, this function should be called
+     * with NULL as data and 0 as data_sz. The memory passed to this function
+     * must be available until the frame has been decoded.
+     *
+     * \param[in] ctx          Pointer to this instance's context
+     * \param[in] data         Pointer to this block of new coded data. If
+     *                         NULL, a VPX_CODEC_CB_PUT_FRAME event is posted
+     *                         for the previously decoded frame.
+     * \param[in] data_sz      Size of the coded data, in bytes.
+     * \param[in] user_priv    Application specific data to associate with
+     *                         this frame.
+     * \param[in] deadline     Soft deadline the decoder should attempt to meet,
+     *                         in us. Set to zero for unlimited.
+     *
+     * \return Returns #VPX_CODEC_OK if the coded data was processed completely
+     *         and future pictures can be decoded without error. Otherwise,
+     *         see the descriptions of the other error codes in ::vpx_codec_err_t
+     *         for recoverability capabilities.
+     */
+    vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
+                                     const uint8_t        *data,
+                                     unsigned int            data_sz,
+                                     void               *user_priv,
+                                     long                deadline);
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 
   /*!\brief Decoded frames iterator

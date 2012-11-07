@@ -54,6 +54,7 @@ enum vp8_dec_control_id {
   /** check if the indicated frame is corrupted */
   VP8D_GET_FRAME_CORRUPTED,
 
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
   /** control function to get info on which reference frames were used
    *  by the last decode
    */
@@ -61,6 +62,15 @@ enum vp8_dec_control_id {
 
   VP8_DECODER_CTRL_ID_MAX
 };
+=======
+    /** control function to get info on which reference frames were used
+     *  by the last decode
+     */
+    VP8D_GET_LAST_REF_USED,
+
+    VP8_DECODER_CTRL_ID_MAX
+} ;
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
 
 
 /*!\brief VP8 decoder control function parameter type

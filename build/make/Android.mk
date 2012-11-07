@@ -208,3 +208,7 @@ endif
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
 $(call import-module,cpufeatures)
 endif
+<<<<<<< HEAD   (82b1a3 Merge other top-level C code)
+=======
+
+>>>>>>> BRANCH (3c8007 Merge "ads2gas.pl: various enhancements to work with flash.")
