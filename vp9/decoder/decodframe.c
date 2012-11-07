@@ -194,7 +194,7 @@ static void skip_recon_mb(VP9D_COMP *pbi, MACROBLOCKD *xd) {
                                            xd->dst.u_buffer, xd->dst.v_buffer,
                                            xd->dst.y_stride, xd->dst.uv_stride);
 
-    if (xd->mode_info_context->mbmi.second_ref_frame) {
+    if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
       vp9_build_2nd_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
                                              xd->dst.u_buffer, xd->dst.v_buffer,
                                              xd->dst.y_stride, xd->dst.uv_stride);
@@ -626,7 +626,7 @@ decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc, int mbrow, MACROBLOCKD *xd,
       xd->pre.u_buffer = pc->yv12_fb[ref_fb_idx].u_buffer + recon_uvoffset;
       xd->pre.v_buffer = pc->yv12_fb[ref_fb_idx].v_buffer + recon_uvoffset;
 
-      if (xd->mode_info_context->mbmi.second_ref_frame) {
+      if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
         int second_ref_fb_idx;
 
         /* Select the appropriate reference frame for this MB */
@@ -1192,6 +1192,9 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
     } else {
       pc->mcomp_filter_type = vp9_read_literal(&header_bc, 2);
     }
+#if CONFIG_COMP_INTERINTRA_PRED
+    pc->use_interintra = vp9_read_bit(&header_bc);
+#endif
     /* To enable choice of different interploation filters */
     vp9_setup_interp_filters(xd, pc->mcomp_filter_type, pc);
   }

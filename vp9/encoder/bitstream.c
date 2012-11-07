@@ -259,7 +259,8 @@ static void update_refpred_stats(VP9_COMP *cpi) {
 }
 
 static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
-                           int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
+                           int_mv *best_ref_mv,
+                           int_mv *second_best_ref_mv) {
   MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
   MV mv;
 
@@ -274,7 +275,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
           mv.col = (x->partition_info->bmi[i].mv.as_mv.col
                     - best_ref_mv->as_mv.col);
           vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame > 0) {
             mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
                       - second_best_ref_mv->as_mv.row);
             mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
@@ -288,7 +289,7 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
           mv.col = (x->partition_info->bmi[i].mv.as_mv.col
                     - best_ref_mv->as_mv.col);
           vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
+          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame > 0) {
             mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
                       - second_best_ref_mv->as_mv.row);
             mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
@@ -304,22 +305,32 @@ static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
       mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
       mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
       vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      if (mbmi->second_ref_frame) {
+      if (mbmi->second_ref_frame > 0) {
         mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
         mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
         vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 1);
+      }
+      else if (mbmi->second_ref_frame == 0) {
+        ++cpi->ymode_count[mbmi->interintra_mode];
       }
     } else {
       mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
       mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
       vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      if (mbmi->second_ref_frame) {
+      if (mbmi->second_ref_frame > 0) {
         mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
         mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
         vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 0);
       }
     }
   }
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
+      mbmi->second_ref_frame == INTRA_FRAME) {
+    ++cpi->ymode_count[mbmi->interintra_mode];
+    ++cpi->y_uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
+  }
+#endif
 }
 
 static void write_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
@@ -1114,7 +1125,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                       cpi->common.mcomp_filter_type);
             }
           }
-          if (mi->second_ref_frame &&
+          if (mi->second_ref_frame > 0 &&
               (mode == NEWMV || mode == SPLITMV)) {
             int_mv n1, n2;
 
@@ -1133,9 +1144,20 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
           // does the feature use compound prediction or not
           // (if not specified at the frame/segment level)
           if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
-            vp9_write(bc, mi->second_ref_frame != INTRA_FRAME,
+            vp9_write(bc, mi->second_ref_frame > INTRA_FRAME,
                       vp9_get_pred_prob(pc, xd, PRED_COMP));
           }
+#if CONFIG_COMP_INTERINTRA_PRED
+          if (mode >= NEARESTMV && mode < SPLITMV &&
+              mi->second_ref_frame <= INTRA_FRAME) {
+            vp9_write(bc, mi->second_ref_frame == INTRA_FRAME, 128);
+            if (mi->second_ref_frame == INTRA_FRAME) {
+              write_ymode(bc, mi->interintra_mode, pc->fc.ymode_prob);
+              write_uv_mode(bc, mi->interintra_uv_mode,
+                            pc->fc.uv_mode_prob[mi->interintra_mode]);
+            }
+          }
+#endif
 
           {
             switch (mode) { /* new, split require MVs */
@@ -1165,7 +1187,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                           (const nmv_context*) nmvc,
                           xd->allow_high_precision_mv);
 
-                if (mi->second_ref_frame) {
+                if (mi->second_ref_frame > 0) {
 #if CONFIG_NEW_MVREF
                   unsigned int best_index;
                   MV_REFERENCE_FRAME sec_ref_frame = mi->second_ref_frame;
@@ -1230,7 +1252,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                               (const nmv_context*) nmvc,
                               xd->allow_high_precision_mv);
 
-                    if (mi->second_ref_frame) {
+                    if (mi->second_ref_frame > 0) {
                       write_nmv(bc,
                                 &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                                 &best_second_mv,
@@ -2167,6 +2189,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_bit(&header_bc, (pc->mcomp_filter_type == SWITCHABLE));
     if (pc->mcomp_filter_type != SWITCHABLE)
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
+#if CONFIG_COMP_INTERINTRA_PRED
+    vp9_write_bit(&header_bc, pc->use_interintra);
+#endif
   }
 
   vp9_write_bit(&header_bc, pc->refresh_entropy_probs);
