@@ -1113,7 +1113,7 @@ static void encode_sb(VP9_COMP *cpi,
 
         pred_context = vp9_get_pred_context(cm, xd, PRED_COMP);
 
-        if (xd->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME)
+        if (xd->mode_info_context->mbmi.second_ref_frame <= INTRA_FRAME)
           cpi->single_pred_count[pred_context]++;
         else
           cpi->comp_pred_count[pred_context]++;
@@ -1391,6 +1391,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 #if CONFIG_SUPERBLOCKS
   vp9_zero(cpi->sb_ymode_count)
   cpi->sb_count = 0;
+#endif
+#if CONFIG_COMP_INTERINTRA_PRED
+  vp9_zero(cpi->interintra_count);
 #endif
 
   vpx_memset(cm->above_context, 0,
@@ -2218,7 +2221,7 @@ static void encode_inter_macroblock(VP9_COMP *cpi, MACROBLOCK *x,
     xd->pre.u_buffer = cpi->common.yv12_fb[ref_fb_idx].u_buffer + recon_uvoffset;
     xd->pre.v_buffer = cpi->common.yv12_fb[ref_fb_idx].v_buffer + recon_uvoffset;
 
-    if (mbmi->second_ref_frame) {
+    if (mbmi->second_ref_frame > 0) {
       int second_ref_fb_idx;
 
       if (mbmi->second_ref_frame == LAST_FRAME)
@@ -2405,7 +2408,7 @@ static void encode_inter_superblock(VP9_COMP *cpi, MACROBLOCK *x,
     xd->pre.u_buffer = cpi->common.yv12_fb[ref_fb_idx].u_buffer + recon_uvoffset;
     xd->pre.v_buffer = cpi->common.yv12_fb[ref_fb_idx].v_buffer + recon_uvoffset;
 
-    if (xd->mode_info_context->mbmi.second_ref_frame) {
+    if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
       int second_ref_fb_idx;
 
       if (xd->mode_info_context->mbmi.second_ref_frame == LAST_FRAME)

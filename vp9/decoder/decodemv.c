@@ -531,6 +531,12 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
 #endif
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
+#if CONFIG_COMP_INTERINTRA_PRED
+    if (cm->use_interintra) {
+      if (vp9_read(bc, VP9_UPD_INTERINTRA_PROB))
+        cm->fc.interintra_prob  = (vp9_prob)vp9_read_literal(bc, 8);
+    }
+#endif
     // Decode the baseline probabilities for decoding reference frame
     cm->prob_intra_coded = (vp9_prob)vp9_read_literal(bc, 8);
     cm->prob_last_coded  = (vp9_prob)vp9_read_literal(bc, 8);
@@ -671,7 +677,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   mb_to_bottom_edge += RIGHT_BOTTOM_MARGIN;
   mbmi->need_to_clamp_mvs = 0;
   mbmi->need_to_clamp_secondmv = 0;
-  mbmi->second_ref_frame = 0;
+  mbmi->second_ref_frame = NONE;
   /* Distance of Mb to the various image edges.
    * These specified to 8th pel as they are always compared to MV values that are in 1/8th pel units
    */
@@ -806,7 +812,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mbmi->second_ref_frame = mbmi->ref_frame + 1;
       if (mbmi->second_ref_frame == 4)
         mbmi->second_ref_frame = 1;
-      if (mbmi->second_ref_frame) {
+      if (mbmi->second_ref_frame > 0) {
         int second_ref_fb_idx;
         /* Select the appropriate reference frame for this MB */
         if (mbmi->second_ref_frame == LAST_FRAME)
@@ -839,7 +845,27 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       }
 
     } else {
-      mbmi->second_ref_frame = 0;
+#if CONFIG_COMP_INTERINTRA_PRED
+      if (pbi->common.use_interintra &&
+          mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
+          mbmi->second_ref_frame == NONE) {
+        mbmi->second_ref_frame = (vp9_read(bc, pbi->common.fc.interintra_prob) ?
+                                  INTRA_FRAME : NONE);
+        // printf("-- %d (%d)\n", mbmi->second_ref_frame == INTRA_FRAME, pbi->common.fc.interintra_prob);
+        pbi->common.fc.interintra_counts[
+            mbmi->second_ref_frame == INTRA_FRAME]++;
+        if (mbmi->second_ref_frame == INTRA_FRAME) {
+          mbmi->interintra_mode = (MB_PREDICTION_MODE)read_ymode(
+              bc, pbi->common.fc.ymode_prob);
+          mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)read_uv_mode(
+              bc, pbi->common.fc.uv_mode_prob[mbmi->interintra_mode]);
+          // printf("** %d %d\n", mbmi->interintra_mode, mbmi->interintra_uv_mode);
+          pbi->common.fc.ymode_counts[mbmi->interintra_mode]++;
+          pbi->common.fc.uv_mode_counts[mbmi->interintra_mode]
+                                       [mbmi->interintra_uv_mode]++;
+        }
+      }
+#endif
     }
 
     mbmi->uv_mode = DC_PRED;
@@ -863,7 +889,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
           leftmv.as_int = left_block_mv(mi, k);
           abovemv.as_int = above_block_mv(mi, k, mis);
-          if (mbmi->second_ref_frame) {
+          if (mbmi->second_ref_frame > 0) {
             second_leftmv.as_int = left_block_second_mv(mi, k);
             second_abovemv.as_int = above_block_second_mv(mi, k, mis);
           }
@@ -881,7 +907,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
               blockmv.as_mv.row += best_mv.as_mv.row;
               blockmv.as_mv.col += best_mv.as_mv.col;
 
-              if (mbmi->second_ref_frame) {
+              if (mbmi->second_ref_frame > 0) {
                 read_nmv(bc, &secondmv.as_mv, &best_mv_second.as_mv, nmvc);
                 read_nmv_fp(bc, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
                             xd->allow_high_precision_mv);
@@ -896,7 +922,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
               break;
             case LEFT4X4:
               blockmv.as_int = leftmv.as_int;
-              if (mbmi->second_ref_frame)
+              if (mbmi->second_ref_frame > 0)
                 secondmv.as_int = second_leftmv.as_int;
 #ifdef VPX_MODE_COUNT
               vp9_mv_cont_count[mv_contz][0]++;
@@ -904,7 +930,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
               break;
             case ABOVE4X4:
               blockmv.as_int = abovemv.as_int;
-              if (mbmi->second_ref_frame)
+              if (mbmi->second_ref_frame > 0)
                 secondmv.as_int = second_abovemv.as_int;
 #ifdef VPX_MODE_COUNT
               vp9_mv_cont_count[mv_contz][1]++;
@@ -912,7 +938,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
               break;
             case ZERO4X4:
               blockmv.as_int = 0;
-              if (mbmi->second_ref_frame)
+              if (mbmi->second_ref_frame > 0)
                 secondmv.as_int = 0;
 #ifdef VPX_MODE_COUNT
               vp9_mv_cont_count[mv_contz][2]++;
@@ -927,7 +953,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                      mb_to_right_edge,
                                                      mb_to_top_edge,
                                                      mb_to_bottom_edge);
-          if (mbmi->second_ref_frame) {
+          if (mbmi->second_ref_frame > 0) {
             mbmi->need_to_clamp_mvs |= check_mv_bounds(&secondmv,
                                                        mb_to_left_edge,
                                                        mb_to_right_edge,
@@ -946,7 +972,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
             do {
               mi->bmi[ *fill_offset].as_mv.first.as_int = blockmv.as_int;
-              if (mbmi->second_ref_frame)
+              if (mbmi->second_ref_frame > 0)
                 mi->bmi[ *fill_offset].as_mv.second.as_int = secondmv.as_int;
               fill_offset++;
             } while (--fill_count);
@@ -965,7 +991,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         /* Clip "next_nearest" so that it does not extend to far out of image */
         clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
                  mb_to_top_edge, mb_to_bottom_edge);
-        if (mbmi->second_ref_frame) {
+        if (mbmi->second_ref_frame > 0) {
           mbmi->mv[1].as_int = nearby_second.as_int;
           clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
                    mb_to_top_edge, mb_to_bottom_edge);
@@ -977,7 +1003,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         /* Clip "next_nearest" so that it does not extend to far out of image */
         clamp_mv(mv, mb_to_left_edge, mb_to_right_edge,
                  mb_to_top_edge, mb_to_bottom_edge);
-        if (mbmi->second_ref_frame) {
+        if (mbmi->second_ref_frame > 0) {
           mbmi->mv[1].as_int = nearest_second.as_int;
           clamp_mv(&mbmi->mv[1], mb_to_left_edge, mb_to_right_edge,
                    mb_to_top_edge, mb_to_bottom_edge);
@@ -986,7 +1012,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
       case ZEROMV:
         mv->as_int = 0;
-        if (mbmi->second_ref_frame)
+        if (mbmi->second_ref_frame > 0)
           mbmi->mv[1].as_int = 0;
         break;
 
@@ -1025,7 +1051,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                   mb_to_top_edge,
                                                   mb_to_bottom_edge);
 
-        if (mbmi->second_ref_frame) {
+        if (mbmi->second_ref_frame > 0) {
 #if CONFIG_NEW_MVREF
         {
           int best_index;

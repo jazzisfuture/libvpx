@@ -21,6 +21,11 @@
 #define DEFAULT_COMP_INTRA_PROB  32
 #endif
 
+#if CONFIG_COMP_INTERINTRA_PRED
+#define VP9_DEF_INTERINTRA_PROB 192
+#define VP9_UPD_INTERINTRA_PROB 192
+#endif
+
 typedef const int vp9_mbsplit[16];
 
 extern vp9_mbsplit vp9_mbsplits[VP9_NUMMBSPLITS];

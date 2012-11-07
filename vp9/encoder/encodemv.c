@@ -656,4 +656,16 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
   }
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
+      mbmi->second_ref_frame <= INTRA_FRAME) {
+    if (mbmi->second_ref_frame == INTRA_FRAME) {
+      ++cpi->interintra_count[1];
+      ++cpi->ymode_count[mbmi->interintra_mode];
+      ++cpi->y_uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
+    } else {
+      ++cpi->interintra_count[0];
+    }
+  }
+#endif
 }
