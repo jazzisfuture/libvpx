@@ -30,7 +30,7 @@ const int num_tests = 10;
 
 using libvpx_test::ACMRandom;
 
-TEST(VP8, TestBitIO) {
+TEST(VP9, TestBitIO) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   for (int n = 0; n < num_tests; ++n) {
     for (int method = 0; method <= 7; ++method) {   // we generate various proba
@@ -56,7 +56,11 @@ TEST(VP8, TestBitIO) {
         ACMRandom bit_rnd(random_seed);
         BOOL_CODER bw;
         uint8_t bw_buffer[buffer_size];
+<<<<<<< HEAD   (bac942 Rough merge of master into experimental)
         vp8_start_encode(&bw, bw_buffer, bw_buffer + buffer_size);
+=======
+        vp9_start_encode(&bw, bw_buffer);
+>>>>>>> BRANCH (a879b4 fixed function prototype)
 
         int bit = (bit_method == 0) ? 0 : (bit_method == 1) ? 1 : 0;
         for (int i = 0; i < bits_to_test; ++i) {
@@ -65,13 +69,13 @@ TEST(VP8, TestBitIO) {
           } else if (bit_method == 3) {
             bit = bit_rnd(2);
           }
-          vp8_encode_bool(&bw, bit, static_cast<int>(probas[i]));
+          encode_bool(&bw, bit, static_cast<int>(probas[i]));
         }
 
-        vp8_stop_encode(&bw);
+        vp9_stop_encode(&bw);
 
         BOOL_DECODER br;
-        vp8dx_start_decode(&br, bw_buffer, buffer_size);
+        vp9_start_decode(&br, bw_buffer, buffer_size);
         bit_rnd.Reset(random_seed);
         for (int i = 0; i < bits_to_test; ++i) {
           if (bit_method == 2) {
@@ -79,8 +83,13 @@ TEST(VP8, TestBitIO) {
           } else if (bit_method == 3) {
             bit = bit_rnd(2);
           }
+<<<<<<< HEAD   (bac942 Rough merge of master into experimental)
           GTEST_ASSERT_EQ(vp8dx_decode_bool(&br, probas[i]), bit)
               << "pos: "<< i << " / " << bits_to_test
+=======
+          GTEST_ASSERT_EQ(decode_bool(&br, probas[i]), bit)
+              << "pos: " << i << " / " << bits_to_test
+>>>>>>> BRANCH (a879b4 fixed function prototype)
               << " bit_method: " << bit_method
               << " method: " << method;
         }

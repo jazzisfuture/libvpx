@@ -147,6 +147,7 @@ vpx_cpu_t vpx_x86_vendor(void);
 unsigned __int64 __rdtsc(void);
 #pragma intrinsic(__rdtsc)
 #endif
+<<<<<<< HEAD   (bac942 Rough merge of master into experimental)
 static unsigned int
 x86_readtsc(void) {
 #if defined(__GNUC__) && __GNUC__
@@ -165,6 +166,8 @@ x86_readtsc(void) {
 #endif
 #endif
 }
+=======
+>>>>>>> BRANCH (a879b4 fixed function prototype)
 
 
 #if defined(__GNUC__) && __GNUC__
