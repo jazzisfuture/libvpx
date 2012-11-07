@@ -1,8 +1,12 @@
 LIBVPX_TEST_SRCS-yes += acm_random.h
 LIBVPX_TEST_SRCS-yes += test.mk
 LIBVPX_TEST_SRCS-yes += test_libvpx.cc
+<<<<<<< HEAD   (2c08c2 Merge with upstream experimental changes)
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
+=======
+LIBVPX_TEST_SRCS-yes += variance_test.cc
+>>>>>>> BRANCH (5338d9 Merge "Fix variance (signed integer) overflow" into experime)
 
 ##
 ## BLACK BOX TESTS
