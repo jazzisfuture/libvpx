@@ -118,12 +118,14 @@ typedef struct macroblock {
   int *nmvcost[2];
   int nmvcosts_hp[2][MV_VALS];
   int *nmvcost_hp[2];
+  int *mvcost[2];
 
   int nmvjointsadcost[MV_JOINTS];
   int nmvsadcosts[2][MV_VALS];
   int *nmvsadcost[2];
   int nmvsadcosts_hp[2][MV_VALS];
   int *nmvsadcost_hp[2];
+  int *mvsadcost[2];
 
   int mbmode_cost[2][MB_MODE_COUNT];
   int intra_uv_mode_cost[2][MB_MODE_COUNT];
