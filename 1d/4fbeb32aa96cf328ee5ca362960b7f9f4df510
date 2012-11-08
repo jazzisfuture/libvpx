@@ -1,0 +1,7 @@
+Code-Review+2: Ronald S. Bultje <rbultje@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Thu, 08 Nov 2012 11:16:41 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/37542
+Project: webm/libvpx
+Branch: refs/heads/experimental
