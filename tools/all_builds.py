@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 LONG_OPTIONS = ["shard=", "shards="]
-BASE_COMMAND = "./configure --disable-vp8 --disable-unit-tests --enable-internal-stats --enable-experimental"
+BASE_COMMAND = "./configure --enable-internal-stats --enable-experimental"
 
 def RunCommand(command):
   run = subprocess.Popen(command, shell=True)
@@ -66,7 +66,7 @@ def test_build(configure_command):
   print "\033[34m\033[47mTesting %s\033[0m" % (configure_command)
   RunCommand(configure_command)
   RunCommand("make clean")
-  RunCommand("make")
+  RunCommand("make -j")
 
 if __name__ == "__main__":
   main(sys.argv)
