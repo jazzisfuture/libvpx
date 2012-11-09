@@ -1,0 +1,9 @@
+Code-Review+1: <ihf@google.com>
+Verified+1: <ihf@google.com>
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Thu, 08 Nov 2012 16:32:32 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/37664
+Project: webm/libvpx
+Branch: refs/heads/master
