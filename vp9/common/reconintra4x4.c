@@ -12,7 +12,7 @@
 #include "vpx_ports/config.h"
 #include "vpx_mem/vpx_mem.h"
 #include "reconintra.h"
-#include "vpx_rtcd.h"
+#include "vp9_rtcd.h"
 
 void vp9_intra4x4_predict_c(BLOCKD *x, int b_mode,
                             unsigned char *predictor) {
