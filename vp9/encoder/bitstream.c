@@ -258,70 +258,6 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   }
 }
 
-static void update_mvcount(VP9_COMP *cpi, MACROBLOCK *x,
-                           int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
-  MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
-  MV mv;
-
-  if (mbmi->mode == SPLITMV) {
-    int i;
-
-    for (i = 0; i < x->partition_info->count; i++) {
-      if (x->partition_info->bmi[i].mode == NEW4X4) {
-        if (x->e_mbd.allow_high_precision_mv) {
-          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
-                    - best_ref_mv->as_mv.row);
-          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
-                    - best_ref_mv->as_mv.col);
-          vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
-            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
-                      - second_best_ref_mv->as_mv.row);
-            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
-                      - second_best_ref_mv->as_mv.col);
-            vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv,
-                              &cpi->NMVcount, 1);
-          }
-        } else {
-          mv.row = (x->partition_info->bmi[i].mv.as_mv.row
-                    - best_ref_mv->as_mv.row);
-          mv.col = (x->partition_info->bmi[i].mv.as_mv.col
-                    - best_ref_mv->as_mv.col);
-          vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-          if (x->e_mbd.mode_info_context->mbmi.second_ref_frame) {
-            mv.row = (x->partition_info->bmi[i].second_mv.as_mv.row
-                      - second_best_ref_mv->as_mv.row);
-            mv.col = (x->partition_info->bmi[i].second_mv.as_mv.col
-                      - second_best_ref_mv->as_mv.col);
-            vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv,
-                              &cpi->NMVcount, 0);
-          }
-        }
-      }
-    }
-  } else if (mbmi->mode == NEWMV) {
-    if (x->e_mbd.allow_high_precision_mv) {
-      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
-      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
-      vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      if (mbmi->second_ref_frame) {
-        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
-        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
-        vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 1);
-      }
-    } else {
-      mv.row = (mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row);
-      mv.col = (mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col);
-      vp9_increment_nmv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      if (mbmi->second_ref_frame) {
-        mv.row = (mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row);
-        mv.col = (mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col);
-        vp9_increment_nmv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount, 0);
-      }
-    }
-  }
-}
-
 static void write_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
   write_token(bc, vp9_ymode_tree, p, vp9_ymode_encodings + m);
 }
@@ -682,11 +618,11 @@ static void vp9_write_mv_ref_id(vp9_writer *w,
 }
 
 // Estimate the cost of each coding the vector using each reference candidate
-static unsigned int pick_best_mv_ref(MACROBLOCK *x,
-                                     MV_REFERENCE_FRAME ref_frame,
-                                     int_mv target_mv,
-                                     int_mv * mv_ref_list,
-                                     int_mv * best_ref) {
+unsigned int pick_best_mv_ref(MACROBLOCK *x,
+                              MV_REFERENCE_FRAME ref_frame,
+                              int_mv target_mv,
+                              int_mv * mv_ref_list,
+                              int_mv * best_ref) {
   int i;
   int best_index = 0;
   int cost, cost2;
@@ -699,7 +635,6 @@ static unsigned int pick_best_mv_ref(MACROBLOCK *x,
                          &mv_ref_list[0],
                          XMVCOST, 96,
                          xd->allow_high_precision_mv);
-
 
   // Use 4 for now : for (i = 1; i < MAX_MV_REFS; ++i ) {
   for (i = 1; i < 4; ++i) {
@@ -924,6 +859,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
       for (i = 0; i < 4; i++) {
         MB_MODE_INFO *mi;
         MV_REFERENCE_FRAME rf;
+        MV_REFERENCE_FRAME sec_ref_frame;
         MB_PREDICTION_MODE mode;
         int segment_id;
 
@@ -943,6 +879,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
 
         mi = &m->mbmi;
         rf = mi->ref_frame;
+        sec_ref_frame = mi->second_ref_frame;
         mode = mi->mode;
         segment_id = mi->segment_id;
 
@@ -1149,8 +1086,14 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                   unsigned int best_index;
 
                   // Choose the best mv reference
+                  /*
                   best_index = pick_best_mv_ref(x, rf, mi->mv[0],
                                                 mi->ref_mvs[rf], &best_mv);
+                  assert(best_index == mi->best_index);
+                  assert(best_mv.as_int == mi->best_mv.as_int);
+                  */
+                  best_index = mi->best_index;
+                  best_mv.as_int = mi->best_mv.as_int;
 
                   // Encode the index of the choice.
                   vp9_write_mv_ref_id(bc,
@@ -1168,12 +1111,18 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                 if (mi->second_ref_frame) {
 #if CONFIG_NEW_MVREF
                   unsigned int best_index;
-                  MV_REFERENCE_FRAME sec_ref_frame = mi->second_ref_frame;
+                  sec_ref_frame = mi->second_ref_frame;
 
+                  /*
                   best_index =
                     pick_best_mv_ref(x, sec_ref_frame, mi->mv[1],
                                      mi->ref_mvs[sec_ref_frame],
                                      &best_second_mv);
+                  assert(best_index == mi->best_second_index);
+                  assert(best_second_mv.as_int == mi->best_second_mv.as_int);
+                  */
+                  best_index = mi->best_second_index;
+                  best_second_mv.as_int = mi->best_second_mv.as_int;
 
                   // Encode the index of the choice.
                   vp9_write_mv_ref_id(bc,
@@ -1186,6 +1135,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                             (const nmv_context*) nmvc,
                             xd->allow_high_precision_mv);
                 }
+                assert(best_mv.as_int == mi->best_mv.as_int);
                 break;
               case SPLITMV: {
                 int j = 0;
@@ -1245,12 +1195,10 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                 break;
             }
           }
-
-          // Update the mvcounts used to tune mv probs but only if this is
-          // the real pack run.
-          if ( !cpi->dummy_packing ) {
-            update_mvcount(cpi, x, &best_mv, &best_second_mv);
-          }
+          /* This is not required if the counts in cpi are consistent with the
+           * final packing pass */
+          // if (!cpi->dummy_packing)
+          //   vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv);
         }
 
         if (
@@ -1374,7 +1322,6 @@ static void write_mb_modes_kf(const VP9_COMMON  *c,
 #endif
 
       write_bmode(bc, bm, c->kf_bmode_prob [A] [L]);
-      // printf("    mode: %d\n", bm);
 #if CONFIG_COMP_INTRA_PRED
       if (uses_second) {
         write_bmode(bc, bm2, c->kf_bmode_prob [A] [L]);
@@ -1862,6 +1809,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_writer header_bc, residual_bc;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   int extra_bytes_packed = 0;
+  nmv_context_counts NMVtest;
 
   unsigned char *cx_data = dest;
 
@@ -2265,12 +2213,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
 
     update_mbintra_mode_probs(cpi, &header_bc);
 
-#if CONFIG_NEW_MVREF
-    // Temp defaults probabilities for ecnoding the MV ref id signal
-    vpx_memset(xd->mb_mv_ref_id_probs, 192, sizeof(xd->mb_mv_ref_id_probs));
-#endif
-
-    vp9_write_nmvprobs(cpi, xd->allow_high_precision_mv, &header_bc);
+    vp9_write_nmv_probs(cpi, xd->allow_high_precision_mv, &header_bc);
   }
 
   vp9_stop_encode(&header_bc);
@@ -2296,7 +2239,11 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     decide_kf_ymode_entropy(cpi);
     write_kfmodes(cpi, &residual_bc);
   } else {
+    /* This is not required if the counts in cpi are consistent with the
+     * final packing pass */
+    // if (!cpi->dummy_packing) vp9_zero(cpi->NMVcount);
     pack_inter_mode_mvs(cpi, &residual_bc);
+
     vp9_update_mode_context(&cpi->common);
   }
 

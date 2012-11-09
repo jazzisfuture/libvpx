@@ -218,6 +218,10 @@ typedef struct {
   int_mv mv[2]; // for each reference frame used
 #if CONFIG_NEWBESTREFMV || CONFIG_NEW_MVREF
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REFS];
+  int_mv best_mv, best_second_mv;
+#if CONFIG_NEW_MVREF
+  int best_index, best_second_index;
+#endif
 #endif
 
   SPLITMV_PARTITIONING_TYPE partitioning;
