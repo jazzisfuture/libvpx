@@ -361,7 +361,14 @@ void vp9_activity_masking(VP9_COMP *cpi, MACROBLOCK *x) {
   adjust_act_zbin(cpi, x);
 }
 
-static void update_state(VP9_COMP *cpi, MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
+extern unsigned int pick_best_mv_ref(MACROBLOCK *x,
+                                     MV_REFERENCE_FRAME ref_frame,
+                                     int_mv target_mv,
+                                     int_mv * mv_ref_list,
+                                     int_mv * best_ref);
+
+static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
+                         PICK_MODE_CONTEXT *ctx) {
   int i;
   MACROBLOCKD *xd = &x->e_mbd;
   MODE_INFO *mi = &ctx->mic;
@@ -465,6 +472,38 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
     */
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[mb_mode_index]++;
+    if (mbmi->mode == SPLITMV || mbmi->mode == NEWMV) {
+      static int testcount = 0;
+      int_mv best_mv, best_second_mv;
+      unsigned int best_index;
+      MV_REFERENCE_FRAME rf = mbmi->ref_frame;
+      MV_REFERENCE_FRAME sec_ref_frame = mbmi->second_ref_frame;
+      best_mv.as_int = ctx->best_ref_mv.as_int;
+      best_second_mv.as_int = ctx->second_best_ref_mv.as_int;
+      if (mbmi->mode == NEWMV) {
+#if CONFIG_NEWBESTREFMV
+        best_mv.as_int = mbmi->ref_mvs[rf][0].as_int;
+        best_second_mv.as_int = mbmi->ref_mvs[mbmi->second_ref_frame][0].as_int;
+#endif
+#if CONFIG_NEW_MVREF
+        best_index = pick_best_mv_ref(x, rf, mbmi->mv[0],
+                                      mbmi->ref_mvs[rf], &best_mv);
+        mbmi->best_index = best_index;
+
+        if (mbmi->second_ref_frame) {
+          unsigned int best_index;
+          best_index =
+              pick_best_mv_ref(x, sec_ref_frame, mbmi->mv[1],
+                               mbmi->ref_mvs[sec_ref_frame],
+                               &best_second_mv);
+          mbmi->best_second_index = best_index;
+        }
+#endif
+      }
+      mbmi->best_mv.as_int = best_mv.as_int;
+      mbmi->best_second_mv.as_int = best_second_mv.as_int;
+      vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv);
+    }
 
     cpi->prediction_error += ctx->distortion;
     cpi->intra_error += ctx->intra_error;
