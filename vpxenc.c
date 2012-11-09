@@ -2311,7 +2311,7 @@ int main(int argc, const char **argv_) {
     usage_exit();
 
   for (pass = global.pass ? global.pass - 1 : 0; pass < global.passes; pass++) {
-    int frames_in = 0;
+    int frames_in = 0, frames_out = 0;
 
     open_input_file(&input);
 
@@ -2418,8 +2418,10 @@ int main(int argc, const char **argv_) {
         got_data = 0;
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
-        if (got_data && global.test_decode)
-          FOREACH_STREAM(test_decode(stream, frames_in));
+        if (got_data && global.test_decode) {
+          ++frames_out;
+          FOREACH_STREAM(test_decode(stream, frames_out));
+        }
       }
 
       fflush(stdout);
