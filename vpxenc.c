@@ -2419,7 +2419,7 @@ int main(int argc, const char **argv_) {
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
         if (got_data && global.test_decode)
-          FOREACH_STREAM(test_decode(stream, frames_in));
+          FOREACH_STREAM(test_decode(stream, stream->frames_out));
       }
 
       fflush(stdout);
