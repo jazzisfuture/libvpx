@@ -902,8 +902,10 @@ static void setup_token_decoder(VP8D_COMP *pbi,
 
 #if CONFIG_MULTITHREAD
     /* Clamp number of decoder threads */
-    if (pbi->decoding_thread_count > num_token_partitions - 1)
+    if (pbi->decoding_thread_count != num_token_partitions - 1) {
+        vp8_decoder_remove_threads(pbi);  // cleanup existing threads
         pbi->decoding_thread_count = num_token_partitions - 1;
+    }
 #endif
 }
 
