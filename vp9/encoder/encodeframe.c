@@ -1432,7 +1432,7 @@ static int check_dual_ref_flags(VP9_COMP *cpi) {
 
 static void reset_skip_txfm_size(VP9_COMP *cpi, TX_SIZE txfm_max) {
   VP9_COMMON *cm = &cpi->common;
-  int mb_row, mb_col, mis = cm->mode_info_stride, segment_id, skip;
+  int mb_row, mb_col, mis = cm->mode_info_stride, segment_id;
   MODE_INFO *mi, *mi_ptr = cm->mi;
 #if CONFIG_SUPERBLOCKS
   MODE_INFO *sb_mi_ptr = cm->mi, *sb_mi;
