@@ -1285,6 +1285,21 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
   pc->refresh_last_frame = (pc->frame_type == KEY_FRAME)
                            || vp9_read_bit(&header_bc);
 
+  // Read inter mode probability context updates
+  if (pc->frame_type != KEY_FRAME) {
+    int i,j;
+    for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
+      if (vp9_read_bit(&header_bc)) {
+        for (j = 0; j < 4; j++) {
+          if (vp9_read_bit(&header_bc)) {
+            pc->fc.vp9_mode_contexts[i][j] =
+              (vp9_prob)vp9_read_literal(&header_bc, 8);
+          }
+        }
+      }
+    }
+  }
+
   if (0) {
     FILE *z = fopen("decodestats.stt", "a");
     fprintf(z, "%6d F:%d,G:%d,A:%d,L:%d,Q:%d\n",
@@ -1330,7 +1345,6 @@ int vp9_decode_frame(VP9D_COMP *pbi) {
   vp9_zero(pbi->common.fc.mbsplit_counts);
   vp9_zero(pbi->common.fc.NMVcount);
   vp9_zero(pbi->common.fc.mv_ref_ct);
-  vp9_zero(pbi->common.fc.mv_ref_ct_a);
 
   read_coef_probs(pbi, &header_bc);
 
