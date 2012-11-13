@@ -255,6 +255,39 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   }
 }
 
+// This function is called to update the mode probability context used to encode
+// inter modes. It assumes the branch counts table has already been populated
+// prior to the actual packing of the bitstream (in rd stage or dummy pack)
+//
+// The branch counts table is re-populated during the actual pack stage and in
+// the decoder to facilitate backwards update of the context.
+static update_mode_probs(VP9_COMMON *cm, int mode_context[INTER_MODE_CONTEXTS][4] ) {
+  int i, j;
+  int (*mv_ref_ct)[4][2];
+
+  vpx_memcpy(mode_context, cm->fc.vp9_mode_contexts,
+             sizeof(cm->fc.vp9_mode_contexts));
+
+  mv_ref_ct = cm->fc.mv_ref_ct;
+
+  for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
+    for (j = 0; j < 4; j++) {
+      int new_prob, count, old_cost, new_cost;
+
+      // Work out cost of coding branches with the old and optimal probability
+      old_cost = cost_branch256(mv_ref_ct[i][j], mode_context[i][j]);
+      count = mv_ref_ct[i][j][0] + mv_ref_ct[i][j][1];
+      new_prob = count > 0 ? (255 * mv_ref_ct[i][j][0]) / count : 128;
+      new_prob = (new_prob > 0) ? new_prob : 1;
+      new_cost = cost_branch256(mv_ref_ct[i][j], new_prob);
+
+      // If cost saving is >= 8 bits then update the mode probability.
+      if (new_cost <= (old_cost - (8 << 8))) {
+        mode_context[i][j] = new_prob;
+      }
+    }
+  }
+}
 static void write_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
   write_token(bc, vp9_ymode_tree, p, vp9_ymode_encodings + m);
 }
@@ -2020,6 +2053,42 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     active_section = 7;
 #endif
 
+  // If appropriate update the inter mode probability context and code the
+  // changes in the bitstream.
+  if ((pc->frame_type != KEY_FRAME) ) {
+    int i,j;
+    int new_context[INTER_MODE_CONTEXTS][4];
+    update_mode_probs(pc, new_context);
+
+    for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
+      int update = FALSE;
+      for (j = 0; j < 4; j++) {
+        if (new_context[i][j] != pc->fc.vp9_mode_contexts[i][j]) {
+          update = TRUE;
+          break;
+        }
+      }
+      if (update) {
+        vp9_write_bit(&header_bc, 1);
+        for (j = 0; j < 4; j++) {
+          if (new_context[i][j] != pc->fc.vp9_mode_contexts[i][j]) {
+            vp9_write_bit(&header_bc, 1);
+            vp9_write_literal(&header_bc, new_context[i][j], 8);
+
+            // Only actually update the persistent copy if this is the "real pack"
+            if (!cpi->dummy_packing) {
+              pc->fc.vp9_mode_contexts[i][j] = new_context[i][j];
+            }
+          } else {
+            vp9_write_bit(&header_bc, 0);
+          }
+        }
+      } else {
+        vp9_write_bit(&header_bc, 0);
+      }
+    }
+  }
+
   vp9_clear_system_state();  // __asm emms;
 
   vp9_copy(cpi->common.fc.pre_coef_probs, cpi->common.fc.coef_probs);
@@ -2038,7 +2107,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_zero(cpi->sub_mv_ref_count);
   vp9_zero(cpi->mbsplit_count);
   vp9_zero(cpi->common.fc.mv_ref_ct)
-  vp9_zero(cpi->common.fc.mv_ref_ct_a)
 
   update_coef_probs(cpi, &header_bc);
 
@@ -2141,6 +2209,26 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_stop_encode(&residual_bc);
 
   *size += residual_bc.pos;
+
+  // TEMP output stats
+  if (0 && !cpi->dummy_packing && (pc->frame_type != KEY_FRAME) &&
+//      !pc->refresh_alt_ref_frame && !pc->refresh_golden_frame)
+      (pc->refresh_alt_ref_frame || pc->refresh_golden_frame))
+  {
+    int i,j;
+    FILE *f = fopen("modeprob.stt", "a");
+
+    fprintf(f, "%6d ", pc->current_video_frame);
+
+    for ( j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      for (i = 0; i < 4; i++) {
+         fprintf(f, "%6d ", pc->fc.vp9_mode_contexts[j][i] );
+      }
+      fprintf(f, " *** ");
+    }
+    fprintf(f, "\n");
+    fclose(f);
+  }
 }
 
 #ifdef ENTROPY_STATS
