@@ -37,8 +37,7 @@ unsigned int vp9_variance32x32_c(const unsigned char *src_ptr,
 
   variance(src_ptr, source_stride, ref_ptr, recon_stride, 32, 32, &var, &avg);
   *sse = var;
-  // TODO(rbultje): in extreme cases these products will rollover.
-  return (var - (((unsigned int)avg * avg) >> 10));
+  return (var - (((int64_t)avg * avg) >> 10));
 }
 #endif
 
