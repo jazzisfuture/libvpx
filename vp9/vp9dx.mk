@@ -63,7 +63,7 @@ VP9_DX_SRCS-yes += decoder/idct_blk.c
 VP9_DX_SRCS-yes := $(filter-out $(VP9_DX_SRCS_REMOVE-yes),$(VP9_DX_SRCS-yes))
 
 VP9_DX_SRCS-$(ARCH_X86)$(ARCH_X86_64) += decoder/x86/x86_dsystemdependent.c
-VP9_DX_SRCS-$(HAVE_MMX) += decoder/x86/dequantize_mmx.asm
+VP9_DX_SRCS-$(HAVE_MMX) += decoder/x86/vp9_dequantize_mmx.asm
 VP9_DX_SRCS-$(HAVE_MMX) += decoder/x86/idct_blk_mmx.c
 VP9_DX_SRCS-$(HAVE_SSE2) += decoder/x86/idct_blk_sse2.c
 
