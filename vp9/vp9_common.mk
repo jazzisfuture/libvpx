@@ -89,28 +89,28 @@ VP9_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/vp8_asm_stubs.c
 VP9_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/loopfilter_x86.c
 VP9_COMMON_SRCS-$(CONFIG_POSTPROC) += common/postproc.h
 VP9_COMMON_SRCS-$(CONFIG_POSTPROC) += common/postproc.c
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/idctllm_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/iwalsh_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/recon_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/subpixel_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/loopfilter_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/idctllm_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/recon_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_idctllm_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_iwalsh_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_recon_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_subpixel_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_loopfilter_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idctllm_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_recon_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/recon_wrapper_sse2.c
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/subpixel_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/loopfilter_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/iwalsh_sse2.asm
-VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/subpixel_8t_ssse3.asm
-VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/subpixel_ssse3.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_subpixel_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_loopfilter_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_iwalsh_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_subpixel_8t_ssse3.asm
+VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_subpixel_ssse3.asm
 ifeq ($(CONFIG_POSTPROC),yes)
-VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/postproc_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/postproc_sse2.asm
+VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_postproc_mmx.asm
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_postproc_sse2.asm
 endif
 
 # common (c)
 ifeq ($(CONFIG_CSM),yes)
 VP9_COMMON_SRCS-yes += common/maskingmv.c
-VP9_COMMON_SRCS-$(HAVE_SSE3) += common/x86/mask_sse3.asm
+VP9_COMMON_SRCS-$(HAVE_SSE3) += common/x86/vp9_mask_sse3.asm
 endif
 
 VP9_COMMON_SRCS-$(HAVE_SSE4_1) += common/x86/filter_sse4.c
