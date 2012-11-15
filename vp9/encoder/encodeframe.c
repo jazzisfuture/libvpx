@@ -1426,7 +1426,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   TOKENEXTRA *tp = cpi->tok;
   int totalrate;
 
-  //printf("encode_frame_internal\n");
+  //printf("encode_frame_internal frame %d\n", cpi->common.current_video_frame);
 
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
