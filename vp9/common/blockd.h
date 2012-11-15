@@ -482,7 +482,16 @@ static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
 }
 
 static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, const BLOCKD *b) {
+// TODO(debargha): explore different patterns for ADST usage when block size
+// is smaller than the prediction size
   TX_TYPE tx_type = DCT_DCT;
+  int ib = (int)(b - xd->block);
+  if (ib >= 16)
+    return tx_type;
+#if CONFIG_SUPERBLOCKS
+  if (xd->mode_info_context->mbmi.encoded_as_sb)
+    return tx_type;
+#endif
   if (xd->mode_info_context->mbmi.mode == B_PRED &&
       xd->q_index < ACTIVE_HT) {
     tx_type = txfm_map(
@@ -490,28 +499,55 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, const BLOCKD *b) {
         b->bmi.as_mode.first == B_CONTEXT_PRED ? b->bmi.as_mode.context :
 #endif
         b->bmi.as_mode.first);
+  } else if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
+             xd->q_index < ACTIVE_HT) {
+    b += (ib & 10) - ib;
+    // tx_type = txfm_map(pred_mode_conv(
+    //       (MB_PREDICTION_MODE)b->bmi.as_mode.first));
+    tx_type = DCT_DCT;
+  } else if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
+             xd->q_index < ACTIVE_HT) {
+    // tx_type = txfm_map(pred_mode_conv(xd->mode_info_context->mbmi.mode));
+    tx_type = DCT_DCT;
   }
   return tx_type;
 }
 
 static TX_TYPE get_tx_type_8x8(const MACROBLOCKD *xd, const BLOCKD *b) {
+// TODO(debargha): explore different patterns for ADST usage when block size
+// is smaller than the prediction size
   TX_TYPE tx_type = DCT_DCT;
+  int ib = (int)(b - xd->block);
+  if (ib >= 16)
+    return tx_type;
+#if CONFIG_SUPERBLOCKS
+  if (xd->mode_info_context->mbmi.encoded_as_sb)
+    return tx_type;
+#endif
   if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
       xd->q_index < ACTIVE_HT8) {
     // TODO(rbultje): MB_PREDICTION_MODE / B_PREDICTION_MODE should be merged
     // or the relationship otherwise modified to address this type conversion.
     tx_type = txfm_map(pred_mode_conv(
-                  (MB_PREDICTION_MODE)b->bmi.as_mode.first));
+           (MB_PREDICTION_MODE)b->bmi.as_mode.first));
+  } else if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
+             xd->q_index < ACTIVE_HT8) {
+    // tx_type = txfm_map(pred_mode_conv(xd->mode_info_context->mbmi.mode));
+    tx_type = DCT_DCT;
   }
   return tx_type;
 }
 
 static TX_TYPE get_tx_type_16x16(const MACROBLOCKD *xd, const BLOCKD *b) {
   TX_TYPE tx_type = DCT_DCT;
-  if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
+  int ib = (int)(b - xd->block);
+  if (ib >= 16)
+    return tx_type;
 #if CONFIG_SUPERBLOCKS
-      !xd->mode_info_context->mbmi.encoded_as_sb &&
+  if (xd->mode_info_context->mbmi.encoded_as_sb)
+    return tx_type;
 #endif
+  if (xd->mode_info_context->mbmi.mode < I8X8_PRED &&
       xd->q_index < ACTIVE_HT16) {
     tx_type = txfm_map(pred_mode_conv(xd->mode_info_context->mbmi.mode));
   }
@@ -534,6 +570,16 @@ static TX_TYPE get_tx_type(const MACROBLOCKD *xd, const BLOCKD *b) {
     tx_type = get_tx_type_4x4(xd, b);
   }
   return tx_type;
+}
+
+static int get_2nd_order_usage(const MACROBLOCKD *xd) {
+  int has_2nd_order = (xd->mode_info_context->mbmi.mode != SPLITMV &&
+                       xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                       xd->mode_info_context->mbmi.mode != B_PRED &&
+                       xd->mode_info_context->mbmi.txfm_size != TX_16X16);
+  if (has_2nd_order)
+    has_2nd_order = (get_tx_type(xd, xd->block) == DCT_DCT);
+  return has_2nd_order;
 }
 
 extern void vp9_build_block_doffsets(MACROBLOCKD *xd);
