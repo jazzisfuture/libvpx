@@ -1,0 +1,8 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Wed, 14 Nov 2012 17:05:46 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/38074
+Project: webm/libvpx
+Branch: refs/heads/experimental
