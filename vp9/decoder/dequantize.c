@@ -15,6 +15,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "onyxd_int.h"
 
+// #define DEC_DEBUG
 #ifdef DEC_DEBUG
 extern int dec_debug;
 #endif
@@ -311,19 +312,6 @@ void vp9_dequant_idct_add_8x8_c(int16_t *input, const int16_t *dq,
 
     add_residual(diff_ptr, pred, pitch, dest, stride, 8, 8);
 
-#ifdef DEC_DEBUG
-  if (dec_debug) {
-    int k, j;
-    printf("Final 8x8\n");
-    for (j = 0; j < 8; j++) {
-      for (k = 0; k < 8; k++) {
-        printf("%d ", origdest[k]);
-      }
-      printf("\n");
-      origdest += stride;
-    }
-  }
-#endif
   }
 }
 
@@ -360,6 +348,11 @@ void vp9_dequant_idct_add_16x16_c(int16_t *input, const int16_t *dq,
 
   /* The calculation can be simplified if there are not many non-zero dct
    * coefficients. Use eobs to separate different cases. */
+#ifdef DEC_DEBUG
+  if (dec_debug) {
+    printf("eobs = %d\n", eobs);
+  }
+#endif
   if (eobs == 0) {
     /* All 0 DCT coefficient */
     vp9_copy_mem16x16(pred, pitch, dest, stride);
@@ -396,6 +389,16 @@ void vp9_dequant_idct_add_16x16_c(int16_t *input, const int16_t *dq,
     input[32] = input[33] = 0;
     input[48] = 0;
 
+#ifdef DEC_DEBUG
+    if (dec_debug) {
+      printf("\n");
+      printf("diff\n");
+      for (i = 0; i < 256; i++) {
+        printf("%3d ", output[i]);
+        if (i % 16 == 15) printf("\n");
+      }
+    }
+#endif
     add_residual(diff_ptr, pred, pitch, dest, stride, 16, 16);
   } else {
     input[0]= input[0] * dq[0];
@@ -409,6 +412,28 @@ void vp9_dequant_idct_add_16x16_c(int16_t *input, const int16_t *dq,
 
     vpx_memset(input, 0, 512);
 
+#ifdef DEC_DEBUG
+    if (dec_debug) {
+      printf("\n");
+      printf("diff\n");
+      for (i = 0; i < 256; i++) {
+        printf("%3d ", output[i]);
+        if (i % 16 == 15) printf("\n");
+      }
+    }
+#endif
     add_residual(diff_ptr, pred, pitch, dest, stride, 16, 16);
+#ifdef DEC_DEBUG
+    if (dec_debug) {
+      int r, c;
+      printf("\n");
+      printf("final\n");
+      for (r = 0; r < 16; r++) {
+        for (c = 0; c < 16; c++)
+          printf("%3d ", dest[r*stride + c]);
+        printf("\n");
+      }
+    }
+#endif
   }
 }
