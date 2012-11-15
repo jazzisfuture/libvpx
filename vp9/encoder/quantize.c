@@ -136,11 +136,19 @@ void vp9_regular_quantize_b_4x4(BLOCK *b, BLOCKD *d) {
 
 void vp9_quantize_mby_4x4_c(MACROBLOCK *x) {
   int i;
-  int has_2nd_order = x->e_mbd.mode_info_context->mbmi.mode != SPLITMV;
+  int has_2nd_order = x->e_mbd.mode_info_context->mbmi.mode != SPLITMV &&
+      x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED &&
+      x->e_mbd.mode_info_context->mbmi.mode != B_PRED;
 
-  for (i = 0; i < 16; i++)
-    x->quantize_b_4x4(&x->block[i], &x->e_mbd.block[i]);
-
+  for (i = 0; i < 16; i++) {
+    TX_TYPE tx_type = get_tx_type_4x4(&x->e_mbd, &x->e_mbd.block[i]);
+    if (tx_type != DCT_DCT) {
+      has_2nd_order = 0;
+      vp9_ht_quantize_b_4x4(&x->block[i], &x->e_mbd.block[i], tx_type);
+    } else {
+      x->quantize_b_4x4(&x->block[i], &x->e_mbd.block[i]);
+    }
+  }
   if (has_2nd_order)
     x->quantize_b_4x4(&x->block[24], &x->e_mbd.block[24]);
 }
@@ -257,7 +265,9 @@ void vp9_regular_quantize_b_8x8(BLOCK *b, BLOCKD *d) {
 
 void vp9_quantize_mby_8x8(MACROBLOCK *x) {
   int i;
-  int has_2nd_order = x->e_mbd.mode_info_context->mbmi.mode != SPLITMV;
+  int has_2nd_order = x->e_mbd.mode_info_context->mbmi.mode != SPLITMV &&
+      x->e_mbd.mode_info_context->mbmi.mode != I8X8_PRED &&
+      x->e_mbd.mode_info_context->mbmi.mode != B_PRED;
 
   for (i = 0; i < 16; i ++) {
     x->e_mbd.block[i].eob = 0;
