@@ -4447,6 +4447,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO best_mbmode;
   int mode_index, best_mode_index;
   unsigned int ref_costs[MAX_REF_FRAMES];
+  int rate_uv_4x4, rate_uv_8x8, rate_uv_tokenonly_4x4, rate_uv_tokenonly_8x8;
+  int dist_uv_4x4, dist_uv_8x8, uv_skip_4x4, uv_skip_8x8;
+  MB_PREDICTION_MODE mode_uv_4x4, mode_uv_8x8;
 
   x->skip = 0;
   xd->mode_info_context->mbmi.segment_id = segment_id;
@@ -4469,8 +4472,22 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
+  mbmi->mode = DC_PRED;
+  if (cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT) {
+    mbmi->txfm_size = TX_4X4;
+    rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_4x4, &rate_uv_tokenonly_4x4,
+                            &dist_uv_4x4, &uv_skip_4x4);
+    mode_uv_4x4 = mbmi->uv_mode;
+  }
+  if (cm->txfm_mode != ONLY_4X4) {
+    mbmi->txfm_size = TX_8X8;
+    rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_8x8, &rate_uv_tokenonly_8x8,
+                            &dist_uv_8x8, &uv_skip_8x8);
+    mode_uv_8x8 = mbmi->uv_mode;
+  }
+
   for (mode_index = 0; mode_index < MAX_MODES; mode_index++) {
-    int mode_excluded;
+    int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;
     int disable_skip = 0;
     int other_cost = 0;
@@ -4487,6 +4504,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
+    assert(ref_frame == INTRA_FRAME ||
+           (cpi->ref_frame_flags & flag_list[ref_frame]));
     mbmi->ref_frame = ref_frame;
     comp_pred = vp9_mode_order[mode_index].second_ref_frame != INTRA_FRAME;
     mbmi->mode = this_mode;
@@ -4496,12 +4515,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->second_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
 #endif
 
-    if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
-      continue;
-
-    // not yet supported or not superblocky
-    // TODO(rbultje): support intra coding
-    if (ref_frame == INTRA_FRAME || this_mode == SPLITMV)
+    // not superblocky
+    if (this_mode == I8X8_PRED || this_mode == B_PRED || this_mode == SPLITMV)
       continue;
 
     if (comp_pred) {
@@ -4522,7 +4537,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       mode_excluded = cm->comp_pred_mode == SINGLE_PREDICTION_ONLY;
     } else {
       mbmi->second_ref_frame = INTRA_FRAME;
-      mode_excluded = cm->comp_pred_mode == COMP_PREDICTION_ONLY;
+      if (ref_frame != INTRA_FRAME)
+        mode_excluded = cm->comp_pred_mode == COMP_PREDICTION_ONLY;
     }
 
     xd->pre.y_buffer = y_buffer[ref_frame];
@@ -4555,15 +4571,35 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
 
-    this_rd = handle_inter_mode(cpi, x, BLOCK_32X32,
-                                &saddone, near_sadidx, mdcounts, txfm_cache,
-                                &rate2, &distortion2, &skippable,
-                                &compmode_cost, &rate_y, &distortion_y,
-                                &rate_uv, &distortion_uv,
-                                &mode_excluded, &disable_skip, recon_yoffset,
-                                mode_index, frame_mv, frame_best_ref_mv);
-    if (this_rd == INT64_MAX)
-      continue;
+    if (ref_frame == INTRA_FRAME) {
+      vp9_build_intra_predictors_sby_s(xd);
+      super_block_yrd(cpi, x, &rate_y, &distortion_y,
+                      IF_RTCD(&cpi->rtcd), &skippable, txfm_cache);
+      if (mbmi->txfm_size == TX_4X4) {
+        rate_uv = rate_uv_4x4;
+        distortion_uv = dist_uv_4x4;
+        skippable = skippable && uv_skip_4x4;
+        mbmi->uv_mode = mode_uv_4x4;
+      } else {
+        rate_uv = rate_uv_8x8;
+        distortion_uv = dist_uv_8x8;
+        skippable = skippable && uv_skip_8x8;
+        mbmi->uv_mode = mode_uv_8x8;
+      }
+
+      rate2 = rate_y + x->mbmode_cost[cm->frame_type][mbmi->mode] + rate_uv;
+      distortion2 = distortion_y + distortion_uv;
+    } else {
+      this_rd = handle_inter_mode(cpi, x, BLOCK_32X32,
+                                  &saddone, near_sadidx, mdcounts, txfm_cache,
+                                  &rate2, &distortion2, &skippable,
+                                  &compmode_cost, &rate_y, &distortion_y,
+                                  &rate_uv, &distortion_uv,
+                                  &mode_excluded, &disable_skip, recon_yoffset,
+                                  mode_index, frame_mv, frame_best_ref_mv);
+      if (this_rd == INT64_MAX)
+        continue;
+    }
 
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
       rate2 += compmode_cost;
@@ -4638,13 +4674,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         // Note index of best mode so far
         best_mode_index = mode_index;
 
-#if 0
         if (this_mode <= B_PRED) {
-          xd->mode_info_context->mbmi.uv_mode = uv_intra_mode_8x8;
           /* required for left and above block mv */
-          xd->mode_info_context->mbmi.mv.as_int = 0;
+          mbmi->mv[0].as_int = 0;
         }
-#endif
 
         other_cost += ref_costs[xd->mode_info_context->mbmi.ref_frame];
 

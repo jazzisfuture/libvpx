@@ -290,6 +290,7 @@ struct vp9_token_struct vp9_bmode_encodings[VP9_NKF_BINTRAMODES];
 struct vp9_token_struct vp9_kf_bmode_encodings[VP9_KF_BINTRAMODES];
 struct vp9_token_struct vp9_ymode_encodings[VP9_YMODES];
 #if CONFIG_SUPERBLOCKS
+struct vp9_token_struct vp9_sb_ymode_encodings [VP9_I32X32_MODES];
 struct vp9_token_struct vp9_sb_kf_ymode_encodings [VP9_I32X32_MODES];
 #endif
 struct vp9_token_struct vp9_kf_ymode_encodings[VP9_YMODES];
@@ -309,6 +310,11 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
   vp9_tree_probs_from_distribution(VP9_YMODES, vp9_ymode_encodings,
                                    vp9_ymode_tree, x->fc.ymode_prob,
                                    bct, y_mode_cts, 256, 1);
+#if CONFIG_SUPERBLOCKS
+  vp9_tree_probs_from_distribution(VP9_I32X32_MODES, vp9_sb_ymode_encodings,
+                                   vp9_sb_ymode_tree, x->fc.sb_ymode_prob,
+                                   bct, y_mode_cts, 256, 1);
+#endif
   {
     int i;
     for (i = 0; i < 8; i++) {
@@ -318,7 +324,7 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
 #if CONFIG_SUPERBLOCKS
       vp9_tree_probs_from_distribution(VP9_I32X32_MODES,
                                        vp9_sb_kf_ymode_encodings,
-                                       vp9_sb_ymode_tree,
+                                       vp9_sb_kf_ymode_tree,
                                        x->sb_kf_ymode_prob[i], bct,
                                        kf_y_mode_cts[i], 256, 1);
 #endif
@@ -418,7 +424,8 @@ void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(vp9_ymode_encodings,   vp9_ymode_tree);
   vp9_tokens_from_tree(vp9_kf_ymode_encodings, vp9_kf_ymode_tree);
 #if CONFIG_SUPERBLOCKS
-  vp9_tokens_from_tree(vp9_sb_kf_ymode_encodings, vp9_sb_ymode_tree);
+  vp9_tokens_from_tree(vp9_sb_ymode_encodings, vp9_sb_ymode_tree);
+  vp9_tokens_from_tree(vp9_sb_kf_ymode_encodings, vp9_sb_kf_ymode_tree);
 #endif
   vp9_tokens_from_tree(vp9_uv_mode_encodings,  vp9_uv_mode_tree);
   vp9_tokens_from_tree(vp9_i8x8_mode_encodings,  vp9_i8x8_mode_tree);
@@ -542,6 +549,9 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   int i, t, count, factor;
   unsigned int branch_ct[32][2];
   vp9_prob ymode_probs[VP9_YMODES - 1];
+#if CONFIG_SUPERBLOCKS
+  vp9_prob sb_ymode_probs[VP9_I32X32_MODES - 1];
+#endif
   vp9_prob uvmode_probs[VP9_UV_MODES - 1];
   vp9_prob bmode_probs[VP9_NKF_BINTRAMODES - 1];
   vp9_prob i8x8_mode_probs[VP9_I8X8_MODES - 1];
@@ -597,6 +607,24 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     else if (prob > 255) cm->fc.ymode_prob[t] = 255;
     else cm->fc.ymode_prob[t] = prob;
   }
+#if CONFIG_SUPERBLOCKS
+  vp9_tree_probs_from_distribution(VP9_I32X32_MODES,
+                                   vp9_sb_ymode_encodings, vp9_sb_ymode_tree,
+                                   sb_ymode_probs, branch_ct,
+                                   cm->fc.sb_ymode_counts,
+                                   256, 1);
+  for (t = 0; t < VP9_I32X32_MODES - 1; ++t) {
+    int prob;
+    count = branch_ct[t][0] + branch_ct[t][1];
+    count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+    factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
+    prob = ((int)cm->fc.pre_sb_ymode_prob[t] * (256 - factor) +
+            (int)sb_ymode_probs[t] * factor + 128) >> 8;
+    if (prob <= 0) cm->fc.sb_ymode_prob[t] = 1;
+    else if (prob > 255) cm->fc.sb_ymode_prob[t] = 255;
+    else cm->fc.sb_ymode_prob[t] = prob;
+  }
+#endif
   for (i = 0; i < VP9_YMODES; ++i) {
     vp9_tree_probs_from_distribution(VP9_UV_MODES, vp9_uv_mode_encodings,
                                      vp9_uv_mode_tree, uvmode_probs, branch_ct,
