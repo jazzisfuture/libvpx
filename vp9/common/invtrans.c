@@ -8,8 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vp9/common/vp9_invtrans.h"
-#include "./vp9_rtcd.h"
+#include "invtrans.h"
 
 static void recon_dcblock(MACROBLOCKD *xd) {
   BLOCKD *b = &xd->block[24];
@@ -29,22 +28,23 @@ static void recon_dcblock_8x8(MACROBLOCKD *xd) {
   xd->block[12].dqcoeff[0] = b->diff[8];
 }
 
-void vp9_inverse_transform_b_4x4(MACROBLOCKD *xd, int block, int pitch) {
-  BLOCKD *b = &xd->block[block];
+void vp9_inverse_transform_b_4x4(const vp9_idct_rtcd_vtable_t *rtcd,
+                                 BLOCKD *b, int pitch) {
   if (b->eob <= 1)
-    xd->inv_xform4x4_1_x8(b->dqcoeff, b->diff, pitch);
+    IDCT_INVOKE(rtcd, idct1)(b->dqcoeff, b->diff, pitch);
   else
-    xd->inv_xform4x4_x8(b->dqcoeff, b->diff, pitch);
+    IDCT_INVOKE(rtcd, idct16)(b->dqcoeff, b->diff, pitch);
 }
 
-void vp9_inverse_transform_mby_4x4(MACROBLOCKD *xd) {
+void vp9_inverse_transform_mby_4x4(const vp9_idct_rtcd_vtable_t *rtcd,
+                                   MACROBLOCKD *xd) {
   int i;
   BLOCKD *blockd = xd->block;
   int has_2nd_order = get_2nd_order_usage(xd);
 
   if (has_2nd_order) {
     /* do 2nd order transform on the dc block */
-    vp9_short_inv_walsh4x4(blockd[24].dqcoeff, blockd[24].diff);
+    IDCT_INVOKE(rtcd, iwalsh16)(blockd[24].dqcoeff, blockd[24].diff);
     recon_dcblock(xd);
   }
 
@@ -54,41 +54,46 @@ void vp9_inverse_transform_mby_4x4(MACROBLOCKD *xd) {
       vp9_ihtllm_c(xd->block[i].dqcoeff, xd->block[i].diff, 32,
                    tx_type, 4);
     } else {
-      vp9_inverse_transform_b_4x4(xd, i, 32);
+      vp9_inverse_transform_b_4x4(rtcd, &blockd[i], 32);
     }
   }
 }
 
-void vp9_inverse_transform_mbuv_4x4(MACROBLOCKD *xd) {
+void vp9_inverse_transform_mbuv_4x4(const vp9_idct_rtcd_vtable_t *rtcd,
+                                    MACROBLOCKD *xd) {
   int i;
+  BLOCKD *blockd = xd->block;
 
   for (i = 16; i < 24; i++) {
-    vp9_inverse_transform_b_4x4(xd, i, 16);
+    vp9_inverse_transform_b_4x4(rtcd, &blockd[i], 16);
   }
 }
 
-void vp9_inverse_transform_mb_4x4(MACROBLOCKD *xd) {
-  vp9_inverse_transform_mby_4x4(xd);
-  vp9_inverse_transform_mbuv_4x4(xd);
+void vp9_inverse_transform_mb_4x4(const vp9_idct_rtcd_vtable_t *rtcd,
+                                  MACROBLOCKD *xd) {
+  vp9_inverse_transform_mby_4x4(rtcd, xd);
+  vp9_inverse_transform_mbuv_4x4(rtcd, xd);
 }
 
-void vp9_inverse_transform_b_8x8(short *input_dqcoeff, short *output_coeff,
+void vp9_inverse_transform_b_8x8(const vp9_idct_rtcd_vtable_t *rtcd,
+                                 short *input_dqcoeff, short *output_coeff,
                                  int pitch) {
   // int b,i;
   // if (b->eob > 1)
-  vp9_short_idct8x8(input_dqcoeff, output_coeff, pitch);
+  IDCT_INVOKE(rtcd, idct8)(input_dqcoeff, output_coeff, pitch);
   // else
   // IDCT_INVOKE(rtcd, idct8_1)(b->dqcoeff, b->diff, pitch);//pitch
 }
 
-void vp9_inverse_transform_mby_8x8(MACROBLOCKD *xd) {
+void vp9_inverse_transform_mby_8x8(const vp9_idct_rtcd_vtable_t *rtcd,
+                                   MACROBLOCKD *xd) {
   int i;
   BLOCKD *blockd = xd->block;
   int has_2nd_order = get_2nd_order_usage(xd);
 
   if (has_2nd_order) {
     // do 2nd order transform on the dc block
-    vp9_short_ihaar2x2(blockd[24].dqcoeff, blockd[24].diff, 8);
+    IDCT_INVOKE(rtcd, ihaar2)(blockd[24].dqcoeff, blockd[24].diff, 8);
     recon_dcblock_8x8(xd); // need to change for 8x8
   }
 
@@ -97,7 +102,7 @@ void vp9_inverse_transform_mby_8x8(MACROBLOCKD *xd) {
     if (tx_type != DCT_DCT) {
       vp9_ihtllm_c(xd->block[i].dqcoeff, xd->block[i].diff, 32, tx_type, 8);
     } else {
-      vp9_inverse_transform_b_8x8(&blockd[i].dqcoeff[0],
+      vp9_inverse_transform_b_8x8(rtcd, &blockd[i].dqcoeff[0],
                                   &blockd[i].diff[0], 32);
     }
   }
@@ -106,44 +111,49 @@ void vp9_inverse_transform_mby_8x8(MACROBLOCKD *xd) {
     if (tx_type != DCT_DCT) {
       vp9_ihtllm_c(xd->block[i + 2].dqcoeff, xd->block[i].diff, 32, tx_type, 8);
     } else {
-      vp9_inverse_transform_b_8x8(&blockd[i + 2].dqcoeff[0],
+      vp9_inverse_transform_b_8x8(rtcd, &blockd[i + 2].dqcoeff[0],
                                   &blockd[i].diff[0], 32);
     }
   }
 }
 
-void vp9_inverse_transform_mbuv_8x8(MACROBLOCKD *xd) {
+void vp9_inverse_transform_mbuv_8x8(const vp9_idct_rtcd_vtable_t *rtcd,
+                                    MACROBLOCKD *xd) {
   int i;
   BLOCKD *blockd = xd->block;
 
   for (i = 16; i < 24; i += 4) {
-    vp9_inverse_transform_b_8x8(&blockd[i].dqcoeff[0],
+    vp9_inverse_transform_b_8x8(rtcd, &blockd[i].dqcoeff[0],
                                 &blockd[i].diff[0], 16);
   }
 }
 
-void vp9_inverse_transform_mb_8x8(MACROBLOCKD *xd) {
-  vp9_inverse_transform_mby_8x8(xd);
-  vp9_inverse_transform_mbuv_8x8(xd);
+void vp9_inverse_transform_mb_8x8(const vp9_idct_rtcd_vtable_t *rtcd,
+                                  MACROBLOCKD *xd) {
+  vp9_inverse_transform_mby_8x8(rtcd, xd);
+  vp9_inverse_transform_mbuv_8x8(rtcd, xd);
 }
 
-void vp9_inverse_transform_b_16x16(short *input_dqcoeff,
+void vp9_inverse_transform_b_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
+                                   short *input_dqcoeff,
                                    short *output_coeff, int pitch) {
-  vp9_short_idct16x16(input_dqcoeff, output_coeff, pitch);
+  IDCT_INVOKE(rtcd, idct16x16)(input_dqcoeff, output_coeff, pitch);
 }
 
-void vp9_inverse_transform_mby_16x16(MACROBLOCKD *xd) {
+void vp9_inverse_transform_mby_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
+                                     MACROBLOCKD *xd) {
   BLOCKD *bd = &xd->block[0];
   TX_TYPE tx_type = get_tx_type_16x16(xd, bd);
   if (tx_type != DCT_DCT) {
     vp9_ihtllm_c(bd->dqcoeff, bd->diff, 32, tx_type, 16);
   } else {
-    vp9_inverse_transform_b_16x16(&xd->block[0].dqcoeff[0],
+    vp9_inverse_transform_b_16x16(rtcd, &xd->block[0].dqcoeff[0],
                                   &xd->block[0].diff[0], 32);
   }
 }
 
-void vp9_inverse_transform_mb_16x16(MACROBLOCKD *xd) {
-  vp9_inverse_transform_mby_16x16(xd);
-  vp9_inverse_transform_mbuv_8x8(xd);
+void vp9_inverse_transform_mb_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
+                                    MACROBLOCKD *xd) {
+  vp9_inverse_transform_mby_16x16(rtcd, xd);
+  vp9_inverse_transform_mbuv_8x8(rtcd, xd);
 }
