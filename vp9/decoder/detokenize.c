@@ -496,9 +496,12 @@ int vp9_decode_mb_tokens_8x8(VP9D_COMP* const pbi,
 
   int bufthred = (xd->mode_info_context->mbmi.mode == I8X8_PRED ||
                   xd->mode_info_context->mbmi.mode == SPLITMV) ? 16 : 24;
-  if (xd->mode_info_context->mbmi.mode != B_PRED &&
-      xd->mode_info_context->mbmi.mode != SPLITMV &&
-      xd->mode_info_context->mbmi.mode != I8X8_PRED) {
+  int has_2nd_order = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                       xd->mode_info_context->mbmi.mode != SPLITMV &&
+                       xd->mode_info_context->mbmi.mode != I8X8_PRED);
+  if (has_2nd_order && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+      has_2nd_order = 0;
+  if (has_2nd_order) {
     ENTROPY_CONTEXT *const a = A + vp9_block2above_8x8[24];
     ENTROPY_CONTEXT *const l = L + vp9_block2left_8x8[24];
     const int *const scan = vp9_default_zig_zag1d;
@@ -615,13 +618,13 @@ int vp9_decode_mb_tokens(VP9D_COMP* const dx,
                          MACROBLOCKD* const xd,
                          BOOL_DECODER* const bc) {
   int i, type, eobtotal = 0;
-
-  if (xd->mode_info_context->mbmi.mode != B_PRED &&
-      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
-      xd->mode_info_context->mbmi.mode != SPLITMV) {
-
+  int has_2nd_order = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                       xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                       xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_2nd_order && get_tx_type(xd, &xd->block[0]))
+    has_2nd_order = 0;
+  if (has_2nd_order) {
     eobtotal += vp9_decode_coefs_4x4(dx, xd, bc, PLANE_TYPE_Y2, 24) - 16;
-
     type = PLANE_TYPE_Y_NO_DC;
   } else {
     type = PLANE_TYPE_Y_WITH_DC;

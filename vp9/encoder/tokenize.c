@@ -203,6 +203,10 @@ static void tokenize_b(VP9_COMP *cpi,
     t->context_tree = probs[type][band][pt];
     t->skip_eob_node = (pt == 0) && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                      (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    if (vp9_coef_encodings[t->Token].Len - t->skip_eob_node <= 0) {
+      printf("mode %d tx-type %d tx-size %d plane-type %d\n",
+             xd->mode_info_context->mbmi.mode, tx_type, tx_size, type);
+    }
     assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][band][pt][token];
@@ -312,6 +316,8 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
                   && xd->mode_info_context->mbmi.mode != B_PRED
                   && xd->mode_info_context->mbmi.mode != I8X8_PRED
                   && xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   switch (tx_size) {
     case TX_16X16:
@@ -733,9 +739,11 @@ static void stuff_mb_8x8(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
   PLANE_TYPE plane_type;
   int b;
-  const int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
-                            xd->mode_info_context->mbmi.mode != I8X8_PRED &&
-                            xd->mode_info_context->mbmi.mode != SPLITMV);
+  int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                      xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   if (has_y2_block) {
     stuff_b(cpi, xd, xd->block + 24, t, PLANE_TYPE_Y2,
@@ -787,9 +795,11 @@ static void stuff_mb_4x4(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
   int b;
   PLANE_TYPE plane_type;
-  const int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
-                            xd->mode_info_context->mbmi.mode != I8X8_PRED &&
-                            xd->mode_info_context->mbmi.mode != SPLITMV);
+  int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                      xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   if (has_y2_block) {
     stuff_b(cpi, xd, xd->block + 24, t, PLANE_TYPE_Y2, A + vp9_block2above[24],

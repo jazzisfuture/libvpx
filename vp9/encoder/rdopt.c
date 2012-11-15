@@ -810,12 +810,7 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
   BLOCK  *be = &mb->block[0];
   TX_TYPE tx_type;
 
-  tx_type = get_tx_type_16x16(xd, b);
-  if (tx_type != DCT_DCT) {
-    vp9_fht(be->src_diff, 32, be->coeff, tx_type, 16);
-  } else
-    vp9_transform_mby_16x16(mb);
-
+  vp9_transform_mby_16x16(mb);
   vp9_quantize_mby_16x16(mb);
   // TODO(jingning) is it possible to quickly determine whether to force
   //                trailing coefficients to be zero, instead of running trellis

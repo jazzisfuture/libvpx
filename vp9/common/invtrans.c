@@ -82,20 +82,32 @@ void vp9_inverse_transform_mby_8x8(const vp9_idct_rtcd_vtable_t *rtcd,
                                    MACROBLOCKD *xd) {
   int i;
   BLOCKD *blockd = xd->block;
+  int has_2nd_order = (xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (get_tx_type(xd, blockd) != DCT_DCT) has_2nd_order = 0;
 
-  if (xd->mode_info_context->mbmi.mode != SPLITMV) {
+  if (has_2nd_order) {
     // do 2nd order transform on the dc block
     IDCT_INVOKE(rtcd, ihaar2)(blockd[24].dqcoeff, blockd[24].diff, 8);
     recon_dcblock_8x8(xd); // need to change for 8x8
   }
 
   for (i = 0; i < 9; i += 8) {
-    vp9_inverse_transform_b_8x8(rtcd, &blockd[i].dqcoeff[0],
-                                &blockd[i].diff[0], 32);
+    TX_TYPE tx_type = get_tx_type_8x8(xd, &xd->block[i]);
+    if (tx_type != DCT_DCT) {
+      vp9_ihtllm_c(xd->block[i].dqcoeff, xd->block[i].diff, 32, tx_type, 8);
+    } else {
+      vp9_inverse_transform_b_8x8(rtcd, &blockd[i].dqcoeff[0],
+                                  &blockd[i].diff[0], 32);
+    }
   }
   for (i = 2; i < 11; i += 8) {
-    vp9_inverse_transform_b_8x8(rtcd, &blockd[i + 2].dqcoeff[0],
-                                &blockd[i].diff[0], 32);
+    TX_TYPE tx_type = get_tx_type_8x8(xd, &xd->block[i]);
+    if (tx_type != DCT_DCT) {
+      vp9_ihtllm_c(xd->block[i + 2].dqcoeff, xd->block[i].diff, 32, tx_type, 8);
+    } else {
+      vp9_inverse_transform_b_8x8(rtcd, &blockd[i + 2].dqcoeff[0],
+                                  &blockd[i].diff[0], 32);
+    }
   }
 }
 
@@ -124,8 +136,14 @@ void vp9_inverse_transform_b_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
 
 void vp9_inverse_transform_mby_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
                                      MACROBLOCKD *xd) {
-  vp9_inverse_transform_b_16x16(rtcd, &xd->block[0].dqcoeff[0],
-                                &xd->block[0].diff[0], 32);
+  BLOCKD *bd = &xd->block[0];
+  TX_TYPE tx_type = get_tx_type_16x16(xd, bd);
+  if (tx_type != DCT_DCT) {
+    vp9_ihtllm_c(bd->dqcoeff, bd->diff, 32, tx_type, 16);
+  } else {
+    vp9_inverse_transform_b_16x16(rtcd, &xd->block[0].dqcoeff[0],
+                                  &xd->block[0].diff[0], 32);
+  }
 }
 
 void vp9_inverse_transform_mb_16x16(const vp9_idct_rtcd_vtable_t *rtcd,

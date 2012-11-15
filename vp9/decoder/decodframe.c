@@ -458,8 +458,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
       if (xd->mode_info_context->mbmi.txfm_size == TX_8X8) {
         tx_type = get_tx_type(xd, &xd->block[idx]);
         if (tx_type != DCT_DCT) {
-          vp9_ht_dequant_idct_add_8x8_c(tx_type,
-                                        q, dq, pre, dst, 16, stride);
+          vp9_ht_dequant_idct_add_8x8_c(tx_type, q, dq, pre, dst, 16, stride);
         } else {
           vp9_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
         }
@@ -468,7 +467,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
         for (j = 0; j < 4; j++) {
           b = &xd->block[ib + iblock[j]];
           vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
-                                 *(b->base_dst) + b->dst, 16, b->dst_stride);
+                               *(b->base_dst) + b->dst, 16, b->dst_stride);
         }
       }
       b = &xd->block[16 + i];
@@ -546,23 +545,57 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
                                         xd->dst.y_buffer, 16, xd->dst.y_stride);
       } else {
         vp9_dequant_idct_add_16x16(xd->qcoeff, xd->block[0].dequant,
-                                     xd->predictor, xd->dst.y_buffer,
-                                     16, xd->dst.y_stride, xd->eobs[0]);
+                                   xd->predictor, xd->dst.y_buffer,
+                                   16, xd->dst.y_stride, xd->eobs[0]);
       }
     } else if (tx_size == TX_8X8) {
-      vp9_dequantize_b_2x2(b);
-      IDCT_INVOKE(RTCD_VTABLE(idct), ihaar2)(&b->dqcoeff[0], b->diff, 8);
-      ((int *)b->qcoeff)[0] = 0;  // 2nd order block are set to 0 after idct
-      ((int *)b->qcoeff)[1] = 0;
-      ((int *)b->qcoeff)[2] = 0;
-      ((int *)b->qcoeff)[3] = 0;
-      ((int *)b->qcoeff)[4] = 0;
-      ((int *)b->qcoeff)[5] = 0;
-      ((int *)b->qcoeff)[6] = 0;
-      ((int *)b->qcoeff)[7] = 0;
+      tx_type = get_tx_type(xd, &xd->block[0]);
+      if (tx_type != DCT_DCT) {
+        int i;
+        for (i = 0; i < 4; i++) {
+          int ib = vp9_i8x8_block[i];
+          const int iblock[4] = {0, 1, 4, 5};
+          int idx = (ib & 0x02) ? (ib + 2) : ib;
+
+          short *q  = xd->block[idx].qcoeff;
+          short *dq = xd->block[0].dequant;
+          unsigned char *pre = xd->block[ib].predictor;
+          unsigned char *dst = *(xd->block[ib].base_dst) + xd->block[ib].dst;
+          int stride = xd->dst.y_stride;
+          BLOCKD *b = &xd->block[ib];
+          tx_type = get_tx_type(xd, &xd->block[idx]);
+          if (tx_type != DCT_DCT) {
+            vp9_ht_dequant_idct_add_8x8_c(tx_type, q, dq, pre, dst, 16, stride);
+          } else {
+            vp9_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride);
+          }
+          b = &xd->block[16 + i];
+          pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
+                        *(b->base_dst) + b->dst, 8, b->dst_stride);
+          b = &xd->block[20 + i];
+          pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
+                        *(b->base_dst) + b->dst, 8, b->dst_stride);
+        }
+      } else {
+        vp9_dequantize_b_2x2(b);
+        IDCT_INVOKE(RTCD_VTABLE(idct), ihaar2)(&b->dqcoeff[0], b->diff, 8);
+        ((int *)b->qcoeff)[0] = 0;  // 2nd order block are set to 0 after idct
+        ((int *)b->qcoeff)[1] = 0;
+        ((int *)b->qcoeff)[2] = 0;
+        ((int *)b->qcoeff)[3] = 0;
+        ((int *)b->qcoeff)[4] = 0;
+        ((int *)b->qcoeff)[5] = 0;
+        ((int *)b->qcoeff)[6] = 0;
+        ((int *)b->qcoeff)[7] = 0;
         vp9_dequant_dc_idct_add_y_block_8x8(xd->qcoeff,
-          xd->block[0].dequant, xd->predictor, xd->dst.y_buffer,
-          xd->dst.y_stride, xd->eobs, xd->block[24].diff, xd);
+                                            xd->block[0].dequant,
+                                            xd->predictor,
+                                            xd->dst.y_buffer,
+                                            xd->dst.y_stride,
+                                            xd->eobs,
+                                            xd->block[24].diff,
+                                            xd);
+      }
     } else {
       vp9_dequantize_b(b);
       if (xd->eobs[24] > 1) {
