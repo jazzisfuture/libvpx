@@ -670,9 +670,10 @@ static int rdcost_mby_4x4(MACROBLOCK *mb, int backup) {
                         ta + vp9_block2above[b], tl + vp9_block2left[b],
                         TX_4X4);
 
-  cost += cost_coeffs(mb, xd->block + 24, PLANE_TYPE_Y2,
-                      ta + vp9_block2above[24], tl + vp9_block2left[24],
-                      TX_4X4);
+  // if (1) //get_2nd_order_usage(xd))
+    cost += cost_coeffs(mb, xd->block + 24, PLANE_TYPE_Y2,
+                        ta + vp9_block2above[24], tl + vp9_block2left[24],
+                        TX_4X4);
 
   return cost;
 }
@@ -690,6 +691,7 @@ static void macro_block_yrd_4x4(MACROBLOCK *mb,
   BLOCK *beptr;
   int d;
 
+  xd->mode_info_context->mbmi.txfm_size = TX_4X4;
   // Fdct and building the 2nd order block
   for (beptr = mb->block; beptr < mb->block + 16; beptr += 2) {
     mb->vp9_short_fdct8x4(beptr->src_diff, beptr->coeff, 32);
@@ -743,8 +745,9 @@ static int rdcost_mby_8x8(MACROBLOCK *mb, int backup) {
                         ta + vp9_block2above_8x8[b], tl + vp9_block2left_8x8[b],
                         TX_8X8);
 
-  cost += cost_coeffs_2x2(mb, xd->block + 24, PLANE_TYPE_Y2,
-                          ta + vp9_block2above[24], tl + vp9_block2left[24]);
+  // if (1) //get_2nd_order_usage(xd))
+    cost += cost_coeffs_2x2(mb, xd->block + 24, PLANE_TYPE_Y2,
+                            ta + vp9_block2above[24], tl + vp9_block2left[24]);
   return cost;
 }
 
@@ -758,6 +761,7 @@ static void macro_block_yrd_8x8(MACROBLOCK *mb,
   BLOCKD *const x_y2  = xd->block + 24;
   int d;
 
+  xd->mode_info_context->mbmi.txfm_size = TX_8X8;
   vp9_transform_mby_8x8(mb);
   vp9_quantize_mby_8x8(mb);
 
@@ -810,12 +814,8 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
   BLOCK  *be = &mb->block[0];
   TX_TYPE tx_type;
 
-  tx_type = get_tx_type_16x16(xd, b);
-  if (tx_type != DCT_DCT) {
-    vp9_fht(be->src_diff, 32, be->coeff, tx_type, 16);
-  } else
-    vp9_transform_mby_16x16(mb);
-
+  xd->mode_info_context->mbmi.txfm_size = TX_16X16;
+  vp9_transform_mby_16x16(mb);
   vp9_quantize_mby_16x16(mb);
   // TODO(jingning) is it possible to quickly determine whether to force
   //                trailing coefficients to be zero, instead of running trellis
@@ -1387,7 +1387,7 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 #endif
   MACROBLOCKD *xd = &x->e_mbd;
   int64_t best_rd = INT64_MAX;
-  int distortion, rate = 0;
+  int distortion = 0, rate = 0;
   BLOCK  *be = x->block + ib;
   BLOCKD *b = xd->block + ib;
   ENTROPY_CONTEXT ta0, ta1, besta0 = 0, besta1 = 0;
@@ -1410,7 +1410,7 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     for (mode2 = DC_PRED - 1; mode2 != TM_PRED + 1; mode2++) {
 #endif
       int64_t this_rd;
-      int rate_t;
+      int rate_t = 0;
 
       // FIXME rate for compound mode and second intrapred mode
       rate = mode_costs[mode];
@@ -1450,35 +1450,32 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         ta1 = ta0;
         tl1 = tl0;
       } else {
-        x->vp9_short_fdct8x4(be->src_diff, be->coeff, 32);
-        x->vp9_short_fdct8x4((be + 4)->src_diff, (be + 4)->coeff, 32);
-
-        x->quantize_b_4x4_pair(x->block + ib, x->block + ib + 1,
-                               xd->block + ib, xd->block + ib + 1);
-        x->quantize_b_4x4_pair(x->block + ib + 4, x->block + ib + 5,
-                               xd->block + ib + 4, xd->block + ib + 5);
-
-        distortion = vp9_block_error_c((x->block + ib)->coeff,
-                                       (xd->block + ib)->dqcoeff, 16);
-        distortion += vp9_block_error_c((x->block + ib + 1)->coeff,
-                                        (xd->block + ib + 1)->dqcoeff, 16);
-        distortion += vp9_block_error_c((x->block + ib + 4)->coeff,
-                                        (xd->block + ib + 4)->dqcoeff, 16);
-        distortion += vp9_block_error_c((x->block + ib + 5)->coeff,
-                                        (xd->block + ib + 5)->dqcoeff, 16);
-
+        static const int iblock[4] = {0, 1, 4, 5};
+        TX_TYPE tx_type;
+        int i;
         ta0 = a[vp9_block2above[ib]];
         ta1 = a[vp9_block2above[ib + 1]];
         tl0 = l[vp9_block2left[ib]];
         tl1 = l[vp9_block2left[ib + 4]];
-        rate_t = cost_coeffs(x, xd->block + ib, PLANE_TYPE_Y_WITH_DC,
-                             &ta0, &tl0, TX_4X4);
-        rate_t += cost_coeffs(x, xd->block + ib + 1, PLANE_TYPE_Y_WITH_DC,
-                              &ta1, &tl0, TX_4X4);
-        rate_t += cost_coeffs(x, xd->block + ib + 4, PLANE_TYPE_Y_WITH_DC,
-                              &ta0, &tl1, TX_4X4);
-        rate_t += cost_coeffs(x, xd->block + ib + 5, PLANE_TYPE_Y_WITH_DC,
-                              &ta1, &tl1, TX_4X4);
+        distortion = 0;
+        rate_t = 0;
+        for (i = 0; i < 4; ++i) {
+          b = &xd->block[ib + iblock[i]];
+          be = &x->block[ib + iblock[i]];
+          tx_type = get_tx_type_4x4(xd, b);
+          if (tx_type != DCT_DCT) {
+            vp9_fht_c(be->src_diff, 32, be->coeff, tx_type, 4);
+            vp9_ht_quantize_b_4x4(be, b, tx_type);
+          } else {
+            x->vp9_short_fdct4x4(be->src_diff, be->coeff, 32);
+            x->quantize_b_4x4(be, b);
+          }
+          distortion += vp9_block_error_c(be->coeff, b->dqcoeff, 16);
+          rate_t += cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC,
+                                //i&1 ? &ta1 : &ta0, i&2 ? &tl1 : &tl0,
+                                &ta0, &tl0,
+                                TX_4X4);
+        }
         rate += rate_t;
       }
 
@@ -4638,6 +4635,15 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
+    if (!(ref_frame == INTRA_FRAME ||
+          (cpi->ref_frame_flags & flag_list[ref_frame]))) {
+      /*
+          printf("%d: %d %d %d\n", mode_index, ref_frame,
+                                   flag_list[ref_frame],
+                                  cpi->ref_frame_flags);
+                                  */
+          continue;
+    }
     assert(ref_frame == INTRA_FRAME ||
            (cpi->ref_frame_flags & flag_list[ref_frame]));
     mbmi->ref_frame = ref_frame;

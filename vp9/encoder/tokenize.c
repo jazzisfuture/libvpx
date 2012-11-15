@@ -203,6 +203,11 @@ static void tokenize_b(VP9_COMP *cpi,
     t->context_tree = probs[type][band][pt];
     t->skip_eob_node = (pt == 0) && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                      (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    if (vp9_coef_encodings[t->Token].Len - t->skip_eob_node <= 0) {
+      printf("mode %d tx-type %d tx-size %d plane-type %d eob %d c %d [%d %d]\n",
+             xd->mode_info_context->mbmi.mode, tx_type, tx_size, type, eob, c,
+             vp9_coef_encodings[t->Token].Len, t->skip_eob_node);
+    }
     assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][band][pt][token];
@@ -312,6 +317,8 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
                   && xd->mode_info_context->mbmi.mode != B_PRED
                   && xd->mode_info_context->mbmi.mode != I8X8_PRED
                   && xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   switch (tx_size) {
     case TX_16X16:
@@ -733,9 +740,11 @@ static void stuff_mb_8x8(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
   PLANE_TYPE plane_type;
   int b;
-  const int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
-                            xd->mode_info_context->mbmi.mode != I8X8_PRED &&
-                            xd->mode_info_context->mbmi.mode != SPLITMV);
+  int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                      xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   if (has_y2_block) {
     stuff_b(cpi, xd, xd->block + 24, t, PLANE_TYPE_Y2,
@@ -787,9 +796,11 @@ static void stuff_mb_4x4(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
   int b;
   PLANE_TYPE plane_type;
-  const int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
-                            xd->mode_info_context->mbmi.mode != I8X8_PRED &&
-                            xd->mode_info_context->mbmi.mode != SPLITMV);
+  int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                      xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
 
   if (has_y2_block) {
     stuff_b(cpi, xd, xd->block + 24, t, PLANE_TYPE_Y2, A + vp9_block2above[24],
@@ -812,10 +823,26 @@ static void stuff_mb_8x8_4x4uv(VP9_COMP *cpi, MACROBLOCKD *xd,
                                TOKENEXTRA **t, int dry_run) {
   ENTROPY_CONTEXT *A = (ENTROPY_CONTEXT *)xd->above_context;
   ENTROPY_CONTEXT *L = (ENTROPY_CONTEXT *)xd->left_context;
+  PLANE_TYPE plane_type;
   int b;
 
+  int has_y2_block = (xd->mode_info_context->mbmi.mode != B_PRED &&
+                      xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+                      xd->mode_info_context->mbmi.mode != SPLITMV);
+  if (has_y2_block && get_tx_type_8x8(xd, &xd->block[0]) != DCT_DCT)
+    has_y2_block = 0;
+
+  if (has_y2_block) {
+    stuff_b(cpi, xd, xd->block + 24, t, PLANE_TYPE_Y2,
+            A + vp9_block2above_8x8[24], L + vp9_block2left_8x8[24],
+            TX_8X8, dry_run);
+    plane_type = PLANE_TYPE_Y_NO_DC;
+  } else {
+    plane_type = PLANE_TYPE_Y_WITH_DC;
+  }
+
   for (b = 0; b < 16; b += 4) {
-    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_Y_WITH_DC,
+    stuff_b(cpi, xd, xd->block + b, t, plane_type,
             A + vp9_block2above_8x8[b], L + vp9_block2left_8x8[b],
             TX_8X8, dry_run);
     A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]];
@@ -851,11 +878,13 @@ void vp9_stuff_mb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
 
 void vp9_fix_contexts(MACROBLOCKD *xd) {
   /* Clear entropy contexts for Y2 blocks */
-  if ((xd->mode_info_context->mbmi.mode != B_PRED
-      && xd->mode_info_context->mbmi.mode != I8X8_PRED
-      && xd->mode_info_context->mbmi.mode != SPLITMV)
-      || xd->mode_info_context->mbmi.txfm_size == TX_16X16
-      ) {
+  int has_2nd_order = ((xd->mode_info_context->mbmi.mode != B_PRED
+                        && xd->mode_info_context->mbmi.mode != I8X8_PRED
+                        && xd->mode_info_context->mbmi.mode != SPLITMV)
+                        //&& get_tx_type(xd, &xd->block[0]) == DCT_DCT)
+                       || xd->mode_info_context->mbmi.txfm_size == TX_16X16);
+
+  if (has_2nd_order) {
     vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
     vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
   } else {

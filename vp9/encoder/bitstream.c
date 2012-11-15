@@ -939,6 +939,11 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
 #endif
             write_ymode(bc, mode, pc->fc.ymode_prob);
           }
+          /*
+          if (!cpi->dummy_packing && mode < I8X8_PRED &&
+              xd->mode_info_context->mbmi.txfm_size == TX_8X8)
+            printf("$$$$$$$ %d %d %d\n", mode, pc->txfm_mode, skip_coeff);
+            */
 
           if (mode == B_PRED) {
             int j = 0;
