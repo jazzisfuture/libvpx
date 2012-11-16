@@ -11,11 +11,11 @@
 #include "vpx_rtcd.h"
 #include "vp9/common/idct.h"
 
-void vp9_dequant_dc_idct_add_y_block_c(short *q, short *dq,
+void vp9_dequant_dc_idct_add_y_block_c(short *q, const short *dq,
                                        unsigned char *pre,
                                        unsigned char *dst,
                                        int stride, unsigned short *eobs,
-                                       short *dc) {
+                                       const short *dc) {
   int i, j;
 
   for (i = 0; i < 4; i++) {
@@ -37,11 +37,12 @@ void vp9_dequant_dc_idct_add_y_block_c(short *q, short *dq,
 }
 
 #if CONFIG_SUPERBLOCKS
-void vp9_dequant_dc_idct_add_y_block_4x4_inplace_c(short *q, short *dq,
+void vp9_dequant_dc_idct_add_y_block_4x4_inplace_c(short *q, const short *dq,
                                                    unsigned char *dst,
                                                    int stride,
                                                    unsigned short *eobs,
-                                                   short *dc, MACROBLOCKD *xd) {
+                                                   const short *dc,
+                                                   MACROBLOCKD *xd) {
   int i, j;
 
   for (i = 0; i < 4; i++) {
@@ -61,7 +62,7 @@ void vp9_dequant_dc_idct_add_y_block_4x4_inplace_c(short *q, short *dq,
 }
 #endif
 
-void vp9_dequant_idct_add_y_block_c(short *q, short *dq,
+void vp9_dequant_idct_add_y_block_c(short *q, const short *dq,
                                     unsigned char *pre,
                                     unsigned char *dst,
                                     int stride, unsigned short *eobs) {
@@ -86,7 +87,7 @@ void vp9_dequant_idct_add_y_block_c(short *q, short *dq,
   }
 }
 
-void vp9_dequant_idct_add_uv_block_c(short *q, short *dq, unsigned char *pre,
+void vp9_dequant_idct_add_uv_block_c(short *q, const short *dq, unsigned char *pre,
                                      unsigned char *dstu, unsigned char *dstv,
                                      int stride, unsigned short *eobs) {
   int i, j;
@@ -129,7 +130,7 @@ void vp9_dequant_idct_add_uv_block_c(short *q, short *dq, unsigned char *pre,
 }
 
 #if CONFIG_SUPERBLOCKS
-void vp9_dequant_idct_add_uv_block_4x4_inplace_c(short *q, short *dq,
+void vp9_dequant_idct_add_uv_block_4x4_inplace_c(short *q, const short *dq,
                                                  unsigned char *dstu,
                                                  unsigned char *dstv,
                                                  int stride,
@@ -171,11 +172,11 @@ void vp9_dequant_idct_add_uv_block_4x4_inplace_c(short *q, short *dq,
 }
 #endif
 
-void vp9_dequant_dc_idct_add_y_block_8x8_c(short *q, short *dq,
+void vp9_dequant_dc_idct_add_y_block_8x8_c(short *q, const short *dq,
                                            unsigned char *pre,
                                            unsigned char *dst,
                                            int stride, unsigned short *eobs,
-                                           short *dc,
+                                           const short *dc,
                                            MACROBLOCKD *xd) {
   q[0] = dc[0];
   vp9_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride, 1, xd->eobs[0]);
@@ -195,11 +196,12 @@ void vp9_dequant_dc_idct_add_y_block_8x8_c(short *q, short *dq,
 }
 
 #if CONFIG_SUPERBLOCKS
-void vp9_dequant_dc_idct_add_y_block_8x8_inplace_c(short *q, short *dq,
+void vp9_dequant_dc_idct_add_y_block_8x8_inplace_c(short *q, const short *dq,
                                                    unsigned char *dst,
                                                    int stride,
                                                    unsigned short *eobs,
-                                                   short *dc, MACROBLOCKD *xd) {
+                                                   const short *dc,
+                                                   MACROBLOCKD *xd) {
   q[0] = dc[0];
   vp9_dequant_idct_add_8x8_c(q, dq, dst, dst, stride, stride, 1, xd->eobs[0]);
 
@@ -219,7 +221,7 @@ void vp9_dequant_dc_idct_add_y_block_8x8_inplace_c(short *q, short *dq,
 }
 #endif
 
-void vp9_dequant_idct_add_y_block_8x8_c(short *q, short *dq,
+void vp9_dequant_idct_add_y_block_8x8_c(short *q, const short *dq,
                                         unsigned char *pre,
                                         unsigned char *dst,
                                         int stride, unsigned short *eobs,
@@ -237,7 +239,7 @@ void vp9_dequant_idct_add_y_block_8x8_c(short *q, short *dq,
                              xd->eobs[12]);
 }
 
-void vp9_dequant_idct_add_uv_block_8x8_c(short *q, short *dq,
+void vp9_dequant_idct_add_uv_block_8x8_c(short *q, const short *dq,
                                          unsigned char *pre,
                                          unsigned char *dstu,
                                          unsigned char *dstv,
@@ -252,7 +254,7 @@ void vp9_dequant_idct_add_uv_block_8x8_c(short *q, short *dq,
 }
 
 #if CONFIG_SUPERBLOCKS
-void vp9_dequant_idct_add_uv_block_8x8_inplace_c(short *q, short *dq,
+void vp9_dequant_idct_add_uv_block_8x8_inplace_c(short *q, const short *dq,
                                                  unsigned char *dstu,
                                                  unsigned char *dstv,
                                                  int stride,
@@ -268,12 +270,12 @@ void vp9_dequant_idct_add_uv_block_8x8_inplace_c(short *q, short *dq,
 #endif
 
 #if CONFIG_LOSSLESS
-void vp9_dequant_dc_idct_add_y_block_lossless_c(short *q, short *dq,
+void vp9_dequant_dc_idct_add_y_block_lossless_c(short *q, const short *dq,
                                                 unsigned char *pre,
                                                 unsigned char *dst,
                                                 int stride,
                                                 unsigned short *eobs,
-                                                short *dc) {
+                                                const short *dc) {
   int i, j;
 
   for (i = 0; i < 4; i++) {
@@ -294,7 +296,7 @@ void vp9_dequant_dc_idct_add_y_block_lossless_c(short *q, short *dq,
   }
 }
 
-void vp9_dequant_idct_add_y_block_lossless_c(short *q, short *dq,
+void vp9_dequant_idct_add_y_block_lossless_c(short *q, const short *dq,
                                              unsigned char *pre,
                                              unsigned char *dst,
                                              int stride, unsigned short *eobs) {
@@ -319,7 +321,7 @@ void vp9_dequant_idct_add_y_block_lossless_c(short *q, short *dq,
   }
 }
 
-void vp9_dequant_idct_add_uv_block_lossless_c(short *q, short *dq,
+void vp9_dequant_idct_add_uv_block_lossless_c(short *q, const short *dq,
                                               unsigned char *pre,
                                               unsigned char *dstu,
                                               unsigned char *dstv,
