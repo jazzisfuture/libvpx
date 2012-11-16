@@ -13,9 +13,13 @@ API_EXPORTS += exports
 
 API_SRCS-$(CONFIG_VP8_ENCODER) += vp8.h
 API_SRCS-$(CONFIG_VP8_ENCODER) += vp8cx.h
+API_DOC_SRCS-$(CONFIG_VP8_ENCODER) += vp8.h
+API_DOC_SRCS-$(CONFIG_VP8_ENCODER) += vp8cx.h
 
 API_SRCS-$(CONFIG_VP8_DECODER) += vp8.h
 API_SRCS-$(CONFIG_VP8_DECODER) += vp8dx.h
+API_DOC_SRCS-$(CONFIG_VP8_DECODER) += vp8.h
+API_DOC_SRCS-$(CONFIG_VP8_DECODER) += vp8dx.h
 
 API_SRCS-yes                += src/vpx_decoder.c
 API_SRCS-yes                += vpx_decoder.h
