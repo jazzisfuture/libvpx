@@ -1957,10 +1957,16 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
 
   {
     if (pc->txfm_mode == TX_MODE_SELECT) {
-      pc->prob_tx[0] = get_prob(cpi->txfm_count[0] + cpi->txfm_count_8x8p[0],
-                                cpi->txfm_count[0] + cpi->txfm_count[1] + cpi->txfm_count[2] +
-                                cpi->txfm_count_8x8p[0] + cpi->txfm_count_8x8p[1]);
-      pc->prob_tx[1] = get_prob(cpi->txfm_count[1], cpi->txfm_count[1] + cpi->txfm_count[2]);
+      pc->prob_tx[0] = get_prob(cpi->txfm_count_16x16p[0] +
+                                cpi->txfm_count_8x8p[0],
+                                cpi->txfm_count_16x16p[0] +
+                                cpi->txfm_count_16x16p[1] +
+                                cpi->txfm_count_16x16p[2] +
+                                cpi->txfm_count_8x8p[0] +
+                                cpi->txfm_count_8x8p[1]);
+      pc->prob_tx[1] = get_prob(cpi->txfm_count_16x16p[1],
+                                cpi->txfm_count_16x16p[1] +
+                                cpi->txfm_count_16x16p[2]);
     } else {
       pc->prob_tx[0] = 128;
       pc->prob_tx[1] = 128;

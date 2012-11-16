@@ -133,3 +133,10 @@ void vp9_inverse_transform_mb_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
   vp9_inverse_transform_mby_16x16(rtcd, xd);
   vp9_inverse_transform_mbuv_8x8(rtcd, xd);
 }
+
+#if CONFIG_TX32X32
+void vp9_inverse_transform_sby_32x32(SUPERBLOCKD *xd_sb) {
+  // TODO(debargha): actual idct
+  abort();
+}
+#endif
