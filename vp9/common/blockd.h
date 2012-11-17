@@ -128,7 +128,13 @@ typedef enum {
   TX_4X4,                      // 4x4 dct transform
   TX_8X8,                      // 8x8 dct transform
   TX_16X16,                    // 16x16 dct transform
-  TX_SIZE_MAX                  // Number of different transforms available
+  TX_SIZE_MAX_MB,              // Number of transforms available to MBs
+#if CONFIG_TX32X32
+  TX_32X32 = TX_SIZE_MAX_MB,   // 32x32 dct transform
+  TX_SIZE_MAX_SB,              // Number of transforms available to SBs
+#else
+  TX_SIZE_MAX_SB = TX_SIZE_MAX_MB,
+#endif
 } TX_SIZE;
 
 typedef enum {
@@ -296,12 +302,23 @@ typedef struct blockd {
   union b_mode_info bmi;
 } BLOCKD;
 
+typedef struct superblockd {
+  /* 32x32 Y and 16x16 U/V. No 2nd order transform yet. */
+  DECLARE_ALIGNED(16, short, diff[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, unsigned char, predictor[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, short, qcoeff[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, short, dqcoeff[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, unsigned short, eobs[3]);
+} SUPERBLOCKD;
+
 typedef struct macroblockd {
   DECLARE_ALIGNED(16, short, diff[400]);      /* from idct diff */
   DECLARE_ALIGNED(16, unsigned char,  predictor[384]);
   DECLARE_ALIGNED(16, short, qcoeff[400]);
   DECLARE_ALIGNED(16, short, dqcoeff[400]);
   DECLARE_ALIGNED(16, unsigned short,  eobs[25]);
+
+  SUPERBLOCKD sb_coeff_data;
 
   /* 16 Y blocks, 4 U, 4 V, 1 DC 2nd order block, each with 16 entries. */
   BLOCKD block[25];
