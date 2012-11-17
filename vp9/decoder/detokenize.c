@@ -246,7 +246,6 @@ SKIP_START:
   return c;
 }
 
-
 int get_eob(MACROBLOCKD* const xd, int segment_id, int eob_max) {
   int active = vp9_segfeature_active(xd, segment_id, SEG_LVL_EOB);
   int eob = vp9_get_segdata(xd, segment_id, SEG_LVL_EOB);
@@ -256,10 +255,9 @@ int get_eob(MACROBLOCKD* const xd, int segment_id, int eob_max) {
   return eob;
 }
 
-
-int vp9_decode_mb_tokens_16x16(VP9D_COMP* const pbi,
-                               MACROBLOCKD* const xd,
-                               BOOL_DECODER* const bc) {
+static int decode_mb_tokens_16x16(VP9D_COMP* const pbi,
+                                  MACROBLOCKD* const xd,
+                                  BOOL_DECODER* const bc) {
   ENTROPY_CONTEXT* const A = (ENTROPY_CONTEXT *)xd->above_context;
   ENTROPY_CONTEXT* const L = (ENTROPY_CONTEXT *)xd->left_context;
 
@@ -308,9 +306,9 @@ int vp9_decode_mb_tokens_16x16(VP9D_COMP* const pbi,
   return eobtotal;
 }
 
-int vp9_decode_mb_tokens_8x8(VP9D_COMP* const pbi,
-                             MACROBLOCKD* const xd,
-                             BOOL_DECODER* const bc) {
+static int decode_mb_tokens_8x8(VP9D_COMP* const pbi,
+                                MACROBLOCKD* const xd,
+                                BOOL_DECODER* const bc) {
   ENTROPY_CONTEXT *const A = (ENTROPY_CONTEXT *)xd->above_context;
   ENTROPY_CONTEXT *const L = (ENTROPY_CONTEXT *)xd->left_context;
 
@@ -424,9 +422,9 @@ static int decode_coefs_4x4(VP9D_COMP *dx, MACROBLOCKD *xd,
   return c;
 }
 
-int vp9_decode_mb_tokens_4x4(VP9D_COMP* const dx,
-                             MACROBLOCKD* const xd,
-                             BOOL_DECODER* const bc) {
+static int decode_mb_tokens_4x4(VP9D_COMP* const dx,
+                                MACROBLOCKD* const xd,
+                                BOOL_DECODER* const bc) {
   int i, eobtotal = 0;
   PLANE_TYPE type;
 
@@ -446,4 +444,19 @@ int vp9_decode_mb_tokens_4x4(VP9D_COMP* const dx,
     eobtotal += decode_coefs_4x4(dx, xd, bc, PLANE_TYPE_UV, i);
   } while (++i < 24);
   return eobtotal;
+}
+
+int vp9_decode_mb_tokens(VP9D_COMP* const pbi,
+                         MACROBLOCKD* const xd,
+                         BOOL_DECODER* const bc) {
+  const TX_SIZE tx_size = xd->mode_info_context->mbmi.txfm_size;
+
+  if (tx_size == TX_16X16) {
+    return decode_mb_tokens_16x16(pbi, xd, bc);
+  } else if (tx_size == TX_8X8) {
+    return decode_mb_tokens_8x8(pbi, xd, bc);
+  } else {
+    assert(tx_size == TX_4X4);
+    return decode_mb_tokens_4x4(pbi, xd, bc);
+  }
 }
