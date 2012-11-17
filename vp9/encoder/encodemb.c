@@ -114,6 +114,23 @@ void vp9_subtract_mby_s_c(short *diff, const unsigned char *src, int src_stride,
   }
 }
 
+#if CONFIG_TX32X32
+void vp9_subtract_sby_s_c(short *diff, const unsigned char *src, int src_stride,
+                          const unsigned char *pred, int dst_stride) {
+  int r, c;
+  
+  for (r = 0; r < 32; r++) {
+    for (c = 0; c < 32; c++) {
+      diff[c] = src[c] - pred[c];
+    }
+    
+    diff += 32;
+    pred += dst_stride;
+    src  += src_stride;
+  }
+}
+#endif
+
 void vp9_subtract_mby_c(short *diff, unsigned char *src,
                         unsigned char *pred, int stride) {
   vp9_subtract_mby_s_c(diff, src, stride, pred, 16);
@@ -227,6 +244,11 @@ void vp9_transform_mby_16x16(MACROBLOCK *x) {
 void vp9_transform_mb_16x16(MACROBLOCK *x) {
   vp9_transform_mby_16x16(x);
   vp9_transform_mbuv_8x8(x);
+}
+
+void vp9_transform_sby_32x32(SUPERBLOCK *x_sb) {
+  // TODO(debargha): do transform
+  abort();
 }
 
 #define RDTRUNC(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
