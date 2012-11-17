@@ -133,3 +133,18 @@ void vp9_inverse_transform_mb_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
   vp9_inverse_transform_mby_16x16(rtcd, xd);
   vp9_inverse_transform_mbuv_8x8(rtcd, xd);
 }
+
+#if CONFIG_TX32X32
+void vp9_inverse_transform_sby_32x32(SUPERBLOCKD *xd_sb) {
+  // TODO(debargha): actual idct
+  abort();
+}
+
+void vp9_inverse_transform_sbuv_16x16(const vp9_idct_rtcd_vtable_t *rtcd,
+                                      SUPERBLOCKD *xd_sb) {
+  vp9_inverse_transform_b_16x16(rtcd, xd_sb->dqcoeff + 1024,
+                                xd_sb->diff + 1024, 32);
+  vp9_inverse_transform_b_16x16(rtcd, xd_sb->dqcoeff + 1280,
+                                xd_sb->diff + 1280, 32);
+}
+#endif

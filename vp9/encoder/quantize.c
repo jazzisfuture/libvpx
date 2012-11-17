@@ -345,6 +345,16 @@ void vp9_regular_quantize_b_16x16(BLOCK *b, BLOCKD *d) {
   d->eob = eob + 1;
 }
 
+void vp9_quantize_sby_32x32(MACROBLOCK *x) {
+  // TODO(debargha): call actual function
+  abort();
+}
+
+void vp9_quantize_sbuv_16x16(MACROBLOCK *x) {
+  // TODO(rbultje): call actual function
+  abort();
+}
+
 /* quantize_b_pair function pointer in MACROBLOCK structure is set to one of
  * these two C functions if corresponding optimized routine is not available.
  * NEON optimized version implements currently the fast quantization for pair
