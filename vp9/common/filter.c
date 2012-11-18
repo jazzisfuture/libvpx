@@ -13,6 +13,7 @@
 #include "filter.h"
 #include "vpx_ports/mem.h"
 #include "vp9_rtcd.h"
+#include "vp9/common/common.h"
 
 DECLARE_ALIGNED(16, const short, vp9_bilinear_filters[SUBPEL_SHIFTS][2]) = {
   { 128,   0 },
@@ -161,14 +162,7 @@ static void filter_block2d_first_pass_6(unsigned char *src_ptr,
              (VP9_FILTER_WEIGHT >> 1);      /* Rounding */
 
       /* Normalize back to 0-255 */
-      Temp = Temp >> VP9_FILTER_SHIFT;
-
-      if (Temp < 0)
-        Temp = 0;
-      else if (Temp > 255)
-        Temp = 255;
-
-      output_ptr[j] = Temp;
+      output_ptr[j] = clip_pixel(Temp >> VP9_FILTER_SHIFT);
       src_ptr++;
     }
 
@@ -201,14 +195,7 @@ static void filter_block2d_second_pass_6(int *src_ptr,
              (VP9_FILTER_WEIGHT >> 1);   /* Rounding */
 
       /* Normalize back to 0-255 */
-      Temp = Temp >> VP9_FILTER_SHIFT;
-
-      if (Temp < 0)
-        Temp = 0;
-      else if (Temp > 255)
-        Temp = 255;
-
-      output_ptr[j] = (unsigned char)Temp;
+      output_ptr[j] = clip_pixel(Temp >> VP9_FILTER_SHIFT);
       src_ptr++;
     }
 
@@ -249,13 +236,7 @@ static void filter_block2d_second_pass_avg_6(int *src_ptr,
              (VP9_FILTER_WEIGHT >> 1);   /* Rounding */
 
       /* Normalize back to 0-255 */
-      Temp = Temp >> VP9_FILTER_SHIFT;
-
-      if (Temp < 0)
-        Temp = 0;
-      else if (Temp > 255)
-        Temp = 255;
-
+      Temp = clip_pixel(Temp >> VP9_FILTER_SHIFT);
       output_ptr[j] = (unsigned char)((output_ptr[j] + Temp + 1) >> 1);
       src_ptr++;
     }
@@ -539,14 +520,8 @@ static void filter_block2d_8_c(const unsigned char *src_ptr,
                    (VP9_FILTER_WEIGHT >> 1); // Rounding
 
         // Normalize back to 0-255...
-        temp >>= VP9_FILTER_SHIFT;
-        if (temp < 0) {
-          temp = 0;
-        } else if (temp > 255) {
-          temp = 255;
-        }
+        *output_ptr = clip_pixel(temp >> VP9_FILTER_SHIFT);
         src_ptr++;
-        *output_ptr = temp;
         output_ptr += intermediate_height;
       }
       src_ptr += src_next_row_stride;
@@ -573,15 +548,8 @@ static void filter_block2d_8_c(const unsigned char *src_ptr,
                    (VP9_FILTER_WEIGHT >> 1); // Rounding
 
         // Normalize back to 0-255...
-        temp >>= VP9_FILTER_SHIFT;
-        if (temp < 0) {
-          temp = 0;
-        } else if (temp > 255) {
-          temp = 255;
-        }
-
+        *dst_ptr++ = clip_pixel(temp >> VP9_FILTER_SHIFT);
         src_ptr += intermediate_height;
-        *dst_ptr++ = (unsigned char)temp;
       }
       src_ptr += intermediate_next_stride;
       dst_ptr += dst_next_row_stride;

@@ -702,12 +702,7 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
     prob = ((int)cm->fc.pre_interintra_prob * (256 - factor) +
             (int)interintra_prob * factor + 128) >> 8;
-    if (prob <= 0)
-      cm->fc.interintra_prob = 1;
-    else if (prob > 255)
-      cm->fc.interintra_prob = 255;
-    else
-      cm->fc.interintra_prob = prob;
+    cm->fc.interintra_prob = clip_prob(prob);
   }
 #endif
 }

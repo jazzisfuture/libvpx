@@ -329,9 +329,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           factor = (update_factor * count / count_sat);
           prob = ((int)cm->fc.pre_coef_probs[i][j][k][t] * (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.coef_probs[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.coef_probs[i][j][k][t] = 255;
-          else cm->fc.coef_probs[i][j][k][t] = prob;
+          cm->fc.coef_probs[i][j][k][t] = clip_prob(prob);
         }
       }
 
@@ -351,9 +349,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           factor = (update_factor * count / count_sat);
           prob = ((int)cm->fc.pre_hybrid_coef_probs[i][j][k][t] * (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.hybrid_coef_probs[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.hybrid_coef_probs[i][j][k][t] = 255;
-          else cm->fc.hybrid_coef_probs[i][j][k][t] = prob;
+          cm->fc.hybrid_coef_probs[i][j][k][t] = clip_prob(prob);
         }
       }
 
@@ -373,9 +369,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           factor = (update_factor * count / count_sat);
           prob = ((int)cm->fc.pre_coef_probs_8x8[i][j][k][t] * (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.coef_probs_8x8[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.coef_probs_8x8[i][j][k][t] = 255;
-          else cm->fc.coef_probs_8x8[i][j][k][t] = prob;
+          cm->fc.coef_probs_8x8[i][j][k][t] = clip_prob(prob);
         }
       }
 
@@ -396,9 +390,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           prob = ((int)cm->fc.pre_hybrid_coef_probs_8x8[i][j][k][t] *
                   (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.hybrid_coef_probs_8x8[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.hybrid_coef_probs_8x8[i][j][k][t] = 255;
-          else cm->fc.hybrid_coef_probs_8x8[i][j][k][t] = prob;
+          cm->fc.hybrid_coef_probs_8x8[i][j][k][t] = clip_prob(prob);
         }
       }
 
@@ -418,9 +410,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           prob = ((int)cm->fc.pre_coef_probs_16x16[i][j][k][t] *
                   (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.coef_probs_16x16[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.coef_probs_16x16[i][j][k][t] = 255;
-          else cm->fc.coef_probs_16x16[i][j][k][t] = prob;
+          cm->fc.coef_probs_16x16[i][j][k][t] = clip_prob(prob);
         }
       }
 
@@ -439,9 +429,7 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
           factor = (update_factor * count / count_sat);
           prob = ((int)cm->fc.pre_hybrid_coef_probs_16x16[i][j][k][t] * (256 - factor) +
                   (int)coef_probs[t] * factor + 128) >> 8;
-          if (prob <= 0) cm->fc.hybrid_coef_probs_16x16[i][j][k][t] = 1;
-          else if (prob > 255) cm->fc.hybrid_coef_probs_16x16[i][j][k][t] = 255;
-          else cm->fc.hybrid_coef_probs_16x16[i][j][k][t] = prob;
+          cm->fc.hybrid_coef_probs_16x16[i][j][k][t] = clip_prob(prob);
         }
       }
 }

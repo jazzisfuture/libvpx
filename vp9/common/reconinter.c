@@ -391,7 +391,7 @@ void filter_mb(unsigned char *src, int src_stride,
         sum += pTmp[(j + k) * width] * pred_filter[k];
       // Round
       sum = (sum + ((1 << (filt_shift << 1)) >> 1)) >> (filt_shift << 1);
-      pDst[j * dst_stride] = (sum < 0 ? 0 : sum > 255 ? 255 : sum);
+      pDst[j * dst_stride] = clip_pixel(sum);
     }
     ++pTmp;
   }

@@ -25,14 +25,7 @@ static void add_residual(const int16_t *diff, const uint8_t *pred, int pitch,
 
   for (r = 0; r < height; r++) {
     for (c = 0; c < width; c++) {
-      int a = diff[c] + pred[c];
-
-      if (a < 0)
-        a = 0;
-      else if (a > 255)
-        a = 255;
-
-      dest[c] = (uint8_t) a;
+      dest[c] = clip_pixel(diff[c] + pred[c]);
     }
 
     dest += stride;
@@ -48,14 +41,7 @@ static void add_constant_residual(const int16_t diff, const uint8_t *pred,
 
   for (r = 0; r < height; r++) {
     for (c = 0; c < width; c++) {
-      int a = diff + pred[c];
-
-      if (a < 0)
-        a = 0;
-      else if (a > 255)
-        a = 255;
-
-      dest[c] = (uint8_t) a;
+      dest[c] = clip_pixel(diff + pred[c]);
     }
 
     dest += stride;

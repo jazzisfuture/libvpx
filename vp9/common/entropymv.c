@@ -220,9 +220,7 @@ static void adapt_prob(vp9_prob *dest, vp9_prob prep, vp9_prob newp,
     count = count > MV_COUNT_SAT ? MV_COUNT_SAT : count;
     factor = (MV_MAX_UPDATE_FACTOR * count / MV_COUNT_SAT);
     prob = ((int)prep * (256 - factor) + (int)(newp) * factor + 128) >> 8;
-    prob += !prob;
-    prob = (prob > 255 ? 255 : prob);
-    *dest = prob;
+    *dest = clip_prob(prob);
   }
 }
 

@@ -2157,13 +2157,8 @@ void print_mode_context(void) {
 
       // context probs
       count = mv_ref_ct[j][i][0] + mv_ref_ct[j][i][1];
-      if (count)
-        this_prob = 256 * mv_ref_ct[j][i][0] / count;
-      else
-        this_prob = 128;
+      this_prob = get_prob(mv_ref_ct[j][i][0], count);
 
-      if (this_prob == 0)
-        this_prob = 1;
       fprintf(f, "%5d, ", this_prob);
     }
     fprintf(f, "  },\n");
