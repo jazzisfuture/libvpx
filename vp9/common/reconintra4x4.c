@@ -194,15 +194,7 @@ void vp9_intra4x4_predict(BLOCKD *x,
       /* prediction similar to true_motion prediction */
       for (r = 0; r < 4; r++) {
         for (c = 0; c < 4; c++) {
-          int pred = Above[c] - top_left + Left[r];
-
-          if (pred < 0)
-            pred = 0;
-
-          if (pred > 255)
-            pred = 255;
-
-          predictor[c] = pred;
+          predictor[c] = clip_pixel(Above[c] - top_left + Left[r]);
         }
 
         predictor += 16;

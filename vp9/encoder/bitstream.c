@@ -172,18 +172,6 @@ static void update_mbintra_mode_probs(VP9_COMP* const cpi,
   }
 }
 
-static int get_prob(int num, int den) {
-  int p;
-  if (den <= 0)
-    return 128;
-  p = (num * 255 + (den >> 1)) / den;
-  return clip_prob(p);
-}
-
-static int get_binary_prob(int n0, int n1) {
-  return get_prob(n0, n0 + n1);
-}
-
 void vp9_update_skip_probs(VP9_COMP *cpi) {
   VP9_COMMON *const pc = &cpi->common;
   int k;
@@ -262,8 +250,8 @@ static void update_refpred_stats(VP9_COMP *cpi) {
 //
 // The branch counts table is re-populated during the actual pack stage and in
 // the decoder to facilitate backwards update of the context.
-static update_mode_probs(VP9_COMMON *cm,
-                         int mode_context[INTER_MODE_CONTEXTS][4]) {
+static void update_mode_probs(VP9_COMMON *cm,
+                              int mode_context[INTER_MODE_CONTEXTS][4]) {
   int i, j;
   int (*mv_ref_ct)[4][2];
 
@@ -279,8 +267,7 @@ static update_mode_probs(VP9_COMMON *cm,
       // Work out cost of coding branches with the old and optimal probability
       old_cost = cost_branch256(mv_ref_ct[i][j], mode_context[i][j]);
       count = mv_ref_ct[i][j][0] + mv_ref_ct[i][j][1];
-      new_prob = count > 0 ? (255 * mv_ref_ct[i][j][0]) / count : 128;
-      new_prob = (new_prob > 0) ? new_prob : 1;
+      new_prob = get_prob(mv_ref_ct[i][j][0], count);
       new_cost = cost_branch256(mv_ref_ct[i][j], new_prob);
 
       // If cost saving is >= 14 bits then update the mode probability.

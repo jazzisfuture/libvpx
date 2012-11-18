@@ -78,6 +78,18 @@ static __inline int clip_prob(int p) {
   return p;
 }
 
+static __inline int get_prob(int num, int den) {
+  int p;
+  if (den <= 0)
+    return 128;
+  p = (num * 255 + (den >> 1)) / den;
+  return clip_prob(p);
+}
+
+static __inline int get_binary_prob(int n0, int n1) {
+  return get_prob(n0, n0 + n1);
+}
+
 vp9_prob vp9_bin_prob_from_distribution(const unsigned int counts[2]);
 
 #endif

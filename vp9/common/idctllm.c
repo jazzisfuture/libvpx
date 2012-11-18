@@ -571,15 +571,7 @@ void vp9_dc_only_idct_add_c(short input_dc, unsigned char *pred_ptr,
 
   for (r = 0; r < 4; r++) {
     for (c = 0; c < 4; c++) {
-      int a = a1 + pred_ptr[c];
-
-      if (a < 0)
-        a = 0;
-
-      if (a > 255)
-        a = 255;
-
-      dst_ptr[c] = (unsigned char) a;
+      dst_ptr[c] = clip_pixel(a1 + pred_ptr[c]);
     }
 
     dst_ptr += stride;
@@ -774,14 +766,7 @@ void vp9_dc_only_inv_walsh_add_c(short input_dc, unsigned char *pred_ptr,
 
   for (r = 0; r < 4; r++) {
     for (c = 0; c < 4; c++) {
-      int a = tmp[r * 4 + c] + pred_ptr[c];
-      if (a < 0)
-        a = 0;
-
-      if (a > 255)
-        a = 255;
-
-      dst_ptr[c] = (unsigned char) a;
+      dst_ptr[c] = clip_pixel(tmp[r * 4 + c] + pred_ptr[c]);
     }
 
     dst_ptr += stride;
@@ -801,15 +786,7 @@ void vp9_dc_only_idct_add_8x8_c(short input_dc,
   for (b = 0; b < 4; b++) {
     for (r = 0; r < 4; r++) {
       for (c = 0; c < 4; c++) {
-        int a = a1 + pred_ptr[c];
-
-        if (a < 0)
-          a = 0;
-
-        if (a > 255)
-          a = 255;
-
-        dst_ptr[c] = (unsigned char) a;
+        dst_ptr[c] = clip_pixel(a1 + pred_ptr[c]);
       }
 
       dst_ptr += stride;

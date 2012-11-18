@@ -38,4 +38,12 @@
 
 #define vp9_zero_array( Dest, N)  vpx_memset( Dest, 0, N * sizeof( *Dest));
 
+static __inline unsigned char clip_pixel(int val) {
+  if (val > 255)
+    return 255;
+  if (val < 0)
+    return 0;
+  return val;
+}
+
 #endif  /* common_h */
