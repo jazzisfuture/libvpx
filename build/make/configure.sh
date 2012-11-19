@@ -435,10 +435,10 @@ RTCD_OPTIONS = ${RTCD_OPTIONS}
 EOF
 
     if enabled rvct; then cat >> $1 << EOF
-fmt_deps = sed -e 's;^__image.axf;\$(dir \$@)\$(notdir \$<).o \$@;' #hide
+fmt_deps = sed -e 's;^__image.axf;\$\$(patsubst %.d,%.o,\$\$@) \$\$@;' #hide
 EOF
     else cat >> $1 << EOF
-fmt_deps = sed -e 's;^\([a-zA-Z0-9_]*\)\.o;\$(dir \$@)\1\$(suffix \$<).o \$@;'
+fmt_deps = sed -e 's;^\([a-zA-Z0-9_]*\)\.o;\$\$(patsubst %.d,%.o,\$\$@) \$\$@;'
 EOF
     fi
 
