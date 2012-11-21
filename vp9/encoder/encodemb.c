@@ -134,6 +134,8 @@ static void build_dcblock_4x4(MACROBLOCK *x) {
 
   for (i = 0; i < 16; i++) {
     src_diff_ptr[i] = x->coeff[i * 16];
+    // Turn original dc coeffs to 0
+    x->coeff[i * 16] = 0;
   }
 }
 
@@ -180,6 +182,9 @@ static void build_dcblock_8x8(MACROBLOCK *x) {
   src_diff_ptr[1] = x->coeff[4 * 16];
   src_diff_ptr[4] = x->coeff[8 * 16];
   src_diff_ptr[8] = x->coeff[12 * 16];
+  // Turn original dc coeffs to 0
+  x->coeff[0 * 16] = x->coeff[4 * 16] = x->coeff[8 * 16] = x->coeff[12 * 16] =
+      0;
 }
 
 void vp9_transform_mby_8x8(MACROBLOCK *x) {
