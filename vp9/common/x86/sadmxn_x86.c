@@ -11,7 +11,7 @@
 #include <emmintrin.h>  // SSE2
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
-
+#include "vpx/vpx_integer.h"
 
 #if HAVE_SSE2
 unsigned int vp9_sad16x3_sse2(
@@ -52,6 +52,15 @@ unsigned int vp9_sad3x16_sse2(
   __m128i s0, s1, s2, s3;
   __m128i r0, r1, r2, r3;
   __m128i sad = _mm_set1_epi16(0);
+
+  int offset = (uintptr_t)src_ptr & 3;
+
+  /* If offset = 1, adjust src_ptr to be 4-byte aligned. Then, movd takes much
+   * less time. But for offset =2 or 3, 2 4-byte reads are needed.
+   */
+  if (offset == 1)
+    src_ptr -= 1;
+
   for (r = 0; r < 16; r += 4) {
     s0 = _mm_cvtsi32_si128 (*(const int *)(src_ptr + 0 * src_stride));
     s1 = _mm_cvtsi32_si128 (*(const int *)(src_ptr + 1 * src_stride));
@@ -69,7 +78,9 @@ unsigned int vp9_sad3x16_sse2(
     s0 = _mm_unpacklo_epi64(s0, s2);
     r0 = _mm_unpacklo_epi64(r0, r2);
 
-    // throw out byte 3
+    // throw out extra byte
+    if (offset == 1)
+      s0 = _mm_srli_epi64(s0, 16);
     s0 = _mm_slli_epi64(s0, 16);
     r0 = _mm_slli_epi64(r0, 16);
 
@@ -84,5 +95,3 @@ unsigned int vp9_sad3x16_sse2(
 }
 
 #endif
-
-
