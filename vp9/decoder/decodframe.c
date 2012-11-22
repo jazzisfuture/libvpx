@@ -27,7 +27,6 @@
 #include "vp9/common/extend.h"
 #include "vp9/common/modecont.h"
 #include "vpx_mem/vpx_mem.h"
-#include "vp9/common/idct.h"
 #include "dboolhuff.h"
 
 #include "vp9/common/seg_common.h"
@@ -311,7 +310,7 @@ static void decode_superblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
           xd->dst.uv_stride, xd->eobs + 16, xd);
     } else if (tx_size == TX_8X8) {
       vp9_dequantize_b_2x2(b);
-      IDCT_INVOKE(RTCD_VTABLE(idct), ihaar2)(&b->dqcoeff[0], b->diff, 8);
+      vp9_short_ihaar2x2(&b->dqcoeff[0], b->diff, 8);
       ((int *)b->qcoeff)[0] = 0;  // 2nd order block are set to 0 after idct
       ((int *)b->qcoeff)[1] = 0;
       ((int *)b->qcoeff)[2] = 0;
@@ -332,7 +331,7 @@ static void decode_superblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
     } else {
       vp9_dequantize_b(b);
       if (xd->eobs[24] > 1) {
-        IDCT_INVOKE(RTCD_VTABLE(idct), iwalsh16)(&b->dqcoeff[0], b->diff);
+        vp9_short_inv_walsh4x4(&b->dqcoeff[0], b->diff);
         ((int *)b->qcoeff)[0] = 0;
         ((int *)b->qcoeff)[1] = 0;
         ((int *)b->qcoeff)[2] = 0;
@@ -342,7 +341,7 @@ static void decode_superblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
         ((int *)b->qcoeff)[6] = 0;
         ((int *)b->qcoeff)[7] = 0;
       } else {
-        IDCT_INVOKE(RTCD_VTABLE(idct), iwalsh1)(&b->dqcoeff[0], b->diff);
+        vp9_short_inv_walsh4x4_1(&b->dqcoeff[0], b->diff);
         ((int *)b->qcoeff)[0] = 0;
       }
 
@@ -539,12 +538,12 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
                                         xd->dst.y_buffer, 16, xd->dst.y_stride);
       } else {
         vp9_dequant_idct_add_16x16(xd->qcoeff, xd->block[0].dequant,
-                                     xd->predictor, xd->dst.y_buffer,
-                                     16, xd->dst.y_stride, xd->eobs[0]);
+                                   xd->predictor, xd->dst.y_buffer,
+                                   16, xd->dst.y_stride, xd->eobs[0]);
       }
     } else if (tx_size == TX_8X8) {
       vp9_dequantize_b_2x2(b);
-      IDCT_INVOKE(RTCD_VTABLE(idct), ihaar2)(&b->dqcoeff[0], b->diff, 8);
+      vp9_short_ihaar2x2(&b->dqcoeff[0], b->diff, 8);
       ((int *)b->qcoeff)[0] = 0;  // 2nd order block are set to 0 after idct
       ((int *)b->qcoeff)[1] = 0;
       ((int *)b->qcoeff)[2] = 0;
@@ -553,13 +552,13 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
       ((int *)b->qcoeff)[5] = 0;
       ((int *)b->qcoeff)[6] = 0;
       ((int *)b->qcoeff)[7] = 0;
-        vp9_dequant_dc_idct_add_y_block_8x8(xd->qcoeff,
+      vp9_dequant_dc_idct_add_y_block_8x8(xd->qcoeff,
           xd->block[0].dequant, xd->predictor, xd->dst.y_buffer,
           xd->dst.y_stride, xd->eobs, xd->block[24].diff, xd);
     } else {
       vp9_dequantize_b(b);
       if (xd->eobs[24] > 1) {
-        IDCT_INVOKE(RTCD_VTABLE(idct), iwalsh16)(&b->dqcoeff[0], b->diff);
+        vp9_short_inv_walsh4x4(&b->dqcoeff[0], b->diff);
         ((int *)b->qcoeff)[0] = 0;
         ((int *)b->qcoeff)[1] = 0;
         ((int *)b->qcoeff)[2] = 0;
@@ -569,7 +568,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
         ((int *)b->qcoeff)[6] = 0;
         ((int *)b->qcoeff)[7] = 0;
       } else {
-        IDCT_INVOKE(RTCD_VTABLE(idct), iwalsh1)(&b->dqcoeff[0], b->diff);
+        vp9_short_inv_walsh4x4_1(&b->dqcoeff[0], b->diff);
         ((int *)b->qcoeff)[0] = 0;
       }
 
