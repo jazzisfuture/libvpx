@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <math.h>
 #include "vpx_ports/config.h"
-#include "vp9/common/idct.h"
 #include "vp9/common/systemdependent.h"
 
 #include "vp9/common/blockd.h"
@@ -644,6 +643,8 @@ void vp9_short_inv_walsh4x4_1_c(short *in, short *out) {
 }
 
 #if CONFIG_LOSSLESS
+#define WHT_UPSCALE_FACTOR 3
+#define Y2_WHT_UPSCALE_FACTOR 2
 void vp9_short_inv_walsh4x4_lossless_c(short *input, short *output) {
   int i;
   int a1, b1, c1, d1;
