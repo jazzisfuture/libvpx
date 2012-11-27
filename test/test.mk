@@ -3,6 +3,7 @@ LIBVPX_TEST_SRCS-yes += test.mk
 LIBVPX_TEST_SRCS-yes += test_libvpx.cc
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
+LIBVPX_TEST_SRCS-yes += register_state_check.h
 
 ##
 ## BLACK BOX TESTS
