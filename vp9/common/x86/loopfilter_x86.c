@@ -416,27 +416,27 @@ void vp9_mbloop_filter_vertical_edge_c_sse2(unsigned char *s,
   unsigned char *src[4];
   unsigned char *dst[4];
 
-  src[0] = s - 5;
-  src[1] = s - 5 + 8;
-  src[2] = s - 5 + p*8;
-  src[3] = s - 5 + p*8 + 8;
+  src[0] = s - 8;
+  src[1] = s;
+  src[2] = s - 8 + p * 8;
+  src[3] = s + p * 8;
 
   dst[0] = t_dst;
-  dst[1] = t_dst + 16*8;
+  dst[1] = t_dst + 16 * 8;
   dst[2] = t_dst + 8;
-  dst[3] = t_dst + 16*8 + 8;
+  dst[3] = t_dst + 16 * 8 + 8;
 
   // 16x16->16x16 or 16x8->8x16
   transpose(src, p, dst, 16, (1 << count));
 
-  vp9_mbloop_filter_horizontal_edge_c_sse2(t_dst + 5*16, 16, blimit, limit,
+  vp9_mbloop_filter_horizontal_edge_c_sse2(t_dst + 8 * 16, 16, blimit, limit,
                                            thresh, count);
 
   dst[0] = s - 5;
-  dst[1] = s - 5 + p*8;
+  dst[1] = s - 5 + p * 8;
 
-  src[0] = t_dst;
-  src[1] = t_dst + 8;
+  src[0] = t_dst + 3 * 16;
+  src[1] = t_dst + 3 * 16 + 8;
 
   // 16x8->8x16 or 8x8->8x8
   transpose(src, 16, dst, p, (1 << (count - 1)));
