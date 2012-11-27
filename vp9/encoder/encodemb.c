@@ -287,6 +287,9 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   int err_mult = plane_rd_mult[type];
   int default_eob;
   int const *scan, *bands;
+#if CONFIG_NEWCOEFCONTEXT
+  const int *neighbors;
+#endif
 
   b = &mb->block[i];
   d = &mb->e_mbd.block[i];
@@ -325,6 +328,9 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       default_eob = 64;
       break;
   }
+#if CONFIG_NEWCOEFCONTEXT
+  neighbors = vp9_get_coef_neighbors_handle(scan);
+#endif
 
   dequant_ptr = d->dequant;
   coeff_ptr = b->coeff;
@@ -699,6 +705,9 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
   int rate0, rate1, error0, error1, t0, t1;
   int best, band, pt;
   int err_mult = plane_rd_mult[type];
+#if CONFIG_NEWCOEFCONTEXT
+  const int *neighbors = vp9_default_zig_zag1d_16x16_neighbors;
+#endif
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   rdmult = mb->rdmult * err_mult;
@@ -731,7 +740,12 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < 256) {
         band = vp9_coef_bands_16x16[i + 1];
+#if 0//CONFIG_NEWCOEFCONTEXT
+        pt = vp9_get_coef_neighbor_context(
+            qcoeff_ptr, neighbors, vp9_default_zig_zag1d_16x16[i + 1]);
+#else
         pt = vp9_prev_token_class[t0];
+#endif
         rate0 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][0].token];
         rate1 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][1].token];
       }

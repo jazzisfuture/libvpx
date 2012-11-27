@@ -98,11 +98,24 @@ static int get_signed(BOOL_DECODER *br, int value_to_sign) {
   return v;
 }
 
+#if CONFIG_NEWCOEFCONTEXT
+#define PT pn
+#define INCREMENT_COUNT(token)                       \
+  do {                                               \
+    coef_counts[coef_bands[c]][pn][token]++;         \
+    pt = vp9_prev_token_class[token];                \
+    if (c < seg_eob - 1)                             \
+      pn = vp9_get_coef_neighbor_context(            \
+          qcoeff_ptr, nodc, neighbors, scan[c + 1]); \
+  } while (0)
+#else
+#define PT pt
 #define INCREMENT_COUNT(token)               \
   do {                                       \
     coef_counts[coef_bands[c]][pt][token]++; \
     pt = vp9_prev_token_class[token];        \
   } while (0)
+#endif  /* CONFIG_NEWCOEFCONTEXT */
 
 #define WRITE_COEF_CONTINUE(val, token)                       \
   {                                                           \
@@ -127,7 +140,12 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                         const int *const scan, TX_SIZE txfm_size,
                         const int *coef_bands) {
   FRAME_CONTEXT *const fc = &dx->common.fc;
-  int pt, c = (type == PLANE_TYPE_Y_NO_DC);
+#if CONFIG_NEWCOEFCONTEXT
+  const int *neighbors;
+  int pn;
+#endif
+  int nodc = (type == PLANE_TYPE_Y_NO_DC);
+  int pt, c = nodc;
   vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][ENTROPY_NODES], *prob;
   unsigned int (*coef_counts)[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
 
@@ -163,11 +181,15 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   }
 
   VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+#if CONFIG_NEWCOEFCONTEXT
+  pn = pt;
+  neighbors = vp9_get_coef_neighbors_handle(scan);
+#endif
   while (1) {
     int val;
     const uint8_t *cat6 = cat6_prob;
     if (c >= seg_eob) break;
-    prob = coef_probs[coef_bands[c]][pt];
+    prob = coef_probs[coef_bands[c]][PT];
     if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
       break;
 SKIP_START:
@@ -175,7 +197,7 @@ SKIP_START:
     if (!vp9_read(br, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-      prob = coef_probs[coef_bands[c]][pt];
+      prob = coef_probs[coef_bands[c]][PT];
       goto SKIP_START;
     }
     // ONE_CONTEXT_NODE_0_
@@ -239,7 +261,7 @@ SKIP_START:
   }
 
   if (c < seg_eob)
-    coef_counts[coef_bands[c]][pt][DCT_EOB_TOKEN]++;
+    coef_counts[coef_bands[c]][PT][DCT_EOB_TOKEN]++;
 
   a[0] = l[0] = (c != !type);
 
