@@ -1783,3 +1783,136 @@ void vp9_short_idct10_16x16_c(int16_t *input, int16_t *output, int pitch) {
 #undef RIGHT_SHIFT
 #undef RIGHT_ROUNDING
 #endif
+
+#define MAX_BLOCK_LENGTH   64
+#define ENH_PRECISION_BITS 0
+#define ENH_PRECISION_RND ((1 << ENH_PRECISION_BITS) / 2)
+
+// Note: block length must be even for this implementation
+static void synthesis_53_row(int length, short *lowpass, short *highpass,
+                             short *x) {
+  short r, * a, * b;
+  int n;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  r = *highpass;
+  while (n--) {
+    *a++ -= (r + (*b) + 1) >> 1;
+    r = *b++;
+  }
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  while (--n) {
+    *x++ = ((r = *a++) + 1) >> 1;
+    *x++ = *b++ + ((r + (*a) + 2) >> 2);
+  }
+  *x++ = ((r = *a) + 1)>>1;
+  *x++ = *b + ((r+1)>>1);
+}
+
+static void synthesis_53_col(int length, short *lowpass, short *highpass,
+                             short *x) {
+  short r, * a, * b;
+  int n;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  r = *highpass;
+  while (n--) {
+    *a++ -= (r + (*b) + 1) >> 1;
+    r = *b++;
+  }
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  while (--n) {
+    *x++ = r = *a++;
+    *x++ = ((*b++) << 1) + ((r + (*a) + 1) >> 1);
+  }
+  *x++ = r = *a;
+  *x++ = ((*b) << 1) + r;
+}
+
+// NOTE: Using a 5/3 integer wavelet for now. Explore using a wavelet
+// with a better response later
+void dyadic_synthesize(int levels, int width, int height, short *c, int pitch_c,
+                       short *x, int pitch_x) {
+  int th[16], tw[16], lv, i, j, nh, nw, hh = height, hw = width;
+  short buffer[2 * MAX_BLOCK_LENGTH];
+
+  th[0] = hh;  tw[0] = hw;
+  for (i = 1; i <= levels; i++) {
+    th[i] = (th[i - 1] + 1) >> 1;
+    tw[i] = (tw[i - 1] + 1) >> 1;
+  }
+  for (lv = levels - 1; lv >= 0; lv--) {
+    nh = th[lv];
+    nw = tw[lv];
+    hh = th[lv + 1];
+    hw = tw[lv + 1];
+    if ((nh < 2) || (nw < 2)) continue;
+    for (j = 0; j < nw; j++) {
+      for (i = 0; i < nh; i++)
+        buffer[i] = c[i * pitch_c + j];
+      synthesis_53_col(nh, buffer, buffer + hh, buffer + nh);
+      for (i = 0; i < nh; i++)
+        c[i * pitch_c + j] = buffer[i + nh];
+    }
+    for (i = 0; i < nh; i++) {
+      memcpy(buffer, &c[i * pitch_c], nw * sizeof(short));
+      synthesis_53_row(nw, buffer, buffer + hw, &c[i * pitch_c]);
+    }
+  }
+  for (i = 0; i < height; i++)
+    for (j = 0; j < width; j++)
+      x[i * pitch_x + j] = (c[i * pitch_c + j] + ENH_PRECISION_RND) >>
+          ENH_PRECISION_BITS;
+}
+
+void vp9_short_idwtdct32x32_c(short *input, short *output, int pitch) {
+  // assume out is a 32x32 buffer
+  short buffer[16 * 16];
+  short buffer2[32 * 32];
+  const int short_pitch = pitch >> 1;
+  int i;
+  // TODO(debargha): Implement more efficiently by adding output pitch
+  // argument to the idct16x16 function
+  vp9_short_idct16x16_c(input, buffer, pitch);
+  for (i = 0; i < 16; ++i) {
+    vpx_memcpy(buffer2 + i * 32, buffer + i * 16, sizeof(short) * 16);
+    vpx_memcpy(buffer2 + i * 32 + 16, input + i * short_pitch + 16,
+               sizeof(short) * 16);
+  }
+  for (; i < 32; ++i) {
+    vpx_memcpy(buffer2 + i * 32, input + i * short_pitch,
+               sizeof(short) * 32);
+  }
+  dyadic_synthesize(1, 32, 32, buffer2, 32, output, 32);
+}
+
+void vp9_short_idwtdct64x64_c(short *input, short *output, int pitch) {
+  // assume out is a 64x64 buffer
+  short buffer[16 * 16];
+  short buffer2[64 * 64];
+  const int short_pitch = pitch >> 1;
+  int i;
+  // TODO(debargha): Implement more efficiently by adding output pitch
+  // argument to the idct16x16 function
+  vp9_short_idct16x16_c(input, buffer, pitch);
+  for (i = 0; i < 16; ++i) {
+    vpx_memcpy(buffer2 + i * 32, buffer + i * 16, sizeof(short) * 16);
+    vpx_memcpy(buffer2 + i * 32 + 16, input + i * short_pitch + 16,
+               sizeof(short) * 48);
+  }
+  for (; i < 64; ++i) {
+    vpx_memcpy(buffer2 + i * 64, input + i * short_pitch,
+               sizeof(short) * 64);
+  }
+  dyadic_synthesize(2, 64, 64, buffer2, 64, output, 64);
+}

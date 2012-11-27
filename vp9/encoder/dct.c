@@ -1331,3 +1331,115 @@ void vp9_short_fdct16x16_c(int16_t *input, int16_t *out, int pitch) {
 #undef RIGHT_SHIFT
 #undef ROUNDING
 #endif
+
+#define MAX_BLOCK_LENGTH   64
+#define ENH_PRECISION_BITS 0
+#define ENH_PRECISION_RND ((1 << ENH_PRECISION_BITS) / 2)
+
+// Note: block length must be even for this implementation
+static void analysis_53_row(int length, short *x,
+                            short *lowpass, short *highpass) {
+  int n;
+  short r, * a, * b;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  while (--n) {
+    *a++ = (r = *x++) << 1;
+    *b++ = *x - ((r + x[1] + 1) >> 1);
+    x++;
+  }
+  *a = (r = *x++) << 1;
+  *b = *x - r;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  r = *highpass;
+  while (n--) {
+    *a++ += (r + (*b) + 1) >> 1;
+    r = *b++;
+  }
+}
+
+static void analysis_53_col(int length, short *x,
+                            short *lowpass, short *highpass) {
+  int n;
+  short r, * a, * b;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  while (--n) {
+    *a++ = (r = *x++);
+    *b++ = (((*x) << 1) - (r + x[1]) + 2) >> 2;
+    x++;
+  }
+  *a = (r = *x++);
+  *b = (*x - r + 1) >> 1;
+
+  n = length >> 1;
+  b = highpass;
+  a = lowpass;
+  r = *highpass;
+  while (n--) {
+    *a++ += (r + (*b) + 1) >> 1;
+    r = *b++;
+  }
+}
+
+// NOTE: Using a 5/3 integer wavelet for now. Explore using a wavelet
+// with a better response later
+static void dyadic_analyze(int levels, int width, int height,
+                           short *x, int pitch_x, short *c, int pitch_c) {
+  int lv, i, j, nh, nw, hh = height, hw = width;
+  short buffer[2 * MAX_BLOCK_LENGTH];
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < width; j++) {
+      c[i * pitch_c + j] = x[i * pitch_x + j] << ENH_PRECISION_BITS;
+    }
+  }
+  for (lv = 0; lv < levels; lv++) {
+    nh = hh;
+    hh = (hh + 1) >> 1;
+    nw = hw;
+    hw = (hw + 1) >> 1;
+    if ((nh < 2) || (nw < 2)) return;
+    for (i = 0; i < nh; i++) {
+      memcpy(buffer, &c[i * pitch_c], nw * sizeof(short));
+      analysis_53_row(nw, buffer, &c[i * pitch_c], &c[i * pitch_c] + hw);
+    }
+    for (j = 0; j < nw; j++) {
+      for (i = 0; i < nh; i++)
+        buffer[i + nh] = c[i * pitch_c + j];
+      analysis_53_col(nh, buffer + nh, buffer, buffer + hh);
+      for (i = 0; i < nh; i++)
+        c[i * pitch_c + j] = buffer[i];
+    }
+  }
+}
+
+void vp9_short_fdwtdct32x32_c(short *input, short *out, int pitch) {
+  // assume out is a 32x32 buffer
+  short buffer[16 * 16];
+  int i;
+  dyadic_analyze(1, 32, 32, input, pitch, out, 32);
+  // TODO(debargha): Implement more efficiently by adding output pitch
+  // argument to the dct16x16 function
+  vp9_short_fdct16x16_c(out, buffer, 64);
+  for (i = 0; i < 16; ++i)
+    vpx_memcpy(out + i * 32, buffer + i * 16, sizeof(short) * 16);
+}
+
+void vp9_short_fdwtdct64x64_c(short *input, short *out, int pitch) {
+  // assume out is a 64x64 buffer
+  short buffer[16 * 16];
+  int i;
+  dyadic_analyze(2, 64, 64, input, pitch, out, 64);
+  // TODO(debargha): Implement more efficiently by adding output pitch
+  // argument to the dct16x16 function
+  vp9_short_fdct16x16_c(out, buffer, 128);
+  for (i = 0; i < 16; ++i)
+    vpx_memcpy(out + i * 64, buffer + i * 16, sizeof(short) * 16);
+}
