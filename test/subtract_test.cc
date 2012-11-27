@@ -10,6 +10,7 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/acm_random.h"
+#include "test/xmm_register_check.h"
 extern "C" {
 #include "vpx_config.h"
 #include "vpx_rtcd.h"
@@ -77,7 +78,7 @@ TEST_P(SubtractBlockTest, SimpleSubtract) {
       predictor += kDiffPredStride;
     }
 
-    GetParam()(&be, &bd, kDiffPredStride);
+    XMM_REGISTER_CHECK(GetParam()(&be, &bd, kDiffPredStride));
 
     base_src = *be.base_src;
     src_diff = be.src_diff;

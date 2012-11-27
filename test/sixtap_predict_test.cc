@@ -13,6 +13,7 @@
 #include <string.h>
 #include "test/acm_random.h"
 #include "test/util.h"
+#include "test/xmm_register_check.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 extern "C" {
 #include "./vpx_config.h"
@@ -136,8 +137,8 @@ TEST_P(SixtapPredictTest, TestWithPresetData) {
 
   uint8_t *src = const_cast<uint8_t*>(test_data);
 
-  sixtap_predict_(&src[kSrcStride * 2 + 2 + 1], kSrcStride,
-                  2, 2, dst_, kDstStride);
+  XMM_REGISTER_CHECK(sixtap_predict_(&src[kSrcStride * 2 + 2 + 1], kSrcStride,
+                                     2, 2, dst_, kDstStride));
 
   for (int i = 0; i < height_; ++i)
     for (int j = 0; j < width_; ++j)
@@ -162,8 +163,9 @@ TEST_P(SixtapPredictTest, TestWithRandomData) {
                                 xoffset, yoffset, dst_c_, kDstStride);
 
       // Run test.
-      sixtap_predict_(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
-                      xoffset, yoffset, dst_, kDstStride);
+      XMM_REGISTER_CHECK(
+          sixtap_predict_(&src_[kSrcStride * 2 + 2 + 1], kSrcStride,
+                          xoffset, yoffset, dst_, kDstStride));
 
       for (int i = 0; i < height_; ++i)
         for (int j = 0; j < width_; ++j)

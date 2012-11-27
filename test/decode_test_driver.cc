@@ -10,6 +10,7 @@
 #include "test/decode_test_driver.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/video_source.h"
+#include "test/xmm_register_check.h"
 
 namespace libvpx_test {
 #if CONFIG_VP8_DECODER
@@ -21,8 +22,9 @@ void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
     ASSERT_EQ(VPX_CODEC_OK, res_init) << DecodeError();
   }
 
-  const vpx_codec_err_t res_dec = vpx_codec_decode(&decoder_,
-                                                   cxdata, size, NULL, 0);
+  vpx_codec_err_t res_dec;
+  XMM_REGISTER_CHECK(res_dec = vpx_codec_decode(&decoder_,
+                                                cxdata, size, NULL, 0));
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << DecodeError();
 }
 

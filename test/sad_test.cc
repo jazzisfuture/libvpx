@@ -22,6 +22,7 @@ extern "C" {
 
 #include "test/acm_random.h"
 #include "test/util.h"
+#include "test/xmm_register_check.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 
@@ -65,9 +66,11 @@ class SADTest : public PARAMS(int, int, sad_m_by_n_fn_t) {
 
   sad_m_by_n_fn_t sad_fn_;
   virtual unsigned int SAD(unsigned int max_sad) {
-    return sad_fn_(source_data_, source_stride_,
-                   reference_data_, reference_stride_,
-                   max_sad);
+    unsigned int ret;
+    XMM_REGISTER_CHECK(ret = sad_fn_(source_data_, source_stride_,
+                                     reference_data_, reference_stride_,
+                                     max_sad));
+    return ret;
   }
 
   // Sum of Absolute Differences. Given two blocks, calculate the absolute
