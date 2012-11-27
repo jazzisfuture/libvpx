@@ -98,7 +98,7 @@ extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_32x32[1024]);
    distinct bands). */
 
 /*# define DC_TOKEN_CONTEXTS        3*/ /* 00, 0!0, !0!0 */
-#define PREV_COEF_CONTEXTS       4
+#define PREV_COEF_CONTEXTS          4
 
 typedef unsigned int vp9_coeff_count[COEF_BANDS][PREV_COEF_CONTEXTS]
                                     [MAX_ENTROPY_TOKENS];
@@ -110,7 +110,8 @@ typedef vp9_prob vp9_coeff_probs[COEF_BANDS][PREV_COEF_CONTEXTS]
 #define SUBEXP_PARAM                4   /* Subexponential code parameter */
 #define MODULUS_PARAM               13  /* Modulus parameter */
 
-extern DECLARE_ALIGNED(16, const unsigned char, vp9_prev_token_class[MAX_ENTROPY_TOKENS]);
+extern DECLARE_ALIGNED(16, const unsigned char,
+                       vp9_prev_token_class[MAX_ENTROPY_TOKENS]);
 
 struct VP9Common;
 void vp9_default_coef_probs(struct VP9Common *);
@@ -129,4 +130,20 @@ void vp9_coef_tree_initialize(void);
 
 void vp9_adapt_coef_probs(struct VP9Common *);
 
+#if CONFIG_NEWCOEFCONTEXT
+#define MAX_NEIGHBORS 5
+const int *vp9_get_coef_neighbors_handle(const int *scan);
+int vp9_get_coef_neighbor_context(const short int *qcoeff_ptr, int nodc,
+                                  const int *neigbor_handle, int rc);
+extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_neighbors[
+                       16 * MAX_NEIGHBORS]);
+extern DECLARE_ALIGNED(16, const int, vp9_row_scan_neighbors[
+                       16 * MAX_NEIGHBORS]);
+extern DECLARE_ALIGNED(16, const int, vp9_col_scan_neighbors[
+                       16 * MAX_NEIGHBORS]);
+extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_8x8_neighbors[
+                       64 * MAX_NEIGHBORS]);
+extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_16x16_neighbors[
+                       256 * MAX_NEIGHBORS]);
+#endif
 #endif
