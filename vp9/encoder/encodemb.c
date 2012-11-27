@@ -287,6 +287,9 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   int err_mult = plane_rd_mult[type];
   int default_eob;
   int const *scan, *bands;
+#if CONFIG_NEWCOEFCONTEXT
+  const int *neighbors;
+#endif
 
   b = &mb->block[i];
   d = &mb->e_mbd.block[i];
@@ -325,6 +328,9 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       default_eob = 64;
       break;
   }
+#if CONFIG_NEWCOEFCONTEXT
+  neighbors = vp9_get_coef_neighbors_handle(scan);
+#endif
 
   dequant_ptr = d->dequant;
   coeff_ptr = b->coeff;
@@ -366,7 +372,12 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < default_eob) {
         band = bands[i + 1];
+#if CONFIG_NEWCOEFCONTEXT
+        pt = vp9_get_coef_neighbor_context(
+            qcoeff_ptr, i0, neighbors, scan[i + 1]);
+#else
         pt = vp9_prev_token_class[t0];
+#endif
         rate0 +=
           mb->token_costs[tx_size][type][band][pt][tokens[next][0].token];
         rate1 +=
@@ -414,12 +425,28 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       if (next < default_eob) {
         band = bands[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
+#if CONFIG_NEWCOEFCONTEXT
+          int tmp = qcoeff_ptr[scan[i]];
+          qcoeff_ptr[scan[i]] = x;
+          pt = vp9_get_coef_neighbor_context(
+              qcoeff_ptr, i0, neighbors, scan[i + 1]);
+          qcoeff_ptr[scan[i]] = tmp;
+#else
           pt = vp9_prev_token_class[t0];
+#endif
           rate0 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][0].token];
         }
         if (t1 != DCT_EOB_TOKEN) {
+#if CONFIG_NEWCOEFCONTEXT
+          int tmp = qcoeff_ptr[scan[i]];
+          qcoeff_ptr[scan[i]] = x;
+          pt = vp9_get_coef_neighbor_context(
+              qcoeff_ptr, i0, neighbors, scan[i + 1]);
+          qcoeff_ptr[scan[i]] = tmp;
+#else
           pt = vp9_prev_token_class[t1];
+#endif
           rate1 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][1].token];
         }
@@ -699,6 +726,9 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
   int rate0, rate1, error0, error1, t0, t1;
   int best, band, pt;
   int err_mult = plane_rd_mult[type];
+#if CONFIG_NEWCOEFCONTEXT
+  const int *neighbors = vp9_default_zig_zag1d_16x16_neighbors;
+#endif
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   rdmult = mb->rdmult * err_mult;
@@ -731,7 +761,12 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < 256) {
         band = vp9_coef_bands_16x16[i + 1];
+#if CONFIG_NEWCOEFCONTEXT
+        pt = vp9_get_coef_neighbor_context(
+            qcoeff_ptr, 0, neighbors, vp9_default_zig_zag1d_16x16[i + 1]);
+#else
         pt = vp9_prev_token_class[t0];
+#endif
         rate0 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][0].token];
         rate1 += mb->token_costs[TX_16X16][type][band][pt][tokens[next][1].token];
       }
@@ -777,14 +812,30 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
       if (next < 256) {
         band = vp9_coef_bands_16x16[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
-            pt = vp9_prev_token_class[t0];
-            rate0 += mb->token_costs[TX_16X16][type][band][pt]
-                [tokens[next][0].token];
+#if CONFIG_NEWCOEFCONTEXT
+          int tmp = qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]];
+          qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]] = x;
+          pt = vp9_get_coef_neighbor_context(
+              qcoeff_ptr, 0, neighbors, vp9_default_zig_zag1d_16x16[i + 1]);
+          qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]] = tmp;
+#else
+          pt = vp9_prev_token_class[t0];
+#endif
+          rate0 += mb->token_costs[TX_16X16][type][band][pt]
+              [tokens[next][0].token];
         }
         if (t1!=DCT_EOB_TOKEN) {
-            pt = vp9_prev_token_class[t1];
-            rate1 += mb->token_costs[TX_16X16][type][band][pt]
-                [tokens[next][1].token];
+#if CONFIG_NEWCOEFCONTEXT
+          int tmp = qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]];
+          qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]] = x;
+          pt = vp9_get_coef_neighbor_context(
+              qcoeff_ptr, 0, neighbors, vp9_default_zig_zag1d_16x16[i + 1]);
+          qcoeff_ptr[vp9_default_zig_zag1d_16x16[i + 1]] = tmp;
+#else
+          pt = vp9_prev_token_class[t1];
+#endif
+          rate1 += mb->token_costs[TX_16X16][type][band][pt]
+              [tokens[next][1].token];
         }
       }
       UPDATE_RD_COST();
