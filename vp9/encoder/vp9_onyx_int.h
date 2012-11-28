@@ -394,7 +394,6 @@ typedef struct {
 
 typedef struct VP9_ENCODER_RTCD {
   VP9_COMMON_RTCD            *common;
-  vp9_temporal_rtcd_vtable_t  temporal;
 } VP9_ENCODER_RTCD;
 
 enum BlockSize {
