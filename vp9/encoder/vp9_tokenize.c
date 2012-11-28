@@ -336,7 +336,7 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
     if (!cpi->common.mb_no_coeff_skip) {
       vp9_stuff_mb(cpi, xd, t, dry_run);
     } else {
-      vp9_fix_contexts(xd);
+      vp9_reset_mb_tokens_context(xd);
     }
     if (dry_run)
       *t = t_backup;
@@ -365,17 +365,36 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
   }
 
   if (tx_size == TX_16X16) {
+#if CONFIG_CNVCONTEXT
+    ENTROPY_CONTEXT above_ec = (A[0] + A[1] + A[2] + A[3]) != 0;
+    ENTROPY_CONTEXT left_ec = (L[0] + L[1] + L[2] + L[3]) != 0;
+    tokenize_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
+               &above_ec, &left_ec, TX_16X16, dry_run);
+    A[1] = A[2] = A[3] = A[0] = above_ec;
+    L[1] = L[2] = L[3] = L[0] = left_ec;
+#else
     tokenize_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
                A, L, TX_16X16, dry_run);
     A[1] = A[2] = A[3] = A[0];
     L[1] = L[2] = L[3] = L[0];
-
+#endif
     for (b = 16; b < 24; b += 4) {
+#if CONFIG_CNVCONTEXT
+      ENTROPY_CONTEXT *const a = A + vp9_block2above_8x8[b];
+      ENTROPY_CONTEXT *const l = L + vp9_block2left_8x8[b];
+      above_ec = (a[0] + a[1]) != 0;
+      left_ec = (l[0] + l[1]) != 0;
+      tokenize_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV,
+                 &above_ec, &left_ec, TX_8X8, dry_run);
+      a[1] = a[0] = above_ec;
+      L[1] = L[0] = left_ec;
+#else
       tokenize_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV,
                  A + vp9_block2above_8x8[b], L + vp9_block2left_8x8[b],
                  TX_8X8, dry_run);
       A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]];
       L[vp9_block2left_8x8[b] + 1]  = L[vp9_block2left_8x8[b]];
+#endif
     }
     A[8] = 0;
     L[8] = 0;
@@ -770,18 +789,35 @@ static void stuff_mb_16x16(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT * A = (ENTROPY_CONTEXT *)xd->above_context;
   ENTROPY_CONTEXT * L = (ENTROPY_CONTEXT *)xd->left_context;
   int b;
-
-  stuff_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC, A, L, TX_16X16, dry_run);
+#if CONFIG_CNVCONTEXT
+  ENTROPY_CONTEXT above_ec = (A[0] + A[1] + A[2] + A[3]) != 0;
+  ENTROPY_CONTEXT left_ec = (L[0] + L[1] + L[2] + L[3]) != 0;
+  stuff_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
+          &above_ec, &left_ec, TX_16X16, dry_run);
+  A[1] = A[2] = A[3] = A[0] = above_ec;
+  L[1] = L[2] = L[3] = L[0] = left_ec;
+#else
+  stuff_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
+          A, L, TX_16X16, dry_run);
   A[1] = A[2] = A[3] = A[0];
   L[1] = L[2] = L[3] = L[0];
+#endif
   for (b = 16; b < 24; b += 4) {
-    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV, A + vp9_block2above[b],
-            L + vp9_block2above_8x8[b], TX_8X8, dry_run);
+#if CONFIG_CNVCONTEXT
+    above_ec = A[vp9_block2above_8x8[b]];
+    left_ec = L[vp9_block2left_8x8[b]];
+    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV,
+            &above_ec, &left_ec, TX_8X8, dry_run);
+    A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]] = above_ec;
+    L[vp9_block2left_8x8[b] + 1] = L[vp9_block2left_8x8[b]] = left_ec;
+#else
+    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV, A, L, TX_8X8, dry_run);
     A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]];
-    L[vp9_block2left_8x8[b] + 1]  = L[vp9_block2left_8x8[b]];
+    L[vp9_block2left_8x8[b] + 1] = L[vp9_block2left_8x8[b]];
+#endif
   }
-  vpx_memset(&A[8], 0, sizeof(A[8]));
-  vpx_memset(&L[8], 0, sizeof(L[8]));
+  A[8] = 0;
+  L[8] = 0;
 }
 
 static void stuff_mb_4x4(VP9_COMP *cpi, MACROBLOCKD *xd,
@@ -869,19 +905,3 @@ void vp9_stuff_mb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
   }
 }
 
-void vp9_fix_contexts(MACROBLOCKD *xd) {
-  /* Clear entropy contexts for blocks */
-  if ((xd->mode_info_context->mbmi.mode != B_PRED
-       && xd->mode_info_context->mbmi.mode != I8X8_PRED
-       && xd->mode_info_context->mbmi.mode != SPLITMV)
-      || xd->mode_info_context->mbmi.txfm_size == TX_16X16
-      ) {
-    vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
-    vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
-  } else {
-    vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
-    vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
-    xd->above_context->y2 = 1;
-    xd->left_context->y2 = 1;
-  }
-}
