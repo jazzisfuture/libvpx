@@ -14,6 +14,7 @@
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_reconintra4x4.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/common/vp9_entropy.h"
 #include "vp9/decoder/vp9_decodframe.h"
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/common/vp9_invtrans.h"
