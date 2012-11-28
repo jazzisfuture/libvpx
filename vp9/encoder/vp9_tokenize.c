@@ -365,20 +365,21 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
   }
 
   if (tx_size == TX_16X16) {
+    ENTROPY_CONTEXT above_ec = A[0] || A[1] || A[2] || A[3] || A[8];
+    ENTROPY_CONTEXT left_ec = L[0] || L[1] || L[2] || L[3] || L[8];
     tokenize_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
-               A, L, TX_16X16, dry_run);
-    A[1] = A[2] = A[3] = A[0];
-    L[1] = L[2] = L[3] = L[0];
+               &above_ec, &left_ec, TX_16X16, dry_run);
+    A[1] = A[2] = A[3] = A[0] = A[8] = above_ec;
+    L[1] = L[2] = L[3] = L[0] = L[8] = left_ec;
 
     for (b = 16; b < 24; b += 4) {
+      above_ec = A[vp9_block2above_8x8[b]] || A[vp9_block2above_8x8[b] + 1];
+      left_ec = L[vp9_block2left_8x8[b]] || L[vp9_block2left_8x8[b] + 1];
       tokenize_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV,
-                 A + vp9_block2above_8x8[b], L + vp9_block2left_8x8[b],
-                 TX_8X8, dry_run);
-      A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]];
-      L[vp9_block2left_8x8[b] + 1]  = L[vp9_block2left_8x8[b]];
+                 &above_ec, &left_ec, TX_8X8, dry_run);
+      A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]] = above_ec;
+      L[vp9_block2left_8x8[b] + 1]  = L[vp9_block2left_8x8[b]] = left_ec;
     }
-    vpx_memset(&A[8], 0, sizeof(A[8]));
-    vpx_memset(&L[8], 0, sizeof(L[8]));
   } else if (tx_size == TX_8X8) {
     for (b = 0; b < 16; b += 4) {
       tokenize_b(cpi, xd, xd->block + b, t, plane_type,
@@ -772,18 +773,22 @@ static void stuff_mb_16x16(VP9_COMP *cpi, MACROBLOCKD *xd,
   ENTROPY_CONTEXT * A = (ENTROPY_CONTEXT *)xd->above_context;
   ENTROPY_CONTEXT * L = (ENTROPY_CONTEXT *)xd->left_context;
   int b;
+  ENTROPY_CONTEXT above_ec = A[0] || A[1] || A[2] || A[3] || A[8];
+  ENTROPY_CONTEXT left_ec = L[0] || L[1] || L[2] || L[3] || L[8];
 
-  stuff_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC, A, L, TX_16X16, dry_run);
-  A[1] = A[2] = A[3] = A[0];
-  L[1] = L[2] = L[3] = L[0];
+  stuff_b(cpi, xd, xd->block, t, PLANE_TYPE_Y_WITH_DC,
+          &above_ec, &left_ec, TX_16X16, dry_run);
+  A[1] = A[2] = A[3] = A[0] = A[8] = above_ec;
+  L[1] = L[2] = L[3] = L[0] = L[8] = left_ec;
+
   for (b = 16; b < 24; b += 4) {
-    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV, A + vp9_block2above[b],
-            L + vp9_block2above_8x8[b], TX_8X8, dry_run);
-    A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]];
-    L[vp9_block2left_8x8[b] + 1]  = L[vp9_block2left_8x8[b]];
+    above_ec = A[vp9_block2above_8x8[b]] || A[vp9_block2above_8x8[b] + 1];
+    left_ec = L[vp9_block2left_8x8[b]] || L[vp9_block2left_8x8[b] + 1];
+    stuff_b(cpi, xd, xd->block + b, t, PLANE_TYPE_UV,
+            &above_ec, &left_ec, TX_8X8, dry_run);
+    A[vp9_block2above_8x8[b] + 1] = A[vp9_block2above_8x8[b]] = above_ec;
+    L[vp9_block2left_8x8[b] + 1] = L[vp9_block2left_8x8[b]] = left_ec;
   }
-  vpx_memset(&A[8], 0, sizeof(A[8]));
-  vpx_memset(&L[8], 0, sizeof(L[8]));
 }
 
 static void stuff_mb_4x4(VP9_COMP *cpi, MACROBLOCKD *xd,

@@ -266,36 +266,35 @@ static int vp9_decode_mb_tokens_16x16(VP9D_COMP* const pbi,
   unsigned short* const eobs = xd->eobs;
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   int c, i, eobtotal = 0, seg_eob;
+  ENTROPY_CONTEXT above_ec = A[0] || A[1] || A[2] || A[3] || A[8];
+  ENTROPY_CONTEXT left_ec = L[0] || L[1] || L[2] || L[3] || L[8];
 
   // Luma block
-  eobs[0] = c = decode_coefs(pbi, xd, bc, A, L, PLANE_TYPE_Y_WITH_DC,
+  eobs[0] = c = decode_coefs(pbi, xd, bc, &above_ec, &left_ec,
+                             PLANE_TYPE_Y_WITH_DC,
                              get_tx_type(xd, &xd->block[0]),
                              get_eob(xd, segment_id, 256),
                              xd->qcoeff, vp9_default_zig_zag1d_16x16,
                              TX_16X16, vp9_coef_bands_16x16);
-  A[1] = A[2] = A[3] = A[0];
-  L[1] = L[2] = L[3] = L[0];
+  A[1] = A[2] = A[3] = A[0] = A[8] = above_ec;
+  L[1] = L[2] = L[3] = L[0] = L[8] = left_ec;
   eobtotal += c;
 
   // 8x8 chroma blocks
   seg_eob = get_eob(xd, segment_id, 64);
   for (i = 16; i < 24; i += 4) {
-    ENTROPY_CONTEXT* const a = A + vp9_block2above_8x8[i];
-    ENTROPY_CONTEXT* const l = L + vp9_block2left_8x8[i];
-
-    eobs[i] = c = decode_coefs(pbi, xd, bc, a, l, PLANE_TYPE_UV,
+    above_ec = A[vp9_block2above_8x8[i]] || A [vp9_block2above_8x8[i] + 1];
+    left_ec = L[vp9_block2left_8x8[i]] || L[vp9_block2left_8x8[i] + 1];
+    eobs[i] = c = decode_coefs(pbi, xd, bc,
+                               &above_ec, &left_ec,
+                               PLANE_TYPE_UV,
                                DCT_DCT, seg_eob, xd->block[i].qcoeff,
                                vp9_default_zig_zag1d_8x8,
                                TX_8X8, vp9_coef_bands_8x8);
-    a[1] = a[0];
-    l[1] = l[0];
+    A[vp9_block2above_8x8[i]] = A[vp9_block2above_8x8[i] + 1] = above_ec;
+    L[vp9_block2left_8x8[i]] = L[vp9_block2left_8x8[i] + 1] = left_ec;
     eobtotal += c;
   }
-
-  // no Y2 block
-  vpx_memset(&A[8], 0, sizeof(A[8]));
-  vpx_memset(&L[8], 0, sizeof(L[8]));
-
   return eobtotal;
 }
 
