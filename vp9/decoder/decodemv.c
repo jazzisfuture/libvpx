@@ -752,10 +752,10 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
     int recon_y_stride, recon_yoffset;
     int recon_uv_stride, recon_uvoffset;
+    MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
 
     {
       int ref_fb_idx;
-      MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
 
       /* Select the appropriate reference frame for this MB */
       if (ref_frame == LAST_FRAME)
@@ -783,10 +783,12 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                             xd->pre.y_buffer,
                             recon_y_stride,
                             mbmi->ref_mvs[ref_frame],
-                            &best_mv, &nearest, &nearby);
+                            &nearest, &nearby);
 
       vp9_mv_ref_probs(&pbi->common, mv_ref_p,
                        mbmi->mb_mode_context[ref_frame]);
+
+      best_mv = mbmi->ref_mvs[ref_frame][0];
     }
 
     // Is the segment level mode feature enabled for this segment
@@ -802,7 +804,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mbmi->mode = read_mv_ref(bc, mv_ref_p);
 
       vp9_accum_mv_refs(&pbi->common, mbmi->mode,
-                        mbmi->mb_mode_context[mbmi->ref_frame]);
+                        mbmi->mb_mode_context[ref_frame]);
     }
 
 #if CONFIG_PRED_FILTER
@@ -866,9 +868,10 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                               xd->second_pre.y_buffer,
                               recon_y_stride,
                               mbmi->ref_mvs[mbmi->second_ref_frame],
-                              &best_mv_second,
                               &nearest_second,
                               &nearby_second);
+
+        best_mv_second = mbmi->ref_mvs[mbmi->second_ref_frame][0];
       }
 
     } else {
@@ -900,6 +903,29 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       }
 #endif
     }
+
+#if CONFIG_NEW_MVREF
+    // if ((mbmi->mode == NEWMV) || (mbmi->mode == SPLITMV)) {
+    if (mbmi->mode == NEWMV) {
+      int best_index;
+      MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
+
+      // Encode the index of the choice.
+      best_index =
+        vp9_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
+
+      best_mv.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+
+      if (mbmi->second_ref_frame > 0) {
+        ref_frame = mbmi->second_ref_frame;
+
+        // Encode the index of the choice.
+        best_index =
+          vp9_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
+        best_mv_second.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+      }
+    }
+#endif
 
     mbmi->uv_mode = DC_PRED;
     switch (mbmi->mode) {
@@ -1051,19 +1077,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
       case NEWMV:
 
-#if CONFIG_NEW_MVREF
-        {
-          int best_index;
-          MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
-
-          // Encode the index of the choice.
-          best_index =
-            vp9_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
-
-          best_mv.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
-        }
-#endif
-
         read_nmv(bc, &mv->as_mv, &best_mv.as_mv, nmvc);
         read_nmv_fp(bc, &mv->as_mv, &best_mv.as_mv, nmvc,
                     xd->allow_high_precision_mv);
@@ -1085,18 +1098,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                                   mb_to_bottom_edge);
 
         if (mbmi->second_ref_frame > 0) {
-#if CONFIG_NEW_MVREF
-        {
-          int best_index;
-          MV_REFERENCE_FRAME ref_frame = mbmi->second_ref_frame;
-
-          // Encode the index of the choice.
-          best_index =
-            vp9_read_mv_ref_id(bc, xd->mb_mv_ref_id_probs[ref_frame]);
-          best_mv_second.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
-        }
-#endif
-
           read_nmv(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc);
           read_nmv_fp(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc,
                       xd->allow_high_precision_mv);
