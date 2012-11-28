@@ -901,17 +901,21 @@ static void optimize_b_16x16(MACROBLOCK *mb, int i, PLANE_TYPE type,
 
 void vp9_optimize_mby_16x16(MACROBLOCK *x) {
   ENTROPY_CONTEXT_PLANES t_above, t_left;
-  ENTROPY_CONTEXT *ta, *tl;
+  ENTROPY_CONTEXT ta, tl;
 
   if (!x->e_mbd.above_context || !x->e_mbd.left_context)
     return;
 
   vpx_memcpy(&t_above, x->e_mbd.above_context, sizeof(ENTROPY_CONTEXT_PLANES));
   vpx_memcpy(&t_left, x->e_mbd.left_context, sizeof(ENTROPY_CONTEXT_PLANES));
-
-  ta = (ENTROPY_CONTEXT *)&t_above;
-  tl = (ENTROPY_CONTEXT *)&t_left;
-  optimize_b_16x16(x, 0, PLANE_TYPE_Y_WITH_DC, ta, tl);
+#if CONFIG_CNVCONTEXT
+  ta = (t_above.y1[0] + t_above.y1[1] + t_above.y1[2] + t_above.y1[3]) != 0;
+  tl = (t_left.y1[0] + t_left.y1[1] + t_left.y1[2] + t_left.y1[3]) != 0;
+#else
+  ta = t_above.y1[0];
+  tl = t_left.y1[0];
+#endif
+  optimize_b_16x16(x, 0, PLANE_TYPE_Y_WITH_DC, &ta, &tl);
 }
 
 static void optimize_mb_16x16(MACROBLOCK *x) {
