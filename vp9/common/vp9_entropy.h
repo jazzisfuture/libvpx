@@ -111,4 +111,20 @@ void vp9_coef_tree_initialize(void);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_16x16[256]);
 void vp9_adapt_coef_probs(struct VP9Common *);
 
+static void vp9_reset_mb_tokens_context(MACROBLOCKD* const xd) {
+  /* Clear entropy contexts */
+  if ((xd->mode_info_context->mbmi.mode != B_PRED &&
+       xd->mode_info_context->mbmi.mode != I8X8_PRED &&
+       xd->mode_info_context->mbmi.mode != SPLITMV)
+      || xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
+    vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
+    vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
+  } else {
+    vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
+    vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) - 1);
+    xd->above_context->y2 = 1;
+    xd->left_context->y2 = 1;
+  }
+}
+
 #endif
