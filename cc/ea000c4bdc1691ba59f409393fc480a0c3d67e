@@ -2,6 +2,15 @@ Code-Review+2: Scott LaVarnway <slavarnway@google.com>
 Code-Review+1: Ronald S. Bultje <rbultje@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Scott LaVarnway <slavarnway@google.com>
+Submitted-at: Thu, 29 Mar 2012 10:22:22 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/19084
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Code-Review+1: Ronald S. Bultje <rbultje@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Scott LaVarnway <slavarnway@google.com>
 Submitted-at: Thu, 29 Mar 2012 11:22:22 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/19084
 Project: webm/libvpx

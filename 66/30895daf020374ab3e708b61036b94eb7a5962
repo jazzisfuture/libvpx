@@ -1,6 +1,14 @@
 Code-Review+2: Ronald S. Bultje <rbultje@google.com>
 Verified+1: Daniel Kang <ddkang@google.com>
 Submitted-by: Daniel Kang <ddkang@google.com>
+Submitted-at: Mon, 06 Aug 2012 15:28:08 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29310
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Ronald S. Bultje <rbultje@google.com>
+Verified+1: Daniel Kang <ddkang@google.com>
+Submitted-by: Daniel Kang <ddkang@google.com>
 Submitted-at: Mon, 06 Aug 2012 16:28:08 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29310
 Project: webm/libvpx

@@ -3,6 +3,16 @@ Code-Review+2: Johann <johannkoenig@google.com>
 Verified+1: Johann <johannkoenig@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Fri, 27 Jul 2012 15:05:12 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/28449
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+1: James Zern <jzern@google.com>
+Code-Review+2: Johann <johannkoenig@google.com>
+Verified+1: Johann <johannkoenig@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Johann <johannkoenig@google.com>
 Submitted-at: Fri, 27 Jul 2012 16:05:12 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/28449
 Project: webm/libvpx

@@ -1,6 +1,14 @@
 Code-Review+2: Yaowu Xu <yaowu@google.com>
 Verified+1: Daniel Kang <ddkang@google.com>
 Submitted-by: Daniel Kang <ddkang@google.com>
+Submitted-at: Wed, 08 Aug 2012 13:58:24 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29566
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: Daniel Kang <ddkang@google.com>
+Submitted-by: Daniel Kang <ddkang@google.com>
 Submitted-at: Wed, 08 Aug 2012 14:58:24 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29566
 Project: webm/libvpx

@@ -2,6 +2,15 @@ Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Verified+1: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Wed, 30 May 2012 07:33:44 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/24023
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Verified+1: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
 Submitted-at: Wed, 30 May 2012 08:33:44 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/24023
 Project: webm/libvpx

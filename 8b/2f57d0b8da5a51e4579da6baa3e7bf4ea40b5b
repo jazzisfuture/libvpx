@@ -1,6 +1,14 @@
 Code-Review+2: Yaowu Xu <yaowu@google.com>
 Verified+1: Yaowu Xu <yaowu@google.com>
 Submitted-by: Yaowu Xu <yaowu@google.com>
+Submitted-at: Tue, 07 Aug 2012 10:35:29 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29297
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: Yaowu Xu <yaowu@google.com>
+Submitted-by: Yaowu Xu <yaowu@google.com>
 Submitted-at: Tue, 07 Aug 2012 11:35:29 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29297
 Project: webm/libvpx

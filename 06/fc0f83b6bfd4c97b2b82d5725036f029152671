@@ -2,6 +2,15 @@ Verified+1: James Berry <jamesberry@google.com>
 Code-Review+2: Yunqing Wang <yunqingwang@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Yunqing Wang <yunqingwang@google.com>
+Submitted-at: Mon, 28 Nov 2011 15:01:00 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/12142
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: James Berry <jamesberry@google.com>
+Code-Review+2: Yunqing Wang <yunqingwang@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Yunqing Wang <yunqingwang@google.com>
 Submitted-at: Mon, 28 Nov 2011 16:01:00 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/12142
 Project: webm/libvpx

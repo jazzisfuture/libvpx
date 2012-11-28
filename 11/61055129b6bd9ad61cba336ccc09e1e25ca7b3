@@ -1,6 +1,14 @@
 Code-Review+2: Scott LaVarnway <slavarnway@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Tue, 31 Jul 2012 09:21:57 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/28501
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Johann <johannkoenig@google.com>
 Submitted-at: Tue, 31 Jul 2012 10:21:57 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/28501
 Project: webm/libvpx

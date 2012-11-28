@@ -1,6 +1,14 @@
 Code-Review+2: Ronald S. Bultje <rbultje@google.com>
 Verified+1: Ronald S. Bultje <rbultje@google.com>
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Mon, 15 Oct 2012 09:39:13 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35497
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Ronald S. Bultje <rbultje@google.com>
+Verified+1: Ronald S. Bultje <rbultje@google.com>
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Mon, 15 Oct 2012 10:39:13 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35497
 Project: webm/libvpx

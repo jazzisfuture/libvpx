@@ -1,6 +1,14 @@
 Code-Review+2: Paul Wilkins <paulwilkins@google.com>
 Verified+1: Paul Wilkins <paulwilkins@google.com>
 Submitted-by: Paul Wilkins <paulwilkins@google.com>
+Submitted-at: Tue, 14 Aug 2012 02:34:54 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29881
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Paul Wilkins <paulwilkins@google.com>
+Verified+1: Paul Wilkins <paulwilkins@google.com>
+Submitted-by: Paul Wilkins <paulwilkins@google.com>
 Submitted-at: Tue, 14 Aug 2012 03:34:54 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29881
 Project: webm/libvpx

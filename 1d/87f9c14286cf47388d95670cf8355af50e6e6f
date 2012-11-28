@@ -2,6 +2,15 @@ Code-Review+2: Yaowu Xu <yaowu@google.com>
 Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Mon, 15 Oct 2012 18:49:37 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35612
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Mon, 15 Oct 2012 19:49:37 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35612
 Project: webm/libvpx

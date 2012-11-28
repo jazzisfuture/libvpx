@@ -1,6 +1,14 @@
 Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: Daniel Kang <ddkang@google.com>
 Submitted-by: Daniel Kang <ddkang@google.com>
+Submitted-at: Fri, 10 Aug 2012 09:18:06 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29892
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: Daniel Kang <ddkang@google.com>
+Submitted-by: Daniel Kang <ddkang@google.com>
 Submitted-at: Fri, 10 Aug 2012 10:18:06 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29892
 Project: webm/libvpx

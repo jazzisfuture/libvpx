@@ -2,6 +2,15 @@ Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Adrian Grange <agrange@google.com>
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Wed, 18 Jan 2012 09:15:24 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/14289
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
 Submitted-at: Wed, 18 Jan 2012 10:15:24 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/14289
 Project: webm/libvpx

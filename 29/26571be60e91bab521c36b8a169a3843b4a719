@@ -1,6 +1,14 @@
 Code-Review+2: John Koleszar <jkoleszar@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Mon, 04 Jun 2012 17:54:52 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/24467
+Project: webm/libvpx
+Branch: refs/heads/eider
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Mon, 04 Jun 2012 18:54:52 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/24467
 Project: webm/libvpx

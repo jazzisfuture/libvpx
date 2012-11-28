@@ -2,6 +2,15 @@ Code-Review+2: Scott LaVarnway <slavarnway@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Mon, 10 Sep 2012 16:29:13 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/32627
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
 Submitted-at: Mon, 10 Sep 2012 17:29:13 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/32627
 Project: webm/libvpx

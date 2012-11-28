@@ -3,6 +3,16 @@ Verified+1: John Koleszar <jkoleszar@google.com>
 Verified+1: Tero Rintaluoma <teror@google.com>
 Code-Review+1: Christian Duvivier <cduvivier@google.com>
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 22 Aug 2012 09:02:45 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/31011
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: John Koleszar <jkoleszar@google.com>
+Verified+1: Tero Rintaluoma <teror@google.com>
+Code-Review+1: Christian Duvivier <cduvivier@google.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Wed, 22 Aug 2012 10:02:45 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/31011
 Project: webm/libvpx

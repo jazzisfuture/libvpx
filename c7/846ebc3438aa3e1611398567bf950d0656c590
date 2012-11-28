@@ -1,6 +1,14 @@
 Code-Review+2: Debargha Mukherjee <debargha@google.com>
 Verified+1: Jingning Han <jingning@google.com>
 Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Thu, 02 Aug 2012 08:11:38 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/28980
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Verified+1: Jingning Han <jingning@google.com>
+Submitted-by: Jingning Han <jingning@google.com>
 Submitted-at: Thu, 02 Aug 2012 09:11:38 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/28980
 Project: webm/libvpx

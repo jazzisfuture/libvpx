@@ -2,6 +2,15 @@ Change-Id: Iaac982e89c9bc883316025036f074eb6b9d45298
 Code-Review+2: Yaowu Xu <yaowu@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Yaowu Xu <yaowu@google.com>
+Submitted-at: Tue, 11 Sep 2012 14:00:51 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/32994
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Change-Id: Iaac982e89c9bc883316025036f074eb6b9d45298
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Yaowu Xu <yaowu@google.com>
 Submitted-at: Tue, 11 Sep 2012 15:00:51 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/32994
 Project: webm/libvpx

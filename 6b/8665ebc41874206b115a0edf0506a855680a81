@@ -1,5 +1,13 @@
 Code-Review+2: John Koleszar <jkoleszar@google.com>
 Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Attila Nagy <attilanagy@chromium.org>
+Submitted-at: Mon, 30 Jul 2012 22:45:54 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/28577
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Attila Nagy <attilanagy@google.com>
 Submitted-at: Mon, 30 Jul 2012 23:45:54 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/28577

@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Adrian Grange <agrange@google.com>
 Submitted-by: Yaowu Xu <yaowu@google.com>
+Submitted-at: Mon, 15 Oct 2012 14:02:36 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35619
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Submitted-by: Yaowu Xu <yaowu@google.com>
 Submitted-at: Mon, 15 Oct 2012 15:02:36 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35619
 Project: webm/libvpx

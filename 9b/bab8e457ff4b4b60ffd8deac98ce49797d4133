@@ -2,6 +2,15 @@ Code-Review+2: John Koleszar <jkoleszar@google.com>
 Code-Review+1: James Zern <jzern@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 03 Oct 2012 11:51:29 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/33936
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Code-Review+1: James Zern <jzern@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Wed, 03 Oct 2012 12:51:29 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/33936
 Project: webm/libvpx

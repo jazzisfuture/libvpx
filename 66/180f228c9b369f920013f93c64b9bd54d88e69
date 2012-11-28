@@ -3,6 +3,16 @@ Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Debargha Mukherjee <debargha@google.com>
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Mon, 15 Oct 2012 18:50:06 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35613
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+1: Scott LaVarnway <slavarnway@google.com>
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Mon, 15 Oct 2012 19:50:06 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35613
 Project: webm/libvpx

@@ -2,6 +2,15 @@ Code-Review+1: James Zern <jzern@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Adrian Grange <agrange@google.com>
+Submitted-at: Thu, 04 Oct 2012 16:33:55 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/34438
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+1: James Zern <jzern@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Adrian Grange <agrange@google.com>
 Submitted-at: Thu, 04 Oct 2012 17:33:55 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/34438
 Project: webm/libvpx

@@ -2,6 +2,15 @@ Code-Review+2: Ronald S. Bultje <rbultje@google.com>
 Code-Review+1: James Zern <jzern@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Adrian Grange <agrange@google.com>
+Submitted-at: Thu, 04 Oct 2012 09:37:38 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/34430
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Ronald S. Bultje <rbultje@google.com>
+Code-Review+1: James Zern <jzern@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Adrian Grange <agrange@google.com>
 Submitted-at: Thu, 04 Oct 2012 10:37:38 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/34430
 Project: webm/libvpx

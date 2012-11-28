@@ -2,6 +2,15 @@ Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Paul Wilkins <paulwilkins@google.com>
+Submitted-at: Tue, 30 Oct 2012 06:24:11 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/36857
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Paul Wilkins <paulwilkins@google.com>
 Submitted-at: Tue, 30 Oct 2012 07:24:11 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/36857
 Project: webm/libvpx

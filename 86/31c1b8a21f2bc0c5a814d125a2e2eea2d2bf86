@@ -1,6 +1,14 @@
 Code-Review+2: John Koleszar <jkoleszar@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 23 May 2012 12:47:48 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/23254
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Wed, 23 May 2012 13:47:48 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/23254
 Project: webm/libvpx

@@ -2,6 +2,15 @@ Change-Id: If9d5f86643244d8f1f9f64187098baa1a08b6d18
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Verified+1: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Sat, 13 Oct 2012 20:23:55 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35519
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Change-Id: If9d5f86643244d8f1f9f64187098baa1a08b6d18
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Verified+1: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
 Submitted-at: Sat, 13 Oct 2012 21:23:55 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35519
 Project: webm/libvpx

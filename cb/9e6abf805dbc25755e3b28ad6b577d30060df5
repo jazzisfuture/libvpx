@@ -2,6 +2,15 @@ Verified+1: Ronald S. Bultje <rbultje@google.com>
 Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Thu, 25 Oct 2012 08:12:36 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/36503
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Verified+1: Ronald S. Bultje <rbultje@google.com>
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Thu, 25 Oct 2012 09:12:36 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/36503
 Project: webm/libvpx

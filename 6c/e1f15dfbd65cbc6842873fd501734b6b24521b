@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Debargha Mukherjee <debargha@google.com>
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Tue, 10 Jan 2012 13:33:26 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/13945
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Tue, 10 Jan 2012 14:33:26 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/13945
 Project: webm/libvpx

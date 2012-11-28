@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Adrian Grange <agrange@google.com>
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 21 Dec 2011 09:20:21 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/12829
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Wed, 21 Dec 2011 10:20:21 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/12829
 Project: webm/libvpx

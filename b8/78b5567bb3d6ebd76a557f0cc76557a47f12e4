@@ -2,6 +2,15 @@ Code-Review+2: John Koleszar <jkoleszar@google.com>
 Verified+1: John Koleszar <jkoleszar@google.com>
 Code-Review+1: Tero Rintaluoma <teror@google.com>
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 22 Aug 2012 09:03:06 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/31012
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: John Koleszar <jkoleszar@google.com>
+Code-Review+1: Tero Rintaluoma <teror@google.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Wed, 22 Aug 2012 10:03:06 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/31012
 Project: webm/libvpx

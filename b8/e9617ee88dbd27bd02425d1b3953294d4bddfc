@@ -1,6 +1,14 @@
 Code-Review+2: Yunqing Wang <yunqingwang@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Yunqing Wang <yunqingwang@google.com>
+Submitted-at: Wed, 31 Oct 2012 08:55:13 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/37026
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Yunqing Wang <yunqingwang@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Yunqing Wang <yunqingwang@google.com>
 Submitted-at: Wed, 31 Oct 2012 09:55:13 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/37026
 Project: webm/libvpx

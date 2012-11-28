@@ -2,6 +2,15 @@ Verified+1: Fritz Koenig <frkoenig@google.com>
 Code-Review+2: Johann <johannkoenig@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Fritz Koenig <frkoenig@google.com>
+Submitted-at: Mon, 23 Jan 2012 11:13:33 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/14527
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: Fritz Koenig <frkoenig@google.com>
+Code-Review+2: Johann <johannkoenig@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Fritz Koenig <frkoenig@google.com>
 Submitted-at: Mon, 23 Jan 2012 12:13:33 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/14527
 Project: webm/libvpx

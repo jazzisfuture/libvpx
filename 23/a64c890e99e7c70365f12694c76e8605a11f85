@@ -2,6 +2,15 @@ Code-Review+1: Scott LaVarnway <slavarnway@google.com>
 Code-Review+2: Yaowu Xu <yaowu@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Mon, 15 Oct 2012 18:50:20 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35614
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+1: Scott LaVarnway <slavarnway@google.com>
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Mon, 15 Oct 2012 19:50:20 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35614
 Project: webm/libvpx

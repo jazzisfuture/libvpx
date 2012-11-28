@@ -2,6 +2,15 @@ Verified+1: Ronald S. Bultje <rbultje@google.com>
 Code-Review+2: Paul Wilkins <paulwilkins@google.com>
 Code-Review+2: Debargha Mukherjee <debargha@google.com>
 Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Mon, 15 Oct 2012 09:38:10 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35494
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Verified+1: Ronald S. Bultje <rbultje@google.com>
+Code-Review+2: Paul Wilkins <paulwilkins@google.com>
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
 Submitted-at: Mon, 15 Oct 2012 10:38:10 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35494
 Project: webm/libvpx

@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Jim Bankoski <jimbankoski@google.com>
 Submitted-by: Yunqing Wang <yunqingwang@google.com>
+Submitted-at: Thu, 26 Jul 2012 07:59:12 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/24875
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Yunqing Wang <yunqingwang@google.com>
 Submitted-at: Thu, 26 Jul 2012 08:59:12 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/24875
 Project: webm/libvpx

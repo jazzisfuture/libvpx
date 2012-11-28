@@ -3,6 +3,16 @@ Verified+1: WebmJenkinsRoleAccount
 Code-Review+1: Tim Terriberry <tterriberry@mozilla.com>
 Verified+1: Tim Terriberry <tterriberry@mozilla.com>
 Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Mon, 04 Jun 2012 15:49:02 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/24441
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Johann <johannkoenig@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+1: Tim Terriberry <tterriberry@mozilla.com>
+Verified+1: Tim Terriberry <tterriberry@mozilla.com>
+Submitted-by: Johann <johannkoenig@google.com>
 Submitted-at: Mon, 04 Jun 2012 16:49:02 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/24441
 Project: webm/libvpx

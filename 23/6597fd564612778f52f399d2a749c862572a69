@@ -1,6 +1,14 @@
 Code-Review+2: Ronald S. Bultje <rbultje@google.com>
 Verified+1: Yaowu Xu <yaowu@google.com>
 Submitted-by: Yaowu Xu <yaowu@google.com>
+Submitted-at: Mon, 06 Aug 2012 06:05:56 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/29184
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Ronald S. Bultje <rbultje@google.com>
+Verified+1: Yaowu Xu <yaowu@google.com>
+Submitted-by: Yaowu Xu <yaowu@google.com>
 Submitted-at: Mon, 06 Aug 2012 07:05:56 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/29184
 Project: webm/libvpx

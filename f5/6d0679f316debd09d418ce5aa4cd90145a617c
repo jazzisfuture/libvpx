@@ -1,6 +1,14 @@
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Adrian Grange <agrange@google.com>
 Submitted-by: Scott LaVarnway <slavarnway@google.com>
+Submitted-at: Wed, 10 Oct 2012 08:08:03 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/35106
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Submitted-by: Scott LaVarnway <slavarnway@google.com>
 Submitted-at: Wed, 10 Oct 2012 09:08:03 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/35106
 Project: webm/libvpx

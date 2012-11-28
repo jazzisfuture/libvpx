@@ -2,6 +2,15 @@ Code-Review+2: Yaowu Xu <yaowu@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Code-Review+2: Debargha Mukherjee <debargha@google.com>
 Submitted-by: Paul Wilkins <paulwilkins@google.com>
+Submitted-at: Fri, 05 Oct 2012 05:14:51 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/34748
+Project: webm/libvpx
+Branch: refs/heads/experimental
+
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Submitted-by: Paul Wilkins <paulwilkins@google.com>
 Submitted-at: Fri, 05 Oct 2012 06:14:51 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/34748
 Project: webm/libvpx

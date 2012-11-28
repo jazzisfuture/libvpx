@@ -1,4 +1,13 @@
 Code-Review+2: Johann <johannkoenig@google.com>
+Code-Review+1: Attila Nagy <attilanagy@chromium.org>
+Verified+1: Attila Nagy <attilanagy@chromium.org>
+Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Tue, 20 Sep 2011 08:50:42 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/7920
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: Johann <johannkoenig@google.com>
 Code-Review+1: Attila Nagy <attilanagy@google.com>
 Verified+1: Attila Nagy <attilanagy@google.com>
 Submitted-by: Johann <johannkoenig@google.com>

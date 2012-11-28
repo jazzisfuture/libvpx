@@ -1,4 +1,13 @@
 Code-Review+2: John Koleszar <jkoleszar@google.com>
+Code-Review+1: Attila Nagy <attilanagy@chromium.org>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Thu, 03 May 2012 08:40:50 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/21699
+Project: webm/libvpx
+Branch: refs/heads/eider
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
 Code-Review+1: Attila Nagy <attilanagy@google.com>
 Verified+1: WebmJenkinsRoleAccount
 Submitted-by: John Koleszar <jkoleszar@google.com>

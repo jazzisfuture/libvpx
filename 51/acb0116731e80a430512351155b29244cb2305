@@ -3,6 +3,16 @@ Verified+1: WebmJenkinsRoleAccount
 Code-Review+1: Marco Paniconi <marpan@google.com>
 Verified+1: Marco Paniconi <marpan@google.com>
 Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Fri, 10 Feb 2012 16:18:00 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/15465
+Project: webm/libvpx
+Branch: refs/heads/master
+
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+1: Marco Paniconi <marpan@google.com>
+Verified+1: Marco Paniconi <marpan@google.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
 Submitted-at: Fri, 10 Feb 2012 17:18:00 -0700
 Reviewed-on: https://gerrit.chromium.org/gerrit/15465
 Project: webm/libvpx
