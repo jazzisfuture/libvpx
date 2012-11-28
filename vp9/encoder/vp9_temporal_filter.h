@@ -12,36 +12,12 @@
 #ifndef __INC_TEMPORAL_FILTER_H
 #define __INC_TEMPORAL_FILTER_H
 
-#define prototype_apply(sym)\
-  void (sym) \
-  ( \
-    unsigned char *frame1, \
-    unsigned int stride, \
-    unsigned char *frame2, \
-    unsigned int block_size, \
-    int strength, \
-    int filter_weight, \
-    unsigned int *accumulator, \
-    unsigned short *count \
-  )
-
 #if ARCH_X86 || ARCH_X86_64
 #include "x86/vp9_temporal_filter_x86.h"
 #endif
 
 #ifndef vp9_temporal_filter_apply
 #define vp9_temporal_filter_apply vp9_temporal_filter_apply_c
-#endif
-extern prototype_apply(vp9_temporal_filter_apply);
-
-typedef struct {
-  prototype_apply(*apply);
-} vp9_temporal_rtcd_vtable_t;
-
-#if CONFIG_RUNTIME_CPU_DETECT
-#define TEMPORAL_INVOKE(ctx,fn) (ctx)->fn
-#else
-#define TEMPORAL_INVOKE(ctx,fn) vp9_temporal_filter_##fn
 #endif
 
 struct VP9_COMP;
