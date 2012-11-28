@@ -548,12 +548,10 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
       unsigned int best_index;
       MV_REFERENCE_FRAME rf = mbmi->ref_frame;
       MV_REFERENCE_FRAME sec_ref_frame = mbmi->second_ref_frame;
-      best_mv.as_int = ctx->best_ref_mv.as_int;
-      best_second_mv.as_int = ctx->second_best_ref_mv.as_int;
-      if (mbmi->mode == NEWMV) {
-        best_mv.as_int = mbmi->ref_mvs[rf][0].as_int;
-        best_second_mv.as_int = mbmi->ref_mvs[mbmi->second_ref_frame][0].as_int;
+      best_mv.as_int = mbmi->ref_mvs[rf][0].as_int;
+      best_second_mv.as_int = mbmi->ref_mvs[mbmi->second_ref_frame][0].as_int;
 #if CONFIG_NEW_MVREF
+      if (mbmi->mode == NEWMV) {
         best_index = pick_best_mv_ref(x, rf, mbmi->mv[0],
                                       mbmi->ref_mvs[rf], &best_mv);
         mbmi->best_index = best_index;
@@ -566,8 +564,8 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
                                &best_second_mv);
           mbmi->best_second_index = best_index;
         }
-#endif
       }
+#endif
       mbmi->best_mv.as_int = best_mv.as_int;
       mbmi->best_second_mv.as_int = best_second_mv.as_int;
       vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv);
