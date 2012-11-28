@@ -43,8 +43,6 @@ extern void vp9_tokenize_mb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
 extern void vp9_stuff_mb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                          TOKENEXTRA **t, int dry_run);
 
-extern void vp9_fix_contexts(MACROBLOCKD *xd);
-
 #ifdef ENTROPY_STATS
 void init_context_counters();
 void print_context_counters();

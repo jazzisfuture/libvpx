@@ -247,6 +247,7 @@ EXPERIMENT_LIST="
     implicit_segmentation
     newbintramodes
     comp_interintra_pred
+    cnvcontext
 "
 CONFIG_LIST="
     external_build
