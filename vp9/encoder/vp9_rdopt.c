@@ -540,7 +540,7 @@ static int cost_coeffs_2x2(MACROBLOCK *mb,
     cost += mb->token_costs[TX_8X8][type][vp9_coef_bands[c]]
             [pt] [DCT_EOB_TOKEN];
 
-  pt = (c != !type); // is eob first coefficient;
+  pt = (c > !type); // is eob first coefficient;
   *a = *l = pt;
   return cost;
 }
@@ -640,7 +640,7 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
           [pt][DCT_EOB_TOKEN];
   }
 
-  pt = (c != !type); // is eob first coefficient;
+  pt = (c > !type); // is eob first coefficient;
   *a = *l = pt;
   return cost;
 }
