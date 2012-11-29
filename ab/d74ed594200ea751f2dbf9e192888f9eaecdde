@@ -1,0 +1,7 @@
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Thu, 29 Nov 2012 08:29:21 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/38910
+Project: webm/libvpx
+Branch: refs/heads/experimental
