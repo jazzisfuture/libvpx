@@ -164,7 +164,6 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
 
-  const int mis = cm->mode_info_stride;
   int i;
   int tot_count;
   int no_pred_cost;
