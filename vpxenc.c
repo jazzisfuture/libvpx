@@ -2281,7 +2281,6 @@ static void get_cx_data(struct stream_state  *stream,
         if (global->test_decode) {
           vpx_codec_decode(&stream->decoder, pkt->data.frame.buf,
                            pkt->data.frame.sz, NULL, 0);
-          ctx_exit_on_error(&stream->decoder, "Failed to decode frame");
         }
         break;
       case VPX_CODEC_STATS_PKT:
