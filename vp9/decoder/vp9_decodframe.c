@@ -702,12 +702,12 @@ static void decode_superblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
 
   assert(xd->mode_info_context->mbmi.encoded_as_sb);
 
+  if (pbi->common.frame_type != KEY_FRAME)
+    vp9_setup_interp_filters(xd, xd->mode_info_context->mbmi.interp_filter, pc);
+
   // re-initialize macroblock dequantizer before detokenization
   if (xd->segmentation_enabled)
     mb_init_dequantizer(pbi, xd);
-
-  if (pbi->common.frame_type != KEY_FRAME)
-    vp9_setup_interp_filters(xd, xd->mode_info_context->mbmi.interp_filter, pc);
 
   if (xd->mode_info_context->mbmi.mb_skip_coeff) {
     vp9_reset_mb_tokens_context(xd);
@@ -744,6 +744,7 @@ static void decode_superblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
 
     if (mb_col + x_idx >= pc->mb_cols || mb_row + y_idx >= pc->mb_rows)
       continue;
+
 
     xd->above_context = pc->above_context + mb_col + x_idx;
     xd->left_context = pc->left_context + y_idx;

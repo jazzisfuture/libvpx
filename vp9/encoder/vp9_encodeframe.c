@@ -2303,6 +2303,8 @@ static void encode_superblock(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_update_zbin_extra(cpi, x);
     }
   } else {
+    vp9_setup_interp_filters(xd, xd->mode_info_context->mbmi.interp_filter, cm);
+
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
       // Adjust the zbin based on this MB rate.
       adjust_act_zbin(cpi, x);
@@ -2336,6 +2338,7 @@ static void encode_superblock(VP9_COMP *cpi, MACROBLOCK *x,
                       vp9_get_pred_ref(cm, xd)));
     vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
   }
+
 
   if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
     vp9_build_intra_predictors_sby_s(&x->e_mbd);
