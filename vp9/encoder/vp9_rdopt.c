@@ -400,6 +400,13 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
     cpi->common.fc.hybrid_coef_probs_16x16,
     BLOCK_TYPES_16X16);
 
+#if CONFIG_TX32X32
+  fill_token_costs(
+    cpi->mb.token_costs[TX_32X32],
+    (const vp9_prob(*)[8][PREV_COEF_CONTEXTS][11]) cpi->common.fc.coef_probs_32x32,
+    BLOCK_TYPES_32X32);
+#endif
+
   /*rough estimate for costing*/
   cpi->common.kf_ymode_probs_index = cpi->common.base_qindex >> 4;
   vp9_init_mode_costs(cpi);
@@ -556,7 +563,7 @@ static int cost_coeffs_2x2(MACROBLOCK *mb,
 
 static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
                        ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
-                       int tx_size) {
+                       TX_SIZE tx_size) {
   const int eob = b->eob;
   int c = (type == PLANE_TYPE_Y_NO_DC); /* start at coef 0, unless Y with Y2 */
   int cost = 0, default_eob, seg_eob;
@@ -615,7 +622,16 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
         tx_type = get_tx_type_16x16(xd, b);
       }
       break;
+#if CONFIG_TX32X32
+    case TX_32X32:
+      scan = vp9_default_zig_zag1d_32x32;
+      band = vp9_coef_bands_32x32;
+      default_eob = 1024;
+      qcoeff_ptr = xd->sb_coeff_data.qcoeff;
+      break;
+#endif
     default:
+      abort();
       break;
   }
   if (vp9_segfeature_active(&mb->e_mbd, segment_id, SEG_LVL_EOB))
@@ -813,23 +829,28 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
 }
 
 static void choose_txfm_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
-                                     int r[2][TX_SIZE_MAX], int *rate,
-                                     int d[TX_SIZE_MAX], int *distortion,
-                                     int s[TX_SIZE_MAX], int *skip,
-                                     int64_t txfm_cache[NB_TXFM_MODES]) {
+                                     int (*r)[2], int *rate,
+                                     int *d, int *distortion,
+                                     int *s, int *skip,
+                                     int64_t txfm_cache[NB_TXFM_MODES],
+                                     TX_SIZE max_txfm_size) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
   vp9_prob skip_prob = cm->mb_no_coeff_skip ?
                        vp9_get_pred_prob(cm, xd, PRED_MBSKIP) : 128;
-  int64_t rd[2][TX_SIZE_MAX];
-  int n;
+  int64_t rd[TX_SIZE_MAX_SB][2];
+  int n, m;
 
-  r[1][TX_16X16] = r[0][TX_16X16] + vp9_cost_one(cm->prob_tx[0]) +
-                   vp9_cost_one(cm->prob_tx[1]);
-  r[1][TX_8X8]   = r[0][TX_8X8] + vp9_cost_one(cm->prob_tx[0]) +
-                   vp9_cost_zero(cm->prob_tx[1]);
-  r[1][TX_4X4]   = r[0][TX_4X4] + vp9_cost_zero(cm->prob_tx[0]);
+  for (n = TX_4X4; n <= max_txfm_size; n++) {
+    r[n][1] = r[n][0];
+    for (m = 0; m <= n - (n == max_txfm_size); m++) {
+      if (m == n)
+        r[n][1] += vp9_cost_zero(cm->prob_tx[m]);
+      else
+        r[n][1] += vp9_cost_one(cm->prob_tx[m]);
+    }
+  }
 
   if (cm->mb_no_coeff_skip) {
     int s0, s1;
@@ -838,64 +859,82 @@ static void choose_txfm_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
     s0 = vp9_cost_bit(skip_prob, 0);
     s1 = vp9_cost_bit(skip_prob, 1);
 
-    for (n = TX_4X4; n <= TX_16X16; n++) {
+    for (n = TX_4X4; n <= max_txfm_size; n++) {
       if (s[n]) {
-        rd[0][n] = rd[1][n] = RDCOST(x->rdmult, x->rddiv, s1, d[n]);
+        rd[n][0] = rd[n][1] = RDCOST(x->rdmult, x->rddiv, s1, d[n]);
       } else {
-        rd[0][n] = RDCOST(x->rdmult, x->rddiv, r[0][n] + s0, d[n]);
-        rd[1][n] = RDCOST(x->rdmult, x->rddiv, r[1][n] + s0, d[n]);
+        rd[n][0] = RDCOST(x->rdmult, x->rddiv, r[n][0] + s0, d[n]);
+        rd[n][1] = RDCOST(x->rdmult, x->rddiv, r[n][1] + s0, d[n]);
       }
     }
   } else {
-    for (n = TX_4X4; n <= TX_16X16; n++) {
-      rd[0][n] = RDCOST(x->rdmult, x->rddiv, r[0][n], d[n]);
-      rd[1][n] = RDCOST(x->rdmult, x->rddiv, r[1][n], d[n]);
+    for (n = TX_4X4; n <= max_txfm_size; n++) {
+      rd[n][0] = RDCOST(x->rdmult, x->rddiv, r[n][0], d[n]);
+      rd[n][1] = RDCOST(x->rdmult, x->rddiv, r[n][1], d[n]);
     }
   }
 
+#if CONFIG_TX32X32
+  if (max_txfm_size == TX_32X32 &&
+      (cm->txfm_mode == ALLOW_32X32 ||
+       (cm->txfm_mode == TX_MODE_SELECT &&
+        rd[TX_32X32][1] < rd[TX_16X16][1] && rd[TX_32X32][1] < rd[TX_8X8][1] &&
+        rd[TX_32X32][1] < rd[TX_4X4][1]))) {
+    mbmi->txfm_size = TX_32X32;
+  } else
+#endif
   if ( cm->txfm_mode == ALLOW_16X16 ||
+#if CONFIG_TX32X32
+      (max_txfm_size == TX_16X16 && cm->txfm_mode == ALLOW_32X32) ||
+#endif
       (cm->txfm_mode == TX_MODE_SELECT &&
-       rd[1][TX_16X16] < rd[1][TX_8X8] && rd[1][TX_16X16] < rd[1][TX_4X4])) {
+       rd[TX_16X16][1] < rd[TX_8X8][1] && rd[TX_16X16][1] < rd[TX_4X4][1])) {
     mbmi->txfm_size = TX_16X16;
   } else if (cm->txfm_mode == ALLOW_8X8 ||
-           (cm->txfm_mode == TX_MODE_SELECT && rd[1][TX_8X8] < rd[1][TX_4X4])) {
+           (cm->txfm_mode == TX_MODE_SELECT && rd[TX_8X8][1] < rd[TX_4X4][1])) {
     mbmi->txfm_size = TX_8X8;
   } else {
-    assert(cm->txfm_mode == ONLY_4X4 ||
-          (cm->txfm_mode == TX_MODE_SELECT && rd[1][TX_4X4] <= rd[1][TX_8X8]));
+    assert(cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT);
     mbmi->txfm_size = TX_4X4;
   }
 
   *distortion = d[mbmi->txfm_size];
-  *rate       = r[cm->txfm_mode == TX_MODE_SELECT][mbmi->txfm_size];
+  *rate       = r[mbmi->txfm_size][cm->txfm_mode == TX_MODE_SELECT];
   *skip       = s[mbmi->txfm_size];
 
-  txfm_cache[ONLY_4X4] = rd[0][TX_4X4];
-  txfm_cache[ALLOW_8X8] = rd[0][TX_8X8];
-  txfm_cache[ALLOW_16X16] = rd[0][TX_16X16];
-  if (rd[1][TX_16X16] < rd[1][TX_8X8] && rd[1][TX_16X16] < rd[1][TX_4X4])
-    txfm_cache[TX_MODE_SELECT] = rd[1][TX_16X16];
+  txfm_cache[ONLY_4X4] = rd[TX_4X4][0];
+  txfm_cache[ALLOW_8X8] = rd[TX_8X8][0];
+  txfm_cache[ALLOW_16X16] = rd[TX_16X16][0];
+#if CONFIG_TX32X32
+  txfm_cache[ALLOW_32X32] = rd[max_txfm_size][0];
+  if (max_txfm_size == TX_32X32 &&
+      rd[TX_32X32][1] < rd[TX_16X16][1] && rd[TX_32X32][1] < rd[TX_8X8][1] &&
+      rd[TX_32X32][1] < rd[TX_4X4][1])
+    txfm_cache[TX_MODE_SELECT] = rd[TX_32X32][1];
   else
-    txfm_cache[TX_MODE_SELECT] = rd[1][TX_4X4] < rd[1][TX_8X8] ?
-                                 rd[1][TX_4X4] : rd[1][TX_8X8];
+#endif
+  if (rd[TX_16X16][1] < rd[TX_8X8][1] && rd[TX_16X16][1] < rd[TX_4X4][1])
+    txfm_cache[TX_MODE_SELECT] = rd[TX_16X16][1];
+  else
+    txfm_cache[TX_MODE_SELECT] = rd[TX_4X4][1] < rd[TX_8X8][1] ?
+                                 rd[TX_4X4][1] : rd[TX_8X8][1];
 }
 
 static void macro_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
                             int *distortion, int *skippable,
                             int64_t txfm_cache[NB_TXFM_MODES]) {
   MACROBLOCKD *const xd = &x->e_mbd;
-  int r[2][TX_SIZE_MAX], d[TX_SIZE_MAX], s[TX_SIZE_MAX];
+  int r[TX_SIZE_MAX_MB][2], d[TX_SIZE_MAX_MB], s[TX_SIZE_MAX_MB];
 
   vp9_subtract_mby(x->src_diff, *(x->block[0].base_src), xd->predictor,
                    x->block[0].src_stride);
 
-  macro_block_yrd_16x16(x, &r[0][TX_16X16], &d[TX_16X16],
-                        &s[TX_16X16], 1);
-  macro_block_yrd_8x8(x, &r[0][TX_8X8], &d[TX_8X8], &s[TX_8X8], 1);
-  macro_block_yrd_4x4(x, &r[0][TX_4X4], &d[TX_4X4], &s[TX_4X4], 1);
+  macro_block_yrd_16x16(x, &r[TX_16X16][0], &d[TX_16X16], &s[TX_16X16], 1);
+  macro_block_yrd_8x8(x, &r[TX_8X8][0], &d[TX_8X8], &s[TX_8X8], 1);
+  macro_block_yrd_4x4(x, &r[TX_4X4][0], &d[TX_4X4], &s[TX_4X4], 1);
 
   choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s, skippable,
-                           txfm_cache);
+                           txfm_cache, TX_16X16);
 }
 
 static void copy_predictor(unsigned char *dst, const unsigned char *predictor) {
@@ -908,25 +947,90 @@ static void copy_predictor(unsigned char *dst, const unsigned char *predictor) {
 }
 
 #if CONFIG_SUPERBLOCKS
+#if CONFIG_TX32X32
+static int rdcost_sby_32x32(MACROBLOCK *x) {
+  MACROBLOCKD * const xd = &x->e_mbd;
+  ENTROPY_CONTEXT_PLANES t_above, t_left;
+  ENTROPY_CONTEXT *ta = (ENTROPY_CONTEXT *) &t_above,
+                  *tl = (ENTROPY_CONTEXT *) &t_left;
+
+  vpx_memcpy(&t_above, xd->above_context, sizeof(ENTROPY_CONTEXT_PLANES));
+  vpx_memcpy(&t_left,  xd->left_context,  sizeof(ENTROPY_CONTEXT_PLANES));
+
+  return cost_coeffs(x, xd->block, PLANE_TYPE_Y_WITH_DC, ta, tl, TX_32X32);
+}
+
+static int vp9_sb_block_error_c(short *coeff, short *dqcoeff, int block_size) {
+  int i;
+  int64_t error = 0;
+
+  for (i = 0; i < block_size; i++) {
+    unsigned int this_diff = coeff[i] - dqcoeff[i];
+    error += this_diff * this_diff;
+  }
+
+  return error > INT_MAX ? INT_MAX : error;
+}
+
+#define DEBUG_ERROR 0
+#define USE_DWT 0
+static void super_block_yrd_32x32(MACROBLOCK *x,
+                                  int *rate, int *distortion, int *skippable) {
+  SUPERBLOCK  * const x_sb = &x->sb_coeff_data;
+  MACROBLOCKD * const xd = &x->e_mbd;
+  SUPERBLOCKD * const xd_sb = &xd->sb_coeff_data;
+#if DEBUG_ERROR || USE_DWT
+  short out[1024];
+#endif
+
+  vp9_transform_sby_32x32(x);
+  vp9_quantize_sby_32x32(x);
+#if DEBUG_ERROR || USE_DWT
+  vp9_short_idct32x32_c(xd_sb->dqcoeff, out, 64);
+#endif
+
+#if USE_DWT == 0
+  *distortion = vp9_sb_block_error_c(x_sb->coeff, xd_sb->dqcoeff, 1024);
+#else
+  *distortion = vp9_block_error_c(x_sb->src_diff, out, 1024) << 4;
+#endif
+#if DEBUG_ERROR
+  printf("IDCT/FDCT error 32x32: %d (d: %d)\n",
+         vp9_block_error_c(x_sb->src_diff, out, 1024), *distortion);
+#endif
+  *rate       = rdcost_sby_32x32(x);
+  *skippable  = vp9_sby_is_skippable_32x32(&x->e_mbd);
+}
+#endif
+
 static void super_block_yrd(VP9_COMP *cpi,
                             MACROBLOCK *x, int *rate, int *distortion,
                             int *skip,
                             int64_t txfm_cache[NB_TXFM_MODES]) {
   MACROBLOCKD *const xd = &x->e_mbd;
-  int r[2][TX_SIZE_MAX], d[TX_SIZE_MAX], s[TX_SIZE_MAX], n;
+  int r[TX_SIZE_MAX_SB][2], d[TX_SIZE_MAX_SB], s[TX_SIZE_MAX_SB], n;
   const uint8_t *src = x->src.y_buffer, *dst = xd->dst.y_buffer;
   int src_y_stride = x->src.y_stride, dst_y_stride = xd->dst.y_stride;
-  ENTROPY_CONTEXT_PLANES t_above[3][2], *orig_above = xd->above_context;
-  ENTROPY_CONTEXT_PLANES t_left[3][2], *orig_left = xd->left_context;
+  ENTROPY_CONTEXT_PLANES t_above[TX_SIZE_MAX_MB][2], *orig_above = xd->above_context;
+  ENTROPY_CONTEXT_PLANES t_left[TX_SIZE_MAX_MB][2], *orig_left = xd->left_context;
 
-  for (n = TX_4X4; n <= TX_16X16; n++) {
+  for (n = TX_4X4; n < TX_SIZE_MAX_MB; n++) {
     vpx_memcpy(t_above[n], xd->above_context, sizeof(t_above[n]));
     vpx_memcpy(t_left[n], xd->left_context, sizeof(t_left[n]));
-    r[0][n] = 0;
+    r[n][0] = 0;
     d[n] = 0;
     s[n] = 1;
   }
 
+#if CONFIG_TX32X32
+  vp9_subtract_sby_s_c(x->sb_coeff_data.src_diff, src, src_y_stride,
+                       dst, dst_y_stride);
+  super_block_yrd_32x32(x, &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32]);
+#endif
+
+#if DEBUG_ERROR
+  int err[3] = { 0, 0, 0 };
+#endif
   for (n = 0; n < 4; n++) {
     int x_idx = n & 1, y_idx = n >> 1;
     int r_tmp, d_tmp, s_tmp;
@@ -941,25 +1045,42 @@ static void super_block_yrd(VP9_COMP *cpi,
     xd->left_context = &t_left[TX_16X16][y_idx];
     macro_block_yrd_16x16(x, &r_tmp, &d_tmp, &s_tmp, 0);
     d[TX_16X16] += d_tmp;
-    r[0][TX_16X16] += r_tmp;
+    r[TX_16X16][0] += r_tmp;
     s[TX_16X16] = s[TX_16X16] && s_tmp;
+#if DEBUG_ERROR
+    vp9_inverse_transform_mby_16x16(xd);
+    err[2] += vp9_block_error_c(xd->diff, x->src_diff, 256);
+#endif
 
     xd->above_context = &t_above[TX_4X4][x_idx];
     xd->left_context = &t_left[TX_4X4][y_idx];
     macro_block_yrd_4x4(x, &r_tmp, &d_tmp, &s_tmp, 0);
     d[TX_4X4] += d_tmp;
-    r[0][TX_4X4] += r_tmp;
+    r[TX_4X4][0] += r_tmp;
     s[TX_4X4] = s[TX_4X4] && s_tmp;
+#if DEBUG_ERROR
+    vp9_inverse_transform_mby_4x4(xd);
+    err[0] += vp9_block_error_c(xd->diff, x->src_diff, 256);
+#endif
 
     xd->above_context = &t_above[TX_8X8][x_idx];
     xd->left_context = &t_left[TX_8X8][y_idx];
     macro_block_yrd_8x8(x, &r_tmp, &d_tmp, &s_tmp, 0);
     d[TX_8X8] += d_tmp;
-    r[0][TX_8X8] += r_tmp;
+    r[TX_8X8][0] += r_tmp;
     s[TX_8X8] = s[TX_8X8] && s_tmp;
+#if DEBUG_ERROR
+    vp9_inverse_transform_mby_8x8(xd);
+    err[1] += vp9_block_error_c(xd->diff, x->src_diff, 256);
+#endif
   }
-
-  choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s, skip, txfm_cache);
+#if DEBUG_ERROR
+  printf("IDCT/FDCT error 16x16: %d (d: %d)\n", err[2], d[2]);
+  printf("IDCT/FDCT error 8x8: %d (d: %d)\n", err[1], d[1]);
+  printf("IDCT/FDCT error 4x4: %d (d: %d)\n", err[0], d[0]);
+#endif
+  choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s, skip, txfm_cache,
+                           TX_SIZE_MAX_SB - 1);
 
   xd->above_context = orig_above;
   xd->left_context = orig_left;
@@ -4140,8 +4261,6 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int dist_y, dist_uv;
   int y_skip, uv_skip;
   int64_t txfm_cache[NB_TXFM_MODES];
-
-  xd->mode_info_context->mbmi.txfm_size = TX_8X8;
 
   error_y = rd_pick_intra_sby_mode(cpi, x, &rate_y, &rate_y_tokenonly,
                                    &dist_y, &y_skip, txfm_cache);
