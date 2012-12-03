@@ -13,6 +13,8 @@
 #include "vp9/common/vp9_pragmas.h"
 #include "vpx_ports/mem.h"
 
+DECLARE_ALIGNED(16, extern const short, vp9_bilinear_filters_mmx[16][8]);
+
 extern void filter_block1d_h6_mmx
 (
   const unsigned char *src_ptr,
@@ -190,32 +192,6 @@ unsigned int vp9_variance8x16_mmx(
   return (var - (((unsigned int)avg * avg) >> 7));
 
 }
-
-
-
-
-///////////////////////////////////////////////////////////////////////////
-// the mmx function that does the bilinear filtering and var calculation //
-// int one pass                                                          //
-///////////////////////////////////////////////////////////////////////////
-DECLARE_ALIGNED(16, const short, vp9_bilinear_filters_mmx[16][8]) = {
-  { 128, 128, 128, 128,  0,  0,  0,  0 },
-  { 120, 120, 120, 120,  8,  8,  8,  8 },
-  { 112, 112, 112, 112, 16, 16, 16, 16 },
-  { 104, 104, 104, 104, 24, 24, 24, 24 },
-  {  96, 96, 96, 96, 32, 32, 32, 32 },
-  {  88, 88, 88, 88, 40, 40, 40, 40 },
-  {  80, 80, 80, 80, 48, 48, 48, 48 },
-  {  72, 72, 72, 72, 56, 56, 56, 56 },
-  {  64, 64, 64, 64, 64, 64, 64, 64 },
-  {  56, 56, 56, 56, 72, 72, 72, 72 },
-  {  48, 48, 48, 48, 80, 80, 80, 80 },
-  {  40, 40, 40, 40, 88, 88, 88, 88 },
-  {  32, 32, 32, 32, 96, 96, 96, 96 },
-  {  24, 24, 24, 24, 104, 104, 104, 104 },
-  {  16, 16, 16, 16, 112, 112, 112, 112 },
-  {   8,  8,  8,  8, 120, 120, 120, 120 }
-};
 
 unsigned int vp9_sub_pixel_variance4x4_mmx
 (
