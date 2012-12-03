@@ -372,6 +372,9 @@ specialize vp9_short_idct16x16
 prototype void vp9_short_idct10_16x16 "short *input, short *output, int pitch"
 specialize vp9_short_idct10_16x16
 
+prototype void vp9_short_idct32x32 "short *input, short *output, int pitch"
+specialize vp9_short_idct32x32
+
 prototype void vp9_ihtllm "const short *input, short *output, int pitch, int tx_type, int tx_dim"
 specialize vp9_ihtllm
 
@@ -650,6 +653,9 @@ specialize vp9_short_fdct8x4
 
 prototype void vp9_short_walsh4x4 "short *InputData, short *OutputData, int pitch"
 specialize vp9_short_walsh4x4
+
+prototype void vp9_short_fdct32x32 "short *InputData, short *OutputData, int pitch"
+specialize vp9_short_fdct32x32
 
 prototype void vp9_short_fdct16x16 "short *InputData, short *OutputData, int pitch"
 specialize vp9_short_fdct16x16
