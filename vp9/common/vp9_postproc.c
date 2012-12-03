@@ -15,7 +15,8 @@
 #include "vp9/common/vp9_textblit.h"
 #include "vpx_scale/vpxscale.h"
 #include "vp9/common/vp9_systemdependent.h"
-#include "./vp9_rtcd.h"
+#include "vp9_rtcd.h"
+#include "vpx_scale_rtcd.h"
 
 
 #include <math.h>
