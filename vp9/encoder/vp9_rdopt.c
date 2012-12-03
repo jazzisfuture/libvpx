@@ -49,6 +49,8 @@
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
+#define DIST_SCALE_BITS  2
+
 static const int auto_speed_thresh[17] = {
   1000,
   200,
@@ -707,7 +709,7 @@ static void macro_block_yrd_4x4(MACROBLOCK *mb,
   if (has_2nd_order)
     d += vp9_block_error(mb_y2->coeff, x_y2->dqcoeff, 16);
 
-  *Distortion = (d >> 2);
+  *Distortion = (d >> DIST_SCALE_BITS);
   // rate
   *Rate = rdcost_mby_4x4(mb, has_2nd_order, backup);
   *skippable = vp9_mby_is_skippable_4x4(&mb->e_mbd, has_2nd_order);
@@ -763,7 +765,7 @@ static void macro_block_yrd_8x8(MACROBLOCK *mb,
   if (has_2nd_order)
     d += vp9_block_error(mb_y2->coeff, x_y2->dqcoeff, 16);
 
-  *Distortion = (d >> 2);
+  *Distortion = (d >> DIST_SCALE_BITS);
   // rate
   *Rate = rdcost_mby_8x8(mb, has_2nd_order, backup);
   *skippable = vp9_mby_is_skippable_8x8(&mb->e_mbd, has_2nd_order);
@@ -806,7 +808,7 @@ static void macro_block_yrd_16x16(MACROBLOCK *mb, int *Rate, int *Distortion,
 
   d = vp9_mbblock_error(mb, 0);
 
-  *Distortion = (d >> 2);
+  *Distortion = (d >> DIST_SCALE_BITS);
   // rate
   *Rate = rdcost_mby_16x16(mb, backup);
   *skippable = vp9_mby_is_skippable_16x16(&mb->e_mbd);
@@ -1089,7 +1091,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
 
       ratey = cost_coeffs(x, b, PLANE_TYPE_Y_WITH_DC, &tempa, &templ, TX_4X4);
       rate += ratey;
-      distortion = vp9_block_error(be->coeff, b->dqcoeff, 16) >> 2;
+      distortion = vp9_block_error(be->coeff, b->dqcoeff, 16)
+          >> DIST_SCALE_BITS;
 
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
@@ -1457,7 +1460,7 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         rate += rate_t;
       }
 
-      distortion >>= 2;
+      distortion >>= DIST_SCALE_BITS;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
       if (this_rd < best_rd) {
         *bestrate = rate;
@@ -1586,7 +1589,7 @@ static int64_t rd_inter16x16_uv_4x4(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   vp9_quantize_mbuv_4x4(x);
 
   *rate       = rd_cost_mbuv_4x4(x, do_ctx_backup);
-  *distortion = vp9_mbuverror(x) / 4;
+  *distortion = vp9_mbuverror(x) >> DIST_SCALE_BITS;
   *skip       = vp9_mbuv_is_skippable_4x4(&x->e_mbd);
 
   return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
@@ -1625,7 +1628,7 @@ static int64_t rd_inter16x16_uv_8x8(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
   vp9_quantize_mbuv_8x8(x);
 
   *rate       = rd_cost_mbuv_8x8(x, do_ctx_backup);
-  *distortion = vp9_mbuverror(x) / 4;
+  *distortion = vp9_mbuverror(x) >> DIST_SCALE_BITS;
   *skip       = vp9_mbuv_is_skippable_8x8(&x->e_mbd);
 
   return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
@@ -1741,7 +1744,7 @@ static void rd_pick_intra_mbuv_mode(VP9_COMP *cpi,
       rate = rate_to
              + x->intra_uv_mode_cost[x->e_mbd.frame_type][mbmi->uv_mode];
 
-      distortion = vp9_mbuverror(x) / 4;
+      distortion = vp9_mbuverror(x) >> DIST_SCALE_BITS;
 
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
@@ -1799,7 +1802,7 @@ static void rd_pick_intra_mbuv_mode_8x8(VP9_COMP *cpi,
     rate_to = rd_cost_mbuv_8x8(x, 1);
     rate = rate_to + x->intra_uv_mode_cost[x->e_mbd.frame_type][mbmi->uv_mode];
 
-    distortion = vp9_mbuverror(x) / 4;
+    distortion = vp9_mbuverror(x) >> DIST_SCALE_BITS;
     this_rd = RDCOST(x->rdmult, x->rddiv, rate, distortion);
 
     if (this_rd < best_rd) {
@@ -1848,7 +1851,7 @@ static void super_block_uvrd_8x8(MACROBLOCK *x,
     vp9_quantize_mbuv_8x8(x);
     s &= vp9_mbuv_is_skippable_8x8(xd);
 
-    d += vp9_mbuverror(x) >> 2;
+    d += vp9_mbuverror(x) >> DIST_SCALE_BITS;
     xd->above_context = ta + x_idx;
     xd->left_context = tl + y_idx;
     r += rd_cost_mbuv_8x8(x, 0);
@@ -2071,7 +2074,7 @@ static int64_t encode_inter_mb_segment(MACROBLOCK *x,
                                  tl + vp9_block2left[i], TX_4X4);
     }
   }
-  *distortion >>= 2;
+  *distortion >>= DIST_SCALE_BITS;
   return RDCOST(x->rdmult, x->rddiv, *labelyrate, *distortion);
 }
 
@@ -2167,9 +2170,9 @@ static int64_t encode_inter_mb_segment_8x8(MACROBLOCK *x,
       }
     }
   }
-  *distortion >>= 2;
+  *distortion >>= DIST_SCALE_BITS;
   if (otherrd) {
-    otherdist >>= 2;
+    otherdist >>= DIST_SCALE_BITS;
     *otherrd = RDCOST(x->rdmult, x->rddiv, othercost, otherdist);
   }
   return RDCOST(x->rdmult, x->rddiv, *labelyrate, *distortion);
@@ -4248,7 +4251,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->uv_mode = modeuv;
     rate = rateuv8x8 + rate16x16 - rateuv8x8_tokenonly - rate16x16_tokenonly +
            vp9_cost_bit(vp9_get_pred_prob(cm, xd, PRED_MBSKIP), 1);
-    dist = dist16x16 + (distuv8x8 >> 2);
+    dist = dist16x16 + distuv8x8;  // (distuv8x8 >> 2);
     mbmi->txfm_size = txfm_size_16x16;
     memset(x->mb_context[xd->mb_index].txfm_rd_diff, 0,
            sizeof(x->mb_context[xd->mb_index].txfm_rd_diff));
@@ -4274,7 +4277,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->txfm_size = txfm_size_16x16;
       mbmi->mode = mode16x16;
       rate = rate16x16 + rateuv8x8;
-      dist = dist16x16 + (distuv8x8 >> 2);
+      dist = dist16x16 + distuv8x8;  // (distuv8x8 >> 2);
       for (i = 0; i < NB_TXFM_MODES; i++) {
         x->mb_context[xd->mb_index].txfm_rd_diff[i] = error16x16 - txfm_cache[i];
       }
@@ -4296,7 +4299,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif
       mbmi->mode = B_PRED;
       mbmi->txfm_size = TX_4X4;
-      dist = dist4x4 + (distuv >> 2);
+      dist = dist4x4 + distuv;   // (distuv >> 2);
       memset(x->mb_context[xd->mb_index].txfm_rd_diff, 0,
              sizeof(x->mb_context[xd->mb_index].txfm_rd_diff));
     } else {
@@ -4305,7 +4308,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->txfm_size = (cm->txfm_mode == ONLY_4X4) ? TX_4X4 : TX_8X8;
       set_i8x8_block_modes(x, mode8x8);
       rate = rate8x8 + rateuv;
-      dist = dist8x8 + (distuv >> 2);
+      dist = dist8x8 + distuv;  // (distuv >> 2);
       memset(x->mb_context[xd->mb_index].txfm_rd_diff, 0,
              sizeof(x->mb_context[xd->mb_index].txfm_rd_diff));
     }
