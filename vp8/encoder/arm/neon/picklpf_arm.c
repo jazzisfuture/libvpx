@@ -9,7 +9,7 @@
  */
 
 #include "vp8/common/loopfilter.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 extern void vp8_memcpy_partial_neon(unsigned char *dst_ptr,
                                     unsigned char *src_ptr,

@@ -19,7 +19,7 @@ extern "C"
 {
 #endif
 #include "vp9/common/vp9_type_aliases.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "vp9/common/vp9_ppflags.h"
 #include "vpx_ports/mem.h"
 #include "vpx/vpx_codec.h"

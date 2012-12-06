@@ -21,7 +21,7 @@
 #include "variance.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8_rtcd.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 #include <limits.h>
 #include <stdlib.h>

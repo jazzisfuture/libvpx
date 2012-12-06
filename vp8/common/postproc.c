@@ -11,8 +11,8 @@
 
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
-#include "vpx_scale_rtcd.h"
-#include "vpx_scale/yv12config.h"
+#include "./vpx_mem_rtcd.h"
+#include "vpx_mem/yv12config.h"
 #include "postproc.h"
 #include "common.h"
 #include "vpx_scale/vpx_scale.h"

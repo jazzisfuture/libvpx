@@ -23,6 +23,7 @@
 #include "vp9/common/vp9_extend.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "vpx_mem/vpx_mem.h"
+#include "./vpx_mem_rtcd.h"
 #include "vp9/common/vp9_swapyv12buffer.h"
 #include <stdio.h>
 #include "vp9/encoder/vp9_quantize.h"
@@ -31,7 +32,6 @@
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/encoder/vp9_encodemv.h"
-#include "./vpx_scale_rtcd.h"
 
 #define OUTPUT_FPF 0
 
