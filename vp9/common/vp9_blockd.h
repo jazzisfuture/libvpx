@@ -65,11 +65,6 @@ typedef struct {
   ENTROPY_CONTEXT y2;
 } ENTROPY_CONTEXT_PLANES;
 
-extern const unsigned char vp9_block2left[25];
-extern const unsigned char vp9_block2above[25];
-extern const unsigned char vp9_block2left_8x8[25];
-extern const unsigned char vp9_block2above_8x8[25];
-
 #define VP9_COMBINEENTROPYCONTEXTS( Dest, A, B) \
   Dest = ((A)!=0) + ((B)!=0);
 
@@ -123,10 +118,10 @@ typedef enum {
 
 // Segment level features.
 typedef enum {
-  TX_4X4,                      // 4x4 dct transform
-  TX_8X8,                      // 8x8 dct transform
-  TX_16X16,                    // 16x16 dct transform
-  TX_SIZE_MAX                  // Number of different transforms available
+  TX_4X4 = 0,                      // 4x4 dct transform
+  TX_8X8 = 1,                      // 8x8 dct transform
+  TX_16X16 = 2,                    // 16x16 dct transform
+  TX_SIZE_MAX = 3                  // Number of different transforms available
 } TX_SIZE;
 
 typedef enum {
@@ -487,6 +482,9 @@ static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
   }
   return tx_type;
 }
+
+extern const unsigned char vp9_block2left[TX_SIZE_MAX][25];
+extern const unsigned char vp9_block2above[TX_SIZE_MAX][25];
 
 #define USE_ADST_FOR_I16X16_8X8   0
 #define USE_ADST_FOR_I16X16_4X4   0
