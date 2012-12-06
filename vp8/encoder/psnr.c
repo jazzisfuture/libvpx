@@ -9,7 +9,7 @@
  */
 
 
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "math.h"
 #include "vp8/common/systemdependent.h" /* for vp8_clear_system_state() */
 

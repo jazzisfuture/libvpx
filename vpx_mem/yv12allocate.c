@@ -9,18 +9,10 @@
  */
 
 
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "vpx_mem/vpx_mem.h"
 
-/****************************************************************************
-*  Exports
-****************************************************************************/
-
-/****************************************************************************
- *
- ****************************************************************************/
-int
-vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
+int vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
   if (ybf) {
     vpx_free(ybf->buffer_alloc);
 
@@ -35,13 +27,9 @@ vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
   return 0;
 }
 
-/****************************************************************************
- *
- ****************************************************************************/
-int
-vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height, int border) {
-  /*NOTE:*/
 
+int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
+                                int width, int height, int border) {
   if (ybf) {
     int y_stride = ((width + 2 * border) + 31) & ~31;
     int yplane_size = (height + 2 * border) * y_stride;

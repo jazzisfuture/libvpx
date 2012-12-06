@@ -9,7 +9,7 @@
  */
 #ifndef LOOKAHEAD_H
 #define LOOKAHEAD_H
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "vpx/vpx_integer.h"
 
 struct lookahead_entry

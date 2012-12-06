@@ -9,7 +9,7 @@
  */
 #ifndef VP9_ENCODER_VP9_LOOKAHEAD_H_
 #define VP9_ENCODER_VP9_LOOKAHEAD_H_
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "vpx/vpx_integer.h"
 
 struct lookahead_entry {

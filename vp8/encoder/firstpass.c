@@ -12,7 +12,7 @@
 #include <limits.h>
 #include <stdio.h>
 
-#include "./vpx_scale_rtcd.h"
+#include "./vpx_mem_rtcd.h"
 #include "block.h"
 #include "onyx_int.h"
 #include "vp8/common/variance.h"

@@ -24,11 +24,11 @@
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "./vp9_rtcd.h"
-#include "./vpx_scale_rtcd.h"
 #if CONFIG_POSTPROC
 #include "vp9/common/vp9_postproc.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
+#include "./vpx_mem_rtcd.h"
 #include "vp9/common/vp9_swapyv12buffer.h"
 #include "vpx_ports/vpx_timer.h"
 

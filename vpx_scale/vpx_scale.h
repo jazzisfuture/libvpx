@@ -12,7 +12,7 @@
 #ifndef VPXSCALE_H
 #define VPXSCALE_H
 
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 extern void vpx_scale_frame(YV12_BUFFER_CONFIG *src,
                             YV12_BUFFER_CONFIG *dst,

@@ -9,7 +9,7 @@
  */
 
 
-#include "./vpx_scale_rtcd.h"
+#include "./vpx_mem_rtcd.h"
 #include "vp8/common/onyxc_int.h"
 #include "onyx_int.h"
 #include "quantize.h"

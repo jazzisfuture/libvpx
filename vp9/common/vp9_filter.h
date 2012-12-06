@@ -12,7 +12,7 @@
 #define VP9_COMMON_VP9_FILTER_H_
 
 #include "vpx_config.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 #define BLOCK_HEIGHT_WIDTH 4
 #define VP9_FILTER_WEIGHT 128
