@@ -25,7 +25,7 @@
 #include <assert.h>
 
 #include "vp8/common/quant_common.h"
-#include "./vpx_scale_rtcd.h"
+#include "./vpx_mem_rtcd.h"
 #include "vpx_scale/vpx_scale.h"
 #include "vp8/common/systemdependent.h"
 #include "vpx_ports/vpx_timer.h"

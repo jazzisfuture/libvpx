@@ -12,7 +12,7 @@
 #include "./vpx_config.h"
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/asm_offsets.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 BEGIN
 

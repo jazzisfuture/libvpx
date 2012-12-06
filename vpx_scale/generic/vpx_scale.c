@@ -22,7 +22,7 @@
 ****************************************************************************/
 #include "./vpx_scale_rtcd.h"
 #include "vpx_mem/vpx_mem.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 
 typedef struct {
   int     expanded_frame_width;

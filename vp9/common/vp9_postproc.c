@@ -10,13 +10,12 @@
 
 
 #include "vpx_ports/config.h"
-#include "vpx_scale/yv12config.h"
+#include "vpx_mem/yv12config.h"
 #include "vp9/common/vp9_postproc.h"
 #include "vp9/common/vp9_textblit.h"
 #include "vpx_scale/vpx_scale.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "./vp9_rtcd.h"
-#include "./vpx_scale_rtcd.h"
 
 
 #include <math.h>

@@ -10,7 +10,6 @@
 
 
 #include "vpx_config.h"
-#include "./vpx_scale_rtcd.h"
 #include "vp8/common/onyxc_int.h"
 #include "vp8/common/blockd.h"
 #include "onyx_int.h"
@@ -29,6 +28,7 @@
 #include "vp8/common/postproc.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
+#include "./vpx_mem_rtcd.h"
 #include "vp8/common/swapyv12buffer.h"
 #include "vp8/common/threading.h"
 #include "vpx_ports/vpx_timer.h"
