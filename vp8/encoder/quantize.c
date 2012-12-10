@@ -119,6 +119,11 @@ void vp8_regular_quantize_b_c(BLOCK *b, BLOCKD *d)
     short *dequant_ptr     = d->dequant;
     short zbin_oq_value    = b->zbin_extra;
 
+// Axel mods start
+    int thres;
+    int mask=0x1;
+// Axel mods end
+
     vpx_memset(qcoeff_ptr, 0, 32);
     vpx_memset(dqcoeff_ptr, 0, 32);
 
@@ -135,11 +140,19 @@ void vp8_regular_quantize_b_c(BLOCK *b, BLOCKD *d)
         sz = (z >> 31);                              /* sign of z */
         x  = (z ^ sz) - sz;                          /* x = abs(z) */
 
+// Axel mods start
+        thres=quant_shift_ptr[rc];
+        mask=(1u<<thres)-1;
+
         if (x >= zbin)
         {
             x += round_ptr[rc];
-            y  = (((x * quant_ptr[rc]) >> 16) + x)
-                 >> quant_shift_ptr[rc];             /* quantize (x) */
+            y  = (((x * quant_ptr[rc]) >> 16) + x);
+
+	    if((y&mask)==mask)
+                y++;
+            y = y >> quant_shift_ptr[rc];             /* quantize (x) */
+// Axel mods end
             x  = (y ^ sz) - sz;                      /* get the sign back */
             qcoeff_ptr[rc]  = x;                     /* write to destination */
             dqcoeff_ptr[rc] = x * dequant_ptr[rc];   /* dequantized value */
