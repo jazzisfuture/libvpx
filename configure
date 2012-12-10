@@ -163,7 +163,7 @@ fi
 # install everything except the sources, by default. sources will have
 # to be enabled when doing dist builds, since that's no longer a common
 # case.
-enabled doxygen && php -v >/dev/null 2>&1 && enable install_docs
+ enabled doxygen && php -v >/dev/null 2>&1 && enable install_docs
 enable install_bins
 enable install_libs
 
