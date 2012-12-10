@@ -142,6 +142,9 @@ typedef struct macroblock
     int rd_threshes[MAX_MODES];
     unsigned int mbs_tested_so_far;
     unsigned int mode_test_hit_counts[MAX_MODES];
+    int zbin_mode_boost_enabled;
+    int zbin_mode_boost;
+    int last_zbin_mode_boost;
 
 
     void (*short_fdct4x4)(short *input, short *output, int pitch);
