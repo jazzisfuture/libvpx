@@ -391,7 +391,7 @@ static unsigned int pick_best_mv_ref(MACROBLOCK *x,
   MACROBLOCKD *xd = &x->e_mbd;
   int max_mv = MV_MAX;
 
-  cost = vp9_cost_mv_ref_id(xd->mb_mv_ref_id_probs[ref_frame], 0) +
+  cost = vp9_cost_mv_ref_id(xd->mb_mv_ref_probs[ref_frame], 0) +
          vp9_mv_bit_cost(&target_mv, &mv_ref_list[0], x->nmvjointcost,
                          x->mvcost, 96, xd->allow_high_precision_mv);
 
@@ -412,7 +412,7 @@ static unsigned int pick_best_mv_ref(MACROBLOCK *x,
       continue;
     }
 
-    cost2 = vp9_cost_mv_ref_id(xd->mb_mv_ref_id_probs[ref_frame], i) +
+    cost2 = vp9_cost_mv_ref_id(xd->mb_mv_ref_probs[ref_frame], i) +
             vp9_mv_bit_cost(&target_mv, &mv_ref_list[i], x->nmvjointcost,
                             x->mvcost, 96, xd->allow_high_precision_mv);
 
@@ -421,8 +421,6 @@ static unsigned int pick_best_mv_ref(MACROBLOCK *x,
       best_index = i;
     }
   }
-
-  // best_index = x->mv_best_ref_index[ref_frame];
   best_ref->as_int = mv_ref_list[best_index].as_int;
 
   return best_index;
@@ -550,6 +548,7 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
         best_index = pick_best_mv_ref(x, rf, mbmi->mv[0],
                                       mbmi->ref_mvs[rf], &best_mv);
         mbmi->best_index = best_index;
+        cpi->mb_mv_ref_count[rf][best_index]++;
 
         if (mbmi->second_ref_frame > 0) {
           unsigned int best_index;
@@ -558,6 +557,7 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
                                mbmi->ref_mvs[sec_ref_frame],
                                &best_second_mv);
           mbmi->best_second_index = best_index;
+          cpi->mb_mv_ref_count[sec_ref_frame][best_index]++;
         }
 #endif
       }
@@ -1438,11 +1438,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   // this frame which may be updated with each iteration of the recode loop.
   vp9_compute_mod_refprobs(cm);
 
-#if CONFIG_NEW_MVREF
-  // temp stats reset
-  vp9_zero( cpi->best_ref_index_counts );
-#endif
-
 // debug output
 #if DBG_PRNT_SEGMAP
   {
@@ -1488,6 +1483,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cpi->hybrid_coef_counts_8x8);
   vp9_zero(cpi->coef_counts_16x16);
   vp9_zero(cpi->hybrid_coef_counts_16x16);
+#if CONFIG_NEW_MVREF
+  vp9_zero( cpi->mb_mv_ref_count );
+#endif
 
   vp9_frame_init_quantizer(cpi);
 
