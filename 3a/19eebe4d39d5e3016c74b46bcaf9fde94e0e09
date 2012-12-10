@@ -1,0 +1,8 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Submitted-by: Scott LaVarnway <slavarnway@google.com>
+Submitted-at: Mon, 10 Dec 2012 12:37:07 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/39491
+Project: webm/libvpx
+Branch: refs/heads/master
