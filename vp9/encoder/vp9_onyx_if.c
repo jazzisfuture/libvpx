@@ -49,7 +49,7 @@ extern void print_tree_update_probs();
 
 static void set_default_lf_deltas(VP9_COMP *cpi);
 
-#define DEFAULT_INTERP_FILTER EIGHTTAP  /* SWITCHABLE for better performance */
+#define DEFAULT_INTERP_FILTER SWITCHABLE  /* SWITCHABLE for better performance */
 #define SEARCH_BEST_FILTER 0            /* to search exhaustively for
                                            best filter */
 #define RESET_FOREACH_FILTER 0          /* whether to reset the encoder state
