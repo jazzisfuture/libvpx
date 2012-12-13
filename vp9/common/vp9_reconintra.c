@@ -248,19 +248,59 @@ void vp9_recon_intra_mbuv(MACROBLOCKD *xd) {
   }
 }
 
+#define FILTERED_INTRAPRED  1
+
+#if FILTERED_INTRAPRED
+static void filter_intrapred(unsigned char *xleft, unsigned char *xabove,
+                             int n) {
+  unsigned char x[2 * 32 + 1];
+  unsigned char y[2 * 32 + 1];
+  int i;
+  for (i = 0; i < n; ++i) {
+    x[i] = xleft[n - 1 - i];
+    x[n + 1 + i] = xabove[i];
+  }
+  x[n] = xabove[-1];
+
+  // Use a 3-tap filter with weights 1-2-1
+  y[0] = (3 * x[0] + x[1] + 2) >> 2;
+  for (i = 1; i < 2 * n; ++i) {
+    y[i] = ((2 * x[i] + x[i - 1] + x[i + 1] + 2) >> 2);
+  }
+  y[n * 2] = ((3 * x[n * 2] + x[n * 2 - 1] + 2) >> 2);
+
+  // Write filtered pixels back
+  for (i = 0; i < n; ++i) {
+    xleft[n - 1 - i] = y[i];
+    xabove[i] = y[n + 1 + i];
+  }
+  xabove[-1] = y[n];
+}
+#endif
+
 void vp9_build_intra_predictors_internal(unsigned char *src, int src_stride,
                                          unsigned char *ypred_ptr,
                                          int y_stride, int mode, int bsize,
                                          int up_available, int left_available) {
-
-  unsigned char *yabove_row = src - src_stride;
+  unsigned char ytop_left;
   unsigned char yleft_col[32];
-  unsigned char ytop_left = yabove_row[-1];
   int r, c, i;
+#if FILTERED_INTRAPRED
+  unsigned char yabove_row_ext[32 + 1];
+  unsigned char *yabove_row = yabove_row_ext + 1;
+#else
+  unsigned char *yabove_row = src - src_stride;
+#endif
 
   for (i = 0; i < bsize; i++) {
     yleft_col[i] = src[i * src_stride - 1];
   }
+#if FILTERED_INTRAPRED
+  memcpy(yabove_row - 1, src - src_stride - 1,
+         (bsize + 1) * sizeof(*yabove_row));
+  filter_intrapred(yleft_col, yabove_row, bsize);
+#endif
+  ytop_left = yabove_row[-1];
 
   /* for Y */
   switch (mode) {
@@ -331,7 +371,7 @@ void vp9_build_intra_predictors_internal(unsigned char *src, int src_stride,
     }
     break;
     case D45_PRED: {
-      d45_predictor(ypred_ptr, y_stride, bsize,  yabove_row, yleft_col);
+      d45_predictor(ypred_ptr, y_stride, bsize, yabove_row, yleft_col);
     }
     break;
     case D135_PRED: {
