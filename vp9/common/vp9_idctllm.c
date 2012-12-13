@@ -404,7 +404,7 @@ void vp9_ihtllm_float_c(const int16_t *input, int16_t *output, int pitch,
 #define HORIZONTAL_SHIFT 17  // 15
 #define HORIZONTAL_ROUNDING ((1 << (HORIZONTAL_SHIFT - 1)) - 1)
 void vp9_ihtllm_c(const int16_t *input, int16_t *output, int pitch,
-                      TX_TYPE tx_type, int tx_dim, uint16_t eobs) {
+                      TX_TYPE tx_type, int tx_dim, int eobs) {
   int i, j, k;
   int nz_dim;
   int16_t imbuf[256];
@@ -446,15 +446,10 @@ void vp9_ihtllm_c(const int16_t *input, int16_t *output, int pitch,
   }
 
   nz_dim = tx_dim;
-  if(tx_dim > 4) {
-    if(eobs < 36) {
+  if (tx_dim > 4) {
+    if (eobs < 36) {
       vpx_memset(im, 0, 512);
-      nz_dim = 8;
-      if(eobs < 3) {
-        nz_dim = 2;
-      } else if(eobs < 10) {
-        nz_dim = 4;
-      }
+      nz_dim = (eobs < 3) ? 2 : (eobs < 10) ? 4 : 8;
     }
   }
 

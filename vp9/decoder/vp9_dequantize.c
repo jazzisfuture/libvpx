@@ -99,7 +99,7 @@ void vp9_ht_dequant_idct_add_8x8_c(TX_TYPE tx_type, int16_t *input,
   if (eobs == 0) {
     /* All 0 DCT coefficient */
     vp9_copy_mem8x8(pred, pitch, dest, stride);
-  } else if (eobs > 0) {
+  } else {
     input[0] = dq[0] * input[0];
     for (i = 1; i < 64; i++) {
       input[i] = dq[1] * input[i];
@@ -280,7 +280,7 @@ void vp9_ht_dequant_idct_add_16x16_c(TX_TYPE tx_type, int16_t *input,
   if (eobs == 0) {
     /* All 0 DCT coefficient */
     vp9_copy_mem16x16(pred, pitch, dest, stride);
-  } else if (eobs > 0) {
+  } else {
     input[0]= input[0] * dq[0];
 
     // recover quantizer for 4 4x4 blocks
