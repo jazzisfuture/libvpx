@@ -9,9 +9,12 @@
  */
 #include <string>
 #include "vpx_config.h"
-#if ARCH_X86 || ARCH_X86_64
+
 extern "C" {
+#if ARCH_X86 || ARCH_X86_64
 #include "vpx_ports/x86.h"
+#endif
+
 #if CONFIG_VP8
 extern void vp8_rtcd();
 #endif
@@ -19,7 +22,7 @@ extern void vp8_rtcd();
 extern void vp9_rtcd();
 #endif
 }
-#endif
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 static void append_gtest_filter(const char *str) {
