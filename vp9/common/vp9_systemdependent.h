@@ -18,6 +18,17 @@ void vpx_reset_mmx_state(void);
 #define vp9_clear_system_state()
 #endif
 
+#ifdef _MSC_VER
+// round is not defined in MSVC
+#include "math.h"
+static int round(double x) {
+  if(x < 0)
+    return (int)ceil(x - 0.5);
+  else
+    return (int)floor(x + 0.5);
+}
+#endif
+
 struct VP9Common;
 void vp9_machine_specific_config(struct VP9Common *);
 #endif
