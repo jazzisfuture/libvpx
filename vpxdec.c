@@ -81,6 +81,12 @@ static const arg_def_t limitarg = ARG_DEF(NULL, "limit", 1,
                                           "Stop decoding after n frames");
 static const arg_def_t skiparg = ARG_DEF(NULL, "skip", 1,
                                          "Skip the first n input frames");
+static const arg_def_t decodeuntilarg = ARG_DEF(NULL, "decode_only_until", 1,
+                                         "Decode the first n input frames "
+                                         "but don't write them to output");
+static const arg_def_t throwuntilarg = ARG_DEF(NULL, "throw_until", 1,
+                                         "Throw away frames from "
+                                         "decode_only_until to throw_until");
 static const arg_def_t postprocarg = ARG_DEF(NULL, "postproc", 0,
                                              "Postprocess decoded frames");
 static const arg_def_t summaryarg = ARG_DEF(NULL, "summary", 0,
@@ -101,7 +107,7 @@ static const arg_def_t md5arg = ARG_DEF(NULL, "md5", 0,
 #endif
 static const arg_def_t *all_args[] = {
   &codecarg, &use_yv12, &use_i420, &flipuvarg, &noblitarg,
-  &progressarg, &limitarg, &skiparg, &postprocarg, &summaryarg, &outputfile,
+  &progressarg, &limitarg, &skiparg, &decodeuntilarg, &throwuntilarg, &postprocarg, &summaryarg, &outputfile,
   &threadsarg, &verbosearg,
 #if CONFIG_MD5
   &md5arg,
@@ -682,6 +688,9 @@ int main(int argc, const char **argv_) {
   int                    frame_in = 0, frame_out = 0, flipuv = 0, noblit = 0, do_md5 = 0, progress = 0;
   int                    stop_after = 0, postproc = 0, summary = 0, quiet = 1;
   int                    arg_skip = 0;
+  int                    arg_decode_only_until = 0;
+  int                    arg_throw_until = 0;
+  int                    frame_count = 0;
   int                    ec_enabled = 0;
   vpx_codec_iface_t       *iface = NULL;
   unsigned int           fourcc;
@@ -747,6 +756,10 @@ int main(int argc, const char **argv_) {
       stop_after = arg_parse_uint(&arg);
     else if (arg_match(&arg, &skiparg, argi))
       arg_skip = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &decodeuntilarg, argi))
+      arg_decode_only_until = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &throwuntilarg, argi))
+      arg_throw_until = arg_parse_uint(&arg);
     else if (arg_match(&arg, &postprocarg, argi))
       postproc = 1;
     else if (arg_match(&arg, &md5arg, argi))
@@ -979,6 +992,16 @@ int main(int argc, const char **argv_) {
     struct vpx_usec_timer timer;
     int                   corrupted;
 
+    frame_count++;
+
+    if(frame_count > arg_decode_only_until && frame_count < arg_throw_until)
+    {
+        fprintf(stderr, "Skipping frame %d\n", frame_count);
+        continue;
+    }
+
+    fprintf(stderr, "Decoding frame %d\n", frame_count);
+
     vpx_usec_timer_start(&timer);
 
     if (vpx_codec_decode(&decoder, buf, (unsigned int)buf_sz, NULL, 0)) {
@@ -1014,7 +1037,8 @@ int main(int argc, const char **argv_) {
     if (progress)
       show_progress(frame_in, frame_out, dx_time);
 
-    if (!noblit) {
+    if (!noblit && (frame_count >= arg_throw_until)) {
+      fprintf(stderr, "Writing frame %d\n", frame_count);
       if (img) {
         unsigned int y;
         char out_fn[PATH_MAX];
