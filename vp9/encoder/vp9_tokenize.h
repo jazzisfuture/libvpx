@@ -29,7 +29,7 @@ typedef struct {
   unsigned char   skip_eob_node;
 } TOKENEXTRA;
 
-typedef INT64 vp9_coeff_accum[COEF_BANDS][PREV_COEF_CONTEXTS]
+typedef int64_t vp9_coeff_accum[COEF_BANDS][PREV_COEF_CONTEXTS]
                              [MAX_ENTROPY_TOKENS];
 
 extern int vp9_mby_is_skippable_4x4(MACROBLOCKD *xd, int has_y2_block);
