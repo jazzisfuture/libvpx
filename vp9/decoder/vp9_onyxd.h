@@ -15,8 +15,7 @@
 
 /* Create/destroy static data structures. */
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 #include "vpx_scale/yv12config.h"
 #include "vp9/common/vp9_ppflags.h"

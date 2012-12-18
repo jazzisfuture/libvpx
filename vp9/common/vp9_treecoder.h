@@ -14,25 +14,13 @@
 
 #include "vpx/vpx_integer.h"
 
-typedef unsigned char vp9_prob;
+typedef uint8_t vp9_prob;
 
-#define vp9_prob_half ( (vp9_prob) 128)
+#define vp9_prob_half ((vp9_prob) 128)
 
-typedef signed char vp9_tree_index;
-struct bool_coder_spec;
+typedef int8_t vp9_tree_index;
 
-typedef struct bool_coder_spec bool_coder_spec;
-typedef struct bool_writer bool_writer;
-typedef struct bool_reader bool_reader;
-
-typedef const bool_coder_spec c_bool_coder_spec;
-typedef const bool_writer c_bool_writer;
-typedef const bool_reader c_bool_reader;
-
-
-
-# define vp9_complement( x) (255 - x)
-
+#define vp9_complement(x) (255 - x)
 
 /* We build coding trees compactly in arrays.
    Each node of the tree is a pair of vp9_tree_indices.
@@ -42,7 +30,6 @@ typedef const bool_reader c_bool_reader;
    Nonnegative indices are always even;  processing begins at node 0. */
 
 typedef const vp9_tree_index vp9_tree[], *vp9_tree_p;
-
 
 typedef const struct vp9_token_struct {
   int value;
@@ -55,20 +42,17 @@ void vp9_tokens_from_tree(struct vp9_token_struct *, vp9_tree);
 void vp9_tokens_from_tree_offset(struct vp9_token_struct *, vp9_tree,
                                  int offset);
 
-
 /* Convert array of token occurrence counts into a table of probabilities
    for the associated binary encoding tree.  Also writes count of branches
    taken for each node on the tree; this facilitiates decisions as to
    probability updates. */
 
-void vp9_tree_probs_from_distribution(
-  int n,                      /* n = size of alphabet */
-  vp9_token tok               [ /* n */ ],
-  vp9_tree tree,
-  vp9_prob probs          [ /* n-1 */ ],
-  unsigned int branch_ct       [ /* n-1 */ ] [2],
-  const unsigned int num_events[ /* n */ ]
-);
+void vp9_tree_probs_from_distribution(int n,  /* n = size of alphabet */
+                                      vp9_token tok[ /* n */ ],
+                                      vp9_tree tree,
+                                      vp9_prob probs[ /* n - 1 */ ],
+                                      unsigned int branch_ct[ /* n - 1 */ ][2],
+                                      const unsigned int num_events[ /* n */ ]);
 
 static __inline vp9_prob clip_prob(int p) {
   return (p > 255) ? 255u : (p < 1) ? 1u : p;
