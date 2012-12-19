@@ -39,6 +39,7 @@ const unsigned int vp9_prob_cost[256] = {
   22,   21,   19,   18,   16,   15,   13,   12,   10,    9,    7,    6,    4,    3,    1,   1
 };
 
+#if !CONFIG_MULTISYMBOL
 void vp9_start_encode(BOOL_CODER *br, unsigned char *source) {
 
   br->lowvalue = 0;
@@ -49,12 +50,14 @@ void vp9_start_encode(BOOL_CODER *br, unsigned char *source) {
   br->pos      = 0;
 }
 
-void vp9_stop_encode(BOOL_CODER *br) {
+int vp9_stop_encode(BOOL_CODER *br) {
   int i;
 
   for (i = 0; i < 32; i++)
     encode_bool(br, 0, 128);
+  return br->pos;
 }
+#endif
 
 
 void vp9_encode_value(BOOL_CODER *br, int data, int bits) {
