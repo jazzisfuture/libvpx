@@ -13,6 +13,7 @@
 #include "vpx_ports/mem.h"
 #include "vpx_mem/vpx_mem.h"
 
+#if !CONFIG_MULTISYMBOL
 int vp9_start_decode(BOOL_DECODER *br,
                      const unsigned char *source,
                      unsigned int source_sz) {
@@ -48,6 +49,7 @@ void vp9_bool_decoder_fill(BOOL_DECODER *br) {
   br->value = value;
   br->count = count;
 }
+#endif
 
 
 static int get_unsigned_bits(unsigned num_values) {

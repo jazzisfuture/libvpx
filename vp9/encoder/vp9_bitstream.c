@@ -2096,9 +2096,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_nmv_probs(cpi, xd->allow_high_precision_mv, &header_bc);
   }
 
-  vp9_stop_encode(&header_bc);
-
-  oh.first_partition_length_in_bytes = header_bc.pos;
+  oh.first_partition_length_in_bytes = vp9_stop_encode(&header_bc);
 
   /* update frame tag */
   {
@@ -2111,9 +2109,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     dest[1] = v >> 8;
     dest[2] = v >> 16;
   }
-
-  *size = VP9_HEADER_SIZE + extra_bytes_packed + header_bc.pos;
-  vp9_start_encode(&residual_bc, cx_data + header_bc.pos);
+  *size = VP9_HEADER_SIZE + extra_bytes_packed
+          + oh.first_partition_length_in_bytes;
+  vp9_start_encode(&residual_bc, cx_data + oh.first_partition_length_in_bytes);
 
   if (pc->frame_type == KEY_FRAME) {
     decide_kf_ymode_entropy(cpi);
@@ -2127,9 +2125,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_update_mode_context(&cpi->common);
   }
 
-  vp9_stop_encode(&residual_bc);
-
-  *size += residual_bc.pos;
+  *size += vp9_stop_encode(&residual_bc);
 }
 
 #ifdef ENTROPY_STATS

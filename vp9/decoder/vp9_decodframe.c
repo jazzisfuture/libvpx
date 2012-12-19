@@ -1148,7 +1148,8 @@ static void setup_token_decoder(VP9D_COMP *pbi,
    * described by the partition can't be fully read, then restrict
    * it to the portion that can be (for EC mode) or throw an error.
    */
-  if (!read_is_valid(partition, partition_size, user_data_end)) {
+  if (partition_size &&
+      !read_is_valid(partition, partition_size, user_data_end)) {
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt partition "
                        "%d length", 1);
@@ -1756,11 +1757,24 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   // printf("Frame %d Done\n", frame_count++);
 
   /* Find the end of the coded buffer */
+#if CONFIG_MULTISYMBOL
+  while ((residual_bc.cnt > -15+CHAR_BIT)
+         && residual_bc.cnt < EC_WINDOW_SZ) {
+    residual_bc.cnt -= 8;
+    residual_bc.buf--;
+  }
+  if (residual_bc.cnt == -15+CHAR_BIT && (residual_bc.buf[-1] & 0x7F)) {
+    residual_bc.cnt -= 8;
+    residual_bc.buf--;
+  }
+  *p_data_end = residual_bc.buf;
+#else
   while (residual_bc.count > CHAR_BIT
          && residual_bc.count < VP9_BD_VALUE_SIZE) {
     residual_bc.count -= CHAR_BIT;
     residual_bc.user_buffer--;
   }
   *p_data_end = residual_bc.user_buffer;
+#endif
   return 0;
 }
