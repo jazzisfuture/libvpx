@@ -50,32 +50,47 @@ TEST(VP9, TestBitIO) {
       }
       for (int bit_method = 0; bit_method <= 3; ++bit_method) {
         const int random_seed = 6432;
-        const int buffer_size = 10000;
+        const int kBufferMaxSize = 10000;
         ACMRandom bit_rnd(random_seed);
         BOOL_CODER bw;
-        uint8_t bw_buffer[buffer_size];
+        uint8_t bw_buffer[kBufferMaxSize];
         vp9_start_encode(&bw, bw_buffer);
 
-        int bit = (bit_method == 0) ? 0 : (bit_method == 1) ? 1 : 0;
+        int bit;
         for (int i = 0; i < bits_to_test; ++i) {
+#if CONFIG_MULTISYMBOL
+          if (!probas[i])
+            bit = 1;
+          else
+#endif
           if (bit_method == 2) {
             bit = (i & 1);
           } else if (bit_method == 3) {
             bit = bit_rnd(2);
+          } else {
+            bit = bit_method;
           }
           encode_bool(&bw, bit, static_cast<int>(probas[i]));
         }
 
-        vp9_stop_encode(&bw);
+        int buffer_size = vp9_stop_encode(&bw);
+        ASSERT_LE(buffer_size, kBufferMaxSize);
 
         BOOL_DECODER br;
         vp9_start_decode(&br, bw_buffer, buffer_size);
         bit_rnd.Reset(random_seed);
         for (int i = 0; i < bits_to_test; ++i) {
+#if CONFIG_MULTISYMBOL
+          if (!probas[i])
+            bit = 1;
+          else
+#endif
           if (bit_method == 2) {
             bit = (i & 1);
           } else if (bit_method == 3) {
             bit = bit_rnd(2);
+          } else {
+            bit = bit_method;
           }
           GTEST_ASSERT_EQ(decode_bool(&br, probas[i]), bit)
               << "pos: " << i << " / " << bits_to_test

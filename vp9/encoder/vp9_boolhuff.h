@@ -19,7 +19,97 @@
 #ifndef VP9_ENCODER_VP9_BOOLHUFF_H_
 #define VP9_ENCODER_VP9_BOOLHUFF_H_
 
+#include <assert.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 #include "vpx_ports/mem.h"
+
+#if CONFIG_MULTISYMBOL
+#include "vpx_ports/vpx_clz.h"
+
+/* MRC namespace: Multisymbol Range Coder */
+typedef struct mrc_enc mrc_enc;
+typedef struct mrc_enc BOOL_CODER;
+
+#define MRC_TREE_FTB (15)
+#define MRC_TREE_FT  (1<<MRC_TREE_FTB)
+
+struct mrc_enc {
+  unsigned short *buf;
+  size_t          cbuf;
+  size_t          nbuf;
+  unsigned        low;
+  short           cnt;
+  unsigned short  rng;
+  unsigned char  *out;
+};
+
+static int mrc_encode(mrc_enc *br, unsigned _fl, unsigned _fh, unsigned _ftb) {
+  unsigned l;
+  unsigned r;
+  int      c;
+  int      s;
+  unsigned d;
+  unsigned u;
+  unsigned v;
+  l = br->low;
+  c = br->cnt;
+  r = br->rng;
+  u = r * _fl >> _ftb;
+  v = r * _fh >> _ftb;
+  r = v - u;
+  l += u;
+  d = 16 - VPX_ILOGNZ_32(r);
+  s = c + d;
+  /* TODO: Right now we flush every time we have at least one byte available.
+   * Instead we should use an mrc_window and flush right before we're about to
+   * shift bits off the end of the window.
+   * For a 32-bit window this is about the same amount of work, but for a 64-bit
+   * window it should be a fair win.
+   */
+  if (s >= 0) {
+    unsigned short *buf;
+    size_t          cbuf;
+    size_t          nbuf;
+    unsigned        m;
+    buf = br->buf;
+    cbuf = br->cbuf;
+    nbuf = br->nbuf;
+    if (nbuf + 2 >= cbuf) {
+      cbuf = (cbuf << 1) + 2;
+      buf = (unsigned short *)realloc(buf, cbuf * sizeof(*buf));
+      if (buf == NULL)return -1;
+    }
+    c += 16;
+    m = (1 << c) - 1;
+    if (s >= 8) {
+      buf[nbuf++] = (unsigned short)(l >> c);
+      l &= m;
+      c -= 8;
+      m >>= 8;
+    }
+    buf[nbuf++] = (unsigned short)(l >> c);
+    s = c + d - 24;
+    l &= m;
+    br->buf = buf;
+    br->cbuf = cbuf;
+    br->nbuf = nbuf;
+  }
+  br->low = l << d;
+  br->cnt = s;
+  br->rng = r << d;
+  return 0;
+}
+
+static void encode_bool(BOOL_CODER *br, int bit, int prob) {
+  unsigned int split = (MRC_TREE_FT * prob + 128) >> 8;
+
+  assert(prob || bit == 1);
+  mrc_encode(br, bit ? split : 0, bit ? MRC_TREE_FT : split, MRC_TREE_FTB);
+}
+
+#else
 
 typedef struct {
   unsigned int lowvalue;
@@ -33,19 +123,6 @@ typedef struct {
   unsigned int  measure_cost;
   unsigned long bit_counter;
 } BOOL_CODER;
-
-extern void vp9_start_encode(BOOL_CODER *bc, unsigned char *buffer);
-
-extern void vp9_encode_value(BOOL_CODER *br, int data, int bits);
-extern void vp9_encode_unsigned_max(BOOL_CODER *br, int data, int max);
-extern void vp9_stop_encode(BOOL_CODER *bc);
-extern const unsigned int vp9_prob_cost[256];
-
-extern void vp9_encode_uniform(BOOL_CODER *bc, int v, int n);
-extern void vp9_encode_term_subexp(BOOL_CODER *bc, int v, int k, int n);
-extern int vp9_count_uniform(int v, int n);
-extern int vp9_count_term_subexp(int v, int k, int n);
-extern int vp9_recenter_nonneg(int v, int m);
 
 DECLARE_ALIGNED(16, extern const unsigned char, vp9_norm[256]);
 
@@ -108,5 +185,19 @@ static void encode_bool(BOOL_CODER *br, int bit, int probability) {
   br->lowvalue = lowvalue;
   br->range = range;
 }
+
+#endif
+
+extern void vp9_start_encode(BOOL_CODER *bc, unsigned char *buffer);
+extern int vp9_stop_encode(BOOL_CODER *bc);
+extern void vp9_encode_value(BOOL_CODER *br, int data, int bits);
+extern void vp9_encode_unsigned_max(BOOL_CODER *br, int data, int max);
+extern const unsigned int vp9_prob_cost[256];
+
+extern void vp9_encode_uniform(BOOL_CODER *bc, int v, int n);
+extern void vp9_encode_term_subexp(BOOL_CODER *bc, int v, int k, int n);
+extern int vp9_count_uniform(int v, int n);
+extern int vp9_count_term_subexp(int v, int k, int n);
+extern int vp9_recenter_nonneg(int v, int m);
 
 #endif  // VP9_ENCODER_VP9_BOOLHUFF_H_

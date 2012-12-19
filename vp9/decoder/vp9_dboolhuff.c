@@ -13,9 +13,41 @@
 #include "vpx_ports/mem.h"
 #include "vpx_mem/vpx_mem.h"
 
+#if CONFIG_MULTISYMBOL
 int vp9_start_decode(BOOL_DECODER *br,
-                     const unsigned char *source,
-                     unsigned int source_sz) {
+                     const uint8_t *source,
+                     size_t source_sz) {
+  const uint8_t* const end = source + source_sz;
+  mrc_window           diff;
+  int                  c;
+  int                  s;
+
+  diff = 0;
+  c = -15;
+  for (s = MRC_WINDOW_SZ - 9; s >= 0;) {
+    if (source >= end) {
+      c = MRC_LOTS_OF_BITS;
+      break;
+    }
+    c += 8;
+    diff |= ((mrc_window)source[0]) << s;
+    ++source;
+    s -= 8;
+  }
+  br->buf = source;
+  br->end = end;
+  br->diff = diff;
+  br->count = c;
+  br->range = 0x8000;
+
+  return (source_sz && !source);
+}
+
+#else
+
+int vp9_start_decode(BOOL_DECODER *br,
+                     const uint8_t *source,
+                     size_t source_sz) {
   br->user_buffer_end = source + source_sz;
   br->user_buffer     = source;
   br->value    = 0;
@@ -48,6 +80,7 @@ void vp9_bool_decoder_fill(BOOL_DECODER *br) {
   br->value = value;
   br->count = count;
 }
+#endif
 
 
 static int get_unsigned_bits(unsigned num_values) {
@@ -109,4 +142,28 @@ int vp9_decode_unsigned_max(BOOL_DECODER *br, int max) {
   if (data > max)
     return max;
   return data;
+}
+
+const uint8_t* vp9_stop_decode(BOOL_DECODER *br) {
+  /* Find the end of the coded buffer */
+#if CONFIG_MULTISYMBOL
+  const int kBufferMaxCount = -15 + CHAR_BIT;
+  while ((br->count > kBufferMaxCount)
+         && br->count < MRC_WINDOW_SZ) {
+    br->count -= 8;
+    --br->buf;
+  }
+  if (br->count == kBufferMaxCount && (br->buf[-1] & 0x7F)) {
+    br->count -= 8;
+    --br->buf;
+  }
+  return br->buf;
+#else
+  while (br->count > CHAR_BIT
+         && br->count < VP9_BD_VALUE_SIZE) {
+    br->count -= CHAR_BIT;
+    --br->user_buffer;
+  }
+  return br->user_buffer;
+#endif
 }
