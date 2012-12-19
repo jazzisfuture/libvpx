@@ -230,10 +230,16 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
 #endif
                    ))
 #endif
-              )
-            vp9_loop_filter_mbv(y_ptr, u_ptr, v_ptr, post->y_stride,
+              ) {
+#if CONFIG_WIDERLPF
+            if (tx_size >= TX_16X16)
+              vp9_lpf_mbv_w(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
-
+            else
+#endif
+              vp9_loop_filter_mbv(y_ptr, u_ptr, v_ptr, post->y_stride,
+                                post->uv_stride, &lfi);
+          }
           if (!skip_lf) {
             if (tx_size == TX_8X8)
               vp9_loop_filter_bv8x8(y_ptr, u_ptr, v_ptr, post->y_stride,
@@ -254,14 +260,20 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
 #endif
                     ))
 #endif
-              )
-            vp9_loop_filter_mbh(y_ptr, u_ptr, v_ptr, post->y_stride,
+              ) {
+#if CONFIG_WIDERLPF
+            if (tx_size >= TX_16X16)
+              vp9_lpf_mbh_w(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
-
+            else
+#endif
+              vp9_loop_filter_mbh(y_ptr, u_ptr, v_ptr, post->y_stride,
+                                post->uv_stride, &lfi);
+          }
           if (!skip_lf) {
             if (tx_size == TX_8X8)
               vp9_loop_filter_bh8x8(y_ptr, u_ptr, v_ptr, post->y_stride,
-                                    post->uv_stride, &lfi);
+                                  post->uv_stride, &lfi);
             else
               vp9_loop_filter_bh(y_ptr, u_ptr, v_ptr, post->y_stride,
                                  post->uv_stride, &lfi);
@@ -296,7 +308,6 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
                                       lfi_n->blim[filter_level]);
         }
       }
-
       y_ptr += 16;
       u_ptr += 8;
       v_ptr += 8;

@@ -93,4 +93,10 @@ void vp9_loop_filter_frame_yonly(struct VP9Common *cm,
 void vp9_loop_filter_update_sharpness(loop_filter_info_n *lfi,
                                       int sharpness_lvl);
 
+extern void vp9_lpf_mbv_w(unsigned char *y_ptr, unsigned char *u_ptr,
+                          unsigned char *v_ptr, int y_stride, int uv_stride,
+                          struct loop_filter_info *lfi);
+extern void vp9_lpf_mbh_w(unsigned char *y_ptr, unsigned char *u_ptr,
+                           unsigned char *v_ptr, int y_stride, int uv_stride,
+                           struct loop_filter_info *lfi);
 #endif  // loopfilter_h
