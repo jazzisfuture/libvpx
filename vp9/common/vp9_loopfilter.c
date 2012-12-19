@@ -176,29 +176,28 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm,
   }
 }
 
+static int mb_lf_skip(const MB_MODE_INFO *const mbmi) {
+  const MB_PREDICTION_MODE mode = mbmi->mode;
+  const int skip_coef = mbmi->mb_skip_coeff;
+  const int tx_size = mbmi->txfm_size;
+  return mode != B_PRED && mode != I8X8_PRED && mode != SPLITMV &&
+         tx_size >= TX_16X16 && skip_coef;
+}
+
 void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
   YV12_BUFFER_CONFIG *post = cm->frame_to_show;
   loop_filter_info_n *lfi_n = &cm->lf_info;
   struct loop_filter_info lfi;
-
-  FRAME_TYPE frame_type = cm->frame_type;
-
-  int mb_row;
-  int mb_col;
-
-  int filter_level;
-
+  const FRAME_TYPE frame_type = cm->frame_type;
+  int mb_row, mb_col;
   unsigned char *y_ptr, *u_ptr, *v_ptr;
 
   /* Point at base of Mb MODE_INFO list */
   const MODE_INFO *mode_info_context = cm->mi;
-#if CONFIG_SUPERBLOCKS
   const int mis = cm->mode_info_stride;
-#endif
 
   /* Initialize the loop filter for this frame. */
   vp9_loop_filter_frame_init(cm, xd, cm->filter_level);
-
   /* Set up the buffer pointers */
   y_ptr = post->y_buffer;
   u_ptr = post->u_buffer;
@@ -207,18 +206,14 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
   /* vp9_filter each macro block */
   for (mb_row = 0; mb_row < cm->mb_rows; mb_row++) {
     for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
-      int skip_lf = (mode_info_context->mbmi.mode != B_PRED &&
-                     mode_info_context->mbmi.mode != I8X8_PRED &&
-                     mode_info_context->mbmi.mode != SPLITMV &&
-                     mode_info_context->mbmi.mb_skip_coeff);
-
       const int mode_index = lfi_n->mode_lf_lut[mode_info_context->mbmi.mode];
       const int seg = mode_info_context->mbmi.segment_id;
       const int ref_frame = mode_info_context->mbmi.ref_frame;
-      int tx_type = mode_info_context->mbmi.txfm_size;
-      filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
+      const int filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
       if (filter_level) {
+        const int skip_lf = mb_lf_skip(&mode_info_context->mbmi);
+        const int tx_size = mode_info_context->mbmi.txfm_size;
         if (cm->filter_type == NORMAL_LOOPFILTER) {
           const int hev_index = lfi_n->hev_thr_lut[frame_type][filter_level];
           lfi.mblim = lfi_n->mblim[filter_level];
@@ -228,20 +223,19 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
 
           if (mb_col > 0
 #if CONFIG_SUPERBLOCKS
-              && !((mb_col & 1) && mode_info_context->mbmi.encoded_as_sb &&
-                   ((mode_info_context[0].mbmi.mb_skip_coeff &&
-                     mode_info_context[-1].mbmi.mb_skip_coeff)
+              && !((mb_col & 1) && mode_info_context->mbmi.encoded_as_sb  &&
+                   ((skip_lf && mb_lf_skip(&mode_info_context[-1].mbmi))
 #if CONFIG_TX32X32
-                    || mode_info_context[-1].mbmi.txfm_size == TX_32X32
+                   || tx_size == TX_32X32
 #endif
-                    ))
+                   ))
 #endif
               )
             vp9_loop_filter_mbv(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
 
-          if (!skip_lf && tx_type < TX_16X16) {
-            if (tx_type == TX_8X8)
+          if (!skip_lf) {
+            if (tx_size == TX_8X8)
               vp9_loop_filter_bv8x8(y_ptr, u_ptr, v_ptr, post->y_stride,
                                     post->uv_stride, &lfi);
             else
@@ -254,10 +248,9 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
           if (mb_row > 0
 #if CONFIG_SUPERBLOCKS
               && !((mb_row & 1) && mode_info_context->mbmi.encoded_as_sb &&
-                   ((mode_info_context[0].mbmi.mb_skip_coeff &&
-                     mode_info_context[-mis].mbmi.mb_skip_coeff)
+                   ((skip_lf && mb_lf_skip(&mode_info_context[-mis].mbmi))
 #if CONFIG_TX32X32
-                    || mode_info_context[-mis].mbmi.txfm_size == TX_32X32
+                    || tx_size == TX_32X32
 #endif
                     ))
 #endif
@@ -265,8 +258,8 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
             vp9_loop_filter_mbh(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
 
-          if (!skip_lf && tx_type < TX_16X16) {
-            if (tx_type == TX_8X8)
+          if (!skip_lf) {
+            if (tx_size == TX_8X8)
               vp9_loop_filter_bh8x8(y_ptr, u_ptr, v_ptr, post->y_stride,
                                     post->uv_stride, &lfi);
             else
@@ -275,11 +268,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
           }
         } else {
           // FIXME: Not 8x8 aware
-          if (mb_col > 0
+          if (mb_col > 0  &&
+              !(skip_lf && mb_lf_skip(&mode_info_context[-1].mbmi))
 #if CONFIG_SUPERBLOCKS
-              && !((mb_col & 1) && mode_info_context->mbmi.encoded_as_sb &&
-                   mode_info_context[0].mbmi.mb_skip_coeff &&
-                   mode_info_context[-1].mbmi.mb_skip_coeff)
+              && !((mb_col & 1) && mode_info_context->mbmi.encoded_as_sb )
 #endif
               )
             vp9_loop_filter_simple_mbv(y_ptr, post->y_stride,
@@ -290,11 +282,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
                                       lfi_n->blim[filter_level]);
 
           /* don't apply across umv border */
-          if (mb_row > 0
+          if (mb_row > 0 &&
+              !(skip_lf && mb_lf_skip(&mode_info_context[-mis].mbmi))
 #if CONFIG_SUPERBLOCKS
-              && !((mb_row & 1) && mode_info_context->mbmi.encoded_as_sb &&
-                   mode_info_context[0].mbmi.mb_skip_coeff &&
-                   mode_info_context[-cm->mode_info_stride].mbmi.mb_skip_coeff)
+              && !((mb_row & 1) && mode_info_context->mbmi.encoded_as_sb)
 #endif
               )
             vp9_loop_filter_simple_mbh(y_ptr, post->y_stride,
@@ -312,11 +303,9 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
 
       mode_info_context++;     /* step to next MB */
     }
-
     y_ptr += post->y_stride  * 16 - post->y_width;
     u_ptr += post->uv_stride *  8 - post->uv_width;
     v_ptr += post->uv_stride *  8 - post->uv_width;
-
     mode_info_context++;         /* Skip border mb */
   }
 }
@@ -324,24 +313,14 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
 void vp9_loop_filter_frame_yonly(VP9_COMMON *cm, MACROBLOCKD *xd,
                                  int default_filt_lvl) {
   YV12_BUFFER_CONFIG *post = cm->frame_to_show;
-
   unsigned char *y_ptr;
-  int mb_row;
-  int mb_col;
-
+  int mb_row, mb_col;
   loop_filter_info_n *lfi_n = &cm->lf_info;
   struct loop_filter_info lfi;
-
-  int filter_level;
-  FRAME_TYPE frame_type = cm->frame_type;
+  const FRAME_TYPE frame_type = cm->frame_type;
 
   /* Point at base of Mb MODE_INFO list */
   const MODE_INFO *mode_info_context = cm->mi;
-
-#if 0
-  if (default_filt_lvl == 0) /* no filter applied */
-    return;
-#endif
 
   /* Initialize the loop filter for this frame. */
   vp9_loop_filter_frame_init(cm, xd, default_filt_lvl);
@@ -352,18 +331,14 @@ void vp9_loop_filter_frame_yonly(VP9_COMMON *cm, MACROBLOCKD *xd,
   /* vp9_filter each macro block */
   for (mb_row = 0; mb_row < cm->mb_rows; mb_row++) {
     for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
-      int skip_lf = (mode_info_context->mbmi.mode != B_PRED &&
-                     mode_info_context->mbmi.mode != I8X8_PRED &&
-                     mode_info_context->mbmi.mode != SPLITMV &&
-                     mode_info_context->mbmi.mb_skip_coeff);
-
       const int mode_index = lfi_n->mode_lf_lut[mode_info_context->mbmi.mode];
       const int seg = mode_info_context->mbmi.segment_id;
       const int ref_frame = mode_info_context->mbmi.ref_frame;
-      int tx_type = mode_info_context->mbmi.txfm_size;
-      filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
+      const int filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
       if (filter_level) {
+        const int skip_lf = mb_lf_skip(&mode_info_context->mbmi);
+        const int tx_type = mode_info_context->mbmi.txfm_size;
         if (cm->filter_type == NORMAL_LOOPFILTER) {
           const int hev_index = lfi_n->hev_thr_lut[frame_type][filter_level];
           lfi.mblim = lfi_n->mblim[filter_level];
@@ -374,7 +349,7 @@ void vp9_loop_filter_frame_yonly(VP9_COMMON *cm, MACROBLOCKD *xd,
           if (mb_col > 0)
             vp9_loop_filter_mbv(y_ptr, 0, 0, post->y_stride, 0, &lfi);
 
-          if (!skip_lf && tx_type != TX_16X16) {
+          if (!skip_lf) {
             if (tx_type == TX_8X8)
               vp9_loop_filter_bv8x8(y_ptr, 0, 0, post->y_stride, 0, &lfi);
             else
@@ -385,7 +360,7 @@ void vp9_loop_filter_frame_yonly(VP9_COMMON *cm, MACROBLOCKD *xd,
           if (mb_row > 0)
             vp9_loop_filter_mbh(y_ptr, 0, 0, post->y_stride, 0, &lfi);
 
-          if (!skip_lf && tx_type != TX_16X16) {
+          if (!skip_lf) {
             if (tx_type == TX_8X8)
               vp9_loop_filter_bh8x8(y_ptr, 0, 0, post->y_stride, 0, &lfi);
             else
