@@ -231,8 +231,13 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
                    ))
 #endif
               )
+#if CONFIG_WIDERLPF
+            vp9_lpf_mbv_w(y_ptr, u_ptr, v_ptr, post->y_stride,
+                                post->uv_stride, &lfi);
+#else
             vp9_loop_filter_mbv(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
+#endif
 
           if (!skip_lf) {
             if (tx_size == TX_8X8)
@@ -255,9 +260,13 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd) {
                     ))
 #endif
               )
+#if CONFIG_WIDERLPF
+            vp9_lpf_mbh_w(y_ptr, u_ptr, v_ptr, post->y_stride,
+                                post->uv_stride, &lfi);
+#else
             vp9_loop_filter_mbh(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
-
+#endif
           if (!skip_lf) {
             if (tx_size == TX_8X8)
               vp9_loop_filter_bh8x8(y_ptr, u_ptr, v_ptr, post->y_stride,
