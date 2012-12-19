@@ -168,6 +168,7 @@ CODEC_SRCS-$(BUILD_LIBVPX) += vpx/vpx_integer.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/asm_offsets.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/vpx_timer.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/mem.h
+CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/vpx_clz.h
 CODEC_SRCS-$(BUILD_LIBVPX) += $(BUILD_PFX)vpx_config.c
 INSTALL-SRCS-no += $(BUILD_PFX)vpx_config.c
 ifeq ($(ARCH_X86)$(ARCH_X86_64),yes)

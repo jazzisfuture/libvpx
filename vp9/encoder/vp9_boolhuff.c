@@ -39,6 +39,95 @@ const unsigned int vp9_prob_cost[256] = {
   22,   21,   19,   18,   16,   15,   13,   12,   10,    9,    7,    6,    4,    3,    1,   1
 };
 
+#if CONFIG_MULTISYMBOL
+static int mrc_enc_done(mrc_enc *br, unsigned char **_out) {
+  unsigned short *buf;
+  size_t          cbuf;
+  size_t          nbuf;
+  unsigned char  *out;
+  unsigned        mask;
+  unsigned        end;
+  unsigned        l;
+  unsigned        r;
+  int             c;
+  int             d;
+  int             s;
+  size_t          i;
+  buf = br->buf;
+  cbuf = br->cbuf;
+  nbuf = br->nbuf;
+  l = br->low;
+  c = br->cnt;
+  r = br->rng;
+  /*Figure out the minimum number of bits that ensures that the symbols encoded
+     thus far will be decoded correctly regardless of the bits that follow.*/
+  d = 0;
+  mask = 0x7FFF;
+  end = (l + mask)&~mask;
+  if ((end | mask) >= l + r) {
+    d++;
+    mask >>= 1;
+    end = (l + mask)&~mask;
+  }
+  /*Flush all remaining bits into the output buffer.*/
+  s = c + d + 8;
+  if (s >= 0) {
+    unsigned m;
+    if (nbuf + 1 + s / 8 >= cbuf) {
+      cbuf += 1 + s / 8;
+      cbuf = (cbuf << 1) + 2;
+      buf = (unsigned short *)realloc(buf, cbuf * sizeof(*buf));
+      if (buf == NULL)return -1;
+    }
+    m = (1 << (c + 16)) - 1;
+    do {
+      buf[nbuf++] = (unsigned short)(end >> (c + 16));
+      end &= m;
+      s -= 8;
+      c -= 8;
+      m >>= 8;
+    } while (s >= 0);
+    br->buf = buf;
+    br->cbuf = cbuf;
+  }
+  /*Perform carry propagation.*/
+  out = (unsigned char *)malloc(nbuf * sizeof(*out));
+  if (out == NULL)return -1;
+  l = 0;
+  for (i = nbuf; i-- > 0;) {
+    l = buf[i] + l;
+    out[i] = (unsigned char)l;
+    l >>= 8;
+  }
+  *_out = out;
+  return nbuf;
+}
+
+static void mrc_enc_init(mrc_enc *br) {
+  br->buf = NULL;
+  br->cbuf = 0;
+  br->nbuf = 0;
+  br->low = 0;
+  br->cnt = -9;
+  br->rng = 0x8000;
+}
+
+void vp9_start_encode(BOOL_CODER *br, unsigned char *source) {
+  mrc_enc_init(br);
+  br->out = source;
+}
+
+int vp9_stop_encode(BOOL_CODER *br) {
+  unsigned char *out = NULL;
+  int sz;
+
+  sz = mrc_enc_done(br, &out);
+  memcpy(br->out, out, sz);
+  free(br->buf);
+  return sz;
+}
+
+#else
 void vp9_start_encode(BOOL_CODER *br, unsigned char *source) {
 
   br->lowvalue = 0;
@@ -49,12 +138,14 @@ void vp9_start_encode(BOOL_CODER *br, unsigned char *source) {
   br->pos      = 0;
 }
 
-void vp9_stop_encode(BOOL_CODER *br) {
+int vp9_stop_encode(BOOL_CODER *br) {
   int i;
 
   for (i = 0; i < 32; i++)
     encode_bool(br, 0, 128);
+  return br->pos;
 }
+#endif
 
 
 void vp9_encode_value(BOOL_CODER *br, int data, int bits) {
