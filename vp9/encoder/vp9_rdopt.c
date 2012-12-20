@@ -258,6 +258,14 @@ static void fill_token_costs(vp9_coeff_count *c,
       }
 }
 
+static void fill_extra_bit_costs(unsigned int *c, vp9_prob *p,
+                                 vp9_tree_p t, int n_bits) {
+  int n;
+
+  for (n = 0; n < (1 << n_bits); n++) {
+    c[n] = treed_cost(t, p, n, n_bits);
+  }
+}
 
 static int rd_iifactor[32] =  { 4, 4, 3, 2, 1, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -388,6 +396,25 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
   fill_token_costs(cpi->mb.token_costs[TX_32X32],
                    cpi->common.fc.coef_probs_32x32, BLOCK_TYPES_32X32);
 #endif
+
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat1,
+                       cpi->common.fc.token_bit_probs_cat1,
+                       vp9_extra_bits[DCT_VAL_CATEGORY1].tree, 1);
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat2,
+                       cpi->common.fc.token_bit_probs_cat2,
+                       vp9_extra_bits[DCT_VAL_CATEGORY2].tree, 2);
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat3,
+                       cpi->common.fc.token_bit_probs_cat3,
+                       vp9_extra_bits[DCT_VAL_CATEGORY3].tree, 3);
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat4,
+                       cpi->common.fc.token_bit_probs_cat4,
+                       vp9_extra_bits[DCT_VAL_CATEGORY4].tree, 4);
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat5,
+                       cpi->common.fc.token_bit_probs_cat5,
+                       vp9_extra_bits[DCT_VAL_CATEGORY5].tree, 5);
+  fill_extra_bit_costs(cpi->mb.token_extra_bit_costs_cat6,
+                       cpi->common.fc.token_bit_probs_cat6,
+                       vp9_extra_bits[DCT_VAL_CATEGORY6].tree, 14);
 
   /*rough estimate for costing*/
   cpi->common.kf_ymode_probs_index = cpi->common.base_qindex >> 4;
@@ -529,7 +556,11 @@ static int cost_coeffs_2x2(MACROBLOCK *mb,
     int v = qcoeff_ptr[vp9_default_zig_zag1d_4x4[c]];
     int t = vp9_dct_value_tokens_ptr[v].Token;
     cost += mb->token_costs[TX_8X8][type][vp9_coef_bands_4x4[c]][pt][t];
-    cost += vp9_dct_value_cost_ptr[v];
+    if (v) {
+      cost += vp9_cost_bit(vp9_prob_half, v < 0); // sign bit
+      if (t >= DCT_VAL_CATEGORY1 && t <= DCT_VAL_CATEGORY6)
+        cost += mb->token_extra_bit_costs[t - DCT_VAL_CATEGORY1][vp9_dct_value_tokens_ptr[v].Extra >> 1];
+    }
     pt = vp9_prev_token_class[t];
   }
 
@@ -633,7 +664,11 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
       int v = qcoeff_ptr[scan[c]];
       int t = vp9_dct_value_tokens_ptr[v].Token;
       cost += mb->hybrid_token_costs[tx_size][type][band[c]][pt][t];
-      cost += vp9_dct_value_cost_ptr[v];
+      if (v) {
+        cost += vp9_cost_bit(vp9_prob_half, v < 0); // sign bit
+        if (t >= DCT_VAL_CATEGORY1 && t <= DCT_VAL_CATEGORY6)
+          cost += mb->token_extra_bit_costs[t - DCT_VAL_CATEGORY1][vp9_dct_value_tokens_ptr[v].Extra >> 1];
+      }
       pt = vp9_prev_token_class[t];
     }
     if (c < seg_eob)
@@ -644,7 +679,11 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
       int v = qcoeff_ptr[scan[c]];
       int t = vp9_dct_value_tokens_ptr[v].Token;
       cost += mb->token_costs[tx_size][type][band[c]][pt][t];
-      cost += vp9_dct_value_cost_ptr[v];
+      if (v) {
+        cost += vp9_cost_bit(vp9_prob_half, v < 0); // sign bit
+        if (t >= DCT_VAL_CATEGORY1 && t <= DCT_VAL_CATEGORY6)
+          cost += mb->token_extra_bit_costs[t - DCT_VAL_CATEGORY1][vp9_dct_value_tokens_ptr[v].Extra >> 1];
+      }
       pt = vp9_prev_token_class[t];
     }
     if (c < seg_eob)

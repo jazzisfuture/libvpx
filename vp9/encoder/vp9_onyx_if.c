@@ -1777,6 +1777,13 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 
   init_config((VP9_PTR)cpi, oxcf);
 
+  cpi->mb.token_extra_bit_costs[0] = cpi->mb.token_extra_bit_costs_cat1;
+  cpi->mb.token_extra_bit_costs[1] = cpi->mb.token_extra_bit_costs_cat2;
+  cpi->mb.token_extra_bit_costs[2] = cpi->mb.token_extra_bit_costs_cat3;
+  cpi->mb.token_extra_bit_costs[3] = cpi->mb.token_extra_bit_costs_cat4;
+  cpi->mb.token_extra_bit_costs[4] = cpi->mb.token_extra_bit_costs_cat5;
+  cpi->mb.token_extra_bit_costs[5] = cpi->mb.token_extra_bit_costs_cat6;
+
   memcpy(cpi->base_skip_false_prob, base_skip_false_prob, sizeof(base_skip_false_prob));
   cpi->common.current_video_frame   = 0;
   cpi->kf_overspend_bits            = 0;
@@ -1857,6 +1864,13 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 #ifdef NMV_STATS
   init_nmvstats();
 #endif
+
+  cpi->token_bit_counter[0] = cpi->token_bit_counter_cat1;
+  cpi->token_bit_counter[1] = cpi->token_bit_counter_cat2;
+  cpi->token_bit_counter[2] = cpi->token_bit_counter_cat3;
+  cpi->token_bit_counter[3] = cpi->token_bit_counter_cat4;
+  cpi->token_bit_counter[4] = cpi->token_bit_counter_cat5;
+  cpi->token_bit_counter[5] = cpi->token_bit_counter_cat6;
 
   /*Initialize the feed-forward activity masking.*/
   cpi->activity_avg = 90 << 12;
@@ -3670,6 +3684,18 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_copy(cpi->common.fc.coef_counts_32x32, cpi->coef_counts_32x32);
 #endif
+  vp9_copy(cpi->common.fc.token_bit_counter_cat1,
+           cpi->token_bit_counter_cat1);
+  vp9_copy(cpi->common.fc.token_bit_counter_cat2,
+           cpi->token_bit_counter_cat2);
+  vp9_copy(cpi->common.fc.token_bit_counter_cat3,
+           cpi->token_bit_counter_cat3);
+  vp9_copy(cpi->common.fc.token_bit_counter_cat4,
+           cpi->token_bit_counter_cat4);
+  vp9_copy(cpi->common.fc.token_bit_counter_cat5,
+           cpi->token_bit_counter_cat5);
+  vp9_copy(cpi->common.fc.token_bit_counter_cat6,
+           cpi->token_bit_counter_cat6);
   vp9_adapt_coef_probs(&cpi->common);
   if (cpi->common.frame_type != KEY_FRAME) {
 #if CONFIG_SUPERBLOCKS

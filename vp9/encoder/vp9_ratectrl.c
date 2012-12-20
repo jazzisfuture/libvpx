@@ -178,6 +178,12 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_copy(cc->coef_probs_32x32, cm->fc.coef_probs_32x32);
 #endif
+  vp9_copy(cc->token_bit_probs_cat1, cm->fc.token_bit_probs_cat1);
+  vp9_copy(cc->token_bit_probs_cat2, cm->fc.token_bit_probs_cat2);
+  vp9_copy(cc->token_bit_probs_cat3, cm->fc.token_bit_probs_cat3);
+  vp9_copy(cc->token_bit_probs_cat4, cm->fc.token_bit_probs_cat4);
+  vp9_copy(cc->token_bit_probs_cat5, cm->fc.token_bit_probs_cat5);
+  vp9_copy(cc->token_bit_probs_cat6, cm->fc.token_bit_probs_cat6);
   vp9_copy(cc->switchable_interp_prob, cm->fc.switchable_interp_prob);
 #if CONFIG_COMP_INTERINTRA_PRED
   cc->interintra_prob = cm->fc.interintra_prob;
@@ -240,6 +246,12 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_copy(cm->fc.coef_probs_32x32, cc->coef_probs_32x32);
 #endif
+  vp9_copy(cm->fc.token_bit_probs_cat1, cc->token_bit_probs_cat1);
+  vp9_copy(cm->fc.token_bit_probs_cat2, cc->token_bit_probs_cat2);
+  vp9_copy(cm->fc.token_bit_probs_cat3, cc->token_bit_probs_cat3);
+  vp9_copy(cm->fc.token_bit_probs_cat4, cc->token_bit_probs_cat4);
+  vp9_copy(cm->fc.token_bit_probs_cat5, cc->token_bit_probs_cat5);
+  vp9_copy(cm->fc.token_bit_probs_cat6, cc->token_bit_probs_cat6);
   vp9_copy(cm->fc.switchable_interp_prob, cc->switchable_interp_prob);
 #if CONFIG_COMP_INTERINTRA_PRED
   cm->fc.interintra_prob = cc->interintra_prob;

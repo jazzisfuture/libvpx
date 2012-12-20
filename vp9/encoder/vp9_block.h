@@ -176,6 +176,13 @@ typedef struct macroblock {
 
   vp9_coeff_count token_costs[TX_SIZE_MAX_SB][BLOCK_TYPES_4X4];
   vp9_coeff_count hybrid_token_costs[TX_SIZE_MAX_SB][BLOCK_TYPES_4X4];
+  unsigned int *token_extra_bit_costs[6];
+  unsigned int token_extra_bit_costs_cat1[1 <<  1];
+  unsigned int token_extra_bit_costs_cat2[1 <<  2];
+  unsigned int token_extra_bit_costs_cat3[1 <<  3];
+  unsigned int token_extra_bit_costs_cat4[1 <<  4];
+  unsigned int token_extra_bit_costs_cat5[1 <<  5];
+  unsigned int token_extra_bit_costs_cat6[1 << 14];
 
   int optimize;
 
