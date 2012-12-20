@@ -2278,10 +2278,14 @@ static void get_cx_data(struct stream_state  *stream,
         stream->nbytes += pkt->data.raw.sz;
 
         *got_data = 1;
-        if (global->test_decode) {
+        if (global->test_decode && !stream->mismatch_seen) {
           vpx_codec_decode(&stream->decoder, pkt->data.frame.buf,
                            pkt->data.frame.sz, NULL, 0);
-          ctx_exit_on_error(&stream->decoder, "Failed to decode frame");
+          if (stream->decoder.err) {
+            warn("Failed to decode frame in stream %d",
+                 stream->index);
+            stream->mismatch_seen = stream->frames_out + 1;
+          }
         }
         break;
       case VPX_CODEC_STATS_PKT:
@@ -2341,14 +2345,15 @@ float usec_to_fps(uint64_t usec, unsigned int frames) {
 
 
 static void test_decode(struct stream_state  *stream) {
+  if (stream->mismatch_seen)
+    return;
+
   vpx_codec_control(&stream->encoder, VP8_COPY_REFERENCE, &stream->ref_enc);
   ctx_exit_on_error(&stream->encoder, "Failed to get encoder reference frame");
   vpx_codec_control(&stream->decoder, VP8_COPY_REFERENCE, &stream->ref_dec);
   ctx_exit_on_error(&stream->decoder, "Failed to get decoder reference frame");
 
-  if (!stream->mismatch_seen
-      && !compare_img(&stream->ref_enc.img, &stream->ref_dec.img)) {
-    /* TODO(jkoleszar): make fatal. */
+  if (!compare_img(&stream->ref_enc.img, &stream->ref_dec.img)) {
     int y[2], u[2], v[2];
     find_mismatch(&stream->ref_enc.img, &stream->ref_dec.img,
                   y, u, v);
