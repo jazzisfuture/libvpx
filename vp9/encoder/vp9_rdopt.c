@@ -3713,8 +3713,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
 
     // Test best rd so far against threshold for trying this mode.
-    if (best_rd <= cpi->rd_threshes[mode_index])
+    if (best_rd <= cpi->rd_threshes[mode_index]) {
+      switchable_filter_index = 0;
       continue;
+    }
 
     // current coding mode under rate-distortion optimization test loop
 #if CONFIG_COMP_INTRA_PRED
@@ -4641,6 +4643,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // Test best rd so far against threshold for trying this mode.
     if (best_rd <= cpi->rd_threshes[mode_index] ||
         cpi->rd_threshes[mode_index] == INT_MAX) {
+      // Reset the index so that the loop counter will move on
+      switchable_filter_index = 0;
       continue;
     }
 
