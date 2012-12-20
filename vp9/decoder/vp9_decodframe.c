@@ -1278,6 +1278,63 @@ static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
     read_coef_probs_common(bc, pc->fc.coef_probs_32x32, BLOCK_TYPES_32X32);
   }
 #endif
+
+  if (0) printf("Pre dec frame %d probs: [ %d ], [ %d, %d ], [ %d, %d, %d ], [ %d, %d, %d, %d ], [ %d, %d, %d, %d, %d ]\n",
+         pc->current_video_frame,
+         pc->fc.token_bit_probs_cat1[0],
+         pc->fc.token_bit_probs_cat2[0],
+         pc->fc.token_bit_probs_cat2[1],
+         pc->fc.token_bit_probs_cat3[0],
+         pc->fc.token_bit_probs_cat3[1],
+         pc->fc.token_bit_probs_cat3[2],
+         pc->fc.token_bit_probs_cat4[0],
+         pc->fc.token_bit_probs_cat4[1],
+         pc->fc.token_bit_probs_cat4[2],
+         pc->fc.token_bit_probs_cat4[3],
+         pc->fc.token_bit_probs_cat5[0],
+         pc->fc.token_bit_probs_cat5[1],
+         pc->fc.token_bit_probs_cat5[2],
+         pc->fc.token_bit_probs_cat5[3],
+         pc->fc.token_bit_probs_cat5[4]);
+  // token extra bits
+  if (vp9_read_bit(bc)) {
+    int n, m;
+    for (n = 0; n < 6; n++) {
+      const int count = ((int[]) { 1, 2, 3, 4, 5, 14 })[n];
+      if (vp9_read_bit(bc)) {
+        for (m = 0; m < count; m++) {
+          if (vp9_read_bit(bc)) {
+            vp9_prob new_prob = vp9_read_literal(bc, 8);
+            switch (n) {
+              case 0: pc->fc.token_bit_probs_cat1[m] = new_prob; break;
+              case 1: pc->fc.token_bit_probs_cat2[m] = new_prob; break;
+              case 2: pc->fc.token_bit_probs_cat3[m] = new_prob; break;
+              case 3: pc->fc.token_bit_probs_cat4[m] = new_prob; break;
+              case 4: pc->fc.token_bit_probs_cat5[m] = new_prob; break;
+              case 5: pc->fc.token_bit_probs_cat6[m] = new_prob; break;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (0) printf("Dec frame %d probs: [ %d ], [ %d, %d ], [ %d, %d, %d ], [ %d, %d, %d, %d ], [ %d, %d, %d, %d, %d ]\n",
+         pc->current_video_frame,
+         pc->fc.token_bit_probs_cat1[0],
+         pc->fc.token_bit_probs_cat2[0],
+         pc->fc.token_bit_probs_cat2[1],
+         pc->fc.token_bit_probs_cat3[0],
+         pc->fc.token_bit_probs_cat3[1],
+         pc->fc.token_bit_probs_cat3[2],
+         pc->fc.token_bit_probs_cat4[0],
+         pc->fc.token_bit_probs_cat4[1],
+         pc->fc.token_bit_probs_cat4[2],
+         pc->fc.token_bit_probs_cat4[3],
+         pc->fc.token_bit_probs_cat5[0],
+         pc->fc.token_bit_probs_cat5[1],
+         pc->fc.token_bit_probs_cat5[2],
+         pc->fc.token_bit_probs_cat5[3],
+         pc->fc.token_bit_probs_cat5[4]);
 }
 
 int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
@@ -1636,6 +1693,18 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   vp9_copy(pbi->common.fc.pre_coef_probs_32x32,
            pbi->common.fc.coef_probs_32x32);
 #endif
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat1,
+           pbi->common.fc.token_bit_probs_cat1);
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat2,
+           pbi->common.fc.token_bit_probs_cat2);
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat3,
+           pbi->common.fc.token_bit_probs_cat3);
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat4,
+           pbi->common.fc.token_bit_probs_cat4);
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat5,
+           pbi->common.fc.token_bit_probs_cat5);
+  vp9_copy(pbi->common.fc.pre_token_bit_probs_cat6,
+           pbi->common.fc.token_bit_probs_cat6);
   vp9_copy(pbi->common.fc.pre_ymode_prob, pbi->common.fc.ymode_prob);
 #if CONFIG_SUPERBLOCKS
   vp9_copy(pbi->common.fc.pre_sb_ymode_prob, pbi->common.fc.sb_ymode_prob);
@@ -1658,6 +1727,12 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_zero(pbi->common.fc.coef_counts_32x32);
 #endif
+  vp9_zero(pbi->common.fc.token_bit_counter_cat1);
+  vp9_zero(pbi->common.fc.token_bit_counter_cat2);
+  vp9_zero(pbi->common.fc.token_bit_counter_cat3);
+  vp9_zero(pbi->common.fc.token_bit_counter_cat4);
+  vp9_zero(pbi->common.fc.token_bit_counter_cat5);
+  vp9_zero(pbi->common.fc.token_bit_counter_cat6);
   vp9_zero(pbi->common.fc.ymode_counts);
 #if CONFIG_SUPERBLOCKS
   vp9_zero(pbi->common.fc.sb_ymode_counts);

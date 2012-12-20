@@ -45,7 +45,6 @@ extern struct vp9_token_struct vp9_coef_encodings[MAX_ENTROPY_TOKENS];
 
 typedef struct {
   vp9_tree_p tree;
-  const vp9_prob *prob;
   int Len;
   int base_val;
 } vp9_extra_bit_struct;

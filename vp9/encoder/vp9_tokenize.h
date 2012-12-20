@@ -72,7 +72,6 @@ extern vp9_coeff_accum hybrid_context_counters_8x8[BLOCK_TYPES_8X8];
 extern vp9_coeff_accum hybrid_context_counters_16x16[BLOCK_TYPES_16X16];
 #endif
 
-extern const int *vp9_dct_value_cost_ptr;
 /* TODO: The Token field should be broken out into a separate char array to
  *  improve cache locality, since it's needed for costing when the rest of the
  *  fields are not.

@@ -361,7 +361,8 @@ static void vp9_cond_prob_update(vp9_writer *bc, vp9_prob *oldp, vp9_prob upd,
   }
 }
 
-static void pack_mb_tokens(vp9_writer* const bc,
+static void pack_mb_tokens(VP9_COMMON *cm,
+                           vp9_writer* const bc,
                            TOKENEXTRA **tp,
                            const TOKENEXTRA *const stop) {
   unsigned int split;
@@ -437,10 +438,19 @@ static void pack_mb_tokens(vp9_writer* const bc,
       const int e = p->Extra, L = b->Len;
 
       if (L) {
-        const unsigned char *pp = b->prob;
+        const unsigned char *pp;
         int v = e >> 1;
         int n = L;              /* number of bits in v, assumed nonzero */
         int i = 0;
+
+        switch (t) {
+          case DCT_VAL_CATEGORY1: pp = cm->fc.token_bit_probs_cat1; break;
+          case DCT_VAL_CATEGORY2: pp = cm->fc.token_bit_probs_cat2; break;
+          case DCT_VAL_CATEGORY3: pp = cm->fc.token_bit_probs_cat3; break;
+          case DCT_VAL_CATEGORY4: pp = cm->fc.token_bit_probs_cat4; break;
+          case DCT_VAL_CATEGORY5: pp = cm->fc.token_bit_probs_cat5; break;
+          case DCT_VAL_CATEGORY6: pp = cm->fc.token_bit_probs_cat6; break;
+        }
 
         do {
           const int bb = (v >> --n) & 1;
@@ -1135,7 +1145,7 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
         active_section = 1;
 #endif
         assert(tok < tok_end);
-        pack_mb_tokens(bc, &tok, tok_end);
+        pack_mb_tokens(pc, bc, &tok, tok_end);
 
 #if CONFIG_SUPERBLOCKS
         if (m->mbmi.encoded_as_sb) {
@@ -1319,7 +1329,7 @@ static void write_kfmodes(VP9_COMP* const cpi, vp9_writer* const bc) {
         active_section = 8;
 #endif
         assert(tok < tok_end);
-        pack_mb_tokens(bc, &tok, tok_end);
+        pack_mb_tokens(c, bc, &tok, tok_end);
 
 #if CONFIG_SUPERBLOCKS
         if (m->mbmi.encoded_as_sb) {
@@ -1633,6 +1643,124 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                              BLOCK_TYPES_32X32);
   }
 #endif
+
+  // FIXME do we update the probabilities for the coeff extra bits?
+  // FIXME msvc compat
+  VP9_COMMON *pc = &cpi->common;
+  if (0 && !cpi->dummy_packing)
+    printf("Pre enc frame %d probs: [ %d ], [ %d, %d ], [ %d, %d, %d ], [ %d, %d, %d, %d ], [ %d, %d, %d, %d, %d ]\n",
+           pc->current_video_frame,
+           pc->fc.token_bit_probs_cat1[0],
+           pc->fc.token_bit_probs_cat2[0],
+           pc->fc.token_bit_probs_cat2[1],
+           pc->fc.token_bit_probs_cat3[0],
+           pc->fc.token_bit_probs_cat3[1],
+           pc->fc.token_bit_probs_cat3[2],
+           pc->fc.token_bit_probs_cat4[0],
+           pc->fc.token_bit_probs_cat4[1],
+           pc->fc.token_bit_probs_cat4[2],
+           pc->fc.token_bit_probs_cat4[3],
+           pc->fc.token_bit_probs_cat5[0],
+           pc->fc.token_bit_probs_cat5[1],
+           pc->fc.token_bit_probs_cat5[2],
+           pc->fc.token_bit_probs_cat5[3],
+           pc->fc.token_bit_probs_cat5[4]);
+  {
+    int n, m;
+  int total_savings = 0;
+  int do_new[6] = { 0, 0, 0, 0, 0, 0 };
+  int do_new_cat1[1] = { 0 }, do_new_cat2[2] = { 0, 0 },
+  do_new_cat3[3] = { 0, 0, 0 }, do_new_cat4[4] = { 0, 0, 0, 0 },
+  do_new_cat5[5] = { 0, 0, 0, 0, 0 }, do_new_cat6[14] = { 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0 };
+  int *do_new_cat[6] = { do_new_cat1, do_new_cat2, do_new_cat3,
+    do_new_cat4, do_new_cat5, do_new_cat6 };
+  for (n = 0; n < 6; n++) {
+    const int count = ((int[]) { 1, 2, 3, 4, 5, 14 })[n];
+    unsigned int (*c)[2] = cpi->token_bit_counter[n];
+    int savings = 0;
+
+    for (m = 0; m < count; m++) {
+      vp9_prob old_prob;
+      vp9_prob new_prob = get_binary_prob(c[m][0], c[m][1]);
+      int new_cost, old_cost;
+
+      switch (n) {
+        case 0: old_prob = cpi->common.fc.token_bit_probs_cat1[m]; break;
+        case 1: old_prob = cpi->common.fc.token_bit_probs_cat2[m]; break;
+        case 2: old_prob = cpi->common.fc.token_bit_probs_cat3[m]; break;
+        case 3: old_prob = cpi->common.fc.token_bit_probs_cat4[m]; break;
+        case 4: old_prob = cpi->common.fc.token_bit_probs_cat5[m]; break;
+        case 5: old_prob = cpi->common.fc.token_bit_probs_cat6[m]; break;
+      }
+
+      old_cost = c[m][0] * vp9_cost_bit(old_prob, 0) +
+                 c[m][1] * vp9_cost_bit(old_prob, 1);
+      new_cost = c[m][0] * vp9_cost_bit(new_prob, 0) +
+                 c[m][1] * vp9_cost_bit(new_prob, 1);
+      if (new_cost - old_cost > 2048) {
+        savings += new_cost - old_cost - 2048;
+        do_new_cat[n][m] = 1;
+      }
+    }
+
+    // do the total savings justify $count booleans for per-prob updates?
+    if (savings > count * 256) {
+      total_savings += savings - count * 256;
+      do_new[n] = 1;
+    }
+  }
+
+  if (total_savings <= 6 * 256) {
+    vp9_write_bit(bc, 0);
+  } else {
+    vp9_write_bit(bc, 1);
+    for (n = 0; n < 6; n++) {
+      if (!do_new[n]) {
+        vp9_write_bit(bc, 0);
+      } else {
+        const int count = ((int[]) { 1, 2, 3, 4, 5, 14 })[n];
+        unsigned int (*c)[2] = cpi->token_bit_counter[n];
+        vp9_write_bit(bc, 1);
+        for (m = 0; m < count; m++) {
+          if (!do_new_cat[n][m]) {
+            vp9_write_bit(bc, 0);
+          } else {
+            vp9_prob new_prob = get_binary_prob(c[m][0], c[m][1]);
+            vp9_write_bit(bc, 1);
+            switch (n) {
+              case 0: cpi->common.fc.token_bit_probs_cat1[m] = new_prob; break;
+              case 1: cpi->common.fc.token_bit_probs_cat2[m] = new_prob; break;
+              case 2: cpi->common.fc.token_bit_probs_cat3[m] = new_prob; break;
+              case 3: cpi->common.fc.token_bit_probs_cat4[m] = new_prob; break;
+              case 4: cpi->common.fc.token_bit_probs_cat5[m] = new_prob; break;
+              case 5: cpi->common.fc.token_bit_probs_cat6[m] = new_prob; break;
+            }
+            vp9_write_literal(bc, new_prob, 8);
+          }
+        }
+      }
+    }
+  }
+  }
+if (0 && !cpi->dummy_packing)
+  printf("Enc frame %d probs: [ %d ], [ %d, %d ], [ %d, %d, %d ], [ %d, %d, %d, %d ], [ %d, %d, %d, %d, %d ]\n",
+         pc->current_video_frame,
+         pc->fc.token_bit_probs_cat1[0],
+         pc->fc.token_bit_probs_cat2[0],
+         pc->fc.token_bit_probs_cat2[1],
+         pc->fc.token_bit_probs_cat3[0],
+         pc->fc.token_bit_probs_cat3[1],
+         pc->fc.token_bit_probs_cat3[2],
+         pc->fc.token_bit_probs_cat4[0],
+         pc->fc.token_bit_probs_cat4[1],
+         pc->fc.token_bit_probs_cat4[2],
+         pc->fc.token_bit_probs_cat4[3],
+         pc->fc.token_bit_probs_cat5[0],
+         pc->fc.token_bit_probs_cat5[1],
+         pc->fc.token_bit_probs_cat5[2],
+         pc->fc.token_bit_probs_cat5[3],
+         pc->fc.token_bit_probs_cat5[4]);
 }
 
 #ifdef PACKET_TESTING
@@ -2114,6 +2242,18 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_copy(cpi->common.fc.pre_coef_probs_32x32,
            cpi->common.fc.coef_probs_32x32);
 #endif
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat1,
+           cpi->common.fc.token_bit_probs_cat1);
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat2,
+           cpi->common.fc.token_bit_probs_cat2);
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat3,
+           cpi->common.fc.token_bit_probs_cat3);
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat4,
+           cpi->common.fc.token_bit_probs_cat4);
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat5,
+           cpi->common.fc.token_bit_probs_cat5);
+  vp9_copy(cpi->common.fc.pre_token_bit_probs_cat6,
+           cpi->common.fc.token_bit_probs_cat6);
 #if CONFIG_SUPERBLOCKS
   vp9_copy(cpi->common.fc.pre_sb_ymode_prob, cpi->common.fc.sb_ymode_prob);
 #endif
