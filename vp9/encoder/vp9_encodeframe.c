@@ -1482,6 +1482,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cpi->pred_filter_off_count = 0;
 #endif
   vp9_zero(cpi->switchable_interp_count);
+  vp9_zero(cpi->best_switchable_interp_count);
 
   xd->mode_info_context = cm->mi;
   xd->prev_mode_info_context = cm->prev_mi;
