@@ -18,36 +18,36 @@
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
-  if (mcomp_filter_type == SIXTAP) {
-    xd->subpixel_predict        = vp9_sixtap_predict;
-    xd->subpixel_predict8x4     = vp9_sixtap_predict8x4;
-    xd->subpixel_predict8x8     = vp9_sixtap_predict8x8;
-    xd->subpixel_predict16x16   = vp9_sixtap_predict16x16;
-    xd->subpixel_predict_avg    = vp9_sixtap_predict_avg;
-    xd->subpixel_predict_avg8x8 = vp9_sixtap_predict_avg8x8;
-    xd->subpixel_predict_avg16x16 = vp9_sixtap_predict_avg16x16;
+  if (mcomp_filter_type == EIGHTTAP_LP) {
+    xd->subpixel_predict4x4     = vp9_eighttap_lp_predict4x4;
+    xd->subpixel_predict8x4     = vp9_eighttap_lp_predict8x4;
+    xd->subpixel_predict8x8     = vp9_eighttap_lp_predict8x8;
+    xd->subpixel_predict16x16   = vp9_eighttap_lp_predict16x16;
+    xd->subpixel_predict_avg4x4 = vp9_eighttap_lp_predict_avg4x4;
+    xd->subpixel_predict_avg8x8 = vp9_eighttap_lp_predict_avg8x8;
+    xd->subpixel_predict_avg16x16 = vp9_eighttap_lp_predict_avg16x16;
   } else if (mcomp_filter_type == EIGHTTAP || mcomp_filter_type == SWITCHABLE) {
-    xd->subpixel_predict        = vp9_eighttap_predict;
+    xd->subpixel_predict4x4     = vp9_eighttap_predict4x4;
     xd->subpixel_predict8x4     = vp9_eighttap_predict8x4;
     xd->subpixel_predict8x8     = vp9_eighttap_predict8x8;
     xd->subpixel_predict16x16   = vp9_eighttap_predict16x16;
-    xd->subpixel_predict_avg    = vp9_eighttap_predict_avg4x4;
+    xd->subpixel_predict_avg4x4 = vp9_eighttap_predict_avg4x4;
     xd->subpixel_predict_avg8x8 = vp9_eighttap_predict_avg8x8;
     xd->subpixel_predict_avg16x16 = vp9_eighttap_predict_avg16x16;
   } else if (mcomp_filter_type == EIGHTTAP_SHARP) {
-    xd->subpixel_predict        = vp9_eighttap_predict_sharp;
+    xd->subpixel_predict4x4     = vp9_eighttap_predict4x4_sharp;
     xd->subpixel_predict8x4     = vp9_eighttap_predict8x4_sharp;
     xd->subpixel_predict8x8     = vp9_eighttap_predict8x8_sharp;
     xd->subpixel_predict16x16   = vp9_eighttap_predict16x16_sharp;
-    xd->subpixel_predict_avg    = vp9_eighttap_predict_avg4x4_sharp;
+    xd->subpixel_predict_avg4x4 = vp9_eighttap_predict_avg4x4_sharp;
     xd->subpixel_predict_avg8x8 = vp9_eighttap_predict_avg8x8_sharp;
-    xd->subpixel_predict_avg16x16 = vp9_eighttap_predict_avg16x16_sharp_c;
+    xd->subpixel_predict_avg16x16 = vp9_eighttap_predict_avg16x16_sharp;
   } else {
-    xd->subpixel_predict        = vp9_bilinear_predict4x4;
+    xd->subpixel_predict4x4     = vp9_bilinear_predict4x4;
     xd->subpixel_predict8x4     = vp9_bilinear_predict8x4;
     xd->subpixel_predict8x8     = vp9_bilinear_predict8x8;
     xd->subpixel_predict16x16   = vp9_bilinear_predict16x16;
-    xd->subpixel_predict_avg    = vp9_bilinear_predict_avg4x4;
+    xd->subpixel_predict_avg4x4 = vp9_bilinear_predict_avg4x4;
     xd->subpixel_predict_avg8x8 = vp9_bilinear_predict_avg8x8;
     xd->subpixel_predict_avg16x16 = vp9_bilinear_predict_avg16x16;
   }
@@ -523,13 +523,13 @@ void vp9_build_inter4x4_predictors_mbuv(MACROBLOCKD *xd) {
     if (d0->bmi.as_mv.first.as_int == d1->bmi.as_mv.first.as_int)
       build_inter_predictors2b(xd, d0, 8);
     else {
-      vp9_build_inter_predictors_b(d0, 8, xd->subpixel_predict);
-      vp9_build_inter_predictors_b(d1, 8, xd->subpixel_predict);
+      vp9_build_inter_predictors_b(d0, 8, xd->subpixel_predict4x4);
+      vp9_build_inter_predictors_b(d1, 8, xd->subpixel_predict4x4);
     }
 
     if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
-      vp9_build_2nd_inter_predictors_b(d0, 8, xd->subpixel_predict_avg);
-      vp9_build_2nd_inter_predictors_b(d1, 8, xd->subpixel_predict_avg);
+      vp9_build_2nd_inter_predictors_b(d0, 8, xd->subpixel_predict_avg4x4);
+      vp9_build_2nd_inter_predictors_b(d1, 8, xd->subpixel_predict_avg4x4);
     }
   }
 }
@@ -785,9 +785,9 @@ void vp9_build_inter32x32_predictors_sb(MACROBLOCKD *x,
 /*
  * The following functions should be called after an initial
  * call to vp9_build_1st_inter16x16_predictors_mb() or _mby()/_mbuv().
- * It will run a second sixtap filter on a (different) ref
+ * It will run a second eighttap filter on a (different) ref
  * frame and average the result with the output of the
- * first sixtap filter. The second reference frame is stored
+ * first eighttap filter. The second reference frame is stored
  * in x->second_pre (the reference frame index is in
  * x->mode_info_context->mbmi.second_ref_frame). The second
  * motion vector is x->mode_info_context->mbmi.second_mv.
@@ -994,13 +994,13 @@ static void build_inter4x4_predictors_mb(MACROBLOCKD *xd) {
       if (d0->bmi.as_mv.first.as_int == d1->bmi.as_mv.first.as_int)
         build_inter_predictors2b(xd, d0, 16);
       else {
-        vp9_build_inter_predictors_b(d0, 16, xd->subpixel_predict);
-        vp9_build_inter_predictors_b(d1, 16, xd->subpixel_predict);
+        vp9_build_inter_predictors_b(d0, 16, xd->subpixel_predict4x4);
+        vp9_build_inter_predictors_b(d1, 16, xd->subpixel_predict4x4);
       }
 
       if (mbmi->second_ref_frame > 0) {
-        vp9_build_2nd_inter_predictors_b(d0, 16, xd->subpixel_predict_avg);
-        vp9_build_2nd_inter_predictors_b(d1, 16, xd->subpixel_predict_avg);
+        vp9_build_2nd_inter_predictors_b(d0, 16, xd->subpixel_predict_avg4x4);
+        vp9_build_2nd_inter_predictors_b(d1, 16, xd->subpixel_predict_avg4x4);
       }
     }
   }
@@ -1012,13 +1012,13 @@ static void build_inter4x4_predictors_mb(MACROBLOCKD *xd) {
     if (d0->bmi.as_mv.first.as_int == d1->bmi.as_mv.first.as_int)
       build_inter_predictors2b(xd, d0, 8);
     else {
-      vp9_build_inter_predictors_b(d0, 8, xd->subpixel_predict);
-      vp9_build_inter_predictors_b(d1, 8, xd->subpixel_predict);
+      vp9_build_inter_predictors_b(d0, 8, xd->subpixel_predict4x4);
+      vp9_build_inter_predictors_b(d1, 8, xd->subpixel_predict4x4);
     }
 
     if (mbmi->second_ref_frame > 0) {
-      vp9_build_2nd_inter_predictors_b(d0, 8, xd->subpixel_predict_avg);
-      vp9_build_2nd_inter_predictors_b(d1, 8, xd->subpixel_predict_avg);
+      vp9_build_2nd_inter_predictors_b(d0, 8, xd->subpixel_predict_avg4x4);
+      vp9_build_2nd_inter_predictors_b(d1, 8, xd->subpixel_predict_avg4x4);
     }
   }
 }

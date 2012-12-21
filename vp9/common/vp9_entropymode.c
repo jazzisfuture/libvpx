@@ -399,7 +399,7 @@ const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {
 };
 struct vp9_token_struct vp9_switchable_interp_encodings[VP9_SWITCHABLE_FILTERS];
 const INTERPOLATIONFILTERTYPE vp9_switchable_interp[VP9_SWITCHABLE_FILTERS] = {
-  EIGHTTAP, SIXTAP, EIGHTTAP_SHARP};
+  EIGHTTAP, EIGHTTAP_LP, EIGHTTAP_SHARP};
 const int vp9_switchable_interp_map[SWITCHABLE+1] = {1, -1, 0, 2, -1};
 const vp9_prob vp9_switchable_interp_prob [VP9_SWITCHABLE_FILTERS+1]
                                           [VP9_SWITCHABLE_FILTERS-1] = {
