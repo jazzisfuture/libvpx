@@ -489,7 +489,8 @@ static void build_inter4x4_predictors_mb(MACROBLOCKD *x)
             }
 
             if (d0->bmi.mv.as_int == d1->bmi.mv.as_int)
-                build_inter_predictors2b(x, d0, base_dst + d0->offset, dst_stride, base_pre, dst_stride);
+                build_inter_predictors2b(x, d0, base_dst + d0->offset,
+                                         dst_stride, base_pre, dst_stride);
             else
             {
                 build_inter_predictors_b(d0, base_dst + d0->offset, dst_stride, base_pre, dst_stride, x->subpixel_predict);
@@ -510,7 +511,8 @@ static void build_inter4x4_predictors_mb(MACROBLOCKD *x)
         /* Note: uv mvs already clamped in build_4x4uvmvs() */
 
         if (d0->bmi.mv.as_int == d1->bmi.mv.as_int)
-            build_inter_predictors2b(x, d0, base_dst + d0->offset, dst_stride, base_pre, dst_stride);
+            build_inter_predictors2b(x, d0, base_dst + d0->offset, dst_stride,
+                                     base_pre, dst_stride);
         else
         {
             build_inter_predictors_b(d0, base_dst + d0->offset, dst_stride, base_pre, dst_stride, x->subpixel_predict);

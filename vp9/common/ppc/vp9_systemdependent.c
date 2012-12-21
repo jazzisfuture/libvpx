@@ -67,10 +67,10 @@ void recon4b_ppc(short *diff_ptr, unsigned char *pred_ptr, unsigned char *dst_pt
 extern void short_idct4x4llm_ppc(short *input, short *output, int pitch);
 
 // Generic C
-extern subpixel_predict_function vp9_sixtap_predict_c;
-extern subpixel_predict_function vp9_sixtap_predict8x4_c;
-extern subpixel_predict_function vp9_sixtap_predict8x8_c;
-extern subpixel_predict_function vp9_sixtap_predict16x16_c;
+extern subpixel_predict_function vp9_eighttap_lp_predict4x4;
+extern subpixel_predict_function vp9_eighttap_lp_predict8x4;
+extern subpixel_predict_function vp9_eighttap_lp_predict8x8;
+extern subpixel_predict_function vp9_eighttap_lp_predict16x16;
 extern subpixel_predict_function vp9_bilinear_predict4x4_c;
 extern subpixel_predict_function vp9_bilinear_predict8x4_c;
 extern subpixel_predict_function vp9_bilinear_predict8x8_c;
@@ -125,24 +125,28 @@ void vp9_clear_c(void) {
 
 void vp9_machine_specific_config(void) {
   // Pure C:
-  vp9_clear_system_state                = vp9_clear_c;
+  vp9_clear_system_state               = vp9_clear_c;
   vp9_recon_b                          = vp9_recon_b_c;
-  vp9_recon4b                         = vp9_recon4b_c;
-  vp9_recon2b                         = vp9_recon2b_c;
+  vp9_recon4b                          = vp9_recon4b_c;
+  vp9_recon2b                          = vp9_recon2b_c;
 
   vp9_bilinear_predict16x16            = bilinear_predict16x16_ppc;
   vp9_bilinear_predict8x8              = bilinear_predict8x8_ppc;
   vp9_bilinear_predict8x4              = bilinear_predict8x4_ppc;
   vp8_bilinear_predict                 = bilinear_predict4x4_ppc;
 
-  vp9_sixtap_predict16x16              = sixtap_predict16x16_ppc;
-  vp9_sixtap_predict8x8                = sixtap_predict8x8_ppc;
-  vp9_sixtap_predict8x4                = sixtap_predict8x4_ppc;
-  vp9_sixtap_predict                   = sixtap_predict_ppc;
+  vp9_eighttap_lp_predict16x16         = eighttap_predict16x16_ppc;
+  vp9_eighttap_lp_predict8x8           = eighttap_predict8x8_ppc;
+  vp9_eighttap_lp_predict8x4           = eighttap_predict8x4_ppc;
+  vp9_eighttap_lp_predict4x4           = eighttap_predict4x4_ppc;
+//  vp9_sixtap_predict16x16              = sixtap_predict16x16_ppc;
+//  vp9_sixtap_predict8x8                = sixtap_predict8x8_ppc;
+//  vp9_sixtap_predict8x4                = sixtap_predict8x4_ppc;
+//  vp9_sixtap_predict                   = sixtap_predict_ppc;
 
   vp8_short_idct4x4_1                  = vp9_short_idct4x4llm_1_c;
   vp8_short_idct4x4                    = short_idct4x4llm_ppc;
-  vp8_dc_only_idct                      = vp8_dc_only_idct_c;
+  vp8_dc_only_idct                     = vp8_dc_only_idct_c;
 
   vp8_lf_mbvfull                       = loop_filter_mbv_ppc;
   vp8_lf_bvfull                        = loop_filter_bv_ppc;
