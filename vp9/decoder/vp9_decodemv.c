@@ -643,14 +643,17 @@ static void read_mb_segment_id(VP9D_COMP *pbi,
         read_mb_segid(bc, mbmi, xd);
       }
 #if CONFIG_SUPERBLOCKS
+#define min(a, b) (a) < (b) ? (a) : (b)
       if (mbmi->encoded_as_sb) {
-        cm->last_frame_seg_map[index] = mbmi->segment_id;
-        if (mb_col + 1 < cm->mb_cols)
-          cm->last_frame_seg_map[index + 1] = mbmi->segment_id;
-        if (mb_row + 1 < cm->mb_rows) {
-          cm->last_frame_seg_map[index + cm->mb_cols] = mbmi->segment_id;
-          if (mb_col + 1 < cm->mb_cols)
-            cm->last_frame_seg_map[index + cm->mb_cols + 1] = mbmi->segment_id;
+        const int nmbs = 1 << mbmi->encoded_as_sb;
+        const int ymbs = min(cm->mb_rows - mb_row, nmbs);
+        const int xmbs = min(cm->mb_cols - mb_col, nmbs);
+        int x, y;
+
+        for (y = 0; y < ymbs; y++) {
+          for (x = 0; x < xmbs; x++) {
+            cm->last_frame_seg_map[index + x + y * cm->mb_cols] = mbmi->segment_id;
+          }
         }
       } else
 #endif
@@ -660,16 +663,16 @@ static void read_mb_segment_id(VP9D_COMP *pbi,
     } else {
 #if CONFIG_SUPERBLOCKS
       if (mbmi->encoded_as_sb) {
-        mbmi->segment_id = cm->last_frame_seg_map[index];
-        if (mb_col < cm->mb_cols - 1)
-          mbmi->segment_id = mbmi->segment_id &&
-                             cm->last_frame_seg_map[index + 1];
-        if (mb_row < cm->mb_rows - 1) {
-          mbmi->segment_id = mbmi->segment_id &&
-                             cm->last_frame_seg_map[index + cm->mb_cols];
-          if (mb_col < cm->mb_cols - 1)
-            mbmi->segment_id = mbmi->segment_id &&
-                               cm->last_frame_seg_map[index + cm->mb_cols + 1];
+        const int nmbs = 1 << mbmi->encoded_as_sb;
+        const int ymbs = min(cm->mb_rows - mb_row, nmbs);
+        const int xmbs = min(cm->mb_cols - mb_col, nmbs);
+        unsigned segment_id = -1;
+        int x, y;
+        
+        for (y = 0; y < ymbs; y++) {
+          for (x = 0; x < xmbs; x++) {
+            segment_id = min(segment_id, cm->last_frame_seg_map[index + x + y * cm->mb_cols]);
+          }
         }
       } else
 #endif
@@ -698,6 +701,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   int mb_to_right_edge;
   int mb_to_top_edge;
   int mb_to_bottom_edge;
+  const int mb_size = 1 << mi->mbmi.encoded_as_sb;
 
   mb_to_top_edge = xd->mb_to_top_edge;
   mb_to_bottom_edge = xd->mb_to_bottom_edge;
@@ -713,17 +717,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     mb_to_left_edge = -((mb_col * 16) << 3);
   mb_to_left_edge -= LEFT_TOP_MARGIN;
 
-#if CONFIG_SUPERBLOCKS
-  if (mi->mbmi.encoded_as_sb) {
-    xd->mb_to_right_edge =
-      mb_to_right_edge = ((pbi->common.mb_cols - 2 - mb_col) * 16) << 3;
-  } else {
-#endif
-    xd->mb_to_right_edge =
-      mb_to_right_edge = ((pbi->common.mb_cols - 1 - mb_col) * 16) << 3;
-#if CONFIG_SUPERBLOCKS
-  }
-#endif
+  xd->mb_to_right_edge =
+      mb_to_right_edge = ((pbi->common.mb_cols - mb_size - mb_col) * 16) << 3;
   mb_to_right_edge += RIGHT_BOTTOM_MARGIN;
 
   // Make sure the MACROBLOCKD mode info pointer is pointed at the

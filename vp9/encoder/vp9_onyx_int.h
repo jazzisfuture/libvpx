@@ -397,6 +397,7 @@ enum BlockSize {
   BLOCK_16X16,
   BLOCK_MAX_SEGMENTS,
   BLOCK_32X32 = BLOCK_MAX_SEGMENTS,
+  BLOCK_64X64,
   BLOCK_MAX_SB_SEGMENTS,
 };
 
@@ -577,8 +578,8 @@ typedef struct VP9_COMP {
   int cq_target_quality;
 
 #if CONFIG_SUPERBLOCKS
-  int sb_count;
-  int sb_ymode_count [VP9_I32X32_MODES];
+  int sb32_count[2], sb64_count[2];
+  int sb_ymode_count[VP9_I32X32_MODES];
 #endif
   int ymode_count[VP9_YMODES];        /* intra MB type cts this frame */
   int bmode_count[VP9_NKF_BINTRAMODES];
@@ -801,9 +802,6 @@ typedef struct VP9_COMP {
   int force_next_frame_intra;
 
   int droppable;
-
-  // TODO Do we still need this??
-  int update_context;
 
   int dummy_packing;    /* flag to indicate if packing is dummy */
 

@@ -416,8 +416,8 @@ typedef struct macroblockd {
 #endif
 
   int mb_index;   // Index of the MB in the SB (0..3)
+  int sb_index;
   int q_index;
-
 } MACROBLOCKD;
 
 #define ACTIVE_HT 110                // quantization stepsize threshold

@@ -249,7 +249,7 @@ typedef struct VP9Common {
 
   /* Y,U,V,Y2 */
   ENTROPY_CONTEXT_PLANES *above_context;   /* row of context for each plane */
-  ENTROPY_CONTEXT_PLANES left_context[2];  /* (up to) 4 contexts "" */
+  ENTROPY_CONTEXT_PLANES left_context[4];  /* (up to) 4 contexts "" */
 
   /* keyframe block modes are predicted by their above, left neighbors */
 
@@ -268,7 +268,7 @@ typedef struct VP9Common {
   vp9_prob prob_last_coded;
   vp9_prob prob_gf_coded;
 #if CONFIG_SUPERBLOCKS
-  vp9_prob sb_coded;
+  vp9_prob sb32_coded, sb64_coded;
 #endif
 
   // Context probabilities when using predictive coding of segment id

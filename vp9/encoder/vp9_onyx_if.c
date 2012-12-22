@@ -1795,7 +1795,8 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cm->prob_gf_coded                 = 128;
   cm->prob_intra_coded              = 63;
 #if CONFIG_SUPERBLOCKS
-  cm->sb_coded                      = 200;
+  cm->sb32_coded                    = 200;
+  cm->sb64_coded = 200;
 #endif
   for (i = 0; i < COMP_PRED_CONTEXTS; i++)
     cm->prob_comppred[i]         = 128;
@@ -1819,9 +1820,9 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->gold_is_alt  = 0;
 
   // allocate memory for storing last frame's MVs for MV prediction.
-  CHECK_MEM_ERROR(cpi->lfmv, vpx_calloc((cpi->common.mb_rows + 2) * (cpi->common.mb_cols + 2), sizeof(int_mv)));
-  CHECK_MEM_ERROR(cpi->lf_ref_frame_sign_bias, vpx_calloc((cpi->common.mb_rows + 2) * (cpi->common.mb_cols + 2), sizeof(int)));
-  CHECK_MEM_ERROR(cpi->lf_ref_frame, vpx_calloc((cpi->common.mb_rows + 2) * (cpi->common.mb_cols + 2), sizeof(int)));
+  CHECK_MEM_ERROR(cpi->lfmv, vpx_calloc((cpi->common.mb_rows + 4) * (cpi->common.mb_cols + 4), sizeof(int_mv)));
+  CHECK_MEM_ERROR(cpi->lf_ref_frame_sign_bias, vpx_calloc((cpi->common.mb_rows + 4) * (cpi->common.mb_cols + 4), sizeof(int)));
+  CHECK_MEM_ERROR(cpi->lf_ref_frame, vpx_calloc((cpi->common.mb_rows + 4) * (cpi->common.mb_cols + 4), sizeof(int)));
 
   // Create the encoder segmentation map and set all entries to 0
   CHECK_MEM_ERROR(cpi->segmentation_map, vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
@@ -2008,6 +2009,11 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
       vp9_variance_halfpixvar32x32_h, vp9_variance_halfpixvar32x32_v,
       vp9_variance_halfpixvar32x32_hv, vp9_sad32x32x3, vp9_sad32x32x8,
       vp9_sad32x32x4d)
+
+  BFP(BLOCK_64X64, vp9_sad64x64, vp9_variance64x64, vp9_sub_pixel_variance64x64,
+      vp9_variance_halfpixvar64x64_h, vp9_variance_halfpixvar64x64_v,
+      vp9_variance_halfpixvar64x64_hv, vp9_sad64x64x3, vp9_sad64x64x8,
+      vp9_sad64x64x4d)
 #endif
 
   BFP(BLOCK_16X16, vp9_sad16x16, vp9_variance16x16, vp9_sub_pixel_variance16x16,

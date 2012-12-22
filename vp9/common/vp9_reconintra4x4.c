@@ -434,11 +434,19 @@ void vp9_comp_intra4x4_predict_c(BLOCKD *x,
  * to the right prediction have filled in pixels to use.
  */
 void vp9_intra_prediction_down_copy(MACROBLOCKD *xd) {
-  int extend_edge = (xd->mb_to_right_edge == 0 && xd->mb_index < 2);
+  int extend_edge = (xd->mb_to_right_edge == 0 &&
+                     xd->mb_index < 2 &&
+                     xd->sb_index < 2);
   uint8_t *above_right = *(xd->block[0].base_dst) + xd->block[0].dst -
                                xd->block[0].dst_stride + 16;
-  uint32_t *src_ptr = (uint32_t *)
-      (above_right - (xd->mb_index == 3 ? 16 * xd->block[0].dst_stride : 0));
+  uint32_t *src_ptr = (uint32_t *) above_right;
+
+  if (xd->mb_to_right_edge == 0) {
+    if (xd->mb_index >= 2)
+      src_ptr -= 16 * xd->block[0].dst_stride;
+    if (xd->sb_index >= 2)
+      src_ptr -= 32 * xd->block[0].dst_stride;
+  }
 
   uint32_t *dst_ptr0 = (uint32_t *)above_right;
   uint32_t *dst_ptr1 =

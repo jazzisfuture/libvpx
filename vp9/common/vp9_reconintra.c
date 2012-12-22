@@ -695,6 +695,48 @@ void vp9_build_interintra_32x32_predictors_sb(MACROBLOCKD *xd,
   vp9_build_interintra_32x32_predictors_sby(xd, ypred, ystride);
   vp9_build_interintra_32x32_predictors_sbuv(xd, upred, vpred, uvstride);
 }
+
+void vp9_build_interintra_64x64_predictors_sby(MACROBLOCKD *xd,
+                                               uint8_t *ypred,
+                                               int ystride) {
+  uint8_t intrapredictor[4096];
+  vp9_build_intra_predictors_internal(xd->dst.y_buffer, xd->dst.y_stride,
+                                      intrapredictor, 64,
+                                      xd->mode_info_context->mbmi.interintra_mode, 64,
+                                      xd->up_available, xd->left_available);
+  combine_interintra(xd->mode_info_context->mbmi.interintra_mode,
+                     ypred, ystride, intrapredictor, 64, 64);
+}
+
+void vp9_build_interintra_64x64_predictors_sbuv(MACROBLOCKD *xd,
+                                                uint8_t *upred,
+                                                uint8_t *vpred,
+                                                int uvstride) {
+  uint8_t uintrapredictor[1024];
+  uint8_t vintrapredictor[1024];
+  vp9_build_intra_predictors_internal(xd->dst.u_buffer, xd->dst.uv_stride,
+                                      uintrapredictor, 32,
+                                      xd->mode_info_context->mbmi.interintra_uv_mode, 32,
+                                      xd->up_available, xd->left_available);
+  vp9_build_intra_predictors_internal(xd->dst.v_buffer, xd->dst.uv_stride,
+                                      vintrapredictor, 32,
+                                      xd->mode_info_context->mbmi.interintra_uv_mode, 32,
+                                      xd->up_available, xd->left_available);
+  combine_interintra(xd->mode_info_context->mbmi.interintra_uv_mode,
+                     upred, uvstride, uintrapredictor, 32, 32);
+  combine_interintra(xd->mode_info_context->mbmi.interintra_uv_mode,
+                     vpred, uvstride, vintrapredictor, 32, 32);
+}
+
+void vp9_build_interintra_64x64_predictors_sb(MACROBLOCKD *xd,
+                                              uint8_t *ypred,
+                                              uint8_t *upred,
+                                              uint8_t *vpred,
+                                              int ystride,
+                                              int uvstride) {
+  vp9_build_interintra_64x64_predictors_sby(xd, ypred, ystride);
+  vp9_build_interintra_64x64_predictors_sbuv(xd, upred, vpred, uvstride);
+}
 #endif
 #endif
 
@@ -717,6 +759,13 @@ void vp9_build_intra_predictors_sby_s(MACROBLOCKD *xd) {
   vp9_build_intra_predictors_internal(xd->dst.y_buffer, xd->dst.y_stride,
                                       xd->dst.y_buffer, xd->dst.y_stride,
                                       xd->mode_info_context->mbmi.mode, 32,
+                                      xd->up_available, xd->left_available);
+}
+
+void vp9_build_intra_predictors_sb64y_s(MACROBLOCKD *xd) {
+  vp9_build_intra_predictors_internal(xd->dst.y_buffer, xd->dst.y_stride,
+                                      xd->dst.y_buffer, xd->dst.y_stride,
+                                      xd->mode_info_context->mbmi.mode, 64,
                                       xd->up_available, xd->left_available);
 }
 #endif
@@ -777,6 +826,13 @@ void vp9_build_intra_predictors_sbuv_s(MACROBLOCKD *xd) {
                                            xd->dst.v_buffer, xd->dst.uv_stride,
                                            xd->mode_info_context->mbmi.uv_mode,
                                            16);
+}
+
+void vp9_build_intra_predictors_sb64uv_s(MACROBLOCKD *xd) {
+  vp9_build_intra_predictors_mbuv_internal(xd, xd->dst.u_buffer,
+                                           xd->dst.v_buffer, xd->dst.uv_stride,
+                                           xd->mode_info_context->mbmi.uv_mode,
+                                           32);
 }
 #endif
 
