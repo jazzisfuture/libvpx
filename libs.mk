@@ -166,6 +166,8 @@ CODEC_SRCS-$(BUILD_LIBVPX) += build/make/version.sh
 CODEC_SRCS-$(BUILD_LIBVPX) += build/make/rtcd.sh
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx/vpx_integer.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/asm_offsets.h
+CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/emmintrin_compat.h
+CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/vpx_once.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/vpx_timer.h
 CODEC_SRCS-$(BUILD_LIBVPX) += vpx_ports/mem.h
 CODEC_SRCS-$(BUILD_LIBVPX) += $(BUILD_PFX)vpx_config.c
@@ -202,8 +204,7 @@ INSTALL-LIBS-$(CONFIG_STATIC) += $(LIBSUBDIR)/libvpx.a
 INSTALL-LIBS-$(CONFIG_DEBUG_LIBS) += $(LIBSUBDIR)/libvpx_g.a
 endif
 
-CODEC_SRCS=$(filter-out %_offsets.c,\
-           $(filter-out %_test.cc,$(call enabled,CODEC_SRCS)))
+CODEC_SRCS=$(call enabled,CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(CODEC_SRCS)
 INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(call enabled,CODEC_EXPORTS)
 
