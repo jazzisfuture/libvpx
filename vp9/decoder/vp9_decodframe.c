@@ -927,9 +927,9 @@ decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc, int mbrow, MACROBLOCKD *xd,
   mb_col = 0;
 
   for (sb_col = 0; sb_col < sb_cols; sb_col++) {
+#if CONFIG_SUPERBLOCKS
     MODE_INFO *mi = xd->mode_info_context;
 
-#if CONFIG_SUPERBLOCKS
     mi->mbmi.encoded_as_sb = vp9_read(bc, pc->sb_coded);
 #endif
 
