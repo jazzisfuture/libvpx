@@ -388,7 +388,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
   }
 
 #if WRITE_RECON_BUFFER == 1
-  if (cm->show_frame)
+  //if (cm->show_frame)
     recon_write_yuv_frame("recon.yuv", cm->frame_to_show);
 #endif
 
