@@ -42,7 +42,7 @@ fi
 # Dequant
 #
 prototype void vp9_dequantize_b "struct blockd *x"
-specialize vp9_dequantize_b mmx
+specialize vp9_dequantize_b
 
 prototype void vp9_dequantize_b_2x2 "struct blockd *x"
 specialize vp9_dequantize_b_2x2
@@ -68,14 +68,29 @@ specialize vp9_dequant_idct_add
 prototype void vp9_dequant_dc_idct_add "int16_t *input, const int16_t *dq, uint8_t *pred, uint8_t *dest, int pitch, int stride, int dc"
 specialize vp9_dequant_dc_idct_add
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_dequant_dc_idct_add_y_block "int16_t *q, const int16_t *dq, uint8_t *pre, uint8_t *dst, int stride, uint16_t *eobs, const int16_t *dcs"
 specialize vp9_dequant_dc_idct_add_y_block mmx
+=======
+prototype void vp9_dequant_dc_idct_add_y_block "short *q, const short *dq, unsigned char *pre, unsigned char *dst, int stride, unsigned short *eobs, const short *dc"
+specialize vp9_dequant_dc_idct_add_y_block
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_dequant_idct_add_y_block "int16_t *q, const int16_t *dq, uint8_t *pre, uint8_t *dst, int stride, uint16_t *eobs"
 specialize vp9_dequant_idct_add_y_block mmx
+=======
+prototype void vp9_dequant_idct_add_y_block "short *q, const short *dq, unsigned char *pre, unsigned char *dst, int stride, unsigned short *eobs"
+specialize vp9_dequant_idct_add_y_block
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_dequant_idct_add_uv_block "int16_t *q, const int16_t *dq, uint8_t *pre, uint8_t *dstu, uint8_t *dstv, int stride, uint16_t *eobs"
 specialize vp9_dequant_idct_add_uv_block mmx
+=======
+prototype void vp9_dequant_idct_add_uv_block "short *q, const short *dq, unsigned char *pre, unsigned char *dstu, unsigned char *dstv, int stride, unsigned short *eobs"
+specialize vp9_dequant_idct_add_uv_block
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 
 #
 # RECON
@@ -218,7 +233,12 @@ vp9_loop_filter_simple_bh_sse2=vp9_loop_filter_bhs_sse2
 #
 # post proc
 #
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_mbpost_proc_down "uint8_t *dst, int pitch, int rows, int cols, int flimit"
+=======
+if [ "$CONFIG_POSTPROC" = "yes" ]; then
+prototype void vp9_mbpost_proc_down "unsigned char *dst, int pitch, int rows, int cols, int flimit"
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 specialize vp9_mbpost_proc_down mmx sse2
 vp9_mbpost_proc_down_sse2=vp9_mbpost_proc_down_xmm
 
@@ -233,6 +253,7 @@ vp9_post_proc_down_and_across_sse2=vp9_post_proc_down_and_across_xmm
 prototype void vp9_plane_add_noise "uint8_t *Start, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int Width, unsigned int Height, int Pitch"
 specialize vp9_plane_add_noise mmx sse2
 vp9_plane_add_noise_sse2=vp9_plane_add_noise_wmt
+fi
 
 prototype void vp9_blend_mb_inner "uint8_t *y, uint8_t *u, uint8_t *v, int y1, int u1, int v1, int alpha, int stride"
 specialize vp9_blend_mb_inner
@@ -342,11 +363,21 @@ specialize vp9_bilinear_predict_avg4x4
 #
 # dct
 #
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_short_idct4x4llm_1 "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct4x4llm_1 mmx
+=======
+prototype void vp9_short_idct4x4llm_1 "short *input, short *output, int pitch"
+specialize vp9_short_idct4x4llm_1
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_short_idct4x4llm "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct4x4llm mmx
+=======
+prototype void vp9_short_idct4x4llm "short *input, short *output, int pitch"
+specialize vp9_short_idct4x4llm
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 
 prototype void vp9_short_idct8x8 "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct8x8
@@ -363,10 +394,14 @@ specialize vp9_short_idct16x16
 prototype void vp9_short_idct10_16x16 "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct10_16x16
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 prototype void vp9_short_idct32x32 "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct32x32
 
 prototype void vp9_ihtllm "const int16_t *input, int16_t *output, int pitch, int tx_type, int tx_dim"
+=======
+prototype void vp9_ihtllm "const short *input, short *output, int pitch, int tx_type, int tx_dim, short eobs"
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 specialize vp9_ihtllm
 
 #

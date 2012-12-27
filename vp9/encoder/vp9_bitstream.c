@@ -691,7 +691,6 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
       for (i = 0; i < 4; i++) {
         MB_MODE_INFO *mi;
         MV_REFERENCE_FRAME rf;
-        MV_REFERENCE_FRAME sec_ref_frame;
         MB_PREDICTION_MODE mode;
         int segment_id, skip_coeff;
 
@@ -711,7 +710,6 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
 
         mi = &m->mbmi;
         rf = mi->ref_frame;
-        sec_ref_frame = mi->second_ref_frame;
         mode = mi->mode;
         segment_id = mi->segment_id;
 
@@ -937,7 +935,33 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
                           xd->allow_high_precision_mv);
 
                 if (mi->second_ref_frame > 0) {
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
                   write_nmv(bc, &mi->mv[1].as_mv, &mi->best_second_mv,
+=======
+#if CONFIG_NEW_MVREF
+                  unsigned int best_index;
+                  MV_REFERENCE_FRAME sec_ref_frame = mi->second_ref_frame;
+
+                  /*
+                  best_index =
+                    pick_best_mv_ref(x, sec_ref_frame, mi->mv[1],
+                                     mi->ref_mvs[sec_ref_frame],
+                                     &best_second_mv);
+                  assert(best_index == mi->best_second_index);
+                  assert(best_second_mv.as_int == mi->best_second_mv.as_int);
+                  */
+                  best_index = mi->best_second_index;
+                  best_second_mv.as_int = mi->best_second_mv.as_int;
+
+                  // Encode the index of the choice.
+                  vp9_write_mv_ref_id(bc,
+                                      xd->mb_mv_ref_id_probs[sec_ref_frame],
+                                      best_index);
+
+                  cpi->best_ref_index_counts[sec_ref_frame][best_index]++;
+#endif
+                  write_nmv(bc, &mi->mv[1].as_mv, &best_second_mv,
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
                             (const nmv_context*) nmvc,
                             xd->allow_high_precision_mv);
                 }

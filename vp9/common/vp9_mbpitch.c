@@ -38,8 +38,13 @@ static void setup_block(BLOCKD *b,
 static void setup_macroblock(MACROBLOCKD *xd, BLOCKSET bs) {
   int block;
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
   uint8_t **y, **u, **v;
   uint8_t **y2, **u2, **v2;
+=======
+  unsigned char **y, **u, **v;
+  unsigned char **y2 = NULL, **u2 = NULL, **v2 = NULL;
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
   BLOCKD *blockd = xd->block;
   int stride;
 

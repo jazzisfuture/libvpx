@@ -1,3 +1,4 @@
+LIBVPX_TEST_SRCS-yes += register_state_check.h
 LIBVPX_TEST_SRCS-yes += test.mk
 LIBVPX_TEST_SRCS-yes += acm_random.h
 
@@ -59,16 +60,23 @@ ifneq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),)
 # These tests require both the encoder and decoder to be built.
 ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),yesyes)
 LIBVPX_TEST_SRCS-yes                   += vp9_boolcoder_test.cc
+
+# IDCT test currently depends on FDCT function
+LIBVPX_TEST_SRCS-yes                   += idct8x8_test.cc
 endif
 
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct4x4_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_TX32X32),yesyes)
 LIBVPX_TEST_SRCS-yes += dct32x32_test.cc
 endif
 LIBVPX_TEST_SRCS-yes += idct8x8_test.cc
 LIBVPX_TEST_SRCS-yes += variance_test.cc
+=======
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 endif # VP9
 
 

@@ -11,8 +11,12 @@
 #ifndef VP9_COMMON_VP9_INVTRANS_H_
 #define VP9_COMMON_VP9_INVTRANS_H_
 
+<<<<<<< HEAD   (89ac94 Removed mmx versions of vp9_bilinear_predict filters)
 #include "vpx_ports/config.h"
 #include "vpx/vpx_integer.h"
+=======
+#include "./vpx_config.h"
+>>>>>>> BRANCH (16810c Merge branch 'vp9-preview' of review:webm/libvpx)
 #include "vp9/common/vp9_blockd.h"
 
 extern void vp9_inverse_transform_b_4x4(MACROBLOCKD *xd, int block, int pitch);
