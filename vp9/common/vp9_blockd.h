@@ -415,6 +415,7 @@ typedef struct macroblockd {
   DECLARE_ALIGNED(32, uint8_t, y_buf[22 * 32]);
 #endif
 
+  int sb_index;
   int mb_index;   // Index of the MB in the SB (0..3)
   int q_index;
 
