@@ -63,6 +63,10 @@ static void set_default_lf_deltas(VP9_COMP *cpi);
                                            now so that HIGH_PRECISION is always
                                            chosen */
 
+#if CONFIG_MULTIPLE_ADAPTS
+#define USE_FORW_UPDATE   1             /* Turns on/off forward update */
+#endif
+
 #if CONFIG_INTERNAL_STATS
 #include "math.h"
 
@@ -2887,6 +2891,20 @@ static void select_interintra_mode(VP9_COMP *cpi) {
 }
 #endif
 
+#if CONFIG_MULTIPLE_ADAPTS
+static int get_num_adapts(int mbrows, int mbcols) {
+  int adapts;
+  int mbs = mbrows * mbcols;
+  if (mbs < 3200)
+    return 1;
+  else if (mbs < 6400)
+    return 2;
+  else
+    return 3;
+  return adapts;
+}
+#endif
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       unsigned long *size,
                                       unsigned char *dest,
@@ -2947,7 +2965,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // For an alt ref frame in 2 pass we skip the call to the second
   // pass function that sets the target bandwidth so must set it here
   if (cpi->common.refresh_alt_ref_frame) {
-    cpi->per_frame_bandwidth = cpi->twopass.gf_bits;                           // Per frame bit target for the alt ref frame
+    // Per frame bit target for the alt ref frame
+    cpi->per_frame_bandwidth = cpi->twopass.gf_bits;
     // per second target bitrate
     cpi->target_bandwidth = (int)(cpi->twopass.gf_bits *
                                   cpi->output_frame_rate);
@@ -3180,6 +3199,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
   if (cm->current_video_frame == 0) {
     cm->use_interintra = 1;
+  }
+#endif
+#if CONFIG_MULTIPLE_ADAPTS
+  if (cm->frame_type == KEY_FRAME) {
+    cm->num_adapts = get_num_adapts(cm->mb_rows, cm->mb_cols);
+    cm->adapt_row_size = get_adapt_row_size(cm->mb_rows, cm->num_adapts);
+    cm->use_forw_update = USE_FORW_UPDATE;
   }
 #endif
 

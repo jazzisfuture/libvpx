@@ -251,6 +251,7 @@ EXPERIMENT_LIST="
     dwt32x32hybrid
     cnvcontext
     newcoefcontext
+    multiple_adapts
 "
 CONFIG_LIST="
     external_build
