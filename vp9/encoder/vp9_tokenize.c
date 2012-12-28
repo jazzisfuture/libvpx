@@ -156,16 +156,26 @@ static void tokenize_b(VP9_COMP *cpi,
       bands = vp9_coef_bands_4x4;
       scan = vp9_default_zig_zag1d_4x4;
       if (tx_type != DCT_DCT) {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->hybrid_coef_counts_4x4[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_4x4[xd->mb_adapt_index];
+#else
         counts = cpi->hybrid_coef_counts_4x4;
         probs = cpi->common.fc.hybrid_coef_probs_4x4;
+#endif
         if (tx_type == ADST_DCT) {
           scan = vp9_row_scan_4x4;
         } else if (tx_type == DCT_ADST) {
           scan = vp9_col_scan_4x4;
         }
       } else {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->coef_counts_4x4[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_4x4[xd->mb_adapt_index];
+#else
         counts = cpi->coef_counts_4x4;
         probs = cpi->common.fc.coef_probs_4x4;
+#endif
       }
       break;
     case TX_8X8:
@@ -183,11 +193,21 @@ static void tokenize_b(VP9_COMP *cpi,
         scan = vp9_default_zig_zag1d_8x8;
       }
       if (tx_type != DCT_DCT) {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->hybrid_coef_counts_8x8[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_8x8[xd->mb_adapt_index];
+#else
         counts = cpi->hybrid_coef_counts_8x8;
         probs = cpi->common.fc.hybrid_coef_probs_8x8;
+#endif
       } else {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->coef_counts_8x8[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_8x8[xd->mb_adapt_index];
+#else
         counts = cpi->coef_counts_8x8;
         probs = cpi->common.fc.coef_probs_8x8;
+#endif
       }
       break;
     case TX_16X16:
@@ -206,11 +226,21 @@ static void tokenize_b(VP9_COMP *cpi,
       bands = vp9_coef_bands_16x16;
       scan = vp9_default_zig_zag1d_16x16;
       if (tx_type != DCT_DCT) {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->hybrid_coef_counts_16x16[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_16x16[xd->mb_adapt_index];
+#else
         counts = cpi->hybrid_coef_counts_16x16;
         probs = cpi->common.fc.hybrid_coef_probs_16x16;
+#endif
       } else {
+#if CONFIG_MULTIPLE_ADAPTS
+        counts = cpi->coef_counts_16x16[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_16x16[xd->mb_adapt_index];
+#else
         counts = cpi->coef_counts_16x16;
         probs = cpi->common.fc.coef_probs_16x16;
+#endif
       }
 #if CONFIG_SUPERBLOCKS && CONFIG_TX32X32
       if (type == PLANE_TYPE_UV) {
@@ -232,8 +262,13 @@ static void tokenize_b(VP9_COMP *cpi,
       seg_eob = 1024;
       bands = vp9_coef_bands_32x32;
       scan = vp9_default_zig_zag1d_32x32;
+#if CONFIG_MULTIPLE_ADAPTS
+      counts = cpi->coef_counts_32x32[xd->mb_adapt_index];
+      probs = cpi->common.fc.coef_probs_32x32[xd->mb_adapt_index];
+#else
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
+#endif
       qcoeff_ptr = xd->sb_coeff_data.qcoeff;
       break;
 #endif
@@ -779,6 +814,15 @@ static __inline void stuff_b(VP9_COMP *cpi,
     default:
     case TX_4X4:
       bands = vp9_coef_bands_4x4;
+#if CONFIG_MULTIPLE_ADAPTS
+      if (tx_type != DCT_DCT) {
+        counts = cpi->hybrid_coef_counts_4x4[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_4x4[xd->mb_adapt_index];
+      } else {
+        counts = cpi->coef_counts_4x4[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_4x4[xd->mb_adapt_index];
+      }
+#else
       if (tx_type != DCT_DCT) {
         counts = cpi->hybrid_coef_counts_4x4;
         probs = cpi->common.fc.hybrid_coef_probs_4x4;
@@ -786,6 +830,7 @@ static __inline void stuff_b(VP9_COMP *cpi,
         counts = cpi->coef_counts_4x4;
         probs = cpi->common.fc.coef_probs_4x4;
       }
+#endif
       break;
     case TX_8X8:
 #if CONFIG_CNVCONTEXT
@@ -795,6 +840,15 @@ static __inline void stuff_b(VP9_COMP *cpi,
       }
 #endif
       bands = vp9_coef_bands_8x8;
+#if CONFIG_MULTIPLE_ADAPTS
+      if (tx_type != DCT_DCT) {
+        counts = cpi->hybrid_coef_counts_8x8[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_8x8[xd->mb_adapt_index];
+      } else {
+        counts = cpi->coef_counts_8x8[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_8x8[xd->mb_adapt_index];
+      }
+#else
       if (tx_type != DCT_DCT) {
         counts = cpi->hybrid_coef_counts_8x8;
         probs = cpi->common.fc.hybrid_coef_probs_8x8;
@@ -802,6 +856,7 @@ static __inline void stuff_b(VP9_COMP *cpi,
         counts = cpi->coef_counts_8x8;
         probs = cpi->common.fc.coef_probs_8x8;
       }
+#endif
       break;
     case TX_16X16:
 #if CONFIG_CNVCONTEXT
@@ -816,6 +871,16 @@ static __inline void stuff_b(VP9_COMP *cpi,
       }
 #endif
       bands = vp9_coef_bands_16x16;
+#if CONFIG_MULTIPLE_ADAPTS
+      if (tx_type != DCT_DCT) {
+        counts = cpi->hybrid_coef_counts_16x16[xd->mb_adapt_index];
+        probs = cpi->common.fc.hybrid_coef_probs_16x16
+            [xd->mb_adapt_index];
+      } else {
+        counts = cpi->coef_counts_16x16[xd->mb_adapt_index];
+        probs = cpi->common.fc.coef_probs_16x16[xd->mb_adapt_index];
+      }
+#else
       if (tx_type != DCT_DCT) {
         counts = cpi->hybrid_coef_counts_16x16;
         probs = cpi->common.fc.hybrid_coef_probs_16x16;
@@ -823,6 +888,7 @@ static __inline void stuff_b(VP9_COMP *cpi,
         counts = cpi->coef_counts_16x16;
         probs = cpi->common.fc.coef_probs_16x16;
       }
+#endif
       break;
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
     case TX_32X32:
@@ -835,8 +901,13 @@ static __inline void stuff_b(VP9_COMP *cpi,
       l_ec = l_ec != 0;
 #endif
       bands = vp9_coef_bands_32x32;
+#if CONFIG_MULTIPLE_ADAPTS
+      counts = cpi->coef_counts_32x32[xd->mb_adapt_index];
+      probs = cpi->common.fc.coef_probs_32x32[xd->mb_adapt_index];
+#else
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
+#endif
       break;
 #endif
   }

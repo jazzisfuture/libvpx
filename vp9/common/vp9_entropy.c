@@ -677,6 +677,37 @@ int vp9_get_coef_neighbor_context(const short int *qcoeff_ptr, int nodc,
 }
 #endif  /* CONFIG_NEWCOEFCONTEXT */
 
+#if CONFIG_MULTIPLE_ADAPTS
+
+void vp9_default_coef_probs(VP9_COMMON *pc) {
+  int i;
+  for (i = 0; i < MAX_ADAPTS_PER_FRAME; ++i) {
+    vpx_memcpy(pc->fc.coef_probs_4x4[i], default_coef_probs_4x4,
+               sizeof(pc->fc.coef_probs_4x4[i]));
+    vpx_memcpy(pc->fc.hybrid_coef_probs_4x4[i],
+               default_hybrid_coef_probs_4x4,
+               sizeof(pc->fc.hybrid_coef_probs_4x4[i]));
+
+    vpx_memcpy(pc->fc.coef_probs_8x8[i], default_coef_probs_8x8,
+               sizeof(pc->fc.coef_probs_8x8[i]));
+    vpx_memcpy(pc->fc.hybrid_coef_probs_8x8[i],
+               default_hybrid_coef_probs_8x8,
+               sizeof(pc->fc.hybrid_coef_probs_8x8[i]));
+
+    vpx_memcpy(pc->fc.coef_probs_16x16[i], default_coef_probs_16x16,
+               sizeof(pc->fc.coef_probs_16x16[i]));
+    vpx_memcpy(pc->fc.hybrid_coef_probs_16x16[i],
+               default_hybrid_coef_probs_16x16,
+               sizeof(pc->fc.hybrid_coef_probs_16x16[i]));
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    vpx_memcpy(pc->fc.coef_probs_32x32[i], default_coef_probs_32x32,
+               sizeof(pc->fc.coef_probs_32x32[i]));
+#endif
+  }
+}
+
+#else
+
 void vp9_default_coef_probs(VP9_COMMON *pc) {
   vpx_memcpy(pc->fc.coef_probs_4x4, default_coef_probs_4x4,
              sizeof(pc->fc.coef_probs_4x4));
@@ -699,6 +730,8 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
 #endif
 }
 
+#endif  // CONFIG_MULTIPLE_ADAPTS
+
 void vp9_coef_tree_initialize() {
   init_bit_trees();
   vp9_tokens_from_tree(vp9_coef_encodings, vp9_coef_tree);
@@ -713,10 +746,10 @@ void vp9_coef_tree_initialize() {
 #define COEF_COUNT_SAT_AFTER_KEY 24
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
 
-static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
-                              vp9_coeff_probs *pre_coef_probs,
-                              int block_types, vp9_coeff_count *coef_counts,
-                              int count_sat, int update_factor) {
+static void adapt_coef_probs(vp9_coeff_probs *dst_coef_probs,
+                             vp9_coeff_probs *pre_coef_probs,
+                             int block_types, vp9_coeff_count *coef_counts,
+                             int count_sat, int update_factor) {
   int t, i, j, k, count;
   unsigned int branch_ct[ENTROPY_NODES][2];
   vp9_prob coef_probs[ENTROPY_NODES];
@@ -740,6 +773,123 @@ static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
         }
       }
 }
+
+#if CONFIG_MULTIPLE_ADAPTS
+
+void vp9_adapt_coef_probs(VP9_COMMON *cm) {
+  int a;
+#ifdef COEF_COUNT_TESTING
+  int t, i, j, k;
+#endif
+  int count_sat;
+  int update_factor; /* denominator 256 */
+
+  // printf("Frame type: %d\n", cm->frame_type);
+  if (cm->frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_KEY;
+    count_sat = COEF_COUNT_SAT_KEY;
+  } else if (cm->last_frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_AFTER_KEY;  /* adapt quickly */
+    count_sat = COEF_COUNT_SAT_AFTER_KEY;
+  } else {
+    update_factor = COEF_MAX_UPDATE_FACTOR;
+    count_sat = COEF_COUNT_SAT;
+  }
+
+  for (a = 0; a < cm->num_adapts; ++a) {
+#ifdef COEF_COUNT_TESTING
+    {
+      printf("static const unsigned int\ncoef_counts"
+             "[BLOCK_TYPES_4X4] [COEF_BANDS]"
+             "[PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS] = {\n");
+      for (i = 0; i < BLOCK_TYPES_4X4; ++i) {
+        printf("  {\n");
+        for (j = 0; j < COEF_BANDS; ++j) {
+          printf("    {\n");
+          for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
+            printf("      {");
+            for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
+              printf("%d, ", cm->fc.coef_counts[a][i][j][k][t]);
+            printf("},\n");
+          }
+          printf("    },\n");
+        }
+        printf("  },\n");
+      }
+      printf("};\n");
+      printf("static const unsigned int\ncoef_counts_8x8"
+             "[BLOCK_TYPES_8X8] [COEF_BANDS]"
+             "[PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS] = {\n");
+      for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
+        printf("  {\n");
+        for (j = 0; j < COEF_BANDS; ++j) {
+          printf("    {\n");
+          for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
+            printf("      {");
+            for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
+              printf("%d, ", cm->fc.coef_counts_8x8[a][i][j][k][t]);
+            printf("},\n");
+          }
+          printf("    },\n");
+        }
+        printf("  },\n");
+      }
+      printf("};\n");
+      printf("static const unsigned int\nhybrid_coef_counts"
+             "[BLOCK_TYPES_4X4] [COEF_BANDS]"
+             "[PREV_COEF_CONTEXTS] [MAX_ENTROPY_TOKENS] = {\n");
+      for (i = 0; i < BLOCK_TYPES_4X4; ++i) {
+        printf("  {\n");
+        for (j = 0; j < COEF_BANDS; ++j) {
+          printf("    {\n");
+          for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
+            printf("      {");
+            for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
+              printf("%d, ", cm->fc.hybrid_coef_counts[a][i][j][k][t]);
+            printf("},\n");
+          }
+          printf("    },\n");
+        }
+        printf("  },\n");
+      }
+      printf("};\n");
+    }
+#endif
+
+    adapt_coef_probs(cm->fc.coef_probs_4x4[a],
+                     cm->fc.pre_coef_probs_4x4[a],
+                     BLOCK_TYPES_4X4, cm->fc.coef_counts_4x4[a],
+                     count_sat, update_factor);
+    adapt_coef_probs(cm->fc.hybrid_coef_probs_4x4[a],
+                     cm->fc.pre_hybrid_coef_probs_4x4[a],
+                     BLOCK_TYPES_4X4, cm->fc.hybrid_coef_counts_4x4[a],
+                     count_sat, update_factor);
+    adapt_coef_probs(cm->fc.coef_probs_8x8[a],
+                     cm->fc.pre_coef_probs_8x8[a],
+                     BLOCK_TYPES_8X8, cm->fc.coef_counts_8x8[a],
+                     count_sat, update_factor);
+    adapt_coef_probs(cm->fc.hybrid_coef_probs_8x8[a],
+                     cm->fc.pre_hybrid_coef_probs_8x8[a],
+                     BLOCK_TYPES_8X8, cm->fc.hybrid_coef_counts_8x8[a],
+                     count_sat, update_factor);
+    adapt_coef_probs(cm->fc.coef_probs_16x16[a],
+                     cm->fc.pre_coef_probs_16x16[a],
+                     BLOCK_TYPES_16X16, cm->fc.coef_counts_16x16[a],
+                     count_sat, update_factor);
+    adapt_coef_probs(cm->fc.hybrid_coef_probs_16x16[a],
+                     cm->fc.pre_hybrid_coef_probs_16x16[a],
+                     BLOCK_TYPES_16X16, cm->fc.hybrid_coef_counts_16x16[a],
+                     count_sat, update_factor);
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    adapt_coef_probs(cm->fc.coef_probs_32x32[a],
+                     cm->fc.pre_coef_probs_32x32[a],
+                     BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32[a],
+                     count_sat, update_factor);
+#endif
+  }
+}
+
+#else
 
 void vp9_adapt_coef_probs(VP9_COMMON *cm) {
 #ifdef COEF_COUNT_TESTING
@@ -819,30 +969,31 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
   }
 #endif
 
-  update_coef_probs(cm->fc.coef_probs_4x4, cm->fc.pre_coef_probs_4x4,
-                    BLOCK_TYPES_4X4, cm->fc.coef_counts_4x4,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.hybrid_coef_probs_4x4,
-                    cm->fc.pre_hybrid_coef_probs_4x4,
-                    BLOCK_TYPES_4X4, cm->fc.hybrid_coef_counts_4x4,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.coef_probs_8x8, cm->fc.pre_coef_probs_8x8,
-                    BLOCK_TYPES_8X8, cm->fc.coef_counts_8x8,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.hybrid_coef_probs_8x8,
-                    cm->fc.pre_hybrid_coef_probs_8x8,
-                    BLOCK_TYPES_8X8, cm->fc.hybrid_coef_counts_8x8,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.coef_probs_16x16, cm->fc.pre_coef_probs_16x16,
-                    BLOCK_TYPES_16X16, cm->fc.coef_counts_16x16,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.hybrid_coef_probs_16x16,
-                    cm->fc.pre_hybrid_coef_probs_16x16,
-                    BLOCK_TYPES_16X16, cm->fc.hybrid_coef_counts_16x16,
-                    count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_4x4, cm->fc.pre_coef_probs_4x4,
+                   BLOCK_TYPES_4X4, cm->fc.coef_counts_4x4,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.hybrid_coef_probs_4x4,
+                   cm->fc.pre_hybrid_coef_probs_4x4,
+                   BLOCK_TYPES_4X4, cm->fc.hybrid_coef_counts_4x4,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_8x8, cm->fc.pre_coef_probs_8x8,
+                   BLOCK_TYPES_8X8, cm->fc.coef_counts_8x8,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.hybrid_coef_probs_8x8,
+                   cm->fc.pre_hybrid_coef_probs_8x8,
+                   BLOCK_TYPES_8X8, cm->fc.hybrid_coef_counts_8x8,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_16x16, cm->fc.pre_coef_probs_16x16,
+                   BLOCK_TYPES_16X16, cm->fc.coef_counts_16x16,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.hybrid_coef_probs_16x16,
+                   cm->fc.pre_hybrid_coef_probs_16x16,
+                   BLOCK_TYPES_16X16, cm->fc.hybrid_coef_counts_16x16,
+                   count_sat, update_factor);
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
-  update_coef_probs(cm->fc.coef_probs_32x32, cm->fc.pre_coef_probs_32x32,
-                    BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32,
-                    count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_32x32, cm->fc.pre_coef_probs_32x32,
+                   BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32,
+                   count_sat, update_factor);
 #endif
 }
+#endif  // CONFIG_MULTIPLE_ADAPTS

@@ -715,6 +715,9 @@ static void pack_inter_mode_mvs(VP9_COMP *const cpi, vp9_writer *const bc) {
         mode = mi->mode;
         segment_id = mi->segment_id;
 
+#if CONFIG_MULTIPLE_ADAPTS
+        xd->mb_adapt_index = mb_row / pc->adapt_row_size;
+#endif
         // Distance of Mb to the various image edges.
         // These specified to 8th pel as they are always compared to MV
         // values that are in 1/8th pel units
@@ -1289,6 +1292,56 @@ static void build_tree_distribution(vp9_coeff_probs *coef_probs,
   }
 }
 
+#if CONFIG_MULTIPLE_ADAPTS
+static void build_coeff_contexts(VP9_COMP *cpi, int adapt_index) {
+  build_tree_distribution(cpi->frame_coef_probs_4x4,
+                          cpi->coef_counts_4x4[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_4x4,
+#endif
+                          cpi->frame_branch_ct_4x4, BLOCK_TYPES_4X4);
+  build_tree_distribution(cpi->frame_hybrid_coef_probs_4x4,
+                          cpi->hybrid_coef_counts_4x4[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, hybrid_context_counters_4x4,
+#endif
+                          cpi->frame_hybrid_branch_ct_4x4, BLOCK_TYPES_4X4);
+  build_tree_distribution(cpi->frame_coef_probs_8x8,
+                          cpi->coef_counts_8x8[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_8x8,
+#endif
+                          cpi->frame_branch_ct_8x8, BLOCK_TYPES_8X8);
+  build_tree_distribution(cpi->frame_hybrid_coef_probs_8x8,
+                          cpi->hybrid_coef_counts_8x8[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, hybrid_context_counters_8x8,
+#endif
+                          cpi->frame_hybrid_branch_ct_8x8, BLOCK_TYPES_8X8);
+  build_tree_distribution(cpi->frame_coef_probs_16x16,
+                          cpi->coef_counts_16x16[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_16x16,
+#endif
+                          cpi->frame_branch_ct_16x16, BLOCK_TYPES_16X16);
+  build_tree_distribution(cpi->frame_hybrid_coef_probs_16x16,
+                          cpi->hybrid_coef_counts_16x16[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, hybrid_context_counters_16x16,
+#endif
+                          cpi->frame_hybrid_branch_ct_16x16, BLOCK_TYPES_16X16);
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+  build_tree_distribution(cpi->frame_coef_probs_32x32,
+                          cpi->coef_counts_32x32[adapt_index],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_32x32,
+#endif
+                          cpi->frame_branch_ct_32x32, BLOCK_TYPES_32X32);
+#endif
+}
+
+#else  // CONFIG_MULTIPLE_ADAPTS
+
 static void build_coeff_contexts(VP9_COMP *cpi) {
   build_tree_distribution(cpi->frame_coef_probs_4x4,
                           cpi->coef_counts_4x4,
@@ -1335,6 +1388,7 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
                           cpi->frame_branch_ct_32x32, BLOCK_TYPES_32X32);
 #endif
 }
+#endif  // CONFIG_MULTIPLE_ADAPTS
 
 static void update_coef_probs_common(vp9_writer* const bc,
 #ifdef ENTROPY_STATS
@@ -1440,6 +1494,98 @@ static void update_coef_probs_common(vp9_writer* const bc,
   }
 }
 
+#if CONFIG_MULTIPLE_ADAPTS
+static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
+  int i;
+  vp9_clear_system_state();
+
+  for (i = 0; i < cpi->common.num_adapts; ++i) {
+
+    // Build the cofficient contexts based on counts collected in encode loop
+    build_coeff_contexts(cpi, i);
+
+    update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                             cpi,
+                             tree_update_hist_4x4,
+#endif
+                             cpi->frame_coef_probs_4x4,
+                             cpi->common.fc.coef_probs_4x4[i],
+                             cpi->frame_branch_ct_4x4,
+                             BLOCK_TYPES_4X4);
+
+    update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                             cpi,
+                             hybrid_tree_update_hist_4x4,
+#endif
+                             cpi->frame_hybrid_coef_probs_4x4,
+                             cpi->common.fc.hybrid_coef_probs_4x4[i],
+                             cpi->frame_hybrid_branch_ct_4x4,
+                             BLOCK_TYPES_4X4);
+
+    /* do not do this if not even allowed */
+    if (cpi->common.txfm_mode != ONLY_4X4) {
+      update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                               cpi,
+                               tree_update_hist_8x8,
+#endif
+                               cpi->frame_coef_probs_8x8,
+                               cpi->common.fc.coef_probs_8x8[i],
+                               cpi->frame_branch_ct_8x8,
+                               BLOCK_TYPES_8X8);
+
+      update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                               cpi,
+                               hybrid_tree_update_hist_8x8,
+#endif
+                               cpi->frame_hybrid_coef_probs_8x8,
+                               cpi->common.fc.hybrid_coef_probs_8x8[i],
+                               cpi->frame_hybrid_branch_ct_8x8,
+                               BLOCK_TYPES_8X8);
+    }
+
+    if (cpi->common.txfm_mode > ALLOW_8X8) {
+      update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                               cpi,
+                               tree_update_hist_16x16,
+#endif
+                               cpi->frame_coef_probs_16x16,
+                               cpi->common.fc.coef_probs_16x16[i],
+                               cpi->frame_branch_ct_16x16,
+                               BLOCK_TYPES_16X16);
+      update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                               cpi,
+                               hybrid_tree_update_hist_16x16,
+#endif
+                               cpi->frame_hybrid_coef_probs_16x16,
+                               cpi->common.fc.hybrid_coef_probs_16x16[i],
+                               cpi->frame_hybrid_branch_ct_16x16,
+                               BLOCK_TYPES_16X16);
+    }
+
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    if (cpi->common.txfm_mode > ALLOW_16X16) {
+      update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                               cpi,
+                               tree_update_hist_32x32,
+#endif
+                               cpi->frame_coef_probs_32x32,
+                               cpi->common.fc.coef_probs_32x32[i],
+                               cpi->frame_branch_ct_32x32,
+                               BLOCK_TYPES_32X32);
+    }
+#endif
+  }  // i
+}
+
+#else
+
 static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
   vp9_clear_system_state();
 
@@ -1524,6 +1670,7 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
   }
 #endif
 }
+#endif  // CONFIG_MULTIPLE_ADAPTS
 
 #ifdef PACKET_TESTING
 FILE *vpxlogc = 0;
@@ -2061,7 +2208,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     if (pc->mcomp_filter_type == SWITCHABLE)
       update_switchable_interp_probs(cpi, &header_bc);
 
-    #if CONFIG_COMP_INTERINTRA_PRED
+#if CONFIG_COMP_INTERINTRA_PRED
     if (pc->use_interintra) {
       vp9_cond_prob_update(&header_bc,
                            &pc->fc.interintra_prob,

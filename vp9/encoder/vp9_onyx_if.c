@@ -3182,6 +3182,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cm->use_interintra = 1;
   }
 #endif
+#if CONFIG_MULTIPLE_ADAPTS
+  if (cm->frame_type == KEY_FRAME) {
+    cm->num_adapts = 1;
+    cm->adapt_row_size = get_adapt_row_size(cm->mb_rows, cm->num_adapts);
+  }
+#endif
 
 #if CONFIG_POSTPROC
 
