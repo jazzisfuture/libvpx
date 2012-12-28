@@ -159,4 +159,10 @@ extern DECLARE_ALIGNED(16, int, vp9_default_zig_zag1d_32x32_neighbors[
                        1024 * MAX_NEIGHBORS]);
 #endif
 #endif  // CONFIG_NEWCOEFCONTEXT
+
+#if CONFIG_MULTIPLE_ADAPTS
+#define ADAPTS_PER_FRAME_BITS   3
+#define MAX_ADAPTS_PER_FRAME    ((1 << ADAPTS_PER_FRAME_BITS) - 1)
+#endif  // CONFIG__MULTIPLE_ADAPTS
+
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

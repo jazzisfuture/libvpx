@@ -369,6 +369,30 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
     }
   }
 
+#if CONFIG_MULTIPLE_ADAPTS
+  for (i = 0; i < cpi->common.num_adapts; ++i) {
+    fill_token_costs(cpi->mb.token_costs[i][TX_4X4],
+                     cpi->common.fc.coef_probs_4x4[i], BLOCK_TYPES_4X4);
+    fill_token_costs(cpi->mb.hybrid_token_costs[i][TX_4X4],
+                     cpi->common.fc.hybrid_coef_probs_4x4[i], BLOCK_TYPES_4X4);
+
+    fill_token_costs(cpi->mb.token_costs[i][TX_8X8],
+                     cpi->common.fc.coef_probs_8x8[i], BLOCK_TYPES_8X8);
+    fill_token_costs(cpi->mb.hybrid_token_costs[i][TX_8X8],
+                     cpi->common.fc.hybrid_coef_probs_8x8[i], BLOCK_TYPES_8X8);
+
+    fill_token_costs(cpi->mb.token_costs[i][TX_16X16],
+                     cpi->common.fc.coef_probs_16x16[i], BLOCK_TYPES_16X16);
+    fill_token_costs(cpi->mb.hybrid_token_costs[i][TX_16X16],
+                     cpi->common.fc.hybrid_coef_probs_16x16[i],
+                     BLOCK_TYPES_16X16);
+
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    fill_token_costs(cpi->mb.token_costs[i][TX_32X32],
+                     cpi->common.fc.coef_probs_32x32[i], BLOCK_TYPES_32X32);
+#endif
+  }
+#else
   fill_token_costs(cpi->mb.token_costs[TX_4X4],
                    cpi->common.fc.coef_probs_4x4, BLOCK_TYPES_4X4);
   fill_token_costs(cpi->mb.hybrid_token_costs[TX_4X4],
@@ -388,6 +412,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
   fill_token_costs(cpi->mb.token_costs[TX_32X32],
                    cpi->common.fc.coef_probs_32x32, BLOCK_TYPES_32X32);
 #endif
+#endif  // CONFIG_MULTIPLE_ADAPTS
 
   /*rough estimate for costing*/
   cpi->common.kf_ymode_probs_index = cpi->common.base_qindex >> 4;
@@ -542,7 +567,12 @@ static int cost_coeffs_2x2(MACROBLOCK *mb,
   for (; c < eob; c++) {
     int v = qcoeff_ptr[vp9_default_zig_zag1d_4x4[c]];
     int t = vp9_dct_value_tokens_ptr[v].Token;
+#if CONFIG_MULTIPLE_ADAPTS
+    cost += mb->token_costs[mb->e_mbd.mb_adapt_index][TX_8X8][type]
+        [vp9_coef_bands_4x4[c]][pt][t];
+#else
     cost += mb->token_costs[TX_8X8][type][vp9_coef_bands_4x4[c]][pt][t];
+#endif
     cost += vp9_dct_value_cost_ptr[v];
     pt = vp9_prev_token_class[t];
 #if CONFIG_NEWCOEFCONTEXT
@@ -553,8 +583,13 @@ static int cost_coeffs_2x2(MACROBLOCK *mb,
   }
 
   if (c < 4)
-    cost += mb->token_costs[TX_8X8][type][vp9_coef_bands_4x4[c]]
-        [PT][DCT_EOB_TOKEN];
+#if CONFIG_MULTIPLE_ADAPTS
+    cost += mb->token_costs[mb->e_mbd.mb_adapt_index][TX_8X8][type]
+        [vp9_coef_bands_4x4[c]][PT][DCT_EOB_TOKEN];
+#else
+    cost += mb->token_costs[TX_8X8][type]
+        [vp9_coef_bands_4x4[c]][PT][DCT_EOB_TOKEN];
+#endif
   // is eob first coefficient;
   pt = (c > !type);
   *a = *l = pt;
@@ -660,7 +695,12 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
     for (; c < eob; c++) {
       int v = qcoeff_ptr[scan[c]];
       int t = vp9_dct_value_tokens_ptr[v].Token;
+#if CONFIG_MULTIPLE_ADAPTS
+      cost += mb->hybrid_token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+          [band[c]][PT][t];
+#else
       cost += mb->hybrid_token_costs[tx_size][type][band[c]][PT][t];
+#endif
       cost += vp9_dct_value_cost_ptr[v];
       pt = vp9_prev_token_class[t];
 #if CONFIG_NEWCOEFCONTEXT
@@ -672,13 +712,23 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
 #endif
     }
     if (c < seg_eob)
+#if CONFIG_MULTIPLE_ADAPTS
+      cost += mb->hybrid_token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+          [band[c]][PT][DCT_EOB_TOKEN];
+#else
       cost += mb->hybrid_token_costs[tx_size][type][band[c]]
           [PT][DCT_EOB_TOKEN];
+#endif
   } else {
     for (; c < eob; c++) {
       int v = qcoeff_ptr[scan[c]];
       int t = vp9_dct_value_tokens_ptr[v].Token;
+#if CONFIG_MULTIPLE_ADAPTS
+      cost += mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+          [band[c]][pt][t];
+#else
       cost += mb->token_costs[tx_size][type][band[c]][pt][t];
+#endif
       cost += vp9_dct_value_cost_ptr[v];
       pt = vp9_prev_token_class[t];
 #if CONFIG_NEWCOEFCONTEXT
@@ -690,8 +740,13 @@ static int cost_coeffs(MACROBLOCK *mb, BLOCKD *b, PLANE_TYPE type,
 #endif
     }
     if (c < seg_eob)
+#if CONFIG_MULTIPLE_ADAPTS
+      cost += mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+          [band[c]][PT][DCT_EOB_TOKEN];
+#else
       cost += mb->token_costs[tx_size][type][band[c]]
           [PT][DCT_EOB_TOKEN];
+#endif
   }
 
   // is eob first coefficient;

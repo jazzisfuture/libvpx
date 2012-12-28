@@ -115,6 +115,44 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   vp9_prob *prob;
   vp9_coeff_count *coef_counts;
 
+#if CONFIG_MULTIPLE_ADAPTS
+  switch (txfm_size) {
+    default:
+    case TX_4X4:
+      if (tx_type == DCT_DCT) {
+        coef_probs  = fc->coef_probs_4x4[xd->mb_adapt_index];
+        coef_counts = fc->coef_counts_4x4[xd->mb_adapt_index];
+      } else {
+        coef_probs  = fc->hybrid_coef_probs_4x4[xd->mb_adapt_index];
+        coef_counts = fc->hybrid_coef_counts_4x4[xd->mb_adapt_index];
+      }
+      break;
+    case TX_8X8:
+      if (tx_type == DCT_DCT) {
+        coef_probs  = fc->coef_probs_8x8[xd->mb_adapt_index];
+        coef_counts = fc->coef_counts_8x8[xd->mb_adapt_index];
+      } else {
+        coef_probs  = fc->hybrid_coef_probs_8x8[xd->mb_adapt_index];
+        coef_counts = fc->hybrid_coef_counts_8x8[xd->mb_adapt_index];
+      }
+      break;
+    case TX_16X16:
+      if (tx_type == DCT_DCT) {
+        coef_probs  = fc->coef_probs_16x16[xd->mb_adapt_index];
+        coef_counts = fc->coef_counts_16x16[xd->mb_adapt_index];
+      } else {
+        coef_probs  = fc->hybrid_coef_probs_16x16[xd->mb_adapt_index];
+        coef_counts = fc->hybrid_coef_counts_16x16[xd->mb_adapt_index];
+      }
+      break;
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    case TX_32X32:
+      coef_probs = fc->coef_probs_32x32[xd->mb_adapt_index];
+      coef_counts = fc->coef_counts_32x32[xd->mb_adapt_index];
+      break;
+#endif
+  }
+#else  // CONFIG_MULTIPLE_ADAPTS
   switch (txfm_size) {
     default:
     case TX_4X4:
@@ -151,6 +189,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       break;
 #endif
   }
+#endif  // CONFIG_MULTIPLE_ADAPTS
 
   VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
 #if CONFIG_NEWCOEFCONTEXT

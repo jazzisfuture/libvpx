@@ -977,6 +977,9 @@ decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc, int mbrow, MACROBLOCKD *xd,
         xd->prev_mode_info_context += offset_extended;
         continue;
       }
+#if CONFIG_MULTIPLE_ADAPTS
+      xd->mb_adapt_index = mb_row / pc->adapt_row_size;
+#endif
 #if CONFIG_SUPERBLOCKS
       if (i)
         mi->mbmi.encoded_as_sb = 0;
@@ -1258,6 +1261,40 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
   }
 }
 
+#if CONFIG_MULTIPLE_ADAPTS
+static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
+  int a;
+  VP9_COMMON *const pc = &pbi->common;
+
+  for (a = 0; a < pc->num_adapts; ++a) {
+    read_coef_probs_common(bc, pc->fc.coef_probs_4x4[a],
+                           BLOCK_TYPES_4X4);
+    read_coef_probs_common(bc, pc->fc.hybrid_coef_probs_4x4[a],
+                           BLOCK_TYPES_4X4);
+
+    if (pbi->common.txfm_mode != ONLY_4X4) {
+      read_coef_probs_common(bc, pc->fc.coef_probs_8x8[a],
+                             BLOCK_TYPES_8X8);
+      read_coef_probs_common(bc, pc->fc.hybrid_coef_probs_8x8[a],
+                             BLOCK_TYPES_8X8);
+    }
+    if (pbi->common.txfm_mode > ALLOW_8X8) {
+      read_coef_probs_common(bc, pc->fc.coef_probs_16x16[a],
+                             BLOCK_TYPES_16X16);
+      read_coef_probs_common(bc, pc->fc.hybrid_coef_probs_16x16[a],
+                             BLOCK_TYPES_16X16);
+    }
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+    if (pbi->common.txfm_mode > ALLOW_16X16) {
+      read_coef_probs_common(bc, pc->fc.coef_probs_32x32[a],
+                             BLOCK_TYPES_32X32);
+    }
+#endif
+  }
+}
+
+#else
+
 static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
   VP9_COMMON *const pc = &pbi->common;
 
@@ -1279,6 +1316,7 @@ static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
   }
 #endif
 }
+#endif  // CONFIG_MULTIPLE_ADAPTS
 
 int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   BOOL_DECODER header_bc, residual_bc;
@@ -1446,6 +1484,13 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
       }
     }
   }
+
+#if CONFIG_MULTIPLE_ADAPTS
+  if (pc->frame_type == KEY_FRAME) {
+    pc->num_adapts = vp9_read_literal(&header_bc, ADAPTS_PER_FRAME_BITS);
+    pc->adapt_row_size = get_adapt_row_size(pc->mb_rows, pc->num_adapts);
+  }
+#endif
 
   // Read common prediction model status flag probability updates for the
   // reference frame

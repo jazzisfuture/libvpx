@@ -465,10 +465,19 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
           pt = vp9_get_coef_neighbor_context(
               qcoeff_ptr, i0, neighbors, scan[i + 1]);
 #endif
+#if CONFIG_MULTIPLE_ADAPTS
+        rate0 +=
+          mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type][band][pt]
+          [tokens[next][0].token];
+        rate1 +=
+          mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type][band][pt]
+          [tokens[next][1].token];
+#else
         rate0 +=
           mb->token_costs[tx_size][type][band][pt][tokens[next][0].token];
         rate1 +=
           mb->token_costs[tx_size][type][band][pt][tokens[next][1].token];
+#endif
       }
       UPDATE_RD_COST();
       /* And pick the best. */
@@ -524,8 +533,13 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
 #else
           pt = vp9_prev_token_class[t0];
 #endif
+#if CONFIG_MULTIPLE_ADAPTS
+          rate0 += mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+              [band][pt][tokens[next][0].token];
+#else
           rate0 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][0].token];
+#endif
         }
         if (t1 != DCT_EOB_TOKEN) {
 #if CONFIG_NEWCOEFCONTEXT
@@ -540,8 +554,13 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
 #else
           pt = vp9_prev_token_class[t1];
 #endif
+#if CONFIG_MULTIPLE_ADAPTS
+          rate1 += mb->token_costs[mb->e_mbd.mb_adapt_index][tx_size][type]
+              [band][pt][tokens[next][1].token];
+#else
           rate1 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][1].token];
+#endif
         }
       }
 
@@ -572,11 +591,21 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       t1 = tokens[next][1].token;
       /* Update the cost of each path if we're past the EOB token. */
       if (t0 != DCT_EOB_TOKEN) {
+#if CONFIG_MULTIPLE_ADAPTS
+        tokens[next][0].rate += mb->token_costs[mb->e_mbd.mb_adapt_index]
+            [tx_size][type][band][0][t0];
+#else
         tokens[next][0].rate += mb->token_costs[tx_size][type][band][0][t0];
+#endif
         tokens[next][0].token = ZERO_TOKEN;
       }
       if (t1 != DCT_EOB_TOKEN) {
+#if CONFIG_MULTIPLE_ADAPTS
+        tokens[next][1].rate += mb->token_costs[mb->e_mbd.mb_adapt_index]
+            [tx_size][type][band][0][t1];
+#else
         tokens[next][1].rate += mb->token_costs[tx_size][type][band][0][t1];
+#endif
         tokens[next][1].token = ZERO_TOKEN;
       }
       /* Don't update next, because we didn't add a new node. */
@@ -592,8 +621,15 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   error1 = tokens[next][1].error;
   t0 = tokens[next][0].token;
   t1 = tokens[next][1].token;
+#if CONFIG_MULTIPLE_ADAPTS
+  rate0 += mb->token_costs[mb->e_mbd.mb_adapt_index]
+      [tx_size][type][band][pt][t0];
+  rate1 += mb->token_costs[mb->e_mbd.mb_adapt_index]
+      [tx_size][type][band][pt][t1];
+#else
   rate0 += mb->token_costs[tx_size][type][band][pt][t0];
   rate1 += mb->token_costs[tx_size][type][band][pt][t1];
+#endif
   UPDATE_RD_COST();
   best = rd_cost1 < rd_cost0;
   final_eob = i0 - 1;

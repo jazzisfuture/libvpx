@@ -2887,6 +2887,28 @@ static void select_interintra_mode(VP9_COMP *cpi) {
 }
 #endif
 
+#if CONFIG_MULTIPLE_ADAPTS
+static int get_num_adapts(int mbrows, int mbcols) {
+  int adapts;
+  int mbs = mbrows * mbcols;
+  if (mbs < 300)
+    return 1;
+  else if (mbs < 600)
+    return 2;
+  else if (mbs < 1200)
+    return 3;
+  else if (mbs < 2400)
+    return 4;
+  else if (mbs < 4800)
+    return 5;
+  else if (mbs < 9600)
+    return 6;
+  else
+    return 7;
+  return adapts;
+}
+#endif
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       unsigned long *size,
                                       unsigned char *dest,
@@ -3180,6 +3202,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
   if (cm->current_video_frame == 0) {
     cm->use_interintra = 1;
+  }
+#endif
+#if CONFIG_MULTIPLE_ADAPTS
+  if (cm->frame_type == KEY_FRAME) {
+    cm->num_adapts = get_num_adapts(cm->mb_rows, cm->mb_cols);
+    cm->adapt_row_size = get_adapt_row_size(cm->mb_rows, cm->num_adapts);
   }
 #endif
 

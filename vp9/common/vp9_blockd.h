@@ -418,6 +418,9 @@ typedef struct macroblockd {
   int mb_index;   // Index of the MB in the SB (0..3)
   int q_index;
 
+#if CONFIG_MULTIPLE_ADAPTS
+  int mb_adapt_index;
+#endif
 } MACROBLOCKD;
 
 #define ACTIVE_HT 110                // quantization stepsize threshold
@@ -665,4 +668,12 @@ static void update_blockd_bmi(MACROBLOCKD *xd) {
     }
   }
 }
+
+#if CONFIG_MULTIPLE_ADAPTS
+static int get_adapt_row_size(int mb_rows, int num_adapts) {
+  static const int sbmbratio = 2;  // make this 4 if there are 4x4 mbs in a sb
+  return ((mb_rows + sbmbratio * num_adapts - 1) / (sbmbratio * num_adapts))
+      * sbmbratio;
+}
+#endif
 #endif  // VP9_COMMON_VP9_BLOCKD_H_

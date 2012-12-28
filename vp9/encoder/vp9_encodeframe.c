@@ -668,6 +668,10 @@ static void pick_mb_modes(VP9_COMP *cpi,
     // Index of the MB in the SB 0..3
     xd->mb_index = i;
 
+#if CONFIG_MULTIPLE_ADAPTS
+    xd->mb_adapt_index = mb_row / cpi->common.adapt_row_size;
+#endif
+
     map_index = (mb_row * cpi->common.mb_cols) + mb_col;
     x->mb_activity_ptr = &cpi->mb_activity_map[map_index];
 
@@ -871,6 +875,10 @@ static void pick_sb_modes (VP9_COMP *cpi,
   map_index = (mb_row * cpi->common.mb_cols) + mb_col;
   x->mb_activity_ptr = &cpi->mb_activity_map[map_index];
 
+#if CONFIG_MULTIPLE_ADAPTS
+  xd->mb_adapt_index = mb_row / cm->adapt_row_size;
+#endif
+
   /* set above context pointer */
   xd->above_context = cm->above_context + mb_col;
 
@@ -1032,6 +1040,10 @@ static void encode_sb(VP9_COMP *cpi,
     }
 
     xd->mb_index = i;
+
+#if CONFIG_MULTIPLE_ADAPTS
+    xd->mb_adapt_index = mb_row / cm->adapt_row_size;
+#endif
 
     // Restore MB state to that when it was picked
 #if CONFIG_SUPERBLOCKS
@@ -1495,6 +1507,16 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cpi->hybrid_coef_counts_16x16);
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_zero(cpi->coef_counts_32x32);
+#endif
+
+  vp9_zero(cpi->common.fc.coef_counts_4x4);
+  vp9_zero(cpi->common.fc.hybrid_coef_counts_4x4);
+  vp9_zero(cpi->common.fc.coef_counts_8x8);
+  vp9_zero(cpi->common.fc.hybrid_coef_counts_8x8);
+  vp9_zero(cpi->common.fc.coef_counts_16x16);
+  vp9_zero(cpi->common.fc.hybrid_coef_counts_16x16);
+#if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
+  vp9_zero(cpi->common.fc.coef_counts_32x32);
 #endif
 
   vp9_frame_init_quantizer(cpi);
