@@ -103,6 +103,14 @@ typedef struct {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_coeff_probs coef_probs_32x32[BLOCK_TYPES_32X32];
 #endif
+#if CONFIG_ADAPTIVE_EXTRABITS
+  vp9_prob token_bit_probs_cat1[ 1];
+  vp9_prob token_bit_probs_cat2[ 2];
+  vp9_prob token_bit_probs_cat3[ 3];
+  vp9_prob token_bit_probs_cat4[ 4];
+  vp9_prob token_bit_probs_cat5[ 5];
+  vp9_prob token_bit_probs_cat6[14];
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
 #if CONFIG_SUPERBLOCKS
   vp9_prob sb_ymode_prob[VP9_I32X32_MODES - 1];
@@ -613,6 +621,16 @@ typedef struct VP9_COMP {
   vp9_coeff_probs frame_coef_probs_32x32[BLOCK_TYPES_32X32];
   vp9_coeff_stats frame_branch_ct_32x32[BLOCK_TYPES_32X32];
 #endif
+
+#if CONFIG_ADAPTIVE_EXTRABITS
+  unsigned int token_bit_counter_cat1[ 1][2];
+  unsigned int token_bit_counter_cat2[ 2][2];
+  unsigned int token_bit_counter_cat3[ 3][2];
+  unsigned int token_bit_counter_cat4[ 4][2];
+  unsigned int token_bit_counter_cat5[ 5][2];
+  unsigned int token_bit_counter_cat6[14][2];
+  unsigned int (*token_bit_counter[6])[2];
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
   int gfu_boost;
   int last_boost;

@@ -514,6 +514,22 @@ static void init_bit_trees() {
   init_bit_tree(cat6, 14);
 }
 
+#if CONFIG_ADAPTIVE_EXTRABITS
+vp9_extra_bit_struct vp9_extra_bits[12] = {
+  { 0, 0, 0},
+  { 0, 0, 1},
+  { 0, 0, 2},
+  { 0, 0, 3},
+  { 0, 0, 4},
+  { cat1, 1, 5},
+  { cat2, 2, 7},
+  { cat3, 3, 11},
+  { cat4, 4, 19},
+  { cat5, 5, 35},
+  { cat6, 14, 67},
+  { 0, 0, 0}
+};
+#else  // CONFIG_ADAPTIVE_EXTRABITS
 vp9_extra_bit_struct vp9_extra_bits[12] = {
   { 0, 0, 0, 0},
   { 0, 0, 0, 1},
@@ -528,6 +544,7 @@ vp9_extra_bit_struct vp9_extra_bits[12] = {
   { cat6, Pcat6, 14, 67},
   { 0, 0, 0, 0}
 };
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
 #include "vp9/common/vp9_default_coef_probs.h"
 
@@ -697,6 +714,15 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
   vpx_memcpy(pc->fc.coef_probs_32x32, default_coef_probs_32x32,
              sizeof(pc->fc.coef_probs_32x32));
 #endif
+
+#if CONFIG_ADAPTIVE_EXTRABITS
+  vpx_memcpy(pc->fc.token_bit_probs_cat1, Pcat1, sizeof(Pcat1));
+  vpx_memcpy(pc->fc.token_bit_probs_cat2, Pcat2, sizeof(Pcat2));
+  vpx_memcpy(pc->fc.token_bit_probs_cat3, Pcat3, sizeof(Pcat3));
+  vpx_memcpy(pc->fc.token_bit_probs_cat4, Pcat4, sizeof(Pcat4));
+  vpx_memcpy(pc->fc.token_bit_probs_cat5, Pcat5, sizeof(Pcat5));
+  vpx_memcpy(pc->fc.token_bit_probs_cat6, Pcat6, sizeof(Pcat6));
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 }
 
 void vp9_coef_tree_initialize() {
@@ -740,6 +766,23 @@ static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
         }
       }
 }
+
+#if CONFIG_ADAPTIVE_EXTRABITS
+static void update_extra_bit_probs(vp9_prob *dst_probs, vp9_prob *src_probs,
+                                   unsigned int (*cnt)[2], int n_bits,
+                                   int count_sat, int update_factor) {
+  int n, count, factor;
+  vp9_prob new_prob;
+
+  for (n = 0; n < n_bits; n++) {
+    new_prob = get_binary_prob(cnt[n][0], cnt[n][1]);
+    count = cnt[n][0] + cnt[n][1];
+    count = count > count_sat ? count_sat : count;
+    factor = update_factor * count / count_sat;
+    dst_probs[n] = weighted_prob(src_probs[n], new_prob, factor);
+  }
+}
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
 void vp9_adapt_coef_probs(VP9_COMMON *cm) {
 #ifdef COEF_COUNT_TESTING
@@ -845,4 +888,31 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
                     BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32,
                     count_sat, update_factor);
 #endif
+
+#if CONFIG_ADAPTIVE_EXTRABITS
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat1,
+                         cm->fc.pre_token_bit_probs_cat1,
+                         cm->fc.token_bit_counter_cat1, 1,
+                         count_sat, update_factor);
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat2,
+                         cm->fc.pre_token_bit_probs_cat2,
+                         cm->fc.token_bit_counter_cat2, 2,
+                         count_sat, update_factor);
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat3,
+                         cm->fc.pre_token_bit_probs_cat3,
+                         cm->fc.token_bit_counter_cat3, 3,
+                         count_sat, update_factor);
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat4,
+                         cm->fc.pre_token_bit_probs_cat4,
+                         cm->fc.token_bit_counter_cat4, 4,
+                         count_sat, update_factor);
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat5,
+                         cm->fc.pre_token_bit_probs_cat5,
+                         cm->fc.token_bit_counter_cat5, 5,
+                         count_sat, update_factor);
+  update_extra_bit_probs(cm->fc.token_bit_probs_cat6,
+                         cm->fc.pre_token_bit_probs_cat6,
+                         cm->fc.token_bit_counter_cat6, 14,
+                         count_sat, update_factor);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 }

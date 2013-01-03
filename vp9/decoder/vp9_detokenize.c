@@ -34,6 +34,8 @@
 #define CAT4_MIN_VAL   19
 #define CAT5_MIN_VAL   35
 #define CAT6_MIN_VAL   67
+
+#if !CONFIG_ADAPTIVE_EXTRABITS
 #define CAT1_PROB0    159
 #define CAT2_PROB0    145
 #define CAT2_PROB1    165
@@ -56,6 +58,7 @@
 static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
+#endif
 
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 
@@ -90,11 +93,21 @@ static int get_signed(BOOL_DECODER *br, int value_to_sign) {
     continue;                                                 \
   }
 
-#define ADJUST_COEF(prob, bits_count)  \
-  do {                                 \
-    if (vp9_read(br, prob))            \
-      val += (uint16_t)(1 << bits_count);\
+#if CONFIG_ADAPTIVE_EXTRABITS
+#define ADJUST_COEF(prob, bits_count, cntr) \
+  do {                                      \
+    const int bit = vp9_read(br, dx->common.fc.prob); \
+    dx->common.fc.cntr[bit]++;              \
+    if (bit)                                \
+      val += (uint16_t)(1 << bits_count);   \
   } while (0);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
+#define ADJUST_COEF(prob, bits_count) \
+  do {                                \
+    if (vp9_read(br, prob))           \
+       val += (uint16_t)(1 << bits_count); \
+  } while (0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
 static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                         BOOL_DECODER* const br,
@@ -159,7 +172,11 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
 #endif
   while (1) {
     int val;
+#if CONFIG_ADAPTIVE_EXTRABITS
+    int idx;
+#else  // CONFIG_ADAPTIVE_EXTRABITS
     const uint8_t *cat6 = cat6_prob;
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
     if (c >= seg_eob) break;
     prob = coef_probs[type][coef_bands[c]][PT];
     if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
@@ -190,44 +207,97 @@ SKIP_START:
     if (!vp9_read(br, prob[HIGH_LOW_CONTEXT_NODE])) {
       if (!vp9_read(br, prob[CAT_ONE_CONTEXT_NODE])) {
         val = CAT1_MIN_VAL;
+#if CONFIG_ADAPTIVE_EXTRABITS
+        ADJUST_COEF(token_bit_probs_cat1[0],
+                    0, token_bit_counter_cat1[0]);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
         ADJUST_COEF(CAT1_PROB0, 0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
         WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY1);
       }
       val = CAT2_MIN_VAL;
+#if CONFIG_ADAPTIVE_EXTRABITS
+      ADJUST_COEF(token_bit_probs_cat2[0],
+                  1, token_bit_counter_cat2[0]);
+      ADJUST_COEF(token_bit_probs_cat2[1],
+                  0, token_bit_counter_cat2[1]);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
       ADJUST_COEF(CAT2_PROB1, 1);
       ADJUST_COEF(CAT2_PROB0, 0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
     }
     // CAT_THREEFOUR_CONTEXT_NODE_0_
     if (!vp9_read(br, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
       if (!vp9_read(br, prob[CAT_THREE_CONTEXT_NODE])) {
         val = CAT3_MIN_VAL;
+#if CONFIG_ADAPTIVE_EXTRABITS
+        ADJUST_COEF(token_bit_probs_cat3[0],
+                    2, token_bit_counter_cat3[0]);
+        ADJUST_COEF(token_bit_probs_cat3[1],
+                    1, token_bit_counter_cat3[1]);
+        ADJUST_COEF(token_bit_probs_cat3[2],
+                    0, token_bit_counter_cat3[2]);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
         ADJUST_COEF(CAT3_PROB2, 2);
         ADJUST_COEF(CAT3_PROB1, 1);
         ADJUST_COEF(CAT3_PROB0, 0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
         WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY3);
       }
       val = CAT4_MIN_VAL;
+#if CONFIG_ADAPTIVE_EXTRABITS
+      ADJUST_COEF(token_bit_probs_cat4[0],
+                  3, token_bit_counter_cat4[0]);
+      ADJUST_COEF(token_bit_probs_cat4[1],
+                  2, token_bit_counter_cat4[1]);
+      ADJUST_COEF(token_bit_probs_cat4[2],
+                  1, token_bit_counter_cat4[2]);
+      ADJUST_COEF(token_bit_probs_cat4[3],
+                  0, token_bit_counter_cat4[3]);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
       ADJUST_COEF(CAT4_PROB3, 3);
       ADJUST_COEF(CAT4_PROB2, 2);
       ADJUST_COEF(CAT4_PROB1, 1);
       ADJUST_COEF(CAT4_PROB0, 0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
     }
     // CAT_FIVE_CONTEXT_NODE_0_:
     if (!vp9_read(br, prob[CAT_FIVE_CONTEXT_NODE])) {
       val = CAT5_MIN_VAL;
+#if CONFIG_ADAPTIVE_EXTRABITS
+      ADJUST_COEF(token_bit_probs_cat5[0],
+                  4, token_bit_counter_cat5[0]);
+      ADJUST_COEF(token_bit_probs_cat5[1],
+                  3, token_bit_counter_cat5[1]);
+      ADJUST_COEF(token_bit_probs_cat5[2],
+                  2, token_bit_counter_cat5[2]);
+      ADJUST_COEF(token_bit_probs_cat5[3],
+                  1, token_bit_counter_cat5[3]);
+      ADJUST_COEF(token_bit_probs_cat5[4],
+                  0, token_bit_counter_cat5[4]);
+#else  // CONFIG_ADAPTIVE_EXTRABITS
       ADJUST_COEF(CAT5_PROB4, 4);
       ADJUST_COEF(CAT5_PROB3, 3);
       ADJUST_COEF(CAT5_PROB2, 2);
       ADJUST_COEF(CAT5_PROB1, 1);
       ADJUST_COEF(CAT5_PROB0, 0);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY5);
     }
     val = 0;
+#if CONFIG_ADAPTIVE_EXTRABITS
+    for (idx = 0; idx < 14; idx++) {
+      const int bit = vp9_read(br, dx->common.fc.token_bit_probs_cat6[idx]);
+      dx->common.fc.token_bit_counter_cat6[idx][bit]++;
+      val = (val << 1) | bit;
+    }
+#else  // CONFIG_ADAPTIVE_EXTRABITS
     while (*cat6) {
       val = (val << 1) | vp9_read(br, *cat6++);
     }
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
     val += CAT6_MIN_VAL;
     WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
   }

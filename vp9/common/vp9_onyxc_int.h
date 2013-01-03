@@ -61,6 +61,15 @@ typedef struct frame_contexts {
   vp9_coeff_probs coef_probs_32x32[BLOCK_TYPES_32X32];
 #endif
 
+#if CONFIG_ADAPTIVE_EXTRABITS
+  vp9_prob token_bit_probs_cat1[ 1];
+  vp9_prob token_bit_probs_cat2[ 2];
+  vp9_prob token_bit_probs_cat3[ 3];
+  vp9_prob token_bit_probs_cat4[ 4];
+  vp9_prob token_bit_probs_cat5[ 5];
+  vp9_prob token_bit_probs_cat6[14];
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
+
   nmv_context nmvc;
   nmv_context pre_nmvc;
   vp9_prob pre_bmode_prob[VP9_NKF_BINTRAMODES - 1];
@@ -92,6 +101,15 @@ typedef struct frame_contexts {
   vp9_coeff_probs pre_coef_probs_32x32[BLOCK_TYPES_32X32];
 #endif
 
+#if CONFIG_ADAPTIVE_EXTRABITS
+  vp9_prob pre_token_bit_probs_cat1[ 1];
+  vp9_prob pre_token_bit_probs_cat2[ 2];
+  vp9_prob pre_token_bit_probs_cat3[ 3];
+  vp9_prob pre_token_bit_probs_cat4[ 4];
+  vp9_prob pre_token_bit_probs_cat5[ 5];
+  vp9_prob pre_token_bit_probs_cat6[14];
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
+
   vp9_coeff_count coef_counts_4x4[BLOCK_TYPES_4X4];
   vp9_coeff_count hybrid_coef_counts_4x4[BLOCK_TYPES_4X4];
   vp9_coeff_count coef_counts_8x8[BLOCK_TYPES_8X8];
@@ -101,6 +119,14 @@ typedef struct frame_contexts {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES_32X32];
 #endif
+#if CONFIG_ADAPTIVE_EXTRABITS
+  unsigned int token_bit_counter_cat1[ 1][2];
+  unsigned int token_bit_counter_cat2[ 2][2];
+  unsigned int token_bit_counter_cat3[ 3][2];
+  unsigned int token_bit_counter_cat4[ 4][2];
+  unsigned int token_bit_counter_cat5[ 5][2];
+  unsigned int token_bit_counter_cat6[14][2];
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
   nmv_context_counts NMVcount;
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
