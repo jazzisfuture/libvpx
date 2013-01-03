@@ -473,7 +473,13 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       UPDATE_RD_COST();
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
+#if CONFIG_ADAPTIVE_EXTRABITS
+      base_bits = vp9_cost_bit(vp9_prob_half, x < 0); // sign bit
+      if (t0 >= DCT_VAL_CATEGORY1 && t0 <= DCT_VAL_CATEGORY6)
+        base_bits += mb->token_extra_bit_costs[t0 - DCT_VAL_CATEGORY1][(vp9_dct_value_tokens_ptr + x)->Extra >> 1];
+#else // CONFIG_ADAPTIVE_EXTRABITS
       base_bits = *(vp9_dct_value_cost_ptr + x);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
       dx = dqcoeff_ptr[rc] - coeff_ptr[rc];
       d2 = dx * dx;
       tokens[i][0].rate = base_bits + (best ? rate1 : rate0);
@@ -548,7 +554,18 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       UPDATE_RD_COST();
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
+#if CONFIG_ADAPTIVE_EXTRABITS
+      if (x) {
+        int t = (vp9_dct_value_tokens_ptr + x)->Token;
+        base_bits = vp9_cost_bit(vp9_prob_half, x < 0); // sign bit
+        if (t >= DCT_VAL_CATEGORY1 && t <= DCT_VAL_CATEGORY6)
+          base_bits += mb->token_extra_bit_costs[t - DCT_VAL_CATEGORY1][(vp9_dct_value_tokens_ptr + x)->Extra >> 1];
+      } else {
+        base_bits = 0;
+      }
+#else  // CONFIG_ADAPTIVE_EXTRABITS
       base_bits = *(vp9_dct_value_cost_ptr + x);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
       if (shortcut) {
         dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
