@@ -543,6 +543,14 @@ static int cost_coeffs(MACROBLOCK *mb,
 
   ENTROPY_CONTEXT a_ec = *a, l_ec = *l;
 
+#if CONFIG_SUPERBLOCKS && CONFIG_TX32X32
+  ENTROPY_CONTEXT *const a1 = a +
+    sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
+  ENTROPY_CONTEXT *const l1 = l +
+    sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
+#endif
+
+
   switch (tx_size) {
     case TX_4X4:
       scan = vp9_default_zig_zag1d_4x4;
@@ -562,12 +570,27 @@ static int cost_coeffs(MACROBLOCK *mb,
         band = vp9_coef_bands_4x4;
         seg_eob = 4;
       } else {
+#if CONFIG_CNVCONTEXT
+        a_ec = (a[0] + a[1]) != 0;
+        l_ec = (l[0] + l[1]) != 0;
+#endif
         scan = vp9_default_zig_zag1d_8x8;
         band = vp9_coef_bands_8x8;
         seg_eob = 64;
       }
       break;
     case TX_16X16:
+#if CONFIG_CNVCONTEXT
+      if (type != PLANE_TYPE_UV) {
+        a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
+        l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+#if CONFIG_SUPERBLOCKS && CONFIG_TX32X32
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+#endif
+      }
+#endif
       scan = vp9_default_zig_zag1d_16x16;
       band = vp9_coef_bands_16x16;
       seg_eob = 256;
@@ -580,6 +603,14 @@ static int cost_coeffs(MACROBLOCK *mb,
       break;
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
     case TX_32X32:
+#if CONFIG_CNVCONTEXT
+      a_ec = a[0] + a[1] + a[2] + a[3] +
+             a1[0] + a1[1] + a1[2] + a1[3];
+      l_ec = l[0] + l[1] + l[2] + l[3] +
+             l1[0] + l1[1] + l1[2] + l1[3];
+      a_ec = a_ec != 0;
+      l_ec = l_ec != 0;
+#endif
       scan = vp9_default_zig_zag1d_32x32;
       band = vp9_coef_bands_32x32;
       seg_eob = 1024;
