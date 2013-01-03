@@ -48,8 +48,10 @@ extern vp9_coeff_stats tree_update_hist_32x32[BLOCK_TYPES_32X32];
 
 static TOKENVALUE dct_value_tokens[DCT_MAX_VALUE * 2];
 const TOKENVALUE *vp9_dct_value_tokens_ptr;
+#if !CONFIG_ADAPTIVE_EXTRABITS
 static int dct_value_cost[DCT_MAX_VALUE * 2];
 const int *vp9_dct_value_cost_ptr;
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
 static void fill_value_tokens() {
 
@@ -80,6 +82,7 @@ static void fill_value_tokens() {
       t[i].Extra = eb;
     }
 
+#if !CONFIG_ADAPTIVE_EXTRABITS
     // initialize the cost for extra bits for all possible coefficient value.
     {
       int cost = 0;
@@ -97,12 +100,28 @@ static void fill_value_tokens() {
       }
 
     }
-
+#endif
   } while (++i < DCT_MAX_VALUE);
 
   vp9_dct_value_tokens_ptr = dct_value_tokens + DCT_MAX_VALUE;
+#if !CONFIG_ADAPTIVE_EXTRABITS
   vp9_dct_value_cost_ptr   = dct_value_cost + DCT_MAX_VALUE;
+#endif
 }
+
+#if CONFIG_ADAPTIVE_EXTRABITS
+static void update_extra_bit_counters(VP9_COMP *cpi, int token_cat,
+                                      int n_bits, unsigned val) {
+  unsigned mask = 1 << (n_bits - 1), pos = 0;
+  unsigned (*cnt)[2] = cpi->token_bit_counter[token_cat - DCT_VAL_CATEGORY1];
+
+  do {
+    cnt[pos++][!!(val & mask)]++;
+    mask >>= 1;
+  } while (--n_bits > 0);
+}
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
+
 static void tokenize_b(VP9_COMP *cpi,
                        MACROBLOCKD *xd,
                        const int ib,
@@ -255,6 +274,11 @@ static void tokenize_b(VP9_COMP *cpi,
     assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][band][pt][token];
+#if CONFIG_ADAPTIVE_EXTRABITS
+      if (token >= DCT_VAL_CATEGORY1 && token <= DCT_VAL_CATEGORY6)
+        update_extra_bit_counters(cpi, token, vp9_extra_bits[token].Len,
+                                  t->Extra >> 1 /* ignore sign bit */);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
     }
     pt = vp9_prev_token_class[token];
     ++t;

@@ -1496,6 +1496,14 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 #if CONFIG_TX32X32 && CONFIG_SUPERBLOCKS
   vp9_zero(cpi->coef_counts_32x32);
 #endif
+#if CONFIG_ADAPTIVE_EXTRABITS
+  vp9_zero(cpi->token_bit_counter_cat1);
+  vp9_zero(cpi->token_bit_counter_cat2);
+  vp9_zero(cpi->token_bit_counter_cat3);
+  vp9_zero(cpi->token_bit_counter_cat4);
+  vp9_zero(cpi->token_bit_counter_cat5);
+  vp9_zero(cpi->token_bit_counter_cat6);
+#endif  // CONFIG_ADAPTIVE_EXTRABITS
 
   vp9_frame_init_quantizer(cpi);
 
