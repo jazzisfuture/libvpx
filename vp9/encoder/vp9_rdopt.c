@@ -1382,6 +1382,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
     xd->inv_xform4x4_x8(best_dqcoeff, b->diff, 32);
 
   vp9_recon_b(best_predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+  {
+    int idx = xd->block - b;
+    if ((idx & 3) == 3 && idx != 15) {
+      uint8_t *ptr = *(b->base_dst) + b->dst + 4 + 3 * b->dst_stride;
+      ptr[0] = ptr[1] = ptr[2] = ptr[3] = ptr[-1];
+    }
+  }
 
   return best_rd;
 }

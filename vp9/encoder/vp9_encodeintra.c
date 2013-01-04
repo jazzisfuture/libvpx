@@ -78,6 +78,10 @@ void vp9_encode_intra4x4block(MACROBLOCK *x, int ib) {
   }
 
   vp9_recon_b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+  if ((ib & 3) == 3 && ib != 15) {
+    uint8_t *ptr = *(b->base_dst) + b->dst + 4 + 3 * b->dst_stride;
+    ptr[0] = ptr[1] = ptr[2] = ptr[3] = ptr[-1];
+  }
 }
 
 void vp9_encode_intra4x4mby(MACROBLOCK *mb) {

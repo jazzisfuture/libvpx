@@ -459,6 +459,10 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
         vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                              *(b->base_dst) + b->dst, 16, b->dst_stride);
       }
+      if ((i & 3) ==3 && i != 15) {
+        uint8_t *ptr = *(b->base_dst) + b->dst + 4 + 3 * b->dst_stride;
+        ptr[0] = ptr[1] = ptr[2] = ptr[3] = ptr[-1];
+      }
     }
     if (!xd->mode_info_context->mbmi.mb_skip_coeff) {
       vp9_decode_mb_tokens_4x4_uv(pbi, xd, bc);

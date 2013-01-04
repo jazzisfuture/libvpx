@@ -449,12 +449,12 @@ void vp9_intra_prediction_down_copy(MACROBLOCKD *xd) {
 
   if ((xd->sb_index >= 2 && xd->mb_to_right_edge == 0) ||
       (xd->sb_index == 3 && xd->mb_index & 1))
-    src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 32 *
-                                                    xd->block[0].dst_stride);
+    extend_edge = 1; //src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 32 *
+                     //                               xd->block[0].dst_stride);
   if (xd->mb_index == 3 ||
       (xd->mb_to_right_edge == 0 && xd->mb_index == 2))
-    src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 16 *
-                                                    xd->block[0].dst_stride);
+    extend_edge = 1; //src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 16 *
+                     //                               xd->block[0].dst_stride);
 
   if (extend_edge) {
     *src_ptr = ((uint8_t *) src_ptr)[-1] * 0x01010101U;
