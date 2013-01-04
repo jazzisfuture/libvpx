@@ -607,6 +607,42 @@ static void write_mb_segid(vp9_writer *bc,
   }
 }
 
+static void write_mb_segid_except(VP9_COMMON *cm,
+                                  vp9_writer *bc,
+                                  const MB_MODE_INFO *mi,
+                                  const MACROBLOCKD *xd,
+                                  int mb_row, int mb_col) {
+  // Encode the MB segment id.
+  int seg_id = mi->segment_id;
+  int pred_seg_id = vp9_get_pred_mb_segid(cm, xd,
+                                          mb_row * cm->mb_cols + mb_col);
+  const vp9_prob *p = xd->mb_segment_tree_probs;
+  vp9_prob p1;
+  unsigned count[4] = { p[0] * p[1], p[0] * (256 - p[1]),
+                        (256 - p[0]) * p[2], (256 - p[0]) * (256 - p[2]) };
+
+  count[pred_seg_id] = 0;
+  p1 = get_binary_prob(count[0] + count[1], count[2] + count[3]);
+
+  if (xd->segmentation_enabled && xd->update_mb_segmentation_map) {
+    vp9_write(bc, seg_id >= 2, p1);
+    switch (seg_id) {
+      case 0:
+      case 1: {
+        if (pred_seg_id >= 2)
+          vp9_write(bc, seg_id == 1, p[1]);
+        break;
+      }
+      case 2:
+      case 3: {
+        if (pred_seg_id <= 1)
+          vp9_write(bc, seg_id == 3, p[2]);
+        break;
+      }
+    }
+  }
+}
+
 // This function encodes the reference frame
 static void encode_ref_frame(vp9_writer *const bc,
                              VP9_COMMON *const cm,
@@ -754,7 +790,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
       // If the mb segment id wasn't predicted code explicitly
       if (!prediction_flag)
-        write_mb_segid(bc, mi, &cpi->mb.e_mbd);
+        write_mb_segid_except(pc, bc, mi, &cpi->mb.e_mbd, mb_row, mb_col);
     } else {
       // Normal unpredicted coding
       write_mb_segid(bc, mi, &cpi->mb.e_mbd);
