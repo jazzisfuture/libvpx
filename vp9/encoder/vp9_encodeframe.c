@@ -493,6 +493,7 @@ static void update_state(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->mv[1].as_int = x->partition_info->bmi[15].second_mv.as_int;
   }
 
+  x->skip = ctx->skip;
   if (!output_enabled)
     return;
 
@@ -2133,7 +2134,6 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
   int seg_ref_active;
   unsigned char ref_pred_flag;
 
-  x->skip = 0;
 #if CONFIG_SUPERBLOCKS
   assert(!xd->mode_info_context->mbmi.sb_type);
 #endif
@@ -2186,7 +2186,6 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
   }
 
-  assert(mbmi->txfm_size <= TX_16X16);
   if (mbmi->ref_frame == INTRA_FRAME) {
 #ifdef ENC_DEBUG
     if (enc_debug) {
@@ -2364,6 +2363,7 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
         !((cpi->common.mb_no_coeff_skip && mbmi->mb_skip_coeff) ||
           (vp9_segfeature_active(&x->e_mbd, segment_id, SEG_LVL_EOB) &&
            vp9_get_segdata(&x->e_mbd, segment_id, SEG_LVL_EOB) == 0))) {
+      assert(mbmi->txfm_size <= TX_16X16);
       if (mbmi->mode != B_PRED && mbmi->mode != I8X8_PRED &&
           mbmi->mode != SPLITMV) {
         cpi->txfm_count_16x16p[mbmi->txfm_size]++;
@@ -2410,8 +2410,6 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
   unsigned int segment_id = mi->mbmi.segment_id;
   ENTROPY_CONTEXT_PLANES ta[4], tl[4];
   const int mis = cm->mode_info_stride;
-
-  x->skip = 0;
 
   if (cm->frame_type == KEY_FRAME) {
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
@@ -2502,6 +2500,7 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
 
 #if CONFIG_TX32X32
   if (xd->mode_info_context->mbmi.txfm_size == TX_32X32) {
+    if (!x->skip) {
     vp9_subtract_sby_s_c(x->sb_coeff_data.src_diff, src, src_y_stride,
                          dst, dst_y_stride);
     vp9_subtract_sbuv_s_c(x->sb_coeff_data.src_diff,
@@ -2517,7 +2516,6 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_recon_sby_s_c(&x->e_mbd, dst);
     vp9_recon_sbuv_s_c(&x->e_mbd, udst, vdst);
 
-    if (!x->skip) {
       vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled);
     } else {
       int mb_skip_context =
@@ -2559,6 +2557,7 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
     tp[n] = *t;
     xd->mode_info_context = mi + x_idx + y_idx * mis;
 
+    if (!x->skip) {
     vp9_subtract_mby_s_c(x->src_diff,
                          src + x_idx * 16 + y_idx * 16 * src_y_stride,
                          src_y_stride,
@@ -2578,7 +2577,6 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
                        udst + x_idx * 8 + y_idx * 8 * dst_uv_stride,
                        vdst + x_idx * 8 + y_idx * 8 * dst_uv_stride);
 
-    if (!x->skip) {
       vp9_tokenize_mb(cpi, &x->e_mbd, t, !output_enabled);
       skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
     } else {
@@ -2657,8 +2655,6 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
   unsigned int segment_id = mi->mbmi.segment_id;
   ENTROPY_CONTEXT_PLANES ta[16], tl[16];
   const int mis = cm->mode_info_stride;
-
-  x->skip = 0;
 
   if (cm->frame_type == KEY_FRAME) {
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
@@ -2764,6 +2760,7 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
       memcpy(&tl[n * 2], xd->left_context, sizeof(*tl) * 2);
       tp[n] = *t;
       xd->mode_info_context = mi + x_idx * 2 + y_idx * mis * 2;
+      if (!x->skip) {
       vp9_subtract_sby_s_c(x->sb_coeff_data.src_diff,
                            src + x_idx * 32 + y_idx * 32 * src_y_stride,
                            src_y_stride,
@@ -2790,7 +2787,6 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
                          udst + x_idx * 16 + y_idx * 16 * dst_uv_stride,
                          vdst + x_idx * 16 + y_idx * 16 * dst_uv_stride);
 
-      if (!x->skip) {
         vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled);
       } else {
         int mb_skip_context = cpi->common.mb_no_coeff_skip ?
@@ -2835,6 +2831,7 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
       tp[n] = *t;
       xd->mode_info_context = mi + x_idx + y_idx * mis;
 
+      if (!x->skip) {
       vp9_subtract_mby_s_c(x->src_diff,
                            src + x_idx * 16 + y_idx * 16 * src_y_stride,
                            src_y_stride,
@@ -2854,7 +2851,6 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
                          udst + x_idx * 8 + y_idx * 8 * dst_uv_stride,
                          vdst + x_idx * 8 + y_idx * 8 * dst_uv_stride);
 
-      if (!x->skip) {
         vp9_tokenize_mb(cpi, &x->e_mbd, t, !output_enabled);
         skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
       } else {
