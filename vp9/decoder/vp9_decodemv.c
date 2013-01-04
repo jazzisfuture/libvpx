@@ -89,6 +89,38 @@ static void read_mb_segid(vp9_reader *r, MB_MODE_INFO *mi,
   }
 }
 
+// This function reads the current macro block's segnent id from the bitstream
+// It should only be called if a segment map update is indicated.
+static void read_mb_segid_except(VP9_COMMON *cm,
+                                 vp9_reader *r, MB_MODE_INFO *mi,
+                                 MACROBLOCKD *xd, int mb_row, int mb_col) {
+  int pred_seg_id = vp9_get_pred_mb_segid(cm, xd,
+                                          mb_row * cm->mb_cols + mb_col);
+  const vp9_prob *p = xd->mb_segment_tree_probs;
+  vp9_prob p1;
+  unsigned count[4] = { p[0] * p[1], p[0] * (256 - p[1]),
+                        (256 - p[0]) * p[2], (256 - p[0]) * (256 - p[2]) };
+
+  count[pred_seg_id] = 0;
+  p1 = get_binary_prob(count[0] + count[1], count[2] + count[3]);
+
+  /* Is segmentation enabled */
+  if (xd->segmentation_enabled && xd->update_mb_segmentation_map) {
+    /* If so then read the segment id. */
+    if (vp9_read(r, p1)) {
+      if (pred_seg_id < 2)
+        mi->segment_id = 2 + vp9_read(r, xd->mb_segment_tree_probs[2]);
+      else
+        mi->segment_id = 2 + (pred_seg_id == 2);
+    } else {
+      if (pred_seg_id >= 2)
+        mi->segment_id = vp9_read(r, xd->mb_segment_tree_probs[1]);
+      else
+        mi->segment_id = pred_seg_id == 0;
+    }
+  }
+}
+
 #if CONFIG_NEW_MVREF
 int vp9_read_mv_ref_id(vp9_reader *r,
                        vp9_prob * ref_id_probs) {
@@ -647,7 +679,7 @@ static void read_mb_segment_id(VP9D_COMP *pbi,
         }
         // Else .... decode it explicitly
         else {
-          read_mb_segid(bc, mbmi, xd);
+          read_mb_segid_except(cm, bc, mbmi, xd, mb_row, mb_col);
         }
       }
       // Normal unpredicted coding mode
