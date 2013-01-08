@@ -394,17 +394,11 @@ prototype void vp9_short_inv_walsh4x4_1_lossless "int16_t *in, int16_t *out"
 prototype void vp9_short_inv_walsh4x4_lossless "int16_t *in, int16_t *out"
 fi
 
-
-
-if [ "$CONFIG_SUPERBLOCKS" = "yes" ]; then
-
 prototype unsigned int vp9_sad32x3 "const uint8_t *src_ptr, int  src_stride, const uint8_t *ref_ptr, int ref_stride, int max_sad"
 specialize vp9_sad32x3
 
 prototype unsigned int vp9_sad3x32 "const uint8_t *src_ptr, int  src_stride, const uint8_t *ref_ptr, int ref_stride, int max_sad"
 specialize vp9_sad3x32
-
-fi
 
 #
 # Encoder functions below this point.
