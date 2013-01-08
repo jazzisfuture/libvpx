@@ -252,6 +252,7 @@ EXPERIMENT_LIST="
     dwt32x32hybrid
     cnvcontext
     newcoefcontext
+    enable-6tap
 "
 CONFIG_LIST="
     external_build
