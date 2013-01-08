@@ -264,7 +264,8 @@ static void decode_16x16(VP9D_COMP *pbi, MACROBLOCKD *xd,
   if (tx_type != DCT_DCT) {
     vp9_ht_dequant_idct_add_16x16_c(tx_type, xd->qcoeff,
                                     xd->block[0].dequant, xd->predictor,
-                                    xd->dst.y_buffer, 16, xd->dst.y_stride);
+                                    xd->dst.y_buffer, 16, xd->dst.y_stride,
+                                    xd->eobs[0]);
   } else {
     vp9_dequant_idct_add_16x16(xd->qcoeff, xd->block[0].dequant,
                                xd->predictor, xd->dst.y_buffer,
@@ -310,7 +311,8 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
       }
       tx_type = get_tx_type_8x8(xd, &xd->block[ib]);
       if (tx_type != DCT_DCT) {
-        vp9_ht_dequant_idct_add_8x8_c(tx_type, q, dq, pre, dst, 16, stride);
+        vp9_ht_dequant_idct_add_8x8_c(tx_type, q, dq, pre, dst, 16, stride,
+                                      xd->eobs[idx]);
       } else {
         vp9_dequant_idct_add_8x8_c(q, dq, pre, dst, 16, stride,
                                    0, xd->eobs[idx]);
@@ -409,7 +411,7 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
           vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                     b->dequant, b->predictor,
                                     *(b->base_dst) + b->dst, 16,
-                                    b->dst_stride);
+                                    b->dst_stride, b->eob);
         } else {
           vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                                *(b->base_dst) + b->dst, 16, b->dst_stride);
@@ -454,7 +456,8 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       if (tx_type != DCT_DCT) {
         vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                   b->dequant, b->predictor,
-                                  *(b->base_dst) + b->dst, 16, b->dst_stride);
+                                  *(b->base_dst) + b->dst, 16, b->dst_stride,
+                                  b->eob);
       } else {
         vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                              *(b->base_dst) + b->dst, 16, b->dst_stride);
@@ -516,7 +519,7 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
           vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                     b->dequant, b->predictor,
                                     *(b->base_dst) + b->dst, 16,
-                                    b->dst_stride);
+                                    b->dst_stride, b->eob);
         } else {
           vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
                                *(b->base_dst) + b->dst, 16, b->dst_stride);
@@ -570,7 +573,7 @@ static void decode_16x16_sb(VP9D_COMP *pbi, MACROBLOCKD *xd,
         tx_type, xd->qcoeff, xd->block[0].dequant,
         xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
         xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
-        xd->dst.y_stride, xd->dst.y_stride);
+        xd->dst.y_stride, xd->dst.y_stride, xd->block[0].eob);
   } else {
     vp9_dequant_idct_add_16x16(
         xd->qcoeff, xd->block[0].dequant,
@@ -609,7 +612,7 @@ static void decode_8x8_sb(VP9D_COMP *pbi, MACROBLOCKD *xd,
             + x_idx * 16 + (i & 1) * 8,
             xd->dst.y_buffer + (y_idx * 16 + (i / 2) * 8) * xd->dst.y_stride
             + x_idx * 16 + (i & 1) * 8,
-            stride, stride);
+            stride, stride, b->eob);
       } else {
         vp9_dequant_idct_add_8x8_c(
             q, dq,
@@ -666,7 +669,7 @@ static void decode_4x4_sb(VP9D_COMP *pbi, MACROBLOCKD *xd,
             + x_idx * 16 + (i & 3) * 4,
             xd->dst.y_buffer + (y_idx * 16 + (i / 4) * 4) * xd->dst.y_stride
             + x_idx * 16 + (i & 3) * 4,
-            xd->dst.y_stride, xd->dst.y_stride);
+            xd->dst.y_stride, xd->dst.y_stride, b->eob);
       } else {
         vp9_dequant_idct_add_c(
             b->qcoeff, b->dequant,
@@ -1196,10 +1199,91 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
   // For a SB there are 2 left contexts, each pertaining to a MB row within
   vpx_memset(pc->left_context, 0, sizeof(pc->left_context));
 
+<<<<<<< HEAD   (c14439 reset segement map on key frame)
   for (mb_col = 0; mb_col < pc->mb_cols; mb_col += 4) {
 #if CONFIG_SUPERBLOCKS64 && CONFIG_SUPERBLOCKS
     if (vp9_read(bc, pc->sb64_coded)) {
       set_offsets(pbi, 64, mb_row, mb_col);
+=======
+  mb_row = mbrow;
+  mb_col = 0;
+
+  for (sb_col = 0; sb_col < sb_cols; sb_col++) {
+#if CONFIG_SUPERBLOCKS
+    MODE_INFO *mi = xd->mode_info_context;
+
+    mi->mbmi.encoded_as_sb = vp9_read(bc, pc->sb_coded);
+#endif
+
+    // Process the 4 MBs within the SB in the order:
+    // top-left, top-right, bottom-left, bottom-right
+    for (i = 0; i < 4; i++) {
+      int dy = row_delta[i];
+      int dx = col_delta[i];
+      int offset_extended = dy * xd->mode_info_stride + dx;
+
+      xd->mb_index = i;
+
+#if CONFIG_SUPERBLOCKS
+      mi = xd->mode_info_context;
+#endif
+      if ((mb_row >= pc->mb_rows) || (mb_col >= pc->mb_cols)) {
+        // MB lies outside frame, skip on to next
+        mb_row += dy;
+        mb_col += dx;
+        xd->mode_info_context += offset_extended;
+        xd->prev_mode_info_context += offset_extended;
+        continue;
+      }
+#if CONFIG_SUPERBLOCKS
+      if (i)
+        mi->mbmi.encoded_as_sb = 0;
+#endif
+
+      // Set above context pointer
+      xd->above_context = pc->above_context + mb_col;
+      xd->left_context = pc->left_context + (i >> 1);
+
+      /* Distance of Mb to the various image edges.
+       * These are specified to 8th pel as they are always compared to
+       * values that are in 1/8th pel units
+       */
+      xd->mb_to_top_edge = -((mb_row * 16)) << 3;
+      xd->mb_to_left_edge = -((mb_col * 16) << 3);
+#if CONFIG_SUPERBLOCKS
+      if (mi->mbmi.encoded_as_sb) {
+        xd->mb_to_bottom_edge = ((pc->mb_rows - 2 - mb_row) * 16) << 3;
+        xd->mb_to_right_edge = ((pc->mb_cols - 2 - mb_col) * 16) << 3;
+      } else {
+#endif
+        xd->mb_to_bottom_edge = ((pc->mb_rows - 1 - mb_row) * 16) << 3;
+        xd->mb_to_right_edge = ((pc->mb_cols - 1 - mb_col) * 16) << 3;
+#if CONFIG_SUPERBLOCKS
+      }
+#endif
+#ifdef DEC_DEBUG
+      dec_debug = (pbi->common.current_video_frame == 1 &&
+                   mb_row == 2 && mb_col == 8);
+      if (dec_debug)
+#if CONFIG_SUPERBLOCKS
+        printf("Enter Debug %d %d sb %d\n", mb_row, mb_col,
+               mi->mbmi.encoded_as_sb);
+#else
+        printf("Enter Debug %d %d\n", mb_row, mb_col);
+#endif
+#endif
+      xd->up_available = (mb_row != 0);
+      xd->left_available = (mb_col != 0);
+
+
+      recon_yoffset = (mb_row * recon_y_stride * 16) + (mb_col * 16);
+      recon_uvoffset = (mb_row * recon_uv_stride * 8) + (mb_col * 8);
+
+      xd->dst.y_buffer = pc->yv12_fb[dst_fb_idx].y_buffer + recon_yoffset;
+      xd->dst.u_buffer = pc->yv12_fb[dst_fb_idx].u_buffer + recon_uvoffset;
+      xd->dst.v_buffer = pc->yv12_fb[dst_fb_idx].v_buffer + recon_uvoffset;
+
+>>>>>>> BRANCH (bdca03 Use seg/ref/mode offsets in loop_filter_partial.)
       vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, bc);
       set_refs(pbi, 64, mb_row, mb_col);
       decode_superblock64(pbi, xd, mb_row, mb_col, bc);
@@ -1356,6 +1440,7 @@ static void init_frame(VP9D_COMP *pbi) {
 
     vp9_update_mode_info_border(pc, pc->mip);
     vp9_update_mode_info_in_image(pc, pc->mi);
+
 
 
   } else {

@@ -10,9 +10,14 @@
 
 #ifndef VP9_DECODER_VP9_ONYXD_INT_H_
 #define VP9_DECODER_VP9_ONYXD_INT_H_
+<<<<<<< HEAD   (c14439 reset segement map on key frame)
 
 #include "vpx_ports/config.h"
 #include "vp9/decoder/vp9_onyxd.h"
+=======
+#include "./vpx_config.h"
+#include "vp9/common/vp9_onyxd.h"
+>>>>>>> BRANCH (bdca03 Use seg/ref/mode offsets in loop_filter_partial.)
 #include "vp9/decoder/vp9_treereader.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/decoder/vp9_dequantize.h"

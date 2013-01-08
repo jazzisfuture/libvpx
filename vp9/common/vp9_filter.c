@@ -452,10 +452,17 @@ static const unsigned int filter_size_to_wh[][2] = {
   {16,16},
 };
 
+<<<<<<< HEAD   (c14439 reset segement map on key frame)
 static void filter_block2d_8_c(const uint8_t *src_ptr,
                                const unsigned int src_stride,
                                const int16_t *HFilter,
                                const int16_t *VFilter,
+=======
+static void filter_block2d_8_c(const unsigned char *src_ptr,
+                               const unsigned int   src_stride,
+                               const short *HFilter,
+                               const short *VFilter,
+>>>>>>> BRANCH (bdca03 Use seg/ref/mode offsets in loop_filter_partial.)
                                const filter_size_t filter_size,
                                uint8_t *dst_ptr,
                                unsigned int dst_stride) {
@@ -477,7 +484,11 @@ static void filter_block2d_8_c(const uint8_t *src_ptr,
    *                               = 23
    * and filter_max_width = 16
    */
+<<<<<<< HEAD   (c14439 reset segement map on key frame)
   uint8_t intermediate_buffer[23 * 16];
+=======
+  unsigned char intermediate_buffer[23 * 16];
+>>>>>>> BRANCH (bdca03 Use seg/ref/mode offsets in loop_filter_partial.)
   const int intermediate_next_stride = 1 - intermediate_height * output_width;
 
   // Horizontal pass (src -> transposed intermediate).

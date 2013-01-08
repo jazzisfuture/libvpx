@@ -11,8 +11,12 @@
 #ifndef VP9_COMMON_VP9_INVTRANS_H_
 #define VP9_COMMON_VP9_INVTRANS_H_
 
+<<<<<<< HEAD   (c14439 reset segement map on key frame)
 #include "vpx_ports/config.h"
 #include "vpx/vpx_integer.h"
+=======
+#include "./vpx_config.h"
+>>>>>>> BRANCH (bdca03 Use seg/ref/mode offsets in loop_filter_partial.)
 #include "vp9/common/vp9_blockd.h"
 
 extern void vp9_inverse_transform_b_4x4(MACROBLOCKD *xd, int block, int pitch);
