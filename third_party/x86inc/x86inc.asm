@@ -23,7 +23,7 @@
 
 ; This is a header file for the x264ASM assembly language, which uses
 ; NASM/YASM syntax combined with a large number of macros to provide easy
-; abstraction between different calling conventions (x86_32, win64, linux64).
+; abstraction between different calling conventions (x86_32, win64, linuwin64).
 ; It also has various other useful features to simplify writing the kind of
 ; DSP functions that are most often used in x264.
 
@@ -46,7 +46,7 @@
         %define WIN64  1
     %elifidn __OUTPUT_FORMAT__,win64
         %define WIN64  1
-    %elifidn __OUTPUT_FORMAT__,x64
+    %elifidn __OUTPUT_FORMAT__,win64
         %define WIN64  1
     %else
         %define UNIX64 1
@@ -59,7 +59,7 @@
     %define mangle(x) x
 %elifidn __OUTPUT_FORMAT__,elf
     %define mangle(x) x
-%elifidn __OUTPUT_FORMAT__,x64
+%elifidn __OUTPUT_FORMAT__,win64
     %define mangle(x) x
 %else
     %define mangle(x) _ %+ x
@@ -318,7 +318,7 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
     %assign n_arg_names %0
 %endmacro
 
-%if WIN64 ; Windows x64 ;=================================================
+%if WIN64 ; Windows x86_64 ;=================================================
 
 DECLARE_REG 0,  rcx, ecx,  cx,   cl
 DECLARE_REG 1,  rdx, edx,  dx,   dl
@@ -395,7 +395,7 @@ DECLARE_REG 14, R15, R15D, R15W, R15B, 120
     %endif
 %endmacro
 
-%elif ARCH_X86_64 ; *nix x64 ;=============================================
+%elif ARCH_X86_64 ; *nix win64 ;=============================================
 
 DECLARE_REG 0,  rdi, edi,  di,   dil
 DECLARE_REG 1,  rsi, esi,  si,   sil

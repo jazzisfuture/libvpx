@@ -33,7 +33,7 @@ namespace libvpx_test {
 
 // Compares the state of xmm[6-15] at construction with their state at
 // destruction. These registers should be preserved by the callee on
-// Windows x64.
+// Windows x86_64.
 // Usage:
 // {
 //   RegisterStateCheck reg_check;

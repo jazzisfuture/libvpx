@@ -60,7 +60,7 @@ typedef unsigned char uint8;
 typedef char int8;
 #endif  // INT_TYPES_DEFINED
 
-// Detect compiler is for x86 or x64.
+// Detect compiler is for x86 or win64.
 #if defined(__x86_64__) || defined(_M_X64) || \
     defined(__i386__) || defined(_M_IX86)
 #define CPU_X86 1

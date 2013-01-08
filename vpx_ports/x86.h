@@ -219,11 +219,11 @@ x87_get_control_word(void) {
   return mode;
 }
 #elif ARCH_X86_64
-/* No fldcw intrinsics on Windows x64, punt to external asm */
-extern void           vpx_winx64_fldcw(unsigned short mode);
-extern unsigned short vpx_winx64_fstcw(void);
-#define x87_set_control_word vpx_winx64_fldcw
-#define x87_get_control_word vpx_winx64_fstcw
+/* No fldcw intrinsics on Windows win64, punt to external asm */
+extern void           vpx_winwin64_fldcw(unsigned short mode);
+extern unsigned short vpx_winwin64_fstcw(void);
+#define x87_set_control_word vpx_winwin64_fldcw
+#define x87_get_control_word vpx_winwin64_fstcw
 #else
 static void
 x87_set_control_word(unsigned short mode) {

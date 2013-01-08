@@ -303,7 +303,7 @@ esac
 # List of all platforms supported for this target
 case "$target" in
     x86_64*)
-        platforms[0]="x64"
+        platforms[0]="Win64"
         asm_Debug_cmdline="yasm -Xvc -g cv8 -f \$(PlatformName) ${yasmincs} &quot;\$(InputPath)&quot;"
         asm_Release_cmdline="yasm -Xvc -f \$(PlatformName) ${yasmincs} &quot;\$(InputPath)&quot;"
     ;;

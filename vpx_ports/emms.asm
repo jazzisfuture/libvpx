@@ -18,18 +18,18 @@ sym(vpx_reset_mmx_state):
     ret
 
 
-%ifidn __OUTPUT_FORMAT__,x64
-global sym(vpx_winx64_fldcw) PRIVATE
-sym(vpx_winx64_fldcw):
+%ifidn __OUTPUT_FORMAT__,win64
+global sym(vpx_winwin64_fldcw) PRIVATE
+sym(vpx_winwin64_fldcw):
     sub   rsp, 8
-    mov   [rsp], rcx ; win x64 specific
+    mov   [rsp], rcx ; win win64 specific
     fldcw [rsp]
     add   rsp, 8
     ret
 
 
-global sym(vpx_winx64_fstcw) PRIVATE
-sym(vpx_winx64_fstcw):
+global sym(vpx_winwin64_fstcw) PRIVATE
+sym(vpx_winwin64_fstcw):
     sub   rsp, 8
     fstcw [rsp]
     mov   rax, [rsp]
