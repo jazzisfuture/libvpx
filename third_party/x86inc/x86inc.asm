@@ -46,7 +46,7 @@
         %define WIN64  1
     %elifidn __OUTPUT_FORMAT__,win64
         %define WIN64  1
-    %elifidn __OUTPUT_FORMAT__,x64
+    %elifidn __OUTPUT_FORMAT__,win64
         %define WIN64  1
     %else
         %define UNIX64 1
@@ -59,7 +59,7 @@
     %define mangle(x) x
 %elifidn __OUTPUT_FORMAT__,elf
     %define mangle(x) x
-%elifidn __OUTPUT_FORMAT__,x64
+%elifidn __OUTPUT_FORMAT__,win64
     %define mangle(x) x
 %else
     %define mangle(x) _ %+ x
