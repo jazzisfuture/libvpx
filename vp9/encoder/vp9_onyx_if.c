@@ -49,7 +49,12 @@ extern void print_tree_update_probs();
 
 static void set_default_lf_deltas(VP9_COMP *cpi);
 
-#define DEFAULT_INTERP_FILTER EIGHTTAP  /* SWITCHABLE for better performance */
+#if CONFIG_PRED_FILTER
+#define DEFAULT_INTERP_FILTER SWITCHABLE
+#else
+#define DEFAULT_INTERP_FILTER EIGHTTAP
+#endif
+
 #define SEARCH_BEST_FILTER 0            /* to search exhaustively for
                                            best filter */
 #define RESET_FOREACH_FILTER 0          /* whether to reset the encoder state
@@ -634,47 +639,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 
   switch (Mode) {
     case 0: // best quality mode
-#if CONFIG_PRED_FILTER
-      sf->thresh_mult[THR_ZEROMV        ] = 0;
-      sf->thresh_mult[THR_ZEROMV_FILT   ] = 0;
-      sf->thresh_mult[THR_ZEROG         ] = 0;
-      sf->thresh_mult[THR_ZEROG_FILT    ] = 0;
-      sf->thresh_mult[THR_ZEROA         ] = 0;
-      sf->thresh_mult[THR_ZEROA_FILT    ] = 0;
-      sf->thresh_mult[THR_NEARESTMV     ] = 0;
-      sf->thresh_mult[THR_NEARESTMV_FILT] = 0;
-      sf->thresh_mult[THR_NEARESTG      ] = 0;
-      sf->thresh_mult[THR_NEARESTG_FILT ] = 0;
-      sf->thresh_mult[THR_NEARESTA      ] = 0;
-      sf->thresh_mult[THR_NEARESTA_FILT ] = 0;
-      sf->thresh_mult[THR_NEARMV        ] = 0;
-      sf->thresh_mult[THR_NEARMV_FILT   ] = 0;
-      sf->thresh_mult[THR_NEARG         ] = 0;
-      sf->thresh_mult[THR_NEARG_FILT    ] = 0;
-      sf->thresh_mult[THR_NEARA         ] = 0;
-      sf->thresh_mult[THR_NEARA_FILT    ] = 0;
-
-      sf->thresh_mult[THR_DC       ] = 0;
-
-      sf->thresh_mult[THR_V_PRED   ] = 1000;
-      sf->thresh_mult[THR_H_PRED   ] = 1000;
-      sf->thresh_mult[THR_D45_PRED ] = 1000;
-      sf->thresh_mult[THR_D135_PRED] = 1000;
-      sf->thresh_mult[THR_D117_PRED] = 1000;
-      sf->thresh_mult[THR_D153_PRED] = 1000;
-      sf->thresh_mult[THR_D27_PRED ] = 1000;
-      sf->thresh_mult[THR_D63_PRED ] = 1000;
-      sf->thresh_mult[THR_B_PRED   ] = 2000;
-      sf->thresh_mult[THR_I8X8_PRED] = 2000;
-      sf->thresh_mult[THR_TM       ] = 1000;
-
-      sf->thresh_mult[THR_NEWMV    ] = 1000;
-      sf->thresh_mult[THR_NEWG     ] = 1000;
-      sf->thresh_mult[THR_NEWA     ] = 1000;
-      sf->thresh_mult[THR_NEWMV_FILT    ] = 1000;
-      sf->thresh_mult[THR_NEWG_FILT     ] = 1000;
-      sf->thresh_mult[THR_NEWA_FILT     ] = 1000;
-#else
       sf->thresh_mult[THR_ZEROMV   ] = 0;
       sf->thresh_mult[THR_ZEROG    ] = 0;
       sf->thresh_mult[THR_ZEROA    ] = 0;
@@ -702,7 +666,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->thresh_mult[THR_NEWMV    ] = 1000;
       sf->thresh_mult[THR_NEWG     ] = 1000;
       sf->thresh_mult[THR_NEWA     ] = 1000;
-#endif
+
       sf->thresh_mult[THR_SPLITMV  ] = 2500;
       sf->thresh_mult[THR_SPLITG   ] = 5000;
       sf->thresh_mult[THR_SPLITA   ] = 5000;
@@ -745,66 +709,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->search_best_filter = SEARCH_BEST_FILTER;
       break;
     case 1:
-#if CONFIG_PRED_FILTER
-      sf->thresh_mult[THR_NEARESTMV] = 0;
-      sf->thresh_mult[THR_NEARESTMV_FILT] = 0;
-      sf->thresh_mult[THR_ZEROMV   ] = 0;
-      sf->thresh_mult[THR_ZEROMV_FILT   ] = 0;
-      sf->thresh_mult[THR_DC       ] = 0;
-      sf->thresh_mult[THR_NEARMV   ] = 0;
-      sf->thresh_mult[THR_NEARMV_FILT   ] = 0;
-      sf->thresh_mult[THR_V_PRED   ] = 1000;
-      sf->thresh_mult[THR_H_PRED   ] = 1000;
-      sf->thresh_mult[THR_D45_PRED ] = 1000;
-      sf->thresh_mult[THR_D135_PRED] = 1000;
-      sf->thresh_mult[THR_D117_PRED] = 1000;
-      sf->thresh_mult[THR_D153_PRED] = 1000;
-      sf->thresh_mult[THR_D27_PRED ] = 1000;
-      sf->thresh_mult[THR_D63_PRED ] = 1000;
-      sf->thresh_mult[THR_B_PRED   ] = 2500;
-      sf->thresh_mult[THR_I8X8_PRED] = 2500;
-      sf->thresh_mult[THR_TM       ] = 1000;
-
-      sf->thresh_mult[THR_NEARESTG ] = 1000;
-      sf->thresh_mult[THR_NEARESTG_FILT ] = 1000;
-      sf->thresh_mult[THR_NEARESTA ] = 1000;
-      sf->thresh_mult[THR_NEARESTA_FILT ] = 1000;
-
-      sf->thresh_mult[THR_ZEROG    ] = 1000;
-      sf->thresh_mult[THR_ZEROA    ] = 1000;
-      sf->thresh_mult[THR_NEARG    ] = 1000;
-      sf->thresh_mult[THR_NEARA    ] = 1000;
-      sf->thresh_mult[THR_ZEROG_FILT    ] = 1000;
-      sf->thresh_mult[THR_ZEROA_FILT    ] = 1000;
-      sf->thresh_mult[THR_NEARG_FILT    ] = 1000;
-      sf->thresh_mult[THR_NEARA_FILT    ] = 1000;
-
-      sf->thresh_mult[THR_ZEROMV   ] = 0;
-      sf->thresh_mult[THR_ZEROG    ] = 0;
-      sf->thresh_mult[THR_ZEROA    ] = 0;
-      sf->thresh_mult[THR_NEARESTMV] = 0;
-      sf->thresh_mult[THR_NEARESTG ] = 0;
-      sf->thresh_mult[THR_NEARESTA ] = 0;
-      sf->thresh_mult[THR_NEARMV   ] = 0;
-      sf->thresh_mult[THR_NEARG    ] = 0;
-      sf->thresh_mult[THR_NEARA    ] = 0;
-      sf->thresh_mult[THR_ZEROMV_FILT   ] = 0;
-      sf->thresh_mult[THR_ZEROG_FILT    ] = 0;
-      sf->thresh_mult[THR_ZEROA_FILT    ] = 0;
-      sf->thresh_mult[THR_NEARESTMV_FILT] = 0;
-      sf->thresh_mult[THR_NEARESTG_FILT ] = 0;
-      sf->thresh_mult[THR_NEARESTA_FILT ] = 0;
-      sf->thresh_mult[THR_NEARMV_FILT   ] = 0;
-      sf->thresh_mult[THR_NEARG_FILT    ] = 0;
-      sf->thresh_mult[THR_NEARA_FILT    ] = 0;
-
-      sf->thresh_mult[THR_NEWMV    ] = 1000;
-      sf->thresh_mult[THR_NEWG     ] = 1000;
-      sf->thresh_mult[THR_NEWA     ] = 1000;
-      sf->thresh_mult[THR_NEWMV_FILT    ] = 1000;
-      sf->thresh_mult[THR_NEWG_FILT     ] = 1000;
-      sf->thresh_mult[THR_NEWA_FILT     ] = 1000;
-#else
       sf->thresh_mult[THR_NEARESTMV] = 0;
       sf->thresh_mult[THR_ZEROMV   ] = 0;
       sf->thresh_mult[THR_DC       ] = 0;
@@ -842,7 +746,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->thresh_mult[THR_NEWMV    ] = 1000;
       sf->thresh_mult[THR_NEWG     ] = 1000;
       sf->thresh_mult[THR_NEWA     ] = 1000;
-#endif
+
       sf->thresh_mult[THR_SPLITMV  ] = 1700;
       sf->thresh_mult[THR_SPLITG   ] = 4500;
       sf->thresh_mult[THR_SPLITA   ] = 4500;
@@ -918,9 +822,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 
         if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
           sf->thresh_mult[THR_NEWMV    ] = 2000;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEWMV_FILT    ] = 2000;
-#endif
           sf->thresh_mult[THR_SPLITMV  ] = 10000;
           sf->thresh_mult[THR_COMP_SPLITLG  ] = 20000;
         }
@@ -930,12 +831,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
           sf->thresh_mult[THR_ZEROG    ] = 1500;
           sf->thresh_mult[THR_NEARG    ] = 1500;
           sf->thresh_mult[THR_NEWG     ] = 2000;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEARESTG_FILT ] = 1500;
-          sf->thresh_mult[THR_ZEROG_FILT    ] = 1500;
-          sf->thresh_mult[THR_NEARG_FILT    ] = 1500;
-          sf->thresh_mult[THR_NEWG_FILT     ] = 2000;
-#endif
           sf->thresh_mult[THR_SPLITG   ] = 20000;
           sf->thresh_mult[THR_COMP_SPLITGA  ] = 20000;
         }
@@ -945,12 +840,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
           sf->thresh_mult[THR_ZEROA    ] = 1500;
           sf->thresh_mult[THR_NEARA    ] = 1500;
           sf->thresh_mult[THR_NEWA     ] = 2000;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEARESTA_FILT ] = 1500;
-          sf->thresh_mult[THR_ZEROA_FILT    ] = 1500;
-          sf->thresh_mult[THR_NEARA_FILT    ] = 1500;
-          sf->thresh_mult[THR_NEWA_FILT     ] = 2000;
-#endif
           sf->thresh_mult[THR_SPLITA   ] = 20000;
           sf->thresh_mult[THR_COMP_SPLITLA  ] = 10000;
         }
@@ -1007,9 +896,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 
         if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
           sf->thresh_mult[THR_NEWMV    ] = 2000;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEWMV_FILT    ] = 2000;
-#endif
           sf->thresh_mult[THR_SPLITMV  ] = 25000;
           sf->thresh_mult[THR_COMP_SPLITLG  ] = 50000;
         }
@@ -1019,12 +905,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
           sf->thresh_mult[THR_ZEROG    ] = 2000;
           sf->thresh_mult[THR_NEARG    ] = 2000;
           sf->thresh_mult[THR_NEWG     ] = 2500;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEARESTG_FILT ] = 2000;
-          sf->thresh_mult[THR_ZEROG_FILT    ] = 2000;
-          sf->thresh_mult[THR_NEARG_FILT    ] = 2000;
-          sf->thresh_mult[THR_NEWG_FILT     ] = 2500;
-#endif
           sf->thresh_mult[THR_SPLITG   ] = 50000;
           sf->thresh_mult[THR_COMP_SPLITGA  ] = 50000;
         }
@@ -1034,12 +914,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
           sf->thresh_mult[THR_ZEROA    ] = 2000;
           sf->thresh_mult[THR_NEARA    ] = 2000;
           sf->thresh_mult[THR_NEWA     ] = 2500;
-#if CONFIG_PRED_FILTER
-          sf->thresh_mult[THR_NEARESTA_FILT ] = 2000;
-          sf->thresh_mult[THR_ZEROA_FILT    ] = 2000;
-          sf->thresh_mult[THR_NEARA_FILT    ] = 2000;
-          sf->thresh_mult[THR_NEWA_FILT     ] = 2500;
-#endif
           sf->thresh_mult[THR_SPLITA   ] = 50000;
           sf->thresh_mult[THR_COMP_SPLITLA  ] = 25000;
         }
@@ -1090,12 +964,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     sf->thresh_mult[THR_NEARESTMV] = INT_MAX;
     sf->thresh_mult[THR_ZEROMV   ] = INT_MAX;
     sf->thresh_mult[THR_NEARMV   ] = INT_MAX;
-#if CONFIG_PRED_FILTER
-    sf->thresh_mult[THR_NEWMV_FILT    ] = INT_MAX;
-    sf->thresh_mult[THR_NEARESTMV_FILT] = INT_MAX;
-    sf->thresh_mult[THR_ZEROMV_FILT   ] = INT_MAX;
-    sf->thresh_mult[THR_NEARMV_FILT   ] = INT_MAX;
-#endif
     sf->thresh_mult[THR_SPLITMV  ] = INT_MAX;
   }
 
@@ -1104,12 +972,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     sf->thresh_mult[THR_ZEROG    ] = INT_MAX;
     sf->thresh_mult[THR_NEARG    ] = INT_MAX;
     sf->thresh_mult[THR_NEWG     ] = INT_MAX;
-#if CONFIG_PRED_FILTER
-    sf->thresh_mult[THR_NEARESTG_FILT ] = INT_MAX;
-    sf->thresh_mult[THR_ZEROG_FILT    ] = INT_MAX;
-    sf->thresh_mult[THR_NEARG_FILT    ] = INT_MAX;
-    sf->thresh_mult[THR_NEWG_FILT     ] = INT_MAX;
-#endif
 #if CONFIG_COMP_INTERINTRA_PRED
     sf->thresh_mult[THR_COMP_INTERINTRA_ZEROG   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTG] = INT_MAX;
@@ -1124,12 +986,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     sf->thresh_mult[THR_ZEROA    ] = INT_MAX;
     sf->thresh_mult[THR_NEARA    ] = INT_MAX;
     sf->thresh_mult[THR_NEWA     ] = INT_MAX;
-#if CONFIG_PRED_FILTER
-    sf->thresh_mult[THR_NEARESTA_FILT ] = INT_MAX;
-    sf->thresh_mult[THR_ZEROA_FILT    ] = INT_MAX;
-    sf->thresh_mult[THR_NEARA_FILT    ] = INT_MAX;
-    sf->thresh_mult[THR_NEWA_FILT     ] = INT_MAX;
-#endif
 #if CONFIG_COMP_INTERINTRA_PRED
     sf->thresh_mult[THR_COMP_INTERINTRA_ZEROA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_INTERINTRA_NEARESTA] = INT_MAX;
@@ -2027,6 +1883,9 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 
   vp9_zero(cpi->y_uv_mode_count)
 
+  // AWG Initialize non-zero coeff histogram
+  //vp9_zero(cpi->coeff_hist);
+
   return (VP9_PTR) cpi;
 }
 
@@ -2866,38 +2725,6 @@ void select_interp_filter_type(VP9_COMP *cpi) {
   }
 }
 
-#if CONFIG_PRED_FILTER
-void select_pred_filter_mode(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-
-  int prob_pred_filter_off = cm->prob_pred_filter_off;
-
-  // Force filter on/off if probability is extreme
-  if (prob_pred_filter_off >= 255 * 0.95)
-    cm->pred_filter_mode = 0;   // Off at the frame level
-  else if (prob_pred_filter_off <= 255 * 0.05)
-    cm->pred_filter_mode = 1;   // On at the frame level
-  else
-    cm->pred_filter_mode = 2;   // Selectable at the MB level
-}
-
-void update_pred_filt_prob(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-
-  // Based on the selection in the previous frame determine what mode
-  // to use for the current frame and work out the signaling probability
-  cm->prob_pred_filter_off = get_binary_prob(cpi->pred_filter_off_count,
-                                             cpi->pred_filter_on_count);
-  /*
-      {
-        FILE *fp = fopen("filt_use.txt", "a");
-        fprintf (fp, "%d %d prob=%d\n", cpi->pred_filter_off_count,
-                 cpi->pred_filter_on_count, cm->prob_pred_filter_off);
-        fclose(fp);
-      }
-  */
-}
-#endif
 #if CONFIG_COMP_INTERINTRA_PRED
 static void select_interintra_mode(VP9_COMP *cpi) {
   static const double threshold = 0.01;
@@ -2958,7 +2785,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   /* list of filters to search over */
   int mcomp_filters_to_search[] = {
-    EIGHTTAP, EIGHTTAP_SHARP, SIXTAP, SWITCHABLE
+#if CONFIG_ENABLE_6TAP
+      EIGHTTAP, EIGHTTAP_SHARP, SIXTAP, SWITCHABLE
+#else
+      EIGHTTAP, EIGHTTAP_SHARP, EIGHTTAP_SMOOTH, SWITCHABLE
+#endif
   };
   int mcomp_filters = sizeof(mcomp_filters_to_search) /
       sizeof(*mcomp_filters_to_search);
@@ -3331,13 +3162,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
     vp9_clear_system_state();  // __asm emms;
 
-#if CONFIG_PRED_FILTER
-    // Update prediction filter on/off probability based on
-    // selection made for the current frame
-    if (cm->frame_type != KEY_FRAME)
-      update_pred_filt_prob(cpi);
-#endif
-
     // Dummy pack of the bitstream using up to date stats to get an
     // accurate estimate of output frame size to determine if we need
     // to recode.
@@ -3639,13 +3463,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cpi->mb.e_mbd.update_mb_segmentation_map) {
     update_reference_segmentation_map(cpi);
   }
-
-#if CONFIG_PRED_FILTER
-  // Select the prediction filtering mode to use for the
-  // next frame based on the current frame selections
-  if (cm->frame_type != KEY_FRAME)
-    select_pred_filter_mode(cpi);
-#endif
 
   update_reference_frames(cm);
   vp9_copy(cpi->common.fc.coef_counts_4x4, cpi->coef_counts_4x4);

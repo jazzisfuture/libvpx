@@ -259,6 +259,11 @@ static void tokenize_b(VP9_COMP *cpi,
 
       t->Extra = vp9_dct_value_tokens_ptr[v].Extra;
       token    = vp9_dct_value_tokens_ptr[v].Token;
+
+      // Update coeff histogram
+//      if (!dry_run && v) {
+//        ++cpi->coeff_hist[tx_type][tx_size][c];
+//      }
     } else {
       token = DCT_EOB_TOKEN;
     }
