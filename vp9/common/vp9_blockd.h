@@ -47,6 +47,14 @@ void vpx_log(const char *format, ...);
 #define MAX_MV_REFS 9
 #define MAX_MV_REF_CANDIDATES 4
 
+#if CONFIG_DWTDCTHYBRID
+#define DWT_MAX_LENGTH     64
+#define DWT_TYPE           26    // 26/53/97
+#define DWT_PRECISION_BITS 2
+#define DWT_PRECISION_RND  ((1 << DWT_PRECISION_BITS) / 2)
+#define DO_DCT_ONLYLL      1
+#endif
+
 typedef struct {
   int r, c;
 } POS;
