@@ -232,10 +232,7 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
           if (mb_col > 0 &&
               !((mb_col & 1) && mode_info_context->mbmi.sb_type &&
                 ((skip_lf && mb_lf_skip(&mode_info_context[-1].mbmi))
-#if CONFIG_TX32X32
-                || tx_size == TX_32X32
-#endif
-                )))
+                || tx_size == TX_32X32)))
             vp9_loop_filter_mbv(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
           if (!skip_lf) {
@@ -251,10 +248,7 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
           if (mb_row > 0 &&
               !((mb_row & 1) && mode_info_context->mbmi.sb_type &&
                 ((skip_lf && mb_lf_skip(&mode_info_context[-mis].mbmi))
-#if CONFIG_TX32X32
-                 || tx_size == TX_32X32
-#endif
-                 )))
+                 || tx_size == TX_32X32)))
             vp9_loop_filter_mbh(y_ptr, u_ptr, v_ptr, post->y_stride,
                                 post->uv_stride, &lfi);
           if (!skip_lf) {
