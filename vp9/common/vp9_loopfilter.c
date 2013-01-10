@@ -187,7 +187,6 @@ static int sb_mb_lf_skip(const MODE_INFO *const mip0,
                          const MODE_INFO *const mip1) {
   return mb_lf_skip(&mip0->mbmi) &&
          mb_lf_skip(&mip1->mbmi) &&
-         mip0->mbmi.txfm_size >= TX_32X32 &&
          mip0->mbmi.ref_frame;
 }
 void vp9_loop_filter_frame(VP9_COMMON *cm,
@@ -235,9 +234,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
           lfi.lim = lfi_n->lim[filter_level];
           lfi.hev_thr = lfi_n->hev_thr[hev_index];
 
-          if (mb_col > 0
-              && !((mb_col & 1) && mode_info_context->mbmi.sb_type &&
-                   sb_mb_lf_skip(mode_info_context - 1, mode_info_context))
+          if (mb_col > 0 &&
+              !((mb_col & 1) && mode_info_context->mbmi.sb_type &&
+                (sb_mb_lf_skip(mode_info_context - 1, mode_info_context) ||
+                 mode_info_context->mbmi.txfm_size >= TX_32X32))
               ) {
 #if CONFIG_WIDERLPF
             if (tx_size >= TX_16X16)
@@ -258,9 +258,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
 
           }
           /* don't apply across umv border */
-          if (mb_row > 0
-              && !((mb_row & 1) && mode_info_context->mbmi.sb_type &&
-                   sb_mb_lf_skip(mode_info_context - mis, mode_info_context))
+          if (mb_row > 0 &&
+              !((mb_row & 1) && mode_info_context->mbmi.sb_type &&
+                (sb_mb_lf_skip(mode_info_context - mis, mode_info_context) ||
+                mode_info_context->mbmi.txfm_size >= TX_32X32))
               ) {
 #if CONFIG_WIDERLPF
             if (tx_size >= TX_16X16)
