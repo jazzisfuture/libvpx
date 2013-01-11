@@ -1,0 +1,7 @@
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Fri, 11 Jan 2013 10:33:03 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/41128
+Project: webm/libvpx
+Branch: refs/heads/experimental
