@@ -604,6 +604,19 @@ void vp9_loop_filter_mbh_sse2(unsigned char *y_ptr,
                                               lfi->lim, lfi->hev_thr, v_ptr);
 }
 
+void vp9_lpf_mbh_w_sse2(unsigned char *y_ptr, unsigned char *u_ptr,
+                           unsigned char *v_ptr, int y_stride, int uv_stride,
+                           struct loop_filter_info *lfi) {
+  vp9_mb_lpf_horizontal_edge_w(y_ptr, y_stride,
+                                      lfi->mblim, lfi->lim, lfi->hev_thr, 2);
+
+  /* u,v */
+  if (u_ptr)
+    vp9_mbloop_filter_horizontal_edge_uv_sse2(u_ptr, uv_stride, lfi->mblim,
+                                              lfi->lim, lfi->hev_thr, v_ptr);
+}
+
+
 void vp9_loop_filter_bh8x8_sse2(unsigned char *y_ptr, unsigned char *u_ptr,
                              unsigned char *v_ptr, int y_stride, int uv_stride,
                              struct loop_filter_info *lfi) {
@@ -617,6 +630,18 @@ void vp9_loop_filter_mbv_sse2(unsigned char *y_ptr, unsigned char *u_ptr,
                               struct loop_filter_info *lfi) {
   vp9_mbloop_filter_vertical_edge_sse2(y_ptr, y_stride, lfi->mblim, lfi->lim,
                                        lfi->hev_thr);
+
+  /* u,v */
+  if (u_ptr)
+    vp9_mbloop_filter_vertical_edge_uv_sse2(u_ptr, uv_stride, lfi->mblim,
+                                            lfi->lim, lfi->hev_thr, v_ptr);
+}
+
+void vp9_lpf_mbv_w_sse2(unsigned char *y_ptr, unsigned char *u_ptr,
+                   unsigned char *v_ptr, int y_stride, int uv_stride,
+                   struct loop_filter_info *lfi) {
+  vp9_mb_lpf_vertical_edge_w(y_ptr, y_stride,
+                                    lfi->mblim, lfi->lim, lfi->hev_thr, 2);
 
   /* u,v */
   if (u_ptr)
