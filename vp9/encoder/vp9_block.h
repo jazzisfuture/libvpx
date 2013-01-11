@@ -36,10 +36,16 @@ typedef struct block {
   int16_t *zbin_8x8;
   int16_t *zbin_16x16;
   int16_t *zbin_32x32;
+#if CONFIG_TX64X64
+  int16_t *zbin_64x64;
+#endif  // CONFIG_TX64X64
   int16_t *zrun_zbin_boost;
   int16_t *zrun_zbin_boost_8x8;
   int16_t *zrun_zbin_boost_16x16;
   int16_t *zrun_zbin_boost_32x32;
+#if CONFIG_TX64X64
+  int16_t *zrun_zbin_boost_64x64;
+#endif  // CONFIG_TX64X64
   int16_t *round;
 
   // Zbin Over Quant value
@@ -54,6 +60,9 @@ typedef struct block {
   int eob_max_offset_8x8;
   int eob_max_offset_16x16;
   int eob_max_offset_32x32;
+#if CONFIG_TX64X64
+  int eob_max_offset_64x64;
+#endif  // CONFIG_TX64X64
 } BLOCK;
 
 typedef struct {
@@ -87,8 +96,8 @@ typedef struct {
 } PICK_MODE_CONTEXT;
 
 typedef struct superblock {
-  DECLARE_ALIGNED(16, int16_t, src_diff[32*32+16*16*2]);
-  DECLARE_ALIGNED(16, int16_t, coeff[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, int16_t, src_diff[64*64+32*32*2]);
+  DECLARE_ALIGNED(16, int16_t, coeff[64*64+32*32*2]);
 } SUPERBLOCK;
 
 typedef struct macroblock {
@@ -160,8 +169,8 @@ typedef struct macroblock {
 
   unsigned char *active_ptr;
 
-  vp9_coeff_count token_costs[TX_SIZE_MAX_SB][BLOCK_TYPES_4X4];
-  vp9_coeff_count hybrid_token_costs[TX_SIZE_MAX_SB][BLOCK_TYPES_4X4];
+  vp9_coeff_count token_costs[TX_SIZE_MAX_SB64][BLOCK_TYPES_4X4];
+  vp9_coeff_count hybrid_token_costs[TX_SIZE_MAX_MB][BLOCK_TYPES_4X4];
 
   int optimize;
 

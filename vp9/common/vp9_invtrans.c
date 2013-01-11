@@ -156,3 +156,14 @@ void vp9_inverse_transform_sbuv_16x16(SUPERBLOCKD *xd_sb) {
   vp9_inverse_transform_b_16x16(xd_sb->dqcoeff + 1280,
                                 xd_sb->diff + 1280, 32);
 }
+
+#if CONFIG_TX64X64
+void vp9_inverse_transform_sb64y_64x64(SUPERBLOCKD *xd_sb) {
+  vp9_short_idct64x64(xd_sb->dqcoeff, xd_sb->diff, 128);
+}
+
+void vp9_inverse_transform_sb64uv_32x32(SUPERBLOCKD *xd_sb) {
+  vp9_short_idct32x32(xd_sb->dqcoeff + 4096, xd_sb->diff + 4096, 64);
+  vp9_short_idct32x32(xd_sb->dqcoeff + 5120, xd_sb->diff + 5120, 64);
+}
+#endif  // CONFIG_TX64X64

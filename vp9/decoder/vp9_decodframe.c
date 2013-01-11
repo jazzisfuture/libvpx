@@ -747,6 +747,34 @@ static void decode_superblock64(VP9D_COMP *pbi, MACROBLOCKD *xd,
   }
 
   /* dequantization and idct */
+#if CONFIG_TX64X64
+  if (xd->mode_info_context->mbmi.txfm_size == TX_64X64) {
+    const int x_mbs = MIN(4, pc->mb_cols - mb_col);
+    const int y_mbs = MIN(4, pc->mb_rows - mb_row);
+
+    eobtotal = vp9_decode_sb64_tokens(pbi, xd, bc);
+    if (eobtotal == 0) {  // skip loopfilter
+      int x_idx, y_idx;
+
+      for (y_idx = 0; y_idx < y_mbs; y_idx++) {
+        for (x_idx = 0; x_idx < x_mbs; x_idx++) {
+          xd->mode_info_context[mis * y_idx + x_idx].mbmi.mb_skip_coeff = 1;
+        }
+      }
+    } else {
+      vp9_dequant_idct_add_64x64(xd->sb_coeff_data.qcoeff,
+                                 xd->block[0].dequant,
+                                 xd->dst.y_buffer, xd->dst.y_buffer,
+                                 xd->dst.y_stride, xd->dst.y_stride,
+                                 xd->eobs[0]);
+      vp9_dequant_idct_add_uv_block_32x32_c(xd->sb_coeff_data.qcoeff + 4096,
+                                            xd->block[16].dequant,
+                                            xd->dst.u_buffer,
+                                            xd->dst.v_buffer,
+                                            xd->dst.uv_stride, xd->eobs + 16);
+    }
+  } else
+#endif  // CONFIG_TX64X64
   if (xd->mode_info_context->mbmi.txfm_size == TX_32X32) {
     for (n = 0; n < 4; n++) {
       const int x_idx = n & 1, y_idx = n >> 1;
@@ -769,7 +797,8 @@ static void decode_superblock64(VP9D_COMP *pbi, MACROBLOCKD *xd,
             xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
         }
       } else {
-        vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff, xd->block[0].dequant,
+        vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff,
+                                   xd->block[0].dequant,
                                    xd->dst.y_buffer + x_idx * 32 +
                                        xd->dst.y_stride * y_idx * 32,
                                    xd->dst.y_buffer + x_idx * 32 +
@@ -881,7 +910,8 @@ static void decode_superblock32(VP9D_COMP *pbi, MACROBLOCKD *xd,
           xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
       }
     } else {
-      vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff, xd->block[0].dequant,
+      vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff,
+                                 xd->block[0].dequant,
                                  xd->dst.y_buffer, xd->dst.y_buffer,
                                  xd->dst.y_stride, xd->dst.y_stride,
                                  xd->eobs[0]);
@@ -1392,6 +1422,11 @@ static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
   if (pbi->common.txfm_mode > ALLOW_16X16) {
     read_coef_probs_common(bc, pc->fc.coef_probs_32x32, BLOCK_TYPES_32X32);
   }
+#if CONFIG_TX64X64
+  if (pbi->common.txfm_mode > ALLOW_32X32) {
+    read_coef_probs_common(bc, pc->fc.coef_probs_64x64, BLOCK_TYPES_64X64);
+  }
+#endif  // CONFIG_TX64X64
 }
 
 int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
@@ -1581,12 +1616,20 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
 
   /* Read the loop filter level and type */
   pc->txfm_mode = vp9_read_literal(&header_bc, 2);
-  if (pc->txfm_mode == 3)
+  if (pc->txfm_mode == 3) {
     pc->txfm_mode += vp9_read_bit(&header_bc);
+#if CONFIG_TX64X64
+    if (pc->txfm_mode == 4)
+      pc->txfm_mode += vp9_read_bit(&header_bc);
+#endif  // CONFIG_TX64X64
+  }
   if (pc->txfm_mode == TX_MODE_SELECT) {
     pc->prob_tx[0] = vp9_read_literal(&header_bc, 8);
     pc->prob_tx[1] = vp9_read_literal(&header_bc, 8);
     pc->prob_tx[2] = vp9_read_literal(&header_bc, 8);
+#if CONFIG_TX64X64
+    pc->prob_tx[3] = vp9_read_literal(&header_bc, 8);
+#endif  // CONFIG_TX64X64
   }
 
   pc->filter_type = (LOOPFILTERTYPE) vp9_read_bit(&header_bc);
@@ -1771,6 +1814,10 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
            pbi->common.fc.hybrid_coef_probs_16x16);
   vp9_copy(pbi->common.fc.pre_coef_probs_32x32,
            pbi->common.fc.coef_probs_32x32);
+#if CONFIG_TX64X64
+  vp9_copy(pbi->common.fc.pre_coef_probs_64x64,
+           pbi->common.fc.coef_probs_64x64);
+#endif  // CONFIG_TX64X64
   vp9_copy(pbi->common.fc.pre_ymode_prob, pbi->common.fc.ymode_prob);
   vp9_copy(pbi->common.fc.pre_sb_ymode_prob, pbi->common.fc.sb_ymode_prob);
   vp9_copy(pbi->common.fc.pre_uv_mode_prob, pbi->common.fc.uv_mode_prob);
@@ -1789,6 +1836,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   vp9_zero(pbi->common.fc.coef_counts_16x16);
   vp9_zero(pbi->common.fc.hybrid_coef_counts_16x16);
   vp9_zero(pbi->common.fc.coef_counts_32x32);
+#if CONFIG_TX64X64
+  vp9_zero(pbi->common.fc.coef_counts_64x64);
+#endif  // CONFIG_TX64X64
   vp9_zero(pbi->common.fc.ymode_counts);
   vp9_zero(pbi->common.fc.sb_ymode_counts);
   vp9_zero(pbi->common.fc.uv_mode_counts);
