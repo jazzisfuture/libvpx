@@ -206,7 +206,6 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                         }
 
 #endif
-
                         /* Special case code for cyclic refresh
                          * If cyclic update enabled then copy
                          * xd->mbmi.segment_id; (which may have been updated
@@ -218,20 +217,38 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                             (cpi->cyclic_refresh_mode_enabled &&
                              xd->segmentation_enabled))
                         {
+                            int max_consec = 8 >> (cpi->oxcf.number_of_layers - 1);
                             const MB_MODE_INFO * mbmi = &xd->mode_info_context->mbmi;
                             cpi->segmentation_map[map_index + mb_col] = mbmi->segment_id;
 
-                            /* If the block has been refreshed mark it as clean
-                             * (the magnitude of the -ve influences how long it
-                             * will be before we consider another refresh):
-                             * Else if it was coded (last frame 0,0) and has
-                             * not already been refreshed then mark it as a
-                             * candidate for cleanup next time (marked 0) else
-                             * mark it as dirty (1).
-                             */
+                            // Keep track of how many (consecutive) times a block is coded
+                            // as ZEROMV_LASTREF. Reset to 0 if its coded as anything else.
+                            if ((xd->mode_info_context->mbmi.mode == ZEROMV) &&
+                                (xd->mode_info_context->mbmi.ref_frame == LAST_FRAME))
+                            {
+                                // Increment, check for wrap-around.
+                                if (cpi->consec_zero_last_count[map_index+mb_col] < 127)
+                                  cpi->consec_zero_last_count[map_index+mb_col] += 1;
+                            }
+                            else
+                              cpi->consec_zero_last_count[map_index+mb_col] = 0;
+
+                            /* If the block has been refreshed mark it as clean (the
+                             * magnitude of the -ve influences how long it will be before
+                             * we consider another refresh):
+                             * Else if it was coded as ZEROMV_LASTREF and has been for at
+                             * least X consecutive times, and has not already been refreshed
+                             * then mark it as a candidate for cleanup next time (marked 0)
+                             * else mark it as dirty (1).
+                            */
+                            max_consec = (cpi->frames_since_key > max_consec)
+                                ? max_consec : cpi->frames_since_key;
                             if (mbmi->segment_id)
                                 cpi->cyclic_refresh_map[map_index + mb_col] = -1;
-                            else if ((mbmi->mode == ZEROMV) && (mbmi->ref_frame == LAST_FRAME))
+                            else if ((mbmi->mode == ZEROMV) &&
+                                (mbmi->ref_frame == LAST_FRAME) &&
+                                (cpi->consec_zero_last_count[map_index+mb_col]>
+                                 max_consec))
                             {
                                 if (cpi->cyclic_refresh_map[map_index + mb_col] == 1)
                                     cpi->cyclic_refresh_map[map_index + mb_col] = 0;

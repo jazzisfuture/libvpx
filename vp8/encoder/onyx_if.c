@@ -492,6 +492,11 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
 
         cpi->cyclic_refresh_mode_index = i;
     }
+    else
+    {
+        // Reset the consecutive ZEROMV_LASTREF count to 0 on key frame.
+        vpx_memset(cpi->consec_zero_last_count, 0, mbs_in_frame);
+    }
 
     /* Activate segmentation. */
     cpi->mb.e_mbd.update_mb_segmentation_map = 1;
@@ -538,6 +543,7 @@ static void set_default_lf_deltas(VP8_COMP *cpi)
 
     cpi->mb.e_mbd.mode_lf_deltas[2] = 2;               /* New mv */
     cpi->mb.e_mbd.mode_lf_deltas[3] = 4;               /* Split mv */
+
 }
 
 /* Convenience macros for mapping speed and mode into a continuous
@@ -1802,10 +1808,13 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     if (cpi->cyclic_refresh_mode_enabled)
     {
         CHECK_MEM_ERROR(cpi->cyclic_refresh_map, vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
+        CHECK_MEM_ERROR(cpi->consec_zero_last_count, vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
     }
     else
+    {
         cpi->cyclic_refresh_map = (signed char *) NULL;
-
+        cpi->consec_zero_last_count = (signed char *) NULL;
+    }
 #ifdef ENTROPY_STATS
     init_context_counters();
 #endif
@@ -2321,7 +2330,7 @@ void vp8_remove_compressor(VP8_COMP **ptr)
     vpx_free(cpi->mb.ss);
     vpx_free(cpi->tok);
     vpx_free(cpi->cyclic_refresh_map);
-
+    vpx_free(cpi->consec_zero_last_count);
     vp8_remove_common(&cpi->common);
     vpx_free(cpi);
     *ptr = 0;
@@ -3732,6 +3741,9 @@ static void encode_frame_to_data_rate
 
     /* Setup background Q adjustment for error resilient mode.
      * For multi-layer encodes only enable this for the base layer.
+     * Reduce or shut off loop filter to reduce "dot" artifacts that can occur
+     * for repeated loop filtering on ZEROMV_LASTREF blocks. For now reducing
+     * it to -32.
      */
     if (cpi->cyclic_refresh_mode_enabled)
     {
