@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
+ * Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -222,9 +222,20 @@ static void kfread_modes(VP9D_COMP *pbi,
     m->mbmi.txfm_size = vp9_read(bc, cm->prob_tx[0]);
     if (m->mbmi.txfm_size != TX_4X4 && m->mbmi.mode != I8X8_PRED) {
       m->mbmi.txfm_size += vp9_read(bc, cm->prob_tx[1]);
-      if (m->mbmi.txfm_size != TX_8X8 && m->mbmi.sb_type)
+      if (m->mbmi.txfm_size != TX_8X8 && m->mbmi.sb_type) {
         m->mbmi.txfm_size += vp9_read(bc, cm->prob_tx[2]);
+#if CONFIG_TX64X64
+        if (m->mbmi.txfm_size != TX_16X16 &&
+            m->mbmi.sb_type >= BLOCK_SIZE_SB64X64)
+          m->mbmi.txfm_size += vp9_read(bc, cm->prob_tx[3]);
+#endif  // CONFIG_TX64X64
+      }
     }
+#if CONFIG_TX64X64
+  } else if (m->mbmi.sb_type >= BLOCK_SIZE_SB64X64 &&
+             cm->txfm_mode >= ALLOW_64X64) {
+    m->mbmi.txfm_size = TX_64X64;
+#endif
   } else if (cm->txfm_mode >= ALLOW_32X32 && m->mbmi.sb_type) {
     m->mbmi.txfm_size = TX_32X32;
   } else if (cm->txfm_mode >= ALLOW_16X16 && m->mbmi.mode <= TM_PRED) {
@@ -1204,9 +1215,20 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     if (mbmi->txfm_size != TX_4X4 && mbmi->mode != I8X8_PRED &&
         mbmi->mode != SPLITMV) {
       mbmi->txfm_size += vp9_read(bc, cm->prob_tx[1]);
-      if (mbmi->sb_type && mbmi->txfm_size != TX_8X8)
+      if (mbmi->sb_type && mbmi->txfm_size != TX_8X8) {
         mbmi->txfm_size += vp9_read(bc, cm->prob_tx[2]);
+#if CONFIG_TX64X64
+        if (mbmi->txfm_size != TX_16X16 &&
+            mbmi->sb_type >= BLOCK_SIZE_SB64X64)
+          mbmi->txfm_size += vp9_read(bc, cm->prob_tx[3]);
+#endif  // CONFIG_TX64X64
+      }
     }
+#if CONFIG_TX64X64
+  } else if (mbmi->sb_type >= BLOCK_SIZE_SB64X64 &&
+             cm->txfm_mode >= ALLOW_64X64) {
+    mbmi->txfm_size = TX_64X64;
+#endif
   } else if (mbmi->sb_type && cm->txfm_mode >= ALLOW_32X32) {
     mbmi->txfm_size = TX_32X32;
   } else if (cm->txfm_mode >= ALLOW_16X16 &&

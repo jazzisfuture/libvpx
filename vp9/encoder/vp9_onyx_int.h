@@ -93,6 +93,9 @@ typedef struct {
   vp9_coeff_probs coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs hybrid_coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs coef_probs_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+  vp9_coeff_probs coef_probs_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
   vp9_prob sb_ymode_prob[VP9_I32X32_MODES - 1];
   vp9_prob ymode_prob[VP9_YMODES - 1]; /* interframe intra mode probs */
@@ -336,6 +339,14 @@ typedef struct VP9_COMP {
   DECLARE_ALIGNED(16, short, zrun_zbin_boost_y2_32x32[QINDEX_RANGE][1024]);
   DECLARE_ALIGNED(16, short, zrun_zbin_boost_uv_32x32[QINDEX_RANGE][1024]);
 
+#if CONFIG_TX64X64
+  // FIXME(rbultje): this is 4k x 2 x 256 = 2 MB per table, we can probably
+  // do with much less by storing this per-band and doing a single extra
+  // shuffle in the dequant SIMD code
+  DECLARE_ALIGNED(16, short, Y1zbin_64x64[QINDEX_RANGE][4096]);
+  DECLARE_ALIGNED(16, short, zrun_zbin_boost_y1_64x64[QINDEX_RANGE][4096]);
+#endif  // CONFIG_TX64X64
+
   MACROBLOCK mb;
   VP9_COMMON common;
   VP9_CONFIG oxcf;
@@ -384,6 +395,7 @@ typedef struct VP9_COMP {
   int comp_pred_count[COMP_PRED_CONTEXTS];
   int single_pred_count[COMP_PRED_CONTEXTS];
   // FIXME contextualize
+  int txfm_count_64x64p[TX_SIZE_MAX_SB64];
   int txfm_count_32x32p[TX_SIZE_MAX_SB];
   int txfm_count_16x16p[TX_SIZE_MAX_MB];
   int txfm_count_8x8p[TX_SIZE_MAX_MB - 1];
@@ -508,6 +520,12 @@ typedef struct VP9_COMP {
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES_32X32];
   vp9_coeff_probs frame_coef_probs_32x32[BLOCK_TYPES_32X32];
   vp9_coeff_stats frame_branch_ct_32x32[BLOCK_TYPES_32X32];
+
+#if CONFIG_TX64X64
+  vp9_coeff_count coef_counts_64x64[BLOCK_TYPES_64X64];
+  vp9_coeff_probs frame_coef_probs_64x64[BLOCK_TYPES_64X64];
+  vp9_coeff_stats frame_branch_ct_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
   int gfu_boost;
   int last_boost;

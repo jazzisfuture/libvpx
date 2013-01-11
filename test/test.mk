@@ -70,6 +70,9 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
+ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_TX64X64),yesyes)
+LIBVPX_TEST_SRCS-yes += dct64x64_test.cc
+endif
 endif # VP9
 
 

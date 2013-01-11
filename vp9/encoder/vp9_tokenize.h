@@ -38,6 +38,10 @@ extern int vp9_mbuv_is_skippable_8x8(MACROBLOCKD *xd);
 extern int vp9_mby_is_skippable_16x16(MACROBLOCKD *xd);
 extern int vp9_sby_is_skippable_32x32(MACROBLOCKD *xd);
 extern int vp9_sbuv_is_skippable_16x16(MACROBLOCKD *xd);
+#if CONFIG_TX64X64
+extern int vp9_sb64y_is_skippable_64x64(MACROBLOCKD *xd);
+extern int vp9_sb64uv_is_skippable_32x32(MACROBLOCKD *xd);
+#endif  // CONFIG_TX64X64
 
 struct VP9_COMP;
 
@@ -45,13 +49,25 @@ extern void vp9_tokenize_mb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                             TOKENEXTRA **t, int dry_run);
 extern void vp9_tokenize_sb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                             TOKENEXTRA **t, int dry_run);
+#if CONFIG_TX64X64
+extern void vp9_tokenize_sb64(struct VP9_COMP *cpi, MACROBLOCKD *xd,
+                              TOKENEXTRA **t, int dry_run);
+#endif  // CONFIG_TX64X64
 
 extern void vp9_stuff_mb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                          TOKENEXTRA **t, int dry_run);
 extern void vp9_stuff_sb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                          TOKENEXTRA **t, int dry_run);
+#if CONFIG_TX64X64
+extern void vp9_stuff_sb64(struct VP9_COMP *cpi, MACROBLOCKD *xd,
+                           TOKENEXTRA **t, int dry_run);
+#endif  // CONFIG_TX64X64
 
 extern void vp9_fix_contexts_sb(MACROBLOCKD *xd);
+#if CONFIG_TX64X64
+extern void vp9_fix_contexts_sb64(MACROBLOCKD *xd);
+#endif  // CONFIG_TX64X64
+
 #ifdef ENTROPY_STATS
 void init_context_counters();
 void print_context_counters();
@@ -60,6 +76,9 @@ extern vp9_coeff_accum context_counters_4x4[BLOCK_TYPES_4X4];
 extern vp9_coeff_accum context_counters_8x8[BLOCK_TYPES_8X8];
 extern vp9_coeff_accum context_counters_16x16[BLOCK_TYPES_16X16];
 extern vp9_coeff_accum context_counters_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+extern vp9_coeff_accum context_counters_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
 extern vp9_coeff_accum hybrid_context_counters_4x4[BLOCK_TYPES_4X4];
 extern vp9_coeff_accum hybrid_context_counters_8x8[BLOCK_TYPES_8X8];
