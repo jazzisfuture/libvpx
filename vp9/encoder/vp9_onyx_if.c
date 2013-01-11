@@ -3462,6 +3462,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_copy(cpi->common.fc.hybrid_coef_counts_16x16,
            cpi->hybrid_coef_counts_16x16);
   vp9_copy(cpi->common.fc.coef_counts_32x32, cpi->coef_counts_32x32);
+#if CONFIG_TX64X64
+  vp9_copy(cpi->common.fc.coef_counts_64x64, cpi->coef_counts_64x64);
+#endif  // CONFIG_TX64X64
   vp9_adapt_coef_probs(&cpi->common);
   if (cpi->common.frame_type != KEY_FRAME) {
     vp9_copy(cpi->common.fc.sb_ymode_counts, cpi->sb_ymode_count);

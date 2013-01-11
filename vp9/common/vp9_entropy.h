@@ -31,7 +31,7 @@ extern const int vp9_i8x8_block[4];
 #define DCT_VAL_CATEGORY3       7       /* 11-18     Extra Bits 3+1 */
 #define DCT_VAL_CATEGORY4       8       /* 19-34     Extra Bits 4+1 */
 #define DCT_VAL_CATEGORY5       9       /* 35-66     Extra Bits 5+1 */
-#define DCT_VAL_CATEGORY6       10      /* 67+       Extra Bits 13+1 */
+#define DCT_VAL_CATEGORY6       10      /* 67+       Extra Bits 15+1 */
 #define DCT_EOB_TOKEN           11      /* EOB       Extra Bits 0+0 */
 #define MAX_ENTROPY_TOKENS 12
 #define ENTROPY_NODES 11
@@ -55,7 +55,7 @@ extern vp9_extra_bit_struct vp9_extra_bits[12];    /* indexed by token value */
 #define PROB_UPDATE_BASELINE_COST   7
 
 #define MAX_PROB                255
-#define DCT_MAX_VALUE           16384
+#define DCT_MAX_VALUE           32768
 
 /* Coefficients are predicted via a 3-dimensional probability table. */
 
@@ -68,6 +68,11 @@ extern vp9_extra_bit_struct vp9_extra_bits[12];    /* indexed by token value */
 
 #define BLOCK_TYPES_32X32 4
 
+#if CONFIG_TX64X64
+// FIXME(rbultje): this should be 1, not 4
+#define BLOCK_TYPES_64X64 4
+#endif  // CONFIG_TX64X64
+
 /* Middle dimension is a coarsening of the coefficient's
    position within the 4x4 DCT. */
 
@@ -76,6 +81,9 @@ extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_4x4[16]);
 extern DECLARE_ALIGNED(64, const int, vp9_coef_bands_8x8[64]);
 extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_16x16[256]);
 extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_32x32[1024]);
+#if CONFIG_TX64X64
+extern DECLARE_ALIGNED(16, const int, vp9_coef_bands_64x64[4096]);
+#endif  // CONFIG_TX64X64
 
 /* Inside dimension is 3-valued measure of nearby complexity, that is,
    the extent to which nearby coefficients are nonzero.  For the first
@@ -119,6 +127,9 @@ extern DECLARE_ALIGNED(16, const int, vp9_row_scan_4x4[16]);
 extern DECLARE_ALIGNED(64, const int, vp9_default_zig_zag1d_8x8[64]);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_16x16[256]);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_32x32[1024]);
+#if CONFIG_TX64X64
+extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_64x64[4096]);
+#endif  // CONFIG_TX64X64
 
 void vp9_coef_tree_initialize(void);
 void vp9_adapt_coef_probs(struct VP9Common *);
@@ -150,5 +161,9 @@ extern DECLARE_ALIGNED(16, int, vp9_default_zig_zag1d_16x16_neighbors[
                        256 * MAX_NEIGHBORS]);
 extern DECLARE_ALIGNED(16, int, vp9_default_zig_zag1d_32x32_neighbors[
                        1024 * MAX_NEIGHBORS]);
+#if CONFIG_TX64X64
+extern DECLARE_ALIGNED(16, int, vp9_default_zig_zag1d_64x64_neighbors[
+                       4096 * MAX_NEIGHBORS]);
+#endif  // CONFIG_TX64X64
 #endif  // CONFIG_NEWCOEFCONTEXT
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

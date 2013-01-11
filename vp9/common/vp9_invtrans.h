@@ -42,4 +42,9 @@ extern void vp9_inverse_transform_mby_16x16(MACROBLOCKD *xd);
 extern void vp9_inverse_transform_sby_32x32(SUPERBLOCKD *xd_sb);
 extern void vp9_inverse_transform_sbuv_16x16(SUPERBLOCKD *xd_sb);
 
+#if CONFIG_TX64X64
+extern void vp9_inverse_transform_sb64y_64x64(SUPERBLOCKD *xd_sb);
+extern void vp9_inverse_transform_sb64uv_32x32(SUPERBLOCKD *xd_sb);
+#endif  // CONFIG_TX64X64
+
 #endif  // VP9_COMMON_VP9_INVTRANS_H_
