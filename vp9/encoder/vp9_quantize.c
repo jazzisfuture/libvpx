@@ -413,6 +413,42 @@ void vp9_quantize_sbuv_16x16(MACROBLOCK *x) {
              vp9_default_zig_zag1d_16x16, 1);
 }
 
+#if CONFIG_TX64X64
+void vp9_quantize_sb64y_64x64(MACROBLOCK *x) {
+  x->e_mbd.block[0].eob = 0;
+  quantize(x->block[0].zrun_zbin_boost_64x64,
+           x->sb_coeff_data.coeff,
+           4096, x->block[0].eob_max_offset_64x64,
+           x->block[0].zbin_64x64,
+           x->block[0].round, x->block[0].quant, x->block[0].quant_shift,
+           x->e_mbd.sb_coeff_data.qcoeff,
+           x->e_mbd.sb_coeff_data.dqcoeff,
+           x->e_mbd.block[0].dequant,
+           x->block[0].zbin_extra,
+           &x->e_mbd.block[0].eob,
+           vp9_default_zig_zag1d_64x64, 4);
+}
+
+void vp9_quantize_sb64uv_32x32(MACROBLOCK *x) {
+  int i;
+
+  x->e_mbd.block[16].eob = 0;
+  x->e_mbd.block[20].eob = 0;
+  for (i = 16; i < 24; i += 4)
+    quantize(x->block[i].zrun_zbin_boost_32x32,
+             x->sb_coeff_data.coeff + 4096 + (i - 16) * 256,
+             1024, x->block[i].eob_max_offset_32x32,
+             x->block[i].zbin_32x32,
+             x->block[i].round, x->block[0].quant, x->block[i].quant_shift,
+             x->e_mbd.sb_coeff_data.qcoeff + 4096 + (i - 16) * 256,
+             x->e_mbd.sb_coeff_data.dqcoeff + 4096 + (i - 16) * 256,
+             x->e_mbd.block[i].dequant,
+             x->block[i].zbin_extra,
+             &x->e_mbd.block[i].eob,
+             vp9_default_zig_zag1d_32x32, 2);
+}
+#endif  // CONFIG_TX64X64
+
 /* quantize_b_pair function pointer in MACROBLOCK structure is set to one of
  * these two C functions if corresponding optimized routine is not available.
  * NEON optimized version implements currently the fast quantization for pair
@@ -470,72 +506,8 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
     48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   };
-  static const int zbin_boost_32x32[1024] = {
-    0,  0,  0,  8,  8,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28,
-    30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-    48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-  };
+#define zbin_boost_32x32(x) zbin_boost_16x16[MIN(x, 255)]
+#define zbin_boost_64x64(x) zbin_boost_16x16[MIN(x, 255)]
   int qrounding_factor = 48;
 
 
@@ -567,8 +539,12 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       ((quant_val * zbin_boost_16x16[0]) + 64) >> 7;
     cpi->Y1zbin_32x32[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->zrun_zbin_boost_y1_32x32[Q][0] =
-     ((quant_val * zbin_boost_32x32[0]) + 64) >> 7;
-
+     ((quant_val * zbin_boost_32x32(0)) + 64) >> 7;
+#if CONFIG_TX64X64
+    cpi->Y1zbin_64x64[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
+    cpi->zrun_zbin_boost_y1_64x64[Q][0] =
+      ((quant_val * zbin_boost_64x64(0)) + 64) >> 7;
+#endif  // CONFIG_TX64X64
 
     quant_val = vp9_dc2quant(Q, cpi->common.y2dc_delta_q);
     invert_quant(cpi->Y2quant[Q] + 0,
@@ -576,13 +552,18 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     cpi->Y2zbin[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->Y2zbin_8x8[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->Y2zbin_16x16[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
+    cpi->Y2zbin_32x32[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->Y2round[Q][0] = (qrounding_factor * quant_val) >> 7;
     cpi->common.Y2dequant[Q][0] = quant_val;
     cpi->zrun_zbin_boost_y2[Q][0] = (quant_val * zbin_boost[0]) >> 7;
     cpi->zrun_zbin_boost_y2_8x8[Q][0] =
       ((quant_val * zbin_boost_8x8[0]) + 64) >> 7;
+#if CONFIG_TX64X64
     cpi->zrun_zbin_boost_y2_16x16[Q][0] =
       ((quant_val * zbin_boost_16x16[0]) + 64) >> 7;
+    cpi->zrun_zbin_boost_y2_32x32[Q][0] =
+      ((quant_val * zbin_boost_32x32(0)) + 64) >> 7;
+#endif
 
     quant_val = vp9_dc_uv_quant(Q, cpi->common.uvdc_delta_q);
     invert_quant(cpi->UVquant[Q] + 0,
@@ -590,6 +571,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     cpi->UVzbin[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->UVzbin_8x8[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->UVzbin_16x16[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
+    cpi->UVzbin_32x32[Q][0] = ((qzbin_factor * quant_val) + 64) >> 7;
     cpi->UVround[Q][0] = (qrounding_factor * quant_val) >> 7;
     cpi->common.UVdequant[Q][0] = quant_val;
     cpi->zrun_zbin_boost_uv[Q][0] = (quant_val * zbin_boost[0]) >> 7;
@@ -597,6 +579,10 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       ((quant_val * zbin_boost_8x8[0]) + 64) >> 7;
     cpi->zrun_zbin_boost_uv_16x16[Q][0] =
       ((quant_val * zbin_boost_16x16[0]) + 64) >> 7;
+#if CONFIG_TX64X64
+    cpi->zrun_zbin_boost_uv_32x32[Q][0] =
+      ((quant_val * zbin_boost_32x32(0)) + 64) >> 7;
+#endif
 
     // all the 4x4 ac values =;
     for (i = 1; i < 16; i++) {
@@ -641,6 +627,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       cpi->zrun_zbin_boost_y1_8x8[Q][i] =
         ((quant_val * zbin_boost_8x8[i]) + 64) >> 7;
 
+      // FIXME(rbultje): 2nd order Y2 only needs to be set for first 16
       quant_val = vp9_ac2quant(Q, cpi->common.y2ac_delta_q);
       cpi->Y2zbin_8x8[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
       cpi->zrun_zbin_boost_y2_8x8[Q][i] =
@@ -661,6 +648,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       cpi->zrun_zbin_boost_y1_16x16[Q][i] =
         ((quant_val * zbin_boost_16x16[i]) + 64) >> 7;
 
+      // FIXME(rbultje): 2nd order Y2 only needs to be set for first 16
       quant_val = vp9_ac2quant(Q, cpi->common.y2ac_delta_q);
       cpi->Y2zbin_16x16[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
       cpi->zrun_zbin_boost_y2_16x16[Q][i] =
@@ -678,8 +666,30 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       quant_val = vp9_ac_yquant(Q);
       cpi->Y1zbin_32x32[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
       cpi->zrun_zbin_boost_y1_32x32[Q][i] =
-        ((quant_val * zbin_boost_32x32[i]) + 64) >> 7;
+        ((quant_val * zbin_boost_32x32(i)) + 64) >> 7;
+
+      // FIXME(rbultje): 2nd order Y2 only needs to be set for first 16
+      quant_val = vp9_ac2quant(Q, cpi->common.y2ac_delta_q);
+      cpi->Y2zbin_32x32[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
+      cpi->zrun_zbin_boost_y2_32x32[Q][i] =
+        ((quant_val * zbin_boost_32x32(i)) + 64) >> 7;
+
+      quant_val = vp9_ac_uv_quant(Q, cpi->common.uvac_delta_q);
+      cpi->UVzbin_32x32[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
+      cpi->zrun_zbin_boost_uv_32x32[Q][i] =
+        ((quant_val * zbin_boost_32x32(i)) + 64) >> 7;
     }
+#if CONFIG_TX64X64
+    // 32x32 structures. Same comment above applies.
+    for (i = 1; i < 4096; i++) {
+      int rc = vp9_default_zig_zag1d_64x64[i];
+
+      quant_val = vp9_ac_yquant(Q);
+      cpi->Y1zbin_64x64[Q][rc] = ((qzbin_factor * quant_val) + 64) >> 7;
+      cpi->zrun_zbin_boost_y1_64x64[Q][i] =
+        ((quant_val * zbin_boost_64x64(i)) + 64) >> 7;
+    }
+#endif  // CONFIG_TX64X64
   }
 }
 
@@ -720,12 +730,18 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
     x->block[i].zbin_8x8 = cpi->Y1zbin_8x8[QIndex];
     x->block[i].zbin_16x16 = cpi->Y1zbin_16x16[QIndex];
     x->block[i].zbin_32x32 = cpi->Y1zbin_32x32[QIndex];
+#if CONFIG_TX64X64
+    x->block[i].zbin_64x64 = cpi->Y1zbin_64x64[QIndex];
+#endif  // CONFIG_TX64X64
     x->block[i].round = cpi->Y1round[QIndex];
     x->e_mbd.block[i].dequant = cpi->common.Y1dequant[QIndex];
     x->block[i].zrun_zbin_boost = cpi->zrun_zbin_boost_y1[QIndex];
     x->block[i].zrun_zbin_boost_8x8 = cpi->zrun_zbin_boost_y1_8x8[QIndex];
     x->block[i].zrun_zbin_boost_16x16 = cpi->zrun_zbin_boost_y1_16x16[QIndex];
     x->block[i].zrun_zbin_boost_32x32 = cpi->zrun_zbin_boost_y1_32x32[QIndex];
+#if CONFIG_TX64X64
+    x->block[i].zrun_zbin_boost_64x64 = cpi->zrun_zbin_boost_y1_64x64[QIndex];
+#endif  // CONFIG_TX64X64
     x->block[i].zbin_extra = (int16_t)zbin_extra;
 
     // Segment max eob offset feature.
@@ -737,12 +753,19 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
       x->block[i].eob_max_offset_16x16 =
         vp9_get_segdata(xd, segment_id, SEG_LVL_EOB);
       x->block[i].eob_max_offset_32x32 =
-      vp9_get_segdata(xd, segment_id, SEG_LVL_EOB);
+        vp9_get_segdata(xd, segment_id, SEG_LVL_EOB);
+#if CONFIG_TX64X64
+      x->block[i].eob_max_offset_64x64 =
+        vp9_get_segdata(xd, segment_id, SEG_LVL_EOB);
+#endif  // CONFIG_TX64X64
     } else {
       x->block[i].eob_max_offset = 16;
       x->block[i].eob_max_offset_8x8 = 64;
       x->block[i].eob_max_offset_16x16 = 256;
       x->block[i].eob_max_offset_32x32 = 1024;
+#if CONFIG_TX64X64
+      x->block[i].eob_max_offset_64x64 = 4096;
+#endif  // CONFIG_TX64X64
     }
   }
 
@@ -758,11 +781,15 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
     x->block[i].zbin = cpi->UVzbin[QIndex];
     x->block[i].zbin_8x8 = cpi->UVzbin_8x8[QIndex];
     x->block[i].zbin_16x16 = cpi->UVzbin_16x16[QIndex];
+    x->block[i].zbin_32x32 = cpi->UVzbin_32x32[QIndex];
     x->block[i].round = cpi->UVround[QIndex];
     x->e_mbd.block[i].dequant = cpi->common.UVdequant[QIndex];
     x->block[i].zrun_zbin_boost = cpi->zrun_zbin_boost_uv[QIndex];
     x->block[i].zrun_zbin_boost_8x8 = cpi->zrun_zbin_boost_uv_8x8[QIndex];
     x->block[i].zrun_zbin_boost_16x16 = cpi->zrun_zbin_boost_uv_16x16[QIndex];
+#if CONFIG_TX64X64
+    x->block[i].zrun_zbin_boost_32x32 = cpi->zrun_zbin_boost_uv_32x32[QIndex];
+#endif  // CONFIG_TX64X64
 
     x->block[i].zbin_extra = (int16_t)zbin_extra;
 
@@ -778,6 +805,9 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
       x->block[i].eob_max_offset = 16;
       x->block[i].eob_max_offset_8x8 = 64;
       x->block[i].eob_max_offset_16x16 = 256;
+#if CONFIG_TX64X64
+      x->block[i].eob_max_offset_32x32 = 1024;
+#endif  // CONFIG_TX64X64
     }
   }
 
@@ -792,11 +822,13 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
   x->block[24].zbin = cpi->Y2zbin[QIndex];
   x->block[24].zbin_8x8 = cpi->Y2zbin_8x8[QIndex];
   x->block[24].zbin_16x16 = cpi->Y2zbin_16x16[QIndex];
+  x->block[24].zbin_32x32 = cpi->Y2zbin_32x32[QIndex];
   x->block[24].round = cpi->Y2round[QIndex];
   x->e_mbd.block[24].dequant = cpi->common.Y2dequant[QIndex];
   x->block[24].zrun_zbin_boost = cpi->zrun_zbin_boost_y2[QIndex];
   x->block[24].zrun_zbin_boost_8x8 = cpi->zrun_zbin_boost_y2_8x8[QIndex];
   x->block[24].zrun_zbin_boost_16x16 = cpi->zrun_zbin_boost_y2_16x16[QIndex];
+  x->block[24].zrun_zbin_boost_32x32 = cpi->zrun_zbin_boost_y2_32x32[QIndex];
   x->block[24].zbin_extra = (int16_t)zbin_extra;
 
   // TBD perhaps not use for Y2
@@ -809,6 +841,8 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
   } else {
     x->block[24].eob_max_offset = 16;
     x->block[24].eob_max_offset_8x8 = 4;
+    x->block[24].eob_max_offset_16x16 = -1;  // FIXME(rbultje): implement for SB
+    x->block[24].eob_max_offset_32x32 = -1;  // FIXME(rbultje): implement for SB
   }
 
   /* save this macroblock QIndex for vp9_update_zbin_extra() */

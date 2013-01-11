@@ -463,6 +463,12 @@ static void update_state(VP9_COMP *cpi,
   }
   if (block_size == 16) {
     ctx->txfm_rd_diff[ALLOW_32X32] = ctx->txfm_rd_diff[ALLOW_16X16];
+#if CONFIG_TX64X64
+    ctx->txfm_rd_diff[ALLOW_64X64] = ctx->txfm_rd_diff[ALLOW_16X16];
+  }
+  if (block_size == 32) {
+    ctx->txfm_rd_diff[ALLOW_64X64] = ctx->txfm_rd_diff[ALLOW_32X32];
+#endif  // CONFIG_TX64X64
   }
 
   if (mb_mode == B_PRED) {
@@ -1298,6 +1304,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cpi->coef_counts_16x16);
   vp9_zero(cpi->hybrid_coef_counts_16x16);
   vp9_zero(cpi->coef_counts_32x32);
+#if CONFIG_TX64X64
+  vp9_zero(cpi->coef_counts_64x64);
+#endif  // CONFIG_TX64X64
 #if CONFIG_NEW_MVREF
   vp9_zero(cpi->mb_mv_ref_count);
 #endif
@@ -1321,6 +1330,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vpx_memset(cpi->rd_comp_pred_diff, 0, sizeof(cpi->rd_comp_pred_diff));
   vpx_memset(cpi->single_pred_count, 0, sizeof(cpi->single_pred_count));
   vpx_memset(cpi->comp_pred_count, 0, sizeof(cpi->comp_pred_count));
+  vpx_memset(cpi->txfm_count_64x64p, 0, sizeof(cpi->txfm_count_64x64p));
   vpx_memset(cpi->txfm_count_32x32p, 0, sizeof(cpi->txfm_count_32x32p));
   vpx_memset(cpi->txfm_count_16x16p, 0, sizeof(cpi->txfm_count_16x16p));
   vpx_memset(cpi->txfm_count_8x8p, 0, sizeof(cpi->txfm_count_8x8p));
@@ -1566,7 +1576,11 @@ void vp9_encode_frame(VP9_COMP *cpi) {
      * keyframe's probabilities as an estimate of what the current keyframe's
      * coefficient cost distributions may look like. */
     if (frame_type == 0) {
+#if CONFIG_TX64X64
+      txfm_type = ALLOW_64X64;
+#else  // CONFIG_TX64X64
       txfm_type = ALLOW_32X32;
+#endif  // CONFIG_TX64X64
     } else
 #if 0
     /* FIXME (rbultje)
@@ -1597,9 +1611,15 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     } else
       txfm_type = ALLOW_8X8;
 #else
+#if CONFIG_TX64X64
+    txfm_type = cpi->rd_tx_select_threshes[frame_type][ALLOW_64X64] >=
+                  cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
+                    ALLOW_64X64 : TX_MODE_SELECT;
+#else  // CONFIG_TX64X64
     txfm_type = cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32] >=
                   cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
                     ALLOW_32X32 : TX_MODE_SELECT;
+#endif  // CONFIG_TX64X64
 #endif
     cpi->common.txfm_mode = txfm_type;
     if (txfm_type != TX_MODE_SELECT) {
@@ -1643,29 +1663,54 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     }
 
     if (cpi->common.txfm_mode == TX_MODE_SELECT) {
-      const int count4x4 = cpi->txfm_count_16x16p[TX_4X4] +
-                           cpi->txfm_count_32x32p[TX_4X4] +
-                           cpi->txfm_count_8x8p[TX_4X4];
-      const int count8x8_lp = cpi->txfm_count_32x32p[TX_8X8] +
-                              cpi->txfm_count_16x16p[TX_8X8];
+      const int count4x4_lp = cpi->txfm_count_64x64p[TX_4X4] +
+                              cpi->txfm_count_32x32p[TX_4X4] +
+                              cpi->txfm_count_16x16p[TX_4X4] +
+                              cpi->txfm_count_8x8p[TX_4X4];
       const int count8x8_8x8p = cpi->txfm_count_8x8p[TX_8X8];
+      const int count8x8_lp = cpi->txfm_count_64x64p[TX_8X8] +
+                              cpi->txfm_count_32x32p[TX_8X8] +
+                              cpi->txfm_count_16x16p[TX_8X8];
       const int count16x16_16x16p = cpi->txfm_count_16x16p[TX_16X16];
-      const int count16x16_lp = cpi->txfm_count_32x32p[TX_16X16];
-      const int count32x32 = cpi->txfm_count_32x32p[TX_32X32];
+      const int count16x16_lp = cpi->txfm_count_32x32p[TX_16X16] +
+                                cpi->txfm_count_64x64p[TX_16X16];
+      const int count32x32_32x32p = cpi->txfm_count_32x32p[TX_32X32];
+      const int count32x32_lp = cpi->txfm_count_64x64p[TX_32X32];
+#if CONFIG_TX64X64
+      const int count64x64_64x64p = cpi->txfm_count_64x64p[TX_64X64];
+#else  // CONFIG_TX64X64
+      const int count64x64_64x64p = 0;
+#endif  // CONFIG_TX64X64
 
-      if (count4x4 == 0 && count16x16_lp == 0 && count16x16_16x16p == 0 &&
-          count32x32 == 0) {
-        cpi->common.txfm_mode = ALLOW_8X8;
-        reset_skip_txfm_size(cpi, TX_8X8);
-      } else if (count8x8_8x8p == 0 && count16x16_16x16p == 0 &&
-                 count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
-        cpi->common.txfm_mode = ONLY_4X4;
-        reset_skip_txfm_size(cpi, TX_4X4);
-      } else if (count8x8_lp == 0 && count16x16_lp == 0 && count4x4 == 0) {
+#if CONFIG_TX64X64
+      if (count32x32_lp == 0 && count16x16_lp == 0 &&
+          count8x8_lp == 0 && count4x4_lp == 0) {
+        cpi->common.txfm_mode = ALLOW_64X64;
+      } else
+#endif  // CONFIG_TX64X64
+      if (count64x64_64x64p == 0 && count16x16_lp == 0 &&
+          count8x8_lp == 0 && count4x4_lp == 0) {
         cpi->common.txfm_mode = ALLOW_32X32;
-      } else if (count32x32 == 0 && count8x8_lp == 0 && count4x4 == 0) {
+#if CONFIG_TX64X64
+        reset_skip_txfm_size(cpi, TX_32X32);
+#endif  // CONFIG_TX64X64
+      } else if (count64x64_64x64p == 0 &&
+                 count32x32_lp == 0 && count32x32_32x32p == 0 &&
+                 count8x8_lp == 0 && count4x4_lp == 0) {
         cpi->common.txfm_mode = ALLOW_16X16;
         reset_skip_txfm_size(cpi, TX_16X16);
+      } else if (count64x64_64x64p == 0 &&
+                 count32x32_32x32p == 0 && count32x32_lp == 0 &&
+                 count16x16_16x16p == 0 && count16x16_lp == 0 &&
+                 count4x4_lp == 0) {
+        cpi->common.txfm_mode = ALLOW_8X8;
+        reset_skip_txfm_size(cpi, TX_8X8);
+      } else if (count64x64_64x64p == 0 &&
+                 count32x32_32x32p == 0 && count32x32_lp == 0 &&
+                 count16x16_16x16p == 0 && count16x16_lp == 0 &&
+                 count8x8_8x8p == 0 && count8x8_lp == 0) {
+        cpi->common.txfm_mode = ONLY_4X4;
+        reset_skip_txfm_size(cpi, TX_4X4);
       }
     }
 
@@ -2471,6 +2516,7 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
         !((cm->mb_no_coeff_skip && skip[0] && skip[1] && skip[2] && skip[3]) ||
           (vp9_segfeature_active(xd, segment_id, SEG_LVL_EOB) &&
            vp9_get_segdata(xd, segment_id, SEG_LVL_EOB) == 0))) {
+      assert(mi->mbmi.txfm_size <= TX_32X32);
       cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
     } else {
       TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ?
@@ -2602,6 +2648,52 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
                                        xd->dst.y_stride, xd->dst.uv_stride);
   }
 
+#if CONFIG_TX64X64
+  if (xd->mode_info_context->mbmi.txfm_size == TX_64X64) {
+    int x_mbs = MIN(4, cm->mb_cols - mb_col),
+        y_mbs = MIN(4, cm->mb_rows - mb_row), x_idx, y_idx;
+
+    if (!x->skip) {
+      vp9_subtract_sb64y_s_c(x->sb_coeff_data.src_diff,
+                             src, src_y_stride, dst, dst_y_stride);
+      vp9_subtract_sb64uv_s_c(x->sb_coeff_data.src_diff,
+                              usrc, vsrc, src_uv_stride,
+                              udst, vdst, dst_uv_stride);
+      vp9_transform_sb64y_64x64(x);
+      vp9_transform_sb64uv_32x32(x);
+      vp9_quantize_sb64y_64x64(x);
+      vp9_quantize_sb64uv_32x32(x);
+      // TODO(rbultje): trellis optimize
+      vp9_inverse_transform_sb64uv_32x32(&x->e_mbd.sb_coeff_data);
+      vp9_inverse_transform_sb64y_64x64(&x->e_mbd.sb_coeff_data);
+      vp9_recon_sb64y_s_c(&x->e_mbd, dst);
+      vp9_recon_sb64uv_s_c(&x->e_mbd, udst, vdst);
+      vp9_tokenize_sb64(cpi, &x->e_mbd, t, !output_enabled);
+    } else {
+      int mb_skip_context = cpi->common.mb_no_coeff_skip ?
+                            (mi - 1)->mbmi.mb_skip_coeff +
+                                (mi - mis)->mbmi.mb_skip_coeff : 0;
+      xd->mode_info_context->mbmi.mb_skip_coeff = 1;
+      if (cm->mb_no_coeff_skip) {
+        if (output_enabled)
+          cpi->skip_true_count[mb_skip_context]++;
+        vp9_fix_contexts_sb64(xd);
+      } else {
+        vp9_stuff_sb64(cpi, xd, t, !output_enabled);
+        if (output_enabled)
+          cpi->skip_false_count[mb_skip_context]++;
+      }
+    }
+
+    // fill skip[0-3] and splat skip flag to all 16 sub-mis
+    for (y_idx = 0; y_idx < y_mbs; y_idx++) {
+      for (x_idx = !y_idx; x_idx < x_mbs; x_idx++) {
+        mi[mis * y_idx + x_idx].mbmi.mb_skip_coeff = mi->mbmi.mb_skip_coeff;
+      }
+    }
+    skip[0] = skip[1] = skip[2] = skip[3] = mi->mbmi.mb_skip_coeff;
+  } else
+#endif  // CONFIG_TX64X64
   if (xd->mode_info_context->mbmi.txfm_size == TX_32X32) {
     int n;
 
@@ -2672,6 +2764,9 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
       }
       skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
     }
+
+    xd->mode_info_context = mi;
+    update_sb64_skip_coeff_state(cpi, ta, tl, tp, t, skip, output_enabled);
   } else {
     for (n = 0; n < 16; n++) {
       const int x_idx = n & 3, y_idx = n >> 2;
@@ -2723,28 +2818,32 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
         }
       }
     }
-  }
 
-  xd->mode_info_context = mi;
-  update_sb64_skip_coeff_state(cpi, ta, tl, tp, t, skip, output_enabled);
+    xd->mode_info_context = mi;
+    update_sb64_skip_coeff_state(cpi, ta, tl, tp, t, skip, output_enabled);
+  }
 
   if (output_enabled) {
     if (cm->txfm_mode == TX_MODE_SELECT &&
         !((cm->mb_no_coeff_skip &&
-           ((mi->mbmi.txfm_size == TX_32X32 &&
+           ((mi->mbmi.txfm_size <= TX_32X32 &&
              skip[0] && skip[1] && skip[2] && skip[3]) ||
-            (mi->mbmi.txfm_size != TX_32X32 &&
+            (mi->mbmi.txfm_size < TX_32X32 &&
              skip[0] && skip[1] && skip[2] && skip[3] &&
              skip[4] && skip[5] && skip[6] && skip[7] &&
              skip[8] && skip[9] && skip[10] && skip[11] &&
              skip[12] && skip[13] && skip[14] && skip[15]))) ||
           (vp9_segfeature_active(xd, segment_id, SEG_LVL_EOB) &&
            vp9_get_segdata(xd, segment_id, SEG_LVL_EOB) == 0))) {
-      cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
+      cpi->txfm_count_64x64p[mi->mbmi.txfm_size]++;
     } else {
       int x, y;
       TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ?
+#if CONFIG_TX64X64
+                    TX_64X64 :
+#else  // CONFIG_TX64X64
                     TX_32X32 :
+#endif  // CONFIG_TX64X64
                     cm->txfm_mode;
       for (y = 0; y < 4; y++) {
         for (x = 0; x < 4; x++) {

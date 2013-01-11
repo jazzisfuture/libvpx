@@ -83,6 +83,16 @@ specialize vp9_dequant_idct_add_32x32
 prototype void vp9_dequant_idct_add_uv_block_16x16 "int16_t *q, const int16_t *dq, uint8_t *dstu, uint8_t *dstv, int stride, uint16_t *eobs"
 specialize vp9_dequant_idct_add_uv_block_16x16
 
+if [ "$CONFIG_TX64X64" = "yes" ]; then
+
+prototype void vp9_dequant_idct_add_64x64 "int16_t *q, const int16_t *dq, uint8_t *pre, uint8_t *dst, int pitch, int stride, int eob"
+specialize vp9_dequant_idct_add_64x64
+
+prototype void vp9_dequant_idct_add_uv_block_32x32 "int16_t *q, const int16_t *dq, uint8_t *dstu, uint8_t *dstv, int stride, uint16_t *eobs"
+specialize vp9_dequant_idct_add_uv_block_32x32
+
+fi
+
 #
 # RECON
 #
@@ -136,6 +146,16 @@ specialize vp9_recon_sby_s
 
 prototype void vp9_recon_sbuv_s "struct macroblockd *x, uint8_t *udst, uint8_t *vdst"
 specialize void vp9_recon_sbuv_s
+
+if [ "$CONFIG_TX64X64" = "yes" ]; then
+
+prototype void vp9_recon_sb64y_s "struct macroblockd *x, uint8_t *dst"
+specialize vp9_recon_sb64y_s
+
+prototype void vp9_recon_sb64uv_s "struct macroblockd *x, uint8_t *udst, uint8_t *vdst"
+specialize void vp9_recon_sb64uv_s
+
+fi
 
 prototype void vp9_build_intra_predictors_mby_s "struct macroblockd *x"
 specialize vp9_build_intra_predictors_mby_s
@@ -411,6 +431,13 @@ specialize vp9_short_idct10_16x16
 
 prototype void vp9_short_idct32x32 "int16_t *input, int16_t *output, int pitch"
 specialize vp9_short_idct32x32
+
+if [ "$CONFIG_TX64X64" = "yes" ]; then
+
+prototype void vp9_short_idct64x64 "int16_t *input, int16_t *output, int pitch"
+specialize vp9_short_idct64x64
+
+fi
 
 prototype void vp9_ihtllm "const int16_t *input, int16_t *output, int pitch, int tx_type, int tx_dim, int16_t eobs"
 specialize vp9_ihtllm
@@ -714,6 +741,13 @@ specialize vp9_short_fdct8x4
 
 prototype void vp9_short_walsh4x4 "int16_t *InputData, int16_t *OutputData, int pitch"
 specialize vp9_short_walsh4x4
+
+if [ "$CONFIG_TX64X64" = "yes" ]; then
+
+prototype void vp9_short_fdct64x64 "int16_t *InputData, int16_t *OutputData, int pitch"
+specialize vp9_short_fdct64x64
+
+fi
 
 prototype void vp9_short_fdct32x32 "int16_t *InputData, int16_t *OutputData, int pitch"
 specialize vp9_short_fdct32x32
