@@ -32,6 +32,9 @@ vp9_coeff_accum hybrid_context_counters_8x8[BLOCK_TYPES_8X8];
 vp9_coeff_accum context_counters_16x16[BLOCK_TYPES_16X16];
 vp9_coeff_accum hybrid_context_counters_16x16[BLOCK_TYPES_16X16];
 vp9_coeff_accum context_counters_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+vp9_coeff_accum context_counters_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
 extern vp9_coeff_stats tree_update_hist_4x4[BLOCK_TYPES_4X4];
 extern vp9_coeff_stats hybrid_tree_update_hist_4x4[BLOCK_TYPES_4X4];
@@ -40,6 +43,9 @@ extern vp9_coeff_stats hybrid_tree_update_hist_8x8[BLOCK_TYPES_8X8];
 extern vp9_coeff_stats tree_update_hist_16x16[BLOCK_TYPES_16X16];
 extern vp9_coeff_stats hybrid_tree_update_hist_16x16[BLOCK_TYPES_16X16];
 extern vp9_coeff_stats tree_update_hist_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+extern vp9_coeff_stats tree_update_hist_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 #endif  /* ENTROPY_STATS */
 
 static TOKENVALUE dct_value_tokens[DCT_MAX_VALUE * 2];
@@ -142,6 +148,17 @@ static void tokenize_b(VP9_COMP *cpi,
   ENTROPY_CONTEXT *const l1 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
       vp9_block2left[tx_size][ib];
 
+#if CONFIG_TX64X64
+  ENTROPY_CONTEXT *const a2 = (ENTROPY_CONTEXT *)(&xd->above_context[2]) +
+      vp9_block2above[tx_size][ib];
+  ENTROPY_CONTEXT *const l2 = (ENTROPY_CONTEXT *)(&xd->left_context[2]) +
+      vp9_block2left[tx_size][ib];
+  ENTROPY_CONTEXT *const a3 = (ENTROPY_CONTEXT *)(&xd->above_context[3]) +
+      vp9_block2above[tx_size][ib];
+  ENTROPY_CONTEXT *const l3 = (ENTROPY_CONTEXT *)(&xd->left_context[3]) +
+      vp9_block2left[tx_size][ib];
+#endif  // CONFIG_TX64X64
+
 
   switch (tx_size) {
     default:
@@ -211,20 +228,50 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     case TX_32X32:
 #if CONFIG_CNVCONTEXT
-      a_ec = a[0] + a[1] + a[2] + a[3] +
-             a1[0] + a1[1] + a1[2] + a1[3];
-      l_ec = l[0] + l[1] + l[2] + l[3] +
-             l1[0] + l1[1] + l1[2] + l1[3];
-      a_ec = a_ec != 0;
-      l_ec = l_ec != 0;
+      if (type != PLANE_TYPE_UV) {
+        a_ec = (a[0] + a[1] + a[2] + a[3] +
+                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
+        l_ec = (l[0] + l[1] + l[2] + l[3] +
+                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+      }
 #endif
       seg_eob = 1024;
       bands = vp9_coef_bands_32x32;
       scan = vp9_default_zig_zag1d_32x32;
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
+      if (type == PLANE_TYPE_UV) {
+        int uv_idx = (ib - 16) >> 2;
+        qcoeff_ptr = xd->sb_coeff_data.qcoeff + 4096 + 1024 * uv_idx;
+      } else {
+        qcoeff_ptr = xd->sb_coeff_data.qcoeff;
+      }
+      break;
+#if CONFIG_TX64X64
+    case TX_64X64:
+#if CONFIG_CNVCONTEXT
+      a_ec = (a[0] + a[1] + a[2] + a[3] +
+              a1[0] + a1[1] + a1[2] + a1[3] +
+              a2[0] + a2[1] + a2[2] + a2[3] +
+              a3[0] + a3[1] + a3[2] + a3[3]) != 0;
+      l_ec = (l[0] + l[1] + l[2] + l[3] +
+              l1[0] + l1[1] + l1[2] + l1[3] +
+              l2[0] + l2[1] + l2[2] + l2[3] +
+              l3[0] + l3[1] + l3[2] + l3[3]) != 0;
+#endif
+      seg_eob = 4096;
+      bands = vp9_coef_bands_64x64;
+      scan = vp9_default_zig_zag1d_64x64;
+      counts = cpi->coef_counts_64x64;
+      probs = cpi->common.fc.coef_probs_64x64;
       qcoeff_ptr = xd->sb_coeff_data.qcoeff;
       break;
+#endif  // CONFIG_TX64X64
   }
 
   VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
@@ -276,10 +323,13 @@ static void tokenize_b(VP9_COMP *cpi,
   l[0] = l_ec;
 
   if (tx_size == TX_8X8 && type != PLANE_TYPE_Y2) {
+    // FIXME(rbultje): if Y2 and SB, 2nd order should be 4x4
     a[1] = a_ec;
     l[1] = l_ec;
   } else if (tx_size == TX_16X16) {
+    // FIXME(rbultje): Y2 and Y-no-DC
     if (type != PLANE_TYPE_UV) {
+      assert(type == PLANE_TYPE_Y_WITH_DC);
       a[1] = a[2] = a[3] = a_ec;
       l[1] = l[2] = l[3] = l_ec;
     } else {
@@ -287,10 +337,38 @@ static void tokenize_b(VP9_COMP *cpi,
       l1[0] = l1[1] = l[1] = l_ec;
     }
   } else if (tx_size == TX_32X32) {
+    // FIXME(rbultje): Y2 and Y-no-DC
+#if CONFIG_TX64X64
+    if (type == PLANE_TYPE_UV) {
+      a[1] = a_ec;
+      a1[0] = a1[1] = a_ec;
+      a2[0] = a2[1] = a_ec;
+      a3[0] = a3[1] = a_ec;
+      l[1] = l_ec;
+      l1[0] = l1[1] = l_ec;
+      l2[0] = l2[1] = l_ec;
+      l3[0] = l3[1] = l_ec;
+    } else
+#endif  // CONFIG_TX64X64
+    {
+      assert(type == PLANE_TYPE_Y_WITH_DC);
+      a[1] = a[2] = a[3] = a_ec;
+      l[1] = l[2] = l[3] = l_ec;
+      a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
+      l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
+    }
+#if CONFIG_TX64X64
+  } else if (tx_size == TX_64X64) {
+    assert(type == PLANE_TYPE_Y_WITH_DC);
     a[1] = a[2] = a[3] = a_ec;
-    l[1] = l[2] = l[3] = l_ec;
     a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
+    a2[0] = a2[1] = a2[2] = a2[3] = a_ec;
+    a3[0] = a3[1] = a3[2] = a3[3] = a_ec;
+    l[1] = l[2] = l[3] = l_ec;
     l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
+    l2[0] = l2[1] = l2[2] = l2[3] = l_ec;
+    l3[0] = l3[1] = l3[2] = l3[3] = l_ec;
+#endif  // CONFIG_TX64X64
   }
 }
 
@@ -363,9 +441,7 @@ static int mb_is_skippable_16x16(MACROBLOCKD *xd) {
 }
 
 int vp9_sby_is_skippable_32x32(MACROBLOCKD *xd) {
-  int skip = 1;
-  skip &= !xd->block[0].eob;
-  return skip;
+  return (!xd->block[0].eob);
 }
 
 int vp9_sbuv_is_skippable_16x16(MACROBLOCKD *xd) {
@@ -376,6 +452,73 @@ static int sb_is_skippable_32x32(MACROBLOCKD *xd) {
   return vp9_sby_is_skippable_32x32(xd) &&
          vp9_sbuv_is_skippable_16x16(xd);
 }
+
+#if CONFIG_TX64X64
+int vp9_sb64y_is_skippable_64x64(MACROBLOCKD *xd) {
+  return (!xd->block[0].eob);
+}
+
+int vp9_sb64uv_is_skippable_32x32(MACROBLOCKD *xd) {
+  return (!xd->block[16].eob) & (!xd->block[20].eob);
+}
+
+static int sb64_is_skippable_64x64(MACROBLOCKD *xd) {
+  return vp9_sb64y_is_skippable_64x64(xd) &&
+  vp9_sb64uv_is_skippable_32x32(xd);
+}
+
+void vp9_tokenize_sb64(VP9_COMP *cpi,
+                       MACROBLOCKD *xd,
+                       TOKENEXTRA **t,
+                       int dry_run) {
+  VP9_COMMON * const cm = &cpi->common;
+  MB_MODE_INFO * const mbmi = &xd->mode_info_context->mbmi;
+  TOKENEXTRA *t_backup = *t;
+  ENTROPY_CONTEXT *A[4] = { (ENTROPY_CONTEXT *) (xd->above_context + 0),
+                            (ENTROPY_CONTEXT *) (xd->above_context + 1),
+                            (ENTROPY_CONTEXT *) (xd->above_context + 2),
+                            (ENTROPY_CONTEXT *) (xd->above_context + 3), };
+  ENTROPY_CONTEXT *L[4] = { (ENTROPY_CONTEXT *) (xd->left_context + 0),
+                            (ENTROPY_CONTEXT *) (xd->left_context + 1),
+                            (ENTROPY_CONTEXT *) (xd->left_context + 2),
+                            (ENTROPY_CONTEXT *) (xd->left_context + 3), };
+  const int mb_skip_context = vp9_get_pred_context(cm, xd, PRED_MBSKIP);
+  const int segment_id = mbmi->segment_id;
+  const int skip_inc =  !vp9_segfeature_active(xd, segment_id, SEG_LVL_EOB) ||
+                        (vp9_get_segdata(xd, segment_id, SEG_LVL_EOB) != 0);
+  int b;
+
+  mbmi->mb_skip_coeff = sb64_is_skippable_64x64(xd);
+
+  if (mbmi->mb_skip_coeff) {
+    if (!dry_run)
+      cpi->skip_true_count[mb_skip_context] += skip_inc;
+    if (!cm->mb_no_coeff_skip) {
+      vp9_stuff_sb64(cpi, xd, t, dry_run);
+    } else {
+      vp9_fix_contexts_sb64(xd);
+    }
+    if (dry_run)
+      *t = t_backup;
+    return;
+  }
+
+  if (!dry_run)
+    cpi->skip_false_count[mb_skip_context] += skip_inc;
+
+  tokenize_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC,
+             TX_64X64, dry_run);
+
+  for (b = 16; b < 24; b += 4) {
+    tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
+               TX_32X32, dry_run);
+  }
+  A[0][8] = L[0][8] = A[1][8] = L[1][8] =
+  A[2][8] = L[2][8] = A[3][8] = L[3][8] = 0;
+  if (dry_run)
+    *t = t_backup;
+}
+#endif
 
 void vp9_tokenize_sb(VP9_COMP *cpi,
                      MACROBLOCKD *xd,
@@ -678,6 +821,10 @@ void print_context_counters() {
                 "vp9_default_hybrid_coef_counts_16x16[BLOCK_TYPES_16X16]");
   print_counter(f, context_counters_32x32, BLOCK_TYPES_32X32,
                 "vp9_default_coef_counts_32x32[BLOCK_TYPES_32X32]");
+#if CONFIG_TX64X64
+  print_counter(f, context_counters_64x64, BLOCK_TYPES_64X64,
+                "vp9_default_coef_counts_64x64[BLOCK_TYPES_64X64]");
+#endif  // CONFIG_TX64X64
 
   /* print coefficient probabilities */
   print_probs(f, context_counters_4x4, BLOCK_TYPES_4X4,
@@ -694,6 +841,10 @@ void print_context_counters() {
               "default_hybrid_coef_probs_16x16[BLOCK_TYPES_16X16]");
   print_probs(f, context_counters_32x32, BLOCK_TYPES_32X32,
               "default_coef_probs_32x32[BLOCK_TYPES_32X32]");
+#if CONFIG_TX64X64
+  print_probs(f, context_counters_64x64, BLOCK_TYPES_64X64,
+              "default_coef_probs_64x64[BLOCK_TYPES_64X64]");
+#endif  // CONFIG_TX64X64
 
   fclose(f);
 
@@ -708,6 +859,9 @@ void print_context_counters() {
   fwrite(hybrid_context_counters_16x16,
          sizeof(hybrid_context_counters_16x16), 1, f);
   fwrite(context_counters_32x32, sizeof(context_counters_32x32), 1, f);
+#if CONFIG_TX64X64
+  fwrite(context_counters_64x64, sizeof(context_counters_64x64), 1, f);
+#endif  // CONFIG_TX64X64
   fclose(f);
 }
 #endif
@@ -740,6 +894,16 @@ static __inline void stuff_b(VP9_COMP *cpi,
       vp9_block2above[tx_size][ib];
   ENTROPY_CONTEXT *const l1 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
       vp9_block2left[tx_size][ib];
+#if CONFIG_TX64X64
+  ENTROPY_CONTEXT *const a2 = (ENTROPY_CONTEXT *)(&xd->above_context[1]) +
+      vp9_block2above[tx_size][ib];
+  ENTROPY_CONTEXT *const l2 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
+      vp9_block2left[tx_size][ib];
+  ENTROPY_CONTEXT *const a3 = (ENTROPY_CONTEXT *)(&xd->above_context[1]) +
+      vp9_block2above[tx_size][ib];
+  ENTROPY_CONTEXT *const l3 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
+      vp9_block2left[tx_size][ib];
+#endif  // CONFIG_TX64X64
 
   switch (tx_size) {
     default:
@@ -790,17 +954,39 @@ static __inline void stuff_b(VP9_COMP *cpi,
       break;
     case TX_32X32:
 #if CONFIG_CNVCONTEXT
-      a_ec = a[0] + a[1] + a[2] + a[3] +
-             a1[0] + a1[1] + a1[2] + a1[3];
-      l_ec = l[0] + l[1] + l[2] + l[3] +
-             l1[0] + l1[1] + l1[2] + l1[3];
-      a_ec = a_ec != 0;
-      l_ec = l_ec != 0;
+      if (type != PLANE_TYPE_UV) {
+        a_ec = (a[0] + a[1] + a[2] + a[3] +
+                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
+        l_ec = (l[0] + l[1] + l[2] + l[3] +
+                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+      }
 #endif
       bands = vp9_coef_bands_32x32;
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
       break;
+#if CONFIG_TX64X64
+    case TX_64X64:
+#if CONFIG_CNVCONTEXT
+      a_ec = (a[0] + a[1] + a[2] + a[3] +
+              a1[0] + a1[1] + a1[2] + a1[3] +
+              a2[0] + a2[1] + a2[2] + a2[3] +
+              a3[0] + a3[1] + a3[2] + a3[3]) != 0;
+      l_ec = (l[0] = l[1] + l[2] + l[3] +
+              l1[0] + l1[1] + l1[2] + l1[3] +
+              l2[0] + l2[1] + l2[2] + l2[3] +
+              l3[0] + l3[1] + l3[2] + l3[3]) != 0;
+#endif
+      bands = vp9_coef_bands_64x64;
+      counts = cpi->coef_counts_64x64;
+      probs = cpi->common.fc.coef_probs_64x64;
+      break;
+#endif  // CONFIG_TX64X64
   }
 
   VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
@@ -813,10 +999,13 @@ static __inline void stuff_b(VP9_COMP *cpi,
   *tp = t;
   *a = *l = 0;
   if (tx_size == TX_8X8 && type != PLANE_TYPE_Y2) {
+    // FIXME(rbultje) Y2 for SB should be 4x4
     a[1] = 0;
     l[1] = 0;
   } else if (tx_size == TX_16X16) {
+    // FIXME(rbultje): Y2 and Y-no-DC
     if (type != PLANE_TYPE_UV) {
+      assert(type == PLANE_TYPE_Y_WITH_DC);
       a[1] = a[2] = a[3] = 0;
       l[1] = l[2] = l[3] = 0;
     } else {
@@ -824,10 +1013,38 @@ static __inline void stuff_b(VP9_COMP *cpi,
       l1[0] = l1[1] = l[1] = l_ec;
     }
   } else if (tx_size == TX_32X32) {
+    // FIXME(rbultje): Y2 and Y-no-DC
+#if CONFIG_TX64X64
+    if (type == PLANE_TYPE_UV) {
+      a[1] = a_ec;
+      l[1] = l_ec;
+      a1[0] = a1[1] = a_ec;
+      a2[0] = a2[1] = a_ec;
+      a3[0] = a3[1] = a_ec;
+      l1[0] = l1[1] = l_ec;
+      l2[0] = l2[1] = l_ec;
+      l3[0] = l3[1] = l_ec;
+    } else
+#endif  // CONFIG_TX64X64
+    {
+      assert(type == PLANE_TYPE_Y_WITH_DC);
+      a[1] = a[2] = a[3] = a_ec;
+      l[1] = l[2] = l[3] = l_ec;
+      a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
+      l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
+    }
+#if CONFIG_TX64X64
+  } else if (tx_size == TX_64X64) {
+    assert(type == PLANE_TYPE_Y_WITH_DC);
     a[1] = a[2] = a[3] = a_ec;
-    l[1] = l[2] = l[3] = l_ec;
     a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
+    a2[0] = a2[1] = a2[2] = a2[3] = a_ec;
+    a3[0] = a3[1] = a3[2] = a3[3] = a_ec;
+    l[1] = l[2] = l[3] = l_ec;
     l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
+    l2[0] = l2[1] = l2[2] = l2[3] = l_ec;
+    l3[0] = l3[1] = l3[2] = l3[3] = l_ec;
+#endif  // CONFIG_TX64X64
   }
 
   if (!dry_run) {
@@ -965,3 +1182,31 @@ void vp9_fix_contexts_sb(MACROBLOCKD *xd) {
   vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * 2);
   vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * 2);
 }
+
+#if CONFIG_TX64X64
+static void stuff_sb64_64x64(VP9_COMP *cpi, MACROBLOCKD *xd,
+                             TOKENEXTRA **t, int dry_run) {
+  int b;
+
+  stuff_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC, TX_64X64, dry_run);
+  for (b = 16; b < 24; b += 4) {
+    stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_32X32, dry_run);
+  }
+}
+
+void vp9_stuff_sb64(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t,
+                    int dry_run) {
+  TOKENEXTRA * const t_backup = *t;
+
+  stuff_sb64_64x64(cpi, xd, t, dry_run);
+
+  if (dry_run) {
+    *t = t_backup;
+  }
+}
+
+void vp9_fix_contexts_sb64(MACROBLOCKD *xd) {
+  vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * 4);
+  vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * 4);
+}
+#endif  // CONFIG_TX64X64

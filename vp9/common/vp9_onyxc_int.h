@@ -56,6 +56,9 @@ typedef struct frame_contexts {
   vp9_coeff_probs coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs hybrid_coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs coef_probs_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+  vp9_coeff_probs coef_probs_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
   nmv_context nmvc;
   nmv_context pre_nmvc;
@@ -81,6 +84,9 @@ typedef struct frame_contexts {
   vp9_coeff_probs pre_coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs pre_hybrid_coef_probs_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_probs pre_coef_probs_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+  vp9_coeff_probs pre_coef_probs_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
   vp9_coeff_count coef_counts_4x4[BLOCK_TYPES_4X4];
   vp9_coeff_count hybrid_coef_counts_4x4[BLOCK_TYPES_4X4];
@@ -89,6 +95,9 @@ typedef struct frame_contexts {
   vp9_coeff_count coef_counts_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_count hybrid_coef_counts_16x16[BLOCK_TYPES_16X16];
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_TX64X64
+  vp9_coeff_count coef_counts_64x64[BLOCK_TYPES_64X64];
+#endif  // CONFIG_TX64X64
 
   nmv_context_counts NMVcount;
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
@@ -120,8 +129,11 @@ typedef enum {
   ALLOW_8X8           = 1,
   ALLOW_16X16         = 2,
   ALLOW_32X32         = 3,
-  TX_MODE_SELECT      = 4,
-  NB_TXFM_MODES       = 5,
+#if CONFIG_TX64X64
+  ALLOW_64X64,
+#endif  // CONFIG_TX64X64
+  TX_MODE_SELECT,
+  NB_TXFM_MODES,
 } TXFM_MODE;
 
 typedef struct VP9Common {

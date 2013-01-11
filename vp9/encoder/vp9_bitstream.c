@@ -972,8 +972,13 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     vp9_write(bc, sz != TX_4X4, pc->prob_tx[0]);
     if (sz != TX_4X4 && mode != I8X8_PRED && mode != SPLITMV) {
       vp9_write(bc, sz != TX_8X8, pc->prob_tx[1]);
-      if (mi->sb_type && sz != TX_8X8)
+      if (mi->sb_type && sz != TX_8X8) {
         vp9_write(bc, sz != TX_16X16, pc->prob_tx[2]);
+#if CONFIG_TX64X64
+        if (mi->sb_type == BLOCK_SIZE_SB64X64 && sz != TX_16X16)
+          vp9_write(bc, sz != TX_32X32, pc->prob_tx[3]);
+#endif  // CONFIG_TX64X64
+      }
     }
   }
 }
@@ -1076,8 +1081,13 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     vp9_write(bc, sz != TX_4X4, c->prob_tx[0]);
     if (sz != TX_4X4 && ym <= TM_PRED) {
       vp9_write(bc, sz != TX_8X8, c->prob_tx[1]);
-      if (m->mbmi.sb_type && sz != TX_8X8)
+      if (m->mbmi.sb_type && sz != TX_8X8) {
         vp9_write(bc, sz != TX_16X16, c->prob_tx[2]);
+#if CONFIG_TX64X64
+        if (m->mbmi.sb_type == BLOCK_SIZE_SB64X64 && sz != TX_16X16)
+          vp9_write(bc, sz != TX_32X32, c->prob_tx[3]);
+#endif  // CONFIG_TX64X64
+      }
     }
   }
 }
@@ -1264,6 +1274,14 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
                           cpi, context_counters_32x32,
 #endif
                           cpi->frame_branch_ct_32x32, BLOCK_TYPES_32X32);
+#if CONFIG_TX64X64
+  build_tree_distribution(cpi->frame_coef_probs_64x64,
+                          cpi->coef_counts_64x64,
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_64x64,
+#endif
+                          cpi->frame_branch_ct_64x64, BLOCK_TYPES_64X64);
+#endif  // CONFIG_TX64X64
 }
 
 static void update_coef_probs_common(vp9_writer* const bc,
@@ -1451,6 +1469,20 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                              cpi->frame_branch_ct_32x32,
                              BLOCK_TYPES_32X32);
   }
+
+#if CONFIG_TX64X64
+  if (cpi->common.txfm_mode > ALLOW_32X32) {
+    update_coef_probs_common(bc,
+#ifdef ENTROPY_STATS
+                             cpi,
+                             tree_update_hist_64x64,
+#endif
+                             cpi->frame_coef_probs_64x64,
+                             cpi->common.fc.coef_probs_64x64,
+                             cpi->frame_branch_ct_64x64,
+                             BLOCK_TYPES_64X64);
+  }
+#endif  // CONFIG_TX64X64
 }
 
 #ifdef PACKET_TESTING
@@ -1685,41 +1717,68 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
 
   {
     if (pc->txfm_mode == TX_MODE_SELECT) {
-      pc->prob_tx[0] = get_prob(cpi->txfm_count_32x32p[TX_4X4] +
-                                cpi->txfm_count_16x16p[TX_4X4] +
-                                cpi->txfm_count_8x8p[TX_4X4],
-                                cpi->txfm_count_32x32p[TX_4X4] +
-                                cpi->txfm_count_32x32p[TX_8X8] +
-                                cpi->txfm_count_32x32p[TX_16X16] +
-                                cpi->txfm_count_32x32p[TX_32X32] +
-                                cpi->txfm_count_16x16p[TX_4X4] +
-                                cpi->txfm_count_16x16p[TX_8X8] +
-                                cpi->txfm_count_16x16p[TX_16X16] +
-                                cpi->txfm_count_8x8p[TX_4X4] +
-                                cpi->txfm_count_8x8p[TX_8X8]);
-      pc->prob_tx[1] = get_prob(cpi->txfm_count_32x32p[TX_8X8] +
-                                cpi->txfm_count_16x16p[TX_8X8],
-                                cpi->txfm_count_32x32p[TX_8X8] +
-                                cpi->txfm_count_32x32p[TX_16X16] +
-                                cpi->txfm_count_32x32p[TX_32X32] +
-                                cpi->txfm_count_16x16p[TX_8X8] +
-                                cpi->txfm_count_16x16p[TX_16X16]);
-      pc->prob_tx[2] = get_prob(cpi->txfm_count_32x32p[TX_16X16],
-                                cpi->txfm_count_32x32p[TX_16X16] +
-                                cpi->txfm_count_32x32p[TX_32X32]);
+      pc->prob_tx[0] = get_binary_prob(cpi->txfm_count_64x64p[TX_4X4] +
+                                       cpi->txfm_count_32x32p[TX_4X4] +
+                                       cpi->txfm_count_16x16p[TX_4X4] +
+                                       cpi->txfm_count_8x8p[TX_4X4],
+                                       cpi->txfm_count_64x64p[TX_8X8] +
+                                       cpi->txfm_count_64x64p[TX_16X16] +
+                                       cpi->txfm_count_64x64p[TX_32X32] +
+#if CONFIG_TX64X64
+                                       cpi->txfm_count_64x64p[TX_64X64] +
+#endif  // CONFIG_TX64X64
+                                       cpi->txfm_count_32x32p[TX_8X8] +
+                                       cpi->txfm_count_32x32p[TX_16X16] +
+                                       cpi->txfm_count_32x32p[TX_32X32] +
+                                       cpi->txfm_count_16x16p[TX_8X8] +
+                                       cpi->txfm_count_16x16p[TX_16X16] +
+                                       cpi->txfm_count_8x8p[TX_8X8]);
+      pc->prob_tx[1] = get_binary_prob(cpi->txfm_count_64x64p[TX_8X8] +
+                                       cpi->txfm_count_32x32p[TX_8X8] +
+                                       cpi->txfm_count_16x16p[TX_8X8],
+                                       cpi->txfm_count_64x64p[TX_16X16] +
+                                       cpi->txfm_count_64x64p[TX_32X32] +
+#if CONFIG_TX64X64
+                                       cpi->txfm_count_64x64p[TX_64X64] +
+#endif  // CONFIG_TX64X64
+                                       cpi->txfm_count_32x32p[TX_16X16] +
+                                       cpi->txfm_count_32x32p[TX_32X32] +
+                                       cpi->txfm_count_16x16p[TX_16X16]);
+      pc->prob_tx[2] = get_binary_prob(cpi->txfm_count_64x64p[TX_16X16] +
+                                       cpi->txfm_count_32x32p[TX_16X16],
+                                       cpi->txfm_count_64x64p[TX_32X32] +
+#if CONFIG_TX64X64
+                                       cpi->txfm_count_64x64p[TX_64X64] +
+#endif // CONFIG_TX64X64
+                                       cpi->txfm_count_32x32p[TX_32X32]);
+#if CONFIG_TX64X64
+      pc->prob_tx[3] = get_binary_prob(cpi->txfm_count_64x64p[TX_32X32],
+                                       cpi->txfm_count_64x64p[TX_64X64]);
+#endif  // CONFIG_TX64X64
     } else {
       pc->prob_tx[0] = 128;
       pc->prob_tx[1] = 128;
       pc->prob_tx[2] = 128;
+#if CONFIG_TX64X64
+      pc->prob_tx[3] = 128;
+#endif  // CONFIG_TX64X64
     }
-    vp9_write_literal(&header_bc, pc->txfm_mode <= 3 ? pc->txfm_mode : 3, 2);
+    // FIXME(rbultje): probably code as a tree
+    vp9_write_literal(&header_bc, MIN(pc->txfm_mode, 3), 2);
     if (pc->txfm_mode > ALLOW_16X16) {
-      vp9_write_bit(&header_bc, pc->txfm_mode == TX_MODE_SELECT);
+      vp9_write_bit(&header_bc, pc->txfm_mode != ALLOW_32X32);
+#if CONFIG_TX64X64
+      if (pc->txfm_mode > ALLOW_32X32)
+        vp9_write_bit(&header_bc, pc->txfm_mode == TX_MODE_SELECT);
+#endif  // CONFIG_TX64X64
     }
     if (pc->txfm_mode == TX_MODE_SELECT) {
       vp9_write_literal(&header_bc, pc->prob_tx[0], 8);
       vp9_write_literal(&header_bc, pc->prob_tx[1], 8);
       vp9_write_literal(&header_bc, pc->prob_tx[2], 8);
+#if CONFIG_TX64X64
+      vp9_write_literal(&header_bc, pc->prob_tx[3], 8);
+#endif  // CONFIG_TX64X64
     }
   }
 
@@ -1942,6 +2001,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
            cpi->common.fc.hybrid_coef_probs_16x16);
   vp9_copy(cpi->common.fc.pre_coef_probs_32x32,
            cpi->common.fc.coef_probs_32x32);
+#if CONFIG_TX64X64
+  vp9_copy(cpi->common.fc.pre_coef_probs_64x64,
+           cpi->common.fc.coef_probs_64x64);
+#endif  // CONFIG_TX64X64
   vp9_copy(cpi->common.fc.pre_sb_ymode_prob, cpi->common.fc.sb_ymode_prob);
   vp9_copy(cpi->common.fc.pre_ymode_prob, cpi->common.fc.ymode_prob);
   vp9_copy(cpi->common.fc.pre_uv_mode_prob, cpi->common.fc.uv_mode_prob);
@@ -2105,6 +2168,10 @@ void print_tree_update_probs() {
                              "vp9_coef_update_probs_16x16[BLOCK_TYPES_16X16]");
   print_tree_update_for_type(f, tree_update_hist_32x32, BLOCK_TYPES_32X32,
                              "vp9_coef_update_probs_32x32[BLOCK_TYPES_32X32]");
+#if CONFIG_TX64X64
+  print_tree_update_for_type(f, tree_update_hist_64x64, BLOCK_TYPES_64X64,
+                             "vp9_coef_update_probs_64x64[BLOCK_TYPES_64X64]");
+#endif  // CONFIG_TX64X64
 
   fclose(f);
   f = fopen("treeupdate.bin", "wb");

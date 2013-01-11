@@ -127,6 +127,12 @@ typedef enum {
   TX_SIZE_MAX_MB = 3,              // Number of different transforms available
   TX_32X32 = TX_SIZE_MAX_MB,       // 32x32 dct transform
   TX_SIZE_MAX_SB,                  // Number of transforms available to SBs
+#if CONFIG_TX64X64
+  TX_64X64 = TX_SIZE_MAX_SB,
+  TX_SIZE_MAX_SB64,
+#else  // CONFIG_TX64X64
+  TX_SIZE_MAX_SB64 = TX_SIZE_MAX_SB,
+#endif  // CONFIG_TX64X64
 } TX_SIZE;
 
 typedef enum {
@@ -299,9 +305,9 @@ typedef struct blockd {
 
 typedef struct superblockd {
   /* 32x32 Y and 16x16 U/V. No 2nd order transform yet. */
-  DECLARE_ALIGNED(16, int16_t, diff[32*32+16*16*2]);
-  DECLARE_ALIGNED(16, int16_t, qcoeff[32*32+16*16*2]);
-  DECLARE_ALIGNED(16, int16_t, dqcoeff[32*32+16*16*2]);
+  DECLARE_ALIGNED(16, int16_t, diff[64*64+32*32*2]);
+  DECLARE_ALIGNED(16, int16_t, qcoeff[64*64+32*32*2]);
+  DECLARE_ALIGNED(16, int16_t, dqcoeff[64*64+32*32*2]);
 } SUPERBLOCKD;
 
 typedef struct macroblockd {
@@ -488,8 +494,8 @@ static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
   return tx_type;
 }
 
-extern const uint8_t vp9_block2left[TX_SIZE_MAX_SB][25];
-extern const uint8_t vp9_block2above[TX_SIZE_MAX_SB][25];
+extern const uint8_t vp9_block2left[TX_SIZE_MAX_SB64][25];
+extern const uint8_t vp9_block2above[TX_SIZE_MAX_SB64][25];
 
 #define USE_ADST_FOR_I16X16_8X8   0
 #define USE_ADST_FOR_I16X16_4X4   0

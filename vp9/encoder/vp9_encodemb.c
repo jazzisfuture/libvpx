@@ -152,6 +152,52 @@ void vp9_subtract_sbuv_s_c(int16_t *diff, const uint8_t *usrc,
   }
 }
 
+#if CONFIG_TX64X64
+void vp9_subtract_sb64y_s_c(int16_t *diff, const uint8_t *src, int src_stride,
+                            const uint8_t *pred, int dst_stride) {
+  int r, c;
+
+  for (r = 0; r < 64; r++) {
+    for (c = 0; c < 64; c++) {
+      diff[c] = src[c] - pred[c];
+    }
+
+    diff += 64;
+    pred += dst_stride;
+    src  += src_stride;
+  }
+}
+
+void vp9_subtract_sb64uv_s_c(int16_t *diff, const uint8_t *usrc,
+                             const uint8_t *vsrc, int src_stride,
+                             const uint8_t *upred,
+                             const uint8_t *vpred, int dst_stride) {
+  int16_t *udiff = diff + 4096;
+  int16_t *vdiff = diff + 5120;
+  int r, c;
+
+  for (r = 0; r < 32; r++) {
+    for (c = 0; c < 32; c++) {
+      udiff[c] = usrc[c] - upred[c];
+    }
+
+    udiff += 32;
+    upred += dst_stride;
+    usrc  += src_stride;
+  }
+
+  for (r = 0; r < 32; r++) {
+    for (c = 0; c < 32; c++) {
+      vdiff[c] = vsrc[c] - vpred[c];
+    }
+
+    vdiff += 32;
+    vpred += dst_stride;
+    vsrc  += src_stride;
+  }
+}
+#endif  // CONFIG_TX64X64
+
 void vp9_subtract_mby_c(int16_t *diff, uint8_t *src,
                         uint8_t *pred, int stride) {
   vp9_subtract_mby_s_c(diff, src, stride, pred, 16);
@@ -322,6 +368,22 @@ void vp9_transform_sbuv_16x16(MACROBLOCK *x) {
   x->vp9_short_fdct16x16(x_sb->src_diff + 1280,
                          x_sb->coeff + 1280, 32);
 }
+
+#if CONFIG_TX64X64
+void vp9_transform_sb64y_64x64(MACROBLOCK *x) {
+  SUPERBLOCK * const x_sb = &x->sb_coeff_data;
+  vp9_short_fdct64x64(x_sb->src_diff, x_sb->coeff, 128);
+}
+
+void vp9_transform_sb64uv_32x32(MACROBLOCK *x) {
+  SUPERBLOCK * const x_sb = &x->sb_coeff_data;
+  vp9_clear_system_state();
+  vp9_short_fdct32x32(x_sb->src_diff + 4096,
+                      x_sb->coeff + 4096, 64);
+  vp9_short_fdct32x32(x_sb->src_diff + 5120,
+                      x_sb->coeff + 5120, 64);
+}
+#endif  // CONFIG_TX64X64
 
 #define RDTRUNC(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
 #define RDTRUNC_8x8(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
