@@ -606,12 +606,10 @@ void vp9_build_inter32x32_predictors_sb(MACROBLOCKD *x,
     x->second_pre.v_buffer = v2;
   }
 
-#if CONFIG_COMP_INTERINTRA_PRED
   if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
     vp9_build_interintra_32x32_predictors_sb(
         x, dst_y, dst_u, dst_v, dst_ystride, dst_uvstride);
   }
-#endif
 }
 
 void vp9_build_inter64x64_predictors_sb(MACROBLOCKD *x,
@@ -670,12 +668,10 @@ void vp9_build_inter64x64_predictors_sb(MACROBLOCKD *x,
     x->second_pre.v_buffer = v2;
   }
 
-#if CONFIG_COMP_INTERINTRA_PRED
   if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
     vp9_build_interintra_64x64_predictors_sb(x, dst_y, dst_u, dst_v,
                                              dst_ystride, dst_uvstride);
   }
-#endif
 }
 
 /*
@@ -970,13 +966,11 @@ void vp9_build_inter_predictors_mb(MACROBLOCKD *xd) {
                                              &xd->predictor[256],
                                              &xd->predictor[320], 16, 8);
     }
-#if CONFIG_COMP_INTERINTRA_PRED
     else if (xd->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
       vp9_build_interintra_16x16_predictors_mb(xd, xd->predictor,
                                                &xd->predictor[256],
                                                &xd->predictor[320], 16, 8);
     }
-#endif
   } else {
     build_4x4uvmvs(xd);
     build_inter4x4_predictors_mb(xd);

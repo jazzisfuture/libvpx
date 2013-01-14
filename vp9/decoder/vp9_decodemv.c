@@ -548,12 +548,10 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
   } else {
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
-#if CONFIG_COMP_INTERINTRA_PRED
     if (cm->use_interintra) {
       if (vp9_read(bc, VP9_UPD_INTERINTRA_PROB))
         cm->fc.interintra_prob  = (vp9_prob)vp9_read_literal(bc, 8);
     }
-#endif
     // Decode the baseline probabilities for decoding reference frame
     cm->prob_intra_coded = (vp9_prob)vp9_read_literal(bc, 8);
     cm->prob_last_coded  = (vp9_prob)vp9_read_literal(bc, 8);
@@ -874,7 +872,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       }
 
     } else {
-#if CONFIG_COMP_INTERINTRA_PRED
       if (pbi->common.use_interintra &&
           mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
           mbmi->second_ref_frame == NONE) {
@@ -900,7 +897,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           //        mbmi->interintra_mode, mbmi->interintra_uv_mode);
         }
       }
-#endif
     }
 
 #if CONFIG_NEW_MVREF

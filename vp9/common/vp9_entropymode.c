@@ -341,9 +341,7 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
   vpx_memcpy(x->fc.mbsplit_prob, vp9_mbsplit_probs, sizeof(vp9_mbsplit_probs));
   vpx_memcpy(x->fc.switchable_interp_prob, vp9_switchable_interp_prob,
              sizeof(vp9_switchable_interp_prob));
-#if CONFIG_COMP_INTERINTRA_PRED
   x->fc.interintra_prob = VP9_DEF_INTERINTRA_PROB;
-#endif
 }
 
 
@@ -584,12 +582,10 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
          "[VP9_NUMMBSPLITS] = {\n");
   for (t = 0; t < VP9_NUMMBSPLITS; ++t) printf("%d, ", cm->fc.mbsplit_counts[t]);
   printf("};\n");
-#if CONFIG_COMP_INTERINTRA_PRED
   printf("static const unsigned int\ninterintra_counts"
          "[2] = {\n");
   for (t = 0; t < 2; ++t) printf("%d, ", cm->fc.interintra_counts[t]);
   printf("};\n");
-#endif
 #endif
 
   update_mode_probs(VP9_YMODES, vp9_ymode_encodings, vp9_ymode_tree,
@@ -617,7 +613,6 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   update_mode_probs(VP9_NUMMBSPLITS, vp9_mbsplit_encodings, vp9_mbsplit_tree,
                     cm->fc.mbsplit_counts, cm->fc.pre_mbsplit_prob,
                     cm->fc.mbsplit_prob);
-#if CONFIG_COMP_INTERINTRA_PRED
   if (cm->use_interintra) {
     int factor, interintra_prob, count;
 
@@ -629,5 +624,4 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     cm->fc.interintra_prob = weighted_prob(cm->fc.pre_interintra_prob,
                                            interintra_prob, factor);
   }
-#endif
 }

@@ -576,7 +576,6 @@ static void update_state(VP9_COMP *cpi,
       mbmi->best_second_mv.as_int = best_second_mv.as_int;
       vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv);
     }
-#if CONFIG_COMP_INTERINTRA_PRED
     if (mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
         mbmi->second_ref_frame <= INTRA_FRAME) {
       if (mbmi->second_ref_frame == INTRA_FRAME) {
@@ -589,7 +588,6 @@ static void update_state(VP9_COMP *cpi,
         ++cpi->interintra_count[0];
       }
     }
-#endif
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         mbmi->mode >= NEARESTMV &&
         mbmi->mode <= SPLITMV) {
@@ -1231,10 +1229,8 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->sb_ymode_count)
   vp9_zero(cpi->sb32_count);
   vp9_zero(cpi->sb64_count);
-#if CONFIG_COMP_INTERINTRA_PRED
   vp9_zero(cpi->interintra_count);
   vp9_zero(cpi->interintra_select_count);
-#endif
 
   vpx_memset(cm->above_context, 0,
              sizeof(ENTROPY_CONTEXT_PLANES) * cm->mb_cols);
@@ -2136,7 +2132,6 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                                                xd->dst.y_stride,
                                                xd->dst.uv_stride);
       }
-#if CONFIG_COMP_INTERINTRA_PRED
       else if (xd->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
         vp9_build_interintra_16x16_predictors_mb(xd,
                                                  xd->dst.y_buffer,
@@ -2145,7 +2140,6 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                                                  xd->dst.y_stride,
                                                  xd->dst.uv_stride);
       }
-#endif
     }
   }
 
