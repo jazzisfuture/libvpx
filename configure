@@ -242,7 +242,6 @@ EXPERIMENT_LIST="
     new_mvref
     implicit_segmentation
     newbintramodes
-    comp_interintra_pred
     tx64x64
     dwtdcthybrid
     cnvcontext

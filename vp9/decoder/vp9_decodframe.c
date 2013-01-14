@@ -213,7 +213,6 @@ static void skip_recon_mb(VP9D_COMP *pbi, MACROBLOCKD *xd) {
                                                xd->dst.y_stride,
                                                xd->dst.uv_stride);
       }
-#if CONFIG_COMP_INTERINTRA_PRED
       else if (xd->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
         vp9_build_interintra_16x16_predictors_mb(xd,
                                                  xd->dst.y_buffer,
@@ -222,7 +221,6 @@ static void skip_recon_mb(VP9D_COMP *pbi, MACROBLOCKD *xd) {
                                                  xd->dst.y_stride,
                                                  xd->dst.uv_stride);
       }
-#endif
     }
   }
 }
@@ -1678,9 +1676,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
     } else {
       pc->mcomp_filter_type = vp9_read_literal(&header_bc, 2);
     }
-#if CONFIG_COMP_INTERINTRA_PRED
     pc->use_interintra = vp9_read_bit(&header_bc);
-#endif
     /* To enable choice of different interploation filters */
     vp9_setup_interp_filters(xd, pc->mcomp_filter_type, pc);
   }
@@ -1766,9 +1762,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   vp9_copy(pbi->common.fc.pre_i8x8_mode_prob, pbi->common.fc.i8x8_mode_prob);
   vp9_copy(pbi->common.fc.pre_sub_mv_ref_prob, pbi->common.fc.sub_mv_ref_prob);
   vp9_copy(pbi->common.fc.pre_mbsplit_prob, pbi->common.fc.mbsplit_prob);
-#if CONFIG_COMP_INTERINTRA_PRED
   pbi->common.fc.pre_interintra_prob = pbi->common.fc.interintra_prob;
-#endif
   pbi->common.fc.pre_nmvc = pbi->common.fc.nmvc;
   vp9_zero(pbi->common.fc.coef_counts_4x4);
   vp9_zero(pbi->common.fc.hybrid_coef_counts_4x4);
@@ -1786,9 +1780,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   vp9_zero(pbi->common.fc.mbsplit_counts);
   vp9_zero(pbi->common.fc.NMVcount);
   vp9_zero(pbi->common.fc.mv_ref_ct);
-#if CONFIG_COMP_INTERINTRA_PRED
   vp9_zero(pbi->common.fc.interintra_counts);
-#endif
 
   read_coef_probs(pbi, &header_bc);
 
