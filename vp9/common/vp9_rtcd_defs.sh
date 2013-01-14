@@ -233,13 +233,11 @@ vp9_loop_filter_simple_bh_c=vp9_loop_filter_bhs_c
 vp9_loop_filter_simple_bh_mmx=vp9_loop_filter_bhs_mmx
 vp9_loop_filter_simple_bh_sse2=vp9_loop_filter_bhs_sse2
 
-if [ "$CONFIG_WIDERLPF" = "yes" ]; then
 prototype void vp9_lpf_mbh_w "unsigned char *y_ptr, unsigned char *u_ptr, unsigned char *v_ptr, int y_stride, int uv_stride, struct loop_filter_info *lfi"
 specialize vp9_lpf_mbh_w sse2
 
 prototype void vp9_lpf_mbv_w "unsigned char *y_ptr, unsigned char *u_ptr, unsigned char *v_ptr, int y_stride, int uv_stride, struct loop_filter_info *lfi"
 specialize vp9_lpf_mbv_w sse2
-fi
 
 #
 # post proc
@@ -280,10 +278,8 @@ specialize vp9_sad16x3 sse2
 prototype unsigned int vp9_sad3x16 "const uint8_t *src_ptr, int  src_stride, const uint8_t *ref_ptr, int ref_stride"
 specialize vp9_sad3x16 sse2
 
-if [ "$CONFIG_SUBPELREFMV" = "yes" ]; then
 prototype unsigned int vp9_sub_pixel_variance16x2 "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int Refstride, unsigned int *sse"
 specialize vp9_sub_pixel_variance16x2 sse2
-fi
 
 #
 # Sub Pixel Filters

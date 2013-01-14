@@ -241,7 +241,6 @@ EXPERIMENT_LIST="
     comp_intra_pred
     pred_filter
     lossless
-    subpelrefmv
     new_mvref
     implicit_segmentation
     newbintramodes
