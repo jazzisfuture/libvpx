@@ -252,7 +252,8 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
                 (sb_mb_lf_skip(mode_info_context - 1, mode_info_context) ||
                  tx_size >= TX_32X32))
               ) {
-            if (tx_size >= TX_16X16)
+            if (tx_size >= TX_16X16 ||
+                mode_info_context[-1].mbmi.txfm_size >= TX_16X16)
               vp9_lpf_mbv_w(y_ptr, u_ptr, v_ptr, post->y_stride,
                             post->uv_stride, &lfi);
             else
@@ -279,7 +280,8 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
                 (sb_mb_lf_skip(mode_info_context - mis, mode_info_context) ||
                 tx_size >= TX_32X32))
               ) {
-            if (tx_size >= TX_16X16)
+            if (tx_size >= TX_16X16 ||
+                mode_info_context[-mis].mbmi.txfm_size >= TX_16X16)
               vp9_lpf_mbh_w(y_ptr, u_ptr, v_ptr, post->y_stride,
                             post->uv_stride, &lfi);
             else
