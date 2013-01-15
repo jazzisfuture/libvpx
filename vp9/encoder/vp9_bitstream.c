@@ -189,15 +189,7 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   int old_cost, new_cost;
 
   // Set the prediction probability structures to defaults
-  if (cm->frame_type == KEY_FRAME) {
-    // Set the prediction probabilities to defaults
-    cm->ref_pred_probs[0] = 120;
-    cm->ref_pred_probs[1] = 80;
-    cm->ref_pred_probs[2] = 40;
-
-    vpx_memset(cpi->ref_pred_probs_update, 0,
-               sizeof(cpi->ref_pred_probs_update));
-  } else {
+  if (cm->frame_type != KEY_FRAME) {
     // From the prediction counts set the probabilities for each context
     for (i = 0; i < PREDICTION_PROBS; i++) {
       new_pred_probs[i] = get_binary_prob(cpi->ref_pred_count[i][0],
@@ -219,7 +211,6 @@ static void update_refpred_stats(VP9_COMP *cpi) {
         cm->ref_pred_probs[i] = new_pred_probs[i];
       } else
         cpi->ref_pred_probs_update[i] = 0;
-
     }
   }
 }
@@ -508,7 +499,8 @@ static void write_sub_mv_ref
               vp9_sub_mv_ref_encoding_array - LEFT4X4 + m);
 }
 
-static void write_nmv(vp9_writer *bc, const MV *mv, const int_mv *ref,
+static void write_nmv(vp9_writer *bc,
+                      const MV *mv, const int_mv *ref,
                       const nmv_context *nmvc, int usehp) {
   MV e;
   e.row = mv->row - ref->as_mv.row;
@@ -704,6 +696,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   int mb_col = pc->mb_cols - mb_cols_left;
   xd->prev_mode_info_context = pc->prev_mi + (m - pc->mi);
   x->partition_info = x->pi + (m - pc->mi);
+
+  //if (!cpi->dummy_packing) printf("mode: %d\n", mi->mode);
 
   // Distance of Mb to the various image edges.
   // These specified to 8th pel as they are always compared to MV
@@ -1547,6 +1541,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_bit(&header_bc, pc->clr_type);
     vp9_write_bit(&header_bc, pc->clamp_type);
 
+    // error resilient mode
+    vp9_write_bit(&header_bc, pc->error_resilient_mode);
   } else {
     vp9_start_encode(&header_bc, cx_data);
   }

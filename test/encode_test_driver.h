@@ -9,6 +9,8 @@
  */
 #ifndef TEST_ENCODE_TEST_DRIVER_H_
 #define TEST_ENCODE_TEST_DRIVER_H_
+
+#include "vpx_config.h"
 #include <string>
 #include <vector>
 #include "third_party/googletest/src/include/gtest/gtest.h"
@@ -153,15 +155,20 @@ class EncoderTest {
   // Initialize the cfg_ member with the default configuration.
   void InitializeConfig() {
     const vpx_codec_err_t res = vpx_codec_enc_config_default(
-                                    &vpx_codec_vp8_cx_algo, &cfg_, 0);
+#if CONFIG_VP8_ENCODER
+                                    &vpx_codec_vp8_cx_algo,
+#elif CONFIG_VP9_ENCODER
+                                    &vpx_codec_vp9_cx_algo,
+#endif
+                                    &cfg_, 0);
     ASSERT_EQ(VPX_CODEC_OK, res);
   }
 
   // Map the TestMode enum to the deadline_ and passes_ variables.
   void SetMode(TestMode mode);
 
-  // Main loop.
-  virtual void RunLoop(VideoSource *video);
+  // Main loop with optional specified dropped frame due to error
+  virtual void RunLoop(VideoSource *video, int error_frame = -1);
 
   // Hook to be called at the beginning of a pass.
   virtual void BeginPassHook(unsigned int pass) {}

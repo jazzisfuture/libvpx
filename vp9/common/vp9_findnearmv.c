@@ -156,7 +156,7 @@ void vp9_find_best_ref_mvs(MACROBLOCKD *xd,
 #endif
 
   // Limit search to the predicted best few candidates
-  for(i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
+  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
     int_mv this_mv;
     int offset = 0;
     int row_offset, col_offset;

@@ -76,6 +76,11 @@ void vp9_entropy_mode_init(void);
 
 struct VP9Common;
 
+/* sets up features to forget past dependence */
+void vp9_setup_past_independence(struct VP9Common *cm, MACROBLOCKD *xd);
+/* sets up common features for key frames */
+void vp9_setup_common_key_frame(struct VP9Common *cm, MACROBLOCKD *xd);
+
 void vp9_init_mbmode_probs(struct VP9Common *x);
 
 extern void vp9_init_mode_contexts(struct VP9Common *pc);

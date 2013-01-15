@@ -83,6 +83,18 @@ TEST_P(ErrorResilienceTest, OnVersusOff) {
     EXPECT_GE(psnr_ratio, 0.9);
     EXPECT_LE(psnr_ratio, 1.1);
   }
+
+  // Test that dropping an arbitrary inter frame only hurts by less than 10%
+  cfg_.g_error_resilient = 1;
+  // Drop frame #3
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video, 3));
+  const double psnr_resilience_on_drop = GetAveragePsnr();
+  EXPECT_GT(psnr_resilience_on_drop, 20.0);
+  if (psnr_resilience_off > 0.0) {
+    const double psnr_ratio = psnr_resilience_on_drop / psnr_resilience_on;
+    EXPECT_GE(psnr_ratio, 0.9);
+    EXPECT_LE(psnr_ratio, 1.1);
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(OnOffTest, ErrorResilienceTest,

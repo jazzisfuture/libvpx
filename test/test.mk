@@ -27,6 +27,12 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ivf_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += test_vector_test.cc
+
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += encode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += encode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += decode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += decode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += error_resilience_test.cc
 ##
 ## WHITE BOX TESTS
 ##
@@ -70,6 +76,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
+
 endif # VP9
 
 
@@ -80,6 +87,8 @@ endif
 ## TEST DATA
 ##
 LIBVPX_TEST_DATA-$(CONFIG_VP8_ENCODER) += hantro_collage_w352h288.yuv
+LIBVPX_TEST_DATA-$(CONFIG_VP9_ENCODER) += hantro_collage_w352h288.yuv
+
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-001.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-002.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-003.ivf
