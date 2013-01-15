@@ -189,15 +189,7 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   int old_cost, new_cost;
 
   // Set the prediction probability structures to defaults
-  if (cm->frame_type == KEY_FRAME) {
-    // Set the prediction probabilities to defaults
-    cm->ref_pred_probs[0] = 120;
-    cm->ref_pred_probs[1] = 80;
-    cm->ref_pred_probs[2] = 40;
-
-    vpx_memset(cpi->ref_pred_probs_update, 0,
-               sizeof(cpi->ref_pred_probs_update));
-  } else {
+  if (cm->frame_type != KEY_FRAME) {
     // From the prediction counts set the probabilities for each context
     for (i = 0; i < PREDICTION_PROBS; i++) {
       new_pred_probs[i] = get_binary_prob(cpi->ref_pred_count[i][0],
@@ -1547,6 +1539,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_bit(&header_bc, pc->clr_type);
     vp9_write_bit(&header_bc, pc->clamp_type);
 
+    // error resilient mode
+    vp9_write_bit(&header_bc, pc->error_resilient_mode);
   } else {
     vp9_start_encode(&header_bc, cx_data);
   }

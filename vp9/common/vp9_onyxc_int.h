@@ -272,6 +272,7 @@ typedef struct VP9Common {
   int use_interintra;
 #endif
 
+  int error_resilient_mode;
 } VP9_COMMON;
 
 #endif  // VP9_COMMON_VP9_ONYXC_INT_H_

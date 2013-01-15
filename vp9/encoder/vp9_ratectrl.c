@@ -25,6 +25,7 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/common/vp9_quant_common.h"
+#include "vp9/common/vp9_seg_common.h"
 
 #define MIN_BPB_FACTOR          0.005
 #define MAX_BPB_FACTOR          50
@@ -241,16 +242,18 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
 
 void vp9_setup_key_frame(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   // Setup for Key frame:
   vp9_default_coef_probs(& cpi->common);
-  vp9_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
   vp9_init_mbmode_probs(& cpi->common);
   vp9_default_bmode_probs(cm->fc.bmode_prob);
+  vp9_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
+  vp9_init_mv_probs(& cpi->common);
 
   if(cm->last_frame_seg_map)
     vpx_memset(cm->last_frame_seg_map, 0, (cm->mb_rows * cm->mb_cols));
 
-  vp9_init_mv_probs(& cpi->common);
+  vp9_clearall_segfeatures(xd);
 
   // cpi->common.filter_level = 0;      // Reset every key frame.
   cpi->common.filter_level = cpi->common.base_qindex * 3 / 8;
@@ -274,28 +277,24 @@ void vp9_setup_key_frame(VP9_COMP *cpi) {
   vp9_update_mode_info_in_image(cm, cm->mi);
 
 #if CONFIG_NEW_MVREF
-  if (1) {
-    MACROBLOCKD *xd = &cpi->mb.e_mbd;
-
-    // Defaults probabilities for encoding the MV ref id signal
-    vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
-               sizeof(xd->mb_mv_ref_probs));
-  }
+  // Defaults probabilities for encoding the MV ref id signal
+  vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
+             sizeof(xd->mb_mv_ref_probs));
 #endif
 }
 
 void vp9_setup_inter_frame(VP9_COMP *cpi) {
-  if (cpi->common.refresh_alt_ref_frame) {
-    vpx_memcpy(&cpi->common.fc,
-               &cpi->common.lfc_a,
-               sizeof(cpi->common.fc));
+  VP9_COMMON *cm = &cpi->common;
+  if (cm->error_resilient_mode) {
+    vp9_setup_key_frame(cpi);
   } else {
-    vpx_memcpy(&cpi->common.fc,
-               &cpi->common.lfc,
-               sizeof(cpi->common.fc));
+    if (cpi->common.refresh_alt_ref_frame) {
+      vpx_memcpy(&cm->fc, &cm->lfc_a, sizeof(cm->fc));
+    } else {
+      vpx_memcpy(&cm->fc, &cm->lfc, sizeof(cm->fc));
+    }
   }
 }
-
 
 static int estimate_bits_at_q(int frame_kind, int Q, int MBs,
                               double correction_factor) {

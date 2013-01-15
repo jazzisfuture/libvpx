@@ -1264,7 +1264,7 @@ static void init_frame(VP9D_COMP *pbi) {
   VP9_COMMON *const pc = &pbi->common;
   MACROBLOCKD *const xd  = &pbi->mb;
 
-  if (pc->frame_type == KEY_FRAME) {
+  if (pc->frame_type == KEY_FRAME || pc->error_resilient_mode) {
 
     if (pc->last_frame_seg_map)
       vpx_memset(pc->last_frame_seg_map, 0, (pc->mb_rows * pc->mb_cols));
@@ -1311,9 +1311,13 @@ static void init_frame(VP9D_COMP *pbi) {
     vp9_update_mode_info_border(pc, pc->mip);
     vp9_update_mode_info_in_image(pc, pc->mi);
 
+#if CONFIG_NEW_MVREF
+    vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
+               sizeof(xd->mb_mv_ref_probs));
+#endif
+  }
 
-  } else {
-
+  if (pc->frame_type != KEY_FRAME) {
     if (!pc->use_bilinear_mc_filter)
       pc->mcomp_filter_type = EIGHTTAP;
     else
@@ -1481,6 +1485,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
   if (pc->frame_type == KEY_FRAME) {
     pc->clr_type    = (YUV_TYPE)vp9_read_bit(&header_bc);
     pc->clamp_type  = (CLAMP_TYPE)vp9_read_bit(&header_bc);
+    pc->error_resilient_mode = vp9_read_bit(&header_bc);
   }
 
   /* Is segmentation enabled */
@@ -1708,11 +1713,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
 
 #if CONFIG_NEW_MVREF
   // If Key frame reset mv ref id probabilities to defaults
-  if (pc->frame_type == KEY_FRAME) {
-    // Defaults probabilities for encoding the MV ref id signal
-    vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
-               sizeof(xd->mb_mv_ref_probs));
-  } else {
+  if (pc->frame_type != KEY_FRAME) {
     // Read any mv_ref index probability updates
     int i, j;
 
@@ -1838,10 +1839,13 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
                          "A stream must start with a complete key frame");
   }
 
-  vp9_adapt_coef_probs(pc);
+  if (!pc->error_resilient_mode)
+    vp9_adapt_coef_probs(pc);
   if (pc->frame_type != KEY_FRAME) {
-    vp9_adapt_mode_probs(pc);
-    vp9_adapt_nmv_probs(pc, xd->allow_high_precision_mv);
+    if (!pc->error_resilient_mode) {
+      vp9_adapt_mode_probs(pc);
+      vp9_adapt_nmv_probs(pc, xd->allow_high_precision_mv);
+    }
     vp9_update_mode_context(&pbi->common);
   }
 
