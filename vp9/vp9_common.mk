@@ -13,7 +13,6 @@ VP9_COMMON_SRCS-yes += common/vp9_pragmas.h
 VP9_COMMON_SRCS-yes += common/vp9_ppflags.h
 VP9_COMMON_SRCS-yes += common/vp9_onyx.h
 VP9_COMMON_SRCS-yes += common/vp9_alloccommon.c
-VP9_COMMON_SRCS-yes += common/vp9_asm_com_offsets.c
 VP9_COMMON_SRCS-yes += common/vp9_blockd.c
 VP9_COMMON_SRCS-yes += common/vp9_coefupdateprobs.h
 VP9_COMMON_SRCS-yes += common/vp9_debugmodes.c
@@ -127,8 +126,5 @@ vp9/common/x86/vp9_filter_sse2.c.d: CFLAGS += -msse2
 vp9/common/x86/vp9_loopfilter_x86.c.d: CFLAGS += -msse2
 vp9/common/x86/vp9_sadmxn_x86.c.d: CFLAGS += -msse2
 endif
-
-$(eval $(call asm_offsets_template,\
-         vp9_asm_com_offsets.asm, $(VP9_PREFIX)common/vp9_asm_com_offsets.c))
 
 $(eval $(call rtcd_h_template,vp9_rtcd,vp9/common/vp9_rtcd_defs.sh))
