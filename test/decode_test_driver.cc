@@ -13,6 +13,7 @@
 #include "test/register_state_check.h"
 #include "test/video_source.h"
 
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 namespace libvpx_test {
 void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
   if (!decoder_.priv) {
@@ -48,3 +49,4 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
   delete decoder;
 }
 }  // namespace libvpx_test
+#endif
