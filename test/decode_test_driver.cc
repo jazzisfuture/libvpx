@@ -12,12 +12,16 @@
 #include "test/register_state_check.h"
 #include "test/video_source.h"
 
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 namespace libvpx_test {
-#if CONFIG_VP8_DECODER
 void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
   if (!decoder_.priv) {
     const vpx_codec_err_t res_init = vpx_codec_dec_init(&decoder_,
+#if CONFIG_VP8_DECODER
                                                         &vpx_codec_vp8_dx_algo,
+#elif CONFIG_VP9_DECODER
+                                                        &vpx_codec_vp9_dx_algo,
+#endif
                                                         &cfg_, 0);
     ASSERT_EQ(VPX_CODEC_OK, res_init) << DecodeError();
   }
@@ -44,5 +48,5 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
       DecompressedFrameHook(*img, video->frame_number());
   }
 }
-#endif
 }  // namespace libvpx_test
+#endif
