@@ -22,10 +22,6 @@
 #define prototype_quantize_mb(sym) \
   void (sym)(MACROBLOCK *x)
 
-#if ARCH_X86 || ARCH_X86_64
-#include "x86/vp9_quantize_x86.h"
-#endif
-
 #define prototype_quantize_block_type(sym) \
   void (sym)(BLOCK *b, BLOCKD *d, TX_TYPE type)
 extern prototype_quantize_block_type(vp9_ht_quantize_b_4x4);
