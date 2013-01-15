@@ -1355,7 +1355,6 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
       if (cpi->oxcf.cpu_used > 5)
         cpi->oxcf.cpu_used = 5;
-
       break;
 
     case MODE_SECONDPASS_BEST:
@@ -2823,6 +2822,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     for (i = 0; i < MAX_MODES; i++) {
       cpi->rd_thresh_mult[i] = 128;
     }
+
+    cm->error_resilient_mode = (cpi->oxcf.error_resilient_mode != 0);
   }
 
   // Test code for new segment features
@@ -3437,7 +3438,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_copy(cpi->common.fc.hybrid_coef_counts_16x16,
            cpi->hybrid_coef_counts_16x16);
   vp9_copy(cpi->common.fc.coef_counts_32x32, cpi->coef_counts_32x32);
-  vp9_adapt_coef_probs(&cpi->common);
+  if (!cpi->common.error_resilient_mode)
+    vp9_adapt_coef_probs(&cpi->common);
   if (cpi->common.frame_type != KEY_FRAME) {
     vp9_copy(cpi->common.fc.sb_ymode_counts, cpi->sb_ymode_count);
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
@@ -3449,14 +3451,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
     vp9_copy(cpi->common.fc.interintra_counts, cpi->interintra_count);
 #endif
-    vp9_adapt_mode_probs(&cpi->common);
+    if (!cpi->common.error_resilient_mode)
+      vp9_adapt_mode_probs(&cpi->common);
 
     cpi->common.fc.NMVcount = cpi->NMVcount;
-    /*
-    printf("2: %d %d %d %d\n", cpi->NMVcount.joints[0], cpi->NMVcount.joints[1],
-                      cpi->NMVcount.joints[2], cpi->NMVcount.joints[3]);
-                      */
-    vp9_adapt_nmv_probs(&cpi->common, cpi->mb.e_mbd.allow_high_precision_mv);
+    if (!cpi->common.error_resilient_mode)
+      vp9_adapt_nmv_probs(&cpi->common, cpi->mb.e_mbd.allow_high_precision_mv);
   }
 #if CONFIG_COMP_INTERINTRA_PRED
   if (cm->frame_type != KEY_FRAME)

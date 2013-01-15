@@ -25,6 +25,7 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/common/vp9_quant_common.h"
+#include "vp9/common/vp9_seg_common.h"
 
 #define MIN_BPB_FACTOR          0.005
 #define MAX_BPB_FACTOR          50
@@ -238,54 +239,16 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
 #endif
 }
 
-
 void vp9_setup_key_frame(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
-  int i;
-
-  // Setup for Key frame:
-  vp9_default_coef_probs(& cpi->common);
-  vp9_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
-  vp9_init_mbmode_probs(& cpi->common);
-  vp9_default_bmode_probs(cm->fc.bmode_prob);
-
-  if(cm->last_frame_seg_map)
-    vpx_memset(cm->last_frame_seg_map, 0, (cm->mb_rows * cm->mb_cols));
-
-  vp9_init_mv_probs(& cpi->common);
-
-  // cpi->common.filter_level = 0;      // Reset every key frame.
-  cpi->common.filter_level = cpi->common.base_qindex * 3 / 8;
-
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  vp9_setup_common_key_frame(cm, xd);
   // interval before next GF
   cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
 
+  /* All buffers are implicitly updated on key frames. */
   cpi->refresh_golden_frame = TRUE;
   cpi->refresh_alt_ref_frame = TRUE;
-
-  vp9_init_mode_contexts(&cpi->common);
-
-  for (i = 0; i < NUM_FRAME_CONTEXTS; i++)
-    vpx_memcpy(&cpi->common.frame_contexts[i], &cpi->common.fc,
-               sizeof(cpi->common.fc));
-
-  vpx_memset(cm->prev_mip, 0,
-    (cm->mb_cols + 1) * (cm->mb_rows + 1)* sizeof(MODE_INFO));
-  vpx_memset(cm->mip, 0,
-    (cm->mb_cols + 1) * (cm->mb_rows + 1)* sizeof(MODE_INFO));
-
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_in_image(cm, cm->mi);
-
-#if CONFIG_NEW_MVREF
-  if (1) {
-    MACROBLOCKD *xd = &cpi->mb.e_mbd;
-
-    // Defaults probabilities for encoding the MV ref id signal
-    vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
-               sizeof(xd->mb_mv_ref_probs));
-  }
-#endif
 
   /* Choose which entropy context to use. When using a forward reference
    * frame, it immediately follows the keyframe, and thus benefits from
@@ -296,17 +259,20 @@ void vp9_setup_key_frame(VP9_COMP *cpi) {
 }
 
 void vp9_setup_inter_frame(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  if (cm->error_resilient_mode) {
+    vp9_setup_past_independence(&cpi->common, xd);
+  }
   /* Choose which entropy context to use. Currently there are only two
    * contexts used, one for normal frames and one for alt ref frames.
    */
-  cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
-
-  assert(cpi->common.frame_context_idx < NUM_FRAME_CONTEXTS);
+  cm->frame_context_idx = cpi->refresh_alt_ref_frame;
+  assert(cm->frame_context_idx < NUM_FRAME_CONTEXTS);
   vpx_memcpy(&cpi->common.fc,
              &cpi->common.frame_contexts[cpi->common.frame_context_idx],
              sizeof(cpi->common.fc));
 }
-
 
 static int estimate_bits_at_q(int frame_kind, int Q, int MBs,
                               double correction_factor) {

@@ -15,16 +15,16 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += altref_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += config_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += cq_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += datarate_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.h
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += error_resilience_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS) += encode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS) += encode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS) += error_resilience_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += i420_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
 
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ../md5_utils.h ../md5_utils.c
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS) += decode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS) += decode_test_driver.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ivf_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += test_vector_test.cc
 ##
@@ -70,6 +70,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
+
 endif # VP9
 
 
@@ -79,7 +80,8 @@ endif
 ##
 ## TEST DATA
 ##
-LIBVPX_TEST_DATA-$(CONFIG_VP8_ENCODER) += hantro_collage_w352h288.yuv
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += hantro_collage_w352h288.yuv
+
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-001.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-002.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP8_DECODER) += vp80-00-comprehensive-003.ivf

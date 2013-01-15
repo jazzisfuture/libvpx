@@ -7,11 +7,40 @@
   in the file PATENTS.  All contributing project authors may
   be found in the AUTHORS file in the root of the source tree.
 */
+
+#include <math.h>
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 
 namespace {
+
+const int kMaxErrorFrames = 8;
+
+static double compute_psnr(const vpx_image_t *img1,
+                           const vpx_image_t *img2) {
+  assert((img1->fmt == img2->fmt) &&
+         (img1->d_w == img2->d_w) &&
+         (img1->d_h == img2->d_h));
+
+  const unsigned int width_y  = img1->d_w;
+  const unsigned int height_y = img1->d_h;
+  unsigned int i, j;
+
+  int64_t sqrerr = 0;
+  for (i = 0; i < height_y; ++i)
+    for (j = 0; j < width_y; ++j) {
+      int64_t d = img1->planes[VPX_PLANE_Y][i * img1->stride[VPX_PLANE_Y] + j] -
+                  img2->planes[VPX_PLANE_Y][i * img2->stride[VPX_PLANE_Y] + j];
+      sqrerr += d * d;
+    }
+  double mse = sqrerr / (width_y * height_y);
+  double psnr = 100.0;
+  if (mse > 0.0) {
+    psnr = 10 * log10(255.0 * 255.0 / mse);
+  }
+  return psnr;
+}
 
 class ErrorResilienceTest : public libvpx_test::EncoderTest,
     public ::testing::TestWithParam<int> {
@@ -19,6 +48,9 @@ class ErrorResilienceTest : public libvpx_test::EncoderTest,
   ErrorResilienceTest() {
     psnr_ = 0.0;
     nframes_ = 0;
+    error_nframes_ = 0;
+    mismatch_psnr_ = 0.0;
+    mismatch_nframes_ = 0;
     encoding_mode_ = static_cast<libvpx_test::TestMode>(GetParam());
   }
   virtual ~ErrorResilienceTest() {}
@@ -31,6 +63,8 @@ class ErrorResilienceTest : public libvpx_test::EncoderTest,
   virtual void BeginPassHook(unsigned int /*pass*/) {
     psnr_ = 0.0;
     nframes_ = 0;
+    mismatch_psnr_ = 0.0;
+    mismatch_nframes_ = 0;
   }
 
   virtual bool Continue() const {
@@ -48,9 +82,51 @@ class ErrorResilienceTest : public libvpx_test::EncoderTest,
     return 0.0;
   }
 
+  double GetAverageMismatchPsnr() const {
+    if (mismatch_nframes_)
+      return mismatch_psnr_ / mismatch_nframes_;
+    return 0.0;
+  }
+
+  virtual bool DoDecode() const {
+    if (error_nframes_ > 0 &&
+        (cfg_.g_pass == VPX_RC_LAST_PASS || cfg_.g_pass == VPX_RC_ONE_PASS)) {
+      for (int i = 0; i < error_nframes_; ++i) {
+        if (error_frames_[i] == nframes_) {
+          std::cout << "             Skipping decoding frame: "
+                    << error_frames_[i] << "\n";
+          return 0;
+        }
+      }
+    }
+    return 1;
+  }
+
+  virtual void MismatchHook(const vpx_image_t *img1,
+                            const vpx_image_t *img2) {
+    double mismatch_psnr = compute_psnr(img1, img2);
+    mismatch_psnr_ += mismatch_psnr;
+    ++mismatch_nframes_;
+    // std::cout << "Mismatch frame psnr: " << mismatch_psnr << "\n";
+  }
+
+  void SetErrorFrames(int num, unsigned int *list) {
+    if (num > kMaxErrorFrames)
+      num = kMaxErrorFrames;
+    else if (num < 0)
+      num = 0;
+    error_nframes_ = num;
+    for (int i = 0; i < error_nframes_; ++i)
+      error_frames_[i] = list[i];
+  }
+
  private:
   double psnr_;
   unsigned int nframes_;
+  int error_nframes_;
+  double mismatch_psnr_;
+  int mismatch_nframes_;
+  unsigned int error_frames_[kMaxErrorFrames];
   libvpx_test::TestMode encoding_mode_;
 };
 
@@ -83,6 +159,34 @@ TEST_P(ErrorResilienceTest, OnVersusOff) {
     EXPECT_GE(psnr_ratio, 0.9);
     EXPECT_LE(psnr_ratio, 1.1);
   }
+}
+
+TEST_P(ErrorResilienceTest, OnErrorFrames) {
+  const vpx_rational timebase = { 33333333, 1000000000 };
+  cfg_.g_timebase = timebase;
+  cfg_.rc_target_bitrate = 2000;
+  cfg_.g_lag_in_frames = 5;
+
+  init_flags_ = VPX_CODEC_USE_PSNR;
+
+  libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                     timebase.den, timebase.num, 0, 30);
+
+  // Error resilient mode ON.
+  cfg_.g_error_resilient = 1;
+  // Set error frames
+  unsigned int num_error_frames = 2;
+  unsigned int error_frame_list[] = {3, 20};
+  SetErrorFrames(num_error_frames, error_frame_list);
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  // Test that dropping an arbitrary set of inter frames does not hurt too much
+  // Note the Average Mismatch PSNR is the average of the PSNR between
+  // decoded frame and encoder's version of the same frame.
+  const double psnr_resilience_mismatch = GetAverageMismatchPsnr();
+  EXPECT_GT(psnr_resilience_mismatch, 20.0);
+  std::cout << "             Mismatch PSNR: "
+            << psnr_resilience_mismatch << "\n";
 }
 
 INSTANTIATE_TEST_CASE_P(OnOffTest, ErrorResilienceTest,
