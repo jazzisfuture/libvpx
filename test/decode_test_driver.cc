@@ -12,12 +12,16 @@
 #include "test/register_state_check.h"
 #include "test/video_source.h"
 
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 namespace libvpx_test {
-#if CONFIG_VP8_DECODER
 void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
   if (!decoder_.priv) {
     const vpx_codec_err_t res_init = vpx_codec_dec_init(&decoder_,
+#if CONFIG_VP8_DECODER
                                                         &vpx_codec_vp8_dx_algo,
+#elif CONFIG_VP9_DECODER
+                                                        &vpx_codec_vp9_dx_algo,
+#endif
                                                         &cfg_, 0);
     ASSERT_EQ(VPX_CODEC_OK, res_init) << DecodeError();
   }
@@ -34,6 +38,28 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
 
   // Decode frames.
   for (video->Begin(); video->cxdata(); video->Next()) {
+    decoder.DecodeFrame(video->cxdata(), video->frame_size());
+
+    DxDataIterator dec_iter = decoder.GetDxData();
+    const vpx_image_t *img = NULL;
+
+    // Get decompressed data
+    while ((img = dec_iter.Next()))
+      DecompressedFrameHook(*img, video->frame_number());
+  }
+}
+
+void DecoderTest::RunLoopWithError(CompressedVideoSource *video,
+                                   int error_frame) {
+  vpx_codec_dec_cfg_t dec_cfg = {0};
+  Decoder decoder(dec_cfg, 0);
+  int i;
+
+  // Decode frames.
+  for (i = 0, video->Begin(); video->cxdata(); video->Next(), ++i) {
+    if (i == error_frame)
+      continue;
+
     decoder.DecodeFrame(video->cxdata(), video->frame_size());
 
     DxDataIterator dec_iter = decoder.GetDxData();

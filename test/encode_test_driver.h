@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "vpx_config.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 
@@ -153,7 +154,12 @@ class EncoderTest {
   // Initialize the cfg_ member with the default configuration.
   void InitializeConfig() {
     const vpx_codec_err_t res = vpx_codec_enc_config_default(
-                                    &vpx_codec_vp8_cx_algo, &cfg_, 0);
+#if CONFIG_VP8_ENCODER
+                                    &vpx_codec_vp8_cx_algo,
+#elif CONFIG_VP9_ENCODER
+                                    &vpx_codec_vp9_cx_algo,
+#endif
+                                    &cfg_, 0);
     ASSERT_EQ(VPX_CODEC_OK, res);
   }
 

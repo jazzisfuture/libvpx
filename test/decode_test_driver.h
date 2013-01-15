@@ -82,6 +82,9 @@ class DecoderTest {
   // Main loop.
   virtual void RunLoop(CompressedVideoSource *video);
 
+  // Decoding loop while skipping a given error frame number
+  virtual void RunLoopWithError(CompressedVideoSource *video, int error_frame);
+
   // Hook to be called on every decompressed frame.
   virtual void DecompressedFrameHook(const vpx_image_t& img,
                                      const unsigned int frame_number) {}

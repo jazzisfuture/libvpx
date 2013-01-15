@@ -9,7 +9,7 @@
  */
 #include "vpx_config.h"
 #include "test/encode_test_driver.h"
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 #include "test/decode_test_driver.h"
 #endif
 #include "test/register_state_check.h"
@@ -45,7 +45,13 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
-    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_,
+    res = vpx_codec_enc_init(&encoder_,
+#if CONFIG_VP8_ENCODER
+                             &vpx_codec_vp8_cx_algo,
+#elif CONFIG_VP9_ENCODER
+                             &vpx_codec_vp9_cx_algo,
+#endif
+                             &cfg_,
                              init_flags_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
@@ -126,7 +132,7 @@ static bool compare_img(const vpx_image_t *img1,
 }
 
 void EncoderTest::RunLoop(VideoSource *video) {
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
   vpx_codec_dec_cfg_t dec_cfg = {0};
 #endif
 
@@ -144,7 +150,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
     BeginPassHook(pass);
     Encoder encoder(cfg_, deadline_, init_flags_, &stats_);
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
     Decoder decoder(dec_cfg, 0);
     bool has_cxdata = false;
 #endif
@@ -163,7 +169,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
             has_cxdata = true;
             decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
                                 pkt->data.frame.sz);
@@ -182,7 +188,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
         }
       }
 
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
       if (has_cxdata) {
         const vpx_image_t *img_enc = encoder.GetPreviewFrame();
         DxDataIterator dec_iter = decoder.GetDxData();

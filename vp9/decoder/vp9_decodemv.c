@@ -752,7 +752,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         printf("%d %d\n", xd->mode_info_context->mbmi.mv[0].as_mv.row,
                xd->mode_info_context->mbmi.mv[0].as_mv.col);
 #endif
-      vp9_find_mv_refs(xd, mi, prev_mi,
+      vp9_find_mv_refs(xd, mi, cm->error_resilient_mode ? 0 : prev_mi,
                        ref_frame, mbmi->ref_mvs[ref_frame],
                        cm->ref_frame_sign_bias);
 
@@ -833,7 +833,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         xd->second_pre.v_buffer =
           cm->yv12_fb[second_ref_fb_idx].v_buffer + recon_uvoffset;
 
-        vp9_find_mv_refs(xd, mi, prev_mi,
+        vp9_find_mv_refs(xd, mi, cm->error_resilient_mode ? 0 : prev_mi,
                          mbmi->second_ref_frame,
                          mbmi->ref_mvs[mbmi->second_ref_frame],
                          cm->ref_frame_sign_bias);
