@@ -25,6 +25,7 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/common/vp9_quant_common.h"
+#include "vp9/common/vp9_seg_common.h"
 
 #define MIN_BPB_FACTOR          0.005
 #define MAX_BPB_FACTOR          50
@@ -238,64 +239,44 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
 #endif
 }
 
+static void set_default_lf_deltas(MACROBLOCKD *xd) {
+  xd->mode_ref_lf_delta_enabled = 1;
+  xd->mode_ref_lf_delta_update = 1;
+
+  xd->ref_lf_deltas[INTRA_FRAME] = 2;
+  xd->ref_lf_deltas[LAST_FRAME] = 0;
+  xd->ref_lf_deltas[GOLDEN_FRAME] = -2;
+  xd->ref_lf_deltas[ALTREF_FRAME] = -2;
+
+  xd->mode_lf_deltas[0] = 4;               // BPRED
+  xd->mode_lf_deltas[1] = -2;              // Zero
+  xd->mode_lf_deltas[2] = 2;               // New mv
+  xd->mode_lf_deltas[3] = 4;               // Split mv
+}
 
 void vp9_setup_key_frame(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
-  // Setup for Key frame:
-  vp9_default_coef_probs(& cpi->common);
-  vp9_kf_default_bmode_probs(cpi->common.kf_bmode_prob);
-  vp9_init_mbmode_probs(& cpi->common);
-  vp9_default_bmode_probs(cm->fc.bmode_prob);
-
-  if(cm->last_frame_seg_map)
-    vpx_memset(cm->last_frame_seg_map, 0, (cm->mb_rows * cm->mb_cols));
-
-  vp9_init_mv_probs(& cpi->common);
-
-  // cpi->common.filter_level = 0;      // Reset every key frame.
-  cpi->common.filter_level = cpi->common.base_qindex * 3 / 8;
-
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  vp9_setup_common_key_frame(cm, xd);
+  set_default_lf_deltas(xd);
   // interval before next GF
   cpi->frames_till_gf_update_due = cpi->baseline_gf_interval;
-
-  cpi->common.refresh_golden_frame = TRUE;
-  cpi->common.refresh_alt_ref_frame = TRUE;
-
-  vp9_init_mode_contexts(&cpi->common);
-  vpx_memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
-  vpx_memcpy(&cpi->common.lfc_a, &cpi->common.fc, sizeof(cpi->common.fc));
-
-  vpx_memset(cm->prev_mip, 0,
-    (cm->mb_cols + 1) * (cm->mb_rows + 1)* sizeof(MODE_INFO));
-  vpx_memset(cm->mip, 0,
-    (cm->mb_cols + 1) * (cm->mb_rows + 1)* sizeof(MODE_INFO));
-
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_in_image(cm, cm->mi);
-
-#if CONFIG_NEW_MVREF
-  if (1) {
-    MACROBLOCKD *xd = &cpi->mb.e_mbd;
-
-    // Defaults probabilities for encoding the MV ref id signal
-    vpx_memset(xd->mb_mv_ref_probs, VP9_DEFAULT_MV_REF_PROB,
-               sizeof(xd->mb_mv_ref_probs));
-  }
-#endif
 }
 
 void vp9_setup_inter_frame(VP9_COMP *cpi) {
-  if (cpi->common.refresh_alt_ref_frame) {
-    vpx_memcpy(&cpi->common.fc,
-               &cpi->common.lfc_a,
-               sizeof(cpi->common.fc));
+  VP9_COMMON *cm = &cpi->common;
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  if (cm->error_resilient_mode) {
+    vp9_setup_past_independence(&cpi->common, xd);
+    set_default_lf_deltas(xd);
   } else {
-    vpx_memcpy(&cpi->common.fc,
-               &cpi->common.lfc,
-               sizeof(cpi->common.fc));
+    if (cpi->common.refresh_alt_ref_frame) {
+      vpx_memcpy(&cm->fc, &cm->lfc_a, sizeof(cm->fc));
+    } else {
+      vpx_memcpy(&cm->fc, &cm->lfc, sizeof(cm->fc));
+    }
   }
 }
-
 
 static int estimate_bits_at_q(int frame_kind, int Q, int MBs,
                               double correction_factor) {

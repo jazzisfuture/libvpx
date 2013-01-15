@@ -189,15 +189,7 @@ static void update_refpred_stats(VP9_COMP *cpi) {
   int old_cost, new_cost;
 
   // Set the prediction probability structures to defaults
-  if (cm->frame_type == KEY_FRAME) {
-    // Set the prediction probabilities to defaults
-    cm->ref_pred_probs[0] = 120;
-    cm->ref_pred_probs[1] = 80;
-    cm->ref_pred_probs[2] = 40;
-
-    vpx_memset(cpi->ref_pred_probs_update, 0,
-               sizeof(cpi->ref_pred_probs_update));
-  } else {
+  if (cm->frame_type != KEY_FRAME) {
     // From the prediction counts set the probabilities for each context
     for (i = 0; i < PREDICTION_PROBS; i++) {
       new_pred_probs[i] = get_binary_prob(cpi->ref_pred_count[i][0],
@@ -219,7 +211,6 @@ static void update_refpred_stats(VP9_COMP *cpi) {
         cm->ref_pred_probs[i] = new_pred_probs[i];
       } else
         cpi->ref_pred_probs_update[i] = 0;
-
     }
   }
 }
@@ -508,7 +499,8 @@ static void write_sub_mv_ref
               vp9_sub_mv_ref_encoding_array - LEFT4X4 + m);
 }
 
-static void write_nmv(vp9_writer *bc, const MV *mv, const int_mv *ref,
+static void write_nmv(VP9_COMP *cpi, vp9_writer *bc,
+                      const MV *mv, const int_mv *ref,
                       const nmv_context *nmvc, int usehp) {
   MV e;
   e.row = mv->row - ref->as_mv.row;
@@ -516,6 +508,11 @@ static void write_nmv(vp9_writer *bc, const MV *mv, const int_mv *ref,
 
   vp9_encode_nmv(bc, &e, &ref->as_mv, nmvc);
   vp9_encode_nmv_fp(bc, &e, &ref->as_mv, nmvc, usehp);
+  /*
+  if (!cpi->dummy_packing) {
+    printf("MV: %d %d REF: %d %d\n", mv->row, mv->col, ref->as_mv.row, ref->as_mv.col);
+  }
+  */
 }
 
 #if CONFIG_NEW_MVREF
@@ -764,6 +761,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   } else {
     assert(rf == INTRA_FRAME);
   }
+  /*
+  if (!cpi->dummy_packing && cpi->common.current_video_frame == 2)
+    printf("ref frame: %d [%d %d]\n", mi->ref_frame, mb_row, mb_col);
+    */
 
   if (rf == INTRA_FRAME) {
 #ifdef ENTROPY_STATS
@@ -801,7 +802,17 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf]);
 
-    // #ifdef ENTROPY_STATS
+    /*
+    if (!cpi->dummy_packing && cpi->common.current_video_frame == 2) {
+      int k = mi->mb_mode_context[rf];
+      printf("vp9_mode_contexts: [%d %d %d %d] %d %d %d %d\n",
+	     mb_row, mb_col, rf, k,
+	     pc->fc.vp9_mode_contexts[k][0],
+	     pc->fc.vp9_mode_contexts[k][1],
+	     pc->fc.vp9_mode_contexts[k][2],
+	     pc->fc.vp9_mode_contexts[k][3]);
+    }
+    */
 #ifdef ENTROPY_STATS
     accum_mv_refs(mode, ct);
     active_section = 3;
@@ -878,12 +889,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 #ifdef ENTROPY_STATS
         active_section = 5;
 #endif
-        write_nmv(bc, &mi->mv[0].as_mv, &mi->best_mv,
+        write_nmv(cpi, bc, &mi->mv[0].as_mv, &mi->best_mv,
                   (const nmv_context*) nmvc,
                   xd->allow_high_precision_mv);
 
         if (mi->second_ref_frame > 0) {
-          write_nmv(bc, &mi->mv[1].as_mv, &mi->best_second_mv,
+          write_nmv(cpi, bc, &mi->mv[1].as_mv, &mi->best_second_mv,
                     (const nmv_context*) nmvc,
                     xd->allow_high_precision_mv);
         }
@@ -926,12 +937,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 #ifdef ENTROPY_STATS
             active_section = 11;
 #endif
-            write_nmv(bc, &blockmv.as_mv, &mi->best_mv,
+            write_nmv(cpi, bc, &blockmv.as_mv, &mi->best_mv,
                       (const nmv_context*) nmvc,
                       xd->allow_high_precision_mv);
 
             if (mi->second_ref_frame > 0) {
-              write_nmv(bc,
+              write_nmv(cpi, bc,
                         &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
                         &mi->best_second_mv,
                         (const nmv_context*) nmvc,
@@ -945,6 +956,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         break;
     }
   }
+  /*
+  if (!cpi->dummy_packing && cpi->common.current_video_frame == 2)
+    printf("mode: %d skip: %d\n", mi->mode, skip_coeff);
+  */
 
   if (((rf == INTRA_FRAME && mode <= I8X8_PRED) ||
        (rf != INTRA_FRAME && !(mode == SPLITMV &&
@@ -1123,6 +1138,7 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc) {
               }
 
               assert(mb_m->mbmi.sb_type == BLOCK_SIZE_MB16X16);
+	      //printf("mb: %d %d\n", mb_row + y_idx, mb_col + x_idx);
               write_modes_b(cpi, mb_m, bc, &tok, tok_end,
                             mb_row + y_idx, mb_col + x_idx);
             }
@@ -1547,6 +1563,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     vp9_write_bit(&header_bc, pc->clr_type);
     vp9_write_bit(&header_bc, pc->clamp_type);
 
+    // error resilient mode
+    vp9_write_bit(&header_bc, pc->error_resilient_mode);
   } else {
     vp9_start_encode(&header_bc, cx_data);
   }
@@ -2023,7 +2041,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     // if (!cpi->dummy_packing) vp9_zero(cpi->NMVcount);
     write_modes(cpi, &residual_bc);
 
-    vp9_update_mode_context(&cpi->common);
+    if (!cpi->common.error_resilient_mode)
+      vp9_adapt_mode_context(&cpi->common);
   }
 
   vp9_stop_encode(&residual_bc);

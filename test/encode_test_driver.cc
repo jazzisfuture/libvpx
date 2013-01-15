@@ -7,9 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include "vpx_config.h"
 #include "test/encode_test_driver.h"
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 #include "test/decode_test_driver.h"
 #endif
 #include "test/register_state_check.h"
@@ -45,7 +46,13 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
-    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_,
+    res = vpx_codec_enc_init(&encoder_,
+#if CONFIG_VP8_ENCODER
+                             &vpx_codec_vp8_cx_algo,
+#elif CONFIG_VP9_ENCODER
+                             &vpx_codec_vp9_cx_algo,
+#endif
+                             &cfg_,
                              init_flags_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
@@ -125,8 +132,13 @@ static bool compare_img(const vpx_image_t *img1,
   return match;
 }
 
+void EncoderTest::MismatchHook(const vpx_image_t *img1,
+                               const vpx_image_t *img2) {
+  ASSERT_TRUE(0) << "Encode/Decode mismatch found";
+}
+
 void EncoderTest::RunLoop(VideoSource *video) {
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
   vpx_codec_dec_cfg_t dec_cfg = {0};
 #endif
 
@@ -144,7 +156,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
     BeginPassHook(pass);
     Encoder encoder(cfg_, deadline_, init_flags_, &stats_);
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
     Decoder decoder(dec_cfg, 0);
     bool has_cxdata = false;
 #endif
@@ -155,18 +167,21 @@ void EncoderTest::RunLoop(VideoSource *video) {
       PreEncodeFrameHook(video);
       PreEncodeFrameHook(video, &encoder);
       encoder.EncodeFrame(video, frame_flags_);
+      //std::cout << "Encode\n";
 
       CxDataIterator iter = encoder.GetCxData();
 
       while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
         again = true;
-
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
-#if CONFIG_VP8_DECODER
-            has_cxdata = true;
-            decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
-                                pkt->data.frame.sz);
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
+            if (DoDecode()) {
+              has_cxdata = true;
+              decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
+                                  pkt->data.frame.sz);
+              //std::cout << "Decode\n";
+            }
 #endif
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
@@ -175,6 +190,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
           case VPX_CODEC_PSNR_PKT:
             PSNRPktHook(pkt);
+            //std::cout << "PSNR\n";
             break;
 
           default:
@@ -182,14 +198,16 @@ void EncoderTest::RunLoop(VideoSource *video) {
         }
       }
 
-#if CONFIG_VP8_DECODER
+#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
       if (has_cxdata) {
         const vpx_image_t *img_enc = encoder.GetPreviewFrame();
         DxDataIterator dec_iter = decoder.GetDxData();
         const vpx_image_t *img_dec = dec_iter.Next();
-        if(img_enc && img_dec) {
-          const bool res = compare_img(img_enc, img_dec);
-          ASSERT_TRUE(res)<< "Encoder/Decoder mismatch found.";
+        if (img_enc && img_dec) {
+          bool res = compare_img(img_enc, img_dec);
+	  if (!res) {  // Mismatch
+            MismatchHook(img_enc, img_dec);
+	  }
         }
       }
 #endif
@@ -203,4 +221,5 @@ void EncoderTest::RunLoop(VideoSource *video) {
       break;
   }
 }
+
 }  // namespace libvpx_test

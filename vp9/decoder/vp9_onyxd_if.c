@@ -318,6 +318,8 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
   /*if(pbi->ready_for_new_data == 0)
       return -1;*/
 
+  //printf("Starting decoding frame %d\n", pbi->common.current_video_frame);
+
   if (ptr == 0) {
     return -1;
   }
@@ -354,6 +356,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
 
   pbi->common.error.setjmp = 1;
 
+  //printf("Continuing decoding frame %d\n", pbi->common.current_video_frame);
   retcode = vp9_decode_frame(pbi, psource);
 
   if (retcode < 0) {
