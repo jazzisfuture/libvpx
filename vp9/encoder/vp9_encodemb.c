@@ -309,6 +309,33 @@ void vp9_transform_mb_16x16(MACROBLOCK *x) {
   vp9_transform_mbuv_8x8(x);
 }
 
+void vp9_transform_sb32y_16x16(MACROBLOCK *x) {
+  int i, off;
+  // ADST is not enabled for superblocks, so ignore it for now
+  for (i = 0, off = 0; i < 16; i += 4, off += 16*16) {
+    x->vp9_short_fdct16x16(&x->sb_coeff_data.src_diff[off],
+                           &x->sb_coeff_data.coeff[off], 32);
+  }
+}
+
+void vp9_transform_sb32uv_8x8(MACROBLOCK *x) {
+  int i, off;
+  for (i = 16, off = 1024; i < 24; i++, off += 8*8) {
+    x->vp9_short_fdct8x8(&x->sb_coeff_data.src_diff[off],
+                         &x->sb_coeff_data.coeff[off], 16);
+  }
+}
+
+void vp9_transform_sb32_16x16(MACROBLOCK *x) {
+  MACROBLOCKD *xd = &x->e_mbd;
+
+  vp9_transform_sb32y_16x16(x);
+  vp9_transform_sb32uv_8x8(x);
+  vp9_quantize_sb32_16x16(x);
+  // Skip optimization for now
+  vp9_inverse_transform_sb32_16x16(xd);
+}
+
 void vp9_transform_sby_32x32(MACROBLOCK *x) {
   SUPERBLOCK * const x_sb = &x->sb_coeff_data;
   vp9_short_fdct32x32(x_sb->src_diff, x_sb->coeff, 64);
@@ -830,6 +857,16 @@ void vp9_optimize_mby_16x16(MACROBLOCK *x) {
 static void optimize_mb_16x16(MACROBLOCK *x) {
   vp9_optimize_mby_16x16(x);
   vp9_optimize_mbuv_8x8(x);
+}
+
+void vp9_fidct_sb32(MACROBLOCK *x) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  TX_SIZE tx_size = xd->mode_info_context->mbmi.txfm_size;
+
+  if (tx_size == TX_16X16) {
+    vp9_transform_sb32_16x16(x);
+    vp9_quantize_sb32_16x16(x);
+  }
 }
 
 void vp9_fidct_mb(MACROBLOCK *x) {

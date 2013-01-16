@@ -156,3 +156,28 @@ void vp9_inverse_transform_sbuv_16x16(SUPERBLOCKD *xd_sb) {
   vp9_inverse_transform_b_16x16(xd_sb->dqcoeff + 1280,
                                 xd_sb->diff + 1280, 32);
 }
+
+void vp9_inverse_transform_sb32y_16x16(MACROBLOCKD *xd) {
+  int i, off;
+  SUPERBLOCKD * const xd_sb = &xd->sb_coeff_data;
+
+  for (i = 0, off = 0; i < 16; i += 4, off += 16*16) {
+    vp9_inverse_transform_b_16x16(&xd_sb->dqcoeff[off],
+                                  &xd_sb->diff[off], 32);
+  }
+}
+
+void vp9_inverse_transform_sb32uv_8x8(MACROBLOCKD *xd) {
+  int i, off;
+  SUPERBLOCKD * const xd_sb = &xd->sb_coeff_data;
+
+  for (i = 16, off = 1024; i < 24; i++, off += 8*8) {
+    vp9_inverse_transform_b_8x8(&xd_sb->dqcoeff[off],
+                                &xd_sb->diff[off], 16);
+  }
+}
+
+void vp9_inverse_transform_sb32_16x16(MACROBLOCKD *xd) {
+  vp9_inverse_transform_sb32y_16x16(xd);
+  vp9_inverse_transform_sb32uv_8x8(xd);
+}

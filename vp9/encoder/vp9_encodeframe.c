@@ -2405,6 +2405,39 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
         mi[mis + 1].mbmi.mb_skip_coeff = mi->mbmi.mb_skip_coeff;
     }
     skip[0] = skip[2] = skip[1] = skip[3] = mi->mbmi.mb_skip_coeff;
+  } else if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
+    if (!x->skip) {
+      vp9_subtract_sby_s_c(x->sb_coeff_data.src_diff, src, src_y_stride,
+                           dst, dst_y_stride);
+      vp9_subtract_sbuv_s_c(x->sb_coeff_data.src_diff,
+                            usrc, vsrc, src_uv_stride,
+                            udst, vdst, dst_uv_stride);
+      vp9_transform_sb32_16x16(x);
+      vp9_recon_sby_s_c(&x->e_mbd, dst);
+      vp9_recon_sbuv_s_c(&x->e_mbd, udst, vdst);
+
+      xd->left_context = cm->left_context + (mb_row & 2);
+      xd->above_context = cm->above_context + mb_col;
+      xd->mode_info_context = mi;
+      vp9_tokenize_sb32_16x16(cpi, &x->e_mbd, t, !output_enabled);
+      xd->mode_info_context = mi;
+    } else {
+      int mb_skip_context =
+          cpi->common.mb_no_coeff_skip ?
+          (mi - 1)->mbmi.mb_skip_coeff +
+          (mi - mis)->mbmi.mb_skip_coeff :
+          0;
+      mi->mbmi.mb_skip_coeff = 1;
+      if (cm->mb_no_coeff_skip) {
+        if (output_enabled)
+          cpi->skip_true_count[mb_skip_context]++;
+        vp9_fix_contexts_sb(xd);
+      } else {
+        vp9_stuff_sb32_16x16(cpi, xd, t, !output_enabled);
+        if (output_enabled)
+          cpi->skip_false_count[mb_skip_context]++;
+      }
+    }
   } else {
     for (n = 0; n < 4; n++) {
       int x_idx = n & 1, y_idx = n >> 1;
