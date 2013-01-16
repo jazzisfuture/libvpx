@@ -874,3 +874,49 @@ void vp9_set_quantizer(struct VP9_COMP *cpi, int Q) {
   // if(update)
   //    vp9_init_quantizer(cpi);
 }
+
+
+void vp9_quantize_sb32y_16x16(MACROBLOCK *x) {
+  int i, off;
+  for (i = 0; i < 16; i++)
+    x->e_mbd.block[i].eob = 0;
+  x->e_mbd.block[24].eob = 0;
+
+  for (i = 0, off = 0; i < 16; i += 4, off += 16*16) {
+    quantize(x->block[i].zrun_zbin_boost_16x16,
+             &x->sb_coeff_data.coeff[off], 256,
+             x->block[i].eob_max_offset_16x16,
+             x->block[i].zbin_16x16,
+             x->block[i].round, x->block[i].quant, x->block[i].quant_shift,
+             &x->e_mbd.sb_coeff_data.qcoeff[off],
+             &x->e_mbd.sb_coeff_data.dqcoeff[off],
+             x->e_mbd.block[i].dequant,
+             x->block[i].zbin_extra,
+             &x->e_mbd.block[i].eob,
+             vp9_default_zig_zag1d_16x16, 1);
+  }
+}
+
+void vp9_quantize_sb32uv_8x8(MACROBLOCK *x) {
+  int i, off;
+  for (i = 16; i < 24; i++)
+    x->e_mbd.block[i].eob = 0;
+
+  for (i = 16, off = 1024; i < 24; i++, off += 8*8) {
+    quantize(x->block[i].zrun_zbin_boost_8x8,
+             &x->sb_coeff_data.coeff[off], 64,
+             x->block[i].eob_max_offset_8x8,
+             x->block[i].zbin_8x8,
+             x->block[i].round, x->block[i].quant, x->block[i].quant_shift,
+             &x->e_mbd.sb_coeff_data.qcoeff[off],
+             &x->e_mbd.sb_coeff_data.dqcoeff[off],
+             x->e_mbd.block[i].dequant, x->block[i].zbin_extra,
+             &x->e_mbd.block[i].eob,
+             vp9_default_zig_zag1d_8x8, 1);
+  }
+}
+
+void vp9_quantize_sb32_16x16(MACROBLOCK *x) {
+  vp9_quantize_sb32y_16x16(x);
+  vp9_quantize_sbuv_16x16(x);
+}

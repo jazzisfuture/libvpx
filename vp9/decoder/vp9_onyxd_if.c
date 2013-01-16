@@ -33,7 +33,7 @@
 static int get_free_fb(VP9_COMMON *cm);
 static void ref_cnt_fb(int *buf, int *idx, int new_idx);
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
   FILE *yuv_file = fopen((char *)name, "ab");

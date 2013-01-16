@@ -79,7 +79,7 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #endif
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
