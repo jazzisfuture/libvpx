@@ -1534,6 +1534,10 @@ void vp9_short_idct10_16x16_c(int16_t *input, int16_t *output, int pitch) {
 #endif
 
 #if !CONFIG_DWTDCTHYBRID
+
+#define TEST_INT_32x32_IDCT 1
+
+#if !TEST_INT_32x32_IDCT
 #define DownshiftMultiplyBy2(x) x * 2
 #define DownshiftMultiply(x) x
 
@@ -1879,6 +1883,165 @@ void vp9_short_idct32x32_c(int16_t *input, int16_t *output, int pitch) {
   }
   vp9_clear_system_state();  // Make it simd safe : __asm emms;
 }
+
+#else
+
+#define INITIAL_SHIFT 1
+#define INITIAL_ROUNDING (1 << (INITIAL_SHIFT - 1))
+#define C16_SHIFT 16
+#define C16_ROUNDING (1 << (C16 - 1))
+#define RIGHT_SHIFT 11
+#define RIGHT_ROUNDING (1 << (RIGHT_SHIFT - 1))
+
+static void butterfly_32_idct_1d(int16_t *input, int16_t *output,
+                                 int last_shift_bits) {
+  static const int16_t C1 = 1025;
+  static const int16_t C3 = 1035;
+  static const int16_t C5 = 1056;
+  static const int16_t C7 = 1088;
+  static const int16_t C9 = 1133;
+  static const int16_t C11 = 1194;
+  static const int16_t C13 = 1275;
+  static const int16_t C15 = 1382;
+  static const int16_t C17 = 1525;
+  static const int16_t C19 = 1719;
+  static const int16_t C21 = 1992;
+  static const int16_t C23 = 2395;
+  static const int16_t C25 = 3040;
+  static const int16_t C27 = 4214;
+  static const int16_t C29 = 6979;
+  static const int16_t C31 = 20869;
+
+  static const int16_t C16 = 23170;   // multiply by 2 ^15
+
+  int16_t step1[32];
+  int16_t step2[32];
+  int temp;
+
+  int last_rounding = 0;
+
+  if (last_shift_bits > 0)
+    last_rounding = 1 << (last_shift_bits - 1);
+
+  step1[ 0] = (input[0] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 1] = (input[2] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 2] = (input[4] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 3] = (input[6] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 4] = (input[8] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 5] = (input[10] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 6] = (input[12] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 7] = (input[14] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 8] = (input[16] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[ 9] = (input[18] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[10] = (input[20] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[11] = (input[22] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[12] = (input[24] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[13] = (input[26] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[14] = (input[28] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[15] = (input[30] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+
+  temp = 2 * input[1] * C16;
+  step1[16] = (temp + C16_ROUNDING) >> C16_SHIFT;
+  step1[17] = (input[3] + input[1] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[18] = (input[5] + input[3] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[19] = (input[7] + input[5] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[20] = (input[9] + input[7] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[21] = (input[11] + input[9] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[22] = (input[13] + input[11] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[23] = (input[15] + input[13] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[24] = (input[17] + input[15] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[25] = (input[19] + input[17] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[26] = (input[21] + input[19] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[27] = (input[23] + input[21] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[28] = (input[25] + input[23] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[29] = (input[27] + input[25] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[30] = (input[29] + input[27] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+  step1[31] = (input[31] + input[29] + INITIAL_ROUNDING) >> INITIAL_SHIFT;
+
+  butterfly_16x16_idct_1d(step1, step2, 0);
+  butterfly_16x16_idct_1d(step1 + 16, step2 + 16, 0);
+
+  step2[16] = (step2[16] * C1 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[17] = (step2[17] * C3 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[18] = (step2[18] * C5 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[19] = (step2[19] * C7 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[20] = (step2[20] * C9 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[21] = (step2[21] * C11 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[22] = (step2[22] * C13 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[23] = (step2[23] * C15 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[24] = (step2[24] * C17 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[25] = (step2[25] * C19 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[26] = (step2[26] * C21 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[27] = (step2[27] * C23 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[28] = (step2[28] * C25 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[29] = (step2[29] * C27 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[30] = (step2[30] * C29 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+  step2[31] = (step2[31] * C31 + RIGHT_ROUNDING) >> RIGHT_SHIFT;
+
+  output[ 0] = (step2[ 0] + step2[16] + last_rounding) >> last_shift_bits;
+  output[ 1] = (step2[ 1] + step2[17] + last_rounding) >> last_shift_bits;
+  output[ 2] = (step2[ 2] + step2[18] + last_rounding) >> last_shift_bits;
+  output[ 3] = (step2[ 3] + step2[19] + last_rounding) >> last_shift_bits;
+  output[ 4] = (step2[ 4] + step2[20] + last_rounding) >> last_shift_bits;
+  output[ 5] = (step2[ 5] + step2[21] + last_rounding) >> last_shift_bits;
+  output[ 6] = (step2[ 6] + step2[22] + last_rounding) >> last_shift_bits;
+  output[ 7] = (step2[ 7] + step2[23] + last_rounding) >> last_shift_bits;
+  output[ 8] = (step2[ 8] + step2[24] + last_rounding) >> last_shift_bits;
+  output[ 9] = (step2[ 9] + step2[25] + last_rounding) >> last_shift_bits;
+  output[10] = (step2[10] + step2[26] + last_rounding) >> last_shift_bits;
+  output[11] = (step2[11] + step2[27] + last_rounding) >> last_shift_bits;
+  output[12] = (step2[12] + step2[28] + last_rounding) >> last_shift_bits;
+  output[13] = (step2[13] + step2[29] + last_rounding) >> last_shift_bits;
+  output[14] = (step2[14] + step2[30] + last_rounding) >> last_shift_bits;
+  output[15] = (step2[15] + step2[31] + last_rounding) >> last_shift_bits;
+  output[16] = (step2[15] - step2[31] + last_rounding) >> last_shift_bits;
+  output[17] = (step2[14] - step2[30] + last_rounding) >> last_shift_bits;
+  output[18] = (step2[13] - step2[29] + last_rounding) >> last_shift_bits;
+  output[19] = (step2[12] - step2[28] + last_rounding) >> last_shift_bits;
+  output[20] = (step2[11] - step2[27] + last_rounding) >> last_shift_bits;
+  output[21] = (step2[10] - step2[26] + last_rounding) >> last_shift_bits;
+  output[22] = (step2[ 9] - step2[25] + last_rounding) >> last_shift_bits;
+  output[23] = (step2[ 8] - step2[24] + last_rounding) >> last_shift_bits;
+  output[24] = (step2[ 7] - step2[23] + last_rounding) >> last_shift_bits;
+  output[25] = (step2[ 6] - step2[22] + last_rounding) >> last_shift_bits;
+  output[26] = (step2[ 5] - step2[21] + last_rounding) >> last_shift_bits;
+  output[27] = (step2[ 4] - step2[20] + last_rounding) >> last_shift_bits;
+  output[28] = (step2[ 3] - step2[19] + last_rounding) >> last_shift_bits;
+  output[29] = (step2[ 2] - step2[18] + last_rounding) >> last_shift_bits;
+  output[30] = (step2[ 1] - step2[17] + last_rounding) >> last_shift_bits;
+  output[31] = (step2[ 0] - step2[16] + last_rounding) >> last_shift_bits;
+}
+#undef INITIAL_SHIFT
+#undef INITIAL_ROUNDING
+#undef C16_SHIFT
+#undef C16_ROUNDING
+#undef RIGHT_SHIFT
+#undef RIGHT_ROUNDING
+
+void vp9_short_idct32x32_c(int16_t *input, int16_t *output, int pitch) {
+  int16_t out[32 * 32];
+  int16_t *outptr = &out[0];
+  const int short_pitch = pitch >> 1;
+  int i, j;
+  int16_t temp_in[32], temp_out[32];
+
+  // First transform rows
+  for (i = 0; i < 32; ++i) {
+    butterfly_32_idct_1d(input, outptr, 0);
+    input += short_pitch;
+    outptr += 32;
+  }
+
+  // Then transform columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    butterfly_32_idct_1d(temp_in, temp_out, 1);
+    for (j = 0; j < 32; ++j)
+      output[j * 32 + i] = temp_out[j];
+  }
+}
+#endif
 
 #else  // !CONFIG_DWTDCTHYBRID
 
