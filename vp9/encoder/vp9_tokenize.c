@@ -106,12 +106,9 @@ static void fill_value_tokens() {
 #define PT pt
 #endif
 
-static void tokenize_b(VP9_COMP *cpi,
-                       MACROBLOCKD *xd,
-                       const int ib,
-                       TOKENEXTRA **tp,
-                       PLANE_TYPE type,
-                       TX_SIZE tx_size,
+static void tokenize_b(VP9_COMP *cpi, MACROBLOCKD *xd,
+                       const int ib, TOKENEXTRA **tp,
+                       PLANE_TYPE type, TX_SIZE tx_size,
                        int dry_run) {
   int pt; /* near block/prev token context index */
   int c = (type == PLANE_TYPE_Y_NO_DC) ? 1 : 0;
@@ -126,6 +123,7 @@ static void tokenize_b(VP9_COMP *cpi,
   vp9_coeff_probs *probs;
   const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                           get_tx_type(xd, b) : DCT_DCT;
+  const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
 #if CONFIG_NEWCOEFCONTEXT
   const int *neighbors;
   int pn;
@@ -208,6 +206,9 @@ static void tokenize_b(VP9_COMP *cpi,
         int uv_idx = (ib - 16) >> 2;
         qcoeff_ptr = xd->sb_coeff_data.qcoeff + 1024 + 256 * uv_idx;
       }
+      else if (sb_type == BLOCK_SIZE_SB32X32 && type == PLANE_TYPE_Y_WITH_DC) {
+        qcoeff_ptr = xd->sb_coeff_data.qcoeff + (ib/4) * 256;
+      }
       break;
     case TX_32X32:
 #if CONFIG_CNVCONTEXT
@@ -255,6 +256,8 @@ static void tokenize_b(VP9_COMP *cpi,
     t->context_tree = probs[type][band][PT];
     t->skip_eob_node = (pt == 0) && ((band > 0 && type != PLANE_TYPE_Y_NO_DC) ||
                                      (band > 1 && type == PLANE_TYPE_Y_NO_DC));
+    if (vp9_coef_encodings[t->Token].Len - t->skip_eob_node <= 0)
+      printf("%d %d %d %d %d %d\n", sb_type, tx_size, type, eob, ib, c);
     assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][band][PT][token];
@@ -375,6 +378,106 @@ int vp9_sbuv_is_skippable_16x16(MACROBLOCKD *xd) {
 static int sb_is_skippable_32x32(MACROBLOCKD *xd) {
   return vp9_sby_is_skippable_32x32(xd) &&
          vp9_sbuv_is_skippable_16x16(xd);
+}
+
+int vp9_sb32y_is_skippable_16x16(MACROBLOCKD *xd) {
+  int skip = 1, i = 0;
+  for (i = 0; i < 16; i += 4)
+    skip &= (!xd->block[i].eob);
+  return skip;
+}
+
+int vp9_sb32uv_is_skippable_8x8(MACROBLOCKD *xd) {
+  int skip = 1, i = 0;
+  for (i = 16; i < 24; i++)
+    skip &= (!xd->block[i].eob);
+  return skip;
+}
+
+static int sb32_is_skippable_16x16(MACROBLOCKD *xd) {
+  return vp9_sb32y_is_skippable_16x16(xd) &&
+         vp9_sbuv_is_skippable_16x16(xd);
+}
+
+void vp9_tokenize_sb32_16x16(VP9_COMP *cpi, MACROBLOCKD *xd,
+                             TOKENEXTRA **t, int dry_run) {
+  VP9_COMMON * const cm = &cpi->common;
+  MB_MODE_INFO * const mbmi = &xd->mode_info_context->mbmi;
+  TOKENEXTRA *t_backup = *t;
+  ENTROPY_CONTEXT *A[2] = { (ENTROPY_CONTEXT *) (xd->above_context + 0),
+                            (ENTROPY_CONTEXT *) (xd->above_context + 1), };
+  ENTROPY_CONTEXT *L[2] = { (ENTROPY_CONTEXT *) (xd->left_context + 0),
+                            (ENTROPY_CONTEXT *) (xd->left_context + 1), };
+  const int mb_skip_context = vp9_get_pred_context(cm, xd, PRED_MBSKIP);
+  const int tx_size = mbmi->txfm_size;
+  const int segment_id = mbmi->segment_id;
+  const int skip_inc =  !vp9_segfeature_active(xd, segment_id, SEG_LVL_EOB) ||
+                        (vp9_get_segdata(xd, segment_id, SEG_LVL_EOB) != 0);
+  int b;
+
+  switch (tx_size) {
+    default:
+    case TX_16X16:
+      mbmi->mb_skip_coeff = sb32_is_skippable_16x16(xd);
+      break;
+  }
+
+  if (mbmi->mb_skip_coeff) {
+    if (!dry_run)
+      cpi->skip_true_count[mb_skip_context] += skip_inc;
+    if (!cpi->common.mb_no_coeff_skip)
+      vp9_stuff_sb32_16x16(cpi, xd, t, dry_run);
+    else {
+      //vp9_fix_contexts_sb(xd);
+      int n;
+      for (n = 0; n < 4; n++) {
+        int x_idx = n & 1, y_idx = n >> 1;
+        xd->left_context = (ENTROPY_CONTEXT_PLANES *) A[y_idx];
+        xd->above_context = (ENTROPY_CONTEXT_PLANES *) L[x_idx];
+        vp9_reset_mb_tokens_context(xd);
+      }
+    }
+
+    if (dry_run)
+      *t = t_backup;
+    return;
+  }
+
+  if (!dry_run)
+    cpi->skip_false_count[mb_skip_context] += skip_inc;
+
+  /*if (has_2nd_order) {
+    tokenize_b(cpi, xd, 24, t, PLANE_TYPE_Y2, tx_size, dry_run);
+    plane_type = PLANE_TYPE_Y_NO_DC;
+  } else */{
+    xd->above_context->y2 = 0;
+    xd->left_context->y2 = 0;
+    //plane_type = PLANE_TYPE_Y_WITH_DC;
+  }
+
+  for (b = 0; b < 16; b += 4) {
+    // Update context??
+    int n = b/4;
+    int x_idx = n & 1, y_idx = n >> 1;
+    const int mis = cm->mode_info_stride;
+    MODE_INFO *mi = xd->mode_info_context;
+    xd->left_context = (ENTROPY_CONTEXT_PLANES *) A[y_idx];
+    xd->above_context = (ENTROPY_CONTEXT_PLANES *) L[x_idx];
+    xd->mode_info_context = mi + x_idx + y_idx * mis;
+
+    tokenize_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC, TX_16X16, dry_run);
+    xd->mode_info_context = mi;
+  }
+
+  xd->left_context = (ENTROPY_CONTEXT_PLANES *) A[0];
+  xd->above_context = (ENTROPY_CONTEXT_PLANES *) L[0];
+  for (b = 16; b < 24; b += 4)
+    tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_16X16, dry_run);
+
+  A[0][8] = L[0][8] = A[1][8] = L[1][8] = 0;
+
+  if (dry_run)
+    *t = t_backup;
 }
 
 void vp9_tokenize_sb(VP9_COMP *cpi,
@@ -942,7 +1045,7 @@ void vp9_stuff_mb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
 }
 
 static void stuff_sb_32x32(VP9_COMP *cpi, MACROBLOCKD *xd,
-                               TOKENEXTRA **t, int dry_run) {
+                           TOKENEXTRA **t, int dry_run) {
   int b;
 
   stuff_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC, TX_32X32, dry_run);
@@ -959,6 +1062,20 @@ void vp9_stuff_sb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
   if (dry_run) {
     *t = t_backup;
   }
+}
+
+void vp9_stuff_sb32_16x16(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, 
+                          int dry_run) {
+  TOKENEXTRA * const t_backup = *t;
+  int b;
+
+  for (b = 0; b < 16; b += 4)
+    stuff_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC, TX_16X16, dry_run);
+  for (b = 16; b < 24; b += 4)
+    stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_16X16, dry_run);
+
+  if (dry_run)
+    *t = t_backup;
 }
 
 void vp9_fix_contexts_sb(MACROBLOCKD *xd) {

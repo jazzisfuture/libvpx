@@ -826,6 +826,14 @@ static void decode_superblock32(VP9D_COMP *pbi, MACROBLOCKD *xd,
   if (xd->segmentation_enabled)
     mb_init_dequantizer(pbi, xd);
 
+if (-xd->mb_to_left_edge/8 == 128) {
+  printf("\n%d %d\n", -xd->mb_to_top_edge/8, -xd->mb_to_left_edge/8);
+  printf("%d %d\n", xd->mode_info_context->mbmi.txfm_size, TX_32X32);
+  if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
+    printf("ohai\n");
+  }
+}
+
   if (xd->mode_info_context->mbmi.mb_skip_coeff) {
     vp9_reset_mb_tokens_context(xd);
     if (mb_col < pc->mb_cols - 1)
@@ -876,6 +884,45 @@ static void decode_superblock32(VP9D_COMP *pbi, MACROBLOCKD *xd,
                                             xd->block[16].dequant,
                                             xd->dst.u_buffer, xd->dst.v_buffer,
                                             xd->dst.uv_stride, xd->eobs + 16);
+    }
+  } else if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
+    xd->above_context = pc->above_context + mb_col;
+    xd->left_context = pc->left_context + (mb_row & 2);
+    xd->mode_info_context = orig_mi;
+    for (i = 0; i < 25; i++) {
+      xd->block[i].eob = 0;
+      xd->eobs[i] = 0;
+    }
+
+    eobtotal = vp9_decode_sb32_tokens_16x16(pbi, xd, bc);
+    if (eobtotal == 0) {  // skip loopfilter
+      xd->mode_info_context->mbmi.mb_skip_coeff = 1;
+      if (mb_col + 1 < pc->mb_cols)
+        xd->mode_info_context[1].mbmi.mb_skip_coeff = 1;
+      if (mb_row + 1 < pc->mb_rows) {
+        xd->mode_info_context[mis].mbmi.mb_skip_coeff = 1;
+        if (mb_col + 1 < pc->mb_cols)
+          xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
+      }
+    } else {
+      for (i = 0; i < 16; i += 4) {
+        int n = i/4;
+        int x_idx = n & 1, y_idx = n >> 1;
+
+        if (mb_col + x_idx >= pc->mb_cols || mb_row + y_idx >= pc->mb_rows)
+          continue;
+
+        vp9_dequant_idct_add_16x16(xd->sb_coeff_data.qcoeff + 256*n,
+                                   xd->block[0].dequant,
+                                   xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
+                                   xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
+                                   xd->dst.y_stride, xd->dst.y_stride, xd->eobs[i]);
+      }
+      vp9_dequant_idct_add_uv_block_16x16_c(xd->sb_coeff_data.qcoeff + 1024,
+                                            xd->block[16].dequant,
+                                            xd->dst.u_buffer, xd->dst.v_buffer,
+                                            xd->dst.uv_stride, xd->eobs + 16);
+
     }
   } else {
     for (n = 0; n < 4; n++) {
