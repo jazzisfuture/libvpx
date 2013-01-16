@@ -152,6 +152,49 @@ void vp9_subtract_sbuv_s_c(int16_t *diff, const uint8_t *usrc,
   }
 }
 
+void vp9_subtract_sb32uv_s_c(int16_t *diff, const uint8_t *usrc,
+                             const uint8_t *vsrc, int src_stride,
+                             const uint8_t *upred,
+                             const uint8_t *vpred, int dst_stride) {
+  int16_t *udiff = diff + 1024;
+  int16_t *vdiff = diff + 1024 + 256;
+  int r, c, n;
+  const uint8_t *usrc_b = usrc;
+  const uint8_t *upred_b = upred;
+  const uint8_t *vsrc_b = vsrc;
+  const uint8_t *vpred_b = vpred;
+
+  for (n = 0; n < 4; n++) {
+    int x_idx = n & 1, y_idx = n >> 1;
+
+    usrc = usrc_b + x_idx * 8 + y_idx * 8 * src_stride;
+    upred = upred_b + x_idx * 8 + y_idx * 8 * dst_stride;
+    for (r = 0; r < 8; r++) {
+      for (c = 0; c < 8; c++)
+        udiff[c] = usrc[c] - upred[c];
+
+      udiff += 8;
+      upred += dst_stride;
+      usrc  += src_stride;
+    }
+  }
+
+  for (n = 0; n < 4; n++) {
+    int x_idx = n & 1, y_idx = n >> 1;
+
+    vsrc = vsrc_b + x_idx * 8 + y_idx * 8 * src_stride;
+    vpred = vpred_b + x_idx * 8 + y_idx * 8 * dst_stride;
+    for (r = 0; r < 8; r++) {
+      for (c = 0; c < 8; c++)
+        vdiff[c] = vsrc[c] - vpred[c];
+
+      vdiff += 8;
+      vpred += dst_stride;
+      vsrc  += src_stride;
+    }
+  }
+}
+
 void vp9_subtract_mby_c(int16_t *diff, uint8_t *src,
                         uint8_t *pred, int stride) {
   vp9_subtract_mby_s_c(diff, src, stride, pred, 16);
@@ -309,6 +352,25 @@ void vp9_transform_mb_16x16(MACROBLOCK *x) {
   vp9_transform_mbuv_8x8(x);
 }
 
+void vp9_transform_sb32y_16x16(MACROBLOCK *x) {
+  int i, off;
+  // ADST is not enabled for superblocks, so ignore it for now
+  vp9_clear_system_state();
+  for (i = 0, off = 0; i < 16; i += 4, off += 16*16) {
+    x->vp9_short_fdct16x16(x->sb_coeff_data.src_diff + off,
+                           x->sb_coeff_data.coeff + off, 32);
+  }
+}
+
+void vp9_transform_sb32uv_8x8(MACROBLOCK *x) {
+  int i, off;
+  vp9_clear_system_state();
+  for (i = 16, off = 1024; i < 24; i++, off += 8*8) {
+    x->vp9_short_fdct8x8(x->sb_coeff_data.src_diff + off,
+                         x->sb_coeff_data.coeff + off, 16);
+  }
+}
+
 void vp9_transform_sby_32x32(MACROBLOCK *x) {
   SUPERBLOCK * const x_sb = &x->sb_coeff_data;
   vp9_short_fdct32x32(x_sb->src_diff, x_sb->coeff, 64);
@@ -322,6 +384,18 @@ void vp9_transform_sbuv_16x16(MACROBLOCK *x) {
   x->vp9_short_fdct16x16(x_sb->src_diff + 1280,
                          x_sb->coeff + 1280, 32);
 }
+
+void vp9_transform_sb32_16x16(MACROBLOCK *x) {
+  MACROBLOCKD *xd = &x->e_mbd;
+
+  vp9_transform_sb32y_16x16(x);
+  vp9_transform_sbuv_16x16(x);
+  vp9_quantize_sb32_16x16(x);
+  // Skip optimization for now
+  vp9_inverse_transform_sb32_16x16(xd);
+}
+
+
 
 #define RDTRUNC(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
 #define RDTRUNC_8x8(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
@@ -830,6 +904,16 @@ void vp9_optimize_mby_16x16(MACROBLOCK *x) {
 static void optimize_mb_16x16(MACROBLOCK *x) {
   vp9_optimize_mby_16x16(x);
   vp9_optimize_mbuv_8x8(x);
+}
+
+void vp9_fidct_sb32(MACROBLOCK *x) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  TX_SIZE tx_size = xd->mode_info_context->mbmi.txfm_size;
+
+  if (tx_size == TX_16X16) {
+    vp9_transform_sb32_16x16(x);
+    vp9_quantize_sb32_16x16(x);
+  }
 }
 
 void vp9_fidct_mb(MACROBLOCK *x) {

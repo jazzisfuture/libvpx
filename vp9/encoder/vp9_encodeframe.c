@@ -2405,6 +2405,99 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
         mi[mis + 1].mbmi.mb_skip_coeff = mi->mbmi.mb_skip_coeff;
     }
     skip[0] = skip[2] = skip[1] = skip[3] = mi->mbmi.mb_skip_coeff;
+  } else if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
+    if (!x->skip) {
+      for (n = 0; n < 4; n++) {
+        int x_idx = n & 1, y_idx = n >> 1;
+        vp9_subtract_mby_s_c(x->sb_coeff_data.src_diff + 256*n,
+                             src + x_idx * 16 + y_idx * 16 * src_y_stride, src_y_stride,
+                             dst + x_idx * 16 + y_idx * 16 * dst_y_stride, dst_y_stride);
+      }
+      vp9_subtract_sbuv_s_c(x->sb_coeff_data.src_diff,
+                            usrc, vsrc, src_uv_stride,
+                            udst, vdst, dst_uv_stride);
+      vp9_transform_sb32_16x16(x);
+      for (n = 0; n < 4; n++) {
+        int x_idx = n & 1, y_idx = n >> 1;
+        vp9_recon_mby_s_c(&x->e_mbd, dst + x_idx * 16 + y_idx * 16 * dst_y_stride);
+      }
+      vp9_recon_sbuv_s_c(&x->e_mbd, udst, vdst);
+
+      xd->left_context = cm->left_context + (mb_row & 2);
+      xd->above_context = cm->above_context + mb_col;
+      xd->mode_info_context = mi;
+      vp9_tokenize_sb32_16x16(cpi, &x->e_mbd, t, !output_enabled);
+    } else {
+      int mb_skip_context =
+          cpi->common.mb_no_coeff_skip ?
+          (mi - 1)->mbmi.mb_skip_coeff +
+          (mi - mis)->mbmi.mb_skip_coeff :
+          0;
+      mi->mbmi.mb_skip_coeff = 1;
+      if (cm->mb_no_coeff_skip) {
+        if (output_enabled)
+          cpi->skip_true_count[mb_skip_context]++;
+        vp9_fix_contexts_sb(xd);
+      } else {
+        vp9_stuff_sb32_16x16(cpi, xd, t, !output_enabled);
+        if (output_enabled)
+          cpi->skip_false_count[mb_skip_context]++;
+      }
+    }
+
+    xd->mode_info_context = mi;
+    /*for (n = 0; n < 4; n++) {
+      int x_idx = n & 1, y_idx = n >> 1;
+      vp9_subtract_mby_s_c(&x->sb_coeff_data.src_diff[256*n],
+                           src + x_idx * 16 + y_idx * 16 * src_y_stride, src_y_stride,
+                           dst + x_idx * 16 + y_idx * 16 * dst_y_stride, dst_y_stride);
+    }
+    vp9_subtract_sb32uv_s_c(x->sb_coeff_data.src_diff, usrc, vsrc, src_uv_stride,
+                            udst, vdst, dst_uv_stride);
+    vp9_transform_sb32_16x16(x);
+    vp9_recon_sby_s_c(&x->e_mbd, dst);
+    vp9_recon_sbuv_s_c(&x->e_mbd, udst, vdst);
+    for (n = 0; n < 4; n++) {
+      int x_idx = n & 1, y_idx = n >> 1;
+
+      xd->left_context = cm->left_context + y_idx + (mb_row & 2);
+      xd->above_context = cm->above_context + mb_col + x_idx;
+      memcpy(&ta[n], xd->above_context, sizeof(ta[n]));
+      memcpy(&tl[n], xd->left_context, sizeof(tl[n]));
+      tp[n] = *t;
+      xd->mode_info_context = mi + x_idx + y_idx * mis;
+      memcpy( xd->block[0].qcoeff, &xd->sb_coeff_data.qcoeff[256*n], 256*2);
+      memcpy(xd->block[16].qcoeff, &xd->sb_coeff_data.qcoeff[1024 + 64*n], 64*2);
+      memcpy(xd->block[20].qcoeff, &xd->sb_coeff_data.qcoeff[1280 + 64*n], 64*2);
+      memcpy( xd->block[0].dqcoeff, &xd->sb_coeff_data.dqcoeff[256*n], 256*2);
+      memcpy(xd->block[16].dqcoeff, &xd->sb_coeff_data.dqcoeff[1024 + 64*n], 64*2);
+      memcpy(xd->block[20].dqcoeff, &xd->sb_coeff_data.dqcoeff[1280 + 64*n], 64*2);
+
+      if (!x->skip) {
+        vp9_tokenize_mb(cpi, &x->e_mbd, t, !output_enabled);
+        skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
+      } else {
+        int mb_skip_context = cpi->common.mb_no_coeff_skip ?
+            (x->e_mbd.mode_info_context - 1)->mbmi.mb_skip_coeff +
+            (x->e_mbd.mode_info_context - mis)->mbmi.mb_skip_coeff :
+            0;
+        xd->mode_info_context->mbmi.mb_skip_coeff = skip[n] = 1;
+        if (cpi->common.mb_no_coeff_skip) {
+          // TODO(rbultje) this should be done per-sb instead of per-mb?
+          if (output_enabled)
+            cpi->skip_true_count[mb_skip_context]++;
+          vp9_reset_mb_tokens_context(xd);
+        } else {
+          vp9_stuff_mb(cpi, xd, t, !output_enabled);
+          // TODO(rbultje) this should be done per-sb instead of per-mb?
+          if (output_enabled)
+            cpi->skip_false_count[mb_skip_context]++;
+        }
+      }
+    }
+
+    xd->mode_info_context = mi;
+    update_sb_skip_coeff_state(cpi, ta, tl, tp, t, skip, output_enabled);*/
   } else {
     for (n = 0; n < 4; n++) {
       int x_idx = n & 1, y_idx = n >> 1;

@@ -79,7 +79,7 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #endif
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
@@ -3747,7 +3747,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 #endif
 #ifdef OUTPUT_YUV_REC
-  vp9_write_yuv_rec_frame(cm);
+  if (cm->show_frame) vp9_write_yuv_rec_frame(cm);
 #endif
 
   if (cm->show_frame) {

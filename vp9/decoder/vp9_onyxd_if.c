@@ -30,7 +30,7 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "./vpx_scale_rtcd.h"
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(char *name, YV12_BUFFER_CONFIG *s) {
   FILE *yuv_file = fopen((char *)name, "ab");
@@ -288,7 +288,8 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
      * at this point, but if it becomes so, [0] may not always be the correct
      * thing to do here.
      */
-    cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
+    if (cm->active_ref_idx[0] != INT_MAX)
+      cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
   }
 
   cm->new_fb_idx = get_free_fb(cm);
@@ -304,7 +305,8 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
      * at this point, but if it becomes so, [0] may not always be the correct
      * thing to do here.
      */
-    cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
+    if (cm->active_ref_idx[0] != INT_MAX)
+      cm->yv12_fb[cm->active_ref_idx[0]].corrupted = 1;
 
     if (cm->fb_idx_ref_cnt[cm->new_fb_idx] > 0)
       cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
