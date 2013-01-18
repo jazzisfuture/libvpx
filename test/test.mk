@@ -13,20 +13,20 @@ LIBVPX_TEST_SRCS-yes += video_source.h
 ##
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += altref_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += config_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += cq_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += datarate_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += encode_test_driver.h
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += error_resilience_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += i420_video_source.h
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += cq_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += datarate_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += encode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += encode_test_driver.h
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += error_resilience_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += i420_video_source.h
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
 
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ../md5_utils.h ../md5_utils.c
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.h
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ivf_video_source.h
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += test_vector_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += ../md5_utils.h ../md5_utils.c
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += decode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += decode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += ivf_video_source.h
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += test_vector_test.cc
 ##
 ## WHITE BOX TESTS
 ##
@@ -40,17 +40,17 @@ ifneq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),)
 
 # These tests require both the encoder and decoder to be built.
 ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),yesyes)
-LIBVPX_TEST_SRCS-yes                   += vp8_boolcoder_test.cc
+###LIBVPX_TEST_SRCS-yes                   += vp8_boolcoder_test.cc
 endif
 
-LIBVPX_TEST_SRCS-yes                   += idctllm_test.cc
-LIBVPX_TEST_SRCS-yes                   += intrapred_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_POSTPROC)    += pp_filter_test.cc
-LIBVPX_TEST_SRCS-yes                   += sad_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += set_roi.cc
-LIBVPX_TEST_SRCS-yes                   += sixtap_predict_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += subtract_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += vp8_fdct4x4_test.cc
+###LIBVPX_TEST_SRCS-yes                   += idctllm_test.cc
+###LIBVPX_TEST_SRCS-yes                   += intrapred_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_POSTPROC)    += pp_filter_test.cc
+###LIBVPX_TEST_SRCS-yes                   += sad_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += set_roi.cc
+###LIBVPX_TEST_SRCS-yes                   += sixtap_predict_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += subtract_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += vp8_fdct4x4_test.cc
 
 endif # VP8
 
@@ -59,17 +59,17 @@ ifneq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),)
 
 # These tests require both the encoder and decoder to be built.
 ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_DECODER),yesyes)
-LIBVPX_TEST_SRCS-yes                   += vp9_boolcoder_test.cc
+###LIBVPX_TEST_SRCS-yes                   += vp9_boolcoder_test.cc
 
 # IDCT test currently depends on FDCT function
-LIBVPX_TEST_SRCS-yes                   += idct8x8_test.cc
+###LIBVPX_TEST_SRCS-yes                   += idct8x8_test.cc
 endif
 
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct4x4_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct4x4_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 #LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
+###LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
 endif # VP9
 
 
