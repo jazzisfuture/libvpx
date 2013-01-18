@@ -17,6 +17,12 @@ else
   ASM:=.asm
 endif
 
+# Only attempt to link pthread when we use multithread and it is available
+ifeq ($(CONFIG_MULTITHREAD),yes)
+  ifeq ($(HAVE_PTHREAD_H),yes)
+    LINK_PTHREAD:=-lpthread
+  endif
+endif
 
 #
 # Calculate platform- and compiler-specific offsets for hand coded assembly
@@ -327,7 +333,7 @@ vpx.pc: config.mk libs.mk
 	$(qexec)echo 'Requires:' >> $@
 	$(qexec)echo 'Conflicts:' >> $@
 	$(qexec)echo 'Libs: -L$${libdir} -lvpx -lm' >> $@
-	$(qexec)echo 'Libs.private: -lm -lpthread' >> $@
+	$(qexec)echo 'Libs.private: -lm $(LINK_PTHREAD)' >> $@
 	$(qexec)echo 'Cflags: -I$${includedir}' >> $@
 INSTALL-LIBS-yes += $(LIBSUBDIR)/pkgconfig/vpx.pc
 INSTALL_MAPS += $(LIBSUBDIR)/pkgconfig/%.pc %.pc
@@ -465,7 +471,7 @@ $(foreach bin,$(LIBVPX_TEST_BINS),\
         lib$(CODEC_LIB)$(CODEC_LIB_SUF) libgtest.a ))\
     $(if $(BUILD_LIBVPX),$(eval $(call linkerxx_template,$(bin),\
         $(LIBVPX_TEST_OBJS) \
-        -L. -lvpx -lgtest -lpthread -lm)\
+        -L. -lvpx -lgtest $(LINK_PTHREAD) -lm)\
         )))\
     $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
 
