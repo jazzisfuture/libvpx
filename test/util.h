@@ -15,4 +15,7 @@
 #define PARAMS(...) ::testing::TestWithParam< std::tr1::tuple< __VA_ARGS__ > >
 #define GET_PARAM(k) std::tr1::get< k >(GetParam())
 
+#define CODEC_TEST_PARAMS(...) \
+  ::testing::TestWithParam< std::tr1::tuple< const libvpx_test::CodecFactory*, \
+                                             __VA_ARGS__ > >
 #endif  // TEST_UTIL_H_
