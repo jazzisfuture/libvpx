@@ -360,7 +360,8 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
     w = ctx->si.w;
     h = ctx->si.h;
 
-    res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
+    if(data && data_sz)
+        res = ctx->base.iface->dec.peek_si(data, data_sz, &ctx->si);
 
     if((res == VPX_CODEC_UNSUP_BITSTREAM) && !ctx->si.is_kf)
     {
