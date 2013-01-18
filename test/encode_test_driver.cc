@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "vpx_config.h"
+#include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #if CONFIG_VP8_DECODER
 #include "test/decode_test_driver.h"
@@ -45,7 +46,7 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
     cfg_.g_h = img->d_h;
     cfg_.g_timebase = video.timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
-    res = vpx_codec_enc_init(&encoder_, &vpx_codec_vp8_cx_algo, &cfg_,
+    res = vpx_codec_enc_init(&encoder_, CodecInterface(), &cfg_,
                              init_flags_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
@@ -143,9 +144,10 @@ void EncoderTest::RunLoop(VideoSource *video) {
       cfg_.g_pass = VPX_RC_LAST_PASS;
 
     BeginPassHook(pass);
-    Encoder encoder(cfg_, deadline_, init_flags_, &stats_);
+    Encoder *encoder = codec_->CreateEncoder(cfg_, deadline_, init_flags_,
+                                             &stats_);
 #if CONFIG_VP8_DECODER
-    Decoder decoder(dec_cfg, 0);
+    Decoder *decoder = codec_->CreateDecoder(dec_cfg, 0);
     bool has_cxdata = false;
 #endif
     bool again;
@@ -153,10 +155,10 @@ void EncoderTest::RunLoop(VideoSource *video) {
       again = video->img() != NULL;
 
       PreEncodeFrameHook(video);
-      PreEncodeFrameHook(video, &encoder);
-      encoder.EncodeFrame(video, frame_flags_);
+      PreEncodeFrameHook(video, encoder);
+      encoder->EncodeFrame(video, frame_flags_);
 
-      CxDataIterator iter = encoder.GetCxData();
+      CxDataIterator iter = encoder->GetCxData();
 
       while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
         again = true;
@@ -165,8 +167,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
           case VPX_CODEC_CX_FRAME_PKT:
 #if CONFIG_VP8_DECODER
             has_cxdata = true;
-            decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
-                                pkt->data.frame.sz);
+            decoder->DecodeFrame((const uint8_t*)pkt->data.frame.buf,
+                                 pkt->data.frame.sz);
 #endif
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
@@ -184,8 +186,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
 #if CONFIG_VP8_DECODER
       if (has_cxdata) {
-        const vpx_image_t *img_enc = encoder.GetPreviewFrame();
-        DxDataIterator dec_iter = decoder.GetDxData();
+        const vpx_image_t *img_enc = encoder->GetPreviewFrame();
+        DxDataIterator dec_iter = decoder->GetDxData();
         const vpx_image_t *img_dec = dec_iter.Next();
         if(img_enc && img_dec) {
           const bool res = compare_img(img_enc, img_dec);
@@ -198,6 +200,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 
     EndPassHook();
+
+    delete decoder;
+    delete encoder;
 
     if (!Continue())
       break;

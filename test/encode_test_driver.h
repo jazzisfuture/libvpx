@@ -17,6 +17,7 @@
 
 namespace libvpx_test {
 
+class CodecFactory;
 class VideoSource;
 
 enum TestMode {
@@ -35,6 +36,9 @@ enum TestMode {
 #define ONE_PASS_TEST_MODES ::testing::Values(::libvpx_test::kRealTime, \
                                               ::libvpx_test::kOnePassGood, \
                                               ::libvpx_test::kOnePassBest)
+
+#define TWO_PASS_TEST_MODES ::testing::Values(::libvpx_test::kTwoPassGood, \
+                                              ::libvpx_test::kTwoPassBest)
 
 
 // Provides an object to handle the libvpx get_cx_data() iteration pattern
@@ -117,6 +121,8 @@ class Encoder {
   }
 
  protected:
+  virtual const vpx_codec_iface_t* CodecInterface() const = 0;
+
   const char *EncoderError() {
     const char *detail = vpx_codec_error_detail(&encoder_);
     return detail ? detail : vpx_codec_error(&encoder_);
@@ -145,8 +151,9 @@ class Encoder {
 // classes directly, so that tests can be parameterized differently.
 class EncoderTest {
  protected:
-  EncoderTest() : abort_(false), init_flags_(0), frame_flags_(0),
-                  last_pts_(0) {}
+  explicit EncoderTest(const CodecFactory *codec) : codec_(codec),
+                          abort_(false), init_flags_(0), frame_flags_(0),
+                          last_pts_(0) {}
 
   virtual ~EncoderTest() {}
 
@@ -182,6 +189,7 @@ class EncoderTest {
   // Hook to determine whether the encode loop should continue.
   virtual bool Continue() const { return !abort_; }
 
+  const CodecFactory   *codec_;
   bool                 abort_;
   vpx_codec_enc_cfg_t  cfg_;
   unsigned int         passes_;
