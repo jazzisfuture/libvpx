@@ -69,21 +69,26 @@ static const unsigned int kf_uv_mode_cts [VP9_YMODES] [VP9_UV_MODES] = {
   { 122, 41, 35, 20, 20, 20, 20, 20, 20, 18}, /* BPRED */
 };
 
+#if CONFIG_FILTERINTRA
+#define DCFILT_COUNT  30000,
+#else
+#define DCFILT_COUNT
+#endif
 static const unsigned int bmode_cts[VP9_NKF_BINTRAMODES] = {
 #if CONFIG_NEWBINTRAMODES
 #if CONTEXT_PRED_REPLACEMENTS == 6
   /* DC    TM     VE     HE   CONTEXT */
-  43891, 17694, 10036, 3920, 20000
+  43891, DCFILT_COUNT 17694, 10036, 3920, 20000
 #elif CONTEXT_PRED_REPLACEMENTS == 4
   /* DC    TM     VE     HE   LD    RD   CONTEXT */
-  43891, 17694, 10036, 3920, 3363, 2546, 14000
+  43891, DCFILT_COUNT 17694, 10036, 3920, 3363, 2546, 14000
 #elif CONTEXT_PRED_REPLACEMENTS == 0
   /* DC    TM     VE     HE   LD    RD   VR    VL    HD    HU   CONTEXT */
-  43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723, 50000
+  43891, DCFILT_COUNT 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723, 50000
 #endif
 #else
   /* DC    TM     VE     HE   LD    RD    VR    VL    HD    HU */
-  43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723
+  43891, DCFILT_COUNT 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723
 #endif
 };
 
@@ -155,16 +160,75 @@ const vp9_prob vp9_mbsplit_probs [VP9_NUMMBSPLITS - 1] = { 110, 111, 150};
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
 
+#if CONFIG_FILTERINTRA
+const vp9_tree_index vp9_kf_bmode_tree[VP9_KF_BINTRAMODES * 2 - 2] = {
+  2, 4,
+  -B_DC_PRED, -B_DCFILT_PRED,         /* 0 = DC_NODE, 1 = DCFILT_NODE */
+  -B_TM_PRED, 6,                      /* 2 = TM_NODE */
+  -B_VE_PRED, 8,                      /* 3 = VE_NODE */
+  10, 14,                             /* 4 = COM_NODE */
+  -B_HE_PRED, 12,                     /* 5 = HE_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 6 = RD_NODE, 7 = VR_NODE */
+  -B_LD_PRED, 16,                     /* 8 = LD_NODE */
+  -B_VL_PRED, 18,                     /* 9 = VL_NODE */
+  -B_HD_PRED, -B_HU_PRED              /* 10 = HD_NODE, 11 = HU_NODE */
+};
+
+const vp9_tree_index vp9_bmode_tree[VP9_NKF_BINTRAMODES * 2 - 2] = {
+#if CONFIG_NEWBINTRAMODES
+#if CONTEXT_PRED_REPLACEMENTS == 6
+  2, 4,
+  -B_DC_PRED, -B_DCFILT_PRED,         /* 0 = DC_NODE, 1 = DCFILT_NODE */
+  -B_TM_PRED, 6,
+  8, -(B_CONTEXT_PRED - CONTEXT_PRED_REPLACEMENTS),
+  -B_VE_PRED, -B_HE_PRED
+#elif CONTEXT_PRED_REPLACEMENTS == 4
+  2, 4,
+  -B_DC_PRED, -B_DCFILT_PRED,         /* 0 = DC_NODE, 1 = DCFILT_NODE */
+  -B_TM_PRED, 6,
+  8, 10,
+  -B_VE_PRED, -B_HE_PRED,
+  12, -(B_CONTEXT_PRED - CONTEXT_PRED_REPLACEMENTS),
+  -B_RD_PRED, -B_LD_PRED,
+#elif CONTEXT_PRED_REPLACEMENTS == 0
+  2, 4,
+  -B_DC_PRED, -B_DCFILT_PRED,         /* 0 = DC_NODE, 1 = DCFILT_NODE */
+  -B_TM_PRED, 6,                      /* 2 = TM_NODE */
+  -B_VE_PRED, 8,                      /* 3 = VE_NODE */
+  10, 14,                             /* 4 = COM_NODE */
+  -B_HE_PRED, 12,                     /* 5 = HE_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 6 = RD_NODE, 7 = VR_NODE */
+  -B_LD_PRED, 16,                     /* 8 = LD_NODE */
+  -B_VL_PRED, 18,                     /* 9 = VL_NODE */
+  -B_HD_PRED, 20,                     /* 10 = HD_NODE */
+  -B_HU_PRED, -B_CONTEXT_PRED         /* 11 = HU_NODE, 12 = CONTEXT_NODE */
+#endif
+#else
+  2, 4,
+  -B_DC_PRED, -B_DCFILT_PRED,         /* 0 = DC_NODE, 1 = DCFILT_NODE */
+  -B_TM_PRED, 6,                      /* 2 = TM_NODE */
+  -B_VE_PRED, 8,                      /* 3 = VE_NODE */
+  10, 14,                             /* 4 = COM_NODE */
+  -B_HE_PRED, 12,                     /* 5 = HE_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 6 = RD_NODE, 7 = VR_NODE */
+  -B_LD_PRED, 16,                     /* 8 = LD_NODE */
+  -B_VL_PRED, 18,                     /* 9 = VL_NODE */
+  -B_HD_PRED, -B_HU_PRED              /* 10 = HD_NODE, 11 = HU_NODE */
+#endif
+};
+
+#else  // CONFIG_FILTERINTRA
+
 const vp9_tree_index vp9_kf_bmode_tree[VP9_KF_BINTRAMODES * 2 - 2] = {
   -B_DC_PRED, 2,                      /* 0 = DC_NODE */
   -B_TM_PRED, 4,                      /* 1 = TM_NODE */
   -B_VE_PRED, 6,                      /* 2 = VE_NODE */
   8, 12,                              /* 3 = COM_NODE */
   -B_HE_PRED, 10,                     /* 4 = HE_NODE */
-  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE */
-  -B_LD_PRED, 14,                     /* 6 = LD_NODE */
-  -B_VL_PRED, 16,                     /* 7 = VL_NODE */
-  -B_HD_PRED, -B_HU_PRED              /* 8 = HD_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE, 6 = VR_NODE */
+  -B_LD_PRED, 14,                     /* 7 = LD_NODE */
+  -B_VL_PRED, 16,                     /* 8 = VL_NODE */
+  -B_HD_PRED, -B_HU_PRED              /* 9 = HD_NODE, 10 = HU_NODE */
 };
 
 const vp9_tree_index vp9_bmode_tree[VP9_NKF_BINTRAMODES * 2 - 2] = {
@@ -187,11 +251,11 @@ const vp9_tree_index vp9_bmode_tree[VP9_NKF_BINTRAMODES * 2 - 2] = {
   -B_VE_PRED, 6,                      /* 2 = VE_NODE */
   8, 12,                              /* 3 = COM_NODE */
   -B_HE_PRED, 10,                     /* 4 = HE_NODE */
-  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE */
-  -B_LD_PRED, 14,                     /* 6 = LD_NODE */
-  -B_VL_PRED, 16,                     /* 7 = VL_NODE */
-  -B_HD_PRED, 18,
-  -B_HU_PRED, -B_CONTEXT_PRED
+  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE, 6 = VR_NODE */
+  -B_LD_PRED, 14,                     /* 7 = LD_NODE */
+  -B_VL_PRED, 16,                     /* 8 = VL_NODE */
+  -B_HD_PRED, 18,                     /* 9 = HD_NODE */
+  -B_HU_PRED, -B_CONTEXT_PRED         /* 10 = HU_NODE, 11 = CONTEXT_NODE */
 #endif
 #else
   -B_DC_PRED, 2,                      /* 0 = DC_NODE */
@@ -199,12 +263,13 @@ const vp9_tree_index vp9_bmode_tree[VP9_NKF_BINTRAMODES * 2 - 2] = {
   -B_VE_PRED, 6,                      /* 2 = VE_NODE */
   8, 12,                              /* 3 = COM_NODE */
   -B_HE_PRED, 10,                     /* 4 = HE_NODE */
-  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE */
-  -B_LD_PRED, 14,                     /* 6 = LD_NODE */
-  -B_VL_PRED, 16,                     /* 7 = VL_NODE */
-  -B_HD_PRED, -B_HU_PRED              /* 8 = HD_NODE */
+  -B_RD_PRED, -B_VR_PRED,             /* 5 = RD_NODE, 6 = VR_NODE */
+  -B_LD_PRED, 14,                     /* 7 = LD_NODE */
+  -B_VL_PRED, 16,                     /* 8 = VL_NODE */
+  -B_HD_PRED, -B_HU_PRED              /* 9 = HD_NODE, 10 = HU_NODE */
 #endif
 };
+#endif  // CONFIG_FILTERINTRA
 
 /* Again, these trees use the same probability indices as their
    explicitly-programmed predecessors. */
