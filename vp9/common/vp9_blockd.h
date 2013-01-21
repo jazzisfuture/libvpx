@@ -161,6 +161,9 @@ typedef enum {
 
 typedef enum {
   B_DC_PRED,          /* average of above and left pixels */
+#if CONFIG_FILTERINTRA
+  B_DCFILT_PRED,      /* filtered DC pred */
+#endif
   B_TM_PRED,
 
   B_VE_PRED,          /* vertical prediction */
@@ -465,6 +468,9 @@ static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
   // map transform type
   TX_TYPE tx_type;
   switch (bmode) {
+#if CONFIG_FILTERINTRA
+    case B_DCFILT_PRED :
+#endif
     case B_TM_PRED :
     case B_RD_PRED :
       tx_type = ADST_ADST;
