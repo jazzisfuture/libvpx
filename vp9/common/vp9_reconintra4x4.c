@@ -202,6 +202,112 @@ void vp9_intra4x4_predict(BLOCKD *x,
     }
     break;
 
+#if CONFIG_FILTERINTRA
+#define INTEGER_IMPLEMENTATION
+    case B_VE_PRED:
+    case B_HE_PRED:
+    case B_RD_PRED:
+    case B_HD_PRED:
+    case B_VR_PRED:
+      {
+        int mean;
+#ifdef INTEGER_IMPLEMENTATION
+        static const int prec_bits = 10;
+        static const int round_val = 511;  // (1 << (prec_bits - 1)) - 1
+        // vert, hor, diag filter taps
+        static const int taps[VP9_KF_BINTRAMODES][3] = {
+          {438, 660, -352,},
+          {0, 0, 0,},
+          {1014, 565, -554,},
+          {312, 1017, -312,},
+          {0, 0, 0,},
+          {304, 356, 445,},
+          {728, 507, -174,},
+          {0, 0, 0,},
+          {342, 760, -55,},
+          {0, 0, 0,},
+        };
+        int predictor5[5][5];
+        const int c1 = taps[b_mode][0];
+        const int c2 = taps[b_mode][1];
+        const int c3 = taps[b_mode][2];
+
+        if (b_mode == B_VE_PRED)
+          mean = (above[0] + above[1] + above[2] + above[3] + 2) >> 2;
+        else if (b_mode == B_HE_PRED)
+          mean = (left[0] + left[1] + left[2] + left[3] + 2) >> 2;
+        else
+          mean = (above[0] + above[1] + above[2] + above[3] +
+                  left[0] + left[1] + left[2] + left[3] + 4) >> 3;
+        for (c = 0; c < 5; c++)
+          predictor5[0][c] = above[c - 1] - mean;
+        for (r = 1; r < 5; r++)
+          predictor5[r][0] = left[r - 1] - mean;
+
+        for (r = 1; r < 5; r++)
+          for (c = 1; c < 5; c++) {
+            int ipred = c1 * predictor5[r - 1][c] +
+                        c2 * predictor5[r][c - 1] +
+                        c3 * predictor5[r - 1][c - 1];
+            predictor5[r][c] = ipred < 0 ?
+                               -((-ipred + round_val) >> prec_bits) :
+                               ((ipred + round_val) >> prec_bits);
+          }
+        for (r = 0; r < 4; r++) {
+          for (c = 0; c < 4; c++) {
+            int ipred = predictor5[r + 1][c + 1] + mean;
+            predictor[c] = (ipred < 0 ? 0 : ipred > 255 ? 255 : ipred);
+          }
+          predictor += 16;
+        }
+#else
+        static const double taps[VP9_KF_BINTRAMODES][3] = {
+          {0.427564, 0.644141,  -0.343843,},
+          {0.0, 0.0, 0.0,},
+          {0.990567, 0.552083, -0.541060,},
+          {0.304926, 0.993424, -0.304502,},
+          {0.0, 0.0, 0.0,},
+          {0.297085, 0.347753, 0.434364,},
+          {0.710759, 0.495451, -0.169892,},
+          {0.0, 0.0, 0.0,},
+          {0.334470, 0.742129, -0.054123,},
+          {0.0, 0.0, 0.0,},
+        };
+        double predictor5[5][5];
+        const double c1 = taps[b_mode][0];
+        const double c2 = taps[b_mode][1];
+        const double c3 = taps[b_mode][2];
+
+        if (b_mode == B_VE_PRED)
+          mean = (above[0] + above[1] + above[2] + above[3] + 2) >> 2;
+        else if (b_mode == B_HE_PRED)
+          mean = (left[0] + left[1] + left[2] + left[3] + 2) >> 2;
+        else
+          mean = (above[0] + above[1] + above[2] + above[3] +
+                  left[0] + left[1] + left[2] + left[3] + 4) >> 3;
+
+        for (c = 0; c < 5; c++)
+          predictor5[0][c] = (double)above[c - 1] - mean;
+        for (r = 1; r < 5; r++)
+          predictor5[r][0] = (double)left[r - 1] - mean;
+
+        for (r = 1; r < 5; r++)
+          for (c = 1; c < 5; c++)
+            predictor5[r][c] = c1 * predictor5[r - 1][c] +
+                               c2 * predictor5[r][c - 1] +
+                               c3 * predictor5[r - 1][c - 1];
+        for (r = 0; r < 4; r++) {
+          for (c = 0; c < 4; c++) {
+            double pred = predictor5[r + 1][c + 1] + mean;
+            int ipred = (int)(pred < 0 ? pred - 0.5 : pred + 0.5);
+            predictor[c] = (ipred < 0 ? 0 : ipred > 255 ? 255 : ipred);
+          }
+          predictor += 16;
+        }
+#endif
+      }
+      break;
+#else   // CONFIG_FILTERINTRA
     case B_VE_PRED: {
       unsigned int ap[4];
 
@@ -237,28 +343,7 @@ void vp9_intra4x4_predict(BLOCKD *x,
       }
     }
     break;
-    case B_LD_PRED: {
-      uint8_t *ptr = above;
 
-      predictor[0 * 16 + 0] = (ptr[0] + ptr[1] * 2 + ptr[2] + 2) >> 2;
-      predictor[0 * 16 + 1] =
-        predictor[1 * 16 + 0] = (ptr[1] + ptr[2] * 2 + ptr[3] + 2) >> 2;
-      predictor[0 * 16 + 2] =
-        predictor[1 * 16 + 1] =
-          predictor[2 * 16 + 0] = (ptr[2] + ptr[3] * 2 + ptr[4] + 2) >> 2;
-      predictor[0 * 16 + 3] =
-        predictor[1 * 16 + 2] =
-          predictor[2 * 16 + 1] =
-            predictor[3 * 16 + 0] = (ptr[3] + ptr[4] * 2 + ptr[5] + 2) >> 2;
-      predictor[1 * 16 + 3] =
-        predictor[2 * 16 + 2] =
-          predictor[3 * 16 + 1] = (ptr[4] + ptr[5] * 2 + ptr[6] + 2) >> 2;
-      predictor[2 * 16 + 3] =
-        predictor[3 * 16 + 2] = (ptr[5] + ptr[6] * 2 + ptr[7] + 2) >> 2;
-      predictor[3 * 16 + 3] = (ptr[6] + ptr[7] * 2 + ptr[7] + 2) >> 2;
-
-    }
-    break;
     case B_RD_PRED: {
       uint8_t pp[9];
 
@@ -289,59 +374,6 @@ void vp9_intra4x4_predict(BLOCKD *x,
         predictor[0 * 16 + 2] = (pp[5] + pp[6] * 2 + pp[7] + 2) >> 2;
       predictor[0 * 16 + 3] = (pp[6] + pp[7] * 2 + pp[8] + 2) >> 2;
 
-    }
-    break;
-    case B_VR_PRED: {
-      uint8_t pp[9];
-
-      pp[0] = left[3];
-      pp[1] = left[2];
-      pp[2] = left[1];
-      pp[3] = left[0];
-      pp[4] = top_left;
-      pp[5] = above[0];
-      pp[6] = above[1];
-      pp[7] = above[2];
-      pp[8] = above[3];
-
-      predictor[3 * 16 + 0] = (pp[1] + pp[2] * 2 + pp[3] + 2) >> 2;
-      predictor[2 * 16 + 0] = (pp[2] + pp[3] * 2 + pp[4] + 2) >> 2;
-      predictor[3 * 16 + 1] =
-        predictor[1 * 16 + 0] = (pp[3] + pp[4] * 2 + pp[5] + 2) >> 2;
-      predictor[2 * 16 + 1] =
-        predictor[0 * 16 + 0] = (pp[4] + pp[5] + 1) >> 1;
-      predictor[3 * 16 + 2] =
-        predictor[1 * 16 + 1] = (pp[4] + pp[5] * 2 + pp[6] + 2) >> 2;
-      predictor[2 * 16 + 2] =
-        predictor[0 * 16 + 1] = (pp[5] + pp[6] + 1) >> 1;
-      predictor[3 * 16 + 3] =
-        predictor[1 * 16 + 2] = (pp[5] + pp[6] * 2 + pp[7] + 2) >> 2;
-      predictor[2 * 16 + 3] =
-        predictor[0 * 16 + 2] = (pp[6] + pp[7] + 1) >> 1;
-      predictor[1 * 16 + 3] = (pp[6] + pp[7] * 2 + pp[8] + 2) >> 2;
-      predictor[0 * 16 + 3] = (pp[7] + pp[8] + 1) >> 1;
-
-    }
-    break;
-    case B_VL_PRED: {
-      uint8_t *pp = above;
-
-      predictor[0 * 16 + 0] = (pp[0] + pp[1] + 1) >> 1;
-      predictor[1 * 16 + 0] = (pp[0] + pp[1] * 2 + pp[2] + 2) >> 2;
-      predictor[2 * 16 + 0] =
-        predictor[0 * 16 + 1] = (pp[1] + pp[2] + 1) >> 1;
-      predictor[1 * 16 + 1] =
-        predictor[3 * 16 + 0] = (pp[1] + pp[2] * 2 + pp[3] + 2) >> 2;
-      predictor[2 * 16 + 1] =
-        predictor[0 * 16 + 2] = (pp[2] + pp[3] + 1) >> 1;
-      predictor[3 * 16 + 1] =
-        predictor[1 * 16 + 2] = (pp[2] + pp[3] * 2 + pp[4] + 2) >> 2;
-      predictor[0 * 16 + 3] =
-        predictor[2 * 16 + 2] = (pp[3] + pp[4] + 1) >> 1;
-      predictor[1 * 16 + 3] =
-        predictor[3 * 16 + 2] = (pp[3] + pp[4] * 2 + pp[5] + 2) >> 2;
-      predictor[2 * 16 + 3] = (pp[4] + pp[5] * 2 + pp[6] + 2) >> 2;
-      predictor[3 * 16 + 3] = (pp[5] + pp[6] * 2 + pp[7] + 2) >> 2;
     }
     break;
 
@@ -378,6 +410,83 @@ void vp9_intra4x4_predict(BLOCKD *x,
     }
     break;
 
+    case B_VR_PRED: {
+      uint8_t pp[9];
+
+      pp[0] = left[3];
+      pp[1] = left[2];
+      pp[2] = left[1];
+      pp[3] = left[0];
+      pp[4] = top_left;
+      pp[5] = above[0];
+      pp[6] = above[1];
+      pp[7] = above[2];
+      pp[8] = above[3];
+
+      predictor[3 * 16 + 0] = (pp[1] + pp[2] * 2 + pp[3] + 2) >> 2;
+      predictor[2 * 16 + 0] = (pp[2] + pp[3] * 2 + pp[4] + 2) >> 2;
+      predictor[3 * 16 + 1] =
+        predictor[1 * 16 + 0] = (pp[3] + pp[4] * 2 + pp[5] + 2) >> 2;
+      predictor[2 * 16 + 1] =
+        predictor[0 * 16 + 0] = (pp[4] + pp[5] + 1) >> 1;
+      predictor[3 * 16 + 2] =
+        predictor[1 * 16 + 1] = (pp[4] + pp[5] * 2 + pp[6] + 2) >> 2;
+      predictor[2 * 16 + 2] =
+        predictor[0 * 16 + 1] = (pp[5] + pp[6] + 1) >> 1;
+      predictor[3 * 16 + 3] =
+        predictor[1 * 16 + 2] = (pp[5] + pp[6] * 2 + pp[7] + 2) >> 2;
+      predictor[2 * 16 + 3] =
+        predictor[0 * 16 + 2] = (pp[6] + pp[7] + 1) >> 1;
+      predictor[1 * 16 + 3] = (pp[6] + pp[7] * 2 + pp[8] + 2) >> 2;
+      predictor[0 * 16 + 3] = (pp[7] + pp[8] + 1) >> 1;
+
+    }
+    break;
+#endif  // CONFIG_FILTERINTRA
+
+    case B_LD_PRED: {
+      uint8_t *ptr = above;
+      predictor[0 * 16 + 0] = (ptr[0] + ptr[1] * 2 + ptr[2] + 2) >> 2;
+      predictor[0 * 16 + 1] =
+        predictor[1 * 16 + 0] = (ptr[1] + ptr[2] * 2 + ptr[3] + 2) >> 2;
+      predictor[0 * 16 + 2] =
+        predictor[1 * 16 + 1] =
+          predictor[2 * 16 + 0] = (ptr[2] + ptr[3] * 2 + ptr[4] + 2) >> 2;
+      predictor[0 * 16 + 3] =
+        predictor[1 * 16 + 2] =
+          predictor[2 * 16 + 1] =
+            predictor[3 * 16 + 0] = (ptr[3] + ptr[4] * 2 + ptr[5] + 2) >> 2;
+      predictor[1 * 16 + 3] =
+        predictor[2 * 16 + 2] =
+          predictor[3 * 16 + 1] = (ptr[4] + ptr[5] * 2 + ptr[6] + 2) >> 2;
+      predictor[2 * 16 + 3] =
+        predictor[3 * 16 + 2] = (ptr[5] + ptr[6] * 2 + ptr[7] + 2) >> 2;
+      predictor[3 * 16 + 3] = (ptr[6] + ptr[7] * 2 + ptr[7] + 2) >> 2;
+
+    }
+    break;
+
+    case B_VL_PRED: {
+      uint8_t *pp = above;
+
+      predictor[0 * 16 + 0] = (pp[0] + pp[1] + 1) >> 1;
+      predictor[1 * 16 + 0] = (pp[0] + pp[1] * 2 + pp[2] + 2) >> 2;
+      predictor[2 * 16 + 0] =
+        predictor[0 * 16 + 1] = (pp[1] + pp[2] + 1) >> 1;
+      predictor[1 * 16 + 1] =
+        predictor[3 * 16 + 0] = (pp[1] + pp[2] * 2 + pp[3] + 2) >> 2;
+      predictor[2 * 16 + 1] =
+        predictor[0 * 16 + 2] = (pp[2] + pp[3] + 1) >> 1;
+      predictor[3 * 16 + 1] =
+        predictor[1 * 16 + 2] = (pp[2] + pp[3] * 2 + pp[4] + 2) >> 2;
+      predictor[0 * 16 + 3] =
+        predictor[2 * 16 + 2] = (pp[3] + pp[4] + 1) >> 1;
+      predictor[1 * 16 + 3] =
+        predictor[3 * 16 + 2] = (pp[3] + pp[4] * 2 + pp[5] + 2) >> 2;
+      predictor[2 * 16 + 3] = (pp[4] + pp[5] * 2 + pp[6] + 2) >> 2;
+      predictor[3 * 16 + 3] = (pp[5] + pp[6] * 2 + pp[7] + 2) >> 2;
+    }
+    break;
 
     case B_HU_PRED: {
       uint8_t *pp = left;
@@ -401,7 +510,7 @@ void vp9_intra4x4_predict(BLOCKD *x,
     break;
 
 #if CONFIG_NEWBINTRAMODES
-    case B_CONTEXT_PRED:
+  case B_CONTEXT_PRED:
     break;
     /*
     case B_CORNER_PRED:
@@ -432,11 +541,11 @@ void vp9_intra_prediction_down_copy(MACROBLOCKD *xd) {
   if ((xd->sb_index >= 2 && xd->mb_to_right_edge == 0) ||
       (xd->sb_index == 3 && xd->mb_index & 1))
     src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 32 *
-                                                    xd->block[0].dst_stride);
+                            xd->block[0].dst_stride);
   if (xd->mb_index == 3 ||
       (xd->mb_to_right_edge == 0 && xd->mb_index == 2))
     src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 16 *
-                                                    xd->block[0].dst_stride);
+                            xd->block[0].dst_stride);
 
   if (extend_edge) {
     *src_ptr = ((uint8_t *) src_ptr)[-1] * 0x01010101U;
