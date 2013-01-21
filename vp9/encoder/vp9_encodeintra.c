@@ -50,7 +50,11 @@ void vp9_encode_intra4x4block(MACROBLOCK *x, int ib) {
   b->bmi.as_mode.context = vp9_find_bpred_context(b);
 #endif
 
+#if CONFIG_FILTERINTRA
+  vp9_filter_intra4x4_predict(b, b->bmi.as_mode.first, b->predictor);
+#else
   vp9_intra4x4_predict(b, b->bmi.as_mode.first, b->predictor);
+#endif
   vp9_subtract_b(be, b, 16);
 
   tx_type = get_tx_type_4x4(&x->e_mbd, b);
