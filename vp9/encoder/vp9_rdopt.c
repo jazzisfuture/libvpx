@@ -1129,7 +1129,11 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
     rate = bmode_costs[mode];
 #endif
 
+#if CONFIG_FILTERINTRA
+    vp9_filter_intra4x4_predict(b, mode, b->predictor);
+#else
     vp9_intra4x4_predict(b, mode, b->predictor);
+#endif
     vp9_subtract_b(be, b, 16);
 
     b->bmi.as_mode.first = mode;

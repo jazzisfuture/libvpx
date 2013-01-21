@@ -426,7 +426,11 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       if (!xd->mode_info_context->mbmi.mb_skip_coeff)
         eobtotal += vp9_decode_coefs_4x4(pbi, xd, bc, PLANE_TYPE_Y_WITH_DC, i);
 
+#if CONFIG_FILTERINTRA
+      vp9_filter_intra4x4_predict(b, b_mode, b->predictor);
+#else
       vp9_intra4x4_predict(b, b_mode, b->predictor);
+#endif
       tx_type = get_tx_type_4x4(xd, b);
       if (tx_type != DCT_DCT) {
         vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
