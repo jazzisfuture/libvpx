@@ -1450,7 +1450,7 @@ static void show_rate_histogram(struct rate_hist          *hist,
 static void find_mismatch(vpx_image_t *img1, vpx_image_t *img2,
                           int yloc[2], int uloc[2], int vloc[2]) {
   static const int bsize = 64;
-  static const int bsize2 = bsize >> 1;
+  static int bsize2 = bsize >> 1;   //MSVS complier error if defined as const!
   int match = 1;
   int i, j;
   yloc[0] = yloc[1] = -1;
