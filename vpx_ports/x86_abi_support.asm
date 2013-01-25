@@ -230,6 +230,8 @@
   %elifidn __OUTPUT_FORMAT__,elfx32
     %define WRT_PLT wrt ..plt
     %define HIDDEN_DATA(x) x:data hidden
+  %elifidn __OUTPUT_FORMAT__,macho64
+    %define HIDDEN_DATA(x) x:private_extern
   %else
     %define HIDDEN_DATA(x) x
   %endif
