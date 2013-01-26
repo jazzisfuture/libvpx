@@ -1476,6 +1476,8 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                               &ta0, &tl0,
                               TX_4X4);
       }
+      b = &xd->block[ib + iblock[i]];
+      be = &x->block[ib + iblock[i]];
       rate += rate_t;
     }
 
