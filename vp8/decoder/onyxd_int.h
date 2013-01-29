@@ -55,7 +55,7 @@ typedef struct VP8D_COMP
     VP8D_CONFIG oxcf;
 
 
-    const unsigned char *fragments[MAX_PARTITIONS];
+    unsigned char *fragments[MAX_PARTITIONS];
     unsigned int   fragment_sizes[MAX_PARTITIONS];
     unsigned int   num_fragments;
 
