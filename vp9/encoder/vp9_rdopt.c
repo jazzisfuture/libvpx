@@ -1129,7 +1129,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
     rate = bmode_costs[mode];
 #endif
 
-    vp9_intra4x4_predict(b, mode, b->predictor);
+    vp9_intra4x4_predict(xd, b, mode, b->predictor);
     vp9_subtract_b(be, b, 16);
 
     b->bmi.as_mode.first = mode;
@@ -1424,7 +1424,7 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     rate = mode_costs[mode];
     b->bmi.as_mode.first = mode;
 
-    vp9_intra8x8_predict(b, mode, b->predictor);
+    vp9_intra8x8_predict(xd, b, mode, b->predictor);
 
     vp9_subtract_4b_c(be, b, 16);
 
@@ -2148,14 +2148,18 @@ static int labels2mode(
           }
           break;
         case LEFT4X4:
-          this_mv->as_int = col ? d[-1].bmi.as_mv.first.as_int : left_block_mv(mic, i);
+          this_mv->as_int = col ? d[-1].bmi.as_mv.first.as_int :
+                                  left_block_mv(xd, mic, i);
           if (mbmi->second_ref_frame > 0)
-            this_second_mv->as_int = col ? d[-1].bmi.as_mv.second.as_int : left_block_second_mv(mic, i);
+            this_second_mv->as_int = col ? d[-1].bmi.as_mv.second.as_int :
+                                           left_block_second_mv(xd, mic, i);
           break;
         case ABOVE4X4:
-          this_mv->as_int = row ? d[-4].bmi.as_mv.first.as_int : above_block_mv(mic, i, mis);
+          this_mv->as_int = row ? d[-4].bmi.as_mv.first.as_int :
+                                  above_block_mv(mic, i, mis);
           if (mbmi->second_ref_frame > 0)
-            this_second_mv->as_int = row ? d[-4].bmi.as_mv.second.as_int : above_block_second_mv(mic, i, mis);
+            this_second_mv->as_int = row ? d[-4].bmi.as_mv.second.as_int :
+                                           above_block_second_mv(mic, i, mis);
           break;
         case ZERO4X4:
           this_mv->as_int = 0;
@@ -2171,10 +2175,10 @@ static int labels2mode(
 
         left_second_mv.as_int = 0;
         left_mv.as_int = col ? d[-1].bmi.as_mv.first.as_int :
-                         left_block_mv(mic, i);
+                         left_block_mv(xd, mic, i);
         if (mbmi->second_ref_frame > 0)
           left_second_mv.as_int = col ? d[-1].bmi.as_mv.second.as_int :
-                                  left_block_second_mv(mic, i);
+                                  left_block_second_mv(xd, mic, i);
 
         if (left_mv.as_int == this_mv->as_int &&
             (mbmi->second_ref_frame <= 0 ||
@@ -3168,7 +3172,7 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   v_buffer[frame_type] = yv12->v_buffer + recon_uvoffset;
 
   // Gets an initial list of candidate vectors from neighbours and orders them
-  vp9_find_mv_refs(xd, xd->mode_info_context,
+  vp9_find_mv_refs(&cpi->common, xd, xd->mode_info_context,
                    cpi->common.error_resilient_mode ?
                    0 : xd->prev_mode_info_context,
                    frame_type,
