@@ -90,8 +90,12 @@
 %define sym(x) x
 %elifidn __OUTPUT_FORMAT__,elfx32
 %define sym(x) x
+%elifidn __OUTPUT_FORMAT__,win64
+%define sym(x) x
+%define LIBVPX_YASM_WIN64 1
 %elifidn __OUTPUT_FORMAT__,x64
 %define sym(x) x
+%define LIBVPX_YASM_WIN64 1
 %else
 %define sym(x) _ %+ x
 %endif
@@ -114,7 +118,7 @@
     %define PRIVATE :hidden
   %elifidn __OUTPUT_FORMAT__,elfx32
     %define PRIVATE :hidden
-  %elifidn __OUTPUT_FORMAT__,x64
+  %elif LIBVPX_YASM_WIN64
     %define PRIVATE
   %else
     %define PRIVATE :private_extern
@@ -131,7 +135,7 @@
 %else
   ; 64 bit ABI passes arguments in registers. This is a workaround to get up
   ; and running quickly. Relies on SHADOW_ARGS_TO_STACK
-  %ifidn __OUTPUT_FORMAT__,x64
+  %if LIBVPX_YASM_WIN64
     %define arg(x) [rbp+16+8*x]
   %else
     %define arg(x) [rbp-8-8*x]
@@ -257,7 +261,7 @@
   %endm
   %define UNSHADOW_ARGS
 %else
-%ifidn __OUTPUT_FORMAT__,x64
+%if LIBVPX_YASM_WIN64
   %macro SHADOW_ARGS_TO_STACK 1 ; argc
     %if %1 > 0
         mov arg(0),rcx
@@ -313,7 +317,7 @@
 ; Win64 ABI requires 16 byte stack alignment, but then pushes an 8 byte return
 ; value. Typically we follow this up with 'push rbp' - re-aligning the stack -
 ; but in some cases this is not done and unaligned movs must be used.
-%ifidn __OUTPUT_FORMAT__,x64
+%if LIBVPX_YASM_WIN64
 %macro SAVE_XMM 1-2 a
   %if %1 < 6
     %error Only xmm registers 6-15 must be preserved
