@@ -277,6 +277,8 @@ typedef struct VP9Common {
 #endif
 
   int error_resilient_mode;
+  int tile_columns;
+  int cur_tile_mb_col_start, cur_tile_mb_col_end, cur_tile_idx;
 } VP9_COMMON;
 
 static int get_free_fb(VP9_COMMON *cm) {
