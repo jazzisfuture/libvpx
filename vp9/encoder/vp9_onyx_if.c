@@ -1260,7 +1260,7 @@ rescale(int val, int num, int denom) {
 
 static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   VP9_COMP *cpi = (VP9_COMP *)(ptr);
-  VP9_COMMON *cm = &cpi->common;
+  VP9_COMMON *const cm = &cpi->common;
 
   cpi->oxcf = *oxcf;
 
@@ -1295,6 +1295,8 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->gld_fb_idx = 1;
   cpi->alt_fb_idx = 2;
 
+  cm->tile_columns = 1 << cpi->oxcf.tile_columns;
+
 #if VP9_TEMPORAL_ALT_REF
   {
     int i;
@@ -1310,7 +1312,7 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
 void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   VP9_COMP *cpi = (VP9_COMP *)(ptr);
-  VP9_COMMON *cm = &cpi->common;
+  VP9_COMMON *const cm = &cpi->common;
 
   if (!cpi)
     return;
@@ -1516,6 +1518,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->last_frame_distortion = 0;
 #endif
 
+  cm->tile_columns = 1 << cpi->oxcf.tile_columns;
 }
 
 #define M_LOG2_E 0.693147180559945309417
@@ -2340,6 +2343,7 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
     fwrite(src, s->uv_width, 1, yuv_rec_file);
     src += s->uv_stride;
   } while (--h);
+  fflush(yuv_rec_file);
 }
 #endif
 
