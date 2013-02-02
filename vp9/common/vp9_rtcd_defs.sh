@@ -263,7 +263,7 @@ specialize vp9_sad16x3 sse2
 prototype unsigned int vp9_sad3x16 "const uint8_t *src_ptr, int  src_stride, const uint8_t *ref_ptr, int ref_stride"
 specialize vp9_sad3x16 sse2
 
-prototype unsigned int vp9_sub_pixel_variance16x2 "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int Refstride, unsigned int *sse"
+prototype unsigned int vp9_sub_pixel_variance16x2 "const uint8_t *src_ptr, const int source_stride, const int xoffset, const int  yoffset, const uint8_t *ref_ptr, const int Refstride, unsigned int *sse"
 specialize vp9_sub_pixel_variance16x2 sse2
 
 #
@@ -419,8 +419,6 @@ specialize vp9_short_inv_walsh4x4_
 
 
 # dct and add
-prototype void vp9_dc_only_idct_add_8x8 "int input_dc, uint8_t *pred_ptr, uint8_t *dst_ptr, int pitch, int stride"
-specialize vp9_dc_only_idct_add_8x8
 
 prototype void vp9_dc_only_idct_add "int input_dc, uint8_t *pred_ptr, uint8_t *dst_ptr, int pitch, int stride"
 specialize vp9_dc_only_idct_add
