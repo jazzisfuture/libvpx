@@ -2470,7 +2470,6 @@ int main(int argc, const char **argv_) {
         " and --passes=2\n", stream->index, global.pass);
     });
 
-
     /* Use the frame rate from the file only if none was specified
      * on the command-line.
      */
