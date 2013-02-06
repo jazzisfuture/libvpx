@@ -2,6 +2,7 @@ LIBVPX_TEST_SRCS-yes += register_state_check.h
 LIBVPX_TEST_SRCS-yes += test.mk
 LIBVPX_TEST_SRCS-yes += acm_random.h
 
+LIBVPX_TEST_SRCS-yes += img_utilities.h
 LIBVPX_TEST_SRCS-yes += test_libvpx.cc
 LIBVPX_TEST_SRCS-yes += util.h
 LIBVPX_TEST_SRCS-yes += video_source.h
@@ -25,6 +26,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += resize_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ../md5_utils.h ../md5_utils.c
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += decode_test_driver.h
+LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += get_set_ref_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += ivf_video_source.h
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += test_vector_test.cc
 ##
