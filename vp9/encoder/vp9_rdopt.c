@@ -386,7 +386,7 @@ int vp9_uvsse(MACROBLOCK *x) {
   int mv_row = x->e_mbd.mode_info_context->mbmi.mv[0].as_mv.row;
   int mv_col = x->e_mbd.mode_info_context->mbmi.mv[0].as_mv.col;
   int offset;
-  int pre_stride = x->e_mbd.block[16].pre_stride;
+  int pre_stride = x->e_mbd.pre.uv_stride;
 
   if (mv_row < 0)
     mv_row -= 1;
@@ -1105,7 +1105,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
   DECLARE_ALIGNED_ARRAY(16, int16_t, best_dqcoeff, 16);
 
 #if CONFIG_NEWBINTRAMODES
-  b->bmi.as_mode.context = vp9_find_bpred_context(b);
+  b->bmi.as_mode.context = vp9_find_bpred_context(b, xd->dst.y_buffer,
+                                                  xd->dst.y_stride);
 #endif
   for (mode = B_DC_PRED; mode < LEFT4X4; mode++) {
     int64_t this_rd;
@@ -1129,7 +1130,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
     rate = bmode_costs[mode];
 #endif
 
-    vp9_intra4x4_predict(b, mode, b->predictor);
+    vp9_intra4x4_predict(b, mode, b->predictor,
+                         xd->dst.y_buffer, xd->dst.y_stride);
     vp9_subtract_b(be, b, 16);
 
     b->bmi.as_mode.first = mode;
@@ -1172,7 +1174,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, BLOCK *be,
   else
     xd->inv_xform4x4_x8(best_dqcoeff, b->diff, 32);
 
-  vp9_recon_b(best_predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+  vp9_recon_b(best_predictor, b->diff, xd->dst.y_buffer + b->offset,
+              xd->dst.y_stride);
 
   return best_rd;
 }
@@ -1214,7 +1217,9 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
       bmode_costs  = mb->bmode_costs[A][L];
     }
 #if CONFIG_NEWBINTRAMODES
-    mic->bmi[i].as_mode.context = vp9_find_bpred_context(xd->block + i);
+    mic->bmi[i].as_mode.context = vp9_find_bpred_context(xd->block + i,
+                                                         xd->dst.y_buffer,
+                                                         xd->dst.y_stride);
 #endif
 
     total_rd += rd_pick_intra4x4block(
@@ -1424,7 +1429,8 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     rate = mode_costs[mode];
     b->bmi.as_mode.first = mode;
 
-    vp9_intra8x8_predict(b, mode, b->predictor);
+    vp9_intra8x8_predict(b, mode, b->predictor,
+                         xd->dst.y_buffer, xd->dst.y_stride);
 
     vp9_subtract_4b_c(be, b, 16);
 
@@ -2222,9 +2228,14 @@ static int64_t encode_inter_mb_segment(MACROBLOCK *x,
       BLOCK *be = &x->block[i];
       int thisdistortion;
 
-      vp9_build_inter_predictors_b(bd, 16, &xd->subpix);
+      vp9_build_inter_predictors_b(bd, 16,
+                                   xd->pre.y_buffer, xd->pre.y_stride,
+                                   &xd->subpix);
       if (xd->mode_info_context->mbmi.second_ref_frame > 0)
-        vp9_build_2nd_inter_predictors_b(bd, 16, &xd->subpix);
+        vp9_build_2nd_inter_predictors_b(bd, 16,
+                                         xd->second_pre.y_buffer,
+                                         xd->second_pre.y_stride,
+                                         &xd->subpix);
       vp9_subtract_b(be, bd, 16);
       x->vp9_short_fdct4x4(be->src_diff, be->coeff, 32);
       x->quantize_b_4x4(be, bd);
@@ -2271,9 +2282,12 @@ static int64_t encode_inter_mb_segment_8x8(MACROBLOCK *x,
       BLOCK *be = &x->block[ib], *be2 = &x->block[idx];
       int thisdistortion;
 
-      vp9_build_inter_predictors4b(xd, bd, 16);
+      vp9_build_inter_predictors4b(xd, bd, 16,
+                                   xd->pre.y_buffer, xd->pre.y_stride);
       if (xd->mode_info_context->mbmi.second_ref_frame > 0)
-        vp9_build_2nd_inter_predictors4b(xd, bd, 16);
+        vp9_build_2nd_inter_predictors4b(xd, bd, 16,
+                                         xd->second_pre.y_buffer,
+                                         xd->second_pre.y_stride);
       vp9_subtract_4b_c(be, bd, 16);
 
       if (xd->mode_info_context->mbmi.txfm_size == TX_4X4) {

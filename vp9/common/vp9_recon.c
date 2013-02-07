@@ -84,7 +84,7 @@ void vp9_recon2b_c(uint8_t *pred_ptr,
 void vp9_recon_mby_s_c(MACROBLOCKD *xd, uint8_t *dst) {
   int x, y;
   BLOCKD *b = &xd->block[0];
-  int stride = b->dst_stride;
+  int stride = xd->dst.y_stride;
   int16_t *diff = b->diff;
 
   for (y = 0; y < 16; y++) {
@@ -102,7 +102,7 @@ void vp9_recon_mbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
 
   for (i = 0; i < 2; i++, dst = vdst) {
     BLOCKD *b = &xd->block[16 + 4 * i];
-    int stride = b->dst_stride;
+    int stride = xd->dst.uv_stride;
     int16_t *diff = b->diff;
 
     for (y = 0; y < 8; y++) {
@@ -116,7 +116,7 @@ void vp9_recon_mbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
 }
 
 void vp9_recon_sby_s_c(MACROBLOCKD *xd, uint8_t *dst) {
-  int x, y, stride = xd->block[0].dst_stride;
+  int x, y, stride = xd->dst.y_stride;
   int16_t *diff = xd->sb_coeff_data.diff;
 
   for (y = 0; y < 32; y++) {
@@ -129,7 +129,7 @@ void vp9_recon_sby_s_c(MACROBLOCKD *xd, uint8_t *dst) {
 }
 
 void vp9_recon_sbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
-  int x, y, stride = xd->block[16].dst_stride;
+  int x, y, stride = xd->dst.uv_stride;
   int16_t *udiff = xd->sb_coeff_data.diff + 1024;
   int16_t *vdiff = xd->sb_coeff_data.diff + 1280;
 
@@ -151,7 +151,8 @@ void vp9_recon_mby_c(MACROBLOCKD *xd) {
   for (i = 0; i < 16; i += 4) {
     BLOCKD *b = &xd->block[i];
 
-    vp9_recon4b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+    vp9_recon4b(b->predictor, b->diff, xd->dst.y_buffer + b->offset,
+                xd->dst.y_stride);
   }
 }
 
@@ -161,12 +162,15 @@ void vp9_recon_mb_c(MACROBLOCKD *xd) {
   for (i = 0; i < 16; i += 4) {
     BLOCKD *b = &xd->block[i];
 
-    vp9_recon4b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+    vp9_recon4b(b->predictor, b->diff, xd->dst.y_buffer + b->offset,
+                xd->dst.y_stride);
   }
 
   for (i = 16; i < 24; i += 2) {
     BLOCKD *b = &xd->block[i];
+    uint8_t *base_dst = i < 20 ? xd->dst.u_buffer : xd->dst.v_buffer;
 
-    vp9_recon2b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+    vp9_recon2b(b->predictor, b->diff, base_dst + b->offset,
+                xd->dst.uv_stride);
   }
 }

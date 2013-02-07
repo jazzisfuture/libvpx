@@ -11,65 +11,20 @@
 
 #include "vp9/common/vp9_blockd.h"
 
-typedef enum {
-  PRED = 0,
-  DEST = 1
-} BLOCKSET;
-
-static void setup_block(BLOCKD *b,
-                        int mv_stride,
-                        uint8_t **base,
-                        uint8_t **base2,
-                        int Stride,
-                        int offset,
-                        BLOCKSET bs) {
-  if (bs == DEST) {
-    b->dst_stride = Stride;
-    b->dst = offset;
-    b->base_dst = base;
-  } else {
-    b->pre_stride = Stride;
-    b->pre = offset;
-    b->base_pre = base;
-    b->base_second_pre = base2;
-  }
-}
-
-static void setup_macroblock(MACROBLOCKD *xd, BLOCKSET bs) {
+void vp9_build_block_doffsets(MACROBLOCKD *xd) {
   int block;
-
-  uint8_t **y, **u, **v;
-  uint8_t **y2 = NULL, **u2 = NULL, **v2 = NULL;
   BLOCKD *blockd = xd->block;
   int stride;
 
-  if (bs == DEST) {
-    y = &xd->dst.y_buffer;
-    u = &xd->dst.u_buffer;
-    v = &xd->dst.v_buffer;
-  } else {
-    y = &xd->pre.y_buffer;
-    u = &xd->pre.u_buffer;
-    v = &xd->pre.v_buffer;
-
-    y2 = &xd->second_pre.y_buffer;
-    u2 = &xd->second_pre.u_buffer;
-    v2 = &xd->second_pre.v_buffer;
-  }
-
   stride = xd->dst.y_stride;
   for (block = 0; block < 16; block++) { /* y blocks */
-    setup_block(&blockd[block], stride, y, y2, stride,
-                (block >> 2) * 4 * stride + (block & 3) * 4, bs);
+    blockd[block].offset = (block >> 2) * 4 * stride + (block & 3) * 4;
   }
 
   stride = xd->dst.uv_stride;
   for (block = 16; block < 20; block++) { /* U and V blocks */
-    setup_block(&blockd[block], stride, u, u2, stride,
-      ((block - 16) >> 1) * 4 * stride + (block & 1) * 4, bs);
-
-    setup_block(&blockd[block + 4], stride, v, v2, stride,
-      ((block - 16) >> 1) * 4 * stride + (block & 1) * 4, bs);
+    blockd[block].offset = ((block - 16) >> 1) * 4 * stride + (block & 1) * 4;
+    blockd[block + 4].offset = blockd[block].offset;
   }
 }
 
@@ -108,10 +63,4 @@ void vp9_setup_block_dptrs(MACROBLOCKD *xd) {
     blockd[r].qcoeff  = xd->qcoeff  + r * 16;
     blockd[r].dqcoeff = xd->dqcoeff + r * 16;
   }
-}
-
-void vp9_build_block_doffsets(MACROBLOCKD *xd) {
-  /* handle the destination pitch features */
-  setup_macroblock(xd, DEST);
-  setup_macroblock(xd, PRED);
 }

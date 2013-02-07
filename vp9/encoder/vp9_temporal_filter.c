@@ -130,6 +130,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
                                               int mb_offset,
                                               int error_thresh) {
   MACROBLOCK *x = &cpi->mb;
+  MACROBLOCKD *xd = &x->e_mbd;
   int step_param;
   int sadpb = x->sadperbit16;
   int bestsme = INT_MAX;
@@ -143,9 +144,9 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   uint8_t **base_src = b->base_src;
   int src = b->src;
   int src_stride = b->src_stride;
-  uint8_t **base_pre = d->base_pre;
-  int pre = d->pre;
-  int pre_stride = d->pre_stride;
+  uint8_t *base_pre = xd->pre.y_buffer;
+  int pre = d->offset;
+  int pre_stride = xd->pre.y_stride;
 
   best_ref_mv1.as_int = 0;
   best_ref_mv1_full.as_mv.col = best_ref_mv1.as_mv.col >> 3;
@@ -156,9 +157,9 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   b->src_stride = arf_frame->y_stride;
   b->src = mb_offset;
 
-  d->base_pre = &frame_ptr->y_buffer;
-  d->pre_stride = frame_ptr->y_stride;
-  d->pre = mb_offset;
+  xd->pre.y_buffer = frame_ptr->y_buffer;
+  xd->pre.y_stride = frame_ptr->y_stride;
+  d->offset = mb_offset;
 
   // Further step/diamond searches as necessary
   if (cpi->Speed < 8) {
@@ -196,9 +197,9 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   b->base_src = base_src;
   b->src = src;
   b->src_stride = src_stride;
-  d->base_pre = base_pre;
-  d->pre = pre;
-  d->pre_stride = pre_stride;
+  xd->pre.y_buffer = base_pre;
+  d->offset = pre;
+  xd->pre.y_stride = pre_stride;
 
   return bestsme;
 }

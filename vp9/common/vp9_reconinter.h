@@ -66,16 +66,20 @@ extern void vp9_build_inter64x64_predictors_sb(MACROBLOCKD *x,
 extern void vp9_build_inter_predictors_mb(MACROBLOCKD *xd);
 
 extern void vp9_build_inter_predictors_b(BLOCKD *d, int pitch,
+                                         uint8_t *pre, int pre_stride,
                                          struct subpix_fn_table *sppf);
 
 extern void vp9_build_2nd_inter_predictors_b(BLOCKD *d, int pitch,
+                                             uint8_t *base_pre, int pre_stride,
                                              struct subpix_fn_table *sppf);
 
 extern void vp9_build_inter_predictors4b(MACROBLOCKD *xd, BLOCKD *d,
-                                         int pitch);
+                                         int pitch,
+                                         uint8_t *base_pre, int pre_stride);
 
-extern void vp9_build_2nd_inter_predictors4b(MACROBLOCKD *xd,
-                                             BLOCKD *d, int pitch);
+extern void vp9_build_2nd_inter_predictors4b(MACROBLOCKD *xd, BLOCKD *d,
+                                             int pitch,
+                                             uint8_t *base_pre, int pre_stride);
 
 extern void vp9_build_inter4x4_predictors_mbuv(MACROBLOCKD *xd);
 
