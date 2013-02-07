@@ -289,12 +289,13 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
       int16_t *q  = xd->block[idx].qcoeff;
       int16_t *dq = xd->block[0].dequant;
       uint8_t *pre = xd->block[ib].predictor;
-      uint8_t *dst = *(xd->block[ib].base_dst) + xd->block[ib].dst;
+      uint8_t *dst = xd->dst.y_buffer + xd->block[ib].offset;
       int stride = xd->dst.y_stride;
       BLOCKD *b = &xd->block[ib];
       if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
         int i8x8mode = b->bmi.as_mode.first;
-        vp9_intra8x8_predict(b, i8x8mode, b->predictor);
+        vp9_intra8x8_predict(b, i8x8mode, b->predictor,
+                             xd->dst.y_buffer, xd->dst.y_stride);
       }
       tx_type = get_tx_type_8x8(xd, &xd->block[ib]);
       if (tx_type != DCT_DCT) {
@@ -344,13 +345,15 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
       BLOCKD *b = &xd->block[ib];
       int i8x8mode = b->bmi.as_mode.first;
       b = &xd->block[16 + i];
-      vp9_intra_uv4x4_predict(&xd->block[16 + i], i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(&xd->block[16 + i], i8x8mode, b->predictor,
+                              xd->dst.u_buffer, xd->dst.uv_stride);
       pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
-                    *(b->base_dst) + b->dst, 8, b->dst_stride);
+                    xd->dst.u_buffer + b->offset, 8, xd->dst.uv_stride);
       b = &xd->block[20 + i];
-      vp9_intra_uv4x4_predict(&xd->block[20 + i], i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(&xd->block[20 + i], i8x8mode, b->predictor,
+                              xd->dst.v_buffer, xd->dst.uv_stride);
       pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
-                    *(b->base_dst) + b->dst, 8, b->dst_stride);
+                    xd->dst.v_buffer + b->offset, 8, xd->dst.uv_stride);
     }
   } else if (xd->mode_info_context->mbmi.mode == SPLITMV) {
     pbi->idct_add_uv_block(xd->qcoeff + 16 * 16, xd->block[16].dequant,
@@ -390,28 +393,32 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       BLOCKD *b;
       b = &xd->block[ib];
       i8x8mode = b->bmi.as_mode.first;
-      vp9_intra8x8_predict(b, i8x8mode, b->predictor);
+      vp9_intra8x8_predict(b, i8x8mode, b->predictor,
+                           xd->dst.y_buffer, xd->dst.y_stride);
       for (j = 0; j < 4; j++) {
         b = &xd->block[ib + iblock[j]];
         tx_type = get_tx_type_4x4(xd, b);
         if (tx_type != DCT_DCT) {
           vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                     b->dequant, b->predictor,
-                                    *(b->base_dst) + b->dst, 16,
-                                    b->dst_stride, b->eob);
+                                    xd->dst.y_buffer + b->offset, 16,
+                                    xd->dst.y_stride, b->eob);
         } else {
           vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
-                               *(b->base_dst) + b->dst, 16, b->dst_stride);
+                               xd->dst.y_buffer + b->offset, 16,
+                               xd->dst.y_stride);
         }
       }
       b = &xd->block[16 + i];
-      vp9_intra_uv4x4_predict(b, i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(b, i8x8mode, b->predictor,
+                              xd->dst.u_buffer, xd->dst.uv_stride);
       pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
-                    *(b->base_dst) + b->dst, 8, b->dst_stride);
+                    xd->dst.u_buffer + b->offset, 8, xd->dst.uv_stride);
       b = &xd->block[20 + i];
-      vp9_intra_uv4x4_predict(b, i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(b, i8x8mode, b->predictor,
+                              xd->dst.v_buffer, xd->dst.uv_stride);
       pbi->idct_add(b->qcoeff, b->dequant, b->predictor,
-                    *(b->base_dst) + b->dst, 8, b->dst_stride);
+                    xd->dst.v_buffer + b->offset, 8, xd->dst.uv_stride);
     }
   } else if (mode == B_PRED) {
     assert(get_2nd_order_usage(xd) == 0);
@@ -426,16 +433,18 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       if (!xd->mode_info_context->mbmi.mb_skip_coeff)
         eobtotal += vp9_decode_coefs_4x4(pbi, xd, bc, PLANE_TYPE_Y_WITH_DC, i);
 
-      vp9_intra4x4_predict(b, b_mode, b->predictor);
+      vp9_intra4x4_predict(b, b_mode, b->predictor,
+                           xd->dst.y_buffer, xd->dst.y_stride);
       tx_type = get_tx_type_4x4(xd, b);
       if (tx_type != DCT_DCT) {
         vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                   b->dequant, b->predictor,
-                                  *(b->base_dst) + b->dst, 16, b->dst_stride,
-                                  b->eob);
+                                  xd->dst.y_buffer + b->offset, 16,
+                                  xd->dst.y_stride, b->eob);
       } else {
         vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
-                             *(b->base_dst) + b->dst, 16, b->dst_stride);
+                             xd->dst.y_buffer + b->offset, 16,
+                             xd->dst.y_stride);
       }
     }
     if (!xd->mode_info_context->mbmi.mb_skip_coeff) {
@@ -493,11 +502,12 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
         if (tx_type != DCT_DCT) {
           vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
                                     b->dequant, b->predictor,
-                                    *(b->base_dst) + b->dst, 16,
-                                    b->dst_stride, b->eob);
+                                    xd->dst.y_buffer + b->offset, 16,
+                                    xd->dst.y_stride, b->eob);
         } else {
           vp9_dequant_idct_add(b->qcoeff, b->dequant, b->predictor,
-                               *(b->base_dst) + b->dst, 16, b->dst_stride);
+                               xd->dst.y_buffer + b->offset, 16,
+                               xd->dst.y_stride);
         }
       }
     } else {
@@ -1109,12 +1119,10 @@ static void set_refs(VP9D_COMP *pbi, int block_size,
       /* Select the appropriate reference frame for this MB */
       second_ref_fb_idx = cm->active_ref_idx[mbmi->second_ref_frame - 1];
 
-      xd->second_pre.y_buffer =
-          cm->yv12_fb[second_ref_fb_idx].y_buffer + ref_yoffset;
-      xd->second_pre.u_buffer =
-          cm->yv12_fb[second_ref_fb_idx].u_buffer + ref_uvoffset;
-      xd->second_pre.v_buffer =
-          cm->yv12_fb[second_ref_fb_idx].v_buffer + ref_uvoffset;
+      xd->second_pre = cm->yv12_fb[second_ref_fb_idx];
+      xd->second_pre.y_buffer += ref_yoffset;
+      xd->second_pre.u_buffer += ref_uvoffset;
+      xd->second_pre.v_buffer += ref_uvoffset;
 
       /* propagate errors from reference frames */
       xd->corrupted |= cm->yv12_fb[second_ref_fb_idx].corrupted;

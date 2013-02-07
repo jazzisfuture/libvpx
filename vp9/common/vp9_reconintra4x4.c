@@ -153,17 +153,18 @@ B_PREDICTION_MODE vp9_find_bpred_context(BLOCKD *x) {
 
 void vp9_intra4x4_predict(BLOCKD *x,
                           int b_mode,
-                          uint8_t *predictor) {
+                          uint8_t *predictor,
+                          uint8_t *base_dst, int dst_stride) {
   int i, r, c;
 
-  uint8_t *above = *(x->base_dst) + x->dst - x->dst_stride;
+  uint8_t *above = base_dst + x->offset - dst_stride;
   uint8_t left[4];
   uint8_t top_left = above[-1];
 
-  left[0] = (*(x->base_dst))[x->dst - 1];
-  left[1] = (*(x->base_dst))[x->dst - 1 + x->dst_stride];
-  left[2] = (*(x->base_dst))[x->dst - 1 + 2 * x->dst_stride];
-  left[3] = (*(x->base_dst))[x->dst - 1 + 3 * x->dst_stride];
+  left[0] = base_dst[x->offset - 1];
+  left[1] = base_dst[x->offset - 1 + dst_stride];
+  left[2] = base_dst[x->offset - 1 + 2 * dst_stride];
+  left[3] = base_dst[x->offset - 1 + 3 * dst_stride];
 
 #if CONFIG_NEWBINTRAMODES
   if (b_mode == B_CONTEXT_PRED)
@@ -417,26 +418,26 @@ void vp9_intra4x4_predict(BLOCKD *x,
  */
 void vp9_intra_prediction_down_copy(MACROBLOCKD *xd) {
   int extend_edge = xd->mb_to_right_edge == 0 && xd->mb_index < 2;
-  uint8_t *above_right = *(xd->block[0].base_dst) + xd->block[0].dst -
-                               xd->block[0].dst_stride + 16;
+  uint8_t *above_right = xd->dst.y_buffer + xd->block[0].offset -
+                               xd->dst.y_stride + 16;
   uint32_t *dst_ptr0 = (uint32_t *)above_right;
   uint32_t *dst_ptr1 =
-    (uint32_t *)(above_right + 4 * xd->block[0].dst_stride);
+    (uint32_t *)(above_right + 4 * xd->dst.y_stride);
   uint32_t *dst_ptr2 =
-    (uint32_t *)(above_right + 8 * xd->block[0].dst_stride);
+    (uint32_t *)(above_right + 8 * xd->dst.y_stride);
   uint32_t *dst_ptr3 =
-    (uint32_t *)(above_right + 12 * xd->block[0].dst_stride);
+    (uint32_t *)(above_right + 12 * xd->dst.y_stride);
 
   uint32_t *src_ptr = (uint32_t *) above_right;
 
   if ((xd->sb_index >= 2 && xd->mb_to_right_edge == 0) ||
       (xd->sb_index == 3 && xd->mb_index & 1))
     src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 32 *
-                                                    xd->block[0].dst_stride);
+                                                    xd->dst.y_stride);
   if (xd->mb_index == 3 ||
       (xd->mb_to_right_edge == 0 && xd->mb_index == 2))
     src_ptr = (uint32_t *) (((uint8_t *) src_ptr) - 16 *
-                                                    xd->block[0].dst_stride);
+                                                    xd->dst.y_stride);
 
   if (extend_edge) {
     *src_ptr = ((uint8_t *) src_ptr)[-1] * 0x01010101U;

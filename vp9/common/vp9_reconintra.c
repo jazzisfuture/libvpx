@@ -244,7 +244,9 @@ void vp9_recon_intra_mbuv(MACROBLOCKD *xd) {
   int i;
   for (i = 16; i < 24; i += 2) {
     BLOCKD *b = &xd->block[i];
-    vp9_recon2b(b->predictor, b->diff, *(b->base_dst) + b->dst, b->dst_stride);
+    uint8_t *base_dst = i < 20 ? xd->dst.u_buffer : xd->dst.v_buffer;
+
+    vp9_recon2b(b->predictor, b->diff, base_dst + b->offset, xd->dst.uv_stride);
   }
 }
 
@@ -698,19 +700,21 @@ void vp9_build_intra_predictors_sb64uv_s(MACROBLOCKD *xd) {
                                            32);
 }
 
-void vp9_intra8x8_predict(BLOCKD *xd,
+void vp9_intra8x8_predict(BLOCKD *b,
                           int mode,
-                          uint8_t *predictor) {
-  vp9_build_intra_predictors_internal(*(xd->base_dst) + xd->dst,
-                                      xd->dst_stride, predictor, 16,
+                          uint8_t *predictor,
+                          uint8_t *base_dst, int dst_stride) {
+  vp9_build_intra_predictors_internal(base_dst + b->offset, dst_stride,
+                                      predictor, 16,
                                       mode, 8, 1, 1);
 }
 
-void vp9_intra_uv4x4_predict(BLOCKD *xd,
+void vp9_intra_uv4x4_predict(BLOCKD *b,
                              int mode,
-                             uint8_t *predictor) {
-  vp9_build_intra_predictors_internal(*(xd->base_dst) + xd->dst,
-                                      xd->dst_stride, predictor, 8,
+                             uint8_t *predictor,
+                             uint8_t *base_dst, int dst_stride) {
+  vp9_build_intra_predictors_internal(base_dst + b->offset, dst_stride,
+                                      predictor, 8,
                                       mode, 4, 1, 1);
 }
 

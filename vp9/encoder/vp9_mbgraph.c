@@ -101,6 +101,7 @@ static int do_16x16_motion_search
   int_mv tmp_mv;
   int n;
 
+  xd->pre = *ref;
   for (n = 0; n < 16; n++) {
     BLOCKD *d = &xd->block[n];
     BLOCK *b  = &x->block[n];
@@ -109,9 +110,7 @@ static int do_16x16_motion_search
     b->src_stride = buf->y_stride;
     b->src        = buf->y_stride * (n & 12) + (n & 3) * 4 + buf_mb_y_offset;
 
-    d->base_pre   = &ref->y_buffer;
-    d->pre_stride = ref->y_stride;
-    d->pre        = ref->y_stride * (n & 12) + (n & 3) * 4 + mb_y_offset;
+    d->offset = ref->y_stride * (n & 12) + (n & 3) * 4 + mb_y_offset;
   }
 
   // Try zero MV first
@@ -160,6 +159,7 @@ static int do_16x16_zerozero_search
   unsigned int err;
   int n;
 
+  xd->pre = *ref;
   for (n = 0; n < 16; n++) {
     BLOCKD *d = &xd->block[n];
     BLOCK *b  = &x->block[n];
@@ -168,9 +168,7 @@ static int do_16x16_zerozero_search
     b->src_stride = buf->y_stride;
     b->src        = buf->y_stride * (n & 12) + (n & 3) * 4 + buf_mb_y_offset;
 
-    d->base_pre   = &ref->y_buffer;
-    d->pre_stride = ref->y_stride;
-    d->pre        = ref->y_stride * (n & 12) + (n & 3) * 4 + mb_y_offset;
+    d->offset = ref->y_stride * (n & 12) + (n & 3) * 4 + mb_y_offset;
   }
 
   // Try zero MV first

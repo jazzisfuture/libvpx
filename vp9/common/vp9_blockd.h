@@ -286,17 +286,7 @@ typedef struct blockd {
   uint8_t *predictor;
   int16_t *diff;
   int16_t *dequant;
-
-  /* 16 Y blocks, 4 U blocks, 4 V blocks each with 16 entries */
-  uint8_t **base_pre;
-  uint8_t **base_second_pre;
-  int pre;
-  int pre_stride;
-
-  uint8_t **base_dst;
-  int dst;
-  int dst_stride;
-
+  int offset;
   int eob;
 
   union b_mode_info bmi;
