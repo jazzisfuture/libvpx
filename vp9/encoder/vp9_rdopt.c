@@ -3360,22 +3360,76 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 #endif
 
+  // FIXME here, do a loop around all switchable filters and choose best, set
+  // that to best_filter_idx
   if (block_size == BLOCK_64X64) {
-    vp9_build_inter64x64_predictors_sb(xd,
-                                       xd->dst.y_buffer,
-                                       xd->dst.u_buffer,
-                                       xd->dst.v_buffer,
-                                       xd->dst.y_stride,
-                                       xd->dst.uv_stride);
+    unsigned best_sad, filt_idx, best_filter;
+
+    // FIXME check cm->mcomp_filter_type
+    mbmi->interp_filter = best_filter = vp9_switchable_interp[0];
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+    vp9_build_inter64x64_predictors_sby(xd, xd->dst.y_buffer, xd->dst.y_stride);
+    best_sad = vp9_variance64x64(xd->dst.y_buffer, xd->dst.y_stride,
+                            x->src.y_buffer, x->src.y_stride, &best_sad);
+    for (filt_idx = 1; filt_idx <= 2; filt_idx++) {
+      DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp, 64 * 64);
+      unsigned tmp_sad, n;
+
+      mbmi->interp_filter = vp9_switchable_interp[filt_idx];
+      vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+      vp9_build_inter64x64_predictors_sby(xd, tmp, 64);
+      tmp_sad = vp9_variance64x64(x->src.y_buffer, x->src.y_stride,
+                             tmp, 64, &tmp_sad);
+      if (tmp_sad < best_sad) {
+        best_sad = tmp_sad;
+        best_filter = mbmi->interp_filter;
+        for (n = 0; n < 64; n++)
+          memcpy(xd->dst.y_buffer + xd->dst.y_stride * n, tmp + n * 64, 64);
+      }
+    }
+
+    // UV
+    mbmi->interp_filter = best_filter;
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+    vp9_build_inter64x64_predictors_sbuv(xd, xd->dst.u_buffer,
+                                         xd->dst.v_buffer, xd->dst.uv_stride);
   } else if (block_size == BLOCK_32X32) {
-    vp9_build_inter32x32_predictors_sb(xd,
-                                       xd->dst.y_buffer,
-                                       xd->dst.u_buffer,
-                                       xd->dst.v_buffer,
-                                       xd->dst.y_stride,
-                                       xd->dst.uv_stride);
+    unsigned best_sad, filt_idx, best_filter;
+    
+    // FIXME check cm->mcomp_filter_type
+    mbmi->interp_filter = best_filter = vp9_switchable_interp[0];
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+    vp9_build_inter32x32_predictors_sby(xd, xd->dst.y_buffer, xd->dst.y_stride);
+    best_sad = vp9_variance32x32(xd->dst.y_buffer, xd->dst.y_stride,
+                            x->src.y_buffer, x->src.y_stride, &best_sad);
+    for (filt_idx = 1; filt_idx <= 2; filt_idx++) {
+      DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp, 32 * 32);
+      unsigned tmp_sad, n;
+      
+      mbmi->interp_filter = vp9_switchable_interp[filt_idx];
+      vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+      vp9_build_inter32x32_predictors_sby(xd, tmp, 32);
+      tmp_sad = vp9_variance32x32(x->src.y_buffer, x->src.y_stride,
+                             tmp, 32, &tmp_sad);
+      if (tmp_sad < best_sad) {
+        best_sad = tmp_sad;
+        best_filter = mbmi->interp_filter;
+        for (n = 0; n < 32; n++)
+          memcpy(xd->dst.y_buffer + xd->dst.y_stride * n, tmp + n * 32, 32);
+      }
+    }
+
+    // UV
+    mbmi->interp_filter = best_filter;
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+    vp9_build_inter32x32_predictors_sbuv(xd, xd->dst.u_buffer,
+                                         xd->dst.v_buffer, xd->dst.uv_stride);
   } else {
+    unsigned best_sad, filt_idx, best_filter;
+
     assert(block_size == BLOCK_16X16);
+    mbmi->interp_filter = best_filter = vp9_switchable_interp[0];
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
     vp9_build_1st_inter16x16_predictors_mby(xd, xd->predictor, 16, 0);
     if (is_comp_pred)
       vp9_build_2nd_inter16x16_predictors_mby(xd, xd->predictor, 16);
@@ -3384,6 +3438,35 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_build_interintra_16x16_predictors_mby(xd, xd->predictor, 16);
     }
 #endif
+    best_sad = vp9_variance16x16(xd->dst.y_buffer, xd->dst.y_stride,
+                            x->src.y_buffer, x->src.y_stride, &best_sad);
+    for (filt_idx = 1; filt_idx <= 2; filt_idx++) {
+      DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp, 16 * 16);
+      unsigned tmp_sad, n;
+
+      mbmi->interp_filter = vp9_switchable_interp[filt_idx];
+      vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+      vp9_build_1st_inter16x16_predictors_mby(xd, tmp, 16, 0);
+      if (is_comp_pred)
+        vp9_build_2nd_inter16x16_predictors_mby(xd, tmp, 16);
+#if CONFIG_COMP_INTERINTRA_PRED
+      if (is_comp_interintra_pred) {
+        vp9_build_interintra_16x16_predictors_mby(xd, tmp, 16);
+      }
+#endif
+      tmp_sad = vp9_variance16x16(x->src.y_buffer, x->src.y_stride,
+                             tmp, 16, &tmp_sad);
+      if (tmp_sad < best_sad) {
+        best_sad = tmp_sad;
+        best_filter = mbmi->interp_filter;
+        for (n = 0; n < 16; n++)
+          memcpy(xd->predictor + 16 * n, tmp + n * 16, 16);
+      }
+    }
+
+    // Save best filter
+    mbmi->interp_filter = best_filter;
+    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
   }
 
   if (cpi->active_map_enabled && x->active_ptr[0] == 0)
@@ -3673,7 +3756,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
-    if (this_mode >= NEARESTMV && this_mode <= SPLITMV) {
+    if (this_mode == SPLITMV) {
       mbmi->interp_filter =
           vp9_switchable_interp[switchable_filter_index++];
       if (switchable_filter_index == VP9_SWITCHABLE_FILTERS)
@@ -4581,8 +4664,10 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  for (mode_index = 0; mode_index < MAX_MODES;
+  for (mode_index = 0; mode_index < MAX_MODES; mode_index++) {
+#if 0
        mode_index += (!switchable_filter_index)) {
+#endif
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;
     int disable_skip = 0;
@@ -4619,6 +4704,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
 #endif
+#if 0
     // Evaluate all sub-pel filters irrespective of whether we can use
     // them for this frame.
     if (this_mode >= NEARESTMV && this_mode <= SPLITMV) {
@@ -4632,7 +4718,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
       vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
     }
-
+#endif
     // if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
     //  continue;
 
