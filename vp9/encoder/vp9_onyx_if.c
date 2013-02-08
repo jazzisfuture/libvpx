@@ -2537,7 +2537,7 @@ void select_interp_filter_type(VP9_COMP *cpi) {
 
   thresh = (unsigned int)(0.80 * count_sum);
 
-  if (high_count > thresh) {
+  if (0 && high_count > thresh) {
     // One filter accounts for 80+% of cases so force the next
     // frame to use this filter exclusively using frame-level flag.
     cpi->common.mcomp_filter_type = vp9_switchable_interp[high_filter_index];
