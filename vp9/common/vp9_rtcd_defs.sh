@@ -304,6 +304,11 @@ prototype void vp9_short_iht8x8 "int16_t *input, int16_t *output, int tx_type, i
 specialize vp9_short_iht8x8
 #endif
 
+#if CONFIG_INTHT4X4
+prototype void vp9_short_iht4x4 "int16_t *input, int16_t *output, int tx_type, int pitch"
+specialize vp9_short_iht4x4
+#endif
+
 prototype void vp9_ihtllm "const int16_t *input, int16_t *output, int pitch, int tx_type, int tx_dim, int16_t eobs"
 specialize vp9_ihtllm
 
