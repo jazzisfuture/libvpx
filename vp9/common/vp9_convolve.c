@@ -298,34 +298,61 @@ void vp9_convolve8_avg_c(const uint8_t *src, int src_stride,
                  w, h, 8);
 }
 
+static void copy_row(const uint8_t *src, int src_stride,
+                     uint8_t *dst, int dst_stride,
+                     int w0, int h) {
+  int w;
+
+  /* TODO(jkoleszar): Added this to get missing 16x8 support. Will want to
+   * revisit this later once all the block sizes are known, as it's certainly
+   * overcomplicated for what we'll finally need.
+   */
+  while (h >= 16 && w0 >= 16) {
+    for (w = w0; w >= 16; w -= 16) {
+      vp9_copy_mem16x16(src + w - 16, src_stride, dst + w - 16, dst_stride);
+    }
+    if (w)
+      copy_row(src, src_stride, dst, dst_stride, w, 16);
+    src += 16 * src_stride;
+    dst += 16 * dst_stride;
+    h -= 16;
+  }
+  while (h >= 8 && w0 >= 8) {
+    for (w = w0; w >= 8; w -= 8) {
+      vp9_copy_mem8x8(src + w - 8, src_stride, dst + w - 8, dst_stride);
+    }
+    if (w)
+      copy_row(src, src_stride, dst, dst_stride, w, 8);
+    src += 8 * src_stride;
+    dst += 8 * dst_stride;
+    h -= 8;
+  }
+  while (h >= 4 && w0 >= 8) {
+    for (w = w0; w >= 8; w -= 8) {
+      vp9_copy_mem8x4(src + w - 8, src_stride, dst + w - 8, dst_stride);
+    }
+    if (w)
+      copy_row(src, src_stride, dst, dst_stride, w, 8);
+    src += 4 * src_stride;
+    dst += 4 * dst_stride;
+    h -= 4;
+  }
+  while (h > 0) {
+    for (w = 0; w < w0; ++w) {
+      dst[w] = src[w];
+    }
+    src += src_stride;
+    dst += dst_stride;
+    h -= 1;
+  }
+}
+
 void vp9_convolve_copy(const uint8_t *src, int src_stride,
                        uint8_t *dst, int dst_stride,
                        const int16_t *filter_x, int filter_x_stride,
                        const int16_t *filter_y, int filter_y_stride,
                        int w, int h) {
-  if (h == 16) {
-    vp9_copy_mem16x16(src, src_stride, dst, dst_stride);
-  } else if (h == 8) {
-    vp9_copy_mem8x8(src, src_stride, dst, dst_stride);
-  } else if (w == 8) {
-    vp9_copy_mem8x4(src, src_stride, dst, dst_stride);
-  } else {
-    // 4x4
-    int r;
-
-    for (r = 0; r < 4; ++r) {
-#if !(CONFIG_FAST_UNALIGNED)
-      dst[0]  = src[0];
-      dst[1]  = src[1];
-      dst[2]  = src[2];
-      dst[3]  = src[3];
-#else
-      *(uint32_t *)dst = *(const uint32_t *)src;
-#endif
-      src += src_stride;
-      dst += dst_stride;
-    }
-  }
+  copy_row(src, src_stride, dst, dst_stride, w, h);
 }
 
 void vp9_convolve_avg(const uint8_t *src, int src_stride,
