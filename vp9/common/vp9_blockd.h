@@ -406,11 +406,11 @@ typedef struct macroblockd {
 
 } MACROBLOCKD;
 
-#define ACTIVE_HT   110                // quantization stepsize threshold
+#define ACTIVE_HT   110                // quantization stepsize threshold (110)
 
 #define ACTIVE_HT8  300
 
-#define ACTIVE_HT16 300
+#define ACTIVE_HT16 0
 
 // convert MB_PREDICTION_MODE to B_PREDICTION_MODE
 static B_PREDICTION_MODE pred_mode_conv(MB_PREDICTION_MODE mode) {

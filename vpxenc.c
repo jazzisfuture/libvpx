@@ -2462,6 +2462,12 @@ int main(int argc, const char **argv_) {
     FOREACH_STREAM(set_stream_dimensions(stream, input.w, input.h));
     FOREACH_STREAM(validate_stream_config(stream));
 
+    // =========================================================
+    // debug point
+    if (global.limit > 100)
+      global.limit = 100;
+    // =========================================================
+
     /* Ensure that --passes and --pass are consistent. If --pass is set and
      * --passes=2, ensure --fpf was set.
      */
