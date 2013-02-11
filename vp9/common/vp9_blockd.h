@@ -66,9 +66,6 @@ typedef struct {
   ENTROPY_CONTEXT y2;
 } ENTROPY_CONTEXT_PLANES;
 
-#define VP9_COMBINEENTROPYCONTEXTS( Dest, A, B) \
-  Dest = ((A)!=0) + ((B)!=0);
-
 typedef enum {
   KEY_FRAME = 0,
   INTER_FRAME = 1
