@@ -66,7 +66,7 @@ static int get_signed(BOOL_DECODER *br, int value_to_sign) {
 #define INCREMENT_COUNT(token)               \
   do {                                       \
     coef_counts[type][coef_bands[c]][pt][token]++; \
-    pt = vp9_prev_token_class[token];              \
+    pt = vp9_get_coef_context(&recent_energy, token);              \
   } while (0)
 
 #define WRITE_COEF_CONTINUE(val, token)                       \
@@ -92,6 +92,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                         const int *const scan, TX_SIZE txfm_size,
                         const int *coef_bands) {
   FRAME_CONTEXT *const fc = &dx->common.fc;
+  int recent_energy = 0;
   int nodc = (type == PLANE_TYPE_Y_NO_DC);
   int pt, c = nodc;
   vp9_coeff_probs *coef_probs;
@@ -133,7 +134,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       break;
   }
 
-  VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+  pt = vp9_initial_coef_context(*a, *l);
   while (1) {
     int val;
     const uint8_t *cat6 = cat6_prob;

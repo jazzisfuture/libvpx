@@ -361,6 +361,13 @@ static const int plane_rd_mult[4] = {
   }\
 }
 
+// This function is a place holder for now but may ultimately need
+// to scan previous tokens to work out the correct context.
+static int trellis_get_coeff_context(TOKENVALUE * tptr, int token) {
+  int recent_energy = 0;
+  return vp9_get_coef_context(&recent_energy, token);
+}
+
 static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
                        ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                        int tx_size) {
@@ -453,7 +460,7 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       /* Consider both possible successor states. */
       if (next < default_eob) {
         band = bands[i + 1];
-        pt = vp9_prev_token_class[t0];
+        pt = trellis_get_coeff_context((vp9_dct_value_tokens_ptr + x), t0);
         rate0 +=
           mb->token_costs[tx_size][type][band][pt][tokens[next][0].token];
         rate1 +=
@@ -501,12 +508,12 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
       if (next < default_eob) {
         band = bands[i + 1];
         if (t0 != DCT_EOB_TOKEN) {
-          pt = vp9_prev_token_class[t0];
+          pt = trellis_get_coeff_context((vp9_dct_value_tokens_ptr + x), t0);
           rate0 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][0].token];
         }
         if (t1 != DCT_EOB_TOKEN) {
-          pt = vp9_prev_token_class[t1];
+          pt = trellis_get_coeff_context((vp9_dct_value_tokens_ptr + x), t1);
           rate1 += mb->token_costs[tx_size][type][band][pt][
               tokens[next][1].token];
         }
@@ -552,7 +559,7 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
 
   /* Now pick the best path through the whole trellis. */
   band = bands[i + 1];
-  VP9_COMBINEENTROPYCONTEXTS(pt, *a, *l);
+  pt = vp9_initial_coef_context(*a, *l);
   rate0 = tokens[next][0].rate;
   rate1 = tokens[next][1].rate;
   error0 = tokens[next][0].error;
