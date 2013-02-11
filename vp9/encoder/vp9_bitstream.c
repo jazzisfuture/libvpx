@@ -1187,8 +1187,6 @@ static void build_tree_distribution(vp9_coeff_probs *coef_probs,
   for (i = 0; i < block_types; ++i) {
     for (j = 0; j < COEF_BANDS; ++j) {
       for (k = 0; k < PREV_COEF_CONTEXTS; ++k) {
-        if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
-          continue;
         vp9_tree_probs_from_distribution(MAX_ENTROPY_TOKENS,
                                          vp9_coef_encodings, vp9_coef_tree,
                                          coef_probs[i][j][k],
@@ -1275,6 +1273,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
           const vp9_prob upd = COEF_UPDATE_PROB;
           int s = prev_coef_savings[t];
           int u = 0;
+
           if (k >= 3 && ((i == 0 && j == 1) || (i > 0 && j == 0)))
             continue;
 #if defined(SEARCH_NEWP)
