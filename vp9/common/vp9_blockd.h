@@ -386,6 +386,9 @@ typedef struct macroblockd {
   unsigned int frames_since_golden;
   unsigned int frames_till_alt_ref_frame;
 
+#if CONFIG_LOSSLESS
+  int lossless;
+#endif
   /* Inverse transform function pointers. */
   void (*inv_xform4x4_1_x8)(int16_t *input, int16_t *output, int pitch);
   void (*inv_xform4x4_x8)(int16_t *input, int16_t *output, int pitch);
@@ -501,6 +504,10 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, const BLOCKD *b) {
   int ib = (int)(b - xd->block);
   if (ib >= 16)
     return tx_type;
+#if CONFIG_LOSSLESS
+  if (xd->lossless)
+    return tx_type;
+#endif
   // TODO(rbultje, debargha): Explore ADST usage for superblocks
   if (xd->mode_info_context->mbmi.sb_type)
     return tx_type;

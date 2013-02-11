@@ -1545,6 +1545,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
 #if CONFIG_LOSSLESS
     if (cpi->oxcf.lossless) {
       txfm_type = ONLY_4X4;
+      cpi->mb.e_mbd.lossless = 1;
     } else
 #endif
     /* FIXME (rbultje)
