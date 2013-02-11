@@ -43,14 +43,18 @@ DECLARE_ALIGNED(16, const uint8_t, vp9_norm[256]) = {
 
 // Unified coefficient band structure used by all block sizes
 DECLARE_ALIGNED(16, const int, vp9_coef_bands[32]) = {
-  0, 1, 2, 3, 5, 4, 4, 5,
-  5, 3, 6, 6, 6, 6, 6, 7,
-  7, 7, 7, 7, 7, 7, 7, 7,
-  7, 7, 7, 7, 7, 7, 7, 7
+  0, 1, 2, 3, 3, 3, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 5,
+  5, 5, 5, 5, 5, 5, 5, 5,
+  5, 5, 5, 5, 5, 5, 5, 5
+};
+DECLARE_ALIGNED(16, const int, vp9_coef_bands4x4[16]) = {
+  0, 1, 2, 3, 3, 3, 4, 4,
+  4, 4, 5, 5, 5, 5, 5, 5
 };
 
-DECLARE_ALIGNED(16, const uint8_t, vp9_prev_token_class[MAX_ENTROPY_TOKENS]) = {
-  0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 0
+DECLARE_ALIGNED(16, const uint8_t, vp9_pt_energy_class[MAX_ENTROPY_TOKENS]) = {
+  0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5
 };
 
 DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_4x4[16]) = {
@@ -231,24 +235,32 @@ int vp9_get_coef_context(int * recent_energy, int token) {
   // int token_energy;
   // int av_energy;
 
-  // Placeholder code for experiments with token energy
-  // as a coefficient context.
   /*token_energy = ((token != DCT_EOB_TOKEN) ? token : 0);
-  if (token_energy) {
-    av_energy = (token_energy + *recent_energy + 1) >> 1;
+  if (!token_energy) {
+    if (!(*recent_energy)) {
+      av_energy = 0;
+    } else {
+      av_energy = 1;
+    }
   } else {
-    av_energy = 0;
+    av_energy = ((token_energy + *recent_energy + 1) >> 1) + 1;
+    if (av_energy > DCT_VAL_CATEGORY6)
+      av_energy = DCT_VAL_CATEGORY6;
   }
   *recent_energy = token_energy;*/
 
-  return vp9_prev_token_class[token];
+  return vp9_pt_energy_class[token];
 };
 
-int vp9_get_coef_band(int coef_index) {
-  if (coef_index < 32)
-    return vp9_coef_bands[coef_index];
-  else
-    return 7;
+int vp9_get_coef_band(int tx_size, int coef_index) {
+  if (tx_size == TX_4X4) {
+    return vp9_coef_bands4x4[coef_index];
+  } else {
+    if (coef_index < 32)
+      return vp9_coef_bands[coef_index];
+    else
+      return 5;
+  }
 }
 
 void vp9_default_coef_probs(VP9_COMMON *pc) {
