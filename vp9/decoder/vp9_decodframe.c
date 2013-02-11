@@ -134,6 +134,7 @@ static void mb_init_dequantizer(VP9D_COMP *pbi, MACROBLOCKD *xd) {
     pbi->dc_idct_add_y_block = vp9_dequant_dc_idct_add_y_block_lossless_c;
     pbi->idct_add_y_block    = vp9_dequant_idct_add_y_block_lossless_c;
     pbi->idct_add_uv_block   = vp9_dequant_idct_add_uv_block_lossless_c;
+    pbi->mb.lossless = 1;
   } else {
     pbi->mb.inv_xform4x4_1_x8     = vp9_short_idct4x4llm_1;
     pbi->mb.inv_xform4x4_x8       = vp9_short_idct4x4llm;
