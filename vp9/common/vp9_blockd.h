@@ -520,7 +520,7 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, const BLOCKD *b) {
     return tx_type;
 #if CONFIG_LOSSLESS
   if (xd->lossless)
-    return tx_type;
+    return DCT_DCT;
 #endif
   // TODO(rbultje, debargha): Explore ADST usage for superblocks
   if (xd->mode_info_context->mbmi.sb_type)
