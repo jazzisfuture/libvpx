@@ -124,22 +124,22 @@ static void mb_init_dequantizer(VP9D_COMP *pbi, MACROBLOCKD *xd) {
   }
 
 #if CONFIG_LOSSLESS
-  if (!QIndex) {
-    pbi->mb.inv_xform4x4_1_x8     = vp9_short_inv_walsh4x4_1_x8;
-    pbi->mb.inv_xform4x4_x8       = vp9_short_inv_walsh4x4_x8;
-    pbi->mb.inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1_lossless;
-    pbi->mb.inv_walsh4x4_lossless = vp9_short_inv_walsh4x4_lossless;
+  if (xd->lossless) {
+    assert(QIndex == 0);
+    xd->inv_xform4x4_1_x8     = vp9_short_inv_walsh4x4_1_x8;
+    xd->inv_xform4x4_x8       = vp9_short_inv_walsh4x4_x8;
+    xd->inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1_lossless;
+    xd->inv_walsh4x4_lossless = vp9_short_inv_walsh4x4_lossless;
     pbi->idct_add            = vp9_dequant_idct_add_lossless_c;
     pbi->dc_idct_add         = vp9_dequant_dc_idct_add_lossless_c;
     pbi->dc_idct_add_y_block = vp9_dequant_dc_idct_add_y_block_lossless_c;
     pbi->idct_add_y_block    = vp9_dequant_idct_add_y_block_lossless_c;
     pbi->idct_add_uv_block   = vp9_dequant_idct_add_uv_block_lossless_c;
-    pbi->mb.lossless = 1;
   } else {
-    pbi->mb.inv_xform4x4_1_x8     = vp9_short_idct4x4llm_1;
-    pbi->mb.inv_xform4x4_x8       = vp9_short_idct4x4llm;
-    pbi->mb.inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1;
-    pbi->mb.inv_walsh4x4_lossless = vp9_short_inv_walsh4x4;
+    xd->inv_xform4x4_1_x8     = vp9_short_idct4x4llm_1;
+    xd->inv_xform4x4_x8       = vp9_short_idct4x4llm;
+    xd->inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1;
+    xd->inv_walsh4x4_lossless = vp9_short_inv_walsh4x4;
     pbi->idct_add            = vp9_dequant_idct_add;
     pbi->dc_idct_add         = vp9_dequant_dc_idct_add;
     pbi->dc_idct_add_y_block = vp9_dequant_dc_idct_add_y_block;
@@ -147,10 +147,10 @@ static void mb_init_dequantizer(VP9D_COMP *pbi, MACROBLOCKD *xd) {
     pbi->idct_add_uv_block   = vp9_dequant_idct_add_uv_block;
   }
 #else
-  pbi->mb.inv_xform4x4_1_x8     = vp9_short_idct4x4llm_1;
-  pbi->mb.inv_xform4x4_x8       = vp9_short_idct4x4llm;
-  pbi->mb.inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1;
-  pbi->mb.inv_walsh4x4_lossless = vp9_short_inv_walsh4x4;
+  xd->inv_xform4x4_1_x8     = vp9_short_idct4x4llm_1;
+  xd->inv_xform4x4_x8       = vp9_short_idct4x4llm;
+  xd->inv_walsh4x4_1        = vp9_short_inv_walsh4x4_1;
+  xd->inv_walsh4x4_lossless = vp9_short_inv_walsh4x4;
   pbi->idct_add            = vp9_dequant_idct_add;
   pbi->dc_idct_add         = vp9_dequant_dc_idct_add;
   pbi->dc_idct_add_y_block = vp9_dequant_dc_idct_add_y_block;
@@ -1529,17 +1529,24 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
 
   pc->sb64_coded = vp9_read_literal(&header_bc, 8);
   pc->sb32_coded = vp9_read_literal(&header_bc, 8);
-
-  /* Read the loop filter level and type */
-  pc->txfm_mode = vp9_read_literal(&header_bc, 2);
-  if (pc->txfm_mode == 3)
-    pc->txfm_mode += vp9_read_bit(&header_bc);
-  if (pc->txfm_mode == TX_MODE_SELECT) {
-    pc->prob_tx[0] = vp9_read_literal(&header_bc, 8);
-    pc->prob_tx[1] = vp9_read_literal(&header_bc, 8);
-    pc->prob_tx[2] = vp9_read_literal(&header_bc, 8);
+#if CONFIG_LOSSLESS
+  xd->lossless = vp9_read_bit(&header_bc);
+  if (xd->lossless) {
+    pc->txfm_mode = ONLY_4X4;
   }
-
+  else
+#endif
+  {
+    /* Read the loop filter level and type */
+    pc->txfm_mode = vp9_read_literal(&header_bc, 2);
+    if (pc->txfm_mode == 3)
+      pc->txfm_mode += vp9_read_bit(&header_bc);
+    if (pc->txfm_mode == TX_MODE_SELECT) {
+      pc->prob_tx[0] = vp9_read_literal(&header_bc, 8);
+      pc->prob_tx[1] = vp9_read_literal(&header_bc, 8);
+      pc->prob_tx[2] = vp9_read_literal(&header_bc, 8);
+    }
+  }
   pc->filter_type = (LOOPFILTERTYPE) vp9_read_bit(&header_bc);
   pc->filter_level = vp9_read_literal(&header_bc, 6);
   pc->sharpness_level = vp9_read_literal(&header_bc, 3);

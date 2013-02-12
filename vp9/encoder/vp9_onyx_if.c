@@ -752,10 +752,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->quarter_pixel_search = 1;
   sf->half_pixel_search = 1;
   sf->iterative_sub_pixel = 1;
-#if CONFIG_LOSSLESS
-  sf->optimize_coefficients = 0;
-#else
   sf->optimize_coefficients = 1;
+#if CONFIG_LOSSLESS
+  if (cpi->oxcf.lossless)
+    sf->optimize_coefficients = 0;
 #endif
   sf->no_skip_block4x4_search = 1;
   sf->first_step = 0;
@@ -2619,10 +2619,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // For 2 Pass Only used where GF/ARF prediction quality
   // is above a threshold
   cpi->zbin_mode_boost = 0;
-#if CONFIG_LOSSLESS
-  cpi->zbin_mode_boost_enabled = FALSE;
-#else
   cpi->zbin_mode_boost_enabled = TRUE;
+#if CONFIG_LOSSLESS
+  if (cpi->oxcf.lossless)
+    cpi->zbin_mode_boost_enabled = FALSE;
 #endif
   if (cpi->gfu_boost <= 400) {
     cpi->zbin_mode_boost_enabled = FALSE;
