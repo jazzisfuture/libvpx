@@ -18,6 +18,25 @@
  * and vp9_build_intra_predictors_mbuv_s(MACROBLOCKD *xd).
  */
 
+#if CONFIG_DISABLE_DIV
+/* Using multiplication and shifting instead of division in diagonal prediction.
+ * iscale table is calculated from ((1<<16) + (i+2)/2) / (i+2) and used as
+ * ((A + B) * iscale[i] + (1<<15)) >> 16;
+ * where A and B are weighted pixel values.
+ */
+static const unsigned int iscale[64] = {
+  32768, 21845, 16384, 13107, 10923,  9362,  8192,  7282,
+   6554,  5958,  5461,  5041,  4681,  4369,  4096,  3855,
+   3641,  3449,  3277,  3121,  2979,  2849,  2731,  2621,
+   2521,  2427,  2341,  2260,  2185,  2114,  2048,  1986,
+   1928,  1872,  1820,  1771,  1725,  1680,  1638,  1598,
+   1560,  1524,  1489,  1456,  1425,  1394,  1365,  1337,
+   1311,  1285,  1260,  1237,  1214,  1192,  1170,  1150,
+   1130,  1111,  1092,  1074,  1057,  1040,  1024,  1008,
+};
+#endif
+
+
 static void d27_predictor(uint8_t *ypred_ptr, int y_stride, int n,
                           uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c, h, w, v;
@@ -29,7 +48,11 @@ static void d27_predictor(uint8_t *ypred_ptr, int y_stride, int n,
     else
       a = (yleft_col[r] + yleft_col[r + 1] + 1) >> 1;
     b = yabove_row[c + 2];
+#if CONFIG_DISABLE_DIV
+    ypred_ptr[c] = ((2 * a + (c + 1) * b) * iscale[1+c] + (1<<15)) >> 16;
+#else
     ypred_ptr[c] = (2 * a + (c + 1) * b + (c + 3) / 2) / (c + 3);
+#endif
   }
   for (r = 1; r < n / 2 - 1; r++) {
     for (c = 0; c < n - 2 - 2 * r; c++) {
@@ -38,7 +61,12 @@ static void d27_predictor(uint8_t *ypred_ptr, int y_stride, int n,
       else
         a = (yleft_col[r] + yleft_col[r + 1] + 1) >> 1;
       b = ypred_ptr[(r - 1) * y_stride + c + 2];
+#if CONFIG_DISABLE_DIV
+      ypred_ptr[r * y_stride + c] =
+                ((2 * a + (c + 1) * b) * iscale[1+c] + (1<<15)) >> 16;
+#else
       ypred_ptr[r * y_stride + c] = (2 * a + (c + 1) * b + (c + 3) / 2) / (c + 3);
+#endif
     }
   }
   for (; r < n - 1; ++r) {
@@ -77,7 +105,12 @@ static void d63_predictor(uint8_t *ypred_ptr, int y_stride, int n,
     else
       a = (yabove_row[c] + yabove_row[c + 1] + 1) >> 1;
     b = yleft_col[r + 2];
+#if CONFIG_DISABLE_DIV
+    ypred_ptr[r * y_stride] = ((2 * a + (r + 1) * b) * iscale[1+r] +
+                              (1<<15)) >> 16;
+#else
     ypred_ptr[r * y_stride] = (2 * a + (r + 1) * b + (r + 3) / 2) / (r + 3);
+#endif
   }
   for (c = 1; c < n / 2 - 1; c++) {
     for (r = 0; r < n - 2 - 2 * c; r++) {
@@ -86,7 +119,12 @@ static void d63_predictor(uint8_t *ypred_ptr, int y_stride, int n,
       else
         a = (yabove_row[c] + yabove_row[c + 1] + 1) >> 1;
       b = ypred_ptr[(r + 2) * y_stride + c - 1];
+#if CONFIG_DISABLE_DIV
+      ypred_ptr[r * y_stride + c] = ((2 * a + (c + 1) * b) * iscale[1+c] +
+                                    (1<<15)) >> 16;
+#else
       ypred_ptr[r * y_stride + c] = (2 * a + (c + 1) * b + (c + 3) / 2) / (c + 3);
+#endif
     }
   }
   for (; c < n - 1; ++c) {
@@ -118,9 +156,15 @@ static void d45_predictor(uint8_t *ypred_ptr, int y_stride, int n,
   int r, c;
   for (r = 0; r < n - 1; ++r) {
     for (c = 0; c <= r; ++c) {
+#if CONFIG_DISABLE_DIV
+      ypred_ptr[(r - c) * y_stride + c] =
+        ((yabove_row[r + 1] * (c + 1) +
+          yleft_col[r + 1] * (r - c + 1)) * iscale[r] + (1<<15)) >> 16;
+#else
       ypred_ptr[(r - c) * y_stride + c] =
         (yabove_row[r + 1] * (c + 1) +
          yleft_col[r + 1] * (r - c + 1) + r / 2 + 1) / (r + 2);
+#endif
     }
   }
   for (c = 0; c <= r; ++c) {
@@ -128,9 +172,15 @@ static void d45_predictor(uint8_t *ypred_ptr, int y_stride, int n,
                                      //            yabove_row[r - 1]);
     int yleft_ext = yleft_col[r];  // clip_pixel(2 * yleft_col[r] -
                                    //            yleft_col[r-1]);
+#if CONFIG_DISABLE_DIV
+    ypred_ptr[(r - c) * y_stride + c] =
+      ((yabove_ext * (c + 1) +
+        yleft_ext * (r - c + 1)) * iscale[r] + (1<<15)) >> 16;
+#else
     ypred_ptr[(r - c) * y_stride + c] =
       (yabove_ext * (c + 1) +
        yleft_ext * (r - c + 1) + r / 2 + 1) / (r + 2);
+#endif
   }
   for (r = 1; r < n; ++r) {
     for (c = n - r; c < n; ++c) {

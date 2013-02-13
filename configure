@@ -249,6 +249,7 @@ EXPERIMENT_LIST="
     abovesprefmv
     intht
     intht4x4
+    disable_div
 "
 CONFIG_LIST="
     external_build
