@@ -143,7 +143,7 @@ typedef enum {
 #define VP9_MVREFS (1 + SPLITMV - NEARESTMV)
 
 #if CONFIG_LOSSLESS
-#define WHT_UPSCALE_FACTOR 3
+#define WHT_UPSCALE_FACTOR 2
 #define Y2_WHT_UPSCALE_FACTOR 2
 #endif
 
