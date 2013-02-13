@@ -624,7 +624,7 @@ static int get_2nd_order_usage(const MACROBLOCKD *xd) {
                        xd->mode_info_context->mbmi.txfm_size != TX_16X16);
   if (has_2nd_order)
     has_2nd_order = (get_tx_type(xd, xd->block) == DCT_DCT);
-  return has_2nd_order;
+  return 0; //has_2nd_order && xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME;
 }
 
 extern void vp9_build_block_doffsets(MACROBLOCKD *xd);
