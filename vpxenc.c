@@ -2507,6 +2507,13 @@ int main(int argc, const char **argv_) {
     FOREACH_STREAM(setup_pass(stream, &global, pass));
     FOREACH_STREAM(initialize_encoder(stream, &global));
 
+    // =============================================================
+    // debug point, to be removed before submitting for code review
+    // =============================================================
+    if (global.limit > 100)
+      global.limit = 100;
+    // =============================================================
+
     frame_avail = 1;
     got_data = 0;
 
