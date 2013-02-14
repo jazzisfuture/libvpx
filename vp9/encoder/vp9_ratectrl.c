@@ -116,11 +116,10 @@ static int kfboost_qadjust(int qindex) {
 
 int vp9_bits_per_mb(FRAME_TYPE frame_type, int qindex) {
   if (frame_type == KEY_FRAME)
-    return (int)(4500000 / vp9_convert_qindex_to_q(qindex));
+    return (int)(4000000 / vp9_convert_qindex_to_q(qindex));
   else
-    return (int)(2850000 / vp9_convert_qindex_to_q(qindex));
+    return (int)(2500000 / vp9_convert_qindex_to_q(qindex));
 }
-
 
 void vp9_save_coding_context(VP9_COMP *cpi) {
   CODING_CONTEXT *const cc = &cpi->coding_context;

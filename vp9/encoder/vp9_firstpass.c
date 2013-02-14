@@ -858,6 +858,7 @@ static double calc_correction_factor(double err_per_mb,
   return correction_factor;
 }
 
+
 // Given a current maxQ value sets a range for future values.
 // PGW TODO..
 // This code removes direct dependency on QIndex to determin the range
@@ -866,8 +867,8 @@ static void adjust_maxq_qrange(VP9_COMP *cpi) {
   int i;
   double q;
 
-  // Set the max corresponding to cpi->avg_q * 2.0
-  q = cpi->avg_q * 2.0;
+  // Set the max corresponding to cpi->avg_q * 1.5
+  q = cpi->avg_q * 1.5;
   cpi->twopass.maxq_max_limit = cpi->worst_quality;
   for (i = cpi->best_quality; i <= cpi->worst_quality; i++) {
     cpi->twopass.maxq_max_limit = i;
@@ -999,10 +1000,9 @@ static int estimate_max_q(VP9_COMP *cpi,
   // Adjust maxq_min_limit and maxq_max_limit limits based on
   // averaga q observed in clip for non kf/gf/arf frames
   // Give average a chance to settle though.
-  // PGW TODO.. This code is broken for the extended Q range
   if ((cpi->ni_frames >
-       ((int)cpi->twopass.total_stats->count >> 8)) &&
-      (cpi->ni_frames > 150)) {
+       ((int)cpi->twopass.total_stats->count >> 7)) &&
+      (cpi->ni_frames > 50)) {
     adjust_maxq_qrange(cpi);
   }
 
