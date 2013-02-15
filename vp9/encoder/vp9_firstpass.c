@@ -511,7 +511,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
     for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
       int this_error;
       int gf_motion_error = INT_MAX;
-      int use_dc_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
+      int use_16x16_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
 
       xd->dst.y_buffer = new_yv12->y_buffer + recon_yoffset;
       xd->dst.u_buffer = new_yv12->u_buffer + recon_uvoffset;
@@ -519,7 +519,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
       xd->left_available = (mb_col != 0);
 
       // do intra 16x16 prediction
-      this_error = vp9_encode_intra(cpi, x, use_dc_pred);
+      xd->mode_info_context->mbmi.txfm_size =
+          use_16x16_pred ? TX_16X16 : TX_4X4;
+      this_error = vp9_encode_intra(cpi, x, use_16x16_pred);
 
       // "intrapenalty" below deals with situations where the intra and inter error scores are very low (eg a plain black frame)
       // We do not have special cases in first pass for 0,0 and nearest etc so all inter modes carry an overhead cost estimate fot the mv.
@@ -612,7 +614,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
           mv.as_mv.col <<= 3;
           this_error = motion_error;
           vp9_set_mbmode_and_mvs(x, NEWMV, &mv);
-          xd->mode_info_context->mbmi.txfm_size = TX_4X4;
+          xd->mode_info_context->mbmi.txfm_size = TX_16X16;
           vp9_encode_inter16x16y(x);
           sum_mvr += mv.as_mv.row;
           sum_mvr_abs += abs(mv.as_mv.row);
