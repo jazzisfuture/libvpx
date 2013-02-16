@@ -949,8 +949,8 @@ static const arg_def_t verbosearg       = ARG_DEF("v", "verbose", 0,
                                                   "Show encoder parameters");
 static const arg_def_t psnrarg          = ARG_DEF(NULL, "psnr", 0,
                                                   "Show PSNR in status line");
-static const arg_def_t recontest        = ARG_DEF(NULL, "test-decode", 0,
-                                                  "Test encode/decode mismatch");
+static const arg_def_t recontest = ARG_DEF(NULL, "test-decode", 1,
+    "Test encode/decode mismatch (0: off, 1: non-fatal, 2: fatal)");
 static const arg_def_t framerate        = ARG_DEF(NULL, "fps", 1,
                                                   "Stream frame rate (rate/scale)");
 static const arg_def_t use_ivf          = ARG_DEF(NULL, "ivf", 0,
@@ -1704,7 +1704,7 @@ static void parse_global_config(struct global_config *global, char **argv) {
     else if (arg_match(&arg, &psnrarg, argi))
       global->show_psnr = 1;
     else if (arg_match(&arg, &recontest, argi))
-      global->test_decode = 1;
+      global->test_decode = arg_parse_uint(&arg);
     else if (arg_match(&arg, &framerate, argi)) {
       global->framerate = arg_parse_rational(&arg);
       validate_positive_rational(arg.name, &global->framerate);
@@ -2304,10 +2304,20 @@ static void get_cx_data(struct stream_state  *stream,
 
         *got_data = 1;
 #if CONFIG_DECODERS
-        if (global->test_decode) {
+        if (global->test_decode && !stream->mismatch_seen) {
           vpx_codec_decode(&stream->decoder, pkt->data.frame.buf,
                            pkt->data.frame.sz, NULL, 0);
-          ctx_exit_on_error(&stream->decoder, "Failed to decode frame");
+          if (stream->decoder.err) {
+            if (global->test_decode == 2) {
+              ctx_exit_on_error(&stream->decoder,
+                                "Failed to decode frame %d in stream %d",
+                                stream->frames_out + 1, stream->index);
+            } else {
+              warn("Failed to decode frame %d in stream %d",
+                   stream->frames_out + 1, stream->index);
+              stream->mismatch_seen = stream->frames_out + 1;
+            }
+          }
         }
 #endif
         break;
@@ -2368,23 +2378,32 @@ float usec_to_fps(uint64_t usec, unsigned int frames) {
 }
 
 
-static void test_decode(struct stream_state  *stream) {
+static void test_decode(struct stream_state  *stream, int fatal) {
+  if (stream->mismatch_seen)
+    return;
+
   vpx_codec_control(&stream->encoder, VP8_COPY_REFERENCE, &stream->ref_enc);
   ctx_exit_on_error(&stream->encoder, "Failed to get encoder reference frame");
   vpx_codec_control(&stream->decoder, VP8_COPY_REFERENCE, &stream->ref_dec);
   ctx_exit_on_error(&stream->decoder, "Failed to get decoder reference frame");
 
-  if (!stream->mismatch_seen
-      && !compare_img(&stream->ref_enc.img, &stream->ref_dec.img)) {
-    /* TODO(jkoleszar): make fatal. */
+  if (!compare_img(&stream->ref_enc.img, &stream->ref_dec.img)) {
     int y[2], u[2], v[2];
     find_mismatch(&stream->ref_enc.img, &stream->ref_dec.img,
                   y, u, v);
-    warn("Stream %d: Encode/decode mismatch on frame %d"
-         " at Y[%d, %d], U[%d, %d], V[%d, %d]",
-         stream->index, stream->frames_out,
-         y[0], y[1], u[0], u[1], v[0], v[1]);
-    stream->mismatch_seen = stream->frames_out;
+    if (fatal) {
+      ctx_exit_on_error(&stream->decoder,
+                        "Stream %d: Encode/decode mismatch on frame %d"
+                        " at Y[%d, %d], U[%d, %d], V[%d, %d]",
+                        stream->index, stream->frames_out,
+                        y[0], y[1], u[0], u[1], v[0], v[1]);
+    } else {
+      warn("Stream %d: Encode/decode mismatch on frame %d"
+           " at Y[%d, %d], U[%d, %d], V[%d, %d]",
+           stream->index, stream->frames_out,
+           y[0], y[1], u[0], u[1], v[0], v[1]);
+      stream->mismatch_seen = stream->frames_out;
+    }
   }
 }
 
@@ -2551,7 +2570,7 @@ int main(int argc, const char **argv_) {
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
         if (got_data && global.test_decode)
-          FOREACH_STREAM(test_decode(stream));
+          FOREACH_STREAM(test_decode(stream, global.test_decode - 1));
       }
 
       fflush(stdout);
