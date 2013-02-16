@@ -10,6 +10,7 @@
 
 
 #include "vpx_config.h"
+#include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/encoder/vp9_onyx_int.h"
@@ -2176,31 +2177,103 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
 void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
   YV12_BUFFER_CONFIG *s = cm->frame_to_show;
   uint8_t *src = s->y_buffer;
-  int h = cm->Height;
+  int h = cm->mb_rows * 16;
+  int w = cm->mb_cols * 16;
 
   do {
-    fwrite(src, s->y_width, 1,  yuv_rec_file);
+    fwrite(src, w, 1,  yuv_rec_file);
     src += s->y_stride;
   } while (--h);
 
   src = s->u_buffer;
-  h = (cm->Height + 1) / 2;
+  h = cm->mb_rows * 8;
+  w = cm->mb_cols * 8;
 
   do {
-    fwrite(src, s->uv_width, 1,  yuv_rec_file);
+    fwrite(src, w, 1,  yuv_rec_file);
     src += s->uv_stride;
   } while (--h);
 
   src = s->v_buffer;
-  h = (cm->Height + 1) / 2;
+  h = cm->mb_rows * 8;
 
   do {
-    fwrite(src, s->uv_width, 1, yuv_rec_file);
+    fwrite(src, w, 1, yuv_rec_file);
     src += s->uv_stride;
   } while (--h);
   fflush(yuv_rec_file);
 }
 #endif
+
+static void scale_and_extend_source(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+
+  /* are we resizing the image */
+  if (cm->horiz_scale != 0 || cm->vert_scale != 0) {
+    const int in_w = sd->y_width;
+    const int in_h = sd->y_height;
+    const int out_w = cpi->scaled_source.y_width;
+    const int out_h = cpi->scaled_source.y_height;
+    int x, y;
+
+    for (y = 0; y < out_h; y++) {
+      for (x = 0; x < out_w; x += 16) {
+        int x_q4 = x * 16 * in_w / out_w;
+        int y_q4 = y * 16 * in_h / out_h;
+        uint8_t *src, *dst;
+        int src_stride, dst_stride;
+
+
+        src = sd->y_buffer +
+            y * in_h / out_h * sd->y_stride +
+            x * in_w / out_w;
+        dst = cpi->scaled_source.y_buffer +
+            y * cpi->scaled_source.y_stride +
+            x;
+        src_stride = sd->y_stride;
+        dst_stride = cpi->scaled_source.y_stride;
+
+        vp9_convolve8(src, src_stride, dst, dst_stride,
+                      vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * in_w / out_w,
+                      vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * in_h / out_h,
+                      16, 16);
+
+        x_q4 >>= 1;
+        y_q4 >>= 1;
+        src_stride = sd->uv_stride;
+        dst_stride = cpi->scaled_source.uv_stride;
+
+        src = sd->u_buffer +
+            y / 2 * in_h / out_h * sd->uv_stride +
+            x / 2 * in_w / out_w;
+        dst = cpi->scaled_source.u_buffer +
+            y / 2 * cpi->scaled_source.uv_stride +
+            x / 2;
+        vp9_convolve8(src, src_stride, dst, dst_stride,
+                      vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * in_w / out_w,
+                      vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * in_h / out_h,
+                      8, 8);
+
+        src = sd->v_buffer +
+            y / 2 * in_h / out_h * sd->uv_stride +
+            x / 2 * in_w / out_w;
+        dst = cpi->scaled_source.v_buffer +
+            y / 2 * cpi->scaled_source.uv_stride +
+            x / 2;
+        vp9_convolve8(src, src_stride, dst, dst_stride,
+                      vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * in_w / out_w,
+                      vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * in_h / out_h,
+                      8, 8);
+      }
+    }
+
+    vp8_yv12_extend_frame_borders(&cpi->scaled_source);
+    cpi->Source = &cpi->scaled_source;
+  } else {
+    cpi->Source = sd;
+  }
+}
+
 
 static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
@@ -2598,6 +2671,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       sizeof(*mcomp_filters_to_search);
   int mcomp_filter_index = 0;
   int64_t mcomp_filter_cost[4];
+
+  scale_and_extend_source(cpi->un_scaled_source, cpi);
 
   // Clear down mmx registers to allow floating point in what follows
   vp9_clear_system_state();
@@ -3816,23 +3891,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   vp8_yv12_realloc_frame_buffer(&cm->yv12_fb[cm->new_fb_idx],
                                 cm->mb_cols * 16, cm->mb_rows * 16,
                                 VP9BORDERINPIXELS);
-
-  /* Disable any references that have different size */
-  if ((cm->yv12_fb[cm->active_ref_idx[cpi->lst_fb_idx]].y_width !=
-       cm->yv12_fb[cm->new_fb_idx].y_width) ||
-      (cm->yv12_fb[cm->active_ref_idx[cpi->lst_fb_idx]].y_height !=
-       cm->yv12_fb[cm->new_fb_idx].y_height))
-    cpi->ref_frame_flags &= ~VP9_LAST_FLAG;
-  if ((cm->yv12_fb[cm->active_ref_idx[cpi->gld_fb_idx]].y_width !=
-       cm->yv12_fb[cm->new_fb_idx].y_width) ||
-      (cm->yv12_fb[cm->active_ref_idx[cpi->gld_fb_idx]].y_height !=
-       cm->yv12_fb[cm->new_fb_idx].y_height))
-    cpi->ref_frame_flags &= ~VP9_GOLD_FLAG;
-  if ((cm->yv12_fb[cm->active_ref_idx[cpi->alt_fb_idx]].y_width !=
-       cm->yv12_fb[cm->new_fb_idx].y_width) ||
-      (cm->yv12_fb[cm->active_ref_idx[cpi->alt_fb_idx]].y_height !=
-       cm->yv12_fb[cm->new_fb_idx].y_height))
-    cpi->ref_frame_flags &= ~VP9_ALT_FLAG;
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
   if (cpi->pass == 1) {

@@ -37,7 +37,10 @@ static void recon_write_yuv_frame(const char *name,
                                   int w, int _h) {
   FILE *yuv_file = fopen((char *)name, "ab");
   const uint8_t *src = s->y_buffer;
-  int h = _h;
+  int h;
+  w = (w + 15) & ~15;
+  _h = (_h + 15) & ~15;
+  h = _h;
 
   do {
     fwrite(src, w, 1,  yuv_file);
