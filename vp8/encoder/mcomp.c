@@ -18,7 +18,7 @@
 #include <math.h>
 #include "vp8/common/findnearmv.h"
 
-#ifdef ENTROPY_STATS
+#ifdef ENTROPY_STATS_VP8
 static int mv_ref_ct [31] [4] [2];
 static int mv_mode_cts [4] [2];
 #endif
@@ -1913,7 +1913,7 @@ int vp8_refining_search_sadx4(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
            + mv_err_cost(&this_mv, center_mv, mvcost, x->errorperbit);
 }
 
-#ifdef ENTROPY_STATS
+#ifdef ENTROPY_STATS_VP8
 void print_mode_context(void)
 {
     FILE *f = fopen("modecont.c", "w");
@@ -1966,8 +1966,8 @@ void print_mode_context(void)
     fclose(f);
 }
 
-/* MV ref count ENTROPY_STATS stats code */
-#ifdef ENTROPY_STATS
+/* MV ref count ENTROPY_STATS_VP8 stats code */
+#ifdef ENTROPY_STATS_VP8
 void init_mv_ref_counts()
 {
     vpx_memset(mv_ref_ct, 0, sizeof(mv_ref_ct));
@@ -2021,6 +2021,6 @@ void accum_mv_refs(MB_PREDICTION_MODE m, const int ct[4])
     }
 }
 
-#endif/* END MV ref count ENTROPY_STATS stats code */
+#endif/* END MV ref count ENTROPY_STATS_VP8 stats code */
 
 #endif

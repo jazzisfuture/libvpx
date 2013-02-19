@@ -16,7 +16,7 @@ unsigned __int64 Sectionbits[500];
 
 #endif
 
-#ifdef ENTROPY_STATS
+#ifdef ENTROPY_STATS_VP8
 unsigned int active_section = 0;
 #endif
 
