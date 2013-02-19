@@ -1278,6 +1278,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
           const vp9_prob upd = COEF_UPDATE_PROB;
           int s = prev_coef_savings[t];
           int u = 0;
+
           if (k >= 3 && j == 0)
             continue;
 #if defined(SEARCH_NEWP)
