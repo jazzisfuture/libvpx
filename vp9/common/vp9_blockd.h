@@ -234,6 +234,7 @@ typedef struct {
 
   SPLITMV_PARTITIONING_TYPE partitioning;
   unsigned char mb_skip_coeff;                                /* does this mb has coefficients at all, 1=no coefficients, 0=need decode tokens */
+  unsigned char sb_skip_coeff;
   unsigned char need_to_clamp_mvs;
   unsigned char need_to_clamp_secondmv;
   unsigned char segment_id;                  /* Which set of segmentation parameters should be used for this MB */
@@ -250,6 +251,9 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+#if CONFIG_CODE_NONZEROCOUNT
+  uint16_t nzcs[24];
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -302,6 +306,9 @@ typedef struct macroblockd {
   DECLARE_ALIGNED(16, int16_t,  qcoeff[384]);
   DECLARE_ALIGNED(16, int16_t,  dqcoeff[384]);
   DECLARE_ALIGNED(16, uint16_t, eobs[24]);
+#if CONFIG_CODE_NONZEROCOUNT
+  DECLARE_ALIGNED(16, uint16_t, nzcs[24]);
+#endif
 
   SUPERBLOCKD sb_coeff_data;
 
