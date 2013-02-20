@@ -1,4 +1,4 @@
-/*
+/*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
@@ -186,6 +186,91 @@ static const vp9_prob Pcat6[] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129
 };
 
+#if CONFIG_CODE_NONZEROCOUNT
+const vp9_tree_index vp9_nzc4x4_tree[2 * NZC4X4_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  -NZC_3TO4, 8,
+  -NZC_5TO8, -NZC_9TO16,
+};
+struct vp9_token_struct vp9_nzc4x4_encodings[NZC4X4_TOKENS];
+
+const vp9_tree_index vp9_nzc8x8_tree[2 * NZC8X8_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  -NZC_9TO16, 12,
+  -NZC_17TO32, -NZC_33TO64,
+};
+struct vp9_token_struct vp9_nzc8x8_encodings[NZC8X8_TOKENS];
+
+const vp9_tree_index vp9_nzc16x16_tree[2 * NZC16X16_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  12, 14,
+  -NZC_9TO16, -NZC_17TO32,
+  -NZC_33TO64, 16,
+  -NZC_65TO128, -NZC_129TO256,
+};
+struct vp9_token_struct vp9_nzc16x16_encodings[NZC16X16_TOKENS];
+
+const vp9_tree_index vp9_nzc32x32_tree[2 * NZC32X32_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  12, 14,
+  -NZC_9TO16, -NZC_17TO32,
+  16, 18,
+  -NZC_33TO64, -NZC_65TO128,
+  -NZC_129TO256, 20,
+  -NZC_257TO512, -NZC_513TO1024,
+};
+struct vp9_token_struct vp9_nzc32x32_encodings[NZC32X32_TOKENS];
+
+const vp9_prob Pcat_nzc[MAX_NZC_CONTEXTS]
+                       [NZC_TOKENS_EXTRA][NZC_BITS_EXTRA] = { {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  }, {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  }, {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  },
+};
+
+#endif  // CONFIG_CODE_NONZEROCOUNT
+
 static vp9_tree_index cat1[2], cat2[4], cat3[6], cat4[8], cat5[10], cat6[28];
 
 static void init_bit_tree(vp9_tree_index *p, int n) {
@@ -253,6 +338,9 @@ int vp9_get_coef_context(int * recent_energy, int token) {
 };
 
 void vp9_default_coef_probs(VP9_COMMON *pc) {
+#if CONFIG_CODE_NONZEROCOUNT
+  int h, g;
+#endif
   vpx_memcpy(pc->fc.coef_probs_4x4, default_coef_probs_4x4,
              sizeof(pc->fc.coef_probs_4x4));
   vpx_memcpy(pc->fc.coef_probs_8x8, default_coef_probs_8x8,
@@ -261,12 +349,584 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
              sizeof(pc->fc.coef_probs_16x16));
   vpx_memcpy(pc->fc.coef_probs_32x32, default_coef_probs_32x32,
              sizeof(pc->fc.coef_probs_32x32));
+#if CONFIG_CODE_NONZEROCOUNT
+  for (h = 0; h < MAX_NZC_CONTEXTS; ++h) {
+    for (g = 0; g < REF_TYPES; ++g) {
+      int i;
+      unsigned int branch_ct4x4[NZC4X4_NODES][2];
+      unsigned int branch_ct8x8[NZC8X8_NODES][2];
+      unsigned int branch_ct16x16[NZC16X16_NODES][2];
+      unsigned int branch_ct32x32[NZC32X32_NODES][2];
+      for (i = 0; i < BLOCK_TYPES; ++i) {
+        vp9_tree_probs_from_distribution(
+          NZC4X4_TOKENS, vp9_nzc4x4_encodings, vp9_nzc4x4_tree,
+          pc->fc.nzc_probs_4x4[h][g][i], branch_ct4x4,
+          default_nzc4x4_counts[h][g][i]);
+      }
+      for (i = 0; i < BLOCK_TYPES; ++i) {
+        vp9_tree_probs_from_distribution(
+          NZC8X8_TOKENS, vp9_nzc8x8_encodings, vp9_nzc8x8_tree,
+          pc->fc.nzc_probs_8x8[h][g][i], branch_ct8x8,
+          default_nzc8x8_counts[h][g][i]);
+      }
+      for (i = 0; i < BLOCK_TYPES; ++i) {
+        vp9_tree_probs_from_distribution(
+          NZC16X16_TOKENS, vp9_nzc16x16_encodings, vp9_nzc16x16_tree,
+          pc->fc.nzc_probs_16x16[h][g][i], branch_ct16x16,
+          default_nzc16x16_counts[h][g][i]);
+      }
+      for (i = 0; i < BLOCK_TYPES_32X32; ++i) {
+        vp9_tree_probs_from_distribution(
+          NZC32X32_TOKENS, vp9_nzc32x32_encodings, vp9_nzc32x32_tree,
+          pc->fc.nzc_probs_32x32[h][g][i], branch_ct32x32,
+          default_nzc32x32_counts[h][g][i]);
+      }
+    }
+  }
+#endif  // CONFIG_CODE_NONZEROCOUNTyy
 }
 
 void vp9_coef_tree_initialize() {
   init_bit_trees();
   vp9_tokens_from_tree(vp9_coef_encodings, vp9_coef_tree);
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_tokens_from_tree(vp9_nzc4x4_encodings, vp9_nzc4x4_tree);
+  vp9_tokens_from_tree(vp9_nzc8x8_encodings, vp9_nzc8x8_tree);
+  vp9_tokens_from_tree(vp9_nzc16x16_encodings, vp9_nzc16x16_tree);
+  vp9_tokens_from_tree(vp9_nzc32x32_encodings, vp9_nzc32x32_tree);
+#endif
 }
+
+#if CONFIG_CODE_NONZEROCOUNT
+
+#define mb_in_cur_tile(cm, mb_row, mb_col)      \
+    ((mb_row) >= (cm)->cur_tile_mb_row_start && \
+     (mb_col) >= (cm)->cur_tile_mb_col_start && \
+     (mb_row) <= (cm)->cur_tile_mb_row_end &&   \
+     (mb_col) <= (cm)->cur_tile_mb_col_end)
+
+static unsigned int get_nzc_4x4_y(VP9_COMMON *cm, MODE_INFO *m,
+                                  int mb_row, int mb_col, int block) {
+  // NOTE: All values returned are at 64 times the true value at 4x4 scale
+  static const int b8x8map[16] = {
+    0, 0, 4, 4, 0, 0, 4, 4, 8, 8, 12, 12, 8, 8, 12, 12
+  };
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int mis = cm->mode_info_stride;
+  int skip = m->mbmi.mb_skip_coeff;
+  if (!mb_in_cur_tile(cm, mb_row, mb_col))
+    return 0;
+  assert(block < 16);
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      m -= (mb_row & 1) * mis + (mb_col & 1);
+      return (!mb_in_cur_tile(cm, mb_row - (mb_row & 1), mb_col - (mb_col & 1))
+              || m->mbmi.mb_skip_coeff ? 0 : m->mbmi.nzcs[0]);
+    case TX_16X16:
+      return skip ? 0 : (mi->nzcs[0] << 2);
+    case TX_8X8:
+      return skip ? 0 : (mi->nzcs[b8x8map[block]] << 4);
+    case TX_4X4:
+      return skip ? 0 : (mi->nzcs[block] << 6);
+    default:
+      return 0;
+  }
+}
+
+static unsigned int get_nzc_4x4_uv(VP9_COMMON *cm, MODE_INFO *m,
+                                   int mb_row, int mb_col, int block) {
+  // NOTE: All values returned are at 64 times the true value at 4x4 scale
+  MB_MODE_INFO *const mi = &m->mbmi;
+  const int base = block - (block & 3);
+  int mis = cm->mode_info_stride;
+  int skip = m->mbmi.mb_skip_coeff;
+  if (!mb_in_cur_tile(cm, mb_row, mb_col))
+    return 0;
+  assert(block >= 16 && block < 24);
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      m -= (mb_row & 1) * mis + (mb_col & 1);
+      return (!mb_in_cur_tile(cm, mb_row - (mb_row & 1), mb_col - (mb_col & 1))
+              || m->mbmi.mb_skip_coeff ? 0 : m->mbmi.nzcs[base] << 2);
+    case TX_16X16:
+      return skip ? 0 : (mi->nzcs[base] << 4);
+    case TX_8X8:
+      if (mi->mode == SPLITMV || mi->mode == I8X8_PRED)
+        return skip ? 0 : (mi->nzcs[block] << 6);
+      else
+        return skip ? 0 : (mi->nzcs[base] << 4);
+    case TX_4X4:
+      return skip ? 0 : (mi->nzcs[block] << 6);
+    default:
+      return 0;
+  }
+}
+
+int vp9_get_nzc_context_y(VP9_COMMON *cm, MODE_INFO *cur,
+                          int mb_row, int mb_col, int block) {
+  // returns an index in [0, MAX_NZC_CONTEXTS - 1] to reflect how busy
+  // neighboring blocks are
+  // TODO(debargha): try to combine in a log scale
+  int mis = cm->mode_info_stride;
+  unsigned int nzc_exp = 0;
+  TX_SIZE txfm_size = cur->mbmi.txfm_size;
+  switch (txfm_size) {
+    case TX_32X32:
+      assert(block == 0);
+      nzc_exp = (get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 12) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 13) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 14) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 15) +
+                 get_nzc_4x4_y(cm, cur - mis + 1, mb_row - 1, mb_col + 1, 12) +
+                 get_nzc_4x4_y(cm, cur - mis + 1, mb_row - 1, mb_col + 1, 13) +
+                 get_nzc_4x4_y(cm, cur - mis + 1, mb_row - 1, mb_col + 1, 14) +
+                 get_nzc_4x4_y(cm, cur - mis + 1, mb_row - 1, mb_col + 1, 15) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 3) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 7) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 11) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 15) +
+                 get_nzc_4x4_y(cm, cur - 1 + mis, mb_row + 1, mb_col - 1, 3) +
+                 get_nzc_4x4_y(cm, cur - 1 + mis, mb_row + 1, mb_col - 1, 7) +
+                 get_nzc_4x4_y(cm, cur - 1 + mis, mb_row + 1, mb_col - 1, 11) +
+                 get_nzc_4x4_y(cm, cur - 1 + mis, mb_row + 1, mb_col - 1, 15))
+                << 2;
+      break;
+
+    case TX_16X16:
+      assert(block == 0);
+      nzc_exp = (get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 12) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 13) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 14) +
+                 get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 15) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 3) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 7) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 11) +
+                 get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 15)) << 3;
+      break;
+
+    case TX_8X8:
+      assert((block & 3) == 0);
+      if (block == 0) {
+        nzc_exp = (get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 12) +
+                   get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 13) +
+                   get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 3) +
+                   get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 7)) << 4;
+      } else if (block == 4) {
+        nzc_exp = ((get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 14) +
+                    get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col, 15))
+                   << 4) +
+                  (cur->mbmi.nzcs[0] << 3);
+      } else if (block == 8) {
+        nzc_exp = ((get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 11) +
+                    get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1, 15))
+                   << 4) +
+                  (cur->mbmi.nzcs[0] >> 3);
+      } else {
+        nzc_exp = (cur->mbmi.nzcs[4] + cur->mbmi.nzcs[8]) << 3;
+      }
+      break;
+
+    case TX_4X4:
+      assert(block < 16);
+      if (block < 4) {
+        nzc_exp += get_nzc_4x4_y(cm, cur - mis, mb_row - 1, mb_col,
+                                 12 + block);
+      } else {
+        nzc_exp += cur->mbmi.nzcs[block - 4];
+      }
+      if ((block & 3) == 0) {
+        nzc_exp += get_nzc_4x4_y(cm, cur - 1, mb_row, mb_col - 1,
+                                 3 + block);
+      } else {
+        nzc_exp += cur->mbmi.nzcs[block - 1];
+      }
+      nzc_exp <<= 5;
+      break;
+
+    default:
+      return 0;
+  }
+  // Note nzc_exp is 64 times the average value expected at 32x32 scale
+  return (nzc_exp >= 32768 ? 2 : nzc_exp >= 4096 ? 1 : 0);
+}
+
+int vp9_get_nzc_context_uv(VP9_COMMON *cm, MODE_INFO *cur,
+                           int mb_row, int mb_col, int block) {
+  // returns an index in [0, MAX_NZC_CONTEXTS - 1] to reflect how busy
+  // neighboring blocks are
+  int mis = cm->mode_info_stride;
+  int nzc_exp = 0;
+  const int base = block - (block & 3);
+  TX_SIZE txfm_size = cur->mbmi.txfm_size;
+  switch (txfm_size) {
+    case TX_32X32:
+      // uv txfm_size 16x16
+      assert(block == 16 || block == 20);
+      nzc_exp = (get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 2) +
+                 get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 3) +
+                 get_nzc_4x4_uv(cm, cur - mis + 1, mb_row - 1, mb_col + 1,
+                                base + 2) +
+                 get_nzc_4x4_uv(cm, cur - mis + 1, mb_row - 1, mb_col + 1,
+                                base + 3) +
+                 get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 1) +
+                 get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 3) +
+                 get_nzc_4x4_uv(cm, cur - 1 + mis, mb_row + 1, mb_col - 1,
+                                base + 1) +
+                 get_nzc_4x4_uv(cm, cur - 1 + mis, mb_row + 1, mb_col - 1,
+                                base + 3)) << 1;
+      break;
+
+    case TX_16X16:
+      // uv txfm_size 8x8
+      assert(block == 16 || block == 20);
+      nzc_exp = (get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 2) +
+                 get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 3) +
+                 get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 1) +
+                 get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 3))
+                << 2;
+      break;
+
+    case TX_8X8:
+    case TX_4X4:
+      if (txfm_size == TX_4X4 ||
+          cur->mbmi.mode == SPLITMV || cur->mbmi.mode == I8X8_PRED) {
+        // uv txfm_size 4x4
+        int base = block - (block & 3);
+        assert(block >= 16 && block < 24);
+        if ((block & 3) == 0) {
+          nzc_exp = (get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col,
+                                    base + 2) +
+                     get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1,
+                                    base + 1)) << 3;
+        } else if ((block & 3) == 1) {
+          nzc_exp = (get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col,
+                                    base + 3) +
+                     cur->mbmi.nzcs[base]) << 3;
+        } else if ((block & 3) == 2) {
+          nzc_exp = (get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1,
+                                    base + 3) +
+                     cur->mbmi.nzcs[base]) << 3;
+        } else {
+          nzc_exp = (cur->mbmi.nzcs[base + 1] + cur->mbmi.nzcs[base + 2]) << 3;
+        }
+      } else {
+        // uv txfm_size 8x8
+        assert(block == 16 || block == 20);
+        nzc_exp = (get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 2) +
+                   get_nzc_4x4_uv(cm, cur - mis, mb_row - 1, mb_col, base + 3) +
+                   get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 1) +
+                   get_nzc_4x4_uv(cm, cur - 1, mb_row, mb_col - 1, base + 3))
+                  << 2;
+      }
+      break;
+
+    default:
+      return 0;
+  }
+  // Note nzc_exp is normalized to 16x16 size
+  return (nzc_exp >= 32 ? 2 : nzc_exp >= 16 ? 1 : 0);
+}
+
+static void update_nzc(VP9_COMMON *cm,
+                       uint16_t nzc,
+                       int nzc_context,
+                       TX_SIZE tx_size,
+                       int ref,
+                       int type) {
+  int c;
+  c = codenzc(nzc);
+  if (tx_size == TX_32X32)
+    cm->fc.nzc_counts_32x32[nzc_context][ref][type][c]++;
+  else if (tx_size == TX_16X16)
+    cm->fc.nzc_counts_16x16[nzc_context][ref][type][c]++;
+  else if (tx_size == TX_8X8)
+    cm->fc.nzc_counts_8x8[nzc_context][ref][type][c]++;
+  else if (tx_size == TX_4X4)
+    cm->fc.nzc_counts_4x4[nzc_context][ref][type][c]++;
+  else
+    assert(0);
+  // TODO(debargha): Handle extra bits later if needed
+}
+
+static void update_nzcs_sb64(VP9_COMMON *cm,
+                             MACROBLOCKD *xd,
+                             int mb_row,
+                             int mb_col) {
+  const int mis = cm->mode_info_stride;
+  MODE_INFO *m = xd->mode_info_context;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int i, j, ref;
+  int nzc_context;
+
+  if (mi->sb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1) << 1, y_idx = j & 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        update_nzc(cm, mb_m->mbmi.nzcs[0], nzc_context, TX_32X32, ref, 0);
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_16X16, ref, 1);
+        }
+      }
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0]
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        update_nzc(cm, mb_m->mbmi.nzcs[0], nzc_context, TX_16X16, ref, 0);
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+        }
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        for (i = 0; i < 16; i += 4) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 0);
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+        }
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        for (i = 0; i < 16; ++i) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 0);
+        }
+        // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 1);
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void update_nzcs_sb32(VP9_COMMON *cm,
+                            MACROBLOCKD *xd,
+                            int mb_row,
+                            int mb_col) {
+  const int mis = cm->mode_info_stride;
+  MODE_INFO *m = xd->mode_info_context;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int i, j, ref;
+  int nzc_context;
+
+  if (mi->sb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      ref = m->mbmi.ref_frame != INTRA_FRAME;
+      // code m->nzcs[0]
+      nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, 0);
+      update_nzc(cm, m->mbmi.nzcs[0], nzc_context, TX_32X32, ref, 0);
+      // code m->nzcs[16, 20]
+      for (i = 16; i < 24; i += 4) {
+        nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+        update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_16X16, ref, 1);
+      }
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0]
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        update_nzc(cm, mb_m->mbmi.nzcs[0], nzc_context, TX_16X16, ref, 0);
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+        }
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        for (i = 0; i < 16; i += 4) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 0);
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+        }
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        if (mb_row + y_idx < 0 || mb_row + y_idx >= cm->mb_rows ||
+            mb_col + x_idx < 0 || mb_col + x_idx >= cm->mb_cols)
+          continue;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        for (i = 0; i < 16; ++i) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 0);
+        }
+        // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          update_nzc(cm, mb_m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 1);
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void update_nzcs_mb16(VP9_COMMON *cm,
+                             MACROBLOCKD *xd,
+                             int mb_row,
+                             int mb_col) {
+  MODE_INFO *m = xd->mode_info_context;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int i;
+  int nzc_context;
+  int ref = m->mbmi.ref_frame != INTRA_FRAME;
+
+  if (mi->sb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_16X16:
+      // code m->nzcs[0]
+      nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, 0);
+      update_nzc(cm, m->mbmi.nzcs[0], nzc_context, TX_16X16, ref, 0);
+      // code m->mbmi.nzcs[16, 20]
+      for (i = 16; i < 24; i += 4) {
+        nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+        update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+      }
+      break;
+
+    case TX_8X8:
+      // code m->nzcs[0, 4, 8, 12]
+      for (i = 0; i < 16; i += 4) {
+        nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, i);
+        update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 0);
+      }
+      if (mi->mode == I8X8_PRED || mi->mode == SPLITMV) {
+        // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+          update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 1);
+        }
+      } else {
+        // code m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+          update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_8X8, ref, 1);
+        }
+      }
+      break;
+
+    case TX_4X4:
+      // code m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      for (i = 0; i < 16; ++i) {
+        nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, i);
+        update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 0);
+      }
+      // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+      for (i = 16; i < 24; ++i) {
+        nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+        update_nzc(cm, m->mbmi.nzcs[i], nzc_context, TX_4X4, ref, 1);
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+void vp9_update_nzc_counts(VP9_COMMON *cm,
+                           MACROBLOCKD *xd,
+                           int mb_row,
+                           int mb_col) {
+  if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64)
+    update_nzcs_sb64(cm, xd, mb_row, mb_col);
+  else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X32)
+    update_nzcs_sb32(cm, xd, mb_row, mb_col);
+  else
+    update_nzcs_mb16(cm, xd, mb_row, mb_col);
+}
+#endif  // CONFIG_CODE_NONZEROCOUNT
 
 // #define COEF_COUNT_TESTING
 
@@ -277,10 +937,10 @@ void vp9_coef_tree_initialize() {
 #define COEF_COUNT_SAT_AFTER_KEY 24
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
 
-static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
-                              vp9_coeff_probs *pre_coef_probs,
-                              int block_types, vp9_coeff_count *coef_counts,
-                              int count_sat, int update_factor) {
+static void adapt_coef_probs(vp9_coeff_probs *dst_coef_probs,
+                             vp9_coeff_probs *pre_coef_probs,
+                             int block_types, vp9_coeff_count *coef_counts,
+                             int count_sat, int update_factor) {
   int t, i, j, k, l, count;
   unsigned int branch_ct[ENTROPY_NODES][2];
   vp9_prob coef_probs[ENTROPY_NODES];
@@ -308,9 +968,6 @@ static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
 }
 
 void vp9_adapt_coef_probs(VP9_COMMON *cm) {
-#ifdef COEF_COUNT_TESTING
-  int t, i, j, k;
-#endif
   int count_sat;
   int update_factor; /* denominator 256 */
 
@@ -326,16 +983,128 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
     count_sat = COEF_COUNT_SAT;
   }
 
-  update_coef_probs(cm->fc.coef_probs_4x4, cm->fc.pre_coef_probs_4x4,
-                    BLOCK_TYPES, cm->fc.coef_counts_4x4,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.coef_probs_8x8, cm->fc.pre_coef_probs_8x8,
-                    BLOCK_TYPES, cm->fc.coef_counts_8x8,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.coef_probs_16x16, cm->fc.pre_coef_probs_16x16,
-                    BLOCK_TYPES, cm->fc.coef_counts_16x16,
-                    count_sat, update_factor);
-  update_coef_probs(cm->fc.coef_probs_32x32, cm->fc.pre_coef_probs_32x32,
-                    BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32,
-                    count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_4x4, cm->fc.pre_coef_probs_4x4,
+                   BLOCK_TYPES, cm->fc.coef_counts_4x4,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_8x8, cm->fc.pre_coef_probs_8x8,
+                   BLOCK_TYPES, cm->fc.coef_counts_8x8,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_16x16, cm->fc.pre_coef_probs_16x16,
+                   BLOCK_TYPES, cm->fc.coef_counts_16x16,
+                   count_sat, update_factor);
+  adapt_coef_probs(cm->fc.coef_probs_32x32, cm->fc.pre_coef_probs_32x32,
+                   BLOCK_TYPES_32X32, cm->fc.coef_counts_32x32,
+                   count_sat, update_factor);
 }
+
+#if CONFIG_CODE_NONZEROCOUNT
+static void adapt_nzc_probs(vp9_prob *dst_nzc_probs,
+                            vp9_prob *pre_nzc_probs,
+                            int block_size,
+                            unsigned int *nzc_counts,
+                            int count_sat,
+                            int update_factor) {
+  int c, r, b, n;
+  int count, factor;
+  unsigned int nzc_branch_ct[NZC32X32_NODES][2];
+  vp9_prob nzc_probs[NZC32X32_NODES];
+  int block_types, tokens, nodes;
+  const vp9_tree_index *nzc_tree;
+  const struct vp9_token_struct *nzc_encodings;
+
+  if (block_size == 32) {
+    block_types = BLOCK_TYPES_32X32;
+    tokens = NZC32X32_TOKENS;
+    nzc_tree = vp9_nzc32x32_tree;
+    nzc_encodings = vp9_nzc32x32_encodings;
+  } else {
+    block_types = BLOCK_TYPES;
+    if (block_size == 16) {
+      tokens = NZC16X16_TOKENS;
+      nzc_tree = vp9_nzc16x16_tree;
+      nzc_encodings = vp9_nzc16x16_encodings;
+    } else if (block_size == 8) {
+      tokens = NZC8X8_TOKENS;
+      nzc_tree = vp9_nzc8x8_tree;
+      nzc_encodings = vp9_nzc8x8_encodings;
+    } else {
+      nzc_tree = vp9_nzc4x4_tree;
+      nzc_encodings = vp9_nzc4x4_encodings;
+      tokens = NZC4X4_TOKENS;
+    }
+  }
+  nodes = tokens - 1;
+  for (c = 0; c < MAX_NZC_CONTEXTS; ++c)
+    for (r = 0; r < REF_TYPES; ++r)
+      for (b = 0; b < block_types; ++b) {
+        int offset = c * REF_TYPES * block_types + r * block_types + b;
+        int offset_nodes = offset * nodes;
+        int offset_tokens = offset * tokens;
+        vp9_tree_probs_from_distribution(tokens,
+                                         nzc_encodings, nzc_tree,
+                                         nzc_probs, nzc_branch_ct,
+                                         nzc_counts + offset_tokens);
+        for (n = 0; n < nodes; ++n) {
+          count = nzc_branch_ct[n][0] + nzc_branch_ct[n][1];
+          count = count > count_sat ? count_sat : count;
+          factor = (update_factor * count / count_sat);
+          dst_nzc_probs[offset_nodes + n] =
+              weighted_prob(pre_nzc_probs[offset_nodes + n],
+                            nzc_probs[n], factor);
+        }
+      }
+}
+
+// #define NZC_COUNT_TESTING
+void vp9_adapt_nzc_probs(VP9_COMMON *cm) {
+  int count_sat;
+  int update_factor; /* denominator 256 */
+#ifdef NZC_COUNT_TESTING
+  int c, r, b, t;
+  printf("\n");
+  for (c = 0; c < MAX_NZC_CONTEXTS; ++c)
+    for (r = 0; r < REF_TYPES; ++r) {
+      for (b = 0; b < BLOCK_TYPES; ++b) {
+        printf("    {");
+        for (t = 0; t < NZC4X4_TOKENS; ++t) {
+          printf(" %d,", cm->fc.nzc_counts_4x4[c][r][b][t]);
+        }
+        printf("}\n");
+      }
+      printf("\n");
+    }
+#endif
+
+  if (cm->frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_KEY;
+    count_sat = COEF_COUNT_SAT_KEY;
+  } else if (cm->last_frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_AFTER_KEY;  /* adapt quickly */
+    count_sat = COEF_COUNT_SAT_AFTER_KEY;
+  } else {
+    update_factor = COEF_MAX_UPDATE_FACTOR;
+    count_sat = COEF_COUNT_SAT;
+  }
+
+  adapt_nzc_probs(cm->fc.nzc_probs_4x4[0][0][0],
+                  cm->fc.pre_nzc_probs_4x4[0][0][0],
+                  4,
+                  cm->fc.nzc_counts_4x4[0][0][0],
+                  count_sat, update_factor);
+  adapt_nzc_probs(cm->fc.nzc_probs_8x8[0][0][0],
+                  cm->fc.pre_nzc_probs_8x8[0][0][0],
+                  8,
+                  cm->fc.nzc_counts_8x8[0][0][0],
+                  count_sat, update_factor);
+  adapt_nzc_probs(cm->fc.nzc_probs_16x16[0][0][0],
+                  cm->fc.pre_nzc_probs_16x16[0][0][0],
+                  16,
+                  cm->fc.nzc_counts_16x16[0][0][0],
+                  count_sat, update_factor);
+  adapt_nzc_probs(cm->fc.nzc_probs_32x32[0][0][0],
+                  cm->fc.pre_nzc_probs_32x32[0][0][0],
+                  32,
+                  cm->fc.nzc_counts_32x32[0][0][0],
+                  count_sat, update_factor);
+}
+#endif  // CONFIG_CODE_NONZEROCOUNT

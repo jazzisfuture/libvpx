@@ -3876,7 +3876,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
   int is_best_interintra = 0;
   int64_t best_intra16_rd = INT64_MAX;
-  int best_intra16_mode = DC_PRED, best_intra16_uv_mode = DC_PRED;
+  int best_intra16_mode = DC_PRED;
+#if SEPARATE_INTERINTRA_UV
+  int best_intra16_uv_mode = DC_PRED;
+#endif
 #endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
@@ -4486,8 +4489,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         (this_rd < best_intra16_rd)) {
       best_intra16_rd = this_rd;
       best_intra16_mode = this_mode;
+#if SEPARATE_INTERINTRA_UV
       best_intra16_uv_mode = (mbmi->txfm_size != TX_4X4 ?
                               uv_intra_mode_8x8 : uv_intra_mode);
+#endif
     }
 #endif
 
@@ -4945,7 +4950,10 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
   int is_best_interintra = 0;
   int64_t best_intra16_rd = INT64_MAX;
-  int best_intra16_mode = DC_PRED, best_intra16_uv_mode = DC_PRED;
+  int best_intra16_mode = DC_PRED;
+#if SEPARATE_INTERINTRA_UV
+  int best_intra16_uv_mode = DC_PRED;
+#endif
 #endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
@@ -5277,8 +5285,10 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         (this_rd < best_intra16_rd)) {
       best_intra16_rd = this_rd;
       best_intra16_mode = this_mode;
+#if SEPARATE_INTERINTRA_UV
       best_intra16_uv_mode = (mbmi->txfm_size != TX_4X4 ?
                               mode_uv_8x8 : mode_uv_4x4);
+#endif
     }
 #endif
 
