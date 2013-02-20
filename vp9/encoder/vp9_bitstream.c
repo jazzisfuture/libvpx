@@ -1055,6 +1055,446 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
   }
 }
 
+#if CONFIG_CODE_NONZEROCOUNT
+static void write_nzcs_sb64(VP9_COMP *cpi, MACROBLOCKD *xd, MODE_INFO *m,
+                            vp9_writer* const bc, int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int mis = cm->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int i, j;
+  int nzc_context;
+  int ref;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1) << 1, y_idx = j & 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0]
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        c = codenzc(mb_m->mbmi.nzcs[0]);
+        vp9_write_token(bc, vp9_nzc32x32_tree,
+                        cm->fc.nzc_probs_32x32[nzc_context][ref][0],
+                        vp8_nzc32x32_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = cur->nzcs[0] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc16x16_tree,
+                          cm->fc.nzc_probs_16x16[nzc_context][ref][1],
+                          vp8_nzc16x16_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+	ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0]
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        c = codenzc(mb_m->mbmi.nzcs[0]);
+        vp9_write_token(bc, vp9_nzc16x16_tree,
+                        cm->fc.nzc_probs_16x16[nzc_context][ref][0],
+                        vp8_nzc16x16_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = cur->nzcs[0] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+	ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        int i;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        for (i = 0; i < 16; i += 4) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][0],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+	}
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+	ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        int i;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        for (i = 0; i < 16; ++i) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][0],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+        // code mb_m->nzcs[16, 17, 18, 19]
+        // code mb_m->nzcs[20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][1],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void write_nzcs_sb32(VP9_COMP *cpi, MACROBLOCKD *xd, MODE_INFO *m,
+                            vp9_writer* const bc, int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int mis = cm->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int j, c, e, ref;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      ref = m->mbmi.ref_frame != INTRA_FRAME;
+      // code m->nzcs[0]
+      nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, 0);
+      c = codenzc(m->mbmi.nzcs[0]);
+      vp9_write_token(bc, vp9_nzc32x32_tree,
+                      cm->fc.nzc_probs_32x32[nzc_context][ref][0],
+                      vp8_nzc32x32_encodings + c);
+      if (e = extranzcbits(c)) {
+        int x = cur->nzcs[0] - basenzcvalue(c);
+        while (e--)
+          vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+      }
+      // code m->nzcs[16, 20]
+      for (i = 16; i < 24; i += 4) {
+        nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+        c = codenzc(m->mbmi.nzcs[i]);
+        vp9_write_token(bc, vp9_nzc16x16_tree,
+                        cm->fc.nzc_probs_16x16[nzc_context][ref][1],
+                        vp8_nzc16x16_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+      }
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+	ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+        // code mb_m->nzcs[0]
+        nzc_context = vp9_get_nzc_context_y(
+            cm, mb_m, mb_row + y_idx, mb_col + x_idx, 0);
+        c = codenzc(mb_m->mbmi.nzcs[0]);
+        vp9_write_token(bc, vp9_nzc16x16_tree,
+                        cm->fc.nzc_probs_16x16[nzc_context][ref][0],
+                        vp8_nzc16x16_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = cur->nzcs[0] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+	ref = mb_m->mbmi.ref_frame != INTRA_FRAME;
+	int i;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        for (i = 0; i < 16; i += 4) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][0],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+        // code mb_m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        int i;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        for (i = 0; i < 16; ++i) {
+          nzc_context = vp9_get_nzc_context_y(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][0],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+        // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(
+              cm, mb_m, mb_row + y_idx, mb_col + x_idx, i);
+          c = codenzc(mb_m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][1],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = mb_m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void write_nzcs_mb16(VP9_COMP *cpi, MACROBLOCKD *xd, MODE_INFO *m,
+                            vp9_writer* const bc, int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int mis = cm->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int i;
+  int ref = m->mbmi.ref_frame != INTRA_FRAME;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_16X16:
+      // code m->nzcs[0]
+      nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, 0);
+      c = codenzc(m->mbmi.nzcs[0]);
+      vp9_write_token(bc, vp9_nzc16x16_tree,
+                      cm->fc.nzc_probs_16x16[nzc_context][ref][0],
+                      vp8_nzc16x16_encodings + c);
+      if (e = extranzcbits(c)) {
+        int x = cur->nzcs[0] - basenzcvalue(c);
+        while (e--)
+          vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+      }
+      // code m->nzcs[16]
+      nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, 16);
+      c = codenzc(m->mbmi.nzcs[16]);
+      vp9_write_token(bc, vp9_nzc8x8_tree,
+                      cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                      vp8_nzc8x8_encodings + c);
+      if (e = extranzcbits(c)) {
+        int x = cur->nzcs[16] - basenzcvalue(c);
+        while (e--)
+          vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+      }
+      // code m->nzcs[20]
+      nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, 20);
+      c = codenzc(m->mbmi.nzcs[20]);
+      vp9_write_token(bc, vp9_nzc8x8_tree,
+                      cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                      vp8_nzc8x8_encodings + c);
+      if (e = extranzcbits(c)) {
+        int x = cur->nzcs[20] - basenzcvalue(c);
+        while (e--)
+          vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+      }
+      break;
+
+    case TX_8X8:
+      // code m->nzcs[0, 4, 8, 12]
+      for (i = 0; i < 16; i += 4) {
+        nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, i);
+        c = codenzc(m->mbmi.nzcs[i]);
+        vp9_write_token(bc, vp9_nzc8x8_tree,
+                        cm->fc.nzc_probs_8x8[nzc_context][ref][0],
+                        vp8_nzc8x8_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+      }
+      if (mi->mode == I8X8_PRED || mi->mode == SPLITMV) {
+        // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+        for (i = 16; i < 24; ++i) {
+          nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+          c = codenzc(m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][1],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      } else {
+        // code m->nzcs[16, 20]
+        for (i = 16; i < 24; i += 4) {
+          nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+          c = codenzc(m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc8x8_tree,
+                          cm->fc.nzc_probs_8x8[nzc_context][ref][1],
+                          vp8_nzc8x8_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+        }
+      }
+      break;
+
+    case TX_4X4:
+      // code m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      for (i = 0; i < 16; ++i) {
+        nzc_context = vp9_get_nzc_context_y(cm, m, mb_row, mb_col, i);
+          c = codenzc(m->mbmi.nzcs[i]);
+          vp9_write_token(bc, vp9_nzc4x4_tree,
+                          cm->fc.nzc_probs_4x4[nzc_context][ref][0],
+                          vp8_nzc4x4_encodings + c);
+          if (e = extranzcbits(c)) {
+            int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+            while (e--)
+              vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+          }
+      }
+      // code mb_m->nzcs[16, 17, 18, 19, 20, 21, 22, 23]
+      for (i = 16; i < 24; ++i) {
+        nzc_context = vp9_get_nzc_context_uv(cm, m, mb_row, mb_col, i);
+        c = codenzc(m->mbmi.nzcs[i]);
+        vp9_write_token(bc, vp9_nzc4x4_tree,
+                        cm->fc.nzc_probs_4x4[nzc_context][ref][1],
+                        vp8_nzc4x4_encodings + c);
+        if (e = extranzcbits(c)) {
+          int x = m->mbmi.nzcs[i] - basenzcvalue(c);
+          while (e--)
+            vp9_write(bc, (x >> e) & 1, Pcat_nzc[nzc_context][c - 3][e]);
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+#endif
+
 static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
                           TOKENEXTRA **tok, TOKENEXTRA *tok_end,
                           int mb_row, int mb_col) {
@@ -1079,6 +1519,14 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
     active_section = 1;
 #endif
   }
+#if CONFIG_CODE_NONZEROCOUNT
+  if (m->mbmi.sb_type == BLOCK_SIZE_SB64X64)
+    write_nzcs_sb64(cpi, xd, m, bc, mb_row, mb_col);
+  else if (m->mbmi.sb_type == BLOCK_SIZE_SB32X32)
+    write_nzcs_sb32(cpi, xd, m, bc, mb_row, mb_col);
+  else
+    write_nzcs_mb16(cpi, xd, m, bc, mb_row, mb_col);
+#endif
 
   assert(*tok < tok_end);
   pack_mb_tokens(bc, tok, tok_end);

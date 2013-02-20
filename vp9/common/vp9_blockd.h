@@ -252,6 +252,9 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+#if CONFIG_CODE_NONZEROCOUNT
+  uint16_t nzcs[24];
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -277,6 +280,9 @@ typedef struct blockd {
   int dst_stride;
 
   int eob;
+#if CONFIG_CODE_NONZEROCOUNT
+  uint16_t nzc; /* number of non-zero coefficients in block */
+#endif
 
   union b_mode_info bmi;
 } BLOCKD;
@@ -293,6 +299,9 @@ typedef struct macroblockd {
   DECLARE_ALIGNED(16, uint8_t,  predictor[384]);
   DECLARE_ALIGNED(16, int16_t,  qcoeff[384]);
   DECLARE_ALIGNED(16, int16_t,  dqcoeff[384]);
+#if CONFIG_CODE_NONZEROCOUNT
+  DECLARE_ALIGNED(16, uint16_t, nzcs[24]);
+#endif
 
   SUPERBLOCKD sb_coeff_data;
 

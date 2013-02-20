@@ -116,6 +116,9 @@ static void tokenize_b(VP9_COMP *cpi,
   const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                           get_tx_type(xd, b) : DCT_DCT;
   const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
+#if CONFIG_CODE_NONZEROCOUNT
+  int zerosleft, nzc = 0;
+#endif
 
   ENTROPY_CONTEXT *const a = (ENTROPY_CONTEXT *)xd->above_context +
       vp9_block2above[tx_size][ib];
@@ -198,7 +201,9 @@ static void tokenize_b(VP9_COMP *cpi,
   do {
     const int band = get_coef_band(tx_size, c);
     int token;
-
+#if CONFIG_CODE_NONZEROCOUNT
+    zerosleft = seg_eob - b->nzc - c + nzc;
+#endif
     if (c < eob) {
       const int rc = scan[c];
       const int v = qcoeff_ptr[rc];
@@ -207,20 +212,34 @@ static void tokenize_b(VP9_COMP *cpi,
       t->Extra = vp9_dct_value_tokens_ptr[v].Extra;
       token    = vp9_dct_value_tokens_ptr[v].Token;
     } else {
+#if CONFIG_CODE_NONZEROCOUNT
+      break;
+#else
       token = DCT_EOB_TOKEN;
+#endif
     }
 
     t->Token = token;
     t->context_tree = probs[type][ref][band][pt];
+#if CONFIG_CODE_NONZEROCOUNT
+    t->skip_eob_node = 1 + (zerosleft == 0);
+#else
     t->skip_eob_node = (pt == 0) && (band > 0);
+#endif
     assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][ref][band][pt][token];
     }
+#if CONFIG_CODE_NONZEROCOUNT
+    nzc += (v!=0);
+#endif
 
     pt = vp9_get_coef_context(&recent_energy, token);
     ++t;
   } while (c < eob && ++c < seg_eob);
+#if CONFIG_CODE_NONZEROCOUNT
+  assert(nzc == b->nzc);
+#endif
 
   *tp = t;
   a_ec = l_ec = (c > 0); /* 0 <-> all coeff data is zero */
@@ -672,11 +691,16 @@ static INLINE void stuff_b(VP9_COMP *cpi,
   VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
 
   band = get_coef_band(tx_size, 0);
+#if CONFIG_CODE_NONZEROCOUNT == 0
   t->Token = DCT_EOB_TOKEN;
   t->context_tree = probs[type][ref][band][pt];
   t->skip_eob_node = 0;
   ++t;
   *tp = t;
+  if (!dry_run) {
+    ++counts[type][ref][band][pt][DCT_EOB_TOKEN];
+  }
+#endif
   *a = *l = 0;
   if (tx_size == TX_8X8) {
     a[1] = 0;
@@ -694,10 +718,6 @@ static INLINE void stuff_b(VP9_COMP *cpi,
     l[1] = l[2] = l[3] = l_ec;
     a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
     l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
-  }
-
-  if (!dry_run) {
-    ++counts[type][ref][band][pt][DCT_EOB_TOKEN];
   }
 }
 
