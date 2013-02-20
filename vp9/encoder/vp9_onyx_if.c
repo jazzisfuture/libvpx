@@ -1709,6 +1709,12 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->common.error.setjmp = 0;
 
   vp9_zero(cpi->y_uv_mode_count)
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_zero(cpi->nzc_counts_4x4);
+  vp9_zero(cpi->nzc_counts_8x8);
+  vp9_zero(cpi->nzc_counts_16x16);
+  vp9_zero(cpi->nzc_counts_32x32);
+#endif
 
   return (VP9_PTR) cpi;
 }
