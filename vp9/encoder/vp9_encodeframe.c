@@ -1294,6 +1294,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cpi->coef_counts_8x8);
   vp9_zero(cpi->coef_counts_16x16);
   vp9_zero(cpi->coef_counts_32x32);
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_zero(cpi->nzc_counts_4x4);
+  vp9_zero(cpi->nzc_counts_8x8);
+  vp9_zero(cpi->nzc_counts_16x16);
+  vp9_zero(cpi->nzc_counts_32x32);
+#endif
 #if CONFIG_NEW_MVREF
   vp9_zero(cpi->mb_mv_ref_count);
 #endif
@@ -2001,6 +2007,89 @@ static void update_sb64_skip_coeff_state(VP9_COMP *cpi,
   }
 }
 
+#if CONFIG_CODE_NONZEROCOUNT
+static void gather_nzcs(MACROBLOCKD *xd) {
+  int i, c, nzc;
+  for (i = 0; i < 24; ++i) {
+    xd->nzcs[i] = 0;
+    xd->mode_info_context->mbmi.nzcs[i] = 0;
+  }
+  switch (xd->mode_info_context->mbmi.txfm_size) {
+    case TX_4X4:
+      for (i = 0; i < 24; ++i) {
+        for (c = 0, nzc = 0; c < 16; ++c)
+          nzc += (xd->block[i].qcoeff[c] != 0);
+        xd->nzcs[i] = nzc;
+	xd->mode_info_context->mbmi.nzcs[i] = nzc;
+        assert(nzc == xd->block[i].nzc);
+      }
+      break;
+
+    case TX_8X8:
+      for (i = 0; i < 16; i += 4) {
+        for (c = 0, nzc = 0; c < 64; ++c)
+          nzc += (xd->block[i].qcoeff[c] != 0);
+        xd->nzcs[i] = nzc;
+	xd->mode_info_context->mbmi.nzcs[i] = nzc;
+        assert(nzc == xd->block[i].nzc);
+      }
+      if (xd->mode_info_context->mbmi.mode == I8X8_PRED ||
+          xd->mode_info_context->mbmi.mode == SPLITMV) {
+        for (i = 16; i < 24; ++i) {
+          for (c = 0, nzc = 0; c < 16; ++c)
+            nzc += (xd->block[i].qcoeff[c] != 0);
+          xd->nzcs[i] = nzc;
+          xd->mode_info_context->mbmi.nzcs[i] = nzc;
+          assert(nzc == xd->block[i].nzc);
+        }
+      } else {
+        for (i = 16; i < 24; i += 4) {
+          for (c = 0, nzc = 0; c < 64; ++c)
+            nzc += (xd->block[i].qcoeff[c] != 0);
+          xd->nzcs[i] = nzc;
+          xd->mode_info_context->mbmi.nzcs[i] = nzc;
+          assert(nzc == xd->block[i].nzc);
+        }
+      }
+      break;
+    
+    case TX_16X16:
+      for (c = 0, nzc = 0; c < 256; ++c)
+        nzc += (xd->block[0].qcoeff[c] != 0);
+      xd->nzcs[0] = nzc;
+      xd->mode_info_context->mbmi.nzcs[0] = nzc;
+      assert(nzc == xd->block[0].nzc);
+      for (i = 16; i < 24; i += 4) {
+        for (c = 0, nzc = 0; c < 64; ++c)
+          nzc += (xd->block[i].qcoeff[c] != 0);
+        xd->nzcs[i] = nzc;
+        xd->mode_info_context->mbmi.nzcs[i] = nzc;
+        assert(nzc == xd->block[i].nzc);
+      }
+      break;
+
+    case TX_32X32:
+      for (c = 0, nzc = 0; c < 1024; ++c)
+        nzc += (xd->sb_coeff_data.qcoeff[c] != 0);
+      xd->nzcs[0] = nzc;
+      xd->mode_info_context->mbmi.nzcs[0] = nzc;
+      assert(nzc == xd->block[0].nzc);
+      for (i = 16; i < 24; i += 4) {
+        int offset = 1024 + 64 * (i - 16);
+        for (c = 0, nzc = 0; c < 256; ++c)
+          nzc += (xd->sb_coeff_data.qcoeff[offset + c] != 0);
+        xd->nzcs[i] = nzc;
+        xd->mode_info_context->mbmi.nzcs[i] = nzc;
+        assert(nzc == xd->block[i].nzc);
+      }
+      break; 
+
+    default:
+      break;
+  }
+}
+#endif
+
 static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled,
                               int mb_row, int mb_col) {
@@ -2205,6 +2294,9 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     }
 #endif
 
+#if CONFIG_CODE_NONZEROCOUNT
+    gather_nzcs(xd);
+#endif
     vp9_tokenize_mb(cpi, xd, t, !output_enabled);
 
   } else {
@@ -2373,7 +2465,10 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
       vp9_inverse_transform_sby_32x32(&x->e_mbd.sb_coeff_data);
       vp9_recon_sby_s_c(&x->e_mbd, dst);
       vp9_recon_sbuv_s_c(&x->e_mbd, udst, vdst);
-
+	
+#if CONFIG_CODE_NONZEROCOUNT
+      gather_nzcs(xd);
+#endif
       vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled);
     } else {
       int mb_skip_context =
@@ -2434,6 +2529,9 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
                            udst + x_idx * 8 + y_idx * 8 * dst_uv_stride,
                            vdst + x_idx * 8 + y_idx * 8 * dst_uv_stride);
 
+#if CONFIG_CODE_NONZEROCOUNT
+        gather_nzcs(xd);
+#endif
         vp9_tokenize_mb(cpi, &x->e_mbd, t, !output_enabled);
         skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
       } else {
@@ -2621,7 +2719,9 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
         vp9_recon_sbuv_s_c(&x->e_mbd,
                            udst + x_idx * 16 + y_idx * 16 * dst_uv_stride,
                            vdst + x_idx * 16 + y_idx * 16 * dst_uv_stride);
-
+#if CONFIG_CODE_NONZEROCOUNT
+	gather_nzcs(&x->e_mbd);
+#endif
         vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled);
       } else {
         int mb_skip_context = cpi->common.mb_no_coeff_skip ?
@@ -2684,6 +2784,9 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
                            udst + x_idx * 8 + y_idx * 8 * dst_uv_stride,
                            vdst + x_idx * 8 + y_idx * 8 * dst_uv_stride);
 
+#if CONFIG_CODE_NONZEROCOUNT
+	gather_nzcs(xd);
+#endif
         vp9_tokenize_mb(cpi, &x->e_mbd, t, !output_enabled);
         skip[n] = xd->mode_info_context->mbmi.mb_skip_coeff;
       } else {
