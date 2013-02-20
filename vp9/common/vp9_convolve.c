@@ -16,7 +16,7 @@
 
 #define VP9_FILTER_WEIGHT 128
 #define VP9_FILTER_SHIFT  7
-#define ALIGN_FILTERS_256 0
+#define ALIGN_FILTERS_256 1
 
 /* Assume a bank of 16 filters to choose from. There are two implementations
  * for filter wrapping behavior, since we want to be able to pick which filter
@@ -53,11 +53,12 @@ static void convolve_horiz_c(const uint8_t *src, int src_stride,
     const int16_t *filter_x = filter_x0;
 
     /* Initial phase offset */
-    int x_q4 = (filter_x - filter_x_base) / taps;
+    int x0_q4 = (filter_x - filter_x_base) / taps;
+    int x_q4 = x0_q4;
 
     for (x = 0; x < w; ++x) {
       /* Per-pixel src offset */
-      int src_x = x_q4 >> 4;
+      int src_x = (x_q4 - x0_q4) >> 4;
 
       for (sum = 0, k = 0; k < taps; ++k) {
         sum += src[src_x + k] * filter_x[k];
@@ -94,11 +95,12 @@ static void convolve_avg_horiz_c(const uint8_t *src, int src_stride,
     const int16_t *filter_x = filter_x0;
 
     /* Initial phase offset */
-    int x_q4 = (filter_x - filter_x_base) / taps;
+    int x0_q4 = (filter_x - filter_x_base) / taps;
+    int x_q4 = x0_q4;
 
     for (x = 0; x < w; ++x) {
       /* Per-pixel src offset */
-      int src_x = x_q4 >> 4;
+      int src_x = (x_q4 - x0_q4) >> 4;
 
       for (sum = 0, k = 0; k < taps; ++k) {
         sum += src[src_x + k] * filter_x[k];
@@ -135,11 +137,12 @@ static void convolve_vert_c(const uint8_t *src, int src_stride,
     const int16_t *filter_y = filter_y0;
 
     /* Initial phase offset */
-    int y_q4 = (filter_y - filter_y_base) / taps;
+    int y0_q4 = (filter_y - filter_y_base) / taps;
+    int y_q4 = y0_q4;
 
     for (y = 0; y < h; ++y) {
       /* Per-pixel src offset */
-      int src_y = y_q4 >> 4;
+      int src_y = (y_q4 - y0_q4) >> 4;
 
       for (sum = 0, k = 0; k < taps; ++k) {
         sum += src[(src_y + k) * src_stride] * filter_y[k];
@@ -176,11 +179,12 @@ static void convolve_avg_vert_c(const uint8_t *src, int src_stride,
     const int16_t *filter_y = filter_y0;
 
     /* Initial phase offset */
-    int y_q4 = (filter_y - filter_y_base) / taps;
+    int y0_q4 = (filter_y - filter_y_base) / taps;
+    int y_q4 = y0_q4;
 
     for (y = 0; y < h; ++y) {
       /* Per-pixel src offset */
-      int src_y = y_q4 >> 4;
+      int src_y = (y_q4 - y0_q4) >> 4;
 
       for (sum = 0, k = 0; k < taps; ++k) {
         sum += src[(src_y + k) * src_stride] * filter_y[k];
