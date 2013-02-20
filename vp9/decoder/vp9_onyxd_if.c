@@ -30,7 +30,7 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "./vpx_scale_rtcd.h"
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(const char *name,
                                   const YV12_BUFFER_CONFIG *s,
