@@ -1,4 +1,4 @@
-/*
+/*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
@@ -182,6 +182,91 @@ static const vp9_prob Pcat6[] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129
 };
 
+#if CONFIG_CODE_NONZEROCOUNT
+const vp9_tree_index vp9_nzc4x4_tree[2 * NZC4X4_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  -NZC_3TO4, 8,
+  -NZC_5TO8, -NZC_9TO16,
+};
+struct vp9_token_struct vp9_nzc4x4_encodings[NZC4X4_TOKENS];
+
+const vp9_tree_index vp9_nzc8x8_tree[2 * NZC8X8_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  -NZC_9TO16, 12,
+  -NZC_17TO32, -NZC_33TO64,
+};
+struct vp9_token_struct vp9_nzc8x8_encodings[NZC8X8_TOKENS];
+
+const vp9_tree_index vp9_nzc16x16_tree[2 * NZC16X16_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  12, 14,
+  -NZC_9TO16, -NZC_17TO32,
+  -NZC_33TO64, 16,
+  -NZC_65TO128, -NZC_129TO256,
+};
+struct vp9_token_struct vp9_nzc16x16_encodings[NZC16X16_TOKENS];
+
+const vp9_tree_index vp9_nzc32x32_tree[2 * NZC32X32_NODES] = {
+  -NZC_0, 2,
+  4, 6,
+  -NZC_1, -NZC_2,
+  8, 10,
+  -NZC_3TO4, -NZC_5TO8,
+  12, 14,
+  -NZC_9TO16, -NZC_17TO32,
+  16, 18,
+  -NZC_33TO64, -NZC_65TO128,
+  -NZC_129TO256, 20,
+  -NZC_257TO512, -NZC_513TO1024,
+};
+struct vp9_token_struct vp9_nzc32x32_encodings[NZC32X32_TOKENS];
+
+const vp9_prob Pcat_nzc[MAX_NZC_CONTEXTS]
+                       [NZC_TOKENS_EXTRA][NZC_BITS_EXTRA] = { {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  }, {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  }, {
+    {176,   0,   0,   0,   0,   0,   0,   0,   0},
+    {160, 192,   0,   0,   0,   0,   0,   0,   0},
+    {152, 184, 208,   0,   0,   0,   0,   0,   0},
+    {144, 176, 200, 216,   0,   0,   0,   0,   0},
+    {140, 172, 192, 208, 224,   0,   0,   0,   0},
+    {136, 168, 188, 200, 220, 232,   0,   0,   0},
+    {132, 164, 184, 196, 216, 228, 240,   0,   0},
+    {130, 162, 178, 194, 212, 226, 240, 248,   0},
+    {128, 160, 176, 192, 208, 224, 240, 248, 254},
+  },
+};
+
+#endif  // CONFIG_CODE_NONZEROCOUNT
+
 static vp9_tree_index cat1[2], cat2[4], cat3[6], cat4[8], cat5[10], cat6[28];
 
 static void init_bit_tree(vp9_tree_index *p, int n) {
@@ -245,6 +330,9 @@ int vp9_get_coef_context(int * recent_energy, int token) {
 };
 
 void vp9_default_coef_probs(VP9_COMMON *pc) {
+#if CONFIG_CODE_NONZEROCOUNT
+  int h;
+#endif
   vpx_memcpy(pc->fc.coef_probs_4x4, default_coef_probs_4x4,
              sizeof(pc->fc.coef_probs_4x4));
   vpx_memcpy(pc->fc.hybrid_coef_probs_4x4, default_hybrid_coef_probs_4x4,
@@ -262,11 +350,76 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
              sizeof(pc->fc.hybrid_coef_probs_16x16));
   vpx_memcpy(pc->fc.coef_probs_32x32, default_coef_probs_32x32,
              sizeof(pc->fc.coef_probs_32x32));
+#if CONFIG_CODE_NONZEROCOUNT
+  for (h = 0; h < MAX_NZC_CONTEXTS; ++h) {
+    int i;
+    unsigned int branch_ct4x4[NZC4X4_NODES][2];
+    unsigned int branch_ct8x8[NZC8X8_NODES][2];
+    unsigned int branch_ct16x16[NZC16X16_NODES][2];
+    unsigned int branch_ct32x32[NZC32X32_NODES][2];
+    for (i = 0; i < BLOCK_TYPES_4X4; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC4X4_TOKENS, vp9_nzc4x4_encodings, vp9_nzc4x4_tree,
+        pc->fc.nzc_probs_4x4[h][i], branch_ct4x4,
+        default_nzc4x4_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_4X4_HYBRID; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC4X4_TOKENS, vp9_nzc4x4_encodings, vp9_nzc4x4_tree,
+        pc->fc.hybrid_nzc_probs_4x4[h][i], branch_ct4x4,
+        default_hybrid_nzc4x4_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_8X8; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC8X8_TOKENS, vp9_nzc8x8_encodings, vp9_nzc8x8_tree,
+        pc->fc.nzc_probs_8x8[h][i], branch_ct8x8,
+        default_nzc8x8_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_8X8_HYBRID; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC8X8_TOKENS, vp9_nzc8x8_encodings, vp9_nzc8x8_tree,
+        pc->fc.hybrid_nzc_probs_8x8[h][i], branch_ct8x8,
+        default_hybrid_nzc8x8_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_16X16; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC16X16_TOKENS, vp9_nzc16x16_encodings, vp9_nzc16x16_tree,
+        pc->fc.nzc_probs_16x16[h][i], branch_ct16x16,
+        default_nzc16x16_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_16X16_HYBRID; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC16X16_TOKENS, vp9_nzc16x16_encodings, vp9_nzc16x16_tree,
+        pc->fc.hybrid_nzc_probs_16x16[h][i], branch_ct16x16,
+        default_hybrid_nzc16x16_counts[h][i]);
+    }
+    for (i = 0; i < BLOCK_TYPES_32X32; ++i) {
+      vp9_tree_probs_from_distribution(
+        NZC32X32_TOKENS, vp9_nzc32x32_encodings, vp9_nzc32x32_tree,
+        pc->fc.nzc_probs_32x32[h][i], branch_ct32x32,
+        default_nzc32x32_counts[h][i]);
+    }
+  }
+#endif  // CONFIG_CODE_NONZEROCOUNT
 }
 
 void vp9_coef_tree_initialize() {
   init_bit_trees();
   vp9_tokens_from_tree(vp9_coef_encodings, vp9_coef_tree);
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_tokens_from_tree(vp9_nzc4x4_encodings, vp9_nzc4x4_tree);
+  vp9_tokens_from_tree(vp9_nzc8x8_encodings, vp9_nzc8x8_tree);
+  vp9_tokens_from_tree(vp9_nzc16x16_encodings, vp9_nzc16x16_tree);
+  vp9_tokens_from_tree(vp9_nzc32x32_encodings, vp9_nzc32x32_tree);
+#endif
+}
+
+int vp9_get_nzc_context(MB_MODE_INFO *cur, MB_MODE_INFO *left,
+                        MB_MODE_INFO *above, int block) {
+  // returns an index 0 - MAX_NZC_CONTEXTS - 1 to reflect how busy
+  // neighboring blocks are
+  // TODO(Debargha): Implement this appropriately
+  return 0;
 }
 
 // #define COEF_COUNT_TESTING

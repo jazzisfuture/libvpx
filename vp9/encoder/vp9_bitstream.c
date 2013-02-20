@@ -1087,6 +1087,151 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   pack_mb_tokens(bc, tok, tok_end);
 }
 
+#if CONFIG_CODE_NONZEROCOUNT
+static void write_nzcs_sb64(VP9_COMP *cpi, MODE_INFO *m) {
+  VP9_COMMON *const c = &cpi->common;
+  const int mis = c->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int j;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1) << 1, y_idx = j & 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0]
+        // code mb_m->nzcs[16]
+        // code mb_m->nzcs[20]
+      }
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0]
+        // code mb_m->nzcs[16]
+        // code mb_m->nzcs[20]
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        // code mb_m->nzcs[16]
+        // code mb_m->nzcs[20]
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 16; j++) {
+        const int x_idx = (j & 3), y_idx = j >> 2;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        // code mb_m->nzcs[16, 17, 18, 19]
+        // code mb_m->nzcs[20, 21, 22, 23]
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void write_nzcs_sb32(VP9_COMP *cpi, MODE_INFO *m) {
+  VP9_COMMON *const c = &cpi->common;
+  const int mis = c->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  int j;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_32X32:
+      // code m->nzcs[0]
+      // code m->nzcs[16]
+      // code m->nzcs[20]
+      break;
+
+    case TX_16X16:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0]
+        // code mb_m->nzcs[16]
+        // code mb_m->nzcs[20]
+      }
+      break;
+
+    case TX_8X8:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0, 4, 8, 12]
+        // code mb_m->nzcs[16]
+        // code mb_m->nzcs[20]
+      }
+      break;
+
+    case TX_4X4:
+      for (j = 0; j < 4; j++) {
+        const int x_idx = (j & 1), y_idx = j >> 1;
+        MODE_INFO *mb_m = m + y_idx * mis + x_idx;
+        // code mb_m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        // code mb_m->nzcs[16, 17, 18, 19]
+        // code mb_m->nzcs[20, 21, 22, 23]
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void write_nzcs_mb(VP9_COMP *cpi, MODE_INFO *m) {
+  VP9_COMMON *const c = &cpi->common;
+  const int mis = c->mode_info_stride;
+  MB_MODE_INFO *const mi = &m->mbmi;
+
+  if (mi->mb_skip_coeff)
+    return;
+
+  switch (mi->txfm_size) {
+    case TX_16X16:
+      // code m->nzcs[0]
+      // code m->nzcs[16]
+      // code m->nzcs[20]
+      break;
+
+    case TX_8X8:
+      // code mb_m->nzcs[0, 4, 8, 12]
+      if (mi->mode == I8X8_PRED || mi->mode == SPLITMV) {
+        // code m->nzcs[16, 17, 18, 19]
+        // code m->nzcs[20, 21, 22, 23]
+      } else {
+        // code m->nzcs[16]
+        // code m->nzcs[20]
+      }
+      break;
+
+    case TX_4X4:
+      // code m->nzcs[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+      // code m->nzcs[16, 17, 18, 19]
+      // code m->nzcs[20, 21, 22, 23]
+      break;
+
+    default:
+      break;
+  }
+}
+#endif
+
 static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
                         TOKENEXTRA **tok, TOKENEXTRA *tok_end) {
   VP9_COMMON *const c = &cpi->common;
@@ -1103,6 +1248,9 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
       vp9_write(bc, m->mbmi.sb_type == BLOCK_SIZE_SB64X64, c->sb64_coded);
       if (m->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
         write_modes_b(cpi, m, bc, tok, tok_end, mb_row, mb_col);
+#if CONFIG_CODE_NONZEROCOUNT
+	write_nzcs_sb64(cpi, m);
+#endif
       } else {
         int j;
 
@@ -1119,6 +1267,9 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
             assert(sb_m->mbmi.sb_type == BLOCK_SIZE_SB32X32);
             write_modes_b(cpi, sb_m, bc, tok, tok_end,
                           mb_row + y_idx_sb, mb_col + x_idx_sb);
+#if CONFIG_CODE_NONZEROCOUNT
+	    write_nzcs_sb32(cpi, sb_m);
+#endif
           } else {
             // Process the 4 MBs in the order:
             // top-left, top-right, bottom-left, bottom-right
@@ -1135,6 +1286,9 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
               assert(mb_m->mbmi.sb_type == BLOCK_SIZE_MB16X16);
               write_modes_b(cpi, mb_m, bc, tok, tok_end,
                             mb_row + y_idx, mb_col + x_idx);
+#if CONFIG_CODE_NONZEROCOUNT
+	      write_nzcs_mb(cpi, mb_m);
+#endif
             }
           }
         }

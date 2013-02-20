@@ -111,6 +111,23 @@ typedef struct {
   int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
   int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
 
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_prob nzc_probs_4x4
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4][NZC4X4_NODES];
+  vp9_prob hybrid_nzc_probs_4x4
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4_HYBRID][NZC4X4_NODES];
+  vp9_prob nzc_probs_8x8
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8][NZC8X8_NODES];
+  vp9_prob hybrid_nzc_probs_8x8
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8_HYBRID][NZC8X8_NODES];
+  vp9_prob nzc_probs_16x16
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16][NZC16X16_NODES];
+  vp9_prob hybrid_nzc_probs_16x16
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16_HYBRID][NZC16X16_NODES];
+  vp9_prob nzc_probs_32x32
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_32X32][NZC32X32_NODES];
+#endif
+
 } CODING_CONTEXT;
 
 typedef struct {
@@ -488,6 +505,51 @@ typedef struct VP9_COMP {
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES_32X32];
   vp9_coeff_probs frame_coef_probs_32x32[BLOCK_TYPES_32X32];
   vp9_coeff_stats frame_branch_ct_32x32[BLOCK_TYPES_32X32];
+
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_prob frame_nzc_probs_4x4
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4][NZC4X4_NODES];
+  unsigned int frame_nzc_branch_ct_4x4
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4][NZC4X4_NODES][2];
+  unsigned int nzc_counts_4x4
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4][NZC4X4_TOKENS];
+  vp9_prob frame_hybrid_nzc_probs_4x4
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4_HYBRID][NZC4X4_NODES];
+  unsigned int frame_hybrid_nzc_branch_ct_4x4
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4_HYBRID][NZC4X4_NODES][2];
+  unsigned int hybrid_nzc_counts_4x4
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_4X4_HYBRID][NZC4X4_TOKENS];
+  vp9_prob frame_nzc_probs_8x8
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8][NZC8X8_NODES];
+  unsigned int frame_nzc_branch_ct_8x8
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8][NZC8X8_NODES][2];
+  unsigned int nzc_counts_8x8
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8][NZC8X8_TOKENS];
+  vp9_prob frame_hybrid_nzc_probs_8x8
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8_HYBRID][NZC8X8_NODES];
+  unsigned int frame_hybrid_nzc_branch_ct_8x8
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8_HYBRID][NZC8X8_NODES][2];
+  unsigned int hybrid_nzc_counts_8x8
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_8X8_HYBRID][NZC8X8_TOKENS];
+  vp9_prob frame_nzc_probs_16x16
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16][NZC16X16_NODES];
+  unsigned int frame_nzc_branch_ct_16x16
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16][NZC16X16_NODES][2];
+  unsigned int nzc_counts_16x16
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16][NZC16X16_TOKENS];
+  vp9_prob frame_hybrid_nzc_probs_16x16
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16_HYBRID][NZC16X16_NODES];
+  unsigned int frame_hybrid_nzc_branch_ct_16x16
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16_HYBRID][NZC16X16_NODES][2];
+  unsigned int hybrid_nzc_counts_16x16
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_16X16_HYBRID][NZC16X16_TOKENS];
+  vp9_prob frame_nzc_probs_32x32
+           [MAX_NZC_CONTEXTS][BLOCK_TYPES_32X32][NZC32X32_NODES];
+  unsigned int frame_nzc_branch_ct_32x32
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_32X32][NZC32X32_NODES][2];
+  unsigned int nzc_counts_32x32
+               [MAX_NZC_CONTEXTS][BLOCK_TYPES_32X32][NZC32X32_TOKENS];
+#endif
 
   int gfu_boost;
   int last_boost;

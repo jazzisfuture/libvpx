@@ -330,6 +330,10 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   int err_mult = plane_rd_mult[type];
   int default_eob;
   int const *scan;
+#if CONFIG_CODE_NONZEROCOUNT
+  //TODO(debargha): this function needs to be changed to be compatible with nzc
+  uint16_t final_nzc = 0;
+#endif
 
   switch (tx_size) {
     default:
@@ -513,8 +517,12 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   final_eob = i0 - 1;
   for (i = next; i < eob; i = next) {
     x = tokens[i][best].qc;
-    if (x)
+    if (x) {
       final_eob = i;
+#if CONFIG_CODE_NONZEROCOUNT
+      ++final_nzc;
+#endif
+    }
     rc = scan[i];
     qcoeff_ptr[rc] = x;
     dqcoeff_ptr[rc] = (x * dequant_ptr[rc != 0]);
@@ -525,6 +533,9 @@ static void optimize_b(MACROBLOCK *mb, int i, PLANE_TYPE type,
   final_eob++;
 
   d->eob = final_eob;
+#if CONFIG_CODE_NONZEROCOUNT
+  d->nzc = final_nzc;
+#endif
   *a = *l = (d->eob > 0);
 }
 
