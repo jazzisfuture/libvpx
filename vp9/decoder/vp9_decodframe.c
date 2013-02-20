@@ -39,7 +39,7 @@
 
 #define COEFCOUNT_TESTING
 
-//#define DEC_DEBUG
+// #define DEC_DEBUG
 #ifdef DEC_DEBUG
 int dec_debug = 0;
 #endif
@@ -250,7 +250,7 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
     int i;
     printf("\n");
     printf("qcoeff 8x8\n");
-    for (i = 0; i < 400; i++) {
+    for (i = 0; i < 384; i++) {
       printf("%3d ", xd->qcoeff[i]);
       if (i % 16 == 15) printf("\n");
     }
@@ -1004,20 +1004,6 @@ static void set_refs(VP9D_COMP *pbi, int block_size,
       xd->corrupted |= cm->yv12_fb[second_ref_fb_idx].corrupted;
     }
   }
-
-  if (mbmi->sb_type) {
-    const int n_mbs = 1 << mbmi->sb_type;
-    const int y_mbs = MIN(n_mbs, cm->mb_rows - mb_row);
-    const int x_mbs = MIN(n_mbs, cm->mb_cols - mb_col);
-    const int mis = cm->mode_info_stride;
-    int x, y;
-
-    for (y = 0; y < y_mbs; y++) {
-      for (x = !y; x < x_mbs; x++) {
-        mi[y * mis + x] = *mi;
-      }
-    }
-  }
 }
 
 /* Decode a row of Superblocks (2x2 region of MBs) */
@@ -1032,6 +1018,11 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
   for (mb_col = pc->cur_tile_mb_col_start;
        mb_col < pc->cur_tile_mb_col_end; mb_col += 4) {
     if (vp9_read(bc, pc->sb64_coded)) {
+#ifdef DEC_DEBUG
+      dec_debug = (pc->current_video_frame == 1 && mb_row == 0 && mb_col == 0);
+      if (dec_debug)
+        printf("Debug\n");
+#endif
       set_offsets(pbi, 64, mb_row, mb_col);
       vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, bc);
       set_refs(pbi, 64, mb_row, mb_col);
@@ -1052,6 +1043,9 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
         xd->sb_index = j;
 
         if (vp9_read(bc, pc->sb32_coded)) {
+#ifdef DEC_DEBUG
+          dec_debug = (pc->current_video_frame == 1 && mb_row + y_idx_sb == 0 && mb_col + x_idx_sb == 0);
+#endif
           set_offsets(pbi, 32, mb_row + y_idx_sb, mb_col + x_idx_sb);
           vp9_decode_mb_mode_mv(pbi,
                                 xd, mb_row + y_idx_sb, mb_col + x_idx_sb, bc);
@@ -1072,11 +1066,15 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
               // MB lies outside frame, skip on to next
               continue;
             }
+#ifdef DEC_DEBUG
+            dec_debug = (pc->current_video_frame == 1 &&
+                         mb_row + y_idx == 0 && mb_col + x_idx == 0);
+#endif
 
             set_offsets(pbi, 16, mb_row + y_idx, mb_col + x_idx);
             xd->mb_index = i;
             vp9_decode_mb_mode_mv(pbi, xd, mb_row + y_idx, mb_col + x_idx, bc);
-            update_blockd_bmi(xd);
+            //update_blockd_bmi(xd);
             set_refs(pbi, 16, mb_row + y_idx, mb_col + x_idx);
             decode_macroblock(pbi, xd, mb_row + y_idx, mb_col + x_idx, bc);
 
@@ -1179,7 +1177,7 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
           for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
             if (l >= 3 && k == 0)
               continue;
-            for (m = 0; m < ENTROPY_NODES; m++) {
+            for (m = CONFIG_CODE_NONZEROCOUNT; m < ENTROPY_NODES; m++) {
               vp9_prob *const p = coef_probs[i][j][k][l] + m;
 
               if (vp9_read(bc, COEF_UPDATE_PROB)) {
