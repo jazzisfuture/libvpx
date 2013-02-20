@@ -3625,7 +3625,12 @@ static void Pass2Encode(VP9_COMP *cpi, unsigned long *size,
     vp9_second_pass(cpi);
 
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
+
+#ifdef DISABLE_RC_LONG_TERM_MEM
+  cpi->twopass.bits_left -=  cpi->this_frame_target;
+#else
   cpi->twopass.bits_left -= 8 * *size;
+#endif
 
   if (!cpi->refresh_alt_ref_frame) {
     double lower_bounds_min_rate = FRAME_OVERHEAD_BITS * cpi->oxcf.frame_rate;
