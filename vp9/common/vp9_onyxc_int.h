@@ -54,10 +54,21 @@ typedef struct frame_contexts {
   vp9_prob i8x8_mode_prob[VP9_I8X8_MODES - 1];
   vp9_prob sub_mv_ref_prob[SUBMVREF_COUNT][VP9_SUBMVREFS - 1];
   vp9_prob mbsplit_prob[VP9_NUMMBSPLITS - 1];
+
   vp9_coeff_probs coef_probs_4x4[BLOCK_TYPES];
   vp9_coeff_probs coef_probs_8x8[BLOCK_TYPES];
   vp9_coeff_probs coef_probs_16x16[BLOCK_TYPES];
   vp9_coeff_probs coef_probs_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_prob nzc_probs_4x4[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                        [NZC4X4_NODES];
+  vp9_prob nzc_probs_8x8[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                        [NZC8X8_NODES];
+  vp9_prob nzc_probs_16x16[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                          [NZC16X16_NODES];
+  vp9_prob nzc_probs_32x32[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES_32X32]
+                          [NZC32X32_NODES];
+#endif
 
   nmv_context nmvc;
   nmv_context pre_nmvc;
@@ -80,11 +91,31 @@ typedef struct frame_contexts {
   vp9_coeff_probs pre_coef_probs_8x8[BLOCK_TYPES];
   vp9_coeff_probs pre_coef_probs_16x16[BLOCK_TYPES];
   vp9_coeff_probs pre_coef_probs_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_CODE_NONZEROCOUNT
+  vp9_prob pre_nzc_probs_4x4[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                            [NZC4X4_NODES];
+  vp9_prob pre_nzc_probs_8x8[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                            [NZC8X8_NODES];
+  vp9_prob pre_nzc_probs_16x16[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                              [NZC16X16_NODES];
+  vp9_prob pre_nzc_probs_32x32[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES_32X32]
+                              [NZC32X32_NODES];
+#endif
 
   vp9_coeff_count coef_counts_4x4[BLOCK_TYPES];
   vp9_coeff_count coef_counts_8x8[BLOCK_TYPES];
   vp9_coeff_count coef_counts_16x16[BLOCK_TYPES];
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES_32X32];
+#if CONFIG_CODE_NONZEROCOUNT
+  unsigned int nzc_counts_4x4[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                             [NZC4X4_TOKENS];
+  unsigned int nzc_counts_8x8[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                             [NZC8X8_TOKENS];
+  unsigned int nzc_counts_16x16[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES]
+                               [NZC16X16_TOKENS];
+  unsigned int nzc_counts_32x32[MAX_NZC_CONTEXTS][REF_TYPES][BLOCK_TYPES_32X32]
+                               [NZC32X32_TOKENS];
+#endif
 
   nmv_context_counts NMVcount;
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
