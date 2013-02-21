@@ -19,11 +19,11 @@
 
 typedef size_t VP9_BD_VALUE;
 
-# define VP9_BD_VALUE_SIZE ((int)sizeof(VP9_BD_VALUE)*CHAR_BIT)
+#define VP9_BD_VALUE_SIZE ((int)sizeof(VP9_BD_VALUE)*CHAR_BIT)
 /*This is meant to be a large, positive constant that can still be efficiently
    loaded as an immediate (on platforms like ARM, for example).
   Even relatively modest values like 100 would work fine.*/
-# define VP9_LOTS_OF_BITS (0x40000000)
+#define VP9_LOTS_OF_BITS (0x40000000)
 
 typedef struct {
   const unsigned char *user_buffer_end;
@@ -44,37 +44,6 @@ void vp9_bool_decoder_fill(BOOL_DECODER *br);
 int vp9_decode_uniform(BOOL_DECODER *br, int n);
 int vp9_decode_term_subexp(BOOL_DECODER *br, int k, int num_syms);
 int vp9_inv_recenter_nonneg(int v, int m);
-
-/*The refill loop is used in several places, so define it in a macro to make
-   sure they're all consistent.
-  An inline function would be cleaner, but has a significant penalty, because
-   multiple BOOL_DECODER fields must be modified, and the compiler is not smart
-   enough to eliminate the stores to those fields and the subsequent reloads
-   from them when inlining the function.*/
-#define VP9DX_BOOL_DECODER_FILL(_count,_value,_bufptr,_bufend) \
-  do \
-  { \
-    int shift = VP9_BD_VALUE_SIZE - 8 - ((_count) + 8); \
-    int loop_end, x; \
-    int bits_left = (int)(((_bufend)-(_bufptr))*CHAR_BIT); \
-    \
-    x = shift + CHAR_BIT - bits_left; \
-    loop_end = 0; \
-    if(x >= 0) \
-    { \
-      (_count) += VP9_LOTS_OF_BITS; \
-      loop_end = x; \
-      if(!bits_left) break; \
-    } \
-    while(shift >= loop_end) \
-    { \
-      (_count) += CHAR_BIT; \
-      (_value) |= (VP9_BD_VALUE)*(_bufptr)++ << shift; \
-      shift -= CHAR_BIT; \
-    } \
-  } \
-  while(0) \
-
 
 static int decode_bool(BOOL_DECODER *br, int probability) {
   unsigned int bit = 0;
@@ -150,6 +119,6 @@ static int bool_error(BOOL_DECODER *br) {
   return 0;
 }
 
-extern int vp9_decode_unsigned_max(BOOL_DECODER *br, int max);
+int vp9_decode_unsigned_max(BOOL_DECODER *br, int max);
 
 #endif  // VP9_DECODER_VP9_DBOOLHUFF_H_

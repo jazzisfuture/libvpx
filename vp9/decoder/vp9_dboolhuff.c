@@ -13,6 +13,36 @@
 #include "vpx_ports/mem.h"
 #include "vpx_mem/vpx_mem.h"
 
+/*The refill loop is used in several places, so define it in a macro to make
+   sure they're all consistent.
+  An inline function would be cleaner, but has a significant penalty, because
+   multiple BOOL_DECODER fields must be modified, and the compiler is not smart
+   enough to eliminate the stores to those fields and the subsequent reloads
+   from them when inlining the function.*/
+#define VP9DX_BOOL_DECODER_FILL(_count,_value,_bufptr,_bufend) \
+  do \
+  { \
+    int shift = VP9_BD_VALUE_SIZE - 8 - ((_count) + 8); \
+    int loop_end, x; \
+    int bits_left = (int)(((_bufend)-(_bufptr))*CHAR_BIT); \
+    \
+    x = shift + CHAR_BIT - bits_left; \
+    loop_end = 0; \
+    if(x >= 0) \
+    { \
+      (_count) += VP9_LOTS_OF_BITS; \
+      loop_end = x; \
+      if(!bits_left) break; \
+    } \
+    while(shift >= loop_end) \
+    { \
+      (_count) += CHAR_BIT; \
+      (_value) |= (VP9_BD_VALUE)*(_bufptr)++ << shift; \
+      shift -= CHAR_BIT; \
+    } \
+  } \
+  while(0) \
+
 int vp9_start_decode(BOOL_DECODER *br,
                      const unsigned char *source,
                      unsigned int source_sz) {
