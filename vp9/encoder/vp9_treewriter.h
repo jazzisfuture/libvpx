@@ -40,15 +40,13 @@ typedef BOOL_CODER vp9_writer;
 static INLINE unsigned int cost_branch(const unsigned int ct[2],
                                        vp9_prob p) {
   /* Imitate existing calculation */
-  return ((ct[0] * vp9_cost_zero(p))
-          + (ct[1] * vp9_cost_one(p))) >> 8;
+  return (ct[0]*vp9_cost_zero(p) + ct[1]*vp9_cost_one(p)) >> 8;
 }
 
 static INLINE unsigned int cost_branch256(const unsigned int ct[2],
                                           vp9_prob p) {
   /* Imitate existing calculation */
-  return ((ct[0] * vp9_cost_zero(p))
-          + (ct[1] * vp9_cost_one(p)));
+  return ct[0]*vp9_cost_zero(p) + ct[1]*vp9_cost_one(p);
 }
 
 /* Small functions to write explicit values and tokens, as well as
