@@ -24,13 +24,12 @@
  **************************************************************************/
 #include <assert.h>
 #include <math.h>
+
 #include "./vpx_config.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_idct.h"
-
-
 
 static const int16_t idct_i4[16] = {
   8192,  10703,  8192,   4433,
@@ -193,11 +192,22 @@ static const int16_t iadst_i16[256] = {
 };
 #endif
 
+#define ROUND_POWER_OF_TWO(value, n) (((value) + (1 << (n - 1))) >> n)
+
+/* If we don't want to use ROUND_POWER_OF_TWO macro
+static INLINE int16_t round_power_of_two(int16_t value, int n) {
+  return (value + (1 << (n - 1))) >> n;
+}*/
+
+
 /* Converted the transforms to integer form. */
 #define HORIZONTAL_SHIFT 14  // 16
 #define HORIZONTAL_ROUNDING ((1 << (HORIZONTAL_SHIFT - 1)) - 1)
+
 #define VERTICAL_SHIFT 17  // 15
 #define VERTICAL_ROUNDING ((1 << (VERTICAL_SHIFT - 1)) - 1)
+
+
 void vp9_ihtllm_c(const int16_t *input, int16_t *output, int pitch,
                       TX_TYPE tx_type, int tx_dim, uint16_t eobs) {
   int i, j, k;
@@ -214,26 +224,30 @@ void vp9_ihtllm_c(const int16_t *input, int16_t *output, int pitch,
 
   switch (tx_type) {
     case ADST_ADST :
-      ptv = pth = (tx_dim == 4) ? &iadst_i4[0]
-                                  : ((tx_dim == 8) ? &iadst_i8[0]
-                                                     : &iadst_i16[0]);
+      ptv = pth = (tx_dim == 4) ? &iadst_i4[0]:
+                 ((tx_dim == 8) ? &iadst_i8[0]:
+                                  &iadst_i16[0]);
       break;
     case ADST_DCT  :
-      ptv = (tx_dim == 4) ? &iadst_i4[0]
-                            : ((tx_dim == 8) ? &iadst_i8[0] : &iadst_i16[0]);
-      pth = (tx_dim == 4) ? &idct_i4[0]
-                            : ((tx_dim == 8) ? &idct_i8[0] : &idct_i16[0]);
+      ptv = (tx_dim == 4) ? &iadst_i4[0]:
+           ((tx_dim == 8) ? &iadst_i8[0]:
+                            &iadst_i16[0]);
+      pth = (tx_dim == 4) ? &idct_i4[0]:
+           ((tx_dim == 8) ? &idct_i8[0]:
+                            &idct_i16[0]);
       break;
     case  DCT_ADST :
-      ptv = (tx_dim == 4) ? &idct_i4[0]
-                            : ((tx_dim == 8) ? &idct_i8[0] : &idct_i16[0]);
-      pth = (tx_dim == 4) ? &iadst_i4[0]
-                            : ((tx_dim == 8) ? &iadst_i8[0] : &iadst_i16[0]);
+      ptv = (tx_dim == 4) ? &idct_i4[0]:
+           ((tx_dim == 8) ? &idct_i8[0]:
+                            &idct_i16[0]);
+      pth = (tx_dim == 4) ? &iadst_i4[0]:
+           ((tx_dim == 8) ? &iadst_i8[0]:
+                            &iadst_i16[0]);
       break;
     case  DCT_DCT :
-      ptv = pth = (tx_dim == 4) ? &idct_i4[0]
-                                  : ((tx_dim == 8) ? &idct_i8[0]
-                                                     : &idct_i16[0]);
+      ptv = pth = (tx_dim == 4) ? &idct_i4[0]:
+                 ((tx_dim == 8) ? &idct_i8[0]:
+                                  &idct_i16[0]);
       break;
     default:
       assert(0);
@@ -306,10 +320,10 @@ void vp9_short_inv_walsh4x4_x8_c(int16_t *input, int16_t *output, int pitch) {
   int shortpitch = pitch >> 1;
 
   for (i = 0; i < 4; i++) {
-    a1 = ((ip[0] + ip[3])) >> WHT_UPSCALE_FACTOR;
-    b1 = ((ip[1] + ip[2])) >> WHT_UPSCALE_FACTOR;
-    c1 = ((ip[1] - ip[2])) >> WHT_UPSCALE_FACTOR;
-    d1 = ((ip[0] - ip[3])) >> WHT_UPSCALE_FACTOR;
+    a1 = (ip[0] + ip[3]) >> WHT_UPSCALE_FACTOR;
+    b1 = (ip[1] + ip[2]) >> WHT_UPSCALE_FACTOR;
+    c1 = (ip[1] - ip[2]) >> WHT_UPSCALE_FACTOR;
+    d1 = (ip[0] - ip[3]) >> WHT_UPSCALE_FACTOR;
 
     op[0] = (a1 + b1 + 1) >> 1;
     op[1] = (c1 + d1) >> 1;
@@ -347,8 +361,7 @@ void vp9_short_inv_walsh4x4_1_x8_c(int16_t *in, int16_t *out, int pitch) {
   int shortpitch = pitch >> 1;
 
   op[0] = ((ip[0] >> WHT_UPSCALE_FACTOR) + 1) >> 1;
-  op[1] = op[2] = op[3] = ((ip[0] >> WHT_UPSCALE_FACTOR) >> 1);
-
+  op[1] = op[2] = op[3] = (ip[0] >> WHT_UPSCALE_FACTOR) >> 1;
 
   ip = tmp;
   op = out;
@@ -369,9 +382,8 @@ void vp9_dc_only_inv_walsh_add_c(int input_dc, uint8_t *pred_ptr,
   vp9_short_inv_walsh4x4_1_x8_c(&dc, tmp, 4 << 1);
 
   for (r = 0; r < 4; r++) {
-    for (c = 0; c < 4; c++) {
+    for (c = 0; c < 4; c++)
       dst_ptr[c] = clip_pixel(tmp[r * 4 + c] + pred_ptr[c]);
-    }
 
     dst_ptr += stride;
     pred_ptr += pitch;
@@ -404,6 +416,7 @@ void vp9_short_idct4x4llm_c(int16_t *input, int16_t *output, int pitch) {
   const int short_pitch = pitch >> 1;
   int i, j;
   int16_t temp_in[4], temp_out[4];
+
   // First transform rows
   for (i = 0; i < 4; ++i) {
     for (j = 0; j < 4; ++j)
@@ -412,13 +425,14 @@ void vp9_short_idct4x4llm_c(int16_t *input, int16_t *output, int pitch) {
     input += 4;
     outptr += 4;
   }
+
   // Then transform columns
   for (i = 0; i < 4; ++i) {
     for (j = 0; j < 4; ++j)
       temp_in[j] = out[j * 4 + i];
     idct4_1d(temp_in, temp_out);
     for (j = 0; j < 4; ++j)
-      output[j * short_pitch + i] = (temp_out[j] + 8) >> 4;
+      output[j * short_pitch + i] = ROUND_POWER_OF_TWO(temp_out[j], 4);
   }
 }
 
@@ -433,7 +447,7 @@ void vp9_short_idct4x4llm_1_c(int16_t *input, int16_t *output, int pitch) {
   out = dct_const_round_shift(tmp);
   tmp = out * cospi_16_64;
   out = dct_const_round_shift(tmp);
-  a1 = (out + 8) >> 4;
+  a1 = ROUND_POWER_OF_TWO(out, 4);
 
   for (i = 0; i < 4; i++) {
     op[0] = a1;
@@ -454,12 +468,12 @@ void vp9_dc_only_idct_add_c(int input_dc, uint8_t *pred_ptr,
   out = dct_const_round_shift(tmp);
   tmp = out * cospi_16_64;
   out = dct_const_round_shift(tmp);
-  a1 = (out + 8) >> 4;
+  a1 = ROUND_POWER_OF_TWO(out, 4);
 
   for (r = 0; r < 4; r++) {
-    for (c = 0; c < 4; c++) {
+    for (c = 0; c < 4; c++)
       dst_ptr[c] = clip_pixel(a1 + pred_ptr[c]);
-    }
+
     dst_ptr += stride;
     pred_ptr += pitch;
   }
@@ -530,7 +544,7 @@ void vp9_short_idct8x8_c(int16_t *input, int16_t *output, int pitch) {
       temp_in[j] = out[j * 8 + i];
     idct8_1d(temp_in, temp_out);
     for (j = 0; j < 8; ++j)
-      output[j * short_pitch + i] = (temp_out[j] + 16) >> 5;
+      output[j * short_pitch + i] = ROUND_POWER_OF_TWO(temp_out[j], 5);
   }
 }
 
@@ -754,7 +768,7 @@ void vp9_short_iht8x8_c(int16_t *input, int16_t *output,
       temp_in[j] = out[j * 8 + i];
     invc(temp_in, temp_out);
     for (j = 0; j < 8; ++j)
-      output[j * short_pitch + i] = (temp_out[j] + 16) >> 5;
+      output[j * short_pitch + i] = ROUND_POWER_OF_TWO(temp_out[j], 5);
   }
 }
 #endif
@@ -782,14 +796,14 @@ void vp9_short_idct10_8x8_c(int16_t *input, int16_t *output, int pitch) {
       temp_in[j] = out[j * 8 + i];
     idct8_1d(temp_in, temp_out);
     for (j = 0; j < 8; ++j)
-      output[j * short_pitch + i] = (temp_out[j] + 16) >> 5;
+      output[j * short_pitch + i] = ROUND_POWER_OF_TWO(temp_out[j], 5);
   }
 }
 
 void vp9_short_idct1_8x8_c(int16_t *input, int16_t *output) {
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
   out = dct_const_round_shift(out * cospi_16_64);
-  output[0] = (out + 16) >> 5;
+  output[0] = ROUND_POWER_OF_TWO(out, 5);
 }
 
 void idct16_1d(int16_t *input, int16_t *output) {
@@ -976,7 +990,7 @@ void vp9_short_idct16x16_c(int16_t *input, int16_t *output, int pitch) {
       temp_in[j] = out[j * 16 + i];
     idct16_1d(temp_in, temp_out);
     for (j = 0; j < 16; ++j)
-      output[j * 16 + i] = (temp_out[j] + 32) >> 6;
+      output[j * 16 + i] = ROUND_POWER_OF_TWO(temp_out[j], 6);
   }
 }
 
@@ -1198,7 +1212,7 @@ void vp9_short_iht16x16_c(int16_t *input, int16_t *output,
       temp_in[j] = out[j * 16 + i];
     invc(temp_in, temp_out);
     for (j = 0; j < 16; ++j)
-      output[j * 16 + i] = (temp_out[j] + 32) >> 6;
+      output[j * 16 + i] = ROUND_POWER_OF_TWO(temp_out[j], 6);
   }
 }
 #endif
@@ -1228,19 +1242,15 @@ void vp9_short_idct10_16x16_c(int16_t *input, int16_t *output, int pitch) {
         temp_in[j] = out[j*16 + i];
       idct16_1d(temp_in, temp_out);
       for (j = 0; j < 16; ++j)
-        output[j*16 + i] = (temp_out[j] + 32) >> 6;
+        output[j*16 + i] = ROUND_POWER_OF_TWO(temp_out[j], 6);
     }
 }
 
 
 void vp9_short_idct1_16x16_c(int16_t *input, int16_t *output) {
-  int tmp;
-  int16_t out;
-  tmp = input[0] * cospi_16_64;
-  out = dct_const_round_shift(tmp);
-  tmp = out * cospi_16_64;
-  out = dct_const_round_shift(tmp);
-  *output = (out + 32) >> 6;
+  int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
+  out = dct_const_round_shift(out * cospi_16_64);
+  output[0] = ROUND_POWER_OF_TWO(out, 6);
 }
 
 void idct32_1d(int16_t *input, int16_t *output) {
@@ -1629,12 +1639,12 @@ void vp9_short_idct32x32_c(int16_t *input, int16_t *output, int pitch) {
       temp_in[j] = out[j * 32 + i];
     idct32_1d(temp_in, temp_out);
     for (j = 0; j < 32; ++j)
-      output[j * 32 + i] = (temp_out[j] + 32) >> 6;
+      output[j * 32 + i] = ROUND_POWER_OF_TWO(temp_out[j], 6);
   }
 }
 
 void vp9_short_idct1_32x32_c(int16_t *input, int16_t *output) {
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
   out = dct_const_round_shift(out * cospi_16_64);
-  output[0] = (out + 32) >> 6;
+  output[0] = ROUND_POWER_OF_TWO(out, 6);
 }
