@@ -211,9 +211,10 @@ static void tokenize_b(VP9_COMP *cpi,
     }
 
     t->Token = token;
+    t->prev_token = pt;
     t->context_tree = probs[type][ref][band][pt];
     t->skip_eob_node = (pt == 0) && (band > 0);
-    assert(vp9_coef_encodings[t->Token].Len - t->skip_eob_node > 0);
+    assert(vp9_coef_encodings[pt][t->Token].Len - t->skip_eob_node > 0);
     if (!dry_run) {
       ++counts[type][ref][band][pt][token];
     }
@@ -545,7 +546,8 @@ static void print_probs(FILE *f, vp9_coeff_accum *context_counters,
           for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
             coef_counts[t] = context_counters[type][ref][band][pt][t];
           vp9_tree_probs_from_distribution(MAX_ENTROPY_TOKENS,
-                                           vp9_coef_encodings, vp9_coef_tree,
+                                           vp9_coef_encodings[pt],
+                                           vp9_coef_tree[pt],
                                            coef_probs, branch_ct, coef_counts);
           fprintf(f, "%s\n      {", Comma(pt));
 
@@ -673,6 +675,7 @@ static INLINE void stuff_b(VP9_COMP *cpi,
 
   band = get_coef_band(tx_size, 0);
   t->Token = DCT_EOB_TOKEN;
+  t->prev_token = pt;
   t->context_tree = probs[type][ref][band][pt];
   t->skip_eob_node = 0;
   ++t;

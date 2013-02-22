@@ -157,22 +157,83 @@ DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_32x32[1024]) = {
 
 /* Array indices are identical to previously-existing CONTEXT_NODE indices */
 
-const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
-{
-  -DCT_EOB_TOKEN, 2,                             /* 0 = EOB */
-  -ZERO_TOKEN, 4,                               /* 1 = ZERO */
-  -ONE_TOKEN, 6,                               /* 2 = ONE */
-  8, 12,                                      /* 3 = LOW_VAL */
-  -TWO_TOKEN, 10,                            /* 4 = TWO */
-  -THREE_TOKEN, -FOUR_TOKEN,                /* 5 = THREE */
-  14, 16,                                    /* 6 = HIGH_LOW */
-  -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,   /* 7 = CAT_ONE */
-  18, 20,                                   /* 8 = CAT_THREEFOUR */
-  -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,  /* 9 = CAT_THREE */
-  -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6   /* 10 = CAT_FIVE */
+const vp9_tree_index vp9_coef_tree[PREV_COEF_CONTEXTS][22] = {
+  {
+    -DCT_EOB_TOKEN, 2,
+    -ZERO_TOKEN, 4,
+    -ONE_TOKEN, 6,
+    8, 12,
+    -TWO_TOKEN, 10,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    14, 16,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    18, 20,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6,
+  }, {
+    -ZERO_TOKEN, 2,
+    -DCT_EOB_TOKEN, 4,
+    -ONE_TOKEN, 6,
+    8, 12,
+    -TWO_TOKEN, 10,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    14, 16,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    18, 20,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6,
+  }, {
+    -ZERO_TOKEN, 2,
+    -ONE_TOKEN, 4,
+    -DCT_EOB_TOKEN, 6,
+    8, 12,
+    -TWO_TOKEN, 10,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    14, 16,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    18, 20,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6,
+  }, {
+    -ZERO_TOKEN, 2,
+    -ONE_TOKEN, 4,
+    6, 12,
+    -DCT_EOB_TOKEN, 8,
+    -TWO_TOKEN, 10,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    14, 16,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    18, 20,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6,
+  }, {
+    -ZERO_TOKEN, 2,
+    -ONE_TOKEN, 4,
+    6, 10,
+    -TWO_TOKEN, 8,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    12, 16,
+    -DCT_EOB_TOKEN, 14,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    18, 20,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6,
+  }, {
+    -ZERO_TOKEN, 2,
+    -ONE_TOKEN, 4,
+    6, 10,
+    -TWO_TOKEN, 8,
+    -THREE_TOKEN, -FOUR_TOKEN,
+    12, 14,
+    -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,
+    16, 18,
+    -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,
+    -DCT_VAL_CATEGORY5, 20,
+    -DCT_VAL_CATEGORY6, -DCT_EOB_TOKEN,
+  }
 };
 
-struct vp9_token_struct vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+struct vp9_token_struct vp9_coef_encodings[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
 
 /* Trees for extra bits.  Probabilities are constant and
    do not depend on previously encoded bits */
@@ -264,8 +325,11 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
 }
 
 void vp9_coef_tree_initialize() {
+  int n;
+
   init_bit_trees();
-  vp9_tokens_from_tree(vp9_coef_encodings, vp9_coef_tree);
+  for (n = 0; n < PREV_COEF_CONTEXTS; n++)
+    vp9_tokens_from_tree(vp9_coef_encodings[n], vp9_coef_tree[n]);
 }
 
 // #define COEF_COUNT_TESTING
@@ -293,7 +357,8 @@ static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
           if (l >= 3 && k == 0)
             continue;
           vp9_tree_probs_from_distribution(MAX_ENTROPY_TOKENS,
-                                           vp9_coef_encodings, vp9_coef_tree,
+                                           vp9_coef_encodings[l],
+                                           vp9_coef_tree[l],
                                            coef_probs, branch_ct,
                                            coef_counts[i][j][k][l]);
           for (t = 0; t < ENTROPY_NODES; ++t) {

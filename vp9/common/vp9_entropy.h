@@ -39,9 +39,11 @@ extern const int vp9_i8x8_block[4];
 
 #define INTER_MODE_CONTEXTS     7
 
-extern const vp9_tree_index vp9_coef_tree[];
+#define PREV_COEF_CONTEXTS          6
 
-extern struct vp9_token_struct vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+extern const vp9_tree_index vp9_coef_tree[PREV_COEF_CONTEXTS][22];
+
+extern struct vp9_token_struct vp9_coef_encodings[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
 
 typedef struct {
   vp9_tree_p tree;
@@ -84,7 +86,6 @@ extern vp9_extra_bit_struct vp9_extra_bits[12];    /* indexed by token value */
    distinct bands). */
 
 /*# define DC_TOKEN_CONTEXTS        3*/ /* 00, 0!0, !0!0 */
-#define PREV_COEF_CONTEXTS          6
 
 typedef unsigned int vp9_coeff_count[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                                     [MAX_ENTROPY_TOKENS];

@@ -159,11 +159,11 @@ static void fill_token_costs(vp9_coeff_count *c,
           if (l == 0 && k > 0)
             vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
                                  p[i][j][k][l],
-                                 vp9_coef_tree);
+                                 vp9_coef_tree[l]);
           else
             vp9_cost_tokens((int *)(c[i][j][k][l]),
                             p[i][j][k][l],
-                            vp9_coef_tree);
+                            vp9_coef_tree[l]);
         }
 }
 

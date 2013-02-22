@@ -25,6 +25,7 @@ typedef struct {
   const vp9_prob *context_tree;
   int16_t         Extra;
   uint8_t         Token;
+  uint8_t         prev_token;
   uint8_t         skip_eob_node;
 } TOKENEXTRA;
 

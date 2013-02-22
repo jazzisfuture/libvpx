@@ -404,7 +404,8 @@ static void pack_mb_tokens(vp9_writer* const bc,
 
   while (p < stop) {
     const int t = p->Token;
-    vp9_token *const a = vp9_coef_encodings + t;
+    const int pt = p->prev_token;
+    vp9_token *const a = vp9_coef_encodings[pt] + t;
     const vp9_extra_bit_struct *const b = vp9_extra_bits + t;
     int i = 0;
     const unsigned char *pp = p->context_tree;
@@ -426,7 +427,7 @@ static void pack_mb_tokens(vp9_writer* const bc,
     do {
       const int bb = (v >> --n) & 1;
       encode_bool(bc, bb, pp[i >> 1]);
-      i = vp9_coef_tree[i + bb];
+      i = vp9_coef_tree[pt][i + bb];
     } while (n);
 
 
@@ -1190,7 +1191,8 @@ static void build_tree_distribution(vp9_coeff_probs *coef_probs,
           if (l >= 3 && k == 0)
             continue;
           vp9_tree_probs_from_distribution(MAX_ENTROPY_TOKENS,
-                                           vp9_coef_encodings, vp9_coef_tree,
+                                           vp9_coef_encodings[l],
+                                           vp9_coef_tree[l],
                                            coef_probs[i][j][k][l],
                                            coef_branch_ct[i][j][k][l],
                                            coef_counts[i][j][k][l]);

@@ -16,18 +16,6 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/common/vp9_seg_common.h"
 
-#define EOB_CONTEXT_NODE            0
-#define ZERO_CONTEXT_NODE           1
-#define ONE_CONTEXT_NODE            2
-#define LOW_VAL_CONTEXT_NODE        3
-#define TWO_CONTEXT_NODE            4
-#define THREE_CONTEXT_NODE          5
-#define HIGH_LOW_CONTEXT_NODE       6
-#define CAT_ONE_CONTEXT_NODE        7
-#define CAT_THREEFOUR_CONTEXT_NODE  8
-#define CAT_THREE_CONTEXT_NODE      9
-#define CAT_FIVE_CONTEXT_NODE       10
-
 #define CAT1_MIN_VAL    5
 #define CAT2_MIN_VAL    7
 #define CAT3_MIN_VAL   11
@@ -163,33 +151,38 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
     const uint8_t *cat6 = cat6_prob;
     if (c >= seg_eob) break;
     prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
-    if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
-      break;
-SKIP_START:
-    if (c >= seg_eob) break;
-    if (!vp9_read(br, prob[ZERO_CONTEXT_NODE])) {
+    if (pt == 0) {
+      if (c == 0) {
+        if (!vp9_read(br, *prob++)) break;
+      } else prob++; // skip eob node
+    }
+
+    if (!vp9_read(br, *prob++)) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-      prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
-      goto SKIP_START;
+      continue;
     }
-    // ONE_CONTEXT_NODE_0_
-    if (!vp9_read(br, prob[ONE_CONTEXT_NODE])) {
+    if (pt == 1 && !vp9_read(br, *prob++)) break;
+
+    if (!vp9_read(br, *prob++)) {
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
-    // LOW_VAL_CONTEXT_NODE_0_
-    if (!vp9_read(br, prob[LOW_VAL_CONTEXT_NODE])) {
-      if (!vp9_read(br, prob[TWO_CONTEXT_NODE])) {
+    if ((pt == 2) && !vp9_read(br, *prob++)) break;
+
+    if (!vp9_read(br, *prob++)) {
+      if (pt == 3 && !vp9_read(br, *prob++)) break;
+      if (!vp9_read(br, *prob++)) {
         WRITE_COEF_CONTINUE(2, TWO_TOKEN);
       }
-      if (!vp9_read(br, prob[THREE_CONTEXT_NODE])) {
+      if (!vp9_read(br, *prob++)) {
         WRITE_COEF_CONTINUE(3, THREE_TOKEN);
       }
       WRITE_COEF_CONTINUE(4, FOUR_TOKEN);
-    }
-    // HIGH_LOW_CONTEXT_NODE_0_
-    if (!vp9_read(br, prob[HIGH_LOW_CONTEXT_NODE])) {
-      if (!vp9_read(br, prob[CAT_ONE_CONTEXT_NODE])) {
+    } else prob += 2 + (pt == 3);
+
+    if (!vp9_read(br, *prob++)) {
+      if (pt == 4 && !vp9_read(br, *prob++)) break;
+      if (!vp9_read(br, *prob++)) {
         val = CAT1_MIN_VAL;
         ADJUST_COEF(CAT1_PROB0, 0);
         WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY1);
@@ -198,10 +191,10 @@ SKIP_START:
       ADJUST_COEF(CAT2_PROB1, 1);
       ADJUST_COEF(CAT2_PROB0, 0);
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
-    }
-    // CAT_THREEFOUR_CONTEXT_NODE_0_
-    if (!vp9_read(br, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
-      if (!vp9_read(br, prob[CAT_THREE_CONTEXT_NODE])) {
+    } else prob += 1 + (pt == 4);
+
+    if (!vp9_read(br, *prob++)) {
+      if (!vp9_read(br, *prob++)) {
         val = CAT3_MIN_VAL;
         ADJUST_COEF(CAT3_PROB2, 2);
         ADJUST_COEF(CAT3_PROB1, 1);
@@ -214,9 +207,9 @@ SKIP_START:
       ADJUST_COEF(CAT4_PROB1, 1);
       ADJUST_COEF(CAT4_PROB0, 0);
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
-    }
-    // CAT_FIVE_CONTEXT_NODE_0_:
-    if (!vp9_read(br, prob[CAT_FIVE_CONTEXT_NODE])) {
+    } else prob += 1;
+
+    if (!vp9_read(br, *prob++)) {
       val = CAT5_MIN_VAL;
       ADJUST_COEF(CAT5_PROB4, 4);
       ADJUST_COEF(CAT5_PROB3, 3);
@@ -225,6 +218,8 @@ SKIP_START:
       ADJUST_COEF(CAT5_PROB0, 0);
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY5);
     }
+    if (pt == 5 && vp9_read(br, *prob++)) break;
+
     val = 0;
     while (*cat6) {
       val = (val << 1) | vp9_read(br, *cat6++);
