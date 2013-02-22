@@ -63,7 +63,8 @@ void vp9_bool_decoder_fill(BOOL_DECODER *br) {
 
 static int get_unsigned_bits(unsigned num_values) {
   int cat = 0;
-  if ((num_values--) <= 1) return 0;
+  if ((num_values--) <= 1)
+    return 0;
   while (num_values > 0) {
     cat++;
     num_values >>= 1;
