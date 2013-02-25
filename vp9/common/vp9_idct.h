@@ -63,4 +63,10 @@ static INLINE int dct_const_round_shift(int input) {
   assert(INT16_MIN <= rv && rv <= INT16_MAX);
   return rv;
 }
+
+static INLINE int dct_32_round_shift(int input) {
+  int rv = (input + DCT_CONST_ROUNDING) >> DCT_CONST_BITS;
+  return rv;
+}
+
 #endif
