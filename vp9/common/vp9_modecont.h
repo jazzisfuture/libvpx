@@ -11,6 +11,6 @@
 #ifndef VP9_COMMON_VP9_MODECONT_H_
 #define VP9_COMMON_VP9_MODECONT_H_
 
-extern const int vp9_default_mode_contexts[INTER_MODE_CONTEXTS][4];
+const int vp9_default_mode_contexts[INTER_MODE_CONTEXTS][4];
 
 #endif  // VP9_COMMON_VP9_MODECONT_H_
