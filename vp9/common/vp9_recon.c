@@ -117,7 +117,7 @@ void vp9_recon_mbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
 
 void vp9_recon_sby_s_c(MACROBLOCKD *xd, uint8_t *dst) {
   int x, y, stride = xd->block[0].dst_stride;
-  int16_t *diff = xd->sb_coeff_data.diff;
+  int16_t *diff = xd->diff;
 
   for (y = 0; y < 32; y++) {
     for (x = 0; x < 32; x++) {
@@ -130,8 +130,8 @@ void vp9_recon_sby_s_c(MACROBLOCKD *xd, uint8_t *dst) {
 
 void vp9_recon_sbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
   int x, y, stride = xd->block[16].dst_stride;
-  int16_t *udiff = xd->sb_coeff_data.diff + 1024;
-  int16_t *vdiff = xd->sb_coeff_data.diff + 1280;
+  int16_t *udiff = xd->diff + 1024;
+  int16_t *vdiff = xd->diff + 1280;
 
   for (y = 0; y < 16; y++) {
     for (x = 0; x < 16; x++) {

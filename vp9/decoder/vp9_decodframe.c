@@ -640,14 +640,14 @@ static void decode_superblock64(VP9D_COMP *pbi, MACROBLOCKD *xd,
             xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
         }
       } else {
-        vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff, xd->block[0].dequant,
+        vp9_dequant_idct_add_32x32(xd->qcoeff, xd->block[0].dequant,
                                    xd->dst.y_buffer + x_idx * 32 +
                                        xd->dst.y_stride * y_idx * 32,
                                    xd->dst.y_buffer + x_idx * 32 +
                                        xd->dst.y_stride * y_idx * 32,
                                    xd->dst.y_stride, xd->dst.y_stride,
                                    xd->eobs[0]);
-        vp9_dequant_idct_add_uv_block_16x16_c(xd->sb_coeff_data.qcoeff + 1024,
+        vp9_dequant_idct_add_uv_block_16x16_c(xd->qcoeff + 1024,
                                               xd->block[16].dequant,
                                               xd->dst.u_buffer + x_idx * 16 +
                                                 xd->dst.uv_stride * y_idx * 16,
@@ -692,9 +692,7 @@ static void decode_superblock32(VP9D_COMP *pbi, MACROBLOCKD *xd,
                                 int mb_row, unsigned int mb_col,
                                 BOOL_DECODER* const bc) {
   int n, eobtotal;
-  TX_SIZE tx_size = xd->mode_info_context->mbmi.txfm_size;
   VP9_COMMON *const pc = &pbi->common;
-  MODE_INFO *orig_mi = xd->mode_info_context;
   const int mis = pc->mode_info_stride;
 
   assert(xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X32);
@@ -737,56 +735,90 @@ static void decode_superblock32(VP9D_COMP *pbi, MACROBLOCKD *xd,
   }
 
   /* dequantization and idct */
-  if (xd->mode_info_context->mbmi.txfm_size == TX_32X32) {
-    eobtotal = vp9_decode_sb_tokens(pbi, xd, bc);
-    if (eobtotal == 0) {  // skip loopfilter
-      xd->mode_info_context->mbmi.mb_skip_coeff = 1;
+  eobtotal = vp9_decode_sb_tokens(pbi, xd, bc);
+  if (eobtotal == 0) {  // skip loopfilter
+    xd->mode_info_context->mbmi.mb_skip_coeff = 1;
+    if (mb_col + 1 < pc->mb_cols)
+      xd->mode_info_context[1].mbmi.mb_skip_coeff = 1;
+    if (mb_row + 1 < pc->mb_rows) {
+      xd->mode_info_context[mis].mbmi.mb_skip_coeff = 1;
       if (mb_col + 1 < pc->mb_cols)
-        xd->mode_info_context[1].mbmi.mb_skip_coeff = 1;
-      if (mb_row + 1 < pc->mb_rows) {
-        xd->mode_info_context[mis].mbmi.mb_skip_coeff = 1;
-        if (mb_col + 1 < pc->mb_cols)
-          xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
-      }
-    } else {
-      vp9_dequant_idct_add_32x32(xd->sb_coeff_data.qcoeff, xd->block[0].dequant,
-                                 xd->dst.y_buffer, xd->dst.y_buffer,
-                                 xd->dst.y_stride, xd->dst.y_stride,
-                                 xd->eobs[0]);
-      vp9_dequant_idct_add_uv_block_16x16_c(xd->sb_coeff_data.qcoeff + 1024,
-                                            xd->block[16].dequant,
-                                            xd->dst.u_buffer, xd->dst.v_buffer,
-                                            xd->dst.uv_stride, xd);
+        xd->mode_info_context[mis + 1].mbmi.mb_skip_coeff = 1;
     }
   } else {
-    for (n = 0; n < 4; n++) {
-      int x_idx = n & 1, y_idx = n >> 1;
-
-      if (mb_col + x_idx >= pc->mb_cols || mb_row + y_idx >= pc->mb_rows)
-        continue;
-
-      xd->above_context = pc->above_context + mb_col + x_idx;
-      xd->left_context = pc->left_context + y_idx + (mb_row & 2);
-      xd->mode_info_context = orig_mi + x_idx + y_idx * mis;
-
-      eobtotal = vp9_decode_mb_tokens(pbi, xd, bc);
-      if (eobtotal == 0) {  // skip loopfilter
-        xd->mode_info_context->mbmi.mb_skip_coeff = 1;
-        continue;
-      }
-
-      if (tx_size == TX_16X16) {
-        decode_16x16_sb(pbi, xd, bc, n, 1, 1);
-      } else if (tx_size == TX_8X8) {
-        decode_8x8_sb(pbi, xd, bc, n, 1, 1);
-      } else {
-        decode_4x4_sb(pbi, xd, bc, n, 1, 1);
-      }
+    switch (xd->mode_info_context->mbmi.txfm_size) {
+      case TX_32X32:
+        vp9_dequant_idct_add_32x32(xd->qcoeff, xd->block[0].dequant,
+                                   xd->dst.y_buffer, xd->dst.y_buffer,
+                                   xd->dst.y_stride, xd->dst.y_stride,
+                                   xd->eobs[0]);
+        vp9_dequant_idct_add_uv_block_16x16_c(xd->qcoeff + 1024,
+                                              xd->block[16].dequant,
+                                              xd->dst.u_buffer,
+                                              xd->dst.v_buffer,
+                                              xd->dst.uv_stride, xd);
+        break;
+      case TX_16X16:  // FIXME(rbultje): adst
+        for (n = 0; n < 4; n++) {
+          const int x_idx = n & 1, y_idx = n >> 1;
+          vp9_dequant_idct_add_16x16(
+              xd->qcoeff + n * 256, xd->block[0].dequant,
+              xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
+              xd->dst.y_buffer + y_idx * 16 * xd->dst.y_stride + x_idx * 16,
+              xd->dst.y_stride, xd->dst.y_stride, xd->eobs[n * 16]);
+          vp9_dequant_idct_add_uv_block_16x16_c(xd->qcoeff + 1024,
+                                                xd->block[16].dequant,
+                                                xd->dst.u_buffer,
+                                                xd->dst.v_buffer,
+                                                xd->dst.uv_stride, xd);
+        }
+        break;
+      case TX_8X8:  // FIXME(rbultje): adst
+        for (n = 0; n < 16; n++) {
+          const int x_idx = n & 3, y_idx = n >> 2;
+          vp9_dequant_idct_add_8x8_c(xd->qcoeff + n * 64, xd->block[0].dequant,
+              xd->dst.y_buffer + y_idx * 8 * xd->dst.y_stride + x_idx * 8,
+              xd->dst.y_buffer + y_idx * 8 * xd->dst.y_stride + x_idx * 8,
+              xd->dst.y_stride, xd->dst.y_stride, xd->eobs[n * 4]);
+        }
+        for (n = 0; n < 4; n++) {
+          const int x_idx = n & 1, y_idx = n >> 1;
+          vp9_dequant_idct_add_8x8_c(xd->qcoeff + n * 64 + 1024,
+              xd->block[16].dequant,
+              xd->dst.u_buffer + y_idx * 8 * xd->dst.uv_stride + x_idx * 8,
+              xd->dst.u_buffer + y_idx * 8 * xd->dst.uv_stride + x_idx * 8,
+              xd->dst.uv_stride, xd->dst.uv_stride, xd->eobs[64 + n * 4]);
+          vp9_dequant_idct_add_8x8_c(xd->qcoeff + n * 64 + 1280,
+              xd->block[20].dequant,
+              xd->dst.v_buffer + y_idx * 8 * xd->dst.uv_stride + x_idx * 8,
+              xd->dst.v_buffer + y_idx * 8 * xd->dst.uv_stride + x_idx * 8,
+              xd->dst.uv_stride, xd->dst.uv_stride, xd->eobs[80 + n * 4]);
+        }
+        break;
+      case TX_4X4:  // FIXME(rbultje): adst
+        for (n = 0; n < 64; n++) {
+          const int x_idx = n & 7, y_idx = n >> 3;
+          vp9_dequant_idct_add_c(xd->qcoeff + n * 16, xd->block[0].dequant,
+              xd->dst.y_buffer + y_idx * 4 * xd->dst.y_stride + x_idx * 4,
+              xd->dst.y_buffer + y_idx * 4 * xd->dst.y_stride + x_idx * 4,
+              xd->dst.y_stride, xd->dst.y_stride);
+        }
+        for (n = 0; n < 16; n++) {
+          const int x_idx = n & 3, y_idx = n >> 2;
+          vp9_dequant_idct_add_c(xd->qcoeff + 1024 + n * 16,
+              xd->block[16].dequant,
+              xd->dst.u_buffer + y_idx * 4 * xd->dst.uv_stride + x_idx * 4,
+              xd->dst.u_buffer + y_idx * 4 * xd->dst.uv_stride + x_idx * 4,
+              xd->dst.uv_stride, xd->dst.uv_stride);
+          vp9_dequant_idct_add_c(xd->qcoeff + 1280 + n * 16,
+              xd->block[20].dequant,
+              xd->dst.v_buffer + y_idx * 4 * xd->dst.uv_stride + x_idx * 4,
+              xd->dst.v_buffer + y_idx * 4 * xd->dst.uv_stride + x_idx * 4,
+              xd->dst.uv_stride, xd->dst.uv_stride);
+        }
+        break;
+      default: assert(0);
     }
-
-    xd->above_context = pc->above_context + mb_col;
-    xd->left_context = pc->left_context + (mb_row & 2);
-    xd->mode_info_context = orig_mi;
   }
 }
 
