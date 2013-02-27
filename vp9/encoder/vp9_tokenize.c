@@ -101,37 +101,42 @@ static void tokenize_b(VP9_COMP *cpi,
                        PLANE_TYPE type,
                        TX_SIZE tx_size,
                        int dry_run) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   int pt; /* near block/prev token context index */
   int c = 0;
   int recent_energy = 0;
-  const BLOCKD * const b = xd->block + ib;
   const int eob = xd->eobs[ib];     /* one beyond last nonzero coeff */
   TOKENEXTRA *t = *tp;        /* store tokens starting here */
-  int16_t *qcoeff_ptr = b->qcoeff;
+  int16_t *qcoeff_ptr = xd->qcoeff + 16 * ib;
   int seg_eob;
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
+  const int segment_id = mbmi->segment_id;
+  const BLOCK_SIZE_TYPE sb_type = mbmi->sb_type;
   const int *scan;
   vp9_coeff_count *counts;
   vp9_coeff_probs *probs;
-  const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-                          get_tx_type(xd, b) : DCT_DCT;
-  const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
+  const TX_TYPE tx_type = (sb_type == BLOCK_SIZE_MB16X16 &&
+                           type == PLANE_TYPE_Y_WITH_DC) ?
+                          get_tx_type(xd, &xd->block[ib]) : DCT_DCT;
+  const int ref = mbmi->ref_frame != INTRA_FRAME;
+  ENTROPY_CONTEXT *a, *l, *a1, *l1, a_ec, l_ec;
 
-  ENTROPY_CONTEXT *const a = (ENTROPY_CONTEXT *)xd->above_context +
-      vp9_block2above[tx_size][ib];
-  ENTROPY_CONTEXT *const l = (ENTROPY_CONTEXT *)xd->left_context +
-      vp9_block2left[tx_size][ib];
-  ENTROPY_CONTEXT a_ec = *a, l_ec = *l;
-
-  ENTROPY_CONTEXT *const a1 = (ENTROPY_CONTEXT *)(&xd->above_context[1]) +
-      vp9_block2above[tx_size][ib];
-  ENTROPY_CONTEXT *const l1 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
-      vp9_block2left[tx_size][ib];
-
+  if (sb_type == BLOCK_SIZE_SB32X32 || tx_size == TX_32X32 ||
+      (type == PLANE_TYPE_UV && tx_size == TX_16X16)) {
+    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above_sb[tx_size][ib];
+    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb[tx_size][ib];
+    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+  } else {
+    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above[tx_size][ib];
+    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left[tx_size][ib];
+    a1 = l1 = NULL;
+  }
 
   switch (tx_size) {
     default:
     case TX_4X4:
+      a_ec = *a;
+      l_ec = *l;
       seg_eob = 16;
       scan = vp9_default_zig_zag1d_4x4;
       if (tx_type != DCT_DCT) {
@@ -164,10 +169,6 @@ static void tokenize_b(VP9_COMP *cpi,
       scan = vp9_default_zig_zag1d_16x16;
       counts = cpi->coef_counts_16x16;
       probs = cpi->common.fc.coef_probs_16x16;
-      if (type == PLANE_TYPE_UV) {
-        int uv_idx = (ib - 16) >> 2;
-        qcoeff_ptr = xd->sb_coeff_data.qcoeff + 1024 + 256 * uv_idx;
-      }
       break;
     case TX_32X32:
       a_ec = a[0] + a[1] + a[2] + a[3] +
@@ -180,7 +181,6 @@ static void tokenize_b(VP9_COMP *cpi,
       scan = vp9_default_zig_zag1d_32x32;
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
-      qcoeff_ptr = xd->sb_coeff_data.qcoeff;
       break;
   }
 
@@ -343,13 +343,41 @@ void vp9_tokenize_sb(VP9_COMP *cpi,
   if (!dry_run)
     cpi->skip_false_count[mb_skip_context] += skip_inc;
 
-  tokenize_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC,
-             TX_32X32, dry_run);
-
-  for (b = 16; b < 24; b += 4) {
-    tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
-               TX_16X16, dry_run);
+  switch (mbmi->txfm_size) {
+    case TX_32X32:
+      tokenize_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC,
+                 TX_32X32, dry_run);
+      for (b = 64; b < 96; b += 16)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
+                   TX_16X16, dry_run);
+      break;
+    case TX_16X16:
+      for (b = 0; b < 64; b += 16)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC,
+                   TX_16X16, dry_run);
+      for (b = 64; b < 96; b += 16)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
+                   TX_16X16, dry_run);
+      break;
+    case TX_8X8:
+      for (b = 0; b < 64; b += 4)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC,
+                   TX_8X8, dry_run);
+      for (b = 64; b < 96; b += 4)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
+                   TX_8X8, dry_run);
+      break;
+    case TX_4X4:
+      for (b = 0; b < 64; b++)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC,
+                   TX_4X4, dry_run);
+      for (b = 64; b < 96; b++)
+        tokenize_b(cpi, xd, b, t, PLANE_TYPE_UV,
+                   TX_4X4, dry_run);
+      break;
+    default: assert(0);
   }
+
   if (dry_run)
     *t = t_backup;
 }
@@ -611,20 +639,28 @@ static INLINE void stuff_b(VP9_COMP *cpi,
   vp9_coeff_probs *probs;
   int pt, band;
   TOKENEXTRA *t = *tp;
-  const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
-  ENTROPY_CONTEXT *const a = (ENTROPY_CONTEXT *)xd->above_context +
-      vp9_block2above[tx_size][ib];
-  ENTROPY_CONTEXT *const l = (ENTROPY_CONTEXT *)xd->left_context +
-      vp9_block2left[tx_size][ib];
-  ENTROPY_CONTEXT a_ec = *a, l_ec = *l;
-  ENTROPY_CONTEXT *const a1 = (ENTROPY_CONTEXT *)(&xd->above_context[1]) +
-      vp9_block2above[tx_size][ib];
-  ENTROPY_CONTEXT *const l1 = (ENTROPY_CONTEXT *)(&xd->left_context[1]) +
-      vp9_block2left[tx_size][ib];
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  const int ref = mbmi->ref_frame != INTRA_FRAME;
+  const BLOCK_SIZE_TYPE sb_type = mbmi->sb_type;
+  ENTROPY_CONTEXT *a, *l, *a1, *l1, a_ec, l_ec;
+
+  if (sb_type == BLOCK_SIZE_SB32X32 || tx_size == TX_32X32 ||
+      (type == PLANE_TYPE_UV && tx_size == TX_16X16)) {
+    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above_sb[tx_size][ib];
+    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb[tx_size][ib];
+    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+  } else {
+    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above[tx_size][ib];
+    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left[tx_size][ib];
+    a1 = l1 = NULL;
+  }
 
   switch (tx_size) {
     default:
     case TX_4X4:
+      a_ec = a[0];
+      l_ec = l[0];
       counts = cpi->coef_counts_4x4;
       probs = cpi->common.fc.coef_probs_4x4;
       break;
@@ -751,20 +787,36 @@ void vp9_stuff_mb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
   }
 }
 
-static void stuff_sb_32x32(VP9_COMP *cpi, MACROBLOCKD *xd,
-                               TOKENEXTRA **t, int dry_run) {
-  int b;
-
-  stuff_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC, TX_32X32, dry_run);
-  for (b = 16; b < 24; b += 4) {
-    stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_16X16, dry_run);
-  }
-}
-
 void vp9_stuff_sb(VP9_COMP *cpi, MACROBLOCKD *xd, TOKENEXTRA **t, int dry_run) {
   TOKENEXTRA * const t_backup = *t;
+  int b;
 
-  stuff_sb_32x32(cpi, xd, t, dry_run);
+  switch (xd->mode_info_context->mbmi.txfm_size) {
+    case TX_32X32:
+      stuff_b(cpi, xd, 0, t, PLANE_TYPE_Y_WITH_DC, TX_32X32, dry_run);
+      for (b = 64; b < 96; b += 16)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_16X16, dry_run);
+      break;
+    case TX_16X16:
+      for (b = 0; b < 64; b += 16)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC, TX_16X16, dry_run);
+      for (b = 64; b < 96; b += 16)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_16X16, dry_run);
+      break;
+    case TX_8X8:
+      for (b = 0; b < 64; b += 4)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC, TX_8X8, dry_run);
+      for (b = 64; b < 96; b += 4)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_8X8, dry_run);
+      break;
+    case TX_4X4:
+      for (b = 0; b < 64; b++)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_Y_WITH_DC, TX_4X4, dry_run);
+      for (b = 64; b < 96; b++)
+        stuff_b(cpi, xd, b, t, PLANE_TYPE_UV, TX_4X4, dry_run);
+      break;
+    default: assert(0);
+  }
 
   if (dry_run) {
     *t = t_backup;
