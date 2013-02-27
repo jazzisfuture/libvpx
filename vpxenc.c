@@ -2450,7 +2450,7 @@ int main(int argc, const char **argv_) {
   struct global_config     global;
   struct stream_state     *streams = NULL;
   char                   **argv, **argi;
-  unsigned long            cx_time = 0;
+  uint64_t                 cx_time = 0;
   int                      stream_cnt = 0;
   int                      res = 0;
 
@@ -2605,7 +2605,7 @@ int main(int argc, const char **argv_) {
                                     frame_avail ? &raw : NULL,
                                     frames_in));
         vpx_usec_timer_mark(&timer);
-        cx_time += (unsigned long)vpx_usec_timer_elapsed(&timer);
+        cx_time += vpx_usec_timer_elapsed(&timer);
 
         FOREACH_STREAM(update_quantizer_histogram(stream));
 
@@ -2614,7 +2614,7 @@ int main(int argc, const char **argv_) {
 
         if (!got_data && input.length && !streams->frames_out) {
           lagged_count = global.limit ? frames_in : ftello(input.file);
-        } else if (got_data && input.length) {
+        } else if (input.length) {
           int64_t remaining;
           int64_t rate;
 
