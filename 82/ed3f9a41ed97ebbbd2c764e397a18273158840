@@ -1,0 +1,10 @@
+Code-Review+2: John Koleszar <jkoleszar@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Jan Kratochvil <jan.kratochvil@redhat.com>
+Code-Review+1: Jan Kratochvil <jan.kratochvil@redhat.com>
+Verified+1: Jan Kratochvil <jan.kratochvil@redhat.com>
+Submitted-by: John Koleszar <jkoleszar@google.com>
+Submitted-at: Wed, 27 Feb 2013 11:19:56 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/44182
+Project: webm/libvpx
+Branch: refs/heads/master
