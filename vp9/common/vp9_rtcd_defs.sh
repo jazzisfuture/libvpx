@@ -491,12 +491,13 @@ specialize vp9_sad8x8x4d sse2
 prototype void vp9_sad4x4x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t **ref_ptr, int  ref_stride, unsigned int *sad_array"
 specialize vp9_sad4x4x4d sse
 
+
 #
 # Block copy
 #
 case $arch in
     x86*)
-    prototype void vp9_copy32xn "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, int n"
+    prototype void vp9_copy32xn "const uint8_t *src_ptr, int source_stride, uint8_t *ref_ptr, int ref_stride, int n"
     specialize vp9_copy32xn sse2 sse3
     ;;
 esac

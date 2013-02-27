@@ -21,7 +21,7 @@ typedef unsigned int(*vp9_sad_fn_t)(const uint8_t *src_ptr,
 
 typedef void (*vp9_copy32xn_fn_t)(const uint8_t *src_ptr,
                                   int source_stride,
-                                  const uint8_t *ref_ptr,
+                                  uint8_t *ref_ptr,
                                   int ref_stride,
                                   int n);
 
