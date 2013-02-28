@@ -94,20 +94,25 @@ void vp9_ht_dequant_idct_add_8x8_c(TX_TYPE tx_type, int16_t *input,
 }
 
 void vp9_dequant_idct_add_c(int16_t *input, const int16_t *dq, uint8_t *pred,
-                            uint8_t *dest, int pitch, int stride) {
+                            uint8_t *dest, int pitch, int stride, int eob) {
   int16_t output[16];
   int16_t *diff_ptr = output;
   int i;
 
-  for (i = 0; i < 16; i++)
-    input[i] *= dq[i];
+  if (eob > 1) {
+    for (i = 0; i < 16; i++)
+      input[i] *= dq[i];
 
-  /* the idct halves ( >> 1) the pitch */
-  vp9_short_idct4x4llm_c(input, output, 4 << 1);
+    /* the idct halves ( >> 1) the pitch */
+    vp9_short_idct4x4llm_c(input, output, 4 << 1);
 
-  vpx_memset(input, 0, 32);
+    vpx_memset(input, 0, 32);
 
-  add_residual(diff_ptr, pred, pitch, dest, stride, 4, 4);
+    add_residual(diff_ptr, pred, pitch, dest, stride, 4, 4);
+  } else {
+    vp9_dc_only_idct_add(input[0]*dq[0], pred, dest, pitch, stride);
+    ((int *)input)[0] = 0;
+  }
 }
 
 void vp9_dequant_dc_idct_add_c(int16_t *input, const int16_t *dq, uint8_t *pred,
@@ -131,19 +136,24 @@ void vp9_dequant_dc_idct_add_c(int16_t *input, const int16_t *dq, uint8_t *pred,
 
 void vp9_dequant_idct_add_lossless_c(int16_t *input, const int16_t *dq,
                                      uint8_t *pred, uint8_t *dest,
-                                     int pitch, int stride) {
+                                     int pitch, int stride, int eob) {
   int16_t output[16];
   int16_t *diff_ptr = output;
   int i;
 
-  for (i = 0; i < 16; i++)
-    input[i] *= dq[i];
+  if (eob > 1) {
+    for (i = 0; i < 16; i++)
+      input[i] *= dq[i];
 
-  vp9_short_inv_walsh4x4_x8_c(input, output, 4 << 1);
+    vp9_short_inv_walsh4x4_x8_c(input, output, 4 << 1);
 
-  vpx_memset(input, 0, 32);
+    vpx_memset(input, 0, 32);
 
-  add_residual(diff_ptr, pred, pitch, dest, stride, 4, 4);
+    add_residual(diff_ptr, pred, pitch, dest, stride, 4, 4);
+  } else {
+    vp9_dc_only_inv_walsh_add(input[0]*dq[0], pred, dest, pitch, stride);
+    ((int *)input)[0] = 0;
+  }
 }
 
 void vp9_dequant_dc_idct_add_lossless_c(int16_t *input, const int16_t *dq,
