@@ -1268,9 +1268,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
        * size.
        */
       if (data + 4 < data_end) {
-        pc->Width = (data[0] | (data[1] << 8)) & 0x3fff;
+        pc->Width = (data[0] | (data[1] << 8));
         pc->horiz_scale = data[1] >> 6;
-        pc->Height = (data[2] | (data[3] << 8)) & 0x3fff;
+        pc->Height = (data[2] | (data[3] << 8));
         pc->vert_scale = data[3] >> 6;
       }
       data += 4;
