@@ -1090,13 +1090,13 @@ void vp9_new_frame_rate(VP9_COMP *cpi, double framerate) {
 }
 
 
-static int
-rescale(int val, int num, int denom) {
+static long int
+rescale(int val, long int num, int denom) {
   int64_t llnum = num;
   int64_t llden = denom;
   int64_t llval = val;
 
-  return (int)(llval * llnum / llden);
+  return (long int)(llval * llnum / llden);
 }
 
 static void set_tile_limits(VP9_COMP *cpi) {
