@@ -43,17 +43,6 @@ static void add_constant_residual(const int16_t diff, const uint8_t *pred,
   }
 }
 
-void vp9_dequantize_b_c(BLOCKD *d) {
-  int i;
-  int16_t *dq = d->dqcoeff;
-  const int16_t *q = d->qcoeff;
-  const int16_t *dqc = d->dequant;
-
-  for (i = 0; i < 16; i++)
-    dq[i] = q[i] * dqc[i];
-}
-
-
 void vp9_ht_dequant_idct_add_c(TX_TYPE tx_type, int16_t *input,
                                const int16_t *dq,
                                uint8_t *pred, uint8_t *dest,
