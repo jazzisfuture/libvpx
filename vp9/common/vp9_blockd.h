@@ -56,15 +56,38 @@ typedef enum {
   PLANE_TYPE_UV,
 } PLANE_TYPE;
 
+#if CONFIG_DCTOKPRED
+typedef uint16_t ENTROPY_CONTEXT;
+#else
 typedef char ENTROPY_CONTEXT;
+#endif
 typedef struct {
   ENTROPY_CONTEXT y1[4];
   ENTROPY_CONTEXT u[2];
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
 
+#if CONFIG_DCTOKPRED
+typedef struct {
+  int16_t Token;
+  int16_t Extra;
+} TOKENVALUE;
+
+#define VP9_COMBINEENTROPYCONTEXTS(dest, a, b) \
+  { \
+    /* FIXME(rbultje): we should probably have a simpler way of relaying */ \
+    /* value -> token, but this works for an experiment */ \
+    extern const TOKENVALUE *vp9_dct_value_tokens_ptr; \
+    int recent_energy = 0, tok; \
+    assert((a + b) >> 1 < INT16_MAX); \
+    tok = vp9_dct_value_tokens_ptr[(a + b) >> 1].Token; \
+    assert(tok >= ZERO_TOKEN && tok <= DCT_VAL_CATEGORY6); \
+    dest = vp9_get_coef_context(&recent_energy, tok); \
+  }
+#else
 #define VP9_COMBINEENTROPYCONTEXTS(Dest, A, B) \
   Dest = ((A)!=0) + ((B)!=0);
+#endif
 
 typedef enum {
   KEY_FRAME = 0,
