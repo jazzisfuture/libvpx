@@ -33,7 +33,7 @@
     movsxd      rax,        dword ptr arg(1)    ; src_stride
     movsxd      rdx,        dword ptr arg(3)    ; ref_stride
 %else
-  %ifidn __OUTPUT_FORMAT__,x64
+  %if LIBVPX_YASM_WIN64
     SAVE_XMM 7, u
     %define     src_ptr     rcx
     %define     src_stride  rdx
@@ -76,13 +76,97 @@
     pop         rsi
     pop         rbp
 %else
-  %ifidn __OUTPUT_FORMAT__,x64
+  %if LIBVPX_YASM_WIN64
     RESTORE_XMM
   %endif
 %endif
     ret
 %endmacro
 
+<<<<<<< HEAD   (253886 Merge changes I9be9c990,Ic3b97339 into experimental)
+=======
+%macro STACK_FRAME_CREATE_X4 0
+%if ABI_IS_32BIT
+  %define     src_ptr       rsi
+  %define     src_stride    rax
+  %define     r0_ptr        rcx
+  %define     r1_ptr        rdx
+  %define     r2_ptr        rbx
+  %define     r3_ptr        rdi
+  %define     ref_stride    rbp
+  %define     result_ptr    arg(4)
+    push        rbp
+    mov         rbp,        rsp
+    push        rsi
+    push        rdi
+    push        rbx
+
+    push        rbp
+    mov         rdi,        arg(2)              ; ref_ptr_base
+
+    LOAD_X4_ADDRESSES rdi, rcx, rdx, rax, rdi
+
+    mov         rsi,        arg(0)              ; src_ptr
+
+    movsxd      rbx,        dword ptr arg(1)    ; src_stride
+    movsxd      rbp,        dword ptr arg(3)    ; ref_stride
+
+    xchg        rbx,        rax
+%else
+  %if LIBVPX_YASM_WIN64
+    SAVE_XMM 7, u
+    %define     src_ptr     rcx
+    %define     src_stride  rdx
+    %define     r0_ptr      rsi
+    %define     r1_ptr      r10
+    %define     r2_ptr      r11
+    %define     r3_ptr      r8
+    %define     ref_stride  r9
+    %define     result_ptr  [rsp+xmm_stack_space+16+4*8]
+    push        rsi
+
+    LOAD_X4_ADDRESSES r8, r0_ptr, r1_ptr, r2_ptr, r3_ptr
+  %else
+    %define     src_ptr     rdi
+    %define     src_stride  rsi
+    %define     r0_ptr      r9
+    %define     r1_ptr      r10
+    %define     r2_ptr      r11
+    %define     r3_ptr      rdx
+    %define     ref_stride  rcx
+    %define     result_ptr  r8
+
+    LOAD_X4_ADDRESSES rdx, r0_ptr, r1_ptr, r2_ptr, r3_ptr
+
+  %endif
+%endif
+%endmacro
+
+%macro STACK_FRAME_DESTROY_X4 0
+  %define     src_ptr
+  %define     src_stride
+  %define     r0_ptr
+  %define     r1_ptr
+  %define     r2_ptr
+  %define     r3_ptr
+  %define     ref_stride
+  %define     result_ptr
+
+%if ABI_IS_32BIT
+    pop         rbx
+    pop         rdi
+    pop         rsi
+    pop         rbp
+%else
+  %if LIBVPX_YASM_WIN64
+    pop         rsi
+    RESTORE_XMM
+  %endif
+%endif
+    ret
+%endmacro
+
+>>>>>>> BRANCH (67978d Merge "vp8 fast quantizer with intrinsics")
 %macro PROCESS_16X2X3 5
 %if %1==0
         movdqa          xmm0,       XMMWORD PTR [%2]

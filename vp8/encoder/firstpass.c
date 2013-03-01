@@ -858,7 +858,9 @@ skip_motion_search:
      */
     if ((cm->current_video_frame > 0) &&
         (cpi->twopass.this_frame_stats.pcnt_inter > 0.20) &&
-        ((cpi->twopass.this_frame_stats.intra_error / cpi->twopass.this_frame_stats.coded_error) > 2.0))
+        ((cpi->twopass.this_frame_stats.intra_error /
+          DOUBLE_DIVIDE_CHECK(cpi->twopass.this_frame_stats.coded_error)) >
+         2.0))
     {
         vp8_yv12_copy_frame(lst_yv12, gld_yv12);
     }
@@ -2131,8 +2133,10 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
     /* Clip cpi->twopass.gf_group_bits based on user supplied data rate
      * variability limit (cpi->oxcf.two_pass_vbrmax_section)
      */
-    if (cpi->twopass.gf_group_bits > max_bits * cpi->baseline_gf_interval)
-        cpi->twopass.gf_group_bits = max_bits * cpi->baseline_gf_interval;
+    if (cpi->twopass.gf_group_bits >
+        (int64_t)max_bits * cpi->baseline_gf_interval)
+        cpi->twopass.gf_group_bits =
+            (int64_t)max_bits * cpi->baseline_gf_interval;
 
     /* Reset the file position */
     reset_fpf_position(cpi, start_pos);

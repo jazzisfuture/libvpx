@@ -29,7 +29,7 @@
     mov         rcx, 0x0400040
 
     movdqa      xmm4, [rdx]                 ;load filters
-    movd        xmm5, rcx
+    movq        xmm5, rcx
     packsswb    xmm4, xmm4
     pshuflw     xmm0, xmm4, 0b              ;k0_k1
     pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
@@ -542,7 +542,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     mov         rcx, 0x0400040
 
     movdqa      xmm4, [rdx]                 ;load filters
-    movd        xmm5, rcx
+    movq        xmm5, rcx
     packsswb    xmm4, xmm4
     pshuflw     xmm0, xmm4, 0b              ;k0_k1
     pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
@@ -842,7 +842,76 @@ sym(vp9_filter_block1d8_h8_ssse3):
     %define k6k7 [rsp + 16*3]
     %define krd [rsp + 16*4]
 
+<<<<<<< HEAD   (253886 Merge changes I9be9c990,Ic3b97339 into experimental)
     HORIZx8 0
+=======
+    mov         rdx, arg(5)                 ;filter ptr
+    mov         rsi, arg(0)                 ;src_ptr
+    mov         rdi, arg(2)                 ;output_ptr
+    mov         rcx, 0x0400040
+
+    movdqa      xmm4, [rdx]                 ;load filters
+    movq        xmm5, rcx
+    packsswb    xmm4, xmm4
+    pshuflw     xmm0, xmm4, 0b              ;k0_k1
+    pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
+    pshuflw     xmm2, xmm4, 10101010b       ;k4_k5
+    pshuflw     xmm3, xmm4, 11111111b       ;k6_k7
+
+    punpcklqdq  xmm0, xmm0
+    punpcklqdq  xmm1, xmm1
+    punpcklqdq  xmm2, xmm2
+    punpcklqdq  xmm3, xmm3
+
+    movdqa      k0k1, xmm0
+    movdqa      k2k3, xmm1
+    pshufd      xmm5, xmm5, 0
+    movdqa      k4k5, xmm2
+    movdqa      k6k7, xmm3
+;    movdqa      krd, xmm5
+
+    movsxd      rax, dword ptr arg(1)       ;src_pixels_per_line
+    movsxd      rdx, dword ptr arg(3)       ;output_pitch
+    movsxd      rcx, dword ptr arg(4)       ;output_height
+
+.filter_block1d8_h8_rowloop_ssse3:
+    movq        xmm0,   [rsi - 3]    ; -3 -2 -1  0  1  2  3  4
+
+;    movq        xmm3,   [rsi + 4]    ; 4  5  6  7  8  9 10 11
+    movq        xmm3,   [rsi + 5]    ; 5  6  7  8  9 10 11 12
+;note: if we create a k0_k7 filter, we can save a pshufb
+;    punpcklbw   xmm0,   xmm3         ; -3 4 -2 5 -1 6 0 7 1 8 2 9 3 10 4 11
+    punpcklqdq  xmm0,   xmm3
+
+    movdqa      xmm1,   xmm0
+    pshufb      xmm0,   [GLOBAL(shuf_t0t1)]
+    pmaddubsw   xmm0,   k0k1
+
+    movdqa      xmm2,   xmm1
+    pshufb      xmm1,   [GLOBAL(shuf_t2t3)]
+    pmaddubsw   xmm1,   k2k3
+
+    movdqa      xmm4,   xmm2
+    pshufb      xmm2,   [GLOBAL(shuf_t4t5)]
+    pmaddubsw   xmm2,   k4k5
+
+    pshufb      xmm4,   [GLOBAL(shuf_t6t7)]
+    pmaddubsw   xmm4,   k6k7
+
+    paddsw      xmm0,   xmm1
+    paddsw      xmm0,   xmm2
+    paddsw      xmm0,   xmm5
+    paddsw      xmm0,   xmm4
+    psraw       xmm0,   7
+    packuswb    xmm0,   xmm0
+
+    lea         rsi,    [rsi + rax]
+    movq        [rdi],  xmm0
+
+    lea         rdi,    [rdi + rdx]
+    dec         rcx
+    jnz         .filter_block1d8_h8_rowloop_ssse3
+>>>>>>> BRANCH (67978d Merge "vp8 fast quantizer with intrinsics")
 
     add rsp, 16*5
     pop rsp
@@ -884,7 +953,107 @@ sym(vp9_filter_block1d16_h8_ssse3):
     %define k6k7 [rsp + 16*3]
     %define krd [rsp + 16*4]
 
+<<<<<<< HEAD   (253886 Merge changes I9be9c990,Ic3b97339 into experimental)
     HORIZx16 0
+=======
+    mov         rdx, arg(5)                 ;filter ptr
+    mov         rsi, arg(0)                 ;src_ptr
+    mov         rdi, arg(2)                 ;output_ptr
+    mov         rcx, 0x0400040
+
+    movdqa      xmm4, [rdx]                 ;load filters
+    movq        xmm5, rcx
+    packsswb    xmm4, xmm4
+    pshuflw     xmm0, xmm4, 0b              ;k0_k1
+    pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
+    pshuflw     xmm2, xmm4, 10101010b       ;k4_k5
+    pshuflw     xmm3, xmm4, 11111111b       ;k6_k7
+
+    punpcklqdq  xmm0, xmm0
+    punpcklqdq  xmm1, xmm1
+    punpcklqdq  xmm2, xmm2
+    punpcklqdq  xmm3, xmm3
+
+    movdqa      k0k1, xmm0
+    movdqa      k2k3, xmm1
+    pshufd      xmm5, xmm5, 0
+    movdqa      k4k5, xmm2
+    movdqa      k6k7, xmm3
+    movdqa      krd, xmm5
+
+    movsxd      rax, dword ptr arg(1)       ;src_pixels_per_line
+    movsxd      rdx, dword ptr arg(3)       ;output_pitch
+    movsxd      rcx, dword ptr arg(4)       ;output_height
+
+.filter_block1d16_h8_rowloop_ssse3:
+    movq        xmm0,   [rsi - 3]    ; -3 -2 -1  0  1  2  3  4
+
+;    movq        xmm3,   [rsi + 4]    ; 4  5  6  7  8  9 10 11
+    movq        xmm3,   [rsi + 5]    ; 5  6  7  8  9 10 11 12
+;note: if we create a k0_k7 filter, we can save a pshufb
+;    punpcklbw   xmm0,   xmm3         ; -3 4 -2 5 -1 6 0 7 1 8 2 9 3 10 4 11
+    punpcklqdq  xmm0,   xmm3
+
+    movdqa      xmm1,   xmm0
+    pshufb      xmm0,   [GLOBAL(shuf_t0t1)]
+    pmaddubsw   xmm0,   k0k1
+
+    movdqa      xmm2,   xmm1
+    pshufb      xmm1,   [GLOBAL(shuf_t2t3)]
+    pmaddubsw   xmm1,   k2k3
+
+    movdqa      xmm4,   xmm2
+    pshufb      xmm2,   [GLOBAL(shuf_t4t5)]
+    pmaddubsw   xmm2,   k4k5
+
+    pshufb      xmm4,   [GLOBAL(shuf_t6t7)]
+    pmaddubsw   xmm4,   k6k7
+
+    paddsw      xmm0,   xmm1
+    paddsw      xmm0,   xmm4
+    paddsw      xmm0,   xmm2
+    paddsw      xmm0,   krd
+    psraw       xmm0,   7
+    packuswb    xmm0,   xmm0
+
+
+    movq        xmm3,   [rsi +  5]
+;    movq        xmm7,   [rsi + 12]
+    movq        xmm7,   [rsi + 13]
+;note: same as above
+;    punpcklbw   xmm3,   xmm7
+    punpcklqdq  xmm3,   xmm7
+
+    movdqa      xmm1,   xmm3
+    pshufb      xmm3,   [GLOBAL(shuf_t0t1)]
+    pmaddubsw   xmm3,   k0k1
+
+    movdqa      xmm2,   xmm1
+    pshufb      xmm1,   [GLOBAL(shuf_t2t3)]
+    pmaddubsw   xmm1,   k2k3
+
+    movdqa      xmm4,   xmm2
+    pshufb      xmm2,   [GLOBAL(shuf_t4t5)]
+    pmaddubsw   xmm2,   k4k5
+
+    pshufb      xmm4,   [GLOBAL(shuf_t6t7)]
+    pmaddubsw   xmm4,   k6k7
+
+    paddsw      xmm3,   xmm1
+    paddsw      xmm3,   xmm2
+    paddsw      xmm3,   krd
+    paddsw      xmm3,   xmm4
+    psraw       xmm3,   7
+    packuswb    xmm3,   xmm3
+    punpcklqdq  xmm0,   xmm3
+
+    lea         rsi,    [rsi + rax]
+    movdqa      [rdi],  xmm0
+
+    lea         rdi,    [rdi + rdx]
+    dec         rcx
+    jnz         .filter_block1d16_h8_rowloop_ssse3
+>>>>>>> BRANCH (67978d Merge "vp8 fast quantizer with intrinsics")
 
     add rsp, 16*5
     pop rsp
