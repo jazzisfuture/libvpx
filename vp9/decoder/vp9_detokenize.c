@@ -114,16 +114,26 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   switch (txfm_size) {
     default:
     case TX_4X4:
+#if CONFIG_DCTOKPRED
+      above_ec = A0[aidx] >> 3;
+      left_ec = L0[lidx] >> 3;
+#else
       above_ec = A0[aidx] != 0;
       left_ec = L0[lidx] != 0;
+#endif
       coef_probs  = fc->coef_probs_4x4;
       coef_counts = fc->coef_counts_4x4;
       break;
     case TX_8X8:
       coef_probs  = fc->coef_probs_8x8;
       coef_counts = fc->coef_counts_8x8;
+#if CONFIG_DCTOKPRED
+      above_ec = (A0[aidx] + A0[aidx + 1]) >> 3;
+      left_ec  = (L0[lidx] + L0[lidx + 1]) >> 3;
+#else
       above_ec = (A0[aidx] + A0[aidx + 1]) != 0;
       left_ec  = (L0[lidx] + L0[lidx + 1]) != 0;
+#endif
       break;
     case TX_16X16:
       coef_probs  = fc->coef_probs_16x16;
@@ -131,11 +141,19 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+#if CONFIG_DCTOKPRED
+        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) >> 3;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) >> 3;
+      } else {
+        above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3]) >> 3;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) >> 3;
+#else
         above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) != 0;
         left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) != 0;
       } else {
         above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3]) != 0;
         left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) != 0;
+#endif
       }
       break;
     case TX_32X32:
@@ -148,17 +166,31 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
         ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
         ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
         ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+#if CONFIG_DCTOKPRED
+        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
+                    A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) >> 3;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
+                    L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) >> 3;
+#else
         above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
                     A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) != 0;
         left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
                     L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) != 0;
+#endif
       } else {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+#if CONFIG_DCTOKPRED
+        above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3] +
+                    A1[aidx] + A1[aidx + 1] + A1[aidx + 2] + A1[aidx + 3]) >> 3;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3] +
+                    L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) >> 3;
+#else
         above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3] +
                     A1[aidx] + A1[aidx + 1] + A1[aidx + 2] + A1[aidx + 3]) != 0;
         left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3] +
                     L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) != 0;
+#endif
       }
       break;
   }
@@ -245,7 +277,13 @@ SKIP_START:
   if (c < seg_eob)
     coef_counts[type][ref][get_coef_band(txfm_size, c)][pt][DCT_EOB_TOKEN]++;
 
+#if CONFIG_DCTOKPRED
+  pt = abs(qcoeff_ptr[scan[0]]);
+  pt <<= 3 - txfm_size; // uniform scale
+  A0[aidx] = L0[lidx] = pt;
+#else
   A0[aidx] = L0[lidx] = c > 0;
+#endif
   if (txfm_size >= TX_8X8) {
     A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
     if (txfm_size >= TX_16X16) {
