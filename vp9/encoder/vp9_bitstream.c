@@ -100,7 +100,7 @@ static int prob_diff_update_cost(vp9_prob newp, vp9_prob oldp) {
 static void update_mode(
   vp9_writer *const bc,
   int n,
-  vp9_token tok               [/* n */],
+  const vp9_token tok               [/* n */],
   vp9_tree tree,
   vp9_prob Pnew               [/* n-1 */],
   vp9_prob Pcur               [/* n-1 */],
@@ -404,7 +404,7 @@ static void pack_mb_tokens(vp9_writer* const bc,
 
   while (p < stop) {
     const int t = p->Token;
-    vp9_token *const a = vp9_coef_encodings + t;
+    const vp9_token *const a = vp9_coef_encodings + t;
     const vp9_extra_bit_struct *const b = vp9_extra_bits + t;
     int i = 0;
     const unsigned char *pp = p->context_tree;

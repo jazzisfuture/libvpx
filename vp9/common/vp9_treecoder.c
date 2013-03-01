@@ -18,39 +18,32 @@
 
 #include "vp9/common/vp9_treecoder.h"
 
-static void tree2tok(
-  struct vp9_token_struct *const p,
-  vp9_tree t,
-  int i,
-  int v,
-  int L
-) {
+static void tree2tok(vp9_token *const p, vp9_tree t, int i, int v, int l) {
   v += v;
-  ++L;
+  ++l;
 
   do {
     const vp9_tree_index j = t[i++];
 
     if (j <= 0) {
       p[-j].value = v;
-      p[-j].Len = L;
+      p[-j].Len = l;
     } else
-      tree2tok(p, t, j, v, L);
+      tree2tok(p, t, j, v, l);
   } while (++v & 1);
 }
 
-void vp9_tokens_from_tree(struct vp9_token_struct *p, vp9_tree t) {
+void vp9_tokens_from_tree(vp9_token *p, vp9_tree t) {
   tree2tok(p, t, 0, 0, 0);
 }
 
-void vp9_tokens_from_tree_offset(struct vp9_token_struct *p, vp9_tree t,
-                                 int offset) {
+void vp9_tokens_from_tree_offset(vp9_token *p, vp9_tree t, int offset) {
   tree2tok(p - offset, t, 0, 0, 0);
 }
 
 static void branch_counts(
   int n,                      /* n = size of alphabet */
-  vp9_token tok               [ /* n */ ],
+  const vp9_token tok               [ /* n */ ],
   vp9_tree tree,
   unsigned int branch_ct       [ /* n-1 */ ] [2],
   const unsigned int num_events[ /* n */ ]
@@ -96,7 +89,7 @@ static void branch_counts(
 
 void vp9_tree_probs_from_distribution(
   int n,                      /* n = size of alphabet */
-  vp9_token tok               [ /* n */ ],
+  const vp9_token tok               [ /* n */ ],
   vp9_tree tree,
   vp9_prob probs          [ /* n-1 */ ],
   unsigned int branch_ct       [ /* n-1 */ ] [2],

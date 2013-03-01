@@ -70,7 +70,7 @@ static INLINE void treed_write(vp9_writer *const w,
 static INLINE void write_token(vp9_writer *const w,
                                vp9_tree t,
                                const vp9_prob *const p,
-                               vp9_token *const x) {
+                               const vp9_token *const x) {
   treed_write(w, t, p, x->value, x->Len);
 }
 
@@ -93,7 +93,7 @@ static INLINE int treed_cost(vp9_tree t,
 
 static INLINE int cost_token(vp9_tree t,
                              const vp9_prob *const p,
-                             vp9_token *const x) {
+                             const vp9_token *const x) {
   return treed_cost(t, p, x->value, x->Len);
 }
 

@@ -10,9 +10,9 @@
 
 
 #include <stdio.h>
+#include <string.h>
 
 #include "vp9/common/vp9_entropy.h"
-#include "string.h"
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_entropymode.h"
@@ -172,7 +172,7 @@ const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
   -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6   /* 10 = CAT_FIVE */
 };
 
-struct vp9_token_struct vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+vp9_token vp9_coef_encodings[MAX_ENTROPY_TOKENS];
 
 /* Trees for extra bits.  Probabilities are constant and
    do not depend on previously encoded bits */

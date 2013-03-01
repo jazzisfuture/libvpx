@@ -569,21 +569,21 @@ static TX_TYPE get_tx_type_16x16(const MACROBLOCKD *xd, const BLOCKD *b) {
 }
 
 static TX_TYPE get_tx_type(const MACROBLOCKD *xd, const BLOCKD *b) {
-  TX_TYPE tx_type = DCT_DCT;
   int ib = (int)(b - xd->block);
   if (ib >= 16)
-    return tx_type;
-  if (xd->mode_info_context->mbmi.txfm_size == TX_16X16) {
-    tx_type = get_tx_type_16x16(xd, b);
+    return DCT_DCT;
+
+  switch (xd->mode_info_context->mbmi.txfm_size) {
+    case TX_16X16:
+      return get_tx_type_16x16(xd, b);
+    case TX_8X8:
+      ib = (ib & 8) + ((ib & 4) >> 1);
+      return get_tx_type_8x8(xd, &xd->block[ib]);
+    case TX_4X4:
+      return get_tx_type_4x4(xd, b);
+    default:
+      return DCT_DCT;
   }
-  if (xd->mode_info_context->mbmi.txfm_size  == TX_8X8) {
-    ib = (ib & 8) + ((ib & 4) >> 1);
-    tx_type = get_tx_type_8x8(xd, &xd->block[ib]);
-  }
-  if (xd->mode_info_context->mbmi.txfm_size  == TX_4X4) {
-    tx_type = get_tx_type_4x4(xd, b);
-  }
-  return tx_type;
 }
 
 void vp9_build_block_doffsets(MACROBLOCKD *xd);

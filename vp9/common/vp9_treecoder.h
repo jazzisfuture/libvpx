@@ -31,16 +31,15 @@ typedef int8_t vp9_tree_index;
 
 typedef const vp9_tree_index vp9_tree[], *vp9_tree_p;
 
-typedef const struct vp9_token_struct {
+typedef struct {
   int value;
   int Len;
 } vp9_token;
 
 /* Construct encoding array from tree. */
 
-void vp9_tokens_from_tree(struct vp9_token_struct *, vp9_tree);
-void vp9_tokens_from_tree_offset(struct vp9_token_struct *, vp9_tree,
-                                 int offset);
+void vp9_tokens_from_tree(vp9_token*, vp9_tree);
+void vp9_tokens_from_tree_offset(vp9_token*, vp9_tree, int offset);
 
 /* Convert array of token occurrence counts into a table of probabilities
    for the associated binary encoding tree.  Also writes count of branches
@@ -48,7 +47,7 @@ void vp9_tokens_from_tree_offset(struct vp9_token_struct *, vp9_tree,
    probability updates. */
 
 void vp9_tree_probs_from_distribution(int n,  /* n = size of alphabet */
-                                      vp9_token tok[ /* n */ ],
+                                      const vp9_token tok[ /* n */ ],
                                       vp9_tree tree,
                                       vp9_prob probs[ /* n - 1 */ ],
                                       unsigned int branch_ct[ /* n - 1 */ ][2],

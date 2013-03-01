@@ -41,7 +41,7 @@ extern const int vp9_i8x8_block[4];
 
 extern const vp9_tree_index vp9_coef_tree[];
 
-extern struct vp9_token_struct vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+extern vp9_token vp9_coef_encodings[MAX_ENTROPY_TOKENS];
 
 typedef struct {
   vp9_tree_p tree;
@@ -107,7 +107,7 @@ extern DECLARE_ALIGNED(64, const int, vp9_default_zig_zag1d_8x8[64]);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_16x16[256]);
 extern DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_32x32[1024]);
 
-void vp9_coef_tree_initialize(void);
+void vp9_coef_tree_initialize();
 void vp9_adapt_coef_probs(struct VP9Common *);
 
 static void vp9_reset_mb_tokens_context(MACROBLOCKD* const xd) {
@@ -116,6 +116,7 @@ static void vp9_reset_mb_tokens_context(MACROBLOCKD* const xd) {
   vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
 }
 
+// Bands
 extern const int vp9_coef_bands[32];
 extern const int vp9_coef_bands4x4[16];
 
@@ -123,12 +124,10 @@ static int get_coef_band(TX_SIZE tx_size, int coef_index) {
   if (tx_size == TX_4X4) {
     return vp9_coef_bands4x4[coef_index];
   } else {
-    if (coef_index < 32)
-      return vp9_coef_bands[coef_index];
-    else
-      return 5;
+    return coef_index < 32 ? vp9_coef_bands[coef_index] : 5;
   }
 }
-extern int vp9_get_coef_context(int * recent_energy, int token);
+
+int vp9_get_coef_context(int *recent_energy, int token);
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_
