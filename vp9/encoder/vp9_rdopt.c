@@ -410,8 +410,13 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
 
   switch (tx_size) {
     case TX_4X4:
+#if CONFIG_DCTOKPRED
+      a_ec = *a >> 3;
+      l_ec = *l >> 3;
+#else
       a_ec = *a;
       l_ec = *l;
+#endif
       scan = vp9_default_zig_zag1d_4x4;
       seg_eob = 16;
       if (type == PLANE_TYPE_Y_WITH_DC) {
@@ -423,8 +428,13 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
       }
       break;
     case TX_8X8:
+#if CONFIG_DCTOKPRED
+      a_ec = (a[0] + a[1]) >> 3;
+      l_ec = (l[0] + l[1]) >> 3;
+#else
       a_ec = (a[0] + a[1]) != 0;
       l_ec = (l[0] + l[1]) != 0;
+#endif
       scan = vp9_default_zig_zag1d_8x8;
       seg_eob = 64;
       break;
@@ -432,11 +442,19 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
       scan = vp9_default_zig_zag1d_16x16;
       seg_eob = 256;
       if (type == PLANE_TYPE_UV) {
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a1[0] + a1[1]) >> 3;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a[2] + a[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3]) >> 3;
+#else
         a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
       } else {
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+#endif
       }
       break;
     case TX_32X32:
@@ -448,6 +466,17 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
         a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
         l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
         l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) >> 3;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a[2] + a[3] +
+                a1[0] + a1[1] + a1[2] + a1[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3] +
+                l1[0] + l1[1] + l1[2] + l1[3]) >> 3;
+#else
         a_ec = (a[0] + a[1] + a1[0] + a1[1] +
                 a2[0] + a2[1] + a3[0] + a3[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1] +
@@ -457,6 +486,7 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
                 a1[0] + a1[1] + a1[2] + a1[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3] +
                 l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+#endif
       }
       break;
     default:
@@ -484,7 +514,12 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
   }
 
   // is eob first coefficient;
+#if CONFIG_DCTOKPRED
+  pt = abs(qcoeff_ptr[scan[0]]);
+  pt <<= 3 - tx_size; // uniform scale
+#else
   pt = (c > 0);
+#endif
   *a = *l = pt;
   if (tx_size >= TX_8X8) {
     a[1] = l[1] = pt;
