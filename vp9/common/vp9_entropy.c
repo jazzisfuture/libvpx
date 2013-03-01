@@ -290,8 +290,6 @@ static void update_coef_probs(vp9_coeff_probs *dst_coef_probs,
     for (j = 0; j < REF_TYPES; ++j)
       for (k = 0; k < COEF_BANDS; ++k)
         for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
-          if (l >= 3 && k == 0)
-            continue;
           vp9_tree_probs_from_distribution(MAX_ENTROPY_TOKENS,
                                            vp9_coef_encodings, vp9_coef_tree,
                                            coef_probs, branch_ct,
