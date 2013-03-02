@@ -203,6 +203,7 @@ static int find_best_16x16_intra
     unsigned int err;
 
     xd->mode_info_context->mbmi.mode = mode;
+    xd->mode_info_context->mbmi.pred_filter_y = PRED_FILTER_OFF;
     vp9_build_intra_predictors_mby(xd);
     err = vp9_sad16x16(xd->predictor, 16, buf->y_buffer + mb_y_offset,
                        buf->y_stride, best_err);

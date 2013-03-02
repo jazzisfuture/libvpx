@@ -265,7 +265,9 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
       BLOCKD *b = &xd->block[ib];
       if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
         int i8x8mode = b->bmi.as_mode.first;
-        vp9_intra8x8_predict(xd, b, i8x8mode, b->predictor);
+        vp9_intra8x8_predict(xd, b, i8x8mode,
+                             xd->mode_info_context->mbmi.pred_filter_y,
+                             b->predictor);
       }
       tx_type = get_tx_type_8x8(xd, &xd->block[ib]);
       if (tx_type != DCT_DCT) {
@@ -293,11 +295,15 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
       BLOCKD *b = &xd->block[ib];
       int i8x8mode = b->bmi.as_mode.first;
       b = &xd->block[16 + i];
-      vp9_intra_uv4x4_predict(xd, &xd->block[16 + i], i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(xd, &xd->block[16 + i], i8x8mode,
+                              xd->mode_info_context->mbmi.pred_filter_uv,
+                              b->predictor);
       xd->itxm_add(b->qcoeff, b->dequant, b->predictor,
                    *(b->base_dst) + b->dst, 8, b->dst_stride, xd->eobs[16 + i]);
       b = &xd->block[20 + i];
-      vp9_intra_uv4x4_predict(xd, &xd->block[20 + i], i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(xd, &xd->block[20 + i], i8x8mode,
+                              xd->mode_info_context->mbmi.pred_filter_uv,
+                              b->predictor);
       xd->itxm_add(b->qcoeff, b->dequant, b->predictor,
                    *(b->base_dst) + b->dst, 8, b->dst_stride, xd->eobs[20 + i]);
     }
@@ -338,7 +344,9 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       BLOCKD *b;
       b = &xd->block[ib];
       i8x8mode = b->bmi.as_mode.first;
-      vp9_intra8x8_predict(xd, b, i8x8mode, b->predictor);
+      vp9_intra8x8_predict(xd, b, i8x8mode,
+                           xd->mode_info_context->mbmi.pred_filter_y,
+                           b->predictor);
       for (j = 0; j < 4; j++) {
         b = &xd->block[ib + iblock[j]];
         tx_type = get_tx_type_4x4(xd, b);
@@ -354,11 +362,15 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
         }
       }
       b = &xd->block[16 + i];
-      vp9_intra_uv4x4_predict(xd, b, i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(xd, b, i8x8mode,
+                              xd->mode_info_context->mbmi.pred_filter_uv,
+                              b->predictor);
       xd->itxm_add(b->qcoeff, b->dequant, b->predictor,
                    *(b->base_dst) + b->dst, 8, b->dst_stride, xd->eobs[16 + i]);
       b = &xd->block[20 + i];
-      vp9_intra_uv4x4_predict(xd, b, i8x8mode, b->predictor);
+      vp9_intra_uv4x4_predict(xd, b, i8x8mode,
+                              xd->mode_info_context->mbmi.pred_filter_uv,
+                              b->predictor);
       xd->itxm_add(b->qcoeff, b->dequant, b->predictor,
                    *(b->base_dst) + b->dst, 8, b->dst_stride, xd->eobs[20 + i]);
     }
@@ -374,7 +386,9 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
       if (!xd->mode_info_context->mbmi.mb_skip_coeff)
         eobtotal += vp9_decode_coefs_4x4(pbi, xd, bc, PLANE_TYPE_Y_WITH_DC, i);
 
-      vp9_intra4x4_predict(xd, b, b_mode, b->predictor);
+      vp9_intra4x4_predict(xd, b, b_mode,
+                           xd->mode_info_context->bmi[i].as_mode.pf_state,
+                           b->predictor);
       tx_type = get_tx_type_4x4(xd, b);
       if (tx_type != DCT_DCT) {
         vp9_ht_dequant_idct_add_c(tx_type, b->qcoeff,
@@ -1147,6 +1161,8 @@ static void init_frame(VP9D_COMP *pbi) {
   xd->fullpixel_mask = 0xffffffff;
   if (pc->full_pixel)
     xd->fullpixel_mask = 0xfffffff8;
+
+  vpx_memset(pc->intra_pf_counts, 0, sizeof(pc->intra_pf_counts));
 }
 
 static void read_coef_probs_common(BOOL_DECODER* const bc,
@@ -1209,6 +1225,16 @@ static void update_frame_size(VP9D_COMP *pbi) {
   cm->mi = cm->mip + cm->mode_info_stride + 1;
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
   vp9_update_mode_info_in_image(cm, cm->mi);
+}
+
+void update_intra_pf_probs(VP9_COMMON *cm) {
+  int i, j;
+  for(i = 0; i < 2; ++i) {
+    for(j = 0; j < 2; ++j) {
+      cm->intra_pf_probs[i][j] = get_binary_prob(cm->intra_pf_counts[i][j][0],
+                                                 cm->intra_pf_counts[i][j][1]);
+    }
+  }
 }
 
 int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {

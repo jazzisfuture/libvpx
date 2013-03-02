@@ -173,16 +173,18 @@ static void kfread_modes(VP9D_COMP *pbi,
       m->mbmi.mb_skip_coeff = 0;
   }
 
-
   y_mode = m->mbmi.sb_type ?
       read_kf_sb_ymode(bc,
           pbi->common.sb_kf_ymode_prob[pbi->common.kf_ymode_probs_index]):
       read_kf_mb_ymode(bc,
           pbi->common.kf_ymode_prob[pbi->common.kf_ymode_probs_index]);
+  m->mbmi.pred_filter_y = vp9_read(bc, cm->intra_pf_probs[0][0]);
+  ++cm->intra_pf_counts[0][0][m->mbmi.pred_filter_y];
 
   m->mbmi.ref_frame = INTRA_FRAME;
+  m->mbmi.mode = y_mode;
 
-  if ((m->mbmi.mode = y_mode) == B_PRED) {
+  if (y_mode == B_PRED) {
     int i = 0;
     do {
       const B_PREDICTION_MODE a = above_block_mode(m, i, mis);
@@ -194,7 +196,7 @@ static void kfread_modes(VP9D_COMP *pbi,
     } while (++i < 16);
   }
 
-  if ((m->mbmi.mode = y_mode) == I8X8_PRED) {
+  if (y_mode == I8X8_PRED) {
     int i;
     for (i = 0; i < 4; i++) {
       const int ib = vp9_i8x8_block[i];
@@ -204,10 +206,20 @@ static void kfread_modes(VP9D_COMP *pbi,
       m->bmi[ib + 1].as_mode.first = mode8x8;
       m->bmi[ib + 4].as_mode.first = mode8x8;
       m->bmi[ib + 5].as_mode.first = mode8x8;
+
+      m->bmi[ib + 0].as_mode.pf_state = m->mbmi.pred_filter_y;
+      m->bmi[ib + 1].as_mode.pf_state = m->mbmi.pred_filter_y;
+      m->bmi[ib + 4].as_mode.pf_state = m->mbmi.pred_filter_y;
+      m->bmi[ib + 5].as_mode.pf_state = m->mbmi.pred_filter_y;
+
+      // Intra prediction filter is disabled for 4x4 blocks.
+      m->mbmi.uv_mode = PRED_FILTER_OFF;
     }
   } else {
     m->mbmi.uv_mode = read_uv_mode(bc,
                                    pbi->common.kf_uv_mode_prob[m->mbmi.mode]);
+    m->mbmi.pred_filter_uv = vp9_read(bc, cm->intra_pf_probs[0][1]);
+    ++cm->intra_pf_counts[0][1][m->mbmi.pred_filter_uv];
   }
 
   if (cm->txfm_mode == TX_MODE_SELECT &&
@@ -522,6 +534,10 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
   if (cm->frame_type == KEY_FRAME) {
     if (!cm->kf_ymode_probs_update)
       cm->kf_ymode_probs_index = vp9_read_literal(bc, 3);
+
+    // Decode intra prediction filter probs.
+    cm->intra_pf_probs[0][0] = (vp9_prob)vp9_read_literal(bc, 8);
+    cm->intra_pf_probs[0][1] = (vp9_prob)vp9_read_literal(bc, 8);
   } else {
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, bc);
@@ -531,6 +547,10 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
         cm->fc.interintra_prob  = (vp9_prob)vp9_read_literal(bc, 8);
     }
 #endif
+    // Decode intra prediction filter probs.
+    cm->intra_pf_probs[1][0] = (vp9_prob)vp9_read_literal(bc, 8);
+    cm->intra_pf_probs[1][1] = (vp9_prob)vp9_read_literal(bc, 8);
+
     // Decode the baseline probabilities for decoding reference frame
     cm->prob_intra_coded = (vp9_prob)vp9_read_literal(bc, 8);
     cm->prob_last_coded  = (vp9_prob)vp9_read_literal(bc, 8);
@@ -802,6 +822,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       } else {
         mbmi->interp_filter = cm->mcomp_filter_type;
       }
+      mbmi->pred_filter_y  = PRED_FILTER_OFF;
+      mbmi->pred_filter_uv = PRED_FILTER_OFF;
     }
 
     if (cm->comp_pred_mode == COMP_PREDICTION_ONLY ||
@@ -1105,6 +1127,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mbmi->mode = read_ymode(bc, pbi->common.fc.ymode_prob);
       pbi->common.fc.ymode_counts[mbmi->mode]++;
     }
+    mbmi->pred_filter_y = vp9_read(bc, cm->intra_pf_probs[1][0]);
+    ++cm->intra_pf_counts[1][0][mbmi->pred_filter_y];
 
     // If MB mode is BPRED read the block modes
     if (mbmi->mode == B_PRED) {
@@ -1117,6 +1141,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         if (m == B_CONTEXT_PRED) m -= CONTEXT_PRED_REPLACEMENTS;
 #endif
         pbi->common.fc.bmode_counts[m]++;
+        mi->bmi[j].as_mode.pf_state = mbmi->pred_filter_y;
       } while (++j < 16);
     }
 
@@ -1126,15 +1151,27 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         const int ib = vp9_i8x8_block[i];
         const int mode8x8 = read_i8x8_mode(bc, pbi->common.fc.i8x8_mode_prob);
 
+        assert((!mbmi->pred_filter_y) ||
+               ((mode8x8 != DC_PRED) && (mode8x8 != TM_PRED)));
+
         mi->bmi[ib + 0].as_mode.first = mode8x8;
         mi->bmi[ib + 1].as_mode.first = mode8x8;
         mi->bmi[ib + 4].as_mode.first = mode8x8;
         mi->bmi[ib + 5].as_mode.first = mode8x8;
         pbi->common.fc.i8x8_mode_counts[mode8x8]++;
+
+        mi->bmi[ib + 0].as_mode.pf_state = mbmi->pred_filter_y;
+        mi->bmi[ib + 1].as_mode.pf_state = mbmi->pred_filter_y;
+        mi->bmi[ib + 4].as_mode.pf_state = mbmi->pred_filter_y;
+        mi->bmi[ib + 5].as_mode.pf_state = mbmi->pred_filter_y;
       }
+      // Intra prediction filter is disabled for 4x4 blocks.
+      mi->mbmi.pred_filter_uv = PRED_FILTER_OFF;
     } else {
       mbmi->uv_mode = read_uv_mode(bc, pbi->common.fc.uv_mode_prob[mbmi->mode]);
       pbi->common.fc.uv_mode_counts[mbmi->mode][mbmi->uv_mode]++;
+      mbmi->pred_filter_uv = vp9_read(bc, cm->intra_pf_probs[1][1]);
+      ++cm->intra_pf_counts[1][1][mbmi->pred_filter_uv];
     }
   }
   /*

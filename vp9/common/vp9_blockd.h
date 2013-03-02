@@ -83,6 +83,12 @@ typedef enum {
 } INTERPOLATIONFILTERTYPE;
 
 typedef enum {
+  PRED_FILTER_OFF,
+  PRED_FILTER_ON
+} PREDICTION_FILTER_STATE;
+
+typedef enum
+{
   DC_PRED,            /* average of above and left pixels */
   V_PRED,             /* vertical prediction */
   H_PRED,             /* horizontal prediction */
@@ -197,6 +203,7 @@ union b_mode_info {
 #if CONFIG_NEWBINTRAMODES
     B_PREDICTION_MODE context;
 #endif
+    PREDICTION_FILTER_STATE pf_state;
   } as_mode;
   int_mv as_mv[2];  // first, second inter predictor motion vectors
 };
@@ -250,6 +257,10 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+
+  PREDICTION_FILTER_STATE pred_filter_y;
+  PREDICTION_FILTER_STATE pred_filter_uv;
+
 } MB_MODE_INFO;
 
 typedef struct {

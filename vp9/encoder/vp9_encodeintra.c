@@ -46,8 +46,9 @@ void vp9_encode_intra4x4block(MACROBLOCK *x, int ib) {
 #if CONFIG_NEWBINTRAMODES
   b->bmi.as_mode.context = vp9_find_bpred_context(b);
 #endif
-
-  vp9_intra4x4_predict(&x->e_mbd, b, b->bmi.as_mode.first, b->predictor);
+  assert(b->bmi.as_mode.pf_state == PRED_FILTER_OFF);
+  vp9_intra4x4_predict(&x->e_mbd, b, b->bmi.as_mode.first,
+                       b->bmi.as_mode.pf_state, b->predictor);
   vp9_subtract_b(be, b, 16);
 
   tx_type = get_tx_type_4x4(&x->e_mbd, b);
@@ -144,7 +145,8 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
   int i;
   TX_TYPE tx_type;
 
-  vp9_intra8x8_predict(xd, b, b->bmi.as_mode.first, b->predictor);
+  vp9_intra8x8_predict(xd, b, b->bmi.as_mode.first, b->bmi.as_mode.pf_state,
+                       b->predictor);
   // generate residual blocks
   vp9_subtract_4b_c(be, b, 16);
 
@@ -200,11 +202,13 @@ void vp9_encode_intra8x8mby(MACROBLOCK *x) {
     vp9_encode_intra8x8(x, vp9_i8x8_block[i]);
 }
 
-static void encode_intra_uv4x4(MACROBLOCK *x, int ib, int mode) {
-  BLOCKD *b = &x->e_mbd.block[ib];
+static void encode_intra_uv4x4(MACROBLOCK *x, int ib, int mode, int pf_state) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  BLOCKD *b = &xd->block[ib];
   BLOCK *be = &x->block[ib];
 
-  vp9_intra_uv4x4_predict(&x->e_mbd, b, mode, b->predictor);
+  assert(pf_state == PRED_FILTER_OFF);
+  vp9_intra_uv4x4_predict(xd, b, mode, pf_state, b->predictor);
 
   vp9_subtract_b(be, b, 8);
 
@@ -223,7 +227,8 @@ void vp9_encode_intra8x8mbuv(MACROBLOCK *x) {
     BLOCKD *b = &x->e_mbd.block[vp9_i8x8_block[i]];
     int mode = b->bmi.as_mode.first;
 
-    encode_intra_uv4x4(x, i + 16, mode);  // u
-    encode_intra_uv4x4(x, i + 20, mode);  // v
+    /* Prediction filter is disabled on 4x4 blocks. */
+    encode_intra_uv4x4(x, i + 16, mode, PRED_FILTER_OFF);  // u
+    encode_intra_uv4x4(x, i + 20, mode, PRED_FILTER_OFF);  // v
   }
 }

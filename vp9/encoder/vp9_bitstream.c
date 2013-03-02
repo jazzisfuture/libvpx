@@ -776,10 +776,14 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     active_section = 6;
 #endif
 
+    assert((!m->mbmi.pred_filter_y) ||
+           ((mode != DC_PRED) && (mode != TM_PRED)));
+
     if (m->mbmi.sb_type)
       write_sb_ymode(bc, mode, pc->fc.sb_ymode_prob);
     else
       write_ymode(bc, mode, pc->fc.ymode_prob);
+    vp9_write(bc, m->mbmi.pred_filter_y, pc->intra_pf_probs[1][0]);
 
     if (mode == B_PRED) {
       int j = 0;
@@ -800,6 +804,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     } else {
       write_uv_mode(bc, mi->uv_mode,
                     pc->fc.uv_mode_prob[mode]);
+      vp9_write(bc, m->mbmi.pred_filter_uv, pc->intra_pf_probs[1][1]);
     }
   } else {
     vp9_prob mv_ref_p[VP9_MVREFS - 1];
@@ -1009,6 +1014,7 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     kfwrite_ymode(bc, ym,
                   c->kf_ymode_prob[c->kf_ymode_probs_index]);
   }
+  vp9_write(bc, m->mbmi.pred_filter_y, c->intra_pf_probs[0][0]);
 
   if (ym == B_PRED) {
     int i = 0;
@@ -1038,8 +1044,10 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     write_i8x8_mode(bc, m->bmi[10].as_mode.first,
                     c->fc.i8x8_mode_prob);
     // printf("    mode: %d\n", m->bmi[10].as_mode.first); fflush(stdout);
-  } else
+  } else {
     write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
+    vp9_write(bc, m->mbmi.pred_filter_uv, c->intra_pf_probs[0][1]);
+  }
 
   if (ym <= I8X8_PRED && c->txfm_mode == TX_MODE_SELECT &&
       !((c->mb_no_coeff_skip && skip_coeff) ||
@@ -1932,6 +1940,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     if (!pc->kf_ymode_probs_update) {
       vp9_write_literal(&header_bc, pc->kf_ymode_probs_index, 3);
     }
+
+    // Write intra prediction filter probs.
+    vp9_write_literal(&header_bc, pc->intra_pf_probs[0][0], 8);
+    vp9_write_literal(&header_bc, pc->intra_pf_probs[0][1], 8);
   } else {
     // Update the probabilities used to encode reference frame data
     update_ref_probs(cpi);
@@ -1951,6 +1963,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
                            cpi->interintra_count);
     }
 #endif
+    // Write intra prediction filter probs.
+    vp9_write_literal(&header_bc, pc->intra_pf_probs[1][0], 8);
+    vp9_write_literal(&header_bc, pc->intra_pf_probs[1][1], 8);
 
     vp9_write_literal(&header_bc, pc->prob_intra_coded, 8);
     vp9_write_literal(&header_bc, pc->prob_last_coded, 8);

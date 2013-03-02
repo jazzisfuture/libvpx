@@ -82,6 +82,8 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #endif
 
+extern void update_intra_pf_probs(VP9_COMMON *cm);
+
 // #define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
@@ -3318,6 +3320,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
+
+  // Update intra prediction filter probs before producing the bitstream.
+  update_intra_pf_probs(&cpi->common);
 
   // build the bitstream
   cpi->dummy_packing = 0;

@@ -704,4 +704,6 @@ void vp9_setup_past_independence(VP9_COMMON *cm, MACROBLOCKD *xd) {
   cm->ref_frame_sign_bias[ALTREF_FRAME] = 0;
 
   cm->frame_context_idx = 0;
+
+  vpx_memset(cm->intra_pf_probs, 128, sizeof(cm->intra_pf_probs));
 }
