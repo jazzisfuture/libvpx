@@ -213,14 +213,14 @@ static void convolve_c(const uint8_t *src, int src_stride,
                        const int16_t *filter_y, int y_step_q4,
                        int w, int h, int taps) {
   /* Fixed size intermediate buffer places limits on parameters.
-   * Maximum intermediate_height is 39, for y_step_q4 == 32,
-   * h == 16, taps == 8.
+   * Maximum intermediate_height is 71, for y_step_q4 == 32,
+   * h == 64, taps == 8.
    */
-  uint8_t temp[16 * 39];
+  uint8_t temp[64 * 71];
   int intermediate_height = ((h * y_step_q4) >> 4) + taps - 1;
 
-  assert(w <= 16);
-  assert(h <= 16);
+  assert(w <= 64);
+  assert(h <= 64);
   assert(taps <= 8);
   assert(y_step_q4 <= 32);
 

@@ -320,7 +320,22 @@ int vp9_receive_compressed_data(VP9D_PTR ptr, unsigned long size,
   pbi->common.error.setjmp = 1;
 
   retcode = vp9_decode_frame(pbi, psource);
-
+#if 0
+  {
+    FILE *fp = fopen("dec_counts.txt", "a");
+    fprintf(fp, "frame:%d  Intra: Y(%d,%d) UV(%d,%d)  Inter: Y(%d,%d) UV(%d,%d)\n",
+            cm->current_video_frame,
+            cm->intra_pf_counts[0][0][0],
+            cm->intra_pf_counts[0][0][1],
+            cm->intra_pf_counts[0][1][0],
+            cm->intra_pf_counts[0][1][1],
+            cm->intra_pf_counts[1][0][0],
+            cm->intra_pf_counts[1][0][1],
+            cm->intra_pf_counts[1][1][0],
+            cm->intra_pf_counts[1][1][1]);
+    fclose(fp);
+  }
+#endif
   if (retcode < 0) {
     pbi->common.error.error_code = VPX_CODEC_ERROR;
     pbi->common.error.setjmp = 0;

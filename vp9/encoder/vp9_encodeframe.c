@@ -1198,6 +1198,8 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   xd->mode_info_context->mbmi.mode = DC_PRED;
   xd->mode_info_context->mbmi.uv_mode = DC_PRED;
+  xd->mode_info_context->mbmi.pred_filter_y = PRED_FILTER_OFF;
+  xd->mode_info_context->mbmi.pred_filter_uv = PRED_FILTER_OFF;
 
   vp9_zero(cpi->count_mb_ref_frame_usage)
   vp9_zero(cpi->bmode_count)
@@ -1266,6 +1268,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 #endif
 
   totalrate = 0;
+
+  // Functions setup for all frame types so we can use MC in AltRef
+  vp9_setup_interp_filters(xd, cm->mcomp_filter_type, cm);
+
+  // Initialize intra prediction filter counters.
+  vp9_zero(cm->intra_pf_counts);
 
   // Reset frame count of inter 0,0 motion vector usage.
   cpi->inter_zz_count = 0;
@@ -1746,9 +1754,11 @@ void vp9_build_block_offsets(MACROBLOCK *x) {
 }
 
 static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
+  VP9_COMMON *cm = &cpi->common;
   const MACROBLOCKD *xd = &x->e_mbd;
-  const MB_PREDICTION_MODE m = xd->mode_info_context->mbmi.mode;
-  const MB_PREDICTION_MODE uvm = xd->mode_info_context->mbmi.uv_mode;
+  const MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  const MB_PREDICTION_MODE m = mbmi->mode;
+  const MB_PREDICTION_MODE uvm = mbmi->uv_mode;
 
 #ifdef MODE_STATS
   const int is_key = cpi->common.frame_type == KEY_FRAME;
@@ -1774,14 +1784,18 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
   }
 #endif
 
+  // Every MB/SB had an intra prediction filter flag for the Y plane.
+  ++cm->intra_pf_counts[cm->frame_type][0][mbmi->pred_filter_y];
+
   if (xd->mode_info_context->mbmi.sb_type) {
     ++cpi->sb_ymode_count[m];
   } else {
     ++cpi->ymode_count[m];
   }
-  if (m != I8X8_PRED)
+  if (m != I8X8_PRED) {
     ++cpi->y_uv_mode_count[m][uvm];
-  else {
+    ++cm->intra_pf_counts[cm->frame_type][1][mbmi->pred_filter_uv];
+  } else {
     cpi->i8x8_mode_count[xd->block[0].bmi.as_mode.first]++;
     cpi->i8x8_mode_count[xd->block[2].bmi.as_mode.first]++;
     cpi->i8x8_mode_count[xd->block[8].bmi.as_mode.first]++;

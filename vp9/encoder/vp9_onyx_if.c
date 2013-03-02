@@ -82,6 +82,8 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #endif
 
+extern void update_intra_pf_probs(VP9_COMMON *cm);
+
 // #define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
@@ -2427,7 +2429,7 @@ static int recode_loop_test(VP9_COMP *cpi,
                             int q, int maxq, int minq) {
   int force_recode = FALSE;
   VP9_COMMON *cm = &cpi->common;
-
+//return FALSE;
   // Is frame recode allowed at all
   // Yes if either recode mode 1 is selected or mode two is selcted
   // and the frame is a key frame. golden frame or alt_ref_frame
@@ -3251,7 +3253,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
     }
   } while (Loop == TRUE);
-
+#if 0
+  {
+    FILE *fp = fopen("enc_counts.txt", "a");
+    fprintf(fp, "frame:%d  Intra: Y(%d,%d) UV(%d,%d)  Inter: Y(%d,%d) UV(%d,%d)\n",
+            cm->current_video_frame,
+            cm->intra_pf_counts[0][0][0],
+            cm->intra_pf_counts[0][0][1],
+            cm->intra_pf_counts[0][1][0],
+            cm->intra_pf_counts[0][1][1],
+            cm->intra_pf_counts[1][0][0],
+            cm->intra_pf_counts[1][0][1],
+            cm->intra_pf_counts[1][1][0],
+            cm->intra_pf_counts[1][1][1]);
+    fclose(fp);
+  }
+#endif
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before
   // the force key frame
@@ -3318,6 +3335,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Pick the loop filter level for the frame.
   loopfilter_frame(cpi, cm);
+
+  // Update intra prediction filter probs before producing the bitstream.
+  update_intra_pf_probs(&cpi->common);
 
   // build the bitstream
   cpi->dummy_packing = 0;

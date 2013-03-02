@@ -249,6 +249,10 @@ typedef struct VP9Common {
 
   vp9_prob mbskip_pred_probs[MBSKIP_CONTEXTS];
 
+  // Intra-coding prediction flag probabilities.
+  vp9_prob intra_pf_probs[2][2];  // [frame_type][color_plane]
+  unsigned int intra_pf_counts[2][2][2];  // [frame_type][color_plane][off/on]
+
   FRAME_CONTEXT fc;  /* this frame entropy */
   FRAME_CONTEXT frame_contexts[NUM_FRAME_CONTEXTS];
   unsigned int  frame_context_idx; /* Context to use/update */
