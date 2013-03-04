@@ -1083,8 +1083,6 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
       for (j = 0; j < REF_TYPES; j++) {
         for (k = 0; k < COEF_BANDS; k++) {
           for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
-            if (l >= 3 && k == 0)
-              continue;
             for (m = 0; m < ENTROPY_NODES; m++) {
               vp9_prob *const p = coef_probs[i][j][k][l] + m;
 
