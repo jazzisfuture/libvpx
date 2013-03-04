@@ -16,10 +16,12 @@
 
 void vp9_tokenize_initialize();
 
+#if CONFIG_DCTOKPRED == 0
 typedef struct {
   int16_t Token;
   int16_t Extra;
 } TOKENVALUE;
+#endif
 
 typedef struct {
   const vp9_prob *context_tree;

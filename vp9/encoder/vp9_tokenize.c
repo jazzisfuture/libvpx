@@ -145,8 +145,13 @@ static void tokenize_b(VP9_COMP *cpi,
   switch (tx_size) {
     default:
     case TX_4X4:
+#if CONFIG_DCTOKPRED
+      a_ec = *a >> 3;
+      l_ec = *l >> 3;
+#else
       a_ec = *a;
       l_ec = *l;
+#endif
       seg_eob = 16;
       scan = vp9_default_zig_zag1d_4x4;
       if (tx_type != DCT_DCT) {
@@ -160,8 +165,13 @@ static void tokenize_b(VP9_COMP *cpi,
       probs = cpi->common.fc.coef_probs_4x4;
       break;
     case TX_8X8:
+#if CONFIG_DCTOKPRED
+      a_ec = (a[0] + a[1]) >> 3;
+      l_ec = (l[0] + l[1]) >> 3;
+#else
       a_ec = (a[0] + a[1]) != 0;
       l_ec = (l[0] + l[1]) != 0;
+#endif
       seg_eob = 64;
       scan = vp9_default_zig_zag1d_8x8;
       counts = cpi->coef_counts_8x8;
@@ -169,11 +179,19 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     case TX_16X16:
       if (type != PLANE_TYPE_UV) {
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a[2] + a[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1]) >> 3;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1]) >> 3;
+#else
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
       } else {
         a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+#endif
       }
       seg_eob = 256;
       scan = vp9_default_zig_zag1d_16x16;
@@ -182,6 +200,17 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     case TX_32X32:
       if (type != PLANE_TYPE_UV) {
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a[2] + a[3] +
+                a1[0] + a1[1] + a1[2] + a1[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3] +
+                l1[0] + l1[1] + l1[2] + l1[3]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) >> 3;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) >> 3;
+#else
         a_ec = (a[0] + a[1] + a[2] + a[3] +
                 a1[0] + a1[1] + a1[2] + a1[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3] +
@@ -191,6 +220,7 @@ static void tokenize_b(VP9_COMP *cpi,
                 a2[0] + a2[1] + a3[0] + a3[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1] +
                 l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+#endif
       }
       seg_eob = 1024;
       scan = vp9_default_zig_zag1d_32x32;
@@ -232,7 +262,13 @@ static void tokenize_b(VP9_COMP *cpi,
   } while (c < eob && ++c < seg_eob);
 
   *tp = t;
+#if CONFIG_DCTOKPRED
+  pt = abs(qcoeff_ptr[scan[0]]);
+  pt <<= 3 - tx_size;  // uniform scale
+  a_ec = l_ec = pt;
+#else
   a_ec = l_ec = (c > 0); /* 0 <-> all coeff data is zero */
+#endif
   a[0] = a_ec;
   l[0] = l_ec;
 
@@ -937,30 +973,59 @@ static void stuff_b(VP9_COMP *cpi,
   switch (tx_size) {
     default:
     case TX_4X4:
+#if CONFIG_DCTOKPRED
+      a_ec = a[0] >> 3;
+      l_ec = l[0] >> 3;
+#else
       a_ec = a[0];
       l_ec = l[0];
+#endif
       counts = cpi->coef_counts_4x4;
       probs = cpi->common.fc.coef_probs_4x4;
       break;
     case TX_8X8:
+#if CONFIG_DCTOKPRED
+      a_ec = (a[0] + a[1]) >> 3;
+      l_ec = (l[0] + l[1]) >> 3;
+#else
       a_ec = (a[0] + a[1]) != 0;
       l_ec = (l[0] + l[1]) != 0;
+#endif
       counts = cpi->coef_counts_8x8;
       probs = cpi->common.fc.coef_probs_8x8;
       break;
     case TX_16X16:
       if (type != PLANE_TYPE_UV) {
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a[2] + a[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+#else
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
       } else {
         a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+#endif
       }
       counts = cpi->coef_counts_16x16;
       probs = cpi->common.fc.coef_probs_16x16;
       break;
     case TX_32X32:
       if (type != PLANE_TYPE_UV) {
+#if CONFIG_DCTOKPRED
+        a_ec = (a[0] + a[1] + a[2] + a[3] +
+                a1[0] + a1[1] + a1[2] + a1[3]) >> 3;
+        l_ec = (l[0] + l[1] + l[2] + l[3] +
+                l1[0] + l1[1] + l1[2] + l1[3]) >> 3;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) >> 3;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) >> 3;
+#else
         a_ec = (a[0] + a[1] + a[2] + a[3] +
                 a1[0] + a1[1] + a1[2] + a1[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3] +
@@ -970,6 +1035,7 @@ static void stuff_b(VP9_COMP *cpi,
                 a2[0] + a2[1] + a3[0] + a3[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1] +
                 l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+#endif
       }
       counts = cpi->coef_counts_32x32;
       probs = cpi->common.fc.coef_probs_32x32;
