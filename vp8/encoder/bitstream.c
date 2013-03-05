@@ -980,6 +980,9 @@ void vp8_calc_ref_frame_costs(int *ref_frame_cost,
                               int prob_garf
                              )
 {
+    prob_intra = MIN(prob_intra, 255);
+    prob_last = MIN(prob_intra, 255);
+    prob_garf = MIN(prob_intra, 255);
     ref_frame_cost[INTRA_FRAME]   = vp8_cost_zero(prob_intra);
     ref_frame_cost[LAST_FRAME]    = vp8_cost_one(prob_intra)
                                     + vp8_cost_zero(prob_last);
