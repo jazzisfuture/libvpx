@@ -114,9 +114,6 @@ static void tokenize_b(VP9_COMP *cpi,
   const int *scan;
   vp9_coeff_count *counts;
   vp9_coeff_probs *probs;
-  const TX_TYPE tx_type = (sb_type == BLOCK_SIZE_MB16X16 &&
-                           type == PLANE_TYPE_Y_WITH_DC) ?
-                          get_tx_type(xd, &xd->block[ib]) : DCT_DCT;
   const int ref = mbmi->ref_frame != INTRA_FRAME;
   ENTROPY_CONTEXT *a, *l, *a1, *l1, *a2, *l2, *a3, *l3, a_ec, l_ec;
 
@@ -144,7 +141,9 @@ static void tokenize_b(VP9_COMP *cpi,
 
   switch (tx_size) {
     default:
-    case TX_4X4:
+    case TX_4X4: {
+      const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+                              get_tx_type_4x4(xd, ib) : DCT_DCT;
       a_ec = *a;
       l_ec = *l;
       seg_eob = 16;
@@ -159,6 +158,7 @@ static void tokenize_b(VP9_COMP *cpi,
       counts = cpi->coef_counts_4x4;
       probs = cpi->common.fc.coef_probs_4x4;
       break;
+    }
     case TX_8X8:
       a_ec = (a[0] + a[1]) != 0;
       l_ec = (l[0] + l[1]) != 0;
@@ -331,7 +331,7 @@ static int sb_is_skippable_32x32(MACROBLOCKD *xd) {
          vp9_sbuv_is_skippable_16x16(xd);
 }
 
-static int sby_is_skippable_16x16(MACROBLOCKD *xd) {
+int vp9_sby_is_skippable_16x16(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -342,10 +342,10 @@ static int sby_is_skippable_16x16(MACROBLOCKD *xd) {
 }
 
 static int sb_is_skippable_16x16(MACROBLOCKD *xd) {
-  return sby_is_skippable_16x16(xd) & vp9_sbuv_is_skippable_16x16(xd);
+  return vp9_sby_is_skippable_16x16(xd) & vp9_sbuv_is_skippable_16x16(xd);
 }
 
-static int sby_is_skippable_8x8(MACROBLOCKD *xd) {
+int vp9_sby_is_skippable_8x8(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -355,7 +355,7 @@ static int sby_is_skippable_8x8(MACROBLOCKD *xd) {
   return skip;
 }
 
-static int sbuv_is_skippable_8x8(MACROBLOCKD *xd) {
+int vp9_sbuv_is_skippable_8x8(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -366,10 +366,10 @@ static int sbuv_is_skippable_8x8(MACROBLOCKD *xd) {
 }
 
 static int sb_is_skippable_8x8(MACROBLOCKD *xd) {
-  return sby_is_skippable_8x8(xd) & sbuv_is_skippable_8x8(xd);
+  return vp9_sby_is_skippable_8x8(xd) & vp9_sbuv_is_skippable_8x8(xd);
 }
 
-static int sby_is_skippable_4x4(MACROBLOCKD *xd) {
+int vp9_sby_is_skippable_4x4(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -379,7 +379,7 @@ static int sby_is_skippable_4x4(MACROBLOCKD *xd) {
   return skip;
 }
 
-static int sbuv_is_skippable_4x4(MACROBLOCKD *xd) {
+int vp9_sbuv_is_skippable_4x4(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -390,7 +390,7 @@ static int sbuv_is_skippable_4x4(MACROBLOCKD *xd) {
 }
 
 static int sb_is_skippable_4x4(MACROBLOCKD *xd) {
-  return sby_is_skippable_4x4(xd) & sbuv_is_skippable_4x4(xd);
+  return vp9_sby_is_skippable_4x4(xd) & vp9_sbuv_is_skippable_4x4(xd);
 }
 
 void vp9_tokenize_sb(VP9_COMP *cpi,
@@ -476,7 +476,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi,
     *t = t_backup;
 }
 
-static int sb64y_is_skippable_32x32(MACROBLOCKD *xd) {
+int vp9_sb64y_is_skippable_32x32(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -491,10 +491,10 @@ int vp9_sb64uv_is_skippable_32x32(MACROBLOCKD *xd) {
 }
 
 static int sb64_is_skippable_32x32(MACROBLOCKD *xd) {
-  return sb64y_is_skippable_32x32(xd) & vp9_sb64uv_is_skippable_32x32(xd);
+  return vp9_sb64y_is_skippable_32x32(xd) & vp9_sb64uv_is_skippable_32x32(xd);
 }
 
-static int sb64y_is_skippable_16x16(MACROBLOCKD *xd) {
+int vp9_sb64y_is_skippable_16x16(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -504,7 +504,7 @@ static int sb64y_is_skippable_16x16(MACROBLOCKD *xd) {
   return skip;
 }
 
-static int sb64uv_is_skippable_16x16(MACROBLOCKD *xd) {
+int vp9_sb64uv_is_skippable_16x16(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -515,10 +515,10 @@ static int sb64uv_is_skippable_16x16(MACROBLOCKD *xd) {
 }
 
 static int sb64_is_skippable_16x16(MACROBLOCKD *xd) {
-  return sb64y_is_skippable_16x16(xd) & sb64uv_is_skippable_16x16(xd);
+  return vp9_sb64y_is_skippable_16x16(xd) & vp9_sb64uv_is_skippable_16x16(xd);
 }
 
-static int sb64y_is_skippable_8x8(MACROBLOCKD *xd) {
+int vp9_sb64y_is_skippable_8x8(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -528,7 +528,7 @@ static int sb64y_is_skippable_8x8(MACROBLOCKD *xd) {
   return skip;
 }
 
-static int sb64uv_is_skippable_8x8(MACROBLOCKD *xd) {
+int vp9_sb64uv_is_skippable_8x8(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -539,10 +539,10 @@ static int sb64uv_is_skippable_8x8(MACROBLOCKD *xd) {
 }
 
 static int sb64_is_skippable_8x8(MACROBLOCKD *xd) {
-  return sb64y_is_skippable_8x8(xd) & sb64uv_is_skippable_8x8(xd);
+  return vp9_sb64y_is_skippable_8x8(xd) & vp9_sb64uv_is_skippable_8x8(xd);
 }
 
-static int sb64y_is_skippable_4x4(MACROBLOCKD *xd) {
+int vp9_sb64y_is_skippable_4x4(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -552,7 +552,7 @@ static int sb64y_is_skippable_4x4(MACROBLOCKD *xd) {
   return skip;
 }
 
-static int sb64uv_is_skippable_4x4(MACROBLOCKD *xd) {
+int vp9_sb64uv_is_skippable_4x4(MACROBLOCKD *xd) {
   int skip = 1;
   int i = 0;
 
@@ -563,7 +563,7 @@ static int sb64uv_is_skippable_4x4(MACROBLOCKD *xd) {
 }
 
 static int sb64_is_skippable_4x4(MACROBLOCKD *xd) {
-  return sb64y_is_skippable_4x4(xd) & sb64uv_is_skippable_4x4(xd);
+  return vp9_sb64y_is_skippable_4x4(xd) & vp9_sb64uv_is_skippable_4x4(xd);
 }
 
 void vp9_tokenize_sb64(VP9_COMP *cpi,
