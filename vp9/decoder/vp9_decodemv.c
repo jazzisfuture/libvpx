@@ -773,18 +773,19 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
         vp9_accum_mv_refs(&pbi->common, mbmi->mode,
                           mbmi->mb_mode_context[ref_frame]);
+
+        if (mbmi->mode != ZEROMV) {
+          vp9_find_best_ref_mvs(xd,
+                                use_prev_in_find_best_ref ?
+                                    xd->pre.y_buffer : NULL,
+                                xd->pre.y_stride,
+                                mbmi->ref_mvs[ref_frame],
+                                &nearest, &nearby);
+
+          best_mv.as_int = (mbmi->ref_mvs[ref_frame][0]).as_int;
+        }
       }
 
-      if (mbmi->mode != ZEROMV) {
-        vp9_find_best_ref_mvs(xd,
-                              use_prev_in_find_best_ref ?
-                                  xd->pre.y_buffer : NULL,
-                              xd->pre.y_stride,
-                              mbmi->ref_mvs[ref_frame],
-                              &nearest, &nearby);
-
-        best_mv.as_int = (mbmi->ref_mvs[ref_frame][0]).as_int;
-      }
 
 #ifdef DEC_DEBUG
       if (dec_debug)
@@ -794,14 +795,12 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #endif
     }
 
-    if (mbmi->mode >= NEARESTMV && mbmi->mode <= SPLITMV) {
-      if (cm->mcomp_filter_type == SWITCHABLE) {
-        mbmi->interp_filter = vp9_switchable_interp[
-            treed_read(bc, vp9_switchable_interp_tree,
-                       vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
-      } else {
-        mbmi->interp_filter = cm->mcomp_filter_type;
-      }
+    if (cm->mcomp_filter_type == SWITCHABLE) {
+      mbmi->interp_filter = vp9_switchable_interp[
+          treed_read(bc, vp9_switchable_interp_tree,
+                     vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP))];
+    } else {
+      mbmi->interp_filter = cm->mcomp_filter_type;
     }
 
     if (cm->comp_pred_mode == COMP_PREDICTION_ONLY ||
@@ -879,29 +878,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       }
 #endif
     }
-
-#if CONFIG_NEW_MVREF
-    // if ((mbmi->mode == NEWMV) || (mbmi->mode == SPLITMV))
-    if (mbmi->mode == NEWMV) {
-      int best_index;
-      MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
-
-      // Encode the index of the choice.
-      best_index =
-        vp9_read_mv_ref_id(bc, xd->mb_mv_ref_probs[ref_frame]);
-
-      best_mv.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
-
-      if (mbmi->second_ref_frame > 0) {
-        ref_frame = mbmi->second_ref_frame;
-
-        // Encode the index of the choice.
-        best_index =
-          vp9_read_mv_ref_id(bc, xd->mb_mv_ref_probs[ref_frame]);
-        best_mv_second.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
-      }
-    }
-#endif
 
     mbmi->uv_mode = DC_PRED;
     switch (mbmi->mode) {
@@ -1055,6 +1031,27 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         break;
 
       case NEWMV:
+#if CONFIG_NEW_MVREF
+        {
+          int best_index;
+          MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
+
+          // Encode the index of the choice.
+          best_index =
+            vp9_read_mv_ref_id(bc, xd->mb_mv_ref_probs[ref_frame]);
+
+          best_mv.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+
+          if (mbmi->second_ref_frame > 0) {
+            ref_frame = mbmi->second_ref_frame;
+
+            // Encode the index of the choice.
+            best_index =
+              vp9_read_mv_ref_id(bc, xd->mb_mv_ref_probs[ref_frame]);
+            best_mv_second.as_int = mbmi->ref_mvs[ref_frame][best_index].as_int;
+          }
+        }
+#endif
         read_nmv(bc, &mv->as_mv, &best_mv.as_mv, nmvc);
         read_nmv_fp(bc, &mv->as_mv, &best_mv.as_mv, nmvc,
                     xd->allow_high_precision_mv);
