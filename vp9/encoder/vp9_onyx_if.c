@@ -1067,15 +1067,12 @@ void vp9_new_frame_rate(VP9_COMP *cpi, double framerate) {
     cpi->min_frame_bandwidth = FRAME_OVERHEAD_BITS;
 
   // Set Maximum gf/arf interval
-  cpi->max_gf_interval = ((int)(cpi->output_frame_rate / 2.0) + 2);
-
-  if (cpi->max_gf_interval < 12)
-    cpi->max_gf_interval = 12;
+  cpi->max_gf_interval = 16;
 
   // Extended interval for genuinely static scenes
   cpi->twopass.static_scene_max_gf_interval = cpi->key_frame_frequency >> 1;
 
-  // Special conditions when altr ref frame enabled in lagged compress mode
+  // Special conditions when alt ref frame enabled in lagged compress mode
   if (cpi->oxcf.play_alternate && cpi->oxcf.lag_in_frames) {
     if (cpi->max_gf_interval > cpi->oxcf.lag_in_frames - 1)
       cpi->max_gf_interval = cpi->oxcf.lag_in_frames - 1;
@@ -2751,8 +2748,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         cpi->active_best_quality * 15 / 16;
     }
   } else {
-#ifdef ONE_SHOT_Q_ESTIMATE & STRICT_ONE_SHOT_Q
+#ifdef ONE_SHOT_Q_ESTIMATE
+#ifdef STRICT_ONE_SHOT_Q
     cpi->active_best_quality = Q;
+#else
+    cpi->active_best_quality = inter_minq[Q];
+#endif // end STRICT_ONE_SHOT_Q
 #else
     cpi->active_best_quality = inter_minq[Q];
 #endif
