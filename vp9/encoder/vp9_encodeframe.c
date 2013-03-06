@@ -1172,6 +1172,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   xd->frames_since_golden = cm->frames_since_golden;
   xd->frames_till_alt_ref_frame = cm->frames_till_alt_ref_frame;
 
+  x->frm_width  = cpi->oxcf.Width;
+  x->frm_height = cpi->oxcf.Height;
+
   // reset intra mode contexts
   if (cm->frame_type == KEY_FRAME)
     vp9_init_mbmode_probs(cm);
@@ -1241,8 +1244,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
   int totalrate;
 
-//   fprintf(stderr, "encode_frame_internal frame %d (%d)\n",
-//          cpi->common.current_video_frame, cpi->common.show_frame);
+//   fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
+//            cpi->common.current_video_frame, cpi->common.show_frame,
+//            cm->frame_type);
 
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
