@@ -3503,7 +3503,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           xd->pre.v_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
         }
 
-        vp9_clamp_mv_min_max(x, &ref_mv[0]);
+        sr = vp9_clamp_mv_min_max(x, &ref_mv[0]);
 
         // mvp_full.as_int = ref_mv[0].as_int;
         mvp_full.as_int =

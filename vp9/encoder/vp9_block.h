@@ -141,6 +141,9 @@ struct macroblock {
   int mv_row_min;
   int mv_row_max;
 
+  int frm_width;
+  int frm_height;
+
   int skip;
 
   int encode_breakout;
