@@ -19,13 +19,35 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/common/vp9_common.h"
 
-void vp9_clamp_mv_min_max(MACROBLOCK *x, int_mv *ref_mv) {
-  int col_min = (ref_mv->as_mv.col >> 3) - MAX_FULL_PEL_VAL +
-      ((ref_mv->as_mv.col & 7) ? 1 : 0);
-  int row_min = (ref_mv->as_mv.row >> 3) - MAX_FULL_PEL_VAL +
-      ((ref_mv->as_mv.row & 7) ? 1 : 0);
-  int col_max = (ref_mv->as_mv.col >> 3) + MAX_FULL_PEL_VAL;
-  int row_max = (ref_mv->as_mv.row >> 3) + MAX_FULL_PEL_VAL;
+int vp9_clamp_mv_min_max(MACROBLOCK *x, int_mv *ref_mv) {
+  int col_min;
+  int row_min;
+  int col_max;
+  int row_max;
+
+  int sr = 0;
+  int quart_frm = MIN(x->frm_width, x->frm_height);
+
+  // refine the motion search range according to the frame dimension
+  while ((quart_frm << sr) < MAX_FULL_PEL_VAL)
+    sr++;
+
+  if (sr) {
+    col_min = (ref_mv->as_mv.col >> 3) - quart_frm +
+        ((ref_mv->as_mv.col & 7) ? 1 : 0);
+    row_min = (ref_mv->as_mv.row >> 3) - quart_frm +
+        ((ref_mv->as_mv.row & 7) ? 1 : 0);
+    col_max = (ref_mv->as_mv.col >> 3) + quart_frm;
+    row_max = (ref_mv->as_mv.row >> 3) + quart_frm;
+    sr--;
+  } else {
+    col_min = (ref_mv->as_mv.col >> 3) - MAX_FULL_PEL_VAL +
+        ((ref_mv->as_mv.col & 7) ? 1 : 0);
+    row_min = (ref_mv->as_mv.row >> 3) - MAX_FULL_PEL_VAL +
+        ((ref_mv->as_mv.row & 7) ? 1 : 0);
+    col_max = (ref_mv->as_mv.col >> 3) + MAX_FULL_PEL_VAL;
+    row_max = (ref_mv->as_mv.row >> 3) + MAX_FULL_PEL_VAL;
+  }
 
   /* Get intersection of UMV window and valid MV window to reduce # of checks in diamond search. */
   if (x->mv_col_min < col_min)
@@ -36,6 +58,8 @@ void vp9_clamp_mv_min_max(MACROBLOCK *x, int_mv *ref_mv) {
     x->mv_row_min = row_min;
   if (x->mv_row_max > row_max)
     x->mv_row_max = row_max;
+
+  return sr;
 }
 
 int vp9_mv_bit_cost(int_mv *mv, int_mv *ref, int *mvjcost, int *mvcost[2],
