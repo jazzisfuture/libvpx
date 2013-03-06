@@ -398,7 +398,7 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
   const int ref = mbmi->ref_frame != INTRA_FRAME;
   unsigned int (*token_costs)[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
       mb->token_costs[tx_size][type][ref];
-  ENTROPY_CONTEXT a_ec, l_ec;
+  ENTROPY_CONTEXT a_ec, l_ec, *a2, *a3, *l2, *l3;
   ENTROPY_CONTEXT *const a1 = a +
       sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
   ENTROPY_CONTEXT *const l1 = l +
@@ -408,8 +408,8 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
     case TX_4X4: {
       const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                               get_tx_type_4x4(xd, ib) : DCT_DCT;
-      a_ec = *a;
-      l_ec = *l;
+      MERGE_ENTROPYCTX4(a_ec, *a);
+      MERGE_ENTROPYCTX4(l_ec, *l);
       seg_eob = 16;
       if (tx_type == ADST_DCT) {
         scan = vp9_row_scan_4x4;
@@ -421,8 +421,8 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
       break;
     }
     case TX_8X8:
-      a_ec = (a[0] + a[1]) != 0;
-      l_ec = (l[0] + l[1]) != 0;
+      MERGE_ENTROPYCTX8(a_ec, a[0], a[1]);
+      MERGE_ENTROPYCTX8(l_ec, l[0], l[1]);
       scan = vp9_default_zig_zag1d_8x8;
       seg_eob = 64;
       break;
@@ -430,31 +430,30 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
       scan = vp9_default_zig_zag1d_16x16;
       seg_eob = 256;
       if (type == PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a1[0], a1[1]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l1[0], l1[1]);
       } else {
-        a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a[2], a[3]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l[2], l[3]);
       }
       break;
     case TX_32X32:
       scan = vp9_default_zig_zag1d_32x32;
       seg_eob = 1024;
       if (type == PLANE_TYPE_UV) {
-        ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
         a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
         a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
         l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
         l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
-                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
-                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a1[0], a1[1],
+                           a2[0], a2[1], a3[0], a3[1]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l1[0], l1[1],
+                           l2[0], l2[1], l3[0], l3[1]);
       } else {
-        a_ec = (a[0] + a[1] + a[2] + a[3] +
-                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3] +
-                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a[2], a[3],
+                           a1[0], a1[1], a1[2], a1[3]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l[2], l[3],
+                           l1[0], l1[1], l1[2], l1[3]);
       }
       break;
     default:
@@ -482,13 +481,27 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
   }
 
   // is eob first coefficient;
+#if CONFIG_DCTOKPRED
+  {
+    int v = abs(qcoeff_ptr[scan[0]]), t = vp9_dct_value_tokens_ptr[v].Token;
+    vp9_extra_bit_struct *p = vp9_extra_bits + t;
+    pt = (t << 8);
+    if (p->Len)
+      pt += ((v - p->base_val) << 8) >> p->Len;
+  }
+#else
   pt = (c > 0);
+#endif
   *a = *l = pt;
   if (tx_size >= TX_8X8) {
     a[1] = l[1] = pt;
     if (tx_size >= TX_16X16) {
       if (type == PLANE_TYPE_UV) {
         a1[0] = a1[1] = l1[0] = l1[1] = pt;
+        if (tx_size >= TX_32X32) {
+          a2[0] = a2[1] = a3[0] = a3[1] = pt;
+          l2[0] = l2[1] = l3[0] = l3[1] = pt;
+        }
       } else {
         a[2] = a[3] = l[2] = l[3] = pt;
         if (tx_size >= TX_32X32) {

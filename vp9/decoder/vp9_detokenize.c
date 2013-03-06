@@ -94,6 +94,9 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   FRAME_CONTEXT *const fc = &dx->common.fc;
   int recent_energy = 0;
   int pt, c = 0;
+#if CONFIG_DCTOKPRED
+  int dc_pt = 0;
+#endif
   vp9_coeff_probs *coef_probs;
   vp9_prob *prob;
   vp9_coeff_count *coef_counts;
@@ -126,8 +129,8 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
           scan = vp9_col_scan_4x4;
           break;
       }
-      above_ec = A0[aidx] != 0;
-      left_ec = L0[lidx] != 0;
+      MERGE_ENTROPYCTX4(above_ec, A0[aidx]);
+      MERGE_ENTROPYCTX4(left_ec, L0[lidx]);
       coef_probs  = fc->coef_probs_4x4;
       coef_counts = fc->coef_counts_4x4;
       break;
@@ -136,8 +139,8 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       scan = vp9_default_zig_zag1d_8x8;
       coef_probs  = fc->coef_probs_8x8;
       coef_counts = fc->coef_counts_8x8;
-      above_ec = (A0[aidx] + A0[aidx + 1]) != 0;
-      left_ec  = (L0[lidx] + L0[lidx + 1]) != 0;
+      MERGE_ENTROPYCTX8(above_ec, A0[aidx], A0[aidx + 1]);
+      MERGE_ENTROPYCTX8(left_ec, L0[lidx], L0[lidx + 1]);
       break;
     case TX_16X16:
       scan = vp9_default_zig_zag1d_16x16;
@@ -146,11 +149,15 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
-        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) != 0;
-        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) != 0;
+        MERGE_ENTROPYCTX16(above_ec, A0[aidx], A0[aidx + 1],
+                           A1[aidx], A1[aidx + 1]);
+        MERGE_ENTROPYCTX16(left_ec, L0[lidx], L0[lidx + 1],
+                           L1[lidx], L1[lidx + 1]);
       } else {
-        above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3]) != 0;
-        left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) != 0;
+        MERGE_ENTROPYCTX16(above_ec, A0[aidx], A0[aidx + 1],
+                           A0[aidx + 2], A0[aidx + 3]);
+        MERGE_ENTROPYCTX16(left_ec, L0[lidx], L0[lidx + 1],
+                           L0[lidx + 2], L0[lidx + 3]);
       }
       break;
     case TX_32X32:
@@ -164,17 +171,21 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
         ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
         ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
         ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
-        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
-                    A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) != 0;
-        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
-                    L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) != 0;
+        MERGE_ENTROPYCTX32(above_ec, A0[aidx], A0[aidx + 1],
+                           A1[aidx], A1[aidx + 1], A2[aidx], A2[aidx + 1],
+                           A3[aidx], A3[aidx + 1]);
+        MERGE_ENTROPYCTX32(left_ec, L0[lidx], L0[lidx + 1],
+                           L1[lidx], L1[lidx + 1], L2[lidx], L2[lidx + 1],
+                           L3[lidx], L3[lidx + 1]);
       } else {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
-        above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3] +
-                    A1[aidx] + A1[aidx + 1] + A1[aidx + 2] + A1[aidx + 3]) != 0;
-        left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3] +
-                    L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) != 0;
+        MERGE_ENTROPYCTX32(above_ec, A0[aidx], A0[aidx + 1],
+                           A0[aidx + 2], A0[aidx + 3], A1[aidx], A1[aidx + 1],
+                           A1[aidx + 2], A1[aidx + 3]);
+        MERGE_ENTROPYCTX32(left_ec, L0[lidx], L0[lidx + 1],
+                           L0[lidx + 2], L0[lidx + 3], L1[lidx], L1[lidx + 1],
+                           L1[lidx + 2], L1[lidx + 3]);
       }
       break;
   }
@@ -200,16 +211,28 @@ SKIP_START:
     }
     // ONE_CONTEXT_NODE_0_
     if (!vp9_read(br, prob[ONE_CONTEXT_NODE])) {
+#if CONFIG_DCTOKPRED
+      if (c == 0) dc_pt = 0x100;
+#endif
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
     // LOW_VAL_CONTEXT_NODE_0_
     if (!vp9_read(br, prob[LOW_VAL_CONTEXT_NODE])) {
       if (!vp9_read(br, prob[TWO_CONTEXT_NODE])) {
+#if CONFIG_DCTOKPRED
+        if (c == 0) dc_pt = 0x200;
+#endif
         WRITE_COEF_CONTINUE(2, TWO_TOKEN);
       }
       if (!vp9_read(br, prob[THREE_CONTEXT_NODE])) {
+#if CONFIG_DCTOKPRED
+        if (c == 0) dc_pt = 0x300;
+#endif
         WRITE_COEF_CONTINUE(3, THREE_TOKEN);
       }
+#if CONFIG_DCTOKPRED
+      if (c == 0) dc_pt = 0x400;
+#endif
       WRITE_COEF_CONTINUE(4, FOUR_TOKEN);
     }
     // HIGH_LOW_CONTEXT_NODE_0_
@@ -217,11 +240,17 @@ SKIP_START:
       if (!vp9_read(br, prob[CAT_ONE_CONTEXT_NODE])) {
         val = CAT1_MIN_VAL;
         ADJUST_COEF(CAT1_PROB0, 0);
+#if CONFIG_DCTOKPRED
+        if (c == 0) dc_pt = 0x500 + 0x80 * (val - CAT1_MIN_VAL);
+#endif
         WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY1);
       }
       val = CAT2_MIN_VAL;
       ADJUST_COEF(CAT2_PROB1, 1);
       ADJUST_COEF(CAT2_PROB0, 0);
+#if CONFIG_DCTOKPRED
+      if (c == 0) dc_pt = 0x600 + 0x40 * (val - CAT2_MIN_VAL);
+#endif
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
     }
     // CAT_THREEFOUR_CONTEXT_NODE_0_
@@ -231,6 +260,9 @@ SKIP_START:
         ADJUST_COEF(CAT3_PROB2, 2);
         ADJUST_COEF(CAT3_PROB1, 1);
         ADJUST_COEF(CAT3_PROB0, 0);
+#if CONFIG_DCTOKPRED
+        if (c == 0) dc_pt = 0x700 + 0x20 * (val - CAT3_MIN_VAL);
+#endif
         WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY3);
       }
       val = CAT4_MIN_VAL;
@@ -238,6 +270,9 @@ SKIP_START:
       ADJUST_COEF(CAT4_PROB2, 2);
       ADJUST_COEF(CAT4_PROB1, 1);
       ADJUST_COEF(CAT4_PROB0, 0);
+#if CONFIG_DCTOKPRED
+      if (c == 0) dc_pt = 0x800 + 0x10 * (val - CAT4_MIN_VAL);
+#endif
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
     }
     // CAT_FIVE_CONTEXT_NODE_0_:
@@ -248,12 +283,18 @@ SKIP_START:
       ADJUST_COEF(CAT5_PROB2, 2);
       ADJUST_COEF(CAT5_PROB1, 1);
       ADJUST_COEF(CAT5_PROB0, 0);
+#if CONFIG_DCTOKPRED
+      if (c == 0) dc_pt = 0x900 + 0x8 * (val - CAT5_MIN_VAL);
+#endif
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY5);
     }
     val = 0;
     while (*cat6) {
       val = (val << 1) | vp9_read(br, *cat6++);
     }
+#if CONFIG_DCTOKPRED
+    if (c == 0) dc_pt = 0xA00 + (val >> 6);
+#endif
     val += CAT6_MIN_VAL;
     WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
   }
@@ -261,7 +302,11 @@ SKIP_START:
   if (c < seg_eob)
     coef_counts[type][ref][get_coef_band(txfm_size, c)][pt][DCT_EOB_TOKEN]++;
 
+#if CONFIG_DCTOKPRED
+  A0[aidx] = L0[lidx] = dc_pt;
+#else
   A0[aidx] = L0[lidx] = c > 0;
+#endif
   if (txfm_size >= TX_8X8) {
     A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
     if (txfm_size >= TX_16X16) {

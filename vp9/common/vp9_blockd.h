@@ -56,15 +56,48 @@ typedef enum {
   PLANE_TYPE_UV,
 } PLANE_TYPE;
 
+#if CONFIG_DCTOKPRED
+typedef uint16_t ENTROPY_CONTEXT;
+#else
 typedef char ENTROPY_CONTEXT;
+#endif
 typedef struct {
   ENTROPY_CONTEXT y1[4];
   ENTROPY_CONTEXT u[2];
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
 
-#define VP9_COMBINEENTROPYCONTEXTS(Dest, A, B) \
-  Dest = ((A)!=0) + ((B)!=0);
+#if CONFIG_DCTOKPRED
+#define MERGE_ENTROPYCTX32(dest, a, b, c, d, e, f, g, h) \
+  dest = ((a) + (b) + (c) + (d) + (e) + (f) + (g) + (h) + 3) >> 3
+#define MERGE_ENTROPYCTX16(dest, a, b, c, d) \
+  dest = ((a) + (b) + (c) + (d) + 1) >> 2
+#define MERGE_ENTROPYCTX8(dest, a, b) \
+  dest = ((a) + (b)) >> 1
+#define MERGE_ENTROPYCTX4(dest, a) \
+  dest = (a)
+
+#define VP9_COMBINEENTROPYCONTEXTS(dest, a, b) \
+  do { \
+    /* FIXME(rbultje): we should probably have a simpler way of relaying */ \
+    /* value -> token, but this works for an experiment */ \
+    int recent_energy = 0, tok = ((a) + (b)) >> 9; \
+    assert(tok >= ZERO_TOKEN && tok <= DCT_VAL_CATEGORY6); \
+    dest = vp9_get_coef_context(&recent_energy, tok); \
+  } while (0)
+#else  // CONFIG_DCTOKPRED
+#define MERGE_ENTROPYCTX32(dest, a, b, c, d, e, f, g, h) \
+  dest = ((a) + (b) + (c) + (d) + (e) + (f) + (g) + (h)) != 0
+#define MERGE_ENTROPYCTX16(dest, a, b, c, d) \
+  dest = ((a) + (b) + (c) + (d)) != 0
+#define MERGE_ENTROPYCTX8(dest, a, b) \
+  dest = ((a) + (b)) != 0
+#define MERGE_ENTROPYCTX4(dest, a) \
+  dest = (a) != 0
+
+#define VP9_COMBINEENTROPYCONTEXTS(dest, a, b) \
+  dest = ((a)!=0) + ((b)!=0)
+#endif  // CONFIG_DCTOKPRED
 
 typedef enum {
   KEY_FRAME = 0,
