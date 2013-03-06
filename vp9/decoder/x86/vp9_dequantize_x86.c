@@ -111,17 +111,17 @@ void vp9_add_residual_8x8_sse2(const int16_t *diff, const uint8_t *pred,
   p6 = _mm_packus_epi16(p6, p7);
 
   // SSE
-  _mm_storel_pi((__m64 *)(dest + 0 * stride), (__m128)p0);
-  _mm_storeh_pi((__m64 *)(dest + 1 * stride), (__m128)p0);
+  _mm_storel_pi((__m64 *)(dest + 0 * stride), _mm_castsi128_ps(p0));
+  _mm_storeh_pi((__m64 *)(dest + 1 * stride), _mm_castsi128_ps(p0));
 
-  _mm_storel_pi((__m64 *)(dest + 2 * stride), (__m128)p2);
-  _mm_storeh_pi((__m64 *)(dest + 3 * stride), (__m128)p2);
+  _mm_storel_pi((__m64 *)(dest + 2 * stride), _mm_castsi128_ps(p2));
+  _mm_storeh_pi((__m64 *)(dest + 3 * stride), _mm_castsi128_ps(p2));
 
-  _mm_storel_pi((__m64 *)(dest + 4 * stride), (__m128)p4);
-  _mm_storeh_pi((__m64 *)(dest + 5 * stride), (__m128)p4);
+  _mm_storel_pi((__m64 *)(dest + 4 * stride), _mm_castsi128_ps(p4));
+  _mm_storeh_pi((__m64 *)(dest + 5 * stride), _mm_castsi128_ps(p4));
 
-  _mm_storel_pi((__m64 *)(dest + 6 * stride), (__m128)p6);
-  _mm_storeh_pi((__m64 *)(dest + 7 * stride), (__m128)p6);
+  _mm_storel_pi((__m64 *)(dest + 6 * stride), _mm_castsi128_ps(p6));
+  _mm_storeh_pi((__m64 *)(dest + 7 * stride), _mm_castsi128_ps(p6));
 }
 
 void vp9_add_residual_16x16_sse2(const int16_t *diff, const uint8_t *pred,
