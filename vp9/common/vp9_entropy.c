@@ -235,9 +235,18 @@ const vp9_tree_index vp9_nzc32x32_tree[2 * NZC32X32_NODES] = {
 };
 struct vp9_token_struct vp9_nzc32x32_encodings[NZC32X32_TOKENS];
 
-const vp9_prob Pcat_nzc[MAX_NZC_CONTEXTS]
-                       [NZC_TOKENS_EXTRA][NZC_BITS_EXTRA] = { {
-    // Bit probabilities are in least to most significance order
+const int vp9_extranzcbits[NZC32X32_TOKENS] = {
+  0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+};
+
+const int vp9_basenzcvalue[NZC32X32_TOKENS] = {
+  0, 1, 2, 3, 5, 9, 17, 33, 65, 129, 257, 513
+};
+
+static const vp9_prob default_nzc_pcat_probs[MAX_NZC_CONTEXTS]
+                                            [NZC_TOKENS_EXTRA]
+                                            [NZC_BITS_EXTRA] = { {
+  // Bit probabilities are in least to most significance order
     {176,   0,   0,   0,   0,   0,   0,   0,   0},   // 3 - 4
     {164, 192,   0,   0,   0,   0,   0,   0,   0},   // 5 - 8
     {154, 184, 208,   0,   0,   0,   0,   0,   0},   // 9 - 16
@@ -384,6 +393,8 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
       }
     }
   }
+  vpx_memcpy(pc->fc.nzc_pcat_probs, default_nzc_pcat_probs,
+             sizeof(pc->fc.nzc_pcat_probs));
 #endif  // CONFIG_CODE_NONZEROCOUNTyy
 }
 
@@ -1253,7 +1264,7 @@ static void update_nzc(VP9_COMMON *cm,
                        TX_SIZE tx_size,
                        int ref,
                        int type) {
-  int c;
+  int e, c;
   c = codenzc(nzc);
   if (tx_size == TX_32X32)
     cm->fc.nzc_counts_32x32[nzc_context][ref][type][c]++;
@@ -1265,7 +1276,15 @@ static void update_nzc(VP9_COMMON *cm,
     cm->fc.nzc_counts_4x4[nzc_context][ref][type][c]++;
   else
     assert(0);
-  // TODO(debargha): Handle extra bits later if needed
+
+  if ((e = vp9_extranzcbits[c])) {
+    int x = nzc - vp9_basenzcvalue[c];
+    while (e--) {
+      int b = (x >> e) & 1;
+      cm->fc.nzc_pcat_counts[nzc_context][c - NZC_TOKENS_NOEXTRA][e][b]++;
+    }
+  }
+
 }
 
 static void update_nzcs_sb64(VP9_COMMON *cm,
@@ -1608,6 +1627,27 @@ static void adapt_nzc_probs(VP9_COMMON *cm,
       }
 }
 
+static void adapt_nzc_pcat(VP9_COMMON *cm, int count_sat, int update_factor) {
+  int c, t;
+  int count, factor;
+  for (c = 0; c < MAX_NZC_CONTEXTS; ++c) {
+    for (t = 0; t < NZC_TOKENS_EXTRA; ++t) {
+      int bits = vp9_extranzcbits[t + NZC_TOKENS_NOEXTRA];
+      int b;
+      for (b = 0; b < bits; ++b) {
+        vp9_prob prob = get_binary_prob(cm->fc.nzc_pcat_counts[c][t][b][0],
+                                        cm->fc.nzc_pcat_counts[c][t][b][1]);
+        count = cm->fc.nzc_pcat_counts[c][t][b][0] +
+                cm->fc.nzc_pcat_counts[c][t][b][1];
+        count = count > count_sat ? count_sat : count;
+        factor = (update_factor * count / count_sat);
+        cm->fc.nzc_pcat_probs[c][t][b] = weighted_prob(
+            cm->fc.pre_nzc_pcat_probs[c][t][b], prob, factor);
+      }
+    }
+  }
+}
+
 // #define NZC_COUNT_TESTING
 void vp9_adapt_nzc_probs(VP9_COMMON *cm) {
   int count_sat;
@@ -1643,5 +1683,6 @@ void vp9_adapt_nzc_probs(VP9_COMMON *cm) {
   adapt_nzc_probs(cm, 8, count_sat, update_factor);
   adapt_nzc_probs(cm, 16, count_sat, update_factor);
   adapt_nzc_probs(cm, 32, count_sat, update_factor);
+  adapt_nzc_pcat(cm, count_sat, update_factor);
 }
 #endif  // CONFIG_CODE_NONZEROCOUNT
