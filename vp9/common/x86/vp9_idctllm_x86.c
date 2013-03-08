@@ -198,4 +198,40 @@ void vp9_short_idct4x4llm_sse2(int16_t *input, int16_t *output, int pitch) {
   input3 = _mm_srli_si128(input3, 8);
   _mm_storel_epi64((__m128i *)(output + 2 * half_pitch), input3);
 }
+
+void vp9_idct4_1d_sse2(int16_t *input, int16_t *output) {
+  const __m128i zero = _mm_setzero_si128();
+  const __m128i cst1 = _mm_setr_epi16((short)cospi_16_64, (short)cospi_16_64,
+                                     (short)cospi_16_64, (short)-cospi_16_64,
+                                     (short)cospi_24_64, (short)-cospi_8_64,
+                                     (short)cospi_8_64, (short)cospi_24_64);
+  const __m128i cst2 = _mm_setr_epi16(1, 1, 1, 1, 1, -1, 1, -1);
+
+  const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
+  __m128i in, temp;
+
+  // Load input data.
+  in = _mm_loadl_epi64((__m128i *)input);
+
+  // Construct i3, i1, i3, i1, i2, i0, i2, i0
+  in = _mm_shufflelo_epi16(in, 0xd8);
+  in = _mm_unpacklo_epi32(in, in);
+
+  // Stage 1
+  in = _mm_madd_epi16(in, cst1);
+  in = _mm_add_epi32(in, rounding);
+  in = _mm_srai_epi32(in, DCT_CONST_BITS);
+  in = _mm_packs_epi32(in, zero);
+
+  // Stage 2
+  temp = _mm_shufflelo_epi16(in, 0x9c);
+  in = _mm_shufflelo_epi16(in, 0xc9);
+  in = _mm_unpacklo_epi64(temp, in);
+  in = _mm_madd_epi16(in, cst2);
+  in = _mm_packs_epi32(in, zero);
+
+  // Store results
+  _mm_storel_epi64((__m128i *)output, in);
+}
+
 #endif
