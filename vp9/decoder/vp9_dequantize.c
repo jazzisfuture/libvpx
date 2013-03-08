@@ -89,7 +89,7 @@ void vp9_ht_dequant_idct_add_c(TX_TYPE tx_type, int16_t *input,
   for (i = 0; i < 16; i++)
     input[i] *= dq[i];
 
-  vp9_short_iht4x4(input, output, 4, tx_type);
+  vp9_short_iht4x4(input, output, 4, (int)tx_type);
   vpx_memset(input, 0, 32);
   vp9_add_residual_4x4(output, pred, pitch, dest, stride);
 }
@@ -110,7 +110,7 @@ void vp9_ht_dequant_idct_add_8x8_c(TX_TYPE tx_type, int16_t *input,
     for (i = 1; i < 64; i++)
       input[i] *= dq[1];
 
-    vp9_short_iht8x8(input, output, 8, tx_type);
+    vp9_short_iht8x8(input, output, 8, (int)tx_type);
     vpx_memset(input, 0, 128);
     vp9_add_residual_8x8(output, pred, pitch, dest, stride);
   }
@@ -270,7 +270,7 @@ void vp9_ht_dequant_idct_add_16x16_c(TX_TYPE tx_type, int16_t *input,
       input[i] *= dq[1];
 
     // inverse hybrid transform
-    vp9_short_iht16x16(input, output, 16, tx_type);
+    vp9_short_iht16x16(input, output, 16, (int)tx_type);
 
     // the idct halves ( >> 1) the pitch
     // vp9_short_idct16x16_c(input, output, 32);
