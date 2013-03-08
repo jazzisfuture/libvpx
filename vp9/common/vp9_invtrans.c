@@ -26,7 +26,8 @@ void vp9_inverse_transform_mby_4x4(MACROBLOCKD *xd) {
   for (i = 0; i < 16; i++) {
     TX_TYPE tx_type = get_tx_type_4x4(xd, i);
     if (tx_type != DCT_DCT) {
-      vp9_short_iht4x4(xd->block[i].dqcoeff, xd->block[i].diff, 16, tx_type);
+      vp9_short_iht4x4(xd->block[i].dqcoeff, xd->block[i].diff, 16,
+                       (int)tx_type);
     } else {
       vp9_inverse_transform_b_4x4(xd, xd->eobs[i], xd->block[i].dqcoeff,
                                   xd->block[i].diff, 32);
@@ -60,7 +61,8 @@ void vp9_inverse_transform_mby_8x8(MACROBLOCKD *xd) {
   for (i = 0; i < 9; i += 8) {
     TX_TYPE tx_type = get_tx_type_8x8(xd, i);
     if (tx_type != DCT_DCT) {
-      vp9_short_iht8x8(xd->block[i].dqcoeff, xd->block[i].diff, 16, tx_type);
+      vp9_short_iht8x8(xd->block[i].dqcoeff, xd->block[i].diff, 16,
+                       (int)tx_type);
     } else {
       vp9_inverse_transform_b_8x8(&blockd[i].dqcoeff[0],
                                   &blockd[i].diff[0], 32);
@@ -69,8 +71,8 @@ void vp9_inverse_transform_mby_8x8(MACROBLOCKD *xd) {
   for (i = 2; i < 11; i += 8) {
     TX_TYPE tx_type = get_tx_type_8x8(xd, i);
     if (tx_type != DCT_DCT) {
-      vp9_short_iht8x8(xd->block[i + 2].dqcoeff, xd->block[i].diff,
-                           16, tx_type);
+      vp9_short_iht8x8(xd->block[i + 2].dqcoeff, xd->block[i].diff, 16,
+                       (int)tx_type);
     } else {
       vp9_inverse_transform_b_8x8(&blockd[i + 2].dqcoeff[0],
                                   &blockd[i].diff[0], 32);
@@ -102,7 +104,7 @@ void vp9_inverse_transform_mby_16x16(MACROBLOCKD *xd) {
   BLOCKD *bd = &xd->block[0];
   TX_TYPE tx_type = get_tx_type_16x16(xd, 0);
   if (tx_type != DCT_DCT) {
-    vp9_short_iht16x16(bd->dqcoeff, bd->diff, 16, tx_type);
+    vp9_short_iht16x16(bd->dqcoeff, bd->diff, 16, (int)tx_type);
   } else {
     vp9_inverse_transform_b_16x16(&xd->block[0].dqcoeff[0],
                                   &xd->block[0].diff[0], 32);
@@ -131,7 +133,8 @@ void vp9_inverse_transform_sby_16x16(MACROBLOCKD *xd) {
                                     64);
     } else {
       vp9_short_iht16x16(xd->dqcoeff + n * 256,
-                         xd->diff + x_idx * 16 + y_idx * 32 * 16, 32, tx_type);
+                         xd->diff + x_idx * 16 + y_idx * 32 * 16,
+                         32, (int)tx_type);
     }
   }
 }
@@ -148,7 +151,7 @@ void vp9_inverse_transform_sby_8x8(MACROBLOCKD *xd) {
                                   xd->diff + x_idx * 8 + y_idx * 32 * 8, 64);
     } else {
       vp9_short_iht8x8(xd->dqcoeff + n * 64,
-                       xd->diff + x_idx * 8 + y_idx * 32 * 8, 32, tx_type);
+                       xd->diff + x_idx * 8 + y_idx * 32 * 8, 32, (int)tx_type);
     }
   }
 }
@@ -165,7 +168,7 @@ void vp9_inverse_transform_sby_4x4(MACROBLOCKD *xd) {
                                   xd->diff + x_idx * 4 + y_idx * 4 * 32, 64);
     } else {
       vp9_short_iht4x4(xd->dqcoeff + n * 16,
-                       xd->diff + x_idx * 4 + y_idx * 4 * 32, 32, tx_type);
+                       xd->diff + x_idx * 4 + y_idx * 4 * 32, 32, (int)tx_type);
     }
   }
 }
@@ -233,7 +236,8 @@ void vp9_inverse_transform_sb64y_16x16(MACROBLOCKD *xd) {
                                     128);
     } else {
       vp9_short_iht16x16(xd->dqcoeff + n * 256,
-                         xd->diff + x_idx * 16 + y_idx * 64 * 16, 64, tx_type);
+                         xd->diff + x_idx * 16 + y_idx * 64 * 16, 64,
+                         (int)tx_type);
     }
   }
 }
@@ -250,7 +254,7 @@ void vp9_inverse_transform_sb64y_8x8(MACROBLOCKD *xd) {
                                   xd->diff + x_idx * 8 + y_idx * 64 * 8, 128);
     } else {
       vp9_short_iht8x8(xd->dqcoeff + n * 64,
-                       xd->diff + x_idx * 8 + y_idx * 64 * 8, 64, tx_type);
+                       xd->diff + x_idx * 8 + y_idx * 64 * 8, 64, (int)tx_type);
     }
   }
 }
@@ -267,7 +271,7 @@ void vp9_inverse_transform_sb64y_4x4(MACROBLOCKD *xd) {
                                   xd->diff + x_idx * 4 + y_idx * 4 * 64, 128);
     } else {
       vp9_short_iht4x4(xd->dqcoeff + n * 16,
-                       xd->diff + x_idx * 4 + y_idx * 4 * 64, 64, tx_type);
+                       xd->diff + x_idx * 4 + y_idx * 4 * 64, 64, (int)tx_type);
     }
   }
 }
