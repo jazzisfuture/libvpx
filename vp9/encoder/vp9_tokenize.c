@@ -149,8 +149,8 @@ static void tokenize_b(VP9_COMP *cpi,
     case TX_4X4: {
       const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                               get_tx_type_4x4(xd, ib) : DCT_DCT;
-      a_ec = *a;
-      l_ec = *l;
+      MERGE_ENTROPYCTX4(a_ec, *a);
+      MERGE_ENTROPYCTX4(l_ec, *l);
       seg_eob = 16;
       scan = vp9_default_zig_zag1d_4x4;
       if (tx_type != DCT_DCT) {
@@ -165,8 +165,8 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     }
     case TX_8X8:
-      a_ec = (a[0] + a[1]) != 0;
-      l_ec = (l[0] + l[1]) != 0;
+      MERGE_ENTROPYCTX8(a_ec, a[0], a[1]);
+      MERGE_ENTROPYCTX8(l_ec, l[0], l[1]);
       seg_eob = 64;
       scan = vp9_default_zig_zag1d_8x8;
       counts = cpi->coef_counts_8x8;
@@ -174,11 +174,11 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     case TX_16X16:
       if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a[2], a[3]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l[2], l[3]);
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a1[0], a1[1]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l1[0], l1[1]);
       }
       seg_eob = 256;
       scan = vp9_default_zig_zag1d_16x16;
@@ -187,15 +187,15 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     case TX_32X32:
       if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3] +
-                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3] +
-                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a[2], a[3],
+                           a1[0], a1[1], a1[2], a1[3]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l[2], l[3],
+                           l1[0], l1[1], l1[2], l1[3]);
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
-                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
-                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a1[0], a1[1],
+                           a2[0], a2[1], a3[0], a3[1]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l1[0], l1[1],
+                           l2[0], l2[1], l3[0], l3[1]);
       }
       seg_eob = 1024;
       scan = vp9_default_zig_zag1d_32x32;
@@ -204,7 +204,7 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
   }
 
-  VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
+  VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec, tx_size);
 
   if (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))
     seg_eob = 0;
@@ -255,7 +255,11 @@ static void tokenize_b(VP9_COMP *cpi,
 #endif
 
   *tp = t;
+#if CONFIG_DCTOKPRED
+  a_ec = l_ec = abs(qcoeff_ptr[scan[0]]) << (3 - tx_size);
+#else
   a_ec = l_ec = (c > 0); /* 0 <-> all coeff data is zero */
+#endif
   a[0] = a_ec;
   l[0] = l_ec;
 
@@ -962,16 +966,16 @@ static void stuff_b(VP9_COMP *cpi,
   switch (tx_size) {
     default:
     case TX_4X4:
-      a_ec = a[0];
-      l_ec = l[0];
+      MERGE_ENTROPYCTX4(a_ec, *a);
+      MERGE_ENTROPYCTX4(l_ec, *l);
 #if CONFIG_CODE_NONZEROCOUNT == 0
       counts = cpi->coef_counts_4x4;
       probs = cpi->common.fc.coef_probs_4x4;
 #endif
       break;
     case TX_8X8:
-      a_ec = (a[0] + a[1]) != 0;
-      l_ec = (l[0] + l[1]) != 0;
+      MERGE_ENTROPYCTX8(a_ec, a[0], a[1]);
+      MERGE_ENTROPYCTX8(l_ec, l[0], l[1]);
 #if CONFIG_CODE_NONZEROCOUNT == 0
       counts = cpi->coef_counts_8x8;
       probs = cpi->common.fc.coef_probs_8x8;
@@ -979,11 +983,11 @@ static void stuff_b(VP9_COMP *cpi,
       break;
     case TX_16X16:
       if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a[2], a[3]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l[2], l[3]);
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+        MERGE_ENTROPYCTX16(a_ec, a[0], a[1], a1[0], a1[1]);
+        MERGE_ENTROPYCTX16(l_ec, l[0], l[1], l1[0], l1[1]);
       }
 #if CONFIG_CODE_NONZEROCOUNT == 0
       counts = cpi->coef_counts_16x16;
@@ -992,15 +996,15 @@ static void stuff_b(VP9_COMP *cpi,
       break;
     case TX_32X32:
       if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3] +
-                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3] +
-                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a[2], a[3],
+                           a1[0], a1[1], a1[2], a1[3]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l[2], l[3],
+                           l1[0], l1[1], l1[2], l1[3]);
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
-                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
-                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+        MERGE_ENTROPYCTX32(a_ec, a[0], a[1], a1[0], a1[1],
+                           a2[0], a2[1], a3[0], a3[1]);
+        MERGE_ENTROPYCTX32(l_ec, l[0], l[1], l1[0], l1[1],
+                           l2[0], l2[1], l3[0], l3[1]);
       }
 #if CONFIG_CODE_NONZEROCOUNT == 0
       counts = cpi->coef_counts_32x32;
@@ -1010,7 +1014,7 @@ static void stuff_b(VP9_COMP *cpi,
   }
 
 #if CONFIG_CODE_NONZEROCOUNT == 0
-  VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
+  VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec, tx_size);
   band = get_coef_band(tx_size, 0);
   t->Token = DCT_EOB_TOKEN;
   t->context_tree = probs[type][ref][band][pt];
