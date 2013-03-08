@@ -30,6 +30,7 @@ const int num_tests = 10;
 
 using libvpx_test::ACMRandom;
 
+
 TEST(VP8, TestBitIO) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   for (int n = 0; n < num_tests; ++n) {
@@ -71,7 +72,8 @@ TEST(VP8, TestBitIO) {
         vp8_stop_encode(&bw);
 
         BOOL_DECODER br;
-        vp8dx_start_decode(&br, bw_buffer, buffer_size);
+        unsigned char key[32] = { 0 };
+        vp8dx_start_decode(&br, bw_buffer, buffer_size, bw_buffer, key);
         bit_rnd.Reset(random_seed);
         for (int i = 0; i < bits_to_test; ++i) {
           if (bit_method == 2) {
@@ -88,3 +90,4 @@ TEST(VP8, TestBitIO) {
     }
   }
 }
+

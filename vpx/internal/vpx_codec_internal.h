@@ -110,7 +110,8 @@ typedef vpx_codec_err_t (*vpx_codec_destroy_fn_t)(vpx_codec_alg_priv_t *ctx);
  */
 typedef vpx_codec_err_t (*vpx_codec_peek_si_fn_t)(const uint8_t         *data,
                                                   unsigned int           data_sz,
-                                                  vpx_codec_stream_info_t *si);
+                                                  vpx_codec_stream_info_t *si,
+                                                  const unsigned char *decrypt_key);
 
 /*!\brief Return information about the current stream.
  *

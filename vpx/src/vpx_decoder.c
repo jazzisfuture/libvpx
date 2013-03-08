@@ -73,6 +73,7 @@ vpx_codec_err_t vpx_codec_peek_stream_info(vpx_codec_iface_t       *iface,
                                            const uint8_t         *data,
                                            unsigned int           data_sz,
                                            vpx_codec_stream_info_t *si) {
+  static const unsigned char decrypt_key[32] = { 0 };
   vpx_codec_err_t res;
 
   if (!iface || !data || !data_sz || !si
@@ -83,7 +84,7 @@ vpx_codec_err_t vpx_codec_peek_stream_info(vpx_codec_iface_t       *iface,
     si->w = 0;
     si->h = 0;
 
-    res = iface->dec.peek_si(data, data_sz, si);
+    res = iface->dec.peek_si(data, data_sz, si, decrypt_key);
   }
 
   return res;

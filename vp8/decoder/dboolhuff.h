@@ -14,6 +14,7 @@
 
 #include <stddef.h>
 #include <limits.h>
+//#include <stdio.h>
 
 #include "vpx_config.h"
 #include "vpx_ports/mem.h"
@@ -28,6 +29,23 @@ typedef size_t VP8_BD_VALUE;
   Even relatively modest values like 100 would work fine.*/
 #define VP8_LOTS_OF_BITS (0x40000000)
 
+#if CONFIG_DECRYPT
+static unsigned char decrypt_byte(unsigned char ch,
+                                  const unsigned char *key,
+                                  int offset)
+{
+    //printf("key = %p, offset = %d\n", key, offset);
+    return ch ^ key[offset % 32];
+}
+#else
+static unsigned char decrypt_byte(unsigned char ch,
+                                  const unsigned char *key,
+                                  int offset)
+{
+    return ch;
+}
+#endif
+
 typedef struct
 {
     const unsigned char *user_buffer_end;
@@ -35,13 +53,17 @@ typedef struct
     VP8_BD_VALUE         value;
     int                  count;
     unsigned int         range;
+    const unsigned char *origin;
+    const unsigned char *key;
 } BOOL_DECODER;
 
 DECLARE_ALIGNED(16, extern const unsigned char, vp8_norm[256]);
 
 int vp8dx_start_decode(BOOL_DECODER *br,
                        const unsigned char *source,
-                       unsigned int source_sz);
+                       unsigned int source_sz,
+                       const unsigned char *origin,
+                       const unsigned char *key);
 
 void vp8dx_bool_decoder_fill(BOOL_DECODER *br);
 

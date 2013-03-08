@@ -207,7 +207,8 @@ static vpx_codec_err_t vp8_destroy(vpx_codec_alg_priv_t *ctx) {
 
 static vpx_codec_err_t vp8_peek_si(const uint8_t         *data,
                                    unsigned int           data_sz,
-                                   vpx_codec_stream_info_t *si) {
+                                   vpx_codec_stream_info_t *si,
+                                   const unsigned char *decrypt_key) {
   vpx_codec_err_t res = VPX_CODEC_OK;
 
   if (data + data_sz <= data)
@@ -308,6 +309,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
                                   unsigned int           data_sz,
                                   void                  *user_priv,
                                   long                   deadline) {
+  static const unsigned char fake_decrypt_key[32] = { 0 };
   vpx_codec_err_t res = VPX_CODEC_OK;
 
   ctx->img_avail = 0;
@@ -317,7 +319,8 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
    * of the heap.
    */
   if (!ctx->si.h)
-    res = ctx->base.iface->dec.peek_si(*data, data_sz, &ctx->si);
+    res = ctx->base.iface->dec.peek_si(*data, data_sz, &ctx->si,
+        fake_decrypt_key);
 
 
   /* Perform deferred allocations, if required */

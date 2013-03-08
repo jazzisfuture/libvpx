@@ -44,6 +44,7 @@ enum vp8_com_control_id {
   VP8_SET_DBG_COLOR_MB_MODES  = 5,    /**< set which macro block modes to color */
   VP8_SET_DBG_COLOR_B_MODES   = 6,    /**< set which blocks modes to color */
   VP8_SET_DBG_DISPLAY_MV      = 7,    /**< set which motion vector modes to draw */
+  VP8_SET_DECRYPT_KEY         = 8,
   VP8_COMMON_CTRL_ID_MAX,
   VP8_DECODER_CTRL_ID_START   = 256
 };
@@ -110,6 +111,7 @@ VPX_CTRL_USE_TYPE(VP8_SET_DBG_COLOR_REF_FRAME, int)
 VPX_CTRL_USE_TYPE(VP8_SET_DBG_COLOR_MB_MODES,  int)
 VPX_CTRL_USE_TYPE(VP8_SET_DBG_COLOR_B_MODES,   int)
 VPX_CTRL_USE_TYPE(VP8_SET_DBG_DISPLAY_MV,      int)
+VPX_CTRL_USE_TYPE(VP8_SET_DECRYPT_KEY,         const unsigned char *)
 
 
 /*! @} - end defgroup vp8 */
