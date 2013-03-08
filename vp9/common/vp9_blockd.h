@@ -56,15 +56,69 @@ typedef enum {
   PLANE_TYPE_UV,
 } PLANE_TYPE;
 
+#if CONFIG_DCTOKPRED
+typedef uint16_t ENTROPY_CONTEXT;
+#else
 typedef char ENTROPY_CONTEXT;
+#endif
 typedef struct {
   ENTROPY_CONTEXT y1[4];
   ENTROPY_CONTEXT u[2];
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
 
-#define VP9_COMBINEENTROPYCONTEXTS(Dest, A, B) \
-  Dest = ((A)!=0) + ((B)!=0);
+#if CONFIG_DCTOKPRED
+#define MERGE_ENTROPYCTX32(dest, a, b, c, d, e, f, g, h) \
+  dest = ((a) + (b) + (c) + (d) + (e) + (f) + (g) + (h)) >> 3
+#define MERGE_ENTROPYCTX16(dest, a, b, c, d) \
+  dest = ((a) + (b) + (c) + (d)) >> 2
+#define MERGE_ENTROPYCTX8(dest, a, b) \
+  dest = ((a) + (b)) >> 1
+#define MERGE_ENTROPYCTX4(dest, a) \
+  dest = (a)
+
+#define RNG_SEL(dest, val, a, b, c, d, e) \
+       if ((val) < (a)) { dest = 0; } \
+  else if ((val) < (b)) { dest = 1; } \
+  else if ((val) < (c)) { dest = 2; } \
+  else if ((val) < (d)) { dest = 3; } \
+  else if ((val) < (e)) { dest = 4; } \
+  else                  { dest = 5; }
+
+#define VP9_COMBINEENTROPYCONTEXTS(dest, a, b, tx_size) \
+  do { \
+    /* FIXME(rbultje): we should probably have a simpler way of relaying */ \
+    /* value -> token, but this works for an experiment */ \
+    int val = a + b; \
+    switch (tx_size) { \
+      case TX_4X4: \
+        RNG_SEL(dest, val, 4, 12, 20, 36, 78); \
+        break; \
+      case TX_8X8: \
+        RNG_SEL(dest, val, 6, 18, 30, 54, 137); \
+        break; \
+      case TX_16X16: \
+        RNG_SEL(dest, val, 8, 24, 40, 72, 156); \
+        break; \
+      case TX_32X32: \
+        RNG_SEL(dest, val, 12, 36, 60, 108, 274); \
+        break; \
+      default: abort(); \
+    } \
+  } while (0)
+#else  // CONFIG_DCTOKPRED
+#define MERGE_ENTROPYCTX32(dest, a, b, c, d, e, f, g, h) \
+  dest = ((a) + (b) + (c) + (d) + (e) + (f) + (g) + (h)) != 0
+#define MERGE_ENTROPYCTX16(dest, a, b, c, d) \
+  dest = ((a) + (b) + (c) + (d)) != 0
+#define MERGE_ENTROPYCTX8(dest, a, b) \
+  dest = ((a) + (b)) != 0
+#define MERGE_ENTROPYCTX4(dest, a) \
+  dest = (a) != 0
+
+#define VP9_COMBINEENTROPYCONTEXTS(dest, a, b, tx_size) \
+  dest = ((a) != 0) + ((b) != 0)
+#endif  // CONFIG_DCTOKPRED
 
 typedef enum {
   KEY_FRAME = 0,
