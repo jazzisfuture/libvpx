@@ -4995,8 +4995,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
                 /* Update frame rates for each layer */
                 for (i=0; i<cpi->oxcf.number_of_layers; i++)
                 {
-                    LAYER_CONTEXT *lc = &cpi->layer_context[i];
-                    lc->frame_rate = cpi->ref_frame_rate /
+                    cpi->layer_context[i].frame_rate = cpi->ref_frame_rate /
                                   cpi->oxcf.rate_decimator[i];
                 }
             }
