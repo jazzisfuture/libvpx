@@ -223,6 +223,7 @@ static void tokenize_b(VP9_COMP *cpi,
 
       t->Extra = vp9_dct_value_tokens_ptr[v].Extra;
       token    = vp9_dct_value_tokens_ptr[v].Token;
+      t->skip_extra_bits = (token == DCT_VAL_CATEGORY6) ? 3 - tx_size : 0;
     } else {
 #if CONFIG_CODE_NONZEROCOUNT
       break;

@@ -205,7 +205,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   VP9_COMBINEENTROPYCONTEXTS(pt, above_ec, left_ec, txfm_size);
   while (1) {
     int val;
-    const uint8_t *cat6 = cat6_prob;
+    const uint8_t *cat6 = cat6_prob + 3 - txfm_size;
 
     if (c >= seg_eob)
       break;
