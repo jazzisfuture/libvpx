@@ -436,8 +436,9 @@ static void pack_mb_tokens(vp9_writer* const bc,
       if (L) {
         const unsigned char *pp = b->prob;
         int v = e >> 1;
-        int n = L;              /* number of bits in v, assumed nonzero */
-        int i = 0;
+        /* n = number of bits in v, assumed nonzero */
+        int n = L - p->skip_extra_bits;
+        int i = p->skip_extra_bits * 2;
 
         do {
           const int bb = (v >> --n) & 1;
