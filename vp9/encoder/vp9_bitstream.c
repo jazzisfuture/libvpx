@@ -418,13 +418,18 @@ static void pack_mb_tokens(vp9_writer* const bc,
     }
 
     /* skip one or two nodes */
-    if (p->skip_eob_node) {
-      n -= p->skip_eob_node;
-      i = 2 * p->skip_eob_node;
+    if (p->skip_eob_node == 2) {
+      n -= 1;
+      i = 2;
     }
 
     do {
       const int bb = (v >> --n) & 1;
+      if (i == 4 && p->skip_eob_node) {
+        i += 2;
+        assert(bb == 1);
+        continue;
+      }
       encode_bool(bc, bb, pp[i >> 1]);
       i = vp9_coef_tree[i + bb];
     } while (n);

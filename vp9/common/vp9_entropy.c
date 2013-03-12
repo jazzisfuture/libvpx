@@ -159,9 +159,9 @@ DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_32x32[1024]) = {
 
 const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
 {
-  -DCT_EOB_TOKEN, 2,                             /* 0 = EOB */
-  -ZERO_TOKEN, 4,                               /* 1 = ZERO */
-  -ONE_TOKEN, 6,                               /* 2 = ONE */
+  -ZERO_TOKEN, 2,                               /* 1 = ZERO */
+  -ONE_TOKEN, 4,                               /* 2 = ONE */
+  -DCT_EOB_TOKEN, 6,                             /* 0 = EOB */
   8, 12,                                      /* 3 = LOW_VAL */
   -TWO_TOKEN, 10,                            /* 4 = TWO */
   -THREE_TOKEN, -FOUR_TOKEN,                /* 5 = THREE */
