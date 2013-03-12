@@ -156,21 +156,9 @@ static void fill_token_costs(vp9_coeff_count *c,
     for (j = 0; j < REF_TYPES; j++)
       for (k = 0; k < COEF_BANDS; k++)
         for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
-#if CONFIG_CODE_NONZEROCOUNT
-          // All costs are without the EOB node
-          vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
-                               p[i][j][k][l],
-                               vp9_coef_tree);
-#else
-          if (l == 0 && k > 0)
-            vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
-                                 p[i][j][k][l],
-                                 vp9_coef_tree);
-          else
-            vp9_cost_tokens((int *)(c[i][j][k][l]),
-                            p[i][j][k][l],
-                            vp9_coef_tree);
-#endif
+          vp9_cost_tokens((int *)(c[i][j][k][l]),
+                          p[i][j][k][l],
+                          vp9_coef_tree);
         }
 }
 

@@ -16,9 +16,9 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/common/vp9_seg_common.h"
 
-#define EOB_CONTEXT_NODE            0
-#define ZERO_CONTEXT_NODE           1
-#define ONE_CONTEXT_NODE            2
+#define ZERO_CONTEXT_NODE           0
+#define ONE_CONTEXT_NODE            1
+#define EOB_CONTEXT_NODE            2
 #define LOW_VAL_CONTEXT_NODE        3
 #define TWO_CONTEXT_NODE            4
 #define THREE_CONTEXT_NODE          5
@@ -114,6 +114,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   uint16_t nzc_expected = xd->mode_info_context->mbmi.nzcs[block_idx];
 #endif
   const int *scan;
+  int skip_eob_node = 0;
 
   if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
     aidx = vp9_block2above_sb64[txfm_size][block_idx];
@@ -214,16 +215,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       break;
 #endif
     prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
-#if CONFIG_CODE_NONZEROCOUNT == 0
-    if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
-      break;
-#endif
-SKIP_START:
-    if (c >= seg_eob)
-      break;
 #if CONFIG_CODE_NONZEROCOUNT
-    if (nzc == nzc_expected)
-      break;
     // decode zero node only if there are zeros left
     if (seg_eob - nzc_expected - c + nzc > 0)
 #endif
@@ -231,12 +223,19 @@ SKIP_START:
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
       prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
-      goto SKIP_START;
+      skip_eob_node = 1;
+      continue;
     }
     // ONE_CONTEXT_NODE_0_
     if (!vp9_read(br, prob[ONE_CONTEXT_NODE])) {
+      skip_eob_node = 0;
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
+#if CONFIG_CODE_NONZEROCOUNT == 0
+    if (!skip_eob_node && !vp9_read(br, prob[EOB_CONTEXT_NODE]))
+      break;
+#endif
+    skip_eob_node = 0;
     // LOW_VAL_CONTEXT_NODE_0_
     if (!vp9_read(br, prob[LOW_VAL_CONTEXT_NODE])) {
       if (!vp9_read(br, prob[TWO_CONTEXT_NODE])) {
