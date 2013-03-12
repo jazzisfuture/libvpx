@@ -276,6 +276,26 @@ specialize vp9_convolve8_avg_horiz ssse3
 prototype void vp9_convolve8_avg_vert "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
 specialize vp9_convolve8_avg_vert ssse3
 
+#if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
+prototype void vp9_convolve8_qtr "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_qtr
+
+prototype void vp9_convolve8_3qtr "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_3qtr
+
+prototype void vp9_convolve8_qtr_horiz "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_qtr_horiz
+
+prototype void vp9_convolve8_3qtr_horiz "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_3qtr_horiz
+
+prototype void vp9_convolve8_qtr_vert "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_qtr_vert
+
+prototype void vp9_convolve8_3qtr_vert "const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h"
+specialize vp9_convolve8_3qtr_vert
+#endif
+
 #
 # dct
 #
