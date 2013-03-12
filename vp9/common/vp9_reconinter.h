@@ -38,6 +38,19 @@ void vp9_build_inter16x16_predictors_mb(MACROBLOCKD *xd,
                                         int mb_row,
                                         int mb_col);
 
+void vp9_build_inter32x32_predictors_sby(MACROBLOCKD *x,
+                                         uint8_t *dst_y,
+                                         int dst_ystride,
+                                         int mb_row,
+                                         int mb_col);
+
+void vp9_build_inter32x32_predictors_sbuv(MACROBLOCKD *x,
+                                          uint8_t *dst_u,
+                                          uint8_t *dst_v,
+                                          int dst_uvstride,
+                                          int mb_row,
+                                          int mb_col);
+
 void vp9_build_inter32x32_predictors_sb(MACROBLOCKD *x,
                                         uint8_t *dst_y,
                                         uint8_t *dst_u,
@@ -46,6 +59,19 @@ void vp9_build_inter32x32_predictors_sb(MACROBLOCKD *x,
                                         int dst_uvstride,
                                         int mb_row,
                                         int mb_col);
+
+void vp9_build_inter64x64_predictors_sby(MACROBLOCKD *x,
+                                         uint8_t *dst_y,
+                                         int dst_ystride,
+                                         int mb_row,
+                                         int mb_col);
+
+void vp9_build_inter64x64_predictors_sbuv(MACROBLOCKD *x,
+                                          uint8_t *dst_u,
+                                          uint8_t *dst_v,
+                                          int dst_uvstride,
+                                          int mb_row,
+                                          int mb_col);
 
 void vp9_build_inter64x64_predictors_sb(MACROBLOCKD *x,
                                         uint8_t *dst_y,
