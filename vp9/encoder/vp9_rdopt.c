@@ -2432,12 +2432,10 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
                                 4, 4, 0 /* no avg */, &xd->subpix);
 
       if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
-        vp9_build_inter_predictor(*(bd->base_second_pre) + bd->pre,
-                                  bd->pre_stride,
-                                  bd->predictor, 16,
-                                  &bd->bmi.as_mv[1],
-                                  &xd->scale_factor[1],
-                                  4, 4, 1 /* avg */, &xd->subpix);
+        vp9_build_inter_predictor(
+            *(bd->base_second_pre) + bd->pre, bd->pre_stride, bd->predictor, 16,
+            &bd->bmi.as_mv[1], &xd->scale_factor[1], 4, 4,
+            1 << CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT /* avg */, &xd->subpix);
       }
 
       vp9_subtract_b(be, bd, 16);
@@ -2493,12 +2491,10 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
       for (which_mv = 0; which_mv < 1 + use_second_ref; ++which_mv) {
         uint8_t **base_pre = which_mv ? bd->base_second_pre : bd->base_pre;
 
-        vp9_build_inter_predictor(*base_pre + bd->pre,
-                                  bd->pre_stride,
-                                  bd->predictor, 16,
-                                  &bd->bmi.as_mv[which_mv],
-                                  &xd->scale_factor[which_mv],
-                                  8, 8, which_mv, &xd->subpix);
+        vp9_build_inter_predictor(
+            *base_pre + bd->pre, bd->pre_stride, bd->predictor, 16,
+            &bd->bmi.as_mv[which_mv], &xd->scale_factor[which_mv], 8, 8,
+            which_mv << CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT, &xd->subpix);
       }
 
       vp9_subtract_4b_c(be, bd, 16);
@@ -3875,7 +3871,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         // vp9_build_interintra_16x16_predictors_mb().
         vp9_build_inter16x16_predictors_mby(xd, xd->predictor, 16,
                                             mb_row, mb_col);
-
 #if CONFIG_COMP_INTERINTRA_PRED
         if (is_comp_interintra_pred) {
           vp9_build_interintra_16x16_predictors_mby(xd, xd->predictor, 16);
