@@ -41,6 +41,7 @@ vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
   return p;
 }
 
+#if CONFIG_USESELECTREFMV
 #define SP(x) (((x) & 7) << 1)
 unsigned int vp9_sad3x16_c(const uint8_t *src_ptr,
                            int  src_stride,
@@ -122,6 +123,7 @@ unsigned int vp9_sub_pixel_variance2x16_c(const uint8_t *src_ptr,
  * above and a number cols of pixels in the left to select the one with best
  * score to use as ref motion vector
  */
+
 void vp9_find_best_ref_mvs(MACROBLOCKD *xd,
                            uint8_t *ref_y_buffer,
                            int ref_y_stride,
@@ -298,3 +300,14 @@ void vp9_find_best_ref_mvs(MACROBLOCKD *xd,
   // Copy back the re-ordered mv list
   vpx_memcpy(mvlist, sorted_mvs, sizeof(sorted_mvs));
 }
+#else
+void vp9_find_best_ref_mvs(MACROBLOCKD *xd,
+    uint8_t *ref_y_buffer,
+    int ref_y_stride,
+    int_mv *mvlist,
+    int_mv *nearest,
+    int_mv *near) {
+  *nearest = mvlist[0];
+  *near = mvlist[1];
+}
+#endif
