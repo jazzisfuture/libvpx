@@ -760,7 +760,7 @@ static int pick_mb_modes(VP9_COMP *cpi,
     // as a predictor for MBs that follow in the SB
     if (cm->frame_type == KEY_FRAME) {
       int r, d;
-#ifdef ENC_DEBUG
+#if 0 // ENC_DEBUG
       if (enc_debug)
         printf("intra pick_mb_modes %d %d\n", mb_row, mb_col);
 #endif
@@ -779,7 +779,7 @@ static int pick_mb_modes(VP9_COMP *cpi,
     } else {
       int seg_id, r, d;
 
-#ifdef ENC_DEBUG
+#if 0 // ENC_DEBUG
       if (enc_debug)
         printf("inter pick_mb_modes %d %d\n", mb_row, mb_col);
 #endif
@@ -2064,8 +2064,8 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
   assert(!xd->mode_info_context->mbmi.sb_type);
 
 #ifdef ENC_DEBUG
-  enc_debug = (cpi->common.current_video_frame == 1 &&
-               mb_row == 0 && mb_col == 0 && output_enabled);
+  enc_debug = (cpi->common.current_video_frame == 6 &&
+               mb_row == 10 && mb_col == 13 && output_enabled);
   if (enc_debug)
     printf("Encode MB %d %d output %d\n", mb_row, mb_col, output_enabled);
 #endif
@@ -2321,8 +2321,8 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
   const int mis = cm->mode_info_stride;
 
 #ifdef ENC_DEBUG
-  enc_debug = (cpi->common.current_video_frame == 1 &&
-               mb_row == 0 && mb_col == 0 && output_enabled);
+  enc_debug = (cpi->common.current_video_frame == 6 &&
+               mb_row == 10 && mb_col == 12 && output_enabled);
   if (enc_debug)
     printf("Encode SB32 %d %d output %d\n", mb_row, mb_col, output_enabled);
 #endif
@@ -2540,8 +2540,8 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
   const int mis = cm->mode_info_stride;
 
 #ifdef ENC_DEBUG
-  enc_debug = (cpi->common.current_video_frame == 1 &&
-               mb_row == 0 && mb_col == 0 && output_enabled);
+  enc_debug = (cpi->common.current_video_frame == 6 &&
+               mb_row == 8 && mb_col == 12 && output_enabled);
   if (enc_debug)
     printf("Encode SB64 %d %d output %d\n", mb_row, mb_col, output_enabled);
 #endif

@@ -202,7 +202,7 @@ static void skip_recon_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
 static void decode_16x16(VP9D_COMP *pbi, MACROBLOCKD *xd,
                          BOOL_DECODER* const bc) {
   TX_TYPE tx_type = get_tx_type_16x16(xd, 0);
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
   if (dec_debug) {
     int i;
     printf("\n");
@@ -240,7 +240,7 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
   // First do Y
   // if the first one is DCT_DCT assume all the rest are as well
   TX_TYPE tx_type = get_tx_type_8x8(xd, 0);
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
   if (dec_debug) {
     int i;
     printf("\n");
@@ -310,7 +310,7 @@ static void decode_8x8(VP9D_COMP *pbi, MACROBLOCKD *xd,
          xd->predictor + 16 * 16, xd->dst.u_buffer, xd->dst.v_buffer,
          xd->dst.uv_stride, xd);
   }
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
   if (dec_debug) {
     int i;
     printf("\n");
@@ -328,6 +328,17 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
   TX_TYPE tx_type;
   int i, eobtotal = 0;
   MB_PREDICTION_MODE mode = xd->mode_info_context->mbmi.mode;
+#ifdef DEC_DEBUG
+  if (dec_debug) {
+    int i;
+    printf("\n");
+    printf("predictor\n");
+    for (i = 0; i < 384; i++) {
+      printf("%3d ", xd->predictor[i]);
+      if (i % 16 == 15) printf("\n");
+    }
+  }
+#endif
   if (mode == I8X8_PRED) {
     for (i = 0; i < 4; i++) {
       int ib = vp9_i8x8_block[i];
@@ -411,7 +422,7 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
                            xd->dst.uv_stride,
                            xd);
   } else {
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
     if (dec_debug) {
       int i;
       printf("\n");
@@ -811,7 +822,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
     skip_recon_mb(pbi, xd, mb_row, mb_col);
     return;
   }
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
   if (dec_debug)
     printf("Decoding mb:  %d %d\n", xd->mode_info_context->mbmi.mode, tx_size);
 #endif
@@ -829,7 +840,7 @@ static void decode_macroblock(VP9D_COMP *pbi, MACROBLOCKD *xd,
       }
     }
   } else {
-#ifdef DEC_DEBUG
+#if 0 // def DEC_DEBUG
   if (dec_debug)
     printf("Decoding mb:  %d %d interp %d\n",
            xd->mode_info_context->mbmi.mode, tx_size,
@@ -976,12 +987,12 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
 
   for (mb_col = pc->cur_tile_mb_col_start;
        mb_col < pc->cur_tile_mb_col_end; mb_col += 4) {
-    if (vp9_read(bc, pc->sb64_coded)) {
 #ifdef DEC_DEBUG
-      dec_debug = (pc->current_video_frame == 1 && mb_row == 0 && mb_col == 0);
-      if (dec_debug)
-        printf("Debug\n");
+    dec_debug = (pc->current_video_frame == 6 && mb_row == 8 && mb_col == 12);
+    if (dec_debug)
+      printf("Debug\n");
 #endif
+    if (vp9_read(bc, pc->sb64_coded)) {
       set_offsets(pbi, 64, mb_row, mb_col);
       vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, bc);
       set_refs(pbi, 64, mb_row, mb_col);
@@ -1003,8 +1014,10 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
 
         if (vp9_read(bc, pc->sb32_coded)) {
 #ifdef DEC_DEBUG
-          dec_debug = (pc->current_video_frame == 1 &&
-                       mb_row + y_idx_sb == 0 && mb_col + x_idx_sb == 0);
+          dec_debug = (pc->current_video_frame == 6 &&
+                       mb_row + y_idx_sb == 10 && mb_col + x_idx_sb == 12);
+          if (dec_debug)
+            printf("Debug\n");
 #endif
           set_offsets(pbi, 32, mb_row + y_idx_sb, mb_col + x_idx_sb);
           vp9_decode_mb_mode_mv(pbi,
@@ -1027,8 +1040,10 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
               continue;
             }
 #ifdef DEC_DEBUG
-            dec_debug = (pc->current_video_frame == 1 &&
-                         mb_row + y_idx == 0 && mb_col + x_idx == 0);
+            dec_debug = (pc->current_video_frame == 6 &&
+                         mb_row + y_idx == 10 && mb_col + x_idx == 13);
+            if (dec_debug)
+              printf("Debug\n");
 #endif
 
             set_offsets(pbi, 16, mb_row + y_idx, mb_col + x_idx);
