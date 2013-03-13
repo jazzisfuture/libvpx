@@ -1197,6 +1197,12 @@ static void read_nzc_probs(VP9_COMMON *cm,
 static void read_coef_probs_common(BOOL_DECODER* const bc,
                                    vp9_coeff_probs *coef_probs,
                                    int block_types) {
+#if CONFIG_MODELCOEFPROB && defined(MODEL_BASED_UPDATE)
+  const int entropy_nodes_update = 2;
+#else
+  const int entropy_nodes_update = ENTROPY_NODES;
+#endif
+
   int i, j, k, l, m;
 
   if (vp9_read_bit(bc)) {
@@ -1206,11 +1212,15 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
           for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
             if (l >= 3 && k == 0)
               continue;
-            for (m = CONFIG_CODE_NONZEROCOUNT; m < ENTROPY_NODES; m++) {
+            for (m = CONFIG_CODE_NONZEROCOUNT; m < entropy_nodes_update; m++) {
               vp9_prob *const p = coef_probs[i][j][k][l] + m;
 
               if (vp9_read(bc, COEF_UPDATE_PROB)) {
                 *p = read_prob_diff_update(bc, *p);
+#if CONFIG_MODELCOEFPROB && defined(MODEL_BASED_UPDATE)
+                if (m == 1)
+                  vp9_get_model_distribution(*p, coef_probs[i][j][k][l]);
+#endif
               }
             }
           }

@@ -2014,6 +2014,14 @@ static void update_coef_probs_common(vp9_writer* const bc,
   int i, j, k, l, t;
   int update[2] = {0, 0};
   int savings;
+#if CONFIG_MODELCOEFPROB && defined(MODEL_BASED_UPDATE)
+  // Only update two nodes EOB and ZERO
+  const int entropy_nodes_update = 2;
+  // TODO(debargha): The search strategy below needs to be modified when model
+  // constrained updates are used.
+#else
+  const int entropy_nodes_update = ENTROPY_NODES;
+#endif
   // vp9_prob bestupd = find_coef_update_prob(cpi);
 
   /* dry run to see if there is any udpate at all needed */
@@ -2023,7 +2031,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
       for (k = 0; k < COEF_BANDS; ++k) {
         int prev_coef_savings[ENTROPY_NODES] = {0};
         for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
-          for (t = CONFIG_CODE_NONZEROCOUNT; t < ENTROPY_NODES; ++t) {
+          for (t = CONFIG_CODE_NONZEROCOUNT; t < entropy_nodes_update; ++t) {
             vp9_prob newp = new_frame_coef_probs[i][j][k][l][t];
             const vp9_prob oldp = old_frame_coef_probs[i][j][k][l][t];
             const vp9_prob upd = COEF_UPDATE_PROB;
@@ -2069,7 +2077,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
           int prev_coef_savings[ENTROPY_NODES] = {0};
           for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
             // calc probs and branch cts for this frame only
-            for (t = CONFIG_CODE_NONZEROCOUNT; t < ENTROPY_NODES; ++t) {
+            for (t = CONFIG_CODE_NONZEROCOUNT; t < entropy_nodes_update; ++t) {
               vp9_prob newp = new_frame_coef_probs[i][j][k][l][t];
               vp9_prob *oldp = old_frame_coef_probs[i][j][k][l] + t;
               const vp9_prob upd = COEF_UPDATE_PROB;
@@ -2099,6 +2107,10 @@ static void update_coef_probs_common(vp9_writer* const bc,
                 /* send/use new probability */
                 write_prob_diff_update(bc, newp, *oldp);
                 *oldp = newp;
+#if CONFIG_MODELCOEFPROB && defined(MODEL_BASED_UPDATE)
+                if (t == 1)
+                  vp9_get_model_distribution(newp, old_frame_coef_probs[i][j][k][l]);
+#endif
               }
             }
           }
