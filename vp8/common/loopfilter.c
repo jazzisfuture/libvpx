@@ -130,7 +130,7 @@ void vp8_loop_filter_frame_init(VP8_COMMON *cm,
     for(seg = 0; seg < MAX_MB_SEGMENTS; seg++)
     {
         int lvl_seg = default_filt_lvl;
-        int lvl_ref, lvl_mode;
+        int lvl_ref_intra_frame, lvl_mode;
 
         /* Note the baseline filter values for each segment */
         if (mbd->segmentation_enabled)
@@ -156,33 +156,34 @@ void vp8_loop_filter_frame_init(VP8_COMMON *cm,
             continue;
         }
 
-        lvl_ref = lvl_seg;
+        lvl_ref_intra_frame = lvl_seg;
 
         /* INTRA_FRAME */
         ref = INTRA_FRAME;
 
         /* Apply delta for reference frame */
-        lvl_ref += mbd->ref_lf_deltas[ref];
+        lvl_ref_intra_frame += mbd->ref_lf_deltas[ref];
 
         /* Apply delta for Intra modes */
         mode = 0; /* B_PRED */
         /* Only the split mode BPRED has a further special case */
-        lvl_mode = lvl_ref +  mbd->mode_lf_deltas[mode];
+        lvl_mode = lvl_ref_intra_frame + mbd->mode_lf_deltas[mode];
         lvl_mode = (lvl_mode > 0) ? (lvl_mode > 63 ? 63 : lvl_mode) : 0; /* clamp */
 
         lfi->lvl[seg][ref][mode] = lvl_mode;
 
         mode = 1; /* all the rest of Intra modes */
-        lvl_mode = (lvl_ref > 0) ? (lvl_ref > 63 ? 63 : lvl_ref)  : 0; /* clamp */
+        /* clamp */
+        lvl_mode = (lvl_ref_intra_frame > 0)
+                 ? (lvl_ref_intra_frame > 63 ? 63 : lvl_ref_intra_frame)
+                 : 0;
         lfi->lvl[seg][ref][mode] = lvl_mode;
 
         /* LAST, GOLDEN, ALT */
         for(ref = 1; ref < MAX_REF_FRAMES; ref++)
         {
-            int lvl_ref = lvl_seg;
-
             /* Apply delta for reference frame */
-            lvl_ref += mbd->ref_lf_deltas[ref];
+            const int lvl_ref = lvl_seg + mbd->ref_lf_deltas[ref];
 
             /* Apply delta for Inter modes */
             for (mode = 1; mode < 4; mode++)
