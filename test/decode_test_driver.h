@@ -44,11 +44,14 @@ class Decoder {
   Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
       : cfg_(cfg), deadline_(deadline) {
     memset(&decoder_, 0, sizeof(decoder_));
+    Init();
   }
 
   ~Decoder() {
     vpx_codec_destroy(&decoder_);
   }
+
+  vpx_codec_err_t DecodeFrameRaw(const uint8_t *cxdata, int size);
 
   void DecodeFrame(const uint8_t *cxdata, int size);
 
@@ -65,7 +68,19 @@ class Decoder {
     ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
   }
 
+  void Control(int ctrl_id, const void *data) {
+    const vpx_codec_err_t res = vpx_codec_control_(&decoder_, ctrl_id, data);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+
  protected:
+  void Init() {
+    const vpx_codec_err_t res = vpx_codec_dec_init(&decoder_,
+                                                   &vpx_codec_vp8_dx_algo,
+                                                   &cfg_, 0);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+
   const char *DecodeError() {
     const char *detail = vpx_codec_error_detail(&decoder_);
     return detail ? detail : vpx_codec_error(&decoder_);
@@ -85,7 +100,6 @@ class DecoderTest {
   // Hook to be called on every decompressed frame.
   virtual void DecompressedFrameHook(const vpx_image_t& img,
                                      const unsigned int frame_number) {}
-
  protected:
   DecoderTest() {}
 

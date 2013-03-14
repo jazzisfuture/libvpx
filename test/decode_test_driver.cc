@@ -14,17 +14,14 @@
 
 namespace libvpx_test {
 #if CONFIG_VP8_DECODER
-void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
-  if (!decoder_.priv) {
-    const vpx_codec_err_t res_init = vpx_codec_dec_init(&decoder_,
-                                                        &vpx_codec_vp8_dx_algo,
-                                                        &cfg_, 0);
-    ASSERT_EQ(VPX_CODEC_OK, res_init) << DecodeError();
-  }
 
+vpx_codec_err_t Decoder::DecodeFrameRaw(const uint8_t *cxdata, int size) {
+  return vpx_codec_decode(&decoder_, cxdata, size, NULL, 0);
+}
+
+void Decoder::DecodeFrame(const uint8_t *cxdata, int size) {
   vpx_codec_err_t res_dec;
-  REGISTER_STATE_CHECK(res_dec = vpx_codec_decode(&decoder_,
-                                                  cxdata, size, NULL, 0));
+  REGISTER_STATE_CHECK(res_dec = DecodeFrameRaw(cxdata, size));
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << DecodeError();
 }
 
