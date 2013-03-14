@@ -50,6 +50,17 @@ class Decoder {
     vpx_codec_destroy(&decoder_);
   }
 
+  void Init() {
+    if (!decoder_.priv) {
+      const vpx_codec_err_t res_init = vpx_codec_dec_init(&decoder_,
+                                                          &vpx_codec_vp8_dx_algo,
+                                                          &cfg_, 0);
+      ASSERT_EQ(VPX_CODEC_OK, res_init) << DecodeError();
+    }
+  }
+
+  vpx_codec_err_t DecodeFrameRaw(const uint8_t *cxdata, int size);
+
   void DecodeFrame(const uint8_t *cxdata, int size);
 
   DxDataIterator GetDxData() {
@@ -62,6 +73,11 @@ class Decoder {
 
   void Control(int ctrl_id, int arg) {
     const vpx_codec_err_t res = vpx_codec_control_(&decoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+
+  void ControlData(int ctrl_id, const void *data) {
+    const vpx_codec_err_t res = vpx_codec_control_(&decoder_, ctrl_id, data);
     ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
   }
 
@@ -85,7 +101,6 @@ class DecoderTest {
   // Hook to be called on every decompressed frame.
   virtual void DecompressedFrameHook(const vpx_image_t& img,
                                      const unsigned int frame_number) {}
-
  protected:
   DecoderTest() {}
 
