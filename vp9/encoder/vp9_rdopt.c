@@ -156,21 +156,9 @@ static void fill_token_costs(vp9_coeff_count *c,
     for (j = 0; j < REF_TYPES; j++)
       for (k = 0; k < COEF_BANDS; k++)
         for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
-#if CONFIG_CODE_NONZEROCOUNT
-          // All costs are without the EOB node
           vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
                                p[i][j][k][l],
                                vp9_coef_tree);
-#else
-          if (l == 0 && k > 0)
-            vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
-                                 p[i][j][k][l],
-                                 vp9_coef_tree);
-          else
-            vp9_cost_tokens((int *)(c[i][j][k][l]),
-                            p[i][j][k][l],
-                            vp9_coef_tree);
-#endif
         }
 }
 
@@ -448,12 +436,13 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   int pt;
   const int eob = xd->eobs[ib];
   int c = 0;
-  int cost = 0;
-  const int *scan;
+  int cost = 0, pad;
+  const int *scan, *nb;
   const int16_t *qcoeff_ptr = xd->qcoeff + ib * 16;
   const int ref = mbmi->ref_frame != INTRA_FRAME;
   unsigned int (*token_costs)[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
       mb->token_costs[tx_size][type][ref];
+  vp9_prob (*coef_probs)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
   ENTROPY_CONTEXT a_ec, l_ec;
   ENTROPY_CONTEXT *const a1 = a +
       sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
@@ -464,9 +453,10 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   int nzc_context = vp9_get_nzc_context(cm, xd, ib);
   unsigned int *nzc_cost;
 #else
-  int seg_eob;
+  int seg_eob, default_eob;
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
 #endif
+  uint8_t token_cache[1024];
 
   // Check for consistency of tx_size with mode info
   if (type == PLANE_TYPE_Y_WITH_DC) {
@@ -494,6 +484,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       } else {
         scan = vp9_default_zig_zag1d_4x4;
       }
+      coef_probs = cm->fc.coef_probs_4x4;
       break;
     }
     case TX_8X8:
@@ -505,6 +496,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 #else
       seg_eob = 64;
 #endif
+      coef_probs = cm->fc.coef_probs_8x8;
       break;
     case TX_16X16:
       scan = vp9_default_zig_zag1d_16x16;
@@ -520,6 +512,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
       }
+      coef_probs = cm->fc.coef_probs_16x16;
       break;
     case TX_32X32:
       scan = vp9_default_zig_zag1d_32x32;
@@ -544,6 +537,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         l_ec = (l[0] + l[1] + l[2] + l[3] +
                 l1[0] + l1[1] + l1[2] + l1[3]) != 0;
       }
+      coef_probs = cm->fc.coef_probs_32x32;
       break;
     default:
       abort();
@@ -551,6 +545,8 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   }
 
   VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
+  nb = vp9_get_coef_neighbors_handle(scan, &pad);
+  default_eob = seg_eob;
 
 #if CONFIG_CODE_NONZEROCOUNT == 0
   if (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))
@@ -558,7 +554,6 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 #endif
 
   {
-    int recent_energy = 0;
 #if CONFIG_CODE_NONZEROCOUNT
     int nzc = 0;
 #endif
@@ -568,9 +563,12 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 #if CONFIG_CODE_NONZEROCOUNT
       nzc += (v != 0);
 #endif
+      token_cache[c] = t;
       cost += token_costs[get_coef_band(tx_size, c)][pt][t];
       cost += vp9_dct_value_cost_ptr[v];
-      pt = vp9_get_coef_context(&recent_energy, t);
+      if (!c || token_cache[c - 1])
+        cost += vp9_cost_bit(coef_probs[type][ref][get_coef_band(tx_size, c)][pt][0], 1);
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
     }
 #if CONFIG_CODE_NONZEROCOUNT
     cost += nzc_cost[nzc];
