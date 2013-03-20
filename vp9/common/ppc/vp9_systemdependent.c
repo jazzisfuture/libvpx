@@ -41,7 +41,7 @@ extern void vp9_post_proc_down_and_across_c
   int cols,
   int flimit
 );
-void vp9_plane_add_noise_c(unsigned char *Start, unsigned int Width, unsigned int Height, int Pitch, int q, int a);
+void vp9_plane_add_noise_c(unsigned char *start, unsigned int width, unsigned int height, int pitch, int q, int a);
 
 extern copy_mem_block_function *vp9_copy_mem16x16;
 extern copy_mem_block_function *vp9_copy_mem8x8;
