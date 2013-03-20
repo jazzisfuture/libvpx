@@ -528,9 +528,9 @@ static const int plane_rd_mult[4] = {
 
 // This function is a place holder for now but may ultimately need
 // to scan previous tokens to work out the correct context.
-static int trellis_get_coeff_context(int token) {
-  int recent_energy = 0;
-  return vp9_get_coef_context(&recent_energy, token);
+static int trellis_get_coeff_context(int token, int seg_eob) {
+  uint8_t cache[1] = { token };
+  return vp9_get_coef_context(NULL, NULL, 2, cache, 0, 1);
 }
 
 static void optimize_b(VP9_COMMON *const cm,
@@ -651,7 +651,7 @@ static void optimize_b(VP9_COMMON *const cm,
       /* Consider both possible successor states. */
       if (next < default_eob) {
         band = get_coef_band(tx_size, i + 1);
-        pt = trellis_get_coeff_context(t0);
+        pt = trellis_get_coeff_context(t0, default_eob);
         rate0 +=
           mb->token_costs[tx_size][type][ref][band][pt][tokens[next][0].token];
         rate1 +=
@@ -710,12 +710,12 @@ static void optimize_b(VP9_COMMON *const cm,
       if (next < default_eob) {
         band = get_coef_band(tx_size, i + 1);
         if (t0 != DCT_EOB_TOKEN) {
-          pt = trellis_get_coeff_context(t0);
+          pt = trellis_get_coeff_context(t0, default_eob);
           rate0 += mb->token_costs[tx_size][type][ref][band][pt][
               tokens[next][0].token];
         }
         if (t1 != DCT_EOB_TOKEN) {
-          pt = trellis_get_coeff_context(t1);
+          pt = trellis_get_coeff_context(t1, default_eob);
           rate1 += mb->token_costs[tx_size][type][ref][band][pt][
               tokens[next][1].token];
         }
