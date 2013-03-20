@@ -65,7 +65,7 @@ static int get_signed(BOOL_DECODER *br, int value_to_sign) {
 
 #define INCREMENT_COUNT(token)               \
   do {                                       \
-    coef_counts[type][ref][get_coef_band(txfm_size, c)][pt][token]++;     \
+    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)][pt][token]++;     \
     token_cache[c] = token; \
     pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob); \
   } while (0)
@@ -212,9 +212,9 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
     if (nzc == nzc_expected)
       break;
 #endif
-    prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
+    prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
 #if CONFIG_CODE_NONZEROCOUNT == 0
-    fc->eob_branch_counts[txfm_size][type][ref][get_coef_band(txfm_size, c)][pt]++;
+    fc->eob_branch_counts[txfm_size][type][ref][get_coef_band(scan, txfm_size, c)][pt]++;
     if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
       break;
 #endif
@@ -230,7 +230,7 @@ SKIP_START:
     if (!vp9_read(br, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-      prob = coef_probs[type][ref][get_coef_band(txfm_size, c)][pt];
+      prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
       goto SKIP_START;
     }
     // ONE_CONTEXT_NODE_0_
@@ -295,7 +295,7 @@ SKIP_START:
 
 #if CONFIG_CODE_NONZEROCOUNT == 0
   if (c < seg_eob)
-    coef_counts[type][ref][get_coef_band(txfm_size, c)][pt][DCT_EOB_TOKEN]++;
+    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)][pt][DCT_EOB_TOKEN]++;
 #endif
 
   A0[aidx] = L0[lidx] = c > 0;
