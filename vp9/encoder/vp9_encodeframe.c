@@ -2090,10 +2090,12 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
           else
             cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
         } else if (mbmi->mode == SPLITMV)
-          cpi->zbin_mode_boost = 0;
+          cpi->zbin_mode_boost = SPLIT_MV_ZBIN_BOOST;
         else
           cpi->zbin_mode_boost = MV_ZBIN_BOOST;
       }
+      else
+        cpi->zbin_mode_boost = INTRA_ZBIN_BOOST;
     }
 
     vp9_update_zbin_extra(cpi, x);
@@ -2346,10 +2348,12 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
           else
             cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
         } else if (xd->mode_info_context->mbmi.mode == SPLITMV)
-          cpi->zbin_mode_boost = 0;
+          cpi->zbin_mode_boost = SPLIT_MV_ZBIN_BOOST;
         else
           cpi->zbin_mode_boost = MV_ZBIN_BOOST;
       }
+      else
+        cpi->zbin_mode_boost = INTRA_ZBIN_BOOST;
     }
 
     vp9_update_zbin_extra(cpi, x);
@@ -2565,11 +2569,13 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
           else
             cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
         } else if (xd->mode_info_context->mbmi.mode == SPLITMV) {
-          cpi->zbin_mode_boost = 0;
+          cpi->zbin_mode_boost = SPLIT_MV_ZBIN_BOOST;
         } else {
           cpi->zbin_mode_boost = MV_ZBIN_BOOST;
         }
       }
+      else
+        cpi->zbin_mode_boost = INTRA_ZBIN_BOOST;
     }
 
     vp9_update_zbin_extra(cpi, x);
