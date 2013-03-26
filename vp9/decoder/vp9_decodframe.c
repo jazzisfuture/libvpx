@@ -1118,23 +1118,24 @@ static void init_frame(VP9D_COMP *pbi) {
 #if CONFIG_CODE_NONZEROCOUNT
 static void read_nzc_probs_common(VP9_COMMON *cm,
                                   BOOL_DECODER* const bc,
-                                  int block_size) {
+                                  TX_SIZE tx_size) {
   int c, r, b, t;
   int tokens, nodes;
   vp9_prob *nzc_probs;
   vp9_prob upd;
 
+  if (!get_nzc_used(tx_size)) return;
   if (!vp9_read_bit(bc)) return;
 
-  if (block_size == 32) {
+  if (tx_size == TX_32X32) {
     tokens = NZC32X32_TOKENS;
     nzc_probs = cm->fc.nzc_probs_32x32[0][0][0];
     upd = NZC_UPDATE_PROB_32X32;
-  } else if (block_size == 16) {
+  } else if (tx_size == TX_16X16) {
     tokens = NZC16X16_TOKENS;
     nzc_probs = cm->fc.nzc_probs_16x16[0][0][0];
     upd = NZC_UPDATE_PROB_16X16;
-  } else if (block_size == 8) {
+  } else if (tx_size == TX_8X8) {
     tokens = NZC8X8_TOKENS;
     nzc_probs = cm->fc.nzc_probs_8x8[0][0][0];
     upd = NZC_UPDATE_PROB_8X8;
@@ -1163,6 +1164,9 @@ static void read_nzc_probs_common(VP9_COMMON *cm,
 static void read_nzc_pcat_probs(VP9_COMMON *cm, BOOL_DECODER* const bc) {
   int c, t, b;
   vp9_prob upd = NZC_UPDATE_PROB_PCAT;
+  if (!(get_nzc_used(TX_4X4) || get_nzc_used(TX_8X8) ||
+        get_nzc_used(TX_16X16) || get_nzc_used(TX_32X32)))
+    return;
   if (!vp9_read_bit(bc)) {
     return;
   }
@@ -1181,13 +1185,13 @@ static void read_nzc_pcat_probs(VP9_COMMON *cm, BOOL_DECODER* const bc) {
 
 static void read_nzc_probs(VP9_COMMON *cm,
                            BOOL_DECODER* const bc) {
-  read_nzc_probs_common(cm, bc, 4);
+  read_nzc_probs_common(cm, bc, TX_4X4);
   if (cm->txfm_mode != ONLY_4X4)
-    read_nzc_probs_common(cm, bc, 8);
+    read_nzc_probs_common(cm, bc, TX_8X8);
   if (cm->txfm_mode > ALLOW_8X8)
-    read_nzc_probs_common(cm, bc, 16);
+    read_nzc_probs_common(cm, bc, TX_16X16);
   if (cm->txfm_mode > ALLOW_16X16)
-    read_nzc_probs_common(cm, bc, 32);
+    read_nzc_probs_common(cm, bc, TX_32X32);
 #ifdef NZC_PCAT_UPDATE
   read_nzc_pcat_probs(cm, bc);
 #endif
@@ -1196,7 +1200,7 @@ static void read_nzc_probs(VP9_COMMON *cm,
 
 static void read_coef_probs_common(BOOL_DECODER* const bc,
                                    vp9_coeff_probs *coef_probs,
-                                   int block_types) {
+                                   TX_SIZE tx_size) {
 #if CONFIG_MODELCOEFPROB && MODEL_BASED_UPDATE
   const int entropy_nodes_update = UNCONSTRAINED_UPDATE_NODES;
 #else
@@ -1206,13 +1210,19 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
   int i, j, k, l, m;
 
   if (vp9_read_bit(bc)) {
-    for (i = 0; i < block_types; i++) {
+    for (i = 0; i < BLOCK_TYPES; i++) {
       for (j = 0; j < REF_TYPES; j++) {
         for (k = 0; k < COEF_BANDS; k++) {
           for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
+#if CONFIG_CODE_NONZEROCOUNT
+            const int mstart = get_nzc_used(tx_size);
+#else
+            const int mstart = 0;
+#endif
             if (l >= 3 && k == 0)
               continue;
-            for (m = CONFIG_CODE_NONZEROCOUNT; m < entropy_nodes_update; m++) {
+
+            for (m = mstart; m < entropy_nodes_update; m++) {
               vp9_prob *const p = coef_probs[i][j][k][l] + m;
 
               if (vp9_read(bc, vp9_coef_update_prob[m])) {
@@ -1233,16 +1243,16 @@ static void read_coef_probs_common(BOOL_DECODER* const bc,
 static void read_coef_probs(VP9D_COMP *pbi, BOOL_DECODER* const bc) {
   VP9_COMMON *const pc = &pbi->common;
 
-  read_coef_probs_common(bc, pc->fc.coef_probs_4x4, BLOCK_TYPES);
+  read_coef_probs_common(bc, pc->fc.coef_probs_4x4, TX_4X4);
 
   if (pbi->common.txfm_mode != ONLY_4X4)
-    read_coef_probs_common(bc, pc->fc.coef_probs_8x8, BLOCK_TYPES);
+    read_coef_probs_common(bc, pc->fc.coef_probs_8x8, TX_8X8);
 
   if (pbi->common.txfm_mode > ALLOW_8X8)
-    read_coef_probs_common(bc, pc->fc.coef_probs_16x16, BLOCK_TYPES);
+    read_coef_probs_common(bc, pc->fc.coef_probs_16x16, TX_16X16);
 
   if (pbi->common.txfm_mode > ALLOW_16X16)
-    read_coef_probs_common(bc, pc->fc.coef_probs_32x32, BLOCK_TYPES);
+    read_coef_probs_common(bc, pc->fc.coef_probs_32x32, TX_32X32);
 }
 
 static void update_frame_size(VP9D_COMP *pbi) {
