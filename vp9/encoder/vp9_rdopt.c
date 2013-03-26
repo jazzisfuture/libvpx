@@ -149,52 +149,56 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
 
 static void fill_token_costs(vp9_coeff_count *c,
                              vp9_coeff_probs *p,
-                             int block_type_counts) {
+                             TX_SIZE tx_size) {
   int i, j, k, l;
 
-  for (i = 0; i < block_type_counts; i++)
+  for (i = 0; i < BLOCK_TYPES; i++)
     for (j = 0; j < REF_TYPES; j++)
       for (k = 0; k < COEF_BANDS; k++)
         for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
 #if CONFIG_CODE_NONZEROCOUNT
           // All costs are without the EOB node
-          vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
-                               p[i][j][k][l],
-                               vp9_coef_tree);
-#else
-          if (l == 0 && k > 0)
+          if (get_nzc_used(tx_size)) {
             vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
                                  p[i][j][k][l],
                                  vp9_coef_tree);
-          else
-            vp9_cost_tokens((int *)(c[i][j][k][l]),
-                            p[i][j][k][l],
-                            vp9_coef_tree);
+          } else {
+#endif
+            if (l == 0 && k > 0)
+              vp9_cost_tokens_skip((int *)(c[i][j][k][l]),
+                                   p[i][j][k][l],
+                                   vp9_coef_tree);
+            else
+              vp9_cost_tokens((int *)(c[i][j][k][l]),
+                              p[i][j][k][l],
+                              vp9_coef_tree);
+#if CONFIG_CODE_NONZEROCOUNT
+          }
 #endif
         }
 }
 
 #if CONFIG_CODE_NONZEROCOUNT
-static void fill_nzc_costs(VP9_COMP *cpi, int block_size) {
+static void fill_nzc_costs(VP9_COMP *cpi, TX_SIZE tx_size) {
   int nzc_context, r, b, nzc, values;
   int cost[16];
-  values = block_size * block_size + 1;
+  values = (16 << (2 * tx_size)) + 1;
 
   for (nzc_context = 0; nzc_context < MAX_NZC_CONTEXTS; ++nzc_context) {
     for (r = 0; r < REF_TYPES; ++r) {
       for (b = 0; b < BLOCK_TYPES; ++b) {
         unsigned int *nzc_costs;
-        if (block_size == 4) {
+        if (tx_size == TX_4X4) {
           vp9_cost_tokens(cost,
                           cpi->common.fc.nzc_probs_4x4[nzc_context][r][b],
                           vp9_nzc4x4_tree);
           nzc_costs = cpi->mb.nzc_costs_4x4[nzc_context][r][b];
-        } else if (block_size == 8) {
+        } else if (tx_size == TX_8X8) {
           vp9_cost_tokens(cost,
                           cpi->common.fc.nzc_probs_8x8[nzc_context][r][b],
                           vp9_nzc8x8_tree);
           nzc_costs = cpi->mb.nzc_costs_8x8[nzc_context][r][b];
-        } else if (block_size == 16) {
+        } else if (tx_size == TX_16X16) {
           vp9_cost_tokens(cost,
                           cpi->common.fc.nzc_probs_16x16[nzc_context][r][b],
                           vp9_nzc16x16_tree);
@@ -320,18 +324,18 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   }
 
   fill_token_costs(cpi->mb.token_costs[TX_4X4],
-                   cpi->common.fc.coef_probs_4x4, BLOCK_TYPES);
+                   cpi->common.fc.coef_probs_4x4, TX_4X4);
   fill_token_costs(cpi->mb.token_costs[TX_8X8],
-                   cpi->common.fc.coef_probs_8x8, BLOCK_TYPES);
+                   cpi->common.fc.coef_probs_8x8, TX_8X8);
   fill_token_costs(cpi->mb.token_costs[TX_16X16],
-                   cpi->common.fc.coef_probs_16x16, BLOCK_TYPES);
+                   cpi->common.fc.coef_probs_16x16, TX_16X16);
   fill_token_costs(cpi->mb.token_costs[TX_32X32],
-                   cpi->common.fc.coef_probs_32x32, BLOCK_TYPES);
+                   cpi->common.fc.coef_probs_32x32, TX_32X32);
 #if CONFIG_CODE_NONZEROCOUNT
-  fill_nzc_costs(cpi, 4);
-  fill_nzc_costs(cpi, 8);
-  fill_nzc_costs(cpi, 16);
-  fill_nzc_costs(cpi, 32);
+  fill_nzc_costs(cpi, TX_4X4);
+  fill_nzc_costs(cpi, TX_8X8);
+  fill_nzc_costs(cpi, TX_16X16);
+  fill_nzc_costs(cpi, TX_32X32);
 #endif
 
   /*rough estimate for costing*/
@@ -461,12 +465,12 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
 
 #if CONFIG_CODE_NONZEROCOUNT
+  const int nzc_used = get_nzc_used(tx_size);
   int nzc_context = vp9_get_nzc_context(cm, xd, ib);
   unsigned int *nzc_cost;
-#else
+#endif
   int seg_eob;
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
-#endif
 
   // Check for consistency of tx_size with mode info
   if (type == PLANE_TYPE_Y_WITH_DC) {
@@ -484,9 +488,8 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       l_ec = *l;
 #if CONFIG_CODE_NONZEROCOUNT
       nzc_cost = mb->nzc_costs_4x4[nzc_context][ref][type];
-#else
-      seg_eob = 16;
 #endif
+      seg_eob = 16;
       if (tx_type == ADST_DCT) {
         scan = vp9_row_scan_4x4;
       } else if (tx_type == DCT_ADST) {
@@ -502,17 +505,15 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       scan = vp9_default_zig_zag1d_8x8;
 #if CONFIG_CODE_NONZEROCOUNT
       nzc_cost = mb->nzc_costs_8x8[nzc_context][ref][type];
-#else
-      seg_eob = 64;
 #endif
+      seg_eob = 64;
       break;
     case TX_16X16:
       scan = vp9_default_zig_zag1d_16x16;
 #if CONFIG_CODE_NONZEROCOUNT
       nzc_cost = mb->nzc_costs_16x16[nzc_context][ref][type];
-#else
-      seg_eob = 256;
 #endif
+      seg_eob = 256;
       if (type == PLANE_TYPE_UV) {
         a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
@@ -525,9 +526,8 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       scan = vp9_default_zig_zag1d_32x32;
 #if CONFIG_CODE_NONZEROCOUNT
       nzc_cost = mb->nzc_costs_32x32[nzc_context][ref][type];
-#else
-      seg_eob = 1024;
 #endif
+      seg_eob = 1024;
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
         a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
@@ -552,10 +552,11 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 
   VP9_COMBINEENTROPYCONTEXTS(pt, a_ec, l_ec);
 
-#if CONFIG_CODE_NONZEROCOUNT == 0
-  if (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))
-    seg_eob = 0;
+#if CONFIG_CODE_NONZEROCOUNT
+  if (!nzc_used)
 #endif
+    if (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))
+      seg_eob = 0;
 
   {
     int recent_energy = 0;
@@ -573,12 +574,13 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       pt = vp9_get_coef_context(&recent_energy, t);
     }
 #if CONFIG_CODE_NONZEROCOUNT
-    cost += nzc_cost[nzc];
-#else
-    if (c < seg_eob)
-      cost += mb->token_costs[tx_size][type][ref][get_coef_band(tx_size, c)]
-          [pt][DCT_EOB_TOKEN];
+    if (nzc_used)
+      cost += nzc_cost[nzc];
+    else
 #endif
+      if (c < seg_eob)
+        cost += mb->token_costs[tx_size][type][ref][get_coef_band(tx_size, c)]
+            [pt][DCT_EOB_TOKEN];
   }
 
   // is eob first coefficient;
