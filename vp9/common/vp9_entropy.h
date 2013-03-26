@@ -150,7 +150,7 @@ extern int vp9_get_coef_context(int * recent_energy, int token);
 #define UNCONSTRAINED_NODES         3   // Choose one of 2 or 3
 
 // whether forward updates are model-based
-#define MODEL_BASED_UPDATE          0
+#define MODEL_BASED_UPDATE          1
 // if model-based how many nodes are unconstrained
 #define UNCONSTRAINED_UPDATE_NODES  3
 // whether backward updates are model-based
