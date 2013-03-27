@@ -755,7 +755,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                        cm->ref_frame_sign_bias);
 
       vp9_mv_ref_probs(&pbi->common, mv_ref_p,
-                       mbmi->mb_mode_context[ref_frame]);
+                       mbmi->mb_mode_context[ref_frame], mbmi->sb_type);
 
       // If the segment level skip mode enabled
       if (vp9_segfeature_active(xd, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -764,7 +764,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         mbmi->mode = mbmi->sb_type ? read_sb_mv_ref(bc, mv_ref_p)
                                    : read_mv_ref(bc, mv_ref_p);
         vp9_accum_mv_refs(&pbi->common, mbmi->mode,
-                          mbmi->mb_mode_context[ref_frame]);
+                          mbmi->mb_mode_context[ref_frame], mbmi->sb_type);
       }
 
       if (mbmi->mode != ZEROMV) {

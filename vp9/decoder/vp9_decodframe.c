@@ -1601,12 +1601,14 @@ int vp9_decode_frame(VP9D_COMP *pbi, const unsigned char **p_data_end) {
 
   // Read inter mode probability context updates
   if (pc->frame_type != KEY_FRAME) {
-    int i, j;
-    for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
-      for (j = 0; j < 4; j++) {
-        if (vp9_read(&header_bc, 252)) {
-          pc->fc.vp9_mode_contexts[i][j] =
-            (vp9_prob)vp9_read_literal(&header_bc, 8);
+    int i, j, k;
+    for (k = 0; k < BLOCK_TYPE_MAX; k++) {
+      for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
+        for (j = 0; j < 4; j++) {
+          if (vp9_read(&header_bc, 252)) {
+            pc->fc.vp9_mode_contexts[k][i][j] =
+              (vp9_prob)vp9_read_literal(&header_bc, 8);
+          }
         }
       }
     }

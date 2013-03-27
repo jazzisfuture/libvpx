@@ -445,16 +445,17 @@ void vp9_entropy_mode_init() {
 void vp9_init_mode_contexts(VP9_COMMON *pc) {
   vpx_memset(pc->fc.mv_ref_ct, 0, sizeof(pc->fc.mv_ref_ct));
   vpx_memcpy(pc->fc.vp9_mode_contexts,
-             vp9_default_mode_contexts,
-             sizeof(vp9_default_mode_contexts));
+              vp9_default_mode_contexts,
+              sizeof(vp9_default_mode_contexts));
 }
 
 void vp9_accum_mv_refs(VP9_COMMON *pc,
                        MB_PREDICTION_MODE m,
-                       const int context) {
+                       const int context,
+                       BLOCK_SIZE_TYPE sb_type) {
   unsigned int (*mv_ref_ct)[4][2];
 
-  mv_ref_ct = pc->fc.mv_ref_ct;
+  mv_ref_ct = pc->fc.mv_ref_ct[sb_type];
 
   if (m == ZEROMV) {
     ++mv_ref_ct[context][0][0];
@@ -481,24 +482,26 @@ void vp9_accum_mv_refs(VP9_COMMON *pc,
 #define MVREF_COUNT_SAT 20
 #define MVREF_MAX_UPDATE_FACTOR 128
 void vp9_adapt_mode_context(VP9_COMMON *pc) {
-  int i, j;
+  int i, j, k;
   unsigned int (*mv_ref_ct)[4][2];
   int (*mode_context)[4];
 
-  mode_context = pc->fc.vp9_mode_contexts;
 
-  mv_ref_ct = pc->fc.mv_ref_ct;
+  for (k = 0; k < BLOCK_TYPE_MAX; k++) {
+    mode_context = pc->fc.vp9_mode_contexts[k];
+    mv_ref_ct = pc->fc.mv_ref_ct[k];
 
-  for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
-    for (i = 0; i < 4; i++) {
-      int count = mv_ref_ct[j][i][0] + mv_ref_ct[j][i][1], factor;
+    for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      for (i = 0; i < 4; i++) {
+        int count = mv_ref_ct[j][i][0] + mv_ref_ct[j][i][1], factor;
 
-      count = count > MVREF_COUNT_SAT ? MVREF_COUNT_SAT : count;
-      factor = (MVREF_MAX_UPDATE_FACTOR * count / MVREF_COUNT_SAT);
-      mode_context[j][i] = weighted_prob(pc->fc.vp9_mode_contexts[j][i],
-                                         get_binary_prob(mv_ref_ct[j][i][0],
-                                                         mv_ref_ct[j][i][1]),
-                                         factor);
+        count = count > MVREF_COUNT_SAT ? MVREF_COUNT_SAT : count;
+        factor = (MVREF_MAX_UPDATE_FACTOR * count / MVREF_COUNT_SAT);
+        mode_context[j][i] = weighted_prob(pc->fc.vp9_mode_contexts[k][j][i],
+          get_binary_prob(mv_ref_ct[j][i][0],
+          mv_ref_ct[j][i][1]),
+          factor);
+      }
     }
   }
 }
@@ -506,18 +509,24 @@ void vp9_adapt_mode_context(VP9_COMMON *pc) {
 #ifdef MODE_STATS
 #include "vp9/common/vp9_modecont.h"
 void print_mode_contexts(VP9_COMMON *pc) {
-  int j, i;
+  int k, j, i;
   printf("\n====================\n");
-  for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
-    for (i = 0; i < 4; i++) {
-      printf("%4d ", pc->fc.mode_context[j][i]);
+  for (k = 0; k < BLOCK_TYPE_MAX; k++) {
+    for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      for (i = 0; i < 4; i++) {
+        printf("%4d ", pc->fc_a.vp9_mode_contexts[k][j][i]);
+      }
+      printf("\n");
     }
     printf("\n");
   }
   printf("====================\n");
-  for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
-    for (i = 0; i < 4; i++) {
-      printf("%4d ", pc->fc.mode_context_a[j][i]);
+  for (k = 0; k < BLOCK_TYPE_MAX; k++) {
+    for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      for (i = 0; i < 4; i++) {
+        printf("%4d ", pc->fc.vp9_mode_contexts[k][j][i]);
+      }
+      printf("\n");
     }
     printf("\n");
   }

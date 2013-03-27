@@ -2096,31 +2096,27 @@ int vp9_refining_search_sadx4(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
 
 
 
-#ifdef ENTROPY_STATS
+#if 1 //def ENTROPY_STATS
 void print_mode_context(VP9_COMMON *pc) {
   FILE *f = fopen("vp9_modecont.c", "a");
-  int i, j;
+  int i, j, k;
 
   fprintf(f, "#include \"vp9_entropy.h\"\n");
-  fprintf(f, "const int vp9_mode_contexts[INTER_MODE_CONTEXTS][4] =");
+  fprintf(f, "const int vp9_mode_contexts[3][INTER_MODE_CONTEXTS][4] =");
   fprintf(f, "{\n");
-  for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
-    fprintf(f, "  {/* %d */ ", j);
-    fprintf(f, "    ");
-    for (i = 0; i < 4; i++) {
-      int this_prob;
-
-      // context probs
-      this_prob = get_binary_prob(pc->fc.mv_ref_ct[j][i][0],
-                                  pc->fc.mv_ref_ct[j][i][1]);
-
-      fprintf(f, "%5d, ", this_prob);
+  for (k = 0; k < BLOCK_TYPE_MAX; k++) {
+    fprintf(f, "  {/* %d */ ", k);
+    for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      fprintf(f, "  {/* %d */ ", j);
+      fprintf(f, "    ");
+      for (i = 0; i < 4; i++) {
+        fprintf(f, "%5d, ", pc->fc.vp9_mode_contexts[k][j][i]);
+      }
+      fprintf(f, "  },\n");
     }
     fprintf(f, "  },\n");
   }
-
   fprintf(f, "};\n");
   fclose(f);
 }
-
 #endif/* END MV ref count ENTROPY_STATS stats code */

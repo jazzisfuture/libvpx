@@ -1705,6 +1705,10 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
     if (cpi->pass == 2) {
       vp9_end_second_pass(cpi);
     }
+    if (cpi->pass != 1) {
+      print_mode_context(&cpi->common);
+    }
+
 
 #ifdef ENTROPY_STATS
     if (cpi->pass != 1) {
