@@ -139,8 +139,8 @@ typedef struct frame_contexts {
   vp9_prob pre_interintra_prob;
 #endif
 
-  int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
-  unsigned int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
+  int vp9_mode_contexts[INTER_MODE_CONTEXTS][6];
+  unsigned int mv_ref_ct[INTER_MODE_CONTEXTS][6][2];
 } FRAME_CONTEXT;
 
 typedef enum {
@@ -235,6 +235,9 @@ typedef struct VP9Common {
   MODE_INFO *prev_mip; /* MODE_INFO array 'mip' from last decoded frame */
   MODE_INFO *prev_mi;  /* 'mi' from last frame (points into prev_mip) */
 
+#if CONFIG_SBSEGMENT
+  MODE_INFO seg_mi[NUM_BLOCK_SIZE][4];
+#endif
 
   // Persistent mb segment id map used in prediction.
   unsigned char *last_frame_seg_map;

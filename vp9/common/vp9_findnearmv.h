@@ -17,8 +17,13 @@
 #include "vp9/common/vp9_treecoder.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
+#define LEFT_TOP_MARGIN     ((VP9BORDERINPIXELS - VP9_INTERP_EXTEND) << 3)
+#define RIGHT_BOTTOM_MARGIN ((VP9BORDERINPIXELS - VP9_INTERP_EXTEND) << 3)
+
+#if 0
 #define LEFT_TOP_MARGIN (16 << 3)
 #define RIGHT_BOTTOM_MARGIN (16 << 3)
+#endif
 
 /* check a list of motion vectors by sad score using a number rows of pixels
  * above and a number cols of pixels in the left to select the one with best

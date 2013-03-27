@@ -53,6 +53,19 @@ void vp9_quantize_sbuv_16x16(MACROBLOCK *x);
 void vp9_quantize_sbuv_8x8(MACROBLOCK *x);
 void vp9_quantize_sbuv_4x4(MACROBLOCK *x);
 
+#if CONFIG_SBSEGMENT
+// TODO (jingning): combine the transform dimension dependent functions into
+// a unified one
+void vp9_quantize_segy_32x32(MACROBLOCK *x, int seg_size);
+void vp9_quantize_segy_16x16(MACROBLOCK *x, int seg_size);
+void vp9_quantize_segy_8x8  (MACROBLOCK *x, int seg_size);
+void vp9_quantize_segy_4x4  (MACROBLOCK *x, int seg_size);
+
+void vp9_quantize_seguv_16x16(MACROBLOCK *x, int seg_size);
+void vp9_quantize_seguv_8x8  (MACROBLOCK *x, int seg_size);
+void vp9_quantize_seguv_4x4  (MACROBLOCK *x, int seg_size);
+#endif
+
 void vp9_quantize_sb64y_32x32(MACROBLOCK *x);
 void vp9_quantize_sb64y_16x16(MACROBLOCK *x);
 void vp9_quantize_sb64y_8x8(MACROBLOCK *x);

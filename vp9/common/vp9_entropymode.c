@@ -271,10 +271,13 @@ const vp9_tree_index vp9_mv_ref_tree[8] = {
   -NEWMV, -SPLITMV
 };
 
-const vp9_tree_index vp9_sb_mv_ref_tree[6] = {
+const vp9_tree_index vp9_sb_mv_ref_tree[12] = {
   -ZEROMV, 2,
   -NEARESTMV, 4,
-  -NEARMV, -NEWMV
+  -NEARMV, 6,
+  -NEWMV, 8,
+  -TOP_BOTTOM, 10,
+  -LEFT_RIGHT, -PARTITION
 };
 
 const vp9_tree_index vp9_sub_mv_ref_tree[6] = {
@@ -452,7 +455,7 @@ void vp9_init_mode_contexts(VP9_COMMON *pc) {
 void vp9_accum_mv_refs(VP9_COMMON *pc,
                        MB_PREDICTION_MODE m,
                        const int context) {
-  unsigned int (*mv_ref_ct)[4][2];
+  unsigned int (*mv_ref_ct)[6][2];
 
   mv_ref_ct = pc->fc.mv_ref_ct;
 
@@ -472,6 +475,16 @@ void vp9_accum_mv_refs(VP9_COMMON *pc,
           ++mv_ref_ct[context][3][0];
         } else {
           ++mv_ref_ct[context][3][1];
+          if (m == TOP_BOTTOM) {
+            ++mv_ref_ct[context][4][0];
+          } else {
+            ++mv_ref_ct[context][4][1];
+            if (m == LEFT_RIGHT) {
+              ++mv_ref_ct[context][5][0];
+            } else {
+              ++mv_ref_ct[context][5][1];
+            }
+          }
         }
       }
     }
@@ -482,18 +495,18 @@ void vp9_accum_mv_refs(VP9_COMMON *pc,
 #define MVREF_MAX_UPDATE_FACTOR 128
 void vp9_adapt_mode_context(VP9_COMMON *pc) {
   int i, j;
-  unsigned int (*mv_ref_ct)[4][2];
-  int (*mode_context)[4];
+  unsigned int (*mv_ref_ct)[6][2];
+  int (*mode_context)[6];
 
   mode_context = pc->fc.vp9_mode_contexts;
 
   mv_ref_ct = pc->fc.mv_ref_ct;
 
   for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 6; i++) {
       int count = mv_ref_ct[j][i][0] + mv_ref_ct[j][i][1], factor;
 
-      count = count > MVREF_COUNT_SAT ? MVREF_COUNT_SAT : count;
+      count = (count > MVREF_COUNT_SAT) ? MVREF_COUNT_SAT : count;
       factor = (MVREF_MAX_UPDATE_FACTOR * count / MVREF_COUNT_SAT);
       mode_context[j][i] = weighted_prob(pc->fc.vp9_mode_contexts[j][i],
                                          get_binary_prob(mv_ref_ct[j][i][0],

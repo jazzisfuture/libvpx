@@ -60,7 +60,7 @@ static INLINE vp9_prob clip_prob(int p) {
 // int64 is not needed for normal frame level calculations.
 // However when outputing entropy stats accumulated over many frames
 // or even clips we can overflow int math.
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 static INLINE vp9_prob get_prob(int num, int den) {
   return (den == 0) ? 128u : clip_prob(((int64_t)num * 256 + (den >> 1)) / den);
 }

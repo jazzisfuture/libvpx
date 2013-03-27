@@ -103,7 +103,7 @@ extern int skip_false_count;
 #endif
 
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 extern int intra_mode_stats[VP9_KF_BINTRAMODES]
                            [VP9_KF_BINTRAMODES]
                            [VP9_KF_BINTRAMODES];
@@ -1426,7 +1426,7 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
                                1));
   }
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
   if (cpi->pass != 1)
     init_context_counters();
 #endif
@@ -1525,6 +1525,11 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->mb.nmvsadcost_hp[1] = &cpi->mb.nmvsadcosts_hp[1][MV_MAX];
   cal_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
 
+#if CONFIG_SBSEGMENT
+  for (i = 0; i < 16; i++)
+    vpx_memcpy(&cpi->seg_mb[i], &cpi->mb, sizeof(MACROBLOCK));
+#endif
+
   for (i = 0; i < KEY_FRAME_CONTEXT; i++)
     cpi->prior_key_frame_distance[i] = (int)cpi->output_frame_rate;
 
@@ -1572,6 +1577,27 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
     cpi->fn_ptr[BT].sdx8f          = SDX8F; \
     cpi->fn_ptr[BT].sdx4df         = SDX4DF;
 
+#if CONFIG_SBSEGMENT
+  BFP(BLOCK_32X16, vp9_sad32x16, vp9_variance32x16, vp9_sub_pixel_variance32x16,
+      NULL, NULL,
+      NULL, NULL, NULL,
+      vp9_sad32x16x4d)
+
+  BFP(BLOCK_16X32, vp9_sad16x32, vp9_variance16x32, vp9_sub_pixel_variance16x32,
+      NULL, NULL,
+      NULL, NULL, NULL,
+      vp9_sad16x32x4d)
+
+  BFP(BLOCK_64X32, vp9_sad64x32, vp9_variance64x32, vp9_sub_pixel_variance64x32,
+      NULL, NULL,
+      NULL, NULL, NULL,
+      vp9_sad64x32x4d)
+
+  BFP(BLOCK_32X64, vp9_sad32x64, vp9_variance32x64, vp9_sub_pixel_variance32x64,
+      NULL, NULL,
+      NULL, NULL, NULL,
+      vp9_sad32x64x4d)
+#endif
 
   BFP(BLOCK_32X32, vp9_sad32x32, vp9_variance32x32, vp9_sub_pixel_variance32x32,
       vp9_variance_halfpixvar32x32_h, vp9_variance_halfpixvar32x32_v,
@@ -1642,7 +1668,7 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
       vp9_end_second_pass(cpi);
     }
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     if (cpi->pass != 1) {
       print_context_counters();
       print_tree_update_probs();
@@ -1795,7 +1821,7 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
     }
 #endif
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     {
       int i, j, k;
       FILE *fmode = fopen("vp9_modecontext.c", "w");

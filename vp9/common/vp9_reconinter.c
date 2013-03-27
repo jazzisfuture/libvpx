@@ -933,6 +933,172 @@ void vp9_build_inter16x16_predictors_mby(MACROBLOCKD *xd,
 }
 #endif
 
+#if CONFIG_SBSEGMENT
+// TODO (jingning): combine 32x16 and 16x32 predictor building functions
+void vp9_build_inter32x16_predictors_sb(MACROBLOCKD *x,
+                                        uint8_t *dst_y,
+                                        uint8_t *dst_u,
+                                        uint8_t *dst_v,
+                                        int dst_ystride,
+                                        int dst_uvstride,
+                                        int mb_row,
+                                        int mb_col) {
+  uint8_t *y1 = x->pre.y_buffer, *u1 = x->pre.u_buffer, *v1 = x->pre.v_buffer;
+  uint8_t *y2 = x->second_pre.y_buffer, *u2 = x->second_pre.u_buffer,
+          *v2 = x->second_pre.v_buffer;
+  int edge[4], n;
+
+  edge[0] = x->mb_to_top_edge;
+  edge[1] = x->mb_to_bottom_edge;
+  edge[2] = x->mb_to_left_edge;
+  edge[3] = x->mb_to_right_edge;
+
+  for (n = 0; n < 2; n++) {
+    const int x_idx = n & 1, y_idx = n >> 1;
+    int scaled_uv_offset;
+
+    x->mb_to_top_edge    = edge[0] -      ((y_idx  * 16) << 3);
+    x->mb_to_bottom_edge = edge[1] + (((1 - y_idx) * 16) << 3);
+    x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
+    x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
+
+    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 16,
+                                                y_idx * 16,
+                                                x->pre.y_stride,
+                                                &x->scale_factor[0]);
+    scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
+                                            y_idx * 8,
+                                            x->pre.uv_stride,
+                                            &x->scale_factor_uv[0]);
+    x->pre.u_buffer = u1 + scaled_uv_offset;
+    x->pre.v_buffer = v1 + scaled_uv_offset;
+
+    if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+      x->second_pre.y_buffer = y2 + scaled_buffer_offset(x_idx * 16,
+                                                         y_idx * 16,
+                                                         x->second_pre.y_stride,
+                                                         &x->scale_factor[1]);
+      scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
+                                              y_idx * 8,
+                                              x->second_pre.uv_stride,
+                                              &x->scale_factor_uv[1]);
+      x->second_pre.u_buffer = u2 + scaled_uv_offset;
+      x->second_pre.v_buffer = v2 + scaled_uv_offset;
+    }
+
+    vp9_build_inter16x16_predictors_mb(x,
+        dst_y + y_idx * 16 * dst_ystride  + x_idx * 16,
+        dst_u + y_idx *  8 * dst_uvstride + x_idx *  8,
+        dst_v + y_idx *  8 * dst_uvstride + x_idx *  8,
+        dst_ystride, dst_uvstride, mb_row + y_idx, mb_col + x_idx);
+  }
+
+  x->mb_to_top_edge    = edge[0];
+  x->mb_to_bottom_edge = edge[1];
+  x->mb_to_left_edge   = edge[2];
+  x->mb_to_right_edge  = edge[3];
+
+  x->pre.y_buffer = y1;
+  x->pre.u_buffer = u1;
+  x->pre.v_buffer = v1;
+
+  if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+    x->second_pre.y_buffer = y2;
+    x->second_pre.u_buffer = u2;
+    x->second_pre.v_buffer = v2;
+  }
+
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
+    vp9_build_interintra_32x32_predictors_sb(
+        x, dst_y, dst_u, dst_v, dst_ystride, dst_uvstride);
+  }
+#endif
+}
+
+void vp9_build_inter16x32_predictors_sb(MACROBLOCKD *x,
+                                        uint8_t *dst_y,
+                                        uint8_t *dst_u,
+                                        uint8_t *dst_v,
+                                        int dst_ystride,
+                                        int dst_uvstride,
+                                        int mb_row,
+                                        int mb_col) {
+  uint8_t *y1 = x->pre.y_buffer, *u1 = x->pre.u_buffer, *v1 = x->pre.v_buffer;
+  uint8_t *y2 = x->second_pre.y_buffer, *u2 = x->second_pre.u_buffer,
+          *v2 = x->second_pre.v_buffer;
+  int edge[4], n;
+
+  edge[0] = x->mb_to_top_edge;
+  edge[1] = x->mb_to_bottom_edge;
+  edge[2] = x->mb_to_left_edge;
+  edge[3] = x->mb_to_right_edge;
+
+  for (n = 0; n < 4; n += 2) {
+    const int x_idx = n & 1, y_idx = n >> 1;
+    int scaled_uv_offset;
+
+    x->mb_to_top_edge    = edge[0] -      ((y_idx  * 16) << 3);
+    x->mb_to_bottom_edge = edge[1] + (((1 - y_idx) * 16) << 3);
+    x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
+    x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
+
+    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 16,
+                                                y_idx * 16,
+                                                x->pre.y_stride,
+                                                &x->scale_factor[0]);
+    scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
+                                            y_idx * 8,
+                                            x->pre.uv_stride,
+                                            &x->scale_factor_uv[0]);
+    x->pre.u_buffer = u1 + scaled_uv_offset;
+    x->pre.v_buffer = v1 + scaled_uv_offset;
+
+    if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+      x->second_pre.y_buffer = y2 + scaled_buffer_offset(x_idx * 16,
+                                                         y_idx * 16,
+                                                         x->second_pre.y_stride,
+                                                         &x->scale_factor[1]);
+      scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
+                                              y_idx * 8,
+                                              x->second_pre.uv_stride,
+                                              &x->scale_factor_uv[1]);
+      x->second_pre.u_buffer = u2 + scaled_uv_offset;
+      x->second_pre.v_buffer = v2 + scaled_uv_offset;
+    }
+
+    vp9_build_inter16x16_predictors_mb(x,
+        dst_y + y_idx * 16 * dst_ystride  + x_idx * 16,
+        dst_u + y_idx *  8 * dst_uvstride + x_idx *  8,
+        dst_v + y_idx *  8 * dst_uvstride + x_idx *  8,
+        dst_ystride, dst_uvstride, mb_row + y_idx, mb_col + x_idx);
+  }
+
+  x->mb_to_top_edge    = edge[0];
+  x->mb_to_bottom_edge = edge[1];
+  x->mb_to_left_edge   = edge[2];
+  x->mb_to_right_edge  = edge[3];
+
+  x->pre.y_buffer = y1;
+  x->pre.u_buffer = u1;
+  x->pre.v_buffer = v1;
+
+  if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+    x->second_pre.y_buffer = y2;
+    x->second_pre.u_buffer = u2;
+    x->second_pre.v_buffer = v2;
+  }
+
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
+    vp9_build_interintra_32x32_predictors_sb(
+        x, dst_y, dst_u, dst_v, dst_ystride, dst_uvstride);
+  }
+#endif
+}
+#endif
+
+
 #if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
 static void build_inter16x16_predictors_mbuv_w(MACROBLOCKD *xd,
                                                uint8_t *dst_u,
@@ -1324,6 +1490,165 @@ void vp9_build_inter32x32_predictors_sbuv(MACROBLOCKD *x,
   }
 }
 #endif
+
+#if CONFIG_SBSEGMENT
+void vp9_build_inter64x32_predictors_sb(MACROBLOCKD *x,
+                                        uint8_t *dst_y,
+                                        uint8_t *dst_u,
+                                        uint8_t *dst_v,
+                                        int dst_ystride,
+                                        int dst_uvstride,
+                                        int mb_row,
+                                        int mb_col) {
+  uint8_t *y1 = x->pre.y_buffer, *u1 = x->pre.u_buffer, *v1 = x->pre.v_buffer;
+  uint8_t *y2 = x->second_pre.y_buffer, *u2 = x->second_pre.u_buffer,
+          *v2 = x->second_pre.v_buffer;
+  int edge[4], n;
+
+  edge[0] = x->mb_to_top_edge;
+  edge[1] = x->mb_to_bottom_edge;
+  edge[2] = x->mb_to_left_edge;
+  edge[3] = x->mb_to_right_edge;
+
+  for (n = 0; n < 2; n++) {
+    const int x_idx = n & 1, y_idx = n >> 1;
+    int scaled_uv_offset;
+
+    x->mb_to_top_edge    = edge[0] -      ((y_idx  * 32) << 3);
+    x->mb_to_bottom_edge = edge[1] + (((1 - y_idx) * 32) << 3);
+    x->mb_to_left_edge   = edge[2] -      ((x_idx  * 32) << 3);
+    x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 32) << 3);
+
+    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 32,
+                                                y_idx * 32,
+                                                x->pre.y_stride,
+                                                &x->scale_factor[0]);
+    scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
+                                            y_idx * 16,
+                                            x->pre.uv_stride,
+                                            &x->scale_factor_uv[0]);
+    x->pre.u_buffer = u1 + scaled_uv_offset;
+    x->pre.v_buffer = v1 + scaled_uv_offset;
+
+    if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+      x->second_pre.y_buffer = y2 + scaled_buffer_offset(x_idx * 32,
+                                                         y_idx * 32,
+                                                         x->second_pre.y_stride,
+                                                         &x->scale_factor[1]);
+      scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
+                                              y_idx * 16,
+                                              x->second_pre.uv_stride,
+                                              &x->scale_factor_uv[1]);
+      x->second_pre.u_buffer = u2 + scaled_uv_offset;
+      x->second_pre.v_buffer = v2 + scaled_uv_offset;
+    }
+
+    vp9_build_inter32x32_predictors_sb(x, mb_row + y_idx * 2,
+                                       mb_col + x_idx * 2);
+  }
+
+  x->mb_to_top_edge    = edge[0];
+  x->mb_to_bottom_edge = edge[1];
+  x->mb_to_left_edge   = edge[2];
+  x->mb_to_right_edge  = edge[3];
+
+  x->pre.y_buffer = y1;
+  x->pre.u_buffer = u1;
+  x->pre.v_buffer = v1;
+
+  if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+    x->second_pre.y_buffer = y2;
+    x->second_pre.u_buffer = u2;
+    x->second_pre.v_buffer = v2;
+  }
+
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
+    vp9_build_interintra_64x64_predictors_sb(x, dst_y, dst_u, dst_v,
+                                             dst_ystride, dst_uvstride);
+  }
+#endif
+}
+
+void vp9_build_inter32x64_predictors_sb(MACROBLOCKD *x,
+                                        uint8_t *dst_y,
+                                        uint8_t *dst_u,
+                                        uint8_t *dst_v,
+                                        int dst_ystride,
+                                        int dst_uvstride,
+                                        int mb_row,
+                                        int mb_col) {
+  uint8_t *y1 = x->pre.y_buffer, *u1 = x->pre.u_buffer, *v1 = x->pre.v_buffer;
+  uint8_t *y2 = x->second_pre.y_buffer, *u2 = x->second_pre.u_buffer,
+          *v2 = x->second_pre.v_buffer;
+  int edge[4], n;
+
+  edge[0] = x->mb_to_top_edge;
+  edge[1] = x->mb_to_bottom_edge;
+  edge[2] = x->mb_to_left_edge;
+  edge[3] = x->mb_to_right_edge;
+
+  for (n = 0; n < 4; n += 2) {
+    const int x_idx = n & 1, y_idx = n >> 1;
+    int scaled_uv_offset;
+
+    x->mb_to_top_edge    = edge[0] -      ((y_idx  * 32) << 3);
+    x->mb_to_bottom_edge = edge[1] + (((1 - y_idx) * 32) << 3);
+    x->mb_to_left_edge   = edge[2] -      ((x_idx  * 32) << 3);
+    x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 32) << 3);
+
+    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 32,
+                                                y_idx * 32,
+                                                x->pre.y_stride,
+                                                &x->scale_factor[0]);
+    scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
+                                            y_idx * 16,
+                                            x->pre.uv_stride,
+                                            &x->scale_factor_uv[0]);
+    x->pre.u_buffer = u1 + scaled_uv_offset;
+    x->pre.v_buffer = v1 + scaled_uv_offset;
+
+    if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+      x->second_pre.y_buffer = y2 + scaled_buffer_offset(x_idx * 32,
+                                                         y_idx * 32,
+                                                         x->second_pre.y_stride,
+                                                         &x->scale_factor[1]);
+      scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
+                                              y_idx * 16,
+                                              x->second_pre.uv_stride,
+                                              &x->scale_factor_uv[1]);
+      x->second_pre.u_buffer = u2 + scaled_uv_offset;
+      x->second_pre.v_buffer = v2 + scaled_uv_offset;
+    }
+
+    vp9_build_inter32x32_predictors_sb(x, mb_row + y_idx * 2,
+                                       mb_col + x_idx * 2);
+  }
+
+  x->mb_to_top_edge    = edge[0];
+  x->mb_to_bottom_edge = edge[1];
+  x->mb_to_left_edge   = edge[2];
+  x->mb_to_right_edge  = edge[3];
+
+  x->pre.y_buffer = y1;
+  x->pre.u_buffer = u1;
+  x->pre.v_buffer = v1;
+
+  if (x->mode_info_context->mbmi.second_ref_frame > 0) {
+    x->second_pre.y_buffer = y2;
+    x->second_pre.u_buffer = u2;
+    x->second_pre.v_buffer = v2;
+  }
+
+#if CONFIG_COMP_INTERINTRA_PRED
+  if (x->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
+    vp9_build_interintra_64x64_predictors_sb(x, dst_y, dst_u, dst_v,
+                                             dst_ystride, dst_uvstride);
+  }
+#endif
+}
+#endif
+
 
 void vp9_build_inter32x32_predictors_sb(MACROBLOCKD *mb,
                                         int mb_row, int mb_col) {

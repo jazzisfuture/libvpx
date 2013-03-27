@@ -15,7 +15,7 @@
 #include "vp9/encoder/vp9_block.h"
 #include "vp9/encoder/vp9_variance.h"
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 void print_mode_context(VP9_COMMON *pc);
 #endif
 

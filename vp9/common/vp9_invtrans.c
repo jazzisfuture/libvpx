@@ -114,6 +114,179 @@ void vp9_inverse_transform_mb_16x16(MACROBLOCKD *xd) {
   vp9_inverse_transform_mbuv_8x8(xd);
 }
 
+#if CONFIG_SBSEGMENT
+void vp9_inverse_transform_segy_32x32(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+
+  // parse the segment dimension
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 5);
+  cols = (cols >> 5);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 5) + i;
+      vp9_short_idct32x32(xd->dqcoeff + n * 1024,
+                          xd->diff + j * 32 * stride + i * 32,
+                          (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_segy_16x16(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+
+  // parse the segment dimension
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 4);
+  cols = (cols >> 4);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 4) + i;
+      vp9_inverse_transform_b_16x16(xd->dqcoeff + n * 256,
+                                    xd->diff + j * 16 * stride + i * 16,
+                                    (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_segy_8x8(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+
+  // parse the segment dimension
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 3);
+  cols = (cols >> 3);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 3) + i;
+      vp9_inverse_transform_b_8x8(xd->dqcoeff + n * 64,
+                                  xd->diff + j * 8 * stride + i * 8,
+                                  (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_segy_4x4(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+
+  // parse the segment dimension
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 2);
+  cols = (cols >> 2);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 2) + i;
+      vp9_inverse_transform_b_4x4(xd, xd->eobs[n], xd->dqcoeff + n * 16,
+                                  xd->diff + j * 4 * stride + i * 4,
+                                  (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_seguv_16x16(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+  int y_offset, uv_offset;
+
+  // parse the segment dimension for uv components
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 5);
+  cols = (cols >> 5);
+  stride = (stride >> 1);
+
+  y_offset  = 4 * stride * stride;
+  uv_offset = stride * stride;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      int off = j * 16 * stride + i * 16;
+      n = j * (stride >> 4) + i;
+      vp9_inverse_transform_b_16x16(xd->dqcoeff + y_offset + n * 256,
+                                    xd->diff + y_offset + off,
+                                    (stride << 1));
+      vp9_inverse_transform_b_16x16(xd->dqcoeff + y_offset
+                                                + uv_offset + n * 256,
+                                    xd->diff + y_offset + uv_offset + off,
+                                    (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_seguv_8x8(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+  int y_offset, uv_offset;
+
+  // parse the segment dimension for uv components
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 4);
+  cols = (cols >> 4);
+  stride = (stride >> 1);
+
+  y_offset  = 4 * stride * stride;
+  uv_offset = stride * stride;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      int off = j * 8 * stride + i * 8;
+      n = j * (stride >> 3) + i;
+      vp9_inverse_transform_b_8x8(xd->dqcoeff + y_offset + n * 64,
+                                  xd->diff + y_offset + off,
+                                  (stride << 1));
+      vp9_inverse_transform_b_8x8(xd->dqcoeff + y_offset + uv_offset + n * 64,
+                                  xd->diff + y_offset + uv_offset + off,
+                                  (stride << 1));
+    }
+  }
+}
+
+void vp9_inverse_transform_seguv_4x4(MACROBLOCKD *xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j, n;
+  int rows, cols, stride;
+  int y_offset, uv_offset;
+
+  // parse the segment dimension for uv components
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  rows = (rows >> 3);
+  cols = (cols >> 3);
+  stride = (stride >> 1);
+
+  y_offset  = 4 * stride * stride;
+  uv_offset = stride * stride;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      int off = j * 4 * stride + i * 4;
+      n = j * (stride >> 2) + i;
+      vp9_inverse_transform_b_4x4(xd, xd->eobs[(y_offset >> 4)],
+                                  xd->dqcoeff + y_offset + n * 16,
+                                  xd->diff + y_offset + off,
+                                  (stride << 1));
+      vp9_inverse_transform_b_4x4(xd,
+                                  xd->eobs[(y_offset >> 4) + (uv_offset >> 4)],
+                                  xd->dqcoeff + y_offset + uv_offset + n * 16,
+                                  xd->diff + y_offset + uv_offset + off,
+                                  (stride << 1));
+    }
+  }
+}
+#endif
+
 void vp9_inverse_transform_sby_32x32(MACROBLOCKD *xd) {
   vp9_short_idct32x32(xd->dqcoeff, xd->diff, 64);
 }

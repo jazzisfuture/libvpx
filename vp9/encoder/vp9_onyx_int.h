@@ -42,10 +42,27 @@
 
 #define MAX_LAG_BUFFERS 25
 
+
+#define AF_THRESH   25
+#define AF_THRESH2  100
+#define ARF_DECAY_THRESH 12
+
+#if CONFIG_SBSEGMENT
+
+#if CONFIG_COMP_INTERINTRA_PRED
+#define MAX_MODES 66
+#else
+#define MAX_MODES 54
+#endif
+
+#else
+
 #if CONFIG_COMP_INTERINTRA_PRED
 #define MAX_MODES 54
 #else
 #define MAX_MODES 42
+#endif
+
 #endif
 
 #define MIN_THRESHMULT  32
@@ -105,8 +122,8 @@ typedef struct {
   vp9_prob interintra_prob;
 #endif
 
-  int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
-  int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
+  int mv_ref_ct[INTER_MODE_CONTEXTS][6][2];
+  int vp9_mode_contexts[INTER_MODE_CONTEXTS][6];
 
 #if CONFIG_CODE_NONZEROCOUNT
   vp9_prob nzc_probs_4x4
@@ -301,6 +318,10 @@ enum BlockSize {
   BLOCK_16X16,
   BLOCK_MAX_SEGMENTS,
   BLOCK_32X32 = BLOCK_MAX_SEGMENTS,
+  BLOCK_32X16,
+  BLOCK_16X32,
+  BLOCK_64X32,
+  BLOCK_32X64,
   BLOCK_64X64,
   BLOCK_MAX_SB_SEGMENTS,
 };
@@ -323,6 +344,18 @@ typedef struct VP9_COMP {
   MACROBLOCK mb;
   VP9_COMMON common;
   VP9_CONFIG oxcf;
+
+#if CONFIG_SBSEGMENT
+  MACROBLOCK seg_mb[16];
+  // =========================================================================
+  // for observation purpose, to be removed before submitting for code reivew
+  // =========================================================================
+  int64_t residual_var[3]; // 0 : NEWMV
+                                // 1 : TOP_BOTTOM
+                                // 2 : LEFT_RIGHT
+  unsigned int mode_count[3];
+  // =========================================================================
+#endif
 
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *source;
@@ -689,6 +722,121 @@ typedef struct VP9_COMP {
   int initial_width;
   int initial_height;
 } VP9_COMP;
+
+#if CONFIG_SBSEGMENT
+// TODO (jingning): these parameter setting functions can be combined into one
+static void vp9_get_seg_parameters_4x4(int *rows, int *cols, int *stride,
+                                       int seg_size) {
+  switch (seg_size) {
+    case BLOCK_32X16:
+      *rows = 4;
+      *cols = 8;
+      *stride = 32;
+      break;
+    case BLOCK_16X32:
+      *rows = 8;
+      *cols = 4;
+      *stride = 32;
+      break;
+    case BLOCK_64X32:
+      *rows = 8;
+      *cols = 16;
+      *stride = 64;
+      break;
+    case BLOCK_32X64:
+      *rows = 16;
+      *cols = 8;
+      *stride = 64;
+      break;
+    default:
+      assert(0);
+  }
+}
+
+static void vp9_get_seg_parameters_8x8(int *rows, int *cols, int *stride,
+                                       int seg_size) {
+  switch (seg_size) {
+    case BLOCK_32X16:
+      *rows = 2;
+      *cols = 4;
+      *stride = 32;
+      break;
+    case BLOCK_16X32:
+      *rows = 4;
+      *cols = 2;
+      *stride = 32;
+      break;
+    case BLOCK_64X32:
+      *rows = 4;
+      *cols = 8;
+      *stride = 64;
+      break;
+    case BLOCK_32X64:
+      *rows = 8;
+      *cols = 4;
+      *stride = 64;
+      break;
+    default:
+      assert(0);
+  }
+}
+
+static void vp9_get_seg_parameters_16x16(int *rows, int *cols, int *stride,
+                                         int seg_size) {
+  switch (seg_size) {
+    case BLOCK_32X16:
+      *rows = 1;
+      *cols = 2;
+      *stride = 32;
+      break;
+    case BLOCK_16X32:
+      *rows = 2;
+      *cols = 1;
+      *stride = 32;
+      break;
+    case BLOCK_64X32:
+      *rows = 2;
+      *cols = 4;
+      *stride = 64;
+      break;
+    case BLOCK_32X64:
+      *rows = 4;
+      *cols = 2;
+      *stride = 64;
+      break;
+    default:
+      assert(0);
+  }
+}
+
+static void vp9_get_seg_parameters_32x32(int *rows, int *cols, int *stride,
+                                         int seg_size) {
+  switch (seg_size) {
+    case BLOCK_32X16:
+      *rows = 0;
+      *cols = 1;
+      *stride = 32;
+      break;
+    case BLOCK_16X32:
+      *rows = 1;
+      *cols = 0;
+      *stride = 32;
+      break;
+    case BLOCK_64X32:
+      *rows = 1;
+      *cols = 2;
+      *stride = 64;
+      break;
+    case BLOCK_32X64:
+      *rows = 2;
+      *cols = 1;
+      *stride = 64;
+      break;
+    default:
+      assert(0);
+  }
+}
+#endif
 
 void vp9_encode_frame(VP9_COMP *cpi);
 

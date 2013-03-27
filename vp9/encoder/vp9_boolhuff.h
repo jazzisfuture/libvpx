@@ -57,7 +57,7 @@ static void encode_bool(BOOL_CODER *br, int bit, int probability) {
   unsigned int lowvalue = br->lowvalue;
   register unsigned int shift;
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 #if defined(SECTIONBITS_OUTPUT)
 
   if (bit)

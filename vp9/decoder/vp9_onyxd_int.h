@@ -20,6 +20,9 @@
 
 typedef struct VP9Decompressor {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
+#if CONFIG_SBSEGMENT
+  DECLARE_ALIGNED(16, MACROBLOCKD, seg_mb[16]);
+#endif
 
   DECLARE_ALIGNED(16, VP9_COMMON, common);
 

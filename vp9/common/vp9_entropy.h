@@ -36,7 +36,12 @@ extern const int vp9_i8x8_block[4];
 #define ENTROPY_NODES           11
 #define EOSB_TOKEN              127     /* Not signalled, encoder only */
 
-#define INTER_MODE_CONTEXTS     7
+#if CONFIG_SBSEGMENT
+#define INTER_MODE_CONTEXTS     21
+#else
+#define INTER_MODE_CONTEXTS     14
+// #define INTER_MODE_CONTEXTS     7
+#endif
 
 extern const vp9_tree_index vp9_coef_tree[];
 
@@ -121,6 +126,18 @@ static INLINE void vp9_reset_mb_tokens_context(MACROBLOCKD* const xd) {
   vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
   vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES));
 }
+
+#if CONFIG_SBSEGMENT
+static INLINE void vp9_reset_seg_tokens_context(MACROBLOCKD* const xd) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int rows, cols, stride;
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+  cols = cols >> 4;
+  rows = rows >> 4;
+  vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * cols);
+  vpx_memset(xd->left_context,  0, sizeof(ENTROPY_CONTEXT_PLANES) * rows);
+}
+#endif
 
 static INLINE void vp9_reset_sb_tokens_context(MACROBLOCKD* const xd) {
   /* Clear entropy contexts */

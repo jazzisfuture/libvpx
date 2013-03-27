@@ -629,7 +629,6 @@ static void read_mb_segment_id(VP9D_COMP *pbi,
   }
 }
 
-
 static INLINE void assign_and_clamp_mv(int_mv *dst, const int_mv *src,
                                        int mb_to_left_edge,
                                        int mb_to_right_edge,
@@ -658,6 +657,16 @@ static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
                                                   PRED_SWITCHABLE_INTERP));
   return vp9_switchable_interp[index];
 }
+
+#if CONFIG_SBSEGMENT
+static void read_sbsegment_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi,
+                                    MB_MODE_INFO *mbmi,
+                                    MODE_INFO *prev_mi,
+                                    int mb_row, int mb_col,
+                                    BOOL_DECODER* const bc) {
+
+}
+#endif
 
 static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                              MODE_INFO *prev_mi,
@@ -747,8 +756,13 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       vp9_find_mv_refs(cm, xd, mi, use_prev_in_find_mv_refs ? prev_mi : NULL,
                        ref_frame, mbmi->ref_mvs[ref_frame],
                        cm->ref_frame_sign_bias);
-
+#if CONFIG_SBSEGMENT
+      vp9_mv_ref_probs(&pbi->common, mv_ref_p,
+                       mbmi->mb_mode_context[ref_frame] +
+                       ((mbmi->sb_type) ? 7 : 0));
+#else
       vp9_mv_ref_probs(cm, mv_ref_p, mbmi->mb_mode_context[ref_frame]);
+#endif
 
       // If the segment level skip mode enabled
       if (vp9_segfeature_active(xd, mbmi->segment_id, SEG_LVL_SKIP)) {
@@ -756,7 +770,13 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       } else {
         mbmi->mode = mbmi->sb_type ? read_sb_mv_ref(bc, mv_ref_p)
                                    : read_mv_ref(bc, mv_ref_p);
+#if CONFIG_SBSEGMENT
+        vp9_accum_mv_refs(&pbi->common, mbmi->mode,
+                          mbmi->mb_mode_context[ref_frame] +
+                          ((mbmi->sb_type) ? 7 : 0));
+#else
         vp9_accum_mv_refs(cm, mbmi->mode, mbmi->mb_mode_context[ref_frame]);
+#endif
       }
 
       if (mbmi->mode != ZEROMV) {
@@ -991,6 +1011,13 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
       break;  /* done with SPLITMV */
 
+#if CONFIG_SBSEGMENT
+      case TOP_BOTTOM:
+        break;
+      case LEFT_RIGHT:
+        break;
+#endif
+
       case NEARMV:
         // Clip "next_nearest" so that it does not extend to far out of image
         assign_and_clamp_mv(mv, &nearby, mb_to_left_edge,
@@ -1026,11 +1053,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       case NEWMV:
         process_mv(bc, &mv->as_mv, &best_mv.as_mv, nmvc, &cm->fc.NMVcount,
                    xd->allow_high_precision_mv);
-
-        // Don't need to check this on NEARMV and NEARESTMV modes
-        // since those modes clamp the MV. The NEWMV mode does not,
-        // so signal to the prediction stage whether special
-        // handling may be required.
         mbmi->need_to_clamp_mvs = check_mv_bounds(mv,
                                                   mb_to_left_edge,
                                                   mb_to_right_edge,
@@ -1040,11 +1062,11 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         if (mbmi->second_ref_frame > 0) {
           process_mv(bc, &mbmi->mv[1].as_mv, &best_mv_second.as_mv, nmvc,
                      &cm->fc.NMVcount, xd->allow_high_precision_mv);
-          mbmi->need_to_clamp_secondmv |= check_mv_bounds(&mbmi->mv[1],
-                                                          mb_to_left_edge,
-                                                          mb_to_right_edge,
-                                                          mb_to_top_edge,
-                                                          mb_to_bottom_edge);
+          mbmi->need_to_clamp_secondmv = check_mv_bounds(&mbmi->mv[1],
+                                                         mb_to_left_edge,
+                                                         mb_to_right_edge,
+                                                         mb_to_top_edge,
+                                                         mb_to_bottom_edge);
         }
         break;
       default:

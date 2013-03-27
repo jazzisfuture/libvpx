@@ -119,6 +119,106 @@ void vp9_subtract_sby_s_c(int16_t *diff, const uint8_t *src, int src_stride,
   }
 }
 
+#if CONFIG_SBSEGMENT
+void vp9_subtract_seg_y_c(int16_t *diff, const uint8_t *src, int src_stride,
+                          const uint8_t *pred, int dst_stride, int block_size) {
+  int r, c;
+  int height, width, stride;
+
+  switch (block_size) {
+    case BLOCK_64X32:
+      height = 32;
+      width = 64;
+      stride = 64;
+      break;
+    case BLOCK_32X64:
+      height = 64;
+      width = 32;
+      stride = 64;
+      break;
+    case BLOCK_32X16:
+      height = 16;
+      width = 32;
+      stride = 32;
+      break;
+    case BLOCK_16X32:
+      height = 32;
+      width = 16;
+      stride = 32;
+      break;
+    default:
+      assert(0);
+  }
+
+  for (r = 0; r < height; r++) {
+    for (c = 0; c < width; c++)
+      diff[c] = src[c] - pred[c];
+
+    diff += stride;
+    pred += dst_stride;
+    src  += src_stride;
+  }
+}
+
+void vp9_subtract_seg_uv_c(int16_t *diff, const uint8_t *usrc,
+                           const uint8_t *vsrc, int src_stride,
+                           const uint8_t *upred,
+                           const uint8_t *vpred,
+                           int dst_stride,
+                           int block_size) {
+  int r, c;
+  int height, width, stride;
+  int16_t *udiff, *vdiff;
+
+  switch (block_size) {
+    case BLOCK_64X32:
+      height = 16;
+      width  = 32;
+      stride = 32;
+      break;
+    case BLOCK_32X64:
+      height = 32;
+      width  = 16;
+      stride = 32;
+      break;
+    case BLOCK_32X16:
+      height = 8;
+      width  = 16;
+      stride = 16;
+      break;
+    case BLOCK_16X32:
+      height = 16;
+      width  = 8;
+      stride = 16;
+      break;
+    default:
+      assert(0);
+  }
+
+  // luma component shift
+  udiff = diff + stride * stride * 4;
+  vdiff = diff + stride * stride * 5;
+
+  for (r = 0; r < height; r++) {
+    for (c = 0; c < width; c++)
+      udiff[c] = usrc[c] - upred[c];
+
+    udiff += stride;
+    upred += dst_stride;
+    usrc  += src_stride;
+  }
+
+  for (r = 0; r < height; r++) {
+    for (c = 0; c < width; c++)
+      vdiff[c] = vsrc[c] - vpred[c];
+
+    vdiff += stride;
+    vpred += dst_stride;
+    vsrc  += src_stride;
+  }
+}
+#endif
+
 void vp9_subtract_sbuv_s_c(int16_t *diff, const uint8_t *usrc,
                            const uint8_t *vsrc, int src_stride,
                            const uint8_t *upred,
@@ -291,6 +391,68 @@ void vp9_transform_mb_16x16(MACROBLOCK *x) {
 void vp9_transform_sby_32x32(MACROBLOCK *x) {
   vp9_short_fdct32x32(x->src_diff, x->coeff, 64);
 }
+
+#if CONFIG_SBSEGMENT
+void vp9_transform_segy_32x32(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_32x32(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 5) + i;
+      vp9_short_fdct32x32(x->src_diff + j * stride * 32 + i * 32,
+                          x->coeff + n * 1024, (stride << 1));
+    }
+  }
+}
+
+void vp9_transform_segy_16x16(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_16x16(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 4) + i;
+      x->fwd_txm16x16(x->src_diff + j * stride * 16 + i * 16,
+                      x->coeff + n * 256, (stride << 1));
+    }
+  }
+}
+
+void vp9_transform_segy_8x8(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_8x8(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 3) + i;
+      x->fwd_txm8x8(x->src_diff + j * stride * 8 + i * 8,
+                    x->coeff + n * 64, (stride << 1));
+    }
+  }
+}
+
+void vp9_transform_segy_4x4(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_4x4(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 2) + i;
+      x->fwd_txm4x4(x->src_diff + j * stride * 4 + i * 4,
+                    x->coeff + n * 16, (stride << 1));
+    }
+  }
+}
+#endif
 
 void vp9_transform_sby_16x16(MACROBLOCK *x) {
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -494,6 +656,92 @@ void vp9_transform_sb64uv_4x4(MACROBLOCK *x) {
                   x->coeff + 4096 + 1024 + n * 16, 64);
   }
 }
+
+#if CONFIG_SBSEGMENT
+void vp9_transform_seguv_16x16(MACROBLOCK *x, int seg_size) {
+  int yoffset, uvoffset;
+  int i, j, n;
+  int rows, cols, stride, uv_stride;
+
+  vp9_clear_system_state();
+
+  // parse the segmentation size
+  vp9_get_seg_parameters_32x32(&rows, &cols, &stride, seg_size);
+  uv_stride = stride >> 1;
+  uvoffset = uv_stride * uv_stride;
+  yoffset  = uvoffset * 4;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 4) + i;
+
+      x->fwd_txm16x16(x->src_diff + yoffset + j * uv_stride * 16 + i * 16,
+                      x->coeff + yoffset + n * 256, (uv_stride << 1));
+
+      x->fwd_txm16x16(x->src_diff + yoffset + uvoffset
+                      + j * uv_stride * 16 + i * 16,
+                      x->coeff + yoffset + uvoffset + n * 256,
+                      (uv_stride << 1));
+    }
+  }
+}
+
+void vp9_transform_seguv_8x8(MACROBLOCK *x, int seg_size) {
+  int yoffset, uvoffset;
+  int i, j, n;
+  int rows, cols, stride, uv_stride;
+
+  vp9_clear_system_state();
+
+  // parse the segmentation size
+  vp9_get_seg_parameters_16x16(&rows, &cols, &stride, seg_size);
+  uv_stride = stride >> 1;
+  uvoffset = uv_stride * uv_stride;
+  yoffset  = uvoffset * 4;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 3) + i;
+
+      x->fwd_txm8x8(x->src_diff + yoffset + j * uv_stride * 8 + i * 8,
+                      x->coeff + yoffset + n * 64, (uv_stride << 1));
+
+      x->fwd_txm8x8(x->src_diff + yoffset + uvoffset
+                                            + j * uv_stride * 8 + i * 8,
+                      x->coeff + yoffset + uvoffset + n * 64, (uv_stride << 1));
+    }
+  }
+}
+
+void vp9_transform_seguv_4x4(MACROBLOCK *x, int seg_size) {
+  int yoffset, uvoffset;
+  int i, j, n;
+  int rows, cols, stride, uv_stride;
+
+  vp9_clear_system_state();
+
+  // parse the segmentation size
+  vp9_get_seg_parameters_8x8(&rows, &cols, &stride, seg_size);
+  uv_stride = stride >> 1;
+
+  uvoffset = uv_stride * uv_stride;
+  yoffset  = uvoffset * 4;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 2) + i;
+
+      x->fwd_txm4x4(x->src_diff + yoffset + j * uv_stride * 4 + i * 4,
+                      x->coeff + yoffset + n * 16, (uv_stride << 1));
+
+      x->fwd_txm4x4(x->src_diff + yoffset + uvoffset
+                                            + j * uv_stride * 4 + i * 4,
+                      x->coeff + yoffset + uvoffset
+                                         + n * 16, (uv_stride << 1));
+    }
+  }
+}
+#endif
 
 #define RDTRUNC(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
 #define RDTRUNC_8x8(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
@@ -962,6 +1210,40 @@ static void optimize_mb_16x16(VP9_COMMON *const cm, MACROBLOCK *x) {
   vp9_optimize_mby_16x16(cm, x);
   vp9_optimize_mbuv_8x8(cm, x);
 }
+
+#if CONFIG_SBSEGMENT
+void vp9_optimize_segy_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
+                             ENTROPY_CONTEXT_PLANES t_above[4],
+                             ENTROPY_CONTEXT_PLANES t_left [4],
+                             int seg_size) {
+  ENTROPY_CONTEXT *ta  = (ENTROPY_CONTEXT *) &(t_above[x->seg_mb_col]);
+  ENTROPY_CONTEXT *tl  = (ENTROPY_CONTEXT *) &(t_left [x->seg_mb_row]);
+  int i, j, n;
+  int rows, cols, stride;
+
+  const uint8_t *block2above = (seg_size == BLOCK_64X32 ||
+                                seg_size == BLOCK_32X64) ?
+                                    vp9_block2above_sb64[TX_16X16] :
+                                    vp9_block2above_sb  [TX_16X16];
+
+  const uint8_t *block2left  = (seg_size == BLOCK_64X32 ||
+                                seg_size == BLOCK_32X64) ?
+                                    vp9_block2left_sb64[TX_16X16] :
+                                    vp9_block2left_sb  [TX_16X16];
+
+  vp9_get_seg_parameters_16x16(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = 16 * (j * (stride >> 4) + i);
+      optimize_b(cm, x, n, PLANE_TYPE_Y_WITH_DC, x->e_mbd.block[0].dequant,
+                 ta + block2above[n],
+                 tl  + block2left [n],
+                 TX_16X16);
+    }
+  }
+}
+#endif
 
 void vp9_optimize_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x) {
   ENTROPY_CONTEXT *a = (ENTROPY_CONTEXT *) x->e_mbd.above_context;

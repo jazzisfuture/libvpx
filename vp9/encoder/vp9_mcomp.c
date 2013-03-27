@@ -2096,18 +2096,18 @@ int vp9_refining_search_sadx4(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
 
 
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 void print_mode_context(VP9_COMMON *pc) {
   FILE *f = fopen("vp9_modecont.c", "a");
   int i, j;
 
   fprintf(f, "#include \"vp9_entropy.h\"\n");
-  fprintf(f, "const int vp9_mode_contexts[INTER_MODE_CONTEXTS][4] =");
+  fprintf(f, "const int vp9_mode_contexts[INTER_MODE_CONTEXTS][6] =");
   fprintf(f, "{\n");
   for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
     fprintf(f, "  {/* %d */ ", j);
     fprintf(f, "    ");
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 6; i++) {
       int this_prob;
 
       // context probs
@@ -2122,5 +2122,4 @@ void print_mode_context(VP9_COMMON *pc) {
   fprintf(f, "};\n");
   fclose(f);
 }
-
-#endif/* END MV ref count ENTROPY_STATS stats code */
+#endif/* END MV ref count VP9_ENTROPY_STATS stats code */

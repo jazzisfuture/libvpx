@@ -59,6 +59,22 @@ void vp9_optimize_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x);
 void vp9_transform_sbuv_4x4(MACROBLOCK *x);
 void vp9_optimize_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x);
 
+#if CONFIG_SBSEGMENT
+void vp9_transform_segy_32x32(MACROBLOCK *x, int seg_size);
+void vp9_transform_segy_16x16(MACROBLOCK *x, int seg_size);
+void vp9_transform_segy_8x8  (MACROBLOCK *x, int seg_size);
+void vp9_transform_segy_4x4  (MACROBLOCK *x, int seg_size);
+
+void vp9_transform_seguv_16x16(MACROBLOCK *x, int seg_size);
+void vp9_transform_seguv_8x8  (MACROBLOCK *x, int seg_size);
+void vp9_transform_seguv_4x4  (MACROBLOCK *x, int seg_size);
+
+void vp9_optimize_segy_16x16  (VP9_COMMON *const cm, MACROBLOCK *x,
+                               ENTROPY_CONTEXT_PLANES t_above[4],
+                               ENTROPY_CONTEXT_PLANES t_left[4],
+                               int seg_size);
+#endif
+
 void vp9_transform_sb64y_32x32(MACROBLOCK *x);
 void vp9_optimize_sb64y_32x32(VP9_COMMON *const cm, MACROBLOCK *x);
 void vp9_transform_sb64y_16x16(MACROBLOCK *x);
@@ -93,6 +109,15 @@ void vp9_subtract_sbuv_s_c(int16_t *diff, const uint8_t *usrc,
                            const uint8_t *vsrc, int src_stride,
                            const uint8_t *upred,
                            const uint8_t *vpred, int dst_stride);
+#if CONFIG_SBSEGMENT
+void vp9_subtract_seg_y_c(int16_t *diff, const uint8_t *src, int src_stride,
+                          const uint8_t *pred, int dst_stride, int block_size);
+void vp9_subtract_seg_uv_c(int16_t *diff, const uint8_t *usrc,
+                           const uint8_t *vsrc, int src_stride,
+                           const uint8_t *upred,
+                           const uint8_t *vpred,
+                           int dst_stride, int block_size);
+#endif
 void vp9_subtract_sb64y_s_c(int16_t *diff, const uint8_t *src, int src_stride,
                             const uint8_t *pred, int dst_stride);
 void vp9_subtract_sb64uv_s_c(int16_t *diff, const uint8_t *usrc,

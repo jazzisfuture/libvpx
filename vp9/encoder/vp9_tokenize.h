@@ -52,7 +52,25 @@ int vp9_sb64uv_is_skippable_16x16(MACROBLOCKD *xd);
 int vp9_sb64uv_is_skippable_8x8(MACROBLOCKD *xd);
 int vp9_sb64uv_is_skippable_4x4(MACROBLOCKD *xd);
 
+#if CONFIG_SBSEGMENT
+int vp9_segy_is_skippable_32x32(MACROBLOCKD *xd, int seg_size);
+int vp9_segy_is_skippable_16x16(MACROBLOCKD *xd, int seg_size);
+int vp9_segy_is_skippable_8x8  (MACROBLOCKD *xd, int seg_size);
+int vp9_segy_is_skippable_4x4  (MACROBLOCKD *xd, int seg_size);
+
+int vp9_seguv_is_skippable_16x16(MACROBLOCKD *xd, int seg_size);
+int vp9_seguv_is_skippable_8x8  (MACROBLOCKD *xd, int seg_size);
+int vp9_seguv_is_skippable_4x4  (MACROBLOCKD *xd, int seg_size);
+#endif
+
 struct VP9_COMP;
+
+#if CONFIG_SBSEGMENT
+void vp9_tokenize_seg(struct VP9_COMP *cpi, MACROBLOCKD *xd,
+                      TOKENEXTRA **t, int dry_run);
+void vp9_stuff_seg(struct VP9_COMP *cpi, MACROBLOCKD *xd,
+                   TOKENEXTRA **t, int dry_run);
+#endif
 
 void vp9_tokenize_mb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                      TOKENEXTRA **t, int dry_run);
@@ -68,7 +86,7 @@ void vp9_stuff_sb(struct VP9_COMP *cpi, MACROBLOCKD *xd,
 void vp9_stuff_sb64(struct VP9_COMP *cpi, MACROBLOCKD *xd,
                     TOKENEXTRA **t, int dry_run);
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 void init_context_counters();
 void print_context_counters();
 

@@ -471,6 +471,8 @@ void vp9_first_pass(VP9_COMP *cpi) {
   int sum_in_vectors = 0;
   uint32_t lastmv_as_int = 0;
 
+  int i;
+
   int_mv zero_ref_mv;
 
   zero_ref_mv.as_int = 0;
@@ -491,6 +493,25 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   vp9_setup_block_ptrs(x);
 
+#if CONFIG_SBSEGMENT
+  // initialize block buffer pointers
+  for (i = 0; i < 16; i++) {
+    MACROBLOCK  *seg_mb  = &cpi->seg_mb[i];
+    MACROBLOCKD *seg_mbd = &seg_mb->e_mbd;
+
+    seg_mb->partition_info = x->pi;
+    seg_mbd->mode_info_context = cm->mi;
+
+    seg_mb->src = *cpi->Source;
+    seg_mbd->pre = cm->yv12_fb[cm->ref_frame_map[cpi->lst_fb_idx]];
+    seg_mbd->dst = cm->yv12_fb[cm->new_fb_idx];
+
+    vp9_build_block_offsets(seg_mb);
+    vp9_setup_block_dptrs(seg_mbd);
+    vp9_setup_block_ptrs(seg_mb);
+  }
+#endif
+
   // set up frame new frame for intra coded blocks
   vp9_setup_intra_recon(new_yv12);
   vp9_frame_init_quantizer(cpi);
@@ -501,6 +522,11 @@ void vp9_first_pass(VP9_COMP *cpi) {
   {
     vp9_init_mv_probs(cm);
     vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y1dc_delta_q);
+
+#if CONFIG_SBSEGMENT
+    for (i = 0; i < 16; i++)
+      memcpy(&cpi->seg_mb[i], &cpi->mb, sizeof(MACROBLOCK));
+#endif
   }
 
   // for each macroblock row in image

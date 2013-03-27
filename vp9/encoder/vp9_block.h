@@ -66,6 +66,9 @@ typedef struct {
 // TODO Do we need all of these?
 typedef struct {
   MODE_INFO mic;
+#if CONFIG_SBSEGMENT
+  MODE_INFO seg_mic[4];
+#endif
   PARTITION_INFO partition_info;
   int skip;
   int_mv best_ref_mv;
@@ -140,6 +143,11 @@ struct macroblock {
   int mv_col_max;
   int mv_row_min;
   int mv_row_max;
+
+#if CONFIG_SBSEGMENT
+  int seg_mb_col;
+  int seg_mb_row;
+#endif
 
   int skip;
 

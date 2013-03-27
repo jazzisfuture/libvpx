@@ -38,7 +38,7 @@
 unsigned __int64 Sectionbits[500];
 #endif
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 int intra_mode_stats[VP9_KF_BINTRAMODES]
                     [VP9_KF_BINTRAMODES]
                     [VP9_KF_BINTRAMODES];
@@ -237,9 +237,9 @@ static void update_refpred_stats(VP9_COMP *cpi) {
 // The branch counts table is re-populated during the actual pack stage and in
 // the decoder to facilitate backwards update of the context.
 static void update_inter_mode_probs(VP9_COMMON *cm,
-                                    int mode_context[INTER_MODE_CONTEXTS][4]) {
+                                    int mode_context[INTER_MODE_CONTEXTS][6]) {
   int i, j;
-  unsigned int (*mv_ref_ct)[4][2];
+  unsigned int (*mv_ref_ct)[6][2];
 
   vpx_memcpy(mode_context, cm->fc.vp9_mode_contexts,
              sizeof(cm->fc.vp9_mode_contexts));
@@ -247,7 +247,7 @@ static void update_inter_mode_probs(VP9_COMMON *cm,
   mv_ref_ct = cm->fc.mv_ref_ct;
 
   for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
-    for (j = 0; j < 4; j++) {
+    for (j = 0; j < 6; j++) {
       int new_prob, old_cost, new_cost;
 
       // Work out cost of coding branches with the old and optimal probability
@@ -534,7 +534,7 @@ static void write_mv_ref
 static void write_sb_mv_ref(vp9_writer *bc, MB_PREDICTION_MODE m,
                             const vp9_prob *p) {
 #if CONFIG_DEBUG
-  assert(NEARESTMV <= m  &&  m < SPLITMV);
+  assert(NEARESTMV <= m  &&  m <= SPLITMV);
 #endif
   write_token(bc, vp9_sb_mv_ref_tree, p,
               vp9_sb_mv_ref_encoding_array - NEARESTMV + m);
@@ -751,6 +751,76 @@ static void update_ref_probs(VP9_COMP *const cpi) {
   vp9_compute_mod_refprobs(cm);
 }
 
+#if CONFIG_SBSEGMENT
+static void pack_sbsegment_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
+                                          vp9_writer *bc,
+                                          int mb_row, int mb_col,
+                                          MB_PREDICTION_MODE sbmode) {
+  VP9_COMMON *const pc = &cpi->common;
+  const nmv_context *nmvc = &pc->fc.nmvc;
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mi = &m->mbmi;
+  const MV_REFERENCE_FRAME rf = mi->ref_frame;
+  const int segment_id = mi->segment_id;
+
+  MB_PREDICTION_MODE mode = mi->seg_mode[mi->sb_type];
+
+  // TODO(jingning): This serves to encode the coding mode and motion vectors
+  // of each TOP_BOTTOM or LEFT_RIGHT segment. Need to move the reference frame,
+  // transform dimension, and skip coefficients, etc. into this part, to fully
+  // support coding flexibilities in segmentation coding.
+  if (rf == INTRA_FRAME) {
+      write_sb_ymode(bc, mode, pc->fc.sb_ymode_prob);
+
+    if (mode == B_PRED) {
+      int j = 0;
+      do {
+        write_bmode(bc, m->bmi[j].as_mode.first,
+                    pc->fc.bmode_prob);
+      } while (++j < 16);
+    }
+    if (mode == I8X8_PRED) {
+      write_i8x8_mode(bc, m->bmi[0].as_mode.first,
+                      pc->fc.i8x8_mode_prob);
+      write_i8x8_mode(bc, m->bmi[2].as_mode.first,
+                      pc->fc.i8x8_mode_prob);
+      write_i8x8_mode(bc, m->bmi[8].as_mode.first,
+                      pc->fc.i8x8_mode_prob);
+      write_i8x8_mode(bc, m->bmi[10].as_mode.first,
+                      pc->fc.i8x8_mode_prob);
+    } else {
+      write_uv_mode(bc, mi->uv_mode,
+                    pc->fc.uv_mode_prob[mode]);
+    }
+  } else {
+    vp9_prob mv_ref_p[VP9_MVREFS - 1];
+    vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf] + 14);
+
+    if (!vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) {
+      write_sb_mv_ref(bc, mode, mv_ref_p);
+      vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf] + 14);
+    }
+
+    switch (mode) { /* new, split require MVs */
+      case NEWMV:
+        write_nmv(cpi, bc, &mi->mv[0].as_mv, &mi->best_mv,
+                  (const nmv_context*) nmvc,
+                  xd->allow_high_precision_mv);
+
+        if (mi->second_ref_frame > 0) {
+          write_nmv(cpi, bc, &mi->mv[1].as_mv, &mi->best_second_mv,
+                    (const nmv_context*) nmvc,
+                    xd->allow_high_precision_mv);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+}
+#endif
+
 static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                                 vp9_writer *bc,
                                 int mb_rows_left, int mb_cols_left) {
@@ -778,7 +848,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   set_mb_row(pc, xd, mb_row, mb_size);
   set_mb_col(pc, xd, mb_col, mb_size);
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
   active_section = 9;
 #endif
 
@@ -814,7 +884,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   encode_ref_frame(bc, pc, xd, segment_id, rf);
 
   if (rf == INTRA_FRAME) {
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     active_section = 6;
 #endif
 
@@ -846,9 +916,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   } else {
     vp9_prob mv_ref_p[VP9_MVREFS - 1];
 
-    vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf]);
+    vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf] +
+                     ((m->mbmi.sb_type) ? 7 : 0));
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     active_section = 3;
 #endif
 
@@ -859,8 +930,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       } else {
         write_mv_ref(bc, mode, mv_ref_p);
       }
-      vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf]);
+      vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf] +
+                        ((m->mbmi.sb_type) ? 7 : 0));
     }
+
 
     if (mode >= NEARESTMV && mode <= SPLITMV) {
       if (cpi->common.mcomp_filter_type == SWITCHABLE) {
@@ -920,7 +993,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     switch (mode) { /* new, split require MVs */
       case NEWMV:
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
         active_section = 5;
 #endif
         write_nmv(cpi, bc, &mi->mv[0].as_mv, &mi->best_mv,
@@ -933,6 +1006,20 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                     xd->allow_high_precision_mv);
         }
         break;
+#if CONFIG_SBSEGMENT
+      case TOP_BOTTOM:
+        pack_sbsegment_inter_mode_mvs(cpi, m, bc, mb_row, mb_col, TOP_BOTTOM);
+        pack_sbsegment_inter_mode_mvs(cpi, m + mis * (int) mi->sb_type,
+                                      bc, mb_row, mb_col, TOP_BOTTOM);
+        break;
+      case LEFT_RIGHT:
+        pack_sbsegment_inter_mode_mvs(cpi, m, bc, mb_row, mb_col, LEFT_RIGHT);
+        pack_sbsegment_inter_mode_mvs(cpi, m + (int) mi->sb_type,
+                                      bc, mb_row, mb_col, LEFT_RIGHT);
+        break;
+
+     // TODO (jingning): use PARTITION mode for recursive segmentation coding
+#endif
       case SPLITMV: {
         int j = 0;
 
@@ -968,7 +1055,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                            cpi->common.fc.sub_mv_ref_prob[mv_contz]);
           cpi->sub_mv_ref_count[mv_contz][blockmode - LEFT4X4]++;
           if (blockmode == NEW4X4) {
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
             active_section = 11;
 #endif
             write_nmv(cpi, bc, &blockmv.as_mv, &mi->best_mv,
@@ -1006,6 +1093,32 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         vp9_write(bc, sz != TX_16X16, pc->prob_tx[2]);
     }
   }
+
+#if CONFIG_SBSEGMENT
+  if (mode == TOP_BOTTOM || mode == LEFT_RIGHT) {
+    int mi_offset;
+    TX_SIZE sz;
+    if (mi->sb_type == BLOCK_SIZE_SB32X32 && mi->txfm_size == TX_32X32)
+      return;
+    switch (mode) {
+      case TOP_BOTTOM:
+        mi_offset = mis * ((mi->sb_type == BLOCK_SIZE_SB32X32) ? 1 : 2);
+        break;
+      case LEFT_RIGHT:
+        mi_offset = (mi->sb_type == BLOCK_SIZE_SB32X32) ? 1 : 2;
+        break;
+      default:
+        assert(0);
+    }
+    sz = (m + mi_offset)->mbmi.txfm_size;
+    vp9_write(bc, sz != TX_4X4, pc->prob_tx[0]);
+    if (sz != TX_4X4) {
+      vp9_write(bc, sz != TX_8X8, pc->prob_tx[1]);
+      if (sz != TX_8X8 && mi->sb_type == BLOCK_SIZE_SB64X64)
+        vp9_write(bc, sz != TX_16X16, pc->prob_tx[2]);
+    }
+  }
+#endif
 }
 
 static void write_mb_modes_kf(const VP9_COMP *cpi,
@@ -1049,7 +1162,7 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
                                   left_block_mode(m, i) : B_DC_PRED;
       const int bm = m->bmi[i].as_mode.first;
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
       ++intra_mode_stats [A] [L] [bm];
 #endif
 
@@ -1654,13 +1767,13 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   if (cm->frame_type == KEY_FRAME) {
     write_mb_modes_kf(cpi, m, bc,
                       cm->mb_rows - mb_row, cm->mb_cols - mb_col);
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     active_section = 8;
 #endif
   } else {
     pack_inter_mode_mvs(cpi, m, bc,
                         cm->mb_rows - mb_row, cm->mb_cols - mb_col);
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     active_section = 1;
 #endif
   }
@@ -1775,7 +1888,7 @@ static void build_tree_distribution(vp9_coeff_probs *coef_probs,
                                     vp9_coeff_stats *coef_branch_ct,
                                     int block_types) {
   int i, j, k, l;
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
   int t = 0;
 #endif
 
@@ -2066,7 +2179,7 @@ static void update_nzc_probs(VP9_COMP* cpi,
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
 static void update_coef_probs_common(vp9_writer* const bc,
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
                                      VP9_COMP *cpi,
                                      vp9_coeff_stats *tree_update_hist,
 #endif
@@ -2207,7 +2320,7 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
   build_coeff_contexts(cpi);
 
   update_coef_probs_common(bc,
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
                            cpi,
                            tree_update_hist_4x4,
 #endif
@@ -2219,7 +2332,7 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
   /* do not do this if not even allowed */
   if (cpi->common.txfm_mode != ONLY_4X4) {
     update_coef_probs_common(bc,
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
                              cpi,
                              tree_update_hist_8x8,
 #endif
@@ -2231,7 +2344,7 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
 
   if (cpi->common.txfm_mode > ALLOW_8X8) {
     update_coef_probs_common(bc,
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
                              cpi,
                              tree_update_hist_16x16,
 #endif
@@ -2243,7 +2356,7 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
 
   if (cpi->common.txfm_mode > ALLOW_16X16) {
     update_coef_probs_common(bc,
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
                              cpi,
                              tree_update_hist_32x32,
 #endif
@@ -2700,7 +2813,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_write_literal(&header_bc, pc->frame_context_idx,
                     NUM_FRAME_CONTEXTS_LG2);
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
   if (pc->frame_type == INTER_FRAME)
     active_section = 0;
   else
@@ -2711,7 +2824,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   // changes in the bitstream.
   if (pc->frame_type != KEY_FRAME) {
     int i, j;
-    int new_context[INTER_MODE_CONTEXTS][4];
+    int new_context[INTER_MODE_CONTEXTS][6];
     if (!cpi->dummy_packing) {
       update_inter_mode_probs(pc, new_context);
     } else {
@@ -2721,7 +2834,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     }
 
     for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
-      for (j = 0; j < 4; j++) {
+      for (j = 0; j < 6; j++) {
         if (new_context[i][j] != pc->fc.vp9_mode_contexts[i][j]) {
           vp9_write(&header_bc, 1, 252);
           vp9_write_literal(&header_bc, new_context[i][j], 8);
@@ -2819,7 +2932,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   update_nzc_probs(cpi, &header_bc);
 #endif
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
   active_section = 2;
 #endif
 
@@ -2842,7 +2955,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     // Update the probabilities used to encode reference frame data
     update_ref_probs(cpi);
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
     active_section = 1;
 #endif
 
@@ -2977,7 +3090,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   }
 }
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 static void print_tree_update_for_type(FILE *f,
                                        vp9_coeff_stats *tree_update_hist,
                                        int block_types, const char *header) {

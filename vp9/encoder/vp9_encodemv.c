@@ -16,7 +16,7 @@
 
 #include <math.h>
 
-#ifdef ENTROPY_STATS
+#ifdef VP9_ENTROPY_STATS
 extern unsigned int active_section;
 #endif
 

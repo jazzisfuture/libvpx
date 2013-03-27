@@ -41,6 +41,17 @@ void vp9_inverse_transform_mb_16x16(MACROBLOCKD *xd);
 
 void vp9_inverse_transform_mby_16x16(MACROBLOCKD *xd);
 
+#if CONFIG_SBSEGMENT
+void vp9_inverse_transform_segy_32x32(MACROBLOCKD *xd);
+void vp9_inverse_transform_segy_16x16(MACROBLOCKD *xd);
+void vp9_inverse_transform_segy_8x8  (MACROBLOCKD *xd);
+void vp9_inverse_transform_segy_4x4  (MACROBLOCKD *xd);
+
+void vp9_inverse_transform_seguv_16x16(MACROBLOCKD *xd);
+void vp9_inverse_transform_seguv_8x8  (MACROBLOCKD *xd);
+void vp9_inverse_transform_seguv_4x4  (MACROBLOCKD *xd);
+#endif
+
 void vp9_inverse_transform_sby_32x32(MACROBLOCKD *xd);
 void vp9_inverse_transform_sby_16x16(MACROBLOCKD *xd);
 void vp9_inverse_transform_sby_8x8(MACROBLOCKD *xd);

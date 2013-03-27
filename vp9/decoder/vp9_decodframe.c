@@ -960,6 +960,39 @@ static void set_offsets(VP9D_COMP *pbi, int block_size,
   xd->dst.v_buffer = cm->yv12_fb[dst_fb_idx].v_buffer + recon_uvoffset;
 }
 
+#if CONFIG_SBSEGMENT
+static void set_seg_offsets(VP9D_COMP *pbi, int block_size, int seg_idx,
+                            int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &pbi->common;
+  MACROBLOCKD *const xd = &pbi->seg_mb[seg_idx];
+  const int mis = cm->mode_info_stride;
+  const int idx = mis * mb_row + mb_col;
+  const int dst_fb_idx = cm->new_fb_idx;
+  const int recon_y_stride = cm->yv12_fb[dst_fb_idx].y_stride;
+  const int recon_uv_stride = cm->yv12_fb[dst_fb_idx].uv_stride;
+  const int recon_yoffset = mb_row * 16 * recon_y_stride + 16 * mb_col;
+  const int recon_uvoffset = mb_row * 8 * recon_uv_stride + 8 * mb_col;
+
+  xd->mode_info_context = cm->mi + idx;
+  xd->mode_info_context->mbmi.sb_type = block_size >> 5;
+  xd->prev_mode_info_context = cm->prev_mi + idx;
+  xd->above_context = cm->above_context + mb_col;
+  xd->left_context = cm->left_context + (mb_row & 3);
+
+  // Distance of Mb to the various image edges.
+  // These are specified to 8th pel as they are always compared to
+  // values that are in 1/8th pel units
+  block_size >>= 4;  // in mb units
+
+  set_mb_row(cm, xd, mb_row, block_size);
+  set_mb_col(cm, xd, mb_col, block_size);
+
+  xd->dst.y_buffer = cm->yv12_fb[dst_fb_idx].y_buffer + recon_yoffset;
+  xd->dst.u_buffer = cm->yv12_fb[dst_fb_idx].u_buffer + recon_uvoffset;
+  xd->dst.v_buffer = cm->yv12_fb[dst_fb_idx].v_buffer + recon_uvoffset;
+}
+#endif
+
 static void set_refs(VP9D_COMP *pbi, int block_size, int mb_row, int mb_col) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
@@ -991,6 +1024,7 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
                           int mb_row, MACROBLOCKD *xd,
                           BOOL_DECODER* const bc) {
   int mb_col;
+  int i;
 
   // For a SB there are 2 left contexts, each pertaining to a MB row within
   vpx_memset(pc->left_context, 0, sizeof(pc->left_context));
@@ -1005,6 +1039,10 @@ static void decode_sb_row(VP9D_COMP *pbi, VP9_COMMON *pc,
         printf("Debug Decode SB64\n");
 #endif
       set_offsets(pbi, 64, mb_row, mb_col);
+#if CONFIG_SBSEGMENT
+      for (i = 0; i < 16; i++)
+        set_seg_offsets(pbi, 64, i, mb_row + (i >> 2), mb_col + (i & 0x03));
+#endif
       vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, bc);
       set_refs(pbi, 64, mb_row, mb_col);
       decode_sb64(pbi, xd, mb_row, mb_col, bc);
@@ -1794,10 +1832,21 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   // Read inter mode probability context updates
   if (pc->frame_type != KEY_FRAME) {
     int i, j;
-    for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
-      for (j = 0; j < 4; ++j)
-        if (vp9_read(&header_bc, 252))
+#if CONFIG_SBSEGMENT
+    for (i = 0; i < INTER_MODE_CONTEXTS; i++) {
+      for (j = 0; j < 6; j++) {
+        if (vp9_read(&header_bc, 252)) {
           pc->fc.vp9_mode_contexts[i][j] = vp9_read_prob(&header_bc);
+        }
+      }
+    }
+#else
+for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
+  for (j = 0; j < 4; ++j)
+    if (vp9_read(&header_bc, 252))
+      pc->fc.vp9_mode_contexts[i][j] = vp9_read_prob(&header_bc);
+
+#endif
   }
 #if CONFIG_MODELCOEFPROB && ADJUST_KF_COEF_PROBS
   if (pc->frame_type == KEY_FRAME)

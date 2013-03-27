@@ -2425,6 +2425,13 @@ static void test_decode(struct stream_state  *stream,
                         const struct codec_item *codec) {
   vpx_image_t enc_img, dec_img;
 
+  // =====================
+  // debug point, to be removed before submitting for
+  // code review
+  // =====================
+  return;
+  // =====================
+
   if (stream->mismatch_seen)
     return;
 

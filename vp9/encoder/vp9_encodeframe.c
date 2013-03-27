@@ -50,6 +50,13 @@ void vp9_select_interp_filter_type(VP9_COMP *cpi);
 static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled, int mb_row, int mb_col);
 
+#if CONFIG_SBSEGMENT
+static void encode_seg_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
+                                    int output_enabled, int mb_row, int mb_col);
+static void encode_seg_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
+                                    int output_enabled, int mb_row, int mb_col);
+#endif
+
 static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
                                 int output_enabled, int mb_row, int mb_col);
 
@@ -619,6 +626,121 @@ static unsigned find_seg_id(uint8_t *buf, int block_size,
   return seg_id;
 }
 
+#if CONFIG_SBSEGMENT
+static void set_seg_offsets(VP9_COMP *cpi, int idx,
+                            int mb_row, int mb_col, int block_size) {
+  MACROBLOCK *const x = &cpi->seg_mb[idx];
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi;
+  const int dst_fb_idx = cm->new_fb_idx;
+  const int idx_map = mb_row * cm->mb_cols + mb_col;
+  const int idx_str = xd->mode_info_stride * mb_row + mb_col;
+
+  // entropy context structures
+  xd->above_context = cm->above_context + mb_col;
+  xd->left_context  = cm->left_context + (mb_row & 3);
+
+  // GF active flags data structure
+  x->gf_active_ptr = (signed char *)&cpi->gf_active_flags[idx_map];
+
+  // Activity map pointer
+  x->mb_activity_ptr = &cpi->mb_activity_map[idx_map];
+  x->active_ptr = cpi->active_map + idx_map;
+
+  /* pointers to mode info contexts */
+  x->partition_info          = x->pi + idx_str;
+  xd->mode_info_context      = cm->mi + idx_str;
+  mbmi = &xd->mode_info_context->mbmi;
+  xd->prev_mode_info_context = cm->prev_mi + idx_str;
+
+  // Set up destination pointers
+  setup_pred_block(&xd->dst,
+                   &cm->yv12_fb[dst_fb_idx],
+                   mb_row, mb_col, NULL, NULL);
+
+  /* Set up limit values for MV components to prevent them from
+   * extending beyond the UMV borders assuming 16x16 block size */
+  x->mv_row_min = -((mb_row * 16) + VP9BORDERINPIXELS - VP9_INTERP_EXTEND);
+  x->mv_col_min = -((mb_col * 16) + VP9BORDERINPIXELS - VP9_INTERP_EXTEND);
+  x->mv_row_max = ((cm->mb_rows - mb_row) * 16 +
+                   (VP9BORDERINPIXELS - block_size - VP9_INTERP_EXTEND));
+  x->mv_col_max = ((cm->mb_cols - mb_col) * 16 +
+                   (VP9BORDERINPIXELS - block_size - VP9_INTERP_EXTEND));
+
+  // Set up distance of MB to edge of frame in 1/8th pel units
+  block_size >>= 4;  // in macroblock units
+  // assert(!(mb_col & (block_size - 1)) && !(mb_row & (block_size - 1)));
+
+  if (block_size == 2) {
+    if (idx == 1) {
+      set_mb_row(cm, xd, mb_row, 2);
+      set_mb_col(cm, xd, mb_col, 1);
+    } else if (idx == 2) {
+      set_mb_row(cm, xd, mb_row, 1);
+      set_mb_col(cm, xd, mb_col, 2);
+    } else {
+      set_mb_row(cm, xd, mb_row, 2);
+      set_mb_col(cm, xd, mb_col, 2);
+    }
+  } else if (block_size == 4) {
+    if (idx == 2) {
+      set_mb_row(cm, xd, mb_row, 4);
+      set_mb_col(cm, xd, mb_col, 2);
+    } else if (idx == 8) {
+      set_mb_row(cm, xd, mb_row, 2);
+      set_mb_col(cm, xd, mb_col, 4);
+    } else {
+      set_mb_row(cm, xd, mb_row, 4);
+      set_mb_col(cm, xd, mb_col, 4);
+    }
+  } else
+    assert(0);
+
+  /* set up source buffers */
+  setup_pred_block(&x->src, cpi->Source, mb_row, mb_col, NULL, NULL);
+
+  /* R/D setup */
+  x->rddiv = cpi->RDDIV;
+  x->rdmult = cpi->RDMULT;
+
+  /* segment ID */
+  if (xd->segmentation_enabled) {
+    if (xd->update_mb_segmentation_map) {
+      mbmi->segment_id = find_seg_id(cpi->segmentation_map, block_size,
+                                     mb_row, cm->mb_rows, mb_col, cm->mb_cols);
+    } else {
+      mbmi->segment_id = find_seg_id(cm->last_frame_seg_map, block_size,
+                                     mb_row, cm->mb_rows, mb_col, cm->mb_cols);
+    }
+    assert(mbmi->segment_id <= 3);
+    vp9_mb_init_quantizer(cpi, x);
+
+    if (xd->segmentation_enabled && cpi->seg0_cnt > 0 &&
+        !vp9_segfeature_active(xd, 0, SEG_LVL_REF_FRAME) &&
+        vp9_segfeature_active(xd, 1, SEG_LVL_REF_FRAME) &&
+        vp9_check_segref(xd, 1, INTRA_FRAME)  +
+        vp9_check_segref(xd, 1, LAST_FRAME)   +
+        vp9_check_segref(xd, 1, GOLDEN_FRAME) +
+        vp9_check_segref(xd, 1, ALTREF_FRAME) == 1) {
+      cpi->seg0_progress = (cpi->seg0_idx << 16) / cpi->seg0_cnt;
+    } else {
+      const int y = mb_row & ~3;
+      const int x = mb_col & ~3;
+      const int p16 = ((mb_row & 1) << 1) +  (mb_col & 1);
+      const int p32 = ((mb_row & 2) << 2) + ((mb_col & 2) << 1);
+      const int tile_progress = cm->cur_tile_mb_col_start * cm->mb_rows;
+      const int mb_cols = cm->cur_tile_mb_col_end - cm->cur_tile_mb_col_start;
+
+      cpi->seg0_progress =
+          ((y * mb_cols + x * 4 + p32 + p16 + tile_progress) << 16) / cm->MBs;
+    }
+  } else {
+    mbmi->segment_id = 0;
+  }
+}
+#endif
+
 static void set_offsets(VP9_COMP *cpi,
                         int mb_row, int mb_col, int block_size) {
   MACROBLOCK *const x = &cpi->mb;
@@ -832,6 +954,11 @@ static void pick_sb_modes(VP9_COMP *cpi,
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
 
+#if CONFIG_SBSEGMENT
+  int idx;
+  for (idx = 0; idx < 4; idx++)
+    set_seg_offsets(cpi, idx, mb_row + (idx >> 1), mb_col + (idx & 0x01), 32);
+#endif
   set_offsets(cpi, mb_row, mb_col, 32);
   xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_SB32X32;
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
@@ -862,6 +989,11 @@ static void pick_sb64_modes(VP9_COMP *cpi,
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
 
+#if CONFIG_SBSEGMENT
+  int idx;
+  for (idx = 0; idx < 16; idx++)
+    set_seg_offsets(cpi, idx, mb_row + (idx >> 2), mb_col + (idx & 0x03), 64);
+#endif
   set_offsets(cpi, mb_row, mb_col, 64);
   xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_SB64X64;
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
@@ -949,11 +1081,27 @@ static void encode_sb(VP9_COMP *cpi,
 
   cpi->sb32_count[is_sb]++;
   if (is_sb) {
+#if CONFIG_SBSEGMENT
+    int idx;
+    for (idx = 0; idx < 4; idx++)
+      set_seg_offsets(cpi, idx, mb_row + (idx >> 1),
+                      mb_col + (idx & 0x01), 32);
+#endif
     set_offsets(cpi, mb_row, mb_col, 32);
     update_state(cpi, &x->sb32_context[xd->sb_index], 32, output_enabled);
 
+#if CONFIG_SBSEGMENT
+    // TODO (jingning): handle the three partitions separately
+    if ((xd->mode_info_context->mbmi.mode == TOP_BOTTOM) ||
+        (xd->mode_info_context->mbmi.mode == LEFT_RIGHT))
+      encode_seg_superblock32(cpi, tp, output_enabled, mb_row, mb_col);
+    else
+      encode_superblock32(cpi, tp, output_enabled, mb_row, mb_col);
+#else
     encode_superblock32(cpi, tp,
                         output_enabled, mb_row, mb_col);
+#endif
+
     if (output_enabled) {
       update_stats(cpi, mb_row, mb_col);
     }
@@ -1020,8 +1168,20 @@ static void encode_sb64(VP9_COMP *cpi,
   if (is_sb[0] == 2) {
     set_offsets(cpi, mb_row, mb_col, 64);
     update_state(cpi, &x->sb64_context, 64, 1);
+#if CONFIG_SBSEGMENT
+    if (xd->mode_info_context->mbmi.mode == TOP_BOTTOM ||
+        xd->mode_info_context->mbmi.mode == LEFT_RIGHT) {
+      int idx;
+      for (idx = 0; idx < 16; idx++)
+        set_seg_offsets(cpi, idx, mb_row + (idx >> 2), mb_col + (idx & 0x03), 64);
+      encode_seg_superblock64(cpi, tp, 1, mb_row, mb_col);
+    }
+    else
+      encode_superblock64(cpi, tp, 1, mb_row, mb_col);
+#else
     encode_superblock64(cpi, tp,
                         1, mb_row, mb_col);
+#endif
     update_stats(cpi, mb_row, mb_col);
 
     (*tp)->Token = EOSB_TOKEN;
@@ -1160,6 +1320,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   MACROBLOCK *const x = &cpi->mb;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
+  int i;
 
   x->act_zbin_adj = 0;
   cpi->seg0_idx = 0;
@@ -1188,6 +1349,22 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_setup_block_dptrs(&x->e_mbd);
 
   vp9_setup_block_ptrs(x);
+
+#if CONFIG_SBSEGMENT
+  // initialize block buffer pointers
+    for (i = 0; i < 16; i++) {
+      MACROBLOCK  *seg_mb  = &cpi->seg_mb[i];
+      MACROBLOCKD *seg_mbd = &seg_mb->e_mbd;
+
+      seg_mb->src = *cpi->Source;
+      seg_mbd->pre = cm->yv12_fb[cm->ref_frame_map[cpi->lst_fb_idx]];
+      seg_mbd->dst = cm->yv12_fb[cm->new_fb_idx];
+
+      vp9_build_block_offsets(seg_mb);
+      vp9_setup_block_dptrs(seg_mbd);
+      vp9_setup_block_ptrs(seg_mb);
+    }
+#endif
 
   xd->mode_info_context->mbmi.mode = DC_PRED;
   xd->mode_info_context->mbmi.uv_mode = DC_PRED;
@@ -1238,11 +1415,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   MACROBLOCK *const x = &cpi->mb;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
-  int totalrate;
+  int totalrate, i;
 
-//   fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
-//            cpi->common.current_video_frame, cpi->common.show_frame,
-//            cm->frame_type);
+  fprintf(stderr, " encode_frame_internal frame %d (%d) type %d\n",
+           cpi->common.current_video_frame, cpi->common.show_frame,
+           cm->frame_type);
 
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
@@ -1273,6 +1450,16 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   xd->mode_info_context = cm->mi;
   xd->prev_mode_info_context = cm->prev_mi;
 
+#if CONFIG_SBSEGMENT
+  for (i = 0; i < 16; i++) {
+    MACROBLOCK *seg_mb   = &cpi->seg_mb[i];
+    MACROBLOCKD *seg_mbd = &seg_mb->e_mbd;
+
+    seg_mbd->mode_info_context = cm->mi;
+    seg_mbd->prev_mode_info_context = cm->prev_mi;
+  }
+#endif
+
   vp9_zero(cpi->NMVcount);
   vp9_zero(cpi->coef_counts_4x4);
   vp9_zero(cpi->coef_counts_8x8);
@@ -1300,6 +1487,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y1dc_delta_q);
   vp9_initialize_me_consts(cpi, cm->base_qindex);
+
+#if CONFIG_SBSEGMENT
+  for (i = 0; i < 16; i++)
+    memcpy(&cpi->seg_mb[i], &cpi->mb, sizeof(MACROBLOCK));
+#endif
 
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
     // Initialize encode frame context.
@@ -1588,6 +1780,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
                   cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
                     ALLOW_32X32 : TX_MODE_SELECT;
 #endif
+
     cpi->common.txfm_mode = txfm_type;
     if (txfm_type != TX_MODE_SELECT) {
       cpi->common.prob_tx[0] = 128;
@@ -1663,6 +1856,33 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     encode_frame_internal(cpi);
   }
 
+  // ==================================
+  // observation point
+  // ==================================
+  if (cpi->common.current_video_frame == 50) {
+    FILE *f = fopen("vp9_modecont.c", "a");
+    int i, j;
+
+    fprintf(f, "#include \"vp9_entropy.h\"\n");
+    fprintf(f, "const int vp9_mode_contexts[INTER_MODE_CONTEXTS][6] =");
+    fprintf(f, "{\n");
+    for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
+      fprintf(f, "  {/* %d */ ", j);
+      fprintf(f, "    ");
+      for (i = 0; i < 6; i++) {
+        int this_prob;
+
+        // context probs
+        this_prob = cpi->common.fc.vp9_mode_contexts[j][i];
+        fprintf(f, "%5d, ", this_prob);
+      }
+      fprintf(f, "  },\n");
+    }
+
+    fprintf(f, "};\n");
+    fclose(f);
+  }
+  // ==================================
 }
 
 void vp9_setup_block_ptrs(MACROBLOCK *x) {
@@ -2301,6 +2521,664 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     }
   }
 }
+
+#if CONFIG_SBSEGMENT
+static void encode_seg_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
+                                    int output_enabled,
+                                    int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  const uint8_t *src = x->src.y_buffer;
+  uint8_t *dst = xd->dst.y_buffer;
+  const uint8_t *usrc = x->src.u_buffer;
+  uint8_t *udst = xd->dst.u_buffer;
+  const uint8_t *vsrc = x->src.v_buffer;
+  uint8_t *vdst = xd->dst.v_buffer;
+  int src_y_stride = x->src.y_stride, dst_y_stride = xd->dst.y_stride;
+  int src_uv_stride = x->src.uv_stride, dst_uv_stride = xd->dst.uv_stride;
+  unsigned char ref_pred_flag;
+  MODE_INFO *mi = x->e_mbd.mode_info_context;
+  unsigned int segment_id = mi->mbmi.segment_id;
+  const int mis = cm->mode_info_stride;
+  int i;
+  MACROBLOCK   *seg_mb[2];
+  MACROBLOCKD  *seg_mbd[2];
+  MB_MODE_INFO *seg_mbmi[2];
+  enum BlockSize seg_size;
+  int width, height;
+
+  // parse the segmentation coding information
+  seg_mb[0]   = &cpi->seg_mb[0];
+  seg_mb[0]->seg_mb_row = 0;
+  seg_mb[0]->seg_mb_col = 0;
+  seg_mbd[0]  = &seg_mb[0]->e_mbd;
+  seg_mbmi[0] = &seg_mbd[0]->mode_info_context->mbmi;
+
+  if (mi->mbmi.mode == TOP_BOTTOM) {
+    seg_mb[1]   = &cpi->seg_mb[2];
+    seg_mb[1]->seg_mb_row = 1;
+    seg_mb[1]->seg_mb_col = 0;
+    seg_size = BLOCK_32X16;
+    width  = 32;
+    height = 16;
+  } else if (mi->mbmi.mode == LEFT_RIGHT) {
+    seg_mb[1]   = &cpi->seg_mb[1];
+    seg_mb[1]->seg_mb_row = 0;
+    seg_mb[1]->seg_mb_col = 1;
+    seg_size = BLOCK_16X32;
+    width  = 16;
+    height = 32;
+  } else
+    assert(0);
+
+  seg_mbd[1]  = &seg_mb[1]->e_mbd;
+  seg_mbmi[1] = &seg_mbd[1]->mode_info_context->mbmi;
+
+
+  for (i = 0; i < 2; i++)
+    vpx_memcpy(seg_mbmi[i], &x->sb32_context[xd->sb_index].seg_mic[i],
+               sizeof(MB_MODE_INFO));
+
+#ifdef ENC_DEBUG
+  enc_debug = (cpi->common.current_video_frame == 1 &&
+               mb_row == 0 && mb_col == 0 && output_enabled);
+  if (enc_debug)
+    printf("Encode SB32 %d %d output %d\n", mb_row, mb_col, output_enabled);
+#endif
+  if (cm->frame_type == KEY_FRAME) {
+    if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
+      adjust_act_zbin(cpi, x);
+      vp9_update_zbin_extra(cpi, x);
+    }
+  } else {
+    vp9_setup_interp_filters(xd, xd->mode_info_context->mbmi.interp_filter, cm);
+
+    if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
+      // Adjust the zbin based on this MB rate.
+      adjust_act_zbin(cpi, x);
+    }
+
+    // Experimental code. Special case for gf and arf zeromv modes.
+    // Increase zbin size to suppress noise
+    cpi->zbin_mode_boost = 0;
+    if (cpi->zbin_mode_boost_enabled) {
+      if (xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME) {
+        if (xd->mode_info_context->mbmi.mode == ZEROMV) {
+          if (xd->mode_info_context->mbmi.ref_frame != LAST_FRAME)
+            cpi->zbin_mode_boost = GF_ZEROMV_ZBIN_BOOST;
+          else
+            cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
+        } else if (xd->mode_info_context->mbmi.mode == SPLITMV)
+          cpi->zbin_mode_boost = 0;
+        else
+          cpi->zbin_mode_boost = MV_ZBIN_BOOST;
+      }
+    }
+
+    vp9_update_zbin_extra(cpi, x);
+
+    // SET VARIOUS PREDICTION FLAGS
+    // Did the chosen reference frame match its predicted value.
+    ref_pred_flag = ((xd->mode_info_context->mbmi.ref_frame ==
+                      vp9_get_pred_ref(cm, xd)));
+    vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
+  }
+
+
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+    vp9_build_intra_predictors_sby_s(&x->e_mbd);
+    vp9_build_intra_predictors_sbuv_s(&x->e_mbd);
+    if (output_enabled)
+      sum_intra_stats(cpi, x);
+  } else {
+    int ref_fb_idx;
+
+    assert(cm->frame_type != KEY_FRAME);
+
+    if (xd->mode_info_context->mbmi.ref_frame == LAST_FRAME)
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->lst_fb_idx];
+    else if (xd->mode_info_context->mbmi.ref_frame == GOLDEN_FRAME)
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->gld_fb_idx];
+    else
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
+
+    setup_pred_block(&xd->pre,
+                     &cpi->common.yv12_fb[ref_fb_idx],
+                     mb_row, mb_col,
+                     &xd->scale_factor[0], &xd->scale_factor_uv[0]);
+
+    for (i = 0; i < 4; i++) {
+      int idx = i & 0x01;
+      int idy = i >> 1;
+      MACROBLOCKD *seg_xd = &cpi->seg_mb[i].e_mbd;
+      setup_pred_block(&seg_xd->pre,
+                       &cpi->common.yv12_fb[ref_fb_idx],
+                       mb_row + idy, mb_col + idx,
+                       &seg_xd->scale_factor[0], &xd->scale_factor_uv[0]);
+    }
+
+    if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
+      int second_ref_fb_idx;
+
+      if (xd->mode_info_context->mbmi.second_ref_frame == LAST_FRAME)
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->lst_fb_idx];
+      else if (xd->mode_info_context->mbmi.second_ref_frame == GOLDEN_FRAME)
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->gld_fb_idx];
+      else
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
+
+      setup_pred_block(&xd->second_pre,
+                       &cpi->common.yv12_fb[second_ref_fb_idx],
+                       mb_row, mb_col,
+                       &xd->scale_factor[1], &xd->scale_factor_uv[1]);
+      // TODO (jingning): currently require all the segments use the same
+      // reference frame type. need to allow each segment select the reference
+      // frames.
+      for (i = 0; i < 4; i++) {
+        int idx = i & 0x01;
+        int idy = i >> 1;
+        MACROBLOCKD *seg_xd = &cpi->seg_mb[i].e_mbd;
+        setup_pred_block(&seg_xd->second_pre,
+                         &cpi->common.yv12_fb[second_ref_fb_idx],
+                         mb_row + idy, mb_col + idx,
+                         &seg_xd->scale_factor[0], &xd->scale_factor_uv[0]);
+      }
+    }
+
+    if (mi->mbmi.mode == TOP_BOTTOM) {
+      for (i = 0; i < 2; i++) {
+        vp9_build_inter32x16_predictors_sb(seg_mbd[i], seg_mbd[i]->dst.y_buffer,
+                                           seg_mbd[i]->dst.u_buffer,
+                                           seg_mbd[i]->dst.v_buffer,
+                                           seg_mbd[i]->dst.y_stride,
+                                           seg_mbd[i]->dst.uv_stride,
+                                           mb_row + seg_mb[i]->seg_mb_row,
+                                           mb_col + seg_mb[i]->seg_mb_col);
+      }
+    } else if (mi->mbmi.mode == LEFT_RIGHT) {
+      for (i = 0; i < 2; i++) {
+        vp9_build_inter16x32_predictors_sb(seg_mbd[i], seg_mbd[i]->dst.y_buffer,
+                                           seg_mbd[i]->dst.u_buffer,
+                                           seg_mbd[i]->dst.v_buffer,
+                                           seg_mbd[i]->dst.y_stride,
+                                           seg_mbd[i]->dst.uv_stride,
+                                           mb_row + seg_mb[i]->seg_mb_row,
+                                           mb_col + seg_mb[i]->seg_mb_col);
+      }
+    } else {
+      // TODO (jingning): enable PARTITION modes
+      assert(0);
+    }
+  }
+
+  // encode the atom units
+  if (!x->skip) {
+    int16_t *y_buf, *u_buf, *v_buf;
+    int y_offset  = 1024;
+    int uv_offset = 256;
+    for (i = 0; i < 2; i++) {
+      src  = seg_mb[i]->src.y_buffer;
+      usrc = seg_mb[i]->src.u_buffer;
+      vsrc = seg_mb[i]->src.v_buffer;
+      src_y_stride  = seg_mb[i]->src.y_stride;
+      src_uv_stride = seg_mb[i]->src.uv_stride;
+      dst  = seg_mbd[i]->dst.y_buffer;
+      udst = seg_mbd[i]->dst.u_buffer;
+      vdst = seg_mbd[i]->dst.v_buffer;
+      dst_y_stride  = seg_mbd[i]->dst.y_stride;
+      dst_uv_stride = seg_mbd[i]->dst.uv_stride;
+
+      vp9_subtract_seg_y_c (seg_mb[i]->src_diff,
+                            src, src_y_stride,
+                            dst, dst_y_stride, seg_size);
+      vp9_subtract_seg_uv_c(seg_mb[i]->src_diff,
+                            usrc, vsrc, src_uv_stride,
+                            udst, vdst, dst_uv_stride, seg_size);
+    }
+
+    if (seg_mbmi[0]->txfm_size == TX_32X32) {
+      // handle TX_32X32 separately from other transform dimensions
+      // merge the two segment prediction residual buffers
+      y_buf = seg_mb[0]->src_diff + seg_mb[1]->seg_mb_row * 16 * 32
+                                  + seg_mb[1]->seg_mb_col * 16;
+      u_buf = seg_mb[0]->src_diff + y_offset
+                                  + seg_mb[1]->seg_mb_row * 8 * 16
+                                  + seg_mb[1]->seg_mb_col * 8;
+      v_buf = seg_mb[0]->src_diff + y_offset + uv_offset
+                                  + seg_mb[1]->seg_mb_row * 8 * 16
+                                  + seg_mb[1]->seg_mb_col * 8;
+      for (i = 0; i < height; i++)
+        vpx_memcpy(y_buf + i * 32, seg_mb[1]->src_diff + i * 32,
+                   sizeof(int16_t) * width);
+      for (i = 0; i < height / 2; i++)
+        vpx_memcpy(u_buf + i * 16, seg_mb[1]->src_diff + y_offset + i * 16,
+                   sizeof(int16_t) * width / 2);
+      for (i = 0; i < height / 2; i++)
+        vpx_memcpy(v_buf + i * 16,
+                   seg_mb[1]->src_diff + y_offset + uv_offset + i * 16,
+                   sizeof(int16_t) * width / 2);
+
+      vp9_transform_sby_32x32(seg_mb[0]);
+      vp9_transform_sbuv_16x16(seg_mb[0]);
+      vp9_quantize_sby_32x32(seg_mb[0]);
+      vp9_quantize_sbuv_16x16(seg_mb[0]);
+      // use the default setting to decide if doing trellis optimization
+      if (x->optimize) {
+        vp9_optimize_sby_32x32(cm, seg_mb[0]);
+        vp9_optimize_sbuv_16x16(cm, seg_mb[0]);
+      }
+      vp9_inverse_transform_sby_32x32(seg_mbd[0]);
+      vp9_inverse_transform_sbuv_16x16(seg_mbd[0]);
+
+      // reconstruction and tokenization
+      vp9_recon_sby_s_c (seg_mbd[0], seg_mbd[0]->dst.y_buffer);
+      vp9_recon_sbuv_s_c(seg_mbd[0], seg_mbd[0]->dst.u_buffer,
+                                     seg_mbd[0]->dst.v_buffer);
+  #if CONFIG_CODE_NONZEROCOUNT
+      gather_nzcs_sb32(cm, xd);
+  #endif
+
+      vp9_tokenize_sb(cpi, seg_mbd[0], t, !output_enabled);
+    } else {
+      // encode per atom unit
+      for (i = 0; i < 2; i++) {
+        switch (seg_mbmi[i]->txfm_size) {
+          case TX_16X16:
+            vp9_transform_segy_16x16(seg_mb[i], seg_size);
+            vp9_transform_seguv_8x8 (seg_mb[i], seg_size);
+            vp9_quantize_segy_16x16(seg_mb[i], seg_size);
+            vp9_quantize_seguv_8x8 (seg_mb[i], seg_size);
+            // TODO (jingning): enable trellis optimize for segment coding
+//            if (x->optimize) {
+//              vp9_optimize_segy_16x16(cm, seg_mb[i]);
+//              vp9_optimize_seguv_8x8 (cm, seg_mb[i]);
+//            }
+            vp9_inverse_transform_segy_16x16(seg_mbd[i]);
+            vp9_inverse_transform_seguv_8x8 (seg_mbd[i]);
+            break;
+          case TX_8X8:
+            vp9_transform_segy_8x8 (seg_mb[i], seg_size);
+            vp9_transform_seguv_4x4(seg_mb[i], seg_size);
+            vp9_quantize_segy_8x8 (seg_mb[i], seg_size);
+            vp9_quantize_seguv_4x4(seg_mb[i], seg_size);
+//            if (x->optimize) {
+//              vp9_optimize_segy_8x8 (cm, seg_mb[i]);
+//              vp9_optimize_seguv_4x4(cm, seg_mb[i]);
+//            }
+            vp9_inverse_transform_segy_8x8 (seg_mbd[i]);
+            vp9_inverse_transform_seguv_4x4(seg_mbd[i]);
+            break;
+          case TX_4X4:
+            vp9_transform_segy_4x4 (seg_mb[i], seg_size);
+            vp9_transform_seguv_4x4(seg_mb[i], seg_size);
+            vp9_quantize_segy_4x4 (seg_mb[i], seg_size);
+            vp9_quantize_seguv_4x4(seg_mb[i], seg_size);
+//            if (x->optimize) {
+//              vp9_optimize_segy_4x4 (cm, seg_mb[i]);
+//              vp9_optimize_seguv_4x4(cm, seg_mb[i]);
+//            }
+            vp9_inverse_transform_segy_4x4 (seg_mbd[i]);
+            vp9_inverse_transform_seguv_4x4(seg_mbd[i]);
+            break;
+          default: assert(0);
+        }
+        vp9_recon_segy (seg_mbd[i], seg_mbd[i]->dst.y_buffer);
+        vp9_recon_seguv(seg_mbd[i], seg_mbd[i]->dst.u_buffer,
+                                      seg_mbd[i]->dst.v_buffer);
+    #if CONFIG_CODE_NONZEROCOUNT
+        gather_nzcs_sb32(cm, xd);
+    #endif
+
+        vp9_tokenize_seg(cpi, seg_mbd[i], t, !output_enabled);
+      }
+    }
+  } else {
+    // FIXME(rbultje): not tile-aware (mi - 1)
+    int mb_skip_context = cm->mb_no_coeff_skip ?
+          (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff : 0;
+
+    mi->mbmi.mb_skip_coeff = 1;
+    if (cm->mb_no_coeff_skip) {
+      if (output_enabled)
+        cpi->skip_true_count[mb_skip_context]++;
+      vp9_reset_sb_tokens_context(xd);
+    } else {
+      vp9_stuff_sb(cpi, xd, t, !output_enabled);
+      if (output_enabled)
+        cpi->skip_false_count[mb_skip_context]++;
+    }
+  }
+
+  if (output_enabled) {
+    if (cm->txfm_mode == TX_MODE_SELECT &&
+        !((cm->mb_no_coeff_skip && mi->mbmi.mb_skip_coeff) ||
+          (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
+      cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
+    } else {
+      // FIXME (jingning): force transform dimension(?)
+//      TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ? TX_32X32 : cm->txfm_mode;
+//      mi->mbmi.txfm_size = sz;
+//      if (mb_col < cm->mb_cols - 1)
+//        mi[1].mbmi.txfm_size = sz;
+//      if (mb_row < cm->mb_rows - 1) {
+//        mi[mis].mbmi.txfm_size = sz;
+//        if (mb_col < cm->mb_cols - 1)
+//          mi[mis + 1].mbmi.txfm_size = sz;
+//      }
+    }
+  }
+}
+#endif
+
+#if CONFIG_SBSEGMENT
+static void encode_seg_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
+                                    int output_enabled,
+                                    int mb_row, int mb_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  const uint8_t *src = x->src.y_buffer;
+  uint8_t *dst = xd->dst.y_buffer;
+  const uint8_t *usrc = x->src.u_buffer;
+  uint8_t *udst = xd->dst.u_buffer;
+  const uint8_t *vsrc = x->src.v_buffer;
+  uint8_t *vdst = xd->dst.v_buffer;
+  int src_y_stride = x->src.y_stride, dst_y_stride = xd->dst.y_stride;
+  int src_uv_stride = x->src.uv_stride, dst_uv_stride = xd->dst.uv_stride;
+  unsigned char ref_pred_flag;
+  MODE_INFO *mi = x->e_mbd.mode_info_context;
+  unsigned int segment_id = mi->mbmi.segment_id;
+  const int mis = cm->mode_info_stride;
+  int i;
+  MACROBLOCK   *seg_mb[2];
+  MACROBLOCKD  *seg_mbd[2];
+  MB_MODE_INFO *seg_mbmi[2];
+  enum BlockSize seg_size;
+  int width, height;
+
+  // parse the segmentation coding information
+  seg_mb[0]   = &cpi->seg_mb[0];
+  seg_mb[0]->seg_mb_row = 0;
+  seg_mb[0]->seg_mb_col = 0;
+  seg_mbd[0]  = &seg_mb[0]->e_mbd;
+  seg_mbmi[0] = &seg_mbd[0]->mode_info_context->mbmi;
+
+  if (mi->mbmi.mode == TOP_BOTTOM) {
+    seg_mb[1]   = &cpi->seg_mb[8];
+    seg_mb[1]->seg_mb_row = 2;
+    seg_mb[1]->seg_mb_col = 0;
+    seg_size = BLOCK_64X32;
+    width  = 64;
+    height = 32;
+  } else if (mi->mbmi.mode == LEFT_RIGHT) {
+    seg_mb[1]   = &cpi->seg_mb[2];
+    seg_mb[1]->seg_mb_row = 0;
+    seg_mb[1]->seg_mb_col = 2;
+    seg_size = BLOCK_32X64;
+    width  = 32;
+    height = 64;
+  } else
+    assert(0);
+
+  seg_mbd[1]  = &seg_mb[1]->e_mbd;
+  seg_mbmi[1] = &seg_mbd[1]->mode_info_context->mbmi;
+
+
+  for (i = 0; i < 2; i++)
+    vpx_memcpy(seg_mbmi[i], &x->sb64_context.seg_mic[i].mbmi,
+               sizeof(MB_MODE_INFO));
+
+#ifdef ENC_DEBUG
+  enc_debug = (cpi->common.current_video_frame == 1 &&
+               mb_row == 0 && mb_col == 0 && output_enabled);
+  if (enc_debug)
+    printf("Encode SB32 %d %d output %d\n", mb_row, mb_col, output_enabled);
+#endif
+  if (cm->frame_type == KEY_FRAME) {
+    if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
+      adjust_act_zbin(cpi, x);
+      vp9_update_zbin_extra(cpi, x);
+    }
+  } else {
+    vp9_setup_interp_filters(xd, xd->mode_info_context->mbmi.interp_filter, cm);
+
+    if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
+      // Adjust the zbin based on this MB rate.
+      adjust_act_zbin(cpi, x);
+    }
+
+    // Experimental code. Special case for gf and arf zeromv modes.
+    // Increase zbin size to suppress noise
+    cpi->zbin_mode_boost = 0;
+    if (cpi->zbin_mode_boost_enabled) {
+      if (xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME) {
+        if (xd->mode_info_context->mbmi.mode == ZEROMV) {
+          if (xd->mode_info_context->mbmi.ref_frame != LAST_FRAME)
+            cpi->zbin_mode_boost = GF_ZEROMV_ZBIN_BOOST;
+          else
+            cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
+        } else if (xd->mode_info_context->mbmi.mode == SPLITMV)
+          cpi->zbin_mode_boost = 0;
+        else
+          cpi->zbin_mode_boost = MV_ZBIN_BOOST;
+      }
+    }
+
+    vp9_update_zbin_extra(cpi, x);
+
+    // SET VARIOUS PREDICTION FLAGS
+    // Did the chosen reference frame match its predicted value.
+    ref_pred_flag = ((xd->mode_info_context->mbmi.ref_frame ==
+                      vp9_get_pred_ref(cm, xd)));
+    vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
+  }
+
+
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+    vp9_build_intra_predictors_sby_s(&x->e_mbd);
+    vp9_build_intra_predictors_sbuv_s(&x->e_mbd);
+    if (output_enabled)
+      sum_intra_stats(cpi, x);
+  } else {
+    int ref_fb_idx;
+
+    assert(cm->frame_type != KEY_FRAME);
+
+    if (xd->mode_info_context->mbmi.ref_frame == LAST_FRAME)
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->lst_fb_idx];
+    else if (xd->mode_info_context->mbmi.ref_frame == GOLDEN_FRAME)
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->gld_fb_idx];
+    else
+      ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
+
+    setup_pred_block(&xd->pre,
+                     &cpi->common.yv12_fb[ref_fb_idx],
+                     mb_row, mb_col,
+                     &xd->scale_factor[0], &xd->scale_factor_uv[0]);
+
+    for (i = 0; i < 16; i++) {
+      int idx = i & 0x03;
+      int idy = i >> 2;
+      MACROBLOCKD *seg_xd = &cpi->seg_mb[i].e_mbd;
+      setup_pred_block(&seg_xd->pre,
+                       &cpi->common.yv12_fb[ref_fb_idx],
+                       mb_row + idy, mb_col + idx,
+                       &seg_xd->scale_factor[0], &xd->scale_factor_uv[0]);
+    }
+
+    if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
+      int second_ref_fb_idx;
+
+      if (xd->mode_info_context->mbmi.second_ref_frame == LAST_FRAME)
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->lst_fb_idx];
+      else if (xd->mode_info_context->mbmi.second_ref_frame == GOLDEN_FRAME)
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->gld_fb_idx];
+      else
+        second_ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
+
+      setup_pred_block(&xd->second_pre,
+                       &cpi->common.yv12_fb[second_ref_fb_idx],
+                       mb_row, mb_col,
+                       &xd->scale_factor[1], &xd->scale_factor_uv[1]);
+      // TODO (jingning): currently require all the segments use the same
+      // reference frame type. need to allow each segment select the reference
+      // frames.
+      for (i = 0; i < 16; i++) {
+        int idx = i & 0x03;
+        int idy = i >> 2;
+        MACROBLOCKD *seg_xd = &cpi->seg_mb[i].e_mbd;
+        setup_pred_block(&seg_xd->second_pre,
+                         &cpi->common.yv12_fb[second_ref_fb_idx],
+                         mb_row + idy, mb_col + idx,
+                         &seg_xd->scale_factor[0], &xd->scale_factor_uv[0]);
+      }
+    }
+
+    if (mi->mbmi.mode == TOP_BOTTOM) {
+      for (i = 0; i < 2; i++) {
+        vp9_build_inter64x32_predictors_sb(seg_mbd[i], seg_mbd[i]->dst.y_buffer,
+                                           seg_mbd[i]->dst.u_buffer,
+                                           seg_mbd[i]->dst.v_buffer,
+                                           seg_mbd[i]->dst.y_stride,
+                                           seg_mbd[i]->dst.uv_stride,
+                                           mb_row + seg_mb[i]->seg_mb_row,
+                                           mb_col + seg_mb[i]->seg_mb_col);
+      }
+    } else if (mi->mbmi.mode == LEFT_RIGHT) {
+      for (i = 0; i < 2; i++) {
+        vp9_build_inter32x64_predictors_sb(seg_mbd[i], seg_mbd[i]->dst.y_buffer,
+                                           seg_mbd[i]->dst.u_buffer,
+                                           seg_mbd[i]->dst.v_buffer,
+                                           seg_mbd[i]->dst.y_stride,
+                                           seg_mbd[i]->dst.uv_stride,
+                                           mb_row + seg_mb[i]->seg_mb_row,
+                                           mb_col + seg_mb[i]->seg_mb_col);
+      }
+    } else {
+      // TODO (jingning): enable PARTITION modes
+      assert(0);
+    }
+  }
+
+  // encode the atom units
+  if (!x->skip) {
+    for (i = 0; i < 2; i++) {
+      src  = seg_mb[i]->src.y_buffer;
+      usrc = seg_mb[i]->src.u_buffer;
+      vsrc = seg_mb[i]->src.v_buffer;
+      src_y_stride  = seg_mb[i]->src.y_stride;
+      src_uv_stride = seg_mb[i]->src.uv_stride;
+      dst  = seg_mbd[i]->dst.y_buffer;
+      udst = seg_mbd[i]->dst.u_buffer;
+      vdst = seg_mbd[i]->dst.v_buffer;
+      dst_y_stride  = seg_mbd[i]->dst.y_stride;
+      dst_uv_stride = seg_mbd[i]->dst.uv_stride;
+
+      vp9_subtract_seg_y_c (seg_mb[i]->src_diff,
+                            src, src_y_stride,
+                            dst, dst_y_stride, seg_size);
+      vp9_subtract_seg_uv_c(seg_mb[i]->src_diff,
+                            usrc, vsrc, src_uv_stride,
+                            udst, vdst, dst_uv_stride, seg_size);
+    }
+
+    // encode per atom unit
+    for (i = 0; i < 2; i++) {
+      switch (seg_mbmi[i]->txfm_size) {
+        case TX_32X32:
+          vp9_transform_segy_32x32 (seg_mb[i], seg_size);
+          vp9_transform_seguv_16x16(seg_mb[i], seg_size);
+          vp9_quantize_segy_32x32 (seg_mb[i], seg_size);
+          vp9_quantize_seguv_16x16(seg_mb[i], seg_size);
+          vp9_inverse_transform_segy_32x32 (seg_mbd[i]);
+          vp9_inverse_transform_seguv_16x16(seg_mbd[i]);
+          break;
+        case TX_16X16:
+          vp9_transform_segy_16x16(seg_mb[i], seg_size);
+          vp9_transform_seguv_8x8 (seg_mb[i], seg_size);
+          vp9_quantize_segy_16x16(seg_mb[i], seg_size);
+          vp9_quantize_seguv_8x8 (seg_mb[i], seg_size);
+          // TODO (jingning): enable trellis optimize for segment coding
+//            if (x->optimize) {
+//              vp9_optimize_segy_16x16(cm, seg_mb[i]);
+//              vp9_optimize_seguv_8x8 (cm, seg_mb[i]);
+//            }
+          vp9_inverse_transform_segy_16x16(seg_mbd[i]);
+          vp9_inverse_transform_seguv_8x8 (seg_mbd[i]);
+          break;
+        case TX_8X8:
+          vp9_transform_segy_8x8 (seg_mb[i], seg_size);
+          vp9_transform_seguv_4x4(seg_mb[i], seg_size);
+          vp9_quantize_segy_8x8 (seg_mb[i], seg_size);
+          vp9_quantize_seguv_4x4(seg_mb[i], seg_size);
+//            if (x->optimize) {
+//              vp9_optimize_segy_8x8 (cm, seg_mb[i]);
+//              vp9_optimize_seguv_4x4(cm, seg_mb[i]);
+//            }
+          vp9_inverse_transform_segy_8x8 (seg_mbd[i]);
+          vp9_inverse_transform_seguv_4x4(seg_mbd[i]);
+          break;
+        case TX_4X4:
+          vp9_transform_segy_4x4 (seg_mb[i], seg_size);
+          vp9_transform_seguv_4x4(seg_mb[i], seg_size);
+          vp9_quantize_segy_4x4 (seg_mb[i], seg_size);
+          vp9_quantize_seguv_4x4(seg_mb[i], seg_size);
+//            if (x->optimize) {
+//              vp9_optimize_segy_4x4 (cm, seg_mb[i]);
+//              vp9_optimize_seguv_4x4(cm, seg_mb[i]);
+//            }
+          vp9_inverse_transform_segy_4x4 (seg_mbd[i]);
+          vp9_inverse_transform_seguv_4x4(seg_mbd[i]);
+          break;
+        default: assert(0);
+      }
+      vp9_recon_segy (seg_mbd[i], seg_mbd[i]->dst.y_buffer);
+      vp9_recon_seguv(seg_mbd[i], seg_mbd[i]->dst.u_buffer,
+                                    seg_mbd[i]->dst.v_buffer);
+  #if CONFIG_CODE_NONZEROCOUNT
+      gather_nzcs_sb32(cm, xd);
+  #endif
+
+      vp9_tokenize_seg(cpi, seg_mbd[i], t, !output_enabled);
+    }
+  } else {
+    // FIXME(rbultje): not tile-aware (mi - 1)
+    int mb_skip_context = cm->mb_no_coeff_skip ?
+          (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff : 0;
+
+    mi->mbmi.mb_skip_coeff = 1;
+    if (cm->mb_no_coeff_skip) {
+      if (output_enabled)
+        cpi->skip_true_count[mb_skip_context]++;
+      vp9_reset_sb_tokens_context(xd);
+    } else {
+      vp9_stuff_sb(cpi, xd, t, !output_enabled);
+      if (output_enabled)
+        cpi->skip_false_count[mb_skip_context]++;
+    }
+  }
+
+  if (output_enabled) {
+    if (cm->txfm_mode == TX_MODE_SELECT &&
+        !((cm->mb_no_coeff_skip && mi->mbmi.mb_skip_coeff) ||
+          (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
+      cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
+    } else {
+      // FIXME (jingning): force transform dimension(?)
+//      TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ? TX_32X32 : cm->txfm_mode;
+//      mi->mbmi.txfm_size = sz;
+//      if (mb_col < cm->mb_cols - 1)
+//        mi[1].mbmi.txfm_size = sz;
+//      if (mb_row < cm->mb_rows - 1) {
+//        mi[mis].mbmi.txfm_size = sz;
+//        if (mb_col < cm->mb_cols - 1)
+//          mi[mis + 1].mbmi.txfm_size = sz;
+//      }
+    }
+  }
+}
+#endif
 
 static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
                                 int output_enabled, int mb_row, int mb_col) {

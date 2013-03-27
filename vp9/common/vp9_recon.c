@@ -84,6 +84,57 @@ void vp9_recon_mbuv_s_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
   }
 }
 
+#if CONFIG_SBSEGMENT
+void vp9_recon_segy_c(MACROBLOCKD *xd, uint8_t *dst) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j;
+  int rows, cols, stride;
+  int16_t *diff = xd->diff;
+  int dst_stride = xd->block[0].dst_stride;
+
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      dst[i] = clip_pixel(dst[i] + diff[i]);
+    }
+    dst  += dst_stride;
+    diff += stride;
+  }
+}
+
+void vp9_recon_seguv_c(MACROBLOCKD *xd, uint8_t *udst, uint8_t *vdst) {
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  int i, j;
+  int rows, cols, stride;
+  int16_t *udiff, *vdiff;
+  int dst_stride = (xd->block[0].dst_stride >> 1);
+  int y_offset, uv_offset;
+
+  get_seg_parameters(mbmi, &rows, &cols, &stride);
+
+  rows = (rows >> 1);
+  cols = (cols >> 1);
+  stride = (stride >> 1);
+  y_offset  = 4 * stride * stride;
+  uv_offset = stride * stride;
+
+  udiff = xd->diff + y_offset;
+  vdiff = xd->diff + y_offset + uv_offset;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      udst[i] = clip_pixel(udst[i] + udiff[i]);
+      vdst[i] = clip_pixel(vdst[i] + vdiff[i]);
+    }
+    udst += dst_stride;
+    vdst += dst_stride;
+    udiff += stride;
+    vdiff += stride;
+  }
+}
+#endif
+
 static INLINE void recon_sby(MACROBLOCKD *mb, uint8_t *dst, int size) {
   int x, y;
   const int stride = mb->block[0].dst_stride;

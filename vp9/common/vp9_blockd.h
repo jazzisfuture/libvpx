@@ -99,7 +99,12 @@ typedef enum {
   NEARMV,
   ZEROMV,
   NEWMV,
-  SPLITMV,
+  TOP_BOTTOM,
+  LEFT_RIGHT,
+  PARTITION,
+  SPLITMV = PARTITION, // TODO(jingning), the SPLITMV mode is currently used
+                       // only for macroblock case. it should be replaced with
+                       // the partitioning modes eventually.
   MB_MODE_COUNT
 } MB_PREDICTION_MODE;
 
@@ -134,7 +139,7 @@ typedef enum {
 #define VP9_I8X8_MODES (TM_PRED + 1)
 #define VP9_I32X32_MODES (TM_PRED + 1)
 
-#define VP9_MVREFS (1 + SPLITMV - NEARESTMV)
+#define VP9_MVREFS (MB_MODE_COUNT - NEARESTMV)
 
 #define WHT_UPSCALE_FACTOR 2
 
@@ -213,10 +218,18 @@ typedef enum {
   BLOCK_SIZE_MB16X16 = 0,
   BLOCK_SIZE_SB32X32 = 1,
   BLOCK_SIZE_SB64X64 = 2,
+  NUM_BLOCK_SIZE = 3
 } BLOCK_SIZE_TYPE;
 
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
+
+#if CONFIG_SBSEGMENT
+  // recursive segmentation depth = 3
+  MB_PREDICTION_MODE seg_mode[NUM_BLOCK_SIZE];
+  int_mv aux_mv[MAX_REF_FRAMES][2];
+#endif
+
 #if CONFIG_COMP_INTERINTRA_PRED
   MB_PREDICTION_MODE interintra_mode, interintra_uv_mode;
 #endif
@@ -462,7 +475,7 @@ extern const uint8_t vp9_block2above_sb64[TX_SIZE_MAX_SB][384];
 #define USE_ADST_FOR_I16X16_4X4   1
 #define USE_ADST_FOR_I8X8_4X4     1
 #define USE_ADST_PERIPHERY_ONLY   1
-#define USE_ADST_FOR_SB           1
+#define USE_ADST_FOR_SB           0
 #define USE_ADST_FOR_REMOTE_EDGE  0
 
 static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
@@ -651,10 +664,69 @@ static void update_blockd_bmi(MACROBLOCKD *xd) {
   }
 }
 
+#if CONFIG_SBSEGMENT
+static void get_seg_parameters(MB_MODE_INFO *mbmi,
+                               int *rows, int *cols, int *stride) {
+  // parse the segment dimension in the unit of pixel
+  if (mbmi->sb_type == BLOCK_SIZE_SB64X64) {
+    *stride = 64;
+    switch (mbmi->mode) {
+      case TOP_BOTTOM:
+        *rows = 32;
+        *cols = 64;
+        break;
+      case LEFT_RIGHT:
+        *rows = 64;
+        *cols = 32;
+        break;
+      default:
+        assert(0);
+    }
+  } else if (mbmi->sb_type == BLOCK_SIZE_SB32X32) {
+    *stride = 32;
+    switch (mbmi->mode) {
+      case TOP_BOTTOM:
+        *rows = 16;
+        *cols = 32;
+        break;
+      case LEFT_RIGHT:
+        *rows = 32;
+        *cols = 16;
+        break;
+      default:
+        assert(0);
+    }
+  } else
+    assert(0);
+}
+#endif
+
 static TX_SIZE get_uv_tx_size(const MACROBLOCKD *xd) {
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   const TX_SIZE size = mbmi->txfm_size;
   const MB_PREDICTION_MODE mode = mbmi->mode;
+
+  #if CONFIG_SBSEGMENT
+  if (xd->mode_info_context->mbmi.mode == TOP_BOTTOM ||
+      xd->mode_info_context->mbmi.mode == LEFT_RIGHT) {
+    TX_SIZE tx_size_uv;
+    switch (size) {
+      case TX_4X4:
+      case TX_8X8:
+        tx_size_uv = TX_4X4;
+        break;
+      case TX_16X16:
+        tx_size_uv = TX_8X8;
+        break;
+      case TX_32X32:
+        tx_size_uv = TX_16X16;
+        break;
+      default:
+        assert(0);
+    }
+    return tx_size_uv;
+  }
+#endif
 
   switch (mbmi->sb_type) {
     case BLOCK_SIZE_SB64X64:

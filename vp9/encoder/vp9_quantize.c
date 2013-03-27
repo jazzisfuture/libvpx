@@ -475,6 +475,124 @@ void vp9_quantize_sby_32x32(MACROBLOCK *x) {
   vp9_regular_quantize_b_32x32(x, 0);
 }
 
+#if CONFIG_SBSEGMENT
+void vp9_quantize_segy_32x32(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_32x32(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 5) + i;
+      vp9_regular_quantize_b_32x32(x, n * 64);
+    }
+  }
+}
+
+void vp9_quantize_segy_16x16(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_16x16(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 4) + i;
+      x->quantize_b_16x16(x, n * 16, DCT_DCT);
+    }
+  }
+}
+
+void vp9_quantize_segy_8x8(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_8x8(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 3) + i;
+      x->quantize_b_8x8(x, n * 4, DCT_DCT);
+    }
+  }
+}
+
+void vp9_quantize_segy_4x4(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, stride;
+
+  vp9_get_seg_parameters_4x4(&rows, &cols, &stride, seg_size);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (stride >> 2) + i;
+      x->quantize_b_4x4(x, n);
+    }
+  }
+}
+
+void vp9_quantize_seguv_16x16(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, y_stride, uv_stride;
+  int y_offset, uv_offset;
+
+  vp9_get_seg_parameters_32x32(&rows, &cols, &y_stride, seg_size);
+  uv_stride = (y_stride >> 1);
+
+  y_offset  = (y_stride * y_stride / 16);
+  uv_offset = (uv_stride * uv_stride / 16);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 4) + i;
+      x->quantize_b_16x16(x, y_offset + n * 16, DCT_DCT);
+      x->quantize_b_16x16(x, y_offset + uv_offset + n * 16, DCT_DCT);
+    }
+  }
+}
+
+void vp9_quantize_seguv_8x8(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, y_stride, uv_stride;
+  int y_offset, uv_offset;
+
+  vp9_get_seg_parameters_16x16(&rows, &cols, &y_stride, seg_size);
+  uv_stride = (y_stride >> 1);
+
+  y_offset  = (y_stride * y_stride / 16);
+  uv_offset = (uv_stride * uv_stride / 16);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 3) + i;
+      x->quantize_b_8x8(x, y_offset + n * 4, DCT_DCT);
+      x->quantize_b_8x8(x, y_offset + uv_offset + n * 4, DCT_DCT);
+    }
+  }
+}
+
+void vp9_quantize_seguv_4x4(MACROBLOCK *x, int seg_size) {
+  int i, j, n;
+  int rows, cols, y_stride, uv_stride;
+  int y_offset, uv_offset;
+
+  vp9_get_seg_parameters_8x8(&rows, &cols, &y_stride, seg_size);
+  uv_stride = (y_stride >> 1);
+
+  y_offset  = (y_stride * y_stride / 16);
+  uv_offset = (uv_stride * uv_stride / 16);
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      n = j * (uv_stride >> 2) + i;
+      x->quantize_b_4x4(x, y_offset + n);
+      x->quantize_b_4x4(x, y_offset + uv_offset + n);
+    }
+  }
+}
+#endif
+
 void vp9_quantize_sby_16x16(MACROBLOCK *x) {
   int n;
 
@@ -758,11 +876,16 @@ void vp9_update_zbin_extra(VP9_COMP *cpi, MACROBLOCK *x) {
 }
 
 void vp9_frame_init_quantizer(VP9_COMP *cpi) {
+  int i;
   // Clear Zbin mode boost for default case
   cpi->zbin_mode_boost = 0;
 
   // MB level quantizer setup
   vp9_mb_init_quantizer(cpi, &cpi->mb);
+#if CONFIG_SBSEGMENT
+  for (i = 0; i < 16; i++)
+    vp9_mb_init_quantizer(cpi, &cpi->seg_mb[i]);
+#endif
 }
 
 void vp9_set_quantizer(struct VP9_COMP *cpi, int Q) {
