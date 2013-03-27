@@ -80,7 +80,7 @@ static unsigned int check_mv_bounds(int_mv *mv,
 
 vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
                            vp9_prob p[VP9_MVREFS - 1],
-                           const int context);
+                           const int context, BLOCK_SIZE_TYPE sb_type);
 
 extern const uint8_t vp9_mbsplit_offset[4][16];
 

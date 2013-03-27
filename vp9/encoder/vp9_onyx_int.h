@@ -109,8 +109,8 @@ typedef struct {
   vp9_prob interintra_prob;
 #endif
 
-  int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
-  int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
+  int mv_ref_ct[3][INTER_MODE_CONTEXTS][4][2];
+  int vp9_mode_contexts[3][INTER_MODE_CONTEXTS][4];
 
 #if CONFIG_CODE_NONZEROCOUNT
   vp9_prob nzc_probs_4x4

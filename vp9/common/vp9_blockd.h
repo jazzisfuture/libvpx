@@ -214,6 +214,7 @@ typedef enum {
   BLOCK_SIZE_MB16X16 = 0,
   BLOCK_SIZE_SB32X32 = 1,
   BLOCK_SIZE_SB64X64 = 2,
+  BLOCK_SIZE_SIZE = 3,
 } BLOCK_SIZE_TYPE;
 
 typedef struct {

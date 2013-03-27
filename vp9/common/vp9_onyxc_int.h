@@ -136,8 +136,8 @@ typedef struct frame_contexts {
   vp9_prob pre_interintra_prob;
 #endif
 
-  int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
-  unsigned int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
+  int vp9_mode_contexts[BLOCK_SIZE_SIZE][INTER_MODE_CONTEXTS][4];
+  unsigned int mv_ref_ct[BLOCK_SIZE_SIZE][INTER_MODE_CONTEXTS][4][2];
 } FRAME_CONTEXT;
 
 typedef enum {
