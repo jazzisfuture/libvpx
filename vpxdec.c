@@ -1024,7 +1024,11 @@ int main(int argc, const char **argv_) {
 
     if (!noblit) {
       if (do_scale) {
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
         if (frame_out == 1) {
+=======
+        if (img && frame_out == 1) {
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
           stream_w = img->d_w;
           stream_h = img->d_h;
           scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420,

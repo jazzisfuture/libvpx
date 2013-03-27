@@ -171,14 +171,27 @@ void EncoderTest::RunLoop(VideoSource *video) {
       while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
         pkt = MutateEncoderOutputHook(pkt);
         again = true;
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
+=======
+#if CONFIG_VP8_DECODER
+        vpx_codec_err_t res_dec;
+#endif
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
             has_cxdata = true;
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
             if (decoder && DoDecode()) {
               decoder->DecodeFrame((const uint8_t*)pkt->data.frame.buf,
                                    pkt->data.frame.sz);
               has_dxdata = true;
             }
+=======
+            res_dec = decoder.DecodeFrame((const uint8_t*)pkt->data.frame.buf,
+                                          pkt->data.frame.sz);
+            ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder.DecodeError();
+#endif
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
             FramePktHook(pkt);

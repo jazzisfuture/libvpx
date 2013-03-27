@@ -44,13 +44,14 @@ class Decoder {
   Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
       : cfg_(cfg), deadline_(deadline) {
     memset(&decoder_, 0, sizeof(decoder_));
+    Init();
   }
 
   virtual ~Decoder() {
     vpx_codec_destroy(&decoder_);
   }
 
-  void DecodeFrame(const uint8_t *cxdata, int size);
+  vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, int size);
 
   DxDataIterator GetDxData() {
     return DxDataIterator(&decoder_);
@@ -65,12 +66,29 @@ class Decoder {
     ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
   }
 
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
  protected:
   virtual const vpx_codec_iface_t* CodecInterface() const = 0;
 
   const char* DecodeError() {
+=======
+  void Control(int ctrl_id, const void *arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&decoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
+  }
+
+  const char *DecodeError() {
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
     const char *detail = vpx_codec_error_detail(&decoder_);
     return detail ? detail : vpx_codec_error(&decoder_);
+  }
+
+ protected:
+  void Init() {
+    const vpx_codec_err_t res = vpx_codec_dec_init(&decoder_,
+                                                   &vpx_codec_vp8_dx_algo,
+                                                   &cfg_, 0);
+    ASSERT_EQ(VPX_CODEC_OK, res) << DecodeError();
   }
 
   vpx_codec_ctx_t     decoder_;

@@ -89,8 +89,8 @@ static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
 
 static const char *exec_name;
 
-#define VP8_FOURCC (0x00385056)
-#define VP9_FOURCC (0x00395056)
+#define VP8_FOURCC (0x30385056)
+#define VP9_FOURCC (0x30395056)
 static const struct codec_item {
   char const              *name;
   const vpx_codec_iface_t *(*iface)(void);
@@ -2245,6 +2245,11 @@ static void initialize_encoder(struct stream_state  *stream,
 
 #if CONFIG_DECODERS
   if (global->test_decode != TEST_DECODE_OFF) {
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
+=======
+    int width, height;
+
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
     vpx_codec_dec_init(&stream->decoder, global->codec->dx_iface(), NULL, 0);
   }
 #endif
@@ -2326,8 +2331,11 @@ static void get_cx_data(struct stream_state  *stream,
         if (!(pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT)) {
           stream->frames_out++;
         }
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
         if (!global->quiet)
           fprintf(stderr, " %6luF", (unsigned long)pkt->data.frame.sz);
+=======
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
 
         update_rate_histogram(&stream->rate_hist, cfg, pkt);
         if (stream->config.write_webm) {
@@ -2390,8 +2398,6 @@ static void get_cx_data(struct stream_state  *stream,
           stream->psnr_sse_total += pkt->data.psnr.sse[0];
           stream->psnr_samples_total += pkt->data.psnr.samples[0];
           for (i = 0; i < 4; i++) {
-            if (!global->quiet)
-              fprintf(stderr, "%.3f ", pkt->data.psnr.psnr[i]);
             stream->psnr_totals[i] += pkt->data.psnr.psnr[i];
           }
           stream->psnr_count++;
@@ -2430,6 +2436,7 @@ static float usec_to_fps(uint64_t usec, unsigned int frames) {
 
 
 static void test_decode(struct stream_state  *stream,
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
                         enum TestDecodeFatality fatal,
                         const struct codec_item *codec) {
   vpx_image_t enc_img, dec_img;
@@ -2462,9 +2469,17 @@ static void test_decode(struct stream_state  *stream,
     vpx_codec_control(&stream->decoder, VP9_GET_REFERENCE, &ref);
     dec_img = ref.img;
   }
+=======
+                        enum TestDecodeFatality fatal) {
+  if (stream->mismatch_seen)
+    return;
+
+  vpx_codec_control(&stream->encoder, VP8_COPY_REFERENCE, &stream->ref_enc);
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
   ctx_exit_on_error(&stream->encoder, "Failed to get encoder reference frame");
   ctx_exit_on_error(&stream->decoder, "Failed to get decoder reference frame");
 
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
   if (!compare_img(&enc_img, &dec_img)) {
     int y[4], u[4], v[4];
     find_mismatch(&enc_img, &dec_img, y, u, v);
@@ -2478,11 +2493,25 @@ static void test_decode(struct stream_state  *stream,
                           y[0], y[1], y[2], y[3],
                           u[0], u[1], u[2], u[3],
                           v[0], v[1], v[2], v[3]);
+=======
+  if (!compare_img(&stream->ref_enc.img, &stream->ref_dec.img)) {
+    int y[2], u[2], v[2];
+    find_mismatch(&stream->ref_enc.img, &stream->ref_dec.img,
+                  y, u, v);
+    warn_or_exit_on_error(&stream->decoder, fatal == TEST_DECODE_FATAL,
+                          "Stream %d: Encode/decode mismatch on frame %d"
+                          " at Y[%d, %d], U[%d, %d], V[%d, %d]",
+                          stream->index, stream->frames_out,
+                          y[0], y[1], u[0], u[1], v[0], v[1]);
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
     stream->mismatch_seen = stream->frames_out;
   }
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
 
   vpx_img_free(&enc_img);
   vpx_img_free(&dec_img);
+=======
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
 }
 
 
@@ -2560,7 +2589,11 @@ int main(int argc, const char **argv_) {
     usage_exit();
 
   for (pass = global.pass ? global.pass - 1 : 0; pass < global.passes; pass++) {
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
     int frames_in = 0;
+=======
+    int frames_in = 0, seen_frames = 0;
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
     int64_t estimated_time_left = -1;
     int64_t average_rate = -1;
     off_t lagged_count = 0;
@@ -2640,9 +2673,15 @@ int main(int argc, const char **argv_) {
 
         if (frame_avail)
           frames_in++;
+        seen_frames = frames_in > global.skip_frames ?
+                          frames_in - global.skip_frames : 0;
 
         if (!global.quiet) {
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
           float fps = usec_to_fps(cx_time, frames_in);
+=======
+          float fps = usec_to_fps(cx_time, seen_frames);
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
           fprintf(stderr, "\rPass %d/%d ", pass + 1, global.passes);
 
           if (stream_cnt == 1)
@@ -2678,6 +2717,7 @@ int main(int argc, const char **argv_) {
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
         if (!got_data && input.length && !streams->frames_out) {
+<<<<<<< HEAD   (513157 Scatter-based scantables.)
           lagged_count = global.limit ? frames_in : ftello(input.file);
         } else if (input.length) {
           int64_t remaining;
@@ -2705,6 +2745,36 @@ int main(int argc, const char **argv_) {
 
         if (got_data && global.test_decode != TEST_DECODE_OFF)
           FOREACH_STREAM(test_decode(stream, global.test_decode, global.codec));
+=======
+          lagged_count = global.limit ? seen_frames : ftello(input.file);
+        } else if (input.length) {
+          int64_t remaining;
+          int64_t rate;
+
+          if (global.limit) {
+            int frame_in_lagged = (seen_frames - lagged_count) * 1000;
+
+            rate = cx_time ? frame_in_lagged * (int64_t)1000000 / cx_time : 0;
+            remaining = 1000 * (global.limit - global.skip_frames
+                                - seen_frames + lagged_count);
+          } else {
+            off_t input_pos = ftello(input.file);
+            off_t input_pos_lagged = input_pos - lagged_count;
+            int64_t limit = input.length;
+
+            rate = cx_time ? input_pos_lagged * (int64_t)1000000 / cx_time : 0;
+            remaining = limit - input_pos + lagged_count;
+          }
+
+          average_rate = (average_rate <= 0)
+              ? rate
+              : (average_rate * 7 + rate) / 8;
+          estimated_time_left = average_rate ? remaining / average_rate : -1;
+        }
+
+        if (got_data && global.test_decode != TEST_DECODE_OFF)
+          FOREACH_STREAM(test_decode(stream, global.test_decode));
+>>>>>>> BRANCH (8015a9 Fixing fourcc for VP8 and VP9.)
       }
 
       fflush(stdout);
@@ -2719,14 +2789,14 @@ int main(int argc, const char **argv_) {
                        "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7lub/f %7"PRId64"b/s"
                        " %7"PRId64" %s (%.2f fps)\033[K\n", pass + 1,
                        global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
-                       frames_in ? (unsigned long)(stream->nbytes * 8 / frames_in) : 0,
-                       frames_in ? (int64_t)stream->nbytes * 8
+                       seen_frames ? (unsigned long)(stream->nbytes * 8 / seen_frames) : 0,
+                       seen_frames ? (int64_t)stream->nbytes * 8
                        * (int64_t)global.framerate.num / global.framerate.den
-                       / frames_in
+                       / seen_frames
                        : 0,
                        stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
                        stream->cx_time > 9999999 ? "ms" : "us",
-                       usec_to_fps(stream->cx_time, frames_in));
+                       usec_to_fps(stream->cx_time, seen_frames));
                     );
 
     if (global.show_psnr)
