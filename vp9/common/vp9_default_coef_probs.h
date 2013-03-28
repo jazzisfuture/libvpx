@@ -995,3 +995,70 @@ static const vp9_prob default_nzc_pcat_probs[MAX_NZC_CONTEXTS]
 };
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+
+// There are two probs: the first is the prob(0) of the isolated zero bit,
+// the second is the prob(0) of the end of orientation symbol [if 0 that
+// indicates a zerotree root].
+static const vp9_zpc_probs default_zpc_probs_4x4 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 2, }, { 2, }, { 2, },
+    }, { /* Coeff Band 1 */
+      { 2, }, { 2, }, { 2, },
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 2, }, { 2, }, { 2, },
+    }, { /* Coeff Band 1 */
+      { 2, }, { 2, }, { 2, },
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_8x8 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 3, }, { 2, }, { 2, },
+    }, { /* ZPC Band 1 */
+      { 3, }, { 2, }, { 2, },
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 3, }, { 2, }, { 2, },
+    }, { /* ZPC Band 1 */
+      { 3, }, { 2, }, { 2, },
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      {  17,  }, {  14,  }, {   8,  },
+    }, { /* ZPC Band 1 */
+      {  24,  }, {  14,  }, {   3,  },
+    },
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      {  96,  }, {  32,  }, {  14,  },
+    }, { /* ZPC Band 1 */
+      {  18,  }, {  10,  }, {   2,  },
+    },
+  },
+};
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      {  19,  }, {  18,  }, {  10,  },
+    }, { /* ZPC Band 1 */
+      {  23,  }, {  10,  }, {   1,  },
+    },
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      {  96,  }, {  32,  }, {  23,  },
+    }, { /* ZPC Band 1 */
+      {  27,  }, {  14,  }, {   2,  },
+    },
+  },
+};
+#endif  // CONFIG_CODE_ZEROGROUP
