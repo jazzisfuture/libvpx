@@ -1626,6 +1626,12 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   vp9_zero(cm->fc.nzc_counts_32x32);
   vp9_zero(cm->fc.nzc_pcat_counts);
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zero(cm->fc.zpc_counts_4x4);
+  vp9_zero(cm->fc.zpc_counts_8x8);
+  vp9_zero(cm->fc.zpc_counts_16x16);
+  vp9_zero(cm->fc.zpc_counts_32x32);
+#endif
 
   return (VP9_PTR) cpi;
 }
