@@ -681,4 +681,10 @@ static int get_nzc_used(TX_SIZE tx_size) {
   return (tx_size >= TX_16X16);
 }
 #endif
+
+#if CONFIG_CODE_ZEROGROUP
+static int get_zpc_used(TX_SIZE tx_size) {
+  return (tx_size >= TX_16X16);
+}
+#endif
 #endif  // VP9_COMMON_VP9_BLOCKD_H_
