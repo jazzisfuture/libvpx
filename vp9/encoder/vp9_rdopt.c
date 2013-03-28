@@ -415,17 +415,32 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
   ENTROPY_CONTEXT *const l1 = l +
       sizeof(ENTROPY_CONTEXT_PLANES)/sizeof(ENTROPY_CONTEXT);
+  TX_TYPE tx_type = DCT_DCT;
 
 #if CONFIG_CODE_NONZEROCOUNT
   const int nzc_used = get_nzc_used(tx_size);
   int nzc_context = vp9_get_nzc_context(cm, xd, ib);
   unsigned int *nzc_cost;
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  int last_nz_pos[3] = {-1, -1, -1};  // Encoder only
+  int is_eoo[3] = {0, 0, 0};
+  int is_last_zero[3] = {0, 0, 0};
+  int o, rc, skip_coef_val;
+  vp9_zpc_probs *zpc_probs;
+  int skip_coef_val1;
+  int last1_start = -1;
+  int last1_indicated = 0;
+#endif
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   vp9_prob (*coef_probs)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                         [ENTROPY_NODES];
   int seg_eob, default_eob;
   uint8_t token_cache[1024];
+
+#if CONFIG_CODE_ZEROGROUP
+  vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
+#endif
 
   // Check for consistency of tx_size with mode info
   assert((!type && !pb_idx.plane) || (type && pb_idx.plane));
@@ -438,8 +453,8 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 
   switch (tx_size) {
     case TX_4X4: {
-      const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-                              get_tx_type_4x4(xd, ib) : DCT_DCT;
+      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_4x4(xd, ib) : DCT_DCT;
       a_ec = *a;
       l_ec = *l;
 #if CONFIG_CODE_NONZEROCOUNT
@@ -454,14 +469,17 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       } else {
         scan = vp9_default_zig_zag1d_4x4;
       }
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &cm->fc.zpc_probs_4x4;
+#endif
       break;
     }
     case TX_8X8: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
       const int sz = 3 + mb_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
-      const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-                              get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
+      TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
       a_ec = (a[0] + a[1]) != 0;
       l_ec = (l[0] + l[1]) != 0;
       if (tx_type == ADST_DCT) {
@@ -476,14 +494,17 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
 #endif
       coef_probs = cm->fc.coef_probs_8x8;
       seg_eob = 64;
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &cm->fc.zpc_probs_8x8;
+#endif
       break;
     }
     case TX_16X16: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
       const int sz = 4 + mb_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
-      const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-                              get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
+      TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
       if (tx_type == ADST_DCT) {
         scan = vp9_row_scan_16x16;
       } else if (tx_type == DCT_ADST) {
@@ -503,6 +524,9 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
       }
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &cm->fc.zpc_probs_16x16;
+#endif
       break;
     }
     case TX_32X32:
@@ -528,6 +552,9 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         l_ec = (l[0] + l[1] + l[2] + l[3] +
                 l1[0] + l1[1] + l1[2] + l1[3]) != 0;
       }
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &cm->fc.zpc_probs_32x32;
+#endif
       break;
     default:
       abort();
@@ -549,36 +576,148 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   if (eob < seg_eob)
     assert(qcoeff_ptr[scan[eob]] == 0);
 
+#if CONFIG_CODE_ZEROGROUP
+  for (c = 0; c < eob; ++c) {
+    rc = scan[c];
+    o = vp9_get_orientation(rc, tx_size);
+    if (qcoeff_ptr[rc] != 0)
+      last_nz_pos[o] = c;
+    if (abs(qcoeff_ptr[rc]) == 1 && last1_start == -1)
+      last1_start = c;
+    else if (abs(qcoeff_ptr[rc]) > 1)
+      last1_start = -1;
+  }
+#endif
   {
 #if CONFIG_CODE_NONZEROCOUNT
     int nzc = 0;
 #endif
-    for (; c < eob; c++) {
+    for (c = 0; c < eob; c++) {
       int v = qcoeff_ptr[scan[c]];
       int t = vp9_dct_value_tokens_ptr[v].Token;
+      int band = get_coef_band(scan, tx_size, c);
 #if CONFIG_CODE_NONZEROCOUNT
       nzc += (v != 0);
 #endif
-      token_cache[c] = t;
-      cost += token_costs[get_coef_band(scan, tx_size, c)][pt][t];
-      cost += vp9_dct_value_cost_ptr[v];
-#if !CONFIG_CODE_NONZEROCOUNT
-      if (!c || token_cache[c - 1])
-        cost += vp9_cost_bit(coef_probs[type][ref]
-                                       [get_coef_band(scan, tx_size, c)]
-                                       [pt][0], 1);
+      if (c)
+        pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
+#if CONFIG_CODE_ZEROGROUP
+      rc = scan[c];
+      o = vp9_get_orientation(rc, tx_size);
+      skip_coef_val = (token_cache[rc] == ZERO_TOKEN || is_eoo[o]);
+      if (skip_coef_val)
+        assert(v == 0);
+      skip_coef_val1 = (t != DCT_EOB_TOKEN && t != ZERO_TOKEN &&
+                        last1_indicated);
+      if (skip_coef_val1)
+        assert(t == ONE_TOKEN);
+      if (!skip_coef_val) {
+#if USE_OPC_LAST1
+        if (!skip_coef_val1) {
+          cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
+        } else {
+          cost += vp9_cost_bit(coef_probs[type][ref][band][pt][1], 1) +
+              vp9_dct_value_cost_ptr[v];
+        }
+#else
+        cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
 #endif
-      pt = vp9_get_coef_context(scan, nb, pad, token_cache, c + 1, default_eob);
+      }
+#else
+      cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
+#endif
+#if !CONFIG_CODE_NONZEROCOUNT
+      if (!c || token_cache[scan[c - 1]])
+        cost += vp9_cost_bit(coef_probs[type][ref][band][pt][0], 1);
+#endif
+      token_cache[scan[c]] = t;
+#if CONFIG_CODE_ZEROGROUP
+      if (t == ZERO_TOKEN && !skip_coef_val) {
+        int ztr = 0, eoo = 0, izr = 1, use_izr, use_ztr, use_eoo;
+#if USE_ZPC_EOORIENT == 1
+        use_eoo = vp9_use_eoo(c, seg_eob, scan, tx_size, is_last_zero, is_eoo);
+#else
+        use_eoo = 0;
+#endif
+#if USE_ZPC_EXTRA == 1
+        use_ztr = vp9_use_zrn(c, seg_eob, tx_size);
+#elif USE_ZPC_EXTRA == 2
+        use_ztr = vp9_use_ztr(c, seg_eob, scan, tx_size, tx_type, pt);
+#else
+        use_ztr = 0;
+#endif
+        use_izr = (use_eoo || use_ztr);
+        if (use_eoo) {
+          eoo = vp9_is_eoo(c, eob, scan, tx_size, qcoeff_ptr, last_nz_pos);
+        }
+        if (use_ztr && !eoo) {
+#if USE_ZPC_EXTRA == 1
+          ztr = vp9_is_zrn(c, eob, scan, tx_size, qcoeff_ptr, token_cache);
+#elif USE_ZPC_EXTRA == 2
+          ztr = vp9_is_ztr(c, eob, scan, tx_size, qcoeff_ptr, token_cache);
+#endif
+        }
+        if (use_izr) {
+          izr = !eoo && !ztr;
+          cost += vp9_cost_bit((*zpc_probs)[ref]
+                                           [coef_to_zpc_band(band)]
+                                           [coef_to_zpc_ptok(pt)][0], izr);
+          if (!izr) {
+            if (use_eoo && use_ztr) {
+              cost += vp9_cost_bit((*zpc_probs)
+                                   [ref][coef_to_zpc_band(band)]
+                                   [coef_to_zpc_ptok(pt)][1], eoo);
+            } else if (use_eoo) {
+              assert(eoo == 1);
+            } else if (use_ztr) {
+              assert(ztr == 1);
+            }
+          }
+          if (eoo) {
+            assert(is_eoo[o] == 0);
+            is_eoo[o] = 1;
+          } else if (ztr) {
+#if USE_ZPC_EXTRA == 1
+            vp9_mark_zrn(c, scan, tx_size, token_cache);
+#elif USE_ZPC_EXTRA == 2
+            vp9_mark_ztr(c, scan, tx_size, token_cache);
+#endif
+          }
+        }
+      } else if (t == ONE_TOKEN && !skip_coef_val1) {
+#if USE_OPC_LAST1
+        int use_last1 = vp9_use_last1(c, seg_eob, scan, tx_size,
+                                      last1_indicated);
+#else
+        int use_last1 = 0;
+#endif
+        if (use_last1) {
+          int last1 = vp9_is_last1(
+              c, eob, scan, tx_size, qcoeff_ptr, last1_start);
+          cost += vp9_cost_bit((*zpc_probs)[ref]
+                               [coef_to_zpc_band(band)]
+                               [coef_to_zpc_ptok(pt)][2], last1);
+          if (last1) {
+            assert(last1_indicated == 0);
+            last1_indicated = 1;
+          }
+        }
+      }
+      is_last_zero[o] = (t == ZERO_TOKEN);
+#endif
     }
 #if CONFIG_CODE_NONZEROCOUNT
     if (nzc_used)
       cost += nzc_cost[nzc];
     else
 #endif
-      if (c < seg_eob)
+      if (c < seg_eob) {
+        if (c)
+          pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
         cost += mb->token_costs[tx_size][type][ref]
                                [get_coef_band(scan, tx_size, c)]
                                [pt][DCT_EOB_TOKEN];
+      }
   }
 
   // is eob first coefficient;
