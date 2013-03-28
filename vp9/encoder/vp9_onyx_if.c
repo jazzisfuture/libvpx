@@ -2797,9 +2797,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     if (cpi->this_key_frame_forced) {
       int delta_qindex;
       int qindex = cpi->last_boosted_qindex;
+      double last_boosted_q = vp9_convert_qindex_to_q(qindex);
 
-      delta_qindex = compute_qdelta(cpi, qindex,
-                                    (qindex * 0.75));
+      delta_qindex = compute_qdelta(cpi, last_boosted_q,
+                                    (last_boosted_q * 0.75));
 
       cpi->active_best_quality = qindex + delta_qindex;
       if (cpi->active_best_quality < cpi->best_quality)
