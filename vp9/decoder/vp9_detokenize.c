@@ -63,15 +63,28 @@ static int16_t get_signed(BOOL_DECODER *br, int16_t value_to_sign) {
   return decode_bool(br, 128) ? -value_to_sign : value_to_sign;
 }
 
-
+#if CONFIG_CODE_ZEROGROUP
+#define ZEROGROUP_ADVANCE()               \
+  do {                                     \
+    token_cache[c] = ZERO_TOKEN;           \
+    is_last_zero[o] = 1;                   \
+    c++;                                   \
+  } while (0)
+#define INCREMENT_COUNT(token)             \
+  do {                                     \
+    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)] \
+               [pt][token]++;     \
+    token_cache[c] = token; \
+    is_last_zero[o] = (token == ZERO_TOKEN);    \
+  } while (0)
+#else
 #define INCREMENT_COUNT(token)               \
   do {                                       \
     coef_counts[type][ref][get_coef_band(scan, txfm_size, c)] \
                [pt][token]++;     \
     token_cache[c] = token; \
-    pt = vp9_get_coef_context(scan, nb, pad, token_cache,     \
-                              c + 1, default_eob); \
   } while (0)
+#endif
 
 #if CONFIG_CODE_NONZEROCOUNT
 #define WRITE_COEF_CONTINUE(val, token)                       \
@@ -112,6 +125,16 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   vp9_prob *prob;
   vp9_coeff_count *coef_counts;
   const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
+#if CONFIG_CODE_ZEROGROUP
+  int is_eoo[3] = {0, 0, 0};
+  int is_last_zero[3] = {0, 0, 0};
+  uint8_t zero_cache[1024];
+  int o, rc;
+  vp9_zpc_probs *zpc_probs;
+  vp9_zpc_count *zpc_count;
+  vp9_prob *zprobs;
+  int ztr = 0, eoo = 0, izr = 1, use_izr, use_ztr, use_eoo;
+#endif
 #if CONFIG_CODE_NONZEROCOUNT
   const int nzc_used = get_nzc_used(txfm_size);
   uint16_t nzc = 0;
@@ -120,6 +143,9 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
 #endif
   const int *scan, *nb;
   uint8_t token_cache[1024];
+#if CONFIG_CODE_ZEROGROUP
+  vpx_memset(zero_cache, UNKNOWN_ZERO, sizeof(zero_cache));
+#endif
 
   if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
     aidx = vp9_block2above_sb64[txfm_size][block_idx];
@@ -153,6 +179,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       coef_probs  = fc->coef_probs_4x4;
       coef_counts = fc->coef_counts_4x4;
       default_eob = 16;
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &(fc->zpc_probs_4x4);
+      zpc_count = &(fc->zpc_counts_4x4);
+#endif
       break;
     }
     case TX_8X8: {
@@ -177,6 +207,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       above_ec = (A0[aidx] + A0[aidx + 1]) != 0;
       left_ec  = (L0[lidx] + L0[lidx + 1]) != 0;
       default_eob = 64;
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &(fc->zpc_probs_8x8);
+      zpc_count = &(fc->zpc_counts_8x8);
+#endif
       break;
     }
     case TX_16X16: {
@@ -208,6 +242,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
         left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) != 0;
       }
       default_eob = 256;
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &(fc->zpc_probs_16x16);
+      zpc_count = &(fc->zpc_counts_16x16);
+#endif
       break;
     }
     case TX_32X32:
@@ -234,6 +272,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                     L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) != 0;
       }
       default_eob = 1024;
+#if CONFIG_CODE_ZEROGROUP
+      zpc_probs = &fc->zpc_probs_32x32;
+      zpc_count = &fc->zpc_counts_32x32;
+#endif
       break;
   }
 
@@ -243,22 +285,49 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   while (1) {
     int val;
     const uint8_t *cat6 = cat6_prob;
-
     if (c >= seg_eob)
       break;
 #if CONFIG_CODE_NONZEROCOUNT
     if (nzc_used && nzc == nzc_expected)
       break;
 #endif
+    if (c)
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                c, default_eob);
     prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
     fc->eob_branch_counts[txfm_size][type][ref]
                          [get_coef_band(scan, txfm_size, c)][pt]++;
+#if CONFIG_CODE_ZEROGROUP
+    rc = scan[c];
+    o = vp9_get_orientation(rc, txfm_size);
+    zprobs = (*zpc_probs)[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+#endif
 #if CONFIG_CODE_NONZEROCOUNT
-    if (!nzc_used)
+    if (!nzc_used) {
 #endif
       if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
         break;
+#if CONFIG_CODE_ZEROGROUP
+      else if (zero_cache[rc] == 0 || is_eoo[o])
+        ZEROGROUP_ADVANCE();
+#endif
+#if CONFIG_CODE_NONZEROCOUNT
+    }
+#endif
 SKIP_START:
+    if (c)
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                c, default_eob);
+    prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+#if CONFIG_CODE_ZEROGROUP
+    rc = scan[c];
+    o = vp9_get_orientation(rc, txfm_size);
+    zprobs = (*zpc_probs)[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+    if (zero_cache[rc] == 0 || is_eoo[o]) {
+      ZEROGROUP_ADVANCE();
+      goto SKIP_START;
+    }
+#endif
     if (c >= seg_eob)
       break;
 #if CONFIG_CODE_NONZEROCOUNT
@@ -268,9 +337,38 @@ SKIP_START:
     if (!nzc_used || seg_eob - nzc_expected - c + nzc > 0)
 #endif
     if (!vp9_read(br, prob[ZERO_CONTEXT_NODE])) {
+#if CONFIG_CODE_ZEROGROUP
+      ztr = 0;
+      eoo = 0;
+      izr = 1;
+      use_eoo = vp9_use_eoo(rc, txfm_size, is_last_zero, is_eoo);
+      use_ztr = vp9_use_ztr(rc, txfm_size);
+      use_izr = (use_eoo || use_ztr);
+      if (use_izr) {
+        izr = vp9_read(br, zprobs[0]);
+        ++(*zpc_count)[type][ref][get_coef_band(scan, txfm_size, c)]
+                      [pt][0][izr];
+        if (!izr) {
+          if (use_eoo && use_ztr) {
+            eoo = vp9_read(br, zprobs[1]);
+            if (!eoo) ztr = 1;
+            ++(*zpc_count)[type][ref][get_coef_band(scan, txfm_size, c)]
+                          [pt][1][eoo];
+          } else if (use_eoo) {
+            eoo = 1;
+          } else if (use_ztr) {
+            ztr = 1;
+          }
+        }
+        if (eoo) {
+          is_eoo[o] = 1;
+        } else if (ztr) {
+          vp9_mark_ztr(rc, txfm_size, zero_cache);
+        }
+      }
+#endif
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-      prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
       goto SKIP_START;
     }
     // ONE_CONTEXT_NODE_0_

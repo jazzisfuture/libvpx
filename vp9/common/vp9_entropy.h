@@ -264,6 +264,44 @@ extern const int vp9_basenzcvalue[NZC32X32_TOKENS];
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
+#if CONFIG_CODE_ZEROGROUP
+
+typedef enum {
+  HORIZONTAL = 0,
+  DIAGONAL,
+  VERTICAL,
+} OrientationType;
+
+/* Note EOB should become part of this symbol eventually,
+ * but holding off on this for now because that is a major
+ * change in the rest of the codebase */
+
+#define ZPC_ISOLATED     (MAX_ENTROPY_TOKENS + 0)    /* Isolated zero */
+#define ZPC_NOTISOLATED  (MAX_ENTROPY_TOKENS + 1)    /* Not Isolated zero */
+#define ZPC_ZEROTREE     (MAX_ENTROPY_TOKENS + 2)    /* Zerotree root */
+#define ZPC_EOORIENT     (MAX_ENTROPY_TOKENS + 3)    /* End of Orientation */
+/* ZPC_EOO: All remaining coefficients in the same orientation are 0.
+ * In other words all remaining coeffs in the current subband, and all
+ * children of the current subband are zero. Subbands are defined by
+ * dyadic partitioning in the coeff domain */
+
+#define ZPC_NODES                2
+
+#define UNKNOWN_ZERO             255     /* Not signalled, encoder only */
+
+typedef vp9_prob vp9_zpc_probs[BLOCK_TYPES][REF_TYPES][COEF_BANDS]
+                              [PREV_COEF_CONTEXTS][ZPC_NODES];
+typedef unsigned int vp9_zpc_count[BLOCK_TYPES][REF_TYPES][COEF_BANDS]
+                                  [PREV_COEF_CONTEXTS][ZPC_NODES][2];
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size);
+int vp9_use_ztr(int rc, TX_SIZE tx_size);
+int vp9_use_eoo(int rc, TX_SIZE tx_size, int *is_last_zero, int *is_eoo);
+int vp9_is_ztr(int rc, TX_SIZE tx_size, const int16_t *qcoeff_ptr);
+void vp9_mark_ztr(int rc, TX_SIZE tx_size, uint8_t *zero_cache);
+
+#endif  // CONFIG_CODE_ZEROGROUP
+
 #include "vp9/common/vp9_coefupdateprobs.h"
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

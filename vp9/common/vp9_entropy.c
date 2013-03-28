@@ -2214,6 +2214,16 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
   vpx_memcpy(pc->fc.coef_probs_32x32, default_coef_probs_32x32,
              sizeof(pc->fc.coef_probs_32x32));
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vpx_memcpy(pc->fc.zpc_probs_4x4, default_zpc_probs_4x4,
+             sizeof(pc->fc.zpc_probs_4x4));
+  vpx_memcpy(pc->fc.zpc_probs_8x8, default_zpc_probs_8x8,
+             sizeof(pc->fc.zpc_probs_8x8));
+  vpx_memcpy(pc->fc.zpc_probs_16x16, default_zpc_probs_16x16,
+             sizeof(pc->fc.zpc_probs_16x16));
+  vpx_memcpy(pc->fc.zpc_probs_32x32, default_zpc_probs_32x32,
+             sizeof(pc->fc.zpc_probs_32x32));
+#endif
 }
 
 #if CONFIG_MODELCOEFPROB
@@ -3728,3 +3738,70 @@ void vp9_adapt_nzc_probs(VP9_COMMON *cm) {
   adapt_nzc_pcat(cm, count_sat, update_factor);
 }
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+void vp9_mark_ztr(int rc, TX_SIZE tx_size, uint8_t *zero_cache) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i >= (2 << tx_size) || j >= (2 << tx_size)) {
+    zero_cache[rc] = 0;
+  } else {
+    i <<= 1;
+    j <<= 1;
+    rc = i * (4 << tx_size) + j;
+    vp9_mark_ztr(rc, tx_size, zero_cache);
+    vp9_mark_ztr(rc + 1, tx_size, zero_cache);
+    vp9_mark_ztr(rc + (4 << tx_size), tx_size, zero_cache);
+    vp9_mark_ztr(rc + (4 << tx_size) + 1, tx_size, zero_cache);
+  }
+}
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i == 0 && j == 0) return DIAGONAL;
+  while (i > 1 || j > 1) {
+    i >>= 1;
+    j >>= 1;
+  }
+  if (i == 0 && j == 1)
+    return HORIZONTAL;  // horizontal
+  else if (i == 1 && j == 1)
+    return DIAGONAL;    // diagonal
+  else if (i == 1 && j == 0)
+    return VERTICAL;    // vertical
+  assert(0);
+}
+
+int vp9_use_ztr(int rc, TX_SIZE tx_size) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  // not dc and not in last subband
+  return (i + j > 0 && i < (2 << tx_size) && j < (2 << tx_size));
+}
+
+int vp9_use_eoo(int rc, TX_SIZE tx_size, int *is_last_zero, int *is_eoo) {
+  int o = vp9_get_orientation(rc, tx_size);
+  int use_eoo = (!is_last_zero[o] &&
+                 !is_eoo[o] &&
+                 is_eoo[0] + is_eoo[1] + is_eoo[2] < 2);
+  return use_eoo;
+}
+
+int vp9_is_ztr(int rc, TX_SIZE tx_size, const int16_t *qcoeff_ptr) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i >= (2 << tx_size) || j >= (2 << tx_size)) {
+    // last subband
+    return qcoeff_ptr[rc] == 0;
+  } else {
+    i <<= 1;
+    j <<= 1;
+    rc = i * (4 << tx_size) + j;
+    return (vp9_is_ztr(rc, tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc + 1, tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc + (4 << tx_size), tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc + (4 << tx_size) + 1,  tx_size, qcoeff_ptr));
+  }
+}
+#endif  // CONFIG_CODE_ZEROGROUP

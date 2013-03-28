@@ -470,6 +470,26 @@ static void pack_mb_tokens(vp9_writer* const bc,
       ++p;
       break;
     }
+#if CONFIG_CODE_ZEROGROUP
+    if (t == ZPC_ISOLATED || t == ZPC_NOTISOLATED) {
+      assert((p - 1)->Token == ZERO_TOKEN);
+      encode_bool(bc, t == ZPC_ISOLATED, *pp);
+      ++p;
+      continue;
+    } else if (t == ZPC_ZEROTREE || t == ZPC_EOORIENT) {
+      assert((p - 2)->Token == ZERO_TOKEN);
+      assert((p - 1)->Token == ZPC_ISOLATED ||
+             (p - 1)->Token == ZPC_NOTISOLATED);
+      encode_bool(bc, t == ZPC_EOORIENT, *pp);
+      ++p;
+      continue;
+    } else if (p->skip_coef_val) {
+      assert(t == DCT_EOB_TOKEN || t == ZERO_TOKEN);
+      encode_bool(bc, t == ZERO_TOKEN, *pp);
+      ++p;
+      continue;
+    }
+#endif
 
     /* skip one or two nodes */
     if (p->skip_eob_node) {
@@ -2798,6 +2818,16 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_zero(cpi->common.fc.nzc_counts_32x32);
   vp9_zero(cpi->common.fc.nzc_pcat_counts);
   */
+#endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_copy(cpi->common.fc.pre_zpc_probs_4x4,
+           cpi->common.fc.zpc_probs_4x4);
+  vp9_copy(cpi->common.fc.pre_zpc_probs_8x8,
+           cpi->common.fc.zpc_probs_8x8);
+  vp9_copy(cpi->common.fc.pre_zpc_probs_16x16,
+           cpi->common.fc.zpc_probs_16x16);
+  vp9_copy(cpi->common.fc.pre_zpc_probs_32x32,
+           cpi->common.fc.zpc_probs_32x32);
 #endif
   vp9_copy(cpi->common.fc.pre_sb_ymode_prob, cpi->common.fc.sb_ymode_prob);
   vp9_copy(cpi->common.fc.pre_ymode_prob, cpi->common.fc.ymode_prob);

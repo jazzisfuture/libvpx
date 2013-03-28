@@ -1561,6 +1561,17 @@ static void update_frame_context(VP9D_COMP *pbi, vp9_reader *r) {
   vp9_zero(fc->nzc_counts_32x32);
   vp9_zero(fc->nzc_pcat_counts);
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_copy(fc->pre_zpc_probs_4x4, fc->zpc_probs_4x4);
+  vp9_copy(fc->pre_zpc_probs_8x8, fc->zpc_probs_8x8);
+  vp9_copy(fc->pre_zpc_probs_16x16, fc->zpc_probs_16x16);
+  vp9_copy(fc->pre_zpc_probs_32x32, fc->zpc_probs_32x32);
+
+  vp9_zero(fc->zpc_counts_4x4);
+  vp9_zero(fc->zpc_counts_8x8);
+  vp9_zero(fc->zpc_counts_16x16);
+  vp9_zero(fc->zpc_counts_32x32);
+#endif
 
   read_coef_probs(pbi, r);
 #if CONFIG_CODE_NONZEROCOUNT

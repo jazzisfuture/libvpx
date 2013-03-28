@@ -1286,6 +1286,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cm->fc.nzc_counts_32x32);
   vp9_zero(cm->fc.nzc_pcat_counts);
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zero(cm->fc.zpc_counts_4x4);
+  vp9_zero(cm->fc.zpc_counts_8x8);
+  vp9_zero(cm->fc.zpc_counts_16x16);
+  vp9_zero(cm->fc.zpc_counts_32x32);
+#endif
 #if CONFIG_NEW_MVREF
   vp9_zero(cpi->mb_mv_ref_count);
 #endif
