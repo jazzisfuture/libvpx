@@ -995,3 +995,70 @@ static const vp9_prob default_nzc_pcat_probs[MAX_NZC_CONTEXTS]
 };
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+
+// There are two probs: the first is the prob(0) of the isolated zero bit,
+// the second is the prob(0) of the end of orientation symbol [if 0 that
+// indicates a zerotree root].
+static const vp9_zpc_probs default_zpc_probs_4x4 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 2, 64, 224}, { 2, 64, 224}, { 2, 64, 224},
+    }, { /* Coeff Band 1 */
+      { 2, 64, 224}, { 2, 64, 224}, { 2, 64, 224},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 2, 64, 224}, { 2, 64, 224}, { 2, 64, 224},
+    }, { /* Coeff Band 1 */
+      { 2, 64, 224}, { 2, 64, 224}, { 2, 64, 224},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_8x8 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 3, 48, 224}, { 2, 48, 224}, { 2, 64, 224},
+    }, { /* ZPC Band 1 */
+      { 3, 48, 224}, { 2, 48, 224}, { 2, 64, 224},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 3, 48, 224}, { 2, 48, 224}, { 2, 64, 224},
+    }, { /* ZPC Band 1 */
+      { 3, 48, 224}, { 2, 48, 224}, { 2, 64, 224},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      {  17,  128, 224}, {  14,  128, 224}, {   8,  128, 224},
+    }, { /* ZPC Band 1 */
+      {  24,  128, 224}, {  14,  128, 224}, {   3,  128, 224},
+    },
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      {  42,  128, 224}, {  21,  128, 224}, {  14,  128, 224},
+    }, { /* ZPC Band 1 */
+      {  18,  128, 224}, {  10,  128, 224}, {   2,  128, 224},
+    },
+  },
+};
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      {  19,  128, 224}, {  18,  128, 224}, {  10,  128, 224},
+    }, { /* ZPC Band 1 */
+      {  23,  128, 224}, {  10,  128, 224}, {   1,  128, 224},
+    },
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      {  61,  128, 224}, {  33,  128, 224}, {  23,  128, 224},
+    }, { /* ZPC Band 1 */
+      {  27,  128, 224}, {  14,  128, 224}, {   2,  128, 224},
+    },
+  },
+};
+#endif  // CONFIG_CODE_ZEROGROUP
