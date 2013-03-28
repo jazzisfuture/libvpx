@@ -460,16 +460,8 @@ void encode_mb_row(VP8_COMP *cpi,
 #if CONFIG_MULTITHREAD
         if (cpi->b_multi_threaded != 0)
         {
-            *current_mb_col = mb_col - 1; /* set previous MB done */
-
-            if ((mb_col & (nsync - 1)) == 0)
-            {
-                while (mb_col > (*last_row_current_mb_col - nsync))
-                {
-                    x86_pause_hint();
-                    thread_sleep(0);
-                }
-            }
+            check_thread_position(&cpi->lock, mb_col, nsync, current_mb_col,
+                                  last_row_current_mb_col);
         }
 #endif
 
@@ -594,7 +586,7 @@ void encode_mb_row(VP8_COMP *cpi,
 
 #if CONFIG_MULTITHREAD
     if (cpi->b_multi_threaded != 0)
-        *current_mb_col = rightmost_col;
+        locked_write(&cpi->lock, current_mb_col, rightmost_col);
 #endif
 
     /* this is to account for the border */

@@ -14,6 +14,23 @@
 
 #if CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD
 
+
+#if (!HAVE_PTHREAD_H)
+#define pthread_mutex_init(x, y)
+#define pthread_mutex_destroy(x)
+#define pthread_mutex_lock(x)
+#define pthread_mutex_unlock(x)
+#define pthread_mutex_t int
+
+
+#define pthread_spin_init(x, y)
+#define pthread_spin_destroy(x)
+#define pthread_spin_lock(x)
+#define pthread_spin_unlock(x)
+#define pthread_spinlock_t int
+#endif
+
+
 /* Thread management macros */
 #ifdef _WIN32
 /* Win32 */
@@ -181,6 +198,49 @@ static inline int sem_destroy(sem_t * sem)
 #define x86_pause_hint()
 #endif
 
+static int locked_read(pthread_spinlock_t *lock, volatile const int *ptr)
+{
+    int ret;
+    pthread_spin_lock(lock);
+    ret = *ptr;
+    pthread_spin_unlock(lock);
+    return ret;
+}
+
+static void locked_write(pthread_spinlock_t *lock, volatile int *ptr, int val)
+{
+    pthread_spin_lock(lock);
+    *ptr = val;
+    pthread_spin_unlock(lock);
+}
+
+static int thread_lock_init(pthread_spinlock_t *lock)
+{
+    return pthread_spin_init(lock, 0);
+}
+
+static void thread_lock_destroy(pthread_spinlock_t *lock)
+{
+    pthread_spin_destroy(lock);
+}
+
+
+
+static void check_thread_position(pthread_spinlock_t *lock, int mb_col,
+                                  const int nsync,
+                                  volatile int *current_mb_col,
+                                  volatile const int *last_row_current_mb_col)
+{
+    locked_write(lock, current_mb_col, mb_col - 1);
+    if ((mb_col & (nsync - 1)) == 0)
+    {
+        while (mb_col > (locked_read(lock, last_row_current_mb_col) - nsync))
+        {
+            x86_pause_hint();
+            thread_sleep(0);
+        }
+    }
+}
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
 
 #endif

@@ -18,7 +18,6 @@
 #if CONFIG_MULTITHREAD
 
 extern void vp8cx_mb_init_quantizer(VP8_COMP *cpi, MACROBLOCK *x, int ok_to_skip);
-
 extern void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm);
 
 static THREAD_FUNCTION thread_loopfilter(void *p_data)
@@ -28,12 +27,13 @@ static THREAD_FUNCTION thread_loopfilter(void *p_data)
 
     while (1)
     {
-        if (cpi->b_multi_threaded == 0)
+        if (locked_read(&cpi->lock, &cpi->b_multi_threaded) == 0)
             break;
 
         if (sem_wait(&cpi->h_event_start_lpf) == 0)
         {
-            if (cpi->b_multi_threaded == 0) /* we're shutting down */
+            /* we're shutting down */
+            if (locked_read(&cpi->lock, &cpi->b_multi_threaded) == 0)
                 break;
 
             vp8_loopfilter_frame(cpi, cm);
@@ -55,7 +55,7 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
 
     while (1)
     {
-        if (cpi->b_multi_threaded == 0)
+        if (locked_read(&cpi->lock, &cpi->b_multi_threaded) == 0)
             break;
 
         if (sem_wait(&cpi->h_event_start_encoding[ithread]) == 0)
@@ -74,7 +74,8 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
             int *segment_counts = mbri->segment_counts;
             int *totalrate = &mbri->totalrate;
 
-            if (cpi->b_multi_threaded == 0) /* we're shutting down */
+            /* we're shutting down */
+            if (locked_read(&cpi->lock, &cpi->b_multi_threaded) == 0)
                 break;
 
             for (mb_row = ithread + 1; mb_row < cm->mb_rows; mb_row += (cpi->encoding_thread_count + 1))
@@ -115,16 +116,9 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                 /* for each macroblock col in image */
                 for (mb_col = 0; mb_col < cm->mb_cols; mb_col++)
                 {
-                    *current_mb_col = mb_col - 1;
-
-                    if ((mb_col & (nsync - 1)) == 0)
-                    {
-                        while (mb_col > (*last_row_current_mb_col - nsync))
-                        {
-                            x86_pause_hint();
-                            thread_sleep(0);
-                        }
-                    }
+                    check_thread_position(&cpi->lock, mb_col, nsync,
+                                          current_mb_col,
+                                          last_row_current_mb_col);
 
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
                     tp = tp_start;
@@ -279,7 +273,7 @@ THREAD_FUNCTION thread_encoding_proc(void *p_data)
                                     xd->dst.u_buffer + 8,
                                     xd->dst.v_buffer + 8);
 
-                *current_mb_col = mb_col + nsync;
+                locked_write(&cpi->lock, current_mb_col, mb_col + nsync);
 
                 /* this is to account for the border */
                 xd->mode_info_context++;
@@ -542,6 +536,16 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi)
                (cpi->encoding_thread_count +1));
         */
 
+        if(thread_lock_init(&cpi->lock))
+        {
+            /* free thread related resources */
+            vpx_free(cpi->h_event_start_encoding);
+            vpx_free(cpi->h_encoding_thread);
+            vpx_free(cpi->mb_row_ei);
+            vpx_free(cpi->en_thread_data);
+            return -3;
+        }
+
         for (ithread = 0; ithread < th_count; ithread++)
         {
             ENCODETHREAD_DATA *ethd = &cpi->en_thread_data[ithread];
@@ -565,13 +569,14 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi)
         if(rc)
         {
             /* shutdown other threads */
-            cpi->b_multi_threaded = 0;
+            locked_write(&cpi->lock, &cpi->b_multi_threaded, 0);
             for(--ithread; ithread >= 0; ithread--)
             {
                 pthread_join(cpi->h_encoding_thread[ithread], 0);
                 sem_destroy(&cpi->h_event_start_encoding[ithread]);
             }
             sem_destroy(&cpi->h_event_end_encoding);
+            thread_lock_destroy(&cpi->lock);
 
             /* free thread related resources */
             vpx_free(cpi->h_event_start_encoding);
@@ -596,7 +601,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi)
             if(rc)
             {
                 /* shutdown other threads */
-                cpi->b_multi_threaded = 0;
+                locked_write(&cpi->lock, &cpi->b_multi_threaded, 0);
                 for(--ithread; ithread >= 0; ithread--)
                 {
                     sem_post(&cpi->h_event_start_encoding[ithread]);
@@ -606,6 +611,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi)
                 sem_destroy(&cpi->h_event_end_encoding);
                 sem_destroy(&cpi->h_event_end_lpf);
                 sem_destroy(&cpi->h_event_start_lpf);
+                thread_lock_destroy(&cpi->lock);
 
                 /* free thread related resources */
                 vpx_free(cpi->h_event_start_encoding);
@@ -625,7 +631,7 @@ void vp8cx_remove_encoder_threads(VP8_COMP *cpi)
     if (cpi->b_multi_threaded)
     {
         /* shutdown other threads */
-        cpi->b_multi_threaded = 0;
+        locked_write(&cpi->lock, &cpi->b_multi_threaded, 0);
         {
             int i;
 
@@ -644,6 +650,7 @@ void vp8cx_remove_encoder_threads(VP8_COMP *cpi)
         sem_destroy(&cpi->h_event_end_encoding);
         sem_destroy(&cpi->h_event_end_lpf);
         sem_destroy(&cpi->h_event_start_lpf);
+        thread_lock_destroy(&cpi->lock);
 
         /* free thread related resources */
         vpx_free(cpi->h_event_start_encoding);

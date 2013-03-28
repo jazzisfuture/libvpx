@@ -412,16 +412,8 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd, int start_mb_row)
 
        for (mb_col = 0; mb_col < pc->mb_cols; mb_col++)
        {
-           *current_mb_col = mb_col - 1;
-
-           if ((mb_col & (nsync - 1)) == 0)
-           {
-               while (mb_col > (*last_row_current_mb_col - nsync))
-               {
-                   x86_pause_hint();
-                   thread_sleep(0);
-               }
-           }
+           check_thread_position(&pbi->lock, mb_col, nsync, current_mb_col,
+                                 last_row_current_mb_col);
 
            /* Distance of MB to the various image edges.
             * These are specified to 8th pel as they are always
@@ -609,8 +601,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd, int start_mb_row)
                              xd->dst.u_buffer + 8, xd->dst.v_buffer + 8);
 
        /* last MB of row is ready just after extension is done */
-       *current_mb_col = mb_col + nsync;
-
+       locked_write(&pbi->lock, current_mb_col, mb_col + nsync);
        ++xd->mode_info_context;      /* skip prediction column */
        xd->up_available = 1;
 
@@ -634,12 +625,12 @@ static THREAD_FUNCTION thread_decoding_proc(void *p_data)
 
     while (1)
     {
-        if (pbi->b_multithreaded_rd == 0)
+        if (locked_read(&pbi->lock, &pbi->b_multithreaded_rd) == 0)
             break;
 
         if (sem_wait(&pbi->h_event_start_decoding[ithread]) == 0)
         {
-            if (pbi->b_multithreaded_rd == 0)
+            if (locked_read(&pbi->lock, &pbi->b_multithreaded_rd) == 0)
                 break;
             else
             {
@@ -679,6 +670,8 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi)
         CALLOC_ARRAY(pbi->h_event_start_decoding, pbi->decoding_thread_count);
         CALLOC_ARRAY_ALIGNED(pbi->mb_row_di, pbi->decoding_thread_count, 32);
         CALLOC_ARRAY(pbi->de_thread_data, pbi->decoding_thread_count);
+
+        thread_lock_init(&pbi->lock);
 
         for (ithread = 0; ithread < pbi->decoding_thread_count; ithread++)
         {
@@ -840,7 +833,7 @@ void vp8_decoder_remove_threads(VP8D_COMP *pbi)
     {
         int i;
 
-        pbi->b_multithreaded_rd = 0;
+        locked_write(&pbi->lock, &pbi->b_multithreaded_rd, 0);
 
         /* allow all threads to exit */
         for (i = 0; i < pbi->allocated_decoding_thread_count; i++)
@@ -855,18 +848,19 @@ void vp8_decoder_remove_threads(VP8D_COMP *pbi)
         }
 
         sem_destroy(&pbi->h_event_end_decoding);
+        thread_lock_destroy(&pbi->lock);
 
-            vpx_free(pbi->h_decoding_thread);
-            pbi->h_decoding_thread = NULL;
+        vpx_free(pbi->h_decoding_thread);
+        pbi->h_decoding_thread = NULL;
 
-            vpx_free(pbi->h_event_start_decoding);
-            pbi->h_event_start_decoding = NULL;
+        vpx_free(pbi->h_event_start_decoding);
+        pbi->h_event_start_decoding = NULL;
 
-            vpx_free(pbi->mb_row_di);
-            pbi->mb_row_di = NULL ;
+        vpx_free(pbi->mb_row_di);
+        pbi->mb_row_di = NULL ;
 
-            vpx_free(pbi->de_thread_data);
-            pbi->de_thread_data = NULL;
+        vpx_free(pbi->de_thread_data);
+        pbi->de_thread_data = NULL;
     }
 }
 
