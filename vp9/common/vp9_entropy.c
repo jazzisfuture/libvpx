@@ -459,6 +459,24 @@ const int vp9_basenzcvalue[NZC32X32_TOKENS] = {
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
+#if CONFIG_CODE_ZEROGROUP
+#if USE_ZPC_EOB
+const vp9_tree_index vp9_zpc_tree[2 * ZPC_NODES] = {
+  -ZPC_ISOLATED, 2,
+  -ZPC_ZEROTREE, 4,
+  -ZPC_EOO, -ZPC_EOB
+};
+#else
+const vp9_tree_index vp9_zpc_tree[2 * ZPC_NODES] = {
+  -ZPC_ISOLATED, 2,
+  -ZPC_ZEROTREE, -ZPC_EOO
+};
+#endif  // USE_ZPC_EOB
+
+struct vp9_token_struct vp9_zpc_encodings[ZPC_TOKENS];
+
+#endif  // CONFIG_CODE_ZEROGROUP
+
 #if CONFIG_MODELCOEFPROB
 
 const vp9_prob vp9_modelcoefprobs_gg875[COEFPROB_MODELS][ENTROPY_NODES - 1] = {
@@ -2430,6 +2448,9 @@ void vp9_coef_tree_initialize() {
   vp9_tokens_from_tree(vp9_nzc8x8_encodings, vp9_nzc8x8_tree);
   vp9_tokens_from_tree(vp9_nzc16x16_encodings, vp9_nzc16x16_tree);
   vp9_tokens_from_tree(vp9_nzc32x32_encodings, vp9_nzc32x32_tree);
+#endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_tokens_from_tree(vp9_zpc_encodings, vp9_zpc_tree);
 #endif
 }
 

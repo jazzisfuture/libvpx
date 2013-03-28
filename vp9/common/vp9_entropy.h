@@ -264,6 +264,35 @@ extern const int vp9_basenzcvalue[NZC32X32_TOKENS];
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
+#if CONFIG_CODE_ZEROGROUP
+#define ZPC_ISOLATED             0       /* Isolated zero */
+#define ZPC_ZEROTREE             1       /* Zerotree root */
+#define ZPC_EOO                  2       /* All remaining coefficients in the
+                                            same orientation are 0. In other
+                                            words all remaining coeffs in the
+                                            current subband, and all children of
+                                            the current subband are zero */
+
+/* Note EOB should become part of this symbol eventually,
+ * but holding off on this for now because that is a major
+ * change in the rest of the codebase */
+#define USE_ZPC_EOB              0
+
+#if USE_ZPC_EOB
+#define ZPC_EOB                  3       /* All remaining coefficients in the
+                                            block are zero */
+#endif  // USE_ZPC_EOB
+
+#define ZPC_TOKENS               (3 + USE_ZPC_EOB)
+#define ZPC_NODES                (2 + USE_ZPC_EOB)
+
+/* zpc tree */
+extern const vp9_tree_index     vp9_zpc_tree[2 * ZPC_NODES];
+
+/* zpc encodings */
+extern struct vp9_token_struct  vp9_zpc_encodings[ZPC_TOKENS];
+#endif  // CONFIG_CODE_ZEROGROUP
+
 #include "vp9/common/vp9_coefupdateprobs.h"
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_
