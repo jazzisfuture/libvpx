@@ -533,10 +533,10 @@ static int trellis_get_coeff_context(const int *scan,
                                      int idx, int token,
                                      uint8_t *token_cache,
                                      int pad, int l) {
-  int bak = token_cache[idx], pt;
-  token_cache[idx] = token;
+  int bak = token_cache[scan[idx]], pt;
+  token_cache[scan[idx]] = token;
   pt = vp9_get_coef_context(scan, nb, pad, token_cache, idx + 1, l);
-  token_cache[idx] = bak;
+  token_cache[scan[idx]] = bak;
   return pt;
 }
 
@@ -661,7 +661,7 @@ static void optimize_b(VP9_COMMON *const cm,
   *(tokens[eob] + 1) = *(tokens[eob] + 0);
   next = eob;
   for (i = 0; i < eob; i++)
-    token_cache[i] = vp9_dct_value_tokens_ptr[qcoeff_ptr[scan[i]]].Token;
+    token_cache[scan[i]] = vp9_dct_value_tokens_ptr[qcoeff_ptr[scan[i]]].Token;
   nb = vp9_get_coef_neighbors_handle(scan, &pad);
 
   for (i = eob; i-- > i0;) {
@@ -821,6 +821,8 @@ static void optimize_b(VP9_COMMON *const cm,
   final_nzc_exp = (best ? nzc1 : nzc0);
 #endif
   final_eob = i0 - 1;
+  vpx_memset(qcoeff_ptr, 0, sizeof(*qcoeff_ptr) * (16 << (tx_size * 2)));
+  vpx_memset(dqcoeff_ptr, 0, sizeof(*dqcoeff_ptr) * (16 << (tx_size * 2)));
   for (i = next; i < eob; i = next) {
     x = tokens[i][best].qc;
     if (x) {
@@ -839,6 +841,8 @@ static void optimize_b(VP9_COMMON *const cm,
   final_eob++;
 
   xd->eobs[ib] = final_eob;
+  if (final_eob < (16 << (tx_size * 2)))
+    assert(qcoeff_ptr[scan[final_eob]] == 0);
   *a = *l = (final_eob > 0);
 #if CONFIG_CODE_NONZEROCOUNT
   assert(final_nzc == final_nzc_exp);

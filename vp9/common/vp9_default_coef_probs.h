@@ -995,3 +995,103 @@ static const vp9_prob default_nzc_pcat_probs[MAX_NZC_CONTEXTS]
 };
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+
+// There are two probs: the first is the prob(0) of the isolated zero bit,
+// the second is the prob(0) of the end of orientation symbol [if 0 that
+// indicates a zerotree root].
+static const vp9_zpc_probs default_zpc_probs_4x4 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* Coeff Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* Coeff Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_8x8 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 32, 48}, { 32, 48},
+    }, { /* ZPC Band 1 */
+      { 32, 48}, { 32, 48},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 32, 48}, { 32, 48},
+    }, { /* ZPC Band 1 */
+      { 32, 48}, { 32, 48},
+    }
+  }
+};
+#if USE_ZERORUN_EXTRA
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 16, 32}, { 16, 32},
+    }, { /* ZPC Band 1 */
+      { 16, 32}, { 16, 32},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 16, 32}, { 16, 32},
+    }, { /* ZPC Band 1 */
+      { 16, 32}, { 16, 32},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }
+};
+#else
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 32, 64}, { 32, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* ZPC Band 0 */
+      { 64, 64}, { 64, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }, { /* Inter */
+    { /* ZPC Band 0 */
+      { 64, 64}, { 64, 64},
+    }, { /* ZPC Band 1 */
+      { 32, 64}, { 32, 64},
+    }
+  }
+};
+#endif
+#endif  // CONFIG_CODE_ZEROGROUP

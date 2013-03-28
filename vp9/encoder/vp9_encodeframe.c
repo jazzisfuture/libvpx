@@ -1286,6 +1286,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cm->fc.nzc_counts_32x32);
   vp9_zero(cm->fc.nzc_pcat_counts);
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vp9_zero(cm->fc.zpc_counts_4x4);
+  vp9_zero(cm->fc.zpc_counts_8x8);
+  vp9_zero(cm->fc.zpc_counts_16x16);
+  vp9_zero(cm->fc.zpc_counts_32x32);
+#endif
 #if CONFIG_NEW_MVREF
   vp9_zero(cpi->mb_mv_ref_count);
 #endif
@@ -1341,6 +1347,8 @@ static void encode_frame_internal(VP9_COMP *cpi) {
             encode_sb_row(cpi, mb_row, &tp, &totalrate);
           }
           cpi->tok_count[tile_col] = (unsigned int)(tp - tp_old);
+          assert(tp - cpi->tok <=
+                 get_token_alloc(cm->mb_rows, cm->mb_cols));
         }
       }
     }
@@ -1843,6 +1851,7 @@ static void update_sb64_skip_coeff_state(VP9_COMP *cpi,
         n_tokens[n] = *tp - t[3];
       }
       if (n_tokens[n]) {
+        assert(n_tokens[n] <= 1024 + 512);
         memcpy(tokens[n], t[n], n_tokens[n] * sizeof(*t[0]));
       }
     }
@@ -1896,6 +1905,7 @@ static void update_sb64_skip_coeff_state(VP9_COMP *cpi,
         n_tokens[n] = *tp - t[15];
       }
       if (n_tokens[n]) {
+        assert(n_tokens[n] <= 16 * 25);
         memcpy(tokens[n], t[n], n_tokens[n] * sizeof(*t[0]));
       }
     }
