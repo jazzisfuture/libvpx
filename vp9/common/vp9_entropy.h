@@ -264,6 +264,74 @@ extern const int vp9_basenzcvalue[NZC32X32_TOKENS];
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
+#if CONFIG_CODE_ZEROGROUP
+
+typedef enum {
+  HORIZONTAL = 0,
+  DIAGONAL,
+  VERTICAL,
+} OrientationType;
+
+/* Note EOB should become part of this symbol eventually,
+ * but holding off on this for now because that is a major
+ * change in the rest of the codebase */
+
+#define ZPC_ISOLATED     (MAX_ENTROPY_TOKENS + 0)    /* Isolated zero */
+#define ZPC_NOTISOLATED  (MAX_ENTROPY_TOKENS + 1)    /* Not Isolated zero */
+
+/* ZPC_ZEROEXTRA: Extra zero pattern that is not end of orientation -
+ * could be zerotree root or zerorun */
+#define ZPC_ZEROEXTRA    (MAX_ENTROPY_TOKENS + 2)    /* Extra zeros not eoo */
+
+/* ZPC_EOORIENT: All remaining coefficients in the same orientation are 0.
+ * In other words all remaining coeffs in the current subband, and all
+ * children of the current subband are zero. Subbands are defined by
+ * dyadic partitioning in the coeff domain */
+#define ZPC_EOORIENT     (MAX_ENTROPY_TOKENS + 3)    /* End of Orientation */
+
+#define USE_ZERORUN_EXTRA        1       /* 1: use zerorun as extra */
+                                         /* 0: use zerotree root as extra */
+
+#define ZPC_NODES                2
+
+#define UNKNOWN_ZERO             255     /* Not signalled, encoder only */
+
+#define ZPC_BANDS                2       /* context bands for zpcs */
+#define ZPC_PTOKS                2       /* context pt for zpcs */
+
+#define coef_to_zpc_band(b)      ((b) > 2)
+#define coef_to_zpc_ptok(p)      ((p) > 0)
+
+typedef vp9_prob vp9_zpc_probs[REF_TYPES][ZPC_BANDS]
+                              [ZPC_PTOKS][ZPC_NODES];
+typedef unsigned int vp9_zpc_count[REF_TYPES][ZPC_BANDS]
+                                  [ZPC_PTOKS][ZPC_NODES][2];
+
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size);
+int vp9_use_eoo(int c, int eob, const int *scan, TX_SIZE tx_size,
+                int *is_last_zero, int *is_eoo);
+int vp9_is_eoo(int c, int eob, const int *scan, TX_SIZE tx_size,
+               const int16_t *qcoeff_ptr, int *last_nz_pos);
+
+#define ZPC_USEEOO_THRESH        2
+
+#if USE_ZERORUN_EXTRA
+#define ZPC_ZERORUN              2       /* #zerorun including initial 0 */
+int vp9_use_zrn(int c, int seg_eob, TX_SIZE tx_size);
+int vp9_is_zrn(int c, int eob, const int *scan, TX_SIZE tx_size,
+               const int16_t *qcoeff_ptr, uint8_t *zero_cache);
+void vp9_mark_zrn(int c, const int *scan, TX_SIZE tx_size,
+                  uint8_t *zero_cache);
+#else
+int vp9_use_ztr(int rc, TX_SIZE tx_size);
+int vp9_is_ztr(int rc, TX_SIZE tx_size, const int16_t *qcoeff_ptr);
+void vp9_mark_ztr(int rc, TX_SIZE tx_size, uint8_t *zero_cache);
+#endif
+
+void vp9_adapt_zpc_probs(struct VP9Common *cm);
+
+#endif  // CONFIG_CODE_ZEROGROUP
+
 #include "vp9/common/vp9_coefupdateprobs.h"
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

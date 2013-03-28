@@ -821,6 +821,8 @@ static void optimize_b(VP9_COMMON *const cm,
   final_nzc_exp = (best ? nzc1 : nzc0);
 #endif
   final_eob = i0 - 1;
+  vpx_memset(qcoeff_ptr, 0, sizeof(*qcoeff_ptr) * (16 << (tx_size * 2)));
+  vpx_memset(dqcoeff_ptr, 0, sizeof(*dqcoeff_ptr) * (16 << (tx_size * 2)));
   for (i = next; i < eob; i = next) {
     x = tokens[i][best].qc;
     if (x) {
@@ -839,6 +841,8 @@ static void optimize_b(VP9_COMMON *const cm,
   final_eob++;
 
   xd->eobs[ib] = final_eob;
+  if (final_eob < (16 << (tx_size * 2)))
+    assert(qcoeff_ptr[scan[final_eob]] == 0);
   *a = *l = (final_eob > 0);
 #if CONFIG_CODE_NONZEROCOUNT
   assert(final_nzc == final_nzc_exp);

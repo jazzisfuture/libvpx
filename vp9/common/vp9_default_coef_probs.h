@@ -995,3 +995,98 @@ static const vp9_prob default_nzc_pcat_probs[MAX_NZC_CONTEXTS]
 };
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+
+#define DEFAULT_IZR_INTERL0_PROB   32
+#define DEFAULT_IZR_INTERL1_PROB   32
+#define DEFAULT_IZR_INTERH0_PROB   32
+#define DEFAULT_IZR_INTERH1_PROB   32
+#define DEFAULT_IZR_INTRAL0_PROB   32
+#define DEFAULT_IZR_INTRAL1_PROB   32
+#define DEFAULT_IZR_INTRAH0_PROB   32
+#define DEFAULT_IZR_INTRAH1_PROB   32
+#define DEFAULT_EOO_PROB_4X4      128
+#define DEFAULT_EOO_PROB_8X8       64
+#define DEFAULT_EOO_PROB_16X16     32
+#define DEFAULT_EOO_PROB_32X32     16
+// There are two probs: the first is the prob(0) of the isolated zero bit,
+// the second is the prob(0) of the end of orientation symbol [if 0 that
+// indicates a zerotree root].
+static const vp9_zpc_probs default_zpc_probs_4x4 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTRAL0_PROB, DEFAULT_EOO_PROB_4X4},
+      { DEFAULT_IZR_INTRAL1_PROB, DEFAULT_EOO_PROB_4X4},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTRAH0_PROB, DEFAULT_EOO_PROB_4X4},
+      { DEFAULT_IZR_INTRAH1_PROB, DEFAULT_EOO_PROB_4X4},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTERL0_PROB, DEFAULT_EOO_PROB_4X4},
+      { DEFAULT_IZR_INTERL1_PROB, DEFAULT_EOO_PROB_4X4},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTERH0_PROB, DEFAULT_EOO_PROB_4X4},
+      { DEFAULT_IZR_INTERH1_PROB, DEFAULT_EOO_PROB_4X4},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_8x8 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTRAL0_PROB, DEFAULT_EOO_PROB_8X8},
+      { DEFAULT_IZR_INTRAL1_PROB, DEFAULT_EOO_PROB_8X8},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTRAH0_PROB, DEFAULT_EOO_PROB_8X8},
+      { DEFAULT_IZR_INTRAH1_PROB, DEFAULT_EOO_PROB_8X8},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTERL0_PROB, DEFAULT_EOO_PROB_8X8},
+      { DEFAULT_IZR_INTERL1_PROB, DEFAULT_EOO_PROB_8X8},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTERH0_PROB, DEFAULT_EOO_PROB_8X8},
+      { DEFAULT_IZR_INTERH1_PROB, DEFAULT_EOO_PROB_8X8},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_16x16 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTRAL0_PROB, DEFAULT_EOO_PROB_16X16},
+      { DEFAULT_IZR_INTRAL1_PROB, DEFAULT_EOO_PROB_16X16},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTRAH0_PROB, DEFAULT_EOO_PROB_16X16},
+      { DEFAULT_IZR_INTRAH1_PROB, DEFAULT_EOO_PROB_16X16},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTERL0_PROB, DEFAULT_EOO_PROB_16X16},
+      { DEFAULT_IZR_INTERL1_PROB, DEFAULT_EOO_PROB_16X16},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTERH0_PROB, DEFAULT_EOO_PROB_16X16},
+      { DEFAULT_IZR_INTERH1_PROB, DEFAULT_EOO_PROB_16X16},
+    }
+  }
+};
+static const vp9_zpc_probs default_zpc_probs_32x32 = {
+  { /* Intra */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTRAL0_PROB, DEFAULT_EOO_PROB_32X32},
+      { DEFAULT_IZR_INTRAL1_PROB, DEFAULT_EOO_PROB_32X32},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTRAH0_PROB, DEFAULT_EOO_PROB_32X32},
+      { DEFAULT_IZR_INTRAH1_PROB, DEFAULT_EOO_PROB_32X32},
+    }
+  }, { /* Inter */
+    { /* Coeff Band 0 */
+      { DEFAULT_IZR_INTERL0_PROB, DEFAULT_EOO_PROB_32X32},
+      { DEFAULT_IZR_INTERL1_PROB, DEFAULT_EOO_PROB_32X32},
+    }, { /* Coeff Band 1 */
+      { DEFAULT_IZR_INTERH0_PROB, DEFAULT_EOO_PROB_32X32},
+      { DEFAULT_IZR_INTERH1_PROB, DEFAULT_EOO_PROB_32X32},
+    }
+  }
+};
+#endif  // CONFIG_CODE_ZEROGROUP

@@ -2214,6 +2214,16 @@ void vp9_default_coef_probs(VP9_COMMON *pc) {
   vpx_memcpy(pc->fc.coef_probs_32x32, default_coef_probs_32x32,
              sizeof(pc->fc.coef_probs_32x32));
 #endif
+#if CONFIG_CODE_ZEROGROUP
+  vpx_memcpy(pc->fc.zpc_probs_4x4, default_zpc_probs_4x4,
+             sizeof(pc->fc.zpc_probs_4x4));
+  vpx_memcpy(pc->fc.zpc_probs_8x8, default_zpc_probs_8x8,
+             sizeof(pc->fc.zpc_probs_8x8));
+  vpx_memcpy(pc->fc.zpc_probs_16x16, default_zpc_probs_16x16,
+             sizeof(pc->fc.zpc_probs_16x16));
+  vpx_memcpy(pc->fc.zpc_probs_32x32, default_zpc_probs_32x32,
+             sizeof(pc->fc.zpc_probs_32x32));
+#endif
 }
 
 #if CONFIG_MODELCOEFPROB
@@ -3728,3 +3738,248 @@ void vp9_adapt_nzc_probs(VP9_COMMON *cm) {
   adapt_nzc_pcat(cm, count_sat, update_factor);
 }
 #endif  // CONFIG_CODE_NONZEROCOUNT
+
+#if CONFIG_CODE_ZEROGROUP
+OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i == 0 && j == 0) return DIAGONAL;
+  while (i > 1 || j > 1) {
+    i >>= 1;
+    j >>= 1;
+  }
+  if (i == 0 && j == 1)
+    return HORIZONTAL;  // horizontal
+  else if (i == 1 && j == 1)
+    return DIAGONAL;    // diagonal
+  else if (i == 1 && j == 0)
+    return VERTICAL;    // vertical
+  assert(0);
+}
+
+int vp9_use_eoo(int c, int seg_eob, const int *scan,
+                TX_SIZE tx_size, int *is_last_zero, int *is_eoo) {
+  // NOTE: returning 0 from this function will turn off eoo symbols
+  // For instance we can experiment with turning eoo off for smaller blocks
+  // and/or lower bands
+  int o = vp9_get_orientation(scan[c], tx_size);
+  int use_eoo = (!is_last_zero[o] &&
+                 !is_eoo[o] &&
+                 get_zpc_used(tx_size) &&
+                 seg_eob - c > (ZPC_USEEOO_THRESH << tx_size) &&
+                 is_eoo[0] + is_eoo[1] + is_eoo[2] < 2);
+  return use_eoo;
+}
+
+int vp9_is_eoo(int c, int eob, const int *scan, TX_SIZE tx_size,
+               const int16_t *qcoeff_ptr, int *last_nz_pos) {
+  int rc = scan[c];
+  int o = vp9_get_orientation(rc, tx_size);
+  int eoo = c > last_nz_pos[o];
+  if (eoo) {
+    int zeros_saved = 0;
+    for (c++; c < eob; ++c) {
+      if (o == vp9_get_orientation(scan[c], tx_size))
+        zeros_saved++;
+    }
+    // TODO(debargha): Need to do a better job at deciding whether
+    // to send the eoo symbol or not, based on costing.
+    if (zeros_saved > 4)
+      return 1;
+  }
+  return 0;
+}
+
+#if USE_ZERORUN_EXTRA
+int vp9_use_zrn(int c, int seg_eob, TX_SIZE tx_size) {
+  // NOTE: returning 0 from this function will turn off zrn symbols.
+  // For instance we can experiment with turning ztr off for small blocks
+  // and/or lower bands
+  const int zpc_zerorun = ZPC_ZERORUN << tx_size;
+  return (get_zpc_used(tx_size) &&
+          zpc_zerorun > 1 &&
+          seg_eob - c >= zpc_zerorun);
+}
+
+void vp9_mark_zrn(int c, const int *scan, TX_SIZE tx_size,
+                  uint8_t *zero_cache) {
+  const int zpc_zerorun = ZPC_ZERORUN << tx_size;
+  int zero_run = 1;
+  zero_cache[scan[c]] = 0;
+  c++;
+  while (zero_run < zpc_zerorun) {
+    int rc = scan[c];
+    if (zero_cache[rc] == UNKNOWN_ZERO) {
+      zero_cache[rc] = 0;
+      zero_run++;
+    }
+    c++;
+  }
+  return;
+}
+
+int vp9_is_zrn(int c, int eob, const int *scan, TX_SIZE tx_size,
+               const int16_t *qcoeff_ptr, uint8_t *zero_cache) {
+  const int zpc_zerorun = ZPC_ZERORUN << tx_size;
+  int zero_run = 1;
+  for (c++; c < eob; ++c) {
+    int rc = scan[c];
+    if (zero_cache[rc] == UNKNOWN_ZERO && qcoeff_ptr[rc] == 0) {
+      zero_run++;
+    } else {
+      break;
+    }
+  }
+  // TODO(debargha): Need to do a better job at deciding whether
+  // to send the zrn symbol or not, based on costing.
+  if (zero_run >= zpc_zerorun && (zero_run % zpc_zerorun) == 0)
+    // Assume that zerorun symbol will always be after isolated zeros
+    return 1;
+  else
+    return 0;
+}
+
+#else
+
+int vp9_use_ztr(int rc, TX_SIZE tx_size) {
+  // NOTE: returning 0 from this function will turn off ztr symbols.
+  // For instance we can experiment with turning ztr off for small blocks
+  // and/or lower bands
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  // not dc and 1st ac coeffs in hor/vert/diag orientations,
+  // and not in last subband
+  return ((i > 1 || j > 1) &&
+          get_zpc_used(tx_size) &&
+          tx_size >= TX_32X32 &&  // only do for transforms 32x32+
+          i < (2 << tx_size) &&
+          j < (2 << tx_size));
+}
+
+int vp9_is_ztr(int rc, TX_SIZE tx_size, const int16_t *qcoeff_ptr) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (qcoeff_ptr[rc] != 0)
+    return 0;
+  if (i >= (2 << tx_size) || j >= (2 << tx_size)) {
+    // last subband
+    return 1;
+  } else {
+    int rc2;
+    i <<= 1;
+    j <<= 1;
+    rc2 = i * (4 << tx_size) + j;
+    // TODO(debargha): Need to do a better job at deciding whether
+    // to send the zrn symbol or not, based on costing.
+    return (vp9_is_ztr(rc2, tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc2 + 1, tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc2 + (4 << tx_size), tx_size, qcoeff_ptr) &&
+            vp9_is_ztr(rc2 + (4 << tx_size) + 1,  tx_size, qcoeff_ptr));
+  }
+}
+
+void vp9_mark_ztr(int rc, TX_SIZE tx_size, uint8_t *zero_cache) {
+  int i = rc >> (tx_size + 2);
+  int j = rc & ((4 << tx_size) - 1);
+  if (i >= (2 << tx_size) || j >= (2 << tx_size)) {
+    zero_cache[rc] = 0;
+  } else {
+    int rc2;
+    i <<= 1;
+    j <<= 1;
+    rc2 = i * (4 << tx_size) + j;
+    zero_cache[rc] = 0;
+    vp9_mark_ztr(rc2, tx_size, zero_cache);
+    vp9_mark_ztr(rc2 + 1, tx_size, zero_cache);
+    vp9_mark_ztr(rc2 + (4 << tx_size), tx_size, zero_cache);
+    vp9_mark_ztr(rc2 + (4 << tx_size) + 1, tx_size, zero_cache);
+  }
+}
+
+#endif
+
+static void adapt_zpc_probs_common(VP9_COMMON *cm,
+                                   TX_SIZE tx_size,
+                                   int count_sat,
+                                   int update_factor) {
+  int r, b, p, n;
+  int count, factor;
+  vp9_zpc_probs *zpc_probs;
+  vp9_zpc_probs *pre_zpc_probs;
+  vp9_zpc_count *zpc_counts;
+  if (!get_zpc_used(tx_size)) return;
+  if (tx_size == TX_32X32) {
+    zpc_probs = &cm->fc.zpc_probs_32x32;
+    pre_zpc_probs = &cm->fc.pre_zpc_probs_32x32;
+    zpc_counts = &cm->fc.zpc_counts_32x32;
+  } else if (tx_size == TX_16X16) {
+    zpc_probs = &cm->fc.zpc_probs_16x16;
+    pre_zpc_probs = &cm->fc.pre_zpc_probs_16x16;
+    zpc_counts = &cm->fc.zpc_counts_16x16;
+  } else if (tx_size == TX_8X8) {
+    zpc_probs = &cm->fc.zpc_probs_8x8;
+    pre_zpc_probs = &cm->fc.pre_zpc_probs_8x8;
+    zpc_counts = &cm->fc.zpc_counts_8x8;
+  } else {
+    zpc_probs = &cm->fc.zpc_probs_4x4;
+    pre_zpc_probs = &cm->fc.pre_zpc_probs_4x4;
+    zpc_counts = &cm->fc.zpc_counts_4x4;
+  }
+  for (r = 0; r < REF_TYPES; ++r) {
+    for (b = 0; b < ZPC_BANDS; ++b) {
+      for (p = 0; p < ZPC_PTOKS; ++p) {
+        for (n = 0; n < ZPC_NODES; ++n) {
+          vp9_prob prob = get_binary_prob((*zpc_counts)[r][b][p][n][0],
+                                          (*zpc_counts)[r][b][p][n][1]);
+          count = (*zpc_counts)[r][b][p][n][0] + (*zpc_counts)[r][b][p][n][1];
+          count = count > count_sat ? count_sat : count;
+          factor = (update_factor * count / count_sat);
+          (*zpc_probs)[r][b][p][n] = weighted_prob(
+              (*pre_zpc_probs)[r][b][p][n], prob, factor);
+        }
+      }
+    }
+  }
+}
+
+// #define ZPC_COUNT_TESTING
+void vp9_adapt_zpc_probs(VP9_COMMON *cm) {
+  int count_sat;
+  int update_factor; /* denominator 256 */
+#ifdef NZC_COUNT_TESTING
+  int r, b, p, n;
+  printf("\n");
+  for (r = 0; r < REF_TYPES; ++r) {
+    printf("{");
+    for (b = 0; b < ZPC_BANDS; ++b) {
+      printf("  {");
+      for (p = 0; p < ZPC_PTOKS; ++p) {
+        printf("    {");
+        for (n = 0; n < ZPC_NODES; ++n) {
+          printf(" %d,", cm->fc.zpc_counts_16x16[r][b][p][n]);
+        }
+        printf("},\n");
+      }
+      printf("  },\n");
+    }
+    printf("},\n");
+  }
+#endif
+
+  if (cm->frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_KEY;
+    count_sat = COEF_COUNT_SAT_KEY;
+  } else if (cm->last_frame_type == KEY_FRAME) {
+    update_factor = COEF_MAX_UPDATE_FACTOR_AFTER_KEY;  /* adapt quickly */
+    count_sat = COEF_COUNT_SAT_AFTER_KEY;
+  } else {
+    update_factor = COEF_MAX_UPDATE_FACTOR;
+    count_sat = COEF_COUNT_SAT;
+  }
+
+  adapt_zpc_probs_common(cm, TX_4X4, count_sat, update_factor);
+  adapt_zpc_probs_common(cm, TX_8X8, count_sat, update_factor);
+  adapt_zpc_probs_common(cm, TX_16X16, count_sat, update_factor);
+  adapt_zpc_probs_common(cm, TX_32X32, count_sat, update_factor);
+}
+#endif  // CONFIG_CODE_ZEROGROUP
