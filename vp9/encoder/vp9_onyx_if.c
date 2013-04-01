@@ -1536,6 +1536,8 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
     cpi->tot_recode_hits = 0;
     cpi->summed_quality = 0;
     cpi->summed_weights = 0;
+    cpi->summedp_quality = 0;
+    cpi->summedp_weights = 0;
   }
 
   if (cpi->b_calculate_ssimg) {
@@ -1735,10 +1737,11 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
         double total_psnr = vp9_mse2psnr(samples, 255.0, cpi->total_sq_error);
         double total_psnr2 = vp9_mse2psnr(samples, 255.0, cpi->total_sq_error2);
         double total_ssim = 100 * pow(cpi->summed_quality / cpi->summed_weights, 8.0);
+        double total_ssimp = 100 * pow(cpi->summedp_quality / cpi->summedp_weights, 8.0);
 
-        fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\tVPXSSIM\t  Time(ms)\n");
-        fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%8.0f\n",
-                dr, cpi->total / cpi->count, total_psnr, cpi->totalp / cpi->count, total_psnr2, total_ssim,
+        fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\tVPXSSIM\tVPSSIMP\t  Time(ms)\n");
+        fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%8.0f\n",
+                dr, cpi->total / cpi->count, total_psnr, cpi->totalp / cpi->count, total_psnr2, total_ssim, total_ssimp,
                 total_encode_time);
 //                fprintf(f, "%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%8.0f %10ld\n",
 //                        dr, cpi->total / cpi->count, total_psnr, cpi->totalp / cpi->count, total_psnr2, total_ssim,
@@ -3988,10 +3991,16 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
           cpi->totalp  += frame_psnr2;
 
           frame_ssim2 = vp9_calc_ssim(cpi->Source,
-                                      &cm->post_proc_buffer, 1, &weight);
+                                      recon, 1, &weight);
 
           cpi->summed_quality += frame_ssim2 * weight;
           cpi->summed_weights += weight;
+
+          frame_ssim2 = vp9_calc_ssim(cpi->Source,
+                                      &cm->post_proc_buffer, 1, &weight);
+
+          cpi->summedp_quality += frame_ssim2 * weight;
+          cpi->summedp_weights += weight;
 #if 0
           {
             FILE *f = fopen("q_used.stt", "a");
