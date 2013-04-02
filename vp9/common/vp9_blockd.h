@@ -652,25 +652,25 @@ static void update_blockd_bmi(MACROBLOCKD *xd) {
 }
 
 static TX_SIZE get_uv_tx_size(const MACROBLOCKD *xd) {
-  TX_SIZE tx_size_uv;
-  if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
-    tx_size_uv = xd->mode_info_context->mbmi.txfm_size;
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X32) {
-    if (xd->mode_info_context->mbmi.txfm_size == TX_32X32)
-      tx_size_uv = TX_16X16;
-    else
-      tx_size_uv = xd->mode_info_context->mbmi.txfm_size;
-  } else {
-    if (xd->mode_info_context->mbmi.txfm_size == TX_16X16)
-      tx_size_uv = TX_8X8;
-    else if (xd->mode_info_context->mbmi.txfm_size == TX_8X8 &&
-             (xd->mode_info_context->mbmi.mode == I8X8_PRED ||
-              xd->mode_info_context->mbmi.mode == SPLITMV))
-      tx_size_uv = TX_4X4;
-    else
-      tx_size_uv = xd->mode_info_context->mbmi.txfm_size;
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+
+  switch (mbmi->sb_type) {
+    case BLOCK_SIZE_SB64X64:
+      return mbmi->txfm_size;
+    case BLOCK_SIZE_SB32X32:
+      if (mbmi->txfm_size == TX_32X32)
+        return TX_16X16;
+      else
+        return mbmi->txfm_size;
+    default:
+      if (mbmi->txfm_size == TX_16X16)
+        return TX_8X8;
+      else if (mbmi->txfm_size == TX_8X8 &&
+               (mbmi->mode == I8X8_PRED || mbmi->mode == SPLITMV))
+        return TX_4X4;
+      else
+        return mbmi->txfm_size;
   }
-  return tx_size_uv;
 }
 
 #if CONFIG_CODE_NONZEROCOUNT
