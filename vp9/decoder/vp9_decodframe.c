@@ -1543,6 +1543,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const uint8_t *data_end = data + pbi->source_sz;
   size_t first_partition_size = 0;
   int i, corrupt_tokens = 0;
+//  FILE *dec_out = fopen("dec_frame_type.txt", "a");
 
   // printf("Decoding frame %d\n", pc->current_video_frame);
 
@@ -1654,6 +1655,10 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
       int ref_frame_num = vp9_read_literal(&header_bc, NUM_REF_FRAMES_LG2);
       pc->active_ref_idx[i] = pc->ref_frame_map[ref_frame_num];
     }
+
+//    fprintf(dec_out, "Frame:%d active(%d, %d, %d)\n", pc->active_ref_idx[0],
+//            pc->active_ref_idx[1], pc->active_ref_idx[2],
+//            pc->current_video_frame);
 
     pc->ref_frame_sign_bias[GOLDEN_FRAME] = vp9_read_bit(&header_bc);
     pc->ref_frame_sign_bias[ALTREF_FRAME] = vp9_read_bit(&header_bc);
@@ -1826,5 +1831,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     residual_bc.user_buffer--;
   }
   *p_data_end = residual_bc.user_buffer;
+//  fclose(dec_out);
   return 0;
 }
