@@ -99,6 +99,8 @@
 %define sym(x) x
 %elifidn __OUTPUT_FORMAT__,elf64
 %define sym(x) x
+%elifidn __OUTPUT_FORMAT__,elf
+%define sym(x) x
 %elifidn __OUTPUT_FORMAT__,elfx32
 %define sym(x) x
 %elif LIBVPX_YASM_WIN64
@@ -386,6 +388,9 @@ section .text
 section .note.GNU-stack noalloc noexec nowrite progbits
 section .text
 %elifidn __OUTPUT_FORMAT__,elf64
+section .note.GNU-stack noalloc noexec nowrite progbits
+section .text
+%elifidn __OUTPUT_FORMAT__,elf
 section .note.GNU-stack noalloc noexec nowrite progbits
 section .text
 %elifidn __OUTPUT_FORMAT__,elfx32
