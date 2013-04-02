@@ -18,6 +18,7 @@
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymode.h"
+
 #if CONFIG_POSTPROC
 #include "vp9/common/vp9_postproc.h"
 #endif
@@ -37,8 +38,13 @@ void vp9_initialize_common(void);
 
 #define QINDEX_RANGE (MAXQ + 1)
 
+#if CONFIG_MULTIPLE_ARF
+#define NUM_REF_FRAMES 8
+#define NUM_REF_FRAMES_LG2 3
+#else
 #define NUM_REF_FRAMES 3
 #define NUM_REF_FRAMES_LG2 2
+#endif
 
 // 1 scratch frame for the new frame, 3 for scaled references on the encoder
 // TODO(jkoleszar): These 3 extra references could probably come from the
@@ -49,6 +55,9 @@ void vp9_initialize_common(void);
 #define NUM_FRAME_CONTEXTS (1 << NUM_FRAME_CONTEXTS_LG2)
 
 #define COMP_PRED_CONTEXTS   2
+
+// TODO(agrange) Fix this... defined in 3 places now.
+#define MAX_LAG_BUFFERS 25
 
 typedef struct frame_contexts {
   vp9_prob bmode_prob[VP9_NKF_BINTRAMODES - 1];
@@ -318,6 +327,7 @@ typedef struct VP9Common {
   int cur_tile_mb_col_start, cur_tile_mb_col_end, cur_tile_col_idx;
   int tile_rows, log2_tile_rows;
   int cur_tile_mb_row_start, cur_tile_mb_row_end, cur_tile_row_idx;
+
 } VP9_COMMON;
 
 static int get_free_fb(VP9_COMMON *cm) {
