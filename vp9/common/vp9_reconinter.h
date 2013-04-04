@@ -91,7 +91,13 @@ static int scaled_buffer_offset(int x_offset,
       scale_value_x(x_offset, scale);
 }
 
-static void setup_pred_block(YV12_BUFFER_CONFIG *dst,
+void (*setup_pred_block)(YV12_BUFFER_CONFIG *dst,
+                             const YV12_BUFFER_CONFIG *src,
+                             int mb_row, int mb_col,
+                             const struct scale_factors *scale,
+                             const struct scale_factors *scale_uv);
+
+static void setup_pred_block_with_scaling(YV12_BUFFER_CONFIG *dst,
                              const YV12_BUFFER_CONFIG *src,
                              int mb_row, int mb_col,
                              const struct scale_factors *scale,
@@ -110,6 +116,28 @@ static void setup_pred_block(YV12_BUFFER_CONFIG *dst,
     recon_yoffset = 16 * mb_row * recon_y_stride + 16 * mb_col;
     recon_uvoffset = 8 * mb_row * recon_uv_stride + 8 * mb_col;
   }
+
+  *dst = *src;
+  dst->y_buffer += recon_yoffset;
+  dst->u_buffer += recon_uvoffset;
+  dst->v_buffer += recon_uvoffset;
+}
+
+static void setup_pred_block_without_scaling(YV12_BUFFER_CONFIG *dst,
+                             const YV12_BUFFER_CONFIG *src,
+                             int mb_row, int mb_col,
+                             const struct scale_factors *scale,
+                             const struct scale_factors *scale_uv) {
+  const int recon_y_stride = src->y_stride;
+  const int recon_uv_stride = src->uv_stride;
+  int recon_yoffset;
+  int recon_uvoffset;
+  (void)scale;
+  (void)scale_uv;
+
+  recon_yoffset = 16 * mb_row * recon_y_stride + 16 * mb_col;
+  recon_uvoffset = 8 * mb_row * recon_uv_stride + 8 * mb_col;
+
   *dst = *src;
   dst->y_buffer += recon_yoffset;
   dst->u_buffer += recon_uvoffset;
@@ -126,4 +154,76 @@ static void set_scale_factors(MACROBLOCKD *xd,
   xd->scale_factor_uv[1] = xd->scale_factor[1];
 }
 
+void (*set_scaled_offsets)(struct scale_factors *scale, int row, int col);
+
+static void set_offsets_with_scaling(struct scale_factors *scale,
+                                     int row, int col) {
+  const int x_q4 = 16 * col;
+  const int y_q4 = 16 * row;
+
+  scale->x_offset_q4 = (x_q4 * scale->x_num / scale->x_den) & 0xf;
+  scale->y_offset_q4 = (y_q4 * scale->y_num / scale->y_den) & 0xf;
+}
+
+static void set_offsets_without_scaling(struct scale_factors *scale,
+                                        int row, int col) {
+  scale->x_offset_q4 = (16 * col) & 0xf;
+  scale->y_offset_q4 = (16 * row) & 0xf;
+}
+
+int_mv32 (*scale_motion_vector_q3_to_q4)(const int_mv *src_mv,
+                                         const struct scale_factors *scale);
+
+static int_mv32 motion_vector_q3_to_q4_with_scaling(
+    const int_mv *src_mv,
+    const struct scale_factors *scale) {
+  // returns mv * scale + offset
+  int_mv32 result;
+  const int32_t mv_row_q4 = src_mv->as_mv.row << 1;
+  const int32_t mv_col_q4 = src_mv->as_mv.col << 1;
+
+  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
+  result.as_mv.row =  mv_row_q4 * scale->y_num / scale->y_den
+                      + scale->y_offset_q4;
+  result.as_mv.col =  mv_col_q4 * scale->x_num / scale->x_den
+                      + scale->x_offset_q4;
+  return result;
+}
+
+static int_mv32 motion_vector_q3_to_q4_without_scaling(
+    const int_mv *src_mv,
+    const struct scale_factors *scale) {
+  // returns mv * scale + offset
+  int_mv32 result;
+  const int32_t mv_row_q4 = src_mv->as_mv.row << 1;
+  const int32_t mv_col_q4 = src_mv->as_mv.col << 1;
+
+  result.as_mv.row = mv_row_q4 + scale->y_offset_q4;
+  result.as_mv.col = mv_col_q4 + scale->x_offset_q4;
+  return result;
+}
+
+int32_t (*scale_motion_vector_component_q4)(int mv_q4,
+                                            int num,
+                                            int den,
+                                            int offset_q4);
+static int32_t motion_vector_component_q4_with_scaling(int mv_q4,
+                                                       int num,
+                                                       int den,
+                                                       int offset_q4) {
+  // returns the scaled and offset value of the mv component.
+
+  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
+  return mv_q4 * num / den + offset_q4;
+}
+
+static int32_t motion_vector_component_q4_without_scaling(int mv_q4,
+                                                          int num,
+                                                          int den,
+                                                          int offset_q4) {
+  // returns the scaled and offset value of the mv component.
+  (void)num;
+  (void)den;
+  return mv_q4 + offset_q4;
+}
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
