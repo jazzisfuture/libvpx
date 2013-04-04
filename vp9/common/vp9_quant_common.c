@@ -14,15 +14,24 @@
 static int dc_qlookup[QINDEX_RANGE];
 static int ac_qlookup[QINDEX_RANGE];
 
-#define ACDC_MIN 4
+#define ACDC_MIN 8
 
 void vp9_init_quant_tables() {
   int i;
   int current_val = 4;
-  int last_val = 4;
+  int last_val = 8;
   int ac_val;
 
-  for (i = 0; i < QINDEX_RANGE; i++) {
+  // A "real" q of 1.0 forces lossless mode.
+  // In practice non lossless Q's between 1.0 and 2.0 (represented here by
+  // integer values from 5-7 give poor rd results (lower psnr and often
+  // larger size than the lossless encode. To block out those "not very useful"
+  // values we increment the ac and dc q lookup values by 4 after position 0.
+  ac_qlookup[0] = current_val;
+  dc_qlookup[0] = current_val;
+  current_val += 4;
+
+  for (i = 1; i < QINDEX_RANGE; i++) {
     ac_qlookup[i] = current_val;
     current_val = (int)(current_val * 1.02);
     if (current_val == last_val)
@@ -37,7 +46,6 @@ void vp9_init_quant_tables() {
       dc_qlookup[i] = ACDC_MIN;
   }
 }
-
 int vp9_dc_quant(int qindex, int delta) {
   return dc_qlookup[clamp(qindex + delta, 0, MAXQ)];
 }
