@@ -264,6 +264,10 @@ extern const int vp9_basenzcvalue[NZC32X32_TOKENS];
 
 #endif  // CONFIG_CODE_NONZEROCOUNT
 
+#if CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN
+const int *vp9_adapt_scan(const int *scan, const int16_t *qcoeff, int pos);
+#endif
+
 #include "vp9/common/vp9_coefupdateprobs.h"
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

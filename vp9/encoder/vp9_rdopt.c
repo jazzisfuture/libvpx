@@ -582,8 +582,17 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
     int nzc = 0;
 #endif
     for (; c < eob; c++) {
-      int v = qcoeff_ptr[scan[c]];
-      int t = vp9_dct_value_tokens_ptr[v].Token;
+      int v, t;
+#if CONFIG_SCATTERSCAN && CONFIG_ADAPTIVESCAN
+      const int *new_scan = vp9_adapt_scan(scan, qcoeff_ptr, c);
+      if (scan != new_scan) {
+        scan = new_scan;
+        nb = vp9_get_coef_neighbors_handle(scan, &pad);
+        pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
+      }
+#endif
+      v = qcoeff_ptr[scan[c]];
+      t = vp9_dct_value_tokens_ptr[v].Token;
 #if CONFIG_CODE_NONZEROCOUNT
       nzc += (v != 0);
 #endif

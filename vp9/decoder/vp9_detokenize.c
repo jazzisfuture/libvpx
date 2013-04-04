@@ -244,6 +244,15 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
     int val;
     const uint8_t *cat6 = cat6_prob;
 
+#if CONFIG_SCATTERSCAN && CONFIG_ADAPTIVESCAN
+    const int *new_scan = vp9_adapt_scan(scan, qcoeff_ptr, c);
+    if (new_scan != scan) {
+      scan = new_scan;
+      nb = vp9_get_coef_neighbors_handle(scan, &pad);
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                c, default_eob);
+    }
+#endif
     if (c >= seg_eob)
       break;
 #if CONFIG_CODE_NONZEROCOUNT
@@ -259,6 +268,18 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       if (!vp9_read(br, prob[EOB_CONTEXT_NODE]))
         break;
 SKIP_START:
+#if CONFIG_SCATTERSCAN && CONFIG_ADAPTIVESCAN
+    {
+      const int *new_scan = vp9_adapt_scan(scan, qcoeff_ptr, c);
+      if (new_scan != scan) {
+        scan = new_scan;
+        nb = vp9_get_coef_neighbors_handle(scan, &pad);
+        pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                  c, default_eob);
+        prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+      }
+    }
+#endif
     if (c >= seg_eob)
       break;
 #if CONFIG_CODE_NONZEROCOUNT
@@ -270,7 +291,8 @@ SKIP_START:
     if (!vp9_read(br, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-      prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+      if (c < seg_eob)
+        prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
       goto SKIP_START;
     }
     // ONE_CONTEXT_NODE_0_

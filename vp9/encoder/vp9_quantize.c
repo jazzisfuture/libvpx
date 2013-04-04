@@ -73,6 +73,9 @@ void vp9_ht_quantize_b_4x4(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type) {
 
   if (!b->skip_block) {
     for (i = 0; i < 16; i++) {
+#if CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN
+      pt_scan = vp9_adapt_scan(pt_scan, qcoeff_ptr, i);
+#endif
       rc   = pt_scan[i];
       z    = coeff_ptr[rc];
 
@@ -128,6 +131,7 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx) {
 #if CONFIG_CODE_NONZEROCOUNT
   int nzc = 0;
 #endif
+  const int *pt_scan = vp9_default_zig_zag1d_4x4;
 
   vpx_memset(qcoeff_ptr, 0, 32);
   vpx_memset(dqcoeff_ptr, 0, 32);
@@ -136,7 +140,10 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx) {
 
   if (!b->skip_block) {
     for (i = 0; i < 16; i++) {
-      rc   = vp9_default_zig_zag1d_4x4[i];
+#if CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN
+      pt_scan = vp9_adapt_scan(pt_scan, qcoeff_ptr, i);
+#endif
+      rc   = pt_scan[i];
       z    = coeff_ptr[rc];
 
       zbin = zbin_ptr[rc] + *zbin_boost_ptr + zbin_oq_value;
@@ -267,6 +274,9 @@ void vp9_regular_quantize_b_8x8(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type) {
       }
     }
     for (i = 1; i < 64; i++) {
+#if CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN
+      pt_scan = vp9_adapt_scan(pt_scan, qcoeff_ptr, i);
+#endif
       rc   = pt_scan[i];
       z    = coeff_ptr[rc];
       zbin = (zbin_ptr[1] + zbin_boost_ptr[zero_run] + zbin_oq_value);
@@ -381,6 +391,9 @@ static void quantize(int16_t *zbin_boost_orig_ptr,
 
   if (!skip_block) {
     for (i = 0; i < n_coeffs; i++) {
+#if CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN
+      scan = vp9_adapt_scan(scan, qcoeff_ptr, i);
+#endif
       rc   = scan[i];
       z    = coeff_ptr[rc] * mul;
 

@@ -252,9 +252,18 @@ static void tokenize_b(VP9_COMP *cpi,
     seg_eob = 0;
 
   do {
-    const int band = get_coef_band(scan, tx_size, c);
+    int band;
     int token;
     int v = 0;
+#if CONFIG_SCATTERSCAN && CONFIG_ADAPTIVESCAN
+    const int *new_scan = vp9_adapt_scan(scan, qcoeff_ptr, c);
+    if (new_scan != scan) {
+      scan = new_scan;
+      nb = vp9_get_coef_neighbors_handle(scan, &pad);
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
+    }
+#endif
+    band = get_coef_band(scan, tx_size, c);
 #if CONFIG_CODE_NONZEROCOUNT
     if (nzc_used)
       zerosleft = seg_eob - xd->nzcs[ib] - c + nzc;

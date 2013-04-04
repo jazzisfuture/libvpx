@@ -545,6 +545,7 @@ static void optimize_b(VP9_COMMON *const cm,
                        const int16_t *dequant_ptr,
                        ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                        int tx_size) {
+#if !(CONFIG_ADAPTIVESCAN && CONFIG_SCATTERSCAN)
   const int ref = mb->e_mbd.mode_info_context->mbmi.ref_frame != INTRA_FRAME;
   MACROBLOCKD *const xd = &mb->e_mbd;
   vp9_token_state tokens[1025][2];
@@ -843,6 +844,7 @@ static void optimize_b(VP9_COMMON *const cm,
 #if CONFIG_CODE_NONZEROCOUNT
   assert(final_nzc == final_nzc_exp);
   xd->nzcs[ib] = final_nzc;
+#endif
 #endif
 }
 
