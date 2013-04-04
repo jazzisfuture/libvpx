@@ -33,6 +33,22 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
   scale->y_offset_q4 = 0;  // calculated per-mb
   scale->y_step_q4 = 16 * other_h / this_h;
 
+  if (scale->x_num == scale->x_den && scale->y_num == scale->y_den) {
+    scale->scaled_buffer_offset = buffer_offset_without_scaling;
+    scale->set_scaled_offsets = set_offsets_without_scaling;
+    scale->scale_motion_vector_q3_to_q4 =
+        motion_vector_q3_to_q4_without_scaling;
+    scale->scale_motion_vector_component_q4 =
+        motion_vector_component_q4_without_scaling;
+  } else {
+    scale->scaled_buffer_offset = buffer_offset_with_scaling;
+    scale->set_scaled_offsets = set_offsets_with_scaling;
+    scale->scale_motion_vector_q3_to_q4 =
+        motion_vector_q3_to_q4_with_scaling;
+    scale->scale_motion_vector_component_q4 =
+        motion_vector_component_q4_with_scaling;
+  }
+
   // TODO(agrange): Investigate the best choice of functions to use here
   // for EIGHTTAP_SMOOTH. Since it is not interpolating, need to choose what
   // to do at full-pel offsets. The current selection, where the filter is
@@ -325,60 +341,13 @@ void vp9_copy_mem8x4_c(const uint8_t *src,
   }
 }
 
-static void set_scaled_offsets(struct scale_factors *scale,
-                               int row, int col) {
-  const int x_q4 = 16 * col;
-  const int y_q4 = 16 * row;
-
-  scale->x_offset_q4 = (x_q4 * scale->x_num / scale->x_den) & 0xf;
-  scale->y_offset_q4 = (y_q4 * scale->y_num / scale->y_den) & 0xf;
-}
-
-static int32_t scale_motion_vector_component_q3(int mv_q3,
-                                                int num,
-                                                int den,
-                                                int offset_q4) {
-  // returns the scaled and offset value of the mv component.
-  const int32_t mv_q4 = mv_q3 << 1;
-
-  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
-  return mv_q4 * num / den + offset_q4;
-}
-
-static int32_t scale_motion_vector_component_q4(int mv_q4,
-                                                int num,
-                                                int den,
-                                                int offset_q4) {
-  // returns the scaled and offset value of the mv component.
-
-  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
-  return mv_q4 * num / den + offset_q4;
-}
-
-static int_mv32 scale_motion_vector_q3_to_q4(
-    const int_mv *src_mv,
-    const struct scale_factors *scale) {
-  // returns mv * scale + offset
-  int_mv32 result;
-
-  result.as_mv.row = scale_motion_vector_component_q3(src_mv->as_mv.row,
-                                                      scale->y_num,
-                                                      scale->y_den,
-                                                      scale->y_offset_q4);
-  result.as_mv.col = scale_motion_vector_component_q3(src_mv->as_mv.col,
-                                                      scale->x_num,
-                                                      scale->x_den,
-                                                      scale->x_offset_q4);
-  return result;
-}
-
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const int_mv *mv_q3,
                                const struct scale_factors *scale,
                                int w, int h, int weight,
                                const struct subpix_fn_table *subpix) {
-  int_mv32 mv = scale_motion_vector_q3_to_q4(mv_q3, scale);
+  int_mv32 mv = scale->scale_motion_vector_q3_to_q4(mv_q3, scale);
   src += (mv.as_mv.row >> 4) * src_stride + (mv.as_mv.col >> 4);
   scale->predict[!!(mv.as_mv.col & 15)][!!(mv.as_mv.row & 15)][weight](
       src, src_stride, dst, dst_stride,
@@ -402,11 +371,11 @@ void vp9_build_inter_predictor_q4(const uint8_t *src, int src_stride,
   const int mv_col_q4 = ((fullpel_mv_q3->as_mv.col >> 3) << 4)
                         + (frac_mv_q4->as_mv.col & 0xf);
   const int scaled_mv_row_q4 =
-      scale_motion_vector_component_q4(mv_row_q4, scale->y_num, scale->y_den,
-                                       scale->y_offset_q4);
+      scale->scale_motion_vector_component_q4(mv_row_q4, scale->y_num,
+                                              scale->y_den, scale->y_offset_q4);
   const int scaled_mv_col_q4 =
-      scale_motion_vector_component_q4(mv_col_q4, scale->x_num, scale->x_den,
-                                       scale->x_offset_q4);
+      scale->scale_motion_vector_component_q4(mv_col_q4, scale->x_num,
+                                              scale->x_den, scale->x_offset_q4);
   const int subpel_x = scaled_mv_col_q4 & 15;
   const int subpel_y = scaled_mv_row_q4 & 15;
 
@@ -429,7 +398,7 @@ static void build_2x1_inter_predictor_wh(const BLOCKD *d0, const BLOCKD *d1,
   assert(d1->predictor - d0->predictor == block_size);
   assert(d1->pre == d0->pre + block_size);
 
-  set_scaled_offsets(&scale[which_mv], row, col);
+  scale[which_mv].set_scaled_offsets(&scale[which_mv], row, col);
 
   if (d0->bmi.as_mv[which_mv].as_int == d1->bmi.as_mv[which_mv].as_int) {
     uint8_t **base_pre = which_mv ? d0->base_second_pre : d0->base_pre;
@@ -456,7 +425,7 @@ static void build_2x1_inter_predictor_wh(const BLOCKD *d0, const BLOCKD *d1,
 
     if (width <= block_size) return;
 
-    set_scaled_offsets(&scale[which_mv], row, col + block_size);
+    scale[which_mv].set_scaled_offsets(&scale[which_mv], row, col + block_size);
 
     vp9_build_inter_predictor(*base_pre1 + d1->pre,
                               d1->pre_stride,
@@ -477,7 +446,7 @@ static void build_2x1_inter_predictor(const BLOCKD *d0, const BLOCKD *d1,
   assert(d1->predictor - d0->predictor == block_size);
   assert(d1->pre == d0->pre + block_size);
 
-  set_scaled_offsets(&scale[which_mv], row, col);
+  scale[which_mv].set_scaled_offsets(&scale[which_mv], row, col);
 
   if (d0->bmi.as_mv[which_mv].as_int == d1->bmi.as_mv[which_mv].as_int) {
     uint8_t **base_pre = which_mv ? d0->base_second_pre : d0->base_pre;
@@ -502,7 +471,7 @@ static void build_2x1_inter_predictor(const BLOCKD *d0, const BLOCKD *d1,
                               block_size, block_size,
                               weight, subpix);
 
-    set_scaled_offsets(&scale[which_mv], row, col + block_size);
+    scale[which_mv].set_scaled_offsets(&scale[which_mv], row, col + block_size);
 
     vp9_build_inter_predictor(*base_pre1 + d1->pre,
                               d1->pre_stride,
@@ -792,10 +761,12 @@ static int get_implicit_compoundinter_weight(MACROBLOCKD *xd,
     xd->mb_to_right_edge  = edge[3] + ((16 - n) << 3);
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
-    set_scaled_offsets(&xd->scale_factor[1], mb_row * 16, mb_col * 16 + n);
+    xd->scale_factor[1].set_scaled_offsets(&xd->scale_factor[1],
+                                           mb_row * 16, mb_col * 16 + n);
     // predict a single row of pixels
     vp9_build_inter_predictor(
-        base_pre + scaled_buffer_offset(n, 0, pre_stride, &xd->scale_factor[1]),
+        base_pre + xd->scale_factor[1].
+        scaled_buffer_offset(n, 0, pre_stride, &xd->scale_factor[1]),
         pre_stride, tmp_y + n, tmp_ystride, &ymv, &xd->scale_factor[1],
         16, 1, 0, &xd->subpix);
   }
@@ -806,10 +777,12 @@ static int get_implicit_compoundinter_weight(MACROBLOCKD *xd,
     xd->mb_to_bottom_edge = edge[1] + ((16 - n) << 3);
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
-    set_scaled_offsets(&xd->scale_factor[1], mb_row * 16 + n, mb_col * 16);
+    xd->scale_factor[1].set_scaled_offsets(&xd->scale_factor[1],
+                                           mb_row * 16 + n, mb_col * 16);
     // predict a single col of pixels
     vp9_build_inter_predictor(
-        base_pre + scaled_buffer_offset(0, n, pre_stride, &xd->scale_factor[1]),
+        base_pre + xd->scale_factor[1].
+        scaled_buffer_offset(0, n, pre_stride, &xd->scale_factor[1]),
         pre_stride, tmp_y + n * tmp_ystride, tmp_ystride, &ymv,
         &xd->scale_factor[1], 1, 16, 0, &xd->subpix);
   }
@@ -828,10 +801,12 @@ static int get_implicit_compoundinter_weight(MACROBLOCKD *xd,
     xd->mb_to_right_edge  = edge[3] + ((16 - n) << 3);
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
-    set_scaled_offsets(&xd->scale_factor[0], mb_row * 16, mb_col * 16 + n);
+    xd->scale_factor[0].set_scaled_offsets(&xd->scale_factor[0],
+                                           mb_row * 16, mb_col * 16 + n);
     // predict a single row of pixels
     vp9_build_inter_predictor(
-        base_pre + scaled_buffer_offset(n, 0, pre_stride, &xd->scale_factor[0]),
+        base_pre + xd->scale_factor[0].
+        scaled_buffer_offset(n, 0, pre_stride, &xd->scale_factor[0]),
         pre_stride, tmp_y + n, tmp_ystride, &ymv, &xd->scale_factor[0],
         16, 1, 0, &xd->subpix);
   }
@@ -842,10 +817,12 @@ static int get_implicit_compoundinter_weight(MACROBLOCKD *xd,
     xd->mb_to_bottom_edge = edge[1] + ((16 - n) << 3);
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
-    set_scaled_offsets(&xd->scale_factor[0], mb_row * 16 + n, mb_col * 16);
+    xd->scale_factor[0].set_scaled_offsets(&xd->scale_factor[0],
+                                           mb_row * 16 + n, mb_col * 16);
     // predict a single col of pixels
     vp9_build_inter_predictor(
-        base_pre + scaled_buffer_offset(0, n, pre_stride, &xd->scale_factor[0]),
+        base_pre + xd->scale_factor[0].
+        scaled_buffer_offset(0, n, pre_stride, &xd->scale_factor[0]),
         pre_stride, tmp_y + n * tmp_ystride, tmp_ystride, &ymv,
         &xd->scale_factor[0], 1, 16, 0, &xd->subpix);
   }
@@ -880,7 +857,8 @@ static void build_inter16x16_predictors_mby_w(MACROBLOCKD *xd,
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
 
-    set_scaled_offsets(&xd->scale_factor[which_mv], mb_row * 16, mb_col * 16);
+    xd->scale_factor[which_mv].set_scaled_offsets(&xd->scale_factor[which_mv],
+                                                  mb_row * 16, mb_col * 16);
 
     vp9_build_inter_predictor(base_pre, pre_stride,
                               dst_y, dst_ystride,
@@ -923,7 +901,8 @@ void vp9_build_inter16x16_predictors_mby(MACROBLOCKD *xd,
     if (clamp_mvs)
       clamp_mv_to_umv_border(&ymv.as_mv, xd);
 
-    set_scaled_offsets(&xd->scale_factor[which_mv], mb_row * 16, mb_col * 16);
+    xd->scale_factor[which_mv].set_scaled_offsets(&xd->scale_factor[which_mv],
+                                                  mb_row * 16, mb_col * 16);
 
     vp9_build_inter_predictor(base_pre, pre_stride,
                               dst_y, dst_ystride,
@@ -980,8 +959,9 @@ static void build_inter16x16_predictors_mbuv_w(MACROBLOCKD *xd,
     uptr = (which_mv ? xd->second_pre.u_buffer : xd->pre.u_buffer);
     vptr = (which_mv ? xd->second_pre.v_buffer : xd->pre.v_buffer);
 
-    set_scaled_offsets(&xd->scale_factor_uv[which_mv],
-                       mb_row * 16, mb_col * 16);
+    xd->scale_factor_uv[which_mv].
+        set_scaled_offsets(&xd->scale_factor_uv[which_mv],
+                           mb_row * 16, mb_col * 16);
 
     vp9_build_inter_predictor_q4(
         uptr, pre_stride, dst_u, dst_uvstride, &_16x16mv, &_o16x16mv,
@@ -1057,8 +1037,9 @@ void vp9_build_inter16x16_predictors_mbuv(MACROBLOCKD *xd,
     uptr = (which_mv ? xd->second_pre.u_buffer : xd->pre.u_buffer);
     vptr = (which_mv ? xd->second_pre.v_buffer : xd->pre.v_buffer);
 
-    set_scaled_offsets(&xd->scale_factor_uv[which_mv],
-                       mb_row * 16, mb_col * 16);
+    xd->scale_factor_uv[which_mv].
+        set_scaled_offsets(&xd->scale_factor_uv[which_mv],
+                           mb_row * 16, mb_col * 16);
 
     vp9_build_inter_predictor_q4(
         uptr, pre_stride, dst_u, dst_uvstride, &_16x16mv, &_o16x16mv,
@@ -1097,16 +1078,17 @@ static void build_inter32x32_predictors_sby_w(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
 
-    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 16,
+    x->pre.y_buffer = y1 +
+        x->scale_factor[0].scaled_buffer_offset(x_idx * 16,
                                                 y_idx * 16,
                                                 x->pre.y_stride,
                                                 &x->scale_factor[0]);
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
       x->second_pre.y_buffer = y2 +
-          scaled_buffer_offset(x_idx * 16,
-                               y_idx * 16,
-                               x->second_pre.y_stride,
-                               &x->scale_factor[1]);
+          x->scale_factor[1].scaled_buffer_offset(x_idx * 16,
+                                                  y_idx * 16,
+                                                  x->second_pre.y_stride,
+                                                  &x->scale_factor[1]);
     }
     build_inter16x16_predictors_mby_w(x,
         dst_y + y_idx * 16 * dst_ystride  + x_idx * 16,
@@ -1159,16 +1141,17 @@ void vp9_build_inter32x32_predictors_sby(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
 
-    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 16,
+    x->pre.y_buffer = y1 +
+        x->scale_factor[0].scaled_buffer_offset(x_idx * 16,
                                                 y_idx * 16,
                                                 x->pre.y_stride,
                                                 &x->scale_factor[0]);
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
       x->second_pre.y_buffer = y2 +
-          scaled_buffer_offset(x_idx * 16,
-                               y_idx * 16,
-                               x->second_pre.y_stride,
-                               &x->scale_factor[1]);
+          x->scale_factor[1].scaled_buffer_offset(x_idx * 16,
+                                                  y_idx * 16,
+                                                  x->second_pre.y_stride,
+                                                  &x->scale_factor[1]);
     }
     vp9_build_inter16x16_predictors_mby(x,
         dst_y + y_idx * 16 * dst_ystride  + x_idx * 16,
@@ -1213,18 +1196,20 @@ static void build_inter32x32_predictors_sbuv_w(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
 
-    scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
-                                            y_idx * 8,
-                                            x->pre.uv_stride,
-                                            &x->scale_factor_uv[0]);
+    scaled_uv_offset =
+        x->scale_factor_uv[0].scaled_buffer_offset(x_idx * 8,
+                                                   y_idx * 8,
+                                                   x->pre.uv_stride,
+                                                   &x->scale_factor_uv[0]);
     x->pre.u_buffer = u1 + scaled_uv_offset;
     x->pre.v_buffer = v1 + scaled_uv_offset;
 
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
-      scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
-                                              y_idx * 8,
-                                              x->second_pre.uv_stride,
-                                              &x->scale_factor_uv[1]);
+      scaled_uv_offset =
+          x->scale_factor_uv[1].scaled_buffer_offset(x_idx * 8,
+                                                     y_idx * 8,
+                                                     x->second_pre.uv_stride,
+                                                     &x->scale_factor_uv[1]);
       x->second_pre.u_buffer = u2 + scaled_uv_offset;
       x->second_pre.v_buffer = v2 + scaled_uv_offset;
     }
@@ -1289,18 +1274,20 @@ void vp9_build_inter32x32_predictors_sbuv(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 16) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 16) << 3);
 
-    scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
-                                            y_idx * 8,
-                                            x->pre.uv_stride,
-                                            &x->scale_factor_uv[0]);
+    scaled_uv_offset =
+        x->scale_factor_uv[0].scaled_buffer_offset(x_idx * 8,
+                                                   y_idx * 8,
+                                                   x->pre.uv_stride,
+                                                   &x->scale_factor_uv[0]);
     x->pre.u_buffer = u1 + scaled_uv_offset;
     x->pre.v_buffer = v1 + scaled_uv_offset;
 
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
-      scaled_uv_offset = scaled_buffer_offset(x_idx * 8,
-                                              y_idx * 8,
-                                              x->second_pre.uv_stride,
-                                              &x->scale_factor_uv[1]);
+      scaled_uv_offset =
+          x->scale_factor_uv[1].scaled_buffer_offset(x_idx * 8,
+                                                     y_idx * 8,
+                                                     x->second_pre.uv_stride,
+                                                     &x->scale_factor_uv[1]);
       x->second_pre.u_buffer = u2 + scaled_uv_offset;
       x->second_pre.v_buffer = v2 + scaled_uv_offset;
     }
@@ -1366,17 +1353,18 @@ static void build_inter64x64_predictors_sby_w(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 32) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 32) << 3);
 
-    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 32,
+    x->pre.y_buffer = y1 +
+        x->scale_factor[0].scaled_buffer_offset(x_idx * 32,
                                                 y_idx * 32,
                                                 x->pre.y_stride,
                                                 &x->scale_factor[0]);
 
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
       x->second_pre.y_buffer = y2 +
-          scaled_buffer_offset(x_idx * 32,
-                               y_idx * 32,
-                               x->second_pre.y_stride,
-                               &x->scale_factor[1]);
+          x->scale_factor[1].scaled_buffer_offset(x_idx * 32,
+                                                  y_idx * 32,
+                                                  x->second_pre.y_stride,
+                                                  &x->scale_factor[1]);
     }
 
     build_inter32x32_predictors_sby_w(x,
@@ -1430,17 +1418,18 @@ void vp9_build_inter64x64_predictors_sby(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 32) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 32) << 3);
 
-    x->pre.y_buffer = y1 + scaled_buffer_offset(x_idx * 32,
+    x->pre.y_buffer = y1 +
+        x->scale_factor[0].scaled_buffer_offset(x_idx * 32,
                                                 y_idx * 32,
                                                 x->pre.y_stride,
                                                 &x->scale_factor[0]);
 
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
       x->second_pre.y_buffer = y2 +
-          scaled_buffer_offset(x_idx * 32,
-                               y_idx * 32,
-                               x->second_pre.y_stride,
-                               &x->scale_factor[1]);
+          x->scale_factor[1].scaled_buffer_offset(x_idx * 32,
+                                                  y_idx * 32,
+                                                  x->second_pre.y_stride,
+                                                  &x->scale_factor[1]);
     }
 
     vp9_build_inter32x32_predictors_sby(x,
@@ -1485,18 +1474,20 @@ void vp9_build_inter64x64_predictors_sbuv(MACROBLOCKD *x,
     x->mb_to_left_edge   = edge[2] -      ((x_idx  * 32) << 3);
     x->mb_to_right_edge  = edge[3] + (((1 - x_idx) * 32) << 3);
 
-    scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
-                                            y_idx * 16,
-                                            x->pre.uv_stride,
-                                            &x->scale_factor_uv[0]);
+    scaled_uv_offset =
+        x->scale_factor_uv[0].scaled_buffer_offset(x_idx * 16,
+                                                   y_idx * 16,
+                                                   x->pre.uv_stride,
+                                                   &x->scale_factor_uv[0]);
     x->pre.u_buffer = u1 + scaled_uv_offset;
     x->pre.v_buffer = v1 + scaled_uv_offset;
 
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
-      scaled_uv_offset = scaled_buffer_offset(x_idx * 16,
-                                              y_idx * 16,
-                                              x->second_pre.uv_stride,
-                                              &x->scale_factor_uv[1]);
+      scaled_uv_offset =
+          x->scale_factor_uv[1].scaled_buffer_offset(x_idx * 16,
+                                                     y_idx * 16,
+                                                     x->second_pre.uv_stride,
+                                                     &x->scale_factor_uv[1]);
       x->second_pre.u_buffer = u2 + scaled_uv_offset;
       x->second_pre.v_buffer = v2 + scaled_uv_offset;
     }
