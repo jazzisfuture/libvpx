@@ -87,6 +87,7 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm,
   int seg,  /* segment number */
       ref,  /* index in ref_lf_deltas */
       mode; /* index in mode_lf_deltas */
+  int n_shift = default_filt_lvl >> 5;
 
   loop_filter_info_n *lfi = &cm->lf_info;
 
@@ -129,12 +130,12 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm,
     ref = INTRA_FRAME;
 
     /* Apply delta for reference frame */
-    lvl_ref += xd->ref_lf_deltas[ref];
+    lvl_ref += xd->ref_lf_deltas[ref] << n_shift;
 
     /* Apply delta for Intra modes */
     mode = 0; /* B_PRED */
     /* Only the split mode BPRED has a further special case */
-    lvl_mode = lvl_ref +  xd->mode_lf_deltas[mode];
+    lvl_mode = lvl_ref +  (xd->mode_lf_deltas[mode] << n_shift);
     lvl_mode = (lvl_mode > 0) ? (lvl_mode > 63 ? 63 : lvl_mode) : 0; /* clamp */
 
     lfi->lvl[seg][ref][mode] = lvl_mode;
@@ -148,11 +149,11 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm,
       int lvl_ref = lvl_seg;
 
       /* Apply delta for reference frame */
-      lvl_ref += xd->ref_lf_deltas[ref];
+      lvl_ref += xd->ref_lf_deltas[ref] << n_shift;
 
       /* Apply delta for Inter modes */
       for (mode = 1; mode < 4; mode++) {
-        lvl_mode = lvl_ref + xd->mode_lf_deltas[mode];
+        lvl_mode = lvl_ref + (xd->mode_lf_deltas[mode]  << n_shift);
         lvl_mode = (lvl_mode > 0) ? (lvl_mode > 63 ? 63 : lvl_mode) : 0; /* clamp */
 
         lfi->lvl[seg][ref][mode] = lvl_mode;
