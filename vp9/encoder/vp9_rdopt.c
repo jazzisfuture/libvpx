@@ -3436,8 +3436,8 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
 
   // TODO(jkoleszar): Is the UV buffer ever used here? If so, need to make this
   // use the UV scaling factors.
-  setup_pred_block(&yv12_mb[frame_type], yv12, mb_row, mb_col,
-                   &scale[frame_type], &scale[frame_type]);
+  scale[frame_type].setup_pred_block(&yv12_mb[frame_type], yv12, mb_row, mb_col,
+                                     &scale[frame_type], &scale[frame_type]);
 
   // Gets an initial list of candidate vectors from neighbours and orders them
   use_prev_in_find_mv_refs = cm->width == cm->last_width &&

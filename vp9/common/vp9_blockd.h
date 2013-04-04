@@ -288,6 +288,23 @@ struct scale_factors {
   int y_den;
   int y_offset_q4;
   int y_step_q4;
+
+  void (*setup_pred_block)(YV12_BUFFER_CONFIG *dst,
+                               const YV12_BUFFER_CONFIG *src,
+                               int mb_row, int mb_col,
+                               const struct scale_factors *scale,
+                               const struct scale_factors *scale_uv);
+
+  void (*set_scaled_offsets)(struct scale_factors *scale, int row, int col);
+
+  int_mv32 (*scale_motion_vector_q3_to_q4)(const int_mv *src_mv,
+                                           const struct scale_factors *scale);
+
+  int32_t (*scale_motion_vector_component_q4)(int mv_q4,
+                                              int num,
+                                              int den,
+                                              int offset_q4);
+
 #if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
   convolve_fn_t predict[2][2][8];  // horiz, vert, weight (0 - 7)
 #else

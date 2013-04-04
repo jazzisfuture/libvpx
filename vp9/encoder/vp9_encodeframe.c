@@ -619,6 +619,22 @@ static unsigned find_seg_id(uint8_t *buf, int block_size,
   return seg_id;
 }
 
+static void setup_blocks(YV12_BUFFER_CONFIG *dst, const YV12_BUFFER_CONFIG *src,
+                         int mb_row, int mb_col) {
+  const int recon_y_stride = src->y_stride;
+  const int recon_uv_stride = src->uv_stride;
+  int recon_yoffset;
+  int recon_uvoffset;
+
+  recon_yoffset = 16 * mb_row * recon_y_stride + 16 * mb_col;
+  recon_uvoffset = 8 * mb_row * recon_uv_stride + 8 * mb_col;
+
+  *dst = *src;
+  dst->y_buffer += recon_yoffset;
+  dst->u_buffer += recon_uvoffset;
+  dst->v_buffer += recon_uvoffset;
+}
+
 static void set_offsets(VP9_COMP *cpi,
                         int mb_row, int mb_col, int block_size) {
   MACROBLOCK *const x = &cpi->mb;
@@ -647,9 +663,7 @@ static void set_offsets(VP9_COMP *cpi,
   xd->prev_mode_info_context = cm->prev_mi + idx_str;
 
   // Set up destination pointers
-  setup_pred_block(&xd->dst,
-                   &cm->yv12_fb[dst_fb_idx],
-                   mb_row, mb_col, NULL, NULL);
+  setup_blocks(&xd->dst, &cm->yv12_fb[dst_fb_idx], mb_row, mb_col);
 
   /* Set up limit values for MV components to prevent them from
    * extending beyond the UMV borders assuming 16x16 block size */
@@ -667,7 +681,7 @@ static void set_offsets(VP9_COMP *cpi,
   set_mb_col(cm, xd, mb_col, block_size);
 
   /* set up source buffers */
-  setup_pred_block(&x->src, cpi->Source, mb_row, mb_col, NULL, NULL);
+  setup_blocks(&x->src, cpi->Source, mb_row, mb_col);
 
   /* R/D setup */
   x->rddiv = cpi->RDDIV;
@@ -2149,10 +2163,11 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     else
       ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-    setup_pred_block(&xd->pre,
-                     &cpi->common.yv12_fb[ref_fb_idx],
-                     mb_row, mb_col,
-                     &xd->scale_factor[0], &xd->scale_factor_uv[0]);
+    xd->scale_factor[0].setup_pred_block(&xd->pre,
+                                         &cpi->common.yv12_fb[ref_fb_idx],
+                                         mb_row, mb_col,
+                                         &xd->scale_factor[0],
+                                         &xd->scale_factor_uv[0]);
 
     if (mbmi->second_ref_frame > 0) {
       int second_ref_fb_idx;
@@ -2164,10 +2179,11 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
       else
         second_ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-      setup_pred_block(&xd->second_pre,
-                       &cpi->common.yv12_fb[second_ref_fb_idx],
-                       mb_row, mb_col,
-                       &xd->scale_factor[1], &xd->scale_factor_uv[1]);
+      xd->scale_factor[1].
+          setup_pred_block(&xd->second_pre,
+                           &cpi->common.yv12_fb[second_ref_fb_idx],
+                           mb_row, mb_col, &xd->scale_factor[1],
+                           &xd->scale_factor_uv[1]);
     }
 
     if (!x->skip) {
@@ -2391,10 +2407,11 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
     else
       ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-    setup_pred_block(&xd->pre,
-                     &cpi->common.yv12_fb[ref_fb_idx],
-                     mb_row, mb_col,
-                     &xd->scale_factor[0], &xd->scale_factor_uv[0]);
+    xd->scale_factor[0].setup_pred_block(&xd->pre,
+                                         &cpi->common.yv12_fb[ref_fb_idx],
+                                         mb_row, mb_col,
+                                         &xd->scale_factor[0],
+                                         &xd->scale_factor_uv[0]);
 
     if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
       int second_ref_fb_idx;
@@ -2406,10 +2423,11 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
       else
         second_ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-      setup_pred_block(&xd->second_pre,
-                       &cpi->common.yv12_fb[second_ref_fb_idx],
-                       mb_row, mb_col,
-                       &xd->scale_factor[1], &xd->scale_factor_uv[1]);
+      xd->scale_factor[1].
+          setup_pred_block(&xd->second_pre,
+                           &cpi->common.yv12_fb[second_ref_fb_idx],
+                           mb_row, mb_col, &xd->scale_factor[1],
+                           &xd->scale_factor_uv[1]);
     }
 
     vp9_build_inter32x32_predictors_sb(xd, mb_row, mb_col);
@@ -2608,10 +2626,11 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
     else
       ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-    setup_pred_block(&xd->pre,
-                     &cpi->common.yv12_fb[ref_fb_idx],
-                     mb_row, mb_col,
-                     &xd->scale_factor[0], &xd->scale_factor_uv[0]);
+    xd->scale_factor[0].setup_pred_block(&xd->pre,
+                                         &cpi->common.yv12_fb[ref_fb_idx],
+                                         mb_row, mb_col,
+                                         &xd->scale_factor[0],
+                                         &xd->scale_factor_uv[0]);
 
     if (xd->mode_info_context->mbmi.second_ref_frame > 0) {
       int second_ref_fb_idx;
@@ -2623,10 +2642,11 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
       else
         second_ref_fb_idx = cpi->common.ref_frame_map[cpi->alt_fb_idx];
 
-      setup_pred_block(&xd->second_pre,
-                       &cpi->common.yv12_fb[second_ref_fb_idx],
-                       mb_row, mb_col,
-                       &xd->scale_factor[1], &xd->scale_factor_uv[1]);
+      xd->scale_factor[1].
+          setup_pred_block(&xd->second_pre,
+                           &cpi->common.yv12_fb[second_ref_fb_idx],
+                           mb_row, mb_col, &xd->scale_factor[1],
+                           &xd->scale_factor_uv[1]);
     }
 
     vp9_build_inter64x64_predictors_sb(xd, mb_row, mb_col);
