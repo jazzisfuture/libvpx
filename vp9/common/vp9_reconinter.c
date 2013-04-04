@@ -33,6 +33,20 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
   scale->y_offset_q4 = 0;  // calculated per-mb
   scale->y_step_q4 = 16 * other_h / this_h;
 
+  if (scale->x_num == scale->x_den && scale->y_num == scale->y_den) {
+    setup_pred_block = setup_pred_block_without_scaling;
+    set_scaled_offsets = set_offsets_without_scaling;
+    scale_motion_vector_q3_to_q4 = motion_vector_q3_to_q4_without_scaling;
+    scale_motion_vector_component_q4
+        = motion_vector_component_q4_without_scaling;
+  } else {
+    setup_pred_block = setup_pred_block_with_scaling;
+    set_scaled_offsets = set_offsets_with_scaling;
+    scale_motion_vector_q3_to_q4 = motion_vector_q3_to_q4_with_scaling;
+    scale_motion_vector_component_q4
+        = motion_vector_component_q4_with_scaling;
+  }
+
   // TODO(agrange): Investigate the best choice of functions to use here
   // for EIGHTTAP_SMOOTH. Since it is not interpolating, need to choose what
   // to do at full-pel offsets. The current selection, where the filter is
@@ -323,53 +337,6 @@ void vp9_copy_mem8x4_c(const uint8_t *src,
     src += src_stride;
     dst += dst_stride;
   }
-}
-
-static void set_scaled_offsets(struct scale_factors *scale,
-                               int row, int col) {
-  const int x_q4 = 16 * col;
-  const int y_q4 = 16 * row;
-
-  scale->x_offset_q4 = (x_q4 * scale->x_num / scale->x_den) & 0xf;
-  scale->y_offset_q4 = (y_q4 * scale->y_num / scale->y_den) & 0xf;
-}
-
-static int32_t scale_motion_vector_component_q3(int mv_q3,
-                                                int num,
-                                                int den,
-                                                int offset_q4) {
-  // returns the scaled and offset value of the mv component.
-  const int32_t mv_q4 = mv_q3 << 1;
-
-  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
-  return mv_q4 * num / den + offset_q4;
-}
-
-static int32_t scale_motion_vector_component_q4(int mv_q4,
-                                                int num,
-                                                int den,
-                                                int offset_q4) {
-  // returns the scaled and offset value of the mv component.
-
-  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
-  return mv_q4 * num / den + offset_q4;
-}
-
-static int_mv32 scale_motion_vector_q3_to_q4(
-    const int_mv *src_mv,
-    const struct scale_factors *scale) {
-  // returns mv * scale + offset
-  int_mv32 result;
-
-  result.as_mv.row = scale_motion_vector_component_q3(src_mv->as_mv.row,
-                                                      scale->y_num,
-                                                      scale->y_den,
-                                                      scale->y_offset_q4);
-  result.as_mv.col = scale_motion_vector_component_q3(src_mv->as_mv.col,
-                                                      scale->x_num,
-                                                      scale->x_den,
-                                                      scale->x_offset_q4);
-  return result;
 }
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
