@@ -461,9 +461,9 @@ int vp9_decode_sb64_tokens(VP9D_COMP* const pbi,
   }
 }
 
-static int vp9_decode_mb_tokens_16x16(VP9D_COMP* const pbi,
-                                      MACROBLOCKD* const xd,
-                                      BOOL_DECODER* const bc) {
+static int decode_mb_tokens_16x16(VP9D_COMP* const pbi,
+                                  MACROBLOCKD* const xd,
+                                  BOOL_DECODER* const bc) {
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   int i, eobtotal = 0, seg_eob;
 
@@ -484,9 +484,9 @@ static int vp9_decode_mb_tokens_16x16(VP9D_COMP* const pbi,
   return eobtotal;
 }
 
-static int vp9_decode_mb_tokens_8x8(VP9D_COMP* const pbi,
-                                    MACROBLOCKD* const xd,
-                                    BOOL_DECODER* const bc) {
+static int decode_mb_tokens_8x8(VP9D_COMP* const pbi,
+                                MACROBLOCKD* const xd,
+                                BOOL_DECODER* const bc) {
   int i, eobtotal = 0;
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
 
@@ -553,9 +553,9 @@ int vp9_decode_mb_tokens_4x4_uv(VP9D_COMP* const dx,
   return decode_mb_tokens_4x4_uv(dx, xd, bc, seg_eob);
 }
 
-static int vp9_decode_mb_tokens_4x4(VP9D_COMP* const dx,
-                                    MACROBLOCKD* const xd,
-                                    BOOL_DECODER* const bc) {
+static int decode_mb_tokens_4x4(VP9D_COMP* const dx,
+                                MACROBLOCKD* const xd,
+                                BOOL_DECODER* const bc) {
   int i, eobtotal = 0;
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   const int seg_eob = get_eob(xd, segment_id, 16);
@@ -576,12 +576,12 @@ int vp9_decode_mb_tokens(VP9D_COMP* const dx,
   const TX_SIZE tx_size = xd->mode_info_context->mbmi.txfm_size;
   switch (tx_size) {
     case TX_16X16:
-      return vp9_decode_mb_tokens_16x16(dx, xd, bc);
+      return decode_mb_tokens_16x16(dx, xd, bc);
     case TX_8X8:
-      return vp9_decode_mb_tokens_8x8(dx, xd, bc);
+      return decode_mb_tokens_8x8(dx, xd, bc);
     default:
       assert(tx_size == TX_4X4);
-      return vp9_decode_mb_tokens_4x4(dx, xd, bc);
+      return decode_mb_tokens_4x4(dx, xd, bc);
   }
 }
 
