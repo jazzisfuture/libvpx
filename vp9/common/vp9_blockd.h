@@ -299,6 +299,9 @@ struct mb_plane {
   DECLARE_ALIGNED(16, int16_t,  qcoeff[64 * 64]);
   DECLARE_ALIGNED(16, int16_t,  dqcoeff[64 * 64]);
   DECLARE_ALIGNED(16, uint16_t, eobs[256]);
+  PLANE_TYPE plane_type;
+  int subsampling_x;
+  int subsampling_y;
 };
 
 #define BLOCK_OFFSET(x, i, n) ((x) + (i) * (n))
