@@ -38,10 +38,12 @@ static void recon_write_yuv_frame(const char *name,
                                   int w, int _h) {
   FILE *yuv_file = fopen((char *)name, "ab");
   const uint8_t *src = s->y_buffer;
-  int h = _h;
+  int h = _h, res;
 
   do {
-    fwrite(src, w, 1,  yuv_file);
+    do {
+      res = fwrite(src, w, 1,  yuv_file);
+    } while (!res);
     src += s->y_stride;
   } while (--h);
 
@@ -50,7 +52,9 @@ static void recon_write_yuv_frame(const char *name,
   w = (w + 1) >> 1;
 
   do {
-    fwrite(src, w, 1,  yuv_file);
+    do {
+      res = fwrite(src, w, 1,  yuv_file);
+    } while (!res);
     src += s->uv_stride;
   } while (--h);
 
@@ -58,7 +62,9 @@ static void recon_write_yuv_frame(const char *name,
   h = (_h + 1) >> 1;
 
   do {
-    fwrite(src, w, 1, yuv_file);
+    do {
+      res = fwrite(src, w, 1, yuv_file);
+    } while (!res);
     src += s->uv_stride;
   } while (--h);
 
