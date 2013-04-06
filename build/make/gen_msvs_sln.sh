@@ -163,9 +163,14 @@ process_makefile() {
     IFS=$'\r'$'\n'
     local TAB=$'\t'
     cat <<EOF
-found_devenv := \$(shell which devenv.com >/dev/null 2>&1 && echo yes)
+ifeq (\$(CONFIG_VS_VERSION),7)
+MSBUILD_TOOL := devenv.com
+else
+MSBUILD_TOOL := vcbuild.exe
+endif
+found_devenv := \$(shell which \$(MSBUILD_TOOL) >/dev/null 2>&1 && echo yes)
 .nodevenv.once:
-${TAB}@echo "  * devenv.com not found in path."
+${TAB}@echo "  * \$(MSBUILD_TOOL) not found in path."
 ${TAB}@echo "  * "
 ${TAB}@echo "  * You will have to build all configurations manually using the"
 ${TAB}@echo "  * Visual Studio IDE. To allow make to build them automatically,"
@@ -190,16 +195,16 @@ ${TAB}rm -rf "$platform"/"$config"
 ifneq (\$(found_devenv),)
   ifeq (\$(CONFIG_VS_VERSION),7)
 $nows_sln_config: $outfile
-${TAB}devenv.com $outfile -build "$config"
+${TAB}\$(MSBUILD_TOOL) $outfile -build "$config"
 
   else
 $nows_sln_config: $outfile
-${TAB}devenv.com $outfile -build "$sln_config"
+${TAB}\$(MSBUILD_TOOL) $outfile "$sln_config"
 
   endif
 else
 $nows_sln_config: $outfile .nodevenv.once
-${TAB}@echo "  * Skipping build of $sln_config (devenv.com not in path)."
+${TAB}@echo "  * Skipping build of $sln_config (\$(MSBUILD_TOOL) not in path)."
 ${TAB}@echo "  * "
 endif
 
