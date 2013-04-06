@@ -17,8 +17,13 @@
 #include "vp9/common/vp9_treecoder.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
+#define LEFT_TOP_MARGIN     ((VP9BORDERINPIXELS - VP9_INTERP_EXTEND) << 3)
+#define RIGHT_BOTTOM_MARGIN ((VP9BORDERINPIXELS - VP9_INTERP_EXTEND) << 3)
+
+#if 0
 #define LEFT_TOP_MARGIN (16 << 3)
 #define RIGHT_BOTTOM_MARGIN (16 << 3)
+#endif
 
 /* check a list of motion vectors by sad score using a number rows of pixels
  * above and a number cols of pixels in the left to select the one with best
@@ -43,7 +48,7 @@ static void mv_bias(int refmb_ref_frame_sign_bias, int refframe,
   mvp->as_mv = xmv;
 }
 
-
+// TODO(jingning): this mv clamping function should be block size dependent.
 static void clamp_mv(int_mv *mv,
                      int mb_to_left_edge,
                      int mb_to_right_edge,
