@@ -1142,7 +1142,7 @@ EOF
     fi
 
     enabled debug && check_add_cflags -g && check_add_ldflags -g
-    enabled gprof && check_add_cflags -pg && check_add_ldflags -pg
+    enabled gprof && add_cflags -fno-omit-frame-pointer && check_add_cflags -pg && check_add_ldflags -pg
     enabled gcov &&
         check_add_cflags -fprofile-arcs -ftest-coverage &&
         check_add_ldflags -fprofile-arcs -ftest-coverage
