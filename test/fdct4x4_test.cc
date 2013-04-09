@@ -15,6 +15,7 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 extern "C" {
+#include "vp9/common/vp9_blockd.h"
 #include "vp9_rtcd.h"
 }
 

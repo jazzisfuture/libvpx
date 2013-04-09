@@ -21,6 +21,7 @@ extern "C" {
 #endif
 #if CONFIG_VP9_ENCODER
 # include "vp9/encoder/vp9_variance.h"
+# include "vp9/common/vp9_blockd.h"
 # include "vp9_rtcd.h"
 #endif
 }
