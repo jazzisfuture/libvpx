@@ -495,11 +495,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi,
   if (mbmi->mb_skip_coeff) {
     if (!dry_run)
       cpi->skip_true_count[mb_skip_context] += skip_inc;
-    if (!cm->mb_no_coeff_skip) {
-      vp9_stuff_sb(cpi, xd, t, dry_run);
-    } else {
-      vp9_reset_sb_tokens_context(xd);
-    }
+    vp9_reset_sb_tokens_context(xd);
     if (dry_run)
       *t = t_backup;
     return;
@@ -668,11 +664,7 @@ void vp9_tokenize_sb64(VP9_COMP *cpi,
   if (mbmi->mb_skip_coeff) {
     if (!dry_run)
       cpi->skip_true_count[mb_skip_context] += skip_inc;
-    if (!cm->mb_no_coeff_skip) {
-      vp9_stuff_sb64(cpi, xd, t, dry_run);
-    } else {
-      vp9_reset_sb64_tokens_context(xd);
-    }
+    vp9_reset_sb64_tokens_context(xd);
     if (dry_run)
       *t = t_backup;
     return;
@@ -765,11 +757,7 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
   if (xd->mode_info_context->mbmi.mb_skip_coeff) {
     if (!dry_run)
       cpi->skip_true_count[mb_skip_context] += skip_inc;
-    if (!cpi->common.mb_no_coeff_skip) {
-      vp9_stuff_mb(cpi, xd, t, dry_run);
-    } else {
-      vp9_reset_mb_tokens_context(xd);
-    }
+    vp9_reset_mb_tokens_context(xd);
 
     if (dry_run)
       *t = t_backup;

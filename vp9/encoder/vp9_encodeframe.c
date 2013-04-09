@@ -1387,14 +1387,13 @@ static void reset_skip_txfm_size_mb(VP9_COMP *cpi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   if (mbmi->txfm_size > txfm_max) {
-    VP9_COMMON *const cm = &cpi->common;
     MACROBLOCK *const x = &cpi->mb;
     MACROBLOCKD *const xd = &x->e_mbd;
     const int segment_id = mbmi->segment_id;
 
     xd->mode_info_context = mi;
-    assert((vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) ||
-           (cm->mb_no_coeff_skip && mbmi->mb_skip_coeff));
+    assert(vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP) ||
+           mbmi->mb_skip_coeff);
     mbmi->txfm_size = txfm_max;
   }
 }
@@ -1428,7 +1427,6 @@ static void reset_skip_txfm_size_sb32(VP9_COMP *cpi, MODE_INFO *mi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   if (mbmi->txfm_size > txfm_max) {
-    VP9_COMMON *const cm = &cpi->common;
     MACROBLOCK *const x = &cpi->mb;
     MACROBLOCKD *const xd = &x->e_mbd;
     const int segment_id = mbmi->segment_id;
@@ -1436,8 +1434,8 @@ static void reset_skip_txfm_size_sb32(VP9_COMP *cpi, MODE_INFO *mi,
     const int xmbs = MIN(2, mb_cols_left);
 
     xd->mode_info_context = mi;
-    assert((vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) ||
-           (cm->mb_no_coeff_skip && get_skip_flag(mi, mis, ymbs, xmbs)));
+    assert(vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP) ||
+           get_skip_flag(mi, mis, ymbs, xmbs));
     set_txfm_flag(mi, mis, ymbs, xmbs, txfm_max);
   }
 }
@@ -1448,7 +1446,6 @@ static void reset_skip_txfm_size_sb64(VP9_COMP *cpi, MODE_INFO *mi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   if (mbmi->txfm_size > txfm_max) {
-    VP9_COMMON *const cm = &cpi->common;
     MACROBLOCK *const x = &cpi->mb;
     MACROBLOCKD *const xd = &x->e_mbd;
     const int segment_id = mbmi->segment_id;
@@ -1456,8 +1453,8 @@ static void reset_skip_txfm_size_sb64(VP9_COMP *cpi, MODE_INFO *mi,
     const int xmbs = MIN(4, mb_cols_left);
 
     xd->mode_info_context = mi;
-    assert((vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) ||
-           (cm->mb_no_coeff_skip && get_skip_flag(mi, mis, ymbs, xmbs)));
+    assert(vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP) ||
+           get_skip_flag(mi, mis, ymbs, xmbs));
     set_txfm_flag(mi, mis, ymbs, xmbs, txfm_max);
   }
 }
@@ -1822,11 +1819,6 @@ static void update_sb64_skip_coeff_state(VP9_COMP *cpi,
     if (!skip[0] && !skip[1] && !skip[2] && !skip[3])
       return;
 
-    // if we don't do coeff skipping for this frame, we don't
-    // need to do anything here
-    if (!cpi->common.mb_no_coeff_skip)
-      return;
-
     // if all 4 MBs skipped coeff coding, nothing to be done
     if (skip[0] && skip[1] && skip[2] && skip[3])
       return;
@@ -1870,11 +1862,6 @@ static void update_sb64_skip_coeff_state(VP9_COMP *cpi,
         !skip[ 4] && !skip[ 5] && !skip[ 6] && !skip[ 7] &&
         !skip[ 8] && !skip[ 9] && !skip[10] && !skip[11] &&
         !skip[12] && !skip[13] && !skip[14] && !skip[15])
-      return;
-
-    // if we don't do coeff skipping for this frame, we don't
-    // need to do anything here
-    if (!cpi->common.mb_no_coeff_skip)
       return;
 
     // if all 4 MBs skipped coeff coding, nothing to be done
@@ -2173,10 +2160,6 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     if (!x->skip) {
       vp9_encode_inter16x16(cm, x, mb_row, mb_col);
 
-      // Clear mb_skip_coeff if mb_no_coeff_skip is not set
-      if (!cpi->common.mb_no_coeff_skip)
-        mbmi->mb_skip_coeff = 0;
-
     } else {
       vp9_build_inter16x16_predictors_mb(xd,
                                          xd->dst.y_buffer,
@@ -2258,27 +2241,20 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
 
   } else {
     // FIXME(rbultje): not tile-aware (mi - 1)
-    int mb_skip_context = cpi->common.mb_no_coeff_skip ?
-      (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff : 0;
+    int mb_skip_context =
+      (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff;
 
-    if (cm->mb_no_coeff_skip) {
-      mbmi->mb_skip_coeff = 1;
-      if (output_enabled)
-        cpi->skip_true_count[mb_skip_context]++;
-      vp9_reset_mb_tokens_context(xd);
-    } else {
-      vp9_stuff_mb(cpi, xd, t, !output_enabled);
-      mbmi->mb_skip_coeff = 0;
-      if (output_enabled)
-        cpi->skip_false_count[mb_skip_context]++;
-    }
+    mbmi->mb_skip_coeff = 1;
+    if (output_enabled)
+      cpi->skip_true_count[mb_skip_context]++;
+    vp9_reset_mb_tokens_context(xd);
   }
 
   if (output_enabled) {
     int segment_id = mbmi->segment_id;
     if (cpi->common.txfm_mode == TX_MODE_SELECT &&
-        !((cpi->common.mb_no_coeff_skip && mbmi->mb_skip_coeff) ||
-          (vp9_segfeature_active(&x->e_mbd, segment_id, SEG_LVL_SKIP)))) {
+        !(mbmi->mb_skip_coeff ||
+          vp9_segfeature_active(&x->e_mbd, segment_id, SEG_LVL_SKIP))) {
       assert(mbmi->txfm_size <= TX_16X16);
       if (mbmi->mode != B_PRED && mbmi->mode != I8X8_PRED &&
           mbmi->mode != SPLITMV) {
@@ -2481,19 +2457,13 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_tokenize_sb(cpi, xd, t, !output_enabled);
   } else {
     // FIXME(rbultje): not tile-aware (mi - 1)
-    int mb_skip_context = cm->mb_no_coeff_skip ?
-          (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff : 0;
+    int mb_skip_context =
+          (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff;
 
     mi->mbmi.mb_skip_coeff = 1;
-    if (cm->mb_no_coeff_skip) {
-      if (output_enabled)
-        cpi->skip_true_count[mb_skip_context]++;
-      vp9_reset_sb_tokens_context(xd);
-    } else {
-      vp9_stuff_sb(cpi, xd, t, !output_enabled);
-      if (output_enabled)
-        cpi->skip_false_count[mb_skip_context]++;
-    }
+    if (output_enabled)
+      cpi->skip_true_count[mb_skip_context]++;
+    vp9_reset_sb_tokens_context(xd);
   }
 
   // copy skip flag on all mb_mode_info contexts in this SB
@@ -2508,8 +2478,8 @@ static void encode_superblock32(VP9_COMP *cpi, TOKENEXTRA **t,
 
   if (output_enabled) {
     if (cm->txfm_mode == TX_MODE_SELECT &&
-        !((cm->mb_no_coeff_skip && mi->mbmi.mb_skip_coeff) ||
-          (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
+        !(mi->mbmi.mb_skip_coeff ||
+          vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
       cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
     } else {
       TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ? TX_32X32 : cm->txfm_mode;
@@ -2696,19 +2666,13 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_tokenize_sb64(cpi, &x->e_mbd, t, !output_enabled);
   } else {
     // FIXME(rbultje): not tile-aware (mi - 1)
-    int mb_skip_context = cpi->common.mb_no_coeff_skip ?
-        (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff : 0;
+    int mb_skip_context =
+        (mi - 1)->mbmi.mb_skip_coeff + (mi - mis)->mbmi.mb_skip_coeff;
 
     xd->mode_info_context->mbmi.mb_skip_coeff = 1;
-    if (cm->mb_no_coeff_skip) {
-      if (output_enabled)
-        cpi->skip_true_count[mb_skip_context]++;
-      vp9_reset_sb64_tokens_context(xd);
-    } else {
-      vp9_stuff_sb64(cpi, xd, t, !output_enabled);
-      if (output_enabled)
-        cpi->skip_false_count[mb_skip_context]++;
-    }
+    if (output_enabled)
+      cpi->skip_true_count[mb_skip_context]++;
+    vp9_reset_sb64_tokens_context(xd);
   }
 
   // copy skip flag on all mb_mode_info contexts in this SB
@@ -2721,8 +2685,8 @@ static void encode_superblock64(VP9_COMP *cpi, TOKENEXTRA **t,
 
   if (output_enabled) {
     if (cm->txfm_mode == TX_MODE_SELECT &&
-        !((cm->mb_no_coeff_skip && mi->mbmi.mb_skip_coeff) ||
-          (vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
+        !(mi->mbmi.mb_skip_coeff ||
+          vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
       cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
     } else {
       int x, y;
