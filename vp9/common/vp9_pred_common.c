@@ -159,15 +159,15 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
 
 // This function returns the status of the given prediction signal.
 // I.e. is the predicted value for the given signal correct.
-unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd,
-                                PRED_ID pred_id) {
+unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd, PRED_ID pred_id) {
+  MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
   switch (pred_id) {
     case PRED_SEG_ID:
-      return xd->mode_info_context->mbmi.seg_id_predicted;
+      return mbmi->seg_id_predicted;
     case PRED_REF:
-      return  xd->mode_info_context->mbmi.ref_predicted;
+      return mbmi->ref_predicted;
     case PRED_MBSKIP:
-      return xd->mode_info_context->mbmi.mb_skip_coeff;
+      return mbmi->mb_skip_coeff;
     default:
       return 0;  // *** add error trap code.
   }
@@ -243,15 +243,16 @@ void vp9_set_pred_flag(MACROBLOCKD *const xd,
 
 // Macroblock segment id prediction function
 unsigned char vp9_get_pred_mb_segid(const VP9_COMMON *const cm,
-                                    const MACROBLOCKD *const xd, int MbIndex) {
+                                    const MACROBLOCKD *const xd,
+                                    int mb_index) {
   // Currently the prediction for the macroblock segment ID is
   // the value stored for this macroblock in the previous frame.
   if (!xd->mode_info_context->mbmi.sb_type) {
-    return cm->last_frame_seg_map[MbIndex];
+    return cm->last_frame_seg_map[mb_index];
   } else {
     const int n_mbs = 1 << xd->mode_info_context->mbmi.sb_type;
-    const int mb_col = MbIndex % cm->mb_cols;
-    const int mb_row = MbIndex / cm->mb_cols;
+    const int mb_col = mb_index % cm->mb_cols;
+    const int mb_row = mb_index / cm->mb_cols;
     const int x_mbs = MIN(n_mbs, cm->mb_cols - mb_col);
     const int y_mbs = MIN(n_mbs, cm->mb_rows - mb_row);
     int x, y;
@@ -279,29 +280,28 @@ MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
   int segment_id = xd->mode_info_context->mbmi.segment_id;
   int i;
 
-  unsigned char frame_allowed[MAX_REF_FRAMES] = {1, 1, 1, 1};
-  unsigned char ref_score[MAX_REF_FRAMES];
-  unsigned char best_score = 0;
-  unsigned char left_in_image;
-  unsigned char above_in_image;
-  unsigned char above_left_in_image;
+  uint8_t frame_allowed[MAX_REF_FRAMES] = {1, 1, 1, 1};
+  uint8_t ref_score[MAX_REF_FRAMES];
+  uint8_t best_score = 0;
+  uint8_t left_in_image;
+  uint8_t above_in_image;
+  uint8_t above_left_in_image;
 
   // Is segment coding ennabled
   int seg_ref_active = vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME);
 
-  // Special case treatment if segment coding is enabled.
-  // Dont allow prediction of a reference frame that the segment
-  // does not allow
+  // Special case treatment if segment coding is enabled. Don't allow prediction
+  // of a reference frame that the segment does not allow
   if (seg_ref_active) {
     for (i = 0; i < MAX_REF_FRAMES; i++) {
-      frame_allowed[i] =
-        vp9_check_segref(xd, segment_id, i);
+      frame_allowed[i] = vp9_check_segref(xd, segment_id, i);
 
       // Score set to 0 if ref frame not allowed
       ref_score[i] = cm->ref_scores[i] * frame_allowed[i];
     }
-  } else
+  } else {
     vpx_memcpy(ref_score, cm->ref_scores, sizeof(ref_score));
+  }
 
   // Reference frames used by neighbours
   left = (m - 1)->mbmi.ref_frame;
