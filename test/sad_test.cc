@@ -20,6 +20,7 @@ extern "C" {
 //#include "vp8/common/blockd.h"
 #endif
 #if CONFIG_VP9_ENCODER
+#include "vp9/common/vp9_blockd.h"
 #include "./vp9_rtcd.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
