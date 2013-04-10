@@ -187,7 +187,8 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     }
     case TX_8X8: {
-      const int sz = 3 + sb_type, x = ib & ((1 << sz) - 1), y = ib - x;
+      const int sz = 3 + mb_width_log2(sb_type);
+      const int x = ib & ((1 << sz) - 1), y = ib - x;
       const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                               get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
       a_ec = (a[0] + a[1]) != 0;
@@ -206,7 +207,8 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     }
     case TX_16X16: {
-      const int sz = 4 + sb_type, x = ib & ((1 << sz) - 1), y = ib - x;
+      const int sz = 4 + mb_width_log2(sb_type);
+      const int x = ib & ((1 << sz) - 1), y = ib - x;
       const TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
                               get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
       if (type != PLANE_TYPE_UV) {
