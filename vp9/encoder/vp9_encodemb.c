@@ -933,8 +933,8 @@ void vp9_optimize_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   for (n = 0; n < bh; n += 2) {
     ENTROPY_CONTEXT *l =
         (ENTROPY_CONTEXT *) (x->e_mbd.left_context + (n >> 1));
-    tl[0] = (l[0] + l[1]) != 0;
-    tl[1] = (l[2] + l[3]) != 0;
+    tl[n + 0] = (l[0] + l[1]) != 0;
+    tl[n + 1] = (l[2] + l[3]) != 0;
   }
 
   for (n = 0; n < bw * bh; n++) {

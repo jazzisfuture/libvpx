@@ -423,55 +423,58 @@ static INLINE int decode_sb(VP9D_COMP* const pbi,
 
 int vp9_decode_sb_tokens(VP9D_COMP* const pbi,
                          MACROBLOCKD* const xd,
-                         BOOL_DECODER* const bc) {
-  switch (xd->mode_info_context->mbmi.txfm_size) {
-    case TX_32X32: {
-      // 32x32 luma block
-      const int segment_id = xd->mode_info_context->mbmi.segment_id;
-      int eobtotal = 0, seg_eob;
-      int c = decode_coefs(pbi, xd, bc, 0, PLANE_TYPE_Y_WITH_DC,
-                           get_eob(xd, segment_id, 1024),
-                           xd->plane[0].qcoeff, TX_32X32);
-      xd->plane[0].eobs[0] = c;
-      eobtotal += c;
+                         BOOL_DECODER* const bc,
+                         BLOCK_SIZE_TYPE bsize) {
+  const int bwl = mb_width_log2(bsize) + 2, bhl = mb_height_log2(bsize) + 2;
+  const int eob_max = 16 << (bwl + bhl);
 
-      // 16x16 chroma blocks
-      seg_eob = get_eob(xd, segment_id, 256);
+  const TX_SIZE txfm_size = xd->mode_info_context->mbmi.txfm_size;
+  const TX_SIZE uv_txfm_size = (bsize < BLOCK_SIZE_SB32X32 &&
+                               txfm_size == TX_16X16) ? TX_8X8 :
+                               (bsize < BLOCK_SIZE_SB64X64 &&
+                               txfm_size == TX_32X32) ? TX_16X16 : txfm_size;
+  const int n_y = (1 << (bwl + bhl)), n_uv = (n_y * 3) >> 1;
 
-      c = decode_coefs(pbi, xd, bc, 64, PLANE_TYPE_UV, seg_eob,
-                       xd->plane[1].qcoeff, TX_16X16);
-      xd->plane[1].eobs[0] = c;
-      eobtotal += c;
-      c = decode_coefs(pbi, xd, bc, 80, PLANE_TYPE_UV, seg_eob,
-                       xd->plane[2].qcoeff, TX_16X16);
-      xd->plane[2].eobs[0] = c;
-      eobtotal += c;
-      return eobtotal;
-    }
-    case TX_16X16:
-      return decode_sb(pbi, xd, bc, 64, 96, 16, 16 * 16, TX_16X16);
-    case TX_8X8:
-      return decode_sb(pbi, xd, bc, 64, 96, 4, 8 * 8, TX_8X8);
-    case TX_4X4:
-      return decode_sb(pbi, xd, bc, 64, 96, 1, 4 * 4, TX_4X4);
-    default:
-      assert(0);
-      return 0;
-  }
-}
-
-int vp9_decode_sb64_tokens(VP9D_COMP* const pbi,
-                           MACROBLOCKD* const xd,
-                           BOOL_DECODER* const bc) {
-  switch (xd->mode_info_context->mbmi.txfm_size) {
+  switch (txfm_size) {
     case TX_32X32:
-      return decode_sb(pbi, xd, bc, 256, 384, 64, 32 * 32, TX_32X32);
+      if (uv_txfm_size == TX_16X16) {
+        int i, c, eobtotal = 0, seg_eob;
+        const int segment_id = xd->mode_info_context->mbmi.segment_id;
+        for (i = 0; i < n_y; i += 64) {
+          c = decode_coefs(pbi, xd, bc, i,
+                           PLANE_TYPE_Y_WITH_DC,
+                           get_eob(xd, segment_id, 1024),
+                           BLOCK_OFFSET(xd->plane[0].qcoeff, i, 16),
+                           TX_32X32);
+          xd->plane[0].eobs[i] = c;
+          eobtotal += c;
+        }
+        for (; i < (n_y * 5) >> 2; i += 16) {
+          const int b = i - n_y;
+          const int uv_offset = n_y >> 2;
+          c = decode_coefs(pbi, xd, bc, i, PLANE_TYPE_UV,
+                           get_eob(xd, segment_id, 256),
+                           BLOCK_OFFSET(xd->plane[1].qcoeff, b, 16),
+                           TX_16X16);
+          xd->plane[1].eobs[b] = c;
+          eobtotal += c;
+          c = decode_coefs(pbi, xd, bc, i + uv_offset, PLANE_TYPE_UV,
+                           get_eob(xd, segment_id, 256),
+                           BLOCK_OFFSET(xd->plane[2].qcoeff, b, 16),
+                           TX_16X16);
+          xd->plane[2].eobs[b] = c;
+          eobtotal += c;
+        }
+        return eobtotal;
+      } else {
+        return decode_sb(pbi, xd, bc, n_y, n_uv, 64, 32 * 32, TX_32X32);
+      }
     case TX_16X16:
-      return decode_sb(pbi, xd, bc, 256, 384, 16, 16 * 16, TX_16X16);
+      return decode_sb(pbi, xd, bc, n_y, n_uv, 16, 16 * 16, TX_16X16);
     case TX_8X8:
-      return decode_sb(pbi, xd, bc, 256, 384, 4, 8 * 8, TX_8X8);
+      return decode_sb(pbi, xd, bc, n_y, n_uv, 4, 8 * 8, TX_8X8);
     case TX_4X4:
-      return decode_sb(pbi, xd, bc, 256, 384, 1, 4 * 4, TX_4X4);
+      return decode_sb(pbi, xd, bc, n_y, n_uv, 1, 4 * 4, TX_4X4);
     default:
       assert(0);
       return 0;
