@@ -4423,6 +4423,9 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   *returnrate = rate;
   *returndist = dist;
+
+  vpx_memcpy(&x->mb_context[xd->sb_index][xd->mb_index].mic,
+             xd->mode_info_context, sizeof(MODE_INFO));
 }
 
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
