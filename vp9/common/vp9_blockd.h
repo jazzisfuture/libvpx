@@ -237,6 +237,45 @@ static INLINE int mb_height_log2(BLOCK_SIZE_TYPE sb_type) {
   }
 }
 
+// parse block dimension in the unit of 4x4 blocks
+static INLINE int b_width_log2(BLOCK_SIZE_TYPE sb_type) {
+  switch (sb_type) {
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB16X32:
+#endif
+    case BLOCK_SIZE_MB16X16: return 2;
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB32X16:
+    case BLOCK_SIZE_SB32X64:
+#endif
+    case BLOCK_SIZE_SB32X32: return 3;
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB64X32:
+#endif
+    case BLOCK_SIZE_SB64X64: return 4;
+    default: assert(0);
+  }
+}
+
+static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
+  switch (sb_type) {
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB32X16:
+#endif
+    case BLOCK_SIZE_MB16X16: return 2;
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB16X32:
+    case BLOCK_SIZE_SB64X32:
+#endif
+    case BLOCK_SIZE_SB32X32: return 3;
+#if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB32X64:
+#endif
+    case BLOCK_SIZE_SB64X64: return 4;
+    default: assert(0);
+  }
+}
+
 typedef enum {
   BLOCK_4X4_LG2 = 0,
   BLOCK_8X8_LG2 = 2,

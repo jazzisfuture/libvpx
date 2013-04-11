@@ -187,21 +187,14 @@ static void propagate_nzcs(VP9_COMMON *cm, MACROBLOCKD *xd) {
  *  to dst buffer, we can write the result directly to dst buffer. This eliminates unnecessary copy.
  */
 static void skip_recon_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
-                          int mb_row, int mb_col) {
+                          int mb_row, int mb_col,
+                          BLOCK_SIZE_TYPE bsize) {
   MODE_INFO *m = xd->mode_info_context;
   BLOCK_SIZE_TYPE sb_type = m->mbmi.sb_type;
 
   if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
-    if (sb_type == BLOCK_SIZE_SB64X64) {
-      vp9_build_intra_predictors_sb64uv_s(xd);
-      vp9_build_intra_predictors_sb64y_s(xd);
-    } else if (sb_type == BLOCK_SIZE_SB32X32) {
-      vp9_build_intra_predictors_sbuv_s(xd);
-      vp9_build_intra_predictors_sby_s(xd);
-    } else {
-      vp9_build_intra_predictors_mbuv_s(xd);
-      vp9_build_intra_predictors_mby_s(xd);
-    }
+    vp9_build_intra_predictors_sbuv_s(xd, bsize);
+    vp9_build_intra_predictors_sby_s(xd, bsize);
   } else {
     if (sb_type == BLOCK_SIZE_SB64X64) {
       vp9_build_inter64x64_predictors_sb(xd, mb_row, mb_col);
@@ -697,27 +690,21 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mb_row, int mb_col,
 
     // Special case:  Force the loopfilter to skip when eobtotal and
     // mb_skip_coeff are zero.
-    skip_recon_mb(pbi, xd, mb_row, mb_col);
+    skip_recon_mb(pbi, xd, mb_row, mb_col, bsize);
     return;
   }
 
-  // TODO(jingning): need to combine intra/inter predictor functions and
+  // TODO(jingning): need to combine inter predictor functions and
   // make them block size independent.
   // generate prediction
-  if (bsize == BLOCK_SIZE_SB64X64) {
-    assert(bsize == BLOCK_SIZE_SB64X64);
-    if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
-      vp9_build_intra_predictors_sb64y_s(xd);
-      vp9_build_intra_predictors_sb64uv_s(xd);
-    } else {
-      vp9_build_inter64x64_predictors_sb(xd, mb_row, mb_col);
-    }
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+    vp9_build_intra_predictors_sby_s(xd, bsize);
+    vp9_build_intra_predictors_sbuv_s(xd, bsize);
   } else {
-    assert(bsize == BLOCK_SIZE_SB32X32);
-    if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
-      vp9_build_intra_predictors_sby_s(xd);
-      vp9_build_intra_predictors_sbuv_s(xd);
+    if (bsize == BLOCK_SIZE_SB64X64) {
+      vp9_build_inter64x64_predictors_sb(xd, mb_row, mb_col);
     } else {
+      assert(bsize == BLOCK_SIZE_SB32X32);
       vp9_build_inter32x32_predictors_sb(xd, mb_row, mb_col);
     }
   }
@@ -792,7 +779,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
     // Special case:  Force the loopfilter to skip when eobtotal and
     // mb_skip_coeff are zero.
     xd->mode_info_context->mbmi.mb_skip_coeff = 1;
-    skip_recon_mb(pbi, xd, mb_row, mb_col);
+    skip_recon_mb(pbi, xd, mb_row, mb_col, BLOCK_SIZE_MB16X16);
     return;
   }
 #if 0  // def DEC_DEBUG
