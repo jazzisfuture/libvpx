@@ -217,7 +217,7 @@ const vp9_tree_index vp9_ymode_tree[VP9_YMODES * 2 - 2] = {
   16, 18,
   -V_PRED, -H_PRED,
   -TM_PRED, 20,
-  -B_PRED, -I8X8_PRED
+  -I4X4_PRED, -I8X8_PRED
 };
 
 const vp9_tree_index vp9_kf_ymode_tree[VP9_YMODES * 2 - 2] = {
@@ -231,7 +231,7 @@ const vp9_tree_index vp9_kf_ymode_tree[VP9_YMODES * 2 - 2] = {
   16, 18,
   -V_PRED, -H_PRED,
   -TM_PRED, 20,
-  -B_PRED, -I8X8_PRED
+  -I4X4_PRED, -I8X8_PRED
 };
 
 const vp9_tree_index vp9_i8x8_mode_tree[VP9_I8X8_MODES * 2 - 2] = {

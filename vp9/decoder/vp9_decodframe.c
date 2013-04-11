@@ -368,7 +368,7 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd,
                    *(b->base_dst) + b->dst, 8, b->dst_stride,
                    xd->plane[2].eobs[i]);
     }
-  } else if (mode == B_PRED) {
+  } else if (mode == I4X4_PRED) {
     for (i = 0; i < 16; i++) {
       BLOCKD *b = &xd->block[i];
       int b_mode = xd->mode_info_context->bmi[i].as_mode.first;
@@ -764,7 +764,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
     vp9_reset_mb_tokens_context(xd);
   } else if (!bool_error(bc)) {
 #if CONFIG_NEWBINTRAMODES
-    if (mode != B_PRED)
+    if (mode != I4X4_PRED)
 #endif
       eobtotal = vp9_decode_tokens(pbi, xd, bc, BLOCK_SIZE_MB16X16);
   }
@@ -775,7 +775,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
                              &pbi->common);
 
   if (eobtotal == 0 &&
-      mode != B_PRED &&
+      mode != I4X4_PRED &&
       mode != SPLITMV &&
       mode != I8X8_PRED &&
       !bool_error(bc)) {
@@ -798,7 +798,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
   if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
     if (mode != I8X8_PRED) {
       vp9_build_intra_predictors_mbuv(xd);
-      if (mode != B_PRED)
+      if (mode != I4X4_PRED)
         vp9_build_intra_predictors_mby(xd);
     }
   } else {

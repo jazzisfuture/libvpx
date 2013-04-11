@@ -104,7 +104,7 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {SPLITMV,   GOLDEN_FRAME, NONE},
   {SPLITMV,   ALTREF_FRAME, NONE},
 
-  {B_PRED,    INTRA_FRAME,  NONE},
+  {I4X4_PRED,    INTRA_FRAME,  NONE},
   {I8X8_PRED, INTRA_FRAME,  NONE},
 
   /* compound prediction modes */
@@ -1301,7 +1301,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
                                          int *Distortion, int64_t best_rd) {
   int i;
   MACROBLOCKD *const xd = &mb->e_mbd;
-  int cost = mb->mbmode_cost [xd->frame_type] [B_PRED];
+  int cost = mb->mbmode_cost[xd->frame_type][I4X4_PRED];
   int distortion = 0;
   int tot_rate_y = 0;
   int64_t total_rd = 0;
@@ -1317,7 +1317,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   ta = (ENTROPY_CONTEXT *)&t_above;
   tl = (ENTROPY_CONTEXT *)&t_left;
 
-  xd->mode_info_context->mbmi.mode = B_PRED;
+  xd->mode_info_context->mbmi.mode = I4X4_PRED;
   bmode_costs = mb->inter_bmode_costs;
 
   for (i = 0; i < 16; i++) {
@@ -4472,7 +4472,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
             skippable = skippable && uv_intra_skippable;
           }
           break;
-        case B_PRED: {
+        case I4X4_PRED: {
           int64_t tmp_rd;
 
           // Note the rate value returned here includes the cost of coding
@@ -4789,9 +4789,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         // Note index of best mode so far
         best_mode_index = mode_index;
 
-        if (this_mode <= B_PRED) {
+        if (this_mode <= I4X4_PRED) {
           if (mbmi->txfm_size != TX_4X4
-              && this_mode != B_PRED
+              && this_mode != I4X4_PRED
               && this_mode != I8X8_PRED)
             mbmi->uv_mode = uv_intra_mode_8x8;
           else
@@ -4812,7 +4812,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         vpx_memcpy(&best_mbmode, mbmi, sizeof(MB_MODE_INFO));
         vpx_memcpy(&best_partition, x->partition_info, sizeof(PARTITION_INFO));
 
-        if ((this_mode == B_PRED)
+        if ((this_mode == I4X4_PRED)
             || (this_mode == I8X8_PRED)
             || (this_mode == SPLITMV))
           for (i = 0; i < 16; i++) {
@@ -4871,7 +4871,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (!mode_excluded && this_rd != INT64_MAX) {
       for (i = 0; i < NB_TXFM_MODES; i++) {
         int64_t adj_rd;
-        if (this_mode != B_PRED) {
+        if (this_mode != I4X4_PRED) {
           const int64_t txfm_mode_diff =
               txfm_cache[i] - txfm_cache[cm->txfm_mode];
           adj_rd = this_rd + txfm_mode_diff;
@@ -4889,7 +4889,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   assert((cm->mcomp_filter_type == SWITCHABLE) ||
          (cm->mcomp_filter_type == best_mbmode.interp_filter) ||
-         (best_mbmode.mode <= B_PRED));
+         (best_mbmode.mode <= I4X4_PRED));
 
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
@@ -4943,7 +4943,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   // macroblock modes
   vpx_memcpy(mbmi, &best_mbmode, sizeof(MB_MODE_INFO));
-  if (best_mbmode.mode == B_PRED) {
+  if (best_mbmode.mode == I4X4_PRED) {
     for (i = 0; i < 16; i++) {
       xd->mode_info_context->bmi[i].as_mode = best_bmodes[i].as_mode;
       xd->block[i].bmi.as_mode = xd->mode_info_context->bmi[i].as_mode;
@@ -5167,7 +5167,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
   } else if (error8x8 > error16x16) {
     if (error4x4 < error16x16) {
       rate = rateuv + rate4x4;
-      mbmi->mode = B_PRED;
+      mbmi->mode = I4X4_PRED;
       mbmi->txfm_size = TX_4X4;
       dist = dist4x4 + (distuv >> 2);
     } else {
@@ -5181,7 +5181,7 @@ void vp9_rd_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     if (error4x4 < error8x8) {
       rate = rateuv + rate4x4;
-      mbmi->mode = B_PRED;
+      mbmi->mode = I4X4_PRED;
       mbmi->txfm_size = TX_4X4;
       dist = dist4x4 + (distuv >> 2);
     } else {
@@ -5368,7 +5368,9 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
     //  continue;
 
-    if (this_mode == I8X8_PRED || this_mode == B_PRED || this_mode == SPLITMV)
+    if (this_mode == I8X8_PRED ||
+        this_mode == I4X4_PRED ||
+        this_mode == SPLITMV)
       continue;
     //  if (vp9_mode_order[mode_index].second_ref_frame == INTRA_FRAME)
     //  continue;
@@ -5601,7 +5603,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         // Note index of best mode so far
         best_mode_index = mode_index;
 
-        if (this_mode <= B_PRED) {
+        if (this_mode <= I4X4_PRED) {
           /* required for left and above block mv */
           mbmi->mv[0].as_int = 0;
         }
@@ -5667,7 +5669,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (!mode_excluded && this_rd != INT64_MAX) {
       for (i = 0; i < NB_TXFM_MODES; i++) {
         int64_t adj_rd;
-        if (this_mode != B_PRED) {
+        if (this_mode != I4X4_PRED) {
           adj_rd = this_rd + txfm_cache[i] - txfm_cache[cm->txfm_mode];
         } else {
           adj_rd = this_rd;
@@ -5683,7 +5685,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   assert((cm->mcomp_filter_type == SWITCHABLE) ||
          (cm->mcomp_filter_type == best_mbmode.interp_filter) ||
-         (best_mbmode.mode <= B_PRED));
+         (best_mbmode.mode <= I4X4_PRED));
 
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
