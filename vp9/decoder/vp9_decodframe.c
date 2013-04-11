@@ -937,63 +937,62 @@ static void set_refs(VP9D_COMP *pbi, int block_size, int mb_row, int mb_col) {
   }
 }
 
-/* Decode a row of Superblocks (2x2 region of MBs) */
-static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
+static void decode_tile(VP9D_COMP *pbi, vp9_reader* r) {
   VP9_COMMON *const pc = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
-  int mb_col;
+  int mb_row, mb_col;
 
-  // For a SB there are 2 left contexts, each pertaining to a MB row within
-  vpx_memset(pc->left_context, 0, sizeof(pc->left_context));
+  for (mb_row = pc->cur_tile_mb_row_start;
+       mb_row < pc->cur_tile_mb_row_end; mb_row += 4) {
+    // For a SB there are 2 left contexts, each pertaining to a MB row within
+    vpx_memset(pc->left_context, 0, sizeof(pc->left_context));
+    for (mb_col = pc->cur_tile_mb_col_start;
+         mb_col < pc->cur_tile_mb_col_end; mb_col += 4) {
+      if (vp9_read(r, pc->prob_sb64_coded)) {
+        // SB64
+        set_offsets(pbi, 64, mb_row, mb_col);
+        vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, r);
+        set_refs(pbi, 64, mb_row, mb_col);
+        decode_sb(pbi, xd, mb_row, mb_col, r, BLOCK_SIZE_SB64X64);
+        xd->corrupted |= bool_error(r);
+      } else {
+        // not SB64
+        int j;
+        for (j = 0; j < 4; j++) {
+          const int x_idx_sb = mb_col + 2 * (j % 2);
+          const int y_idx_sb = mb_row + 2 * (j / 2);
 
-  for (mb_col = pc->cur_tile_mb_col_start;
-       mb_col < pc->cur_tile_mb_col_end; mb_col += 4) {
-    if (vp9_read(r, pc->prob_sb64_coded)) {
-      // SB64 decoding
-      set_offsets(pbi, 64, mb_row, mb_col);
-      vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, r);
-      set_refs(pbi, 64, mb_row, mb_col);
-      decode_sb(pbi, xd, mb_row, mb_col, r, BLOCK_SIZE_SB64X64);
-      xd->corrupted |= bool_error(r);
-    } else {
-      // not SB64
-      int j;
-      for (j = 0; j < 4; j++) {
-        const int x_idx_sb = mb_col + 2 * (j % 2);
-        const int y_idx_sb = mb_row + 2 * (j / 2);
+          if (y_idx_sb >= pc->mb_rows || x_idx_sb >= pc->mb_cols)
+            continue;  // MB lies outside frame, skip on to next
 
-        if (y_idx_sb >= pc->mb_rows || x_idx_sb >= pc->mb_cols)
-          continue;  // MB lies outside frame, skip on to next
+          xd->sb_index = j;
 
-        xd->sb_index = j;
-
-        if (vp9_read(r, pc->prob_sb32_coded)) {
-          // SB32 decoding
-          set_offsets(pbi, 32, y_idx_sb, x_idx_sb);
-          vp9_decode_mb_mode_mv(pbi, xd, y_idx_sb, x_idx_sb, r);
-          set_refs(pbi, 32, y_idx_sb, x_idx_sb);
-          decode_sb(pbi, xd, y_idx_sb, x_idx_sb, r, BLOCK_SIZE_SB32X32);
-          xd->corrupted |= bool_error(r);
-        } else {
-          // not SB32
-          // Process the 4 MBs within the SB in the order:
-          // top-left, top-right, bottom-left, bottom-right
-          int i;
-          for (i = 0; i < 4; i++) {
-            const int x_idx_mb = x_idx_sb + (i % 2);
-            const int y_idx_mb = y_idx_sb + (i / 2);
-
-            if (y_idx_mb >= pc->mb_rows || x_idx_mb >= pc->mb_cols)
-              continue;  // MB lies outside frame, skip on to next
-
-            xd->mb_index = i;
-
-            // MB decoding
-            set_offsets(pbi, 16, y_idx_mb, x_idx_mb);
-            vp9_decode_mb_mode_mv(pbi, xd, y_idx_mb, x_idx_mb, r);
-            set_refs(pbi, 16, y_idx_mb, x_idx_mb);
-            decode_mb(pbi, xd, y_idx_mb, x_idx_mb, r);
+          if (vp9_read(r, pc->prob_sb32_coded)) {
+            // SB32
+            set_offsets(pbi, 32, y_idx_sb, x_idx_sb);
+            vp9_decode_mb_mode_mv(pbi, xd, y_idx_sb, x_idx_sb, r);
+            set_refs(pbi, 32, y_idx_sb, x_idx_sb);
+            decode_sb(pbi, xd, y_idx_sb, x_idx_sb, r, BLOCK_SIZE_SB32X32);
             xd->corrupted |= bool_error(r);
+          } else {
+            // not SB32
+            int i;
+            for (i = 0; i < 4; i++) {
+              const int x_idx_mb = x_idx_sb + (i % 2);
+              const int y_idx_mb = y_idx_sb + (i / 2);
+
+              if (y_idx_mb >= pc->mb_rows || x_idx_mb >= pc->mb_cols)
+                continue;  // MB lies outside frame, skip on to next
+
+              xd->mb_index = i;
+
+              // MB
+              set_offsets(pbi, 16, y_idx_mb, x_idx_mb);
+              vp9_decode_mb_mode_mv(pbi, xd, y_idx_mb, x_idx_mb, r);
+              set_refs(pbi, 16, y_idx_mb, x_idx_mb);
+              decode_mb(pbi, xd, y_idx_mb, x_idx_mb, r);
+              xd->corrupted |= bool_error(r);
+            }
           }
         }
       }
@@ -1340,8 +1339,17 @@ static const uint8_t *read_frame_size(VP9_COMMON *const pc, const uint8_t *data,
                                       const uint8_t *data_end,
                                       int *width, int *height) {
   if (data + 4 < data_end) {
-    *width = read_le16(data);
-    *height = read_le16(data + 2);
+    const int w = read_le16(data);
+    const int h = read_le16(data + 2);
+    if (w <= 0)
+      vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+                         "Invalid frame width");
+
+    if (h <= 0)
+      vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+                         "Invalid frame height");
+    *width = w;
+    *height = h;
     data += 4;
   } else {
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
@@ -1367,14 +1375,6 @@ static const uint8_t *setup_frame_size(VP9D_COMP *pbi, int scaling_active,
   data = read_frame_size(pc, data, data_end, &width, &height);
 
   if (pc->width != width || pc->height != height) {
-    if (width <= 0)
-      vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                         "Invalid frame width");
-
-    if (height <= 0)
-      vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                         "Invalid frame height");
-
     if (!pbi->initial_width || !pbi->initial_height) {
       if (vp9_alloc_frame_buffers(pc, width, height))
         vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
@@ -1465,7 +1465,6 @@ static void decode_tiles(VP9D_COMP *pbi,
 
   const uint8_t *data_ptr = data + first_partition_size;
   int tile_row, tile_col, delta_log2_tiles;
-  int mb_row;
 
   vp9_get_tile_n_bits(pc, &pc->log2_tile_columns, &delta_log2_tiles);
   while (delta_log2_tiles--) {
@@ -1511,13 +1510,7 @@ static void decode_tiles(VP9D_COMP *pbi,
       for (tile_col = n_cols - 1; tile_col >= 0; tile_col--) {
         vp9_get_tile_col_offsets(pc, tile_col);
         setup_token_decoder(pbi, data_ptr2[tile_row][tile_col], residual_bc);
-
-        // Decode a row of superblocks
-        for (mb_row = pc->cur_tile_mb_row_start;
-             mb_row < pc->cur_tile_mb_row_end; mb_row += 4) {
-          decode_sb_row(pbi, mb_row, residual_bc);
-        }
-
+        decode_tile(pbi, residual_bc);
         if (tile_row == pc->tile_rows - 1 && tile_col == n_cols - 1)
           bc_bak = *residual_bc;
       }
@@ -1536,13 +1529,7 @@ static void decode_tiles(VP9D_COMP *pbi,
 
         // Setup decoder
         setup_token_decoder(pbi, data_ptr + (has_more ? 4 : 0), residual_bc);
-
-        // Decode a row of superblocks
-        for (mb_row = pc->cur_tile_mb_row_start;
-             mb_row < pc->cur_tile_mb_row_end; mb_row += 4) {
-          decode_sb_row(pbi, mb_row, residual_bc);
-        }
-
+        decode_tile(pbi, residual_bc);
         if (has_more) {
           const int size = read_le32(data_ptr);
           data_ptr += 4 + size;
