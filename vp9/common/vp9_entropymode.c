@@ -78,12 +78,12 @@ static const unsigned int bmode_cts[VP9_NKF_BINTRAMODES] = {
   /* DC    TM     VE     HE   LD    RD   CONTEXT */
   43891, 17694, 10036, 3920, 3363, 2546, 14000
 #elif CONTEXT_PRED_REPLACEMENTS == 0
-  /* DC    TM     VE     HE   LD    RD   VR    VL    HD    HU   CONTEXT */
-  43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723, 50000
+  /* DC    VE    HE   LD    RD    VR    HD    HU      VL   TM    CONTEXT */
+  43891, 10036, 3920, 3363, 2546, 5119, 2471, 1723, 3221, 17694, 50000
 #endif
 #else
-  /* DC    TM     VE     HE   LD    RD    VR    VL    HD    HU */
-  43891, 17694, 10036, 3920, 3363, 2546, 5119, 3221, 2471, 1723
+  /* DC    VE    HE   LD    RD    VR    HD    HU      VL   TM  */
+  43891, 10036, 3920, 3363, 2546, 5119, 2471, 1723, 3221, 17694
 #endif
 };
 

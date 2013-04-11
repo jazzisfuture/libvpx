@@ -131,18 +131,15 @@ typedef enum {
 
 typedef enum {
   B_DC_PRED,          /* average of above and left pixels */
-  B_TM_PRED,
-
   B_VE_PRED,          /* vertical prediction */
   B_HE_PRED,          /* horizontal prediction */
-
   B_LD_PRED,
   B_RD_PRED,
-
   B_VR_PRED,
-  B_VL_PRED,
   B_HD_PRED,
   B_HU_PRED,
+  B_VL_PRED,
+  B_TM_PRED,
 #if CONFIG_NEWBINTRAMODES
   B_CONTEXT_PRED,
 #endif
