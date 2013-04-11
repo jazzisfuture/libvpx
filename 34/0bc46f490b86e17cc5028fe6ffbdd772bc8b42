@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jingning Han <jingning@google.com>
+Code-Review+1: Dmitry Kovalev <dkovalev@google.com>
+Submitted-by: Ronald S. Bultje <rbultje@google.com>
+Submitted-at: Thu, 11 Apr 2013 15:50:40 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/47893
+Project: webm/libvpx
+Branch: refs/heads/experimental
