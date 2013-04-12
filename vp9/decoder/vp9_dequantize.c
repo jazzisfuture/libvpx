@@ -83,36 +83,43 @@ void vp9_dequant_iht_add_c(TX_TYPE tx_type, int16_t *input,
                            const int16_t *dq,
                            uint8_t *pred, uint8_t *dest,
                            int pitch, int stride, int eob) {
-  int i;
-  DECLARE_ALIGNED_ARRAY(16, int16_t, output, 16);
+  if (tx_type == DCT_DCT) {
+    vp9_dequant_idct_add(input, dq, pred, dest, pitch, stride, eob);
+  } else {
+    int i;
+    DECLARE_ALIGNED_ARRAY(16, int16_t, output, 16);
 
-  for (i = 0; i < 16; i++)
-    input[i] *= dq[i];
+    for (i = 0; i < 16; i++)
+      input[i] *= dq[i];
 
-  vp9_short_iht4x4(input, output, 4, tx_type);
-  vpx_memset(input, 0, 32);
-  vp9_add_residual_4x4(output, pred, pitch, dest, stride);
+    vp9_short_iht4x4(input, output, 4, tx_type);
+    vpx_memset(input, 0, 32);
+    vp9_add_residual_4x4(output, pred, pitch, dest, stride);
+  }
 }
 
 void vp9_dequant_iht_add_8x8_c(TX_TYPE tx_type, int16_t *input,
                                const int16_t *dq,
                                uint8_t *pred, uint8_t *dest,
                                int pitch, int stride, int eob) {
-  DECLARE_ALIGNED_ARRAY(16, int16_t, output, 64);
+  if (tx_type == DCT_DCT) {
+    vp9_dequant_idct_add_8x8(input, dq, pred, dest, pitch, stride, eob);
+  } else {
+    DECLARE_ALIGNED_ARRAY(16, int16_t, output, 64);
+    if (eob == 0) {
+      // All 0 DCT coefficients
+      vp9_copy_mem8x8(pred, pitch, dest, stride);
+    } else if (eob > 0) {
+      int i;
 
-  if (eob == 0) {
-    // All 0 DCT coefficients
-    vp9_copy_mem8x8(pred, pitch, dest, stride);
-  } else if (eob > 0) {
-    int i;
+      input[0] *= dq[0];
+      for (i = 1; i < 64; i++)
+        input[i] *= dq[1];
 
-    input[0] *= dq[0];
-    for (i = 1; i < 64; i++)
-      input[i] *= dq[1];
-
-    vp9_short_iht8x8(input, output, 8, tx_type);
-    vpx_memset(input, 0, 128);
-    vp9_add_residual_8x8(output, pred, pitch, dest, stride);
+      vp9_short_iht8x8(input, output, 8, tx_type);
+      vpx_memset(input, 0, 128);
+      vp9_add_residual_8x8(output, pred, pitch, dest, stride);
+    }
   }
 }
 
@@ -257,29 +264,25 @@ void vp9_dequant_iht_add_16x16_c(TX_TYPE tx_type, int16_t *input,
                                  const int16_t *dq, uint8_t *pred,
                                  uint8_t *dest, int pitch, int stride,
                                  int eob) {
-  DECLARE_ALIGNED_ARRAY(16, int16_t, output, 256);
+  if (tx_type == DCT_DCT) {
+    vp9_dequant_idct_add_16x16(input, dq, pred, dest, pitch, stride, eob);
+  } else {
+    DECLARE_ALIGNED_ARRAY(16, int16_t, output, 256);
 
-  if (eob == 0) {
-    // All 0 DCT coefficients
-    vp9_copy_mem16x16(pred, pitch, dest, stride);
-  } else if (eob > 0) {
-    int i;
+    if (eob == 0) {
+      // All 0 DCT coefficients
+      vp9_copy_mem16x16(pred, pitch, dest, stride);
+    } else if (eob > 0) {
+      int i;
 
-    input[0] *= dq[0];
+      input[0] *= dq[0];
+      for (i = 1; i < 256; i++)
+        input[i] *= dq[1];
 
-    // recover quantizer for 4 4x4 blocks
-    for (i = 1; i < 256; i++)
-      input[i] *= dq[1];
-
-    // inverse hybrid transform
-    vp9_short_iht16x16(input, output, 16, tx_type);
-
-    // the idct halves ( >> 1) the pitch
-    // vp9_short_idct16x16(input, output, 32);
-
-    vpx_memset(input, 0, 512);
-
-    vp9_add_residual_16x16(output, pred, pitch, dest, stride);
+      vp9_short_iht16x16(input, output, 16, tx_type);
+      vpx_memset(input, 0, 512);
+      vp9_add_residual_16x16(output, pred, pitch, dest, stride);
+    }
   }
 }
 
