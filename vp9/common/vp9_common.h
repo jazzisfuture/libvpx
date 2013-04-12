@@ -32,6 +32,9 @@ static INLINE int16_t round_power_of_two(int16_t value, int n) {
   return (value + (1 << (n - 1))) >> n;
 }*/
 
+
+#define ODD(x) ((x) & 1)
+
 // Only need this for fixed-size arrays, for structs just assign.
 #define vp9_copy(dest, src) {            \
     assert(sizeof(dest) == sizeof(src)); \
