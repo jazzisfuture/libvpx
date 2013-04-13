@@ -1033,11 +1033,51 @@ static void encode_sb_row(VP9_COMP *cpi,
 
       if (!sb32_skip && !(mb_col + x_idx + 1 >= cm->mb_cols ||
                           mb_row + y_idx + 1 >= cm->mb_rows)) {
+#if CONFIG_SBSEGMENT
+        int r1, r2, r3, r4;
+        int d1, d2, d3, d4;
+        pick_sb_modes(cpi, mb_row + y_idx, mb_col + x_idx,
+                      tp, &r1, &d1, BLOCK_SIZE_SB32X16,
+                      &x->sb32_context[xd->sb_index]);
+        update_state(cpi, &x->sb32_context[xd->sb_index],
+                     BLOCK_SIZE_SB32X16, 0);
+        encode_superblock(cpi, tp,
+                          0, mb_row + y_idx, mb_col + x_idx, BLOCK_SIZE_SB32X16);
+        pick_sb_modes(cpi, mb_row + y_idx+1, mb_col + x_idx,
+                      tp, &r2, &d2, BLOCK_SIZE_SB32X16,
+                      &x->sb32_context[xd->sb_index]);
+        vpx_memcpy(cm->left_context + y_idx, l2, sizeof(l2));
+        vpx_memcpy(cm->above_context + mb_col + x_idx, a2, sizeof(a2));
+        pick_sb_modes(cpi, mb_row + y_idx, mb_col + x_idx,
+                      tp, &r3, &d3, BLOCK_SIZE_SB16X32,
+                      &x->sb32_context[xd->sb_index]);
+        update_state(cpi, &x->sb32_context[xd->sb_index],
+                     BLOCK_SIZE_SB16X32, 0);
+        encode_superblock(cpi, tp,
+                          0, mb_row + y_idx, mb_col + x_idx, BLOCK_SIZE_SB16X32);
+        pick_sb_modes(cpi, mb_row + y_idx, mb_col + x_idx+1,
+                      tp, &r4, &d4, BLOCK_SIZE_SB16X32,
+                      &x->sb32_context[xd->sb_index]);
+        vpx_memcpy(cm->left_context + y_idx, l2, sizeof(l2));
+        vpx_memcpy(cm->above_context + mb_col + x_idx, a2, sizeof(a2));
+#endif
         /* Pick a mode assuming that it applies to all 4 of the MBs in the SB */
         pick_sb_modes(cpi, mb_row + y_idx, mb_col + x_idx,
                       tp, &sb_rate, &sb_dist, BLOCK_SIZE_SB32X32,
                       &x->sb32_context[xd->sb_index]);
         sb_rate += vp9_cost_bit(cm->prob_sb32_coded, 1);
+#if CONFIG_SBSEGMENT
+        printf("[%d:%d,%d]\n"
+               "16x16: r=%d,d=%d,rd=%lld\n"
+               "16x32: r=%d+%d=%d,d=%d+%d=%d,rd=%lld\n"
+               "32x16: r=%d+%d=%d,d=%d+%d=%d,rd=%lld\n"
+               "32x32: r=%d,d=%d,rd=%lld\n",
+               cm->current_video_frame, mb_row + y_idx, mb_col + x_idx,
+               mb_rate, mb_dist, RDCOST(x->rdmult, x->rddiv, mb_rate, mb_dist),
+               r1, r2, r1+r2, d1, d2, d1+d2, RDCOST(x->rdmult, x->rddiv, r1+r2, d1+d2),
+               r3, r4, r3+r4, d3, d4, d3+d4, RDCOST(x->rdmult, x->rddiv, r3+r4, d3+d4),
+               sb_rate, sb_dist, RDCOST(x->rdmult, x->rddiv, sb_rate, sb_dist));
+#endif
       }
 
       /* Decide whether to encode as a SB or 4xMBs */
