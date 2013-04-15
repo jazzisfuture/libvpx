@@ -68,11 +68,15 @@ specialize vp9_recon_b
 prototype void vp9_recon_uv_b "uint8_t *pred_ptr, int16_t *diff_ptr, uint8_t *dst_ptr, int stride"
 specialize vp9_recon_uv_b
 
+# TODO(jingning): The prototype functions in c are modified to enable block-size configurable
+# operations. Need to change the sse2 accrodingly.
 prototype void vp9_recon2b "uint8_t *pred_ptr, int16_t *diff_ptr, uint8_t *dst_ptr, int stride"
-specialize vp9_recon2b sse2
+specialize vp9_recon2b
+# specialize vp9_recon2b sse2
 
 prototype void vp9_recon4b "uint8_t *pred_ptr, int16_t *diff_ptr, uint8_t *dst_ptr, int stride"
-specialize vp9_recon4b sse2
+specialize vp9_recon4b
+# specialize vp9_recon4b sse2
 
 prototype void vp9_recon_mb "struct macroblockd *x"
 specialize vp9_recon_mb
@@ -91,12 +95,6 @@ specialize vp9_build_intra_predictors_sby_s;
 
 prototype void vp9_build_intra_predictors_sbuv_s "struct macroblockd *x, enum BLOCK_SIZE_TYPE bsize"
 specialize vp9_build_intra_predictors_sbuv_s;
-
-prototype void vp9_build_intra_predictors_mby "struct macroblockd *x"
-specialize vp9_build_intra_predictors_mby;
-
-prototype void vp9_build_intra_predictors_mbuv "struct macroblockd *x"
-specialize vp9_build_intra_predictors_mbuv;
 
 prototype void vp9_intra4x4_predict "struct macroblockd *xd, struct blockd *x, int b_mode, uint8_t *predictor, int pre_stride"
 specialize vp9_intra4x4_predict;
@@ -624,16 +622,10 @@ specialize vp9_block_error mmx sse2
 vp9_block_error_sse2=vp9_block_error_xmm
 
 prototype void vp9_subtract_b "struct block *be, struct blockd *bd, int pitch"
-specialize vp9_subtract_b mmx sse2
-
-prototype void vp9_subtract_b "struct block *be, struct blockd *bd, int pitch"
-specialize vp9_subtract_b mmx sse2
-
-prototype void vp9_subtract_mby "int16_t *diff, uint8_t *src, uint8_t *pred, int stride"
-specialize vp9_subtract_mby mmx sse2
-
-prototype void vp9_subtract_mbuv "int16_t *diff, uint8_t *usrc, uint8_t *vsrc, uint8_t *pred, int stride"
-specialize vp9_subtract_mbuv mmx sse2
+# TODO(jingning): The prototype function in c has been changed to remove 
+# the use of predictor buffer in MACROBLOCKD. Need to modify the mmx and sse2
+# versions accordingly.
+specialize vp9_subtract_b
 
 #
 # Structured Similarity (SSIM)

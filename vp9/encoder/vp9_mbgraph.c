@@ -203,8 +203,9 @@ static int find_best_16x16_intra
     unsigned int err;
 
     xd->mode_info_context->mbmi.mode = mode;
-    vp9_build_intra_predictors_mby(xd);
-    err = vp9_sad16x16(xd->predictor, 16, buf->y_buffer + mb_y_offset,
+    vp9_build_intra_predictors_sby_s(xd, BLOCK_SIZE_MB16X16);
+    err = vp9_sad16x16(xd->dst.y_buffer, xd->dst.y_stride,
+                       buf->y_buffer + mb_y_offset,
                        buf->y_stride, best_err);
     // find best
     if (err < best_err) {
@@ -237,12 +238,17 @@ static void update_mbgraph_mb_stats
   MACROBLOCK   *const x  = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   int intra_error;
+  VP9_COMMON *cm = &cpi->common;
 
   // FIXME in practice we're completely ignoring chroma here
-  xd->dst.y_buffer = buf->y_buffer + mb_y_offset;
+  xd->dst.y_buffer = cm->yv12_fb[cm->new_fb_idx].y_buffer + mb_y_offset;
+  x->src.y_buffer = buf->y_buffer + mb_y_offset;
+  vpx_memcpy(cm->yv12_fb[cm->new_fb_idx].y_buffer, buf->y_buffer,
+             sizeof(buf->y_buffer));
 
   // do intra 16x16 prediction
-  intra_error = find_best_16x16_intra(cpi, buf, mb_y_offset, &stats->ref[INTRA_FRAME].m.mode);
+  intra_error = find_best_16x16_intra(cpi, buf, mb_y_offset,
+                                      &stats->ref[INTRA_FRAME].m.mode);
   if (intra_error <= 0)
     intra_error = 1;
   stats->ref[INTRA_FRAME].err = intra_error;
