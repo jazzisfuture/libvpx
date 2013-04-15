@@ -1516,16 +1516,11 @@ void vp9_build_inter_predictors_mb(MACROBLOCKD *xd,
                                    int mb_row,
                                    int mb_col) {
   if (xd->mode_info_context->mbmi.mode != SPLITMV) {
-    // TODO(jingning): to be replaced with vp9_build_inter_predictors_sb() when
-    // converting buffers from predictors to dst.
-    vp9_build_inter16x16_predictors_mb(xd, xd->predictor,
-                                       &xd->predictor[256],
-                                       &xd->predictor[320], 16, 8,
-                                       mb_row, mb_col);
-
+    vp9_build_inter_predictors_sb(xd, mb_row, mb_col, BLOCK_SIZE_MB16X16);
   } else {
     build_4x4uvmvs(xd);
-    build_inter4x4_predictors_mb(xd, mb_row, mb_col, 0);
+    build_inter4x4_predictors_mb(xd, mb_row, mb_col, 1);
+//    build_inter4x4_predictors_mb(xd, mb_row, mb_col, 0);
   }
 }
 
@@ -1594,7 +1589,11 @@ void vp9_build_inter4x4_predictors_mbuv(MACROBLOCKD *xd,
       build_2x1_inter_predictor(d0, d1, xd->scale_factor_uv, 4, 8, which_mv,
                                 which_mv ? weight : 0,
                                 &xd->subpix, mb_row * 8 + y, mb_col * 8 + x,
-                                0);
+                                1);
+//      build_2x1_inter_predictor(d0, d1, xd->scale_factor_uv, 4, 8, which_mv,
+//                                which_mv ? weight : 0,
+//                                &xd->subpix, mb_row * 8 + y, mb_col * 8 + x,
+//                                0);
     }
   }
 }
