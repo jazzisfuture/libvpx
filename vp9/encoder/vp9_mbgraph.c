@@ -203,9 +203,14 @@ static int find_best_16x16_intra
     unsigned int err;
 
     xd->mode_info_context->mbmi.mode = mode;
-    vp9_build_intra_predictors_mby(xd);
-    err = vp9_sad16x16(xd->predictor, 16, buf->y_buffer + mb_y_offset,
+    vp9_build_intra_predictors_sby_s(xd, BLOCK_SIZE_MB16X16);
+    err = vp9_sad16x16(xd->dst.y_buffer, xd->dst.y_stride,
+                       buf->y_buffer + mb_y_offset,
                        buf->y_stride, best_err);
+
+//    vp9_build_intra_predictors_mby(xd);
+//    err = vp9_sad16x16(xd->predictor, 16, buf->y_buffer + mb_y_offset,
+//                       buf->y_stride, best_err);
     // find best
     if (err < best_err) {
       best_err  = err;
