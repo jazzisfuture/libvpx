@@ -27,4 +27,20 @@ typedef enum BLOCK_SIZE_TYPE {
   BLOCK_SIZE_SB64X64,
 } BLOCK_SIZE_TYPE;
 
+typedef enum PARTITION_TYPE {
+  PARTITION_NONE,
+#if CONFIG_SBSEGMENT
+  PARTITION_HORZ,
+  PARTITION_VERT,
+#endif
+  PARTITION_SPLIT,
+} PARTITION_TYPE;
+
+#define PARTITION_PLANES 2  // number of probability models
+#if CONFIG_SBSEGMENT
+#define PARTITION_TYPES  4  // number of partition types
+#else
+#define PARTITION_TYPES  2
+#endif
+
 #endif  // VP9_COMMON_VP9_ENUMS_H_
