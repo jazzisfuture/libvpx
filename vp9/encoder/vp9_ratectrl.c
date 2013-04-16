@@ -121,6 +121,7 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
   CODING_CONTEXT *const cc = &cpi->coding_context;
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  int i;
 
   // Stores a snapshot of key state variables which can subsequently be
   // restored with a call to vp9_restore_coding_context. These functions are
@@ -141,6 +142,8 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
   vp9_copy(cc->i8x8_mode_prob, cm->fc.i8x8_mode_prob);
   vp9_copy(cc->sub_mv_ref_prob, cm->fc.sub_mv_ref_prob);
   vp9_copy(cc->mbsplit_prob, cm->fc.mbsplit_prob);
+  for (i = 0; i < PARTITION_PLANES; i++)
+    vp9_copy(cc->partition_prob[i], cm->fc.partition_prob[i]);
 
   // Stats
 #ifdef MODE_STATS
@@ -184,6 +187,7 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   CODING_CONTEXT *const cc = &cpi->coding_context;
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  int i;
 
   // Restore key state variables to the snapshot state stored in the
   // previous call to vp9_save_coding_context.
@@ -202,6 +206,8 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->fc.uv_mode_prob, cc->uv_mode_prob);
   vp9_copy(cm->fc.sub_mv_ref_prob, cc->sub_mv_ref_prob);
   vp9_copy(cm->fc.mbsplit_prob, cc->mbsplit_prob);
+  for (i = 0; i < PARTITION_PLANES; i++)
+    vp9_copy(cm->fc.partition_prob[i], cc->partition_prob[i]);
 
   // Stats
 #ifdef MODE_STATS
