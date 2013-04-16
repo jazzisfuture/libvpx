@@ -868,6 +868,7 @@ static void encode_sb(VP9_COMP *cpi,
                       output_enabled, mb_row, mb_col, BLOCK_SIZE_SB32X32);
     if (output_enabled) {
       update_stats(cpi, mb_row, mb_col);
+      cpi->partition_count[1][PARTITION_NONE]++;
     }
 
     if (output_enabled) {
@@ -876,6 +877,8 @@ static void encode_sb(VP9_COMP *cpi,
     }
   } else {
     int i;
+    if (output_enabled)
+      cpi->partition_count[1][PARTITION_SPLIT]++;
 
     for (i = 0; i < 4; i++) {
       const int x_idx = i & 1, y_idx = i >> 1;
@@ -897,6 +900,7 @@ static void encode_sb(VP9_COMP *cpi,
                         output_enabled, mb_row + y_idx, mb_col + x_idx);
       if (output_enabled) {
         update_stats(cpi, mb_row + y_idx, mb_col + x_idx);
+        cpi->partition_count[0][PARTITION_NONE]++;
       }
 
       if (output_enabled) {
@@ -935,8 +939,10 @@ static void encode_sb64(VP9_COMP *cpi,
 
     (*tp)->Token = EOSB_TOKEN;
     (*tp)++;
+    cpi->partition_count[2][PARTITION_NONE]++;
   } else {
     int i;
+    cpi->partition_count[2][PARTITION_SPLIT]++;
 
     for (i = 0; i < 4; i++) {
       const int x_idx = i & 1, y_idx = i >> 1;
@@ -1098,6 +1104,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   MACROBLOCK *const x = &cpi->mb;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
+  int i;
 
   x->act_zbin_adj = 0;
   cpi->seg0_idx = 0;
@@ -1141,6 +1148,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->sb_ymode_count)
   vp9_zero(cpi->sb32_count);
   vp9_zero(cpi->sb64_count);
+  for (i = 0; i < PARTITION_PLANES; i++)
+    vp9_zero(cpi->partition_count[i]);
+
 #if CONFIG_COMP_INTERINTRA_PRED
   vp9_zero(cpi->interintra_count);
   vp9_zero(cpi->interintra_select_count);

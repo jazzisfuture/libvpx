@@ -503,6 +503,7 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
   VP9_COMMON *const cm = &pbi->common;
   nmv_context *const nmvc = &pbi->common.fc.nmvc;
   MACROBLOCKD *const xd = &pbi->mb;
+  int i, j;
 
   if (cm->frame_type == KEY_FRAME) {
     if (!cm->kf_ymode_probs_update)
@@ -545,6 +546,13 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *bc) {
       int i;
       for (i = 0; i < VP9_I32X32_MODES - 1; ++i)
         cm->fc.sb_ymode_prob[i] = vp9_read_prob(bc);
+    }
+
+    for (j = 0; j < PARTITION_PLANES; j++) {
+      if (vp9_read_bit(bc)) {
+        for (i = 0; i < PARTITION_TYPES - 1; i++)
+          cm->fc.partition_prob[j][i] = vp9_read_prob(bc);
+      }    
     }
 
     read_nmvprobs(bc, nmvc, xd->allow_high_precision_mv);
