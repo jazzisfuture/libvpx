@@ -496,13 +496,14 @@ static INLINE COMPPREDMODE_TYPE read_comp_pred_mode(vp9_reader *r) {
 
 static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
+  nmv_context *const nmvc = &pbi->common.fc.nmvc;
+  MACROBLOCKD *const xd = &pbi->mb;
+  int i, j;
 
   if (cm->frame_type == KEY_FRAME) {
     if (!cm->kf_ymode_probs_update)
       cm->kf_ymode_probs_index = vp9_read_literal(r, 3);
   } else {
-    int i;
-
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, r);
 #if CONFIG_COMP_INTERINTRA_PRED
@@ -535,7 +536,14 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
       for (i = 0; i < VP9_I32X32_MODES - 1; ++i)
         cm->fc.sb_ymode_prob[i] = vp9_read_prob(r);
 
-    read_nmvprobs(r, &cm->fc.nmvc, pbi->mb.allow_high_precision_mv);
+    for (j = 0; j < PARTITION_PLANES; j++) {
+      if (vp9_read_bit(r)) {
+        for (i = 0; i < PARTITION_TYPES - 1; i++)
+          cm->fc.partition_prob[j][i] = vp9_read_prob(r);
+      }
+    }
+
+    read_nmvprobs(r, nmvc, xd->allow_high_precision_mv);
   }
 }
 
