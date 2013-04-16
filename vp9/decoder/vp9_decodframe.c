@@ -913,10 +913,80 @@ static void set_refs(VP9D_COMP *pbi, int mb_row, int mb_col) {
   }
 }
 
-/* Decode a row of Superblocks (2x2 region of MBs) */
-static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
+static void decode_modes_b(VP9D_COMP *pbi, int mb_row, int mb_col,
+                           vp9_reader *r, BLOCK_SIZE_TYPE bsize) {
+  MACROBLOCKD *const xd = &pbi->mb;
+
+  set_offsets(pbi, bsize, mb_row, mb_col);
+  vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, r);
+  set_refs(pbi, mb_row, mb_col);
+
+  // TODO(jingning): merge decode_sb_ and decode_mb_
+  if (bsize > BLOCK_SIZE_MB16X16)
+    decode_sb(pbi, xd, mb_row, mb_col, r, bsize);
+  else
+    decode_mb(pbi, xd, mb_row, mb_col, r);
+
+  xd->corrupted |= bool_error(r);
+}
+
+static void decode_modes_sb(VP9D_COMP *pbi, int mb_row, int mb_col,
+                            vp9_reader* r, BLOCK_SIZE_TYPE bsize) {
   VP9_COMMON *const pc = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
+  int bsl = mb_width_log2(bsize), bs = (1 << bsl) / 2;
+  int n;
+  PARTITION_TYPE partition = PARTITION_NONE;
+  BLOCK_SIZE_TYPE subsize;
+
+  if (mb_row >= pc->mb_rows || mb_col >= pc->mb_cols)
+    return;
+
+  if (bsize > BLOCK_SIZE_MB16X16) {
+    // read the partition information
+    partition = treed_read(r, vp9_partition_tree, pc->fc.partition_prob[bsize]);
+  }
+  pc->fc.partition_counts[bsl][partition]++;
+
+  switch (partition) {
+    case PARTITION_NONE:
+      subsize = bsize;
+      decode_modes_b(pbi, mb_row, mb_col, r, subsize);
+      break;
+#if CONFIG_SBSEGMENT
+    case PARTITION_HORZ:
+      subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB64X32 :
+                                                BLOCK_SIZE_SB32X16;
+      decode_modes_b(pbi, mb_row, mb_col, r, subsize);
+      decode_modes_b(pbi, mb_row + bs, mb_col, r, subsize);
+      break;
+    case PARTITION_VERT:
+      subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB32X64 :
+                                                BLOCK_SIZE_SB16X32;
+      decode_modes_b(pbi, mb_row, mb_col, r, subsize);
+      decode_modes_b(pbi, mb_row, mb_col + bs, r, subsize);
+      break;
+#endif
+    case PARTITION_SPLIT:
+      subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB32X32 :
+                                                BLOCK_SIZE_MB16X16;
+      for (n = 0; n < 4; n++) {
+        int j = n >> 1, i = n & 0x01;
+        if (subsize == BLOCK_SIZE_SB32X32)
+          xd->sb_index = n;
+        else
+          xd->mb_index = n;
+        decode_modes_sb(pbi, mb_row + j * bs, mb_col + i * bs, r, subsize);
+      }
+      break;
+    default:
+      assert(0);
+  }
+}
+
+/* Decode a row of Superblocks (4x4 region of MBs) */
+static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
+  VP9_COMMON *const pc = &pbi->common;
   int mb_col;
 
   // For a SB there are 2 left contexts, each pertaining to a MB row within
@@ -924,59 +994,9 @@ static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
 
   for (mb_col = pc->cur_tile_mb_col_start;
        mb_col < pc->cur_tile_mb_col_end; mb_col += 4) {
-    if (vp9_read(r, pc->prob_sb64_coded)) {
-      // SB64 decoding
-      set_offsets(pbi, BLOCK_SIZE_SB64X64, mb_row, mb_col);
-      vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col, r);
-      set_refs(pbi, mb_row, mb_col);
-      decode_sb(pbi, xd, mb_row, mb_col, r, BLOCK_SIZE_SB64X64);
-      xd->corrupted |= bool_error(r);
-    } else {
-      // not SB64
-      int j;
-      for (j = 0; j < 4; j++) {
-        const int x_idx_sb = mb_col + 2 * (j % 2);
-        const int y_idx_sb = mb_row + 2 * (j / 2);
-
-        if (y_idx_sb >= pc->mb_rows || x_idx_sb >= pc->mb_cols)
-          continue;  // MB lies outside frame, skip on to next
-
-        xd->sb_index = j;
-
-        if (vp9_read(r, pc->prob_sb32_coded)) {
-          // SB32 decoding
-          set_offsets(pbi, BLOCK_SIZE_SB32X32, y_idx_sb, x_idx_sb);
-          vp9_decode_mb_mode_mv(pbi, xd, y_idx_sb, x_idx_sb, r);
-          set_refs(pbi, y_idx_sb, x_idx_sb);
-          decode_sb(pbi, xd, y_idx_sb, x_idx_sb, r, BLOCK_SIZE_SB32X32);
-          xd->corrupted |= bool_error(r);
-        } else {
-          // not SB32
-          // Process the 4 MBs within the SB in the order:
-          // top-left, top-right, bottom-left, bottom-right
-          int i;
-          for (i = 0; i < 4; i++) {
-            const int x_idx_mb = x_idx_sb + (i % 2);
-            const int y_idx_mb = y_idx_sb + (i / 2);
-
-            if (y_idx_mb >= pc->mb_rows || x_idx_mb >= pc->mb_cols)
-              continue;  // MB lies outside frame, skip on to next
-
-            xd->mb_index = i;
-
-            // MB decoding
-            set_offsets(pbi, BLOCK_SIZE_MB16X16, y_idx_mb, x_idx_mb);
-            vp9_decode_mb_mode_mv(pbi, xd, y_idx_mb, x_idx_mb, r);
-            set_refs(pbi, y_idx_mb, x_idx_mb);
-            decode_mb(pbi, xd, y_idx_mb, x_idx_mb, r);
-            xd->corrupted |= bool_error(r);
-          }
-        }
-      }
-    }
+    decode_modes_sb(pbi, mb_row, mb_col, r, BLOCK_SIZE_SB64X64);
   }
 }
-
 
 static void setup_token_decoder(VP9D_COMP *pbi,
                                 const uint8_t *data,
@@ -1376,6 +1396,7 @@ static const uint8_t *setup_frame_size(VP9D_COMP *pbi, int scaling_active,
 
 static void update_frame_context(VP9D_COMP *pbi, vp9_reader *r) {
   FRAME_CONTEXT *const fc = &pbi->common.fc;
+  int i;
 
   vp9_copy(fc->pre_coef_probs_4x4, fc->coef_probs_4x4);
   vp9_copy(fc->pre_coef_probs_8x8, fc->coef_probs_8x8);
@@ -1388,6 +1409,8 @@ static void update_frame_context(VP9D_COMP *pbi, vp9_reader *r) {
   vp9_copy(fc->pre_i8x8_mode_prob, fc->i8x8_mode_prob);
   vp9_copy(fc->pre_sub_mv_ref_prob, fc->sub_mv_ref_prob);
   vp9_copy(fc->pre_mbsplit_prob, fc->mbsplit_prob);
+  for (i = 0; i < PARTITION_PLANES; i++)
+    vp9_copy(fc->pre_partition_prob[i], fc->partition_prob[i]);
   fc->pre_nmvc = fc->nmvc;
 
   vp9_zero(fc->coef_counts_4x4);
@@ -1404,6 +1427,8 @@ static void update_frame_context(VP9D_COMP *pbi, vp9_reader *r) {
   vp9_zero(fc->mbsplit_counts);
   vp9_zero(fc->NMVcount);
   vp9_zero(fc->mv_ref_ct);
+  for (i = 0; i < PARTITION_PLANES; i++)
+    vp9_zero(fc->partition_counts[i]);
 
 #if CONFIG_COMP_INTERINTRA_PRED
   fc->pre_interintra_prob = fc->interintra_prob;
