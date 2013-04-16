@@ -1724,11 +1724,14 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
 #if CONFIG_SBSEGMENT
     case PARTITION_HORZ:
       write_modes_b(cpi, m, bc, tok, tok_end, mb_row, mb_col);
-      write_modes_b(cpi, m + bh * mis, bc, tok, tok_end, mb_row + bh, mb_col);
+      if (mb_row + bh < cm->mb_rows)
+        write_modes_b(cpi, m + bh * mis, bc, tok, tok_end, mb_row + bh, mb_col);
       break;
     case PARTITION_VERT:
       write_modes_b(cpi, m, bc, tok, tok_end, mb_row, mb_col);
-      write_modes_b(cpi, m + bw, bc, tok, tok_end, mb_row, mb_col + bw);
+      if (mb_col + bw < cm->mb_cols)
+        write_modes_b(cpi, m + bw, bc, tok, tok_end, mb_row, mb_col + bw);
+      break;
 #endif
     case PARTITION_SPLIT:
       // TODO(jingning): support recursive partitioning down to 16x16 as for
