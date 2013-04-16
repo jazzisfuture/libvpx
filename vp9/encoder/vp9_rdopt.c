@@ -261,7 +261,6 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
       } else {
         cpi->rd_threshes[i] = INT_MAX;
       }
-
       cpi->rd_baseline_thresh[i] = cpi->rd_threshes[i];
     }
   } else {
@@ -273,7 +272,6 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int QIndex) {
       } else {
         cpi->rd_threshes[i] = INT_MAX;
       }
-
       cpi->rd_baseline_thresh[i] = cpi->rd_threshes[i];
     }
   }
@@ -4487,6 +4485,7 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_pred_diff[NB_PREDICTION_TYPES];
   int64_t best_pred_rd[NB_PREDICTION_TYPES];
   MB_MODE_INFO best_mbmode;
+  int j;
   int mode_index, best_mode_index = 0;
   unsigned int ref_costs[MAX_REF_FRAMES];
 #if CONFIG_COMP_INTERINTRA_PRED
@@ -4504,6 +4503,8 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int rate_uv_16x16 = 0, rate_uv_tokenonly_16x16 = 0;
   int dist_uv_16x16 = 0, uv_skip_16x16 = 0;
   MB_PREDICTION_MODE mode_uv_16x16 = NEARESTMV;
+  unsigned int ref_frame_mask = 0;
+  unsigned int mode_mask = 0;
 
   x->skip = 0;
   xd->mode_info_context->mbmi.segment_id = segment_id;
@@ -4514,6 +4515,31 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     best_pred_rd[i] = INT64_MAX;
   for (i = 0; i < NB_TXFM_MODES; i++)
     best_txfm_rd[i] = INT64_MAX;
+
+  // check if any of the 4x4
+  if (cpi->Speed > 0) {
+    switch (block_size) {
+      case BLOCK_64X64:
+        for (i = 0; i < 4; i++) {
+          for (j = 0; j < 4; j++) {
+            ref_frame_mask |= (1 << x->mb_context[i][j].mic.mbmi.ref_frame);
+            mode_mask |= (1 << x->mb_context[i][j].mic.mbmi.mode);
+          }
+        }
+        for (i = 0; i < 4; i++) {
+          ref_frame_mask |= (1 << x->sb32_context[i].mic.mbmi.ref_frame);
+          mode_mask |= (1 << x->sb32_context[i].mic.mbmi.mode);
+        }
+        break;
+      case BLOCK_32X32:
+        for (i = 0; i < 4; i++) {
+          ref_frame_mask |= (1
+              << x->mb_context[xd->sb_index][i].mic.mbmi.ref_frame);
+          mode_mask |= (1 << x->mb_context[xd->sb_index][i].mic.mbmi.mode);
+        }
+        break;
+    }
+  }
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
@@ -4526,47 +4552,50 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
-  if (block_size == BLOCK_64X64) {
-    mbmi->mode = DC_PRED;
-    if (cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT) {
-      mbmi->txfm_size = TX_4X4;
-      rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_4x4, &rate_uv_tokenonly_4x4,
+  if (cpi->Speed > 0 && (ref_frame_mask & (1 << INTRA_FRAME))) {
+    if (block_size == BLOCK_64X64) {
+      mbmi->mode = DC_PRED;
+      if (cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT) {
+        mbmi->txfm_size = TX_4X4;
+        rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_4x4, &rate_uv_tokenonly_4x4,
+                                  &dist_uv_4x4, &uv_skip_4x4);
+        mode_uv_4x4 = mbmi->uv_mode;
+      }
+      if (cm->txfm_mode != ONLY_4X4) {
+        mbmi->txfm_size = TX_8X8;
+        rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_8x8, &rate_uv_tokenonly_8x8,
+                                  &dist_uv_8x8, &uv_skip_8x8);
+        mode_uv_8x8 = mbmi->uv_mode;
+      }
+      if (cm->txfm_mode >= ALLOW_32X32) {
+        mbmi->txfm_size = TX_32X32;
+        rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_16x16,
+                                  &rate_uv_tokenonly_16x16, &dist_uv_16x16,
+                                  &uv_skip_16x16);
+        mode_uv_16x16 = mbmi->uv_mode;
+      }
+    } else {
+      assert(block_size == BLOCK_32X32);
+      mbmi->mode = DC_PRED;
+      if (cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT) {
+        mbmi->txfm_size = TX_4X4;
+        rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_4x4, &rate_uv_tokenonly_4x4,
                                 &dist_uv_4x4, &uv_skip_4x4);
-      mode_uv_4x4 = mbmi->uv_mode;
-    }
-    if (cm->txfm_mode != ONLY_4X4) {
-      mbmi->txfm_size = TX_8X8;
-      rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_8x8, &rate_uv_tokenonly_8x8,
+        mode_uv_4x4 = mbmi->uv_mode;
+      }
+      if (cm->txfm_mode != ONLY_4X4) {
+        mbmi->txfm_size = TX_8X8;
+        rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_8x8, &rate_uv_tokenonly_8x8,
                                 &dist_uv_8x8, &uv_skip_8x8);
-      mode_uv_8x8 = mbmi->uv_mode;
-    }
-    if (cm->txfm_mode >= ALLOW_32X32) {
-      mbmi->txfm_size = TX_32X32;
-      rd_pick_intra_sb64uv_mode(cpi, x, &rate_uv_16x16,
-                                &rate_uv_tokenonly_16x16,
-                                &dist_uv_16x16, &uv_skip_16x16);
-      mode_uv_16x16 = mbmi->uv_mode;
-    }
-  } else {
-    assert(block_size == BLOCK_32X32);
-    mbmi->mode = DC_PRED;
-    if (cm->txfm_mode == ONLY_4X4 || cm->txfm_mode == TX_MODE_SELECT) {
-      mbmi->txfm_size = TX_4X4;
-      rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_4x4, &rate_uv_tokenonly_4x4,
-                              &dist_uv_4x4, &uv_skip_4x4);
-      mode_uv_4x4 = mbmi->uv_mode;
-    }
-    if (cm->txfm_mode != ONLY_4X4) {
-      mbmi->txfm_size = TX_8X8;
-      rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_8x8, &rate_uv_tokenonly_8x8,
-                              &dist_uv_8x8, &uv_skip_8x8);
-      mode_uv_8x8 = mbmi->uv_mode;
-    }
-    if (cm->txfm_mode >= ALLOW_32X32) {
-      mbmi->txfm_size = TX_32X32;
-      rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_16x16, &rate_uv_tokenonly_16x16,
-                              &dist_uv_16x16, &uv_skip_16x16);
-      mode_uv_16x16 = mbmi->uv_mode;
+        mode_uv_8x8 = mbmi->uv_mode;
+      }
+      if (cm->txfm_mode >= ALLOW_32X32) {
+        mbmi->txfm_size = TX_32X32;
+        rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_16x16,
+                                &rate_uv_tokenonly_16x16, &dist_uv_16x16,
+                                &uv_skip_16x16);
+        mode_uv_16x16 = mbmi->uv_mode;
+      }
     }
   }
 
@@ -4594,10 +4623,21 @@ static int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
-    if (!(ref_frame == INTRA_FRAME ||
-          (cpi->ref_frame_flags & flag_list[ref_frame]))) {
-      continue;
+    if (cpi->Speed > 0) {
+      if (!(ref_frame == INTRA_FRAME
+          || (cpi->ref_frame_flags & flag_list[ref_frame]))) {
+        continue;
+      }
+      if (!(ref_frame_mask & (1 << ref_frame))) {
+        continue;
+      }
+      if (vp9_mode_order[mode_index].second_ref_frame != NONE
+          && !(ref_frame_mask
+              & (1 << vp9_mode_order[mode_index].second_ref_frame))) {
+        continue;
+      }
     }
+
     mbmi->ref_frame = ref_frame;
     mbmi->second_ref_frame = vp9_mode_order[mode_index].second_ref_frame;
     comp_pred = mbmi->second_ref_frame > INTRA_FRAME;
