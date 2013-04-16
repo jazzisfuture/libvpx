@@ -39,6 +39,13 @@
 #define MAX_MV_REFS 9
 #define MAX_MV_REF_CANDIDATES 4
 
+#define PARTITION_PLANES 3
+#if CONFIG_SBSEGMENT
+#define PARTITION_TYPES  4
+#else
+#define PARTITION_TYPES  2
+#endif
+
 typedef enum {
   PLANE_TYPE_Y_WITH_DC,
   PLANE_TYPE_UV,

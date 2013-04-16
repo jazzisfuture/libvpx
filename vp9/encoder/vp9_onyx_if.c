@@ -1380,8 +1380,6 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cm->prob_last_coded               = 128;
   cm->prob_gf_coded                 = 128;
   cm->prob_intra_coded              = 63;
-  cm->prob_sb32_coded               = 200;
-  cm->prob_sb64_coded               = 200;
   for (i = 0; i < COMP_PRED_CONTEXTS; i++)
     cm->prob_comppred[i]         = 128;
   for (i = 0; i < TX_SIZE_MAX_SB - 1; i++)
@@ -3346,6 +3344,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
   }
   if (cpi->common.frame_type != KEY_FRAME) {
+    int i;
     vp9_copy(cpi->common.fc.sb_ymode_counts, cpi->sb_ymode_count);
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
     vp9_copy(cpi->common.fc.uv_mode_counts, cpi->y_uv_mode_count);
@@ -3353,6 +3352,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_copy(cpi->common.fc.i8x8_mode_counts, cpi->i8x8_mode_count);
     vp9_copy(cpi->common.fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
     vp9_copy(cpi->common.fc.mbsplit_counts, cpi->mbsplit_count);
+    for (i = 0; i < PARTITION_PLANES; i++)
+      vp9_copy(cpi->common.fc.partition_counts[i], cpi->partition_count[i]);
 #if CONFIG_COMP_INTERINTRA_PRED
     vp9_copy(cpi->common.fc.interintra_counts, cpi->interintra_count);
 #endif
