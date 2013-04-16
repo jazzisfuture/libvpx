@@ -833,6 +833,28 @@ static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
       set_refs(pbi, mb_row, mb_col);
       decode_sb(pbi, xd, mb_row, mb_col, r, BLOCK_SIZE_SB64X64);
       xd->corrupted |= bool_error(r);
+#if CONFIG_SBSEGMENT
+    } else if (1 /* .. 64x32 */) {
+      int j;
+
+      for (j = 0; j < 2 && mb_row + j * 2 < pc->mb_rows; j++) {
+        set_offsets(pbi, BLOCK_SIZE_SB64X32, mb_row + j * 2, mb_col);
+        vp9_decode_mb_mode_mv(pbi, xd, mb_row + j * 2, mb_col, r);
+        set_refs(pbi, mb_row + j * 2, mb_col);
+        decode_sb(pbi, xd, mb_row + j * 2, mb_col, r, BLOCK_SIZE_SB64X32);
+        xd->corrupted |= bool_error(r);
+      }
+    } else if (1 /* .. 32x64 */) {
+      int j;
+
+      for (j = 0; j < 2 && mb_col + j * 2 < pc->mb_cols; j++) {
+        set_offsets(pbi, BLOCK_SIZE_SB32X64, mb_row, mb_col + j * 2);
+        vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col + j * 2, r);
+        set_refs(pbi, mb_row, mb_col + j * 2);
+        decode_sb(pbi, xd, mb_row, mb_col + j * 2, r, BLOCK_SIZE_SB32X64);
+        xd->corrupted |= bool_error(r);
+      }
+#endif
     } else {
       // not SB64
       int j;
@@ -852,6 +874,28 @@ static void decode_sb_row(VP9D_COMP *pbi, int mb_row, vp9_reader* r) {
           set_refs(pbi, y_idx_sb, x_idx_sb);
           decode_sb(pbi, xd, y_idx_sb, x_idx_sb, r, BLOCK_SIZE_SB32X32);
           xd->corrupted |= bool_error(r);
+#if CONFIG_SBSEGMENT
+        } else if (1 /*.. 32x16*/) {
+          int j;
+
+          for (j = 0; j < 2 && y_idx_sb + j < pc->mb_rows; j++) {
+            set_offsets(pbi, BLOCK_SIZE_SB32X16, mb_row + j, mb_col);
+            vp9_decode_mb_mode_mv(pbi, xd, mb_row + j, mb_col, r);
+            set_refs(pbi, mb_row + j, mb_col);
+            decode_sb(pbi, xd, mb_row + j, mb_col, r, BLOCK_SIZE_SB32X16);
+            xd->corrupted |= bool_error(r);
+          }
+        } else if (1 /* .. 16x32 */) {
+          int j;
+
+          for (j = 0; j < 2 && x_idx_sb + j < pc->mb_cols; j++) {
+            set_offsets(pbi, BLOCK_SIZE_SB16X32, mb_row, mb_col + j);
+            vp9_decode_mb_mode_mv(pbi, xd, mb_row, mb_col + j, r);
+            set_refs(pbi, mb_row, mb_col + j);
+            decode_sb(pbi, xd, mb_row, mb_col + j, r, BLOCK_SIZE_SB16X32);
+            xd->corrupted |= bool_error(r);
+          }
+#endif
         } else {
           // not SB32
           // Process the 4 MBs within the SB in the order:
