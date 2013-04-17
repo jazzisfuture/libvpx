@@ -188,3 +188,7 @@ struct lookahead_entry * vp9_lookahead_peek(struct lookahead_ctx *ctx,
 unsigned int vp9_lookahead_depth(struct lookahead_ctx *ctx) {
   return ctx->sz;
 }
+
+unsigned int vp9_lookahead_full(struct lookahead_ctx *ctx) {
+  return (ctx->sz >= ctx->max_sz);
+}
