@@ -2777,10 +2777,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       cpi->active_best_quality = MAX(qindex + delta_qindex, cpi->best_quality);
     }
 #if CONFIG_MULTIPLE_ARF
-    // Force the KF quantizer to be 30% of the active_worst_quality.
+    // KF quantizer set as multiple of active_worst_quality quantizer.
     current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
     cpi->active_best_quality = cpi->active_worst_quality
-        + compute_qdelta(cpi, current_q, current_q * 0.3);
+        + compute_qdelta(cpi, current_q, current_q * cpi->kf_q_mult);
 #endif
   } else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
     int high = 2000;
@@ -2868,15 +2868,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
   if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME)) {
-    double new_q;
-    double current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
-    int level = cpi->this_frame_weight;
-    assert(level >= 0);
-
-    // Set quantizer steps at 10% increments.
-    new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
-    q = cpi->active_worst_quality + compute_qdelta(cpi, current_q, new_q);
-
+     double current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
+    q = cpi->active_worst_quality + compute_qdelta(
+        cpi, current_q, current_q * cpi->this_frame_q_mult);
     bottom_index = q;
     top_index    = q;
     q_low  = q;
@@ -3609,8 +3603,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
         cpi->new_frame_coding_order_period = -1;
       }
-      cpi->this_frame_weight = cpi->arf_weight[cpi->sequence_number];
-      assert(cpi->this_frame_weight >= 0);
+      cpi->this_frame_q_mult = cpi->arf_q_mult[cpi->sequence_number];
     }
 #endif
   }
@@ -3760,7 +3753,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     else
 #endif
       frames_to_arf = cpi->frames_till_gf_update_due;
-
     assert(frames_to_arf < cpi->twopass.frames_to_key);
 
     if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
@@ -3843,8 +3835,8 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     // fprintf(fp_out, "   Frame:%d", cm->current_video_frame);
 #if CONFIG_MULTIPLE_ARF
     if (cpi->multi_arf_enabled) {
-      // fprintf(fp_out, "   seq_no:%d  this_frame_weight:%d",
-      //         cpi->sequence_number, cpi->this_frame_weight);
+      // fprintf(fp_out, "   seq_no:%d  this_frame_q_mult:%.2lf",
+      //         cpi->sequence_number, cpi->this_frame_q_mult);
     } else {
       // fprintf(fp_out, "\n");
     }
@@ -3940,7 +3932,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   cm->active_ref_idx[1] = cm->ref_frame_map[cpi->gld_fb_idx];
   cm->active_ref_idx[2] = cm->ref_frame_map[cpi->alt_fb_idx];
 
-#if 0  // CONFIG_MULTIPLE_ARF
+#if 0
   if (cpi->multi_arf_enabled) {
     fprintf(fp_out, "      idx(%d, %d, %d, %d) active(%d, %d, %d)",
         cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx, cm->new_fb_idx,
