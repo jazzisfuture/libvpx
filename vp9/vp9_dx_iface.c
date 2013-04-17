@@ -627,6 +627,11 @@ static vpx_codec_err_t get_reference(vpx_codec_alg_priv_t *ctx,
 
     vp9_get_reference_dec(ctx->pbi, data->idx, &fb);
     yuvconfig2image(&data->img, fb, NULL);
+//    {
+//      FILE *fp = fopen("dec_frame.yuv", "w");
+//      vp9_write_yuv_frame(fb, fp);
+//      fclose(fp);
+//    }
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;
