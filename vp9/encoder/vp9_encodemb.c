@@ -922,7 +922,8 @@ void vp9_encode_inter16x16y(MACROBLOCK *x, int mb_row, int mb_col) {
   MACROBLOCKD *xd = &x->e_mbd;
   BLOCK *b = &x->block[0];
 
-  vp9_build_inter16x16_predictors_mby(xd, xd->predictor, 16, mb_row, mb_col);
+  vp9_build_inter_predictors_sby(xd, xd->predictor, 16, mb_row, mb_col,
+                                 BLOCK_SIZE_MB16X16);
 
   vp9_subtract_mby(x->src_diff, *(b->base_src), xd->predictor, b->src_stride);
 
