@@ -37,12 +37,8 @@
 #endif
 
 // #define SPEEDSTATS 1
-#if CONFIG_MULTIPLE_ARF
-// Set MIN_GF_INTERVAL to 1 for the full decomposition.
-#define MIN_GF_INTERVAL             2
-#else
 #define MIN_GF_INTERVAL             4
-#endif
+
 #define DEFAULT_GF_INTERVAL         7
 
 #define KEY_FRAME_CONTEXT 5
@@ -333,6 +329,7 @@ typedef struct VP9_COMP {
   int gld_fb_idx;
   int alt_fb_idx;
 #if CONFIG_MULTIPLE_ARF
+  int oldgf_fb_idx;
   int alt_ref_fb_idx[NUM_REF_FRAMES - 3];
 #endif
   int refresh_last_frame;
@@ -588,7 +585,6 @@ typedef struct VP9_COMP {
     int64_t gf_group_bits;
     // Bits for the golden frame or ARF - 2 pass only
     int gf_bits;
-    int alt_extra_bits;
 
     int sr_update_lag;
     double est_max_qcorrection_factor;
@@ -650,14 +646,19 @@ typedef struct VP9_COMP {
 #if CONFIG_MULTIPLE_ARF
   // ARF tracking variables.
   int multi_arf_enabled;
+  int multi_arf_group;
+  int new_multi_arf_group;
   unsigned int frame_coding_order_period;
   unsigned int new_frame_coding_order_period;
   int frame_coding_order[MAX_LAG_BUFFERS * 2];
   int arf_buffer_idx[MAX_LAG_BUFFERS * 3 / 2];
-  int arf_weight[MAX_LAG_BUFFERS];
+  int arf_level[MAX_LAG_BUFFERS * 2];
+  double kf_q_mult;
+  double arf_q_mult[MAX_LAG_BUFFERS * 2];
   int arf_buffered;
-  int this_frame_weight;
   int max_arf_level;
+  double this_frame_q_mult;
+  int min_arf_separation;
 #endif
 } VP9_COMP;
 
