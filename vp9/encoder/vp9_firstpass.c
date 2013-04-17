@@ -1368,9 +1368,10 @@ static int calc_arf_boost(VP9_COMP *cpi, int offset,
       break;
 
     // Update the motion related elements to the boost calculation
-    accumulate_frame_motion_stats(cpi, &this_frame,
-                                  &this_frame_mv_in_out, &mv_in_out_accumulator,
-                                  &abs_mv_in_out_accumulator, &mv_ratio_accumulator);
+    accumulate_frame_motion_stats(cpi, &this_frame, &this_frame_mv_in_out,
+                                  &mv_in_out_accumulator,
+                                  &abs_mv_in_out_accumulator,
+                                  &mv_ratio_accumulator);
 
     // We want to discount the the flash frame itself and the recovery
     // frame that follows as both will have poor scores.
@@ -1398,139 +1399,122 @@ static int calc_arf_boost(VP9_COMP *cpi, int offset,
 }
 
 #if CONFIG_MULTIPLE_ARF
-// Work out the frame coding order for a GF or an ARF group.
-// The current implementation codes frames in their natural order for a
-// GF group, and inserts additional ARFs into an ARF group using a
-// binary split approach.
-// NOTE: this function is currently implemented recursively.
-static void schedule_frames(VP9_COMP *cpi, const int start, const int end,
-                            const int arf_idx, const int gf_or_arf_group,
-                            const int level) {
-  int i, abs_end, half_range;
-  int *cfo = cpi->frame_coding_order;
-  int idx = cpi->new_frame_coding_order_period;
+// Coded frame group fixed size.
+#define FRAME_GROUP_SIZE 16
 
-  // If (end < 0) an ARF should be coded at position (-end).
-  assert(start >= 0);
+#ifdef MIN_ARF_SEPARATION_1
+// Frame coding pattern with minimum ARF separation of 1 frame.
 
-  // printf("start:%d end:%d\n", start, end);
+// A set of frames 0..15 is encoded in the following order. A negative number
+// indicates a frame encoded out-of-order, as an ARF frame, e.g. -15 indicates
+// that frame 15, the last frame in the group, is encoded as an ARF frame. The
+// corresponding entry 15 indicates the ARF overlay frame for ARF frame 15.
+static const int frame_coding_order[FIXED_SEQUENCE_LENGTH] =
+  {-15, -7, -3, -1, 0, 1, 2, 3, -5, 4, 5, 6, 7, -11, -9, 8, 9, 10, 11, -13, 12,
+    13, 14, 15};
 
-  // GF Group: code frames in logical order.
-  if (gf_or_arf_group == 0) {
-    assert(end >= start);
-    for (i = start; i <= end; ++i) {
-      cfo[idx] = i;
-      cpi->arf_buffer_idx[idx] = arf_idx;
-      cpi->arf_weight[idx] = -1;
-      ++idx;
-    }
-    cpi->new_frame_coding_order_period = idx;
+// Quantizer level for each encoded frame.
+static const int frame_q_level[FIXED_SEQUENCE_LENGTH] =
+  {0, 1, 2, 3, 4, 4, 4, 4, 3, 4, 4, 4, 4, 2, 3, 4, 4, 4, 4, 3, 4, 4, 4, 4};
+
+// Quantizer value is specified as a multiplier of the baseline step-size
+// and depends on level of the frame as specified by frame_q_level, above.
+static const double q_mult_lut[5] = {0.4, 0.6, 0.7, 0.8, 1.0};
+
+// Target reference buffer where the encoded frame will be stored.
+// -1 indicates that the frame is not used as a predictor.
+static const int frame_target_buffer[FIXED_SEQUENCE_LENGTH] =
+  {3, 4, 0, 1, -1, 1, -1, 0, 1, -1, 1, -1, 4, 0, 1, -1, 1, -1, 0, 1, -1, 1,
+    -1, 2};
+
+// Each encoded frame may refer to up to 3 reference frames.
+static const int
+  active_ref_buffer[ALLOWED_REFS_PER_FRAME][FIXED_SEQUENCE_LENGTH] = {
+    {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
+    {1, 2, 3, 2, 1, 1, 1, 2, 2, 1, 2, 2, 3, 3, 3, 3, 3, 1, 3, 3, 1, 1, 1, 1},
+    {2, 3, 4, 4, 2, 2, 2, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 3, 3, 3, 3}};
+
+// Reference frames can be forward or backward, sign-bias indicates which.
+static const int sign_bias[ALLOWED_REFS_PER_FRAME][FIXED_SEQUENCE_LENGTH] = {
+  {0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+  {0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0},
+  {0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0}};
+#else
+// Frame coding pattern with minimum ARF separation of 4 frames.
+
+// A set of frames 0..15 is encoded in the following order. A negative number
+// indicates a frame encoded out-of-order, as an ARF frame, e.g. -15 indicates
+// that frame 15, the last frame in the group, is encoded as an ARF frame. The
+// corresponding entry 15 indicates the ARF overlay frame for ARF frame 15.
+static const int frame_coding_order[FIXED_SEQUENCE_LENGTH] =
+  {-15, -7, -3, 0, 1, 2, 3, 4, 5, 6, 7, -11, 8, 9, 10, 11, 12, 13, 14, 15};
+
+// Quantizer level for each encoded frame.
+static const int frame_q_level[FIXED_SEQUENCE_LENGTH] =
+  {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3};
+
+// Quantizer value is specified as a multiplier of the baseline step-size
+// and depends on level of the frame as specified by frame_q_level, above.
+static const double q_mult_lut[4] = {0.4, 0.6, 0.8, 1.0};
+
+// Target reference buffer where the encoded frame will be stored.
+// -1 indicates that the frame is not used as a predictor.
+static const int frame_target_buffer[FIXED_SEQUENCE_LENGTH] =
+  {3, 0, 1, -1, -1, -1, 1, -1, -1, -1, 0, 1, -1, -1, -1, 1, -1, -1, -1, 2};
+
+// Each encoded frame may refer to up to 3 reference frames.
+static const int
+  active_ref_buffer[ALLOWED_REFS_PER_FRAME][FIXED_SEQUENCE_LENGTH] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1},
+    {2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}};
+
+// Reference frames can be forward or backward, sign-bias indicates which.
+static const int sign_bias[ALLOWED_REFS_PER_FRAME][FIXED_SEQUENCE_LENGTH] = {
+  {0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0},
+  {0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0}};
+#endif
+
+void init_coding_order(VP9_COMP *cpi) {
+  // Initialize frame coding order variables.
+  vpx_memcpy(cpi->frame_coding_order, frame_coding_order,
+             sizeof(frame_coding_order));
+  vpx_memcpy(cpi->frame_q_level, frame_q_level, sizeof(frame_q_level));
+  vpx_memcpy(cpi->q_mult_lut, q_mult_lut, sizeof(q_mult_lut));
+  vpx_memcpy(cpi->frame_target_buffer, frame_target_buffer,
+             sizeof(frame_target_buffer));
+  vpx_memcpy(cpi->active_ref_buffer, active_ref_buffer,
+             sizeof(active_ref_buffer));
+  vpx_memcpy(cpi->sign_bias, sign_bias, sizeof(sign_bias));
+}
+
+// Decide whether an ARF contains a single or multiple ARF frames andWork out the frame coding order for an ARF group.
+static void define_coding_order(VP9_COMP *cpi) {
+  cpi->num_arf_buffered = 0;
+
+  // Decide whether to encode a single- or multi-ARF group.
+  if (cpi->multi_arf_enabled &&
+      (FRAME_GROUP_SIZE <= (cpi->twopass.frames_to_key - MIN_GF_INTERVAL)) &&
+      (cpi->gfu_boost < 1200) &&
+      (vp9_convert_qindex_to_q(cpi->active_worst_quality) > 250)) {
+    // Force a multi-ARF group (force fixed length).
+    cpi->new_multi_arf_group = 1;
+    cpi->baseline_gf_interval = FRAME_GROUP_SIZE;
+  } else {
+    // Single-ARF group (variable length).
+    cpi->new_multi_arf_group = 0;
+    cpi->new_alt_fb_idx = 2;
     return;
   }
 
-  // ARF Group: work out the ARF schedule.
-  // Mark ARF frames as negative.
-  if (end < 0) {
-    // printf("start:%d end:%d\n", -end, -end);
-    // ARF frame is at the end of the range.
-    cfo[idx] = end;
-    // What ARF buffer does this ARF use as predictor.
-    cpi->arf_buffer_idx[idx] = (arf_idx > 2) ? (arf_idx - 1) : 2;
-    cpi->arf_weight[idx] = level;
-    ++idx;
-    abs_end = -end;
-  } else {
-    abs_end = end;
+  // Initialize frame coding order variables for a multi-ARF group.
+  cpi->new_frame_coding_order_period = FIXED_SEQUENCE_LENGTH;
+
+  if (cpi->common.frame_type == KEY_FRAME) {
+    // Define the KF Q multiplier.
+    cpi->kf_q_mult = 0.1;
   }
-
-  half_range = (abs_end - start) >> 1;
-
-  // ARFs may not be adjacent, they must be separated by at least
-  // MIN_GF_INTERVAL non-ARF frames.
-  if ((start + MIN_GF_INTERVAL) >= (abs_end - MIN_GF_INTERVAL)) {
-    // printf("start:%d end:%d\n", start, abs_end);
-    // Update the coding order and active ARF.
-    for (i = start; i <= abs_end; ++i) {
-      cfo[idx] = i;
-      cpi->arf_buffer_idx[idx] = arf_idx;
-      cpi->arf_weight[idx] = -1;
-      ++idx;
-    }
-    cpi->new_frame_coding_order_period = idx;
-  } else {
-    // Place a new ARF at the mid-point of the range.
-    cpi->new_frame_coding_order_period = idx;
-    schedule_frames(cpi, start, -(start + half_range), arf_idx + 1,
-                    gf_or_arf_group, level + 1);
-    schedule_frames(cpi, start + half_range + 1, abs_end, arf_idx,
-                    gf_or_arf_group, level + 1);
-  }
-}
-
-#define FIXED_ARF_GROUP_SIZE 16
-
-void define_fixed_arf_period(VP9_COMP *cpi) {
-  int i;
-  int max_level = INT_MIN;
-
-  assert(cpi->multi_arf_enabled);
-  assert(cpi->oxcf.lag_in_frames >= FIXED_ARF_GROUP_SIZE);
-
-  // Save the weight of the last frame in the sequence before next
-  // sequence pattern overwrites it.
-  cpi->this_frame_weight = cpi->arf_weight[cpi->sequence_number];
-  assert(cpi->this_frame_weight >= 0);
-
-  // Initialize frame coding order variables.
-  cpi->new_frame_coding_order_period = 0;
-  cpi->next_frame_in_order = 0;
-  cpi->arf_buffered = 0;
-  vp9_zero(cpi->frame_coding_order);
-  vp9_zero(cpi->arf_buffer_idx);
-  vpx_memset(cpi->arf_weight, -1, sizeof(cpi->arf_weight));
-
-  if (cpi->twopass.frames_to_key <= (FIXED_ARF_GROUP_SIZE + 8)) {
-    // Setup a GF group close to the keyframe.
-    cpi->source_alt_ref_pending = 0;
-    cpi->baseline_gf_interval = cpi->twopass.frames_to_key;
-    schedule_frames(cpi, 0, (cpi->baseline_gf_interval - 1), 2, 0, 0);
-  } else {
-    // Setup a fixed period ARF group.
-    cpi->source_alt_ref_pending = 1;
-    cpi->baseline_gf_interval = FIXED_ARF_GROUP_SIZE;
-    schedule_frames(cpi, 0, -(cpi->baseline_gf_interval - 1), 2, 1, 0);
-  }
-
-  // Replace level indicator of -1 with correct level.
-  for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-    if (cpi->arf_weight[i] > max_level) {
-      max_level = cpi->arf_weight[i];
-    }
-  }
-  ++max_level;
-  for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-    if (cpi->arf_weight[i] == -1) {
-      cpi->arf_weight[i] = max_level;
-    }
-  }
-  cpi->max_arf_level = max_level;
-#if 0
-  printf("\nSchedule: ");
-  for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-    printf("%4d ", cpi->frame_coding_order[i]);
-  }
-  printf("\n");
-  printf("ARFref:   ");
-  for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-    printf("%4d ", cpi->arf_buffer_idx[i]);
-  }
-  printf("\n");
-  printf("Weight:   ");
-  for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-    printf("%4d ", cpi->arf_weight[i]);
-  }
-  printf("\n");
-#endif
 }
 #endif
 
@@ -1694,18 +1678,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Set the interval until the next gf or arf.
   cpi->baseline_gf_interval = i;
 
-#if CONFIG_MULTIPLE_ARF
-  if (cpi->multi_arf_enabled) {
-    // Initialize frame coding order variables.
-    cpi->new_frame_coding_order_period = 0;
-    cpi->next_frame_in_order = 0;
-    cpi->arf_buffered = 0;
-    vp9_zero(cpi->frame_coding_order);
-    vp9_zero(cpi->arf_buffer_idx);
-    vpx_memset(cpi->arf_weight, -1, sizeof(cpi->arf_weight));
-  }
-#endif
-
   // Should we use the alternate reference frame
   if (allow_alt_ref &&
       (i < cpi->oxcf.lag_in_frames) &&
@@ -1717,66 +1689,29 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       ((mv_in_out_accumulator / (double)i > -0.2) ||
        (mv_in_out_accumulator > -2.0)) &&
       (boost_score > 100)) {
-    // Alternative boost calculation for alt ref
-    cpi->gfu_boost = calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost, &b_boost);
+    // Encode an ARF group.
     cpi->source_alt_ref_pending = 1;
 
+    // Alternative boost calculation for alt ref
+    cpi->gfu_boost = calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost,
+                                    &b_boost);
 #if CONFIG_MULTIPLE_ARF
-    // Set the ARF schedule.
-    if (cpi->multi_arf_enabled) {
-      schedule_frames(cpi, 0, -(cpi->baseline_gf_interval - 1), 2, 1, 0);
-    }
+    define_coding_order(cpi);
 #endif
   } else {
-    cpi->gfu_boost = (int)boost_score;
+    // Encode a GF group.
     cpi->source_alt_ref_pending = 0;
+    cpi->gfu_boost = (int)boost_score;
 #if CONFIG_MULTIPLE_ARF
-    // Set the GF schedule.
-    if (cpi->multi_arf_enabled) {
-      schedule_frames(cpi, 0, cpi->baseline_gf_interval - 1, 2, 0, 0);
-      assert(cpi->new_frame_coding_order_period == cpi->baseline_gf_interval);
-    }
+    cpi->new_multi_arf_group = 0;
+    cpi->num_arf_buffered = 0;
+    cpi->new_alt_fb_idx = 2;
 #endif
   }
 
 #if CONFIG_MULTIPLE_ARF
-  if (cpi->multi_arf_enabled && (cpi->common.frame_type != KEY_FRAME)) {
-    int max_level = INT_MIN;
-    // Replace level indicator of -1 with correct level.
-    for (i = 0; i < cpi->frame_coding_order_period; ++i) {
-      if (cpi->arf_weight[i] > max_level) {
-        max_level = cpi->arf_weight[i];
-      }
-    }
-    ++max_level;
-    for (i = 0; i < cpi->frame_coding_order_period; ++i) {
-      if (cpi->arf_weight[i] == -1) {
-        cpi->arf_weight[i] = max_level;
-      }
-    }
-    cpi->max_arf_level = max_level;
-  }
-#if 0
-  if (cpi->multi_arf_enabled) {
-    printf("\nSchedule: ");
-    for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-      printf("%4d ", cpi->frame_coding_order[i]);
-    }
-    printf("\n");
-    printf("ARFref:   ");
-    for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-      printf("%4d ", cpi->arf_buffer_idx[i]);
-    }
-    printf("\n");
-    printf("Weight:   ");
-    for (i = 0; i < cpi->new_frame_coding_order_period; ++i) {
-      printf("%4d ", cpi->arf_weight[i]);
-    }
-    printf("\n");
-  }
+  if (!cpi->new_multi_arf_group) {
 #endif
-#endif
-
   // Now decide how many bits should be allocated to the GF group as  a
   // proportion of those remaining in the kf group.
   // The final key frame group in the clip is treated as a special case
@@ -1931,6 +1866,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       }
     }
   }
+#if CONFIG_MULTIPLE_ARF
+  }
+#endif
 
   if (cpi->common.frame_type != KEY_FRAME) {
     FIRSTPASS_STATS sectionstats;
@@ -1949,6 +1887,10 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       (sectionstats.intra_error /
       DOUBLE_DIVIDE_CHECK(sectionstats.coded_error));
 
+    reset_fpf_position(cpi, start_pos);
+  }
+  else {
+    // Reset the file position
     reset_fpf_position(cpi, start_pos);
   }
 }
@@ -2114,15 +2056,7 @@ void vp9_second_pass(VP9_COMP *cpi) {
     // Define next gf group and assign bits to it
     vpx_memcpy(&this_frame_copy, &this_frame, sizeof(this_frame));
 
-#if CONFIG_MULTIPLE_ARF
-    if (cpi->multi_arf_enabled) {
-      define_fixed_arf_period(cpi);
-    } else {
-#endif
-      define_gf_group(cpi, &this_frame_copy);
-#if CONFIG_MULTIPLE_ARF
-    }
-#endif
+    define_gf_group(cpi, &this_frame_copy);
 
     // If we are going to code an altref frame at the end of the group
     // and the current frame is not a key frame....
@@ -2326,7 +2260,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       loop_decay_rate = get_prediction_decay_rate(cpi, &next_frame);
 
       // We want to know something about the recent past... rather than
-      // as used elsewhere where we are concened with decay in prediction
+      // as used elsewhere where we are concerned with decay in prediction
       // quality since the last GF or KF.
       recent_loop_decay[i % 8] = loop_decay_rate;
       decay_accumulator = 1.0;
