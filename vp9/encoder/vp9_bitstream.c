@@ -17,6 +17,7 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_findnearmv.h"
+#include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/common/vp9_tile_common.h"
 #include "vp9/encoder/vp9_mcomp.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -341,7 +342,7 @@ static void update_inter_mode_probs(VP9_COMMON *cm,
 
       // If cost saving is >= 14 bits then update the mode probability.
       // This is the approximate net cost of updating one probability given
-      // that the no update case ismuch more common than the update case.
+      // that the no update case is much more common than the update case.
       if (new_cost <= (old_cost - (14 << 8))) {
         mode_context[i][j] = new_prob;
       }
@@ -645,7 +646,7 @@ static void encode_ref_frame(vp9_writer *const bc,
     }
   }
 
-  // if using the prediction mdoel we have nothing further to do because
+  // if using the prediction model we have nothing further to do because
   // the reference frame is fully coded by the segment
 }
 
@@ -1638,10 +1639,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 
     // Should the GF or ARF be updated using the transmitted frame or buffer
 #if CONFIG_MULTIPLE_ARF
-    if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
-        !cpi->refresh_alt_ref_frame) {
+    if ((!cpi->multi_arf_enabled) &&
+        (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame)) {
 #else
-      if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
+    if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
 #endif
       /* Preserve the previously existing golden frame and update the frame in
        * the alt ref slot instead. This is highly specific to the use of
@@ -1655,19 +1656,18 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
       refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
                      (cpi->refresh_golden_frame << cpi->alt_fb_idx);
     } else {
-      int arf_idx = cpi->alt_fb_idx;
 #if CONFIG_MULTIPLE_ARF
-      // Determine which ARF buffer to use to encode this ARF frame.
-      if (cpi->multi_arf_enabled) {
-        int sn = cpi->sequence_number;
-        arf_idx = (cpi->frame_coding_order[sn] < 0) ?
-            cpi->arf_buffer_idx[sn + 1] :
-            cpi->arf_buffer_idx[sn];
-      }
+      if (cpi->multi_arf_group) {
+        int upd_buf = cpi->frame_target_buffer[cpi->sequence_number];
+        refresh_mask = (upd_buf == -1) ? 0 : (1 << upd_buf);
+      } else {
 #endif
       refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
                      (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
-                     (cpi->refresh_alt_ref_frame << arf_idx);
+                     (cpi->refresh_alt_ref_frame << cpi->alt_fb_idx);
+#if CONFIG_MULTIPLE_ARF
+      }
+#endif
     }
 
     vp9_write_literal(&header_bc, refresh_mask, NUM_REF_FRAMES);
