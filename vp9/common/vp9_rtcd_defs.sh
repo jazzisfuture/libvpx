@@ -466,16 +466,16 @@ specialize vp9_sad64x64 sse2
 
 #if CONFIG_SBSEGMENT
 prototype unsigned int vp9_sad32x64 "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int max_sad"
-specialize vp9_sad32x64
+specialize vp9_sad32x64 sse2
 
 prototype unsigned int vp9_sad64x32 "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int max_sad"
-specialize vp9_sad64x32
+specialize vp9_sad64x32 sse2
 
 prototype unsigned int vp9_sad32x16 "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int max_sad"
-specialize vp9_sad32x16
+specialize vp9_sad32x16 sse2
 
 prototype unsigned int vp9_sad16x32 "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int ref_stride, unsigned int max_sad"
-specialize vp9_sad16x32
+specialize vp9_sad16x32 sse2
 #endif
 
 prototype unsigned int vp9_sad32x32 "const uint8_t *src_ptr, int source_stride, const uint8_t *ref_ptr, int  ref_stride, unsigned int max_sad"
@@ -573,16 +573,16 @@ specialize vp9_sad64x64x4d sse2
 
 #if CONFIG_SBSEGMENT
 prototype void vp9_sad32x64x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t* const ref_ptr[], int  ref_stride, unsigned int *sad_array"
-specialize vp9_sad32x64x4d
+specialize vp9_sad32x64x4d sse2
 
 prototype void vp9_sad64x32x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t* const ref_ptr[], int  ref_stride, unsigned int *sad_array"
-specialize vp9_sad64x32x4d
+specialize vp9_sad64x32x4d sse2
 
 prototype void vp9_sad32x16x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t* const ref_ptr[], int  ref_stride, unsigned int *sad_array"
-specialize vp9_sad32x16x4d
+specialize vp9_sad32x16x4d sse2
 
 prototype void vp9_sad16x32x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t* const ref_ptr[], int  ref_stride, unsigned int *sad_array"
-specialize vp9_sad16x32x4d
+specialize vp9_sad16x32x4d sse2
 #endif
 
 prototype void vp9_sad32x32x4d "const uint8_t *src_ptr, int  src_stride, const uint8_t* const ref_ptr[], int  ref_stride, unsigned int *sad_array"
