@@ -2232,13 +2232,7 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
       vp9_encode_inter16x16(cm, x, mb_row, mb_col);
 
     } else {
-      vp9_build_inter16x16_predictors_mb(xd,
-                                         xd->dst.y_buffer,
-                                         xd->dst.u_buffer,
-                                         xd->dst.v_buffer,
-                                         xd->dst.y_stride,
-                                         xd->dst.uv_stride,
-                                         mb_row, mb_col);
+      vp9_build_inter_predictors_mb_s(xd, mb_row, mb_col);
 #if CONFIG_COMP_INTERINTRA_PRED
       if (xd->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {
         vp9_build_interintra_16x16_predictors_mb(xd,
