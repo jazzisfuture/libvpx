@@ -283,6 +283,11 @@ static void calc_pframe_target_size(VP9_COMP *cpi) {
                                           : cpi->oxcf.fixed_q;
 
     cpi->refresh_golden_frame = 1;
+#if CONFIG_MULTIPLE_ARF
+    if (!cpi->multi_arf_group) {
+      cpi->refresh_last_frame = 0;
+    }
+#endif
 
     calc_gf_params(cpi);
 
