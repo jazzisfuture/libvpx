@@ -263,7 +263,7 @@ static void update_inter_mode_probs(VP9_COMMON *cm,
 
       // If cost saving is >= 14 bits then update the mode probability.
       // This is the approximate net cost of updating one probability given
-      // that the no update case ismuch more common than the update case.
+      // that the no update case is much more common than the update case.
       if (new_cost <= (old_cost - (14 << 8))) {
         mode_context[i][j] = new_prob;
       }
@@ -1898,7 +1898,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
         !cpi->refresh_alt_ref_frame) {
 #else
-      if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
+    if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
 #endif
       /* Preserve the previously existing golden frame and update the frame in
        * the alt ref slot instead. This is highly specific to the use of
@@ -1915,11 +1915,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
       int arf_idx = cpi->alt_fb_idx;
 #if CONFIG_MULTIPLE_ARF
       // Determine which ARF buffer to use to encode this ARF frame.
-      if (cpi->multi_arf_enabled) {
+      if (cpi->multi_arf_group) {
         int sn = cpi->sequence_number;
         arf_idx = (cpi->frame_coding_order[sn] < 0) ?
-            cpi->arf_buffer_idx[sn + 1] :
-            cpi->arf_buffer_idx[sn];
+            cpi->arf_buffer_idx[sn + 1] : cpi->arf_buffer_idx[sn];
       }
 #endif
       refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
