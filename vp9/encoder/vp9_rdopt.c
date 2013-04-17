@@ -3228,10 +3228,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         unsigned int sse, var;
         int tmp_rate_y, tmp_rate_u, tmp_rate_v;
         int tmp_dist_y, tmp_dist_u, tmp_dist_v;
-        vp9_build_inter16x16_predictors_mb(xd, xd->predictor,
-                                           xd->predictor + 256,
-                                           xd->predictor + 320,
-                                           16, 8, mb_row, mb_col);
+        vp9_build_inter_predictors_mb(xd, mb_row, mb_col);
         var = vp9_variance16x16(*(b->base_src), b->src_stride,
                                 xd->predictor, 16, &sse);
         // Note our transform coeffs are 8 times an orthogonal transform.
@@ -3317,10 +3314,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (bsize > BLOCK_SIZE_MB16X16) {
       vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
     } else {
-      vp9_build_inter16x16_predictors_mb(xd, xd->predictor,
-                                         xd->predictor + 256,
-                                         xd->predictor + 320,
-                                         16, 8, mb_row, mb_col);
+      vp9_build_inter_predictors_mb(xd, mb_row, mb_col);
     }
   }
 

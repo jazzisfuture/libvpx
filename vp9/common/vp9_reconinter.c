@@ -1274,14 +1274,14 @@ static int mi_mv_pred_col(MACROBLOCKD *mb, int off, int idx) {
   return round_mv_comp(temp);
 }
 
-void vp9_build_inter16x16_predictors_mb(MACROBLOCKD *xd,
-                                        uint8_t *dst_y,
-                                        uint8_t *dst_u,
-                                        uint8_t *dst_v,
-                                        int dst_ystride,
-                                        int dst_uvstride,
-                                        int mb_row,
-                                        int mb_col) {
+static void build_inter16x16_predictors_mb(MACROBLOCKD *xd,
+                                           uint8_t *dst_y,
+                                           uint8_t *dst_u,
+                                           uint8_t *dst_v,
+                                           int dst_ystride,
+                                           int dst_uvstride,
+                                           int mb_row,
+                                           int mb_col) {
   vp9_build_inter_predictors_sby(xd, dst_y, dst_ystride, mb_row, mb_col,
                                  BLOCK_SIZE_MB16X16);
   vp9_build_inter_predictors_sbuv(xd, dst_u, dst_v, dst_uvstride,
@@ -1297,21 +1297,21 @@ void vp9_build_inter16x16_predictors_mb(MACROBLOCKD *xd,
 void vp9_build_inter_predictors_mb(MACROBLOCKD *xd,
                                    int mb_row,
                                    int mb_col) {
-  vp9_build_inter16x16_predictors_mb(xd, xd->predictor,
-                                     &xd->predictor[256],
-                                     &xd->predictor[320], 16, 8,
-                                     mb_row, mb_col);
+  build_inter16x16_predictors_mb(xd, xd->predictor,
+                                 &xd->predictor[256],
+                                 &xd->predictor[320], 16, 8,
+                                 mb_row, mb_col);
 }
 
 void vp9_build_inter_predictors_mb_s(MACROBLOCKD *xd,
                                    int mb_row,
                                    int mb_col) {
-  vp9_build_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
-                                     xd->dst.u_buffer,
-                                     xd->dst.v_buffer,
-                                     xd->dst.y_stride,
-                                     xd->dst.uv_stride,
-                                     mb_row, mb_col);
+  build_inter16x16_predictors_mb(xd, xd->dst.y_buffer,
+                                 xd->dst.u_buffer,
+                                 xd->dst.v_buffer,
+                                 xd->dst.y_stride,
+                                 xd->dst.uv_stride,
+                                 mb_row, mb_col);
 }
 
 /*encoder only*/
