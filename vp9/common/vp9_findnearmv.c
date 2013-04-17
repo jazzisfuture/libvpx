@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include <limits.h>
 
 #include "vp9/common/vp9_findnearmv.h"
@@ -22,8 +21,7 @@ const uint8_t vp9_mbsplit_offset[4][16] = {
   { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15}
 };
 
-static void lower_mv_precision(int_mv *mv, int usehp)
-{
+static void lower_mv_precision(int_mv *mv, int usehp) {
   if (!usehp || !vp9_use_nmv_hp(&mv->as_mv)) {
     if (mv->as_mv.row & 1)
       mv->as_mv.row += (mv->as_mv.row > 0 ? -1 : 1);
@@ -32,8 +30,7 @@ static void lower_mv_precision(int_mv *mv, int usehp)
   }
 }
 
-vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
-                           vp9_prob p[4], const int context) {
+vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc, vp9_prob p[4], int context) {
   p[0] = pc->fc.vp9_mode_contexts[context][0];
   p[1] = pc->fc.vp9_mode_contexts[context][1];
   p[2] = pc->fc.vp9_mode_contexts[context][2];
@@ -83,16 +80,14 @@ unsigned int vp9_sub_pixel_variance16x2_c(const uint8_t *src_ptr,
                                           const uint8_t *dst_ptr,
                                           int dst_pixels_per_line,
                                           unsigned int *sse) {
-  uint16_t FData3[16 * 3];  // Temp data buffer used in filtering
+  uint16_t fdata3[16 * 3];  // Temp data buffer used in filtering
   uint8_t temp2[2 * 16];
-  const int16_t *HFilter, *VFilter;
+  const int16_t *h_filter = VP9_BILINEAR_FILTERS_2TAP(xoffset);
+  const int16_t *v_filter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
 
-  HFilter = VP9_BILINEAR_FILTERS_2TAP(xoffset);
-  VFilter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
-
-  var_filter_block2d_bil_first_pass(src_ptr, FData3,
-                                    src_pixels_per_line, 1, 3, 16, HFilter);
-  var_filter_block2d_bil_second_pass(FData3, temp2, 16, 16, 2, 16, VFilter);
+  var_filter_block2d_bil_first_pass(src_ptr, fdata3,
+                                    src_pixels_per_line, 1, 3, 16, h_filter);
+  var_filter_block2d_bil_second_pass(fdata3, temp2, 16, 16, 2, 16, v_filter);
 
   return vp9_variance16x2_c(temp2, 16, dst_ptr, dst_pixels_per_line, sse);
 }
@@ -104,16 +99,14 @@ unsigned int vp9_sub_pixel_variance2x16_c(const uint8_t *src_ptr,
                                           const uint8_t *dst_ptr,
                                           int dst_pixels_per_line,
                                           unsigned int *sse) {
-  uint16_t FData3[2 * 17];  // Temp data buffer used in filtering
+  uint16_t fdata3[2 * 17];  // Temp data buffer used in filtering
   uint8_t temp2[2 * 16];
-  const int16_t *HFilter, *VFilter;
+  const int16_t *h_filter = VP9_BILINEAR_FILTERS_2TAP(xoffset);
+  const int16_t *v_filter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
 
-  HFilter = VP9_BILINEAR_FILTERS_2TAP(xoffset);
-  VFilter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
-
-  var_filter_block2d_bil_first_pass(src_ptr, FData3,
-                                    src_pixels_per_line, 1, 17, 2, HFilter);
-  var_filter_block2d_bil_second_pass(FData3, temp2, 2, 2, 16, 2, VFilter);
+  var_filter_block2d_bil_first_pass(src_ptr, fdata3,
+                                    src_pixels_per_line, 1, 17, 2, h_filter);
+  var_filter_block2d_bil_second_pass(fdata3, temp2, 2, 2, 16, 2, v_filter);
 
   return vp9_variance2x16_c(temp2, 2, dst_ptr, dst_pixels_per_line, sse);
 }
