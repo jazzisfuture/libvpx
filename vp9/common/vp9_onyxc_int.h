@@ -28,7 +28,6 @@
 
 void vp9_initialize_common(void);
 
-// Define the number of candidate reference buffers.
 #define NUM_REF_FRAMES 8
 #define NUM_REF_FRAMES_LG2 3
 
@@ -138,7 +137,7 @@ typedef struct VP9Common {
   int active_ref_idx[ALLOWED_REFS_PER_FRAME];
   struct scale_factors active_ref_scale[ALLOWED_REFS_PER_FRAME];
   int new_fb_idx;
-
+  int previous_fb_idx;
 
   YV12_BUFFER_CONFIG post_proc_buffer;
   YV12_BUFFER_CONFIG temp_scale_frame;

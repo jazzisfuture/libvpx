@@ -315,9 +315,9 @@ void vp9_calc_ref_probs(int *count, vp9_prob *probs) {
   probs[2] = get_prob(count[2], tot_count);
 }
 
-// Computes a set of modified conditional probabilities for the reference frame
-// Values willbe set to 0 for reference frame options that are not possible
-// because wither they were predicted and prediction has failed or because
+// Computes a set of modified conditional probabilities for the reference frame.
+// Values will be set to 0 for reference frame options that are not possible
+// because either they were predicted and prediction has failed or because
 // they are not allowed for a given segment.
 void vp9_compute_mod_refprobs(VP9_COMMON *const cm) {
   int norm_cnt[MAX_REF_FRAMES];

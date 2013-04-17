@@ -49,6 +49,8 @@
 
 extern void print_tree_update_probs();
 
+extern void init_coding_order(VP9_COMP *cpi);
+
 static void set_default_lf_deltas(VP9_COMP *cpi);
 
 #define DEFAULT_INTERP_FILTER SWITCHABLE
@@ -282,7 +284,7 @@ static void setup_features(VP9_COMP *cpi) {
 }
 
 static void dealloc_compressor_data(VP9_COMP *cpi) {
-  // Delete sementation map
+  // Delete segmentation map
   vpx_free(cpi->segmentation_map);
   cpi->segmentation_map = 0;
   vpx_free(cpi->common.last_frame_seg_map);
@@ -336,130 +338,6 @@ static int compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   }
 
   return target_index - start_index;
-}
-
-static void configure_static_seg_features(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-  MACROBLOCKD *xd = &cpi->mb.e_mbd;
-
-  int high_q = (int)(cpi->avg_q > 48.0);
-  int qi_delta;
-
-  // Disable and clear down for KF
-  if (cm->frame_type == KEY_FRAME) {
-    // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-    xd->update_mb_segmentation_map = 0;
-    xd->update_mb_segmentation_data = 0;
-    cpi->static_mb_pct = 0;
-
-    // Disable segmentation
-    vp9_disable_segmentation((VP9_PTR)cpi);
-
-    // Clear down the segment features.
-    vp9_clearall_segfeatures(xd);
-  } else if (cpi->refresh_alt_ref_frame) {
-    // If this is an alt ref frame
-    // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-    xd->update_mb_segmentation_map = 0;
-    xd->update_mb_segmentation_data = 0;
-    cpi->static_mb_pct = 0;
-
-    // Disable segmentation and individual segment features by default
-    vp9_disable_segmentation((VP9_PTR)cpi);
-    vp9_clearall_segfeatures(xd);
-
-    // Scan frames from current to arf frame.
-    // This function re-enables segmentation if appropriate.
-    vp9_update_mbgraph_stats(cpi);
-
-    // If segmentation was enabled set those features needed for the
-    // arf itself.
-    if (xd->segmentation_enabled) {
-      xd->update_mb_segmentation_map = 1;
-      xd->update_mb_segmentation_data = 1;
-
-      qi_delta = compute_qdelta(cpi, cpi->avg_q, (cpi->avg_q * 0.875));
-      vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, (qi_delta - 2));
-      vp9_set_segdata(xd, 1, SEG_LVL_ALT_LF, -2);
-
-      vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_Q);
-      vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
-
-      // Where relevant assume segment data is delta data
-      xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-
-    }
-  } else if (xd->segmentation_enabled) {
-    // All other frames if segmentation has been enabled
-
-    // First normal frame in a valid gf or alt ref group
-    if (cpi->common.frames_since_golden == 0) {
-      // Set up segment features for normal frames in an arf group
-      if (cpi->source_alt_ref_active) {
-        xd->update_mb_segmentation_map = 0;
-        xd->update_mb_segmentation_data = 1;
-        xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-
-        qi_delta = compute_qdelta(cpi, cpi->avg_q,
-                                  (cpi->avg_q * 1.125));
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, (qi_delta + 2));
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, 0);
-        vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_Q);
-
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_LF, -2);
-        vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
-
-        // Segment coding disabled for compred testing
-        if (high_q || (cpi->static_mb_pct == 100)) {
-          vp9_set_segref(xd, 1, ALTREF_FRAME);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_REF_FRAME);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_SKIP);
-        }
-      } else {
-        // Disable segmentation and clear down features if alt ref
-        // is not active for this group
-
-        vp9_disable_segmentation((VP9_PTR)cpi);
-
-        vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-
-        xd->update_mb_segmentation_map = 0;
-        xd->update_mb_segmentation_data = 0;
-
-        vp9_clearall_segfeatures(xd);
-      }
-    } else if (cpi->is_src_frame_alt_ref) {
-      // Special case where we are coding over the top of a previous
-      // alt ref frame.
-      // Segment coding disabled for compred testing
-
-      // Enable ref frame features for segment 0 as well
-      vp9_enable_segfeature(xd, 0, SEG_LVL_REF_FRAME);
-      vp9_enable_segfeature(xd, 1, SEG_LVL_REF_FRAME);
-
-      // All mbs should use ALTREF_FRAME
-      vp9_clear_segref(xd, 0);
-      vp9_set_segref(xd, 0, ALTREF_FRAME);
-      vp9_clear_segref(xd, 1);
-      vp9_set_segref(xd, 1, ALTREF_FRAME);
-
-      // Skip all MBs if high Q (0,0 mv and skip coeffs)
-      if (high_q) {
-          vp9_enable_segfeature(xd, 0, SEG_LVL_SKIP);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_SKIP);
-      }
-      // Enable data udpate
-      xd->update_mb_segmentation_data = 1;
-    } else {
-      // All other frames.
-
-      // No updates.. leave things as they are.
-      xd->update_mb_segmentation_map = 0;
-      xd->update_mb_segmentation_data = 0;
-    }
-  }
 }
 
 #ifdef ENTROPY_STATS
@@ -739,12 +617,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->first_step = 0;
   sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
   sf->comp_inter_joint_search = 1;
-#if CONFIG_MULTIPLE_ARF
-  // Switch segmentation off.
-  sf->static_segmentation = 0;
-#else
-  sf->static_segmentation = 0;
-#endif
   sf->mb16_breakout = 0;
 
   switch (mode) {
@@ -753,12 +625,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       break;
 
     case 1:
-#if CONFIG_MULTIPLE_ARF
-      // Switch segmentation off.
-      sf->static_segmentation = 0;
-#else
-  sf->static_segmentation = 0;
-#endif
       sf->mb16_breakout = 0;
 
       if (speed > 0) {
@@ -1213,7 +1079,10 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   // YX Temp
 #if CONFIG_MULTIPLE_ARF
-  vp9_zero(cpi->alt_ref_source);
+  if (cpi->multi_arf_enabled) {
+    init_coding_order(cpi);
+    vp9_zero(cpi->alt_ref_source);
+  }
 #else
   cpi->alt_ref_source = NULL;
 #endif
@@ -1326,7 +1195,15 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->recent_ref_frame_usage[ALTREF_FRAME] = 1;
 
   // Set reference frame sign bias for ALTREF frame to 1 (for now)
-  cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = 1;
+#if CONFIG_MULTIPLE_ARF
+  if (!cpi->multi_arf_group) {
+#endif
+    cpi->common.ref_frame_sign_bias[LAST_FRAME] = 0;
+    cpi->common.ref_frame_sign_bias[GOLDEN_FRAME] = 0;
+    cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = 1;
+#if CONFIG_MULTIPLE_ARF
+  }
+#endif
 
   cpi->baseline_gf_interval = DEFAULT_GF_INTERVAL;
 
@@ -1383,13 +1260,12 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 #if CONFIG_MULTIPLE_ARF
   // Turn multiple ARF usage on/off. This is a quick hack for the initial test
   // version. It should eventually be set via the codec API.
-  cpi->multi_arf_enabled = 1;
+  cpi->multi_arf_enabled = 0;
 
   if (cpi->multi_arf_enabled) {
     cpi->sequence_number = 0;
+    cpi->multi_arf_group = 0;
     cpi->frame_coding_order_period = 0;
-    vp9_zero(cpi->frame_coding_order);
-    vp9_zero(cpi->arf_buffer_idx);
   }
 #endif
 
@@ -1920,7 +1796,16 @@ int vp9_get_reference_enc(VP9_PTR ptr, int index, YV12_BUFFER_CONFIG **fb) {
   if (index < 0 || index >= NUM_REF_FRAMES)
     return -1;
 
-  *fb = &cm->yv12_fb[cm->ref_frame_map[index]];
+  {
+    FILE *fp = fopen("enc_refs.txt", "a");
+    fprintf(fp, "(%d, %d, %d) previous_fb_idx=%d new_fb_idx=%d\n",
+            cm->ref_frame_map[0], cm->ref_frame_map[1], cm->ref_frame_map[2],
+            cm->previous_fb_idx, cm->new_fb_idx);
+    fclose(fp);
+  }
+  // Set pointer to the last encoded frame.
+//  *fb = &cm->yv12_fb[cm->new_fb_idx];
+  *fb = &cm->yv12_fb[cm->previous_fb_idx];
   return 0;
 }
 
@@ -1950,13 +1835,13 @@ int vp9_update_entropy(VP9_PTR comp, int update) {
 }
 
 
-#ifdef OUTPUT_YUV_SRC
-void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
+#if OUTPUT_YUV_SRC
+void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s, FILE *fp) {
   uint8_t *src = s->y_buffer;
   int h = s->y_height;
 
   do {
-    fwrite(src, s->y_width, 1,  yuv_file);
+    fwrite(src, s->y_width, 1, fp);
     src += s->y_stride;
   } while (--h);
 
@@ -1964,7 +1849,7 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1,  yuv_file);
+    fwrite(src, s->uv_width, 1, fp);
     src += s->uv_stride;
   } while (--h);
 
@@ -1972,7 +1857,7 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1, yuv_file);
+    fwrite(src, s->uv_width, 1, fp);
     src += s->uv_stride;
   } while (--h);
 }
@@ -2067,7 +1952,7 @@ static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
   cpi->common.frames_since_golden = 0;
 
 #if CONFIG_MULTIPLE_ARF
-  if (!cpi->multi_arf_enabled)
+  if (cpi->multi_arf_enabled && !cpi->multi_arf_group)
 #endif
     // Clear the alternate reference update pending flag.
     cpi->source_alt_ref_pending = 0;
@@ -2273,8 +2158,8 @@ static void update_reference_frames(VP9_COMP * const cpi) {
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
   }
 #if CONFIG_MULTIPLE_ARF
-  else if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
-      !cpi->refresh_alt_ref_frame) {
+  else if (!cpi->multi_arf_enabled &&
+      (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame)) {
 #else
   else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
 #endif
@@ -2296,27 +2181,34 @@ static void update_reference_frames(VP9_COMP * const cpi) {
     cpi->alt_fb_idx = cpi->gld_fb_idx;
     cpi->gld_fb_idx = tmp;
   }  else { /* For non key/golden frames */
-    if (cpi->refresh_alt_ref_frame) {
-      int arf_idx = cpi->alt_fb_idx;
 #if CONFIG_MULTIPLE_ARF
-      if (cpi->multi_arf_enabled) {
-        arf_idx = cpi->arf_buffer_idx[cpi->sequence_number + 1];
+    if (cpi->multi_arf_group) {
+      int idx = cpi->frame_target_buffer[cpi->sequence_number];
+      if (idx != -1) {
+        ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->ref_frame_map[idx], cm->new_fb_idx);
       }
+    } else {
 #endif
-      ref_cnt_fb(cm->fb_idx_ref_cnt,
-                 &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
-    }
+      if (cpi->refresh_alt_ref_frame) {
+        ref_cnt_fb(cm->fb_idx_ref_cnt,
+                   &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
+      }
 
-    if (cpi->refresh_golden_frame) {
-      ref_cnt_fb(cm->fb_idx_ref_cnt,
-                 &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
+      if (cpi->refresh_golden_frame) {
+        ref_cnt_fb(cm->fb_idx_ref_cnt,
+                   &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
+      }
+#if CONFIG_MULTIPLE_ARF
     }
+#endif
   }
-
-  if (cpi->refresh_last_frame) {
-    ref_cnt_fb(cm->fb_idx_ref_cnt,
-               &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
-  }
+#if CONFIG_MULTIPLE_ARF
+  if (!cpi->multi_arf_group)
+#endif
+    if (cpi->refresh_last_frame || cm->frame_type == KEY_FRAME) {
+      ref_cnt_fb(cm->fb_idx_ref_cnt,
+                 &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
+    }
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
@@ -2498,8 +2390,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // else
   //   cpi->zbin_mode_boost_enabled = 1;
 
-  // Current default encoder behaviour for the altref sign bias
+#if CONFIG_MULTIPLE_ARF
+  if (cpi->multi_arf_group) {
+    int i;
+    for (i = LAST_FRAME; i < MAX_REF_FRAMES; ++i) {
+      cpi->common.ref_frame_sign_bias[i] =
+          cpi->sign_bias[i - 1][cpi->sequence_number];
+    }
+  } else {
+#endif
+    // Current default encoder behaviour for the altref sign bias
+    cpi->common.ref_frame_sign_bias[LAST_FRAME] = 0;
+    cpi->common.ref_frame_sign_bias[GOLDEN_FRAME] = 0;
     cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = cpi->source_alt_ref_active;
+#if CONFIG_MULTIPLE_ARF
+  }
+#endif
 
   // Check to see if a key frame is signaled
   // For two pass with auto key frame enabled cm->frame_type may already be set, but not for one pass.
@@ -2512,7 +2418,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Set default state for segment based loop filter update flags
   xd->mode_ref_lf_delta_update = 0;
-
 
   // Set various flags etc to special state if it is a key frame
   if (cm->frame_type == KEY_FRAME) {
@@ -2544,14 +2449,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
   }
 
-  // Configure experimental use of segmentation for enhanced coding of
-  // static regions if indicated.
-  // Only allowed for now in second pass of two pass (as requires lagged coding)
-  // and if the relevant speed feature flag is set.
-  if ((cpi->pass == 2) && (cpi->sf.static_segmentation)) {
-    configure_static_seg_features(cpi);
-  }
-
   // Decide how big to make the frame
   vp9_pick_frame_size(cpi);
 
@@ -2561,7 +2458,28 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   q = cpi->active_worst_quality;
 
   if (cm->frame_type == KEY_FRAME) {
-#if !CONFIG_MULTIPLE_ARF
+    int high = 2000;
+    int low = 400;
+
+    if (cpi->kf_boost > high) {
+      cpi->active_best_quality = kf_low_motion_minq[q];
+    } else if (cpi->kf_boost < low) {
+      cpi->active_best_quality = kf_high_motion_minq[q];
+    } else {
+      const int gap = high - low;
+      const int offset = high - cpi->kf_boost;
+      const int qdiff = kf_high_motion_minq[q] - kf_low_motion_minq[q];
+      const int adjustment = ((offset * qdiff) + (gap >> 1)) / gap;
+
+      cpi->active_best_quality = kf_low_motion_minq[q] + adjustment;
+    }
+
+    // Make an adjustment based on the % static
+    // The main impact of this is at lower Q to prevent overly large key
+    // frames unless a lot of the image is static.
+    if (cpi->kf_zeromotion_pct < 64)
+      cpi->active_best_quality += 4 - (cpi->kf_zeromotion_pct >> 4);
+
     // Special case for key frames forced because we have reached
     // the maximum key frame interval. Here force the Q to a range
     // based on the ambient Q to reduce the risk of popping
@@ -2608,14 +2526,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       cpi->active_best_quality +=
         compute_qdelta(cpi, q_val, (q_val * q_adj_factor));
     }
-#else
-    double current_q;
-
-    // Force the KF quantizer to be 30% of the active_worst_quality.
-    current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
-    cpi->active_best_quality = cpi->active_worst_quality
-        + compute_qdelta(cpi, current_q, current_q * 0.3);
-#endif
   } else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
     int high = 2000;
     int low = 400;
@@ -2688,37 +2598,30 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cpi->active_worst_quality < cpi->active_best_quality)
     cpi->active_worst_quality = cpi->active_best_quality;
 
-  // Special case code to try and match quality with forced key frames
-  if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
-    q = cpi->last_boosted_qindex;
-  } else {
-    // Determine initial Q to try
-    q = vp9_regulate_q(cpi, cpi->this_frame_target);
-  }
-
-  vp9_compute_frame_size_bounds(cpi, &frame_under_shoot_limit,
-                                &frame_over_shoot_limit);
-
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
-  if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME)) {
-    double new_q;
+  if (cpi->multi_arf_group) {
     double current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
-    int level = cpi->this_frame_weight;
-    assert(level >= 0);
+    double q_mult = (cm->frame_type == KEY_FRAME) ?
+        cpi->kf_q_mult : cpi->this_frame_q_mult;
+    cpi->active_best_quality = cpi->active_worst_quality +
+        compute_qdelta(cpi, current_q, current_q * q_mult);
 
-    // Set quantizer steps at 10% increments.
-    new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
-    q = cpi->active_worst_quality + compute_qdelta(cpi, current_q, new_q);
-
+    q = cpi->active_best_quality;
     bottom_index = q;
     top_index    = q;
     q_low  = q;
     q_high = q;
-
-    printf("frame:%d q:%d\n", cm->current_video_frame, q);
   } else {
 #endif
+    // Special case code to try and match quality with forced key frames
+    if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
+      q = cpi->last_boosted_qindex;
+    } else {
+      // Determine initial Q to try
+      q = vp9_regulate_q(cpi, cpi->this_frame_target);
+    }
+
     // Limit Q range for the adaptive loop.
     bottom_index = cpi->active_best_quality;
     top_index    = cpi->active_worst_quality;
@@ -2727,6 +2630,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_MULTIPLE_ARF
   }
 #endif
+
+  vp9_compute_frame_size_bounds(cpi, &frame_under_shoot_limit,
+                                 &frame_over_shoot_limit);
+
   loop_count = 0;
   vpx_memset(cpi->rd_tx_select_threshes, 0, sizeof(cpi->rd_tx_select_threshes));
 
@@ -2971,7 +2878,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
           // Special case reset for qlow for constrained quality.
           // This should only trigger where there is very substantial
           // undershoot on a frame and the auto cq level is above
-          // the user passsed in value.
+          // the user passed in value.
           if (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY && q < q_low) {
             q_low = q;
           }
@@ -3225,7 +3132,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // in this frame.
   update_base_skip_probs(cpi);
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
   {
     FILE *f = fopen("tmp.stt", "a");
     int recon_err;
@@ -3235,6 +3142,45 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     recon_err = vp9_calc_ss_err(cpi->Source,
                                 &cm->yv12_fb[cm->new_fb_idx]);
 
+#define COMPACT_STATS 1
+#if COMPACT_STATS
+    if (cpi->twopass.total_left_stats.coded_error != 0.0)
+      fprintf(f, "%10d %10d %10d"
+              "%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f"
+              "%6d %6d %5d %5d %5d"
+              "%8d %10d %10d %10d\n",
+              cpi->common.current_video_frame, cpi->this_frame_target,
+              cpi->projected_frame_size,
+              vp9_convert_qindex_to_q(cm->base_qindex),
+              (double)vp9_dc_quant(cm->base_qindex, 0) / 4.0,
+              vp9_convert_qindex_to_q(cpi->active_best_quality),
+              vp9_convert_qindex_to_q(cpi->active_worst_quality),
+              vp9_convert_qindex_to_q(cpi->ni_av_qi),
+              vp9_convert_qindex_to_q(cpi->cq_target_quality),
+              cpi->refresh_last_frame,
+              cpi->refresh_golden_frame, cpi->refresh_alt_ref_frame,
+              cm->frame_type, cpi->gfu_boost,
+              cpi->tot_recode_hits, recon_err, cpi->kf_boost,
+              cpi->kf_zeromotion_pct);
+    else
+      fprintf(f, "%10d %10d %10d"
+              "%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f"
+              "%5d %5d %5d %8d %8d"
+              "%8d %10d %10d %10d\n",
+              cpi->common.current_video_frame,
+              cpi->this_frame_target, cpi->projected_frame_size,
+              vp9_convert_qindex_to_q(cm->base_qindex),
+              (double)vp9_dc_quant(cm->base_qindex, 0) / 4.0,
+              vp9_convert_qindex_to_q(cpi->active_best_quality),
+              vp9_convert_qindex_to_q(cpi->active_worst_quality),
+              vp9_convert_qindex_to_q(cpi->ni_av_qi),
+              vp9_convert_qindex_to_q(cpi->cq_target_quality),
+              cpi->refresh_last_frame,
+              cpi->refresh_golden_frame, cpi->refresh_alt_ref_frame,
+              cm->frame_type, cpi->gfu_boost,
+              cpi->tot_recode_hits, recon_err, cpi->kf_boost,
+              cpi->kf_zeromotion_pct);
+#else
     if (cpi->twopass.total_left_stats.coded_error != 0.0)
       fprintf(f, "%10d %10d %10d %10d %10d %10d %10d %10d"
               "%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f"
@@ -3290,7 +3236,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
               cpi->twopass.total_left_stats.coded_error,
               cpi->tot_recode_hits, recon_err, cpi->kf_boost,
               cpi->kf_zeromotion_pct);
-
+#endif
     fclose(f);
 
     if (0) {
@@ -3373,10 +3319,19 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     *frame_flags = cm->frame_flags | FRAMEFLAGS_KEY;
 
 #if CONFIG_MULTIPLE_ARF
-    // Reset the sequence number.
-    if (cpi->multi_arf_enabled) {
+    // Setup multi-ARF variables for the next frame.
+    cpi->multi_arf_group = cpi->new_multi_arf_group;
+    cpi->alt_fb_idx = cpi->new_alt_fb_idx;
+    if (cpi->multi_arf_group) {
+      // Reset for the beginning of a new sequence.
       cpi->sequence_number = 0;
+      cpi->next_frame_in_order = 0;
+      cpi->num_arf_buffered = 0;
       cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
+      cpi->this_frame_q_mult = cpi->q_mult_lut[0];
+
+      // Set variables to invalid values.
+      cpi->new_multi_arf_group = -1;
       cpi->new_frame_coding_order_period = -1;
     }
 #endif
@@ -3387,16 +3342,23 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     *frame_flags = cm->frame_flags&~FRAMEFLAGS_KEY;
 
 #if CONFIG_MULTIPLE_ARF
-    /* Increment position in the coded frame sequence. */
-    if (cpi->multi_arf_enabled) {
+    // Setup multi-ARF variables for the next frame.
+    if (cpi->multi_arf_group) {
+      // Increment position in the coded frame sequence.
       ++cpi->sequence_number;
       if (cpi->sequence_number >= cpi->frame_coding_order_period) {
         cpi->sequence_number = 0;
+        cpi->next_frame_in_order = 0;
+        cpi->num_arf_buffered = 0;
+        cpi->multi_arf_group = cpi->new_multi_arf_group;
+        cpi->alt_fb_idx = cpi->new_alt_fb_idx;
         cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
+
+        // Set variables to invalid values.
         cpi->new_frame_coding_order_period = -1;
       }
-      cpi->this_frame_weight = cpi->arf_weight[cpi->sequence_number];
-      assert(cpi->this_frame_weight >= 0);
+      cpi->this_frame_q_mult =
+          cpi->q_mult_lut[cpi->frame_q_level[cpi->sequence_number]];
     }
 #endif
   }
@@ -3520,7 +3482,7 @@ static int frame_is_reference(const VP9_COMP *cpi) {
 }
 
 #if CONFIG_MULTIPLE_ARF
-int is_next_frame_arf(VP9_COMP *cpi) {
+static int is_next_frame_arf(const VP9_COMP *cpi) {
   // Negative entry in frame_coding_order indicates an ARF at this position.
   return cpi->frame_coding_order[cpi->sequence_number + 1] < 0 ? 1 : 0;
 }
@@ -3534,7 +3496,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   struct vpx_usec_timer  cmptimer;
   YV12_BUFFER_CONFIG    *force_src_buffer = NULL;
   int i;
-  // FILE *fp_out = fopen("enc_frame_type.txt", "a");
 
   if (!cpi)
     return -1;
@@ -3551,21 +3512,22 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     int frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
-    assert(!cpi->multi_arf_enabled ||
+    assert(!cpi->multi_arf_group ||
            cpi->frame_coding_order[cpi->sequence_number] < 0);
 
-    if (cpi->multi_arf_enabled && (cpi->pass == 2))
+    if (cpi->multi_arf_group && (cpi->pass == 2))
       frames_to_arf = (-cpi->frame_coding_order[cpi->sequence_number])
         - cpi->next_frame_in_order;
     else
 #endif
       frames_to_arf = cpi->frames_till_gf_update_due;
-
     assert(frames_to_arf < cpi->twopass.frames_to_key);
 
     if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
 #if CONFIG_MULTIPLE_ARF
-      cpi->alt_ref_source[cpi->arf_buffered] = cpi->source;
+      // Add to the list of ARF buffers.
+      cpi->alt_ref_source[cpi->num_arf_buffered] = cpi->source;
+      ++cpi->num_arf_buffered;
 #else
       cpi->alt_ref_source = cpi->source;
 #endif
@@ -3590,7 +3552,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       cm->frames_till_alt_ref_frame = frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
-      if (!cpi->multi_arf_enabled)
+      if (!cpi->multi_arf_group)
 #endif
         cpi->source_alt_ref_pending = 0;   // Clear Pending altf Ref flag.
     }
@@ -3606,30 +3568,34 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 #if CONFIG_MULTIPLE_ARF
       // Is this frame the ARF overlay.
       cpi->is_src_frame_alt_ref = 0;
-      for (i = 0; i < cpi->arf_buffered; ++i) {
+      for (i = 0; i < cpi->num_arf_buffered; ++i) {
         if (cpi->source == cpi->alt_ref_source[i]) {
+          // Current frame is an ARF overlay frame.
           cpi->is_src_frame_alt_ref = 1;
           cpi->refresh_golden_frame = 1;
+          cpi->alt_ref_source[i] = NULL;
+
+          // Don't refresh the last buffer for an ARF overlay frame.
+          cpi->refresh_last_frame = 0;
           break;
         }
       }
 #else
       cpi->is_src_frame_alt_ref = cpi->alt_ref_source
                                   && (cpi->source == cpi->alt_ref_source);
-#endif
       if (cpi->is_src_frame_alt_ref) {
         // Current frame is an ARF overlay frame.
-#if CONFIG_MULTIPLE_ARF
-        cpi->alt_ref_source[i] = NULL;
-#else
         cpi->alt_ref_source = NULL;
-#endif
+
         // Don't refresh the last buffer for an ARF overlay frame. It will
         // become the GF so preserve last as an alternative prediction option.
         cpi->refresh_last_frame = 0;
       }
+#endif
 #if CONFIG_MULTIPLE_ARF
-      ++cpi->next_frame_in_order;
+      if (cpi->multi_arf_group) {
+        ++cpi->next_frame_in_order;
+      }
 #endif
     }
   }
@@ -3641,21 +3607,11 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     *time_end = cpi->source->ts_end;
     *frame_flags = cpi->source->flags;
 
-    // fprintf(fp_out, "   Frame:%d", cm->current_video_frame);
 #if CONFIG_MULTIPLE_ARF
-    if (cpi->multi_arf_enabled) {
-      // fprintf(fp_out, "   seq_no:%d  this_frame_weight:%d",
-      //         cpi->sequence_number, cpi->this_frame_weight);
-    } else {
-      // fprintf(fp_out, "\n");
-    }
-#else
-    // fprintf(fp_out, "\n");
-#endif
-
-#if CONFIG_MULTIPLE_ARF
-    if ((cm->frame_type != KEY_FRAME) && (cpi->pass == 2))
+    if (cpi->multi_arf_group &&
+        (cm->frame_type != KEY_FRAME) && (cpi->pass == 2)) {
       cpi->source_alt_ref_pending = is_next_frame_arf(cpi);
+    }
 #endif
   } else {
     *size = 0;
@@ -3663,8 +3619,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       vp9_end_first_pass(cpi);    /* get last stats packet */
       cpi->twopass.first_pass_done = 1;
     }
-
-    // fclose(fp_out);
     return -1;
   }
 
@@ -3722,37 +3676,24 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   /* find a free buffer for the new frame, releasing the reference previously
    * held.
    */
+  cm->previous_fb_idx = cm->new_fb_idx;
   cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
   cm->new_fb_idx = get_free_fb(cm);
 
 #if CONFIG_MULTIPLE_ARF
   /* Set up the correct ARF frame. */
-  if (cpi->refresh_alt_ref_frame) {
-    ++cpi->arf_buffered;
-  }
-  if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
-      (cpi->pass == 2)) {
-    cpi->alt_fb_idx = cpi->arf_buffer_idx[cpi->sequence_number];
+  if (cpi->multi_arf_group &&
+      (cm->frame_type != KEY_FRAME) && (cpi->pass == 2)) {
+    /* Get the mapping of L/G/A to the reference buffer pool */
+    cpi->lst_fb_idx = cpi->active_ref_buffer[0][cpi->sequence_number];
+    cpi->gld_fb_idx = cpi->active_ref_buffer[1][cpi->sequence_number];
+    cpi->alt_fb_idx = cpi->active_ref_buffer[2][cpi->sequence_number];
   }
 #endif
 
-  /* Get the mapping of L/G/A to the reference buffer pool */
   cm->active_ref_idx[0] = cm->ref_frame_map[cpi->lst_fb_idx];
   cm->active_ref_idx[1] = cm->ref_frame_map[cpi->gld_fb_idx];
   cm->active_ref_idx[2] = cm->ref_frame_map[cpi->alt_fb_idx];
-
-#if 0  // CONFIG_MULTIPLE_ARF
-  if (cpi->multi_arf_enabled) {
-    fprintf(fp_out, "      idx(%d, %d, %d, %d) active(%d, %d, %d)",
-        cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx, cm->new_fb_idx,
-        cm->active_ref_idx[0], cm->active_ref_idx[1], cm->active_ref_idx[2]);
-    if (cpi->refresh_alt_ref_frame)
-      fprintf(fp_out, "  type:ARF");
-    if (cpi->is_src_frame_alt_ref)
-      fprintf(fp_out, "  type:OVERLAY[%d]", cpi->alt_fb_idx);
-    fprintf(fp_out, "\n");
-  }
-#endif
 
   cm->frame_type = INTER_FRAME;
   cm->frame_flags = *frame_flags;
@@ -3905,9 +3846,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       }
     }
   }
-
 #endif
-  // fclose(fp_out);
   return 0;
 }
 
