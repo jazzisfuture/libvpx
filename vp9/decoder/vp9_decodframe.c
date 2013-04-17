@@ -931,6 +931,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   size_t first_partition_size = 0;
   YV12_BUFFER_CONFIG *new_fb = &pc->yv12_fb[pc->new_fb_idx];
   int i;
+  // FILE *fff = fopen("dec_data.txt", "a");
 
   xd->corrupted = 0;  // start with no corruption of current frame
   new_fb->corrupted = 0;
@@ -1017,16 +1018,27 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     // Should the GF or ARF be updated from the current frame
     pbi->refresh_frame_flags = vp9_read_literal(&header_bc, NUM_REF_FRAMES);
 
+    // fprintf(fff, "Frame %d: ", pc->current_video_frame);
+    // fprintf(fff, "mask:%d ", pbi->refresh_frame_flags);
+
     // Select active reference frames and calculate scaling factors
     for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
       const int ref = vp9_read_literal(&header_bc, NUM_REF_FRAMES_LG2);
       pc->active_ref_idx[i] = pc->ref_frame_map[ref];
+      // fprintf(fff, "(%d, %d) ", ref, pc->ref_frame_map[ref]);
       vp9_setup_scale_factors(pc, i);
+
+
     }
 
     // Read the sign bias for each reference frame buffer.
-    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
+    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
       pc->ref_frame_sign_bias[i + 1] = vp9_read_bit(&header_bc);
+      // fprintf (fff, "bias[%d]:%d ", i, pc->ref_frame_sign_bias[i + 1]);
+    }
+
+    // fprintf(fff, "\n");
+    // fclose(fff);
 
     xd->allow_high_precision_mv = vp9_read_bit(&header_bc);
     pc->mcomp_filter_type = read_mcomp_filter_type(&header_bc);

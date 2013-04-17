@@ -32,6 +32,16 @@
 
 void vp9_initialize_common(void);
 
+//<<<<<<< HEAD
+//=======
+//#define MINQ 0
+//
+//#define MAXQ 255
+//#define QINDEX_BITS 8
+//
+//#define QINDEX_RANGE (MAXQ + 1)
+//
+//>>>>>>> 5285ecf... Add function to compute all ARF variables
 // Define the number of candidate reference buffers.
 #define NUM_REF_FRAMES 8
 #define NUM_REF_FRAMES_LG2 3
