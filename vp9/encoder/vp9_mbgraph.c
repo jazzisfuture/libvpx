@@ -71,7 +71,8 @@ static unsigned int do_16x16_motion_iteration(VP9_COMP *cpi,
   }
 
   vp9_set_mbmode_and_mvs(x, NEWMV, dst_mv);
-  vp9_build_inter16x16_predictors_mby(xd, xd->predictor, 16, mb_row, mb_col);
+  vp9_build_inter_predictors_sby(xd, xd->predictor, 16, mb_row, mb_col,
+                                 BLOCK_SIZE_MB16X16);
   best_err = vp9_sad16x16(xd->dst.y_buffer, xd->dst.y_stride,
                           xd->predictor, 16, INT_MAX);
 
