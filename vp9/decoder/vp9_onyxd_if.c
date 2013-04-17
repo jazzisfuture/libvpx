@@ -240,10 +240,15 @@ int vp9_get_reference_dec(VP9D_PTR ptr, int index, YV12_BUFFER_CONFIG **fb) {
   VP9D_COMP *pbi = (VP9D_COMP *) ptr;
   VP9_COMMON *cm = &pbi->common;
 
-  if (index < 0 || index >= NUM_REF_FRAMES)
+#if CONFIG_MULTIPLE_ARF
+  *fb = &cm->yv12_fb[pbi->common.new_fb_idx];
+#else
+//  if (index < 0 || index >= NUM_REF_FRAMES)
+  if (index < 0 || index >= NUM_YV12_BUFFERS)
     return -1;
 
   *fb = &cm->yv12_fb[cm->ref_frame_map[index]];
+#endif
   return 0;
 }
 
@@ -264,7 +269,7 @@ static void swap_frame_buffers(VP9D_COMP *pbi) {
   pbi->common.fb_idx_ref_cnt[pbi->common.new_fb_idx]--;
 
   /* Invalidate these references until the next frame starts. */
-  for (ref_index = 0; ref_index < 3; ref_index++)
+  for (ref_index = 0; ref_index < ALLOWED_REFS_PER_FRAME; ref_index++)
     pbi->common.active_ref_idx[ref_index] = INT_MAX;
 }
 

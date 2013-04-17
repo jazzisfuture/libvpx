@@ -32,7 +32,6 @@
 
 void vp9_initialize_common(void);
 
-// Define the number of candidate reference buffers.
 #define NUM_REF_FRAMES 8
 #define NUM_REF_FRAMES_LG2 3
 
