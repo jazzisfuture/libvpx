@@ -1266,7 +1266,7 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *x,
 
   edge[0] = x->mb_to_top_edge;
   edge[1] = x->mb_to_bottom_edge;
-  edge[2] = x->mb_to_left_edge;
+  edge[2] = x->mb_to_left_edge; 
   edge[3] = x->mb_to_right_edge;
 
   for (n = 0; n < bw * bh; n++) {
