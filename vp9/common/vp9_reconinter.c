@@ -1121,7 +1121,7 @@ void vp9_build_inter_predictors_sby(MACROBLOCKD *x,
                                     int dst_ystride,
                                     int mb_row,
                                     int mb_col,
-                                    BLOCK_SIZE_TYPE bsize) {
+                                    BLOCK_SIZE_TYPE bsize, int dbg) {
   const int bwl = mb_width_log2(bsize),  bw = 1 << bwl;
   const int bhl = mb_height_log2(bsize), bh = 1 << bhl;
   uint8_t *y1 = x->pre.y_buffer;
@@ -1145,6 +1145,7 @@ void vp9_build_inter_predictors_sby(MACROBLOCKD *x,
                                                 y_idx * 16,
                                                 x->pre.y_stride,
                                                 &x->scale_factor[0]);
+    if (dbg) printf("offset: %d\n", y->pre.y_buffer - y1);
     if (x->mode_info_context->mbmi.second_ref_frame > 0) {
       x->second_pre.y_buffer = y2 +
           scaled_buffer_offset(x_idx * 16,
@@ -1266,7 +1267,7 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *x,
 
   edge[0] = x->mb_to_top_edge;
   edge[1] = x->mb_to_bottom_edge;
-  edge[2] = x->mb_to_left_edge;
+  edge[2] = x->mb_to_left_edge; 
   edge[3] = x->mb_to_right_edge;
 
   for (n = 0; n < bw * bh; n++) {
@@ -1316,14 +1317,14 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *x,
 
 void vp9_build_inter_predictors_sb(MACROBLOCKD *mb,
                                    int mb_row, int mb_col,
-                                   BLOCK_SIZE_TYPE bsize) {
+                                   BLOCK_SIZE_TYPE bsize, int dbg) {
   uint8_t *const y = mb->dst.y_buffer;
   uint8_t *const u = mb->dst.u_buffer;
   uint8_t *const v = mb->dst.v_buffer;
   const int y_stride = mb->dst.y_stride;
   const int uv_stride = mb->dst.uv_stride;
 
-  vp9_build_inter_predictors_sby(mb, y, y_stride, mb_row, mb_col, bsize);
+  vp9_build_inter_predictors_sby(mb, y, y_stride, mb_row, mb_col, bsize, dbg);
   vp9_build_inter_predictors_sbuv(mb, u, v, uv_stride, mb_row, mb_col, bsize);
 #if CONFIG_COMP_INTERINTRA_PRED
   if (mb->mode_info_context->mbmi.second_ref_frame == INTRA_FRAME) {

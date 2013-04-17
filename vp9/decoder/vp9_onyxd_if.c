@@ -31,7 +31,7 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "./vpx_scale_rtcd.h"
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(const char *name,
                                   const YV12_BUFFER_CONFIG *s,
@@ -358,7 +358,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   }
 
 #if WRITE_RECON_BUFFER == 1
-  if (cm->show_frame)
+  //if (cm->show_frame)
     recon_write_yuv_frame("recon.yuv", cm->frame_to_show,
                           cm->width, cm->height);
 #endif

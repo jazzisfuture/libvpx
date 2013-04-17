@@ -322,6 +322,11 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   fill_nzc_costs(cpi, TX_32X32);
 #endif
 
+  for (i = 0; i < 2; i++)
+    vp9_cost_tokens(cpi->mb.partition_cost[i],
+                    cpi->common.fc.partition_prob[i],
+                    vp9_partition_tree);
+
   /*rough estimate for costing*/
   cpi->common.kf_ymode_probs_index = cpi->common.base_qindex >> 4;
   vp9_init_mode_costs(cpi);
@@ -3054,7 +3059,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         unsigned int sse, var;
         int tmp_rate_y, tmp_rate_u, tmp_rate_v;
         int tmp_dist_y, tmp_dist_u, tmp_dist_v;
-        vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
+        vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize, 0);
         var = cpi->fn_ptr[block_size].vf(*(b->base_src), b->src_stride,
                                          xd->dst.y_buffer, xd->dst.y_stride,
                                          &sse);
@@ -3217,7 +3222,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Handles the special case when a filter that is not in the
     // switchable list (ex. bilinear, 6-tap) is indicated at the frame level
     if (bsize > BLOCK_SIZE_MB16X16) {
-      vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
+      vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize, 0);
     } else {
       vp9_build_inter16x16_predictors_mb(xd, xd->predictor,
                                          xd->predictor + 256,

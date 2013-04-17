@@ -86,7 +86,7 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 extern void configure_arnr_filter(VP9_COMP *cpi, const unsigned int this_frame,
                                   int group_boost);
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;

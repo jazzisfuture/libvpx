@@ -192,7 +192,7 @@ static void skip_recon_sb(VP9D_COMP *pbi, MACROBLOCKD *xd,
     vp9_build_intra_predictors_sbuv_s(xd, bsize);
     vp9_build_intra_predictors_sby_s(xd, bsize);
   } else {
-    vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
+    vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize, 0);
   }
 #if CONFIG_CODE_NONZEROCOUNT
   vpx_memset(m->mbmi.nzcs, 0, 384 * sizeof(m->mbmi.nzcs[0]));
@@ -597,7 +597,8 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mb_row, int mb_col,
     vp9_build_intra_predictors_sby_s(xd, bsize);
     vp9_build_intra_predictors_sbuv_s(xd, bsize);
   } else {
-    vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
+    vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize,
+                                  pc->current_video_frame == 1 && mb_row == 2 && mb_col == 21);
   }
 
   // dequantization and idct
@@ -610,6 +611,19 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mb_row, int mb_col,
         mi[y_idx * mis + x_idx].mbmi.mb_skip_coeff = mi->mbmi.mb_skip_coeff;
     }
   } else {
+    if (pc->current_video_frame == 1 && mb_row == 2 && mb_col == 21) {
+      int xx,yy;
+      printf("dec predict (mv=%d/%d, ref=%d/%d, filter=%d, mode=%d):\n", mi->mbmi.mv[0].as_mv.row,
+             mi->mbmi.mv[1].as_mv.col, mi->mbmi.ref_frame, mi->mbmi.second_ref_frame,
+             mi->mbmi.interp_filter, mi->mbmi.mode);
+      for (yy=0;yy<2;yy++){
+        for (xx=0;xx<8;xx++){
+          printf("%02x ", xd->dst.y_buffer[yy*xd->dst.y_stride+xx]);
+        }
+        printf("\n");
+      }
+      printf("\n");
+    }
     switch (xd->mode_info_context->mbmi.txfm_size) {
       case TX_32X32:
         decode_sb_32x32(xd, bsize);
@@ -626,6 +640,17 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mb_row, int mb_col,
         decode_sbuv_4x4(xd, bsize);
         break;
       default: assert(0);
+    }
+    if (0 && pc->current_video_frame == 1 && mb_row == 2 && mb_col == 21) {
+      int xx,yy;
+      printf("dec recon:\n");
+      for (yy=0;yy<32;yy++){
+        for (xx=0;xx<8;xx++){
+          printf("%02x ", xd->dst.y_buffer[yy*xd->dst.y_stride+xx]);
+        }
+        printf("\n");
+      }
+      printf("\n");
     }
   }
 #if CONFIG_CODE_NONZEROCOUNT
@@ -861,13 +886,15 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mb_row, int mb_col,
       subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB64X32 :
                                                 BLOCK_SIZE_SB32X16;
       decode_modes_b(pbi, mb_row, mb_col, r, subsize);
-      decode_modes_b(pbi, mb_row + bs, mb_col, r, subsize);
+      if (mb_row + bs < pc->mb_rows)
+        decode_modes_b(pbi, mb_row + bs, mb_col, r, subsize);
       break;
     case PARTITION_VERT:
       subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB32X64 :
                                                 BLOCK_SIZE_SB16X32;
       decode_modes_b(pbi, mb_row, mb_col, r, subsize);
-      decode_modes_b(pbi, mb_row, mb_col + bs, r, subsize);
+      if (mb_col + bs < pc->mb_cols)
+        decode_modes_b(pbi, mb_row, mb_col + bs, r, subsize);
       break;
 #endif
     case PARTITION_SPLIT:
