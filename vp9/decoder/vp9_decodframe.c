@@ -861,13 +861,15 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mb_row, int mb_col,
       subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB64X32 :
                                                 BLOCK_SIZE_SB32X16;
       decode_modes_b(pbi, mb_row, mb_col, r, subsize);
-      decode_modes_b(pbi, mb_row + bs, mb_col, r, subsize);
+      if (mb_row + bs < pc->mb_rows)
+        decode_modes_b(pbi, mb_row + bs, mb_col, r, subsize);
       break;
     case PARTITION_VERT:
       subsize = (bsize == BLOCK_SIZE_SB64X64) ? BLOCK_SIZE_SB32X64 :
                                                 BLOCK_SIZE_SB16X32;
       decode_modes_b(pbi, mb_row, mb_col, r, subsize);
-      decode_modes_b(pbi, mb_row, mb_col + bs, r, subsize);
+      if (mb_col + bs < pc->mb_cols)
+        decode_modes_b(pbi, mb_row, mb_col + bs, r, subsize);
       break;
 #endif
     case PARTITION_SPLIT:
