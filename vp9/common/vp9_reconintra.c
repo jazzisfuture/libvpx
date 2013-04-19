@@ -297,7 +297,7 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
                                 int up_available, int left_available,
                                 int right_available) {
   int r, c, i;
-  uint8_t yleft_col[64], yabove_data[65], ytop_left;
+  uint8_t yleft_col[64], yabove_data[129], ytop_left;
   uint8_t *yabove_row = yabove_data + 1;
 
   // 127 127 127 .. 127 127 127 127 127 127
@@ -318,8 +318,9 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
     uint8_t *yabove_ptr = src - src_stride;
     vpx_memcpy(yabove_row, yabove_ptr, bw);
     ytop_left = left_available ? yabove_ptr[-1] : 127;
+    vpx_memset(yabove_row + bw, yabove_ptr[bw-1], bw);
   } else {
-    vpx_memset(yabove_row, 127, bw);
+    vpx_memset(yabove_row, 127, bw * 2);
     ytop_left = 127;
   }
   yabove_row[-1] = ytop_left;
@@ -354,15 +355,46 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
     }
     break;
     case V_PRED:
-      for (r = 0; r < bh; r++) {
-        memcpy(ypred_ptr, yabove_row, bw);
-        ypred_ptr += y_stride;
+      if (1) {
+        for (c = 0; c < bw; ++c) {
+          ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[c - 1] +
+                                            yabove_row[c] * 2 +
+                                            yabove_row[c + 1], 2);
+        }
+        for (r = 1; r < bh; r++) {
+          vpx_memcpy(ypred_ptr + y_stride, ypred_ptr, bw);
+          ypred_ptr += y_stride;
+        }
+      } else {
+        for (r = 0; r < bh; r++) {
+          vpx_memcpy(ypred_ptr, yabove_row, bw);
+          ypred_ptr += y_stride;
+        }
       }
       break;
     case H_PRED:
-      for (r = 0; r < bh; r++) {
-        vpx_memset(ypred_ptr, yleft_col[r], bw);
+      if (1) {
+        uint8_t val;
+        val = ROUND_POWER_OF_TWO(yabove_row[-1] +
+                                 yleft_col[0] * 2 +
+                                 yleft_col[1], 2);
+        vpx_memset(ypred_ptr, val, bw);
         ypred_ptr += y_stride;
+        for (r = 1; r < bh - 1; r++) {
+          val = ROUND_POWER_OF_TWO(yleft_col[r - 1] +
+                                   yleft_col[r] * 2 +
+                                   yleft_col[r + 1], 2);
+          vpx_memset(ypred_ptr, val, bw);
+          ypred_ptr += y_stride;
+        }
+        val = ROUND_POWER_OF_TWO(yleft_col[bh - 2] +
+                                 yleft_col[bh - 1] * 3, 2);
+        vpx_memset(ypred_ptr, val, bw);
+      } else {
+        for (r = 0; r < bh; r++) {
+          vpx_memset(ypred_ptr, yleft_col[r], bw);
+          ypred_ptr += y_stride;
+        }
       }
       break;
     case TM_PRED:
@@ -807,7 +839,22 @@ void vp9_intra8x8_predict(MACROBLOCKD *xd,
                              mode, 8, 8, have_top, have_left,
                              have_right);
 }
+#if 0
+void vp9_intra4x4_predict(MACROBLOCKD *xd,
+                          BLOCKD *b,
+                          int mode,
+                          uint8_t *predictor, int pre_stride) {
+  const int block_idx = (b - xd->block);
+  const int have_top = (block_idx >> 2) || xd->up_available;
+  const int have_left = (block_idx & 3) || xd->left_available;
+  const int have_right = ((block_idx & 3) != 3) || xd->right_available;
 
+  vp9_build_intra_predictors(*(b->base_dst) + b->dst,
+                             b->dst_stride, predictor, pre_stride,
+                             mode, 4, 4, have_top, have_left,
+                             have_right);
+}
+#endif
 void vp9_intra_uv4x4_predict(MACROBLOCKD *xd,
                              BLOCKD *b,
                              int mode,
