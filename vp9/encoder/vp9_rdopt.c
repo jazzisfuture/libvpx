@@ -2722,13 +2722,9 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
       scale[frame_type].y_num == scale[frame_type].y_den &&
       !cm->error_resilient_mode &&
       !cm->frame_parallel_decoding_mode;
-  vp9_find_best_ref_mvs(xd,
-                        use_prev_in_find_best_ref ?
-                            yv12_mb[frame_type].y_buffer : NULL,
-                        yv12->y_stride,
-                        mbmi->ref_mvs[frame_type],
-                        &frame_nearest_mv[frame_type],
-                        &frame_near_mv[frame_type]);
+
+  frame_nearest_mv[frame_type].as_int = mbmi->ref_mvs[frame_type][0].as_int;
+  frame_near_mv[frame_type].as_int = mbmi->ref_mvs[frame_type][1].as_int;
 
   // Further refinement that is encode side only to test the top few candidates
   // in full and choose the best as the centre point for subsequent searches.

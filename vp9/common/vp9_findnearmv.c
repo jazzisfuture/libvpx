@@ -37,19 +37,3 @@ vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc, vp9_prob p[4], int context) {
   p[3] = pc->fc.vp9_mode_contexts[context][3];
   return p;
 }
-
-void vp9_find_best_ref_mvs(MACROBLOCKD *xd,
-                           uint8_t *ref_y_buffer,
-                           int ref_y_stride,
-                           int_mv *mvlist,
-                           int_mv *nearest,
-                           int_mv *near) {
-  int i;
-  // Make sure all the candidates are properly clamped etc
-  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
-    lower_mv_precision(&mvlist[i], xd->allow_high_precision_mv);
-    clamp_mv2(&mvlist[i], xd);
-  }
-  *nearest = mvlist[0];
-  *near = mvlist[1];
-}
