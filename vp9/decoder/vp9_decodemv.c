@@ -716,13 +716,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       }
 
       if (mbmi->mode != ZEROMV) {
-        vp9_find_best_ref_mvs(xd,
-                              use_prev_in_find_best_ref ? xd->pre.y_buffer
-                                                        : NULL,
-                              xd->pre.y_stride,
-                              mbmi->ref_mvs[ref_frame],
-                              &nearest, &nearby);
-
+        nearest.as_int = mbmi->ref_mvs[ref_frame][0].as_int;
+        nearby.as_int  = mbmi->ref_mvs[ref_frame][1].as_int;
         best_mv.as_int = mbmi->ref_mvs[ref_frame][0].as_int;
       }
 
@@ -773,13 +768,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                          cm->ref_frame_sign_bias);
 
         if (mbmi->mode != ZEROMV) {
-          vp9_find_best_ref_mvs(xd,
-                                use_prev_in_find_best_ref ?
-                                    xd->second_pre.y_buffer : NULL,
-                                xd->second_pre.y_stride,
-                                mbmi->ref_mvs[second_ref_frame],
-                                &nearest_second,
-                                &nearby_second);
+          nearest_second.as_int = mbmi->ref_mvs[second_ref_frame][0].as_int;
+          nearby_second.as_int  = mbmi->ref_mvs[second_ref_frame][1].as_int;
           best_mv_second.as_int = mbmi->ref_mvs[second_ref_frame][0].as_int;
         }
       }
