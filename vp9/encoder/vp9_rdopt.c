@@ -2873,7 +2873,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                   x->nmvjointcost, x->mvcost, 96,
                                   x->e_mbd.allow_high_precision_mv);
       } else {
-        YV12_BUFFER_CONFIG backup_yv12 = xd->pre;
+        struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
         int bestsme = INT_MAX;
         int further_steps, step_param = cpi->sf.first_step;
         int sadpb = x->sadperbit16;
@@ -2886,13 +2886,16 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         int tmp_row_max = x->mv_row_max;
 
         if (scaled_ref_frame) {
+          int i;
+
           // Swap out the reference frame for a version that's been scaled to
           // match the resolution of the current frame, allowing the existing
           // motion search code to be used without additional modifications.
-          xd->pre = *scaled_ref_frame;
-          xd->pre.y_buffer += mb_row * 16 * xd->pre.y_stride + mb_col * 16;
-          xd->pre.u_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
-          xd->pre.v_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
+          for (i = 0; i < MAX_MB_PLANE; i++)
+            backup_yv12[i] = xd->plane[i].pre[0];
+
+          setup_pre_planes(xd, scaled_ref_frame, NULL, mb_row, mb_col,
+                           NULL, NULL);
         }
 
         vp9_clamp_mv_min_max(x, &ref_mv[0]);
@@ -2942,7 +2945,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
         // restore the predictor, if required
         if (scaled_ref_frame) {
-          xd->pre = backup_yv12;
+          int i;
+
+          for (i = 0; i < MAX_MB_PLANE; i++)
+            xd->plane[i].pre[0] = backup_yv12[i];
         }
       }
       break;
@@ -3521,7 +3527,6 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       int ref = mbmi->ref_frame;
       int fb;
 
-      xd->pre = yv12_mb[ref];
       best_ref_mv = mbmi->ref_mvs[ref][0];
       vpx_memcpy(mdcounts, frame_mdcounts[ref], sizeof(mdcounts));
 
@@ -3540,9 +3545,14 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (mbmi->second_ref_frame > 0) {
       int ref = mbmi->second_ref_frame;
 
-      xd->second_pre = yv12_mb[ref];
       second_best_ref_mv = mbmi->ref_mvs[ref][0];
     }
+
+    // TODO(jkoleszar) scaling/translation handled during creation of yv12_mb
+    // currently.
+    setup_pre_planes(xd, &yv12_mb[mbmi->ref_frame],
+        mbmi->second_ref_frame > 0 ? &yv12_mb[mbmi->second_ref_frame] : NULL,
+        0, 0, NULL, NULL);
 
     // Experimental code. Special case for gf and arf zeromv modes.
     // Increase zbin size to suppress noise
@@ -4299,7 +4309,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   MB_PREDICTION_MODE this_mode;
   MB_PREDICTION_MODE best_mode = DC_PRED;
-  MV_REFERENCE_FRAME ref_frame;
+  MV_REFERENCE_FRAME ref_frame, second_ref;
   unsigned char segment_id = xd->mode_info_context->mbmi.segment_id;
   int comp_pred, i;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
@@ -4465,8 +4475,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     //  continue;
 
     if (comp_pred) {
-      int second_ref;
-
       if (ref_frame == ALTREF_FRAME) {
         second_ref = LAST_FRAME;
       } else {
@@ -4478,7 +4486,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       set_scale_factors(xd, mbmi->ref_frame, mbmi->second_ref_frame,
                         scale_factor);
 
-      xd->second_pre = yv12_mb[second_ref];
       mode_excluded =
           mode_excluded ?
               mode_excluded : cm->comp_pred_mode == SINGLE_PREDICTION_ONLY;
@@ -4496,7 +4503,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
 
-    xd->pre = yv12_mb[ref_frame];
+    setup_pre_planes(xd, &yv12_mb[ref_frame],
+        comp_pred ? &yv12_mb[second_ref] : NULL, 0, 0, NULL, NULL);
+
     vpx_memcpy(mdcounts, frame_mdcounts[ref_frame], sizeof(mdcounts));
 
     // If the segment reference frame feature is enabled....
