@@ -133,6 +133,11 @@ typedef struct frame_contexts {
   vp9_prob interintra_prob;
   vp9_prob pre_interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  unsigned int masked_compound_counts[2];
+  vp9_prob masked_compound_prob;
+  vp9_prob pre_masked_compound_prob;
+#endif
 
   int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
   unsigned int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
@@ -302,6 +307,9 @@ typedef struct VP9Common {
 #if CONFIG_COMP_INTERINTRA_PRED
   int use_interintra;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
+#endif
 
   int error_resilient_mode;
   int frame_parallel_decoding_mode;
@@ -361,6 +369,10 @@ static int get_mb_col(const MACROBLOCKD *xd) {
 }
 
 static int get_token_alloc(int mb_rows, int mb_cols) {
+#if CONFIG_CODE_ZEROGROUP
+  return mb_rows * mb_cols * (24 * 16 * 2);
+#else
   return mb_rows * mb_cols * (24 * 16 + 4);
+#endif
 }
 #endif  // VP9_COMMON_VP9_ONYXC_INT_H_

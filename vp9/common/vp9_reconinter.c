@@ -319,6 +319,101 @@ static void duplicate_splitmv_bmi(MACROBLOCKD *xd) {
   }
 }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+
+#define MASK_WEIGHT_BITS  6
+
+static int get_masked_weight(int m, int dim) {
+#define SMOOTHER_LEN  16
+  static const uint8_t smoothfn[2 * SMOOTHER_LEN + 1] = {
+    0,  0,  0,  0,  1,  1,  1,  2,  3,  4,  5,  8, 11, 15, 20, 26,
+    32,
+    38, 44, 49, 53, 56, 59, 60, 61, 62, 63, 63, 63, 64, 64, 64, 64,
+  };
+  /*
+  static const uint8_t smoothfn_16[2 * SMOOTHER_LEN + 1] = {
+    0,  0,  0,  0,  0,  0,  0,  1,  1,  2,  3,  5,  8, 12, 17, 24,
+    32,
+    40, 47, 52, 56, 59, 61, 62, 63, 63, 64, 64, 64, 64, 64, 64, 64,
+  };
+  */
+  if (m < -SMOOTHER_LEN) return 0;
+  else if (m > SMOOTHER_LEN) return (1 << MASK_WEIGHT_BITS);
+  else return smoothfn[m + SMOOTHER_LEN];
+}
+
+static void generate_mask(MASK_TYPE mask_index, int h, int w,
+                          uint8_t *mask, int stride) {
+  // Equation of line: a[0]*(x - a[2]*w/2) + a[1]*(y - a[3]*h/2)
+  // a[2] and a[3] must be one of 0, 1, 2
+#if MASK_BITS == 3
+  static const int mask_params[MASK_TYPES][4] = {
+    {-1,  2, 1, 1},
+    { 1, -2, 1, 1},
+    {-2,  1, 1, 1},
+    { 2, -1, 1, 1},
+    { 2,  1, 1, 1},
+    {-2, -1, 1, 1},
+    { 1,  2, 1, 1},
+    {-1, -2, 1, 1}
+  };
+#elif MASK_BITS == 4
+  static const int mask_params[MASK_TYPES][4] = {
+    {-1,  2, 0, 0},
+    { 1, -2, 0, 0},
+    {-1,  2, 0, 1},
+    { 1, -2, 0, 1},
+
+    {-2,  1, 0, 0},
+    { 2, -1, 0, 0},
+    {-2,  1, 1, 0},
+    { 2, -1, 1, 0},
+
+    { 2,  1, 1, 0},
+    {-2, -1, 1, 0},
+    { 2,  1, 2, 0},
+    {-2, -1, 2, 0},
+
+    { 1,  2, 0, 1},
+    {-1, -2, 0, 1},
+    { 1,  2, 0, 2},
+    {-1, -2, 0, 2},
+  };
+#endif
+  int i, j, dim;
+  const int *a = mask_params[mask_index];
+  dim = w > h ? w : h;
+
+  if (mask_index == MASK_NONE)
+    return;
+
+  for (i = 0; i < h; ++i)
+    for (j = 0; j < w; ++j) {
+      int x = (j - a[2] * w / 2);
+      int y = (i - a[3] * h / 2);
+      int m = a[0] * x + a[1] * y;
+      mask[i * stride + j] = get_masked_weight(m, dim);
+    }
+}
+
+static void build_masked_compound(uint8_t *dst, int dst_stride,
+                                  uint8_t *dst2, int dst2_stride,
+                                  MASK_TYPE mask_index,
+                                  int h, int w) {
+  int i, j;
+  uint8_t mask[4096];
+  generate_mask(mask_index, h, w, mask, 64);
+  for (i = 0; i < h; ++i)
+    for (j = 0; j < w; ++j) {
+      int m = mask[i * 64 + j];
+      dst[i * dst_stride + j] =  (dst[i * dst_stride + j] * m +
+                                  dst2[i * dst2_stride + j] * (64 - m) +
+                                  (1 << (MASK_WEIGHT_BITS - 1))) >>
+                                 MASK_WEIGHT_BITS;
+    }
+}
+#endif
+
 struct build_inter_predictors_args {
   MACROBLOCKD *xd;
   int x;
@@ -354,7 +449,8 @@ static void build_inter_predictors(int plane, int block,
     const uint8_t *const pre = base_pre +
         scaled_buffer_offset(x, y, pre_stride, &xd->scale_factor[which_mv]);
     struct scale_factors * const scale =
-      plane == 0 ? &xd->scale_factor[which_mv] : &xd->scale_factor_uv[which_mv];
+        plane == 0 ? &xd->scale_factor[which_mv] :
+                 &xd->scale_factor_uv[which_mv];
 
     // dest
     uint8_t *const dst = arg->dst[plane] + arg->dst_stride[plane] * y + x;
@@ -391,11 +487,28 @@ static void build_inter_predictors(int plane, int block,
                                                  xd->mb_to_bottom_edge);
     scale->set_scaled_offsets(scale, arg->y + y, arg->x + x);
 
-    vp9_build_inter_predictor_q4(pre, pre_stride,
-                                 dst, arg->dst_stride[plane],
-                                 &clamped_mv, &xd->scale_factor[which_mv],
-                                 4 << pred_w, 4 << pred_h, which_mv,
-                                 &xd->subpix);
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (which_mv && xd->mode_info_context->mbmi.use_masked_compound) {
+      uint8_t tmp_dst[4096];
+      vp9_build_inter_predictor_q4(pre, pre_stride,
+                                   tmp_dst, 64,
+                                   &clamped_mv, &xd->scale_factor[which_mv],
+                                   4 << pred_w, 4 << pred_h, 0,
+                                   &xd->subpix);
+      build_masked_compound(dst, arg->dst_stride[plane],
+                              tmp_dst, 64,
+                              xd->mode_info_context->mbmi.mask_index,
+                              (4 << pred_h), (4 << pred_w));
+    } else {
+#endif
+      vp9_build_inter_predictor_q4(pre, pre_stride,
+                                   dst, arg->dst_stride[plane],
+                                   &clamped_mv, &xd->scale_factor[which_mv],
+                                   4 << pred_w, 4 << pred_h, which_mv,
+                                   &xd->subpix);
+#if CONFIG_MASKED_COMPOUND_INTER
+    }
+#endif
   }
 }
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd,
@@ -406,7 +519,7 @@ void vp9_build_inter_predictors_sby(MACROBLOCKD *xd,
     xd, mb_col * 16, mb_row * 16,
     {xd->plane[0].dst.buf, NULL, NULL}, {xd->plane[0].dst.stride, 0, 0},
     {{xd->plane[0].pre[0].buf, NULL, NULL},
-     {xd->plane[0].pre[1].buf, NULL, NULL}},
+      {xd->plane[0].pre[1].buf, NULL, NULL}},
     {{xd->plane[0].pre[0].stride, 0, 0}, {xd->plane[0].pre[1].stride, 0, 0}},
   };
 
@@ -417,6 +530,7 @@ void vp9_build_inter_predictors_sby(MACROBLOCKD *xd,
 
   foreach_predicted_block_in_plane(xd, bsize, 0, build_inter_predictors, &args);
 }
+
 void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd,
                                      int mb_row,
                                      int mb_col,
@@ -426,9 +540,9 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd,
     {NULL, xd->plane[1].dst.buf, xd->plane[2].dst.buf},
     {0, xd->plane[1].dst.stride, xd->plane[1].dst.stride},
     {{NULL, xd->plane[1].pre[0].buf, xd->plane[2].pre[0].buf},
-     {NULL, xd->plane[1].pre[1].buf, xd->plane[2].pre[1].buf}},
+      {NULL, xd->plane[1].pre[1].buf, xd->plane[2].pre[1].buf}},
     {{0, xd->plane[1].pre[0].stride, xd->plane[1].pre[0].stride},
-     {0, xd->plane[1].pre[1].stride, xd->plane[1].pre[1].stride}},
+      {0, xd->plane[1].pre[1].stride, xd->plane[1].pre[1].stride}},
   };
   foreach_predicted_block_uv(xd, bsize, build_inter_predictors, &args);
 }

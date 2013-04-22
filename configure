@@ -250,6 +250,7 @@ EXPERIMENT_LIST="
     sbsegment
     multiple_arf
     code_zerogroup
+    masked_compound_inter
 "
 CONFIG_LIST="
     external_build
