@@ -100,6 +100,9 @@ typedef struct {
 
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
                                  [VP9_SWITCHABLE_FILTERS - 1];
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_prob masked_compound_prob;
+#endif
 
   int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
   int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
@@ -422,6 +425,10 @@ typedef struct VP9_COMP {
   int sub_mv_ref_count[SUBMVREF_COUNT][VP9_SUBMVREFS];
   int y_uv_mode_count[VP9_YMODES][VP9_UV_MODES];
   unsigned int partition_count[NUM_PARTITION_CONTEXTS][PARTITION_TYPES];
+#if CONFIG_MASKED_COMPOUND_INTER
+  unsigned int masked_compound_counts[2];
+  unsigned int masked_compound_select_counts[2];
+#endif
 
   nmv_context_counts NMVcount;
 
