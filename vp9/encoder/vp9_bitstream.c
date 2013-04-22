@@ -681,6 +681,20 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                 vp9_get_pred_prob(pc, xd, PRED_COMP));
     }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound &&
+        cpi->common.comp_pred_mode != SINGLE_PREDICTION_ONLY &&
+        mode >= NEARESTMV && mode <= NEWMV &&
+        get_mask_bits(mi->sb_type) &&
+        mi->second_ref_frame > INTRA_FRAME) {
+      vp9_write(bc, mi->use_masked_compound, pc->fc.masked_compound_prob);
+      if (mi->use_masked_compound) {
+        vp9_write_literal(
+            bc, mi->mask_index, get_mask_bits(mi->sb_type));
+      }
+    }
+#endif
+
     switch (mode) { /* new, split require MVs */
       case NEWMV:
 #ifdef ENTROPY_STATS
@@ -1591,6 +1605,13 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
     vp9_write_bit(&header_bc, (pc->mcomp_filter_type == SWITCHABLE));
     if (pc->mcomp_filter_type != SWITCHABLE)
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
+#if 0//CONFIG_MASKED_COMPOUND_INTER
+    if (!cpi->dummy_packing && pc->use_masked_compound)
+      pc->use_masked_compound = (cpi->masked_compound_counts[1] > 0);
+    vp9_write_bit(&header_bc, pc->use_masked_compound);
+    if (!pc->use_masked_compound)
+      vp9_zero(cpi->masked_compound_counts);
+#endif
   }
 
   if (!pc->error_resilient_mode) {
@@ -1714,6 +1735,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(cpi->common.fc.pre_sub_mv_ref_prob, cpi->common.fc.sub_mv_ref_prob);
   vp9_copy(cpi->common.fc.pre_partition_prob, cpi->common.fc.partition_prob);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
+#if CONFIG_MASKED_COMPOUND_INTER
+  cpi->common.fc.pre_masked_compound_prob = cpi->common.fc.masked_compound_prob;
+#endif
   vp9_zero(cpi->sub_mv_ref_count);
   vp9_zero(cpi->common.fc.mv_ref_ct);
 
@@ -1743,6 +1767,15 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
     if (pc->mcomp_filter_type == SWITCHABLE)
       update_switchable_interp_probs(cpi, &header_bc);
 
+#if 0 //CONFIG_MASKED_COMPOUND_INTER
+    if (pc->use_masked_compound) {
+      vp9_cond_prob_update(&header_bc,
+                           &pc->fc.masked_compound_prob,
+                           VP9_UPD_MASKED_COMPOUND_PROB,
+                           cpi->masked_compound_counts);
+    }
+#endif
+
     vp9_write_prob(&header_bc, pc->prob_intra_coded);
     vp9_write_prob(&header_bc, pc->prob_last_coded);
     vp9_write_prob(&header_bc, pc->prob_gf_coded);
@@ -1763,6 +1796,24 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
           }
         }
       }
+#if CONFIG_MASKED_COMPOUND_INTER
+      if (use_compound_pred) {
+        if (!cpi->dummy_packing && pc->use_masked_compound)
+          pc->use_masked_compound = (cpi->masked_compound_counts[1] > 0);
+        vp9_write_bit(&header_bc, pc->use_masked_compound);
+        if (pc->use_masked_compound) {
+          vp9_cond_prob_update(&header_bc,
+                               &pc->fc.masked_compound_prob,
+                               VP9_UPD_MASKED_COMPOUND_PROB,
+                               cpi->masked_compound_counts);
+        } else {
+          vp9_zero(cpi->masked_compound_counts);
+        }
+      } else {
+        if (!cpi->dummy_packing) pc->use_masked_compound = 0;
+        vp9_zero(cpi->masked_compound_counts);
+      }
+#endif
     }
     update_mbintra_mode_probs(cpi, &header_bc);
 
