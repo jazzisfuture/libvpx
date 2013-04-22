@@ -1052,6 +1052,10 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   fc->pre_interintra_prob = fc->interintra_prob;
   vp9_zero(fc->interintra_counts);
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  fc->pre_masked_compound_prob = fc->masked_compound_prob;
+  vp9_zero(fc->masked_compound_counts);
+#endif
 
 #if CONFIG_CODE_ZEROGROUP
   vp9_copy(fc->pre_zpc_probs_4x4, fc->zpc_probs_4x4);
@@ -1285,6 +1289,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
 #if CONFIG_COMP_INTERINTRA_PRED
     pc->use_interintra = vp9_read_bit(&header_bc);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    pc->use_masked_compound = vp9_read_bit(&header_bc);
 #endif
 
     // To enable choice of different interpolation filters

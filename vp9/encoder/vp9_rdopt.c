@@ -3316,6 +3316,218 @@ static enum BlockSize y_bsizet_to_block_size(BLOCK_SIZE_TYPE bs) {
   }
 }
 
+static YV12_BUFFER_CONFIG *get_scaled_ref_frame(VP9_COMP *cpi, int ref_frame) {
+  YV12_BUFFER_CONFIG *scaled_ref_frame = NULL;
+  int fb;
+
+  if (ref_frame == LAST_FRAME) {
+    fb = cpi->lst_fb_idx;
+  } else if (ref_frame == GOLDEN_FRAME) {
+    fb = cpi->gld_fb_idx;
+  } else {
+    fb = cpi->alt_fb_idx;
+  }
+
+  if (cpi->scaled_ref_idx[fb] != cpi->common.ref_frame_map[fb])
+    scaled_ref_frame = &cpi->common.yv12_fb[cpi->scaled_ref_idx[fb]];
+
+  return scaled_ref_frame;
+}
+
+static void do_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
+                             BLOCK_SIZE_TYPE bsize,
+                             int ref, int mi_row, int mi_col,
+                             int_mv *tmp_mv, int *rate_mv) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  const enum BlockSize block_size = y_bsizet_to_block_size(bsize);
+  struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
+  int bestsme = INT_MAX;
+  int further_steps, step_param = cpi->sf.first_step;
+  int sadpb = x->sadperbit16;
+  int_mv mvp_full;
+  int sr = 0;
+  int_mv ref_mv;
+
+  int tmp_col_min = x->mv_col_min;
+  int tmp_col_max = x->mv_col_max;
+  int tmp_row_min = x->mv_row_min;
+  int tmp_row_max = x->mv_row_max;
+
+  YV12_BUFFER_CONFIG *scaled_ref_frame = get_scaled_ref_frame(cpi, ref);
+
+  ref_mv = mbmi->ref_mvs[ref][0];
+
+  if (scaled_ref_frame) {
+    int i;
+
+    // Swap out the reference frame for a version that's been scaled to
+    // match the resolution of the current frame, allowing the existing
+    // motion search code to be used without additional modifications.
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_yv12[i] = xd->plane[i].pre[0];
+
+    setup_pre_planes(xd, scaled_ref_frame, NULL, mi_row, mi_col,
+                     NULL, NULL);
+  }
+
+  vp9_clamp_mv_min_max(x, &ref_mv);
+
+  sr = vp9_init_search_range(cpi->common.width, cpi->common.height);
+
+  mvp_full.as_int =
+      mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int;
+
+  mvp_full.as_mv.col >>= 3;
+  mvp_full.as_mv.row >>= 3;
+
+  // adjust search range according to sr from mv prediction
+  step_param = MAX(step_param, sr);
+
+  // Further step/diamond searches as necessary
+  further_steps = (cpi->sf.max_step_search_steps - 1) - step_param;
+
+  bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
+                                   sadpb, further_steps, 1,
+                                   &cpi->fn_ptr[block_size],
+                                   &ref_mv, tmp_mv);
+
+  x->mv_col_min = tmp_col_min;
+  x->mv_col_max = tmp_col_max;
+  x->mv_row_min = tmp_row_min;
+  x->mv_row_max = tmp_row_max;
+
+  if (bestsme < INT_MAX) {
+    int dis; /* TODO: use dis in distortion calculation later. */
+    unsigned int sse;
+    cpi->find_fractional_mv_step(x, tmp_mv,
+                                 &ref_mv,
+                                 x->errorperbit,
+                                 &cpi->fn_ptr[block_size],
+                                 x->nmvjointcost, x->mvcost,
+                                 &dis, &sse);
+  }
+
+  // Add the new motion vector cost to our rolling cost variable
+  *rate_mv = vp9_mv_bit_cost(tmp_mv, &ref_mv,
+                             x->nmvjointcost, x->mvcost,
+                             96, xd->allow_high_precision_mv);
+
+  // restore the predictor, if required
+  if (scaled_ref_frame) {
+    int i;
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[0] = backup_yv12[i];
+  }
+}
+
+#if CONFIG_MASKED_COMPOUND_INTER
+static void do_masked_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
+                                    int mask_index,
+                                    BLOCK_SIZE_TYPE bsize,
+                                    int ref, int mi_row, int mi_col,
+                                    int_mv *tmp_mv, int *rate_mv) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  const enum BlockSize block_size = y_bsizet_to_block_size(bsize);
+  struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
+  int bestsme = INT_MAX;
+  int further_steps, step_param = cpi->sf.first_step;
+  int sadpb = x->sadperbit16;
+  int_mv mvp_full;
+  int sr = 0;
+  int_mv ref_mv;
+
+  int tmp_col_min = x->mv_col_min;
+  int tmp_col_max = x->mv_col_max;
+  int tmp_row_min = x->mv_row_min;
+  int tmp_row_max = x->mv_row_max;
+  YV12_BUFFER_CONFIG *scaled_ref_frame = get_scaled_ref_frame(cpi, ref);
+  // int refs[2] = { mbmi->ref_frame,
+  //                (mbmi->second_ref_frame < 0 ? 0 : mbmi->second_ref_frame) };
+
+  ref_mv = mbmi->ref_mvs[ref][0];
+  // ref_mv[1] = mbmi->ref_mvs[refs[1]][0];
+
+  if (scaled_ref_frame) {
+    int i;
+
+    // Swap out the reference frame for a version that's been scaled to
+    // match the resolution of the current frame, allowing the existing
+    // motion search code to be used without additional modifications.
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      backup_yv12[i] = xd->plane[i].pre[0];
+
+    setup_pre_planes(xd, scaled_ref_frame, NULL, mi_row, mi_col,
+                     NULL, NULL);
+  }
+
+  vp9_clamp_mv_min_max(x, &ref_mv);
+
+  sr = vp9_init_search_range(cpi->common.width, cpi->common.height);
+
+  // mvp_full.as_int = ref_mv[0].as_int;
+  mvp_full.as_int =
+      mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int;
+
+  mvp_full.as_mv.col >>= 3;
+  mvp_full.as_mv.row >>= 3;
+
+  // adjust search range according to sr from mv prediction
+  step_param = MAX(step_param, sr);
+
+  // Further step/diamond searches as necessary
+  further_steps = (cpi->sf.max_step_search_steps - 1) - step_param;
+
+  bestsme = vp9_masked_full_pixel_diamond(cpi, x, mask_index,
+                                          &mvp_full, step_param,
+                                          sadpb, further_steps, 1,
+                                          &cpi->fn_ptr[block_size],
+                                          &ref_mv, tmp_mv);
+
+  x->mv_col_min = tmp_col_min;
+  x->mv_col_max = tmp_col_max;
+  x->mv_row_min = tmp_row_min;
+  x->mv_row_max = tmp_row_max;
+
+  if (bestsme < INT_MAX) {
+    int dis; /* TODO: use dis in distortion calculation later. */
+    unsigned int sse;
+    vp9_find_best_masked_sub_pixel_step_iteratively(
+        x, mask_index, tmp_mv, &ref_mv, x->errorperbit,
+        &cpi->fn_ptr[block_size],
+        x->nmvjointcost, x->mvcost,
+        &dis, &sse);
+  }
+
+  // Add the new motion vector cost to our rolling cost variable
+  *rate_mv = vp9_mv_bit_cost(tmp_mv, &ref_mv,
+                             x->nmvjointcost, x->mvcost,
+                             96, xd->allow_high_precision_mv);
+
+  // restore the predictor, if required
+  if (scaled_ref_frame) {
+    int i;
+
+    for (i = 0; i < MAX_MB_PLANE; i++)
+      xd->plane[i].pre[0] = backup_yv12[i];
+  }
+}
+
+static void do_masked_motion_search_pair(VP9_COMP *cpi, MACROBLOCK *x,
+                                         int mask_index,
+                                         BLOCK_SIZE_TYPE bsize,
+                                         int *refs,
+                                         int mi_row, int mi_col,
+                                         int_mv *tmp_mv, int *rate_mv) {
+  do_masked_motion_search(cpi, x, mask_index, bsize, refs[0],
+                          mi_row, mi_col, &tmp_mv[0], &rate_mv[0]);
+  do_masked_motion_search(cpi, x, mask_index^1, bsize, refs[1],
+                          mi_row, mi_col, &tmp_mv[1], &rate_mv[1]);
+}
+#endif
+
 static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  BLOCK_SIZE_TYPE bsize,
                                  int mdcounts[4], int64_t txfm_cache[],
@@ -3323,6 +3535,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  int *compmode_cost,
 #if CONFIG_COMP_INTERINTRA_PRED
                                  int *compmode_interintra_cost,
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                 int *compmode_masked_cost,
 #endif
                                  int *rate_y, int *distortion_y,
                                  int *rate_uv, int *distortion_uv,
@@ -3358,6 +3573,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int interpolating_intpel_seen = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
+  int rate_mv = 0;
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (is_comp_pred) mbmi->use_masked_compound = 0;
+#endif
 
   switch (this_mode) {
     case NEWMV:
@@ -3368,92 +3587,25 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         if (frame_mv[NEWMV][refs[0]].as_int == INVALID_MV ||
             frame_mv[NEWMV][refs[1]].as_int == INVALID_MV)
           return INT64_MAX;
-        *rate2 += vp9_mv_bit_cost(&frame_mv[NEWMV][refs[0]],
-                                  &ref_mv[0],
-                                  x->nmvjointcost, x->mvcost, 96,
-                                  x->e_mbd.allow_high_precision_mv);
-        *rate2 += vp9_mv_bit_cost(&frame_mv[NEWMV][refs[1]],
-                                  &ref_mv[1],
-                                  x->nmvjointcost, x->mvcost, 96,
-                                  x->e_mbd.allow_high_precision_mv);
+        rate_mv =  vp9_mv_bit_cost(&frame_mv[NEWMV][refs[0]],
+                                   &ref_mv[0],
+                                   x->nmvjointcost, x->mvcost, 96,
+                                   x->e_mbd.allow_high_precision_mv) +
+                   vp9_mv_bit_cost(&frame_mv[NEWMV][refs[1]],
+                                   &ref_mv[1],
+                                   x->nmvjointcost, x->mvcost, 96,
+                                   x->e_mbd.allow_high_precision_mv);
+        // *rate2 += rate_mv_comp_pred;
       } else {
-        struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
-        int bestsme = INT_MAX;
-        int further_steps, step_param = cpi->sf.first_step;
-        int sadpb = x->sadperbit16;
-        int_mv mvp_full, tmp_mv;
-        int sr = 0;
-
-        int tmp_col_min = x->mv_col_min;
-        int tmp_col_max = x->mv_col_max;
-        int tmp_row_min = x->mv_row_min;
-        int tmp_row_max = x->mv_row_max;
-
-        if (scaled_ref_frame) {
-          int i;
-
-          // Swap out the reference frame for a version that's been scaled to
-          // match the resolution of the current frame, allowing the existing
-          // motion search code to be used without additional modifications.
-          for (i = 0; i < MAX_MB_PLANE; i++)
-            backup_yv12[i] = xd->plane[i].pre[0];
-
-          setup_pre_planes(xd, scaled_ref_frame, NULL, mi_row, mi_col,
-                           NULL, NULL);
-        }
-
-        vp9_clamp_mv_min_max(x, &ref_mv[0]);
-
-        sr = vp9_init_search_range(cpi->common.width, cpi->common.height);
-
-        // mvp_full.as_int = ref_mv[0].as_int;
-        mvp_full.as_int =
-         mbmi->ref_mvs[refs[0]][x->mv_best_ref_index[refs[0]]].as_int;
-
-        mvp_full.as_mv.col >>= 3;
-        mvp_full.as_mv.row >>= 3;
-
-        // adjust search range according to sr from mv prediction
-        step_param = MAX(step_param, sr);
-
-        // Further step/diamond searches as necessary
-        further_steps = (cpi->sf.max_step_search_steps - 1) - step_param;
-
-        bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
-                                         sadpb, further_steps, 1,
-                                         &cpi->fn_ptr[block_size],
-                                         &ref_mv[0], &tmp_mv);
-
-        x->mv_col_min = tmp_col_min;
-        x->mv_col_max = tmp_col_max;
-        x->mv_row_min = tmp_row_min;
-        x->mv_row_max = tmp_row_max;
-
-        if (bestsme < INT_MAX) {
-          int dis; /* TODO: use dis in distortion calculation later. */
-          unsigned int sse;
-          cpi->find_fractional_mv_step(x, &tmp_mv,
-                                       &ref_mv[0],
-                                       x->errorperbit,
-                                       &cpi->fn_ptr[block_size],
-                                       x->nmvjointcost, x->mvcost,
-                                       &dis, &sse);
-        }
+        int_mv tmp_mv;
+        int tmp_rate;
+        do_motion_search(cpi, x, bsize,
+                         mbmi->ref_frame, mi_row, mi_col,
+                         &tmp_mv, &tmp_rate);
         frame_mv[NEWMV][refs[0]].as_int =
           xd->mode_info_context->bmi[0].as_mv[0].as_int = tmp_mv.as_int;
-
-        // Add the new motion vector cost to our rolling cost variable
-        *rate2 += vp9_mv_bit_cost(&tmp_mv, &ref_mv[0],
-                                  x->nmvjointcost, x->mvcost,
-                                  96, xd->allow_high_precision_mv);
-
-        // restore the predictor, if required
-        if (scaled_ref_frame) {
-          int i;
-
-          for (i = 0; i < MAX_MB_PLANE; i++)
-            xd->plane[i].pre[0] = backup_yv12[i];
-        }
+        rate_mv = tmp_rate;
+        // *rate2 += tmp_rate;
       }
       break;
     case NEARMV:
@@ -3464,12 +3616,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
   for (i = 0; i < num_refs; ++i) {
     cur_mv[i] = frame_mv[this_mode][refs[i]];
-    // Clip "next_nearest" so that it does not extend to far out of image
     if (this_mode == NEWMV)
       assert(!clamp_mv2(&cur_mv[i], xd));
     else
       clamp_mv2(&cur_mv[i], xd);
-
     if (mv_check_bounds(x, &cur_mv[i]))
       return INT64_MAX;
     mbmi->mv[i].as_int = cur_mv[i].as_int;
@@ -3609,6 +3759,284 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   else
     mbmi->interp_filter = *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (is_comp_pred) {
+    int mask_index, best_mask_index = -1, rs;
+    unsigned int sse, var;
+    int tmp_rate_y, tmp_rate_u, tmp_rate_v;
+    int tmp_dist_y, tmp_dist_u, tmp_dist_v;
+    int64_t best_rd_nomask = INT64_MAX;
+    int64_t best_rd_mask = INT64_MAX;
+    int mask_types;
+
+    mbmi->use_masked_compound = 0;
+    rs = vp9_cost_bit(cm->fc.masked_compound_prob, 0);
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+    var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                     x->plane[0].src.stride,
+                                     xd->plane[0].dst.buf,
+                                     xd->plane[0].dst.stride,
+                                     &sse);
+    model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                             xd->plane[0].dequant[1] >> 3,
+                             &tmp_rate_y, &tmp_dist_y);
+    var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                        x->plane[1].src.stride,
+                                        xd->plane[1].dst.buf,
+                                        xd->plane[1].dst.stride,
+                                        &sse);
+    model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                             xd->plane[1].dequant[1] >> 3,
+                             &tmp_rate_u, &tmp_dist_u);
+    var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                        x->plane[1].src.stride,
+                                        xd->plane[2].dst.buf,
+                                        xd->plane[1].dst.stride,
+                                        &sse);
+    model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                             xd->plane[2].dequant[1] >> 3,
+                             &tmp_rate_v, &tmp_dist_v);
+    rd = RDCOST(x->rdmult, x->rddiv,
+                rs + rate_mv + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                tmp_dist_y + tmp_dist_u + tmp_dist_v);
+    best_rd_nomask = rd;
+
+    mbmi->use_masked_compound = 1;
+    rs = get_mask_bits(bsize) * 256 +
+        vp9_cost_bit(cm->fc.masked_compound_prob, 1);
+    mask_types = (1 << get_mask_bits(bsize));
+#define USE_MASKED_NEWMV_FAST_SEARCH
+#define USE_MASKED_NEWMV_REFINEMENT_SEARCH
+    if (this_mode == NEWMV) {
+#ifdef USE_MASKED_NEWMV_FAST_SEARCH
+      for (mask_index = 0; mask_index < mask_types; ++mask_index) {
+        mbmi->mask_index = mask_index;
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+        var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].dst.buf,
+                                         xd->plane[0].dst.stride,
+                                         &sse);
+        model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                                 xd->plane[0].dequant[1] >> 3,
+                                 &tmp_rate_y, &tmp_dist_y);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[1].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[1].dequant[1] >> 3,
+                                 &tmp_rate_u, &tmp_dist_u);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[2].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[2].dequant[1] >> 3,
+                                 &tmp_rate_v, &tmp_dist_v);
+        rd = RDCOST(x->rdmult, x->rddiv,
+                    rs + rate_mv + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                    tmp_dist_y + tmp_dist_u + tmp_dist_v);
+        if (rd < best_rd_mask) {
+          best_mask_index = mask_index;
+          best_rd_mask = rd;
+        }
+      }
+      if (best_rd_mask < best_rd_nomask) {
+        mbmi->use_masked_compound = 1;
+        mbmi->mask_index = best_mask_index;
+      } else {
+        mbmi->use_masked_compound = 0;
+        mbmi->mask_index = MASK_NONE;
+      }
+#ifdef USE_MASKED_NEWMV_REFINEMENT_SEARCH
+      if (mbmi->use_masked_compound) {
+        int_mv tmp_mv[2];
+        int rate_mvs[2], tmp_rate_mv;
+
+        do_masked_motion_search_pair(cpi, x, mbmi->mask_index, bsize,
+                                     refs, mi_row, mi_col,
+                                     tmp_mv, rate_mvs);
+        tmp_rate_mv = rate_mvs[0] + rate_mvs[1];
+        mbmi->mv[0].as_int = tmp_mv[0].as_int;
+        mbmi->mv[1].as_int = tmp_mv[1].as_int;
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+        var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].dst.buf,
+                                         xd->plane[0].dst.stride,
+                                         &sse);
+        model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                                 xd->plane[0].dequant[1] >> 3,
+                                 &tmp_rate_y, &tmp_dist_y);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[1].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[1].dequant[1] >> 3,
+                                 &tmp_rate_u, &tmp_dist_u);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[2].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[2].dequant[1] >> 3,
+                                 &tmp_rate_v, &tmp_dist_v);
+        rd = RDCOST(x->rdmult, x->rddiv,
+                    rs + tmp_rate_mv + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                    tmp_dist_y + tmp_dist_u + tmp_dist_v);
+        mbmi->mv[0].as_int = cur_mv[0].as_int;
+        mbmi->mv[1].as_int = cur_mv[1].as_int;
+        // printf("Result %d\n", rd < best_rd_mask);
+        if (rd < best_rd_mask) {
+          // printf("Better %ld %ld\n", rd, best_rd_mask);
+          best_rd_mask = rd;
+          if (cm->use_masked_compound) {
+            mbmi->mv[0].as_int = tmp_mv[0].as_int;
+            mbmi->mv[1].as_int = tmp_mv[1].as_int;
+            xd->mode_info_context->bmi[0].as_mv[0].as_int = tmp_mv[0].as_int;
+            xd->mode_info_context->bmi[0].as_mv[1].as_int = tmp_mv[1].as_int;
+            rate_mv = tmp_rate_mv;
+            // printf("Selected %ld vs %ld [%d]\n", best_rd_mask, best_rd_nomask, best_tmp_rate_mv);
+          }
+        }
+      }
+#endif
+#else
+      int best_tmp_rate_mv = INT_MAX;
+      int_mv best_tmp_mv[2];
+      best_tmp_mv[0].as_int = 0;
+      best_tmp_mv[1].as_int = 0;
+      for (mask_index = 0; mask_index < mask_types; ++mask_index) {
+        int_mv tmp_mv[2];
+        int rate_mvs[2], tmp_rate_mv;
+
+        mbmi->mask_index = mask_index;
+        do_masked_motion_search_pair(cpi, x, mask_index, bsize,
+                                     refs, mi_row, mi_col,
+                                     tmp_mv, rate_mvs);
+        tmp_rate_mv = rate_mvs[0] + rate_mvs[1];
+        mbmi->mv[0].as_int = tmp_mv[0].as_int;
+        mbmi->mv[1].as_int = tmp_mv[1].as_int;
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+        var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].dst.buf,
+                                         xd->plane[0].dst.stride,
+                                         &sse);
+        model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                                 xd->plane[0].dequant[1] >> 3,
+                                 &tmp_rate_y, &tmp_dist_y);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[1].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[1].dequant[1] >> 3,
+                                 &tmp_rate_u, &tmp_dist_u);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[2].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[2].dequant[1] >> 3,
+                                 &tmp_rate_v, &tmp_dist_v);
+        rd = RDCOST(x->rdmult, x->rddiv,
+                    rs + tmp_rate_mv + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                    tmp_dist_y + tmp_dist_u + tmp_dist_v);
+        mbmi->mv[0].as_int = cur_mv[0].as_int;
+        mbmi->mv[1].as_int = cur_mv[1].as_int;
+        if (rd < best_rd_mask) {
+          best_mask_index = mask_index;
+          best_rd_mask = rd;
+          best_tmp_mv[0].as_int = tmp_mv[0].as_int;
+          best_tmp_mv[1].as_int = tmp_mv[1].as_int;
+          best_tmp_rate_mv = tmp_rate_mv;
+        }
+      }
+      if (best_rd_mask < best_rd_nomask) {
+        mbmi->use_masked_compound = 1;
+        mbmi->mask_index = best_mask_index;
+        if (cm->use_masked_compound) {
+          mbmi->mv[0].as_int = best_tmp_mv[0].as_int;
+          mbmi->mv[1].as_int = best_tmp_mv[1].as_int;
+          xd->mode_info_context->bmi[0].as_mv[0].as_int = best_tmp_mv[0].as_int;
+          xd->mode_info_context->bmi[0].as_mv[1].as_int = best_tmp_mv[1].as_int;
+          rate_mv = best_tmp_rate_mv;
+          // printf("Selected %ld vs %ld [%d]\n", best_rd_mask, best_rd_nomask, best_tmp_rate_mv);
+        }
+      } else {
+        mbmi->use_masked_compound = 0;
+        mbmi->mask_index = MASK_NONE;
+      }
+#endif
+    } else {
+      for (mask_index = 0; mask_index < mask_types; ++mask_index) {
+        mbmi->mask_index = mask_index;
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+        var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                         x->plane[0].src.stride,
+                                         xd->plane[0].dst.buf,
+                                         xd->plane[0].dst.stride,
+                                         &sse);
+        model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                                 xd->plane[0].dequant[1] >> 3,
+                                 &tmp_rate_y, &tmp_dist_y);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[1].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[1].dequant[1] >> 3,
+                                 &tmp_rate_u, &tmp_dist_u);
+        var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[2].dst.buf,
+                                            xd->plane[1].dst.stride,
+                                            &sse);
+        model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                                 xd->plane[2].dequant[1] >> 3,
+                                 &tmp_rate_v, &tmp_dist_v);
+        rd = RDCOST(x->rdmult, x->rddiv,
+                    rs + rate_mv + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                    tmp_dist_y + tmp_dist_u + tmp_dist_v);
+        if (rd < best_rd_mask) {
+          best_mask_index = mask_index;
+          best_rd_mask = rd;
+        }
+      }
+      if (best_rd_mask < best_rd_nomask) {
+        mbmi->use_masked_compound = 1;
+        mbmi->mask_index = best_mask_index;
+      } else {
+        mbmi->use_masked_compound = 0;
+        mbmi->mask_index = MASK_NONE;
+      }
+    }
+    // Note that when this function returns, mbmi->mask_index will hold
+    // the best mask irrespective of whether the frame level flag is off.
+    if (!cm->use_masked_compound) {
+      mbmi->use_masked_compound = 0;
+    }
+    pred_exists = 0;
+
+    if (mbmi->use_masked_compound)
+      *compmode_masked_cost = get_mask_bits(bsize) * 256 +
+          vp9_cost_bit(cm->fc.masked_compound_prob, 1);
+    else
+      *compmode_masked_cost = vp9_cost_bit(cm->fc.masked_compound_prob, 0);
+  }
+#endif
+  *rate2 += rate_mv;
 
   if (pred_exists) {
     // FIXME(rbultje): mb code still predicts into xd->predictor
@@ -3774,6 +4202,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int best_intra16_uv_mode = DC_PRED;
 #endif
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  int is_best_masked_compound = 0;
+#endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
   INTERPOLATIONFILTERTYPE tmp_best_filter = SWITCHABLE;
@@ -3877,6 +4308,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     int compmode_interintra_cost = 0;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    int compmode_masked_cost = 0;
+#endif
     int mode_excluded = 0;
     int64_t txfm_cache[NB_TXFM_MODES] = { 0 };
     YV12_BUFFER_CONFIG *scaled_ref_frame;
@@ -3932,6 +4366,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    mbmi->mask_index = MASK_NONE;
 #endif
 
     // If the segment reference frame feature is enabled....
@@ -4250,6 +4688,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
                                   &compmode_interintra_cost,
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                  &compmode_masked_cost,
+#endif
                                   &rate_y, &distortion,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
@@ -4262,6 +4703,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     if (cpi->common.use_interintra)
       rate2 += compmode_interintra_cost;
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound)
+      rate2 += compmode_masked_cost;
 #endif
 
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION)
@@ -4345,6 +4790,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       best_mode = this_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
       is_best_interintra = (mbmi->second_ref_frame == INTRA_FRAME);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+      is_best_masked_compound = (mbmi->mask_index != MASK_NONE);
 #endif
     }
 
@@ -4474,6 +4922,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  ++cpi->masked_compound_select_counts[is_best_masked_compound];
+  // if (is_best_masked_compound)  printf("best_masked_compound\n");
 #endif
 
   // Accumulate filter usage stats
@@ -4845,6 +5297,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int best_intra16_uv_mode = DC_PRED;
 #endif
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  int is_best_masked_compound = 0;
+#endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
   INTERPOLATIONFILTERTYPE tmp_best_filter = SWITCHABLE;
@@ -4949,6 +5404,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     int compmode_interintra_cost = 0;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    int compmode_masked_cost = 0;
+#endif
 
     // Test best rd so far against threshold for trying this mode.
     if (best_rd <= cpi->rd_threshes[mode_index] ||
@@ -4987,6 +5445,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    mbmi->mask_index = MASK_NONE;
 #endif
 
     // Evaluate all sub-pel filters irrespective of whether we can use
@@ -5274,6 +5736,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
                                   &compmode_interintra_cost,
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                  &compmode_masked_cost,
+#endif
                                   &rate_y, &distortion_y,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
@@ -5287,6 +5752,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (cpi->common.use_interintra) {
       rate2 += compmode_interintra_cost;
     }
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound)
+      rate2 += compmode_masked_cost;
 #endif
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
       rate2 += compmode_cost;
@@ -5368,6 +5837,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       best_mode = this_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
       is_best_interintra = (mbmi->second_ref_frame == INTRA_FRAME);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+      is_best_masked_compound = (mbmi->mask_index != MASK_NONE);
 #endif
     }
 
@@ -5503,6 +5975,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
   // if (is_best_interintra)  printf("best_interintra\n");
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  ++cpi->masked_compound_select_counts[is_best_masked_compound];
+  // if (is_best_masked_compound)  printf("best_masked_compound\n");
 #endif
 
   // Accumulate filter usage stats

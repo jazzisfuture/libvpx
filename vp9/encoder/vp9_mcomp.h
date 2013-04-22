@@ -79,5 +79,16 @@ typedef int (*vp9_diamond_search_fn_t)(MACROBLOCK *x,
                                        int *mvjcost, int *mvcost[2],
                                        int_mv *center_mv);
 
+#if CONFIG_MASKED_COMPOUND_INTER
+int vp9_find_best_masked_sub_pixel_step_iteratively(
+    MACROBLOCK *x, int mask_index, int_mv *bestmv, int_mv *ref_mv,
+    int error_per_bit, const vp9_variance_fn_ptr_t *vfp,
+    int *mvjcost, int *mvcost[2], int *distortion, unsigned int *sse);
+
+int vp9_masked_full_pixel_diamond(
+    struct VP9_COMP *cpi, MACROBLOCK *x, int mask_index, int_mv *mvp_full,
+    int step_param, int sadpb, int further_steps, int do_refine,
+    vp9_variance_fn_ptr_t *fn_ptr, int_mv *ref_mv, int_mv *dst_mv);
+#endif
 
 #endif  // VP9_ENCODER_VP9_MCOMP_H_
