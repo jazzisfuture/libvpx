@@ -17,7 +17,8 @@
 int vp9_decode_tokens(VP9D_COMP* const pbi,
                       MACROBLOCKD* const xd,
                       vp9_reader *r,
-                      BLOCK_SIZE_TYPE bsize);
+                      BLOCK_SIZE_TYPE bsize,
+                      const int16_t *dq);
 
 int vp9_decode_mb_tokens_4x4_uv(VP9D_COMP* const dx, MACROBLOCKD* const xd,
                                 vp9_reader *r);

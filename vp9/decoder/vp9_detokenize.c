@@ -81,7 +81,7 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 #else
 #define WRITE_COEF_CONTINUE(val, token)                  \
   {                                                      \
-    qcoeff_ptr[scan[c]] = vp9_read_and_apply_sign(r, val); \
+    qcoeff_ptr[scan[c]] = vp9_read_and_apply_sign(r, val) * dq[c > 0]; \
     INCREMENT_COUNT(token);                              \
     c++;                                                 \
     continue;                                            \
@@ -97,7 +97,7 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                         vp9_reader *r, int block_idx,
                         PLANE_TYPE type, int seg_eob, int16_t *qcoeff_ptr,
-                        TX_SIZE txfm_size) {
+                        TX_SIZE txfm_size, const int16_t *dq) {
   ENTROPY_CONTEXT* const A0 = (ENTROPY_CONTEXT *) xd->above_context;
   ENTROPY_CONTEXT* const L0 = (ENTROPY_CONTEXT *) xd->left_context;
   int aidx, lidx;
@@ -400,6 +400,7 @@ struct decode_block_args {
   MACROBLOCKD *xd;
   vp9_reader *r;
   int *eobtotal;
+  const int16_t *dq;
 };
 static void decode_block(int plane, int block,
                          BLOCK_SIZE_TYPE bsize,
@@ -419,7 +420,7 @@ static void decode_block(int plane, int block,
   const int eob = decode_coefs(arg->pbi, arg->xd, arg->r, old_block_idx,
                                arg->xd->plane[plane].plane_type, seg_eob,
                                BLOCK_OFFSET(qcoeff_base, block, 16),
-                               ss_tx_size);
+                               ss_tx_size, arg->dq);
 
   arg->xd->plane[plane].eobs[block] = eob;
   arg->eobtotal[0] += eob;
@@ -428,9 +429,10 @@ static void decode_block(int plane, int block,
 int vp9_decode_tokens(VP9D_COMP* const pbi,
                          MACROBLOCKD* const xd,
                          vp9_reader *r,
-                         BLOCK_SIZE_TYPE bsize) {
+                         BLOCK_SIZE_TYPE bsize,
+                         const int16_t *dq) {
   int eobtotal = 0;
-  struct decode_block_args args = {pbi, xd, r, &eobtotal};
+  struct decode_block_args args = {pbi, xd, r, &eobtotal, dq};
   foreach_transformed_block(xd, bsize, decode_block, &args);
   return eobtotal;
 }
