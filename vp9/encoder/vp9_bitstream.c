@@ -816,18 +816,24 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         mi->second_ref_frame <= INTRA_FRAME) {
       vp9_write(bc, mi->second_ref_frame == INTRA_FRAME,
                 pc->fc.interintra_prob);
-      // if (!cpi->dummy_packing)
-      //   printf("-- %d (%d)\n", mi->second_ref_frame == INTRA_FRAME,
-      //          pc->fc.interintra_prob);
       if (mi->second_ref_frame == INTRA_FRAME) {
-        // if (!cpi->dummy_packing)
-        //   printf("** %d %d\n", mi->interintra_mode,
-        // mi->interintra_uv_mode);
         write_ymode(bc, mi->interintra_mode, pc->fc.ymode_prob);
 #if SEPARATE_INTERINTRA_UV
         write_uv_mode(bc, mi->interintra_uv_mode,
                       pc->fc.uv_mode_prob[mi->interintra_mode]);
 #endif
+      }
+    }
+#endif
+
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound &&
+        mode >= NEARESTMV && mode < SPLITMV &&
+        mi->second_ref_frame > INTRA_FRAME) {
+      vp9_write(bc, mi->use_masked_compound, pc->fc.masked_compound_prob);
+      if (mi->use_masked_compound) {
+        vp9_write_literal(bc, mi->mask_index, MASK_BITS);
+        // if (!cpi->dummy_packing) printf("E %d %d\n", pc->current_video_frame, mi->mask_index);
       }
     }
 #endif
@@ -1957,13 +1963,18 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     if (pc->mcomp_filter_type != SWITCHABLE)
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
 #if CONFIG_COMP_INTERINTRA_PRED
-    //  printf("Counts: %d %d\n", cpi->interintra_count[0],
-    //         cpi->interintra_count[1]);
     if (!cpi->dummy_packing && pc->use_interintra)
       pc->use_interintra = (cpi->interintra_count[1] > 0);
     vp9_write_bit(&header_bc, pc->use_interintra);
     if (!pc->use_interintra)
       vp9_zero(cpi->interintra_count);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (!cpi->dummy_packing && pc->use_masked_compound)
+      pc->use_masked_compound = (cpi->masked_compound_counts[1] > 0);
+    vp9_write_bit(&header_bc, pc->use_masked_compound);
+    if (!pc->use_masked_compound)
+      vp9_zero(cpi->masked_compound_counts);
 #endif
   }
 
@@ -2179,6 +2190,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
 #if CONFIG_COMP_INTERINTRA_PRED
   cpi->common.fc.pre_interintra_prob = cpi->common.fc.interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  cpi->common.fc.pre_masked_compound_prob = cpi->common.fc.masked_compound_prob;
+#endif
   vp9_zero(cpi->sub_mv_ref_count);
   vp9_zero(cpi->mbsplit_count);
   vp9_zero(cpi->common.fc.mv_ref_ct);
@@ -2221,6 +2235,14 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
                            &pc->fc.interintra_prob,
                            VP9_UPD_INTERINTRA_PROB,
                            cpi->interintra_count);
+    }
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (pc->use_masked_compound) {
+      vp9_cond_prob_update(&header_bc,
+                           &pc->fc.masked_compound_prob,
+                           VP9_UPD_MASKED_COMPOUND_PROB,
+                           cpi->masked_compound_counts);
     }
 #endif
 

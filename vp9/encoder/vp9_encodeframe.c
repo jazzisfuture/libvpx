@@ -504,6 +504,12 @@ static void update_state(VP9_COMP *cpi,
       }
     }
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
+        mbmi->second_ref_frame > INTRA_FRAME) {
+      ++cpi->masked_compound_counts[mbmi->use_masked_compound];
+    }
+#endif
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         mbmi->mode >= NEARESTMV &&
         mbmi->mode <= SPLITMV) {
@@ -1267,6 +1273,10 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 #if CONFIG_COMP_INTERINTRA_PRED
   vp9_zero(cpi->interintra_count);
   vp9_zero(cpi->interintra_select_count);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_zero(cpi->masked_compound_counts);
+  vp9_zero(cpi->masked_compound_select_counts);
 #endif
 
   vpx_memset(cm->above_context, 0,
