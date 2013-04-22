@@ -24,6 +24,11 @@
 #define SEPARATE_INTERINTRA_UV  0
 #endif
 
+#if CONFIG_MASKED_COMPOUND_INTER
+#define VP9_DEF_MASKED_COMPOUND_PROB 248
+#define VP9_UPD_MASKED_COMPOUND_PROB 192
+#endif
+
 typedef const int vp9_mbsplit[16];
 
 extern vp9_mbsplit vp9_mbsplits[VP9_NUMMBSPLITS];
