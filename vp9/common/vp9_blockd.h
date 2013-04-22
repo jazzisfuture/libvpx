@@ -240,6 +240,34 @@ static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
   return mb_height_log2(sb_type) + 2;
 }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+
+#define MASK_BITS_SML   3
+#define MASK_TYPES_SML  (1 << MASK_BITS_SML)
+#define MASK_BITS_BIG   4
+#define MASK_TYPES_BIG  (1 << MASK_BITS_BIG)
+
+typedef enum {
+  MASK_NONE = -1,
+  MASK_ANGLE_27 = 0,
+  MASK_ANGLE_27_INV = 1,
+  MASK_ANGLE_63 = 2,
+  MASK_ANGLE_63_INV = 3,
+  MASK_ANGLE_117 = 4,
+  MASK_ANGLE_117_INV = 5,
+  MASK_ANGLE_153 = 6,
+  MASK_ANGLE_153_INV = 7,
+  MASK_ANGLE_63S,
+  MASK_ANGLE_63S_INV,
+  MASK_ANGLE_63L,
+  MASK_ANGLE_63L_INV,
+  MASK_ANGLE_117S,
+  MASK_ANGLE_117S_INV,
+  MASK_ANGLE_117L,
+  MASK_ANGLE_117L_INV,
+} MASK_TYPE;
+#endif  // CONFIG_MASKED_COMPOUND_INTER
+
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
@@ -271,6 +299,11 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
+  MASK_TYPE mask_index;
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -306,7 +339,11 @@ struct scale_factors {
                                               int den,
                                               int offset_q4);
 
+#if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
+  convolve_fn_t predict[2][2][8];  // horiz, vert, weight (0 - 7)
+#else
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
+#endif
 };
 
 enum { MAX_MB_PLANE = 3 };

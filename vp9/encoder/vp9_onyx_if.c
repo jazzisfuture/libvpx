@@ -2593,6 +2593,20 @@ static void select_interintra_mode(VP9_COMP *cpi) {
 }
 #endif
 
+#if CONFIG_MASKED_COMPOUND_INTER
+static void select_masked_compound_mode(VP9_COMP *cpi) {
+  static const double threshold = 0.01;
+  VP9_COMMON *cm = &cpi->common;
+  int sum = cpi->masked_compound_select_counts[1] +
+            cpi->masked_compound_select_counts[0];
+  if (sum) {
+    double fraction = (double) cpi->masked_compound_select_counts[1] / sum;
+    cm->use_masked_compound = (fraction > threshold);
+    // printf("Mask fraction: %f\n", fraction);
+  }
+}
+#endif
+
 static void scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   int i;
@@ -2956,6 +2970,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
   if (cm->current_video_frame == 0) {
     cm->use_interintra = 1;
+  }
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (cm->current_video_frame == 0) {
+    cm->use_masked_compound = 0;
   }
 #endif
 
@@ -3348,6 +3367,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
     vp9_copy(cpi->common.fc.interintra_counts, cpi->interintra_count);
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    vp9_copy(cpi->common.fc.masked_compound_counts,
+             cpi->masked_compound_counts);
+#endif
     cpi->common.fc.NMVcount = cpi->NMVcount;
     if (!cpi->common.error_resilient_mode &&
         !cpi->common.frame_parallel_decoding_mode) {
@@ -3359,6 +3382,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_COMP_INTERINTRA_PRED
   if (cm->frame_type != KEY_FRAME)
     select_interintra_mode(cpi);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (cm->frame_type != KEY_FRAME)
+    select_masked_compound_mode(cpi);
 #endif
 
   /* Move storing frame_type out of the above loop since it is also

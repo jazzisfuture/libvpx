@@ -489,6 +489,12 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
         cm->fc.interintra_prob = vp9_read_prob(r);
     }
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cm->use_masked_compound) {
+      if (vp9_read(r, VP9_UPD_MASKED_COMPOUND_PROB))
+        cm->fc.masked_compound_prob = vp9_read_prob(r);
+    }
+#endif
     // Baseline probabilities for decoding reference frame
     cm->prob_intra_coded = vp9_read_prob(r);
     cm->prob_last_coded  = vp9_read_prob(r);
@@ -611,6 +617,11 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   mbmi->need_to_clamp_mvs = 0;
   mbmi->need_to_clamp_secondmv = 0;
   mbmi->second_ref_frame = NONE;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  mbmi->use_masked_compound = 0;
+  mbmi->mask_index = MASK_NONE;
+#endif
 
   // Make sure the MACROBLOCKD mode info pointer is pointed at the
   // correct entry for the current macroblock.
@@ -756,12 +767,25 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 #else
           mbmi->interintra_uv_mode = mbmi->interintra_mode;
 #endif
-          // printf("** %d %d\n",
-          //        mbmi->interintra_mode, mbmi->interintra_uv_mode);
         }
       }
 #endif
     }
+
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (pbi->common.use_masked_compound &&
+        mbmi->mode >= NEARESTMV && mbmi->mode < SPLITMV &&
+        mbmi->second_ref_frame > INTRA_FRAME) {
+      mbmi->use_masked_compound =
+          vp9_read(r, pbi->common.fc.masked_compound_prob);
+      pbi->common.fc.masked_compound_counts[mbmi->use_masked_compound]++;
+      if (mbmi->use_masked_compound) {
+        mbmi->mask_index = vp9_read_literal(
+            r, mi->mbmi.sb_type > BLOCK_SIZE_MB16X16 ? MASK_BITS_BIG : MASK_BITS_SML);
+        // printf("D %d\n", mbmi->mask_index);
+      }
+    }
+#endif
 
     mbmi->uv_mode = DC_PRED;
     switch (mbmi->mode) {
