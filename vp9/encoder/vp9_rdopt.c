@@ -2780,6 +2780,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
                                  int *compmode_interintra_cost,
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                 int *compmode_masked_cost,
+#endif
                                  int *rate_y, int *distortion_y,
                                  int *rate_uv, int *distortion_uv,
                                  int *mode_excluded, int *disable_skip,
@@ -2814,6 +2817,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int interpolating_intpel_seen = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (is_comp_pred) mbmi->use_masked_compound = 0;
+#endif
 
   switch (this_mode) {
     case NEWMV:
@@ -3066,6 +3072,109 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->interp_filter = *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
 
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (is_comp_pred) {
+    int mask_index, best_mask_index = -1, rs;
+    unsigned int sse, var;
+    int tmp_rate_y, tmp_rate_u, tmp_rate_v;
+    int tmp_dist_y, tmp_dist_u, tmp_dist_v;
+    int64_t best_rd_nomask = INT64_MAX;
+    int64_t best_rd_mask = INT64_MAX;
+    int mask_types;
+
+    mbmi->use_masked_compound = 0;
+    rs = vp9_cost_bit(cm->fc.masked_compound_prob, 0);
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+    var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                     x->plane[0].src.stride,
+                                     xd->plane[0].dst.buf,
+                                     xd->plane[0].dst.stride,
+                                     &sse);
+    model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                             xd->plane[0].dequant[1] >> 3,
+                             &tmp_rate_y, &tmp_dist_y);
+    var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                        x->plane[1].src.stride,
+                                        xd->plane[1].dst.buf,
+                                        xd->plane[1].dst.stride,
+                                        &sse);
+    model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                             xd->plane[1].dequant[1] >> 3,
+                             &tmp_rate_u, &tmp_dist_u);
+    var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                        x->plane[1].src.stride,
+                                        xd->plane[2].dst.buf,
+                                        xd->plane[1].dst.stride,
+                                        &sse);
+    model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                             xd->plane[2].dequant[1] >> 3,
+                             &tmp_rate_v, &tmp_dist_v);
+    rd = RDCOST(x->rdmult, x->rddiv,
+                rs + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                tmp_dist_y + tmp_dist_u + tmp_dist_v);
+    best_rd_nomask = rd;
+
+    mbmi->use_masked_compound = 1;
+    rs = get_mask_bits(bsize) * 256 +
+         vp9_cost_bit(cm->fc.masked_compound_prob, 1);
+    mask_types = (1 << get_mask_bits(bsize));
+    for (mask_index = 0; mask_index < mask_types; ++mask_index) {
+      mbmi->mask_index = mask_index;
+      vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+      var = cpi->fn_ptr[block_size].vf(x->plane[0].src.buf,
+                                       x->plane[0].src.stride,
+                                       xd->plane[0].dst.buf,
+                                       xd->plane[0].dst.stride,
+                                       &sse);
+      model_rd_from_var_lapndz(var, 16 * bw * 16 * bh,
+                               xd->plane[0].dequant[1] >> 3,
+                               &tmp_rate_y, &tmp_dist_y);
+      var = cpi->fn_ptr[uv_block_size].vf(x->plane[1].src.buf,
+                                          x->plane[1].src.stride,
+                                          xd->plane[1].dst.buf,
+                                          xd->plane[1].dst.stride,
+                                          &sse);
+      model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                               xd->plane[1].dequant[1] >> 3,
+                               &tmp_rate_u, &tmp_dist_u);
+      var = cpi->fn_ptr[uv_block_size].vf(x->plane[2].src.buf,
+                                          x->plane[1].src.stride,
+                                          xd->plane[2].dst.buf,
+                                          xd->plane[1].dst.stride,
+                                          &sse);
+      model_rd_from_var_lapndz(var, 8 * bw * 8 * bh,
+                               xd->plane[2].dequant[1] >> 3,
+                               &tmp_rate_v, &tmp_dist_v);
+      rd = RDCOST(x->rdmult, x->rddiv,
+                  rs + tmp_rate_y + tmp_rate_u + tmp_rate_v,
+                  tmp_dist_y + tmp_dist_u + tmp_dist_v);
+      if (rd < best_rd_mask) {
+        best_mask_index = mask_index;
+        best_rd_mask = rd;
+      }
+    }
+    if (best_rd_mask < best_rd_nomask) {
+      mbmi->use_masked_compound = 1;
+      mbmi->mask_index = best_mask_index;
+    } else {
+      mbmi->use_masked_compound = 0;
+      mbmi->mask_index = MASK_NONE;
+    }
+    // Note that when this function returns, mbmi->mask_index will hold
+    // the best mask irrespective of whether the frame level flag is off.
+    if (!cm->use_masked_compound) {
+      mbmi->use_masked_compound = 0;
+    }
+    pred_exists = 0;
+
+    if (mbmi->use_masked_compound)
+      *compmode_masked_cost = get_mask_bits(bsize) * 256 +
+          vp9_cost_bit(cm->fc.masked_compound_prob, 1);
+    else
+      *compmode_masked_cost = vp9_cost_bit(cm->fc.masked_compound_prob, 0);
+  }
+#endif
+
   if (pred_exists) {
     // FIXME(rbultje): mb code still predicts into xd->predictor
     for (i = 0; i < bh * MI_SIZE; ++i)
@@ -3229,6 +3338,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int best_intra16_uv_mode = DC_PRED;
 #endif
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  int is_best_masked_compound = 0;
+#endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
   INTERPOLATIONFILTERTYPE tmp_best_filter = SWITCHABLE;
@@ -3332,6 +3444,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     int compmode_interintra_cost = 0;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    int compmode_masked_cost = 0;
+#endif
     int mode_excluded = 0;
     int64_t txfm_cache[NB_TXFM_MODES] = { 0 };
     YV12_BUFFER_CONFIG *scaled_ref_frame;
@@ -3387,6 +3502,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    mbmi->mask_index = MASK_NONE;
 #endif
 
     // If the segment reference frame feature is enabled....
@@ -3705,6 +3824,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
                                   &compmode_interintra_cost,
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                  &compmode_masked_cost,
+#endif
                                   &rate_y, &distortion,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
@@ -3717,6 +3839,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     if (cpi->common.use_interintra)
       rate2 += compmode_interintra_cost;
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound)
+      rate2 += compmode_masked_cost;
 #endif
 
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION)
@@ -3800,6 +3926,9 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       best_mode = this_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
       is_best_interintra = (mbmi->second_ref_frame == INTRA_FRAME);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+      is_best_masked_compound = (mbmi->mask_index != MASK_NONE);
 #endif
     }
 
@@ -3929,6 +4058,10 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  ++cpi->masked_compound_select_counts[is_best_masked_compound];
+  // if (is_best_masked_compound)  printf("best_masked_compound\n");
 #endif
 
   // Accumulate filter usage stats
@@ -4261,6 +4394,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int best_intra16_uv_mode = DC_PRED;
 #endif
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  int is_best_masked_compound = 0;
+#endif
   int64_t best_overall_rd = INT64_MAX;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
   INTERPOLATIONFILTERTYPE tmp_best_filter = SWITCHABLE;
@@ -4352,6 +4488,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     int compmode_interintra_cost = 0;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    int compmode_masked_cost = 0;
+#endif
 
     // Test best rd so far against threshold for trying this mode.
     if (best_rd <= cpi->rd_threshes[mode_index] ||
@@ -4390,6 +4529,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
     mbmi->interintra_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
     mbmi->interintra_uv_mode = (MB_PREDICTION_MODE)(DC_PRED - 1);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    mbmi->mask_index = MASK_NONE;
 #endif
 
     // Evaluate all sub-pel filters irrespective of whether we can use
@@ -4517,6 +4660,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
                                   &compmode_interintra_cost,
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+                                  &compmode_masked_cost,
+#endif
                                   &rate_y, &distortion_y,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
@@ -4530,6 +4676,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (cpi->common.use_interintra) {
       rate2 += compmode_interintra_cost;
     }
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound)
+      rate2 += compmode_masked_cost;
 #endif
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
       rate2 += compmode_cost;
@@ -4611,6 +4761,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       best_mode = this_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
       is_best_interintra = (mbmi->second_ref_frame == INTRA_FRAME);
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+      is_best_masked_compound = (mbmi->mask_index != MASK_NONE);
 #endif
     }
 
@@ -4738,6 +4891,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMP_INTERINTRA_PRED
   ++cpi->interintra_select_count[is_best_interintra];
   // if (is_best_interintra)  printf("best_interintra\n");
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  ++cpi->masked_compound_select_counts[is_best_masked_compound];
+  // if (is_best_masked_compound)  printf("best_masked_compound\n");
 #endif
 
   // Accumulate filter usage stats

@@ -250,6 +250,7 @@ EXPERIMENT_LIST="
     multiple_arf
     code_zerogroup
     sb8x8
+    masked_compound_inter
 "
 CONFIG_LIST="
     external_build

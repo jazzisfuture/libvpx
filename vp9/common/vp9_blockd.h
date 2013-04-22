@@ -245,6 +245,24 @@ static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
   return mi_height_log2(sb_type) + 2 - CONFIG_SB8X8;
 }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+
+#define MASK_BITS_SML   3
+#define MASK_BITS_MED   4
+#define MASK_BITS_BIG   5
+
+#define MASK_NONE      -1
+
+static inline int get_mask_bits(BLOCK_SIZE_TYPE sb_type) {
+  if (sb_type == BLOCK_SIZE_MB16X16)
+    return MASK_BITS_SML;
+  else if (sb_type <= BLOCK_SIZE_SB32X32)
+    return MASK_BITS_MED;
+  else
+    return MASK_BITS_BIG;
+}
+#endif  // CONFIG_MASKED_COMPOUND_INTER
+
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
@@ -276,6 +294,11 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
+  int mask_index;
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -303,7 +326,11 @@ struct scale_factors {
                                               int den,
                                               int offset_q4);
 
+#if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
+  convolve_fn_t predict[2][2][8];  // horiz, vert, weight (0 - 7)
+#else
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
+#endif
 };
 
 enum { MAX_MB_PLANE = 3 };

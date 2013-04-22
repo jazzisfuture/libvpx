@@ -110,6 +110,9 @@ typedef struct {
 #if CONFIG_COMP_INTERINTRA_PRED
   vp9_prob interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_prob masked_compound_prob;
+#endif
 
   int mv_ref_ct[INTER_MODE_CONTEXTS][4][2];
   int vp9_mode_contexts[INTER_MODE_CONTEXTS][4];
@@ -459,6 +462,10 @@ typedef struct VP9_COMP {
 #if CONFIG_COMP_INTERINTRA_PRED
   unsigned int interintra_count[2];
   unsigned int interintra_select_count[2];
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  unsigned int masked_compound_counts[2];
+  unsigned int masked_compound_select_counts[2];
 #endif
 
   nmv_context_counts NMVcount;
