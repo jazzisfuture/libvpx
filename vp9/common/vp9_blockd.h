@@ -232,6 +232,33 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
   return a;
 }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+
+#define MASK_NONE      -1
+
+// Use 3mv mask mode rather than explicit partitions
+#define USE_3MV_MASK  1
+
+#if USE_3MV_MASK == 0
+
+#define MASK_BITS_SML   3
+#define MASK_BITS_MED   4
+#define MASK_BITS_BIG   5
+
+static inline int get_mask_bits(BLOCK_SIZE_TYPE sb_type) {
+  if (sb_type == BLOCK_SIZE_AB4X4)
+    return 0;
+  if (sb_type == BLOCK_SIZE_SB8X8 || sb_type == BLOCK_SIZE_MB16X16)
+    return MASK_BITS_SML;
+  else if (sb_type <= BLOCK_SIZE_SB32X32)
+    return MASK_BITS_MED;
+  else
+    return MASK_BITS_BIG;
+}
+#endif  // USE_3MV_MASK == 0
+
+#endif  // CONFIG_MASKED_COMPOUND_INTER
+
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
@@ -245,6 +272,9 @@ typedef struct {
   unsigned char mb_skip_coeff;                                /* does this mb has coefficients at all, 1=no coefficients, 0=need decode tokens */
   unsigned char need_to_clamp_mvs;
   unsigned char need_to_clamp_secondmv;
+#if CONFIG_MASKED_COMPOUND_INTER && USE_3MV_MASK
+  unsigned char need_to_clamp_mv3;
+#endif
   unsigned char segment_id;           // Segment id for current frame
 
   // Flags used for prediction status of various bistream signals
@@ -259,6 +289,14 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
+  int mask_index;
+#if USE_3MV_MASK
+  int_mv mv3;
+#endif
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
