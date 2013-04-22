@@ -124,4 +124,58 @@ static void set_scale_factors(MACROBLOCKD *xd,
 
 void vp9_setup_scale_factors(VP9_COMMON *cm, int i);
 
+static int_mv32 motion_vector_q3_to_q4_with_scaling(
+    const int_mv *src_mv,
+    const struct scale_factors *scale) {
+  // returns mv * scale + offset
+  int_mv32 result;
+  const int32_t mv_row_q4 = src_mv->as_mv.row << 1;
+  const int32_t mv_col_q4 = src_mv->as_mv.col << 1;
+
+  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
+  result.as_mv.row =  mv_row_q4 * scale->y_num / scale->y_den
+                      + scale->y_offset_q4;
+  result.as_mv.col =  mv_col_q4 * scale->x_num / scale->x_den
+                      + scale->x_offset_q4;
+  return result;
+}
+
+static int_mv32 motion_vector_q3_to_q4_without_scaling(
+    const int_mv *src_mv,
+    const struct scale_factors *scale) {
+  // returns mv * scale + offset
+  int_mv32 result;
+
+  result.as_mv.row = src_mv->as_mv.row << 1;
+  result.as_mv.col = src_mv->as_mv.col << 1;
+  return result;
+}
+
+static int32_t motion_vector_component_q4_with_scaling(int mv_q4,
+                                                       int num,
+                                                       int den,
+                                                       int offset_q4) {
+  // returns the scaled and offset value of the mv component.
+
+  /* TODO(jkoleszar): make fixed point, or as a second multiply? */
+  return mv_q4 * num / den + offset_q4;
+}
+
+static int32_t motion_vector_component_q4_without_scaling(int mv_q4,
+                                                          int num,
+                                                          int den,
+                                                          int offset_q4) {
+  // returns the scaled and offset value of the mv component.
+  (void)num;
+  (void)den;
+  (void)offset_q4;
+  return mv_q4;
+}
+
+#if CONFIG_MASKED_COMPOUND_INTER
+void vp9_generate_masked_weight(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                                int h, int w, uint8_t *mask, int stride);
+void vp9_generate_hard_mask(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                            int h, int w, uint8_t *mask, int stride);
+#endif
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
