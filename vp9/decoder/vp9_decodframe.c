@@ -804,6 +804,11 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->NMVcount);
   vp9_zero(fc->mv_ref_ct);
   vp9_zero(fc->partition_counts);
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  fc->pre_masked_compound_prob = fc->masked_compound_prob;
+  vp9_zero(fc->masked_compound_counts);
+#endif
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
@@ -1025,6 +1030,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     xd->allow_high_precision_mv = vp9_read_bit(&header_bc);
     pc->mcomp_filter_type = read_mcomp_filter_type(&header_bc);
 
+#if CONFIG_MASKED_COMPOUND_INTER
+    pc->use_masked_compound = vp9_read_bit(&header_bc);
+#endif
     // To enable choice of different interpolation filters
     vp9_setup_interp_filters(xd, pc->mcomp_filter_type, pc);
   }

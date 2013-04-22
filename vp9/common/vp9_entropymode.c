@@ -256,6 +256,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
   vpx_memcpy(x->fc.partition_prob, vp9_partition_probs,
              sizeof(vp9_partition_probs));
 
+#if CONFIG_MASKED_COMPOUND_INTER
+  x->fc.masked_compound_prob = VP9_DEF_MASKED_COMPOUND_PROB;
+#endif
   x->ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
   x->ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
   x->ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
@@ -513,6 +516,19 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
                       vp9_sub_mv_ref_tree, fc->sub_mv_ref_counts[i],
                       fc->pre_sub_mv_ref_prob[i], fc->sub_mv_ref_prob[i],
                       LEFT4X4);
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (cm->use_masked_compound) {
+    int factor, masked_compound_prob, count;
+    masked_compound_prob = get_binary_prob(cm->fc.masked_compound_counts[0],
+                                           cm->fc.masked_compound_counts[1]);
+    count = cm->fc.masked_compound_counts[0] + cm->fc.masked_compound_counts[1];
+    count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+    factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
+    cm->fc.masked_compound_prob = weighted_prob(cm->fc.pre_masked_compound_prob,
+                                                masked_compound_prob, factor);
+  }
+#endif
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
     update_mode_probs(PARTITION_TYPES, vp9_partition_tree,
                       fc->partition_counts[i], fc->pre_partition_prob[i],

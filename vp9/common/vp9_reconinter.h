@@ -199,4 +199,11 @@ static int32_t motion_vector_component_q4_without_scaling(int mv_q4,
   (void)offset_q4;
   return mv_q4;
 }
+
+#if CONFIG_MASKED_COMPOUND_INTER
+void vp9_generate_masked_weight(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                                int h, int w, uint8_t *mask, int stride);
+void vp9_generate_hard_mask(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                            int h, int w, uint8_t *mask, int stride);
+#endif
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
