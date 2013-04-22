@@ -59,6 +59,31 @@ typedef unsigned int (*vp9_subp_avg_variance_fn_t)(const uint8_t *src_ptr,
                                                    int Refstride,
                                                    unsigned int *sse,
                                                    const uint8_t *second_pred);
+#if CONFIG_MASKED_COMPOUND_INTER
+typedef unsigned int(*vp9_masked_sad_fn_t)(const uint8_t *src_ptr,
+                                           int source_stride,
+                                           const uint8_t *ref_ptr,
+                                           int ref_stride,
+                                           const uint8_t *msk_ptr,
+                                           int msk_stride,
+                                           unsigned int max_sad);
+typedef unsigned int (*vp9_masked_variance_fn_t)(const uint8_t *src_ptr,
+                                                 int source_stride,
+                                                 const uint8_t *ref_ptr,
+                                                 int ref_stride,
+                                                 const uint8_t *msk_ptr,
+                                                 int msk_stride,
+                                                 unsigned int *sse);
+typedef unsigned int (*vp9_masked_subpixvariance_fn_t)(const uint8_t *src_ptr,
+                                                       int source_stride,
+                                                       int xoffset,
+                                                       int yoffset,
+                                                       const uint8_t *ref_ptr,
+                                                       int Refstride,
+                                                       const uint8_t *msk_ptr,
+                                                       int msk_stride,
+                                                       unsigned int *sse);
+#endif
 
 typedef void (*vp9_ssimpf_fn_t)(uint8_t *s, int sp, uint8_t *r,
                                 int rp, unsigned long *sum_s,
@@ -84,6 +109,11 @@ typedef struct vp9_variance_vtable {
     vp9_sad_multi_fn_t         sdx3f;
     vp9_sad_multi1_fn_t        sdx8f;
     vp9_sad_multi_d_fn_t       sdx4df;
+#if CONFIG_MASKED_COMPOUND_INTER
+    vp9_masked_sad_fn_t            msdf;
+    vp9_masked_variance_fn_t       mvf;
+    vp9_masked_subpixvariance_fn_t msvf;
+#endif
 } vp9_variance_fn_ptr_t;
 
 // #if CONFIG_COMP_INTER_JOINT_SEARCH
