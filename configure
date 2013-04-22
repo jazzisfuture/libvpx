@@ -247,6 +247,7 @@ EXPERIMENT_LIST="
     non420
     alpha
     ab4x4
+    masked_compound_inter
 "
 CONFIG_LIST="
     external_build
