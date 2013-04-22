@@ -172,6 +172,9 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
 #if CONFIG_COMP_INTERINTRA_PRED
   cc->interintra_prob = cm->fc.interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  cc->masked_compound_prob = cm->fc.masked_compound_prob;
+#endif
 #if CONFIG_CODE_ZEROGROUP
   vp9_copy(cc->zpc_probs_4x4, cm->fc.zpc_probs_4x4);
   vp9_copy(cc->zpc_probs_8x8, cm->fc.zpc_probs_8x8);
@@ -233,6 +236,9 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->fc.switchable_interp_prob, cc->switchable_interp_prob);
 #if CONFIG_COMP_INTERINTRA_PRED
   cm->fc.interintra_prob = cc->interintra_prob;
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  cm->fc.masked_compound_prob = cc->masked_compound_prob;
 #endif
 #if CONFIG_CODE_ZEROGROUP
   vp9_copy(cm->fc.zpc_probs_4x4, cc->zpc_probs_4x4);
