@@ -369,7 +369,6 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
 
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(pbi, r);
-
     // Baseline probabilities for decoding reference frame
     cm->prob_intra_coded = vp9_read_prob(r);
     cm->prob_last_coded  = vp9_read_prob(r);
@@ -384,7 +383,16 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
       for (i = 0; i < COMP_PRED_CONTEXTS; i++)
         cm->prob_comppred[i] = vp9_read_prob(r);
 
-    // VP9_INTRA_MODES
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cm->comp_pred_mode != SINGLE_PREDICTION_ONLY) {
+      cm->use_masked_compound = vp9_read_bit(r);
+      if (cm->use_masked_compound) {
+        if (vp9_read(r, VP9_UPD_MASKED_COMPOUND_PROB))
+          cm->fc.masked_compound_prob = vp9_read_prob(r);
+      }
+    }
+#endif
+
     if (vp9_read_bit(r))
       for (i = 0; i < VP9_INTRA_MODES - 1; ++i)
         cm->fc.y_mode_prob[i] = vp9_read_prob(r);
@@ -496,6 +504,11 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   mbmi->need_to_clamp_mvs = 0;
   mbmi->need_to_clamp_secondmv = 0;
   mbmi->second_ref_frame = NONE;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  mbmi->use_masked_compound = 0;
+  mbmi->mask_index = MASK_NONE;
+#endif
 
   // Make sure the MACROBLOCKD mode info pointer is pointed at the
   // correct entry for the current macroblock.
@@ -752,6 +765,27 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           break;
       }
     }
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    if (pbi->common.use_masked_compound &&
+        pbi->common.comp_pred_mode != SINGLE_PREDICTION_ONLY &&
+        mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
+        get_mask_bits(mi->mbmi.sb_type) &&
+        mbmi->second_ref_frame > INTRA_FRAME) {
+      mbmi->use_masked_compound =
+          vp9_read(r, pbi->common.fc.masked_compound_prob);
+      // printf("use_masked_compund %d/%d/%d\n",
+      //    mbmi->use_masked_compound, pbi->common.fc.masked_compound_prob,
+      //    mi->mbmi.sb_type);
+      pbi->common.fc.masked_compound_counts[mbmi->use_masked_compound]++;
+      if (mbmi->use_masked_compound) {
+        mbmi->mask_index = vp9_read_literal(r, get_mask_bits(mi->mbmi.sb_type));
+        // printf("%d mask %d\n",
+        //        pbi->common.current_video_frame, mbmi->mask_index);
+      }
+    }
+#endif
+
   } else {
     // required for left and above block mv
     mv0->as_int = 0;

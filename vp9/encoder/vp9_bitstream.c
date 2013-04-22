@@ -783,6 +783,25 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                       &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
                       nmvc, xd->allow_high_precision_mv);
     }
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (cpi->common.use_masked_compound &&
+        cpi->common.comp_pred_mode != SINGLE_PREDICTION_ONLY &&
+        mode >= NEARESTMV && mode <= NEWMV &&
+        get_mask_bits(mi->sb_type) &&
+        mi->second_ref_frame > INTRA_FRAME) {
+      vp9_write(bc, mi->use_masked_compound, pc->fc.masked_compound_prob);
+      // if (!cpi->dummy_packing)
+      //   printf("use_masked_compund %d/%d/%d\n",
+      //          mi->use_masked_compound, pc->fc.masked_compound_prob, mi->sb_type);
+      if (mi->use_masked_compound) {
+        vp9_write_literal(
+            bc, mi->mask_index, get_mask_bits(mi->sb_type));
+        // if (!cpi->dummy_packing)
+        //   printf("%d mask %d\n",
+        //          pc->current_video_frame, mi->mask_index);
+      }
+    }
+#endif
   }
 }
 
@@ -1600,6 +1619,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(cpi->common.fc.pre_uv_mode_prob, cpi->common.fc.uv_mode_prob);
   vp9_copy(cpi->common.fc.pre_partition_prob, cpi->common.fc.partition_prob);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
+#if CONFIG_MASKED_COMPOUND_INTER
+  cpi->common.fc.pre_masked_compound_prob = cpi->common.fc.masked_compound_prob;
+#endif
   vp9_zero(cpi->common.fc.mv_ref_ct);
 
   update_coef_probs(cpi, &header_bc);
@@ -1644,6 +1666,24 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
           }
         }
       }
+#if CONFIG_MASKED_COMPOUND_INTER
+      if (use_compound_pred) {
+        if (!cpi->dummy_packing && pc->use_masked_compound)
+          pc->use_masked_compound = (cpi->masked_compound_counts[1] > 0);
+        vp9_write_bit(&header_bc, pc->use_masked_compound);
+        if (pc->use_masked_compound) {
+          vp9_cond_prob_update(&header_bc,
+                               &pc->fc.masked_compound_prob,
+                               VP9_UPD_MASKED_COMPOUND_PROB,
+                               cpi->masked_compound_counts);
+        } else {
+          vp9_zero(cpi->masked_compound_counts);
+        }
+      } else {
+        if (!cpi->dummy_packing) pc->use_masked_compound = 0;
+        vp9_zero(cpi->masked_compound_counts);
+      }
+#endif
     }
     update_mbintra_mode_probs(cpi, &header_bc);
 

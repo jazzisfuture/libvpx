@@ -475,7 +475,13 @@ static void update_state(VP9_COMP *cpi,
         for (i = 0; i < bw; ++i)
           xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
-
+#if CONFIG_MASKED_COMPOUND_INTER
+    if (mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
+        get_mask_bits(mbmi->sb_type) &&
+        mbmi->second_ref_frame > INTRA_FRAME) {
+      ++cpi->masked_compound_counts[mbmi->use_masked_compound];
+    }
+#endif
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         is_inter_mode(mbmi->mode)) {
       ++cpi->switchable_interp_count
@@ -1468,6 +1474,11 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->common.fc.mv_ref_ct)
   vp9_zero(cpi->partition_count);
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_zero(cpi->masked_compound_counts);
+  vp9_zero(cpi->masked_compound_select_counts);
+#endif
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.

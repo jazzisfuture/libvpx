@@ -196,6 +196,26 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
   return a;
 }
 
+#if CONFIG_MASKED_COMPOUND_INTER
+
+#define MASK_BITS_SML   3
+#define MASK_BITS_MED   4
+#define MASK_BITS_BIG   5
+
+#define MASK_NONE      -1
+
+static inline int get_mask_bits(BLOCK_SIZE_TYPE sb_type) {
+  if (sb_type == BLOCK_SIZE_AB4X4)
+     return 0;
+  if (sb_type <= BLOCK_SIZE_SB8X8)
+    return MASK_BITS_SML;
+  else if (sb_type <= BLOCK_SIZE_SB32X32)
+    return MASK_BITS_MED;
+  else
+    return MASK_BITS_BIG;
+}
+#endif  // CONFIG_MASKED_COMPOUND_INTER
+
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
@@ -223,6 +243,11 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
+  int mask_index;
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -247,7 +272,11 @@ struct scale_factors {
                                 const struct scale_factors *scale);
   int32_t (*scale_mv_component_q4)(int mv_q4, int num, int den, int offset_q4);
 
+#if CONFIG_IMPLICIT_COMPOUNDINTER_WEIGHT
+  convolve_fn_t predict[2][2][8];  // horiz, vert, weight (0 - 7)
+#else
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
+#endif
 };
 
 #if CONFIG_ALPHA
