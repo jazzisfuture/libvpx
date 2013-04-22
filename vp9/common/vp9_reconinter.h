@@ -30,6 +30,24 @@ void vp9_build_inter_predictors_sb(MACROBLOCKD *mb,
                                    int mb_row, int mb_col,
                                    BLOCK_SIZE_TYPE bsize);
 
+#if CONFIG_MASKED_COMPOUND_INTER
+void vp9_build_inter_predictors_singlemv_sby(MACROBLOCKD *mb,
+                                             int mb_row, int mb_col,
+                                             BLOCK_SIZE_TYPE bsize,
+                                             int singlemv,
+                                             uint8_t *dst, int dst_stride);
+void vp9_build_inter_predictors_singlemv_sbuv(MACROBLOCKD *xd,
+                                              int mi_row,
+                                              int mi_col,
+                                              BLOCK_SIZE_TYPE bsize,
+                                              int which_mv,
+                                              uint8_t *dstu, int ustride,
+                                              uint8_t *dstv, int vstride);
+int vp9_get_3mv_mask_y(MACROBLOCKD *xd, int mi_row, int mi_col,
+                       BLOCK_SIZE_TYPE bsize,
+                       uint8_t *mask, int mask_stride);
+#endif
+
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE filter,
                               VP9_COMMON *cm);
@@ -199,4 +217,11 @@ static int32_t motion_vector_component_q4_without_scaling(int mv_q4,
   (void)offset_q4;
   return mv_q4;
 }
+
+#if CONFIG_MASKED_COMPOUND_INTER
+void vp9_generate_masked_weight(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                                int h, int w, uint8_t *mask, int stride);
+void vp9_generate_hard_mask(int mask_index, BLOCK_SIZE_TYPE sb_type,
+                            int h, int w, uint8_t *mask, int stride);
+#endif
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
