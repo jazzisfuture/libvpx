@@ -171,14 +171,32 @@ static void d117_predictor(uint8_t *ypred_ptr, int y_stride,
                            int bw, int bh,
                            uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
+  // first row
   for (c = 0; c < bw; c++)
     ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[c - 1] + yabove_row[c], 1);
   ypred_ptr += y_stride;
-  for (c = 0; c < bw; c++)
-    ypred_ptr[c] = yabove_row[c - 1];
+
+  // second row
+  ypred_ptr[0] = ROUND_POWER_OF_TWO(yleft_col[0] +
+                                    yabove_row[-1] * 2 +
+                                    yabove_row[0], 2);
+  for (c = 1; c < bw; c++)
+    ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[c - 2] +
+                                      yabove_row[c - 1] * 2 +
+                                      yabove_row[c], 2);
+    yabove_row[c - 1];
   ypred_ptr += y_stride;
+
+  // the rest of first col
+  ypred_ptr[0] = ROUND_POWER_OF_TWO(yabove_row[-1] +
+                                    yleft_col[0] * 2 +
+                                    yleft_col[1], 2);
+  for (r = 3; r < bh; ++r)
+    ypred_ptr[(r-2) * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r - 3] +
+                                                     yleft_col[r - 2] * 2 +
+                                                     yleft_col[r - 1], 2);
+  // the rest of the block
   for (r = 2; r < bh; ++r) {
-    ypred_ptr[0] = yleft_col[r - 2];
     for (c = 1; c < bw; c++)
       ypred_ptr[c] = ypred_ptr[-2 * y_stride + c - 1];
     ypred_ptr += y_stride;
@@ -369,7 +387,6 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
             average += yabove_row[i];
           count += bw;
         }
-
         if (left_available) {
           for (i = 0; i < bh; i++)
             average += yleft_col[i];
@@ -377,7 +394,6 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
         }
         expected_dc = (average + (count >> 1)) / count;
       }
-
       for (r = 0; r < bh; r++) {
         vpx_memset(ypred_ptr, expected_dc, bw);
         ypred_ptr += y_stride;
@@ -400,7 +416,6 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
       for (r = 0; r < bh; r++) {
         for (c = 0; c < bw; c++)
           ypred_ptr[c] = clip_pixel(yleft_col[r] + yabove_row[c] - ytop_left);
-
         ypred_ptr += y_stride;
       }
       break;
