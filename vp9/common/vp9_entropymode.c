@@ -153,12 +153,19 @@ const vp9_prob vp9_mbsplit_probs [VP9_NUMMBSPLITS - 1] = { 110, 111, 150};
 
 #if CONFIG_SBSEGMENT
 const vp9_prob vp9_partition_probs[PARTITION_PLANES][PARTITION_TYPES - 1] = {
-  {110, 111, 150},
-  {110, 111, 150},
+  {202, 162, 107},
+  {16,  2,   169},
+  {3,   246,  19},
+  {104, 90,  134},
+  {183, 70,  109},
+  {30,  14,  162},
+  {67,  208,  22},
+  {4,   17,   5},
 };
 #else
 const vp9_prob vp9_partition_probs[PARTITION_PLANES][PARTITION_TYPES - 1] = {
-  {200}, {200},
+  {200}, {200}, {200}, {200},
+  {200}, {200}, {200}, {200},
 };
 #endif
 
