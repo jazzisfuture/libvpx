@@ -63,7 +63,6 @@ static void encode_intra4x4block(MACROBLOCK *x, int ib) {
                      *(b->base_dst) + b->dst, b->dst_stride);
 
   tx_type = get_tx_type_4x4(&x->e_mbd, ib);
-  assert(be->coeff == coeff);
   if (tx_type != DCT_DCT) {
     vp9_short_fht4x4(src_diff, coeff, 16, tx_type);
     vp9_ht_quantize_b_4x4(x, ib, tx_type);
@@ -197,7 +196,6 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
       b = &xd->block[ib + iblock[i]];
       be = &x->block[ib + iblock[i]];
       tx_type = get_tx_type_4x4(xd, ib + iblock[i]);
-      assert(be->coeff == coeff);
       if (tx_type != DCT_DCT) {
         vp9_short_fht4x4(src_diff, coeff, 16, tx_type);
         vp9_ht_quantize_b_4x4(x, ib + iblock[i], tx_type);
@@ -247,7 +245,6 @@ static void encode_intra_uv4x4(MACROBLOCK *x, int ib, int mode) {
       raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16, plane, block,
                                 x->plane[plane].src_diff);
 
-  assert(be->coeff == coeff);
   assert(ib >= 16 && ib < 24);
   vp9_intra_uv4x4_predict(&x->e_mbd, b, mode,
                           *(b->base_dst) + b->dst, b->dst_stride);
