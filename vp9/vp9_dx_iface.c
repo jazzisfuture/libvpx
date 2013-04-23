@@ -408,9 +408,9 @@ static void parse_superframe_index(const uint8_t *data,
   *count = 0;
 
   if ((marker & 0xe0) == 0xc0) {
-    const unsigned int frames = (marker & 0x7) + 1;
-    const unsigned int mag = ((marker >> 3) & 3) + 1;
-    const size_t index_sz = 2 + mag  * frames;
+    const uint32_t frames = (marker & 0x7) + 1;
+    const uint32_t mag = ((marker >> 3) & 0x3) + 1;
+    const size_t index_sz = 2 + mag * frames;
 
     if (data_sz >= index_sz && data[data_sz - index_sz] == marker) {
       // found a valid superframe index
@@ -447,9 +447,9 @@ static vpx_codec_err_t vp9_decode(vpx_codec_alg_priv_t  *ctx,
     // Skip over the superframe index, if present
     if (data_sz && (*data_start & 0xe0) == 0xc0) {
       const uint8_t marker = *data_start;
-      const unsigned int frames = (marker & 0x7) + 1;
-      const unsigned int mag = ((marker >> 3) & 3) + 1;
-      const unsigned int index_sz = 2 + mag  * frames;
+      const uint32_t frames = (marker & 0x7) + 1;
+      const uint32_t mag = ((marker >> 3) & 0x3) + 1;
+      const uint32_t index_sz = 2 + mag * frames;
 
       if (data_sz >= index_sz && data_start[index_sz - 1] == marker) {
         data_start += index_sz;
