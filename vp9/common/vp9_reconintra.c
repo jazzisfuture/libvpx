@@ -189,11 +189,24 @@ static void d135_predictor(uint8_t *ypred_ptr, int y_stride,
                            int bw, int bh,
                            uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
-  ypred_ptr[0] = yabove_row[-1];
+  ypred_ptr[0] = ROUND_POWER_OF_TWO(yleft_col[0] +
+                                    yabove_row[-1] * 2 +
+                                    yabove_row[0], 2);
   for (c = 1; c < bw; c++)
-    ypred_ptr[c] = yabove_row[c - 1];
-  for (r = 1; r < bh; ++r)
-    ypred_ptr[r * y_stride] = yleft_col[r - 1];
+    ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[c - 2] +
+                                      yabove_row[c - 1] * 2 +
+                                      yabove_row[c], 2);
+
+  ypred_ptr[y_stride] = ROUND_POWER_OF_TWO(yabove_row[-1] +
+                                           yleft_col[0] * 2 +
+                                           yleft_col[1], 2);
+  for (r = 2; r < bh - 1; ++r)
+    ypred_ptr[r * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r - 2] +
+                                                 yleft_col[r - 1] * 2 +
+                                                 yleft_col[r + 1], 2);
+
+  ypred_ptr[(bh - 1) * y_stride] = ROUND_POWER_OF_TWO(yleft_col[bh - 2] +
+                                                      yleft_col[bh - 1] * 3, 2);
 
   ypred_ptr += y_stride;
   for (r = 1; r < bh; ++r) {
@@ -297,7 +310,7 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
                                 int up_available, int left_available,
                                 int right_available) {
   int r, c, i;
-  uint8_t yleft_col[64], yabove_data[65], ytop_left;
+  uint8_t yleft_col[64], yabove_data[129], ytop_left;
   uint8_t *yabove_row = yabove_data + 1;
 
   // 127 127 127 .. 127 127 127 127 127 127
@@ -319,7 +332,7 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
     vpx_memcpy(yabove_row, yabove_ptr, bw);
     ytop_left = left_available ? yabove_ptr[-1] : 127;
   } else {
-    vpx_memset(yabove_row, 127, bw);
+    vpx_memset(yabove_row, 127, bw * 2);
     ytop_left = 127;
   }
   yabove_row[-1] = ytop_left;
@@ -807,7 +820,22 @@ void vp9_intra8x8_predict(MACROBLOCKD *xd,
                              mode, 8, 8, have_top, have_left,
                              have_right);
 }
+#if 1
+void vp9_intra4x4_predict_new(MACROBLOCKD *xd,
+                          BLOCKD *b,
+                          int mode,
+                          uint8_t *predictor, int pre_stride) {
+  const int block_idx = (b - xd->block);
+  const int have_top = (block_idx >> 2) || xd->up_available;
+  const int have_left = (block_idx & 3) || xd->left_available;
+  const int have_right = ((block_idx & 3) != 3) || xd->right_available;
 
+  vp9_build_intra_predictors(*(b->base_dst) + b->dst,
+                             b->dst_stride, predictor, pre_stride,
+                             mode, 4, 4, have_top, have_left,
+                             have_right);
+}
+#endif
 void vp9_intra_uv4x4_predict(MACROBLOCKD *xd,
                              BLOCKD *b,
                              int mode,
