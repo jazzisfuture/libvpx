@@ -28,7 +28,6 @@ static INLINE int plane_idx(int plane) {
 
 void vp9_ht_quantize_b_4x4(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type) {
   MACROBLOCKD *const xd = &mb->e_mbd;
-  BLOCK *const b = &mb->block[0];
   BLOCKD *const d = &xd->block[0];
   int i, rc, eob;
   int zbin;
@@ -63,7 +62,7 @@ void vp9_ht_quantize_b_4x4(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type) {
 
   eob = -1;
 
-  if (!b->skip_block) {
+  if (!mb->skip_block) {
     for (i = 0; i < 16; i++) {
       rc   = pt_scan[i];
       z    = coeff_ptr[rc];
@@ -97,7 +96,6 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx, int y_blocks) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   const struct plane_block_idx pb_idx = plane_block_idx(y_blocks, b_idx);
   const int c_idx = plane_idx(pb_idx.plane);
-  BLOCK *const b = &mb->block[c_idx];
   BLOCKD *const d = &xd->block[c_idx];
   int i, rc, eob;
   int zbin;
@@ -124,7 +122,7 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx, int y_blocks) {
 
   eob = -1;
 
-  if (!b->skip_block) {
+  if (!mb->skip_block) {
     for (i = 0; i < 16; i++) {
       rc   = vp9_default_zig_zag1d_4x4[i];
       z    = coeff_ptr[rc];
@@ -166,7 +164,6 @@ void vp9_regular_quantize_b_8x8(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
                                       pb_idx.block, 16);
   int16_t *coeff_ptr = BLOCK_OFFSET(mb->plane[pb_idx.plane].coeff,
                                     pb_idx.block, 16);
-  BLOCK *const b = &mb->block[c_idx];
   BLOCKD *const d = &xd->block[c_idx];
   const int *pt_scan;
 
@@ -188,7 +185,7 @@ void vp9_regular_quantize_b_8x8(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
   vpx_memset(qcoeff_ptr, 0, 64 * sizeof(int16_t));
   vpx_memset(dqcoeff_ptr, 0, 64 * sizeof(int16_t));
 
-  if (!b->skip_block) {
+  if (!mb->skip_block) {
     int i, rc, eob;
     int zbin;
     int x, y, z, sz;
@@ -313,7 +310,6 @@ void vp9_regular_quantize_b_16x16(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
   MACROBLOCKD *const xd = &mb->e_mbd;
   const struct plane_block_idx pb_idx = plane_block_idx(y_blocks, b_idx);
   const int c_idx = plane_idx(pb_idx.plane);
-  BLOCK *const b = &mb->block[c_idx];
   BLOCKD *const d = &xd->block[c_idx];
   const int *pt_scan;
 
@@ -334,7 +330,7 @@ void vp9_regular_quantize_b_16x16(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
   if (c_idx == 20) assert(pb_idx.plane == 2);
   quantize(mb->plane[pb_idx.plane].zrun_zbin_boost,
            BLOCK_OFFSET(mb->plane[pb_idx.plane].coeff, pb_idx.block, 16),
-           256, b->skip_block,
+           256, mb->skip_block,
            mb->plane[pb_idx.plane].zbin,
            mb->plane[pb_idx.plane].round,
            mb->plane[pb_idx.plane].quant,
@@ -351,7 +347,6 @@ void vp9_regular_quantize_b_32x32(MACROBLOCK *mb, int b_idx, int y_blocks) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   const struct plane_block_idx pb_idx = plane_block_idx(y_blocks, b_idx);
   const int c_idx = plane_idx(pb_idx.plane);
-  BLOCK *const b = &mb->block[c_idx];
   BLOCKD *const d = &xd->block[c_idx];
 
   if (c_idx == 0) assert(pb_idx.plane == 0);
@@ -359,7 +354,7 @@ void vp9_regular_quantize_b_32x32(MACROBLOCK *mb, int b_idx, int y_blocks) {
   if (c_idx == 20) assert(pb_idx.plane == 2);
   quantize(mb->plane[pb_idx.plane].zrun_zbin_boost,
            BLOCK_OFFSET(mb->plane[pb_idx.plane].coeff, pb_idx.block, 16),
-           1024, b->skip_block,
+           1024, mb->skip_block,
            mb->plane[pb_idx.plane].zbin,
            mb->plane[pb_idx.plane].round,
            mb->plane[pb_idx.plane].quant,
@@ -541,7 +536,6 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
   MACROBLOCKD *xd = &x->e_mbd;
   int zbin_extra;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
-  int skip_block;
 
   // Select the baseline MB Q index allowing for any segment level change.
   if (vp9_segfeature_active(xd, segment_id, SEG_LVL_ALT_Q)) {
@@ -588,11 +582,7 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
   for (i = 16; i < 24; i++)
     x->e_mbd.block[i].dequant = cpi->common.uv_dequant[qindex];
 
-  skip_block = vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP);
-  for (i = 0; i < 24; i++) {
-    // Segment skip feature.
-    x->block[i].skip_block = skip_block;
-  }
+  x->skip_block = vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP);
 
   /* save this macroblock QIndex for vp9_update_zbin_extra() */
   x->e_mbd.q_index = qindex;
