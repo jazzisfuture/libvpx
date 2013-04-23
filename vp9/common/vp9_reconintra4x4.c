@@ -161,6 +161,12 @@ B_PREDICTION_MODE vp9_find_bpred_context(MACROBLOCKD *xd, BLOCKD *x) {
 }
 #endif
 
+extern void vp9_intra4x4_predict_new(MACROBLOCKD *xd,
+                                     BLOCKD *b,
+                                     int mode,
+                                     uint8_t *predictor,
+                                     int pre_stride);
+
 void vp9_intra4x4_predict(MACROBLOCKD *xd,
                           BLOCKD *x,
                           int b_mode,
@@ -180,6 +186,12 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
    * 129  G   H  ..  S   T   T   T   T   T
    *  ..
    */
+
+  if (1 /*b_mode != B_D45_PRED*/) {
+    vp9_intra4x4_predict_new (xd, x, b_mode, predictor, ps);
+    return;
+  }
+
 
   if (have_left) {
     uint8_t *left_ptr = *(x->base_dst) + x->dst - 1;
@@ -257,53 +269,6 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
 #endif
 
   switch (b_mode) {
-    case B_DC_PRED: {
-      int expected_dc = 128;
-      if (have_top || have_left) {
-        int average = 0;
-        int count = 0;
-        if (have_top) {
-          for (i = 0; i < 4; i++)
-            average += above[i];
-          count += 4;
-        }
-        if (have_left) {
-          for (i = 0; i < 4; i++)
-            average += left[i];
-          count += 4;
-        }
-        expected_dc = (average + (count >> 1)) / count;
-      }
-      for (r = 0; r < 4; r++) {
-        for (c = 0; c < 4; c++)
-          predictor[c] = expected_dc;
-        predictor += ps;
-      }
-    }
-    break;
-    case B_TM_PRED: {
-      /* prediction similar to true_motion prediction */
-      for (r = 0; r < 4; r++) {
-        for (c = 0; c < 4; c++)
-          predictor[c] = clip_pixel(above[c] - top_left + left[r]);
-        predictor += ps;
-      }
-    }
-    break;
-    case B_V_PRED:
-      for (r = 0; r < 4; r++) {
-        for (c = 0; c < 4; c++)
-          predictor[c] = above[c];
-        predictor += ps;
-      }
-      break;
-    case B_H_PRED:
-      for (r = 0; r < 4; r++) {
-        for (c = 0; c < 4; c++)
-          predictor[c] = left[r];
-        predictor += ps;
-      }
-      break;
     case B_D45_PRED: {
       uint8_t *p = above;
 
@@ -327,120 +292,6 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
 
     }
     break;
-    case B_D135_PRED: {
-      uint8_t p[9] = { left[3], left[2], left[1], left[0],
-                       top_left,
-                       above[0], above[1], above[2], above[3] };
-
-      predictor[3 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1] * 2 + p[2], 2);
-      predictor[3 * ps + 1] =
-        predictor[2 * ps + 0] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[3 * ps + 2] =
-        predictor[2 * ps + 1] =
-          predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[4], 2);
-      predictor[3 * ps + 3] =
-        predictor[2 * ps + 2] =
-          predictor[1 * ps + 1] =
-            predictor[0 * ps + 0] =
-              ROUND_POWER_OF_TWO(p[3] + p[4] * 2 + p[5], 2);
-      predictor[2 * ps + 3] =
-        predictor[1 * ps + 2] =
-          predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[4] + p[5] * 2 + p[6], 2);
-      predictor[1 * ps + 3] =
-        predictor[0 * ps + 2] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
-      predictor[0 * ps + 3] = ROUND_POWER_OF_TWO(p[6] + p[7] * 2 + p[8], 2);
-
-    }
-    break;
-    case B_D117_PRED: {
-      uint8_t p[9] = { left[3], left[2], left[1], left[0],
-                       top_left,
-                       above[0], above[1], above[2], above[3] };
-
-      predictor[3 * ps + 0] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[2 * ps + 0] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[4], 2);
-      predictor[3 * ps + 1] =
-        predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[3] + p[4] * 2 + p[5], 2);
-      predictor[2 * ps + 1] =
-        predictor[0 * ps + 0] = ROUND_POWER_OF_TWO(p[4] + p[5], 1);
-      predictor[3 * ps + 2] =
-        predictor[1 * ps + 1] = ROUND_POWER_OF_TWO(p[4] + p[5] * 2 + p[6], 2);
-      predictor[2 * ps + 2] =
-        predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[5] + p[6], 1);
-      predictor[3 * ps + 3] =
-        predictor[1 * ps + 2] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
-      predictor[2 * ps + 3] =
-        predictor[0 * ps + 2] = ROUND_POWER_OF_TWO(p[6] + p[7], 1);
-      predictor[1 * ps + 3] = ROUND_POWER_OF_TWO(p[6] + p[7] * 2 + p[8], 2);
-      predictor[0 * ps + 3] = ROUND_POWER_OF_TWO(p[7] + p[8], 1);
-
-    }
-    break;
-    case B_D63_PRED: {
-      uint8_t *p = above;
-
-      predictor[0 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1], 1);
-      predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1] * 2 + p[2], 2);
-      predictor[2 * ps + 0] =
-        predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[1] + p[2], 1);
-      predictor[1 * ps + 1] =
-        predictor[3 * ps + 0] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[2 * ps + 1] =
-        predictor[0 * ps + 2] = ROUND_POWER_OF_TWO(p[2] + p[3], 1);
-      predictor[3 * ps + 1] =
-        predictor[1 * ps + 2] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[4], 2);
-      predictor[0 * ps + 3] =
-        predictor[2 * ps + 2] = ROUND_POWER_OF_TWO(p[3] + p[4], 1);
-      predictor[1 * ps + 3] =
-        predictor[3 * ps + 2] = ROUND_POWER_OF_TWO(p[3] + p[4] * 2 + p[5], 2);
-      predictor[2 * ps + 3] = ROUND_POWER_OF_TWO(p[4] + p[5] * 2 + p[6], 2);
-      predictor[3 * ps + 3] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
-    }
-    break;
-    case B_D153_PRED: {
-      uint8_t p[9] = { left[3], left[2], left[1], left[0],
-                       top_left,
-                       above[0], above[1], above[2], above[3] };
-
-      predictor[3 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1], 1);
-      predictor[3 * ps + 1] = ROUND_POWER_OF_TWO(p[0] + p[1] * 2 + p[2], 2);
-      predictor[2 * ps + 0] =
-        predictor[3 * ps + 2] = ROUND_POWER_OF_TWO(p[1] + p[2], 1);
-      predictor[2 * ps + 1] =
-        predictor[3 * ps + 3] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[2 * ps + 2] =
-        predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[2] + p[3], 1);
-      predictor[2 * ps + 3] =
-        predictor[1 * ps + 1] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[4], 2);
-      predictor[1 * ps + 2] =
-        predictor[0 * ps + 0] = ROUND_POWER_OF_TWO(p[3] + p[4], 1);
-      predictor[1 * ps + 3] =
-        predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[3] + p[4] * 2 + p[5], 2);
-      predictor[0 * ps + 2] = ROUND_POWER_OF_TWO(p[4] + p[5] * 2 + p[6], 2);
-      predictor[0 * ps + 3] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
-    }
-    break;
-    case B_D27_PRED: {
-      uint8_t *p = left;
-      predictor[0 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1], 1);
-      predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[0] + p[1] * 2 + p[2], 2);
-      predictor[0 * ps + 2] =
-        predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[1] + p[2], 1);
-      predictor[0 * ps + 3] =
-        predictor[1 * ps + 1] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[1 * ps + 2] =
-        predictor[2 * ps + 0] = ROUND_POWER_OF_TWO(p[2] + p[3], 1);
-      predictor[1 * ps + 3] =
-        predictor[2 * ps + 1] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[3], 2);
-      predictor[2 * ps + 2] =
-        predictor[2 * ps + 3] =
-          predictor[3 * ps + 0] =
-            predictor[3 * ps + 1] =
-              predictor[3 * ps + 2] =
-                predictor[3 * ps + 3] = p[3];
-    }
-    break;
-
 #if CONFIG_NEWBINTRAMODES
     case B_CONTEXT_PRED:
     break;
