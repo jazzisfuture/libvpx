@@ -322,7 +322,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   fill_nzc_costs(cpi, TX_32X32);
 #endif
 
-  for (i = 0; i < 2; i++)
+  for (i = 0; i < PARTITION_PLANES; i++)
     vp9_cost_tokens(cpi->mb.partition_cost[i],
                     cpi->common.fc.partition_prob[i],
                     vp9_partition_tree);

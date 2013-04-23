@@ -37,6 +37,7 @@ typedef enum PARTITION_TYPE {
   PARTITION_TYPES
 } PARTITION_TYPE;
 
-#define PARTITION_PLANES 2  // number of probability models
+#define PARTITION_PLOFFSET 4  // number of probability models per block size
+#define PARTITION_PLANES   8  // total number of probability models
 
 #endif  // VP9_COMMON_VP9_ENUMS_H_

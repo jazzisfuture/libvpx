@@ -55,6 +55,8 @@ typedef struct {
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
 
+typedef char PARTITION_CONTEXT;
+
 static INLINE int combine_entropy_contexts(ENTROPY_CONTEXT a,
                                            ENTROPY_CONTEXT b) {
   return (a != 0) + (b != 0);
@@ -246,11 +248,6 @@ static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
   return mb_height_log2(sb_type) + 2;
 }
 
-static INLINE int partition_plane(BLOCK_SIZE_TYPE sb_type) {
-  assert(mb_width_log2(sb_type) == mb_height_log2(sb_type));
-  return (mb_width_log2(sb_type) - 1);
-}
-
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
 #if CONFIG_COMP_INTERINTRA_PRED
@@ -387,6 +384,10 @@ typedef struct macroblockd {
   ENTROPY_CONTEXT_PLANES *above_context;
   ENTROPY_CONTEXT_PLANES *left_context;
 
+  // partition contexts
+  PARTITION_CONTEXT *above_seg_context;
+  PARTITION_CONTEXT *left_seg_context;
+
   /* 0 indicates segmentation at MB level is not enabled. Otherwise the individual bits indicate which features are active. */
   unsigned char segmentation_enabled;
 
@@ -459,6 +460,67 @@ typedef struct macroblockd {
   int q_index;
 
 } MACROBLOCKD;
+
+static INLINE void update_partition_context(MACROBLOCKD *xd,
+                                            BLOCK_SIZE_TYPE sb_type,
+                                            BLOCK_SIZE_TYPE sb_size) {
+  int bsl = mb_width_log2(sb_size), bs = 1 << bsl;
+  int bwl = mb_width_log2(sb_type);
+  int bhl = mb_height_log2(sb_type);
+  int base_ctx = mb_width_log2(BLOCK_SIZE_SB64X64) - bsl;
+  int i;
+  // skip macroblock partition  
+  if (bsl == 0)
+    return;
+
+  if ((bwl == bsl) && (bhl == bsl)) {
+    for (i = 0; i < bs; i++)
+      xd->left_seg_context[i] = base_ctx;
+    for (i = 0; i < bs; i++)
+      xd->above_seg_context[i] = base_ctx;
+  }
+#if CONFIG_SBSEGMENT
+  else if ((bwl == bsl) && (bhl < bsl)) {
+    for (i = 0; i < bs; i++)
+      xd->left_seg_context[i] = base_ctx + 1;
+    for (i = 0; i < bs; i++)
+      xd->above_seg_context[i] = base_ctx;
+  }
+  else if ((bwl < bsl) && (bhl == bsl)) {
+    for (i = 0; i < bs; i++)
+      xd->left_seg_context[i] = base_ctx;
+    for (i = 0; i < bs; i++)
+      xd->above_seg_context[i] = base_ctx + 1;
+  }
+#endif
+  else if ((bwl < bsl) && (bhl < bsl)) {
+    for (i = 0; i < bs; i++)
+      xd->left_seg_context[i] = base_ctx + 1;
+    for (i = 0; i < bs; i++)
+      xd->above_seg_context[i] = base_ctx + 1;
+  }
+  else {
+    assert(0);
+  }
+}
+
+static INLINE int partition_plane(MACROBLOCKD *xd,
+                                  BLOCK_SIZE_TYPE sb_type) {
+  int bsl = mb_width_log2(sb_type), bs = 1 << bsl;
+  int above = 0, left = 0, i;
+  int mask = (sb_type == BLOCK_SIZE_SB64X64) ? 0x03 : 0x02;
+  assert(mb_width_log2(sb_type) == mb_height_log2(sb_type));
+
+  for (i = 0; i < bs; i++)
+    above |= (xd->above_seg_context[i] & mask);
+  for (i = 0; i < bs; i++)
+    left |= (xd->left_seg_context[i] & mask);
+
+  above = (above > 0);
+  left  = (left > 0);
+
+  return (left * 2 + above) + (bsl - 1) * PARTITION_PLOFFSET;
+}
 
 #define ACTIVE_HT   110                // quantization stepsize threshold
 
