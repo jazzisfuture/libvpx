@@ -268,6 +268,10 @@ typedef struct VP9Common {
   ENTROPY_CONTEXT_PLANES *above_context;   /* row of context for each plane */
   ENTROPY_CONTEXT_PLANES left_context[4];  /* (up to) 4 contexts "" */
 
+  // partition contexts
+  int *above_seg_context;
+  int left_seg_context[4];
+
   /* keyframe block modes are predicted by their above, left neighbors */
 
   vp9_prob kf_bmode_prob[VP9_KF_BINTRAMODES]
