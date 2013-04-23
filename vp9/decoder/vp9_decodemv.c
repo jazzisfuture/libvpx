@@ -138,7 +138,7 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
     m->mbmi.mb_skip_coeff = vp9_read(r, vp9_get_pred_prob(cm, xd, PRED_MBSKIP));
 
   // luma mode
-  m->mbmi.mode = m->mbmi.sb_type ?
+  m->mbmi.mode = m->mbmi.sb_type > BLOCK_SIZE_MB16X16 ?
       read_kf_sb_ymode(r, cm->sb_kf_ymode_prob[cm->kf_ymode_probs_index]):
       read_kf_mb_ymode(r, cm->kf_ymode_prob[cm->kf_ymode_probs_index]);
 
@@ -669,7 +669,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       if (vp9_segfeature_active(xd, mbmi->segment_id, SEG_LVL_SKIP)) {
         mbmi->mode = ZEROMV;
       } else {
-        mbmi->mode = mbmi->sb_type ? read_sb_mv_ref(r, mv_ref_p)
+        mbmi->mode = mbmi->sb_type > BLOCK_SIZE_MB16X16 ?
+                                     read_sb_mv_ref(r, mv_ref_p)
                                    : read_mv_ref(r, mv_ref_p);
         vp9_accum_mv_refs(cm, mbmi->mode, mbmi->mb_mode_context[ref_frame]);
       }
@@ -933,7 +934,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     // required for left and above block mv
     mv0->as_int = 0;
 
-    if (mbmi->sb_type) {
+    if (mbmi->sb_type > BLOCK_SIZE_MB16X16) {
       mbmi->mode = read_sb_ymode(r, cm->fc.sb_ymode_prob);
       cm->fc.sb_ymode_counts[mbmi->mode]++;
     } else {
