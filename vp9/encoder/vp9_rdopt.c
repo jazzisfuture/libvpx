@@ -366,7 +366,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
     }
     case TX_8X8: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-      const int sz = 3 + mb_width_log2(sb_type);
+      const int sz = 1 + b_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
@@ -388,7 +388,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
     }
     case TX_16X16: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-      const int sz = 4 + mb_width_log2(sb_type);
+      const int sz = 2 + b_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
@@ -684,8 +684,8 @@ static int vp9_sb_uv_block_error_c(int16_t *coeff,
 
 static int rdcost_sby_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                           BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) + 2);
+  const int bwl = b_width_log2(bsize), bw = 1 << bwl;
+  const int bh = 1 << b_height_log2(bsize);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
   ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
@@ -709,7 +709,7 @@ static int rdcost_sby_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_yrd_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                                 int *rate, int *distortion, int *skippable,
                                 BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bhl = mb_height_log2(bsize) + 2;
+  const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
   MACROBLOCKD *const xd = &x->e_mbd;
 
   xd->mode_info_context->mbmi.txfm_size = TX_4X4;
@@ -724,8 +724,8 @@ static void super_block_yrd_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rdcost_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                           BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) + 1);
+  const int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 1);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
   ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
@@ -749,7 +749,7 @@ static int rdcost_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_yrd_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                                 int *rate, int *distortion, int *skippable,
                                 BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bhl = mb_height_log2(bsize) + 1;
+  const int bwl = b_width_log2(bsize) - 1, bhl = b_height_log2(bsize) - 1;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   xd->mode_info_context->mbmi.txfm_size = TX_8X8;
@@ -764,8 +764,8 @@ static void super_block_yrd_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rdcost_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bw = 1 << bwl;
-  const int bh = 1 << mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 2);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
   ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
@@ -787,7 +787,7 @@ static int rdcost_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_yrd_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                                   int *rate, int *distortion, int *skippable,
                                   BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bhl = mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bhl = b_height_log2(bsize) - 2;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   xd->mode_info_context->mbmi.txfm_size = TX_16X16;
@@ -802,8 +802,8 @@ static void super_block_yrd_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rdcost_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) - 1);
+  const int bwl = b_width_log2(bsize) - 3, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 3);
   int cost = 0, b;
   MACROBLOCKD * const xd = &x->e_mbd;
   ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
@@ -827,7 +827,7 @@ static int rdcost_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_yrd_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
                                   int *rate, int *distortion, int *skippable,
                                   BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bhl = mb_height_log2(bsize) - 1;
+  const int bwl = b_width_log2(bsize) - 3, bhl = b_height_log2(bsize) - 3;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   xd->mode_info_context->mbmi.txfm_size = TX_32X32;
@@ -1347,8 +1347,8 @@ static int64_t rd_pick_intra8x8mby_modes_and_txsz(VP9_COMP *cpi, MACROBLOCK *x,
 #define UVCTX(c, p) ((p) ? (c).v : (c).u)
 static int rd_cost_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) + 1);
+  const int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 1);
   int yoff = 4 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1376,7 +1376,7 @@ static int rd_cost_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_uvrd_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                                  int *rate, int *distortion, int *skip,
                                  BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bhl = mb_height_log2(bsize) + 2;
+  const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
   MACROBLOCKD *const xd = &x->e_mbd;
 
   vp9_transform_sbuv_4x4(x, bsize);
@@ -1392,8 +1392,8 @@ static void super_block_uvrd_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rd_cost_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bw = 1 << bwl;
-  const int bh = 1 << mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 2);
   int yoff = 16 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1421,7 +1421,7 @@ static int rd_cost_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_uvrd_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                                  int *rate, int *distortion, int *skip,
                                  BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bhl = mb_height_log2(bsize) + 1;
+  const int bwl = b_width_log2(bsize) - 1, bhl = b_height_log2(bsize) - 1;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   vp9_transform_sbuv_8x8(x, bsize);
@@ -1437,8 +1437,8 @@ static void super_block_uvrd_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rd_cost_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                               BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) - 1);
+  const int bwl = b_width_log2(bsize) - 3, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 3);
   int yoff = 64 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1466,7 +1466,7 @@ static int rd_cost_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_uvrd_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                                    int *rate, int *distortion, int *skip,
                                    BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bhl = mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bhl = b_height_log2(bsize) - 2;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   vp9_transform_sbuv_16x16(x, bsize);
@@ -1482,8 +1482,8 @@ static void super_block_uvrd_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 
 static int rd_cost_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
                               BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 2, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) - 2);
+  const int bwl = b_width_log2(bsize) - 4, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 4);
   int yoff = 256 * bh * bw;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1512,7 +1512,7 @@ static int rd_cost_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
 static void super_block_uvrd_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
                                    int *rate, int *distortion, int *skip,
                                    BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bhl = mb_height_log2(bsize) - 1;
+  const int bwl = b_width_log2(bsize) - 3, bhl = b_height_log2(bsize) - 3;
   MACROBLOCKD *const xd = &x->e_mbd;
 
   vp9_transform_sbuv_32x32(x, bsize);
