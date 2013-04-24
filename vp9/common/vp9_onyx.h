@@ -225,8 +225,9 @@ extern "C"
 
   int vp9_set_roimap(VP9_PTR comp, unsigned char *map,
                      unsigned int rows, unsigned int cols,
-                     int delta_q[4], int delta_lf[4],
-                     unsigned int threshold[4]);
+                     int delta_q[8],
+                     int delta_lf[8],
+                     unsigned int threshold[8]);
 
   int vp9_set_active_map(VP9_PTR comp, unsigned char *map,
                          unsigned int rows, unsigned int cols);
