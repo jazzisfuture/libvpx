@@ -124,7 +124,7 @@ static void d63_predictor(uint8_t *ypred_ptr, int y_stride,
                           int bw, int bh,
                           uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
-
+#if 0
   c = 0;
   for (r = 0; r < bh - 2; r++) {
     int a = r & 1 ? yabove_row[c + 1]
@@ -169,6 +169,21 @@ static void d63_predictor(uint8_t *ypred_ptr, int y_stride,
                              ypred_ptr[(h - 1) * y_stride + c], 1);
     }
   }
+#else
+  for (r = 0; r < bh; ++r) {
+    for (c = 0; c < bw; ++c) {
+      if (r & 1) {
+        ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[r/2 + c] +
+                                          yabove_row[r/2 + c + 1] * 2 +
+                                          yabove_row[r/2 + c + 2], 2);
+      } else {
+        ypred_ptr[c] =ROUND_POWER_OF_TWO(yabove_row[r/2 + c] +
+                                         yabove_row[r/2+ c + 1], 1);
+      }
+    }
+    ypred_ptr += y_stride;
+  }
+#endif
 }
 
 static void d45_predictor(uint8_t *ypred_ptr, int y_stride,
@@ -218,7 +233,6 @@ static void d117_predictor(uint8_t *ypred_ptr, int y_stride,
     ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[c - 2] +
                                       yabove_row[c - 1] * 2 +
                                       yabove_row[c], 2);
-    yabove_row[c - 1];
   ypred_ptr += y_stride;
 
   // the rest of first col
@@ -395,12 +409,7 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
   if (up_available) {
     uint8_t *yabove_ptr = src - src_stride;
     vpx_memcpy(yabove_row, yabove_ptr, bw);
-    if (right_available) {
-      vpx_memcpy(yabove_row + bw, yabove_ptr + bw, 16);
-      if (bw > 16)
-        vpx_memset(yabove_row + bw + 16, 127, bw - 16);
-    }
-
+    vpx_memset(yabove_row + bw, yabove_row[bw -1], bw);
     ytop_left = left_available ? yabove_ptr[-1] : 127;
   } else {
     vpx_memset(yabove_row, 127, bw * 2);
