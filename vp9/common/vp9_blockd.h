@@ -290,7 +290,6 @@ typedef struct {
 
 typedef struct blockd {
   int16_t *diff;
-  int16_t *dequant;
 
   /* 16 Y blocks, 4 U blocks, 4 V blocks each with 16 entries */
   uint8_t **base_pre;
@@ -345,6 +344,7 @@ struct macroblockd_plane {
   int subsampling_y;
   struct buf_2d dst;
   struct buf_2d pre[2];
+  int16_t *dequant;
 };
 
 #define BLOCK_OFFSET(x, i, n) ((x) + (i) * (n))
