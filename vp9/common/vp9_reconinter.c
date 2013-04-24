@@ -366,7 +366,7 @@ static void build_inter_predictors(int plane, int block,
 
     if (xd->mode_info_context->mbmi.mode == SPLITMV) {
       if (plane == 0) {
-        mv = &xd->block[block].bmi.as_mv[which_mv].as_mv;
+        mv = &xd->mode_info_context->bmi[block].as_mv[which_mv].as_mv;
       } else {
         const int y_block = (block & 2) * 4 + (block & 1) * 2;
         split_chroma_mv.row = mi_mv_pred_row_q4(xd, y_block, which_mv);
