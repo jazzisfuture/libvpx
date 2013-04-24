@@ -82,13 +82,10 @@ static int read_mb_segid(vp9_reader *r, MACROBLOCKD *xd) {
 // This function reads the current macro block's segnent id from the bitstream
 // It should only be called if a segment map update is indicated.
 static int read_mb_segid_except(vp9_reader *r,
-                                VP9_COMMON *cm, MACROBLOCKD *xd,
-                                int mb_row, int mb_col) {
-  const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-  const int pred_seg_id = vp9_get_pred_mb_segid(cm, sb_type, mb_row, mb_col);
+                                MACROBLOCKD *xd,
+                                int pred_seg_id) {
   const vp9_prob *const p = xd->mb_segment_tree_probs;
   const vp9_prob prob = xd->mb_segment_mispred_tree_probs[pred_seg_id];
-
   return vp9_read(r, prob)
              ? 2 + (pred_seg_id  < 2 ? vp9_read(r, p[2]) : (pred_seg_id == 2))
              :     (pred_seg_id >= 2 ? vp9_read(r, p[1]) : (pred_seg_id == 0));
@@ -127,7 +124,51 @@ static TX_SIZE select_txfm_size(VP9_COMMON *cm, vp9_reader *r,
   return txfm_size;
 }
 
+// This function either reads the segment id for the current macroblock from
+// the bitstream or if the value is temporally predicted asserts the predicted
+// value
+static int read_mb_segment_id(VP9D_COMP *pbi, int mb_row, int mb_col,
+                              vp9_reader *r, FRAME_TYPE frame_type) {
+  VP9_COMMON *const cm = &pbi->common;
+  MACROBLOCKD *const xd = &pbi->mb;
+  MODE_INFO *const mi = xd->mode_info_context;
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
+
+  if (!xd->segmentation_enabled)
+    return 0;  // Default for disabled segmentation
+
+  if (xd->update_mb_segmentation_map) {
+    int segment_id;
+
+    if (frame_type == INTER_FRAME && cm->temporal_update) {
+      // Temporal coding of the segment id for this mb is enabled.
+      // Get the context based probability for reading the
+      // prediction status flag
+      const vp9_prob pred_prob = vp9_get_pred_prob(cm, xd, PRED_SEG_ID);
+      const int pred_flag = vp9_read(r, pred_prob);
+      const int pred_segid = vp9_get_pred_mb_segid(cm, mbmi->sb_type,
+                                                   mb_row, mb_col);
+      vp9_set_pred_flag(xd, PRED_SEG_ID, pred_flag);
+
+      // If the value is flagged as correctly predicted
+      // then use the predicted value, otherwise decode it explicitly
+      segment_id = pred_flag ? pred_segid
+                             : read_mb_segid_except(r, xd,  pred_segid);
+    } else {
+      segment_id = read_mb_segid(r, xd);  // Normal unpredicted coding mode
+    }
+
+    set_segment_id(cm, mbmi, mb_row, mb_col, segment_id);  // Side effect
+    return segment_id;
+  } else {
+    return frame_type == INTER_FRAME
+              ? vp9_get_pred_mb_segid(cm, mbmi->sb_type, mb_row, mb_col)
+              : 0;
+  }
+}
+
 extern const int vp9_i8x8_block[4];
+
 static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
                          int mb_row, int mb_col,
                          vp9_reader *r) {
@@ -135,14 +176,7 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   MACROBLOCKD *const xd = &pbi->mb;
   const int mis = cm->mode_info_stride;
   m->mbmi.ref_frame = INTRA_FRAME;
-
-  // Read segmentation map if it is being updated explicitly this frame
-  m->mbmi.segment_id = 0;
-  if (xd->segmentation_enabled && xd->update_mb_segmentation_map) {
-    m->mbmi.segment_id = read_mb_segid(r, xd);
-    set_segment_id(cm, &m->mbmi, mb_row, mb_col, m->mbmi.segment_id);
-  }
-
+  m->mbmi.segment_id = read_mb_segment_id(pbi, mb_row, mb_col, r, KEY_FRAME);
   m->mbmi.mb_skip_coeff = vp9_segfeature_active(xd, m->mbmi.segment_id,
                                                 SEG_LVL_SKIP);
   if (!m->mbmi.mb_skip_coeff)
@@ -523,47 +557,6 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
   }
 }
 
-// This function either reads the segment id for the current macroblock from
-// the bitstream or if the value is temporally predicted asserts the predicted
-// value
-static int read_mb_segment_id(VP9D_COMP *pbi, int mb_row, int mb_col,
-                              vp9_reader *r) {
-  VP9_COMMON *const cm = &pbi->common;
-  MACROBLOCKD *const xd = &pbi->mb;
-  MODE_INFO *const mi = xd->mode_info_context;
-  MB_MODE_INFO *const mbmi = &mi->mbmi;
-
-  if (!xd->segmentation_enabled)
-    return 0;  // Default for disabled segmentation
-
-  if (xd->update_mb_segmentation_map) {
-    int segment_id;
-
-    if (cm->temporal_update) {
-      // Temporal coding of the segment id for this mb is enabled.
-      // Get the context based probability for reading the
-      // prediction status flag
-      const vp9_prob pred_prob = vp9_get_pred_prob(cm, xd, PRED_SEG_ID);
-      const int pred_flag = vp9_read(r, pred_prob);
-      vp9_set_pred_flag(xd, PRED_SEG_ID, pred_flag);
-
-      // If the value is flagged as correctly predicted
-      // then use the predicted value, otherwise decode it explicitly
-      segment_id = pred_flag ? vp9_get_pred_mb_segid(cm, mbmi->sb_type,
-                                                     mb_row, mb_col)
-                             : read_mb_segid_except(r, cm, xd, mb_row, mb_col);
-    } else {
-      segment_id = read_mb_segid(r, xd);  // Normal unpredicted coding mode
-    }
-
-    set_segment_id(cm, mbmi, mb_row, mb_col, segment_id);  // Side effect
-    return segment_id;
-  } else {
-    return vp9_get_pred_mb_segid(cm, mbmi->sb_type, mb_row, mb_col);
-  }
-}
-
-
 static INLINE void assign_and_clamp_mv(int_mv *dst, const int_mv *src,
                                        int mb_to_left_edge,
                                        int mb_to_right_edge,
@@ -635,7 +628,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   mb_to_right_edge = xd->mb_to_right_edge + RIGHT_BOTTOM_MARGIN;
 
   // Read the macroblock segment id.
-  mbmi->segment_id = read_mb_segment_id(pbi, mb_row, mb_col, r);
+  mbmi->segment_id = read_mb_segment_id(pbi, mb_row, mb_col, r, INTER_FRAME);
 
   mbmi->mb_skip_coeff = vp9_segfeature_active(xd, mbmi->segment_id,
                                               SEG_LVL_SKIP);
