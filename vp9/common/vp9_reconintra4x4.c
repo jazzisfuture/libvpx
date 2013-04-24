@@ -187,13 +187,7 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
    *  ..
    */
 
-  if (b_mode <= B_H_PRED ||
-      b_mode == B_TM_PRED ||
-      b_mode == B_D135_PRED||
-      b_mode == B_D117_PRED||
-      b_mode == B_D27_PRED||
-      b_mode == B_D63_PRED||
-      b_mode == B_D153_PRED) {
+  if (1 /*b_mode != B_D45_PRED*/) {
     vp9_intra4x4_predict_new (xd, x, b_mode, predictor, ps);
     return;
   }
@@ -296,27 +290,6 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
         predictor[3 * ps + 2] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
       predictor[3 * ps + 3] = ROUND_POWER_OF_TWO(p[6] + p[7] * 2 + p[7], 2);
 
-    }
-    break;
-    case B_D63_PRED: {
-      uint8_t *p = above;
-
-      predictor[0 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1], 1);
-      predictor[1 * ps + 0] = ROUND_POWER_OF_TWO(p[0] + p[1] * 2 + p[2], 2);
-      predictor[2 * ps + 0] =
-        predictor[0 * ps + 1] = ROUND_POWER_OF_TWO(p[1] + p[2], 1);
-      predictor[1 * ps + 1] =
-        predictor[3 * ps + 0] = ROUND_POWER_OF_TWO(p[1] + p[2] * 2 + p[3], 2);
-      predictor[2 * ps + 1] =
-        predictor[0 * ps + 2] = ROUND_POWER_OF_TWO(p[2] + p[3], 1);
-      predictor[3 * ps + 1] =
-        predictor[1 * ps + 2] = ROUND_POWER_OF_TWO(p[2] + p[3] * 2 + p[4], 2);
-      predictor[0 * ps + 3] =
-        predictor[2 * ps + 2] = ROUND_POWER_OF_TWO(p[3] + p[4], 1);
-      predictor[1 * ps + 3] =
-        predictor[3 * ps + 2] = ROUND_POWER_OF_TWO(p[3] + p[4] * 2 + p[5], 2);
-      predictor[2 * ps + 3] = ROUND_POWER_OF_TWO(p[4] + p[5] * 2 + p[6], 2);
-      predictor[3 * ps + 3] = ROUND_POWER_OF_TWO(p[5] + p[6] * 2 + p[7], 2);
     }
     break;
 #if CONFIG_NEWBINTRAMODES
