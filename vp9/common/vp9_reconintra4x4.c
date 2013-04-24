@@ -191,6 +191,7 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
       b_mode == B_TM_PRED ||
       b_mode == B_D135_PRED||
       b_mode == B_D117_PRED||
+      b_mode == B_D27_PRED||
       b_mode == B_D153_PRED) {
     vp9_intra4x4_predict_new (xd, x, b_mode, predictor, ps);
     return;
