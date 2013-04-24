@@ -206,11 +206,9 @@ static void mb_init_dequantizer(VP9D_COMP *pbi, MACROBLOCKD *mb) {
   const int qindex = get_qindex(mb, segment_id, pc->base_qindex);
   mb->q_index = qindex;
 
-  for (i = 0; i < 16; i++)
-    mb->block[i].dequant = pc->y_dequant[qindex];
-
-  for (i = 16; i < 24; i++)
-    mb->block[i].dequant = pc->uv_dequant[qindex];
+  mb->plane[0].dequant = pc->y_dequant[qindex];
+  for (i = 1; i < MAX_MB_PLANE; i++)
+    mb->plane[i].dequant = pc->uv_dequant[qindex];
 
   if (mb->lossless) {
     assert(qindex == 0);
@@ -596,7 +594,7 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mb_row, int mb_col,
       mb_init_dequantizer(pbi, xd);
 
     // dequantization and idct
-    eobtotal = vp9_decode_tokens(pbi, xd, r, bsize, xd->block[0].dequant);
+    eobtotal = vp9_decode_tokens(pbi, xd, r, bsize, xd->plane[0].dequant);
     if (eobtotal == 0) {  // skip loopfilter
       for (n = 0; n < bw * bh; n++) {
         const int x_idx = n & (bw - 1), y_idx = n >> bwl;
@@ -671,7 +669,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
     if (mode != I4X4_PRED)
 #endif
       eobtotal = vp9_decode_tokens(pbi, xd, r, BLOCK_SIZE_MB16X16,
-                                   xd->block[0].dequant);
+                                   xd->plane[0].dequant);
     }
   }
 
