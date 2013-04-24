@@ -117,8 +117,8 @@ static void subtract_mb(MACROBLOCK *x) {
 }
 
 void vp9_transform_sby_32x32(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) - 1);
+  const int bwl = b_width_log2(bsize) - 3, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 3);
   const int stride = 32 << bwl;
   int n;
 
@@ -131,8 +131,8 @@ void vp9_transform_sby_32x32(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sby_16x16(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bw = 1 << bwl;
-  const int bh = 1 << mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 2);
   const int stride = 16 << bwl, bstride = 4 << bwl;
   MACROBLOCKD *const xd = &x->e_mbd;
   int n;
@@ -153,8 +153,8 @@ void vp9_transform_sby_16x16(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sby_8x8(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) + 1);
+  const int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 1);
   const int stride = 8 << bwl, bstride = 2 << bwl;
   MACROBLOCKD *const xd = &x->e_mbd;
   int n;
@@ -174,8 +174,8 @@ void vp9_transform_sby_8x8(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sby_4x4(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) + 2);
+  const int bwl = b_width_log2(bsize), bw = 1 << bwl;
+  const int bh = 1 << b_height_log2(bsize);
   const int stride = 4 << bwl;
   MACROBLOCKD *const xd = &x->e_mbd;
   int n;
@@ -204,7 +204,7 @@ void vp9_transform_sbuv_32x32(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sbuv_16x16(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bhl = mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bhl = b_height_log2(bsize) - 2;
   const int uoff = (16 * 16) << (bwl + bhl), voff = (uoff * 5) >> 2;
   const int bw = 1 << (bwl - 1), bh = 1 << (bhl - 1);
   const int stride = 16 << (bwl - 1);
@@ -222,7 +222,7 @@ void vp9_transform_sbuv_16x16(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sbuv_8x8(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bhl = mb_height_log2(bsize) + 1;
+  const int bwl = b_width_log2(bsize) - 1, bhl = b_height_log2(bsize) - 1;
   const int uoff = (8 * 8) << (bwl + bhl), voff = (uoff * 5) >> 2;
   const int bw = 1 << (bwl - 1), bh = 1 << (bhl - 1);
   const int stride = 8 << (bwl - 1);
@@ -240,7 +240,7 @@ void vp9_transform_sbuv_8x8(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
 }
 
 void vp9_transform_sbuv_4x4(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bhl = mb_height_log2(bsize) + 2;
+  const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
   const int uoff = (4 * 4) << (bwl + bhl), voff = (uoff * 5) >> 2;
   const int bw = 1 << (bwl - 1), bh = 1 << (bhl - 1);
   const int stride = 4 << (bwl - 1);
@@ -346,7 +346,7 @@ static void optimize_b(VP9_COMMON *const cm,
     }
     case TX_8X8: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-      const int sz = 3 + mb_width_log2(sb_type);
+      const int sz = 1 + b_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       const TX_TYPE tx_type = get_tx_type_8x8(xd, y + (x >> 1));
       if (tx_type == DCT_ADST) {
@@ -361,7 +361,7 @@ static void optimize_b(VP9_COMMON *const cm,
     }
     case TX_16X16: {
       const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-      const int sz = 4 + mb_width_log2(sb_type);
+      const int sz = 2 + b_width_log2(sb_type);
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       const TX_TYPE tx_type = get_tx_type_16x16(xd, y + (x >> 2));
       if (tx_type == DCT_ADST) {
@@ -556,8 +556,8 @@ static void optimize_b(VP9_COMMON *const cm,
 
 void vp9_optimize_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) - 1, bw = 1 << bwl;
-  const int bh = 1 << (mb_height_log2(bsize) - 1);
+  const int bwl = b_width_log2(bsize) - 3, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 3);
   ENTROPY_CONTEXT ta[2], tl[2];
   int n;
 
@@ -586,8 +586,8 @@ void vp9_optimize_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                             BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bw = 1 << bwl;
-  const int bh = 1 << mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 2);
   ENTROPY_CONTEXT ta[4], tl[4];
   int n;
 
@@ -609,8 +609,8 @@ void vp9_optimize_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                           BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bw = 1 << bwl;
-  const int bh = 2 << mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  const int bh = 1 << (b_height_log2(bsize) - 1);
   ENTROPY_CONTEXT ta[8], tl[8];
   int n;
 
@@ -637,20 +637,17 @@ void vp9_optimize_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sby_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                           BLOCK_SIZE_TYPE bsize) {
-  int bwl = mb_width_log2(bsize), bw = 1 << bwl;
-  int bh = 1 << mb_height_log2(bsize);
+  int bwl = b_width_log2(bsize), bw = 1 << bwl;
+  int bh = 1 << b_height_log2(bsize);
   ENTROPY_CONTEXT ta[16], tl[16];
   int n;
 
-  for (n = 0; n < bw; n++)
-    vpx_memcpy(&ta[n * 4], x->e_mbd.above_context + n,
+  for (n = 0; n < bw; n += 4)
+    vpx_memcpy(&ta[n], x->e_mbd.above_context + (n >> 2),
                sizeof(ENTROPY_CONTEXT) * 4);
-  for (n = 0; n < bh; n++)
-    vpx_memcpy(&tl[n * 4], x->e_mbd.left_context + n,
+  for (n = 0; n < bh; n += 4)
+    vpx_memcpy(&tl[n], x->e_mbd.left_context + (n >> 2),
                sizeof(ENTROPY_CONTEXT) * 4);
-  bw *= 4;
-  bh *= 4;
-  bwl += 2;
 
   for (n = 0; n < bw * bh; n++) {
     const int x_idx = n & (bw - 1), y_idx = n >> bwl;
@@ -687,7 +684,7 @@ void vp9_optimize_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
                              BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize), bhl = mb_height_log2(bsize);
+  const int bwl = b_width_log2(bsize) - 2, bhl = b_height_log2(bsize) - 2;
   const int bw = 1 << (bwl - 1);
   const int bh = 1 << (bhl - 1);
   int uvoff = 16 << (bwl + bhl);
@@ -722,7 +719,7 @@ void vp9_optimize_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
                            BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 1, bhl = mb_height_log2(bsize) + 1;
+  const int bwl = b_width_log2(bsize) - 1, bhl = b_height_log2(bsize) - 1;
   const int bw = 1 << (bwl - 1);
   const int bh = 1 << (bhl - 1);
   int uvoff = 4 << (bwl + bhl);
@@ -755,7 +752,7 @@ void vp9_optimize_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
 
 void vp9_optimize_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
                            BLOCK_SIZE_TYPE bsize) {
-  const int bwl = mb_width_log2(bsize) + 2, bhl = mb_height_log2(bsize) + 2;
+  const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
   const int bw = 1 << (bwl - 1);
   const int bh = 1 << (bhl - 1);
   int uvoff = 1 << (bwl + bhl);
