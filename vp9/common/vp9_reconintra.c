@@ -190,7 +190,7 @@ static void d45_predictor(uint8_t *ypred_ptr, int y_stride,
                           int bw, int bh,
                           uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
-
+#if 0
   for (r = 0; r < bh - 1; ++r) {
     for (c = 0; c <= r; ++c) {
       ypred_ptr[(r - c) * y_stride + c] = iscale_round(
@@ -214,6 +214,16 @@ static void d45_predictor(uint8_t *ypred_ptr, int y_stride,
           ROUND_POWER_OF_TWO(yabove_ext + yleft_ext, 1);
     }
   }
+#else
+  for (r = 0; r < bh; ++r) {
+    for (c = 0; c < bw; ++c) {
+        ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[r + c - 1] +
+                                          yabove_row[r + c] * 2 +
+                                          yabove_row[r + c + 1], 2);
+    }
+    ypred_ptr += y_stride;
+  }
+#endif
 }
 
 static void d117_predictor(uint8_t *ypred_ptr, int y_stride,
