@@ -25,4 +25,6 @@ void vp9_free_frame_buffers(VP9_COMMON *oci);
 
 void vp9_setup_version(VP9_COMMON *oci);
 
+void vp9_update_frame_size(VP9_COMMON *cm, int update_prev);
+
 #endif  // VP9_COMMON_VP9_ALLOCCOMMON_H_

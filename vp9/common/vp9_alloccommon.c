@@ -198,3 +198,22 @@ void vp9_initialize_common() {
   vp9_entropy_mode_init();
   vp9_entropy_mv_init();
 }
+
+
+void vp9_update_frame_size(VP9_COMMON *cm, int update_prev) {
+  cm->mb_rows = multiple16(cm->height) / 16;
+  cm->mb_cols = multiple16(cm->width) / 16;
+  cm->MBs = cm->mb_rows * cm->mb_cols;
+  cm->mode_info_stride = cm->mb_cols + 1;
+  cm->mi = cm->mip + cm->mode_info_stride + 1;
+  cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
+
+  memset(cm->mip, 0, (cm->mb_cols + 1) * (cm->mb_rows + 1) * sizeof(MODE_INFO));
+  vp9_update_mode_info_border(cm, cm->mip);
+  vp9_update_mode_info_in_image(cm, cm->mi);
+
+  if (update_prev) {
+    vp9_update_mode_info_border(cm, cm->prev_mip);
+    vp9_update_mode_info_in_image(cm, cm->prev_mi);
+  }
+}
