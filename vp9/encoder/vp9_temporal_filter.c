@@ -132,6 +132,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   BLOCKD *d = &x->e_mbd.block[0];
   int_mv best_ref_mv1;
   int_mv best_ref_mv1_full; /* full-pixel value of best_ref_mv1 */
+  int_mv *ref_mv;
 
   // Save input state
   uint8_t **base_src = b->base_src;
@@ -165,7 +166,8 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   /*cpi->sf.search_method == HEX*/
   // TODO Check that the 16x16 vf & sdf are selected here
   // Ignore mv costing by sending NULL pointer instead of cost arrays
-  bestsme = vp9_hex_search(x, b, d, &best_ref_mv1_full, &d->bmi.as_mv[0],
+  ref_mv = &x->e_mbd.mode_info_context->bmi[0].as_mv[0];
+  bestsme = vp9_hex_search(x, b, d, &best_ref_mv1_full, ref_mv,
                            step_param, sadpb, &cpi->fn_ptr[BLOCK_16X16],
                            NULL, NULL, NULL, NULL,
                            &best_ref_mv1);
@@ -177,7 +179,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
     int distortion;
     unsigned int sse;
     // Ignore mv costing by sending NULL pointer instead of cost array
-    bestsme = cpi->find_fractional_mv_step(x, b, d, &d->bmi.as_mv[0],
+    bestsme = cpi->find_fractional_mv_step(x, b, d, ref_mv,
                                            &best_ref_mv1,
                                            x->errorperbit,
                                            &cpi->fn_ptr[BLOCK_16X16],
@@ -257,8 +259,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         if (cpi->frames[frame] == NULL)
           continue;
 
-        mbd->block[0].bmi.as_mv[0].as_mv.row = 0;
-        mbd->block[0].bmi.as_mv[0].as_mv.col = 0;
+        mbd->mode_info_context->bmi[0].as_mv[0].as_mv.row = 0;
+        mbd->mode_info_context->bmi[0].as_mv[0].as_mv.col = 0;
 
         if (frame == alt_ref_index) {
           filter_weight = 2;
@@ -291,8 +293,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
            cpi->frames[frame]->u_buffer + mb_uv_offset,
            cpi->frames[frame]->v_buffer + mb_uv_offset,
            cpi->frames[frame]->y_stride,
-           mbd->block[0].bmi.as_mv[0].as_mv.row,
-           mbd->block[0].bmi.as_mv[0].as_mv.col,
+           mbd->mode_info_context->bmi[0].as_mv[0].as_mv.row,
+           mbd->mode_info_context->bmi[0].as_mv[0].as_mv.col,
            predictor);
 
           // Apply the filter (YUV)
