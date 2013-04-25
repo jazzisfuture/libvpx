@@ -83,9 +83,9 @@ static int read_mb_segid(vp9_reader *r, MACROBLOCKD *xd) {
 // It should only be called if a segment map update is indicated.
 static int read_mb_segid_except(vp9_reader *r,
                                 VP9_COMMON *cm, MACROBLOCKD *xd,
-                                int mb_row, int mb_col) {
+                                int mi_row, int mi_col) {
   const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
-  const int pred_seg_id = vp9_get_pred_mb_segid(cm, sb_type, mb_row, mb_col);
+  const int pred_seg_id = vp9_get_pred_mi_segid(cm, sb_type, mi_row, mi_col);
   const vp9_prob *const p = xd->mb_segment_tree_probs;
   const vp9_prob prob = xd->mb_segment_mispred_tree_probs[pred_seg_id];
 
@@ -95,30 +95,26 @@ static int read_mb_segid_except(vp9_reader *r,
 }
 
 static void set_segment_id(VP9_COMMON *cm, MB_MODE_INFO *mbmi,
-                           int mb_row, int mb_col, int segment_id) {
-  const int mb_index = mb_row * cm->mb_cols + mb_col;
+                           int mi_row, int mi_col, int segment_id) {
+  const int mb_index = mi_row * cm->mi_cols + mi_col;
   const BLOCK_SIZE_TYPE sb_type = mbmi->sb_type;
-  if (sb_type > BLOCK_SIZE_MB16X16) {
-    const int bw = 1 << mb_width_log2(sb_type);
-    const int bh = 1 << mb_height_log2(sb_type);
-    const int ymbs = MIN(cm->mb_rows - mb_row, bh);
-    const int xmbs = MIN(cm->mb_cols - mb_col, bw);
-    int x, y;
+  const int bw = 1 << mi_width_log2(sb_type);
+  const int bh = 1 << mi_height_log2(sb_type);
+  const int ymbs = MIN(cm->mi_rows - mi_row, bh);
+  const int xmbs = MIN(cm->mi_cols - mi_col, bw);
+  int x, y;
 
-    for (y = 0; y < ymbs; y++) {
-      for (x = 0; x < xmbs; x++) {
-        const int index = mb_index + (y * cm->mb_cols + x);
-        cm->last_frame_seg_map[index] = segment_id;
-      }
+  for (y = 0; y < ymbs; y++) {
+    for (x = 0; x < xmbs; x++) {
+      const int index = mb_index + (y * cm->mi_cols + x);
+      cm->last_frame_seg_map[index] = segment_id;
     }
-  } else {
-    cm->last_frame_seg_map[mb_index] = segment_id;
   }
 }
 
 extern const int vp9_i8x8_block[4];
 static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
-                         int mb_row, int mb_col,
+                         int mi_row, int mi_col,
                          vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
@@ -129,7 +125,7 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   m->mbmi.segment_id = 0;
   if (xd->segmentation_enabled && xd->update_mb_segmentation_map) {
     m->mbmi.segment_id = read_mb_segid(r, xd);
-    set_segment_id(cm, &m->mbmi, mb_row, mb_col, m->mbmi.segment_id);
+    set_segment_id(cm, &m->mbmi, mi_row, mi_col, m->mbmi.segment_id);
   }
 
   m->mbmi.mb_skip_coeff = vp9_segfeature_active(xd, m->mbmi.segment_id,
@@ -518,7 +514,7 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
 // This function either reads the segment id for the current macroblock from
 // the bitstream or if the value is temporally predicted asserts the predicted
 // value
-static int read_mb_segment_id(VP9D_COMP *pbi, int mb_row, int mb_col,
+static int read_mb_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
                               vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
@@ -541,17 +537,17 @@ static int read_mb_segment_id(VP9D_COMP *pbi, int mb_row, int mb_col,
 
       // If the value is flagged as correctly predicted
       // then use the predicted value, otherwise decode it explicitly
-      segment_id = pred_flag ? vp9_get_pred_mb_segid(cm, mbmi->sb_type,
-                                                     mb_row, mb_col)
-                             : read_mb_segid_except(r, cm, xd, mb_row, mb_col);
+      segment_id = pred_flag ? vp9_get_pred_mi_segid(cm, mbmi->sb_type,
+                                                     mi_row, mi_col)
+                             : read_mb_segid_except(r, cm, xd, mi_row, mi_col);
     } else {
       segment_id = read_mb_segid(r, xd);  // Normal unpredicted coding mode
     }
 
-    set_segment_id(cm, mbmi, mb_row, mb_col, segment_id);  // Side effect
+    set_segment_id(cm, mbmi, mi_row, mi_col, segment_id);  // Side effect
     return segment_id;
   } else {
-    return vp9_get_pred_mb_segid(cm, mbmi->sb_type, mb_row, mb_col);
+    return vp9_get_pred_mi_segid(cm, mbmi->sb_type, mi_row, mi_col);
   }
 }
 
@@ -587,7 +583,7 @@ static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
 
 static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                              MODE_INFO *prev_mi,
-                             int mb_row, int mb_col,
+                             int mi_row, int mi_col,
                              vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   nmv_context *const nmvc = &cm->fc.nmvc;
@@ -596,8 +592,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
   int_mv *const mv0 = &mbmi->mv[0];
   int_mv *const mv1 = &mbmi->mv[1];
-  const int bw = 1 << mb_width_log2(mi->mbmi.sb_type);
-  const int bh = 1 << mb_height_log2(mi->mbmi.sb_type);
+  const int bw = 1 << mi_width_log2(mi->mbmi.sb_type);
+  const int bh = 1 << mi_height_log2(mi->mbmi.sb_type);
 
   const int use_prev_in_find_mv_refs = cm->width == cm->last_width &&
                                        cm->height == cm->last_height &&
@@ -618,8 +614,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   // Distance of Mb to the various image edges.
   // These specified to 8th pel as they are always compared to MV values
   // that are in 1/8th pel units
-  set_mb_row(cm, xd, mb_row, bh);
-  set_mb_col(cm, xd, mb_col, bw);
+  set_mi_row(cm, xd, mi_row, bh);
+  set_mi_col(cm, xd, mi_col, bw);
 
   mb_to_top_edge = xd->mb_to_top_edge - LEFT_TOP_MARGIN;
   mb_to_bottom_edge = xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN;
@@ -627,15 +623,21 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   mb_to_right_edge = xd->mb_to_right_edge + RIGHT_BOTTOM_MARGIN;
 
   // Read the macroblock segment id.
-  mbmi->segment_id = read_mb_segment_id(pbi, mb_row, mb_col, r);
+  mbmi->segment_id = read_mb_segment_id(pbi, mi_row, mi_col, r);
+  if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+    printf("Post-seg: %d\n", r->range);
 
   mbmi->mb_skip_coeff = vp9_segfeature_active(xd, mbmi->segment_id,
                                               SEG_LVL_SKIP);
   if (!mbmi->mb_skip_coeff)
     mbmi->mb_skip_coeff = vp9_read(r, vp9_get_pred_prob(cm, xd, PRED_MBSKIP));
+  if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+    printf("Post-skip: %d\n", r->range);
 
   // Read the reference frame
   mbmi->ref_frame = read_ref_frame(pbi, r, mbmi->segment_id);
+  if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+    printf("Post-ref: %d\n", r->range);
 
   // If reference frame is an Inter frame
   if (mbmi->ref_frame) {
@@ -652,7 +654,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       const int ref_fb_idx = cm->active_ref_idx[ref_frame - 1];
 
       setup_pre_planes(xd, &cm->yv12_fb[ref_fb_idx], NULL,
-                       mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+                       mi_row, mi_col, xd->scale_factor, xd->scale_factor_uv);
 
 #ifdef DEC_DEBUG
       if (dec_debug)
@@ -674,6 +676,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                    : read_mv_ref(r, mv_ref_p);
         vp9_accum_mv_refs(cm, mbmi->mode, mbmi->mb_mode_context[ref_frame]);
       }
+      if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+        printf("Post-mode[%d]: %d\n", mbmi->mode, r->range);
 
       if (mbmi->mode != ZEROMV) {
         vp9_find_best_ref_mvs(xd,
@@ -696,6 +700,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                                 ? read_switchable_filter_type(pbi, r)
                                 : cm->mcomp_filter_type;
     }
+    if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+      printf("Post-interp: %d\n", r->range);
 
     if (cm->comp_pred_mode == COMP_PREDICTION_ONLY ||
         (cm->comp_pred_mode == HYBRID_PREDICTION &&
@@ -717,7 +723,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         *sf1 = cm->active_ref_scale[second_ref_frame - 1];
 
         setup_pre_planes(xd, NULL, &cm->yv12_fb[second_ref_fb_idx],
-                         mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+                         mi_row, mi_col, xd->scale_factor, xd->scale_factor_uv);
 
         vp9_find_mv_refs(cm, xd, mi,
                          use_prev_in_find_mv_refs ? prev_mi : NULL,
@@ -768,6 +774,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         const int s = treed_read(r, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
         const int num_p = vp9_mbsplit_count[s];
         int j = 0;
+        if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+          printf("Partitioning: %d\n", s);
 
         cm->fc.mbsplit_counts[s]++;
         mbmi->need_to_clamp_mvs = 0;
@@ -790,6 +798,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           mv_contz = vp9_mv_cont(&leftmv, &abovemv);
           blockmode = read_sub_mv_ref(r, cm->fc.sub_mv_ref_prob[mv_contz]);
           cm->fc.sub_mv_ref_counts[mv_contz][blockmode - LEFT4X4]++;
+          if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+            printf("Post-splitmv[%d][c=%d,l=%d,a=%d,k=%d][m=%d]: %d\n", j, mv_contz, leftmv.as_int, abovemv.as_int, k, blockmode, r->range);
 
           switch (blockmode) {
             case NEW4X4:
@@ -831,6 +841,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
             default:
               break;
           }
+          if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+            printf("Blockmv: %d/%d\n", blockmv.as_mv.row, blockmv.as_mv.col);
 
           /*  Commenting this section out, not sure why this was needed, and
            *  there are mismatches with this section in rare cases since it is
@@ -976,6 +988,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   if (cm->current_video_frame == 1)
     printf("mode: %d skip: %d\n", mbmi->mode, mbmi->mb_skip_coeff);
     */
+  if (pbi->common.current_video_frame == 1 && mi_col == 14 && mi_row == 0)
+    printf("Post-mode: %d\n", r->range);
 
   if (cm->txfm_mode == TX_MODE_SELECT && mbmi->mb_skip_coeff == 0 &&
       ((mbmi->ref_frame == INTRA_FRAME && mbmi->mode <= I8X8_PRED) ||
@@ -1020,8 +1034,8 @@ void vp9_decode_mode_mvs_init(VP9D_COMP* const pbi, vp9_reader *r) {
 
 void vp9_decode_mb_mode_mv(VP9D_COMP* const pbi,
                            MACROBLOCKD* const xd,
-                           int mb_row,
-                           int mb_col,
+                           int mi_row,
+                           int mi_col,
                            vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   MODE_INFO *mi = xd->mode_info_context;
@@ -1029,26 +1043,28 @@ void vp9_decode_mb_mode_mv(VP9D_COMP* const pbi,
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   if (cm->frame_type == KEY_FRAME) {
-    kfread_modes(pbi, mi, mb_row, mb_col, r);
+    kfread_modes(pbi, mi, mi_row, mi_col, r);
   } else {
-    read_mb_modes_mv(pbi, mi, &mi->mbmi, prev_mi, mb_row, mb_col, r);
+    read_mb_modes_mv(pbi, mi, &mi->mbmi, prev_mi, mi_row, mi_col, r);
     set_scale_factors(xd,
                       mi->mbmi.ref_frame - 1, mi->mbmi.second_ref_frame - 1,
                       cm->active_ref_scale);
   }
 
-  if (mbmi->sb_type > BLOCK_SIZE_MB16X16) {
-    const int bw = 1 << mb_width_log2(mbmi->sb_type);
-    const int bh = 1 << mb_height_log2(mbmi->sb_type);
-    const int y_mbs = MIN(bh, cm->mb_rows - mb_row);
-    const int x_mbs = MIN(bw, cm->mb_cols - mb_col);
+  if (1) {
+    const int bw = 1 << mi_width_log2(mbmi->sb_type);
+    const int bh = 1 << mi_height_log2(mbmi->sb_type);
+    const int y_mbs = MIN(bh, cm->mi_rows - mi_row);
+    const int x_mbs = MIN(bw, cm->mi_cols - mi_col);
     const int mis = cm->mode_info_stride;
     int x, y;
 
     for (y = 0; y < y_mbs; y++)
       for (x = !y; x < x_mbs; x++)
         mi[y * mis + x] = *mi;
-  } else {
+  }
+
+  if (mbmi->sb_type == BLOCK_SIZE_MB16X16) {
     update_blockd_bmi(xd);
   }
 }
