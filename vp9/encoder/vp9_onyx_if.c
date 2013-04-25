@@ -82,7 +82,7 @@ extern double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #endif
 
-// #define OUTPUT_YUV_REC
+#define OUTPUT_YUV_REC
 
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
@@ -376,7 +376,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
   // Disable and clear down for KF
   if (cm->frame_type == KEY_FRAME) {
     // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, (cm->mb_rows * cm->mb_cols));
+    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
     cpi->static_mb_pct = 0;
@@ -389,7 +389,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
   } else if (cpi->refresh_alt_ref_frame) {
     // If this is an alt ref frame
     // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, (cm->mb_rows * cm->mb_cols));
+    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
     cpi->static_mb_pct = 0;
@@ -451,8 +451,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       else {
         vp9_disable_segmentation((VP9_PTR)cpi);
 
-        vpx_memset(cpi->segmentation_map, 0,
-                   (cm->mb_rows * cm->mb_cols));
+        vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
 
         xd->update_mb_segmentation_map = 0;
         xd->update_mb_segmentation_data = 0;
@@ -501,8 +500,8 @@ static void print_seg_map(VP9_COMP *cpi) {
 
   fprintf(statsfile, "%10d\n", cm->current_video_frame);
 
-  for (row = 0; row < cpi->common.mb_rows; row++) {
-    for (col = 0; col < cpi->common.mb_cols; col++) {
+  for (row = 0; row < cpi->common.mi_rows; row++) {
+    for (col = 0; col < cpi->common.mi_cols; col++) {
       fprintf(statsfile, "%10d", cpi->segmentation_map[map_index]);
       map_index++;
     }
@@ -519,13 +518,13 @@ static void update_reference_segmentation_map(VP9_COMP *cpi) {
   MODE_INFO *mi, *mi_ptr = cm->mi;
   uint8_t *cache_ptr = cm->last_frame_seg_map, *cache;
 
-  for (row = 0; row < cm->mb_rows; row++) {
+  for (row = 0; row < cm->mi_rows; row++) {
     mi = mi_ptr;
     cache = cache_ptr;
-    for (col = 0; col < cm->mb_cols; col++, mi++, cache++)
+    for (col = 0; col < cm->mi_cols; col++, mi++, cache++)
       cache[0] = mi->mbmi.segment_id;
     mi_ptr += cm->mode_info_stride;
-    cache_ptr += cm->mb_cols;
+    cache_ptr += cm->mi_cols;
   }
 }
 
@@ -851,7 +850,7 @@ static int alloc_partition_data(VP9_COMP *cpi) {
   vpx_free(cpi->mb.pip);
 
   cpi->mb.pip = vpx_calloc((cpi->common.mode_info_stride) *
-                           (cpi->common.mb_rows + 1),
+                           (cpi->common.mi_rows + 1),
                            sizeof(PARTITION_INFO));
   if (!cpi->mb.pip)
     return 1;
@@ -933,9 +932,9 @@ static void update_frame_size(VP9_COMP *cpi) {
   cm->mb_rows = aligned_height >> 4;
   cm->mb_cols = aligned_width >> 4;
   cm->MBs = cm->mb_rows * cm->mb_cols;
-  cm->mode_info_stride = cm->mb_cols + 1;
+  cm->mode_info_stride = cm->mi_cols + 1;
   memset(cm->mip, 0,
-        cm->mode_info_stride * (cm->mb_rows + 1) * sizeof(MODE_INFO));
+        cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO));
   vp9_update_mode_info_border(cm, cm->mip);
 
   cm->mi = cm->mip + cm->mode_info_stride + 1;
@@ -1378,16 +1377,17 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->gold_is_alt  = 0;
 
   // Create the encoder segmentation map and set all entries to 0
-  CHECK_MEM_ERROR(cpi->segmentation_map, vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
+  CHECK_MEM_ERROR(cpi->segmentation_map,
+                  vpx_calloc(cpi->common.mi_rows * cpi->common.mi_cols, 1));
 
   // And a copy in common for temporal coding
   CHECK_MEM_ERROR(cm->last_frame_seg_map,
-                  vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
+                  vpx_calloc(cpi->common.mi_rows * cpi->common.mi_cols, 1));
 
   // And a place holder structure is the coding context
   // for use if we want to save and restore it
   CHECK_MEM_ERROR(cpi->coding_context.last_frame_seg_map_copy,
-                  vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
+                  vpx_calloc(cpi->common.mi_rows * cpi->common.mi_cols, 1));
 
   CHECK_MEM_ERROR(cpi->active_map, vpx_calloc(cpi->common.mb_rows * cpi->common.mb_cols, 1));
   vpx_memset(cpi->active_map, 1, (cpi->common.mb_rows * cpi->common.mb_cols));
@@ -3266,6 +3266,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_adapt_zpc_probs(&cpi->common);
 #endif
   }
+
   if (cpi->common.frame_type != KEY_FRAME) {
     vp9_copy(cpi->common.fc.sb_ymode_counts, cpi->sb_ymode_count);
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
@@ -3598,10 +3599,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   if (cm->show_frame) {
     vpx_memcpy(cm->prev_mip, cm->mip,
-               cm->mode_info_stride * (cm->mb_rows + 1) * sizeof(MODE_INFO));
+               cm->mode_info_stride * (cm->mi_rows + 1) *
+               sizeof(MODE_INFO));
   } else {
     vpx_memset(cm->prev_mip, 0,
-               cm->mode_info_stride * (cm->mb_rows + 1) * sizeof(MODE_INFO));
+               cm->mode_info_stride * (cm->mi_rows + 1) *
+               sizeof(MODE_INFO));
   }
 }
 

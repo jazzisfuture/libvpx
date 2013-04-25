@@ -60,7 +60,8 @@ void vp9_subtract_4b_c(BLOCK *be, BLOCKD *bd, int pitch) {
 void vp9_subtract_sby_s_c(int16_t *diff, const uint8_t *src, int src_stride,
                           const uint8_t *pred, int dst_stride,
                           BLOCK_SIZE_TYPE bsize) {
-  const int bh = 16 << mb_height_log2(bsize), bw = 16 << mb_width_log2(bsize);
+  const int bh = MI_SIZE << mi_height_log2(bsize);
+  const int bw = MI_SIZE << mi_width_log2(bsize);
   int r, c;
 
   for (r = 0; r < bh; r++) {
@@ -78,9 +79,9 @@ void vp9_subtract_sbuv_s_c(int16_t *diff, const uint8_t *usrc,
                            const uint8_t *upred,
                            const uint8_t *vpred, int dst_stride,
                            BLOCK_SIZE_TYPE bsize) {
-  const int bhl = mb_height_log2(bsize), bwl = mb_width_log2(bsize);
-  const int uoff = (16 * 16) << (bhl + bwl), voff = (uoff * 5) >> 2;
-  const int bw = 8 << bwl, bh = 8 << bhl;
+  const int bhl = mi_height_log2(bsize), bwl = mi_width_log2(bsize);
+  const int uoff = (MI_SIZE * MI_SIZE) << (bhl + bwl), voff = (uoff * 5) >> 2;
+  const int bw = MI_UV_SIZE << bwl, bh = MI_UV_SIZE << bhl;
   int16_t *udiff = diff + uoff;
   int16_t *vdiff = diff + voff;
   int r, c;
@@ -837,20 +838,20 @@ void vp9_fidct_mb(VP9_COMMON *const cm, MACROBLOCK *x) {
 }
 
 void vp9_encode_inter16x16(VP9_COMMON *const cm, MACROBLOCK *x,
-                           int mb_row, int mb_col) {
+                           int mi_row, int mi_col) {
   MACROBLOCKD *const xd = &x->e_mbd;
 
-  vp9_build_inter_predictors_sb(xd, mb_row, mb_col, BLOCK_SIZE_MB16X16);
+  vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_SIZE_MB16X16);
   subtract_mb(x);
   vp9_fidct_mb(cm, x);
   vp9_recon_sb(xd, BLOCK_SIZE_MB16X16);
 }
 
 /* this function is used by first pass only */
-void vp9_encode_inter16x16y(MACROBLOCK *x, int mb_row, int mb_col) {
+void vp9_encode_inter16x16y(MACROBLOCK *x, int mi_row, int mi_col) {
   MACROBLOCKD *xd = &x->e_mbd;
 
-  vp9_build_inter_predictors_sby(xd, mb_row, mb_col, BLOCK_SIZE_MB16X16);
+  vp9_build_inter_predictors_sby(xd, mi_row, mi_col, BLOCK_SIZE_MB16X16);
   vp9_subtract_sby_s_c(x->src_diff, x->src.y_buffer, x->src.y_stride,
                        xd->plane[0].dst.buf, xd->plane[0].dst.stride,
                        BLOCK_SIZE_MB16X16);
