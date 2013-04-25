@@ -199,56 +199,74 @@ typedef enum {
   MAX_REF_FRAMES = 4
 } MV_REFERENCE_FRAME;
 
-static INLINE int mb_width_log2(BLOCK_SIZE_TYPE sb_type) {
+static INLINE int mi_width_log2(BLOCK_SIZE_TYPE sb_type) {
   switch (sb_type) {
+#if CONFIG_SB8X8
 #if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB8X16:
+#endif
+    case BLOCK_SIZE_SB8X8: return 0;
+#endif
+#if CONFIG_SBSEGMENT
+#if CONFIG_SB8X8
+    case BLOCK_SIZE_SB16X8:
+#endif
     case BLOCK_SIZE_SB16X32:
 #endif
-    case BLOCK_SIZE_MB16X16: return 0;
+    case BLOCK_SIZE_MB16X16: return 0 + CONFIG_SB8X8;
 #if CONFIG_SBSEGMENT
     case BLOCK_SIZE_SB32X16:
     case BLOCK_SIZE_SB32X64:
 #endif
-    case BLOCK_SIZE_SB32X32: return 1;
+    case BLOCK_SIZE_SB32X32: return 1 + CONFIG_SB8X8;
 #if CONFIG_SBSEGMENT
     case BLOCK_SIZE_SB64X32:
 #endif
-    case BLOCK_SIZE_SB64X64: return 2;
+    case BLOCK_SIZE_SB64X64: return 2 + CONFIG_SB8X8;
     default: assert(0);
   }
 }
 
-static INLINE int mb_height_log2(BLOCK_SIZE_TYPE sb_type) {
+static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
   switch (sb_type) {
+#if CONFIG_SB8X8
 #if CONFIG_SBSEGMENT
+    case BLOCK_SIZE_SB16X8:
+#endif
+    case BLOCK_SIZE_SB8X8: return 0;
+#endif
+#if CONFIG_SBSEGMENT
+#if CONFIG_SB8X8
+    case BLOCK_SIZE_SB8X16:
+#endif
     case BLOCK_SIZE_SB32X16:
 #endif
-    case BLOCK_SIZE_MB16X16: return 0;
+    case BLOCK_SIZE_MB16X16: return 0 + CONFIG_SB8X8;
 #if CONFIG_SBSEGMENT
     case BLOCK_SIZE_SB16X32:
     case BLOCK_SIZE_SB64X32:
 #endif
-    case BLOCK_SIZE_SB32X32: return 1;
+    case BLOCK_SIZE_SB32X32: return 1 + CONFIG_SB8X8;
 #if CONFIG_SBSEGMENT
     case BLOCK_SIZE_SB32X64:
 #endif
-    case BLOCK_SIZE_SB64X64: return 2;
+    case BLOCK_SIZE_SB64X64: return 2 + CONFIG_SB8X8;
     default: assert(0);
   }
 }
 
 // parse block dimension in the unit of 4x4 blocks
 static INLINE int b_width_log2(BLOCK_SIZE_TYPE sb_type) {
-  return mb_width_log2(sb_type) + 2;
+  return mi_width_log2(sb_type) + 2 - CONFIG_SB8X8;
 }
 
 static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
-  return mb_height_log2(sb_type) + 2;
+  return mi_height_log2(sb_type) + 2 - CONFIG_SB8X8;
 }
 
 static INLINE int partition_plane(BLOCK_SIZE_TYPE sb_type) {
-  assert(mb_width_log2(sb_type) == mb_height_log2(sb_type));
-  return (mb_width_log2(sb_type) - 1);
+  assert(mi_width_log2(sb_type) == mi_height_log2(sb_type));
+  return (mi_width_log2(sb_type) - 1 - CONFIG_SB8X8);
 }
 
 typedef struct {
