@@ -862,6 +862,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16, 0, ib,
                                 xd->plane[0].diff);
   int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, ib, 16);
+  uint8_t* const dst =
+      raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
+                                xd->plane[0].dst.buf, xd->plane[0].dst.stride);
   ENTROPY_CONTEXT ta = *a, tempa = *a;
   ENTROPY_CONTEXT tl = *l, templ = *l;
   TX_TYPE tx_type = DCT_DCT;
@@ -900,10 +903,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     rate = bmode_costs[mode];
 #endif
 
-    vp9_intra4x4_predict(xd, b, mode, *(b->base_dst) + b->dst, b->dst_stride);
+    vp9_intra4x4_predict(xd, b, mode, dst, xd->plane[0].dst.stride);
     vp9_subtract_block(4, 4, src_diff, 16,
                        src, src_stride,
-                       *(b->base_dst) + b->dst, b->dst_stride);
+                       dst, xd->plane[0].dst.stride);
 
     b->bmi.as_mode.first = mode;
     tx_type = get_tx_type_4x4(xd, ib);
@@ -948,9 +951,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     xd->inv_txm4x4(best_dqcoeff, diff, 32);
 
   vp9_intra4x4_predict(xd, b, *best_mode,
-                       *(b->base_dst) + b->dst, b->dst_stride);
-  vp9_recon_b(*(b->base_dst) + b->dst, diff,
-              *(b->base_dst) + b->dst, b->dst_stride);
+                       dst, xd->plane[0].dst.stride);
+  vp9_recon_b(dst, diff,
+              dst, xd->plane[0].dst.stride);
 
   return best_rd;
 }
@@ -1103,6 +1106,9 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16, 0, ib,
                                 x->plane[0].src_diff);
   int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
+  uint8_t* const dst =
+      raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
+                                xd->plane[0].dst.buf, xd->plane[0].dst.stride);
 
   assert(ib < 16);
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
@@ -1113,11 +1119,11 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     rate = mode_costs[mode];
     b->bmi.as_mode.first = mode;
 
-    vp9_intra8x8_predict(xd, b, mode, *(b->base_dst) + b->dst, b->dst_stride);
+    vp9_intra8x8_predict(xd, ib, mode, dst, xd->plane[0].dst.stride);
 
     vp9_subtract_block(8, 8, src_diff, 16,
                        src, src_stride,
-                       *(b->base_dst) + b->dst, b->dst_stride);
+                       dst, xd->plane[0].dst.stride);
 
     if (xd->mode_info_context->mbmi.txfm_size == TX_8X8) {
       TX_TYPE tx_type = get_tx_type_8x8(xd, ib);
@@ -1727,12 +1733,16 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
           raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, i,
                                     xd->plane[0].pre[0].buf,
                                     xd->plane[0].pre[0].stride);
+      uint8_t* const dst =
+          raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, i,
+                                    xd->plane[0].dst.buf,
+                                    xd->plane[0].dst.stride);
       int thisdistortion;
 
       vp9_build_inter_predictor(pre,
                                 xd->plane[0].pre[0].stride,
-                                *(bd->base_dst) + bd->dst,
-                                bd->dst_stride,
+                                dst,
+                                xd->plane[0].dst.stride,
                                 &bd->bmi.as_mv[0],
                                 &xd->scale_factor[0],
                                 4, 4, 0 /* no avg */, &xd->subpix);
@@ -1747,14 +1757,14 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
                                     xd->plane[0].pre[1].stride);
         vp9_build_inter_predictor(
             second_pre, xd->plane[0].pre[1].stride,
-            *(bd->base_dst) + bd->dst, bd->dst_stride,
+            dst, xd->plane[0].dst.stride,
             &bd->bmi.as_mv[1], &xd->scale_factor[1], 4, 4, 1,
             &xd->subpix);
       }
 
       vp9_subtract_block(4, 4, src_diff, 16,
                          src, src_stride,
-                         *(bd->base_dst) + bd->dst, bd->dst_stride);
+                         dst, xd->plane[0].dst.stride);
       x->fwd_txm4x4(src_diff, coeff, 32);
       x->quantize_b_4x4(x, i, DCT_DCT, 16);
       thisdistortion = vp9_block_error(coeff,
@@ -1811,6 +1821,10 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
                                     x->plane[0].src_diff);
       int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
       int thisdistortion;
+      uint8_t* const dst =
+          raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
+                                    xd->plane[0].dst.buf,
+                                    xd->plane[0].dst.stride);
 
       assert(idx < 16);
       for (which_mv = 0; which_mv < 1 + use_second_ref; ++which_mv) {
@@ -1824,14 +1838,14 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
         // weighting for splitmv modes is turned on.
         vp9_build_inter_predictor(
             pre, xd->plane[0].pre[which_mv].stride,
-            *(bd->base_dst) + bd->dst, bd->dst_stride,
+            dst, xd->plane[0].dst.stride,
             &bd->bmi.as_mv[which_mv], &xd->scale_factor[which_mv], 8, 8,
             which_mv, &xd->subpix);
       }
 
       vp9_subtract_block(8, 8, src_diff, 16,
                          src, src_stride,
-                         *(bd->base_dst) + bd->dst, bd->dst_stride);
+                         dst, xd->plane[0].dst.stride);
 
       if (xd->mode_info_context->mbmi.txfm_size == TX_4X4) {
         if (otherrd) {
