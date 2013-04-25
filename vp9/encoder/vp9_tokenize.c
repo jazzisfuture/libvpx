@@ -122,6 +122,7 @@ static void tokenize_b(VP9_COMP *cpi,
   ENTROPY_CONTEXT *a, *l, *a1, *l1, *a2, *l2, *a3, *l3, a_ec, l_ec;
   uint8_t token_cache[1024];
   TX_TYPE tx_type = DCT_DCT;
+
 #if CONFIG_CODE_ZEROGROUP
   int last_nz_pos[3] = {-1, -1, -1};  // Encoder only
   int is_eoo_list[3] = {0, 0, 0};
@@ -141,49 +142,49 @@ static void tokenize_b(VP9_COMP *cpi,
     a = (ENTROPY_CONTEXT *)xd->above_context +
                                              vp9_block2above_sb64[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb64[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
+    a2 = a1 + ENTROPY_CONTEXT_COUNT;
+    l2 = l1 + ENTROPY_CONTEXT_COUNT;
+    a3 = a2 + ENTROPY_CONTEXT_COUNT;
+    l3 = l2 + ENTROPY_CONTEXT_COUNT;
   } else if (sb_type == BLOCK_SIZE_SB32X64) {
     a = (ENTROPY_CONTEXT *)xd->above_context +
                                           vp9_block2above_sb32x64[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context +
                                           vp9_block2left_sb32x64[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
     a2 = a3 = l2 = l3 = NULL;
   } else if (sb_type == BLOCK_SIZE_SB64X32) {
     a = (ENTROPY_CONTEXT *)xd->above_context +
                                           vp9_block2above_sb64x32[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context +
                                           vp9_block2left_sb64x32[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
     a2 = a3 = l2 = l3 = NULL;
   } else if (sb_type == BLOCK_SIZE_SB32X32) {
     a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above_sb[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
     a2 = a3 = l2 = l3 = NULL;
   } else if (sb_type == BLOCK_SIZE_SB16X32) {
     a = (ENTROPY_CONTEXT *)xd->above_context +
                                           vp9_block2above_sb16x32[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context +
                                           vp9_block2left_sb16x32[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
     a1 = l1 = a2 = l2 = a3 = l3 = NULL;
   } else if (sb_type == BLOCK_SIZE_SB32X16) {
     a = (ENTROPY_CONTEXT *)xd->above_context +
                                           vp9_block2above_sb32x16[tx_size][ib];
     l = (ENTROPY_CONTEXT *)xd->left_context +
                                           vp9_block2left_sb32x16[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
     a1 = l1 = a2 = l2 = a3 = l3 = NULL;
   } else {
     assert(sb_type == BLOCK_SIZE_MB16X16);

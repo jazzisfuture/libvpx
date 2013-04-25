@@ -13,6 +13,10 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vpx_mem/vpx_mem.h"
 
+#define S(x) x + ENTROPY_CONTEXT_COUNT
+#define T(x) x + 2 * ENTROPY_CONTEXT_COUNT
+#define U(x) x + 3 * ENTROPY_CONTEXT_COUNT
+
 const uint8_t vp9_block2left[TX_SIZE_MAX_MB][24] = {
   { 0, 0, 0, 0,
     1, 1, 1, 1,
@@ -35,6 +39,7 @@ const uint8_t vp9_block2left[TX_SIZE_MAX_MB][24] = {
     0, 0, 0, 0,
     0, 0, 0, 0 },
 };
+
 const uint8_t vp9_block2above[TX_SIZE_MAX_MB][24] = {
   { 0, 1, 2, 3,
     0, 1, 2, 3,
@@ -57,8 +62,6 @@ const uint8_t vp9_block2above[TX_SIZE_MAX_MB][24] = {
     0, 0, 0, 0,
     0, 0, 0, 0 },
 };
-
-#define S(x) x + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT)
 
 const uint8_t vp9_block2left_sb16x32[TX_SIZE_MAX_MB][48] = {
   { 0, 0, 0, 0,
@@ -102,6 +105,7 @@ const uint8_t vp9_block2left_sb16x32[TX_SIZE_MAX_MB][48] = {
     S(0), S(0), S(0), S(0),
     S(0), S(0), S(0), S(0) },
 };
+
 const uint8_t vp9_block2above_sb16x32[TX_SIZE_MAX_MB][48] = {
   { 0, 1, 2, 3,
     0, 1, 2, 3,
@@ -167,6 +171,7 @@ const uint8_t vp9_block2left_sb32x16[TX_SIZE_MAX_MB][48] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0 },
 };
+
 const uint8_t vp9_block2above_sb32x16[TX_SIZE_MAX_MB][48] = {
   { 0, 1, 2, 3, S(0), S(1), S(2), S(3),
     0, 1, 2, 3, S(0), S(1), S(2), S(3),
@@ -248,6 +253,7 @@ const uint8_t vp9_block2left_sb[TX_SIZE_MAX_SB][96] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0 },
 };
+
 const uint8_t vp9_block2above_sb[TX_SIZE_MAX_SB][96] = {
   { 0, 1, 2, 3, S(0), S(1), S(2), S(3),
     0, 1, 2, 3, S(0), S(1), S(2), S(3),
@@ -306,9 +312,6 @@ const uint8_t vp9_block2above_sb[TX_SIZE_MAX_SB][96] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0 },
 };
-
-#define T(x) x + 2 * (sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT))
-#define U(x) x + 3 * (sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT))
 
 const uint8_t vp9_block2left_sb32x64[TX_SIZE_MAX_SB][192] = {
   { 0, 0, 0, 0, 0, 0, 0, 0,
@@ -422,6 +425,7 @@ const uint8_t vp9_block2left_sb32x64[TX_SIZE_MAX_SB][192] = {
     T(0), T(0), T(0), T(0), T(0), T(0), T(0), T(0),
     T(0), T(0), T(0), T(0), T(0), T(0), T(0), T(0) },
 };
+
 const uint8_t vp9_block2above_sb32x64[TX_SIZE_MAX_SB][192] = {
   { 0, 1, 2, 3, S(0), S(1), S(2), S(3),
     0, 1, 2, 3, S(0), S(1), S(2), S(3),
@@ -595,6 +599,7 @@ const uint8_t vp9_block2left_sb64x32[TX_SIZE_MAX_SB][192] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 };
+
 const uint8_t vp9_block2above_sb64x32[TX_SIZE_MAX_SB][192] = {
   { 0, 1, 2, 3, S(0), S(1), S(2), S(3), T(0), T(1), T(2), T(3), U(0), U(1), U(2), U(3),
     0, 1, 2, 3, S(0), S(1), S(2), S(3), T(0), T(1), T(2), T(3), U(0), U(1), U(2), U(3),
@@ -784,6 +789,7 @@ const uint8_t vp9_block2left_sb64[TX_SIZE_MAX_SB][384] = {
     6, 6, 6, 6, 6, 6, 6, 6,
     6, 6, 6, 6, 6, 6, 6, 6 },
 };
+
 const uint8_t vp9_block2above_sb64[TX_SIZE_MAX_SB][384] = {
   { 0, 1, 2, 3, S(0), S(1), S(2), S(3), T(0), T(1), T(2), T(3), U(0), U(1), U(2), U(3),
     0, 1, 2, 3, S(0), S(1), S(2), S(3), T(0), T(1), T(2), T(3), U(0), U(1), U(2), U(3),
@@ -914,6 +920,3 @@ const uint8_t vp9_block2above_sb64[TX_SIZE_MAX_SB][384] = {
     6, 6, 6, 6, 6, 6, 6, 6,
     6, 6, 6, 6, 6, 6, 6, 6 },
 };
-#undef U
-#undef T
-#undef S

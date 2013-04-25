@@ -401,10 +401,10 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       seg_eob = 1024;
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
-        a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-        a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-        l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-        l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a2 = a1 + ENTROPY_CONTEXT_COUNT;
+        a3 = a2 + ENTROPY_CONTEXT_COUNT;
+        l2 = l1 + ENTROPY_CONTEXT_COUNT;
+        l3 = l2 + ENTROPY_CONTEXT_COUNT;
         a_ec = (a[0] + a[1] + a1[0] + a1[1] +
                 a2[0] + a2[1] + a3[0] + a3[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1] +

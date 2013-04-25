@@ -599,12 +599,12 @@ void vp9_optimize_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
     const int plane = 1 + (b >= 320);
     a = ta + vp9_block2above_sb64[TX_32X32][b];
     l = tl + vp9_block2left_sb64[TX_32X32][b];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a + 2 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l2 = l + 2 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a3 = a + 3 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l3 = l + 3 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a1 = a + ENTROPY_CONTEXT_COUNT;
+    l1 = l + ENTROPY_CONTEXT_COUNT;
+    a2 = a + 2 * ENTROPY_CONTEXT_COUNT;
+    l2 = l + 2 * ENTROPY_CONTEXT_COUNT;
+    a3 = a + 3 * ENTROPY_CONTEXT_COUNT;
+    l3 = l + 3 * ENTROPY_CONTEXT_COUNT;
     a_ec = (a[0] + a[1] + a1[0] + a1[1] + a2[0] + a2[1] + a3[0] + a3[1]) != 0;
     l_ec = (l[0] + l[1] + l1[0] + l1[1] + l2[0] + l2[1] + l3[0] + l3[1]) != 0;
     optimize_b(cm, x, b, PLANE_TYPE_UV, x->e_mbd.plane[plane].dequant,

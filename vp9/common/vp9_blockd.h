@@ -54,6 +54,9 @@ typedef struct {
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
 
+#define ENTROPY_CONTEXT_COUNT \
+  (sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT))
+
 typedef char PARTITION_CONTEXT;
 
 static INLINE int combine_entropy_contexts(ENTROPY_CONTEXT a,

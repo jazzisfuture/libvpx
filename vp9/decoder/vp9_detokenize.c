@@ -118,6 +118,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   vp9_coeff_count *coef_counts;
   const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
   TX_TYPE tx_type = DCT_DCT;
+  const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
 #if CONFIG_CODE_ZEROGROUP
   int is_eoo[3] = {0, 0, 0};
   int is_last_zero[3] = {0, 0, 0};
@@ -133,22 +134,22 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
 #endif
 
-  if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
+  if (sb_type == BLOCK_SIZE_SB64X64) {
     aidx = vp9_block2above_sb64[txfm_size][block_idx];
     lidx = vp9_block2left_sb64[txfm_size][block_idx];
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X32) {
+  } else if (sb_type == BLOCK_SIZE_SB64X32) {
     aidx = vp9_block2above_sb64x32[txfm_size][block_idx];
     lidx = vp9_block2left_sb64x32[txfm_size][block_idx];
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X64) {
+  } else if (sb_type == BLOCK_SIZE_SB32X64) {
     aidx = vp9_block2above_sb32x64[txfm_size][block_idx];
     lidx = vp9_block2left_sb32x64[txfm_size][block_idx];
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X32) {
+  } else if (sb_type == BLOCK_SIZE_SB32X32) {
     aidx = vp9_block2above_sb[txfm_size][block_idx];
     lidx = vp9_block2left_sb[txfm_size][block_idx];
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X16) {
+  } else if (sb_type == BLOCK_SIZE_SB32X16) {
     aidx = vp9_block2above_sb32x16[txfm_size][block_idx];
     lidx = vp9_block2left_sb32x16[txfm_size][block_idx];
-  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB16X32) {
+  } else if (sb_type == BLOCK_SIZE_SB16X32) {
     aidx = vp9_block2above_sb16x32[txfm_size][block_idx];
     lidx = vp9_block2left_sb16x32[txfm_size][block_idx];
   } else {
@@ -158,9 +159,9 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
 
   switch (txfm_size) {
     default:
-    case TX_4X4: {
-      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-          get_tx_type_4x4(xd, block_idx) : DCT_DCT;
+    case TX_4X4:
+      tx_type = type == PLANE_TYPE_Y_WITH_DC ? get_tx_type_4x4(xd, block_idx)
+                                             : DCT_DCT;
       scan = get_scan_4x4(tx_type);
       above_ec = A0[aidx] != 0;
       left_ec = L0[lidx] != 0;
@@ -172,9 +173,8 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       zpc_count = &(fc->zpc_counts_4x4);
 #endif
       break;
-    }
+
     case TX_8X8: {
-      const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
       const int sz = 1 + b_width_log2(sb_type);
       const int x = block_idx & ((1 << sz) - 1);
       const int y = block_idx - x;
@@ -193,7 +193,6 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       break;
     }
     case TX_16X16: {
-      const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
       const int sz = 2 + b_width_log2(sb_type);
       const int x = block_idx & ((1 << sz) - 1);
       const int y = block_idx - x;
