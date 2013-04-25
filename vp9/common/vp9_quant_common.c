@@ -38,7 +38,7 @@ void vp9_init_quant_tables() {
   }
 }
 
-int vp9_dc_quant(int qindex, int delta) {
+int vp9_dc_y_quant(int qindex, int delta) {
   return dc_qlookup[clamp(qindex + delta, 0, MAXQ)];
 }
 
@@ -46,7 +46,7 @@ int vp9_dc_uv_quant(int qindex, int delta) {
   return dc_qlookup[clamp(qindex + delta, 0, MAXQ)];
 }
 
-int vp9_ac_yquant(int qindex) {
+int vp9_ac_y_quant(int qindex) {
   return ac_qlookup[clamp(qindex, 0, MAXQ)];
 }
 

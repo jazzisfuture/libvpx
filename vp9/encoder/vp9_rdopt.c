@@ -187,7 +187,7 @@ void vp9_init_me_luts() {
 }
 
 static int compute_rd_mult(int qindex) {
-  int q = vp9_dc_quant(qindex, 0);
+  const int q = vp9_dc_y_quant(qindex, 0);
   return (11 * q * q) >> 2;
 }
 
@@ -221,7 +221,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
 
   vp9_set_speed_features(cpi);
 
-  q = (int)pow(vp9_dc_quant(qindex, 0) >> 2, 1.25);
+  q = (int)pow(vp9_dc_y_quant(qindex, 0) >> 2, 1.25);
   q <<= 2;
   if (q < 8)
     q = 8;
@@ -3355,8 +3355,8 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int ref_costs[MAX_REF_FRAMES];
   int_mv seg_mvs[NB_PARTITIONINGS][16 /* n_blocks */][MAX_REF_FRAMES - 1];
 
-  int intra_cost_penalty = 20 * vp9_dc_quant(cpi->common.base_qindex,
-                                             cpi->common.y_dc_delta_q);
+  int intra_cost_penalty = 20 * vp9_dc_y_quant(cpi->common.base_qindex,
+                                               cpi->common.y_dc_delta_q);
   int64_t mode_distortions[MB_MODE_COUNT] = {-1};
   int64_t frame_distortions[MAX_REF_FRAMES] = {-1};
   int ref_frame;

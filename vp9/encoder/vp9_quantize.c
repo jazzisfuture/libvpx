@@ -450,14 +450,14 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
                                      14, 16, 20, 24, 28, 32, 36, 40 };
 
   for (q = 0; q < QINDEX_RANGE; q++) {
-    int qzbin_factor = (vp9_dc_quant(q, 0) < 148) ? 84 : 80;
+    int qzbin_factor = (vp9_dc_y_quant(q, 0) < 148) ? 84 : 80;
     int qrounding_factor = 48;
     if (q == 0) {
       qzbin_factor = 64;
       qrounding_factor = 64;
     }
     // dc values
-    quant_val = vp9_dc_quant(q, cpi->common.y_dc_delta_q);
+    quant_val = vp9_dc_y_quant(q, cpi->common.y_dc_delta_q);
     invert_quant(cpi->Y1quant[q] + 0, cpi->Y1quant_shift[q] + 0, quant_val);
     cpi->Y1zbin[q][0] = ROUND_POWER_OF_TWO(qzbin_factor * quant_val, 7);
     cpi->Y1round[q][0] = (qrounding_factor * quant_val) >> 7;
@@ -475,7 +475,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     for (i = 1; i < 16; i++) {
       int rc = vp9_default_zig_zag1d_4x4[i];
 
-      quant_val = vp9_ac_yquant(q);
+      quant_val = vp9_ac_y_quant(q);
       invert_quant(cpi->Y1quant[q] + rc, cpi->Y1quant_shift[q] + rc, quant_val);
       cpi->Y1zbin[q][rc] = ROUND_POWER_OF_TWO(qzbin_factor * quant_val, 7);
       cpi->Y1round[q][rc] = (qrounding_factor * quant_val) >> 7;
