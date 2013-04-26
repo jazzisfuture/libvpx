@@ -236,7 +236,10 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
   if (up_available) {
     uint8_t *yabove_ptr = src - src_stride;
     vpx_memcpy(yabove_row, yabove_ptr, bw);
-    vpx_memset(yabove_row + bw, yabove_row[bw -1], bw);
+    if (bw == 4 && right_available)
+      vpx_memcpy(yabove_row + bw, yabove_ptr + bw, bw);
+    else
+      vpx_memset(yabove_row + bw, yabove_row[bw -1], bw);
     ytop_left = left_available ? yabove_ptr[-1] : 127;
   } else {
     vpx_memset(yabove_row, 127, bw * 2);
@@ -616,7 +619,7 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
   const int block_idx = (b - xd->block);
   const int have_top = (block_idx >> 2) || xd->up_available;
   const int have_left = (block_idx & 3) || xd->left_available;
-  const int have_right = ((block_idx & 3) != 3) || xd->right_available;
+  const int have_right = ((block_idx & 3) != 3);
 
   vp9_build_intra_predictors(*(b->base_dst) + b->dst,
                              b->dst_stride, predictor, pre_stride,
@@ -631,7 +634,7 @@ void vp9_intra_uv4x4_predict(MACROBLOCKD *xd,
   const int block_idx = (b - xd->block) & 3;
   const int have_top = (block_idx >> 1) || xd->up_available;
   const int have_left = (block_idx & 1) || xd->left_available;
-  const int have_right = !(block_idx & 1) || xd->right_available;
+  const int have_right = !(block_idx & 1);
 
   vp9_build_intra_predictors(*(b->base_dst) + b->dst,
                              b->dst_stride, predictor, pre_stride,
