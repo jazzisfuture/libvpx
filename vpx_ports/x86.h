@@ -33,7 +33,7 @@ typedef enum {
   VPX_CPU_LAST
 }  vpx_cpu_t;
 
-#if defined(__GNUC__) && __GNUC__
+#if (defined(__GNUC__) && __GNUC__) || defined (__ANDROID__)
 #if ARCH_X86_64
 #define cpuid(func,ax,bx,cx,dx)\
   __asm__ __volatile__ (\
@@ -49,7 +49,7 @@ typedef enum {
                         : "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) \
                         : "a" (func));
 #endif
-#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC) /* end __GNUC__ or __ANDROID__*/
 #if ARCH_X86_64
 #define cpuid(func,ax,bx,cx,dx)\
   asm volatile (\
@@ -69,7 +69,7 @@ typedef enum {
                 : "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) \
                 : "a" (func));
 #endif
-#else
+#else /* end __SUNPRO__ */
 #if ARCH_X86_64
 void __cpuid(int CPUInfo[4], int info_type);
 #pragma intrinsic(__cpuid)
@@ -86,7 +86,7 @@ void __cpuid(int CPUInfo[4], int info_type);
   __asm mov c, ecx\
   __asm mov d, edx
 #endif
-#endif
+#endif /* end others */
 
 #define HAS_MMX   0x01
 #define HAS_SSE   0x02
@@ -98,24 +98,37 @@ void __cpuid(int CPUInfo[4], int info_type);
 #define BIT(n) (1<<n)
 #endif
 
-static int
-x86_simd_caps(void) {
-  unsigned int flags = 0;
-  unsigned int mask = ~0;
-  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+static int x86_cpu_env_flags(int *flags) {
   char *env;
-  (void)reg_ebx;
-
   /* See if the CPU capabilities are being overridden by the environment */
   env = getenv("VPX_SIMD_CAPS");
+  if (env && *env) {
+    *flags = (int)strtol(env, NULL, 0);
+    return 0;
+  }
+  *flags = 0;
+  return -1;
+}
 
-  if (env && *env)
-    return (int)strtol(env, NULL, 0);
-
+static int x86_cpu_env_mask() {
+  char *env;
   env = getenv("VPX_SIMD_CAPS_MASK");
+  return env && *env ? (int)strtol(env, NULL, 0) : ~0;
+}
 
-  if (env && *env)
-    mask = strtol(env, NULL, 0);
+#if !CONFIG_RUNTIME_CPU_DETECT
+
+#else /* end !CONFIG_RUNTIME_CPU_DETECT */
+static int
+x86_simd_caps(void) {
+  unsigned int flags;
+  unsigned int mask;
+  unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+
+  if (!x86_cpu_env_flags(&flags)) {
+    return flags;
+  }
+  mask = x86_cpu_env_mask();
 
   /* Ensure that the CPUID instruction supports extended features */
   cpuid(0, reg_eax, reg_ebx, reg_ecx, reg_edx);
@@ -140,6 +153,7 @@ x86_simd_caps(void) {
 
   return flags & mask;
 }
+#endif /* end CONFIG_RUNTIME_CPU_DETECT */
 
 vpx_cpu_t vpx_x86_vendor(void);
 
