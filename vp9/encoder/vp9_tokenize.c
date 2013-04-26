@@ -132,6 +132,11 @@ static void tokenize_b(VP9_COMP *cpi,
   vp9_zpc_count *zpc_count;
   uint8_t token_cache_full[1024];
 #endif
+#if CONFIG_REDUCED_CONTEXT && BLOCK_TYPES == 1
+  int ctype = 0;
+#else
+  int ctype = type;
+#endif
 #if CONFIG_CODE_ZEROGROUP
   vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
 #endif
@@ -308,7 +313,7 @@ static void tokenize_b(VP9_COMP *cpi,
     }
 
     t->token = token;
-    t->context_tree = coef_probs[type][ref][band][pt];
+    t->context_tree = coef_probs[ctype][ref][band][pt];
       t->skip_eob_node = (c > 0) && (token_cache[scan[c - 1]] == 0);
     assert(vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
 #if CONFIG_CODE_ZEROGROUP
@@ -326,9 +331,10 @@ static void tokenize_b(VP9_COMP *cpi,
     }
 #endif
     if (!dry_run) {
-      ++counts[type][ref][band][pt][token];
-      if (!t->skip_eob_node)
-        ++cpi->common.fc.eob_branch_counts[tx_size][type][ref][band][pt];
+      ++counts[ctype][ref][band][pt][token];
+      if (!t->skip_eob_node) {
+        ++cpi->common.fc.eob_branch_counts[tx_size][ctype][ref][band][pt];
+      }
     }
     token_cache[scan[c]] = token;
 #if CONFIG_CODE_ZEROGROUP
@@ -362,8 +368,8 @@ static void tokenize_b(VP9_COMP *cpi,
               assert(token_cache_full[scan[c_]] == ZERO_TOKEN);
               if (!c_ || token_cache_full[scan[c_ - 1]])
                 savings +=
-                    vp9_cost_bit(coef_probs[type][ref][band_][pt_][0], 1);
-              savings += vp9_cost_bit(coef_probs[type][ref][band_][pt_][1], 0);
+                    vp9_cost_bit(coef_probs[ctype][ref][band_][pt_][0], 1);
+              savings += vp9_cost_bit(coef_probs[ctype][ref][band_][pt_][1], 0);
               zsaved++;
             }
           }
@@ -565,6 +571,7 @@ void vp9_tokenize_mb(VP9_COMP *cpi,
   // transmitted skip probability;
   int skip_inc;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
+
 
   if (!vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) {
     skip_inc = 1;

@@ -36,6 +36,7 @@
 
 #if defined(SECTIONBITS_OUTPUT)
 unsigned __int64 Sectionbits[500];
+unsigned int active_section;
 #endif
 
 #ifdef ENTROPY_STATS
@@ -46,8 +47,6 @@ vp9_coeff_stats tree_update_hist_4x4[BLOCK_TYPES];
 vp9_coeff_stats tree_update_hist_8x8[BLOCK_TYPES];
 vp9_coeff_stats tree_update_hist_16x16[BLOCK_TYPES];
 vp9_coeff_stats tree_update_hist_32x32[BLOCK_TYPES];
-
-extern unsigned int active_section;
 #endif
 
 #if CONFIG_CODE_ZEROGROUP
@@ -712,7 +711,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
   set_mb_row_col(pc, xd, mb_row, bh, mb_col, bw);
 
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
   active_section = 9;
 #endif
 
@@ -746,7 +745,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   encode_ref_frame(bc, pc, xd, segment_id, rf);
 
   if (rf == INTRA_FRAME) {
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
     active_section = 6;
 #endif
 
@@ -780,7 +779,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf]);
 
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
     active_section = 3;
 #endif
 
@@ -836,7 +835,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     switch (mode) { /* new, split require MVs */
       case NEWMV:
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
         active_section = 5;
 #endif
         write_nmv(cpi, bc, &mi->mv[0].as_mv, &mi->best_mv,
@@ -884,7 +883,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                            cpi->common.fc.sub_mv_ref_prob[mv_contz]);
           cpi->sub_mv_ref_count[mv_contz][blockmode - LEFT4X4]++;
           if (blockmode == NEW4X4) {
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
             active_section = 11;
 #endif
             write_nmv(cpi, bc, &blockmv.as_mv, &mi->best_mv,
@@ -1156,13 +1155,13 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   if (cm->frame_type == KEY_FRAME) {
     write_mb_modes_kf(cpi, m, bc,
                       cm->mb_rows - mb_row, cm->mb_cols - mb_col);
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
     active_section = 8;
 #endif
   } else {
     pack_inter_mode_mvs(cpi, m, bc,
                         cm->mb_rows - mb_row, cm->mb_cols - mb_col);
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
     active_section = 1;
 #endif
   }
@@ -1993,7 +1992,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   vp9_write_literal(&header_bc, pc->frame_context_idx,
                     NUM_FRAME_CONTEXTS_LG2);
 
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
   if (pc->frame_type == INTER_FRAME)
     active_section = 0;
   else
@@ -2209,7 +2208,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
   update_zpc_probs(cpi, &header_bc);
 #endif
 
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
   active_section = 2;
 #endif
 
@@ -2229,7 +2228,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, unsigned char *dest,
     // Update the probabilities used to encode reference frame data
     update_ref_probs(cpi);
 
-#ifdef ENTROPY_STATS
+#ifdef SECTIONBITS_OUTPUT
     active_section = 1;
 #endif
 

@@ -325,6 +325,11 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   vp9_zpc_probs *zpc_probs;
   uint8_t token_cache_full[1024];
 #endif
+#if CONFIG_REDUCED_CONTEXT && BLOCK_TYPES == 1
+  int ctype = 0;
+#else
+  int ctype = type;
+#endif
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   vp9_prob (*coef_probs)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                         [ENTROPY_NODES];
@@ -466,7 +471,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
 #endif
       if (!c || token_cache[scan[c - 1]])
-        cost += vp9_cost_bit(coef_probs[type][ref][band][pt][0], 1);
+        cost += vp9_cost_bit(coef_probs[ctype][ref][band][pt][0], 1);
       token_cache[scan[c]] = t;
 #if CONFIG_CODE_ZEROGROUP
       if (t == ZERO_TOKEN && !skip_coef_val) {
@@ -499,9 +504,9 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
                 assert(token_cache_full[scan[c_]] == ZERO_TOKEN);
                 if (!c_ || token_cache_full[scan[c_ - 1]])
                   savings += vp9_cost_bit(
-                      coef_probs[type][ref][band_][pt_][0], 1);
+                      coef_probs[ctype][ref][band_][pt_][0], 1);
                 savings += vp9_cost_bit(
-                    coef_probs[type][ref][band_][pt_][1], 0);
+                    coef_probs[ctype][ref][band_][pt_][1], 0);
                 zsaved++;
               }
             }
@@ -528,7 +533,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
     if (c < seg_eob) {
       if (c)
         pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
-      cost += mb->token_costs[tx_size][type][ref]
+      cost += mb->token_costs[tx_size][ctype][ref]
           [get_coef_band(scan, tx_size, c)]
           [pt][DCT_EOB_TOKEN];
     }

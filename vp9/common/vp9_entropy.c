@@ -40,6 +40,30 @@ DECLARE_ALIGNED(16, const uint8_t, vp9_norm[256]) = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+#if CONFIG_REDUCED_CONTEXT
+// Unified coefficient band structure used by all block sizes
+DECLARE_ALIGNED(16, const int, vp9_coef_bands8x8[64]) = {
+  0, 1, 2, 3, 3, 4, 4, 4,
+  1, 2, 3, 3, 4, 4, 4, 4,
+  2, 3, 3, 4, 4, 4, 4, 4,
+  3, 3, 4, 4, 4, 4, 4, 4,
+  3, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4
+};
+
+DECLARE_ALIGNED(16, const int, vp9_coef_bands4x4[16]) = {
+  0, 1, 2, 3,
+  1, 2, 3, 4,
+  2, 3, 4, 4,
+  3, 4, 4, 4
+};
+
+DECLARE_ALIGNED(16, const uint8_t, vp9_pt_energy_class[MAX_ENTROPY_TOKENS]) = {
+  0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3
+};
+#else
 // Unified coefficient band structure used by all block sizes
 DECLARE_ALIGNED(16, const int, vp9_coef_bands8x8[64]) = {
   0, 1, 2, 3, 4, 4, 5, 5,
@@ -51,6 +75,7 @@ DECLARE_ALIGNED(16, const int, vp9_coef_bands8x8[64]) = {
   5, 5, 5, 5, 5, 5, 5, 5,
   5, 5, 5, 5, 5, 5, 5, 5
 };
+
 DECLARE_ALIGNED(16, const int, vp9_coef_bands4x4[16]) = {
   0, 1, 2, 3,
   1, 2, 3, 4,
@@ -61,6 +86,7 @@ DECLARE_ALIGNED(16, const int, vp9_coef_bands4x4[16]) = {
 DECLARE_ALIGNED(16, const uint8_t, vp9_pt_energy_class[MAX_ENTROPY_TOKENS]) = {
   0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5
 };
+#endif  // CONFIG_REDUCED_CONTEXT
 
 #if CONFIG_SCATTERSCAN
 DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_4x4[16]) = {
@@ -1597,20 +1623,6 @@ OrientationType vp9_get_orientation(int rc, TX_SIZE tx_size) {
     return HORIZONTAL;
   else
     return DIAGONAL;
-  /*
-  if (i == 0 && j == 0) return DIAGONAL;
-  while (i > 1 || j > 1) {
-    i >>= 1;
-    j >>= 1;
-  }
-  if (i == 0 && j == 1)
-    return HORIZONTAL;  // horizontal
-  else if (i == 1 && j == 1)
-    return DIAGONAL;    // diagonal
-  else if (i == 1 && j == 0)
-    return VERTICAL;    // vertical
-  assert(0);
-  */
 }
 
 int vp9_use_eoo(int c, int seg_eob, const int *scan,
