@@ -26,10 +26,12 @@ void vp9_dc_idct_add_y_block_lossless_c(int16_t *q, unsigned char *pre,
                                         const int16_t *dc);
 
 void vp9_idct_add_y_block_lossless_c(int16_t *q, unsigned char *dst, int stride,
-                                     struct macroblockd *xd);
+                                     struct macroblockd *xd,
+                                     BLOCK_SIZE_TYPE bs);
 
 void vp9_idct_add_uv_block_lossless_c(int16_t *q, unsigned char *dst,
-                                      int stride, uint16_t *eobs);
+                                      int stride, uint16_t *eobs,
+                                      BLOCK_SIZE_TYPE bs);
 
 void vp9_iht_add_c(TX_TYPE tx_type, int16_t *input, unsigned char *dest,
                    int stride, int eob);

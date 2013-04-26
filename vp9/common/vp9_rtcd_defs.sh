@@ -37,10 +37,10 @@ specialize vp9_idct_add_8x8
 prototype void vp9_idct_add "int16_t *input, uint8_t *dest, int stride, int eob"
 specialize vp9_idct_add
 
-prototype void vp9_idct_add_y_block "int16_t *q, uint8_t *dst, int stride, struct macroblockd *xd"
+prototype void vp9_idct_add_y_block "int16_t *q, uint8_t *dst, int stride, struct macroblockd *xd, BLOCK_SIZE_TYPE bs"
 specialize vp9_idct_add_y_block
 
-prototype void vp9_idct_add_uv_block "int16_t *q, uint8_t *dst, int stride, uint16_t *eobs"
+prototype void vp9_idct_add_uv_block "int16_t *q, uint8_t *dst, int stride, uint16_t *eobs, BLOCK_SIZE_TYPE bsize"
 specialize vp9_idct_add_uv_block
 
 prototype void vp9_idct_add_32x32 "int16_t *q, uint8_t *dst, int stride, int eob"
