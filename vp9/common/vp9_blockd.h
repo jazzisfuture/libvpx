@@ -318,6 +318,7 @@ struct macroblockd_plane {
   int subsampling_y;
   struct buf_2d dst;
   struct buf_2d pre[2];
+  struct scale_factors scale_factor[2];
   int16_t *dequant;
 };
 
@@ -330,9 +331,6 @@ struct macroblockd_plane {
 
 typedef struct macroblockd {
   struct macroblockd_plane plane[MAX_MB_PLANE];
-
-  struct scale_factors scale_factor[2];
-  struct scale_factors scale_factor_uv[2];
 
   MODE_INFO *prev_mode_info_context;
   MODE_INFO *mode_info_context;

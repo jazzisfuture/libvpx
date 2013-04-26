@@ -1747,7 +1747,7 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
                                 dst,
                                 xd->plane[0].dst.stride,
                                 &xd->mode_info_context->bmi[i].as_mv[0],
-                                &xd->scale_factor[0],
+                                &xd->plane[0].scale_factor[0],
                                 4, 4, 0 /* no avg */, &xd->subpix);
 
       // TODO(debargha): Make this work properly with the
@@ -1762,7 +1762,7 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
             second_pre, xd->plane[0].pre[1].stride,
             dst, xd->plane[0].dst.stride,
             &xd->mode_info_context->bmi[i].as_mv[1],
-            &xd->scale_factor[1], 4, 4, 1,
+            &xd->plane[0].scale_factor[1], 4, 4, 1,
             &xd->subpix);
       }
 
@@ -1843,7 +1843,7 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
             pre, xd->plane[0].pre[which_mv].stride,
             dst, xd->plane[0].dst.stride,
             &xd->mode_info_context->bmi[ib].as_mv[which_mv],
-            &xd->scale_factor[which_mv], 8, 8,
+            &xd->plane[0].scale_factor[which_mv], 8, 8,
             which_mv, &xd->subpix);
       }
 
@@ -2939,8 +2939,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           for (i = 0; i < MAX_MB_PLANE; i++)
             backup_yv12[i] = xd->plane[i].pre[0];
 
-          setup_pre_planes(xd, scaled_ref_frame, NULL, mb_row, mb_col,
-                           NULL, NULL);
+          setup_pre_planes(xd, scaled_ref_frame, NULL, mb_row, mb_col, 0);
         }
 
         vp9_clamp_mv_min_max(x, &ref_mv[0]);
@@ -3527,7 +3526,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // currently.
     setup_pre_planes(xd, &yv12_mb[mbmi->ref_frame],
         mbmi->second_ref_frame > 0 ? &yv12_mb[mbmi->second_ref_frame] : NULL,
-        0, 0, NULL, NULL);
+        0, 0, 0);
 
     // Experimental code. Special case for gf and arf zeromv modes.
     // Increase zbin size to suppress noise
@@ -4519,7 +4518,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     setup_pre_planes(xd, &yv12_mb[ref_frame],
-        comp_pred ? &yv12_mb[second_ref] : NULL, 0, 0, NULL, NULL);
+        comp_pred ? &yv12_mb[second_ref] : NULL, 0, 0, 0);
 
     vpx_memcpy(mdcounts, frame_mdcounts[ref_frame], sizeof(mdcounts));
 

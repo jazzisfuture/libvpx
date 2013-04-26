@@ -49,7 +49,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
   vp9_build_inter_predictor(y_mb_ptr, stride,
                             &pred[0], 16,
                             &mv,
-                            &xd->scale_factor[which_mv],
+                            &xd->plane[0].scale_factor[which_mv],
                             16, 16,
                             which_mv,
                             &xd->subpix);
@@ -59,7 +59,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
   vp9_build_inter_predictor_q4(u_mb_ptr, stride,
                                &pred[256], 8,
                                &mv,
-                               &xd->scale_factor_uv[which_mv],
+                               &xd->plane[1].scale_factor[which_mv],
                                8, 8,
                                which_mv,
                                &xd->subpix);
@@ -67,7 +67,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
   vp9_build_inter_predictor_q4(v_mb_ptr, stride,
                                &pred[320], 8,
                                &mv,
-                               &xd->scale_factor_uv[which_mv],
+                               &xd->plane[2].scale_factor[which_mv],
                                8, 8,
                                which_mv,
                                &xd->subpix);
@@ -373,6 +373,7 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
   int strength = cpi->active_arnr_strength;
   int blur_type = cpi->oxcf.arnr_type;
   int max_frames = cpi->active_arnr_frames;
+  int i;
 
   num_frames_backward = distance;
   num_frames_forward = vp9_lookahead_depth(cpi->lookahead)
@@ -444,11 +445,13 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
 #endif
 
   // Setup scaling factors. Scaling on each of the arnr frames is not supported
-  vp9_setup_scale_factors_for_frame(&cpi->mb.e_mbd.scale_factor[0],
+  vp9_setup_scale_factors_for_frame(&cpi->mb.e_mbd.plane[0].scale_factor[0],
       &cpi->common.yv12_fb[cpi->common.new_fb_idx],
       cpi->common.width,
       cpi->common.height);
-  cpi->mb.e_mbd.scale_factor_uv[0] = cpi->mb.e_mbd.scale_factor[0];
+  for (i = 1; i < MAX_MB_PLANE; i++)
+    cpi->mb.e_mbd.plane[i].scale_factor[0] =
+        cpi->mb.e_mbd.plane[0].scale_factor[0];
 
   // Setup frame pointers, NULL indicates frame not included in filter
   vpx_memset(cpi->frames, 0, max_frames * sizeof(YV12_BUFFER_CONFIG *));

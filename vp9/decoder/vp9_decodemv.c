@@ -645,15 +645,14 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     vp9_prob mv_ref_p[VP9_MVREFS - 1];
 
     const MV_REFERENCE_FRAME ref_frame = mbmi->ref_frame;
-    struct scale_factors *sf0 = &xd->scale_factor[0];
-    *sf0 = cm->active_ref_scale[mbmi->ref_frame - 1];
 
+    set_scale_factors(xd, ref_frame - 1, -1, cm->active_ref_scale);
     {
       // Select the appropriate reference frame for this MB
       const int ref_fb_idx = cm->active_ref_idx[ref_frame - 1];
 
       setup_pre_planes(xd, &cm->yv12_fb[ref_fb_idx], NULL,
-                       mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+                       mb_row, mb_col, 1);
 
 #ifdef DEC_DEBUG
       if (dec_debug)
@@ -713,12 +712,12 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         mbmi->second_ref_frame = 1;
       if (mbmi->second_ref_frame > 0) {
         const MV_REFERENCE_FRAME second_ref_frame = mbmi->second_ref_frame;
-        struct scale_factors *sf1 = &xd->scale_factor[1];
         const int second_ref_fb_idx = cm->active_ref_idx[second_ref_frame - 1];
-        *sf1 = cm->active_ref_scale[second_ref_frame - 1];
 
+        set_scale_factors(xd, ref_frame - 1, second_ref_frame - 1,
+                          cm->active_ref_scale);
         setup_pre_planes(xd, NULL, &cm->yv12_fb[second_ref_fb_idx],
-                         mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+                         mb_row, mb_col, 1);
 
         vp9_find_mv_refs(cm, xd, mi,
                          use_prev_in_find_mv_refs ? prev_mi : NULL,

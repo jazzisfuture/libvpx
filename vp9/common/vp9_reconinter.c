@@ -339,10 +339,10 @@ static void build_inter_predictors(int plane, int block,
     // source
     const uint8_t * const base_pre = arg->pre[which_mv][plane];
     const int pre_stride = arg->pre_stride[which_mv][plane];
+    struct scale_factors* const scale =
+        &xd->plane[plane].scale_factor[which_mv];
     const uint8_t *const pre = base_pre +
-        scaled_buffer_offset(x, y, pre_stride, &xd->scale_factor[which_mv]);
-    struct scale_factors * const scale =
-      plane == 0 ? &xd->scale_factor[which_mv] : &xd->scale_factor_uv[which_mv];
+        scaled_buffer_offset(x, y, pre_stride, scale);
 
     // dest
     uint8_t *const dst = arg->dst[plane] + arg->dst_stride[plane] * y + x;
@@ -381,7 +381,7 @@ static void build_inter_predictors(int plane, int block,
 
     vp9_build_inter_predictor_q4(pre, pre_stride,
                                  dst, arg->dst_stride[plane],
-                                 &clamped_mv, &xd->scale_factor[which_mv],
+                                 &clamped_mv, scale,
                                  4 << pred_w, 4 << pred_h, which_mv,
                                  &xd->subpix);
   }

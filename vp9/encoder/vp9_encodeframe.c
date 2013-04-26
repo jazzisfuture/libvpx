@@ -1287,7 +1287,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   // TODO(jkoleszar): are these initializations required?
   setup_pre_planes(xd, &cm->yv12_fb[cm->ref_frame_map[cpi->lst_fb_idx]], NULL,
-                   0, 0, NULL, NULL);
+                   0, 0, 0);
   setup_dst_planes(xd, &cm->yv12_fb[cm->new_fb_idx], 0, 0);
 
   // set up frame for intra coded blocks
@@ -1963,7 +1963,7 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
         &cpi->common.yv12_fb[ref_fb_idx],
         mbmi->second_ref_frame > 0 ? &cpi->common.yv12_fb[second_ref_fb_idx]
                                    : NULL,
-        mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+        mb_row, mb_col, 1);
 
     if (!x->skip) {
       vp9_encode_inter16x16(cm, x, mb_row, mb_col);
@@ -2156,7 +2156,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
         &cpi->common.yv12_fb[ref_fb_idx],
         xd->mode_info_context->mbmi.second_ref_frame > 0
             ? &cpi->common.yv12_fb[second_ref_fb_idx] : NULL,
-        mb_row, mb_col, xd->scale_factor, xd->scale_factor_uv);
+        mb_row, mb_col, 1);
 
     vp9_build_inter_predictors_sb(xd, mb_row, mb_col, bsize);
   }

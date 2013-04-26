@@ -791,27 +791,25 @@ static void set_refs(VP9D_COMP *pbi, int mb_row, int mb_col) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
+  int ref_frame[2] = {0};
+  YV12_BUFFER_CONFIG* cfg[2] = {0};
 
   if (mbmi->ref_frame > INTRA_FRAME) {
     // Select the appropriate reference frame for this MB
     const int fb_idx = cm->active_ref_idx[mbmi->ref_frame - 1];
-    const YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[fb_idx];
-    xd->scale_factor[0]    = cm->active_ref_scale[mbmi->ref_frame - 1];
-    xd->scale_factor_uv[0] = cm->active_ref_scale[mbmi->ref_frame - 1];
-    setup_pre_planes(xd, cfg, NULL, mb_row, mb_col,
-                     xd->scale_factor, xd->scale_factor_uv);
-    xd->corrupted |= cfg->corrupted;
+    cfg[0] = &cm->yv12_fb[fb_idx];
+    ref_frame[0] = mbmi->ref_frame - 1;
+    xd->corrupted |= cfg[0]->corrupted;
 
     if (mbmi->second_ref_frame > INTRA_FRAME) {
       // Select the appropriate reference frame for this MB
       const int second_fb_idx = cm->active_ref_idx[mbmi->second_ref_frame - 1];
-      const YV12_BUFFER_CONFIG *second_cfg = &cm->yv12_fb[second_fb_idx];
-      xd->scale_factor[1]    = cm->active_ref_scale[mbmi->second_ref_frame - 1];
-      xd->scale_factor_uv[1] = cm->active_ref_scale[mbmi->second_ref_frame - 1];
-      setup_pre_planes(xd, NULL, second_cfg, mb_row, mb_col,
-                       xd->scale_factor, xd->scale_factor_uv);
-      xd->corrupted |= second_cfg->corrupted;
+      cfg[1] = &cm->yv12_fb[second_fb_idx];
+      ref_frame[1] = mbmi->second_ref_frame - 1;
+      xd->corrupted |= cfg[1]->corrupted;
     }
+    set_scale_factors(xd, ref_frame[0], ref_frame[1], cm->active_ref_scale);
+    setup_pre_planes(xd, cfg[0], cfg[1], mb_row, mb_col, 1);
   }
 }
 
@@ -1559,7 +1557,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   // Initialize xd pointers. Any reference should do for xd->pre, so use 0.
   setup_pre_planes(xd, &pc->yv12_fb[pc->active_ref_idx[0]], NULL,
-                   0, 0, NULL, NULL);
+                   0, 0, 0);
   setup_dst_planes(xd, new_fb, 0, 0);
 
   // Create the segmentation map structure and set to 0

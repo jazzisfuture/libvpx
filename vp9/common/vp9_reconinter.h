@@ -110,8 +110,7 @@ static void setup_pre_planes(MACROBLOCKD *xd,
                              const YV12_BUFFER_CONFIG *src0,
                              const YV12_BUFFER_CONFIG *src1,
                              int mb_row, int mb_col,
-                             const struct scale_factors *scale,
-                             const struct scale_factors *scale_uv) {
+                             int do_scale) {
   int i;
 
   for (i = 0; i < 2; i++) {
@@ -122,15 +121,18 @@ static void setup_pre_planes(MACROBLOCKD *xd,
 
     setup_pred_plane(&xd->plane[0].pre[i],
                      src->y_buffer, src->y_stride,
-                     mb_row, mb_col, scale ? scale + i : NULL,
+                     mb_row, mb_col,
+                     do_scale ? xd->plane[0].scale_factor + i : NULL,
                      xd->plane[0].subsampling_x, xd->plane[0].subsampling_y);
     setup_pred_plane(&xd->plane[1].pre[i],
                      src->u_buffer, src->uv_stride,
-                     mb_row, mb_col, scale_uv ? scale_uv + i : NULL,
+                     mb_row, mb_col,
+                     do_scale ? xd->plane[1].scale_factor + i : NULL,
                      xd->plane[1].subsampling_x, xd->plane[1].subsampling_y);
     setup_pred_plane(&xd->plane[2].pre[i],
                      src->v_buffer, src->uv_stride,
-                     mb_row, mb_col, scale_uv ? scale_uv + i : NULL,
+                     mb_row, mb_col,
+                     do_scale ? xd->plane[2].scale_factor + i : NULL,
                      xd->plane[2].subsampling_x, xd->plane[2].subsampling_y);
   }
 }
@@ -164,11 +166,12 @@ static void setup_pred_block(YV12_BUFFER_CONFIG *dst,
 static void set_scale_factors(MACROBLOCKD *xd,
     int ref0, int ref1,
     struct scale_factors scale_factor[MAX_REF_FRAMES]) {
+  int i;
 
-  xd->scale_factor[0] = scale_factor[ref0 >= 0 ? ref0 : 0];
-  xd->scale_factor[1] = scale_factor[ref1 >= 0 ? ref1 : 0];
-  xd->scale_factor_uv[0] = xd->scale_factor[0];
-  xd->scale_factor_uv[1] = xd->scale_factor[1];
+  for (i = 0; i < MAX_MB_PLANE; i++) {
+    xd->plane[i].scale_factor[0] = scale_factor[ref0 >= 0 ? ref0 : 0];
+    xd->plane[i].scale_factor[1] = scale_factor[ref1 >= 0 ? ref1 : 0];
+  }
 }
 
 static void set_offsets_with_scaling(struct scale_factors *scale,
