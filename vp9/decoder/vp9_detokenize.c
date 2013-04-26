@@ -69,7 +69,7 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
   } while (0)
 #define INCREMENT_COUNT(token)             \
   do {                                     \
-    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)] \
+    coef_counts[ctype][ref][get_coef_band(scan, txfm_size, c)] \
                [pt][token]++;     \
     token_cache[scan[c]] = token; \
     is_last_zero[o] = (token == ZERO_TOKEN);    \
@@ -77,7 +77,7 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 #else
 #define INCREMENT_COUNT(token)               \
   do {                                       \
-    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)] \
+    coef_counts[ctype][ref][get_coef_band(scan, txfm_size, c)] \
                [pt][token]++;     \
     token_cache[scan[c]] = token; \
   } while (0)
@@ -129,6 +129,11 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
 #endif
   const int *scan, *nb;
   uint8_t token_cache[1024];
+#if CONFIG_REDUCED_CONTEXT && BLOCK_TYPES == 1
+  int ctype = 0;
+#else
+  int ctype = type;
+#endif
 #if CONFIG_CODE_ZEROGROUP
   vpx_memset(token_cache, UNKNOWN_TOKEN, sizeof(token_cache));
 #endif
@@ -262,15 +267,15 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       pt = vp9_get_coef_context(scan, nb, pad, token_cache,
                                 c, default_eob);
     band = get_coef_band(scan, txfm_size, c);
-    prob = coef_probs[type][ref][band][pt];
-    fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
+    prob = coef_probs[ctype][ref][band][pt];
+    fc->eob_branch_counts[txfm_size][ctype][ref][band][pt]++;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 #if CONFIG_CODE_ZEROGROUP
     rc = scan[c];
     o = vp9_get_orientation(rc, txfm_size);
     if (token_cache[rc] == ZERO_TOKEN || is_eoo[o]) {
-      coef_counts[type][ref][band][pt][ZERO_TOKEN]++;
+      coef_counts[ctype][ref][band][pt][ZERO_TOKEN]++;
       ZEROGROUP_ADVANCE();
       goto SKIP_START;
     }
@@ -283,7 +288,7 @@ SKIP_START:
       pt = vp9_get_coef_context(scan, nb, pad, token_cache,
                                 c, default_eob);
     band = get_coef_band(scan, txfm_size, c);
-    prob = coef_probs[type][ref][band][pt];
+    prob = coef_probs[ctype][ref][band][pt];
 #if CONFIG_CODE_ZEROGROUP
     rc = scan[c];
     o = vp9_get_orientation(rc, txfm_size);
@@ -378,7 +383,7 @@ SKIP_START:
   }
 
   if (c < seg_eob)
-    coef_counts[type][ref][get_coef_band(scan, txfm_size, c)]
+    coef_counts[ctype][ref][get_coef_band(scan, txfm_size, c)]
         [pt][DCT_EOB_TOKEN]++;
 
   A0[aidx] = L0[lidx] = c > 0;

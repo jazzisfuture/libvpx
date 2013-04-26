@@ -250,6 +250,7 @@ EXPERIMENT_LIST="
     multiple_arf
     code_zerogroup
     sb8x8
+    reduced_context
 "
 CONFIG_LIST="
     external_build

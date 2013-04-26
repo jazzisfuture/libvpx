@@ -59,11 +59,19 @@ extern vp9_extra_bit vp9_extra_bits[12];    /* indexed by token value */
 /* Coefficients are predicted via a 3-dimensional probability table. */
 
 /* Outside dimension.  0 = Y with DC, 1 = UV */
+#if CONFIG_REDUCED_CONTEXT
+#define BLOCK_TYPES 2  // Currently keeping it at 2
+#else
 #define BLOCK_TYPES 2
+#endif
 #define REF_TYPES 2  // intra=0, inter=1
 
 /* Middle dimension reflects the coefficient position within the transform. */
+#if CONFIG_REDUCED_CONTEXT
+#define COEF_BANDS 5
+#else
 #define COEF_BANDS 6
+#endif
 
 /* Inside dimension is measure of nearby complexity, that reflects the energy
    of nearby coefficients are nonzero.  For the first coefficient (DC, unless
@@ -82,7 +90,11 @@ extern vp9_extra_bit vp9_extra_bits[12];    /* indexed by token value */
    distinct bands). */
 
 /*# define DC_TOKEN_CONTEXTS        3*/ /* 00, 0!0, !0!0 */
+#if CONFIG_REDUCED_CONTEXT
+#define PREV_COEF_CONTEXTS          4
+#else
 #define PREV_COEF_CONTEXTS          6
+#endif
 
 typedef unsigned int vp9_coeff_count[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                                     [MAX_ENTROPY_TOKENS];
@@ -136,7 +148,7 @@ static int get_coef_band(const int *scan, TX_SIZE tx_size, int coef_index) {
     const int sz = 1 << (2 + tx_size);
     const int x = pos & (sz - 1), y = pos >> (2 + tx_size);
     if (x >= 8 || y >= 8)
-      return 5;
+      return COEF_BANDS - 1;
     else
       return vp9_coef_bands8x8[y * 8 + x];
   }
@@ -144,6 +156,8 @@ static int get_coef_band(const int *scan, TX_SIZE tx_size, int coef_index) {
 extern int vp9_get_coef_context(const int *scan, const int *neighbors,
                                 int nb_pad, uint8_t *token_cache, int c, int l);
 const int *vp9_get_coef_neighbors_handle(const int *scan, int *pad);
+
+// #define ENTROPY_STATS
 
 #if CONFIG_MODELCOEFPROB
 #define COEFPROB_BITS               8
