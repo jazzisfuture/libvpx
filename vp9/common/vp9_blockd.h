@@ -417,9 +417,9 @@ typedef struct macroblockd {
   void (*inv_txm4x4)(int16_t *input, int16_t *output, int pitch);
   void (*itxm_add)(int16_t *input, uint8_t *dest, int stride, int eob);
   void (*itxm_add_y_block)(int16_t *q, uint8_t *dst, int stride,
-    struct macroblockd *xd);
+    struct macroblockd *xd, BLOCK_SIZE_TYPE bsize);
   void (*itxm_add_uv_block)(int16_t *q, uint8_t *dst, int stride,
-    uint16_t *eobs);
+    uint16_t *eobs, BLOCK_SIZE_TYPE bsize);
 
   struct subpix_fn_table  subpix;
 

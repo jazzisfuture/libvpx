@@ -13,12 +13,14 @@
 #include "vp9/decoder/vp9_idct_blk.h"
 
 void vp9_idct_add_y_block_c(int16_t *q, uint8_t *dst, int stride,
-                            MACROBLOCKD *xd) {
+                            MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize) {
   int i, j;
+  int bwl = b_width_log2(bsize), bw = 1 << bwl;
+  int bhl = b_height_log2(bsize), bh = 1 << bhl;
 
-  for (i = 0; i < 4; i++) {
-    for (j = 0; j < 4; j++) {
-      vp9_idct_add(q, dst, stride, xd->plane[0].eobs[i * 4  + j]);
+  for (i = 0; i < bh; i++) {
+    for (j = 0; j < bw; j++) {
+      vp9_idct_add(q, dst, stride, xd->plane[0].eobs[i * bw  + j]);
       q   += 16;
       dst += 4;
     }
@@ -28,12 +30,14 @@ void vp9_idct_add_y_block_c(int16_t *q, uint8_t *dst, int stride,
 }
 
 void vp9_idct_add_uv_block_c(int16_t *q, uint8_t *dst, int stride,
-                             uint16_t *eobs) {
+                             uint16_t *eobs, BLOCK_SIZE_TYPE bsize) {
   int i, j;
+  int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  int bhl = b_height_log2(bsize) - 1, bh = 1 << bhl;
 
-  for (i = 0; i < 2; i++) {
-    for (j = 0; j < 2; j++) {
-      vp9_idct_add(q, dst, stride, eobs[i * 2 + j]);
+  for (i = 0; i < bh; i++) {
+    for (j = 0; j < bw; j++) {
+      vp9_idct_add(q, dst, stride, eobs[i * bw + j]);
       q   += 16;
       dst += 4;
     }
@@ -55,12 +59,14 @@ void vp9_idct_add_y_block_8x8_c(int16_t *q, uint8_t *dst, int stride,
 }
 
 void vp9_idct_add_y_block_lossless_c(int16_t *q, uint8_t *dst, int stride,
-                                     MACROBLOCKD *xd) {
+                                     MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize) {
   int i, j;
+  int bwl = b_width_log2(bsize), bw = 1 << bwl;
+  int bhl = b_height_log2(bsize), bh = 1 << bhl;
 
-  for (i = 0; i < 4; i++) {
-    for (j = 0; j < 4; j++) {
-      vp9_idct_add_lossless_c(q, dst, stride, xd->plane[0].eobs[i * 4 + j]);
+  for (i = 0; i < bh; i++) {
+    for (j = 0; j < bw; j++) {
+      vp9_idct_add_lossless_c(q, dst, stride, xd->plane[0].eobs[i * bw + j]);
       q   += 16;
       dst += 4;
     }
@@ -70,12 +76,14 @@ void vp9_idct_add_y_block_lossless_c(int16_t *q, uint8_t *dst, int stride,
 }
 
 void vp9_idct_add_uv_block_lossless_c(int16_t *q, uint8_t *dst, int stride,
-                                      uint16_t *eobs) {
+                                      uint16_t *eobs, BLOCK_SIZE_TYPE bsize) {
   int i, j;
+  int bwl = b_width_log2(bsize) - 1, bw = 1 << bwl;
+  int bhl = b_height_log2(bsize) - 1, bh = 1 << bhl;
 
-  for (i = 0; i < 2; i++) {
-    for (j = 0; j < 2; j++) {
-      vp9_idct_add_lossless_c(q, dst, stride, eobs[i * 2 + j]);
+  for (i = 0; i < bh; i++) {
+    for (j = 0; j < bw; j++) {
+      vp9_idct_add_lossless_c(q, dst, stride, eobs[i * bw + j]);
       q   += 16;
       dst += 4;
     }
