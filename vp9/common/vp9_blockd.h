@@ -48,11 +48,8 @@ typedef enum {
 } PLANE_TYPE;
 
 typedef char ENTROPY_CONTEXT;
-typedef struct {
-  ENTROPY_CONTEXT y1[4];
-  ENTROPY_CONTEXT u[2];
-  ENTROPY_CONTEXT v[2];
-} ENTROPY_CONTEXT_PLANES;
+
+typedef ENTROPY_CONTEXT *ENTROPY_CONTEXT_PLANES[3];
 
 typedef char PARTITION_CONTEXT;
 
@@ -355,8 +352,8 @@ typedef struct macroblockd {
   int right_available;
 
   /* Y,U,V */
-  ENTROPY_CONTEXT_PLANES *above_context;
-  ENTROPY_CONTEXT_PLANES *left_context;
+  ENTROPY_CONTEXT_PLANES above_context;
+  ENTROPY_CONTEXT_PLANES left_context;
 
   // partition contexts
   PARTITION_CONTEXT *above_seg_context;
@@ -545,21 +542,6 @@ static TX_TYPE txfm_map(B_PREDICTION_MODE bmode) {
       return DCT_DCT;
   }
 }
-
-extern const uint8_t vp9_block2left[TX_SIZE_MAX_MB][24];
-extern const uint8_t vp9_block2above[TX_SIZE_MAX_MB][24];
-extern const uint8_t vp9_block2left_sb[TX_SIZE_MAX_SB][96];
-extern const uint8_t vp9_block2above_sb[TX_SIZE_MAX_SB][96];
-extern const uint8_t vp9_block2left_sb64[TX_SIZE_MAX_SB][384];
-extern const uint8_t vp9_block2above_sb64[TX_SIZE_MAX_SB][384];
-extern const uint8_t vp9_block2left_sb16x32[TX_SIZE_MAX_MB][48];
-extern const uint8_t vp9_block2above_sb16x32[TX_SIZE_MAX_MB][48];
-extern const uint8_t vp9_block2left_sb32x16[TX_SIZE_MAX_MB][48];
-extern const uint8_t vp9_block2above_sb32x16[TX_SIZE_MAX_MB][48];
-extern const uint8_t vp9_block2left_sb32x64[TX_SIZE_MAX_SB][192];
-extern const uint8_t vp9_block2above_sb32x64[TX_SIZE_MAX_SB][192];
-extern const uint8_t vp9_block2left_sb64x32[TX_SIZE_MAX_SB][192];
-extern const uint8_t vp9_block2above_sb64x32[TX_SIZE_MAX_SB][192];
 
 #define USE_ADST_FOR_I16X16_8X8   1
 #define USE_ADST_FOR_I16X16_4X4   1
