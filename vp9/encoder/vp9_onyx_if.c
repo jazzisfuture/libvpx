@@ -501,12 +501,14 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 }
 
 #if CONFIG_IMPLICIT_SEGMENTATION
-static void configure_implicit_segmentation(VP9_COMP *cpi) {
+static double implict_seg_q_modifiers[MAX_MB_SEGMENTS] =
+  {1.0, 1.25, 1.15, 1.05, 1.15, 1.05, 0.95, 0.90};
+static void configure_implicit_segmentation(VP9_COMP *cpi, int frame_qindex) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   int i;
   int qi_delta;
-  double q_target = cpi->active_worst_quality * 1.10;
+  double q_baseline = vp9_convert_qindex_to_q(frame_qindex);
 
   // Set the flags to allow implicit segment update but disallow explicit update
   xd->segmentation_enabled = 1;
@@ -521,20 +523,21 @@ static void configure_implicit_segmentation(VP9_COMP *cpi) {
     // Clear down the segment features.
     vp9_clearall_segfeatures(xd);
 
+    xd->update_mb_segmentation_data = 0;
+  } else {
     xd->update_mb_segmentation_data = 1;
 
     // Enable use of q deltas on segments 1 and up
+    // Segment 0 is treated as a neutral segment with no changes
     for (i = 1; i < MAX_MB_SEGMENTS; ++i) {
-      qi_delta = compute_qdelta(cpi, cpi->active_worst_quality, q_target);
+      qi_delta = compute_qdelta(cpi, q_baseline,
+                                implict_seg_q_modifiers[i] * q_baseline);
       vp9_set_segdata(xd, i, SEG_LVL_ALT_Q, qi_delta);
-      q_target *= 0.95;
       vp9_enable_segfeature(xd, i, SEG_LVL_ALT_Q);
     }
 
     // Where relevant assume segment data is delta data
     xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-  } else {
-    xd->update_mb_segmentation_data = 0;
   }
 }
 #endif
@@ -779,7 +782,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #if CONFIG_IMPLICIT_SEGMENTATION
   sf->static_segmentation = 0;
 #else
-  sf->static_segmentation = 1;
+  sf->static_segmentation = 0;
 #endif
 #endif
   sf->splitmode_breakout = 0;
@@ -798,7 +801,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #if CONFIG_IMPLICIT_SEGMENTATION
   sf->static_segmentation = 0;
 #else
-  sf->static_segmentation = 1;
+  sf->static_segmentation = 0;
 #endif
 #endif
       sf->splitmode_breakout = 1;
@@ -3066,13 +3069,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
         vp9_setup_inter_frame(cpi);
       }
+    }
 
 #if CONFIG_IMPLICIT_SEGMENTATION
-      if (!cm->error_resilient_mode && !cpi->sf.static_segmentation) {
-        configure_implicit_segmentation(cpi);
-      }
-#endif
+    if (!cm->error_resilient_mode && !cpi->sf.static_segmentation) {
+      configure_implicit_segmentation(cpi, q);
     }
+#endif
 
     // transform / motion compensation build reconstruction frame
 #if CONFIG_MODELCOEFPROB
