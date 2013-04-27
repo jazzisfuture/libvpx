@@ -583,13 +583,139 @@ static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
   return vp9_switchable_interp[index];
 }
 
+static void process_splitmv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
+                            vp9_reader *r,
+                            const int_mv *best_mv,
+                            const int_mv *best_mv_second) {
+  VP9_COMMON *const cm = &pbi->common;
+  MACROBLOCKD *const xd = &pbi->mb;
+  nmv_context *const nmvc = &cm->fc.nmvc;
+  const int mis = cm->mode_info_stride;
+  int_mv *const mv0 = &mbmi->mv[0];
+  int_mv *const mv1 = &mbmi->mv[1];
+
+  const int s = treed_read(r, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
+  const int num_p = vp9_mbsplit_count[s];
+  int j = 0;
+
+  cm->fc.mbsplit_counts[s]++;
+  mbmi->need_to_clamp_mvs = 0;
+  mbmi->partitioning = s;
+  do {  // for each subset j
+    int_mv leftmv, abovemv, second_leftmv, second_abovemv;
+    int_mv blockmv, secondmv;
+    int mv_contz;
+    int blockmode;
+    int k = vp9_mbsplit_offset[s][j];  // first block in subset j
+
+    leftmv.as_int = left_block_mv(xd, mi, k);
+    abovemv.as_int = above_block_mv(mi, k, mis);
+    second_leftmv.as_int = 0;
+    second_abovemv.as_int = 0;
+    if (mbmi->second_ref_frame > 0) {
+      second_leftmv.as_int = left_block_second_mv(xd, mi, k);
+      second_abovemv.as_int = above_block_second_mv(mi, k, mis);
+    }
+    mv_contz = vp9_mv_cont(&leftmv, &abovemv);
+    blockmode = read_sub_mv_ref(r, cm->fc.sub_mv_ref_prob[mv_contz]);
+    cm->fc.sub_mv_ref_counts[mv_contz][blockmode - LEFT4X4]++;
+
+    switch (blockmode) {
+      case NEW4X4:
+        process_mv(r, &blockmv.as_mv, &best_mv->as_mv, nmvc,
+                   &cm->fc.NMVcount, xd->allow_high_precision_mv);
+
+        if (mbmi->second_ref_frame > 0)
+          process_mv(r, &secondmv.as_mv, &best_mv_second->as_mv, nmvc,
+                     &cm->fc.NMVcount, xd->allow_high_precision_mv);
+
+#ifdef VPX_MODE_COUNT
+        vp9_mv_cont_count[mv_contz][3]++;
+#endif
+        break;
+      case LEFT4X4:
+        blockmv.as_int = leftmv.as_int;
+        if (mbmi->second_ref_frame > 0)
+          secondmv.as_int = second_leftmv.as_int;
+#ifdef VPX_MODE_COUNT
+        vp9_mv_cont_count[mv_contz][0]++;
+#endif
+        break;
+      case ABOVE4X4:
+        blockmv.as_int = abovemv.as_int;
+        if (mbmi->second_ref_frame > 0)
+          secondmv.as_int = second_abovemv.as_int;
+#ifdef VPX_MODE_COUNT
+        vp9_mv_cont_count[mv_contz][1]++;
+#endif
+        break;
+      case ZERO4X4:
+        blockmv.as_int = 0;
+        if (mbmi->second_ref_frame > 0)
+          secondmv.as_int = 0;
+#ifdef VPX_MODE_COUNT
+        vp9_mv_cont_count[mv_contz][2]++;
+#endif
+        break;
+      default:
+        break;
+      }
+
+    /*  Commenting this section out, not sure why this was needed, and
+     *  there are mismatches with this section in rare cases since it is
+     *  not done in the encoder at all.
+    mbmi->need_to_clamp_mvs |= check_mv_bounds(&blockmv,
+                                               mb_to_left_edge,
+                                               mb_to_right_edge,
+                                               mb_to_top_edge,
+                                               mb_to_bottom_edge);
+    if (mbmi->second_ref_frame > 0) {
+      mbmi->need_to_clamp_mvs |= check_mv_bounds(&secondmv,
+                                                 mb_to_left_edge,
+                                                 mb_to_right_edge,
+                                                 mb_to_top_edge,
+                                                 mb_to_bottom_edge);
+    }
+    */
+    {
+      /* Fill (uniform) modes, mvs of jth subset.
+       Must do it here because ensuing subsets can
+       refer back to us via "left" or "above". */
+      unsigned int fill_count = mbsplit_fill_count[s];
+      const uint8_t *fill_offset =
+          &mbsplit_fill_offset[s][j * fill_count];
+       do {
+        mi->bmi[*fill_offset].as_mv[0].as_int = blockmv.as_int;
+        if (mbmi->second_ref_frame > 0)
+          mi->bmi[*fill_offset].as_mv[1].as_int = secondmv.as_int;
+        fill_offset++;
+      } while (--fill_count);
+    }
+
+  } while (++j < num_p);
+
+  mv0->as_int = mi->bmi[15].as_mv[0].as_int;
+  mv1->as_int = mi->bmi[15].as_mv[1].as_int;
+}
+
+void process_nearmv(MB_MODE_INFO *mbmi,
+                    const int_mv *first, const int_mv *second,
+                    int mb_to_le, int mb_to_re, int mb_to_te, int mb_to_be) {
+  int_mv *const mv0 = &mbmi->mv[0];
+  int_mv *const mv1 = &mbmi->mv[1];
+
+  assign_and_clamp_mv(mv0, first, mb_to_le, mb_to_re, mb_to_te, mb_to_be);
+  if (mbmi->second_ref_frame > 0)
+      assign_and_clamp_mv(mv1, second, mb_to_le, mb_to_re,
+                                       mb_to_te, mb_to_be);
+}
+
 static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                              MODE_INFO *prev_mi,
                              int mi_row, int mi_col,
                              vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   nmv_context *const nmvc = &cm->fc.nmvc;
-  const int mis = cm->mode_info_stride;
   MACROBLOCKD *const xd = &pbi->mb;
 
   int_mv *const mv0 = &mbmi->mv[0];
@@ -761,139 +887,22 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
 
     mbmi->uv_mode = DC_PRED;
     switch (mbmi->mode) {
-      case SPLITMV: {
-        const int s = treed_read(r, vp9_mbsplit_tree, cm->fc.mbsplit_prob);
-        const int num_p = vp9_mbsplit_count[s];
-        int j = 0;
-
-        cm->fc.mbsplit_counts[s]++;
-        mbmi->need_to_clamp_mvs = 0;
-        mbmi->partitioning = s;
-        do {  // for each subset j
-          int_mv leftmv, abovemv, second_leftmv, second_abovemv;
-          int_mv blockmv, secondmv;
-          int mv_contz;
-          int blockmode;
-          int k = vp9_mbsplit_offset[s][j];  // first block in subset j
-
-          leftmv.as_int = left_block_mv(xd, mi, k);
-          abovemv.as_int = above_block_mv(mi, k, mis);
-          second_leftmv.as_int = 0;
-          second_abovemv.as_int = 0;
-          if (mbmi->second_ref_frame > 0) {
-            second_leftmv.as_int = left_block_second_mv(xd, mi, k);
-            second_abovemv.as_int = above_block_second_mv(mi, k, mis);
-          }
-          mv_contz = vp9_mv_cont(&leftmv, &abovemv);
-          blockmode = read_sub_mv_ref(r, cm->fc.sub_mv_ref_prob[mv_contz]);
-          cm->fc.sub_mv_ref_counts[mv_contz][blockmode - LEFT4X4]++;
-
-          switch (blockmode) {
-            case NEW4X4:
-              process_mv(r, &blockmv.as_mv, &best_mv.as_mv, nmvc,
-                         &cm->fc.NMVcount, xd->allow_high_precision_mv);
-
-              if (mbmi->second_ref_frame > 0)
-                process_mv(r, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
-                           &cm->fc.NMVcount, xd->allow_high_precision_mv);
-
-#ifdef VPX_MODE_COUNT
-              vp9_mv_cont_count[mv_contz][3]++;
-#endif
-              break;
-            case LEFT4X4:
-              blockmv.as_int = leftmv.as_int;
-              if (mbmi->second_ref_frame > 0)
-                secondmv.as_int = second_leftmv.as_int;
-#ifdef VPX_MODE_COUNT
-              vp9_mv_cont_count[mv_contz][0]++;
-#endif
-              break;
-            case ABOVE4X4:
-              blockmv.as_int = abovemv.as_int;
-              if (mbmi->second_ref_frame > 0)
-                secondmv.as_int = second_abovemv.as_int;
-#ifdef VPX_MODE_COUNT
-              vp9_mv_cont_count[mv_contz][1]++;
-#endif
-              break;
-            case ZERO4X4:
-              blockmv.as_int = 0;
-              if (mbmi->second_ref_frame > 0)
-                secondmv.as_int = 0;
-#ifdef VPX_MODE_COUNT
-              vp9_mv_cont_count[mv_contz][2]++;
-#endif
-              break;
-            default:
-              break;
-          }
-
-          /*  Commenting this section out, not sure why this was needed, and
-           *  there are mismatches with this section in rare cases since it is
-           *  not done in the encoder at all.
-          mbmi->need_to_clamp_mvs |= check_mv_bounds(&blockmv,
-                                                     mb_to_left_edge,
-                                                     mb_to_right_edge,
-                                                     mb_to_top_edge,
-                                                     mb_to_bottom_edge);
-          if (mbmi->second_ref_frame > 0) {
-            mbmi->need_to_clamp_mvs |= check_mv_bounds(&secondmv,
-                                                       mb_to_left_edge,
-                                                       mb_to_right_edge,
-                                                       mb_to_top_edge,
-                                                       mb_to_bottom_edge);
-          }
-          */
-
-          {
-            /* Fill (uniform) modes, mvs of jth subset.
-             Must do it here because ensuing subsets can
-             refer back to us via "left" or "above". */
-            unsigned int fill_count = mbsplit_fill_count[s];
-            const uint8_t *fill_offset =
-                &mbsplit_fill_offset[s][j * fill_count];
-
-            do {
-              mi->bmi[*fill_offset].as_mv[0].as_int = blockmv.as_int;
-              if (mbmi->second_ref_frame > 0)
-                mi->bmi[*fill_offset].as_mv[1].as_int = secondmv.as_int;
-              fill_offset++;
-            } while (--fill_count);
-          }
-
-        } while (++j < num_p);
-      }
-
-      mv0->as_int = mi->bmi[15].as_mv[0].as_int;
-      mv1->as_int = mi->bmi[15].as_mv[1].as_int;
-
-      break;  /* done with SPLITMV */
+      case SPLITMV:
+        process_splitmv(pbi, mi, mbmi, r, &best_mv, &best_mv_second);
+        break;
 
       case NEARMV:
-        // Clip "next_nearest" so that it does not extend to far out of image
-        assign_and_clamp_mv(mv0, &nearby, mb_to_left_edge,
-                                          mb_to_right_edge,
-                                          mb_to_top_edge,
-                                          mb_to_bottom_edge);
-        if (mbmi->second_ref_frame > 0)
-          assign_and_clamp_mv(mv1, &nearby_second, mb_to_left_edge,
-                                                   mb_to_right_edge,
-                                                   mb_to_top_edge,
-                                                   mb_to_bottom_edge);
+        process_nearmv(mbmi, &nearby, &nearby_second, mb_to_left_edge,
+                                                      mb_to_right_edge,
+                                                      mb_to_top_edge,
+                                                      mb_to_bottom_edge);
         break;
 
       case NEARESTMV:
-        // Clip "next_nearest" so that it does not extend to far out of image
-        assign_and_clamp_mv(mv0, &nearest, mb_to_left_edge,
-                                           mb_to_right_edge,
-                                           mb_to_top_edge,
-                                           mb_to_bottom_edge);
-        if (mbmi->second_ref_frame > 0)
-          assign_and_clamp_mv(mv1, &nearest_second, mb_to_left_edge,
-                                                    mb_to_right_edge,
-                                                    mb_to_top_edge,
-                                                    mb_to_bottom_edge);
+        process_nearmv(mbmi, &nearest, &nearest_second, mb_to_left_edge,
+                                                        mb_to_right_edge,
+                                                        mb_to_top_edge,
+                                                        mb_to_bottom_edge);
         break;
 
       case ZEROMV:
