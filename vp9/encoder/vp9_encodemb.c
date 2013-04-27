@@ -492,18 +492,42 @@ void vp9_optimize_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
   int n;
 
   for (n = 0; n < bw; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT *a =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 4 + 0);
+    ENTROPY_CONTEXT *a1 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 4 + 1);
+    ENTROPY_CONTEXT *a2 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 4 + 2);
+    ENTROPY_CONTEXT *a3 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 4 + 3);
+    ta[n] = (a[0] + a[1] + a1[0] + a1[1] + a2[0] + a2[1] + a3[0] + a3[1]) != 0;
+#else
     ENTROPY_CONTEXT *a =
         (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 2 + 0);
     ENTROPY_CONTEXT *a1 =
         (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 2 + 1);
     ta[n] = (a[0] + a[1] + a[2] + a[3] + a1[0] + a1[1] + a1[2] + a1[3]) != 0;
+#endif
   }
   for (n = 0; n < bh; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT *l =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 4 + 0);
+    ENTROPY_CONTEXT *l1 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 4 + 1);
+    ENTROPY_CONTEXT *l2 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 4 + 2);
+    ENTROPY_CONTEXT *l3 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 4 + 3);
+    tl[n] = (l[0] + l[1] + l1[0] + l1[1] + l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+#else
     ENTROPY_CONTEXT *l =
         (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 2);
     ENTROPY_CONTEXT *l1 =
         (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 2 + 1);
     tl[n] = (l[0] + l[1] + l[2] + l[3] + l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+#endif
   }
 
   for (n = 0; n < bw * bh; n++) {
@@ -522,12 +546,28 @@ void vp9_optimize_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
   int n;
 
   for (n = 0; n < bw; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT *a =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 2 + 0);
+    ENTROPY_CONTEXT *a1 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n * 2 + 1);
+    ta[n] = (a[0] + a[1] + a1[0] + a1[1]) != 0;
+#else
     ENTROPY_CONTEXT *a = (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n);
     ta[n] = (a[0] + a[1] + a[2] + a[3]) != 0;
+#endif
   }
   for (n = 0; n < bh; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT *l =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 2 + 0);
+    ENTROPY_CONTEXT *l1 =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n * 2 + 1);
+    tl[n] = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+#else
     ENTROPY_CONTEXT *l = (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n);
     tl[n] = (l[0] + l[1] + l[2] + l[3]) != 0;
+#endif
   }
   for (n = 0; n < bw * bh; n++) {
     const int x_idx = n & (bw - 1), y_idx = n >> bwl;
@@ -544,6 +584,18 @@ void vp9_optimize_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   ENTROPY_CONTEXT ta[8], tl[8];
   int n;
 
+#if CONFIG_SB8X8
+  for (n = 0; n < bw; n++) {
+    ENTROPY_CONTEXT *a =
+        (ENTROPY_CONTEXT *) (x->e_mbd.above_context + n);
+    ta[n] = (a[0] + a[1]) != 0;
+  }
+  for (n = 0; n < bh; n++) {
+    ENTROPY_CONTEXT *l =
+        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + n);
+    tl[n] = (l[0] + l[1]) != 0;
+  }
+#else
   for (n = 0; n < bw; n += 2) {
     ENTROPY_CONTEXT *a =
         (ENTROPY_CONTEXT *) (x->e_mbd.above_context + (n >> 1));
@@ -552,10 +604,11 @@ void vp9_optimize_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   }
   for (n = 0; n < bh; n += 2) {
     ENTROPY_CONTEXT *l =
-        (ENTROPY_CONTEXT *) (x->e_mbd.left_context + (n >> 1));
+    (ENTROPY_CONTEXT *) (x->e_mbd.left_context + (n >> 1));
     tl[n + 0] = (l[0] + l[1]) != 0;
     tl[n + 1] = (l[2] + l[3]) != 0;
   }
+#endif
 
   for (n = 0; n < bw * bh; n++) {
     const int x_idx = n & (bw - 1), y_idx = n >> bwl;
@@ -572,12 +625,21 @@ void vp9_optimize_sby_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
   ENTROPY_CONTEXT ta[16], tl[16];
   int n;
 
+#if CONFIG_SB8X8
+  for (n = 0; n < bw; n += 2)
+    vpx_memcpy(&ta[n], x->e_mbd.above_context + (n >> 1),
+               sizeof(ENTROPY_CONTEXT) * 2);
+  for (n = 0; n < bh; n += 2)
+    vpx_memcpy(&tl[n], x->e_mbd.left_context + (n >> 1),
+               sizeof(ENTROPY_CONTEXT) * 2);
+#else
   for (n = 0; n < bw; n += 4)
     vpx_memcpy(&ta[n], x->e_mbd.above_context + (n >> 2),
                sizeof(ENTROPY_CONTEXT) * 4);
   for (n = 0; n < bh; n += 4)
     vpx_memcpy(&tl[n], x->e_mbd.left_context + (n >> 2),
                sizeof(ENTROPY_CONTEXT) * 4);
+#endif
 
   for (n = 0; n < bw * bh; n++) {
     const int x_idx = n & (bw - 1), y_idx = n >> bwl;
@@ -592,6 +654,9 @@ void vp9_optimize_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
   ENTROPY_CONTEXT *ta = (ENTROPY_CONTEXT *) x->e_mbd.above_context;
   ENTROPY_CONTEXT *tl = (ENTROPY_CONTEXT *) x->e_mbd.left_context;
   ENTROPY_CONTEXT *a, *l, *a1, *l1, *a2, *l2, *a3, *l3, a_ec, l_ec;
+#if CONFIG_SB8X8
+  ENTROPY_CONTEXT *a4, *l4, *a5, *l5, *a6, *l6, *a7, *l7;
+#endif
   int b;
 
   assert(bsize == BLOCK_SIZE_SB64X64);
@@ -605,8 +670,21 @@ void vp9_optimize_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
     l2 = l + 2 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
     a3 = a + 3 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
     l3 = l + 3 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+#if CONFIG_SB8X8
+    a4 = a + 4 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l4 = l + 4 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a5 = a + 5 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l5 = l + 5 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a6 = a + 6 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l6 = l + 6 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a7 = a + 7 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    l7 = l + 7 * sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+    a_ec = (a[0] + a1[0] + a2[0] + a3[0] + a4[0] + a5[0] + a6[0] + a7[0]) != 0;
+    l_ec = (l[0] + l1[0] + l2[0] + l3[0] + l4[0] + l5[0] + l6[0] + l7[0]) != 0;
+#else
     a_ec = (a[0] + a[1] + a1[0] + a1[1] + a2[0] + a2[1] + a3[0] + a3[1]) != 0;
     l_ec = (l[0] + l[1] + l1[0] + l1[1] + l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+#endif
     optimize_b(cm, x, b, PLANE_TYPE_UV, x->e_mbd.plane[plane].dequant,
                &a_ec, &l_ec, TX_32X32, 256);
   }
@@ -622,16 +700,34 @@ void vp9_optimize_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
   int plane, n;
 
   for (n = 0; n < bw; n++) {
+#if CONFIG_SB
+    ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + n * 4;
+    ENTROPY_CONTEXT_PLANES *a1 = x->e_mbd.above_context + n * 4 + 1;
+    ENTROPY_CONTEXT_PLANES *a2 = x->e_mbd.above_context + n * 4 + 2;
+    ENTROPY_CONTEXT_PLANES *a3 = x->e_mbd.above_context + n * 4 + 3;
+    ta[0][n] = (a->u[0] + a1->u[0] + a2->u[0] + a3->u[0]) != 0;
+    ta[1][n] = (a->v[0] + a1->v[0] + a2->v[0] + a3->v[0]) != 0;
+#else
     ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + n * 2;
     ENTROPY_CONTEXT_PLANES *a1 = x->e_mbd.above_context + n * 2 + 1;
     ta[0][n] = (a->u[0] + a->u[1] + a1->u[0] + a1->u[1]) != 0;
     ta[1][n] = (a->v[0] + a->v[1] + a1->v[0] + a1->v[1]) != 0;
+#endif
   }
   for (n = 0; n < bh; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT_PLANES *l = (x->e_mbd.left_context + n * 4);
+    ENTROPY_CONTEXT_PLANES *l1 = (x->e_mbd.left_context + n * 4 + 1);
+    ENTROPY_CONTEXT_PLANES *l2 = (x->e_mbd.left_context + n * 4 + 2);
+    ENTROPY_CONTEXT_PLANES *l3 = (x->e_mbd.left_context + n * 4 + 3);
+    tl[0][n] = (l->u[0] + l1->u[0] + l2->u[0] + l3->u[0]) != 0;
+    tl[1][n] = (l->v[0] + l1->v[0] + l2->v[0] + l3->v[0]) != 0;
+#else
     ENTROPY_CONTEXT_PLANES *l = (x->e_mbd.left_context + n * 2);
     ENTROPY_CONTEXT_PLANES *l1 = (x->e_mbd.left_context + n * 2 + 1);
     tl[0][n] = (l->u[0] + l->u[1] + l1->u[0] + l1->u[1]) != 0;
     tl[1][n] = (l->v[0] + l->v[1] + l1->v[0] + l1->v[1]) != 0;
+#endif
   }
 
   for (plane = 0; plane < 2; plane++) {
@@ -656,14 +752,28 @@ void vp9_optimize_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   int plane, n;
 
   for (n = 0; n < bw; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + n * 2 + 0;
+    ENTROPY_CONTEXT_PLANES *a1 = x->e_mbd.above_context + n * 2 + 1;
+    ta[0][n] = (a->u[0] + a1->u[0]) != 0;
+    ta[1][n] = (a->v[0] + a1->v[0]) != 0;
+#else
     ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + n;
     ta[0][n] = (a->u[0] + a->u[1]) != 0;
     ta[1][n] = (a->v[0] + a->v[1]) != 0;
+#endif
   }
   for (n = 0; n < bh; n++) {
+#if CONFIG_SB8X8
+    ENTROPY_CONTEXT_PLANES *l = x->e_mbd.left_context + n * 2 + 0;
+    ENTROPY_CONTEXT_PLANES *l1 = x->e_mbd.left_context + n * 2 + 1;
+    tl[0][n] = (l->u[0] + l1->u[0]) != 0;
+    tl[1][n] = (l->v[0] + l1->v[0]) != 0;
+#else
     ENTROPY_CONTEXT_PLANES *l = x->e_mbd.left_context + n;
     tl[0][n] = (l->u[0] + l->u[1]) != 0;
     tl[1][n] = (l->v[0] + l->v[1]) != 0;
+#endif
   }
 
   for (plane = 0; plane < 2; plane++) {
@@ -687,6 +797,18 @@ void vp9_optimize_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
   ENTROPY_CONTEXT ta[2][8], tl[2][8];
   int plane, n;
 
+#if CONFIG_SB8X8
+  for (n = 0; n < bw; n++) {
+    ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + n;
+    ta[0][n] = (a->u[0]) != 0;
+    ta[1][n] = (a->v[0]) != 0;
+  }
+  for (n = 0; n < bh; n++) {
+    ENTROPY_CONTEXT_PLANES *l = x->e_mbd.left_context + n;
+    tl[0][n] = (l->u[0]) != 0;
+    tl[1][n] = (l->v[0]) != 0;
+  }
+#else
   for (n = 0; n < bw; n += 2) {
     ENTROPY_CONTEXT_PLANES *a = x->e_mbd.above_context + (n >> 1);
     ta[0][n + 0] = (a->u[0]) != 0;
@@ -701,6 +823,7 @@ void vp9_optimize_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
     tl[1][n + 0] = (l->v[0]) != 0;
     tl[1][n + 1] = (l->v[1]) != 0;
   }
+#endif
 
   for (plane = 0; plane < 2; plane++) {
     for (n = 0; n < bw * bh; n++) {

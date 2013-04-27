@@ -183,8 +183,18 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       scan = get_scan_8x8(tx_type);
       coef_probs  = fc->coef_probs_8x8;
       coef_counts = fc->coef_counts_8x8;
-      above_ec = (A0[aidx] + A0[aidx + 1]) != 0;
-      left_ec  = (L0[lidx] + L0[lidx + 1]) != 0;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        above_ec = (A0[aidx] + A1[aidx]) != 0;
+        left_ec  = (L0[lidx] + L1[lidx]) != 0;
+      } else
+#endif
+      {
+        above_ec = (A0[aidx] + A0[aidx + 1]) != 0;
+        left_ec  = (L0[lidx] + L0[lidx + 1]) != 0;
+      }
       default_eob = 64;
 #if CONFIG_CODE_ZEROGROUP
       zpc_probs = &(fc->zpc_probs_8x8);
@@ -202,6 +212,23 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       scan = get_scan_16x16(tx_type);
       coef_probs  = fc->coef_probs_16x16;
       coef_counts = fc->coef_counts_16x16;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        above_ec = (A0[aidx] + A1[aidx] + A2[aidx] + A3[aidx]) != 0;
+        left_ec  = (L0[lidx] + L1[lidx] + L2[lidx] + L3[lidx]) != 0;
+      } else {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) != 0;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) != 0;
+      }
+#else
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
@@ -211,6 +238,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
         above_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3]) != 0;
         left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) != 0;
       }
+#endif
       default_eob = 256;
 #if CONFIG_CODE_ZEROGROUP
       zpc_probs = &(fc->zpc_probs_16x16);
@@ -222,6 +250,39 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       scan = vp9_default_zig_zag1d_32x32;
       coef_probs = fc->coef_probs_32x32;
       coef_counts = fc->coef_counts_32x32;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        ENTROPY_CONTEXT *A4 = (ENTROPY_CONTEXT *) (xd->above_context + 4);
+        ENTROPY_CONTEXT *L4 = (ENTROPY_CONTEXT *) (xd->left_context + 4);
+        ENTROPY_CONTEXT *A5 = (ENTROPY_CONTEXT *) (xd->above_context + 5);
+        ENTROPY_CONTEXT *L5 = (ENTROPY_CONTEXT *) (xd->left_context + 5);
+        ENTROPY_CONTEXT *A6 = (ENTROPY_CONTEXT *) (xd->above_context + 6);
+        ENTROPY_CONTEXT *L6 = (ENTROPY_CONTEXT *) (xd->left_context + 6);
+        ENTROPY_CONTEXT *A7 = (ENTROPY_CONTEXT *) (xd->above_context + 7);
+        ENTROPY_CONTEXT *L7 = (ENTROPY_CONTEXT *) (xd->left_context + 7);
+        above_ec = (A0[aidx] + A1[aidx] + A2[aidx] + A3[aidx] +
+                    A4[aidx] + A5[aidx] + A6[aidx] + A7[aidx]) != 0;
+        left_ec  = (L0[lidx] + L1[lidx] + L2[lidx] + L3[lidx] +
+                    L4[lidx] + L5[lidx] + L6[lidx] + L7[lidx]) != 0;
+      } else {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        above_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
+                    A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) != 0;
+        left_ec  = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
+                    L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) != 0;
+      }
+#else
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
         ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
@@ -241,6 +302,7 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
         left_ec  = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3] +
                     L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) != 0;
       }
+#endif
       default_eob = 1024;
 #if CONFIG_CODE_ZEROGROUP
       zpc_probs = &fc->zpc_probs_32x32;
@@ -382,6 +444,49 @@ SKIP_START:
         [pt][DCT_EOB_TOKEN]++;
 
   A0[aidx] = L0[lidx] = c > 0;
+#if CONFIG_SB8X8
+  if (txfm_size >= TX_8X8) {
+    if (type == PLANE_TYPE_UV) {
+      ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+      ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+      A1[aidx] = L1[lidx] = A0[aidx];
+      if (txfm_size >= TX_16X16) {
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        A2[aidx] = A3[aidx] = L2[lidx] = L3[lidx] = A0[aidx];
+        if (txfm_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A4 = (ENTROPY_CONTEXT *) (xd->above_context + 4);
+          ENTROPY_CONTEXT *L4 = (ENTROPY_CONTEXT *) (xd->left_context + 4);
+          ENTROPY_CONTEXT *A5 = (ENTROPY_CONTEXT *) (xd->above_context + 5);
+          ENTROPY_CONTEXT *L5 = (ENTROPY_CONTEXT *) (xd->left_context + 5);
+          ENTROPY_CONTEXT *A6 = (ENTROPY_CONTEXT *) (xd->above_context + 6);
+          ENTROPY_CONTEXT *L6 = (ENTROPY_CONTEXT *) (xd->left_context + 6);
+          ENTROPY_CONTEXT *A7 = (ENTROPY_CONTEXT *) (xd->above_context + 7);
+          ENTROPY_CONTEXT *L7 = (ENTROPY_CONTEXT *) (xd->left_context + 7);
+          A4[aidx] = A5[aidx] = L4[lidx] = L5[lidx] = A0[aidx];
+          A6[aidx] = A7[aidx] = L6[lidx] = L7[lidx] = A0[aidx];
+        }
+      }
+    } else {
+      A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
+      if (txfm_size >= TX_16X16) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        A1[aidx] = A1[aidx + 1] = L1[lidx] = L1[lidx + 1] = A0[aidx];
+        if (txfm_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+          ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+          ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+          ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+          A2[aidx] = A2[aidx + 1] = A3[aidx] = A3[aidx + 1] = A0[aidx];
+          L2[lidx] = L2[lidx + 1] = L3[lidx] = L3[lidx + 1] = A0[aidx];
+        }
+      }
+    }
+  }
+#else
   if (txfm_size >= TX_8X8) {
     A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
     if (txfm_size >= TX_16X16) {
@@ -408,6 +513,7 @@ SKIP_START:
       }
     }
   }
+#endif
   return c;
 }
 

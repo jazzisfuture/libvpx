@@ -576,8 +576,8 @@ static void set_offsets(VP9_COMP *cpi,
   const int idx_map = mb_row * cm->mb_cols + mb_col;
 
   // entropy context structures
-  xd->above_context = cm->above_context + mb_col;
-  xd->left_context  = cm->left_context + (mb_row & 3);
+  xd->above_context = cm->above_context + mi_col;
+  xd->left_context  = cm->left_context + (mi_row & (7 >> !CONFIG_SB8X8));
 
   // partition contexts
   xd->above_seg_context = cm->above_seg_context + mb_col;
@@ -997,7 +997,7 @@ static void encode_sb_row(VP9_COMP *cpi,
     PARTITION_CONTEXT seg_l[4], seg_a[4];
     TOKENEXTRA *tp_orig = *tp;
 
-    memcpy(&a, cm->above_context + (mi_col >> CONFIG_SB8X8), sizeof(a));
+    memcpy(&a, cm->above_context + mi_col, sizeof(a));
     memcpy(&l, cm->left_context, sizeof(l));
     memcpy(&seg_a, cm->above_seg_context + (mi_col >> CONFIG_SB8X8),
            sizeof(seg_a));
@@ -1017,9 +1017,8 @@ static void encode_sb_row(VP9_COMP *cpi,
       xd->sb_index = i;
 
       /* Function should not modify L & A contexts; save and restore on exit */
-      vpx_memcpy(l2, cm->left_context + (y_idx >> CONFIG_SB8X8), sizeof(l2));
-      vpx_memcpy(a2, cm->above_context + ((mi_col + x_idx) >> CONFIG_SB8X8),
-                 sizeof(a2));
+      vpx_memcpy(l2, cm->left_context + y_idx, sizeof(l2));
+      vpx_memcpy(a2, cm->above_context + mi_col + x_idx, sizeof(a2));
 
       /* Encode MBs in raster order within the SB */
       sb_partitioning[i] = BLOCK_SIZE_MB16X16;
@@ -1052,9 +1051,8 @@ static void encode_sb_row(VP9_COMP *cpi,
       }
 
       /* Restore L & A coding context to those in place on entry */
-      vpx_memcpy(cm->left_context + (y_idx >> CONFIG_SB8X8), l2, sizeof(l2));
-      vpx_memcpy(cm->above_context + ((mi_col + x_idx) >> CONFIG_SB8X8), a2,
-                 sizeof(a2));
+      vpx_memcpy(cm->left_context + y_idx, l2, sizeof(l2));
+      vpx_memcpy(cm->above_context + mi_col + x_idx, a2, sizeof(a2));
 
       xd->left_seg_context  = cm->left_seg_context + (y_idx >> CONFIG_SB8X8);
       xd->above_seg_context =
@@ -1105,9 +1103,8 @@ static void encode_sb_row(VP9_COMP *cpi,
           sb_partitioning[i] = BLOCK_SIZE_SB32X16;
         }
 
-        vpx_memcpy(cm->left_context + (y_idx >> CONFIG_SB8X8), l2, sizeof(l2));
-        vpx_memcpy(cm->above_context + ((mi_col + x_idx) >> CONFIG_SB8X8), a2,
-                   sizeof(a2));
+        vpx_memcpy(cm->left_context + y_idx, l2, sizeof(l2));
+        vpx_memcpy(cm->above_context + mi_col + x_idx, a2, sizeof(a2));
       }
 
       // check 16x32
@@ -1150,9 +1147,8 @@ static void encode_sb_row(VP9_COMP *cpi,
           sb_partitioning[i] = BLOCK_SIZE_SB16X32;
         }
 
-        vpx_memcpy(cm->left_context + (y_idx >> CONFIG_SB8X8), l2, sizeof(l2));
-        vpx_memcpy(cm->above_context + ((mi_col + x_idx) >> CONFIG_SB8X8), a2,
-                   sizeof(a2));
+        vpx_memcpy(cm->left_context + y_idx, l2, sizeof(l2));
+        vpx_memcpy(cm->above_context + mi_col + x_idx, a2, sizeof(a2));
       }
 
       if (!sb32_skip &&
@@ -1197,7 +1193,7 @@ static void encode_sb_row(VP9_COMP *cpi,
                 sb_partitioning[i]);
     }
 
-    memcpy(cm->above_context + (mi_col >> CONFIG_SB8X8), &a, sizeof(a));
+    memcpy(cm->above_context + mi_col, &a, sizeof(a));
     memcpy(cm->left_context, &l, sizeof(l));
     memcpy(cm->above_seg_context + (mi_col >> CONFIG_SB8X8), &seg_a,
            sizeof(seg_a));
@@ -1245,7 +1241,7 @@ static void encode_sb_row(VP9_COMP *cpi,
       }
 
       vpx_memcpy(cm->left_context, l, sizeof(l));
-      vpx_memcpy(cm->above_context + (mi_col >> CONFIG_SB8X8), a, sizeof(a));
+      vpx_memcpy(cm->above_context + mi_col, a, sizeof(a));
     }
 
     // check 32x64
@@ -1285,7 +1281,7 @@ static void encode_sb_row(VP9_COMP *cpi,
       }
 
       vpx_memcpy(cm->left_context, l, sizeof(l));
-      vpx_memcpy(cm->above_context + (mi_col >> CONFIG_SB8X8), a, sizeof(a));
+      vpx_memcpy(cm->above_context + mi_col, a, sizeof(a));
     }
 
     if (!sb64_skip &&
@@ -1369,7 +1365,8 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 #endif
 
   vpx_memset(cm->above_context, 0,
-             sizeof(ENTROPY_CONTEXT_PLANES) * mb_cols_aligned_to_sb(cm));
+             sizeof(ENTROPY_CONTEXT_PLANES) *
+             mb_cols_aligned_to_sb(cm) << CONFIG_SB8X8);
   vpx_memset(cm->above_seg_context, 0, sizeof(PARTITION_CONTEXT) *
                                        mb_cols_aligned_to_sb(cm));
 }

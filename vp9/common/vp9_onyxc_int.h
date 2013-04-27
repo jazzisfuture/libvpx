@@ -254,7 +254,7 @@ typedef struct VP9Common {
 
   /* Y,U,V */
   ENTROPY_CONTEXT_PLANES *above_context;   /* row of context for each plane */
-  ENTROPY_CONTEXT_PLANES left_context[4];  /* (up to) 4 contexts "" */
+  ENTROPY_CONTEXT_PLANES left_context[4 << CONFIG_SB8X8];
 
   // partition contexts
   PARTITION_CONTEXT *above_seg_context;

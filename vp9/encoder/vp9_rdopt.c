@@ -364,8 +364,16 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       TX_TYPE tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
-      a_ec = (a[0] + a[1]) != 0;
-      l_ec = (l[0] + l[1]) != 0;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        a_ec = (a[0] + a1[0]) != 0;
+        l_ec = (l[0] + l1[0]) != 0;
+      } else
+#endif
+      {
+        a_ec = (a[0] + a[1]) != 0;
+        l_ec = (l[0] + l[1]) != 0;
+      }
       scan = get_scan_8x8(tx_type);
       coef_probs = cm->fc.coef_probs_8x8;
       seg_eob = 64;
@@ -383,6 +391,20 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       scan = get_scan_16x16(tx_type);
       coef_probs = cm->fc.coef_probs_16x16;
       seg_eob = 256;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
+        a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a_ec = (a[0] + a1[0] + a2[0] + a3[0]) != 0;
+        l_ec = (l[0] + l1[0] + l2[0] + l3[0]) != 0;
+      } else {
+        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+      }
+#else
       if (type == PLANE_TYPE_UV) {
         a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
         l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
@@ -390,6 +412,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
         l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
       }
+#endif
 #if CONFIG_CODE_ZEROGROUP
       zpc_probs = &cm->fc.zpc_probs_16x16;
 #endif
@@ -399,6 +422,38 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       scan = vp9_default_zig_zag1d_32x32;
       coef_probs = cm->fc.coef_probs_32x32;
       seg_eob = 1024;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *a2, *a3, *a4, *a5, *a6, *a7;
+        ENTROPY_CONTEXT *l2, *l3, *l4, *l5, *l6, *l7;
+        a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a4 = a3 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a5 = a4 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a6 = a5 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a7 = a6 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l4 = l3 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l5 = l4 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l6 = l5 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l7 = l6 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a_ec = (a[0] + a1[0] + a2[0] + a3[0] +
+                a4[0] + a5[0] + a6[0] + a7[0]) != 0;
+        l_ec = (l[0] + l1[0] + l2[0] + l3[0] +
+                l4[0] + l5[0] + l6[0] + l7[0]) != 0;
+      } else {
+        ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
+        a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
+                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
+        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
+                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+      }
+#else
       if (type == PLANE_TYPE_UV) {
         ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
         a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
@@ -415,6 +470,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
         l_ec = (l[0] + l[1] + l[2] + l[3] +
                 l1[0] + l1[1] + l1[2] + l1[3]) != 0;
       }
+#endif
 #if CONFIG_CODE_ZEROGROUP
       zpc_probs = &cm->fc.zpc_probs_32x32;
 #endif
@@ -534,9 +590,38 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
     }
   }
 
-    // is eob first coefficient;
-    pt = (c > 0);
+  // is eob first coefficient;
+  pt = (c > 0);
   *a = *l = pt;
+#if CONFIG_SB8X8
+  if (tx_size >= TX_8X8) {
+    if (type == PLANE_TYPE_UV) {
+      a1[0] = l1[1] = pt;
+      if (tx_size >= TX_16X16) {
+        ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
+        a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+        a2[0] = a3[0] = l2[0] = l3[0] = pt;
+      }
+    } else {
+      a[1] = l[1] = pt;
+      if (tx_size >= TX_16X16) {
+        a1[0] = a1[1] = l1[0] = l1[1] = pt;
+        if (tx_size >= TX_32X32) {
+          ENTROPY_CONTEXT *a2, *a3, *l2, *l3;
+          a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+          a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+          l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+          l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
+          a2[0] = a2[1] = a3[0] = a3[1] = pt;
+          l2[0] = l2[1] = l3[0] = l3[1] = pt;
+        }
+      }
+    }
+  }
+#else
   if (tx_size >= TX_8X8) {
     a[1] = l[1] = pt;
     if (tx_size >= TX_16X16) {
@@ -551,6 +636,7 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       }
     }
   }
+#endif
   return cost;
 }
 
@@ -670,18 +756,20 @@ static int rdcost_sby_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
   const int bh = 1 << b_height_log2(bsize);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> 2);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> (2 - CONFIG_SB8X8));
   vpx_memcpy(&t_left,  xd->left_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> 2);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> (2 - CONFIG_SB8X8));
 
   for (b = 0; b < bw * bh; b++) {
     const int x_idx = b & (bw - 1), y_idx = b >> bwl;
     cost += cost_coeffs(cm, x, b, PLANE_TYPE_Y_WITH_DC,
-                ((ENTROPY_CONTEXT *) &t_above[x_idx >> 2]) + (x_idx & 3),
-                ((ENTROPY_CONTEXT *) &t_left[y_idx >> 2]) + (y_idx & 3),
+                ((ENTROPY_CONTEXT *) &t_above[x_idx >> (2 - CONFIG_SB8X8)]) +
+                        (x_idx & (3 >> CONFIG_SB8X8)),
+                ((ENTROPY_CONTEXT *) &t_left[y_idx >> (2 - CONFIG_SB8X8)]) +
+                        (y_idx & (3 >> CONFIG_SB8X8)),
                 TX_4X4, bw * bh);
   }
 
@@ -709,18 +797,23 @@ static int rdcost_sby_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   const int bh = 1 << (b_height_log2(bsize) - 1);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> 1);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> !CONFIG_SB8X8);
   vpx_memcpy(&t_left,  xd->left_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> 1);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> !CONFIG_SB8X8);
 
   for (b = 0; b < bw * bh; b++) {
     const int x_idx = b & (bw - 1), y_idx = b >> bwl;
     cost += cost_coeffs(cm, x, b * 4, PLANE_TYPE_Y_WITH_DC,
+#if CONFIG_SB8X8
+                (ENTROPY_CONTEXT *) &t_above[x_idx],
+                (ENTROPY_CONTEXT *) &t_left[y_idx],
+#else
                 ((ENTROPY_CONTEXT *) &t_above[x_idx >> 1]) + ((x_idx & 1) << 1),
                 ((ENTROPY_CONTEXT *) &t_left[y_idx >> 1]) + ((y_idx & 1) << 1),
+#endif
                 TX_8X8, 4 * bw * bh);
   }
 
@@ -748,16 +841,18 @@ static int rdcost_sby_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
   const int bh = 1 << (b_height_log2(bsize) - 2);
   int cost = 0, b;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
-  vpx_memcpy(&t_above, xd->above_context, sizeof(ENTROPY_CONTEXT_PLANES) * bw);
-  vpx_memcpy(&t_left,  xd->left_context,  sizeof(ENTROPY_CONTEXT_PLANES) * bh);
+  vpx_memcpy(&t_above, xd->above_context,
+             sizeof(ENTROPY_CONTEXT_PLANES) * bw << CONFIG_SB8X8);
+  vpx_memcpy(&t_left,  xd->left_context,
+             sizeof(ENTROPY_CONTEXT_PLANES) * bh << CONFIG_SB8X8);
 
   for (b = 0; b < bw * bh; b++) {
     const int x_idx = b & (bw - 1), y_idx = b >> bwl;
     cost += cost_coeffs(cm, x, b * 16, PLANE_TYPE_Y_WITH_DC,
-                        (ENTROPY_CONTEXT *) &t_above[x_idx],
-                        (ENTROPY_CONTEXT *) &t_left[y_idx],
+                        (ENTROPY_CONTEXT *) &t_above[x_idx << CONFIG_SB8X8],
+                        (ENTROPY_CONTEXT *) &t_left[y_idx << CONFIG_SB8X8],
                         TX_16X16, bw * bh * 16);
   }
 
@@ -785,18 +880,18 @@ static int rdcost_sby_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
   const int bh = 1 << (b_height_log2(bsize) - 3);
   int cost = 0, b;
   MACROBLOCKD * const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * bw * 2);
+             sizeof(ENTROPY_CONTEXT_PLANES) * bw * 2 << CONFIG_SB8X8);
   vpx_memcpy(&t_left,  xd->left_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * bh * 2);
+             sizeof(ENTROPY_CONTEXT_PLANES) * bh * 2 << CONFIG_SB8X8);
 
   for (b = 0; b < bw * bh; b++) {
     const int x_idx = b & (bw - 1), y_idx = b >> bwl;
     cost += cost_coeffs(cm, x, b * 64, PLANE_TYPE_Y_WITH_DC,
-                        (ENTROPY_CONTEXT *) &t_above[x_idx * 2],
-                        (ENTROPY_CONTEXT *) &t_left[y_idx * 2],
+                        (ENTROPY_CONTEXT *) &t_above[x_idx * 2 << CONFIG_SB8X8],
+                        (ENTROPY_CONTEXT *) &t_left[y_idx * 2 << CONFIG_SB8X8],
                         TX_32X32, bw * bh * 64);
   }
 
@@ -968,17 +1063,24 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   int distortion = 0;
   int tot_rate_y = 0;
   int64_t total_rd = 0;
+#if CONFIG_SB8X8
+  ENTROPY_CONTEXT_PLANES t_above[2], t_left[2];
+#else
   ENTROPY_CONTEXT_PLANES t_above, t_left;
+#endif
   ENTROPY_CONTEXT *ta, *tl;
   int *bmode_costs;
 
-  vpx_memcpy(&t_above, xd->above_context,
-             sizeof(ENTROPY_CONTEXT_PLANES));
-  vpx_memcpy(&t_left, xd->left_context,
-             sizeof(ENTROPY_CONTEXT_PLANES));
+  vpx_memcpy(&t_above, xd->above_context, sizeof(t_above));
+  vpx_memcpy(&t_left, xd->left_context, sizeof(t_left));
 
+#if CONFIG_SB8X8
+  ta = (ENTROPY_CONTEXT *)t_above;
+  tl = (ENTROPY_CONTEXT *)t_left;
+#else
   ta = (ENTROPY_CONTEXT *)&t_above;
   tl = (ENTROPY_CONTEXT *)&t_left;
+#endif
 
   xd->mode_info_context->mbmi.mode = I4X4_PRED;
   bmode_costs = mb->inter_bmode_costs;
@@ -1246,15 +1348,24 @@ static int64_t rd_pick_intra8x8mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   int distortion = 0;
   int tot_rate_y = 0;
   int64_t total_rd = 0;
+#if CONFIG_SB8X8
+  ENTROPY_CONTEXT_PLANES t_above[2], t_left[2];
+#else
   ENTROPY_CONTEXT_PLANES t_above, t_left;
+#endif
   ENTROPY_CONTEXT *ta, *tl;
   int *i8x8mode_costs;
 
-  vpx_memcpy(&t_above, xd->above_context, sizeof(ENTROPY_CONTEXT_PLANES));
-  vpx_memcpy(&t_left, xd->left_context, sizeof(ENTROPY_CONTEXT_PLANES));
+  vpx_memcpy(&t_above, xd->above_context, sizeof(t_above));
+  vpx_memcpy(&t_left, xd->left_context, sizeof(t_left));
 
+#if CONFIG_SB8X8
+  ta = (ENTROPY_CONTEXT *)t_above;
+  tl = (ENTROPY_CONTEXT *)t_left;
+#else
   ta = (ENTROPY_CONTEXT *)&t_above;
   tl = (ENTROPY_CONTEXT *)&t_left;
+#endif
 
   xd->mode_info_context->mbmi.mode = I8X8_PRED;
   i8x8mode_costs  = mb->i8x8_mode_costs;
@@ -1361,19 +1472,24 @@ static int rd_cost_sbuv_4x4(VP9_COMMON *const cm, MACROBLOCK *x,
   int yoff = 4 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> 1);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bw) >> !CONFIG_SB8X8);
   vpx_memcpy(&t_left, xd->left_context,
-             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> 1);
+             (sizeof(ENTROPY_CONTEXT_PLANES) * bh) >> !CONFIG_SB8X8);
 
   for (p = 0; p < 2; p++) {
     for (b = 0; b < bw * bh; b++) {
       const int x_idx = b & (bw - 1), y_idx = b >> bwl;
       cost += cost_coeffs(cm, x, yoff + b, PLANE_TYPE_UV,
+#if CONFIG_SB8X8
+                          UVCTX(t_above[x_idx], p),
+                          UVCTX(t_left[y_idx], p),
+#else
                           UVCTX(t_above[x_idx >> 1], p) + (x_idx & 1),
                           UVCTX(t_left[y_idx >> 1], p) + (y_idx & 1),
+#endif
                           TX_4X4, bw * bh * 4);
     }
     yoff = (yoff * 5) >> 2;  // u -> v
@@ -1402,19 +1518,19 @@ static int rd_cost_sbuv_8x8(VP9_COMMON *const cm, MACROBLOCK *x,
   int yoff = 16 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * bw);
+             sizeof(ENTROPY_CONTEXT_PLANES) * bw << CONFIG_SB8X8);
   vpx_memcpy(&t_left, xd->left_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * bh);
+             sizeof(ENTROPY_CONTEXT_PLANES) * bh << CONFIG_SB8X8);
 
   for (p = 0; p < 2; p++) {
     for (b = 0; b < bw * bh; b++) {
       const int x_idx = b & (bw - 1), y_idx = b >> bwl;
       cost += cost_coeffs(cm, x, yoff + b * 4, PLANE_TYPE_UV,
-                          UVCTX(t_above[x_idx], p),
-                          UVCTX(t_left[y_idx], p),
+                          UVCTX(t_above[x_idx << CONFIG_SB8X8], p),
+                          UVCTX(t_left[y_idx << CONFIG_SB8X8], p),
                           TX_8X8, bw * bh * 16);
     }
     yoff = (yoff * 5) >> 2;  // u -> v
@@ -1443,19 +1559,19 @@ static int rd_cost_sbuv_16x16(VP9_COMMON *const cm, MACROBLOCK *x,
   int yoff = 64 * bw * bh;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * 2 * bw);
+             sizeof(ENTROPY_CONTEXT_PLANES) * 2 * bw << CONFIG_SB8X8);
   vpx_memcpy(&t_left, xd->left_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * 2 * bh);
+             sizeof(ENTROPY_CONTEXT_PLANES) * 2 * bh << CONFIG_SB8X8);
 
   for (p = 0; p < 2; p++) {
     for (b = 0; b < bw * bh; b++) {
       const int x_idx = b & (bw - 1), y_idx = b >> bwl;
       cost += cost_coeffs(cm, x, yoff + b * 16, PLANE_TYPE_UV,
-                          UVCTX(t_above[x_idx * 2], p),
-                          UVCTX(t_left[y_idx * 2], p),
+                          UVCTX(t_above[x_idx * 2 << CONFIG_SB8X8], p),
+                          UVCTX(t_left[y_idx * 2 << CONFIG_SB8X8], p),
                           TX_16X16, bw * bh * 64);
     }
     yoff = (yoff * 5) >> 2;  // u -> v
@@ -1484,19 +1600,19 @@ static int rd_cost_sbuv_32x32(VP9_COMMON *const cm, MACROBLOCK *x,
   int yoff = 256 * bh * bw;
   int p, b, cost = 0;
   MACROBLOCKD *const xd = &x->e_mbd;
-  ENTROPY_CONTEXT_PLANES t_above[4], t_left[4];
+  ENTROPY_CONTEXT_PLANES t_above[4 << CONFIG_SB8X8], t_left[4 << CONFIG_SB8X8];
 
   vpx_memcpy(&t_above, xd->above_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * 4 * bw);
+             sizeof(ENTROPY_CONTEXT_PLANES) * 4 * bw << CONFIG_SB8X8);
   vpx_memcpy(&t_left, xd->left_context,
-             sizeof(ENTROPY_CONTEXT_PLANES) * 4 * bh);
+             sizeof(ENTROPY_CONTEXT_PLANES) * 4 * bh << CONFIG_SB8X8);
 
   for (p = 0; p < 2; p++) {
     for (b = 0; b < bw * bh; b++) {
       const int x_idx = b * (bw - 1), y_idx = b >> bwl;
       cost += cost_coeffs(cm, x, yoff + b * 64, PLANE_TYPE_UV,
-                          UVCTX(t_above[x_idx * 4], p),
-                          UVCTX(t_left[y_idx * 4], p),
+                          UVCTX(t_above[x_idx * 4 << CONFIG_SB8X8], p),
+                          UVCTX(t_left[y_idx * 4 << CONFIG_SB8X8], p),
                           TX_32X32, 256 * bh * bw);
     }
     yoff = (yoff * 5) >> 2;  // u -> v
@@ -1996,18 +2112,30 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
 
   vp9_variance_fn_ptr_t *v_fn_ptr;
 
+#if CONFIG_SB8X8
+  ENTROPY_CONTEXT_PLANES t_above[2], t_left[2];
+  ENTROPY_CONTEXT_PLANES t_above_b[2], t_left_b[2];
+#else
   ENTROPY_CONTEXT_PLANES t_above, t_left;
-  ENTROPY_CONTEXT *ta, *tl;
   ENTROPY_CONTEXT_PLANES t_above_b, t_left_b;
+#endif
+  ENTROPY_CONTEXT *ta, *tl;
   ENTROPY_CONTEXT *ta_b, *tl_b;
 
-  vpx_memcpy(&t_above, x->e_mbd.above_context, sizeof(ENTROPY_CONTEXT_PLANES));
-  vpx_memcpy(&t_left, x->e_mbd.left_context, sizeof(ENTROPY_CONTEXT_PLANES));
+  vpx_memcpy(&t_above, x->e_mbd.above_context, sizeof(t_above));
+  vpx_memcpy(&t_left, x->e_mbd.left_context, sizeof(t_left));
 
+#if CONFIG_SB8X8
+  ta = (ENTROPY_CONTEXT *)t_above;
+  tl = (ENTROPY_CONTEXT *)t_left;
+  ta_b = (ENTROPY_CONTEXT *)t_above_b;
+  tl_b = (ENTROPY_CONTEXT *)t_left_b;
+#else
   ta = (ENTROPY_CONTEXT *)&t_above;
   tl = (ENTROPY_CONTEXT *)&t_left;
   ta_b = (ENTROPY_CONTEXT *)&t_above_b;
   tl_b = (ENTROPY_CONTEXT *)&t_left_b;
+#endif
 
   v_fn_ptr = &cpi->fn_ptr[segmentation];
   labels = vp9_mbsplits[segmentation];
@@ -2040,15 +2168,24 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
       int64_t this_rd, other_rd;
       int distortion;
       int labelyrate;
+#if CONFIG_SB8X8
+      ENTROPY_CONTEXT_PLANES t_above_s[2], t_left_s[2];
+#else
       ENTROPY_CONTEXT_PLANES t_above_s, t_left_s;
+#endif
       ENTROPY_CONTEXT *ta_s;
       ENTROPY_CONTEXT *tl_s;
 
-      vpx_memcpy(&t_above_s, &t_above, sizeof(ENTROPY_CONTEXT_PLANES));
-      vpx_memcpy(&t_left_s, &t_left, sizeof(ENTROPY_CONTEXT_PLANES));
+      vpx_memcpy(&t_above_s, &t_above, sizeof(t_above_s));
+      vpx_memcpy(&t_left_s, &t_left, sizeof(t_left_s));
 
+#if CONFIG_SB8X8
+      ta_s = (ENTROPY_CONTEXT *)t_above_s;
+      tl_s = (ENTROPY_CONTEXT *)t_left_s;
+#else
       ta_s = (ENTROPY_CONTEXT *)&t_above_s;
       tl_s = (ENTROPY_CONTEXT *)&t_left_s;
+#endif
 
       // motion search for newmv (single predictor case only)
       if (mbmi->second_ref_frame <= 0 && this_mode == NEW4X4) {
@@ -2215,14 +2352,14 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
         if (other_rd < best_other_rd)
           best_other_rd = other_rd;
 
-        vpx_memcpy(ta_b, ta_s, sizeof(ENTROPY_CONTEXT_PLANES));
-        vpx_memcpy(tl_b, tl_s, sizeof(ENTROPY_CONTEXT_PLANES));
+        vpx_memcpy(ta_b, ta_s, sizeof(t_above_s));
+        vpx_memcpy(tl_b, tl_s, sizeof(t_left_s));
 
       }
     } /*for each 4x4 mode*/
 
-    vpx_memcpy(ta, ta_b, sizeof(ENTROPY_CONTEXT_PLANES));
-    vpx_memcpy(tl, tl_b, sizeof(ENTROPY_CONTEXT_PLANES));
+    vpx_memcpy(ta, ta_b, sizeof(t_above));
+    vpx_memcpy(tl, tl_b, sizeof(t_left));
 
     labels2mode(x, labels, i, mode_selected, &mode_mv[mode_selected],
                 &second_mode_mv[mode_selected], seg_mvs[i],

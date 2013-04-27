@@ -138,7 +138,8 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
   oci->prev_mi = oci->prev_mip + oci->mode_info_stride + 1;
 
   oci->above_context =
-    vpx_calloc(sizeof(ENTROPY_CONTEXT_PLANES) * mb_cols_aligned_to_sb(oci), 1);
+    vpx_calloc(sizeof(ENTROPY_CONTEXT_PLANES) *
+               mb_cols_aligned_to_sb(oci) << CONFIG_SB8X8, 1);
 
   if (!oci->above_context) {
     vp9_free_frame_buffers(oci);

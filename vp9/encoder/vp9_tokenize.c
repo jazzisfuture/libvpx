@@ -119,7 +119,10 @@ static void tokenize_b(VP9_COMP *cpi,
   vp9_coeff_count *counts;
   vp9_coeff_probs *coef_probs;
   const int ref = mbmi->ref_frame != INTRA_FRAME;
-  ENTROPY_CONTEXT *a, *l, *a1, *l1, *a2, *l2, *a3, *l3, a_ec, l_ec;
+  int aidx, lidx;
+  ENTROPY_CONTEXT* const A0 = (ENTROPY_CONTEXT *) xd->above_context;
+  ENTROPY_CONTEXT* const L0 = (ENTROPY_CONTEXT *) xd->left_context;
+  ENTROPY_CONTEXT a_ec, l_ec;
   uint8_t token_cache[1024];
   TX_TYPE tx_type = DCT_DCT;
 #if CONFIG_CODE_ZEROGROUP
@@ -137,59 +140,28 @@ static void tokenize_b(VP9_COMP *cpi,
 #endif
 
   assert((!type && !pb_idx.plane) || (type && pb_idx.plane));
-  if (sb_type == BLOCK_SIZE_SB64X64) {
-    a = (ENTROPY_CONTEXT *)xd->above_context +
-                                             vp9_block2above_sb64[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb64[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l2 = l1 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a3 = a2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l3 = l2 + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-  } else if (sb_type == BLOCK_SIZE_SB32X64) {
-    a = (ENTROPY_CONTEXT *)xd->above_context +
-                                          vp9_block2above_sb32x64[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context +
-                                          vp9_block2left_sb32x64[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a3 = l2 = l3 = NULL;
-  } else if (sb_type == BLOCK_SIZE_SB64X32) {
-    a = (ENTROPY_CONTEXT *)xd->above_context +
-                                          vp9_block2above_sb64x32[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context +
-                                          vp9_block2left_sb64x32[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a3 = l2 = l3 = NULL;
-  } else if (sb_type == BLOCK_SIZE_SB32X32) {
-    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above_sb[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left_sb[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a2 = a3 = l2 = l3 = NULL;
-  } else if (sb_type == BLOCK_SIZE_SB16X32) {
-    a = (ENTROPY_CONTEXT *)xd->above_context +
-                                          vp9_block2above_sb16x32[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context +
-                                          vp9_block2left_sb16x32[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a1 = l1 = a2 = l2 = a3 = l3 = NULL;
-  } else if (sb_type == BLOCK_SIZE_SB32X16) {
-    a = (ENTROPY_CONTEXT *)xd->above_context +
-                                          vp9_block2above_sb32x16[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context +
-                                          vp9_block2left_sb32x16[tx_size][ib];
-    a1 = a + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    l1 = l + sizeof(ENTROPY_CONTEXT_PLANES) / sizeof(ENTROPY_CONTEXT);
-    a1 = l1 = a2 = l2 = a3 = l3 = NULL;
+
+  if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X64) {
+    aidx = vp9_block2above_sb64[tx_size][ib];
+    lidx = vp9_block2left_sb64[tx_size][ib];
+  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB64X32) {
+    aidx = vp9_block2above_sb64x32[tx_size][ib];
+    lidx = vp9_block2left_sb64x32[tx_size][ib];
+  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X64) {
+    aidx = vp9_block2above_sb32x64[tx_size][ib];
+    lidx = vp9_block2left_sb32x64[tx_size][ib];
+  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X32) {
+    aidx = vp9_block2above_sb[tx_size][ib];
+    lidx = vp9_block2left_sb[tx_size][ib];
+  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB32X16) {
+    aidx = vp9_block2above_sb32x16[tx_size][ib];
+    lidx = vp9_block2left_sb32x16[tx_size][ib];
+  } else if (xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB16X32) {
+    aidx = vp9_block2above_sb16x32[tx_size][ib];
+    lidx = vp9_block2left_sb16x32[tx_size][ib];
   } else {
-    assert(sb_type == BLOCK_SIZE_MB16X16);
-    a = (ENTROPY_CONTEXT *)xd->above_context + vp9_block2above[tx_size][ib];
-    l = (ENTROPY_CONTEXT *)xd->left_context + vp9_block2left[tx_size][ib];
-    a1 = l1 = a2 = l2 = a3 = l3 = NULL;
+    aidx = vp9_block2above[tx_size][ib];
+    lidx = vp9_block2left[tx_size][ib];
   }
 
   switch (tx_size) {
@@ -197,8 +169,8 @@ static void tokenize_b(VP9_COMP *cpi,
     case TX_4X4: {
       tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_4x4(xd, ib) : DCT_DCT;
-      a_ec = *a;
-      l_ec = *l;
+      a_ec = A0[aidx] != 0;
+      l_ec = L0[lidx] != 0;
       seg_eob = 16;
       scan = get_scan_4x4(tx_type);
       counts = cpi->coef_counts_4x4;
@@ -214,8 +186,18 @@ static void tokenize_b(VP9_COMP *cpi,
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
-      a_ec = (a[0] + a[1]) != 0;
-      l_ec = (l[0] + l[1]) != 0;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        a_ec = (A0[aidx] + A1[aidx]) != 0;
+        l_ec = (L0[lidx] + L1[lidx]) != 0;
+      } else
+#endif
+      {
+        a_ec = (A0[aidx] + A0[aidx + 1]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1]) != 0;
+      }
       seg_eob = 64;
       scan = get_scan_8x8(tx_type);
       counts = cpi->coef_counts_8x8;
@@ -231,13 +213,33 @@ static void tokenize_b(VP9_COMP *cpi,
       const int x = ib & ((1 << sz) - 1), y = ib - x;
       tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
           get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
-      if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3]) != 0;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        a_ec = (A0[aidx] + A1[aidx] + A2[aidx] + A3[aidx]) != 0;
+        l_ec = (L0[lidx] + L1[lidx] + L2[lidx] + L3[lidx]) != 0;
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1]) != 0;
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        a_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) != 0;
       }
+#else
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        a_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1]) != 0;
+      } else {
+        a_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3]) != 0;
+      }
+#endif
       seg_eob = 256;
       scan = get_scan_16x16(tx_type);
       counts = cpi->coef_counts_16x16;
@@ -249,17 +251,59 @@ static void tokenize_b(VP9_COMP *cpi,
       break;
     }
     case TX_32X32:
-      if (type != PLANE_TYPE_UV) {
-        a_ec = (a[0] + a[1] + a[2] + a[3] +
-                a1[0] + a1[1] + a1[2] + a1[3]) != 0;
-        l_ec = (l[0] + l[1] + l[2] + l[3] +
-                l1[0] + l1[1] + l1[2] + l1[3]) != 0;
+#if CONFIG_SB8X8
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        ENTROPY_CONTEXT *A4 = (ENTROPY_CONTEXT *) (xd->above_context + 4);
+        ENTROPY_CONTEXT *L4 = (ENTROPY_CONTEXT *) (xd->left_context + 4);
+        ENTROPY_CONTEXT *A5 = (ENTROPY_CONTEXT *) (xd->above_context + 5);
+        ENTROPY_CONTEXT *L5 = (ENTROPY_CONTEXT *) (xd->left_context + 5);
+        ENTROPY_CONTEXT *A6 = (ENTROPY_CONTEXT *) (xd->above_context + 6);
+        ENTROPY_CONTEXT *L6 = (ENTROPY_CONTEXT *) (xd->left_context + 6);
+        ENTROPY_CONTEXT *A7 = (ENTROPY_CONTEXT *) (xd->above_context + 7);
+        ENTROPY_CONTEXT *L7 = (ENTROPY_CONTEXT *) (xd->left_context + 7);
+        a_ec = (A0[aidx] + A1[aidx] + A2[aidx] + A3[aidx] +
+                A4[aidx] + A5[aidx] + A6[aidx] + A7[aidx]) != 0;
+        l_ec = (L0[lidx] + L1[lidx] + L2[lidx] + L3[lidx] +
+                L4[lidx] + L5[lidx] + L6[lidx] + L7[lidx]) != 0;
       } else {
-        a_ec = (a[0] + a[1] + a1[0] + a1[1] +
-                a2[0] + a2[1] + a3[0] + a3[1]) != 0;
-        l_ec = (l[0] + l[1] + l1[0] + l1[1] +
-                l2[0] + l2[1] + l3[0] + l3[1]) != 0;
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        a_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
+                A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
+                L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) != 0;
       }
+#else
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        a_ec = (A0[aidx] + A0[aidx + 1] + A1[aidx] + A1[aidx + 1] +
+                A2[aidx] + A2[aidx + 1] + A3[aidx] + A3[aidx + 1]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L1[lidx] + L1[lidx + 1] +
+                L2[lidx] + L2[lidx + 1] + L3[lidx] + L3[lidx + 1]) != 0;
+      } else {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        a_ec = (A0[aidx] + A0[aidx + 1] + A0[aidx + 2] + A0[aidx + 3] +
+                A1[aidx] + A1[aidx + 1] + A1[aidx + 2] + A1[aidx + 3]) != 0;
+        l_ec = (L0[lidx] + L0[lidx + 1] + L0[lidx + 2] + L0[lidx + 3] +
+                L1[lidx] + L1[lidx + 1] + L1[lidx + 2] + L1[lidx + 3]) != 0;
+      }
+#endif
       seg_eob = 1024;
       scan = vp9_default_zig_zag1d_32x32;
       counts = cpi->coef_counts_32x32;
@@ -403,34 +447,77 @@ static void tokenize_b(VP9_COMP *cpi,
   } while (c < eob && ++c < seg_eob);
 
   *tp = t;
-  a_ec = l_ec = (c > 0); /* 0 <-> all coeff data is zero */
-  a[0] = a_ec;
-  l[0] = l_ec;
-
-  if (tx_size == TX_8X8) {
-    a[1] = a_ec;
-    l[1] = l_ec;
-  } else if (tx_size == TX_16X16) {
-    if (type != PLANE_TYPE_UV) {
-      a[1] = a[2] = a[3] = a_ec;
-      l[1] = l[2] = l[3] = l_ec;
+  A0[aidx] = L0[lidx] = c > 0;
+#if CONFIG_SB8X8
+  if (tx_size >= TX_8X8) {
+    if (type == PLANE_TYPE_UV) {
+      ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+      ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+      A1[aidx] = L1[lidx] = A0[aidx];
+      if (tx_size >= TX_16X16) {
+        ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+        ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+        ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+        ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+        A2[aidx] = A3[aidx] = L2[lidx] = L3[lidx] = A0[aidx];
+        if (tx_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A4 = (ENTROPY_CONTEXT *) (xd->above_context + 4);
+          ENTROPY_CONTEXT *L4 = (ENTROPY_CONTEXT *) (xd->left_context + 4);
+          ENTROPY_CONTEXT *A5 = (ENTROPY_CONTEXT *) (xd->above_context + 5);
+          ENTROPY_CONTEXT *L5 = (ENTROPY_CONTEXT *) (xd->left_context + 5);
+          ENTROPY_CONTEXT *A6 = (ENTROPY_CONTEXT *) (xd->above_context + 6);
+          ENTROPY_CONTEXT *L6 = (ENTROPY_CONTEXT *) (xd->left_context + 6);
+          ENTROPY_CONTEXT *A7 = (ENTROPY_CONTEXT *) (xd->above_context + 7);
+          ENTROPY_CONTEXT *L7 = (ENTROPY_CONTEXT *) (xd->left_context + 7);
+          A4[aidx] = A5[aidx] = L4[lidx] = L5[lidx] = A0[aidx];
+          A6[aidx] = A7[aidx] = L6[lidx] = L7[lidx] = A0[aidx];
+        }
+      }
     } else {
-      a1[0] = a1[1] = a[1] = a_ec;
-      l1[0] = l1[1] = l[1] = l_ec;
-    }
-  } else if (tx_size == TX_32X32) {
-    if (type != PLANE_TYPE_UV) {
-      a[1] = a[2] = a[3] = a_ec;
-      l[1] = l[2] = l[3] = l_ec;
-      a1[0] = a1[1] = a1[2] = a1[3] = a_ec;
-      l1[0] = l1[1] = l1[2] = l1[3] = l_ec;
-    } else {
-      a[1] = a1[0] = a1[1] = a_ec;
-      l[1] = l1[0] = l1[1] = l_ec;
-      a2[0] = a2[1] = a3[0] = a3[1] = a_ec;
-      l2[0] = l2[1] = l3[0] = l3[1] = l_ec;
+      A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
+      if (tx_size >= TX_16X16) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        A1[aidx] = A1[aidx + 1] = L1[lidx] = L1[lidx + 1] = A0[aidx];
+        if (tx_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+          ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+          ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+          ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+          A2[aidx] = A2[aidx + 1] = A3[aidx] = A3[aidx + 1] = A0[aidx];
+          L2[lidx] = L2[lidx + 1] = L3[lidx] = L3[lidx + 1] = A0[aidx];
+        }
+      }
     }
   }
+#else
+  if (tx_size >= TX_8X8) {
+    A0[aidx + 1] = L0[lidx + 1] = A0[aidx];
+    if (tx_size >= TX_16X16) {
+      if (type == PLANE_TYPE_UV) {
+        ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+        ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+        A1[aidx] = A1[aidx + 1] = L1[lidx] = L1[lidx + 1] = A0[aidx];
+        if (tx_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A2 = (ENTROPY_CONTEXT *) (xd->above_context + 2);
+          ENTROPY_CONTEXT *L2 = (ENTROPY_CONTEXT *) (xd->left_context + 2);
+          ENTROPY_CONTEXT *A3 = (ENTROPY_CONTEXT *) (xd->above_context + 3);
+          ENTROPY_CONTEXT *L3 = (ENTROPY_CONTEXT *) (xd->left_context + 3);
+          A2[aidx] = A2[aidx + 1] = A3[aidx] = A3[aidx + 1] = A0[aidx];
+          L2[lidx] = L2[lidx + 1] = L3[lidx] = L3[lidx + 1] = A0[aidx];
+        }
+      } else {
+        A0[aidx + 2] = A0[aidx + 3] = L0[lidx + 2] = L0[lidx + 3] = A0[aidx];
+        if (tx_size >= TX_32X32) {
+          ENTROPY_CONTEXT *A1 = (ENTROPY_CONTEXT *) (xd->above_context + 1);
+          ENTROPY_CONTEXT *L1 = (ENTROPY_CONTEXT *) (xd->left_context + 1);
+          A1[aidx] = A1[aidx + 1] = A1[aidx + 2] = A1[aidx + 3] = A0[aidx];
+          L1[lidx] = L1[lidx + 1] = L1[lidx + 2] = L1[lidx + 3] = A0[aidx];
+        }
+      }
+    }
+  }
+#endif
 }
 
 struct is_skippable_args {

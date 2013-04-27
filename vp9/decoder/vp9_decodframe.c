@@ -754,8 +754,8 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
   xd->mode_info_context->mbmi.sb_type = bsize;
   xd->prev_mode_info_context = cm->prev_mi + mi_idx;
 
-  xd->above_context = cm->above_context + (mi_col >> CONFIG_SB8X8);
-  xd->left_context = cm->left_context + ((mi_row >> CONFIG_SB8X8) & 3);
+  xd->above_context = cm->above_context + mi_col;
+  xd->left_context = cm->left_context + (mi_row & (7 >> !CONFIG_SB8X8));
   xd->above_seg_context = cm->above_seg_context + (mi_col >> CONFIG_SB8X8);
   xd->left_seg_context  = cm->left_seg_context + ((mi_row >> CONFIG_SB8X8) & 3);
 
@@ -1329,7 +1329,8 @@ static void decode_tiles(VP9D_COMP *pbi,
   pc->tile_rows    = 1 << pc->log2_tile_rows;
 
   vpx_memset(pc->above_context, 0,
-             sizeof(ENTROPY_CONTEXT_PLANES) * mb_cols_aligned_to_sb(pc));
+             sizeof(ENTROPY_CONTEXT_PLANES) *
+             mb_cols_aligned_to_sb(pc) << CONFIG_SB8X8);
 
   vpx_memset(pc->above_seg_context, 0, sizeof(PARTITION_CONTEXT) *
                                        mb_cols_aligned_to_sb(pc));
