@@ -754,8 +754,13 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
   xd->mode_info_context->mbmi.sb_type = bsize;
   xd->prev_mode_info_context = cm->prev_mi + mi_idx;
 
-  xd->above_context = cm->above_context + (mi_col >> CONFIG_SB8X8);
-  xd->left_context = cm->left_context + ((mi_row >> CONFIG_SB8X8) & 3);
+  xd->above_context[0] = cm->above_context[0] + (mi_col * 4 >> CONFIG_SB8X8);
+  xd->above_context[1] = cm->above_context[1] + (mi_col * 2 >> CONFIG_SB8X8);
+  xd->above_context[2] = cm->above_context[2] + (mi_col * 2 >> CONFIG_SB8X8);
+  xd->left_context[0] =
+      cm->left_context.y + ((mi_row * 4 >> CONFIG_SB8X8) & 15);
+  xd->left_context[1] = cm->left_context.u + ((mi_row * 2 >> CONFIG_SB8X8) & 7);
+  xd->left_context[2] = cm->left_context.v + ((mi_row * 2 >> CONFIG_SB8X8) & 7);
   xd->above_seg_context = cm->above_seg_context + (mi_col >> CONFIG_SB8X8);
   xd->left_seg_context  = cm->left_seg_context + ((mi_row >> CONFIG_SB8X8) & 3);
 
@@ -1297,7 +1302,7 @@ static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
   for (mi_row = pc->cur_tile_mi_row_start;
        mi_row < pc->cur_tile_mi_row_end; mi_row += (4 << CONFIG_SB8X8)) {
     // For a SB there are 2 left contexts, each pertaining to a MB row within
-    vpx_memset(pc->left_context, 0, sizeof(pc->left_context));
+    vpx_memset(&pc->left_context, 0, sizeof(pc->left_context));
     vpx_memset(pc->left_seg_context, 0, sizeof(pc->left_seg_context));
     for (mi_col = pc->cur_tile_mi_col_start;
          mi_col < pc->cur_tile_mi_col_end; mi_col += (4 << CONFIG_SB8X8)) {
@@ -1328,8 +1333,10 @@ static void decode_tiles(VP9D_COMP *pbi,
   pc->tile_columns = 1 << pc->log2_tile_columns;
   pc->tile_rows    = 1 << pc->log2_tile_rows;
 
-  vpx_memset(pc->above_context, 0,
-             sizeof(ENTROPY_CONTEXT_PLANES) * mb_cols_aligned_to_sb(pc));
+  // Note: this memset assumes above_context[0], [1] and [2]
+  // are allocated as part of the same buffer.
+  vpx_memset(pc->above_context[0], 0,
+             sizeof(ENTROPY_CONTEXT) * 8 * mb_cols_aligned_to_sb(pc));
 
   vpx_memset(pc->above_seg_context, 0, sizeof(PARTITION_CONTEXT) *
                                        mb_cols_aligned_to_sb(pc));
