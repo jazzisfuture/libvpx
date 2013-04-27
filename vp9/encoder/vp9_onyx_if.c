@@ -501,12 +501,14 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 }
 
 #if CONFIG_IMPLICIT_SEGMENTATION
+static double implict_seg_q_modifiers[MAX_MB_SEGMENTS] =
+  {1.0, 1.25, 1.15, 1.05, 1.15, 1.05, 0.95, 0.90};
 static void configure_implicit_segmentation(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   int i;
   int qi_delta;
-  double q_target = cpi->active_worst_quality * 1.10;
+  double q_baseline = vp9_convert_qindex_to_q(cpi->oxcf.worst_allowed_q);
 
   // Set the flags to allow implicit segment update but disallow explicit update
   xd->segmentation_enabled = 1;
@@ -524,10 +526,10 @@ static void configure_implicit_segmentation(VP9_COMP *cpi) {
     xd->update_mb_segmentation_data = 1;
 
     // Enable use of q deltas on segments 1 and up
+    // Segment 0 is treated as a neutral segment with no changes
     for (i = 1; i < MAX_MB_SEGMENTS; ++i) {
-      qi_delta = compute_qdelta(cpi, cpi->active_worst_quality, q_target);
+      qi_delta = compute_qdelta(cpi, q_baseline, implict_seg_q_modifiers[i]);
       vp9_set_segdata(xd, i, SEG_LVL_ALT_Q, qi_delta);
-      q_target *= 0.95;
       vp9_enable_segfeature(xd, i, SEG_LVL_ALT_Q);
     }
 
