@@ -119,10 +119,14 @@ void vp9_adapt_coef_probs(struct VP9Common *);
 static INLINE void vp9_reset_sb_tokens_context(MACROBLOCKD* const xd,
                                                BLOCK_SIZE_TYPE bsize) {
   /* Clear entropy contexts */
-  const int bw = 1 << (b_width_log2(bsize) - 2);
-  const int bh = 1 << (b_height_log2(bsize) - 2);
-  vpx_memset(xd->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * bw);
-  vpx_memset(xd->left_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * bh);
+  const int bw = 1 << b_width_log2(bsize);
+  const int bh = 1 << b_height_log2(bsize);
+  vpx_memset(xd->above_context[0], 0, sizeof(ENTROPY_CONTEXT) * bw);
+  vpx_memset(xd->above_context[1], 0, sizeof(ENTROPY_CONTEXT) * bw >> 1);
+  vpx_memset(xd->above_context[2], 0, sizeof(ENTROPY_CONTEXT) * bw >> 1);
+  vpx_memset(xd->left_context[0], 0, sizeof(ENTROPY_CONTEXT) * bh);
+  vpx_memset(xd->left_context[1], 0, sizeof(ENTROPY_CONTEXT) * bh >> 1);
+  vpx_memset(xd->left_context[2], 0, sizeof(ENTROPY_CONTEXT) * bh >> 1);
 }
 
 extern const int vp9_coef_bands8x8[64];
