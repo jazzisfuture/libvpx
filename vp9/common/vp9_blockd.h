@@ -49,7 +49,7 @@ typedef enum {
 
 typedef char ENTROPY_CONTEXT;
 typedef struct {
-  ENTROPY_CONTEXT y1[4];
+  ENTROPY_CONTEXT y[4];
   ENTROPY_CONTEXT u[2];
   ENTROPY_CONTEXT v[2];
 } ENTROPY_CONTEXT_PLANES;
