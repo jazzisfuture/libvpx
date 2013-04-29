@@ -815,6 +815,26 @@ static INLINE int old_block_idx_4x4(MACROBLOCKD* const xd, int block_size_b,
                       luma_blocks * 5 / 4 + i;
 }
 
+static INLINE TX_SIZE get_uv_txfm_size(MACROBLOCKD *xd,
+                                       TX_SIZE txfm_size,
+                                       BLOCK_SIZE_TYPE bsize) {
+  if (bsize <= BLOCK_SIZE_MB16X16) {
+    if (txfm_size == TX_16X16)
+      return TX_8X8;
+    // TODO(jingning): need to tune the mapping of txfm_size between y and uv
+    // components.
+    if (xd->mode_info_context->mbmi.mode == I8X8_PRED ||
+        xd->mode_info_context->mbmi.mode == SPLITMV)
+      return TX_4X4;
+  } else if (bsize < BLOCK_SIZE_SB32X32 && txfm_size == TX_16X16) {
+    return TX_8X8;
+  } else if (bsize < BLOCK_SIZE_SB64X64 && txfm_size == TX_32X32) {
+    return TX_16X16;
+  }
+
+  return txfm_size;
+}
+
 typedef void (*foreach_transformed_block_visitor)(int plane, int block,
                                                   BLOCK_SIZE_TYPE bsize,
                                                   int ss_txfrm_size,
