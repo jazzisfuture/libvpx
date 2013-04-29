@@ -144,17 +144,19 @@ static int above_block_second_mv(const MODE_INFO *cur_mb, int b, int mi_stride) 
 }
 
 static B_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mb, int b) {
-  if (!(b & 3)) {
+  if (!(b & (3 >> CONFIG_SB8X8))) {
     /* On L edge, get from MB to left of us */
     --cur_mb;
 
-    if (cur_mb->mbmi.mode < I8X8_PRED) {
+    if (cur_mb->mbmi.mode <= TM_PRED) {
       return pred_mode_conv(cur_mb->mbmi.mode);
+#if !CONFIG_SB8X8
     } else if (cur_mb->mbmi.mode == I8X8_PRED) {
       return pred_mode_conv(
           (MB_PREDICTION_MODE)(cur_mb->bmi + 3 + b)->as_mode.first);
+#endif  // !CONFIG_SB8X8
     } else if (cur_mb->mbmi.mode == I4X4_PRED) {
-      return ((cur_mb->bmi + 3 + b)->as_mode.first);
+      return ((cur_mb->bmi + (3 >> CONFIG_SB8X8) + b)->as_mode.first);
     } else {
       return B_DC_PRED;
     }
@@ -164,23 +166,25 @@ static B_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mb, int b) {
 
 static B_PREDICTION_MODE above_block_mode(const MODE_INFO *cur_mb,
                                           int b, int mi_stride) {
-  if (!(b >> 2)) {
+  if (!(b >> (2 >> CONFIG_SB8X8))) {
     /* On top edge, get from MB above us */
     cur_mb -= mi_stride;
 
-    if (cur_mb->mbmi.mode < I8X8_PRED) {
+    if (cur_mb->mbmi.mode <= TM_PRED) {
       return pred_mode_conv(cur_mb->mbmi.mode);
+#if !CONFIG_SB8X8
     } else if (cur_mb->mbmi.mode == I8X8_PRED) {
       return pred_mode_conv(
           (MB_PREDICTION_MODE)(cur_mb->bmi + 12 + b)->as_mode.first);
+#endif
     } else if (cur_mb->mbmi.mode == I4X4_PRED) {
-      return ((cur_mb->bmi + 12 + b)->as_mode.first);
+      return ((cur_mb->bmi + (CONFIG_SB8X8 ? 2 : 12) + b)->as_mode.first);
     } else {
       return B_DC_PRED;
     }
   }
 
-  return (cur_mb->bmi + b - 4)->as_mode.first;
+  return (cur_mb->bmi + b - (4 >> CONFIG_SB8X8))->as_mode.first;
 }
 
 #endif  // VP9_COMMON_VP9_FINDNEARMV_H_

@@ -47,8 +47,10 @@ int enc_debug = 0;
 
 void vp9_select_interp_filter_type(VP9_COMP *cpi);
 
+#if !CONFIG_SB8X8
 static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col);
+#endif
 
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col,
@@ -387,8 +389,10 @@ static void update_state(VP9_COMP *cpi,
     vpx_memcpy(x->partition_info, &ctx->partition_info,
                sizeof(PARTITION_INFO));
 
-    mbmi->mv[0].as_int = x->partition_info->bmi[15].mv.as_int;
-    mbmi->mv[1].as_int = x->partition_info->bmi[15].second_mv.as_int;
+    mbmi->mv[0].as_int =
+        x->partition_info->bmi[15 >> (CONFIG_SB8X8 * 2)].mv.as_int;
+    mbmi->mv[1].as_int =
+        x->partition_info->bmi[15 >> (CONFIG_SB8X8 * 2)].second_mv.as_int;
 #if CONFIG_SB8X8
     vpx_memcpy(x->partition_info + mis, &ctx->partition_info,
                sizeof(PARTITION_INFO));
@@ -453,7 +457,9 @@ static void update_state(VP9_COMP *cpi,
       THR_D27_PRED /*D27_PRED*/,
       THR_D63_PRED /*D63_PRED*/,
       THR_TM /*TM_PRED*/,
+#if !CONFIG_SB8X8
       THR_I8X8_PRED /*I8X8_PRED*/,
+#endif
       THR_B_PRED /*I4X4_PRED*/,
     };
     cpi->mode_chosen_counts[kf_mode_index[mb_mode]]++;
@@ -667,6 +673,7 @@ static void set_offsets(VP9_COMP *cpi,
   }
 }
 
+#if !CONFIG_SB8X8
 static int pick_mb_mode(VP9_COMP *cpi,
                         int mi_row,
                         int mi_col,
@@ -707,6 +714,7 @@ static int pick_mb_mode(VP9_COMP *cpi,
 
   return splitmodes_used;
 }
+#endif
 
 static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
                           TOKENEXTRA **tp, int *totalrate, int *totaldist,
@@ -837,12 +845,15 @@ static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp,
     set_block_index(xd, sub_index, bsize);
   set_offsets(cpi, mi_row, mi_col, bsize);
   update_state(cpi, get_block_context(x, bsize), bsize, output_enabled);
+#if !CONFIG_SB8X8
   if (bsize == BLOCK_SIZE_MB16X16) {
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
       vp9_activity_masking(cpi, x);
 
     encode_macroblock(cpi, tp, output_enabled, mi_row, mi_col);
-  } else {
+  } else
+#endif
+  {
     encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
   }
 
@@ -995,18 +1006,25 @@ static void encode_sb_row(VP9_COMP *cpi,
         // Index of the MB in the SB 0..3
         xd->mb_index = j;
 
+#if CONFIG_SB8X8
+        pick_sb_modes(cpi, mi_row + y_idx_m, mi_col + x_idx_m,
+                      tp, &r, &d, BLOCK_SIZE_MB16X16,
+                      &x->mb_context[xd->sb_index][xd->mb_index]);
+#else
         splitmodes_used += pick_mb_mode(cpi, mi_row + y_idx_m,
                                         mi_col + x_idx_m, tp, &r, &d);
+#endif
         sb32_rate += r;
         sb32_dist += d;
 
         // Dummy encode, do not do the tokenization
 #if CONFIG_SB8X8
-        update_state(cpi, &x->mb_context[xd->sb_index][xd->mb_index],
-                     BLOCK_SIZE_MB16X16, 0);
-#endif
+        encode_sb(cpi, tp, mi_row + y_idx, mi_col + x_idx, 0,
+                  BLOCK_SIZE_MB16X16, sb_partitioning[i]/*[j]*/, sb_partitioning);
+#else
         encode_macroblock(cpi, tp, 0, mi_row + y_idx_m,
                           mi_col + x_idx_m);
+#endif
       }
 
       /* Restore L & A coding context to those in place on entry */
@@ -1346,10 +1364,14 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->count_mb_ref_frame_usage)
   vp9_zero(cpi->bmode_count)
   vp9_zero(cpi->ymode_count)
+#if !CONFIG_SB8X8
   vp9_zero(cpi->i8x8_mode_count)
+#endif
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->sub_mv_ref_count)
+#if !CONFIG_SB8X8
   vp9_zero(cpi->mbsplit_count)
+#endif
   vp9_zero(cpi->common.fc.mv_ref_ct)
   vp9_zero(cpi->sb_ymode_count)
   vp9_zero(cpi->partition_count);
@@ -1823,9 +1845,10 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
 
     do {
       ++ bct[xd->block[b].bmi.as_mode.first];
-    } while (++b < 16);
+    } while (++b < (16 >> (CONFIG_SB8X8 * 2)));
   }
 
+#if !CONFIG_SB8X8
   if (m == I8X8_PRED) {
     i8x8_modes[xd->block[0].bmi.as_mode.first]++;
     i8x8_modes[xd->block[2].bmi.as_mode.first]++;
@@ -1833,20 +1856,25 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
     i8x8_modes[xd->block[10].bmi.as_mode.first]++;
   }
 #endif
+#endif
 
   if (xd->mode_info_context->mbmi.sb_type > BLOCK_SIZE_MB16X16) {
     ++cpi->sb_ymode_count[m];
   } else {
     ++cpi->ymode_count[m];
   }
+#if !CONFIG_SB8X8
   if (m != I8X8_PRED)
+#endif
     ++cpi->y_uv_mode_count[m][uvm];
+#if !CONFIG_SB8X8
   else {
     cpi->i8x8_mode_count[xd->mode_info_context->bmi[0].as_mode.first]++;
     cpi->i8x8_mode_count[xd->mode_info_context->bmi[2].as_mode.first]++;
     cpi->i8x8_mode_count[xd->mode_info_context->bmi[8].as_mode.first]++;
     cpi->i8x8_mode_count[xd->mode_info_context->bmi[10].as_mode.first]++;
   }
+#endif
   if (m == I4X4_PRED) {
     int b = 0;
     do {
@@ -1855,7 +1883,7 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
       if (m == B_CONTEXT_PRED) m -= CONTEXT_PRED_REPLACEMENTS;
 #endif
       ++cpi->bmode_count[m];
-    } while (++b < 16);
+    } while (++b < (16 >> (CONFIG_SB8X8 * 2)));
   }
 }
 
@@ -1880,6 +1908,7 @@ static void adjust_act_zbin(VP9_COMP *cpi, MACROBLOCK *x) {
 #endif
 }
 
+#if !CONFIG_SB8X8
 static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled,
                               int mi_row, int mi_col) {
@@ -2129,6 +2158,7 @@ static void encode_macroblock(VP9_COMP *cpi, TOKENEXTRA **t,
     }
   }
 }
+#endif
 
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
                               int output_enabled, int mi_row, int mi_col,
@@ -2317,8 +2347,10 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
           vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
       if (bsize >= BLOCK_SIZE_SB32X32) {
         cpi->txfm_count_32x32p[mi->mbmi.txfm_size]++;
-      } else {
+      } else if (bsize >= BLOCK_SIZE_MB16X16) {
         cpi->txfm_count_16x16p[mi->mbmi.txfm_size]++;
+      } else {
+        cpi->txfm_count_8x8p[mi->mbmi.txfm_size]++;
       }
     } else {
       int x, y;
@@ -2326,6 +2358,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
 
       if (sz == TX_32X32 && bsize < BLOCK_SIZE_SB32X32)
         sz = TX_16X16;
+      if (sz == TX_16X16 && bsize < BLOCK_SIZE_MB16X16)
+        sz = TX_8X8;
 
       for (y = 0; y < bh; y++) {
         for (x = 0; x < bw; x++) {
