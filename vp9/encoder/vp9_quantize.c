@@ -75,6 +75,25 @@ static void quantize(int16_t *zbin_boost_orig_ptr,
   *eob_ptr = eob + 1;
 }
 
+void vp9_quantize(MACROBLOCK *mb, int plane, int block, int n_coefs,
+                  const int *scan, int mul) {
+  MACROBLOCKD *const xd = &mb->e_mbd;
+
+  quantize(mb->plane[plane].zrun_zbin_boost,
+           BLOCK_OFFSET(mb->plane[plane].coeff, block, 16),
+           n_coefs, mb->skip_block,
+           mb->plane[plane].zbin,
+           mb->plane[plane].round,
+           mb->plane[plane].quant,
+           mb->plane[plane].quant_shift,
+           BLOCK_OFFSET(xd->plane[plane].qcoeff, block, 16),
+           BLOCK_OFFSET(xd->plane[plane].dqcoeff, block, 16),
+           xd->plane[plane].dequant,
+           mb->plane[plane].zbin_extra,
+           &xd->plane[plane].eobs[block],
+           scan, mul);
+}
+
 void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
                                 int y_blocks) {
   MACROBLOCKD *const xd = &mb->e_mbd;

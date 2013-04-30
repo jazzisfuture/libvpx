@@ -26,6 +26,9 @@
 #include "x86/vp9_quantize_x86.h"
 #endif
 
+void vp9_quantize(MACROBLOCK *mb, int plane, int block, int n_coefs,
+                  const int *scan, int mul);
+
 void vp9_regular_quantize_b_4x4_pair(MACROBLOCK *mb, int b_idx1, int b_idx2,
                                      int y_blocks);
 void vp9_regular_quantize_b_4x4(MACROBLOCK *mb, int b_idx, TX_TYPE tx_type,
