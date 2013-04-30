@@ -520,38 +520,16 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
   }
 }
 
-// TODO(jingning): Need to merge SB and MB decoding. The MB decoding currently
-// couples special handles on I8x8, B_PRED, and splitmv modes.
+#if !CONFIG_SB8X8
+// TODO(jingning): This only performs I8X8_PRED decoding process, which will be
+// automatically covered by decode_sb, when SB8X8 is on.
 static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
                      int mi_row, int mi_col,
                      vp9_reader *r) {
-  int eobtotal = 0;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
-  const MB_PREDICTION_MODE mode = mbmi->mode;
   const int tx_size = mbmi->txfm_size;
 
   assert(mbmi->sb_type == BLOCK_SIZE_MB16X16);
-
-  //mode = xd->mode_info_context->mbmi.mode;
-  if (pbi->common.frame_type != KEY_FRAME)
-    vp9_setup_interp_filters(xd, mbmi->interp_filter, &pbi->common);
-
-  // do prediction
-  if (mbmi->ref_frame == INTRA_FRAME) {
-    if (mode != I8X8_PRED) {
-      vp9_build_intra_predictors_sbuv_s(xd, BLOCK_SIZE_MB16X16);
-      if (mode != I4X4_PRED)
-        vp9_build_intra_predictors_sby_s(xd, BLOCK_SIZE_MB16X16);
-    }
-  } else {
-#if 0  // def DEC_DEBUG
-  if (dec_debug)
-    printf("Decoding mb:  %d %d interp %d\n",
-           xd->mode_info_context->mbmi.mode, tx_size,
-           xd->mode_info_context->mbmi.interp_filter);
-#endif
-    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_SIZE_MB16X16);
-  }
 
   if (mbmi->mb_skip_coeff) {
     vp9_reset_sb_tokens_context(xd, BLOCK_SIZE_MB16X16);
@@ -560,68 +538,18 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
     if (xd->segmentation_enabled)
       mb_init_dequantizer(&pbi->common, xd);
 
-    if (!vp9_reader_has_error(r)) {
-#if CONFIG_NEWBINTRAMODES
-    if (mode != I4X4_PRED)
-#endif
-      eobtotal = vp9_decode_tokens(pbi, xd, r, BLOCK_SIZE_MB16X16);
-    }
+    if (!vp9_reader_has_error(r))
+      vp9_decode_tokens(pbi, xd, r, BLOCK_SIZE_MB16X16);
   }
 
-  if (eobtotal == 0 &&
-      mode != I4X4_PRED && mode != I8X8_PRED && mode != SPLITMV &&
-      !vp9_reader_has_error(r)) {
-    mbmi->mb_skip_coeff = 1;
-  } else {
-#if 0  // def DEC_DEBUG
-  if (dec_debug)
-    printf("Decoding mb:  %d %d\n", xd->mode_info_context->mbmi.mode, tx_size);
-#endif
-
-    if (tx_size == TX_16X16) {
-      decode_16x16(xd);
-    } else if (tx_size == TX_8X8) {
-      decode_8x8(xd);
-    } else {
-      decode_4x4(pbi, xd, r);
-    }
-  }
-
-#ifdef DEC_DEBUG
-  if (dec_debug) {
-    int i, j;
-    printf("\n");
-    printf("predictor y\n");
-    for (i = 0; i < 16; i++) {
-      for (j = 0; j < 16; j++)
-        printf("%3d ", xd->predictor[i * 16 + j]);
-      printf("\n");
-    }
-    printf("\n");
-    printf("final y\n");
-    for (i = 0; i < 16; i++) {
-      for (j = 0; j < 16; j++)
-        printf("%3d ", xd->plane[0].dst.buf[i * xd->plane[0].dst.stride + j]);
-      printf("\n");
-    }
-    printf("\n");
-    printf("final u\n");
-    for (i = 0; i < 8; i++) {
-      for (j = 0; j < 8; j++)
-        printf("%3d ", xd->plane[1].dst.buf[i * xd->plane[1].dst.stride + j]);
-      printf("\n");
-    }
-    printf("\n");
-    printf("final v\n");
-    for (i = 0; i < 8; i++) {
-      for (j = 0; j < 8; j++)
-        printf("%3d ", xd->plane[2].dst.buf[i * xd->plane[1].dst.stride + j]);
-      printf("\n");
-    }
-    fflush(stdout);
-  }
-#endif
+  if (tx_size == TX_16X16)
+    decode_16x16(xd);
+  else if (tx_size == TX_8X8)
+    decode_8x8(xd);
+  else
+    decode_4x4(pbi, xd, r);
 }
+#endif
 
 static int get_delta_q(vp9_reader *r, int *dq) {
   const int old_value = *dq;
@@ -708,6 +636,12 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
   vp9_decode_mb_mode_mv(pbi, xd, mi_row, mi_col, r);
   set_refs(pbi, mi_row, mi_col);
 
+#if CONFIG_SB8X8
+  if (bsize >= BLOCK_SIZE_SB8X8)
+    decode_sb(pbi, xd, mi_row, mi_col, r, bsize);
+  else
+    decode_atom(pbi, xd, mi_row, mi_col, r, BLOCK_SIZE_SB8X8);
+#else
   // TODO(jingning): merge decode_sb_ and decode_mb_
   if (bsize > BLOCK_SIZE_MB16X16) {
     decode_sb(pbi, xd, mi_row, mi_col, r, bsize);
@@ -719,11 +653,14 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
         (xd->mode_info_context->mbmi.mode == SPLITMV &&
          xd->mode_info_context->mbmi.partitioning == PARTITIONING_4X4))
       decode_atom(pbi, xd, mi_row, mi_col, r, bsize);
+    else if (xd->mode_info_context->mbmi.mode != I8X8_PRED)
+      decode_sb(pbi, xd, mi_row, mi_col, r, bsize);
     else
-      // TODO(jingning): decode_mb still carries deocding process of I8X8_PRED
-      // and SPLITMV of 8x8, 16x8, and 8x16. To be migrated into decode_sb.
+      // TODO(jingning): decode_mb still carries deocding process of I8X8_PRED.
+      // This will be covered by decode_sb when SB8X8 is on.
       decode_mb(pbi, xd, mi_row, mi_col, r);
   }
+#endif
 
   xd->corrupted |= vp9_reader_has_error(r);
 }
