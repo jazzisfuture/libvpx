@@ -205,6 +205,7 @@ static void mb_init_dequantizer(VP9_COMMON *pc, MACROBLOCKD *xd) {
     xd->plane[i].dequant = pc->uv_dequant[xd->q_index];
 }
 
+#if !CONFIG_SB8X8
 static void decode_16x16(MACROBLOCKD *xd) {
   const TX_TYPE tx_type = get_tx_type_16x16(xd, 0);
 
@@ -382,6 +383,7 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd, vp9_reader *r) {
                           xd->plane[1].dst.stride, xd->plane[2].eobs);
   }
 }
+#endif
 
 static INLINE void decode_sby_32x32(MACROBLOCKD *mb, BLOCK_SIZE_TYPE bsize) {
   const int bwl = b_width_log2(bsize) - 3, bw = 1 << bwl;
@@ -621,6 +623,7 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
   }
 }
 
+#if !CONFIG_SB8X8
 // TODO(jingning): Need to merge SB and MB decoding. The MB decoding currently
 // couples special handles on I8x8, B_PRED, and splitmv modes.
 static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
@@ -723,6 +726,7 @@ static void decode_mb(VP9D_COMP *pbi, MACROBLOCKD *xd,
   }
 #endif
 }
+#endif
 
 static int get_delta_q(vp9_reader *r, int *dq) {
   const int old_value = *dq;
@@ -809,11 +813,15 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
   vp9_decode_mb_mode_mv(pbi, xd, mi_row, mi_col, r);
   set_refs(pbi, mi_row, mi_col);
 
+#if CONFIG_SB8X8
+  decode_sb(pbi, xd, mi_row, mi_col, r, bsize);
+#else
   // TODO(jingning): merge decode_sb_ and decode_mb_
   if (bsize > BLOCK_SIZE_MB16X16)
     decode_sb(pbi, xd, mi_row, mi_col, r, bsize);
   else
     decode_mb(pbi, xd, mi_row, mi_col, r);
+#endif
 
   xd->corrupted |= vp9_reader_has_error(r);
 }
@@ -1255,9 +1263,13 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_copy(fc->pre_sb_ymode_prob, fc->sb_ymode_prob);
   vp9_copy(fc->pre_uv_mode_prob, fc->uv_mode_prob);
   vp9_copy(fc->pre_bmode_prob, fc->bmode_prob);
+#if !CONFIG_SB8X8
   vp9_copy(fc->pre_i8x8_mode_prob, fc->i8x8_mode_prob);
+#endif
   vp9_copy(fc->pre_sub_mv_ref_prob, fc->sub_mv_ref_prob);
+#if !CONFIG_SB8X8
   vp9_copy(fc->pre_mbsplit_prob, fc->mbsplit_prob);
+#endif
   vp9_copy(fc->pre_partition_prob, fc->partition_prob);
   fc->pre_nmvc = fc->nmvc;
 
@@ -1270,9 +1282,13 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->sb_ymode_counts);
   vp9_zero(fc->uv_mode_counts);
   vp9_zero(fc->bmode_counts);
+#if !CONFIG_SB8X8
   vp9_zero(fc->i8x8_mode_counts);
+#endif
   vp9_zero(fc->sub_mv_ref_counts);
+#if !CONFIG_SB8X8
   vp9_zero(fc->mbsplit_counts);
+#endif
   vp9_zero(fc->NMVcount);
   vp9_zero(fc->mv_ref_ct);
   vp9_zero(fc->partition_counts);
