@@ -453,7 +453,7 @@ typedef struct macroblockd {
 static INLINE void update_partition_context(MACROBLOCKD *xd,
                                             BLOCK_SIZE_TYPE sb_type,
                                             BLOCK_SIZE_TYPE sb_size) {
-  int bsl = mi_width_log2(sb_size), bs = 1 << bsl;
+  int bsl = mi_width_log2(sb_size), bs;
   int bwl = mi_width_log2(sb_type);
   int bhl = mi_height_log2(sb_type);
   int boffset = mi_width_log2(BLOCK_SIZE_SB64X64) - bsl;
@@ -461,6 +461,8 @@ static INLINE void update_partition_context(MACROBLOCKD *xd,
   // skip macroblock partition
   if (bsl == 0)
     return;
+
+  bs = 1 << (bsl - 1);
 
   // update the partition context at the end notes. set partition bits
   // of block sizes larger than the current one to be one, and partition
