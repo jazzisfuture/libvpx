@@ -84,7 +84,8 @@ void vp9_idct_add_uv_block_lossless_c(int16_t *q, uint8_t *dst, int stride,
   }
 }
 
-static void add_residual(const int16_t *diff, uint8_t *dest, int stride,
+//static
+void add_residual(const int16_t *diff, uint8_t *dest, int stride,
                          int width, int height) {
   int r, c;
 
