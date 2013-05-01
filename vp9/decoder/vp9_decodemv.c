@@ -154,7 +154,7 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
 
   if (m->mbmi.mode == I4X4_PRED) {
     int i;
-    for (i = 0; i < 16; ++i) {
+    for (i = 0; i < (16 >> (2 * CONFIG_SB8X8)); ++i) {
       const B_PREDICTION_MODE a = above_block_mode(m, i, mis);
       const B_PREDICTION_MODE l = xd->left_available || (i & 3) ?
                                   left_block_mode(m, i) : B_DC_PRED;
