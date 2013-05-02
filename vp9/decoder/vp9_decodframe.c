@@ -1278,6 +1278,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
         vp9_setup_scale_factors_for_frame(sf, fb, pc->width, pc->height);
     }
 
+    pc->ref_frame_sign_bias[LAST_FRAME]   = vp9_read_bit(&header_bc);
     pc->ref_frame_sign_bias[GOLDEN_FRAME] = vp9_read_bit(&header_bc);
     pc->ref_frame_sign_bias[ALTREF_FRAME] = vp9_read_bit(&header_bc);
     xd->allow_high_precision_mv = vp9_read_bit(&header_bc);
