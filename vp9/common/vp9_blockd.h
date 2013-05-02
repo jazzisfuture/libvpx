@@ -453,10 +453,10 @@ typedef struct macroblockd {
 static INLINE void update_partition_context(MACROBLOCKD *xd,
                                             BLOCK_SIZE_TYPE sb_type,
                                             BLOCK_SIZE_TYPE sb_size) {
-  int bsl = mi_width_log2(sb_size), bs = 1 << bsl;
-  int bwl = mi_width_log2(sb_type);
-  int bhl = mi_height_log2(sb_type);
-  int boffset = mi_width_log2(BLOCK_SIZE_SB64X64) - bsl;
+  int bsl = mi_width_log2(sb_size) - CONFIG_SB8X8, bs = 1 << bsl;
+  int bwl = mi_width_log2(sb_type) - CONFIG_SB8X8;
+  int bhl = mi_height_log2(sb_type) - CONFIG_SB8X8;
+  int boffset = mi_width_log2(BLOCK_SIZE_SB64X64) - bsl - CONFIG_SB8X8;
   int i;
   // skip macroblock partition
   if (bsl == 0)
@@ -492,9 +492,9 @@ static INLINE void update_partition_context(MACROBLOCKD *xd,
 
 static INLINE int partition_plane_context(MACROBLOCKD *xd,
                                           BLOCK_SIZE_TYPE sb_type) {
-  int bsl = mi_width_log2(sb_type), bs = 1 << bsl;
+  int bsl = mi_width_log2(sb_type) - CONFIG_SB8X8, bs = 1 << bsl;
   int above = 0, left = 0, i;
-  int boffset = mi_width_log2(BLOCK_SIZE_SB64X64) - bsl;
+  int boffset = mi_width_log2(BLOCK_SIZE_SB64X64) - bsl - CONFIG_SB8X8;
 
   assert(mi_width_log2(sb_type) == mi_height_log2(sb_type));
   assert(bsl >= 0);
