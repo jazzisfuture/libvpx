@@ -20,6 +20,7 @@
 #include "vp9/common/vp9_coefupdateprobs.h"
 
 const int vp9_i8x8_block[4] = {0, 2, 8, 10};
+const int vp9_i8x8_block_stride[4] = {0, 1, 4, 5};
 
 DECLARE_ALIGNED(16, const uint8_t, vp9_norm[256]) = {
   0, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,

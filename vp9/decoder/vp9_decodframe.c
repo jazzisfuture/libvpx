@@ -264,19 +264,17 @@ static void decode_4x4(VP9D_COMP *pbi, MACROBLOCKD *xd, vp9_reader *r) {
   const MB_PREDICTION_MODE mode = xd->mode_info_context->mbmi.mode;
   assert(mode == I8X8_PRED);
   for (i = 0; i < 4; i++) {
-    int ib = vp9_i8x8_block[i];
-    const int iblock[4] = {0, 1, 4, 5};
+    const int ib = vp9_i8x8_block[i];
     int j;
-    uint8_t* dst;
-    int i8x8mode = xd->mode_info_context->bmi[ib].as_mode.first;
-
-    dst = raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
-                                    xd->plane[0].dst.buf,
-                                    xd->plane[0].dst.stride);
+    const int i8x8mode = xd->mode_info_context->bmi[ib].as_mode.first;
+    uint8_t* dst = raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
+                                             xd->plane[0].dst.buf,
+                                             xd->plane[0].dst.stride);
     vp9_intra8x8_predict(xd, ib, i8x8mode, dst, xd->plane[0].dst.stride);
     for (j = 0; j < 4; j++) {
-      tx_type = get_tx_type_4x4(xd, ib + iblock[j]);
-      dequant_add_y(xd, tx_type, ib + iblock[j]);
+      const int idx = ib + vp9_i8x8_block_stride[j];
+      tx_type = get_tx_type_4x4(xd, idx);
+      dequant_add_y(xd, tx_type, idx);
     }
     dst = raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 1, i,
                                     xd->plane[1].dst.buf,

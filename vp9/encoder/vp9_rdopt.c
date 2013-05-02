@@ -1152,42 +1152,40 @@ static int64_t rd_pick_intra8x8block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
       rate += rate_t;
     } else {
-      static const int iblock[4] = {0, 1, 4, 5};
       TX_TYPE tx_type;
       int i;
 
       distortion = 0;
       rate_t = 0;
       for (i = 0; i < 4; ++i) {
+        const int idx = ib + vp9_i8x8_block_stride[i];
         int16_t* const src_diff =
             raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16,
-                                      0, ib + iblock[i],
-                                      x->plane[0].src_diff);
-        int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff,
-                                            ib + iblock[i], 16);
+                                      0, idx, x->plane[0].src_diff);
+        int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
         int do_two = 0;
-        tx_type = get_tx_type_4x4(xd, ib + iblock[i]);
+        tx_type = get_tx_type_4x4(xd, idx);
         if (tx_type != DCT_DCT) {
           vp9_short_fht4x4(src_diff, coeff, 16, tx_type);
-          x->quantize_b_4x4(x, ib + iblock[i], tx_type, 16);
+          x->quantize_b_4x4(x, idx, tx_type, 16);
         } else if (!(i & 1) &&
-                   get_tx_type_4x4(xd, ib + iblock[i] + 1) == DCT_DCT) {
+                   get_tx_type_4x4(xd, idx + 1) == DCT_DCT) {
           x->fwd_txm8x4(src_diff, coeff, 32);
-          x->quantize_b_4x4_pair(x, ib + iblock[i], ib + iblock[i] + 1, 16);
+          x->quantize_b_4x4_pair(x, idx, idx + 1, 16);
           do_two = 1;
         } else {
           x->fwd_txm4x4(src_diff, coeff, 32);
-          x->quantize_b_4x4(x, ib + iblock[i], tx_type, 16);
+          x->quantize_b_4x4(x, idx, tx_type, 16);
         }
         distortion += vp9_block_error_c(coeff,
-            BLOCK_OFFSET(xd->plane[0].dqcoeff, ib + iblock[i], 16),
+            BLOCK_OFFSET(xd->plane[0].dqcoeff, idx, 16),
             16 << do_two);
-        rate_t += cost_coeffs(cm, x, ib + iblock[i], PLANE_TYPE_Y_WITH_DC,
+        rate_t += cost_coeffs(cm, x, idx, PLANE_TYPE_Y_WITH_DC,
                               &ta_temp[i & 1], &tl_temp[i >> 1],
                               TX_4X4, 16);
         if (do_two) {
           i++;
-          rate_t += cost_coeffs(cm, x, ib + iblock[i], PLANE_TYPE_Y_WITH_DC,
+          rate_t += cost_coeffs(cm, x, idx, PLANE_TYPE_Y_WITH_DC,
                                 &ta_temp[i & 1], &tl_temp[i >> 1],
                                 TX_4X4, 16);
         }
@@ -2270,7 +2268,6 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
                                            ENTROPY_CONTEXT *tl) {
   int i, j;
   MACROBLOCKD *xd = &x->e_mbd;
-  const int iblock[4] = { 0, 1, 4, 5 };
   int othercost = 0, otherdist = 0;
   ENTROPY_CONTEXT tac[4], tlc[4];
 
@@ -2340,24 +2337,24 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
           xd->mode_info_context->mbmi.txfm_size = TX_4X4;
         }
         for (j = 0; j < 4; j += 2) {
+          const int idx = ib + vp9_i8x8_block_stride[j];
+
           int16_t* const src_diff =
               raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16,
-                                        0, ib + iblock[j],
-                                        x->plane[0].src_diff);
-          int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff,
-                                              ib + iblock[j], 16);
+                                        0, idx, x->plane[0].src_diff);
+          int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
           x->fwd_txm8x4(src_diff, coeff, 32);
-          x->quantize_b_4x4_pair(x, ib + iblock[j], ib + iblock[j] + 1, 16);
+          x->quantize_b_4x4_pair(x, idx, idx + 1, 16);
           thisdistortion = vp9_block_error_c(coeff,
-              BLOCK_OFFSET(xd->plane[0].dqcoeff, ib + iblock[j], 16), 32);
+              BLOCK_OFFSET(xd->plane[0].dqcoeff, idx, 16), 32);
           *distortion += thisdistortion;
           *labelyrate +=
-              cost_coeffs(cm, x, ib + iblock[j], PLANE_TYPE_Y_WITH_DC,
+              cost_coeffs(cm, x, idx, PLANE_TYPE_Y_WITH_DC,
                           ta + (i & 1) * 2,
                           tl + (i & 2) + ((j & 2) >> 1),
                           TX_4X4, 16);
           *labelyrate +=
-              cost_coeffs(cm, x, ib + iblock[j] + 1,
+              cost_coeffs(cm, x, idx + 1,
                           PLANE_TYPE_Y_WITH_DC,
                           ta + (i & 1) * 2 + 1,
                           tl + (i & 2) + ((j & 2) >> 1),
@@ -2366,25 +2363,25 @@ static int64_t encode_inter_mb_segment_8x8(VP9_COMMON *const cm,
       } else /* 8x8 */ {
         if (otherrd) {
           for (j = 0; j < 4; j += 2) {
+            const int idx = ib + vp9_i8x8_block_stride[j];
+
             int16_t* const src_diff =
                 raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16,
-                                          0, ib + iblock[j],
-                                          x->plane[0].src_diff);
-            int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff,
-                                                ib + iblock[j], 16);
+                                          0, idx, x->plane[0].src_diff);
+            int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
             x->fwd_txm8x4(src_diff, coeff, 32);
-            x->quantize_b_4x4_pair(x, ib + iblock[j], ib + iblock[j] + 1, 16);
+            x->quantize_b_4x4_pair(x, idx, idx + 1, 16);
             thisdistortion = vp9_block_error_c(coeff,
-                BLOCK_OFFSET(xd->plane[0].dqcoeff, ib + iblock[j], 16), 32);
+                BLOCK_OFFSET(xd->plane[0].dqcoeff, idx, 16), 32);
             otherdist += thisdistortion;
             xd->mode_info_context->mbmi.txfm_size = TX_4X4;
             othercost +=
-                cost_coeffs(cm, x, ib + iblock[j], PLANE_TYPE_Y_WITH_DC,
+                cost_coeffs(cm, x, idx, PLANE_TYPE_Y_WITH_DC,
                             tac + (i & 1) * 2,
                             tlc + (i & 2) + ((j & 2) >> 1),
                             TX_4X4, 16);
             othercost +=
-                cost_coeffs(cm, x, ib + iblock[j] + 1,
+                cost_coeffs(cm, x, idx + 1,
                             PLANE_TYPE_Y_WITH_DC,
                             tac + (i & 1) * 2 + 1,
                             tlc + (i & 2) + ((j & 2) >> 1),
@@ -3018,16 +3015,13 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if !CONFIG_SB8X8
 static void set_i8x8_block_modes(MACROBLOCK *x, int modes[4]) {
-  int i;
+  int i, j;
   MACROBLOCKD *xd = &x->e_mbd;
   for (i = 0; i < 4; i++) {
-    int ib = vp9_i8x8_block[i];
-    xd->mode_info_context->bmi[ib + 0].as_mode.first = modes[i];
-    xd->mode_info_context->bmi[ib + 1].as_mode.first = modes[i];
-    xd->mode_info_context->bmi[ib + 4].as_mode.first = modes[i];
-    xd->mode_info_context->bmi[ib + 5].as_mode.first = modes[i];
-    // printf("%d,%d,%d,%d\n",
-    //       modes[0], modes[1], modes[2], modes[3]);
+    const int ib = vp9_i8x8_block[i];
+    for (j = 0; j < 4; ++j)
+      xd->mode_info_context->bmi[ib + vp9_i8x8_block_stride[j]].as_mode.first =
+          modes[i];
   }
 }
 #endif

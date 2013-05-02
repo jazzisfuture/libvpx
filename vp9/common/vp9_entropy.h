@@ -17,6 +17,7 @@
 #include "vp9/common/vp9_common.h"
 
 extern const int vp9_i8x8_block[4];
+extern const int vp9_i8x8_block_stride[4];
 
 /* Coefficient token alphabet */
 

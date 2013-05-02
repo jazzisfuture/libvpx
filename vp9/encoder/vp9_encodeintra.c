@@ -178,7 +178,6 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
   uint8_t* const dst =
       raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib,
                                 xd->plane[0].dst.buf, xd->plane[0].dst.stride);
-  const int iblock[4] = {0, 1, 4, 5};
   int i;
   TX_TYPE tx_type;
 
@@ -207,7 +206,7 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
     }
   } else {
     for (i = 0; i < 4; i++) {
-      int idx = ib + iblock[i];
+      const int idx = ib + vp9_i8x8_block_stride[i];
       int16_t* const dqcoeff = BLOCK_OFFSET(xd->plane[0].dqcoeff, idx, 16);
       int16_t* const coeff = BLOCK_OFFSET(x->plane[0].coeff, idx, 16);
       int16_t* const src_diff =
@@ -218,24 +217,24 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
                                     xd->plane[0].diff);
 
       assert(idx < 16);
-      tx_type = get_tx_type_4x4(xd, ib + iblock[i]);
+      tx_type = get_tx_type_4x4(xd, idx);
       if (tx_type != DCT_DCT) {
         vp9_short_fht4x4(src_diff, coeff, 16, tx_type);
-        x->quantize_b_4x4(x, ib + iblock[i], tx_type, 16);
+        x->quantize_b_4x4(x, idx, tx_type, 16);
         vp9_short_iht4x4(dqcoeff, diff, 16, tx_type);
       } else if (!(i & 1) &&
-                 get_tx_type_4x4(xd, ib + iblock[i] + 1) == DCT_DCT) {
+                 get_tx_type_4x4(xd, idx + 1) == DCT_DCT) {
         x->fwd_txm8x4(src_diff, coeff, 32);
-        x->quantize_b_4x4_pair(x, ib + iblock[i], ib + iblock[i] + 1, 16);
-        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[ib + iblock[i]],
+        x->quantize_b_4x4_pair(x, idx, idx + 1, 16);
+        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[idx],
                                     dqcoeff, diff, 32);
-        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[ib + iblock[i] + 1],
+        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[idx + 1],
                                     dqcoeff + 16, diff + 4, 32);
         i++;
       } else {
         x->fwd_txm4x4(src_diff, coeff, 32);
-        x->quantize_b_4x4(x, ib + iblock[i], tx_type, 16);
-        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[ib + iblock[i]],
+        x->quantize_b_4x4(x, idx, tx_type, 16);
+        vp9_inverse_transform_b_4x4(xd, xd->plane[0].eobs[idx],
                                     dqcoeff, diff, 32);
       }
     }
@@ -243,11 +242,13 @@ void vp9_encode_intra8x8(MACROBLOCK *x, int ib) {
 
   // reconstruct submacroblock
   for (i = 0; i < 4; i++) {
+    const int idx = ib + vp9_i8x8_block_stride[i];
+
     int16_t* const diff =
-        raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16, 0, ib + iblock[i],
+        raster_block_offset_int16(xd, BLOCK_SIZE_MB16X16, 0, idx,
                                   xd->plane[0].diff);
     uint8_t* const dst =
-        raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, ib + iblock[i],
+        raster_block_offset_uint8(xd, BLOCK_SIZE_MB16X16, 0, idx,
                                   xd->plane[0].dst.buf,
                                   xd->plane[0].dst.stride);
     vp9_recon_b_c(dst, diff, dst, xd->plane[0].dst.stride);

@@ -108,7 +108,7 @@ static TX_SIZE select_txfm_size(VP9_COMMON *cm, vp9_reader *r,
   return txfm_size;
 }
 
-extern const int vp9_i8x8_block[4];
+
 static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
                          int mi_row, int mi_col,
                          vp9_reader *r) {
@@ -152,15 +152,12 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
 
 #if !CONFIG_SB8X8
   if (m->mbmi.mode == I8X8_PRED) {
-    int i;
+    int i, j;
     for (i = 0; i < 4; ++i) {
       const int ib = vp9_i8x8_block[i];
       const int mode8x8 = read_i8x8_mode(r, cm->fc.i8x8_mode_prob);
-
-      m->bmi[ib + 0].as_mode.first = mode8x8;
-      m->bmi[ib + 1].as_mode.first = mode8x8;
-      m->bmi[ib + 4].as_mode.first = mode8x8;
-      m->bmi[ib + 5].as_mode.first = mode8x8;
+      for (j = 0; j < 4; ++j)
+        m->bmi[ib + vp9_i8x8_block_stride[j]].as_mode.first = mode8x8;
     }
   }
 
