@@ -313,10 +313,11 @@ const int kNumFilterBanks = sizeof(kTestFilterList) /
 const int kNumFilters = 16;
 
 TEST(ConvolveTest, FiltersWontSaturateWhenAddedPairwise) {
+  // int ii[2] = { 0 };
   for (int filter_bank = 0; filter_bank < kNumFilterBanks; ++filter_bank) {
     const int16_t (*filters)[8] = kTestFilterList[filter_bank];
     for (int i = 0; i < kNumFilters; i++) {
-      const int p0 = filters[i][0] + filters[i][1];
+      const int p0 = filters[i][0] + filters[i][1];  // + ii[i];
       const int p1 = filters[i][2] + filters[i][3];
       const int p2 = filters[i][4] + filters[i][5];
       const int p3 = filters[i][6] + filters[i][7];
