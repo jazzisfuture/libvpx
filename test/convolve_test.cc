@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <limits.h>
 
 #include "test/acm_random.h"
 #include "test/register_state_check.h"
@@ -312,6 +313,7 @@ const int kNumFilterBanks = sizeof(kTestFilterList) /
 const int kNumFilters = 16;
 
 TEST(ConvolveTest, FiltersWontSaturateWhenAddedPairwise) {
+  int ii = INT_MAX;
   for (int filter_bank = 0; filter_bank < kNumFilterBanks; ++filter_bank) {
     const int16_t (*filters)[8] = kTestFilterList[filter_bank];
     for (int i = 0; i < kNumFilters; i++) {
@@ -319,6 +321,7 @@ TEST(ConvolveTest, FiltersWontSaturateWhenAddedPairwise) {
       const int p1 = filters[i][2] + filters[i][3];
       const int p2 = filters[i][4] + filters[i][5];
       const int p3 = filters[i][6] + filters[i][7];
+      ii += p0 + 1;
       EXPECT_LE(p0, 128);
       EXPECT_LE(p1, 128);
       EXPECT_LE(p2, 128);
