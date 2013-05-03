@@ -277,14 +277,15 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
 }
 
 int vp9_block_error_c(int16_t *coeff, int16_t *dqcoeff, int block_size) {
-  int i, error = 0;
+  int i;
+  int64_t error = 0;
 
   for (i = 0; i < block_size; i++) {
     int this_diff = coeff[i] - dqcoeff[i];
-    error += this_diff * this_diff;
+    error += (unsigned)this_diff * this_diff;
   }
 
-  return error;
+  return error > INT_MAX ? INT_MAX : (int)error;
 }
 
 static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
@@ -603,7 +604,7 @@ static int block_error(int16_t *coeff, int16_t *dqcoeff,
 
   for (i = 0; i < block_size; i++) {
     int this_diff = coeff[i] - dqcoeff[i];
-    error += this_diff * this_diff;
+    error += (unsigned)this_diff * this_diff;
   }
   error >>= shift;
 
