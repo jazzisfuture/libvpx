@@ -49,6 +49,14 @@ void vp9_optimize_sbuv(VP9_COMMON *const cm, MACROBLOCK *x,
                        BLOCK_SIZE_TYPE bsize);
 
 void vp9_encode_sb(VP9_COMMON *const cm, MACROBLOCK *x, BLOCK_SIZE_TYPE bsize);
+void vp9_encode_sby(VP9_COMMON *const cm, MACROBLOCK *x, BLOCK_SIZE_TYPE bsize);
+void vp9_encode_sbuv(VP9_COMMON *const cm, MACROBLOCK *x,
+                     BLOCK_SIZE_TYPE bsize);
+
+void vp9_xform_quant_sby(VP9_COMMON *const cm, MACROBLOCK *x,
+                        BLOCK_SIZE_TYPE bsize);
+void vp9_xform_quant_sbuv(VP9_COMMON *const cm, MACROBLOCK *x,
+                          BLOCK_SIZE_TYPE bsize);
 
 void vp9_subtract_block(int rows, int cols,
                         int16_t *diff_ptr, int diff_stride,

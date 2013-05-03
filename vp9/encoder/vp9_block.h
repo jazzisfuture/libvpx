@@ -166,8 +166,6 @@ struct macroblock {
                          int y_blocks);
   void (*quantize_b_4x4_pair)(MACROBLOCK *x, int b_idx1, int b_idx2,
                               int y_blocks);
-  void (*quantize_b_16x16)(MACROBLOCK *x, int b_idx, TX_TYPE tx_type,
-                           int y_blocks);
   void (*quantize_b_8x8)(MACROBLOCK *x, int b_idx, TX_TYPE tx_type,
                          int y_blocks);
 };
