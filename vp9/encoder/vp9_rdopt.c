@@ -2825,8 +2825,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  INTERPOLATIONFILTERTYPE *best_filter,
                                  int_mv frame_mv[MB_MODE_COUNT]
                                                 [MAX_REF_FRAMES],
-                                 YV12_BUFFER_CONFIG *scaled_ref_frame,
-                                 int mb_row, int mb_col) {
+                                 YV12_BUFFER_CONFIG **scaled_ref_frame,
+                                 int mb_row, int mb_col,
+                                 int_mv single_newmv[MAX_REF_FRAMES]) {
   const int bw = 1 << mb_width_log2(bsize), bh = 1 << mb_height_log2(bsize);
   const enum BlockSize block_size = y_bsizet_to_block_size(bsize);
   const enum BlockSize uv_block_size = y_to_uv_block_size(block_size);
@@ -2861,6 +2862,121 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       ref_mv[1] = mbmi->ref_mvs[refs[1]][0];
 
       if (is_comp_pred) {
+#if CONFIG_COMP_INTER_JOINT_SEARCH
+        // Currently, the joint motion search is only added in block16x16
+        // motion search.
+        if (bsize == 0) {
+          int ite;
+          // Prediction buffer from second frame.
+          DECLARE_ALIGNED_ARRAY(16, uint8_t, second_pred, 16 * 16);
+
+          // Do joint motion search in compound mode to get more accurate mv.
+          YV12_BUFFER_CONFIG backup_yv12 = xd->pre;
+          YV12_BUFFER_CONFIG backup_second_yv12 = xd->second_pre;
+          YV12_BUFFER_CONFIG scaled_first_yv12;
+
+          if (scaled_ref_frame[0]) {
+            xd->pre = *scaled_ref_frame[0];
+            xd->pre.y_buffer += mb_row * 16 * xd->pre.y_stride + mb_col * 16;
+            xd->pre.u_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
+            xd->pre.v_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
+          }
+
+          if (scaled_ref_frame[1]) {
+            xd->second_pre = *scaled_ref_frame[1];
+            xd->second_pre.y_buffer += mb_row * 16 * xd->second_pre.y_stride +
+                mb_col * 16;
+            xd->second_pre.u_buffer += mb_row * 8 * xd->second_pre.uv_stride +
+                mb_col * 8;
+            xd->second_pre.v_buffer += mb_row * 8 * xd->second_pre.uv_stride +
+                mb_col * 8;
+          }
+
+          xd->scale_factor[0].set_scaled_offsets(&xd->scale_factor[0],
+                                                  mb_row, mb_col);
+          xd->scale_factor[1].set_scaled_offsets(&xd->scale_factor[1],
+                                                  mb_row, mb_col);
+
+          scaled_first_yv12 = xd->pre;
+
+          // Initialize mv using single prediction mode result.
+          frame_mv[NEWMV][refs[0]].as_int = single_newmv[refs[0]].as_int;
+          frame_mv[NEWMV][refs[1]].as_int = single_newmv[refs[1]].as_int;
+
+          // Iterate 2 times
+          //for (ite = 0; ite < 4; ite++) {
+          for (ite = 0; ite < 2; ite++) {
+            YV12_BUFFER_CONFIG ref_yv12[2] = {xd->pre, xd->second_pre};
+            int bestsme = INT_MAX;
+            int sadpb = x->sadperbit16;
+            int_mv tmp_mv;
+            int search_range = 3;
+
+            int tmp_col_min = x->mv_col_min;
+            int tmp_col_max = x->mv_col_max;
+            int tmp_row_min = x->mv_row_min;
+            int tmp_row_max = x->mv_row_max;
+            int id = ite % 2;
+
+            // Get pred block from second frame.
+            vp9_build_inter_predictor(ref_yv12[!id].y_buffer,
+                                      ref_yv12[!id].y_stride,
+                                      second_pred, 16,
+                                      &frame_mv[NEWMV][refs[!id]],
+                                      &xd->scale_factor[!id], 16, 16, 0,
+                                      &xd->subpix);
+
+            // Compound motion search on first ref frame.
+            if (id)
+              xd->pre = ref_yv12[id];
+            vp9_clamp_mv_min_max(x, &ref_mv[id]);
+
+            // Use mv result from single mode as mvp.
+            tmp_mv.as_int = frame_mv[NEWMV][refs[id]].as_int;
+
+            tmp_mv.as_mv.col >>= 3;
+            tmp_mv.as_mv.row >>= 3;
+
+            // Small-range full-pixel motion search
+            bestsme = vp9_refining_search_8p_c(x, b, d, &tmp_mv, sadpb,
+                                               search_range,
+                                               &cpi->fn_ptr[block_size],
+                                               x->nmvjointcost, x->mvcost,
+                                               &ref_mv[id], second_pred);
+
+            x->mv_col_min = tmp_col_min;
+            x->mv_col_max = tmp_col_max;
+            x->mv_row_min = tmp_row_min;
+            x->mv_row_max = tmp_row_max;
+
+            if (bestsme < INT_MAX)
+            {
+              int dis; /* TODO: use dis in distortion calculation later. */
+              unsigned int sse;
+
+              vp9_find_best_sub_pixel_comp(x, b, d, &tmp_mv,
+                                           &ref_mv[id],
+                                           x->errorperbit,
+                                           &cpi->fn_ptr[block_size],
+                                           x->nmvjointcost, x->mvcost,
+                                           &dis, &sse, second_pred);
+            }
+
+            d->bmi.as_mv[id].as_int = tmp_mv.as_int;
+            frame_mv[NEWMV][refs[id]].as_int = d->bmi.as_mv[id].as_int;
+            if (id)
+              xd->pre = scaled_first_yv12;
+          }
+
+          // restore the predictor
+          if (scaled_ref_frame[0])
+            xd->pre = backup_yv12;
+
+          if (scaled_ref_frame[1])
+            xd->second_pre = backup_second_yv12;
+        }
+#endif  // CONFIG_COMP_INTER_JOINT_SEARCH
+
         if (frame_mv[NEWMV][refs[0]].as_int == INVALID_MV ||
             frame_mv[NEWMV][refs[1]].as_int == INVALID_MV)
           return INT64_MAX;
@@ -2885,11 +3001,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         int tmp_row_min = x->mv_row_min;
         int tmp_row_max = x->mv_row_max;
 
-        if (scaled_ref_frame) {
+        if (scaled_ref_frame[0]) {
           // Swap out the reference frame for a version that's been scaled to
           // match the resolution of the current frame, allowing the existing
           // motion search code to be used without additional modifications.
-          xd->pre = *scaled_ref_frame;
+          xd->pre = *scaled_ref_frame[0];
           xd->pre.y_buffer += mb_row * 16 * xd->pre.y_stride + mb_col * 16;
           xd->pre.u_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
           xd->pre.v_buffer += mb_row * 8 * xd->pre.uv_stride + mb_col * 8;
@@ -2935,13 +3051,15 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         d->bmi.as_mv[0].as_int = tmp_mv.as_int;
         frame_mv[NEWMV][refs[0]].as_int = d->bmi.as_mv[0].as_int;
 
+        single_newmv[refs[0]].as_int = d->bmi.as_mv[0].as_int;
+
         // Add the new motion vector cost to our rolling cost variable
         *rate2 += vp9_mv_bit_cost(&tmp_mv, &ref_mv[0],
                                   x->nmvjointcost, x->mvcost,
                                   96, xd->allow_high_precision_mv);
 
         // restore the predictor, if required
-        if (scaled_ref_frame) {
+        if (scaled_ref_frame[0]) {
           xd->pre = backup_yv12;
         }
       }
@@ -3339,6 +3457,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   int frame_mdcounts[4][4];
   YV12_BUFFER_CONFIG yv12_mb[4];
+  int_mv single_newmv[MAX_REF_FRAMES];
 
   unsigned int ref_costs[MAX_REF_FRAMES];
   int_mv seg_mvs[NB_PARTITIONINGS][16 /* n_blocks */][MAX_REF_FRAMES - 1];
@@ -3354,6 +3473,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   vpx_memset(&best_bmodes, 0, sizeof(best_bmodes));
   vpx_memset(&x->mb_context[xd->sb_index][xd->mb_index], 0,
              sizeof(PICK_MODE_CONTEXT));
+  vpx_memset(&single_newmv, 0, sizeof(single_newmv));
 
   for (i = 0; i < MAX_REF_FRAMES; i++)
     frame_mv[NEWMV][i].as_int = INVALID_MV;
@@ -3425,7 +3545,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif
     int mode_excluded = 0;
     int64_t txfm_cache[NB_TXFM_MODES] = { 0 };
-    YV12_BUFFER_CONFIG *scaled_ref_frame;
+    YV12_BUFFER_CONFIG *scaled_ref_frame[2];
 
     // These variables hold are rolling total cost and distortion for this mode
     rate2 = 0;
@@ -3506,7 +3626,7 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     /* everything but intra */
-    scaled_ref_frame = NULL;
+    scaled_ref_frame[0] = scaled_ref_frame[1] = NULL;
     if (mbmi->ref_frame) {
       int ref = mbmi->ref_frame;
       int fb;
@@ -3515,23 +3635,36 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       best_ref_mv = mbmi->ref_mvs[ref][0];
       vpx_memcpy(mdcounts, frame_mdcounts[ref], sizeof(mdcounts));
 
-      if (mbmi->ref_frame == LAST_FRAME) {
+      if (ref == LAST_FRAME) {
         fb = cpi->lst_fb_idx;
-      } else if (mbmi->ref_frame == GOLDEN_FRAME) {
+      } else if (ref == GOLDEN_FRAME) {
         fb = cpi->gld_fb_idx;
       } else {
         fb = cpi->alt_fb_idx;
       }
 
       if (cpi->scaled_ref_idx[fb] != cm->ref_frame_map[fb])
-        scaled_ref_frame = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
+        scaled_ref_frame[0] = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
     }
 
     if (mbmi->second_ref_frame > 0) {
       int ref = mbmi->second_ref_frame;
+      int fb;
 
       xd->second_pre = yv12_mb[ref];
       second_best_ref_mv = mbmi->ref_mvs[ref][0];
+      vpx_memcpy(mdcounts, frame_mdcounts[ref], sizeof(mdcounts));
+
+      if (ref == LAST_FRAME) {
+        fb = cpi->lst_fb_idx;
+      } else if (ref == GOLDEN_FRAME) {
+        fb = cpi->gld_fb_idx;
+      } else {
+        fb = cpi->alt_fb_idx;
+      }
+
+      if (cpi->scaled_ref_idx[fb] != cm->ref_frame_map[fb])
+        scaled_ref_frame[1] = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
     }
 
     // Experimental code. Special case for gf and arf zeromv modes.
@@ -3800,7 +3933,8 @@ static void rd_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
                                   mode_index, &tmp_best_filter, frame_mv,
-                                  scaled_ref_frame, mb_row, mb_col);
+                                  scaled_ref_frame, mb_row, mb_col,
+                                  single_newmv);
       if (this_rd == INT64_MAX)
         continue;
     }
@@ -4295,6 +4429,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   int frame_mdcounts[4][4];
   YV12_BUFFER_CONFIG yv12_mb[4];
+  int_mv single_newmv[MAX_REF_FRAMES];
+
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
                                     VP9_ALT_FLAG };
   int idx_list[4] = {0,
@@ -4332,6 +4468,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   xd->mode_info_context->mbmi.segment_id = segment_id;
   estimate_ref_frame_costs(cpi, segment_id, ref_costs);
   vpx_memset(&best_mbmode, 0, sizeof(best_mbmode));
+  vpx_memset(&single_newmv, 0, sizeof(single_newmv));
 
   for (i = 0; i < NB_PREDICTION_TYPES; ++i)
     best_pred_rd[i] = INT64_MAX;
@@ -4469,6 +4606,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                         scale_factor);
 
       xd->second_pre = yv12_mb[second_ref];
+      vpx_memcpy(mdcounts, frame_mdcounts[mbmi->second_ref_frame], sizeof(mdcounts));
       mode_excluded =
           mode_excluded ?
               mode_excluded : cm->comp_pred_mode == SINGLE_PREDICTION_ONLY;
@@ -4533,7 +4671,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       rate2 = rate_y + x->mbmode_cost[cm->frame_type][mbmi->mode] + rate_uv;
       distortion2 = distortion_y + distortion_uv;
     } else {
-      YV12_BUFFER_CONFIG *scaled_ref_frame = NULL;
+      YV12_BUFFER_CONFIG *scaled_ref_frame[2] = {NULL};
       int fb;
 
       if (mbmi->ref_frame == LAST_FRAME) {
@@ -4545,7 +4683,20 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
       if (cpi->scaled_ref_idx[fb] != cm->ref_frame_map[fb])
-        scaled_ref_frame = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
+        scaled_ref_frame[0] = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
+
+      if (comp_pred) {
+        if (mbmi->second_ref_frame == LAST_FRAME) {
+          fb = cpi->lst_fb_idx;
+        } else if (mbmi->second_ref_frame == GOLDEN_FRAME) {
+          fb = cpi->gld_fb_idx;
+        } else {
+          fb = cpi->alt_fb_idx;
+        }
+
+        if (cpi->scaled_ref_idx[fb] != cm->ref_frame_map[fb])
+          scaled_ref_frame[1] = &cm->yv12_fb[cpi->scaled_ref_idx[fb]];
+      }
 
 #if CONFIG_COMP_INTERINTRA_PRED
       if (mbmi->second_ref_frame == INTRA_FRAME) {
@@ -4569,7 +4720,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   &rate_uv, &distortion_uv,
                                   &mode_excluded, &disable_skip,
                                   mode_index, &tmp_best_filter, frame_mv,
-                                  scaled_ref_frame, mb_row, mb_col);
+                                  scaled_ref_frame, mb_row, mb_col,
+                                  single_newmv);
       if (this_rd == INT64_MAX)
         continue;
     }

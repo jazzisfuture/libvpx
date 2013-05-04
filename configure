@@ -251,6 +251,7 @@ EXPERIMENT_LIST="
     oneshotq
     sbsegment
     multiple_arf
+    comp_inter_joint_search
 "
 CONFIG_LIST="
     external_build
