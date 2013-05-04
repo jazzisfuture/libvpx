@@ -160,6 +160,7 @@ B_PREDICTION_MODE vp9_find_bpred_context(MACROBLOCKD *xd, int block_idx,
 
 void vp9_intra4x4_predict(MACROBLOCKD *xd,
                           int block_idx,
+                          BLOCK_SIZE_TYPE bsize,
                           int b_mode,
                           uint8_t *predictor,
                           int ps) {
@@ -177,6 +178,7 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
    *  ..
    */
 
+  assert(bsize == BLOCK_TYPE_MB16X16);
   if (have_left) {
     uint8_t *left_ptr = predictor - 1;
     const int stride = ps;
