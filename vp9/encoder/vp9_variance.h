@@ -12,6 +12,7 @@
 #define VP9_ENCODER_VP9_VARIANCE_H_
 
 #include "vpx/vpx_integer.h"
+#include "./vpx_config.h"
 
 typedef unsigned int(*vp9_sad_fn_t)(const uint8_t *src_ptr,
                                     int source_stride,
@@ -74,5 +75,32 @@ typedef struct vp9_variance_vtable {
     vp9_sad_multi1_fn_t     sdx8f;
     vp9_sad_multi_d_fn_t    sdx4df;
 } vp9_variance_fn_ptr_t;
+
+#if CONFIG_COMP_INTER_JOINT_SEARCH
+static void comp_avg_pred(uint8_t *comp_pred, const uint8_t *pred, int weight,
+                          int height, uint8_t *ref, int ref_stride) {
+  int i, j;
+
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < weight; j++) {
+      int tmp;
+      tmp = pred[j] + ref[j];
+      comp_pred[j] = (tmp + 1) >> 1;
+    }
+    comp_pred += weight;
+    pred += weight;
+    ref += ref_stride;
+  }
+}
+
+unsigned int vp9_sub_pixel_variance16x16_comp_c(const uint8_t *src_ptr,
+                                                int  src_pixels_per_line,
+                                                int  xoffset,
+                                                int  yoffset,
+                                                const uint8_t *dst_ptr,
+                                                int dst_pixels_per_line,
+                                                unsigned int *sse,
+                                                const uint8_t *second_pred);
+#endif // CONFIG_COMP_INTER_JOINT_SEARCH
 
 #endif  // VP9_ENCODER_VP9_VARIANCE_H_

@@ -415,8 +415,6 @@ int vp9_find_best_sub_pixel_step_iteratively(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
 #undef DIST
 #undef IFMVCV
 #undef CHECK_BETTER
-#undef MIN
-#undef MAX
 
 int vp9_find_best_sub_pixel_step(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
                                  int_mv *bestmv, int_mv *ref_mv,
@@ -2095,7 +2093,325 @@ int vp9_refining_search_sadx4(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
     return INT_MAX;
 }
 
+#if CONFIG_COMP_INTER_JOINT_SEARCH
+/* This function is called when we do joint motion search in comp_inter_inter
+ * mode.
+ */
+int vp9_refining_search_8p_c(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
+                             int_mv *ref_mv, int error_per_bit,
+                             int search_range, vp9_variance_fn_ptr_t *fn_ptr,
+                             int *mvjcost, int *mvcost[2], int_mv *center_mv,
+                             const uint8_t *second_pred) {
+  MV neighbors[8] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0},
+      {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+  int i, j;
+  int this_row_offset, this_col_offset;
 
+  int what_stride = b->src_stride;
+  int in_what_stride = d->pre_stride;
+  uint8_t *what = (*(b->base_src) + b->src);
+  uint8_t *best_address = (uint8_t *)(*(d->base_pre) + d->pre +
+                                      (ref_mv->as_mv.row * (d->pre_stride)) +
+                                      ref_mv->as_mv.col);
+  uint8_t *check_here;
+  unsigned int thissad;
+  int_mv this_mv;
+  unsigned int bestsad = INT_MAX;
+  MACROBLOCKD *xd = &x->e_mbd;
+  int_mv fcenter_mv;
+
+  int *mvjsadcost = x->nmvjointsadcost;
+  int *mvsadcost[2] = {x->nmvsadcost[0], x->nmvsadcost[1]};
+
+  /* Compound pred buffer */
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, comp_pred, 16 * 16);
+
+  fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
+  fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
+
+  /* Get compound pred by averaging two pred blocks. */
+  comp_avg_pred(comp_pred, second_pred, 16, 16, best_address, in_what_stride);
+
+  bestsad = fn_ptr->sdf(what, what_stride, comp_pred, 16, 0x7fffffff) +
+      mvsad_err_cost(ref_mv, &fcenter_mv, mvjsadcost, mvsadcost, error_per_bit);
+
+  for (i = 0; i < search_range; i++) {
+    int best_site = -1;
+
+    for (j = 0; j < 8; j++) {
+      this_row_offset = ref_mv->as_mv.row + neighbors[j].row;
+      this_col_offset = ref_mv->as_mv.col + neighbors[j].col;
+
+      if ((this_col_offset > x->mv_col_min) &&
+          (this_col_offset < x->mv_col_max) &&
+          (this_row_offset > x->mv_row_min) &&
+          (this_row_offset < x->mv_row_max)) {
+        check_here = (neighbors[j].row) * in_what_stride + neighbors[j].col +
+            best_address;
+
+        /* Get compound block and use it to calculate SAD. */
+        comp_avg_pred(comp_pred, second_pred, 16, 16, check_here,
+                      in_what_stride);
+        thissad = fn_ptr->sdf(what, what_stride, comp_pred, 16, bestsad);
+
+        if (thissad < bestsad) {
+          this_mv.as_mv.row = this_row_offset;
+          this_mv.as_mv.col = this_col_offset;
+          thissad += mvsad_err_cost(&this_mv, &fcenter_mv, mvjsadcost,
+                                    mvsadcost, error_per_bit);
+
+          if (thissad < bestsad) {
+            bestsad = thissad;
+            best_site = j;
+          }
+        }
+      }
+    }
+
+    if (best_site == -1)
+      break;
+    else {
+      ref_mv->as_mv.row += neighbors[best_site].row;
+      ref_mv->as_mv.col += neighbors[best_site].col;
+      best_address += (neighbors[best_site].row) * in_what_stride +
+          neighbors[best_site].col;
+    }
+  }
+
+  this_mv.as_mv.row = ref_mv->as_mv.row << 3;
+  this_mv.as_mv.col = ref_mv->as_mv.col << 3;
+
+  if (bestsad < INT_MAX) {
+    comp_avg_pred(comp_pred, second_pred, 16, 16, best_address, in_what_stride);
+    return
+        fn_ptr->vf(what, what_stride, comp_pred, 16,
+                   (unsigned int *)(&thissad)) +
+        mv_err_cost(&this_mv, center_mv, mvjcost, mvcost, x->errorperbit,
+                    xd->allow_high_precision_mv);
+  } else
+    return INT_MAX;
+}
+
+/* estimated cost of a motion vector (r,c) */
+#define MVC(r, c)                                       \
+    (mvcost ?                                           \
+     ((mvjcost[((r) != rr) * 2 + ((c) != rc)] +         \
+       mvcost[0][((r) - rr)] + mvcost[1][((c) - rc)]) * \
+      error_per_bit + 4096) >> 13 : 0)
+
+
+#define SP(x) (((x) & 7) << 1)  // convert motion vector component to offset
+                                // for svf calc
+
+#define IFMVCV(r, c, s, e)                                \
+    if (c >= minc && c <= maxc && r >= minr && r <= maxr) \
+      s                                                   \
+    else                                                  \
+      e;
+
+/* pointer to predictor base of a motionvector */
+#define PRE(r, c) (y + (((r) >> 3) * y_stride + ((c) >> 3) -(offset)))
+
+/* returns subpixel variance error function */
+#define DIST(r, c) \
+    vp9_sub_pixel_variance16x16_comp_c(PRE(r, c), y_stride, SP(c), SP(r), z, b->src_stride, &sse, second_pred)
+
+/* checks if (r, c) has better score than previous best */
+#define CHECK_BETTER(v, r, c) \
+    IFMVCV(r, c, {                                                       \
+      thismse = (DIST(r, c));                                            \
+      if ((v = MVC(r, c) + thismse) < besterr) {                         \
+        besterr = v;                                                     \
+        br = r;                                                          \
+        bc = c;                                                          \
+        *distortion = thismse;                                           \
+        *sse1 = sse;                                                     \
+      }                                                                  \
+    },                                                                   \
+    v = INT_MAX;)
+
+int vp9_find_best_sub_pixel_comp(MACROBLOCK *x, BLOCK *b, BLOCKD *d,
+                                 int_mv *bestmv, int_mv *ref_mv,
+                                 int error_per_bit,
+                                 const vp9_variance_fn_ptr_t *vfp,
+                                 int *mvjcost, int *mvcost[2],
+                                 int *distortion, unsigned int *sse1,
+                                 const uint8_t *second_pred) {
+  uint8_t *z = (*(b->base_src) + b->src);
+  MACROBLOCKD *xd = &x->e_mbd;
+
+  int rr, rc, br, bc, hstep;
+  int tr, tc;
+  unsigned int besterr = INT_MAX;
+  unsigned int left, right, up, down, diag;
+  unsigned int sse;
+  unsigned int whichdir;
+  unsigned int halfiters = 4;
+  unsigned int quarteriters = 4;
+  unsigned int eighthiters = 4;
+  int thismse;
+  int maxc, minc, maxr, minr;
+  int y_stride;
+  int offset;
+  int usehp = xd->allow_high_precision_mv;
+
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, comp_pred, 16 * 16);
+
+  uint8_t *y = *(d->base_pre) + d->pre +
+               (bestmv->as_mv.row) * d->pre_stride + bestmv->as_mv.col;
+  y_stride = d->pre_stride;
+
+  rr = ref_mv->as_mv.row;
+  rc = ref_mv->as_mv.col;
+  br = bestmv->as_mv.row << 3;
+  bc = bestmv->as_mv.col << 3;
+  hstep = 4;
+  minc = MAX(x->mv_col_min << 3, (ref_mv->as_mv.col) - ((1 << MV_MAX_BITS) - 1));
+  maxc = MIN(x->mv_col_max << 3, (ref_mv->as_mv.col) + ((1 << MV_MAX_BITS) - 1));
+  minr = MAX(x->mv_row_min << 3, (ref_mv->as_mv.row) - ((1 << MV_MAX_BITS) - 1));
+  maxr = MIN(x->mv_row_max << 3, (ref_mv->as_mv.row) + ((1 << MV_MAX_BITS) - 1));
+
+  tr = br;
+  tc = bc;
+
+
+  offset = (bestmv->as_mv.row) * y_stride + bestmv->as_mv.col;
+
+  // central mv
+  bestmv->as_mv.row <<= 3;
+  bestmv->as_mv.col <<= 3;
+
+  comp_avg_pred(comp_pred, second_pred, 16, 16, y, y_stride);
+
+  // calculate central point error
+  besterr = vfp->vf(comp_pred, 16, z, b->src_stride, sse1);
+  *distortion = besterr;
+  besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost,
+                         error_per_bit, xd->allow_high_precision_mv);
+
+  // TODO: Each subsequent iteration checks at least one point in
+  // common with the last iteration could be 2 ( if diag selected)
+  while (--halfiters) {
+    // 1/2 pel
+    CHECK_BETTER(left, tr, tc - hstep);
+    CHECK_BETTER(right, tr, tc + hstep);
+    CHECK_BETTER(up, tr - hstep, tc);
+    CHECK_BETTER(down, tr + hstep, tc);
+
+    whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+
+    switch (whichdir) {
+      case 0:
+        CHECK_BETTER(diag, tr - hstep, tc - hstep);
+        break;
+      case 1:
+        CHECK_BETTER(diag, tr - hstep, tc + hstep);
+        break;
+      case 2:
+        CHECK_BETTER(diag, tr + hstep, tc - hstep);
+        break;
+      case 3:
+        CHECK_BETTER(diag, tr + hstep, tc + hstep);
+        break;
+    }
+
+    // no reason to check the same one again.
+    if (tr == br && tc == bc)
+      break;
+
+    tr = br;
+    tc = bc;
+  }
+
+  // TODO: Each subsequent iteration checks at least one point in common with
+  // the last iteration could be 2 ( if diag selected) 1/4 pel
+  hstep >>= 1;
+  while (--quarteriters) {
+    CHECK_BETTER(left, tr, tc - hstep);
+    CHECK_BETTER(right, tr, tc + hstep);
+    CHECK_BETTER(up, tr - hstep, tc);
+    CHECK_BETTER(down, tr + hstep, tc);
+
+    whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+
+    switch (whichdir) {
+      case 0:
+        CHECK_BETTER(diag, tr - hstep, tc - hstep);
+        break;
+      case 1:
+        CHECK_BETTER(diag, tr - hstep, tc + hstep);
+        break;
+      case 2:
+        CHECK_BETTER(diag, tr + hstep, tc - hstep);
+        break;
+      case 3:
+        CHECK_BETTER(diag, tr + hstep, tc + hstep);
+        break;
+    }
+
+    // no reason to check the same one again.
+    if (tr == br && tc == bc)
+      break;
+
+    tr = br;
+    tc = bc;
+  }
+
+  if (xd->allow_high_precision_mv) {
+    usehp = vp9_use_nmv_hp(&ref_mv->as_mv);
+  } else {
+    usehp = 0;
+  }
+
+  if (usehp) {
+    hstep >>= 1;
+    while (--eighthiters) {
+      CHECK_BETTER(left, tr, tc - hstep);
+      CHECK_BETTER(right, tr, tc + hstep);
+      CHECK_BETTER(up, tr - hstep, tc);
+      CHECK_BETTER(down, tr + hstep, tc);
+
+      whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+
+      switch (whichdir) {
+        case 0:
+          CHECK_BETTER(diag, tr - hstep, tc - hstep);
+          break;
+        case 1:
+          CHECK_BETTER(diag, tr - hstep, tc + hstep);
+          break;
+        case 2:
+          CHECK_BETTER(diag, tr + hstep, tc - hstep);
+          break;
+        case 3:
+          CHECK_BETTER(diag, tr + hstep, tc + hstep);
+          break;
+      }
+
+      // no reason to check the same one again.
+      if (tr == br && tc == bc)
+        break;
+
+      tr = br;
+      tc = bc;
+    }
+  }
+  bestmv->as_mv.row = br;
+  bestmv->as_mv.col = bc;
+
+  if ((abs(bestmv->as_mv.col - ref_mv->as_mv.col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->as_mv.row - ref_mv->as_mv.row) > (MAX_FULL_PEL_VAL << 3)))
+    return INT_MAX;
+
+  return besterr;
+}
+#undef MVC
+#undef PRE
+#undef SP
+#undef DIST
+#undef IFMVCV
+#undef CHECK_BETTER
+#endif // CONFIG_COMP_INTER_JOINT_SEARCH
 
 #ifdef ENTROPY_STATS
 void print_mode_context(VP9_COMMON *pc) {
