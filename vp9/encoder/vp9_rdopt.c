@@ -947,7 +947,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
   vp9_intra4x4_predict(xd, ib, *best_mode,
                        dst, xd->plane[0].dst.stride);
-  vp9_recon_b(dst, diff,
+  vp9_recon_b(dst, diff, 16 >> CONFIG_SB8X8,
               dst, xd->plane[0].dst.stride);
 
   return best_rd;
