@@ -249,7 +249,6 @@ EXPERIMENT_LIST="
     oneshotq
     multiple_arf
     code_zerogroup
-    sb8x8
 "
 CONFIG_LIST="
     external_build
