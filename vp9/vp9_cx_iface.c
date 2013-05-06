@@ -211,11 +211,12 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
   switch (img->fmt) {
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_I420:
-    case VPX_IMG_FMT_VPXI420:
-    case VPX_IMG_FMT_VPXYV12:
+    case VPX_IMG_FMT_I422:
+    case VPX_IMG_FMT_I444:
       break;
     default:
-      ERROR("Invalid image format. Only YV12 and I420 images are supported");
+      ERROR("Invalid image format. Only YV12, I420, I422, I444 images are "
+            "supported.");
   }
 
   if ((img->d_w != ctx->cfg.g_w) || (img->d_h != ctx->cfg.g_h))
@@ -553,14 +554,17 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t   *img,
   yv12->y_crop_height = img->d_h;
   yv12->y_width  = img->d_w;
   yv12->y_height = img->d_h;
-  yv12->uv_width = (1 + yv12->y_width) / 2;
-  yv12->uv_height = (1 + yv12->y_height) / 2;
+
+  yv12->uv_width = img->x_chroma_shift == 1 ? (1 + yv12->y_width) / 2
+                                            : yv12->y_width;
+  yv12->uv_height = img->y_chroma_shift == 1 ? (1 + yv12->y_height) / 2
+                                             : yv12->y_height;
 
   yv12->y_stride = img->stride[VPX_PLANE_Y];
   yv12->uv_stride = img->stride[VPX_PLANE_U];
 
   yv12->border  = (img->stride[VPX_PLANE_Y] - img->w) / 2;
-  yv12->clrtype = (img->fmt == VPX_IMG_FMT_VPXI420 || img->fmt == VPX_IMG_FMT_VPXYV12); // REG_YUV = 0
+  yv12->clrtype = REG_YUV;
   return res;
 }
 
