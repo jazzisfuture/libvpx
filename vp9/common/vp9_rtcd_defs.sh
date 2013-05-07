@@ -355,6 +355,9 @@ specialize vp9_sub_pixel_variance32x32 sse2
 prototype unsigned int vp9_sub_pixel_variance16x16 "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse"
 specialize vp9_sub_pixel_variance16x16 sse2 mmx ssse3
 
+prototype unsigned int vp9_sub_pixel_avg_variance16x16 "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse, const uint8_t *second_pred"
+specialize vp9_sub_pixel_avg_variance16x16
+
 prototype unsigned int vp9_sub_pixel_variance8x16 "const uint8_t *src_ptr, int source_stride, int xoffset, int  yoffset, const uint8_t *ref_ptr, int ref_stride, unsigned int *sse"
 specialize vp9_sub_pixel_variance8x16 sse2 mmx
 vp9_sub_pixel_variance8x16_sse2=vp9_sub_pixel_variance8x16_wmt
