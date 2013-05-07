@@ -152,7 +152,7 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
     oci->above_context[1] + sizeof(ENTROPY_CONTEXT) * 4 * mb_cols;
 
   oci->above_seg_context =
-    vpx_calloc(sizeof(PARTITION_CONTEXT) * mb_cols_aligned_to_sb(oci), 1);
+    vpx_calloc(sizeof(PARTITION_CONTEXT) * 2 * mb_cols_aligned_to_sb(oci), 1);
 
   if (!oci->above_seg_context) {
     vp9_free_frame_buffers(oci);
