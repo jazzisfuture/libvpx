@@ -589,7 +589,6 @@ void vp9_intra8x8_predict(MACROBLOCKD *xd,
                              have_right);
 }
 #endif
-#if !CONFIG_NEWBINTRAMODES
 void vp9_intra4x4_predict(MACROBLOCKD *xd,
                           int block_idx,
                           BLOCK_SIZE_TYPE bsize,
@@ -608,7 +607,6 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
                              mode, 4, 4, have_top, have_left,
                              have_right);
 }
-#endif
 #if !CONFIG_SB8X8
 void vp9_intra_uv4x4_predict(MACROBLOCKD *xd,
                              int block4x4_idx,
