@@ -22,7 +22,7 @@
 #include "vp9/common/vp9_extend.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "vpx_mem/vpx_mem.h"
-#include "vp9/common/vp9_swapyv12buffer.h"
+#include "vpx_scale/yv12config.h"
 #include <stdio.h>
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_rdopt.h"
@@ -772,7 +772,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
     cpi->twopass.sr_update_lag++;
 
   // swap frame pointers so last frame refers to the frame we just compressed
-  vp9_swap_yv12_buffer(lst_yv12, new_yv12);
+  vpx_swap_yv12_fb(lst_yv12, new_yv12);
   vp8_yv12_extend_frame_borders(lst_yv12);
 
   // Special case for the first frame. Copy into the GF buffer as a second reference.

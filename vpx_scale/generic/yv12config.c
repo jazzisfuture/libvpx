@@ -97,3 +97,23 @@ int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
   }
   return -2;
 }
+
+void vpx_swap_yv12_fb(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
+  uint8_t *temp;
+
+  temp = a->buffer_alloc;
+  a->buffer_alloc = b->buffer_alloc;
+  b->buffer_alloc = temp;
+
+  temp = a->y_buffer;
+  a->y_buffer = b->y_buffer;
+  b->y_buffer = temp;
+
+  temp = a->u_buffer;
+  a->u_buffer = b->u_buffer;
+  b->u_buffer = temp;
+
+  temp = a->v_buffer;
+  a->v_buffer = b->v_buffer;
+  b->v_buffer = temp;
+}

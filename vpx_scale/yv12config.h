@@ -72,6 +72,8 @@ extern "C" {
                                     int width, int height, int border);
   int vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf);
 
+  void vpx_swap_yv12_fb(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b);
+
 #ifdef __cplusplus
 }
 #endif
