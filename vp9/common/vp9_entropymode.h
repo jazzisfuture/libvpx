@@ -19,13 +19,6 @@
 #define VP9_NUMMBSPLITS 4
 #endif
 
-#if CONFIG_COMP_INTERINTRA_PRED
-#define VP9_DEF_INTERINTRA_PROB 248
-#define VP9_UPD_INTERINTRA_PROB 192
-// whether to use a separate uv mode (1) or use the same as the y mode (0)
-#define SEPARATE_INTERINTRA_UV  0
-#endif
-
 #if !CONFIG_SB8X8
 typedef const int vp9_mbsplit[16];
 
