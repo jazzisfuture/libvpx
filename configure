@@ -250,6 +250,7 @@ EXPERIMENT_LIST="
     multiple_arf
     code_zerogroup
     non420
+    comp_inter_joint_search
 "
 CONFIG_LIST="
     external_build
