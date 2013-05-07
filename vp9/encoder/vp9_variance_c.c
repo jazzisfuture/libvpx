@@ -339,6 +339,32 @@ unsigned int vp9_sub_pixel_variance8x8_c(const uint8_t *src_ptr,
   return vp9_variance8x8_c(temp2, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+// #if CONFIG_COMP_INTER_JOINT_SEARCH
+unsigned int vp9_sub_pixel_avg_variance16x16_c(const uint8_t *src_ptr,
+                                               int  src_pixels_per_line,
+                                               int  xoffset,
+                                               int  yoffset,
+                                               const uint8_t *dst_ptr,
+                                               int dst_pixels_per_line,
+                                               unsigned int *sse,
+                                               const uint8_t *second_pred) {
+  uint16_t fdata3[17 * 16];
+  uint8_t temp2[20 * 16];
+  uint8_t temp3[16 * 16];    // compound pred buffer
+  const int16_t *hfilter, *vfilter;
+
+  hfilter = VP9_BILINEAR_FILTERS_2TAP(xoffset);
+  vfilter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
+
+  var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_pixels_per_line,
+                                    1, 17, 16, hfilter);
+  var_filter_block2d_bil_second_pass(fdata3, temp2, 16, 16, 16, 16, vfilter);
+
+  comp_avg_pred(temp3, second_pred, 16, 16, temp2, 16);
+  return vp9_variance16x16_c(temp3, 16, dst_ptr, dst_pixels_per_line, sse);
+}
+// #endif  // CONFIG_COMP_INTER_JOINT_SEARCH
+
 unsigned int vp9_sub_pixel_variance16x16_c(const uint8_t *src_ptr,
                                            int  src_pixels_per_line,
                                            int  xoffset,
