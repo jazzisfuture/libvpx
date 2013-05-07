@@ -217,7 +217,7 @@ typedef struct VP9Common {
 
   // partition contexts
   PARTITION_CONTEXT *above_seg_context;
-  PARTITION_CONTEXT left_seg_context[4];
+  PARTITION_CONTEXT left_seg_context[8];
 
   /* keyframe block modes are predicted by their above, left neighbors */
 
