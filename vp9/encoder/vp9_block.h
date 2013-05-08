@@ -135,6 +135,9 @@ struct macroblock {
   unsigned char *active_ptr;
 
   vp9_coeff_count token_costs[TX_SIZE_MAX_SB][BLOCK_TYPES];
+#if CONFIG_BALANCED_COEFTREE
+  vp9_coeff_count token_costs_skip[TX_SIZE_MAX_SB][BLOCK_TYPES];
+#endif
 
   int optimize;
 
