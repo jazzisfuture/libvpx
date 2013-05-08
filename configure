@@ -247,6 +247,7 @@ EXPERIMENT_LIST="
     non420
     alpha
     ab4x4
+    balanced_coeftree
 "
 CONFIG_LIST="
     external_build
