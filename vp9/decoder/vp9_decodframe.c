@@ -818,9 +818,8 @@ static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
     vpx_memset(&pc->left_context, 0, sizeof(pc->left_context));
     vpx_memset(pc->left_seg_context, 0, sizeof(pc->left_seg_context));
     for (mi_col = pc->cur_tile_mi_col_start;
-         mi_col < pc->cur_tile_mi_col_end; mi_col += 8) {
+         mi_col < pc->cur_tile_mi_col_end; mi_col += 8)
       decode_modes_sb(pbi, mi_row, mi_col, r, BLOCK_SIZE_SB64X64);
-    }
   }
 }
 
