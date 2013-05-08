@@ -153,6 +153,10 @@ struct macroblock {
   PICK_MODE_CONTEXT sb64_context;
   int partition_cost[NUM_PARTITION_CONTEXTS][PARTITION_TYPES];
 
+  BLOCK_SIZE_TYPE mb_partitioning[4][4];
+  BLOCK_SIZE_TYPE sb_partitioning[4];
+  BLOCK_SIZE_TYPE sb64_partitioning;
+
   void (*fwd_txm4x4)(int16_t *input, int16_t *output, int pitch);
   void (*fwd_txm8x4)(int16_t *input, int16_t *output, int pitch);
   void (*fwd_txm8x8)(int16_t *input, int16_t *output, int pitch);
