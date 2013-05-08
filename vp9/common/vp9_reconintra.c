@@ -558,19 +558,20 @@ void vp9_build_intra_predictors_sby_s(MACROBLOCKD *xd,
 
 void vp9_build_intra_predictors_sbuv_s(MACROBLOCKD *xd,
                                        BLOCK_SIZE_TYPE bsize) {
-  const int bwl = b_width_log2(bsize), bw = 2 << bwl;
-  const int bhl = b_height_log2(bsize), bh = 2 << bhl;
+  int p;
 
-  vp9_build_intra_predictors(xd->plane[1].dst.buf, xd->plane[1].dst.stride,
-                             xd->plane[1].dst.buf, xd->plane[1].dst.stride,
-                             xd->mode_info_context->mbmi.uv_mode,
-                             bw, bh, xd->up_available,
-                             xd->left_available, 0 /*xd->right_available*/);
-  vp9_build_intra_predictors(xd->plane[2].dst.buf, xd->plane[1].dst.stride,
-                             xd->plane[2].dst.buf, xd->plane[1].dst.stride,
-                             xd->mode_info_context->mbmi.uv_mode,
-                             bw, bh, xd->up_available,
-                             xd->left_available, 0 /*xd->right_available*/);
+  for (p = 1; p < MAX_MB_PLANE; p++) {
+    const int bwl = b_width_log2(bsize) - xd->plane[p].subsampling_x;
+    const int bw = 4 << bwl;
+    const int bhl = b_height_log2(bsize) - xd->plane[p].subsampling_x;
+    const int bh = 4 << bhl;
+
+    vp9_build_intra_predictors(xd->plane[p].dst.buf, xd->plane[p].dst.stride,
+                               xd->plane[p].dst.buf, xd->plane[p].dst.stride,
+                               xd->mode_info_context->mbmi.uv_mode,
+                               bw, bh, xd->up_available,
+                               xd->left_available, 0 /*xd->right_available*/);
+  }
 }
 
 #if !CONFIG_NEWBINTRAMODES
