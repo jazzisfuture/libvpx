@@ -359,9 +359,9 @@ static int get_mi_col(const MACROBLOCKD *xd) {
 
 static int get_token_alloc(int mb_rows, int mb_cols) {
 #if CONFIG_CODE_ZEROGROUP
-  return mb_rows * mb_cols * (24 * 16 * 2);
+  return mb_rows * mb_cols * (48 * 16 * 2);
 #else
-  return mb_rows * mb_cols * (24 * 16 + 4);
+  return mb_rows * mb_cols * (48 * 16 + 4);
 #endif
 }
 #endif  // VP9_COMMON_VP9_ONYXC_INT_H_
