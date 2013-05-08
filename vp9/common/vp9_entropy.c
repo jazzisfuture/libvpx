@@ -372,9 +372,15 @@ DECLARE_ALIGNED(16, const int, vp9_default_zig_zag1d_32x32[1024]) = {
 
 const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
 {
+#if CONFIG_BALANCED_COEFTREE
+  -ZERO_TOKEN, 2,                             /* 0 = ZERO */
+  -ONE_TOKEN, 4,                              /* 1 = ONE  */
+  -DCT_EOB_TOKEN, 6,                          /* 2 = EOB  */
+#else
   -DCT_EOB_TOKEN, 2,                             /* 0 = EOB */
   -ZERO_TOKEN, 4,                               /* 1 = ZERO */
   -ONE_TOKEN, 6,                               /* 2 = ONE */
+#endif
   8, 12,                                      /* 3 = LOW_VAL */
   -TWO_TOKEN, 10,                            /* 4 = TWO */
   -THREE_TOKEN, -FOUR_TOKEN,                /* 5 = THREE */
@@ -1525,8 +1531,13 @@ static void adapt_coef_probs(vp9_coeff_probs *dst_coef_probs,
           vp9_tree_probs_from_distribution(vp9_coef_tree,
                                            coef_probs, branch_ct,
                                            coef_counts[i][j][k][l], 0);
+#if CONFIG_BALANCED_COEFTREE
+          branch_ct[2][1] = eob_branch_count[i][j][k][l] - branch_ct[2][0];
+          coef_probs[2] = get_binary_prob(branch_ct[2][0], branch_ct[2][1]);
+#else
           branch_ct[0][1] = eob_branch_count[i][j][k][l] - branch_ct[0][0];
           coef_probs[0] = get_binary_prob(branch_ct[0][0], branch_ct[0][1]);
+#endif
           for (t = 0; t < entropy_nodes_adapt; ++t) {
             count = branch_ct[t][0] + branch_ct[t][1];
             count = count > count_sat ? count_sat : count;

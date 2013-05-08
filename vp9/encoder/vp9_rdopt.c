@@ -105,11 +105,32 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {SPLITMV,   GOLDEN_FRAME, ALTREF_FRAME},
 };
 
+#if CONFIG_BALANCED_COEFTREE
+static void fill_token_costs(vp9_coeff_count *c,
+                             vp9_coeff_count *cskip,
+                             vp9_coeff_probs *p,
+                             TX_SIZE tx_size) {
+  int i, j, k, l;
+  vp9_prob tmp_prob[ENTROPY_NODES];
+  for (i = 0; i < BLOCK_TYPES; i++)
+    for (j = 0; j < REF_TYPES; j++)
+      for (k = 0; k < COEF_BANDS; k++)
+        for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
+          vp9_cost_tokens((int *)c[i][j][k][l], p[i][j][k][l],
+                          vp9_coef_tree);
+          vpx_memcpy(tmp_prob, p[i][j][k][l], sizeof(vp9_prob) * ENTROPY_NODES);
+          // Replace the eob node prob with a very small value so that the
+          // cost approximately equals the cost without the eob node
+          tmp_prob[2] = 1;
+          vp9_cost_tokens((int *)cskip[i][j][k][l], tmp_prob,
+                          vp9_coef_tree);
+        }
+}
+#else
 static void fill_token_costs(vp9_coeff_count *c,
                              vp9_coeff_probs *p,
                              TX_SIZE tx_size) {
   int i, j, k, l;
-
   for (i = 0; i < BLOCK_TYPES; i++)
     for (j = 0; j < REF_TYPES; j++)
       for (k = 0; k < COEF_BANDS; k++)
@@ -117,6 +138,7 @@ static void fill_token_costs(vp9_coeff_count *c,
           vp9_cost_tokens_skip((int *)c[i][j][k][l], p[i][j][k][l],
                                vp9_coef_tree);
 }
+#endif
 
 static int rd_iifactor[32] =  { 4, 4, 3, 2, 1, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -207,6 +229,20 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
     }
   }
 
+#if CONFIG_BALANCED_COEFTREE
+  fill_token_costs(cpi->mb.token_costs[TX_4X4],
+                   cpi->mb.token_costs_skip[TX_4X4],
+                   cpi->common.fc.coef_probs_4x4, TX_4X4);
+  fill_token_costs(cpi->mb.token_costs[TX_8X8],
+                   cpi->mb.token_costs_skip[TX_8X8],
+                   cpi->common.fc.coef_probs_8x8, TX_8X8);
+  fill_token_costs(cpi->mb.token_costs[TX_16X16],
+                   cpi->mb.token_costs_skip[TX_16X16],
+                   cpi->common.fc.coef_probs_16x16, TX_16X16);
+  fill_token_costs(cpi->mb.token_costs[TX_32X32],
+                   cpi->mb.token_costs_skip[TX_32X32],
+                   cpi->common.fc.coef_probs_32x32, TX_32X32);
+#else
   fill_token_costs(cpi->mb.token_costs[TX_4X4],
                    cpi->common.fc.coef_probs_4x4, TX_4X4);
   fill_token_costs(cpi->mb.token_costs[TX_8X8],
@@ -215,6 +251,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
                    cpi->common.fc.coef_probs_16x16, TX_16X16);
   fill_token_costs(cpi->mb.token_costs[TX_32X32],
                    cpi->common.fc.coef_probs_32x32, TX_32X32);
+#endif
 
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
     vp9_cost_tokens(cpi->mb.partition_cost[i],
@@ -264,12 +301,17 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   const int ref = mbmi->ref_frame != INTRA_FRAME;
   unsigned int (*token_costs)[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
       mb->token_costs[tx_size][type][ref];
+#if CONFIG_BALANCED_COEFTREE
+  unsigned int (*token_costs_skip)[PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
+      mb->token_costs_skip[tx_size][type][ref];
+#else
+  vp9_prob (*coef_probs)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
+                        [ENTROPY_NODES];
+#endif
   ENTROPY_CONTEXT above_ec, left_ec;
   TX_TYPE tx_type = DCT_DCT;
 
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
-  vp9_prob (*coef_probs)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
-                        [ENTROPY_NODES];
   int seg_eob, default_eob;
   uint8_t token_cache[1024];
 
@@ -351,10 +393,16 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       if (c)
         pt = vp9_get_coef_context(scan, nb, pad, token_cache, c, default_eob);
 
+#if CONFIG_BALANCED_COEFTREE
+      if (!c || token_cache[scan[c - 1]])  // do not skip eob
+        cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
+      else
+        cost += token_costs_skip[band][pt][t] + vp9_dct_value_cost_ptr[v];
+#else
       cost += token_costs[band][pt][t] + vp9_dct_value_cost_ptr[v];
-
       if (!c || token_cache[scan[c - 1]])
         cost += vp9_cost_bit(coef_probs[type][ref][band][pt][0], 1);
+#endif
       token_cache[scan[c]] = t;
     }
     if (c < seg_eob) {
