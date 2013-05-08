@@ -247,6 +247,7 @@ EXPERIMENT_LIST="
     multiple_arf
     non420
     ab4x4
+    balanced_coeftree
 "
 CONFIG_LIST="
     external_build
