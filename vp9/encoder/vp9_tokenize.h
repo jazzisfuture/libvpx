@@ -47,6 +47,12 @@ extern vp9_coeff_accum context_counters_4x4[BLOCK_TYPES];
 extern vp9_coeff_accum context_counters_8x8[BLOCK_TYPES];
 extern vp9_coeff_accum context_counters_16x16[BLOCK_TYPES];
 extern vp9_coeff_accum context_counters_32x32[BLOCK_TYPES];
+#if CONFIG_BALANCED_COEFTREE
+extern vp9_coeff_accum context_counters_skipeob_4x4[BLOCK_TYPES];
+extern vp9_coeff_accum context_counters_skipeob_8x8[BLOCK_TYPES];
+extern vp9_coeff_accum context_counters_skipeob_16x16[BLOCK_TYPES];
+extern vp9_coeff_accum context_counters_skipeob_32x32[BLOCK_TYPES];
+#endif
 #endif
 
 extern const int *vp9_dct_value_cost_ptr;

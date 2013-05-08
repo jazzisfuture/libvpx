@@ -29,7 +29,12 @@ vp9_coeff_accum context_counters_4x4[BLOCK_TYPES];
 vp9_coeff_accum context_counters_8x8[BLOCK_TYPES];
 vp9_coeff_accum context_counters_16x16[BLOCK_TYPES];
 vp9_coeff_accum context_counters_32x32[BLOCK_TYPES];
-
+#if CONFIG_BALANCED_COEFTREE
+vp9_coeff_accum context_counters_skipeob_4x4[BLOCK_TYPES];
+vp9_coeff_accum context_counters_skipeob_8x8[BLOCK_TYPES];
+vp9_coeff_accum context_counters_skipeob_16x16[BLOCK_TYPES];
+vp9_coeff_accum context_counters_skipeob_32x32[BLOCK_TYPES];
+#endif
 extern vp9_coeff_stats tree_update_hist_4x4[BLOCK_TYPES];
 extern vp9_coeff_stats tree_update_hist_8x8[BLOCK_TYPES];
 extern vp9_coeff_stats tree_update_hist_16x16[BLOCK_TYPES];
@@ -133,6 +138,10 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
   const int *scan, *nb;
   vp9_coeff_count *counts;
   vp9_coeff_probs_model *coef_probs;
+#if CONFIG_BALANCED_COEFTREE
+  vp9_coeff_count *counts_skipeob;
+  vp9_coeff_probs_model *coef_probs_skipeob;
+#endif
   const int ref = mbmi->ref_frame != INTRA_FRAME;
   ENTROPY_CONTEXT above_ec, left_ec;
   uint8_t token_cache[1024];
@@ -151,6 +160,10 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = get_scan_4x4(tx_type);
       counts = cpi->coef_counts_4x4;
       coef_probs = cpi->common.fc.coef_probs_4x4;
+#if CONFIG_BALANCED_COEFTREE
+      counts_skipeob = cpi->coef_counts_skipeob_4x4;
+      coef_probs_skipeob = cpi->common.fc.coef_probs_skipeob_4x4;
+#endif
       band_translate = vp9_coefband_trans_4x4;
       break;
     }
@@ -165,6 +178,10 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = get_scan_8x8(tx_type);
       counts = cpi->coef_counts_8x8;
       coef_probs = cpi->common.fc.coef_probs_8x8;
+#if CONFIG_BALANCED_COEFTREE
+      counts_skipeob = cpi->coef_counts_skipeob_8x8;
+      coef_probs_skipeob = cpi->common.fc.coef_probs_skipeob_8x8;
+#endif
       band_translate = vp9_coefband_trans_8x8plus;
       break;
     }
@@ -179,6 +196,10 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = get_scan_16x16(tx_type);
       counts = cpi->coef_counts_16x16;
       coef_probs = cpi->common.fc.coef_probs_16x16;
+#if CONFIG_BALANCED_COEFTREE
+      counts_skipeob = cpi->coef_counts_skipeob_16x16;
+      coef_probs_skipeob = cpi->common.fc.coef_probs_skipeob_16x16;
+#endif
       band_translate = vp9_coefband_trans_8x8plus;
       break;
     }
@@ -189,6 +210,10 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = vp9_default_scan_32x32;
       counts = cpi->coef_counts_32x32;
       coef_probs = cpi->common.fc.coef_probs_32x32;
+#if CONFIG_BALANCED_COEFTREE
+      counts_skipeob = cpi->coef_counts_skipeob_32x32;
+      coef_probs_skipeob = cpi->common.fc.coef_probs_skipeob_32x32;
+#endif
       band_translate = vp9_coefband_trans_8x8plus;
       break;
   }
@@ -219,13 +244,36 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
     }
 
     t->token = token;
-    t->context_tree = coef_probs[type][ref][band][pt];
     t->skip_eob_node = (c > 0) && (token_cache[scan[c - 1]] == 0);
+#if CONFIG_BALANCED_COEFTREE
+    t->context_tree = t->skip_eob_node ?
+        coef_probs_skipeob[type][ref][band][pt] :
+        coef_probs[type][ref][band][pt];
+#else
+    t->context_tree = coef_probs[type][ref][band][pt];
+#endif
+
+#if CONFIG_BALANCED_COEFTREE
+    assert(token <= ONE_TOKEN ||
+           vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
+#else
     assert(vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
+#endif
 
     if (!dry_run) {
+#if CONFIG_BALANCED_COEFTREE
+      if (t->skip_eob_node) {
+        ++counts_skipeob[type][ref][band][pt][token];
+        if (token > ONE_TOKEN)
+          ++counts[type][ref][band][pt][token];
+      } else {
+        ++counts[type][ref][band][pt][token];
+      }
+      if (!t->skip_eob_node && token > ONE_TOKEN)
+#else
       ++counts[type][ref][band][pt][token];
       if (!t->skip_eob_node)
+#endif
         ++cpi->common.fc.eob_branch_counts[tx_size][type][ref][band][pt];
     }
     token_cache[scan[c]] = token;
