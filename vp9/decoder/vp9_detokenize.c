@@ -17,9 +17,15 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_BALANCED_COEFTREE
+#define ZERO_CONTEXT_NODE           0
+#define ONE_CONTEXT_NODE            1
+#define EOB_CONTEXT_NODE            2
+#else
 #define EOB_CONTEXT_NODE            0
 #define ZERO_CONTEXT_NODE           1
 #define ONE_CONTEXT_NODE            2
+#endif
 #define LOW_VAL_CONTEXT_NODE        3
 #define TWO_CONTEXT_NODE            4
 #define THREE_CONTEXT_NODE          5
@@ -104,6 +110,9 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   TX_TYPE tx_type = DCT_DCT;
   const int *scan, *nb;
   uint8_t token_cache[1024];
+#if CONFIG_BALANCED_COEFTREE
+  int skip_eob_node = 0;
+#endif
 
   switch (txfm_size) {
     default:
@@ -171,11 +180,16 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                                 c, default_eob);
     band = get_coef_band(scan, txfm_size, c);
     prob = coef_probs[type][ref][band][pt];
+#if CONFIG_BALANCED_COEFTREE
+    if (!skip_eob_node)
+      fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
+#else
     fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
 SKIP_START:
+#endif
     if (c >= seg_eob)
       break;
     if (c)
@@ -186,12 +200,26 @@ SKIP_START:
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
+#if CONFIG_BALANCED_COEFTREE
+      prob = coef_probs[type][ref][get_coef_band(scan, txfm_size, c)][pt];
+      skip_eob_node = 1;
+      continue;
+#else
       goto SKIP_START;
+#endif
     }
     // ONE_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
+#if CONFIG_BALANCED_COEFTREE
+       skip_eob_node = 0;
+#endif
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
+#if CONFIG_BALANCED_COEFTREE
+    if (!skip_eob_node && !vp9_read(r, prob[EOB_CONTEXT_NODE]))
+      break;
+    skip_eob_node = 0;
+#endif
     // LOW_VAL_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
       if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {

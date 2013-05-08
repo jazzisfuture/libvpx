@@ -248,6 +248,7 @@ EXPERIMENT_LIST="
     non420
     ab4x4
     comp_inter_joint_search
+    balanced_coeftree
 "
 CONFIG_LIST="
     external_build
