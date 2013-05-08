@@ -576,9 +576,16 @@ static void init_frame(VP9D_COMP *pbi) {
 
 static void read_coef_probs_common(
     vp9_coeff_probs_model *coef_probs,
+#if CONFIG_BALANCED_COEFTREE
+    int is_skip,
+#endif
     TX_SIZE tx_size,
     vp9_reader *r) {
+#if CONFIG_BALANCED_COEFTREE
+  const int entropy_nodes_update = UNCONSTRAINED_NODES - is_skip;
+#else
   const int entropy_nodes_update = UNCONSTRAINED_NODES;
+#endif
 
   int i, j, k, l, m;
 
@@ -609,16 +616,45 @@ static void read_coef_probs(VP9D_COMP *pbi, vp9_reader *r) {
   const TXFM_MODE mode = pbi->common.txfm_mode;
   FRAME_CONTEXT *const fc = &pbi->common.fc;
 
-  read_coef_probs_common(fc->coef_probs_4x4, TX_4X4, r);
+  read_coef_probs_common(fc->coef_probs_4x4,
+#if CONFIG_BALANCED_COEFTREE
+                         0,
+#endif
+                         TX_4X4, r);
 
   if (mode > ONLY_4X4)
-    read_coef_probs_common(fc->coef_probs_8x8, TX_8X8, r);
+    read_coef_probs_common(fc->coef_probs_8x8,
+#if CONFIG_BALANCED_COEFTREE
+                           0,
+#endif
+                           TX_8X8, r);
 
   if (mode > ALLOW_8X8)
-    read_coef_probs_common(fc->coef_probs_16x16, TX_16X16, r);
+    read_coef_probs_common(fc->coef_probs_16x16,
+#if CONFIG_BALANCED_COEFTREE
+                           0,
+#endif
+                           TX_16X16, r);
 
   if (mode > ALLOW_16X16)
-    read_coef_probs_common(fc->coef_probs_32x32, TX_32X32, r);
+    read_coef_probs_common(fc->coef_probs_32x32,
+#if CONFIG_BALANCED_COEFTREE
+                           0,
+#endif
+                           TX_32X32, r);
+#if CONFIG_BALANCED_COEFTREE
+  read_coef_probs_common(fc->coef_probs_skipeob_4x4,
+                         1, TX_4X4, r);
+  if (mode > ONLY_4X4)
+    read_coef_probs_common(fc->coef_probs_skipeob_8x8,
+                           1, TX_8X8, r);
+  if (mode > ALLOW_8X8)
+    read_coef_probs_common(fc->coef_probs_skipeob_16x16,
+                           1, TX_16X16, r);
+  if (mode > ALLOW_16X16)
+    read_coef_probs_common(fc->coef_probs_skipeob_32x32,
+                           1, TX_32X32, r);
+#endif
 }
 
 static void setup_segmentation(VP9_COMMON *pc, MACROBLOCKD *xd, vp9_reader *r) {
@@ -815,6 +851,12 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_copy(fc->pre_coef_probs_8x8, fc->coef_probs_8x8);
   vp9_copy(fc->pre_coef_probs_16x16, fc->coef_probs_16x16);
   vp9_copy(fc->pre_coef_probs_32x32, fc->coef_probs_32x32);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_copy(fc->pre_coef_probs_skipeob_4x4, fc->coef_probs_skipeob_4x4);
+  vp9_copy(fc->pre_coef_probs_skipeob_8x8, fc->coef_probs_skipeob_8x8);
+  vp9_copy(fc->pre_coef_probs_skipeob_16x16, fc->coef_probs_skipeob_16x16);
+  vp9_copy(fc->pre_coef_probs_skipeob_32x32, fc->coef_probs_skipeob_32x32);
+#endif
   vp9_copy(fc->pre_ymode_prob, fc->ymode_prob);
   vp9_copy(fc->pre_sb_ymode_prob, fc->sb_ymode_prob);
   vp9_copy(fc->pre_uv_mode_prob, fc->uv_mode_prob);
@@ -827,6 +869,12 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->coef_counts_16x16);
   vp9_zero(fc->coef_counts_32x32);
   vp9_zero(fc->eob_branch_counts);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_zero(fc->coef_counts_skipeob_4x4);
+  vp9_zero(fc->coef_counts_skipeob_8x8);
+  vp9_zero(fc->coef_counts_skipeob_16x16);
+  vp9_zero(fc->coef_counts_skipeob_32x32);
+#endif
   vp9_zero(fc->ymode_counts);
   vp9_zero(fc->sb_ymode_counts);
   vp9_zero(fc->uv_mode_counts);
@@ -1075,9 +1123,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
         if (vp9_read(&header_bc, 252))
           pc->fc.vp9_mode_contexts[i][j] = vp9_read_prob(&header_bc);
   }
-  // Is this needed ?
-  if (pc->frame_type == KEY_FRAME)
-    vp9_default_coef_probs(pc);
 
   update_frame_context(&pc->fc);
 

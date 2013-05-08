@@ -80,6 +80,12 @@ typedef struct {
   vp9_coeff_probs_model coef_probs_8x8[BLOCK_TYPES];
   vp9_coeff_probs_model coef_probs_16x16[BLOCK_TYPES];
   vp9_coeff_probs_model coef_probs_32x32[BLOCK_TYPES];
+#if CONFIG_BALANCED_COEFTREE
+  vp9_coeff_probs_model coef_probs_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_32x32[BLOCK_TYPES];
+#endif
 
   vp9_prob sb_ymode_prob[VP9_I32X32_MODES - 1];
   vp9_prob ymode_prob[VP9_YMODES - 1]; /* interframe intra mode probs */
@@ -436,6 +442,24 @@ typedef struct VP9_COMP {
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES];
   vp9_coeff_probs_model frame_coef_probs_32x32[BLOCK_TYPES];
   vp9_coeff_stats_model frame_branch_ct_32x32[BLOCK_TYPES];
+
+#if CONFIG_BALANCED_COEFTREE
+  vp9_coeff_count coef_counts_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_probs_model frame_coef_probs_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_stats_model frame_branch_ct_skipeob_4x4[BLOCK_TYPES];
+
+  vp9_coeff_count coef_counts_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_probs_model frame_coef_probs_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_stats_model frame_branch_ct_skipeob_8x8[BLOCK_TYPES];
+
+  vp9_coeff_count coef_counts_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_probs_model frame_coef_probs_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_stats_model frame_branch_ct_skipeob_16x16[BLOCK_TYPES];
+
+  vp9_coeff_count coef_counts_skipeob_32x32[BLOCK_TYPES];
+  vp9_coeff_probs_model frame_coef_probs_skipeob_32x32[BLOCK_TYPES];
+  vp9_coeff_stats_model frame_branch_ct_skipeob_32x32[BLOCK_TYPES];
+#endif
 
   int gfu_boost;
   int last_boost;

@@ -38,9 +38,9 @@ unsigned __int64 Sectionbits[500];
 #endif
 
 #ifdef ENTROPY_STATS
-int intra_mode_stats[VP9_KF_BINTRAMODES]
-                    [VP9_KF_BINTRAMODES]
-                    [VP9_KF_BINTRAMODES];
+int intra_mode_stats[VP9_BINTRAMODES]
+                    [VP9_BINTRAMODES]
+                    [VP9_BINTRAMODES];
 vp9_coeff_stats tree_update_hist_4x4[BLOCK_TYPES];
 vp9_coeff_stats tree_update_hist_8x8[BLOCK_TYPES];
 vp9_coeff_stats tree_update_hist_16x16[BLOCK_TYPES];
@@ -471,7 +471,6 @@ static void pack_mb_tokens(vp9_writer* const bc,
     const vp9_prob *pp;
     int v = a->value;
     int n = a->len;
-    int ncount = n;
     vp9_prob probs[ENTROPY_NODES];
 
     if (t == EOSB_TOKEN) {
@@ -487,18 +486,25 @@ static void pack_mb_tokens(vp9_writer* const bc,
     assert(pp != 0);
 
     /* skip one or two nodes */
+#if !CONFIG_BALANCED_COEFTREE
     if (p->skip_eob_node) {
       n -= p->skip_eob_node;
       i = 2 * p->skip_eob_node;
-      ncount -= p->skip_eob_node;
     }
+#endif
 
     do {
       const int bb = (v >> --n) & 1;
+#if CONFIG_BALANCED_COEFTREE
+      if (i == 4 && p->skip_eob_node) {
+        i += 2;
+        assert(bb == 1);
+        continue;
+      }
+#endif
       vp9_write(bc, bb, pp[i >> 1]);
       i = vp9_coef_tree[i + bb];
-      ncount--;
-    } while (n && ncount);
+    } while (n);
 
     if (b->base_val) {
       const int e = p->extra, l = b->len;
@@ -869,8 +875,11 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
         const MB_PREDICTION_MODE A = above_block_mode(m, i, mis);
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
                                      left_block_mode(m, i) : DC_PRED;
-        write_kf_bmode(bc, m->bmi[i].as_mode.first,
-                       c->kf_bmode_prob[A][L]);
+        const int bm = m->bmi[i].as_mode.first;
+#ifdef ENTROPY_STATS
+        ++intra_mode_stats[A][L][bm];
+#endif
+        write_kf_bmode(bc, bm, c->kf_bmode_prob[A][L]);
       }
     }
   }
@@ -1073,11 +1082,19 @@ static void build_tree_distribution(vp9_coeff_probs_model *coef_probs,
                                            coef_probs[i][j][k][l],
                                            coef_branch_ct[i][j][k][l],
                                            model_counts, 0);
+#if CONFIG_BALANCED_COEFTREE
+          coef_branch_ct[i][j][k][l][2][1] = eob_branch_ct[i][j][k][l] -
+                                             coef_branch_ct[i][j][k][l][2][0];
+          coef_probs[i][j][k][l][2] =
+              get_binary_prob(coef_branch_ct[i][j][k][l][2][0],
+                              coef_branch_ct[i][j][k][l][2][1]);
+#else
           coef_branch_ct[i][j][k][l][0][1] = eob_branch_ct[i][j][k][l] -
                                              coef_branch_ct[i][j][k][l][0][0];
           coef_probs[i][j][k][l][0] =
               get_binary_prob(coef_branch_ct[i][j][k][l][0][0],
                               coef_branch_ct[i][j][k][l][0][1]);
+#endif
 #ifdef ENTROPY_STATS
           if (!cpi->dummy_packing) {
             for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
@@ -1121,6 +1138,36 @@ static void build_coeff_contexts(VP9_COMP *cpi) {
                           cpi, context_counters_32x32,
 #endif
                           cpi->frame_branch_ct_32x32, BLOCK_TYPES);
+#if CONFIG_BALANCED_COEFTREE
+  build_tree_distribution(cpi->frame_coef_probs_skipeob_4x4,
+                          cpi->coef_counts_skipeob_4x4,
+                          cpi->common.fc.eob_branch_counts[TX_4X4],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_skipeob_4x4,
+#endif
+                          cpi->frame_branch_ct_skipeob_4x4, BLOCK_TYPES);
+  build_tree_distribution(cpi->frame_coef_probs_skipeob_8x8,
+                          cpi->coef_counts_skipeob_8x8,
+                          cpi->common.fc.eob_branch_counts[TX_8X8],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_skipeob_8x8,
+#endif
+                          cpi->frame_branch_ct_8x8, BLOCK_TYPES);
+  build_tree_distribution(cpi->frame_coef_probs_skipeob_16x16,
+                          cpi->coef_counts_skipeob_16x16,
+                          cpi->common.fc.eob_branch_counts[TX_16X16],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_skipeob_16x16,
+#endif
+                          cpi->frame_branch_ct_skipeob_16x16, BLOCK_TYPES);
+  build_tree_distribution(cpi->frame_coef_probs_skipeob_32x32,
+                          cpi->coef_counts_skipeob_32x32,
+                          cpi->common.fc.eob_branch_counts[TX_32X32],
+#ifdef ENTROPY_STATS
+                          cpi, context_counters_skipeob_32x32,
+#endif
+                          cpi->frame_branch_ct_skipeob_32x32, BLOCK_TYPES);
+#endif  // CONFIG_BALANCED_COEFTREE
 }
 
 static void update_coef_probs_common(
@@ -1132,13 +1179,19 @@ static void update_coef_probs_common(
     vp9_coeff_probs_model *new_frame_coef_probs,
     vp9_coeff_probs_model *old_frame_coef_probs,
     vp9_coeff_stats_model *frame_branch_ct,
+#if CONFIG_BALANCED_COEFTREE
+    int is_skip,
+#endif
     TX_SIZE tx_size) {
   int i, j, k, l, t;
   int update[2] = {0, 0};
   int savings;
 
+#if CONFIG_BALANCED_COEFTREE
+  const int entropy_nodes_update = UNCONSTRAINED_NODES - is_skip;
+#else
   const int entropy_nodes_update = UNCONSTRAINED_NODES;
-  // vp9_prob bestupd = find_coef_update_prob(cpi);
+#endif
 
   const int tstart = 0;
   /* dry run to see if there is any udpate at all needed */
@@ -1146,13 +1199,12 @@ static void update_coef_probs_common(
   for (i = 0; i < BLOCK_TYPES; ++i) {
     for (j = 0; j < REF_TYPES; ++j) {
       for (k = 0; k < COEF_BANDS; ++k) {
-        // int prev_coef_savings[ENTROPY_NODES] = {0};
         for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
           for (t = tstart; t < entropy_nodes_update; ++t) {
             vp9_prob newp = new_frame_coef_probs[i][j][k][l][t];
             const vp9_prob oldp = old_frame_coef_probs[i][j][k][l][t];
             const vp9_prob upd = vp9_coef_update_prob[t];
-            int s;  // = prev_coef_savings[t];
+            int s;
             int u = 0;
 
             if (l >= 3 && k == 0)
@@ -1177,8 +1229,6 @@ static void update_coef_probs_common(
     }
   }
 
-  // printf("Update %d %d, savings %d\n", update[0], update[1], savings);
-  /* Is coef updated at all */
   if (update[1] == 0 || savings < 0) {
     vp9_write_bit(bc, 0);
     return;
@@ -1187,14 +1237,13 @@ static void update_coef_probs_common(
   for (i = 0; i < BLOCK_TYPES; ++i) {
     for (j = 0; j < REF_TYPES; ++j) {
       for (k = 0; k < COEF_BANDS; ++k) {
-        // int prev_coef_savings[ENTROPY_NODES] = {0};
         for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
           // calc probs and branch cts for this frame only
           for (t = tstart; t < entropy_nodes_update; ++t) {
             vp9_prob newp = new_frame_coef_probs[i][j][k][l][t];
             vp9_prob *oldp = old_frame_coef_probs[i][j][k][l] + t;
             const vp9_prob upd = vp9_coef_update_prob[t];
-            int s;  // = prev_coef_savings[t];
+            int s;
             int u = 0;
             if (l >= 3 && k == 0)
               continue;
@@ -1240,6 +1289,9 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                            cpi->frame_coef_probs_4x4,
                            cpi->common.fc.coef_probs_4x4,
                            cpi->frame_branch_ct_4x4,
+#if CONFIG_BALANCED_COEFTREE
+                           0,
+#endif
                            TX_4X4);
 
   /* do not do this if not even allowed */
@@ -1252,6 +1304,9 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                              cpi->frame_coef_probs_8x8,
                              cpi->common.fc.coef_probs_8x8,
                              cpi->frame_branch_ct_8x8,
+#if CONFIG_BALANCED_COEFTREE
+                             0,
+#endif
                              TX_8X8);
   }
 
@@ -1264,6 +1319,9 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                              cpi->frame_coef_probs_16x16,
                              cpi->common.fc.coef_probs_16x16,
                              cpi->frame_branch_ct_16x16,
+#if CONFIG_BALANCED_COEFTREE
+                             0,
+#endif
                              TX_16X16);
   }
 
@@ -1276,8 +1334,59 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
                              cpi->frame_coef_probs_32x32,
                              cpi->common.fc.coef_probs_32x32,
                              cpi->frame_branch_ct_32x32,
+#if CONFIG_BALANCED_COEFTREE
+                             0,
+#endif
                              TX_32X32);
   }
+#if CONFIG_BALANCED_COEFTREE
+  update_coef_probs_common(bc,
+                           cpi,
+#ifdef ENTROPY_STATS
+                           tree_update_hist_4x4,
+#endif
+                           cpi->frame_coef_probs_skipeob_4x4,
+                           cpi->common.fc.coef_probs_skipeob_4x4,
+                           cpi->frame_branch_ct_skipeob_4x4,
+                           1,
+                           TX_4X4);
+  if (cpi->common.txfm_mode != ONLY_4X4) {
+    update_coef_probs_common(bc,
+                             cpi,
+#ifdef ENTROPY_STATS
+                             tree_update_hist_8x8,
+#endif
+                             cpi->frame_coef_probs_skipeob_8x8,
+                             cpi->common.fc.coef_probs_skipeob_8x8,
+                             cpi->frame_branch_ct_skipeob_8x8,
+                             1,
+                             TX_8X8);
+  }
+  if (cpi->common.txfm_mode > ALLOW_8X8) {
+    update_coef_probs_common(bc,
+                             cpi,
+#ifdef ENTROPY_STATS
+                             tree_update_hist_16x16,
+#endif
+                             cpi->frame_coef_probs_skipeob_16x16,
+                             cpi->common.fc.coef_probs_skipeob_16x16,
+                             cpi->frame_branch_ct_skipeob_16x16,
+                             1,
+                             TX_16X16);
+  }
+  if (cpi->common.txfm_mode > ALLOW_16X16) {
+    update_coef_probs_common(bc,
+                             cpi,
+#ifdef ENTROPY_STATS
+                             tree_update_hist_32x32,
+#endif
+                             cpi->frame_coef_probs_skipeob_32x32,
+                             cpi->common.fc.coef_probs_skipeob_32x32,
+                             cpi->frame_branch_ct_skipeob_32x32,
+                             1,
+                             TX_32X32);
+  }
+#endif
 }
 
 #ifdef PACKET_TESTING
@@ -1732,6 +1841,16 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
            cpi->common.fc.coef_probs_16x16);
   vp9_copy(cpi->common.fc.pre_coef_probs_32x32,
            cpi->common.fc.coef_probs_32x32);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_copy(cpi->common.fc.pre_coef_probs_skipeob_4x4,
+           cpi->common.fc.coef_probs_skipeob_4x4);
+  vp9_copy(cpi->common.fc.pre_coef_probs_skipeob_8x8,
+           cpi->common.fc.coef_probs_skipeob_8x8);
+  vp9_copy(cpi->common.fc.pre_coef_probs_skipeob_16x16,
+           cpi->common.fc.coef_probs_skipeob_16x16);
+  vp9_copy(cpi->common.fc.pre_coef_probs_skipeob_32x32,
+           cpi->common.fc.coef_probs_skipeob_32x32);
+#endif
 
   vp9_copy(cpi->common.fc.pre_sb_ymode_prob, cpi->common.fc.sb_ymode_prob);
   vp9_copy(cpi->common.fc.pre_ymode_prob, cpi->common.fc.ymode_prob);
