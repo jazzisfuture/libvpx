@@ -17,9 +17,15 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_BALANCED_COEFTREE
+#define ZERO_CONTEXT_NODE           0
+#define ONE_CONTEXT_NODE            1
+#define EOB_CONTEXT_NODE            2
+#else
 #define EOB_CONTEXT_NODE            0
 #define ZERO_CONTEXT_NODE           1
 #define ONE_CONTEXT_NODE            2
+#endif
 #define LOW_VAL_CONTEXT_NODE        3
 #define TWO_CONTEXT_NODE            4
 #define THREE_CONTEXT_NODE          5
@@ -58,15 +64,43 @@ static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
 
-#define INCREMENT_COUNT(token)               \
-  do {                                       \
-    coef_counts[type][ref][band][pt]         \
-               [token >= TWO_TOKEN ?     \
-                (token == DCT_EOB_TOKEN ? DCT_EOB_MODEL_TOKEN : TWO_TOKEN) : \
-                token]++;     \
-    token_cache[scan[c]] = token; \
-  } while (0)
+#if CONFIG_BALANCED_COEFTREE
+#define INCREMENT_COUNT(token)                          \
+    do {                                                \
+      int x = (token >= TWO_TOKEN) ?                    \
+              (token == DCT_EOB_TOKEN ? DCT_EOB_MODEL_TOKEN : TWO_TOKEN) : \
+              token;                                    \
+      if (skip_eob_node) {                              \
+        coef_counts_skipeob[type][ref][band][pt][x]++;  \
+        if (token > ONE_TOKEN)                          \
+          coef_counts[type][ref][band][pt][x]++;        \
+      } else {                                          \
+        coef_counts[type][ref][band][pt][x]++;          \
+      }                                                 \
+      token_cache[scan[c]] = token;                     \
+    } while (0)
+#else
+#define INCREMENT_COUNT(token)                          \
+    do {                                                \
+      coef_counts[type][ref][band][pt]                  \
+          [token >= TWO_TOKEN ?                         \
+          (token == DCT_EOB_TOKEN ? DCT_EOB_MODEL_TOKEN : TWO_TOKEN) : \
+          token]++;                                     \
+      token_cache[scan[c]] = token;                     \
+    } while (0)
+#endif
 
+#if CONFIG_BALANCED_COEFTREE
+#define WRITE_COEF_CONTINUE(val, token)                  \
+  {                                                      \
+    qcoeff_ptr[scan[c]] = vp9_read_and_apply_sign(r, val) * \
+                            dq[c > 0] / (1 + (txfm_size == TX_32X32)); \
+    INCREMENT_COUNT(token);                              \
+    c++;                                                 \
+    skip_eob_node = 0;                                   \
+    continue;                                            \
+  }
+#else
 #define WRITE_COEF_CONTINUE(val, token)                  \
   {                                                      \
     qcoeff_ptr[scan[c]] = vp9_read_and_apply_sign(r, val) * \
@@ -75,6 +109,7 @@ static const vp9_prob cat6_prob[15] = {
     c++;                                                 \
     continue;                                            \
   }
+#endif
 
 #define ADJUST_COEF(prob, bits_count)  \
   do {                                 \
@@ -109,6 +144,20 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   const int *scan, *nb;
   uint8_t token_cache[1024];
   const uint8_t * band_translate;
+#if CONFIG_BALANCED_COEFTREE
+  int skip_eob_node = 0;
+  vp9_coeff_count_model *coef_counts_skipeob;
+  vp9_prob (*coef_probs_skipeob)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES];
+  vp9_prob coef_probs_full_skipeob[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
+  uint8_t load_map_skipeob[COEF_BANDS][PREV_COEF_CONTEXTS] = {
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+  };
+#endif
 
   switch (txfm_size) {
     default:
@@ -122,6 +171,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       coef_counts = fc->coef_counts_4x4;
       default_eob = 16;
       band_translate = vp9_coefband_trans_4x4;
+#if CONFIG_BALANCED_COEFTREE
+      coef_probs_skipeob  = fc->coef_probs_skipeob_4x4[type][ref];
+      coef_counts_skipeob = fc->coef_counts_skipeob_4x4;
+#endif
       break;
     }
     case TX_8X8: {
@@ -138,6 +191,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       left_ec = (L[0] + L[1]) != 0;
       default_eob = 64;
       band_translate = vp9_coefband_trans_8x8plus;
+#if CONFIG_BALANCED_COEFTREE
+      coef_probs_skipeob  = fc->coef_probs_skipeob_8x8[type][ref];
+      coef_counts_skipeob = fc->coef_counts_skipeob_8x8;
+#endif
       break;
     }
     case TX_16X16: {
@@ -154,6 +211,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       left_ec = (L[0] + L[1] + L[2] + L[3]) != 0;
       default_eob = 256;
       band_translate = vp9_coefband_trans_8x8plus;
+#if CONFIG_BALANCED_COEFTREE
+      coef_probs_skipeob  = fc->coef_probs_skipeob_16x16[type][ref];
+      coef_counts_skipeob = fc->coef_counts_skipeob_16x16;
+#endif
       break;
     }
     case TX_32X32:
@@ -164,6 +225,10 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       left_ec = (L[0] + L[1] + L[2] + L[3] + L[4] + L[5] + L[6] + L[7]) != 0;
       default_eob = 1024;
       band_translate = vp9_coefband_trans_8x8plus;
+#if CONFIG_BALANCED_COEFTREE
+      coef_probs_skipeob  = fc->coef_probs_skipeob_32x32[type][ref];
+      coef_counts_skipeob = fc->coef_counts_skipeob_32x32;
+#endif
       break;
   }
 
@@ -179,36 +244,76 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
       pt = vp9_get_coef_context(scan, nb, pad, token_cache,
                                 c, default_eob);
     band = get_coef_band(band_translate, c);
+#if CONFIG_BALANCED_COEFTREE
+    prob = (skip_eob_node ? coef_probs_skipeob : coef_probs)[band][pt];
+#else
     prob = coef_probs[band][pt];
+#endif
+#if !CONFIG_BALANCED_COEFTREE
     fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
 SKIP_START:
+#endif
     if (c >= seg_eob)
       break;
     if (c)
       pt = vp9_get_coef_context(scan, nb, pad, token_cache,
                                 c, default_eob);
     band = get_coef_band(band_translate, c);
+#if CONFIG_BALANCED_COEFTREE
+    prob = (skip_eob_node ? coef_probs_skipeob : coef_probs)[band][pt];
+#else
     prob = coef_probs[band][pt];
+#endif
 
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
+#if CONFIG_BALANCED_COEFTREE
+      skip_eob_node = 1;
+      continue;
+#else
       goto SKIP_START;
+#endif
     }
     // ONE_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
+#if CONFIG_BALANCED_COEFTREE
+    if (!skip_eob_node) {
+      fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
+      if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
+        break;
+    }
+#endif
     // Load full probabilities if not already loaded
+#if CONFIG_BALANCED_COEFTREE
+    if (skip_eob_node) {
+      if (!load_map_skipeob[band][pt]) {
+        vp9_model_to_full_probs(coef_probs_skipeob[band][pt],
+                                coef_probs_full_skipeob[band][pt]);
+        load_map_skipeob[band][pt] = 1;
+      }
+      prob = coef_probs_full_skipeob[band][pt];
+    } else {
+      if (!load_map[band][pt]) {
+        vp9_model_to_full_probs(coef_probs[band][pt],
+                                coef_probs_full[band][pt]);
+        load_map[band][pt] = 1;
+      }
+      prob = coef_probs_full[band][pt];
+    }
+#else
     if (!load_map[band][pt]) {
       vp9_model_to_full_probs(coef_probs[band][pt],
                               coef_probs_full[band][pt]);
       load_map[band][pt] = 1;
     }
     prob = coef_probs_full[band][pt];
+#endif
     // LOW_VAL_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
       if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {
@@ -265,8 +370,13 @@ SKIP_START:
     WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
   }
 
-  if (c < seg_eob)
+  if (c < seg_eob) {
     coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN]++;
+#if CONFIG_BALANCED_COEFTREE
+    if (skip_eob_node)
+      coef_counts_skipeob[type][ref][band][pt][DCT_EOB_MODEL_TOKEN]++;
+#endif
+  }
 
   for (pt = 0; pt < (1 << txfm_size); pt++) {
     A[pt] = L[pt] = c > 0;

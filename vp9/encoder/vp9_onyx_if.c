@@ -103,9 +103,9 @@ extern int skip_false_count;
 
 
 #ifdef ENTROPY_STATS
-extern int intra_mode_stats[VP9_KF_BINTRAMODES]
-                           [VP9_KF_BINTRAMODES]
-                           [VP9_KF_BINTRAMODES];
+extern int intra_mode_stats[VP9_BINTRAMODES]
+                           [VP9_BINTRAMODES]
+                           [VP9_BINTRAMODES];
 #endif
 
 #ifdef NMV_STATS
@@ -286,7 +286,6 @@ static void setup_features(VP9_COMP *cpi) {
 
   set_default_lf_deltas(cpi);
 }
-
 
 static void dealloc_compressor_data(VP9_COMP *cpi) {
   // Delete sementation map
@@ -1756,18 +1755,18 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
 
       fprintf(fmode, "\n#include \"vp9_entropymode.h\"\n\n");
       fprintf(fmode, "const unsigned int vp9_kf_default_bmode_counts ");
-      fprintf(fmode, "[VP9_KF_BINTRAMODES][VP9_KF_BINTRAMODES]"
-                     "[VP9_KF_BINTRAMODES] =\n{\n");
+      fprintf(fmode, "[VP9_BINTRAMODES][VP9_BINTRAMODES]"
+                     "[VP9_BINTRAMODES] =\n{\n");
 
-      for (i = 0; i < VP9_KF_BINTRAMODES; i++) {
+      for (i = 0; i < VP9_BINTRAMODES; i++) {
 
         fprintf(fmode, "    { // Above Mode :  %d\n", i);
 
-        for (j = 0; j < VP9_KF_BINTRAMODES; j++) {
+        for (j = 0; j < VP9_BINTRAMODES; j++) {
 
           fprintf(fmode, "        {");
 
-          for (k = 0; k < VP9_KF_BINTRAMODES; k++) {
+          for (k = 0; k < VP9_BINTRAMODES; k++) {
             if (!intra_mode_stats[i][j][k])
               fprintf(fmode, " %5d, ", 1);
             else
@@ -2938,9 +2937,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
     // transform / motion compensation build reconstruction frame
-    if (cm->frame_type == KEY_FRAME) {
-      vp9_default_coef_probs(cm);
-    }
 
     vp9_encode_frame(cpi);
 
@@ -3206,6 +3202,16 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                            cpi->coef_counts_16x16);
   vp9_full_to_model_counts(cpi->common.fc.coef_counts_32x32,
                            cpi->coef_counts_32x32);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_full_to_model_counts(cpi->common.fc.coef_counts_skipeob_4x4,
+                           cpi->coef_counts_skipeob_4x4);
+  vp9_full_to_model_counts(cpi->common.fc.coef_counts_skipeob_8x8,
+                           cpi->coef_counts_skipeob_8x8);
+  vp9_full_to_model_counts(cpi->common.fc.coef_counts_skipeob_16x16,
+                           cpi->coef_counts_skipeob_16x16);
+  vp9_full_to_model_counts(cpi->common.fc.coef_counts_skipeob_32x32,
+                           cpi->coef_counts_skipeob_32x32);
+#endif
   if (!cpi->common.error_resilient_mode &&
       !cpi->common.frame_parallel_decoding_mode) {
     vp9_adapt_coef_probs(&cpi->common);

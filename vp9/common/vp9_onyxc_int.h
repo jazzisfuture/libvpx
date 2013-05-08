@@ -82,6 +82,20 @@ typedef struct frame_contexts {
   vp9_coeff_count_model coef_counts_8x8[BLOCK_TYPES];
   vp9_coeff_count_model coef_counts_16x16[BLOCK_TYPES];
   vp9_coeff_count_model coef_counts_32x32[BLOCK_TYPES];
+#if CONFIG_BALANCED_COEFTREE
+  vp9_coeff_probs_model coef_probs_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_probs_model coef_probs_skipeob_32x32[BLOCK_TYPES];
+  vp9_coeff_probs_model pre_coef_probs_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_probs_model pre_coef_probs_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_probs_model pre_coef_probs_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_probs_model pre_coef_probs_skipeob_32x32[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_skipeob_4x4[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_skipeob_8x8[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_skipeob_16x16[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_skipeob_32x32[BLOCK_TYPES];
+#endif
   unsigned int eob_branch_counts[TX_SIZE_MAX_SB][BLOCK_TYPES][REF_TYPES]
                                 [COEF_BANDS][PREV_COEF_CONTEXTS];
 
