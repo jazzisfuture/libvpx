@@ -1169,6 +1169,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_zero(cpi->coef_counts_8x8);
   vp9_zero(cpi->coef_counts_16x16);
   vp9_zero(cpi->coef_counts_32x32);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_zero(cpi->coef_counts_skipeob_4x4);
+  vp9_zero(cpi->coef_counts_skipeob_8x8);
+  vp9_zero(cpi->coef_counts_skipeob_16x16);
+  vp9_zero(cpi->coef_counts_skipeob_32x32);
+#endif
   vp9_zero(cm->fc.eob_branch_counts);
 
   cpi->mb.e_mbd.lossless = cm->base_qindex == 0 &&
