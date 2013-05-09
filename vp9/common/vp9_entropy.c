@@ -46,12 +46,20 @@ DECLARE_ALIGNED(16, const int, vp9_coef_bands8x8[64]) = {
   5, 5, 5, 5, 5, 5, 5, 5,
   5, 5, 5, 5, 5, 5, 5, 5
 };
+DECLARE_ALIGNED(16, const uint8_t,
+                vp9_coefband_trans_8x8plus[22]) =
+  {0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
+   4, 4, 4, 4, 4, 5};
+
 DECLARE_ALIGNED(16, const int, vp9_coef_bands4x4[16]) = {
   0, 1, 2, 3,
   1, 2, 3, 4,
   2, 3, 4, 5,
   3, 4, 5, 5
 };
+DECLARE_ALIGNED(16, const uint8_t, vp9_coefband_trans_4x4[22]) =
+  {0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
+   4, 4, 4, 4, 4, 5};
 
 DECLARE_ALIGNED(16, const uint8_t, vp9_pt_energy_class[MAX_ENTROPY_TOKENS]) = {
   0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5
