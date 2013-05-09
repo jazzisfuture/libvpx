@@ -455,15 +455,11 @@ static void write_sub_mv_ref(vp9_writer *bc, B_PREDICTION_MODE m,
               vp9_sub_mv_ref_encoding_array - LEFT4X4 + m);
 }
 
-static void write_nmv(VP9_COMP *cpi, vp9_writer *bc,
+static void write_nmv(VP9_COMP *cpi, vp9_writer *w,
                       const MV *mv, const int_mv *ref,
                       const nmv_context *nmvc, int usehp) {
-  MV e;
-  e.row = mv->row - ref->as_mv.row;
-  e.col = mv->col - ref->as_mv.col;
-
-  vp9_encode_nmv(bc, &e, &ref->as_mv, nmvc);
-  vp9_encode_nmv_fp(bc, &e, &ref->as_mv, nmvc, usehp);
+  const MV e = {mv->row - ref->as_mv.row, mv->col - ref->as_mv.col};
+  vp9_encode_mv(w, &e, &ref->as_mv, nmvc, usehp);
 }
 
 // This function writes the current macro block's segnment id to the bitstream
