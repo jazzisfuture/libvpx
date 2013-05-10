@@ -157,77 +157,51 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   }
 }
 
+static int read_mv_component(vp9_reader *r,
+                             const nmv_component *mvcomp, int usehp) {
 
-static int read_nmv_component(vp9_reader *r,
-                              int rv,
-                              const nmv_component *mvcomp) {
-  int mag, d;
+  int mag, d, fr, hp;
   const int sign = vp9_read(r, mvcomp->sign);
   const int mv_class = treed_read(r, vp9_mv_class_tree, mvcomp->classes);
 
+  // Integer part
   if (mv_class == MV_CLASS_0) {
     d = treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
   } else {
     int i;
-    int n = mv_class + CLASS0_BITS - 1;  // number of bits
+    const int n = mv_class + CLASS0_BITS - 1;  // number of bits
 
     d = 0;
     for (i = 0; i < n; ++i)
       d |= vp9_read(r, mvcomp->bits[i]) << i;
   }
 
-  mag = vp9_get_mv_mag(mv_class, d << 3);
-  return sign ? -(mag + 8) : (mag + 8);
+  // Fractional part
+  fr = treed_read(r, vp9_mv_fp_tree,
+                  mv_class == MV_CLASS_0 ? mvcomp->class0_fp[d] : mvcomp->fp);
+
+
+  // High precision part (if hp is not used, the default value of the hp is 1)
+  hp = usehp ? vp9_read(r,
+                        mv_class == MV_CLASS_0 ? mvcomp->class0_hp : mvcomp->hp)
+             : 1;
+
+  // result
+  mag = vp9_get_mv_mag(mv_class, (d << 3) + (fr << 1) + hp) + 1;
+  return sign ? -mag : mag;
 }
 
-static int read_nmv_component_fp(vp9_reader *r,
-                                 int v,
-                                 int rv,
-                                 const nmv_component *mvcomp,
-                                 int usehp) {
-  const int sign = v < 0;
-  int mag = ((sign ? -v : v) - 1) & ~7;  // magnitude - 1
-  int offset;
-  const int mv_class = vp9_get_mv_class(mag, &offset);
-  const int f = mv_class == MV_CLASS_0 ?
-      treed_read(r, vp9_mv_fp_tree, mvcomp->class0_fp[offset >> 3]):
-      treed_read(r, vp9_mv_fp_tree, mvcomp->fp);
-
-  offset += f << 1;
-
-  if (usehp) {
-    const vp9_prob p = mv_class == MV_CLASS_0 ? mvcomp->class0_hp : mvcomp->hp;
-    offset += vp9_read(r, p);
-  } else {
-    offset += 1;  // If hp is not used, the default value of the hp bit is 1
-  }
-  mag = vp9_get_mv_mag(mv_class, offset);
-  return sign ? -(mag + 1) : (mag + 1);
-}
-
-static void read_nmv(vp9_reader *r, MV *mv, const MV *ref,
-                     const nmv_context *mvctx) {
+static void read_mv(vp9_reader *r, MV *mv, const MV *ref,
+                    const nmv_context *mvctx, int usehp) {
   const MV_JOINT_TYPE j = treed_read(r, vp9_mv_joint_tree, mvctx->joints);
   mv->row = mv->col = 0;
 
-  if (mv_joint_vertical(j))
-    mv->row = read_nmv_component(r, ref->row, &mvctx->comps[0]);
-
-  if (mv_joint_horizontal(j))
-    mv->col = read_nmv_component(r, ref->col, &mvctx->comps[1]);
-}
-
-static void read_nmv_fp(vp9_reader *r, MV *mv, const MV *ref,
-                        const nmv_context *mvctx, int usehp) {
-  const MV_JOINT_TYPE j = vp9_get_mv_joint(mv);
   usehp = usehp && vp9_use_nmv_hp(ref);
   if (mv_joint_vertical(j))
-    mv->row = read_nmv_component_fp(r, mv->row, ref->row, &mvctx->comps[0],
-                                    usehp);
+    mv->row = read_mv_component(r, &mvctx->comps[0], usehp);
 
   if (mv_joint_horizontal(j))
-    mv->col = read_nmv_component_fp(r, mv->col, ref->col, &mvctx->comps[1],
-                                    usehp);
+    mv->col = read_mv_component(r, &mvctx->comps[1], usehp);
 }
 
 static void update_nmv(vp9_reader *r, vp9_prob *const p,
@@ -520,8 +494,7 @@ static INLINE void process_mv(vp9_reader *r, MV *mv, const MV *ref,
                               const nmv_context *nmvc,
                               nmv_context_counts *mvctx,
                               int usehp) {
-  read_nmv(r, mv, ref, nmvc);
-  read_nmv_fp(r, mv, ref, nmvc, usehp);
+  read_mv(r, mv, ref, nmvc, usehp);
   vp9_increment_nmv(mv, ref, mvctx, usehp);
   mv->row += ref->row;
   mv->col += ref->col;
