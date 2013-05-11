@@ -914,7 +914,11 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   }
 
   // update partition context
+#if CONFIG_AB4X4
+  if ((partition == PARTITION_SPLIT) && (bsize > BLOCK_SIZE_SB8X8))
+#else
   if ((partition == PARTITION_SPLIT) && (bsize > BLOCK_SIZE_MB16X16))
+#endif
     return;
 
   xd->left_seg_context = cm->left_seg_context + (mi_row & MI_MASK);
