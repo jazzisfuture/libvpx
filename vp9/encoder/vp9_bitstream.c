@@ -780,12 +780,21 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     vp9_write(bc, skip_coeff, vp9_get_pred_prob(c, xd, PRED_MBSKIP));
   }
 
+#if CONFIG_AB4X4
+  if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8)
+    sb_kfwrite_ymode(bc, ym, c->sb_kf_ymode_prob[c->kf_ymode_probs_index]);
+#else
   if (m->mbmi.sb_type > BLOCK_SIZE_SB8X8)
     sb_kfwrite_ymode(bc, ym, c->sb_kf_ymode_prob[c->kf_ymode_probs_index]);
   else
     kfwrite_ymode(bc, ym, c->kf_ymode_prob[c->kf_ymode_probs_index]);
+#endif
 
+#if CONFIG_AB4X4
+  if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+#else
   if (ym == I4X4_PRED) {
+#endif
     int i = 0;
     do {
       const B_PREDICTION_MODE a = above_block_mode(m, i, mis);
@@ -803,8 +812,13 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
 
   write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
 
+#if CONFIG_AB4X4
+  if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8 && c->txfm_mode == TX_MODE_SELECT &&
+      !(skip_coeff || vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
+#else
   if (ym != I4X4_PRED && c->txfm_mode == TX_MODE_SELECT &&
       !(skip_coeff || vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
+#endif
     TX_SIZE sz = m->mbmi.txfm_size;
     // FIXME(rbultje) code ternary symbol once all experiments are merged
     vp9_write(bc, sz != TX_4X4, c->prob_tx[0]);
@@ -876,7 +890,19 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   else
     assert(0);
 
+#if CONFIG_AB4X4
+  if (bsize == BLOCK_SIZE_SB8X8 && m->mbmi.sb_type < BLOCK_SIZE_SB8X8)
+    partition = PARTITION_SPLIT;
+  if (bsize < BLOCK_SIZE_SB8X8)
+    if (xd->ab_index != 0)
+      return;
+#endif
+
+#if CONFIG_AB4X4
+  if (bsize >= BLOCK_SIZE_SB8X8) {
+#else
   if (bsize > BLOCK_SIZE_SB8X8) {
+#endif
     int pl;
     xd->left_seg_context = cm->left_seg_context + (mi_row & MI_MASK);
     xd->above_seg_context = cm->above_seg_context + mi_col;
@@ -884,6 +910,13 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
     // encode the partition information
     write_token(bc, vp9_partition_tree, cm->fc.partition_prob[pl],
                 vp9_partition_encodings + partition);
+  }
+
+  if (cpi->dummy_packing == 0) {
+    FILE *pf = fopen("enc_range.txt", "a");
+    fprintf(pf, "position (%d, %d), bsize %d, partition %d, range %d\n",
+            mi_row, mi_col, bsize, partition, bc->range);
+    fclose(pf);
   }
 
   subsize = get_subsize(bsize, partition);
@@ -905,6 +938,7 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
     case PARTITION_SPLIT:
       for (n = 0; n < 4; n++) {
         int j = n >> 1, i = n & 0x01;
+        *(get_sb_index(xd, subsize)) = n;
         write_modes_sb(cpi, m + j * bs * mis + i * bs, bc, tok, tok_end,
                        mi_row + j * bs, mi_col + i * bs, subsize);
       }
@@ -914,12 +948,16 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   }
 
   // update partition context
-  if ((partition == PARTITION_SPLIT) && (bsize > BLOCK_SIZE_MB16X16))
-    return;
-
-  xd->left_seg_context = cm->left_seg_context + (mi_row & MI_MASK);
-  xd->above_seg_context = cm->above_seg_context + mi_col;
-  update_partition_context(xd, subsize, bsize);
+#if CONFIG_AB4X4
+  if (bsize >= BLOCK_SIZE_SB8X8 &&
+      (bsize == BLOCK_SIZE_SB8X8 || partition != PARTITION_SPLIT)) {
+#else
+  if (bsize > BLOCK_SIZE_SB8X8 &&
+      (bsize == BLOCK_SIZE_MB16X16 || partition != PARTITION_SPLIT)) {
+#endif
+    set_partition_seg_context(cm, xd, mi_row, mi_col);
+    update_partition_context(xd, subsize, bsize);
+  }
 }
 
 static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,

@@ -119,13 +119,25 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
     m->mbmi.mb_skip_coeff = vp9_read(r, vp9_get_pred_prob(cm, xd, PRED_MBSKIP));
 
   // luma mode
+#if CONFIG_AB4X4
+  if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8)
+    m->mbmi.mode = read_kf_sb_ymode(r,
+                     cm->sb_kf_ymode_prob[cm->kf_ymode_probs_index]);
+  else
+    m->mbmi.mode = I4X4_PRED;
+#else
   m->mbmi.mode = m->mbmi.sb_type > BLOCK_SIZE_SB8X8 ?
       read_kf_sb_ymode(r, cm->sb_kf_ymode_prob[cm->kf_ymode_probs_index]):
       read_kf_mb_ymode(r, cm->kf_ymode_prob[cm->kf_ymode_probs_index]);
+#endif
 
   m->mbmi.ref_frame = INTRA_FRAME;
 
+#if CONFIG_AB4X4
+  if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+#else
   if (m->mbmi.mode == I4X4_PRED) {
+#endif
     int i;
     for (i = 0; i < 4; ++i) {
       const B_PREDICTION_MODE a = above_block_mode(m, i, mis);
@@ -139,7 +151,13 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   m->mbmi.uv_mode = read_uv_mode(r, cm->kf_uv_mode_prob[m->mbmi.mode]);
 
   if (cm->txfm_mode == TX_MODE_SELECT &&
-      !m->mbmi.mb_skip_coeff && m->mbmi.mode != I4X4_PRED) {
+      !m->mbmi.mb_skip_coeff &&
+#if CONFIG_AB4X4
+      m->mbmi.sb_type >= BLOCK_SIZE_SB8X8
+#else
+      m->mbmi.mode != I4X4_PRED
+#endif
+      ) {
     const int allow_16x16 = m->mbmi.sb_type >= BLOCK_SIZE_MB16X16;
     const int allow_32x32 = m->mbmi.sb_type >= BLOCK_SIZE_SB32X32;
     m->mbmi.txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
@@ -150,7 +168,13 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
              m->mbmi.sb_type >= BLOCK_SIZE_MB16X16 &&
              m->mbmi.mode <= TM_PRED) {
     m->mbmi.txfm_size = TX_16X16;
-  } else if (cm->txfm_mode >= ALLOW_8X8 && m->mbmi.mode != I4X4_PRED) {
+  } else if (cm->txfm_mode >= ALLOW_8X8 &&
+#if CONFIG_AB4X4
+             m->mbmi.sb_type >= BLOCK_SIZE_SB8X8
+#else
+             m->mbmi.mode != I4X4_PRED
+#endif
+             ) {
     m->mbmi.txfm_size = TX_8X8;
   } else {
     m->mbmi.txfm_size = TX_4X4;
