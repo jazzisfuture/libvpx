@@ -439,7 +439,11 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
   if (mi_row >= pc->mi_rows || mi_col >= pc->mi_cols)
     return;
 
+#if CONFIG_AB4X4
+  if (bsize >= BLOCK_SIZE_SB8X8) {
+#else
   if (bsize > BLOCK_SIZE_SB8X8) {
+#endif
     int pl;
     // read the partition information
     xd->left_seg_context = pc->left_seg_context + (mi_row & MI_MASK);
@@ -481,7 +485,11 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
       assert(0);
   }
   // update partition context
+#if CONFIG_AB4X4
+  if ((partition == PARTITION_SPLIT) && (bsize > BLOCK_SIZE_SB8X8))
+#else
   if ((partition == PARTITION_SPLIT) && (bsize > BLOCK_SIZE_MB16X16))
+#endif
     return;
 
   xd->left_seg_context = pc->left_seg_context + (mi_row & MI_MASK);
