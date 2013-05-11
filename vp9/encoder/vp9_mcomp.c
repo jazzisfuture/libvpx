@@ -2429,6 +2429,155 @@ int vp9_refining_search_8p_c(MACROBLOCK *x,
     return INT_MAX;
   }
 }
+
+int vp9_refining_search_8p_sadx4(MACROBLOCK *x,
+                              int_mv *ref_mv, int error_per_bit,
+                              int search_range, vp9_variance_fn_ptr_t *fn_ptr,
+                              int *mvjcost, int *mvcost[2], int_mv *center_mv,
+                              const uint8_t *second_pred, int w, int h) {
+  const MACROBLOCKD* const xd = &x->e_mbd;
+  MV neighbors[8] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0},
+      {-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+  int i, j;
+  int this_row_offset, this_col_offset;
+
+  int what_stride = x->plane[0].src.stride;
+  int in_what_stride = xd->plane[0].pre[0].stride;
+  uint8_t *what = x->plane[0].src.buf;
+  uint8_t *best_address = xd->plane[0].pre[0].buf +
+                          (ref_mv->as_mv.row * xd->plane[0].pre[0].stride) +
+                          ref_mv->as_mv.col;
+  uint8_t *check_here;
+  unsigned int thissad;
+  int_mv this_mv;
+  unsigned int bestsad = INT_MAX;
+  int_mv fcenter_mv;
+
+  int *mvjsadcost = x->nmvjointsadcost;
+  int *mvsadcost[2] = {x->nmvsadcost[0], x->nmvsadcost[1]};
+
+  /* Compound pred buffer */
+  uint8_t *comp_pred = vpx_memalign(16, 4 * w * h * sizeof(uint8_t));
+
+  fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
+  fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
+
+  /* Get compound pred by averaging two pred blocks. */
+  comp_avg_pred(comp_pred, second_pred, w, h, best_address, in_what_stride);
+
+  bestsad = fn_ptr->sdf(what, what_stride, comp_pred, w, 0x7fffffff) +
+      mvsad_err_cost(ref_mv, &fcenter_mv, mvjsadcost, mvsadcost, error_per_bit);
+
+  for (i = 0; i < search_range; i++) {
+    int best_site = -1;
+    int all_in = ((ref_mv->as_mv.row - 1) > x->mv_row_min) &
+                 ((ref_mv->as_mv.row + 1) < x->mv_row_max) &
+                 ((ref_mv->as_mv.col - 1) > x->mv_col_min) &
+                 ((ref_mv->as_mv.col + 1) < x->mv_col_max);
+
+    if (all_in) {
+      unsigned int sad_array[8];
+      unsigned char const *block_offset[4];
+
+      block_offset[0] = comp_pred;
+      block_offset[1] = comp_pred + w * h;
+      block_offset[2] = comp_pred + w * h * 2;
+      block_offset[3] = comp_pred + w * h * 3;
+
+      /* Get compound block and use it to calculate SAD. */
+      comp_avg_pred(comp_pred, second_pred, w, h,
+                    (best_address - in_what_stride), in_what_stride);
+      comp_avg_pred(comp_pred + w * h, second_pred, w, h,
+                    (best_address - 1), in_what_stride);
+      comp_avg_pred(comp_pred + w * h * 2, second_pred, w, h,
+                    (best_address + 1), in_what_stride);
+      comp_avg_pred(comp_pred + w * h * 3, second_pred, w, h,
+                    (best_address + in_what_stride), in_what_stride);
+      fn_ptr->sdx4df(what, what_stride, block_offset, w, sad_array);
+
+      /* Get compound block and use it to calculate SAD. */
+      comp_avg_pred(comp_pred, second_pred, w, h,
+                    (best_address - in_what_stride - 1), in_what_stride);
+      comp_avg_pred(comp_pred + w * h, second_pred, w, h,
+                    (best_address + in_what_stride - 1), in_what_stride);
+      comp_avg_pred(comp_pred + w * h * 2, second_pred, w, h,
+                    (best_address - in_what_stride + 1), in_what_stride);
+      comp_avg_pred(comp_pred + w * h * 3, second_pred, w, h,
+                    (best_address + in_what_stride + 1), in_what_stride);
+      fn_ptr->sdx4df(what, what_stride, block_offset, w, &sad_array[4]);
+
+      for (j = 0; j < 8; j++) {
+        if (sad_array[j] < bestsad) {
+          this_mv.as_mv.row = ref_mv->as_mv.row + neighbors[j].row;
+          this_mv.as_mv.col = ref_mv->as_mv.col + neighbors[j].col;
+          sad_array[j] += mvsad_err_cost(&this_mv, &fcenter_mv, mvjsadcost,
+                                         mvsadcost, error_per_bit);
+
+          if (sad_array[j] < bestsad) {
+            bestsad = sad_array[j];
+            best_site = j;
+          }
+        }
+      }
+    } else {
+      for (j = 0; j < 8; j++) {
+        this_row_offset = ref_mv->as_mv.row + neighbors[j].row;
+        this_col_offset = ref_mv->as_mv.col + neighbors[j].col;
+
+        if ((this_col_offset > x->mv_col_min) &&
+            (this_col_offset < x->mv_col_max) &&
+            (this_row_offset > x->mv_row_min) &&
+            (this_row_offset < x->mv_row_max)) {
+          check_here = (neighbors[j].row) * in_what_stride + neighbors[j].col +
+              best_address;
+
+          /* Get compound block and use it to calculate SAD. */
+          comp_avg_pred(comp_pred, second_pred, w, h, check_here,
+                        in_what_stride);
+          thissad = fn_ptr->sdf(what, what_stride, comp_pred, w, bestsad);
+
+          if (thissad < bestsad) {
+            this_mv.as_mv.row = this_row_offset;
+            this_mv.as_mv.col = this_col_offset;
+            thissad += mvsad_err_cost(&this_mv, &fcenter_mv, mvjsadcost,
+                                      mvsadcost, error_per_bit);
+
+            if (thissad < bestsad) {
+              bestsad = thissad;
+              best_site = j;
+            }
+          }
+        }
+      }
+    }
+
+    if (best_site == -1)
+      break;
+    else {
+      ref_mv->as_mv.row += neighbors[best_site].row;
+      ref_mv->as_mv.col += neighbors[best_site].col;
+      best_address += (neighbors[best_site].row) * in_what_stride +
+          neighbors[best_site].col;
+    }
+  }
+
+  this_mv.as_mv.row = ref_mv->as_mv.row << 3;
+  this_mv.as_mv.col = ref_mv->as_mv.col << 3;
+
+  if (bestsad < INT_MAX) {
+    int besterr;
+    comp_avg_pred(comp_pred, second_pred, w, h, best_address, in_what_stride);
+    besterr = fn_ptr->vf(what, what_stride, comp_pred, w,
+        (unsigned int *)(&thissad)) +
+        mv_err_cost(&this_mv, center_mv, mvjcost, mvcost, x->errorperbit,
+                    xd->allow_high_precision_mv);
+    vpx_free(comp_pred);
+    return besterr;
+  } else {
+    vpx_free(comp_pred);
+    return INT_MAX;
+  }
+}
 #endif  // CONFIG_COMP_INTER_JOINT_SEARCH
 
 #ifdef ENTROPY_STATS
