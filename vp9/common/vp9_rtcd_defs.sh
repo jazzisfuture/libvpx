@@ -619,6 +619,12 @@ prototype int vp9_refining_search_sad "struct macroblock *x, union int_mv *ref_m
 specialize vp9_refining_search_sad sse3
 vp9_refining_search_sad_sse3=vp9_refining_search_sadx4
 
+if [ "$CONFIG_COMP_INTER_JOINT_SEARCH" = "yes" ]; then
+prototype int vp9_refining_search_8p "struct macroblock *x, union int_mv *ref_mv, int sad_per_bit, int distance, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, union int_mv *center_mv, const uint8_t *second_pred, int w, int h"
+specialize vp9_refining_search_8p sse3
+vp9_refining_search_8p_sse3=vp9_refining_search_8p_sadx4
+fi
+
 prototype int vp9_diamond_search_sad "struct macroblock *x, union int_mv *ref_mv, union int_mv *best_mv, int search_param, int sad_per_bit, int *num00, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, union int_mv *center_mv"
 specialize vp9_diamond_search_sad sse3
 vp9_diamond_search_sad_sse3=vp9_diamond_search_sadx4

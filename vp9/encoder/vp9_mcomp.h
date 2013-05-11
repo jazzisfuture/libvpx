@@ -88,12 +88,5 @@ int vp9_find_best_sub_pixel_comp(MACROBLOCK *x,
                                  int *distortion, unsigned int *sse1,
                                  const uint8_t *second_pred,
                                  int w, int h);
-
-int vp9_refining_search_8p_c(MACROBLOCK *x,
-                             int_mv *ref_mv, int error_per_bit,
-                             int search_range, vp9_variance_fn_ptr_t *fn_ptr,
-                             int *mvjcost, int *mvcost[2],
-                             int_mv *center_mv, const uint8_t *second_pred,
-                             int w, int h);
 #endif  // CONFIG_COMP_INTER_JOINT_SEARCH
 #endif  // VP9_ENCODER_VP9_MCOMP_H_

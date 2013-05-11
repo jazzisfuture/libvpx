@@ -1936,12 +1936,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           tmp_mv.as_mv.row >>= 3;
 
           // Small-range full-pixel motion search
-          bestsme = vp9_refining_search_8p_c(x, &tmp_mv, sadpb,
-                                             search_range,
-                                             &cpi->fn_ptr[block_size],
-                                             x->nmvjointcost, x->mvcost,
-                                             &ref_mv[id], second_pred,
-                                             b_sz[bsize][0], b_sz[bsize][1]);
+          bestsme = vp9_refining_search_8p(x, &tmp_mv, sadpb,
+                                           search_range,
+                                           &cpi->fn_ptr[block_size],
+                                           x->nmvjointcost, x->mvcost,
+                                           &ref_mv[id], second_pred,
+                                           b_sz[bsize][0], b_sz[bsize][1]);
 
           x->mv_col_min = tmp_col_min;
           x->mv_col_max = tmp_col_max;
