@@ -578,12 +578,6 @@ static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
   return subsize;
 }
 
-#define ACTIVE_HT   110                // quantization stepsize threshold
-
-#define ACTIVE_HT8  300
-
-#define ACTIVE_HT16 300
-
 // convert MB_PREDICTION_MODE to B_PREDICTION_MODE
 static B_PREDICTION_MODE pred_mode_conv(MB_PREDICTION_MODE mode) {
   switch (mode) {
@@ -652,8 +646,7 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
     return tx_type;
   if (xd->lossless)
     return DCT_DCT;
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED &&
-      xd->q_index < ACTIVE_HT) {
+  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
     tx_type = txfm_map(
 #if CONFIG_NEWBINTRAMODES
         xd->mode_info_context->bmi[ib].as_mode.first == B_CONTEXT_PRED ?
@@ -661,8 +654,7 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
 #endif
         xd->mode_info_context->bmi[ib].as_mode.first);
 #if !CONFIG_SB8X8
-  } else if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
-             xd->q_index < ACTIVE_HT) {
+  } else if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
     const int ic = (ib & 10);
 #if USE_ADST_FOR_I8X8_4X4
 #if USE_ADST_PERIPHERY_ONLY
@@ -696,8 +688,7 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
     tx_type = DCT_DCT;
 #endif
 #endif  // !CONFIG_SB8X8
-  } else if (xd->mode_info_context->mbmi.mode <= TM_PRED &&
-             xd->q_index < ACTIVE_HT) {
+  } else if (xd->mode_info_context->mbmi.mode <= TM_PRED) {
 #if USE_ADST_FOR_I16X16_4X4
 #if USE_ADST_PERIPHERY_ONLY
     const int hmax = 1 << wb;
@@ -741,16 +732,14 @@ static TX_TYPE get_tx_type_8x8(const MACROBLOCKD *xd, int ib) {
   if (ib >= (1 << (wb + hb)))  // no chroma adst
     return tx_type;
 #if !CONFIG_SB8X8
-  if (xd->mode_info_context->mbmi.mode == I8X8_PRED &&
-      xd->q_index < ACTIVE_HT8) {
+  if (xd->mode_info_context->mbmi.mode == I8X8_PRED) {
     // TODO(rbultje): MB_PREDICTION_MODE / B_PREDICTION_MODE should be merged
     // or the relationship otherwise modified to address this type conversion.
     tx_type = txfm_map(pred_mode_conv(
            (MB_PREDICTION_MODE)xd->mode_info_context->bmi[ib].as_mode.first));
   } else
 #endif  // CONFIG_SB8X8
-  if (xd->mode_info_context->mbmi.mode <= TM_PRED &&
-      xd->q_index < ACTIVE_HT8) {
+  if (xd->mode_info_context->mbmi.mode <= TM_PRED) {
 #if USE_ADST_FOR_I16X16_8X8
 #if USE_ADST_PERIPHERY_ONLY
     const int hmax = 1 << wb;
@@ -791,8 +780,7 @@ static TX_TYPE get_tx_type_16x16(const MACROBLOCKD *xd, int ib) {
 #endif
   if (ib >= (1 << (wb + hb)))
     return tx_type;
-  if (xd->mode_info_context->mbmi.mode <= TM_PRED &&
-      xd->q_index < ACTIVE_HT16) {
+  if (xd->mode_info_context->mbmi.mode <= TM_PRED) {
     tx_type = txfm_map(pred_mode_conv(xd->mode_info_context->mbmi.mode));
 #if USE_ADST_PERIPHERY_ONLY
     if (sb_type > BLOCK_SIZE_MB16X16) {
