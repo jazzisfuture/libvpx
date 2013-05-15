@@ -841,6 +841,13 @@ static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp,
     set_block_index(xd, sub_index, bsize);
   set_offsets(cpi, mi_row, mi_col, bsize);
   update_state(cpi, get_block_context(x, bsize), bsize, output_enabled);
+
+  if (output_enabled) {
+    FILE *pf = fopen("enc_ab4x4_mode.txt", "a");
+    fprintf(pf, "position (%d, %d), mode %d, bsize %d\n",
+            mi_row, mi_col, xd->mode_info_context->mbmi.mode, bsize);
+    fclose(pf);
+  }
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
 
   if (output_enabled) {
