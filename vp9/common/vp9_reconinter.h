@@ -199,4 +199,7 @@ static int32_t motion_vector_component_q4_without_scaling(int mv_q4,
   (void)offset_q4;
   return mv_q4;
 }
+
+void vp9_setup_scale_factors(VP9_COMMON *cm, int i);
+
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
