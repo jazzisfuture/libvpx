@@ -413,6 +413,11 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
                            vp9_reader *r, BLOCK_SIZE_TYPE bsize) {
   MACROBLOCKD *const xd = &pbi->mb;
 
+#if CONFIG_AB4X4
+  if (bsize < BLOCK_SIZE_SB8X8)
+    if (xd->ab_index > 0)
+      return;
+#endif
   set_offsets(pbi, bsize, mi_row, mi_col);
   vp9_decode_mb_mode_mv(pbi, xd, mi_row, mi_col, r);
   set_refs(pbi, mi_row, mi_col);
