@@ -13,6 +13,7 @@
 #include "./vpx_config.h"
 #include "vp9_rtcd.h"
 #include "vp9/common/vp9_reconintra.h"
+#include "vp9/common/vp9_onyxc_int.h"
 #include "vpx_mem/vpx_mem.h"
 
 static void d27_predictor(uint8_t *ypred_ptr, int y_stride,
@@ -393,21 +394,34 @@ void vp9_build_intra_predictors_sbuv_s(MACROBLOCKD *xd,
                              xd->left_available, 0 /*xd->right_available*/);
 }
 
-void vp9_intra4x4_predict(MACROBLOCKD *xd,
-                          int block_idx,
-                          BLOCK_SIZE_TYPE bsize,
-                          int mode,
-                          uint8_t *predictor, int pre_stride) {
-  const int bwl = b_width_log2(bsize);
+void vp9_predict_intra_block(MACROBLOCKD *xd,
+                            int block_idx,
+                            BLOCK_SIZE_TYPE bsize,
+                            TX_SIZE tx_size,
+                            int mode,
+                            uint8_t *predictor, int pre_stride) {
+  const int bwl = b_width_log2(bsize) - tx_size;
   const int wmask = (1 << bwl) - 1;
   const int have_top =
       (block_idx >> bwl) || xd->up_available;
   const int have_left =
       (block_idx & wmask) || xd->left_available;
   const int have_right = ((block_idx & wmask) != wmask);
+  const int txfm_block_size = 4 << tx_size;
 
   vp9_build_intra_predictors(predictor, pre_stride,
                              predictor, pre_stride,
-                             mode, 4, 4, have_top, have_left,
+                             mode,
+                             txfm_block_size,
+                             txfm_block_size,
+                             have_top, have_left,
                              have_right);
+}
+
+void vp9_intra4x4_predict(MACROBLOCKD *xd,
+                          int block_idx,
+                          BLOCK_SIZE_TYPE bsize,
+                          int mode,
+                          uint8_t *predictor, int pre_stride) {
+  vp9_predict_intra_block(xd, block_idx, bsize, TX_4X4, mode, predictor, pre_stride);
 }

@@ -1989,8 +1989,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
   if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
     assert(bsize == BLOCK_SIZE_SB8X8 &&
            xd->mode_info_context->mbmi.txfm_size == TX_4X4);
-
-    vp9_encode_intra4x4mby(x, bsize);
+    vp9_encode_intra4x4mby(&cpi->common, x, bsize);
     vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
     vp9_encode_sbuv(cm, x, bsize);
 
