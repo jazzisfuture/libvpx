@@ -711,46 +711,55 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         }
         break;
       case SPLITMV: {
-        int j = 0;
+        int j;
+        B_PREDICTION_MODE blockmode;
+        int_mv blockmv;
+        int k = -1;  /* first block in subset j */
+        int mv_contz;
+        int_mv leftmv, abovemv;
+        int bwl = b_width_log2(mi->sb_type), bw = 1 << bwl;
+        int bhl = b_height_log2(mi->sb_type), bh = 1 << bhl;
+        int idx, idy;
+
+#if !CONFIG_AB4X4
+        bw = 1, bh = 1;
+#endif
+
+        for (idy = 0; idy < 2; idy += bh) {
+          for (idx = 0; idx < 2; idx += bw) {
+            j = idy * 2 + idx;
+            blockmode = cpi->mb.partition_info->bmi[j].mode;
+            blockmv = cpi->mb.partition_info->bmi[j].mv;
+            k = j;
+            leftmv.as_int = left_block_mv(xd, m, k);
+            abovemv.as_int = above_block_mv(m, k, mis);
+            mv_contz = vp9_mv_cont(&leftmv, &abovemv);
+
+            write_sub_mv_ref(bc, blockmode,
+                             cpi->common.fc.sub_mv_ref_prob[mv_contz]);
+            cpi->sub_mv_ref_count[mv_contz][blockmode - LEFT4X4]++;
+            if (blockmode == NEW4X4) {
+#ifdef ENTROPY_STATS
+              active_section = 11;
+#endif
+              write_nmv(cpi, bc, &blockmv.as_mv, &mi->best_mv,
+                        (const nmv_context*) nmvc,
+                        xd->allow_high_precision_mv);
+
+              if (mi->second_ref_frame > 0) {
+                write_nmv(cpi, bc,
+                          &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
+                          &mi->best_second_mv,
+                          (const nmv_context*) nmvc,
+                          xd->allow_high_precision_mv);
+              }
+            }
+          }
+        }
 
 #ifdef MODE_STATS
         ++count_mb_seg[mi->partitioning];
 #endif
-
-        do {
-          B_PREDICTION_MODE blockmode;
-          int_mv blockmv;
-          int k = -1;  /* first block in subset j */
-          int mv_contz;
-          int_mv leftmv, abovemv;
-
-          blockmode = cpi->mb.partition_info->bmi[j].mode;
-          blockmv = cpi->mb.partition_info->bmi[j].mv;
-          k = j;
-          leftmv.as_int = left_block_mv(xd, m, k);
-          abovemv.as_int = above_block_mv(m, k, mis);
-          mv_contz = vp9_mv_cont(&leftmv, &abovemv);
-
-          write_sub_mv_ref(bc, blockmode,
-                           cpi->common.fc.sub_mv_ref_prob[mv_contz]);
-          cpi->sub_mv_ref_count[mv_contz][blockmode - LEFT4X4]++;
-          if (blockmode == NEW4X4) {
-#ifdef ENTROPY_STATS
-            active_section = 11;
-#endif
-            write_nmv(cpi, bc, &blockmv.as_mv, &mi->best_mv,
-                      (const nmv_context*) nmvc,
-                      xd->allow_high_precision_mv);
-
-            if (mi->second_ref_frame > 0) {
-              write_nmv(cpi, bc,
-                        &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
-                        &mi->best_second_mv,
-                        (const nmv_context*) nmvc,
-                        xd->allow_high_precision_mv);
-            }
-          }
-        } while (++j < cpi->mb.partition_info->count);
         break;
       }
       default:
