@@ -217,13 +217,10 @@ static void lpf_mb(VP9_COMMON *cm, const MODE_INFO *mi,
 
     if (!skip_lf) {
       if (tx_size >= TX_8X8) {
-        if (tx_size == TX_8X8 &&
-            mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
-          vp9_loop_filter_bh8x8(y_ptr, u_ptr, v_ptr,
-                                y_stride, uv_stride, &lfi);
-        else
-          vp9_loop_filter_bh8x8(y_ptr, NULL, NULL,
-                                y_stride, uv_stride, &lfi);
+        const int do_uv = tx_size == TX_8X8 &&
+                          mi->mbmi.sb_type < BLOCK_SIZE_MB16X16;
+        vp9_loop_filter_bh8x8(y_ptr, do_uv ? u_ptr : NULL, do_uv ? v_ptr : NULL,
+                              y_stride, uv_stride, &lfi);
       } else {
         vp9_loop_filter_bh(y_ptr, u_ptr, v_ptr,
                            y_stride, uv_stride, &lfi);
@@ -242,13 +239,11 @@ static void lpf_mb(VP9_COMMON *cm, const MODE_INFO *mi,
 
     if (!skip_lf) {
       if (tx_size >= TX_8X8) {
-        if (tx_size == TX_8X8 &&
-            mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
-          vp9_loop_filter_bv8x8(y_ptr, u_ptr, v_ptr,
-                                y_stride, uv_stride, &lfi);
-        else
-          vp9_loop_filter_bv8x8(y_ptr, NULL, NULL,
-                                y_stride, uv_stride, &lfi);
+        const int do_uv = tx_size == TX_8X8 &&
+                          mi->mbmi.sb_type < BLOCK_SIZE_MB16X16;
+
+        vp9_loop_filter_bv8x8(y_ptr, do_uv ? u_ptr : NULL, do_uv ? v_ptr : NULL,
+                              y_stride, uv_stride, &lfi);
       } else {
         vp9_loop_filter_bv(y_ptr, u_ptr, v_ptr,
                            y_stride, uv_stride, &lfi);
@@ -354,24 +349,18 @@ static void lpf_sb64(VP9_COMMON *cm, const MODE_INFO *mode_info_context,
                      uint8_t *y_ptr, uint8_t *u_ptr, uint8_t *v_ptr,
                      int y_stride, int uv_stride,
                      int y_only, int dering) {
-  lpf_sb32(cm, mode_info_context, mb_row, mb_col,
-      y_ptr, u_ptr, v_ptr,
-      y_stride, uv_stride, y_only, dering);
-  lpf_sb32(cm, mode_info_context + 4, mb_row, mb_col + 2,
-      y_ptr + 32, u_ptr + 16, v_ptr + 16,
-      y_stride, uv_stride, y_only, dering);
-  lpf_sb32(cm, mode_info_context + cm->mode_info_stride * 4,
-      mb_row + 2, mb_col,
-      y_ptr + 32 * y_stride,
-      u_ptr + 16 * uv_stride,
-      v_ptr + 16 * uv_stride,
-      y_stride, uv_stride, y_only, dering);
-  lpf_sb32(cm, mode_info_context + cm->mode_info_stride * 4 + 4,
-      mb_row + 2, mb_col + 2,
-      y_ptr + 32 * y_stride + 32,
-      u_ptr + 16 * uv_stride + 16,
-      v_ptr + 16 * uv_stride + 16,
-      y_stride, uv_stride, y_only, dering);
+  int n;
+  for (n = 0; n < 4; ++n) {
+    const int i = n / 2, j = n % 2;
+    const int y_offset = i * 32 * y_stride + j * 32;
+    const int uv_offset = i * 16 * uv_stride + j * 16;
+    const int mi_offset = i * 4 * cm->mode_info_stride + j * 4;
+
+    lpf_sb32(cm, mode_info_context + mi_offset,
+             mb_row + 2 * i, mb_col + 2 * j,
+             y_ptr + y_offset, u_ptr + uv_offset, v_ptr + uv_offset,
+             y_stride, uv_stride, y_only, dering);
+  }
 }
 
 void vp9_loop_filter_frame(VP9_COMMON *cm,
