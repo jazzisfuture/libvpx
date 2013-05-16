@@ -1029,7 +1029,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   // TODO(jingning): need to enable 4x8 and 8x4 partition coding
   // PARTITION_HORZ
   if ((mi_col + ms <= cm->mi_cols) && (mi_row + (ms >> 1) <= cm->mi_rows) &&
+#if CONFIG_AB4X4
+      (bsize >= BLOCK_SIZE_SB8X8)) {
+#else
       (bsize >= BLOCK_SIZE_MB16X16)) {
+#endif
     int r2, d2;
     int mb_skip = 0;
     subsize = get_subsize(bsize, PARTITION_HORZ);
@@ -1065,7 +1069,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
 
   // PARTITION_VERT
   if ((mi_row + ms <= cm->mi_rows) && (mi_col + (ms >> 1) <= cm->mi_cols) &&
+#if CONFIG_AB4X4
+      (bsize >= BLOCK_SIZE_SB8X8)) {
+#else
       (bsize >= BLOCK_SIZE_MB16X16)) {
+#endif
     int r2, d2;
     int mb_skip = 0;
     subsize = get_subsize(bsize, PARTITION_VERT);

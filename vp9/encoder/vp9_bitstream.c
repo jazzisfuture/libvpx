@@ -587,6 +587,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   const MB_PREDICTION_MODE mode = mi->mode;
   const int segment_id = mi->segment_id;
   int skip_coeff;
+  int bwl = b_width_log2(mi->sb_type), bw = 1 << bwl;
+  int bhl = b_height_log2(mi->sb_type), bh = 1 << bhl;
 
   xd->prev_mode_info_context = pc->prev_mi + (m - pc->mi);
   x->partition_info = x->pi + (m - pc->mi);
@@ -711,19 +713,15 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         }
         break;
       case SPLITMV: {
-        int j = 0;
+        int j;
+        B_PREDICTION_MODE blockmode;
+        int_mv blockmv;
+        int k;  /* first block in subset j */
+        int mv_contz;
+        int_mv leftmv, abovemv;
 
-#ifdef MODE_STATS
-        ++count_mb_seg[mi->partitioning];
-#endif
-
-        do {
-          B_PREDICTION_MODE blockmode;
-          int_mv blockmv;
-          int k = -1;  /* first block in subset j */
-          int mv_contz;
-          int_mv leftmv, abovemv;
-
+       for (j = 0; j < cpi->mb.partition_info->count; ++j) {
+          k = -1;
           blockmode = cpi->mb.partition_info->bmi[j].mode;
           blockmv = cpi->mb.partition_info->bmi[j].mv;
           k = j;
@@ -750,7 +748,11 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                         xd->allow_high_precision_mv);
             }
           }
-        } while (++j < cpi->mb.partition_info->count);
+        }
+
+#ifdef MODE_STATS
+        ++count_mb_seg[mi->partitioning];
+#endif
         break;
       }
       default:
