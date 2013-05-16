@@ -34,7 +34,7 @@
 static void recon_write_yuv_frame(const char *name,
                                   const YV12_BUFFER_CONFIG *s,
                                   int w, int _h) {
-  FILE *yuv_file = fopen((char *)name, "ab");
+  FILE *yuv_file = fopen((const char *)name, "ab");
   const uint8_t *src = s->y_buffer;
   int h = _h;
 
@@ -357,7 +357,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   }
 
 #if WRITE_RECON_BUFFER == 1
-  if (cm->show_frame)
+  if (cm->show_frame || 1)
     recon_write_yuv_frame("recon.yuv", cm->frame_to_show,
                           cm->width, cm->height);
 #endif
