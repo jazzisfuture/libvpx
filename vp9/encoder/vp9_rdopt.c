@@ -1156,8 +1156,9 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
   int segmentyrate = 0;
   int best_eobs[4] = { 0 };
   BLOCK_SIZE_TYPE bsize = mbmi->sb_type;
-  int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
-
+  int bwl = b_width_log2(bsize), incw = 2 >> bwl;
+  int bhl = b_height_log2(bsize), inch = 2 >> bhl;
+  int idx, idy;
   vp9_variance_fn_ptr_t *v_fn_ptr;
 
   ENTROPY_CONTEXT t_above[2], t_left[2];
@@ -1175,183 +1176,197 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
   label_mv_thresh = 1 * bsi->mvthresh / label_count;
 
   // Segmentation method overheads
+#if !CONFIG_AB4X4
   rate += vp9_cost_mv_ref(cpi, SPLITMV,
                           mbmi->mb_mode_context[mbmi->ref_frame]);
   this_segment_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
   br += rate;
+#endif
   other_segment_rd = this_segment_rd;
 
-  for (i = 0; i < label_count && this_segment_rd < bsi->segment_rd; i++) {
-    int_mv mode_mv[B_MODE_COUNT], second_mode_mv[B_MODE_COUNT];
-    int64_t best_label_rd = INT64_MAX, best_other_rd = INT64_MAX;
-    B_PREDICTION_MODE mode_selected = ZERO4X4;
-    int bestlabelyrate = 0;
+  for (idy = 0; idy < 2; idy += inch) {
+    for (idx = 0; idx < 2; idx += incw) {
+      int_mv mode_mv[B_MODE_COUNT], second_mode_mv[B_MODE_COUNT];
+      int64_t best_label_rd = INT64_MAX, best_other_rd = INT64_MAX;
+      B_PREDICTION_MODE mode_selected = ZERO4X4;
+      int bestlabelyrate = 0;
+      i = idy * 2 + idx;
 
-    // search for the best motion vector on this segment
-    for (this_mode = LEFT4X4; this_mode <= NEW4X4; this_mode ++) {
-      int64_t this_rd;
-      int distortion;
-      int labelyrate;
-      ENTROPY_CONTEXT t_above_s[2], t_left_s[2];
+      // search for the best motion vector on this segment
+      for (this_mode = LEFT4X4; this_mode <= NEW4X4; this_mode ++) {
+        int64_t this_rd;
+        int distortion;
+        int labelyrate;
+        ENTROPY_CONTEXT t_above_s[2], t_left_s[2];
 
-      vpx_memcpy(t_above_s, t_above, sizeof(t_above_s));
-      vpx_memcpy(t_left_s, t_left, sizeof(t_left_s));
+        vpx_memcpy(t_above_s, t_above, sizeof(t_above_s));
+        vpx_memcpy(t_left_s, t_left, sizeof(t_left_s));
 
-      // motion search for newmv (single predictor case only)
-      if (mbmi->second_ref_frame <= 0 && this_mode == NEW4X4) {
-        int sseshift, n;
-        int step_param = 0;
-        int further_steps;
-        int thissme, bestsme = INT_MAX;
-        const struct buf_2d orig_src = x->plane[0].src;
-        const struct buf_2d orig_pre = x->e_mbd.plane[0].pre[0];
+        // motion search for newmv (single predictor case only)
+        if (mbmi->second_ref_frame <= 0 && this_mode == NEW4X4) {
+          int sseshift, n;
+          int step_param = 0;
+          int further_steps;
+          int thissme, bestsme = INT_MAX;
+          const struct buf_2d orig_src = x->plane[0].src;
+          const struct buf_2d orig_pre = x->e_mbd.plane[0].pre[0];
 
-        /* Is the best so far sufficiently good that we cant justify doing
-         * and new motion search. */
-        if (best_label_rd < label_mv_thresh)
-          break;
+          /* Is the best so far sufficiently good that we cant justify doing
+           * and new motion search. */
+          if (best_label_rd < label_mv_thresh)
+            break;
 
-        if (cpi->compressor_speed) {
-          // use previous block's result as next block's MV predictor.
-          if (i > 0) {
-            bsi->mvp.as_int =
-            x->e_mbd.mode_info_context->bmi[i - 1].as_mv[0].as_int;
-            if (i == 2)
+          if (cpi->compressor_speed) {
+            // use previous block's result as next block's MV predictor.
+            if (i > 0) {
               bsi->mvp.as_int =
-              x->e_mbd.mode_info_context->bmi[i - 2].as_mv[0].as_int;
-            step_param = 2;
-          }
-        }
-
-        further_steps = (MAX_MVSEARCH_STEPS - 1) - step_param;
-
-        {
-          int sadpb = x->sadperbit4;
-          int_mv mvp_full;
-
-          mvp_full.as_mv.row = bsi->mvp.as_mv.row >> 3;
-          mvp_full.as_mv.col = bsi->mvp.as_mv.col >> 3;
-
-          // find first label
-          n = i;
-
-          // adjust src pointer for this segment
-          x->plane[0].src.buf =
-          raster_block_offset_uint8(&x->e_mbd, BLOCK_SIZE_SB8X8, 0, n,
-                                    x->plane[0].src.buf,
-                                    x->plane[0].src.stride);
-          assert(((intptr_t)x->e_mbd.plane[0].pre[0].buf & 0x7) == 0);
-          x->e_mbd.plane[0].pre[0].buf =
-          raster_block_offset_uint8(&x->e_mbd, BLOCK_SIZE_SB8X8, 0, n,
-                                    x->e_mbd.plane[0].pre[0].buf,
-                                    x->e_mbd.plane[0].pre[0].stride);
-
-          bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
-                                           sadpb, further_steps, 0, v_fn_ptr,
-                                           bsi->ref_mv, &mode_mv[NEW4X4]);
-
-          sseshift = 0;
-
-          // Should we do a full search (best quality only)
-          if ((cpi->compressor_speed == 0) && (bestsme >> sseshift) > 4000) {
-            /* Check if mvp_full is within the range. */
-            clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max,
-                     x->mv_row_min, x->mv_row_max);
-
-            thissme = cpi->full_search_sad(x, &mvp_full,
-                                           sadpb, 16, v_fn_ptr,
-                                           x->nmvjointcost, x->mvcost,
-                                           bsi->ref_mv,
-                                           n);
-
-            if (thissme < bestsme) {
-              bestsme = thissme;
-              mode_mv[NEW4X4].as_int =
-              x->e_mbd.mode_info_context->bmi[n].as_mv[0].as_int;
-            } else {
-              /* The full search result is actually worse so re-instate the
-               * previous best vector */
-              x->e_mbd.mode_info_context->bmi[n].as_mv[0].as_int =
-              mode_mv[NEW4X4].as_int;
+              x->e_mbd.mode_info_context->bmi[i - 1].as_mv[0].as_int;
+              if (i == 2)
+                bsi->mvp.as_int =
+                x->e_mbd.mode_info_context->bmi[i - 2].as_mv[0].as_int;
+              step_param = 2;
             }
           }
+
+          further_steps = (MAX_MVSEARCH_STEPS - 1) - step_param;
+
+          {
+            int sadpb = x->sadperbit4;
+            int_mv mvp_full;
+
+            mvp_full.as_mv.row = bsi->mvp.as_mv.row >> 3;
+            mvp_full.as_mv.col = bsi->mvp.as_mv.col >> 3;
+
+            // find first label
+            n = i;
+
+            // adjust src pointer for this segment
+            x->plane[0].src.buf =
+            raster_block_offset_uint8(&x->e_mbd, BLOCK_SIZE_SB8X8, 0, n,
+                                      x->plane[0].src.buf,
+                                      x->plane[0].src.stride);
+            assert(((intptr_t)x->e_mbd.plane[0].pre[0].buf & 0x7) == 0);
+            x->e_mbd.plane[0].pre[0].buf =
+            raster_block_offset_uint8(&x->e_mbd, BLOCK_SIZE_SB8X8, 0, n,
+                                      x->e_mbd.plane[0].pre[0].buf,
+                                      x->e_mbd.plane[0].pre[0].stride);
+
+            bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
+                                             sadpb, further_steps, 0, v_fn_ptr,
+                                             bsi->ref_mv, &mode_mv[NEW4X4]);
+
+            sseshift = 0;
+
+            // Should we do a full search (best quality only)
+            if ((cpi->compressor_speed == 0) && (bestsme >> sseshift) > 4000) {
+              /* Check if mvp_full is within the range. */
+              clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max,
+                       x->mv_row_min, x->mv_row_max);
+
+              thissme = cpi->full_search_sad(x, &mvp_full,
+                                             sadpb, 16, v_fn_ptr,
+                                             x->nmvjointcost, x->mvcost,
+                                             bsi->ref_mv,
+                                             n);
+
+              if (thissme < bestsme) {
+                bestsme = thissme;
+                mode_mv[NEW4X4].as_int =
+                x->e_mbd.mode_info_context->bmi[n].as_mv[0].as_int;
+              } else {
+                /* The full search result is actually worse so re-instate the
+                 * previous best vector */
+                x->e_mbd.mode_info_context->bmi[n].as_mv[0].as_int =
+                mode_mv[NEW4X4].as_int;
+              }
+            }
+          }
+
+          if (bestsme < INT_MAX) {
+            int distortion;
+            unsigned int sse;
+            cpi->find_fractional_mv_step(x, &mode_mv[NEW4X4],
+                                         bsi->ref_mv, x->errorperbit, v_fn_ptr,
+                                         x->nmvjointcost, x->mvcost,
+                                         &distortion, &sse);
+
+            // safe motion search result for use in compound prediction
+            seg_mvs[i][mbmi->ref_frame - 1].as_int = mode_mv[NEW4X4].as_int;
+          }
+
+          // restore src pointers
+          x->plane[0].src = orig_src;
+          x->e_mbd.plane[0].pre[0] = orig_pre;
+        } else if (mbmi->second_ref_frame > 0 && this_mode == NEW4X4) {
+          /* NEW4X4 */
+          /* motion search not completed? Then skip newmv for this block with
+           * comppred */
+          if (seg_mvs[i][mbmi->second_ref_frame - 1].as_int == INVALID_MV ||
+              seg_mvs[i][mbmi->ref_frame        - 1].as_int == INVALID_MV) {
+            continue;
+          }
         }
 
-        if (bestsme < INT_MAX) {
-          int distortion;
-          unsigned int sse;
-          cpi->find_fractional_mv_step(x, &mode_mv[NEW4X4],
-                                       bsi->ref_mv, x->errorperbit, v_fn_ptr,
-                                       x->nmvjointcost, x->mvcost,
-                                       &distortion, &sse);
+        rate = labels2mode(x, labels, i, this_mode, &mode_mv[this_mode],
+                           &second_mode_mv[this_mode], seg_mvs[i],
+                           bsi->ref_mv, bsi->second_ref_mv, x->nmvjointcost,
+                           x->mvcost, cpi);
 
-          // safe motion search result for use in compound prediction
-          seg_mvs[i][mbmi->ref_frame - 1].as_int = mode_mv[NEW4X4].as_int;
-        }
-
-        // restore src pointers
-        x->plane[0].src = orig_src;
-        x->e_mbd.plane[0].pre[0] = orig_pre;
-      } else if (mbmi->second_ref_frame > 0 && this_mode == NEW4X4) {
-        /* NEW4X4 */
-        /* motion search not completed? Then skip newmv for this block with
-         * comppred */
-        if (seg_mvs[i][mbmi->second_ref_frame - 1].as_int == INVALID_MV ||
-            seg_mvs[i][mbmi->ref_frame        - 1].as_int == INVALID_MV) {
+        // Trap vectors that reach beyond the UMV borders
+        if (((mode_mv[this_mode].as_mv.row >> 3) < x->mv_row_min) ||
+            ((mode_mv[this_mode].as_mv.row >> 3) > x->mv_row_max) ||
+            ((mode_mv[this_mode].as_mv.col >> 3) < x->mv_col_min) ||
+            ((mode_mv[this_mode].as_mv.col >> 3) > x->mv_col_max)) {
           continue;
         }
-      }
+        if (mbmi->second_ref_frame > 0 &&
+            mv_check_bounds(x, &second_mode_mv[this_mode]))
+          continue;
 
-      rate = labels2mode(x, labels, i, this_mode, &mode_mv[this_mode],
-                         &second_mode_mv[this_mode], seg_mvs[i],
-                         bsi->ref_mv, bsi->second_ref_mv, x->nmvjointcost,
-                         x->mvcost, cpi);
+        this_rd = encode_inter_mb_segment(&cpi->common,
+                                          x, labels, i, &labelyrate,
+                                          &distortion, t_above_s, t_left_s);
+        this_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
+        rate += labelyrate;
 
-      // Trap vectors that reach beyond the UMV borders
-      if (((mode_mv[this_mode].as_mv.row >> 3) < x->mv_row_min) ||
-          ((mode_mv[this_mode].as_mv.row >> 3) > x->mv_row_max) ||
-          ((mode_mv[this_mode].as_mv.col >> 3) < x->mv_col_min) ||
-          ((mode_mv[this_mode].as_mv.col >> 3) > x->mv_col_max)) {
-        continue;
-      }
-      if (mbmi->second_ref_frame > 0 &&
-          mv_check_bounds(x, &second_mode_mv[this_mode]))
-        continue;
+        if (this_rd < best_label_rd) {
+          sbr = rate;
+          sbd = distortion;
+          bestlabelyrate = labelyrate;
+          mode_selected = this_mode;
+          best_label_rd = this_rd;
+          for (j = 0; j < 4; j++)
+            if (labels[j] == i)
+              best_eobs[j] = x->e_mbd.plane[0].eobs[j];
 
-      this_rd = encode_inter_mb_segment(&cpi->common,
-                                        x, labels, i, &labelyrate,
-                                        &distortion, t_above_s, t_left_s);
-      this_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
-      rate += labelyrate;
+          vpx_memcpy(t_above_b, t_above_s, sizeof(t_above_s));
+          vpx_memcpy(t_left_b, t_left_s, sizeof(t_left_s));
+        }
+      } /*for each 4x4 mode*/
 
-      if (this_rd < best_label_rd) {
-        sbr = rate;
-        sbd = distortion;
-        bestlabelyrate = labelyrate;
-        mode_selected = this_mode;
-        best_label_rd = this_rd;
-        for (j = 0; j < 4; j++)
-          if (labels[j] == i)
-            best_eobs[j] = x->e_mbd.plane[0].eobs[j];
+      vpx_memcpy(t_above, t_above_b, sizeof(t_above));
+      vpx_memcpy(t_left, t_left_b, sizeof(t_left));
 
-        vpx_memcpy(t_above_b, t_above_s, sizeof(t_above_s));
-        vpx_memcpy(t_left_b, t_left_s, sizeof(t_left_s));
-      }
-    } /*for each 4x4 mode*/
+      labels2mode(x, labels, i, mode_selected, &mode_mv[mode_selected],
+                  &second_mode_mv[mode_selected], seg_mvs[i],
+                  bsi->ref_mv, bsi->second_ref_mv, x->nmvjointcost,
+                  x->mvcost, cpi);
 
-    vpx_memcpy(t_above, t_above_b, sizeof(t_above));
-    vpx_memcpy(t_left, t_left_b, sizeof(t_left));
+      br += sbr;
+      bd += sbd;
+      segmentyrate += bestlabelyrate;
+      this_segment_rd += best_label_rd;
+      other_segment_rd += best_other_rd;
 
-    labels2mode(x, labels, i, mode_selected, &mode_mv[mode_selected],
-                &second_mode_mv[mode_selected], seg_mvs[i],
-                bsi->ref_mv, bsi->second_ref_mv, x->nmvjointcost,
-                x->mvcost, cpi);
-
-    br += sbr;
-    bd += sbd;
-    segmentyrate += bestlabelyrate;
-    this_segment_rd += best_label_rd;
-    other_segment_rd += best_other_rd;
+      for (j = 1; j < inch; ++j)
+        vpx_memcpy(&x->partition_info->bmi[i + j * 2],
+                   &x->partition_info->bmi[i],
+                   sizeof(x->partition_info->bmi[i]));
+      for (j = 1; j < incw; ++j)
+        vpx_memcpy(&x->partition_info->bmi[i + j],
+                   &x->partition_info->bmi[i],
+                   sizeof(x->partition_info->bmi[i]));
+    }
   } /* for each label */
 
   if (this_segment_rd < bsi->segment_rd) {
