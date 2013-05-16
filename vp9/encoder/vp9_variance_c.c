@@ -880,7 +880,7 @@ unsigned int vp9_sub_pixel_variance4x8_c(const uint8_t *src_ptr,
   vfilter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
 
   var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_pixels_per_line,
-                                    1, 17, 4, hfilter);
+                                    1, 9, 4, hfilter);
   var_filter_block2d_bil_second_pass(fdata3, temp2, 4, 4, 8, 4, vfilter);
 
   return vp9_variance4x8_c(temp2, 4, dst_ptr, dst_pixels_per_line, sse);
@@ -903,7 +903,7 @@ unsigned int vp9_sub_pixel_avg_variance4x8_c(const uint8_t *src_ptr,
   vfilter = VP9_BILINEAR_FILTERS_2TAP(yoffset);
 
   var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_pixels_per_line,
-                                    1, 17, 4, hfilter);
+                                    1, 9, 4, hfilter);
   var_filter_block2d_bil_second_pass(fdata3, temp2, 4, 4, 8, 4, vfilter);
   comp_avg_pred(temp3, second_pred, 4, 8, temp2, 4);
   return vp9_variance4x8_c(temp3, 4, dst_ptr, dst_pixels_per_line, sse);
