@@ -889,6 +889,23 @@ static uint8_t* raster_block_offset_uint8(MACROBLOCKD *xd,
   return base + raster_block_offset(xd, bsize, plane, block, stride);
 }
 
+static int16_t* raster_txblock_offset_int16(MACROBLOCKD *xd,
+                                         BLOCK_SIZE_TYPE bsize,
+                                         TX_SIZE tx_size,
+                                         int plane, int block, int16_t *base) {
+  const int bw = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
+  const int stride = 4 << bw;
+  return base + (raster_block_offset(xd, bsize, plane, block, stride) << tx_size);
+}
+static uint8_t* raster_txblock_offset_uint8(MACROBLOCKD *xd,
+                                         BLOCK_SIZE_TYPE bsize,
+                                         TX_SIZE tx_size,
+                                         int plane, int block,
+                                         uint8_t *base, int stride) {
+  return base + (raster_block_offset(xd, bsize, plane, block, stride) << tx_size);
+}
+
+
 static int txfrm_block_to_raster_block(MACROBLOCKD *xd,
                                        BLOCK_SIZE_TYPE bsize,
                                        int plane, int block,
