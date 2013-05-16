@@ -34,6 +34,13 @@ void vp9_recon_b_c(uint8_t *pred_ptr, int16_t *diff_ptr, int diff_stride,
   recon(4, 4, diff_ptr, diff_stride, dst_ptr, stride);
 }
 
+void vp9_recon_txb_c(int tx_b_size, uint8_t *pred_ptr, int16_t *diff_ptr, int diff_stride,
+                   uint8_t *dst_ptr, int stride) {
+  assert(pred_ptr == dst_ptr);
+  recon(tx_b_size, tx_b_size, diff_ptr, diff_stride, dst_ptr, stride);
+}
+
+
 static void recon_plane(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize, int plane) {
   const int bw = 4 << (b_width_log2(bsize) - xd->plane[plane].subsampling_x);
   const int bh = 4 << (b_height_log2(bsize) - xd->plane[plane].subsampling_y);
