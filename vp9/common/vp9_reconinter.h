@@ -15,6 +15,10 @@
 #include "vp9/common/vp9_onyxc_int.h"
 
 struct subpix_fn_table;
+void vp9_recon_txb_c(int tx_b_size, uint8_t *pred_ptr,
+                     int16_t *diff_ptr, int diff_stride,
+                     uint8_t *dst_ptr, int stride);
+
 
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd,
                                     int mb_row,
