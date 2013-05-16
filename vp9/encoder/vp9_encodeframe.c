@@ -710,24 +710,6 @@ static void update_stats(VP9_COMP *cpi, int mi_row, int mi_col) {
   }
 }
 
-static void set_block_index(MACROBLOCKD *xd, int idx,
-                            BLOCK_SIZE_TYPE bsize) {
-  if (bsize >= BLOCK_SIZE_SB32X32) {
-    xd->sb_index = idx;
-  } else if (bsize >= BLOCK_SIZE_MB16X16) {
-    xd->mb_index = idx;
-  } else {
-#if CONFIG_AB4X4
-    if (bsize >= BLOCK_SIZE_SB8X8)
-      xd->b_index = idx;
-    else
-      xd->ab_index = idx;
-#else
-    xd->b_index = idx;
-#endif
-  }
-}
-
 // TODO(jingning): the variables used here are little complicated. need further
 // refactoring on organizing the the temporary buffers, when recursive
 // partition down to 4x4 block size is enabled.
@@ -831,7 +813,13 @@ static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp,
     return;
 
   if (sub_index != -1)
-    set_block_index(xd, sub_index, bsize);
+    *(get_sb_index(xd, bsize)) = sub_index;
+
+#if CONFIG_AB4X4
+  if (bsize < BLOCK_SIZE_SB8X8)
+    if (sub_index > 0)
+      return;
+#endif
   set_offsets(cpi, mi_row, mi_col, bsize);
   update_state(cpi, get_block_context(x, bsize), bsize, output_enabled);
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
@@ -851,7 +839,7 @@ static void encode_sb(VP9_COMP *cpi, TOKENEXTRA **tp,
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   BLOCK_SIZE_TYPE c1 = BLOCK_SIZE_SB8X8;
-  const int bsl = mi_width_log2(bsize), bs = (1 << bsl) / 2;
+  const int bsl = b_width_log2(bsize), bs = (1 << bsl) / 4;
   int bwl, bhl;
   int UNINITIALIZED_IS_SAFE(pl);
 
@@ -870,16 +858,16 @@ static void encode_sb(VP9_COMP *cpi, TOKENEXTRA **tp,
     c1 = *(get_sb_partitioning(x, bsize));
   }
 
-  bwl = mi_width_log2(c1), bhl = mi_height_log2(c1);
+  bwl = b_width_log2(c1), bhl = b_height_log2(c1);
 
   if (bsl == bwl && bsl == bhl) {
 #if CONFIG_AB4X4
     if (output_enabled && bsize >= BLOCK_SIZE_SB8X8) {
-      if (bsize > BLOCK_SIZE_SB8X8 ||
-          (bsize == BLOCK_SIZE_SB8X8 && c1 == bsize))
+//      if (bsize > BLOCK_SIZE_SB8X8 ||
+//          (bsize == BLOCK_SIZE_SB8X8 && c1 == bsize))
         cpi->partition_count[pl][PARTITION_NONE]++;
-      else
-        cpi->partition_count[pl][PARTITION_SPLIT]++;
+//      else
+//        cpi->partition_count[pl][PARTITION_SPLIT]++;
     }
 #else
     if (output_enabled && bsize > BLOCK_SIZE_SB8X8)
@@ -909,7 +897,7 @@ static void encode_sb(VP9_COMP *cpi, TOKENEXTRA **tp,
     for (i = 0; i < 4; i++) {
       const int x_idx = i & 1, y_idx = i >> 1;
 
-      set_block_index(xd, i, subsize);
+      *(get_sb_index(xd, subsize)) = i;
       encode_sb(cpi, tp, mi_row + y_idx * bs, mi_col + x_idx * bs,
                 output_enabled, subsize);
     }
@@ -955,7 +943,6 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
       return;
     }
 #endif
-
   assert(mi_height_log2(bsize) == mi_width_log2(bsize));
 
   // buffer the above/left context information of the block in search.
@@ -985,7 +972,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
     for (i = 0; i < 4; ++i) {
       int x_idx = (i & 1) * (ms >> 1);
       int y_idx = (i >> 1) * (ms >> 1);
-      int r, d;
+      int r = 0, d = 0;
 
       if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
         continue;
@@ -1015,7 +1002,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   // TODO(jingning): need to enable 4x8 and 8x4 partition coding
   // PARTITION_HORZ
   if ((mi_col + ms <= cm->mi_cols) && (mi_row + (ms >> 1) <= cm->mi_rows) &&
+#if CONFIG_AB4X4
+      (bsize >= BLOCK_SIZE_SB8X8)) {
+#else
       (bsize >= BLOCK_SIZE_MB16X16)) {
+#endif
     int r2, d2;
     int mb_skip = 0;
     subsize = get_subsize(bsize, PARTITION_HORZ);
@@ -1024,7 +1015,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
                   get_block_context(x, subsize));
 
     if (mi_row + ms <= cm->mi_rows) {
-      int r, d;
+      int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
       *(get_sb_index(xd, subsize)) = 1;
@@ -1051,7 +1042,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
 
   // PARTITION_VERT
   if ((mi_row + ms <= cm->mi_rows) && (mi_col + (ms >> 1) <= cm->mi_cols) &&
+#if CONFIG_AB4X4
+      (bsize >= BLOCK_SIZE_SB8X8)) {
+#else
       (bsize >= BLOCK_SIZE_MB16X16)) {
+#endif
     int r2, d2;
     int mb_skip = 0;
     subsize = get_subsize(bsize, PARTITION_VERT);
@@ -1059,7 +1054,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
                   get_block_context(x, subsize));
     if (mi_col + ms <= cm->mi_cols) {
-      int r, d;
+      int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
       *(get_sb_index(xd, subsize)) = 1;
@@ -1222,9 +1217,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
   int totalrate;
 
-//  fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
-//           cpi->common.current_video_frame, cpi->common.show_frame,
-//           cm->frame_type);
+  fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
+           cpi->common.current_video_frame, cpi->common.show_frame,
+           cm->frame_type);
 
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
