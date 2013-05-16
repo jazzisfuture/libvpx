@@ -419,6 +419,7 @@ typedef struct macroblockd {
 
 static int *get_sb_index(MACROBLOCKD *xd, BLOCK_SIZE_TYPE subsize) {
   switch (subsize) {
+    case BLOCK_SIZE_SB64X64:
     case BLOCK_SIZE_SB64X32:
     case BLOCK_SIZE_SB32X64:
     case BLOCK_SIZE_SB32X32:
