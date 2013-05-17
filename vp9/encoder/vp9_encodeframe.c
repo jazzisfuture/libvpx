@@ -1986,18 +1986,12 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_update_zbin_extra(cpi, x);
   }
 
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
-    assert(bsize == BLOCK_SIZE_SB8X8 &&
-           xd->mode_info_context->mbmi.txfm_size == TX_4X4);
-    vp9_encode_intra4x4mby(&cpi->common, x, bsize);
-    vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
-    vp9_encode_sbuv(cm, x, bsize);
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+    /*assert(bsize == BLOCK_SIZE_SB8X8 &&
+           xd->mode_info_context->mbmi.txfm_size == TX_4X4);*/
+    vp9_encode_intra4x4mby(cm, x, bsize);
+    vp9_encode_intra4x4mbuv(cm, x, bsize);
 
-    if (output_enabled)
-      sum_intra_stats(cpi, x);
-  } else if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
-    vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
-    vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
     if (output_enabled)
       sum_intra_stats(cpi, x);
   } else {
@@ -2030,8 +2024,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
   }
 
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
-    assert(bsize == BLOCK_SIZE_SB8X8);
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
     vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled, bsize);
   } else if (!x->skip) {
     vp9_encode_sb(cm, x, bsize);
@@ -2078,10 +2071,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
                            xd->mode_info_context->mbmi.mode == I4X4_PRED))
         sz = TX_4X4;
 
-      for (y = 0; y < bh; y++) {
-        for (x = 0; x < bw; x++) {
-          if (mi_col + x < cm->mi_cols && mi_row + y < cm->mi_rows) {
-            mi[mis * y + x].mbmi.txfm_size = sz;
+      if(mi->mbmi.ref_frame != INTRA_FRAME)
+        for (y = 0; y < bh; y++) {
+          for (x = 0; x < bw; x++) {
+            if (mi_col + x < cm->mi_cols && mi_row + y < cm->mi_rows) {
+              mi[mis * y + x].mbmi.txfm_size = sz;
           }
         }
       }
