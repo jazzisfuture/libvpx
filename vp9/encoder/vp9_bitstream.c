@@ -747,8 +747,9 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   if (((rf == INTRA_FRAME && mode != I4X4_PRED) ||
        (rf != INTRA_FRAME && mode != SPLITMV)) &&
       pc->txfm_mode == TX_MODE_SELECT &&
-      !(skip_coeff || vp9_segfeature_active(xd, segment_id,
-                                            SEG_LVL_SKIP))) {
+      !(rf != INTRA_FRAME &&
+        (skip_coeff || vp9_segfeature_active(xd, segment_id,
+                                            SEG_LVL_SKIP)))) {
     TX_SIZE sz = mi->txfm_size;
     // FIXME(rbultje) code ternary symbol once all experiments are merged
     vp9_write(bc, sz != TX_4X4, pc->prob_tx[0]);
@@ -804,7 +805,8 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
   write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
 
   if (ym != I4X4_PRED && c->txfm_mode == TX_MODE_SELECT &&
-      !(skip_coeff || vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP))) {
+    !(m->mbmi.ref_frame != INTRA_FRAME && (skip_coeff ||
+      vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
     TX_SIZE sz = m->mbmi.txfm_size;
     // FIXME(rbultje) code ternary symbol once all experiments are merged
     vp9_write(bc, sz != TX_4X4, c->prob_tx[0]);
