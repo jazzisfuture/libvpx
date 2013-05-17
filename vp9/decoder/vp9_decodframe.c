@@ -546,7 +546,7 @@ static void read_coef_probs_common(vp9_coeff_probs *coef_probs,
                                    TX_SIZE tx_size,
                                    vp9_reader *r) {
 #if CONFIG_MODELCOEFPROB && MODEL_BASED_UPDATE
-  const int entropy_nodes_update = UNCONSTRAINED_UPDATE_NODES;
+  const int entropy_nodes_update = UNCONSTRAINED_NODES;
 #else
   const int entropy_nodes_update = ENTROPY_NODES;
 #endif
