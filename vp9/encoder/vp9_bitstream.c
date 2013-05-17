@@ -320,7 +320,7 @@ static int prob_diff_update_savings_search_model(const unsigned int *ct,
                                                  const vp9_prob *oldp,
                                                  vp9_prob *bestp,
                                                  const vp9_prob upd,
-                                                 int b, int r, int q) {
+                                                 int b, int r) {
   int i, old_b, new_b, update_b, savings, bestsavings, step;
   int newp;
   vp9_prob bestnewp, newplist[ENTROPY_NODES];
@@ -1011,6 +1011,67 @@ static void print_prob_tree(vp9_coeff_probs *coef_probs, int block_types) {
   fclose(f);
 }
 
+#if CONFIG_MODELCOEFPROB && MODEL_BASED_UPDATE
+static void build_tree_distribution(vp9_coeff_probs *coef_probs,
+                                    vp9_coeff_count *coef_counts,
+                                    unsigned int (*eob_branch_ct)[REF_TYPES]
+                                                                [COEF_BANDS]
+                                                        [PREV_COEF_CONTEXTS],
+#ifdef ENTROPY_STATS
+                                    VP9_COMP *cpi,
+                                    vp9_coeff_accum *context_counters,
+#endif
+                                    vp9_coeff_stats *coef_branch_ct,
+                                    int block_types) {
+  int i, j, k, l;
+#ifdef ENTROPY_STATS
+  int t = 0;
+#endif
+
+  for (i = 0; i < block_types; ++i) {
+    for (j = 0; j < REF_TYPES; ++j) {
+      for (k = 0; k < COEF_BANDS; ++k) {
+        for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
+          /*
+          unsigned int coefmodel_counts[UNCONSTRAINED_NODES + 1];
+          coefmodel_counts[DCT_EOB_MODEL_TOKEN] = coef_counts[i][j][k][l][DCT_EOB_TOKEN];
+          coefmodel_counts[ZERO_TOKEN] = coef_counts[i][j][k][l][ZERO_TOKEN];
+          coefmodel_counts[ONE_TOKEN] = coef_counts[i][j][k][l][ONE_TOKEN];
+          coefmodel_counts[TWO_TOKEN] = coef_counts[i][j][k][l][TWO_TOKEN];
+          for (n = THREE_TOKEN; n < DCT_EOB_TOKEN; ++n)
+            coefmodel_counts[TWO_TOKEN] += coef_counts[i][j][k][l][n];
+            */
+          if (l >= 3 && k == 0)
+            continue;
+          /*
+          vp9_tree_probs_from_distribution(vp9_coefmodel_tree,
+                                           coef_probs[i][j][k][l],
+                                           coef_branch_ct[i][j][k][l],
+                                           coefmodel_counts, 0);
+                                           */
+          vp9_tree_probs_from_distribution(vp9_coef_tree,
+                                           coef_probs[i][j][k][l],
+                                           coef_branch_ct[i][j][k][l],
+                                           coef_counts[i][j][k][l], 0);
+          coef_branch_ct[i][j][k][l][0][1] = eob_branch_ct[i][j][k][l] -
+              coef_branch_ct[i][j][k][l][0][0];
+          coef_probs[i][j][k][l][0] =
+              get_binary_prob(coef_branch_ct[i][j][k][l][0][0],
+                              coef_branch_ct[i][j][k][l][0][1]);
+#ifdef ENTROPY_STATS
+          if (!cpi->dummy_packing) {
+            for (t = 0; t < UNCONSTRAINED_NODES + 1; ++t)
+              context_counters[i][j][k][l][t] += coefmodel_counts[t];
+            context_counters[i][j][k][l][MAX_ENTROPY_TOKENS] +=
+                eob_branch_ct[i][j][k][l];
+          }
+#endif
+        }
+      }
+    }
+  }
+}
+#else
 static void build_tree_distribution(vp9_coeff_probs *coef_probs,
                                     vp9_coeff_count *coef_counts,
                                     unsigned int (*eob_branch_ct)[REF_TYPES]
@@ -1055,6 +1116,7 @@ static void build_tree_distribution(vp9_coeff_probs *coef_probs,
     }
   }
 }
+#endif
 
 static void build_coeff_contexts(VP9_COMP *cpi) {
   build_tree_distribution(cpi->frame_coef_probs_4x4,
@@ -1099,8 +1161,9 @@ static void update_coef_probs_common(vp9_writer* const bc,
   int i, j, k, l, t;
   int update[2] = {0, 0};
   int savings;
+
 #if CONFIG_MODELCOEFPROB && MODEL_BASED_UPDATE
-  const int entropy_nodes_update = UNCONSTRAINED_UPDATE_NODES;
+  const int entropy_nodes_update = UNCONSTRAINED_NODES;
 #else
   const int entropy_nodes_update = ENTROPY_NODES;
 #endif
@@ -1128,8 +1191,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
             if (t == UNCONSTRAINED_NODES - 1)
               s = prob_diff_update_savings_search_model(
                   frame_branch_ct[i][j][k][l][0],
-                  old_frame_coef_probs[i][j][k][l], &newp, upd, i, j,
-                  cpi->common.base_qindex);
+                  old_frame_coef_probs[i][j][k][l], &newp, upd, i, j);
             else
 #endif
               s = prob_diff_update_savings_search(
@@ -1183,8 +1245,7 @@ static void update_coef_probs_common(vp9_writer* const bc,
             if (t == UNCONSTRAINED_NODES - 1)
               s = prob_diff_update_savings_search_model(
                   frame_branch_ct[i][j][k][l][0],
-                  old_frame_coef_probs[i][j][k][l], &newp, upd, i, j,
-                  cpi->common.base_qindex);
+                  old_frame_coef_probs[i][j][k][l], &newp, upd, i, j);
             else
 #endif
               s = prob_diff_update_savings_search(

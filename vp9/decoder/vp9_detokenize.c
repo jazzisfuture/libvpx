@@ -60,12 +60,23 @@ static const vp9_prob cat6_prob[15] = {
 
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 
+#if CONFIG_MODELCOEFPROB && MODEL_BASED_ADAPT
+#define INCREMENT_COUNT(token)               \
+  do {                                       \
+    coef_counts[type][ref][band][pt]         \
+               [token >= TWO_TOKEN ?     \
+                (token == DCT_EOB_TOKEN ? DCT_EOB_MODEL_TOKEN : TWO_TOKEN) : \
+                token]++;     \
+    token_cache[scan[c]] = token; \
+  } while (0)
+#else
 #define INCREMENT_COUNT(token)               \
   do {                                       \
     coef_counts[type][ref][band] \
                [pt][token]++;     \
     token_cache[scan[c]] = token; \
   } while (0)
+#endif
 
 #define WRITE_COEF_CONTINUE(val, token)                  \
   {                                                      \
@@ -93,7 +104,11 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   int band;
   vp9_coeff_probs *coef_probs;
   vp9_prob *prob;
+#if CONFIG_MODELCOEFPROB && MODEL_BASED_ADAPT
+  vp9_coeff_count_model *coef_counts;
+#else
   vp9_coeff_count *coef_counts;
+#endif
   const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
   TX_TYPE tx_type = DCT_DCT;
   const int *scan, *nb;
@@ -249,7 +264,11 @@ SKIP_START:
   }
 
   if (c < seg_eob)
+#if CONFIG_MODELCOEFPROB && MODEL_BASED_ADAPT
+    coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN]++;
+#else
     coef_counts[type][ref][band][pt][DCT_EOB_TOKEN]++;
+#endif
 
   for (pt = 0; pt < (1 << txfm_size); pt++) {
     A[pt] = L[pt] = c > 0;

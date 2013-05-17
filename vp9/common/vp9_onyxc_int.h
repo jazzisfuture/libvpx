@@ -83,10 +83,17 @@ typedef struct frame_contexts {
   vp9_coeff_probs pre_coef_probs_16x16[BLOCK_TYPES];
   vp9_coeff_probs pre_coef_probs_32x32[BLOCK_TYPES];
 
+#if CONFIG_MODELCOEFPROB && MODEL_BASED_ADAPT
+  vp9_coeff_count_model coef_counts_4x4[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_8x8[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_16x16[BLOCK_TYPES];
+  vp9_coeff_count_model coef_counts_32x32[BLOCK_TYPES];
+#else
   vp9_coeff_count coef_counts_4x4[BLOCK_TYPES];
   vp9_coeff_count coef_counts_8x8[BLOCK_TYPES];
   vp9_coeff_count coef_counts_16x16[BLOCK_TYPES];
   vp9_coeff_count coef_counts_32x32[BLOCK_TYPES];
+#endif
   unsigned int eob_branch_counts[TX_SIZE_MAX_SB][BLOCK_TYPES][REF_TYPES]
                                 [COEF_BANDS][PREV_COEF_CONTEXTS];
 
