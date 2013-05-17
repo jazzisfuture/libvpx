@@ -139,7 +139,8 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   m->mbmi.uv_mode = read_uv_mode(r, cm->kf_uv_mode_prob[m->mbmi.mode]);
 
   if (cm->txfm_mode == TX_MODE_SELECT &&
-      !m->mbmi.mb_skip_coeff && m->mbmi.mode != I4X4_PRED) {
+    !(m->mbmi.mb_skip_coeff && m->mbmi.ref_frame != INTRA_FRAME)
+    && m->mbmi.mode != I4X4_PRED) {
     const int allow_16x16 = m->mbmi.sb_type >= BLOCK_SIZE_MB16X16;
     const int allow_32x32 = m->mbmi.sb_type >= BLOCK_SIZE_SB32X32;
     m->mbmi.txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
@@ -842,7 +843,8 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     cm->fc.uv_mode_counts[mbmi->mode][mbmi->uv_mode]++;
   }
 
-  if (cm->txfm_mode == TX_MODE_SELECT && mbmi->mb_skip_coeff == 0 &&
+  if (cm->txfm_mode == TX_MODE_SELECT &&
+      (mbmi->mb_skip_coeff == 0 || mbmi->ref_frame == INTRA_FRAME) &&
       ((mbmi->ref_frame == INTRA_FRAME && mbmi->mode != I4X4_PRED) ||
        (mbmi->ref_frame != INTRA_FRAME && mbmi->mode != SPLITMV))) {
     const int allow_16x16 = mbmi->sb_type >= BLOCK_SIZE_MB16X16;
