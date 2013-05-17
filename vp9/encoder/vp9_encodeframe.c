@@ -1986,18 +1986,12 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_update_zbin_extra(cpi, x);
   }
 
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
-    assert(bsize == BLOCK_SIZE_SB8X8 &&
-           xd->mode_info_context->mbmi.txfm_size == TX_4X4);
-    vp9_encode_intra4x4mby(&cpi->common, x, bsize);
-    vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
-    vp9_encode_sbuv(cm, x, bsize);
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+    /*assert(bsize == BLOCK_SIZE_SB8X8 &&
+           xd->mode_info_context->mbmi.txfm_size == TX_4X4);*/
+    vp9_encode_intra_block_y(cm, x, bsize);
+    vp9_encode_intra_block_uv(cm, x, bsize);
 
-    if (output_enabled)
-      sum_intra_stats(cpi, x);
-  } else if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
-    vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
-    vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
     if (output_enabled)
       sum_intra_stats(cpi, x);
   } else {
@@ -2030,8 +2024,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
   }
 
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
-    assert(bsize == BLOCK_SIZE_SB8X8);
+  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
     vp9_tokenize_sb(cpi, &x->e_mbd, t, !output_enabled, bsize);
   } else if (!x->skip) {
     vp9_encode_sb(cm, x, bsize);
@@ -2069,14 +2062,19 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     } else {
       int x, y;
       TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ? TX_32X32 : cm->txfm_mode;
-
-      if (sz == TX_32X32 && bsize < BLOCK_SIZE_SB32X32)
-        sz = TX_16X16;
-      if (sz == TX_16X16 && bsize < BLOCK_SIZE_MB16X16)
-        sz = TX_8X8;
-      if (sz == TX_8X8 && (xd->mode_info_context->mbmi.mode == SPLITMV ||
-                           xd->mode_info_context->mbmi.mode == I4X4_PRED))
+       // The new intra coding scheme requires no change of transform size
+      if (mi->mbmi.ref_frame != INTRA_FRAME) {
+        if (sz == TX_32X32 && bsize < BLOCK_SIZE_SB32X32)
+          sz = TX_16X16;
+        if (sz == TX_16X16 && bsize < BLOCK_SIZE_MB16X16)
+          sz = TX_8X8;
+        if (sz == TX_8X8 && xd->mode_info_context->mbmi.mode == SPLITMV)
+          sz = TX_4X4;
+      } else if (xd->mode_info_context->mbmi.mode != I4X4_PRED) {
+        sz = xd->mode_info_context->mbmi.txfm_size;
+      } else {
         sz = TX_4X4;
+      }
 
       for (y = 0; y < bh; y++) {
         for (x = 0; x < bw; x++) {
