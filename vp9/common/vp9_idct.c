@@ -18,23 +18,33 @@
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_idct.h"
 
+/* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
+   0.5 shifts per pixel. */
 void vp9_short_iwalsh4x4_c(int16_t *input, int16_t *output, int pitch) {
   int i;
-  int a1, b1, c1, d1;
+  int a1, b1, c1, d1, e1;
   int16_t *ip = input;
   int16_t *op = output;
   const int half_pitch = pitch >> 1;
 
   for (i = 0; i < 4; i++) {
-    a1 = (ip[0] + ip[3]) >> WHT_UPSCALE_FACTOR;
-    b1 = (ip[1] + ip[2]) >> WHT_UPSCALE_FACTOR;
-    c1 = (ip[1] - ip[2]) >> WHT_UPSCALE_FACTOR;
-    d1 = (ip[0] - ip[3]) >> WHT_UPSCALE_FACTOR;
+    a1 = ip[0] >> WHT_UPSCALE_FACTOR;
+    c1 = ip[1] >> WHT_UPSCALE_FACTOR;
+    d1 = ip[2] >> WHT_UPSCALE_FACTOR;
+    b1 = ip[3] >> WHT_UPSCALE_FACTOR;
 
-    op[0] = (a1 + b1 + 1) >> 1;
-    op[1] = (c1 + d1) >> 1;
-    op[2] = (a1 - b1) >> 1;
-    op[3] = (d1 - c1) >> 1;
+    c1 = a1 - c1;
+    b1 += d1;
+    e1 = (c1 - b1) >> 1;
+    a1 -= e1;
+    d1 += e1;
+    b1 = a1 - b1;
+    c1 -= d1;
+
+    op[0] = a1;
+    op[1] = b1;
+    op[2] = c1;
+    op[3] = d1;
 
     ip += 4;
     op += half_pitch;
@@ -43,16 +53,23 @@ void vp9_short_iwalsh4x4_c(int16_t *input, int16_t *output, int pitch) {
   ip = output;
   op = output;
   for (i = 0; i < 4; i++) {
-    a1 = ip[half_pitch * 0] + ip[half_pitch * 3];
-    b1 = ip[half_pitch * 1] + ip[half_pitch * 2];
-    c1 = ip[half_pitch * 1] - ip[half_pitch * 2];
-    d1 = ip[half_pitch * 0] - ip[half_pitch * 3];
+    a1 = ip[half_pitch * 0];
+    c1 = ip[half_pitch * 1];
+    d1 = ip[half_pitch * 2];
+    b1 = ip[half_pitch * 3];
 
+    c1 = a1 - c1;
+    b1 += d1;
+    e1 = (c1 - b1) >> 1;
+    a1 -= e1;
+    d1 += e1;
+    b1 = a1 - b1;
+    c1 -= d1;
 
-    op[half_pitch * 0] = (a1 + b1 + 1) >> 1;
-    op[half_pitch * 1] = (c1 + d1) >> 1;
-    op[half_pitch * 2] = (a1 - b1) >> 1;
-    op[half_pitch * 3] = (d1 - c1) >> 1;
+    op[half_pitch * 0] = a1;
+    op[half_pitch * 1] = b1;
+    op[half_pitch * 2] = c1;
+    op[half_pitch * 3] = d1;
 
     ip++;
     op++;
@@ -61,19 +78,23 @@ void vp9_short_iwalsh4x4_c(int16_t *input, int16_t *output, int pitch) {
 
 void vp9_short_iwalsh4x4_1_c(int16_t *in, int16_t *out, int pitch) {
   int i;
+  int a1, e1;
   int16_t tmp[4];
   int16_t *ip = in;
   int16_t *op = tmp;
   const int half_pitch = pitch >> 1;
 
-  op[0] = ((ip[0] >> WHT_UPSCALE_FACTOR) + 1) >> 1;
-  op[1] = op[2] = op[3] = (ip[0] >> WHT_UPSCALE_FACTOR) >> 1;
+  a1 = ip[0] >> WHT_UPSCALE_FACTOR;
+  e1 = a1 >> 1;
+  op[0] = op[1] = op[2] = a1 - e1;
+  op[3] = e1;
 
   ip = tmp;
   op = out;
   for (i = 0; i < 4; i++) {
-    op[half_pitch * 0] = (ip[0] + 1) >> 1;
-    op[half_pitch * 1] = op[half_pitch * 2] = op[half_pitch * 3] = ip[0] >> 1;
+    e1 = ip[0] >> 1;
+    op[half_pitch * 0] = op[half_pitch * 1] = op[half_pitch * 2] = ip[0] - e1;
+    op[half_pitch * 3] = e1;
     ip++;
     op++;
   }
