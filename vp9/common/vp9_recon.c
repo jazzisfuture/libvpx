@@ -35,11 +35,10 @@ void vp9_recon_b_c(uint8_t *pred_ptr, int16_t *diff_ptr, int diff_stride,
 }
 
 static void recon_plane(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize, int plane) {
-  const int bw = 4 << (b_width_log2(bsize) - xd->plane[plane].subsampling_x);
-  const int bh = 4 << (b_height_log2(bsize) - xd->plane[plane].subsampling_y);
-  recon(bh, bw,
-        xd->plane[plane].diff, bw,
-        xd->plane[plane].dst.buf, xd->plane[plane].dst.stride);
+  struct macroblockd_plane *pd = &xd->plane[plane];
+  const int bw = plane_block_width(bsize, pd);
+  const int bh = plane_block_height(bsize, pd);
+  recon(bh, bw, pd->diff, bw, pd->dst.buf, pd->dst.stride);
 }
 
 void vp9_recon_sby_c(MACROBLOCKD *mb, BLOCK_SIZE_TYPE bsize) {

@@ -39,8 +39,8 @@ void vp9_subtract_block(int rows, int cols,
 
 static void subtract_plane(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize, int plane) {
   const MACROBLOCKD * const xd = &x->e_mbd;
-  const int bw = 4 << (b_width_log2(bsize) - xd->plane[plane].subsampling_x);
-  const int bh = 4 << (b_height_log2(bsize) - xd->plane[plane].subsampling_y);
+  const int bw = plane_block_width(bsize, &xd->plane[plane]);
+  const int bh = plane_block_height(bsize, &xd->plane[plane]);
   const uint8_t *src = x->plane[plane].src.buf;
   const int src_stride = x->plane[plane].src.stride;
 
@@ -433,7 +433,7 @@ static void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
   struct encode_b_args* const args = arg;
   MACROBLOCK* const x = args->x;
   MACROBLOCKD* const xd = &x->e_mbd;
-  const int bw = 4 << (b_width_log2(bsize) - xd->plane[plane].subsampling_x);
+  const int bw = plane_block_width(bsize, &xd->plane[plane]);
   const int raster_block = txfrm_block_to_raster_block(xd, bsize, plane,
                                                        block, ss_txfrm_size);
   int16_t* const src_diff = raster_block_offset_int16(xd, bsize, plane,
@@ -496,16 +496,15 @@ static void encode_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
   MACROBLOCK* const x = args->x;
   int *wip_txfrm_size = args->wip_txfrm_size;
   MACROBLOCKD* const xd = &x->e_mbd;
-  const int bw = 4 << (b_width_log2(bsize) - xd->plane[plane].subsampling_x);
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  const int bw = plane_block_width(bsize, pd);
   const int raster_block = txfrm_block_to_raster_block(xd, bsize, plane,
                                                        block, ss_txfrm_size);
   int16_t* const diff = raster_block_offset_int16(xd, bsize, plane,
-                                                  raster_block,
-                                                  xd->plane[plane].diff);
+                                                  raster_block, pd->diff);
   uint8_t* const dst = raster_block_offset_uint8(xd, bsize, plane,
                                                  raster_block,
-                                                 xd->plane[plane].dst.buf,
-                                                 xd->plane[plane].dst.stride);
+                                                 pd->dst.buf, pd->dst.stride);
   TX_TYPE tx_type = DCT_DCT;
 
   xform_quant(plane, block, bsize, ss_txfrm_size, arg);
@@ -515,46 +514,42 @@ static void encode_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
 
   switch (ss_txfrm_size / 2) {
     case TX_32X32:
-        vp9_short_idct32x32_add(BLOCK_OFFSET(xd->plane[plane].dqcoeff,
-                                block, 16), dst, xd->plane[plane].dst.stride);
+        vp9_short_idct32x32_add(BLOCK_OFFSET(pd->dqcoeff, block, 16), dst,
+                                pd->dst.stride);
         *wip_txfrm_size = 32;
       break;
     case TX_16X16:
       tx_type = plane == 0 ? get_tx_type_16x16(xd, raster_block) : DCT_DCT;
-      if (tx_type == DCT_DCT) {
-        vp9_short_idct16x16_add(BLOCK_OFFSET(xd->plane[plane].dqcoeff,
-                                block, 16), dst, xd->plane[plane].dst.stride);
-      } else {
-        vp9_short_iht16x16_add(BLOCK_OFFSET(xd->plane[plane].dqcoeff,
-                               block, 16), dst, xd->plane[plane].dst.stride,
-                               tx_type);
-      }
+      if (tx_type == DCT_DCT)
+        vp9_short_idct16x16_add(BLOCK_OFFSET(pd->dqcoeff, block, 16), dst,
+                                pd->dst.stride);
+      else
+        vp9_short_iht16x16_add(BLOCK_OFFSET(pd->dqcoeff, block, 16), dst,
+                               pd->dst.stride, tx_type);
       *wip_txfrm_size = 16;
       break;
     case TX_8X8:
       tx_type = plane == 0 ? get_tx_type_8x8(xd, raster_block) : DCT_DCT;
-      if (tx_type == DCT_DCT) {
-        vp9_short_idct8x8_add(BLOCK_OFFSET(xd->plane[plane].dqcoeff,
-                              block, 16), dst, xd->plane[plane].dst.stride);
-      } else {
-        vp9_short_iht8x8_add(BLOCK_OFFSET(xd->plane[plane].dqcoeff,
-                             block, 16), dst, xd->plane[plane].dst.stride,
-                             tx_type);
-      }
+      if (tx_type == DCT_DCT)
+        vp9_short_idct8x8_add(BLOCK_OFFSET(pd->dqcoeff, block, 16), dst,
+                              pd->dst.stride);
+      else
+        vp9_short_iht8x8_add(BLOCK_OFFSET(pd->dqcoeff, block, 16), dst,
+                             pd->dst.stride, tx_type);
       *wip_txfrm_size = 8;
       break;
     case TX_4X4:
       tx_type = plane == 0 ? get_tx_type_4x4(xd, raster_block) : DCT_DCT;
-      if (tx_type == DCT_DCT) {
+      if (tx_type == DCT_DCT)
         // this is like vp9_short_idct4x4 but has a special case around eob<=1
         // which is significant (not just an optimization) for the lossless
         // case.
-        vp9_inverse_transform_b_4x4(xd, xd->plane[plane].eobs[block],
-            BLOCK_OFFSET(xd->plane[plane].dqcoeff, block, 16), diff, bw * 2);
-      } else {
-        vp9_short_iht4x4(BLOCK_OFFSET(xd->plane[plane].dqcoeff, block, 16),
-                         diff, bw, tx_type);
-      }
+        vp9_inverse_transform_b_4x4(xd, pd->eobs[block],
+                                    BLOCK_OFFSET(pd->dqcoeff, block, 16),
+                                    diff, bw * 2);
+      else
+        vp9_short_iht4x4(BLOCK_OFFSET(pd->dqcoeff, block, 16), diff, bw,
+                         tx_type);
       *wip_txfrm_size = 4;
       break;
   }
