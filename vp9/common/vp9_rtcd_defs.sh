@@ -84,6 +84,9 @@ specialize vp9_build_intra_predictors_sbuv_s
 prototype void vp9_intra4x4_predict "struct macroblockd *xd, int block, enum BLOCK_SIZE_TYPE bsize, int b_mode, uint8_t *predictor, int pre_stride"
 specialize vp9_intra4x4_predict;
 
+prototype void vp9_filter_intra4x4_predict "struct macroblockd *xd, int block, enum BLOCK_SIZE_TYPE bsize, int b_mode, uint8_t *predictor, int pre_stride"
+specialize vp9_filter_intra4x4_predict;
+
 if [ "$CONFIG_VP9_DECODER" = "yes" ]; then
 prototype void vp9_add_residual_4x4 "const int16_t *diff, uint8_t *dest, int stride"
 specialize vp9_add_residual_4x4 sse2

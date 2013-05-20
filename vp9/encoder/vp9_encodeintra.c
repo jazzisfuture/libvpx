@@ -61,9 +61,15 @@ static void encode_intra4x4block(MACROBLOCK *x, int ib,
 
   assert(ib < (1 << (bwl + bhl)));
 
+#if !CONFIG_FILTERINTRA
   vp9_intra4x4_predict(&x->e_mbd, ib, bsize,
                        xd->mode_info_context->bmi[ib].as_mode.first,
                        dst, xd->plane[0].dst.stride);
+#else
+  vp9_filter_intra4x4_predict(&x->e_mbd, ib, bsize,
+                       xd->mode_info_context->bmi[ib].as_mode.first,
+                       dst, xd->plane[0].dst.stride);
+#endif
   vp9_subtract_block(4, 4, src_diff, 4 << bwl,
                      src, x->plane[0].src.stride,
                      dst, xd->plane[0].dst.stride);
