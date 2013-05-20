@@ -580,7 +580,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   const nmv_context *nmvc = &pc->fc.nmvc;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
-  const int mis = pc->mode_info_stride;
   MB_MODE_INFO *const mi = &m->mbmi;
   const MV_REFERENCE_FRAME rf = mi->ref_frame;
   const MB_PREDICTION_MODE mode = mi->mode;
@@ -712,9 +711,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         int j;
         B_PREDICTION_MODE blockmode;
         int_mv blockmv;
-        int k = -1;  /* first block in subset j */
-        int mv_contz;
-        int_mv leftmv, abovemv;
         int bwl = b_width_log2(mi->sb_type), bw = 1 << bwl;
         int bhl = b_height_log2(mi->sb_type), bh = 1 << bhl;
         int idx, idy;
@@ -725,15 +721,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
           for (idx = 0; idx < 2; idx += bw) {
             j = idy * 2 + idx;
             blockmode = cpi->mb.partition_info->bmi[j].mode;
-            blockmv = cpi->mb.partition_info->bmi[j].mv;
-            k = j;
-            leftmv.as_int = left_block_mv(xd, m, k);
-            abovemv.as_int = above_block_mv(m, k, mis);
-            mv_contz = vp9_mv_cont(&leftmv, &abovemv);
-
-            write_sub_mv_ref(bc, blockmode,
-                             cpi->common.fc.sub_mv_ref_prob[mv_contz]);
-            cpi->sub_mv_ref_count[mv_contz][blockmode - LEFT4X4]++;
+            blockmv = cpi->mb.partition_info->bmi[j].mv[0];
+            vp9_mv_ref_probs(&cpi->common, mv_ref_p, mi->mb_mode_context[rf]);
+            write_sb_mv_ref(bc, blockmode, mv_ref_p);
+            vp9_accum_mv_refs(pc, blockmode, mi->mb_mode_context[rf]);
             if (blockmode == NEW4X4) {
 #ifdef ENTROPY_STATS
               active_section = 11;
@@ -743,7 +734,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
               if (mi->second_ref_frame > 0)
                 vp9_encode_mv(bc,
-                              &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
+                              &cpi->mb.partition_info->bmi[j].mv[1].as_mv,
                               &mi->best_second_mv.as_mv,
                               nmvc, xd->allow_high_precision_mv);
             }
