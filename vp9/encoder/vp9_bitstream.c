@@ -636,7 +636,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       int bh = 1 << b_height_log2(mi->sb_type);
       // FIXME(jingning): fix intra4x4 rate-distortion optimization, then
       // use bw and bh as the increment values.
-#if !CONFIG_AB4X4 || CONFIG_AB4X4
+#if !CONFIG_AB4X4
       bw = 1, bh = 1;
 #endif
       for (idy = 0; idy < 2; idy += bh)
@@ -819,13 +819,16 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     int bh = 1 << b_height_log2(m->mbmi.sb_type);
     // FIXME(jingning): fix intra4x4 rate-distortion optimization, then
     // use bw and bh as the increment values.
-#if !CONFIG_AB4X4 || CONFIG_AB4X4
+#if !CONFIG_AB4X4
     bw = 1, bh = 1;
 #endif
-    for (idy = 0; idy < 2; idy += bh)
-      for (idx = 0; idx < 2; idx += bw)
-        sb_kfwrite_ymode(bc, m->bmi[idy * 2 + idx].as_mode.first,
-                         c->sb_kf_ymode_prob[c->kf_ymode_probs_index]);
+    for (idy = 0; idy < 2; idy += bh) {
+      for (idx = 0; idx < 2; idx += bw) {
+        int i = idy * 2 + idx;
+        sb_kfwrite_ymode(bc, m->bmi[i].as_mode.first,
+                          c->sb_kf_ymode_prob[c->kf_ymode_probs_index]);
+      }
+    }
   }
 
   write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
