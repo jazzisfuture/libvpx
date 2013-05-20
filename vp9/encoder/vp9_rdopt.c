@@ -659,9 +659,15 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     xd->mode_info_context->bmi[ib].as_mode.first = mode;
     rate = bmode_costs[mode];
 
+#if !CONFIG_FILTERINTRA
     vp9_intra4x4_predict(xd, ib,
                          BLOCK_SIZE_SB8X8,
                          mode, dst, xd->plane[0].dst.stride);
+#else
+    vp9_filter_intra4x4_predict(xd, ib,
+                         BLOCK_SIZE_SB8X8,
+                         mode, dst, xd->plane[0].dst.stride);
+#endif
     vp9_subtract_block(4, 4, src_diff, 8,
                        src, src_stride,
                        dst, xd->plane[0].dst.stride);
@@ -709,10 +715,17 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   else
     xd->inv_txm4x4(best_dqcoeff, diff, 16);
 
+#if !CONFIG_FILTERINTRA
   vp9_intra4x4_predict(xd, ib,
                        BLOCK_SIZE_SB8X8,
                        *best_mode,
                        dst, xd->plane[0].dst.stride);
+#else
+  vp9_filter_intra4x4_predict(xd, ib,
+                       BLOCK_SIZE_SB8X8,
+                       *best_mode,
+                       dst, xd->plane[0].dst.stride);
+#endif
   vp9_recon_b(dst, diff, 8,
               dst, xd->plane[0].dst.stride);
 
