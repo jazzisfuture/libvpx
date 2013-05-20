@@ -254,7 +254,11 @@ static void decode_atom_intra(VP9D_COMP *pbi, MACROBLOCKD *xd,
                                              xd->plane[0].dst.buf,
                                              xd->plane[0].dst.stride);
 
+#if !CONFIG_FILTERINTRA
     vp9_intra4x4_predict(xd, i, bsize, b_mode, dst, xd->plane[0].dst.stride);
+#else
+    vp9_filter_intra4x4_predict(xd, i, bsize, b_mode, dst, xd->plane[0].dst.stride);
+#endif
     // TODO(jingning): refactor to use foreach_transformed_block_in_plane_
     tx_type = get_tx_type_4x4(xd, i);
     dequant_add_y(xd, tx_type, i, bsize);

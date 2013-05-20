@@ -413,3 +413,117 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
                              mode, 4, 4, have_top, have_left,
                              have_right);
 }
+
+#if CONFIG_FILTERINTRA
+void vp9_filter_intra4x4_predict(MACROBLOCKD *xd,
+                          int block_idx,
+                          BLOCK_SIZE_TYPE bsize,
+                          int mode,
+                          uint8_t *predictor, int pre_stride) {
+  const int bwl = b_width_log2(bsize);
+  const int wmask = (1 << bwl) - 1;
+  const int have_top =
+      (block_idx >> bwl) || xd->up_available;
+  const int have_left =
+      (block_idx & wmask) || xd->left_available;
+  const int have_right = ((block_idx & wmask) != wmask);
+
+  switch (mode) {
+    case B_DC_PRED  :
+    case B_D45_PRED :
+    case B_D63_PRED :
+    case B_D27_PRED :
+      vp9_build_intra_predictors(predictor, pre_stride,
+                                 predictor, pre_stride,
+                                 mode, 4, 4, have_top, have_left,
+                                 have_right);
+      break;
+    default: {
+      static const int prec_bits = 10;
+      static const int round_val = 511;
+      static const int taps[10][3] = {
+        {0, 0, 0},              // DC
+        {1014, 565, -559},      // V
+        {312, 1017, -312},      // H
+        {0, 0, 0},              // D45
+        {478, 483, 153},        // D135
+        {699, 470, -122},       // D117
+        {356, 707, 35},         // D153
+        {0, 0, 0},              // D27
+        {0, 0, 0},              // D63
+        {877, 896, -812},       // TM
+      };
+      int r, c, i;
+      uint8_t yleft_col[4], yabove_data[9], ytop_left;
+      uint8_t *yabove_row = yabove_data + 1;
+      uint8_t *yabove_ptr;
+      int predictor5[5][5];
+      int mean, ipred;
+      const int c1 = taps[mode][0];
+      const int c2 = taps[mode][1];
+      const int c3 = taps[mode][2];
+
+      if (have_top) {
+        yabove_ptr = predictor - pre_stride;
+        vpx_memcpy(yabove_row, yabove_ptr, 4);
+        if (have_right)
+          vpx_memcpy(yabove_row + 4, yabove_ptr + 4, 4);
+        else
+          vpx_memset(yabove_row + 4, yabove_row[3], 4);
+        ytop_left = have_left ? yabove_ptr[-1] : 129;
+      } else {
+        vpx_memset(yabove_row, 127, 8);
+        ytop_left = 127;
+      }
+      yabove_row[-1] = ytop_left;
+
+      if (have_left) {
+        for (i = 0; i < 4; i++)
+          yleft_col[i] = predictor[i * pre_stride - 1];
+      } else {
+        vpx_memset(yleft_col, 129, 4);
+      }
+
+      switch (mode) {
+        case B_V_PRED :
+          mean = ((int)yabove_row[0] + (int)yabove_row[1] +
+                  (int)yabove_row[2] + (int)yabove_row[3] + 2) >> 2;
+          break;
+        case B_H_PRED :
+          mean = ((int)yleft_col[0] + (int)yleft_col[1] +
+                  (int)yleft_col[2] + (int)yleft_col[3] + 2) >> 2;
+          break;
+        default :
+          mean = ((int)yabove_row[0] + (int)yabove_row[1] +
+                  (int)yabove_row[2] + (int)yabove_row[3] +
+                  (int)yleft_col[0] + (int)yleft_col[1] +
+                  (int)yleft_col[2] + (int)yleft_col[3] + 4) >> 3;
+          break;
+      }
+
+      for ( c = 0; c < 5; c++)
+        predictor5[0][c] = (int)yabove_row[c-1]-mean;
+      for ( r = 1; r < 5; r++)
+        predictor5[r][0] = (int)yleft_col[r-1]-mean;
+
+      for (r = 1; r < 5; r++)
+        for (c = 1; c < 5; c++) {
+          ipred = c1 * predictor5[r-1][c] +
+              c2 * predictor5[r][c-1] + c3 * predictor5[r-1][c-1];
+          predictor5[r][c] = ipred < 0 ?
+              -((-ipred + round_val) >> prec_bits) :
+              ((ipred + round_val) >> prec_bits);
+        }
+
+      for (r = 0; r < 4; r++) {
+        for (c = 0; c < 4; c++) {
+          ipred = predictor5[r + 1][c + 1] + mean;
+          predictor[c] = clip_pixel(ipred);
+        }
+        predictor += pre_stride;
+      }
+    }
+      break;
+  }
+}
+#endif
