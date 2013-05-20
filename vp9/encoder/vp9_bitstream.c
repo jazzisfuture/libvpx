@@ -636,7 +636,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       int bh = 1 << b_height_log2(mi->sb_type);
       // FIXME(jingning): fix intra4x4 rate-distortion optimization, then
       // use bw and bh as the increment values.
-#if !CONFIG_AB4X4 || CONFIG_AB4X4
+#if !CONFIG_AB4X4
       bw = 1, bh = 1;
 #endif
       for (idy = 0; idy < 2; idy += bh)
@@ -819,7 +819,7 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     int bh = 1 << b_height_log2(m->mbmi.sb_type);
     // FIXME(jingning): fix intra4x4 rate-distortion optimization, then
     // use bw and bh as the increment values.
-#if !CONFIG_AB4X4 || CONFIG_AB4X4
+#if !CONFIG_AB4X4
     bw = 1, bh = 1;
 #endif
     for (idy = 0; idy < 2; idy += bh)
