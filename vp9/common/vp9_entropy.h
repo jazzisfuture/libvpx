@@ -157,7 +157,9 @@ extern int vp9_get_coef_context(const int *scan, const int *neighbors,
 const int *vp9_get_coef_neighbors_handle(const int *scan, int *pad);
 
 #if CONFIG_MODELCOEFPROB
-#define COEFPROB_MODELS             128  // 128 lists stored for probs 1, 3, ..., 255
+
+// 65 lists stored for ONE node probs: 1, 3, 7, 11, 15, ..., 251, 255
+#define COEFPROB_MODELS             65
 
 #define UNCONSTRAINED_NODES         3
 #define MODEL_NODES                 (ENTROPY_NODES - UNCONSTRAINED_NODES)
