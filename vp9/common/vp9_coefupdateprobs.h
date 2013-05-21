@@ -18,8 +18,4 @@ static const vp9_prob vp9_coef_update_prob[ENTROPY_NODES] = {
   252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252
 };
 
-#if CONFIG_MODELCOEFPROB
-#define COEF_MODEL_UPDATE_PROB   16
-#endif
-
 #endif  // VP9_COMMON_VP9_COEFUPDATEPROBS_H__
