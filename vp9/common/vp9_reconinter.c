@@ -326,18 +326,18 @@ static INLINE int round_mv_comp_q4(int value) {
 }
 
 static int mi_mv_pred_row_q4(MACROBLOCKD *mb, int idx) {
-  const int temp = mb->mode_info_context->bmi[0].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[1].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[2].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[3].as_mv[idx].as_mv.row;
+  const int temp = mb->mode_info_context->bmi[0].as_mv.mv[idx].as_mv.row +
+                   mb->mode_info_context->bmi[1].as_mv.mv[idx].as_mv.row +
+                   mb->mode_info_context->bmi[2].as_mv.mv[idx].as_mv.row +
+                   mb->mode_info_context->bmi[3].as_mv.mv[idx].as_mv.row;
   return round_mv_comp_q4(temp);
 }
 
 static int mi_mv_pred_col_q4(MACROBLOCKD *mb, int idx) {
-  const int temp = mb->mode_info_context->bmi[0].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[1].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[2].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[3].as_mv[idx].as_mv.col;
+  const int temp = mb->mode_info_context->bmi[0].as_mv.mv[idx].as_mv.col +
+                   mb->mode_info_context->bmi[1].as_mv.mv[idx].as_mv.col +
+                   mb->mode_info_context->bmi[2].as_mv.mv[idx].as_mv.col +
+                   mb->mode_info_context->bmi[3].as_mv.mv[idx].as_mv.col;
   return round_mv_comp_q4(temp);
 }
 
@@ -414,7 +414,7 @@ static void build_inter_predictors(int plane, int block,
 
     if (xd->mode_info_context->mbmi.mode == SPLITMV) {
       if (plane == 0) {
-        mv = &xd->mode_info_context->bmi[block].as_mv[which_mv].as_mv;
+        mv = &xd->mode_info_context->bmi[block].as_mv.mv[which_mv].as_mv;
       } else {
         // TODO(jkoleszar): All chroma MVs in SPLITMV mode are taken as the
         // same MV (the average of the 4 luma MVs) but we could do something
