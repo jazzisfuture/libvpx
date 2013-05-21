@@ -26,9 +26,12 @@ typedef struct {
 typedef struct {
   int count;
   struct {
+#if CONFIG_AB4X4
+    MB_PREDICTION_MODE mode;
+#else
     B_PREDICTION_MODE mode;
-    int_mv mv;
-    int_mv second_mv;
+#endif
+    int_mv mv[2];
   } bmi[4];
 } PARTITION_INFO;
 
