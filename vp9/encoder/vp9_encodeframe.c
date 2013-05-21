@@ -639,6 +639,11 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   } else {
     vp9_rd_pick_inter_mode_sb(cpi, x, mi_row, mi_col, totalrate, totaldist,
                               bsize, ctx);
+    if (bsize < BLOCK_SIZE_SB8X8)
+      printf("Frame %d row %d col %d bs %d r %d d %d rd=%lld\n",
+             cm->current_video_frame,
+             mi_row, mi_col, bsize, *totalrate, *totaldist,
+             RDCOST(x->rdmult, x->rddiv, *totalrate, *totaldist));
   }
 }
 
