@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) 2012 The WebM project authors. All Rights Reserved.
  *
@@ -19,8 +18,7 @@
 // TBD prediction functions for various bitstream signals
 
 // Returns a context number for the given MB prediction signal
-unsigned char vp9_get_pred_context(const VP9_COMMON *const cm,
-                                   const MACROBLOCKD *const xd,
+unsigned char vp9_get_pred_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                    PRED_ID pred_id) {
   int pred_context;
   const MODE_INFO *const mi = xd->mode_info_context;
@@ -96,34 +94,9 @@ unsigned char vp9_get_pred_context(const VP9_COMMON *const cm,
   return pred_context;
 }
 
-// This function returns a context probability for coding a given
-// prediction signal
-vp9_prob vp9_get_pred_prob(const VP9_COMMON *const cm,
-                          const MACROBLOCKD *const xd,
-                          PRED_ID pred_id) {
-  const int pred_context = vp9_get_pred_context(cm, xd, pred_id);
-
-  switch (pred_id) {
-    case PRED_SEG_ID:
-      return cm->segment_pred_probs[pred_context];
-    case PRED_REF:
-      return cm->ref_pred_probs[pred_context];
-    case PRED_COMP:
-      // In keeping with convention elsewhre the probability returned is
-      // the probability of a "0" outcome which in this case means the
-      // probability of comp pred off.
-      return cm->prob_comppred[pred_context];
-    case PRED_MBSKIP:
-      return cm->mbskip_pred_probs[pred_context];
-    default:
-      return 128;  // *** add error trap code.
-  }
-}
-
 // This function returns a context probability ptr for coding a given
 // prediction signal
-const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
-                                   const MACROBLOCKD *const xd,
+const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                    PRED_ID pred_id) {
   const int pred_context = vp9_get_pred_context(cm, xd, pred_id);
 
@@ -146,17 +119,25 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
   }
 }
 
+// This function returns a context probability for coding a given
+// prediction signal
+vp9_prob vp9_get_pred_prob(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+                           PRED_ID pred_id) {
+  const vp9_prob *const p = vp9_get_pred_probs(cm, xd, pred_id);
+  return p ? *p : 128;
+}
+
 // This function returns the status of the given prediction signal.
 // I.e. is the predicted value for the given signal correct.
-unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd,
-                                PRED_ID pred_id) {
+unsigned char vp9_get_pred_flag(const MACROBLOCKD *xd, PRED_ID pred_id) {
+  const MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
   switch (pred_id) {
     case PRED_SEG_ID:
-      return xd->mode_info_context->mbmi.seg_id_predicted;
+      return mbmi->seg_id_predicted;
     case PRED_REF:
-      return  xd->mode_info_context->mbmi.ref_predicted;
+      return  mbmi->ref_predicted;
     case PRED_MBSKIP:
-      return xd->mode_info_context->mbmi.mb_skip_coeff;
+      return mbmi->mb_skip_coeff;
     default:
       return 0;  // *** add error trap code.
   }
@@ -179,27 +160,21 @@ void vp9_set_pred_flag(MACROBLOCKD *const xd,
 
   switch (pred_id) {
     case PRED_SEG_ID:
-      for (y = 0; y < y_mis; y++) {
-        for (x = 0; x < x_mis; x++) {
+      for (y = 0; y < y_mis; y++)
+        for (x = 0; x < x_mis; x++)
           xd->mode_info_context[y * mis + x].mbmi.seg_id_predicted = pred_flag;
-        }
-      }
       break;
 
     case PRED_REF:
-      for (y = 0; y < y_mis; y++) {
-        for (x = 0; x < x_mis; x++) {
+      for (y = 0; y < y_mis; y++)
+        for (x = 0; x < x_mis; x++)
           xd->mode_info_context[y * mis + x].mbmi.ref_predicted = pred_flag;
-        }
-      }
       break;
 
     case PRED_MBSKIP:
-      for (y = 0; y < y_mis; y++) {
-        for (x = 0; x < x_mis; x++) {
+      for (y = 0; y < y_mis; y++)
+        for (x = 0; x < x_mis; x++)
           xd->mode_info_context[y * mis + x].mbmi.mb_skip_coeff = pred_flag;
-        }
-      }
       break;
 
     default:
@@ -213,7 +188,7 @@ void vp9_set_pred_flag(MACROBLOCKD *const xd,
 // peredict various bitstream signals.
 
 // Macroblock segment id prediction function
-int vp9_get_pred_mi_segid(VP9_COMMON *cm, BLOCK_SIZE_TYPE sb_type,
+int vp9_get_pred_mi_segid(const VP9_COMMON *cm, BLOCK_SIZE_TYPE sb_type,
                           int mi_row, int mi_col) {
   const int mi_index = mi_row * cm->mi_cols + mi_col;
   const int bw = 1 << mi_width_log2(sb_type);
@@ -232,8 +207,8 @@ int vp9_get_pred_mi_segid(VP9_COMMON *cm, BLOCK_SIZE_TYPE sb_type,
   return segment_id;
 }
 
-MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
-                                    const MACROBLOCKD *const xd) {
+MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *cm,
+                                    const MACROBLOCKD * xd) {
   MODE_INFO *m = xd->mode_info_context;
 
   MV_REFERENCE_FRAME left;
@@ -241,15 +216,13 @@ MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
   MV_REFERENCE_FRAME above_left;
   MV_REFERENCE_FRAME pred_ref = LAST_FRAME;
 
-  int segment_id = xd->mode_info_context->mbmi.segment_id;
+  const int segment_id = xd->mode_info_context->mbmi.segment_id;
   int i;
 
   unsigned char frame_allowed[MAX_REF_FRAMES] = {1, 1, 1, 1};
   unsigned char ref_score[MAX_REF_FRAMES];
   unsigned char best_score = 0;
-  unsigned char left_in_image;
-  unsigned char above_in_image;
-  unsigned char above_left_in_image;
+  unsigned char left_in_image, above_in_image, above_left_in_image;
 
   // Is segment coding ennabled
   int seg_ref_active = vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME);
@@ -259,14 +232,13 @@ MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
   // does not allow
   if (seg_ref_active) {
     for (i = 0; i < MAX_REF_FRAMES; i++) {
-      frame_allowed[i] =
-        vp9_check_segref(xd, segment_id, i);
-
+      frame_allowed[i] = vp9_check_segref(xd, segment_id, i);
       // Score set to 0 if ref frame not allowed
       ref_score[i] = cm->ref_scores[i] * frame_allowed[i];
     }
-  } else
+  } else {
     vpx_memcpy(ref_score, cm->ref_scores, sizeof(ref_score));
+  }
 
   // Reference frames used by neighbours
   left = (m - 1)->mbmi.ref_frame;
@@ -285,6 +257,7 @@ MV_REFERENCE_FRAME vp9_get_pred_ref(const VP9_COMMON *const cm,
     if (above_left_in_image && (left == above_left))
       ref_score[left] += 4;
   }
+
   if (frame_allowed[above] && above_in_image) {
     ref_score[above] += 16;
     if (above_left_in_image && (above == above_left))
@@ -319,7 +292,7 @@ void vp9_calc_ref_probs(int *count, vp9_prob *probs) {
 // Values willbe set to 0 for reference frame options that are not possible
 // because wither they were predicted and prediction has failed or because
 // they are not allowed for a given segment.
-void vp9_compute_mod_refprobs(VP9_COMMON *const cm) {
+void vp9_compute_mod_refprobs(VP9_COMMON *cm) {
   int norm_cnt[MAX_REF_FRAMES];
   const int intra_count = cm->prob_intra_coded;
   const int inter_count = (255 - intra_count);
