@@ -174,13 +174,9 @@ typedef enum {
 
 static INLINE int b_width_log2(BLOCK_SIZE_TYPE sb_type) {
   switch (sb_type) {
-#if CONFIG_AB4X4
     case BLOCK_SIZE_SB4X8:
-#endif
     case BLOCK_SIZE_AB4X4: return 0;
-#if CONFIG_AB4X4
     case BLOCK_SIZE_SB8X4:
-#endif
     case BLOCK_SIZE_SB8X8:
     case BLOCK_SIZE_SB8X16: return 1;
     case BLOCK_SIZE_SB16X8:
@@ -197,13 +193,9 @@ static INLINE int b_width_log2(BLOCK_SIZE_TYPE sb_type) {
 
 static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
   switch (sb_type) {
-#if CONFIG_AB4X4
     case BLOCK_SIZE_SB8X4:
-#endif
     case BLOCK_SIZE_AB4X4: return 0;
-#if CONFIG_AB4X4
     case BLOCK_SIZE_SB4X8:
-#endif
     case BLOCK_SIZE_SB8X8:
     case BLOCK_SIZE_SB16X8: return 1;
     case BLOCK_SIZE_SB8X16:
@@ -220,21 +212,17 @@ static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
 
 static INLINE int mi_width_log2(BLOCK_SIZE_TYPE sb_type) {
   int a = b_width_log2(sb_type) - 1;
-#if CONFIG_AB4X4
   // align 4x4 block to mode_info
   if (a < 0)
     a = 0;
-#endif
   assert(a >= 0);
   return a;
 }
 
 static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
   int a = b_height_log2(sb_type) - 1;
-#if CONFIG_AB4X4
   if (a < 0)
     a = 0;
-#endif
   assert(a >= 0);
   return a;
 }
@@ -407,9 +395,7 @@ typedef struct macroblockd {
   int sb_index;   // index of 32x32 block inside the 64x64 block
   int mb_index;   // index of 16x16 block inside the 32x32 block
   int b_index;    // index of 8x8 block inside the 16x16 block
-#if CONFIG_AB4X4
   int ab_index;   // index of 4x4 block inside the 8x8 block
-#endif
   int q_index;
 
 } MACROBLOCKD;
@@ -429,12 +415,10 @@ static int *get_sb_index(MACROBLOCKD *xd, BLOCK_SIZE_TYPE subsize) {
     case BLOCK_SIZE_SB8X16:
     case BLOCK_SIZE_SB8X8:
       return &xd->b_index;
-#if CONFIG_AB4X4
     case BLOCK_SIZE_SB8X4:
     case BLOCK_SIZE_SB4X8:
     case BLOCK_SIZE_AB4X4:
       return &xd->ab_index;
-#endif
     default:
       assert(0);
       return NULL;
@@ -449,12 +433,6 @@ static INLINE void update_partition_context(MACROBLOCKD *xd,
   int bhl = b_height_log2(sb_type);
   int boffset = b_width_log2(BLOCK_SIZE_SB64X64) - bsl;
   int i;
-
-#if !CONFIG_AB4X4
-  // skip 8x8 block partition
-  if (bsl == 0)
-    return;
-#endif
 
   // update the partition context at the end notes. set partition bits
   // of block sizes larger than the current one to be one, and partition
@@ -502,11 +480,7 @@ static INLINE int partition_plane_context(MACROBLOCKD *xd,
   above = (above > 0);
   left  = (left > 0);
 
-#if CONFIG_AB4X4
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
-#else
-  return (left * 2 + above) + (bsl - 1) * PARTITION_PLOFFSET;
-#endif
 }
 
 static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
@@ -523,10 +497,8 @@ static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
         subsize = BLOCK_SIZE_SB32X16;
       else if (bsize == BLOCK_SIZE_MB16X16)
         subsize = BLOCK_SIZE_SB16X8;
-#if CONFIG_AB4X4
       else if (bsize == BLOCK_SIZE_SB8X8)
         subsize = BLOCK_SIZE_SB8X4;
-#endif
       else
         assert(0);
       break;
@@ -537,10 +509,8 @@ static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
         subsize = BLOCK_SIZE_SB16X32;
       else if (bsize == BLOCK_SIZE_MB16X16)
         subsize = BLOCK_SIZE_SB8X16;
-#if CONFIG_AB4X4
       else if (bsize == BLOCK_SIZE_SB8X8)
         subsize = BLOCK_SIZE_SB4X8;
-#endif
       else
         assert(0);
       break;
@@ -551,10 +521,8 @@ static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
         subsize = BLOCK_SIZE_MB16X16;
       else if (bsize == BLOCK_SIZE_MB16X16)
         subsize = BLOCK_SIZE_SB8X8;
-#if CONFIG_AB4X4
       else if (bsize == BLOCK_SIZE_SB8X8)
         subsize = BLOCK_SIZE_AB4X4;
-#endif
       else
         assert(0);
       break;
