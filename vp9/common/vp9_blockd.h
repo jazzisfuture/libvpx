@@ -160,7 +160,9 @@ union b_mode_info {
   struct {
     B_PREDICTION_MODE first;
   } as_mode;
-  int_mv as_mv[2];  // first, second inter predictor motion vectors
+  struct {
+    int_mv mv[2];  // first, second inter predictor motion vectors
+  } as_mv;
 };
 
 typedef enum {
@@ -270,7 +272,7 @@ typedef struct {
 
 typedef struct {
   MB_MODE_INFO mbmi;
-  union b_mode_info bmi[16];
+  union b_mode_info bmi[16]; // needs to be 16 for firstpass
 } MODE_INFO;
 
 struct scale_factors {
