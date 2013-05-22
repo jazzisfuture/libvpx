@@ -367,9 +367,9 @@ static void update_state(VP9_COMP *cpi,
                sizeof(PARTITION_INFO));
 
     mbmi->mv[0].as_int =
-        x->partition_info->bmi[3].mv.as_int;
+        x->partition_info->bmi[3].mv[0].as_int;
     mbmi->mv[1].as_int =
-        x->partition_info->bmi[3].second_mv.as_int;
+        x->partition_info->bmi[3].mv[1].as_int;
   }
 
   x->skip = ctx->skip;

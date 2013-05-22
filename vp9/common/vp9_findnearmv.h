@@ -74,6 +74,7 @@ vp9_prob *vp9_mv_ref_probs(VP9_COMMON *pc,
                            vp9_prob p[VP9_MVREFS - 1],
                            const int context);
 
+#if !CONFIG_AB4X4
 static int left_block_mv(const MACROBLOCKD *xd,
                          const MODE_INFO *cur_mb, int b) {
   if (!(b & 1)) {
@@ -140,6 +141,7 @@ static int above_block_second_mv(const MODE_INFO *cur_mb, int b, int mi_stride) 
       (cur_mb->bmi + b - 2)->as_mv[1].as_int :
       (cur_mb->bmi + b - 2)->as_mv[0].as_int;
 }
+#endif
 
 static B_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mb, int b) {
   // FIXME(rbultje, jingning): temporary hack because jenkins doesn't
