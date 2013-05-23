@@ -1,0 +1,9 @@
+Verified+1: Johann <johannkoenig@google.com>
+Code-Review+2: pascal massimino <pascal.massimino@gmail.com>
+Verified+1: pascal massimino <pascal.massimino@gmail.com>
+Code-Review+1: WebmJenkinsRoleAccount
+Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Thu, 23 May 2013 13:42:50 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/56498
+Project: webm/libvpx
+Branch: refs/heads/experimental
