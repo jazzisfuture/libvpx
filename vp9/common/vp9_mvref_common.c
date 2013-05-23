@@ -18,18 +18,18 @@ static int b_mv_ref_search[MVREF_NEIGHBOURS][2] = {
 };
 
 static int mb_mv_ref_search[MVREF_NEIGHBOURS][2] = {
-    {0, -1}, {-1, 0}, {-1, -1}, {0, -3},
-    {-3, 0}, {-1, -3}, {-3, -1}, {-3, -3}
+    {0, -1}, {-1, 0}, {-2, -2}, {-2, 1},
+    {1, -2}, {-3, -3}, {-3, 0}, {0, -3}
 };
 
 static int sb_mv_ref_search[MVREF_NEIGHBOURS][2] = {
-    {0, -1}, {-1, 0}, {2, -1}, {-1, 2},
-    {-1, -1}, {0, -3}, {-3, 0}, {-1, -3}
+    {0, -1}, {-1, 0}, {-3, -3}, {-3, 2},
+    {2, -3}, {-5, -5}, {-5, 0}, {0, -5}
 };
 
 static int sb64_mv_ref_search[MVREF_NEIGHBOURS][2] = {
-    {0, -1}, {-1, 0}, {2, -1}, {-1,  2},
-    {4, -1}, {-1, 4}, {6, -1}, {-1, -1}
+    {0, -1}, {-1, 0}, {-4, -4}, {-4, 3},
+    {3, -4}, {-9, -9}, {-9, 0}, {0, -9}
 };
 
 // clamp_mv_ref
@@ -278,7 +278,7 @@ void vp9_find_mv_refs(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
   }
 
   // Look at the last frame if it exists
-  if (lf_here && (refmv_count < MAX_MV_REF_CANDIDATES)) {
+  if (0 && lf_here && (refmv_count < MAX_MV_REF_CANDIDATES)) {
     candidate_mi = lf_here;
     get_non_matching_candidates(candidate_mi, ref_frame,
                                 &c_ref_frame, &c_refmv,
