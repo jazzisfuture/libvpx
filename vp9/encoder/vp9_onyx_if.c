@@ -3200,7 +3200,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
     vp9_copy(cpi->common.fc.uv_mode_counts, cpi->y_uv_mode_count);
     vp9_copy(cpi->common.fc.bmode_counts, cpi->bmode_count);
-    vp9_copy(cpi->common.fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
     vp9_copy(cpi->common.fc.partition_counts, cpi->partition_count);
     cpi->common.fc.NMVcount = cpi->NMVcount;
     if (!cpi->common.error_resilient_mode &&
