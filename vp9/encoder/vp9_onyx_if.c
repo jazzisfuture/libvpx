@@ -2582,7 +2582,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   //   cpi->zbin_mode_boost_enabled = 1;
 
   // Current default encoder behaviour for the altref sign bias
-    cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = cpi->source_alt_ref_active;
+  cm->ref_frame_sign_bias[ALTREF_FRAME] = cpi->source_alt_ref_active;
 
   // Check to see if a key frame is signaled
   // For two pass with auto key frame enabled cm->frame_type may already be set, but not for one pass.
@@ -2881,52 +2881,35 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         cm->mbskip_pred_probs[k] = cpi->base_skip_false_prob[q][k];
 
       if (cm->frame_type != KEY_FRAME) {
-        if (cpi->refresh_alt_ref_frame) {
-          for (k = 0; k < MBSKIP_CONTEXTS; k++) {
-            if (cpi->last_skip_false_probs[2][k] != 0)
-              cm->mbskip_pred_probs[k] = cpi->last_skip_false_probs[2][k];
-          }
-        } else if (cpi->refresh_golden_frame) {
-          for (k = 0; k < MBSKIP_CONTEXTS; k++) {
-            if (cpi->last_skip_false_probs[1][k] != 0)
-              cm->mbskip_pred_probs[k] = cpi->last_skip_false_probs[1][k];
-          }
+        if (cpi->is_src_frame_alt_ref) {
+          for (k = 0; k < MBSKIP_CONTEXTS; ++k)
+            cm->mbskip_pred_probs[k] = 1;
         } else {
-          int k;
-          for (k = 0; k < MBSKIP_CONTEXTS; k++) {
-            if (cpi->last_skip_false_probs[0][k] != 0)
-              cm->mbskip_pred_probs[k] = cpi->last_skip_false_probs[0][k];
-          }
-        }
+          const int idx = cpi->refresh_alt_ref_frame ? 2 :
+                          cpi->refresh_golden_frame ? 1 :
+                                                      0;
 
-        // as this is for cost estimate, let's make sure it does not
-        // get extreme either way
-        {
-          int k;
           for (k = 0; k < MBSKIP_CONTEXTS; ++k) {
-            cm->mbskip_pred_probs[k] = clamp(cm->mbskip_pred_probs[k],
+            const int prob = cm->mbskip_pred_probs[k];
+            const int new_prob = cpi->last_skip_false_probs[idx][k];
+            cm->mbskip_pred_probs[k] = clamp(new_prob != 0 ? new_prob : prob,
                                              5, 250);
-
-            if (cpi->is_src_frame_alt_ref)
-              cm->mbskip_pred_probs[k] = 1;
           }
         }
       }
 
       // Set up entropy depending on frame type.
       if (cm->frame_type == KEY_FRAME) {
-        /* Choose which entropy context to use. When using a forward reference
-         * frame, it immediately follows the keyframe, and thus benefits from
-         * using the same entropy context established by the keyframe.
-         *  Otherwise, use the default context 0.
-         */
+        // Choose which entropy context to use. When using a forward reference
+        // frame, it immediately follows the keyframe, and thus benefits from
+        // using the same entropy context established by the keyframe.
+        // Otherwise, use the default context 0.
         cm->frame_context_idx = cpi->oxcf.play_alternate;
         vp9_setup_key_frame(cpi);
       } else {
-        /* Choose which entropy context to use. Currently there are only two
-         * contexts used, one for normal frames and one for alt ref frames.
-         */
-        cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
+        // Choose which entropy context to use. Currently there are only two
+        // contexts used, one for normal frames and one for alt ref frames.
+        cm->frame_context_idx = cpi->refresh_alt_ref_frame;
         vp9_setup_inter_frame(cpi);
       }
     }
@@ -3092,8 +3075,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         int64_t err = vp9_calc_ss_err(cpi->Source,
                                     &cm->yv12_fb[cm->new_fb_idx]);
         int64_t rate = cpi->projected_frame_size << 8;
-        mcomp_filter_cost[mcomp_filter_index] =
-          (RDCOST(cpi->RDMULT, cpi->RDDIV, rate, err));
+        mcomp_filter_cost[mcomp_filter_index] = RDCOST(cpi->RDMULT, cpi->RDDIV,
+                                                       rate, err);
         mcomp_filter_index++;
         if (mcomp_filter_index < mcomp_filters) {
           cm->mcomp_filter_type = mcomp_filters_to_search[mcomp_filter_index];
@@ -3148,7 +3131,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before
   // the force key frame
-  if (cpi->next_key_frame_forced && (cpi->twopass.frames_to_key == 0)) {
+  if (cpi->next_key_frame_forced && cpi->twopass.frames_to_key == 0) {
     cpi->ambient_err = vp9_calc_ss_err(cpi->Source,
                                        &cm->yv12_fb[cm->new_fb_idx]);
   }
@@ -3198,32 +3181,25 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   release_scaled_references(cpi);
   update_reference_frames(cpi);
 
-  vp9_full_to_model_counts(cpi->common.fc.coef_counts_4x4,
-                           cpi->coef_counts_4x4);
-  vp9_full_to_model_counts(cpi->common.fc.coef_counts_8x8,
-                           cpi->coef_counts_8x8);
-  vp9_full_to_model_counts(cpi->common.fc.coef_counts_16x16,
-                           cpi->coef_counts_16x16);
-  vp9_full_to_model_counts(cpi->common.fc.coef_counts_32x32,
-                           cpi->coef_counts_32x32);
-  if (!cpi->common.error_resilient_mode &&
-      !cpi->common.frame_parallel_decoding_mode) {
-    vp9_adapt_coef_probs(&cpi->common);
-  }
+  vp9_full_to_model_counts(cm->fc.coef_counts_4x4, cpi->coef_counts_4x4);
+  vp9_full_to_model_counts(cm->fc.coef_counts_8x8, cpi->coef_counts_8x8);
+  vp9_full_to_model_counts(cm->fc.coef_counts_16x16, cpi->coef_counts_16x16);
+  vp9_full_to_model_counts(cm->fc.coef_counts_32x32, cpi->coef_counts_32x32);
+  if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode)
+    vp9_adapt_coef_probs(cm);
 
-  if (cpi->common.frame_type != KEY_FRAME) {
-    vp9_copy(cpi->common.fc.sb_ymode_counts, cpi->sb_ymode_count);
-    vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
-    vp9_copy(cpi->common.fc.uv_mode_counts, cpi->y_uv_mode_count);
-    vp9_copy(cpi->common.fc.bmode_counts, cpi->bmode_count);
-    vp9_copy(cpi->common.fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
-    vp9_copy(cpi->common.fc.partition_counts, cpi->partition_count);
-    cpi->common.fc.NMVcount = cpi->NMVcount;
-    if (!cpi->common.error_resilient_mode &&
-        !cpi->common.frame_parallel_decoding_mode) {
-      vp9_adapt_mode_probs(&cpi->common);
-      vp9_adapt_mode_context(&cpi->common);
-      vp9_adapt_nmv_probs(&cpi->common, cpi->mb.e_mbd.allow_high_precision_mv);
+  if (cm->frame_type != KEY_FRAME) {
+    vp9_copy(cm->fc.sb_ymode_counts, cpi->sb_ymode_count);
+    vp9_copy(cm->fc.ymode_counts, cpi->ymode_count);
+    vp9_copy(cm->fc.uv_mode_counts, cpi->y_uv_mode_count);
+    vp9_copy(cm->fc.bmode_counts, cpi->bmode_count);
+    vp9_copy(cm->fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
+    vp9_copy(cm->fc.partition_counts, cpi->partition_count);
+    cm->fc.NMVcount = cpi->NMVcount;
+    if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
+      vp9_adapt_mode_probs(cm);
+      vp9_adapt_mode_context(cm);
+      vp9_adapt_nmv_probs(cm, cpi->mb.e_mbd.allow_high_precision_mv);
     }
   }
 
@@ -3253,13 +3229,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       ((cpi->static_mb_pct < 100) &&
        ((cm->frame_type == KEY_FRAME) ||
         cpi->refresh_alt_ref_frame ||
-        (cpi->refresh_golden_frame && !cpi->is_src_frame_alt_ref)))) {
+        (cpi->refresh_golden_frame && !cpi->is_src_frame_alt_ref))))
     cpi->last_boosted_qindex = cm->base_qindex;
-  }
 
-  if (cm->frame_type == KEY_FRAME) {
+  if (cm->frame_type == KEY_FRAME)
     vp9_adjust_key_frame_context(cpi);
-  }
 
   // Keep a record of ambient average Q.
   if (cm->frame_type != KEY_FRAME)
@@ -3292,15 +3266,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.
   if (cm->frame_type != KEY_FRAME) {
-    cpi->rolling_target_bits =
-      ((cpi->rolling_target_bits * 3) + cpi->this_frame_target + 2) / 4;
-    cpi->rolling_actual_bits =
-      ((cpi->rolling_actual_bits * 3) + cpi->projected_frame_size + 2) / 4;
-    cpi->long_rolling_target_bits =
-      ((cpi->long_rolling_target_bits * 31) + cpi->this_frame_target + 16) / 32;
-    cpi->long_rolling_actual_bits =
-      ((cpi->long_rolling_actual_bits * 31) +
-       cpi->projected_frame_size + 16) / 32;
+    cpi->rolling_target_bits = ROUND_POWER_OF_TWO(
+        cpi->rolling_target_bits * 3 + cpi->this_frame_target, 2);
+    cpi->rolling_actual_bits = ROUND_POWER_OF_TWO(
+        cpi->rolling_actual_bits * 3 + cpi->projected_frame_size, 2);
+    cpi->long_rolling_target_bits = ROUND_POWER_OF_TWO(
+        cpi->long_rolling_target_bits * 31 + cpi->this_frame_target, 5);
+    cpi->long_rolling_actual_bits = ROUND_POWER_OF_TWO(
+        cpi->long_rolling_actual_bits * 31 + cpi->projected_frame_size, 5);
   }
 
   // Actual bits spent
@@ -3420,19 +3393,20 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
   // If this was a kf or Gf note the Q
-  if ((cm->frame_type == KEY_FRAME)
-      || cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
+  if (cm->frame_type == KEY_FRAME ||
+      cpi->refresh_golden_frame ||
+      cpi->refresh_alt_ref_frame)
     cm->last_kf_gf_q = cm->base_qindex;
 
   if (cpi->refresh_golden_frame == 1)
-    cm->frame_flags = cm->frame_flags | FRAMEFLAGS_GOLDEN;
+    cm->frame_flags |= FRAMEFLAGS_GOLDEN;
   else
-    cm->frame_flags = cm->frame_flags&~FRAMEFLAGS_GOLDEN;
+    cm->frame_flags &= ~FRAMEFLAGS_GOLDEN;
 
   if (cpi->refresh_alt_ref_frame == 1)
-    cm->frame_flags = cm->frame_flags | FRAMEFLAGS_ALTREF;
+    cm->frame_flags |= FRAMEFLAGS_ALTREF;
   else
-    cm->frame_flags = cm->frame_flags&~FRAMEFLAGS_ALTREF;
+    cm->frame_flags &= ~FRAMEFLAGS_ALTREF;
 
 
   if (cpi->refresh_last_frame & cpi->refresh_golden_frame)
@@ -3461,8 +3435,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cpi->gold_is_alt)
     cpi->ref_frame_flags &= ~VP9_ALT_FLAG;
 
-  if (cpi->oxcf.play_alternate && cpi->refresh_alt_ref_frame
-      && (cm->frame_type != KEY_FRAME))
+  if (cpi->oxcf.play_alternate &&
+      cpi->refresh_alt_ref_frame &&
+      cm->frame_type != KEY_FRAME)
     // Update the alternate reference frame stats as appropriate.
     update_alt_ref_frame_stats(cpi);
   else
