@@ -2635,6 +2635,8 @@ int main(int argc, const char **argv_) {
     FOREACH_STREAM(setup_pass(stream, &global, pass));
     FOREACH_STREAM(initialize_encoder(stream, &global));
 
+    global.limit = 100;
+
     frame_avail = 1;
     got_data = 0;
 
