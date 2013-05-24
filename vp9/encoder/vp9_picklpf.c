@@ -233,30 +233,4 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi) {
   }
 
   cm->filter_level = filt_best;
-
-#if CONFIG_LOOP_DERING
-  /* Decide whether to turn on deringing filter */
-  {  // NOLINT
-    int best_dering = 0;
-    int this_dering;
-    int last_err_diff = INT_MAX;
-
-    for (this_dering = 1; this_dering <= 16; this_dering++) {
-      vp9_set_alt_lf_level(cpi, filt_best);
-      vp9_loop_filter_frame(cm, &cpi->mb.e_mbd, filt_high, 1, this_dering);
-      filt_err = vp9_calc_ss_err(sd, cm->frame_to_show);
-      vp8_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
-      if (filt_err < best_err) {
-        best_err = filt_err;
-        best_dering = this_dering;
-        last_err_diff = INT_MAX;
-      } else {
-        if (filt_err - best_err > last_err_diff)
-          break;
-        last_err_diff = filt_err - best_err;
-      }
-    }
-    cm->dering_enabled = best_dering;
-  }
-#endif
 }
