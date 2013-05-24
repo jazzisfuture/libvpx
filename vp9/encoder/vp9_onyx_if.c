@@ -258,9 +258,6 @@ void vp9_initialize_enc() {
     init_done = 1;
   }
 }
-#ifdef PACKET_TESTING
-extern FILE *vpxlogc;
-#endif
 
 static void setup_features(VP9_COMP *cpi) {
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
@@ -271,7 +268,7 @@ static void setup_features(VP9_COMP *cpi) {
   xd->update_mb_segmentation_map = 0;
   xd->update_mb_segmentation_data = 0;
 #if CONFIG_IMPLICIT_SEGMENTATION
-  xd->allow_implicit_segment_update = 0;
+  xd->allow_implicit_segmentation = 0;
 #endif
   vpx_memset(xd->mb_segment_tree_probs, 255, sizeof(xd->mb_segment_tree_probs));
 
@@ -359,7 +356,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
 #if CONFIG_IMPLICIT_SEGMENTATION
-    xd->allow_implicit_segment_update = 0;
+    xd->allow_implicit_segmentation = 0;
 #endif
     cpi->static_mb_pct = 0;
 
@@ -375,7 +372,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
 #if CONFIG_IMPLICIT_SEGMENTATION
-    xd->allow_implicit_segment_update = 0;
+    xd->allow_implicit_segmentation = 0;
 #endif
     cpi->static_mb_pct = 0;
 
@@ -487,7 +484,6 @@ static void configure_implicit_segmentation(VP9_COMP *cpi, int frame_qindex) {
 
   // Set the flags to allow implicit segment update but disallow explicit update
   xd->segmentation_enabled = 1;
-  xd->allow_implicit_segment_update = 1;
   xd->update_mb_segmentation_map = 0;
 
   // For key frames clear down the segment map to a default state.
@@ -751,6 +747,9 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
 
 void vp9_set_speed_features(VP9_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
+#if CONFIG_IMPLICIT_SEGMENTATION
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+#endif
   int mode = cpi->compressor_speed;
   int speed = cpi->speed;
   int i;
@@ -785,6 +784,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
 #if CONFIG_IMPLICIT_SEGMENTATION
   sf->static_segmentation = 0;
+  xd->allow_implicit_segmentation = 0;  // Leave it off by default for now
 #else
   sf->static_segmentation = 0;
 #endif
@@ -2809,6 +2809,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 #endif
   loop_count = 0;
+  vpx_memset(cpi->rd_tx_select_threshes, 0, sizeof(cpi->rd_tx_select_threshes));
 
   if (cm->frame_type != KEY_FRAME) {
     /* TODO: Decide this more intelligently */
@@ -2931,7 +2932,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
 
 #if CONFIG_IMPLICIT_SEGMENTATION
-    if (!cm->error_resilient_mode && !cpi->sf.static_segmentation) {
+    if (xd->allow_implicit_segmentation &&
+        !cm->error_resilient_mode && !cpi->sf.static_segmentation) {
       configure_implicit_segmentation(cpi, q);
     }
 #endif
@@ -3184,7 +3186,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
 #if CONFIG_IMPLICIT_SEGMENTATION
   // Should we allow implicit update of the segment map.
-  if (xd->allow_implicit_segment_update && !cm->error_resilient_mode) {
+  if (xd->allow_implicit_segmentation && !cm->error_resilient_mode) {
     vp9_implicit_segment_map_update(cm);
   // or has there been an explicit update
   } else if (xd->update_mb_segmentation_map) {
