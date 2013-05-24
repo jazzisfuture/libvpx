@@ -88,8 +88,7 @@ int vp9_check_segref(const MACROBLOCKD *xd, int segment_id,
 
 #if CONFIG_IMPLICIT_SEGMENTATION
 // This function defines an implicit segmentation for the next frame based
-// on predcition and transform decisions in the current frame.
-// For test purposes at the moment it uses ref frame and prediction size
+// on predcition size, reference frame and motion
 void vp9_implicit_segment_map_update(VP9_COMMON * cm) {
   int row, col;
   MODE_INFO *mi, *mi_ptr = cm->mi;
@@ -120,42 +119,6 @@ void vp9_implicit_segment_map_update(VP9_COMMON * cm) {
           map_ptr[col] = 5;
         else
           map_ptr[col] = 7;
-      }
-    }
-    mi_ptr += cm->mode_info_stride;
-    map_ptr += cm->mb_cols;
-  }
-}
-
-// This function defines an implicit segmentation for the next frame based
-// on predcition and transform decisions in the current frame.
-// For test purposes at the moment only TX size is used.
-void vp9_implicit_segment_map_update_tx(VP9_COMMON * cm) {
-  int row, col;
-  MODE_INFO *mi, *mi_ptr = cm->mi;
-  unsigned char * map_ptr = cm->last_frame_seg_map;
-
-  for (row = 0; row < cm->mb_rows; row++) {
-    mi = mi_ptr;
-    for (col = 0; col < cm->mb_cols; ++col, ++mi) {
-      // Intra modes
-      if (mi->mbmi.ref_frame == INTRA_FRAME) {
-        if (mi->mbmi.txfm_size == TX_4X4)
-          map_ptr[col] = 7;
-        else if (mi->mbmi.txfm_size <= TX_16X16)
-          map_ptr[col] = 5;
-        else
-          map_ptr[col] = 4;
-      } else {
-        // Inter Modes
-        if (mi->mbmi.txfm_size == TX_4X4)
-          map_ptr[col] = 6;
-        else if (mi->mbmi.txfm_size == TX_8X8)
-          map_ptr[col] = 3;
-        else if (mi->mbmi.txfm_size == TX_16X16)
-          map_ptr[col] = 2;
-        else
-          map_ptr[col] = 1;
       }
     }
     mi_ptr += cm->mode_info_stride;
