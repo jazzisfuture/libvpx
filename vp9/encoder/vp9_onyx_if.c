@@ -3200,7 +3200,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_copy(cpi->common.fc.ymode_counts, cpi->ymode_count);
     vp9_copy(cpi->common.fc.uv_mode_counts, cpi->y_uv_mode_count);
     vp9_copy(cpi->common.fc.bmode_counts, cpi->bmode_count);
-    vp9_copy(cpi->common.fc.sub_mv_ref_counts, cpi->sub_mv_ref_count);
     vp9_copy(cpi->common.fc.partition_counts, cpi->partition_count);
     cpi->common.fc.NMVcount = cpi->NMVcount;
     if (!cpi->common.error_resilient_mode &&
@@ -3320,7 +3319,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     recon_err = vp9_calc_ss_err(cpi->Source,
                                 &cm->yv12_fb[cm->new_fb_idx]);
 
-    if (cpi->twopass.total_left_stats->coded_error != 0.0)
+    if (cpi->twopass.total_left_stats.coded_error != 0.0)
       fprintf(f, "%10d %10d %10d %10d %10d %10d %10d %10d"
               "%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f"
               "%6d %6d %5d %5d %5d %8.2f %10d %10.3f"
@@ -3343,9 +3342,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               (double)cpi->twopass.bits_left /
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               cpi->tot_recode_hits, recon_err, cpi->kf_boost,
               cpi->kf_zeromotion_pct);
     else
@@ -3372,7 +3371,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               cpi->tot_recode_hits, recon_err, cpi->kf_boost,
               cpi->kf_zeromotion_pct);
 

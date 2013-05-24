@@ -535,7 +535,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                              vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   nmv_context *const nmvc = &cm->fc.nmvc;
-  const int mis = cm->mode_info_stride;
   MACROBLOCKD *const xd = &pbi->mb;
 
   int_mv *const mv0 = &mbmi->mv[0];
@@ -695,28 +694,27 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         mbmi->need_to_clamp_mvs = 0;
         for (idy = 0; idy < 2; idy += bh) {
           for (idx = 0; idx < 2; idx += bw) {
-            int_mv leftmv, abovemv, second_leftmv, second_abovemv;
             int_mv blockmv, secondmv;
-            int mv_contz;
             int blockmode;
-            int i, k;
+            int i;
             j = idy * 2 + idx;
-            k = j;
 
-            leftmv.as_int = left_block_mv(xd, mi, k);
-            abovemv.as_int = above_block_mv(mi, k, mis);
-            second_leftmv.as_int = 0;
-            second_abovemv.as_int = 0;
-            if (mbmi->second_ref_frame > 0) {
-              second_leftmv.as_int = left_block_second_mv(xd, mi, k);
-              second_abovemv.as_int = above_block_second_mv(mi, k, mis);
+            blockmode = read_sb_mv_ref(r, mv_ref_p);
+            vp9_accum_mv_refs(cm, blockmode, mbmi->mb_mode_context[ref_frame]);
+            if (blockmode == NEARESTMV || blockmode == NEARMV) {
+              vp9_append_sub8x8_mvs_for_idx(cm, xd,
+                                            mbmi->ref_mvs[ref_frame],
+                                            &nearest, &nearby, j, 0);
+              if (mbmi->second_ref_frame > 0) {
+                vp9_append_sub8x8_mvs_for_idx(cm, xd,
+                                              mbmi->ref_mvs[mbmi->second_ref_frame],
+                                              &nearest_second,
+                                              &nearby_second, j, 1);
+              }
             }
-            mv_contz = vp9_mv_cont(&leftmv, &abovemv);
-            blockmode = read_sub_mv_ref(r, cm->fc.sub_mv_ref_prob[mv_contz]);
-            cm->fc.sub_mv_ref_counts[mv_contz][blockmode - LEFT4X4]++;
 
             switch (blockmode) {
-              case NEW4X4:
+              case NEWMV:
                 decode_mv(r, &blockmv.as_mv, &best_mv.as_mv, nmvc,
                            &cm->fc.NMVcount, xd->allow_high_precision_mv);
 
@@ -728,23 +726,23 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                 vp9_mv_cont_count[mv_contz][3]++;
   #endif
                 break;
-              case LEFT4X4:
-                blockmv.as_int = leftmv.as_int;
+              case NEARESTMV:
+                blockmv.as_int = nearest.as_int;
                 if (mbmi->second_ref_frame > 0)
-                  secondmv.as_int = second_leftmv.as_int;
+                  secondmv.as_int = nearest_second.as_int;
   #ifdef VPX_MODE_COUNT
                 vp9_mv_cont_count[mv_contz][0]++;
   #endif
                 break;
-              case ABOVE4X4:
-                blockmv.as_int = abovemv.as_int;
+              case NEARMV:
+                blockmv.as_int = nearby.as_int;
                 if (mbmi->second_ref_frame > 0)
-                  secondmv.as_int = second_abovemv.as_int;
+                  secondmv.as_int = nearby_second.as_int;
   #ifdef VPX_MODE_COUNT
                 vp9_mv_cont_count[mv_contz][1]++;
   #endif
                 break;
-              case ZERO4X4:
+              case ZEROMV:
                 blockmv.as_int = 0;
                 if (mbmi->second_ref_frame > 0)
                   secondmv.as_int = 0;
@@ -763,6 +761,18 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
               vpx_memcpy(&mi->bmi[j + i * 2], &mi->bmi[j], sizeof(mi->bmi[j]));
             for (i = 1; i < bw; ++i)
               vpx_memcpy(&mi->bmi[j + i], &mi->bmi[j], sizeof(mi->bmi[j]));
+            if (pbi->common.current_video_frame == 62 &&
+                mi_row == 31 && mi_col == 24) {
+              printf("dMV%d = %d,%d mode=%d\n", j, blockmv.as_mv.row,
+                     blockmv.as_mv.col, blockmode);
+              if (mi->mbmi.second_ref_frame > 0)
+                printf("dMV%d = %d,%d ref=%d,%d best=%d,%d\n", j, secondmv.as_mv.row,
+                       secondmv.as_mv.col,
+                       best_mv_second.as_mv.row,
+                       best_mv_second.as_mv.col,
+                       mbmi->ref_mvs[mbmi->second_ref_frame][0].as_mv.row,
+                       mbmi->ref_mvs[mbmi->second_ref_frame][0].as_mv.col);
+            }
           }
         }
 
