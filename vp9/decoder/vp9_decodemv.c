@@ -41,7 +41,7 @@ static B_PREDICTION_MODE read_bmode(vp9_reader *r, const vp9_prob *p) {
 }
 
 static B_PREDICTION_MODE read_kf_bmode(vp9_reader *r, const vp9_prob *p) {
-  return (B_PREDICTION_MODE)treed_read(r, vp9_kf_bmode_tree, p);
+  return (B_PREDICTION_MODE)treed_read(r, vp9_bmode_tree, p);
 }
 
 static MB_PREDICTION_MODE read_ymode(vp9_reader *r, const vp9_prob *p) {
