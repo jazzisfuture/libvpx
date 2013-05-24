@@ -370,7 +370,7 @@ static void write_uv_mode(vp9_writer *bc, int m, const vp9_prob *p) {
 }
 
 static void write_kf_bmode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_kf_bmode_tree, p, vp9_kf_bmode_encodings + m);
+  write_token(bc, vp9_bmode_tree, p, vp9_kf_bmode_encodings + m);
 }
 
 static int prob_update_savings(const unsigned int *ct,

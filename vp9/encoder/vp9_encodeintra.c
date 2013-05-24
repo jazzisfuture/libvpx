@@ -32,7 +32,7 @@ int vp9_encode_intra(VP9_COMP *cpi, MACROBLOCK *x, int use_16x16_pred) {
     int i;
 
     for (i = 0; i < 16; i++) {
-      x->e_mbd.mode_info_context->bmi[i].as_mode.first = B_DC_PRED;
+      x->e_mbd.mode_info_context->bmi[i].as_mode.first = DC_PRED;
       encode_intra4x4block(x, i, BLOCK_SIZE_MB16X16);
     }
   }
