@@ -1507,42 +1507,60 @@ static void encode_segmentation(VP9_COMP *cpi, vp9_writer *w) {
   }
 }
 
+void write_uncompressed_header(VP9_COMMON *cm,
+                              struct vp9_write_bit_buffer *wb) {
+  const int scaling_active = cm->width != cm->display_width ||
+                             cm->height != cm->display_height;
+
+  vp9_wb_write_bit(wb, cm->frame_type);
+  vp9_wb_write_literal(wb, cm->version, 3);
+  vp9_wb_write_bit(wb, cm->show_frame);
+  vp9_wb_write_bit(wb, scaling_active);
+  vp9_wb_write_bit(wb, cm->subsampling_x);
+  vp9_wb_write_bit(wb, cm->subsampling_y);
+
+  if (cm->frame_type == KEY_FRAME) {
+    // Synch code
+    vp9_wb_write_literal(wb, SYNC_CODE_0, 8);
+    vp9_wb_write_literal(wb, SYNC_CODE_1, 8);
+    vp9_wb_write_literal(wb, SYNC_CODE_2, 8);
+  }
+
+  if (scaling_active) {
+    vp9_wb_write_literal(wb, cm->display_width, 16);
+    vp9_wb_write_literal(wb, cm->display_height, 16);
+  }
+
+  vp9_wb_write_literal(wb, cm->width, 16);
+  vp9_wb_write_literal(wb, cm->height, 16);
+
+  vp9_wb_write_literal(wb, cm->frame_context_idx, NUM_FRAME_CONTEXTS_LG2);
+  vp9_wb_write_bit(wb, cm->clr_type);
+  vp9_wb_write_bit(wb, cm->error_resilient_mode);
+  if (!cm->error_resilient_mode) {
+    vp9_wb_write_bit(wb, cm->refresh_frame_context);
+    vp9_wb_write_bit(wb, cm->frame_parallel_decoding_mode);
+  }
+}
+
 void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
-  int i;
+  int i, bytes_packed;
   VP9_COMMON *const pc = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   vp9_writer header_bc, residual_bc;
-  int extra_bytes_packed = 0;
   uint8_t *cx_data = dest;
 
-  cx_data += HEADER_SIZE_IN_BYTES;
+  struct vp9_write_bit_buffer wb = {dest, 0};
+  struct vp9_write_bit_buffer first_partition_size_wb;
 
-#if defined(SECTIONBITS_OUTPUT)
-  Sectionbits[active_section = 1] += HEADER_SIZE_IN_BYTES * 8 * 256;
-#endif
+  write_uncompressed_header(pc, &wb);
+  first_partition_size_wb = wb;
+  vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
+
+  bytes_packed = vp9_rb_bytes_written(&wb);
+  cx_data += bytes_packed;
 
   compute_update_table();
-
-  if (pc->frame_type == KEY_FRAME) {
-    // Start / synch code
-    cx_data[0] = 0x49;
-    cx_data[1] = 0x83;
-    cx_data[2] = 0x42;
-    extra_bytes_packed += 3;
-    cx_data += 3;
-  }
-
-  if (pc->width != pc->display_width || pc->height != pc->display_height) {
-    write_le16(cx_data, pc->display_width);
-    write_le16(cx_data + 2, pc->display_height);
-    extra_bytes_packed += 4;
-    cx_data += 4;
-  }
-
-  write_le16(cx_data, pc->width);
-  write_le16(cx_data + 2, pc->height);
-  extra_bytes_packed += 4;
-  cx_data += 4;
 
   vp9_start_encode(&header_bc, cx_data);
 
@@ -1625,8 +1643,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
   }
 
-  vp9_write_literal(&header_bc, pc->frame_context_idx,
-                    NUM_FRAME_CONTEXTS_LG2);
 
 #ifdef ENTROPY_STATS
   if (pc->frame_type == INTER_FRAME)
@@ -1825,35 +1841,10 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 
   vp9_stop_encode(&header_bc);
 
-  /* update frame tag */
-  {
-    const int first_partition_length_in_bytes = header_bc.pos;
-    int scaling = (pc->width != pc->display_width ||
-                   pc->height != pc->display_height);
-
-    struct vp9_write_bit_buffer wb = {dest, 0};
-
-    assert(first_partition_length_in_bytes <= 0xffff);
-
-    vp9_wb_write_bit(&wb, pc->frame_type);
-    vp9_wb_write_literal(&wb, pc->version, 3);
-    vp9_wb_write_bit(&wb, pc->show_frame);
-    vp9_wb_write_bit(&wb, scaling);
-    vp9_wb_write_bit(&wb, pc->subsampling_x);
-    vp9_wb_write_bit(&wb, pc->subsampling_y);
-
-    vp9_wb_write_bit(&wb, pc->clr_type);
-    vp9_wb_write_bit(&wb, pc->error_resilient_mode);
-    if (!pc->error_resilient_mode) {
-      vp9_wb_write_bit(&wb, pc->refresh_frame_context);
-      vp9_wb_write_bit(&wb, pc->frame_parallel_decoding_mode);
-    }
-
-
-    vp9_wb_write_literal(&wb, first_partition_length_in_bytes, 16);
-  }
-
-  *size = HEADER_SIZE_IN_BYTES + extra_bytes_packed + header_bc.pos;
+  // first partition size
+  assert(header_bc.pos <= 0xffff);
+  vp9_wb_write_literal(&first_partition_size_wb, header_bc.pos, 16);
+  *size = bytes_packed + header_bc.pos;
 
   if (pc->frame_type == KEY_FRAME) {
     decide_kf_ymode_entropy(cpi);
