@@ -3342,9 +3342,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               (double)cpi->twopass.bits_left /
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               cpi->tot_recode_hits, recon_err, cpi->kf_boost,
               cpi->kf_zeromotion_pct);
     else
@@ -3371,7 +3371,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
               cm->frame_type, cpi->gfu_boost,
               cpi->twopass.est_max_qcorrection_factor,
               (int)cpi->twopass.bits_left,
-              cpi->twopass.total_left_stats->coded_error,
+              cpi->twopass.total_left_stats.coded_error,
               cpi->tot_recode_hits, recon_err, cpi->kf_boost,
               cpi->kf_zeromotion_pct);
 
