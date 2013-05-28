@@ -86,7 +86,6 @@ int vp9_check_segref(const MACROBLOCKD *xd, int segment_id,
 }
 
 
-#if CONFIG_IMPLICIT_SEGMENTATION
 // This function defines an implicit segmentation for the next frame based
 // on predcition size, reference frame and motion
 void vp9_implicit_segment_map_update(VP9_COMMON * cm) {
@@ -125,8 +124,6 @@ void vp9_implicit_segment_map_update(VP9_COMMON * cm) {
     map_ptr += cm->mb_cols;
   }
 }
-#endif
-
 
 const vp9_tree_index vp9_segment_tree[14] = {
   2,  4,  6,  8, 10, 12,
