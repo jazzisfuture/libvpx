@@ -270,9 +270,7 @@ static void setup_features(VP9_COMP *cpi) {
 
   xd->update_mb_segmentation_map = 0;
   xd->update_mb_segmentation_data = 0;
-#if CONFIG_IMPLICIT_SEGMENTATION
   xd->allow_implicit_segmentation = 0;
-#endif
   vpx_memset(xd->mb_segment_tree_probs, 255, sizeof(xd->mb_segment_tree_probs));
 
   vp9_clearall_segfeatures(xd);
@@ -358,9 +356,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
-#if CONFIG_IMPLICIT_SEGMENTATION
     xd->allow_implicit_segmentation = 0;
-#endif
     cpi->static_mb_pct = 0;
 
     // Disable segmentation
@@ -374,9 +370,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
     xd->update_mb_segmentation_map = 0;
     xd->update_mb_segmentation_data = 0;
-#if CONFIG_IMPLICIT_SEGMENTATION
     xd->allow_implicit_segmentation = 0;
-#endif
     cpi->static_mb_pct = 0;
 
     // Disable segmentation and individual segment features by default
@@ -475,7 +469,6 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
   }
 }
 
-#if CONFIG_IMPLICIT_SEGMENTATION
 static double implict_seg_q_modifiers[MAX_MB_SEGMENTS] =
   {1.0, 0.95, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 static void configure_implicit_segmentation(VP9_COMP *cpi, int frame_qindex) {
@@ -519,7 +512,6 @@ static void configure_implicit_segmentation(VP9_COMP *cpi, int frame_qindex) {
     xd->update_mb_segmentation_data = 0;
   }
 }
-#endif
 
 #ifdef ENTROPY_STATS
 void vp9_update_mode_context_stats(VP9_COMP *cpi) {
@@ -750,9 +742,7 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
 
 void vp9_set_speed_features(VP9_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
-#if CONFIG_IMPLICIT_SEGMENTATION
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
-#endif
   int mode = cpi->compressor_speed;
   int speed = cpi->speed;
   int i;
@@ -785,12 +775,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   // Switch segmentation off.
   sf->static_segmentation = 0;
 #else
-#if CONFIG_IMPLICIT_SEGMENTATION
   sf->static_segmentation = 0;
   xd->allow_implicit_segmentation = 0;  // Leave it off by default for now
-#else
-  sf->static_segmentation = 0;
-#endif
 #endif
   sf->mb16_breakout = 0;
 
@@ -804,11 +790,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       // Switch segmentation off.
       sf->static_segmentation = 0;
 #else
-#if CONFIG_IMPLICIT_SEGMENTATION
   sf->static_segmentation = 0;
-#else
-  sf->static_segmentation = 0;
-#endif
 #endif
       sf->mb16_breakout = 0;
 
@@ -2934,12 +2916,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       }
     }
 
-#if CONFIG_IMPLICIT_SEGMENTATION
     if (xd->allow_implicit_segmentation &&
         !cm->error_resilient_mode && !cpi->sf.static_segmentation) {
       configure_implicit_segmentation(cpi, q);
     }
-#endif
 
     // transform / motion compensation build reconstruction frame
     if (cm->frame_type == KEY_FRAME) {
@@ -3187,15 +3167,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cpi->dummy_packing = 0;
   vp9_pack_bitstream(cpi, dest, size);
 
-#if CONFIG_IMPLICIT_SEGMENTATION
   // Should we allow implicit update of the segment map.
   if (xd->allow_implicit_segmentation && !cm->error_resilient_mode) {
     vp9_implicit_segment_map_update(cm);
   // or has there been an explicit update
   } else if (xd->update_mb_segmentation_map) {
-#else
-  if (xd->update_mb_segmentation_map) {
-#endif
     update_reference_segmentation_map(cpi);
   }
 
