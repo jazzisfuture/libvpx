@@ -960,6 +960,15 @@ size_t read_uncompressed_header(VP9D_COMP *pbi,
   cm->frame_context_idx = vp9_rb_read_literal(rb, NUM_FRAME_CONTEXTS_LG2);
   cm->clr_type = (YUV_TYPE)vp9_rb_read_bit(rb);
 
+  cm->error_resilient_mode = vp9_rb_read_bit(rb);
+  if (!cm->error_resilient_mode) {
+    cm->refresh_frame_context = vp9_rb_read_bit(rb);
+    cm->frame_parallel_decoding_mode = vp9_rb_read_bit(rb);
+  } else {
+    cm->refresh_frame_context = 0;
+    cm->frame_parallel_decoding_mode = 1;
+  }
+
   return vp9_rb_read_literal(rb, 16);
 }
 
@@ -1001,8 +1010,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   if (vp9_reader_init(&header_bc, data, first_partition_size))
     vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
-
-  pc->error_resilient_mode = vp9_read_bit(&header_bc);
 
   setup_loopfilter(pc, xd, &header_bc);
 
@@ -1048,14 +1055,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
     // To enable choice of different interpolation filters
     vp9_setup_interp_filters(xd, pc->mcomp_filter_type, pc);
-  }
-
-  if (!pc->error_resilient_mode) {
-    pc->refresh_frame_context = vp9_read_bit(&header_bc);
-    pc->frame_parallel_decoding_mode = vp9_read_bit(&header_bc);
-  } else {
-    pc->refresh_frame_context = 0;
-    pc->frame_parallel_decoding_mode = 1;
   }
 
   pc->fc = pc->frame_contexts[pc->frame_context_idx];

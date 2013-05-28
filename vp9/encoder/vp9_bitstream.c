@@ -1509,6 +1509,12 @@ void write_uncompressed_header(VP9_COMMON *cm,
 
   vp9_wb_write_literal(wb, cm->frame_context_idx, NUM_FRAME_CONTEXTS_LG2);
   vp9_wb_write_bit(wb, cm->clr_type);
+
+  vp9_wb_write_bit(wb, cm->error_resilient_mode);
+  if (!cm->error_resilient_mode) {
+    vp9_wb_write_bit(wb, cm->refresh_frame_context);
+    vp9_wb_write_bit(wb, cm->frame_parallel_decoding_mode);
+  }
 }
 
 void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
@@ -1531,8 +1537,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   compute_update_table();
 
   vp9_start_encode(&header_bc, cx_data);
-
-  vp9_write_bit(&header_bc, pc->error_resilient_mode);
 
   encode_loopfilter(pc, xd, &header_bc);
 
@@ -1612,11 +1616,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
     vp9_write_bit(&header_bc, (pc->mcomp_filter_type == SWITCHABLE));
     if (pc->mcomp_filter_type != SWITCHABLE)
       vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
-  }
-
-  if (!pc->error_resilient_mode) {
-    vp9_write_bit(&header_bc, pc->refresh_frame_context);
-    vp9_write_bit(&header_bc, pc->frame_parallel_decoding_mode);
   }
 
 #ifdef ENTROPY_STATS
