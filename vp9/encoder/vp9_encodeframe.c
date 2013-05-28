@@ -1456,7 +1456,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     } else
       txfm_type = ALLOW_8X8;
 #else
-    txfm_type = cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32] >
+    txfm_type = cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32] >=
                   cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
                     ALLOW_32X32 : TX_MODE_SELECT;
 #endif
