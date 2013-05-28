@@ -575,6 +575,28 @@ static void super_block_yrd(VP9_COMP *cpi,
                            - (bs < BLOCK_SIZE_MB16X16));
 }
 
+static void super_block_yrd_fast(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
+                                 int *distortion, int *skip, BLOCK_SIZE_TYPE bs,
+                                 int64_t txfm_cache[NB_TXFM_MODES]) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
+
+  vp9_subtract_sby(x, bs);
+
+  if (bs >= BLOCK_SIZE_SB32X32) {
+    mbmi->txfm_size = TX_32X32;
+  } else if (bs >= BLOCK_SIZE_MB16X16) {
+    mbmi->txfm_size = TX_16X16;
+  } else if (bs >= BLOCK_SIZE_SB8X8) {
+    mbmi->txfm_size = TX_8X8;
+  } else {
+    mbmi->txfm_size = TX_4X4;
+  }
+  super_block_yrd_for_txfm(cm, x, rate, distortion, skip, bs, mbmi->txfm_size);
+}
+
+
 static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                      MB_PREDICTION_MODE *best_mode,
                                      int *bmode_costs,
@@ -814,9 +836,14 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     x->e_mbd.mode_info_context->mbmi.mode = mode;
     vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
 
-    super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion, &s,
-                    bsize, local_txfm_cache);
-    this_rate = this_rate_tokenonly + bmode_costs[mode];
+    if (cpi->speed == 0)
+      super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion, &s,
+                      bsize, local_txfm_cache);
+    else
+      super_block_yrd_fast(cpi, x, &this_rate_tokenonly, &this_distortion, &s,
+                           bsize, local_txfm_cache);
+
+    this_rate = this_rate_tokenonly + x->mbmode_cost[x->e_mbd.frame_type][mode];
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
@@ -2195,7 +2222,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                  (mbmi->mv[1].as_mv.col & 15) == 0;
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used
-  if (1) {
+  if (cpi->speed >0) {
+    *best_filter = EIGHTTAP;
+  } else {
     int i, newbest;
     int tmp_rate_sum = 0, tmp_dist_sum = 0;
     for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
@@ -2277,6 +2306,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (cpi->active_map_enabled && x->active_ptr[0] == 0)
     x->skip = 1;
+#if 0
   else if (x->encode_breakout) {
     unsigned int var, sse;
     int threshold = (xd->plane[0].dequant[1]
@@ -2325,13 +2355,18 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
   }
+#endif
 
   if (!x->skip) {
     int skippable_y, skippable_uv;
 
     // Y cost and distortion
-    super_block_yrd(cpi, x, rate_y, distortion_y, &skippable_y,
-                    bsize, txfm_cache);
+    if(cpi->speed == 0)
+      super_block_yrd(cpi, x, rate_y, distortion_y, &skippable_y,
+                      bsize, txfm_cache);
+    else
+      super_block_yrd_fast(cpi, x, rate_y, distortion_y, &skippable_y, bsize,
+                           txfm_cache);
     *rate2 += *rate_y;
     *distortion += *distortion_y;
 
