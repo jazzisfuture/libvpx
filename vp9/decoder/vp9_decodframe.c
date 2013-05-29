@@ -400,10 +400,15 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
   MACROBLOCKD *const xd = &pbi->mb;
   const int mi_idx = mi_row * cm->mode_info_stride + mi_col;
   int i;
+  const int use_prev_in_find_mv_refs = cm->width == cm->last_width &&
+                                       cm->height == cm->last_height &&
+                                       !cm->error_resilient_mode &&
+                                       cm->last_show_frame;
 
   xd->mode_info_context = cm->mi + mi_idx;
   xd->mode_info_context->mbmi.sb_type = bsize;
-  xd->prev_mode_info_context = cm->prev_mi + mi_idx;
+  xd->prev_mode_info_context = use_prev_in_find_mv_refs ?
+                                 cm->prev_mi + mi_idx : NULL;
 
   for (i = 0; i < MAX_MB_PLANE; i++) {
     xd->plane[i].above_context = cm->above_context[i] +
