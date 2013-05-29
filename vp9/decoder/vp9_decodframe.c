@@ -403,7 +403,10 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
 
   xd->mode_info_context = cm->mi + mi_idx;
   xd->mode_info_context->mbmi.sb_type = bsize;
-  xd->prev_mode_info_context = cm->prev_mi + mi_idx;
+  // Special case: if prev_mi_copy is NULL, the previous mode info context
+  // cannot be used.
+  xd->prev_mode_info_context = xd->prev_mi_copy ?
+                                 xd->prev_mi_copy + mi_idx : NULL;
 
   for (i = 0; i < MAX_MB_PLANE; i++) {
     xd->plane[i].above_context = cm->above_context[i] +
@@ -1098,6 +1101,15 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   // clear out the coeff buffer
   for (i = 0; i < MAX_MB_PLANE; ++i)
     vp9_zero(xd->plane[i].qcoeff);
+  {
+    const int use_prev_in_find_mv_refs = pc->width == pc->last_width &&
+                                         pc->height == pc->last_height &&
+                                         !pc->error_resilient_mode &&
+                                         pc->last_show_frame;
+    // Special case: set prev_mi_copy to NULL when the previous mode info
+    // context cannot be used.
+    xd->prev_mi_copy = use_prev_in_find_mv_refs ? pc->prev_mi : NULL;
+  }
 
   vp9_decode_mode_mvs_init(pbi, &header_bc);
 

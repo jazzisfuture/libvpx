@@ -1768,11 +1768,8 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
                    &scale[frame_type], &scale[frame_type]);
 
   // Gets an initial list of candidate vectors from neighbours and orders them
-  use_prev_in_find_mv_refs = cm->width == cm->last_width &&
-                             cm->height == cm->last_height &&
-                             !cpi->common.error_resilient_mode;
   vp9_find_mv_refs(&cpi->common, xd, xd->mode_info_context,
-                   use_prev_in_find_mv_refs ? xd->prev_mode_info_context : NULL,
+                   xd->prev_mode_info_context,
                    frame_type,
                    mbmi->ref_mvs[frame_type],
                    cpi->common.ref_frame_sign_bias);
