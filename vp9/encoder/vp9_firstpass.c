@@ -509,8 +509,6 @@ void vp9_first_pass(VP9_COMP *cpi) {
     for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
       int this_error;
       int gf_motion_error = INT_MAX;
-      int use_dc_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
-
       set_mi_row_col(cm, xd,
                      mb_row << 1,
                      1 << mi_height_log2(BLOCK_SIZE_MB16X16),
@@ -525,7 +523,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
       xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_MB16X16;
 
       // do intra 16x16 prediction
-      this_error = vp9_encode_intra(cpi, x, use_dc_pred);
+      this_error = vp9_encode_intra(cpi, x);
 
       // "intrapenalty" below deals with situations where the intra and inter error scores are very low (eg a plain black frame)
       // We do not have special cases in first pass for 0,0 and nearest etc so all inter modes carry an overhead cost estimate fot the mv.

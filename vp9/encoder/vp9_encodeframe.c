@@ -93,8 +93,8 @@ static unsigned int tt_activity_measure(VP9_COMP *cpi, MACROBLOCK *x) {
 
 // Stub for alternative experimental activity measures.
 static unsigned int alt_activity_measure(VP9_COMP *cpi,
-                                         MACROBLOCK *x, int use_dc_pred) {
-  return vp9_encode_intra(cpi, x, use_dc_pred);
+                                         MACROBLOCK *x) {
+  return vp9_encode_intra(cpi, x);
 }
 
 
@@ -106,10 +106,8 @@ static unsigned int mb_activity_measure(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int mb_activity;
 
   if (ALT_ACT_MEASURE) {
-    int use_dc_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
-
     // Or use and alternative.
-    mb_activity = alt_activity_measure(cpi, x, use_dc_pred);
+    mb_activity = alt_activity_measure(cpi, x);
   } else {
     // Original activity measure from Tim T's code.
     mb_activity = tt_activity_measure(cpi, x);
