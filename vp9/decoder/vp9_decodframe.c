@@ -40,6 +40,11 @@
 int dec_debug = 0;
 #endif
 
+#ifdef COUNT_COEFF_BOOL_DECODES
+extern int64_t num_bool_decodes;
+#endif
+
+
 static int read_le16(const uint8_t *p) {
   return (p[1] << 8) | p[0];
 }
@@ -1137,6 +1142,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   if (pc->refresh_frame_context)
     pc->frame_contexts[pc->frame_context_idx] = pc->fc;
 
+#ifdef COUNT_COEFF_BOOL_DECODES
+  printf("Bool decodes: %ld \n", num_bool_decodes);
+#endif
   *p_data_end = vp9_reader_find_end(&residual_bc);
   return 0;
 }

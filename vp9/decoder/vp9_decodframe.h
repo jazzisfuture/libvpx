@@ -18,4 +18,6 @@ struct VP9Decompressor;
 void vp9_init_dequantizer(struct VP9Common *pc);
 int vp9_decode_frame(struct VP9Decompressor *cpi, const uint8_t **p_data_end);
 
+// #define COUNT_COEFF_BOOL_DECODES
+
 #endif  // VP9_DECODER_VP9_DECODFRAME_H_
