@@ -244,16 +244,12 @@ static void update_mode(
 static void update_mbintra_mode_probs(VP9_COMP* const cpi,
                                       vp9_writer* const bc) {
   VP9_COMMON *const cm = &cpi->common;
+  vp9_prob pnew[VP9_INTRA_MODES - 1];
+  unsigned int bct[VP9_INTRA_MODES - 1][2];
 
-  vp9_prob pnew[VP9_YMODES - 1];
-  unsigned int bct[VP9_YMODES - 1][2];
-
-  update_mode(bc, VP9_YMODES, vp9_ymode_encodings, vp9_ymode_tree, pnew,
-              cm->fc.ymode_prob, bct, (unsigned int *)cpi->ymode_count);
-
-  update_mode(bc, VP9_I32X32_MODES, vp9_sb_ymode_encodings,
-              vp9_sb_ymode_tree, pnew, cm->fc.sb_ymode_prob, bct,
-              (unsigned int *)cpi->sb_ymode_count);
+  update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
+              vp9_intra_mode_tree, pnew,
+              cm->fc.y_mode_prob, bct, (unsigned int *)cpi->y_mode_count);
 }
 
 void vp9_update_skip_probs(VP9_COMP *cpi) {
@@ -350,28 +346,8 @@ static void update_inter_mode_probs(VP9_COMMON *cm,
   }
 }
 
-static void write_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_ymode_tree, p, vp9_ymode_encodings + m);
-}
-
-static void kfwrite_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_kf_ymode_tree, p, vp9_kf_ymode_encodings + m);
-}
-
-static void write_sb_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_sb_ymode_tree, p, vp9_sb_ymode_encodings + m);
-}
-
-static void sb_kfwrite_ymode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_uv_mode_tree, p, vp9_sb_kf_ymode_encodings + m);
-}
-
-static void write_uv_mode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_uv_mode_tree, p, vp9_uv_mode_encodings + m);
-}
-
-static void write_kf_bmode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_bmode_tree, p, vp9_kf_bmode_encodings + m);
+static void write_intra_mode(vp9_writer *bc, int m, const vp9_prob *p) {
+  write_token(bc, vp9_intra_mode_tree, p, vp9_intra_mode_encodings + m);
 }
 
 static int prob_update_savings(const unsigned int *ct,
@@ -526,13 +502,13 @@ static void pack_mb_tokens(vp9_writer* const bc,
   *tp = p;
 }
 
-static void write_sb_mv_ref(vp9_writer *bc, MB_PREDICTION_MODE m,
-                            const vp9_prob *p) {
+static void write_mv_ref(vp9_writer *bc, MB_PREDICTION_MODE m,
+                         const vp9_prob *p) {
 #if CONFIG_DEBUG
-  assert(NEARESTMV <= m  &&  m < SPLITMV);
+  assert(NEARESTMV <= m  &&  m <= NEWMV);
 #endif
-  write_token(bc, vp9_sb_mv_ref_tree, p,
-              vp9_sb_mv_ref_encoding_array - NEARESTMV + m);
+  write_token(bc, vp9_mv_ref_tree, p,
+              vp9_mv_ref_encoding_array - NEARESTMV + m);
 }
 
 // This function writes the current macro block's segnment id to the bitstream
@@ -710,20 +686,19 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     active_section = 6;
 #endif
 
-    if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8)
-      write_sb_ymode(bc, mode, pc->fc.sb_ymode_prob);
-
-    if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+    if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
+      write_intra_mode(bc, mode, pc->fc.y_mode_prob);
+    } else {
       int idx, idy;
       int bw = 1 << b_width_log2(mi->sb_type);
       int bh = 1 << b_height_log2(mi->sb_type);
       for (idy = 0; idy < 2; idy += bh)
         for (idx = 0; idx < 2; idx += bw)
-          write_sb_ymode(bc, m->bmi[idy * 2 + idx].as_mode.first,
-                         pc->fc.sb_ymode_prob);
+          write_intra_mode(bc, m->bmi[idy * 2 + idx].as_mode.first,
+                           pc->fc.y_mode_prob);
     }
-    write_uv_mode(bc, mi->uv_mode,
-                  pc->fc.uv_mode_prob[mode]);
+    write_intra_mode(bc, mi->uv_mode,
+                     pc->fc.uv_mode_prob[mode]);
   } else {
     vp9_prob mv_ref_p[VP9_MVREFS - 1];
 
@@ -735,9 +710,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     // If segment skip is not enabled code the mode.
     if (!vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) {
-      if (mi->sb_type >= BLOCK_SIZE_SB8X8)
-        write_sb_mv_ref(bc, mode, mv_ref_p);
-      vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf]);
+      if (mi->sb_type >= BLOCK_SIZE_SB8X8) {
+        write_mv_ref(bc, mode, mv_ref_p);
+        vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf]);
+      }
     }
 
     if (is_inter_mode(mode)) {
@@ -759,57 +735,53 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                 vp9_get_pred_prob(pc, xd, PRED_COMP));
     }
 
-    switch (mode) { /* new, split require MVs */
-      case NEWMV:
-#ifdef ENTROPY_STATS
-        active_section = 5;
-#endif
-        vp9_encode_mv(bc,
-                      &mi->mv[0].as_mv, &mi->best_mv.as_mv,
-                      nmvc, xd->allow_high_precision_mv);
 
-        if (mi->second_ref_frame > 0)
-          vp9_encode_mv(bc,
-                        &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
-                        nmvc, xd->allow_high_precision_mv);
-        break;
-      case SPLITMV: {
-        int j;
-        MB_PREDICTION_MODE blockmode;
-        int_mv blockmv;
-        int bwl = b_width_log2(mi->sb_type), bw = 1 << bwl;
-        int bhl = b_height_log2(mi->sb_type), bh = 1 << bhl;
-        int idx, idy;
-        for (idy = 0; idy < 2; idy += bh) {
-          for (idx = 0; idx < 2; idx += bw) {
-            j = idy * 2 + idx;
-            blockmode = cpi->mb.partition_info->bmi[j].mode;
-            blockmv = cpi->mb.partition_info->bmi[j].mv;
-            write_sb_mv_ref(bc, blockmode, mv_ref_p);
-            vp9_accum_mv_refs(&cpi->common, blockmode, mi->mb_mode_context[rf]);
-            if (blockmode == NEWMV) {
+    if (mi->sb_type < BLOCK_SIZE_SB8X8) {
+      int j;
+      MB_PREDICTION_MODE blockmode;
+      int_mv blockmv;
+      int bwl = b_width_log2(mi->sb_type), bw = 1 << bwl;
+      int bhl = b_height_log2(mi->sb_type), bh = 1 << bhl;
+      int idx, idy;
+
+      for (idy = 0; idy < 2; idy += bh) {
+        for (idx = 0; idx < 2; idx += bw) {
+          j = idy * 2 + idx;
+          blockmode = cpi->mb.partition_info->bmi[j].mode;
+          blockmv = cpi->mb.partition_info->bmi[j].mv;
+          write_mv_ref(bc, blockmode, mv_ref_p);
+          vp9_accum_mv_refs(&cpi->common, blockmode, mi->mb_mode_context[rf]);
+          if (blockmode == NEWMV) {
 #ifdef ENTROPY_STATS
-              active_section = 11;
+            active_section = 11;
 #endif
-              vp9_encode_mv(bc, &blockmv.as_mv, &mi->best_mv.as_mv,
+            vp9_encode_mv(bc, &blockmv.as_mv, &mi->best_mv.as_mv,
+                          nmvc, xd->allow_high_precision_mv);
+
+            if (mi->second_ref_frame > 0)
+              vp9_encode_mv(bc,
+                            &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
+                            &mi->best_second_mv.as_mv,
                             nmvc, xd->allow_high_precision_mv);
-
-              if (mi->second_ref_frame > 0)
-                vp9_encode_mv(bc,
-                              &cpi->mb.partition_info->bmi[j].second_mv.as_mv,
-                              &mi->best_second_mv.as_mv,
-                              nmvc, xd->allow_high_precision_mv);
-            }
           }
         }
+      }
 
 #ifdef MODE_STATS
-        ++count_mb_seg[mi->partitioning];
+      ++count_mb_seg[mi->partitioning];
 #endif
-        break;
-      }
-      default:
-        break;
+    } else if (mode == NEWMV) {
+#ifdef ENTROPY_STATS
+      active_section = 5;
+#endif
+      vp9_encode_mv(bc,
+                    &mi->mv[0].as_mv, &mi->best_mv.as_mv,
+                    nmvc, xd->allow_high_precision_mv);
+
+      if (mi->second_ref_frame > 0)
+        vp9_encode_mv(bc,
+                      &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
+                      nmvc, xd->allow_high_precision_mv);
     }
   }
 }
@@ -849,10 +821,8 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     const MB_PREDICTION_MODE A = above_block_mode(m, 0, mis);
     const MB_PREDICTION_MODE L = xd->left_available ?
                                  left_block_mode(m, 0) : DC_PRED;
-    write_kf_bmode(bc, ym, c->kf_bmode_prob[A][L]);
-  }
-
-  if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+    write_intra_mode(bc, ym, c->kf_y_mode_prob[A][L]);
+  } else {
     int idx, idy;
     int bw = 1 << b_width_log2(m->mbmi.sb_type);
     int bh = 1 << b_height_log2(m->mbmi.sb_type);
@@ -862,13 +832,13 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
         const MB_PREDICTION_MODE A = above_block_mode(m, i, mis);
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
                                      left_block_mode(m, i) : DC_PRED;
-        write_kf_bmode(bc, m->bmi[i].as_mode.first,
-                       c->kf_bmode_prob[A][L]);
+        write_intra_mode(bc, m->bmi[i].as_mode.first,
+                         c->kf_y_mode_prob[A][L]);
       }
     }
   }
 
-  write_uv_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
+  write_intra_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
 }
 
 static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
@@ -1273,33 +1243,6 @@ static void update_coef_probs(VP9_COMP* const cpi, vp9_writer* const bc) {
   }
 }
 
-static void decide_kf_ymode_entropy(VP9_COMP *cpi) {
-  int mode_cost[MB_MODE_COUNT];
-  int bestcost = INT_MAX;
-  int bestindex = 0;
-  int i, j;
-
-  for (i = 0; i < 8; i++) {
-    int cost = 0;
-
-    vp9_cost_tokens(mode_cost, cpi->common.kf_ymode_prob[i], vp9_kf_ymode_tree);
-
-    for (j = 0; j < VP9_YMODES; j++)
-      cost += mode_cost[j] * cpi->ymode_count[j];
-
-    vp9_cost_tokens(mode_cost, cpi->common.sb_kf_ymode_prob[i],
-                    vp9_sb_ymode_tree);
-    for (j = 0; j < VP9_I32X32_MODES; j++)
-      cost += mode_cost[j] * cpi->sb_ymode_count[j];
-
-    if (cost < bestcost) {
-      bestindex = i;
-      bestcost = cost;
-    }
-  }
-  cpi->common.kf_ymode_probs_index = bestindex;
-
-}
 static void segment_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON *oci = &cpi->common;
   MODE_INFO *mi = oci->mi;
@@ -1717,10 +1660,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(cpi->common.fc.pre_coef_probs_32x32,
            cpi->common.fc.coef_probs_32x32);
 
-  vp9_copy(cpi->common.fc.pre_sb_ymode_prob, cpi->common.fc.sb_ymode_prob);
-  vp9_copy(cpi->common.fc.pre_ymode_prob, cpi->common.fc.ymode_prob);
+  vp9_copy(cpi->common.fc.pre_y_mode_prob, cpi->common.fc.y_mode_prob);
   vp9_copy(cpi->common.fc.pre_uv_mode_prob, cpi->common.fc.uv_mode_prob);
-  vp9_copy(cpi->common.fc.pre_bmode_prob, cpi->common.fc.bmode_prob);
   vp9_copy(cpi->common.fc.pre_partition_prob, cpi->common.fc.partition_prob);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
   vp9_zero(cpi->common.fc.mv_ref_ct);
@@ -1736,11 +1677,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
     vp9_write_prob(&header_bc, pc->mbskip_pred_probs[i]);
   }
 
-  if (pc->frame_type == KEY_FRAME) {
-    if (!pc->kf_ymode_probs_update) {
-      vp9_write_literal(&header_bc, pc->kf_ymode_probs_index, 3);
-    }
-  } else {
+  if (pc->frame_type != KEY_FRAME) {
     // Update the probabilities used to encode reference frame data
     update_ref_probs(cpi);
 
@@ -1811,14 +1748,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   assert(header_bc.pos <= 0xffff);
   vp9_wb_write_literal(&first_partition_size_wb, header_bc.pos, 16);
   *size = bytes_packed + header_bc.pos;
-
-  if (pc->frame_type == KEY_FRAME) {
-    decide_kf_ymode_entropy(cpi);
-  } else {
-    /* This is not required if the counts in cpi are consistent with the
-     * final packing pass */
-    // if (!cpi->dummy_packing) vp9_zero(cpi->NMVcount);
-  }
 
   {
     int tile_row, tile_col, total_size = 0;

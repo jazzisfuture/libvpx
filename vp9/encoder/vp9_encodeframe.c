@@ -357,19 +357,26 @@ static void update_state(VP9_COMP *cpi,
     }
   }
   if (bsize < BLOCK_SIZE_SB32X32) {
-    if (bsize < BLOCK_SIZE_MB16X16)
+    if (bsize < BLOCK_SIZE_MB16X16) {
+      if (bsize < BLOCK_SIZE_SB8X8)
+        ctx->txfm_rd_diff[ALLOW_8X8] = ctx->txfm_rd_diff[ONLY_4X4];
       ctx->txfm_rd_diff[ALLOW_16X16] = ctx->txfm_rd_diff[ALLOW_8X8];
+    }
     ctx->txfm_rd_diff[ALLOW_32X32] = ctx->txfm_rd_diff[ALLOW_16X16];
   }
 
-  if (mb_mode == SPLITMV) {
-    vpx_memcpy(x->partition_info, &ctx->partition_info,
-               sizeof(PARTITION_INFO));
+  if (bsize < BLOCK_SIZE_SB8X8) {
+    if (mi->mbmi.ref_frame != INTRA_FRAME) {
+      vpx_memcpy(x->partition_info, &ctx->partition_info,
+                 sizeof(PARTITION_INFO));
 
-    mbmi->mv[0].as_int =
-        x->partition_info->bmi[3].mv.as_int;
-    mbmi->mv[1].as_int =
-        x->partition_info->bmi[3].second_mv.as_int;
+      mbmi->mv[0].as_int =
+          x->partition_info->bmi[3].mv.as_int;
+      mbmi->mv[1].as_int =
+          x->partition_info->bmi[3].second_mv.as_int;
+    } else {
+      mbmi->mode = mi->bmi[3].as_mode.first;
+    }
   }
 
   x->skip = ctx->skip;
@@ -448,7 +455,8 @@ static void update_state(VP9_COMP *cpi,
     */
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[mb_mode_index]++;
-    if (mbmi->mode == SPLITMV || mbmi->mode == NEWMV) {
+    if ((mbmi->sb_type < BLOCK_SIZE_SB8X8 && mbmi->ref_frame != INTRA_FRAME) ||
+        mbmi->mode == NEWMV) {
       int_mv best_mv, best_second_mv;
       MV_REFERENCE_FRAME rf = mbmi->ref_frame;
       best_mv.as_int = ctx->best_ref_mv.as_int;
@@ -1090,11 +1098,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   xd->mode_info_context->mbmi.uv_mode = DC_PRED;
 
   vp9_zero(cpi->count_mb_ref_frame_usage)
-  vp9_zero(cpi->bmode_count)
-  vp9_zero(cpi->ymode_count)
+  vp9_zero(cpi->y_mode_count)
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->common.fc.mv_ref_ct)
-  vp9_zero(cpi->sb_ymode_count)
   vp9_zero(cpi->partition_count);
 
   // Note: this memset assumes above_context[0], [1] and [2]
@@ -1545,20 +1551,17 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
   const MB_PREDICTION_MODE m = xd->mode_info_context->mbmi.mode;
   const MB_PREDICTION_MODE uvm = xd->mode_info_context->mbmi.uv_mode;
 
+  ++cpi->y_uv_mode_count[m][uvm];
   if (xd->mode_info_context->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
-    ++cpi->sb_ymode_count[m];
+    ++cpi->y_mode_count[m];
   } else {
-    ++cpi->ymode_count[m];
-  }
-    ++cpi->y_uv_mode_count[m][uvm];
-  if (m == I4X4_PRED) {
     int idx, idy;
     int bw = 1 << b_width_log2(xd->mode_info_context->mbmi.sb_type);
     int bh = 1 << b_height_log2(xd->mode_info_context->mbmi.sb_type);
     for (idy = 0; idy < 2; idy += bh) {
       for (idx = 0; idx < 2; idx += bw) {
         int m = xd->mode_info_context->bmi[idy * 2 + idx].as_mode.first;
-        ++cpi->sb_ymode_count[m];
+        ++cpi->y_mode_count[m];
       }
     }
   }
@@ -1622,7 +1625,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
             cpi->zbin_mode_boost = GF_ZEROMV_ZBIN_BOOST;
           else
             cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
-        } else if (mbmi->mode == SPLITMV) {
+        } else if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
           cpi->zbin_mode_boost = SPLIT_MV_ZBIN_BOOST;
         } else {
           cpi->zbin_mode_boost = MV_ZBIN_BOOST;

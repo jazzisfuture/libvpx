@@ -78,20 +78,16 @@ typedef enum {
   D27_PRED,        // Directional 27  deg = round(arctan(1/2) * 180/pi)
   D63_PRED,        // Directional 63  deg = round(arctan(2/1) * 180/pi)
   TM_PRED,         // True-motion
-  I4X4_PRED,       // Each 4x4 subblock has its own mode
   NEARESTMV,
   NEARMV,
   ZEROMV,
   NEWMV,
-  SPLITMV,
   MB_MODE_COUNT
 } MB_PREDICTION_MODE;
 
 static INLINE int is_inter_mode(MB_PREDICTION_MODE mode) {
-  return mode >= NEARESTMV && mode <= SPLITMV;
+  return mode >= NEARESTMV && mode <= NEWMV;
 }
-
-#define INTRA_MODE_COUNT (TM_PRED + 1)
 
 // Segment level features.
 typedef enum {
@@ -119,15 +115,10 @@ typedef enum {
   ADST_ADST = 3                       // ADST in both directions
 } TX_TYPE;
 
-#define VP9_YMODES  (I4X4_PRED + 1)
-#define VP9_UV_MODES (TM_PRED + 1)
-#define VP9_I32X32_MODES (TM_PRED + 1)
-
-#define VP9_MVREFS (1 + SPLITMV - NEARESTMV)
+#define VP9_INTRA_MODES (TM_PRED + 1)
+#define VP9_MVREFS (1 + NEWMV - NEARESTMV)
 
 #define WHT_UPSCALE_FACTOR 2
-
-#define VP9_BINTRAMODES INTRA_MODE_COUNT
 
 /* For keyframes, intra block modes are predicted by the (already decoded)
    modes for the Y blocks to the left and above us; for interframes, there
@@ -541,7 +532,7 @@ static TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
   TX_TYPE tx_type = DCT_DCT;
   if (xd->lossless)
     return DCT_DCT;
-  if (xd->mode_info_context->mbmi.mode == I4X4_PRED) {
+  if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
     tx_type = txfm_map(
         xd->mode_info_context->bmi[ib].as_mode.first);
   } else if (xd->mode_info_context->mbmi.mode <= TM_PRED) {
@@ -689,7 +680,6 @@ static INLINE void foreach_predicted_block_in_plane(
     const MACROBLOCKD* const xd, BLOCK_SIZE_TYPE bsize, int plane,
     foreach_predicted_block_visitor visit, void *arg) {
   int i, x, y;
-  const MB_PREDICTION_MODE mode = xd->mode_info_context->mbmi.mode;
 
   // block sizes in number of 4x4 blocks log 2 ("*_b")
   // 4x4=0, 8x8=2, 16x16=4, 32x32=6, 64x64=8
@@ -700,7 +690,7 @@ static INLINE void foreach_predicted_block_in_plane(
   // size of the predictor to use.
   int pred_w, pred_h;
 
-  if (mode == SPLITMV) {
+  if (bsize < BLOCK_SIZE_SB8X8) {
     pred_w = 0;
     pred_h = 0;
   } else {
