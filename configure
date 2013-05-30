@@ -247,6 +247,7 @@ EXPERIMENT_LIST="
     multiple_arf
     non420
     alpha
+    new_loopfilter
     ab4x4
     comp_inter_joint_search
 "
