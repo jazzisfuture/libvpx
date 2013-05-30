@@ -201,13 +201,8 @@ DECLARE_ALIGNED(16, const int, vp9_default_scan_32x32[1024]) = {
 
 const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
 {
-#if CONFIG_BALANCED_COEFTREE
-  -ZERO_TOKEN, 2,                             /* 0 = ZERO */
-  -DCT_EOB_TOKEN, 4,                          /* 1 = EOB  */
-#else
   -DCT_EOB_TOKEN, 2,                          /* 0 = EOB */
   -ZERO_TOKEN, 4,                             /* 1 = ZERO */
-#endif
   -ONE_TOKEN, 6,                              /* 2 = ONE */
   8, 12,                                      /* 3 = LOW_VAL */
   -TWO_TOKEN, 10,                            /* 4 = TWO */
@@ -219,7 +214,38 @@ const vp9_tree_index vp9_coef_tree[ 22] =     /* corresponding _CONTEXT_NODEs */
   -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6    /* 10 = CAT_FIVE */
 };
 
+const vp9_tree_index vp9_coefmodel_tree[6] = {
+  -DCT_EOB_MODEL_TOKEN, 2,                      /* 0 = EOB */
+  -ZERO_TOKEN, 4,                               /* 1 = ZERO */
+  -ONE_TOKEN, -TWO_TOKEN,
+};
+
 struct vp9_token vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+
+#if CONFIG_BALANCED_COEFTREE
+const vp9_tree_index vp9_coef_bal_tree[ 22] = {
+  -ZERO_TOKEN, 2,                           /* 0 = ZERO */
+  -DCT_EOB_TOKEN, 4,                        /* 1 = EOB  */
+  -ONE_TOKEN, 6,                            /* 2 = ONE */
+  8, 12,                                    /* 3 = LOW_VAL */
+  -TWO_TOKEN, 10,                           /* 4 = TWO */
+  -THREE_TOKEN, -FOUR_TOKEN,                /* 5 = THREE */
+  14, 16,                                   /* 6 = HIGH_LOW */
+  -DCT_VAL_CATEGORY1, -DCT_VAL_CATEGORY2,   /* 7 = CAT_ONE */
+  18, 20,                                   /* 8 = CAT_THREEFOUR */
+  -DCT_VAL_CATEGORY3, -DCT_VAL_CATEGORY4,   /* 9 = CAT_THREE */
+  -DCT_VAL_CATEGORY5, -DCT_VAL_CATEGORY6    /* 10 = CAT_FIVE */
+};
+
+const vp9_tree_index vp9_coefmodel_bal_tree[6] = {
+  -ZERO_TOKEN, 2,
+  -DCT_EOB_MODEL_TOKEN, 4,
+  -ONE_TOKEN, -TWO_TOKEN,
+};
+
+struct vp9_token vp9_coef_bal_encodings[MAX_ENTROPY_TOKENS];
+#endif
+
 
 /* Trees for extra bits.  Probabilities are constant and
    do not depend on previously encoded bits */
@@ -231,17 +257,6 @@ static const vp9_prob Pcat4[] = { 176, 155, 140, 135};
 static const vp9_prob Pcat5[] = { 180, 157, 141, 134, 130};
 static const vp9_prob Pcat6[] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129
-};
-
-const vp9_tree_index vp9_coefmodel_tree[6] = {
-#if CONFIG_BALANCED_COEFTREE
-  -ZERO_TOKEN, 2,
-  -DCT_EOB_MODEL_TOKEN, 4,
-#else
-  -DCT_EOB_MODEL_TOKEN, 2,                      /* 0 = EOB */
-  -ZERO_TOKEN, 4,                               /* 1 = ZERO */
-#endif
-  -ONE_TOKEN, -TWO_TOKEN,
 };
 
 // Model obtained from a 2-sided zero-centerd distribuition derived
@@ -641,6 +656,9 @@ void vp9_coef_tree_initialize() {
   vp9_init_neighbors();
   init_bit_trees();
   vp9_tokens_from_tree(vp9_coef_encodings, vp9_coef_tree);
+#if CONFIG_BALANCED_COEFTREE
+  vp9_tokens_from_tree(vp9_coef_bal_encodings, vp9_coef_bal_tree);
+#endif
 }
 
 // #define COEF_COUNT_TESTING
@@ -682,6 +700,9 @@ static void adapt_coef_probs(
     vp9_coeff_probs_model *pre_coef_probs,
     vp9_coeff_count_model *coef_counts,
     unsigned int (*eob_branch_count)[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS],
+#if CONFIG_BALANCED_COEFTREE
+    int balanced,
+#endif
     int count_sat,
     int update_factor) {
   int t, i, j, k, l, count;
@@ -696,14 +717,27 @@ static void adapt_coef_probs(
         for (l = 0; l < PREV_COEF_CONTEXTS; ++l) {
           if (l >= 3 && k == 0)
             continue;
+#if CONFIG_BALANCED_COEFTREE
+          if (balanced) {
+            vp9_tree_probs_from_distribution(
+                vp9_coefmodel_bal_tree,
+                coef_probs, branch_ct,
+                coef_counts[i][j][k][l], 0);
+            branch_ct[1][1] = eob_branch_count[i][j][k][l] - branch_ct[1][0];
+            coef_probs[1] = get_binary_prob(branch_ct[1][0], branch_ct[1][1]);
+          } else {
+            vp9_tree_probs_from_distribution(
+                vp9_coefmodel_tree,
+                coef_probs, branch_ct,
+                coef_counts[i][j][k][l], 0);
+            branch_ct[0][1] = eob_branch_count[i][j][k][l] - branch_ct[0][0];
+            coef_probs[0] = get_binary_prob(branch_ct[0][0], branch_ct[0][1]);
+          }
+#else
           vp9_tree_probs_from_distribution(
               vp9_coefmodel_tree,
               coef_probs, branch_ct,
               coef_counts[i][j][k][l], 0);
-#if CONFIG_BALANCED_COEFTREE
-          branch_ct[1][1] = eob_branch_count[i][j][k][l] - branch_ct[1][0];
-          coef_probs[1] = get_binary_prob(branch_ct[1][0], branch_ct[1][1]);
-#else
           branch_ct[0][1] = eob_branch_count[i][j][k][l] - branch_ct[0][0];
           coef_probs[0] = get_binary_prob(branch_ct[0][0], branch_ct[0][1]);
 #endif
@@ -735,17 +769,29 @@ void vp9_adapt_coef_probs(VP9_COMMON *cm) {
   adapt_coef_probs(cm->fc.coef_probs_4x4, cm->fc.pre_coef_probs_4x4,
                    cm->fc.coef_counts_4x4,
                    cm->fc.eob_branch_counts[TX_4X4],
+#if CONFIG_BALANCED_COEFTREE
+                   get_balanced(TX_4X4),
+#endif
                    count_sat, update_factor);
   adapt_coef_probs(cm->fc.coef_probs_8x8, cm->fc.pre_coef_probs_8x8,
                    cm->fc.coef_counts_8x8,
                    cm->fc.eob_branch_counts[TX_8X8],
+#if CONFIG_BALANCED_COEFTREE
+                   get_balanced(TX_8X8),
+#endif
                    count_sat, update_factor);
   adapt_coef_probs(cm->fc.coef_probs_16x16, cm->fc.pre_coef_probs_16x16,
                    cm->fc.coef_counts_16x16,
                    cm->fc.eob_branch_counts[TX_16X16],
+#if CONFIG_BALANCED_COEFTREE
+                   get_balanced(TX_16X16),
+#endif
                    count_sat, update_factor);
   adapt_coef_probs(cm->fc.coef_probs_32x32, cm->fc.pre_coef_probs_32x32,
                    cm->fc.coef_counts_32x32,
                    cm->fc.eob_branch_counts[TX_32X32],
+#if CONFIG_BALANCED_COEFTREE
+                   get_balanced(TX_32X32),
+#endif
                    count_sat, update_factor);
 }
