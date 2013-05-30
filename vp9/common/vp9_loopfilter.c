@@ -11,6 +11,7 @@
 #include "vpx_config.h"
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/common/vp9_onyxc_int.h"
+#include "vp9/common/vp9_reconinter.h"
 #include "vpx_mem/vpx_mem.h"
 
 #include "vp9/common/vp9_seg_common.h"
@@ -159,6 +160,7 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm,
   }
 }
 
+#if !CONFIG_NEW_LOOPFILTER
 // Determine if we should skip inner-MB loop filtering within a MB
 // The current condition is that the loop filtering is skipped only
 // the MB uses a prediction size of 16x16 and either 16x16 transform
@@ -190,15 +192,15 @@ static void lpf_mb(VP9_COMMON *cm, const MODE_INFO *mi,
                    int y_stride, int uv_stride) {
   loop_filter_info_n *lfi_n = &cm->lf_info;
   struct loop_filter_info lfi;
-  int mode = mi->mbmi.mode;
+  int mode = mbmi->mode;
   int mode_index = lfi_n->mode_lf_lut[mode];
-  int seg = mi->mbmi.segment_id;
-  int ref_frame = mi->mbmi.ref_frame;
+  int seg = mbmi->segment_id;
+  int ref_frame = mbmi->ref_frame;
   int filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
 
   if (filter_level) {
-    const int skip_lf = mb_lf_skip(&mi->mbmi);
-    const int tx_size = mi->mbmi.txfm_size;
+    const int skip_lf = mb_lf_skip(&mbmi->;
+    const int tx_size = mbmi->txfm_size;
     const int hev_index = filter_level >> 4;
     lfi.mblim = lfi_n->mblim[filter_level];
     lfi.blim = lfi_n->blim[filter_level];
@@ -218,7 +220,7 @@ static void lpf_mb(VP9_COMMON *cm, const MODE_INFO *mi,
     if (!skip_lf) {
       if (tx_size >= TX_8X8) {
         if (tx_size == TX_8X8 &&
-            mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
+            mbmi->sb_type < BLOCK_SIZE_MB16X16)
           vp9_loop_filter_bh8x8(y_ptr, u_ptr, v_ptr,
                                 y_stride, uv_stride, &lfi);
         else
@@ -243,7 +245,7 @@ static void lpf_mb(VP9_COMMON *cm, const MODE_INFO *mi,
     if (!skip_lf) {
       if (tx_size >= TX_8X8) {
         if (tx_size == TX_8X8 &&
-            mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
+            mbmi->sb_type < BLOCK_SIZE_MB16X16)
           vp9_loop_filter_bv8x8(y_ptr, u_ptr, v_ptr,
                                 y_stride, uv_stride, &lfi);
         else
@@ -539,3 +541,164 @@ void vp9_loop_filter_frame(VP9_COMMON *cm,
     }
   }
 }
+
+#else
+static int build_lfi(const VP9_COMMON *cm, const MB_MODE_INFO *mbmi,
+                      struct loop_filter_info *lfi) {
+  const loop_filter_info_n *lfi_n = &cm->lf_info;
+  int mode = mbmi->mode;
+  int mode_index = lfi_n->mode_lf_lut[mode];
+  int seg = mbmi->segment_id;
+  int ref_frame = mbmi->ref_frame;
+  int filter_level = lfi_n->lvl[seg][ref_frame][mode_index];
+
+  if (filter_level) {
+    const int hev_index = filter_level >> 4;
+    lfi->mblim = lfi_n->mblim[filter_level];
+    lfi->blim = lfi_n->blim[filter_level];
+    lfi->lim = lfi_n->lim[filter_level];
+    lfi->hev_thr = lfi_n->hev_thr[hev_index];
+    return 1;
+  }
+  return 0;
+}
+
+typedef void (*filter_edge_fn_t)(uint8_t *s, int pitch, const uint8_t *blimit,
+                                 const uint8_t *limit, const uint8_t *thresh,
+                                 int count);
+
+static void filter_selectively(uint8_t *s0, int pitch, unsigned int mask,
+                               const struct loop_filter_info *lfi,
+                               filter_edge_fn_t filter) {
+  uint8_t *s = s0;
+  for (; mask; mask >>= 1) {
+    if (mask & 1) {
+      filter(s, pitch, lfi->mblim, lfi->lim, lfi->hev_thr, 1);
+    }
+    s += 8;
+    lfi++;
+  }
+}
+
+static void filter_block_plane(VP9_COMMON *cm, MACROBLOCKD *xd,
+                               int plane, int mi_row, int mi_col) {
+  const int ss_x = xd->plane[plane].subsampling_x;
+  const int row_step = 1 << xd->plane[plane].subsampling_y;
+  const int col_step = 1 << xd->plane[plane].subsampling_x;
+  struct buf_2d * const dst = &xd->plane[plane].dst;
+  int r, c;
+
+  for (r = 0; r < 64 / MI_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
+    unsigned int mask_16x16_c = 0, mask_16x16_r = 0;
+    unsigned int mask_8x8_c = 0, mask_8x8_r = 0;
+    unsigned int mask_4x4_c = 0, mask_4x4_r = 0;
+    unsigned int mask_4x4 = 0;
+    unsigned int border_mask;
+    struct loop_filter_info lfi[64 / MI_SIZE];
+
+    // Determine the vertical edges that need filtering
+    for (c = 0; c < 64 / MI_SIZE && mi_col + c < cm->mi_cols; c += col_step) {
+      const MODE_INFO const *mi = xd->mode_info_context;
+      const TX_SIZE tx_size = plane ? get_uv_tx_size(xd) : mi[c].mbmi.txfm_size;
+
+      // Skip loop filtering on 8x8 and larger if there was no residual
+      // TODO(jkoleszar): make skip per-plane?
+      if (0 && tx_size >= TX_8X8 && mi[c].mbmi.mb_skip_coeff)
+        continue;
+
+      // Filter level can vary per MI
+      if (!build_lfi(cm, &mi[c].mbmi,
+                     lfi + (c >> xd->plane[plane].subsampling_x)))
+        continue;
+
+      // Build masks based on the transform size of each block
+      if (tx_size == TX_32X32) {
+        if ((c & 3) == 0)
+          mask_16x16_c |= 1 << (c >> ss_x);
+        if ((r & 3) == 0)
+          mask_16x16_r |= 1 << (c >> ss_x);
+      } else if (tx_size == TX_16X16) {
+        if ((c & 1) == 0)
+          mask_16x16_c |= 1 << (c >> ss_x);
+        if ((r & 1) == 0)
+          mask_16x16_r |= 1 << (c >> ss_x);
+      } else {
+        // force 8x8 filtering on 32x32 boundaries
+        if (tx_size == TX_8X8 || (c & 3) == 0)
+          mask_8x8_c |= 1 << (c >> ss_x);
+        else
+          mask_4x4_c |= 1 << (c >> ss_x);
+
+        if (tx_size == TX_8X8 || (r & 3) == 0)
+          mask_8x8_r |= 1 << (c >> ss_x);
+        else
+          mask_4x4_r |= 1 << (c >> ss_x);
+
+        if (tx_size < TX_8X8)
+          mask_4x4 |= 1 << (c >> ss_x);
+      }
+    }
+
+    // Disable filtering on the leftmost column
+    border_mask = ~(mi_col == 0);
+
+    filter_selectively(dst->buf, dst->stride,
+                       mask_16x16_c & border_mask, lfi,
+                       vp9_mb_lpf_vertical_edge_w);
+    filter_selectively(dst->buf, dst->stride,
+                       mask_8x8_c & border_mask, lfi,
+                       vp9_mbloop_filter_vertical_edge);
+    filter_selectively(dst->buf, dst->stride,
+                       mask_4x4_c & border_mask, lfi,
+                       vp9_loop_filter_vertical_edge);
+    filter_selectively(dst->buf + 4,
+                       dst->stride,
+                       mask_4x4_c | mask_4x4, lfi,
+                       vp9_loop_filter_vertical_edge);
+
+    // Disable filtering on the topmost row
+    if (mi_row + r > 0) {
+      filter_selectively(dst->buf, dst->stride,
+                         mask_16x16_r, lfi,
+                         vp9_mb_lpf_horizontal_edge_w);
+      filter_selectively(dst->buf, dst->stride,
+                         mask_8x8_r, lfi,
+                         vp9_mbloop_filter_horizontal_edge);
+      filter_selectively(dst->buf, dst->stride,
+                         mask_4x4_r, lfi,
+                         vp9_loop_filter_horizontal_edge);
+    }
+    filter_selectively(dst->buf + 4 * dst->stride,
+                       dst->stride,
+                       mask_4x4_r | mask_4x4, lfi,
+                       vp9_loop_filter_horizontal_edge);
+
+    dst->buf += 8 * dst->stride;
+    xd->mode_info_context += cm->mode_info_stride * row_step;
+  }
+}
+
+void vp9_loop_filter_frame(VP9_COMMON *cm,
+                           MACROBLOCKD *xd,
+                           int frame_filter_level,
+                           int y_only) {
+  int mi_row, mi_col;
+
+  // Initialize the loop filter for this frame.
+  vp9_loop_filter_frame_init(cm, xd, frame_filter_level);
+
+  for (mi_row = 0; mi_row < cm->mi_rows; mi_row += 64 / MI_SIZE) {
+    MODE_INFO* const mi = cm->mi + mi_row * cm->mode_info_stride;
+
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += 64 / MI_SIZE) {
+      int plane;
+
+      setup_dst_planes(xd, cm->frame_to_show, mi_row, mi_col);
+      for (plane = 0; plane < (y_only ? 1 : MAX_MB_PLANE); plane++) {
+        xd->mode_info_context = mi + mi_col;
+        filter_block_plane(cm, xd, plane, mi_row, mi_col);
+      }
+    }
+  }
+}
+#endif
