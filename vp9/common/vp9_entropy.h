@@ -37,11 +37,16 @@
 #define INTER_MODE_CONTEXTS     7
 
 extern const vp9_tree_index vp9_coef_tree[];
+extern const vp9_tree_index vp9_coefmodel_tree[];
+extern struct vp9_token vp9_coef_encodings[MAX_ENTROPY_TOKENS];
+
+#if CONFIG_BALANCED_COEFTREE
+extern const vp9_tree_index vp9_coef_bal_tree[];
+extern const vp9_tree_index vp9_coefmodel_bal_tree[];
+extern struct vp9_token vp9_coef_bal_encodings[MAX_ENTROPY_TOKENS];
+#endif
 
 #define DCT_EOB_MODEL_TOKEN     3      /* EOB       Extra Bits 0+0 */
-extern const vp9_tree_index vp9_coefmodel_tree[];
-
-extern struct vp9_token vp9_coef_encodings[MAX_ENTROPY_TOKENS];
 
 typedef struct {
   vp9_tree_p tree;
@@ -86,6 +91,14 @@ extern vp9_extra_bit vp9_extra_bits[12];    /* indexed by token value */
 #define PREV_COEF_CONTEXTS          6
 
 // #define ENTROPY_STATS
+
+#if CONFIG_BALANCED_COEFTREE
+#define TX_SIZE_BALANCED_START 2
+#define get_balanced(t)  ((t) >= TX_SIZE_BALANCED_START)
+#else
+#define TX_SIZE_BALANCED_START 100
+#define get_balanced(t)  (0)
+#endif
 
 typedef unsigned int vp9_coeff_count[REF_TYPES][COEF_BANDS][PREV_COEF_CONTEXTS]
                                     [MAX_ENTROPY_TOKENS];
@@ -171,9 +184,7 @@ typedef vp9_prob vp9_coeff_probs_model[REF_TYPES][COEF_BANDS]
 typedef unsigned int vp9_coeff_count_model[REF_TYPES][COEF_BANDS]
                                           [PREV_COEF_CONTEXTS]
                                           [UNCONSTRAINED_NODES + 1];
-typedef unsigned int vp9_coeff_stats_model[REF_TYPES][COEF_BANDS]
-                                          [PREV_COEF_CONTEXTS]
-                                          [UNCONSTRAINED_NODES][2];
+
 extern void vp9_full_to_model_count(unsigned int *model_count,
                                     unsigned int *full_count);
 extern void vp9_full_to_model_counts(
