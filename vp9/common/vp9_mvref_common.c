@@ -220,10 +220,10 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
         add_candidate_mv(mv_ref_list, candidate_scores,
                          &refmv_count, c_refmv, 16);
       }
-      split_count += (candidate_mi->mbmi.mode == SPLITMV);
+      split_count += (candidate_mi->mbmi.sb_type < BLOCK_SIZE_SB8X8);
 
       // Count number of neihgbours coded intra and zeromv
-      intra_count += (candidate_mi->mbmi.mode < NEARESTMV);
+      intra_count += (candidate_mi->mbmi.ref_frame == INTRA_FRAME);
       zero_count += (candidate_mi->mbmi.mode == ZEROMV);
       newmv_count += (candidate_mi->mbmi.mode >= NEWMV);
     }
