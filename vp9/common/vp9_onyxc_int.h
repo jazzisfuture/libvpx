@@ -47,17 +47,17 @@ void vp9_initialize_common(void);
 #define MAX_LAG_BUFFERS 25
 
 typedef struct frame_contexts {
-  vp9_prob y_mode_prob[VP9_YMODES - 1]; /* interframe intra mode probs */
-  vp9_prob uv_mode_prob[VP9_YMODES][VP9_UV_MODES - 1];
+  vp9_prob y_mode_prob[VP9_INTRA_MODES - 1]; /* interframe intra mode probs */
+  vp9_prob uv_mode_prob[VP9_INTRA_MODES][VP9_INTRA_MODES - 1];
   vp9_prob partition_prob[NUM_PARTITION_CONTEXTS][PARTITION_TYPES - 1];
 
   nmv_context nmvc;
   nmv_context pre_nmvc;
-  vp9_prob pre_y_mode_prob[VP9_YMODES - 1]; /* interframe intra mode probs */
-  vp9_prob pre_uv_mode_prob[VP9_YMODES][VP9_UV_MODES - 1];
+  vp9_prob pre_y_mode_prob[VP9_INTRA_MODES - 1]; /* interframe intra mode probs */
+  vp9_prob pre_uv_mode_prob[VP9_INTRA_MODES][VP9_INTRA_MODES - 1];
   vp9_prob pre_partition_prob[NUM_PARTITION_CONTEXTS][PARTITION_TYPES - 1];
-  unsigned int y_mode_counts[VP9_YMODES];   /* interframe intra mode probs */
-  unsigned int uv_mode_counts[VP9_YMODES][VP9_UV_MODES];
+  unsigned int y_mode_counts[VP9_INTRA_MODES];   /* interframe intra mode probs */
+  unsigned int uv_mode_counts[VP9_INTRA_MODES][VP9_INTRA_MODES];
   unsigned int partition_counts[NUM_PARTITION_CONTEXTS][PARTITION_TYPES];
 
   vp9_coeff_probs_model coef_probs_4x4[BLOCK_TYPES];
@@ -214,7 +214,7 @@ typedef struct VP9Common {
   vp9_prob kf_y_mode_prob[VP9_BINTRAMODES]
                          [VP9_BINTRAMODES]
                          [VP9_BINTRAMODES - 1];
-  vp9_prob kf_uv_mode_prob[VP9_YMODES] [VP9_UV_MODES - 1];
+  vp9_prob kf_uv_mode_prob[VP9_INTRA_MODES] [VP9_INTRA_MODES - 1];
 
   vp9_prob prob_intra_coded;
   vp9_prob prob_last_coded;

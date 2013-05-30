@@ -245,10 +245,10 @@ static void update_mbintra_mode_probs(VP9_COMP* const cpi,
                                       vp9_writer* const bc) {
   VP9_COMMON *const cm = &cpi->common;
 
-  vp9_prob pnew[VP9_YMODES - 1];
-  unsigned int bct[VP9_YMODES - 1][2];
+  vp9_prob pnew[VP9_INTRA_MODES - 1];
+  unsigned int bct[VP9_INTRA_MODES - 1][2];
 
-  update_mode(bc, VP9_YMODES, vp9_intra_mode_encodings,
+  update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
               vp9_intra_mode_tree, pnew,
               cm->fc.y_mode_prob, bct, (unsigned int *)cpi->y_mode_count);
 }
