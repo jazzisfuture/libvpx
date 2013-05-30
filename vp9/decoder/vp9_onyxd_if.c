@@ -150,6 +150,13 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   if (!pbi)
     return;
 
+#ifdef COUNT_COEFF_BOOL_DECODES
+  FILE *fp = fopen("bool_decode_counts.txt", "w");
+  fprintf(fp, "%d %"PRId64"\n",
+          pbi->common.current_video_frame, num_bool_decodes);
+  fclose(fp);
+#endif
+
   if (pbi->common.last_frame_seg_map)
     vpx_free(pbi->common.last_frame_seg_map);
 

@@ -15,15 +15,12 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 #include "vp9/decoder/vp9_detokenize.h"
+#include "vp9/decoder/vp9_decodframe.h"
 #include "vp9/common/vp9_seg_common.h"
 
-#if CONFIG_BALANCED_COEFTREE
-#define ZERO_CONTEXT_NODE           0
-#define EOB_CONTEXT_NODE            1
-#else
 #define EOB_CONTEXT_NODE            0
 #define ZERO_CONTEXT_NODE           1
-#endif
+
 #define ONE_CONTEXT_NODE            2
 #define LOW_VAL_CONTEXT_NODE        3
 #define TWO_CONTEXT_NODE            4
@@ -63,6 +60,13 @@ static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
 
+#ifdef COUNT_COEFF_BOOL_DECODES
+int64_t num_bool_decodes = 0;
+#define INCREMENT_NUM_BOOL_DECODES  num_bool_decodes++
+#else
+#define INCREMENT_NUM_BOOL_DECODES
+#endif
+
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
 #define INCREMENT_COUNT(token)               \
@@ -76,6 +80,7 @@ DECLARE_ALIGNED(16, extern const uint8_t,
 
 #define WRITE_COEF_CONTINUE(val, token)                  \
   {                                                      \
+    INCREMENT_NUM_BOOL_DECODES;                          \
     qcoeff_ptr[scan[c]] = vp9_read_and_apply_sign(r, val) * \
                             dq[c > 0] / (1 + (txfm_size == TX_32X32)); \
     INCREMENT_COUNT(token);                              \
@@ -85,6 +90,7 @@ DECLARE_ALIGNED(16, extern const uint8_t,
 
 #define ADJUST_COEF(prob, bits_count)  \
   do {                                 \
+    INCREMENT_NUM_BOOL_DECODES;        \
     if (vp9_read(r, prob))             \
       val += 1 << bits_count;          \
   } while (0);
@@ -116,9 +122,6 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
   const int *scan, *nb;
   uint8_t token_cache[1024];
   const uint8_t * band_translate;
-#if CONFIG_BALANCED_COEFTREE
-  int skip_eob_node = 0;
-#endif
 
   switch (txfm_size) {
     default:
@@ -190,13 +193,12 @@ static int decode_coefs(VP9D_COMP *dx, const MACROBLOCKD *xd,
                                 c, default_eob);
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
-#if !CONFIG_BALANCED_COEFTREE
     fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
 SKIP_START:
-#endif
     if (c >= seg_eob)
       break;
     if (c)
@@ -205,26 +207,15 @@ SKIP_START:
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
 
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       ++c;
-#if CONFIG_BALANCED_COEFTREE
-      skip_eob_node = 1;
-      continue;
-#else
       goto SKIP_START;
-#endif
     }
-#if CONFIG_BALANCED_COEFTREE
-    if (!skip_eob_node) {
-      fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
-      if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
-        break;
-    }
-    skip_eob_node = 0;
-#endif
 
     // ONE_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
@@ -236,17 +227,22 @@ SKIP_START:
     }
     prob = coef_probs_full[band][pt];
     // LOW_VAL_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
       if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {
         WRITE_COEF_CONTINUE(2, TWO_TOKEN);
       }
+      INCREMENT_NUM_BOOL_DECODES;
       if (!vp9_read(r, prob[THREE_CONTEXT_NODE])) {
         WRITE_COEF_CONTINUE(3, THREE_TOKEN);
       }
       WRITE_COEF_CONTINUE(4, FOUR_TOKEN);
     }
     // HIGH_LOW_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[HIGH_LOW_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
       if (!vp9_read(r, prob[CAT_ONE_CONTEXT_NODE])) {
         val = CAT1_MIN_VAL;
         ADJUST_COEF(CAT1_PROB0, 0);
@@ -258,7 +254,9 @@ SKIP_START:
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
     }
     // CAT_THREEFOUR_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
       if (!vp9_read(r, prob[CAT_THREE_CONTEXT_NODE])) {
         val = CAT3_MIN_VAL;
         ADJUST_COEF(CAT3_PROB2, 2);
@@ -274,6 +272,7 @@ SKIP_START:
       WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
     }
     // CAT_FIVE_CONTEXT_NODE_0_:
+    INCREMENT_NUM_BOOL_DECODES;
     if (!vp9_read(r, prob[CAT_FIVE_CONTEXT_NODE])) {
       val = CAT5_MIN_VAL;
       ADJUST_COEF(CAT5_PROB4, 4);
@@ -285,6 +284,7 @@ SKIP_START:
     }
     val = 0;
     while (*cat6) {
+      INCREMENT_NUM_BOOL_DECODES;
       val = (val << 1) | vp9_read(r, *cat6++);
     }
     val += CAT6_MIN_VAL;
@@ -300,6 +300,223 @@ SKIP_START:
 
   return c;
 }
+
+#if CONFIG_BALANCED_COEFTREE
+
+#undef ZERO_CONTEXT_NODE
+#undef EOB_CONTEXT_NODE
+#define ZERO_CONTEXT_NODE           0
+#define EOB_CONTEXT_NODE            1
+
+static int decode_coefs_bal(VP9D_COMP *dx, const MACROBLOCKD *xd,
+                            vp9_reader *r, int block_idx,
+                            PLANE_TYPE type, int seg_eob, int16_t *qcoeff_ptr,
+                            TX_SIZE txfm_size, const int16_t *dq,
+                            ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L) {
+  ENTROPY_CONTEXT above_ec, left_ec;
+  FRAME_CONTEXT *const fc = &dx->common.fc;
+  int pt, c = 0, pad, default_eob;
+  int band;
+  vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES];
+  vp9_prob coef_probs_full[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
+  uint8_t load_map[COEF_BANDS][PREV_COEF_CONTEXTS] = {
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+  };
+
+  vp9_prob *prob;
+  vp9_coeff_count_model *coef_counts;
+  const int ref = xd->mode_info_context->mbmi.ref_frame != INTRA_FRAME;
+  TX_TYPE tx_type = DCT_DCT;
+  const int *scan, *nb;
+  uint8_t token_cache[1024];
+  const uint8_t * band_translate;
+  int skip_eob_node = 0;
+
+  switch (txfm_size) {
+    default:
+    case TX_4X4: {
+      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_4x4(xd, block_idx) : DCT_DCT;
+      scan = get_scan_4x4(tx_type);
+      above_ec = A[0] != 0;
+      left_ec = L[0] != 0;
+      coef_probs  = fc->coef_probs_4x4[type][ref];
+      coef_counts = fc->coef_counts_4x4;
+      default_eob = 16;
+      band_translate = vp9_coefband_trans_4x4;
+      break;
+    }
+    case TX_8X8: {
+      const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
+      const int sz = 1 + b_width_log2(sb_type);
+      const int x = block_idx & ((1 << sz) - 1);
+      const int y = block_idx - x;
+      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_8x8(xd, y + (x >> 1)) : DCT_DCT;
+      scan = get_scan_8x8(tx_type);
+      coef_probs  = fc->coef_probs_8x8[type][ref];
+      coef_counts = fc->coef_counts_8x8;
+      above_ec = (A[0] + A[1]) != 0;
+      left_ec = (L[0] + L[1]) != 0;
+      default_eob = 64;
+      band_translate = vp9_coefband_trans_8x8plus;
+      break;
+    }
+    case TX_16X16: {
+      const BLOCK_SIZE_TYPE sb_type = xd->mode_info_context->mbmi.sb_type;
+      const int sz = 2 + b_width_log2(sb_type);
+      const int x = block_idx & ((1 << sz) - 1);
+      const int y = block_idx - x;
+      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
+          get_tx_type_16x16(xd, y + (x >> 2)) : DCT_DCT;
+      scan = get_scan_16x16(tx_type);
+      coef_probs  = fc->coef_probs_16x16[type][ref];
+      coef_counts = fc->coef_counts_16x16;
+      above_ec = (A[0] + A[1] + A[2] + A[3]) != 0;
+      left_ec = (L[0] + L[1] + L[2] + L[3]) != 0;
+      default_eob = 256;
+      band_translate = vp9_coefband_trans_8x8plus;
+      break;
+    }
+    case TX_32X32:
+      scan = vp9_default_scan_32x32;
+      coef_probs = fc->coef_probs_32x32[type][ref];
+      coef_counts = fc->coef_counts_32x32;
+      above_ec = (A[0] + A[1] + A[2] + A[3] + A[4] + A[5] + A[6] + A[7]) != 0;
+      left_ec = (L[0] + L[1] + L[2] + L[3] + L[4] + L[5] + L[6] + L[7]) != 0;
+      default_eob = 1024;
+      band_translate = vp9_coefband_trans_8x8plus;
+      break;
+  }
+
+  pt = combine_entropy_contexts(above_ec, left_ec);
+  nb = vp9_get_coef_neighbors_handle(scan, &pad);
+
+  while (1) {
+    int val;
+    const uint8_t *cat6 = cat6_prob;
+    if (c >= seg_eob)
+      break;
+    if (c)
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                c, default_eob);
+    band = get_coef_band(band_translate, c);
+    prob = coef_probs[band][pt];
+    if (c >= seg_eob)
+      break;
+    if (c)
+      pt = vp9_get_coef_context(scan, nb, pad, token_cache,
+                                c, default_eob);
+    band = get_coef_band(band_translate, c);
+    prob = coef_probs[band][pt];
+
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+      INCREMENT_COUNT(ZERO_TOKEN);
+      ++c;
+      skip_eob_node = 1;
+      continue;
+    }
+    if (!skip_eob_node) {
+      fc->eob_branch_counts[txfm_size][type][ref][band][pt]++;
+      INCREMENT_NUM_BOOL_DECODES;
+      if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
+        break;
+    }
+    skip_eob_node = 0;
+
+    // ONE_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
+      WRITE_COEF_CONTINUE(1, ONE_TOKEN);
+    }
+    // Load full probabilities if not already loaded
+    if (!load_map[band][pt]) {
+      vp9_model_to_full_probs(coef_probs[band][pt],
+                              coef_probs_full[band][pt]);
+      load_map[band][pt] = 1;
+    }
+    prob = coef_probs_full[band][pt];
+    // LOW_VAL_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
+      if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {
+        WRITE_COEF_CONTINUE(2, TWO_TOKEN);
+      }
+      INCREMENT_NUM_BOOL_DECODES;
+      if (!vp9_read(r, prob[THREE_CONTEXT_NODE])) {
+        WRITE_COEF_CONTINUE(3, THREE_TOKEN);
+      }
+      WRITE_COEF_CONTINUE(4, FOUR_TOKEN);
+    }
+    // HIGH_LOW_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[HIGH_LOW_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
+      if (!vp9_read(r, prob[CAT_ONE_CONTEXT_NODE])) {
+        val = CAT1_MIN_VAL;
+        ADJUST_COEF(CAT1_PROB0, 0);
+        WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY1);
+      }
+      val = CAT2_MIN_VAL;
+      ADJUST_COEF(CAT2_PROB1, 1);
+      ADJUST_COEF(CAT2_PROB0, 0);
+      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
+    }
+    // CAT_THREEFOUR_CONTEXT_NODE_0_
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
+      INCREMENT_NUM_BOOL_DECODES;
+      if (!vp9_read(r, prob[CAT_THREE_CONTEXT_NODE])) {
+        val = CAT3_MIN_VAL;
+        ADJUST_COEF(CAT3_PROB2, 2);
+        ADJUST_COEF(CAT3_PROB1, 1);
+        ADJUST_COEF(CAT3_PROB0, 0);
+        WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY3);
+      }
+      val = CAT4_MIN_VAL;
+      ADJUST_COEF(CAT4_PROB3, 3);
+      ADJUST_COEF(CAT4_PROB2, 2);
+      ADJUST_COEF(CAT4_PROB1, 1);
+      ADJUST_COEF(CAT4_PROB0, 0);
+      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
+    }
+    // CAT_FIVE_CONTEXT_NODE_0_:
+    INCREMENT_NUM_BOOL_DECODES;
+    if (!vp9_read(r, prob[CAT_FIVE_CONTEXT_NODE])) {
+      val = CAT5_MIN_VAL;
+      ADJUST_COEF(CAT5_PROB4, 4);
+      ADJUST_COEF(CAT5_PROB3, 3);
+      ADJUST_COEF(CAT5_PROB2, 2);
+      ADJUST_COEF(CAT5_PROB1, 1);
+      ADJUST_COEF(CAT5_PROB0, 0);
+      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY5);
+    }
+    val = 0;
+    while (*cat6) {
+      INCREMENT_NUM_BOOL_DECODES;
+      val = (val << 1) | vp9_read(r, *cat6++);
+    }
+    val += CAT6_MIN_VAL;
+    WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
+  }
+
+  if (c < seg_eob)
+    coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN]++;
+
+  for (pt = 0; pt < (1 << txfm_size); pt++) {
+    A[pt] = L[pt] = c > 0;
+  }
+
+  return c;
+}
+#endif
 
 static int get_eob(MACROBLOCKD* const xd, int segment_id, int eob_max) {
   return vp9_get_segdata(xd, segment_id, SEG_LVL_SKIP) ? 0 : eob_max;
@@ -328,14 +545,34 @@ static void decode_block(int plane, int block,
   const int mod = bw - ss_tx_size - arg->xd->plane[plane].subsampling_x;
   const int aoff = (off & ((1 << mod) - 1)) << ss_tx_size;
   const int loff = (off >> mod) << ss_tx_size;
+  int eob;
 
-  const int eob = decode_coefs(arg->pbi, arg->xd, arg->r, block,
-                               arg->xd->plane[plane].plane_type, seg_eob,
-                               BLOCK_OFFSET(qcoeff_base, block, 16),
-                               ss_tx_size, arg->xd->plane[plane].dequant,
-                               arg->xd->plane[plane].above_context + aoff,
-                               arg->xd->plane[plane].left_context + loff);
-
+#if CONFIG_BALANCED_COEFTREE
+  const int balanced = get_balanced(ss_tx_size);
+  if (balanced)
+    eob = decode_coefs_bal(
+        arg->pbi, arg->xd, arg->r, block,
+        arg->xd->plane[plane].plane_type, seg_eob,
+        BLOCK_OFFSET(qcoeff_base, block, 16),
+        ss_tx_size, arg->xd->plane[plane].dequant,
+        arg->xd->plane[plane].above_context + aoff,
+        arg->xd->plane[plane].left_context + loff);
+  else
+    eob = decode_coefs(
+        arg->pbi, arg->xd, arg->r, block,
+        arg->xd->plane[plane].plane_type, seg_eob,
+        BLOCK_OFFSET(qcoeff_base, block, 16),
+        ss_tx_size, arg->xd->plane[plane].dequant,
+        arg->xd->plane[plane].above_context + aoff,
+        arg->xd->plane[plane].left_context + loff);
+#else
+  eob = decode_coefs(arg->pbi, arg->xd, arg->r, block,
+                     arg->xd->plane[plane].plane_type, seg_eob,
+                     BLOCK_OFFSET(qcoeff_base, block, 16),
+                     ss_tx_size, arg->xd->plane[plane].dequant,
+                     arg->xd->plane[plane].above_context + aoff,
+                     arg->xd->plane[plane].left_context + loff);
+#endif
   arg->xd->plane[plane].eobs[block] = eob;
   arg->eobtotal[0] += eob;
 }

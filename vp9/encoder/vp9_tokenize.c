@@ -226,8 +226,12 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
     t->skip_eob_node = (c > 0) && (token_cache[scan[c - 1]] == 0);
 
 #if CONFIG_BALANCED_COEFTREE
-    assert(token <= ZERO_TOKEN ||
-           vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
+    t->balanced = get_balanced(tx_size);
+    if (t->balanced)
+      assert(token <= ZERO_TOKEN ||
+             vp9_coef_bal_encodings[t->token].len - t->skip_eob_node > 0);
+    else
+      assert(vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
 #else
     assert(vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
 #endif
@@ -235,7 +239,8 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
     if (!dry_run) {
       ++counts[type][ref][band][pt][token];
 #if CONFIG_BALANCED_COEFTREE
-      if (!t->skip_eob_node && token > ZERO_TOKEN)
+      if ((t->balanced && token > ZERO_TOKEN) || !t->balanced)
+      if (!t->skip_eob_node)
 #else
       if (!t->skip_eob_node)
 #endif
@@ -350,7 +355,7 @@ void init_context_counters(void) {
 }
 
 static void print_counter(FILE *f, vp9_coeff_accum *context_counters,
-                          int block_types, const char *header) {
+                          const char *header) {
   int type, ref, band, pt, t;
 
   fprintf(f, "static const vp9_coeff_count %s = {\n", header);
@@ -384,12 +389,12 @@ static void print_counter(FILE *f, vp9_coeff_accum *context_counters,
       fprintf(f, "\n    }");
     } while (++ref < REF_TYPES);
     fprintf(f, "\n  }");
-  } while (++type < block_types);
+  } while (++type < BLOCK_TYPES);
   fprintf(f, "\n};\n");
 }
 
 static void print_probs(FILE *f, vp9_coeff_accum *context_counters,
-                        int block_types, const char *header) {
+                        TX_SIZE tx_size, const char *header) {
   int type, ref, band, pt, t;
 
   fprintf(f, "static const vp9_coeff_probs %s = {", header);
@@ -417,8 +422,15 @@ static void print_probs(FILE *f, vp9_coeff_accum *context_counters,
             break;
           for (t = 0; t < MAX_ENTROPY_TOKENS + 1; ++t)
             coef_counts[t] = context_counters[type][ref][band][pt][t];
+#if CONFIG_BALANCED_COEFTREE
+          vp9_tree_probs_from_distribution(get_balanced(tx_size) ?
+                                           vp9_coef_bal_tree : vp9_coef_tree,
+                                           coef_probs,
+                                           branch_ct, coef_counts, 0);
+#else
           vp9_tree_probs_from_distribution(vp9_coef_tree, coef_probs,
                                            branch_ct, coef_counts, 0);
+#endif
           branch_ct[0][1] = coef_counts[MAX_ENTROPY_TOKENS] - branch_ct[0][0];
           coef_probs[0] = get_binary_prob(branch_ct[0][0], branch_ct[0][1]);
           fprintf(f, "%s\n      {", Comma(pt));
@@ -435,7 +447,7 @@ static void print_probs(FILE *f, vp9_coeff_accum *context_counters,
       fprintf(f, "\n    }");
     } while (++ref < REF_TYPES);
     fprintf(f, "\n  }");
-  } while (++type < block_types);
+  } while (++type < BLOCK_TYPES);
   fprintf(f, "\n};\n");
 }
 
@@ -446,23 +458,23 @@ void print_context_counters() {
   fprintf(f, "\n/* *** GENERATED FILE: DO NOT EDIT *** */\n\n");
 
   /* print counts */
-  print_counter(f, context_counters_4x4, BLOCK_TYPES,
+  print_counter(f, context_counters_4x4,
                 "vp9_default_coef_counts_4x4[BLOCK_TYPES]");
-  print_counter(f, context_counters_8x8, BLOCK_TYPES,
+  print_counter(f, context_counters_8x8,
                 "vp9_default_coef_counts_8x8[BLOCK_TYPES]");
-  print_counter(f, context_counters_16x16, BLOCK_TYPES,
+  print_counter(f, context_counters_16x16,
                 "vp9_default_coef_counts_16x16[BLOCK_TYPES]");
-  print_counter(f, context_counters_32x32, BLOCK_TYPES,
+  print_counter(f, context_counters_32x32,
                 "vp9_default_coef_counts_32x32[BLOCK_TYPES]");
 
   /* print coefficient probabilities */
-  print_probs(f, context_counters_4x4, BLOCK_TYPES,
+  print_probs(f, context_counters_4x4, TX_4X4,
               "default_coef_probs_4x4[BLOCK_TYPES]");
-  print_probs(f, context_counters_8x8, BLOCK_TYPES,
+  print_probs(f, context_counters_8x8, TX_8X8,
               "default_coef_probs_8x8[BLOCK_TYPES]");
-  print_probs(f, context_counters_16x16, BLOCK_TYPES,
+  print_probs(f, context_counters_16x16, TX_16X16,
               "default_coef_probs_16x16[BLOCK_TYPES]");
-  print_probs(f, context_counters_32x32, BLOCK_TYPES,
+  print_probs(f, context_counters_32x32, TX_32X32,
               "default_coef_probs_32x32[BLOCK_TYPES]");
 
   fclose(f);
