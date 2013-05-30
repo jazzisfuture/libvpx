@@ -49,6 +49,9 @@
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
 
+#define SPLITMV 100
+#define I4X4_PRED 101
+
 const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {ZEROMV,    LAST_FRAME,   NONE},
   {DC_PRED,   INTRA_FRAME,  NONE},
@@ -264,7 +267,6 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
                     vp9_partition_tree);
 
   /*rough estimate for costing*/
-  cpi->common.kf_ymode_probs_index = cpi->common.base_qindex >> 4;
   vp9_init_mode_costs(cpi);
 
   if (cpi->common.frame_type != KEY_FRAME) {
@@ -679,7 +681,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     if (cm->frame_type == KEY_FRAME)
       rate = bmode_costs[mode];
     else
-      rate = x->mbmode_cost[cm->frame_type][mode];
+      rate = x->mbmode_cost[mode];
     distortion = 0;
 
     vpx_memcpy(tempa, ta, sizeof(ta));
@@ -777,7 +779,8 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
                                          int *Distortion, int64_t best_rd) {
   int i, j;
   MACROBLOCKD *const xd = &mb->e_mbd;
-  BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+  MODE_INFO *const mic = xd->mode_info_context;
+  BLOCK_SIZE_TYPE bsize = mic->mbmi.sb_type;
   int bw = 1 << b_width_log2(bsize);
   int bh = 1 << b_height_log2(bsize);
   int idx, idy;
@@ -792,11 +795,10 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   vpx_memcpy(t_left, xd->plane[0].left_context, sizeof(t_left));
 
   xd->mode_info_context->mbmi.mode = I4X4_PRED;
-  bmode_costs = mb->mbmode_cost[cpi->common.frame_type];
+  bmode_costs = mb->mbmode_cost;
 
   for (idy = 0; idy < 2; idy += bh) {
     for (idx = 0; idx < 2; idx += bw) {
-      MODE_INFO *const mic = xd->mode_info_context;
       const int mis = xd->mode_info_stride;
       MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(best_mode);
       int UNINITIALIZED_IS_SAFE(r), UNINITIALIZED_IS_SAFE(ry);
@@ -808,7 +810,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
                                      left_block_mode(mic, i) : DC_PRED;
 
-        bmode_costs  = mb->bmode_costs[A][L];
+        bmode_costs  = mb->kf_y_mode_costs[A][L];
       }
 
       total_rd += rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
@@ -835,6 +837,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   *Rate = cost;
   *rate_y = tot_rate_y;
   *Distortion = distortion;
+  mic->mbmi.mode = mic->bmi[3].as_mode.first;
 
   return RDCOST(mb->rdmult, mb->rddiv, cost, distortion);
 }
@@ -866,11 +869,17 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t local_txfm_cache[NB_TXFM_MODES];
     MODE_INFO *const mic = xd->mode_info_context;
     const int mis = xd->mode_info_stride;
-    const MB_PREDICTION_MODE A = above_block_mode(mic, 0, mis);
-    const MB_PREDICTION_MODE L = xd->left_available ?
-                                 left_block_mode(mic, 0) : DC_PRED;
+    int *bmode_costs;
 
-    int *bmode_costs  = x->bmode_costs[A][L];
+    if (cpi->common.frame_type == KEY_FRAME) {
+      const MB_PREDICTION_MODE A = above_block_mode(mic, 0, mis);
+      const MB_PREDICTION_MODE L = xd->left_available ?
+                                   left_block_mode(mic, 0) : DC_PRED;
+
+      bmode_costs = x->kf_y_mode_costs[A][L];
+    } else {
+      bmode_costs = x->mbmode_cost;
+    }
 
     x->e_mbd.mode_info_context->mbmi.mode = mode;
     vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
@@ -986,10 +995,10 @@ int vp9_cost_mv_ref(VP9_COMP *cpi,
     VP9_COMMON *pc = &cpi->common;
 
     vp9_prob p [VP9_MVREFS - 1];
-    assert(NEARESTMV <= m  &&  m <= SPLITMV);
+    assert(NEARESTMV <= m  &&  m <= NEWMV);
     vp9_mv_ref_probs(pc, p, mode_context);
-    return cost_token(vp9_sb_mv_ref_tree, p,
-                      vp9_sb_mv_ref_encoding_array - NEARESTMV + m);
+    return cost_token(vp9_mv_ref_tree, p,
+                      vp9_mv_ref_encoding_array - NEARESTMV + m);
   } else
     return 0;
 }
@@ -1534,6 +1543,7 @@ static int rd_pick_best_mbsegmentation(VP9_COMP *cpi, MACROBLOCK *x,
   *returndistortion = bsi.d;
   *returnyrate = bsi.segment_yrate;
   *skippable = vp9_sby_is_skippable(&x->e_mbd, BLOCK_SIZE_SB8X8);
+  mbmi->mode = bsi.modes[3];
 
   return (int)(bsi.segment_rd);
 }
@@ -2767,7 +2777,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       skippable = skippable && skip_uv[uv_tx];
       mbmi->uv_mode = mode_uv[uv_tx];
 
-      rate2 = rate_y + x->mbmode_cost[cm->frame_type][mbmi->mode] + rate_uv;
+      rate2 = rate_y + x->mbmode_cost[mbmi->mode] + rate_uv;
       if (mbmi->mode != DC_PRED && mbmi->mode != TM_PRED)
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
@@ -3005,7 +3015,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         // Note index of best mode so far
         best_mode_index = mode_index;
 
-        if (this_mode <= I4X4_PRED) {
+        if (mbmi->ref_frame == INTRA_FRAME) {
           /* required for left and above block mv */
           mbmi->mv[0].as_int = 0;
         }
@@ -3128,7 +3138,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   assert((cm->mcomp_filter_type == SWITCHABLE) ||
          (cm->mcomp_filter_type == best_mbmode.interp_filter) ||
-         (best_mbmode.mode <= I4X4_PRED));
+         (best_mbmode.ref_frame == INTRA_FRAME));
 
   // Accumulate filter usage stats
   // TODO(agrange): Use RD criteria to select interpolation filter mode.
