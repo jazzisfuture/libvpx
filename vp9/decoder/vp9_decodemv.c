@@ -35,33 +35,9 @@ int dec_mvcount = 0;
 extern int dec_debug;
 #endif
 
-static MB_PREDICTION_MODE read_bmode(vp9_reader *r, const vp9_prob *p) {
-  MB_PREDICTION_MODE m = treed_read(r, vp9_bmode_tree, p);
+static MB_PREDICTION_MODE read_intra_mode(vp9_reader *r, const vp9_prob *p) {
+  MB_PREDICTION_MODE m = treed_read(r, vp9_intra_mode_tree, p);
   return m;
-}
-
-static MB_PREDICTION_MODE read_kf_bmode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_bmode_tree, p);
-}
-
-static MB_PREDICTION_MODE read_ymode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_ymode_tree, p);
-}
-
-static MB_PREDICTION_MODE read_sb_ymode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_sb_ymode_tree, p);
-}
-
-static MB_PREDICTION_MODE read_kf_sb_ymode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_uv_mode_tree, p);
-}
-
-static MB_PREDICTION_MODE read_kf_mb_ymode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_kf_ymode_tree, p);
-}
-
-static MB_PREDICTION_MODE read_uv_mode(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE)treed_read(r, vp9_uv_mode_tree, p);
 }
 
 static int read_mb_segid(vp9_reader *r, MACROBLOCKD *xd) {
@@ -137,18 +113,13 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
   }
 
   // luma mode
+  m->mbmi.ref_frame = INTRA_FRAME;
   if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
     const MB_PREDICTION_MODE A = above_block_mode(m, 0, mis);
     const MB_PREDICTION_MODE L = xd->left_available ?
                                   left_block_mode(m, 0) : DC_PRED;
-    m->mbmi.mode = read_kf_bmode(r, cm->kf_bmode_prob[A][L]);
+    m->mbmi.mode = read_intra_mode(r, cm->kf_y_mode_prob[A][L]);
   } else {
-     m->mbmi.mode = I4X4_PRED;
-  }
-
-  m->mbmi.ref_frame = INTRA_FRAME;
-
-  if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
     int idx, idy;
     int bw = 1 << b_width_log2(m->mbmi.sb_type);
     int bh = 1 << b_height_log2(m->mbmi.sb_type);
@@ -161,16 +132,17 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
                                       left_block_mode(m, ib) : DC_PRED;
         m->bmi[ib].as_mode.first =
-            read_kf_bmode(r, cm->kf_bmode_prob[A][L]);
+            read_intra_mode(r, cm->kf_y_mode_prob[A][L]);
         for (k = 1; k < bh; ++k)
           m->bmi[ib + k * 2].as_mode.first = m->bmi[ib].as_mode.first;
         for (k = 1; k < bw; ++k)
           m->bmi[ib + k].as_mode.first = m->bmi[ib].as_mode.first;
       }
     }
+    m->mbmi.mode = m->bmi[3].as_mode.first;
   }
 
-  m->mbmi.uv_mode = read_uv_mode(r, cm->kf_uv_mode_prob[m->mbmi.mode]);
+  m->mbmi.uv_mode = read_intra_mode(r, cm->kf_uv_mode_prob[m->mbmi.mode]);
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -358,8 +330,8 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
   return ref_frame;
 }
 
-static MB_PREDICTION_MODE read_sb_mv_ref(vp9_reader *r, const vp9_prob *p) {
-  return (MB_PREDICTION_MODE) treed_read(r, vp9_sb_mv_ref_tree, p);
+static MB_PREDICTION_MODE read_mv_ref(vp9_reader *r, const vp9_prob *p) {
+  return (MB_PREDICTION_MODE) treed_read(r, vp9_mv_ref_tree, p);
 }
 
 #ifdef VPX_MODE_COUNT
@@ -390,10 +362,7 @@ static INLINE COMPPREDMODE_TYPE read_comp_pred_mode(vp9_reader *r) {
 static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
 
-  if (cm->frame_type == KEY_FRAME) {
-    if (!cm->kf_ymode_probs_update)
-      cm->kf_ymode_probs_index = vp9_read_literal(r, 3);
-  } else {
+  if (cm->frame_type != KEY_FRAME) {
     nmv_context *const nmvc = &pbi->common.fc.nmvc;
     MACROBLOCKD *const xd = &pbi->mb;
     int i, j;
@@ -417,13 +386,8 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
 
     // VP9_YMODES
     if (vp9_read_bit(r))
-      for (i = 0; i < VP9_YMODES - 1; ++i)
-        cm->fc.ymode_prob[i] = vp9_read_prob(r);
-
-    // VP9_I32X32_MODES
-    if (vp9_read_bit(r))
-      for (i = 0; i < VP9_I32X32_MODES - 1; ++i)
-        cm->fc.sb_ymode_prob[i] = vp9_read_prob(r);
+      for (i = 0; i < VP9_INTRA_MODES - 1; ++i)
+        cm->fc.y_mode_prob[i] = vp9_read_prob(r);
 
     for (j = 0; j < NUM_PARTITION_CONTEXTS; ++j)
       if (vp9_read_bit(r))
@@ -606,11 +570,10 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       if (vp9_segfeature_active(xd, mbmi->segment_id, SEG_LVL_SKIP)) {
         mbmi->mode = ZEROMV;
       } else {
-        if (bsize >= BLOCK_SIZE_SB8X8)
-          mbmi->mode = read_sb_mv_ref(r, mv_ref_p);
-        else
-          mbmi->mode = SPLITMV;
-        vp9_accum_mv_refs(cm, mbmi->mode, mbmi->mb_mode_context[ref_frame]);
+        if (bsize >= BLOCK_SIZE_SB8X8) {
+          mbmi->mode = read_mv_ref(r, mv_ref_p);
+          vp9_accum_mv_refs(cm, mbmi->mode, mbmi->mb_mode_context[ref_frame]);
+        }
       }
 
       if (mbmi->mode != ZEROMV) {
@@ -667,93 +630,91 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     }
 
     mbmi->uv_mode = DC_PRED;
-    switch (mbmi->mode) {
-      case SPLITMV:
-        mbmi->need_to_clamp_mvs = 0;
-        for (idy = 0; idy < 2; idy += bh) {
-          for (idx = 0; idx < 2; idx += bw) {
-            int_mv blockmv, secondmv;
-            int blockmode;
-            int i;
-            j = idy * 2 + idx;
+    if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
+      mbmi->need_to_clamp_mvs = 0;
+      for (idy = 0; idy < 2; idy += bh) {
+        for (idx = 0; idx < 2; idx += bw) {
+          int_mv blockmv, secondmv;
+          int blockmode;
+          int i;
+          j = idy * 2 + idx;
 
-            blockmode = read_sb_mv_ref(r, mv_ref_p);
-            vp9_accum_mv_refs(cm, blockmode, mbmi->mb_mode_context[ref_frame]);
-            if (blockmode == NEARESTMV || blockmode == NEARMV) {
-              MV_REFERENCE_FRAME rf2 = mbmi->second_ref_frame;
-              vp9_append_sub8x8_mvs_for_idx(cm, xd, &nearest, &nearby, j, 0);
-              if (rf2 > 0) {
-                vp9_append_sub8x8_mvs_for_idx(cm, xd,  &nearest_second,
-                                              &nearby_second, j, 1);
-              }
+          blockmode = read_mv_ref(r, mv_ref_p);
+          vp9_accum_mv_refs(cm, blockmode, mbmi->mb_mode_context[ref_frame]);
+          if (blockmode == NEARESTMV || blockmode == NEARMV) {
+            MV_REFERENCE_FRAME rf2 = mbmi->second_ref_frame;
+            vp9_append_sub8x8_mvs_for_idx(cm, xd, &nearest, &nearby, j, 0);
+            if (rf2 > 0) {
+              vp9_append_sub8x8_mvs_for_idx(cm, xd,  &nearest_second,
+                                            &nearby_second, j, 1);
             }
-
-            switch (blockmode) {
-              case NEWMV:
-                decode_mv(r, &blockmv.as_mv, &best_mv.as_mv, nmvc,
-                           &cm->fc.NMVcount, xd->allow_high_precision_mv);
-
-                if (mbmi->second_ref_frame > 0)
-                  decode_mv(r, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
-                            &cm->fc.NMVcount, xd->allow_high_precision_mv);
-
-  #ifdef VPX_MODE_COUNT
-                vp9_mv_cont_count[mv_contz][3]++;
-  #endif
-                break;
-              case NEARESTMV:
-                blockmv.as_int = nearest.as_int;
-                if (mbmi->second_ref_frame > 0)
-                  secondmv.as_int = nearest_second.as_int;
-  #ifdef VPX_MODE_COUNT
-                vp9_mv_cont_count[mv_contz][0]++;
-  #endif
-                break;
-              case NEARMV:
-                blockmv.as_int = nearby.as_int;
-                if (mbmi->second_ref_frame > 0)
-                  secondmv.as_int = nearby_second.as_int;
-  #ifdef VPX_MODE_COUNT
-                vp9_mv_cont_count[mv_contz][1]++;
-  #endif
-                break;
-              case ZEROMV:
-                blockmv.as_int = 0;
-                if (mbmi->second_ref_frame > 0)
-                  secondmv.as_int = 0;
-  #ifdef VPX_MODE_COUNT
-                vp9_mv_cont_count[mv_contz][2]++;
-  #endif
-                break;
-              default:
-                break;
-            }
-            mi->bmi[j].as_mv[0].as_int = blockmv.as_int;
-            if (mbmi->second_ref_frame > 0)
-              mi->bmi[j].as_mv[1].as_int = secondmv.as_int;
-
-            for (i = 1; i < bh; ++i)
-              vpx_memcpy(&mi->bmi[j + i * 2], &mi->bmi[j], sizeof(mi->bmi[j]));
-            for (i = 1; i < bw; ++i)
-              vpx_memcpy(&mi->bmi[j + i], &mi->bmi[j], sizeof(mi->bmi[j]));
           }
+
+          switch (blockmode) {
+            case NEWMV:
+              decode_mv(r, &blockmv.as_mv, &best_mv.as_mv, nmvc,
+                         &cm->fc.NMVcount, xd->allow_high_precision_mv);
+
+              if (mbmi->second_ref_frame > 0)
+                decode_mv(r, &secondmv.as_mv, &best_mv_second.as_mv, nmvc,
+                          &cm->fc.NMVcount, xd->allow_high_precision_mv);
+
+  #ifdef VPX_MODE_COUNT
+              vp9_mv_cont_count[mv_contz][3]++;
+  #endif
+              break;
+            case NEARESTMV:
+              blockmv.as_int = nearest.as_int;
+              if (mbmi->second_ref_frame > 0)
+                secondmv.as_int = nearest_second.as_int;
+  #ifdef VPX_MODE_COUNT
+              vp9_mv_cont_count[mv_contz][0]++;
+  #endif
+              break;
+            case NEARMV:
+              blockmv.as_int = nearby.as_int;
+              if (mbmi->second_ref_frame > 0)
+                secondmv.as_int = nearby_second.as_int;
+  #ifdef VPX_MODE_COUNT
+              vp9_mv_cont_count[mv_contz][1]++;
+  #endif
+              break;
+            case ZEROMV:
+              blockmv.as_int = 0;
+              if (mbmi->second_ref_frame > 0)
+                secondmv.as_int = 0;
+  #ifdef VPX_MODE_COUNT
+              vp9_mv_cont_count[mv_contz][2]++;
+  #endif
+              break;
+            default:
+              break;
+          }
+          mi->bmi[j].as_mv[0].as_int = blockmv.as_int;
+          if (mbmi->second_ref_frame > 0)
+            mi->bmi[j].as_mv[1].as_int = secondmv.as_int;
+
+          for (i = 1; i < bh; ++i)
+            vpx_memcpy(&mi->bmi[j + i * 2], &mi->bmi[j], sizeof(mi->bmi[j]));
+          for (i = 1; i < bw; ++i)
+            vpx_memcpy(&mi->bmi[j + i], &mi->bmi[j], sizeof(mi->bmi[j]));
         }
+      }
 
-        mv0->as_int = mi->bmi[3].as_mv[0].as_int;
-        mv1->as_int = mi->bmi[3].as_mv[1].as_int;
-        break;  /* done with SPLITMV */
-
+      mv0->as_int = mi->bmi[3].as_mv[0].as_int;
+      mv1->as_int = mi->bmi[3].as_mv[1].as_int;
+    } else switch (mbmi->mode) {
       case NEARMV:
         // Clip "next_nearest" so that it does not extend to far out of image
-        assign_and_clamp_mv(mv0, &nearby, mb_to_left_edge,
-                                          mb_to_right_edge,
-                                          mb_to_top_edge,
-                                          mb_to_bottom_edge);
-        if (mbmi->second_ref_frame > 0)
-          assign_and_clamp_mv(mv1, &nearby_second, mb_to_left_edge,
-                                                   mb_to_right_edge,
-                                                   mb_to_top_edge,
-                                                   mb_to_bottom_edge);
+          assign_and_clamp_mv(mv0, &nearby, mb_to_left_edge,
+                                            mb_to_right_edge,
+                                            mb_to_top_edge,
+                                            mb_to_bottom_edge);
+          if (mbmi->second_ref_frame > 0)
+            assign_and_clamp_mv(mv1, &nearby_second, mb_to_left_edge,
+                                                     mb_to_right_edge,
+                                                     mb_to_top_edge,
+                                                     mb_to_bottom_edge);
         break;
 
       case NEARESTMV:
@@ -795,40 +756,36 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         }
         break;
       default:
-;
 #if CONFIG_DEBUG
         assert(0);
 #endif
+        break;
     }
   } else {
     // required for left and above block mv
     mv0->as_int = 0;
 
     if (bsize >= BLOCK_SIZE_SB8X8) {
-      mbmi->mode = read_sb_ymode(r, cm->fc.sb_ymode_prob);
-      cm->fc.sb_ymode_counts[mbmi->mode]++;
+      mbmi->mode = read_intra_mode(r, cm->fc.y_mode_prob);
+      cm->fc.y_mode_counts[mbmi->mode]++;
     } else {
-      mbmi->mode = I4X4_PRED;
-    }
-
-    // If MB mode is I4X4_PRED read the block modes
-    if (bsize < BLOCK_SIZE_SB8X8) {
       int idx, idy;
       for (idy = 0; idy < 2; idy += bh) {
         for (idx = 0; idx < 2; idx += bw) {
           int ib = idy * 2 + idx, k;
-          int m = read_sb_ymode(r, cm->fc.sb_ymode_prob);
+          int m = read_intra_mode(r, cm->fc.y_mode_prob);
           mi->bmi[ib].as_mode.first = m;
-          cm->fc.sb_ymode_counts[m]++;
+          cm->fc.y_mode_counts[m]++;
           for (k = 1; k < bh; ++k)
             mi->bmi[ib + k * 2].as_mode.first = m;
           for (k = 1; k < bw; ++k)
             mi->bmi[ib + k].as_mode.first = m;
         }
       }
+      mbmi->mode = mi->bmi[3].as_mode.first;
     }
 
-    mbmi->uv_mode = read_uv_mode(r, cm->fc.uv_mode_prob[mbmi->mode]);
+    mbmi->uv_mode = read_intra_mode(r, cm->fc.uv_mode_prob[mbmi->mode]);
     cm->fc.uv_mode_counts[mbmi->mode][mbmi->uv_mode]++;
   }
 }
