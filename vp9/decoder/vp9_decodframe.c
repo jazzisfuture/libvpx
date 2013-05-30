@@ -259,7 +259,7 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   mode = plane == 0? xd->mode_info_context->mbmi.mode:
                      xd->mode_info_context->mbmi.uv_mode;
 
-  if (bsize <= BLOCK_SIZE_SB8X8 && mode == I4X4_PRED && plane == 0)
+  if (bsize < BLOCK_SIZE_SB8X8 && plane == 0)
     b_mode = xd->mode_info_context->bmi[raster_block].as_mode.first;
   else
     b_mode = mode;
