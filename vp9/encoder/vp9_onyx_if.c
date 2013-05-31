@@ -3436,14 +3436,17 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_write_yuv_rec_frame(cm);
 #endif
 
+  cm->last_show_frame = cm->show_frame;
   if (cm->show_frame) {
-    vpx_memcpy(cm->prev_mip, cm->mip,
-               cm->mode_info_stride * (cm->mi_rows + 1) *
-               sizeof(MODE_INFO));
-  } else {
-    vpx_memset(cm->prev_mip, 0,
-               cm->mode_info_stride * (cm->mi_rows + 1) *
-               sizeof(MODE_INFO));
+    // current mip will be the prev_mip for the next frame
+    MODE_INFO *temp = cm->prev_mip;
+    cm->prev_mip = cm->mip;
+    cm->mip = temp;
+
+    // update the upper left visible macroblock ptrs
+    cm->mi = cm->mip + cm->mode_info_stride + 1;
+
+    cm->current_video_frame++;
   }
   // restore prev_mi
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
