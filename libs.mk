@@ -436,7 +436,20 @@ test_libvpx.$(VCPROJ_SFX): $(LIBVPX_TEST_SRCS) vpx.$(VCPROJ_SFX) gtest.$(VCPROJ_
 PROJECTS-$(CONFIG_MSVS) += test_libvpx.$(VCPROJ_SFX)
 
 test:: testdata
-	@set -e; for t in $(addprefix $(TGT_OS:win64=x64)/Release/,$(notdir $(LIBVPX_TEST_BINS:.cc=.exe))); do $$t; done
+
+define test_shard_template
+test:: test_shard.$(1)
+test_shard.$(1): testdata
+	@set -e; \
+	 for t in \
+	   $(addprefix $(TGT_OS:win64=x64)/Release/,$(notdir $(LIBVPX_TEST_BINS:.cc=.exe))); do \
+	   export GTEST_SHARD_INDEX=$(1); \
+	   export GTEST_TOTAL_SHARDS=$(2); \
+	   $$$$t; \
+	 done
+.PHONY: test_shard.$(1)
+endef
+
 endif
 else
 
@@ -471,10 +484,26 @@ $(foreach bin,$(LIBVPX_TEST_BINS),\
         )))\
     $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
 
-test:: $(LIBVPX_TEST_BINS) testdata
-	@set -e; for t in $(LIBVPX_TEST_BINS); do $$t; done
+test:: $(LIBVPX_TEST_BINS)
+
+define test_shard_template
+test:: test_shard.$(1)
+test_shard.$(1): testdata
+	@set -e; \
+	 for t in $(LIBVPX_TEST_BINS); do \
+	   export GTEST_SHARD_INDEX=$(1); \
+	   export GTEST_TOTAL_SHARDS=$(2); \
+	   $$$$t; \
+	 done
+.PHONY: test_shard.$(1)
+endef
 
 endif
+
+NUM_SHARDS := 10
+SHARDS := 0 1 2 3 4 5 6 7 8 9
+$(foreach s,$(SHARDS),$(eval $(call test_shard_template,$(s),$(NUM_SHARDS))))
+
 endif
 
 ##
