@@ -111,6 +111,12 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {SPLITMV,   GOLDEN_FRAME, ALTREF_FRAME},
 };
 
+// The baseline rd thresholds for breaking out of the rd loop for
+// certain modes are assumed to be based on 8x8 blocks.
+// The left shift values below are adjustments for differnrt block sizes.
+static int rd_thresh_block_size_factor[BLOCK_SIZE_TYPES] =
+  { -2, -1, -1, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6 };
+
 #if CONFIG_BALANCED_COEFTREE
 static void fill_token_costs(vp9_coeff_count *c,
                              vp9_coeff_count *cnoskip,
@@ -2562,6 +2568,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv seg_mvs[4][MAX_REF_FRAMES];
   union b_mode_info best_bmodes[4];
   PARTITION_INFO best_partition;
+  int rd_thresh_shift = rd_thresh_block_size_factor[bsize];
 
   for (i = 0; i < 4; i++) {
     int j;
@@ -2651,14 +2658,28 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     int skippable;
     int64_t txfm_cache[NB_TXFM_MODES];
     int i;
+    int rd_thresh = cpi->rd_threshes[mode_index];
+
+    // Mode breakout threshold adjusted to take account of block size
+    if (rd_thresh_shift >= 0) {
+      if (rd_thresh < (INT_MAX >> rd_thresh_shift)) {
+        rd_thresh = rd_thresh << rd_thresh_shift;
+      } else {
+        rd_thresh = INT_MAX;
+      }
+    } else if (rd_thresh < INT_MAX) {
+      rd_thresh = rd_thresh >> -rd_thresh_shift;
+    }
 
     for (i = 0; i < NB_TXFM_MODES; ++i)
       txfm_cache[i] = INT64_MAX;
 
     // Test best rd so far against threshold for trying this mode.
-    if (bsize >= BLOCK_SIZE_SB8X8 &&
-        (best_rd < cpi->rd_threshes[mode_index] ||
-         cpi->rd_threshes[mode_index] == INT_MAX))
+/*    if (bsize >= BLOCK_SIZE_SB8X8 &&
+        (best_rd < rd_thresh ||
+         cpi->rd_threshes[mode_index] == INT_MAX))*/
+    if ((best_rd < rd_thresh ||
+        cpi->rd_threshes[mode_index] == INT_MAX))
       continue;
 
     x->skip = 0;
