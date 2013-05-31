@@ -338,130 +338,6 @@ static int compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   return target_index - start_index;
 }
 
-static void configure_static_seg_features(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-  MACROBLOCKD *xd = &cpi->mb.e_mbd;
-
-  int high_q = (int)(cpi->avg_q > 48.0);
-  int qi_delta;
-
-  // Disable and clear down for KF
-  if (cm->frame_type == KEY_FRAME) {
-    // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-    xd->update_mb_segmentation_map = 0;
-    xd->update_mb_segmentation_data = 0;
-    cpi->static_mb_pct = 0;
-
-    // Disable segmentation
-    vp9_disable_segmentation((VP9_PTR)cpi);
-
-    // Clear down the segment features.
-    vp9_clearall_segfeatures(xd);
-  } else if (cpi->refresh_alt_ref_frame) {
-    // If this is an alt ref frame
-    // Clear down the global segmentation map
-    vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-    xd->update_mb_segmentation_map = 0;
-    xd->update_mb_segmentation_data = 0;
-    cpi->static_mb_pct = 0;
-
-    // Disable segmentation and individual segment features by default
-    vp9_disable_segmentation((VP9_PTR)cpi);
-    vp9_clearall_segfeatures(xd);
-
-    // Scan frames from current to arf frame.
-    // This function re-enables segmentation if appropriate.
-    vp9_update_mbgraph_stats(cpi);
-
-    // If segmentation was enabled set those features needed for the
-    // arf itself.
-    if (xd->segmentation_enabled) {
-      xd->update_mb_segmentation_map = 1;
-      xd->update_mb_segmentation_data = 1;
-
-      qi_delta = compute_qdelta(cpi, cpi->avg_q, (cpi->avg_q * 0.875));
-      vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, (qi_delta - 2));
-      vp9_set_segdata(xd, 1, SEG_LVL_ALT_LF, -2);
-
-      vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_Q);
-      vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
-
-      // Where relevant assume segment data is delta data
-      xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-
-    }
-  } else if (xd->segmentation_enabled) {
-    // All other frames if segmentation has been enabled
-
-    // First normal frame in a valid gf or alt ref group
-    if (cpi->common.frames_since_golden == 0) {
-      // Set up segment features for normal frames in an arf group
-      if (cpi->source_alt_ref_active) {
-        xd->update_mb_segmentation_map = 0;
-        xd->update_mb_segmentation_data = 1;
-        xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
-
-        qi_delta = compute_qdelta(cpi, cpi->avg_q,
-                                  (cpi->avg_q * 1.125));
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, (qi_delta + 2));
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, 0);
-        vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_Q);
-
-        vp9_set_segdata(xd, 1, SEG_LVL_ALT_LF, -2);
-        vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
-
-        // Segment coding disabled for compred testing
-        if (high_q || (cpi->static_mb_pct == 100)) {
-          vp9_set_segref(xd, 1, ALTREF_FRAME);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_REF_FRAME);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_SKIP);
-        }
-      } else {
-        // Disable segmentation and clear down features if alt ref
-        // is not active for this group
-
-        vp9_disable_segmentation((VP9_PTR)cpi);
-
-        vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
-
-        xd->update_mb_segmentation_map = 0;
-        xd->update_mb_segmentation_data = 0;
-
-        vp9_clearall_segfeatures(xd);
-      }
-    } else if (cpi->is_src_frame_alt_ref) {
-      // Special case where we are coding over the top of a previous
-      // alt ref frame.
-      // Segment coding disabled for compred testing
-
-      // Enable ref frame features for segment 0 as well
-      vp9_enable_segfeature(xd, 0, SEG_LVL_REF_FRAME);
-      vp9_enable_segfeature(xd, 1, SEG_LVL_REF_FRAME);
-
-      // All mbs should use ALTREF_FRAME
-      vp9_clear_segref(xd, 0);
-      vp9_set_segref(xd, 0, ALTREF_FRAME);
-      vp9_clear_segref(xd, 1);
-      vp9_set_segref(xd, 1, ALTREF_FRAME);
-
-      // Skip all MBs if high Q (0,0 mv and skip coeffs)
-      if (high_q) {
-          vp9_enable_segfeature(xd, 0, SEG_LVL_SKIP);
-          vp9_enable_segfeature(xd, 1, SEG_LVL_SKIP);
-      }
-      // Enable data udpate
-      xd->update_mb_segmentation_data = 1;
-    } else {
-      // All other frames.
-
-      // No updates.. leave things as they are.
-      xd->update_mb_segmentation_map = 0;
-      xd->update_mb_segmentation_data = 0;
-    }
-  }
-}
-
 #ifdef ENTROPY_STATS
 void vp9_update_mode_context_stats(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
@@ -739,12 +615,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->first_step = 0;
   sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
   sf->comp_inter_joint_search = 1;
-#if CONFIG_MULTIPLE_ARF
-  // Switch segmentation off.
-  sf->static_segmentation = 0;
-#else
-  sf->static_segmentation = 0;
-#endif
   sf->mb16_breakout = 0;
 
   switch (mode) {
@@ -753,12 +623,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       break;
 
     case 1:
-#if CONFIG_MULTIPLE_ARF
-      // Switch segmentation off.
-      sf->static_segmentation = 0;
-#else
-  sf->static_segmentation = 0;
-#endif
       sf->mb16_breakout = 0;
 
       if (speed > 0) {
@@ -2542,14 +2406,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       cm->reset_frame_context = 0;
       cm->refresh_frame_context = 0;
     }
-  }
-
-  // Configure experimental use of segmentation for enhanced coding of
-  // static regions if indicated.
-  // Only allowed for now in second pass of two pass (as requires lagged coding)
-  // and if the relevant speed feature flag is set.
-  if ((cpi->pass == 2) && (cpi->sf.static_segmentation)) {
-    configure_static_seg_features(cpi);
   }
 
   // Decide how big to make the frame
