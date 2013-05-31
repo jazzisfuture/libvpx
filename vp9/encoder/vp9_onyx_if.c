@@ -586,7 +586,7 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
 
   // Set baseline threshold values
   for (i = 0; i < MAX_MODES; ++i)
-    sf->thresh_mult[i] = mode == 0 ? -500 : 0;
+    sf->thresh_mult[i] = mode == 0 ? -250 : 0;
 
   sf->thresh_mult[THR_ZEROMV   ] = 0;
   sf->thresh_mult[THR_ZEROG    ] = 0;
@@ -596,50 +596,50 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
   sf->thresh_mult[THR_NEARESTG ] = 0;
   sf->thresh_mult[THR_NEARESTA ] = 0;
 
-  sf->thresh_mult[THR_NEARMV   ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_NEARG    ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_NEARA    ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_NEARMV   ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_NEARG    ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_NEARA    ] += speed_multiplier * 500;
 
   sf->thresh_mult[THR_DC       ] = 0;
-  sf->thresh_mult[THR_TM       ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_V_PRED   ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_H_PRED   ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_D45_PRED ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_D135_PRED] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_D117_PRED] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_D153_PRED] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_D27_PRED ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_D63_PRED ] += speed_multiplier * 1500;
+  sf->thresh_mult[THR_TM       ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_V_PRED   ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_H_PRED   ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_D45_PRED ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_D135_PRED] += speed_multiplier * 750;
+  sf->thresh_mult[THR_D117_PRED] += speed_multiplier * 750;
+  sf->thresh_mult[THR_D153_PRED] += speed_multiplier * 750;
+  sf->thresh_mult[THR_D27_PRED ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_D63_PRED ] += speed_multiplier * 750;
 
-  sf->thresh_mult[THR_B_PRED   ] += speed_multiplier * 2500;
+  sf->thresh_mult[THR_B_PRED   ] += speed_multiplier * 1250;
 
-  sf->thresh_mult[THR_NEWMV    ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_NEWG     ] += speed_multiplier * 1000;
-  sf->thresh_mult[THR_NEWA     ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_NEWMV    ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_NEWG     ] += speed_multiplier * 500;
+  sf->thresh_mult[THR_NEWA     ] += speed_multiplier * 500;
 
-  sf->thresh_mult[THR_SPLITMV  ] += speed_multiplier * 2500;
-  sf->thresh_mult[THR_SPLITG   ] += speed_multiplier * 2500;
-  sf->thresh_mult[THR_SPLITA   ] += speed_multiplier * 2500;
+  sf->thresh_mult[THR_SPLITMV  ] += speed_multiplier * 1250;
+  sf->thresh_mult[THR_SPLITG   ] += speed_multiplier * 1250;
+  sf->thresh_mult[THR_SPLITA   ] += speed_multiplier * 1250;
 
-  sf->thresh_mult[THR_COMP_ZEROLG   ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_ZEROLA   ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_ZEROGA   ] += speed_multiplier * 1500;
+  sf->thresh_mult[THR_COMP_ZEROLG   ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_ZEROLA   ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_ZEROGA   ] += speed_multiplier * 750;
 
-  sf->thresh_mult[THR_COMP_NEARESTLG] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_NEARESTLA] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_NEARESTGA] += speed_multiplier * 1500;
+  sf->thresh_mult[THR_COMP_NEARESTLG] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_NEARESTLA] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_NEARESTGA] += speed_multiplier * 750;
 
-  sf->thresh_mult[THR_COMP_NEARLG   ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_NEARLA   ] += speed_multiplier * 1500;
-  sf->thresh_mult[THR_COMP_NEARGA   ] += speed_multiplier * 1500;
+  sf->thresh_mult[THR_COMP_NEARLG   ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_NEARLA   ] += speed_multiplier * 750;
+  sf->thresh_mult[THR_COMP_NEARGA   ] += speed_multiplier * 750;
 
-  sf->thresh_mult[THR_COMP_NEWLG    ] += speed_multiplier * 2000;
-  sf->thresh_mult[THR_COMP_NEWLA    ] += speed_multiplier * 2000;
-  sf->thresh_mult[THR_COMP_NEWGA    ] += speed_multiplier * 2000;
+  sf->thresh_mult[THR_COMP_NEWLG    ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_COMP_NEWLA    ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_COMP_NEWGA    ] += speed_multiplier * 1000;
 
-  sf->thresh_mult[THR_COMP_SPLITLA  ] += speed_multiplier * 4500;
-  sf->thresh_mult[THR_COMP_SPLITGA  ] += speed_multiplier * 4500;
-  sf->thresh_mult[THR_COMP_SPLITLG  ] += speed_multiplier * 4500;
+  sf->thresh_mult[THR_COMP_SPLITLA  ] += speed_multiplier * 2500;
+  sf->thresh_mult[THR_COMP_SPLITGA  ] += speed_multiplier * 2500;
+  sf->thresh_mult[THR_COMP_SPLITLG  ] += speed_multiplier * 2500;
 
   if (speed > 4) {
     for (i = 0; i < MAX_MODES; ++i)
@@ -647,16 +647,16 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
 
     sf->thresh_mult[THR_DC       ] = 0;
     sf->thresh_mult[THR_TM       ] = 0;
-    sf->thresh_mult[THR_NEWMV    ] = 4000;
-    sf->thresh_mult[THR_NEWG     ] = 4000;
-    sf->thresh_mult[THR_NEWA     ] = 4000;
+    sf->thresh_mult[THR_NEWMV    ] = 2000;
+    sf->thresh_mult[THR_NEWG     ] = 2000;
+    sf->thresh_mult[THR_NEWA     ] = 2000;
     sf->thresh_mult[THR_NEARESTMV] = 0;
     sf->thresh_mult[THR_NEARESTG ] = 0;
     sf->thresh_mult[THR_NEARESTA ] = 0;
-    sf->thresh_mult[THR_NEARMV   ] = 2000;
-    sf->thresh_mult[THR_NEARG    ] = 2000;
-    sf->thresh_mult[THR_NEARA    ] = 2000;
-    sf->thresh_mult[THR_COMP_NEARESTLA] = 2000;
+    sf->thresh_mult[THR_NEARMV   ] = 1000;
+    sf->thresh_mult[THR_NEARG    ] = 1000;
+    sf->thresh_mult[THR_NEARA    ] = 1000;
+    sf->thresh_mult[THR_COMP_NEARESTLA] = 1000;
     sf->recode_loop = 0;
   }
 
