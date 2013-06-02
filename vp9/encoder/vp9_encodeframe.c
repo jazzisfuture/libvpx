@@ -473,7 +473,9 @@ static void update_state(VP9_COMP *cpi,
       int i, j;
       for (j = 0; j < bh; ++j)
         for (i = 0; i < bw; ++i)
-          xd->mode_info_context[mis * j + i].mbmi = *mbmi;
+          if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > j &&
+              (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > i)
+            xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
 
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
@@ -924,7 +926,7 @@ static void set_block_size(VP9_COMMON *const cm,
   for (row = 0; row < bs; row++) {
     for (col = 0; col < bs; col++) {
       if (mi_row + row >= cm->mi_rows || mi_col + col >= cm->mi_cols)
-        return;
+        continue;
       m2[row*mis+col].mbmi.sb_type = bsize;
     }
   }
@@ -1410,15 +1412,13 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
     // TODO(JBB): remove the border conditions for 64x64 blocks once its fixed
     // without this border check choose will fail on the border of every
     // non 64x64.
-    if (cpi->speed < 5 ||
-        mi_col + 8 > cm->cur_tile_mi_col_end ||
-        mi_row + 8 > cm->cur_tile_mi_row_end) {
+    if (cpi->speed < 5) {
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                         &dummy_rate, &dummy_dist);
     } else {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
       MODE_INFO *m = cm->mi + idx_str;
-      // set_partitioning(cpi, m, BLOCK_SIZE_SB8X8);
+      // set_partitioning(cpi, m, BLOCK_SIZE_SB64X64);
       choose_partitioning(cpi, cm->mi, mi_row, mi_col);
       rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                        &dummy_rate, &dummy_dist);
