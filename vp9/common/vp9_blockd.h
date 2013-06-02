@@ -639,8 +639,42 @@ static INLINE void foreach_transformed_block_in_plane(
 
   assert(txfrm_size_b <= block_size_b);
   assert(txfrm_size_b <= ss_block_size);
-  for (i = 0; i < (1 << ss_block_size); i += step) {
-    visit(plane, i, bsize, txfrm_size_b, arg);
+
+  // If mb_to_right_edge is < 0 we are in a situation in which
+  // the current block size extends into the UMV and we won't
+  // visit the sub blocks that are wholly within the UMV.
+  if(xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0 ) {
+    int r, c;
+    const int sw = bw - xd->plane[plane].subsampling_x;
+    const int sh = bh - xd->plane[plane].subsampling_y;
+    int max_blocks_wide = 1 << sw;
+    int max_blocks_high = 1 << sh;
+
+    // xd->mb_to_right_edge is in units of pixels * 8.  This converts
+    // it to 4x4 block sizes.
+    if (xd->mb_to_right_edge < 0)
+      max_blocks_wide = ((-xd->mb_to_right_edge)
+          >> (2 + LOG2_MI_SIZE + xd->plane[plane].subsampling_x));
+
+    if (xd->mb_to_bottom_edge < 0)
+      max_blocks_high = ((-xd->mb_to_bottom_edge)
+          >> (2 + LOG2_MI_SIZE + xd->plane[plane].subsampling_y));
+
+    i=0;
+    // Unlike the normal case - in here we have to keep track of the
+    // row and column of the blocks we use so that we know if we are in
+    // the unrestricted motion border..
+    for (r = 0; r < (1 << sw); r+= (1<<tx_size)  ) {
+      for (c = 0; c < (1 << sh); c+= (1<<tx_size)  ) {
+        if (r < max_blocks_high && c < max_blocks_wide)
+          visit(plane, i, bsize, txfrm_size_b, arg);
+        i += step;
+      }
+    }
+  } else {
+    for (i = 0; i < (1 << ss_block_size); i += step) {
+      visit(plane, i, bsize, txfrm_size_b, arg);
+    }
   }
 }
 
