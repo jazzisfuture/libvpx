@@ -673,6 +673,10 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   TX_TYPE tx_type;
   int mode, b_mode;
 
+  if (xd->mb_to_right_edge < 0 || xd->mb_to_left_edge < 0) {
+    extend_for_intra(xd, plane, block, bsize);
+  }
+
   mode = plane == 0? mbmi->mode: mbmi->uv_mode;
   if (mbmi->sb_type < BLOCK_SIZE_SB8X8 && plane == 0 &&
       mbmi->ref_frame == INTRA_FRAME)
@@ -754,7 +758,6 @@ void vp9_encode_intra_block_uv(VP9_COMMON *const cm, MACROBLOCK *x,
   MACROBLOCKD* const xd = &x->e_mbd;
   struct optimize_ctx ctx;
   struct encode_b_args arg = {cm, x, &ctx};
-
   foreach_transformed_block_uv(xd, bsize, encode_block_intra, &arg);
 }
 
