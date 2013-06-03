@@ -320,8 +320,10 @@ typedef struct VP9_COMP {
   unsigned int mode_chosen_counts[MAX_MODES];
 
   int rd_thresh_mult[MAX_MODES];
-  int rd_baseline_thresh[MAX_MODES];
-  int rd_threshes[MAX_MODES];
+  int rd_baseline_thresh[BLOCK_SIZE_TYPES][MAX_MODES];
+  int rd_threshes[BLOCK_SIZE_TYPES][MAX_MODES];
+  int rd_thresh_freq_fact[BLOCK_SIZE_TYPES][MAX_MODES];
+
   int64_t rd_comp_pred_diff[NB_PREDICTION_TYPES];
   int rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];
   int comp_pred_count[COMP_PRED_CONTEXTS];
