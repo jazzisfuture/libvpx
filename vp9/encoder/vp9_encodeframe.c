@@ -473,7 +473,9 @@ static void update_state(VP9_COMP *cpi,
       int i, j;
       for (j = 0; j < bh; ++j)
         for (i = 0; i < bw; ++i)
-          xd->mode_info_context[mis * j + i].mbmi = *mbmi;
+          if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > j &&
+              (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > i)
+            xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
 
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
@@ -918,13 +920,16 @@ static void set_block_size(VP9_COMMON *const cm,
                            MODE_INFO *m, BLOCK_SIZE_TYPE bsize, int mis,
                            int mi_row, int mi_col) {
   int row, col;
-  int bsl = b_width_log2(bsize);
+  int bwl = b_width_log2(bsize);
+  int bhl = b_height_log2(bsize);
+  int bsl = ( bwl > bhl ? bwl : bhl);
+
   int bs = (1 << bsl) / 2;  //
   MODE_INFO *m2 = m + mi_row * mis + mi_col;
   for (row = 0; row < bs; row++) {
     for (col = 0; col < bs; col++) {
       if (mi_row + row >= cm->mi_rows || mi_col + col >= cm->mi_cols)
-        return;
+        continue;
       m2[row*mis+col].mbmi.sb_type = bsize;
     }
   }
@@ -1091,8 +1096,10 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   MACROBLOCK * const x = &cpi->mb;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   const int mis = cm->mode_info_stride;
-  int bwl, bhl;
+  int bwl = b_width_log2(m->mbmi.sb_type);
+  int bhl = b_height_log2(m->mbmi.sb_type);
   int bsl = b_width_log2(bsize);
+  int bh = (1 << bhl);
   int bs = (1 << bsl);
   int bss = (1 << bsl)/4;
   int i, pl;
@@ -1105,9 +1112,6 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-
-  bwl = b_width_log2(m->mbmi.sb_type);
-  bhl = b_height_log2(m->mbmi.sb_type);
 
   // parse the partition type
   if ((bwl == bsl) && (bhl == bsl))
@@ -1147,7 +1151,7 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
       *(get_sb_index(xd, subsize)) = 0;
       pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, subsize,
                     get_block_context(x, subsize));
-      if (mi_row + (bs >> 1) <= cm->mi_rows) {
+      if (mi_row + (bh >> 1) <= cm->mi_rows) {
         int rt, dt;
         update_state(cpi, get_block_context(x, subsize), subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
@@ -1407,18 +1411,13 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
   for (mi_col = cm->cur_tile_mi_col_start;
        mi_col < cm->cur_tile_mi_col_end; mi_col += 8) {
     int dummy_rate, dummy_dist;
-    // TODO(JBB): remove the border conditions for 64x64 blocks once its fixed
-    // without this border check choose will fail on the border of every
-    // non 64x64.
-    if (cpi->speed < 5 ||
-        mi_col + 8 > cm->cur_tile_mi_col_end ||
-        mi_row + 8 > cm->cur_tile_mi_row_end) {
+    if (cpi->speed < 5) {
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                         &dummy_rate, &dummy_dist);
     } else {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
       MODE_INFO *m = cm->mi + idx_str;
-      // set_partitioning(cpi, m, BLOCK_SIZE_SB8X8);
+      //set_partitioning(cpi, m, BLOCK_SIZE_SB64X64);
       choose_partitioning(cpi, cm->mi, mi_row, mi_col);
       rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                        &dummy_rate, &dummy_dist);
