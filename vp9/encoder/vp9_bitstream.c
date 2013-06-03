@@ -1391,8 +1391,41 @@ static void encode_txfm(VP9_COMP *cpi, vp9_writer *w) {
   }
 }
 
-void write_uncompressed_header(VP9_COMP *cpi,
-                               struct vp9_write_bit_buffer *wb) {
+static void write_interp_filter_type(INTERPOLATIONFILTERTYPE type,
+                                     struct vp9_write_bit_buffer *wb) {
+  vp9_wb_write_bit(wb, type == SWITCHABLE);
+  if (type != SWITCHABLE)
+    vp9_wb_write_literal(wb, type, 2);
+}
+
+static void fix_mcomp_filter_type(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+
+  if (cm->mcomp_filter_type == SWITCHABLE) {
+    // Check to see if only one of the filters is actually used
+    int count[VP9_SWITCHABLE_FILTERS];
+    int i, j, c = 0;
+    for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
+      count[i] = 0;
+      for (j = 0; j <= VP9_SWITCHABLE_FILTERS; ++j)
+        count[i] += cpi->switchable_interp_count[j][i];
+        c += (count[i] > 0);
+    }
+
+    if (c == 1) {
+      // Only one filter is used. So set the filter at frame level
+      for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
+        if (count[i]) {
+          cm->mcomp_filter_type = vp9_switchable_interp[i];
+          break;
+        }
+      }
+    }
+  }
+}
+
+static void write_uncompressed_header(VP9_COMP *cpi,
+                                      struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
 
@@ -1420,9 +1453,71 @@ void write_uncompressed_header(VP9_COMP *cpi,
   vp9_wb_write_literal(wb, cm->width, 16);
   vp9_wb_write_literal(wb, cm->height, 16);
 
-  if (!cm->show_frame) {
-      vp9_wb_write_bit(wb, cm->intra_only);
+  // When there is a key frame all reference buffers are updated using the
+  // new key frame
+  if (cm->frame_type != KEY_FRAME) {
+    int refresh_mask, i;
+
+#if CONFIG_MULTIPLE_ARF
+  if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
+      !cpi->refresh_alt_ref_frame) {
+#else
+  if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
+#endif
+      // Preserve the previously existing golden frame and update the frame in
+      // the alt ref slot instead. This is highly specific to the use of
+      // alt-ref as a forward reference, and this needs to be generalized as
+      // other uses are implemented (like RTC/temporal scaling)
+      //
+      // gld_fb_idx and alt_fb_idx need to be swapped for future frames, but
+      // that happens in vp9_onyx_if.c:update_reference_frames() so that it can
+      // be done outside of the recode loop.
+      refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+                     (cpi->refresh_golden_frame << cpi->alt_fb_idx);
+    } else {
+      int arf_idx = cpi->alt_fb_idx;
+#if CONFIG_MULTIPLE_ARF
+      // Determine which ARF buffer to use to encode this ARF frame.
+      if (cpi->multi_arf_enabled) {
+        int sn = cpi->sequence_number;
+        arf_idx = (cpi->frame_coding_order[sn] < 0) ?
+            cpi->arf_buffer_idx[sn + 1] :
+            cpi->arf_buffer_idx[sn];
+      }
+#endif
+      refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+                     (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
+                     (cpi->refresh_alt_ref_frame << arf_idx);
+    }
+
+    vp9_wb_write_literal(wb, refresh_mask, NUM_REF_FRAMES);
+    vp9_wb_write_literal(wb, cpi->lst_fb_idx, NUM_REF_FRAMES_LG2);
+    vp9_wb_write_literal(wb, cpi->gld_fb_idx, NUM_REF_FRAMES_LG2);
+    vp9_wb_write_literal(wb, cpi->alt_fb_idx, NUM_REF_FRAMES_LG2);
+
+    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
+      vp9_wb_write_bit(wb, cm->ref_frame_sign_bias[LAST_FRAME + i]);
+
+    vp9_wb_write_bit(wb, xd->allow_high_precision_mv);
+    fix_mcomp_filter_type(cpi);
+    write_interp_filter_type(cm->mcomp_filter_type, wb);
   }
+
+  // Encode the common prediction model status flag probability updates for
+  // the reference frame
+  update_refpred_stats(cpi);
+  if (cm->frame_type != KEY_FRAME) {
+    int i;
+    for (i = 0; i < PREDICTION_PROBS; i++) {
+      const int update = cpi->ref_pred_probs_update[i];
+      vp9_wb_write_bit(wb, update);
+      if (update)
+        vp9_wb_write_literal(wb, cm->ref_pred_probs[i], 8);
+    }
+  }
+
+  if (!cm->show_frame)
+    vp9_wb_write_bit(wb, cm->intra_only);
 
   vp9_wb_write_literal(wb, cm->frame_context_idx, NUM_FRAME_CONTEXTS_LG2);
   vp9_wb_write_bit(wb, cm->clr_type);
@@ -1459,82 +1554,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 
   vp9_start_encode(&header_bc, cx_data);
 
-  // When there is a key frame all reference buffers are updated using the new key frame
-  if (pc->frame_type != KEY_FRAME) {
-    int refresh_mask;
-
-    // Should the GF or ARF be updated using the transmitted frame or buffer
-#if CONFIG_MULTIPLE_ARF
-    if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
-        !cpi->refresh_alt_ref_frame) {
-#else
-      if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame) {
-#endif
-      /* Preserve the previously existing golden frame and update the frame in
-       * the alt ref slot instead. This is highly specific to the use of
-       * alt-ref as a forward reference, and this needs to be generalized as
-       * other uses are implemented (like RTC/temporal scaling)
-       *
-       * gld_fb_idx and alt_fb_idx need to be swapped for future frames, but
-       * that happens in vp9_onyx_if.c:update_reference_frames() so that it can
-       * be done outside of the recode loop.
-       */
-      refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
-                     (cpi->refresh_golden_frame << cpi->alt_fb_idx);
-    } else {
-      int arf_idx = cpi->alt_fb_idx;
-#if CONFIG_MULTIPLE_ARF
-      // Determine which ARF buffer to use to encode this ARF frame.
-      if (cpi->multi_arf_enabled) {
-        int sn = cpi->sequence_number;
-        arf_idx = (cpi->frame_coding_order[sn] < 0) ?
-            cpi->arf_buffer_idx[sn + 1] :
-            cpi->arf_buffer_idx[sn];
-      }
-#endif
-      refresh_mask = (cpi->refresh_last_frame << cpi->lst_fb_idx) |
-                     (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
-                     (cpi->refresh_alt_ref_frame << arf_idx);
-    }
-
-    vp9_write_literal(&header_bc, refresh_mask, NUM_REF_FRAMES);
-    vp9_write_literal(&header_bc, cpi->lst_fb_idx, NUM_REF_FRAMES_LG2);
-    vp9_write_literal(&header_bc, cpi->gld_fb_idx, NUM_REF_FRAMES_LG2);
-    vp9_write_literal(&header_bc, cpi->alt_fb_idx, NUM_REF_FRAMES_LG2);
-
-    // Indicate the sign bias for each reference frame buffer.
-    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
-      vp9_write_bit(&header_bc, pc->ref_frame_sign_bias[LAST_FRAME + i]);
-    }
-
-    // Signal whether to allow high MV precision
-    vp9_write_bit(&header_bc, (xd->allow_high_precision_mv) ? 1 : 0);
-    if (pc->mcomp_filter_type == SWITCHABLE) {
-      /* Check to see if only one of the filters is actually used */
-      int count[VP9_SWITCHABLE_FILTERS];
-      int i, j, c = 0;
-      for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
-        count[i] = 0;
-        for (j = 0; j <= VP9_SWITCHABLE_FILTERS; ++j)
-          count[i] += cpi->switchable_interp_count[j][i];
-        c += (count[i] > 0);
-      }
-      if (c == 1) {
-        /* Only one filter is used. So set the filter at frame level */
-        for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
-          if (count[i]) {
-            pc->mcomp_filter_type = vp9_switchable_interp[i];
-            break;
-          }
-        }
-      }
-    }
-    // Signal the type of subpel filter to use
-    vp9_write_bit(&header_bc, (pc->mcomp_filter_type == SWITCHABLE));
-    if (pc->mcomp_filter_type != SWITCHABLE)
-      vp9_write_literal(&header_bc, (pc->mcomp_filter_type), 2);
-  }
-
 #ifdef ENTROPY_STATS
   if (pc->frame_type == INTER_FRAME)
     active_section = 0;
@@ -1543,20 +1562,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 #endif
 
   encode_segmentation(cpi, &header_bc);
-
-  // Encode the common prediction model status flag probability updates for
-  // the reference frame
-  update_refpred_stats(cpi);
-  if (pc->frame_type != KEY_FRAME) {
-    for (i = 0; i < PREDICTION_PROBS; i++) {
-      if (cpi->ref_pred_probs_update[i]) {
-        vp9_write_bit(&header_bc, 1);
-        vp9_write_prob(&header_bc, pc->ref_pred_probs[i]);
-      } else {
-        vp9_write_bit(&header_bc, 0);
-      }
-    }
-  }
 
   if (xd->lossless)
     pc->txfm_mode = ONLY_4X4;
