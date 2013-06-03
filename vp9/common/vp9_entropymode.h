@@ -35,6 +35,8 @@ extern struct vp9_token vp9_sb_mv_ref_encoding_array[VP9_MVREFS];
 // probability models for partition information
 extern const vp9_tree_index  vp9_partition_tree[];
 extern struct vp9_token vp9_partition_encodings[PARTITION_TYPES];
+extern const vp9_prob vp9_partition_probs[2][NUM_PARTITION_CONTEXTS]
+                                         [PARTITION_TYPES - 1];
 
 void vp9_entropy_mode_init(void);
 

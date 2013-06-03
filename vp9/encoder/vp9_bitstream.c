@@ -241,13 +241,16 @@ static void update_mode(
 static void update_mbintra_mode_probs(VP9_COMP* const cpi,
                                       vp9_writer* const bc) {
   VP9_COMMON *const cm = &cpi->common;
+  int i;
 
   vp9_prob pnew[VP9_INTRA_MODES - 1];
   unsigned int bct[VP9_INTRA_MODES - 1][2];
 
-  update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
-              vp9_intra_mode_tree, pnew,
-              cm->fc.y_mode_prob, bct, (unsigned int *)cpi->y_mode_count);
+  for (i = 0; i < 4; i++)
+    update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
+                vp9_intra_mode_tree, pnew,
+                cm->fc.y_mode_prob[i], bct,
+                (unsigned int *)cpi->y_mode_count[i]);
 }
 
 void vp9_update_skip_probs(VP9_COMP *cpi) {
@@ -691,15 +694,19 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 #endif
 
     if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
-      write_intra_mode(bc, mode, pc->fc.y_mode_prob);
+      const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+      const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
+      const int bsl = MIN(bwl, bhl);
+      write_intra_mode(bc, mode, pc->fc.y_mode_prob[MIN(3, bsl)]);
     } else {
       int idx, idy;
       int bw = 1 << b_width_log2(mi->sb_type);
       int bh = 1 << b_height_log2(mi->sb_type);
       for (idy = 0; idy < 2; idy += bh)
-        for (idx = 0; idx < 2; idx += bw)
-          write_intra_mode(bc, m->bmi[idy * 2 + idx].as_mode.first,
-                           pc->fc.y_mode_prob);
+        for (idx = 0; idx < 2; idx += bw) {
+          MB_PREDICTION_MODE bm = m->bmi[idy * 2 + idx].as_mode.first;
+          write_intra_mode(bc, bm, pc->fc.y_mode_prob[0]);
+        }
     }
     write_intra_mode(bc, mi->uv_mode,
                      pc->fc.uv_mode_prob[mode]);
@@ -915,7 +922,8 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
     xd->above_seg_context = cm->above_seg_context + mi_col;
     pl = partition_plane_context(xd, bsize);
     // encode the partition information
-    write_token(bc, vp9_partition_tree, cm->fc.partition_prob[pl],
+    write_token(bc, vp9_partition_tree,
+                cm->fc.partition_prob[cm->frame_type][pl],
                 vp9_partition_encodings + partition);
   }
 
@@ -1598,7 +1606,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(cpi->common.fc.pre_coef_probs, cpi->common.fc.coef_probs);
   vp9_copy(cpi->common.fc.pre_y_mode_prob, cpi->common.fc.y_mode_prob);
   vp9_copy(cpi->common.fc.pre_uv_mode_prob, cpi->common.fc.uv_mode_prob);
-  vp9_copy(cpi->common.fc.pre_partition_prob, cpi->common.fc.partition_prob);
+  vp9_copy(cpi->common.fc.pre_partition_prob, cpi->common.fc.partition_prob[1]);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
   vp9_zero(cpi->common.fc.mv_ref_ct);
 
@@ -1651,7 +1659,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
       vp9_prob Pnew[PARTITION_TYPES - 1];
       unsigned int bct[PARTITION_TYPES - 1][2];
       update_mode(&header_bc, PARTITION_TYPES, vp9_partition_encodings,
-                  vp9_partition_tree, Pnew, pc->fc.partition_prob[i], bct,
+                  vp9_partition_tree, Pnew,
+                  pc->fc.partition_prob[pc->frame_type][i], bct,
                   (unsigned int *)cpi->partition_count[i]);
     }
 

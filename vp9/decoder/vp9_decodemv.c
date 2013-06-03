@@ -385,14 +385,15 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
         cm->prob_comppred[i] = vp9_read_prob(r);
 
     // VP9_INTRA_MODES
-    if (vp9_read_bit(r))
-      for (i = 0; i < VP9_INTRA_MODES - 1; ++i)
-        cm->fc.y_mode_prob[i] = vp9_read_prob(r);
+    for (j = 0; j < 4; j++)
+      if (vp9_read_bit(r))
+        for (i = 0; i < VP9_INTRA_MODES - 1; ++i)
+          cm->fc.y_mode_prob[j][i] = vp9_read_prob(r);
 
     for (j = 0; j < NUM_PARTITION_CONTEXTS; ++j)
       if (vp9_read_bit(r))
         for (i = 0; i < PARTITION_TYPES - 1; ++i)
-          cm->fc.partition_prob[j][i] = vp9_read_prob(r);
+          cm->fc.partition_prob[cm->frame_type][j][i] = vp9_read_prob(r);
 
     read_nmvprobs(r, nmvc, xd->allow_high_precision_mv);
   }
@@ -766,16 +767,19 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
     mv0->as_int = 0;
 
     if (bsize >= BLOCK_SIZE_SB8X8) {
-      mbmi->mode = read_intra_mode(r, cm->fc.y_mode_prob);
-      cm->fc.y_mode_counts[mbmi->mode]++;
+      const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+      const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
+      const int bsl = MIN(bwl, bhl);
+      mbmi->mode = read_intra_mode(r, cm->fc.y_mode_prob[MIN(3, bsl)]);
+      cm->fc.y_mode_counts[MIN(3, bsl)][mbmi->mode]++;
     } else {
       int idx, idy;
       for (idy = 0; idy < 2; idy += bh) {
         for (idx = 0; idx < 2; idx += bw) {
           int ib = idy * 2 + idx, k;
-          int m = read_intra_mode(r, cm->fc.y_mode_prob);
+          int m = read_intra_mode(r, cm->fc.y_mode_prob[0]);
           mi->bmi[ib].as_mode.first = m;
-          cm->fc.y_mode_counts[m]++;
+          cm->fc.y_mode_counts[0][m]++;
           for (k = 1; k < bh; ++k)
             mi->bmi[ib + k * 2].as_mode.first = m;
           for (k = 1; k < bw; ++k)
