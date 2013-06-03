@@ -738,6 +738,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->first_step = 0;
   sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
   sf->comp_inter_joint_search = 1;
+  sf->adpative_rd_thresh = 0;
+
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
   sf->static_segmentation = 0;
@@ -759,6 +761,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->static_segmentation = 0;
 #endif
       sf->comp_inter_joint_search = 0;
+      sf->adpative_rd_thresh = 1;
       if (speed > 0) {
         sf->optimize_coefficients = 0;
         sf->first_step = 1;
