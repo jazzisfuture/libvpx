@@ -144,6 +144,12 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
   // FIXME(jkoleszar): allocate subsampled arrays for U/V once subsampling
   // information is exposed at this level
   mi_cols = mi_cols_aligned_to_sb(oci);
+
+  // mi_cols needs to extend into the umv by up to 16 to handle the fact that
+  // we now can have transforms that extend into the border.
+  mi_cols = ((mi_cols + 15) & ~15);
+
+
 # if CONFIG_ALPHA
   // TODO(jkoleszar): Why is this * 2?
   oci->above_context[0] = vpx_calloc(sizeof(ENTROPY_CONTEXT) * 8 * mi_cols, 1);
