@@ -409,10 +409,10 @@ static void parse_superframe_index(const uint8_t *data,
       int i, j;
       const uint8_t *x = data + data_sz - index_sz + 1;
 
-      for (i = 0; i < frames; i++) {
+      for (i = 0; i < (int)frames; i++) {
         uint32_t this_sz = 0;
 
-        for (j = 0; j < mag; j++)
+        for (j = 0; j < (int)mag; j++)
           this_sz |= (*x++) << (j * 8);
         sizes[i] = this_sz;
       }
