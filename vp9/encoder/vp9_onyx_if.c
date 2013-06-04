@@ -734,7 +734,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->quarter_pixel_search = 1;
   sf->half_pixel_search = 1;
   sf->iterative_sub_pixel = 1;
-  sf->no_skip_block4x4_search = 1;
   sf->optimize_coefficients = !cpi->oxcf.lossless;
   sf->first_step = 0;
   sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
@@ -745,7 +744,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
   sf->static_segmentation = 0;
 #endif
-  sf->mb16_breakout = 0;
+  sf->split_partition_breakout = 0;
 
   switch (mode) {
     case 0: // best quality mode
@@ -759,13 +758,11 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
   sf->static_segmentation = 0;
 #endif
-      sf->mb16_breakout = 0;
-
       if (speed > 0) {
         sf->optimize_coefficients = 0;
-        sf->no_skip_block4x4_search = 0;
         sf->comp_inter_joint_search = 0;
         sf->first_step = 1;
+        sf->split_partition_breakout = 1;
       }
       break;
 
