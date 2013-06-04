@@ -290,6 +290,16 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     update_mode_probs(PARTITION_TYPES, vp9_partition_tree,
                       fc->partition_counts[i], fc->pre_partition_prob[i],
                       fc->partition_prob[i], 0);
+
+  if (cm->mcomp_filter_type == SWITCHABLE) {
+    for (i = 0; i <= VP9_SWITCHABLE_FILTERS; i++) {
+      update_mode_probs(VP9_SWITCHABLE_FILTERS, vp9_switchable_interp_tree,
+                        fc->switchable_interp_count[i],
+                        fc->pre_switchable_interp_prob[i],
+                        fc->switchable_interp_prob[i], 0);
+
+    }
+  }
 }
 
 static void set_default_lf_deltas(MACROBLOCKD *xd) {

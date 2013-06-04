@@ -20,6 +20,7 @@
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/decoder/vp9_decodemv.h"
+#include "vp9/decoder/vp9_decodframe.h"
 #include "vp9/common/vp9_mvref_common.h"
 #if CONFIG_DEBUG
 #include <assert.h>
@@ -347,9 +348,13 @@ unsigned int vp9_mv_cont_count[5][4] = {
 static void read_switchable_interp_probs(VP9D_COMP* const pbi, vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   int i, j;
-  for (j = 0; j < VP9_SWITCHABLE_FILTERS + 1; ++j)
-    for (i = 0; i < VP9_SWITCHABLE_FILTERS - 1; ++i)
-      cm->fc.switchable_interp_prob[j][i] = vp9_read_prob(r);
+  for (j = 0; j <= VP9_SWITCHABLE_FILTERS; ++j)
+    for (i = 0; i < VP9_SWITCHABLE_FILTERS - 1; ++i) {
+      if (vp9_read(r, VP9_DEF_UPDATE_PROB)) {
+        cm->fc.switchable_interp_prob[j][i] =
+            read_prob_diff_update(r, cm->fc.switchable_interp_prob[j][i]);
+      }
+    }
 }
 
 static INLINE COMPPREDMODE_TYPE read_comp_pred_mode(vp9_reader *r) {
@@ -474,6 +479,9 @@ static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
   const int index = treed_read(r, vp9_switchable_interp_tree,
                                vp9_get_pred_probs(&pbi->common, &pbi->mb,
                                                   PRED_SWITCHABLE_INTERP));
+  ++pbi->common.fc.switchable_interp_count
+                [vp9_get_pred_context(
+                    &pbi->common, &pbi->mb, PRED_SWITCHABLE_INTERP)][index];
   return vp9_switchable_interp[index];
 }
 

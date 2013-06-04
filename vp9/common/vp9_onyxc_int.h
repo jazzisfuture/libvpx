@@ -71,6 +71,10 @@ typedef struct frame_contexts {
   nmv_context_counts NMVcount;
   vp9_prob switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
                                  [VP9_SWITCHABLE_FILTERS - 1];
+  vp9_prob pre_switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
+      [VP9_SWITCHABLE_FILTERS - 1];
+  unsigned int switchable_interp_count[VP9_SWITCHABLE_FILTERS + 1]
+                                      [VP9_SWITCHABLE_FILTERS];
 
   int vp9_mode_contexts[INTER_MODE_CONTEXTS][VP9_MVREFS - 1];
   unsigned int mv_ref_ct[INTER_MODE_CONTEXTS][VP9_MVREFS - 1][2];
