@@ -202,7 +202,7 @@ void vp9_accum_mv_refs(VP9_COMMON *pc,
 void vp9_adapt_mode_context(VP9_COMMON *pc) {
   int i, j;
   unsigned int (*mv_ref_ct)[VP9_MVREFS - 1][2] = pc->fc.mv_ref_ct;
-  int (*mode_context)[VP9_MVREFS - 1] = pc->fc.vp9_mode_contexts;
+  vp9_prob (*mode_context)[VP9_MVREFS - 1] = pc->fc.vp9_mode_contexts;
 
   for (j = 0; j < INTER_MODE_CONTEXTS; j++) {
     for (i = 0; i < VP9_MVREFS - 1; i++) {
@@ -210,7 +210,7 @@ void vp9_adapt_mode_context(VP9_COMMON *pc) {
 
       count = count > MVREF_COUNT_SAT ? MVREF_COUNT_SAT : count;
       factor = (MVREF_MAX_UPDATE_FACTOR * count / MVREF_COUNT_SAT);
-      mode_context[j][i] = weighted_prob(pc->fc.vp9_mode_contexts[j][i],
+      mode_context[j][i] = weighted_prob(pc->fc.pre_mv_ref_prob[j][i],
                                          get_binary_prob(mv_ref_ct[j][i][0],
                                                          mv_ref_ct[j][i][1]),
                                          factor);
@@ -290,6 +290,15 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     update_mode_probs(PARTITION_TYPES, vp9_partition_tree,
                       fc->partition_counts[i], fc->pre_partition_prob[i],
                       fc->partition_prob[i], 0);
+
+  if (cm->mcomp_filter_type == SWITCHABLE) {
+    for (i = 0; i <= VP9_SWITCHABLE_FILTERS; i++) {
+      update_mode_probs(VP9_SWITCHABLE_FILTERS, vp9_switchable_interp_tree,
+                        fc->switchable_interp_count[i],
+                        fc->pre_switchable_interp_prob[i],
+                        fc->switchable_interp_prob[i], 0);
+    }
+  }
 }
 
 static void set_default_lf_deltas(MACROBLOCKD *xd) {
