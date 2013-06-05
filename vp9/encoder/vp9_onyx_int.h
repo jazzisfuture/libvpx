@@ -47,7 +47,7 @@
 
 #define KEY_FRAME_CONTEXT 5
 
-#define MAX_MODES 41
+#define MAX_MODES 36
 
 #define MIN_THRESHMULT  32
 #define MAX_THRESHMULT  512
@@ -65,9 +65,10 @@ typedef struct {
   int nmvcosts_hp[2][MV_VALS];
 
   vp9_prob segment_pred_probs[PREDICTION_PROBS];
-  unsigned char ref_pred_probs_update[PREDICTION_PROBS];
-  vp9_prob ref_pred_probs[PREDICTION_PROBS];
-  vp9_prob prob_comppred[COMP_PRED_CONTEXTS];
+  vp9_prob intra_inter_prob[INTRA_INTER_CONTEXTS];
+  vp9_prob comp_inter_prob[COMP_INTER_CONTEXTS];
+  vp9_prob single_ref_prob[REF_CONTEXTS][2];
+  vp9_prob comp_ref_prob[REF_CONTEXTS];
 
   unsigned char *last_frame_seg_map_copy;
 
@@ -324,8 +325,11 @@ typedef struct VP9_COMP {
   int rd_threshes[MAX_MODES];
   int64_t rd_comp_pred_diff[NB_PREDICTION_TYPES];
   int rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];
-  int comp_pred_count[COMP_PRED_CONTEXTS];
-  int single_pred_count[COMP_PRED_CONTEXTS];
+  unsigned int intra_inter_count[INTRA_INTER_CONTEXTS][2];
+  unsigned int comp_inter_count[COMP_INTER_CONTEXTS][2];
+  unsigned int single_ref_count[REF_CONTEXTS][2][2];
+  unsigned int comp_ref_count[REF_CONTEXTS][2];
+
   // FIXME contextualize
   int txfm_count_32x32p[TX_SIZE_MAX_SB];
   int txfm_count_16x16p[TX_SIZE_MAX_SB - 1];
@@ -432,7 +436,6 @@ typedef struct VP9_COMP {
   int mbgraph_n_frames;             // number of frames filled in the above
   int static_mb_pct;                // % forced skip mbs by segmentation
   int seg0_progress, seg0_idx, seg0_cnt;
-  int ref_pred_count[3][2];
 
   int decimation_factor;
   int decimation_count;
@@ -453,11 +456,7 @@ typedef struct VP9_COMP {
   vp9_prob last_skip_false_probs[3][MBSKIP_CONTEXTS];
   int last_skip_probs_q[3];
 
-  int recent_ref_frame_usage[MAX_REF_FRAMES];
-  int count_mb_ref_frame_usage[MAX_REF_FRAMES];
   int ref_frame_flags;
-
-  unsigned char ref_pred_probs_update[PREDICTION_PROBS];
 
   SPEED_FEATURES sf;
   int error_bins[1024];
