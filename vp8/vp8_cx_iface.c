@@ -53,9 +53,9 @@ static const struct extraconfig_map extracfg_map[] =
 #if !(CONFIG_REALTIME_ONLY)
             0,                          /* cpu_used      */
 #else
-            4,                          /* cpu_used      */
+            5,                          /* cpu_used      */
 #endif
-            0,                          /* enable_auto_alt_ref */
+            1,                          /* enable_auto_alt_ref */
             0,                          /* noise_sensitivity */
             0,                          /* Sharpness */
             0,                          /* static_thresh */
@@ -64,8 +64,8 @@ static const struct extraconfig_map extracfg_map[] =
 #else
             VP8_ONE_TOKENPARTITION,     /* token_partitions */
 #endif
-            0,                          /* arnr_max_frames */
-            3,                          /* arnr_strength */
+            7,                          /* arnr_max_frames */
+            5,                          /* arnr_strength */
             3,                          /* arnr_type*/
             0,                          /* tuning*/
             10,                         /* cq_level */
