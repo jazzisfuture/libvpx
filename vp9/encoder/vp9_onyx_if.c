@@ -588,19 +588,19 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
   for (i = 0; i < MAX_MODES; ++i)
     sf->thresh_mult[i] = mode == 0 ? -500 : 0;
 
-  sf->thresh_mult[THR_ZEROMV   ] = 0;
-  sf->thresh_mult[THR_ZEROG    ] = 0;
-  sf->thresh_mult[THR_ZEROA    ] = 0;
+  sf->thresh_mult[THR_ZEROMV   ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_ZEROG    ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_ZEROA    ] += speed_multiplier * 1000;
 
-  sf->thresh_mult[THR_NEARESTMV] = 0;
-  sf->thresh_mult[THR_NEARESTG ] = 0;
-  sf->thresh_mult[THR_NEARESTA ] = 0;
+  sf->thresh_mult[THR_NEARESTMV] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_NEARESTG ] += speed_multiplier * 1000;
+  sf->thresh_mult[THR_NEARESTA ] += speed_multiplier * 1000;
 
   sf->thresh_mult[THR_NEARMV   ] += speed_multiplier * 1000;
   sf->thresh_mult[THR_NEARG    ] += speed_multiplier * 1000;
   sf->thresh_mult[THR_NEARA    ] += speed_multiplier * 1000;
 
-  sf->thresh_mult[THR_DC       ] = 0;
+  sf->thresh_mult[THR_DC       ] += speed_multiplier * 1000;
   sf->thresh_mult[THR_TM       ] += speed_multiplier * 1000;
   sf->thresh_mult[THR_V_PRED   ] += speed_multiplier * 1000;
   sf->thresh_mult[THR_H_PRED   ] += speed_multiplier * 1000;
@@ -645,14 +645,14 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
     for (i = 0; i < MAX_MODES; ++i)
       sf->thresh_mult[i] = INT_MAX;
 
-    sf->thresh_mult[THR_DC       ] = 0;
-    sf->thresh_mult[THR_TM       ] = 0;
+    sf->thresh_mult[THR_DC       ] = 1000;
+    sf->thresh_mult[THR_TM       ] = 1000;
     sf->thresh_mult[THR_NEWMV    ] = 4000;
     sf->thresh_mult[THR_NEWG     ] = 4000;
     sf->thresh_mult[THR_NEWA     ] = 4000;
-    sf->thresh_mult[THR_NEARESTMV] = 0;
-    sf->thresh_mult[THR_NEARESTG ] = 0;
-    sf->thresh_mult[THR_NEARESTA ] = 0;
+    sf->thresh_mult[THR_NEARESTMV] = 1000;
+    sf->thresh_mult[THR_NEARESTG ] = 1000;
+    sf->thresh_mult[THR_NEARESTA ] = 1000;
     sf->thresh_mult[THR_NEARMV   ] = 2000;
     sf->thresh_mult[THR_NEARG    ] = 2000;
     sf->thresh_mult[THR_NEARA    ] = 2000;
