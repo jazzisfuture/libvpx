@@ -65,7 +65,6 @@ typedef struct {
   int nmvcosts_hp[2][MV_VALS];
 
   vp9_prob segment_pred_probs[PREDICTION_PROBS];
-  unsigned char ref_pred_probs_update[PREDICTION_PROBS];
   vp9_prob ref_pred_probs[PREDICTION_PROBS];
   vp9_prob prob_comppred[COMP_PRED_CONTEXTS];
 
@@ -432,7 +431,6 @@ typedef struct VP9_COMP {
   int mbgraph_n_frames;             // number of frames filled in the above
   int static_mb_pct;                // % forced skip mbs by segmentation
   int seg0_progress, seg0_idx, seg0_cnt;
-  int ref_pred_count[3][2];
 
   int decimation_factor;
   int decimation_count;
@@ -456,8 +454,6 @@ typedef struct VP9_COMP {
   int recent_ref_frame_usage[MAX_REF_FRAMES];
   int count_mb_ref_frame_usage[MAX_REF_FRAMES];
   int ref_frame_flags;
-
-  unsigned char ref_pred_probs_update[PREDICTION_PROBS];
 
   SPEED_FEATURES sf;
   int error_bins[1024];

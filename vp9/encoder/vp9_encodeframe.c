@@ -384,9 +384,7 @@ static void update_state(VP9_COMP *cpi,
       }
     }
 
-    // Did the chosen reference frame match its predicted value.
-    ref_pred_flag = ((xd->mode_info_context->mbmi.ref_frame ==
-                      vp9_get_pred_ref(cm, xd)));
+    ref_pred_flag = ((mbmi->ref_frame == vp9_get_pred_ref(cm, xd)));
     vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
     if (!xd->segmentation_enabled ||
         !vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME) ||
@@ -398,7 +396,7 @@ static void update_state(VP9_COMP *cpi,
       int pred_context = vp9_get_pred_context(cm, xd, PRED_REF);
 
       // Count prediction success
-      cpi->ref_pred_count[pred_context][ref_pred_flag]++;
+      cpi->common.fc.ref_pred_counts[pred_context][ref_pred_flag]++;
     }
   }
 
@@ -555,7 +553,7 @@ static void set_offsets(VP9_COMP *cpi,
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
   xd->prev_mode_info_context = cm->prev_mi ?
-                                 cm->prev_mi + idx_str : NULL;
+                               cm->prev_mi + idx_str : NULL;
 
   // Set up destination pointers
   setup_dst_planes(xd, &cm->yv12_fb[dst_fb_idx], mi_row, mi_col);
@@ -1430,7 +1428,6 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   x->act_zbin_adj = 0;
   cpi->seg0_idx = 0;
-  vpx_memset(cpi->ref_pred_count, 0, sizeof(cpi->ref_pred_count));
 
   xd->mode_info_stride = cm->mode_info_stride;
   xd->frame_type = cm->frame_type;
@@ -1462,6 +1459,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->common.fc.inter_mode_counts)
   vp9_zero(cpi->partition_count);
+  vp9_zero(cpi->common.fc.ref_pred_counts);
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.

@@ -99,15 +99,15 @@ unsigned char vp9_get_pred_context(const VP9_COMMON *const cm,
 // This function returns a context probability for coding a given
 // prediction signal
 vp9_prob vp9_get_pred_prob(const VP9_COMMON *const cm,
-                          const MACROBLOCKD *const xd,
-                          PRED_ID pred_id) {
+                           const MACROBLOCKD *const xd,
+                           PRED_ID pred_id) {
   const int pred_context = vp9_get_pred_context(cm, xd, pred_id);
 
   switch (pred_id) {
     case PRED_SEG_ID:
       return cm->segment_pred_probs[pred_context];
     case PRED_REF:
-      return cm->ref_pred_probs[pred_context];
+      return cm->fc.ref_pred_probs[pred_context];
     case PRED_COMP:
       // In keeping with convention elsewhre the probability returned is
       // the probability of a "0" outcome which in this case means the
@@ -131,7 +131,7 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *const cm,
     case PRED_SEG_ID:
       return &cm->segment_pred_probs[pred_context];
     case PRED_REF:
-      return &cm->ref_pred_probs[pred_context];
+      return &cm->fc.ref_pred_probs[pred_context];
     case PRED_COMP:
       // In keeping with convention elsewhre the probability returned is
       // the probability of a "0" outcome which in this case means the

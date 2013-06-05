@@ -79,6 +79,10 @@ typedef struct frame_contexts {
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][VP9_MVREFS - 1];
   vp9_prob pre_inter_mode_probs[INTER_MODE_CONTEXTS][VP9_MVREFS - 1];
   unsigned int inter_mode_counts[INTER_MODE_CONTEXTS][VP9_MVREFS - 1][2];
+
+  vp9_prob ref_pred_probs[PREDICTION_PROBS];
+  vp9_prob pre_ref_pred_probs[PREDICTION_PROBS];
+  unsigned int ref_pred_counts[PREDICTION_PROBS][2];
 } FRAME_CONTEXT;
 
 typedef enum {
@@ -230,7 +234,6 @@ typedef struct VP9Common {
 
   // Context probabilities for reference frame prediction
   unsigned char ref_scores[MAX_REF_FRAMES];
-  vp9_prob ref_pred_probs[PREDICTION_PROBS];
   vp9_prob mod_refprobs[MAX_REF_FRAMES][PREDICTION_PROBS];
 
   vp9_prob prob_comppred[COMP_PRED_CONTEXTS];

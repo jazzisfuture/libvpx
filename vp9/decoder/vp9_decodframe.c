@@ -651,14 +651,16 @@ static void setup_pred_probs(VP9_COMMON *pc, vp9_reader *r) {
   // reference frame
   if (pc->frame_type == KEY_FRAME) {
     // Set the prediction probabilities to defaults
-    pc->ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
-    pc->ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
-    pc->ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
+    pc->fc.ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
+    pc->fc.ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
+    pc->fc.ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
   } else {
     int i;
-    for (i = 0; i < PREDICTION_PROBS; ++i)
-      if (vp9_read_bit(r))
-        pc->ref_pred_probs[i] = vp9_read_prob(r);
+    for (i = 0; i < PREDICTION_PROBS; ++i) {
+      if (vp9_read(r, VP9_DEF_UPDATE_PROB))
+        pc->fc.ref_pred_probs[i] =
+            vp9_read_prob_diff_update(r, pc->fc.ref_pred_probs[i]);
+    }
   }
 }
 
@@ -786,8 +788,8 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   fc->pre_nmvc = fc->nmvc;
   vp9_copy(fc->pre_switchable_interp_prob,
            fc->switchable_interp_prob);
-  vp9_copy(fc->pre_inter_mode_probs,
-           fc->inter_mode_probs);
+  vp9_copy(fc->pre_inter_mode_probs, fc->inter_mode_probs);
+  vp9_copy(fc->pre_ref_pred_probs, fc->ref_pred_probs);
 
   vp9_zero(fc->coef_counts);
   vp9_zero(fc->eob_branch_counts);
@@ -797,6 +799,7 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->inter_mode_counts);
   vp9_zero(fc->partition_counts);
   vp9_zero(fc->switchable_interp_count);
+  vp9_zero(fc->ref_pred_counts);
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {

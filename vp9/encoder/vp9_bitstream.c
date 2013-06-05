@@ -203,100 +203,6 @@ static int prob_diff_update_cost(vp9_prob newp, vp9_prob oldp) {
   return update_bits[delp] * 256;
 }
 
-static void update_mode(
-  vp9_writer *w,
-  int n,
-  const struct vp9_token tok[/* n */],
-  vp9_tree tree,
-  vp9_prob Pnew               [/* n-1 */],
-  vp9_prob Pcur               [/* n-1 */],
-  unsigned int bct            [/* n-1 */] [2],
-  const unsigned int num_events[/* n */]
-) {
-  unsigned int new_b = 0, old_b = 0;
-  int i = 0;
-
-  vp9_tree_probs_from_distribution(tree, Pnew, bct, num_events, 0);
-  n--;
-
-  do {
-    new_b += cost_branch(bct[i], Pnew[i]);
-    old_b += cost_branch(bct[i], Pcur[i]);
-  } while (++i < n);
-
-  if (new_b + (n << 8) < old_b) {
-    int i = 0;
-
-    vp9_write_bit(w, 1);
-
-    do {
-      const vp9_prob p = Pnew[i];
-
-      vp9_write_literal(w, Pcur[i] = p ? p : 1, 8);
-    } while (++i < n);
-  } else
-    vp9_write_bit(w, 0);
-}
-
-static void update_mbintra_mode_probs(VP9_COMP* const cpi,
-                                      vp9_writer* const bc) {
-  VP9_COMMON *const cm = &cpi->common;
-
-  vp9_prob pnew[VP9_INTRA_MODES - 1];
-  unsigned int bct[VP9_INTRA_MODES - 1][2];
-
-  update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
-              vp9_intra_mode_tree, pnew,
-              cm->fc.y_mode_prob, bct, (unsigned int *)cpi->y_mode_count);
-}
-
-void vp9_update_skip_probs(VP9_COMP *cpi) {
-  VP9_COMMON *const pc = &cpi->common;
-  int k;
-
-  for (k = 0; k < MBSKIP_CONTEXTS; ++k)
-    pc->mbskip_pred_probs[k] = get_binary_prob(cpi->skip_false_count[k],
-                                               cpi->skip_true_count[k]);
-}
-
-// This function updates the reference frame prediction stats
-static void update_refpred_stats(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  int i;
-  vp9_prob new_pred_probs[PREDICTION_PROBS];
-  int old_cost, new_cost;
-
-  // Set the prediction probability structures to defaults
-  if (cm->frame_type != KEY_FRAME) {
-    // From the prediction counts set the probabilities for each context
-    for (i = 0; i < PREDICTION_PROBS; i++) {
-      const int c0 = cpi->ref_pred_count[i][0];
-      const int c1 = cpi->ref_pred_count[i][1];
-
-      new_pred_probs[i] = get_binary_prob(c0, c1);
-
-      // Decide whether or not to update the reference frame probs.
-      // Returned costs are in 1/256 bit units.
-      old_cost = c0 * vp9_cost_zero(cm->ref_pred_probs[i]) +
-                 c1 * vp9_cost_one(cm->ref_pred_probs[i]);
-
-      new_cost = c0 * vp9_cost_zero(new_pred_probs[i]) +
-                 c1 * vp9_cost_one(new_pred_probs[i]);
-
-      // Cost saving must be >= 8 bits (2048 in these units)
-      if ((old_cost - new_cost) >= 2048) {
-        cpi->ref_pred_probs_update[i] = 1;
-        cm->ref_pred_probs[i] = new_pred_probs[i];
-      } else
-        cpi->ref_pred_probs_update[i] = 0;
-    }
-  }
-}
-
-static void write_intra_mode(vp9_writer *bc, int m, const vp9_prob *p) {
-  write_token(bc, vp9_intra_mode_tree, p, vp9_intra_mode_encodings + m);
-}
-
 static int prob_update_savings(const unsigned int *ct,
                                const vp9_prob oldp, const vp9_prob newp,
                                const vp9_prob upd) {
@@ -399,6 +305,65 @@ static void vp9_cond_prob_diff_update(vp9_writer *bc, vp9_prob *oldp,
   } else {
     vp9_write(bc, 0, upd);
   }
+}
+
+static void update_mode(
+  vp9_writer *w,
+  int n,
+  const struct vp9_token tok[/* n */],
+  vp9_tree tree,
+  vp9_prob Pnew[/* n-1 */],
+  vp9_prob Pcur[/* n-1 */],
+  unsigned int bct[/* n-1 */] [2],
+  const unsigned int num_events[/* n */]
+) {
+  int i = 0;
+
+  vp9_tree_probs_from_distribution(tree, Pnew, bct, num_events, 0);
+  n--;
+  for (i = 0; i < n; ++i) {
+    vp9_cond_prob_diff_update(w, &Pcur[i], VP9_DEF_UPDATE_PROB, bct[i]);
+  }
+}
+
+static void update_mbintra_mode_probs(VP9_COMP* const cpi,
+                                      vp9_writer* const bc) {
+  VP9_COMMON *const cm = &cpi->common;
+
+  vp9_prob pnew[VP9_INTRA_MODES - 1];
+  unsigned int bct[VP9_INTRA_MODES - 1][2];
+
+  update_mode(bc, VP9_INTRA_MODES, vp9_intra_mode_encodings,
+              vp9_intra_mode_tree, pnew,
+              cm->fc.y_mode_prob, bct, (unsigned int *)cpi->y_mode_count);
+}
+
+void vp9_update_skip_probs(VP9_COMP *cpi) {
+  VP9_COMMON *const pc = &cpi->common;
+  int k;
+
+  for (k = 0; k < MBSKIP_CONTEXTS; ++k)
+    pc->mbskip_pred_probs[k] = get_binary_prob(cpi->skip_false_count[k],
+                                               cpi->skip_true_count[k]);
+}
+
+// This function updates the reference frame prediction stats
+static void update_refpred_stats(VP9_COMP *cpi, vp9_writer* const bc) {
+  VP9_COMMON *const cm = &cpi->common;
+  int i;
+  // Set the prediction probability structures to defaults
+  if (cm->frame_type != KEY_FRAME) {
+    // From the prediction counts set the probabilities for each context
+    for (i = 0; i < PREDICTION_PROBS; i++) {
+      vp9_cond_prob_diff_update(bc, &cm->fc.ref_pred_probs[i],
+                                VP9_DEF_UPDATE_PROB,
+                                cpi->common.fc.ref_pred_counts[i]);
+    }
+  }
+}
+
+static void write_intra_mode(vp9_writer *bc, int m, const vp9_prob *p) {
+  write_token(bc, vp9_intra_mode_tree, p, vp9_intra_mode_encodings + m);
 }
 
 static void update_switchable_interp_probs(VP9_COMMON *const pc,
@@ -554,6 +519,7 @@ static void encode_ref_frame(vp9_writer *const bc,
     unsigned char prediction_flag;
     vp9_prob pred_prob;
     MV_REFERENCE_FRAME pred_rf;
+    int pred_context = vp9_get_pred_context(cm, xd, PRED_REF);
 
     // Get the context probability the prediction flag
     pred_prob = vp9_get_pred_prob(cm, xd, PRED_REF);
@@ -564,6 +530,8 @@ static void encode_ref_frame(vp9_writer *const bc,
     // Did the chosen reference frame match its predicted value.
     prediction_flag =
       (xd->mode_info_context->mbmi.ref_frame == pred_rf);
+
+    cm->fc.ref_pred_counts[pred_context][prediction_flag]++;
 
     vp9_set_pred_flag(xd, PRED_REF, prediction_flag);
     vp9_write(bc, prediction_flag, pred_prob);
@@ -1550,17 +1518,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 
   // Encode the common prediction model status flag probability updates for
   // the reference frame
-  update_refpred_stats(cpi);
-  if (pc->frame_type != KEY_FRAME) {
-    for (i = 0; i < PREDICTION_PROBS; i++) {
-      if (cpi->ref_pred_probs_update[i]) {
-        vp9_write_bit(&header_bc, 1);
-        vp9_write_prob(&header_bc, pc->ref_pred_probs[i]);
-      } else {
-        vp9_write_bit(&header_bc, 0);
-      }
-    }
-  }
+  update_refpred_stats(cpi, &header_bc);
+  vp9_zero(cpi->common.fc.ref_pred_counts);
 
   if (xd->lossless)
     pc->txfm_mode = ONLY_4X4;
@@ -1578,6 +1537,8 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
            cpi->common.fc.switchable_interp_prob);
   vp9_copy(cpi->common.fc.pre_inter_mode_probs,
            cpi->common.fc.inter_mode_probs);
+  vp9_copy(cpi->common.fc.pre_ref_pred_probs,
+           cpi->common.fc.ref_pred_probs);
 
   update_coef_probs(cpi, &header_bc);
 
