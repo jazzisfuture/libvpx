@@ -505,33 +505,48 @@ static int block_error_sbuv(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize, int shift) {
   return sum > INT_MAX ? INT_MAX : (int)sum;
 }
 
-static int rdcost_plane(VP9_COMMON *const cm, MACROBLOCK *x,
-                        int plane, BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
-  MACROBLOCKD *const xd = &x->e_mbd;
+struct rdcost_block_args {
+  VP9_COMMON *cm;
+  MACROBLOCK *x;
+  ENTROPY_CONTEXT t_above[16];
+  ENTROPY_CONTEXT t_left[16];
+  TX_SIZE tx_size;
+  int bw;
+  int bh;
+  int cost;
+};
+
+static void rdcost_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
+                         int ss_txfrm_size, void *arg) {
+  struct rdcost_block_args* args = arg;
+  int x_idx, y_idx;
+  MACROBLOCKD * const xd = &args->x->e_mbd;
+
+  txfrm_block_to_raster_xy(xd, bsize, plane, block, args->tx_size * 2, &x_idx,
+                           &y_idx);
+
+  args->cost += cost_coeffs(args->cm, args->x, plane, block,
+                            xd->plane[plane].plane_type, args->t_above + x_idx,
+                            args->t_left + y_idx, args->tx_size,
+                            args->bw * args->bh);
+}
+
+static int rdcost_plane(VP9_COMMON * const cm, MACROBLOCK *x, int plane,
+                        BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
+  MACROBLOCKD * const xd = &x->e_mbd;
   const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
   const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
   const int bw = 1 << bwl, bh = 1 << bhl;
-  ENTROPY_CONTEXT t_above[16], t_left[16];
-  int block, cost;
+  struct rdcost_block_args args = { cm, x, { 0 }, { 0 }, tx_size, bw, bh, 0 };
 
-  vpx_memcpy(&t_above, xd->plane[plane].above_context,
+  vpx_memcpy(&args.t_above, xd->plane[plane].above_context,
              sizeof(ENTROPY_CONTEXT) * bw);
-  vpx_memcpy(&t_left,  xd->plane[plane].left_context,
+  vpx_memcpy(&args.t_left, xd->plane[plane].left_context,
              sizeof(ENTROPY_CONTEXT) * bh);
 
-  cost = 0;
-  for (block = 0; block < bw * bh; block += 1 << (tx_size * 2)) {
-    int x_idx, y_idx;
+  foreach_transformed_block_in_plane(xd, bsize, plane, rdcost_block, &args);
 
-    txfrm_block_to_raster_xy(xd, bsize, plane, block, tx_size * 2,
-                             &x_idx, &y_idx);
-
-    cost += cost_coeffs(cm, x, plane, block, xd->plane[plane].plane_type,
-                        t_above + x_idx, t_left + y_idx,
-                        tx_size, bw * bh);
-  }
-
-  return cost;
+  return args.cost;
 }
 
 static int rdcost_uv(VP9_COMMON *const cm, MACROBLOCK *x,
@@ -2500,6 +2515,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv seg_mvs[4][MAX_REF_FRAMES];
   union b_mode_info best_bmodes[4];
   PARTITION_INFO best_partition;
+  int bwsl = b_width_log2(bsize);
+  int bws = (1 << bwsl) / 4;  // mode_info step for subsize
+  int bhsl = b_width_log2(bsize);
+  int bhs = (1 << bhsl) / 4;  // mode_info step for subsize
 
   for (i = 0; i < 4; i++) {
     int j;
@@ -2719,6 +2738,15 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           continue;
         }
       }
+    }
+    // TODO(JBB): This is to make up for the fact that we don't have sad
+    // functions that work when the block size reads outside the umv.  We
+    // should fix this either by making the motion search just work on
+    // a representative block in the boundary ( first ) and then implement a
+    // function that does sads when inside the border..
+    if (((mi_row + bhs) < cm->mi_rows || (mi_col + bws) < cm->mi_cols) &&
+        this_mode == NEWMV) {
+      continue;
     }
 
     if (this_mode == I4X4_PRED) {
