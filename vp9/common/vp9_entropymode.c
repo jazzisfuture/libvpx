@@ -120,9 +120,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
   vpx_memcpy(x->fc.partition_prob, vp9_partition_probs,
              sizeof(vp9_partition_probs));
 
-  x->ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
-  x->ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
-  x->ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
+  x->fc.ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
+  x->fc.ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
+  x->fc.ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
 }
 
 #if VP9_SWITCHABLE_FILTERS == 3
@@ -223,10 +223,10 @@ void vp9_adapt_mode_context(VP9_COMMON *pc) {
 
 #define MODE_COUNT_SAT 20
 #define MODE_MAX_UPDATE_FACTOR 144
-static void update_mode_probs(int n_modes,
-                              const vp9_tree_index *tree, unsigned int *cnt,
-                              vp9_prob *pre_probs, vp9_prob *dst_probs,
-                              unsigned int tok0_offset) {
+static void adapt_mode_probs(int n_modes,
+                             const vp9_tree_index *tree, unsigned int *cnt,
+                             vp9_prob *pre_probs, vp9_prob *dst_probs,
+                             unsigned int tok0_offset) {
 #define MAX_PROBS 32
   vp9_prob probs[MAX_PROBS];
   unsigned int branch_ct[MAX_PROBS][2];
@@ -280,28 +280,43 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   printf("};\n");
 #endif
 
-  update_mode_probs(VP9_INTRA_MODES, vp9_intra_mode_tree,
-                    fc->y_mode_counts, fc->pre_y_mode_prob,
-                    fc->y_mode_prob, 0);
+  adapt_mode_probs(VP9_INTRA_MODES, vp9_intra_mode_tree,
+                   fc->y_mode_counts, fc->pre_y_mode_prob,
+                   fc->y_mode_prob, 0);
 
   for (i = 0; i < VP9_INTRA_MODES; ++i)
-    update_mode_probs(VP9_INTRA_MODES, vp9_intra_mode_tree,
-                      fc->uv_mode_counts[i], fc->pre_uv_mode_prob[i],
-                      fc->uv_mode_prob[i], 0);
+    adapt_mode_probs(VP9_INTRA_MODES, vp9_intra_mode_tree,
+                     fc->uv_mode_counts[i], fc->pre_uv_mode_prob[i],
+                     fc->uv_mode_prob[i], 0);
 
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
-    update_mode_probs(PARTITION_TYPES, vp9_partition_tree,
-                      fc->partition_counts[i], fc->pre_partition_prob[i],
-                      fc->partition_prob[i], 0);
+    adapt_mode_probs(PARTITION_TYPES, vp9_partition_tree,
+                     fc->partition_counts[i], fc->pre_partition_prob[i],
+                     fc->partition_prob[i], 0);
 
   if (cm->mcomp_filter_type == SWITCHABLE) {
     for (i = 0; i <= VP9_SWITCHABLE_FILTERS; i++) {
-      update_mode_probs(VP9_SWITCHABLE_FILTERS, vp9_switchable_interp_tree,
-                        fc->switchable_interp_count[i],
-                        fc->pre_switchable_interp_prob[i],
-                        fc->switchable_interp_prob[i], 0);
+      adapt_mode_probs(VP9_SWITCHABLE_FILTERS, vp9_switchable_interp_tree,
+                       fc->switchable_interp_count[i],
+                       fc->pre_switchable_interp_prob[i],
+                       fc->switchable_interp_prob[i], 0);
     }
   }
+  /*
+  if (cm->frame_type != KEY_FRAME) {
+    for (i = 0; i < PREDICTION_PROBS; i++) {
+      int count = cm->fc.ref_pred_counts[i][0] + cm->fc.ref_pred_counts[i][1];
+      int factor;
+      count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+      factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
+      cm->fc.ref_pred_probs[i] = weighted_prob(
+          cm->fc.pre_ref_pred_probs[i],
+          get_binary_prob(cm->fc.ref_pred_counts[i][0],
+                          cm->fc.ref_pred_counts[i][1]),
+          factor);
+    }
+  }
+  */
 }
 
 static void set_default_lf_deltas(MACROBLOCKD *xd) {

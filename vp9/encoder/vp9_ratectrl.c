@@ -129,8 +129,7 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
   vp9_copy(cc->partition_prob, cm->fc.partition_prob);
 
   vp9_copy(cc->segment_pred_probs, cm->segment_pred_probs);
-  vp9_copy(cc->ref_pred_probs_update, cpi->ref_pred_probs_update);
-  vp9_copy(cc->ref_pred_probs, cm->ref_pred_probs);
+  vp9_copy(cc->ref_pred_probs, cm->fc.ref_pred_probs);
   vp9_copy(cc->prob_comppred, cm->prob_comppred);
 
   vpx_memcpy(cpi->coding_context.last_frame_seg_map_copy,
@@ -163,8 +162,7 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->fc.partition_prob, cc->partition_prob);
 
   vp9_copy(cm->segment_pred_probs, cc->segment_pred_probs);
-  vp9_copy(cpi->ref_pred_probs_update, cc->ref_pred_probs_update);
-  vp9_copy(cm->ref_pred_probs, cc->ref_pred_probs);
+  vp9_copy(cm->fc.ref_pred_probs, cc->ref_pred_probs);
   vp9_copy(cm->prob_comppred, cc->prob_comppred);
 
   vpx_memcpy(cm->last_frame_seg_map,

@@ -261,12 +261,15 @@ static MV_REFERENCE_FRAME read_ref_frame(VP9D_COMP *pbi,
 
     // Get the context probability the prediction flag
     vp9_prob pred_prob = vp9_get_pred_prob(cm, xd, PRED_REF);
+    int pred_context = vp9_get_pred_context(cm, xd, PRED_REF);
 
     // Read the prediction status flag
     unsigned char prediction_flag = vp9_read(r, pred_prob);
 
     // Store the prediction flag.
     vp9_set_pred_flag(xd, PRED_REF, prediction_flag);
+
+    cm->fc.ref_pred_counts[pred_context][prediction_flag]++;
 
     // Get the predicted reference frame.
     pred_ref = vp9_get_pred_ref(cm, xd);
@@ -404,14 +407,20 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
         cm->prob_comppred[i] = vp9_read_prob(r);
 
     // VP9_INTRA_MODES
-    if (vp9_read_bit(r))
-      for (i = 0; i < VP9_INTRA_MODES - 1; ++i)
-        cm->fc.y_mode_prob[i] = vp9_read_prob(r);
-
-    for (j = 0; j < NUM_PARTITION_CONTEXTS; ++j)
-      if (vp9_read_bit(r))
-        for (i = 0; i < PARTITION_TYPES - 1; ++i)
-          cm->fc.partition_prob[j][i] = vp9_read_prob(r);
+    for (i = 0; i < VP9_INTRA_MODES - 1; ++i) {
+      if (vp9_read(r, VP9_DEF_UPDATE_PROB)) {
+        cm->fc.y_mode_prob[i] =
+            vp9_read_prob_diff_update(r, cm->fc.y_mode_prob[i]);
+      }
+    }
+    for (j = 0; j < NUM_PARTITION_CONTEXTS; ++j) {
+      for (i = 0; i < PARTITION_TYPES - 1; ++i) {
+        if (vp9_read(r, VP9_DEF_UPDATE_PROB)) {
+          cm->fc.partition_prob[j][i] =
+              vp9_read_prob_diff_update(r, cm->fc.partition_prob[j][i]);
+        }
+      }
+    }
 
     read_nmvprobs(r, nmvc, xd->allow_high_precision_mv);
   }

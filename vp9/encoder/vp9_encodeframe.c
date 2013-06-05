@@ -398,7 +398,7 @@ static void update_state(VP9_COMP *cpi,
       int pred_context = vp9_get_pred_context(cm, xd, PRED_REF);
 
       // Count prediction success
-      cpi->ref_pred_count[pred_context][ref_pred_flag]++;
+      cpi->common.fc.ref_pred_counts[pred_context][ref_pred_flag]++;
     }
   }
 
@@ -1430,7 +1430,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   x->act_zbin_adj = 0;
   cpi->seg0_idx = 0;
-  vpx_memset(cpi->ref_pred_count, 0, sizeof(cpi->ref_pred_count));
+
+  //vpx_memset(cpi->common.fc.ref_pred_counts, 0,
+  //           sizeof(cpi->common.fc.ref_pred_counts));
 
   xd->mode_info_stride = cm->mode_info_stride;
   xd->frame_type = cm->frame_type;
@@ -1462,6 +1464,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->common.fc.inter_mode_counts)
   vp9_zero(cpi->partition_count);
+  vp9_zero(cpi->common.fc.ref_pred_counts);
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.
