@@ -1052,7 +1052,7 @@ static vpx_codec_enc_cfg_map_t vp9e_usage_cfg_map[] = {
 
       VPX_RC_ONE_PASS,    /* g_pass */
 
-      0,                  /* g_lag_in_frames */
+      25,                 /* g_lag_in_frames */
 
       0,                  /* rc_dropframe_thresh */
       0,                  /* rc_resize_allowed */
@@ -1064,7 +1064,7 @@ static vpx_codec_enc_cfg_map_t vp9e_usage_cfg_map[] = {
       {0},                /* rc_twopass_stats_in */
 #endif
       256,                /* rc_target_bandwidth */
-      4,                  /* rc_min_quantizer */
+      0,                  /* rc_min_quantizer */
       63,                 /* rc_max_quantizer */
       100,                /* rc_undershoot_pct */
       100,                /* rc_overshoot_pct */
@@ -1074,13 +1074,13 @@ static vpx_codec_enc_cfg_map_t vp9e_usage_cfg_map[] = {
       5000,               /* rc_buffer_optimal_size; */
 
       50,                 /* rc_two_pass_vbrbias  */
-      0,                  /* rc_two_pass_vbrmin_section */
-      400,                /* rc_two_pass_vbrmax_section */
+      5,                  /* rc_two_pass_vbrmin_section */
+      2000,               /* rc_two_pass_vbrmax_section */
 
       /* keyframing settings (kf) */
       VPX_KF_AUTO,        /* g_kfmode*/
       0,                  /* kf_min_dist */
-      9999,               /* kf_max_dist */
+      99999,              /* kf_max_dist */
 
 #if VPX_ENCODER_ABI_VERSION == (1 + VPX_CODEC_ABI_VERSION)
       1,                  /* g_delete_first_pass_file */
