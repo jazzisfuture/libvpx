@@ -1310,20 +1310,8 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->frames_till_gf_update_due    = 0;
   cpi->gf_overspend_bits            = 0;
   cpi->non_gf_bitrate_adjustment    = 0;
-  cm->prob_last_coded               = 128;
-  cm->prob_gf_coded                 = 128;
-  cm->prob_intra_coded              = 63;
-  for (i = 0; i < COMP_PRED_CONTEXTS; i++)
-    cm->prob_comppred[i]         = 128;
   for (i = 0; i < TX_SIZE_MAX_SB - 1; i++)
     cm->prob_tx[i]               = 128;
-
-  // Prime the recent reference frame usage counters.
-  // Hereafter they will be maintained as a sort of moving average
-  cpi->recent_ref_frame_usage[INTRA_FRAME]  = 1;
-  cpi->recent_ref_frame_usage[LAST_FRAME]   = 1;
-  cpi->recent_ref_frame_usage[GOLDEN_FRAME] = 1;
-  cpi->recent_ref_frame_usage[ALTREF_FRAME] = 1;
 
   // Set reference frame sign bias for ALTREF frame to 1 (for now)
   cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = 1;
@@ -2082,22 +2070,6 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
     cpi->refresh_golden_frame = 0;
     cpi->common.frames_since_golden = 0;
 
-    // if ( cm->frame_type == KEY_FRAME )
-    // {
-    cpi->recent_ref_frame_usage[INTRA_FRAME] = 1;
-    cpi->recent_ref_frame_usage[LAST_FRAME] = 1;
-    cpi->recent_ref_frame_usage[GOLDEN_FRAME] = 1;
-    cpi->recent_ref_frame_usage[ALTREF_FRAME] = 1;
-    // }
-    // else
-    // {
-    //  // Carry a portion of count over to beginning of next gf sequence
-    //  cpi->recent_ref_frame_usage[INTRA_FRAME] >>= 5;
-    //  cpi->recent_ref_frame_usage[LAST_FRAME] >>= 5;
-    //  cpi->recent_ref_frame_usage[GOLDEN_FRAME] >>= 5;
-    //  cpi->recent_ref_frame_usage[ALTREF_FRAME] >>= 5;
-    // }
-
     // ******** Fixed Q test code only ************
     // If we are going to use the ALT reference for the next group of frames set a flag to say so.
     if (cpi->oxcf.fixed_q >= 0 &&
@@ -2122,13 +2094,6 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
       cpi->common.frames_till_alt_ref_frame--;
 
     cpi->common.frames_since_golden++;
-
-    if (cpi->common.frames_since_golden > 1) {
-      cpi->recent_ref_frame_usage[INTRA_FRAME] += cpi->count_mb_ref_frame_usage[INTRA_FRAME];
-      cpi->recent_ref_frame_usage[LAST_FRAME] += cpi->count_mb_ref_frame_usage[LAST_FRAME];
-      cpi->recent_ref_frame_usage[GOLDEN_FRAME] += cpi->count_mb_ref_frame_usage[GOLDEN_FRAME];
-      cpi->recent_ref_frame_usage[ALTREF_FRAME] += cpi->count_mb_ref_frame_usage[ALTREF_FRAME];
-    }
   }
 }
 

@@ -171,8 +171,8 @@ void vp9_setup_interp_filters(MACROBLOCKD *xd,
     MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
 
     set_scale_factors(xd,
-                      mbmi->ref_frame - 1,
-                      mbmi->second_ref_frame - 1,
+                      mbmi->ref_frame[0] - 1,
+                      mbmi->ref_frame[1] - 1,
                       cm->active_ref_scale);
   }
 
@@ -387,7 +387,7 @@ static void build_inter_predictors(int plane, int block,
   const int bh = 4 << bhl,  bw = 4 << bwl;
   const int x_idx = block & ((1 << bwl) - 1), y_idx = block >> bwl;
   const int x = x_idx * 4, y = y_idx * 4;
-  const int use_second_ref = xd->mode_info_context->mbmi.second_ref_frame > 0;
+  const int use_second_ref = xd->mode_info_context->mbmi.ref_frame[1] > 0;
   int which_mv;
 
   assert(x < bw);
