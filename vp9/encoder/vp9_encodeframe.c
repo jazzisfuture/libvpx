@@ -330,7 +330,6 @@ static void update_state(VP9_COMP *cpi,
                          BLOCK_SIZE_TYPE bsize,
                          int output_enabled) {
   int i, x_idx, y;
-  VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   MODE_INFO *mi = &ctx->mic;
@@ -345,7 +344,8 @@ static void update_state(VP9_COMP *cpi,
 #if CONFIG_DEBUG
   assert(mb_mode < MB_MODE_COUNT);
   assert(mb_mode_index < MAX_MODES);
-  assert(mi->mbmi.ref_frame < MAX_REF_FRAMES);
+  assert(mi->mbmi.ref_frame[0] < MAX_REF_FRAMES);
+  assert(mi->mbmi.ref_frame[1] < MAX_REF_FRAMES);
 #endif
 
   assert(mi->mbmi.sb_type == bsize);
@@ -367,7 +367,7 @@ static void update_state(VP9_COMP *cpi,
     ctx->txfm_rd_diff[ALLOW_32X32] = ctx->txfm_rd_diff[ALLOW_16X16];
   }
 
-  if (mbmi->ref_frame != INTRA_FRAME &&
+  if (mbmi->ref_frame[0] != INTRA_FRAME &&
       mbmi->sb_type < BLOCK_SIZE_SB8X8) {
     vpx_memcpy(x->partition_info, &ctx->partition_info,
                sizeof(PARTITION_INFO));
@@ -382,29 +382,9 @@ static void update_state(VP9_COMP *cpi,
   if (!output_enabled)
     return;
 
-  {
-    int segment_id = mbmi->segment_id, ref_pred_flag;
-    if (!vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)) {
-      for (i = 0; i < NB_TXFM_MODES; i++) {
-        cpi->rd_tx_select_diff[i] += ctx->txfm_rd_diff[i];
-      }
-    }
-
-    // Did the chosen reference frame match its predicted value.
-    ref_pred_flag = ((xd->mode_info_context->mbmi.ref_frame ==
-                      vp9_get_pred_ref(cm, xd)));
-    vp9_set_pred_flag(xd, PRED_REF, ref_pred_flag);
-    if (!xd->segmentation_enabled ||
-        !vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME) ||
-        vp9_check_segref(xd, segment_id, INTRA_FRAME)  +
-        vp9_check_segref(xd, segment_id, LAST_FRAME)   +
-        vp9_check_segref(xd, segment_id, GOLDEN_FRAME) +
-        vp9_check_segref(xd, segment_id, ALTREF_FRAME) > 1) {
-      // Get the prediction context and status
-      int pred_context = vp9_get_pred_context(cm, xd, PRED_REF);
-
-      // Count prediction success
-      cpi->ref_pred_count[pred_context][ref_pred_flag]++;
+  if (!vp9_segfeature_active(xd, mbmi->segment_id, SEG_LVL_SKIP)) {
+    for (i = 0; i < NB_TXFM_MODES; i++) {
+      cpi->rd_tx_select_diff[i] += ctx->txfm_rd_diff[i];
     }
   }
 
@@ -454,15 +434,16 @@ static void update_state(VP9_COMP *cpi,
     */
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[mb_mode_index]++;
-    if (mbmi->ref_frame != INTRA_FRAME &&
+    if (mbmi->ref_frame[0] != INTRA_FRAME &&
         (mbmi->sb_type < BLOCK_SIZE_SB8X8 || mbmi->mode == NEWMV)) {
       int_mv best_mv, best_second_mv;
-      MV_REFERENCE_FRAME rf = mbmi->ref_frame;
+      const MV_REFERENCE_FRAME rf1 = mbmi->ref_frame[0];
+      const MV_REFERENCE_FRAME rf2 = mbmi->ref_frame[1];
       best_mv.as_int = ctx->best_ref_mv.as_int;
       best_second_mv.as_int = ctx->second_best_ref_mv.as_int;
       if (mbmi->mode == NEWMV) {
-        best_mv.as_int = mbmi->ref_mvs[rf][0].as_int;
-        best_second_mv.as_int = mbmi->ref_mvs[mbmi->second_ref_frame][0].as_int;
+        best_mv.as_int = mbmi->ref_mvs[rf1][0].as_int;
+        best_second_mv.as_int = mbmi->ref_mvs[rf2][0].as_int;
       }
       mbmi->best_mv.as_int = best_mv.as_int;
       mbmi->best_second_mv.as_int = best_second_mv.as_int;
@@ -655,14 +636,8 @@ static void update_stats(VP9_COMP *cpi, int mi_row, int mi_col) {
   if (cm->frame_type != KEY_FRAME) {
     int segment_id, seg_ref_active;
 
-    if (mbmi->ref_frame) {
-      int pred_context = vp9_get_pred_context(cm, xd, PRED_COMP);
-
-      if (mbmi->second_ref_frame <= INTRA_FRAME)
-        cpi->single_pred_count[pred_context]++;
-      else
-        cpi->comp_pred_count[pred_context]++;
-    }
+    cpi->intra_inter_count[vp9_get_pred_context(cm, xd, PRED_INTRA_INTER)]
+                          [mbmi->ref_frame[0] > INTRA_FRAME]++;
 
     // If we have just a single reference frame coded for a segment then
     // exclude from the reference frame counts used to work out
@@ -672,15 +647,29 @@ static void update_stats(VP9_COMP *cpi, int mi_row, int mi_col) {
     segment_id = mbmi->segment_id;
     seg_ref_active = vp9_segfeature_active(xd, segment_id,
                                            SEG_LVL_REF_FRAME);
-    if (!seg_ref_active ||
-        ((vp9_check_segref(xd, segment_id, INTRA_FRAME) +
-          vp9_check_segref(xd, segment_id, LAST_FRAME) +
-          vp9_check_segref(xd, segment_id, GOLDEN_FRAME) +
-          vp9_check_segref(xd, segment_id, ALTREF_FRAME)) > 1)) {
-      cpi->count_mb_ref_frame_usage[mbmi->ref_frame]++;
+    if (mbmi->ref_frame[0] > INTRA_FRAME &&
+        (!seg_ref_active ||
+         ((vp9_check_segref(xd, segment_id, INTRA_FRAME) +
+           vp9_check_segref(xd, segment_id, LAST_FRAME) +
+           vp9_check_segref(xd, segment_id, GOLDEN_FRAME) +
+           vp9_check_segref(xd, segment_id, ALTREF_FRAME)) > 1))) {
+      cpi->comp_inter_count[vp9_get_pred_context(cm, xd, PRED_COMP_INTER_INTER)]
+                           [mbmi->ref_frame[1] > INTRA_FRAME]++;
+
+      if (mbmi->ref_frame[1] > INTRA_FRAME) {
+        cpi->comp_ref_count[vp9_get_pred_context(cm, xd, PRED_COMP_REF_P)]
+                           [mbmi->ref_frame[0] == GOLDEN_FRAME]++;
+      } else {
+        cpi->single_ref_count[vp9_get_pred_context(cm, xd, PRED_SINGLE_REF_P1)]
+                             [0][mbmi->ref_frame[0] != LAST_FRAME]++;
+        if (mbmi->ref_frame[0] != LAST_FRAME)
+          cpi->single_ref_count[vp9_get_pred_context(cm, xd,
+                                                     PRED_SINGLE_REF_P2)]
+                               [1][mbmi->ref_frame[0] != GOLDEN_FRAME]++;
+      }
     }
     // Count of last ref frame 0,0 usage
-    if ((mbmi->mode == ZEROMV) && (mbmi->ref_frame == LAST_FRAME))
+    if ((mbmi->mode == ZEROMV) && (mbmi->ref_frame[0] == LAST_FRAME))
       cpi->inter_zz_count++;
   }
 }
@@ -1433,7 +1422,6 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   x->act_zbin_adj = 0;
   cpi->seg0_idx = 0;
-  vpx_memset(cpi->ref_pred_count, 0, sizeof(cpi->ref_pred_count));
 
   xd->mode_info_stride = cm->mode_info_stride;
   xd->frame_type = cm->frame_type;
@@ -1460,11 +1448,14 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   xd->mode_info_context->mbmi.mode = DC_PRED;
   xd->mode_info_context->mbmi.uv_mode = DC_PRED;
 
-  vp9_zero(cpi->count_mb_ref_frame_usage)
   vp9_zero(cpi->y_mode_count)
   vp9_zero(cpi->y_uv_mode_count)
   vp9_zero(cpi->common.fc.mv_ref_ct)
   vp9_zero(cpi->partition_count);
+  vp9_zero(cpi->intra_inter_count);
+  vp9_zero(cpi->comp_inter_count);
+  vp9_zero(cpi->single_ref_count);
+  vp9_zero(cpi->comp_ref_count);
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.
@@ -1504,10 +1495,17 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 //           cpi->common.current_video_frame, cpi->common.show_frame,
 //           cm->frame_type);
 
-  // Compute a modified set of reference frame probabilities to use when
-  // prediction fails. These are based on the current general estimates for
-  // this frame which may be updated with each iteration of the recode loop.
-  vp9_compute_mod_refprobs(cm);
+  if (cm->ref_frame_sign_bias[LAST_FRAME] ==
+          cm->ref_frame_sign_bias[GOLDEN_FRAME] &&
+      cm->ref_frame_sign_bias[LAST_FRAME] ==
+          cm->ref_frame_sign_bias[ALTREF_FRAME]) {
+    cm->allow_comp_inter_inter = 0;
+  } else {
+    cm->allow_comp_inter_inter = 1;
+    cm->comp_fixed_ref = ALTREF_FRAME;
+    cm->comp_var_ref[0] = LAST_FRAME;
+    cm->comp_var_ref[1] = GOLDEN_FRAME;
+  }
 
 // debug output
 #if DBG_PRNT_SEGMAP
@@ -1560,8 +1558,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   init_encode_frame_mb_context(cpi);
 
   vpx_memset(cpi->rd_comp_pred_diff, 0, sizeof(cpi->rd_comp_pred_diff));
-  vpx_memset(cpi->single_pred_count, 0, sizeof(cpi->single_pred_count));
-  vpx_memset(cpi->comp_pred_count, 0, sizeof(cpi->comp_pred_count));
   vpx_memset(cpi->txfm_count_32x32p, 0, sizeof(cpi->txfm_count_32x32p));
   vpx_memset(cpi->txfm_count_16x16p, 0, sizeof(cpi->txfm_count_16x16p));
   vpx_memset(cpi->txfm_count_8x8p, 0, sizeof(cpi->txfm_count_8x8p));
@@ -1855,9 +1851,9 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       int single_count_zero = 0;
       int comp_count_zero = 0;
 
-      for (i = 0; i < COMP_PRED_CONTEXTS; i++) {
-        single_count_zero += cpi->single_pred_count[i];
-        comp_count_zero += cpi->comp_pred_count[i];
+      for (i = 0; i < COMP_INTER_CONTEXTS; i++) {
+        single_count_zero += cpi->comp_inter_count[i][0];
+        comp_count_zero += cpi->comp_inter_count[i][1];
       }
 
       if (comp_count_zero == 0) {
@@ -1982,9 +1978,9 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     // Increase zbin size to suppress noise
     cpi->zbin_mode_boost = 0;
     if (cpi->zbin_mode_boost_enabled) {
-      if (mbmi->ref_frame != INTRA_FRAME) {
+      if (mbmi->ref_frame[0] != INTRA_FRAME) {
         if (mbmi->mode == ZEROMV) {
-          if (mbmi->ref_frame != LAST_FRAME)
+          if (mbmi->ref_frame[0] != LAST_FRAME)
             cpi->zbin_mode_boost = GF_ZEROMV_ZBIN_BOOST;
           else
             cpi->zbin_mode_boost = LF_ZEROMV_ZBIN_BOOST;
@@ -2001,7 +1997,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     vp9_update_zbin_extra(cpi, x);
   }
 
-  if (mbmi->ref_frame == INTRA_FRAME) {
+  if (mbmi->ref_frame[0] == INTRA_FRAME) {
     vp9_encode_intra_block_y(cm, x, (bsize < BLOCK_SIZE_SB8X8) ?
                                     BLOCK_SIZE_SB8X8 : bsize);
     vp9_encode_intra_block_uv(cm, x, (bsize < BLOCK_SIZE_SB8X8) ?
@@ -2009,11 +2005,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     if (output_enabled)
       sum_intra_stats(cpi, x);
   } else {
-    int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->ref_frame)];
+    int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->ref_frame[0])];
     YV12_BUFFER_CONFIG *ref_fb = &cm->yv12_fb[idx];
     YV12_BUFFER_CONFIG *second_ref_fb = NULL;
-    if (mbmi->second_ref_frame > 0) {
-      idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->second_ref_frame)];
+    if (mbmi->ref_frame[1] > 0) {
+      idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->ref_frame[1])];
       second_ref_fb = &cm->yv12_fb[idx];
     }
 
@@ -2027,7 +2023,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
                                                            : bsize);
   }
 
-  if (xd->mode_info_context->mbmi.ref_frame == INTRA_FRAME) {
+  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {
     vp9_tokenize_sb(cpi, xd, t, !output_enabled,
                     (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 : bsize);
   } else if (!x->skip) {
@@ -2057,7 +2053,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
   if (output_enabled) {
     if (cm->txfm_mode == TX_MODE_SELECT &&
         mbmi->sb_type >= BLOCK_SIZE_SB8X8 &&
-        !(mbmi->ref_frame != INTRA_FRAME && (mbmi->mb_skip_coeff ||
+        !(mbmi->ref_frame[0] != INTRA_FRAME && (mbmi->mb_skip_coeff ||
           vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
       if (bsize >= BLOCK_SIZE_SB32X32) {
         cpi->txfm_count_32x32p[mbmi->txfm_size]++;
@@ -2070,7 +2066,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
       int x, y;
       TX_SIZE sz = (cm->txfm_mode == TX_MODE_SELECT) ? TX_32X32 : cm->txfm_mode;
        // The new intra coding scheme requires no change of transform size
-      if (mi->mbmi.ref_frame != INTRA_FRAME) {
+      if (mi->mbmi.ref_frame[0] != INTRA_FRAME) {
         if (sz == TX_32X32 && bsize < BLOCK_SIZE_SB32X32)
           sz = TX_16X16;
         if (sz == TX_16X16 && bsize < BLOCK_SIZE_MB16X16)
