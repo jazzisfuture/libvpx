@@ -1665,8 +1665,8 @@ static void estimate_ref_frame_costs(VP9_COMP *cpi, int segment_id,
 
   // Predict probability for current frame based on stats so far
   pred_ctx = vp9_get_pred_context(cm, xd, PRED_REF);
-  new_pred_prob = get_binary_prob(cpi->ref_pred_count[pred_ctx][0],
-                                  cpi->ref_pred_count[pred_ctx][1]);
+  new_pred_prob = get_binary_prob(cm->fc.ref_pred_counts[pred_ctx][0],
+                                  cm->fc.ref_pred_counts[pred_ctx][1]);
 
   // Get the set of probabilities to use if prediction fails
   mod_refprobs = cm->mod_refprobs[pred_ref];
