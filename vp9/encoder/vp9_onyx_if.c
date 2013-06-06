@@ -1317,8 +1317,6 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cm->prob_intra_coded              = 63;
   for (i = 0; i < COMP_PRED_CONTEXTS; i++)
     cm->prob_comppred[i]         = 128;
-  for (i = 0; i < TX_SIZE_MAX_SB - 1; i++)
-    cm->prob_tx[i]               = 128;
 
   // Prime the recent reference frame usage counters.
   // Hereafter they will be maintained as a sort of moving average
