@@ -79,6 +79,12 @@ typedef struct frame_contexts {
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1];
   vp9_prob pre_inter_mode_probs[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1];
   unsigned int inter_mode_counts[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1][2];
+
+  vp9_prob tx_probs[TX_SIZE_PROBS];
+  vp9_prob pre_tx_probs[TX_SIZE_PROBS];
+  unsigned int tx_count_32x32p[TX_SIZE_MAX_SB];
+  unsigned int tx_count_16x16p[TX_SIZE_MAX_SB - 1];
+  unsigned int tx_count_8x8p[TX_SIZE_MAX_SB - 2];
 } FRAME_CONTEXT;
 
 typedef enum {
@@ -234,9 +240,6 @@ typedef struct VP9Common {
   vp9_prob mod_refprobs[MAX_REF_FRAMES][PREDICTION_PROBS];
 
   vp9_prob prob_comppred[COMP_PRED_CONTEXTS];
-
-  // FIXME contextualize
-  vp9_prob prob_tx[TX_SIZE_MAX_SB - 1];
 
   vp9_prob mbskip_pred_probs[MBSKIP_CONTEXTS];
 
