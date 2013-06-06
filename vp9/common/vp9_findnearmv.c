@@ -65,7 +65,7 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
   vp9_find_mv_refs_idx(cm, xd, xd->mode_info_context,
                        use_prev_in_find_mv_refs ?
                            xd->prev_mode_info_context : NULL,
-                       ref_idx ? mbmi->second_ref_frame : mbmi->ref_frame,
+                       mbmi->ref_frame[ref_idx],
                        mv_list, cm->ref_frame_sign_bias, block_idx);
 
   dst_list[1].as_int = 0;
