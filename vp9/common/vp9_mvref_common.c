@@ -11,7 +11,7 @@
 #include "vp9/common/vp9_mvref_common.h"
 
 #define MVREF_NEIGHBOURS 8
-
+#if 0
 static int b_mv_ref_search[MVREF_NEIGHBOURS][2] = {
   {0, -1}, {-1, 0}, {-1, -1}, {0, -2},
   {-2, 0}, {-1, -2}, {-2, -1}, {-2, -2}
@@ -31,7 +31,36 @@ static int sb64_mv_ref_search[MVREF_NEIGHBOURS][2] = {
     {0, -1}, {-1, 0}, {2, -1}, {-1,  2},
     {4, -1}, {-1, 4}, {6, -1}, {-1, -1}
 };
-
+#else
+static int mv_ref_blocks[BLOCK_SIZE_TYPES][MVREF_NEIGHBOURS][2] = {
+  // SB4X4
+  {{0, -1}, {-1, 0}, {-1, -1}, {0, -2}, {-2, 0}, {-1, -2}, {-2, -1}, {-2, -2}},
+  // SB4X8
+  {{0, -1}, {-1, 0}, {-1, -1}, {0, -2}, {-2, 0}, {-1, -2}, {-2, -1}, {-2, -2}},
+  // SB8X4
+  {{0, -1}, {-1, 0}, {-1, -1}, {0, -2}, {-2, 0}, {-1, -2}, {-2, -1}, {-2, -2}},
+  // SB8X8
+  {{0, -1}, {-1, 0}, {-1, -1}, {0, -2}, {-2, 0}, {-1, -2}, {-2, -1}, {-2, -2}},
+  // SB8X16
+  {{0, -1}, {-1, 0}, {-1, 1}, {-1, -1}, {0, -2}, {-2, 0}, {-1, -2}, {-2, -1}},
+  // SB16X8
+  {{0, -1}, {-1, 0}, {1, -1}, {-1, -1}, {0, -2}, {1, -2}, {-2, 0}, {-1, -2}},
+  // SB16X16
+  {{0, -1}, {-1, 0}, {1, -1}, {-1, 1}, {-1, -1}, {0, -2}, {-2, 0}, {1, -2}},
+  // SB16X32
+  {{-1, 1}, {-1, 2}, {0, -1}, {-1, 0}, {-1, 3}, {1, -1}, {-1, -1}, {-2, 1}},
+  // SB32X16
+  {{1, -1}, {2, -1}, {-1, 0}, {0, -1}, {3, -1}, {-1, 1}, {-1, -1}, {1, -2}},
+  // SB32X32
+  {{1, -1}, {-1, 1}, {2, -1}, {-1, 2}, {-1, -1}, {0, -1}, {-1, 0}, {-1, 3}},
+  // SB32X64
+  {{-1, 3}, {-1, 4}, {1, -1}, {-1, 1}, {-1, 6}, {2, -1}, {-1, -1}, {-1, 0}},
+  // SB64X32
+  {{3, -1}, {4, -1}, {-1, 1}, {1, -1}, {6, -1}, {-1, 2}, {-1, -1}, {0, -1}},
+  // SB64X64
+  {{3, -1}, {-1, 3}, {4, -1}, {-1, 4}, {1, -1}, {-1, 1}, {-1, -1}, {6, -1}}
+};
+#endif
 // clamp_mv_ref
 #define MV_BORDER (16 << 3) // Allow 16 pels in 1/8th pel units
 
@@ -154,18 +183,10 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
   vpx_memset(mv_ref_list, 0, sizeof(int_mv) * MAX_MV_REF_CANDIDATES);
   vpx_memset(candidate_scores, 0, sizeof(candidate_scores));
 
-  if (mbmi->sb_type == BLOCK_SIZE_SB64X64) {
-    mv_ref_search = sb64_mv_ref_search;
-  } else if (mbmi->sb_type >= BLOCK_SIZE_SB32X32) {
-    mv_ref_search = sb_mv_ref_search;
-  } else if (mbmi->sb_type >= BLOCK_SIZE_MB16X16) {
-    mv_ref_search = mb_mv_ref_search;
-  } else {
-    mv_ref_search = b_mv_ref_search;
-    if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
-      x_idx = block_idx & 1;
-      y_idx = block_idx >> 1;
-    }
+  mv_ref_search = mv_ref_blocks[mbmi->sb_type];
+  if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
+    x_idx = block_idx & 1;
+    y_idx = block_idx >> 1;
   }
 
   // We first scan for candidate vectors that match the current reference frame
