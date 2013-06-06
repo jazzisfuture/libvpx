@@ -1422,7 +1422,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
 
   // Code each SB in the row
   for (mi_col = cm->cur_tile_mi_col_start;
-       mi_col < cm->cur_tile_mi_col_end; mi_col += 8) {
+       mi_col < cm->cur_tile_mi_col_end; mi_col += 64 / MI_SIZE) {
     int dummy_rate, dummy_dist;
     if (cpi->speed < 5) {
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
