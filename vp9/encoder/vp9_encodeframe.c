@@ -467,8 +467,8 @@ static void update_state(VP9_COMP *cpi,
       int i, j;
       for (j = 0; j < bh; ++j)
         for (i = 0; i < bw; ++i)
-          if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > j &&
-              (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > i)
+          if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > i &&
+              (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > j)
             xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
 
@@ -1313,7 +1313,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
                   get_block_context(x, subsize));
 
-    if (mi_row + ms <= cm->mi_rows) {
+    if (mi_row + ms <= cm->mi_rows || 1) {
       int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
@@ -1422,7 +1422,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
 
   // Code each SB in the row
   for (mi_col = cm->cur_tile_mi_col_start;
-       mi_col < cm->cur_tile_mi_col_end; mi_col += 8) {
+       mi_col < cm->cur_tile_mi_col_end; mi_col += 64 / MI_SIZE) {
     int dummy_rate, dummy_dist;
     if (cpi->speed < 5) {
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
