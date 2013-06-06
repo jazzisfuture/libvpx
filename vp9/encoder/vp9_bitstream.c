@@ -575,12 +575,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       !(rf != INTRA_FRAME &&
         (skip_coeff || vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP)))) {
     TX_SIZE sz = mi->txfm_size;
-    int tx_probs_offset = get_tx_probs_offset(mi->sb_type);
-    vp9_write(bc, sz != TX_4X4, pc->fc.tx_probs[tx_probs_offset]);
+    const vp9_prob *tx_probs = vp9_get_pred_probs(pc, xd, PRED_TX_SIZE);
+    vp9_write(bc, sz != TX_4X4, tx_probs[0]);
     if (mi->sb_type >= BLOCK_SIZE_MB16X16 && sz != TX_4X4) {
-      vp9_write(bc, sz != TX_8X8, pc->fc.tx_probs[tx_probs_offset + 1]);
+      vp9_write(bc, sz != TX_8X8, tx_probs[1]);
       if (mi->sb_type >= BLOCK_SIZE_SB32X32 && sz != TX_8X8)
-        vp9_write(bc, sz != TX_16X16, pc->fc.tx_probs[tx_probs_offset + 2]);
+        vp9_write(bc, sz != TX_16X16, tx_probs[2]);
     }
   }
 
@@ -706,12 +706,12 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
 
   if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8 && c->txfm_mode == TX_MODE_SELECT) {
     TX_SIZE sz = m->mbmi.txfm_size;
-    int tx_probs_offset = get_tx_probs_offset(m->mbmi.sb_type);
-    vp9_write(bc, sz != TX_4X4, c->fc.tx_probs[tx_probs_offset]);
+    const vp9_prob *tx_probs = vp9_get_pred_probs(c, xd, PRED_TX_SIZE);
+    vp9_write(bc, sz != TX_4X4, tx_probs[0]);
     if (m->mbmi.sb_type >= BLOCK_SIZE_MB16X16 && sz != TX_4X4) {
-      vp9_write(bc, sz != TX_8X8, c->fc.tx_probs[tx_probs_offset + 1]);
+      vp9_write(bc, sz != TX_8X8, tx_probs[1]);
       if (m->mbmi.sb_type >= BLOCK_SIZE_SB32X32 && sz != TX_8X8)
-        vp9_write(bc, sz != TX_16X16, c->fc.tx_probs[tx_probs_offset + 2]);
+        vp9_write(bc, sz != TX_16X16, tx_probs[2]);
     }
   }
 
@@ -1227,19 +1227,42 @@ static void encode_txfm_probs(VP9_COMP *cpi, vp9_writer *w) {
 
   // Probabilities
   if (cm->txfm_mode == TX_MODE_SELECT) {
-    int i;
-    unsigned int ct[TX_SIZE_PROBS][2];
-    tx_counts_to_branch_counts(cm->fc.tx_count_32x32p,
-                               cm->fc.tx_count_16x16p,
-                               cm->fc.tx_count_8x8p, ct);
+    int i, j;
+    unsigned int ct_8x8p[TX_SIZE_MAX_SB - 3][2];
+    unsigned int ct_16x16p[TX_SIZE_MAX_SB - 2][2];
+    unsigned int ct_32x32p[TX_SIZE_MAX_SB - 1][2];
 
-    for (i = 0; i < TX_SIZE_PROBS; i++) {
-      vp9_cond_prob_diff_update(w, &cm->fc.tx_probs[i],
-                                VP9_DEF_UPDATE_PROB, ct[i]);
+    for (i = 0; i < TX_SIZE_MAX_SB - 2; i++) {
+      tx_counts_to_branch_counts_8x8(cm->fc.tx_count_8x8p[i],
+                                     ct_8x8p);
+      for (j = 0; j < TX_SIZE_MAX_SB - 3; j++) {
+        vp9_cond_prob_diff_update(w, &cm->fc.tx_probs_8x8p[i][j],
+                                  VP9_DEF_UPDATE_PROB, ct_8x8p[j]);
+      }
+    }
+    for (i = 0; i < TX_SIZE_MAX_SB - 1; i++) {
+      tx_counts_to_branch_counts_16x16(cm->fc.tx_count_16x16p[i],
+                                       ct_16x16p);
+      for (j = 0; j < TX_SIZE_MAX_SB - 2; j++) {
+        vp9_cond_prob_diff_update(w, &cm->fc.tx_probs_16x16p[i][j],
+                                  VP9_DEF_UPDATE_PROB, ct_16x16p[j]);
+      }
+    }
+    for (i = 0; i < TX_SIZE_MAX_SB; i++) {
+      tx_counts_to_branch_counts_32x32(cm->fc.tx_count_32x32p[i],
+                                       ct_32x32p);
+      for (j = 0; j < TX_SIZE_MAX_SB - 1; j++) {
+        vp9_cond_prob_diff_update(w, &cm->fc.tx_probs_32x32p[i][j],
+                                  VP9_DEF_UPDATE_PROB, ct_32x32p[j]);
+      }
     }
   } else {
-    vpx_memcpy(cm->fc.tx_probs, vp9_default_tx_probs,
-               sizeof(vp9_default_tx_probs));
+    vpx_memcpy(cm->fc.tx_probs_32x32p, vp9_default_tx_probs_32x32p,
+               sizeof(vp9_default_tx_probs_32x32p));
+    vpx_memcpy(cm->fc.tx_probs_16x16p, vp9_default_tx_probs_16x16p,
+               sizeof(vp9_default_tx_probs_16x16p));
+    vpx_memcpy(cm->fc.tx_probs_8x8p, vp9_default_tx_probs_8x8p,
+               sizeof(vp9_default_tx_probs_8x8p));
   }
 }
 
@@ -1439,7 +1462,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(pc->fc.pre_comp_ref_prob, pc->fc.comp_ref_prob);
   vp9_copy(pc->fc.pre_single_ref_prob, pc->fc.single_ref_prob);
   cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
-  vp9_copy(cpi->common.fc.pre_tx_probs, cpi->common.fc.tx_probs);
+  vp9_copy(pc->fc.pre_tx_probs_8x8p, pc->fc.tx_probs_8x8p);
+  vp9_copy(pc->fc.pre_tx_probs_16x16p, pc->fc.tx_probs_16x16p);
+  vp9_copy(pc->fc.pre_tx_probs_32x32p, pc->fc.tx_probs_32x32p);
 
   if (xd->lossless) {
     pc->txfm_mode = ONLY_4X4;
