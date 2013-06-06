@@ -894,7 +894,8 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
     if (xd->ab_index > 0)
       return;
 
-  if (bsize >= BLOCK_SIZE_SB8X8) {
+  if (bsize >= BLOCK_SIZE_SB8X8 &&
+      check_bsize_coverage(cm, xd, mi_row, mi_col, bsize)) {
     int pl;
     xd->left_seg_context = cm->left_seg_context + (mi_row & MI_MASK);
     xd->above_seg_context = cm->above_seg_context + mi_col;

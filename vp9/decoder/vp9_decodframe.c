@@ -473,8 +473,12 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
     xd->left_seg_context = pc->left_seg_context + (mi_row & MI_MASK);
     xd->above_seg_context = pc->above_seg_context + mi_col;
     pl = partition_plane_context(xd, bsize);
-    partition = treed_read(r, vp9_partition_tree,
-                           pc->fc.partition_prob[pl]);
+
+    if (check_bsize_coverage(pc, xd, mi_row, mi_col, bsize))
+      partition = treed_read(r, vp9_partition_tree, pc->fc.partition_prob[pl]);
+    else
+      partition = PARTITION_SPLIT;
+
     pc->fc.partition_counts[pl][partition]++;
   }
 
