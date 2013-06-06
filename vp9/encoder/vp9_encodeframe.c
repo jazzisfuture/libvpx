@@ -852,6 +852,11 @@ static void encode_sb(VP9_COMP *cpi, TOKENEXTRA **tp,
 
   bwl = b_width_log2(c1), bhl = b_height_log2(c1);
 
+  // check consistency of partition type parse for block sitting on the
+  // frame boundary
+  if (!check_bsize_coverage(cm, xd, mi_row, mi_col, bsize))
+    assert(bwl < bsl && bhl < bsl);
+
   if (bsl == bwl && bsl == bhl) {
     if (output_enabled && bsize >= BLOCK_SIZE_SB8X8)
         cpi->partition_count[pl][PARTITION_NONE]++;
@@ -1422,7 +1427,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
 
   // Code each SB in the row
   for (mi_col = cm->cur_tile_mi_col_start;
-       mi_col < cm->cur_tile_mi_col_end; mi_col += 8) {
+       mi_col < cm->cur_tile_mi_col_end; mi_col += 64 / MI_SIZE) {
     int dummy_rate, dummy_dist;
     if (cpi->speed < 5) {
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
