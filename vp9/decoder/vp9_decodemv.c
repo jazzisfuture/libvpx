@@ -63,13 +63,27 @@ static void set_segment_id(VP9_COMMON *cm, MB_MODE_INFO *mbmi,
   }
 }
 
+/*
 static TX_SIZE select_txfm_size(VP9_COMMON *cm, vp9_reader *r,
                                 int allow_16x16, int allow_32x32) {
-  TX_SIZE txfm_size = vp9_read(r, cm->prob_tx[0]);  // TX_4X4 or >TX_4X4
+  TX_SIZE txfm_size = vp9_read(r, cm->fc.tx_probs[0]);  // TX_4X4 or >TX_4X4
   if (txfm_size != TX_4X4 && allow_16x16) {
-    txfm_size += vp9_read(r, cm->prob_tx[1]);       // TX_8X8 or >TX_8X8
+    txfm_size += vp9_read(r, cm->fc.tx_probs[1]);       // TX_8X8 or >TX_8X8
     if (txfm_size != TX_8X8 && allow_32x32)
-      txfm_size += vp9_read(r, cm->prob_tx[2]);     // TX_16X16 or >TX_16X16
+      txfm_size += vp9_read(r, cm->fc.tx_probs[2]);     // TX_16X16 or >TX_16X16
+  }
+  return txfm_size;
+}
+*/
+
+static TX_SIZE select_txfm_size(VP9_COMMON *cm, vp9_reader *r,
+                                BLOCK_SIZE_TYPE bsize) {
+  int tx_probs_offset = get_tx_probs_offset(bsize);
+  TX_SIZE txfm_size = vp9_read(r, cm->fc.tx_probs[tx_probs_offset]);
+  if (txfm_size != TX_4X4 && bsize >= BLOCK_SIZE_MB16X16) {
+    txfm_size += vp9_read(r, cm->fc.tx_probs[tx_probs_offset + 1]);
+    if (txfm_size != TX_8X8 && bsize >= BLOCK_SIZE_SB32X32)
+      txfm_size += vp9_read(r, cm->fc.tx_probs[tx_probs_offset + 2]);
   }
   return txfm_size;
 }
@@ -97,9 +111,10 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
 
   if (cm->txfm_mode == TX_MODE_SELECT &&
       m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
-    const int allow_16x16 = m->mbmi.sb_type >= BLOCK_SIZE_MB16X16;
-    const int allow_32x32 = m->mbmi.sb_type >= BLOCK_SIZE_SB32X32;
-    m->mbmi.txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
+    // const int allow_16x16 = m->mbmi.sb_type >= BLOCK_SIZE_MB16X16;
+    // const int allow_32x32 = m->mbmi.sb_type >= BLOCK_SIZE_SB32X32;
+    // m->mbmi.txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
+    m->mbmi.txfm_size = select_txfm_size(cm, r,  m->mbmi.sb_type);
   } else if (cm->txfm_mode >= ALLOW_32X32 &&
              m->mbmi.sb_type >= BLOCK_SIZE_SB32X32) {
     m->mbmi.txfm_size = TX_32X32;
@@ -554,9 +569,10 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   if (cm->txfm_mode == TX_MODE_SELECT &&
       (mbmi->mb_skip_coeff == 0 || mbmi->ref_frame == INTRA_FRAME) &&
       bsize >= BLOCK_SIZE_SB8X8) {
-    const int allow_16x16 = bsize >= BLOCK_SIZE_MB16X16;
-    const int allow_32x32 = bsize >= BLOCK_SIZE_SB32X32;
-    mbmi->txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
+    // const int allow_16x16 = bsize >= BLOCK_SIZE_MB16X16;
+    // const int allow_32x32 = bsize >= BLOCK_SIZE_SB32X32;
+    // mbmi->txfm_size = select_txfm_size(cm, r, allow_16x16, allow_32x32);
+    mbmi->txfm_size = select_txfm_size(cm, r, bsize);
   } else if (bsize >= BLOCK_SIZE_SB32X32 &&
              cm->txfm_mode >= ALLOW_32X32) {
     mbmi->txfm_size = TX_32X32;

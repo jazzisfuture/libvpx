@@ -119,6 +119,11 @@ typedef enum {
 
 #define WHT_UPSCALE_FACTOR 2
 
+#define TX_SIZE_PROBS  6 // (TX_SIZE_MAX_SB * (TX_SIZE_MAX_SB - 1) / 2)
+
+#define get_tx_probs_offset(b) ((b) < BLOCK_SIZE_MB16X16 ? 0 : \
+                                (b) < BLOCK_SIZE_SB32X32 ? 1 : 3)
+
 /* For keyframes, intra block modes are predicted by the (already decoded)
    modes for the Y blocks to the left and above us; for interframes, there
    is a single probability table. */

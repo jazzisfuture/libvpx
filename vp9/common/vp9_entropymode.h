@@ -72,4 +72,6 @@ extern struct vp9_token vp9_switchable_interp_encodings[VP9_SWITCHABLE_FILTERS];
 extern const  vp9_prob vp9_switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
                                                  [VP9_SWITCHABLE_FILTERS - 1];
 
+extern const vp9_prob vp9_default_tx_probs[TX_SIZE_PROBS];
+
 #endif  // VP9_COMMON_VP9_ENTROPYMODE_H_

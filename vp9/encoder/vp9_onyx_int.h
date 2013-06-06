@@ -88,6 +88,8 @@ typedef struct {
   int inter_mode_counts[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1][2];
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1];
 
+  vp9_prob tx_probs[TX_SIZE_PROBS];
+
 } CODING_CONTEXT;
 
 typedef struct {

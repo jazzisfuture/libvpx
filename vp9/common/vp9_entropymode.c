@@ -100,6 +100,10 @@ struct vp9_token vp9_sb_mv_ref_encoding_array[VP9_INTER_MODES];
 
 struct vp9_token vp9_partition_encodings[PARTITION_TYPES];
 
+const vp9_prob vp9_default_tx_probs[TX_SIZE_PROBS] = {
+  128, 128, 128, 128, 128, 128
+};
+
 void vp9_init_mbmode_probs(VP9_COMMON *x) {
   unsigned int bct[VP9_INTRA_MODES][2];  // num Ymodes > num UV modes
   int i;
@@ -123,6 +127,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
   x->ref_pred_probs[0] = DEFAULT_PRED_PROB_0;
   x->ref_pred_probs[1] = DEFAULT_PRED_PROB_1;
   x->ref_pred_probs[2] = DEFAULT_PRED_PROB_2;
+
+  vpx_memcpy(x->fc.tx_probs, vp9_default_tx_probs,
+             sizeof(vp9_default_tx_probs));
 }
 
 #if VP9_SWITCHABLE_FILTERS == 3
