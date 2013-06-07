@@ -130,7 +130,7 @@ struct vp9_token vp9_sb_mv_ref_encoding_array[VP9_INTER_MODES];
 struct vp9_token vp9_partition_encodings[PARTITION_TYPES];
 
 static const vp9_prob default_intra_inter_p[INTRA_INTER_CONTEXTS] = {
-  6, 87, 165, 213
+  9, 102, 187, 225
 };
 
 static const vp9_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
