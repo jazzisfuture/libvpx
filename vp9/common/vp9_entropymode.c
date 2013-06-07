@@ -55,46 +55,46 @@ const vp9_prob vp9_partition_probs[NUM_FRAME_TYPES][NUM_PARTITION_CONTEXTS]
                                   [PARTITION_TYPES - 1] = {
   { /* frame_type = keyframe */
     /* 8x8 -> 4x4 */
-    { 164, 121, 109 } /* a/l both not split */,
-    {  69,  11, 129 } /* a split, l not split */,
-    {  52, 181,  37 } /* l split, a not split */,
-    {  66,  71,  93 } /* a/l both split */,
+    { 158,  97,  94 } /* a/l both not split */,
+    {  93,  24,  99 } /* a split, l not split */,
+    {  85, 119,  44 } /* l split, a not split */,
+    {  62,  59,  67 } /* a/l both split */,
     /* 16x16 -> 8x8 */
-    { 154,  48,  43 } /* a/l both not split */,
-    {  81,  11,  63 } /* a split, l not split */,
-    {  67,  65,  17 } /* l split, a not split */,
-    {  57,  18,  24 } /* a/l both split */,
+    { 149,  53,  53 } /* a/l both not split */,
+    {  94,  20,  48 } /* a split, l not split */,
+    {  83,  53,  24 } /* l split, a not split */,
+    {  52,  18,  18 } /* a/l both split */,
     /* 32x32 -> 16x16 */
-    { 156,  42,  35 } /* a/l both not split */,
-    {  74,  10,  40 } /* a split, l not split */,
-    {  59,  53,  10 } /* l split, a not split */,
-    {  28,  10,   9 } /* a/l both split */,
+    { 150,  40,  39 } /* a/l both not split */,
+    {  78,  12,  26 } /* a split, l not split */,
+    {  67,  33,  11 } /* l split, a not split */,
+    {  24,   7,   5 } /* a/l both split */,
     /* 64x64 -> 32x32 */
-    { 168,  32,  43 } /* a/l both not split */,
-    {  59,  13,  41 } /* a split, l not split */,
-    {  60,  25,  10 } /* l split, a not split */,
-    {  13,   5,   4 } /* a/l both split */
+    { 174,  35,  49 } /* a/l both not split */,
+    {  68,  11,  27 } /* a split, l not split */,
+    {  57,  15,   9 } /* l split, a not split */,
+    {  12,   3,   3 } /* a/l both split */
   }, { /* frame_type = interframe */
     /* 8x8 -> 4x4 */
-    { 192, 121, 151 } /* a/l both not split */,
-    { 134,  63, 162 } /* a split, l not split */,
-    { 136, 134, 127 } /* l split, a not split */,
-    { 101,  97, 131 } /* a/l both split */,
+    { 199, 122, 141 } /* a/l both not split */,
+    { 147,  63, 159 } /* a split, l not split */,
+    { 148, 133, 118 } /* l split, a not split */,
+    { 121, 104, 114 } /* a/l both split */,
     /* 16x16 -> 8x8 */
-    { 167,  67,  80 } /* a/l both not split */,
-    {  87,  36,  70 } /* a split, l not split */,
-    {  90,  61,  45 } /* l split, a not split */,
-    {  46,  31,  32 } /* a/l both split */,
+    { 174,  73,  87 } /* a/l both not split */,
+    {  92,  41,  83 } /* a split, l not split */,
+    {  82,  99,  50 } /* l split, a not split */,
+    {  53,  39,  39 } /* a/l both split */,
     /* 32x32 -> 16x16 */
-    { 167,  63,  75 } /* a/l both not split */,
-    {  67,  27,  61 } /* a split, l not split */,
-    {  56,  87,  31 } /* l split, a not split */,
-    {  15,  13,  11 } /* a/l both split */,
+    { 177,  58,  59 } /* a/l both not split */,
+    {  68,  26,  63 } /* a split, l not split */,
+    {  52,  79,  25 } /* l split, a not split */,
+    {  17,  14,  12 } /* a/l both split */,
     /* 64x64 -> 32x32 */
-    { 222,  45,  44 } /* a/l both not split */,
-    {  62,  17,  62 } /* a split, l not split */,
-    {  52,  65,  16 } /* l split, a not split */,
-    {   9,   7,   6 } /* a/l both split */
+    { 222,  34,  30 } /* a/l both not split */,
+    {  72,  16,  44 } /* a split, l not split */,
+    {  58,  32,  12 } /* l split, a not split */,
+    {  10,   7,   6 } /* a/l both split */
   }
 };
 
