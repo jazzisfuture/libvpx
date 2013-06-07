@@ -1293,18 +1293,67 @@ static void write_tile_info(VP9_COMMON *cm, struct vp9_write_bit_buffer *wb) {
     vp9_wb_write_bit(wb, cm->log2_tile_rows != 1);
 }
 
-void write_uncompressed_header(VP9_COMP *cpi,
-                               struct vp9_write_bit_buffer *wb) {
+static void write_display_size(VP9_COMP *cpi, struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
-
   const int scaling_active = cm->width != cm->display_width ||
                              cm->height != cm->display_height;
+  vp9_wb_write_bit(wb, scaling_active);
+  if (scaling_active) {
+    vp9_wb_write_literal(wb, cm->display_width, 16);
+    vp9_wb_write_literal(wb, cm->display_height, 16);
+  }
+}
+
+static void write_key_frame_size(VP9_COMP *cpi,
+                                 struct vp9_write_bit_buffer *wb) {
+  VP9_COMMON *const cm = &cpi->common;
+
+  // printf("=> Writing (key frame):   %d x %d\n", cm->width, cm->height);
+
+  vp9_wb_write_literal(wb, cm->width, 16);
+  vp9_wb_write_literal(wb, cm->height, 16);
+
+  write_display_size(cpi, wb);
+}
+
+static void write_inter_frame_size(VP9_COMP *cpi,
+                                   struct vp9_write_bit_buffer *wb) {
+  VP9_COMMON *const cm = &cpi->common;
+  int i, found = 0;
+  int refs[ALLOWED_REFS_PER_FRAME] = {cpi->lst_fb_idx, cpi->gld_fb_idx,
+                                      cpi->alt_fb_idx};
+
+  // printf("=> Writing (inter frame): %d x %d\n", cm->width, cm->height);
+
+  for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
+    YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[cm->ref_frame_map[refs[i]]];
+    if (cm->width == cfg->y_crop_width &&
+        cm->height == cfg->y_crop_height) {
+      vp9_wb_write_bit(wb, 1);
+      found = 1;
+      break;
+    } else {
+      vp9_wb_write_bit(wb, 0);
+    }
+  }
+
+  if (!found) {
+    vp9_wb_write_literal(wb, cm->width, 16);
+    vp9_wb_write_literal(wb, cm->height, 16);
+  }
+
+  write_display_size(cpi, wb);
+}
+
+static void write_uncompressed_header(VP9_COMP *cpi,
+                                      struct vp9_write_bit_buffer *wb) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
 
   vp9_wb_write_bit(wb, cm->frame_type);
   vp9_wb_write_literal(wb, cm->version, 3);
   vp9_wb_write_bit(wb, cm->show_frame);
-  vp9_wb_write_bit(wb, scaling_active);
+  vp9_wb_write_bit(wb, cm->error_resilient_mode);
   vp9_wb_write_bit(wb, cm->subsampling_x);
   vp9_wb_write_bit(wb, cm->subsampling_y);
 
@@ -1312,26 +1361,15 @@ void write_uncompressed_header(VP9_COMP *cpi,
     vp9_wb_write_literal(wb, SYNC_CODE_0, 8);
     vp9_wb_write_literal(wb, SYNC_CODE_1, 8);
     vp9_wb_write_literal(wb, SYNC_CODE_2, 8);
-  }
 
-  if (scaling_active) {
-    vp9_wb_write_literal(wb, cm->display_width, 16);
-    vp9_wb_write_literal(wb, cm->display_height, 16);
-  }
+    write_key_frame_size(cpi, wb);
+  } else {
+    // When there is a key frame all reference buffers are updated using the
+    // new key frame
 
-  vp9_wb_write_literal(wb, cm->width, 16);
-  vp9_wb_write_literal(wb, cm->height, 16);
-
-  vp9_wb_write_bit(wb, cm->error_resilient_mode);
-  if (!cm->error_resilient_mode) {
-    vp9_wb_write_bit(wb, cm->reset_frame_context);
-    vp9_wb_write_bit(wb, cm->refresh_frame_context);
-    vp9_wb_write_bit(wb, cm->frame_parallel_decoding_mode);
-  }
-
-  // When there is a key frame all reference buffers are updated using the new key frame
-  if (cm->frame_type != KEY_FRAME) {
     int refresh_mask, i;
+    int refs[ALLOWED_REFS_PER_FRAME] = {cpi->lst_fb_idx, cpi->gld_fb_idx,
+                                        cpi->alt_fb_idx};
 
     // Should the GF or ARF be updated using the transmitted frame or buffer
 #if CONFIG_MULTIPLE_ARF
@@ -1367,20 +1405,24 @@ void write_uncompressed_header(VP9_COMP *cpi,
     }
 
     vp9_wb_write_literal(wb, refresh_mask, NUM_REF_FRAMES);
-    vp9_wb_write_literal(wb, cpi->lst_fb_idx, NUM_REF_FRAMES_LG2);
-    vp9_wb_write_literal(wb, cpi->gld_fb_idx, NUM_REF_FRAMES_LG2);
-    vp9_wb_write_literal(wb, cpi->alt_fb_idx, NUM_REF_FRAMES_LG2);
 
-    // Indicate the sign bias for each reference frame buffer.
-    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
+    for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
+      vp9_wb_write_literal(wb, refs[i], NUM_REF_FRAMES_LG2);
       vp9_wb_write_bit(wb, cm->ref_frame_sign_bias[LAST_FRAME + i]);
+    }
 
-    // Signal whether to allow high MV precision
+    write_inter_frame_size(cpi, wb);
+
     vp9_wb_write_bit(wb, xd->allow_high_precision_mv);
 
-    // Signal the type of subpel filter to use
     fix_mcomp_filter_type(cpi);
     write_interp_filter_type(cm->mcomp_filter_type, wb);
+  }
+
+  if (!cm->error_resilient_mode) {
+    vp9_wb_write_bit(wb, cm->reset_frame_context);
+    vp9_wb_write_bit(wb, cm->refresh_frame_context);
+    vp9_wb_write_bit(wb, cm->frame_parallel_decoding_mode);
   }
 
   if (!cm->show_frame)
@@ -1429,8 +1471,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(pc->fc.pre_coef_probs, pc->fc.coef_probs);
   vp9_copy(pc->fc.pre_y_mode_prob, pc->fc.y_mode_prob);
   vp9_copy(pc->fc.pre_uv_mode_prob, pc->fc.uv_mode_prob);
-  vp9_copy(cpi->common.fc.pre_partition_prob,
-           cpi->common.fc.partition_prob[INTER_FRAME]);
+  vp9_copy(pc->fc.pre_partition_prob, pc->fc.partition_prob[INTER_FRAME]);
   pc->fc.pre_nmvc = pc->fc.nmvc;
   vp9_copy(pc->fc.pre_switchable_interp_prob, pc->fc.switchable_interp_prob);
   vp9_copy(pc->fc.pre_inter_mode_probs, pc->fc.inter_mode_probs);
@@ -1438,8 +1479,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(pc->fc.pre_comp_inter_prob, pc->fc.comp_inter_prob);
   vp9_copy(pc->fc.pre_comp_ref_prob, pc->fc.comp_ref_prob);
   vp9_copy(pc->fc.pre_single_ref_prob, pc->fc.single_ref_prob);
-  cpi->common.fc.pre_nmvc = cpi->common.fc.nmvc;
-  vp9_copy(cpi->common.fc.pre_tx_probs, cpi->common.fc.tx_probs);
+  vp9_copy(pc->fc.pre_tx_probs, pc->fc.tx_probs);
 
   if (xd->lossless) {
     pc->txfm_mode = ONLY_4X4;
