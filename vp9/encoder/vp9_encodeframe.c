@@ -474,6 +474,9 @@ static unsigned find_seg_id(uint8_t *buf, BLOCK_SIZE_TYPE bsize,
   int x, y;
   unsigned seg_id = -1;
 
+ if (bsize > BLOCK_SIZE_MB16X16)
+   bsize = bsize;
+
   buf += width * start_y;
   for (y = start_y; y < end_y; y++, buf += width) {
     for (x = start_x; x < end_x; x++) {
@@ -481,6 +484,9 @@ static unsigned find_seg_id(uint8_t *buf, BLOCK_SIZE_TYPE bsize,
     }
   }
 
+  // TODO(paulwilkins) temporary trap of illegal segment id return.
+  if (seg_id > 7)
+    seg_id = 0;
   return seg_id;
 }
 
