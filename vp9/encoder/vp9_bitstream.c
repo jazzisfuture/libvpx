@@ -1314,14 +1314,17 @@ void write_uncompressed_header(VP9_COMP *cpi,
     vp9_wb_write_literal(wb, SYNC_CODE_0, 8);
     vp9_wb_write_literal(wb, SYNC_CODE_1, 8);
     vp9_wb_write_literal(wb, SYNC_CODE_2, 8);
+    if (cm->version == 1)
+      vp9_wb_write_bit(wb, 0);  // 0: yuv, 1: rgb
     // colorspaces
-    // 000 - Unknown
-    // 001 - BT.601
-    // 010 - BT.709
-    // 011 - xvYCC
-    // 1xx - Reserved
-    vp9_wb_write_literal(wb, 0, 3);
-    if (cm->version == 1) {
+    // 00 - BT.601
+    // 01 - BT.709
+    // 10 - SMPTE-170
+    // 11 - SMPTE-240
+    vp9_wb_write_literal(wb, 0, 2);
+    if (1 /* !rgb */)
+      vp9_wb_write_bit(wb, 0);  // 0: [16,235] (inc. xvycc), 1: [0,255]
+    if (cm->version == 1 && 1 /* yuv */) {
       vp9_wb_write_bit(wb, cm->subsampling_x);
       vp9_wb_write_bit(wb, cm->subsampling_y);
       vp9_wb_write_bit(wb, 0);  // has extra plane
