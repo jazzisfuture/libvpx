@@ -90,6 +90,7 @@ typedef struct {
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][VP9_INTER_MODES - 1];
 
   vp9_prob tx_probs[TX_SIZE_PROBS];
+  vp9_prob mbskip_probs[MBSKIP_CONTEXTS];
 } CODING_CONTEXT;
 
 typedef struct {
@@ -459,8 +460,6 @@ typedef struct VP9_COMP {
   int inter_zz_count;
   int gf_bad_count;
   int gf_update_recommended;
-  int skip_true_count[3];
-  int skip_false_count[3];
 
   unsigned char *segmentation_map;
 
