@@ -162,8 +162,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
   vpx_memset(candidate_scores, 0, sizeof(candidate_scores));
 
   if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0) {
-    int pixels_wide = 4 * b_width_log2(mbmi->sb_type);
-    int pixels_high = 4 * b_height_log2(mbmi->sb_type);
+    int pixels_wide = 4 << b_width_log2(mbmi->sb_type);
+    int pixels_high = 4 << b_height_log2(mbmi->sb_type);
     int pixels_square = 0;
 
     if (xd->mb_to_right_edge < 0)
