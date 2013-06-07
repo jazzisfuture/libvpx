@@ -205,7 +205,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
     const int mi_search_col = mi_col + mv_ref_search[i][0];
     if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
         (mi_search_col < cm->cur_tile_mi_col_end) &&
-        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge)) {
+        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge) &&
+        ((-mv_ref_search[i][1] << 6) <= xd->mb_to_bottom_edge)) {
       int b;
 
       candidate_mi = here + mv_ref_search[i][0] +
@@ -240,7 +241,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
 
     if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
         (mi_search_col < cm->cur_tile_mi_col_end) &&
-        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge)) {
+        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge) &&
+        ((-mv_ref_search[i][1] << 6) <= xd->mb_to_bottom_edge)) {
       candidate_mi = here + mv_ref_search[i][0] +
                      (mv_ref_search[i][1] * xd->mode_info_stride);
 
@@ -270,7 +272,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
 
     if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
         (mi_search_col < cm->cur_tile_mi_col_end) &&
-        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge)) {
+        ((mv_ref_search[i][1] << 6) >= xd->mb_to_top_edge) &&
+        ((-mv_ref_search[i][1] << 6) <= xd->mb_to_bottom_edge)) {
       candidate_mi = here + mv_ref_search[i][0] +
                      (mv_ref_search[i][1] * xd->mode_info_stride);
 
