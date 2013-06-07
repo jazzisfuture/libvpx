@@ -138,15 +138,15 @@ static const vp9_prob default_comp_inter_p[COMP_INTER_CONTEXTS] = {
 };
 
 static const vp9_prob default_comp_ref_p[REF_CONTEXTS] = {
-  36, 93, 136, 205, 236
+  50, 126, 123, 221, 226
 };
 
 static const vp9_prob default_single_ref_p[REF_CONTEXTS][2] = {
-  { 30, 17 },
-  { 80, 66 },
-  { 142, 129 },
-  { 192, 178 },
-  { 235, 248 },
+  {  33,  16 },
+  {  77,  74 },
+  { 142, 142 },
+  { 172, 170 },
+  { 238, 247 }
 };
 
 void tx_counts_to_branch_counts(unsigned int *tx_count_32x32p,
