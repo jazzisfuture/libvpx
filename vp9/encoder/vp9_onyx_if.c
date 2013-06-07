@@ -338,6 +338,54 @@ static int compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   return target_index - start_index;
 }
 
+// Test code. Segments into columns with passed in offset.
+// Uses all possible segments
+static void segmentation_test(VP9_COMP *cpi)
+{
+  VP9_COMMON *cm = &cpi->common;
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  int segment;
+  int row, col;
+  int map_index = 0;
+
+  // Clear down the global segmentation map
+  vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
+  xd->update_mb_segmentation_map = 0;
+  xd->update_mb_segmentation_data = 0;
+  vp9_disable_segmentation((VP9_PTR)cpi);
+
+  // Define segmentation
+  for (row = 0; row < cm->mi_rows; row++) {
+    for (col = 0; col < cm->mi_cols; col++) {
+      cpi->segmentation_map[map_index] = (col / 4) % MAX_MB_SEGMENTS;
+      map_index++;
+    }
+  }
+
+  vp9_enable_segmentation((VP9_PTR)cpi);
+  xd->mb_segment_abs_delta = SEGMENT_DELTADATA;
+
+  // enable features
+  for (segment = 0; segment < MAX_MB_SEGMENTS; ++segment) {
+    vp9_enable_segfeature(xd, segment, SEG_LVL_ALT_Q);
+    vp9_enable_segfeature(xd, segment, SEG_LVL_ALT_LF);
+    if (cm->frame_type != KEY_FRAME) {
+      vp9_enable_segfeature(xd, segment, SEG_LVL_REF_FRAME);
+      //if (segment == 4)
+      //  vp9_enable_segfeature(xd, segment, SEG_LVL_SKIP);
+    } else {
+      vp9_disable_segfeature(xd, segment, SEG_LVL_REF_FRAME);
+      vp9_disable_segfeature(xd, segment, SEG_LVL_SKIP);
+    }
+
+    vp9_set_segdata(xd, segment, SEG_LVL_ALT_Q, (segment - 4) * 10);
+    vp9_set_segdata(xd, segment, SEG_LVL_ALT_LF,(segment - 4) * 10);
+    if (cm->frame_type == KEY_FRAME) {
+      vp9_set_segdata(xd, segment, SEG_LVL_REF_FRAME, segment % MAX_REF_FRAMES);
+    }
+  }
+}
+
 static void configure_static_seg_features(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
@@ -407,6 +455,10 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, (qi_delta + 2));
         vp9_set_segdata(xd, 1, SEG_LVL_ALT_Q, 0);
         vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_Q);
+
+        vp9_set_segdata(xd, 0, SEG_LVL_ALT_Q, 255);
+        vp9_enable_segfeature(xd, 0, SEG_LVL_ALT_Q);
+
 
         vp9_set_segdata(xd, 1, SEG_LVL_ALT_LF, -2);
         vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
@@ -746,7 +798,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       // Switch segmentation off.
       sf->static_segmentation = 0;
 #else
-      sf->static_segmentation = 0;
+      sf->static_segmentation = 1;
 #endif
       sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
       sf->adpative_rd_thresh = 1;
@@ -2504,6 +2556,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if ((cpi->pass == 2) && (cpi->sf.static_segmentation)) {
     configure_static_seg_features(cpi);
   }
+  // debug test code
+  //segmentation_test(cpi);
 
   // Decide how big to make the frame
   vp9_pick_frame_size(cpi);
@@ -3914,7 +3968,7 @@ int vp9_set_roimap(VP9_PTR comp, unsigned char *map, unsigned int rows,
   // Activate segmentation.
   vp9_enable_segmentation((VP9_PTR)cpi);
 
-  // Set up the quan, LF and breakout threshold segment data
+  // Set up the quant, LF and breakout threshold segment data
   for (i = 0; i < MAX_MB_SEGMENTS; i++) {
     feature_data[SEG_LVL_ALT_Q][i] = delta_q[i];
     feature_data[SEG_LVL_ALT_LF][i] = delta_lf[i];
