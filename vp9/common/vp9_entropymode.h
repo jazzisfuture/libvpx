@@ -15,8 +15,9 @@
 #include "vp9/common/vp9_treecoder.h"
 
 #define SUBMVREF_COUNT 5
+#define TX_SIZE_CONTEXTS 2
 
-// #define MODE_STATS
+#define MODE_STATS
 
 extern int vp9_mv_cont(const int_mv *l, const int_mv *a);
 
@@ -77,11 +78,11 @@ extern struct vp9_token vp9_switchable_interp_encodings[VP9_SWITCHABLE_FILTERS];
 extern const  vp9_prob vp9_switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
                                                  [VP9_SWITCHABLE_FILTERS - 1];
 
-extern const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_MAX_SB]
+extern const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
                                                  [TX_SIZE_MAX_SB - 1];
-extern const vp9_prob vp9_default_tx_probs_16x16p[TX_SIZE_MAX_SB - 1]
+extern const vp9_prob vp9_default_tx_probs_16x16p[TX_SIZE_CONTEXTS]
                                                  [TX_SIZE_MAX_SB - 2];
-extern const vp9_prob vp9_default_tx_probs_8x8p[TX_SIZE_MAX_SB - 2]
+extern const vp9_prob vp9_default_tx_probs_8x8p[TX_SIZE_CONTEXTS]
                                                [TX_SIZE_MAX_SB - 3];
 
 extern void tx_counts_to_branch_counts_32x32(unsigned int *tx_count_32x32p,
