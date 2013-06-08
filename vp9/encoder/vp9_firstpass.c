@@ -522,7 +522,19 @@ void vp9_first_pass(VP9_COMP *cpi) {
       xd->plane[2].dst.buf = new_yv12->v_buffer + recon_uvoffset;
       xd->left_available = (mb_col != 0);
 
-      xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_MB16X16;
+      if (mb_col * 2 + 1 < cm->mi_cols) {
+        if (mb_row * 2 + 1 < cm->mi_rows) {
+          xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_MB16X16;
+        } else {
+          xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_SB16X8;
+        }
+      } else {
+        if (mb_row * 2 + 1 < cm->mi_rows) {
+          xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_SB8X16;
+        } else {
+          xd->mode_info_context->mbmi.sb_type = BLOCK_SIZE_SB8X8;
+        }
+      }
       xd->mode_info_context->mbmi.ref_frame[0] = INTRA_FRAME;
 
       // do intra 16x16 prediction
