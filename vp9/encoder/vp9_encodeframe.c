@@ -965,18 +965,32 @@ void sum_2_variances(var *r, var *a, var*b) {
 
 // Set the blocksize in the macroblock info structure if the variance is less
 // than our threshold to one of none, horz, vert.
+#define set_vt_h_size(VT, BLOCKSIZE, R, C, ACTION) \
+  if (VT.horz[0].variance < threshold && VT.horz[1].variance < threshold ) { \
+    set_block_size(cm, m, get_subsize(BLOCKSIZE, PARTITION_HORZ), mis, R, C); \
+    ACTION; \
+  }
+#define set_vt_v_size(VT, BLOCKSIZE, R, C, ACTION) \
+  if (VT.vert[0].variance < threshold && VT.vert[1].variance < threshold ) { \
+    set_block_size(cm, m, get_subsize(BLOCKSIZE, PARTITION_VERT), mis, R, C); \
+    ACTION; \
+  }
+
 #define set_vt_size(VT, BLOCKSIZE, R, C, ACTION) \
   if (VT.none.variance < threshold) { \
     set_block_size(cm, m, BLOCKSIZE, mis, R, C); \
     ACTION; \
   } \
-  if (VT.horz[0].variance < threshold && VT.horz[1].variance < threshold ) { \
-    set_block_size(cm, m, get_subsize(BLOCKSIZE, PARTITION_HORZ), mis, R, C); \
-    ACTION; \
-  } \
-  if (VT.vert[0].variance < threshold && VT.vert[1].variance < threshold ) { \
-    set_block_size(cm, m, get_subsize(BLOCKSIZE, PARTITION_VERT), mis, R, C); \
-    ACTION; \
+  set_vt_h_size(VT, BLOCKSIZE, R, C, ACTION) \
+  set_vt_v_size(VT, BLOCKSIZE, R, C, ACTION)
+
+#define set_vt_partitioning(VT, BLOCKSIZE, R, C, N, ACTION) \
+  if ( pixels_wide <= N) { \
+    set_vt_v_size(vt, BLOCKSIZE, mi_row, mi_col, ACTION); \
+  } else if (pixels_high <= N) { \
+    set_vt_h_size(vt, BLOCKSIZE, mi_row, mi_col, ACTION); \
+  } else { \
+    set_vt_size(vt, BLOCKSIZE, mi_row, mi_col, ACTION); \
   }
 
 static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
@@ -1061,18 +1075,18 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
   // Now go through the entire structure,  splitting every blocksize until
   // we get to one that's got a variance lower than our threshold,  or we
   // hit 8x8.
-  set_vt_size( vt, BLOCK_SIZE_SB64X64, mi_row, mi_col, return);
+  set_vt_partitioning(VT, BLOCK_SIZE_SB64X64, mi_row, mi_col, 32, return);
   for (i = 0; i < 4; ++i) {
     const int x32_idx = ((i & 1) << 2);
     const int y32_idx = ((i >> 1) << 2);
-    set_vt_size(vt, BLOCK_SIZE_SB32X32, mi_row + y32_idx, mi_col + x32_idx,
-                continue);
+    set_vt_partitioning(VT, BLOCK_SIZE_SB32X32, mi_row + y32_idx,
+                        mi_col + x32_idx, 16, continue);
 
     for (j = 0; j < 4; ++j) {
       const int x16_idx = ((j & 1) << 1);
       const int y16_idx = ((j >> 1) << 1);
-      set_vt_size(vt, BLOCK_SIZE_MB16X16, mi_row + y32_idx + y16_idx,
-                  mi_col+x32_idx+x16_idx, continue);
+      set_vt_partitioning(VT, BLOCK_SIZE_MB16X16, mi_row + y32_idx + y16_idx,
+                          mi_col+x32_idx+x16_idx, 8, continue);
 
       for (k = 0; k < 4; ++k) {
         const int x8_idx = (k & 1);
@@ -1084,6 +1098,7 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
     }
   }
 }
+
 static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
                              int mi_row, int mi_col, BLOCK_SIZE_TYPE bsize,
                              int *rate, int *dist) {
