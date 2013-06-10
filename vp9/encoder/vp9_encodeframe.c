@@ -474,10 +474,14 @@ static unsigned find_seg_id(uint8_t *buf, BLOCK_SIZE_TYPE bsize,
   int x, y;
   unsigned seg_id = -1;
 
-  buf += width * start_y;
-  for (y = start_y; y < end_y; y++, buf += width) {
-    for (x = start_x; x < end_x; x++) {
-      seg_id = MIN(seg_id, buf[x]);
+  if ((start_x >= width) || (start_y >= height)) {
+    return 0;  // Off edge return seg 0
+  } else {
+    buf += width * start_y;
+    for (y = start_y; y < end_y; y++, buf += width) {
+      for (x = start_x; x < end_x; x++) {
+        seg_id = MIN(seg_id, buf[x]);
+      }
     }
   }
 
