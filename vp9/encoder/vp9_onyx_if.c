@@ -365,8 +365,8 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         vp9_enable_segfeature(xd, 1, SEG_LVL_ALT_LF);
 
         // Segment coding disabled for compred testing
-        if (high_q || (cpi->static_mb_pct == 100)) {
-          vp9_set_segdata(xd, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+        if (1 || high_q || (cpi->static_mb_pct == 100)) {
+          vp9_set_segdata(xd, 1, SEG_LVL_REF_FRAME, LAST_FRAME);
           vp9_enable_segfeature(xd, 1, SEG_LVL_REF_FRAME);
           vp9_enable_segfeature(xd, 1, SEG_LVL_SKIP);
         }
@@ -2456,7 +2456,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // static regions if indicated.
   // Only allowed for now in second pass of two pass (as requires lagged coding)
   // and if the relevant speed feature flag is set.
-  if ((cpi->pass == 2) && (cpi->sf.static_segmentation)) {
+  if (1) { //(cpi->pass == 2) && (cpi->sf.static_segmentation)) {
     configure_static_seg_features(cpi);
   }
 

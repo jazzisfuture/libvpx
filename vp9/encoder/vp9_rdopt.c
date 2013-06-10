@@ -2609,6 +2609,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         || (cpi->ref_frame_flags & flag_list[mbmi->ref_frame[1]]))) {
       continue;
     }
+    if (mbmi->ref_frame[1] != NONE &&
+        vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME))
+      continue;
 
     // TODO(jingning, jkoleszar): scaling reference frame not supported for
     // SPLITMV.
