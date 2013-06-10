@@ -80,13 +80,6 @@ static void setup_txfm_mode(VP9_COMMON *pc, int lossless, vp9_reader *r) {
                 vp9_read_prob_diff_update(r, pc->fc.tx_probs_32x32p[i][j]);
         }
       }
-    } else {
-      vpx_memcpy(pc->fc.tx_probs_8x8p, vp9_default_tx_probs_8x8p,
-                 sizeof(vp9_default_tx_probs_8x8p));
-      vpx_memcpy(pc->fc.tx_probs_16x16p, vp9_default_tx_probs_16x16p,
-                 sizeof(vp9_default_tx_probs_16x16p));
-      vpx_memcpy(pc->fc.tx_probs_32x32p, vp9_default_tx_probs_32x32p,
-                 sizeof(vp9_default_tx_probs_32x32p));
     }
   }
 }
