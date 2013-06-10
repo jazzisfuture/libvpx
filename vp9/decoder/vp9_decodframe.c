@@ -140,25 +140,17 @@ static int decode_unsigned_max(struct vp9_read_bit_buffer *rb, int max) {
   return data > max ? max : data;
 }
 
-static int merge_index(int v, int n, int modulus) {
-  int max1 = (n - 1 - modulus / 2) / modulus + 1;
-  if (v < max1) {
-    v = v * modulus + modulus / 2;
-  } else {
-    int w;
-    v -= max1;
-    w = v;
-    v += (v + modulus - modulus / 2) / modulus;
-    while (v % modulus == modulus / 2 ||
-           w != v - (v + modulus - modulus / 2) / modulus) v++;
-  }
+static int inv_flip_index(int i) {
+  int il = i % 17;
+  int ih = i / 17;
+  int v =  il * 15 + ih;
   return v;
 }
 
 static int inv_remap_prob(int v, int m) {
   const int n = 256;
 
-  v = merge_index(v, n - 1, MODULUS_PARAM);
+  v = inv_flip_index(v);
   if ((m << 1) <= n) {
     return inv_recenter_nonneg(v + 1, m);
   } else {

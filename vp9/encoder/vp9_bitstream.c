@@ -269,23 +269,22 @@ static void compute_update_table() {
     update_bits[i] = count_term_subexp(i, SUBEXP_PARAM, 255);
 }
 
-static int split_index(int i, int n, int modulus) {
-  int max1 = (n - 1 - modulus / 2) / modulus + 1;
-  if (i % modulus == modulus / 2) i = i / modulus;
-  else i = max1 + i - (i + modulus - modulus / 2) / modulus;
-  return i;
+static int flip_index(int i) {
+  int il = i % 15;
+  int ih = i / 15;
+  int v =  il * 17 + ih;
+  return v;
 }
 
 static int remap_prob(int v, int m) {
   const int n = 256;
-  const int modulus = MODULUS_PARAM;
   int i;
   if ((m << 1) <= n)
     i = recenter_nonneg(v, m) - 1;
   else
     i = recenter_nonneg(n - 1 - v, n - 1 - m) - 1;
 
-  i = split_index(i, n - 1, modulus);
+  i = flip_index(i);
   return i;
 }
 
