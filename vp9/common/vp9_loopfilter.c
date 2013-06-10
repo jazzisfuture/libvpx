@@ -655,6 +655,7 @@ static void filter_selectively_horiz(uint8_t *s, int pitch,
 static void filter_block_plane(VP9_COMMON *cm, MACROBLOCKD *xd,
                                int plane, int mi_row, int mi_col) {
   const int ss_x = xd->plane[plane].subsampling_x;
+  const int ss_y = xd->plane[plane].subsampling_y;
   const int row_step = 1 << xd->plane[plane].subsampling_y;
   const int col_step = 1 << xd->plane[plane].subsampling_x;
   struct buf_2d * const dst = &xd->plane[plane].dst;
@@ -696,26 +697,26 @@ static void filter_block_plane(VP9_COMMON *cm, MACROBLOCKD *xd,
 
       // Build masks based on the transform size of each block
       if (tx_size == TX_32X32) {
-        if (!skip_this_c && (c & 3) == 0)
+        if (!skip_this_c && ((c >> ss_x) & 3) == 0)
           mask_16x16_c |= 1 << (c >> ss_x);
-        if (!skip_this_r && (r & 3) == 0)
+        if (!skip_this_r && ((r >> ss_y) & 3) == 0)
           mask_16x16[r] |= 1 << (c >> ss_x);
       } else if (tx_size == TX_16X16) {
-        if (!skip_this_c && (c & 1) == 0)
+        if (!skip_this_c && ((c >> ss_x) & 1) == 0)
           mask_16x16_c |= 1 << (c >> ss_x);
-        if (!skip_this_r && (r & 1) == 0)
+        if (!skip_this_r && ((r >> ss_y) & 1) == 0)
           mask_16x16[r] |= 1 << (c >> ss_x);
       } else {
         // force 8x8 filtering on 32x32 boundaries
         if (!skip_this_c) {
-          if (tx_size == TX_8X8 || (c & 3) == 0)
+          if (tx_size == TX_8X8 || ((c >> ss_x) & 3) == 0)
             mask_8x8_c |= 1 << (c >> ss_x);
           else
             mask_4x4_c |= 1 << (c >> ss_x);
         }
 
         if (!skip_this_r) {
-          if (tx_size == TX_8X8 || (r & 3) == 0)
+          if (tx_size == TX_8X8 || ((r >> ss_y) & 3) == 0)
             mask_8x8[r] |= 1 << (c >> ss_x);
           else
             mask_4x4[r] |= 1 << (c >> ss_x);
