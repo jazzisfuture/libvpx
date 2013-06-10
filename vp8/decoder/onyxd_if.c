@@ -37,17 +37,319 @@
 #include "vpx_ports/arm.h"
 #endif
 
-extern void vp8_init_loop_filter(VP8_COMMON *cm);
 extern void vp8cx_init_de_quantizer(VP8D_COMP *pbi);
-static int get_free_fb (VP8_COMMON *cm);
-static void ref_cnt_fb (int *buf, int *idx, int new_idx);
+
+int vp8_destroy_frame_pool(struct frame_buffers *fb)
+{
+    unsigned int max_frames = fb->max_allocated_frames;
+    unsigned int i;
+
+    if(fb->free_alloc)
+    {
+        for(i = 0; i < max_frames; i++)
+        {
+            vp8_yv12_de_alloc_frame_buffer(&fb->free_alloc[i].yv12_fb);
+        }
+
+        vpx_free(fb->free_alloc);
+
+        fb->free_alloc = 0;
+    }
+    return 0;
+}
+
+int vp8_create_frame_pool(struct frame_buffers *fb, unsigned int max_frames)
+{
+    unsigned int i;
+
+    vp8_destroy_frame_pool(fb);
+
+    fb->free_alloc =
+    fb->free = (struct fbnode *) vpx_malloc(sizeof(struct fbnode) * (max_frames+1));
+    if(!fb->free)
+        return -1;
+
+    vpx_memset(fb->free, 0, sizeof(struct fbnode) * (max_frames+1));
+
+    for(i = 0; i < max_frames; i++)
+    {
+        fb->free[i].next = &fb->free[i+1];
+
+        /* for testing/debug purposes */
+        fb->free[i].frame_id = i + 0xa0;
+    }
+
+    /* terminate */
+    fb->free[max_frames-1].next = 0;
+
+    /* for debug purposes... we should never use this extra node */
+    fb->free[max_frames].frame_id = i;
+
+    fb->max_allocated_frames = max_frames;
+    fb->decoded = (struct fbnode *)0;
+    fb->decoded_head = (struct fbnode *)0;
+    fb->decoded_to_show = (struct fbnode *)0;
+    fb->cx_data_count = 0;
+    fb->size_id = 0;
+
+    return 0;
+}
+
+#if 0
+/* for debug purposes */
+void vp8_show_free_buffers(struct frame_buffers *fb)
+{
+    struct fbnode *this_node = fb->free;
+
+    if(this_node)
+    {
+        while(this_node)
+        {
+            printf("this_node->frame_id %d this_node %x\n", this_node->frame_id,
+                (unsigned int)this_node);
+            this_node = this_node->next;
+        }
+    }
+    else
+        printf("fb->free is NULL\n");
+}
+
+/* for debug purposes */
+void vp8_show_decoded_buffers(struct frame_buffers *fb)
+{
+    struct fbnode *this_node = fb->decoded;
+
+    if(this_node)
+    {
+        while(this_node)
+        {
+            printf("vp8_show_(): cx_frame_num %d frame_id %d this_node %x K:%d "
+                "G:%d A:%d rL:%d refcnt:%d s:%x d:%x ithread:%x\n", this_node->current_cx_frame, this_node->frame_id, (unsigned int)this_node,
+                this_node->is_key, this_node->is_gld, this_node->is_alt,
+            this_node->is_refresh_last, this_node->ref_cnt, this_node->show, this_node->is_decoded,
+            this_node->ithread);
+            this_node = this_node->next;
+        }
+    }
+    else
+        printf("fb->decoded is NULL\n");
+}
+#endif
+
+static struct fbnode * get_free_fb(struct frame_buffers *fb)
+{
+    struct fbnode *free_node = fb->free;
+
+    if(fb->free)
+    {
+        /* remove empty buffer from pool */
+        fb->free = fb->free->next;
+    }
+
+    return free_node;
+}
+
+/* reset before adding back to free pool */
+static void clear_fbnode(struct fbnode *free_node)
+{
+    free_node->next = 0;
+    free_node->prev = 0;
+    free_node->is_alt = 0;
+    free_node->is_gld = 0;
+    free_node->is_key = 0;
+    free_node->is_decoded = 0;
+    free_node->show = 0;
+    free_node->last_time_stamp = 0;
+    free_node->is_refresh_last = 0;
+    free_node->ref_cnt = 0;
+}
+
+/* add buffer back to pool */
+static void put_free_fb(struct frame_buffers *fb, struct fbnode *free_node)
+{
+    clear_fbnode(free_node);
+
+    if(fb->free)
+        free_node->next = fb->free;
+
+    fb->free = free_node;
+}
+
+static void update_frame_if_resize(struct frame_buffers *fb, struct fbnode *fbn,
+                                 VP8D_COMP *pbi)
+{
+    pbi->this_fb = fbn;
+    /* check if resize occurred */
+    if(fbn->size_id != fb->size_id)
+    {
+        int width, height;
+        /* dealloc only if a buffer has been created */
+        if(fbn->y_width != 0 && fbn->y_height != 0)
+            vp8_yv12_de_alloc_frame_buffer(&fbn->yv12_fb);
+
+        width = fb->new_y_width;
+        height = fb->new_y_height;
+        /* our internal buffers are always multiples of 16 */
+        if ((width & 0xf) != 0)
+            width += 16 - (width & 0xf);
+
+        if ((height & 0xf) != 0)
+            height += 16 - (height & 0xf);
+
+        if (vp8_yv12_alloc_frame_buffer(&fbn->yv12_fb, width, height,
+                                        VP8BORDERINPIXELS) < 0)
+        {
+            vpx_internal_error(&pbi->common.error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate frame buffer");
+        }
+
+        pbi->mb.pre = pbi->mb.dst = fbn->yv12_fb;
+
+#if CONFIG_MULTITHREAD
+        if (pbi->b_multithreaded_rd)
+        {
+            int i;
+            for (i = 0; i < pbi->allocated_decoding_thread_count; i++)
+            {
+                pbi->mb_row_di[i].mbd.dst = pbi->mb.dst;
+                vp8_build_block_doffsets(&pbi->mb_row_di[i].mbd);
+            }
+        }
+#endif
+
+        vp8_build_block_doffsets(&pbi->mb);
+
+        /* mark this frame as having the most current frame dimensions */
+        fbn->size_id = fb->size_id;
+    }
+}
+
+/* add frame buffer to decoded list */
+static void add_fb_to_decoded(struct frame_buffers *fb, struct fbnode *fbn,
+                             void *user_priv)
+{
+    fbn->user_priv = user_priv;
+    if(fb->decoded)
+    {
+        fb->decoded_head->next = fbn;
+        fbn->prev = fb->decoded_head;
+        fbn->next = (struct fbnode *)0;
+    }
+    else
+    {
+        fb->decoded = fbn;
+        fb->decoded->prev = (struct fbnode *)0;
+        fb->decoded->next = (struct fbnode *)0;
+    }
+
+    fb->decoded_head = fbn;
+    fb->decoded_size++;
+}
+
+static void remove_fb_frome_decoded(struct frame_buffers *fb,
+                                    struct fbnode * this_node)
+{
+    if(this_node->next)
+    {
+        this_node->next->prev = this_node->prev;
+        if(this_node->prev)
+            this_node->prev->next = this_node->next;
+        else
+            fb->decoded = this_node->next;
+    }
+    else
+    {
+        fb->decoded_head = this_node->prev;
+        if(this_node->prev)
+            this_node->prev->next = (struct fbnode *)0;
+        else
+            /* list is now empty */
+            fb->decoded = (struct fbnode *)0;
+    }
+
+    fb->decoded_size--;
+
+    put_free_fb(fb, this_node);
+}
+
+int vp8_get_to_show(struct frame_buffers *fb)
+{
+    struct fbnode * to_show_fb = 0;
+
+    fb->decoded_to_show = 0;
+
+    if(fb->decoded_size)
+    {
+        struct fbnode * this_node;
+
+        /* vp8_show_decoded_buffers(fb); */
+
+        to_show_fb = fb->decoded;
+
+        while(!to_show_fb->show)
+        {
+            if(to_show_fb->is_decoded == 0)
+            {
+                return 1; /* buffer not available yet */
+            }
+
+            to_show_fb = to_show_fb->next;
+            if(!to_show_fb)
+            {
+                return -1; /* empty buffer... all buffers have been shown */
+            }
+        }
+
+        /* this frame buffer will be shown by the calling app, so lets set
+         * to zero so we do not show again */
+        to_show_fb->show = 0;
+
+        /* remove unreferenced buffers */
+        this_node = to_show_fb->prev;
+        while(this_node)
+        {
+            if(this_node->ref_cnt <= 0)
+            {
+                struct fbnode *n = this_node;
+
+                /* we are about to remove this node from list, so point to
+                 * the previous frame before the ptrs are adjusted */
+                this_node = this_node->prev;
+
+                remove_fb_frome_decoded(fb, n);
+            }
+            else
+            {
+                this_node = this_node->prev;
+            }
+        }
+    }
+
+    fb->decoded_to_show = to_show_fb;
+
+    return 0;
+}
 
 static void remove_decompressor(VP8D_COMP *pbi)
 {
+  VP8_COMMON *oci = &pbi->common;
+  int i;
 #if CONFIG_ERROR_CONCEALMENT
     vp8_de_alloc_overlap_lists(pbi);
 #endif
-    vp8_remove_common(&pbi->common);
+    for (i = 0; i < NUM_YV12_BUFFERS; i++)
+        vp8_yv12_de_alloc_frame_buffer(&oci->yv12_fb[i]);
+
+    vpx_free(oci->above_context);
+    vpx_free(oci->mip);
+#if CONFIG_ERROR_CONCEALMENT
+    vpx_free(oci->prev_mip);
+    oci->prev_mip = NULL;
+#endif
+
+    oci->above_context = NULL;
+    oci->mip = NULL;
+
     vpx_free(pbi);
 }
 
@@ -107,194 +409,307 @@ static struct VP8D_COMP * create_decompressor(VP8D_CONFIG *oxcf)
     return pbi;
 }
 
-vpx_codec_err_t vp8dx_get_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_frame_flag, YV12_BUFFER_CONFIG *sd)
+void vp8dx_remove_postproc_frame(struct frame_buffers *fb)
 {
-    VP8_COMMON *cm = &pbi->common;
-    int ref_fb_idx;
+#if CONFIG_POSTPROC
+    vp8_yv12_de_alloc_frame_buffer(&fb->post_proc_buffer);
+    if (fb->post_proc_buffer_int_used)
+        vp8_yv12_de_alloc_frame_buffer(&fb->post_proc_buffer_int);
 
-    if (ref_frame_flag == VP8_LAST_FRAME)
-        ref_fb_idx = cm->lst_fb_idx;
-    else if (ref_frame_flag == VP8_GOLD_FRAME)
-        ref_fb_idx = cm->gld_fb_idx;
-    else if (ref_frame_flag == VP8_ALTR_FRAME)
-        ref_fb_idx = cm->alt_fb_idx;
-    else{
-        vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
-            "Invalid reference frame");
-        return pbi->common.error.error_code;
+    vpx_free(fb->pp_limits_buffer);
+    fb->pp_limits_buffer = NULL;
+#endif
+}
+
+int vp8dx_create_postproc_frame(struct frame_buffers *fb, int width, int height)
+{
+    vp8dx_remove_postproc_frame(fb);
+
+    /* our internal buffers are always multiples of 16 */
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+#if CONFIG_POSTPROC
+    if (vp8_yv12_alloc_frame_buffer(&fb->post_proc_buffer, width, height,
+                                    VP8BORDERINPIXELS) < 0)
+    {
+        vp8dx_remove_postproc_frame(fb);
+        return 1;
     }
 
-    if(cm->yv12_fb[ref_fb_idx].y_height != sd->y_height ||
-        cm->yv12_fb[ref_fb_idx].y_width != sd->y_width ||
-        cm->yv12_fb[ref_fb_idx].uv_height != sd->uv_height ||
-        cm->yv12_fb[ref_fb_idx].uv_width != sd->uv_width){
-        vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
-            "Incorrect buffer dimensions");
+    fb->post_proc_buffer_int_used = 0;
+    vpx_memset(&fb->postproc_state, 0, sizeof(fb->postproc_state));
+    vpx_memset((&fb->post_proc_buffer)->buffer_alloc,128,(&fb->post_proc_buffer)->frame_size);
+
+    /* Allocate buffer to store post-processing filter coefficients.
+     *
+     * Note: Round up mb_cols to support SIMD reads
+     */
+    fb->pp_limits_buffer = vpx_memalign(16, 24 * (((width >> 4) + 1) & ~1));
+    if (!fb->pp_limits_buffer)
+    {
+        vp8dx_remove_postproc_frame(fb);
+        return 1;
     }
-    else
-        vp8_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
+#endif
+    return 0;
+}
+
+void remove_decoder_frame(VP8_COMMON *oci)
+{
+#if CONFIG_ERROR_CONCEALMENT
+    vpx_free(oci->prev_mip);
+    oci->prev_mip = NULL;
+#endif
+
+    vpx_free(oci->above_context);
+    vpx_free(oci->mip);
+
+    oci->above_context = NULL;
+    oci->mip = NULL;
+}
+
+static int create_decoder_frame(VP8D_COMP *pbi, int width, int height)
+{
+    VP8_COMMON *const oci = & pbi->common;
+#if CONFIG_MULTITHREAD
+    int prev_mb_rows = oci->mb_rows;
+#endif
+
+    remove_decoder_frame(oci);
+
+    /* our internal buffers are always multiples of 16 */
+    if ((width & 0xf) != 0)
+        width += 16 - (width & 0xf);
+
+    if ((height & 0xf) != 0)
+        height += 16 - (height & 0xf);
+
+    oci->mb_rows = height >> 4;
+    oci->mb_cols = width >> 4;
+    oci->MBs = oci->mb_rows * oci->mb_cols;
+    oci->mode_info_stride = oci->mb_cols + 1;
+    oci->mip = vpx_calloc((oci->mb_cols + 1) * (oci->mb_rows + 1),
+                          sizeof(MODE_INFO));
+    if (!oci->mip)
+    {
+        remove_decoder_frame(oci);
+        vpx_internal_error(&oci->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate"
+                           "MODE_INFO array");
+    }
+
+    oci->mi = oci->mip + oci->mode_info_stride + 1;
+
+    oci->above_context = vpx_calloc(sizeof(ENTROPY_CONTEXT_PLANES) * oci->mb_cols, 1);
+    if (!oci->above_context)
+    {
+        remove_decoder_frame(oci);
+        vpx_internal_error(&oci->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate"
+                           "above_context array");
+    }
+
+    /* allocate memory for last frame MODE_INFO array */
+#if CONFIG_ERROR_CONCEALMENT
+    if (pbi->ec_enabled)
+    {
+        /* old prev_mip was released by vp8dx_remove_decoder_frame() */
+        oci->prev_mip = vpx_calloc(
+                           (oci->mb_cols + 1) * (oci->mb_rows + 1),
+                           sizeof(MODE_INFO));
+
+        if (!oci->prev_mip)
+        {
+            remove_decoder_frame(oci);
+            vpx_internal_error(&oci->error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate"
+                               "last frame MODE_INFO array");
+        }
+
+        oci->prev_mi = oci->prev_mip + oci->mode_info_stride + 1;
+
+        if (vp8_alloc_overlap_lists(pbi))
+            vpx_internal_error(&oci->error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate overlap lists "
+                               "for error concealment");
+    }
+#endif
+
+#if CONFIG_MULTITHREAD
+      if (pbi->b_multithreaded_rd)
+          vp8mt_alloc_temp_buffers(pbi, width, prev_mb_rows);
+#endif
+
+    return 0;
+}
+
+vpx_codec_err_t vp8dx_get_reference(struct frame_buffers *fb, VP8D_COMP *pbi,
+                                    enum vpx_ref_frame_type ref_frame_flag,
+                                    YV12_BUFFER_CONFIG *sd)
+{
+  struct fbnode *ref_fb;
+  YV12_BUFFER_CONFIG *yv12_ref;
+  int frame_index;
+
+  if (ref_frame_flag == VP8_LAST_FRAME)
+      frame_index = LAST_FRAME;
+  else if (ref_frame_flag == VP8_GOLD_FRAME)
+      frame_index = GOLDEN_FRAME;
+  else if (ref_frame_flag == VP8_ALTR_FRAME)
+      frame_index = ALTREF_FRAME;
+  else{
+      vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
+          "Invalid reference frame");
+      return pbi->common.error.error_code;
+  }
+
+  ref_fb = pbi->this_fb->this_ref_fb[frame_index];
+  yv12_ref = &ref_fb->yv12_fb;
+
+  if(yv12_ref->y_height != sd->y_height ||
+          yv12_ref->y_width != sd->y_width ||
+          yv12_ref->uv_height != sd->uv_height ||
+          yv12_ref->uv_width != sd->uv_width)
+  {
+      vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
+          "Incorrect buffer dimensions");
+  }
+  else
+      vp8_yv12_copy_frame(yv12_ref, sd);
 
     return pbi->common.error.error_code;
 }
 
-
-vpx_codec_err_t vp8dx_set_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_frame_flag, YV12_BUFFER_CONFIG *sd)
+vpx_codec_err_t vp8dx_set_reference(struct frame_buffers *fb, VP8D_COMP *pbi,
+                                    enum vpx_ref_frame_type ref_frame_flag,
+                                    YV12_BUFFER_CONFIG *sd)
 {
-    VP8_COMMON *cm = &pbi->common;
-    int *ref_fb_ptr = NULL;
-    int free_fb;
+    struct fbnode *ref_fb;
+    YV12_BUFFER_CONFIG *yv12_ref;
+    int frame_index;
 
     if (ref_frame_flag == VP8_LAST_FRAME)
-        ref_fb_ptr = &cm->lst_fb_idx;
+        frame_index = LAST_FRAME;
     else if (ref_frame_flag == VP8_GOLD_FRAME)
-        ref_fb_ptr = &cm->gld_fb_idx;
+        frame_index = GOLDEN_FRAME;
     else if (ref_frame_flag == VP8_ALTR_FRAME)
-        ref_fb_ptr = &cm->alt_fb_idx;
+        frame_index = ALTREF_FRAME;
     else{
         vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
             "Invalid reference frame");
         return pbi->common.error.error_code;
     }
 
-    if(cm->yv12_fb[*ref_fb_ptr].y_height != sd->y_height ||
-        cm->yv12_fb[*ref_fb_ptr].y_width != sd->y_width ||
-        cm->yv12_fb[*ref_fb_ptr].uv_height != sd->uv_height ||
-        cm->yv12_fb[*ref_fb_ptr].uv_width != sd->uv_width){
+    ref_fb = pbi->this_fb->next_ref_fb[frame_index];
+    yv12_ref = &ref_fb->yv12_fb;
+
+    if(yv12_ref->y_height != sd->y_height ||
+            yv12_ref->y_width != sd->y_width ||
+            yv12_ref->uv_height != sd->uv_height ||
+            yv12_ref->uv_width != sd->uv_width)
+    {
         vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
             "Incorrect buffer dimensions");
     }
-    else{
-        /* Find an empty frame buffer. */
-        free_fb = get_free_fb(cm);
-        /* Decrease fb_idx_ref_cnt since it will be increased again in
-         * ref_cnt_fb() below. */
-        cm->fb_idx_ref_cnt[free_fb]--;
-
-        /* Manage the reference counters and copy image. */
-        ref_cnt_fb (cm->fb_idx_ref_cnt, ref_fb_ptr, free_fb);
-        vp8_yv12_copy_frame(sd, &cm->yv12_fb[*ref_fb_ptr]);
-    }
-
-   return pbi->common.error.error_code;
-}
-
-/*For ARM NEON, d8-d15 are callee-saved registers, and need to be saved by us.*/
-#if HAVE_NEON
-extern void vp8_push_neon(int64_t *store);
-extern void vp8_pop_neon(int64_t *store);
-#endif
-
-static int get_free_fb (VP8_COMMON *cm)
-{
-    int i;
-    for (i = 0; i < NUM_YV12_BUFFERS; i++)
-        if (cm->fb_idx_ref_cnt[i] == 0)
-            break;
-
-    assert(i < NUM_YV12_BUFFERS);
-    cm->fb_idx_ref_cnt[i] = 1;
-    return i;
-}
-
-static void ref_cnt_fb (int *buf, int *idx, int new_idx)
-{
-    if (buf[*idx] > 0)
-        buf[*idx]--;
-
-    *idx = new_idx;
-
-    buf[new_idx]++;
-}
-
-/* If any buffer copy / swapping is signalled it should be done here. */
-static int swap_frame_buffers (VP8_COMMON *cm)
-{
-    int err = 0;
-
-    /* The alternate reference frame or golden frame can be updated
-     *  using the new, last, or golden/alt ref frame.  If it
-     *  is updated using the newly decoded frame it is a refresh.
-     *  An update using the last or golden/alt ref frame is a copy.
-     */
-    if (cm->copy_buffer_to_arf)
-    {
-        int new_fb = 0;
-
-        if (cm->copy_buffer_to_arf == 1)
-            new_fb = cm->lst_fb_idx;
-        else if (cm->copy_buffer_to_arf == 2)
-            new_fb = cm->gld_fb_idx;
-        else
-            err = -1;
-
-        ref_cnt_fb (cm->fb_idx_ref_cnt, &cm->alt_fb_idx, new_fb);
-    }
-
-    if (cm->copy_buffer_to_gf)
-    {
-        int new_fb = 0;
-
-        if (cm->copy_buffer_to_gf == 1)
-            new_fb = cm->lst_fb_idx;
-        else if (cm->copy_buffer_to_gf == 2)
-            new_fb = cm->alt_fb_idx;
-        else
-            err = -1;
-
-        ref_cnt_fb (cm->fb_idx_ref_cnt, &cm->gld_fb_idx, new_fb);
-    }
-
-    if (cm->refresh_golden_frame)
-        ref_cnt_fb (cm->fb_idx_ref_cnt, &cm->gld_fb_idx, cm->new_fb_idx);
-
-    if (cm->refresh_alt_ref_frame)
-        ref_cnt_fb (cm->fb_idx_ref_cnt, &cm->alt_fb_idx, cm->new_fb_idx);
-
-    if (cm->refresh_last_frame)
-    {
-        ref_cnt_fb (cm->fb_idx_ref_cnt, &cm->lst_fb_idx, cm->new_fb_idx);
-
-        cm->frame_to_show = &cm->yv12_fb[cm->lst_fb_idx];
-    }
     else
-        cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
+    {
+        /* if only one reference, then ok to copy.
+         * otherwise we must find a free buffer */
+        if(ref_fb->ref_cnt > 1)
+        {
+            struct fbnode *new_ref_fb;
 
-    cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
+            /* remove reference from current buffer */
+            ref_fb->ref_cnt--;
 
-    return err;
+            /* find a free frame buffer */
+            new_ref_fb = get_free_fb(fb);
+            if(!new_ref_fb)
+            {
+                vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
+                                   "Could not find a free frame buffer.");
+                return pbi->common.error.error_code;
+            }
+
+            /* add into decoded list */
+            add_fb_to_decoded(fb, new_ref_fb, NULL);
+
+            /* add reference to current buffer */
+            new_ref_fb->ref_cnt++;
+
+            yv12_ref = &new_ref_fb->yv12_fb;
+
+            pbi->this_fb->next_ref_fb[frame_index] = new_ref_fb;
+        }
+
+        vp8_yv12_copy_frame(sd, yv12_ref);
+    }
+
+    return pbi->common.error.error_code;
 }
 
-int check_fragments_for_errors(VP8D_COMP *pbi)
+int check_fragments_for_errors(struct frame_buffers *fb, VP8D_COMP *pbi)
 {
     if (!pbi->ec_active &&
         pbi->fragments.count <= 1 && pbi->fragments.sizes[0] == 0)
     {
-        VP8_COMMON *cm = &pbi->common;
+        struct fbnode *ref_fb;
+
+        ref_fb = pbi->this_fb->this_ref_fb[LAST_FRAME];
 
         /* If error concealment is disabled we won't signal missing frames
          * to the decoder.
          */
-        if (cm->fb_idx_ref_cnt[cm->lst_fb_idx] > 1)
+
+        if(ref_fb->ref_cnt > 1)
         {
+            YV12_BUFFER_CONFIG *old_yv12_ref;
+            YV12_BUFFER_CONFIG *new_yv12_ref;
             /* The last reference shares buffer with another reference
              * buffer. Move it to its own buffer before setting it as
              * corrupt, otherwise we will make multiple buffers corrupt.
              */
-            const int prev_idx = cm->lst_fb_idx;
-            cm->fb_idx_ref_cnt[prev_idx]--;
-            cm->lst_fb_idx = get_free_fb(cm);
-            vp8_yv12_copy_frame(&cm->yv12_fb[prev_idx],
-                                    &cm->yv12_fb[cm->lst_fb_idx]);
+            struct fbnode *new_ref_fb;
+
+            old_yv12_ref = &ref_fb->yv12_fb;
+            /* remove reference from current buffer */
+            ref_fb->ref_cnt--;
+
+            /* find a free frame buffer */
+            new_ref_fb = get_free_fb(fb);
+            if(!new_ref_fb)
+            {
+                vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
+                                   "Could not find a free frame buffer.");
+                return pbi->common.error.error_code;
+            }
+
+            /* add into decoded list */
+            add_fb_to_decoded(fb, new_ref_fb, NULL);
+
+            /* add reference to current buffer */
+            new_ref_fb->ref_cnt++;
+
+            new_yv12_ref = &new_ref_fb->yv12_fb;
+
+            pbi->this_fb->this_ref_fb[LAST_FRAME] = new_ref_fb;
+
+            vp8_yv12_copy_frame(old_yv12_ref, new_yv12_ref);
         }
+
         /* This is used to signal that we are missing frames.
          * We do not know if the missing frame(s) was supposed to update
          * any of the reference buffers, but we act conservative and
          * mark only the last buffer as corrupted.
          */
-        cm->yv12_fb[cm->lst_fb_idx].corrupted = 1;
+        vp8_mark_last_as_corrupted(pbi);
 
         /* Signal that we have no frame to show. */
-        cm->show_frame = 0;
+        pbi->common.show_frame = 0;
 
         /* Nothing more to do. */
         return 0;
@@ -303,19 +718,27 @@ int check_fragments_for_errors(VP8D_COMP *pbi)
     return 1;
 }
 
-int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
+/*For ARM NEON, d8-d15 are callee-saved registers, and need to be saved by us.*/
+#if HAVE_NEON
+extern void vp8_push_neon(int64_t *store);
+extern void vp8_pop_neon(int64_t *store);
+#endif
+
+int vp8dx_receive_compressed_data(struct frame_buffers *fb, size_t size,
                                   const uint8_t *source,
-                                  int64_t time_stamp)
+                                  int64_t time_stamp, void *user_priv)
 {
 #if HAVE_NEON
     int64_t dx_store_reg[8];
 #endif
+    VP8D_COMP *pbi = fb->pbi[0];
     VP8_COMMON *cm = &pbi->common;
+    struct fbnode *this_fb;
     int retcode = -1;
 
     pbi->common.error.error_code = VPX_CODEC_OK;
 
-    retcode = check_fragments_for_errors(pbi);
+    retcode = check_fragments_for_errors(fb, pbi);
     if(retcode <= 0)
         return retcode;
 
@@ -328,13 +751,13 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     }
 #endif
 
-    cm->new_fb_idx = get_free_fb (cm);
-
-    /* setup reference frames for vp8_decode_frame */
-    pbi->dec_fb_ref[INTRA_FRAME]  = &cm->yv12_fb[cm->new_fb_idx];
-    pbi->dec_fb_ref[LAST_FRAME]   = &cm->yv12_fb[cm->lst_fb_idx];
-    pbi->dec_fb_ref[GOLDEN_FRAME] = &cm->yv12_fb[cm->gld_fb_idx];
-    pbi->dec_fb_ref[ALTREF_FRAME] = &cm->yv12_fb[cm->alt_fb_idx];
+    /* find a free frame buffer */
+    this_fb = get_free_fb(fb);
+    if(!this_fb)
+    {
+        pbi->common.error.error_code = VPX_CODEC_ERROR;
+        goto decode_exit;
+    }
 
     if (setjmp(pbi->common.error.jmp))
     {
@@ -342,32 +765,39 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
         * any of the reference buffers, but we act conservative and
         * mark only the last buffer as corrupted.
         */
-        cm->yv12_fb[cm->lst_fb_idx].corrupted = 1;
-
-        if (cm->fb_idx_ref_cnt[cm->new_fb_idx] > 0)
-          cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
-
+        vp8_mark_last_as_corrupted(pbi);
+        remove_fb_frome_decoded(fb, this_fb);
         goto decode_exit;
     }
+
+    /* update internal buffers, if a resolution change occurred */
+    update_frame_if_resize(fb, this_fb, pbi);
+
+    /* add into decoded list */
+    add_fb_to_decoded(fb, this_fb, user_priv);
+
+    this_fb->this_pbi = pbi;
+    this_fb->current_cx_frame = fb->cx_data_count;
+    this_fb->clr_type = pbi->common.clr_type;
 
     pbi->common.error.setjmp = 1;
 
     retcode = vp8_decode_frame(pbi);
 
+    this_fb->clr_type = pbi->common.clr_type;
+
     if (retcode < 0)
     {
-        if (cm->fb_idx_ref_cnt[cm->new_fb_idx] > 0)
-          cm->fb_idx_ref_cnt[cm->new_fb_idx]--;
-
+        remove_fb_frome_decoded(fb, this_fb);
         pbi->common.error.error_code = VPX_CODEC_ERROR;
         goto decode_exit;
     }
 
-    if (swap_frame_buffers (cm))
-    {
-        pbi->common.error.error_code = VPX_CODEC_ERROR;
-        goto decode_exit;
-    }
+    /* number of compressed frames */
+    fb->cx_data_count++;
+
+    pbi->this_fb->is_decoded = 1;
+    pbi->this_fb->show = pbi->common.show_frame;
 
     vp8_clear_system_state();
 
@@ -415,44 +845,57 @@ decode_exit:
     pbi->common.error.setjmp = 0;
     return retcode;
 }
-int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd, int64_t *time_stamp, int64_t *time_end_stamp, vp8_ppflags_t *flags)
+
+int vp8dx_get_raw_frame(struct frame_buffers *fb,
+                        YV12_BUFFER_CONFIG *sd,
+                        int64_t *time_stamp,
+                        int64_t *time_end_stamp,
+                        void **user_priv, vp8_ppflags_t *flags)
 {
     int ret = -1;
 
-    if (pbi->ready_for_new_data == 1)
-        return ret;
-
-    /* ie no raw frame to show!!! */
-    if (pbi->common.show_frame == 0)
-        return ret;
-
-    pbi->ready_for_new_data = 1;
-    *time_stamp = pbi->last_time_stamp;
-    *time_end_stamp = 0;
-
-    sd->clrtype = pbi->common.clr_type;
+    ret = vp8_get_to_show(fb);
+    if(!ret)
+    {
+        struct fbnode *to_show_fb = fb->decoded_to_show;
 #if CONFIG_POSTPROC
-    ret = vp8_post_proc_frame(&pbi->common, sd, flags);
+        VP8D_COMP *pbi = to_show_fb->this_pbi;
+
+        /* For now, copy post proc data into common. */
+        pbi->common.show_frame = 1;
+        vpx_memcpy(&pbi->common.post_proc_buffer, &fb->post_proc_buffer,
+                   sizeof(fb->post_proc_buffer));
+        vpx_memcpy(&pbi->common.post_proc_buffer_int, &fb->post_proc_buffer_int,
+                   sizeof(fb->post_proc_buffer_int));
+        pbi->common.post_proc_buffer_int_used = fb->post_proc_buffer_int_used;
+        pbi->common.pp_limits_buffer = fb->pp_limits_buffer;
+        vpx_memcpy(&pbi->common.postproc_state, &fb->postproc_state,
+                   sizeof(fb->postproc_state));
+
+        ret = vp8_post_proc_frame(&pbi->common, sd, flags);
+
+        /* save post proc data */
+        vpx_memcpy(&fb->post_proc_buffer, &pbi->common.post_proc_buffer,
+                   sizeof(fb->post_proc_buffer));
+        vpx_memcpy(&fb->post_proc_buffer_int, &pbi->common.post_proc_buffer_int,
+                   sizeof(fb->post_proc_buffer_int));
+        pbi->common.post_proc_buffer_int_used = fb->post_proc_buffer_int_used;
+        vpx_memcpy(&fb->postproc_state, &pbi->common.postproc_state,
+                   sizeof(fb->postproc_state));
+
+        vp8_clear_system_state();
 #else
-
-    if (pbi->common.frame_to_show)
-    {
-        *sd = *pbi->common.frame_to_show;
-        sd->y_width = pbi->common.Width;
-        sd->y_height = pbi->common.Height;
-        sd->uv_height = pbi->common.Height / 2;
-        ret = 0;
+        *sd = to_show_fb->yv12_fb;
+        sd->y_width = to_show_fb->y_width;
+        sd->y_height = to_show_fb->y_height;
+        sd->clrtype = to_show_fb->clr_type;
+#endif
+        *user_priv = (void *)to_show_fb->user_priv;
+        *time_stamp = to_show_fb->last_time_stamp;
+        *time_end_stamp = 0;
     }
-    else
-    {
-        ret = -1;
-    }
-
-#endif /*!CONFIG_POSTPROC*/
-    vp8_clear_system_state();
     return ret;
 }
-
 
 /* This function as written isn't decoder specific, but the encoder has
  * much faster ways of computing this, so it's ok for it to live in a
@@ -525,4 +968,27 @@ int vp8_remove_decoder_instances(struct frame_buffers *fb)
     }
 
     return VPX_CODEC_OK;
+}
+
+int vp8_adjust_decoder_frames(struct frame_buffers *fb, int width, int height)
+{
+    int ithread;
+    int num_decoder_instances = 1; /* single thread mode */
+
+    for (ithread = 0; ithread < num_decoder_instances; ithread++)
+    {
+        VP8_COMMON *cm = &fb->pbi[ithread]->common;
+        remove_decoder_frame(cm);
+    }
+
+    for (ithread = 0; ithread < num_decoder_instances; ithread++)
+    {
+        create_decoder_frame(fb->pbi[ithread], width, height);
+    }
+
+    fb->size_id += 1;
+    fb->new_y_width = width;
+    fb->new_y_height = height;
+
+    return 0;
 }

@@ -980,6 +980,149 @@ static void init_frame(VP8D_COMP *pbi)
 
 }
 
+void vp8_mark_last_as_corrupted(VP8D_COMP *pbi)
+{
+    if(pbi->this_fb->this_ref_fb[LAST_FRAME])
+        pbi->this_fb->this_ref_fb[LAST_FRAME]->yv12_fb.corrupted = 1;
+}
+
+static YV12_BUFFER_CONFIG * assign_reference(VP8D_COMP *pbi)
+{
+    VP8_COMMON * pc = & pbi->common;
+    YV12_BUFFER_CONFIG *yv12_fb_new;
+
+    if (pc->frame_type != KEY_FRAME)
+    {
+        struct fbnode * ref_fb = pbi->this_fb->prev;
+
+        pbi->this_fb->this_ref_fb[ALTREF_FRAME] = ref_fb->next_ref_fb[ALTREF_FRAME];
+        pbi->this_fb->this_ref_fb[GOLDEN_FRAME] = ref_fb->next_ref_fb[GOLDEN_FRAME];
+        pbi->this_fb->this_ref_fb[LAST_FRAME] = ref_fb->next_ref_fb[LAST_FRAME];
+
+        pbi->this_fb->this_ref_fb[INTRA_FRAME] = pbi->this_fb;
+    }
+    else
+    {
+        pbi->this_fb->this_ref_fb[INTRA_FRAME] = pbi->this_fb;
+
+        if(pbi->this_fb->this_ref_fb[INTRA_FRAME]->current_cx_frame)
+        {
+            /* cleanup any assumptions made */
+            struct fbnode * ref_fb = pbi->this_fb->prev;
+            ref_fb->next_ref_fb[ALTREF_FRAME]->ref_cnt -= 1;
+            ref_fb->next_ref_fb[GOLDEN_FRAME]->ref_cnt -= 1;
+            ref_fb->next_ref_fb[LAST_FRAME]->ref_cnt -= 1;
+        }
+
+        pbi->this_fb->this_ref_fb[ALTREF_FRAME] =
+        pbi->this_fb->this_ref_fb[GOLDEN_FRAME] =
+        pbi->this_fb->this_ref_fb[LAST_FRAME] = pbi->this_fb;
+
+        pbi->this_fb->next_ref_fb[ALTREF_FRAME] =
+        pbi->this_fb->next_ref_fb[GOLDEN_FRAME] =
+        pbi->this_fb->next_ref_fb[LAST_FRAME] = pbi->this_fb;
+
+        pbi->this_fb->ref_cnt = 0;
+    }
+
+    pbi->dec_fb_ref[ALTREF_FRAME] = &pbi->this_fb->this_ref_fb[ALTREF_FRAME]->yv12_fb;
+    pbi->dec_fb_ref[GOLDEN_FRAME] = &pbi->this_fb->this_ref_fb[GOLDEN_FRAME]->yv12_fb;
+    pbi->dec_fb_ref[LAST_FRAME] = &pbi->this_fb->this_ref_fb[LAST_FRAME]->yv12_fb;
+    yv12_fb_new =
+    pbi->dec_fb_ref[INTRA_FRAME] = &pbi->this_fb->this_ref_fb[INTRA_FRAME]->yv12_fb;
+
+    yv12_fb_new->corrupted = 0;
+
+    return yv12_fb_new;
+}
+
+static void assign_nextframe_reference(VP8D_COMP *pbi)
+{
+    VP8_COMMON * pc = & pbi->common;
+
+    /**/
+    pbi->this_fb->y_width = pc->Width;
+    pbi->this_fb->y_height = pc->Height;
+
+    pbi->this_fb->is_refresh_last = pc->refresh_last_frame;
+    pc->frame_to_show = &pbi->this_fb->yv12_fb;
+
+    /* for testing/debugging purposes */
+    pbi->this_fb->is_key = (pc->frame_type == KEY_FRAME) ? 1 : 0;
+
+    /* default ref frame assignment.... may be overridden */
+    pbi->this_fb->next_ref_fb[ALTREF_FRAME] = pbi->this_fb->this_ref_fb[ALTREF_FRAME];
+    pbi->this_fb->next_ref_fb[GOLDEN_FRAME] = pbi->this_fb->this_ref_fb[GOLDEN_FRAME];
+    pbi->this_fb->next_ref_fb[LAST_FRAME] = pbi->this_fb->this_ref_fb[LAST_FRAME];
+
+    if(pc->refresh_last_frame)
+    {
+        pbi->this_fb->next_ref_fb[LAST_FRAME] = pbi->this_fb->this_ref_fb[INTRA_FRAME];
+    }
+
+    if (pc->copy_buffer_to_arf)
+    {
+        if (pc->copy_buffer_to_arf == 1)
+        {
+            pbi->this_fb->next_ref_fb[ALTREF_FRAME] = pbi->this_fb->this_ref_fb[LAST_FRAME];
+        }
+        else
+        {
+            pbi->this_fb->next_ref_fb[ALTREF_FRAME] = pbi->this_fb->this_ref_fb[GOLDEN_FRAME];
+        }
+        /* for testing/debugging purposes */
+        pbi->this_fb->next_ref_fb[ALTREF_FRAME]->is_alt = 1;
+    }
+    if (pc->copy_buffer_to_gf)
+    {
+        if (pc->copy_buffer_to_gf == 1)
+        {
+            pbi->this_fb->next_ref_fb[GOLDEN_FRAME] = pbi->this_fb->this_ref_fb[LAST_FRAME];
+        }
+        else
+        {
+            pbi->this_fb->next_ref_fb[GOLDEN_FRAME] = pbi->this_fb->this_ref_fb[ALTREF_FRAME];
+        }
+        /* for testing/debugging purposes */
+        pbi->this_fb->next_ref_fb[GOLDEN_FRAME]->is_gld = 1;
+    }
+    if (pc->refresh_golden_frame)
+    {
+        pbi->this_fb->next_ref_fb[GOLDEN_FRAME] = pbi->this_fb->this_ref_fb[INTRA_FRAME];
+        /* for testing/debugging purposes */
+        pbi->this_fb->next_ref_fb[GOLDEN_FRAME]->is_gld = 1;
+    }
+
+    if (pc->refresh_alt_ref_frame)
+    {
+        pbi->this_fb->next_ref_fb[ALTREF_FRAME] = pbi->this_fb->this_ref_fb[INTRA_FRAME];
+        /* for testing/debugging purposes */
+        pbi->this_fb->next_ref_fb[ALTREF_FRAME]->is_alt = 1;
+    }
+
+    pbi->this_fb->next_ref_fb[ALTREF_FRAME]->ref_cnt += 1;
+    pbi->this_fb->next_ref_fb[GOLDEN_FRAME]->ref_cnt += 1;
+    pbi->this_fb->next_ref_fb[LAST_FRAME]->ref_cnt += 1;
+
+#if 0
+printf("rL: %d rG: %d rA: %d cG: %d cA: %d refcnt %d cx_frame_num %d\n", pc->refresh_last_frame,
+       pc->refresh_golden_frame, pc->refresh_alt_ref_frame, pc->copy_buffer_to_gf,
+       pc->copy_buffer_to_arf, pbi->this_fb->this_ref_fb[INTRA_FRAME]->ref_cnt, pbi->this_fb->current_cx_frame);
+#endif
+}
+
+void update_frame_refcnt(VP8D_COMP *pbi)
+{
+    /* */
+    if(pbi->this_fb->this_ref_fb[INTRA_FRAME]->current_cx_frame
+            && pbi->common.frame_type != KEY_FRAME)
+    {
+        pbi->this_fb->this_ref_fb[ALTREF_FRAME]->ref_cnt -= 1;
+        pbi->this_fb->this_ref_fb[GOLDEN_FRAME]->ref_cnt -= 1;
+        pbi->this_fb->this_ref_fb[LAST_FRAME]->ref_cnt -= 1;
+    }
+}
+
 int vp8_decode_frame(VP8D_COMP *pbi)
 {
     vp8_reader *const bc = &pbi->mbc[8];
@@ -995,11 +1138,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
     int corrupt_tokens = 0;
     int prev_independent_partitions = pbi->independent_partitions;
 
-    YV12_BUFFER_CONFIG *yv12_fb_new = pbi->dec_fb_ref[INTRA_FRAME];
-
-    /* start with no corruption of current frame */
-    xd->corrupted = 0;
-    yv12_fb_new->corrupted = 0;
+    YV12_BUFFER_CONFIG *yv12_fb_new;
 
     if (data_end - data < 3)
     {
@@ -1085,16 +1224,13 @@ int vp8_decode_frame(VP8D_COMP *pbi)
             data += 7;
 
         }
-        else
-        {
-          vpx_memcpy(&xd->pre, yv12_fb_new, sizeof(YV12_BUFFER_CONFIG));
-          vpx_memcpy(&xd->dst, yv12_fb_new, sizeof(YV12_BUFFER_CONFIG));
-        }
     }
     if ((!pbi->decoded_key_frame && pc->frame_type != KEY_FRAME))
     {
         return -1;
     }
+
+    yv12_fb_new = assign_reference(pbi);
 
     init_frame(pbi);
 
@@ -1308,6 +1444,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
         pc->refresh_last_frame = 1;
 #endif
 
+    assign_nextframe_reference(pbi);
+
     if (0)
     {
         FILE *z = fopen("decodestats.stt", "a");
@@ -1411,6 +1549,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
         fclose(f);
     }
 #endif
+
+    update_frame_refcnt(pbi);
 
     return 0;
 }

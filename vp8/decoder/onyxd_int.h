@@ -45,17 +45,82 @@ typedef struct
 
 #define MAX_FB_MT_DEC 32
 
+struct fbnode
+{
+    YV12_BUFFER_CONFIG yv12_fb;
+
+    /* debug / testing purposes */
+    unsigned int is_key;
+    unsigned int is_gld;
+    unsigned int is_alt;
+    unsigned int is_refresh_last;
+    unsigned int frame_id;
+    /* debug / testing purposes */
+
+    unsigned int is_decoded;
+    unsigned int show;
+
+    int64_t last_time_stamp;
+
+    YUV_TYPE clr_type;              /* color type */
+
+    /* for vp8dx_get_raw_frame () */
+    int y_width;
+    int y_height;
+
+    void *user_priv;
+
+    int current_cx_frame;
+
+    int ref_cnt;
+    int ithread;
+    unsigned int size_id;
+
+    struct VP8D_COMP *this_pbi;
+
+    struct fbnode *this_ref_fb[NUM_YV12_BUFFERS];
+    struct fbnode *next_ref_fb[NUM_YV12_BUFFERS];
+
+    struct fbnode *next;
+    struct fbnode *prev;
+};
+
+
 struct frame_buffers
 {
-    /*
-     * this struct will be populated with frame buffer management
-     * info in future commits. */
+    struct fbnode *free_alloc;
+
+    struct fbnode *free;
+
+    struct fbnode *decoded;
+
+    struct fbnode *decoded_head;
+
+    /* decoded frame buffer ready to show */
+    struct fbnode *decoded_to_show;
+
+    unsigned int decoded_size;
+    unsigned int max_allocated_frames;
+    unsigned int size_id;
+    unsigned int new_y_width;
+    unsigned int new_y_height;
+
+    unsigned int cx_data_count;
 
     /* enable/disable frame-based threading */
     int     use_frame_threads;
 
     /* decoder instances */
     struct VP8D_COMP *pbi[MAX_FB_MT_DEC];
+
+    /* post proc data */
+#if CONFIG_POSTPROC
+    YV12_BUFFER_CONFIG post_proc_buffer;
+    YV12_BUFFER_CONFIG post_proc_buffer_int;
+    int post_proc_buffer_int_used;
+    unsigned char *pp_limits_buffer;   /* post-processing filter coefficients */
+    struct postproc_state  postproc_state;
+#endif
 
 };
 
@@ -64,6 +129,8 @@ typedef struct VP8D_COMP
     DECLARE_ALIGNED(16, MACROBLOCKD, mb);
 
     YV12_BUFFER_CONFIG *dec_fb_ref[NUM_YV12_BUFFERS];
+
+    struct fbnode *this_fb;
 
     DECLARE_ALIGNED(16, VP8_COMMON, common);
 
@@ -129,6 +196,14 @@ int vp8_decode_frame(VP8D_COMP *cpi);
 
 int vp8_create_decoder_instances(struct frame_buffers *fb, VP8D_CONFIG *oxcf);
 int vp8_remove_decoder_instances(struct frame_buffers *fb);
+int vp8_create_frame_pool(struct frame_buffers *fb, unsigned int max_frames);
+int vp8_destroy_frame_pool(struct frame_buffers *fb);
+int vp8_adjust_decoder_frames(struct frame_buffers *fb, int width, int height);
+int vp8dx_create_postproc_frame(struct frame_buffers *fb,
+                                int width, int height);
+void vp8dx_remove_postproc_frame(struct frame_buffers *fb);
+
+void vp8_mark_last_as_corrupted(VP8D_COMP *pbi);
 
 #if CONFIG_DEBUG
 #define CHECK_MEM_ERROR(lval,expr) do {\

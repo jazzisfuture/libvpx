@@ -168,6 +168,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
       bool has_cxdata = false;
       bool has_dxdata = false;
+      const vpx_image_t *img_dec;
+
       while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
         pkt = MutateEncoderOutputHook(pkt);
         again = true;
@@ -179,7 +181,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
                   (const uint8_t*)pkt->data.frame.buf, pkt->data.frame.sz);
               ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
               has_dxdata = true;
-            }
+              DxDataIterator dec_iter = decoder->GetDxData();
+              img_dec = dec_iter.Next();
+        }
             ASSERT_GE(pkt->data.frame.pts, last_pts_);
             last_pts_ = pkt->data.frame.pts;
             FramePktHook(pkt);
@@ -196,8 +200,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
       if (has_dxdata && has_cxdata) {
         const vpx_image_t *img_enc = encoder->GetPreviewFrame();
-        DxDataIterator dec_iter = decoder->GetDxData();
-        const vpx_image_t *img_dec = dec_iter.Next();
+//        DxDataIterator dec_iter = decoder->GetDxData();
+  //      const vpx_image_t *img_dec = dec_iter.Next();
         if (img_enc && img_dec) {
           const bool res = compare_img(img_enc, img_dec);
           if (!res) {  // Mismatch
