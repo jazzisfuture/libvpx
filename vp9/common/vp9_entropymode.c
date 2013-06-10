@@ -152,18 +152,18 @@ static const vp9_prob default_single_ref_p[REF_CONTEXTS][2] = {
 #if TX_SIZE_CONTEXTS == 2
 const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
                                           [TX_SIZE_MAX_SB - 1] = {
-  { 16, 32, 64, },
-  { 16, 32, 64, },
+  { 3, 148, 32, },
+  { 4, 58, 11, },
 };
 const vp9_prob vp9_default_tx_probs_16x16p[TX_SIZE_CONTEXTS]
                                           [TX_SIZE_MAX_SB - 2] = {
-  { 32, 64, },
-  { 32, 64, },
+  { 22, 153, },
+  { 15, 100, },
 };
 const vp9_prob vp9_default_tx_probs_8x8p[TX_SIZE_CONTEXTS]
                                         [TX_SIZE_MAX_SB - 3] = {
-  { 64, },
-  { 64, },
+  { 104, },
+  { 69, },
 };
 #else
 const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
@@ -254,7 +254,10 @@ const INTERPOLATIONFILTERTYPE vp9_switchable_interp[VP9_SWITCHABLE_FILTERS] = {
 const int vp9_switchable_interp_map[SWITCHABLE+1] = {1, 0, 2, -1, -1};
 const vp9_prob vp9_switchable_interp_prob [VP9_SWITCHABLE_FILTERS+1]
                                           [VP9_SWITCHABLE_FILTERS-1] = {
-  {248, 192}, { 32, 248}, { 32,  32}, {192, 160}
+  { 237, 137, },
+  { 43, 254, },
+  { 43, 3, },
+  { 156, 111, },
 };
 
 // Indicates if the filter is interpolating or non-interpolating
