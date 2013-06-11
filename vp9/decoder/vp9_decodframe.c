@@ -1078,9 +1078,13 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
       check_sync_code(cm, rb);
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, NUM_REF_FRAMES);
+
+      for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
+        cm->active_ref_idx[i] = cm->new_fb_idx;
+
       setup_frame_size(pbi, rb);
     } else {
-       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, NUM_REF_FRAMES);
+      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, NUM_REF_FRAMES);
 
       for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
         const int ref = vp9_rb_read_literal(rb, NUM_REF_FRAMES_LG2);
