@@ -724,16 +724,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       }
     }
 
-    if (cpi->common.mcomp_filter_type == SWITCHABLE) {
-      write_token(bc, vp9_switchable_interp_tree,
-                  vp9_get_pred_probs(&cpi->common, xd,
-                                     PRED_SWITCHABLE_INTERP),
-                  vp9_switchable_interp_encodings +
-                  vp9_switchable_interp_map[mi->interp_filter]);
-    } else {
-      assert(mi->interp_filter == cpi->common.mcomp_filter_type);
-    }
-
     if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
       int j;
       MB_PREDICTION_MODE blockmode;
@@ -775,6 +765,21 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         vp9_encode_mv(bc,
                       &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
                       nmvc, xd->allow_high_precision_mv);
+    }
+
+    if (is_inter_mode(mi->mode) &&
+        cpi->common.mcomp_filter_type == SWITCHABLE) {
+      if (!is_intpel_mv(xd)) {
+        write_token(bc, vp9_switchable_interp_tree,
+                    vp9_get_pred_probs(&cpi->common, xd,
+                                       PRED_SWITCHABLE_INTERP),
+                    vp9_switchable_interp_encodings +
+                    vp9_switchable_interp_map[mi->interp_filter]);
+      } else {
+        assert(mi->interp_filter == EIGHTTAP);
+      }
+    } else {
+      assert(mi->interp_filter == cpi->common.mcomp_filter_type);
     }
   }
 }

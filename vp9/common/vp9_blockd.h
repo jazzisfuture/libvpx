@@ -906,5 +906,11 @@ static void set_contexts_on_border(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
     L[pt] = 0;
 }
 
-
+static INLINE int is_intpel_mv(MACROBLOCKD *xd) {
+  if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+    return 0;
+  } else {
+    return (xd->mode_info_context->mbmi.mode == ZEROMV);
+  }
+}
 #endif  // VP9_COMMON_VP9_BLOCKD_H_

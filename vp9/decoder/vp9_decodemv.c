@@ -476,13 +476,18 @@ static INLINE void decode_mv(vp9_reader *r, MV *mv, const MV *ref,
 
 static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
     VP9D_COMP *pbi, vp9_reader *r) {
+  MACROBLOCKD *xd = &pbi->mb;
+  if (!is_intpel_mv(xd)) {
   const int index = treed_read(r, vp9_switchable_interp_tree,
-                               vp9_get_pred_probs(&pbi->common, &pbi->mb,
+                               vp9_get_pred_probs(&pbi->common, xd,
                                                   PRED_SWITCHABLE_INTERP));
   ++pbi->common.fc.switchable_interp_count
-                [vp9_get_pred_context(
-                    &pbi->common, &pbi->mb, PRED_SWITCHABLE_INTERP)][index];
+      [vp9_get_pred_context(
+          &pbi->common, xd, PRED_SWITCHABLE_INTERP)][index];
   return vp9_switchable_interp[index];
+  } else {
+    return EIGHTTAP;
+  }
 }
 
 static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
@@ -602,10 +607,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                mv_ref_p[0], mv_ref_p[1], mv_ref_p[2], mv_ref_p[3]);
 #endif
     }
-
-    mbmi->interp_filter = cm->mcomp_filter_type == SWITCHABLE
-                              ? read_switchable_filter_type(pbi, r)
-                              : cm->mcomp_filter_type;
 
     if (mbmi->ref_frame[1] > INTRA_FRAME) {
       vp9_find_mv_refs(cm, xd, mi, xd->prev_mode_info_context,
@@ -758,6 +759,9 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           break;
       }
     }
+    mbmi->interp_filter = cm->mcomp_filter_type == SWITCHABLE ?
+        read_switchable_filter_type(pbi, r) : cm->mcomp_filter_type;
+
   } else {
     // required for left and above block mv
     mv0->as_int = 0;

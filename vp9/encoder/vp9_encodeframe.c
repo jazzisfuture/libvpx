@@ -455,9 +455,11 @@ static void update_state(VP9_COMP *cpi,
 
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         is_inter_mode(mbmi->mode)) {
-      ++cpi->common.fc.switchable_interp_count
-          [vp9_get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
-          [vp9_switchable_interp_map[mbmi->interp_filter]];
+      if (!is_intpel_mv(xd)) {
+        ++cpi->common.fc.switchable_interp_count
+            [vp9_get_pred_context(&cpi->common, xd, PRED_SWITCHABLE_INTERP)]
+            [vp9_switchable_interp_map[mbmi->interp_filter]];
+      }
     }
 
     cpi->rd_comp_pred_diff[SINGLE_PREDICTION_ONLY] += ctx->single_pred_diff;
