@@ -1287,14 +1287,16 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   }
 
   // PARTITION_HORZ
-    if ((bsize >= BLOCK_SIZE_SB8X8) && (mi_col + ms <= cm->mi_cols)) {
+  if ((bsize >= BLOCK_SIZE_SB8X8) &&
+      (mi_row + (ms >> 1) < cm->mi_rows)) {
     int r2, d2;
     subsize = get_subsize(bsize, PARTITION_HORZ);
     *(get_sb_index(xd, subsize)) = 0;
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
                   get_block_context(x, subsize));
 
-    if (mi_row + (ms >> 1) < cm->mi_rows) {
+    // if (mi_row + (ms >> 1) < cm->mi_rows)
+    {
       int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
@@ -1318,13 +1320,15 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   }
 
   // PARTITION_VERT
-  if ((bsize >= BLOCK_SIZE_SB8X8) && (mi_row + ms <= cm->mi_rows)) {
+  if ((bsize >= BLOCK_SIZE_SB8X8) &&
+      (mi_col + (ms >> 1) < cm->mi_cols)) {
     int r2, d2;
     subsize = get_subsize(bsize, PARTITION_VERT);
     *(get_sb_index(xd, subsize)) = 0;
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
                   get_block_context(x, subsize));
-    if (mi_col + (ms >> 1) < cm->mi_cols) {
+    // if (mi_col + (ms >> 1) < cm->mi_cols)
+    {
       int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
@@ -1348,7 +1352,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   }
 
   // PARTITION_NONE
-  if (mi_row + ms <= cm->mi_rows && mi_col + ms <= cm->mi_cols) {
+  if ((mi_row + (ms >> 1) < cm->mi_rows) &&
+      (mi_col + (ms >> 1) < cm->mi_cols)) {
     int r, d;
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, bsize,
                   get_block_context(x, bsize));
