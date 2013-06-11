@@ -130,6 +130,16 @@ struct macroblock {
 
   int encode_breakout;
 
+  // Threshold for determining that mode is unsuitable based on prediction
+  // residual error.
+  int abort_mode;
+  int64_t residual_error_thresh;
+  int64_t cached_residual;
+  int64_t best_residual_error_so_far;
+  int residual_breakout_enabled;
+
+  int skip_this_mode;
+
   unsigned char *active_ptr;
 
   // note that token_costs is the cost when eob node is skipped

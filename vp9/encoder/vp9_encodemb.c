@@ -19,6 +19,10 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9_rtcd.h"
 
+extern int residual_breakout_test(MACROBLOCK *mb, int plane,
+                           int16_t const * const residual, int width,
+                           int height, int stride);
+
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
 
@@ -578,6 +582,23 @@ void vp9_encode_sb(VP9_COMMON *cm, MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
   foreach_transformed_block(xd, bsize, encode_block, &arg);
 }
 
+int64_t block_sse(const int16_t * const src_ptr, int width, int height,
+                  int stride) {
+  int i, j;
+  int64_t error = 0;
+  int16_t const *ptr = src_ptr;
+
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      int this_val = ptr[j];
+      error += (unsigned)this_val * this_val;
+    }
+    ptr += stride;
+  }
+
+  return error;
+}
+
 void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
                                int ss_txfrm_size, void *arg) {
   struct encode_b_args* const args = arg;
@@ -589,6 +610,7 @@ void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block, 16);
   const int bw = plane_block_width(bsize, pd);
+  const int bh = plane_block_height(bsize, pd);
   const int raster_block = txfrm_block_to_raster_block(xd, bsize, plane,
                                                        block, ss_txfrm_size);
 
@@ -607,6 +629,9 @@ void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
 
   TX_TYPE tx_type;
   int mode, b_mode;
+
+  if (x->abort_mode)
+    return;
 
   if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0) {
     extend_for_intra(xd, plane, block, bsize, ss_txfrm_size);
@@ -629,8 +654,15 @@ void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   vp9_subtract_block(txfm_b_size, txfm_b_size, src_diff, bw,
                      src, p->src.stride, dst, pd->dst.stride);
 
-  xform_quant(plane, block, bsize, ss_txfrm_size, arg);
+  // Test for breakout based on prediction error residual energy.
+  x->abort_mode = ((x->residual_breakout_enabled) ?
+      residual_breakout_test(x, plane, src_diff, bw, bh, bw) : 0);
 
+  if (x->abort_mode) {
+    return;
+  }
+
+  xform_quant(plane, block, bsize, ss_txfrm_size, arg);
 
   // if (x->optimize)
   // vp9_optimize_b(plane, block, bsize, ss_txfrm_size,

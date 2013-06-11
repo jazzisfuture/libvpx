@@ -36,8 +36,7 @@ extern "C" {
   {
     REG_YUV = 0,    /* Regular yuv */
     INT_YUV = 1     /* The type of yuv that can be tranfer to and from RGB through integer transform */
-  }
-            YUV_TYPE;
+  } YUV_TYPE;
 
   typedef struct yv12_buffer_config {
     int   y_width;
