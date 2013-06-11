@@ -317,6 +317,8 @@ static int check_bsize_coverage(VP9_COMMON *cm, MACROBLOCKD *xd,
     return 0;
   if ((mi_col + bs <= cm->mi_cols) && (mi_row + ms < cm->mi_rows))
     return 0;
+  if ((mi_row + ms < cm->mi_rows) && (mi_col + ms < cm->mi_cols))
+    return 0;
 
   // frame width/height are multiples of 8, hence 8x8 block should always
   // pass the above check
