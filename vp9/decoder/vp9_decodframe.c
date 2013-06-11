@@ -538,21 +538,19 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
 }
 
 static void setup_token_decoder(VP9D_COMP *pbi,
-                                const uint8_t *data,
+                                const uint8_t *data, size_t read_size,
                                 vp9_reader *r) {
   VP9_COMMON *pc = &pbi->common;
   const uint8_t *data_end = pbi->source + pbi->source_sz;
-  const size_t partition_size = data_end - data;
 
   // Validate the calculated partition length. If the buffer
   // described by the partition can't be fully read, then restrict
   // it to the portion that can be (for EC mode) or throw an error.
-  if (!read_is_valid(data, partition_size, data_end))
+  if (!read_is_valid(data, read_size, data_end))
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                       "Truncated packet or corrupt partition "
-                       "%d length", 1);
+                       "Truncated packet or corrupt tile length");
 
-  if (vp9_reader_init(r, data, partition_size))
+  if (vp9_reader_init(r, data, read_size))
     vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder %d", 1);
 }
@@ -901,6 +899,7 @@ static void decode_tiles(VP9D_COMP *pbi,
   if (pbi->oxcf.inv_tile_order) {
     const int n_cols = pc->tile_columns;
     const uint8_t *data_ptr2[4][1 << 6];
+    size_t sizes[4][1 << 6];
     vp9_reader bc_bak = {0};
 
     // pre-initialize the offsets, we're going to read in inverse order
@@ -910,6 +909,7 @@ static void decode_tiles(VP9D_COMP *pbi,
         const int size = read_be32(data_ptr2[tile_row - 1][n_cols - 1]);
         data_ptr2[tile_row - 1][n_cols - 1] += 4;
         data_ptr2[tile_row][0] = data_ptr2[tile_row - 1][n_cols - 1] + size;
+        sizes[tile_row][0] = size;
       }
 
       for (tile_col = 1; tile_col < n_cols; tile_col++) {
@@ -917,6 +917,7 @@ static void decode_tiles(VP9D_COMP *pbi,
         data_ptr2[tile_row][tile_col - 1] += 4;
         data_ptr2[tile_row][tile_col] =
             data_ptr2[tile_row][tile_col - 1] + size;
+        sizes[tile_row][tile_col] = size;
       }
     }
 
@@ -924,7 +925,8 @@ static void decode_tiles(VP9D_COMP *pbi,
       vp9_get_tile_row_offsets(pc, tile_row);
       for (tile_col = n_cols - 1; tile_col >= 0; tile_col--) {
         vp9_get_tile_col_offsets(pc, tile_col);
-        setup_token_decoder(pbi, data_ptr2[tile_row][tile_col], residual_bc);
+        setup_token_decoder(pbi, data_ptr2[tile_row][tile_col],
+                            sizes[tile_row][tile_col], residual_bc);
         decode_tile(pbi, residual_bc);
         if (tile_row == pc->tile_rows - 1 && tile_col == n_cols - 1)
           bc_bak = *residual_bc;
@@ -933,22 +935,31 @@ static void decode_tiles(VP9D_COMP *pbi,
     *residual_bc = bc_bak;
   } else {
     int has_more;
+    const uint8_t* const data_end = pbi->source + pbi->source_sz;
 
     for (tile_row = 0; tile_row < pc->tile_rows; tile_row++) {
       vp9_get_tile_row_offsets(pc, tile_row);
       for (tile_col = 0; tile_col < pc->tile_columns; tile_col++) {
+        size_t size;
+
         vp9_get_tile_col_offsets(pc, tile_col);
 
         has_more = tile_col < pc->tile_columns - 1 ||
                    tile_row < pc->tile_rows - 1;
-
-        setup_token_decoder(pbi, data_ptr + (has_more ? 4 : 0), residual_bc);
-        decode_tile(pbi, residual_bc);
-
         if (has_more) {
-          const int size = read_be32(data_ptr);
-          data_ptr += 4 + size;
+          if (!read_is_valid(data_ptr, 4, data_end))
+            vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
+                         "Truncated packet or corrupt tile length");
+
+          size = read_be32(data_ptr);
+          data_ptr += 4;
+        } else {
+          size = data_end - data_ptr;
         }
+
+        setup_token_decoder(pbi, data_ptr, size, residual_bc);
+        decode_tile(pbi, residual_bc);
+        data_ptr += size;
       }
     }
   }
@@ -1145,7 +1156,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   if (!read_is_valid(data, first_partition_size, data_end))
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                       "Truncated packet or corrupt partition 0 length");
+                       "Truncated packet or corrupt header length");
 
   xd->mode_info_context = pc->mi;
   xd->prev_mode_info_context = pc->prev_mi;
