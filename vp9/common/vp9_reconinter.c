@@ -513,16 +513,28 @@ void vp9_build_inter4x4_predictors_mbuv(MACROBLOCKD *xd,
 }
 
 // TODO(dkovalev: find better place for this function)
-void vp9_setup_scale_factors(VP9_COMMON *cm, int i) {
+int vp9_setup_scale_factors(VP9_COMMON *cm, int i) {
   const int ref = cm->active_ref_idx[i];
   struct scale_factors *const sf = &cm->active_ref_scale[i];
   if (ref >= NUM_YV12_BUFFERS) {
     memset(sf, 0, sizeof(*sf));
   } else {
     YV12_BUFFER_CONFIG *const fb = &cm->yv12_fb[ref];
+
+    // check scaling ratios and maximum supported frame dimensions with scaling
+    if ((cm->width > (1 << VP9_REF_SCALE_SHIFT))      ||
+        (cm->height > (1 << VP9_REF_SCALE_SHIFT))     ||
+        (((fb->y_crop_width + 1) >> 1) > cm->width)   ||  // max downscaling 2:1
+        (((fb->y_crop_height + 1) >> 1) > cm->height) ||
+        ((fb->y_crop_width << 4) < cm->width)         ||  // max upscaling 16:1
+        ((fb->y_crop_height << 4) < cm->height)) {
+      return -1;
+    }
+
     vp9_setup_scale_factors_for_frame(sf,
                                       fb->y_crop_width, fb->y_crop_height,
                                       cm->width, cm->height);
   }
+  return 0;
 }
 

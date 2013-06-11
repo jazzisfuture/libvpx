@@ -3635,8 +3635,10 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
                            VP9BORDERINPIXELS);
 
   // Calculate scaling factors for each of the 3 available references
-  for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
-    vp9_setup_scale_factors(cm, i);
+  for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
+    if (vp9_setup_scale_factors(cm, i))
+      return -2;
+  }
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
 

@@ -682,6 +682,7 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
     int64_t dst_time_stamp, dst_end_time_stamp;
     unsigned long size, cx_data_sz;
     unsigned char *cx_data;
+    int ret = 0;
 
     /* Set up internal flags */
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR)
@@ -727,10 +728,17 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
       }
     }
 
-    while (cx_data_sz >= ctx->cx_data_sz / 2 &&
-           -1 != vp9_get_compressed_data(ctx->cpi, &lib_flags, &size,
+    while (cx_data_sz >= ctx->cx_data_sz / 2) {
+      ret = vp9_get_compressed_data(ctx->cpi, &lib_flags, &size,
                                          cx_data, &dst_time_stamp,
-                                         &dst_end_time_stamp, !img)) {
+                                         &dst_end_time_stamp, !img);
+      if (ret == -1)
+        break;
+      else if (ret == -2) {
+        ctx->base.err_detail = "Scaling ratio not supported";
+        return VPX_CODEC_ERROR;
+      }
+
       if (size) {
         vpx_codec_pts_t    round, delta;
         vpx_codec_cx_pkt_t pkt;

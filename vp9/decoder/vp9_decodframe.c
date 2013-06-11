@@ -1100,8 +1100,12 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
       xd->allow_high_precision_mv = vp9_rb_read_bit(rb);
       cm->mcomp_filter_type = read_interp_filter_type(rb);
 
-      for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
-        vp9_setup_scale_factors(cm, i);
+      for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
+        if (vp9_setup_scale_factors(cm, i)) {
+          vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                             "Scaling ratio not supported");
+        }
+      }
 
       setup_inter_inter(cm);
     }

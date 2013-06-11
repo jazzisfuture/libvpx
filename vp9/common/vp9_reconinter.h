@@ -125,6 +125,6 @@ static void set_scale_factors(MACROBLOCKD *xd,
   xd->scale_factor_uv[1] = xd->scale_factor[1];
 }
 
-void vp9_setup_scale_factors(VP9_COMMON *cm, int i);
+int vp9_setup_scale_factors(VP9_COMMON *cm, int i);
 
 #endif  // VP9_COMMON_VP9_RECONINTER_H_
