@@ -2199,6 +2199,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   pred_exists = 0;
   interpolating_intpel_seen = 0;
   // Are all MVs integer pel for Y and UV
+  *best_filter = EIGHTTAP;
   intpel_mv = (mbmi->mv[0].as_mv.row & 15) == 0 &&
               (mbmi->mv[0].as_mv.col & 15) == 0;
   if (is_comp_pred)
@@ -2206,7 +2207,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                  (mbmi->mv[1].as_mv.col & 15) == 0;
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used
-  if (cpi->speed > 4) {
+  if (cpi->speed > 4 || is_intpel_mv(xd)) {
     *best_filter = EIGHTTAP;
   } else {
     int i, newbest;
@@ -2265,7 +2266,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->interp_filter = cm->mcomp_filter_type != SWITCHABLE ?
                              cm->mcomp_filter_type : *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
-
 
   if (pred_exists) {
     int p;
