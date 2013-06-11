@@ -789,8 +789,8 @@ static void setup_inter_inter(VP9_COMMON *cm) {
   int i;
 
   cm->allow_comp_inter_inter = 0;
-  for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i) {
-    cm->allow_comp_inter_inter |= i > 0 &&
+  for (i = 1; i < ALLOWED_REFS_PER_FRAME; ++i) {
+    cm->allow_comp_inter_inter |=
         cm->ref_frame_sign_bias[i + 1] != cm->ref_frame_sign_bias[1];
   }
 

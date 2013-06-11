@@ -116,6 +116,9 @@ static int rd_thresh_block_size_factor[BLOCK_SIZE_TYPES] =
 #define MAX_RD_THRESH_FREQ_FACT 32
 #define MAX_RD_THRESH_FREQ_INC 1
 
+extern int64_t block_sse(const int16_t * const src_ptr, int width, int height,
+                  int stride);
+
 static void fill_token_costs(vp9_coeff_count (*c)[BLOCK_TYPES][2],
                              vp9_coeff_probs_model (*p)[BLOCK_TYPES]) {
   int i, j, k, l;
@@ -778,6 +781,32 @@ static int64_t block_error_sbuv(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize,
   return sum >> shift;
 }
 
+int residual_breakout_test(MACROBLOCK *mb, int plane,
+                           int16_t const * const residual, int width,
+                           int height, int stride) {
+  int64_t residual_error = block_sse(residual, width, height, stride);;
+
+  // Test for breakout based on prediction error residual energy.
+  if (plane == 1) {
+    // Keep U's residual error add to V's later.
+    mb->cached_residual = residual_error;
+  }
+
+  if (plane == 2) {
+    // Add U's residual error to V's.
+    residual_error += mb->cached_residual;
+  }
+
+  if (residual_error > mb->residual_error_thresh) {
+    return 1;
+  } else if ((plane != 1) &&
+      (residual_error < mb->best_residual_error_so_far)) {
+    mb->best_residual_error_so_far = residual_error;
+    mb->residual_error_thresh = residual_error * 3 / 2;
+  }
+  return 0;
+}
+
 static void block_yrd_txfm(int plane, int block, BLOCK_SIZE_TYPE bsize,
                            int ss_txfrm_size, void *arg) {
   struct rdcost_block_args *args = arg;
@@ -795,13 +824,32 @@ static void block_yrd_txfm(int plane, int block, BLOCK_SIZE_TYPE bsize,
     return;
   }
 
-  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME)
+  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {
     encode_block_intra(plane, block, bsize, ss_txfrm_size, &encode_args);
-  else
-    xform_quant(plane, block, bsize, ss_txfrm_size, &encode_args);
+  } else {
+    struct macroblock_plane *const p = &x->plane[0];
+    const struct macroblockd_plane *const pd = &xd->plane[0];
+    const int bw = plane_block_width(bsize, pd);
+    const int bh = plane_block_height(bsize, pd);
 
-  dist_block(plane, block, bsize, ss_txfrm_size, args);
-  rate_block(plane, block, bsize, ss_txfrm_size, args);
+    // Test for breakout based on prediction error residual energy.
+    x->abort_mode = ((x->residual_breakout_enabled) ?
+        residual_breakout_test(x, 0, p->src_diff, bw, bh, bw) : 0);
+
+    if (!x->abort_mode) {
+      xform_quant(plane, block, bsize, ss_txfrm_size, &encode_args);
+    }
+  }
+
+  if (!x->abort_mode) {
+    dist_block(plane, block, bsize, ss_txfrm_size, args);
+    rate_block(plane, block, bsize, ss_txfrm_size, args);
+  } else {
+    args->skip = 1;
+    args->rate = INT_MAX;
+    args->dist = INT64_MAX;
+    args->sse  = INT64_MAX;
+  }
 }
 
 static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
@@ -821,10 +869,6 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
   vpx_memcpy(&args.t_left, pd->left_context, sizeof(ENTROPY_CONTEXT) * bh);
 
   foreach_transformed_block_in_plane(xd, bsize, 0, block_yrd_txfm, &args);
-  *distortion = args.dist;
-  *rate       = args.rate;
-  *sse        = args.sse;
-  *skippable  = vp9_sby_is_skippable(xd, bsize) && (!args.skip);
 }
 
 static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
@@ -1201,6 +1245,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   vpx_memcpy(tl, l, sizeof(tl));
   xd->mode_info_context->mbmi.txfm_size = TX_4X4;
 
+  x->best_residual_error_so_far = INT64_MAX;
+  x->residual_error_thresh      = INT64_MAX;
+
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     int64_t this_rd;
     int ratey = 0;
@@ -1239,6 +1286,14 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                            src, src_stride,
                            dst, pd->dst.stride);
 
+        // Test for breakout based on prediction error residual energy.
+        x->abort_mode = ((x->residual_breakout_enabled) ?
+            residual_breakout_test(x, 0, src_diff, 4, 4, 8) : 0);
+
+        if (x->abort_mode) {
+          break;
+        }
+
         tx_type = get_tx_type_4x4(xd, block);
         if (tx_type != DCT_DCT) {
           vp9_short_fht4x4(src_diff, coeff, 8, tx_type);
@@ -1261,6 +1316,12 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
           xd->inv_txm4x4_add(BLOCK_OFFSET(pd->dqcoeff, block, 16),
                              dst, pd->dst.stride);
       }
+      if (x->abort_mode) {
+        break;
+      }
+    }
+    if (x->abort_mode) {
+      continue;
     }
 
     rate += ratey;
@@ -1402,6 +1463,9 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
       txfm_cache[i] = INT64_MAX;
   }
 
+  x->best_residual_error_so_far = INT64_MAX;
+  x->residual_error_thresh      = INT64_MAX;
+
   /* Y Search for 32x32 intra prediction mode */
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     int64_t local_txfm_cache[NB_TXFM_MODES];
@@ -1422,6 +1486,11 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (this_rate_tokenonly == INT_MAX)
       continue;
+
+    // Skip modes that were aborted because they had a high prediction residual.
+    if (this_distortion == INT64_MAX) {
+      continue;
+    }
 
     this_rate = this_rate_tokenonly + bmode_costs[mode];
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
@@ -1465,10 +1534,16 @@ static void super_block_uvrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
   else
     vp9_xform_quant_sbuv(cm, x, bsize);
 
-  *distortion = block_error_sbuv(x, bsize, uv_tx_size == TX_32X32 ? 0 : 2,
-                                 sse ? sse : &dummy);
-  *rate       = rdcost_uv(cm, x, bsize, uv_tx_size);
-  *skippable  = vp9_sbuv_is_skippable(xd, bsize);
+  if (!x->skip_this_mode) {
+    *distortion = block_error_sbuv(x, bsize, uv_tx_size == TX_32X32 ? 0 : 2,
+                                   sse ? sse : &dummy);
+    *rate       = rdcost_uv(cm, x, bsize, uv_tx_size);
+    *skippable  = vp9_sbuv_is_skippable(xd, bsize);
+  } else {
+    *distortion = INT64_MAX;
+    *rate       = INT_MAX;
+    *skippable  = 1;
+  }
 }
 
 static void super_block_uvrd(VP9_COMMON *const cm, MACROBLOCK *x,
@@ -1495,10 +1570,18 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int this_rate_tokenonly, this_rate, s;
   int64_t this_distortion;
 
+  x->best_residual_error_so_far = INT64_MAX;
+  x->residual_error_thresh      = INT64_MAX;
+
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     x->e_mbd.mode_info_context->mbmi.uv_mode = mode;
     super_block_uvrd(&cpi->common, x, &this_rate_tokenonly,
                      &this_distortion, &s, NULL, bsize);
+
+    if (this_distortion == INT64_MAX) {
+      continue;
+    }
+
     this_rate = this_rate_tokenonly +
                 x->intra_uv_mode_cost[x->e_mbd.frame_type][mode];
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
@@ -2700,7 +2783,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  // Set the appripriate filter
+  // Set the appropriate filter
   mbmi->interp_filter = cm->mcomp_filter_type != SWITCHABLE ?
       cm->mcomp_filter_type : *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
@@ -3019,6 +3102,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  x->best_residual_error_so_far = INT64_MAX;
+  x->residual_error_thresh      = INT64_MAX;
+
   for (mode_index = 0; mode_index < MAX_MODES; ++mode_index) {
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;
@@ -3189,6 +3275,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       mbmi->txfm_size = TX_4X4;
       rd_pick_intra4x4mby_modes(cpi, x, &rate, &rate_y,
                                 &distortion_y, INT64_MAX);
+
       rate2 += rate;
       rate2 += intra_cost_penalty;
       distortion2 += distortion_y;
