@@ -645,11 +645,11 @@ void vp9_coef_tree_initialize() {
 
 // #define COEF_COUNT_TESTING
 
-#define COEF_COUNT_SAT 24
-#define COEF_MAX_UPDATE_FACTOR 112
-#define COEF_COUNT_SAT_KEY 24
-#define COEF_MAX_UPDATE_FACTOR_KEY 112
-#define COEF_COUNT_SAT_AFTER_KEY 24
+#define COEF_COUNT_SAT 32
+#define COEF_MAX_UPDATE_FACTOR 128
+#define COEF_COUNT_SAT_KEY 32
+#define COEF_MAX_UPDATE_FACTOR_KEY 128
+#define COEF_COUNT_SAT_AFTER_KEY 32
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
 
 void vp9_full_to_model_count(unsigned int *model_count,

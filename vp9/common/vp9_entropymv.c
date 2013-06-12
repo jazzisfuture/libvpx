@@ -14,7 +14,7 @@
 
 //#define MV_COUNT_TESTING
 
-#define MV_COUNT_SAT 20
+#define MV_COUNT_SAT 16
 #define MV_MAX_UPDATE_FACTOR 128
 
 /* Integer pel reference mv threshold for use of high-precision 1/8 mv */

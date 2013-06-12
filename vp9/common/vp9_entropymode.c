@@ -288,8 +288,9 @@ void vp9_accum_mv_refs(VP9_COMMON *pc,
   }
 }
 
-#define MVREF_COUNT_SAT 20
-#define MVREF_MAX_UPDATE_FACTOR 128
+#define MODE_COUNT_SAT 16
+#define MODE_MAX_UPDATE_FACTOR 128
+
 void vp9_adapt_mode_context(VP9_COMMON *pc) {
   int i, j;
   unsigned int (*inter_mode_counts)[VP9_INTER_MODES - 1][2] =
@@ -300,8 +301,8 @@ void vp9_adapt_mode_context(VP9_COMMON *pc) {
     for (i = 0; i < VP9_INTER_MODES - 1; i++) {
       int count = inter_mode_counts[j][i][0] + inter_mode_counts[j][i][1];
       int factor;
-      count = count > MVREF_COUNT_SAT ? MVREF_COUNT_SAT : count;
-      factor = (MVREF_MAX_UPDATE_FACTOR * count / MVREF_COUNT_SAT);
+      count = count > MODE_COUNT_SAT ? MODE_COUNT_SAT : count;
+      factor = (MODE_MAX_UPDATE_FACTOR * count / MODE_COUNT_SAT);
       mode_context[j][i] = weighted_prob(
           pc->fc.pre_inter_mode_probs[j][i],
           get_binary_prob(inter_mode_counts[j][i][0],
@@ -311,8 +312,6 @@ void vp9_adapt_mode_context(VP9_COMMON *pc) {
   }
 }
 
-#define MODE_COUNT_SAT 20
-#define MODE_MAX_UPDATE_FACTOR 128
 static int update_mode_ct(vp9_prob pre_prob, vp9_prob prob,
                           unsigned int branch_ct[2]) {
   int factor, count = branch_ct[0] + branch_ct[1];
