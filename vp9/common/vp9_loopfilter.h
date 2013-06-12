@@ -39,6 +39,7 @@ struct loop_filter_info {
   const unsigned char *blim;
   const unsigned char *lim;
   const unsigned char *hev_thr;
+  int                  same_as_last;
 };
 
 #define prototype_loopfilter(sym) \
