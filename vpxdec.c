@@ -97,6 +97,9 @@ static const arg_def_t error_concealment = ARG_DEF(NULL, "error-concealment", 0,
 static const arg_def_t scalearg = ARG_DEF("S", "scale", 0,
                                             "Scale output frames uniformly");
 
+static const arg_def_t frame_threading = ARG_DEF(NULL, "frame-threading", 0,
+                                       "Enable frame base multi-threading");
+
 
 #if CONFIG_MD5
 static const arg_def_t md5arg = ARG_DEF(NULL, "md5", 0,
@@ -110,6 +113,7 @@ static const arg_def_t *all_args[] = {
   &md5arg,
 #endif
   &error_concealment,
+    &frame_threading,
   NULL
 };
 
@@ -685,7 +689,7 @@ int main(int argc, const char **argv_) {
   int                    frame_in = 0, frame_out = 0, flipuv = 0, noblit = 0, do_md5 = 0, progress = 0;
   int                    stop_after = 0, postproc = 0, summary = 0, quiet = 1;
   int                    arg_skip = 0;
-  int                    ec_enabled = 0;
+    int                    ec_enabled = 0, ft_enabled = 0;
   vpx_codec_iface_t       *iface = NULL;
   unsigned int           fourcc;
   unsigned long          dx_time = 0;
@@ -817,6 +821,9 @@ int main(int argc, const char **argv_) {
     } else if (arg_match(&arg, &error_concealment, argi)) {
       ec_enabled = 1;
     }
+    else if (arg_match(&arg, &frame_threading, argi)) {
+        ft_enabled = 1;
+    }
 
 #endif
     else
@@ -929,7 +936,8 @@ int main(int argc, const char **argv_) {
     }
 
   dec_flags = (postproc ? VPX_CODEC_USE_POSTPROC : 0) |
-              (ec_enabled ? VPX_CODEC_USE_ERROR_CONCEALMENT : 0);
+              (ec_enabled ? VPX_CODEC_USE_ERROR_CONCEALMENT : 0) |
+              (ft_enabled ? VPX_CODEC_USE_FRAME_THREADING : 0);
   if (vpx_codec_dec_init(&decoder, iface ? iface :  ifaces[0].iface(), &cfg,
                          dec_flags)) {
     fprintf(stderr, "Failed to initialize decoder: %s\n", vpx_codec_error(&decoder));
@@ -999,11 +1007,11 @@ int main(int argc, const char **argv_) {
 
         vpx_usec_timer_start(&timer);
 
-        if (vpx_codec_decode(&decoder, buf, (unsigned int)buf_sz, NULL, 0)) {
+      if (vpx_codec_decode(&decoder, buf, (unsigned int)buf_sz,
+                           (void *)frame_in, 0)) {
           const char *detail = vpx_codec_error_detail(&decoder);
           fprintf(stderr, "Failed to decode frame: %s\n",
                   vpx_codec_error(&decoder));
-
           if (detail)
             fprintf(stderr, "  Additional information: %s\n", detail);
           goto fail;
@@ -1024,12 +1032,13 @@ int main(int argc, const char **argv_) {
 
     vpx_usec_timer_mark(&timer);
     dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
-
+#if 0
     if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
       fprintf(stderr, "Failed VP8_GET_FRAME_CORRUPTED: %s\n",
               vpx_codec_error(&decoder));
       goto fail;
     }
+#endif
     frames_corrupted += corrupted;
 
     if (progress)
@@ -1064,13 +1073,14 @@ int main(int argc, const char **argv_) {
         unsigned int y;
         char out_fn[PATH_MAX];
         uint8_t *buf;
+        int img_frame_in = (int )img->user_priv;
 
         if (!single_file) {
           size_t len = sizeof(out_fn) - 1;
 
           out_fn[len] = '\0';
           generate_filename(outfile_pattern, out_fn, len - 1,
-                            img->d_w, img->d_h, frame_in);
+                                      img->d_w, img->d_h, img_frame_in);
           out = out_open(out_fn, do_md5);
         } else if (use_y4m)
           out_put(out, (unsigned char *)"FRAME\n", 6, do_md5);
@@ -1101,8 +1111,6 @@ int main(int argc, const char **argv_) {
       }
     }
 
-    if (stop_after && frame_in >= stop_after)
-      break;
   }
 
   if (summary || progress) {

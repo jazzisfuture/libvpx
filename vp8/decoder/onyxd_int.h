@@ -45,6 +45,39 @@ typedef struct
 
 #define MAX_FB_MT_DEC 32
 
+#define MULTI_THREAD_FRAMEBASED
+
+#define DEC_STARTED         0
+#define DEC_HEADER          1
+#define DEC_MODE_MOTION     2
+#define DEC_MB_ROW          3
+#define DEC_DONE            4
+#define DEC_POSTPROC        5
+
+
+//TODO: some of these are duplicates.....  can we remove from pbi?
+struct ref_frame_context
+{
+    int Width;
+    int Height;
+    int horiz_scale;
+    int vert_scale;
+    YUV_TYPE clr_type;
+    CLAMP_TYPE clamp_type;
+
+    signed char ref_lf_deltas[MAX_REF_LF_DELTAS];
+    signed char mode_lf_deltas[MAX_MODE_LF_DELTAS];
+
+    unsigned char mb_segement_abs_delta;
+    signed char segment_feature_data[MB_LVL_MAX][MAX_MB_SEGMENTS];
+    vp8_prob mb_segment_tree_probs[MB_FEATURE_TREE_PROBS];
+
+    int ref_frame_sign_bias[MAX_REF_FRAMES];
+    FRAME_CONTEXT lfc;
+    FRAME_CONTEXT fc;
+};
+
+//TODO: some of these are duplicates.....  can we remove from pbi?
 struct fbnode
 {
     YV12_BUFFER_CONFIG yv12_fb;
@@ -57,11 +90,12 @@ struct fbnode
     unsigned int frame_id;
     /* debug / testing purposes */
 
-    unsigned int is_decoded;
-    unsigned int show;
+    volatile unsigned int is_decoded;
+    volatile unsigned int show;
 
     int64_t last_time_stamp;
 
+    unsigned char *cx_data_ptr;     /* this frame's compressed data */
     YUV_TYPE clr_type;              /* color type */
 
     /* for vp8dx_get_raw_frame () */
@@ -72,11 +106,15 @@ struct fbnode
 
     int current_cx_frame;
 
-    int ref_cnt;
+    volatile int dec_state;
+    volatile int mb_row;
+    volatile int ref_cnt;
     int ithread;
     unsigned int size_id;
 
-    struct VP8D_COMP *this_pbi;
+    volatile struct VP8D_COMP *this_pbi;
+
+    struct ref_frame_context rfc;
 
     struct fbnode *this_ref_fb[NUM_YV12_BUFFERS];
     struct fbnode *next_ref_fb[NUM_YV12_BUFFERS];
@@ -85,6 +123,23 @@ struct fbnode
     struct fbnode *prev;
 };
 
+#define THREAD_READY  0
+#define THREAD_IN_USE 1
+
+struct framebased_thread_info
+{
+    DECODETHREAD_DATA    *de_thread_data;
+
+    pthread_t           *h_decoding_thread;
+    sem_t               *h_event_start_decoding;
+    sem_t                h_event_end_decoding;
+    sem_t               *h_event_frame_done;
+
+    int decoding_thread_count;
+    int allocated_decoding_thread_count;
+
+    volatile int thread_state[MAX_FB_MT_DEC];
+};
 
 struct frame_buffers
 {
@@ -104,6 +159,8 @@ struct frame_buffers
     unsigned int size_id;
     unsigned int new_y_width;
     unsigned int new_y_height;
+
+    struct framebased_thread_info fbmt;
 
     unsigned int cx_data_count;
 
@@ -204,7 +261,8 @@ int vp8dx_create_postproc_frame(struct frame_buffers *fb,
 void vp8dx_remove_postproc_frame(struct frame_buffers *fb);
 
 void vp8_mark_last_as_corrupted(VP8D_COMP *pbi);
-
+int vp8_create_decoder_frame_threads(struct frame_buffers *fb,
+                                     VP8D_CONFIG *oxcf);
 #if CONFIG_DEBUG
 #define CHECK_MEM_ERROR(lval,expr) do {\
         lval = (expr); \

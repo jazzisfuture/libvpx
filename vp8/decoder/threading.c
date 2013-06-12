@@ -915,3 +915,191 @@ void vp8mt_decode_mb_rows( VP8D_COMP *pbi, MACROBLOCKD *xd)
 
     sem_wait(&pbi->h_event_end_decoding);   /* add back for each frame */
 }
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * TODO: remove global
+ * move lock/unlock to header file
+ */
+
+static pthread_mutex_t fbmt_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void vp8_fbmt_mutex_lock()
+{
+//    pthread_mutex_lock( &fbmt_mutex );
+}
+
+void vp8_fbmt_mutex_unlock()
+{
+//    pthread_mutex_unlock( &fbmt_mutex );
+}
+
+static THREAD_FUNCTION multiframe_decoding_proc(void *p_data)
+{
+    int ithread = ((DECODETHREAD_DATA *)p_data)->ithread;
+    struct frame_buffers *fb = (struct frame_buffers *)(((DECODETHREAD_DATA *)p_data)->ptr1);
+
+    for(;;)
+    {
+        if (sem_wait(&fb->fbmt.h_event_start_decoding[ithread]) == 0)
+        {
+            VP8D_COMP *pbi = fb->pbi[ithread];
+            int retcode = 0;
+
+            vp8_fbmt_mutex_lock();
+            pbi->this_fb->ithread = ithread;
+            vp8_fbmt_mutex_unlock();
+
+            pbi->common.error.setjmp = 1;
+
+//            printf("@@ current_cx_frame %d ref_cnt %d i:%d this_fb %x toshow %d this_fb->prev %x\n",
+  //                 pbi->this_fb->current_cx_frame, pbi->this_fb->ref_cnt, ithread, pbi->this_fb, pbi->this_fb->show, pbi->this_fb->prev);
+            retcode = vp8_decode_frame(pbi);
+
+            if (retcode < 0)
+            {
+                //TODO: add code to handle errors
+                pbi->common.error.error_code = VPX_CODEC_ERROR;
+                pbi->common.error.setjmp = 0;
+                //remove_fb_frome_decoded(fb, this_fb);
+                //return retcode;
+                printf("multiframe_decoding_proc: error......\n");
+            }
+
+            vpx_free(pbi->this_fb->cx_data_ptr);
+
+            vp8_fbmt_mutex_lock();
+            fb->fbmt.thread_state[ithread] = THREAD_READY;
+            pbi->this_fb->is_decoded = 1;
+            pbi->this_fb->show = pbi->common.show_frame;
+            vp8_fbmt_mutex_unlock();
+
+            sem_post(&fb->fbmt.h_event_frame_done[ithread]);
+            //printf("@@ current_cx_frame %d ref_cnt %d i:%d this_fb %x toshow %d\n",
+              ///     pbi->this_fb->current_cx_frame, pbi->this_fb->ref_cnt, ithread, pbi->this_fb, pbi->this_fb->show);
+        }
+    }
+    return 0;
+}
+
+
+#define CHECK_MEM_ERROR_TEMP(lval,expr,error) do {\
+        lval = (expr); \
+        if(!lval) \
+            vpx_internal_error(&error, VPX_CODEC_MEM_ERROR,\
+                               "Failed to allocate "#lval" at %s:%d", \
+                               __FILE__,__LINE__);\
+    } while(0)
+
+
+
+
+int vp8_create_decoder_frame_threads(struct frame_buffers *fb, VP8D_CONFIG *oxcf)
+{
+    int core_count = 0;
+    int ithread;
+    int error;
+
+    fb->fbmt.allocated_decoding_thread_count = 0;
+
+    if(!oxcf->max_threads)
+        return 0;
+
+    core_count = oxcf->max_threads;
+
+    /* limit decoding threads to the available cores */
+/*
+ * TODO: call vp8_machine_specific_config() here
+ * */
+
+    if (core_count > 1)
+    {
+        fb->fbmt.decoding_thread_count = core_count; // - 1;
+//printf("fb->fbmt.decoding_thread_count %d\n", fb->fbmt.decoding_thread_count);
+//        fbmt.decoding_thread_count = 1;
+
+        CHECK_MEM_ERROR_TEMP(fb->fbmt.h_decoding_thread,
+                        vpx_malloc(sizeof(pthread_t) *
+                                   fb->fbmt.decoding_thread_count), error);
+        CHECK_MEM_ERROR_TEMP(fb->fbmt.h_event_start_decoding,
+                        vpx_malloc(sizeof(sem_t) *
+                                   fb->fbmt.decoding_thread_count), error);
+        CHECK_MEM_ERROR_TEMP(fb->fbmt.h_event_frame_done,
+                        vpx_malloc(sizeof(sem_t) *
+                                   fb->fbmt.decoding_thread_count), error);
+        CHECK_MEM_ERROR_TEMP(fb->fbmt.de_thread_data,
+                        vpx_malloc(sizeof(DECODETHREAD_DATA) *
+                                   fb->fbmt.decoding_thread_count), error);
+
+        for (ithread = 0; ithread < fb->fbmt.decoding_thread_count; ithread++)
+        {
+
+            sem_init(&fb->fbmt.h_event_start_decoding[ithread], 0, 0);
+            sem_init(&fb->fbmt.h_event_frame_done[ithread], 0, 0);
+
+            fb->fbmt.de_thread_data[ithread].ithread  = ithread;
+            fb->fbmt.de_thread_data[ithread].ptr1     = (void *)fb;
+            fb->fbmt.de_thread_data[ithread].ptr2     = (void *) 0;
+
+            /* TODO: error handling
+             * */
+            pthread_create(&fb->fbmt.h_decoding_thread[ithread],
+                           0,
+                           multiframe_decoding_proc,
+                           (&fb->fbmt.de_thread_data[ithread]));
+        }
+
+        sem_init(&fb->fbmt.h_event_end_decoding, 0, 0);
+
+        fb->fbmt.allocated_decoding_thread_count = fb->fbmt.decoding_thread_count;
+    }
+
+    return 0;
+}
+
+
+void vp8_fbmt_decoder_remove_threads(VP8D_COMP *pbi)
+{
+
+#if 0
+    /* shutdown MB Decoding thread; */
+    if (fbmt.b_multithreaded_rd)
+    {
+        int i;
+
+        fbmt.b_multithreaded_rd = 0;
+
+        /* allow all threads to exit */
+        for (i = 0; i < fbmt.allocated_decoding_thread_count; i++)
+        {
+            sem_post(&fbmt.h_event_start_decoding[i]);
+            sem_post(&fbmt.h_event_frame_done[i]);
+            pthread_join(fbmt.h_decoding_thread[i], NULL);
+        }
+
+        for (i = 0; i < fbmt.allocated_decoding_thread_count; i++)
+        {
+            sem_destroy(&fbmt.h_event_start_decoding[i]);
+            sem_destroy(&fbmt.h_event_frame_done[i]);
+        }
+
+        sem_destroy(&fbmt.h_event_end_decoding);
+
+            vpx_free(fbmt.h_decoding_thread);
+            fbmt.h_decoding_thread = NULL;
+
+            vpx_free(fbmt.h_event_start_decoding);
+            fbmt.h_event_start_decoding = NULL;
+
+            vpx_free(fbmt.h_event_frame_done);
+            fbmt.h_event_frame_done = NULL;
+
+            vpx_free(fbmt.de_thread_data);
+            fbmt.de_thread_data = NULL;
+
+//            vpx_free(fbmt.pbi);
+  //          fbmt.pbi = NULL;
+    }
+#endif
+
+}
+

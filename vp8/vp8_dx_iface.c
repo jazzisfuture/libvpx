@@ -242,7 +242,7 @@ static vpx_codec_err_t vp8_init(vpx_codec_ctx_t *ctx,
                     VPX_CODEC_USE_FRAME_THREADING);
 
     /* for now, disable frame threading */
-    ctx->priv->alg_priv->yv12_frame_buffers.use_frame_threads = 0;
+//    ctx->priv->alg_priv->yv12_frame_buffers.use_frame_threads = 0;
 
     if(ctx->priv->alg_priv->yv12_frame_buffers.use_frame_threads &&
             (( ctx->priv->alg_priv->base.init_flags &
@@ -441,6 +441,9 @@ update_fragments(vpx_codec_alg_priv_t  *ctx,
     return 1;
 }
 
+int vp8dx_receive_compressed_data2(struct frame_buffers *fb, unsigned long size,
+        const unsigned char *source, int64_t time_stamp, void *user_priv);
+
 static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
                                   const uint8_t         *data,
                                   unsigned int            data_sz,
@@ -538,6 +541,8 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
                 ctx->postproc_cfg.deblocking_level = 4;
                 ctx->postproc_cfg.noise_level = 0;
             }
+            if(ctx->cfg.threads == 0)
+              fb->use_frame_threads = 0;
 
             res = vp8_create_decoder_instances(fb, &oxcf);
             ctx->yv12_frame_buffers.pbi[0]->decrypt_key = ctx->decrypt_key;
@@ -568,12 +573,18 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
         }
 
         /* update the pbi fragment data */
-        pbi->fragments = ctx->fragments;
+        if(fb->fbmt.allocated_decoding_thread_count <= 1)
+            pbi->fragments = ctx->fragments;
 
         ctx->user_priv = user_priv;
-        if (vp8dx_receive_compressed_data(fb, data_sz, data, deadline,
+        if(vp8dx_receive_compressed_data2(fb, ctx->fragments.sizes[0],
+                                          ctx->fragments.ptrs[0], deadline,
                                           user_priv))
         {
+//pass in a local error struct to receive_compressed
+//check in get frame as well ..... ie a frame error state
+//
+printf("vp8dx_receive_compressed_data2() error..............\n");
             res = update_error_state(ctx, &pbi->common.error);
         }
         ctx->frame_in++;
@@ -584,51 +595,103 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
     return res;
 }
 
+static vpx_image_t * get_frame_fbmt(vpx_codec_alg_priv_t  *ctx,
+                                    vpx_codec_iter_t      *iter)
+{
+    vpx_image_t *img = NULL;
+    YV12_BUFFER_CONFIG sd;
+    int64_t time_stamp = 0, time_end_stamp = 0;
+    void *user_priv = NULL;
+    vp8_ppflags_t flags = {0};
+
+
+    if (ctx->base.init_flags & VPX_CODEC_USE_POSTPROC)
+    {
+        flags.post_proc_flag= ctx->postproc_cfg.post_proc_flag
+#if CONFIG_POSTPROC_VISUALIZER
+
+                            | ((ctx->dbg_color_ref_frame_flag != 0) ? VP8D_DEBUG_CLR_FRM_REF_BLKS : 0)
+                            | ((ctx->dbg_color_mb_modes_flag != 0) ? VP8D_DEBUG_CLR_BLK_MODES : 0)
+                            | ((ctx->dbg_color_b_modes_flag != 0) ? VP8D_DEBUG_CLR_BLK_MODES : 0)
+                            | ((ctx->dbg_display_mv_flag != 0) ? VP8D_DEBUG_DRAW_MV : 0)
+#endif
+                            ;
+        flags.deblocking_level      = ctx->postproc_cfg.deblocking_level;
+        flags.noise_level           = ctx->postproc_cfg.noise_level;
+#if CONFIG_POSTPROC_VISUALIZER
+        flags.display_ref_frame_flag= ctx->dbg_color_ref_frame_flag;
+        flags.display_mb_modes_flag = ctx->dbg_color_mb_modes_flag;
+        flags.display_b_modes_flag  = ctx->dbg_color_b_modes_flag;
+        flags.display_mv_flag       = ctx->dbg_display_mv_flag;
+#endif
+    }
+
+
+    //printf("ctx->frame_in %d ctx->last_frame_in %d *iter %d \n", ctx->frame_in, ctx->last_frame_in, *iter);
+
+#if 1
+    if(!*iter)
+    {
+        if(ctx->last_frame_in == ctx->frame_in)
+        {
+            while(1)
+            {
+                int rc;
+                rc = vp8dx_get_raw_frame(&ctx->yv12_frame_buffers, &sd,
+                                          &time_stamp, &time_end_stamp,
+                                          &user_priv, &flags);
+                if(rc <= 0)
+                {
+                    //printf("ctx->frame_in %d ctx->last_frame_in %d *iter %d rc %d\n", ctx->frame_in, ctx->last_frame_in, *iter, rc);
+                    /* assume all decoded buffers have been shown */
+                    img = NULL;
+                    if(!rc)
+                    {
+                        yuvconfig2image(&ctx->img, &sd, user_priv);
+                        /* new decoded buffer to be shown */
+                        img = &ctx->img;
+                    }
+                    break;
+                }
+            }
+            /* save the last frame we saw */
+            ctx->last_frame_in = ctx->frame_in;
+
+            return img;
+        }
+    }
+#endif
+
+    if (0 == vp8dx_get_raw_frame(&ctx->yv12_frame_buffers, &sd,
+                                 &time_stamp, &time_end_stamp, &user_priv,
+                                 &flags))
+    {
+        yuvconfig2image(&ctx->img, &sd, user_priv);
+        img = &ctx->img;
+    }
+    *iter += 1;
+    /* save the last frame we saw */
+    ctx->last_frame_in = ctx->frame_in;
+
+    return img;
+}
+
 static vpx_image_t *vp8_get_frame(vpx_codec_alg_priv_t  *ctx,
                                   vpx_codec_iter_t      *iter)
 {
     vpx_image_t *img = NULL;
-    void *user_priv = NULL;
 
-    /* iter acts as a flip flop, so an image is only returned on the first
-     * call to get_frame.
-     */
-    if (!(*iter) && ctx->yv12_frame_buffers.pbi[0])
-    {
-        YV12_BUFFER_CONFIG sd;
-        int64_t time_stamp = 0, time_end_stamp = 0;
-        vp8_ppflags_t flags = {0};
-
-        if (ctx->base.init_flags & VPX_CODEC_USE_POSTPROC)
-        {
-            flags.post_proc_flag= ctx->postproc_cfg.post_proc_flag
-#if CONFIG_POSTPROC_VISUALIZER
-
-                                | ((ctx->dbg_color_ref_frame_flag != 0) ? VP8D_DEBUG_CLR_FRM_REF_BLKS : 0)
-                                | ((ctx->dbg_color_mb_modes_flag != 0) ? VP8D_DEBUG_CLR_BLK_MODES : 0)
-                                | ((ctx->dbg_color_b_modes_flag != 0) ? VP8D_DEBUG_CLR_BLK_MODES : 0)
-                                | ((ctx->dbg_display_mv_flag != 0) ? VP8D_DEBUG_DRAW_MV : 0)
-#endif
-                                ;
-            flags.deblocking_level      = ctx->postproc_cfg.deblocking_level;
-            flags.noise_level           = ctx->postproc_cfg.noise_level;
-#if CONFIG_POSTPROC_VISUALIZER
-            flags.display_ref_frame_flag= ctx->dbg_color_ref_frame_flag;
-            flags.display_mb_modes_flag = ctx->dbg_color_mb_modes_flag;
-            flags.display_b_modes_flag  = ctx->dbg_color_b_modes_flag;
-            flags.display_mv_flag       = ctx->dbg_display_mv_flag;
-#endif
-        }
-
-        if (0 == vp8dx_get_raw_frame(&ctx->yv12_frame_buffers, &sd, &time_stamp,
-                                     &time_end_stamp, &user_priv, &flags))
-        {
-            yuvconfig2image(&ctx->img, &sd, user_priv);
-            img = &ctx->img;
-        }
-    }
+    img = get_frame_fbmt(ctx, iter);
 
     return img;
+/*
+ * TODO: check each frame for error state
+    {
+        VP8D_COMP *pbi = (VP8D_COMP *)ctx->yv12_frame_buffers.pbi[0];
+        res = update_error_state(ctx, &pbi->common.error);
+    }
+*/
+
 }
 
 

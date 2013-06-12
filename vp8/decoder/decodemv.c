@@ -148,7 +148,8 @@ static const unsigned char mbsplit_fill_offset[4][16] = {
 };
 
 
-static void mb_mode_mv_init(VP8D_COMP *pbi)
+//static
+void mb_mode_mv_init(VP8D_COMP *pbi)
 {
     vp8_reader *const bc = & pbi->mbc[8];
     MV_CONTEXT *const mvc = pbi->common.fc.mvc;
@@ -621,7 +622,7 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi)
     int mb_row = -1;
     int mb_to_right_edge_start;
 
-    mb_mode_mv_init(pbi);
+//    mb_mode_mv_init(pbi);
 
     pbi->mb.mb_to_top_edge = 0;
     pbi->mb.mb_to_bottom_edge = ((pbi->common.mb_rows - 1) * 16) << 3;

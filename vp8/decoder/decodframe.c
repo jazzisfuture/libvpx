@@ -503,6 +503,78 @@ static void yv12_extend_frame_left_right_c(YV12_BUFFER_CONFIG *ybf,
     }
 }
 
+#define PIX_EXTRA 0
+#define PIX_EXTRA_SPLIT 0
+
+void vp8_check_inter_predictors_mb(VP8D_COMP *pbi, MACROBLOCKD *xd,
+                                   unsigned int mb_row, unsigned int max_rows,
+                                   int ref_frame)
+{
+    struct fbnode * ref_fb; // = pbi->this_fb->prev;
+
+    if(ref_frame == INTRA_FRAME)
+        return;
+
+    ref_fb = pbi->this_fb->this_ref_fb[ref_frame];
+
+    if(ref_fb)
+    {
+        int current_pix_row_pos = (mb_row + 1) << 4;
+
+        current_pix_row_pos += (xd->mode_info_context->mbmi.mv.as_mv.row >> 3);
+        current_pix_row_pos += 3;
+
+        if (xd->mode_info_context->mbmi.mode == SPLITMV)
+        {
+            int max_splitmv_pixel = (mb_row + 1) << 4;
+            int block_row_mv = xd->mode_info_context->bmi[0].mv.as_mv.row;
+            int i;
+            for (i = 1; i < 16; i++)
+            {
+                /* find the most positive row mv */
+                if(block_row_mv < xd->mode_info_context->bmi[i].mv.as_mv.row)
+                    block_row_mv = xd->mode_info_context->bmi[i].mv.as_mv.row;
+            }
+            max_splitmv_pixel += (block_row_mv >> 3) + 3 + PIX_EXTRA_SPLIT;
+
+            current_pix_row_pos = max_splitmv_pixel;
+        }
+
+        while(1)
+        {
+#if 1
+            int prev_frame_pix_row_pos = ref_fb->mb_row << 4;
+
+            /* check if reference has been decoded */
+            if(current_pix_row_pos + PIX_EXTRA < prev_frame_pix_row_pos)
+                break;
+
+            /* ref frame decoded last row */
+            if(prev_frame_pix_row_pos == max_rows<<4)
+                break;
+
+            /* the reference has not been decoded... keep looping */
+
+
+
+//            x86_pause_hint();
+  //          thread_sleep(0);
+
+
+
+            //printf("%d %d %d\n", current_pix_row_pos, prev_frame_pix_row_pos, max_rows<<4);
+
+//            pbi->this_fb->this_ref_fb[ref_frame]->mb_row = mb_row;
+#else
+            if(ref_fb->dec_state >= DEC_DONE)
+            //if(ref_fb->dec_state >= DEC_MODE_MOTION)
+            //if(ref_fb->dec_state >= DEC_HEADER)
+                break;
+#endif
+        }
+    }
+}
+
 static void decode_mb_rows(VP8D_COMP *pbi)
 {
     VP8_COMMON *const pc = & pbi->common;
@@ -644,7 +716,10 @@ static void decode_mb_rows(VP8D_COMP *pbi)
 
             /* propagate errors from reference frames */
             xd->corrupted |= ref_fb_corrupted[xd->mode_info_context->mbmi.ref_frame];
-
+#if 1
+            if (pc->frame_type != KEY_FRAME)
+                vp8_check_inter_predictors_mb(pbi, xd, mb_row, pc->mb_rows, xd->mode_info_context->mbmi.ref_frame);
+#endif
             decode_macroblock(pbi, xd, mb_idx);
 
             mb_idx++;
@@ -729,6 +804,13 @@ static void decode_mb_rows(VP8D_COMP *pbi)
                     yv12_extend_frame_top_c(yv12_fb_new);
             }
         }
+
+        /* row position required for next thread */
+        if(mb_row > 2)
+        pbi->this_fb->mb_row = mb_row-2;
+        //pbi->this_fb->this_ref_fb[INTRA_FRAME]->mb_row[INTRA_FRAME] = mb_row;
+
+
     }
 
     if(pc->filter_level)
@@ -757,6 +839,8 @@ static void decode_mb_rows(VP8D_COMP *pbi)
 
     yv12_extend_frame_bottom_c(yv12_fb_new);
 
+    /* row position required for next thread */
+    pbi->this_fb->mb_row = mb_row;
 }
 
 static unsigned int read_partition_size(const unsigned char *cx_size)
@@ -986,20 +1070,138 @@ void vp8_mark_last_as_corrupted(VP8D_COMP *pbi)
         pbi->this_fb->this_ref_fb[LAST_FRAME]->yv12_fb.corrupted = 1;
 }
 
+static void wait_for_modemv(VP8D_COMP *pbi)
+{
+    if(pbi->common.frame_type != KEY_FRAME)
+    {
+        struct fbnode * ref_fb = pbi->this_fb->prev;
+        if(ref_fb)
+        {
+            int dec_state;
+            while(1)
+            {
+                vp8_fbmt_mutex_lock();
+                dec_state = ref_fb->dec_state;
+                vp8_fbmt_mutex_unlock();
+
+                if(dec_state >= DEC_MODE_MOTION)
+                    break;
+
+                x86_pause_hint();
+                thread_sleep(0);
+            }
+        }
+    }
+}
+
+static void wait_for_header(VP8D_COMP *pbi)
+{
+    struct fbnode * ref_fb = pbi->this_fb->prev;
+    if(ref_fb)
+    {
+        int dec_state;
+        while(1)
+        {
+            vp8_fbmt_mutex_lock();
+            dec_state = ref_fb->dec_state;
+            vp8_fbmt_mutex_unlock();
+
+            //if(dec_state == DEC_DONE)
+            //if(dec_state >= DEC_MODE_MOTION)
+            if(dec_state >= DEC_HEADER)
+                break;
+
+            x86_pause_hint();
+            thread_sleep(0);
+
+        }
+    }
+}
+
+static void restore_rfc(VP8D_COMP *pbi, struct ref_frame_context *rfc)
+{
+    MACROBLOCKD * xd  = & pbi->mb;
+
+    pbi->common.Width = rfc->Width;
+    pbi->common.Height = rfc->Height;
+    pbi->common.horiz_scale = rfc->horiz_scale;
+    pbi->common.vert_scale = rfc->vert_scale;
+    pbi->common.clr_type    = rfc->clr_type;
+    pbi->common.clamp_type  = rfc->clamp_type;
+
+    vpx_memcpy(xd->ref_lf_deltas, rfc->ref_lf_deltas, sizeof(xd->ref_lf_deltas));
+    vpx_memcpy(xd->mode_lf_deltas, rfc->mode_lf_deltas, sizeof(xd->mode_lf_deltas));
+
+    xd->mb_segement_abs_delta = rfc->mb_segement_abs_delta;
+    vpx_memcpy(xd->segment_feature_data, rfc->segment_feature_data, sizeof(xd->segment_feature_data));
+    vpx_memcpy(xd->mb_segment_tree_probs, rfc->mb_segment_tree_probs, sizeof(xd->mb_segment_tree_probs));
+
+    vpx_memcpy(pbi->common.ref_frame_sign_bias, rfc->ref_frame_sign_bias, sizeof(pbi->common.ref_frame_sign_bias));
+
+    vpx_memcpy(&pbi->common.lfc, &rfc->lfc, sizeof(FRAME_CONTEXT));
+    vpx_memcpy(&pbi->common.fc, &rfc->fc, sizeof(FRAME_CONTEXT));
+}
+
+static void save_rfc(VP8D_COMP *pbi, struct ref_frame_context *rfc)
+{
+    MACROBLOCKD * xd  = & pbi->mb;
+
+    vp8_fbmt_mutex_lock();
+
+    rfc->Width = pbi->common.Width;
+    rfc->Height = pbi->common.Height;
+    rfc->horiz_scale = pbi->common.horiz_scale;
+    rfc->vert_scale = pbi->common.vert_scale;
+    rfc->clr_type = pbi->common.clr_type;
+    rfc->clamp_type = pbi->common.clamp_type;
+
+    vpx_memcpy(rfc->ref_lf_deltas, xd->ref_lf_deltas, sizeof(xd->ref_lf_deltas));
+    vpx_memcpy(rfc->mode_lf_deltas, xd->mode_lf_deltas, sizeof(xd->mode_lf_deltas));
+
+    rfc->mb_segement_abs_delta = xd->mb_segement_abs_delta;
+    vpx_memcpy(rfc->segment_feature_data, xd->segment_feature_data, sizeof(xd->segment_feature_data));
+    vpx_memcpy(rfc->mb_segment_tree_probs, xd->mb_segment_tree_probs, sizeof(xd->mb_segment_tree_probs));
+
+    vpx_memcpy(rfc->ref_frame_sign_bias, pbi->common.ref_frame_sign_bias, sizeof(pbi->common.ref_frame_sign_bias));
+
+    vpx_memcpy(&rfc->lfc, &pbi->common.lfc, sizeof(FRAME_CONTEXT));
+    vpx_memcpy(&rfc->fc, &pbi->common.fc, sizeof(FRAME_CONTEXT));
+
+    if (pbi->common.refresh_entropy_probs == 0)
+    {
+        vpx_memcpy(&rfc->fc, &pbi->common.lfc, sizeof(FRAME_CONTEXT));
+    }
+
+    vp8_fbmt_mutex_unlock();
+}
+
 static YV12_BUFFER_CONFIG * assign_reference(VP8D_COMP *pbi)
 {
     VP8_COMMON * pc = & pbi->common;
     YV12_BUFFER_CONFIG *yv12_fb_new;
 
+    vp8_fbmt_mutex_lock();
+//TODO: move this check.... other cleanups
     if (pc->frame_type != KEY_FRAME)
     {
         struct fbnode * ref_fb = pbi->this_fb->prev;
+        VP8D_COMP *ref_pbi;
+//        MACROBLOCKD *ref_xd;
+
+        ref_pbi = ref_fb->this_pbi;
+//        ref_xd  = & ref_pbi->mb;
 
         pbi->this_fb->this_ref_fb[ALTREF_FRAME] = ref_fb->next_ref_fb[ALTREF_FRAME];
         pbi->this_fb->this_ref_fb[GOLDEN_FRAME] = ref_fb->next_ref_fb[GOLDEN_FRAME];
         pbi->this_fb->this_ref_fb[LAST_FRAME] = ref_fb->next_ref_fb[LAST_FRAME];
-
+        //TODO: fix me
         pbi->this_fb->this_ref_fb[INTRA_FRAME] = pbi->this_fb;
+
+        restore_rfc(pbi, &ref_fb->rfc);
+
+        /* for segment maps */
+        vpx_memcpy(pc->mip, ref_pbi->common.mip,
+                   (pc->mb_cols + 1) * (pc->mb_rows + 1) * sizeof(MODE_INFO));
     }
     else
     {
@@ -1030,7 +1232,7 @@ static YV12_BUFFER_CONFIG * assign_reference(VP8D_COMP *pbi)
     pbi->dec_fb_ref[LAST_FRAME] = &pbi->this_fb->this_ref_fb[LAST_FRAME]->yv12_fb;
     yv12_fb_new =
     pbi->dec_fb_ref[INTRA_FRAME] = &pbi->this_fb->this_ref_fb[INTRA_FRAME]->yv12_fb;
-
+    vp8_fbmt_mutex_unlock();
     yv12_fb_new->corrupted = 0;
 
     return yv12_fb_new;
@@ -1040,6 +1242,7 @@ static void assign_nextframe_reference(VP8D_COMP *pbi)
 {
     VP8_COMMON * pc = & pbi->common;
 
+    vp8_fbmt_mutex_lock();
     /**/
     pbi->this_fb->y_width = pc->Width;
     pbi->this_fb->y_height = pc->Height;
@@ -1104,6 +1307,8 @@ static void assign_nextframe_reference(VP8D_COMP *pbi)
     pbi->this_fb->next_ref_fb[GOLDEN_FRAME]->ref_cnt += 1;
     pbi->this_fb->next_ref_fb[LAST_FRAME]->ref_cnt += 1;
 
+    vp8_fbmt_mutex_unlock();
+
 #if 0
 printf("rL: %d rG: %d rA: %d cG: %d cA: %d refcnt %d cx_frame_num %d\n", pc->refresh_last_frame,
        pc->refresh_golden_frame, pc->refresh_alt_ref_frame, pc->copy_buffer_to_gf,
@@ -1114,6 +1319,8 @@ printf("rL: %d rG: %d rA: %d cG: %d cA: %d refcnt %d cx_frame_num %d\n", pc->ref
 void update_frame_refcnt(VP8D_COMP *pbi)
 {
     /* */
+    vp8_fbmt_mutex_lock();
+
     if(pbi->this_fb->this_ref_fb[INTRA_FRAME]->current_cx_frame
             && pbi->common.frame_type != KEY_FRAME)
     {
@@ -1121,6 +1328,32 @@ void update_frame_refcnt(VP8D_COMP *pbi)
         pbi->this_fb->this_ref_fb[GOLDEN_FRAME]->ref_cnt -= 1;
         pbi->this_fb->this_ref_fb[LAST_FRAME]->ref_cnt -= 1;
     }
+    vp8_fbmt_mutex_unlock();
+}
+
+static void set_dec_state(VP8D_COMP *pbi, int state)
+{
+    /* set state for next thread */
+    vp8_fbmt_mutex_lock();
+    pbi->this_fb->dec_state = state;
+    vp8_fbmt_mutex_unlock();
+}
+
+static void get_segmentation_map(VP8D_COMP *pbi)
+{
+    struct fbnode * ref_fb = pbi->this_fb->prev;
+    VP8D_COMP *ref_pbi;
+
+    ref_pbi = ref_fb->this_pbi;
+
+    /* we have to wait until the previous frame's mode/mv has been
+     * decoded before we can copy */
+    wait_for_modemv(pbi);
+
+/* TODO: not necessary for single thread mode */
+    vpx_memcpy(pbi->common.mip, ref_pbi->common.mip,
+               (pbi->common.mb_cols + 1) * (pbi->common.mb_rows + 1)
+               * sizeof(MODE_INFO));
 }
 
 int vp8_decode_frame(VP8D_COMP *pbi)
@@ -1139,6 +1372,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
     int prev_independent_partitions = pbi->independent_partitions;
 
     YV12_BUFFER_CONFIG *yv12_fb_new;
+
+    wait_for_header(pbi);
 
     if (data_end - data < 3)
     {
@@ -1181,7 +1416,6 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 
         vp8_setup_version(pc);
 
-
         if (pc->frame_type == KEY_FRAME)
         {
             /* vet via sync code */
@@ -1222,18 +1456,34 @@ int vp8_decode_frame(VP8D_COMP *pbi)
                 pc->vert_scale = data6 >> 6;
             }
             data += 7;
-
         }
     }
+#if 0
     if ((!pbi->decoded_key_frame && pc->frame_type != KEY_FRAME))
     {
         return -1;
     }
+#endif
+
+
+//    printf("~~ decodeframe: this_fb %x pbi->this_fb->prev %x pbi->this_fb->ithread %d ft %d sizes %d\n",
+  //         pbi->this_fb, pbi->this_fb->prev, pbi->this_fb->ithread, pc->frame_type, pbi->fragments.sizes[0]);
+
 
     yv12_fb_new = assign_reference(pbi);
 
     init_frame(pbi);
 
+    /* here we are only interested in the strides */
+    /*for frame-based multithreading
+     * TODO:
+     */
+    vpx_memcpy(&pbi->mb.pre, yv12_fb_new, sizeof(YV12_BUFFER_CONFIG));
+    vpx_memcpy(&pbi->mb.dst, yv12_fb_new, sizeof(YV12_BUFFER_CONFIG));
+    vp8_build_block_doffsets(&pbi->mb);
+    /*for frame-based multithreading
+     * TODO:
+     */
     if (vp8dx_start_decode(bc,
                            data,
                            (unsigned int)(data_end - data),
@@ -1292,6 +1542,10 @@ int vp8_decode_frame(VP8D_COMP *pbi)
                 if (vp8_read_bit(bc))
                     xd->mb_segment_tree_probs[i] = (vp8_prob)vp8_read_literal(bc, 8);
             }
+        }
+        else
+        {
+            get_segmentation_map(pbi);
         }
     }
     else
@@ -1482,10 +1736,24 @@ int vp8_decode_frame(VP8D_COMP *pbi)
                     }
     }
 
+/*for frame-based multithreading
+ * TODO:
+ */
+vp8_setup_block_dptrs(&pbi->mb);
+
+
     /* clear out the coeff buffer */
     vpx_memset(xd->qcoeff, 0, sizeof(xd->qcoeff));
 
+    mb_mode_mv_init(pbi);
+
+    save_rfc(pbi, &pbi->this_fb->rfc);
+
+    set_dec_state(pbi, DEC_HEADER);
+
     vp8_decode_mode_mvs(pbi);
+
+    set_dec_state(pbi, DEC_MODE_MOTION);
 
 #if CONFIG_ERROR_CONCEALMENT
     if (pbi->ec_active &&
@@ -1499,6 +1767,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 
     vpx_memset(pc->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * pc->mb_cols);
     pbi->frame_corrupt_residual = 0;
+
+    wait_for_modemv(pbi);
 
 #if CONFIG_MULTITHREAD
     if (pbi->b_multithreaded_rd && pc->multi_token_partition != ONE_PARTITION)
@@ -1522,6 +1792,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
     /* 2. Check the macroblock information */
     yv12_fb_new->corrupted |= corrupt_tokens;
 
+#if 0
     if (!pbi->decoded_key_frame)
     {
         if (pc->frame_type == KEY_FRAME &&
@@ -1531,7 +1802,7 @@ int vp8_decode_frame(VP8D_COMP *pbi)
             vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
                                "A stream must start with a complete key frame");
     }
-
+#endif
     /* vpx_log("Decoder: Frame Decoded, Size Roughly:%d bytes  \n",bc->pos+pbi->bc2.pos); */
 
     if (pc->refresh_entropy_probs == 0)
@@ -1551,6 +1822,8 @@ int vp8_decode_frame(VP8D_COMP *pbi)
 #endif
 
     update_frame_refcnt(pbi);
+
+    set_dec_state(pbi, DEC_DONE);
 
     return 0;
 }

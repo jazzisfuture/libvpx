@@ -152,16 +152,22 @@ static struct fbnode * get_free_fb(struct frame_buffers *fb)
 /* reset before adding back to free pool */
 static void clear_fbnode(struct fbnode *free_node)
 {
-    free_node->next = 0;
-    free_node->prev = 0;
-    free_node->is_alt = 0;
-    free_node->is_gld = 0;
-    free_node->is_key = 0;
-    free_node->is_decoded = 0;
-    free_node->show = 0;
-    free_node->last_time_stamp = 0;
-    free_node->is_refresh_last = 0;
-    free_node->ref_cnt = 0;
+    if(free_node)
+    {
+        free_node->next = 0;
+        free_node->prev = 0;
+        free_node->is_alt = 0;
+        free_node->is_gld = 0;
+        free_node->is_key = 0;
+        free_node->is_decoded = 0;
+        free_node->show = 0;
+        free_node->last_time_stamp = 0;
+        free_node->is_refresh_last = 0;
+
+        free_node->ref_cnt = 0;
+        free_node->dec_state = 0;
+        free_node->mb_row = 0;
+    }
 }
 
 /* add buffer back to pool */
@@ -278,6 +284,8 @@ int vp8_get_to_show(struct frame_buffers *fb)
 
     fb->decoded_to_show = 0;
 
+    vp8_fbmt_mutex_lock();
+
     if(fb->decoded_size)
     {
         struct fbnode * this_node;
@@ -290,14 +298,25 @@ int vp8_get_to_show(struct frame_buffers *fb)
         {
             if(to_show_fb->is_decoded == 0)
             {
+                vp8_fbmt_mutex_unlock();
                 return 1; /* buffer not available yet */
             }
 
             to_show_fb = to_show_fb->next;
             if(!to_show_fb)
             {
+//                printf("~~~~~~~~~~~~ all buffers shown decoded size %d\n", fb->decoded_size);
+//                vp8_show_decoded_buffers(fb);
+                vp8_fbmt_mutex_unlock();
                 return -1; /* empty buffer... all buffers have been shown */
             }
+        }
+
+        if(to_show_fb->is_decoded == 0)
+        {
+            printf("~~~~~~ buffer not ready current_cx_frame %d ref_cnt %d\n", to_show_fb->current_cx_frame, to_show_fb->ref_cnt);
+            vp8_fbmt_mutex_unlock();
+            return 1; /* buffer not available yet */
         }
 
         /* this frame buffer will be shown by the calling app, so lets set
@@ -326,6 +345,7 @@ int vp8_get_to_show(struct frame_buffers *fb)
     }
 
     fb->decoded_to_show = to_show_fb;
+    vp8_fbmt_mutex_unlock();
 
     return 0;
 }
@@ -718,6 +738,211 @@ int check_fragments_for_errors(struct frame_buffers *fb, VP8D_COMP *pbi)
     return 1;
 }
 
+int vp8dx_receive_compressed_data2(struct frame_buffers *fb,
+                                       unsigned long size,
+                                       const unsigned char *source,
+                                       int64_t time_stamp,
+                                       void *user_priv)
+{
+    struct fbnode *this_fb;
+    int retcode = 0;
+    int i;
+    VP8D_COMP *thread_pbi = NULL;
+    int num_decoder_instances;
+
+    num_decoder_instances = fb->fbmt.allocated_decoding_thread_count;
+    if(!num_decoder_instances)
+        num_decoder_instances = 1; /* single thread mode */
+
+#if 0
+    for(i = 0; i < num_decoder_instances; i++)
+    {
+        printf("fb->fbmt.thread_state[%d] : %d\n", i, fb->fbmt.thread_state[i]);
+    }
+#endif
+
+    //printf("vp8dx_receive_compressed_data_fbmt4() fb->cx_data_count %d\n", fb->cx_data_count);
+
+#if 1
+    while(thread_pbi == NULL)
+    {
+        for(i = 0; i < num_decoder_instances; i++)
+        {
+            int state;
+
+            vp8_fbmt_mutex_lock();
+            state = fb->fbmt.thread_state[i];
+            vp8_fbmt_mutex_unlock();
+//printf("_____ waiting for thread\n");
+            if(state == THREAD_READY)
+            {
+                thread_pbi = fb->pbi[i];
+//printf("thread i:%d\n", i);
+
+                vp8_fbmt_mutex_lock();
+                fb->fbmt.thread_state[i] = THREAD_IN_USE;
+                vp8_fbmt_mutex_unlock();
+                break;
+            }
+        }
+        /* if threads are busy, do other work */
+//        if(!thread_pbi)
+  //          return 0;
+        if(num_decoder_instances > 1)
+        {
+//            x86_pause_hint();
+  //          thread_sleep(0);
+        }
+    }
+#else
+    i = fb->cx_data_count;
+    thread_pbi = fb->pbi[i&3];
+#endif
+
+#if 0
+if(0)
+    while(1)
+    {
+        if(fb->decoded_size >= (fb->max_allocated_frames - 1))
+        {
+            /* we are approaching a full condition, probably due to a long
+             * decode */
+            FBNODE *this_node = fb->decoded;
+            int dec_size = fb->decoded_size;
+            int all_decoded = 1;
+
+            //printf("?? approaching a full condition dec_size:%d\n", dec_size);
+            vp8_write_lock();
+            while(this_node && dec_size)
+            {
+                all_decoded &= this_node->is_decoded;
+                this_node = this_node->next;
+                dec_size--;
+            }
+            vp8_write_unlock();
+
+            if(all_decoded)
+                break;
+        }
+        else
+            break;
+    }
+#else
+if(1)
+    if(fb->decoded_size >= (fb->max_allocated_frames - 1))
+    {
+        /* we are approaching a full condition, probably due to a long
+         * decode */
+        struct fbnode *this_node = fb->decoded;
+        int dec_size = fb->decoded_size;
+
+        //printf("?? approaching a full condition dec_size:%d\n", dec_size);
+//        vp8_write_lock();
+//        vp8_write_unlock();
+
+        /* search for the first frame not decoded */
+        while(this_node && dec_size)
+        {
+            int is_decoded;
+            is_decoded = this_node->is_decoded;
+
+            if(!is_decoded)
+                break;
+            this_node = this_node->next;
+            dec_size--;
+        }
+
+        if(dec_size)
+        {
+            /* wait for this frame to decode */
+            while((!this_node->is_decoded))
+            {
+                x86_pause_hint();
+                thread_sleep(0);
+            }
+        }
+    }
+#endif
+
+    /* find a free buffer */
+    this_fb = get_free_fb(fb);
+    if(!this_fb)
+    {
+        printf("could not find free buffer cx_data_count:%d\n", fb->cx_data_count);
+        //vp8_show_decoded_buffers(fb);
+        printf("~~~~~~\n");
+        return -1;
+    }
+
+    /* update internal buffers, if a resolution change occurred */
+    update_frame_if_resize(fb, this_fb, thread_pbi);
+
+    /* add into decoded list */
+    add_fb_to_decoded(fb, this_fb, user_priv);
+
+    //    printf("~~ current_cx_frame %d ref_cnt %d i:%d this_fb %x this_fb->prev %x thread_pbi %x\n",
+  //         this_fb->current_cx_frame, this_fb->ref_cnt, i, this_fb, this_fb->prev, thread_pbi);
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    thread_pbi->common.error.error_code = VPX_CODEC_OK;
+
+    //TODO: fix fragments
+//    if (thread_pbi->fragments.count == 0)
+//    {
+//        /* New frame, reset fragment pointers and sizes */
+//        vpx_memset((void*)thread_pbi->fragments, 0, sizeof(thread_pbi->fragments));
+//        vpx_memset(thread_pbi->fragment_sizes, 0, sizeof(thread_pbi->fragment_sizes));
+///    }
+
+    if (!thread_pbi->fragments.enabled)
+    {
+        thread_pbi->fragments.ptrs[0] = source;
+        thread_pbi->fragments.sizes[0] = size;
+        thread_pbi->fragments.count = 1;
+    }
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+    /* save the compressed data */
+    this_fb->cx_data_ptr = vpx_malloc(thread_pbi->fragments.sizes[0]);
+    vpx_memcpy(this_fb->cx_data_ptr, thread_pbi->fragments.ptrs[0],
+               thread_pbi->fragments.sizes[0]);
+
+    this_fb->current_cx_frame = fb->cx_data_count;
+    this_fb->this_pbi = thread_pbi;
+
+    thread_pbi->this_fb = this_fb;
+    thread_pbi->fragments.ptrs[0] = this_fb->cx_data_ptr;
+
+    /* number of compressed frames */
+    fb->cx_data_count++;
+
+    if(num_decoder_instances > 1)
+    {
+        sem_post(&fb->fbmt.h_event_start_decoding[i ]);
+
+//printf("post %d sizes %d\n", this_fb->current_cx_frame, thread_pbi->fragments.sizes[0]);
+        //for testing/debugging purposes....
+        //sem_wait(&fb->fbmt.h_event_frame_done[i ]);
+    }
+    else
+    {
+        retcode = vp8_decode_frame(thread_pbi);
+
+        fb->fbmt.thread_state[i] = THREAD_READY;
+        thread_pbi->this_fb->is_decoded = 1;
+        thread_pbi->this_fb->show = thread_pbi->common.show_frame;
+        vpx_free(this_fb->cx_data_ptr);
+    }
+
+
+
+    vp8_clear_system_state();
+
+//    printf("++ current_cx_frame %d ref_cnt %d i:%d this_fb %x\n", this_fb->current_cx_frame, this_fb->ref_cnt, i, this_fb);
+    return retcode;
+}
 /*For ARM NEON, d8-d15 are callee-saved registers, and need to be saved by us.*/
 #if HAVE_NEON
 extern void vp8_push_neon(int64_t *store);
@@ -858,7 +1083,7 @@ int vp8dx_get_raw_frame(struct frame_buffers *fb,
     if(!ret)
     {
         struct fbnode *to_show_fb = fb->decoded_to_show;
-#if CONFIG_POSTPROC
+#if xCONFIG_POSTPROC
         VP8D_COMP *pbi = to_show_fb->this_pbi;
 
         /* For now, copy post proc data into common. */
@@ -937,8 +1162,19 @@ int vp8_create_decoder_instances(struct frame_buffers *fb, VP8D_CONFIG *oxcf)
     }
     else
     {
-        /* TODO : create frame threads and decoder instances for each
-         * thread here */
+        int i;
+
+         /* */
+         if(vp8_create_decoder_frame_threads(fb, oxcf))
+         {
+             return -1;
+         }
+
+         /* decoder instance for each thread */
+         for(i = 0; i < fb->fbmt.allocated_decoding_thread_count; i++)
+         {
+             fb->pbi[i] = create_decompressor(oxcf);
+         }
     }
 
     return VPX_CODEC_OK;
@@ -973,7 +1209,59 @@ int vp8_remove_decoder_instances(struct frame_buffers *fb)
 int vp8_adjust_decoder_frames(struct frame_buffers *fb, int width, int height)
 {
     int ithread;
-    int num_decoder_instances = 1; /* single thread mode */
+    int num_decoder_instances;
+
+    num_decoder_instances = fb->fbmt.allocated_decoding_thread_count;
+    if(num_decoder_instances)
+    {
+        int i;
+
+        /* wait for remaining cx frames to be decoded */
+if(1)
+        while(1)
+        {
+            struct fbnode *this_node = fb->decoded;
+            int dec_size = fb->decoded_size;
+            int all_decoded = 1;
+
+            while(this_node && dec_size)
+            {
+                vp8_fbmt_mutex_lock();
+                all_decoded &= this_node->is_decoded;
+                vp8_fbmt_mutex_unlock();
+                this_node = this_node->next;
+                dec_size--;
+            }
+
+            if(all_decoded)
+                break;
+        }
+
+        /* wait for the thread to complete */
+if(0)
+        for(i = 0; i < num_decoder_instances; i++)
+        {
+            int state;
+
+            vp8_fbmt_mutex_lock();
+            state = fb->fbmt.thread_state[i];
+            vp8_fbmt_mutex_unlock();
+
+            while(state != THREAD_READY)
+            {
+                vp8_fbmt_mutex_lock();
+                state = fb->fbmt.thread_state[i];
+                vp8_fbmt_mutex_unlock();
+
+//                x86_pause_hint();
+  //              thread_sleep(0);
+                break;
+            }
+//            printf("thread %d READY\n", i);
+        }
+    }
+    else
+        num_decoder_instances = 1; /* single thread mode */
 
     for (ithread = 0; ithread < num_decoder_instances; ithread++)
     {

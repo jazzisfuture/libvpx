@@ -19,4 +19,8 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows);
 void vp8mt_de_alloc_temp_buffers(VP8D_COMP *pbi, int mb_rows);
 #endif
 
+extern void vp8_fbmt_mutex_lock();
+
+extern void vp8_fbmt_mutex_unlock();
+
 #endif  // DECODERTHREADING_H_
