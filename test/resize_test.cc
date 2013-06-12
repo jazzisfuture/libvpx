@@ -101,7 +101,9 @@ TEST_P(ResizeTest, TestExternalResizeWorks) {
 
 class ResizeInternalTest : public ResizeTest {
  protected:
-  ResizeInternalTest() : ResizeTest(), frame0_psnr_(0.0) {}
+  ResizeInternalTest() : ResizeTest() {
+    memset(&frame0_psnr_[0], 0, sizeof(frame0_psnr_));
+  }
 
   virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
                                   libvpx_test::Encoder *encoder) {
@@ -116,12 +118,15 @@ class ResizeInternalTest : public ResizeTest {
   }
 
   virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
-    if (!frame0_psnr_)
-      frame0_psnr_ = pkt->data.psnr.psnr[0];
-    EXPECT_NEAR(pkt->data.psnr.psnr[0], frame0_psnr_, 1.0);
+    if (!frame0_psnr_[0])
+      memcpy(frame0_psnr_, pkt->data.psnr.psnr, sizeof(frame0_psnr_));
+    EXPECT_NEAR(pkt->data.psnr.psnr[0], frame0_psnr_[0], 1.2);
+    EXPECT_NEAR(pkt->data.psnr.psnr[1], frame0_psnr_[1], 1.2);
+    EXPECT_NEAR(pkt->data.psnr.psnr[2], frame0_psnr_[2], 1.2);
+    EXPECT_NEAR(pkt->data.psnr.psnr[3], frame0_psnr_[3], 1.2);
   }
 
-  double frame0_psnr_;
+  double frame0_psnr_[4];
 };
 
 TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
