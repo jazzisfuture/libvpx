@@ -31,11 +31,11 @@ static size_t vp9_rb_bytes_read(struct vp9_read_bit_buffer *rb) {
 }
 
 static int vp9_rb_read_bit(struct vp9_read_bit_buffer *rb) {
-  const int off = rb->bit_offset;
+  const int off = (int)rb->bit_offset;
   const int p = off / CHAR_BIT;
   const int q = CHAR_BIT - 1 - off % CHAR_BIT;
   if (rb->bit_buffer + p >= rb->bit_buffer_end) {
-    rb->error_handler(rb->error_handler_data, rb->bit_offset);
+    rb->error_handler(rb->error_handler_data, (int)rb->bit_offset);
     return 0;
   } else {
     const int bit = (rb->bit_buffer[p] & (1 << q)) >> q;
