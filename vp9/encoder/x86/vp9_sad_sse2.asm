@@ -166,29 +166,36 @@ cglobal sad8x%1, 4, 7, 5, src, src_stride, ref, ref_stride, \
 INIT_XMM sse2
 SAD8XN 16 ; sad8x16_sse2
 SAD8XN  8 ; sad8x8_sse2
+SAD8XN  4 ; sad8x4_sse2
 
-; unsigned int vp9_sad4x4_sse(uint8_t *src, int src_stride,
-;                             uint8_t *ref, int ref_stride);
-INIT_MMX sse
-cglobal sad4x4, 4, 4, 8, src, src_stride, ref, ref_stride
+; unsigned int vp9_sad4x{4, 8}_sse(uint8_t *src, int src_stride,
+;                                  uint8_t *ref, int ref_stride);
+%macro SAD4XN 1
+cglobal sad4x%1, 4, 5, 5, src, src_stride, ref, ref_stride, \
+                         n_rows
   movsxdifnidn src_strideq, src_strided
   movsxdifnidn ref_strideq, ref_strided
-  movd                  m0, [refq]
-  movd                  m1, [refq+ref_strideq]
-  movd                  m2, [srcq]
-  movd                  m3, [srcq+src_strideq]
+  mov              n_rowsd, %1/2
+  pxor                  m0, m0
+
+.loop:
+  movd                  m1, [refq]
+  movd                  m2, [refq+ref_strideq]
+  movd                  m3, [srcq]
+  movd                  m4, [srcq+src_strideq]
   lea                 refq, [refq+ref_strideq*2]
   lea                 srcq, [srcq+src_strideq*2]
-  movd                  m4, [refq]
-  movd                  m5, [refq+ref_strideq]
-  movd                  m6, [srcq]
-  movd                  m7, [srcq+src_strideq]
-  punpckldq             m0, m1
-  punpckldq             m2, m3
-  punpckldq             m4, m5
-  punpckldq             m6, m7
-  psadbw                m0, m2
-  psadbw                m4, m6
-  paddd                 m0, m4
+  punpckldq             m1, m2
+  punpckldq             m3, m4
+  psadbw                m1, m3
+  paddd                 m0, m1
+  dec              n_rowsd
+  jg .loop
+
   movd                 eax, m0
   RET
+%endmacro
+
+INIT_MMX sse
+SAD4XN  8 ; sad4x8_sse
+SAD4XN  4 ; sad4x4_sse
