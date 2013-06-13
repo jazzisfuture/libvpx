@@ -166,6 +166,34 @@ cglobal sad8x%1, 4, 7, 5, src, src_stride, ref, ref_stride, \
 INIT_XMM sse2
 SAD8XN 16 ; sad8x16_sse2
 SAD8XN  8 ; sad8x8_sse2
+SAD8XN  4 ; sad8x4_sse2
+
+; unsigned int vp9_sad4x8_sse(uint8_t *src, int src_stride,
+;                             uint8_t *ref, int ref_stride);
+INIT_MMX sse
+cglobal sad4x8, 4, 5, 5, src, src_stride, ref, ref_stride, \
+                         n_rows
+  movsxdifnidn src_strideq, src_strided
+  movsxdifnidn ref_strideq, ref_strided
+  mov              n_rowsd, 4
+  pxor                  m0, m0
+
+.loop:
+  movd                  m1, [refq]
+  movd                  m2, [refq+ref_strideq]
+  movd                  m3, [srcq]
+  movd                  m4, [srcq+src_strideq]
+  lea                 refq, [refq+ref_strideq*2]
+  lea                 srcq, [srcq+src_strideq*2]
+  punpckldq             m1, m2
+  punpckldq             m3, m4
+  psadbw                m1, m3
+  paddd                 m0, m1
+  dec              n_rowsd
+  jg .loop
+
+  movd                 eax, m0
+  RET
 
 ; unsigned int vp9_sad4x4_sse(uint8_t *src, int src_stride,
 ;                             uint8_t *ref, int ref_stride);
