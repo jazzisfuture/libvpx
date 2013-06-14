@@ -1224,6 +1224,17 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   *dist = d;
 }
 
+static int do_test_split(MACROBLOCK *const x,
+                         int r1, int d1, int r2h, int d2h, int r2v, int d2v,
+                         BLOCK_SIZE_TYPE bsize) {
+  if (RDCOST(x->rdmult, x->rddiv, r2h, d2h) >
+      RDCOST(x->rdmult, x->rddiv, r1, d1) &&
+      RDCOST(x->rdmult, x->rddiv, r2v, d2v) >
+      RDCOST(x->rdmult, x->rddiv, r1, d1))
+    return 0;
+  else
+    return 1;
+}
 
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previously rate-distortion optimization
@@ -1232,6 +1243,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
                               int mi_row, int mi_col,
                               BLOCK_SIZE_TYPE bsize,
                               int *rate, int *dist) {
+  int r4 = 0, d4 = 0, r2v = 0, d2v = 0, r2h = 0, d2h = 0, r1 = 0, d1 = 0;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -1243,6 +1255,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
   int i, pl;
   BLOCK_SIZE_TYPE subsize;
   int srate = INT_MAX, sdist = INT_MAX;
+  PARTITION_TYPE best_partition = PARTITION_NONE;
 
   if (bsize < BLOCK_SIZE_SB8X8)
     if (xd->ab_index != 0) {
@@ -1254,126 +1267,143 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp,
 
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  // PARTITION_SPLIT
   if (bsize >= BLOCK_SIZE_SB8X8) {
-    int r4 = 0, d4 = 0;
-    subsize = get_subsize(bsize, PARTITION_SPLIT);
-    *(get_sb_partitioning(x, bsize)) = subsize;
-
-    for (i = 0; i < 4; ++i) {
-      int x_idx = (i & 1) * (ms >> 1);
-      int y_idx = (i >> 1) * (ms >> 1);
-      int r = 0, d = 0;
-
-      if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
-        continue;
-
-      *(get_sb_index(xd, subsize)) = i;
-      rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
-                        &r, &d);
-
-      r4 += r;
-      d4 += d;
-    }
-    set_partition_seg_context(cm, xd, mi_row, mi_col);
-    pl = partition_plane_context(xd, bsize);
-    if (r4 < INT_MAX)
-      r4 += x->partition_cost[pl][PARTITION_SPLIT];
-    assert(r4 >= 0);
-    assert(d4 >= 0);
-    srate = r4;
-    sdist = d4;
-    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-  }
-
-  // PARTITION_HORZ
-  if (bsize >= BLOCK_SIZE_SB8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
-    int r2, d2;
-    int r = 0, d = 0;
-    subsize = get_subsize(bsize, PARTITION_HORZ);
-    *(get_sb_index(xd, subsize)) = 0;
-    pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
-                  get_block_context(x, subsize));
-
-    if (mi_row + (ms >> 1) < cm->mi_rows) {
-      update_state(cpi, get_block_context(x, subsize), subsize, 0);
-      encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
-
-      *(get_sb_index(xd, subsize)) = 1;
-      pick_sb_modes(cpi, mi_row + (ms >> 1), mi_col, tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
-      r2 += r;
-      d2 += d;
-    }
-    set_partition_seg_context(cm, xd, mi_row, mi_col);
-    pl = partition_plane_context(xd, bsize);
-    if (r2 < INT_MAX)
-      r2 += x->partition_cost[pl][PARTITION_HORZ];
-    if (RDCOST(x->rdmult, x->rddiv, r2, d2) <
-        RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
-      srate = r2;
-      sdist = d2;
-      *(get_sb_partitioning(x, bsize)) = subsize;
-    }
-    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-  }
-
-  // PARTITION_VERT
-  if (bsize >= BLOCK_SIZE_SB8X8 && mi_row + (ms >> 1) < cm->mi_rows) {
-    int r2, d2;
-    subsize = get_subsize(bsize, PARTITION_VERT);
-    *(get_sb_index(xd, subsize)) = 0;
-    pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
-                  get_block_context(x, subsize));
-    if (mi_col + (ms >> 1) < cm->mi_cols) {
-      int r = 0, d = 0;
-      update_state(cpi, get_block_context(x, subsize), subsize, 0);
-      encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
-
-      *(get_sb_index(xd, subsize)) = 1;
-      pick_sb_modes(cpi, mi_row, mi_col + (ms >> 1), tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
-      r2 += r;
-      d2 += d;
-    }
-    set_partition_seg_context(cm, xd, mi_row, mi_col);
-    pl = partition_plane_context(xd, bsize);
-    if (r2 < INT_MAX)
-      r2 += x->partition_cost[pl][PARTITION_VERT];
-    if (RDCOST(x->rdmult, x->rddiv, r2, d2) <
-        RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
-      srate = r2;
-      sdist = d2;
-      *(get_sb_partitioning(x, bsize)) = subsize;
-    }
-    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-  }
-
-  // PARTITION_NONE
-  if ((mi_row + (ms >> 1) < cm->mi_rows) &&
-      (mi_col + (ms >> 1) < cm->mi_cols)) {
-    int r, d;
-    pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, bsize,
-                  get_block_context(x, bsize));
-    if (bsize >= BLOCK_SIZE_SB8X8) {
+    // PARTITION_NONE
+    if ((mi_row + (ms >> 1) < cm->mi_rows) &&
+        (mi_col + (ms >> 1) < cm->mi_cols)) {
+      pick_sb_modes(cpi, mi_row, mi_col, tp, &r1, &d1, bsize,
+                    get_block_context(x, bsize));
       set_partition_seg_context(cm, xd, mi_row, mi_col);
       pl = partition_plane_context(xd, bsize);
-      r += x->partition_cost[pl][PARTITION_NONE];
+      r1 += x->partition_cost[pl][PARTITION_NONE];
+
+      if (RDCOST(x->rdmult, x->rddiv, r1, d1) <
+          RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
+        srate = r1;
+        sdist = d1;
+        best_partition = PARTITION_NONE;
+        *(get_sb_partitioning(x, bsize)) = bsize;
+      }
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+    }
+    // PARTITION_HORZ
+    if (mi_col + (ms >> 1) < cm->mi_cols) {
+      subsize = get_subsize(bsize, PARTITION_HORZ);
+      *(get_sb_index(xd, subsize)) = 0;
+      pick_sb_modes(cpi, mi_row, mi_col, tp, &r2h, &d2h, subsize,
+                    get_block_context(x, subsize));
+
+      if (mi_row + (ms >> 1) < cm->mi_rows) {
+        int r = 0, d = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+
+        *(get_sb_index(xd, subsize)) = 1;
+        pick_sb_modes(cpi, mi_row + (ms >> 1), mi_col, tp, &r, &d, subsize,
+                      get_block_context(x, subsize));
+        r2h += r;
+        d2h += d;
+      }
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      if (r2h < INT_MAX)
+        r2h += x->partition_cost[pl][PARTITION_HORZ];
+      if (RDCOST(x->rdmult, x->rddiv, r2h, d2h) <
+          RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
+        srate = r2h;
+        sdist = d2h;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+        best_partition = PARTITION_HORZ;
+      }
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+    }
+    // PARTITION_VERT
+    if (mi_row + (ms >> 1) < cm->mi_rows) {
+      subsize = get_subsize(bsize, PARTITION_VERT);
+      *(get_sb_index(xd, subsize)) = 0;
+      pick_sb_modes(cpi, mi_row, mi_col, tp, &r2v, &d2v, subsize,
+                    get_block_context(x, subsize));
+      if (mi_col + (ms >> 1) < cm->mi_cols) {
+        int r = 0, d = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+
+        *(get_sb_index(xd, subsize)) = 1;
+        pick_sb_modes(cpi, mi_row, mi_col + (ms >> 1), tp, &r, &d, subsize,
+                      get_block_context(x, subsize));
+        r2v += r;
+        d2v += d;
+      }
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      if (r2v < INT_MAX)
+        r2v += x->partition_cost[pl][PARTITION_VERT];
+      if (RDCOST(x->rdmult, x->rddiv, r2v, d2v) <
+          RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
+        srate = r2v;
+        sdist = d2v;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+        best_partition = PARTITION_VERT;
+      }
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+    }
+    // PARTITION_SPLIT
+    if (do_test_split(x, r1, d1, r2h, d2h, r2v, d2v, bsize)) {
+      subsize = get_subsize(bsize, PARTITION_SPLIT);
+      //*(get_sb_partitioning(x, bsize)) = subsize;
+
+      for (i = 0; i < 4; ++i) {
+        int x_idx = (i & 1) * (ms >> 1);
+        int y_idx = (i >> 1) * (ms >> 1);
+        int r = 0, d = 0;
+
+        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
+          continue;
+
+        *(get_sb_index(xd, subsize)) = i;
+        rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
+                          &r, &d);
+
+        r4 += r;
+        d4 += d;
+      }
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      if (r4 < INT_MAX)
+        r4 += x->partition_cost[pl][PARTITION_SPLIT];
+      assert(r4 >= 0);
+      assert(d4 >= 0);
+      if (RDCOST(x->rdmult, x->rddiv, r4, d4) <
+          RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
+        srate = r4;
+        sdist = d4;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+        best_partition = PARTITION_SPLIT;
+      }
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
     }
 
-    if (RDCOST(x->rdmult, x->rddiv, r, d) <
-        RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
-      srate = r;
-      sdist = d;
-      if (bsize >= BLOCK_SIZE_SB8X8)
-        *(get_sb_partitioning(x, bsize)) = bsize;
+    if (best_partition == PARTITION_NONE)
+      *(get_sb_partitioning(x, bsize)) = bsize;
+    else
+      *(get_sb_partitioning(x, bsize)) = get_subsize(bsize, best_partition);
+  } else {
+    if ((mi_row + (ms >> 1) < cm->mi_rows) &&
+        (mi_col + (ms >> 1) < cm->mi_cols)) {
+      pick_sb_modes(cpi, mi_row, mi_col, tp, &r1, &d1, bsize,
+                    get_block_context(x, bsize));
+
+      if (RDCOST(x->rdmult, x->rddiv, r1, d1) <
+          RDCOST(x->rdmult, x->rddiv, srate, sdist)) {
+        srate = r1;
+        sdist = d1;
+      }
     }
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
   *rate = srate;
   *dist = sdist;
-
-  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
   if (srate < INT_MAX && sdist < INT_MAX)
     encode_sb(cpi, tp, mi_row, mi_col, bsize == BLOCK_SIZE_SB64X64, bsize);
