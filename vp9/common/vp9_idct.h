@@ -71,9 +71,8 @@ static INLINE int dct_const_round_shift(int input) {
   return rv;
 }
 
-static INLINE int dct_32_round(int input) {
-  int rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
-  assert(-131072 <= rv && rv <= 131071);
+static INLINE int half_round_shift(int input) {
+  int rv = (input + (input > 0)) >> 1;
   return rv;
 }
 
