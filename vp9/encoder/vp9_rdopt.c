@@ -601,12 +601,13 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
   *skippable  = vp9_sby_is_skippable(xd, bsize);
 }
 
+static void model_rd_from_var_lapndz(int var, int n, int qstep,
+                                     int *rate, int *dist);
 static void super_block_yrd(VP9_COMP *cpi,
                             MACROBLOCK *x, int *rate, int *distortion,
                             int *skip, BLOCK_SIZE_TYPE bs,
                             int64_t txfm_cache[NB_TXFM_MODES]) {
   VP9_COMMON *const cm = &cpi->common;
-  int r[TX_SIZE_MAX_SB][2], d[TX_SIZE_MAX_SB], s[TX_SIZE_MAX_SB];
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
 
@@ -629,21 +630,132 @@ static void super_block_yrd(VP9_COMP *cpi,
                              mbmi->txfm_size);
     return;
   }
-  if (bs >= BLOCK_SIZE_SB32X32)
-    super_block_yrd_for_txfm(cm, x, &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32],
-                             bs, TX_32X32);
-  if (bs >= BLOCK_SIZE_MB16X16)
-    super_block_yrd_for_txfm(cm, x, &r[TX_16X16][0], &d[TX_16X16], &s[TX_16X16],
-                             bs, TX_16X16);
-  super_block_yrd_for_txfm(cm, x, &r[TX_8X8][0], &d[TX_8X8], &s[TX_8X8], bs,
-                           TX_8X8);
-  super_block_yrd_for_txfm(cm, x, &r[TX_4X4][0], &d[TX_4X4], &s[TX_4X4], bs,
-                           TX_4X4);
 
-  choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s,
-                           skip, txfm_cache,
-                           TX_32X32 - (bs < BLOCK_SIZE_SB32X32)
-                           - (bs < BLOCK_SIZE_MB16X16));
+  if (mbmi->ref_frame[0] > INTRA_FRAME) {
+    int rates[TX_SIZE_MAX_SB][2] = { { 0 } }, dists[TX_SIZE_MAX_SB] = { 0 };
+    uint64_t rd[NB_TXFM_MODES], tmp_rd;
+    const int w = 4 << b_width_log2(bs), h = 4 << b_height_log2(bs);
+    uint8_t *src = x->plane[0].src.buf, *dst = xd->plane[0].dst.buf;
+    int v, r, d, xx, y;
+    unsigned sse;
+    const int srcs = x->plane[0].src.stride, dsts = xd->plane[0].dst.stride;
+    TX_SIZE best_tx = TX_4X4, max_tx = TX_8X8;
+    const vp9_prob *tx_probs = vp9_get_pred_probs(cm, xd, PRED_TX_SIZE);
+
+    // try 4x4
+    for (y = 0; y < h; y += 4) {
+      for (xx = 0; xx < w; xx += 4) {
+        v = cpi->fn_ptr[BLOCK_4X4].vf(src + y * srcs + xx, srcs,
+                                      dst + y * dsts + xx, dsts, &sse);
+        model_rd_from_var_lapndz(v, 4 * 4, xd->plane[0].dequant[1] >> 3,
+                                 &r, &d);
+        rates[TX_4X4][0] += r;
+        dists[TX_4X4] += d;
+      }
+    }
+    rd[ONLY_4X4] = RDCOST(x->rdmult, x->rddiv, rates[TX_4X4][0], dists[TX_4X4]);
+    rates[TX_4X4][1] = rates[TX_4X4][0] + vp9_cost_bit(tx_probs[0], 0);
+    rd[TX_MODE_SELECT] = RDCOST(x->rdmult, x->rddiv, rates[TX_4X4][1], dists[TX_4X4]);
+
+    // try 8x8
+    for (y = 0; y < h; y += 8) {
+      for (xx = 0; xx < w; xx += 8) {
+        v = cpi->fn_ptr[BLOCK_8X8].vf(src + y * srcs + xx, srcs,
+                                      dst + y * dsts + xx, dsts, &sse);
+        model_rd_from_var_lapndz(v >> 1, 8 * 8, xd->plane[0].dequant[1] >> 3,
+                                 &r, &d);
+        rates[TX_8X8][0] += r;
+        dists[TX_8X8] += d;
+      }
+    }
+    rd[ALLOW_8X8] = RDCOST(x->rdmult, x->rddiv, rates[TX_8X8][0], dists[TX_8X8]);
+    rates[TX_8X8][1] = rates[TX_8X8][0] + vp9_cost_bit(tx_probs[0], 1);
+    if (bs >= BLOCK_SIZE_MB16X16)
+      rates[TX_8X8][1] += vp9_cost_bit(tx_probs[1], 0);
+    tmp_rd = RDCOST(x->rdmult, x->rddiv, rates[TX_8X8][1], dists[TX_8X8]);
+    if (tmp_rd < rd[TX_MODE_SELECT]) {
+      best_tx = TX_8X8;
+      rd[TX_MODE_SELECT] = tmp_rd;
+    }
+
+    // try 16x16
+    if (bs >= BLOCK_SIZE_MB16X16) {
+      for (y = 0; y < h; y += 16) {
+        for (xx = 0; xx < w; xx += 16) {
+          v = cpi->fn_ptr[BLOCK_16X16].vf(src + y * srcs + xx, srcs,
+                                          dst + y * dsts + xx, dsts, &sse);
+          model_rd_from_var_lapndz(v >> 2, 16 * 16, xd->plane[0].dequant[1] >> 3,
+                                   &r, &d);
+          rates[TX_16X16][0] += r;
+          dists[TX_16X16] += d;
+        }
+      }
+      rd[ALLOW_16X16] = RDCOST(x->rdmult, x->rddiv, rates[TX_16X16][0], dists[TX_16X16]);
+      rates[TX_16X16][1] = rates[TX_16X16][0] + vp9_cost_bit(tx_probs[0], 1);
+      rates[TX_16X16][1] += vp9_cost_bit(tx_probs[1], 1);
+      if (bs >= BLOCK_SIZE_SB32X32)
+        rates[TX_16X16][1] += vp9_cost_bit(tx_probs[2], 0);
+      tmp_rd = RDCOST(x->rdmult, x->rddiv, rates[TX_16X16][1], dists[TX_16X16]);
+      if (tmp_rd < rd[TX_MODE_SELECT]) {
+        best_tx = TX_16X16;
+        rd[TX_MODE_SELECT] = tmp_rd;
+      }
+      max_tx = TX_16X16;
+    } else {
+      memcpy(rates[TX_16X16], rates[TX_8X8], sizeof(int) * 2);
+      dists[TX_16X16] = dists[TX_8X8];
+      rd[ALLOW_16X16] = rd[ALLOW_8X8];
+    }
+
+    // try 32x32
+    if (bs >= BLOCK_SIZE_SB32X32) {
+      for (y = 0; y < h; y += 32) {
+        for (xx = 0; xx < w; xx += 32) {
+          v = cpi->fn_ptr[BLOCK_32X32].vf(src + y * srcs + xx, srcs,
+                                          dst + y * dsts + xx, dsts, &sse);
+          model_rd_from_var_lapndz(v >> 2, 32 * 32, xd->plane[0].dequant[1] >> 3,
+                                   &r, &d);
+          rates[TX_32X32][0] += r;
+          dists[TX_32X32] += d;
+        }
+      }
+      rd[TX_32X32] = RDCOST(x->rdmult, x->rddiv, rates[TX_32X32][0], dists[TX_32X32]);
+      rates[TX_32X32][1] = rates[TX_32X32][0] + vp9_cost_bit(tx_probs[0], 1);
+      rates[TX_32X32][1] += vp9_cost_bit(tx_probs[1], 1);
+      rates[TX_32X32][1] += vp9_cost_bit(tx_probs[2], 1);
+      tmp_rd = RDCOST(x->rdmult, x->rddiv, rates[TX_32X32][1], dists[TX_32X32]);
+      if (tmp_rd < rd[TX_MODE_SELECT]) {
+        best_tx = TX_32X32;
+        rd[TX_MODE_SELECT] = tmp_rd;
+      }
+      max_tx = TX_32X32;
+    } else {
+      memcpy(rates[TX_32X32], rates[TX_16X16], sizeof(int) * 2);
+      dists[TX_32X32] = dists[TX_16X16];
+      rd[ALLOW_32X32] = rd[ALLOW_16X16];
+    }
+    super_block_yrd_for_txfm(cm, x, rate, distortion, skip, bs,
+                         cm->txfm_mode == TX_MODE_SELECT ? best_tx : max_tx);
+    memcpy(txfm_cache, rd, sizeof(int64_t) * NB_TXFM_MODES);
+  } else {
+    int r[TX_SIZE_MAX_SB][2], d[TX_SIZE_MAX_SB], s[TX_SIZE_MAX_SB];
+
+    if (bs >= BLOCK_SIZE_SB32X32)
+      super_block_yrd_for_txfm(cm, x, &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32],
+                               bs, TX_32X32);
+    if (bs >= BLOCK_SIZE_MB16X16)
+      super_block_yrd_for_txfm(cm, x, &r[TX_16X16][0], &d[TX_16X16], &s[TX_16X16],
+                               bs, TX_16X16);
+    super_block_yrd_for_txfm(cm, x, &r[TX_8X8][0], &d[TX_8X8], &s[TX_8X8], bs,
+                             TX_8X8);
+    super_block_yrd_for_txfm(cm, x, &r[TX_4X4][0], &d[TX_4X4], &s[TX_4X4], bs,
+                             TX_4X4);
+
+    choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s,
+                             skip, txfm_cache,
+                             TX_32X32 - (bs < BLOCK_SIZE_SB32X32)
+                             - (bs < BLOCK_SIZE_MB16X16));
+  }
 }
 
 static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
