@@ -248,6 +248,8 @@ EXPERIMENT_LIST="
     non420
     alpha
     balanced_coeftree
+    filterintra
+    filterbit
 "
 CONFIG_LIST="
     external_build

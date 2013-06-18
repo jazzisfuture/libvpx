@@ -152,6 +152,9 @@ static int find_best_16x16_intra(VP9_COMP *cpi,
     vp9_build_intra_predictors(x->plane[0].src.buf, x->plane[0].src.stride,
                                xd->plane[0].dst.buf, xd->plane[0].dst.stride,
                                xd->mode_info_context->mbmi.mode,
+#if CONFIG_FILTERBIT
+                               0,
+#endif
                                bw, bh,
                                xd->up_available, xd->left_available,
                                xd->right_available);
