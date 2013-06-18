@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
@@ -639,46 +640,53 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                       max_intra_size_pct);
 
-    frame_avail = 1;
-    while (frame_avail || got_data) {
-        vpx_codec_iter_t iter = NULL;
-        const vpx_codec_cx_pkt_t *pkt;
+    {
+        clock_t before = clock();
+        clock_t after;
+        frame_avail = 1;
+        while (frame_avail || got_data) {
+            vpx_codec_iter_t iter = NULL;
+            const vpx_codec_cx_pkt_t *pkt;
 
-        flags = layer_flags[frame_cnt % flag_periodicity];
+            flags = layer_flags[frame_cnt % flag_periodicity];
 
-        frame_avail = read_frame(infile, &raw);
-        if (vpx_codec_encode(&codec, frame_avail? &raw : NULL, pts,
-                            1, flags, VPX_DL_REALTIME))
-            die_codec(&codec, "Failed to encode frame");
+            frame_avail = read_frame(infile, &raw);
+            if (vpx_codec_encode(&codec, frame_avail? &raw : NULL, pts,
+                                1, flags, VPX_DL_REALTIME))
+                die_codec(&codec, "Failed to encode frame");
 
-        /* Reset KF flag */
-        if (layering_mode != 7)
-            layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
+            /* Reset KF flag */
+            if (layering_mode != 7)
+                layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
 
-        got_data = 0;
-        while ( (pkt = vpx_codec_get_cx_data(&codec, &iter)) ) {
-            got_data = 1;
-            switch (pkt->kind) {
-            case VPX_CODEC_CX_FRAME_PKT:
-                for (i=cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity];
-                                              i<cfg.ts_number_layers; i++)
-                {
-                    write_ivf_frame_header(outfile[i], pkt);
-                    (void) fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz,
-                                  outfile[i]);
-                    frames_in_layer[i]++;
+            got_data = 0;
+            while ( (pkt = vpx_codec_get_cx_data(&codec, &iter)) ) {
+                got_data = 1;
+                switch (pkt->kind) {
+                case VPX_CODEC_CX_FRAME_PKT:
+                    for (i=cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity];
+                                                  i<cfg.ts_number_layers; i++)
+                    {
+                        write_ivf_frame_header(outfile[i], pkt);
+                        (void) fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz,
+                                      outfile[i]);
+                        frames_in_layer[i]++;
+                    }
+                    break;
+                default:
+                    break;
                 }
-                break;
-            default:
-                break;
             }
+            frame_cnt++;
+            pts += frame_duration;
         }
-        frame_cnt++;
-        pts += frame_duration;
+        after = clock();
+        printf("Processed %d frames in %ld ms.\n", frame_cnt-1,
+               (int) (after - before) / (CLOCKS_PER_SEC / 1000));
     }
+
     fclose (infile);
 
-    printf ("Processed %d frames.\n",frame_cnt-1);
     if (vpx_codec_destroy(&codec))
             die_codec (&codec, "Failed to destroy codec");
 
