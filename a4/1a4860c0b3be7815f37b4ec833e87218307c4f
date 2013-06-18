@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Christian Duvivier <cduvivier@google.com>
+Code-Review+2: Christian Duvivier <cduvivier@google.com>
+Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Tue, 18 Jun 2013 11:40:14 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/58700
+Project: webm/libvpx
+Branch: refs/heads/master
