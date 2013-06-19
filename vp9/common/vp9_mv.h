@@ -18,19 +18,10 @@ typedef struct {
   int16_t col;
 } MV;
 
+// facilitates faster equality tests and copies
 typedef union int_mv {
   uint32_t as_int;
   MV as_mv;
-} int_mv; /* facilitates faster equality tests and copies */
-
-struct mv32 {
-  int32_t row;
-  int32_t col;
-};
-
-typedef union int_mv32 {
-  uint64_t    as_int;
-  struct mv32 as_mv;
-} int_mv32; /* facilitates faster equality tests and copies */
+} int_mv;
 
 #endif  // VP9_COMMON_VP9_MV_H_
