@@ -346,16 +346,16 @@ static int mi_mv_pred_col_q4(MACROBLOCKD *mb, int idx) {
 
 // TODO(jkoleszar): yet another mv clamping function :-(
 MV clamp_mv_to_umv_border_sb(const MV *src_mv,
-    int bwl, int bhl, int ss_x, int ss_y,
+    int bw, int bh, int ss_x, int ss_y,
     int mb_to_left_edge, int mb_to_top_edge,
     int mb_to_right_edge, int mb_to_bottom_edge) {
   /* If the MV points so far into the UMV border that no visible pixels
    * are used for reconstruction, the subpel part of the MV can be
    * discarded and the MV limited to 16 pixels with equivalent results.
    */
-  const int spel_left = (VP9_INTERP_EXTEND + (4 << bwl)) << 4;
+  const int spel_left = (VP9_INTERP_EXTEND + bw) << 4;
   const int spel_right = spel_left - (1 << 4);
-  const int spel_top = (VP9_INTERP_EXTEND + (4 << bhl)) << 4;
+  const int spel_top = (VP9_INTERP_EXTEND + bh) << 4;
   const int spel_bottom = spel_top - (1 << 4);
   MV clamped_mv;
 
@@ -385,10 +385,10 @@ static void build_inter_predictors(int plane, int block,
                                    void *argv) {
   const struct build_inter_predictors_args* const arg = argv;
   MACROBLOCKD * const xd = arg->xd;
-  const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
-  const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
-  const int bh = 4 << bhl, bw = 4 << bwl;
-  const int x = 4 * (block & ((1 << bwl) - 1)), y = 4 * (block >> bwl);
+  const int bw = plane_block_width(bsize, &xd->plane[plane]);
+  const int bh = plane_block_height(bsize, &xd->plane[plane]);
+  const int x = 4 * (block % (bw / 4));
+  const int y = 4 * (block / (bw / 4));
   const int use_second_ref = xd->mode_info_context->mbmi.ref_frame[1] > 0;
   int which_mv;
 
@@ -437,7 +437,7 @@ static void build_inter_predictors(int plane, int block,
      * MV. Note however that it performs the subsampling aware scaling so
      * that the result is always q4.
      */
-    clamped_mv.as_mv = clamp_mv_to_umv_border_sb(mv, bwl, bhl,
+    clamped_mv.as_mv = clamp_mv_to_umv_border_sb(mv, bw, bh,
                                                  xd->plane[plane].subsampling_x,
                                                  xd->plane[plane].subsampling_y,
                                                  xd->mb_to_left_edge,

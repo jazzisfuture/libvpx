@@ -11,28 +11,30 @@
 #include <stdio.h>
 
 #include "./vpx_config.h"
+#include "vpx_mem/vpx_mem.h"
 #include "vp9_rtcd.h"
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_onyxc_int.h"
-#include "vpx_mem/vpx_mem.h"
 
 static void d27_predictor(uint8_t *ypred_ptr, int y_stride,
                           int bw, int bh,
                           uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
+
   // first column
-  for (r = 0; r < bh - 1; ++r) {
-      ypred_ptr[r * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r] +
-                                                   yleft_col[r + 1], 1);
-  }
+  for (r = 0; r < bh - 1; ++r)
+    ypred_ptr[r * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r] +
+                                                 yleft_col[r + 1], 1);
+
   ypred_ptr[(bh - 1) * y_stride] = yleft_col[bh-1];
   ypred_ptr++;
+
   // second column
-  for (r = 0; r < bh - 2; ++r) {
-      ypred_ptr[r * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r] +
-                                                   yleft_col[r + 1] * 2 +
-                                                   yleft_col[r + 2], 2);
-  }
+  for (r = 0; r < bh - 2; ++r)
+    ypred_ptr[r * y_stride] = ROUND_POWER_OF_TWO(yleft_col[r] +
+                                                 yleft_col[r + 1] * 2 +
+                                                 yleft_col[r + 2], 2);
+
   ypred_ptr[(bh - 2) * y_stride] = ROUND_POWER_OF_TWO(yleft_col[bh - 2] +
                                                       yleft_col[bh - 1] * 3,
                                                       2);
@@ -40,15 +42,12 @@ static void d27_predictor(uint8_t *ypred_ptr, int y_stride,
   ypred_ptr++;
 
   // rest of last row
-  for (c = 0; c < bw - 2; ++c) {
+  for (c = 0; c < bw - 2; ++c)
     ypred_ptr[(bh - 1) * y_stride + c] = yleft_col[bh-1];
-  }
 
-  for (r = bh - 2; r >= 0; --r) {
-    for (c = 0; c < bw - 2; ++c) {
+  for (r = bh - 2; r >= 0; --r)
+    for (c = 0; c < bw - 2; ++c)
       ypred_ptr[r * y_stride + c] = ypred_ptr[(r + 1) * y_stride + c - 2];
-    }
-  }
 }
 
 static void d63_predictor(uint8_t *ypred_ptr, int y_stride,
@@ -57,14 +56,13 @@ static void d63_predictor(uint8_t *ypred_ptr, int y_stride,
   int r, c;
   for (r = 0; r < bh; ++r) {
     for (c = 0; c < bw; ++c) {
-      if (r & 1) {
+      if (r & 1)
         ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[r/2 + c] +
                                           yabove_row[r/2 + c + 1] * 2 +
                                           yabove_row[r/2 + c + 2], 2);
-      } else {
-        ypred_ptr[c] =ROUND_POWER_OF_TWO(yabove_row[r/2 + c] +
-                                         yabove_row[r/2+ c + 1], 1);
-      }
+      else
+        ypred_ptr[c] = ROUND_POWER_OF_TWO(yabove_row[r/2 + c] +
+                                          yabove_row[r/2 + c + 1], 1);
     }
     ypred_ptr += y_stride;
   }
@@ -293,35 +291,6 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
     default:
       break;
   }
-}
-
-void vp9_build_intra_predictors_sby_s(MACROBLOCKD *xd,
-                                      BLOCK_SIZE_TYPE bsize) {
-  const struct macroblockd_plane* const pd = &xd->plane[0];
-  const int bw = plane_block_width(bsize, pd);
-  const int bh = plane_block_height(bsize, pd);
-  vp9_build_intra_predictors(pd->dst.buf, pd->dst.stride,
-                             pd->dst.buf, pd->dst.stride,
-                             xd->mode_info_context->mbmi.mode,
-                             bw, bh, xd->up_available, xd->left_available,
-                             0 /*xd->right_available*/);
-}
-
-void vp9_build_intra_predictors_sbuv_s(MACROBLOCKD *xd,
-                                       BLOCK_SIZE_TYPE bsize) {
-  const int bwl = b_width_log2(bsize), bw = 2 << bwl;
-  const int bhl = b_height_log2(bsize), bh = 2 << bhl;
-
-  vp9_build_intra_predictors(xd->plane[1].dst.buf, xd->plane[1].dst.stride,
-                             xd->plane[1].dst.buf, xd->plane[1].dst.stride,
-                             xd->mode_info_context->mbmi.uv_mode,
-                             bw, bh, xd->up_available,
-                             xd->left_available, 0 /*xd->right_available*/);
-  vp9_build_intra_predictors(xd->plane[2].dst.buf, xd->plane[1].dst.stride,
-                             xd->plane[2].dst.buf, xd->plane[1].dst.stride,
-                             xd->mode_info_context->mbmi.uv_mode,
-                             bw, bh, xd->up_available,
-                             xd->left_available, 0 /*xd->right_available*/);
 }
 
 void vp9_predict_intra_block(MACROBLOCKD *xd,
