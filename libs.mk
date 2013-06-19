@@ -466,7 +466,7 @@ $(foreach bin,$(LIBVPX_TEST_BINS),\
         lib$(CODEC_LIB)$(CODEC_LIB_SUF) libgtest.a ))\
     $(if $(BUILD_LIBVPX),$(eval $(call linkerxx_template,$(bin),\
         $(LIBVPX_TEST_OBJS) \
-        -L. -lvpx -lgtest -lpthread -lm)\
+        -L. -lvpx -lgtest $(extralibs) -lm)\
         )))\
     $(if $(LIPO_LIBS),$(eval $(call lipo_bin_template,$(bin))))\
 
