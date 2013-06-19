@@ -988,7 +988,7 @@ static int estimate_max_q(VP9_COMP *cpi,
   // (reduced compression expected)
   if (cpi->compressor_speed == 1)
     speed_correction = cpi->oxcf.cpu_used <= 5 ?
-                          1.04 + (cpi->oxcf.cpu_used * 0.04) :
+                          1.04 + (/*cpi->oxcf.cpu_used*/0 * 0.04) :
                           1.25;
 
   // Try and pick a max Q that will be high enough to encode the
@@ -1051,7 +1051,7 @@ static int estimate_cq(VP9_COMP *cpi,
   // (reduced compression expected)
   if (cpi->compressor_speed == 1) {
     if (cpi->oxcf.cpu_used <= 5)
-      speed_correction = 1.04 + (cpi->oxcf.cpu_used * 0.04);
+      speed_correction = 1.04 + (/*cpi->oxcf.cpu_used*/ 0 * 0.04);
     else
       speed_correction = 1.25;
   }
