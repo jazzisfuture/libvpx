@@ -13,6 +13,7 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "test/clear_system_state.h"
+#include "test/register_state_check.h"
 
 #include "vpx/vpx_integer.h"
 #include "vpx_config.h"
@@ -76,7 +77,8 @@ void VarianceTest<VarianceFunctionType>::ZeroTest() {
     for (int j = 0; j <= 255; ++j) {
       memset(ref_, j, block_size_);
       unsigned int sse;
-      const unsigned int var = variance_(src_, width_, ref_, width_, &sse);
+      unsigned int var;
+      REGISTER_STATE_CHECK(var = variance_(src_, width_, ref_, width_, &sse));
       EXPECT_EQ(0u, var) << "src values: " << i << "ref values: " << j;
     }
   }
@@ -89,7 +91,8 @@ void VarianceTest<VarianceFunctionType>::OneQuarterTest() {
   memset(ref_, 255, half);
   memset(ref_ + half, 0, half);
   unsigned int sse;
-  const unsigned int var = variance_(src_, width_, ref_, width_, &sse);
+  unsigned int var;
+  REGISTER_STATE_CHECK(var = variance_(src_, width_, ref_, width_, &sse));
   const unsigned int expected = block_size_ * 255 * 255 / 4;
   EXPECT_EQ(expected, var);
 }
