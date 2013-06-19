@@ -8,7 +8,7 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-
+%if 0
 %include "vpx_ports/x86_abi_support.asm"
 
 %define xmm_filter_shift            7
@@ -370,3 +370,4 @@ bilinear_filters_ssse3:
     times 8 db  24, 104
     times 8 db  16, 112
     times 8 db   8, 120
+%endif

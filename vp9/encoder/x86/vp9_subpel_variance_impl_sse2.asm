@@ -8,11 +8,11 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-
 %include "vpx_ports/x86_abi_support.asm"
 
 %define xmm_filter_shift            7
 
+%if 0
 ;void vp9_filter_block2d_bil_var_sse2
 ;(
 ;    unsigned char *ref_ptr,
@@ -291,7 +291,7 @@ filter_block2d_bil_variance:
     UNSHADOW_ARGS
     pop         rbp
     ret
-
+%endif
 
 
 ;void vp9_half_horiz_vert_variance16x_h_sse2

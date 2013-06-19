@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if 0
 #include "vpx_config.h"
 #include "vp9/encoder/vp9_variance.h"
 #include "vp9/common/vp9_pragmas.h"
@@ -140,3 +141,4 @@ unsigned int vp9_sub_pixel_variance16x8_ssse3
   *sse = xxsum0;
   return (xxsum0 - (((unsigned int)xsum0 * xsum0) >> 7));
 }
+#endif

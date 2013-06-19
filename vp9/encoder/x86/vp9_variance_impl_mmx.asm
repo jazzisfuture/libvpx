@@ -509,6 +509,7 @@ sym(vp9_get4x4sse_cs_mmx):
     pop         rbp
     ret
 
+%if 0
 %define mmx_filter_shift            7
 
 ;void vp9_filter_block2d_bil4x4_var_mmx
@@ -849,3 +850,4 @@ SECTION_RODATA
 align 16
 mmx_bi_rd:
     times 4 dw 64
+%endif

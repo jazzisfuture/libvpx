@@ -9,6 +9,7 @@
  */
 
 #include "vpx_config.h"
+
 #include "vp9/encoder/vp9_variance.h"
 #include "vp9/common/vp9_pragmas.h"
 #include "vpx_ports/mem.h"
@@ -375,6 +376,7 @@ unsigned int vp9_variance32x64_sse2(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 11));
 }
 
+#if 0
 unsigned int vp9_sub_pixel_variance4x4_wmt
 (
   const unsigned char  *src_ptr,
@@ -715,7 +717,85 @@ unsigned int vp9_sub_pixel_variance8x16_wmt
   *sse = xxsum;
   return (xxsum - (((unsigned int)xsum * xsum) >> 7));
 }
+#else
+#define DECLS(opt1, opt2) \
+int vp9_sub_pixel_variance4xh_##opt2(const uint8_t *src, int src_stride, \
+                                     int x_offset, int y_offset, \
+                                     const uint8_t *dst, int dst_stride, \
+                                     int height, unsigned int *sse); \
+int vp9_sub_pixel_variance8xh_##opt1(const uint8_t *src, int src_stride, \
+                                     int x_offset, int y_offset, \
+                                     const uint8_t *dst, int dst_stride, \
+                                     int height, unsigned int *sse); \
+int vp9_sub_pixel_variance16xh_##opt1(const uint8_t *src, int src_stride, \
+                                      int x_offset, int y_offset, \
+                                      const uint8_t *dst, int dst_stride, \
+                                      int height, unsigned int *sse)
 
+DECLS(sse2, sse);
+DECLS(ssse3, ssse3);
+#undef DECLS
+
+#define FN(w, h, wf, wlog2, hlog2, opt, cast) \
+unsigned int vp9_sub_pixel_variance##w##x##h##_##opt(const uint8_t *src, \
+                                                     int src_stride, \
+                                                     int x_offset, \
+                                                     int y_offset, \
+                                                     const uint8_t *dst, \
+                                                     int dst_stride, \
+                                                     unsigned int *sse_ptr) { \
+  unsigned int sse; \
+  int se = vp9_sub_pixel_variance##wf##xh_##opt(src, src_stride, x_offset, \
+                                                y_offset, dst, dst_stride, \
+                                                h, &sse); \
+  if (w > wf) { \
+    unsigned int sse2; \
+    int se2 = vp9_sub_pixel_variance##wf##xh_##opt(src + 16, src_stride, \
+                                                   x_offset, y_offset, \
+                                                   dst + 16, dst_stride, \
+                                                   h, &sse2); \
+    se += se2; \
+    sse += sse2; \
+    if (w > wf * 2) { \
+      se2 = vp9_sub_pixel_variance##wf##xh_##opt(src + 32, src_stride, \
+                                                 x_offset, y_offset, \
+                                                 dst + 32, dst_stride, \
+                                                 h, &sse2); \
+      se += se2; \
+      sse += sse2; \
+      se2 = vp9_sub_pixel_variance##wf##xh_##opt(src + 48, src_stride, \
+                                                 x_offset, y_offset, \
+                                                 dst + 48, dst_stride, \
+                                                 h, &sse2); \
+      se += se2; \
+      sse += sse2; \
+    } \
+  } \
+  *sse_ptr = sse; \
+  return sse - ((cast se * se) >> (wlog2 + hlog2)); \
+}
+
+#define FNS(opt1, opt2) \
+FN(64, 64, 16, 6, 6, opt1, (int64_t)); \
+FN(64, 32, 16, 6, 5, opt1, (int64_t)); \
+FN(32, 64, 16, 5, 6, opt1, (int64_t)); \
+FN(32, 32, 16, 5, 5, opt1, (int64_t)); \
+FN(32, 16, 16, 5, 4, opt1, (int64_t)); \
+FN(16, 32, 16, 4, 5, opt1, (int64_t)); \
+FN(16, 16, 16, 4, 4, opt1, (unsigned int)); \
+FN(16,  8, 16, 4, 3, opt1, ); \
+FN( 8, 16,  8, 3, 4, opt1, ); \
+FN( 8,  8,  8, 3, 3, opt1, ); \
+FN( 8,  4,  8, 3, 2, opt1, ); \
+FN( 4,  8,  4, 2, 3, opt2, ); \
+FN( 4,  4,  4, 2, 2, opt2, )
+
+FNS(sse2, sse);
+FNS(ssse3, ssse3);
+
+#undef FNS
+#undef FN
+#endif
 
 unsigned int vp9_variance_halfpixvar16x16_h_wmt(
   const unsigned char *src_ptr,

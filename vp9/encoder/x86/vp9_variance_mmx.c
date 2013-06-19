@@ -191,6 +191,7 @@ unsigned int vp9_variance8x16_mmx(
 
 }
 
+#if 0
 DECLARE_ALIGNED(16, extern const short, vp9_bilinear_filters_mmx[16][8]);
 
 unsigned int vp9_sub_pixel_variance4x4_mmx
@@ -348,7 +349,6 @@ unsigned int vp9_sub_pixel_variance8x16_mmx
   return (xxsum - (((unsigned int)xsum * xsum) >> 7));
 }
 
-
 unsigned int vp9_variance_halfpixvar16x16_h_mmx(
   const unsigned char *src_ptr,
   int  source_stride,
@@ -380,3 +380,4 @@ unsigned int vp9_variance_halfpixvar16x16_hv_mmx(
   return vp9_sub_pixel_variance16x16_mmx(src_ptr, source_stride, 8, 8,
                                          ref_ptr, recon_stride, sse);
 }
+#endif
