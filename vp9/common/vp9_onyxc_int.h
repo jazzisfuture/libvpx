@@ -260,6 +260,9 @@ typedef struct VP9Common {
   int cur_tile_mi_col_start, cur_tile_mi_col_end, cur_tile_col_idx;
   int tile_rows, log2_tile_rows;
   int cur_tile_mi_row_start, cur_tile_mi_row_end, cur_tile_row_idx;
+#if CONFIG_BM_INTRA
+  int boundary_is_safe;
+#endif
 } VP9_COMMON;
 
 static int get_free_fb(VP9_COMMON *cm) {
