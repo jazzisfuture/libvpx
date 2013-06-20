@@ -641,7 +641,12 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   /* Find best coding mode & reconstruct the MB so it is available
    * as a predictor for MBs that follow in the SB */
   if (cm->frame_type == KEY_FRAME) {
-    vp9_rd_pick_intra_mode_sb(cpi, x, totalrate, totaldist, bsize, ctx);
+    vp9_rd_pick_intra_mode_sb(cpi, x, totalrate, totaldist, bsize, ctx
+#if CONFIG_BM_INTRA
+                              , mi_row, mi_col
+#else
+#endif
+);
   } else {
     vp9_rd_pick_inter_mode_sb(cpi, x, mi_row, mi_col, totalrate, totaldist,
                               bsize, ctx);
@@ -1416,13 +1421,19 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row,
     if (cpi->speed < 5 ||
         mi_col + 8 > cm->cur_tile_mi_col_end ||
         mi_row + 8 > cm->cur_tile_mi_row_end) {
+#if CONFIG_BM_INTRA
+      cpi->common.boundary_is_safe = 0;
+#endif
       rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                         &dummy_rate, &dummy_dist);
     } else {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
       MODE_INFO *m = cm->mi + idx_str;
-      // set_partitioning(cpi, m, BLOCK_SIZE_SB8X8);
-      choose_partitioning(cpi, cm->mi, mi_row, mi_col);
+       set_partitioning(cpi, m, BLOCK_SIZE_SB8X8);
+      //choose_partitioning(cpi, cm->mi, mi_row, mi_col);
+#if CONFIG_BM_INTRA
+      cpi->common.boundary_is_safe = 1;
+#endif
       rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                        &dummy_rate, &dummy_dist);
     }
@@ -1503,9 +1514,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
   int totalrate;
 
-//  fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
-//           cpi->common.current_video_frame, cpi->common.show_frame,
-//           cm->frame_type);
+  //  fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
+  //           cpi->common.current_video_frame, cpi->common.show_frame,
+  //           cm->frame_type);
 
   // Compute a modified set of reference frame probabilities to use when
   // prediction fails. These are based on the current general estimates for
@@ -2005,10 +2016,17 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
   }
 
   if (mbmi->ref_frame == INTRA_FRAME) {
+#if CONFIG_BM_INTRA
+    if(xd->mode_info_context->mbmi.mode == BM_PRED)
+    {
+      assert(cpi->common.boundary_is_safe);
+      assert(bsize == BLOCK_SIZE_SB8X8);
+    }
+#endif
     vp9_encode_intra_block_y(cm, x, (bsize < BLOCK_SIZE_SB8X8) ?
-                                    BLOCK_SIZE_SB8X8 : bsize);
+                                        BLOCK_SIZE_SB8X8 : bsize);
     vp9_encode_intra_block_uv(cm, x, (bsize < BLOCK_SIZE_SB8X8) ?
-                                     BLOCK_SIZE_SB8X8 : bsize);
+                                        BLOCK_SIZE_SB8X8 : bsize);
     if (output_enabled)
       sum_intra_stats(cpi, x);
   } else {

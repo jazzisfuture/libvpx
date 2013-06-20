@@ -626,8 +626,28 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   assert(b_mode >= DC_PRED && b_mode <= TM_PRED);
 
   plane_b_size = b_width_log2(bsize) - pd->subsampling_x;
+#if CONFIG_BM_INTRA
+  if(b_mode == BM_PRED)
+  {
+    assert(mbmi->sb_type == BLOCK_SIZE_SB8X8);
+    assert(plane == 0);
+    int r, c;
+
+    int jj = block >> 1, ii = block & 0x01;
+    copy_block(pd->dst.buf + jj * 4 * pd->dst.stride + 4 * ii, pd->dst.stride,
+               args->cm->yv12_fb[args->cm->new_fb_idx].y_buffer +
+               (xd->mode_info_context->mbmi.bm_mv_4x4[block].as_mv.row) * pd->dst.stride +
+               (xd->mode_info_context->mbmi.bm_mv_4x4[block].as_mv.col),
+               pd->dst.stride,
+               4, 4);
+  }
+  else
+    vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size, b_mode,
+                            dst, pd->dst.stride);
+#else
   vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size, b_mode,
                           dst, pd->dst.stride);
+#endif
   vp9_subtract_block(txfm_b_size, txfm_b_size, src_diff, bw,
                      src, p->src.stride, dst, pd->dst.stride);
 
