@@ -76,6 +76,9 @@ typedef enum {
   D153_PRED,       // Directional 153 deg = 180 - 27
   D27_PRED,        // Directional 27  deg = round(arctan(1/2) * 180/pi)
   D63_PRED,        // Directional 63  deg = round(arctan(2/1) * 180/pi)
+#if CONFIG_BM_INTRA
+  BM_PRED,
+#endif
   TM_PRED,         // True-motion
   NEARESTMV,
   NEARMV,
@@ -223,6 +226,9 @@ typedef struct {
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
+#if CONFIG_BM_INTRA
+  int_mv bm_mv_4x4[4];
+#endif
 } MB_MODE_INFO;
 
 typedef struct {
@@ -503,6 +509,9 @@ static TX_TYPE txfm_map(MB_PREDICTION_MODE bmode) {
   switch (bmode) {
     case TM_PRED :
     case D135_PRED :
+#if CONFIG_BM_INTRA
+    case BM_PRED:
+#endif
       return ADST_ADST;
 
     case V_PRED :

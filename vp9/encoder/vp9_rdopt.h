@@ -21,7 +21,12 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex);
 
 void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                int *r, int *d, BLOCK_SIZE_TYPE bsize,
-                               PICK_MODE_CONTEXT *ctx);
+                               PICK_MODE_CONTEXT *ctx
+#if CONFIG_BM_INTRA
+                               ,int mi_row, int mi_col
+#else
+#endif
+);
 
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   int mi_row, int mi_col,

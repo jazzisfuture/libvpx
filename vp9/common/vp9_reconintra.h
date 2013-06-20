@@ -27,4 +27,7 @@ void vp9_predict_intra_block(MACROBLOCKD *xd,
                             TX_SIZE tx_size,
                             int mode,
                             uint8_t *predictor, int pre_stride);
+#if CONFIG_BM_INTRA
+extern const int mi_index_map[8][8];
+#endif
 #endif  // VP9_COMMON_VP9_RECONINTRA_H_
