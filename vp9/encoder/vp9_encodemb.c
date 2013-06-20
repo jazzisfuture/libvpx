@@ -19,6 +19,8 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9_rtcd.h"
 
+#include "vpx_ports/x86.h"
+
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
 
