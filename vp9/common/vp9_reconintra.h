@@ -27,4 +27,14 @@ void vp9_predict_intra_block(MACROBLOCKD *xd,
                             TX_SIZE tx_size,
                             int mode,
                             uint8_t *predictor, int pre_stride);
+#if CONFIG_BM_INTRA
+extern const int mi_index_map[8][8];
+
+int sad_L_A(uint8_t *src, int src_stride, uint8_t *pred_ptr, int pred_stride,
+            int l, int n, int *sad_l, int *sad_a);
+
+void copy_block(uint8_t *dst_ptr, int dst_stride, uint8_t *src_ptr,
+                int src_stride, int rows, int cols);
+
+#endif
 #endif  // VP9_COMMON_VP9_RECONINTRA_H_
