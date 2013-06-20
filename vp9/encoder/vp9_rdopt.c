@@ -1138,7 +1138,7 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
                             xd->plane[0].dst.stride,
                             &xd->mode_info_context->bmi[i].as_mv[0],
                             &xd->scale_factor[0],
-                            4 * bw, 4 * bh, 0 /* no avg */, &xd->subpix);
+                            4 * bw, 4 * bh, 0 /* no avg */, &xd->subpix, 0);
 
   // TODO(debargha): Make this work properly with the
   // implicit-compoundinter-weight experiment when implicit
@@ -1152,7 +1152,7 @@ static int64_t encode_inter_mb_segment(VP9_COMMON *const cm,
                               dst, xd->plane[0].dst.stride,
                               &xd->mode_info_context->bmi[i].as_mv[1],
                               &xd->scale_factor[1], 4 * bw, 4 * bh, 1,
-                              &xd->subpix);
+                              &xd->subpix, 0);
   }
 
   vp9_subtract_block(4 * bh, 4 * bw, src_diff, 8,
@@ -2162,7 +2162,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                               &frame_mv[refs[!id]],
                               &xd->scale_factor[!id],
                               pw, ph, 0,
-                              &xd->subpix);
+                              &xd->subpix, 0);
 
     // Compound motion search on first ref frame.
     if (id)
