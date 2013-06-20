@@ -249,9 +249,8 @@ struct scale_factors {
   int (*scale_value_x)(int val, const struct scale_factors *scale);
   int (*scale_value_y)(int val, const struct scale_factors *scale);
   void (*set_scaled_offsets)(struct scale_factors *scale, int row, int col);
-  int_mv32 (*scale_mv_q3_to_q4)(const int_mv *src_mv,
-                                const struct scale_factors *scale);
-  int32_t (*scale_mv_component_q4)(int mv_q4, int scale_fp, int offset_q4);
+  MV (*scale_mv_q3_to_q4)(const MV *mv, const struct scale_factors *scale);
+  MV (*scale_mv_q4)(const MV *mv, const struct scale_factors *scale);
 
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
 };
