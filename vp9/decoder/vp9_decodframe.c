@@ -240,6 +240,99 @@ static void decode_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
   }
 }
 
+#if CONFIG_BM_INTRA
+struct decode_b_args {
+  VP9D_COMP *pbi;
+  MACROBLOCKD *xd;
+  int mi_row;
+  int mi_col;
+};
+
+struct decode_block_args {
+  VP9D_COMP *pbi;
+  MACROBLOCKD *xd;
+  vp9_reader *r;
+  int *eobtotal;
+};
+
+static void decode_block_intra_with_BM(int plane, int block,
+                                       BLOCK_SIZE_TYPE bsize,
+                                       int ss_txfrm_size, void *arg) {
+  struct decode_b_args* args = arg;
+  MACROBLOCKD *xd = args -> xd;
+  VP9D_COMP *pbi = args -> pbi;
+  int16_t* const qcoeff = BLOCK_OFFSET(xd->plane[plane].qcoeff, block, 16);
+  const int stride = xd->plane[plane].dst.stride;
+  const int raster_block = txfrm_block_to_raster_block(xd, bsize, plane,
+                                                       block, ss_txfrm_size);
+  uint8_t* const dst = raster_block_offset_uint8(xd, bsize, plane,
+                                                 raster_block,
+                                                 xd->plane[plane].dst.buf,
+                                                 stride);
+  const TX_SIZE tx_size = (TX_SIZE)(ss_txfrm_size / 2);
+  TX_TYPE tx_type;
+  int mode, b_mode;
+  int plane_b_size;
+  int tx_ib = raster_block >> tx_size;
+  mode = plane == 0? xd->mode_info_context->mbmi.mode:
+                     xd->mode_info_context->mbmi.uv_mode;
+
+  if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8 && plane == 0) {
+    assert(bsize == BLOCK_SIZE_SB8X8);
+    b_mode = xd->mode_info_context->bmi[raster_block].as_mode.first;
+  } else {
+    b_mode = mode;
+  }
+
+  plane_b_size = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
+  if (b_mode == BM_PRED) {
+    assert(plane == 0);
+    assert(bsize == BLOCK_SIZE_SB8X8);
+    assert(xd->mode_info_context->mbmi.txfm_size == TX_4X4);
+    int best_r = 0, best_c = 0, i, sad, sad_l, sad_a;
+    const struct macroblockd_plane* const pd = &xd->plane[0];
+
+    int sad_thresh = 40;
+    int jj = block >> 1, ii = block & 0x01;
+    sad = template_matching_L(&(pbi -> common), xd,
+                              pd->dst.buf + jj * 4 * pd->dst.stride + 4 * ii,
+                              pd->dst.stride,
+                              args -> mi_row, args -> mi_col, &best_r, &best_c,
+                              2, 4, &sad_l, &sad_a);
+    copy_block(pd->dst.buf + jj * 4 * pd->dst.stride + 4 * ii, pd->dst.stride,
+               pbi->common.yv12_fb[pbi->common.new_fb_idx].y_buffer +
+               best_r * pd->dst.stride + best_c, pd->dst.stride, 4, 4);
+  } else {
+    vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size,
+                            b_mode, dst, xd->plane[plane].dst.stride);
+  }
+
+  switch (ss_txfrm_size / 2) {
+    case TX_4X4:
+      tx_type = plane == 0 ? get_tx_type_4x4(xd, raster_block) : DCT_DCT;
+      if (tx_type == DCT_DCT)
+        xd->itxm_add(qcoeff, dst, stride, xd->plane[plane].eobs[block]);
+      else
+        vp9_iht_add_c(tx_type, qcoeff, dst, stride,
+                      xd->plane[plane].eobs[block]);
+      break;
+    case TX_8X8:
+      tx_type = plane == 0 ? get_tx_type_8x8(xd, raster_block) : DCT_DCT;
+      vp9_iht_add_8x8_c(tx_type, qcoeff, dst, stride,
+                        xd->plane[plane].eobs[block]);
+      break;
+    case TX_16X16:
+      tx_type = plane == 0 ? get_tx_type_16x16(xd, raster_block) : DCT_DCT;
+      vp9_iht_add_16x16_c(tx_type, qcoeff, dst, stride,
+                          xd->plane[plane].eobs[block]);
+      break;
+    case TX_32X32:
+      vp9_idct_add_32x32(qcoeff, dst, stride, xd->plane[plane].eobs[block]);
+      break;
+  }
+}
+#endif
+
 static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
                                int ss_txfrm_size, void *arg) {
   MACROBLOCKD* const xd = arg;
@@ -338,9 +431,13 @@ static void decode_sb_intra(VP9D_COMP *pbi, MACROBLOCKD *xd,
     }
   }
 
+#if CONFIG_BM_INTRA
+  struct decode_b_args arg = {pbi, xd, mi_row, mi_col};
+  foreach_transformed_block(xd, bsize, decode_block_intra_with_BM, &arg);
+#else
   foreach_transformed_block(xd, bsize, decode_block_intra, xd);
+#endif
 }
-
 
 static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
                       vp9_reader *r, BLOCK_SIZE_TYPE bsize) {
