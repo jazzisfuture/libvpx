@@ -276,9 +276,7 @@ static void decode_atom(VP9D_COMP *pbi, MACROBLOCKD *xd,
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
 
   assert(mbmi->ref_frame[0] != INTRA_FRAME);
-
-  if ((pbi->common.frame_type != KEY_FRAME) && (!pbi->common.intra_only))
-    vp9_setup_interp_filters(xd, mbmi->interp_filter, &pbi->common);
+  vp9_setup_interp_filters(xd, mbmi->interp_filter, &pbi->common);
 
   // prediction
   vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
@@ -327,8 +325,7 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
   assert(mbmi->sb_type == bsize);
   assert(mbmi->ref_frame[0] != INTRA_FRAME);
 
-  if (pbi->common.frame_type != KEY_FRAME)
-    vp9_setup_interp_filters(xd, mbmi->interp_filter, pc);
+  vp9_setup_interp_filters(xd, mbmi->interp_filter, pc);
 
   // generate prediction
   vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
