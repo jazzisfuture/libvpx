@@ -420,3 +420,125 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
   vp9_predict_intra_block(xd, block_idx, b_width_log2(bsize), TX_4X4,
                           mode, predictor, pre_stride);
 }
+#if CONFIG_BM_INTRA
+const int mi_index_map[8][8] = {
+    {0, 1, 4, 5, 16, 17, 20, 21},
+    {2, 3, 6, 7, 18, 19, 22, 23},
+    {8, 9, 12, 13, 24, 25, 28, 29},
+    {10, 11, 14, 15, 26, 27, 30, 31},
+    {32, 33, 36, 37, 48, 49, 52, 53},
+    {34, 35, 38, 39, 50, 51, 54, 55},
+    {40, 41, 44, 45, 56, 57, 60, 61},
+    {42, 43, 46, 47, 58, 59, 62, 63}
+};
+
+int sad_L_A(uint8_t *src, int src_stride, uint8_t *pred_ptr, int pred_stride,
+        int l, int n, int *sad_l, int *sad_a) {
+  int sad = 0, r_idx, c_idx, i, temp;
+  int sad_temp_l = 0, sad_temp_a = 0;
+
+  assert(src != pred_ptr);
+
+  for (i = 0; i < l; i++) {
+    for (r_idx = l; r_idx < (l + n); r_idx++) {
+      temp = abs(src[r_idx * src_stride + i] -
+                 pred_ptr[r_idx * pred_stride + i]) * (i + 2);
+      sad = sad + temp;
+      sad_temp_l = sad_temp_l + temp;
+    }
+    for (c_idx = l; c_idx < (l + n); c_idx++) {
+      temp = abs(src[c_idx + i * src_stride] -
+                 pred_ptr[c_idx + i * pred_stride]) * (i + 2);
+      sad = sad + temp;
+      sad_temp_a = sad_temp_a + temp;
+    }
+  }
+
+  for (r_idx = 0; r_idx < l; r_idx ++)
+    for (c_idx = 0; c_idx < l; c_idx ++) {
+      temp = abs(src[r_idx * src_stride + c_idx] -
+                 pred_ptr[r_idx * pred_stride + c_idx]) * 2;
+      sad = sad + temp;
+    }
+
+  *sad_l = sad_temp_l;
+  *sad_a = sad_temp_a;
+  return sad;
+}
+
+int template_matching_L(VP9_COMMON *cm, MACROBLOCKD *xd, uint8_t *src,
+                        int src_stride, int mi_row, int mi_col,
+                        int *best_r, int *best_c,
+                        int l, int n, int *sad_l, int *sad_a) {
+  int r_idx, c_idx;
+  int best_sad = n*n*256, this_sad;
+  const struct macroblockd_plane* const pd = &xd->plane[0];
+  int mi_row_this, mi_col_this;
+  int r_start, r_end, c_start, c_end;
+  int sad_l_temp, sad_a_temp;
+
+  assert(xd->mode_info_context->mbmi.sb_type == BLOCK_SIZE_SB8X8);
+
+  r_start = (8 * (mi_row - 4) > 0) ? (8 * (mi_row - 4) > 0) : 0;
+  r_end = (8 * (mi_row + 4)) < 8 * (cm->mi_rows) ? (8 * (mi_row + 4)) :
+      8 * (cm->mi_rows);
+  c_start = (8 * (mi_col - 3) > 0) ? (8 * (mi_col - 3) > 0) : 0;
+  c_end = (8 * (mi_col + 3)) < 8 * (cm->mi_cols) ? (8 * (mi_col + 3)) :
+      8 * (cm->mi_cols);
+
+  r_start = 0;
+  r_end = cm -> height - l - n ;
+  c_start = 0;
+  c_end = cm -> width - l - n;
+
+
+  *best_r = *best_c = 0;
+  for (r_idx = r_start; r_idx < r_end; r_idx++) {
+    mi_row_this = (r_idx + l + n - 1) >> 3;
+    for (c_idx = c_start; c_idx < c_end; c_idx++) {
+      mi_col_this = (c_idx + l + n - 1) >> 3;
+      if ((mi_row_this >> 3) > (mi_row >> 3))
+        continue;
+      else if ((mi_row_this >> 3) == (mi_row >> 3)) {
+        if ((mi_col_this >> 3) > (mi_col >> 3))
+          continue;
+        else if ((mi_col_this >> 3) == (mi_col >> 3)) {
+          int this_r = mi_row_this - ((mi_row_this >> 3) << 3);
+          int this_c = mi_col_this - ((mi_col_this >> 3) << 3);
+          int r = mi_row - ((mi_row >> 3) << 3);
+          int c = mi_col - ((mi_col >> 3) << 3);
+
+          if(mi_index_map[this_r][this_c] >= mi_index_map[r][c])
+            continue;
+        }
+      }
+
+      this_sad = sad_L_A(src - l * src_stride - l, src_stride,
+                         cm -> yv12_fb[cm -> new_fb_idx].y_buffer +
+                         r_idx * pd->dst.stride + c_idx, pd->dst.stride,
+                         l, n, &sad_l_temp, &sad_a_temp);
+
+      if (this_sad < best_sad) {
+        best_sad = this_sad;
+        *best_r = r_idx;
+        *best_c = c_idx;
+        *sad_l = sad_l_temp;
+        *sad_a = sad_a_temp;
+      }
+    }
+  }
+  *best_r = *best_r + l;
+  *best_c = *best_c + l;
+  return best_sad;
+}
+
+void copy_block(uint8_t *dst_ptr, int dst_stride, uint8_t *src_ptr,
+                int src_stride, int rows, int cols)
+{
+  int r_idx, c_idx;
+  for(r_idx = 0; r_idx < rows; r_idx++)
+    for(c_idx = 0; c_idx < cols; c_idx++) {
+      dst_ptr[r_idx * dst_stride + c_idx] = src_ptr[r_idx * src_stride + c_idx];
+    }
+}
+#endif
