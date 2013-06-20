@@ -51,6 +51,12 @@ DECLARE_ALIGNED(16, extern const uint8_t,
 
 #define I4X4_PRED 0x8000
 #define SPLITMV 0x10000
+#if CONFIG_BM_INTRA
+extern int template_matching_L(VP9_COMMON *cm, MACROBLOCKD *xd, uint8_t *src,
+                               int src_stride, int mi_row, int mi_col,
+                               int *best_r, int *best_c,
+                               int l, int n, int *sad_l, int *sad_a);
+#endif
 
 const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {ZEROMV,    LAST_FRAME,   NONE},
@@ -577,6 +583,10 @@ static void super_block_yrd(VP9_COMP *cpi,
     } else {
       mbmi->txfm_size = TX_4X4;
     }
+#if CONFIG_BM_INTRA
+    if (xd->mode_info_context->mbmi.mode == BM_PRED)
+      mbmi->txfm_size = TX_4X4;
+#endif
     super_block_yrd_for_txfm(cm, x, rate, distortion, skip, bs,
                              mbmi->txfm_size);
     return;
@@ -632,6 +642,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     int64_t this_rd;
     int ratey = 0;
+#if CONFIG_BM_INTRA
+    if (mode == BM_PRED)
+      continue;
+#endif
 
     rate = bmode_costs[mode];
     distortion = 0;
@@ -797,7 +811,12 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                       int *rate, int *rate_tokenonly,
                                       int *distortion, int *skippable,
                                       BLOCK_SIZE_TYPE bsize,
-                                      int64_t txfm_cache[NB_TXFM_MODES]) {
+                                      int64_t txfm_cache[NB_TXFM_MODES]
+#if CONFIG_BM_INTRA
+                                      , int mi_row, int mi_col
+#else
+#endif
+) {
   MB_PREDICTION_MODE mode;
   MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(mode_selected);
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -807,6 +826,10 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   TX_SIZE UNINITIALIZED_IS_SAFE(best_tx);
   int i;
   int *bmode_costs = x->mbmode_cost;
+#if CONFIG_BM_INTRA
+  struct macroblockd_plane* pd;
+  int sad_l, sad_a, ii, jj, best_r, best_c, r, c;
+#endif
 
   if (bsize < BLOCK_SIZE_SB8X8) {
     x->e_mbd.mode_info_context->mbmi.txfm_size = TX_4X4;
@@ -829,7 +852,50 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
       bmode_costs = x->y_mode_costs[A][L];
     }
     x->e_mbd.mode_info_context->mbmi.mode = mode;
+#if CONFIG_BM_INTRA
+    if (mode != BM_PRED) {
+      vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
+    } else {
+      if (!cpi->common.boundary_is_safe || 0)
+        continue;
+      if (mi_row == 0 || mi_col == 0)
+        continue;
+      assert(bsize == BLOCK_SIZE_SB8X8);
+
+      pd = &xd->plane[0];
+      for (i = 0; i < 4; i++) {
+        jj = i >> 1;
+        ii = i & 0x01;
+        template_matching_L(&(cpi -> common), xd,
+                            pd->dst.buf + jj * 4 * pd->dst.stride +
+                            4 * ii, pd->dst.stride,
+                            mi_row, mi_col, &best_r, &best_c,
+                            2, 4, &sad_l, &sad_a);
+
+        copy_block(pd->dst.buf + jj * 4 * pd->dst.stride + 4 * ii,
+                   pd->dst.stride,
+                   cpi->common.yv12_fb[cpi->common.new_fb_idx].y_buffer +
+                   best_r * pd->dst.stride + best_c, pd->dst.stride, 4, 4);
+
+        x->e_mbd.mode_info_context->mbmi.bm_mv_4x4[i].as_mv.row = best_r;
+        x->e_mbd.mode_info_context->mbmi.bm_mv_4x4[i].as_mv.col = best_c;
+        xd->mode_info_context->mbmi.txfm_size = TX_4X4;
+        vp9_encode_intra_block_y(&(cpi->common), x, BLOCK_SIZE_SB8X8);
+      }
+      for (i = 0; i < 4; i++) {
+        jj = i >> 1;
+        ii = i & 0x01;
+        r = x->e_mbd.mode_info_context->mbmi.bm_mv_4x4[i].as_mv.row;
+        c = x->e_mbd.mode_info_context->mbmi.bm_mv_4x4[i].as_mv.col;
+        copy_block(pd->dst.buf + jj * 4 * pd->dst.stride + 4 * ii,
+                   pd->dst.stride,
+                   cpi->common.yv12_fb[cpi->common.new_fb_idx].y_buffer +
+                   r * pd->dst.stride + c, pd->dst.stride, 4, 4);
+      }
+    }
+#else
     vp9_build_intra_predictors_sby_s(&x->e_mbd, bsize);
+#endif
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion, &s,
                     bsize, local_txfm_cache);
@@ -859,6 +925,12 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   x->e_mbd.mode_info_context->mbmi.mode = mode_selected;
   x->e_mbd.mode_info_context->mbmi.txfm_size = best_tx;
 
+#if CONFIG_BM_INTRA
+  if (mode_selected == BM_PRED) {
+    assert(cpi->common.boundary_is_safe);
+    assert(bsize == BLOCK_SIZE_SB8X8);
+  }
+#endif
   return best_rd;
 }
 
@@ -909,6 +981,10 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     x->e_mbd.mode_info_context->mbmi.uv_mode = mode;
+#if CONFIG_BM_INTRA
+    if (mode == BM_PRED)
+      continue;
+#endif
     vp9_build_intra_predictors_sbuv_s(&x->e_mbd, bsize);
 
     super_block_uvrd(&cpi->common, x, &this_rate_tokenonly,
@@ -929,6 +1005,9 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   x->e_mbd.mode_info_context->mbmi.uv_mode = mode_selected;
 
+#if CONFIG_BM_INTRA
+    assert(mode_selected != BM_PRED);
+#endif
   return best_rd;
 }
 
@@ -2390,7 +2469,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                int *returnrate, int *returndist,
                                BLOCK_SIZE_TYPE bsize,
-                               PICK_MODE_CONTEXT *ctx) {
+                               PICK_MODE_CONTEXT *ctx
+#if CONFIG_BM_INTRA
+                               , int mi_row, int mi_col
+#else
+#endif
+                               ) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   int rate_y = 0, rate_uv;
@@ -2406,8 +2490,14 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   ctx->skip = 0;
   xd->mode_info_context->mbmi.mode = DC_PRED;
+#if CONFIG_BM_INTRA
+  err = rd_pick_intra_sby_mode(cpi, x, &rate_y, &rate_y_tokenonly,
+                               &dist_y, &y_skip, bsize, txfm_cache,
+                               mi_row, mi_col);
+#else
   err = rd_pick_intra_sby_mode(cpi, x, &rate_y, &rate_y_tokenonly,
                                &dist_y, &y_skip, bsize, txfm_cache);
+#endif
   mode = xd->mode_info_context->mbmi.mode;
   txfm_size = xd->mode_info_context->mbmi.txfm_size;
   rd_pick_intra_sbuv_mode(cpi, x, &rate_uv, &rate_uv_tokenonly,
