@@ -60,7 +60,7 @@ class FwdTrans4x4Test : public ::testing::TestWithParam<int> {
   FwdTrans4x4Test(void (*fwd_func)(test_arg &), void (*inv_func)(test_arg &)):
     fwd_txfm(fwd_func),
     inv_txfm(inv_func){}
-  FwdTrans4x4Test() {SetUpTestTxfm();}
+  FwdTrans4x4Test() { SetUpTestTxfm(); }
   ~FwdTrans4x4Test() {}
 
   void SetUpTestTxfm() {
