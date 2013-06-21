@@ -33,7 +33,7 @@ void idct8x8_add(int16_t *in, int16_t *out, uint8_t *dst,
   vp9_short_idct8x8_add_c(out, dst, stride >> 1);
 }
 void fht8x8(int16_t *in, int16_t *out, uint8_t *dst, int stride, int tx_type) {
-  vp9_short_fht8x8_c(in, out, stride >> 1, tx_type);
+  vp9_short_fht8x8_sse2(in, out, stride >> 1, tx_type);
 }
 void iht8x8_add(int16_t *in, int16_t *out, uint8_t *dst,
                 int stride, int tx_type) {
