@@ -531,6 +531,24 @@ void fdct8_1d_sse2(int16_t *input, int16_t *output, int stride, int round) {
   res7 = _mm_packs_epi32(v6, v7);
 
   if (round == 1) {
+    __m128i sign0 = _mm_srai_epi16(res0, 15);
+    __m128i sign1 = _mm_srai_epi16(res1, 15);
+    __m128i sign2 = _mm_srai_epi16(res2, 15);
+    __m128i sign3 = _mm_srai_epi16(res3, 15);
+    __m128i sign4 = _mm_srai_epi16(res4, 15);
+    __m128i sign5 = _mm_srai_epi16(res5, 15);
+    __m128i sign6 = _mm_srai_epi16(res6, 15);
+    __m128i sign7 = _mm_srai_epi16(res7, 15);
+
+    res0 = _mm_sub_epi16(res0, sign0);
+    res1 = _mm_sub_epi16(res1, sign1);
+    res2 = _mm_sub_epi16(res2, sign2);
+    res3 = _mm_sub_epi16(res3, sign3);
+    res4 = _mm_sub_epi16(res4, sign4);
+    res5 = _mm_sub_epi16(res5, sign5);
+    res6 = _mm_sub_epi16(res6, sign6);
+    res7 = _mm_sub_epi16(res7, sign7);
+
     res0 = _mm_srai_epi16(res0, 1);
     res1 = _mm_srai_epi16(res1, 1);
     res2 = _mm_srai_epi16(res2, 1);
@@ -841,6 +859,24 @@ void fadst8_1d_sse2(int16_t *input, int16_t *output, int stride, int round) {
   res7 = _mm_sub_epi16(k__const_0, s1);
 
   if (round == 1) {
+    __m128i sign0 = _mm_srai_epi16(res0, 15);
+    __m128i sign1 = _mm_srai_epi16(res1, 15);
+    __m128i sign2 = _mm_srai_epi16(res2, 15);
+    __m128i sign3 = _mm_srai_epi16(res3, 15);
+    __m128i sign4 = _mm_srai_epi16(res4, 15);
+    __m128i sign5 = _mm_srai_epi16(res5, 15);
+    __m128i sign6 = _mm_srai_epi16(res6, 15);
+    __m128i sign7 = _mm_srai_epi16(res7, 15);
+
+    res0 = _mm_sub_epi16(res0, sign0);
+    res1 = _mm_sub_epi16(res1, sign1);
+    res2 = _mm_sub_epi16(res2, sign2);
+    res3 = _mm_sub_epi16(res3, sign3);
+    res4 = _mm_sub_epi16(res4, sign4);
+    res5 = _mm_sub_epi16(res5, sign5);
+    res6 = _mm_sub_epi16(res6, sign6);
+    res7 = _mm_sub_epi16(res7, sign7);
+
     res0 = _mm_srai_epi16(res0, 1);
     res1 = _mm_srai_epi16(res1, 1);
     res2 = _mm_srai_epi16(res2, 1);
