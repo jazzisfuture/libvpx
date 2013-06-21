@@ -1597,7 +1597,7 @@ static void switch_lossless_mode(VP9_COMP *cpi, int lossless) {
 }
 
 static void switch_txfm_mode(VP9_COMP *cpi) {
-  if (cpi->sf.use_largest_txform &&
+  if (cpi->sf.tx_size_search_method == USE_LARGEST_TXFM &&
       cpi->common.txfm_mode >= ALLOW_32X32)
     cpi->common.txfm_mode = ALLOW_32X32;
 }
@@ -1630,6 +1630,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   vp9_zero(cm->fc.switchable_interp_count);
   vp9_zero(cpi->best_switchable_interp_count);
+  vp9_zero(cpi->txfm_stepdown_count);
 
   xd->mode_info_context = cm->mi;
   xd->prev_mode_info_context = cm->prev_mi;
@@ -1832,6 +1833,40 @@ static void reset_skip_txfm_size(VP9_COMP *cpi, TX_SIZE txfm_max) {
   }
 }
 
+static void select_txfm_mode(VP9_COMP *cpi) {
+  if (cpi->oxcf.lossless) {
+    cpi->common.txfm_mode = ONLY_4X4;
+  } else if (cpi->common.current_video_frame == 0) {
+    cpi->common.txfm_mode = TX_MODE_SELECT;
+  } else {
+    if (cpi->sf.tx_size_search_method == USE_FULL_RD) {
+      int frame_type;
+      if (cpi->common.frame_type == KEY_FRAME)
+        frame_type = 0;
+      else if (cpi->is_src_frame_alt_ref && cpi->refresh_golden_frame)
+        frame_type = 3;
+      else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
+        frame_type = 1;
+      else
+        frame_type = 2;
+      cpi->common.txfm_mode =
+          cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32]
+          > cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
+          ALLOW_32X32 : TX_MODE_SELECT;
+    } else {
+      unsigned int total = 0;
+      int i;
+      for (i = 0; i < TX_SIZE_MAX_SB; ++i)
+        total += cpi->txfm_stepdown_count[i];
+      if (total) {
+        double fraction = (double)cpi->txfm_stepdown_count[0] / total;
+        cpi->common.txfm_mode = fraction > 0.90 ? ALLOW_32X32 : TX_MODE_SELECT;
+        // printf("fraction = %f\n", fraction);
+      }  // else keep unchanged
+    }
+  }
+}
+
 void vp9_encode_frame(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
 
@@ -1842,7 +1877,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
   // side behaviour is where the ALT ref buffer has oppositie sign bias to
   // the other two.
   if ((cm->ref_frame_sign_bias[ALTREF_FRAME]
-      == cm->ref_frame_sign_bias[GOLDEN_FRAME])
+       == cm->ref_frame_sign_bias[GOLDEN_FRAME])
       || (cm->ref_frame_sign_bias[ALTREF_FRAME]
           == cm->ref_frame_sign_bias[LAST_FRAME])) {
     cm->allow_comp_inter_inter = 0;
@@ -1855,8 +1890,6 @@ void vp9_encode_frame(VP9_COMP *cpi) {
 
   if (cpi->sf.RD) {
     int i, frame_type, pred_type;
-    TXFM_MODE txfm_type;
-
     /*
      * This code does a single RD pass over the whole frame assuming
      * either compound, single or hybrid prediction as per whatever has
@@ -1879,13 +1912,13 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     if (frame_type == 3 || !cm->allow_comp_inter_inter)
       pred_type = SINGLE_PREDICTION_ONLY;
     else if (cpi->rd_prediction_type_threshes[frame_type][1]
-        > cpi->rd_prediction_type_threshes[frame_type][0]
-        && cpi->rd_prediction_type_threshes[frame_type][1]
-            > cpi->rd_prediction_type_threshes[frame_type][2]
-        && check_dual_ref_flags(cpi) && cpi->static_mb_pct == 100)
+             > cpi->rd_prediction_type_threshes[frame_type][0]
+             && cpi->rd_prediction_type_threshes[frame_type][1]
+             > cpi->rd_prediction_type_threshes[frame_type][2]
+             && check_dual_ref_flags(cpi) && cpi->static_mb_pct == 100)
       pred_type = COMP_PREDICTION_ONLY;
     else if (cpi->rd_prediction_type_threshes[frame_type][0]
-        > cpi->rd_prediction_type_threshes[frame_type][2])
+             > cpi->rd_prediction_type_threshes[frame_type][2])
       pred_type = SINGLE_PREDICTION_ONLY;
     else
       pred_type = HYBRID_PREDICTION;
@@ -1894,43 +1927,10 @@ void vp9_encode_frame(VP9_COMP *cpi) {
 
     cpi->mb.e_mbd.lossless = 0;
     if (cpi->oxcf.lossless) {
-      txfm_type = ONLY_4X4;
       cpi->mb.e_mbd.lossless = 1;
-    } else
-#if 0
-      /* FIXME (rbultje): this code is disabled until we support cost updates
-       * while a frame is being encoded; the problem is that each time we
-       * "revert" to 4x4 only (or even 8x8 only), the coefficient probabilities
-       * for 16x16 (and 8x8) start lagging behind, thus leading to them lagging
-       * further behind and not being chosen for subsequent frames either. This
-       * is essentially a local minimum problem that we can probably fix by
-       * estimating real costs more closely within a frame, perhaps by re-
-       * calculating costs on-the-fly as frame encoding progresses. */
-      if (cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] >
-          cpi->rd_tx_select_threshes[frame_type][ONLY_4X4] &&
-          cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] >
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_16X16] &&
-          cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] >
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_8X8]) {
-        txfm_type = TX_MODE_SELECT;
-      } else if (cpi->rd_tx_select_threshes[frame_type][ONLY_4X4] >
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_8X8]
-          && cpi->rd_tx_select_threshes[frame_type][ONLY_4X4] >
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_16X16]
-      ) {
-        txfm_type = ONLY_4X4;
-      } else if (cpi->rd_tx_select_threshes[frame_type][ALLOW_16X16] >=
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_8X8]) {
-        txfm_type = ALLOW_16X16;
-      } else
-      txfm_type = ALLOW_8X8;
-#else
-      txfm_type =
-          cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32]
-              > cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
-              ALLOW_32X32 : TX_MODE_SELECT;
-#endif
-    cpi->common.txfm_mode = txfm_type;
+    }
+
+    select_txfm_mode(cpi);
     cpi->common.comp_pred_mode = pred_type;
     encode_frame_internal(cpi);
 
@@ -1945,7 +1945,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       int diff;
       if (i == TX_MODE_SELECT)
         pd -= RDCOST(cpi->mb.rdmult, cpi->mb.rddiv,
-            2048 * (TX_SIZE_MAX_SB - 1), 0);
+                     2048 * (TX_SIZE_MAX_SB - 1), 0);
       diff = (int) (pd / cpi->common.MBs);
       cpi->rd_tx_select_threshes[frame_type][i] += diff;
       cpi->rd_tx_select_threshes[frame_type][i] /= 2;
@@ -2004,7 +2004,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
         cpi->common.txfm_mode = ALLOW_8X8;
         reset_skip_txfm_size(cpi, TX_8X8);
       } else if (count8x8_8x8p == 0 && count16x16_16x16p == 0
-          && count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
+                 && count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
         cpi->common.txfm_mode = ONLY_4X4;
         reset_skip_txfm_size(cpi, TX_4X4);
       } else if (count8x8_lp == 0 && count16x16_lp == 0 && count4x4 == 0) {

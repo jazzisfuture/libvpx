@@ -200,6 +200,13 @@ typedef enum {
   HEX = 2
 } SEARCH_METHODS;
 
+typedef enum {
+  USE_FULL_RD = 0,
+  USE_MODEL_FOR_32INTER = 1,
+  USE_MODEL_FOR_1632INTER = 2,
+  USE_LARGEST_TXFM = 3
+} TX_SIZE_SEARCH_METHOD;
+
 typedef struct {
   int RD;
   SEARCH_METHODS search_method;
@@ -217,7 +224,7 @@ typedef struct {
   int comp_inter_joint_search_thresh;
   int adpative_rd_thresh;
   int use_lastframe_partitioning;
-  int use_largest_txform;
+  TX_SIZE_SEARCH_METHOD tx_size_search_method;
   int use_8tap_always;
   int use_avoid_tested_higherror;
   int skip_lots_of_modes;
@@ -584,6 +591,8 @@ typedef struct VP9_COMP {
   unsigned int switchable_interp_count[VP9_SWITCHABLE_FILTERS + 1]
                                       [VP9_SWITCHABLE_FILTERS];
   unsigned int best_switchable_interp_count[VP9_SWITCHABLE_FILTERS];
+
+  unsigned int txfm_stepdown_count[TX_SIZE_MAX_SB];
 
   int initial_width;
   int initial_height;
