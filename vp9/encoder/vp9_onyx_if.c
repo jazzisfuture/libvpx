@@ -741,6 +741,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_one_partition_size_always = 1;
         sf->always_this_block_size = BLOCK_SIZE_MB16X16;
       }
+      /*
       if (speed == 2) {
         sf->first_step = 0;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
@@ -753,6 +754,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_partitions_greater_than = 1;
         sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
       }
+      */
 
      break;
 
