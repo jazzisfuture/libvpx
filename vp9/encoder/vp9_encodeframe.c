@@ -1459,6 +1459,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cm->fc.tx_count_16x16p);
   vp9_zero(cm->fc.tx_count_8x8p);
   vp9_zero(cm->fc.mbskip_count);
+#if CONFIG_FILTERINTRA
+  vp9_zero(cm->fc.filterintra_count);
+#endif
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.
@@ -1921,13 +1924,26 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
   const MACROBLOCKD *xd = &x->e_mbd;
   const MB_PREDICTION_MODE m = xd->mode_info_context->mbmi.mode;
   const MB_PREDICTION_MODE uvm = xd->mode_info_context->mbmi.uv_mode;
+#if CONFIG_FILTERINTRA
+  int fbit = xd->mode_info_context->mbmi.filterbit;
+  const int uv_fbit = xd->mode_info_context->mbmi.uv_filterbit;
+#endif
 
   ++cpi->y_uv_mode_count[m][uvm];
+#if CONFIG_FILTERINTRA
+  if (is_filter_mode(uvm) &&
+      get_uv_tx_size(&(xd->mode_info_context->mbmi)) == TX_4X4)
+    ++cpi->common.fc.filterintra_count[uv_fbit];
+#endif
   if (xd->mode_info_context->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
     const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
     const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
     const int bsl = MIN(bwl, bhl);
     ++cpi->y_mode_count[MIN(bsl, 3)][m];
+#if CONFIG_FILTERINTRA
+    if (is_filter_mode(m) && xd->mode_info_context->mbmi.txfm_size <=TX_4X4)
+      ++cpi->common.fc.filterintra_count[fbit];
+#endif
   } else {
     int idx, idy;
     int bw = 1 << b_width_log2(xd->mode_info_context->mbmi.sb_type);
@@ -1936,6 +1952,12 @@ static void sum_intra_stats(VP9_COMP *cpi, MACROBLOCK *x) {
       for (idx = 0; idx < 2; idx += bw) {
         int m = xd->mode_info_context->bmi[idy * 2 + idx].as_mode.first;
         ++cpi->y_mode_count[0][m];
+#if CONFIG_FILTERINTRA
+        if (is_filter_mode(m)) {
+          fbit = xd->mode_info_context->bmi[idy * 2 + idx].as_mode.filterbit;
+          ++cpi->common.fc.filterintra_count[fbit];
+        }
+#endif
       }
     }
   }
