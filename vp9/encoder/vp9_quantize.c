@@ -26,14 +26,14 @@ static INLINE int plane_idx(int plane) {
          plane == 1 ? 16 : 20;
 }
 
-static void quantize(int16_t *zbin_boost_orig_ptr,
-                     int16_t *coeff_ptr, int n_coeffs, int skip_block,
-                     int16_t *zbin_ptr, int16_t *round_ptr, int16_t *quant_ptr,
-                     uint8_t *quant_shift_ptr,
-                     int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
-                     int16_t *dequant_ptr, int zbin_oq_value,
-                     uint16_t *eob_ptr,
-                     const int *scan, int mul) {
+static INLINE void quantize_impl(int16_t *zbin_boost_orig_ptr,
+                                int16_t *coeff_ptr, int n_coeffs, int skip_block,
+                                int16_t *zbin_ptr, int16_t *round_ptr, int16_t *quant_ptr,
+                                uint8_t *quant_shift_ptr,
+                                int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                                int16_t *dequant_ptr, int zbin_oq_value,
+                                uint16_t *eob_ptr,
+                                const int *scan, int mul) {
   int i, rc, eob;
   int zbins[2], nzbins[2], zbin;
   int x, y, z, sz;
@@ -95,8 +95,23 @@ static void quantize(int16_t *zbin_boost_orig_ptr,
   *eob_ptr = eob + 1;
 }
 
+static void quantize(int16_t *a,
+                     int16_t *b, int c, int d,
+                     int16_t *e, int16_t *f, int16_t *g,
+                     uint8_t *h,
+                     int16_t *i, int16_t *j,
+                     int16_t *k, int l,
+                     uint16_t *m,
+                     const int *n, int mul) {
+  if (mul == 1) {
+    quantize_impl(a, b, c, d, e, f, g, h, i, j, k, l, m, n, 1);
+  } else {
+    quantize_impl(a, b, c, d, e, f, g, h, i, j, k, l, m, n, 2);
+  }
+}
+
 // This function works well for large transform size.
-static void quantize_sparse(int16_t *zbin_boost_orig_ptr,
+static INLINE void quantize_sparse_impl(int16_t *zbin_boost_orig_ptr,
                             int16_t *coeff_ptr, int n_coeffs, int skip_block,
                             int16_t *zbin_ptr, int16_t *round_ptr,
                             int16_t *quant_ptr, uint8_t *quant_shift_ptr,
@@ -171,57 +186,21 @@ static void quantize_sparse(int16_t *zbin_boost_orig_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#if 0
-// Original quantize function
-static void quantize(int16_t *zbin_boost_orig_ptr,
-                     int16_t *coeff_ptr, int n_coeffs, int skip_block,
-                     int16_t *zbin_ptr, int16_t *round_ptr, int16_t *quant_ptr,
-                     uint8_t *quant_shift_ptr,
-                     int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
-                     int16_t *dequant_ptr, int zbin_oq_value,
-                     uint16_t *eob_ptr,
-                     const int *scan, int mul) {
-  int i, rc, eob;
-  int zbin;
-  int x, y, z, sz;
-  int zero_run = 0;
-  int16_t *zbin_boost_ptr = zbin_boost_orig_ptr;
 
-  vpx_memset(qcoeff_ptr, 0, n_coeffs*sizeof(int16_t));
-  vpx_memset(dqcoeff_ptr, 0, n_coeffs*sizeof(int16_t));
-
-  eob = -1;
-
-  if (!skip_block) {
-    for (i = 0; i < n_coeffs; i++) {
-      rc   = scan[i];
-      z    = coeff_ptr[rc] * mul;
-
-      zbin = (zbin_ptr[rc != 0] + zbin_boost_ptr[zero_run] + zbin_oq_value);
-      zero_run += (zero_run < 15);
-
-      sz = (z >> 31);                               // sign of z
-      x  = (z ^ sz) - sz;                           // x = abs(z)
-
-      if (x >= zbin) {
-        x += (round_ptr[rc != 0]);
-        y  = ((int)(((int)(x * quant_ptr[rc != 0]) >> 16) + x))
-            >> quant_shift_ptr[rc != 0];            // quantize (x)
-        x  = (y ^ sz) - sz;                         // get the sign back
-        qcoeff_ptr[rc]  = x;                        // write to destination
-        dqcoeff_ptr[rc] = x * dequant_ptr[rc != 0] / mul;  // dequantized value
-
-        if (y) {
-          eob = i;                                  // last nonzero coeffs
-          zero_run = 0;
-        }
-      }
-    }
+static void quantize_sparse(int16_t *a,
+                              int16_t *b, int c, int d,
+                              int16_t *e, int16_t *f,
+                              int16_t *g, uint8_t *h,
+                              int16_t *i, int16_t *j,
+                              int16_t *k, int l,
+                              uint16_t *m, const int *n, int mul,
+                              int *p) {
+  if (mul == 1) {
+    quantize_sparse_impl(a, b, c, d, e, f, g, h, i, j, k, l, m, n, 1, p);
+  } else {
+    quantize_sparse_impl(a, b, c, d, e, f, g, h, i, j, k, l, m, n, 2, p);
   }
-
-  *eob_ptr = eob + 1;
 }
-#endif
 
 void vp9_quantize(MACROBLOCK *mb, int plane, int block, int n_coeffs,
                   TX_TYPE tx_type) {
