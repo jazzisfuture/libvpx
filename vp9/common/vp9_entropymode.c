@@ -227,6 +227,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *x) {
              sizeof(vp9_default_tx_probs_8x8p));
   vpx_memcpy(x->fc.mbskip_probs, vp9_default_mbskip_probs,
              sizeof(vp9_default_mbskip_probs));
+#if CONFIG_FILTERBIT
+  x->fc.filterintra_prob = FBIT0_PROB;
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {

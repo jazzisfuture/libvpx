@@ -41,6 +41,10 @@
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
 
+#if CONFIG_FILTERBIT
+#define FBIT0_PROB 192
+#endif
+
 typedef enum {
   PLANE_TYPE_Y_WITH_DC,
   PLANE_TYPE_UV,
@@ -91,6 +95,46 @@ static INLINE int is_inter_mode(MB_PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
 
+#if CONFIG_FILTERBIT
+static INLINE int is_filter_mode(MB_PREDICTION_MODE mode) {
+  return mode != DC_PRED &&
+         mode != D45_PRED &&
+         mode != D27_PRED &&
+         mode != D63_PRED;
+/*  return mode != D45_PRED &&
+         mode != D27_PRED &&
+         mode != D63_PRED;*/
+}
+
+static INLINE MB_PREDICTION_MODE mode_table(int mode) {
+  switch (mode) {
+    case 0:
+      return DC_PRED;
+    case 1:
+      return V_PRED;
+    case 2:
+      return H_PRED;
+    case 3:
+      return D45_PRED;
+    case 4:
+      return D135_PRED;
+    case 5:
+      return D117_PRED;
+    case 6:
+      return D153_PRED;
+    case 7:
+      return D27_PRED;
+    case 8:
+      return D63_PRED;
+    case 9:
+      return TM_PRED;
+    default:
+      return DC_PRED;
+      break;
+  }
+}
+#endif
+
 // Segment level features.
 typedef enum {
   SEG_LVL_ALT_Q = 0,               // Use alternate Quantizer ....
@@ -136,6 +180,9 @@ typedef enum {
 union b_mode_info {
   struct {
     MB_PREDICTION_MODE first;
+#if CONFIG_FILTERBIT
+    int filterbit;
+#endif
   } as_mode;
   int_mv as_mv[2];  // first, second inter predictor motion vectors
 };
@@ -208,6 +255,9 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
 
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
+#if CONFIG_FILTERBIT
+  int filterbit, uv_filterbit;
+#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used
@@ -588,6 +638,33 @@ static TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
 
   return size;
 }
+
+#if CONFIG_FILTERBIT
+static TX_SIZE get_uv_tx_size_2(BLOCK_SIZE_TYPE bsize, TX_SIZE size) {
+  switch (bsize) {
+    case BLOCK_SIZE_SB64X64:
+      return size;
+    case BLOCK_SIZE_SB64X32:
+    case BLOCK_SIZE_SB32X64:
+    case BLOCK_SIZE_SB32X32:
+      if (size == TX_32X32)
+        return TX_16X16;
+      else
+        return size;
+    case BLOCK_SIZE_SB32X16:
+    case BLOCK_SIZE_SB16X32:
+    case BLOCK_SIZE_MB16X16:
+      if (size == TX_16X16)
+        return TX_8X8;
+      else
+        return size;
+    default:
+      return TX_4X4;
+  }
+
+  return size;
+}
+#endif
 
 struct plane_block_idx {
   int plane;

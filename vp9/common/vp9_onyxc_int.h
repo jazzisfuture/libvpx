@@ -103,6 +103,11 @@ typedef struct frame_contexts {
   vp9_prob mbskip_probs[MBSKIP_CONTEXTS];
   vp9_prob pre_mbskip_probs[MBSKIP_CONTEXTS];
   unsigned int mbskip_count[MBSKIP_CONTEXTS][2];
+#if CONFIG_FILTERBIT
+  vp9_prob filterintra_prob;
+  vp9_prob pre_filterintra_prob;
+  unsigned int filterintra_count[2];
+#endif
 } FRAME_CONTEXT;
 
 typedef enum {
