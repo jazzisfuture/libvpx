@@ -60,8 +60,13 @@ vp9_copy_mem8x8_dspr2=vp9_copy_mem8x8_dspr2
 prototype void vp9_copy_mem8x4 "const uint8_t *src, int src_pitch, uint8_t *dst, int dst_pitch"
 specialize vp9_copy_mem8x4 mmx
 
+if [ "$CONFIG_FILTERINTRA" = "yes" ]; then
+prototype void vp9_build_intra_predictors "uint8_t *src, int src_stride, uint8_t *pred, int y_stride, int mode, int filterbit, int bw, int bh, int up_available, int left_available, int right_available"
+specialize void vp9_build_intra_predictors
+else
 prototype void vp9_build_intra_predictors "uint8_t *src, int src_stride, uint8_t *pred, int y_stride, int mode, int bw, int bh, int up_available, int left_available, int right_available"
 specialize void vp9_build_intra_predictors
+fi
 
 prototype void vp9_build_intra_predictors_sby_s "struct macroblockd *x, enum BLOCK_SIZE_TYPE bsize"
 specialize vp9_build_intra_predictors_sby_s

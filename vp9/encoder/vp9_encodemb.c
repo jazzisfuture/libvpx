@@ -615,6 +615,9 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
 
   TX_TYPE tx_type;
   int mode, b_mode;
+#if CONFIG_FILTERINTRA
+  int fbit = 0;
+#endif
 
   if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0) {
     extend_for_intra(xd, plane, block, bsize, ss_txfrm_size);
@@ -624,14 +627,32 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   if (plane == 0 &&
       mbmi->sb_type < BLOCK_SIZE_SB8X8 &&
       mbmi->ref_frame[0] == INTRA_FRAME)
+#if CONFIG_FILTERINTRA
+  {
+#endif
     b_mode = xd->mode_info_context->bmi[ib].as_mode.first;
+#if CONFIG_FILTERINTRA
+    fbit = xd->mode_info_context->bmi[ib].as_mode.filterbit;
+  }
+#endif
   else
+#if CONFIG_FILTERINTRA
+  {
+#endif
     b_mode = mode;
+#if CONFIG_FILTERINTRA
+    if (tx_size <= TX_4X4)
+      fbit = plane == 0? mbmi->filterbit: mbmi->uv_filterbit;
+  }
+#endif
 
   assert(b_mode >= DC_PRED && b_mode <= TM_PRED);
 
   plane_b_size = b_width_log2(bsize) - pd->subsampling_x;
   vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size, b_mode,
+#if CONFIG_FILTERINTRA
+                          fbit,
+#endif
                           dst, pd->dst.stride);
   vp9_subtract_block(txfm_b_size, txfm_b_size, src_diff, bw,
                      src, p->src.stride, dst, pd->dst.stride);
