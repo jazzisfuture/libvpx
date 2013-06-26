@@ -129,6 +129,10 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
     const MB_PREDICTION_MODE L = xd->left_available ?
                                   left_block_mode(m, 0) : DC_PRED;
     m->mbmi.mode = read_intra_mode(r, cm->kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+    if ((m->mbmi.txfm_size == TX_4X4) && is_filter_mode(m->mbmi.mode))
+      m->mbmi.filterbit = vp9_read(r, cm->fc.filterintra_prob);
+#endif
   } else {
     int idx, idy;
     int bw = 1 << b_width_log2(m->mbmi.sb_type);
@@ -143,6 +147,15 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
                                       left_block_mode(m, ib) : DC_PRED;
         m->bmi[ib].as_mode.first =
             read_intra_mode(r, cm->kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+        if (is_filter_mode(m->bmi[ib].as_mode.first)) {
+          m->bmi[ib].as_mode.filterbit = vp9_read(r, cm->fc.filterintra_prob);
+          for (k = 1; k < bh; ++k)
+            m->bmi[ib + k * 2].as_mode.filterbit = m->bmi[ib].as_mode.filterbit;
+          for (k = 1; k < bw; ++k)
+            m->bmi[ib + k].as_mode.filterbit = m->bmi[ib].as_mode.filterbit;
+        }
+#endif
         for (k = 1; k < bh; ++k)
           m->bmi[ib + k * 2].as_mode.first = m->bmi[ib].as_mode.first;
         for (k = 1; k < bw; ++k)
@@ -150,9 +163,17 @@ static void kfread_modes(VP9D_COMP *pbi, MODE_INFO *m,
       }
     }
     m->mbmi.mode = m->bmi[3].as_mode.first;
+#if CONFIG_FILTERINTRA
+    if (is_filter_mode(m->mbmi.mode))
+      m->mbmi.filterbit = m->bmi[3].as_mode.filterbit;
+#endif
   }
 
   m->mbmi.uv_mode = read_intra_mode(r, cm->kf_uv_mode_prob[m->mbmi.mode]);
+#if CONFIG_FILTERINTRA
+  if ((get_uv_tx_size(&(m->mbmi)) <= TX_4X4) && is_filter_mode(m->mbmi.uv_mode))
+    m->mbmi.uv_filterbit = vp9_read(r, cm->fc.filterintra_prob);
+#endif
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -768,6 +789,12 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       const int bsl = MIN(bwl, bhl);
       mbmi->mode = read_intra_mode(r, cm->fc.y_mode_prob[MIN(3, bsl)]);
       cm->fc.y_mode_counts[MIN(3, bsl)][mbmi->mode]++;
+#if CONFIG_FILTERINTRA
+      if ((mbmi->txfm_size == TX_4X4) && is_filter_mode(mbmi->mode)) {
+        mbmi->filterbit = vp9_read(r, cm->fc.filterintra_prob);
+        cm->fc.filterintra_count[mbmi->filterbit]++;
+      }
+#endif
     } else {
       int idx, idy;
       for (idy = 0; idy < 2; idy += bh) {
@@ -775,6 +802,17 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           int ib = idy * 2 + idx, k;
           int m = read_intra_mode(r, cm->fc.y_mode_prob[0]);
           mi->bmi[ib].as_mode.first = m;
+#if CONFIG_FILTERINTRA
+          if (is_filter_mode(m)) {
+            int fbit = vp9_read(r, cm->fc.filterintra_prob);
+            mi->bmi[ib].as_mode.filterbit = fbit;
+            cm->fc.filterintra_count[fbit]++;
+            for (k = 1; k < bh; ++k)
+              mi->bmi[ib + k * 2].as_mode.filterbit = fbit;
+            for (k = 1; k < bw; ++k)
+              mi->bmi[ib + k].as_mode.filterbit = fbit;
+          }
+#endif
           cm->fc.y_mode_counts[0][m]++;
           for (k = 1; k < bh; ++k)
             mi->bmi[ib + k * 2].as_mode.first = m;
@@ -783,10 +821,21 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
         }
       }
       mbmi->mode = mi->bmi[3].as_mode.first;
+#if CONFIG_FILTERINTRA
+      if (is_filter_mode(mbmi->mode)) {
+        mbmi->filterbit = mi->bmi[3].as_mode.filterbit;
+      }
+#endif
     }
 
     mbmi->uv_mode = read_intra_mode(r, cm->fc.uv_mode_prob[mbmi->mode]);
     cm->fc.uv_mode_counts[mbmi->mode][mbmi->uv_mode]++;
+#if CONFIG_FILTERINTRA
+    if ((get_uv_tx_size(mbmi) <= TX_4X4) && is_filter_mode(mbmi->uv_mode)) {
+      mbmi->uv_filterbit = vp9_read(r, cm->fc.filterintra_prob);
+      cm->fc.filterintra_count[mbmi->uv_filterbit]++;
+    }
+#endif
   }
 }
 

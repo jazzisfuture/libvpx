@@ -93,6 +93,10 @@ typedef struct {
   vp9_prob tx_probs_16x16p[TX_SIZE_CONTEXTS][TX_SIZE_MAX_SB - 2];
   vp9_prob tx_probs_32x32p[TX_SIZE_CONTEXTS][TX_SIZE_MAX_SB - 1];
   vp9_prob mbskip_probs[MBSKIP_CONTEXTS];
+
+#if CONFIG_FILTERINTRA
+  vp9_prob filterintra_prob;
+#endif
 } CODING_CONTEXT;
 
 typedef struct {
