@@ -404,34 +404,23 @@ static INLINE void update_partition_context(MACROBLOCKD *xd,
   int bwl = b_width_log2(sb_type);
   int bhl = b_height_log2(sb_type);
   int boffset = b_width_log2(BLOCK_SIZE_SB64X64) - bsl;
-  int i;
 
   // update the partition context at the end notes. set partition bits
   // of block sizes larger than the current one to be one, and partition
   // bits of smaller block sizes to be zero.
-  if ((bwl == bsl) && (bhl == bsl)) {
-    for (i = 0; i < bs; i++)
-      xd->left_seg_context[i] = ~(0xf << boffset);
-    for (i = 0; i < bs; i++)
-      xd->above_seg_context[i] = ~(0xf << boffset);
-  } else if ((bwl == bsl) && (bhl < bsl)) {
-    for (i = 0; i < bs; i++)
-      xd->left_seg_context[i] = ~(0xe << boffset);
-    for (i = 0; i < bs; i++)
-      xd->above_seg_context[i] = ~(0xf << boffset);
-  }  else if ((bwl < bsl) && (bhl == bsl)) {
-    for (i = 0; i < bs; i++)
-      xd->left_seg_context[i] = ~(0xf << boffset);
-    for (i = 0; i < bs; i++)
-      xd->above_seg_context[i] = ~(0xe << boffset);
-  } else if ((bwl < bsl) && (bhl < bsl)) {
-    for (i = 0; i < bs; i++)
-      xd->left_seg_context[i] = ~(0xe << boffset);
-    for (i = 0; i < bs; i++)
-      xd->above_seg_context[i] = ~(0xe << boffset);
-  } else {
+  if (bwl == bsl)
+    vpx_memset(xd->above_seg_context, ~(0xf << boffset), bs);
+  else if (bwl < bsl)
+    vpx_memset(xd->above_seg_context, ~(0xe << boffset), bs);
+  else
     assert(0);
-  }
+
+  if (bhl == bsl)
+    vpx_memset(xd->left_seg_context, ~(0xf << boffset), bs);
+  else if (bhl < bsl)
+    vpx_memset(xd->left_seg_context, ~(0xe << boffset), bs);
+  else
+    assert(0);
 }
 
 static INLINE int partition_plane_context(MACROBLOCKD *xd,
