@@ -649,6 +649,9 @@ static void super_block_yrd(VP9_COMP *cpi,
 static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                      MB_PREDICTION_MODE *best_mode,
                                      int *bmode_costs,
+#if CONFIG_FILTERINTRA
+                                     int *fbit,
+#endif
                                      ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                                      int *bestrate, int *bestratey,
                                      int *bestdistortion,
@@ -670,6 +673,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   int bw = 1 << b_width_log2(bsize);
   int bh = 1 << b_height_log2(bsize);
   int idx, idy, block;
+#if CONFIG_FILTERINTRA
+  int mode_ext, filterbit;
+#endif
   DECLARE_ALIGNED(16, int16_t, best_dqcoeff[4][16]);
 
   assert(ib < 4);
@@ -678,11 +684,27 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   vpx_memcpy(tl, l, sizeof(tl));
   xd->mode_info_context->mbmi.txfm_size = TX_4X4;
 
+#if !CONFIG_FILTERINTRA
   for (mode = DC_PRED; mode <= TM_PRED; ++mode) {
     int64_t this_rd;
     int ratey = 0;
 
     rate = bmode_costs[mode];
+#else
+  for (mode_ext = 2 * DC_PRED; mode_ext <= 2 * TM_PRED + 1; ++mode_ext) {
+    int64_t this_rd;
+    int ratey = 0;
+    filterbit = mode_ext & 1;
+    mode = mode_ext >> 1;
+
+    if (filterbit && !is_filter_mode(mode))
+      continue;
+
+    rate = bmode_costs[mode];
+    if (is_filter_mode(mode))
+      rate += vp9_cost_bit(cm->fc.filterintra_prob, filterbit);
+#endif
+
     distortion = 0;
 
     vpx_memcpy(tempa, ta, sizeof(ta));
@@ -692,6 +714,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       for (idx = 0; idx < bw; ++idx) {
         block = ib + idy * 2 + idx;
         xd->mode_info_context->bmi[block].as_mode.first = mode;
+#if CONFIG_FILTERINTRA
+        xd->mode_info_context->bmi[block].as_mode.filterbit = filterbit;
+#endif
         src = raster_block_offset_uint8(xd, BLOCK_SIZE_SB8X8, 0, block,
                                         x->plane[0].src.buf, src_stride);
         src_diff = raster_block_offset_int16(xd, BLOCK_SIZE_SB8X8, 0, block,
@@ -738,6 +763,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       *bestdistortion = distortion;
       best_rd = this_rd;
       *best_mode = mode;
+#if CONFIG_FILTERINTRA
+      *fbit = filterbit;
+#endif
       best_tx_type = tx_type;
       vpx_memcpy(a, tempa, sizeof(tempa));
       vpx_memcpy(l, templ, sizeof(templ));
@@ -756,6 +784,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     for (idx = 0; idx < bw; ++idx) {
       block = ib + idy * 2 + idx;
       xd->mode_info_context->bmi[block].as_mode.first = *best_mode;
+#if CONFIG_FILTERINTRA
+      xd->mode_info_context->bmi[block].as_mode.filterbit = *fbit;
+#endif
       dst = raster_block_offset_uint8(xd, BLOCK_SIZE_SB8X8, 0, block,
                                       xd->plane[0].dst.buf,
                                       xd->plane[0].dst.stride);
@@ -801,6 +832,9 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
     for (idx = 0; idx < 2; idx += bw) {
       const int mis = xd->mode_info_stride;
       MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(best_mode);
+#if CONFIG_FILTERINTRA
+      int UNINITIALIZED_IS_SAFE(filterbit);
+#endif
       int UNINITIALIZED_IS_SAFE(r), UNINITIALIZED_IS_SAFE(ry);
       int UNINITIALIZED_IS_SAFE(d);
       i = idy * 2 + idx;
@@ -809,11 +843,14 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
         const MB_PREDICTION_MODE A = above_block_mode(mic, i, mis);
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
                                      left_block_mode(mic, i) : DC_PRED;
-
-        bmode_costs  = mb->y_mode_costs[A][L];
+        bmode_costs = mb->y_mode_costs[A][L];
       }
 
-      total_rd += rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
+      total_rd += rd_pick_intra4x4block(cpi, mb, i, &best_mode,
+                                        bmode_costs,
+#if CONFIG_FILTERINTRA
+                                        &filterbit,
+#endif
                                         t_above + idx, t_left + idy,
                                         &r, &ry, &d, bsize);
       cost += r;
@@ -825,6 +862,13 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
         mic->bmi[i + j * 2].as_mode.first = best_mode;
       for (j = 1; j < bw; ++j)
         mic->bmi[i + j].as_mode.first = best_mode;
+#if CONFIG_FILTERINTRA
+      mic->bmi[i].as_mode.filterbit = filterbit;
+      for (j = 1; j < bh; ++j)
+        mic->bmi[i + j * 2].as_mode.filterbit = filterbit;
+      for (j = 1; j < bw; ++j)
+        mic->bmi[i + j].as_mode.filterbit = filterbit;
+#endif
 
       if (total_rd >= best_rd)
         break;
@@ -838,6 +882,9 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
   *rate_y = tot_rate_y;
   *Distortion = distortion;
   xd->mode_info_context->mbmi.mode = mic->bmi[3].as_mode.first;
+#if CONFIG_FILTERINTRA
+  xd->mode_info_context->mbmi.filterbit = mic->bmi[3].as_mode.filterbit;
+#endif
 
   return RDCOST(mb->rdmult, mb->rddiv, cost, distortion);
 }
@@ -856,6 +903,9 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   TX_SIZE UNINITIALIZED_IS_SAFE(best_tx);
   int i;
   int *bmode_costs = x->mbmode_cost;
+#if CONFIG_FILTERINTRA
+  int mode_ext, filterbit = 0, fbit_selected = 0;
+#endif
 
   if (bsize < BLOCK_SIZE_SB8X8) {
     x->e_mbd.mode_info_context->mbmi.txfm_size = TX_4X4;
@@ -866,10 +916,27 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     txfm_cache[i] = INT64_MAX;
 
   /* Y Search for 32x32 intra prediction mode */
+#if !CONFIG_FILTERINTRA
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     int64_t local_txfm_cache[NB_TXFM_MODES];
     MODE_INFO *const mic = xd->mode_info_context;
     const int mis = xd->mode_info_stride;
+#else
+  for (mode_ext = 0; mode_ext < 20; mode_ext++) {
+    int64_t local_txfm_cache[NB_TXFM_MODES];
+    MODE_INFO *const mic = xd->mode_info_context;
+    const int mis = xd->mode_info_stride;
+    if (mode_ext < 10) {
+      mode = DC_PRED + mode_ext;
+      filterbit = 0;
+    } else {
+      mode = DC_PRED + (mode_ext - 10);
+      filterbit = 1;
+    }
+    if (filterbit &&
+        !is_filter_mode(mode))
+      continue;
+#endif
 
     if (cpi->common.frame_type == KEY_FRAME) {
       const MB_PREDICTION_MODE A = above_block_mode(mic, 0, mis);
@@ -879,15 +946,29 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
       bmode_costs = x->y_mode_costs[A][L];
     }
     x->e_mbd.mode_info_context->mbmi.mode = mode;
+#if CONFIG_FILTERINTRA
+    if (is_filter_mode(mode))
+      x->e_mbd.mode_info_context->mbmi.filterbit = filterbit;
+#endif
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion, &s,
                     bsize, local_txfm_cache);
 
     this_rate = this_rate_tokenonly + bmode_costs[mode];
+#if CONFIG_FILTERINTRA
+    if (is_filter_mode(mode)
+        && (x->e_mbd.mode_info_context->mbmi.txfm_size == TX_4X4))
+    this_rate +=
+        vp9_cost_bit(cpi->common.fc.filterintra_prob,
+                     x->e_mbd.mode_info_context->mbmi.filterbit);
+#endif
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
       mode_selected   = mode;
+#if CONFIG_FILTERINTRA
+      fbit_selected   = filterbit;
+#endif
       best_rd         = this_rd;
       best_tx         = x->e_mbd.mode_info_context->mbmi.txfm_size;
       *rate           = this_rate;
@@ -906,6 +987,9 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   x->e_mbd.mode_info_context->mbmi.mode = mode_selected;
+#if CONFIG_FILTERINTRA
+  x->e_mbd.mode_info_context->mbmi.filterbit = fbit_selected;
+#endif
   x->e_mbd.mode_info_context->mbmi.txfm_size = best_tx;
 
   return best_rd;
@@ -960,16 +1044,47 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int this_rate_tokenonly, this_rate;
   int this_distortion, s;
 
+#if CONFIG_FILTERINTRA
+  int mode_ext, filterbit = 0, fbit_selected = 0;
+  for (mode_ext = 0; mode_ext < 20; mode_ext++) {
+  if (mode_ext < 10) {
+    mode = DC_PRED + mode_ext;
+    filterbit = 0;
+  } else {
+    mode = DC_PRED + (mode_ext - 10);
+    filterbit = 1;
+  }
+  if (filterbit && !is_filter_mode(mode))
+    continue;
+  if (filterbit && is_filter_mode(mode) &&
+      get_uv_tx_size_2(bsize, x->e_mbd.mode_info_context->mbmi.txfm_size)
+      > TX_4X4)
+    continue;
+#else
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
+#endif
     x->e_mbd.mode_info_context->mbmi.uv_mode = mode;
+#if CONFIG_FILTERINTRA
+    x->e_mbd.mode_info_context->mbmi.uv_filterbit = filterbit;
+#endif
     super_block_uvrd(&cpi->common, x, &this_rate_tokenonly,
                      &this_distortion, &s, bsize);
     this_rate = this_rate_tokenonly +
                 x->intra_uv_mode_cost[x->e_mbd.frame_type][mode];
+#if CONFIG_FILTERINTRA
+    if (is_filter_mode(mode) &&
+        get_uv_tx_size_2(bsize, x->e_mbd.mode_info_context->mbmi.txfm_size)
+        == TX_4X4)
+      this_rate += vp9_cost_bit(cpi->common.fc.filterintra_prob, filterbit);
+#endif
+
     this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
 
     if (this_rd < best_rd) {
       mode_selected   = mode;
+#if CONFIG_FILTERINTRA
+      fbit_selected   = filterbit;
+#endif
       best_rd         = this_rd;
       *rate           = this_rate;
       *rate_tokenonly = this_rate_tokenonly;
@@ -979,6 +1094,9 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   x->e_mbd.mode_info_context->mbmi.uv_mode = mode_selected;
+#if CONFIG_FILTERINTRA
+  x->e_mbd.mode_info_context->mbmi.uv_filterbit = fbit_selected;
+#endif
 
   return best_rd;
 }
@@ -2734,6 +2852,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         txfm_cache[i] = txfm_cache[ONLY_4X4];
     } else if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
+#if CONFIG_FILTERINTRA
+      mbmi->filterbit = 0;
+      mbmi->uv_filterbit = 0;
+#endif
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
                       bsize, txfm_cache);
 
