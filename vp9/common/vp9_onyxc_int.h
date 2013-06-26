@@ -161,7 +161,6 @@ typedef struct VP9Common {
 
 
   YV12_BUFFER_CONFIG post_proc_buffer;
-  YV12_BUFFER_CONFIG temp_scale_frame;
 
 
   FRAME_TYPE last_frame_type;  /* Save last frame's frame type for motion search. */
