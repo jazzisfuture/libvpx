@@ -684,6 +684,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->max_step_search_steps = MAX_MVSEARCH_STEPS;
   sf->comp_inter_joint_search_thresh = BLOCK_SIZE_AB4X4;
   sf->adpative_rd_thresh = 0;
+  sf->skip_encode_sb = 0;
   sf->use_lastframe_partitioning = 0;
   sf->use_largest_txform = 0;
   sf->use_8tap_always = 0;
@@ -703,6 +704,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
   sf->static_segmentation = 0;
 #endif
+
+  // FIXME(jingning): need to decide which category skip_encode_sb feature
+  // should belong to. currently turn it on/off manually
+  sf->skip_encode_sb = 1;
 
   switch (mode) {
     case 0: // best quality mode
