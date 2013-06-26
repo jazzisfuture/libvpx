@@ -187,9 +187,78 @@ static void d153_predictor(uint8_t *ypred_ptr,
   }
 }
 
+#if CONFIG_FILTERBIT
+static void filter_intra_predictors(uint8_t *ypred_ptr,
+                                    int y_stride,
+                                    int bw, int bh,
+                                    uint8_t *yabove_row,
+                                    uint8_t *yleft_col,
+                                    int mode) {
+  static const int prec_bits = 10;
+  static const int round_val = 511;
+  static const int taps[10][3] = {
+      {0, 0, 0},          // DC
+      {1014, 565, -559},  // V
+      {312, 1017, -312},  // H
+      {0, 0, 0},          // D45
+      {478, 483, 153},    // D135
+      {699, 470, -122},   // D117
+      {356, 707, 35},     // D153
+      {0, 0, 0},          // D27
+      {0, 0, 0},          // D63
+      {877, 896, -812}    // TM
+  };
+  int r, c;
+  int pred[17][17];
+  int mean, ipred;
+  const int c1 = taps[mode][0];
+  const int c2 = taps[mode][1];
+  const int c3 = taps[mode][2];
+
+  r = 0;
+  c = 0;
+  mean = 0;
+  while (r < bh) {
+    mean = mean + (int)yleft_col[r];
+    r++;
+  }
+  while (c < bw) {
+    mean = mean + (int)yabove_row[c];
+    c++;
+  }
+  mean = (mean + (bh + bw)/2) / (bh + bw);
+
+  for (r = 0; r < bh; r++)
+    pred[r + 1][0] = (int)yleft_col[r] - mean;
+
+  for (c = 0; c < bw + 1; c++)
+    pred[0][c] = (int)yabove_row[c - 1] - mean;
+
+  for (r = 1; r < bh + 1; r++)
+    for (c = 1; c < bw + 1; c++) {
+      ipred = c1 * pred[r - 1][c] + c2 * pred[r][c - 1]
+              + c3 * pred[r - 1][c - 1];
+      pred[r][c] = ipred < 0 ?
+          -((-ipred + round_val) >> prec_bits) :
+          ((ipred + round_val) >> prec_bits);
+    }
+
+  for (r = 0; r < bh; r++) {
+    for (c = 0; c < bw; c++) {
+      ipred = pred[r + 1][c + 1] + mean;
+      ypred_ptr[c] = clip_pixel(ipred);
+    }
+    ypred_ptr += y_stride;
+  }
+}
+#endif
+
 void vp9_build_intra_predictors(uint8_t *src, int src_stride,
                                 uint8_t *ypred_ptr,
                                 int y_stride, int mode,
+#if CONFIG_FILTERBIT
+                                int filterbit,
+#endif
                                 int bw, int bh,
                                 int up_available, int left_available,
                                 int right_available) {
@@ -203,6 +272,9 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
   // 129  E   F  ..  U   V
   // 129  G   H  ..  S   T   T   T   T   T
   // ..
+#if CONFIG_FILTERBIT
+  int filterflag = is_filter_mode(mode) && (bw == 4) && filterbit;
+#endif
 
   assert(bw == bh);
 
@@ -227,6 +299,12 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
   }
   yabove_row[-1] = ytop_left;
 
+#if CONFIG_FILTERBIT
+  if (filterflag) {
+    filter_intra_predictors(ypred_ptr, y_stride, bw, bh,
+                            yabove_row, yleft_col, mode);
+  } else {
+#endif
   switch (mode) {
     case DC_PRED: {
       int i;
@@ -293,6 +371,9 @@ void vp9_build_intra_predictors(uint8_t *src, int src_stride,
     default:
       break;
   }
+#if CONFIG_FILTERBIT
+  }
+#endif
 }
 
 void vp9_build_intra_predictors_sby_s(MACROBLOCKD *xd,
@@ -303,6 +384,9 @@ void vp9_build_intra_predictors_sby_s(MACROBLOCKD *xd,
   vp9_build_intra_predictors(pd->dst.buf, pd->dst.stride,
                              pd->dst.buf, pd->dst.stride,
                              xd->mode_info_context->mbmi.mode,
+#if CONFIG_FILTERBIT
+                             0,
+#endif
                              bw, bh, xd->up_available, xd->left_available,
                              0 /*xd->right_available*/);
 }
@@ -315,11 +399,17 @@ void vp9_build_intra_predictors_sbuv_s(MACROBLOCKD *xd,
   vp9_build_intra_predictors(xd->plane[1].dst.buf, xd->plane[1].dst.stride,
                              xd->plane[1].dst.buf, xd->plane[1].dst.stride,
                              xd->mode_info_context->mbmi.uv_mode,
+#if CONFIG_FILTERBIT
+                             0,
+#endif
                              bw, bh, xd->up_available,
                              xd->left_available, 0 /*xd->right_available*/);
   vp9_build_intra_predictors(xd->plane[2].dst.buf, xd->plane[1].dst.stride,
                              xd->plane[2].dst.buf, xd->plane[1].dst.stride,
                              xd->mode_info_context->mbmi.uv_mode,
+#if CONFIG_FILTERBIT
+                             0,
+#endif
                              bw, bh, xd->up_available,
                              xd->left_available, 0 /*xd->right_available*/);
 }
@@ -329,6 +419,9 @@ void vp9_predict_intra_block(MACROBLOCKD *xd,
                             int bwl_in,
                             TX_SIZE tx_size,
                             int mode,
+#if CONFIG_FILTERBIT
+                            int filterbit,
+#endif
                             uint8_t *predictor, int pre_stride) {
   const int bwl = bwl_in - tx_size;
   const int wmask = (1 << bwl) - 1;
@@ -341,6 +434,9 @@ void vp9_predict_intra_block(MACROBLOCKD *xd,
   vp9_build_intra_predictors(predictor, pre_stride,
                              predictor, pre_stride,
                              mode,
+#if CONFIG_FILTERBIT
+                             filterbit,
+#endif
                              txfm_block_size,
                              txfm_block_size,
                              have_top, have_left,
@@ -351,7 +447,14 @@ void vp9_intra4x4_predict(MACROBLOCKD *xd,
                           int block_idx,
                           BLOCK_SIZE_TYPE bsize,
                           int mode,
+#if CONFIG_FILTERBIT
+                          int filterbit,
+#endif
                           uint8_t *predictor, int pre_stride) {
   vp9_predict_intra_block(xd, block_idx, b_width_log2(bsize), TX_4X4,
-                          mode, predictor, pre_stride);
+                          mode,
+#if CONFIG_FILTERBIT
+                          filterbit,
+#endif
+                          predictor, pre_stride);
 }
