@@ -147,6 +147,10 @@ void vp9_save_coding_context(VP9_COMP *cpi) {
   vp9_copy(cc->tx_probs_16x16p, cm->fc.tx_probs_16x16p);
   vp9_copy(cc->tx_probs_32x32p, cm->fc.tx_probs_32x32p);
   vp9_copy(cc->mbskip_probs, cm->fc.mbskip_probs);
+
+#if CONFIG_FILTERBIT
+  cc->filterintra_prob = cm->fc.filterintra_prob;
+#endif
 }
 
 void vp9_restore_coding_context(VP9_COMP *cpi) {
@@ -188,6 +192,10 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->fc.tx_probs_16x16p, cc->tx_probs_16x16p);
   vp9_copy(cm->fc.tx_probs_32x32p, cc->tx_probs_32x32p);
   vp9_copy(cm->fc.mbskip_probs, cc->mbskip_probs);
+
+#if CONFIG_FILTERBIT
+  cm->fc.filterintra_prob = cc->filterintra_prob;
+#endif
 }
 
 void vp9_setup_key_frame(VP9_COMP *cpi) {
