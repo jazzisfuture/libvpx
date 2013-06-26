@@ -345,7 +345,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > x_idx
           && (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > y) {
         MODE_INFO *mi_addr = xd->mode_info_context + x_idx + y * mis;
-        *mi_addr = *mi;
+        vpx_memcpy(mi_addr, mi, sizeof(*mi));
       }
     }
   }
@@ -471,7 +471,7 @@ void vp9_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
 }
 
 static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
-                        BLOCK_SIZE_TYPE bsize) {
+                        BLOCK_SIZE_TYPE bsize, int skippable) {
   MACROBLOCK * const x = &cpi->mb;
   VP9_COMMON * const cm = &cpi->common;
   MACROBLOCKD * const xd = &x->e_mbd;
@@ -484,17 +484,6 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
   const int idx_map = mb_row * cm->mb_cols + mb_col;
   int i;
 
-  // entropy context structures
-  for (i = 0; i < MAX_MB_PLANE; i++) {
-    xd->plane[i].above_context = cm->above_context[i]
-        + (mi_col * 2 >> xd->plane[i].subsampling_x);
-    xd->plane[i].left_context = cm->left_context[i]
-        + (((mi_row * 2) & 15) >> xd->plane[i].subsampling_y);
-  }
-
-  // partition contexts
-  set_partition_seg_context(cm, xd, mi_row, mi_col);
-
   // Activity map pointer
   x->mb_activity_ptr = &cpi->mb_activity_map[idx_map];
   x->active_ptr = cpi->active_map + idx_map;
@@ -506,6 +495,17 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
   xd->prev_mode_info_context = cm->prev_mi ? cm->prev_mi + idx_str : NULL;
+
+  // entropy context structures
+  for (i = 0; i < MAX_MB_PLANE; i++) {
+    xd->plane[i].above_context = cm->above_context[i]
+        + (mi_col * 2 >> xd->plane[i].subsampling_x);
+    xd->plane[i].left_context = cm->left_context[i]
+        + (((mi_row * 2) & 15) >> xd->plane[i].subsampling_y);
+  }
+
+  // partition contexts
+  set_partition_seg_context(cm, xd, mi_row, mi_col);
 
   // Set up destination pointers
   setup_dst_planes(xd, &cm->yv12_fb[dst_fb_idx], mi_row, mi_col);
@@ -573,7 +573,7 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
     if (xd->ab_index != 0)
       return;
 
-  set_offsets(cpi, mi_row, mi_col, bsize);
+  set_offsets(cpi, mi_row, mi_col, bsize, 0);
   xd->mode_info_context->mbmi.sb_type = bsize;
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
@@ -708,14 +708,16 @@ static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
         a + bw * p, sizeof(ENTROPY_CONTEXT) * bw >> xd->plane[p].subsampling_x);
     vpx_memcpy(
         cm->left_context[p]
-            + ((mi_row & MI_MASK)* 2 >> xd->plane[p].subsampling_y),l + bh * p,
-            sizeof(ENTROPY_CONTEXT) * bh >> xd->plane[p].subsampling_y);
-          }
+            + ((mi_row & MI_MASK)* 2 >> xd->plane[p].subsampling_y),
+        l + bh * p,
+        sizeof(ENTROPY_CONTEXT) * bh >> xd->plane[p].subsampling_y);
+  }
   vpx_memcpy(cm->above_seg_context + mi_col, sa,
              sizeof(PARTITION_CONTEXT) * mw);
   vpx_memcpy(cm->left_seg_context + (mi_row & MI_MASK), sl,
-  sizeof(PARTITION_CONTEXT) * mh)
-             ;}
+             sizeof(PARTITION_CONTEXT) * mh);
+}
+
 static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
                          ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
                          ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
@@ -744,8 +746,8 @@ static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
   vpx_memcpy(sa, cm->above_seg_context + mi_col,
              sizeof(PARTITION_CONTEXT) * mw);
   vpx_memcpy(sl, cm->left_seg_context + (mi_row & MI_MASK),
-  sizeof(PARTITION_CONTEXT) * mh)
-             ;}
+             sizeof(PARTITION_CONTEXT) * mh);
+}
 
 static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row, int mi_col,
                      int output_enabled, BLOCK_SIZE_TYPE bsize, int sub_index) {
@@ -762,7 +764,8 @@ static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row, int mi_col,
   if (bsize < BLOCK_SIZE_SB8X8)
     if (xd->ab_index > 0)
       return;
-  set_offsets(cpi, mi_row, mi_col, bsize);
+
+  set_offsets(cpi, mi_row, mi_col, bsize, !output_enabled);
   update_state(cpi, get_block_context(x, bsize), bsize, output_enabled);
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
 
@@ -1077,7 +1080,7 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
 
   vpx_memset(&vt, 0, sizeof(vt));
 
-  set_offsets(cpi, mi_row, mi_col, BLOCK_SIZE_SB64X64);
+  set_offsets(cpi, mi_row, mi_col, BLOCK_SIZE_SB64X64, 0);
 
   if (xd->mb_to_right_edge < 0)
     pixels_wide += (xd->mb_to_right_edge >> 3);
@@ -1495,7 +1498,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
       MODE_INFO *p = cm->prev_mi + idx_str;
 
       if (cpi->sf.use_one_partition_size_always) {
-        set_offsets(cpi, mi_row, mi_col, BLOCK_SIZE_SB64X64);
+        set_offsets(cpi, mi_row, mi_col, BLOCK_SIZE_SB64X64, 0);
         set_partitioning(cpi, m, cpi->sf.always_this_block_size);
         rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                          &dummy_rate, &dummy_dist);
@@ -2085,6 +2088,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int bwl = mi_width_log2(bsize);
   const int bw = 1 << bwl, bh = 1 << mi_height_log2(bsize);
   x->rd_search = 0;
+  x->skip_encode = (!output_enabled && cm->frame_type != KEY_FRAME &&
+                    cpi->sf.skip_encode_sb);
+
+  if (x->skip_encode)
+    return;
 
   if (cm->frame_type == KEY_FRAME) {
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {

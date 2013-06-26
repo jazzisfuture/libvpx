@@ -660,7 +660,6 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   DECLARE_ALIGNED(16, int16_t, best_dqcoeff[4][16]);
 
   assert(ib < 4);
-
   vpx_memcpy(ta, a, sizeof(ta));
   vpx_memcpy(tl, l, sizeof(tl));
   xd->mode_info_context->mbmi.txfm_size = TX_4X4;
@@ -689,7 +688,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                         pd->dst.stride);
         vp9_predict_intra_block(xd, block, b_width_log2(BLOCK_SIZE_SB8X8),
                                 TX_4X4, mode,
-                                dst, pd->dst.stride,
+                                x->skip_encode ? src : dst,
+                                x->skip_encode ? p->src.stride : pd->dst.stride,
                                 dst, pd->dst.stride);
         vp9_subtract_block(4, 4, src_diff, 8,
                            src, src_stride,
@@ -750,7 +750,9 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                       pd->dst.stride);
 
       vp9_predict_intra_block(xd, block, b_width_log2(BLOCK_SIZE_SB8X8), TX_4X4,
-                              *best_mode, dst, pd->dst.stride,
+                              *best_mode,
+                              x->skip_encode ? src : dst,
+                              x->skip_encode ? p->src.stride : pd->dst.stride,
                               dst, pd->dst.stride);
       // inverse transform
       if (best_tx_type != DCT_DCT)
@@ -2514,6 +2516,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t err4x4 = INT64_MAX;
   int i;
 
+  x->skip_encode = 0;
   vpx_memset(&txfm_cache,0,sizeof(txfm_cache));
   ctx->skip = 0;
   xd->mode_info_context->mbmi.mode = DC_PRED;
@@ -2614,6 +2617,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int bhsl = b_height_log2(bsize);
   int bhs = (1 << bhsl) / 4;  // mode_info step for subsize
 
+  x->skip_encode = cpi->sf.skip_encode_sb;
   for (i = 0; i < 4; i++) {
     int j;
 
