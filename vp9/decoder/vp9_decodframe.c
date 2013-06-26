@@ -251,6 +251,9 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   int mode, b_mode;
   int plane_b_size;
   int tx_ib = raster_block >> tx_size;
+#if CONFIG_FILTERBIT
+  int fbit = 0;
+#endif
   mode = plane == 0? xd->mode_info_context->mbmi.mode:
                      xd->mode_info_context->mbmi.uv_mode;
 
@@ -258,8 +261,18 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8 && plane == 0) {
     assert(bsize == BLOCK_SIZE_SB8X8);
     b_mode = xd->mode_info_context->bmi[raster_block].as_mode.first;
+#if CONFIG_FILTERBIT
+    if (tx_size <= TX_4X4)
+      fbit = xd->mode_info_context->bmi[raster_block].as_mode.filterbit;
+#endif
   } else {
     b_mode = mode;
+#if CONFIG_FILTERBIT
+    if ((!plane) && (tx_size <= TX_4X4))
+      fbit = xd->mode_info_context->mbmi.filterbit;
+    else if (plane != 0 && get_uv_tx_size(&(xd->mode_info_context->mbmi)) <= TX_4X4)
+      fbit = xd->mode_info_context->mbmi.uv_filterbit;
+#endif
   }
 
   if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0) {
@@ -268,7 +281,11 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
 
   plane_b_size = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
   vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size,
-                          b_mode, dst, xd->plane[plane].dst.stride);
+                          b_mode,
+#if CONFIG_FILTERBIT
+                          fbit,
+#endif
+                          dst, xd->plane[plane].dst.stride);
 
   switch (ss_txfrm_size / 2) {
     case TX_4X4:
