@@ -650,7 +650,9 @@ static void super_block_yrd(VP9_COMP *cpi,
     vp9_subtract_sby(x, bs);
 
   if (cpi->sf.use_largest_txform) {
-    if (bs >= BLOCK_SIZE_SB32X32) {
+    if (xd->lossless) {
+      mbmi->txfm_size = TX_4X4;
+    } else if (bs >= BLOCK_SIZE_SB32X32) {
       mbmi->txfm_size = TX_32X32;
     } else if (bs >= BLOCK_SIZE_MB16X16) {
       mbmi->txfm_size = TX_16X16;
