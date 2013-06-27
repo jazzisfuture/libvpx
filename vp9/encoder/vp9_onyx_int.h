@@ -226,6 +226,7 @@ typedef struct {
   int adjust_thresholds_by_speed;
   int partition_by_variance;
   int use_one_partition_size_always;
+  int use_square_partition_only;
   BLOCK_SIZE_TYPE always_this_block_size;
   int use_partitions_greater_than;
   BLOCK_SIZE_TYPE greater_than_block_size;

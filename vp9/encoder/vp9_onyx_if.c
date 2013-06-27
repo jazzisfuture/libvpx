@@ -699,6 +699,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adjust_thresholds_by_speed = 0;
   sf->partition_by_variance = 0;
   sf->use_one_partition_size_always = 0;
+  sf->use_square_partition_only = 0;
   sf->use_partitions_less_than = 0;
   sf->less_than_block_size = BLOCK_SIZE_MB16X16;
   sf->use_partitions_greater_than = 0;
@@ -729,6 +730,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->adpative_rd_thresh = 1;
 
       if (speed == 1) {
+        sf->use_square_partition_only = 1;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
         sf->use_largest_txform = !(cpi->common.frame_type == KEY_FRAME ||
                                    cpi->common.intra_only ||
