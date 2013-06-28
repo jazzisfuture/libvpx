@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymode.h"
@@ -23,11 +25,6 @@
 #include "vp9/decoder/vp9_onyxd_int.h"
 #include "vp9/decoder/vp9_dsubexp.h"
 #include "vp9/decoder/vp9_treereader.h"
-
-
-#if CONFIG_DEBUG
-#include <assert.h>
-#endif
 
 // #define DEBUG_DEC_MV
 #ifdef DEBUG_DEC_MV
@@ -530,8 +527,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   const BLOCK_SIZE_TYPE bsize = mi->mbmi.sb_type;
   const int bw = 1 << b_width_log2(bsize);
   const int bh = 1 << b_height_log2(bsize);
-
-  int mb_to_left_edge, mb_to_right_edge, mb_to_top_edge, mb_to_bottom_edge;
   int j, idx, idy;
 
   mbmi->ref_frame[1] = NONE;
@@ -545,11 +540,6 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
   // that are in 1/8th pel units
   set_mi_row_col(cm, xd, mi_row, 1 << mi_height_log2(bsize),
                          mi_col, 1 << mi_width_log2(bsize));
-
-  mb_to_top_edge = xd->mb_to_top_edge - LEFT_TOP_MARGIN;
-  mb_to_bottom_edge = xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN;
-  mb_to_left_edge = xd->mb_to_left_edge - LEFT_TOP_MARGIN;
-  mb_to_right_edge = xd->mb_to_right_edge + RIGHT_BOTTOM_MARGIN;
 
   // Read the macroblock segment id.
   mbmi->segment_id = read_inter_segment_id(pbi, mi_row, mi_col, r);
@@ -707,6 +697,11 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
       mv0->as_int = mi->bmi[3].as_mv[0].as_int;
       mv1->as_int = mi->bmi[3].as_mv[1].as_int;
     } else {
+      const int mb_to_top_edge = xd->mb_to_top_edge - LEFT_TOP_MARGIN;
+      const int mb_to_bottom_edge = xd->mb_to_bottom_edge + RIGHT_BOTTOM_MARGIN;
+      const int mb_to_left_edge = xd->mb_to_left_edge - LEFT_TOP_MARGIN;
+      const int mb_to_right_edge = xd->mb_to_right_edge + RIGHT_BOTTOM_MARGIN;
+
       switch (mbmi->mode) {
         case NEARMV:
           // Clip "next_nearest" so that it does not extend to far out of image
@@ -748,9 +743,7 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
                       &cm->fc.NMVcount, xd->allow_high_precision_mv);
           break;
         default:
-#if CONFIG_DEBUG
           assert(0);
-#endif
           break;
       }
     }
