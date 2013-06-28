@@ -44,15 +44,15 @@ specialize vp9_idct_add_32x32
 # RECON
 #
 prototype void vp9_copy_mem16x16 "const uint8_t *src, int src_pitch, uint8_t *dst, int dst_pitch"
-specialize vp9_copy_mem16x16 mmx sse2 dspr2
+specialize vp9_copy_mem16x16 mmx sse2 dspr2 neon
 vp9_copy_mem16x16_dspr2=vp9_copy_mem16x16_dspr2
 
 prototype void vp9_copy_mem8x8 "const uint8_t *src, int src_pitch, uint8_t *dst, int dst_pitch"
-specialize vp9_copy_mem8x8 mmx dspr2
+specialize vp9_copy_mem8x8 mmx dspr2 neon
 vp9_copy_mem8x8_dspr2=vp9_copy_mem8x8_dspr2
 
 prototype void vp9_copy_mem8x4 "const uint8_t *src, int src_pitch, uint8_t *dst, int dst_pitch"
-specialize vp9_copy_mem8x4 mmx
+specialize vp9_copy_mem8x4 mmx neon
 
 prototype void vp9_build_intra_predictors "uint8_t *src, int src_stride, uint8_t *pred, int y_stride, int mode, int bw, int bh, int up_available, int left_available, int right_available"
 specialize void vp9_build_intra_predictors
