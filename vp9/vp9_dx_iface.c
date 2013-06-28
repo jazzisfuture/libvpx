@@ -478,7 +478,7 @@ static vpx_codec_err_t vp9_decode(vpx_codec_alg_priv_t  *ctx,
     while (data_start < data_end && *data_start == 0)
       data_start++;
 
-    data_sz = data_end - data_start;
+    data_sz = (uint32_t)(data_end - data_start);
   } while (data_start < data_end);
   return res;
 }

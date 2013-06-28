@@ -938,7 +938,7 @@ static void fill_variance(var *v, int64_t s2, int64_t s, int c) {
   v->sum_error = s;
   v->count = c;
   if (c > 0)
-    v->variance = 256
+    v->variance = (int)256
         * (v->sum_square_error - v->sum_error * v->sum_error / v->count)
         / v->count;
   else

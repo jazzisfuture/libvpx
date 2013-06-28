@@ -1036,8 +1036,8 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->avg_frame_qindex             = cpi->oxcf.worst_allowed_q;
 
   // Initialise the starting buffer levels
-  cpi->buffer_level                 = cpi->oxcf.starting_buffer_level;
-  cpi->bits_off_target              = cpi->oxcf.starting_buffer_level;
+  cpi->buffer_level                 = (int)cpi->oxcf.starting_buffer_level;
+  cpi->bits_off_target              = (int)cpi->oxcf.starting_buffer_level;
 
   cpi->rolling_target_bits          = cpi->av_per_frame_bandwidth;
   cpi->rolling_actual_bits          = cpi->av_per_frame_bandwidth;
@@ -1141,21 +1141,27 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   // Convert target bandwidth from Kbit/s to Bit/s
   cpi->oxcf.target_bandwidth       *= 1000;
 
-  cpi->oxcf.starting_buffer_level = rescale(cpi->oxcf.starting_buffer_level,
-                                            cpi->oxcf.target_bandwidth, 1000);
+  cpi->oxcf.starting_buffer_level = rescale(
+    (int)cpi->oxcf.starting_buffer_level,
+    cpi->oxcf.target_bandwidth,
+    1000);
 
   // Set or reset optimal and maximum buffer levels.
   if (cpi->oxcf.optimal_buffer_level == 0)
     cpi->oxcf.optimal_buffer_level = cpi->oxcf.target_bandwidth / 8;
   else
-    cpi->oxcf.optimal_buffer_level = rescale(cpi->oxcf.optimal_buffer_level,
-                                             cpi->oxcf.target_bandwidth, 1000);
+    cpi->oxcf.optimal_buffer_level = rescale(
+      (int)cpi->oxcf.optimal_buffer_level,
+      cpi->oxcf.target_bandwidth,
+      1000);
 
   if (cpi->oxcf.maximum_buffer_size == 0)
     cpi->oxcf.maximum_buffer_size = cpi->oxcf.target_bandwidth / 8;
   else
-    cpi->oxcf.maximum_buffer_size = rescale(cpi->oxcf.maximum_buffer_size,
-                                            cpi->oxcf.target_bandwidth, 1000);
+    cpi->oxcf.maximum_buffer_size = rescale(
+      (int)cpi->oxcf.maximum_buffer_size,
+      cpi->oxcf.target_bandwidth,
+      1000);
 
   // Set up frame rate and related parameters rate control values.
   vp9_new_frame_rate(cpi, cpi->oxcf.frame_rate);
@@ -3163,7 +3169,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Clip the buffer level at the maximum buffer size
   if (cpi->bits_off_target > cpi->oxcf.maximum_buffer_size)
-    cpi->bits_off_target = cpi->oxcf.maximum_buffer_size;
+    cpi->bits_off_target = (int)cpi->oxcf.maximum_buffer_size;
 
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.

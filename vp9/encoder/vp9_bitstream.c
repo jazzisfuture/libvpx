@@ -1591,7 +1591,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   first_partition_size_wb = wb;
   vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
 
-  bytes_packed = vp9_rb_bytes_written(&wb);
+  bytes_packed = (int)vp9_rb_bytes_written(&wb);
   cx_data += bytes_packed;
 
   compute_update_table();

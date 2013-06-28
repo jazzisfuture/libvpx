@@ -431,7 +431,7 @@ void vp9_optimize_sby(VP9_COMMON *cm, MACROBLOCK *x, BLOCK_SIZE_TYPE bsize) {
   foreach_transformed_block_in_plane(&x->e_mbd, bsize, 0, optimize_block, &arg);
 }
 
-void vp9_optimize_sbuv(VP9_COMMON *const cm, MACROBLOCK *x,
+void vp9_optimize_sbuv(VP9_COMMON *cm, MACROBLOCK *x,
                        BLOCK_SIZE_TYPE bsize) {
   struct optimize_ctx ctx;
   struct optimize_block_args arg = {cm, x, &ctx};

@@ -440,7 +440,7 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *cm, const MACROBLOCKD * xd,
 
 // This function returns the status of the given prediction signal.
 // I.e. is the predicted value for the given signal correct.
-unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd,
+unsigned char vp9_get_pred_flag(const MACROBLOCKD *xd,
                                 PRED_ID pred_id) {
   switch (pred_id) {
     case PRED_SEG_ID:

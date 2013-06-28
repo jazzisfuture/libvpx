@@ -2308,7 +2308,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
                 pct_extra = (pct_extra > 20) ? 20 : pct_extra;
 
                 cpi->twopass.alt_extra_bits =
-                    (cpi->twopass.gf_group_bits * pct_extra) / 100;
+                    (int)(cpi->twopass.gf_group_bits * pct_extra) / 100;
                 cpi->twopass.gf_group_bits -= cpi->twopass.alt_extra_bits;
                 cpi->twopass.alt_extra_bits /=
                     ((cpi->baseline_gf_interval-1)>>1);
@@ -2384,7 +2384,7 @@ static void assign_std_frame_bits(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
             target_frame_size = max_bits;
 
         if (target_frame_size > cpi->twopass.gf_group_bits)
-            target_frame_size = cpi->twopass.gf_group_bits;
+            target_frame_size = (int)cpi->twopass.gf_group_bits;
     }
 
     /* Adjust error and bits remaining */

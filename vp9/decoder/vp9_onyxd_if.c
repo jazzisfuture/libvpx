@@ -285,7 +285,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   pbi->common.error.error_code = VPX_CODEC_OK;
 
   pbi->source = source;
-  pbi->source_sz = size;
+  pbi->source_sz = (uint32_t)size;
 
   if (pbi->source_sz == 0) {
     /* This is used to signal that we are missing frames.

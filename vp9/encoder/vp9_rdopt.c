@@ -1930,8 +1930,8 @@ static void model_rd_from_var_lapndz(int var, int n, int qstep,
       R = 0;
       D = var;
     }
-    *rate = (n * R * 256 + 0.5);
-    *dist = (n * D * s2 + 0.5);
+    *rate = (int) (n * R * 256 + 0.5);
+    *dist = (int64_t)(n * D * s2 + 0.5);
   }
   vp9_clear_system_state();
 }
@@ -3152,7 +3152,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     /* keep record of best compound/single-only prediction */
     if (!disable_skip && mbmi->ref_frame[0] != INTRA_FRAME) {
-      int single_rd, hybrid_rd, single_rate, hybrid_rate;
+      int64_t single_rd, hybrid_rd;
+      int single_rate, hybrid_rate;
 
       if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
         single_rate = rate2 - compmode_cost;
