@@ -26,7 +26,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   int mi_row, int mi_col,
                                   int *r, int *d, BLOCK_SIZE_TYPE bsize,
-                                  PICK_MODE_CONTEXT *ctx);
+                                  PICK_MODE_CONTEXT *ctx, int fast_ms);
 
 void vp9_init_me_luts();
 
