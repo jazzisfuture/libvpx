@@ -583,7 +583,8 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
 
 static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
                           TOKENEXTRA **tp, int *totalrate, int *totaldist,
-                          BLOCK_SIZE_TYPE bsize, PICK_MODE_CONTEXT *ctx) {
+                          BLOCK_SIZE_TYPE bsize, PICK_MODE_CONTEXT *ctx,
+                          int fast_ms) {
   VP9_COMMON * const cm = &cpi->common;
   MACROBLOCK * const x = &cpi->mb;
   MACROBLOCKD * const xd = &x->e_mbd;
@@ -605,7 +606,7 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
     vp9_rd_pick_intra_mode_sb(cpi, x, totalrate, totaldist, bsize, ctx);
   } else {
     vp9_rd_pick_inter_mode_sb(cpi, x, mi_row, mi_col, totalrate, totaldist,
-                              bsize, ctx);
+                              bsize, ctx, fast_ms);
   }
 }
 
@@ -1244,20 +1245,20 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   switch (partition) {
     case PARTITION_NONE:
       pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, bsize,
-                    get_block_context(x, bsize));
+                    get_block_context(x, bsize), 0);
       r += x->partition_cost[pl][PARTITION_NONE];
       break;
     case PARTITION_HORZ:
       *(get_sb_index(xd, subsize)) = 0;
       pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
+                    get_block_context(x, subsize), 0);
       if (mi_row + (bh >> 1) <= cm->mi_rows) {
         int rt, dt;
         update_state(cpi, get_block_context(x, subsize), subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
         *(get_sb_index(xd, subsize)) = 1;
         pick_sb_modes(cpi, mi_row + (bs >> 2), mi_col, tp, &rt, &dt, subsize,
-                      get_block_context(x, subsize));
+                      get_block_context(x, subsize), 0);
         r += rt;
         d += dt;
       }
@@ -1268,14 +1269,14 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
     case PARTITION_VERT:
       *(get_sb_index(xd, subsize)) = 0;
       pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
+                    get_block_context(x, subsize), 0);
       if (mi_col + (bs >> 1) <= cm->mi_cols) {
         int rt, dt;
         update_state(cpi, get_block_context(x, subsize), subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
         *(get_sb_index(xd, subsize)) = 1;
         pick_sb_modes(cpi, mi_row, mi_col + (bs >> 2), tp, &rt, &dt, subsize,
-                      get_block_context(x, subsize));
+                      get_block_context(x, subsize), 0);
         r += rt;
         d += dt;
       }
@@ -1336,6 +1337,16 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   BLOCK_SIZE_TYPE subsize;
   int srate = INT_MAX, sdist = INT_MAX;
 
+  // Flags for skipping partition checking
+  int skiph = 0, skipv = 0;
+  // Fast motion search levels
+  int fast_ms_n = 0, fast_ms_h = 0, fast_ms_v = 0;
+  // Prediction MVs for 3 partitions(H, V, and NONE).
+  int_mv mv_h0, mv_h1, mv_v0, mv_v1, mv_n;
+  int subblock_ref = 0;
+
+  mv_h0.as_int = mv_h1.as_int = mv_v0.as_int = mv_v1.as_int = mv_n.as_int = 0;
+
   if (bsize < BLOCK_SIZE_SB8X8)
     if (xd->ab_index != 0) {
       *rate = 0;
@@ -1378,22 +1389,166 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
+#if CONFIG_USING_SMALL_PARTITION_INFO
+  // Use 4 subblocks' motion estimation results to speed up current
+  // partition's checking.
+  if (bsize == BLOCK_SIZE_MB16X16 || bsize == BLOCK_SIZE_SB32X32 ||
+      bsize == BLOCK_SIZE_SB64X64) {
+    int ref0 = 0, ref1 = 0, ref2 = 0, ref3 = 0;
+
+    if (bsize == BLOCK_SIZE_MB16X16) {
+      ref0 = x->sb8x8_context[xd->sb_index][xd->mb_index][0].mic.mbmi.
+          ref_frame[0];
+      ref1 = x->sb8x8_context[xd->sb_index][xd->mb_index][1].mic.mbmi.
+          ref_frame[0];
+      ref2 = x->sb8x8_context[xd->sb_index][xd->mb_index][2].mic.mbmi.
+          ref_frame[0];
+      ref3 = x->sb8x8_context[xd->sb_index][xd->mb_index][3].mic.mbmi.
+          ref_frame[0];
+    } else if (bsize == BLOCK_SIZE_SB32X32) {
+      ref0 = x->mb_context[xd->sb_index][0].mic.mbmi.ref_frame[0];
+      ref1 = x->mb_context[xd->sb_index][1].mic.mbmi.ref_frame[0];
+      ref2 = x->mb_context[xd->sb_index][2].mic.mbmi.ref_frame[0];
+      ref3 = x->mb_context[xd->sb_index][3].mic.mbmi.ref_frame[0];
+    } else if (bsize == BLOCK_SIZE_SB64X64) {
+      ref0 = x->sb32_context[0].mic.mbmi.ref_frame[0];
+      ref1 = x->sb32_context[1].mic.mbmi.ref_frame[0];
+      ref2 = x->sb32_context[2].mic.mbmi.ref_frame[0];
+      ref3 = x->sb32_context[3].mic.mbmi.ref_frame[0];
+    }
+
+    // Currently, only consider 4 inter ref situation.
+    if (ref0 && ref1 && ref2 && ref3) {
+      int16_t mvr0 = 0, mvc0 = 0, mvr1 = 0, mvc1 = 0, mvr2 = 0, mvc2 = 0,
+          mvr3 = 0, mvc3 = 0;
+      int d01, d23, d02, d13;  // motion vector distance between 2 blocks
+
+      // Get each subblock's motion vectors.
+      if (bsize == BLOCK_SIZE_MB16X16) {
+        mvr0 = x->sb8x8_context[xd->sb_index][xd->mb_index][0].mic.mbmi.mv[0].
+            as_mv.row;
+        mvc0 = x->sb8x8_context[xd->sb_index][xd->mb_index][0].mic.mbmi.mv[0].
+            as_mv.col;
+        mvr1 = x->sb8x8_context[xd->sb_index][xd->mb_index][1].mic.mbmi.mv[0].
+            as_mv.row;
+        mvc1 = x->sb8x8_context[xd->sb_index][xd->mb_index][1].mic.mbmi.mv[0].
+            as_mv.col;
+        mvr2 = x->sb8x8_context[xd->sb_index][xd->mb_index][2].mic.mbmi.mv[0].
+            as_mv.row;
+        mvc2 = x->sb8x8_context[xd->sb_index][xd->mb_index][2].mic.mbmi.mv[0].
+            as_mv.col;
+        mvr3 = x->sb8x8_context[xd->sb_index][xd->mb_index][3].mic.mbmi.mv[0].
+            as_mv.row;
+        mvc3 = x->sb8x8_context[xd->sb_index][xd->mb_index][3].mic.mbmi.mv[0].
+            as_mv.col;
+      } else if (bsize == BLOCK_SIZE_SB32X32) {
+        mvr0 = x->mb_context[xd->sb_index][0].mic.mbmi.mv[0].as_mv.row;
+        mvc0 = x->mb_context[xd->sb_index][0].mic.mbmi.mv[0].as_mv.col;
+        mvr1 = x->mb_context[xd->sb_index][1].mic.mbmi.mv[0].as_mv.row;
+        mvc1 = x->mb_context[xd->sb_index][1].mic.mbmi.mv[0].as_mv.col;
+        mvr2 = x->mb_context[xd->sb_index][2].mic.mbmi.mv[0].as_mv.row;
+        mvc2 = x->mb_context[xd->sb_index][2].mic.mbmi.mv[0].as_mv.col;
+        mvr3 = x->mb_context[xd->sb_index][3].mic.mbmi.mv[0].as_mv.row;
+        mvc3 = x->mb_context[xd->sb_index][3].mic.mbmi.mv[0].as_mv.col;
+      } else if (bsize == BLOCK_SIZE_SB64X64) {
+        mvr0 = x->sb32_context[0].mic.mbmi.mv[0].as_mv.row;
+        mvc0 = x->sb32_context[0].mic.mbmi.mv[0].as_mv.col;
+        mvr1 = x->sb32_context[1].mic.mbmi.mv[0].as_mv.row;
+        mvc1 = x->sb32_context[1].mic.mbmi.mv[0].as_mv.col;
+        mvr2 = x->sb32_context[2].mic.mbmi.mv[0].as_mv.row;
+        mvc2 = x->sb32_context[2].mic.mbmi.mv[0].as_mv.col;
+        mvr3 = x->sb32_context[3].mic.mbmi.mv[0].as_mv.row;
+        mvc3 = x->sb32_context[3].mic.mbmi.mv[0].as_mv.col;
+      }
+
+      // Adjust sign if ref is alt_ref
+      if (cm->ref_frame_sign_bias[ref0]) {
+        mvr0 *= -1;
+        mvc0 *= -1;
+      }
+
+      if (cm->ref_frame_sign_bias[ref1]) {
+        mvr1 *= -1;
+        mvc1 *= -1;
+      }
+
+      if (cm->ref_frame_sign_bias[ref2]) {
+        mvr2 *= -1;
+        mvc2 *= -1;
+      }
+
+      if (cm->ref_frame_sign_bias[ref3]) {
+        mvr3 *= -1;
+        mvc3 *= -1;
+      }
+
+      // Calculate mv distances.
+      d01 = MAX(abs(mvr0 - mvr1), abs(mvc0 - mvc1));
+      d23 = MAX(abs(mvr2 - mvr3), abs(mvc2 - mvc3));
+      d02 = MAX(abs(mvr0 - mvr2), abs(mvc0 - mvc2));
+      d13 = MAX(abs(mvr1 - mvr3), abs(mvc1 - mvc3));
+
+      if (d01 < 24 && d23 < 24 && d02 < 24 && d13 < 24) {
+        // Set fast motion search level.
+        fast_ms_n = 1;
+        fast_ms_h = 1;
+        fast_ms_v = 1;
+
+        // Calculate prediction MVs for 3 partitions(H, V, N).
+        mv_n.as_mv.row = (mvr0 + mvr1 + mvr2 + mvr3) >> 2;
+        mv_n.as_mv.col = (mvc0 + mvc1 + mvc2 + mvc3) >> 2;
+
+        mv_h0.as_mv.row = (mvr0 + mvr1) >> 1;
+        mv_h0.as_mv.col = (mvc0 + mvc1) >> 1;
+        mv_h1.as_mv.row = (mvr2 + mvr3) >> 1;
+        mv_h1.as_mv.col = (mvc2 + mvc3) >> 1;
+
+        mv_v0.as_mv.row = (mvr0 + mvr2) >> 1;
+        mv_v0.as_mv.col = (mvc0 + mvc2) >> 1;
+        mv_v1.as_mv.row = (mvr1 + mvr3) >> 1;
+        mv_v1.as_mv.col = (mvc1 + mvc3) >> 1;
+
+        // What ref frames are picked by subblocks.
+        if (ref0 == ref1 && ref1 == ref2 && ref2 == ref3 &&
+            d01 < 2 && d23 < 2 && d02 < 2 && d13 < 2) {
+          // Skip H and V
+          skiph = 1;
+          skipv = 1;
+
+          fast_ms_n = 2;
+          subblock_ref = ref0;
+        }
+      }
+    }
+  }
+#endif
+
   // PARTITION_HORZ
-  if (bsize >= BLOCK_SIZE_SB8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
+  if (bsize >= BLOCK_SIZE_SB8X8 && mi_col + (ms >> 1) < cm->mi_cols && !skiph) {
     int r2, d2;
     int r = 0, d = 0;
     subsize = get_subsize(bsize, PARTITION_HORZ);
     *(get_sb_index(xd, subsize)) = 0;
+
+    if (fast_ms_h && (bsize == BLOCK_SIZE_MB16X16 ||
+        bsize == BLOCK_SIZE_SB32X32 || bsize == BLOCK_SIZE_SB64X64)) {
+      x->pred_mv.as_int = mv_h0.as_int;
+    }
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
-                  get_block_context(x, subsize));
+                  get_block_context(x, subsize), fast_ms_h);
 
     if (mi_row + (ms >> 1) < cm->mi_rows) {
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *(get_sb_index(xd, subsize)) = 1;
+
+      if (fast_ms_h && (bsize == BLOCK_SIZE_MB16X16 ||
+          bsize == BLOCK_SIZE_SB32X32 || bsize == BLOCK_SIZE_SB64X64)) {
+        x->pred_mv.as_int = mv_h1.as_int;
+      }
       pick_sb_modes(cpi, mi_row + (ms >> 1), mi_col, tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
+                    get_block_context(x, subsize), fast_ms_h);
       r2 += r;
       d2 += d;
     }
@@ -1411,20 +1566,30 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   }
 
   // PARTITION_VERT
-  if (bsize >= BLOCK_SIZE_SB8X8 && mi_row + (ms >> 1) < cm->mi_rows) {
+  if (bsize >= BLOCK_SIZE_SB8X8 && mi_row + (ms >> 1) < cm->mi_rows && !skipv) {
     int r2, d2;
     subsize = get_subsize(bsize, PARTITION_VERT);
     *(get_sb_index(xd, subsize)) = 0;
+
+    if (fast_ms_v && (bsize == BLOCK_SIZE_MB16X16
+        || bsize == BLOCK_SIZE_SB32X32 || bsize == BLOCK_SIZE_SB64X64)) {
+      x->pred_mv.as_int = mv_v0.as_int;
+    }
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r2, &d2, subsize,
-                  get_block_context(x, subsize));
+                  get_block_context(x, subsize), fast_ms_v);
     if (mi_col + (ms >> 1) < cm->mi_cols) {
       int r = 0, d = 0;
       update_state(cpi, get_block_context(x, subsize), subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *(get_sb_index(xd, subsize)) = 1;
+
+      if (fast_ms_v && (bsize == BLOCK_SIZE_MB16X16
+          || bsize == BLOCK_SIZE_SB32X32 || bsize == BLOCK_SIZE_SB64X64)) {
+        x->pred_mv.as_int = mv_v1.as_int;
+      }
       pick_sb_modes(cpi, mi_row, mi_col + (ms >> 1), tp, &r, &d, subsize,
-                    get_block_context(x, subsize));
+                    get_block_context(x, subsize), fast_ms_v);
       r2 += r;
       d2 += d;
     }
@@ -1445,8 +1610,14 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   if ((mi_row + (ms >> 1) < cm->mi_rows) &&
       (mi_col + (ms >> 1) < cm->mi_cols)) {
     int r, d;
+
+    if (fast_ms_n && (bsize == BLOCK_SIZE_MB16X16
+        || bsize == BLOCK_SIZE_SB32X32 || bsize == BLOCK_SIZE_SB64X64)) {
+      x->pred_mv.as_int = mv_n.as_int;
+      x->subblock_ref = subblock_ref;
+    }
     pick_sb_modes(cpi, mi_row, mi_col, tp, &r, &d, bsize,
-                  get_block_context(x, bsize));
+                  get_block_context(x, bsize), fast_ms_n);
     if (bsize >= BLOCK_SIZE_SB8X8) {
       set_partition_seg_context(cm, xd, mi_row, mi_col);
       pl = partition_plane_context(xd, bsize);
@@ -2018,7 +2189,6 @@ void vp9_encode_frame(VP9_COMP *cpi) {
   } else {
     encode_frame_internal(cpi);
   }
-
 }
 
 void vp9_build_block_offsets(MACROBLOCK *x) {

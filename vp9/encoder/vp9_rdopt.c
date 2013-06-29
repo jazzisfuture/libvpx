@@ -1014,7 +1014,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  BLOCK_SIZE_TYPE bsize,
                                  int mi_row, int mi_col,
-                                 int_mv *tmp_mv, int *rate_mv);
+                                 int_mv *tmp_mv, int *rate_mv, int fast_mv);
 
 static int labels2mode(MACROBLOCK *x, int i,
                        MB_PREDICTION_MODE this_mode,
@@ -1894,8 +1894,9 @@ static INLINE int get_switchable_rate(VP9_COMMON *cm, MACROBLOCK *x) {
 static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  BLOCK_SIZE_TYPE bsize,
                                  int mi_row, int mi_col,
-                                 int_mv *tmp_mv, int *rate_mv) {
+                                 int_mv *tmp_mv, int *rate_mv, int fast_ms) {
   MACROBLOCKD *xd = &x->e_mbd;
+  VP9_COMMON *cm = &cpi->common;
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
   int bestsme = INT_MAX;
@@ -1928,11 +1929,29 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   vp9_clamp_mv_min_max(x, &ref_mv);
 
-  sr = vp9_init_search_range(cpi->common.width, cpi->common.height);
+  // Adjust search parameters based on small partitions' result.
+  if (fast_ms) {
+    // adjust search range
+    sr = 6;
 
-  // mvp_full.as_int = ref_mv[0].as_int;
-  mvp_full.as_int =
-      mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int;
+    if (fast_ms > 1)
+      sr = 8;
+
+    // Get prediction MV.
+    mvp_full.as_int = x->pred_mv.as_int;
+
+    // Adjust MV sign if needed.
+    if (cm->ref_frame_sign_bias[ref]) {
+      mvp_full.as_mv.col *= -1;
+      mvp_full.as_mv.row *= -1;
+    }
+  } else {
+    sr = vp9_init_search_range(cpi->common.width, cpi->common.height);
+
+    // mvp_full.as_int = ref_mv[0].as_int;
+    mvp_full.as_int =
+        mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int;
+  }
 
   mvp_full.as_mv.col >>= 3;
   mvp_full.as_mv.row >>= 3;
@@ -1962,6 +1981,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &sse);
   }
+
   *rate_mv = vp9_mv_bit_cost(tmp_mv, &ref_mv,
                              x->nmvjointcost, x->mvcost,
                              96, xd->allow_high_precision_mv);
@@ -2141,7 +2161,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  INTERPOLATIONFILTERTYPE *best_filter,
                                  int_mv *frame_mv,
                                  int mi_row, int mi_col,
-                                 int_mv single_newmv[MAX_REF_FRAMES]) {
+                                 int_mv single_newmv[MAX_REF_FRAMES],
+                                 int fast_ms) {
   const int bw = 1 << mi_width_log2(bsize), bh = 1 << mi_height_log2(bsize);
 
   VP9_COMMON *cm = &cpi->common;
@@ -2193,7 +2214,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       } else {
         int_mv tmp_mv;
         single_motion_search(cpi, x, bsize, mi_row, mi_col,
-                             &tmp_mv, &rate_mv);
+                             &tmp_mv, &rate_mv, fast_ms);
         *rate2 += rate_mv;
         frame_mv[refs[0]].as_int =
             xd->mode_info_context->bmi[0].as_mv[0].as_int = tmp_mv.as_int;
@@ -2464,7 +2485,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   int *returnrate,
                                   int *returndistortion,
                                   BLOCK_SIZE_TYPE bsize,
-                                  PICK_MODE_CONTEXT *ctx) {
+                                  PICK_MODE_CONTEXT *ctx, int fast_ms) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
@@ -2620,9 +2641,16 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
          vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME))
       continue;
 
+
     x->skip = 0;
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
+
+    // Skip some checking based on small partitions' result.
+    if (fast_ms > 0 && !ref_frame)
+      continue;
+    if (fast_ms > 1 && ref_frame != x->subblock_ref)
+      continue;
 
     if (cpi->sf.use_avoid_tested_higherror && bsize >= BLOCK_SIZE_SB8X8) {
       if (!(ref_frame_mask & (1 << ref_frame))) {
@@ -2917,7 +2945,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   &mode_excluded, &disable_skip,
                                   &tmp_best_filter, frame_mv[this_mode],
                                   mi_row, mi_col,
-                                  single_newmv);
+                                  single_newmv, fast_ms);
       if (this_rd == INT64_MAX)
         continue;
     }
