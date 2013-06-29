@@ -94,6 +94,8 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
 
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += add_constant_residual_test.cc
+
 endif # VP9
 
 
