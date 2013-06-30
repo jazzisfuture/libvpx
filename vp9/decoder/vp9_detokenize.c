@@ -97,7 +97,7 @@ static int decode_coefs(FRAME_CONTEXT *fc, const MACROBLOCKD *xd,
                         TX_SIZE txfm_size, const int16_t *dq,
                         ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L) {
   ENTROPY_CONTEXT above_ec, left_ec;
-  int pt, c = 0, pad, default_eob;
+  int pt, c = 0, default_eob;
   int band;
   vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES];
   vp9_prob coef_probs_full[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
@@ -164,7 +164,7 @@ static int decode_coefs(FRAME_CONTEXT *fc, const MACROBLOCKD *xd,
   }
 
   pt = combine_entropy_contexts(above_ec, left_ec);
-  nb = vp9_get_coef_neighbors_handle(scan, &pad);
+  nb = vp9_get_coef_neighbors_handle(scan);
 
   while (1) {
     int val;
@@ -172,8 +172,7 @@ static int decode_coefs(FRAME_CONTEXT *fc, const MACROBLOCKD *xd,
     if (c >= seg_eob)
       break;
     if (c)
-      pt = get_coef_context(scan, nb, pad, token_cache,
-                            c, default_eob);
+      pt = get_coef_context(scan, nb, token_cache, c);
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
 #if !CONFIG_BALANCED_COEFTREE
@@ -186,8 +185,7 @@ SKIP_START:
     if (c >= seg_eob)
       break;
     if (c)
-      pt = get_coef_context(scan, nb, pad, token_cache,
-                            c, default_eob);
+      pt = get_coef_context(scan, nb, token_cache, c);
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
 
