@@ -652,6 +652,15 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
     sf->thresh_mult[THR_COMP_NEWGA    ] = INT_MAX;
     sf->thresh_mult[THR_COMP_SPLITGA  ] = INT_MAX;
   }
+
+  if (sf->disable_splitmv == 1) {
+    sf->thresh_mult[THR_SPLITMV  ] = INT_MAX;
+    sf->thresh_mult[THR_SPLITG   ] = INT_MAX;
+    sf->thresh_mult[THR_SPLITA   ] = INT_MAX;
+
+    sf->thresh_mult[THR_COMP_SPLITLA  ] = INT_MAX;
+    sf->thresh_mult[THR_COMP_SPLITGA  ] = INT_MAX;
+  }
 }
 
 void vp9_set_speed_features(VP9_COMP *cpi) {
@@ -703,6 +712,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->less_than_block_size = BLOCK_SIZE_MB16X16;
   sf->use_partitions_greater_than = 0;
   sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+  sf->disable_splitmv = 0;
 
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
@@ -734,6 +744,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
                                           cpi->common.intra_only ||
                                           cpi->common.show_frame == 0);
+
+        sf->disable_splitmv =
+            (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 1;
       }
       if (speed == 2) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
