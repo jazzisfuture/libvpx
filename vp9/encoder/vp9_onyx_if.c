@@ -697,6 +697,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_largest_txform = 0;
   sf->use_8tap_always = 0;
   sf->use_avoid_tested_higherror = 0;
+  sf->reference_masking = 0;
   sf->skip_lots_of_modes = 0;
   sf->partition_by_variance = 0;
   sf->use_one_partition_size_always = 0;
@@ -705,6 +706,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->less_than_block_size = BLOCK_SIZE_MB16X16;
   sf->use_partitions_greater_than = 0;
   sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+
+  // Skip any mode not chosen at size < X for all sizes > X
+  // Hence BLOCK_SIZE_SB64X64 (skip is off)
+  sf->unused_mode_skip_lvl = BLOCK_SIZE_SB64X64;
 
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
@@ -735,6 +740,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
                                           cpi->common.intra_only ||
                                           cpi->common.show_frame == 0);
+        sf->unused_mode_skip_lvl = BLOCK_SIZE_SB32X32;
+        sf->reference_masking = 1;
       }
       if (speed == 2) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
@@ -746,6 +753,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->reduce_first_step_size = 1;
         sf->optimize_coefficients = 0;
         sf->use_lastframe_partitioning = 1;
+        sf->unused_mode_skip_lvl = BLOCK_SIZE_MB16X16;
+        sf->reference_masking = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
