@@ -696,6 +696,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->less_than_block_size = BLOCK_SIZE_MB16X16;
   sf->use_partitions_greater_than = 0;
   sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+  sf->adjust_partitioning_from_last_frame = 0;
 
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
@@ -728,6 +729,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       if (speed == 2) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
         sf->use_lastframe_partitioning = 1;
+        sf->adjust_partitioning_from_last_frame = 1;
         sf->first_step = 0;
       }
       if (speed == 3) {
@@ -741,6 +743,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_one_partition_size_always = 1;
         sf->always_this_block_size = BLOCK_SIZE_MB16X16;
       }
+      /*
       if (speed == 2) {
         sf->first_step = 0;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
@@ -753,6 +756,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_partitions_greater_than = 1;
         sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
       }
+      */
 
      break;
 
@@ -3376,7 +3380,7 @@ static void Pass2Encode(VP9_COMP *cpi, unsigned long *size,
     vp9_second_pass(cpi);
 
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
-  //vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
+  // vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
 #ifdef DISABLE_RC_LONG_TERM_MEM
   cpi->twopass.bits_left -=  cpi->this_frame_target;
 #else
