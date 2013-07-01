@@ -279,21 +279,6 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   }
 }
 
-int64_t vp9_block_error_c(int16_t *coeff, int16_t *dqcoeff,
-                          intptr_t block_size, int64_t *ssz) {
-  int i;
-  int64_t error = 0, sqcoeff = 0;
-
-  for (i = 0; i < block_size; i++) {
-    int this_diff = coeff[i] - dqcoeff[i];
-    error += (unsigned)this_diff * this_diff;
-    sqcoeff += (unsigned) coeff[i] * coeff[i];
-  }
-
-  *ssz = sqcoeff;
-  return error;
-}
-
 static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
                               int plane, int block, PLANE_TYPE type,
                               ENTROPY_CONTEXT *A,
