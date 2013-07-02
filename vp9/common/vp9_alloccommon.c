@@ -11,6 +11,7 @@
 
 #include "./vpx_config.h"
 #include "vpx_mem/vpx_mem.h"
+
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_entropymv.h"
@@ -74,7 +75,7 @@ static void set_mb_mi(VP9_COMMON *cm, int aligned_width, int aligned_height) {
 
   cm->mi_cols = aligned_width >> LOG2_MI_SIZE;
   cm->mi_rows = aligned_height >> LOG2_MI_SIZE;
-  cm->mode_info_stride = cm->mi_cols + 64 / MI_SIZE;
+  cm->mode_info_stride = cm->mi_cols + MAX_MI_BLOCK_SIZE;
 }
 
 static void setup_mi(VP9_COMMON *cm) {
@@ -99,6 +100,7 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
   const int aligned_height = multiple8(height);
   const int ss_x = oci->subsampling_x;
   const int ss_y = oci->subsampling_y;
+  int mi_sz;
 
   vp9_free_frame_buffers(oci);
 
@@ -129,16 +131,14 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
     goto fail;
 
   set_mb_mi(oci, aligned_width, aligned_height);
+  mi_sz = oci->mode_info_stride * (oci->mi_rows + MAX_MI_BLOCK_SIZE);
 
   // Allocation
-  oci->mip = vpx_calloc(oci->mode_info_stride * (oci->mi_rows + 64 / MI_SIZE),
-                        sizeof(MODE_INFO));
+  oci->mip = vpx_calloc(mi_sz, sizeof(MODE_INFO));
   if (!oci->mip)
     goto fail;
 
-  oci->prev_mip = vpx_calloc(oci->mode_info_stride *
-                             (oci->mi_rows + 64 / MI_SIZE),
-                             sizeof(MODE_INFO));
+  oci->prev_mip = vpx_calloc(mi_sz, sizeof(MODE_INFO));
   if (!oci->prev_mip)
     goto fail;
 
