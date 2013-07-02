@@ -43,8 +43,6 @@
 int enc_debug = 0;
 #endif
 
-void vp9_select_interp_filter_type(VP9_COMP *cpi);
-
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE_TYPE bsize);
 
@@ -344,6 +342,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       }
     }
   }
+  // FIXME(rbultje) I'm pretty sure this should go to the end of this block
+  // (i.e. after the output_enabled)
   if (bsize < BLOCK_SIZE_SB32X32) {
     if (bsize < BLOCK_SIZE_MB16X16)
       ctx->txfm_rd_diff[ALLOW_16X16] = ctx->txfm_rd_diff[ALLOW_8X8];
@@ -429,6 +429,10 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     cpi->rd_comp_pred_diff[SINGLE_PREDICTION_ONLY] += ctx->single_pred_diff;
     cpi->rd_comp_pred_diff[COMP_PREDICTION_ONLY] += ctx->comp_pred_diff;
     cpi->rd_comp_pred_diff[HYBRID_PREDICTION] += ctx->hybrid_pred_diff;
+
+    for (i = 0; i <= VP9_SWITCHABLE_FILTERS; i++) {
+      cpi->rd_filter_diff[i] += ctx->best_filter_diff[i];
+    }
   }
 }
 
@@ -1606,7 +1610,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   cpi->inter_zz_count = 0;
 
   vp9_zero(cm->fc.switchable_interp_count);
-  vp9_zero(cpi->best_switchable_interp_count);
 
   xd->mode_info_context = cm->mi;
   xd->prev_mode_info_context = cm->prev_mi;
@@ -1637,6 +1640,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   init_encode_frame_mb_context(cpi);
 
   vpx_memset(cpi->rd_comp_pred_diff, 0, sizeof(cpi->rd_comp_pred_diff));
+  vp9_zero(cpi->rd_filter_diff);
   vpx_memset(cpi->rd_tx_select_diff, 0, sizeof(cpi->rd_tx_select_diff));
   vpx_memset(cpi->rd_tx_select_threshes, 0, sizeof(cpi->rd_tx_select_threshes));
 
@@ -1833,6 +1837,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
   if (cpi->sf.RD) {
     int i, frame_type, pred_type;
     TXFM_MODE txfm_type;
+    INTERPOLATIONFILTERTYPE filter_type;
 
     /*
      * This code does a single RD pass over the whole frame assuming
@@ -1866,6 +1871,30 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       pred_type = SINGLE_PREDICTION_ONLY;
     else
       pred_type = HYBRID_PREDICTION;
+
+    /* filter type selection */
+    // FIXME(rbultje) for some odd reason, we often select smooth_filter
+    // as default filter for ARF overlay frames. This is a REALLY BAD
+    // IDEA so we explicitely disable it here.
+    if (frame_type != 3 &&
+        cpi->rd_filter_threshes[frame_type][1] >
+            cpi->rd_filter_threshes[frame_type][0] &&
+        cpi->rd_filter_threshes[frame_type][1] >
+            cpi->rd_filter_threshes[frame_type][2] &&
+        cpi->rd_filter_threshes[frame_type][1] >
+            cpi->rd_filter_threshes[frame_type][VP9_SWITCHABLE_FILTERS]) {
+      filter_type = vp9_switchable_interp[1];
+    } else if (cpi->rd_filter_threshes[frame_type][2] >
+            cpi->rd_filter_threshes[frame_type][0] &&
+        cpi->rd_filter_threshes[frame_type][2] >
+            cpi->rd_filter_threshes[frame_type][VP9_SWITCHABLE_FILTERS]) {
+      filter_type = vp9_switchable_interp[2];
+    } else if (cpi->rd_filter_threshes[frame_type][0] >
+                   cpi->rd_filter_threshes[frame_type][VP9_SWITCHABLE_FILTERS]) {
+      filter_type = vp9_switchable_interp[0];
+    } else {
+      filter_type = SWITCHABLE;
+    }
 
     /* transform size (4x4, 8x8, 16x16 or select-per-mb) selection */
 
@@ -1909,12 +1938,41 @@ void vp9_encode_frame(VP9_COMP *cpi) {
 #endif
     cpi->common.txfm_mode = txfm_type;
     cpi->common.comp_pred_mode = pred_type;
+    cpi->common.mcomp_filter_type = filter_type;
+    if (0) printf("Encoding frame %d:%d filter %d type=%d\n",
+           cpi->common.current_video_frame,
+           cpi->refresh_alt_ref_frame,
+           filter_type, frame_type);
     encode_frame_internal(cpi);
+    if (0) printf("Filter count: %d, %d, %d\n",
+           cpi->common.fc.switchable_interp_count[0][0] +
+           cpi->common.fc.switchable_interp_count[1][0] +
+           cpi->common.fc.switchable_interp_count[2][0] +
+           cpi->common.fc.switchable_interp_count[3][0],
+           cpi->common.fc.switchable_interp_count[0][1] +
+           cpi->common.fc.switchable_interp_count[1][1] +
+           cpi->common.fc.switchable_interp_count[2][1] +
+           cpi->common.fc.switchable_interp_count[3][1],
+           cpi->common.fc.switchable_interp_count[0][2] +
+           cpi->common.fc.switchable_interp_count[1][2] +
+           cpi->common.fc.switchable_interp_count[2][2] +
+           cpi->common.fc.switchable_interp_count[3][2]);
 
     for (i = 0; i < NB_PREDICTION_TYPES; ++i) {
+      // FIXME(rbultje) can this overflow int64_t?
       const int diff = (int) (cpi->rd_comp_pred_diff[i] / cpi->common.MBs);
       cpi->rd_prediction_type_threshes[frame_type][i] += diff;
+      // FIXME(rbultje) you probably want rounding towards zero here,
+      // i.e. /2 not >>1
       cpi->rd_prediction_type_threshes[frame_type][i] >>= 1;
+    }
+
+    for (i = 0; i <= VP9_SWITCHABLE_FILTERS; i++) {
+      const int64_t diff = cpi->rd_filter_diff[i] / cpi->common.MBs;
+      cpi->rd_filter_threshes[frame_type][i] =
+          (cpi->rd_filter_threshes[frame_type][i] + diff) / 2;
+      if (0) printf("Filter RD diff[%d]: %lld -> %lld\n",
+             i, diff, cpi->rd_filter_threshes[frame_type][i]);
     }
 
     for (i = 0; i < NB_TXFM_MODES; ++i) {
@@ -1991,10 +2049,6 @@ void vp9_encode_frame(VP9_COMP *cpi) {
         reset_skip_txfm_size(cpi, TX_16X16);
       }
     }
-
-    // Update interpolation filter strategy for next frame.
-    if ((cpi->common.frame_type != KEY_FRAME) && (cpi->sf.search_best_filter))
-      vp9_select_interp_filter_type(cpi);
   } else {
     encode_frame_internal(cpi);
   }
