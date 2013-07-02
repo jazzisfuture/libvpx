@@ -651,6 +651,27 @@ static void super_block_yrd(VP9_COMP *cpi,
     *psse = sse[mbmi->txfm_size];
 }
 
+static int conditional_skip(MB_PREDICTION_MODE mode,
+                            MB_PREDICTION_MODE best_intra_mode) {
+  if (mode == D117_PRED &&
+      best_intra_mode != V_PRED &&
+      best_intra_mode != D135_PRED)
+    return 1;
+  if (mode == D63_PRED &&
+      best_intra_mode != V_PRED &&
+      best_intra_mode != D45_PRED)
+    return 1;
+  if (mode == D27_PRED &&
+      best_intra_mode != H_PRED &&
+      best_intra_mode != D45_PRED)
+    return 1;
+  if (mode == D153_PRED &&
+      best_intra_mode != H_PRED &&
+      best_intra_mode != D135_PRED)
+    return 1;
+  return 0;
+}
+
 static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                      MB_PREDICTION_MODE *best_mode,
                                      int *bmode_costs,
@@ -694,6 +715,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
     vpx_memcpy(tempa, ta, sizeof(ta));
     vpx_memcpy(templ, tl, sizeof(tl));
+
+    // Only do the oblique modes if the best so far is
+    // one of the neighboring directional modes
+    if (cpi->sf.conditional_oblique_intramodes) {
+      if (conditional_skip(mode, *best_mode))
+          continue;
+    }
 
     for (idy = 0; idy < bh; ++idy) {
       for (idx = 0; idx < bw; ++idx) {
@@ -2611,6 +2639,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
   vp9_prob comp_mode_p;
   int64_t best_overall_rd = INT64_MAX;
+  int64_t best_intra_rd = INT64_MAX;
+  MB_PREDICTION_MODE best_intra_mode = DC_PRED;
   INTERPOLATIONFILTERTYPE best_filter = SWITCHABLE;
   INTERPOLATIONFILTERTYPE tmp_best_filter = SWITCHABLE;
   int rate_uv_intra[TX_SIZE_MAX_SB], rate_uv_tokenonly[TX_SIZE_MAX_SB];
@@ -2886,6 +2916,17 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         txfm_cache[i] = txfm_cache[ONLY_4X4];
     } else if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
+      /*
+      if (mbmi->mode >= D45_PRED && mbmi->mode < TM_PRED
+          && best_intra_rd > best_rd * 2)
+        continue;
+        */
+      // Only search the oblique modes if the best so far is
+      // one of the neighboring directional modes
+      if (cpi->sf.conditional_oblique_intramodes) {
+        if (conditional_skip(mbmi->mode, best_intra_mode))
+            continue;
+      }
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable, NULL,
                       bsize, txfm_cache);
 
@@ -3115,14 +3156,13 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
     }
 
-#if 0
     // Keep record of best intra distortion
-    if ((xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) &&
-        (this_rd < best_intra_rd)) {
+    if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME &&
+        xd->mode_info_context->mbmi.mode <= TM_PRED &&
+        this_rd < best_intra_rd) {
       best_intra_rd = this_rd;
-      *returnintra = distortion2;
+      best_intra_mode = xd->mode_info_context->mbmi.mode;
     }
-#endif
 
     if (!disable_skip && mbmi->ref_frame[0] == INTRA_FRAME)
       for (i = 0; i < NB_PREDICTION_TYPES; ++i)

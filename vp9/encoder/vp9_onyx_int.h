@@ -233,6 +233,10 @@ typedef struct {
   BLOCK_SIZE_TYPE greater_than_block_size;
   int use_partitions_less_than;
   BLOCK_SIZE_TYPE less_than_block_size;
+  // Search the D27, D63, D117 and D153 modes
+  // only if the best intra mode so far is one
+  // of the two directional modes nearest to each.
+  int conditional_oblique_intramodes;
 } SPEED_FEATURES;
 
 enum BlockSize {

@@ -705,6 +705,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->less_than_block_size = BLOCK_SIZE_MB16X16;
   sf->use_partitions_greater_than = 0;
   sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+  sf->conditional_oblique_intramodes = 1;
 
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
@@ -735,6 +736,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
                                           cpi->common.intra_only ||
                                           cpi->common.show_frame == 0);
+        sf->conditional_oblique_intramodes = 1;
       }
       if (speed == 2) {
         sf->use_largest_txform        = !(cpi->common.frame_type == KEY_FRAME ||
@@ -746,17 +748,20 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->reduce_first_step_size = 1;
         sf->optimize_coefficients = 0;
         sf->use_lastframe_partitioning = 1;
+        sf->conditional_oblique_intramodes = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
         sf->partition_by_variance = 1;
         sf->reduce_first_step_size = 1;
+        sf->conditional_oblique_intramodes = 1;
       }
       if (speed == 4) {
         sf->reduce_first_step_size = 1;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
         sf->use_one_partition_size_always = 1;
         sf->always_this_block_size = BLOCK_SIZE_MB16X16;
+        sf->conditional_oblique_intramodes = 1;
       }
 /*      if (speed == 2) {
         sf->reduce_first_step_size = 0;
