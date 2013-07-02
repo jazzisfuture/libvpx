@@ -27,8 +27,8 @@ int vp9_segfeature_active(const MACROBLOCKD *xd, int segment_id,
 }
 
 void vp9_clearall_segfeatures(MACROBLOCKD *xd) {
-  vpx_memset(xd->segment_feature_data, 0, sizeof(xd->segment_feature_data));
-  vpx_memset(xd->segment_feature_mask, 0, sizeof(xd->segment_feature_mask));
+  vp9_zero(xd->segment_feature_data);
+  vp9_zero(xd->segment_feature_mask);
 }
 
 void vp9_enable_segfeature(MACROBLOCKD *xd, int segment_id,
