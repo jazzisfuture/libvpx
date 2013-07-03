@@ -716,7 +716,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adjust_partitioning_from_last_frame = 0;
   sf->last_partitioning_redo_frequency = 4;
   sf->disable_splitmv = 0;
-  sf->conditional_oblique_intramodes = 0;
+  sf->mode_search_skip_flags = 0;
 
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
@@ -752,7 +752,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                      USE_LARGESTINTRA);
         sf->disable_splitmv =
             (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 0;
-        sf->conditional_oblique_intramodes = 1;
+        sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
+                                     FLAG_SKIP_INTRA_BESTINTER |
+                                     FLAG_SKIP_COMP_BESTINTRA;
       }
       if (speed == 2) {
         sf->adjust_thresholds_by_speed = 1;
@@ -768,7 +770,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                       cpi->common.show_frame == 0) ?
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
-        sf->conditional_oblique_intramodes = 1;
+        sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
+                                     FLAG_SKIP_INTRA_BESTINTER |
+                                     FLAG_SKIP_COMP_BESTINTRA |
+                                     FLAG_SKIP_COMP_REFMISMATCH;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -779,7 +784,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
         sf->reduce_first_step_size = 1;
-        sf->conditional_oblique_intramodes = 1;
+        sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
+                                     FLAG_SKIP_INTRA_BESTINTER |
+                                     FLAG_SKIP_COMP_BESTINTRA |
+                                     FLAG_SKIP_COMP_REFMISMATCH;
       }
       if (speed == 4) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -790,7 +798,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                       cpi->common.show_frame == 0) ?
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
-        sf->conditional_oblique_intramodes = 1;
+        sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
+                                     FLAG_SKIP_INTRA_BESTINTER |
+                                     FLAG_SKIP_COMP_BESTINTRA |
+                                     FLAG_SKIP_COMP_REFMISMATCH;
       }
       /*
       if (speed == 2) {
