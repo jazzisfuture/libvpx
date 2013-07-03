@@ -3027,6 +3027,19 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
          vp9_segfeature_active(xd, segment_id, SEG_LVL_REF_FRAME))
       continue;
 
+    // Speed Experiment.
+    // For compound prediction modes skip tests for GF/ARF if best so far is
+    // LAST and for LAST/ARF if best so far is GF.
+    if (cpi->sf.reduced_compound_prediction) {
+      if ((vp9_mode_order[mode_index].second_ref_frame == ALTREF_FRAME) &&
+          ((vp9_mode_order[best_mode_index].ref_frame == LAST_FRAME) &&
+           (vp9_mode_order[mode_index].ref_frame == GOLDEN_FRAME)) ||
+          ((vp9_mode_order[best_mode_index].ref_frame == GOLDEN_FRAME) &&
+           (vp9_mode_order[mode_index].ref_frame == LAST_FRAME))) {
+        continue;
+      }
+    }
+
     x->skip = 0;
 
     if (cpi->sf.use_avoid_tested_higherror && bsize >= BLOCK_SIZE_SB8X8) {

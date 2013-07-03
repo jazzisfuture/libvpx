@@ -719,6 +719,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->last_partitioning_redo_frequency = 4;
   sf->disable_splitmv = 0;
   sf->conditional_oblique_intramodes = 0;
+  sf->reduced_compound_prediction = 0;
 
   // Skip any mode not chosen at size < X for all sizes > X
   // Hence BLOCK_SIZE_SB64X64 (skip is off)
@@ -776,6 +777,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->unused_mode_skip_lvl = BLOCK_SIZE_SB32X32;
         sf->reduce_first_step_size = 1;
         sf->optimize_coefficients = 0;
+        sf->reduced_compound_prediction = 1;
         // sf->reference_masking = 1;
       }
       if (speed == 3) {
