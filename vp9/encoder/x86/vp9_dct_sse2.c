@@ -555,8 +555,8 @@ static INLINE void load_buffer_8x8(int16_t *input, __m128i *in, int stride) {
   in[7] = _mm_slli_epi16(in[7], 2);
 }
 
-// write 8x8 array
-static INLINE void write_buffer_8x8(int16_t *output, __m128i *res) {
+// right shift and rounding
+static INLINE void right_shift_8x8(__m128i *res, int const bit) {
   __m128i sign0 = _mm_srai_epi16(res[0], 15);
   __m128i sign1 = _mm_srai_epi16(res[1], 15);
   __m128i sign2 = _mm_srai_epi16(res[2], 15);
@@ -575,35 +575,40 @@ static INLINE void write_buffer_8x8(int16_t *output, __m128i *res) {
   res[6] = _mm_sub_epi16(res[6], sign6);
   res[7] = _mm_sub_epi16(res[7], sign7);
 
-  res[0] = _mm_srai_epi16(res[0], 1);
-  res[1] = _mm_srai_epi16(res[1], 1);
-  res[2] = _mm_srai_epi16(res[2], 1);
-  res[3] = _mm_srai_epi16(res[3], 1);
-  res[4] = _mm_srai_epi16(res[4], 1);
-  res[5] = _mm_srai_epi16(res[5], 1);
-  res[6] = _mm_srai_epi16(res[6], 1);
-  res[7] = _mm_srai_epi16(res[7], 1);
+  res[0] = _mm_srai_epi16(res[0], bit);
+  res[1] = _mm_srai_epi16(res[1], bit);
+  res[2] = _mm_srai_epi16(res[2], bit);
+  res[3] = _mm_srai_epi16(res[3], bit);
+  res[4] = _mm_srai_epi16(res[4], bit);
+  res[5] = _mm_srai_epi16(res[5], bit);
+  res[6] = _mm_srai_epi16(res[6], bit);
+  res[7] = _mm_srai_epi16(res[7], bit);
+}
 
-  _mm_store_si128((__m128i *)(output + 0 * 8), res[0]);
-  _mm_store_si128((__m128i *)(output + 1 * 8), res[1]);
-  _mm_store_si128((__m128i *)(output + 2 * 8), res[2]);
-  _mm_store_si128((__m128i *)(output + 3 * 8), res[3]);
-  _mm_store_si128((__m128i *)(output + 4 * 8), res[4]);
-  _mm_store_si128((__m128i *)(output + 5 * 8), res[5]);
-  _mm_store_si128((__m128i *)(output + 6 * 8), res[6]);
-  _mm_store_si128((__m128i *)(output + 7 * 8), res[7]);
+// write 8x8 array
+static INLINE void write_buffer_8x8(int16_t *output, __m128i *res, int stride) {
+  right_shift_8x8(res, 1);
+
+  _mm_store_si128((__m128i *)(output + 0 * stride), res[0]);
+  _mm_store_si128((__m128i *)(output + 1 * stride), res[1]);
+  _mm_store_si128((__m128i *)(output + 2 * stride), res[2]);
+  _mm_store_si128((__m128i *)(output + 3 * stride), res[3]);
+  _mm_store_si128((__m128i *)(output + 4 * stride), res[4]);
+  _mm_store_si128((__m128i *)(output + 5 * stride), res[5]);
+  _mm_store_si128((__m128i *)(output + 6 * stride), res[6]);
+  _mm_store_si128((__m128i *)(output + 7 * stride), res[7]);
 }
 
 // perform in-place transpose
-static INLINE void array_transpose_8x8(__m128i *res) {
-  const __m128i tr0_0 = _mm_unpacklo_epi16(res[0], res[1]);
-  const __m128i tr0_1 = _mm_unpacklo_epi16(res[2], res[3]);
-  const __m128i tr0_2 = _mm_unpackhi_epi16(res[0], res[1]);
-  const __m128i tr0_3 = _mm_unpackhi_epi16(res[2], res[3]);
-  const __m128i tr0_4 = _mm_unpacklo_epi16(res[4], res[5]);
-  const __m128i tr0_5 = _mm_unpacklo_epi16(res[6], res[7]);
-  const __m128i tr0_6 = _mm_unpackhi_epi16(res[4], res[5]);
-  const __m128i tr0_7 = _mm_unpackhi_epi16(res[6], res[7]);
+static INLINE void array_transpose_8x8(__m128i *in, __m128i *res) {
+  const __m128i tr0_0 = _mm_unpacklo_epi16(in[0], in[1]);
+  const __m128i tr0_1 = _mm_unpacklo_epi16(in[2], in[3]);
+  const __m128i tr0_2 = _mm_unpackhi_epi16(in[0], in[1]);
+  const __m128i tr0_3 = _mm_unpackhi_epi16(in[2], in[3]);
+  const __m128i tr0_4 = _mm_unpacklo_epi16(in[4], in[5]);
+  const __m128i tr0_5 = _mm_unpacklo_epi16(in[6], in[7]);
+  const __m128i tr0_6 = _mm_unpackhi_epi16(in[4], in[5]);
+  const __m128i tr0_7 = _mm_unpackhi_epi16(in[6], in[7]);
   // 00 10 01 11 02 12 03 13
   // 20 30 21 31 22 32 23 33
   // 04 14 05 15 06 16 07 17
@@ -783,7 +788,7 @@ void fdct8_1d_sse2(__m128i *in) {
   in[7] = _mm_packs_epi32(v6, v7);
 
   // transpose
-  array_transpose_8x8(in);
+  array_transpose_8x8(in, in);
 }
 
 void fadst8_1d_sse2(__m128i *in) {
@@ -1013,7 +1018,7 @@ void fadst8_1d_sse2(__m128i *in) {
   in[7] = _mm_sub_epi16(k__const_0, s1);
 
   // transpose
-  array_transpose_8x8(in);
+  array_transpose_8x8(in, in);
 }
 
 void vp9_short_fht8x8_sse2(int16_t *input, int16_t *output,
@@ -1041,7 +1046,7 @@ void vp9_short_fht8x8_sse2(int16_t *input, int16_t *output,
       assert(0);
       break;
   }
-  write_buffer_8x8(output, in);
+  write_buffer_8x8(output, in, 8);
 }
 
 void vp9_short_fdct16x16_sse2(int16_t *input, int16_t *output, int pitch) {
@@ -1668,6 +1673,84 @@ void vp9_short_fdct16x16_sse2(int16_t *input, int16_t *output, int pitch) {
     in = intermediate;
     out = output;
   }
+}
+
+static INLINE void load_buffer_16x16(int16_t* input, __m128i *in0,
+                                     __m128i *in1, int stride) {
+  // load first 8 columns
+  load_buffer_8x8(input, in0, stride);
+  load_buffer_8x8(input + 8 * stride, in0 + 8, stride);
+
+  input += 8;
+  // load second 8 columns
+  load_buffer_8x8(input, in1, stride);
+  load_buffer_8x8(input + 8 * stride, in1 + 8, stride);
+}
+
+static INLINE void write_buffer_16x16(int16_t *output, __m128i *in0,
+                                      __m128i *in1, int stride) {
+  // write first 8 columns
+  write_buffer_8x8(output, in0, stride);
+  write_buffer_8x8(output + 8 * stride, in0 + 8, stride);
+  // write second 8 columns
+  output += 8;
+  write_buffer_8x8(output, in1, stride);
+  write_buffer_8x8(output + 8 * stride, in1 + 8, stride);
+}
+
+static INLINE void array_transpose_16x16(__m128i *res0, __m128i *res1) {
+  __m128i tbuf[8];
+  array_transpose_8x8(res0, res0);
+  array_transpose_8x8(res1, tbuf);
+  array_transpose_8x8(res0 + 8, res1);
+  array_transpose_8x8(res1 + 8, res1 + 8);
+
+  res0[8] = tbuf[0];
+  res0[9] = tbuf[1];
+  res0[10] = tbuf[2];
+  res0[11] = tbuf[3];
+  res0[12] = tbuf[4];
+  res0[13] = tbuf[5];
+  res0[14] = tbuf[6];
+  res0[15] = tbuf[7];
+}
+
+void fdct16_1d_sse2(__m128i *in0, __m128i *in1) {
+
+}
+
+void fadst16_1d_sse2(__m128i *in0, __m128i *in1) {
+
+}
+
+void vp9_short_fht16x16_sse2(int16_t *input, int16_t *output,
+                             int stride, int tx_type) {
+  __m128i in0[16], in1[16];
+  load_buffer_16x16(input, in0, in1, stride);
+
+  switch (tx_type) {
+    case 0:  // DCT_DCT
+      fdct16_1d_sse2(in0, in1);
+      fdct16_1d_sse2(in0, in1);
+      break;
+    case 1:  // ADST_DCT
+      fadst16_1d_sse2(in0, in1);
+      fdct16_1d_sse2(in0, in1);
+      break;
+    case 2:  // DCT_ADST
+      fdct16_1d_sse2(in0, in1);
+      fadst16_1d_sse2(in0, in1);
+      break;
+    case 3:  // ADST_ADST
+      fadst16_1d_sse2(in0, in1);
+      fadst16_1d_sse2(in0, in1);
+      break;
+    default:
+      assert(0);
+      break;
+  }
+
+  write_buffer_16x16(output, in0, in1, 16);
 }
 
 void vp9_short_fdct32x32_rd_sse2(int16_t *input,
