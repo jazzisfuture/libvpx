@@ -773,9 +773,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->tx_size_search_method = USE_LARGESTALL;
         sf->conditional_oblique_intramodes = 1;
         sf->unused_mode_skip_lvl = BLOCK_SIZE_SB32X32;
-        sf->reduce_first_step_size = 1;
-        sf->optimize_coefficients = 0;
-        // sf->reference_masking = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -785,7 +782,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                       cpi->common.show_frame == 0) ?
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
-        sf->reduce_first_step_size = 1;
         sf->conditional_oblique_intramodes = 1;
       }
       if (speed == 4) {
@@ -798,6 +794,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
         sf->conditional_oblique_intramodes = 1;
+        sf->optimize_coefficients = 0;
+        // sf->reduce_first_step_size = 1;
+        // sf->reference_masking = 1;
       }
       /*
       if (speed == 2) {
