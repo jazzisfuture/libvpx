@@ -2333,18 +2333,26 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   vp9_clamp_mv_min_max(x, &ref_mv);
 
-  // Work out the size of the first step in the mv step search.
-  // 0 here is maximum length first step. 1 is MAX >> 1 etc.
-  if (cpi->sf.auto_mv_step_size && cpi->common.show_frame) {
-    step_param = vp9_init_search_range(cpi, cpi->max_mv_magnitude);
-  } else {
-    step_param = vp9_init_search_range(
-                   cpi, MIN(cpi->common.width, cpi->common.height));
-  }
-
   // mvp_full.as_int = ref_mv[0].as_int;
   mvp_full.as_int =
       mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int;
+
+  // Adjust search parameters based on small partitions' result.
+  if (x->fast_ms &&
+      abs(mvp_full.as_mv.row - x->pred_mv.as_mv.row) < 24 &&
+      abs(mvp_full.as_mv.col - x->pred_mv.as_mv.col) < 24) {
+    // adjust search range
+    step_param = 6;
+  } else {
+    // Work out the size of the first step in the mv step search.
+    // 0 here is maximum length first step. 1 is MAX >> 1 etc.
+    if (cpi->sf.auto_mv_step_size && cpi->common.show_frame) {
+      step_param = vp9_init_search_range(cpi, cpi->max_mv_magnitude);
+    } else {
+      step_param = vp9_init_search_range(
+                     cpi, MIN(cpi->common.width, cpi->common.height));
+    }
+  }
 
   mvp_full.as_mv.col >>= 3;
   mvp_full.as_mv.row >>= 3;
@@ -3001,9 +3009,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
-  if (!cpi->sf.use_avoid_tested_higherror
+
+  if (x->fast_ms < 2 && (!cpi->sf.use_avoid_tested_higherror
       || (cpi->sf.use_avoid_tested_higherror
-          && (ref_frame_mask & (1 << INTRA_FRAME)))) {
+          && (ref_frame_mask & (1 << INTRA_FRAME))))) {
     mbmi->mode = DC_PRED;
     mbmi->ref_frame[0] = INTRA_FRAME;
     for (i = 0; i <= (bsize < BLOCK_SIZE_MB16X16 ? TX_4X4 :
@@ -3062,6 +3071,17 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     x->skip = 0;
 
+    if (bsize >= BLOCK_SIZE_SB8X8 &&
+        (this_mode == I4X4_PRED || this_mode == SPLITMV))
+      continue;
+    if (bsize < BLOCK_SIZE_SB8X8 &&
+        !(this_mode == I4X4_PRED || this_mode == SPLITMV))
+      continue;
+
+    // Skip some checking based on small partitions' result.
+    if (x->fast_ms > 1 && !ref_frame)
+      continue;
+
     if (cpi->sf.use_avoid_tested_higherror && bsize >= BLOCK_SIZE_SB8X8) {
       if (!(ref_frame_mask & (1 << ref_frame))) {
         continue;
@@ -3116,13 +3136,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // them for this frame.
     mbmi->interp_filter = cm->mcomp_filter_type;
     vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
-
-    if (bsize >= BLOCK_SIZE_SB8X8 &&
-        (this_mode == I4X4_PRED || this_mode == SPLITMV))
-      continue;
-    if (bsize < BLOCK_SIZE_SB8X8 &&
-        !(this_mode == I4X4_PRED || this_mode == SPLITMV))
-      continue;
 
     if (comp_pred) {
       if (!(cpi->ref_frame_flags & flag_list[mbmi->ref_frame[1]]))
