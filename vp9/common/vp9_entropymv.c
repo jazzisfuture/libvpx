@@ -371,5 +371,5 @@ void vp9_entropy_mv_init() {
 }
 
 void vp9_init_mv_probs(VP9_COMMON *cm) {
-  vpx_memcpy(&cm->fc.nmvc, &vp9_default_nmv_context, sizeof(nmv_context));
+  cm->fc.nmvc = vp9_default_nmv_context;
 }
