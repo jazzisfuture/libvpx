@@ -140,6 +140,10 @@ struct macroblock {
   // indicate if it is in the rd search loop or encoding process
   int rd_search;
 
+  // Used to store sub partition's choices.
+  int fast_ms;
+  int_mv pred_mv;
+
   // TODO(jingning): Need to refactor the structure arrays that buffers the
   // coding mode decisions of each partition type.
   PICK_MODE_CONTEXT ab4x4_context[4][4][4];
