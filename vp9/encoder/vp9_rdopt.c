@@ -2277,11 +2277,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     (mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]) };
   int_mv cur_mv[2];
   int64_t this_rd = 0;
-  unsigned char tmp_buf[MAX_MB_PLANE][64 * 64];
+  uint8_t tmp_buf[MAX_MB_PLANE][64 * 64];
   int pred_exists = 0;
   int interpolating_intpel_seen = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
+  int best_needs_copy = 0;
 
   switch (this_mode) {
     int rate_mv;
@@ -2363,10 +2364,22 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int i, newbest;
     int tmp_rate_sum = 0;
     int64_t tmp_dist_sum = 0;
+    uint8_t *orig_dst[MAX_MB_PLANE];
+    int orig_dst_stride[MAX_MB_PLANE];
+
+    // do first prediction into the destination buffer. Do the next
+    // prediction into a temporary buffer. Then keep track of which one
+    // of these currently holds the best predictor, and use the other
+    // one for future predictions. In the end, copy from tmp_buf to
+    // dst if necessary.
+    for (i = 0; i < MAX_MB_PLANE; i++) {
+      orig_dst[i] = xd->plane[i].dst.buf;
+      orig_dst_stride[i] = xd->plane[i].dst.stride;
+    }
 
     filter_cache[VP9_SWITCHABLE_FILTERS] = INT64_MAX;
     for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
-      int rs;
+      int rs, j;
       int64_t rs_rd;
       const INTERPOLATIONFILTERTYPE filter = vp9_switchable_interp[i];
       const int is_intpel_interp = intpel_mv &&
@@ -2387,6 +2400,20 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       } else {
         int rate_sum = 0;
         int64_t dist_sum = 0;
+        if ((cm->mcomp_filter_type == SWITCHABLE &&
+             i && !best_needs_copy) ||
+            (cm->mcomp_filter_type != SWITCHABLE &&
+             cm->mcomp_filter_type != mbmi->interp_filter)) {
+          for (j = 0; j < MAX_MB_PLANE; j++) {
+            xd->plane[j].dst.buf = tmp_buf[j];
+            xd->plane[j].dst.stride = 64;
+          }
+        } else {
+          for (j = 0; j < MAX_MB_PLANE; j++) {
+            xd->plane[j].dst.buf = orig_dst[j];
+            xd->plane[j].dst.stride = orig_dst_stride[j];
+          }
+        }
         vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
         model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
         filter_cache[i] = RDCOST(x->rdmult, x->rddiv, rate_sum, dist_sum);
@@ -2405,23 +2432,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       if (newbest) {
         best_rd = rd;
         *best_filter = mbmi->interp_filter;
+        if (cm->mcomp_filter_type == SWITCHABLE && i &&
+            !(interpolating_intpel_seen && is_intpel_interp))
+          best_needs_copy = !best_needs_copy;
       }
 
       if ((cm->mcomp_filter_type == SWITCHABLE && newbest) ||
           (cm->mcomp_filter_type != SWITCHABLE &&
            cm->mcomp_filter_type == mbmi->interp_filter)) {
-        int p;
-
-        for (p = 0; p < MAX_MB_PLANE; p++) {
-          struct macroblockd_plane *pd = &xd->plane[p];
-          const int bw = plane_block_width(bsize, pd);
-          const int bh = plane_block_height(bsize, pd);
-          int i;
-
-          for (i = 0; i < bh; i++)
-            vpx_memcpy(&tmp_buf[p][64 * i], pd->dst.buf + i * pd->dst.stride,
-                                   bw);
-        }
         pred_exists = 1;
       }
       interpolating_intpel_seen |= is_intpel_interp;
@@ -2430,6 +2448,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                i, filter_cache[i], filter_cache[VP9_SWITCHABLE_FILTERS],
                interpolating_intpel_seen, is_intpel_interp);
     }
+
+    for (i = 0; i < MAX_MB_PLANE; i++) {
+      xd->plane[i].dst.buf = orig_dst[i];
+      xd->plane[i].dst.stride = orig_dst_stride[i];
+    }
   }
 
   // Set the appripriate filter
@@ -2437,18 +2460,19 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       cm->mcomp_filter_type : *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
 
-
   if (pred_exists) {
-    int p;
+    if (best_needs_copy) {
+      int p;
 
-    for (p = 0; p < MAX_MB_PLANE; p++) {
-      struct macroblockd_plane *pd = &xd->plane[p];
-      const int bw = plane_block_width(bsize, pd);
-      const int bh = plane_block_height(bsize, pd);
-      int i;
+      for (p = 0; p < MAX_MB_PLANE; p++) {
+        struct macroblockd_plane *pd = &xd->plane[p];
+        const int bw = plane_block_width(bsize, pd);
+        const int bh = plane_block_height(bsize, pd);
+        int i;
 
-      for (i = 0; i < bh; i++)
-        vpx_memcpy(pd->dst.buf + i * pd->dst.stride, &tmp_buf[p][64 * i], bw);
+        for (i = 0; i < bh; i++)
+          vpx_memcpy(pd->dst.buf + i * pd->dst.stride, &tmp_buf[p][64 * i], bw);
+      }
     }
   } else {
     // Handles the special case when a filter that is not in the
