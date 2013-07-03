@@ -330,7 +330,7 @@ TEST(VP9Fdct16x16Test, AccuracyCheck) {
   EXPECT_GE(1, max_error)
       << "Error: 16x16 FDCT/IDCT has an individual round trip error > 1";
 
-  EXPECT_GE(count_test_block , total_error)
+  EXPECT_GE(count_test_block, total_error)
       << "Error: 16x16 FDCT/IDCT has average round trip error > 1 per block";
 }
 
