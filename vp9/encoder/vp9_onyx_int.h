@@ -296,7 +296,6 @@ enum BlockSize {
 };
 
 typedef struct VP9_COMP {
-
   DECLARE_ALIGNED(16, int16_t, y_quant[QINDEX_RANGE][8]);
   DECLARE_ALIGNED(16, int16_t, y_quant_shift[QINDEX_RANGE][8]);
   DECLARE_ALIGNED(16, int16_t, y_zbin[QINDEX_RANGE][8]);
