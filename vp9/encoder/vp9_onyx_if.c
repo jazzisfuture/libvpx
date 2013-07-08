@@ -719,6 +719,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->last_partitioning_redo_frequency = 4;
   sf->disable_splitmv = 0;
   sf->mode_search_skip_flags = 0;
+  sf->use_residual_breakout = 1;
 
   // Skip any mode not chosen at size < X for all sizes > X
   // Hence BLOCK_SIZE_SB64X64 (skip is off)
