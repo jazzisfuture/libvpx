@@ -2569,6 +2569,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int interpolating_intpel_seen = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
+  int rs = 0;
 
   switch (this_mode) {
     int rate_mv;
@@ -2632,6 +2633,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   *rate2 += vp9_cost_mv_ref(cpi, this_mode,
                             mbmi->mb_mode_context[mbmi->ref_frame[0]]);
 
+  if (!(*mode_excluded)) {
+    if (is_comp_pred) {
+      *mode_excluded = (cpi->common.comp_pred_mode == SINGLE_PREDICTION_ONLY);
+    } else {
+      *mode_excluded = (cpi->common.comp_pred_mode == COMP_PREDICTION_ONLY);
+    }
+  }
+
   pred_exists = 0;
   interpolating_intpel_seen = 0;
   // Are all MVs integer pel for Y and UV
@@ -2642,14 +2651,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         (mbmi->mv[1].as_mv.col & 15) == 0;
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used
-  if (cpi->sf.use_8tap_always) {
-    *best_filter = EIGHTTAP;
-  } else {
+  *best_filter = EIGHTTAP;
+  if (!cpi->sf.use_8tap_always) {
     int i, newbest;
     int tmp_rate_sum = 0;
     int64_t tmp_dist_sum = 0;
     for (i = 0; i < VP9_SWITCHABLE_FILTERS; ++i) {
-      int rs = 0;
       const INTERPOLATIONFILTERTYPE filter = vp9_switchable_interp[i];
       const int is_intpel_interp = intpel_mv &&
           vp9_is_interpolating_filter[filter];
@@ -2670,6 +2677,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         if (!interpolating_intpel_seen && is_intpel_interp) {
           tmp_rate_sum = rate_sum;
           tmp_dist_sum = dist_sum;
+        }
+      }
+      if (i == 0 && cpi->sf.use_residual_breakout && ref_best_rd < INT64_MAX) {
+        if (rd / 2 > ref_best_rd) {
+          return INT64_MAX;
         }
       }
       newbest = i == 0 || rd < best_rd;
@@ -2699,12 +2711,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       interpolating_intpel_seen |= is_intpel_interp;
     }
   }
-
   // Set the appripriate filter
   mbmi->interp_filter = cm->mcomp_filter_type != SWITCHABLE ?
       cm->mcomp_filter_type : *best_filter;
   vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
-
+  rs = (cm->mcomp_filter_type == SWITCHABLE ? get_switchable_rate(cm, x) : 0);
 
   if (pred_exists) {
     int p;
@@ -2722,6 +2733,18 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Handles the special case when a filter that is not in the
     // switchable list (ex. bilinear, 6-tap) is indicated at the frame level
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+  }
+
+
+  if (cpi->sf.use_residual_breakout && ref_best_rd < INT64_MAX) {
+    int tmp_rate;
+    int64_t tmp_dist;
+    model_rd_for_sb(cpi, bsize, x, xd, &tmp_rate, &tmp_dist);
+    rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate, tmp_dist);
+    // if current pred_error modeled rd is substantially more than the best
+    // so far, do not bother doing full rd
+    if (rd / 2 > ref_best_rd)
+      return INT64_MAX;
   }
 
   if (cpi->common.mcomp_filter_type == SWITCHABLE)
@@ -2803,14 +2826,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *rate2 += *rate_uv;
     *distortion += *distortion_uv;
     *skippable = skippable_y && skippable_uv;
-  }
-
-  if (!(*mode_excluded)) {
-    if (is_comp_pred) {
-      *mode_excluded = (cpi->common.comp_pred_mode == SINGLE_PREDICTION_ONLY);
-    } else {
-      *mode_excluded = (cpi->common.comp_pred_mode == COMP_PREDICTION_ONLY);
-    }
   }
 
   return this_rd;  // if 0, this will be re-calculated by caller
@@ -3296,7 +3311,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
            ++switchable_filter_index) {
         int newbest;
         mbmi->interp_filter =
-        vp9_switchable_interp[switchable_filter_index];
+            vp9_switchable_interp[switchable_filter_index];
         vp9_setup_interp_filters(xd, mbmi->interp_filter, &cpi->common);
 
         tmp_rd = rd_pick_best_mbsegmentation(cpi, x,
@@ -3328,6 +3343,16 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
               for (i = 0; i < 4; i++)
                 tmp_best_bmodes[i] = xd->mode_info_context->bmi[i];
               pred_exists = 1;
+              if (switchable_filter_index == 0 &&
+                  cpi->sf.use_residual_breakout &&
+                  best_rd < INT64_MAX) {
+                if (tmp_best_rdu / 2 > best_rd) {
+                  // skip searching the other filters if the first is
+                  // already substantially larger han the best so far
+                  tmp_best_filter = mbmi->interp_filter;
+                  break;
+                }
+              }
             }
       }  // switchable_filter_index loop
 
@@ -3366,29 +3391,32 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (cpi->common.mcomp_filter_type == SWITCHABLE)
         rate2 += get_switchable_rate(cm, x);
 
-      // If even the 'Y' rd value of split is higher than best so far
-      // then dont bother looking at UV
-      vp9_build_inter_predictors_sbuv(&x->e_mbd, mi_row, mi_col,
-                                      BLOCK_SIZE_SB8X8);
-      vp9_subtract_sbuv(x, BLOCK_SIZE_SB8X8);
-      super_block_uvrd_for_txfm(cm, x, &rate_uv, &distortion_uv,
-                                &uv_skippable, NULL, BLOCK_SIZE_SB8X8, TX_4X4);
-      rate2 += rate_uv;
-      distortion2 += distortion_uv;
-      skippable = skippable && uv_skippable;
-
-      txfm_cache[ONLY_4X4] = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
-      for (i = 0; i < NB_TXFM_MODES; ++i)
-        txfm_cache[i] = txfm_cache[ONLY_4X4];
-
       if (!mode_excluded) {
         if (is_comp_pred)
           mode_excluded = cpi->common.comp_pred_mode == SINGLE_PREDICTION_ONLY;
         else
           mode_excluded = cpi->common.comp_pred_mode == COMP_PREDICTION_ONLY;
       }
-
       compmode_cost = vp9_cost_bit(comp_mode_p, is_comp_pred);
+
+      if (RDCOST(x->rdmult, x->rddiv, rate2, distortion2) <
+          best_rd) {
+        // If even the 'Y' rd value of split is higher than best so far
+        // then dont bother looking at UV
+        vp9_build_inter_predictors_sbuv(&x->e_mbd, mi_row, mi_col,
+                                        BLOCK_SIZE_SB8X8);
+        vp9_subtract_sbuv(x, BLOCK_SIZE_SB8X8);
+        super_block_uvrd_for_txfm(cm, x, &rate_uv, &distortion_uv,
+                                  &uv_skippable, NULL,
+                                  BLOCK_SIZE_SB8X8, TX_4X4);
+        rate2 += rate_uv;
+        distortion2 += distortion_uv;
+        skippable = skippable && uv_skippable;
+
+        txfm_cache[ONLY_4X4] = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
+        for (i = 0; i < NB_TXFM_MODES; ++i)
+          txfm_cache[i] = txfm_cache[ONLY_4X4];
+      }
     } else {
       compmode_cost = vp9_cost_bit(comp_mode_p,
                                    mbmi->ref_frame[1] > INTRA_FRAME);
