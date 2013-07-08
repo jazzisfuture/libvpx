@@ -2247,6 +2247,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int bwl = mi_width_log2(bsize);
   const int bw = 1 << bwl, bh = 1 << mi_height_log2(bsize);
   x->rd_search = 0;
+  x->skip_encode = (!output_enabled && cm->frame_type != KEY_FRAME &&
+                    cm->show_frame && cpi->sf.skip_encode_sb &&
+                    xd->q_index < QIDX_SKIP_THRESH);
+  if (x->skip_encode)
+    return;
 
   if (cm->frame_type == KEY_FRAME) {
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
