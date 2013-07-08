@@ -140,44 +140,17 @@ typedef enum {
   MAX_REF_FRAMES = 4
 } MV_REFERENCE_FRAME;
 
+static const int b_width_log2_lookup[BLOCK_SIZE_TYPES] =
+{0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4};
 static INLINE int b_width_log2(BLOCK_SIZE_TYPE sb_type) {
-  switch (sb_type) {
-    case BLOCK_SIZE_SB4X8:
-    case BLOCK_SIZE_AB4X4: return 0;
-    case BLOCK_SIZE_SB8X4:
-    case BLOCK_SIZE_SB8X8:
-    case BLOCK_SIZE_SB8X16: return 1;
-    case BLOCK_SIZE_SB16X8:
-    case BLOCK_SIZE_MB16X16:
-    case BLOCK_SIZE_SB16X32: return 2;
-    case BLOCK_SIZE_SB32X16:
-    case BLOCK_SIZE_SB32X32:
-    case BLOCK_SIZE_SB32X64: return 3;
-    case BLOCK_SIZE_SB64X32:
-    case BLOCK_SIZE_SB64X64: return 4;
-    default: assert(0);
-      return -1;
-  }
+  assert((sb_type >= BLOCK_SIZE_AB4X4) && (sb_type < BLOCK_SIZE_TYPES));
+  return b_width_log2_lookup[sb_type];
 }
-
+static const int b_height_log2_lookup[BLOCK_SIZE_TYPES] =
+{0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4};
 static INLINE int b_height_log2(BLOCK_SIZE_TYPE sb_type) {
-  switch (sb_type) {
-    case BLOCK_SIZE_SB8X4:
-    case BLOCK_SIZE_AB4X4: return 0;
-    case BLOCK_SIZE_SB4X8:
-    case BLOCK_SIZE_SB8X8:
-    case BLOCK_SIZE_SB16X8: return 1;
-    case BLOCK_SIZE_SB8X16:
-    case BLOCK_SIZE_MB16X16:
-    case BLOCK_SIZE_SB32X16: return 2;
-    case BLOCK_SIZE_SB16X32:
-    case BLOCK_SIZE_SB32X32:
-    case BLOCK_SIZE_SB64X32: return 3;
-    case BLOCK_SIZE_SB32X64:
-    case BLOCK_SIZE_SB64X64: return 4;
-    default: assert(0);
-      return -1;
-  }
+  assert((sb_type >= BLOCK_SIZE_AB4X4) && (sb_type < BLOCK_SIZE_TYPES));
+  return b_height_log2_lookup[sb_type];
 }
 
 static INLINE int mi_width_log2(BLOCK_SIZE_TYPE sb_type) {
