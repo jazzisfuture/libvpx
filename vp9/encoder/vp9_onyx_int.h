@@ -274,6 +274,7 @@ typedef struct {
   // The heuristics selected are based on  flags
   // defined in the MODE_SEARCH_SKIP_HEURISTICS enum
   unsigned int mode_search_skip_flags;
+  int use_rd_breakout;
 } SPEED_FEATURES;
 
 enum BlockSize {
