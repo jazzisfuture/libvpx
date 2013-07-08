@@ -731,6 +731,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->static_segmentation = 0;
 #endif
 
+  // FIXME(jingning): need to decide which category skip_encode_sb feature
+  // should belong to. currently turn it on/off manually
+  sf->skip_encode_sb = 1;
+
   switch (mode) {
     case 0: // best quality mode
       sf->search_best_filter = SEARCH_BEST_FILTER;
