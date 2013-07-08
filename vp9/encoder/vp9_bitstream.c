@@ -609,6 +609,15 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
 #endif
   } else {
     pack_inter_mode_mvs(cpi, m, bc, mi_row, mi_col);
+
+    {
+      FILE *pf = fopen("enc_skip.txt", "a");
+      fprintf(pf, "position (%d, %d), sb_type %d, mode %d\n",
+              mi_row, mi_col, m->mbmi.sb_type, m->mbmi.mode);
+      fclose(pf);
+    }
+
+
 #ifdef ENTROPY_STATS
     active_section = 1;
 #endif
