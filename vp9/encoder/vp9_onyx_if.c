@@ -770,7 +770,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
         sf->use_lastframe_partitioning = 1;
         sf->adjust_partitioning_from_last_frame = 1;
-        sf->last_partitioning_redo_frequency = 3;
+        sf->last_partitioning_redo_frequency = 8;
         sf->tx_size_search_method = USE_LARGESTALL;
         sf->conditional_oblique_intramodes = 1;
         sf->unused_mode_skip_lvl = BLOCK_SIZE_SB32X32;

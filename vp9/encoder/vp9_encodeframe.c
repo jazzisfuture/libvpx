@@ -836,6 +836,21 @@ static void copy_partitioning(VP9_COMP *cpi, MODE_INFO *m, MODE_INFO *p) {
   }
 }
 
+static int sb_has_motion(VP9_COMP *cpi, MODE_INFO *p) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int mis = cm->mode_info_stride;
+  int block_row, block_col;
+
+  for (block_row = 0; block_row < 8; ++block_row) {
+    for (block_col = 0; block_col < 8; ++block_col) {
+       if(abs(p[block_row * mis + block_col].mbmi.mv[0].as_mv.row) >= 8 ||
+           abs(p[block_row * mis + block_col].mbmi.mv[0].as_mv.col) >= 8)
+         return 1;
+    }
+  }
+  return 0;
+}
+
 static void set_block_size(VP9_COMMON * const cm, MODE_INFO *m,
                            BLOCK_SIZE_TYPE bsize, int mis, int mi_row,
                            int mi_col) {
@@ -1673,7 +1688,8 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
             || cm->prev_mi == 0
             || cpi->common.show_frame == 0
             || cpi->common.frame_type == KEY_FRAME
-            || cpi->is_src_frame_alt_ref) {
+            || cpi->is_src_frame_alt_ref
+            || sb_has_motion(cpi, p)) {
           rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                             &dummy_rate, &dummy_dist);
         } else {
