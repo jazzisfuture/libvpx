@@ -2608,6 +2608,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       break;
     case NEARMV:
     case NEARESTMV:
+      if (((this_mode == NEARMV) || (this_mode == NEARESTMV)) &&
+          (frame_mv[refs[0]].as_int == 0))
+        return INT64_MAX;
     case ZEROMV:
     default:
       break;
