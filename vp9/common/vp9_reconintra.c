@@ -33,9 +33,21 @@ const TX_TYPE mode2txfm_map[MB_MODE_COUNT] = {
     DCT_DCT     // NEWMV
 };
 
+#define intra_pred_sized(type, size) \
+void vp9_##type##_predictor_##size##x##size##_c(uint8_t *ypred_ptr, \
+                                                ptrdiff_t y_stride, \
+                                                uint8_t *yabove_row, \
+                                                uint8_t *yleft_col) { \
+  type##_predictor(ypred_ptr, y_stride, size, yabove_row, yleft_col); \
+}
+#define intra_pred_allsizes(type) \
+  intra_pred_sized(type, 4) \
+  intra_pred_sized(type, 8) \
+  intra_pred_sized(type, 16) \
+  intra_pred_sized(type, 32)
 
-void vp9_d27_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                         uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d27_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                 uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   // first column
   for (r = 0; r < bs - 1; ++r) {
@@ -67,9 +79,10 @@ void vp9_d27_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     }
   }
 }
+intra_pred_allsizes(d27)
 
-void vp9_d63_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                         uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d63_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                 uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   for (r = 0; r < bs; ++r) {
     for (c = 0; c < bs; ++c) {
@@ -85,9 +98,10 @@ void vp9_d63_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(d63)
 
-void vp9_d45_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                         uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d45_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                 uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   for (r = 0; r < bs; ++r) {
     for (c = 0; c < bs; ++c) {
@@ -101,9 +115,10 @@ void vp9_d45_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(d45)
 
-void vp9_d117_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                          uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d117_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                  uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   // first row
   for (c = 0; c < bs; c++)
@@ -135,10 +150,10 @@ void vp9_d117_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(d117)
 
-
-void vp9_d135_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                          uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d135_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                  uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   ypred_ptr[0] = ROUND_POWER_OF_TWO(yleft_col[0] +
                                     yabove_row[-1] * 2 +
@@ -163,9 +178,10 @@ void vp9_d135_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(d135)
 
-void vp9_d153_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                          uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void d153_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                  uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   ypred_ptr[0] = ROUND_POWER_OF_TWO(yabove_row[-1] + yleft_col[0], 1);
   for (r = 1; r < bs; r++)
@@ -196,8 +212,9 @@ void vp9_d153_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(d153)
 
-void vp9_v_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
+static INLINE void v_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
                        uint8_t *yabove_row, uint8_t *yleft_col) {
   int r;
 
@@ -206,9 +223,10 @@ void vp9_v_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(v)
 
-void vp9_h_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                       uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void h_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                               uint8_t *yabove_row, uint8_t *yleft_col) {
   int r;
 
   for (r = 0; r < bs; r++) {
@@ -216,9 +234,10 @@ void vp9_h_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(h)
 
-void vp9_tm_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                        uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void tm_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                uint8_t *yabove_row, uint8_t *yleft_col) {
   int r, c;
   int ytop_left = yabove_row[-1];
 
@@ -228,9 +247,10 @@ void vp9_tm_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(tm)
 
-void vp9_dc_128_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                            uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void dc_128_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                    uint8_t *yabove_row, uint8_t *yleft_col) {
   int r;
 
   for (r = 0; r < bs; r++) {
@@ -238,9 +258,10 @@ void vp9_dc_128_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(dc_128)
 
-void vp9_dc_left_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                             uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void dc_left_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                     uint8_t *yabove_row, uint8_t *yleft_col) {
   int i, r;
   int expected_dc = 128;
   int average = 0;
@@ -255,9 +276,10 @@ void vp9_dc_left_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(dc_left)
 
-void vp9_dc_top_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                            uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void dc_top_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                    uint8_t *yabove_row, uint8_t *yleft_col) {
   int i, r;
   int expected_dc = 128;
   int average = 0;
@@ -272,9 +294,10 @@ void vp9_dc_top_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(dc_top)
 
-void vp9_dc_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
-                        uint8_t *yabove_row, uint8_t *yleft_col) {
+static INLINE void dc_predictor(uint8_t *ypred_ptr, ptrdiff_t y_stride, int bs,
+                                uint8_t *yabove_row, uint8_t *yleft_col) {
   int i, r;
   int expected_dc = 128;
   int average = 0;
@@ -291,24 +314,37 @@ void vp9_dc_predictor_c(uint8_t *ypred_ptr, int y_stride, int bs,
     ypred_ptr += y_stride;
   }
 }
+intra_pred_allsizes(dc)
+#undef intra_pred_allsizes
 
-typedef void (*intra_pred_fn)(uint8_t *ypred_ptr, int y_stride, int bs,
+typedef void (*intra_pred_fn)(uint8_t *ypred_ptr, ptrdiff_t y_stride,
                               uint8_t *yabove_row, uint8_t *yleft_col);
 
 static void build_intra_predictors(uint8_t *src, int src_stride,
                                    uint8_t *ypred_ptr, int y_stride,
-                                   MB_PREDICTION_MODE mode, int bs,
+                                   MB_PREDICTION_MODE mode, TX_SIZE txsz,
                                    int up_available, int left_available,
                                    int right_available) {
   int i;
   DECLARE_ALIGNED_ARRAY(16, uint8_t, yleft_col, 64);
   DECLARE_ALIGNED_ARRAY(16, uint8_t, yabove_data, 128 + 16);
   uint8_t *yabove_row = yabove_data + 16;
-  static const intra_pred_fn pred[VP9_INTRA_MODES] = {
-    NULL, vp9_v_predictor, vp9_h_predictor, vp9_d45_predictor,
-    vp9_d135_predictor, vp9_d117_predictor, vp9_d153_predictor,
-    vp9_d27_predictor, vp9_d63_predictor, vp9_tm_predictor
+#define intra_pred_allsizes(type) \
+  { vp9_##type##_predictor_4x4, vp9_##type##_predictor_8x8, \
+    vp9_##type##_predictor_16x16, vp9_##type##_predictor_32x32 }
+  static const intra_pred_fn pred[VP9_INTRA_MODES][4] = {
+    { NULL }, intra_pred_allsizes(v), intra_pred_allsizes(h),
+    intra_pred_allsizes(d45), intra_pred_allsizes(d135),
+    intra_pred_allsizes(d117), intra_pred_allsizes(d153),
+    intra_pred_allsizes(d27), intra_pred_allsizes(d63),
+    intra_pred_allsizes(tm)
   };
+  const int bs = 4 << txsz;
+  static const intra_pred_fn dc_pred[2][2][4] = {
+    { intra_pred_allsizes(dc_128), intra_pred_allsizes(dc_top) },
+    { intra_pred_allsizes(dc_left), intra_pred_allsizes(dc) }
+  };
+#undef intra_pred_allsizes
 
   // 127 127 127 .. 127 127 127 127 127 127
   // 129  A   B  ..  Y   Z
@@ -342,19 +378,10 @@ static void build_intra_predictors(uint8_t *src, int src_stride,
   }
 
   if (mode == DC_PRED) {
-    if (left_available) {
-      if (up_available) {
-        vp9_dc_predictor(ypred_ptr, y_stride, bs, yabove_row, yleft_col);
-      } else {
-        vp9_dc_left_predictor(ypred_ptr, y_stride, bs, yabove_row, yleft_col);
-      }
-    } else if (up_available) {
-      vp9_dc_top_predictor(ypred_ptr, y_stride, bs, yabove_row, yleft_col);
-    } else {
-      vp9_dc_128_predictor(ypred_ptr, y_stride, bs, yabove_row, yleft_col);
-    }
+    dc_pred[left_available][up_available][txsz](ypred_ptr, y_stride,
+                                                yabove_row, yleft_col);
   } else {
-    pred[mode](ypred_ptr, y_stride, bs, yabove_row, yleft_col);
+    pred[mode][txsz](ypred_ptr, y_stride, yabove_row, yleft_col);
   }
 }
 
@@ -370,13 +397,12 @@ void vp9_predict_intra_block(MACROBLOCKD *xd,
   const int have_top = (block_idx >> bwl) || xd->up_available;
   const int have_left = (block_idx & wmask) || xd->left_available;
   const int have_right = ((block_idx & wmask) != wmask);
-  const int txfm_block_size = 4 << tx_size;
 
   assert(bwl >= 0);
   build_intra_predictors(reference, ref_stride,
                          predictor, pre_stride,
                          mode,
-                         txfm_block_size,
+                         tx_size,
                          have_top, have_left,
                          have_right);
 }
