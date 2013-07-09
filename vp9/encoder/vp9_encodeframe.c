@@ -336,11 +336,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   // when the mode was picked for it
   for (y = 0; y < bh; y++) {
     for (x_idx = 0; x_idx < bw; x_idx++) {
-      if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > x_idx
-          && (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > y) {
-        MODE_INFO *mi_addr = xd->mode_info_context + x_idx + y * mis;
-        *mi_addr = *mi;
-      }
+      MODE_INFO *mi_addr = xd->mode_info_context + x_idx + y * mis;
+      vpx_memcpy(mi_addr, mi, sizeof(MODE_INFO));
     }
   }
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
@@ -415,9 +412,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       int i, j;
       for (j = 0; j < bh; ++j)
         for (i = 0; i < bw; ++i)
-          if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + bw > i
-              && (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + bh > j)
-            xd->mode_info_context[mis * j + i].mbmi = *mbmi;
+          vpx_memcpy(&xd->mode_info_context[mis * j + i].mbmi,mbmi,
+                     sizeof(MODE_INFO));
     }
 
     if (cpi->common.mcomp_filter_type == SWITCHABLE
