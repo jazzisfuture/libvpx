@@ -451,6 +451,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
       const int bsl = MIN(bwl, bhl);
       write_intra_mode(bc, mode, pc->fc.y_mode_prob[MIN(3, bsl)]);
+#if CONFIG_FILTERINTRA
+      if (is_filter_allowed(mode) && mi->txfm_size <= TX_4X4)
+        vp9_write(bc, mi->filterbit, pc->fc.filterintra_prob);
+#endif
     } else {
       int idx, idy;
       int bw = 1 << b_width_log2(mi->sb_type);
@@ -459,10 +463,19 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         for (idx = 0; idx < 2; idx += bw) {
           const MB_PREDICTION_MODE bm = m->bmi[idy * 2 + idx].as_mode;
           write_intra_mode(bc, bm, pc->fc.y_mode_prob[0]);
+#if CONFIG_FILTERINTRA
+          if (is_filter_allowed(bm))
+            vp9_write(bc, m->bmi[idy * 2 + idx].filterbit,
+                      pc->fc.filterintra_prob);
+#endif
         }
     }
     write_intra_mode(bc, mi->uv_mode,
                      pc->fc.uv_mode_prob[mode]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(mi->uv_mode) && (get_uv_tx_size(mi) <= TX_4X4))
+      vp9_write(bc, mi->uv_filterbit, pc->fc.filterintra_prob);
+#endif
   } else {
     vp9_prob *mv_ref_p;
 
@@ -573,6 +586,10 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     const MB_PREDICTION_MODE L = xd->left_available ?
                                  left_block_mode(m, 0) : DC_PRED;
     write_intra_mode(bc, ym, c->kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(ym) && (get_uv_tx_size(&(m->mbmi)) <= TX_4X4))
+      vp9_write(bc, m->mbmi.filterbit, c->fc.filterintra_prob);
+#endif
   } else {
     int idx, idy;
     int bw = 1 << b_width_log2(m->mbmi.sb_type);
@@ -588,11 +605,20 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
         ++intra_mode_stats[A][L][bm];
 #endif
         write_intra_mode(bc, bm, c->kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+        if (is_filter_allowed(bm))
+          vp9_write(bc, m->bmi[i].filterbit, c->fc.filterintra_prob);
+#endif
       }
     }
   }
 
   write_intra_mode(bc, m->mbmi.uv_mode, c->kf_uv_mode_prob[ym]);
+#if CONFIG_FILTERINTRA
+  if (is_filter_allowed(m->mbmi.uv_mode) &&
+      (get_uv_tx_size(&(m->mbmi)) <= TX_4X4))
+    vp9_write(bc, m->mbmi.uv_filterbit, c->fc.filterintra_prob);
+#endif
 }
 
 static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
@@ -1390,6 +1416,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(pc->fc.pre_tx_probs_16x16p, pc->fc.tx_probs_16x16p);
   vp9_copy(pc->fc.pre_tx_probs_32x32p, pc->fc.tx_probs_32x32p);
   vp9_copy(pc->fc.pre_mbskip_probs, pc->fc.mbskip_probs);
+#if CONFIG_FILTERINRTA
+  pc->fc.pre_filterintra_prob = pc->fc.filterintra_prob;
+#endif
 
   if (xd->lossless) {
     pc->txfm_mode = ONLY_4X4;
