@@ -391,7 +391,7 @@ static INLINE int partition_plane_context(MACROBLOCKD *xd,
 
 static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
                                    PARTITION_TYPE partition) {
-  BLOCK_SIZE_TYPE subsize;
+  BLOCK_SIZE_TYPE subsize = bsize;
   switch (partition) {
     case PARTITION_NONE:
       subsize = bsize;
