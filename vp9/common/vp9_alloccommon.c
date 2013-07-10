@@ -18,6 +18,7 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_systemdependent.h"
+#include "vp9/common/vp9_common_data.h"
 
 void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
   const int stride = cm->mode_info_stride;
@@ -194,6 +195,7 @@ void vp9_initialize_common() {
   vp9_coef_tree_initialize();
   vp9_entropy_mode_init();
   vp9_entropy_mv_init();
+  vp9_fill_lookups();
 }
 
 void vp9_update_frame_size(VP9_COMMON *cm) {
