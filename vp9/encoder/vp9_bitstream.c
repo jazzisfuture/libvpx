@@ -220,7 +220,7 @@ static int write_skip_coeff(const VP9_COMP *cpi, int segment_id, MODE_INFO *m,
     return 1;
   } else {
     const int skip_coeff = m->mbmi.mb_skip_coeff;
-    vp9_write(w, skip_coeff, vp9_get_pred_prob(&cpi->common, xd, PRED_MBSKIP));
+    vp9_write(w, skip_coeff, vp9_get_pred_prob_mbskip(&cpi->common, xd));
     return skip_coeff;
   }
 }
@@ -426,8 +426,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   if (cpi->mb.e_mbd.update_mb_segmentation_map) {
     // Is temporal coding of the segment map enabled
     if (pc->temporal_update) {
-      unsigned char prediction_flag = vp9_get_pred_flag(xd, PRED_SEG_ID);
-      vp9_prob pred_prob = vp9_get_pred_prob(pc, xd, PRED_SEG_ID);
+      unsigned char prediction_flag = vp9_get_pred_flag_seg_id(xd);
+      vp9_prob pred_prob = vp9_get_pred_prob_seg_id(pc, xd);
 
       // Code the segment id prediction flag for this mb
       vp9_write(bc, prediction_flag, pred_prob);
