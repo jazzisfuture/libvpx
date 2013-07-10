@@ -422,9 +422,9 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
     if (cpi->common.mcomp_filter_type == SWITCHABLE
         && is_inter_mode(mbmi->mode)) {
-      ++cpi->common.fc.switchable_interp_count[vp9_get_pred_context(
-          &cpi->common, xd, PRED_SWITCHABLE_INTERP)][vp9_switchable_interp_map[mbmi
-          ->interp_filter]];
+      ++cpi->common.fc.switchable_interp_count[
+          vp9_get_pred_context_switchable_interp(&cpi->common, xd)]
+            [vp9_switchable_interp_map[mbmi->interp_filter]];
     }
 
     cpi->rd_comp_pred_diff[SINGLE_PREDICTION_ONLY] += ctx->single_pred_diff;
@@ -2368,7 +2368,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 
   // copy skip flag on all mb_mode_info contexts in this SB
   // if this was a skip at this txfm size
-  vp9_set_pred_flag(xd, bsize, PRED_MBSKIP, mi->mbmi.mb_skip_coeff);
+  vp9_set_pred_flag_mbskip(xd, bsize, mi->mbmi.mb_skip_coeff);
 
   if (output_enabled) {
     if (cm->txfm_mode == TX_MODE_SELECT && mbmi->sb_type >= BLOCK_SIZE_SB8X8

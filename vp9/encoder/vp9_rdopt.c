@@ -877,7 +877,7 @@ static void choose_txfm_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
-  vp9_prob skip_prob = vp9_get_pred_prob(cm, xd, PRED_MBSKIP);
+  vp9_prob skip_prob = vp9_get_pred_prob_mbskip(cm, xd);
   int64_t rd[TX_SIZE_MAX_SB][2];
   int n, m;
   int s0, s1;
@@ -981,7 +981,7 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
-  vp9_prob skip_prob = vp9_get_pred_prob(cm, xd, PRED_MBSKIP);
+  vp9_prob skip_prob = vp9_get_pred_prob_mbskip(cm, xd);
   int64_t rd[TX_SIZE_MAX_SB][2];
   int n, m;
   int s0, s1;
@@ -2305,7 +2305,7 @@ static INLINE int get_switchable_rate(VP9_COMMON *cm, MACROBLOCK *x) {
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
 
-  const int c = vp9_get_pred_context(cm, xd, PRED_SWITCHABLE_INTERP);
+  const int c = vp9_get_pred_context_switchable_interp(cm, xd);
   const int m = vp9_switchable_interp_map[mbmi->interp_filter];
   return SWITCHABLE_INTERP_RATE_FACTOR * x->switchable_interp_costs[c][m];
 }
@@ -2906,21 +2906,21 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (y_skip && uv_skip) {
     *returnrate = rate_y + rate_uv - rate_y_tokenonly - rate_uv_tokenonly +
-                  vp9_cost_bit(vp9_get_pred_prob(cm, xd, PRED_MBSKIP), 1);
+                  vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd), 1);
     *returndist = dist_y + (dist_uv >> 2);
     memset(ctx->txfm_rd_diff, 0, sizeof(ctx->txfm_rd_diff));
     xd->mode_info_context->mbmi.mode = mode;
     xd->mode_info_context->mbmi.txfm_size = txfm_size;
   } else if (bsize < BLOCK_SIZE_SB8X8 && err4x4 < err) {
     *returnrate = rate4x4_y + rate_uv +
-        vp9_cost_bit(vp9_get_pred_prob(cm, xd, PRED_MBSKIP), 0);
+        vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd), 0);
     *returndist = dist4x4_y + (dist_uv >> 2);
     vpx_memset(ctx->txfm_rd_diff, 0, sizeof(ctx->txfm_rd_diff));
     xd->mode_info_context->mbmi.txfm_size = TX_4X4;
   } else {
     int i;
     *returnrate = rate_y + rate_uv +
-        vp9_cost_bit(vp9_get_pred_prob(cm, xd, PRED_MBSKIP), 0);
+        vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd), 0);
     *returndist = dist_y + (dist_uv >> 2);
     if (cpi->sf.tx_size_search_method == USE_FULL_RD) {
       for (i = 0; i < NB_TXFM_MODES; i++) {
@@ -3498,7 +3498,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
           // Cost the skip mb case
           vp9_prob skip_prob =
-            vp9_get_pred_prob(cm, xd, PRED_MBSKIP);
+            vp9_get_pred_prob_mbskip(cm, xd);
 
           if (skip_prob) {
             prob_skip_cost = vp9_cost_bit(skip_prob, 1);
@@ -3510,13 +3510,13 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
           // Add in the cost of the no skip flag.
-          int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob(cm, xd,
-                                                          PRED_MBSKIP), 0);
+          int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd),
+                                            0);
           rate2 += prob_skip_cost;
         } else {
           // FIXME(rbultje) make this work for splitmv also
-          int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob(cm, xd,
-                                                              PRED_MBSKIP), 1);
+          int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd),
+                                            1);
           rate2 += prob_skip_cost;
           distortion2 = total_sse;
           assert(total_sse >= 0);
@@ -3527,8 +3527,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         }
       } else if (mb_skip_allowed) {
         // Add in the cost of the no skip flag.
-        int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob(cm, xd,
-                                                            PRED_MBSKIP), 0);
+        int prob_skip_cost = vp9_cost_bit(vp9_get_pred_prob_mbskip(cm, xd),
+                                          0);
         rate2 += prob_skip_cost;
       }
 

@@ -123,8 +123,8 @@ static uint8_t read_skip_coeff(VP9D_COMP *pbi, int segment_id, vp9_reader *r) {
   MACROBLOCKD *const xd = &pbi->mb;
   int skip_coeff = vp9_segfeature_active(xd, segment_id, SEG_LVL_SKIP);
   if (!skip_coeff) {
-    const uint8_t ctx = vp9_get_pred_context(cm, xd, PRED_MBSKIP);
-    skip_coeff = vp9_read(r, vp9_get_pred_prob(cm, xd, PRED_MBSKIP));
+    const uint8_t ctx = vp9_get_pred_context_mbskip(cm, xd);
+    skip_coeff = vp9_read(r, vp9_get_pred_prob_mbskip(cm, xd));
     cm->fc.mbskip_count[ctx][skip_coeff]++;
   }
   return skip_coeff;
@@ -379,9 +379,9 @@ static int read_inter_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
     return pred_segment_id;
 
   if (cm->temporal_update) {
-    const vp9_prob pred_prob = vp9_get_pred_prob(cm, xd, PRED_SEG_ID);
+    const vp9_prob pred_prob = vp9_get_pred_prob_seg_id(cm, xd);
     const int pred_flag = vp9_read(r, pred_prob);
-    vp9_set_pred_flag(xd, bsize, PRED_SEG_ID, pred_flag);
+    vp9_set_pred_flag_seg_id(xd, bsize, pred_flag);
     segment_id = pred_flag ? pred_segment_id
                            : read_segment_id(r, xd);
   } else {
@@ -406,9 +406,9 @@ static INLINE INTERPOLATIONFILTERTYPE read_switchable_filter_type(
     VP9D_COMP *pbi, vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
-  const vp9_prob *probs = vp9_get_pred_probs(cm, xd, PRED_SWITCHABLE_INTERP);
+  const vp9_prob *probs = vp9_get_pred_probs_switchable_interp(cm, xd);
   const int index = treed_read(r, vp9_switchable_interp_tree, probs);
-  const int ctx = vp9_get_pred_context(cm, xd, PRED_SWITCHABLE_INTERP);
+  const int ctx = vp9_get_pred_context_switchable_interp(cm, xd);
   ++cm->fc.switchable_interp_count[ctx][index];
   return vp9_switchable_interp[index];
 }

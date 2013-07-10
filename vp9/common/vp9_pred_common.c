@@ -16,8 +16,64 @@
 #include "vp9/common/vp9_seg_common.h"
 #include "vp9/common/vp9_treecoder.h"
 
-// TBD prediction functions for various bitstream signals
+void vp9_set_pred_flag_seg_id(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
+                       unsigned char pred_flag) {
+  const int mis = xd->mode_info_stride;
+  const int bh = 1 << mi_height_log2(bsize);
+  const int bw = 1 << mi_width_log2(bsize);
+#define sub(a, b) (b) < 0 ? (a) + (b) : (a)
+  const int x_mis = sub(bw, xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE));
+  const int y_mis = sub(bh, xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE));
+#undef sub
+  int x, y;
 
+  for (y = 0; y < y_mis; y++)
+    for (x = 0; x < x_mis; x++)
+      xd->mode_info_context[y * mis + x].mbmi.seg_id_predicted = pred_flag;
+}
+// Returns a context number for the given MB prediction signal
+unsigned char vp9_get_pred_context_switchable_interp(const VP9_COMMON *cm,
+                                                     const MACROBLOCKD *xd) {
+  int pred_context;
+  const MODE_INFO * const mi = xd->mode_info_context;
+  const MODE_INFO * const above_mi = mi - cm->mode_info_stride;
+  const MODE_INFO * const left_mi = mi - 1;
+  const int left_in_image = xd->left_available && left_mi->mbmi.mb_in_image;
+  const int above_in_image = xd->up_available && above_mi->mbmi.mb_in_image;
+  // Note:
+  // The mode info data structure has a one element border above and to the
+  // left of the entries correpsonding to real macroblocks.
+  // The prediction flags in these dummy entries are initialised to 0.
+  // left
+  const int left_mv_pred = is_inter_mode(left_mi->mbmi.mode);
+  const int left_interp =
+      left_in_image && left_mv_pred ?
+          vp9_switchable_interp_map[left_mi->mbmi.interp_filter] :
+          VP9_SWITCHABLE_FILTERS;
+
+  // above
+  const int above_mv_pred = is_inter_mode(above_mi->mbmi.mode);
+  const int above_interp =
+      above_in_image && above_mv_pred ?
+          vp9_switchable_interp_map[above_mi->mbmi.interp_filter] :
+          VP9_SWITCHABLE_FILTERS;
+
+  assert(left_interp != -1);
+  assert(above_interp != -1);
+
+  if (left_interp == above_interp)
+    pred_context = left_interp;
+  else if (left_interp == VP9_SWITCHABLE_FILTERS
+      && above_interp != VP9_SWITCHABLE_FILTERS)
+    pred_context = above_interp;
+  else if (left_interp != VP9_SWITCHABLE_FILTERS
+      && above_interp == VP9_SWITCHABLE_FILTERS)
+    pred_context = left_interp;
+  else
+    pred_context = VP9_SWITCHABLE_FILTERS;
+
+  return pred_context;
+}
 // Returns a context number for the given MB prediction signal
 unsigned char vp9_get_pred_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                    PRED_ID pred_id) {
@@ -32,47 +88,6 @@ unsigned char vp9_get_pred_context(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   // left of the entries correpsonding to real macroblocks.
   // The prediction flags in these dummy entries are initialised to 0.
   switch (pred_id) {
-    case PRED_SEG_ID:
-      pred_context = above_mi->mbmi.seg_id_predicted;
-      if (xd->left_available)
-        pred_context += left_mi->mbmi.seg_id_predicted;
-      break;
-
-    case PRED_MBSKIP:
-      pred_context = above_mi->mbmi.mb_skip_coeff;
-      if (xd->left_available)
-        pred_context += left_mi->mbmi.mb_skip_coeff;
-      break;
-
-    case PRED_SWITCHABLE_INTERP: {
-      // left
-      const int left_mv_pred = is_inter_mode(left_mi->mbmi.mode);
-      const int left_interp = left_in_image && left_mv_pred ?
-                    vp9_switchable_interp_map[left_mi->mbmi.interp_filter] :
-                    VP9_SWITCHABLE_FILTERS;
-
-      // above
-      const int above_mv_pred = is_inter_mode(above_mi->mbmi.mode);
-      const int above_interp = above_in_image && above_mv_pred ?
-                    vp9_switchable_interp_map[above_mi->mbmi.interp_filter] :
-                    VP9_SWITCHABLE_FILTERS;
-
-      assert(left_interp != -1);
-      assert(above_interp != -1);
-
-      if (left_interp == above_interp)
-        pred_context = left_interp;
-      else if (left_interp == VP9_SWITCHABLE_FILTERS &&
-               above_interp != VP9_SWITCHABLE_FILTERS)
-         pred_context = above_interp;
-      else if (left_interp != VP9_SWITCHABLE_FILTERS &&
-               above_interp == VP9_SWITCHABLE_FILTERS)
-        pred_context = left_interp;
-      else
-        pred_context = VP9_SWITCHABLE_FILTERS;
-
-      break;
-    }
 
     case PRED_INTRA_INTER: {
       if (above_in_image && left_in_image) {  // both edges available
@@ -393,10 +408,6 @@ vp9_prob vp9_get_pred_prob(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int pred_context = vp9_get_pred_context(cm, xd, pred_id);
 
   switch (pred_id) {
-    case PRED_SEG_ID:
-      return cm->segment_pred_probs[pred_context];
-    case PRED_MBSKIP:
-      return cm->fc.mbskip_probs[pred_context];
     case PRED_INTRA_INTER:
       return cm->fc.intra_inter_prob[pred_context];
     case PRED_COMP_INTER_INTER:
@@ -421,8 +432,6 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *cm, const MACROBLOCKD * xd,
   const int pred_context = vp9_get_pred_context(cm, xd, pred_id);
 
   switch (pred_id) {
-    case PRED_SWITCHABLE_INTERP:
-      return &cm->fc.switchable_interp_prob[pred_context][0];
 
     case PRED_TX_SIZE:
       if (mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
@@ -443,10 +452,6 @@ const vp9_prob *vp9_get_pred_probs(const VP9_COMMON *cm, const MACROBLOCKD * xd,
 unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd,
                                 PRED_ID pred_id) {
   switch (pred_id) {
-    case PRED_SEG_ID:
-      return xd->mode_info_context->mbmi.seg_id_predicted;
-    case PRED_MBSKIP:
-      return xd->mode_info_context->mbmi.mb_skip_coeff;
     default:
       assert(0);
       return 0;  // *** add error trap code.
@@ -455,7 +460,7 @@ unsigned char vp9_get_pred_flag(const MACROBLOCKD *const xd,
 
 // This function sets the status of the given prediction signal.
 // I.e. is the predicted value for the given signal correct.
-void vp9_set_pred_flag(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize, PRED_ID pred_id,
+void vp9_set_pred_flag_mbskip(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
                        unsigned char pred_flag) {
   const int mis = xd->mode_info_stride;
   const int bh = 1 << mi_height_log2(bsize);
@@ -466,24 +471,9 @@ void vp9_set_pred_flag(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize, PRED_ID pred_id,
 #undef sub
   int x, y;
 
-  switch (pred_id) {
-    case PRED_SEG_ID:
-      for (y = 0; y < y_mis; y++)
-        for (x = 0; x < x_mis; x++)
-          xd->mode_info_context[y * mis + x].mbmi.seg_id_predicted = pred_flag;
-      break;
-
-    case PRED_MBSKIP:
-      for (y = 0; y < y_mis; y++)
-        for (x = 0; x < x_mis; x++)
-          xd->mode_info_context[y * mis + x].mbmi.mb_skip_coeff = pred_flag;
-      break;
-
-    default:
-      assert(0);
-      // *** add error trap code.
-      break;
-  }
+  for (y = 0; y < y_mis; y++)
+    for (x = 0; x < x_mis; x++)
+      xd->mode_info_context[y * mis + x].mbmi.mb_skip_coeff = pred_flag;
 }
 
 int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
