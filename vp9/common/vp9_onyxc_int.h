@@ -108,6 +108,12 @@ typedef struct frame_contexts {
   nmv_context nmvc;
   nmv_context pre_nmvc;
   nmv_context_counts NMVcount;
+
+#if CONFIG_FILTERINTRA
+  vp9_prob filterintra_prob;
+  vp9_prob pre_filterintra_prob;
+  unsigned int filterintra_count[2];
+#endif
 } FRAME_CONTEXT;
 
 typedef enum {
