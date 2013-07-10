@@ -249,6 +249,7 @@ typedef struct {
   // only if the best intra mode so far is one
   // of the two directional modes nearest to each.
   int conditional_oblique_intramodes;
+  int reduced_compound_prediction;
 } SPEED_FEATURES;
 
 enum BlockSize {
