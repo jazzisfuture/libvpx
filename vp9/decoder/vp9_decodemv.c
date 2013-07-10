@@ -379,9 +379,9 @@ static int read_inter_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
     return pred_segment_id;
 
   if (cm->temporal_update) {
-    const vp9_prob pred_prob = vp9_get_pred_prob(cm, xd, PRED_SEG_ID);
+    const vp9_prob pred_prob = vp9_get_pred_prob_seg_id(cm, xd);
     const int pred_flag = vp9_read(r, pred_prob);
-    vp9_set_pred_flag(xd, bsize, PRED_SEG_ID, pred_flag);
+    vp9_set_pred_flag_seg_id(xd, bsize, pred_flag);
     segment_id = pred_flag ? pred_segment_id
                            : read_segment_id(r, xd);
   } else {
