@@ -323,29 +323,15 @@ typedef struct macroblockd {
 
 } MACROBLOCKD;
 
-static int *get_sb_index(MACROBLOCKD *xd, BLOCK_SIZE_TYPE subsize) {
-  switch (subsize) {
-    case BLOCK_SIZE_SB64X64:
-    case BLOCK_SIZE_SB64X32:
-    case BLOCK_SIZE_SB32X64:
-    case BLOCK_SIZE_SB32X32:
-      return &xd->sb_index;
-    case BLOCK_SIZE_SB32X16:
-    case BLOCK_SIZE_SB16X32:
-    case BLOCK_SIZE_MB16X16:
-      return &xd->mb_index;
-    case BLOCK_SIZE_SB16X8:
-    case BLOCK_SIZE_SB8X16:
-    case BLOCK_SIZE_SB8X8:
-      return &xd->b_index;
-    case BLOCK_SIZE_SB8X4:
-    case BLOCK_SIZE_SB4X8:
-    case BLOCK_SIZE_AB4X4:
-      return &xd->ab_index;
-    default:
-      assert(0);
-      return NULL;
-  }
+static INLINE int *get_sb_index(MACROBLOCKD *xd, BLOCK_SIZE_TYPE subsize) {
+  if (subsize >= BLOCK_SIZE_SB32X32)
+    return &xd->sb_index;
+  else if (subsize >= BLOCK_SIZE_MB16X16)
+    return &xd->mb_index;
+  else if (subsize >= BLOCK_SIZE_SB8X8)
+    return &xd->b_index;
+  else
+    return &xd->ab_index;
 }
 
 static INLINE void update_partition_context(MACROBLOCKD *xd,
@@ -389,8 +375,8 @@ static INLINE int partition_plane_context(MACROBLOCKD *xd,
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
 }
 
-static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
-                                   PARTITION_TYPE partition) {
+static INLINE BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
+                                          PARTITION_TYPE partition) {
   BLOCK_SIZE_TYPE subsize = bsize;
   switch (partition) {
     case PARTITION_NONE:
@@ -474,31 +460,17 @@ static void setup_block_dptrs(MACROBLOCKD *xd, int ss_x, int ss_y) {
 }
 
 
-static TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
+static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
   const TX_SIZE size = mbmi->txfm_size;
 
-  switch (mbmi->sb_type) {
-    case BLOCK_SIZE_SB64X64:
-      return size;
-    case BLOCK_SIZE_SB64X32:
-    case BLOCK_SIZE_SB32X64:
-    case BLOCK_SIZE_SB32X32:
-      if (size == TX_32X32)
-        return TX_16X16;
-      else
-        return size;
-    case BLOCK_SIZE_SB32X16:
-    case BLOCK_SIZE_SB16X32:
-    case BLOCK_SIZE_MB16X16:
-      if (size == TX_16X16)
-        return TX_8X8;
-      else
-        return size;
-    default:
-      return TX_4X4;
-  }
-
-  return size;
+  if (mbmi->sb_type == BLOCK_SIZE_SB64X64)
+    return size;
+  else if (mbmi->sb_type >= BLOCK_SIZE_SB32X32)
+    return size == TX_32X32 ? TX_16X16 : size;
+  else if (mbmi->sb_type >= BLOCK_SIZE_MB16X16)
+    return size == TX_16X16 ? TX_8X8 : size;
+  else
+    return TX_4X4;
 }
 
 struct plane_block_idx {
