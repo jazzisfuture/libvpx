@@ -146,12 +146,24 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
   const int tx_ib = raster_block >> tx_size;
   const int mode = plane == 0 ? mi->mbmi.mode
                               : mi->mbmi.uv_mode;
+#if CONFIG_FILTERINTRA
+  int fbit = 0;
+#endif
 
   if (plane == 0 && mi->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
     assert(bsize == BLOCK_SIZE_SB8X8);
     b_mode = mi->bmi[raster_block].as_mode;
+#if CONFIG_FILTERINTRA
+    fbit = mi->bmi[raster_block].filterbit;
+#endif
   } else {
     b_mode = mode;
+#if CONFIG_FILTERINTRA
+    if ((plane == 0) && (tx_size <= TX_4X4))
+      fbit = mi->mbmi.filterbit;
+    else if ((plane != 0) && (tx_size <= TX_4X4))
+      fbit = mi->mbmi.uv_filterbit;
+#endif
   }
 
   if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0)
@@ -159,6 +171,9 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
 
   plane_b_size = b_width_log2(bsize) - pd->subsampling_x;
   vp9_predict_intra_block(xd, tx_ib, plane_b_size, tx_size, b_mode,
+#if CONFIG_FILTERINTRA
+                          fbit,
+#endif
                           dst, pd->dst.stride,
                           dst, pd->dst.stride);
 
@@ -634,6 +649,9 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_copy(fc->pre_tx_probs_16x16p, fc->tx_probs_16x16p);
   vp9_copy(fc->pre_tx_probs_32x32p, fc->tx_probs_32x32p);
   vp9_copy(fc->pre_mbskip_probs, fc->mbskip_probs);
+#if CONFIG_FILTERINTRA
+  fc->pre_filterintra_prob = fc->filterintra_prob;
+#endif
 
   vp9_zero(fc->coef_counts);
   vp9_zero(fc->eob_branch_counts);
@@ -651,6 +669,9 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->tx_count_16x16p);
   vp9_zero(fc->tx_count_32x32p);
   vp9_zero(fc->mbskip_count);
+#if CONFIG_FILTERINTRA
+  vp9_zero(fc->filterintra_count);
+#endif
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {

@@ -220,6 +220,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
   vp9_copy(cm->fc.tx_probs_16x16p, vp9_default_tx_probs_16x16p);
   vp9_copy(cm->fc.tx_probs_8x8p, vp9_default_tx_probs_8x8p);
   vp9_copy(cm->fc.mbskip_probs, vp9_default_mbskip_probs);
+#if CONFIG_FILTERINTRA
+  cm->fc.filterintra_prob = FBIT0_PROB;
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {
@@ -458,6 +461,10 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < MBSKIP_CONTEXTS; ++i)
     fc->mbskip_probs[i] = update_mode_ct2(fc->pre_mbskip_probs[i],
                                           fc->mbskip_count[i]);
+#if CONFIG_FILTERINTRA
+  fc->filterintra_prob =
+      update_mode_ct2(fc->pre_filterintra_prob, fc->filterintra_count);
+#endif
 }
 
 static void set_default_lf_deltas(MACROBLOCKD *xd) {
