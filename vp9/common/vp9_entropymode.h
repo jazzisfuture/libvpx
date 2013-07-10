@@ -40,9 +40,6 @@ extern struct vp9_token vp9_sb_mv_ref_encoding_array[VP9_INTER_MODES];
 // probability models for partition information
 extern const vp9_tree_index  vp9_partition_tree[];
 extern struct vp9_token vp9_partition_encodings[PARTITION_TYPES];
-extern const vp9_prob vp9_partition_probs[NUM_FRAME_TYPES]
-                                         [NUM_PARTITION_CONTEXTS]
-                                         [PARTITION_TYPES - 1];
 
 void vp9_entropy_mode_init(void);
 
@@ -76,16 +73,6 @@ extern const  vp9_tree_index vp9_switchable_interp_tree
                   [2 * (VP9_SWITCHABLE_FILTERS - 1)];
 
 extern struct vp9_token vp9_switchable_interp_encodings[VP9_SWITCHABLE_FILTERS];
-
-extern const  vp9_prob vp9_switchable_interp_prob[VP9_SWITCHABLE_FILTERS + 1]
-                                                 [VP9_SWITCHABLE_FILTERS - 1];
-
-extern const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
-                                                 [TX_SIZE_MAX_SB - 1];
-extern const vp9_prob vp9_default_tx_probs_16x16p[TX_SIZE_CONTEXTS]
-                                                 [TX_SIZE_MAX_SB - 2];
-extern const vp9_prob vp9_default_tx_probs_8x8p[TX_SIZE_CONTEXTS]
-                                               [TX_SIZE_MAX_SB - 3];
 
 extern void tx_counts_to_branch_counts_32x32(unsigned int *tx_count_32x32p,
                                              unsigned int (*ct_32x32p)[2]);

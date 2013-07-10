@@ -50,8 +50,8 @@ static const vp9_prob default_if_uv_probs[VP9_INTRA_MODES]
   { 101,  21, 107, 181, 192, 103,  19,  67, 125 } /* y = tm */
 };
 
-const vp9_prob vp9_partition_probs[NUM_FRAME_TYPES][NUM_PARTITION_CONTEXTS]
-                                  [PARTITION_TYPES - 1] = {
+const vp9_prob default_partition_probs[NUM_FRAME_TYPES][NUM_PARTITION_CONTEXTS]
+                                      [PARTITION_TYPES - 1] = {
   { /* frame_type = keyframe */
     /* 8x8 -> 4x4 */
     { 158,  97,  94 } /* a/l both not split */,
@@ -159,18 +159,18 @@ static const vp9_prob default_single_ref_p[REF_CONTEXTS][2] = {
   { 238, 247 }
 };
 
-const vp9_prob vp9_default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
-                                          [TX_SIZE_MAX_SB - 1] = {
+const vp9_prob default_tx_probs_32x32p[TX_SIZE_CONTEXTS]
+                                      [TX_SIZE_MAX_SB - 1] = {
   { 3, 136, 37, },
   { 5, 52, 13, },
 };
-const vp9_prob vp9_default_tx_probs_16x16p[TX_SIZE_CONTEXTS]
-                                          [TX_SIZE_MAX_SB - 2] = {
+const vp9_prob default_tx_probs_16x16p[TX_SIZE_CONTEXTS]
+                                      [TX_SIZE_MAX_SB - 2] = {
   { 20, 152, },
   { 15, 101, },
 };
-const vp9_prob vp9_default_tx_probs_8x8p[TX_SIZE_CONTEXTS]
-                                        [TX_SIZE_MAX_SB - 3] = {
+const vp9_prob default_tx_probs_8x8p[TX_SIZE_CONTEXTS]
+                                    [TX_SIZE_MAX_SB - 3] = {
   { 100, },
   { 66, },
 };
@@ -202,7 +202,7 @@ void tx_counts_to_branch_counts_8x8(unsigned int *tx_count_8x8p,
   ct_8x8p[0][1] = tx_count_8x8p[TX_8X8];
 }
 
-const vp9_prob vp9_default_mbskip_probs[MBSKIP_CONTEXTS] = {
+const vp9_prob default_mbskip_probs[MBSKIP_CONTEXTS] = {
   192, 128, 64
 };
 
@@ -210,16 +210,16 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
   vp9_copy(cm->fc.uv_mode_prob, default_if_uv_probs);
   vp9_copy(cm->kf_uv_mode_prob, default_kf_uv_probs);
   vp9_copy(cm->fc.y_mode_prob, default_if_y_probs);
-  vp9_copy(cm->fc.switchable_interp_prob, vp9_switchable_interp_prob);
-  vp9_copy(cm->fc.partition_prob, vp9_partition_probs);
+  vp9_copy(cm->fc.switchable_interp_prob, default_switchable_interp_prob);
+  vp9_copy(cm->fc.partition_prob, default_partition_probs);
   vp9_copy(cm->fc.intra_inter_prob, default_intra_inter_p);
   vp9_copy(cm->fc.comp_inter_prob, default_comp_inter_p);
   vp9_copy(cm->fc.comp_ref_prob, default_comp_ref_p);
   vp9_copy(cm->fc.single_ref_prob, default_single_ref_p);
-  vp9_copy(cm->fc.tx_probs_32x32p, vp9_default_tx_probs_32x32p);
-  vp9_copy(cm->fc.tx_probs_16x16p, vp9_default_tx_probs_16x16p);
-  vp9_copy(cm->fc.tx_probs_8x8p, vp9_default_tx_probs_8x8p);
-  vp9_copy(cm->fc.mbskip_probs, vp9_default_mbskip_probs);
+  vp9_copy(cm->fc.tx_probs_32x32p, default_tx_probs_32x32p);
+  vp9_copy(cm->fc.tx_probs_16x16p, default_tx_probs_16x16p);
+  vp9_copy(cm->fc.tx_probs_8x8p, default_tx_probs_8x8p);
+  vp9_copy(cm->fc.mbskip_probs, default_mbskip_probs);
 }
 
 const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {
@@ -229,9 +229,10 @@ const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {
 struct vp9_token vp9_switchable_interp_encodings[VP9_SWITCHABLE_FILTERS];
 const INTERPOLATIONFILTERTYPE vp9_switchable_interp[VP9_SWITCHABLE_FILTERS] = {
   EIGHTTAP, EIGHTTAP_SMOOTH, EIGHTTAP_SHARP};
-const int vp9_switchable_interp_map[SWITCHABLE+1] = {1, 0, 2, -1, -1};
-const vp9_prob vp9_switchable_interp_prob [VP9_SWITCHABLE_FILTERS+1]
-                                          [VP9_SWITCHABLE_FILTERS-1] = {
+const int vp9_switchable_interp_map[SWITCHABLE + 1] = {1, 0, 2, -1, -1};
+
+const vp9_prob default_switchable_interp_prob[VP9_SWITCHABLE_FILTERS+1]
+                                             [VP9_SWITCHABLE_FILTERS-1] = {
   { 235, 162, },
   { 36, 255, },
   { 34, 3, },
