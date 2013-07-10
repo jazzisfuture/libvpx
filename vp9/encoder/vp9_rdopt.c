@@ -290,47 +290,16 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
 }
 
 static enum BlockSize get_block_size(int bw, int bh) {
-  if (bw == 4 && bh == 4)
-    return BLOCK_4X4;
-
-  if (bw == 4 && bh == 8)
-    return BLOCK_4X8;
-
-  if (bw == 8 && bh == 4)
-    return BLOCK_8X4;
-
-  if (bw == 8 && bh == 8)
-    return BLOCK_8X8;
-
-  if (bw == 8 && bh == 16)
-    return BLOCK_8X16;
-
-  if (bw == 16 && bh == 8)
-    return BLOCK_16X8;
-
-  if (bw == 16 && bh == 16)
-    return BLOCK_16X16;
-
-  if (bw == 32 && bh == 32)
-    return BLOCK_32X32;
-
-  if (bw == 32 && bh == 16)
-    return BLOCK_32X16;
-
-  if (bw == 16 && bh == 32)
-    return BLOCK_16X32;
-
-  if (bw == 64 && bh == 32)
-    return BLOCK_64X32;
-
-  if (bw == 32 && bh == 64)
-    return BLOCK_32X64;
-
-  if (bw == 64 && bh == 64)
-    return BLOCK_64X64;
-
-  assert(0);
-  return -1;
+  static const int log2_bsizeby4_lookup[9] = { 0, 1, 2, 2, 3, 3, 3, 3, 4 };
+  static const enum BlockSize bsizelookup[5][5] = {
+    {BLOCK_4X4,   BLOCK_4X8,   BLOCK_4X8,   BLOCK_4X8,   BLOCK_4X8},
+    {BLOCK_8X4,   BLOCK_8X8,   BLOCK_8X16,  BLOCK_8X16,  BLOCK_8X16},
+    {BLOCK_16X8,  BLOCK_16X8,  BLOCK_16X16, BLOCK_16X32, BLOCK_16X32},
+    {BLOCK_32X16, BLOCK_32X16, BLOCK_32X16, BLOCK_32X32, BLOCK_32X64},
+    {BLOCK_64X32, BLOCK_64X32, BLOCK_64X32, BLOCK_64X32, BLOCK_64X64}
+  };
+  return bsizelookup[log2_bsizeby4_lookup[bw >> 3]]
+                    [log2_bsizeby4_lookup[bh >> 3]];
 }
 
 static enum BlockSize get_plane_block_size(BLOCK_SIZE_TYPE bsize,
@@ -339,27 +308,33 @@ static enum BlockSize get_plane_block_size(BLOCK_SIZE_TYPE bsize,
                         plane_block_height(bsize, pd));
 }
 
-static double linear_interpolate(double x, int ntab, int inv_step,
-                                 const double *tab) {
+static inline void linear_interpolate2(double x, int ntab, int inv_step,
+                                       const double *tab1, const double *tab2,
+                                       double *v1, double *v2) {
   double y = x * inv_step;
   int d = (int) y;
   if (d >= ntab - 1) {
-    return tab[ntab - 1];
+    *v1 = tab1[ntab - 1];
+    *v2 = tab2[ntab - 1];
   } else {
     double a = y - d;
-    return tab[d] * (1 - a) + tab[d + 1] * a;
+    *v1 = tab1[d] * (1 - a) + tab1[d + 1] * a;
+    *v2 = tab2[d] * (1 - a) + tab2[d + 1] * a;
   }
 }
 
-static double model_rate_norm(double x) {
+static void model_rd_norm(double x, double *R, double *D) {
+  static const int inv_tab_step = 8;
+  static const int tab_size = 120;
+  // NOTE: The tables below must be of the same size
+  //
   // Normalized rate
-  // This function models the rate for a Laplacian source
+  // This table models the rate for a Laplacian source
   // source with given variance when quantized with a uniform quantizer
   // with given stepsize. The closed form expression is:
   // Rn(x) = H(sqrt(r)) + sqrt(r)*[1 + H(r)/(1 - r)],
   // where r = exp(-sqrt(2) * x) and x = qpstep / sqrt(variance),
   // and H(x) is the binary entropy function.
-  static const int inv_rate_tab_step = 8;
   static const double rate_tab[] = {
     64.00, 4.944, 3.949, 3.372, 2.966, 2.655, 2.403, 2.194,
     2.014, 1.858, 1.720, 1.596, 1.485, 1.384, 1.291, 1.206,
@@ -377,20 +352,13 @@ static double model_rate_norm(double x) {
     0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001,
     0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.000,
   };
-  const int rate_tab_num = sizeof(rate_tab)/sizeof(rate_tab[0]);
-  assert(x >= 0.0);
-  return linear_interpolate(x, rate_tab_num, inv_rate_tab_step, rate_tab);
-}
-
-static double model_dist_norm(double x) {
   // Normalized distortion
-  // This function models the normalized distortion for a Laplacian source
+  // This table models the normalized distortion for a Laplacian source
   // source with given variance when quantized with a uniform quantizer
   // with given stepsize. The closed form expression is:
   // Dn(x) = 1 - 1/sqrt(2) * x / sinh(x/sqrt(2))
   // where x = qpstep / sqrt(variance)
   // Note the actual distortion is Dn * variance.
-  static const int inv_dist_tab_step = 8;
   static const double dist_tab[] = {
     0.000, 0.001, 0.005, 0.012, 0.021, 0.032, 0.045, 0.061,
     0.079, 0.098, 0.119, 0.142, 0.166, 0.190, 0.216, 0.242,
@@ -408,9 +376,14 @@ static double model_dist_norm(double x) {
     0.998, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 0.999,
     0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 0.999, 1.000,
   };
-  const int dist_tab_num = sizeof(dist_tab)/sizeof(dist_tab[0]);
+  /*
+  assert(sizeof(rate_tab) == tab_size * sizeof(rate_tab[0]);
+  assert(sizeof(dist_tab) == tab_size * sizeof(dist_tab[0]);
+  assert(sizeof(rate_tab) == sizeof(dist_tab));
+  */
   assert(x >= 0.0);
-  return linear_interpolate(x, dist_tab_num, inv_dist_tab_step, dist_tab);
+  linear_interpolate2(x, tab_size, inv_tab_step,
+                      rate_tab, dist_tab, R, D);
 }
 
 static void model_rd_from_var_lapndz(int var, int n, int qstep,
@@ -429,14 +402,9 @@ static void model_rd_from_var_lapndz(int var, int n, int qstep,
     double D, R;
     double s2 = (double) var / n;
     double x = qstep / sqrt(s2);
-    D = model_dist_norm(x);
-    R = model_rate_norm(x);
-    if (R < 0) {
-      R = 0;
-      D = var;
-    }
-    *rate = (n * R * 256 + 0.5);
-    *dist = (n * D * s2 + 0.5);
+    model_rd_norm(x, &R, &D);
+    *rate = ((n << 8) * R + 0.5);
+    *dist = (var * D + 0.5);
   }
   vp9_clear_system_state();
 }
@@ -864,6 +832,7 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
 static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
                                      int *rate, int64_t *distortion,
                                      int *skip, int64_t *sse,
+                                     int64_t ref_best_rd,
                                      BLOCK_SIZE_TYPE bs) {
   const TX_SIZE max_txfm_size = TX_32X32
       - (bs < BLOCK_SIZE_SB32X32) - (bs < BLOCK_SIZE_MB16X16);
@@ -885,7 +854,7 @@ static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->txfm_size = TX_4X4;
   }
   super_block_yrd_for_txfm(cm, x, rate, distortion, skip,
-                           &sse[mbmi->txfm_size], INT64_MAX, bs,
+                           &sse[mbmi->txfm_size], ref_best_rd, bs,
                            mbmi->txfm_size);
   cpi->txfm_stepdown_count[0]++;
 }
@@ -998,6 +967,7 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
                                           int (*r)[2], int *rate,
                                           int64_t *d, int64_t *distortion,
                                           int *s, int *skip, int64_t *sse,
+                                          int64_t ref_best_rd,
                                           BLOCK_SIZE_TYPE bs,
                                           int *model_used) {
   const TX_SIZE max_txfm_size = TX_32X32
@@ -1072,7 +1042,7 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
     // Actually encode using the chosen mode if a model was used, but do not
     // update the r, d costs
     super_block_yrd_for_txfm(cm, x, rate, distortion, skip,
-                             &sse[mbmi->txfm_size], INT64_MAX,
+                             &sse[mbmi->txfm_size], ref_best_rd,
                              bs, mbmi->txfm_size);
   } else {
     *distortion = d[mbmi->txfm_size];
@@ -1115,7 +1085,8 @@ static void super_block_yrd(VP9_COMP *cpi,
       (cpi->sf.tx_size_search_method != USE_FULL_RD &&
        mbmi->ref_frame[0] == INTRA_FRAME)) {
     vpx_memset(txfm_cache, 0, NB_TXFM_MODES * sizeof(int64_t));
-    choose_largest_txfm_size(cpi, x, rate, distortion, skip, sse, bs);
+    choose_largest_txfm_size(cpi, x, rate, distortion, skip, sse,
+                             ref_best_rd, bs);
     if (psse)
       *psse = sse[mbmi->txfm_size];
     return;
@@ -1159,7 +1130,7 @@ static void super_block_yrd(VP9_COMP *cpi,
                                &sse[TX_4X4], INT64_MAX, bs, TX_4X4);
     }
     choose_txfm_size_from_modelrd(cpi, x, r, rate, d, distortion, s,
-                                  skip, sse, bs, model_used);
+                                  skip, sse, ref_best_rd, bs, model_used);
   } else {
     if (bs >= BLOCK_SIZE_SB32X32)
       super_block_yrd_for_txfm(cm, x, &r[TX_32X32][0], &d[TX_32X32],
