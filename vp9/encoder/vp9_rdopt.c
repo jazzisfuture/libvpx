@@ -1641,7 +1641,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                        int64_t best_yrd,
                                        int i,
                                        int *labelyrate,
-                                       int64_t *distortion,
+                                       int64_t *distortion, int64_t *sse,
                                        ENTROPY_CONTEXT *ta,
                                        ENTROPY_CONTEXT *tl) {
   int k;
@@ -1666,7 +1666,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   uint8_t* const dst = raster_block_offset_uint8(xd, BLOCK_SIZE_SB8X8, 0, i,
                                                  xd->plane[0].dst.buf,
                                                  xd->plane[0].dst.stride);
-  int64_t thisdistortion = 0;
+  int64_t thisdistortion = 0, thissse = 0;
   int thisrate = 0;
 
   vp9_build_inter_predictor(pre,
@@ -1710,6 +1710,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
       thisdistortion += vp9_block_error(coeff,
                                         BLOCK_OFFSET(xd->plane[0].dqcoeff,
                                                      k, 16), 16, &ssz);
+      thissse += ssz;
       thisrate += cost_coeffs(cm, x, 0, k, PLANE_TYPE_Y_WITH_DC,
                               ta + (k & 1),
                               tl + (k >> 1), TX_4X4, 16);
@@ -1717,6 +1718,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   }
   *distortion += thisdistortion;
   *labelyrate += thisrate;
+  *sse = thissse >> 2;
 
   *distortion >>= 2;
   return RDCOST(x->rdmult, x->rddiv, *labelyrate, *distortion);
@@ -1729,6 +1731,7 @@ typedef struct {
   int64_t segment_rd;
   int r;
   int64_t d;
+  int64_t sse;
   int segment_yrate;
   MB_PREDICTION_MODE modes[4];
   int_mv mvs[4], second_mvs[4];
@@ -1777,7 +1780,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                                     int_mv seg_mvs[4][MAX_REF_FRAMES],
                                     int mi_row, int mi_col) {
   int i, j, br = 0, rate = 0, sbr = 0, idx, idy;
-  int64_t bd = 0, sbd = 0;
+  int64_t bd = 0, sbd = 0, sbsse = 0, bsse = 0;
   MB_PREDICTION_MODE this_mode;
   MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
   const int label_count = 4;
@@ -1830,7 +1833,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
       // search for the best motion vector on this segment
       for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
         int64_t this_rd;
-        int64_t distortion;
+        int64_t distortion, sse;
         int labelyrate;
         ENTROPY_CONTEXT t_above_s[4], t_left_s[4];
         const struct buf_2d orig_src = x->plane[0].src;
@@ -1953,14 +1956,15 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
 
         this_rd = encode_inter_mb_segment(cpi, x,
                                           bsi->segment_rd - this_segment_rd,
-                                          i, &labelyrate,
-                                          &distortion, t_above_s, t_left_s);
+                                          i, &labelyrate, &distortion, &sse,
+                                          t_above_s, t_left_s);
         this_rd += RDCOST(x->rdmult, x->rddiv, rate, 0);
         rate += labelyrate;
 
         if (this_rd < best_label_rd) {
           sbr = rate;
           sbd = distortion;
+          sbsse = sse;
           bestlabelyrate = labelyrate;
           mode_selected = this_mode;
           best_label_rd = this_rd;
@@ -1980,6 +1984,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
 
       br += sbr;
       bd += sbd;
+      bsse += sbsse;
       segmentyrate += bestlabelyrate;
       this_segment_rd += best_label_rd;
 
@@ -2003,6 +2008,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
   bsi->d = bd;
   bsi->segment_yrate = segmentyrate;
   bsi->segment_rd = this_segment_rd;
+  bsi->sse = bsse;
 
   // store everything needed to come back to this!!
   for (i = 0; i < 4; i++) {
@@ -2021,7 +2027,8 @@ static int64_t rd_pick_best_mbsegmentation(VP9_COMP *cpi, MACROBLOCK *x,
                                            int *returntotrate,
                                            int *returnyrate,
                                            int64_t *returndistortion,
-                                           int *skippable, int mvthresh,
+                                           int *skippable, int64_t *psse,
+                                           int mvthresh,
                                            int_mv seg_mvs[4][MAX_REF_FRAMES],
                                            int mi_row, int mi_col) {
   int i;
@@ -2070,6 +2077,7 @@ static int64_t rd_pick_best_mbsegmentation(VP9_COMP *cpi, MACROBLOCK *x,
   *returndistortion = bsi.d;
   *returnyrate = bsi.segment_yrate;
   *skippable = vp9_sby_is_skippable(&x->e_mbd, BLOCK_SIZE_SB8X8);
+  *psse = bsi.sse;
   mbmi->mode = bsi.modes[3];
 
   return bsi.segment_rd;
@@ -3350,7 +3358,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       int64_t this_rd_thresh;
       int64_t tmp_rd, tmp_best_rd = INT64_MAX, tmp_best_rdu = INT64_MAX;
       int tmp_best_rate = INT_MAX, tmp_best_ratey = INT_MAX;
-      int64_t tmp_best_distortion = INT_MAX;
+      int64_t tmp_best_distortion = INT_MAX, tmp_best_sse, uv_sse;
       int tmp_best_skippable = 0;
       int switchable_filter_index;
       int_mv *second_ref = is_comp_pred ?
@@ -3393,7 +3401,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                      second_ref,
                      best_yrd,
                      &rate, &rate_y, &distortion,
-                     &skippable,
+                     &skippable, &total_sse,
                      (int)this_rd_thresh, seg_mvs,
                      mi_row, mi_col);
         if (tmp_rd == INT64_MAX) {
@@ -3419,6 +3427,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
               tmp_best_rate = rate;
               tmp_best_ratey = rate_y;
               tmp_best_distortion = distortion;
+              tmp_best_sse = total_sse;
               tmp_best_skippable = skippable;
               tmp_best_mbmode = *mbmi;
               tmp_best_partition = *x->partition_info;
@@ -3452,7 +3461,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                      second_ref,
                      best_yrd,
                      &rate, &rate_y, &distortion,
-                     &skippable,
+                     &skippable, &total_sse,
                      (int)this_rd_thresh, seg_mvs,
                      mi_row, mi_col);
         if (tmp_rd == INT64_MAX)
@@ -3463,6 +3472,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           tmp_best_rdu -= RDCOST(x->rdmult, x->rddiv, rs, 0);
         }
         tmp_rd = tmp_best_rdu;
+        total_sse = tmp_best_sse;
         rate = tmp_best_rate;
         rate_y = tmp_best_ratey;
         distortion = tmp_best_distortion;
@@ -3495,11 +3505,12 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                         BLOCK_SIZE_SB8X8);
         vp9_subtract_sbuv(x, BLOCK_SIZE_SB8X8);
         super_block_uvrd_for_txfm(cm, x, &rate_uv, &distortion_uv,
-                                  &uv_skippable, NULL,
+                                  &uv_skippable, &uv_sse,
                                   BLOCK_SIZE_SB8X8, TX_4X4);
         rate2 += rate_uv;
         distortion2 += distortion_uv;
         skippable = skippable && uv_skippable;
+        total_sse += uv_sse;
 
         txfm_cache[ONLY_4X4] = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
         for (i = 0; i < NB_TXFM_MODES; ++i)
@@ -3561,7 +3572,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           }
         }
       } else if (mb_skip_allowed && ref_frame != INTRA_FRAME &&
-                 this_mode != SPLITMV && !xd->lossless) {
+                 !xd->lossless) {
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
           // Add in the cost of the no skip flag.
