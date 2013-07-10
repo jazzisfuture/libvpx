@@ -758,5 +758,5 @@ void vp9_read_mode_info(VP9D_COMP* pbi, int mi_row, int mi_col, vp9_reader *r) {
 
   for (y = 0; y < y_mis; y++)
     for (x = !y; x < x_mis; x++)
-      mi[y * cm->mode_info_stride + x] = *mi;
+      vpx_memcpy(&mi[y * cm->mode_info_stride + x],mi, sizeof(MODE_INFO));
 }
