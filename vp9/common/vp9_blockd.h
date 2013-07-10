@@ -41,6 +41,10 @@
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
 
+#if CONFIG_FILTERINTRA
+#define FBIT0_PROB 255
+#endif
+
 typedef enum {
   PLANE_TYPE_Y_WITH_DC,
   PLANE_TYPE_UV,
@@ -90,6 +94,15 @@ typedef enum {
 static INLINE int is_inter_mode(MB_PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
+
+#if CONFIG_FILTERINTRA
+static INLINE int is_filter_allowed(MB_PREDICTION_MODE mode) {
+  return mode != DC_PRED &&
+         mode != D45_PRED &&
+         mode != D27_PRED &&
+         mode != D63_PRED;
+}
+#endif
 
 // Segment level features.
 typedef enum {
@@ -199,6 +212,9 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
 
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
+#if CONFIG_FILTERINTRA
+  int filterbit, uv_filterbit;
+#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used
@@ -225,6 +241,9 @@ typedef struct {
 
 typedef struct {
   MB_MODE_INFO mbmi;
+#if CONFIG_FILTERINTRA
+  int b_filter_info[4];
+#endif
   union b_mode_info bmi[4];
 } MODE_INFO;
 
