@@ -119,18 +119,25 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm, MACROBLOCKD *xd,
 }
 
 static int build_lfi(const VP9_COMMON *cm, const MB_MODE_INFO *mbmi,
-                      struct loop_filter_info *lfi) {
+                     struct loop_filter_info *lfi,
+                     struct loop_filter_info *last_lfi) {
   const loop_filter_info_n *const lfi_n = &cm->lf_info;
   const int seg = mbmi->segment_id;
   const int ref = mbmi->ref_frame[0];
   const int mode = lfi_n->mode_lf_lut[mbmi->mode];
   const int filter_level = lfi_n->lvl[seg][ref][mode];
+  lfi->level = filter_level;
 
   if (filter_level > 0) {
     lfi->mblim = lfi_n->mblim[filter_level];
     lfi->blim = lfi_n->blim[filter_level];
     lfi->lim = lfi_n->lim[filter_level];
     lfi->hev_thr = lfi_n->hev_thr[filter_level >> 4];
+    if (last_lfi) {
+      lfi->same_as_last = (last_lfi->level == lfi->level);
+    } else {
+      lfi->same_as_last = 0;
+    }
     return 1;
   } else {
     return 0;
@@ -185,34 +192,35 @@ static void filter_selectively_horiz(uint8_t *s, int pitch,
                                      unsigned int mask_4x4_int,
                                      int only_4x4_1,
                                      const struct loop_filter_info *lfi) {
+  static const int count_from_mask_lut[2][4] = {{0, 1, 0, 1}, {0, 1, 0, 2}};
   unsigned int mask;
   int count;
 
   for (mask = mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int;
        mask; mask >>= count) {
-    count =1;
+    const int same_lfi = (mask & 3) == 3 && lfi[1].same_as_last;
+    const int* count_from_mask = count_from_mask_lut[same_lfi];
+
+    count = 1;
     if (mask & 1) {
       if (!only_4x4_1) {
         if (mask_16x16 & 1) {
-          if ((mask_16x16 & 3) == 3) {
-            vp9_mb_lpf_horizontal_edge_w(s, pitch, lfi->mblim, lfi->lim,
-                                         lfi->hev_thr, 2);
-            count = 2;
-          } else {
-            vp9_mb_lpf_horizontal_edge_w(s, pitch, lfi->mblim, lfi->lim,
-                                         lfi->hev_thr, 1);
-          }
+          count = count_from_mask[mask_16x16 & 3];
+          vp9_mb_lpf_horizontal_edge_w(s, pitch, lfi->mblim, lfi->lim,
+                                       lfi->hev_thr, count);
           assert(!(mask_8x8 & 1));
           assert(!(mask_4x4 & 1));
           assert(!(mask_4x4_int & 1));
         } else if (mask_8x8 & 1) {
+          count = count_from_mask[mask_8x8 & 3];
           vp9_mbloop_filter_horizontal_edge(s, pitch, lfi->mblim, lfi->lim,
-                                            lfi->hev_thr, 1);
+                                            lfi->hev_thr, count);
           assert(!(mask_16x16 & 1));
           assert(!(mask_4x4 & 1));
         } else if (mask_4x4 & 1) {
+          count = count_from_mask[mask_4x4 & 3];
           vp9_loop_filter_horizontal_edge(s, pitch, lfi->mblim, lfi->lim,
-                                          lfi->hev_thr, 1);
+                                          lfi->hev_thr, count);
           assert(!(mask_16x16 & 1));
           assert(!(mask_8x8 & 1));
         }
@@ -221,6 +229,10 @@ static void filter_selectively_horiz(uint8_t *s, int pitch,
       if (mask_4x4_int & 1)
         vp9_loop_filter_horizontal_edge(s + 4 * pitch, pitch, lfi->mblim,
                                         lfi->lim, lfi->hev_thr, 1);
+      if (count == 2 && (mask_4x4_int & 2)) {
+        vp9_loop_filter_horizontal_edge(s + 8 + 4 * pitch, pitch, lfi->mblim,
+                                        lfi->lim, lfi->hev_thr, 1);
+      }
     }
     s += 8 * count;
     lfi += count;
@@ -273,7 +285,9 @@ static void filter_block_plane(VP9_COMMON *cm, MACROBLOCKD *xd,
 
       // Filter level can vary per MI
       if (!build_lfi(cm, &mi[c].mbmi,
-                     lfi[r] + (c >> xd->plane[plane].subsampling_x)))
+                     lfi[r] + (c >> xd->plane[plane].subsampling_x),
+                     c ? lfi[r] + (c >> xd->plane[plane].subsampling_x) - 1
+                       : NULL))
         continue;
 
       // Build masks based on the transform size of each block
@@ -340,7 +354,6 @@ static void filter_block_plane(VP9_COMMON *cm, MACROBLOCKD *xd,
   for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
     const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
     const unsigned int mask_4x4_int_r = skip_border_4x4_r ? 0 : mask_4x4_int[r];
-
     filter_selectively_horiz(dst->buf, dst->stride,
                              mask_16x16[r],
                              mask_8x8[r],

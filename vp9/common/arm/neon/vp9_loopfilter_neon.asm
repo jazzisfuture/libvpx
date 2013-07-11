@@ -8,25 +8,21 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vp9_loop_filter_horizontal_edge_neon|
+    EXPORT  |vp9_loop_filter_horizontal_edge_neon_8|
     EXPORT  |vp9_loop_filter_vertical_edge_neon|
+    EXPORT  |vp9_loop_filter_horizontal_edge_neon_16|
     EXPORT  |vp9_mbloop_filter_horizontal_edge_neon|
     EXPORT  |vp9_mbloop_filter_vertical_edge_neon|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
 
-; Currently vp9 only works on iterations 8 at a time. The vp8 loop filter
-; works on 16 iterations at a time.
-; TODO(fgalligan): See about removing the count code as this function is only
-; called with a count of 1.
-;
-; void vp9_loop_filter_horizontal_edge_neon(uint8_t *s,
-;                                           int p /* pitch */,
-;                                           const uint8_t *blimit,
-;                                           const uint8_t *limit,
-;                                           const uint8_t *thresh,
-;                                           int count)
+; void vp9_loop_filter_horizontal_edge_neon_8(uint8_t *s,
+;                                             int p /* pitch */,
+;                                             const uint8_t *blimit,
+;                                             const uint8_t *limit,
+;                                             const uint8_t *thresh,
+;                                             int count)
 ;
 ; r0    uint8_t *s,
 ; r1    int p, /* pitch */
@@ -34,7 +30,7 @@
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
 ; sp+4  int count
-|vp9_loop_filter_horizontal_edge_neon| PROC
+|vp9_loop_filter_horizontal_edge_neon_8| PROC
     push        {lr}
 
     ldr         r12, [sp,#8]               ; load count
@@ -76,7 +72,7 @@ count_lf_h_loop
 
 end_vp9_lf_h_edge
     pop         {pc}
-    ENDP        ; |vp9_loop_filter_horizontal_edge_neon|
+    ENDP        ; |vp9_loop_filter_horizontal_edge_neon_8|
 
 ; Currently vp9 only works on iterations 8 at a time. The vp8 loop filter
 ; works on 16 iterations at a time.
@@ -84,11 +80,11 @@ end_vp9_lf_h_edge
 ; called with a count of 1.
 ;
 ; void vp9_loop_filter_vertical_edge_neon(uint8_t *s,
-;                                         int p /* pitch */,
-;                                         const uint8_t *blimit,
-;                                         const uint8_t *limit,
-;                                         const uint8_t *thresh,
-;                                         int count)
+;                                           int p /* pitch */,
+;                                           const uint8_t *blimit,
+;                                           const uint8_t *limit,
+;                                           const uint8_t *thresh,
+;                                           int count)
 ;
 ; r0    uint8_t *s,
 ; r1    int p, /* pitch */
@@ -262,6 +258,158 @@ end_vp9_lf_v_edge
 
     bx          lr
     ENDP        ; |vp9_loop_filter_neon|
+
+; r0    unsigned char *src
+; r1    int pitch
+; r2    unsigned char blimit
+; r3    unsigned char limit
+; sp    unsigned char thresh,
+|vp9_loop_filter_horizontal_edge_neon_16| PROC
+    push        {lr}
+
+    vdup.u8     q0, r2                      ; duplicate blimit
+    vdup.u8     q1, r3                      ; duplicate limit
+    sub         r2, r0, r1, lsl #2          ; move src pointer down by 4 lines
+    ldr         r3, [sp, #4]                ; load thresh
+    add         r12, r2, r1
+    add         r1, r1, r1
+
+    vstmdb  sp!, {d8-d15}                   ; save neon registers
+
+    vdup.u8     q2, r3                      ; duplicate thresh
+
+    vld1.u8     {q3}, [r2@64], r1           ; p3
+    vld1.u8     {q4}, [r12@64], r1          ; p2
+    vld1.u8     {q5}, [r2@64], r1           ; p1
+    vld1.u8     {q6}, [r12@64], r1          ; p0
+    vld1.u8     {q7}, [r2@64], r1           ; q0
+    vld1.u8     {q8}, [r12@64], r1          ; q1
+    vld1.u8     {q9}, [r2@64]               ; q2
+    vld1.u8     {q10}, [r12@64]             ; q3
+
+    sub         r2, r2, r1, lsl #1
+    sub         r12, r12, r1, lsl #1
+
+    bl          vp9_loop_filter_neon_16
+
+    vst1.u8     {q5}, [r2@64], r1           ; store op1
+    vst1.u8     {q6}, [r12@64], r1          ; store op0
+    vst1.u8     {q7}, [r2@64], r1           ; store oq0
+    vst1.u8     {q8}, [r12@64], r1          ; store oq1
+
+    vldmia  sp!, {d8-d15}                   ; restore neon registers
+
+    pop         {pc}
+    ENDP        ; |vp9_loop_filter_horizontal_edge_neon_16|
+
+; void vp9_loop_filter_neon_16();
+; This is a helper function for the loopfilters. The invidual functions do the
+; necessary load, transpose (if necessary) and store.
+
+; r0-r3, r12 PRESERVE
+; q0    blimit
+; q1    limit
+; q2    thresh
+; q3    p3
+; q4    p2
+; q5    p1
+; q6    p0
+; q7    q0
+; q8    q1
+; q9    q2
+; q10   q3
+|vp9_loop_filter_neon_16| PROC
+
+    ; filter_mask
+    vabd.u8     q11, q3, q4                 ; abs(p3 - p2)
+    vabd.u8     q12, q4, q5                 ; abs(p2 - p1)
+    vabd.u8     q13, q5, q6                 ; abs(p1 - p0)
+    vabd.u8     q14, q8, q7                 ; abs(q1 - q0)
+    vabd.u8     q3, q9, q8                  ; abs(q2 - q1)
+    vabd.u8     q4, q10, q9                 ; abs(q3 - q2)
+
+    ; only compare the largest value to limit
+    vmax.u8     q11, q11, q12
+    vmax.u8     q12, q13, q14
+    vmax.u8     q3, q3, q4
+    vmax.u8     q15, q11, q12
+
+    vabd.u8     q9, q6, q7                  ; abs(p0 - q0)
+
+    ; hevmask
+    vcgt.u8     q13, q13, q2                ; (abs(p1 - p0) > thresh)*-1
+    vcgt.u8     q14, q14, q2                ; (abs(q1 - q0) > thresh)*-1
+    vmax.u8     q15, q15, q3
+
+    vmov.u8     q10, #0x80
+
+    vabd.u8     q2, q5, q8                  ; a = abs(p1 - q1)
+    vqadd.u8    q9, q9, q9                  ; b = abs(p0 - q0) * 2
+
+    vcge.u8     q15, q1, q15
+
+    ; filter() function
+    ; convert to signed
+    veor        q7, q7, q10                 ; qs0
+    vshr.u8     q2, q2, #1                  ; a = a / 2
+    veor        q6, q6, q10                 ; ps0
+
+    veor        q5, q5, q10                 ; ps1
+    vqadd.u8    q9, q9, q2                  ; a = b + a
+
+    veor        q8, q8, q10                 ; qs1
+
+    vmov.u8     q10, #3
+
+    vsubl.s8    q2, d14, d12                ; ( qs0 - ps0)
+    vsubl.s8    q11, d15, d13
+
+    vcge.u8     q9, q0, q9                  ; a > blimit
+
+    vmovl.u8    q4, d20
+
+    vqsub.s8    q1, q5, q8                  ; filter = clamp(ps1-qs1)
+    vorr        q14, q13, q14               ; hevmask
+
+    vmul.i16    q2, q2, q4                  ; 3 * ( qs0 - ps0)
+    vmul.i16    q11, q11, q4
+
+    vand        q1, q1, q14                 ; filter &= hev
+    vand        q15, q15, q9                ; filter_mask
+
+    vaddw.s8    q2, q2, d2                  ; filter + 3 * (qs0 - ps0)
+    vaddw.s8    q11, q11, d3
+
+    vmov.u8     q9, #4
+
+    ; filter = clamp(filter + 3 * ( qs0 - ps0))
+    vqmovn.s16  d2, q2
+    vqmovn.s16  d3, q11
+    vand        q1, q1, q15                 ; filter &= mask
+
+    vqadd.s8    q2, q1, q10                 ; filter2 = clamp(filter+3)
+    vqadd.s8    q1, q1, q9                  ; filter1 = clamp(filter+4)
+    vshr.s8     q2, q2, #3                  ; filter2 >>= 3
+    vshr.s8     q1, q1, #3                  ; filter1 >>= 3
+
+
+    vqadd.s8    q11, q6, q2                 ; u = clamp(ps0 + filter2)
+    vqsub.s8    q10, q7, q1                 ; u = clamp(qs0 - filter1)
+
+    ; outer tap adjustments: ++filter >> 1
+    vrshr.s8    q1, q1, #1
+    vbic        q1, q1, q14                 ; filter &= ~hev
+    vmov.u8     q0, #0x80
+    vqadd.s8    q13, q5, q1                 ; u = clamp(ps1 + filter)
+    vqsub.s8    q12, q8, q1                 ; u = clamp(qs1 - filter)
+
+    veor        q6, q11, q0                 ; *op0 = u^0x80
+    veor        q7, q10, q0                 ; *oq0 = u^0x80
+    veor        q5, q13, q0                 ; *op1 = u^0x80
+    veor        q8, q12, q0                 ; *oq1 = u^0x80
+
+    bx          lr
+    ENDP        ; |vp9_loop_filter_neon_16|
 
 ; void vp9_mbloop_filter_horizontal_edge_neon(uint8_t *s, int p,
 ;                                             const uint8_t *blimit,
