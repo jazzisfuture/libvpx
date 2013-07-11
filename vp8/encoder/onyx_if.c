@@ -3271,11 +3271,31 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
         vp8_clear_system_state();
 
         vpx_usec_timer_start(&timer);
-        if (cpi->sf.auto_filter == 0)
+        if (cpi->sf.auto_filter == 0) {
+#if CONFIG_TEMPORAL_DENOISING
+            if (cpi->oxcf.noise_sensitivity) {
+                // Use the denoised buffer for selecting base loop filter level.
+                vp8cx_pick_filter_level_fast(
+                    &cpi->denoiser.yv12_running_avg[INTRA_FRAME], cpi);
+            } else {
+                vp8cx_pick_filter_level_fast(cpi->Source, cpi);
+            }
+#else
             vp8cx_pick_filter_level_fast(cpi->Source, cpi);
-
-        else
+#endif
+        } else {
+#if CONFIG_TEMPORAL_DENOISING
+            if (cpi->oxcf.noise_sensitivity) {
+                // Use the denoised buffer for selecting base loop filter level.
+                vp8cx_pick_filter_level(
+                    &cpi->denoiser.yv12_running_avg[INTRA_FRAME], cpi);
+            } else {
+                vp8cx_pick_filter_level(cpi->Source, cpi);
+            }
+#else
             vp8cx_pick_filter_level(cpi->Source, cpi);
+#endif
+        }
 
         if (cm->filter_level > 0)
         {
