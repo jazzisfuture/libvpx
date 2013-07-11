@@ -40,6 +40,8 @@ struct loop_filter_info {
   const uint8_t *blim;
   const uint8_t *lim;
   const uint8_t *hev_thr;
+  int                  same_as_last;
+  int level;
 };
 
 #define prototype_loopfilter(sym) \
