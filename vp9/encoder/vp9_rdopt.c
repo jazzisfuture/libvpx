@@ -112,6 +112,11 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
 static int rd_thresh_block_size_factor[BLOCK_SIZE_TYPES] =
   {2, 3, 3, 4, 6, 6, 8, 12, 12, 16, 24, 24, 32};
 
+static int encode_breakout_block_size_factor[BLOCK_SIZE_TYPES] =
+//{2, 3, 3, 4, 6, 6, 8, 12, 12, 16, 24, 24, 32};
+//{0, 0, 0, 1, 2, 2, 4, 8, 8, 16, 32, 32, 64};
+  {0, 0, 0, 1, 1, 1, 2, 3, 3, 4, 6, 6, 8};
+
 #define BASE_RD_THRESH_FREQ_FACT 16
 #define MAX_RD_THRESH_FREQ_FACT 32
 #define MAX_RD_THRESH_FREQ_INC 1
@@ -2626,6 +2631,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   uint8_t *orig_dst[MAX_MB_PLANE];
   int orig_dst_stride[MAX_MB_PLANE];
   int rs = 0;
+  int encode_breakout = x->encode_breakout *
+      encode_breakout_block_size_factor[bsize];
 
   switch (this_mode) {
     int rate_mv;
@@ -2852,53 +2859,56 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (cpi->common.mcomp_filter_type == SWITCHABLE)
     *rate2 += get_switchable_rate(cm, x);
 
-  if (cpi->active_map_enabled && x->active_ptr[0] == 0)
-    x->skip = 1;
-  else if (x->encode_breakout) {
-    const enum BlockSize y_size = get_plane_block_size(bsize, &xd->plane[0]);
-    const enum BlockSize uv_size = get_plane_block_size(bsize, &xd->plane[1]);
+  if(!is_comp_pred) {
+    if (cpi->active_map_enabled && x->active_ptr[0] == 0)
+      x->skip = 1;
+    else if (encode_breakout) {
+      const enum BlockSize y_size = get_plane_block_size(bsize, &xd->plane[0]);
+      const enum BlockSize uv_size = get_plane_block_size(bsize, &xd->plane[1]);
 
-    unsigned int var, sse;
-    int threshold = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1] >> 4);
+      unsigned int var, sse;
+      int threshold = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1] >> 6) *
+          encode_breakout_block_size_factor[bsize];
 
+      if (threshold < encode_breakout)
+        threshold = encode_breakout;
 
-    if (threshold < x->encode_breakout)
-      threshold = x->encode_breakout;
+      var = cpi->fn_ptr[y_size].vf(x->plane[0].src.buf, x->plane[0].src.stride,
+                                   xd->plane[0].dst.buf, xd->plane[0].dst.stride,
+                                   &sse);
 
-    var = cpi->fn_ptr[y_size].vf(x->plane[0].src.buf, x->plane[0].src.stride,
-                                 xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-                                 &sse);
+      if ((int)sse < threshold) {
+        unsigned int q2dc = xd->plane[0].dequant[0];
+        // If there is no codeable 2nd order dc
+        // or a very small uniform pixel change change
+        if ((sse - var < (q2dc * q2dc >> 6) *
+            encode_breakout_block_size_factor[bsize]) ||
+            (sse / 2 > var && sse - var < 64)) {
+          // Check u and v to make sure skip is ok
+          int sse2;
+          unsigned int sse2u, sse2v;
+          var = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf,
+                                        x->plane[1].src.stride,
+                                        xd->plane[1].dst.buf,
+                                        xd->plane[1].dst.stride, &sse2u);
+          var = cpi->fn_ptr[uv_size].vf(x->plane[2].src.buf,
+                                        x->plane[2].src.stride,
+                                        xd->plane[2].dst.buf,
+                                        xd->plane[2].dst.stride, &sse2v);
+          sse2 = sse2u + sse2v;
 
-    if ((int)sse < threshold) {
-      unsigned int q2dc = xd->plane[0].dequant[0];
-      // If there is no codeable 2nd order dc
-      // or a very small uniform pixel change change
-      if ((sse - var < q2dc * q2dc >> 4) ||
-          (sse / 2 > var && sse - var < 64)) {
-        // Check u and v to make sure skip is ok
-        int sse2;
-        unsigned int sse2u, sse2v;
-        var = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf,
-                                      x->plane[1].src.stride,
-                                      xd->plane[1].dst.buf,
-                                      xd->plane[1].dst.stride, &sse2u);
-        var = cpi->fn_ptr[uv_size].vf(x->plane[2].src.buf,
-                                      x->plane[2].src.stride,
-                                      xd->plane[2].dst.buf,
-                                      xd->plane[2].dst.stride, &sse2v);
-        sse2 = sse2u + sse2v;
+          if (sse2 * 2 < threshold) {
+            x->skip = 1;
+            *distortion = sse + sse2;
+            *rate2 = 500;
 
-        if (sse2 * 2 < threshold) {
-          x->skip = 1;
-          *distortion = sse + sse2;
-          *rate2 = 500;
+            // for best yrd calculation
+            *rate_uv = 0;
+            *distortion_uv = sse2;
 
-          // for best yrd calculation
-          *rate_uv = 0;
-          *distortion_uv = sse2;
-
-          *disable_skip = 1;
-          this_rd = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
+            *disable_skip = 1;
+            this_rd = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
+          }
         }
       }
     }
