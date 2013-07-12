@@ -412,7 +412,7 @@ int vp9_get_raw_frame(VP9D_PTR ptr, YV12_BUFFER_CONFIG *sd,
   *time_stamp = pbi->last_time_stamp;
   *time_end_stamp = 0;
 
-  sd->clrtype = pbi->common.clr_type;
+  sd->clrtype = REG_YUV;
 #if CONFIG_POSTPROC
   ret = vp9_post_proc_frame(&pbi->common, sd, flags);
 #else
