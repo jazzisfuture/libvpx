@@ -680,12 +680,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     cpi->mode_chosen_counts[i] = 0;
   }
 
-  // Initialize cpi->max_mv_magnitude if appropriate.
-  if ((cpi->common.frame_type == KEY_FRAME) || cpi->common.intra_only ||
-    (cpi->common.show_frame == 0)) {
-    cpi->max_mv_magnitude = 0;
-  }
-
   // best quality defaults
   sf->RD = 1;
   sf->search_method = NSTEP;
@@ -746,7 +740,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
       sf->static_segmentation = 0;
 #endif
-      sf->auto_mv_step_size = 1;
       sf->use_avoid_tested_higherror = 1;
       sf->adaptive_rd_thresh = 1;
       sf->last_chroma_intra_mode = TM_PRED;
@@ -771,6 +764,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->last_chroma_intra_mode = H_PRED;
         sf->use_rd_breakout = 1;
         sf->skip_encode_sb = 1;
+        sf->auto_mv_step_size = 1;
       }
       if (speed == 2) {
         sf->adjust_thresholds_by_speed = 1;
@@ -793,6 +787,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->last_chroma_intra_mode = DC_PRED;
         sf->use_rd_breakout = 1;
         sf->skip_encode_sb = 1;
+        sf->auto_mv_step_size = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -808,6 +803,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                      FLAG_SKIP_COMP_REFMISMATCH;
         sf->use_rd_breakout = 1;
         sf->skip_encode_sb = 1;
+        sf->auto_mv_step_size = 1;
       }
       if (speed == 4) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -824,6 +820,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
                                      FLAG_SKIP_COMP_REFMISMATCH;
         sf->use_rd_breakout = 1;
         sf->optimize_coefficients = 0;
+        sf->auto_mv_step_size = 1;
         // sf->reduce_first_step_size = 1;
         // sf->reference_masking = 1;
       }
@@ -2561,6 +2558,19 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Set default state for segment based loop filter update flags
   xd->mode_ref_lf_delta_update = 0;
 
+
+  // Initialize cpi->max_mv_magnitude if appropriate.
+  if (sf->auto_mv_step_size) {
+    if ((cpi->common.frame_type == KEY_FRAME) || cpi->common.intra_only) {
+      if (cm->current_video_frame == 0) {
+        cpi->max_mv_magnitude = 64;
+        cpi->frame_max_mv_magnitude = 64;
+      }
+    } else {
+      cpi->max_mv_magnitude = cpi->frame_max_mv_magnitude;
+      cpi->frame_max_mv_magnitude = 0;
+    }
+  }
 
   // Set various flags etc to special state if it is a key frame
   if (cm->frame_type == KEY_FRAME) {
