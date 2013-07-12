@@ -30,7 +30,6 @@ typedef struct VP9Decompressor {
 
   vp9_reader *mbc;
   int64_t last_time_stamp;
-  int ready_for_new_data;
 
   int refresh_frame_flags;
   vp9_prob prob_skip_false;

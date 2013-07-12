@@ -72,7 +72,6 @@ static struct VP8D_COMP * create_decompressor(VP8D_CONFIG *oxcf)
     vp8_create_common(&pbi->common);
 
     pbi->common.current_video_frame = 0;
-    pbi->ready_for_new_data = 1;
 
     /* vp8cx_init_de_quantizer() is first called here. Add check in frame_init_dequantizer() to avoid
      *  unnecessary calling of vp8cx_init_de_quantizer() for every frame.
@@ -399,7 +398,6 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     }
 #endif
 
-    pbi->ready_for_new_data = 0;
     pbi->last_time_stamp = time_stamp;
 
 decode_exit:
@@ -419,14 +417,10 @@ int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd, int64_t *time_st
 {
     int ret = -1;
 
-    if (pbi->ready_for_new_data == 1)
-        return ret;
-
     /* ie no raw frame to show!!! */
     if (pbi->common.show_frame == 0)
         return ret;
 
-    pbi->ready_for_new_data = 1;
     *time_stamp = pbi->last_time_stamp;
     *time_end_stamp = 0;
 

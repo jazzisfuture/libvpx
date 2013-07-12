@@ -129,7 +129,6 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
 
   pbi->oxcf = *oxcf;
   pbi->common.current_video_frame = 0;
-  pbi->ready_for_new_data = 1;
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of
@@ -276,9 +275,6 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   const uint8_t *source = *psource;
   int retcode = 0;
 
-  /*if(pbi->ready_for_new_data == 0)
-      return -1;*/
-
   if (ptr == 0)
     return -1;
 
@@ -387,7 +383,6 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
     cm->current_video_frame++;
   }
 
-  pbi->ready_for_new_data = 0;
   pbi->last_time_stamp = time_stamp;
   pbi->source_sz = 0;
 
@@ -401,14 +396,10 @@ int vp9_get_raw_frame(VP9D_PTR ptr, YV12_BUFFER_CONFIG *sd,
   int ret = -1;
   VP9D_COMP *pbi = (VP9D_COMP *) ptr;
 
-  if (pbi->ready_for_new_data == 1)
-    return ret;
-
   /* ie no raw frame to show!!! */
   if (pbi->common.show_frame == 0)
     return ret;
 
-  pbi->ready_for_new_data = 1;
   *time_stamp = pbi->last_time_stamp;
   *time_end_stamp = 0;
 

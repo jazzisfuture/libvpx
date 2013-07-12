@@ -104,7 +104,6 @@ typedef struct VP8D_COMP
 #endif
 
     int64_t last_time_stamp;
-    int   ready_for_new_data;
 
     vp8_prob prob_intra;
     vp8_prob prob_last;
