@@ -608,9 +608,9 @@ void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
 
   // If auto_mv_step_size is enabled and it is an arf/non shown frame
   // then keep track of the largest motion vector component used.
-  if (cpi->sf.auto_mv_step_size && !cpi->common.show_frame) {
-    cpi->max_mv_magnitude = MAX((MAX(abs(mv->row), abs(mv->col)) >> 3),
-                                cpi->max_mv_magnitude);
+  if (!cpi->dummy_packing && cpi->sf.auto_mv_step_size) {
+    unsigned int maxv = MAX(abs(mv->row), abs(mv->col)) >> 3;
+    cpi->frame_max_mv_magnitude = MAX(maxv, cpi->frame_max_mv_magnitude);
   }
 }
 
