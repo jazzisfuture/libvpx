@@ -1504,6 +1504,7 @@ int vp9_diamond_search_sad_c(MACROBLOCK *x,
   tot_steps = (x->ss_count / x->searches_per_step) - search_param;
 
   i = 1;
+  assert(0);
 
   for (step = 0; step < tot_steps; step++) {
     for (j = 0; j < x->searches_per_step; j++) {
