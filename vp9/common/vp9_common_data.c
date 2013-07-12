@@ -20,3 +20,15 @@ const int mi_width_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3};
 const int mi_height_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3};
+
+// This shortcuts a conditional / case statement to convert a combination
+// of partition and block type to a subsize.
+const BLOCK_SIZE_TYPE partition_subsize[PARTITION_TYPES][BLOCK_SIZE_TYPES] =
+  {{0,0,0,BLOCK_SIZE_SB8X8,0,0,BLOCK_SIZE_MB16X16,      // PARTITION_NONE
+    0,0,BLOCK_SIZE_SB32X32,0,0,BLOCK_SIZE_SB64X64},
+   {0,0,0,BLOCK_SIZE_SB8X4,0,0,BLOCK_SIZE_SB16X8,       // PARTITION_HORZ
+    0,0,BLOCK_SIZE_SB32X16,0,0,BLOCK_SIZE_SB64X32},
+   {0,0,0,BLOCK_SIZE_SB4X8,0,0,BLOCK_SIZE_SB8X16,       // PARTITION_VERT
+    0,0,BLOCK_SIZE_SB16X32,0,0,BLOCK_SIZE_SB32X64},
+   {0,0,0,BLOCK_SIZE_AB4X4,0,0,BLOCK_SIZE_SB8X8,        // PARTITION_SPLIT
+    0,0,BLOCK_SIZE_MB16X16,0,0,BLOCK_SIZE_SB32X32}};

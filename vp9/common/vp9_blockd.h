@@ -359,52 +359,9 @@ static INLINE int partition_plane_context(MACROBLOCKD *xd,
   return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
 }
 
-static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
-                                   PARTITION_TYPE partition) {
-  BLOCK_SIZE_TYPE subsize = bsize;
-  switch (partition) {
-    case PARTITION_NONE:
-      break;
-    case PARTITION_HORZ:
-      if (bsize == BLOCK_SIZE_SB64X64)
-        subsize = BLOCK_SIZE_SB64X32;
-      else if (bsize == BLOCK_SIZE_SB32X32)
-        subsize = BLOCK_SIZE_SB32X16;
-      else if (bsize == BLOCK_SIZE_MB16X16)
-        subsize = BLOCK_SIZE_SB16X8;
-      else if (bsize == BLOCK_SIZE_SB8X8)
-        subsize = BLOCK_SIZE_SB8X4;
-      else
-        assert(0);
-      break;
-    case PARTITION_VERT:
-      if (bsize == BLOCK_SIZE_SB64X64)
-        subsize = BLOCK_SIZE_SB32X64;
-      else if (bsize == BLOCK_SIZE_SB32X32)
-        subsize = BLOCK_SIZE_SB16X32;
-      else if (bsize == BLOCK_SIZE_MB16X16)
-        subsize = BLOCK_SIZE_SB8X16;
-      else if (bsize == BLOCK_SIZE_SB8X8)
-        subsize = BLOCK_SIZE_SB4X8;
-      else
-        assert(0);
-      break;
-    case PARTITION_SPLIT:
-      if (bsize == BLOCK_SIZE_SB64X64)
-        subsize = BLOCK_SIZE_SB32X32;
-      else if (bsize == BLOCK_SIZE_SB32X32)
-        subsize = BLOCK_SIZE_MB16X16;
-      else if (bsize == BLOCK_SIZE_MB16X16)
-        subsize = BLOCK_SIZE_SB8X8;
-      else if (bsize == BLOCK_SIZE_SB8X8)
-        subsize = BLOCK_SIZE_AB4X4;
-      else
-        assert(0);
-      break;
-    default:
-      assert(0);
-  }
-  return subsize;
+static INLINE BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
+                                          PARTITION_TYPE partition) {
+  return(partition_subsize[partition][bsize]);
 }
 
 extern const TX_TYPE mode2txfm_map[MB_MODE_COUNT];

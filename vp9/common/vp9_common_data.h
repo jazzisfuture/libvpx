@@ -18,4 +18,7 @@ extern const int b_height_log2_lookup[BLOCK_SIZE_TYPES];
 extern const int mi_width_log2_lookup[BLOCK_SIZE_TYPES];
 extern const int mi_height_log2_lookup[BLOCK_SIZE_TYPES];
 
+extern const BLOCK_SIZE_TYPE partition_subsize[PARTITION_TYPES]
+                                              [BLOCK_SIZE_TYPES];
+
 #endif    // VP9_COMMON_VP9_COMMON_DATA_H
