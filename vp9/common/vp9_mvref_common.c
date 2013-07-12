@@ -70,6 +70,21 @@ static int get_matching_candidate(const MODE_INFO *candidate_mi,
 
   return 1;
 }
+// Gets a candidate reference motion vector from the given mode info
+// structure if one exists that matches the given reference frame.
+static int get_matching_candidateb(const MODE_INFO *candidate_mi,
+                                  MV_REFERENCE_FRAME ref_frame,
+                                  int_mv *c_mv, int block_idx) {
+  if (ref_frame == candidate_mi->mbmi.ref_frame[0]) {
+      c_mv->as_int = candidate_mi->bmi[block_idx].as_mv[0].as_int;
+  } else if (ref_frame == candidate_mi->mbmi.ref_frame[1]) {
+      c_mv->as_int = candidate_mi->bmi[block_idx].as_mv[1].as_int;
+  } else {
+    return 0;
+  }
+
+  return 1;
+}
 
 // Gets candidate reference motion vector(s) from the given mode info
 // structure if they exists and do NOT match the given reference frame.
@@ -136,6 +151,254 @@ static void add_candidate_mv(int_mv *mv_list,  int *mv_scores,
 // This function searches the neighbourhood of a given MB/SB
 // to try and find candidate reference vectors.
 //
+#if 1
+typedef enum {
+  MV_REF_INTRA,
+  MV_REF_ZERO,
+  MV_REF_NEW,
+  MV_REF_NONE,
+  MV_REF_NUM
+} MV_REF;
+
+static const int mode_2_mv_ref_count[MB_MODE_COUNT] = {
+  MV_REF_INTRA,  // DC_PRED
+  MV_REF_INTRA,  // V_PRED,
+  MV_REF_INTRA,  // H_PRED,
+  MV_REF_INTRA,  // D45_PRED,
+  MV_REF_INTRA,  // D135_PRED,
+  MV_REF_INTRA,  // D117_PRED,
+  MV_REF_INTRA,  // D153_PRED,
+  MV_REF_INTRA,  // D27_PRED,
+  MV_REF_INTRA,  // D63_PRED,
+  MV_REF_INTRA,  // TM_PRED,
+  MV_REF_NONE,    // NEARESTMV,
+  MV_REF_NONE,   // NEARMV,
+  MV_REF_ZERO,  // ZEROMV,
+  MV_REF_NEW,   // NEWMV,
+};
+static int check_and_add_mv(const MODE_INFO *candidate_mi,
+                            MV_REFERENCE_FRAME ref_frame, int weight,
+                            int_mv *candidate_mv,
+                            int *scores,
+                            int *refmv_count) {
+  int same_ref_0 = (ref_frame == candidate_mi->mbmi.ref_frame[0]);
+  int same_ref_1 = (ref_frame == candidate_mi->mbmi.ref_frame[1]);
+  int found = 0;
+  int proposed_mv = (
+      same_ref_0 ? candidate_mi->mbmi.mv[0].as_int :
+          (same_ref_1 ? candidate_mi->mbmi.mv[1].as_int : 0));
+
+  found = (same_ref_0 || same_ref_1)
+      && (!*refmv_count || candidate_mv[0].as_int != proposed_mv);
+
+  if (found) {
+    scores[*refmv_count] = weight;
+    candidate_mv[*refmv_count].as_int = proposed_mv;
+    ++(*refmv_count);
+  }
+  return found;
+}
+static int check_and_add_block_mv(const MODE_INFO *candidate_mi,
+                            MV_REFERENCE_FRAME ref_frame, int weight,
+                            int_mv *candidate_mv,
+                            int *scores,
+                            int *refmv_count, int block_idx) {
+  int same_ref_0 = (ref_frame == candidate_mi->mbmi.ref_frame[0]);
+  int same_ref_1 = (ref_frame == candidate_mi->mbmi.ref_frame[1]);
+  int found = 0;
+  int proposed_mv;
+
+  if (candidate_mi->mbmi.sb_type < BLOCK_SIZE_SB8X8)
+    proposed_mv = (
+        same_ref_0 ?
+            candidate_mi->bmi[block_idx].as_mv[0].as_int :
+            (same_ref_1 ?
+                candidate_mi->bmi[block_idx].as_mv[1].as_int :
+                candidate_mv[0].as_int));
+  else
+    proposed_mv = (
+        same_ref_0 ?
+            candidate_mi->mbmi.mv[0].as_int :
+            (same_ref_1 ? candidate_mi->mbmi.mv[1].as_int : 0));
+
+  found = (same_ref_0 || same_ref_1)
+      && (!*refmv_count || candidate_mv[0].as_int != proposed_mv);
+
+  if (found) {
+    scores[*refmv_count] = weight;
+    candidate_mv[*refmv_count].as_int = proposed_mv;
+    ++(*refmv_count);
+  }
+
+  return found;
+}
+
+void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
+                          MODE_INFO *lf_here, MV_REFERENCE_FRAME ref_frame,
+                          int_mv *mv_ref_list, int *ref_sign_bias,
+                          int block_idx) {
+  int i;
+  MODE_INFO *candidate_mi;
+  MB_MODE_INFO * mbmi = &xd->mode_info_context->mbmi;
+  int_mv c_refmv;
+  int_mv c2_refmv;
+  MV_REFERENCE_FRAME c_ref_frame;
+  MV_REFERENCE_FRAME c2_ref_frame;
+  int candidate_scores[MAX_MV_REF_CANDIDATES];
+  int refmv_count = 0;
+  int (*mv_ref_search)[2];
+  const int mi_col = get_mi_col(xd);
+  const int mi_row = get_mi_row(xd);
+  int mv_counts[MV_REF_NUM] = {0, 0, 0, 0};
+  int x_idx = 0, y_idx = 0;
+
+  // Blank the reference vector lists and other local structures.
+  vpx_memset(mv_ref_list, 0, sizeof(int_mv) * MAX_MV_REF_CANDIDATES);
+  vpx_memset(candidate_scores, 0, sizeof(candidate_scores));
+
+  mv_ref_search = mv_ref_blocks[mbmi->sb_type];
+
+  if (block_idx == -1) {
+    for (i = 0; i < 2; ++i) {
+      const int mi_search_col = mi_col + mv_ref_search[i][0];
+      const int mi_search_row = mi_row + mv_ref_search[i][1];
+      if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+          (mi_search_row >= 0) ) {
+        candidate_mi = here + mv_ref_search[i][0] +
+                       (mv_ref_search[i][1] * xd->mode_info_stride);
+        check_and_add_mv(candidate_mi, ref_frame, 16, mv_ref_list,
+                         candidate_scores, &refmv_count);
+
+        assert(candidate_mi->mbmi.mode < MB_MODE_COUNT);
+        mv_counts[mode_2_mv_ref_count[candidate_mi->mbmi.mode]]++;
+      }
+    }
+  } else {
+    x_idx = block_idx & 1;
+    y_idx = block_idx >> 1;
+
+    // We first scan for candidate vectors that match the current reference
+    // frame look at nearest neighbors
+    for (i = 0; i < 2; ++i) {
+      const int mi_search_col = mi_col + mv_ref_search[i][0];
+      const int mi_search_row = mi_row + mv_ref_search[i][1];
+      if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+          (mi_search_row >= 0) ) {
+        int b;
+        assert(block_idx >= 0);
+        assert(mbmi->sb_type < BLOCK_SIZE_SB8X8);
+        if (mv_ref_search[i][0])
+          b = 1 + y_idx * 2;
+        else
+          b = 2 + x_idx;
+
+        candidate_mi = here + mv_ref_search[i][0] +
+                       (mv_ref_search[i][1] * xd->mode_info_stride);
+        check_and_add_block_mv(candidate_mi, ref_frame, 16, mv_ref_list,
+                               candidate_scores, &refmv_count, b);
+
+        mv_counts[mode_2_mv_ref_count[candidate_mi->mbmi.mode]]++;
+      }
+    }
+  }
+  c_refmv.as_int = 0;
+  // More distant neigbours
+  for (i = 2; (i < MVREF_NEIGHBOURS) &&
+              (refmv_count < MAX_MV_REF_CANDIDATES); ++i) {
+    const int mi_search_col = mi_col + mv_ref_search[i][0];
+    const int mi_search_row = mi_row + mv_ref_search[i][1];
+    if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+        (mi_search_col < cm->cur_tile_mi_col_end) &&
+        (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
+      candidate_mi = here + mv_ref_search[i][0] +
+                     (mv_ref_search[i][1] * xd->mode_info_stride);
+
+      check_and_add_mv(candidate_mi, ref_frame, 16, mv_ref_list,
+                       candidate_scores, &refmv_count);
+    }
+  }
+
+  // Look in the last frame if it exists
+  if (lf_here && (refmv_count < MAX_MV_REF_CANDIDATES)) {
+    candidate_mi = lf_here;
+    check_and_add_mv(candidate_mi, ref_frame, 16, mv_ref_list,
+                     candidate_scores, &refmv_count);
+  }
+
+  // If we have not found enough candidates consider ones where the
+  // reference frame does not match. Break out when we have
+  // MAX_MV_REF_CANDIDATES candidates.
+  // Look first at spatial neighbours
+  for (i = 0; (i < MVREF_NEIGHBOURS) &&
+              (refmv_count < MAX_MV_REF_CANDIDATES); ++i) {
+    const int mi_search_col = mi_col + mv_ref_search[i][0];
+    const int mi_search_row = mi_row + mv_ref_search[i][1];
+    if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+        (mi_search_col < cm->cur_tile_mi_col_end) &&
+        (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
+      candidate_mi = here + mv_ref_search[i][0] +
+                     (mv_ref_search[i][1] * xd->mode_info_stride);
+
+      get_non_matching_candidates(candidate_mi, ref_frame,
+                                  &c_ref_frame, &c_refmv,
+                                  &c2_ref_frame, &c2_refmv);
+
+      if (c_ref_frame != INTRA_FRAME) {
+        scale_mv(xd, ref_frame, c_ref_frame, &c_refmv, ref_sign_bias);
+        add_candidate_mv(mv_ref_list, candidate_scores,
+                         &refmv_count, c_refmv, 1);
+      }
+
+      if (c2_ref_frame != INTRA_FRAME) {
+        scale_mv(xd, ref_frame, c2_ref_frame, &c2_refmv, ref_sign_bias);
+        add_candidate_mv(mv_ref_list, candidate_scores,
+                         &refmv_count, c2_refmv, 1);
+      }
+    }
+  }
+
+  // Look at the last frame if it exists
+  if (lf_here && (refmv_count < MAX_MV_REF_CANDIDATES)) {
+    candidate_mi = lf_here;
+    get_non_matching_candidates(candidate_mi, ref_frame,
+                                &c_ref_frame, &c_refmv,
+                                &c2_ref_frame, &c2_refmv);
+
+    if (c_ref_frame != INTRA_FRAME) {
+      scale_mv(xd, ref_frame, c_ref_frame, &c_refmv, ref_sign_bias);
+      add_candidate_mv(mv_ref_list, candidate_scores,
+                       &refmv_count, c_refmv, 1);
+    }
+
+    if (c2_ref_frame != INTRA_FRAME) {
+      scale_mv(xd, ref_frame, c2_ref_frame, &c2_refmv, ref_sign_bias);
+      add_candidate_mv(mv_ref_list, candidate_scores,
+                       &refmv_count, c2_refmv, 1);
+    }
+  }
+  if (!mv_counts[MV_REF_INTRA]) {
+    if (!mv_counts[MV_REF_NEW]) {
+      // 0 = both zero mv
+      // 1 = one zero mv + one a predicted mv
+      // 2 = two predicted mvs
+      mbmi->mb_mode_context[ref_frame] = 2 - mv_counts[MV_REF_ZERO];
+    } else {
+      // 3 = one predicted/zero and one new mv
+      // 4 = two new mvs
+      mbmi->mb_mode_context[ref_frame] = 2 + mv_counts[MV_REF_NEW];
+    }
+  } else {
+    // 5 = one intra neighbour + x
+    // 6 = two intra neighbours
+    mbmi->mb_mode_context[ref_frame] = 4 + mv_counts[MV_REF_INTRA];
+  }
+
+  // Clamp vectors
+  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i) {
+    clamp_mv_ref(xd, &mv_ref_list[i]);
+  }
+}
+#else
 void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                           MODE_INFO *lf_here, MV_REFERENCE_FRAME ref_frame,
                           int_mv *mv_ref_list, int *ref_sign_bias,
@@ -175,7 +438,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
     const int mi_search_row = mi_row + mv_ref_search[i][1];
     if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
         (mi_search_col < cm->cur_tile_mi_col_end) &&
-        (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
+        (mi_search_row >= 0) &&
+        (mi_search_row < cm->mi_rows)) {
       int b;
 
       candidate_mi = here + mv_ref_search[i][0] +
@@ -304,3 +568,5 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
     clamp_mv_ref(xd, &mv_ref_list[i]);
   }
 }
+
+#endif
