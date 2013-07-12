@@ -99,6 +99,7 @@ struct macroblock {
   signed int act_zbin_adj;
 
   int mv_best_ref_index[MAX_REF_FRAMES];
+  unsigned int max_mv_context[MAX_REF_FRAMES];
 
   int nmvjointcost[MV_JOINTS];
   int nmvcosts[2][MV_VALS];
