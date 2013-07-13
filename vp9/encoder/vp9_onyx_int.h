@@ -390,7 +390,7 @@ typedef struct VP9_COMP {
   int last_boosted_qindex;         // Last boosted GF/KF/ARF q
 
   double rate_correction_factor;
-  double key_frame_rate_correction_factor;
+  double key_framerate_correction_factor;
   double gf_rate_correction_factor;
 
   int frames_till_gf_update_due;      // Count down till next GF
@@ -412,7 +412,7 @@ typedef struct VP9_COMP {
   int av_per_frame_bandwidth;        // Average frame size target for clip
   int min_frame_bandwidth;          // Minimum allocation that should be used for any frame
   int inter_frame_target;
-  double output_frame_rate;
+  double output_framerate;
   int64_t last_time_stamp_seen;
   int64_t last_end_time_stamp_seen;
   int64_t first_time_stamp_ever;
