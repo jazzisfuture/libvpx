@@ -165,8 +165,6 @@ typedef struct VP8Common
 #ifdef PACKET_TESTING
     VP8_HEADER oh;
 #endif
-    double bitrate;
-    double framerate;
 
 #if CONFIG_MULTITHREAD
     int processor_core_count;
