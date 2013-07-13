@@ -323,7 +323,7 @@ void vp9_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   vp9_clear_system_state();  // __asm emms;
 
   if (cpi->common.frame_type == KEY_FRAME) {
-    rate_correction_factor = cpi->key_frame_rate_correction_factor;
+    rate_correction_factor = cpi->key_framerate_correction_factor;
   } else {
     if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       rate_correction_factor = cpi->gf_rate_correction_factor;
@@ -380,7 +380,7 @@ void vp9_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   }
 
   if (cpi->common.frame_type == KEY_FRAME)
-    cpi->key_frame_rate_correction_factor = rate_correction_factor;
+    cpi->key_framerate_correction_factor = rate_correction_factor;
   else {
     if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       cpi->gf_rate_correction_factor = rate_correction_factor;
@@ -401,7 +401,7 @@ int vp9_regulate_q(VP9_COMP *cpi, int target_bits_per_frame) {
 
   // Select the appropriate correction factor based upon type of frame.
   if (cpi->common.frame_type == KEY_FRAME)
-    correction_factor = cpi->key_frame_rate_correction_factor;
+    correction_factor = cpi->key_framerate_correction_factor;
   else {
     if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
       correction_factor = cpi->gf_rate_correction_factor;
@@ -451,7 +451,7 @@ static int estimate_keyframe_frequency(VP9_COMP *cpi) {
      * whichever is smaller.
      */
     int key_freq = cpi->oxcf.key_freq > 0 ? cpi->oxcf.key_freq : 1;
-    av_key_frame_frequency = (int)cpi->output_frame_rate * 2;
+    av_key_frame_frequency = (int)cpi->output_framerate * 2;
 
     if (cpi->oxcf.auto_key && av_key_frame_frequency > key_freq)
       av_key_frame_frequency = cpi->oxcf.key_freq;
