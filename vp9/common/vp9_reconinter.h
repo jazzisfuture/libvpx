@@ -120,7 +120,11 @@ static void set_scale_factors(MACROBLOCKD *xd,
     struct scale_factors scale_factor[MAX_REF_FRAMES]) {
 
   xd->scale_factor[0] = scale_factor[ref0 >= 0 ? ref0 : 0];
+#if CONFIG_INTERINTRA
+  xd->scale_factor[1] = scale_factor[ref1 > 0  ? ref1 : 0];
+#else
   xd->scale_factor[1] = scale_factor[ref1 >= 0 ? ref1 : 0];
+#endif
   xd->scale_factor_uv[0] = xd->scale_factor[0];
   xd->scale_factor_uv[1] = xd->scale_factor[1];
 }
