@@ -306,7 +306,12 @@ static void decode_atom(VP9D_COMP *pbi, MACROBLOCKD *xd,
     vp9_setup_interp_filters(xd, mbmi->interp_filter, &pbi->common);
 
   // prediction
+#if CONFIG_INTERINTRA
+  vp9_build_inter_predictors_sby(xd, mi_row, mi_col, BLOCK_SIZE_SB8X8);
+  vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, BLOCK_SIZE_SB8X8);
+#else
   vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#endif
 
   if (mbmi->mb_skip_coeff) {
     vp9_reset_sb_tokens_context(xd, bsize);
@@ -848,6 +853,11 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->tx_count_16x16p);
   vp9_zero(fc->tx_count_32x32p);
   vp9_zero(fc->mbskip_count);
+
+#if CONFIG_INTERINTRA
+  fc->pre_interintra_prob = fc->interintra_prob;
+  vp9_zero(fc->interintra_counts);
+#endif
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
@@ -1099,6 +1109,10 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
 
       xd->allow_high_precision_mv = vp9_rb_read_bit(rb);
       cm->mcomp_filter_type = read_interp_filter_type(rb);
+
+#if CONFIG_INTERINTRA
+      cm->use_interintra = vp9_rb_read_bit(rb);
+#endif
 
       for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
         vp9_setup_scale_factors(cm, i);
