@@ -351,6 +351,7 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
   MODE_INFO *const mi = xd->mode_info_context;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const int mis = pc->mode_info_stride;
+  int i, j;
 
   assert(mbmi->sb_type == bsize);
   assert(mbmi->ref_frame[0] != INTRA_FRAME);
@@ -358,9 +359,61 @@ static void decode_sb(VP9D_COMP *pbi, MACROBLOCKD *xd, int mi_row, int mi_col,
   if (pbi->common.frame_type != KEY_FRAME)
     vp9_setup_interp_filters(xd, mbmi->interp_filter, pc);
 
+/*  if (pbi->common.current_video_frame == 10
+      &&(((mi_row == 7) && (mi_col == 33))
+      ||((mi_row == 7) && (mi_col == 32))
+      ||((mi_row == 6) && (mi_col == 33))
+      ||((mi_row == 6) && (mi_col == 32))
+      ||((mi_row == 6) && (mi_col == 34)))){
+  fprintf(stderr, "mi-position[%4d%4d]\n", mi_row, mi_col);
+  for (j=0; j<(2<<b_width_log2(bsize)); ++j) {
+    for (i=0; i<(2<<b_height_log2(bsize)); ++i)
+      fprintf(stderr, "%4d",xd->plane[1].pre[0].buf[i+j*xd->plane[1].dst.stride]);
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+  }*/
   // generate prediction
   vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-
+  if ((pbi->common.current_video_frame == 134)){
+/*
+    fprintf(stderr, "=============[%3d%3d%3d%3d%3d]============\n",
+            pbi->common.current_video_frame,
+            pbi->common.show_frame,
+            mi_row, mi_col,  xd->mode_info_context->mbmi.sb_type);
+*/
+    if ( (mi_row == 22) && (mi_col == 16)){
+  fprintf(stderr, "=============[%3d%3d%3d%3d]============\n",
+          pbi->common.current_video_frame,
+          pbi->common.show_frame,
+          pbi->common.use_interintra,  xd->mode_info_context->mbmi.sb_type);
+  fprintf(stderr, "=============ref_frame[][%3d%3d]============\n"
+                          , mbmi->ref_frame[0]
+                          , mbmi->ref_frame[1]);
+  fprintf(stderr, "============inter? :mode :interintra[%3d%3d%3d]============\n",
+                         is_inter_mode(mbmi->mode), mbmi->mode, mbmi->interintra_mode);
+  fprintf(stderr, "=============up : left :right[%3d%3d%3d]============\n",
+          xd->up_available, xd->left_available, xd->right_available);
+  for (j=0; j<(4<<b_height_log2(bsize)); ++j) {
+    for (i=0; i<(4<<b_width_log2(bsize)); ++i)
+      fprintf(stderr, "%4d",xd->plane[0].dst.buf[i+j*xd->plane[0].dst.stride]);
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+/*  for (j=0; j<(2<<b_height_log2(bsize)); ++j) {
+    for (i=0; i<(2<<b_width_log2(bsize)); ++i)
+      fprintf(stderr, "%4d",xd->plane[1].dst.buf[i+j*xd->plane[1].dst.stride]);
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+  for (j=0; j<(2<<b_height_log2(bsize)); ++j) {
+    for (i=0; i<(2<<b_width_log2(bsize)); ++i)
+      fprintf(stderr, "%4d",xd->plane[2].dst.buf[i+j*xd->plane[1].dst.stride]);
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");*/
+  }
+  }
   if (mbmi->mb_skip_coeff) {
     vp9_reset_sb_tokens_context(xd, bsize);
   } else {
@@ -848,6 +901,11 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   vp9_zero(fc->tx_count_16x16p);
   vp9_zero(fc->tx_count_32x32p);
   vp9_zero(fc->mbskip_count);
+
+#if CONFIG_INTERINTRA
+  fc->pre_interintra_prob = fc->interintra_prob;
+  vp9_zero(fc->interintra_counts);
+#endif
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
@@ -1099,6 +1157,10 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
 
       xd->allow_high_precision_mv = vp9_rb_read_bit(rb);
       cm->mcomp_filter_type = read_interp_filter_type(rb);
+
+#if CONFIG_INTERINTRA
+      cm->use_interintra = vp9_rb_read_bit(rb);
+#endif
 
       for (i = 0; i < ALLOWED_REFS_PER_FRAME; ++i)
         vp9_setup_scale_factors(cm, i);

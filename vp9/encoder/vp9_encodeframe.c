@@ -453,6 +453,25 @@ static void update_state(VP9_COMP *cpi,
             xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
 
+#if CONFIG_INTERINTRA
+    if (cpi->common.use_interintra
+        && (mbmi->sb_type >= BLOCK_SIZE_SB8X8)
+        && mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
+        mbmi->ref_frame[1] <= INTRA_FRAME) {
+      if (mbmi->ref_frame[1] == INTRA_FRAME) {
+        const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
+        const int bsl = MIN(bwl, bhl);
+        ++cpi->y_mode_count[MIN(bsl, 3)][mbmi->interintra_mode];
+        ++cpi->interintra_count[1];
+#if SEPARATE_INTERINTRA_UV
+        ++cpi->uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
+#endif
+        } else {
+          ++cpi->interintra_count[0];
+        }
+    }
+#endif
+
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         is_inter_mode(mbmi->mode)) {
       ++cpi->common.fc.switchable_interp_count
@@ -1460,6 +1479,11 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cm->fc.tx_count_8x8p);
   vp9_zero(cm->fc.mbskip_count);
 
+#if CONFIG_INTERINTRA
+  vp9_zero(cpi->interintra_count);
+  vp9_zero(cpi->interintra_select_count);
+#endif
+
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.
   vpx_memset(cm->above_context[0], 0, sizeof(ENTROPY_CONTEXT) * 2 *
@@ -2033,9 +2057,61 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t,
     setup_pre_planes(xd, ref_fb, second_ref_fb,
                      mi_row, mi_col, xd->scale_factor, xd->scale_factor_uv);
 
+    int i,j;
+/*
+    if (cm->current_video_frame == 10){
+    if (((mi_row == 15) && (mi_col == 0))
+        ||((mi_row == 7) && (mi_col == 32))
+        ||((mi_row == 6) && (mi_col == 33))
+        ||((mi_row == 6) && (mi_col == 32))
+        ||((mi_row == 6) && (mi_col == 34))){
+      fprintf(stderr, "mi-position[%4d%4d]\n", mi_row, mi_col);
+      for (i=0; i<(2<<b_width_log2(bsize)); ++i) {
+        for (j=0; j<(2<<b_height_log2(bsize)); ++j)
+          fprintf(stderr, "%4d",xd->plane[1].pre[0].buf[j+i*xd->plane[1].dst.stride]);
+        fprintf(stderr, "\n");
+      }
+      fprintf(stderr, "\n");
+      fprintf(stderr, "%d\n", cm->cur_tile_mi_col_end);
+    }
+    }
+*/
+
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col,
                                   bsize < BLOCK_SIZE_SB8X8 ? BLOCK_SIZE_SB8X8
                                                            : bsize);
+    if ((cm->current_video_frame == 134) && (mi_row == 22) && (mi_col == 16)){
+    fprintf(stderr, "=============[%3d%3d%3d%3d]============\n"
+                            , cm->current_video_frame
+                            , cm->show_frame
+                            , cm->use_interintra
+                            , xd->mode_info_context->mbmi.sb_type);
+    fprintf(stderr, "=============ref_frame[][%3d%3d]============\n"
+                            , xd->mode_info_context->mbmi.ref_frame[0]
+                            , xd->mode_info_context->mbmi.ref_frame[1]);
+    fprintf(stderr, "=============inter? :mode :interintra[%3d%3d%3d]============\n",
+             is_inter_mode(mbmi->mode), mbmi->mode, mbmi->interintra_mode);
+    fprintf(stderr, "=============up : left :right[%3d%3d%3d]============\n",
+             xd->up_available, xd->left_available, xd->right_available);
+    for (i=0; i<(4<<b_height_log2(xd->mode_info_context->mbmi.sb_type)); ++i) {
+      for (j=0; j<(4<<b_width_log2(xd->mode_info_context->mbmi.sb_type)); ++j)
+        fprintf(stderr, "%4d",xd->plane[0].dst.buf[j+i*xd->plane[0].dst.stride]);
+      fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+/*    for (i=0; i<(2<<b_height_log2(xd->mode_info_context->mbmi.sb_type)); ++i) {
+      for (j=0; j<(2<<b_width_log2(xd->mode_info_context->mbmi.sb_type)); ++j)
+        fprintf(stderr, "%4d",xd->plane[1].dst.buf[j+i*xd->plane[1].dst.stride]);
+      fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+    for (i=0; i<(2<<b_height_log2(xd->mode_info_context->mbmi.sb_type)); ++i) {
+      for (j=0; j<(2<<b_width_log2(xd->mode_info_context->mbmi.sb_type)); ++j)
+        fprintf(stderr, "%4d",xd->plane[2].dst.buf[j+i*xd->plane[1].dst.stride]);
+      fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");*/
+    }
   }
 
   if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {
