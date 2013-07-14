@@ -121,6 +121,7 @@ static void set_scale_factors(MACROBLOCKD *xd,
 
   xd->scale_factor[0] = scale_factor[ref0 >= 0 ? ref0 : 0];
   xd->scale_factor[1] = scale_factor[ref1 >= 0 ? ref1 : 0];
+
   xd->scale_factor_uv[0] = xd->scale_factor[0];
   xd->scale_factor_uv[1] = xd->scale_factor[1];
 }
