@@ -346,7 +346,12 @@ static void mb_mode_mv_init(VP9D_COMP *pbi, vp9_reader *r) {
 
     if (cm->mcomp_filter_type == SWITCHABLE)
       read_switchable_interp_probs(cm, r);
-
+#if CONFIG_INTERINTRA
+    if (cm->use_interintra) {
+      if (vp9_read(r, VP9_UPD_INTERINTRA_PROB))
+        cm->fc.interintra_prob = vp9_read_prob(r);
+    }
+#endif
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++) {
       if (vp9_read(r, VP9_MODE_UPDATE_PROB))
         cm->fc.intra_inter_prob[i] =
@@ -758,6 +763,31 @@ static void read_mb_modes_mv(VP9D_COMP *pbi, MODE_INFO *mi, MB_MODE_INFO *mbmi,
           break;
       }
     }
+#if CONFIG_INTERINTRA
+    if (mbmi->ref_frame[1] <= INTRA_FRAME) {
+      if (pbi->common.use_interintra &&
+          mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
+          mbmi->ref_frame[1] == NONE) {
+        mbmi->ref_frame[1] = (vp9_read(r, pbi->common.fc.interintra_prob) ?
+                              INTRA_FRAME : NONE);
+        pbi->common.fc.interintra_counts[mbmi->ref_frame[1] == INTRA_FRAME]++;
+        if (mbmi->ref_frame[1] == INTRA_FRAME) {
+          int bsg = MIN(MIN(b_width_log2(bsize), b_height_log2(bsize)), 3);
+          mbmi->interintra_mode = read_intra_mode(r,
+                         pbi->common.fc.y_mode_prob[bsg]);
+          pbi->common.fc.y_mode_counts[bsg][mbmi->interintra_mode]++;
+#if SEPARATE_INTERINTRA_UV
+          mbmi->interintra_uv_mode = read_intra_mode(r,
+                           pbi->common.fc.uv_mode_prob[mbmi->interintra_mode]);
+          pbi->common.fc.uv_mode_counts[mbmi->interintra_mode]
+                                        [mbmi->interintra_uv_mode]++;
+#else
+          mbmi->interintra_uv_mode = mbmi->interintra_mode;
+#endif
+        }
+      }
+    }
+#endif
   } else {
     // required for left and above block mv
     mv0->as_int = 0;

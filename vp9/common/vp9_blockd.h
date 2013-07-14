@@ -208,6 +208,9 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
 
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
+#if CONFIG_INTERINTRA
+  MB_PREDICTION_MODE interintra_mode, interintra_uv_mode;
+#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used
