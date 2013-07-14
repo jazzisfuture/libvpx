@@ -778,6 +778,24 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                       &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
                       nmvc, xd->allow_high_precision_mv);
     }
+#if CONFIG_INTERINTRA
+    if (cpi->common.use_interintra &&
+        mode >= NEARESTMV && mode <= NEWMV &&
+        mi->ref_frame[1] <= INTRA_FRAME) {
+        vp9_write(bc, mi->ref_frame[1] == INTRA_FRAME,
+                  pc->fc.interintra_prob);
+        if (mi->ref_frame[1] == INTRA_FRAME) {
+          const int bwl = b_width_log2(mi->sb_type),
+                    bhl = b_height_log2(mi->sb_type);
+          write_intra_mode(bc, mi->interintra_mode,
+                           pc->fc.y_mode_prob[MIN(3, MIN(bwl, bhl))]);
+#if SEPARATE_INTERINTRA_UV
+          write_intra_mode(bc, mi->interintra_uv_mode,
+                        pc->fc.uv_mode_prob[mi->interintra_mode]);
+#endif
+          }
+    }
+#endif
   }
 }
 
@@ -1572,6 +1590,13 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
       fix_mcomp_filter_type(cpi);
       write_interp_filter_type(cm->mcomp_filter_type, wb);
+#if CONFIG_INTERINTRA
+      if (!cpi->dummy_packing && cm->use_interintra)
+        cm->use_interintra = (cpi->interintra_count[1] > 0);
+      vp9_wb_write_bit(wb, cm->use_interintra);
+      if (!cm->use_interintra)
+        vp9_zero(cpi->interintra_count);
+#endif
     }
   }
 
@@ -1634,6 +1659,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   vp9_copy(pc->fc.pre_tx_probs_16x16p, pc->fc.tx_probs_16x16p);
   vp9_copy(pc->fc.pre_tx_probs_32x32p, pc->fc.tx_probs_32x32p);
   vp9_copy(pc->fc.pre_mbskip_probs, pc->fc.mbskip_probs);
+#if CONFIG_INTERINTRA
+  pc->fc.pre_interintra_prob = pc->fc.interintra_prob;
+#endif
 
   if (xd->lossless) {
     pc->txfm_mode = ONLY_4X4;
@@ -1659,6 +1687,15 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 
     if (pc->mcomp_filter_type == SWITCHABLE)
       update_switchable_interp_probs(cpi, &header_bc);
+
+#if CONFIG_INTERINTRA
+    if (pc->use_interintra) {
+     vp9_cond_prob_update (&header_bc,
+                           &pc->fc.interintra_prob,
+                           VP9_UPD_INTERINTRA_PROB,
+                           cpi->interintra_count);
+    }
+#endif
 
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
       vp9_cond_prob_diff_update(&header_bc, &pc->fc.intra_inter_prob[i],
