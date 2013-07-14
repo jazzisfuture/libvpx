@@ -453,6 +453,25 @@ static void update_state(VP9_COMP *cpi,
             xd->mode_info_context[mis * j + i].mbmi = *mbmi;
     }
 
+#if CONFIG_INTERINTRA
+    if (cpi->common.use_interintra
+        && (mbmi->sb_type >= BLOCK_SIZE_SB8X8)
+        && mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
+        mbmi->ref_frame[1] <= INTRA_FRAME) {
+      if (mbmi->ref_frame[1] == INTRA_FRAME) {
+        const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
+        const int bsl = MIN(bwl, bhl);
+        ++cpi->y_mode_count[MIN(bsl, 3)][mbmi->interintra_mode];
+        ++cpi->interintra_count[1];
+#if SEPARATE_INTERINTRA_UV
+        ++cpi->uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
+#endif
+        } else {
+          ++cpi->interintra_count[0];
+        }
+    }
+#endif
+
     if (cpi->common.mcomp_filter_type == SWITCHABLE &&
         is_inter_mode(mbmi->mode)) {
       ++cpi->common.fc.switchable_interp_count
@@ -1459,6 +1478,11 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cm->fc.tx_count_16x16p);
   vp9_zero(cm->fc.tx_count_8x8p);
   vp9_zero(cm->fc.mbskip_count);
+
+#if CONFIG_INTERINTRA
+  vp9_zero(cpi->interintra_count);
+  vp9_zero(cpi->interintra_select_count);
+#endif
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.

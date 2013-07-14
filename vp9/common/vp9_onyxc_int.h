@@ -103,6 +103,11 @@ typedef struct frame_contexts {
   vp9_prob mbskip_probs[MBSKIP_CONTEXTS];
   vp9_prob pre_mbskip_probs[MBSKIP_CONTEXTS];
   unsigned int mbskip_count[MBSKIP_CONTEXTS][2];
+#if CONFIG_INTERINTRA
+  vp9_prob interintra_prob;
+  vp9_prob pre_interintra_prob;
+  unsigned int interintra_counts[2];
+#endif
 } FRAME_CONTEXT;
 
 typedef enum {
@@ -265,6 +270,10 @@ typedef struct VP9Common {
 
 #if CONFIG_POSTPROC
   struct postproc_state  postproc_state;
+#endif
+
+#if CONFIG_INTERINTRA
+  int use_interintra;
 #endif
 
   int error_resilient_mode;
