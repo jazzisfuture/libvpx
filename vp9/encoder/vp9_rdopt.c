@@ -1508,6 +1508,24 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
   return best_rd;
 }
 
+static int64_t rd_sbuv_dcpred(VP9_COMP *cpi, MACROBLOCK *x,
+                              int *rate, int *rate_tokenonly,
+                              int64_t *distortion, int *skippable,
+                              BLOCK_SIZE_TYPE bsize) {
+  int64_t this_rd;
+
+  x->e_mbd.mode_info_context->mbmi.uv_mode = DC_PRED;
+  super_block_uvrd(&cpi->common, x, rate_tokenonly,
+                   distortion, skippable, NULL, bsize);
+  *rate = *rate_tokenonly +
+          x->intra_uv_mode_cost[x->e_mbd.frame_type][DC_PRED];
+  this_rd = RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
+
+  x->e_mbd.mode_info_context->mbmi.uv_mode = DC_PRED;
+
+  return this_rd;
+}
+
 static int cost_mv_ref(VP9_COMP *cpi, MB_PREDICTION_MODE mode,
                        int mode_context) {
   MACROBLOCK *const x = &cpi->mb;
@@ -3070,6 +3088,11 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
+
+  // Use DC_PRED cost as estimate of UV element for intra mode tests.
+  // Then if Intra is chosen do a more detailed UV search.
+  // TODO(paulwilkins): Put under flag and make use of any UV in RD loop a
+  // speed option
   if (!cpi->sf.use_avoid_tested_higherror
       || (cpi->sf.use_avoid_tested_higherror
           && (ref_frame_mask & (1 << INTRA_FRAME)))) {
@@ -3080,10 +3103,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                        (bsize < BLOCK_SIZE_SB64X64 ? TX_16X16 : TX_32X32)));
          i++) {
       mbmi->txfm_size = i;
-      rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_intra[i], &rate_uv_tokenonly[i],
-                              &dist_uv[i], &skip_uv[i],
-                              (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 :
-                                                           bsize);
+
+      rd_sbuv_dcpred(cpi, x, &rate_uv_intra[i], &rate_uv_tokenonly[i],
+                     &dist_uv[i], &skip_uv[i],
+                     (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 : bsize);
       mode_uv[i] = mbmi->uv_mode;
     }
   }
@@ -3739,6 +3762,23 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (x->skip && !mode_excluded)
       break;
+  }
+
+  // Intra UV rd mode selection if best mode choice was intra.
+  if (vp9_mode_order[best_mode_index].ref_frame == INTRA_FRAME) {
+    mbmi->mode = DC_PRED;
+    mbmi->ref_frame[0] = INTRA_FRAME;
+    for (i = 0; i <= (bsize < BLOCK_SIZE_MB16X16 ? TX_4X4 :
+                      (bsize < BLOCK_SIZE_SB32X32 ? TX_8X8 :
+                       (bsize < BLOCK_SIZE_SB64X64 ? TX_16X16 : TX_32X32)));
+         i++) {
+      mbmi->txfm_size = i;
+      rd_pick_intra_sbuv_mode(cpi, x, &rate_uv_intra[i], &rate_uv_tokenonly[i],
+                              &dist_uv[i], &skip_uv[i],
+                              (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 :
+                                                           bsize);
+      mode_uv[i] = mbmi->uv_mode;
+    }
   }
 
   // If indicated then mark the index of the chosen mode to be inspected at
