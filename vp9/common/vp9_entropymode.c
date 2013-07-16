@@ -327,9 +327,12 @@ static const vp9_prob default_switchable_interp_prob[VP9_SWITCHABLE_FILTERS+1]
 };
 
 void vp9_init_mbmode_probs(VP9_COMMON *cm) {
-  vp9_copy(cm->fc.uv_mode_prob, default_if_uv_probs);
-  vp9_copy(cm->kf_uv_mode_prob, default_kf_uv_probs);
   vp9_copy(cm->fc.y_mode_prob, default_if_y_probs);
+  vp9_copy(cm->fc.uv_mode_prob, default_if_uv_probs);
+
+  vp9_copy(cm->fc.kf_y_mode_prob, default_kf_bmode_probs);
+  vp9_copy(cm->fc.kf_uv_mode_prob, default_kf_uv_probs);
+
   vp9_copy(cm->fc.switchable_interp_prob, default_switchable_interp_prob);
   vp9_copy(cm->fc.partition_prob, default_partition_probs);
   vp9_copy(cm->fc.intra_inter_prob, default_intra_inter_p);
@@ -582,8 +585,6 @@ void vp9_setup_past_independence(VP9_COMMON *cm, MACROBLOCKD *xd) {
 
   vp9_default_coef_probs(cm);
   vp9_init_mbmode_probs(cm);
-
-  vp9_copy(cm->kf_y_mode_prob, default_kf_bmode_probs);
 
   vp9_init_mv_probs(cm);
 

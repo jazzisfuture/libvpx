@@ -41,6 +41,9 @@ typedef struct frame_contexts {
   // y_mode, uv_mode, partition
   vp9_prob y_mode_prob[BLOCK_SIZE_GROUPS][VP9_INTRA_MODES - 1];
   vp9_prob uv_mode_prob[VP9_INTRA_MODES][VP9_INTRA_MODES - 1];
+  vp9_prob kf_y_mode_prob[VP9_INTRA_MODES][VP9_INTRA_MODES]
+                         [VP9_INTRA_MODES - 1];
+  vp9_prob kf_uv_mode_prob[VP9_INTRA_MODES][VP9_INTRA_MODES - 1];
   vp9_prob partition_prob[NUM_FRAME_TYPES][NUM_PARTITION_CONTEXTS]
                          [PARTITION_TYPES - 1];
   vp9_prob pre_y_mode_prob[BLOCK_SIZE_GROUPS][VP9_INTRA_MODES - 1];
@@ -226,13 +229,6 @@ typedef struct VP9Common {
   // partition contexts
   PARTITION_CONTEXT *above_seg_context;
   PARTITION_CONTEXT left_seg_context[8];
-
-  /* keyframe block modes are predicted by their above, left neighbors */
-
-  vp9_prob kf_y_mode_prob[VP9_INTRA_MODES]
-                         [VP9_INTRA_MODES]
-                         [VP9_INTRA_MODES - 1];
-  vp9_prob kf_uv_mode_prob[VP9_INTRA_MODES] [VP9_INTRA_MODES - 1];
 
   // Context probabilities for reference frame prediction
   int allow_comp_inter_inter;
