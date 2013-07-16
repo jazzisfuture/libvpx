@@ -28,8 +28,6 @@ typedef struct {
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t,
                   mblim[MAX_LOOP_FILTER + 1][SIMD_WIDTH]);
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t,
-                  blim[MAX_LOOP_FILTER + 1][SIMD_WIDTH]);
-  DECLARE_ALIGNED(SIMD_WIDTH, uint8_t,
                   lim[MAX_LOOP_FILTER + 1][SIMD_WIDTH]);
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t,
                   hev_thr[4][SIMD_WIDTH]);
@@ -39,7 +37,6 @@ typedef struct {
 
 struct loop_filter_info {
   const uint8_t *mblim;
-  const uint8_t *blim;
   const uint8_t *lim;
   const uint8_t *hev_thr;
 };
@@ -47,14 +44,6 @@ struct loop_filter_info {
 #define prototype_loopfilter(sym) \
   void sym(uint8_t *src, int pitch, const uint8_t *blimit, \
            const uint8_t *limit, const uint8_t *thresh, int count)
-
-#define prototype_loopfilter_block(sym) \
-  void sym(uint8_t *y, uint8_t *u, uint8_t *v, \
-           int ystride, int uv_stride, struct loop_filter_info *lfi)
-
-#if ARCH_X86 || ARCH_X86_64
-#include "x86/vp9_loopfilter_x86.h"
-#endif
 
 typedef void loop_filter_uvfunction(uint8_t *src, int pitch,
                                     const uint8_t *blimit,
