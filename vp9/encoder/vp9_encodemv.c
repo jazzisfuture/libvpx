@@ -510,7 +510,8 @@ void vp9_build_nmv_cost_table(int *mvjoint,
 
 void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
                          int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
-  MB_MODE_INFO * mbmi = &x->e_mbd.mode_info_context->mbmi;
+  MODE_INFO *mi = x->e_mbd.mode_info_context;
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
   MV mv;
   int bwl = b_width_log2(mbmi->sb_type), bw = 1 << bwl;
   int bhl = b_height_log2(mbmi->sb_type), bh = 1 << bhl;
@@ -523,14 +524,14 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
       for (idx = 0; idx < 2; idx += bw) {
         i = idy * 2 + idx;
         if (pi->bmi[i].mode == NEWMV) {
-          mv.row = (pi->bmi[i].mv.as_mv.row - best_ref_mv->as_mv.row);
-          mv.col = (pi->bmi[i].mv.as_mv.col - best_ref_mv->as_mv.col);
+          mv.row = (mi->bmi[i].as_mv[0].as_mv.row - best_ref_mv->as_mv.row);
+          mv.col = (mi->bmi[i].as_mv[0].as_mv.col - best_ref_mv->as_mv.col);
           vp9_inc_mv(&mv, &best_ref_mv->as_mv, &cpi->NMVcount,
                      x->e_mbd.allow_high_precision_mv);
           if (x->e_mbd.mode_info_context->mbmi.ref_frame[1] > INTRA_FRAME) {
-            mv.row = pi->bmi[i].second_mv.as_mv.row -
+            mv.row = mi->bmi[i].as_mv[1].as_mv.row -
                          second_best_ref_mv->as_mv.row;
-            mv.col = pi->bmi[i].second_mv.as_mv.col -
+            mv.col = mi->bmi[i].as_mv[1].as_mv.col -
                          second_best_ref_mv->as_mv.col;
             vp9_inc_mv(&mv, &second_best_ref_mv->as_mv, &cpi->NMVcount,
                        x->e_mbd.allow_high_precision_mv);
