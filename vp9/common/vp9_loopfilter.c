@@ -243,8 +243,8 @@ static void filter_block_plane(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   struct loop_filter_info lfi[MI_BLOCK_SIZE][MI_BLOCK_SIZE];
   int r, c;
 
-  const MODE_INFO *mi = xd->mode_info_context;
   const int row_step_stride = cm->mode_info_stride * row_step;
+  MODE_INFO_8x8 *mi_8x8 = xd->mi_8x8;
 
   for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
     unsigned int mask_16x16_c = 0;
@@ -254,23 +254,25 @@ static void filter_block_plane(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
     // Determine the vertical edges that need filtering
     for (c = 0; c < MI_BLOCK_SIZE && mi_col + c < cm->mi_cols; c += col_step) {
-      const int skip_this = mi[c].mbmi.mb_skip_coeff
-                            && mi[c].mbmi.ref_frame[0] != INTRA_FRAME;
+      MODE_INFO *mi = mi_8x8[c].mi;
+
+      const int skip_this = mi[0].mbmi.mb_skip_coeff
+                            && mi[0].mbmi.ref_frame[0] != INTRA_FRAME;
       // left edge of current unit is block/partition edge -> no skip
-      const int block_edge_left = b_width_log2(mi[c].mbmi.sb_type) ?
-          !(c & ((1 << (b_width_log2(mi[c].mbmi.sb_type)-1)) - 1)) : 1;
+      const int block_edge_left = b_width_log2(mi[0].mbmi.sb_type) ?
+          !(c & ((1 << (b_width_log2(mi[0].mbmi.sb_type)-1)) - 1)) : 1;
       const int skip_this_c = skip_this && !block_edge_left;
       // top edge of current unit is block/partition edge -> no skip
-      const int block_edge_above = b_height_log2(mi[c].mbmi.sb_type) ?
-          !(r & ((1 << (b_height_log2(mi[c].mbmi.sb_type)-1)) - 1)) : 1;
+      const int block_edge_above = b_height_log2(mi[0].mbmi.sb_type) ?
+          !(r & ((1 << (b_height_log2(mi[0].mbmi.sb_type)-1)) - 1)) : 1;
       const int skip_this_r = skip_this && !block_edge_above;
-      const TX_SIZE tx_size = plane ? get_uv_tx_size(&mi[c].mbmi)
-                                    : mi[c].mbmi.txfm_size;
+      const TX_SIZE tx_size = plane ? get_uv_tx_size(&mi[0].mbmi)
+                                    : mi[0].mbmi.txfm_size;
       const int skip_border_4x4_c = ss_x && mi_col + c == cm->mi_cols - 1;
       const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
 
       // Filter level can vary per MI
-      if (!build_lfi(&cm->lf_info, &mi[c].mbmi, lfi[r] + (c >> ss_x)))
+      if (!build_lfi(&cm->lf_info, &mi[0].mbmi, lfi[r] + (c >> ss_x)))
         continue;
 
       // Build masks based on the transform size of each block
@@ -329,7 +331,7 @@ static void filter_block_plane(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                             mask_4x4_c & border_mask,
                             mask_4x4_int[r], lfi[r]);
     dst->buf += 8 * dst->stride;
-    mi += row_step_stride;
+    mi_8x8 += row_step_stride;
   }
 
   // Now do horizontal pass
@@ -355,14 +357,14 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
   loop_filter_frame_init(cm, xd, frame_filter_level);
 
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row += MI_BLOCK_SIZE) {
-    MODE_INFO* const mi = cm->mi + mi_row * cm->mode_info_stride;
+    MODE_INFO_8x8 *mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
 
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
       int plane;
 
       setup_dst_planes(xd, cm->frame_to_show, mi_row, mi_col);
       for (plane = 0; plane < (y_only ? 1 : MAX_MB_PLANE); plane++) {
-        xd->mode_info_context = mi + mi_col;
+        xd->mi_8x8 = mi_8x8 + mi_col;
         filter_block_plane(cm, xd, plane, mi_row, mi_col);
       }
     }
