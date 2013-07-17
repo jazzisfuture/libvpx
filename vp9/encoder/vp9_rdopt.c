@@ -2702,6 +2702,18 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  // if we're newmv and mv == near/nearest/zero, exit - we assume newmv is
+  // always more expensive than near/nearest/zero
+  if (this_mode == NEWMV &&
+      (frame_mv[refs[0]].as_int == mode_mv[NEARESTMV][refs[0]].as_int ||
+       frame_mv[refs[0]].as_int == mode_mv[NEARMV][refs[0]].as_int ||
+       frame_mv[refs[0]].as_int == mode_mv[ZEROMV][refs[0]].as_int) &&
+      (num_refs == 1 ||
+       (frame_mv[refs[1]].as_int == mode_mv[NEARESTMV][refs[1]].as_int ||
+        frame_mv[refs[1]].as_int == mode_mv[NEARMV][refs[1]].as_int ||
+        frame_mv[refs[1]].as_int == mode_mv[ZEROMV][refs[1]].as_int)))
+    return INT64_MAX;
+
   for (i = 0; i < num_refs; ++i) {
     cur_mv[i] = frame_mv[refs[i]];
     // Clip "next_nearest" so that it does not extend to far out of image
