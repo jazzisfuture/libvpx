@@ -38,7 +38,7 @@ int log_msg(const char *fmt, ...) {
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 
-int printMachOEQU(output_fmt_t mode, uint8_t* name, int val) {
+int print_macho_equ(output_fmt_t mode, uint8_t* name, int val) {
   switch (mode) {
     case OUTPUT_FMT_RVDS:
       printf("%-40s EQU %5d\n", name, val);
@@ -170,7 +170,7 @@ int parse_macho(uint8_t *base_buf, size_t sz, output_fmt_t mode) {
 
             memcpy(&val, base_buf + base_data_section + nl.n_value,
                    sizeof(val));
-	    printMachOEQU(mode, str_buf + nl.n_un.n_strx + 1, val);
+            print_macho_equ(mode, str_buf + nl.n_un.n_strx + 1, val);
           } else { /* if (bits == 64) */
             struct nlist_64 nl;
             int val;
@@ -180,7 +180,7 @@ int parse_macho(uint8_t *base_buf, size_t sz, output_fmt_t mode) {
 
             memcpy(&val, base_buf + base_data_section + nl.n_value,
                    sizeof(val));
-	    printMachOEQU(mode, str_buf + nl.n_un.n_strx + 1, val);
+            print_macho_equ(mode, str_buf + nl.n_un.n_strx + 1, val);
           }
         }
       }
