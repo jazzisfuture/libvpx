@@ -521,6 +521,13 @@ int64_t vp9_block_error_c(int16_t *coeff, int16_t *dqcoeff,
   return error;
 }
 
+static const int16_t band_counts[TX_SIZE_MAX_SB][8] = {
+  { 1, 2, 3, 4,  3,   16 - 13 },
+  { 1, 2, 3, 4, 11,   64 - 21 },
+  { 1, 2, 3, 4, 11,  256 - 21 },
+  { 1, 2, 3, 4, 11, 1024 - 21 },
+};
+
 static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
                               int plane, int block, PLANE_TYPE type,
                               ENTROPY_CONTEXT *A,
@@ -529,21 +536,15 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
                               int y_blocks) {
   MACROBLOCKD *const xd = &mb->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
-  int pt;
-  int c = 0;
-  int cost = 0;
-  const int16_t *scan = NULL, *nb;
+  int pt, c, cost;
+  const int16_t *scan = NULL, *nb, *band_count = band_counts[tx_size];
   const int eob = xd->plane[plane].eobs[block];
   const int16_t *qcoeff_ptr = BLOCK_OFFSET(xd->plane[plane].qcoeff, block, 16);
   const int ref = mbmi->ref_frame[0] != INTRA_FRAME;
   unsigned int (*token_costs)[COEF_BANDS][PREV_COEF_CONTEXTS]
                     [MAX_ENTROPY_TOKENS] = mb->token_costs[tx_size][type][ref];
-  ENTROPY_CONTEXT above_ec = 0, left_ec = 0;
-  TX_TYPE tx_type = DCT_DCT;
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
-  int seg_eob = 0;
+  ENTROPY_CONTEXT above_ec, left_ec;
   uint8_t token_cache[1024];
-  const uint8_t *band_translate = NULL;
 
   // Check for consistency of tx_size with mode info
   assert((!type && !plane) || (type && plane));
@@ -554,75 +555,53 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   }
 
   switch (tx_size) {
-    case TX_4X4: {
-      tx_type = (type == PLANE_TYPE_Y_WITH_DC) ?
-          get_tx_type_4x4(xd, block) : DCT_DCT;
-      above_ec = A[0] != 0;
-      left_ec = L[0] != 0;
-      seg_eob = 16;
-      scan = get_scan_4x4(tx_type);
-      band_translate = vp9_coefband_trans_4x4;
+    case TX_4X4:
+      scan = get_scan_4x4(type == PLANE_TYPE_Y_WITH_DC ?
+                          get_tx_type_4x4(xd, block) : DCT_DCT);
+      above_ec = !!*A;
+      left_ec  = !!*L;
       break;
-    }
-    case TX_8X8: {
-      const TX_TYPE tx_type = type == PLANE_TYPE_Y_WITH_DC ?
-                                  get_tx_type_8x8(xd) : DCT_DCT;
-      above_ec = (A[0] + A[1]) != 0;
-      left_ec = (L[0] + L[1]) != 0;
-      scan = get_scan_8x8(tx_type);
-      seg_eob = 64;
-      band_translate = vp9_coefband_trans_8x8plus;
+    case TX_8X8:
+      scan = get_scan_8x8(type == PLANE_TYPE_Y_WITH_DC ?
+                          get_tx_type_8x8(xd) : DCT_DCT);
+      above_ec = !!*((uint16_t *)A);
+      left_ec  = !!*((uint16_t *)L);
       break;
-    }
-    case TX_16X16: {
-      const TX_TYPE tx_type = type == PLANE_TYPE_Y_WITH_DC ?
-                                  get_tx_type_16x16(xd) : DCT_DCT;
-      scan = get_scan_16x16(tx_type);
-      seg_eob = 256;
-      above_ec = (A[0] + A[1] + A[2] + A[3]) != 0;
-      left_ec = (L[0] + L[1] + L[2] + L[3]) != 0;
-      band_translate = vp9_coefband_trans_8x8plus;
+    case TX_16X16:
+      scan = get_scan_16x16(type == PLANE_TYPE_Y_WITH_DC ?
+                            get_tx_type_16x16(xd) : DCT_DCT);
+      above_ec = !!*((uint32_t *)A);
+      left_ec  = !!*((uint32_t *)L);
       break;
-    }
     case TX_32X32:
       scan = vp9_default_scan_32x32;
-      seg_eob = 1024;
-      above_ec = (A[0] + A[1] + A[2] + A[3] + A[4] + A[5] + A[6] + A[7]) != 0;
-      left_ec = (L[0] + L[1] + L[2] + L[3] + L[4] + L[5] + L[6] + L[7]) != 0;
-      band_translate = vp9_coefband_trans_8x8plus;
+      above_ec = !!*(uint64_t *)A;
+      left_ec  = !!*(uint64_t *)L;
       break;
     default:
       assert(0);
       break;
   }
-  assert(eob <= seg_eob);
 
   pt = combine_entropy_contexts(above_ec, left_ec);
   nb = vp9_get_coef_neighbors_handle(scan);
 
-  if (vp9_segfeature_active(&xd->seg, segment_id, SEG_LVL_SKIP))
-    seg_eob = 0;
-
-  /* sanity check to ensure that we do not have spurious non-zero q values */
-  if (eob < seg_eob)
-    assert(qcoeff_ptr[scan[eob]] == 0);
-
   if (eob == 0) {
     // single eob token
-    cost += token_costs[0][0][pt][DCT_EOB_TOKEN];
+    cost = token_costs[0][0][pt][DCT_EOB_TOKEN];
+    c = 0;
   } else {
-    int v, prev_t;
+    int v, prev_t, band = 1, band_left = band_count[1];
 
     // dc token
     v = qcoeff_ptr[0];
     prev_t = vp9_dct_value_tokens_ptr[v].token;
-    cost += token_costs[0][0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
+    cost = token_costs[0][0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
     token_cache[0] = vp9_pt_energy_class[prev_t];
 
     // ac tokens
     for (c = 1; c < eob; c++) {
       const int rc = scan[c];
-      const int band = get_coef_band(band_translate, c);
       int t;
 
       v = qcoeff_ptr[rc];
@@ -631,19 +610,34 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
       cost += token_costs[!prev_t][band][pt][t] + vp9_dct_value_cost_ptr[v];
       token_cache[rc] = vp9_pt_energy_class[t];
       prev_t = t;
+      if (!--band_left) {
+        band_left = band_count[++band];
+      }
     }
 
     // eob token
-    if (c < seg_eob) {
+    if (band < 6) {
       pt = get_coef_context(nb, token_cache, c);
-      cost += token_costs[0][get_coef_band(band_translate, c)][pt]
-                         [DCT_EOB_TOKEN];
+      cost += token_costs[0][band][pt][DCT_EOB_TOKEN];
     }
   }
 
   // is eob first coefficient;
-  for (pt = 0; pt < (1 << tx_size); pt++) {
-    A[pt] = L[pt] = c > 0;
+  switch (tx_size) {
+    case TX_4X4:
+      *A = *L = c > 0;
+      break;
+    case TX_8X8:
+      *(uint16_t *)A = *(uint16_t *)L = 0x0101 * (c > 0);
+      break;
+    case TX_16X16:
+      *(uint32_t *)A = *(uint32_t *)L = 0x01010101 * (c > 0);
+      break;
+    case TX_32X32:
+      *(uint64_t *)A = *(uint64_t *)L = 0x0101010101010101ULL * (c > 0);
+      break;
+    default:
+      assert(0);
   }
 
   return cost;
