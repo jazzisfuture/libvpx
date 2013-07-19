@@ -1179,10 +1179,11 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                      ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                                      int *bestrate, int *bestratey,
                                      int64_t *bestdistortion,
-                                     BLOCK_SIZE_TYPE bsize) {
+                                     BLOCK_SIZE_TYPE bsize,
+                                     int64_t rd_thresh) {
   MB_PREDICTION_MODE mode;
   MACROBLOCKD *xd = &x->e_mbd;
-  int64_t best_rd = INT64_MAX;
+  int64_t best_rd = rd_thresh;
   int rate = 0;
   int64_t distortion;
   VP9_COMMON *const cm = &cpi->common;
@@ -1263,6 +1264,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         distortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff,
                                                           block, 16),
                                       16, &ssz) >> 2;
+        if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
+          goto next;
 
         if (tx_type != DCT_DCT)
           vp9_short_iht4x4_add(BLOCK_OFFSET(pd->dqcoeff, block, 16),
@@ -1285,6 +1288,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       best_tx_type = tx_type;
       vpx_memcpy(a, tempa, sizeof(tempa));
       vpx_memcpy(l, templ, sizeof(templ));
+      // FIXME(rbultje) why are we storing best_dqcoeff instead of the
+      // dst buffer here?
       for (idy = 0; idy < bh; ++idy) {
         for (idx = 0; idx < bw; ++idx) {
           block = ib + idy * 2 + idx;
@@ -1294,9 +1299,11 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         }
       }
     }
+  next:
+    {}
   }
 
-  if (x->skip_encode)
+  if (best_rd >= rd_thresh || x->skip_encode)
     return best_rd;
 
   for (idy = 0; idy < bh; ++idy) {
@@ -1353,7 +1360,7 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
       const int mis = xd->mode_info_stride;
       MB_PREDICTION_MODE UNINITIALIZED_IS_SAFE(best_mode);
       int UNINITIALIZED_IS_SAFE(r), UNINITIALIZED_IS_SAFE(ry);
-      int64_t UNINITIALIZED_IS_SAFE(d);
+      int64_t UNINITIALIZED_IS_SAFE(d), this_rd;
       i = idy * 2 + idx;
 
       if (cpi->common.frame_type == KEY_FRAME) {
@@ -1364,9 +1371,14 @@ static int64_t rd_pick_intra4x4mby_modes(VP9_COMP *cpi, MACROBLOCK *mb,
         bmode_costs  = mb->y_mode_costs[A][L];
       }
 
-      total_rd += rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
-                                        t_above + idx, t_left + idy,
-                                        &r, &ry, &d, bsize);
+      this_rd = rd_pick_intra4x4block(cpi, mb, i, &best_mode, bmode_costs,
+                                      t_above + idx, t_left + idy,
+                                      &r, &ry, &d, bsize,
+                                      best_rd - total_rd);
+      if (this_rd >= best_rd - total_rd)
+        return INT64_MAX;
+
+      total_rd += this_rd;
       cost += r;
       distortion += d;
       tot_rate_y += ry;
@@ -3424,8 +3436,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         */
 
       mbmi->txfm_size = TX_4X4;
-      rd_pick_intra4x4mby_modes(cpi, x, &rate, &rate_y,
-                                &distortion_y, INT64_MAX);
+      if (rd_pick_intra4x4mby_modes(cpi, x, &rate, &rate_y,
+                                    &distortion_y, best_rd) >= best_rd)
+        continue;
       rate2 += rate;
       rate2 += intra_cost_penalty;
       distortion2 += distortion_y;
