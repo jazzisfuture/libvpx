@@ -347,7 +347,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
                              cm->current_video_frame + 1000);
 #endif
 
-    if (cm->filter_level) {
+    if (!pbi->do_loopfilter_inline) {
       /* Apply the loop filter if appropriate. */
       vp9_loop_filter_frame(cm, &pbi->mb, cm->filter_level, 0);
     }
