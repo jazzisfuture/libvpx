@@ -778,9 +778,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->less_rectangular_check  = 1;
         sf->use_square_partition_only = 1;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
-        sf->use_lastframe_partitioning = 1;
-        sf->adjust_partitioning_from_last_frame = 1;
-        sf->last_partitioning_redo_frequency = 3;
         sf->unused_mode_skip_lvl = BLOCK_SIZE_SB32X32;
         sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
                                       cpi->common.intra_only ||
@@ -801,7 +798,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
-        sf->partition_by_variance = 1;
+        sf->use_lastframe_partitioning = 1;
+        sf->last_partitioning_redo_frequency = 3;
         sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
                                       cpi->common.intra_only ||
                                       cpi->common.show_frame == 0) ?
