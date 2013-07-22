@@ -513,14 +513,14 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
   MODE_INFO *mi = x->e_mbd.mode_info_context;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   MV diff;
-  const int bw = 1 << b_width_log2(mbmi->sb_type);
-  const int bh = 1 << b_height_log2(mbmi->sb_type);
+  const int block_width = block_type_to_width[mbmi->sb_type];
+  const int block_height = block_type_to_height[mbmi->sb_type];
   int idx, idy;
 
   if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
     PARTITION_INFO *pi = x->partition_info;
-    for (idy = 0; idy < 2; idy += bh) {
-      for (idx = 0; idx < 2; idx += bw) {
+    for (idy = 0; idy < 2; idy += block_height) {
+      for (idx = 0; idx < 2; idx += block_width) {
         const int i = idy * 2 + idx;
         if (pi->bmi[i].mode == NEWMV) {
           diff.row = mi->bmi[i].as_mv[0].as_mv.row - best_ref_mv->as_mv.row;
