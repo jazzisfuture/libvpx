@@ -17,6 +17,14 @@ extern const int b_width_log2_lookup[BLOCK_SIZE_TYPES];
 extern const int b_height_log2_lookup[BLOCK_SIZE_TYPES];
 extern const int mi_width_log2_lookup[BLOCK_SIZE_TYPES];
 extern const int mi_height_log2_lookup[BLOCK_SIZE_TYPES];
+extern const int block_type_to_mi_width[BLOCK_SIZE_TYPES];
+extern const int block_type_to_mi_height[BLOCK_SIZE_TYPES];
+extern const int block_type_to_ablocks_high[BLOCK_SIZE_TYPES];
+extern const int block_type_to_ablocks_wide[BLOCK_SIZE_TYPES];
+extern const PARTITION_TYPE
+  block_type_to_partition[BLOCK_SIZE_TYPES][BLOCK_SIZE_TYPES];
+
+
 extern const BLOCK_SIZE_TYPE subsize_lookup[PARTITION_TYPES][BLOCK_SIZE_TYPES];
 extern const TX_SIZE max_txsize_lookup[BLOCK_SIZE_TYPES];
 extern const TX_SIZE max_uv_txsize_lookup[BLOCK_SIZE_TYPES];
