@@ -468,10 +468,8 @@ static void model_rd_for_sb_y_tx(VP9_COMP *cpi, BLOCK_SIZE_TYPE bsize,
   BLOCK_SIZE_TYPE bs = BLOCK_SIZE_AB4X4;
   struct macroblock_plane *const p = &x->plane[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
-  const int bwl = plane_block_width_log2by4(bsize, pd);
-  const int bhl = plane_block_height_log2by4(bsize, pd);
-  const int bw = 4 << bwl;
-  const int bh = 4 << bhl;
+  const int block_width = plane_block_width(bsize, pd);
+  const int block_height = plane_block_height(bsize, pd);
   int rate_sum = 0;
   int64_t dist_sum = 0;
 
@@ -490,10 +488,9 @@ static void model_rd_for_sb_y_tx(VP9_COMP *cpi, BLOCK_SIZE_TYPE bsize,
   } else {
     assert(0);
   }
-  assert(bs <= get_block_size(bwl, bhl));
   *out_skip = 1;
-  for (j = 0; j < bh; j+=t) {
-    for (k = 0; k < bw; k+=t) {
+  for (j = 0; j < block_height; j+=t) {
+    for (k = 0; k < block_width; k+=t) {
       int rate;
       int64_t dist;
       unsigned int sse;
@@ -716,8 +713,8 @@ static void rate_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
 static int rdcost_plane(VP9_COMMON * const cm, MACROBLOCK *x, int plane,
                         BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
   MACROBLOCKD * const xd = &x->e_mbd;
-  const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
-  const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
+  const int bwl = plane_block_width_log2by4(bsize, &xd->plane[plane]);
+  const int bhl = plane_block_height_log2by4(bsize, &xd->plane[plane]);
   const int bw = 1 << bwl, bh = 1 << bhl;
   struct rdcost_block_args args = { cm, x, { 0 }, { 0 }, tx_size, bw, bh,
     0, 0, 0, INT64_MAX, 0 };
