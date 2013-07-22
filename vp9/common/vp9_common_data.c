@@ -17,11 +17,19 @@ const int b_width_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4};
 const int b_height_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4};
+const int block_type_to_width[BLOCK_SIZE_TYPES] =
+  {1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16};
+const int block_type_to_height[BLOCK_SIZE_TYPES] =
+  {1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16};
 // Log 2 conversion lookup tables for modeinfo width and height
 const int mi_width_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3};
+const int block_type_to_mi_width[BLOCK_SIZE_TYPES] =
+  {1, 1, 1, 1, 1, 2, 2, 2, 4, 4, 4, 8, 8};
 const int mi_height_log2_lookup[BLOCK_SIZE_TYPES] =
   {0, 0, 0, 0, 1, 0, 1, 2, 1, 2, 3, 2, 3};
+const int block_type_to_mi_height[BLOCK_SIZE_TYPES] =
+  {1, 1, 1, 1, 2, 1, 2, 4, 2, 4, 8, 4, 8};
 
 const BLOCK_SIZE_TYPE subsize_lookup[PARTITION_TYPES][BLOCK_SIZE_TYPES] = {
   {     // PARTITION_NONE
