@@ -1282,15 +1282,6 @@ int vp9_find_best_half_pixel_step(MACROBLOCK *x,
     }\
   }
 
-static const MV next_chkpts[6][3] = {
-  {{ -2, 0}, { -1, -2}, {1, -2}},
-  {{ -1, -2}, {1, -2}, {2, 0}},
-  {{1, -2}, {2, 0}, {1, 2}},
-  {{2, 0}, {1, 2}, { -1, 2}},
-  {{1, 2}, { -1, 2}, { -2, 0}},
-  {{ -1, 2}, { -2, 0}, { -1, -2}}
-};
-
 int vp9_hex_search
 (
   MACROBLOCK *x,
@@ -1298,14 +1289,61 @@ int vp9_hex_search
   int_mv *best_mv,
   int search_param,
   int sad_per_bit,
+  int do_refine,
   const vp9_variance_fn_ptr_t *vfp,
   int *mvjsadcost, int *mvsadcost[2],
-  int *mvjcost, int *mvcost[2],
   int_mv *center_mv
 ) {
   const MACROBLOCKD* const xd = &x->e_mbd;
-  MV hex[6] = { { -1, -2}, {1, -2}, {2, 0}, {1, 2}, { -1, 2}, { -2, 0} };
-  MV neighbors[4] = {{0, -1}, { -1, 0}, {1, 0}, {0, 1}};
+  static const MV hex[4][6] = {
+    {{-1, -2}, {1, -2}, {2, 0}, {1, 2}, { -1, 2}, { -2, 0}},
+    {{-2, -4}, {2, -4}, {4, 0}, {2, 4}, { -2, 4}, { -4, 0}},
+    {{-4, -8}, {4, -8}, {8, 0}, {4, 8}, { -4, 8}, { -8, 0}},
+    {{-8, -16}, {8, -16}, {16, 0}, {8, 16}, { -8, 16}, { -16, 0}},
+  };
+  static const MV next_chkpts[4][6][3] = {
+    {
+      {{ -2, 0}, { -1, -2}, {1, -2}},
+      {{ -1, -2}, {1, -2}, {2, 0}},
+      {{1, -2}, {2, 0}, {1, 2}},
+      {{2, 0}, {1, 2}, { -1, 2}},
+      {{1, 2}, { -1, 2}, { -2, 0}},
+      {{ -1, 2}, { -2, 0}, { -1, -2}}
+    }, {
+      {{ -4, 0}, { -2, -4}, {2, -4}},
+      {{ -2, -4}, {2, -4}, {4, 0}},
+      {{2, -4}, {4, 0}, {2, 4}},
+      {{4, 0}, {2, 4}, {-2, 4}},
+      {{2, 4}, {-2, 4}, {-4, 0}},
+      {{-2, 4}, {-4, 0}, {-2, -4}}
+    }, {
+      {{ -8, 0}, { -4, -8}, {4, -8}},
+      {{ -4, -8}, {4, -8}, {8, 0}},
+      {{4, -8}, {8, 0}, {4, 8}},
+      {{8, 0}, {4, 8}, {-4, 8}},
+      {{4, 8}, {-4, 8}, {-8, 0}},
+      {{-4, 8}, {-8, 0}, {-4, -8}}
+    }, {
+      {{ -16, 0}, { -8, -16}, {8, -16}},
+      {{ -8, -16}, {8, -16}, {16, 0}},
+      {{8, -16}, {16, 0}, {8, 16}},
+      {{16, 0}, {8, 16}, {-8, 16}},
+      {{8, 16}, {-8, 16}, {-16, 0}},
+      {{-8, 16}, {-16, 0}, {-8, -16}}
+    }
+  };
+  static const int real_index[6][3] = {
+    {5, 0, 1},
+    {0, 1, 2},
+    {1, 2, 3},
+    {2, 3, 4},
+    {3, 4, 5},
+    {4, 5, 0}
+  };
+  static const MV neighbors[4] = {
+    {0, -1}, { -1, 0}, {1, 0}, {0, 1},
+  };
+
   int i, j;
 
   uint8_t *what = x->plane[0].src.buf;
@@ -1320,10 +1358,13 @@ int vp9_hex_search
   int k = -1;
   int all_in;
   int best_site = -1;
-
   int_mv fcenter_mv;
+  int s = search_param;
+
   fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
   fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
+
+  assert(s < 4);
 
   // adjust ref_mv to make sure it is within MV range
   clamp_mv(ref_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min, x->mv_row_max);
@@ -1342,99 +1383,112 @@ int vp9_hex_search
 
   // hex search
   // j=0
-  CHECK_BOUNDS(2)
-
-  if (all_in) {
-    for (i = 0; i < 6; i++) {
-      this_mv.as_mv.row = br + hex[i].row;
-      this_mv.as_mv.col = bc + hex[i].col;
-      this_offset = base_offset + (this_mv.as_mv.row * in_what_stride) + this_mv.as_mv.col;
-      thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
-      CHECK_BETTER
-    }
-  } else {
-    for (i = 0; i < 6; i++) {
-      this_mv.as_mv.row = br + hex[i].row;
-      this_mv.as_mv.col = bc + hex[i].col;
-      CHECK_POINT
-      this_offset = base_offset + (this_mv.as_mv.row * in_what_stride) + this_mv.as_mv.col;
-      thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
-      CHECK_BETTER
-    }
-  }
-
-  if (best_site == -1)
-    goto cal_neighbors;
-  else {
-    br += hex[best_site].row;
-    bc += hex[best_site].col;
-    k = best_site;
-  }
-
-  for (j = 1; j < 127; j++) {
-    best_site = -1;
+  do {
     CHECK_BOUNDS(2)
 
     if (all_in) {
-      for (i = 0; i < 3; i++) {
-        this_mv.as_mv.row = br + next_chkpts[k][i].row;
-        this_mv.as_mv.col = bc + next_chkpts[k][i].col;
-        this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) + this_mv.as_mv.col;
-        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
+      for (i = 0; i < 6; i++) {
+        this_mv.as_mv.row = br + hex[s][i].row;
+        this_mv.as_mv.col = bc + hex[s][i].col;
+        this_offset = base_offset + (this_mv.as_mv.row * in_what_stride) +
+                      this_mv.as_mv.col;
+        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride,
+                           bestsad);
         CHECK_BETTER
       }
     } else {
-      for (i = 0; i < 3; i++) {
-        this_mv.as_mv.row = br + next_chkpts[k][i].row;
-        this_mv.as_mv.col = bc + next_chkpts[k][i].col;
+      for (i = 0; i < 6; i++) {
+        this_mv.as_mv.row = br + hex[s][i].row;
+        this_mv.as_mv.col = bc + hex[s][i].col;
         CHECK_POINT
-        this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) + this_mv.as_mv.col;
-        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
+        this_offset = base_offset + (this_mv.as_mv.row * in_what_stride) +
+                      this_mv.as_mv.col;
+        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride,
+                           bestsad);
         CHECK_BETTER
       }
     }
 
-    if (best_site == -1)
-      break;
-    else {
-      br += next_chkpts[k][best_site].row;
-      bc += next_chkpts[k][best_site].col;
-      k += 5 + best_site;
-      if (k >= 12) k -= 12;
-      else if (k >= 6) k -= 6;
+    if (best_site == -1) {
+      continue;
+    } else {
+      br += hex[s][best_site].row;
+      bc += hex[s][best_site].col;
+      k = best_site;
     }
-  }
+
+    for (j = 0; j < 16; j++) {
+      best_site = -1;
+      CHECK_BOUNDS(2)
+
+      if (all_in) {
+        for (i = 0; i < 3; i++) {
+          this_mv.as_mv.row = br + next_chkpts[s][k][i].row;
+          this_mv.as_mv.col = bc + next_chkpts[s][k][i].col;
+          this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) +
+                        this_mv.as_mv.col;
+          thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride,
+                             bestsad);
+          CHECK_BETTER
+        }
+      } else {
+        for (i = 0; i < 3; i++) {
+          this_mv.as_mv.row = br + next_chkpts[s][k][i].row;
+          this_mv.as_mv.col = bc + next_chkpts[s][k][i].col;
+          CHECK_POINT
+          this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) +
+                        this_mv.as_mv.col;
+          thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride,
+                             bestsad);
+          CHECK_BETTER
+        }
+      }
+
+      if (best_site == -1) {
+        break;
+      } else {
+        br += next_chkpts[s][k][best_site].row;
+        bc += next_chkpts[s][k][best_site].col;
+        k = real_index[k][best_site];
+      }
+    }
+  } while (s--);
 
   // check 4 1-away neighbors
-cal_neighbors:
-  for (j = 0; j < 32; j++) {
-    best_site = -1;
-    CHECK_BOUNDS(1)
+  // cal_neighbors:
+  if (do_refine) {
+    int l = 16;
+    for (j = 0; j < l; j++) {
+      best_site = -1;
+      CHECK_BOUNDS(1)
 
-    if (all_in) {
-      for (i = 0; i < 4; i++) {
-        this_mv.as_mv.row = br + neighbors[i].row;
-        this_mv.as_mv.col = bc + neighbors[i].col;
-        this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) + this_mv.as_mv.col;
-        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
-        CHECK_BETTER
+          if (all_in) {
+            for (i = 0; i < 4; i++) {
+              this_mv.as_mv.row = br + neighbors[i].row;
+              this_mv.as_mv.col = bc + neighbors[i].col;
+              this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) +
+                  this_mv.as_mv.col;
+              thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
+              CHECK_BETTER
+            }
+          } else {
+            for (i = 0; i < 4; i++) {
+              this_mv.as_mv.row = br + neighbors[i].row;
+              this_mv.as_mv.col = bc + neighbors[i].col;
+              CHECK_POINT
+                  this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) +
+                  this_mv.as_mv.col;
+          thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
+          CHECK_BETTER
+        }
       }
-    } else {
-      for (i = 0; i < 4; i++) {
-        this_mv.as_mv.row = br + neighbors[i].row;
-        this_mv.as_mv.col = bc + neighbors[i].col;
-        CHECK_POINT
-        this_offset = base_offset + (this_mv.as_mv.row * (in_what_stride)) + this_mv.as_mv.col;
-        thissad = vfp->sdf(what, what_stride, this_offset, in_what_stride, bestsad);
-        CHECK_BETTER
-      }
-    }
 
-    if (best_site == -1)
-      break;
-    else {
-      br += neighbors[best_site].row;
-      bc += neighbors[best_site].col;
+      if (best_site == -1) {
+        break;
+      } else {
+        br += neighbors[best_site].row;
+        bc += neighbors[best_site].col;
+      }
     }
   }
 

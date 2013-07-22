@@ -42,9 +42,9 @@ int vp9_full_pixel_diamond(struct VP9_COMP *cpi, MACROBLOCK *x,
 int vp9_hex_search(MACROBLOCK *x,
                    int_mv *ref_mv, int_mv *best_mv,
                    int search_param, int error_per_bit,
+                   int do_refine,
                    const vp9_variance_fn_ptr_t *vf,
                    int *mvjsadcost, int *mvsadcost[2],
-                   int *mvjcost, int *mvcost[2],
                    int_mv *center_mv);
 
 typedef int (fractional_mv_step_fp) (MACROBLOCK *x, int_mv
