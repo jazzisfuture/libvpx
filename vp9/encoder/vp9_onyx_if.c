@@ -827,6 +827,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->disable_splitmv =
             (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 0;
         sf->auto_mv_step_size = 1;
+        sf->search_method = SQUARE;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -844,6 +845,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->skip_encode_sb = 1;
         sf->disable_splitmv = 1;
         sf->auto_mv_step_size = 1;
+        sf->search_method = HEX;
       }
       if (speed == 4) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -865,6 +867,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         // sf->reference_masking = 1;
 
         sf->disable_splitmv = 1;
+        sf->search_method = HEX;
       }
       /*
       if (speed == 2) {
