@@ -149,11 +149,6 @@ typedef struct {
   // Flags used for prediction status of various bistream signals
   unsigned char seg_id_predicted;
 
-  // Indicates if the mb is part of the image (1) vs border (0)
-  // This can be useful in determining whether the MB provides
-  // a valid predictor
-  unsigned char mb_in_image;
-
   INTERPOLATIONFILTERTYPE interp_filter;
 
   BLOCK_SIZE_TYPE sb_type;
@@ -163,6 +158,14 @@ typedef struct {
   MB_MODE_INFO mbmi;
   union b_mode_info bmi[4];
 } MODE_INFO;
+
+typedef struct {
+  MODE_INFO *mi;
+  // Indicates if the mb is part of the image (1) vs border (0)
+  // This can be useful in determining whether the MB provides
+  // a valid predictor
+  unsigned char mb_in_image;
+} MODE_INFO_8x8;
 
 enum mv_precision {
   MV_PRECISION_Q3,
@@ -237,6 +240,8 @@ struct loopfilter {
   signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
 };
 
+#define MIC_STREAM
+
 typedef struct macroblockd {
   struct macroblockd_plane plane[MAX_MB_PLANE];
 
@@ -245,6 +250,13 @@ typedef struct macroblockd {
   MODE_INFO *prev_mode_info_context;
   MODE_INFO *mode_info_context;
   int mode_info_stride;
+
+  MODE_INFO *mic_stream_ptr;
+
+  MODE_INFO_8x8 *mi_8x8;
+  MODE_INFO_8x8 *prev_mi_8x8;
+
+  FRAME_TYPE frame_type;
 
   int up_available;
   int left_available;
@@ -360,7 +372,7 @@ static BLOCK_SIZE_TYPE get_subsize(BLOCK_SIZE_TYPE bsize,
 extern const TX_TYPE mode2txfm_map[MB_MODE_COUNT];
 
 static INLINE TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
-  MODE_INFO *const mi = xd->mode_info_context;
+  MODE_INFO *const mi = xd->mi_8x8[0].mi;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   if (xd->lossless || mbmi->ref_frame[0] != INTRA_FRAME)
@@ -371,11 +383,11 @@ static INLINE TX_TYPE get_tx_type_4x4(const MACROBLOCKD *xd, int ib) {
 }
 
 static INLINE TX_TYPE get_tx_type_8x8(const MACROBLOCKD *xd) {
-  return mode2txfm_map[xd->mode_info_context->mbmi.mode];
+  return mode2txfm_map[(xd->mi_8x8[0].mi)->mbmi.mode];
 }
 
 static INLINE TX_TYPE get_tx_type_16x16(const MACROBLOCKD *xd) {
-  return  mode2txfm_map[xd->mode_info_context->mbmi.mode];
+  return mode2txfm_map[(xd->mi_8x8[0].mi)->mbmi.mode];
 }
 
 static void setup_block_dptrs(MACROBLOCKD *xd, int ss_x, int ss_y) {
@@ -457,7 +469,7 @@ static INLINE void foreach_transformed_block_in_plane(
   // block and transform sizes, in number of 4x4 blocks log 2 ("*_b")
   // 4x4=0, 8x8=2, 16x16=4, 32x32=6, 64x64=8
   // transform size varies per plane, look it up in a common way.
-  const MB_MODE_INFO* mbmi = &xd->mode_info_context->mbmi;
+  const MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
   const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi)
                                 : mbmi->txfm_size;
   const int block_size_b = bw + bh;
@@ -555,8 +567,9 @@ static INLINE void foreach_predicted_block_in_plane(
 
   // size of the predictor to use.
   int pred_w, pred_h;
+  MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
 
-  if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+  if (mbmi->sb_type < BLOCK_SIZE_SB8X8) {
     assert(bsize == BLOCK_SIZE_SB8X8);
     pred_w = 0;
     pred_h = 0;

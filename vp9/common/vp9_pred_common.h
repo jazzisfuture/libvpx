@@ -19,9 +19,10 @@ int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
 
 
 static INLINE int vp9_get_pred_context_seg_id(const MACROBLOCKD *xd) {
-  const MODE_INFO *const mi = xd->mode_info_context;
-  const MB_MODE_INFO *const above_mbmi = &mi[-xd->mode_info_stride].mbmi;
-  const MB_MODE_INFO *const left_mbmi = &mi[-1].mbmi;
+  const MODE_INFO_8x8 *const mi_8x8 = xd->mi_8x8;
+  const MB_MODE_INFO *const above_mbmi =
+    &mi_8x8[-xd->mode_info_stride].mi->mbmi;
+  const MB_MODE_INFO *const left_mbmi = &mi_8x8[-1].mi->mbmi;
 
   return above_mbmi->seg_id_predicted +
              (xd->left_available ? left_mbmi->seg_id_predicted : 0);
@@ -31,16 +32,17 @@ static INLINE vp9_prob vp9_get_pred_prob_seg_id(const MACROBLOCKD *xd) {
   return xd->seg.pred_probs[vp9_get_pred_context_seg_id(xd)];
 }
 
-void vp9_set_pred_flag_seg_id(VP9_COMMON *cm, BLOCK_SIZE_TYPE bsize,
-                              int mi_row, int mi_col, uint8_t pred_flag);
+void vp9_set_pred_flag_seg_id(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
+                              uint8_t pred_flag);
 
 static INLINE int vp9_get_pred_context_mbskip(const MACROBLOCKD *xd) {
-  const MODE_INFO *const mi = xd->mode_info_context;
-  const MB_MODE_INFO *const above_mbmi = &mi[-xd->mode_info_stride].mbmi;
-  const MB_MODE_INFO *const left_mbmi = &mi[-1].mbmi;
+  const MODE_INFO_8x8 *const mi_8x8 = xd->mi_8x8;
+  const MB_MODE_INFO *const above_mbmi =
+    &mi_8x8[-xd->mode_info_stride].mi->mbmi;
+  const MB_MODE_INFO *const left_mbmi = &mi_8x8[-1].mi->mbmi;
 
-  return above_mbmi->mb_skip_coeff +
-             (xd->left_available ? left_mbmi->mb_skip_coeff : 0);
+  return (above_mbmi ? above_mbmi->mb_skip_coeff : 0) +
+             (xd->left_available && left_mbmi ? left_mbmi->mb_skip_coeff : 0);
 }
 
 static INLINE vp9_prob vp9_get_pred_prob_mbskip(const VP9_COMMON *cm,
@@ -49,11 +51,11 @@ static INLINE vp9_prob vp9_get_pred_prob_mbskip(const VP9_COMMON *cm,
 }
 
 static INLINE unsigned char vp9_get_pred_flag_mbskip(const MACROBLOCKD *xd) {
-  return xd->mode_info_context->mbmi.mb_skip_coeff;
+  return xd->mi_8x8[0].mi->mbmi.mb_skip_coeff;
 }
 
-void vp9_set_pred_flag_mbskip(VP9_COMMON *cm, BLOCK_SIZE_TYPE bsize,
-                              int mi_row, int mi_col, uint8_t pred_flag);
+void vp9_set_pred_flag_mbskip(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
+                              uint8_t pred_flag);
 
 unsigned char vp9_get_pred_context_switchable_interp(const MACROBLOCKD *xd);
 
@@ -110,7 +112,7 @@ unsigned char vp9_get_pred_context_tx_size(const MACROBLOCKD *xd);
 
 static const vp9_prob *vp9_get_pred_probs_tx_size(const MACROBLOCKD *xd,
                            const struct tx_probs *tx_probs) {
-  const MODE_INFO *const mi = xd->mode_info_context;
+  const MODE_INFO *const mi = xd->mi_8x8[0].mi;
   const int pred_context = vp9_get_pred_context_tx_size(xd);
   if (mi->mbmi.sb_type < BLOCK_SIZE_MB16X16)
     return tx_probs->p8x8[pred_context];

@@ -31,19 +31,19 @@ void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
     vpx_memset(&mi[i * stride], 0, sizeof(MODE_INFO));
 }
 
-void vp9_update_mode_info_in_image(VP9_COMMON *cm, MODE_INFO *mi) {
+void vp9_update_mic_ptrs_in_image(VP9_COMMON *cm, MODE_INFO_8x8 *mi_8x8) {
   int i, j;
 
   // For each in image mode_info element set the in image flag to 1
   for (i = 0; i < cm->mi_rows; i++) {
-    MODE_INFO *ptr = mi;
+    MODE_INFO_8x8 *ptr = mi_8x8;
     for (j = 0; j < cm->mi_cols; j++) {
-      ptr->mbmi.mb_in_image = 1;
+      ptr->mb_in_image = 1;
       ptr++;  // Next element in the row
     }
 
     // Step over border element at start of next row
-    mi += cm->mode_info_stride;
+    mi_8x8 += cm->mode_info_stride;
   }
 }
 
@@ -81,15 +81,20 @@ static void set_mb_mi(VP9_COMMON *cm, int aligned_width, int aligned_height) {
 static void setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mode_info_stride + 1;
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
+  cm->mi_grid_visible = cm->mi_grid_base + cm->mode_info_stride + 1;
+  cm->prev_mi_grid_visible = cm->prev_mi_grid_base + cm->mode_info_stride + 1;
 
   vpx_memset(cm->mip, 0,
              cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO));
 
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_in_image(cm, cm->mi);
+  vpx_memset(cm->mi_grid_base, 0,
+             cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO_8x8));
 
+  vp9_update_mode_info_border(cm, cm->mip);
   vp9_update_mode_info_border(cm, cm->prev_mip);
-  vp9_update_mode_info_in_image(cm, cm->prev_mi);
+
+  vp9_update_mic_ptrs_in_image(cm, cm->mi_grid_visible);
+  vp9_update_mic_ptrs_in_image(cm, cm->prev_mi_grid_visible);
 }
 
 int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
@@ -140,6 +145,14 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
 
   oci->prev_mip = vpx_calloc(mi_size, sizeof(MODE_INFO));
   if (!oci->prev_mip)
+    goto fail;
+
+  oci->mi_grid_base = vpx_calloc(mi_size, sizeof(MODE_INFO_8x8));
+  if (!oci->mi_grid_base)
+    goto fail;
+
+  oci->prev_mi_grid_base = vpx_calloc(mi_size, sizeof(MODE_INFO_8x8));
+  if (!oci->prev_mi_grid_base)
     goto fail;
 
   setup_mi(oci);

@@ -112,7 +112,8 @@ static int decode_coefs(FRAME_CONTEXT *fc, const MACROBLOCKD *xd,
 
   vp9_prob *prob;
   vp9_coeff_count_model *coef_counts;
-  const int ref = xd->mode_info_context->mbmi.ref_frame[0] != INTRA_FRAME;
+  const int ref = xd->mi_8x8[0].mi->mbmi.ref_frame[0] != INTRA_FRAME;
+
   const int16_t *scan, *nb;
   uint8_t token_cache[1024];
   const uint8_t * band_translate;
@@ -298,7 +299,8 @@ static void decode_block(int plane, int block,
   // find the maximum eob for this transform size, adjusted by segment
   MACROBLOCKD *xd = &arg->pbi->mb;
   struct macroblockd_plane* pd = &xd->plane[plane];
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
+  const int segment_id = xd->mi_8x8[0].mi->mbmi.segment_id;
+
   const TX_SIZE ss_tx_size = ss_txfrm_size / 2;
   const int seg_eob = get_eob(&xd->seg, segment_id, 16 << ss_txfrm_size);
   const int off = block >> ss_txfrm_size;
