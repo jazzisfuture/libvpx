@@ -12,15 +12,6 @@
 #include "vp9/encoder/vp9_boolhuff.h"
 #include "vp9/common/vp9_entropy.h"
 
-#if defined(SECTIONBITS_OUTPUT)
-unsigned __int64 Sectionbits[500];
-
-#endif
-
-#ifdef ENTROPY_STATS
-unsigned int active_section = 0;
-#endif
-
 const unsigned int vp9_prob_cost[256] = {
   2047, 2047, 1791, 1641, 1535, 1452, 1385, 1328, 1279, 1235, 1196, 1161, 1129, 1099, 1072, 1046,
   1023, 1000,  979,  959,  940,  922,  905,  889,  873,  858,  843,  829,  816,  803,  790,  778,

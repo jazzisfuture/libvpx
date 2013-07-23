@@ -35,18 +35,12 @@
 #include "vp9/encoder/vp9_subexp.h"
 #include "vp9/encoder/vp9_write_bit_buffer.h"
 
-
-#if defined(SECTIONBITS_OUTPUT)
-unsigned __int64 Sectionbits[500];
-#endif
-
 #ifdef ENTROPY_STATS
 int intra_mode_stats[VP9_INTRA_MODES]
                     [VP9_INTRA_MODES]
                     [VP9_INTRA_MODES];
 vp9_coeff_stats tree_update_hist[TX_SIZE_MAX_SB][BLOCK_TYPES];
 
-extern unsigned int active_section;
 #endif
 
 
@@ -419,10 +413,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   xd->prev_mode_info_context = pc->prev_mi + (m - pc->mi);
   x->partition_info = x->pi + (m - pc->mi);
 
-#ifdef ENTROPY_STATS
-  active_section = 9;
-#endif
-
   if (seg->update_map) {
     if (seg->temporal_update) {
       const int pred_flag = xd->mode_info_context->mbmi.seg_id_predicted;
@@ -448,10 +438,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   }
 
   if (rf == INTRA_FRAME) {
-#ifdef ENTROPY_STATS
-    active_section = 6;
-#endif
-
     if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
       const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
       const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
@@ -472,10 +458,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     vp9_prob *mv_ref_p;
     encode_ref_frame(cpi, bc);
     mv_ref_p = cpi->common.fc.inter_mode_probs[mi->mb_mode_context[rf]];
-
-#ifdef ENTROPY_STATS
-    active_section = 3;
-#endif
 
     // If segment skip is not enabled code the mode.
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
@@ -509,9 +491,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
           write_sb_mv_ref(bc, blockmode, mv_ref_p);
           vp9_accum_mv_refs(&cpi->common, blockmode, mi->mb_mode_context[rf]);
           if (blockmode == NEWMV) {
-#ifdef ENTROPY_STATS
-            active_section = 11;
-#endif
             vp9_encode_mv(cpi, bc, &blockmv.as_mv, &mi->best_mv.as_mv,
                           nmvc, xd->allow_high_precision_mv);
 
@@ -524,9 +503,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
         }
       }
     } else if (mode == NEWMV) {
-#ifdef ENTROPY_STATS
-      active_section = 5;
-#endif
       vp9_encode_mv(cpi, bc,
                     &mi->mv[0].as_mv, &mi->best_mv.as_mv,
                     nmvc, xd->allow_high_precision_mv);
@@ -598,14 +574,8 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
                  mi_col, 1 << mi_width_log2(m->mbmi.sb_type));
   if ((cm->frame_type == KEY_FRAME) || cm->intra_only) {
     write_mb_modes_kf(cpi, m, bc, mi_row, mi_col);
-#ifdef ENTROPY_STATS
-    active_section = 8;
-#endif
   } else {
     pack_inter_mode_mvs(cpi, m, bc, mi_row, mi_col);
-#ifdef ENTROPY_STATS
-    active_section = 1;
-#endif
   }
 
   assert(*tok < tok_end);
@@ -1380,17 +1350,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
   update_coef_probs(cpi, &header_bc);
 
-#ifdef ENTROPY_STATS
-  active_section = 2;
-#endif
-
   vp9_update_skip_probs(cpi, &header_bc);
 
   if (cm->frame_type != KEY_FRAME) {
     int i;
-#ifdef ENTROPY_STATS
-    active_section = 1;
-#endif
 
     update_inter_mode_probs(cm, &header_bc);
     vp9_zero(fc->inter_mode_counts);
@@ -1469,13 +1432,6 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
   data += vp9_rb_bytes_written(&wb);
 
   vp9_compute_update_table();
-
-#ifdef ENTROPY_STATS
-  if (pc->frame_type == INTER_FRAME)
-    active_section = 0;
-  else
-    active_section = 7;
-#endif
 
   vp9_clear_system_state();  // __asm emms;
 

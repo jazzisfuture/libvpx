@@ -16,10 +16,6 @@
 
 #include <math.h>
 
-#ifdef ENTROPY_STATS
-extern unsigned int active_section;
-#endif
-
 #ifdef NMV_STATS
 nmv_context_counts tnmvcounts;
 #endif
