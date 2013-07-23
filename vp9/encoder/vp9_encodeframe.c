@@ -1894,7 +1894,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
         rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                          &dummy_rate, &dummy_dist, 1);
       } else if (cpi->sf.partition_by_variance) {
-        choose_partitioning(cpi, cm->mi, mi_row, mi_col);
+        choose_partitioning(cpi, m, mi_row, mi_col);
         rd_use_partition(cpi, m, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
                          &dummy_rate, &dummy_dist, 1);
       } else {
