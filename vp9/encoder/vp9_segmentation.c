@@ -129,6 +129,7 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
 
   segment_id = mi->mbmi.segment_id;
   xd->mode_info_context = mi;
+  xd->mi_8x8->mi = mi;
   set_mi_row_col(cm, xd, mi_row, bh, mi_col, bw);
 
   // Count the number of hits on each segment with no prediction
@@ -145,7 +146,7 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
 
     // Store the prediction status for this mb and update counts
     // as appropriate
-    vp9_set_pred_flag_seg_id(cm, bsize, mi_row, mi_col, pred_flag);
+    vp9_set_pred_flag_seg_id2(cm, bsize, mi_row, mi_col, pred_flag);
     temporal_predictor_count[pred_context][pred_flag]++;
 
     if (!pred_flag)

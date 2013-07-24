@@ -170,8 +170,8 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
-  if (xd->mode_info_context) {
-    MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  if (xd->mi_8x8) {
+    MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
 
     set_scale_factors(xd, mbmi->ref_frame[0] - 1, mbmi->ref_frame[1] - 1,
                       cm->active_ref_scale);
@@ -220,19 +220,21 @@ static INLINE int round_mv_comp_q4(int value) {
   return (value < 0 ? value - 2 : value + 2) / 4;
 }
 
-static int mi_mv_pred_row_q4(MACROBLOCKD *mb, int idx) {
-  const int temp = mb->mode_info_context->bmi[0].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[1].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[2].as_mv[idx].as_mv.row +
-                   mb->mode_info_context->bmi[3].as_mv[idx].as_mv.row;
+static int mi_mv_pred_row_q4(MACROBLOCKD *xd, int idx) {
+  const MODE_INFO *mi = xd->mi_8x8[0].mi;
+  const int temp = mi->bmi[0].as_mv[idx].as_mv.row +
+                   mi->bmi[1].as_mv[idx].as_mv.row +
+                   mi->bmi[2].as_mv[idx].as_mv.row +
+                   mi->bmi[3].as_mv[idx].as_mv.row;
   return round_mv_comp_q4(temp);
 }
 
-static int mi_mv_pred_col_q4(MACROBLOCKD *mb, int idx) {
-  const int temp = mb->mode_info_context->bmi[0].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[1].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[2].as_mv[idx].as_mv.col +
-                   mb->mode_info_context->bmi[3].as_mv[idx].as_mv.col;
+static int mi_mv_pred_col_q4(MACROBLOCKD *xd, int idx) {
+  const MODE_INFO *mi = xd->mi_8x8[0].mi;
+  const int temp = mi->bmi[0].as_mv[idx].as_mv.col +
+                   mi->bmi[1].as_mv[idx].as_mv.col +
+                   mi->bmi[2].as_mv[idx].as_mv.col +
+                   mi->bmi[3].as_mv[idx].as_mv.col;
   return round_mv_comp_q4(temp);
 }
 
@@ -280,14 +282,15 @@ static void build_inter_predictors(int plane, int block,
   const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
   const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
   const int x = 4 * (block & ((1 << bwl) - 1)), y = 4 * (block >> bwl);
-  const int use_second_ref = xd->mode_info_context->mbmi.ref_frame[1] > 0;
+  const MODE_INFO *mi = xd->mi_8x8[0].mi;
+  const int use_second_ref = mi->mbmi.ref_frame[1] > 0;
   int which_mv;
 
   assert(x < (4 << bwl));
   assert(y < (4 << bhl));
-  assert(xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8 ||
+  assert(mi->mbmi.sb_type < BLOCK_SIZE_SB8X8 ||
          4 << pred_w == (4 << bwl));
-  assert(xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8 ||
+  assert(mi->mbmi.sb_type < BLOCK_SIZE_SB8X8 ||
          4 << pred_h == (4 << bhl));
 
   for (which_mv = 0; which_mv < 1 + use_second_ref; ++which_mv) {
@@ -306,9 +309,9 @@ static void build_inter_predictors(int plane, int block,
     MV split_chroma_mv;
     int_mv clamped_mv;
 
-    if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+    if (mi->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
       if (plane == 0) {
-        mv = &xd->mode_info_context->bmi[block].as_mv[which_mv].as_mv;
+        mv = &mi->bmi[block].as_mv[which_mv].as_mv;
       } else {
         // TODO(jkoleszar): All chroma MVs in SPLITMV mode are taken as the
         // same MV (the average of the 4 luma MVs) but we could do something
@@ -319,7 +322,7 @@ static void build_inter_predictors(int plane, int block,
         mv = &split_chroma_mv;
       }
     } else {
-      mv = &xd->mode_info_context->mbmi.mv[which_mv].as_mv;
+      mv = &mi->mbmi.mv[which_mv].as_mv;
     }
 
     /* TODO(jkoleszar): This clamping is done in the incorrect place for the
