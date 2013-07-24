@@ -200,11 +200,13 @@ static void update_mbintra_mode_probs(VP9_COMP* const cpi,
                 (unsigned int *)cpi->y_mode_count[j]);
 }
 
-static void write_selected_txfm_size(const VP9_COMP *cpi, TX_SIZE tx_size,
-                                     BLOCK_SIZE_TYPE bsize, vp9_writer *w) {
+
+static void write_selected_txfm_size(const VP9_COMP *cpi, MODE_INFO *m,
+                                     TX_SIZE tx_size, BLOCK_SIZE_TYPE bsize,
+                                     vp9_writer *w) {
   const VP9_COMMON *const cm = &cpi->common;
   const MACROBLOCKD *const xd = &cpi->mb.e_mbd;
-  const vp9_prob *tx_probs = vp9_get_pred_probs_tx_size(xd, &cm->fc.tx_probs);
+  const vp9_prob *tx_probs = vp9_get_pred_probs_tx_size(xd, &cm->fc.tx_probs, m);
   vp9_write(w, tx_size != TX_4X4, tx_probs[0]);
   if (bsize >= BLOCK_SIZE_MB16X16 && tx_size != TX_4X4) {
     vp9_write(w, tx_size != TX_8X8, tx_probs[1]);
@@ -366,7 +368,7 @@ static void encode_ref_frame(VP9_COMP *cpi, vp9_writer *bc) {
   VP9_COMMON *const pc = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
-  MB_MODE_INFO *mi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO *mi = &xd->mi_8x8->mi->mbmi;
   const int segment_id = mi->segment_id;
   int seg_ref_active = vp9_segfeature_active(&xd->seg, segment_id,
                                              SEG_LVL_REF_FRAME);
@@ -415,8 +417,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
   const MB_PREDICTION_MODE mode = mi->mode;
   const int segment_id = mi->segment_id;
   int skip_coeff;
+  const BLOCK_SIZE_TYPE bsize = m->mbmi.sb_type;
 
-  xd->prev_mode_info_context = pc->prev_mi + (m - pc->mi);
   x->partition_info = x->pi + (m - pc->mi);
 
 #ifdef ENTROPY_STATS
@@ -425,7 +427,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
   if (seg->update_map) {
     if (seg->temporal_update) {
-      const int pred_flag = xd->mode_info_context->mbmi.seg_id_predicted;
+      const int pred_flag = m->mbmi.seg_id_predicted;
       vp9_prob pred_prob = vp9_get_pred_prob_seg_id(xd);
       vp9_write(bc, pred_flag, pred_prob);
       if (!pred_flag)
@@ -441,10 +443,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     vp9_write(bc, rf != INTRA_FRAME,
               vp9_get_pred_prob_intra_inter(pc, xd));
 
-  if (mi->sb_type >= BLOCK_SIZE_SB8X8 && pc->tx_mode == TX_MODE_SELECT &&
+  if (bsize >= BLOCK_SIZE_SB8X8 && pc->tx_mode == TX_MODE_SELECT &&
       !(rf != INTRA_FRAME &&
         (skip_coeff || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
-    write_selected_txfm_size(cpi, mi->txfm_size, mi->sb_type, bc);
+    write_selected_txfm_size(cpi, m, mi->txfm_size, bsize, bc);
   }
 
   if (rf == INTRA_FRAME) {
@@ -452,15 +454,14 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
     active_section = 6;
 #endif
 
-    if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
-      const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+    if (bsize >= BLOCK_SIZE_SB8X8) {
       const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
       const int bsl = MIN(bwl, bhl);
       write_intra_mode(bc, mode, pc->fc.y_mode_prob[MIN(3, bsl)]);
     } else {
       int idx, idy;
-      int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[mi->sb_type];
-      int num_4x4_blocks_high = num_4x4_blocks_high_lookup[mi->sb_type];
+      int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+      int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
       for (idy = 0; idy < 2; idy += num_4x4_blocks_high)
         for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
           const MB_PREDICTION_MODE bm = m->bmi[idy * 2 + idx].as_mode;
@@ -479,7 +480,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 
     // If segment skip is not enabled code the mode.
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
-      if (mi->sb_type >= BLOCK_SIZE_SB8X8) {
+      if (bsize >= BLOCK_SIZE_SB8X8) {
         write_sb_mv_ref(bc, mode, mv_ref_p);
         vp9_accum_mv_refs(&cpi->common, mode, mi->mb_mode_context[rf]);
       }
@@ -494,17 +495,17 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
       assert(mi->interp_filter == cpi->common.mcomp_filter_type);
     }
 
-    if (xd->mode_info_context->mbmi.sb_type < BLOCK_SIZE_SB8X8) {
+    if (bsize < BLOCK_SIZE_SB8X8) {
       int j;
       MB_PREDICTION_MODE blockmode;
       int_mv blockmv;
-      int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[mi->sb_type];
-      int num_4x4_blocks_high = num_4x4_blocks_high_lookup[mi->sb_type];
+      int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+      int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
       int idx, idy;
       for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
         for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
           j = idy * 2 + idx;
-          blockmode = cpi->mb.partition_info->bmi[j].mode;
+          blockmode = x->partition_info->bmi[j].mode;
           blockmv = m->bmi[j].as_mv[0];
           write_sb_mv_ref(bc, blockmode, mv_ref_p);
           vp9_accum_mv_refs(&cpi->common, blockmode, mi->mb_mode_context[rf]);
@@ -540,26 +541,28 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
 }
 
 static void write_mb_modes_kf(const VP9_COMP *cpi,
-                              MODE_INFO *m,
+                              MODE_INFO_8x8 *mi_8x8,
                               vp9_writer *bc, int mi_row, int mi_col) {
   const VP9_COMMON *const c = &cpi->common;
   const MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MODE_INFO *m = mi_8x8->mi;
   const int ym = m->mbmi.mode;
-  const int mis = c->mode_info_stride;
   const int segment_id = m->mbmi.segment_id;
+  MODE_INFO *above_mi = mi_8x8[-xd->mode_info_stride].mi;
+  MODE_INFO *left_mi = mi_8x8[-1].mi;
 
   if (xd->seg.update_map)
     write_segment_id(bc, &xd->seg, m->mbmi.segment_id);
 
   write_skip_coeff(cpi, segment_id, m, bc);
 
-  if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8 && c->tx_mode == TX_MODE_SELECT)
-    write_selected_txfm_size(cpi, m->mbmi.txfm_size, m->mbmi.sb_type, bc);
+    if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8 && c->tx_mode == TX_MODE_SELECT)
+    write_selected_txfm_size(cpi, m, m->mbmi.txfm_size, m->mbmi.sb_type, bc);
 
   if (m->mbmi.sb_type >= BLOCK_SIZE_SB8X8) {
-    const MB_PREDICTION_MODE A = above_block_mode(m, 0, mis);
+    const MB_PREDICTION_MODE A = above_block_mode2(m, above_mi, 0);
     const MB_PREDICTION_MODE L = xd->left_available ?
-                                 left_block_mode(m, 0) : DC_PRED;
+                                 left_block_mode2(m, left_mi, 0) : DC_PRED;
     write_intra_mode(bc, ym, vp9_kf_y_mode_prob[A][L]);
   } else {
     int idx, idy;
@@ -568,9 +571,9 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
     for (idy = 0; idy < 2; idy += num_4x4_blocks_high) {
       for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
         int i = idy * 2 + idx;
-        const MB_PREDICTION_MODE A = above_block_mode(m, i, mis);
+        const MB_PREDICTION_MODE A = above_block_mode2(m, above_mi, i);
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
-                                     left_block_mode(m, i) : DC_PRED;
+                                     left_block_mode2(m, left_mi, i) : DC_PRED;
         const int bm = m->bmi[i].as_mode;
 #ifdef ENTROPY_STATS
         ++intra_mode_stats[A][L][bm];
@@ -583,21 +586,25 @@ static void write_mb_modes_kf(const VP9_COMP *cpi,
   write_intra_mode(bc, m->mbmi.uv_mode, vp9_kf_uv_mode_prob[ym]);
 }
 
-static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
+static void write_modes_b(VP9_COMP *cpi, MODE_INFO_8x8 *mi_8x8, vp9_writer *bc,
                           TOKENEXTRA **tok, TOKENEXTRA *tok_end,
                           int mi_row, int mi_col) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MODE_INFO *m = mi_8x8->mi;
 
   if (m->mbmi.sb_type < BLOCK_SIZE_SB8X8)
     if (xd->ab_index > 0)
       return;
+
   xd->mode_info_context = m;
+  xd->mi_8x8 = mi_8x8;
+
   set_mi_row_col(&cpi->common, xd, mi_row,
                  1 << mi_height_log2(m->mbmi.sb_type),
                  mi_col, 1 << mi_width_log2(m->mbmi.sb_type));
   if ((cm->frame_type == KEY_FRAME) || cm->intra_only) {
-    write_mb_modes_kf(cpi, m, bc, mi_row, mi_col);
+    write_mb_modes_kf(cpi, mi_8x8, bc, mi_row, mi_col);
 #ifdef ENTROPY_STATS
     active_section = 8;
 #endif
@@ -612,7 +619,7 @@ static void write_modes_b(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   pack_mb_tokens(bc, tok, tok_end);
 }
 
-static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
+static void write_modes_sb(VP9_COMP *cpi, MODE_INFO_8x8 *mi_8x8, vp9_writer *bc,
                            TOKENEXTRA **tok, TOKENEXTRA *tok_end,
                            int mi_row, int mi_col,
                            BLOCK_SIZE_TYPE bsize) {
@@ -624,6 +631,7 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
   int n;
   PARTITION_TYPE partition = PARTITION_NONE;
   BLOCK_SIZE_TYPE subsize;
+  MODE_INFO *m = mi_8x8->mi;
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
@@ -654,25 +662,25 @@ static void write_modes_sb(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc,
 
   switch (partition) {
     case PARTITION_NONE:
-      write_modes_b(cpi, m, bc, tok, tok_end, mi_row, mi_col);
+      write_modes_b(cpi, mi_8x8, bc, tok, tok_end, mi_row, mi_col);
       break;
     case PARTITION_HORZ:
-      write_modes_b(cpi, m, bc, tok, tok_end, mi_row, mi_col);
+      write_modes_b(cpi, mi_8x8, bc, tok, tok_end, mi_row, mi_col);
       *(get_sb_index(xd, subsize)) = 1;
       if ((mi_row + bs) < cm->mi_rows)
-        write_modes_b(cpi, m + bs * mis, bc, tok, tok_end, mi_row + bs, mi_col);
+        write_modes_b(cpi, mi_8x8 + bs * mis, bc, tok, tok_end, mi_row + bs, mi_col);
       break;
     case PARTITION_VERT:
-      write_modes_b(cpi, m, bc, tok, tok_end, mi_row, mi_col);
+      write_modes_b(cpi, mi_8x8, bc, tok, tok_end, mi_row, mi_col);
       *(get_sb_index(xd, subsize)) = 1;
       if ((mi_col + bs) < cm->mi_cols)
-        write_modes_b(cpi, m + bs, bc, tok, tok_end, mi_row, mi_col + bs);
+        write_modes_b(cpi, mi_8x8 + bs, bc, tok, tok_end, mi_row, mi_col + bs);
       break;
     case PARTITION_SPLIT:
       for (n = 0; n < 4; n++) {
         int j = n >> 1, i = n & 0x01;
         *(get_sb_index(xd, subsize)) = n;
-        write_modes_sb(cpi, m + j * bs * mis + i * bs, bc, tok, tok_end,
+        write_modes_sb(cpi, mi_8x8 + j * bs * mis + i * bs, bc, tok, tok_end,
                        mi_row + j * bs, mi_col + i * bs, subsize);
       }
       break;
@@ -692,19 +700,21 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
                         TOKENEXTRA **tok, TOKENEXTRA *tok_end) {
   VP9_COMMON *const c = &cpi->common;
   const int mis = c->mode_info_stride;
-  MODE_INFO *m, *m_ptr = c->mi;
   int mi_row, mi_col;
+  MODE_INFO_8x8 *mi_8x8 = c->mi_grid_visible;
+  MODE_INFO_8x8 *m_8x8;
 
-  m_ptr += c->cur_tile_mi_col_start + c->cur_tile_mi_row_start * mis;
+  mi_8x8 += c->cur_tile_mi_col_start + c->cur_tile_mi_row_start * mis;
 
   for (mi_row = c->cur_tile_mi_row_start; mi_row < c->cur_tile_mi_row_end;
-       mi_row += 8, m_ptr += 8 * mis) {
-    m = m_ptr;
+       mi_row += 8, mi_8x8 += 8 * mis) {
+    m_8x8 = mi_8x8;
     vp9_zero(c->left_seg_context);
     for (mi_col = c->cur_tile_mi_col_start; mi_col < c->cur_tile_mi_col_end;
-         mi_col += MI_BLOCK_SIZE, m += MI_BLOCK_SIZE)
-      write_modes_sb(cpi, m, bc, tok, tok_end, mi_row, mi_col,
+         mi_col += MI_BLOCK_SIZE, m_8x8 += MI_BLOCK_SIZE) {
+      write_modes_sb(cpi, m_8x8, bc, tok, tok_end, mi_row, mi_col,
                      BLOCK_SIZE_SB64X64);
+    }
   }
 }
 
