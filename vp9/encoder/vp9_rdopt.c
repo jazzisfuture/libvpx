@@ -781,6 +781,7 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
                                      BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[0];
+  const PLANE_TYPE type = pd->plane_type;
   const int bwl = plane_block_width_log2by4(bsize, pd);
   const int bhl = plane_block_height_log2by4(bsize, pd);
   const int bw = 1 << bwl, bh = 1 << bhl;
@@ -794,21 +795,21 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
                  sizeof(ENTROPY_CONTEXT) * bw);
       vpx_memcpy(&args.t_left, pd->left_context,
                  sizeof(ENTROPY_CONTEXT) * bh);
-      get_scan_nb_4x4(get_tx_type_4x4(xd, 0), &args.scan, &args.nb);
+      get_scan_nb_4x4(get_tx_type_4x4(type, xd, 0), &args.scan, &args.nb);
       break;
     case TX_8X8:
       for (i = 0; i < bw; i += 2)
         args.t_above[i] = !!*(uint16_t *)&pd->above_context[i];
       for (i = 0; i < bh; i += 2)
         args.t_left[i] = !!*(uint16_t *)&pd->left_context[i];
-      get_scan_nb_8x8(get_tx_type_8x8(xd), &args.scan, &args.nb);
+      get_scan_nb_8x8(get_tx_type_8x8(type, xd), &args.scan, &args.nb);
       break;
     case TX_16X16:
       for (i = 0; i < bw; i += 4)
         args.t_above[i] = !!*(uint32_t *)&pd->above_context[i];
       for (i = 0; i < bh; i += 4)
         args.t_left[i] = !!*(uint32_t *)&pd->left_context[i];
-      get_scan_nb_16x16(get_tx_type_16x16(xd), &args.scan, &args.nb);
+      get_scan_nb_16x16(get_tx_type_16x16(type, xd), &args.scan, &args.nb);
       break;
     case TX_32X32:
       for (i = 0; i < bw; i += 8)
@@ -1246,7 +1247,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                            src, src_stride,
                            dst, dst_stride);
 
-        tx_type = get_tx_type_4x4(xd, block);
+        tx_type = get_tx_type_4x4(PLANE_TYPE_Y_WITH_DC, xd, block);
         if (tx_type != DCT_DCT) {
           vp9_short_fht4x4(src_diff, coeff, 8, tx_type);
           x->quantize_b_4x4(x, block, tx_type, 16);
@@ -1255,7 +1256,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
           x->quantize_b_4x4(x, block, tx_type, 16);
         }
 
-        scan = get_scan_4x4(get_tx_type_4x4(xd, block));
+        scan = get_scan_4x4(get_tx_type_4x4(PLANE_TYPE_Y_WITH_DC, xd, block));
         ratey += cost_coeffs(cm, x, 0, block, PLANE_TYPE_Y_WITH_DC,
                              tempa + idx, templ + idy, TX_4X4, scan,
                              vp9_get_coef_neighbors_handle(scan));
