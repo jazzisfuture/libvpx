@@ -3195,7 +3195,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
   const BLOCK_SIZE_TYPE block_size = get_plane_block_size(bsize, &xd->plane[0]);
   MB_PREDICTION_MODE this_mode;
-  MV_REFERENCE_FRAME ref_frame;
+  MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   unsigned char segment_id = xd->mode_info_context->mbmi.segment_id;
   int comp_pred, i;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
@@ -3336,6 +3336,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
+    second_ref_frame = vp9_mode_order[mode_index].second_ref_frame;
 
     // Slip modes that have been masked off but always consider first mode.
     if ( mode_index && (bsize > cpi->sf.unused_mode_skip_lvl) &&
@@ -3355,7 +3356,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     // Do not allow compound prediction if the segment level reference
     // frame feature is in use as in this case there can only be one reference.
-    if ((vp9_mode_order[mode_index].second_ref_frame > INTRA_FRAME) &&
+    if ((second_ref_frame > INTRA_FRAME) &&
          vp9_segfeature_active(&xd->seg, segment_id, SEG_LVL_REF_FRAME))
       continue;
 
@@ -3374,15 +3375,14 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (!(mode_mask & (1 << this_mode))) {
         continue;
       }
-      if (vp9_mode_order[mode_index].second_ref_frame != NONE
-          && !(ref_frame_mask
-              & (1 << vp9_mode_order[mode_index].second_ref_frame))) {
+      if (second_ref_frame != NONE
+          && !(ref_frame_mask & (1 << second_ref_frame))) {
         continue;
       }
     }
 
     mbmi->ref_frame[0] = ref_frame;
-    mbmi->ref_frame[1] = vp9_mode_order[mode_index].second_ref_frame;
+    mbmi->ref_frame[1] = second_ref_frame;
 
     if (!(ref_frame == INTRA_FRAME
         || (cpi->ref_frame_flags & flag_list[ref_frame]))) {
@@ -3399,8 +3399,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         if (vp9_mode_order[best_mode_index].ref_frame == INTRA_FRAME)
           continue;
       if (cpi->sf.mode_search_skip_flags & FLAG_SKIP_COMP_REFMISMATCH)
-        if (vp9_mode_order[mode_index].ref_frame != best_inter_ref_frame &&
-            vp9_mode_order[mode_index].second_ref_frame != best_inter_ref_frame)
+        if (ref_frame != best_inter_ref_frame &&
+            second_ref_frame != best_inter_ref_frame)
           continue;
     }
     // TODO(jingning, jkoleszar): scaling reference frame not supported for
@@ -3590,9 +3590,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           if (vp9_mode_order[best_mode_index].ref_frame == INTRA_FRAME)
             continue;
         if (cpi->sf.mode_search_skip_flags & FLAG_SKIP_COMP_REFMISMATCH)
-          if (vp9_mode_order[mode_index].ref_frame != best_inter_ref_frame &&
-              vp9_mode_order[mode_index].second_ref_frame !=
-              best_inter_ref_frame)
+          if (ref_frame != best_inter_ref_frame &&
+              second_ref_frame != best_inter_ref_frame)
             continue;
       }
 
