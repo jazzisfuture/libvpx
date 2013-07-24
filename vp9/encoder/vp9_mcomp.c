@@ -19,7 +19,7 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/common/vp9_common.h"
 
-// #define NEW_DIAMOND_SEARCH
+#define NEW_DIAMOND_SEARCH
 
 void vp9_clamp_mv_min_max(MACROBLOCK *x, int_mv *ref_mv) {
   int col_min = (ref_mv->as_mv.col >> 3) - MAX_FULL_PEL_VAL +
