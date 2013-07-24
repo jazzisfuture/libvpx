@@ -256,3 +256,166 @@ cglobal d45_predictor_32x32, 3, 4, 8, dst, stride, above, line
   dec                 lined
   jnz .loop
   REP_RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_4x4, 3, 3, 4, dst, stride, above
+  movq                m3, [aboveq]
+  pshufb              m2, m3, [sh_w23456777]
+  pshufb              m0, m3, [sh_w01234577]
+  pshufb              m1, m3, [sh_w12345677]
+  paddw               m2, m0
+  psrldq              m4, m3, 1
+  paddw               m2, [pw_2]
+  paddw               m1, m1
+  pavgb               m3, m4
+  paddw               m2, m1
+  psraw               m2, 2
+  packuswb            m2, m2
+  movd    [dstq        ], m3
+  movd    [dstq+strideq], m2
+  lea               dstq, [dstq+strideq*2]
+  psrldq              m2, 1
+  psrldq              m3, 1
+  movd    [dstq        ], m3
+  movd    [dstq+strideq], m2
+  RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_8x8, 3, 3, 4, dst, stride, above
+  movq                m0, [aboveq]
+  DEFINE_ARGS dst, stride, stride3, line
+  lea           stride3q, [strideq*3]
+  pshufb              m3, m0, [sh_w23456777]
+  pshufb              m2, m0, [sh_w12345677]
+  pshufb              m1, m0, [sh_w01234567]
+  pshufb              m0, [pb_7m1]
+  paddw               m3, m1
+  pavgw               m1, m2
+  paddw               m2, m2
+  paddw               m3, [pw_2]
+  paddw               m3, m2
+  psraw               m3, 2
+  packuswb            m1, m0
+  packuswb            m3, m0
+  mov              lined, 2
+.loop:
+  movq  [dstq          ], m1
+  movq  [dstq+strideq  ], m3
+  psrldq              m1, 1
+  psrldq              m3, 1
+  movq  [dstq+strideq*2], m1
+  movq  [dstq+stride3q ], m3
+  psrldq              m1, 1
+  psrldq              m3, 1
+  lea               dstq, [dstq+strideq*4]
+  dec              lined
+  jnz .loop
+  REP_RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_16x16, 3, 4, 8, dst, stride, above, line
+  mova                m0, [aboveq]
+  DEFINE_ARGS dst, stride, stride3, line
+  lea           stride3q, [strideq*3]
+  mova                m1, [sh_b123456789abcdeff]
+  pshufb              m7, m0, [sh_wabcdefff]
+  pshufb              m6, m0, [sh_w23456789]
+  pshufb              m5, m0, [sh_w9abcdeff]
+  pshufb              m4, m0, [sh_w12345678]
+  pshufb              m3, m0, [sh_w89abcdef]
+  pshufb              m2, m0, [sh_w01234567]
+  paddw               m4, m4
+  paddw               m5, m5
+  paddw               m2, m6
+  paddw               m3, m7
+  paddw               m4, [pw_2]
+  paddw               m5, [pw_2]
+  paddw               m2, m4
+  paddw               m3, m5
+  psraw               m2, 2
+  psraw               m3, 2
+  pshufb              m4, m0, m1
+  packuswb            m2, m3                  ; odd lines
+  pavgb               m0, m4                  ; even lines
+  mov              lined, 4
+.loop:
+  mova  [dstq          ], m0
+  mova  [dstq+strideq  ], m2
+  pshufb              m0, m1
+  pshufb              m2, m1
+  mova  [dstq+strideq*2], m0
+  mova  [dstq+stride3q ], m2
+  pshufb              m0, m1
+  pshufb              m2, m1
+  lea               dstq, [dstq+strideq*4]
+  dec              lined
+  jnz .loop
+  REP_RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_32x32, 3, 4, 8, dst, stride, above, line
+  mova                   m0, [aboveq]
+  mova                   m7, [aboveq+16]
+  DEFINE_ARGS dst, stride, stride3, line
+  lea              stride3q, [strideq*3]
+  pshufb                 m6, m7, [sh_wabcdefff]
+  pshufb                 m5, m7, [sh_w23456789]
+  pshufb                 m4, m7, [sh_w9abcdeff]
+  pshufb                 m3, m7, [sh_w12345678]
+  pshufb                 m2, m7, [sh_w89abcdef]
+  pshufb                 m1, m7, [sh_w01234567]
+  paddw                  m4, m4
+  paddw                  m3, m3
+  paddw                  m5, m1
+  paddw                  m6, m2
+  paddw                  m3, [pw_2]
+  paddw                  m4, [pw_2]
+  paddw                  m5, m3
+  paddw                  m6, m4
+  psraw                  m5, 2
+  psraw                  m6, 2
+  packuswb               m5, m6                     ; high 16px of even lines
+  pshufb                 m4, m0, [sh_w23456789]
+  pshufb                 m3, m0, [sh_w12345678]
+  pshufb                 m2, m0, [sh_w01234567]
+  pshufb                 m6, m0, [sh_w89abcdef]
+  paddw                  m2, m4
+  palignr                m4, m1, m6, 2
+  palignr                m1, m6, 4
+  paddw                  m3, m3
+  paddw                  m4, m4
+  paddw                  m6, m1
+  paddw                  m3, [pw_2]
+  paddw                  m4, [pw_2]
+  paddw                  m2, m3
+  paddw                  m6, m4
+  psraw                  m2, 2
+  psraw                  m6, 2
+  packuswb               m2, m6                     ; low 16px of even lines
+  mova                   m1, [sh_b123456789abcdeff]
+  pshufb                 m3, m7, m1                 ; high 16px of odd lines
+  pavgb                  m3, m7 ; KEEP - upper avg
+  palignr                m7, m0, 1                  ; low 16px of odd lines
+  pavgb                  m0, m7 ; KEEP - lower avg
+  mov                 lined, 8
+.loop:
+  mova  [dstq             ], m0
+  mova  [dstq          +16], m3
+  mova  [dstq+strideq     ], m2
+  mova  [dstq+strideq  +16], m5
+  palignr                m6, m3, m0, 1
+  palignr                m7, m5, m2, 1
+  pshufb                 m3, m1
+  pshufb                 m5, m1
+  mova  [dstq+strideq*2   ], m6
+  mova  [dstq+strideq*2+16], m3
+  mova  [dstq+stride3q    ], m7
+  mova  [dstq+stride3q +16], m5
+  palignr                m0, m3, m6, 1
+  palignr                m2, m5, m7, 1
+  pshufb                 m3, m1
+  pshufb                 m5, m1
+  lea                  dstq, [dstq+strideq*4]
+  dec                 lined
+  jnz .loop
+  REP_RET
