@@ -731,10 +731,11 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_one_partition_size_always = 0;
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
-  sf->use_partitions_less_than = 0;
-  sf->less_than_block_size = BLOCK_SIZE_MB16X16;
-  sf->use_partitions_greater_than = 0;
-  sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+  sf->use_max_partition_size = 0;
+  sf->max_partition_size = BLOCK_SIZE_MB16X16;
+  sf->auto_min_max_partition_size = 0;
+  sf->use_min_partition_size = 0;
+  sf->min_partition_size = BLOCK_SIZE_SB8X8;
   sf->adjust_partitioning_from_last_frame = 0;
   sf->last_partitioning_redo_frequency = 4;
   sf->disable_splitmv = 0;
@@ -770,6 +771,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->use_avoid_tested_higherror = 1;
       sf->adaptive_rd_thresh = 1;
       sf->last_chroma_intra_mode = TM_PRED;
+
+      sf->auto_min_max_partition_size = 1;
+      sf->use_max_partition_size = 1;
+      sf->use_min_partition_size = 1;
 
       if (speed == 1) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -862,14 +867,14 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       if (speed == 2) {
         sf->first_step = 0;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
-        sf->use_partitions_less_than = 1;
-        sf->less_than_block_size = BLOCK_SIZE_MB16X16;
+        sf->use_max_partition_size = 1;
+        sf->max_partition_size = BLOCK_SIZE_MB16X16;
       }
       if (speed == 3) {
         sf->first_step = 0;
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_SB8X8;
-        sf->use_partitions_greater_than = 1;
-        sf->greater_than_block_size = BLOCK_SIZE_SB8X8;
+        sf->use_min_partition_size = 1;
+        sf->min_partition_size = BLOCK_SIZE_SB8X8;
       }
       */
 
