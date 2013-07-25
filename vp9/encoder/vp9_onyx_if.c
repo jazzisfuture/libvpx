@@ -883,12 +883,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   else
     set_rd_speed_thresholds(cpi, mode, 0);
 
-  // Slow quant, dct and trellis not worthwhile for first pass
-  // so make sure they are always turned off.
-  if (cpi->pass == 1) {
-    sf->optimize_coefficients = 0;
-  }
-
   cpi->mb.fwd_txm16x16  = vp9_short_fdct16x16;
   cpi->mb.fwd_txm8x8    = vp9_short_fdct8x8;
   cpi->mb.fwd_txm8x4    = vp9_short_fdct8x4;
@@ -908,7 +902,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     cpi->find_fractional_mv_step = vp9_find_best_half_pixel_step;
   }
 
+  // turn off trellis coefficient optimization in the settings of first
+  // pass and lossless coding
   cpi->mb.optimize = cpi->sf.optimize_coefficients == 1 && cpi->pass != 1;
+  cpi->mb.optimize &= !cpi->oxcf.lossless;
 
 #ifdef SPEEDSTATS
   frames_at_speed[cpi->speed]++;
