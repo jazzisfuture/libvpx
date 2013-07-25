@@ -76,9 +76,9 @@ static void read_tx_probs(struct tx_probs *tx_probs, vp9_reader *r) {
 
 static void init_dequantizer(VP9_COMMON *cm, MACROBLOCKD *xd) {
   int i;
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
+  MODE_INFO *mi = xd->mi_8x8[0].mi;
+  const int segment_id = mi ? mi->mbmi.segment_id : 0;
   xd->q_index = vp9_get_qindex(xd, segment_id, cm->base_qindex);
-
   xd->plane[0].dequant = cm->y_dequant[xd->q_index];
   for (i = 1; i < MAX_MB_PLANE; i++)
     xd->plane[i].dequant = cm->uv_dequant[xd->q_index];
@@ -124,7 +124,7 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
                                int ss_txfrm_size, void *arg) {
   MACROBLOCKD* const xd = arg;
   struct macroblockd_plane *pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mode_info_context;
+  MODE_INFO *const mi = xd->mi_8x8[0].mi;
 
   const int raster_block = txfrm_block_to_raster_block(xd, bsize, plane,
                                                        block, ss_txfrm_size);
@@ -163,7 +163,7 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
 static int decode_tokens(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize, vp9_reader *r) {
   MACROBLOCKD *const xd = &pbi->mb;
 
-  if (xd->mode_info_context->mbmi.mb_skip_coeff) {
+  if ((xd->mi_8x8[0].mi)->mbmi.mb_skip_coeff) {
     vp9_reset_sb_tokens_context(xd, bsize);
     return -1;
   } else {
@@ -184,11 +184,30 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
   const int mi_idx = mi_row * cm->mode_info_stride + mi_col;
   int i;
 
+  xd->mi_8x8 = cm->mi_grid_visible + mi_idx;
+  xd->prev_mi_8x8 = cm->prev_mi_grid_visible + mi_idx;
+
+#ifndef MIC_STREAM
   xd->mode_info_context = cm->mi + mi_idx;
   xd->mode_info_context->mbmi.sb_type = bsize;
+#endif
+
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
-  xd->prev_mode_info_context = cm->prev_mi ? cm->prev_mi + mi_idx : NULL;
+  xd->prev_mode_info_context = cm->prev_mi ? xd->mi_8x8[0].mi : NULL;
+//^^^^^^ TYPO ABOVE ^^^^^^^^^^^^
+
+
+#ifndef MIC_STREAM
+  // this has to be after  xd->prev_mode_info_context = ... ????
+  xd->mi_8x8[0].mi = cm->mi + mi_idx;
+  (xd->mi_8x8[0].mi)->mbmi.sb_type = bsize;
+#else
+  // we are using the mode info context stream here
+  xd->mi_8x8[0].mi = xd->mic_stream_ptr;
+  (xd->mi_8x8[0].mi)->mbmi.sb_type = bsize;
+  xd->mic_stream_ptr++;
+#endif
 
   for (i = 0; i < MAX_MB_PLANE; i++) {
     struct macroblockd_plane *pd = &xd->plane[i];
@@ -210,7 +229,7 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
 static void set_ref(VP9D_COMP *pbi, int i, int mi_row, int mi_col) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
-  MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
   const int ref = mbmi->ref_frame[i] - 1;
 
   const YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[cm->active_ref_idx[ref]];
@@ -237,7 +256,7 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
     bsize = BLOCK_SIZE_SB8X8;
 
   // Has to be called after set_offsets
-  mbmi = &xd->mode_info_context->mbmi;
+  mbmi = &(xd->mi_8x8[0].mi)->mbmi;
 
   if (mbmi->ref_frame[0] == INTRA_FRAME) {
     // Intra reconstruction
@@ -261,7 +280,7 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
       assert(mbmi->sb_type == bsize);
       if (eobtotal == 0)
         // skip loopfilter
-        vp9_set_pred_flag_mbskip(cm, bsize, mi_row, mi_col, 1);
+        vp9_set_pred_flag_mbskip(xd, bsize, 1);
       else if (eobtotal > 0)
         foreach_transformed_block(xd, bsize, decode_block, xd);
     }
@@ -958,6 +977,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   if (!read_is_valid(data, first_partition_size, data_end))
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt header length");
+
+  xd->mi_8x8 = pc->mi_grid_visible;
+  xd->mic_stream_ptr = pc->mi;
 
   xd->mode_info_context = pc->mi;
   xd->prev_mode_info_context = pc->prev_mi;
