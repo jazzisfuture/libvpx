@@ -62,7 +62,7 @@ prototype void vp9_d135_predictor_4x4 "uint8_t *ypred_ptr, ptrdiff_t y_stride, u
 specialize vp9_d135_predictor_4x4
 
 prototype void vp9_d153_predictor_4x4 "uint8_t *ypred_ptr, ptrdiff_t y_stride, uint8_t *yabove_row, uint8_t *yleft_col"
-specialize vp9_d153_predictor_4x4
+specialize vp9_d153_predictor_4x4 ssse3
 
 prototype void vp9_v_predictor_4x4 "uint8_t *ypred_ptr, ptrdiff_t y_stride, uint8_t *yabove_row, uint8_t *yleft_col"
 specialize vp9_v_predictor_4x4 sse
@@ -101,7 +101,7 @@ prototype void vp9_d135_predictor_8x8 "uint8_t *ypred_ptr, ptrdiff_t y_stride, u
 specialize vp9_d135_predictor_8x8
 
 prototype void vp9_d153_predictor_8x8 "uint8_t *ypred_ptr, ptrdiff_t y_stride, uint8_t *yabove_row, uint8_t *yleft_col"
-specialize vp9_d153_predictor_8x8
+specialize vp9_d153_predictor_8x8 ssse3
 
 prototype void vp9_v_predictor_8x8 "uint8_t *ypred_ptr, ptrdiff_t y_stride, uint8_t *yabove_row, uint8_t *yleft_col"
 specialize vp9_v_predictor_8x8 sse

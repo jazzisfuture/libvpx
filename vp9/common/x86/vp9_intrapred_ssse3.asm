@@ -28,7 +28,12 @@ sh_b2wabcdefff: db 10, -1, 11, -1, 12, -1, 13, -1, 14, -1, 15, -1, 15, -1, 15, -
 sh_b123456789abcdeff: db 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15
 sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b12345677: db 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b2w32104567: db 3, -1, 2, -1, 1, -1, 0, -1, 4, -1, 5, -1, 6, -1, 7, -1
+sh_b8091a2b345: db 8, 0, 9, 1, 10, 2, 11, 3, 4, 5, 0, 0, 0, 0, 0, 0
 sh_b23456789abcdefff: db 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 15
+sh_b2w76543210: db 7, -1, 6, -1, 5, -1, 4, -1, 3, -1, 2, -1, 1, -1, 0, -1
+sh_b2w65432108: db 6, -1, 5, -1, 4, -1, 3, -1, 2, -1, 1, -1, 0, -1, 8, -1
+sh_b2w54321089: db 5, -1, 4, -1, 3, -1, 2, -1, 1, -1, 0, -1, 8, -1, 9, -1
 
 SECTION .text
 
@@ -712,4 +717,91 @@ cglobal d27_predictor_32x32, 2, 4, 8, dst, stride, stride3, left
   mova  [dstq +stride3q +16], m7
 
   ; done!
+  RET
+
+INIT_XMM ssse3
+cglobal d153_predictor_4x4, 4, 4, 4, dst, stride, above, left
+  movd                m0, [leftq]               ; l1, l2, l3, l4
+  movd                m1, [aboveq-1]            ; tl, t1, t2, t3
+  punpckldq           m0, m1                    ; l1, l2, l3, l4, tl, t1, t2, t3
+  pshufb              m0, [sh_b2w32104567]      ; l4, l3, l2, l1, tl, t1, t2, t3
+  psrldq              m1, m0, 2                 ; l3, l2, l1, tl, t1, t2, t3
+  psrldq              m2, m0, 4                 ; l2, l1, tl, t1, t2, t3
+  ; comments below are for a predictor like this
+  ; A1 B1 C1 D1
+  ; A2 B2 A1 B1
+  ; A3 B3 A2 B2
+  ; A4 B4 A3 B3
+  pavgw               m3, m1, m0                ; 2-tap avg A4 A3 A2 A1
+  paddw               m1, m1
+  paddw               m2, m0
+  paddw               m1, [pw_2]
+  paddw               m2, m1
+  psraw               m2, 2                     ; 3-tap avg B4 B3 B2 B1 C1 D1
+  packuswb            m2, m3                    ; B4 B3 B2 B1 C1 D1 x x A4 A3 A2 A1 ..
+  DEFINE_ARGS dst, stride, stride3
+  lea           stride3q, [strideq*3]
+  pshufb              m2, [sh_b8091a2b345]      ; A4 B4 A3 B3 A2 B2 A1 B1 C1 D1 ..
+  movd  [dstq+stride3q ], m2
+  psrldq              m2, 2                     ; A3 B3 A2 B2 A1 B1 C1 D1 ..
+  movd  [dstq+strideq*2], m2
+  psrldq              m2, 2                     ; A2 B2 A1 B1 C1 D1 ..
+  movd  [dstq+strideq  ], m2
+  psrldq              m2, 2                     ; A1 B1 C1 D1 ..
+  movd  [dstq          ], m2
+  RET
+
+INIT_XMM ssse3
+cglobal d153_predictor_8x8, 4, 4, 7, dst, stride, above, left
+  movq                m0, [leftq]               ; [0- 7] l1-8 [byte]
+  movhps              m0, [aboveq-1]            ; [8-15] tl, t1-7 [byte]
+  pshufb              m1, m0, [sh_b2w76543210]  ; l8-1 [word]
+  pshufb              m2, m0, [sh_b2w65432108]  ; l7-1,tl [word]
+  pshufb              m3, m0, [sh_b2w54321089]  ; l6-1,tl,t1 [word]
+  pshufb              m0, [sh_b2w89abcdef]      ; tl,t1-7 [word]
+  psrldq              m4, m0, 2                 ; t1-7 [word]
+  psrldq              m5, m0, 4                 ; t2-7 [word]
+  ; comments below are for a predictor like this
+  ; A1 B1 C1 D1 E1 F1 G1 H1
+  ; A2 B2 A1 B1 C1 D1 E1 F1
+  ; A3 B3 A2 B2 A1 B1 C1 D1
+  ; A4 B4 A3 B3 A2 B2 A1 B1
+  ; A5 B5 A4 B4 A3 B3 A2 B2
+  ; A6 B6 A5 B5 A4 B4 A3 B3
+  ; A7 B7 A6 B6 A5 B5 A4 B4
+  ; A8 B8 A7 B7 A6 B6 A5 B5
+  pavgw               m6, m1, m2                ; 2-tap avg A8-A1
+  paddw               m4, m4
+  paddw               m2, m2
+  paddw               m0, m5
+  paddw               m1, m3
+  paddw               m4, [pw_2]
+  paddw               m2, [pw_2]
+  paddw               m0, m4
+  paddw               m1, m2
+  psraw               m0, 2                     ; 3-tap avg C-H1
+  psraw               m1, 2                     ; 3-tap avg B8-1
+  packuswb            m6, m6
+  packuswb            m1, m1
+  packuswb            m0, m0
+  punpcklbw           m6, m1                    ; A-B8, A-B7 ... A-B2, A-B1
+
+  DEFINE_ARGS dst, stride, stride3
+  lea           stride3q, [strideq*3]
+
+  movhps [dstq+stride3q], m6                    ; A-B4, A-B3, A-B2, A-B1
+  palignr             m1, m0, m6, 10            ; A-B3, A-B2, A-B1, C-H1
+  movq  [dstq+strideq*2], m1
+  psrldq              m1, 2                     ; A-B2, A-B1, C-H1
+  movq  [dstq+strideq  ], m1
+  psrldq              m1, 2                     ; A-H1
+  movq  [dstq          ], m1
+  lea               dstq, [dstq+strideq*4]
+  movq  [dstq+stride3q ], m6                    ; A-B8, A-B7, A-B6, A-B5
+  psrldq              m6, 2                     ; A-B7, A-B6, A-B5, A-B4
+  movq  [dstq+strideq*2], m6
+  psrldq              m6, 2                     ; A-B6, A-B5, A-B4, A-B3
+  movq  [dstq+strideq  ], m6
+  psrldq              m6, 2                     ; A-B5, A-B4, A-B3, A-B2
+  movq  [dstq          ], m6
   RET
