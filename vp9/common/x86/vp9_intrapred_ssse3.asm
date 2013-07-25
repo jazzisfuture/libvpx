@@ -26,6 +26,9 @@ sh_b2w89abcdef: db 8, -1, 9, -1, 10, -1, 11, -1, 12, -1, 13, -1, 14, -1, 15, -1
 sh_b2w9abcdeff: db 9, -1, 10, -1, 11, -1, 12, -1, 13, -1, 14, -1, 15, -1, 15, -1
 sh_b2wabcdefff: db 10, -1, 11, -1, 12, -1, 13, -1, 14, -1, 15, -1, 15, -1, 15, -1
 sh_b123456789abcdeff: db 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15
+sh_b1233: db 1, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b12345677: db 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b23456789abcdefff: db 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 15
 
 SECTION .text
 
@@ -417,5 +420,127 @@ cglobal d63_predictor_32x32, 3, 4, 8, dst, stride, above, line
   pshufb                 m5, m1
   lea                  dstq, [dstq+strideq*4]
   dec                 lined
+  jnz .loop
+  REP_RET
+
+INIT_MMX ssse3
+cglobal d27_predictor_4x4, 2, 4, 4, dst, stride, unused, left
+  movifnidn        leftq, leftmp
+  movd                m0, [leftq]        ; abcd [byte]
+  pxor                m2, m2
+  pshufb              m1, m0, [sh_b1233] ; bcdd [byte]
+  pavgb               m1, m0             ; ab, bc, cd, d [byte]
+  punpcklbw           m0, m2             ; a, b, c, d [word]
+  pshufw              m2, m0, q3332      ; c, d, d, d [word]
+  pshufw              m3, m0, q3321      ; b, c, d, d [word]
+  paddw               m2, m0
+  paddw               m3, m3
+  paddw               m2, [pw_2]
+  paddw               m2, m3
+  psraw               m2, 2
+  packuswb            m2, m2             ; a2bc, b2cd, c3d, d [byte]
+  punpcklbw           m1, m2             ; ab, a2bc, bc, b2cd, cd, c3d, d, d
+  movd    [dstq        ], m1
+  psrlq               m1, 16             ; bc, b2cd, cd, c3d, d, d
+  movd    [dstq+strideq], m1
+  lea               dstq, [dstq+strideq*2]
+  psrlq               m1, 16             ; cd, c3d, d, d
+  movd    [dstq        ], m1
+  pshufw              m1, m1, q1111      ; d, d, d, d
+  movd    [dstq+strideq], m1
+  RET
+
+INIT_XMM ssse3
+cglobal d27_predictor_8x8, 2, 4, 4, dst, stride, stride3, left
+  movifnidn        leftq, leftmp
+  movq                m0, [leftq]            ; abcdefgh [byte]
+  lea           stride3q, [strideq*3]
+  pshufb              m1, m0, [sh_b12345677] ; bcdefghh [byte]
+  pavgb               m1, m0                 ; ab, bc, cd, de, ef, fg, gh, h
+  pshufb              m2, m0, [sh_b2w23456777] ; c, d, e, f, g, h, h, h [word]
+  pshufb              m3, m0, [sh_b2w12345677] ; b, c, d, e, f, g, h, h [word]
+  pshufb              m0, [sh_b2w01234567]
+  paddw               m2, m0
+  paddw               m3, m3
+  paddw               m2, [pw_2]
+  paddw               m2, m3
+  psraw               m2, 2
+  packuswb            m2, m2        ; a2bc, b2cd, c2de, d2ef, e2fg, f2gh, g3h, h
+  punpcklbw           m1, m2        ; interleaved output
+  movq  [dstq          ], m1
+  psrldq              m1, 2
+  movq  [dstq+strideq  ], m1
+  psrldq              m1, 2
+  movq  [dstq+strideq*2], m1
+  psrldq              m1, 2
+  movq  [dstq+stride3q ], m1
+  lea               dstq, [dstq+strideq*4]
+  pshufhw             m1, m1, q0000 ; de, d2ef, ef, e2fg, fg, f2gh, gh, g3h, 8xh
+  psrldq              m1, 2
+  movq  [dstq          ], m1
+  psrldq              m1, 2
+  movq  [dstq+strideq  ], m1
+  psrldq              m1, 2
+  movq  [dstq+strideq*2], m1
+  psrldq              m1, 2
+  movq  [dstq+stride3q ], m1
+  RET
+
+INIT_XMM ssse3
+cglobal d27_predictor_16x16, 2, 4, 7, dst, stride, stride3, left
+  lea           stride3q, [strideq*3]
+  movifnidn        leftq, leftmp
+  mova                m0, [leftq]            ; abcdefghijklmnop [byte]
+  pshufb              m1, m0, [sh_b123456789abcdeff] ; bcdefghijklmnopp [byte]
+  pavgb               m1, m0                 ; ab, bc, cd .. no, op, pp [byte]
+  pshufb              m6, m0, [sh_b2wabcdefff]
+  pshufb              m3, m0, [sh_b2w23456789]
+  pshufb              m5, m0, [sh_b2w9abcdeff]
+  pshufb              m2, m0, [sh_b2w12345678]
+  pshufb              m4, m0, [sh_b2w89abcdef]
+  pshufb              m0, [sh_b2w01234567]
+  paddw               m2, m2
+  paddw               m5, m5
+  paddw               m0, m3
+  paddw               m4, m6
+  paddw               m2, [pw_2]
+  paddw               m5, [pw_2]
+  paddw               m0, m2
+  paddw               m4, m5
+  psraw               m0, 2
+  psraw               m4, 2
+  packuswb            m0, m4
+  punpckhbw           m4, m1, m0    ; interleaved input
+  punpcklbw           m1, m0        ; interleaved output
+  mova  [dstq          ], m1
+  palignr             m0, m4, m1, 2
+  mova  [dstq+strideq  ], m0
+  palignr             m0, m4, m1, 4
+  mova  [dstq+strideq*2], m0
+  palignr             m0, m4, m1, 6
+  mova  [dstq+stride3q ], m0
+  lea               dstq, [dstq+strideq*4]
+  palignr             m0, m4, m1, 8
+  mova  [dstq          ], m0
+  palignr             m0, m4, m1, 10
+  mova  [dstq+strideq  ], m0
+  palignr             m0, m4, m1, 12
+  mova  [dstq+strideq*2], m0
+  palignr             m0, m4, m1, 14
+  mova  [dstq+stride3q ], m0
+  DEFINE_ARGS dst, stride, stride3, line
+  mov              lined, 2
+  mova                m0, [sh_b23456789abcdefff]
+.loop:
+  lea               dstq, [dstq+strideq*4]
+  mova  [dstq          ], m4
+  pshufb              m4, m0
+  mova  [dstq+strideq  ], m4
+  pshufb              m4, m0
+  mova  [dstq+strideq*2], m4
+  pshufb              m4, m0
+  mova  [dstq+stride3q ], m4
+  pshufb              m4, m0
+  dec              lined
   jnz .loop
   REP_RET
