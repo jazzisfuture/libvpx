@@ -91,7 +91,7 @@ static int read_intra_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
                                  vp9_reader *r) {
   MACROBLOCKD *const xd = &pbi->mb;
   struct segmentation *const seg = &xd->seg;
-  const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+  const BLOCK_SIZE_TYPE bsize = xd->mi_8x8[0].mi->mbmi.sb_type;
   int segment_id;
 
   if (!seg->enabled)
@@ -110,7 +110,7 @@ static int read_inter_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
   struct segmentation *const seg = &xd->seg;
-  const BLOCK_SIZE_TYPE bsize = xd->mode_info_context->mbmi.sb_type;
+  const BLOCK_SIZE_TYPE bsize = xd->mi_8x8[0].mi->mbmi.sb_type;
   int pred_segment_id, segment_id;
 
   if (!seg->enabled)
@@ -124,7 +124,7 @@ static int read_inter_segment_id(VP9D_COMP *pbi, int mi_row, int mi_col,
   if (seg->temporal_update) {
     const vp9_prob pred_prob = vp9_get_pred_prob_seg_id(xd);
     const int pred_flag = vp9_read(r, pred_prob);
-    vp9_set_pred_flag_seg_id(cm, bsize, mi_row, mi_col, pred_flag);
+    vp9_set_pred_flag_seg_id(xd, bsize, pred_flag);
     segment_id = pred_flag ? pred_segment_id
                            : read_segment_id(r, seg);
   } else {
@@ -152,7 +152,8 @@ static void read_intra_mode_info(VP9D_COMP *pbi, MODE_INFO *m,
   MACROBLOCKD *const xd = &pbi->mb;
   MB_MODE_INFO *const mbmi = &m->mbmi;
   const BLOCK_SIZE_TYPE bsize = mbmi->sb_type;
-  const int mis = cm->mode_info_stride;
+  MODE_INFO *above_mi = xd->mi_8x8[-cm->mode_info_stride].mi;
+  MODE_INFO *left_mi = xd->mi_8x8[-1].mi;
 
   mbmi->segment_id = read_intra_segment_id(pbi, mi_row, mi_col, r);
   mbmi->mb_skip_coeff = read_skip_coeff(pbi, mbmi->segment_id, r);
@@ -160,9 +161,9 @@ static void read_intra_mode_info(VP9D_COMP *pbi, MODE_INFO *m,
   mbmi->ref_frame[0] = INTRA_FRAME;
 
   if (bsize >= BLOCK_SIZE_SB8X8) {
-    const MB_PREDICTION_MODE A = above_block_mode(m, 0, mis);
+    const MB_PREDICTION_MODE A = above_block_mode2(m, above_mi, 0);
     const MB_PREDICTION_MODE L = xd->left_available ?
-                                  left_block_mode(m, 0) : DC_PRED;
+                                  left_block_mode2(m, left_mi, 0) : DC_PRED;
     mbmi->mode = read_intra_mode(r, vp9_kf_y_mode_prob[A][L]);
   } else {
     // Only 4x4, 4x8, 8x4 blocks
@@ -173,9 +174,9 @@ static void read_intra_mode_info(VP9D_COMP *pbi, MODE_INFO *m,
     for (idy = 0; idy < 2; idy += bh) {
       for (idx = 0; idx < 2; idx += bw) {
         const int ib = idy * 2 + idx;
-        const MB_PREDICTION_MODE A = above_block_mode(m, ib, mis);
+        const MB_PREDICTION_MODE A = above_block_mode2(m, above_mi, ib);
         const MB_PREDICTION_MODE L = (xd->left_available || idx) ?
-                                      left_block_mode(m, ib) : DC_PRED;
+                                     left_block_mode2(m, left_mi, ib) : DC_PRED;
         const MB_PREDICTION_MODE b_mode = read_intra_mode(r,
                                               vp9_kf_y_mode_prob[A][L]);
         m->bmi[ib].as_mode = b_mode;
@@ -680,20 +681,31 @@ void vp9_prepare_read_mode_info(VP9D_COMP* pbi, vp9_reader *r) {
 void vp9_read_mode_info(VP9D_COMP* pbi, int mi_row, int mi_col, vp9_reader *r) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
+#ifdef MIC_STREAM
+  MODE_INFO *mi = xd->mi_8x8[0].mi;
+#else
   MODE_INFO *mi = xd->mode_info_context;
+#endif
   const BLOCK_SIZE_TYPE bsize = mi->mbmi.sb_type;
   const int bw = 1 << mi_width_log2(bsize);
   const int bh = 1 << mi_height_log2(bsize);
   const int y_mis = MIN(bh, cm->mi_rows - mi_row);
   const int x_mis = MIN(bw, cm->mi_cols - mi_col);
-  int x, y;
+  int x, y, z;
 
   if (cm->frame_type == KEY_FRAME || cm->intra_only)
     read_intra_mode_info(pbi, mi, mi_row, mi_col, r);
   else
     read_inter_mode_info(pbi, mi, mi_row, mi_col, r);
 
-  for (y = 0; y < y_mis; y++)
-    for (x = !y; x < x_mis; x++)
-      mi[y * cm->mode_info_stride + x] = *mi;
+#ifdef MIC_STREAM
+//  xd->mi_8x8[0].mi = mi;
+#endif
+  for (y = 0, z = 0; y < y_mis; y++, z += cm->mode_info_stride)
+    for (x = !y; x < x_mis; x++) {
+#ifndef MIC_STREAM
+      mi[z + x] = *mi;
+#endif
+        xd->mi_8x8[z + x].mi = mi;
+      }
 }

@@ -3466,11 +3466,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->show_frame) {
     // current mip will be the prev_mip for the next frame
     MODE_INFO *temp = cm->prev_mip;
+    MODE_INFO_8x8 *temp2 = cm->prev_mi_grid_base;
     cm->prev_mip = cm->mip;
     cm->mip = temp;
+    cm->prev_mi_grid_base = cm->mi_grid_base;
+    cm->mi_grid_base = temp2;
 
     // update the upper left visible macroblock ptrs
     cm->mi = cm->mip + cm->mode_info_stride + 1;
+    cm->mi_grid_visible = cm->mi_grid_base + cm->mode_info_stride + 1;
 
     // Don't increment frame counters if this was an altref buffer
     // update not a real frame
@@ -3479,6 +3483,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
   // restore prev_mi
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
+  cm->prev_mi_grid_visible = cm->prev_mi_grid_base + cm->mode_info_stride + 1;
 
 #if 0
   {
