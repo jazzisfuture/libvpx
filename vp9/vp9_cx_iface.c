@@ -213,6 +213,7 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
     case VPX_IMG_FMT_I420:
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
+    case VPX_IMG_FMT_NV12:
       break;
     default:
       ERROR("Invalid image format. Only YV12, I420, I422, I444 images are "

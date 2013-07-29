@@ -92,6 +92,7 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_VPXI420:
     case VPX_IMG_FMT_VPXYV12:
+    case VPX_IMG_FMT_NV12:
       bps = 12;
       break;
     default:
@@ -117,6 +118,7 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_VPXI420:
     case VPX_IMG_FMT_VPXYV12:
+    case VPX_IMG_FMT_NV12:
       ycs = 1;
       break;
     default:
@@ -221,7 +223,13 @@ int vpx_img_set_rect(vpx_image_t  *img,
       img->planes[VPX_PLANE_Y] = data + x + y * img->stride[VPX_PLANE_Y];
       data += img->h * img->stride[VPX_PLANE_Y];
 
-      if (!(img->fmt & VPX_IMG_FMT_UV_FLIP)) {
+      if (img->fmt == VPX_IMG_FMT_NV12) {
+        img->planes[VPX_PLANE_U] = data
+                                   + (x >> img->x_chroma_shift)
+                                   + (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
+        img->planes[VPX_PLANE_V] = img->planes[VPX_PLANE_U] + 1;
+      } 
+      else if (!(img->fmt & VPX_IMG_FMT_UV_FLIP)) {
         img->planes[VPX_PLANE_U] = data
                                    + (x >> img->x_chroma_shift)
                                    + (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
