@@ -66,13 +66,10 @@ unsigned char vp9_get_pred_context_intra_inter(const MACROBLOCKD *xd) {
   // left of the entries correpsonding to real macroblocks.
   // The prediction flags in these dummy entries are initialised to 0.
   if (above_in_image && left_in_image) {  // both edges available
-    if (left_mbmi->ref_frame[0] == INTRA_FRAME &&
-        above_mbmi->ref_frame[0] == INTRA_FRAME) {  // intra/intra (3)
-      pred_context = 3;
-    } else {  // intra/inter (1) or inter/inter (0)
-      pred_context = left_mbmi->ref_frame[0] == INTRA_FRAME ||
-                     above_mbmi->ref_frame[0] == INTRA_FRAME;
-    }
+    if (!is_inter_block(left_mbmi) && !is_inter_block(above_mbmi))
+      pred_context = 3;  // intra/intra (3)
+    else  // intra/inter (1) or inter/inter (0)
+      pred_context = !is_inter_block(left_mbmi) || !is_inter_block(above_mbmi);
   } else if (above_in_image || left_in_image) {  // one edge available
     const MB_MODE_INFO *edge_mbmi = above_in_image ? above_mbmi : left_mbmi;
 

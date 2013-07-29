@@ -158,6 +158,7 @@ static void read_intra_frame_mode_info(VP9D_COMP *pbi, MODE_INFO *m,
   mbmi->mb_skip_coeff = read_skip_coeff(pbi, mbmi->segment_id, r);
   mbmi->txfm_size = read_tx_size(pbi, cm->tx_mode, bsize, 1, r);
   mbmi->ref_frame[0] = INTRA_FRAME;
+  mbmi->ref_frame[1] = NONE;
 
   if (bsize >= BLOCK_SIZE_SB8X8) {
     const MB_PREDICTION_MODE A = above_block_mode(m, 0, mis);

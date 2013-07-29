@@ -536,9 +536,9 @@ static INLINE int cost_coeffs(VP9_COMMON *const cm, MACROBLOCK *mb,
   const int16_t *band_count = &band_counts[tx_size][1];
   const int eob = xd->plane[plane].eobs[block];
   const int16_t *qcoeff_ptr = BLOCK_OFFSET(xd->plane[plane].qcoeff, block, 16);
-  const int ref = mbmi->ref_frame[0] != INTRA_FRAME;
-  unsigned int (*token_costs)[2][PREV_COEF_CONTEXTS]
-                    [MAX_ENTROPY_TOKENS] = mb->token_costs[tx_size][type][ref];
+  const int is_inter = is_inter_block(mbmi);
+  unsigned int (*token_costs)[2][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
+                   mb->token_costs[tx_size][type][is_inter];
   ENTROPY_CONTEXT above_ec = !!*A, left_ec = !!*L;
   uint8_t token_cache[1024];
 
@@ -627,8 +627,7 @@ static void dist_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
                                 &this_sse) >> shift;
   args->sse += this_sse >> shift;
 
-  if (x->skip_encode &&
-      xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {
+  if (x->skip_encode && !is_inter_block(&xd->mode_info_context->mbmi)) {
     // TODO(jingning): tune the model to better capture the distortion.
     int64_t p = (pd->dequant[1] * pd->dequant[1] *
                     (1 << ss_txfrm_size)) >> shift;
@@ -765,7 +764,7 @@ static void block_yrd_txfm(int plane, int block, BLOCK_SIZE_TYPE bsize,
     return;
   }
 
-  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME)
+  if (!is_inter_block(&xd->mode_info_context->mbmi))
     encode_block_intra(plane, block, bsize, ss_txfrm_size, &encode_args);
   else
     xform_quant(plane, block, bsize, ss_txfrm_size, &encode_args);
@@ -1085,8 +1084,7 @@ static void super_block_yrd(VP9_COMP *cpi,
     vp9_subtract_sby(x, bs);
 
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL ||
-      (cpi->sf.tx_size_search_method != USE_FULL_RD &&
-       mbmi->ref_frame[0] == INTRA_FRAME)) {
+      (cpi->sf.tx_size_search_method != USE_FULL_RD && !is_inter_block(mbmi))) {
     vpx_memset(txfm_cache, 0, NB_TXFM_MODES * sizeof(int64_t));
     choose_largest_txfm_size(cpi, x, rate, distortion, skip, sse,
                              ref_best_rd, bs);
@@ -1454,7 +1452,7 @@ static void super_block_uvrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
                                       TX_SIZE uv_tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   int64_t dummy;
-  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME)
+  if (!is_inter_block(&xd->mode_info_context->mbmi))
     vp9_encode_intra_block_uv(cm, x, bsize);
   else
     vp9_xform_quant_sbuv(cm, x, bsize);
@@ -3830,7 +3828,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     // Keep record of best intra rd
-    if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME &&
+    if (!is_inter_block(&xd->mode_info_context->mbmi) &&
         is_intra_mode(xd->mode_info_context->mbmi.mode) &&
         this_rd < best_intra_rd) {
       best_intra_rd = this_rd;
@@ -4052,9 +4050,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     return best_rd;
   }
 
-  assert((cm->mcomp_filter_type == SWITCHABLE) ||
-         (cm->mcomp_filter_type == best_mbmode.interp_filter) ||
-         (best_mbmode.ref_frame[0] == INTRA_FRAME));
+  assert(cm->mcomp_filter_type == SWITCHABLE ||
+         cm->mcomp_filter_type == best_mbmode.interp_filter ||
+         !is_inter_block(&best_mbmode));
 
   // Updating rd_thresh_freq_fact[] here means that the differnt
   // partition/block sizes are handled independently based on the best
@@ -4094,14 +4092,11 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   // macroblock modes
   *mbmi = best_mbmode;
   x->skip |= best_skip2;
-  if (best_mbmode.ref_frame[0] == INTRA_FRAME &&
-      best_mbmode.sb_type < BLOCK_SIZE_SB8X8) {
+  if (!is_inter_block(&best_mbmode) && best_mbmode.sb_type < BLOCK_SIZE_SB8X8)
     for (i = 0; i < 4; i++)
       xd->mode_info_context->bmi[i].as_mode = best_bmodes[i].as_mode;
-  }
 
-  if (best_mbmode.ref_frame[0] != INTRA_FRAME &&
-      best_mbmode.sb_type < BLOCK_SIZE_SB8X8) {
+  if (is_inter_block(&best_mbmode) && best_mbmode.sb_type < BLOCK_SIZE_SB8X8) {
     for (i = 0; i < 4; i++)
       xd->mode_info_context->bmi[i].as_mv[0].as_int =
           best_bmodes[i].as_mv[0].as_int;

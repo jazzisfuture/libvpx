@@ -65,7 +65,7 @@ DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
 #define INCREMENT_COUNT(token)               \
   do {                                       \
-    coef_counts[type][ref][band][pt]         \
+    coef_counts[type][is_inter][band][pt]    \
                [token >= TWO_TOKEN ?     \
                 (token == DCT_EOB_TOKEN ? DCT_EOB_MODEL_TOKEN : TWO_TOKEN) : \
                 token]++;     \
@@ -95,10 +95,10 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   ENTROPY_CONTEXT above_ec, left_ec;
-  const int ref = xd->mode_info_context->mbmi.ref_frame[0] != INTRA_FRAME;
+  const int is_inter = is_inter_block(&xd->mode_info_context->mbmi);
   int band, pt, c = 0;
   vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
-      fc->coef_probs[txfm_size][type][ref];
+      fc->coef_probs[txfm_size][type][is_inter];
   vp9_prob coef_probs_full[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
   uint8_t load_map[COEF_BANDS][PREV_COEF_CONTEXTS] = { { 0 } };
   vp9_prob *prob;
@@ -150,7 +150,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       pt = get_coef_context(nb, token_cache, c);
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
-    counts->eob_branch[txfm_size][type][ref][band][pt]++;
+    counts->eob_branch[txfm_size][type][is_inter][band][pt]++;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
@@ -236,7 +236,7 @@ SKIP_START:
   }
 
   if (c < seg_eob)
-    coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN]++;
+    coef_counts[type][is_inter][band][pt][DCT_EOB_MODEL_TOKEN]++;
 
 
   return c;

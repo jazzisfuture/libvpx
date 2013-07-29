@@ -351,7 +351,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     ctx->txfm_rd_diff[ALLOW_32X32] = ctx->txfm_rd_diff[ALLOW_16X16];
   }
 
-  if (mbmi->ref_frame[0] != INTRA_FRAME && mbmi->sb_type < BLOCK_SIZE_SB8X8) {
+  if (is_inter_block(mbmi) && mbmi->sb_type < BLOCK_SIZE_SB8X8) {
     *x->partition_info = ctx->partition_info;
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
@@ -395,7 +395,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   } else {
     // Note how often each mode chosen as best
     cpi->mode_chosen_counts[mb_mode_index]++;
-    if (mbmi->ref_frame[0] != INTRA_FRAME
+    if (is_inter_block(mbmi)
         && (mbmi->sb_type < BLOCK_SIZE_SB8X8 || mbmi->mode == NEWMV)) {
       int_mv best_mv, best_second_mv;
       const MV_REFERENCE_FRAME rf1 = mbmi->ref_frame[0];
@@ -2561,7 +2561,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     // Increase zbin size to suppress noise
     cpi->zbin_mode_boost = 0;
     if (cpi->zbin_mode_boost_enabled) {
-      if (mbmi->ref_frame[0] != INTRA_FRAME) {
+      if (is_inter_block(mbmi)) {
         if (mbmi->mode == ZEROMV) {
           if (mbmi->ref_frame[0] != LAST_FRAME)
             cpi->zbin_mode_boost = GF_ZEROMV_ZBIN_BOOST;
@@ -2580,7 +2580,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     vp9_update_zbin_extra(cpi, x);
   }
 
-  if (mbmi->ref_frame[0] == INTRA_FRAME) {
+  if (!is_inter_block(mbmi)) {
     vp9_encode_intra_block_y(
         cm, x, (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 : bsize);
     vp9_encode_intra_block_uv(
@@ -2609,7 +2609,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         bsize < BLOCK_SIZE_SB8X8 ? BLOCK_SIZE_SB8X8 : bsize);
   }
 
-  if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {
+  if (!is_inter_block(&xd->mode_info_context->mbmi)) {
     vp9_tokenize_sb(cpi, t, !output_enabled,
                     (bsize < BLOCK_SIZE_SB8X8) ? BLOCK_SIZE_SB8X8 : bsize);
   } else if (!x->skip) {
@@ -2634,7 +2634,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   if (output_enabled) {
     if (cm->tx_mode == TX_MODE_SELECT &&
         mbmi->sb_type >= BLOCK_SIZE_SB8X8  &&
-        !(mbmi->ref_frame[0] != INTRA_FRAME &&
+        !(is_inter_block(mbmi) &&
             (mbmi->mb_skip_coeff ||
              vp9_segfeature_active(&xd->seg, segment_id, SEG_LVL_SKIP)))) {
       const uint8_t context = vp9_get_pred_context_tx_size(xd);
@@ -2643,7 +2643,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       int x, y;
       TX_SIZE sz = (cm->tx_mode == TX_MODE_SELECT) ? TX_32X32 : cm->tx_mode;
       // The new intra coding scheme requires no change of transform size
-      if (mi->mbmi.ref_frame[0] != INTRA_FRAME) {
+      if (is_inter_block(&mi->mbmi)) {
         if (sz == TX_32X32 && bsize < BLOCK_SIZE_SB32X32)
           sz = TX_16X16;
         if (sz == TX_16X16 && bsize < BLOCK_SIZE_MB16X16)

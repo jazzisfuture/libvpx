@@ -143,7 +143,7 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
                        int plane, int block, BLOCK_SIZE_TYPE bsize,
                        ENTROPY_CONTEXT *a, ENTROPY_CONTEXT *l,
                        TX_SIZE tx_size) {
-  const int ref = mb->e_mbd.mode_info_context->mbmi.ref_frame[0] != INTRA_FRAME;
+  const int is_inter = is_inter_block(&mb->e_mbd.mode_info_context->mbmi);
   MACROBLOCKD *const xd = &mb->e_mbd;
   vp9_token_state tokens[1025][2];
   unsigned best_index[1025][2];
@@ -198,7 +198,7 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
 
   /* Now set up a Viterbi trellis to evaluate alternative roundings. */
   rdmult = mb->rdmult * err_mult;
-  if (mb->e_mbd.mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME)
+  if (!is_inter)
     rdmult = (rdmult * 9) >> 4;
   rddiv = mb->rddiv;
   /* Initialize the sentinel node of the trellis. */
@@ -233,10 +233,10 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
         band = get_coef_band(band_translate, i + 1);
         pt = trellis_get_coeff_context(scan, nb, i, t0, token_cache);
         rate0 +=
-          mb->token_costs[tx_size][type][ref][band][0][pt]
+          mb->token_costs[tx_size][type][is_inter][band][0][pt]
                          [tokens[next][0].token];
         rate1 +=
-          mb->token_costs[tx_size][type][ref][band][0][pt]
+          mb->token_costs[tx_size][type][is_inter][band][0][pt]
                          [tokens[next][1].token];
       }
       UPDATE_RD_COST();
@@ -284,12 +284,12 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
         band = get_coef_band(band_translate, i + 1);
         if (t0 != DCT_EOB_TOKEN) {
           pt = trellis_get_coeff_context(scan, nb, i, t0, token_cache);
-          rate0 += mb->token_costs[tx_size][type][ref][band][!x][pt]
+          rate0 += mb->token_costs[tx_size][type][is_inter][band][!x][pt]
                                   [tokens[next][0].token];
         }
         if (t1 != DCT_EOB_TOKEN) {
           pt = trellis_get_coeff_context(scan, nb, i, t1, token_cache);
-          rate1 += mb->token_costs[tx_size][type][ref][band][!x][pt]
+          rate1 += mb->token_costs[tx_size][type][is_inter][band][!x][pt]
                                   [tokens[next][1].token];
         }
       }
@@ -322,12 +322,12 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
       /* Update the cost of each path if we're past the EOB token. */
       if (t0 != DCT_EOB_TOKEN) {
         tokens[next][0].rate +=
-            mb->token_costs[tx_size][type][ref][band][1][0][t0];
+            mb->token_costs[tx_size][type][is_inter][band][1][0][t0];
         tokens[next][0].token = ZERO_TOKEN;
       }
       if (t1 != DCT_EOB_TOKEN) {
         tokens[next][1].rate +=
-            mb->token_costs[tx_size][type][ref][band][1][0][t1];
+            mb->token_costs[tx_size][type][is_inter][band][1][0][t1];
         tokens[next][1].token = ZERO_TOKEN;
       }
       best_index[i][0] = best_index[i][1] = 0;
@@ -344,8 +344,8 @@ static void optimize_b(VP9_COMMON *const cm, MACROBLOCK *mb,
   error1 = tokens[next][1].error;
   t0 = tokens[next][0].token;
   t1 = tokens[next][1].token;
-  rate0 += mb->token_costs[tx_size][type][ref][band][0][pt][t0];
-  rate1 += mb->token_costs[tx_size][type][ref][band][0][pt][t1];
+  rate0 += mb->token_costs[tx_size][type][is_inter][band][0][pt][t0];
+  rate1 += mb->token_costs[tx_size][type][is_inter][band][0][pt][t1];
   UPDATE_RD_COST();
   best = rd_cost1 < rd_cost0;
   final_eob = i0 - 1;

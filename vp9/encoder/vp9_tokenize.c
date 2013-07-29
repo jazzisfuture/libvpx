@@ -128,7 +128,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
   const int16_t *scan, *nb;
   vp9_coeff_count *counts;
   vp9_coeff_probs_model *coef_probs;
-  const int ref = mbmi->ref_frame[0] != INTRA_FRAME;
+  const int is_inter = is_inter_block(mbmi);
   ENTROPY_CONTEXT above_ec, left_ec;
   uint8_t token_cache[1024];
   const uint8_t *band_translate;
@@ -193,15 +193,15 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
     }
 
     t->token = token;
-    t->context_tree = coef_probs[type][ref][band][pt];
+    t->context_tree = coef_probs[type][is_inter][band][pt];
     t->skip_eob_node = (c > 0) && (token_cache[scan[c - 1]] == 0);
 
     assert(vp9_coef_encodings[t->token].len - t->skip_eob_node > 0);
 
     if (!dry_run) {
-      ++counts[type][ref][band][pt][token];
+      ++counts[type][is_inter][band][pt][token];
       if (!t->skip_eob_node)
-        ++cpi->common.counts.eob_branch[tx_size][type][ref][band][pt];
+        ++cpi->common.counts.eob_branch[tx_size][type][is_inter][band][pt];
     }
     token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++t;
