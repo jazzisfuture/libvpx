@@ -1,0 +1,7 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Dmitry Kovalev <dkovalev@google.com>
+Submitted-by: Dmitry Kovalev <dkovalev@google.com>
+Submitted-at: Mon, 29 Jul 2013 13:24:29 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/63533
+Project: webm/libvpx
+Branch: refs/heads/master
