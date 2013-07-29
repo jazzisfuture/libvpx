@@ -327,6 +327,7 @@ struct input_state {
   struct vpx_rational   framerate;
   int                   use_i420;
   int                   only_i420;
+  int                   use_nv12;
 };
 
 
@@ -355,9 +356,14 @@ static int read_frame(struct input_state *input, vpx_image_t *img) {
 
     for (plane = 0; plane < 3; plane++) {
       unsigned char *ptr;
-      int w = (plane ? (1 + img->d_w) / 2 : img->d_w);
-      int h = (plane ? (1 + img->d_h) / 2 : img->d_h);
+      int w = (plane && img->x_chroma_shift ? ((1 + img->d_w) >> img->x_chroma_shift) : img->d_w);
+      int h = (plane && img->y_chroma_shift ? ((1 + img->d_h) >> img->y_chroma_shift) : img->d_h);
       int r;
+
+      // assuming that for nv12 we read all chroma data at one time
+      if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) continue;
+      // fixing NV12 chroma width it is odd
+      if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
 
       /* Determine the correct plane based on the image format. The for-loop
        * always counts in Y,U,V order, but this may not match the order of
@@ -942,6 +948,8 @@ static const arg_def_t use_yv12 = ARG_DEF(NULL, "yv12", 0,
                                           "Input file is YV12 ");
 static const arg_def_t use_i420 = ARG_DEF(NULL, "i420", 0,
                                           "Input file is I420 (default)");
+static const arg_def_t use_nv12 = ARG_DEF(NULL, "nv12", 0,
+                                          "Input file is NV12");
 static const arg_def_t codecarg = ARG_DEF(NULL, "codec", 1,
                                           "Codec to use");
 static const arg_def_t passes           = ARG_DEF("p", "passes", 1,
@@ -1028,7 +1036,7 @@ static const arg_def_t lag_in_frames    = ARG_DEF(NULL, "lag-in-frames", 1,
                                                   "Max number of frames to lag");
 
 static const arg_def_t *global_args[] = {
-  &use_yv12, &use_i420, &usage, &threads, &profile,
+  &use_yv12, &use_i420, &use_nv12, &usage, &threads, &profile,
   &width, &height, &stereo_mode, &timebase, &framerate,
   &error_resilient,
   &lag_in_frames, NULL
@@ -1614,6 +1622,7 @@ struct global_config {
   int                       usage;
   int                       deadline;
   int                       use_i420;
+  int                       use_nv12;
   int                       quiet;
   int                       verbose;
   int                       limit;
@@ -1690,6 +1699,7 @@ static void parse_global_config(struct global_config *global, char **argv) {
   global->codec = codecs;
   global->passes = 1;
   global->use_i420 = 1;
+  global->use_nv12 = 0;
 
   for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step) {
     arg.argv_step = 1;
@@ -1732,6 +1742,8 @@ static void parse_global_config(struct global_config *global, char **argv) {
       global->use_i420 = 0;
     else if (arg_match(&arg, &use_i420, argi))
       global->use_i420 = 1;
+    else if (arg_match(&arg, &use_nv12, argi))
+      global->use_nv12 = 1;
     else if (arg_match(&arg, &quietarg, argi))
       global->quiet = 1;
     else if (arg_match(&arg, &verbosearg, argi))
@@ -2525,6 +2537,7 @@ int main(int argc, const char **argv_) {
   input.framerate.den = 1;
   input.use_i420 = 1;
   input.only_i420 = 1;
+  input.use_nv12 = 0;
 
   /* First parse the global configuration values, because we want to apply
    * other parameters on top of the default configuration provided by the
@@ -2555,6 +2568,7 @@ int main(int argc, const char **argv_) {
 
   /* Handle non-option arguments */
   input.fn = argv[0];
+  input.use_nv12 = global.use_nv12;
 
   if (!input.fn)
     usage_exit();
@@ -2615,17 +2629,17 @@ int main(int argc, const char **argv_) {
       FOREACH_STREAM(show_stream_config(stream, &global, &input));
 
     if (pass == (global.pass ? global.pass - 1 : 0)) {
-      if (input.file_type == FILE_TYPE_Y4M)
+      if (input.file_type == FILE_TYPE_Y4M) {
         /*The Y4M reader does its own allocation.
           Just initialize this here to avoid problems if we never read any
            frames.*/
         memset(&raw, 0, sizeof(raw));
-      else
-        vpx_img_alloc(&raw,
-                      input.use_i420 ? VPX_IMG_FMT_I420
-                      : VPX_IMG_FMT_YV12,
-                      input.w, input.h, 32);
-
+      } else {
+        vpx_img_fmt_t fmt = input.use_i420 ? VPX_IMG_FMT_I420
+                                           : VPX_IMG_FMT_YV12;
+        if (input.use_nv12) fmt = VPX_IMG_FMT_NV12;
+        vpx_img_alloc(&raw, fmt, input.w, input.h, 32);
+      }
       FOREACH_STREAM(init_rate_histogram(&stream->rate_hist,
                                          &stream->config.cfg,
                                          &global.framerate));
