@@ -149,34 +149,38 @@ static void inc_mv_component(int v, nmv_component_counts *comp_counts,
   }
 }
 
-static void counts_to_context(nmv_component_counts *mvcomp, int usehp) {
-  int v;
-  vpx_memset(mvcomp->sign, 0, sizeof(nmv_component_counts) - sizeof(mvcomp->mvcount));
-  for (v = 1; v <= MV_MAX; v++) {
-    inc_mv_component(-v, mvcomp, mvcomp->mvcount[MV_MAX - v], usehp);
-    inc_mv_component( v, mvcomp, mvcomp->mvcount[MV_MAX + v], usehp);
-  }
-}
+//static void counts_to_context(nmv_component_counts *mvcomp, int usehp) {
+//  int v;
+//  vpx_memset(mvcomp->sign, 0, sizeof(nmv_component_counts) - sizeof(mvcomp->mvcount));
+//  for (v = 1; v <= MV_MAX; v++) {
+//    inc_mv_component(-v, mvcomp, mvcomp->mvcount[MV_MAX - v], usehp);
+//    inc_mv_component( v, mvcomp, mvcomp->mvcount[MV_MAX + v], usehp);
+//  }
+//}
 
-void vp9_inc_mv(const MV *mv,  nmv_context_counts *counts) {
+void vp9_inc_mv(const MV *mv,  nmv_context_counts *counts, int usehp) {
   const MV_JOINT_TYPE j = vp9_get_mv_joint(mv);
   ++counts->joints[j];
 
-  if (mv_joint_vertical(j))
-    ++counts->comps[0].mvcount[MV_MAX + mv->row];
+  if (mv_joint_vertical(j)) {
+    //++counts->comps[0].mvcount[MV_MAX + mv->row];
+    inc_mv_component(mv->row, &counts->comps[0], 1, usehp);
+  }
 
-  if (mv_joint_horizontal(j))
-    ++counts->comps[1].mvcount[MV_MAX + mv->col];
+  if (mv_joint_horizontal(j)) {
+    //++counts->comps[1].mvcount[MV_MAX + mv->col];
+    inc_mv_component(mv->col, &counts->comps[1], 1, usehp);
+  }
 }
 
 static vp9_prob adapt_prob(vp9_prob prep, const unsigned int ct[2]) {
   return merge_probs2(prep, ct, MV_COUNT_SAT, MV_MAX_UPDATE_FACTOR);
 }
 
-void vp9_counts_process(nmv_context_counts *nmv_count, int usehp) {
-  counts_to_context(&nmv_count->comps[0], usehp);
-  counts_to_context(&nmv_count->comps[1], usehp);
-}
+//void vp9_counts_process(nmv_context_counts *nmv_count, int usehp) {
+//  counts_to_context(&nmv_count->comps[0], usehp);
+//  counts_to_context(&nmv_count->comps[1], usehp);
+//}
 
 static unsigned int adapt_probs(unsigned int i,
                                 vp9_tree tree,
@@ -207,7 +211,7 @@ void vp9_adapt_mv_probs(VP9_COMMON *cm, int usehp) {
   nmv_context *pre_ctx = &pre_fc->nmvc;
   nmv_context_counts *cts = &cm->counts.mv;
 
-  vp9_counts_process(cts, usehp);
+  //vp9_counts_process(cts, usehp);
 
   adapt_probs(0, vp9_mv_joint_tree, ctx->joints, pre_ctx->joints, cts->joints);
 

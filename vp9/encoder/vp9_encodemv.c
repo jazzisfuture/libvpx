@@ -159,7 +159,7 @@ static void counts_to_nmv_context(
     unsigned int (*branch_ct_class0_hp)[2],
     unsigned int (*branch_ct_hp)[2]) {
   int i, j, k;
-  vp9_counts_process(nmv_count, usehp);
+  //vp9_counts_process(nmv_count, usehp);
   vp9_tree_probs_from_distribution(vp9_mv_joint_tree,
                                    prob->joints,
                                    branch_ct_joint,
@@ -470,7 +470,7 @@ void vp9_build_nmv_cost_table(int *mvjoint,
 }
 
 void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
-                         int_mv *best_ref_mv, int_mv *second_best_ref_mv) {
+                         int_mv *best_ref_mv, int_mv *second_best_ref_mv, int usehp) {
   MODE_INFO *mi = x->e_mbd.mode_info_context;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   MV diff;
@@ -486,14 +486,14 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
         if (pi->bmi[i].mode == NEWMV) {
           diff.row = mi->bmi[i].as_mv[0].as_mv.row - best_ref_mv->as_mv.row;
           diff.col = mi->bmi[i].as_mv[0].as_mv.col - best_ref_mv->as_mv.col;
-          vp9_inc_mv(&diff, &cpi->NMVcount);
+          vp9_inc_mv(&diff, &cpi->NMVcount, usehp && vp9_use_mv_hp(&best_ref_mv->as_mv));
 
           if (x->e_mbd.mode_info_context->mbmi.ref_frame[1] > INTRA_FRAME) {
             diff.row = mi->bmi[i].as_mv[1].as_mv.row -
                          second_best_ref_mv->as_mv.row;
             diff.col = mi->bmi[i].as_mv[1].as_mv.col -
                          second_best_ref_mv->as_mv.col;
-            vp9_inc_mv(&diff, &cpi->NMVcount);
+            vp9_inc_mv(&diff, &cpi->NMVcount, usehp && vp9_use_mv_hp(&second_best_ref_mv->as_mv));
           }
         }
       }
@@ -501,12 +501,12 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
   } else if (mbmi->mode == NEWMV) {
     diff.row = mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row;
     diff.col = mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col;
-    vp9_inc_mv(&diff, &cpi->NMVcount);
+    vp9_inc_mv(&diff, &cpi->NMVcount, usehp && vp9_use_mv_hp(&best_ref_mv->as_mv));
 
     if (mbmi->ref_frame[1] > INTRA_FRAME) {
       diff.row = mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row;
       diff.col = mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col;
-      vp9_inc_mv(&diff, &cpi->NMVcount);
+      vp9_inc_mv(&diff, &cpi->NMVcount, usehp && vp9_use_mv_hp(&second_best_ref_mv->as_mv));
     }
   }
 }

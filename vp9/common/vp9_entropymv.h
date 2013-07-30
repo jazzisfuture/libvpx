@@ -108,7 +108,7 @@ int vp9_get_mv_mag(MV_CLASS_TYPE c, int offset);
 
 
 typedef struct {
-  unsigned int mvcount[MV_VALS];
+  //unsigned int mvcount[MV_VALS];
   unsigned int sign[2];
   unsigned int classes[MV_CLASSES];
   unsigned int class0[CLASS0_SIZE];
@@ -124,8 +124,8 @@ typedef struct {
   nmv_component_counts comps[2];
 } nmv_context_counts;
 
-void vp9_inc_mv(const MV *mv, nmv_context_counts *mvctx);
+void vp9_inc_mv(const MV *mv, nmv_context_counts *mvctx, int usehp);
 
-void vp9_counts_process(nmv_context_counts *NMVcount, int usehp);
+//void vp9_counts_process(nmv_context_counts *NMVcount, int usehp);
 
 #endif  // VP9_COMMON_VP9_ENTROPYMV_H_

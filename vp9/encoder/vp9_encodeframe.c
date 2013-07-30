@@ -407,7 +407,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       }
       mbmi->best_mv.as_int = best_mv.as_int;
       mbmi->best_second_mv.as_int = best_second_mv.as_int;
-      vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv);
+      vp9_update_nmv_count(cpi, x, &best_mv, &best_second_mv, xd->allow_high_precision_mv);
     }
 
     if (bsize > BLOCK_SIZE_SB8X8 && mbmi->mode == NEWMV) {
