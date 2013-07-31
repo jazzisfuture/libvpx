@@ -94,8 +94,10 @@ INSTANTIATE_TEST_CASE_P(C, VP9SubtractBlockTest,
                         ::testing::Values(vp9_subtract_block_c));
 
 #if HAVE_SSE2
+#if ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(SSE2, VP9SubtractBlockTest,
                         ::testing::Values(vp9_subtract_block_sse2));
+#endif
 #endif
 
 }  // namespace vp9
