@@ -212,6 +212,7 @@ static void count_segs_sb(VP9_COMP *cpi, MODE_INFO *mi,
 void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  struct segmentation *const seg = &xd->seg;
 
   int no_pred_cost;
   int t_pred_cost = INT_MAX;
@@ -231,8 +232,8 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
 
   // Set default state for the segment tree probabilities and the
   // temporal coding probabilities
-  vpx_memset(xd->seg.tree_probs, 255, sizeof(xd->seg.tree_probs));
-  vpx_memset(xd->seg.pred_probs, 255, sizeof(xd->seg.pred_probs));
+  vpx_memset(seg->tree_probs, 255, sizeof(seg->tree_probs));
+  vpx_memset(seg->pred_probs, 255, sizeof(seg->pred_probs));
 
   vpx_memset(no_pred_segcounts, 0, sizeof(no_pred_segcounts));
   vpx_memset(t_unpred_seg_counts, 0, sizeof(t_unpred_seg_counts));
@@ -280,11 +281,11 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
 
   // Now choose which coding method to use.
   if (t_pred_cost < no_pred_cost) {
-    xd->seg.temporal_update = 1;
-    vpx_memcpy(xd->seg.tree_probs, t_pred_tree, sizeof(t_pred_tree));
-    vpx_memcpy(xd->seg.pred_probs, t_nopred_prob, sizeof(t_nopred_prob));
+    seg->temporal_update = 1;
+    vpx_memcpy(seg->tree_probs, t_pred_tree, sizeof(t_pred_tree));
+    vpx_memcpy(seg->pred_probs, t_nopred_prob, sizeof(t_nopred_prob));
   } else {
-    xd->seg.temporal_update = 0;
-    vpx_memcpy(xd->seg.tree_probs, no_pred_tree, sizeof(no_pred_tree));
+    seg->temporal_update = 0;
+    vpx_memcpy(seg->tree_probs, no_pred_tree, sizeof(no_pred_tree));
   }
 }
