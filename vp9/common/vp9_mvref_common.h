@@ -22,7 +22,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm,
                           int_mv *mv_ref_list,
                           int *ref_sign_bias,
                           int block_idx,
-                          int mi_row, int mi_col);
+                          int mi_row,
+                          int mi_col);
 
 static INLINE void vp9_find_mv_refs(VP9_COMMON *cm,
                                     MACROBLOCKD *xd,
