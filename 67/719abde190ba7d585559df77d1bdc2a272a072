@@ -1,0 +1,7 @@
+Code-Review+2: Scott LaVarnway <slavarnway@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Thu, 01 Aug 2013 15:41:35 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/64253
+Project: webm/libvpx
+Branch: refs/heads/master
