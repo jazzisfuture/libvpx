@@ -170,11 +170,13 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
-  if (xd->mode_info_context) {
-    MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  if (xd->mi_8x8 && xd->mi_8x8->mi) {
+    MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
 
     set_scale_factors(xd, mbmi->ref_frame[0] - 1, mbmi->ref_frame[1] - 1,
                       cm->active_ref_scale);
+  } else {
+    set_scale_factors(xd, -1, -1, cm->active_ref_scale);
   }
 
   switch (mcomp_filter_type) {
@@ -278,7 +280,7 @@ static void build_inter_predictors(int plane, int block,
   const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
   const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
   const int x = 4 * (block & ((1 << bwl) - 1)), y = 4 * (block >> bwl);
-  const MODE_INFO *const mi = xd->mode_info_context;
+  const MODE_INFO *mi = xd->mi_8x8[0].mi;
   const int use_second_ref = mi->mbmi.ref_frame[1] > 0;
   int which_mv;
 
