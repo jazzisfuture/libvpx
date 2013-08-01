@@ -142,7 +142,11 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                           int block_idx, int mi_row, int mi_col) {
   int i;
   MODE_INFO *candidate_mi;
-  MB_MODE_INFO *mbmi = &here->mbmi;
+  // MODE_INFO *here always points to the current 8x8 being worked on.  Will
+  // remove later.  lf_here is always the previous frame.
+  MODE_INFO_8x8 *mi_8x8 = xd->mi_8x8;
+  MB_MODE_INFO * mbmi = &(xd->mi_8x8[0].mi)->mbmi;
+//  MB_MODE_INFO *mbmi = &here->mbmi;
   int_mv c_refmv;
   int_mv c2_refmv;
   MV_REFERENCE_FRAME c_ref_frame;
@@ -174,8 +178,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
         (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
       int b;
 
-      candidate_mi = here + mv_ref_search[i][0] +
-                     mi_stride * mv_ref_search[i][1];
+      candidate_mi = mi_8x8[ mv_ref_search[i][0] +
+                             (mv_ref_search[i][1] * mi_stride)].mi;
 
       if (block_idx >= 0) {
         if (mv_ref_search[i][0])
@@ -201,12 +205,11 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
               (refmv_count < MAX_MV_REF_CANDIDATES); ++i) {
     const int mi_search_col = mi_col + mv_ref_search[i][0];
     const int mi_search_row = mi_row + mv_ref_search[i][1];
-    if (mi_search_col >= cm->cur_tile_mi_col_start &&
-        mi_search_col < cm->cur_tile_mi_col_end &&
-        mi_search_row >= 0 &&
-        mi_search_row < cm->mi_rows) {
-      candidate_mi = here + mv_ref_search[i][0] +
-                     mi_stride * mv_ref_search[i][1];
+    if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+        (mi_search_col < cm->cur_tile_mi_col_end) &&
+        (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
+      candidate_mi = mi_8x8[ mv_ref_search[i][0] +
+                     (mv_ref_search[i][1] * mi_stride)].mi;
 
       if (get_matching_candidate(candidate_mi, ref_frame, &c_refmv, -1))
         add_candidate_mv(mv_ref_list, candidate_scores, &refmv_count, c_refmv,
@@ -230,12 +233,11 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
               (refmv_count < MAX_MV_REF_CANDIDATES); ++i) {
     const int mi_search_col = mi_col + mv_ref_search[i][0];
     const int mi_search_row = mi_row + mv_ref_search[i][1];
-    if (mi_search_col >= cm->cur_tile_mi_col_start &&
-        mi_search_col < cm->cur_tile_mi_col_end &&
-        mi_search_row >= 0 &&
-        mi_search_row < cm->mi_rows) {
-      candidate_mi = here + mv_ref_search[i][0] +
-                     mi_stride * mv_ref_search[i][1];
+    if ((mi_search_col >= cm->cur_tile_mi_col_start) &&
+        (mi_search_col < cm->cur_tile_mi_col_end) &&
+        (mi_search_row >= 0) && (mi_search_row < cm->mi_rows)) {
+      candidate_mi = mi_8x8[ mv_ref_search[i][0] +
+                     (mv_ref_search[i][1] * mi_stride)].mi;
 
       get_non_matching_candidates(candidate_mi, ref_frame,
                                   &c_ref_frame, &c_refmv,
