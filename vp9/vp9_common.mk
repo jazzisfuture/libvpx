@@ -74,13 +74,26 @@ VP9_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/vp9_loopfilter_intrin_ss
 VP9_COMMON_SRCS-$(CONFIG_POSTPROC) += common/vp9_postproc.h
 VP9_COMMON_SRCS-$(CONFIG_POSTPROC) += common/vp9_postproc.c
 VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_loopfilter_mmx.asm
-VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_copy_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_intrapred_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_intrapred_ssse3.asm
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_subpixel_8t_ssse3.asm
 ifeq ($(CONFIG_POSTPROC),yes)
 VP9_COMMON_SRCS-$(HAVE_MMX) += common/x86/vp9_postproc_mmx.asm
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_postproc_sse2.asm
+endif
+
+# x86inc.asm is not compatible with pic 32bit builds. Restrict
+# files which use it to 64bit builds or 32bit without pic
+CAN_USE_X86INC = no
+ifneq ($(CONFIG_PIC),yes)
+  CAN_USE_X86INC = yes
+endif
+ifeq ($(ARCH_X86_64),yes)
+  CAN_USE_X86INC = yes
+endif
+
+ifeq ($(CAN_USE_X86INC),yes)
+VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_copy_sse2.asm
 endif
 
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_intrin_sse2.c
