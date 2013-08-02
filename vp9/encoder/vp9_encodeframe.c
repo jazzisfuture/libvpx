@@ -340,8 +340,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   int mb_mode_index = ctx->best_mode_index;
   const int mis = cpi->common.mode_info_stride;
-  const int mi_height = num_8x8_blocks_high_lookup[bsize];
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
+  const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   assert(mi->mbmi.mode < MB_MODE_COUNT);
   assert(mb_mode_index < MAX_MODES);
@@ -698,8 +698,8 @@ static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
   MACROBLOCK * const x = &cpi->mb;
   MACROBLOCKD * const xd = &x->e_mbd;
   int p;
-  int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
-  int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int mi_height = num_8x8_blocks_high_lookup[bsize];
   for (p = 0; p < MAX_MB_PLANE; p++) {
@@ -729,8 +729,8 @@ static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
   MACROBLOCK * const x = &cpi->mb;
   MACROBLOCKD * const xd = &x->e_mbd;
   int p;
-  int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
-  int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int mi_height = num_8x8_blocks_high_lookup[bsize];
 
@@ -1193,8 +1193,8 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   const int mis = cm->mode_info_stride;
   int bsl = b_width_log2(bsize);
-  int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
-  int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int ms = num_4x4_blocks_wide / 2;
   int mh = num_4x4_blocks_high / 2;
   int bss = (1 << bsl) / 4;
