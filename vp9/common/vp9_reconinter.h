@@ -25,9 +25,16 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd,
                                      int mb_col,
                                      BLOCK_SIZE_TYPE bsize);
 
+#if CONFIG_AFFINE_MP
+void vp9_build_inter_predictors_sb(MACROBLOCKD *xd,
+                                   int mi_row, int mi_col,
+                                   BLOCK_SIZE_TYPE bsize,
+                                   int mi_rows, int mi_cols);
+#else
 void vp9_build_inter_predictors_sb(MACROBLOCKD *mb,
                                    int mb_row, int mb_col,
                                    BLOCK_SIZE_TYPE bsize);
+#endif
 
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE filter,

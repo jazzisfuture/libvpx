@@ -47,7 +47,11 @@
 
 #define KEY_FRAME_CONTEXT 5
 
+#if CONFIG_AFFINE_MP
+#define MAX_MODES 37
+#else
 #define MAX_MODES 36
+#endif
 
 #define MIN_THRESHMULT  32
 #define MAX_THRESHMULT  512

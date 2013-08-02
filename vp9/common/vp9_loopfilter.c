@@ -30,6 +30,9 @@ static void lf_init_lut(loop_filter_info_n *lfi) {
   lfi->mode_lf_lut[ZEROMV]  = 0;
   lfi->mode_lf_lut[NEARESTMV] = 1;
   lfi->mode_lf_lut[NEARMV] = 1;
+#if CONFIG_AFFINE_MP
+  lfi->mode_lf_lut[AFFINEMV] = 1;
+#endif
   lfi->mode_lf_lut[NEWMV] = 1;
 }
 
