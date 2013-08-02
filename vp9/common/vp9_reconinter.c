@@ -18,6 +18,503 @@
 #include "vp9/common/vp9_reconintra.h"
 #include "./vpx_scale_rtcd.h"
 
+#if CONFIG_AFFINE_MP
+#define SP(x) (((x) & 7) << 4)
+int sse_block(uint8_t *src, int src_stride, uint8_t *pred_ptr,
+              int pred_stride, int rows, int cols) {
+  int sse = 0, r_idx, c_idx, temp;
+  for (r_idx = 0; r_idx < rows; r_idx++) {
+    for (c_idx = 0; c_idx < cols; c_idx++) {
+      temp = (src[c_idx] - pred_ptr[c_idx]) * (src[c_idx] - pred_ptr[c_idx]);
+      sse = sse + temp;
+    }
+    src += src_stride;
+    pred_ptr += pred_stride;
+  }
+
+  return sse;
+}
+
+void template_matching(uint8_t *src, int src_stride,
+                       uint8_t *dst, int dst_stride,
+                       int bh, int bw,
+                       int rows, int cols,
+                       int *best_r, int *best_c) {
+  int r_idx, c_idx;
+  int best_error = bh * bw * 256 * 256, this_error;
+
+  *best_r = *best_c = 0;
+
+  for (r_idx = 0; r_idx < rows; r_idx++) {
+    for (c_idx = 0; c_idx < cols; c_idx++) {
+      this_error = sse_block(src, src_stride, dst + c_idx, dst_stride,
+                           bh, bw);
+      if (this_error < best_error) {
+        best_error = this_error;
+        *best_r = r_idx;
+        *best_c = c_idx;
+      }
+    }
+    dst += dst_stride;
+  }
+}
+
+void affine_estimation(int *mv_x, int *mv_y, int n, float *coeff) {
+  // coeff 0 1 2 3 4 5
+  //       a b c d e f
+  // point 1: (0, 0);
+  // point 2: (0, n);
+  // point 3: (n, 0);
+
+  coeff[2] = ((float) mv_x[0]) / 8;
+  coeff[5] = ((float) mv_y[0]) / 8;
+
+  coeff[1] = (((float) mv_x[1]) / 8 - coeff[2]) / n;
+  coeff[4] = (((float) mv_y[1]) / 8 - coeff[5]) / n;
+
+  coeff[0] = (((float) mv_x[2]) / 8 - coeff[2]) / n;
+  coeff[3] = (((float) mv_y[2]) / 8 - coeff[5]) / n;
+}
+
+uint8_t bil_interp(float *xp, float *yp, uint8_t *src, int src_stride) {
+  int x_int, y_int;
+  float value, x = *xp, y = *yp;
+
+  x_int = floor(x);
+  y_int = floor(y);
+  value = (y_int + 1 - y) * (x_int + 1 - x) * src[src_stride * y_int + x_int] +
+      (y_int + 1 - y) * (x - x_int) * src[src_stride * y_int + x_int + 1] +
+      (y - y_int) * (x_int + 1 - x) * src[src_stride * (y_int + 1) + x_int] +
+      (y - y_int) * (x - x_int) * src[src_stride * (y_int + 1) + x_int + 1];
+
+  return (uint8_t) value;
+}
+
+void sub_pixel_filtering_h(uint8_t *src, int src_stride,
+                           uint8_t *dst, int dst_stride,
+                           int rows, int cols, int *filter) {
+  int i, j;
+
+  for (i = 0; i < rows + 1; i++) {
+    for (j = 0; j < cols; j++) {
+      // Apply bilinear filter
+      dst[j] = (((int) src[j] * filter[0]) +  ((int) src[j + 1] * filter[1]) +
+          (128 / 2)) >> 7;
+    }
+    src += src_stride;
+    dst += dst_stride;
+  }
+}
+
+void sub_pixel_filtering_v(uint8_t *src, int src_stride,
+                           uint8_t *dst, int dst_stride,
+                           int rows, int cols, int *filter) {
+  int i, j;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      // Apply bilinear filter
+      dst[i* dst_stride] = ((((int) src[i * src_stride]) * filter[0]) +
+          (((int) src[(i + 1) * src_stride]) * filter[1]) + (128 / 2)) >> 7;
+    }
+    src += 1;
+    dst += 1;
+  }
+}
+
+void sub_pixel_adjust(MACROBLOCKD *xd, uint8_t *z, uint8_t *y,
+                         int bh, int bw, int_mv startmv, int_mv *bestmv) {
+  int left, right, up, down, diag;
+  int best_sad;
+  int whichdir;
+  int y_stride = xd->plane[0].pre[0].stride;
+  int z_stride = xd->plane[0].dst.stride;
+  int filter[2];
+  uint8_t temp2[256], temp[256];
+  int_mv this_mv;
+
+  startmv.as_mv.row = startmv.as_mv.row << 3;
+  startmv.as_mv.col = startmv.as_mv.col << 3;
+  *bestmv = startmv;
+  best_sad = sse_block(z, z_stride, y, y_stride, bh, bw);
+
+  filter[0] = 64, filter[1] = 64;
+
+  // go left
+  this_mv.as_mv.row = startmv.as_mv.row;
+  this_mv.as_mv.col = ((startmv.as_mv.col - 8) | 4);
+  sub_pixel_filtering_h(y-1, y_stride, temp, bw, bh, bw, filter);
+  left = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (left < best_sad) {
+    *bestmv = this_mv;
+    best_sad = left;
+  }
+
+  // go right
+  this_mv.as_mv.row = startmv.as_mv.row;
+  this_mv.as_mv.col += 8;
+  sub_pixel_filtering_h(y, y_stride, temp, bw, bh, bw, filter);
+  right = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (right < best_sad) {
+    *bestmv = this_mv;
+    best_sad = right;
+  }
+
+  // go up
+  this_mv.as_mv.col = startmv.as_mv.col;
+  this_mv.as_mv.row = ((startmv.as_mv.row - 8) | 4);
+  sub_pixel_filtering_v(y - y_stride, y_stride, temp, bw, bh, bw, filter);
+  up = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (up < best_sad) {
+    *bestmv = this_mv;
+    best_sad = up;
+  }
+
+  // go down
+  this_mv.as_mv.row += 8;
+  sub_pixel_filtering_v(y, y_stride, temp, bw, bh, bw, filter);
+  down = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (down < best_sad) {
+    *bestmv = this_mv;
+    best_sad = down;
+  }
+
+  whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+  this_mv = startmv;
+
+  switch (whichdir) {
+    case 0:
+      this_mv.as_mv.col = (this_mv.as_mv.col - 8) | 4;
+      this_mv.as_mv.row = (this_mv.as_mv.row - 8) | 4;
+      sub_pixel_filtering_h(y - y_stride - 1, y_stride, temp2,
+                            bw, bh, bw, filter);
+      sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      diag = sse_block(z, z_stride, temp, bw, bh, bw);
+      break;
+    case 1:
+      this_mv.as_mv.col += 4;
+      this_mv.as_mv.row = (this_mv.as_mv.row - 8) | 4;
+      sub_pixel_filtering_h(y - y_stride, y_stride, temp2, bw, bh, bw, filter);
+      sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      diag = sse_block(z, z_stride, temp, bw, bh, bw);
+      break;
+    case 2:
+      this_mv.as_mv.col = (this_mv.as_mv.col - 8) | 4;
+      this_mv.as_mv.row += 4;
+      sub_pixel_filtering_h(y - 1, y_stride, temp2, bw, bh, bw, filter);
+      sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      diag = sse_block(z, z_stride, temp, bw, bh, bw);
+      break;
+    case 3:
+    default:
+      this_mv.as_mv.col += 4;
+      this_mv.as_mv.row += 4;
+      sub_pixel_filtering_h(y, y_stride, temp2, bw, bh, bw, filter);
+      sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      diag = sse_block(z, z_stride, temp, bw, bh, bw);
+      break;
+  }
+  if (diag < best_sad) {
+    *bestmv = this_mv;
+    best_sad = diag;
+  }
+
+  if (bestmv->as_mv.row < startmv.as_mv.row) {
+    y -= y_stride;
+  }
+  if (bestmv->as_mv.col < startmv.as_mv.col) {
+    y--;
+  }
+
+  startmv = *bestmv;
+
+  this_mv.as_mv.row = startmv.as_mv.row;
+  // left
+  if (startmv.as_mv.col & 7) {
+    this_mv.as_mv.col = startmv.as_mv.col - 2;
+    filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+    sub_pixel_filtering_h(y, y_stride, temp, bw, bh, bw, filter);
+  } else {
+    this_mv.as_mv.col = (startmv.as_mv.col - 8) | 6;
+    filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+    sub_pixel_filtering_h(y - 1, y_stride, temp, bw, bh, bw, filter);
+  }
+  left = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (left < best_sad) {
+    *bestmv = this_mv;
+    best_sad = left;
+  }
+
+  this_mv.as_mv.col += 4;
+  filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+  sub_pixel_filtering_h(y, y_stride, temp, bw, bh, bw, filter);
+  right = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (right < best_sad) {
+    *bestmv = this_mv;
+    best_sad = right;
+  }
+
+  this_mv.as_mv.col = startmv.as_mv.col;
+  if (startmv.as_mv.row & 7) {
+    this_mv.as_mv.row = startmv.as_mv.row - 2;
+    filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+    sub_pixel_filtering_v(y, y_stride, temp, bw, bh, bw, filter);
+  } else {
+    this_mv.as_mv.row = (startmv.as_mv.row - 8) | 6;
+    filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+    sub_pixel_filtering_v(y - y_stride, y_stride, temp, bw, bh, bw, filter);
+  }
+  up = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (up < best_sad) {
+    *bestmv = this_mv;
+    best_sad = up;
+  }
+
+  this_mv.as_mv.row += 4;
+  filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+  sub_pixel_filtering_v(y, y_stride, temp, bw, bh, bw, filter);
+  down = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (down < best_sad) {
+    *bestmv = this_mv;
+    best_sad = down;
+  }
+
+  whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+  this_mv = startmv;
+  switch (whichdir) {
+    case 0:
+
+      if (startmv.as_mv.row & 7) {
+        this_mv.as_mv.row -= 2;
+        if (startmv.as_mv.col & 7) {
+          this_mv.as_mv.col -= 2;
+          filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_h(y, y_stride, temp2, bw, bh, bw, filter);
+          filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+        } else {
+          this_mv.as_mv.col = (startmv.as_mv.col - 8) | 6;
+          filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_h(y - 1, y_stride, temp2, bw, bh, bw, filter);
+          filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+        }
+      } else {
+        this_mv.as_mv.row = (startmv.as_mv.row - 8) | 6;
+        if (startmv.as_mv.col & 7) {
+          this_mv.as_mv.col -= 2;
+          filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_h(y - y_stride, y_stride, temp2,
+                                bw, bh, bw, filter);
+          filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+        } else {
+          this_mv.as_mv.col = (startmv.as_mv.col - 8) | 6;
+          filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+          sub_pixel_filtering_h(y - y_stride - 1, y_stride, temp2,
+                                bw, bh, bw, filter);
+          sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+        }
+      }
+      break;
+    case 1:
+      this_mv.as_mv.col += 2;
+      if (startmv.as_mv.row & 7) {
+        this_mv.as_mv.row -= 2;
+        filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_h(y, y_stride, temp2, bw, bh, bw, filter);
+        filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      } else {
+        this_mv.as_mv.row = (startmv.as_mv.row - 8) | 6;
+        filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_h(y - y_stride, y_stride,
+                              temp2, bw, bh, bw, filter);
+        filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      }
+      break;
+    case 2:
+      this_mv.as_mv.row += 2;
+
+      if (startmv.as_mv.col & 7) {
+        this_mv.as_mv.col -= 2;
+        filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_h(y, y_stride, temp2, bw, bh, bw, filter);
+        filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      } else {
+        this_mv.as_mv.col = (startmv.as_mv.col - 8) | 6;
+        filter[0] = 128 - SP(6), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_h(y - 1, y_stride, temp2, bw, bh, bw, filter);
+        filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+        sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      }
+      break;
+    case 3:
+      this_mv.as_mv.col += 2;
+      this_mv.as_mv.row += 2;
+      filter[0] = 128 - SP(this_mv.as_mv.col), filter[1] = 128 - filter[0];
+      sub_pixel_filtering_h(y, y_stride, temp2, bw, bh, bw, filter);
+      filter[0] = 128 - SP(this_mv.as_mv.row), filter[1] = 128 - filter[0];
+      sub_pixel_filtering_v(temp2, bw, temp, bw, bh, bw, filter);
+      break;
+  }
+  diag = sse_block(z, z_stride, temp, bw, bh, bw);
+  if (diag < best_sad) {
+    *bestmv = this_mv;
+    best_sad = diag;
+  }
+}
+
+void affine_motion_prediciton(MACROBLOCKD *xd, int n, int m, int t,
+                                 int mi_row, int mi_col,
+                                 int mi_rows, int mi_cols,
+                                 int shift_mi_u, int shift_mi_l) {
+  int i, j;
+  int mv_x[3], mv_y[3], plane;
+  int l = 2 * m + 1, h = 2 * t + 1;
+  int ur, uc, lr, lc;
+  float aff_coeff[6];
+  float x_f, y_f;
+  uint8_t *temp_dst, *temp_pre;
+  int_mv mv1, mv2, mv3;
+  int_mv temp_mv;
+
+  assert(n > l);
+
+  if (mi_row >= shift_mi_u)
+    ur = shift_mi_u << 3;
+  else
+    ur = mi_row << 3;
+
+  if (mi_col >= shift_mi_u)
+    uc = shift_mi_u << 3;
+  else
+    uc = mi_col << 3;
+
+  if (mi_row + shift_mi_l < mi_rows)
+    lr = (shift_mi_l << 3) + 8 - l;
+  else
+    lr = ((mi_rows - 1 - mi_row) << 3) + 8 - l;
+
+  if (mi_col + shift_mi_l < mi_cols)
+    lc = (shift_mi_l << 3) + 8 - l;
+  else
+    lc = ((mi_cols - 1 - mi_col) << 3) + 8 - l;
+
+  temp_pre = xd->plane[0].pre[0].buf - ur * xd->plane[0].pre[0].stride - uc;
+
+  temp_dst = xd->plane[0].dst.buf - l * xd->plane[0].dst.stride - l;
+  template_matching(temp_dst, xd->plane[0].dst.stride,
+                       temp_pre, xd->plane[0].pre[0].stride,
+                       l, l, ur + lr, uc + lc, &mv_y[0], &mv_x[0]);
+  mv1.as_mv.row = mv_y[0];
+  mv1.as_mv.col = mv_x[0];
+  sub_pixel_adjust(xd, temp_dst,
+                      temp_pre + mv_y[0] * xd->plane[0].pre[0].stride + mv_x[0],
+                      l, l, mv1, &temp_mv);
+  mv1 = temp_mv;
+
+  temp_dst = xd->plane[0].dst.buf + (n - h) * xd->plane[0].dst.stride - l;
+  template_matching(temp_dst, xd->plane[0].dst.stride,
+                       temp_pre, xd->plane[0].pre[0].stride,
+                       h, l, ur + lr, uc + lc, &mv_y[1], &mv_x[1]);
+  mv2.as_mv.row = mv_y[1];
+  mv2.as_mv.col = mv_x[1];
+  sub_pixel_adjust(xd, temp_dst,
+                      temp_pre + mv_y[1] * xd->plane[0].pre[0].stride + mv_x[1],
+                      h, l, mv2, &temp_mv);
+  mv2 = temp_mv;
+
+  temp_dst = xd->plane[0].dst.buf - l * xd->plane[0].dst.stride + (n - h);
+  template_matching(temp_dst, xd->plane[0].dst.stride,
+                       temp_pre, xd->plane[0].pre[0].stride,
+                       l, h, ur + lr, uc + lc, &mv_y[2], &mv_x[2]);
+  mv3.as_mv.row = mv_y[2];
+  mv3.as_mv.col = mv_x[2];
+  sub_pixel_adjust(xd, temp_dst,
+                      temp_pre + mv_y[2] * xd->plane[0].pre[0].stride + mv_x[2],
+                      l, h, mv3, &temp_mv);
+  mv3 = temp_mv;
+
+  mv_x[0] = mv1.as_mv.col + (m << 3);
+  mv_y[0] = mv1.as_mv.row + (m << 3);
+  mv_x[1] = mv2.as_mv.col + (m << 3);
+  mv_y[1] = mv2.as_mv.row + (t << 3);
+  mv_x[2] = mv3.as_mv.col + (t << 3);
+  mv_y[2] = mv3.as_mv.row + (m << 3);
+
+  affine_estimation(mv_x, mv_y, n + m - t, aff_coeff);
+
+
+  for (i = 0; i < n; i ++) {
+    for (j = 0; j < n; j++) {
+      x_f = (j + m + 1) * aff_coeff[0] + (i + m + 1) * aff_coeff[1] +
+          aff_coeff[2];
+      y_f = (j + m + 1) * aff_coeff[3] + (i + m + 1) * aff_coeff[4] +
+          aff_coeff[5];
+      xd->plane[0].dst.buf[i * xd->plane[0].dst.stride + j] =
+          bil_interp(&x_f, &y_f, temp_pre, xd->plane[0].pre[0].stride);
+    }
+  }
+
+  for (plane = 1; plane < 3; plane++) {
+    temp_pre = xd->plane[plane].pre[0].buf -
+        (ur >> 1) * xd->plane[plane].pre[0].stride - (uc >> 1);
+    for (i = 0; i < (n >> 1); i++) {
+      for (j = 0; j < (n >> 1); j++) {
+        x_f = (2 * j + m + 1) * aff_coeff[0] + (2 * i + m + 1) * aff_coeff[1] +
+            aff_coeff[2];
+        y_f = (2 * j + m +1) * aff_coeff[3] + (2 * i + m + 1) * aff_coeff[4] +
+            aff_coeff[5];
+        x_f = x_f /2;
+        y_f = y_f /2;
+        xd->plane[plane].dst.buf[i * xd->plane[plane].dst.stride + j] =
+            bil_interp(&x_f, &y_f, temp_pre, xd->plane[plane].pre[0].stride);
+      }
+    }
+  }
+
+  xd->mode_info_context->mbmi.mv[0].as_mv.col = mv1.as_mv.col -
+      ((uc - l) << 3);
+  xd->mode_info_context->mbmi.mv[0].as_mv.row = mv1.as_mv.row -
+      ((ur - l) << 3);
+
+  mv_y[0] = mv_y[0] >> 1;
+  mv_x[0] = mv_x[0] >> 1;
+  for (plane = 1; plane < 3; plane++) {
+    temp_pre = xd->plane[plane].pre[0].buf -
+        (ur >> 1) * xd->plane[plane].pre[0].stride - (uc >> 1);
+    for (i = 0; i < (n >> 1); i ++) {
+      for (j = 0; j < (n >> 1); j++) {
+        xd->plane[plane].dst.buf[i * xd->plane[plane].dst.stride + j] =
+            temp_pre[(i + mv_y[0]) * xd->plane[plane].pre[0].stride +
+                     j + mv_x[0]];
+      }
+    }
+  }
+  xd->mode_info_context->mbmi.mv[0] = mv1;
+}
+
+void amp_inter(MACROBLOCKD *xd, BLOCK_SIZE_TYPE bsize,
+               int mi_row, int mi_col, int mi_rows, int mi_cols) {
+  if (bsize == BLOCK_SIZE_MB16X16) {
+    affine_motion_prediciton(xd, 16, 4, 4, mi_row, mi_col,
+                             mi_rows, mi_cols, 4, 3);
+    (xd->mode_info_context + 1) -> mbmi = xd->mode_info_context->mbmi;
+    (xd->mode_info_context + xd->mode_info_stride) -> mbmi =
+        xd->mode_info_context->mbmi;
+    (xd->mode_info_context + xd->mode_info_stride + 1) -> mbmi =
+        xd->mode_info_context->mbmi;
+  } else if (bsize == BLOCK_SIZE_SB8X8) {
+    affine_motion_prediciton(xd, 8, 3, 3, mi_row, mi_col,
+                             mi_rows, mi_cols, 4, 3);
+  } else {
+    assert(0);
+  }
+}
+#endif
 static int scale_value_x_with_scaling(int val,
                                       const struct scale_factors *scale) {
   return (val * scale->x_scale_fp >> VP9_REF_SCALE_SHIFT);
@@ -387,13 +884,28 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd,
   };
   foreach_predicted_block_uv(xd, bsize, build_inter_predictors, &args);
 }
+#if CONFIG_AFFINE_MP
+void vp9_build_inter_predictors_sb(MACROBLOCKD *xd,
+                                   int mi_row, int mi_col,
+                                   BLOCK_SIZE_TYPE bsize,
+                                   int mi_rows, int mi_cols) {
+  if (xd->mode_info_context->mbmi.mode == AFFINEMV) {
+    assert(xd->mode_info_context->mbmi.ref_frame[0] == LAST_FRAME);
+    assert(xd->mode_info_context->mbmi.ref_frame[1] == NONE);
+    amp_inter(xd, bsize, mi_row, mi_col, mi_rows, mi_cols);
+  } else {
+    vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+    vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
+  }
+}
+#else
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd,
                                    int mi_row, int mi_col,
                                    BLOCK_SIZE_TYPE bsize) {
-
   vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
   vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
 }
+#endif
 
 // TODO(dkovalev: find better place for this function)
 void vp9_setup_scale_factors(VP9_COMMON *cm, int i) {

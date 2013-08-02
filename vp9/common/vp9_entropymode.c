@@ -214,6 +214,18 @@ const vp9_prob vp9_kf_y_mode_prob[VP9_INTRA_MODES]
   }
 };
 
+#if CONFIG_AFFINE_MP
+static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
+                                              [VP9_INTER_MODES - 1] = {
+  {2,       173,   34,   128},  // 0 = both zero mv
+  {7,       145,   85,   128},  // 1 = one zero mv + one a predicted mv
+  {7,       166,   63,   128},  // 2 = two predicted mvs
+  {7,       94,    66,   128},  // 3 = one predicted/zero and one new mv
+  {8,       64,    46,   128},  // 4 = two new mvs
+  {17,      81,    31,   128},  // 5 = one intra neighbour + x
+  {25,      29,    30,   128},  // 6 = two intra neighbours
+};
+#else
 static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [VP9_INTER_MODES - 1] = {
   {2,       173,   34},  // 0 = both zero mv
@@ -224,6 +236,7 @@ static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
   {17,      81,    31},  // 5 = one intra neighbour + x
   {25,      29,    30},  // 6 = two intra neighbours
 };
+#endif
 
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
 const vp9_tree_index vp9_intra_mode_tree[VP9_INTRA_MODES * 2 - 2] = {
@@ -238,11 +251,20 @@ const vp9_tree_index vp9_intra_mode_tree[VP9_INTRA_MODES * 2 - 2] = {
   -D153_PRED, -D27_PRED             /* 8 = D153_NODE */
 };
 
+#if CONFIG_AFFINE_MP
+const vp9_tree_index vp9_inter_mode_tree[8] = {
+  -ZEROMV, 2,
+  -NEARESTMV, 4,
+  -NEARMV, 6,
+  -NEWMV, -AFFINEMV
+};
+#else
 const vp9_tree_index vp9_inter_mode_tree[6] = {
   -ZEROMV, 2,
   -NEARESTMV, 4,
   -NEARMV, -NEWMV
 };
+#endif
 
 const vp9_tree_index vp9_partition_tree[6] = {
   -PARTITION_NONE, 2,
