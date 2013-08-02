@@ -71,15 +71,6 @@ static const uint8_t VP9_VAR_OFFS[64] = {
   128, 128, 128, 128, 128, 128, 128, 128
 };
 
-static unsigned int get_sb_variance(VP9_COMP *cpi, MACROBLOCK *x,
-                                    BLOCK_SIZE_TYPE bs) {
-  unsigned int var, sse;
-  var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
-                           x->plane[0].src.stride,
-                           VP9_VAR_OFFS, 0, &sse);
-  return var >> num_pels_log2_lookup[bs];
-}
-
 // Original activity measure from Tim T's code.
 static unsigned int tt_activity_measure(MACROBLOCK *x) {
   unsigned int act;
