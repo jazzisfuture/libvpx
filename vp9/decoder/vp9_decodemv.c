@@ -606,6 +606,10 @@ static void read_inter_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
             mv1->as_int = 0;
           break;
 
+#if CONFIG_AFFINE_MP
+        case AFFINEMV:
+          break;
+#endif
         case NEWMV:
           read_mv(r, &mv0->as_mv, &best_mv.as_mv, nmvc, &cm->fc.NMVcount,
                   xd->allow_high_precision_mv);

@@ -96,6 +96,9 @@ const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {D63_PRED,  INTRA_FRAME,  NONE},
   {D117_PRED, INTRA_FRAME,  NONE},
   {D45_PRED,  INTRA_FRAME,  NONE},
+#if CONFIG_AFFINE_MP
+  {AFFINEMV,  LAST_FRAME,  NONE},
+#endif
 };
 
 // The baseline rd thresholds for breaking out of the rd loop for
@@ -2796,6 +2799,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     case NEARMV:
     case NEARESTMV:
     case ZEROMV:
+#if CONFIG_AFFINE_MP
+    case AFFINEMV:
+#endif
     default:
       break;
   }
@@ -2932,7 +2938,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
             xd->plane[j].dst.stride = 64;
           }
         }
+#if CONFIG_AFFINE_MP
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize,
+                                      cm->mi_rows, cm->mi_cols);
+#else
         vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#endif
         model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
         cpi->rd_filter_cache[i] = RDCOST(x->rdmult, x->rddiv,
                                          rate_sum, dist_sum);
@@ -2996,7 +3007,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     // Handles the special case when a filter that is not in the
     // switchable list (ex. bilinear, 6-tap) is indicated at the frame level
+#if CONFIG_AFFINE_MP
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize,
+                                  cm->mi_rows, cm->mi_cols);
+#else
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#endif
   }
 
 
@@ -3225,6 +3241,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int bhsl = b_height_log2(bsize);
   int bhs = (1 << bhsl) / 4;  // mode_info step for subsize
   int best_skip2 = 0;
+#if CONFIG_AFFINE_MP
+  int skippable_y, skippable_uv;
+  int64_t psse, sseuv;
+#endif
 
   x->skip_encode = (cpi->sf.skip_encode_frame &&
                     xd->q_index < QIDX_SKIP_THRESH);
@@ -3316,6 +3336,13 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame;
+#if CONFIG_AFFINE_MP
+    if (vp9_mode_order[mode_index].second_ref_frame != NONE)
+      continue;
+    if (vp9_mode_order[mode_index].ref_frame != INTRA_FRAME &&
+        vp9_mode_order[mode_index].ref_frame != LAST_FRAME)
+      continue;
+#endif
 
     // Slip modes that have been masked off but always consider first mode.
     if ( mode_index && (bsize > cpi->sf.unused_mode_skip_lvl) &&
@@ -3716,6 +3743,44 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         for (i = 0; i < NB_TXFM_MODES; ++i)
           txfm_cache[i] = txfm_cache[ONLY_4X4];
       }
+#if CONFIG_AFFINE_MP
+    } else if (this_mode == AFFINEMV) {
+      if (bsize != BLOCK_SIZE_SB8X8 && bsize != BLOCK_SIZE_MB16X16)
+        continue;
+
+      assert(xd->mode_info_context->mbmi.ref_frame[0] == LAST_FRAME);
+      assert(xd->mode_info_context->mbmi.ref_frame[1] == NONE);
+
+      if (mi_row < 1 || mi_col < 1 )
+        continue;
+
+      if (cpi->active_map_enabled && x->active_ptr[0] == 0)
+        x->skip = 1;
+
+      amp_inter(xd, bsize, mi_row, mi_col, cm->mi_rows, cm->mi_cols);
+
+      rate2 = 0;
+      distortion2 = 0;
+      rate2 += x->mbmode_cost[this_mode];
+      rate2 += cost_mv_ref(cpi, this_mode,
+                           mbmi->mb_mode_context[mbmi->ref_frame[0]]);
+      super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable_y, &psse,
+                      bsize, txfm_cache, INT64_MAX);
+      rate2 += rate_y;
+      distortion2 += distortion_y;
+
+      super_block_uvrd(cm, x, &rate_uv, &distortion_uv,
+                       &skippable_uv, &sseuv, bsize);
+      rate2 += rate_uv;
+      distortion2 += distortion_uv;
+      skippable = skippable_y && skippable_uv;
+
+      mbmi->interp_filter = cm->mcomp_filter_type == SWITCHABLE ?
+          EIGHTTAP : cm->mcomp_filter_type;
+      vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+
+      if (cpi->common.mcomp_filter_type == SWITCHABLE)
+          rate2 += get_switchable_rate(cm, x);
     } else {
       compmode_cost = vp9_cost_bit(comp_mode_p,
                                    mbmi->ref_frame[1] > INTRA_FRAME);
@@ -3731,6 +3796,23 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (this_rd == INT64_MAX)
         continue;
     }
+#else
+    } else {
+      compmode_cost = vp9_cost_bit(comp_mode_p,
+                                   mbmi->ref_frame[1] > INTRA_FRAME);
+      this_rd = handle_inter_mode(cpi, x, bsize,
+                                  txfm_cache,
+                                  &rate2, &distortion2, &skippable,
+                                  &rate_y, &distortion_y,
+                                  &rate_uv, &distortion_uv,
+                                  &mode_excluded, &disable_skip,
+                                  &tmp_best_filter, frame_mv,
+                                  mi_row, mi_col,
+                                  single_newmv, &total_sse, best_rd);
+      if (this_rd == INT64_MAX)
+        continue;
+    }
+#endif
 
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
       rate2 += compmode_cost;
@@ -3970,6 +4052,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (x->skip && !mode_excluded)
       break;
   }
+
   if (best_rd >= best_rd_so_far)
     return INT64_MAX;
 
@@ -4002,6 +4085,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   // Flag all modes that have a distortion thats > 2x the best we found at
   // this level.
   for (mode_index = 0; mode_index < MB_MODE_COUNT; ++mode_index) {
+#if CONFIG_AFFINE_MP
+    if (mode_index == AFFINEMV)
+      continue;
+#endif
     if (mode_index == NEARESTMV || mode_index == NEARMV || mode_index == NEWMV)
       continue;
 
@@ -4128,6 +4215,5 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                        &mbmi->ref_mvs[mbmi->ref_frame[1] < 0 ? 0 :
                                       mbmi->ref_frame[1]][0],
                        best_pred_diff, best_txfm_diff, best_filter_diff);
-
   return best_rd;
 }

@@ -252,7 +252,12 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
       set_ref(pbi, 1, mi_row, mi_col);
 
     vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+#if CONFIG_AFFINE_MP
+    vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize,
+                                  cm->mi_rows, cm->mi_cols);
+#else
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+#endif
     eobtotal = decode_tokens(pbi, bsize, r);
     if (less8x8) {
       if (eobtotal >= 0)

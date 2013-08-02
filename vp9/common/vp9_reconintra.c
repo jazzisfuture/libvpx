@@ -31,6 +31,9 @@ const TX_TYPE mode2txfm_map[MB_MODE_COUNT] = {
     DCT_DCT,    // NEARESTMV
     DCT_DCT,    // NEARMV
     DCT_DCT,    // ZEROMV
+#if CONFIG_AFFINE_MP
+    ADST_ADST,    // AFFINEMV
+#endif
     DCT_DCT     // NEWMV
 };
 
