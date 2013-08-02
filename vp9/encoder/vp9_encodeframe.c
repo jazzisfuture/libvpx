@@ -2580,9 +2580,16 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                      &xd->scale_factor[1]);
 
 
+#if CONFIG_AFFINE_MP
+    vp9_build_inter_predictors_sb(
+        xd, mi_row, mi_col,
+        bsize < BLOCK_SIZE_SB8X8 ? BLOCK_SIZE_SB8X8 : bsize,
+            cm->mi_rows, cm->mi_cols);
+#else
     vp9_build_inter_predictors_sb(
         xd, mi_row, mi_col,
         bsize < BLOCK_SIZE_SB8X8 ? BLOCK_SIZE_SB8X8 : bsize);
+#endif
   }
 
   if (xd->mode_info_context->mbmi.ref_frame[0] == INTRA_FRAME) {

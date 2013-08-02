@@ -770,6 +770,11 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->use_avoid_tested_higherror = 1;
       sf->adaptive_rd_thresh = 1;
       sf->last_chroma_intra_mode = TM_PRED;
+#if CONFIG_AFFINE_MP
+      sf->always_this_block_size = BLOCK_SIZE_MB16X16;
+      sf->use_one_partition_size_always = 1;
+      sf->use_8tap_always = 1;
+#endif
 
       if (speed == 1) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -857,6 +862,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         // sf->reference_masking = 1;
 
         sf->disable_splitmv = 1;
+#if CONFIG_AFFINE_MP
+        //sf->always_this_block_size = BLOCK_SIZE_SB8X8;
+#endif
       }
       /*
       if (speed == 2) {

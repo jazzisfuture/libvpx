@@ -80,6 +80,9 @@ typedef enum {
   NEARESTMV,
   NEARMV,
   ZEROMV,
+#if CONFIG_AFFINE_MP
+  AFFINEMV,
+#endif
   NEWMV,
   MB_MODE_COUNT
 } MB_PREDICTION_MODE;
