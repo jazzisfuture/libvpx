@@ -2645,14 +2645,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           int16_t *inb =  in + 31 * str1;
           __m128i *step1a = &step1[ 0];
           __m128i *step1b = &step1[31];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
+          const __m128i ina0  = _mm_load_si128((const __m128i *)(ina));
+          const __m128i ina1  = _mm_load_si128((const __m128i *)(ina + str1));
+          const __m128i ina2  = _mm_load_si128((const __m128i *)(ina + str2));
+          const __m128i ina3  = _mm_load_si128((const __m128i *)(ina + str3));
+          const __m128i inb3  = _mm_load_si128((const __m128i *)(inb - str3));
+          const __m128i inb2  = _mm_load_si128((const __m128i *)(inb - str2));
+          const __m128i inb1  = _mm_load_si128((const __m128i *)(inb - str1));
+          const __m128i inb0  = _mm_load_si128((const __m128i *)(inb));
           step1a[ 0] = _mm_add_epi16(ina0, inb0);
           step1a[ 1] = _mm_add_epi16(ina1, inb1);
           step1a[ 2] = _mm_add_epi16(ina2, inb2);
@@ -2675,14 +2675,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           int16_t *inb =  in + 27 * str1;
           __m128i *step1a = &step1[ 4];
           __m128i *step1b = &step1[27];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
+          const __m128i ina0  = _mm_load_si128((const __m128i *)(ina));
+          const __m128i ina1  = _mm_load_si128((const __m128i *)(ina + str1));
+          const __m128i ina2  = _mm_load_si128((const __m128i *)(ina + str2));
+          const __m128i ina3  = _mm_load_si128((const __m128i *)(ina + str3));
+          const __m128i inb3  = _mm_load_si128((const __m128i *)(inb - str3));
+          const __m128i inb2  = _mm_load_si128((const __m128i *)(inb - str2));
+          const __m128i inb1  = _mm_load_si128((const __m128i *)(inb - str1));
+          const __m128i inb0  = _mm_load_si128((const __m128i *)(inb));
           step1a[ 0] = _mm_add_epi16(ina0, inb0);
           step1a[ 1] = _mm_add_epi16(ina1, inb1);
           step1a[ 2] = _mm_add_epi16(ina2, inb2);
@@ -2705,14 +2705,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           int16_t *inb =  in + 23 * str1;
           __m128i *step1a = &step1[ 8];
           __m128i *step1b = &step1[23];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
+          const __m128i ina0  = _mm_load_si128((const __m128i *)(ina));
+          const __m128i ina1  = _mm_load_si128((const __m128i *)(ina + str1));
+          const __m128i ina2  = _mm_load_si128((const __m128i *)(ina + str2));
+          const __m128i ina3  = _mm_load_si128((const __m128i *)(ina + str3));
+          const __m128i inb3  = _mm_load_si128((const __m128i *)(inb - str3));
+          const __m128i inb2  = _mm_load_si128((const __m128i *)(inb - str2));
+          const __m128i inb1  = _mm_load_si128((const __m128i *)(inb - str1));
+          const __m128i inb0  = _mm_load_si128((const __m128i *)(inb));
           step1a[ 0] = _mm_add_epi16(ina0, inb0);
           step1a[ 1] = _mm_add_epi16(ina1, inb1);
           step1a[ 2] = _mm_add_epi16(ina2, inb2);
@@ -2735,14 +2735,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           int16_t *inb =  in + 19 * str1;
           __m128i *step1a = &step1[12];
           __m128i *step1b = &step1[19];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
+          const __m128i ina0  = _mm_load_si128((const __m128i *)(ina));
+          const __m128i ina1  = _mm_load_si128((const __m128i *)(ina + str1));
+          const __m128i ina2  = _mm_load_si128((const __m128i *)(ina + str2));
+          const __m128i ina3  = _mm_load_si128((const __m128i *)(ina + str3));
+          const __m128i inb3  = _mm_load_si128((const __m128i *)(inb - str3));
+          const __m128i inb2  = _mm_load_si128((const __m128i *)(inb - str2));
+          const __m128i inb1  = _mm_load_si128((const __m128i *)(inb - str1));
+          const __m128i inb0  = _mm_load_si128((const __m128i *)(inb));
           step1a[ 0] = _mm_add_epi16(ina0, inb0);
           step1a[ 1] = _mm_add_epi16(ina1, inb1);
           step1a[ 2] = _mm_add_epi16(ina2, inb2);
@@ -2769,14 +2769,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
         // Note: the next four blocks could be in a loop. That would help the
         //       instruction cache but is actually slower.
         {
-          __m128i in00  = _mm_loadu_si128((const __m128i *)(in +  0 * 32));
-          __m128i in01  = _mm_loadu_si128((const __m128i *)(in +  1 * 32));
-          __m128i in02  = _mm_loadu_si128((const __m128i *)(in +  2 * 32));
-          __m128i in03  = _mm_loadu_si128((const __m128i *)(in +  3 * 32));
-          __m128i in28  = _mm_loadu_si128((const __m128i *)(in + 28 * 32));
-          __m128i in29  = _mm_loadu_si128((const __m128i *)(in + 29 * 32));
-          __m128i in30  = _mm_loadu_si128((const __m128i *)(in + 30 * 32));
-          __m128i in31  = _mm_loadu_si128((const __m128i *)(in + 31 * 32));
+          __m128i in00  = _mm_load_si128((const __m128i *)(in +  0 * 32));
+          __m128i in01  = _mm_load_si128((const __m128i *)(in +  1 * 32));
+          __m128i in02  = _mm_load_si128((const __m128i *)(in +  2 * 32));
+          __m128i in03  = _mm_load_si128((const __m128i *)(in +  3 * 32));
+          __m128i in28  = _mm_load_si128((const __m128i *)(in + 28 * 32));
+          __m128i in29  = _mm_load_si128((const __m128i *)(in + 29 * 32));
+          __m128i in30  = _mm_load_si128((const __m128i *)(in + 30 * 32));
+          __m128i in31  = _mm_load_si128((const __m128i *)(in + 31 * 32));
           step1[ 0] = _mm_add_epi16(in00, in31);
           step1[ 1] = _mm_add_epi16(in01, in30);
           step1[ 2] = _mm_add_epi16(in02, in29);
@@ -2787,14 +2787,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           step1[31] = _mm_sub_epi16(in00, in31);
         }
         {
-          __m128i in04  = _mm_loadu_si128((const __m128i *)(in +  4 * 32));
-          __m128i in05  = _mm_loadu_si128((const __m128i *)(in +  5 * 32));
-          __m128i in06  = _mm_loadu_si128((const __m128i *)(in +  6 * 32));
-          __m128i in07  = _mm_loadu_si128((const __m128i *)(in +  7 * 32));
-          __m128i in24  = _mm_loadu_si128((const __m128i *)(in + 24 * 32));
-          __m128i in25  = _mm_loadu_si128((const __m128i *)(in + 25 * 32));
-          __m128i in26  = _mm_loadu_si128((const __m128i *)(in + 26 * 32));
-          __m128i in27  = _mm_loadu_si128((const __m128i *)(in + 27 * 32));
+          __m128i in04  = _mm_load_si128((const __m128i *)(in +  4 * 32));
+          __m128i in05  = _mm_load_si128((const __m128i *)(in +  5 * 32));
+          __m128i in06  = _mm_load_si128((const __m128i *)(in +  6 * 32));
+          __m128i in07  = _mm_load_si128((const __m128i *)(in +  7 * 32));
+          __m128i in24  = _mm_load_si128((const __m128i *)(in + 24 * 32));
+          __m128i in25  = _mm_load_si128((const __m128i *)(in + 25 * 32));
+          __m128i in26  = _mm_load_si128((const __m128i *)(in + 26 * 32));
+          __m128i in27  = _mm_load_si128((const __m128i *)(in + 27 * 32));
           step1[ 4] = _mm_add_epi16(in04, in27);
           step1[ 5] = _mm_add_epi16(in05, in26);
           step1[ 6] = _mm_add_epi16(in06, in25);
@@ -2805,14 +2805,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           step1[27] = _mm_sub_epi16(in04, in27);
         }
         {
-          __m128i in08  = _mm_loadu_si128((const __m128i *)(in +  8 * 32));
-          __m128i in09  = _mm_loadu_si128((const __m128i *)(in +  9 * 32));
-          __m128i in10  = _mm_loadu_si128((const __m128i *)(in + 10 * 32));
-          __m128i in11  = _mm_loadu_si128((const __m128i *)(in + 11 * 32));
-          __m128i in20  = _mm_loadu_si128((const __m128i *)(in + 20 * 32));
-          __m128i in21  = _mm_loadu_si128((const __m128i *)(in + 21 * 32));
-          __m128i in22  = _mm_loadu_si128((const __m128i *)(in + 22 * 32));
-          __m128i in23  = _mm_loadu_si128((const __m128i *)(in + 23 * 32));
+          __m128i in08  = _mm_load_si128((const __m128i *)(in +  8 * 32));
+          __m128i in09  = _mm_load_si128((const __m128i *)(in +  9 * 32));
+          __m128i in10  = _mm_load_si128((const __m128i *)(in + 10 * 32));
+          __m128i in11  = _mm_load_si128((const __m128i *)(in + 11 * 32));
+          __m128i in20  = _mm_load_si128((const __m128i *)(in + 20 * 32));
+          __m128i in21  = _mm_load_si128((const __m128i *)(in + 21 * 32));
+          __m128i in22  = _mm_load_si128((const __m128i *)(in + 22 * 32));
+          __m128i in23  = _mm_load_si128((const __m128i *)(in + 23 * 32));
           step1[ 8] = _mm_add_epi16(in08, in23);
           step1[ 9] = _mm_add_epi16(in09, in22);
           step1[10] = _mm_add_epi16(in10, in21);
@@ -2823,14 +2823,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           step1[23] = _mm_sub_epi16(in08, in23);
         }
         {
-          __m128i in12  = _mm_loadu_si128((const __m128i *)(in + 12 * 32));
-          __m128i in13  = _mm_loadu_si128((const __m128i *)(in + 13 * 32));
-          __m128i in14  = _mm_loadu_si128((const __m128i *)(in + 14 * 32));
-          __m128i in15  = _mm_loadu_si128((const __m128i *)(in + 15 * 32));
-          __m128i in16  = _mm_loadu_si128((const __m128i *)(in + 16 * 32));
-          __m128i in17  = _mm_loadu_si128((const __m128i *)(in + 17 * 32));
-          __m128i in18  = _mm_loadu_si128((const __m128i *)(in + 18 * 32));
-          __m128i in19  = _mm_loadu_si128((const __m128i *)(in + 19 * 32));
+          __m128i in12  = _mm_load_si128((const __m128i *)(in + 12 * 32));
+          __m128i in13  = _mm_load_si128((const __m128i *)(in + 13 * 32));
+          __m128i in14  = _mm_load_si128((const __m128i *)(in + 14 * 32));
+          __m128i in15  = _mm_load_si128((const __m128i *)(in + 15 * 32));
+          __m128i in16  = _mm_load_si128((const __m128i *)(in + 16 * 32));
+          __m128i in17  = _mm_load_si128((const __m128i *)(in + 17 * 32));
+          __m128i in18  = _mm_load_si128((const __m128i *)(in + 18 * 32));
+          __m128i in19  = _mm_load_si128((const __m128i *)(in + 19 * 32));
           step1[12] = _mm_add_epi16(in12, in19);
           step1[13] = _mm_add_epi16(in13, in18);
           step1[14] = _mm_add_epi16(in14, in17);
@@ -3778,14 +3778,14 @@ void vp9_short_fdct32x32_rd_sse2(int16_t *input,
           }
           // Note: even though all these stores are aligned, using the aligned
           //       intrinsic make the code slightly slower.
-          _mm_storeu_si128((__m128i *)(output + 0 * 32), tr2_0);
-          _mm_storeu_si128((__m128i *)(output + 1 * 32), tr2_1);
-          _mm_storeu_si128((__m128i *)(output + 2 * 32), tr2_2);
-          _mm_storeu_si128((__m128i *)(output + 3 * 32), tr2_3);
-          _mm_storeu_si128((__m128i *)(output + 4 * 32), tr2_4);
-          _mm_storeu_si128((__m128i *)(output + 5 * 32), tr2_5);
-          _mm_storeu_si128((__m128i *)(output + 6 * 32), tr2_6);
-          _mm_storeu_si128((__m128i *)(output + 7 * 32), tr2_7);
+          _mm_store_si128((__m128i *)(output + 0 * 32), tr2_0);
+          _mm_store_si128((__m128i *)(output + 1 * 32), tr2_1);
+          _mm_store_si128((__m128i *)(output + 2 * 32), tr2_2);
+          _mm_store_si128((__m128i *)(output + 3 * 32), tr2_3);
+          _mm_store_si128((__m128i *)(output + 4 * 32), tr2_4);
+          _mm_store_si128((__m128i *)(output + 5 * 32), tr2_5);
+          _mm_store_si128((__m128i *)(output + 6 * 32), tr2_6);
+          _mm_store_si128((__m128i *)(output + 7 * 32), tr2_7);
           // Process next 8x8
           output += 8;
         }

@@ -1112,7 +1112,7 @@ static void dct32_1d(int *input, int *output, int round) {
   step[30] = output[30] + output[25];
   step[31] = output[31] + output[24];
 
-  // dump the magnitude by half, hence the intermediate values are within 1108
+  // dump the magnitude by half, hence the intermediate values are within
   // the range of 16 bits.
   if (round) {
     step[0] = half_round_shift(step[0]);
