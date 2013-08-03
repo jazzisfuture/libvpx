@@ -1523,6 +1523,24 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   BLOCK_SIZE_TYPE subsize;
   int srate = INT_MAX;
   int64_t sdist = INT_MAX;
+  int do_split = 1, do_rect = 1;
+  int partition_none_allowed = (bsize <= cpi->sf.max_partition_size ||
+                                !cpi->sf.auto_min_max_partition_size) &&
+                               (mi_row + (ms >> 1) < cm->mi_rows) &&
+                               (mi_col + (ms >> 1) < cm->mi_cols);
+  int partition_horz_allowed = (bsize <= cpi->sf.max_partition_size ||
+                                !cpi->sf.auto_min_max_partition_size) &&
+                               !cpi->sf.use_square_partition_only &&
+                               bsize >= BLOCK_SIZE_SB8X8 &&
+                               (mi_col + (ms >> 1) < cm->mi_cols);
+  int partition_vert_allowed = (bsize <= cpi->sf.max_partition_size ||
+                                !cpi->sf.auto_min_max_partition_size) &&
+                               !cpi->sf.use_square_partition_only &&
+                               bsize >= BLOCK_SIZE_SB8X8 &&
+                               (mi_row + (ms >> 1) < cm->mi_rows);
+  int larger_is_better = 0;
+  unsigned int source_variance = UINT_MAX;
+  int partition_split_done = 0;
 
   (void) *tp_orig;
 
@@ -1539,48 +1557,60 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
 
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  // PARTITION_SPLIT
-  if (!cpi->sf.auto_min_max_partition_size ||
-      bsize >= cpi->sf.min_partition_size) {
-    if (bsize > BLOCK_SIZE_SB8X8) {
-      int r4 = 0;
-      int64_t d4 = 0, sum_rd = 0;
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
+  if (cpi->sf.disable_split_var_thresh) {
+    source_variance = get_sb_variance(cpi, x, bsize);
+    if (partition_none_allowed) {
+      if (source_variance < cpi->sf.disable_split_var_thresh)
+        do_split = 0;
+      else if (source_variance < cpi->sf.disable_split_var_thresh / 4)
+        do_rect = 0;
+    }
+  }
+  if (do_split) {
+    // PARTITION_SPLIT
+    if (!cpi->sf.auto_min_max_partition_size ||
+        bsize >= cpi->sf.min_partition_size) {
+      if (bsize > BLOCK_SIZE_SB8X8) {
+        int r4 = 0;
+        int64_t d4 = 0, sum_rd = 0;
+        subsize = get_subsize(bsize, PARTITION_SPLIT);
 
-      for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
-        int x_idx = (i & 1) * (ms >> 1);
-        int y_idx = (i >> 1) * (ms >> 1);
-        int r = 0;
-        int64_t d = 0;
+        for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
+          int x_idx = (i & 1) * (ms >> 1);
+          int y_idx = (i >> 1) * (ms >> 1);
+          int r = 0;
+          int64_t d = 0;
 
-        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
-          continue;
+          if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
+            continue;
 
-        *(get_sb_index(xd, subsize)) = i;
-        rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize, &r,
-                          &d, i != 3, best_rd - sum_rd);
+          *(get_sb_index(xd, subsize)) = i;
+          rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize, &r,
+                            &d, i != 3, best_rd - sum_rd);
 
-        if (r == INT_MAX) {
-          r4 = INT_MAX;
-          sum_rd = INT64_MAX;
-        } else {
-          r4 += r;
-          d4 += d;
-          sum_rd = RDCOST(x->rdmult, x->rddiv, r4, d4);
+          if (r == INT_MAX) {
+            r4 = INT_MAX;
+            sum_rd = INT64_MAX;
+          } else {
+            r4 += r;
+            d4 += d;
+            sum_rd = RDCOST(x->rdmult, x->rddiv, r4, d4);
+          }
         }
+        set_partition_seg_context(cm, xd, mi_row, mi_col);
+        pl = partition_plane_context(xd, bsize);
+        if (r4 != INT_MAX && i == 4) {
+          r4 += x->partition_cost[pl][PARTITION_SPLIT];
+          *(get_sb_partitioning(x, bsize)) = subsize;
+          assert(r4 >= 0);
+          assert(d4 >= 0);
+          srate = r4;
+          sdist = d4;
+          best_rd = MIN(best_rd, RDCOST(x->rdmult, x->rddiv, r4, d4));
+        }
+        restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+        partition_split_done = 1;
       }
-      set_partition_seg_context(cm, xd, mi_row, mi_col);
-      pl = partition_plane_context(xd, bsize);
-      if (r4 != INT_MAX && i == 4) {
-        r4 += x->partition_cost[pl][PARTITION_SPLIT];
-        *(get_sb_partitioning(x, bsize)) = subsize;
-        assert(r4 >= 0);
-        assert(d4 >= 0);
-        srate = r4;
-        sdist = d4;
-        best_rd = MIN(best_rd, RDCOST(x->rdmult, x->rddiv, r4, d4));
-      }
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
     }
   }
 
@@ -1590,7 +1620,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   x->pred_mv.as_int = 0;
   x->subblock_ref = 0;
 
-  if (cpi->sf.using_small_partition_info &&
+  if (partition_split_done &&
+      cpi->sf.using_small_partition_info &&
       (!cpi->sf.auto_min_max_partition_size ||
       (bsize <= cpi->sf.max_partition_size &&
       bsize >= cpi->sf.min_partition_size))) {
@@ -1687,10 +1718,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
 
   if (!cpi->sf.auto_min_max_partition_size ||
       bsize <= cpi->sf.max_partition_size) {
-    int larger_is_better = 0;
     // PARTITION_NONE
-    if ((mi_row + (ms >> 1) < cm->mi_rows) &&
-        (mi_col + (ms >> 1) < cm->mi_cols)) {
+    if (partition_none_allowed) {
       int r;
       int64_t d;
       pick_sb_modes(cpi, mi_row, mi_col, &r, &d, bsize,
@@ -1714,7 +1743,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       }
     }
 
-    if (bsize == BLOCK_SIZE_SB8X8) {
+    if (bsize == BLOCK_SIZE_SB8X8 && do_split) {
       int r4 = 0;
       int64_t d4 = 0, sum_rd = 0;
       subsize = get_subsize(bsize, PARTITION_SPLIT);
@@ -1757,10 +1786,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
     }
 
-    if (!cpi->sf.use_square_partition_only &&
-        (!cpi->sf.less_rectangular_check ||!larger_is_better)) {
+    if (do_rect &&
+        !cpi->sf.use_square_partition_only &&
+        (!cpi->sf.less_rectangular_check || !larger_is_better)) {
       // PARTITION_HORZ
-      if (bsize >= BLOCK_SIZE_SB8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
+      if (partition_horz_allowed) {
         int r2, r = 0;
         int64_t d2, d = 0, h_rd;
         subsize = get_subsize(bsize, PARTITION_HORZ);
@@ -1799,7 +1829,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       }
 
       // PARTITION_VERT
-      if (bsize >= BLOCK_SIZE_SB8X8 && mi_row + (ms >> 1) < cm->mi_rows) {
+      if (partition_vert_allowed) {
         int r2;
         int64_t d2, v_rd;
         subsize = get_subsize(bsize, PARTITION_VERT);
