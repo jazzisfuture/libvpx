@@ -25,6 +25,11 @@
 #define SEPARATE_INTERINTRA_UV  0
 #endif
 
+#if CONFIG_MASKED_COMPOUND_INTER
+#define VP9_DEF_MASKED_COMPOUND_PROB 192
+#define VP9_UPD_MASKED_COMPOUND_PROB 248
+#endif
+
 // #define MODE_STATS
 
 extern int vp9_mv_cont(const int_mv *l, const int_mv *a);

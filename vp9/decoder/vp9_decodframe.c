@@ -662,6 +662,11 @@ static void update_frame_context(FRAME_CONTEXT *fc) {
   fc->pre_interintra_prob = fc->interintra_prob;
   vp9_zero(fc->interintra_counts);
 #endif
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  fc->pre_masked_compound_prob = fc->masked_compound_prob;
+  vp9_zero(fc->masked_compound_counts);
+#endif
 }
 
 static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {

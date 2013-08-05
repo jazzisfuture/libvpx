@@ -114,6 +114,12 @@ typedef struct frame_contexts {
   vp9_prob pre_interintra_prob;
   unsigned int interintra_counts[2];
 #endif
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_prob masked_compound_prob;
+  vp9_prob pre_masked_compound_prob;
+  unsigned int masked_compound_counts[2];
+#endif
 } FRAME_CONTEXT;
 
 typedef enum {
@@ -280,6 +286,10 @@ typedef struct VP9Common {
 
 #if CONFIG_INTERINTRA
   int use_interintra;
+#endif
+
+#if CONFIG_MASKED_COMPOUND_INTER
+  int use_masked_compound;
 #endif
 
   int error_resilient_mode;
