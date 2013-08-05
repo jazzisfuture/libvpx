@@ -481,6 +481,10 @@ static void read_inter_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
 
   int idx, idy;
 
+#if CONFIG_MASKED_COMPOUND_INTER
+  mbmi->use_masked_compound = 0;
+  mbmi->mask_index = MASK_NONE;
+#endif
   // Make sure the MACROBLOCKD mode info pointer is pointed at the
   // correct entry for the current macroblock.
   xd->mode_info_context = mi;
@@ -702,6 +706,22 @@ static void read_inter_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
           assert(!"Invalid inter mode value");
       }
     }
+
+#if CONFIG_MASKED_COMPOUND_INTER
+    mbmi->use_masked_compound = 0;
+    if (pbi->common.use_masked_compound &&
+        pbi->common.comp_pred_mode != SINGLE_PREDICTION_ONLY &&
+        is_inter_mode(mbmi->mode) &&
+        get_mask_bits(mi->mbmi.sb_type) &&
+        mbmi->ref_frame[1] > INTRA_FRAME) {
+      mbmi->use_masked_compound =
+          vp9_read(r, pbi->common.fc.masked_compound_prob);
+      pbi->common.fc.masked_compound_counts[mbmi->use_masked_compound]++;
+      if (mbmi->use_masked_compound) {
+        mbmi->mask_index = vp9_read_literal(r, get_mask_bits(mi->mbmi.sb_type));
+      }
+    }
+#endif
   } else {
     mv0->as_int = 0;  // required for left and above block mv
     read_intra_block_modes(pbi, mi, r);
@@ -745,6 +765,17 @@ void vp9_prepare_read_mode_info(VP9D_COMP* pbi, vp9_reader *r) {
         for (i = 0; i < COMP_INTER_CONTEXTS; i++)
           if (vp9_read(r, VP9_MODE_UPDATE_PROB))
             vp9_diff_update_prob(r, &cm->fc.comp_inter_prob[i]);
+#if CONFIG_MASKED_COMPOUND_INTER
+      if (cm->comp_pred_mode != SINGLE_PREDICTION_ONLY) {
+        cm->use_masked_compound = vp9_read_bit(r);
+        if (cm->use_masked_compound) {
+          if (vp9_read(r, VP9_UPD_MASKED_COMPOUND_PROB))
+            cm->fc.masked_compound_prob = vp9_read_prob(r);
+        }
+      } else {
+        cm->use_masked_compound = 0;
+      }
+#endif
     } else {
       cm->comp_pred_mode = SINGLE_PREDICTION_ONLY;
     }
