@@ -22,6 +22,8 @@ struct loop_filter_info {
   const uint8_t *hev_thr;
 };
 
+#define MI_BLOCKS_IN_64 (64 / MI_BLOCK_SIZE)
+
 static void lf_init_lut(loop_filter_info_n *lfi) {
   lfi->mode_lf_lut[DC_PRED] = 0;
   lfi->mode_lf_lut[D45_PRED] = 0;
@@ -247,21 +249,23 @@ static void filter_block_plane(VP9_COMMON *const cm,
   const int row_step_stride = cm->mode_info_stride * row_step;
   struct buf_2d *const dst = &plane->dst;
   uint8_t* const dst0 = dst->buf;
-  unsigned int mask_16x16[MI_BLOCK_SIZE] = {0};
-  unsigned int mask_8x8[MI_BLOCK_SIZE] = {0};
-  unsigned int mask_4x4[MI_BLOCK_SIZE] = {0};
-  unsigned int mask_4x4_int[MI_BLOCK_SIZE] = {0};
-  struct loop_filter_info lfi[MI_BLOCK_SIZE][MI_BLOCK_SIZE];
+  unsigned int mask_16x16[MI_BLOCKS_IN_64] = {0};
+  unsigned int mask_8x8[MI_BLOCKS_IN_64] = {0};
+  unsigned int mask_4x4[MI_BLOCKS_IN_64] = {0};
+  unsigned int mask_4x4_int[MI_BLOCKS_IN_64] = {0};
+  struct loop_filter_info lfi[MI_BLOCKS_IN_64][MI_BLOCKS_IN_64];
   int r, c;
 
-  for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
+  for (r = 0; r < MI_BLOCKS_IN_64 &&
+              mi_row + r < cm->mi_rows; r += row_step) {
     unsigned int mask_16x16_c = 0;
     unsigned int mask_8x8_c = 0;
     unsigned int mask_4x4_c = 0;
     unsigned int border_mask;
 
     // Determine the vertical edges that need filtering
-    for (c = 0; c < MI_BLOCK_SIZE && mi_col + c < cm->mi_cols; c += col_step) {
+    for (c = 0; c < MI_BLOCKS_IN_64 && mi_col + c < cm->mi_cols;
+         c += col_step) {
       const int skip_this = mi[c].mbmi.mb_skip_coeff
                             && is_inter_block(&mi[c].mbmi);
       // left edge of current unit is block/partition edge -> no skip
@@ -343,7 +347,8 @@ static void filter_block_plane(VP9_COMMON *const cm,
 
   // Now do horizontal pass
   dst->buf = dst0;
-  for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
+  for (r = 0; r < MI_BLOCKS_IN_64 && mi_row + r < cm->mi_rows;
+       r += row_step) {
     const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
     const unsigned int mask_4x4_int_r = skip_border_4x4_r ? 0 : mask_4x4_int[r];
 
@@ -362,10 +367,10 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
   const int num_planes = y_only ? 1 : MAX_MB_PLANE;
   int mi_row, mi_col;
 
-  for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
+  for (mi_row = start; mi_row < stop; mi_row += MI_BLOCKS_IN_64) {
     MODE_INFO* const mi = cm->mi + mi_row * cm->mode_info_stride;
 
-    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCKS_IN_64) {
       int plane;
 
       setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
