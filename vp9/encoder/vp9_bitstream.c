@@ -554,6 +554,18 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m,
                       &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
                       nmvc, xd->allow_high_precision_mv);
     }
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (cpi->common.use_masked_compound &&
+      cpi->common.comp_pred_mode != SINGLE_PREDICTION_ONLY &&
+      mode >= NEARESTMV && mode <= NEWMV &&
+      get_mask_bits(mi->sb_type) &&
+      mi->ref_frame[1] > INTRA_FRAME) {
+    vp9_write(bc, mi->use_masked_compound, pc->fc.masked_compound_prob);
+    if (mi->use_masked_compound) {
+      vp9_write_literal(bc, mi->mask_index, get_mask_bits(mi->sb_type));
+    }
+  }
+#endif
   }
 }
 
@@ -1420,6 +1432,9 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
 #if CONFIG_INTERINTRA
   pc->fc.pre_interintra_prob = pc->fc.interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  pc->fc.pre_masked_compound_prob = pc->fc.masked_compound_prob;
+#endif
 
   if (xd->lossless) {
     pc->txfm_mode = ONLY_4X4;
@@ -1475,6 +1490,25 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
                                       cpi->comp_inter_count[i]);
         }
       }
+#if CONFIG_MASKED_COMPOUND_INTER
+      if (use_compound_pred) {
+        if (!cpi->dummy_packing && pc->use_masked_compound)
+          pc->use_masked_compound = (cpi->masked_compound_counts[1] > 0);
+        vp9_write_bit(&header_bc, pc->use_masked_compound);
+        if (pc->use_masked_compound) {
+          vp9_cond_prob_update(&header_bc,
+                               &pc->fc.masked_compound_prob,
+                               VP9_UPD_MASKED_COMPOUND_PROB,
+                               cpi->masked_compound_counts);
+        } else {
+          vp9_zero(cpi->masked_compound_counts);
+        }
+      } else {
+        if (!cpi->dummy_packing)
+          pc->use_masked_compound = 0;
+        vp9_zero(cpi->masked_compound_counts);
+      }
+#endif
     }
 
     if (pc->comp_pred_mode != COMP_PREDICTION_ONLY) {
