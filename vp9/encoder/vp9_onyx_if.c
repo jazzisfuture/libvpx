@@ -748,6 +748,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_rd_breakout = 0;
   sf->skip_encode_sb = 0;
   sf->use_uv_intra_rd_estimate = 0;
+  sf->use_fast_lpf_pick = 0;
   sf->using_small_partition_info = 0;
   // Skip any mode not chosen at size < X for all sizes > X
   // Hence BLOCK_64X64 (skip is off)
@@ -831,6 +832,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
             (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 0;
         sf->auto_mv_step_size = 1;
         sf->search_method = SQUARE;
+        sf->use_fast_lpf_pick = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -2437,7 +2439,10 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    vp9_pick_filter_level(cpi->Source, cpi);
+    if (cpi->sf.use_fast_lpf_pick == 0)
+      vp9_pick_filter_level(cpi->Source, cpi);
+    else
+      vp9_pick_filter_level_fast(cpi->Source, cpi);
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
