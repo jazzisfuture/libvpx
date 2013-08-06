@@ -245,13 +245,14 @@ void vp9_init3smotion_compensation(MACROBLOCK *x, int stride) {
     },                                                                   \
     v = INT_MAX;)
 
-int vp9_find_best_sub_pixel_step_iteratively(MACROBLOCK *x,
-                                             int_mv *bestmv, int_mv *ref_mv,
-                                             int error_per_bit,
-                                             const vp9_variance_fn_ptr_t *vfp,
-                                             int *mvjcost, int *mvcost[2],
-                                             int *distortion,
-                                             unsigned int *sse1) {
+int vp9_find_best_sub_pixel_iterative(MACROBLOCK *x,
+                                      int_mv *bestmv, int_mv *ref_mv,
+                                      int error_per_bit,
+                                      const vp9_variance_fn_ptr_t *vfp,
+                                      int forced_stop,
+                                      int *mvjcost, int *mvcost[2],
+                                      int *distortion,
+                                      unsigned int *sse1) {
   uint8_t *z = x->plane[0].src.buf;
   int src_stride = x->plane[0].src.stride;
   MACROBLOCKD *xd = &x->e_mbd;
@@ -337,39 +338,44 @@ int vp9_find_best_sub_pixel_step_iteratively(MACROBLOCK *x,
 
   // TODO: Each subsequent iteration checks at least one point in common with
   // the last iteration could be 2 ( if diag selected) 1/4 pel
-  hstep >>= 1;
-  while (--quarteriters) {
-    CHECK_BETTER(left, tr, tc - hstep);
-    CHECK_BETTER(right, tr, tc + hstep);
-    CHECK_BETTER(up, tr - hstep, tc);
-    CHECK_BETTER(down, tr + hstep, tc);
 
-    whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+  // Note forced_stop: 0 - full, 1 - qtr only, 2 - half only
+  if (forced_stop != 2) {
+    hstep >>= 1;
+    while (--quarteriters) {
+      CHECK_BETTER(left, tr, tc - hstep);
+      CHECK_BETTER(right, tr, tc + hstep);
+      CHECK_BETTER(up, tr - hstep, tc);
+      CHECK_BETTER(down, tr + hstep, tc);
 
-    switch (whichdir) {
-      case 0:
-        CHECK_BETTER(diag, tr - hstep, tc - hstep);
+      whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+
+      switch (whichdir) {
+        case 0:
+          CHECK_BETTER(diag, tr - hstep, tc - hstep);
+          break;
+        case 1:
+          CHECK_BETTER(diag, tr - hstep, tc + hstep);
+          break;
+        case 2:
+          CHECK_BETTER(diag, tr + hstep, tc - hstep);
+          break;
+        case 3:
+          CHECK_BETTER(diag, tr + hstep, tc + hstep);
+          break;
+      }
+
+      // no reason to check the same one again.
+      if (tr == br && tc == bc)
         break;
-      case 1:
-        CHECK_BETTER(diag, tr - hstep, tc + hstep);
-        break;
-      case 2:
-        CHECK_BETTER(diag, tr + hstep, tc - hstep);
-        break;
-      case 3:
-        CHECK_BETTER(diag, tr + hstep, tc + hstep);
-        break;
+
+      tr = br;
+      tc = bc;
     }
-
-    // no reason to check the same one again.
-    if (tr == br && tc == bc)
-      break;
-
-    tr = br;
-    tc = bc;
   }
 
-  if (xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv)) {
+  if (xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv) &&
+      forced_stop == 0) {
     hstep >>= 1;
     while (--eighthiters) {
       CHECK_BETTER(left, tr, tc - hstep);
@@ -402,6 +408,7 @@ int vp9_find_best_sub_pixel_step_iteratively(MACROBLOCK *x,
       tc = bc;
     }
   }
+
   bestmv->as_mv.row = br;
   bestmv->as_mv.col = bc;
 
@@ -418,14 +425,16 @@ int vp9_find_best_sub_pixel_step_iteratively(MACROBLOCK *x,
     vfp->svaf(PRE(r, c), y_stride, SP(c), SP(r), \
               z, src_stride, &sse, second_pred)
 
-int vp9_find_best_sub_pixel_comp(MACROBLOCK *x,
-                                 int_mv *bestmv, int_mv *ref_mv,
-                                 int error_per_bit,
-                                 const vp9_variance_fn_ptr_t *vfp,
-                                 int *mvjcost, int *mvcost[2],
-                                 int *distortion,
-                                 unsigned int *sse1,
-                                 const uint8_t *second_pred, int w, int h) {
+int vp9_find_best_sub_pixel_comp_iterative(MACROBLOCK *x,
+                                           int_mv *bestmv, int_mv *ref_mv,
+                                           int error_per_bit,
+                                           const vp9_variance_fn_ptr_t *vfp,
+                                           int forced_stop,
+                                           int *mvjcost, int *mvcost[2],
+                                           int *distortion,
+                                           unsigned int *sse1,
+                                           const uint8_t *second_pred,
+                                           int w, int h) {
   uint8_t *z = x->plane[0].src.buf;
   int src_stride = x->plane[0].src.stride;
   MACROBLOCKD *xd = &x->e_mbd;
@@ -519,39 +528,44 @@ int vp9_find_best_sub_pixel_comp(MACROBLOCK *x,
 
   // Each subsequent iteration checks at least one point in common with
   // the last iteration could be 2 ( if diag selected) 1/4 pel
-  hstep >>= 1;
-  while (--quarteriters) {
-    CHECK_BETTER(left, tr, tc - hstep);
-    CHECK_BETTER(right, tr, tc + hstep);
-    CHECK_BETTER(up, tr - hstep, tc);
-    CHECK_BETTER(down, tr + hstep, tc);
 
-    whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+  // Note forced_stop: 0 - full, 1 - qtr only, 2 - half only
+  if (forced_stop != 2) {
+    hstep >>= 1;
+    while (--quarteriters) {
+      CHECK_BETTER(left, tr, tc - hstep);
+      CHECK_BETTER(right, tr, tc + hstep);
+      CHECK_BETTER(up, tr - hstep, tc);
+      CHECK_BETTER(down, tr + hstep, tc);
 
-    switch (whichdir) {
-      case 0:
-        CHECK_BETTER(diag, tr - hstep, tc - hstep);
+      whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
+
+      switch (whichdir) {
+        case 0:
+          CHECK_BETTER(diag, tr - hstep, tc - hstep);
+          break;
+        case 1:
+          CHECK_BETTER(diag, tr - hstep, tc + hstep);
+          break;
+        case 2:
+          CHECK_BETTER(diag, tr + hstep, tc - hstep);
+          break;
+        case 3:
+          CHECK_BETTER(diag, tr + hstep, tc + hstep);
+          break;
+      }
+
+      // no reason to check the same one again.
+      if (tr == br && tc == bc)
         break;
-      case 1:
-        CHECK_BETTER(diag, tr - hstep, tc + hstep);
-        break;
-      case 2:
-        CHECK_BETTER(diag, tr + hstep, tc - hstep);
-        break;
-      case 3:
-        CHECK_BETTER(diag, tr + hstep, tc + hstep);
-        break;
+
+      tr = br;
+      tc = bc;
     }
-
-    // no reason to check the same one again.
-    if (tr == br && tc == bc)
-      break;
-
-    tr = br;
-    tc = bc;
   }
 
-  if (xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv)) {
+  if (xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv) &&
+      forced_stop == 0) {
     hstep >>= 1;
     while (--eighthiters) {
       CHECK_BETTER(left, tr, tc - hstep);
@@ -603,12 +617,13 @@ int vp9_find_best_sub_pixel_comp(MACROBLOCK *x,
 #undef MIN
 #undef MAX
 
-int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
-                                 int_mv *bestmv, int_mv *ref_mv,
-                                 int error_per_bit,
-                                 const vp9_variance_fn_ptr_t *vfp,
-                                 int *mvjcost, int *mvcost[2], int *distortion,
-                                 unsigned int *sse1) {
+int vp9_find_best_sub_pixel_1step(MACROBLOCK *x,
+                                  int_mv *bestmv, int_mv *ref_mv,
+                                  int error_per_bit,
+                                  const vp9_variance_fn_ptr_t *vfp,
+                                  int forced_stop,
+                                  int *mvjcost, int *mvcost[2], int *distortion,
+                                  unsigned int *sse1) {
   int bestmse = INT_MAX;
   int_mv startmv;
   int_mv this_mv;
@@ -693,8 +708,6 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
 
   // now check 1 more diagonal
   whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
-  // for(whichdir =0;whichdir<4;whichdir++)
-  // {
   this_mv = startmv;
 
   switch (whichdir) {
@@ -733,8 +746,10 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
     *sse1 = sse;
   }
 
-//  }
-
+  // Note forced_stop: 0 - full, 1 - qtr only, 2 - half only
+  if (forced_stop == 2) {
+    return bestmse;
+  }
 
   // time to check quarter pels.
   if (bestmv->as_mv.row < startmv.as_mv.row) {
@@ -826,12 +841,9 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
     *sse1 = sse;
   }
 
-
   // now check 1 more diagonal
   whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
 
-//  for(whichdir=0;whichdir<4;whichdir++)
-//  {
   this_mv = startmv;
 
   switch (whichdir) {
@@ -914,7 +926,9 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
     *sse1 = sse;
   }
 
-  if (!(xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv)))
+  // Note forced_stop: 0 - full, 1 - qtr only, 2 - half only
+  if (forced_stop == 1 ||
+      !(xd->allow_high_precision_mv && vp9_use_mv_hp(&ref_mv->as_mv)))
     return bestmse;
 
   /* Now do 1/8th pixel */
@@ -1007,8 +1021,6 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
   // now check 1 more diagonal
   whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
 
-//  for(whichdir=0;whichdir<4;whichdir++)
-//  {
   this_mv = startmv;
 
   switch (whichdir) {
@@ -1096,133 +1108,6 @@ int vp9_find_best_sub_pixel_step(MACROBLOCK *x,
 }
 
 #undef SP
-
-int vp9_find_best_half_pixel_step(MACROBLOCK *x,
-                                  int_mv *bestmv, int_mv *ref_mv,
-                                  int error_per_bit,
-                                  const vp9_variance_fn_ptr_t *vfp,
-                                  int *mvjcost, int *mvcost[2],
-                                  int *distortion,
-                                  unsigned int *sse1) {
-  int bestmse = INT_MAX;
-  int_mv startmv;
-  int_mv this_mv;
-  uint8_t *z = x->plane[0].src.buf;
-  int src_stride = x->plane[0].src.stride;
-  int left, right, up, down, diag;
-  unsigned int sse;
-  int whichdir;
-  int thismse;
-  int y_stride;
-  MACROBLOCKD *xd = &x->e_mbd;
-
-  uint8_t *y = xd->plane[0].pre[0].buf +
-      (bestmv->as_mv.row) * xd->plane[0].pre[0].stride + bestmv->as_mv.col;
-  y_stride = xd->plane[0].pre[0].stride;
-
-  // central mv
-  bestmv->as_mv.row <<= 3;
-  bestmv->as_mv.col <<= 3;
-  startmv = *bestmv;
-
-  // calculate central point error
-  bestmse = vfp->vf(y, y_stride, z, src_stride, sse1);
-  *distortion = bestmse;
-  bestmse += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
-
-  // go left then right and check error
-  this_mv.as_mv.row = startmv.as_mv.row;
-  this_mv.as_mv.col = ((startmv.as_mv.col - 8) | 4);
-  thismse = vfp->svf_halfpix_h(y - 1, y_stride, z, src_stride, &sse);
-  left = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
-                               error_per_bit);
-
-  if (left < bestmse) {
-    *bestmv = this_mv;
-    bestmse = left;
-    *distortion = thismse;
-    *sse1 = sse;
-  }
-
-  this_mv.as_mv.col += 8;
-  thismse = vfp->svf_halfpix_h(y, y_stride, z, src_stride, &sse);
-  right = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
-                                error_per_bit);
-
-  if (right < bestmse) {
-    *bestmv = this_mv;
-    bestmse = right;
-    *distortion = thismse;
-    *sse1 = sse;
-  }
-
-  // go up then down and check error
-  this_mv.as_mv.col = startmv.as_mv.col;
-  this_mv.as_mv.row = ((startmv.as_mv.row - 8) | 4);
-  thismse = vfp->svf_halfpix_v(y - y_stride, y_stride, z, src_stride, &sse);
-  up = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost, error_per_bit);
-
-  if (up < bestmse) {
-    *bestmv = this_mv;
-    bestmse = up;
-    *distortion = thismse;
-    *sse1 = sse;
-  }
-
-  this_mv.as_mv.row += 8;
-  thismse = vfp->svf_halfpix_v(y, y_stride, z, src_stride, &sse);
-  down = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
-                               error_per_bit);
-
-  if (down < bestmse) {
-    *bestmv = this_mv;
-    bestmse = down;
-    *distortion = thismse;
-    *sse1 = sse;
-  }
-
-  // now check 1 more diagonal -
-  whichdir = (left < right ? 0 : 1) + (up < down ? 0 : 2);
-  this_mv = startmv;
-
-  switch (whichdir) {
-    case 0:
-      this_mv.as_mv.col = (this_mv.as_mv.col - 8) | 4;
-      this_mv.as_mv.row = (this_mv.as_mv.row - 8) | 4;
-      thismse = vfp->svf_halfpix_hv(y - 1 - y_stride, y_stride,
-                                    z, src_stride, &sse);
-      break;
-    case 1:
-      this_mv.as_mv.col += 4;
-      this_mv.as_mv.row = (this_mv.as_mv.row - 8) | 4;
-      thismse = vfp->svf_halfpix_hv(y - y_stride, y_stride,
-                                    z, src_stride, &sse);
-      break;
-    case 2:
-      this_mv.as_mv.col = (this_mv.as_mv.col - 8) | 4;
-      this_mv.as_mv.row += 4;
-      thismse = vfp->svf_halfpix_hv(y - 1, y_stride, z, src_stride, &sse);
-      break;
-    case 3:
-    default:
-      this_mv.as_mv.col += 4;
-      this_mv.as_mv.row += 4;
-      thismse = vfp->svf_halfpix_hv(y, y_stride, z, src_stride, &sse);
-      break;
-  }
-
-  diag = thismse + mv_err_cost(&this_mv, ref_mv, mvjcost, mvcost,
-                               error_per_bit);
-
-  if (diag < bestmse) {
-    *bestmv = this_mv;
-    bestmse = diag;
-    *distortion = thismse;
-    *sse1 = sse;
-  }
-
-  return bestmse;
-}
 
 #define CHECK_BOUNDS(range) \
   {\

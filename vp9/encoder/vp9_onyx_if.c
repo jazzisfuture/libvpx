@@ -713,9 +713,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->search_method = NSTEP;
   sf->auto_filter = 1;
   sf->recode_loop = 1;
-  sf->quarter_pixel_search = 1;
-  sf->half_pixel_search = 1;
-  sf->iterative_sub_pixel = 1;
+  sf->subpel_search_method = SUBPEL_ITERATIVE;
   sf->optimize_coefficients = !cpi->oxcf.lossless;
   sf->reduce_first_step_size = 0;
   sf->auto_mv_step_size = 0;
@@ -918,12 +916,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 
   cpi->mb.quantize_b_4x4      = vp9_regular_quantize_b_4x4;
 
-  if (cpi->sf.iterative_sub_pixel == 1) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_step_iteratively;
-  } else if (cpi->sf.quarter_pixel_search) {
-    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_step;
-  } else if (cpi->sf.half_pixel_search) {
-    cpi->find_fractional_mv_step = vp9_find_best_half_pixel_step;
+  if (cpi->sf.subpel_search_method == SUBPEL_ITERATIVE) {
+    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_iterative;
+  } else if (cpi->sf.subpel_search_method == SUBPEL_ONESTEP) {
+    cpi->find_fractional_mv_step = vp9_find_best_sub_pixel_1step;
   }
 
   cpi->mb.optimize = cpi->sf.optimize_coefficients == 1 && cpi->pass != 1;
