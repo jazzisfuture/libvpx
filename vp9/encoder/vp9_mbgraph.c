@@ -145,7 +145,7 @@ static int find_best_16x16_intra(VP9_COMP *cpi,
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     unsigned int err;
 
-    xd->mode_info_context->mbmi.mode = mode;
+    xd->mi_8x8->mi->mbmi.mode = mode;
     vp9_predict_intra_block(xd, 0, 2, TX_16X16, mode,
                             x->plane[0].src.buf, x->plane[0].src.stride,
                             xd->plane[0].dst.buf, xd->plane[0].dst.stride);
@@ -255,7 +255,7 @@ static void update_mbgraph_frame_stats(VP9_COMP *cpi,
   xd->plane[0].dst.stride  = buf->y_stride;
   xd->plane[0].pre[0].stride  = buf->y_stride;
   xd->plane[1].dst.stride = buf->uv_stride;
-  xd->mode_info_context = &mi_local;
+  xd->mi_8x8->mi = &mi_local;
   mi_local.mbmi.sb_type = BLOCK_16X16;
   mi_local.mbmi.ref_frame[0] = LAST_FRAME;
   mi_local.mbmi.ref_frame[1] = NONE;

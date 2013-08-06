@@ -129,7 +129,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE_TYPE bsize,
   TOKENEXTRA **tp = args->tp;
   const TX_SIZE tx_size = ss_txfrm_size >> 1;
   const int tx_size_in_blocks = 1 << tx_size;
-  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO *mbmi = &xd->mi_8x8->mi->mbmi;
   int pt; /* near block/prev token context index */
   int c = 0, rc = 0;
   TOKENEXTRA *t = *tp;        /* store tokens starting here */
@@ -271,7 +271,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
                      BLOCK_SIZE_TYPE bsize) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
-  MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO *const mbmi = &xd->mi_8x8->mi->mbmi;
   TOKENEXTRA *t_backup = *t;
   const int mb_skip_context = vp9_get_pred_context_mbskip(xd);
   const int skip_inc = !vp9_segfeature_active(&xd->seg, mbmi->segment_id,

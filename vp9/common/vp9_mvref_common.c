@@ -181,20 +181,26 @@ static INLINE int is_inside(int mi_col, int mi_row, int cur_tile_mi_col_start,
 
 // This function searches the neighbourhood of a given MB/SB
 // to try and find candidate reference vectors.
-void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
+void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                           const MODE_INFO *lf_here,
                           const MV_REFERENCE_FRAME ref_frame,
                           int_mv *mv_ref_list, const int *ref_sign_bias,
                           const int block_idx,
                           const int mi_row, const int mi_col) {
   int idx;
-  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  // MODE_INFO *here always points to the current 8x8 being worked on.  Will
+  // remove later.  lf_here is always the previous frame.
+  MODE_INFO_8x8 *mi_8x8 = xd->mi_8x8;
+  MB_MODE_INFO * mbmi = &xd->this_mi->mbmi;
   int refmv_count = 0;
   const int (*mv_ref_search)[2] = mv_ref_blocks[mbmi->sb_type];
   const MODE_INFO *candidate;
   const int check_sub_blocks = block_idx >= 0;
   int different_ref_found = 0;
   int context_counter = 0;
+  MODE_INFO local_mi;
+
+  vpx_memset(&local_mi, 0, sizeof(MODE_INFO));
 
   // Blank the reference vector list
   vpx_memset(mv_ref_list, 0, sizeof(*mv_ref_list) * MAX_MV_REF_CANDIDATES);
@@ -208,7 +214,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
     if (!is_inside(mi_col, mi_row, cm->cur_tile_mi_col_start, mv_ref))
       continue;
 
-    candidate = here + mv_ref[0] + mv_ref[1] * xd->mode_info_stride;
+    candidate = mi_8x8[mv_ref[0] + mv_ref[1] * xd->mode_info_stride].mi;
+    candidate = !candidate ? &local_mi : candidate;
 
     // Keep counts for entropy encoding.
     context_counter += mode_2_counter[candidate->mbmi.mode];
@@ -236,7 +243,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
     if (!is_inside(mi_col, mi_row, cm->cur_tile_mi_col_start, mv_ref))
       continue;
 
-    candidate = here + mv_ref[0] + mv_ref[1] * xd->mode_info_stride;
+    candidate = mi_8x8[mv_ref[0] + mv_ref[1] * xd->mode_info_stride].mi;
+    candidate = !candidate ? &local_mi : candidate;
 
     if (candidate->mbmi.ref_frame[0] == ref_frame) {
       ADD_MV_REF_LIST(candidate->mbmi.mv[0]);
@@ -267,7 +275,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
       if (!is_inside(mi_col, mi_row, cm->cur_tile_mi_col_start, mv_ref))
         continue;
 
-      candidate = here + mv_ref[0] + mv_ref[1] * xd->mode_info_stride;
+      candidate = mi_8x8[mv_ref[0] + mv_ref[1] * xd->mode_info_stride].mi;
+      candidate = !candidate ? &local_mi : candidate;
 
       // If the candidate is INTRA we don't want to consider its mv.
       if (!is_inter_block(&candidate->mbmi))
