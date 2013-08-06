@@ -1,0 +1,7 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Dmitry Kovalev <dkovalev@google.com>
+Submitted-at: Tue, 06 Aug 2013 10:29:57 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/64394
+Project: webm/libvpx
+Branch: refs/heads/master
