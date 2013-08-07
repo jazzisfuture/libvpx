@@ -459,11 +459,15 @@ void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
   int16_t *coeff = BLOCK_OFFSET(p->coeff, block, 16);
   int16_t *qcoeff = BLOCK_OFFSET(pd->qcoeff, block, 16);
   int16_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block, 16);
-  const TX_SIZE tx_size = (TX_SIZE)(ss_txfrm_size / 2);
   const int16_t *scan, *iscan;
   uint16_t *eob = &pd->eobs[block];
-  const int bwl = plane_block_width_log2by4(bsize, pd), bw = 1 << bwl;
+
+  const TX_SIZE tx_size = (TX_SIZE)(ss_txfrm_size / 2);
+  const int bwl = b_width_log2(bsize) - pd->subsampling_x, bw = 1 << bwl;
   const int twl = bwl - tx_size, twmask = (1 << twl) - 1;
+  const int bx = block & twmask;
+  const int by = block >> twl;
+
   int xoff, yoff;
   int16_t *src_diff;
 
@@ -472,8 +476,8 @@ void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = vp9_default_scan_32x32;
       iscan = vp9_default_iscan_32x32;
       block >>= 6;
-      xoff = 32 * (block & twmask);
-      yoff = 32 * (block >> twl);
+      xoff = 32 * bx;
+      yoff = 32 * by;
       src_diff = p->src_diff + 4 * bw * yoff + xoff;
       if (x->rd_search)
         vp9_short_fdct32x32_rd(src_diff, coeff, bw * 8);
@@ -487,8 +491,8 @@ void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = vp9_default_scan_16x16;
       iscan = vp9_default_iscan_16x16;
       block >>= 4;
-      xoff = 16 * (block & twmask);
-      yoff = 16 * (block >> twl);
+      xoff = 16 * bx;
+      yoff = 16 * by;
       src_diff = p->src_diff + 4 * bw * yoff + xoff;
       x->fwd_txm16x16(src_diff, coeff, bw * 8);
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
@@ -499,8 +503,8 @@ void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
       scan = vp9_default_scan_8x8;
       iscan = vp9_default_iscan_8x8;
       block >>= 2;
-      xoff = 8 * (block & twmask);
-      yoff = 8 * (block >> twl);
+      xoff = 8 * bx;
+      yoff = 8 * by;
       src_diff = p->src_diff + 4 * bw * yoff + xoff;
       x->fwd_txm8x8(src_diff, coeff, bw * 8);
       vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
@@ -510,8 +514,8 @@ void xform_quant(int plane, int block, BLOCK_SIZE_TYPE bsize,
     case TX_4X4:
       scan = vp9_default_scan_4x4;
       iscan = vp9_default_iscan_4x4;
-      xoff = 4 * (block & twmask);
-      yoff = 4 * (block >> twl);
+      xoff = 4 * bx;
+      yoff = 4 * by;
       src_diff = p->src_diff + 4 * bw * yoff + xoff;
       x->fwd_txm4x4(src_diff, coeff, bw * 8);
       vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
