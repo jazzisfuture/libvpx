@@ -12,6 +12,8 @@
 #include "vp9/common/vp9_idct.h"  // for cospi constants
 #include "vpx_ports/mem.h"
 
+#include "stdio.h"
+
 void vp9_short_fdct4x4_sse2(int16_t *input, int16_t *output, int pitch) {
   // The 2D transform is done with two passes which are actually pretty
   // similar. In the first one, we transform the columns and transpose
@@ -2573,13 +2575,13 @@ void vp9_short_fht16x16_sse2(int16_t *input, int16_t *output,
 }
 
 #define FDCT32x32_2D vp9_short_fdct32x32_rd_sse2
-#define FDCT32x32_LOW_PRECISION 1
+#define FDCT32x32_HIGH_PRECISION 0
 #include "vp9/encoder/x86/vp9_dct32x32_sse2.c"
 #undef  FDCT32x32_2D
-#undef  FDCT32x32_LOW_PRECISION
+#undef  FDCT32x32_HIGH_PRECISION
 
 #define FDCT32x32_2D vp9_short_fdct32x32_sse2
-#define FDCT32x32_LOW_PRECISION 0
+#define FDCT32x32_HIGH_PRECISION 1
 #include "vp9/encoder/x86/vp9_dct32x32_sse2.c" // NOLINT
 #undef  FDCT32x32_2D
-#undef  FDCT32x32_LOW_PRECISION
+#undef  FDCT32x32_HIGH_PRECISION
