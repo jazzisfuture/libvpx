@@ -12,6 +12,8 @@
 #include "vp9/common/vp9_idct.h"  // for cospi constants
 #include "vpx_ports/mem.h"
 
+#include "stdio.h"
+
 void vp9_short_fdct4x4_sse2(int16_t *input, int16_t *output, int pitch) {
   // The 2D transform is done with two passes which are actually pretty
   // similar. In the first one, we transform the columns and transpose
@@ -2570,16 +2572,36 @@ void vp9_short_fht16x16_sse2(int16_t *input, int16_t *output,
       break;
   }
   write_buffer_16x16(output, in0, in1, 16);
+
+//  {
+//    int16_t m[8] = {-1, 8, -3, 4, 5, 6, -7, -10};
+//    int32_t n[4] = {5, 6, -7, 8};
+//    int32_t k[4];
+//    int32_t h[4];
+//    __m128i a, b, c;
+//    __m128i mask = _mm_set_epi32(0, 0x80000000, 0, 0x80000000);
+//    __m128i mask16 = _mm_set_epi32(0x80008000, 0x80008000, 0x80008000, 0x80008000);
+//    __m128i kZero = _mm_setzero_si128();
+//
+//    a = _mm_loadu_si128((__m128i *)m);
+//    b = _mm_loadu_si128((__m128i *)n);
+//    c = _mm_mul_epu32(a, b);
+//    _mm_storeu_si128((__m128i *)k, c);
+//    _mm_storeu_si128((__m128i *)h, k_cvthi_epi16(a, mask16, kZero));
+//    fprintf(stderr, "buffer k %d\t%d\t\n", k[0], k[2]);
+//    fprintf(stderr, "buffer h %d\t%d\t\n", h[2], h[3]);
+//    assert(0);
+//  }
 }
 
 #define FDCT32x32_2D vp9_short_fdct32x32_rd_sse2
-#define FDCT32x32_LOW_PRECISION 1
+#define FDCT32x32_HIGH_PRECISION 0
 #include "vp9/encoder/x86/vp9_dct32x32_sse2.c"
 #undef  FDCT32x32_2D
-#undef  FDCT32x32_LOW_PRECISION
+#undef  FDCT32x32_HIGH_PRECISION
 
 #define FDCT32x32_2D vp9_short_fdct32x32_sse2
-#define FDCT32x32_LOW_PRECISION 0
+#define FDCT32x32_HIGH_PRECISION 1
 #include "vp9/encoder/x86/vp9_dct32x32_sse2.c" // NOLINT
 #undef  FDCT32x32_2D
-#undef  FDCT32x32_LOW_PRECISION
+#undef  FDCT32x32_HIGH_PRECISION

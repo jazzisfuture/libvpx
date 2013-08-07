@@ -672,8 +672,16 @@ void encode_block_intra(int plane, int block, BLOCK_SIZE_TYPE bsize,
                          src, p->src.stride, dst, pd->dst.stride);
       if (x->rd_search)
         vp9_short_fdct32x32_rd(src_diff, coeff, bw * 8);
-      else
+      else {
+        int16_t ref_coeff[1024];
+        int i;
+        vp9_short_fdct32x32_c(src_diff, ref_coeff, bw * 8);
         vp9_short_fdct32x32(src_diff, coeff, bw * 8);
+        for (i = 0; i < 1024; ++i) {
+          if (ref_coeff[i] != coeff[i])
+            assert(0);
+        }
+      }
       vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob, scan, iscan);
