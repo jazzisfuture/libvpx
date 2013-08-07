@@ -123,8 +123,7 @@ static void inc_mv_component(int v, nmv_component_counts *comp_counts,
   d = (o >> 3);               /* int mv data */
   f = (o >> 1) & 3;           /* fractional pel mv data */
   e = (o & 1);                /* high precision mv data */
-  if (c == MV_CLASS_0) {
-    comp_counts->class0[d] += incr;
+  if (c == MV_CLASS_0) {    comp_counts->class0[d] += incr;
   } else {
     int i;
     int b = c + CLASS0_BITS - 1;  // number of bits
