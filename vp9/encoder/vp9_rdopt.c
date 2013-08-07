@@ -9,37 +9,50 @@
  */
 
 
-#include <stdio.h>
-#include <math.h>
-#include <limits.h>
 #include <assert.h>
+#include <build/linuxbuild/vp9_rtcd.h>
+#include <limits.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <vp9/common/vp9_blockd.h>
+#include <vp9/common/vp9_common.h>
+#include <vp9/common/vp9_convolve.h>
+#include <vp9/common/vp9_entropy.h>
+#include <vp9/common/vp9_entropymode.h>
+#include <vp9/common/vp9_enums.h>
+#include <vp9/common/vp9_findnearmv.h>
+#include <vp9/common/vp9_mv.h>
+#include <vp9/common/vp9_mvref_common.h>
+#include <vp9/common/vp9_onyx.h>
+#include <vp9/common/vp9_onyxc_int.h>
+#include <vp9/common/vp9_pred_common.h>
+#include <vp9/common/vp9_quant_common.h>
+#include <vp9/common/vp9_reconinter.h>
+#include <vp9/common/vp9_reconintra.h>
+#include <vp9/common/vp9_seg_common.h>
+#include <vp9/common/vp9_systemdependent.h>
+#include <vp9/common/vp9_treecoder.h>
+#include <vp9/encoder/vp9_block.h>
+#include <vp9/encoder/vp9_encodeintra.h>
+#include <vp9/encoder/vp9_encodemb.h>
+#include <vp9/encoder/vp9_encodemv.h>
+#include <vp9/encoder/vp9_mcomp.h>
+#include <vp9/encoder/vp9_modecosts.h>
+#include <vp9/encoder/vp9_onyx_int.h>
+#include <vp9/encoder/vp9_ratectrl.h>
+#include <vp9/encoder/vp9_rdopt.h>
+#include <vp9/encoder/vp9_tokenize.h>
+#include <vp9/encoder/vp9_treewriter.h>
+#include <vp9/encoder/vp9_variance.h>
+#include <vpx_mem/vpx_mem.h>
+#include <vpx_scale/yv12config.h>
 
-#include "vp9/common/vp9_pragmas.h"
-#include "vp9/encoder/vp9_tokenize.h"
-#include "vp9/encoder/vp9_treewriter.h"
-#include "vp9/encoder/vp9_onyx_int.h"
-#include "vp9/encoder/vp9_modecosts.h"
-#include "vp9/encoder/vp9_encodeintra.h"
-#include "vp9/common/vp9_entropymode.h"
-#include "vp9/common/vp9_reconinter.h"
-#include "vp9/common/vp9_reconintra.h"
-#include "vp9/common/vp9_findnearmv.h"
-#include "vp9/common/vp9_quant_common.h"
-#include "vp9/encoder/vp9_encodemb.h"
-#include "vp9/encoder/vp9_quantize.h"
-#include "vp9/encoder/vp9_variance.h"
-#include "vp9/encoder/vp9_mcomp.h"
-#include "vp9/encoder/vp9_rdopt.h"
-#include "vp9/encoder/vp9_ratectrl.h"
-#include "vpx_mem/vpx_mem.h"
-#include "vp9/common/vp9_systemdependent.h"
-#include "vp9/encoder/vp9_encodemv.h"
-#include "vp9/common/vp9_seg_common.h"
-#include "vp9/common/vp9_pred_common.h"
-#include "vp9/common/vp9_entropy.h"
-#include "vp9_rtcd.h"
-#include "vp9/common/vp9_mvref_common.h"
-#include "vp9/common/vp9_common.h"
+//#include "vp9/common/vp9_pragmas.h"
+//#include "vp9/encoder/vp9_quantize.h"
+//#include "vp9/encoder/vp9_rdopt.h"
 
 #define INVALID_MV 0x80008000
 
