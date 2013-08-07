@@ -277,16 +277,6 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   }
 }
 
-static INLINE BLOCK_SIZE_TYPE get_block_size(int bwl, int bhl) {
-  return bsize_from_dim_lookup[bwl][bhl];
-}
-
-static BLOCK_SIZE_TYPE get_plane_block_size(BLOCK_SIZE_TYPE bsize,
-                                            struct macroblockd_plane *pd) {
-  return get_block_size(plane_block_width_log2by4(bsize, pd),
-                        plane_block_height_log2by4(bsize, pd));
-}
-
 static INLINE void linear_interpolate2(double x, int ntab, int inv_step,
                                        const double *tab1, const double *tab2,
                                        double *v1, double *v2) {
@@ -399,18 +389,14 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE_TYPE bsize,
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     struct macroblock_plane *const p = &x->plane[i];
     struct macroblockd_plane *const pd = &xd->plane[i];
-
-    // TODO(dkovalev) the same code in get_plane_block_size
-    const int bwl = plane_block_width_log2by4(bsize, pd);
-    const int bhl = plane_block_height_log2by4(bsize, pd);
-    const BLOCK_SIZE_TYPE bs = get_block_size(bwl, bhl);
+    const BLOCK_SIZE_TYPE bs = get_plane_block_size(bsize, pd);
     unsigned int sse;
     int rate;
     int64_t dist;
     (void) cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
                               pd->dst.buf, pd->dst.stride, &sse);
     // sse works better than var, since there is no dc prediction used
-    model_rd_from_var_lapndz(sse, 16 << (bwl + bhl),
+    model_rd_from_var_lapndz(sse, block_pixels_lookup[bs],
                              pd->dequant[1] >> 3, &rate, &dist);
 
     rate_sum += rate;
@@ -631,9 +617,9 @@ static void rate_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
 static int rdcost_plane(VP9_COMMON * const cm, MACROBLOCK *x, int plane,
                         BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
   MACROBLOCKD * const xd = &x->e_mbd;
-  const int bwl = plane_block_width_log2by4(bsize, &xd->plane[plane]);
-  const int bhl = plane_block_height_log2by4(bsize, &xd->plane[plane]);
-  const int bw = 1 << bwl, bh = 1 << bhl;
+  const BLOCK_SIZE_TYPE bs = get_plane_block_size(bsize, &xd->plane[plane]);
+  const int bw = num_4x4_blocks_wide_lookup[bs];
+  const int bh = num_4x4_blocks_wide_lookup[bs];
   int i;
   struct rdcost_block_args args = { cm, x, { 0 }, { 0 }, tx_size, bw, bh,
     0, 0, 0, INT64_MAX, 0 };
@@ -697,10 +683,9 @@ static int64_t block_error_sbuv(MACROBLOCK *x, BLOCK_SIZE_TYPE bsize,
   *sse = 0;
   for (plane = 1; plane < MAX_MB_PLANE; plane++) {
     struct macroblockd_plane *p = &x->e_mbd.plane[plane];
-    const int bwl = plane_block_width_log2by4(bsize, p);
-    const int bhl = plane_block_height_log2by4(bsize, p);
+    const BLOCK_SIZE_TYPE bs = get_plane_block_size(bsize, p);
     sum += vp9_block_error(x->plane[plane].coeff, x->e_mbd.plane[plane].dqcoeff,
-                           16 << (bwl + bhl), &this_sse);
+                           block_pixels_lookup[bs], &this_sse);
     *sse += this_sse;
   }
   *sse >>= shift;
@@ -744,9 +729,9 @@ static void super_block_yrd_for_txfm(VP9_COMMON *const cm, MACROBLOCK *x,
                                      BLOCK_SIZE_TYPE bsize, TX_SIZE tx_size) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[0];
-  const int bwl = plane_block_width_log2by4(bsize, pd);
-  const int bhl = plane_block_height_log2by4(bsize, pd);
-  const int bw = 1 << bwl, bh = 1 << bhl;
+  const BLOCK_SIZE_TYPE bs = get_plane_block_size(bsize, pd);
+  const int bw = num_4x4_blocks_wide_lookup[bs];
+  const int bh = num_4x4_blocks_wide_lookup[bs];
   int i;
   struct rdcost_block_args args = { cm, x, { 0 }, { 0 }, tx_size, bw, bh,
                                     0, 0, 0, ref_best_rd, 0 };
