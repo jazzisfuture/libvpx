@@ -1,3 +1,181 @@
+2013-08-07 v1.3.0
+  This release introduces VP9 codec in a backward-compatible way.
+
+  - Upgrading:
+    This release is ABI and API compatible with Duclair (v1.0.0). Users
+    of older releases should refer to the Upgrading notes in this document
+    for that release.
+
+  - Enhancements:
+      Added usage info on command line options
+      Add lossless compression mode
+      Dll build of libvpx
+      Add x86_64-darwin11-gcc target
+      Add option to disable documentation
+      enable build on windows with msvc
+      support building vp8 and vp9 into a single lib
+      webm: add support for V_VP9
+      configure: add --enable-external-build support
+      make: support V=1 as short form of verbose=yes
+      configure: support mingw-w64
+      configure: support hardfloat armv7 CHOSTS
+      configure: add support for android x86
+      Add estimated completion time to vpxenc
+      Don't exit on decode errors in vpxenc
+      vpxenc: support scaling prior to encoding
+      vpxdec: support scaling output
+      vpxenc: improve progress indicators with --skip
+      msvs: Don't link to winmm.lib
+      Add a new script for producing vcxproj files
+      gen_msvs_sln: Support producing versions 10 and 11, handle vcxproj files
+      msvs: Support producing both vcproj and vcxproj depending on configure variables
+      configure: Add x86*-vs10/11 targets
+      Add support for armv7-win32-vs11
+      vpxdec: add --loops option
+      vpxenc: send usage to stderr
+      msvs-build: use msbuild for vs >= 2005
+      libvpx: enable building for iOS devices (armv7)
+      configure: default configure log to config.log
+      Make libvpx compile on OSX 10.9 (Mavericks)
+      Add encoding option --static-thresh
+
+  - Speed:
+      SSE2 version of vectorized 8-tap filtering
+      sse2 intrinsic version of vp8_mbloop_filter_horizontal_edge()
+      sse2 intrinsic version of vp8_mbloop_filter_vertical_edge()
+      vp9_sub_pixel_variance16x2 SSE2 optimization
+      Initial sse2 version of the wide loopfilters
+      Added sse2 version of vp9_mb_lpf_horizontal_edge_w
+      Intrinsic version of loopfilter now matches C code
+      Add SSE3 versions for sad{32x32,64x64}x4d functions
+      Add sse2 versions of sub_pixel_variance{32x32,64x64}
+      Faster vp9_short_fdct8x8
+      Extend diff MV limit from +/-256 to +/-1024
+      Optimize vp9_tree_probs_from_distribution
+      Faster vp9_short_fdct16x16
+      Optimize 16x16 idct function
+      Optimize 16x16 idct10 function
+      Faster vp9_short_fdct4x4 and vp9_short_fdct8x4
+      Add SSE2 versions for rectangular sad and sad4d functions
+      Quick modifications to wide loopfilter intrinsic functions
+      Quick modifications to mb loopfilter intrinsic functions
+      Add two-pass quantization
+      SSE2/SSSE3 optimizations and unit test for sub_pixel_avg_variance()
+      Optimize partition search order
+      Some minor optimizations for cost_coeffs()
+      Inline vp9_get_coef_context() (and remove vp9_ prefix)
+      SSE2 version of vp9_short_fdct32x32_rd
+      Quantize (64-bit only, for now) SSSE3 SIMD
+      Add speed feature to disable splitmv
+      Speed feature to binary search dir intramodes
+      Enable early termination in rd search
+      Implements several heuristics to prune mode search
+      Prunes out full-rd computation based on modeled rd
+      convolve8 optimizations for neon
+      Skip duplicate block encoding in the rd loop
+      Skip redundant motion search in 4x4 level rd loop
+      Speed up motion estimation using small partitions' result
+      Skip nearest/near/zero redundant encodes
+      Do in-place UV intra mode selection
+      Add neon optimize vp9_short_idct8x8_add
+      Speedup loopfilter neon code
+      d45 intra prediction SSSE3 optimizations
+      Optimize 32x32 2D inverse DCT for speed-up
+      Add variance based mode/skipping
+
+  - Quality:
+      In general, quality is consistent with the Eider release.
+
+  - Bug Fixes:
+      mbgraph: fix invalid memory access if motion vectors are too big
+      Bug fix in ssse3 variance computation
+      Bug fix in vp8_estimate_entropy_savings()
+      Bug fix in probability update savings computation
+      Fix splitmv/compound prediction when eightpel is enabled
+      makefile: fix .so build rule
+      Fix SIMD unsafe use of floating point
+      Mismatch bug-fix when transform expts are off
+      Fix encode breakout skip handling
+      A fix for crashes when #macroblock rows is odd
+      loopfilter: prevent signed integer overflow
+      rdopt: fix use of uninitialized value in addition
+      rd_pick_inter_mode: prevent signed integer overflow
+      Fix variance (signed integer) overflow
+      fix a crash in 2-pass encoding with test-decode on
+      Fix another crash in vpxenc with --pass=1 and --test-decode
+      Fix frame number on which the mismatch is reported in vpxenc
+      Segment mode coding bug
+      Prevent overflow in variance32x32
+      fix costing bug in pick_uv_sb_mode
+      make: fix dependency generation for flat build tree
+      Fix crash in pick_inter_mode_sb()
+      A bug fix related to switchable filters
+      make: fix dependency generation
+      Fix mode selection infinite loop bug
+      Don't include x86inc.asm on non-x86 targets
+      Bug fix:  error-concealment enabled changed postproc output
+      Fix overread/write reported by valgrind if (mb_cols) & 3 != 0
+      Fix block pointer corruption in intra8x8 prediction with 4x4 transform
+      Fix for divide by zero in vp8_adjust_key_frame
+      fix a small bug in 16 point forward dct
+      Bug fix: ssse3 version of subpixel did not match C code
+      fixed an enc/dec mis-match issue
+      Fix variance (signed integer) overflow
+      vp8_first_pass(): avoid floating point div by 0
+      Fix --as=nasm compatibility for new asm code
+      Fix incorrect comparison of frame size
+      Fix use of uninitialized memory in CONFIG_ABOVESPREFMV
+      vp8_init: fix NULL dereference on allocation error
+      vpxenc: actually report mismatch on stderr
+      vp8: clamp probability values
+      Fix issue in add_residual intrinsic function
+      vpxdec: fix use of uninitialized do_scale argument
+      Fix pulsing issue with scaling
+      Bug fix: Issue 531: MMX code tries to read from SSE2 register
+      Bug fix: Issue 532: VPX codec executes emms instruction without checking CPU capabilities
+      Fix use of NaN in firstpass
+      Fixing fourcc for VP8 and VP9
+      Bugfix in encode_inter_mb_segment_8x8
+      fix make test invocation for msvc win64
+      Configure: make --enable-gprof work
+      Fix width/height switch-up in U/V SB quantize code
+      Fix Android ndk-build
+      Fix incorrect dequant used in detokenize
+      Bugfix from reordering frame probs patch
+      Fix incorrect 32x64, 16x32 subpel variance
+      Fix bug in sb8x8 bitstream decoding
+      Fix bug in sb8x8 partition context
+      Fix right-edge availability for intra prediction in sb8x8
+      Fix i4x4 mode reading and writing in sb8x8 bitstream
+      Fix 16x16-iteration indexing bug in main encode_sb_row loop
+      Fix use of wrong rate/distortion variables in 16x8 r/d check
+      Fix overflow in RD error calculation code
+      fix permissions on cpplint.py (0644->0755)
+      vpxenc: fix mismatch check for non-4:2:0
+      Fix a bug in intra4x4 level rd loop
+      Fix bug in 4x4 band definition
+      Fix a off-by-one bug in the calculation of maximum number of tiles in log2 scale
+      Fixed crash in VP8/CQTest
+      Compound inter encoder bug fix
+      Fix bug in segment skip
+      Fix crash on RD iterations with segmentation enabled
+      Fix a crash in vpxdec
+      Using network byte order (big-endian) to encode tile size
+      Trap reference frames of invalid size
+      Fix chroma output when scaling
+      Quick fix to stop vpxdec infinite loop
+      Add missing SECTION .text marker in assembly file
+      fixed a compiling problem with MSVC win32 build
+      Fix aligned memory allocation in unit tests
+      Bug fix: set frame_parallel_decoding_mode
+      Fix loopfilter bug
+      Fix bug which skips zeromv even if near/nearest is not 0,0
+      Fix horz loopfilter loops
+      Fix bug where we don't choose any mode in RD selection
+      added checks to prevent rate/distortion overflow
+      Fix some format error and code error in neon code
+      Fix bug with sse2 when x86inc is disabled
+
 2012-12-21 v1.2.0
   This release acts as a checkpoint for a large amount of internal refactoring
   and testing. It also contains a number of small bugfixes, so all users are
