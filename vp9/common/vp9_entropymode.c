@@ -339,6 +339,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
 #if CONFIG_INTERINTRA
   cm->fc.interintra_prob = VP9_DEF_INTERINTRA_PROB;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  cm->fc.masked_compound_prob = VP9_DEF_MASKED_COMPOUND_PROB;
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree[VP9_SWITCHABLE_FILTERS*2-2] = {
@@ -465,6 +468,14 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   if (cm->use_interintra) {
     fc->interintra_prob = update_ct2(pre_fc->interintra_prob,
                                      counts->interintra);
+  }
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  if (cm->use_masked_compound) {
+    fc->masked_compound_prob = update_ct2(pre_fc->masked_compound_prob,
+                                          counts->masked_compound);
+    // fprintf(stderr, "[%d %d]\n",fc->pre_masked_compound_prob,
+    // pre_fc->masked_compound_prob);
   }
 #endif
 }

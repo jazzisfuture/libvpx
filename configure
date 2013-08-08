@@ -251,6 +251,7 @@ EXPERIMENT_LIST="
     non420
     alpha
     interintra
+    masked_compound_inter
 "
 CONFIG_LIST="
     external_build

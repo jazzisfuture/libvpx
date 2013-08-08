@@ -99,6 +99,9 @@ typedef struct {
 #if CONFIG_INTERINTRA
   vp9_prob interintra_prob;
 #endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  vp9_prob masked_compound_prob;
+#endif
 } CODING_CONTEXT;
 
 typedef struct {
@@ -496,6 +499,10 @@ typedef struct VP9_COMP {
 #if CONFIG_INTERINTRA
   unsigned int interintra_count[2];
   unsigned int interintra_select_count[2];
+#endif
+#if CONFIG_MASKED_COMPOUND_INTER
+  unsigned int masked_compound_counts[2];
+  unsigned int masked_compound_select_counts[2];
 #endif
 
   nmv_context_counts NMVcount;
