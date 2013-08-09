@@ -1207,6 +1207,11 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
       cpi->pass = 2;
       cpi->compressor_speed = 0;
       break;
+
+    case MODE_GOODQUALITY:
+      cpi->compressor_speed = 1;
+      cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
+      break;
   }
 
   cpi->oxcf.worst_allowed_q = q_trans[oxcf->worst_allowed_q];
