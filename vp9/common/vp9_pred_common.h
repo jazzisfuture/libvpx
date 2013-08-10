@@ -16,7 +16,9 @@
 
 int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
                        BLOCK_SIZE_TYPE bsize, int mi_row, int mi_col);
-
+void vp9_set_segment_id(VP9_COMMON *cm, uint8_t *segment_ids,
+                        BLOCK_SIZE_TYPE bsize, int mi_row, int mi_col,
+                        int segment_id);
 
 static INLINE int vp9_get_pred_context_seg_id(const MACROBLOCKD *xd) {
   const MODE_INFO *const mi = xd->mode_info_context;
