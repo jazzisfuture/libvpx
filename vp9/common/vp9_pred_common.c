@@ -430,3 +430,20 @@ int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
   assert(segment_id >= 0 && segment_id < MAX_SEGMENTS);
   return segment_id;
 }
+
+void vp9_set_segment_id(VP9_COMMON *cm, uint8_t *segment_ids,
+                        BLOCK_SIZE_TYPE bsize, int mi_row, int mi_col,
+                        int segment_id) {
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = 1 << mi_width_log2(bsize);
+  const int bh = 1 << mi_height_log2(bsize);
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+  int x, y;
+
+  assert(segment_id >= 0 && segment_id < MAX_SEGMENTS);
+
+  for (y = 0; y < ymis; y++)
+    for (x = 0; x < xmis; x++)
+      segment_ids[mi_offset + y * cm->mi_cols + x] = segment_id;
+}
