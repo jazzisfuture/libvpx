@@ -787,8 +787,7 @@ static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
                                      int *skip, int64_t *sse,
                                      int64_t ref_best_rd,
                                      BLOCK_SIZE_TYPE bs) {
-  const TX_SIZE max_txfm_size = TX_32X32
-      - (bs < BLOCK_32X32) - (bs < BLOCK_16X16);
+  const TX_SIZE max_txfm_size = max_txsize_lookup[bs];
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
