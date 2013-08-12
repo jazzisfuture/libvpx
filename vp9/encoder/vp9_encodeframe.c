@@ -480,17 +480,8 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
   const int mb_col = mi_col >> 1;
   const int idx_map = mb_row * cm->mb_cols + mb_col;
   const struct segmentation *const seg = &xd->seg;
-  int i;
 
-  // entropy context structures
-  for (i = 0; i < MAX_MB_PLANE; i++) {
-    xd->plane[i].above_context = cm->above_context[i]
-        + (mi_col * 2 >> xd->plane[i].subsampling_x);
-    xd->plane[i].left_context = cm->left_context[i]
-        + (((mi_row * 2) & 15) >> xd->plane[i].subsampling_y);
-  }
-
-  // partition contexts
+  set_skip_context(cm, xd, mi_row, mi_col);
   set_partition_seg_context(cm, xd, mi_row, mi_col);
 
   // Activity map pointer
@@ -695,12 +686,11 @@ static BLOCK_SIZE_TYPE *get_sb_partitioning(MACROBLOCK *x,
   }
 }
 
-static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
+static void restore_context(VP9_COMP *cpi,
                             ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
                             ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
                             PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
                             BLOCK_SIZE_TYPE bsize) {
-  VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
   int p;
@@ -709,29 +699,23 @@ static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
   int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int mi_height = num_8x8_blocks_high_lookup[bsize];
   for (p = 0; p < MAX_MB_PLANE; p++) {
-    vpx_memcpy(
-        cm->above_context[p] + ((mi_col * 2) >> xd->plane[p].subsampling_x),
-        a + num_4x4_blocks_wide * p,
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
-        xd->plane[p].subsampling_x);
-    vpx_memcpy(
-        cm->left_context[p]
-            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
-        l + num_4x4_blocks_high * p,
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
-        xd->plane[p].subsampling_y);
+    struct macroblockd_plane *pd = &xd->plane[p];
+    vpx_memcpy(pd->above_context, &a[num_4x4_blocks_wide * p],
+              (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
+                  pd->subsampling_x);
+    vpx_memcpy(pd->left_context, &l[num_4x4_blocks_high * p],
+               (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
+                  pd->subsampling_y);
   }
-  vpx_memcpy(cm->above_seg_context + mi_col, sa,
-             sizeof(PARTITION_CONTEXT) * mi_width);
-  vpx_memcpy(cm->left_seg_context + (mi_row & MI_MASK), sl,
-             sizeof(PARTITION_CONTEXT) * mi_height);
+
+  vpx_memcpy(xd->above_seg_context, sa, sizeof(PARTITION_CONTEXT) * mi_width);
+  vpx_memcpy(xd->left_seg_context, sl, sizeof(PARTITION_CONTEXT) * mi_height);
 }
-static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
+static void save_context(VP9_COMP *cpi,
                          ENTROPY_CONTEXT a[16 * MAX_MB_PLANE],
                          ENTROPY_CONTEXT l[16 * MAX_MB_PLANE],
                          PARTITION_CONTEXT sa[8], PARTITION_CONTEXT sl[8],
                          BLOCK_SIZE_TYPE bsize) {
-  const VP9_COMMON *const cm = &cpi->common;
   const MACROBLOCK *const x = &cpi->mb;
   const MACROBLOCKD *const xd = &x->e_mbd;
   int p;
@@ -742,22 +726,16 @@ static void save_context(VP9_COMP *cpi, int mi_row, int mi_col,
 
   // buffer the above/left context information of the block in search.
   for (p = 0; p < MAX_MB_PLANE; ++p) {
-    vpx_memcpy(
-        a + num_4x4_blocks_wide * p,
-        cm->above_context[p] + (mi_col * 2 >> xd->plane[p].subsampling_x),
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide) >>
-        xd->plane[p].subsampling_x);
-    vpx_memcpy(
-        l + num_4x4_blocks_high * p,
-        cm->left_context[p]
-            + ((mi_row & MI_MASK) * 2 >> xd->plane[p].subsampling_y),
-        (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high) >>
-        xd->plane[p].subsampling_y);
+    const struct macroblockd_plane *const pd = &xd->plane[p];
+    vpx_memcpy(&a[num_4x4_blocks_wide * p], pd->above_context,
+               (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_wide)
+                   >> pd->subsampling_x);
+    vpx_memcpy(&l[num_4x4_blocks_high * p], pd->left_context,
+               (sizeof(ENTROPY_CONTEXT) * num_4x4_blocks_high)
+                   >> pd->subsampling_y);
   }
-  vpx_memcpy(sa, cm->above_seg_context + mi_col,
-             sizeof(PARTITION_CONTEXT) * mi_width);
-  vpx_memcpy(sl, cm->left_seg_context + (mi_row & MI_MASK),
-             sizeof(PARTITION_CONTEXT) * mi_height);
+  vpx_memcpy(sa, xd->above_seg_context, sizeof(PARTITION_CONTEXT) * mi_width);
+  vpx_memcpy(sl, xd->left_seg_context, sizeof(PARTITION_CONTEXT) * mi_height);
 }
 
 static void encode_b(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row, int mi_col,
@@ -1242,7 +1220,7 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   } else {
     *(get_sb_partitioning(x, bsize)) = subsize;
   }
-  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  save_context(cpi, a, l, sa, sl, bsize);
 
   x->fast_ms = 0;
   x->pred_mv.as_int = 0;
@@ -1274,7 +1252,7 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
       pl = partition_plane_context(xd, bsize);
       none_rate += x->partition_cost[pl][PARTITION_NONE];
 
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      restore_context(cpi, a, l, sa, sl, bsize);
       m->mbmi.sb_type = bs_type;
       *(get_sb_partitioning(x, bsize)) = subsize;
     }
@@ -1372,7 +1350,7 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
     BLOCK_SIZE_TYPE split_subsize = get_subsize(bsize, PARTITION_SPLIT);
     split_rate = 0;
     split_dist = 0;
-    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+    restore_context(cpi, a, l, sa, sl, bsize);
 
     // Split partition.
     for (i = 0; i < 4; i++) {
@@ -1383,21 +1361,20 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
       ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
       PARTITION_CONTEXT sl[8], sa[8];
 
-      if ((mi_row + y_idx >= cm->mi_rows)
-          || (mi_col + x_idx >= cm->mi_cols))
+      if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
         continue;
 
       *(get_sb_index(xd, split_subsize)) = i;
       *(get_sb_partitioning(x, bsize)) = split_subsize;
       *(get_sb_partitioning(x, split_subsize)) = split_subsize;
 
-      save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      save_context(cpi, a, l, sa, sl, bsize);
 
       pick_sb_modes(cpi, mi_row + y_idx, mi_col + x_idx, &rt, &dt,
                     split_subsize, get_block_context(x, split_subsize),
                     INT64_MAX);
 
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      restore_context(cpi, a, l, sa, sl, bsize);
 
       if (rt == INT_MAX || dt == INT_MAX) {
         split_rate = INT_MAX;
@@ -1443,7 +1420,7 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
     chosen_dist = none_dist;
   }
 
-  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  restore_context(cpi, a, l, sa, sl, bsize);
 
   // We must have chosen a partitioning and encoding or we'll fail later on.
   // No other opportunities for success.
@@ -1637,7 +1614,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   }
   assert(mi_height_log2(bsize) == mi_width_log2(bsize));
 
-  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  save_context(cpi, a, l, sa, sl, bsize);
 
   // PARTITION_SPLIT
   if (!cpi->sf.auto_min_max_partition_size ||
@@ -1676,7 +1653,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
           *(get_sb_partitioning(x, bsize)) = subsize;
         }
       }
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      restore_context(cpi, a, l, sa, sl, bsize);
     }
   }
 
@@ -1756,7 +1733,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
           *(get_sb_partitioning(x, bsize)) = subsize;
         }
       }
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      restore_context(cpi, a, l, sa, sl, bsize);
     }
 
     if (!cpi->sf.use_square_partition_only &&
@@ -1797,7 +1774,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
             *(get_sb_partitioning(x, bsize)) = subsize;
           }
         }
-        restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+        restore_context(cpi, a, l, sa, sl, bsize);
       }
 
       // PARTITION_VERT
@@ -1835,14 +1812,14 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
             *(get_sb_partitioning(x, bsize)) = subsize;
           }
         }
-        restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+        restore_context(cpi, a, l, sa, sl, bsize);
       }
     }
   }
   *rate = best_rate;
   *dist = best_dist;
 
-  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  restore_context(cpi, a, l, sa, sl, bsize);
 
   if (best_rate < INT_MAX && best_dist < INT_MAX && do_recon)
     encode_sb(cpi, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
@@ -1869,7 +1846,7 @@ static void rd_pick_reference_frame(VP9_COMP *cpi, int mi_row, int mi_col) {
   int r;
   int64_t d;
 
-  save_context(cpi, mi_row, mi_col, a, l, sa, sl, BLOCK_64X64);
+  save_context(cpi, a, l, sa, sl, BLOCK_64X64);
 
   // Default is non mask (all reference frames allowed.
   cpi->ref_frame_mask = 0;
@@ -1888,7 +1865,7 @@ static void rd_pick_reference_frame(VP9_COMP *cpi, int mi_row, int mi_col) {
     cpi->set_ref_frame_mask = 0;
   }
 
-  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, BLOCK_64X64);
+  restore_context(cpi, a, l, sa, sl, BLOCK_64X64);
 }
 
 static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
@@ -2630,7 +2607,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     mbmi->mb_skip_coeff = 1;
     if (output_enabled)
       cm->counts.mbskip[mb_skip_context][1]++;
-    vp9_reset_sb_tokens_context(xd, MAX(bsize, BLOCK_8X8));
+    reset_skip_context(xd, MAX(bsize, BLOCK_8X8));
   }
 
   // copy skip flag on all mb_mode_info contexts in this SB
