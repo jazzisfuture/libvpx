@@ -1,0 +1,71 @@
+/*
+ *  Copyright (c) 2013 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+#ifndef VP9_COMMON_VP9_COMMON_DSPR2_H_
+#define VP9_COMMON_VP9_COMMON_DSPR2_H_
+
+#include <assert.h>
+
+#include "./vpx_config.h"
+#include "vpx/vpx_integer.h"
+#include "vp9/common/vp9_common.h"
+
+#if HAVE_DSPR2
+#define CROP_WIDTH 512
+extern uint8_t vp9_ff_cropTbl[256 + 2 * CROP_WIDTH];
+
+#define DCT_CONST_ROUND_SHIFT_TWICE(input, out, dct_cost_rounding_in, cospi_in) {   \
+                                                                                    \
+  int32_t tmp;                                                                      \
+  int32_t cospi = cospi_in;                                                         \
+  int     dct_cost_rounding = dct_cost_rounding_in;                                 \
+  int     in = input;                                                               \
+                                                                                    \
+  __asm__ __volatile__ (                                                            \
+      /* out = dct_const_round_shift(input_dc * cospi_16_64); */                    \
+      "mtlo     %[dct_cost_rounding],   $ac1                              \n\t"     \
+      "mthi     $zero,                  $ac1                              \n\t"     \
+      "madd     $ac1,                   %[in],                  %[cospi]  \n\t"     \
+      "extp     %[tmp],                 $ac1,                   31        \n\t"     \
+                                                                                    \
+      /* out = dct_const_round_shift(out * cospi_16_64); */                         \
+      "mtlo     %[dct_cost_rounding],   $ac2                              \n\t"     \
+      "mthi     $zero,                  $ac2                              \n\t"     \
+      "madd     $ac2,                   %[tmp],                 %[cospi]  \n\t"     \
+      "extp     %[out],                 $ac2,                   31        \n\t"     \
+                                                                                    \
+      : [tmp] "=&r" (tmp), [out] "=r" (out)                                         \
+      : [in] "r" (in),                                                              \
+        [dct_cost_rounding] "r" (dct_cost_rounding),                                \
+        [cospi] "r" (cospi)                                                         \
+   );                                                                             }
+
+static INLINE void vp9_prefetch_load(const unsigned char *src) {
+  __asm__ __volatile__ (
+      "pref   0,  0(%[src])   \n\t"
+      :
+      : [src] "r" (src)
+  );
+}
+
+/* prefetch data for store */
+static INLINE void vp9_prefetch_store(unsigned char *dst) {
+  __asm__ __volatile__ (
+      "pref   1,  0(%[dst])   \n\t"
+      :
+      : [dst] "r" (dst)
+  );
+}
+
+void idct32_1d_cols_add_blk_dspr2(int16_t *input, uint8_t *dest, int dest_stride);
+void iadst16_1d(int16_t *input, int16_t *output);
+
+#endif // #if HAVE_DSPR2
+#endif  // VP9_COMMON_VP9_COMMON_DSPR2_H_
