@@ -88,6 +88,26 @@ VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_intrapred_sse2.asm
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_intrapred_ssse3.asm
 endif
 
+# common (c)
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_common_dspr2.h
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_convolve8_avg_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_convolve8_avg_horiz_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_convolve8_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_convolve8_horiz_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_convolve8_vert_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_itrans4_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_itrans8_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_itrans16_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_itrans32_cols_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_itrans32_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_loopfilter_filters_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_loopfilter_filters_dspr2.h
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_loopfilter_macros_dspr2.h
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_loopfilter_masks_dspr2.h
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_mbloop_loopfilter_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_mblpf_horiz_loopfilter_dspr2.c
+VP9_COMMON_SRCS-$(HAVE_DSPR2)  += common/mips/dspr2/vp9_mblpf_vert_loopfilter_dspr2.c
+
 VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_intrin_sse2.c
 
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_convolve_neon.c
