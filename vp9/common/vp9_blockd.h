@@ -35,6 +35,11 @@
 #define COMP_INTER_CONTEXTS 5
 #define REF_CONTEXTS 5
 
+#if CONFIG_FILTERINTRA
+// TODO set different PROBs for different modes
+#define FBIT0_PROB 160
+#endif
+
 typedef enum {
   PLANE_TYPE_Y_WITH_DC,
   PLANE_TYPE_UV,
@@ -88,6 +93,15 @@ static INLINE int is_intra_mode(MB_PREDICTION_MODE mode) {
 static INLINE int is_inter_mode(MB_PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
+
+#if CONFIG_FILTERINTRA
+static INLINE int is_filter_allowed(MB_PREDICTION_MODE mode) {
+  return mode != DC_PRED &&
+         mode != D45_PRED &&
+         mode != D27_PRED &&
+         mode != D63_PRED;
+}
+#endif
 
 #define VP9_INTRA_MODES (TM_PRED + 1)
 
@@ -161,6 +175,9 @@ typedef struct {
 #if CONFIG_INTERINTRA
   MB_PREDICTION_MODE interintra_mode, interintra_uv_mode;
 #endif
+#if CONFIG_FILTERINTRA
+  int filterbit, uv_filterbit;
+#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_SIZE txfm_size;
   int_mv mv[2]; // for each reference frame used
@@ -187,6 +204,9 @@ typedef struct {
 
 typedef struct {
   MB_MODE_INFO mbmi;
+#if CONFIG_FILTERINTRA
+  int b_filter_info[4];
+#endif
   union b_mode_info bmi[4];
 } MODE_INFO;
 
