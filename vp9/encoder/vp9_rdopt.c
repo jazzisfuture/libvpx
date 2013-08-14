@@ -602,7 +602,7 @@ static void rate_block(int plane, int block, BLOCK_SIZE_TYPE bsize,
   int x_idx, y_idx;
   MACROBLOCKD * const xd = &args->x->e_mbd;
 
-  txfrm_block_to_raster_xy(xd, bsize, plane, block, args->tx_size * 2, &x_idx,
+  txfrm_block_to_raster_xy(xd, bsize, plane, block, args->tx_size, &x_idx,
                            &y_idx);
 
   args->rate += cost_coeffs(args->x, plane, block,
