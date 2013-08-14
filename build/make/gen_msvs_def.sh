@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ##
 ##  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
 ##
@@ -12,7 +12,7 @@
 
 self=$0
 self_basename=${self##*/}
-EOL=$'\n'
+EOL="$(print '\n')"
 
 show_help() {
     cat <<EOF
@@ -70,7 +70,7 @@ for opt in "$@"; do
     ;;
      -*) die_unknown $opt
     ;;
-    *) file_list[${#file_list[@]}]="$opt"
+    *) file_list="$file_list $opt"
     esac
 done
 outfile=${outfile:-/dev/stdout}
@@ -78,6 +78,6 @@ outfile=${outfile:-/dev/stdout}
 
 echo "LIBRARY ${name}" > ${outfile}
 echo "EXPORTS" >> ${outfile}
-for f in "${file_list[@]}"; do
+for f in $file_list; do
     . $f
 done

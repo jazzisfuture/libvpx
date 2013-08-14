@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ##
 ##  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
 ##
@@ -12,8 +12,8 @@
 
 self=$0
 self_basename=${self##*/}
-EOL=$'\n'
-EOLDOS=$'\r'
+EOL="$(printf '\n')"
+EOLDOS="$(printf '\r')"
 
 show_help() {
     cat <<EOF
@@ -33,18 +33,18 @@ EOF
 
 die() {
     echo "${self_basename}: $@" >&2
-    [ -f "${outfile}" ] && rm -f ${outfile}{,.mk}
+    [ -f "${outfile}" ] && rm -f ${outfile} ${outfile}.mk
     exit 1
 }
 
 die_unknown(){
     echo "Unknown option \"$1\"." >&2
     echo "See ${self_basename} --help for available options." >&2
-    [ -f "${outfile}" ] && rm -f ${outfile}{,.mk}
+    [ -f "${outfile}" ] && rm -f ${outfile} ${outfile}.mk
     exit 1
 }
 
-indent1=$'\t'
+indent1="$(printf '\t')"
 indent=""
 indent_push() {
     indent="${indent}${indent1}"
@@ -135,7 +135,7 @@ process_global() {
     echo "${indent}GlobalSection(SolutionConfigurationPlatforms) = preSolution"
     indent_push
     IFS_bak=${IFS}
-    IFS=$'\r'$'\n'
+    IFS="$(printf '\r')$(printf '\n')"
     if [ "$mixed_platforms" != "" ]; then
         config_list="
 Release|Mixed Platforms
@@ -156,7 +156,7 @@ Debug|Mixed Platforms"
     for proj in ${proj_list}; do
         eval "local proj_guid=\${${proj}_guid}"
         eval "local proj_config_list=\${${proj}_config_list}"
-        IFS=$'\r'$'\n'
+        IFS="$(printf '\r')$(printf '\n')"
         for config in ${proj_config_list}; do
             if [ "$mixed_platforms" != "" ]; then
                 local c=${config%%|*}
@@ -188,8 +188,8 @@ Debug|Mixed Platforms"
 
 process_makefile() {
     IFS_bak=${IFS}
-    IFS=$'\r'$'\n'
-    local TAB=$'\t'
+    IFS="$(printf '\r')$(printf '\n')"
+    local TAB="$(printf '\t')"
     cat <<EOF
 ifeq (\$(CONFIG_VS_VERSION),7)
 MSBUILD_TOOL := devenv.com
@@ -276,7 +276,7 @@ for opt in "$@"; do
     ;;
     -*) die_unknown $opt
     ;;
-    *) file_list[${#file_list[@]}]="$opt"
+    *) file_list="$file_list $opt"
     esac
 done
 outfile=${outfile:-/dev/stdout}
@@ -307,7 +307,7 @@ case "${vs_ver:-8}" in
     ;;
 esac
 
-for f in "${file_list[@]}"; do
+for f in $file_list; do
     parse_project $f
 done
 cat  >${outfile} <<EOF
