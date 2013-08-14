@@ -13,7 +13,7 @@
 self=$0
 self_basename=${self##*/}
 self_dirname=$(dirname "$0")
-EOL=$'\n'
+EOL="$(printf '\n')"
 
 show_help() {
     cat <<EOF
@@ -55,16 +55,7 @@ die_unknown(){
 }
 
 generate_uuid() {
-    local hex="0123456789ABCDEF"
-    local i
-    local uuid=""
-    local j
-    #93995380-89BD-4b04-88EB-625FBE52EBFB
-    for ((i=0; i<32; i++)); do
-        (( j = $RANDOM % 16 ))
-        uuid="${uuid}${hex:$j:1}"
-    done
-    echo "${uuid:0:8}-${uuid:8:4}-${uuid:12:4}-${uuid:16:4}-${uuid:20:12}"
+  awk -f uuid.awk "$1"
 }
 
 indent1="    "
@@ -149,13 +140,13 @@ generate_filter() {
     file_list_sz=${#file_list[@]}
     for i in ${!file_list[@]}; do
         f=${file_list[i]}
-        for pat in ${pats//;/$IFS}; do
-            if [ "${f##*.}" == "$pat" ]; then
+        for pat in $pats; do
+            if [ "${f##*.}" = "$pat" ]; then
                 unset file_list[i]
 
                 objf=$(echo ${f%.*}.obj | sed -e 's/^[\./]\+//g' -e 's,/,_,g')
 
-                if ([ "$pat" == "asm" ] || [ "$pat" == "s" ]) && $asm_use_custom_step; then
+                if ([ "$pat" = "asm" ] || [ "$pat" = "s" ]) && $asm_use_custom_step; then
                     open_tag CustomBuild \
                         Include=".\\$f"
                     for plat in "${platforms[@]}"; do
@@ -169,16 +160,16 @@ generate_filter() {
                         done
                     done
                     close_tag CustomBuild
-                elif [ "$pat" == "c" ] || [ "$pat" == "cc" ] ; then
+                elif [ "$pat" = "c" ] || [ "$pat" = "cc" ] ; then
                     open_tag ClCompile \
                         Include=".\\$f"
                     # Separate file names with Condition?
                     tag_content ObjectFileName "\$(IntDir)$objf"
                     close_tag ClCompile
-                elif [ "$pat" == "h" ] ; then
+                elif [ "$pat" = "h" ] ; then
                     tag ClInclude \
                         Include=".\\$f"
-                elif [ "$pat" == "vcxproj" ] ; then
+                elif [ "$pat" = "vcxproj" ] ; then
                     open_tag ProjectReference \
                         Include="$f"
                     depguid=`grep ProjectGuid "$f" | sed 's,.*<.*>\(.*\)</.*>.*,\1,'`
@@ -242,7 +233,7 @@ for opt in "$@"; do
         -D*) defines="${defines}${defines:+;}${opt##-D}"
         ;;
         -L*) # fudge . to $(OutDir)
-            if [ "${opt##-L}" == "." ]; then
+            if [ "${opt##-L}" = "." ]; then
                 libdirs="${libdirs}${libdirs:+;}\$(OutDir)"
             else
                  # Also try directories for this platform/configuration
@@ -265,7 +256,7 @@ for opt in "$@"; do
     esac
 done
 outfile=${outfile:-/dev/stdout}
-guid=${guid:-`generate_uuid`}
+guid=${guid:-`generate_uuid 2`}
 asm_use_custom_step=false
 uses_asm=${uses_asm:-false}
 case "${vs_ver:-11}" in
@@ -296,8 +287,8 @@ for lib in ${libs}; do
     fi
     debug_libs="${debug_libs}${debug_libs:+ }${lib}"
 done
-debug_libs=${debug_libs// /;}
-libs=${libs// /;}
+debug_libs=$(echo "$debug_libs" | tr ' ' ';')
+libs=$(echo "$libs" | tr ' ' ';')
 
 
 # List of all platforms supported for this target
@@ -492,10 +483,10 @@ generate_vcxproj() {
     done
 
     open_tag ItemGroup
-    generate_filter "Source Files"   "c;cc;def;odl;idl;hpj;bat;asm;asmx;s"
+    generate_filter "Source Files"   "c cc def odl idl hpj bat asm asmx s"
     close_tag ItemGroup
     open_tag ItemGroup
-    generate_filter "Header Files"   "h;hm;inl;inc;xsd"
+    generate_filter "Header Files"   "h hm inl inc xsd"
     close_tag ItemGroup
     open_tag ItemGroup
     generate_filter "Build Files"    "mk"
