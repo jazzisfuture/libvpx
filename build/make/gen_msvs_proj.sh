@@ -13,7 +13,8 @@
 self=$0
 self_basename=${self##*/}
 self_dirname=$(dirname "$0")
-EOL=$'\n'
+EOL="$(printf '\n')"
+UUID_COUNT=0
 
 show_help() {
     cat <<EOF
@@ -55,16 +56,8 @@ die_unknown(){
 }
 
 generate_uuid() {
-    local hex="0123456789ABCDEF"
-    local i
-    local uuid=""
-    local j
-    #93995380-89BD-4b04-88EB-625FBE52EBFB
-    for ((i=0; i<32; i++)); do
-        (( j = $RANDOM % 16 ))
-        uuid="${uuid}${hex:$j:1}"
-    done
-    echo "${uuid:0:8}-${uuid:8:4}-${uuid:12:4}-${uuid:16:4}-${uuid:20:12}"
+    UUID_COUNT=$(($UUID_COUNT + 1))
+    awk -f uuid.awk "$UUID_COUNT"
 }
 
 indent1="    "
@@ -133,20 +126,20 @@ generate_filter() {
 
     open_tag Filter \
         Name=$name \
-        Filter=$pats \
+        Filter="$(echo pats | tr ' ' ',')" \
         UniqueIdentifier=`generate_uuid` \
 
     file_list_sz=${#file_list[@]}
     for i in ${!file_list[@]}; do
         f=${file_list[i]}
-        for pat in ${pats//;/$IFS}; do
-            if [ "${f##*.}" == "$pat" ]; then
+        for pat in $pats; do
+            if [ "${f##*.}" = "$pat" ]; then
                 unset file_list[i]
 
                 objf=$(echo ${f%.*}.obj | sed -e 's/^[\./]\+//g' -e 's,/,_,g')
                 open_tag File RelativePath="./$f"
 
-                if [ "$pat" == "asm" ] && $asm_use_custom_step; then
+                if [ "$pat" = "asm" ] && $asm_use_custom_step; then
                     for plat in "${platforms[@]}"; do
                         for cfg in Debug Release; do
                             open_tag FileConfiguration \
@@ -162,7 +155,7 @@ generate_filter() {
                         done
                     done
                 fi
-                if [ "$pat" == "c" ] || [ "$pat" == "cc" ] ; then
+                if [ "$pat" = "c" ] || [ "$pat" = "cc" ] ; then
                     for plat in "${platforms[@]}"; do
                         for cfg in Debug Release; do
                             open_tag FileConfiguration \
@@ -231,7 +224,7 @@ for opt in "$@"; do
         -D*) defines="${defines}${defines:+;}${opt##-D}"
         ;;
         -L*) # fudge . to $(OutDir)
-            if [ "${opt##-L}" == "." ]; then
+            if [ "${opt##-L}" = "." ]; then
                 libdirs="${libdirs}${libdirs:+;}&quot;\$(OutDir)&quot;"
             else
                  # Also try directories for this platform/configuration
@@ -563,9 +556,9 @@ generate_vcproj() {
     close_tag Configurations
 
     open_tag Files
-    generate_filter srcs   "Source Files"   "c;cc;def;odl;idl;hpj;bat;asm;asmx"
-    generate_filter hdrs   "Header Files"   "h;hm;inl;inc;xsd"
-    generate_filter resrcs "Resource Files" "rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+    generate_filter srcs   "Source Files"   "c cc def odl idl hpj bat asm asmx"
+    generate_filter hdrs   "Header Files"   "h hm inl inc xsd"
+    generate_filter resrcs "Resource Files" "rc ico cur bmp dlg rc2 rct bin rgs gif jpg jpeg jpe resx tiff tif png wav"
     generate_filter resrcs "Build Files"    "mk"
     close_tag Files
 
