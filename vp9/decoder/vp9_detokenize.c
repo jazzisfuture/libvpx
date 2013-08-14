@@ -258,10 +258,11 @@ static void decode_block(int plane, int block,
 
   // find the maximum eob for this transform size, adjusted by segment
   MACROBLOCKD *xd = &arg->pbi->mb;
+  struct segmentation *seg = &arg->pbi->common.seg;
   struct macroblockd_plane* pd = &xd->plane[plane];
   const int segment_id = xd->mode_info_context->mbmi.segment_id;
   const TX_SIZE ss_tx_size = ss_txfrm_size / 2;
-  const int seg_eob = get_eob(&xd->seg, segment_id, 16 << ss_txfrm_size);
+  const int seg_eob = get_eob(seg, segment_id, 16 << ss_txfrm_size);
   const int off = block >> ss_txfrm_size;
   const int mod = bw - ss_tx_size - pd->subsampling_x;
   const int aoff = (off & ((1 << mod) - 1)) << ss_tx_size;
