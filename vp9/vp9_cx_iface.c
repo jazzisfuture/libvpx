@@ -295,7 +295,7 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   // oxcf->delete_first_pass_file = cfg.g_delete_firstpassfile;
   // strcpy(oxcf->first_pass_file, cfg.g_firstpass_file);
 
-  oxcf->cpu_used               =  vp8_cfg.cpu_used;
+  oxcf->cpu_used               =  1; // vp8_cfg.cpu_used;
   oxcf->encode_breakout        =  vp8_cfg.static_thresh;
   oxcf->play_alternate         =  vp8_cfg.enable_auto_alt_ref;
   oxcf->noise_sensitivity      =  vp8_cfg.noise_sensitivity;
