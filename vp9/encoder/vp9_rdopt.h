@@ -18,6 +18,7 @@
 #define QIDX_SKIP_THRESH     115
 
 void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex);
+void vp9_initialize_token_costs(VP9_COMP *cpi);
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex);
 

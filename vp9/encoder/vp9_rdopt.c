@@ -245,7 +245,10 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       }
     }
   }
+}
 
+void vp9_initialize_token_costs(VP9_COMP *cpi) {
+  int i;
   fill_token_costs(cpi->mb.token_costs, cpi->common.fc.coef_probs);
 
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
