@@ -35,6 +35,7 @@
 #include "vpx_ports/vpx_timer.h"
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_mvref_common.h"
+#include "vp9/common/vp9_subpelvar.h"
 
 #define DBG_PRNT_SEGMAP 0
 
@@ -515,10 +516,6 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
   /* set up source buffers */
   vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
 
-  /* R/D setup */
-  x->rddiv = cpi->RDDIV;
-  x->rdmult = cpi->RDMULT;
-
   /* segment ID */
   if (seg->enabled) {
     uint8_t *map = seg->update_map ? cpi->segmentation_map
@@ -549,6 +546,11 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
     mbmi->segment_id = 0;
     x->encode_breakout = cpi->oxcf.encode_breakout;
   }
+  /* R/D setup */
+  vp9_initialize_rd_consts(cpi, xd->q_index + cm->y_dc_delta_q);
+  vp9_initialize_me_consts(cpi, xd->q_index);
+  x->rddiv = cpi->RDDIV;
+  x->rdmult = cpi->RDMULT;
 }
 
 static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
@@ -894,6 +896,10 @@ typedef struct {
   int64_t sum_error;
   int count;
   int variance;
+} planevar;
+
+typedef struct {
+  planevar plane[3];
 } var;
 
 typedef struct {
@@ -963,14 +969,19 @@ static void tree_to_node(void *data, BLOCK_SIZE_TYPE block_size, vt_node *node) 
 }
 
 // Set variance values given sum square error, sum error, count.
-static void fill_variance(var *v, int64_t s2, int64_t s, int c) {
+static void fill_variance(planevar *v, int64_t s2, int64_t s, int c) {
   v->sum_square_error = s2;
   v->sum_error = s;
   v->count = c;
-  if (c > 0)
+  if (c > 0) {
+#if 0
     v->variance = 256
         * (v->sum_square_error - v->sum_error * v->sum_error / v->count)
         / v->count;
+#else
+    v->variance = v->sum_square_error - v->sum_error * v->sum_error / v->count;
+#endif
+  }
   else
     v->variance = 0;
 }
@@ -978,8 +989,12 @@ static void fill_variance(var *v, int64_t s2, int64_t s, int c) {
 // Combine 2 variance structures by summing the sum_error, sum_square_error,
 // and counts and then calculating the new variance.
 void sum_2_variances(var *r, var *a, var*b) {
-  fill_variance(r, a->sum_square_error + b->sum_square_error,
-                a->sum_error + b->sum_error, a->count + b->count);
+  int p;
+  for (p = 0; p < 3; p++)
+    fill_variance(&r->plane[p], a->plane[p].sum_square_error
+                  + b->plane[p].sum_square_error,
+                  a->plane[p].sum_error + b->plane[p].sum_error,
+                  a->plane[p].count + b->plane[p].count);
 }
 
 static void fill_variance_tree(void *data, BLOCK_SIZE_TYPE block_size) {
@@ -1045,22 +1060,24 @@ static int set_vt_partitioning(VP9_COMP *cpi, void *data, MODE_INFO *m,
   // split none is available only if we have more than half a block size
   // in width and height inside the visible image
   if (mi_col + mi_size < cm->mi_cols && mi_row + mi_size < cm->mi_rows
-      && vt.vt->none.variance < threshold) {
+      && vt.vt->none.plane[0].variance < threshold) {
     set_block_size(cm, m, block_size, mis, mi_row, mi_col);
     return 1;
   }
 
   // vertical split is available on all but the bottom border
-  if (mi_row + mi_size < cm->mi_rows && vt.vt->vert[0].variance < threshold
-      && vt.vt->vert[1].variance < threshold) {
+  if (mi_row + mi_size < cm->mi_rows
+      && vt.vt->vert[0].plane[0].variance < threshold
+      && vt.vt->vert[1].plane[0].variance < threshold) {
     set_block_size(cm, m, get_subsize(block_size, PARTITION_VERT), mis, mi_row,
                    mi_col);
     return 1;
   }
 
   // horizontal split is available on all but the right border
-  if (mi_col + mi_size < cm->mi_cols && vt.vt->horz[0].variance < threshold
-      && vt.vt->horz[1].variance < threshold) {
+  if (mi_col + mi_size < cm->mi_cols
+      && vt.vt->horz[0].plane[0].variance < threshold
+      && vt.vt->horz[1].plane[0].variance < threshold) {
     set_block_size(cm, m, get_subsize(block_size, PARTITION_HORZ), mis, mi_row,
                    mi_col);
     return 1;
@@ -1075,7 +1092,9 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
   VP9_COMMON * const cm = &cpi->common;
   MACROBLOCK *x = &cpi->mb;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
+#if 0
   const int mis = cm->mode_info_stride;
+#endif
   // TODO(JBB): More experimentation or testing of this threshold;
   int64_t threshold = 4;
   int i, j, k;
@@ -1104,6 +1123,7 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
 
   d = vp9_64x64_zeros;
   dp = 64;
+#if 0
   if (cm->frame_type != KEY_FRAME) {
     int_mv nearest_mv, near_mv;
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, LAST_FRAME)];
@@ -1124,6 +1144,7 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
     d = xd->plane[0].dst.buf;
     dp = xd->plane[0].dst.stride;
   }
+#endif
 
   // Fill in the entire tree of 8x8 variances for splits.
   for (i = 0; i < 4; i++) {
@@ -1138,22 +1159,64 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
         int y_idx = y16_idx + ((k >> 1) << 3);
         unsigned int sse = 0;
         int sum = 0;
-        if (x_idx < pixels_wide && y_idx < pixels_high)
+        int in_frame = x_idx + 8 <= pixels_wide && y_idx + 8 <= pixels_high;
+        int p;
+        if (in_frame)
           vp9_get_sse_sum_8x8(s + y_idx * sp + x_idx, sp,
                               d + y_idx * dp + x_idx, dp, &sse, &sum);
-        fill_variance(&vst->split[k].vt.none, sse, sum, 64);
+        fill_variance(&vst->split[k].vt.none.plane[0], sse, sum, 64);
+        for (p = 1; p < 3; p++) {
+          int w = 8 >> xd->plane[p].subsampling_x;
+          int h = 8 >> xd->plane[p].subsampling_y;
+          int x_idx_c = x_idx >> xd->plane[p].subsampling_x;
+          int y_idx_c = y_idx >> xd->plane[p].subsampling_x;
+
+          uint8_t *sc = x->plane[p].src.buf;
+          int scp = x->plane[p].src.stride;
+
+          sse = sum = 0;
+          if (in_frame)
+            variance(sc + y_idx_c * scp + x_idx_c, scp,
+                     d, dp, w, h, &sse, &sum);
+          fill_variance(&vst->split[k].vt.none.plane[p], sse, sum, w*h);
+        }
       }
-    }
-  }
-  // Fill the rest of the variance tree by summing the split partition
-  // values.
-  for (i = 0; i < 4; i++) {
-    for (j = 0; j < 4; j++) {
-      fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
+      fill_variance_tree(vst, BLOCK_16X16);
+
+      // VAQ
+      if (x16_idx + 16 <= pixels_wide && y16_idx + 16 <= pixels_high) {
+#if VAQ_CHROMA
+        int var = vst->vt.none.plane[0].variance +
+                  (vst->vt.none.plane[1].variance +
+                   vst->vt.none.plane[2].variance);
+#else
+        int var = vst->vt.none.plane[0].variance;
+#endif
+        int factor = ((logbf(var) - 14.427f)*3.0/5.0) + 0.5f;
+        int row = mi_row + (y16_idx >> 3);
+        int col = mi_col + (x16_idx >> 3);
+        int segments[] = { 5, 3, 1, 0, 2, 4, 6 };
+        int segment_id = segments[clamp(factor, -3, 3) + 3];
+
+        vp9_set_segment_id(cm, cpi->segmentation_map, BLOCK_16X16, row, col,
+                           segment_id);
+#if 0
+          {
+              int h;
+              static int hist[7] = {0};
+              hist[factor+3]++;
+              for (h = 0; h < sizeof(hist)/sizeof(hist[0]); ++h) {
+                  printf("Delta %d: %d\n", h - 3, hist[h]);
+              }
+          }
+#endif
+      }
     }
     fill_variance_tree(&vt.split[i], BLOCK_32X32);
   }
   fill_variance_tree(&vt, BLOCK_64X64);
+
+#if 0
   // Now go through the entire structure,  splitting every block size until
   // we get to one that's got a variance lower than our threshold,  or we
   // hit 8x8.
@@ -1183,6 +1246,7 @@ static void choose_partitioning(VP9_COMP *cpi, MODE_INFO *m, int mi_row,
       }
     }
   }
+#endif
 }
 
 static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
@@ -1463,13 +1527,23 @@ static const BLOCK_SIZE_TYPE max_partition_size[BLOCK_SIZES] =
 static void rd_auto_partition_range(VP9_COMP *cpi,
                                     BLOCK_SIZE_TYPE * min_block_size,
                                     BLOCK_SIZE_TYPE * max_block_size) {
+#if 0
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   const MODE_INFO *const mi = xd->mode_info_context;
   const MB_MODE_INFO *const above_mbmi = &mi[-xd->mode_info_stride].mbmi;
   const MB_MODE_INFO *const left_mbmi = &mi[-1].mbmi;
   const int left_in_image = xd->left_available && left_mbmi->mb_in_image;
   const int above_in_image = xd->up_available && above_mbmi->mb_in_image;
+#endif
 
+#if FORCE_BLOCK_SIZE
+  *min_block_size = FORCED_BLOCK_SIZE;
+  *max_block_size = FORCED_BLOCK_SIZE;
+#else
+  *min_block_size = BLOCK_4X4;
+  *max_block_size = BLOCK_64X64;
+#endif
+#if 0
   // Frequency check
   if (cpi->sf.auto_min_max_partition_count <= 0) {
     cpi->sf.auto_min_max_partition_count =
@@ -1497,6 +1571,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi,
     *max_block_size =
       max_partition_size[MAX(left_mbmi->sb_type, above_mbmi->sb_type)];
   }
+#endif
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *const cpi,
@@ -1916,6 +1991,9 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
     if (cpi->sf.reference_masking)
       rd_pick_reference_frame(cpi, mi_row, mi_col);
 
+#if VAQ
+    choose_partitioning(cpi, cm->mi, mi_row, mi_col);
+#endif
     if (cpi->sf.partition_by_variance || cpi->sf.use_lastframe_partitioning ||
         cpi->sf.use_one_partition_size_always ) {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
@@ -2084,6 +2162,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_frame_init_quantizer(cpi);
 
   vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y_dc_delta_q);
+  vp9_initialize_token_costs(cpi);
   vp9_initialize_me_consts(cpi, cm->base_qindex);
   switch_tx_mode(cpi);
 
