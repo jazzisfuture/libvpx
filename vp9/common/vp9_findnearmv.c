@@ -47,14 +47,12 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
   int_mv dst_list[MAX_MV_REF_CANDIDATES];
   int_mv mv_list[MAX_MV_REF_CANDIDATES];
   MODE_INFO *mi = xd->mode_info_context;
-  MB_MODE_INFO *const mbmi = &mi->mbmi;
 
   assert(ref_idx == 0 || ref_idx == 1);
   assert(MAX_MV_REF_CANDIDATES == 2);  // makes code here slightly easier
 
-  vp9_find_mv_refs_idx(cm, xd, xd->mode_info_context,
-                       xd->prev_mode_info_context,
-                       mbmi->ref_frame[ref_idx],
+  vp9_find_mv_refs_idx(cm, xd, mi, xd->prev_mode_info_context,
+                       mi->mbmi.ref_frame[ref_idx],
                        mv_list, cm->ref_frame_sign_bias, block_idx,
                        mi_row, mi_col);
 

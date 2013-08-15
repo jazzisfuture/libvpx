@@ -14,26 +14,21 @@
 #ifndef VP9_COMMON_VP9_MVREF_COMMON_H_
 #define VP9_COMMON_VP9_MVREF_COMMON_H_
 
-void vp9_find_mv_refs_idx(VP9_COMMON *cm,
-                          MACROBLOCKD *xd,
-                          MODE_INFO *here,
-                          const MODE_INFO *lf_here,
+void vp9_find_mv_refs_idx(VP9_COMMON *cm, const MACROBLOCKD *xd,
+                          MODE_INFO *mi, const MODE_INFO *prev_mi,
                           const MV_REFERENCE_FRAME ref_frame,
                           int_mv *mv_ref_list,
                           const int *ref_sign_bias,
                           const int block_idx,
-                          const int mi_row,
-                          const int mi_col);
+                          int mi_row, int mi_col);
 
-static INLINE void vp9_find_mv_refs(VP9_COMMON *cm,
-                                    MACROBLOCKD *xd,
-                                    MODE_INFO *here,
-                                    MODE_INFO *lf_here,
+static INLINE void vp9_find_mv_refs(VP9_COMMON *cm, const MACROBLOCKD *xd,
+                                    MODE_INFO *mi, const MODE_INFO *prev_mi,
                                     MV_REFERENCE_FRAME ref_frame,
                                     int_mv *mv_ref_list,
-                                    int *ref_sign_bias,
+                                    const int *ref_sign_bias,
                                     int mi_row, int mi_col) {
-  vp9_find_mv_refs_idx(cm, xd, here, lf_here, ref_frame,
+  vp9_find_mv_refs_idx(cm, xd, mi, prev_mi, ref_frame,
                        mv_ref_list, ref_sign_bias, -1, mi_row, mi_col);
 }
 
