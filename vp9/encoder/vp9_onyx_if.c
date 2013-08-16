@@ -716,7 +716,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_lastframe_partitioning = 0;
   sf->tx_size_search_method = USE_FULL_RD;
   sf->use_lp32x32fdct = 0;
-  sf->use_8tap_always = 0;
+  sf->switchable_filter_search_method = FILTER_SEARCH_FULL;
   sf->use_avoid_tested_higherror = 0;
   sf->reference_masking = 0;
   sf->skip_lots_of_modes = 0;
