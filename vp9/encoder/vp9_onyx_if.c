@@ -767,6 +767,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #endif
       sf->use_avoid_tested_higherror = 1;
       sf->adaptive_rd_thresh = 1;
+
       if (speed == 1) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
         sf->less_rectangular_check  = 1;
@@ -826,6 +827,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->search_method = SQUARE;
         sf->subpel_iters_per_step = 1;
         sf->use_fast_lpf_pick = 1;
+
+        sf->auto_min_max_partition_size = 1;
+        sf->auto_min_max_partition_interval = 2;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
