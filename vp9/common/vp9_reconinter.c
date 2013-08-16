@@ -115,8 +115,6 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
 struct build_inter_predictors_args {
   MACROBLOCKD *xd;
   int x, y;
-  struct buf_2d *dst;
-  struct buf_2d *pre[2];
 };
 static void build_inter_predictors(int plane, int block,
                                    BLOCK_SIZE_TYPE bsize,
@@ -141,8 +139,8 @@ static void build_inter_predictors(int plane, int block,
 
   for (ref = 0; ref < 1 + use_second_ref; ++ref) {
     struct scale_factors *const scale = &xd->scale_factor[ref];
-    struct buf_2d *const pre_buf = arg->pre[ref];
-    struct buf_2d *const dst_buf = arg->dst;
+    struct buf_2d *const pre_buf = &pd->pre[ref];
+    struct buf_2d *const dst_buf = &pd->dst;
 
     const uint8_t *const pre = pre_buf->buf + scaled_buffer_offset(x, y,
                                pre_buf->stride, scale);
@@ -182,8 +180,6 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd,
   for (plane = plane_from; plane <= plane_to; ++plane) {
     struct build_inter_predictors_args args = {
       xd, mi_col * MI_SIZE, mi_row * MI_SIZE,
-      &xd->plane[plane].dst,
-      {&xd->plane[plane].pre[0], &xd->plane[plane].pre[1]}
     };
     foreach_predicted_block_in_plane(xd, bsize, plane, build_inter_predictors,
                                      &args);
