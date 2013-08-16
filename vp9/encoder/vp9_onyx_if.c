@@ -716,7 +716,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_lastframe_partitioning = 0;
   sf->tx_size_search_method = USE_FULL_RD;
   sf->use_lp32x32fdct = 0;
-  sf->use_8tap_always = 0;
+  sf->switchable_filter_search_method = FILTER_SEARCH_FULL;
   sf->use_avoid_tested_higherror = 0;
   sf->reference_masking = 0;
   sf->skip_lots_of_modes = 0;
@@ -827,6 +827,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->subpel_iters_per_step = 1;
         sf->use_fast_lpf_pick = 1;
         sf->disable_split_var_thresh = 64;
+        sf->switchable_filter_search_method = FILTER_SEARCH_SKIP_LOWVAR;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
@@ -850,6 +851,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->search_method = BIGDIA;
         sf->subpel_iters_per_step = 1;
         sf->disable_split_var_thresh = 64;
+        sf->switchable_filter_search_method = FILTER_SEARCH_SKIP_LOWVAR;
       }
       if (speed == 4) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
@@ -877,6 +879,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->search_method = HEX;
         sf->subpel_iters_per_step = 1;
         sf->disable_split_var_thresh = 64;
+        sf->switchable_filter_search_method = FILTER_SEARCH_SKIP_LOWVAR;
       }
       /*
       if (speed == 2) {

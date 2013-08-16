@@ -238,6 +238,12 @@ typedef enum {
   // Other methods to come
 } SUBPEL_SEARCH_METHODS;
 
+typedef enum {
+  FILTER_SEARCH_FULL = 0,
+  FILTER_SEARCH_SKIP_LOWVAR = 1,
+  FILTER_SEARCH_8TAP_ALWAYS = 2,
+} SWITCHABLE_FILTER_SEARCH_METHOD;
+
 typedef struct {
   int RD;
   SEARCH_METHODS search_method;
@@ -259,7 +265,7 @@ typedef struct {
   int use_lastframe_partitioning;
   TX_SIZE_SEARCH_METHOD tx_size_search_method;
   int use_lp32x32fdct;
-  int use_8tap_always;
+  SWITCHABLE_FILTER_SEARCH_METHOD switchable_filter_search_method;
   int use_avoid_tested_higherror;
   int skip_lots_of_modes;
   int adjust_thresholds_by_speed;
