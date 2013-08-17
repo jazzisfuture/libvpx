@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jingning Han <jingning@google.com>
+Code-Review+1: Yue Chen <yuec@google.com>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Fri, 16 Aug 2013 17:05:14 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/65972
+Project: webm/libvpx
+Branch: refs/heads/experimental
