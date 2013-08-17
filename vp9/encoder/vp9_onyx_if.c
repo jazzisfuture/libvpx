@@ -318,6 +318,32 @@ static int compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   return target_index - start_index;
 }
 
+static void setup_vaq(VP9_COMP *cpi) {
+    int i;
+    // 1.8^(1/3) ~= 1.21644, 1.8^(2/3) ~= 1.4797272
+    double factors[] = {
+        1.0/1.21644, 1.21644, 1.0/1.4797272, 1.4797272, 1.0/1.8, 1.8
+    };
+    // double factors[] = { 5.0/6.0, 6.0/5.0, 2.0/3.0, 3.0/2.0, 1.0/2.0, 2.0 };
+    MACROBLOCKD *xd = &cpi->mb.e_mbd;
+    double base_q = vp9_convert_qindex_to_q(cpi->common.base_qindex);
+
+    vp9_enable_segmentation((VP9_PTR)cpi);
+    vp9_clearall_segfeatures(&xd->seg);
+
+    xd->seg.abs_delta = SEGMENT_DELTADATA;
+
+    for (i = 0; i < sizeof(factors)/sizeof(factors[0]); ++i) {
+        int qdelta = compute_qdelta(cpi, base_q, base_q * factors[i]);
+        // printf("qdelta: %d\n", qdelta);
+        vp9_set_segdata(&xd->seg, i + 1, SEG_LVL_ALT_Q, qdelta);
+        vp9_enable_segfeature(&xd->seg, i + 1, SEG_LVL_ALT_Q);
+    }
+    // xd->seg.abs_delta = SEGMENT_ABSDATA;
+    // vp9_set_segdata(&xd->seg, 0, SEG_LVL_ALT_Q, 255);
+    // vp9_enable_segfeature(&xd->seg, 0, SEG_LVL_ALT_Q);
+}
+
 static void configure_static_seg_features(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
@@ -398,6 +424,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
           vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
         }
       } else {
+#if 0
         // Disable segmentation and clear down features if alt ref
         // is not active for this group
 
@@ -409,6 +436,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 0;
 
         vp9_clearall_segfeatures(seg);
+#endif
       }
     } else if (cpi->is_src_frame_alt_ref) {
       // Special case where we are coding over the top of a previous
@@ -727,13 +755,18 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_one_partition_size_always = 0;
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
-  sf->auto_min_max_partition_size = 0;
+  sf->auto_min_max_partition_size = 1;
   sf->auto_min_max_partition_interval = 0;
   sf->auto_min_max_partition_count = 0;
   // sf->use_max_partition_size = 0;
-  sf->max_partition_size = BLOCK_64X64;
   // sf->use_min_partition_size = 0;
+#if FORCE_BLOCK_SIZE
+  sf->max_partition_size = FORCED_BLOCK_SIZE;
+  sf->min_partition_size = FORCED_BLOCK_SIZE;
+#else
+  sf->max_partition_size = BLOCK_64X64;
   sf->min_partition_size = BLOCK_4X4;
+#endif
   sf->adjust_partitioning_from_last_frame = 0;
   sf->last_partitioning_redo_frequency = 4;
   sf->disable_splitmv = 0;
@@ -768,7 +801,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       sf->static_segmentation = 0;
 #endif
       sf->use_avoid_tested_higherror = 1;
-      sf->adaptive_rd_thresh = 1;
+
+      sf->adaptive_rd_thresh = 0;  // Disabled until we get it to work with AQ
       if (speed == 1) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
         sf->less_rectangular_check  = 1;
@@ -2921,6 +2955,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         vp9_setup_inter_frame(cpi);
       }
     }
+
+    setup_vaq(cpi);
 
     // transform / motion compensation build reconstruction frame
 
