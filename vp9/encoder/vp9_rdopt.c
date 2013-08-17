@@ -245,7 +245,10 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       }
     }
   }
+}
 
+void vp9_initialize_token_costs(VP9_COMP *cpi) {
+  int i;
   fill_token_costs(cpi->mb.token_costs, cpi->common.fc.coef_probs);
 
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
@@ -3120,6 +3123,7 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       for (i = 0; i < TX_MODES; i++)
         ctx->tx_rd_diff[i] = tx_cache[i] - tx_cache[cm->tx_mode];
   }
+#endif
 
   ctx->mic = *xd->mode_info_context;
 }
@@ -3480,7 +3484,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       };
       if ((cpi->sf.mode_search_skip_flags & FLAG_SKIP_INTRA_LOWVAR) &&
           this_mode != DC_PRED &&
-          x->source_variance < skip_intra_var_thresh[mbmi->sb_type])
+          (x->source_variance / 256) < skip_intra_var_thresh[mbmi->sb_type])
         continue;
       // Only search the oblique modes if the best so far is
       // one of the neighboring directional modes
@@ -3833,7 +3837,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           // TODO(debargha): Enhance this by specializing for each mode_index
           int scale = 4;
           if (x->source_variance < UINT_MAX) {
-            const int var_adjust = (x->source_variance < 16);
+            const int var_adjust = ((x->source_variance / 256) < 16);
             scale -= var_adjust;
           }
           if (ref_frame > INTRA_FRAME &&
