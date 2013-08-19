@@ -1212,7 +1212,6 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
       cpi->compressor_speed = 0;
       break;
   }
-
   cpi->oxcf.worst_allowed_q = q_trans[oxcf->worst_allowed_q];
   cpi->oxcf.best_allowed_q = q_trans[oxcf->best_allowed_q];
   cpi->oxcf.cq_level = q_trans[cpi->oxcf.cq_level];
@@ -1316,6 +1315,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
     assert(cm->width <= cpi->initial_width);
     assert(cm->height <= cpi->initial_height);
   }
+
   update_frame_size(cpi);
 
   if (cpi->oxcf.fixed_q >= 0) {
@@ -1325,6 +1325,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   }
 
   cpi->speed = cpi->oxcf.cpu_used;
+  // printf("cpi->speed = %d\n", cpi->speed);
 
   if (cpi->oxcf.lag_in_frames == 0) {
     // force to allowlag to 0 if lag_in_frames is 0;
