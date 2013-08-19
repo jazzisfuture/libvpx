@@ -2529,6 +2529,20 @@ static void select_interintra_mode(VP9_COMP *cpi) {
     cm->use_interintra = (fraction > threshold);
   }
 }
+
+#if CONFIG_MASKED_INTERINTRA
+static void select_masked_interintra_mode(VP9_COMP *cpi) {
+  static const double threshold = 1/100.0;
+  VP9_COMMON *cm = &cpi->common;
+  int sum = cpi->masked_interintra_select_count[1] +
+      cpi->masked_interintra_select_count[0];
+  if (sum) {
+    double fraction = (double) cpi->masked_interintra_select_count[1] / sum;
+    cm->use_masked_interintra = (fraction > threshold);
+    // fprintf(stderr, "[%d %d %f]\n", cpi->masked_interintra_select_count[1], sum, fraction);
+  }
+}
+#endif
 #endif
 
 #if CONFIG_MASKED_COMPOUND_INTER
@@ -2540,7 +2554,7 @@ static void select_masked_compound_mode(VP9_COMP *cpi) {
   if (sum) {
     double fraction = (double) cpi->masked_compound_select_counts[1] / sum;
     cm->use_masked_compound = (fraction > threshold);
-    }
+  }
 }
 #endif
 
@@ -2951,6 +2965,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #if CONFIG_INTERINTRA
   if (cm->current_video_frame == 0) {
     cm->use_interintra = 1;
+#if CONFIG_MASKED_INTERINTRA
+    cm->use_masked_interintra = 1;
+#endif
   }
 #endif
 
@@ -3299,6 +3316,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     counts->mv = cpi->NMVcount;
 #if CONFIG_INTERINTRA
     vp9_copy(counts->interintra, cpi->interintra_count);
+#if CONFIG_MASKED_INTERINTRA
+    vp9_copy(counts->masked_interintra, cpi->masked_interintra_count);
+#endif
 #endif
 #if CONFIG_MASKED_COMPOUND_INTER
     vp9_copy(counts->masked_compound, cpi->masked_compound_counts);
@@ -3311,8 +3331,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
 #if CONFIG_INTERINTRA
-  if (cm->frame_type != KEY_FRAME)
+  if (cm->frame_type != KEY_FRAME) {
     select_interintra_mode(cpi);
+#if CONFIG_MASKED_INTERINTRA
+    if (cpi->common.use_interintra)
+      select_masked_interintra_mode(cpi);
+    else
+      cpi->common.use_masked_interintra = 0;
+#endif
+  }
 #endif
 #if CONFIG_MASKED_COMPOUND_INTER
   if (cm->frame_type != KEY_FRAME)

@@ -3018,6 +3018,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       is_interintra_allowed(mbmi->sb_type)) {
     extend_for_interintra(xd, bsize);
   }
+#if CONFIG_MASKED_INTERINTRA
+  mbmi->use_masked_interintra = 0;
+  mbmi->interintra_mask_index = 0;
+  mbmi->interintra_uv_mask_index = 0;
+#endif
 #endif
 
   if (this_mode == NEWMV) {
@@ -3174,6 +3179,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         int64_t dist_sum = 0;
         if ((cm->mcomp_filter_type == SWITCHABLE &&
              (!i || best_needs_copy)) ||
+#if CONFIG_INTERINTRA
+            (is_inter_mode(this_mode) && is_comp_interintra_pred &&
+             is_interintra_allowed(mbmi->sb_type)) ||
+#endif
             (cm->mcomp_filter_type != SWITCHABLE &&
              (cm->mcomp_filter_type == mbmi->interp_filter ||
               (!interpolating_intpel_seen && is_intpel_interp)))) {
@@ -3247,6 +3256,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t best_interintra_rd = INT64_MAX;
     int rmode, rate_sum;
     int64_t dist_sum;
+#if CONFIG_MASKED_INTERINTRA
+    int maskbits, mask_types, mask_index, best_mask_index = 0;
+    int64_t best_interintra_rd_nomask, best_interintra_rd_mask = INT64_MAX;
+    int rmask;
+#endif
     for (interintra_mode = DC_PRED; interintra_mode <= TM_PRED;
         ++interintra_mode) {
       mbmi->interintra_mode = interintra_mode;
@@ -3266,19 +3280,69 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if !SEPARATE_INTERINTRA_UV
     mbmi->interintra_uv_mode = best_interintra_mode;
 #endif
+#if CONFIG_MASKED_INTERINTRA
+    maskbits = get_mask_bits_interintra(bsize);
+    if (maskbits) {
+      vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
+      rmask = vp9_cost_bit(cm->fc.masked_interintra_prob[bsize], 0);
+      rd = RDCOST(x->rdmult, x->rddiv, rmask + rate_sum, dist_sum);
+      best_interintra_rd_nomask = rd;
+
+      mbmi->use_masked_interintra = 1;
+      rmask = maskbits * 256 + vp9_cost_bit(cm->fc.masked_interintra_prob[bsize]
+                                            , 1);
+      mask_types = (1 << maskbits);
+      for (mask_index = 0; mask_index < mask_types; ++mask_index) {
+        mbmi->interintra_mask_index = mask_index;
+        mbmi->interintra_uv_mask_index = mask_index;
+        vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
+        rd = RDCOST(x->rdmult, x->rddiv, rmask + rate_sum, dist_sum);
+        if (rd < best_interintra_rd_mask) {
+          best_interintra_rd_mask = rd;
+          best_mask_index = mask_index;
+        }
+      }
+      if (best_interintra_rd_mask < best_interintra_rd_nomask) {
+        mbmi->use_masked_interintra = 1;
+        if (cm->use_masked_interintra) {
+          mbmi->interintra_mask_index = best_mask_index;
+          mbmi->interintra_uv_mask_index = best_mask_index;
+        }
+      } else {
+        mbmi->use_masked_interintra = 0;
+      }
+
+      ++cpi->masked_interintra_select_count[mbmi->use_masked_interintra];
+      if (!cm->use_masked_interintra) {
+        mbmi->use_masked_interintra = 0;
+      }
+    }
+#endif
     pred_exists = 0;
   }
 
-  if (!is_comp_pred) {
+  if (!is_comp_pred && is_interintra_allowed(mbmi->sb_type)) {
     *compmode_interintra_cost = vp9_cost_bit(cm->fc.interintra_prob[bsize],
                                              is_comp_interintra_pred);
-    if (is_comp_interintra_pred && is_interintra_allowed(mbmi->sb_type)) {
+    if (is_comp_interintra_pred) {
       *compmode_interintra_cost += x->mbmode_cost[mbmi->interintra_mode];
 #if SEPARATE_INTERINTRA_UV
       *compmode_interintra_cost +=
           x->intra_uv_mode_cost[xd->frame_type][mbmi->interintra_uv_mode];
 #endif
+#if CONFIG_MASKED_INTERINTRA
+      if (get_mask_bits_interintra(bsize) && cm->use_masked_interintra) {
+        *compmode_interintra_cost += vp9_cost_bit(
+                                     cm->fc.masked_interintra_prob[bsize],
+                                     mbmi->use_masked_interintra);
+        if (mbmi->use_masked_interintra) {
+          *compmode_interintra_cost += get_mask_bits_interintra(bsize) * 256;
+        }
       }
+#endif
+    }
   }
 #endif
 
