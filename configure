@@ -251,6 +251,7 @@ EXPERIMENT_LIST="
     non420
     alpha
     interintra
+    masked_interintra
     filterintra
     masked_compound_inter
 "
