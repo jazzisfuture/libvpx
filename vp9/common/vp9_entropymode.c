@@ -339,6 +339,12 @@ static const vp9_prob default_switchable_interp_prob[VP9_SWITCHABLE_FILTERS+1]
 static const vp9_prob default_interintra_prob[BLOCK_SIZE_TYPES] = {
   192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192
 };
+#if CONFIG_MASKED_INTERINTRA
+static const vp9_prob default_masked_interintra_prob[BLOCK_SIZE_TYPES] = {
+// 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180
+  192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192
+};
+#endif
 #endif
 
 void vp9_init_mbmode_probs(VP9_COMMON *cm) {
@@ -354,6 +360,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
   vp9_copy(cm->fc.mbskip_probs, default_mbskip_probs);
 #if CONFIG_INTERINTRA
   vp9_copy(cm->fc.interintra_prob, default_interintra_prob);
+#if CONFIG_MASKED_INTERINTRA
+  vp9_copy(cm->fc.masked_interintra_prob, default_masked_interintra_prob);
+#endif
 #endif
 #if CONFIG_FILTERINTRA
   vp9_copy(cm->fc.filterintra_prob, vp9_default_filterintra_prob);
@@ -490,6 +499,16 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
         fc->interintra_prob[i] = update_ct2(pre_fc->interintra_prob[i],
                                             counts->interintra[i]);
     }
+#if CONFIG_MASKED_INTERINTRA
+    if (cm->use_masked_interintra) {
+      for (i = 0; i < BLOCK_SIZE_TYPES; ++i) {
+        if (is_interintra_allowed(i) && get_mask_bits_interintra(i))
+          fc->masked_interintra_prob[i] = update_ct2(
+                                          pre_fc->masked_interintra_prob[i],
+                                          counts->masked_interintra[i]);
+      }
+    }
+#endif
   }
 #endif
 #if CONFIG_FILTERINTRA

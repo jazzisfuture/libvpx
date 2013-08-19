@@ -564,6 +564,9 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
       mbmi->ref_frame[1] = (vp9_read(r, cm->fc.interintra_prob[bsize]) ?
                             INTRA_FRAME : NONE);
       cm->counts.interintra[bsize][mbmi->ref_frame[1] == INTRA_FRAME]++;
+#if CONFIG_MASKED_INTERINTRA
+      mbmi->use_masked_interintra = 0;
+#endif
       if (mbmi->ref_frame[1] == INTRA_FRAME) {
         int bsg = MIN(MIN(b_width_log2(bsize), b_height_log2(bsize)), 3);
         mbmi->interintra_mode = read_intra_mode(r, cm->fc.y_mode_prob[bsg]);
@@ -575,7 +578,19 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
 #else
         mbmi->interintra_uv_mode = mbmi->interintra_mode;
 #endif
+#if CONFIG_MASKED_INTERINTRA
+        if (cm->use_masked_interintra && get_mask_bits_interintra(bsize)) {
+          mbmi->use_masked_interintra = vp9_read(r,
+                                          cm->fc.masked_interintra_prob[bsize]);
+          cm->counts.masked_interintra[bsize][mbmi->use_masked_interintra]++;
+          if (mbmi->use_masked_interintra) {
+            mbmi->interintra_mask_index = vp9_read_literal(r,
+                                               get_mask_bits_interintra(bsize));
+            mbmi->interintra_uv_mask_index = mbmi->interintra_mask_index;
+          }
         }
+#endif
+      }
     }
 #endif
 
@@ -780,6 +795,16 @@ void vp9_prepare_read_mode_info(VP9D_COMP* pbi, vp9_reader *r) {
           if (vp9_read(r, VP9_UPD_INTERINTRA_PROB))
             vp9_diff_update_prob(r, &cm->fc.interintra_prob[b]);
       }
+#if CONFIG_MASKED_INTERINTRA
+      if (cm->use_masked_interintra) {
+        int k;
+        for (k = 0; k < BLOCK_SIZE_TYPES; ++k) {
+          if (is_interintra_allowed(k) && get_mask_bits_interintra(k))
+            if (vp9_read(r, VP9_UPD_MASKED_INTERINTRA_PROB))
+              vp9_diff_update_prob(r, &cm->fc.masked_interintra_prob[k]);
+        }
+      }
+#endif
     }
 #endif
 
