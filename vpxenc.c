@@ -1688,8 +1688,10 @@ static void parse_global_config(struct global_config *global, char **argv) {
   /* Initialize default parameters */
   memset(global, 0, sizeof(*global));
   global->codec = codecs;
-  global->passes = 1;
+  global->passes = 2;
   global->use_i420 = 1;
+  /* Assign default deadline to good quality */
+  global->deadline = VPX_DL_GOOD_QUALITY;
 
   for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step) {
     arg.argv_step = 1;
