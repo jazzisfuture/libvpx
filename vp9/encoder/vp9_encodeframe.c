@@ -1615,7 +1615,7 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   int64_t this_dist, sum_dist = 0, best_dist = INT_MAX;
   int64_t sum_rd = 0;
 
-  // Override min_partition_size for edge blocks
+  // Override min_partition_size and use_square_partition_only for edge blocks
   int force_horz_split = mi_row + (ms >> 1) >= cm->mi_rows;
   int force_vert_split = mi_col + (ms >> 1) >= cm->mi_cols;
 
@@ -1755,8 +1755,9 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
     }
 
-    if (!cpi->sf.use_square_partition_only &&
-        (!cpi->sf.less_rectangular_check || !larger_is_better)) {
+    if (force_horz_split || force_vert_split ||
+        (!cpi->sf.use_square_partition_only &&
+         (!cpi->sf.less_rectangular_check || !larger_is_better))) {
       // PARTITION_HORZ
       if (bsize >= BLOCK_8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
         subsize = get_subsize(bsize, PARTITION_HORZ);
