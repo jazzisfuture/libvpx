@@ -1635,11 +1635,10 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
   // PARTITION_SPLIT
-  if (!cpi->sf.auto_min_max_partition_size ||
-      bsize > cpi->sf.min_partition_size) {
-    if (bsize > BLOCK_8X8) {
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
-
+  if (bsize > BLOCK_8X8) {
+    subsize = get_subsize(bsize, PARTITION_SPLIT);
+    if (!cpi->sf.auto_min_max_partition_size ||
+        subsize >= cpi->sf.min_partition_size) {
       for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
         int x_idx = (i & 1) * (ms >> 1);
         int y_idx = (i >> 1) * (ms >> 1);
@@ -1714,10 +1713,12 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       }
     }
 
-    if (bsize == BLOCK_8X8) {
+    // PARTITION_SPLIT for BLOCK_8X8
+    if (bsize == BLOCK_8X8 &&
+        (!cpi->sf.auto_min_max_partition_size ||
+         cpi->sf.min_partition_size == BLOCK_4X4)) {
+      subsize = BLOCK_4X4;
       sum_rate = 0; sum_dist = 0; sum_rd = 0;
-
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
 
       for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
         int x_idx = (i & 1) * (ms >> 1);
