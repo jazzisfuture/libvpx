@@ -155,9 +155,16 @@ void vp9_init_me_luts() {
   }
 }
 
-static int compute_rd_mult(int qindex) {
+int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex) {
   const int q = vp9_dc_quant(qindex, 0);
-  return (11 * q * q) >> 2;
+  int rdmult = (11 * q * q) >> 2;
+  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
+    if (cpi->twopass.next_iiratio > 31)
+      rdmult += (rdmult * rd_iifactor[31]) >> 4;
+    else
+      rdmult += (rdmult * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+  }
+  return rdmult;
 }
 
 static MB_PREDICTION_MODE rd_mode_to_mode(RD_PREDICTION_MODE rd_mode) {
@@ -186,17 +193,9 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   //     cpi->common.refresh_alt_ref_frame)
   qindex = clamp(qindex, 0, MAXQ);
 
-  cpi->RDMULT = compute_rd_mult(qindex);
-  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
-    if (cpi->twopass.next_iiratio > 31)
-      cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 4;
-    else
-      cpi->RDMULT +=
-          (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
-  }
+  cpi->RDMULT = vp9_compute_rd_mult(cpi, qindex);
   cpi->mb.errorperbit = cpi->RDMULT >> 6;
   cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
-
   vp9_set_speed_features(cpi);
 
   q = (int)pow(vp9_dc_quant(qindex, 0) >> 2, 1.25);
@@ -243,7 +242,10 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       }
     }
   }
+}
 
+void vp9_initialize_token_costs(VP9_COMP *cpi) {
+  int i;
   fill_token_costs(cpi->mb.token_costs, cpi->common.fc.coef_probs);
 
   for (i = 0; i < NUM_PARTITION_CONTEXTS; i++)
