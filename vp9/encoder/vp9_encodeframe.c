@@ -1713,48 +1713,48 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     else if (source_variancey < cpi->sf.disable_split_var_thresh / 2)
       do_rect = 0;
   }
+
+
   // PARTITION_SPLIT
   if (do_split &&
       (!cpi->sf.auto_min_max_partition_size ||
        bsize >= cpi->sf.min_partition_size)) {
-    if (bsize > BLOCK_8X8) {
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
-      for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
-        int x_idx = (i & 1) * (ms >> 1);
-        int y_idx = (i >> 1) * (ms >> 1);
+    subsize = get_subsize(bsize, PARTITION_SPLIT);
+    for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
+      int x_idx = (i & 1) * (ms >> 1);
+      int y_idx = (i >> 1) * (ms >> 1);
 
-          if ((mi_row + y_idx >= cm->mi_rows) ||
-              (mi_col + x_idx >= cm->mi_cols))
-            continue;
+      if ((mi_row + y_idx >= cm->mi_rows) ||
+          (mi_col + x_idx >= cm->mi_cols))
+        continue;
 
-        *(get_sb_index(xd, subsize)) = i;
+      *(get_sb_index(xd, subsize)) = i;
 
-        rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
-                          &this_rate, &this_dist, i != 3, best_rd - sum_rd);
+      rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
+                        &this_rate, &this_dist, i != 3, best_rd - sum_rd);
 
-        if (this_rate == INT_MAX) {
-          sum_rd = INT64_MAX;
-        } else {
-          sum_rate += this_rate;
-          sum_dist += this_dist;
-          sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        }
-      }
-      if (sum_rd < best_rd && i == 4) {
-        set_partition_seg_context(cm, xd, mi_row, mi_col);
-        pl = partition_plane_context(xd, bsize);
-        sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
+      if (this_rate == INT_MAX) {
+        sum_rd = INT64_MAX;
+      } else {
+        sum_rate += this_rate;
+        sum_dist += this_dist;
         sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        if (sum_rd < best_rd) {
-          best_rate = sum_rate;
-          best_dist = sum_dist;
-          best_rd = sum_rd;
-          *(get_sb_partitioning(x, bsize)) = subsize;
-        }
       }
-      partition_split_done = 1;
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
     }
+    if (sum_rd < best_rd && i == 4) {
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
+      sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      if (sum_rd < best_rd) {
+        best_rate = sum_rate;
+        best_dist = sum_dist;
+        best_rd = sum_rd;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+      }
+    }
+    partition_split_done = 1;
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
   // Use 4 subblocks' motion estimation results to speed up current
