@@ -46,7 +46,7 @@ unsigned int vp9_sub_pixel_variance64x32_c(const uint8_t *src_ptr,
                                            const uint8_t *dst_ptr,
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
-  uint16_t fdata3[65 * 64];  // Temp data bufffer used in filtering
+  uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
   uint8_t temp2[68 * 64];
   const int16_t *hfilter, *vfilter;
 
