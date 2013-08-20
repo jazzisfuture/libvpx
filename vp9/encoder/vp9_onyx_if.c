@@ -821,7 +821,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->use_rd_breakout = 1;
         sf->skip_encode_sb = 1;
         sf->use_lp32x32fdct = 1;
-        sf->using_small_partition_info = 1;
+        sf->using_small_partition_info = 0;
         sf->disable_splitmv =
             (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 0;
         sf->auto_mv_step_size = 1;

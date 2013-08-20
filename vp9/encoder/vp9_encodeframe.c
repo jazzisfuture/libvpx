@@ -1666,28 +1666,31 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   int i, pl;
   BLOCK_SIZE_TYPE subsize;
   int this_rate, sum_rate = 0, best_rate = INT_MAX;
-  int64_t this_dist, sum_dist = 0, best_dist = INT_MAX;
+  int64_t this_dist, sum_dist = 0, best_dist = INT64_MAX;
   int64_t sum_rd = 0;
-  int do_split = 1, do_rect = 1;
+  int do_split = bsize >= BLOCK_8X8;
+  int do_rect = 1;
   // Override min_partition_size for edge blocks
   int force_horz_split = mi_row + (ms >> 1) >= cm->mi_rows;
   int force_vert_split = mi_col + (ms >> 1) >= cm->mi_cols;
-  const int partition_none_allowed = (bsize <= cpi->sf.max_partition_size ||
-                                      !cpi->sf.auto_min_max_partition_size) &&
-                                     !force_horz_split &&
-                                     !force_vert_split;
-  const int partition_horz_allowed = (bsize <= cpi->sf.max_partition_size ||
-                                      !cpi->sf.auto_min_max_partition_size) &&
-                                     !cpi->sf.use_square_partition_only &&
-                                     bsize >= BLOCK_8X8 &&
-                                     !force_vert_split;
-  const int partition_vert_allowed = (bsize <= cpi->sf.max_partition_size ||
-                                      !cpi->sf.auto_min_max_partition_size) &&
-                                     !cpi->sf.use_square_partition_only &&
-                                     bsize >= BLOCK_8X8 &&
-                                     !force_horz_split;
+  const int partition_none_allowed = ((bsize <= cpi->sf.max_partition_size &&
+                                       bsize >= cpi->sf.min_partition_size)||
+                                       !cpi->sf.auto_min_max_partition_size) &&
+                                      !force_horz_split && !force_vert_split;
+  const int partition_horz_allowed = ((bsize <= cpi->sf.max_partition_size &&
+                                       bsize >  cpi->sf.min_partition_size) ||
+                                       !cpi->sf.auto_min_max_partition_size) &&
+                                     (!cpi->sf.use_square_partition_only ||
+                                       force_horz_split) &&
+                                      bsize >= BLOCK_8X8 && !force_vert_split;
+  const int partition_vert_allowed = ((bsize <= cpi->sf.max_partition_size &&
+                                       bsize >  cpi->sf.min_partition_size) ||
+                                       !cpi->sf.auto_min_max_partition_size) &&
+                                     (!cpi->sf.use_square_partition_only ||
+                                       force_vert_split) &&
+                                     bsize >= BLOCK_8X8 && !force_horz_split;
   int partition_split_done = 0;
-
+  int larger_is_better = 0;
 
   (void) *tp_orig;
 
@@ -1704,7 +1707,10 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
 
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  if (cpi->sf.disable_split_var_thresh && partition_none_allowed) {
+  // FIXME(jingning): temporarily turn off disable_split_var_thresh during
+  // refactoring process. will get this back after finishing the main framework
+  // of partition search type.
+  if (0 && cpi->sf.disable_split_var_thresh && partition_none_allowed) {
     unsigned int source_variancey;
     vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
     source_variancey = get_sby_perpixel_variance(cpi, x, bsize);
@@ -1713,48 +1719,74 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     else if (source_variancey < cpi->sf.disable_split_var_thresh / 2)
       do_rect = 0;
   }
-  // PARTITION_SPLIT
-  if (do_split &&
-      (!cpi->sf.auto_min_max_partition_size ||
-       bsize >= cpi->sf.min_partition_size)) {
-    if (bsize > BLOCK_8X8) {
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
-      for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
-        int x_idx = (i & 1) * (ms >> 1);
-        int y_idx = (i >> 1) * (ms >> 1);
 
-          if ((mi_row + y_idx >= cm->mi_rows) ||
-              (mi_col + x_idx >= cm->mi_cols))
-            continue;
-
-        *(get_sb_index(xd, subsize)) = i;
-
-        rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
-                          &this_rate, &this_dist, i != 3, best_rd - sum_rd);
-
-        if (this_rate == INT_MAX) {
-          sum_rd = INT64_MAX;
-        } else {
-          sum_rate += this_rate;
-          sum_dist += this_dist;
-          sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        }
-      }
-      if (sum_rd < best_rd && i == 4) {
+  // PARTITION_NONE
+  if (partition_none_allowed) {
+    pick_sb_modes(cpi, mi_row, mi_col, &this_rate, &this_dist, bsize,
+                  get_block_context(x, bsize), best_rd);
+    if (this_rate != INT_MAX) {
+      if (bsize >= BLOCK_8X8) {
         set_partition_seg_context(cm, xd, mi_row, mi_col);
         pl = partition_plane_context(xd, bsize);
-        sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
-        sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        if (sum_rd < best_rd) {
-          best_rate = sum_rate;
-          best_dist = sum_dist;
-          best_rd = sum_rd;
-          *(get_sb_partitioning(x, bsize)) = subsize;
-        }
+        this_rate += x->partition_cost[pl][PARTITION_NONE];
       }
-      partition_split_done = 1;
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+      sum_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_dist);
+      if (sum_rd < best_rd) {
+        best_rate = this_rate;
+        best_dist = this_dist;
+        best_rd = sum_rd;
+        if (bsize >= BLOCK_8X8)
+          *(get_sb_partitioning(x, bsize)) = bsize;
+      }
     }
+  }
+  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+
+  // PARTITION_SPLIT
+  sum_rd = 0;
+  if (do_split &&
+      (!cpi->sf.auto_min_max_partition_size ||
+       bsize > cpi->sf.min_partition_size)) {
+    subsize = get_subsize(bsize, PARTITION_SPLIT);
+    for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
+      int x_idx = (i & 1) * (ms >> 1);
+      int y_idx = (i >> 1) * (ms >> 1);
+
+      if ((mi_row + y_idx >= cm->mi_rows) ||
+          (mi_col + x_idx >= cm->mi_cols))
+        continue;
+
+      *(get_sb_index(xd, subsize)) = i;
+
+      rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
+                        &this_rate, &this_dist, i != 3, best_rd - sum_rd);
+
+      if (this_rate == INT_MAX) {
+        sum_rd = INT64_MAX;
+      } else {
+        sum_rate += this_rate;
+        sum_dist += this_dist;
+        sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      }
+    }
+    if (sum_rd < best_rd && i == 4) {
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
+      sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      if (sum_rd < best_rd) {
+        best_rate = sum_rate;
+        best_dist = sum_dist;
+        best_rd = sum_rd;
+        larger_is_better = 0;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+      } else {
+        larger_is_better = partition_none_allowed;
+      }
+    }
+    partition_split_done = 1;
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
   // Use 4 subblocks' motion estimation results to speed up current
@@ -1770,165 +1802,92 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     compute_fast_motion_search_level(cpi, bsize);
   }
 
-  if (!cpi->sf.auto_min_max_partition_size ||
-      bsize <= cpi->sf.max_partition_size) {
-    int larger_is_better = 0;
 
-    // PARTITION_NONE
-    if (partition_none_allowed) {
-      pick_sb_modes(cpi, mi_row, mi_col, &this_rate, &this_dist, bsize,
-                    get_block_context(x, bsize), best_rd);
-      if (this_rate != INT_MAX) {
-        if (bsize >= BLOCK_8X8) {
-          set_partition_seg_context(cm, xd, mi_row, mi_col);
-          pl = partition_plane_context(xd, bsize);
-          this_rate += x->partition_cost[pl][PARTITION_NONE];
-        }
-        sum_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_dist);
-        if (sum_rd < best_rd || bsize == BLOCK_8X8) {
-          best_rate = this_rate;
-          best_dist = this_dist;
-          best_rd = sum_rd;
-          larger_is_better = 1;
-          if (bsize >= BLOCK_8X8)
-            *(get_sb_partitioning(x, bsize)) = bsize;
-        }
-      }
-    }
+  // PARTITION_HORZ
+  if (partition_horz_allowed && do_rect &&
+      (!cpi->sf.less_rectangular_check || !larger_is_better)) {
+    subsize = get_subsize(bsize, PARTITION_HORZ);
+    *(get_sb_index(xd, subsize)) = 0;
+    pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
+                  get_block_context(x, subsize), best_rd);
+    sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
 
-    if (bsize == BLOCK_8X8 && do_split) {
-      sum_rate = 0; sum_dist = 0; sum_rd = 0;
+    if (sum_rd < best_rd && mi_row + (ms >> 1) < cm->mi_rows) {
+      update_state(cpi, get_block_context(x, subsize), subsize, 0);
+      encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
-      subsize = get_subsize(bsize, PARTITION_SPLIT);
-
-      for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
-        int x_idx = (i & 1) * (ms >> 1);
-        int y_idx = (i >> 1) * (ms >> 1);
-
-        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
-          continue;
-
-        *(get_sb_index(xd, subsize)) = i;
-        rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
-                          &this_rate, &this_dist, i != 3, best_rd - sum_rd);
-
-        if (this_rate == INT_MAX) {
-          sum_rd = INT64_MAX;
-        } else {
-          sum_rate += this_rate;
-          sum_dist += this_dist;
-          sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        }
-      }
-      if (sum_rd < best_rd && i == 4) {
-        set_partition_seg_context(cm, xd, mi_row, mi_col);
-        pl = partition_plane_context(xd, bsize);
-        sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
+      *(get_sb_index(xd, subsize)) = 1;
+      pick_sb_modes(cpi, mi_row + (ms >> 1), mi_col, &this_rate,
+                    &this_dist, subsize, get_block_context(x, subsize),
+                    best_rd - sum_rd);
+      if (this_rate == INT_MAX) {
+        sum_rd = INT64_MAX;
+      } else {
+        sum_rate += this_rate;
+        sum_dist += this_dist;
         sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-        if (sum_rd < best_rd) {
-          best_rate = sum_rate;
-          best_dist = sum_dist;
-          best_rd = sum_rd;
-          larger_is_better = 0;
-          *(get_sb_partitioning(x, bsize)) = subsize;
-        }
-      }
-      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-    }
-
-    if (do_rect &&
-        !cpi->sf.use_square_partition_only &&
-        (!cpi->sf.less_rectangular_check || !larger_is_better)) {
-      // PARTITION_HORZ
-      if (partition_horz_allowed) {
-        subsize = get_subsize(bsize, PARTITION_HORZ);
-        if (!cpi->sf.auto_min_max_partition_size || force_horz_split ||
-            subsize >= cpi->sf.min_partition_size) {
-          *(get_sb_index(xd, subsize)) = 0;
-          pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
-                        get_block_context(x, subsize), best_rd);
-          sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-
-          if (sum_rd < best_rd && mi_row + (ms >> 1) < cm->mi_rows) {
-            update_state(cpi, get_block_context(x, subsize), subsize, 0);
-            encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
-
-            *(get_sb_index(xd, subsize)) = 1;
-            pick_sb_modes(cpi, mi_row + (ms >> 1), mi_col, &this_rate,
-                          &this_dist, subsize, get_block_context(x, subsize),
-                          best_rd - sum_rd);
-            if (this_rate == INT_MAX) {
-              sum_rd = INT64_MAX;
-            } else {
-              sum_rate += this_rate;
-              sum_dist += this_dist;
-              sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-            }
-          }
-          if (sum_rd < best_rd) {
-            set_partition_seg_context(cm, xd, mi_row, mi_col);
-            pl = partition_plane_context(xd, bsize);
-            sum_rate += x->partition_cost[pl][PARTITION_HORZ];
-            sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-            if (sum_rd < best_rd) {
-              best_rd = sum_rd;
-              best_rate = sum_rate;
-              best_dist = sum_dist;
-              *(get_sb_partitioning(x, bsize)) = subsize;
-            }
-          }
-          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-        }
-      }
-
-      // PARTITION_VERT
-      if (partition_vert_allowed) {
-        subsize = get_subsize(bsize, PARTITION_VERT);
-        if (!cpi->sf.auto_min_max_partition_size || force_vert_split ||
-            subsize >= cpi->sf.min_partition_size) {
-          *(get_sb_index(xd, subsize)) = 0;
-          pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
-                        get_block_context(x, subsize), best_rd);
-          sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-          if (sum_rd < best_rd && mi_col + (ms >> 1) < cm->mi_cols) {
-            update_state(cpi, get_block_context(x, subsize), subsize, 0);
-            encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
-
-            *(get_sb_index(xd, subsize)) = 1;
-            pick_sb_modes(cpi, mi_row, mi_col + (ms >> 1), &this_rate,
-                          &this_dist, subsize, get_block_context(x, subsize),
-                          best_rd - sum_rd);
-            if (this_rate == INT_MAX) {
-              sum_rd = INT64_MAX;
-            } else {
-              sum_rate += this_rate;
-              sum_dist += this_dist;
-              sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-            }
-          }
-          if (sum_rd < best_rd) {
-            set_partition_seg_context(cm, xd, mi_row, mi_col);
-            pl = partition_plane_context(xd, bsize);
-            sum_rate += x->partition_cost[pl][PARTITION_VERT];
-            sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
-            if (sum_rd < best_rd) {
-              best_rate = sum_rate;
-              best_dist = sum_dist;
-              best_rd = sum_rd;
-              *(get_sb_partitioning(x, bsize)) = subsize;
-            }
-          }
-          restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-        }
       }
     }
+    if (sum_rd < best_rd) {
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      sum_rate += x->partition_cost[pl][PARTITION_HORZ];
+      sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      if (sum_rd < best_rd) {
+        best_rd = sum_rd;
+        best_rate = sum_rate;
+        best_dist = sum_dist;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+      }
+    }
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
+  // PARTITION_VERT
+  if (partition_vert_allowed && do_rect &&
+      (!cpi->sf.less_rectangular_check || !larger_is_better)) {
+    subsize = get_subsize(bsize, PARTITION_VERT);
+
+    *(get_sb_index(xd, subsize)) = 0;
+    pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
+                  get_block_context(x, subsize), best_rd);
+    sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+    if (sum_rd < best_rd && mi_col + (ms >> 1) < cm->mi_cols) {
+      update_state(cpi, get_block_context(x, subsize), subsize, 0);
+      encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+
+      *(get_sb_index(xd, subsize)) = 1;
+      pick_sb_modes(cpi, mi_row, mi_col + (ms >> 1), &this_rate,
+                    &this_dist, subsize, get_block_context(x, subsize),
+                    best_rd - sum_rd);
+      if (this_rate == INT_MAX) {
+        sum_rd = INT64_MAX;
+      } else {
+        sum_rate += this_rate;
+        sum_dist += this_dist;
+        sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      }
+    }
+    if (sum_rd < best_rd) {
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      sum_rate += x->partition_cost[pl][PARTITION_VERT];
+      sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
+      if (sum_rd < best_rd) {
+        best_rate = sum_rate;
+        best_dist = sum_dist;
+        best_rd = sum_rd;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+      }
+    }
+    restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+  }
+
+
   *rate = best_rate;
   *dist = best_dist;
 
-  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
-
-  if (best_rate < INT_MAX && best_dist < INT_MAX && do_recon)
+  if (best_rate < INT_MAX && best_dist < INT64_MAX && do_recon)
     encode_sb(cpi, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
   if (bsize == BLOCK_64X64) {
     assert(tp_orig < *tp);
