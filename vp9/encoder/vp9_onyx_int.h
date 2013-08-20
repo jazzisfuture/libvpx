@@ -29,6 +29,8 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/encoder/vp9_lookahead.h"
 
+#define VAQ 1
+
 // Experimental rate control switches
 #if CONFIG_ONESHOTQ
 #define ONE_SHOT_Q_ESTIMATE 0
