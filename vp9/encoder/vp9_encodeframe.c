@@ -35,6 +35,7 @@
 #include "vpx_ports/vpx_timer.h"
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_mvref_common.h"
+#include "vp9/common/vp9_subpelvar.h"
 
 #define DBG_PRNT_SEGMAP 0
 
@@ -80,7 +81,7 @@ static unsigned int get_sb_variance(VP9_COMP *cpi, MACROBLOCK *x,
   var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                            x->plane[0].src.stride,
                            VP9_VAR_OFFS, 0, &sse);
-  return var >> num_pels_log2_lookup[bs];
+  return (256 * var) >> num_pels_log2_lookup[bs];
 }
 
 // Original activity measure from Tim T's code.
@@ -360,6 +361,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       if ((xd->mb_to_right_edge >> (3 + LOG2_MI_SIZE)) + mi_width > x_idx
           && (xd->mb_to_bottom_edge >> (3 + LOG2_MI_SIZE)) + mi_height > y)
         xd->mode_info_context[x_idx + y * mis] = *mi;
+  vp9_mb_init_quantizer(cpi, x);
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -515,16 +517,13 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
   /* set up source buffers */
   vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
 
-  /* R/D setup */
-  x->rddiv = cpi->RDDIV;
-  x->rdmult = cpi->RDMULT;
-
   /* segment ID */
   if (seg->enabled) {
+#if 0
     uint8_t *map = seg->update_map ? cpi->segmentation_map
                                    : cm->last_frame_seg_map;
     mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
-
+#endif
     vp9_mb_init_quantizer(cpi, x);
 
     if (seg->enabled && cpi->seg0_cnt > 0
@@ -558,6 +557,11 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+  int segments[] = { 5, 3, 1, 0, 2, 4, 6 };
+  int delta_min = -3;
+  int delta_max = 3;
+  double strength = 1.0;
+  int factor, var;
 
   x->use_lp32x32fdct = 1;
 
@@ -574,7 +578,23 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   set_offsets(cpi, mi_row, mi_col, bsize);
   xd->mode_info_context->mbmi.sb_type = bsize;
 
+  // FIXME: Properly compute the variance of edge blocks
   x->source_variance = get_sb_variance(cpi, x, bsize);
+
+#if VAQ
+  if (bsize < BLOCK_8X8) {
+    // Segments are assigned at the 8x8 level
+    assert(xd->ab_index == 0);
+    var = get_sb_variance(cpi, x, BLOCK_8X8);
+  } else {
+    var = x->source_variance;
+  }
+  factor = strength*((logbf(var) - 14.427f)*3.0/5.0) + 0.5f;
+  xd->mode_info_context->mbmi.segment_id =
+      segments[clamp(factor, delta_min, delta_max) + 3];
+  vp9_mb_init_quantizer(cpi, x);
+#endif
+
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
 
@@ -1463,13 +1483,23 @@ static const BLOCK_SIZE_TYPE max_partition_size[BLOCK_SIZES] =
 static void rd_auto_partition_range(VP9_COMP *cpi,
                                     BLOCK_SIZE_TYPE * min_block_size,
                                     BLOCK_SIZE_TYPE * max_block_size) {
+#if 0
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   const MODE_INFO *const mi = xd->mode_info_context;
   const MB_MODE_INFO *const above_mbmi = &mi[-xd->mode_info_stride].mbmi;
   const MB_MODE_INFO *const left_mbmi = &mi[-1].mbmi;
   const int left_in_image = xd->left_available && left_mbmi->mb_in_image;
   const int above_in_image = xd->up_available && above_mbmi->mb_in_image;
+#endif
 
+#if FORCE_BLOCK_SIZE
+  *min_block_size = MIN_BLOCK_SIZE;
+  *max_block_size = MAX_BLOCK_SIZE;
+#else
+  *min_block_size = BLOCK_4X4;
+  *max_block_size = BLOCK_64X64;
+#endif
+#if 0
   // Frequency check
   if (cpi->sf.auto_min_max_partition_count <= 0) {
     cpi->sf.auto_min_max_partition_count =
@@ -1497,6 +1527,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi,
     *max_block_size =
       max_partition_size[MAX(left_mbmi->sb_type, above_mbmi->sb_type)];
   }
+#endif
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *const cpi,
@@ -2086,6 +2117,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_frame_init_quantizer(cpi);
 
   vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y_dc_delta_q);
+  vp9_initialize_token_costs(cpi);
   vp9_initialize_me_consts(cpi, cm->base_qindex);
   switch_tx_mode(cpi);
 
