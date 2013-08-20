@@ -12,6 +12,7 @@
 #include "vpx_mem/vpx_mem.h"
 
 #include "vp9/encoder/vp9_onyx_int.h"
+#include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/common/vp9_quant_common.h"
 
@@ -275,11 +276,14 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
 
 void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
   int i;
+  VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   int zbin_extra;
   int segment_id = xd->mode_info_context->mbmi.segment_id;
   const int qindex = vp9_get_qindex(&cpi->common.seg, segment_id,
                                     cpi->common.base_qindex);
+
+  int rdmult = vp9_compute_rd_mult(qindex + cm->y_dc_delta_q);
 
   // Y
   zbin_extra = (cpi->common.y_dequant[qindex][1] *
@@ -319,6 +323,13 @@ void vp9_mb_init_quantizer(VP9_COMP *cpi, MACROBLOCK *x) {
 
   /* save this macroblock QIndex for vp9_update_zbin_extra() */
   x->e_mbd.q_index = qindex;
+
+  /* R/D setup */
+  //vp9_initialize_rd_consts(cpi, xd->q_index + cm->y_dc_delta_q);
+  cpi->mb.errorperbit = rdmult >> 6;
+  cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
+
+  vp9_initialize_me_consts(cpi, xd->q_index);
 }
 
 void vp9_update_zbin_extra(VP9_COMP *cpi, MACROBLOCK *x) {

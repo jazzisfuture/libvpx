@@ -29,6 +29,12 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/encoder/vp9_lookahead.h"
 
+#define VAQ 1
+#define VAQ_CHROMA 0
+#define FORCE_BLOCK_SIZE 0
+#define MIN_BLOCK_SIZE BLOCK_16X16
+#define MAX_BLOCK_SIZE BLOCK_16X16
+
 // Experimental rate control switches
 #if CONFIG_ONESHOTQ
 #define ONE_SHOT_Q_ESTIMATE 0

@@ -28,6 +28,7 @@
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_seg_common.h"
+#include "vp9/common/vp9_subpelvar.h"
 #include "vp9/common/vp9_tile_common.h"
 
 #include "vp9/encoder/vp9_encodeframe.h"
@@ -76,6 +77,31 @@ static const uint8_t VP9_VAR_OFFS[64] = {
   128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128
 };
+
+
+static unsigned int get_sb_perpixel_variance_2(VP9_COMP *cpi, MACROBLOCK *x,
+                                               BLOCK_SIZE bs) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  unsigned int var, sse;
+  int right_overflow = (xd->mb_to_right_edge < 0) ?
+      -(xd->mb_to_right_edge >> 3) : 0;
+  int bottom_overflow = (xd->mb_to_bottom_edge < 0) ?
+      -(xd->mb_to_bottom_edge >> 3) : 0;
+
+  if (right_overflow || bottom_overflow) {
+    int bw = (1 << (mi_width_log2(bs)  + 3)) - right_overflow;
+    int bh = (1 << (mi_height_log2(bs) + 3)) - bottom_overflow;
+    int avg;
+    variance(x->plane[0].src.buf, x->plane[0].src.stride,
+             VP9_VAR_OFFS, 0, bw, bh, &sse, &avg);
+    var = sse - (((int64_t)avg * avg) / (bw * bh));
+  } else {
+    var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
+                             x->plane[0].src.stride,
+                             VP9_VAR_OFFS, 0, &sse);
+  }
+  return (256 * var) >> num_pels_log2_lookup[bs];
+}
 
 static unsigned int get_sby_perpixel_variance(VP9_COMP *cpi, MACROBLOCK *x,
                                               BLOCK_SIZE bs) {
@@ -362,6 +388,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       if ((xd->mb_to_right_edge >> (3 + MI_SIZE_LOG2)) + mi_width > x_idx
           && (xd->mb_to_bottom_edge >> (3 + MI_SIZE_LOG2)) + mi_height > y)
         xd->mode_info_context[x_idx + y * mis] = *mi;
+  vp9_mb_init_quantizer(cpi, x);
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -521,10 +548,11 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
 
   /* segment ID */
   if (seg->enabled) {
+#if 0
     uint8_t *map = seg->update_map ? cpi->segmentation_map
                                    : cm->last_frame_seg_map;
     mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
-
+#endif
     vp9_mb_init_quantizer(cpi, x);
 
     if (seg->enabled && cpi->seg0_cnt > 0
@@ -558,6 +586,21 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+  int segments[] = { 5, 3, 1, 0, 2, 4, 6 };
+  int delta_min = -3;
+  int delta_max = 3;
+  double strength = 1.0;
+  double factor;
+  int var;
+  int segment;
+  int segment_id;
+  int orig_rddiv = x->rddiv;
+  int orig_rdmult = x->rdmult;
+
+  int qindex;
+  double real_rdmult, base_rdmult, avg_rdmult;
+  double rate_factor = 1.0;
+  double dist_factor = 1.0;
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
@@ -580,8 +623,42 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
 
   x->source_variance = get_sby_perpixel_variance(cpi, x, bsize);
 
+#if VAQ
+  if (bsize < BLOCK_8X8) {
+    // Segments are assigned at the 8x8 level
+    assert(xd->ab_index == 0);
+    var = get_sb_perpixel_variance_2(cpi, x, BLOCK_8X8);
+    //delta_min = -1;
+  } else {
+    var = get_sb_perpixel_variance_2(cpi, x, bsize);
+  }
+
+  // factor = (int)(strength*((logbf(var + 1) - 14.427f)*3.0/5.0) + 0.5f);
+  // factor = clamp(strength*(logbf(var + 1) - 14.427f) + 0.5, -5, 5);
+  // segment = clamp(factor*3.0/5.0, delta_min, delta_max);
+
+  factor = strength*((logbf(var + 1) - 14.427f)*3.0/5.0);
+  segment = clamp(round(factor), delta_min, delta_max);
+
+  xd->mode_info_context->mbmi.segment_id = segment_id = segments[segment + 3];
+
+  vp9_mb_init_quantizer(cpi, x);
+
+  qindex = vp9_get_qindex(&cpi->common.seg, segment_id,
+                          cpi->common.base_qindex);
+  real_rdmult = vp9_compute_rd_mult(qindex + cm->y_dc_delta_q);
+  base_rdmult = vp9_compute_rd_mult(cpi->common.base_qindex + cm->y_dc_delta_q);
+
+  // If Q is higher, we care less about distortion and more about rate
+  avg_rdmult = (base_rdmult + real_rdmult)/2.0;
+  dist_factor = avg_rdmult/real_rdmult;
+  rate_factor = avg_rdmult/base_rdmult;
+#endif
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
+
+  x->rddiv = round(x->rddiv * dist_factor);
+  x->rdmult = round(x->rdmult * rate_factor);
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
@@ -591,6 +668,15 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   else
     vp9_rd_pick_inter_mode_sb(cpi, x, mi_row, mi_col, totalrate, totaldist,
                               bsize, ctx, best_rd);
+
+  // RDCOST will be computed using the frame rddiv and rdmult,
+  // so we have to adjust the actual dist and rate to not alter the cost
+  x->rddiv = orig_rddiv;
+  x->rdmult = orig_rdmult;
+  if (*totalrate != INT_MAX && *totaldist != INT64_MAX) {
+    *totaldist = round(*totaldist * dist_factor);
+    *totalrate = round(*totalrate * rate_factor);
+  }
 }
 
 static void update_stats(VP9_COMP *cpi) {
@@ -1488,6 +1574,7 @@ static void get_sb_partition_size_range(VP9_COMP *cpi, MODE_INFO * mi,
 static void rd_auto_partition_range(VP9_COMP *cpi,
                                     BLOCK_SIZE *min_block_size,
                                     BLOCK_SIZE *max_block_size) {
+#if 0
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   MODE_INFO *mi = xd->mode_info_context;
   MODE_INFO *above_sb64_mi;
@@ -1496,7 +1583,16 @@ static void rd_auto_partition_range(VP9_COMP *cpi,
   const MB_MODE_INFO *const left_mbmi = &mi[-1].mbmi;
   const int left_in_image = xd->left_available && left_mbmi->in_image;
   const int above_in_image = xd->up_available && above_mbmi->in_image;
+#endif
 
+#if FORCE_BLOCK_SIZE
+  *min_block_size = MIN_BLOCK_SIZE;
+  *max_block_size = MAX_BLOCK_SIZE;
+#else
+  *min_block_size = BLOCK_4X4;
+  *max_block_size = BLOCK_64X64;
+#endif
+#if 0
   // Frequency check
   if (cpi->sf.auto_min_max_partition_count <= 0) {
     cpi->sf.auto_min_max_partition_count =
@@ -1536,6 +1632,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi,
     *min_block_size = min_partition_size[*min_block_size];
     *max_block_size = max_partition_size[*max_block_size];
   }
+#endif
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
@@ -2105,6 +2202,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   vp9_frame_init_quantizer(cpi);
 
   vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y_dc_delta_q);
+  vp9_initialize_token_costs(cpi);
   vp9_initialize_me_consts(cpi, cm->base_qindex);
   switch_tx_mode(cpi);
 
