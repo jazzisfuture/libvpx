@@ -3601,6 +3601,12 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         continue;
     }
 
+#ifdef MODE_TEST_HIT_STATS
+    // TEST/DEBUG CODE
+    // Keep a rcord of the number of test hits at each size
+    cpi->mode_test_hits[bsize]++;
+#endif
+
     if (cpi->common.comp_pred_mode == HYBRID_PREDICTION) {
       rate2 += compmode_cost;
     }
