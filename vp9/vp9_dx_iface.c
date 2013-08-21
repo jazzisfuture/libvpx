@@ -152,7 +152,12 @@ static vpx_codec_err_t vp9_peek_si(const uint8_t         *data,
     const int frame_marker = (data[0] >> 6) & 0x3;
     const int version = (data[0] >> 4) & 0x3;
     if (frame_marker != 0x2) return VPX_CODEC_UNSUP_BITSTREAM;
+
+#ifdef CONFIG_NON420
+    if (version != 2 && version != 0) return VPX_CODEC_UNSUP_BITSTREAM;
+#else
     if (version != 0) return VPX_CODEC_UNSUP_BITSTREAM;
+#endif
 
     si->is_kf = !((data[0] >> 2) & 0x1);
     if (si->is_kf) {
