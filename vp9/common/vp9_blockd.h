@@ -500,14 +500,6 @@ static INLINE void foreach_predicted_block_in_plane(
     i += (1 << (bwl + pred_h)) - (1 << bwl);
   }
 }
-static INLINE void foreach_predicted_block(
-    const MACROBLOCKD* const xd, BLOCK_SIZE_TYPE bsize,
-    foreach_predicted_block_visitor visit, void *arg) {
-  int plane;
-
-  for (plane = 0; plane < MAX_MB_PLANE; plane++)
-    foreach_predicted_block_in_plane(xd, bsize, plane, visit, arg);
-}
 
 static int raster_block_offset(BLOCK_SIZE_TYPE plane_bsize,
                                int raster_block, int stride) {
