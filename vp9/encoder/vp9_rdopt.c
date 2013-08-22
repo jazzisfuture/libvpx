@@ -2286,7 +2286,9 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   // in full and choose the best as the centre point for subsequent searches.
   // The current implementation doesn't support scaling.
   if (scale[frame_type].x_scale_fp == VP9_REF_NO_SCALE &&
-      scale[frame_type].y_scale_fp == VP9_REF_NO_SCALE)
+      scale[frame_type].y_scale_fp == VP9_REF_NO_SCALE &&
+      mi_col + num_8x8_blocks_wide_lookup[block_size] < cm->mi_cols &&
+      mi_row + num_8x8_blocks_high_lookup[block_size] < cm->mi_rows)
     mv_pred(cpi, x, yv12_mb[frame_type][0].buf, yv12->y_stride,
             frame_type, block_size);
 }
