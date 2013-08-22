@@ -187,7 +187,7 @@ class ConvolveTest : public PARAMS(int, int, const ConvolveFunctions*) {
 
  protected:
   static const int kDataAlignment = 16;
-  static const int kOuterBlockSize = 128;
+  static const int kOuterBlockSize = 256;
   static const int kInputStride = kOuterBlockSize;
   static const int kOutputStride = kOuterBlockSize;
   static const int kMaxDimension = 64;
@@ -222,6 +222,11 @@ class ConvolveTest : public PARAMS(int, int, const ConvolveFunctions*) {
     ::libvpx_test::ACMRandom prng;
     for (int i = 0; i < kInputBufferSize; ++i)
       input_[i] = prng.Rand8Extremes();
+  }
+
+  void SetConstantInput(int value) {
+    for (int i = 0; i < kInputBufferSize; ++i)
+      input_[i] = value;
   }
 
   void CheckGuardBlocks() {
@@ -539,6 +544,35 @@ TEST_P(ConvolveTest, ChangeFilterWorks) {
 
       ASSERT_EQ(in[ref_y * kInputStride + ref_x], out[y * kOutputStride + x])
           << "x == " << x << ", y == " << y;
+    }
+  }
+}
+
+/* This test exercises that enough rows and columns are filtered with every
+   possible initial fractional positions and scaling steps. */
+TEST_P(ConvolveTest, CheckScalingFiltering) {
+  uint8_t* const in = input();
+  uint8_t* const out = output();
+  int frac, step;
+
+  SetConstantInput(127);
+
+  for (frac = 0; frac < 16; frac++) {
+    for (step = 1; step <= 32; step++) {
+      /* Test the horizontal and vertical filters in combination. */
+      REGISTER_STATE_CHECK(UUT_->hv8_(in, kInputStride, out, kOutputStride,
+            vp9_sub_pel_filters_8[frac], step, vp9_sub_pel_filters_8[frac], step,
+            Width(), Height()));
+
+      CheckGuardBlocks();
+
+      for (int y = 0; y < Height(); ++y) {
+        for (int x = 0; x < Width(); ++x) {
+          ASSERT_EQ(in[y * kInputStride + x], out[y * kOutputStride + x])
+            << "x == " << x << ", y == " << y
+            << ", frac == " << frac << ", step == " << step;
+        }
+      }
     }
   }
 }
