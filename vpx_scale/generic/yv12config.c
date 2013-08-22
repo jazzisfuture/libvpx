@@ -150,6 +150,7 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #endif
     if (!ybf->buffer_alloc) {
       ybf->buffer_alloc = vpx_memalign(32, frame_size);
+      vpx_memset(ybf->buffer_alloc, 0, frame_size);
       ybf->buffer_alloc_sz = frame_size;
     }
 
