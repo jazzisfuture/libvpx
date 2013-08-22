@@ -1540,16 +1540,18 @@ static void rd_auto_partition_range(VP9_COMP *cpi,
     // Find the min and max partition sizes used in the left SB64
     if (left_in_image) {
       left_sb64_mi = &mi[-MI_BLOCK_SIZE];
-      get_sb_partition_size_range(cpi, left_sb64_mi,
-                                  min_block_size, max_block_size);
+      if(left_sb64_mi->mbmi.in_image)
+        get_sb_partition_size_range(cpi, left_sb64_mi,
+                                    min_block_size, max_block_size);
     }
 
     // Find the min and max partition sizes used in the above SB64 taking
     // the values found for left as a starting point.
     if (above_in_image) {
       above_sb64_mi = &mi[-xd->mode_info_stride * MI_BLOCK_SIZE];
-      get_sb_partition_size_range(cpi, above_sb64_mi,
-                                  min_block_size, max_block_size);
+      if(above_sb64_mi->mbmi.in_image)
+        get_sb_partition_size_range(cpi, above_sb64_mi,
+                                    min_block_size, max_block_size);
     }
 
     // give a bit of leaway either side of the observed min and max
