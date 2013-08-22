@@ -593,7 +593,12 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   // Set to zero to make sure we do not use the previous encoded frame stats
   xd->mode_info_context->mbmi.skip_coeff = 0;
 
-  x->source_variance = get_sby_perpixel_variance(cpi, x, bsize);
+
+  if (mi_col + num_8x8_blocks_wide_lookup[bsize] < cm->mi_cols &&
+      mi_row + num_8x8_blocks_high_lookup[bsize] < cm->mi_rows)
+    x->source_variance = get_sby_perpixel_variance(cpi, x, bsize);
+  else
+    x->source_variance = INT_MAX;
 
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
