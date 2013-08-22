@@ -8,33 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "./vpx_config.h"
-#include "./vp9_rtcd.h"
-#include "vp9/encoder/vp9_encodeframe.h"
-#include "vp9/encoder/vp9_encodemb.h"
-#include "vp9/encoder/vp9_encodemv.h"
-#include "vp9/common/vp9_common.h"
-#include "vp9/encoder/vp9_onyx_int.h"
-#include "vp9/common/vp9_extend.h"
-#include "vp9/common/vp9_entropy.h"
-#include "vp9/common/vp9_entropymode.h"
-#include "vp9/common/vp9_quant_common.h"
-#include "vp9/encoder/vp9_segmentation.h"
-#include "vp9/encoder/vp9_encodeintra.h"
-#include "vp9/common/vp9_reconinter.h"
-#include "vp9/encoder/vp9_rdopt.h"
-#include "vp9/common/vp9_findnearmv.h"
-#include "vp9/common/vp9_reconintra.h"
-#include "vp9/common/vp9_seg_common.h"
-#include "vp9/common/vp9_tile_common.h"
-#include "vp9/encoder/vp9_tokenize.h"
-#include "./vp9_rtcd.h"
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
+
+#include "./vp9_rtcd.h"
+#include "./vpx_config.h"
+
 #include "vpx_ports/vpx_timer.h"
-#include "vp9/common/vp9_pred_common.h"
+
+#include "vp9/common/vp9_common.h"
+#include "vp9/common/vp9_entropy.h"
+#include "vp9/common/vp9_entropymode.h"
+#include "vp9/common/vp9_extend.h"
+#include "vp9/common/vp9_findnearmv.h"
 #include "vp9/common/vp9_mvref_common.h"
+#include "vp9/common/vp9_pred_common.h"
+#include "vp9/common/vp9_quant_common.h"
+#include "vp9/common/vp9_reconintra.h"
+#include "vp9/common/vp9_reconinter.h"
+#include "vp9/common/vp9_seg_common.h"
+#include "vp9/common/vp9_tile_common.h"
+
+#include "vp9/encoder/vp9_encodeframe.h"
+#include "vp9/encoder/vp9_encodeintra.h"
+#include "vp9/encoder/vp9_encodemb.h"
+#include "vp9/encoder/vp9_encodemv.h"
+#include "vp9/encoder/vp9_onyx_int.h"
+#include "vp9/encoder/vp9_rdopt.h"
+#include "vp9/encoder/vp9_segmentation.h"
+#include "vp9/encoder/vp9_tokenize.h"
 
 #define DBG_PRNT_SEGMAP 0
 
@@ -82,24 +85,6 @@ static unsigned int get_sby_perpixel_variance(VP9_COMP *cpi, MACROBLOCK *x,
                            VP9_VAR_OFFS, 0, &sse);
   return (var + (1 << (num_pels_log2_lookup[bs] - 1))) >>
       num_pels_log2_lookup[bs];
-}
-
-static unsigned int get_sbuv_perpixel_variance(VP9_COMP *cpi, MACROBLOCK *x,
-                                               BLOCK_SIZE_TYPE bs) {
-  unsigned int varu, varv, sse;
-  BLOCK_SIZE_TYPE uvbs = ss_size_lookup[bs]
-                                       [x->e_mbd.plane[1].subsampling_x]
-                                       [x->e_mbd.plane[1].subsampling_y];
-  if (uvbs == BLOCK_INVALID)
-    return 0;
-  varu = cpi->fn_ptr[uvbs].vf(x->plane[1].src.buf,
-                              x->plane[1].src.stride,
-                              VP9_VAR_OFFS, 0, &sse);
-  varv = cpi->fn_ptr[uvbs].vf(x->plane[2].src.buf,
-                              x->plane[2].src.stride,
-                              VP9_VAR_OFFS, 0, &sse);
-  return (varu + varv + (1 << num_pels_log2_lookup[uvbs])) >>
-      (1 + num_pels_log2_lookup[uvbs]);
 }
 
 // Original activity measure from Tim T's code.
@@ -620,30 +605,31 @@ static void update_stats(VP9_COMP *cpi) {
                                                      SEG_LVL_REF_FRAME);
 
     if (!seg_ref_active)
-      cpi->intra_inter_count[vp9_get_pred_context_intra_inter(xd)][mbmi
-          ->ref_frame[0] > INTRA_FRAME]++;
+      cpi->intra_inter_count[vp9_get_pred_context_intra_inter(xd)]
+                            [is_inter_block(mbmi)]++;
 
     // If the segment reference feature is enabled we have only a single
     // reference frame allowed for the segment so exclude it from
     // the reference frame counts used to work out probabilities.
-    if ((mbmi->ref_frame[0] > INTRA_FRAME) && !seg_ref_active) {
+    if (is_inter_block(mbmi) && !seg_ref_active) {
       if (cm->comp_pred_mode == HYBRID_PREDICTION)
         cpi->comp_inter_count[vp9_get_pred_context_comp_inter_inter(cm, xd)]
-                              [mbmi->ref_frame[1] > INTRA_FRAME]++;
+                             [has_second_ref(mbmi)]++;
 
-      if (mbmi->ref_frame[1] > INTRA_FRAME) {
-        cpi->comp_ref_count[vp9_get_pred_context_comp_ref_p(cm, xd)][mbmi
-            ->ref_frame[0] == GOLDEN_FRAME]++;
+      if (has_second_ref(mbmi)) {
+        cpi->comp_ref_count[vp9_get_pred_context_comp_ref_p(cm, xd)]
+                           [mbmi->ref_frame[0] == GOLDEN_FRAME]++;
       } else {
-        cpi->single_ref_count[vp9_get_pred_context_single_ref_p1(xd)]
-                              [0][mbmi->ref_frame[0] != LAST_FRAME]++;
+        cpi->single_ref_count[vp9_get_pred_context_single_ref_p1(xd)][0]
+                             [mbmi->ref_frame[0] != LAST_FRAME]++;
         if (mbmi->ref_frame[0] != LAST_FRAME)
           cpi->single_ref_count[vp9_get_pred_context_single_ref_p2(xd)][1]
-              [mbmi->ref_frame[0] != GOLDEN_FRAME]++;
+                               [mbmi->ref_frame[0] != GOLDEN_FRAME]++;
       }
     }
+
     // Count of last ref frame 0,0 usage
-    if ((mbmi->mode == ZEROMV) && (mbmi->ref_frame[0] == LAST_FRAME))
+    if (mbmi->mode == ZEROMV && mbmi->ref_frame[0] == LAST_FRAME)
       cpi->inter_zz_count++;
   }
 }
@@ -2671,7 +2657,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     vp9_update_zbin_extra(cpi, x);
   }
 
-  if (mbmi->ref_frame[0] == INTRA_FRAME) {
+  if (!is_inter_block(mbmi)) {
     vp9_encode_intra_block_y(x, MAX(bsize, BLOCK_8X8));
     vp9_encode_intra_block_uv(x, MAX(bsize, BLOCK_8X8));
     if (output_enabled)
@@ -2696,7 +2682,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
   }
 
-  if (mbmi->ref_frame[0] == INTRA_FRAME) {
+  if (!is_inter_block(mbmi)) {
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
   } else if (!x->skip) {
     vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
