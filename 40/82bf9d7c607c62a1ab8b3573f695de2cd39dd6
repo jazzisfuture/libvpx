@@ -1,0 +1,10 @@
+Code-Review+1: Frank Galligan <fgalligan@google.com>
+Code-Review+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Hangyu Kuang <hkuang@google.com>
+Code-Review+2: Hangyu Kuang <hkuang@google.com>
+Verified+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: Hangyu Kuang <hkuang@google.com>
+Submitted-at: Thu, 22 Aug 2013 15:57:28 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/66556
+Project: webm/libvpx
+Branch: refs/heads/master
