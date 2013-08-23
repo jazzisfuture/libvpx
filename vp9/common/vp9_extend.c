@@ -57,15 +57,18 @@ static void copy_and_extend_plane(const uint8_t *src, int src_pitch,
 
 void vp9_copy_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                                YV12_BUFFER_CONFIG *dst) {
-  const int et_y = dst->border;
-  const int el_y = dst->border;
-  const int eb_y = dst->border + dst->y_height - src->y_height;
-  const int er_y = dst->border + dst->y_width - src->y_width;
-
-  const int et_uv = dst->border >> (dst->uv_height != dst->y_height);
-  const int el_uv = dst->border >> (dst->uv_width != dst->y_width);
-  const int eb_uv = et_uv + dst->uv_height - src->uv_height;
-  const int er_uv = el_uv + dst->uv_width - src->uv_width;
+  const int et_y = 0;
+  const int el_y = 0;
+  const int eb_y = ALIGN_POWER_OF_TWO(src->y_width, 6) - src->y_width;
+  const int er_y = ALIGN_POWER_OF_TWO(src->y_height, 6) - src->y_height;
+  const int et_uv = 0;
+  const int el_uv = 0;
+  const int eb_uv = ALIGN_POWER_OF_TWO(src->uv_width,
+                                       6 - (src->uv_width != src->y_width))
+                    - src->uv_width;
+  const int er_uv = ALIGN_POWER_OF_TWO(src->uv_height,
+                                       6 - (src->uv_height != src->y_height))
+                    - src->uv_height;
 
 #if CONFIG_ALPHA
   const int et_a = dst->border >> (dst->alpha_height != dst->y_height);
