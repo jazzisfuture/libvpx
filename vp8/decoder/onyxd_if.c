@@ -132,7 +132,7 @@ vpx_codec_err_t vp8dx_get_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
             "Incorrect buffer dimensions");
     }
     else
-        vp8_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
+        vpx_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
 
     return pbi->common.error.error_code;
 }
@@ -172,7 +172,7 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
 
         /* Manage the reference counters and copy image. */
         ref_cnt_fb (cm->fb_idx_ref_cnt, ref_fb_ptr, free_fb);
-        vp8_yv12_copy_frame(sd, &cm->yv12_fb[*ref_fb_ptr]);
+        vpx_yv12_copy_frame(sd, &cm->yv12_fb[*ref_fb_ptr]);
     }
 
    return pbi->common.error.error_code;
@@ -283,7 +283,7 @@ int check_fragments_for_errors(VP8D_COMP *pbi)
             const int prev_idx = cm->lst_fb_idx;
             cm->fb_idx_ref_cnt[prev_idx]--;
             cm->lst_fb_idx = get_free_fb(cm);
-            vp8_yv12_copy_frame(&cm->yv12_fb[prev_idx],
+            vpx_yv12_copy_frame(&cm->yv12_fb[prev_idx],
                                     &cm->yv12_fb[cm->lst_fb_idx]);
         }
         /* This is used to signal that we are missing frames.

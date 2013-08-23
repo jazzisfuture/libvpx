@@ -658,7 +658,7 @@ int vp9_post_proc_frame(struct VP9Common *oci,
   } else if (flags & VP9D_DEBLOCK) {
     vp9_deblock(oci->frame_to_show, &oci->post_proc_buffer, q);
   } else {
-    vp8_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);
+    vpx_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);
   }
 
   if (flags & VP9D_ADDNOISE) {

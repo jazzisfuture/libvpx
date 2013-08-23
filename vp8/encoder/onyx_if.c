@@ -2566,7 +2566,7 @@ int vp8_get_reference(VP8_COMP *cpi, enum vpx_ref_frame_type ref_frame_flag, YV1
     else
         return -1;
 
-    vp8_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
+    vpx_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
 
     return 0;
 }
@@ -2585,7 +2585,7 @@ int vp8_set_reference(VP8_COMP *cpi, enum vpx_ref_frame_type ref_frame_flag, YV1
     else
         return -1;
 
-    vp8_yv12_copy_frame(sd, &cm->yv12_fb[ref_fb_idx]);
+    vpx_yv12_copy_frame(sd, &cm->yv12_fb[ref_fb_idx]);
 
     return 0;
 }
@@ -3214,7 +3214,7 @@ static void update_reference_frames(VP8_COMP *cpi)
         if (cm->frame_type == KEY_FRAME)
         {
             int i;
-            vp8_yv12_copy_frame(
+            vpx_yv12_copy_frame(
                     cpi->Source,
                     &cpi->denoiser.yv12_running_avg[LAST_FRAME]);
 
@@ -3222,7 +3222,7 @@ static void update_reference_frames(VP8_COMP *cpi)
                     &cpi->denoiser.yv12_running_avg[LAST_FRAME]);
 
             for (i = 2; i < MAX_REF_FRAMES - 1; i++)
-                vp8_yv12_copy_frame(
+                vpx_yv12_copy_frame(
                         &cpi->denoiser.yv12_running_avg[LAST_FRAME],
                         &cpi->denoiser.yv12_running_avg[i]);
         }
@@ -3233,19 +3233,19 @@ static void update_reference_frames(VP8_COMP *cpi)
 
             if (cm->refresh_alt_ref_frame || cm->copy_buffer_to_arf)
             {
-                vp8_yv12_copy_frame(
+                vpx_yv12_copy_frame(
                         &cpi->denoiser.yv12_running_avg[INTRA_FRAME],
                         &cpi->denoiser.yv12_running_avg[ALTREF_FRAME]);
             }
             if (cm->refresh_golden_frame || cm->copy_buffer_to_gf)
             {
-                vp8_yv12_copy_frame(
+                vpx_yv12_copy_frame(
                         &cpi->denoiser.yv12_running_avg[INTRA_FRAME],
                         &cpi->denoiser.yv12_running_avg[GOLDEN_FRAME]);
             }
             if(cm->refresh_last_frame)
             {
-                vp8_yv12_copy_frame(
+                vpx_yv12_copy_frame(
                         &cpi->denoiser.yv12_running_avg[INTRA_FRAME],
                         &cpi->denoiser.yv12_running_avg[LAST_FRAME]);
             }

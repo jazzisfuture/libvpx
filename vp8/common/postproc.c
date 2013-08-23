@@ -384,7 +384,7 @@ void vp8_deblock(VP8_COMMON                 *cm,
         }
     } else
     {
-        vp8_yv12_copy_frame(source, post);
+        vpx_yv12_copy_frame(source, post);
     }
 }
 
@@ -780,7 +780,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
         if (((flags & VP8D_DEBLOCK) || (flags & VP8D_DEMACROBLOCK)) &&
             oci->post_proc_buffer_int_used)
         {
-            vp8_yv12_copy_frame(&oci->post_proc_buffer, &oci->post_proc_buffer_int);
+            vpx_yv12_copy_frame(&oci->post_proc_buffer, &oci->post_proc_buffer_int);
             if (flags & VP8D_DEMACROBLOCK)
             {
                 vp8_deblock(oci, &oci->post_proc_buffer_int, &oci->post_proc_buffer,
@@ -813,7 +813,7 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest, vp8_ppflags_t
     }
     else
     {
-        vp8_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);
+        vpx_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);
         oci->postproc_state.last_base_qindex = oci->base_qindex;
     }
     oci->postproc_state.last_frame_valid = 1;

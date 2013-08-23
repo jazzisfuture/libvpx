@@ -862,7 +862,7 @@ skip_motion_search:
           DOUBLE_DIVIDE_CHECK(cpi->twopass.this_frame_stats.coded_error)) >
          2.0))
     {
-        vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+        vpx_yv12_copy_frame(lst_yv12, gld_yv12);
     }
 
     /* swap frame pointers so last frame refers to the frame we just
@@ -876,7 +876,7 @@ skip_motion_search:
      */
     if (cm->current_video_frame == 0)
     {
-        vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+        vpx_yv12_copy_frame(lst_yv12, gld_yv12);
     }
 
 

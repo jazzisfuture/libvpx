@@ -196,7 +196,7 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9D_PTR ptr,
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                        "Incorrect buffer dimensions");
   } else {
-    vp8_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
+    vpx_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
   }
 
   return cm->error.error_code;
@@ -238,7 +238,7 @@ vpx_codec_err_t vp9_set_reference_dec(VP9D_PTR ptr, VP9_REFFRAME ref_frame_flag,
 
     // Manage the reference counters and copy image.
     ref_cnt_fb(cm->fb_idx_ref_cnt, ref_fb_ptr, free_fb);
-    vp8_yv12_copy_frame(sd, &cm->yv12_fb[*ref_fb_ptr]);
+    vpx_yv12_copy_frame(sd, &cm->yv12_fb[*ref_fb_ptr]);
   }
 
   return pbi->common.error.error_code;

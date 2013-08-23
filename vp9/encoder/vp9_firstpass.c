@@ -802,7 +802,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
        ((cpi->twopass.this_frame_stats.intra_error /
          DOUBLE_DIVIDE_CHECK(cpi->twopass.this_frame_stats.coded_error)) >
         2.0))) {
-    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    vpx_yv12_copy_frame(lst_yv12, gld_yv12);
     cpi->twopass.sr_update_lag = 1;
   } else
     cpi->twopass.sr_update_lag++;
@@ -814,7 +814,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   // Special case for the first frame. Copy into the GF buffer as a second reference.
   if (cm->current_video_frame == 0)
-    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    vpx_yv12_copy_frame(lst_yv12, gld_yv12);
 
   // use this to see what the first pass reconstruction looks like
   if (0) {

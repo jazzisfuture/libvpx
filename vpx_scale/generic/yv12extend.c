@@ -142,7 +142,7 @@ void vp9_extend_frame_inner_borders_c(YV12_BUFFER_CONFIG *ybf,
 
 /****************************************************************************
  *
- *  ROUTINE       : vp8_yv12_copy_frame
+ *  ROUTINE       : vpx_yv12_copy_frame
  *
  *  INPUTS        :
  *
@@ -157,7 +157,7 @@ void vp9_extend_frame_inner_borders_c(YV12_BUFFER_CONFIG *ybf,
  *
  ****************************************************************************/
 void
-vp8_yv12_copy_frame_c(YV12_BUFFER_CONFIG *src_ybc,
+vpx_yv12_copy_frame_c(YV12_BUFFER_CONFIG *src_ybc,
                       YV12_BUFFER_CONFIG *dst_ybc) {
   int row;
   unsigned char *source, *dest;

@@ -2037,7 +2037,7 @@ int vp9_copy_reference_enc(VP9_PTR ptr, VP9_REFFRAME ref_frame_flag,
   else
     return -1;
 
-  vp8_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
+  vpx_yv12_copy_frame(&cm->yv12_fb[ref_fb_idx], sd);
 
   return 0;
 }
@@ -2069,7 +2069,7 @@ int vp9_set_reference_enc(VP9_PTR ptr, VP9_REFFRAME ref_frame_flag,
   else
     return -1;
 
-  vp8_yv12_copy_frame(sd, &cm->yv12_fb[ref_fb_idx]);
+  vpx_yv12_copy_frame(sd, &cm->yv12_fb[ref_fb_idx]);
 
   return 0;
 }
