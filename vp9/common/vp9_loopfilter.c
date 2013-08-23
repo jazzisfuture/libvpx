@@ -238,7 +238,7 @@ static void filter_selectively_horiz(uint8_t *s, int pitch,
 
 static void filter_block_plane(VP9_COMMON *const cm,
                                struct macroblockd_plane *const plane,
-                               const MODE_INFO *mi,
+                               const MODE_INFO_8x8 *mi_8x8,
                                int mi_row, int mi_col) {
   const int ss_x = plane->subsampling_x;
   const int ss_y = plane->subsampling_y;
@@ -262,24 +262,25 @@ static void filter_block_plane(VP9_COMMON *const cm,
 
     // Determine the vertical edges that need filtering
     for (c = 0; c < MI_BLOCK_SIZE && mi_col + c < cm->mi_cols; c += col_step) {
-      const int skip_this = mi[c].mbmi.skip_coeff
-                            && is_inter_block(&mi[c].mbmi);
+      MODE_INFO *mi = mi_8x8[c].mi;
+      const int skip_this = mi[0].mbmi.skip_coeff
+                            && is_inter_block(&mi[0].mbmi);
       // left edge of current unit is block/partition edge -> no skip
-      const int block_edge_left = b_width_log2(mi[c].mbmi.sb_type) ?
-          !(c & ((1 << (b_width_log2(mi[c].mbmi.sb_type)-1)) - 1)) : 1;
+      const int block_edge_left = b_width_log2(mi[0].mbmi.sb_type) ?
+          !(c & ((1 << (b_width_log2(mi[0].mbmi.sb_type)-1)) - 1)) : 1;
       const int skip_this_c = skip_this && !block_edge_left;
       // top edge of current unit is block/partition edge -> no skip
-      const int block_edge_above = b_height_log2(mi[c].mbmi.sb_type) ?
-          !(r & ((1 << (b_height_log2(mi[c].mbmi.sb_type)-1)) - 1)) : 1;
+      const int block_edge_above = b_height_log2(mi[0].mbmi.sb_type) ?
+          !(r & ((1 << (b_height_log2(mi[0].mbmi.sb_type)-1)) - 1)) : 1;
       const int skip_this_r = skip_this && !block_edge_above;
       const TX_SIZE tx_size = (plane->plane_type == PLANE_TYPE_UV)
-                            ? get_uv_tx_size(&mi[c].mbmi)
-                            : mi[c].mbmi.txfm_size;
+                            ? get_uv_tx_size(&mi[0].mbmi)
+                            : mi[0].mbmi.txfm_size;
       const int skip_border_4x4_c = ss_x && mi_col + c == cm->mi_cols - 1;
       const int skip_border_4x4_r = ss_y && mi_row + r == cm->mi_rows - 1;
 
       // Filter level can vary per MI
-      if (!build_lfi(&cm->lf_info, &mi[c].mbmi, lfi[r] + (c >> ss_x)))
+      if (!build_lfi(&cm->lf_info, &mi[0].mbmi, lfi[r] + (c >> ss_x)))
         continue;
 
       // Build masks based on the transform size of each block
@@ -338,7 +339,7 @@ static void filter_block_plane(VP9_COMMON *const cm,
                             mask_4x4_c & border_mask,
                             mask_4x4_int[r], lfi[r]);
     dst->buf += 8 * dst->stride;
-    mi += row_step_stride;
+    mi_8x8 += row_step_stride;
   }
 
   // Now do horizontal pass
@@ -363,14 +364,14 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
   int mi_row, mi_col;
 
   for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
-    MODE_INFO* const mi = cm->mi + mi_row * cm->mode_info_stride;
+    MODE_INFO_8x8 *mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
 
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
       int plane;
 
       setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
       for (plane = 0; plane < num_planes; ++plane) {
-        filter_block_plane(cm, &xd->plane[plane], mi + mi_col, mi_row, mi_col);
+        filter_block_plane(cm, &xd->plane[plane], mi_8x8 + mi_col, mi_row, mi_col);
       }
     }
   }

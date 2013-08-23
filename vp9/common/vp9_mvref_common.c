@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (c) 2012 The WebM project authors. All Rights Reserved.
  *
@@ -186,8 +187,9 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                           int_mv *mv_ref_list, const int *ref_sign_bias,
                           const int block_idx,
                           const int mi_row, const int mi_col) {
+  const MODE_INFO_8x8 *mi_8x8 = xd->mi_8x8;
   int idx;
-  MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO *mbmi = &mi_8x8->mi->mbmi;
   int refmv_count = 0;
   const MV *mv_ref_search = mv_ref_blocks[mbmi->sb_type];
   const MODE_INFO *candidate;
@@ -208,7 +210,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                    cm->cur_tile_mi_col_end, cm->mi_rows, mv_ref))
       continue;
 
-    candidate = here + mv_ref->col + mv_ref->row * xd->mode_info_stride;
+    candidate = mi_8x8[mv_ref->col + mv_ref->row * xd->mode_info_stride].mi;
+    assert(candidate);
 
     // Keep counts for entropy encoding.
     context_counter += mode_2_counter[candidate->mbmi.mode];
@@ -237,7 +240,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                    cm->cur_tile_mi_col_end, cm->mi_rows, mv_ref))
       continue;
 
-    candidate = here + mv_ref->col + mv_ref->row * xd->mode_info_stride;
+    candidate = mi_8x8[mv_ref->col + mv_ref->row * xd->mode_info_stride].mi;
+    assert(candidate);
 
     if (candidate->mbmi.ref_frame[0] == ref_frame) {
       ADD_MV_REF_LIST(candidate->mbmi.mv[0]);
@@ -269,7 +273,8 @@ void vp9_find_mv_refs_idx(VP9_COMMON *cm, MACROBLOCKD *xd, MODE_INFO *here,
                      cm->cur_tile_mi_col_end, cm->mi_rows, mv_ref))
         continue;
 
-      candidate = here + mv_ref->col + mv_ref->row * xd->mode_info_stride;
+      candidate = mi_8x8[mv_ref->col + mv_ref->row * xd->mode_info_stride].mi;
+      assert(candidate);
 
       // If the candidate is INTRA we don't want to consider its mv.
       if (!is_inter_block(&candidate->mbmi))

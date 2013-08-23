@@ -79,9 +79,9 @@ static void read_tx_probs(struct tx_probs *tx_probs, vp9_reader *r) {
 
 static void init_dequantizer(VP9_COMMON *cm, MACROBLOCKD *xd) {
   int i;
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
+  MODE_INFO *mi = xd->this_mi;
+  const int segment_id = mi ? mi->mbmi.segment_id : 0;
   xd->q_index = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
-
   xd->plane[0].dequant = cm->y_dequant[xd->q_index];
   for (i = 1; i < MAX_MB_PLANE; i++)
     xd->plane[i].dequant = cm->uv_dequant[xd->q_index];
@@ -128,7 +128,7 @@ static void decode_block_intra(int plane, int block,
                                TX_SIZE tx_size, void *arg) {
   MACROBLOCKD* const xd = arg;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mode_info_context;
+  MODE_INFO *const mi = xd->this_mi;
   const int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size,
                                                        block);
   uint8_t* const dst = raster_block_offset_uint8(plane_bsize, raster_block,
@@ -161,7 +161,7 @@ static void decode_block_intra(int plane, int block,
 static int decode_tokens(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize, vp9_reader *r) {
   MACROBLOCKD *const xd = &pbi->mb;
 
-  if (xd->mode_info_context->mbmi.skip_coeff) {
+  if (xd->this_mi->mbmi.skip_coeff) {
       reset_skip_context(xd, bsize);
     return -1;
   } else {
@@ -181,11 +181,25 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
   const int bw = 1 << mi_width_log2(bsize);
   const int mi_idx = mi_row * cm->mode_info_stride + mi_col;
 
+  xd->mi_8x8 = cm->mi_grid_visible + mi_idx;
+  xd->prev_mi_8x8 = cm->prev_mi_grid_visible + mi_idx;
+
+#ifndef MIC_STREAM
   xd->mode_info_context = cm->mi + mi_idx;
   xd->mode_info_context->mbmi.sb_type = bsize;
+  xd->mi_8x8[0].mi = cm->mi + mi_idx;
+  (xd->mi_8x8[0].mi)->mbmi.sb_type = bsize;
+#else
+  // we are using the mode info context stream here
+  xd->this_mi =
+  xd->mi_8x8->mi = xd->mic_stream_ptr;
+  xd->this_mi->mbmi.sb_type = bsize;
+  xd->mic_stream_ptr++;
+#endif
+
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
-  xd->prev_mode_info_context = cm->prev_mi ? cm->prev_mi + mi_idx : NULL;
+  xd->last_mi = cm->prev_mi ? xd->prev_mi_8x8->mi : NULL;
 
 
   set_skip_context(cm, xd, mi_row, mi_col);
@@ -201,7 +215,7 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE_TYPE bsize,
 static void set_ref(VP9D_COMP *pbi, int i, int mi_row, int mi_col) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
-  MB_MODE_INFO *const mbmi = &xd->mode_info_context->mbmi;
+  MB_MODE_INFO * mbmi = &xd->this_mi->mbmi;
   const int ref = mbmi->ref_frame[i] - 1;
 
   const YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[cm->active_ref_idx[ref]];
@@ -228,7 +242,7 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
     bsize = BLOCK_8X8;
 
   // Has to be called after set_offsets
-  mbmi = &xd->mode_info_context->mbmi;
+  mbmi = &xd->this_mi->mbmi;
 
   if (!is_inter_block(mbmi)) {
     // Intra reconstruction
@@ -252,7 +266,7 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
       assert(mbmi->sb_type == bsize);
       if (eobtotal == 0)
         // skip loopfilter
-        vp9_set_pred_flag_mbskip(cm, bsize, mi_row, mi_col, 1);
+        vp9_set_pred_flag_mbskip(xd, bsize, 1);
       else if (eobtotal > 0)
         foreach_transformed_block(xd, bsize, decode_block, xd);
     }
@@ -958,8 +972,12 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt header length");
 
+  xd->mi_8x8 = pc->mi_grid_visible;
+  xd->mic_stream_ptr = pc->mi;
+#ifndef MIC_STREAM
   xd->mode_info_context = pc->mi;
   xd->prev_mode_info_context = pc->prev_mi;
+#endif
   xd->mode_info_stride = pc->mode_info_stride;
 
   init_dequantizer(pc, &pbi->mb);
