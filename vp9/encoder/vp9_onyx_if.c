@@ -753,6 +753,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   // Hence BLOCK_SIZE_SB64X64 (skip is off)
   sf->unused_mode_skip_lvl = BLOCK_SIZE_SB64X64;
 
+  sf->fast_partition_picking = 0;
+
 #if CONFIG_MULTIPLE_ARF
   // Switch segmentation off.
   sf->static_segmentation = 0;
@@ -800,6 +802,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         // sf->use_max_partition_size = 1;
         // sf->use_min_partition_size = 1;
         sf->auto_min_max_partition_interval = 1;
+
+        sf->fast_partition_picking = 1;
       }
       if (speed == 2) {
         sf->adjust_thresholds_by_speed = 1;
@@ -827,6 +831,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->disable_splitmv =
             (MIN(cpi->common.width, cpi->common.height) >= 720)? 1 : 0;
         sf->auto_mv_step_size = 1;
+
+        sf->fast_partition_picking = 1;
       }
       if (speed == 3) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -844,6 +850,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->skip_encode_sb = 1;
         sf->disable_splitmv = 1;
         sf->auto_mv_step_size = 1;
+
+        sf->fast_partition_picking = 1;
       }
       if (speed == 4) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZE_TYPES;
@@ -865,6 +873,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         // sf->reference_masking = 1;
 
         sf->disable_splitmv = 1;
+
+        sf->fast_partition_picking = 1;
       }
       /*
       if (speed == 2) {

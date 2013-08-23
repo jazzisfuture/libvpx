@@ -1856,6 +1856,423 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   }
 }
 
+// Store RD scores for each partition level
+typedef struct partition_rd {
+  int64_t rd;
+  struct partition_rd *split[4];
+} partition_rd_t;
+
+// Check all blocks in one partition level.
+static void rd_check_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
+                              int mi_col, BLOCK_SIZE_TYPE bsize, int *rate,
+                              int64_t *dist, int do_recon, int64_t best_rd,
+                              partition_rd_t *prd, partition_rd_t *srd) {
+  VP9_COMMON * const cm = &cpi->common;
+  MACROBLOCK * const x = &cpi->mb;
+  MACROBLOCKD * const xd = &x->e_mbd;
+  int bsl = b_width_log2(bsize), bs = 1 << bsl;
+  int ms = bs / 2;
+  ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
+  PARTITION_CONTEXT sl[8], sa[8];
+  TOKENEXTRA *tp_orig = *tp;
+  int i, pl;
+  BLOCK_SIZE_TYPE subsize;
+  int srate = INT_MAX;
+  int64_t sdist = INT_MAX;
+
+  (void) *tp_orig;
+
+  if (bsize < BLOCK_SIZE_SB8X8) {
+    // When ab_index = 0 all sub-blocks are handled, so for ab_index != 0
+    // there is nothing to be done.
+    if (xd->ab_index != 0) {
+      *rate = 0;
+      *dist = 0;
+      prd->rd = 0;
+      return;
+    }
+  }
+
+  assert(mi_height_log2(bsize) == mi_width_log2(bsize));
+
+  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  // PARTITION_SPLIT
+  if (!cpi->sf.auto_min_max_partition_size ||
+      bsize > cpi->sf.min_partition_size) {
+    if (bsize >= BLOCK_SIZE_SB8X8) {
+      int r4 = 0;
+      int64_t d4 = 0;
+      subsize = get_subsize(bsize, PARTITION_SPLIT);
+
+      for (i = 0; i < 4; i++) {
+        int x_idx = (i & 1) * (ms >> 1);
+        int y_idx = (i >> 1) * (ms >> 1);
+        int r = 0;
+        int64_t d = 0;
+
+        if ((mi_row + y_idx >= cm->mi_rows)
+            || (mi_col + x_idx >= cm->mi_cols)) {
+          prd->split[i]->rd = 0;
+          continue;
+        }
+
+        *(get_sb_index(xd, subsize)) = i;
+        rd_check_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize, &r,
+                          &d, i != 3, INT64_MAX, prd->split[i], srd->split[i]);
+
+        if (r == INT_MAX) {
+          r4 = INT_MAX;
+        } else {
+          r4 += r;
+          d4 += d;
+        }
+      }
+      set_partition_seg_context(cm, xd, mi_row, mi_col);
+      pl = partition_plane_context(xd, bsize);
+      if (r4 != INT_MAX) {
+        r4 += x->partition_cost[pl][PARTITION_SPLIT];
+        //*(get_sb_partitioning(x, bsize)) = subsize;
+        assert(r4 >= 0);
+        assert(d4 >= 0);
+        srate = r4;
+        sdist = d4;
+        best_rd = MIN(best_rd, RDCOST(x->rdmult, x->rddiv, r4, d4));
+      }
+
+      // Save the extra rd associated with SPLIT mode.
+      if (subsize == cpi->sf.min_partition_size) {
+        int extra_r = x->partition_cost[pl][PARTITION_SPLIT];
+        srd->rd = RDCOST(x->rdmult, x->rddiv, extra_r, 0);
+      }
+
+      restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+    }
+  }
+
+  if (!cpi->sf.auto_min_max_partition_size ||
+      bsize <= cpi->sf.max_partition_size) {
+    // PARTITION_NONE
+    if ((mi_row + (ms >> 1) < cm->mi_rows) &&
+        (mi_col + (ms >> 1) < cm->mi_cols)) {
+      int r;
+      int64_t d;
+      pick_sb_modes(cpi, mi_row, mi_col, &r, &d, bsize,
+                    get_block_context(x, bsize), INT64_MAX);
+      if (r != INT_MAX && bsize >= BLOCK_SIZE_SB8X8) {
+        set_partition_seg_context(cm, xd, mi_row, mi_col);
+        pl = partition_plane_context(xd, bsize);
+        r += x->partition_cost[pl][PARTITION_NONE];
+      }
+
+      /*
+      if (r != INT_MAX &&
+          (bsize == BLOCK_SIZE_SB8X8 ||
+           RDCOST(x->rdmult, x->rddiv, r, d) <
+               RDCOST(x->rdmult, x->rddiv, srate, sdist))) {
+      */
+      if (r != INT_MAX) {
+        best_rd = RDCOST(x->rdmult, x->rddiv, r, d);
+        prd->rd = best_rd;
+
+        srate = r;
+        sdist = d;
+        if (bsize >= BLOCK_SIZE_SB8X8)
+          *(get_sb_partitioning(x, bsize)) = bsize;
+      }
+    }
+  }
+
+  *rate = srate;
+  *dist = sdist;
+
+  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  //if (bsize == cpi->sf.max_partition_size
+  // && srate < INT_MAX && sdist < INT_MAX && do_recon)
+  if (srate < INT_MAX && sdist < INT_MAX && do_recon)
+    encode_sb(cpi, tp, mi_row, mi_col, 0, bsize);
+
+  assert(tp_orig == *tp);
+}
+
+// Set partition according to the stored rd scores.
+static void rd_set_partition(VP9_COMP *cpi, int mi_row,
+                             int mi_col, BLOCK_SIZE_TYPE bsize,
+                             int64_t *sb_best_rd,
+                             partition_rd_t *prd, partition_rd_t *srd) {
+  VP9_COMMON * const cm = &cpi->common;
+  MACROBLOCK * const x = &cpi->mb;
+  MACROBLOCKD * const xd = &x->e_mbd;
+  int bsl = b_width_log2(bsize), bs = 1 << bsl;
+  int ms = bs / 2;
+  int i;
+  BLOCK_SIZE_TYPE subsize;
+  int64_t brd = INT64_MAX;
+
+  if (bsize < BLOCK_SIZE_SB8X8) {
+    if (xd->ab_index != 0) {
+      return;
+    }
+  }
+
+  assert(mi_height_log2(bsize) == mi_width_log2(bsize));
+
+  // PARTITION_SPLIT
+  if (!cpi->sf.auto_min_max_partition_size ||
+      bsize > cpi->sf.min_partition_size) {
+    if (bsize >= BLOCK_SIZE_SB8X8) {
+      int64_t rd4 = 0;
+
+      subsize = get_subsize(bsize, PARTITION_SPLIT);
+
+      for (i = 0; i < 4; ++i) {
+        int x_idx = (i & 1) * (ms >> 1);
+        int y_idx = (i >> 1) * (ms >> 1);
+        int64_t rd = 0;
+
+        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
+          continue;
+
+        *(get_sb_index(xd, subsize)) = i;
+        rd_set_partition(cpi, mi_row + y_idx, mi_col + x_idx, subsize, &rd,
+                         prd->split[i], srd->split[i]);
+
+        if (rd == INT64_MAX) {
+          rd4 = INT64_MAX;
+        } else {
+          rd4 += rd;
+        }
+      }
+
+      if (rd4 != INT64_MAX) {
+        assert(srd->rd != INT64_MAX);
+        rd4 += srd->rd;
+        *(get_sb_partitioning(x, bsize)) = subsize;
+        assert(rd4 >= 0);
+
+        brd = rd4;
+      }
+    }
+  }
+
+  if (!cpi->sf.auto_min_max_partition_size ||
+      bsize <= cpi->sf.max_partition_size) {
+    // PARTITION_NONE
+    if ((mi_row + (ms >> 1) < cm->mi_rows) &&
+        (mi_col + (ms >> 1) < cm->mi_cols)) {
+
+      if (prd->rd != INT64_MAX &&  (bsize == BLOCK_SIZE_SB8X8 || prd->rd < brd)) {
+        brd = prd->rd;
+
+        if (bsize >= BLOCK_SIZE_SB8X8)
+          *(get_sb_partitioning(x, bsize)) = bsize;
+      }
+    }
+  }
+
+  *sb_best_rd = brd;
+}
+
+// This function does square-partition checking from 64x64 to 4x4. The RD scores
+// for each partition level are stored in 2 structures - one is for rd in NONE
+// mode, and the other is for extra rd in SPLIT mode. After checking all
+// partition levels, the final partition choice is made based on RD scores, and
+// is done recursively from 4x4 to 64x64. In the end, the SB is encoded.
+static void fast_rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
+                              int mi_col, BLOCK_SIZE_TYPE bsize, int *rate,
+                              int64_t *dist, int do_recon, int64_t best_rd) {
+  TOKENEXTRA *tp_orig = *tp;
+
+  int i, j, k, n;
+  MACROBLOCK * const x = &cpi->mb;
+  //MACROBLOCKD * const xd = &x->e_mbd;
+
+  int srate = INT_MAX;
+  int64_t sdist = INT64_MAX;
+  int64_t sb_best_rd = INT64_MAX;
+
+  // all rd scores need to be initialized to INT64_MAX
+  // rd for none
+  partition_rd_t prd;
+  partition_rd_t prd32[4];
+  partition_rd_t prd16[4][4];
+  partition_rd_t prd8[4][4][4];
+  partition_rd_t prd4[4][4][4][4];
+
+  // only the extra rd for split mode
+  partition_rd_t srd;
+  partition_rd_t srd32[4];
+  partition_rd_t srd16[4][4];
+  partition_rd_t srd8[4][4][4];
+
+  // Initilize all rd scores to INT64_MAX
+  prd.rd = INT64_MAX;
+
+  for (i = 0; i < 4; i++)
+    prd32[i].rd = INT64_MAX;
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      prd16[i][j].rd = INT64_MAX;
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++)
+        prd8[i][j][k].rd = INT64_MAX;
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++) {
+        for (n = 0; n < 4; n++)
+          prd4[i][j][k][n].rd = INT64_MAX;
+      }
+    }
+  }
+
+  srd.rd = INT64_MAX;
+
+  for (i = 0; i < 4; i++)
+    srd32[i].rd = INT64_MAX;
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      srd16[i][j].rd = INT64_MAX;
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++)
+        srd8[i][j][k].rd = INT64_MAX;
+    }
+  }
+
+  // Set partition rd for each level
+  // NONE mode rd
+  for (i = 0; i < 4; i++)
+    prd.split[i] = &prd32[i];
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      prd.split[i]->split[j] = &prd16[i][j];
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++)
+        prd.split[i]->split[j]->split[k] = &prd8[i][j][k];
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++) {
+        for (n = 0; n < 4; n++)
+          prd.split[i]->split[j]->split[k]->split[n] = &prd4[i][j][k][n];
+      }
+    }
+  }
+
+  // SPLIT mode extra rd
+  for (i = 0; i < 4; i++)
+    srd.split[i] = &srd32[i];
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      srd.split[i]->split[j] = &srd16[i][j];
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++)
+        srd.split[i]->split[j]->split[k] = &srd8[i][j][k];
+    }
+  }
+
+  (void) *tp_orig;
+
+  // Set default partition to Split. In rd_check_partition(), if current
+  // partition is invalid, we need to split down to a valid partition size to
+  // do encode_sb() for providing above/left context.
+  x->sb64_partitioning = 0;
+
+  for (i = 0; i < 4; i++) {
+    x->sb_partitioning[i] = 0;
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      x->mb_partitioning[i][j] = 0;
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 4; k++)
+        x->b_partitioning[i][j][k] = 0;
+    }
+  }
+
+  // Use 4 subblocks' motion estimation results to speed up current
+  // partition's checking.
+  x->fast_ms = 0;
+  x->pred_mv.as_int = 0;
+  x->subblock_ref = 0;
+
+  // Use MAX/MIN partition size to control which level to test.
+  cpi->sf.auto_min_max_partition_size = 1;
+
+  // Check partition 64x64 level
+  cpi->sf.max_partition_size = BLOCK_64X64;
+  cpi->sf.min_partition_size = BLOCK_64X64;
+  rd_check_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                     &srate, &sdist, 0, INT64_MAX, &prd, &srd);
+
+  // Check partition 32x32 level
+  cpi->sf.max_partition_size = BLOCK_32X32;
+  cpi->sf.min_partition_size = BLOCK_32X32;
+  rd_check_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                     &srate, &sdist, 0, INT64_MAX, &prd, &srd);
+
+  // Check partition 16x16 level
+  cpi->sf.max_partition_size = BLOCK_16X16;
+  cpi->sf.min_partition_size = BLOCK_16X16;
+  rd_check_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                     &srate, &sdist, 0, INT64_MAX, &prd, &srd);
+
+  // Check partition 8x8 level
+  cpi->sf.max_partition_size = BLOCK_8X8;
+  cpi->sf.min_partition_size = BLOCK_8X8;
+  rd_check_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                     &srate, &sdist, 0, INT64_MAX, &prd, &srd);
+
+  // Check partition 4x4 level
+  cpi->sf.max_partition_size = BLOCK_4X4;
+  cpi->sf.min_partition_size = BLOCK_4X4;
+  rd_check_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                     &srate, &sdist, 0, INT64_MAX, &prd, &srd);
+
+  // Pick the final partition based on stored rd scores.
+  cpi->sf.max_partition_size = BLOCK_64X64;
+  cpi->sf.min_partition_size = BLOCK_4X4;
+  rd_set_partition(cpi, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                   &sb_best_rd, &prd, &srd);
+
+  // Encode SB.
+  bsize = BLOCK_SIZE_SB64X64;
+  if (sb_best_rd < INT64_MAX)
+    encode_sb(cpi, tp, mi_row, mi_col, 1, bsize);
+
+  assert(tp_orig < *tp);
+}
+
 // Examines 64x64 block and chooses a best reference frame
 static void rd_pick_reference_frame(VP9_COMP *cpi, int mi_row, int mi_col) {
   VP9_COMMON * const cm = &cpi->common;
@@ -1952,8 +2369,21 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
                            &dummy_rate, &dummy_dist, 1);
         }
       }
-    } else {
+    } else if (cpi->sf.fast_partition_picking) {
+      // Temporarily disable this feature. Will add it in after the code works.
+      /*
       // If required set upper and lower partition size limits
+      if (cpi->sf.auto_min_max_partition_size) {
+        rd_auto_partition_range(cpi, &cpi->sf.min_partition_size,
+                                &cpi->sf.max_partition_size);
+      }
+      */
+
+      fast_rd_pick_partition(cpi, tp, mi_row, mi_col, BLOCK_SIZE_SB64X64,
+                             &dummy_rate, &dummy_dist, 1, INT64_MAX);
+
+    } else {
+       // If required set upper and lower partition size limits
       if (cpi->sf.auto_min_max_partition_size) {
         rd_auto_partition_range(cpi, &cpi->sf.min_partition_size,
                                 &cpi->sf.max_partition_size);
