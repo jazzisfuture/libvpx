@@ -269,6 +269,7 @@ typedef struct {
   int last_partitioning_redo_frequency;
   int disable_splitmv;
   int using_small_partition_info;
+  int fast_partition_picking;
 
   // Implements various heuristics to skip searching modes
   // The heuristics selected are based on  flags
