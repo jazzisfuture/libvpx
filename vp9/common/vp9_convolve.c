@@ -66,7 +66,7 @@ static void convolve_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
       for (k = 0; k < taps; ++k)
         sum += src[src_x + k] * filter_x[k];
 
-      dst[x] = clip_pixel(ROUND_POWER_OF_TWO(sum, VP9_FILTER_BITS));
+      dst[x] = clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
 
       /* Adjust source and filter to use for the next pixel */
       x_q4 += x_step_q4;
@@ -109,7 +109,7 @@ static void convolve_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
         sum += src[src_x + k] * filter_x[k];
 
       dst[x] = ROUND_POWER_OF_TWO(dst[x] +
-                   clip_pixel(ROUND_POWER_OF_TWO(sum, VP9_FILTER_BITS)), 1);
+                   clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
 
       /* Adjust source and filter to use for the next pixel */
       x_q4 += x_step_q4;
@@ -152,7 +152,7 @@ static void convolve_vert_c(const uint8_t *src, ptrdiff_t src_stride,
         sum += src[(src_y + k) * src_stride] * filter_y[k];
 
       dst[y * dst_stride] =
-          clip_pixel(ROUND_POWER_OF_TWO(sum, VP9_FILTER_BITS));
+          clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
 
       /* Adjust source and filter to use for the next pixel */
       y_q4 += y_step_q4;
@@ -195,7 +195,7 @@ static void convolve_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
         sum += src[(src_y + k) * src_stride] * filter_y[k];
 
       dst[y * dst_stride] = ROUND_POWER_OF_TWO(dst[y * dst_stride] +
-           clip_pixel(ROUND_POWER_OF_TWO(sum, VP9_FILTER_BITS)), 1);
+           clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
 
       /* Adjust source and filter to use for the next pixel */
       y_q4 += y_step_q4;
