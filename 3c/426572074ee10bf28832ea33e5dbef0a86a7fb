@@ -1,0 +1,8 @@
+Code-Review+1: Tero Rintaluoma <teror@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Adrian Grange <agrange@google.com>
+Submitted-by: Dmitry Kovalev <dkovalev@google.com>
+Submitted-at: Fri, 23 Aug 2013 11:05:17 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/66714
+Project: webm/libvpx
+Branch: refs/heads/master
