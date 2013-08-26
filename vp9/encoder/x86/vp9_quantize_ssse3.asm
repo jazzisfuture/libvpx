@@ -36,6 +36,14 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   pshufd                          m4, m4, 0
   mova                            m2, [quantq]             ; m2 = quant
   paddw                           m0, m4                   ; m0 = zbin + zbin_oq
+%ifidn %1, b_32x32
+  por                             m5, m5
+  psrlw                           m5, 15                   ; m5 = 0x00010001..
+  paddw                           m0, m5
+  paddw                           m1, m5
+  psrlw                           m0, 1
+  psrlw                           m1, 1
+%endif
   mova                            m3, [r2q]                ; m3 = dequant
   psubw                           m0, [pw_1]
   mov                             r2, shiftmp
@@ -43,6 +51,10 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   mova                            m4, [r2]                 ; m4 = shift
   mov                             r4, dqcoeffmp
   mov                             r5, iscanmp
+  mov                             r2, eobmp
+%ifidn %1, b_32x32
+  psllw                           m4, 1
+%endif
   pxor                            m5, m5                   ; m5 = dedicated zero
   DEFINE_ARGS coeff, ncoeff, d1, qcoeff, dqcoeff, iscan, d2, d3, d4, d5, d6, eob
   lea                         coeffq, [  coeffq+ncoeffq*2]
@@ -56,10 +68,6 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   mova                           m10, [  coeffq+ncoeffq*2+16] ; m10 = c[i]
   pabsw                           m6, m9                   ; m6 = abs(m9)
   pabsw                          m11, m10                  ; m11 = abs(m10)
-%ifidn %1, b_32x32
-  paddw                           m6, m6
-  paddw                          m11, m11
-%endif
   pcmpgtw                         m7, m6, m0               ; m7 = c[i] >= zbin
   punpckhqdq                      m0, m0
   pcmpgtw                        m12, m11, m0              ; m12 = c[i] >= zbin
@@ -74,6 +82,10 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   pmulhw                          m8, m4                   ; m8 = m8*qsh>>16
   punpckhqdq                      m4, m4
   pmulhw                         m13, m4                   ; m13 = m13*qsh>>16
+%ifidn %1, b_32x32
+;  psllw                           m8, 1
+;  psllw                          m13, 1
+%endif
   psignw                          m8, m9                   ; m8 = reinsert sign
   psignw                         m13, m10                  ; m13 = reinsert sign
   pand                            m8, m7
@@ -112,10 +124,6 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   mova                           m10, [  coeffq+ncoeffq*2+16] ; m10 = c[i]
   pabsw                           m6, m9                   ; m6 = abs(m9)
   pabsw                          m11, m10                  ; m11 = abs(m10)
-%ifidn %1, b_32x32
-  paddw                           m6, m6
-  paddw                          m11, m11
-%endif
   pcmpgtw                         m7, m6, m0               ; m7 = c[i] >= zbin
   pcmpgtw                        m12, m11, m0              ; m12 = c[i] >= zbin
 %ifidn %1, b_32x32
@@ -132,6 +140,10 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   paddw                          m13, m11                  ; m13 += m11
   pmulhw                         m14, m4                   ; m14 = m14*qsh>>16
   pmulhw                         m13, m4                   ; m13 = m13*qsh>>16
+%ifidn %1, b_32x32
+;  psllw                          m14, 1
+;  psllw                          m13, 1
+%endif
   psignw                         m14, m9                   ; m14 = reinsert sign
   psignw                         m13, m10                  ; m13 = reinsert sign
   pand                           m14, m7
@@ -164,6 +176,7 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   pmaxsw                          m8, m13
   add                        ncoeffq, mmsize
   jl .ac_only_loop
+
 %ifidn %1, b_32x32
   jmp .accumulate_eob
 .skip_iter:
