@@ -117,7 +117,7 @@ static int cost_segmap(int *segcounts, vp9_prob *probs) {
   return cost;
 }
 
-static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
+static void count_segs(VP9_COMP *cpi, MODE_INFO_8x8 *mi_8x8,
                        int *no_pred_segcounts,
                        int (*temporal_predictor_count)[2],
                        int *t_unpred_seg_counts,
@@ -129,8 +129,8 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  segment_id = mi->mbmi.segment_id;
-  xd->mode_info_context = mi;
+  segment_id = mi_8x8->mi->mbmi.segment_id;
+
   set_mi_row_col(cm, xd, mi_row, bh, mi_col, bw);
 
   // Count the number of hits on each segment with no prediction
@@ -138,7 +138,7 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
 
   // Temporal prediction not allowed on key frames
   if (cm->frame_type != KEY_FRAME) {
-    const BLOCK_SIZE_TYPE bsize = mi->mbmi.sb_type;
+    const BLOCK_SIZE_TYPE bsize = mi_8x8->mi->mbmi.sb_type;
     // Test to see if the segment id matches the predicted value.
     const int pred_segment_id = vp9_get_segment_id(cm, cm->last_frame_seg_map,
                                                    bsize, mi_row, mi_col);
@@ -147,7 +147,7 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
 
     // Store the prediction status for this mb and update counts
     // as appropriate
-    vp9_set_pred_flag_seg_id(cm, bsize, mi_row, mi_col, pred_flag);
+    vp9_set_pred_flag_seg_id_e(cm, bsize, mi_row, mi_col, pred_flag);
     temporal_predictor_count[pred_context][pred_flag]++;
 
     if (!pred_flag)
@@ -156,7 +156,7 @@ static void count_segs(VP9_COMP *cpi, MODE_INFO *mi,
   }
 }
 
-static void count_segs_sb(VP9_COMP *cpi, MODE_INFO *mi,
+static void count_segs_sb(VP9_COMP *cpi, MODE_INFO_8x8 *mi_8x8,
                           int *no_pred_segcounts,
                           int (*temporal_predictor_count)[2],
                           int *t_unpred_seg_counts,
@@ -170,21 +170,22 @@ static void count_segs_sb(VP9_COMP *cpi, MODE_INFO *mi,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  bwl = mi_width_log2(mi->mbmi.sb_type);
-  bhl = mi_height_log2(mi->mbmi.sb_type);
+  bwl = mi_width_log2(mi_8x8->mi->mbmi.sb_type);
+  bhl = mi_height_log2(mi_8x8->mi->mbmi.sb_type);
 
   if (bwl == bsl && bhl == bsl) {
-    count_segs(cpi, mi, no_pred_segcounts, temporal_predictor_count,
+    count_segs(cpi, mi_8x8, no_pred_segcounts, temporal_predictor_count,
                t_unpred_seg_counts, 1 << bsl, 1 << bsl, mi_row, mi_col);
   } else if (bwl == bsl && bhl < bsl) {
-    count_segs(cpi, mi, no_pred_segcounts, temporal_predictor_count,
+    count_segs(cpi, mi_8x8, no_pred_segcounts, temporal_predictor_count,
                t_unpred_seg_counts, 1 << bsl, bs, mi_row, mi_col);
-    count_segs(cpi, mi + bs * mis, no_pred_segcounts, temporal_predictor_count,
-               t_unpred_seg_counts, 1 << bsl, bs, mi_row + bs, mi_col);
+    count_segs(cpi, mi_8x8 + bs * mis, no_pred_segcounts,
+               temporal_predictor_count, t_unpred_seg_counts, 1 << bsl, bs,
+               mi_row + bs, mi_col);
   } else if (bwl < bsl && bhl == bsl) {
-    count_segs(cpi, mi, no_pred_segcounts, temporal_predictor_count,
+    count_segs(cpi, mi_8x8, no_pred_segcounts, temporal_predictor_count,
                t_unpred_seg_counts, bs, 1 << bsl, mi_row, mi_col);
-    count_segs(cpi, mi + bs, no_pred_segcounts, temporal_predictor_count,
+    count_segs(cpi, mi_8x8 + bs, no_pred_segcounts, temporal_predictor_count,
                t_unpred_seg_counts, bs, 1 << bsl, mi_row, mi_col + bs);
   } else {
     BLOCK_SIZE_TYPE subsize;
@@ -203,7 +204,7 @@ static void count_segs_sb(VP9_COMP *cpi, MODE_INFO *mi,
     for (n = 0; n < 4; n++) {
       const int y_idx = n >> 1, x_idx = n & 0x01;
 
-      count_segs_sb(cpi, mi + y_idx * bs * mis + x_idx * bs,
+      count_segs_sb(cpi, mi_8x8 + y_idx * bs * mis + x_idx * bs,
                     no_pred_segcounts, temporal_predictor_count,
                     t_unpred_seg_counts,
                     mi_row + y_idx * bs, mi_col + x_idx * bs, subsize);
@@ -229,7 +230,7 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   vp9_prob t_nopred_prob[PREDICTION_PROBS];
 
   const int mis = cm->mode_info_stride;
-  MODE_INFO *mi_ptr, *mi;
+  MODE_INFO_8x8 *mi_ptr, *mi;
 
   // Set default state for the segment tree probabilities and the
   // temporal coding probabilities
@@ -240,7 +241,7 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   // predicts this one
   for (tile_col = 0; tile_col < 1 << cm->log2_tile_cols; tile_col++) {
     vp9_get_tile_col_offsets(cm, tile_col);
-    mi_ptr = cm->mi + cm->cur_tile_mi_col_start;
+    mi_ptr = cm->mi_grid_visible + cm->cur_tile_mi_col_start;
     for (mi_row = 0; mi_row < cm->mi_rows;
          mi_row += 8, mi_ptr += 8 * mis) {
       mi = mi_ptr;

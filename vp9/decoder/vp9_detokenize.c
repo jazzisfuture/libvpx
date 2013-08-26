@@ -95,7 +95,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   ENTROPY_CONTEXT above_ec, left_ec;
-  const int ref = is_inter_block(&xd->mode_info_context->mbmi);
+  const int ref = is_inter_block(&xd->this_mi->mbmi);
   int band, pt, c = 0;
   vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
@@ -257,7 +257,7 @@ static void decode_block(int plane, int block, BLOCK_SIZE_TYPE plane_bsize,
   MACROBLOCKD *xd = &arg->pbi->mb;
   struct segmentation *seg = &arg->pbi->common.seg;
   struct macroblockd_plane* pd = &xd->plane[plane];
-  const int segment_id = xd->mode_info_context->mbmi.segment_id;
+  const int segment_id = xd->this_mi->mbmi.segment_id;
   const int ss_txfrm_size = tx_size << 1;
   const int seg_eob = get_eob(seg, segment_id, 16 << ss_txfrm_size);
   int aoff, loff, eob;
