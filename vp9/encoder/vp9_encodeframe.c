@@ -2252,49 +2252,42 @@ static void reset_skip_txfm_size_b(VP9_COMP *cpi, MODE_INFO *mi, int mis,
 static void reset_skip_txfm_size_sb(VP9_COMP *cpi, MODE_INFO *mi,
                                     TX_SIZE txfm_max, int mi_row, int mi_col,
                                     BLOCK_SIZE_TYPE bsize) {
-  VP9_COMMON * const cm = &cpi->common;
+  const VP9_COMMON *const cm = &cpi->common;
   const int mis = cm->mode_info_stride;
-  int bwl, bhl;
-  const int bsl = mi_width_log2(bsize), bs = 1 << (bsl - 1);
+  int bw, bh;
+  const int bs = num_8x8_blocks_wide_lookup[bsize], hbs = bs / 2;
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  bwl = mi_width_log2(mi->mbmi.sb_type);
-  bhl = mi_height_log2(mi->mbmi.sb_type);
+  bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
+  bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
 
-  if (bwl == bsl && bhl == bsl) {
-    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, 1 << bsl, 1 << bsl, mi_row,
+  if (bw == bs && bh == bs) {
+    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, bs, bs, mi_row,
                            mi_col, bsize);
-  } else if (bwl == bsl && bhl < bsl) {
-    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, 1 << bsl, bs, mi_row, mi_col,
+  } else if (bw == bs && bh < bs) {
+    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, bs, hbs, mi_row, mi_col,
                            bsize);
-    reset_skip_txfm_size_b(cpi, mi + bs * mis, mis, txfm_max, 1 << bsl, bs,
-                           mi_row + bs, mi_col, bsize);
-  } else if (bwl < bsl && bhl == bsl) {
-    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, bs, 1 << bsl, mi_row, mi_col,
+    reset_skip_txfm_size_b(cpi, mi + hbs * mis, mis, txfm_max, bs, hbs,
+                           mi_row + hbs, mi_col, bsize);
+  } else if (bw < bs && bh == bs) {
+    reset_skip_txfm_size_b(cpi, mi, mis, txfm_max, hbs, bs, mi_row, mi_col,
                            bsize);
-    reset_skip_txfm_size_b(cpi, mi + bs, mis, txfm_max, bs, 1 << bsl, mi_row,
-                           mi_col + bs, bsize);
+    reset_skip_txfm_size_b(cpi, mi + hbs, mis, txfm_max, hbs, bs, mi_row,
+                           mi_col + hbs, bsize);
   } else {
-    BLOCK_SIZE_TYPE subsize;
+    const BLOCK_SIZE_TYPE subsize = subsize_lookup[PARTITION_SPLIT][bsize];
     int n;
 
-    assert(bwl < bsl && bhl < bsl);
-    if (bsize == BLOCK_64X64) {
-      subsize = BLOCK_32X32;
-    } else if (bsize == BLOCK_32X32) {
-      subsize = BLOCK_16X16;
-    } else {
-      assert(bsize == BLOCK_16X16);
-      subsize = BLOCK_8X8;
-    }
+    assert(bw < bs && bh < bs);
 
     for (n = 0; n < 4; n++) {
-      const int y_idx = n >> 1, x_idx = n & 0x01;
+      const int mi_dc = hbs * (n & 1);
+      const int mi_dr = hbs * (n >> 1);
 
-      reset_skip_txfm_size_sb(cpi, mi + y_idx * bs * mis + x_idx * bs, txfm_max,
-                              mi_row + y_idx * bs, mi_col + x_idx * bs,
+      reset_skip_txfm_size_sb(cpi, &mi[mi_dr * mis + mi_dc * hbs], txfm_max,
+                              mi_row + mi_dr * hbs, mi_col + mi_dc * hbs,
                               subsize);
     }
   }
