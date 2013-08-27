@@ -161,8 +161,9 @@ const char *kVP9TestVectors[] = {
   "vp90-2-03-size-226x210.webm", "vp90-2-03-size-226x224.webm",
   "vp90-2-03-size-226x226.webm",
 #if CONFIG_NON420
-  "vp91-2-04-yv444.webm"
+  "vp91-2-04-yv444.webm",
 #endif
+  "vp90-2-05-resize.webm"
 };
 #endif
 
