@@ -246,7 +246,6 @@ HAVE_LIST="
     unistd_h
 "
 EXPERIMENT_LIST="
-    oneshotq
     multiple_arf
     non420
     alpha
