@@ -14,10 +14,12 @@
 
 static INLINE int scaled_x(int val, const struct scale_factors *scale) {
   return val * scale->x_scale_fp >> REF_SCALE_SHIFT;
+//  return (val * scale->x_scale_fp + (1 << (REF_SCALE_SHIFT - 1))) >> REF_SCALE_SHIFT;
 }
 
 static INLINE int scaled_y(int val, const struct scale_factors *scale) {
   return val * scale->y_scale_fp >> REF_SCALE_SHIFT;
+//  return (val * scale->y_scale_fp + (1 << (REF_SCALE_SHIFT - 1))) >> REF_SCALE_SHIFT;
 }
 
 static int unscaled_value(int val, const struct scale_factors *scale) {

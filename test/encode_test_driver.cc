@@ -135,6 +135,23 @@ void EncoderTest::MismatchHook(const vpx_image_t *img1,
   ASSERT_TRUE(0) << "Encode/Decode mismatch found";
 }
 
+/* AWG TEMP DEBUG */
+static void write_img(const vpx_image_t *img1, const char *const fname) {
+  const unsigned int width_y  = img1->d_w;
+  const unsigned int height_y = img1->d_h;
+  unsigned int i;
+  FILE *fp = fopen(fname, "w");
+  for (i = 0; i < height_y; ++i)
+    fwrite(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y], 1, width_y, fp);
+  const unsigned int width_uv  = (img1->d_w + 1) >> 1;
+  const unsigned int height_uv = (img1->d_h + 1) >> 1;
+  for (i = 0; i < height_uv; ++i)
+    fwrite(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U], 1, width_uv, fp);
+  for (i = 0; i < height_uv; ++i)
+    fwrite(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V], 1, width_uv, fp);
+  fclose(fp);
+}
+
 void EncoderTest::RunLoop(VideoSource *video) {
   vpx_codec_dec_cfg_t dec_cfg = {0};
 
@@ -192,20 +209,22 @@ void EncoderTest::RunLoop(VideoSource *video) {
           default:
             break;
         }
-      }
 
-      if (has_dxdata && has_cxdata) {
-        const vpx_image_t *img_enc = encoder->GetPreviewFrame();
-        DxDataIterator dec_iter = decoder->GetDxData();
-        const vpx_image_t *img_dec = dec_iter.Next();
-        if (img_enc && img_dec) {
-          const bool res = compare_img(img_enc, img_dec);
-          if (!res) {  // Mismatch
-            MismatchHook(img_enc, img_dec);
+        if (has_dxdata && has_cxdata) {
+          const vpx_image_t *img_enc = encoder->GetPreviewFrame();
+          DxDataIterator dec_iter = decoder->GetDxData();
+          const vpx_image_t *img_dec = dec_iter.Next();
+          if (img_enc && img_dec) {
+            const bool res = compare_img(img_enc, img_dec);
+            if (!res) {  // Mismatch
+              MismatchHook(img_enc, img_dec);
+              //write_img(img_enc, "image_enc.yuv");
+              //write_img(img_dec, "image_dec.yuv");
+            }
           }
+          if (img_dec)
+            DecompressedFrameHook(*img_dec, video->pts());
         }
-        if (img_dec)
-          DecompressedFrameHook(*img_dec, video->pts());
       }
       if (!Continue())
         break;
