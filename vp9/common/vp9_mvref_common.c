@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (c) 2012 The WebM project authors. All Rights Reserved.
  *
@@ -186,6 +187,7 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                           int_mv *mv_ref_list,
                           int block_idx,
                           int mi_row, int mi_col) {
+  const MODE_INFO_8x8 *mi_8x8 = xd->mi_8x8;
   const int *ref_sign_bias = cm->ref_frame_sign_bias;
   int i, refmv_count = 0;
   const MV *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
@@ -203,8 +205,8 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     const MV *const mv_ref = &mv_ref_search[i];
     if (is_inside(cm, mi_col, mi_row, mv_ref)) {
       const int check_sub_blocks = block_idx >= 0;
-      const MODE_INFO *const candidate_mi = &mi[mv_ref->col + mv_ref->row
-                                                * xd->mode_info_stride];
+      const MODE_INFO *const candidate_mi = mi_8x8[mv_ref->col + mv_ref->row
+                                                   * xd->mode_info_stride].mi;
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
       // Keep counts for entropy encoding.
       context_counter += mode_2_counter[candidate->mode];
@@ -230,8 +232,8 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   for (; i < MVREF_NEIGHBOURS; ++i) {
     const MV *const mv_ref = &mv_ref_search[i];
     if (is_inside(cm, mi_col, mi_row, mv_ref)) {
-      const MB_MODE_INFO *const candidate = &mi[mv_ref->col + mv_ref->row
-                                                * xd->mode_info_stride].mbmi;
+      const MB_MODE_INFO *const candidate = &mi_8x8[mv_ref->col + mv_ref->row
+                                                * xd->mode_info_stride].mi->mbmi;
 
       if (candidate->ref_frame[0] == ref_frame) {
         ADD_MV_REF_LIST(candidate->mv[0]);
@@ -259,8 +261,8 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
       const MV *mv_ref = &mv_ref_search[i];
       if (is_inside(cm, mi_col, mi_row, mv_ref)) {
-        const MB_MODE_INFO *const candidate = &mi[mv_ref->col + mv_ref->row
-                                                  * xd->mode_info_stride].mbmi;
+        const MB_MODE_INFO *const candidate = &mi_8x8[mv_ref->col + mv_ref->row
+                                                  * xd->mode_info_stride].mi->mbmi;
 
         // If the candidate is INTRA we don't want to consider its mv.
         if (is_inter_block(candidate))
