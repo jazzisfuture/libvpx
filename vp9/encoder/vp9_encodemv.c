@@ -322,7 +322,8 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
   MV diff;
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[mbmi->sb_type];
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[mbmi->sb_type];
-  int idx, idy;
+  const int is_compound = has_second_ref(mbmi);
+  int idx, idy, ref;
 
   if (mbmi->sb_type < BLOCK_8X8) {
     PARTITION_INFO *pi = x->partition_info;
@@ -330,28 +331,18 @@ void vp9_update_nmv_count(VP9_COMP *cpi, MACROBLOCK *x,
       for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
         const int i = idy * 2 + idx;
         if (pi->bmi[i].mode == NEWMV) {
-          diff.row = mi->bmi[i].as_mv[0].as_mv.row - best_ref_mv->as_mv.row;
-          diff.col = mi->bmi[i].as_mv[0].as_mv.col - best_ref_mv->as_mv.col;
-          vp9_inc_mv(&diff, &cpi->NMVcount);
-
-          if (x->e_mbd.mode_info_context->mbmi.ref_frame[1] > INTRA_FRAME) {
-            diff.row = mi->bmi[i].as_mv[1].as_mv.row -
-                         second_best_ref_mv->as_mv.row;
-            diff.col = mi->bmi[i].as_mv[1].as_mv.col -
-                         second_best_ref_mv->as_mv.col;
+          for (ref = 0; ref < 1 + is_compound; ++ref) {
+            diff.row = mi->bmi[i].as_mv[ref].as_mv.row - best_ref_mv->as_mv.row;
+            diff.col = mi->bmi[i].as_mv[ref].as_mv.col - best_ref_mv->as_mv.col;
             vp9_inc_mv(&diff, &cpi->NMVcount);
           }
         }
       }
     }
   } else if (mbmi->mode == NEWMV) {
-    diff.row = mbmi->mv[0].as_mv.row - best_ref_mv->as_mv.row;
-    diff.col = mbmi->mv[0].as_mv.col - best_ref_mv->as_mv.col;
-    vp9_inc_mv(&diff, &cpi->NMVcount);
-
-    if (mbmi->ref_frame[1] > INTRA_FRAME) {
-      diff.row = mbmi->mv[1].as_mv.row - second_best_ref_mv->as_mv.row;
-      diff.col = mbmi->mv[1].as_mv.col - second_best_ref_mv->as_mv.col;
+    for (ref = 0; ref < 1 + is_compound; ++ref) {
+      diff.row = mbmi->mv[ref].as_mv.row - best_ref_mv->as_mv.row;
+      diff.col = mbmi->mv[ref].as_mv.col - best_ref_mv->as_mv.col;
       vp9_inc_mv(&diff, &cpi->NMVcount);
     }
   }
