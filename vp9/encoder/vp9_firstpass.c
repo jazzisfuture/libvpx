@@ -1011,6 +1011,15 @@ static int estimate_max_q(VP9_COMP *cpi,
   return q;
 }
 
+int vp9_estimate_kf_max_q_constq(VP9_COMP *cpi) {
+  FIRSTPASS_STATS *fpstats = &cpi->twopass.total_stats;
+  int q = cpi->oxcf.cq_level;
+  double pct = fpstats->pcnt_inter/fpstats->count;
+  q -= (int)(0.0 * q * pct * pct);
+  printf("kf q = %d\n", q);
+  return q;
+}
+
 // For cq mode estimate a cq level that matches the observed
 // complexity and data rate.
 static int estimate_cq(VP9_COMP *cpi,
@@ -1091,7 +1100,6 @@ static int estimate_cq(VP9_COMP *cpi,
 
   return q;
 }
-
 
 extern void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
@@ -2081,12 +2089,18 @@ void vp9_second_pass(VP9_COMP *cpi) {
 
   // Special case code for first frame.
   if (cpi->common.current_video_frame == 0) {
+    /*
+    int section_target_bandwidth =
+        cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY ?
+        INT_MAX : (int)(cpi->twopass.bits_left / frames_left);
+        */
+    int section_target_bandwidth = (int)(cpi->twopass.bits_left / frames_left);
     cpi->twopass.est_max_qcorrection_factor = 1.0;
 
     // Set a cq_level in constrained quality mode.
     if (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY) {
       int est_cq = estimate_cq(cpi, &cpi->twopass.total_left_stats,
-                               (int)(cpi->twopass.bits_left / frames_left));
+                               section_target_bandwidth);
 
       cpi->cq_target_quality = cpi->oxcf.cq_level;
       if (est_cq > cpi->cq_target_quality)
@@ -2098,7 +2112,7 @@ void vp9_second_pass(VP9_COMP *cpi) {
     cpi->twopass.maxq_min_limit = cpi->best_quality;
 
     tmp_q = estimate_max_q(cpi, &cpi->twopass.total_left_stats,
-                           (int)(cpi->twopass.bits_left / frames_left));
+                           section_target_bandwidth);
 
     cpi->active_worst_quality = tmp_q;
     cpi->ni_av_qi = tmp_q;
@@ -2122,14 +2136,21 @@ void vp9_second_pass(VP9_COMP *cpi) {
   else if ((cpi->common.current_video_frame <
             (((unsigned int)cpi->twopass.total_stats.count * 255) >> 8)) &&
            ((cpi->common.current_video_frame + cpi->baseline_gf_interval) <
-            (unsigned int)cpi->twopass.total_stats.count)) {
+            (unsigned int)cpi->twopass.total_stats.count) &&
+           cpi->oxcf.end_usage != USAGE_CONSTANT_QUALITY) {
+    /*
+    int section_target_bandwidth =
+        cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY ?
+        INT_MAX : (int)(cpi->twopass.bits_left / frames_left);
+        */
+    int section_target_bandwidth = (int)(cpi->twopass.bits_left / frames_left);
     if (frames_left < 1)
       frames_left = 1;
 
     tmp_q = estimate_max_q(
               cpi,
               &cpi->twopass.total_left_stats,
-              (int)(cpi->twopass.bits_left / frames_left));
+              section_target_bandwidth);
 
     // Make a damped adjustment to active max Q
     cpi->active_worst_quality =
@@ -2148,6 +2169,14 @@ void vp9_second_pass(VP9_COMP *cpi) {
     // Define next KF group and assign bits to it
     this_frame_copy = this_frame;
     find_next_key_frame(cpi, &this_frame_copy);
+  }
+
+  if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
+    if (cpi->common.frame_type == KEY_FRAME) {
+      cpi->active_worst_quality = vp9_estimate_kf_max_q_constq(cpi);
+    } else {
+      cpi->active_worst_quality = cpi->oxcf.cq_level;
+    }
   }
 
   // Is this a GF / ARF (Note that a KF is always also a GF)
