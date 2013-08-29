@@ -460,10 +460,23 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
 
   if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
     mbmi->mode = ZEROMV;
-  } else {
-    if (bsize >= BLOCK_8X8)
-      mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
+    if (bsize < BLOCK_8X8) {
+      int i;
+      for (i = 0; i < 4; ++i) {
+        mi->bmi[i].as_mv[0].as_int = 0;
+        if (is_compound)
+          mi->bmi[i].as_mv[1].as_int = 0;
+      }
+    } else {
+      mv0->as_int = 0;
+      if (is_compound)
+        mv1->as_int = 0;
+    }
+    return;
   }
+
+  if (bsize >= BLOCK_8X8)
+    mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
 
   // nearest, nearby
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
