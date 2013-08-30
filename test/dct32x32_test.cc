@@ -177,7 +177,7 @@ TEST(VP9Fdct32x32Test, CoeffSizeCheck) {
 
     const int pitch = 64;
     vp9_short_fdct32x32_c(input_block, output_block, pitch);
-    vp9_short_fdct32x32_c(input_extreme_block, output_extreme_block, pitch);
+    vp9_short_fdct32x32_c(input_block, output_extreme_block, pitch);
 
     // The minimum quant value is 4.
     for (int j = 0; j < 1024; ++j) {
