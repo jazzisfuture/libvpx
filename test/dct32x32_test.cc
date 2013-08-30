@@ -163,7 +163,8 @@ TEST(VP9Fdct32x32Test, CoeffSizeCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 1000;
   for (int i = 0; i < count_test_block; ++i) {
-    int16_t input_block[1024], input_extreme_block[1024];
+    int16_t input_block[1024];
+    int16_t input_extreme_block[1024];
     int16_t output_block[1024], output_extreme_block[1024];
 
     // Initialize a test block with input range [-255, 255].
@@ -176,11 +177,20 @@ TEST(VP9Fdct32x32Test, CoeffSizeCheck) {
         input_extreme_block[j] = 255;
 
     const int pitch = 64;
-    vp9_short_fdct32x32_c(input_block, output_block, pitch);
-    vp9_short_fdct32x32_c(input_extreme_block, output_extreme_block, pitch);
+    vp9_short_fdct32x32_c(input_extreme_block, output_block, pitch);
+    vp9_short_fdct32x32(input_extreme_block, output_extreme_block, pitch);
+
+    fprintf(stderr, "%d %d\n", output_block[0], output_block[1]);
+    fprintf(stderr, "%d %d\n", output_extreme_block[0], output_extreme_block[1]);
+    // assert(0);
 
     // The minimum quant value is 4.
     for (int j = 0; j < 1024; ++j) {
+      if (output_block[j] != output_extreme_block[j]) {
+        fprintf(stderr, "position %d: ref %d, sse2 %d\n", j,
+                output_block[j], output_extreme_block[j]);
+        assert(0);
+      }
       EXPECT_GE(4*DCT_MAX_VALUE, abs(output_block[j]))
           << "Error: 32x32 FDCT has coefficient larger than 4*DCT_MAX_VALUE";
       EXPECT_GE(4*DCT_MAX_VALUE, abs(output_extreme_block[j]))
