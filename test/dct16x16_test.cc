@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "test/clear_system_state.h"
 #include "vpx_ports/mem.h"
 
 extern "C" {
@@ -392,10 +393,13 @@ TEST_P(Trans16x16Test, CoeffSizeCheck) {
 TEST_P(Trans16x16Test, InvAccuracyCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 1000;
+
   // TODO(jingning): is this unit test necessary? if so, need to add
   // check sets for inverse hybrid transforms too.
   if (tx_type_ != DCT_DCT)
     return;
+
+  libvpx_test::ClearSystemState();
 
   for (int i = 0; i < count_test_block; ++i) {
     DECLARE_ALIGNED_ARRAY(16, int16_t, in, 256);
