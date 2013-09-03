@@ -17,6 +17,7 @@
 
 extern "C" {
 #include "vp9/common/vp9_entropy.h"
+#include "vp9/common/vp9_systemdependent.h"
 #include "vp9_rtcd.h"
 void vp9_short_idct16x16_add_c(short *input, uint8_t *output, int pitch);
 }
@@ -392,10 +393,13 @@ TEST_P(Trans16x16Test, CoeffSizeCheck) {
 TEST_P(Trans16x16Test, InvAccuracyCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 1000;
+
   // TODO(jingning): is this unit test necessary? if so, need to add
   // check sets for inverse hybrid transforms too.
   if (tx_type_ != DCT_DCT)
     return;
+
+  vp9_clear_system_state();
 
   for (int i = 0; i < count_test_block; ++i) {
     DECLARE_ALIGNED_ARRAY(16, int16_t, in, 256);
