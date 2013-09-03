@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "blockd.h"
 
+#if CONFIG_DEBUG
 
 void vp8_print_modes_and_motion_vectors(MODE_INFO *mi, int rows, int cols, int frame)
 {
@@ -155,3 +156,4 @@ void vp8_print_modes_and_motion_vectors(MODE_INFO *mi, int rows, int cols, int f
 
     fclose(mvs);
 }
+#endif
