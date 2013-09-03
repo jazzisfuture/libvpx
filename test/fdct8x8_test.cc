@@ -13,6 +13,8 @@
 #include <string.h>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "test/clear_system_state.h"
+#include "test/register_state_check.h"
 #include "vpx_ports/mem.h"
 
 extern "C" {
@@ -62,6 +64,7 @@ class FwdTrans8x8Test : public ::testing::TestWithParam<int> {
       inv_txfm = iht8x8_add;
     }
   }
+  virtual void TearDown() { libvpx_test::ClearSystemState(); }
 
  protected:
   void RunFwdTxfm(int16_t *in, int16_t *out, uint8_t *dst,
@@ -92,8 +95,9 @@ TEST_P(FwdTrans8x8Test, SignBiasCheck) {
     // Initialize a test block with input range [-255, 255].
     for (int j = 0; j < 64; ++j)
       test_input_block[j] = rnd.Rand8() - rnd.Rand8();
-
-    RunFwdTxfm(test_input_block, test_output_block, NULL, pitch, tx_type_);
+    REGISTER_STATE_CHECK(
+        RunFwdTxfm(test_input_block, test_output_block,
+                   NULL, pitch, tx_type_));
 
     for (int j = 0; j < 64; ++j) {
       if (test_output_block[j] < 0)
@@ -121,8 +125,9 @@ TEST_P(FwdTrans8x8Test, SignBiasCheck) {
     // Initialize a test block with input range [-15, 15].
     for (int j = 0; j < 64; ++j)
       test_input_block[j] = (rnd.Rand8() >> 4) - (rnd.Rand8() >> 4);
-
-    RunFwdTxfm(test_input_block, test_output_block, NULL, pitch, tx_type_);
+    REGISTER_STATE_CHECK(
+        RunFwdTxfm(test_input_block, test_output_block,
+                   NULL, pitch, tx_type_));
 
     for (int j = 0; j < 64; ++j) {
       if (test_output_block[j] < 0)
@@ -165,7 +170,9 @@ TEST_P(FwdTrans8x8Test, RoundTripErrorCheck) {
       test_input_block[j] = src[j] - dst[j];
 
     const int pitch = 16;
-    RunFwdTxfm(test_input_block, test_temp_block, dst, pitch, tx_type_);
+    REGISTER_STATE_CHECK(
+        RunFwdTxfm(test_input_block, test_temp_block,
+                   dst, pitch, tx_type_));
     for (int j = 0; j < 64; ++j){
         if(test_temp_block[j] > 0) {
           test_temp_block[j] += 2;
@@ -177,7 +184,9 @@ TEST_P(FwdTrans8x8Test, RoundTripErrorCheck) {
           test_temp_block[j] *= 4;
         }
     }
-    RunInvTxfm(test_input_block, test_temp_block, dst, pitch, tx_type_);
+    REGISTER_STATE_CHECK(
+        RunInvTxfm(test_input_block, test_temp_block,
+                    dst, pitch, tx_type_));
 
     for (int j = 0; j < 64; ++j) {
       const int diff = dst[j] - src[j];
@@ -216,8 +225,12 @@ TEST_P(FwdTrans8x8Test, ExtremalCheck) {
       test_input_block[j] = src[j] - dst[j];
 
     const int pitch = 16;
-    RunFwdTxfm(test_input_block, test_temp_block, dst, pitch, tx_type_);
-    RunInvTxfm(test_input_block, test_temp_block, dst, pitch, tx_type_);
+    REGISTER_STATE_CHECK(
+        RunFwdTxfm(test_input_block, test_temp_block,
+                   dst, pitch, tx_type_));
+    REGISTER_STATE_CHECK(
+        RunInvTxfm(test_input_block, test_temp_block,
+                   dst, pitch, tx_type_));
 
     for (int j = 0; j < 64; ++j) {
       const int diff = dst[j] - src[j];
