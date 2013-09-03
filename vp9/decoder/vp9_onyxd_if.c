@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 #include "vp9/common/vp9_onyxc_int.h"
-#if CONFIG_POSTPROC
+#if CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_postproc.h"
 #endif
 #include "vp9/decoder/vp9_onyxd.h"
@@ -421,7 +421,7 @@ int vp9_get_raw_frame(VP9D_PTR ptr, YV12_BUFFER_CONFIG *sd,
   *time_stamp = pbi->last_time_stamp;
   *time_end_stamp = 0;
 
-#if CONFIG_POSTPROC
+#if CONFIG_VP9_POSTPROC
   ret = vp9_post_proc_frame(&pbi->common, sd, flags);
 #else
 
