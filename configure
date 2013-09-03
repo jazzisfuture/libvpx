@@ -279,6 +279,7 @@ CONFIG_LIST="
     dc_recon
     runtime_cpu_detect
     postproc
+    vp9_postproc
     multithread
     internal_stats
     ${CODECS}
@@ -333,6 +334,7 @@ CMDLINE_SELECT="
     dequant_tokens
     dc_recon
     postproc
+    vp9_postproc
     multithread
     internal_stats
     ${CODECS}
