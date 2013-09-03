@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
+#include "test/clear_system_state.h"
 #include "vpx_ports/mem.h"
 
 extern "C" {
@@ -290,7 +291,6 @@ void iht16x16_add(int16_t* /*in*/, int16_t *out, uint8_t *dst,
 class Trans16x16Test : public ::testing::TestWithParam<int> {
  public:
   virtual ~Trans16x16Test() {}
-
   virtual void SetUp() {
     tx_type_ = GetParam();
     if (tx_type_ == 0) {
@@ -392,6 +392,7 @@ TEST_P(Trans16x16Test, CoeffSizeCheck) {
 TEST_P(Trans16x16Test, InvAccuracyCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 1000;
+
   // TODO(jingning): is this unit test necessary? if so, need to add
   // check sets for inverse hybrid transforms too.
   if (tx_type_ != DCT_DCT)
