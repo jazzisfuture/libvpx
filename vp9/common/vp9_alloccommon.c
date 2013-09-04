@@ -19,9 +19,10 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_systemdependent.h"
 
-void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
+void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi,
+                                 MODE_INFO **mi_8x8) {
   const int stride = cm->mode_info_stride;
-  int i;
+  int i, j;
 
   // Clear down top border row
   vpx_memset(mi, 0, sizeof(MODE_INFO) * stride);
@@ -29,21 +30,21 @@ void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
   // Clear left border column
   for (i = 1; i < cm->mi_rows + 1; i++)
     vpx_memset(&mi[i * stride], 0, sizeof(MODE_INFO));
-}
 
-void vp9_update_mode_info_in_image(VP9_COMMON *cm, MODE_INFO *mi) {
-  int i, j;
+  // Use the first struct allocated for the top border mode info
+//  for (i = 0; i < cm->mi_cols + 1; i++) {
+//    mi_8x8[i] = mi;
+//  }
+  // Step over border element at start of next row
+//  mi_8x8 += stride;
 
-  // For each in image mode_info element set the in image flag to 1
-  for (i = 0; i < cm->mi_rows; i++) {
-    MODE_INFO *ptr = mi;
-    for (j = 0; j < cm->mi_cols; j++) {
-      ptr->mbmi.in_image = 1;
-      ptr++;  // Next element in the row
+  // Use the first struct allocated for the left mode info
+  for (i = 0; i < cm->mi_rows + MI_BLOCK_SIZE; i++) {
+    for (j = 0; j < cm->mi_cols + MI_BLOCK_SIZE; j++) {
+        mi_8x8[j] = mi;
     }
-
     // Step over border element at start of next row
-    mi += cm->mode_info_stride;
+    mi_8x8 += stride;
   }
 }
 
@@ -82,15 +83,18 @@ static void set_mb_mi(VP9_COMMON *cm, int aligned_width, int aligned_height) {
 static void setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mode_info_stride + 1;
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
+  cm->mi_grid_visible = cm->mi_grid_base + cm->mode_info_stride + 1;
+  cm->prev_mi_grid_visible = cm->prev_mi_grid_base + cm->mode_info_stride + 1;
 
   vpx_memset(cm->mip, 0,
              cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO));
 
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_in_image(cm, cm->mi);
+  vpx_memset(cm->mi_grid_base, 0,
+             cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO *));
 
-  vp9_update_mode_info_border(cm, cm->prev_mip);
-  vp9_update_mode_info_in_image(cm, cm->prev_mi);
+  vp9_update_mode_info_border(cm, cm->mip, cm->mi_grid_base);
+
+  vp9_update_mode_info_border(cm, cm->prev_mip, cm->prev_mi_grid_base);
 }
 
 int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
@@ -137,6 +141,14 @@ int vp9_alloc_frame_buffers(VP9_COMMON *oci, int width, int height) {
 
   oci->prev_mip = vpx_calloc(mi_size, sizeof(MODE_INFO));
   if (!oci->prev_mip)
+    goto fail;
+
+  oci->mi_grid_base = vpx_calloc(mi_size, sizeof(MODE_INFO *));
+  if (!oci->mi_grid_base)
+    goto fail;
+
+  oci->prev_mi_grid_base = vpx_calloc(mi_size, sizeof(MODE_INFO *));
+  if (!oci->prev_mi_grid_base)
     goto fail;
 
   setup_mi(oci);

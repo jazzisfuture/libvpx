@@ -509,11 +509,8 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vpx_memset(cm->mip, 0,
              cm->mode_info_stride * (cm->mi_rows + 1) * sizeof(MODE_INFO));
 
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_in_image(cm, cm->mi);
-
-  vp9_update_mode_info_border(cm, cm->prev_mip);
-  vp9_update_mode_info_in_image(cm, cm->prev_mi);
+  vp9_update_mode_info_border(cm, cm->mip, cm->mi_grid_base);
+  vp9_update_mode_info_border(cm, cm->prev_mip, cm->prev_mi_grid_base);
 
   vp9_zero(cm->ref_frame_sign_bias);
 
