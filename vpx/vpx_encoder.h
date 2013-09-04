@@ -595,8 +595,14 @@ extern "C" {
     unsigned int           kf_max_dist;
 
     /*
-     * Temporal scalability settings (ts)
+     * Spatial scalability settings (ss)
      */
+
+    /*!\brief Number of coding layers (spatial)
+     *
+     * This value specifies the number of coding layers to be used.
+     */
+    unsigned int           ss_number_layers;
 
     /*!\brief Number of coding layers
      *
