@@ -12,7 +12,7 @@
 #define TEST_DECODE_TEST_DRIVER_H_
 #include <cstring>
 #include "third_party/googletest/src/include/gtest/gtest.h"
-#include "vpx_config.h"
+#include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
 
 namespace libvpx_test {
@@ -36,12 +36,11 @@ class DxDataIterator {
 };
 
 // Provides a simplified interface to manage one video decoding.
-//
-// TODO: similar to Encoder class, the exact services should be
-// added as more tests are added.
+// Similar to Encoder class, the exact services should be added
+// as more tests are added.
 class Decoder {
  public:
-  Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
+  Decoder(vpx_codec_dec_cfg_t cfg, uint64_t deadline)
       : cfg_(cfg), deadline_(deadline), init_done_(false) {
     memset(&decoder_, 0, sizeof(decoder_));
   }
@@ -56,7 +55,7 @@ class Decoder {
     return DxDataIterator(&decoder_);
   }
 
-  void set_deadline(unsigned long deadline) {
+  void set_deadline(uint64_t deadline) {
     deadline_ = deadline;
   }
 

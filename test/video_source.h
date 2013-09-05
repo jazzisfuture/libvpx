@@ -50,7 +50,7 @@ class VideoSource {
   virtual vpx_codec_pts_t pts() const = 0;
 
   // Get the current frame's duration
-  virtual unsigned long duration() const = 0;
+  virtual uint64_t duration() const = 0;
 
   // Get the timebase for the stream
   virtual vpx_rational_t timebase() const = 0;
@@ -88,7 +88,7 @@ class DummyVideoSource : public VideoSource {
   // Models a stream where Timebase = 1/FPS, so pts == frame.
   virtual vpx_codec_pts_t pts() const { return frame_; }
 
-  virtual unsigned long duration() const { return 1; }
+  virtual uint64_t duration() const { return 1; }
 
   virtual vpx_rational_t timebase() const {
     const vpx_rational_t t = {1, 30};

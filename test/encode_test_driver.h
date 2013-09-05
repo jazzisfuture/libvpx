@@ -87,8 +87,8 @@ class TwopassStatsStore {
 // level of abstraction will be fleshed out as more tests are written.
 class Encoder {
  public:
-  Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
-          const unsigned long init_flags, TwopassStatsStore *stats)
+  Encoder(vpx_codec_enc_cfg_t cfg, uint64_t deadline,
+          const uint64_t init_flags, TwopassStatsStore *stats)
       : cfg_(cfg), deadline_(deadline), init_flags_(init_flags), stats_(stats) {
     memset(&encoder_, 0, sizeof(encoder_));
   }
@@ -106,7 +106,7 @@ class Encoder {
   }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
-  void EncodeFrame(VideoSource *video, const unsigned long frame_flags);
+  void EncodeFrame(VideoSource *video, const uint64_t frame_flags);
 
   // Convenience wrapper for EncodeFrame()
   void EncodeFrame(VideoSource *video) {
@@ -123,7 +123,7 @@ class Encoder {
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
 
-  void set_deadline(unsigned long deadline) {
+  void set_deadline(uint64_t deadline) {
     deadline_ = deadline;
   }
 
@@ -137,15 +137,15 @@ class Encoder {
 
   // Encode an image
   void EncodeFrameInternal(const VideoSource &video,
-                           const unsigned long frame_flags);
+                           const uint64_t frame_flags);
 
   // Flush the encoder on EOS
   void Flush();
 
   vpx_codec_ctx_t      encoder_;
   vpx_codec_enc_cfg_t  cfg_;
-  unsigned long        deadline_;
-  unsigned long        init_flags_;
+  uint64_t             deadline_;
+  uint64_t             init_flags_;
   TwopassStatsStore   *stats_;
 };
 
@@ -215,10 +215,10 @@ class EncoderTest {
   bool                 abort_;
   vpx_codec_enc_cfg_t  cfg_;
   unsigned int         passes_;
-  unsigned long        deadline_;
+  uint64_t             deadline_;
   TwopassStatsStore    stats_;
-  unsigned long        init_flags_;
-  unsigned long        frame_flags_;
+  uint64_t             init_flags_;
+  uint64_t             frame_flags_;
   vpx_codec_pts_t      last_pts_;
 };
 

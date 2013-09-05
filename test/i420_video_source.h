@@ -11,6 +11,7 @@
 #define TEST_I420_VIDEO_SOURCE_H_
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 #include "test/video_source.h"
 
@@ -34,7 +35,6 @@ class I420VideoSource : public VideoSource {
         height_(0),
         framerate_numerator_(rate_numerator),
         framerate_denominator_(rate_denominator) {
-
     // This initializes raw_sz_, width_, height_ and allocates an img.
     SetSize(width, height);
   }
@@ -69,7 +69,7 @@ class I420VideoSource : public VideoSource {
   // Models a stream where Timebase = 1/FPS, so pts == frame.
   virtual vpx_codec_pts_t pts() const { return frame_; }
 
-  virtual unsigned long duration() const { return 1; }
+  virtual uint64_t duration() const { return 1; }
 
   virtual vpx_rational_t timebase() const {
     const vpx_rational_t t = { framerate_denominator_, framerate_numerator_ };

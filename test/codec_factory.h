@@ -33,11 +33,11 @@ class CodecFactory {
   virtual ~CodecFactory() {}
 
   virtual Decoder* CreateDecoder(vpx_codec_dec_cfg_t cfg,
-                                 unsigned long deadline) const = 0;
+                                 uint64_t deadline) const = 0;
 
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
-                                 const unsigned long init_flags,
+                                 uint64_t deadline,
+                                 const uint64_t init_flags,
                                  TwopassStatsStore *stats) const = 0;
 
   virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
@@ -69,7 +69,7 @@ class CodecTestWith3Params : public ::testing::TestWithParam<
 #if CONFIG_VP8
 class VP8Decoder : public Decoder {
  public:
-  VP8Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
+  VP8Decoder(vpx_codec_dec_cfg_t cfg, uint64_t deadline)
       : Decoder(cfg, deadline) {}
 
  protected:
@@ -84,8 +84,8 @@ class VP8Decoder : public Decoder {
 
 class VP8Encoder : public Encoder {
  public:
-  VP8Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
-             const unsigned long init_flags, TwopassStatsStore *stats)
+  VP8Encoder(vpx_codec_enc_cfg_t cfg, uint64_t deadline,
+             const uint64_t init_flags, TwopassStatsStore *stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
@@ -103,7 +103,7 @@ class VP8CodecFactory : public CodecFactory {
   VP8CodecFactory() : CodecFactory() {}
 
   virtual Decoder* CreateDecoder(vpx_codec_dec_cfg_t cfg,
-                                 unsigned long deadline) const {
+                                 uint64_t deadline) const {
 #if CONFIG_VP8_DECODER
     return new VP8Decoder(cfg, deadline);
 #else
@@ -112,8 +112,8 @@ class VP8CodecFactory : public CodecFactory {
   }
 
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
-                                 const unsigned long init_flags,
+                                 uint64_t deadline,
+                                 const uint64_t init_flags,
                                  TwopassStatsStore *stats) const {
 #if CONFIG_VP8_ENCODER
     return new VP8Encoder(cfg, deadline, init_flags, stats);
@@ -151,7 +151,7 @@ const libvpx_test::VP8CodecFactory kVP8;
 #if CONFIG_VP9
 class VP9Decoder : public Decoder {
  public:
-  VP9Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
+  VP9Decoder(vpx_codec_dec_cfg_t cfg, uint64_t deadline)
       : Decoder(cfg, deadline) {}
 
  protected:
@@ -166,8 +166,8 @@ class VP9Decoder : public Decoder {
 
 class VP9Encoder : public Encoder {
  public:
-  VP9Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
-             const unsigned long init_flags, TwopassStatsStore *stats)
+  VP9Encoder(vpx_codec_enc_cfg_t cfg, uint64_t deadline,
+             const uint64_t init_flags, TwopassStatsStore *stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
@@ -185,7 +185,7 @@ class VP9CodecFactory : public CodecFactory {
   VP9CodecFactory() : CodecFactory() {}
 
   virtual Decoder* CreateDecoder(vpx_codec_dec_cfg_t cfg,
-                                 unsigned long deadline) const {
+                                 uint64_t deadline) const {
 #if CONFIG_VP9_DECODER
     return new VP9Decoder(cfg, deadline);
 #else
@@ -194,8 +194,8 @@ class VP9CodecFactory : public CodecFactory {
   }
 
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
-                                 const unsigned long init_flags,
+                                 uint64_t deadline,
+                                 const uint64_t init_flags,
                                  TwopassStatsStore *stats) const {
 #if CONFIG_VP9_ENCODER
     return new VP9Encoder(cfg, deadline, init_flags, stats);

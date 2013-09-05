@@ -47,7 +47,7 @@ nestegg_seek_cb(int64_t offset, int whence, void *userdata) {
       whence = SEEK_END;
       break;
   };
-  return fseek(f, (long)offset, whence) ? -1 : 0;
+  return fseek(f, (int64_t)offset, whence) ? -1 : 0;
 }
 
 
