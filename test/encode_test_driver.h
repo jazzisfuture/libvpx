@@ -106,7 +106,7 @@ class Encoder {
   }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
-  void EncodeFrame(VideoSource *video, const unsigned long frame_flags);
+  void EncodeFrame(VideoSource *video, const uint64_t frame_flags);
 
   // Convenience wrapper for EncodeFrame()
   void EncodeFrame(VideoSource *video) {
@@ -137,7 +137,7 @@ class Encoder {
 
   // Encode an image
   void EncodeFrameInternal(const VideoSource &video,
-                           const unsigned long frame_flags);
+                           const uint64_t frame_flags);
 
   // Flush the encoder on EOS
   void Flush();
