@@ -2605,7 +2605,23 @@ static void adjust_act_zbin(VP9_COMP *cpi, MACROBLOCK *x) {
     x->act_zbin_adj = 1 - (int) (((int64_t) a + (b >> 1)) / b);
 #endif
 }
-
+static const TX_SIZE tx_mode_to_biggest_tx_size(TX_MODE tx_mode) {
+  switch (tx_mode) {
+    case ONLY_4X4:
+      return TX_4X4;
+    case ALLOW_8X8:
+      return TX_8X8;
+    case ALLOW_16X16:
+      return TX_16X16;
+    case ALLOW_32X32:
+      return TX_32X32;
+    case TX_MODE_SELECT:
+      return TX_32X32;
+    case TX_MODES:
+      assert(!"Invalid transform mode");
+      return TX_SIZES;
+  }
+}
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize) {
   VP9_COMMON * const cm = &cpi->common;
@@ -2713,7 +2729,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       update_tx_counts(bsize, context, mbmi->tx_size, &cm->counts.tx);
     } else {
       int x, y;
-      TX_SIZE sz = (cm->tx_mode == TX_MODE_SELECT) ? TX_32X32 : cm->tx_mode;
+      TX_SIZE sz = tx_mode_to_biggest_tx_size(cm->tx_mode);
       // The new intra coding scheme requires no change of transform size
       if (is_inter_block(&mi->mbmi)) {
         if (sz == TX_32X32 && bsize < BLOCK_32X32)
