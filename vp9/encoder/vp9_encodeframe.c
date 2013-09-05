@@ -594,13 +594,6 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   int var;
   int segment;
   int segment_id;
-  int orig_rddiv = x->rddiv;
-  int orig_rdmult = x->rdmult;
-
-  int qindex;
-  double real_rdmult, base_rdmult, avg_rdmult;
-  double rate_factor = 1.0;
-  double dist_factor = 1.0;
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
@@ -643,22 +636,9 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   xd->mode_info_context->mbmi.segment_id = segment_id = segments[segment + 3];
 
   vp9_mb_init_quantizer(cpi, x);
-
-  qindex = vp9_get_qindex(&cpi->common.seg, segment_id,
-                          cpi->common.base_qindex);
-  real_rdmult = vp9_compute_rd_mult(qindex + cm->y_dc_delta_q);
-  base_rdmult = vp9_compute_rd_mult(cpi->common.base_qindex + cm->y_dc_delta_q);
-
-  // If Q is higher, we care less about distortion and more about rate
-  avg_rdmult = (base_rdmult + real_rdmult)/2.0;
-  dist_factor = avg_rdmult/real_rdmult;
-  rate_factor = avg_rdmult/base_rdmult;
 #endif
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
-
-  x->rddiv = round(x->rddiv * dist_factor);
-  x->rdmult = round(x->rdmult * rate_factor);
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
@@ -668,15 +648,6 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   else
     vp9_rd_pick_inter_mode_sb(cpi, x, mi_row, mi_col, totalrate, totaldist,
                               bsize, ctx, best_rd);
-
-  // RDCOST will be computed using the frame rddiv and rdmult,
-  // so we have to adjust the actual dist and rate to not alter the cost
-  x->rddiv = orig_rddiv;
-  x->rdmult = orig_rdmult;
-  if (*totalrate != INT_MAX && *totaldist != INT64_MAX) {
-    *totaldist = round(*totaldist * dist_factor);
-    *totalrate = round(*totalrate * rate_factor);
-  }
 }
 
 static void update_stats(VP9_COMP *cpi) {
