@@ -184,7 +184,7 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9D_PTR ptr,
    * vpxenc --test-decode functionality working, and will be replaced in a
    * later commit that adds VP9-specific controls for this functionality.
    */
-  if (ref_frame_flag == VP9_LAST_FLAG) {
+  if (ref_frame_flag == LAST_FLAG) {
     ref_fb_idx = cm->ref_frame_map[0];
   } else {
     vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
@@ -214,11 +214,11 @@ vpx_codec_err_t vp9_set_reference_dec(VP9D_PTR ptr, VP9_REFFRAME ref_frame_flag,
    * vpxenc --test-decode functionality working, and will be replaced in a
    * later commit that adds VP9-specific controls for this functionality.
    */
-  if (ref_frame_flag == VP9_LAST_FLAG)
+  if (ref_frame_flag == LAST_FLAG)
     ref_fb_ptr = &pbi->common.active_ref_idx[0];
-  else if (ref_frame_flag == VP9_GOLD_FLAG)
+  else if (ref_frame_flag == GOLD_FLAG)
     ref_fb_ptr = &pbi->common.active_ref_idx[1];
-  else if (ref_frame_flag == VP9_ALT_FLAG)
+  else if (ref_frame_flag == ALT_FLAG)
     ref_fb_ptr = &pbi->common.active_ref_idx[2];
   else {
     vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,

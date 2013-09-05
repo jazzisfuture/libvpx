@@ -2455,8 +2455,8 @@ static void test_decode(struct stream_state  *stream,
     vpx_img_alloc(&ref_dec.img, VPX_IMG_FMT_I420, width, height, 1);
     dec_img = ref_dec.img;
 
-    ref_enc.frame_type = VP8_LAST_FRAME;
-    ref_dec.frame_type = VP8_LAST_FRAME;
+    ref_enc.frame_type = LAST_FLAG;
+    ref_dec.frame_type = LAST_FLAG;
     vpx_codec_control(&stream->encoder, VP8_COPY_REFERENCE, &ref_enc);
     vpx_codec_control(&stream->decoder, VP8_COPY_REFERENCE, &ref_dec);
   } else {

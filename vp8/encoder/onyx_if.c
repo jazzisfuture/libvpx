@@ -788,11 +788,11 @@ void vp8_set_speed_features(VP8_COMP *cpi)
 
     /* Count enabled references */
     ref_frames = 1;
-    if (cpi->ref_frame_flags & VP8_LAST_FRAME)
+    if (cpi->ref_frame_flags & LAST_FLAG)
         ref_frames++;
-    if (cpi->ref_frame_flags & VP8_GOLD_FRAME)
+    if (cpi->ref_frame_flags & GOLD_FLAG)
         ref_frames++;
-    if (cpi->ref_frame_flags & VP8_ALTR_FRAME)
+    if (cpi->ref_frame_flags & ALT_FLAG)
         ref_frames++;
 
     /* Convert speed to continuous range, with clamping */
@@ -1564,7 +1564,7 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
     cpi->baseline_gf_interval =
         cpi->oxcf.alt_freq ? cpi->oxcf.alt_freq : DEFAULT_GF_INTERVAL;
 
-    cpi->ref_frame_flags = VP8_ALTR_FRAME | VP8_GOLD_FRAME | VP8_LAST_FRAME;
+    cpi->ref_frame_flags = ALT_FLAG | GOLD_FLAG | LAST_FLAG;
 
     cm->refresh_golden_frame = 0;
     cm->refresh_last_frame = 1;
@@ -2540,13 +2540,13 @@ int vp8_update_reference(VP8_COMP *cpi, int ref_frame_flags)
     cpi->common.refresh_alt_ref_frame = 0;
     cpi->common.refresh_last_frame   = 0;
 
-    if (ref_frame_flags & VP8_LAST_FRAME)
+    if (ref_frame_flags & LAST_FLAG)
         cpi->common.refresh_last_frame = 1;
 
-    if (ref_frame_flags & VP8_GOLD_FRAME)
+    if (ref_frame_flags & GOLD_FLAG)
         cpi->common.refresh_golden_frame = 1;
 
-    if (ref_frame_flags & VP8_ALTR_FRAME)
+    if (ref_frame_flags & ALT_FLAG)
         cpi->common.refresh_alt_ref_frame = 1;
 
     return 0;
@@ -2557,11 +2557,11 @@ int vp8_get_reference(VP8_COMP *cpi, enum vpx_ref_frame_type ref_frame_flag, YV1
     VP8_COMMON *cm = &cpi->common;
     int ref_fb_idx;
 
-    if (ref_frame_flag == VP8_LAST_FRAME)
+    if (ref_frame_flag == LAST_FLAG)
         ref_fb_idx = cm->lst_fb_idx;
-    else if (ref_frame_flag == VP8_GOLD_FRAME)
+    else if (ref_frame_flag == GOLD_FLAG)
         ref_fb_idx = cm->gld_fb_idx;
-    else if (ref_frame_flag == VP8_ALTR_FRAME)
+    else if (ref_frame_flag == ALT_FLAG)
         ref_fb_idx = cm->alt_fb_idx;
     else
         return -1;
@@ -2576,11 +2576,11 @@ int vp8_set_reference(VP8_COMP *cpi, enum vpx_ref_frame_type ref_frame_flag, YV1
 
     int ref_fb_idx;
 
-    if (ref_frame_flag == VP8_LAST_FRAME)
+    if (ref_frame_flag == LAST_FLAG)
         ref_fb_idx = cm->lst_fb_idx;
-    else if (ref_frame_flag == VP8_GOLD_FRAME)
+    else if (ref_frame_flag == GOLD_FLAG)
         ref_fb_idx = cm->gld_fb_idx;
-    else if (ref_frame_flag == VP8_ALTR_FRAME)
+    else if (ref_frame_flag == ALT_FLAG)
         ref_fb_idx = cm->alt_fb_idx;
     else
         return -1;
@@ -3086,10 +3086,10 @@ static void update_reference_frames(VP8_COMP *cpi)
 
     if (cm->frame_type == KEY_FRAME)
     {
-        yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FRAME | VP8_ALTR_FRAME ;
+        yv12_fb[cm->new_fb_idx].flags |= GOLD_FLAG | ALT_FLAG ;
 
-        yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
-        yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
+        yv12_fb[cm->gld_fb_idx].flags &= ~GOLD_FLAG;
+        yv12_fb[cm->alt_fb_idx].flags &= ~ALT_FLAG;
 
         cm->alt_fb_idx = cm->gld_fb_idx = cm->new_fb_idx;
 
@@ -3104,8 +3104,8 @@ static void update_reference_frames(VP8_COMP *cpi)
         {
             assert(!cm->copy_buffer_to_arf);
 
-            cm->yv12_fb[cm->new_fb_idx].flags |= VP8_ALTR_FRAME;
-            cm->yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
+            cm->yv12_fb[cm->new_fb_idx].flags |= ALT_FLAG;
+            cm->yv12_fb[cm->alt_fb_idx].flags &= ~ALT_FLAG;
             cm->alt_fb_idx = cm->new_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3120,8 +3120,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             {
                 if(cm->alt_fb_idx != cm->lst_fb_idx)
                 {
-                    yv12_fb[cm->lst_fb_idx].flags |= VP8_ALTR_FRAME;
-                    yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
+                    yv12_fb[cm->lst_fb_idx].flags |= ALT_FLAG;
+                    yv12_fb[cm->alt_fb_idx].flags &= ~ALT_FLAG;
                     cm->alt_fb_idx = cm->lst_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3134,8 +3134,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             {
                 if(cm->alt_fb_idx != cm->gld_fb_idx)
                 {
-                    yv12_fb[cm->gld_fb_idx].flags |= VP8_ALTR_FRAME;
-                    yv12_fb[cm->alt_fb_idx].flags &= ~VP8_ALTR_FRAME;
+                    yv12_fb[cm->gld_fb_idx].flags |= ALT_FLAG;
+                    yv12_fb[cm->alt_fb_idx].flags &= ~ALT_FLAG;
                     cm->alt_fb_idx = cm->gld_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3150,8 +3150,8 @@ static void update_reference_frames(VP8_COMP *cpi)
         {
             assert(!cm->copy_buffer_to_gf);
 
-            cm->yv12_fb[cm->new_fb_idx].flags |= VP8_GOLD_FRAME;
-            cm->yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
+            cm->yv12_fb[cm->new_fb_idx].flags |= GOLD_FLAG;
+            cm->yv12_fb[cm->gld_fb_idx].flags &= ~GOLD_FLAG;
             cm->gld_fb_idx = cm->new_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3166,8 +3166,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             {
                 if(cm->gld_fb_idx != cm->lst_fb_idx)
                 {
-                    yv12_fb[cm->lst_fb_idx].flags |= VP8_GOLD_FRAME;
-                    yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
+                    yv12_fb[cm->lst_fb_idx].flags |= GOLD_FLAG;
+                    yv12_fb[cm->gld_fb_idx].flags &= ~GOLD_FLAG;
                     cm->gld_fb_idx = cm->lst_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3180,8 +3180,8 @@ static void update_reference_frames(VP8_COMP *cpi)
             {
                 if(cm->alt_fb_idx != cm->gld_fb_idx)
                 {
-                    yv12_fb[cm->alt_fb_idx].flags |= VP8_GOLD_FRAME;
-                    yv12_fb[cm->gld_fb_idx].flags &= ~VP8_GOLD_FRAME;
+                    yv12_fb[cm->alt_fb_idx].flags |= GOLD_FLAG;
+                    yv12_fb[cm->gld_fb_idx].flags &= ~GOLD_FLAG;
                     cm->gld_fb_idx = cm->alt_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3195,8 +3195,8 @@ static void update_reference_frames(VP8_COMP *cpi)
 
     if (cm->refresh_last_frame)
     {
-        cm->yv12_fb[cm->new_fb_idx].flags |= VP8_LAST_FRAME;
-        cm->yv12_fb[cm->lst_fb_idx].flags &= ~VP8_LAST_FRAME;
+        cm->yv12_fb[cm->new_fb_idx].flags |= LAST_FLAG;
+        cm->yv12_fb[cm->lst_fb_idx].flags &= ~LAST_FLAG;
         cm->lst_fb_idx = cm->new_fb_idx;
 
 #if CONFIG_MULTI_RES_ENCODING
@@ -3430,15 +3430,15 @@ static void encode_frame_to_data_rate
             cpi->mr_low_res_mv_avail = 1;
             cpi->mr_low_res_mv_avail &= !(low_res_frame_info->is_frame_dropped);
 
-            if (cpi->ref_frame_flags & VP8_LAST_FRAME)
+            if (cpi->ref_frame_flags & LAST_FLAG)
                 cpi->mr_low_res_mv_avail &= (cpi->current_ref_frames[LAST_FRAME]
                          == low_res_frame_info->low_res_ref_frames[LAST_FRAME]);
 
-            if (cpi->ref_frame_flags & VP8_GOLD_FRAME)
+            if (cpi->ref_frame_flags & GOLD_FLAG)
                 cpi->mr_low_res_mv_avail &= (cpi->current_ref_frames[GOLDEN_FRAME]
                          == low_res_frame_info->low_res_ref_frames[GOLDEN_FRAME]);
 
-            if (cpi->ref_frame_flags & VP8_ALTR_FRAME)
+            if (cpi->ref_frame_flags & ALT_FLAG)
                 cpi->mr_low_res_mv_avail &= (cpi->current_ref_frames[ALTREF_FRAME]
                          == low_res_frame_info->low_res_ref_frames[ALTREF_FRAME]);
         }
@@ -4713,16 +4713,16 @@ static void encode_frame_to_data_rate
         /* 1 refreshed but not the other */
         cpi->gold_is_alt = 0;
 
-    cpi->ref_frame_flags = VP8_ALTR_FRAME | VP8_GOLD_FRAME | VP8_LAST_FRAME;
+    cpi->ref_frame_flags = ALT_FLAG | GOLD_FLAG | LAST_FLAG;
 
     if (cpi->gold_is_last)
-        cpi->ref_frame_flags &= ~VP8_GOLD_FRAME;
+        cpi->ref_frame_flags &= ~GOLD_FLAG;
 
     if (cpi->alt_is_last)
-        cpi->ref_frame_flags &= ~VP8_ALTR_FRAME;
+        cpi->ref_frame_flags &= ~ALT_FLAG;
 
     if (cpi->gold_is_alt)
-        cpi->ref_frame_flags &= ~VP8_ALTR_FRAME;
+        cpi->ref_frame_flags &= ~ALT_FLAG;
 
 
     if (!cpi->oxcf.error_resilient_mode)

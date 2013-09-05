@@ -3053,8 +3053,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   int_mv single_newmv[MAX_REF_FRAMES] = { { 0 } };
-  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                    VP9_ALT_FLAG };
+  static const int flag_list[4] = { 0, LAST_FLAG, GOLD_FLAG,
+                                    ALT_FLAG };
   int idx_list[4] = {0,
                      cpi->lst_fb_idx,
                      cpi->gld_fb_idx,

@@ -52,7 +52,7 @@ frame_avail = read_frame(infile, &raw);
 if(frame_cnt + 1 == update_frame_num) {
     vpx_ref_frame_t ref;
 
-    ref.frame_type = VP8_LAST_FRAME;
+    ref.frame_type = LAST_FLAG;
     ref.img        = raw;
 
     if(vpx_codec_control(&codec, VP8_SET_REFERENCE, &ref))

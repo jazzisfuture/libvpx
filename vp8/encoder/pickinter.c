@@ -509,7 +509,7 @@ static int evaluate_inter_mode(unsigned int* sse, int rate2, int* distortion2,
     if(this_mode == ZEROMV)
     {
         /* Bias to ZEROMV on LAST_FRAME reference when it is available. */
-        if ((cpi->ref_frame_flags & VP8_LAST_FRAME &
+        if ((cpi->ref_frame_flags & LAST_FLAG &
             cpi->common.refresh_last_frame)
             && x->e_mbd.mode_info_context->mbmi.ref_frame != LAST_FRAME)
             rd_adj = 100;
@@ -632,11 +632,11 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
          */
         parent_ref_flag = 0;
         if (parent_ref_frame == LAST_FRAME)
-            parent_ref_flag = (cpi->ref_frame_flags & VP8_LAST_FRAME);
+            parent_ref_flag = (cpi->ref_frame_flags & LAST_FLAG);
         else if (parent_ref_frame == GOLDEN_FRAME)
-            parent_ref_flag = (cpi->ref_frame_flags & VP8_GOLD_FRAME);
+            parent_ref_flag = (cpi->ref_frame_flags & GOLD_FLAG);
         else if (parent_ref_frame == ALTREF_FRAME)
-            parent_ref_flag = (cpi->ref_frame_flags & VP8_ALTR_FRAME);
+            parent_ref_flag = (cpi->ref_frame_flags & ALT_FLAG);
 
         //assert(!parent_ref_frame || parent_ref_flag);
         if (parent_ref_frame && !parent_ref_flag)
