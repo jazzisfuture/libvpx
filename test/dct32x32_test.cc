@@ -18,7 +18,7 @@ extern "C" {
 #include "vp9/common/vp9_entropy.h"
 #include "./vp9_rtcd.h"
   void vp9_short_fdct32x32_c(int16_t *input, int16_t *out, int pitch);
-  void vp9_short_idct32x32_add_c(short *input, uint8_t *output, int pitch);
+  void vp9_short_idct32x32_add_c(int16_t *input, uint8_t *output, int pitch);
 }
 
 #include "test/acm_random.h"
@@ -30,9 +30,9 @@ namespace {
 #ifdef _MSC_VER
 static int round(double x) {
   if (x < 0)
-    return (int)ceil(x - 0.5);
+    return  static_cast<int>(ceil(x - 0.5));
   else
-    return (int)floor(x + 0.5);
+    return static_cast<int>(floor(x + 0.5));
 }
 #endif
 
