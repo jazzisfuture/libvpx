@@ -193,7 +193,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
     q = 8;
 
   if (cpi->RDMULT > 1000) {
-    cpi->RDDIV = 1 << 10;
+    cpi->RDDIV = 1;
     cpi->RDMULT /= 100;
 
     for (bsize = 0; bsize < BLOCK_SIZES; ++bsize) {
@@ -213,7 +213,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       }
     }
   } else {
-    cpi->RDDIV = 100 << 10;
+    cpi->RDDIV = 100;
 
     for (bsize = 0; bsize < BLOCK_SIZES; ++bsize) {
       for (i = 0; i < MAX_MODES; i++) {

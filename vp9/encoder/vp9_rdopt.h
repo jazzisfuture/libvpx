@@ -12,7 +12,7 @@
 #ifndef VP9_ENCODER_VP9_RDOPT_H_
 #define VP9_ENCODER_VP9_RDOPT_H_
 
-#define RDCOST(RM,DM,R,D) ( ((128+((int64_t)R)*(RM)) >> 8) + ((512+((int64_t)DM)*(D)) >> 10) )
+#define RDCOST(RM,DM,R,D) ( ((128+((int64_t)R)*(RM)) >> 8) + ((int64_t)DM)*(D) )
 #define QIDX_SKIP_THRESH     115
 
 int vp9_compute_rd_mult(int qindex);
