@@ -18,6 +18,7 @@ extern "C" {
 #include "vpx_scale/yv12config.h"
 #include "vp9/common/vp9_ppflags.h"
 #include "vpx/vpx_codec.h"
+#include "vpx/vp8.h"
 
 typedef void *VP9D_PTR;
 
@@ -31,11 +32,7 @@ typedef struct {
   int input_partition;
 } VP9D_CONFIG;
 
-typedef enum {
-  VP9_LAST_FLAG = 1,
-  VP9_GOLD_FLAG = 2,
-  VP9_ALT_FLAG = 4
-} VP9_REFFRAME;
+typedef vpx_ref_frame_type_t VP9_REFFRAME;
 
 void vp9_initialize_dec();
 

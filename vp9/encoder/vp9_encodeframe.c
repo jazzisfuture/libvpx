@@ -2252,8 +2252,8 @@ static int check_dual_ref_flags(VP9_COMP *cpi) {
   if (vp9_segfeature_active(&cpi->common.seg, 1, SEG_LVL_REF_FRAME)) {
     return 0;
   } else {
-    return (!!(ref_flags & VP9_GOLD_FLAG) + !!(ref_flags & VP9_LAST_FLAG)
-        + !!(ref_flags & VP9_ALT_FLAG)) >= 2;
+    return (!!(ref_flags & GOLD_FLAG) + !!(ref_flags & LAST_FLAG)
+        + !!(ref_flags & ALT_FLAG)) >= 2;
   }
 }
 

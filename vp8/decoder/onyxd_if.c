@@ -112,11 +112,11 @@ vpx_codec_err_t vp8dx_get_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
     VP8_COMMON *cm = &pbi->common;
     int ref_fb_idx;
 
-    if (ref_frame_flag == VP8_LAST_FRAME)
+    if (ref_frame_flag == LAST_FLAG)
         ref_fb_idx = cm->lst_fb_idx;
-    else if (ref_frame_flag == VP8_GOLD_FRAME)
+    else if (ref_frame_flag == GOLD_FLAG)
         ref_fb_idx = cm->gld_fb_idx;
-    else if (ref_frame_flag == VP8_ALTR_FRAME)
+    else if (ref_frame_flag == ALT_FLAG)
         ref_fb_idx = cm->alt_fb_idx;
     else{
         vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,
@@ -144,11 +144,11 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
     int *ref_fb_ptr = NULL;
     int free_fb;
 
-    if (ref_frame_flag == VP8_LAST_FRAME)
+    if (ref_frame_flag == LAST_FLAG)
         ref_fb_ptr = &cm->lst_fb_idx;
-    else if (ref_frame_flag == VP8_GOLD_FRAME)
+    else if (ref_frame_flag == GOLD_FLAG)
         ref_fb_ptr = &cm->gld_fb_idx;
-    else if (ref_frame_flag == VP8_ALTR_FRAME)
+    else if (ref_frame_flag == ALT_FLAG)
         ref_fb_ptr = &cm->alt_fb_idx;
     else{
         vpx_internal_error(&pbi->common.error, VPX_CODEC_ERROR,

@@ -634,21 +634,21 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
   }
 
   /* disable frame modes if flags not set */
-  if (!(cpi->ref_frame_flags & VP9_LAST_FLAG)) {
+  if (!(cpi->ref_frame_flags & LAST_FLAG)) {
     sf->thresh_mult[THR_NEWMV    ] = INT_MAX;
     sf->thresh_mult[THR_NEARESTMV] = INT_MAX;
     sf->thresh_mult[THR_ZEROMV   ] = INT_MAX;
     sf->thresh_mult[THR_NEARMV   ] = INT_MAX;
     sf->thresh_mult[THR_SPLITMV  ] = INT_MAX;
   }
-  if (!(cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
+  if (!(cpi->ref_frame_flags & GOLD_FLAG)) {
     sf->thresh_mult[THR_NEARESTG ] = INT_MAX;
     sf->thresh_mult[THR_ZEROG    ] = INT_MAX;
     sf->thresh_mult[THR_NEARG    ] = INT_MAX;
     sf->thresh_mult[THR_NEWG     ] = INT_MAX;
     sf->thresh_mult[THR_SPLITG   ] = INT_MAX;
   }
-  if (!(cpi->ref_frame_flags & VP9_ALT_FLAG)) {
+  if (!(cpi->ref_frame_flags & ALT_FLAG)) {
     sf->thresh_mult[THR_NEARESTA ] = INT_MAX;
     sf->thresh_mult[THR_ZEROA    ] = INT_MAX;
     sf->thresh_mult[THR_NEARA    ] = INT_MAX;
@@ -656,16 +656,16 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode, int speed) {
     sf->thresh_mult[THR_SPLITA   ] = INT_MAX;
   }
 
-  if ((cpi->ref_frame_flags & (VP9_LAST_FLAG | VP9_ALT_FLAG)) !=
-      (VP9_LAST_FLAG | VP9_ALT_FLAG)) {
+  if ((cpi->ref_frame_flags & (LAST_FLAG | ALT_FLAG)) !=
+      (LAST_FLAG | ALT_FLAG)) {
     sf->thresh_mult[THR_COMP_ZEROLA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARESTLA] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARLA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEWLA    ] = INT_MAX;
     sf->thresh_mult[THR_COMP_SPLITLA  ] = INT_MAX;
   }
-  if ((cpi->ref_frame_flags & (VP9_GOLD_FLAG | VP9_ALT_FLAG)) !=
-      (VP9_GOLD_FLAG | VP9_ALT_FLAG)) {
+  if ((cpi->ref_frame_flags & (GOLD_FLAG | ALT_FLAG)) !=
+      (GOLD_FLAG | ALT_FLAG)) {
     sf->thresh_mult[THR_COMP_ZEROGA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARESTGA] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARGA   ] = INT_MAX;
@@ -1243,7 +1243,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   cpi->baseline_gf_interval = DEFAULT_GF_INTERVAL;
 
-  cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
+  cpi->ref_frame_flags = ALT_FLAG | GOLD_FLAG | LAST_FLAG;
 
   // cpi->use_golden_frame_only = 0;
   // cpi->use_last_frame_only = 0;
@@ -2055,13 +2055,13 @@ int vp9_update_reference(VP9_PTR ptr, int ref_frame_flags) {
   cpi->refresh_alt_ref_frame = 0;
   cpi->refresh_last_frame   = 0;
 
-  if (ref_frame_flags & VP9_LAST_FLAG)
+  if (ref_frame_flags & LAST_FLAG)
     cpi->refresh_last_frame = 1;
 
-  if (ref_frame_flags & VP9_GOLD_FLAG)
+  if (ref_frame_flags & GOLD_FLAG)
     cpi->refresh_golden_frame = 1;
 
-  if (ref_frame_flags & VP9_ALT_FLAG)
+  if (ref_frame_flags & ALT_FLAG)
     cpi->refresh_alt_ref_frame = 1;
 
   return 0;
@@ -2073,11 +2073,11 @@ int vp9_copy_reference_enc(VP9_PTR ptr, VP9_REFFRAME ref_frame_flag,
   VP9_COMMON *cm = &cpi->common;
   int ref_fb_idx;
 
-  if (ref_frame_flag == VP9_LAST_FLAG)
+  if (ref_frame_flag == LAST_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->lst_fb_idx];
-  else if (ref_frame_flag == VP9_GOLD_FLAG)
+  else if (ref_frame_flag == GOLD_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->gld_fb_idx];
-  else if (ref_frame_flag == VP9_ALT_FLAG)
+  else if (ref_frame_flag == ALT_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->alt_fb_idx];
   else
     return -1;
@@ -2105,11 +2105,11 @@ int vp9_set_reference_enc(VP9_PTR ptr, VP9_REFFRAME ref_frame_flag,
 
   int ref_fb_idx;
 
-  if (ref_frame_flag == VP9_LAST_FLAG)
+  if (ref_frame_flag == LAST_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->lst_fb_idx];
-  else if (ref_frame_flag == VP9_GOLD_FLAG)
+  else if (ref_frame_flag == GOLD_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->gld_fb_idx];
-  else if (ref_frame_flag == VP9_ALT_FLAG)
+  else if (ref_frame_flag == ALT_FLAG)
     ref_fb_idx = cm->ref_frame_map[cpi->alt_fb_idx];
   else
     return -1;
@@ -3462,16 +3462,16 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   else if (cpi->refresh_alt_ref_frame ^ cpi->refresh_golden_frame)
     cpi->gold_is_alt = 0;
 
-  cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
+  cpi->ref_frame_flags = ALT_FLAG | GOLD_FLAG | LAST_FLAG;
 
   if (cpi->gold_is_last)
-    cpi->ref_frame_flags &= ~VP9_GOLD_FLAG;
+    cpi->ref_frame_flags &= ~GOLD_FLAG;
 
   if (cpi->alt_is_last)
-    cpi->ref_frame_flags &= ~VP9_ALT_FLAG;
+    cpi->ref_frame_flags &= ~ALT_FLAG;
 
   if (cpi->gold_is_alt)
-    cpi->ref_frame_flags &= ~VP9_ALT_FLAG;
+    cpi->ref_frame_flags &= ~ALT_FLAG;
 
   if (cpi->oxcf.play_alternate && cpi->refresh_alt_ref_frame
       && (cm->frame_type != KEY_FRAME))

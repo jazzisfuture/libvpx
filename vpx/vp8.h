@@ -88,9 +88,9 @@ typedef struct vp8_postproc_cfg {
  * The set of macros define the type of VP8 reference frames
  */
 typedef enum vpx_ref_frame_type {
-  VP8_LAST_FRAME = 1,
-  VP8_GOLD_FRAME = 2,
-  VP8_ALTR_FRAME = 4
+  LAST_FLAG = 1,
+  GOLD_FLAG = 2,
+  ALT_FLAG = 4
 } vpx_ref_frame_type_t;
 
 /*!\brief reference frame data struct

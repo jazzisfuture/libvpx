@@ -36,12 +36,6 @@ extern "C"
 
   } VPX_SCALING;
 
-  typedef enum {
-    VP9_LAST_FLAG = 1,
-    VP9_GOLD_FLAG = 2,
-    VP9_ALT_FLAG = 4
-  } VP9_REFFRAME;
-
 
   typedef enum {
     USAGE_STREAM_FROM_SERVER    = 0x0,
@@ -63,6 +57,8 @@ extern "C"
     FRAMEFLAGS_GOLDEN = 2,
     FRAMEFLAGS_ALTREF = 4,
   } FRAMETYPE_FLAGS;
+
+  typedef vpx_ref_frame_type_t VP9_REFFRAME;
 
   typedef struct {
     int version;  // 4 versions of bitstream defined:
