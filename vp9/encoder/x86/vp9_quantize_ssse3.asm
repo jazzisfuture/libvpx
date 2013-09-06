@@ -75,9 +75,15 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   punpckhqdq                      m1, m1
   paddsw                         m11, m1
 %else
+%ifidn %1, b_16x16
+  paddsw                          m6, m1
+  punpckhqdq                      m1, m1
+  paddsw                         m11, m1
+%else
   paddw                           m6, m1                   ; m6 += round
   punpckhqdq                      m1, m1
   paddw                          m11, m1                   ; m11 += round
+%endif
 %endif
   pmulhw                          m8, m6, m2               ; m8 = m6*q>>16
   punpckhqdq                      m2, m2
@@ -135,8 +141,13 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
   paddsw                          m6, m1
   paddsw                         m11, m1
 %else
+%ifidn %1, b_16x16
+  paddsw                          m6, m1
+  paddsw                         m11, m1
+%else
   paddw                           m6, m1                   ; m6 += round
   paddw                          m11, m1                   ; m11 += round
+%endif
 %endif
   pmulhw                         m14, m6, m2               ; m14 = m6*q>>16
   pmulhw                         m13, m11, m2              ; m13 = m11*q>>16
@@ -224,4 +235,5 @@ cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, zbin, round, quant, \
 
 INIT_XMM ssse3
 QUANTIZE_FN b, 6
+QUANTIZE_FN b_16x16, 6
 QUANTIZE_FN b_32x32, 7
