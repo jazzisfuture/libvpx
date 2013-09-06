@@ -21,68 +21,17 @@
 extern int enc_debug;
 #endif
 
-void vp9_quantize_b_c(int16_t *coeff_ptr, intptr_t n_coeffs, int skip_block,
-                      int16_t *zbin_ptr, int16_t *round_ptr, int16_t *quant_ptr,
-                      int16_t *quant_shift_ptr, int16_t *qcoeff_ptr,
-                      int16_t *dqcoeff_ptr, int16_t *dequant_ptr,
-                      int zbin_oq_value, uint16_t *eob_ptr, const int16_t *scan,
-                      const int16_t *iscan) {
-  int i, rc, eob;
-  int zbins[2], nzbins[2], zbin;
-  int x, y, z, sz;
-  int zero_flag = n_coeffs;
+#define QUANTIZE_B vp9_quantize_b_c
+#define CLAMP_FLAG 0
+#include "vp9/encoder/vp9_quantize_b.c"
+#undef  CLAMP_FLAG
+#undef  QUANTIZE_B
 
-  vpx_memset(qcoeff_ptr, 0, n_coeffs*sizeof(int16_t));
-  vpx_memset(dqcoeff_ptr, 0, n_coeffs*sizeof(int16_t));
-
-  eob = -1;
-
-  // Base ZBIN
-  zbins[0] = zbin_ptr[0] + zbin_oq_value;
-  zbins[1] = zbin_ptr[1] + zbin_oq_value;
-  nzbins[0] = zbins[0] * -1;
-  nzbins[1] = zbins[1] * -1;
-
-  if (!skip_block) {
-    // Pre-scan pass
-    for (i = n_coeffs - 1; i >= 0; i--) {
-      rc = scan[i];
-      z = coeff_ptr[rc];
-
-      if (z < zbins[rc != 0] && z > nzbins[rc != 0]) {
-        zero_flag--;
-      } else {
-        break;
-      }
-    }
-
-    // Quantization pass: All coefficients with index >= zero_flag are
-    // skippable. Note: zero_flag can be zero.
-    for (i = 0; i < zero_flag; i++) {
-      rc = scan[i];
-      z  = coeff_ptr[rc];
-
-      zbin = (zbins[rc != 0]);
-
-      sz = (z >> 31);                               // sign of z
-      x  = (z ^ sz) - sz;
-
-      if (x >= zbin) {
-        x += (round_ptr[rc != 0]);
-        y  = (((int)(((int)(x * quant_ptr[rc != 0]) >> 16) + x)) *
-              quant_shift_ptr[rc != 0]) >> 16;      // quantize (x)
-        x  = (y ^ sz) - sz;                         // get the sign back
-        qcoeff_ptr[rc]  = x;                        // write to destination
-        dqcoeff_ptr[rc] = x * dequant_ptr[rc != 0];  // dequantized value
-
-        if (y) {
-          eob = i;                                  // last nonzero coeffs
-        }
-      }
-    }
-  }
-  *eob_ptr = eob + 1;
-}
+#define QUANTIZE_B vp9_quantize_b_16x16_c
+#define CLAMP_FLAG 1
+#include "vp9/encoder/vp9_quantize_b.c"  // NOLINT
+#undef  CLAMP_FLAG
+#undef  QUANTIZE_B
 
 void vp9_quantize_b_32x32_c(int16_t *coeff_ptr, intptr_t n_coeffs,
                             int skip_block,
