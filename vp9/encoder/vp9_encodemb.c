@@ -461,8 +461,8 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
       src_diff = p->src_diff + 4 * bw * yoff + xoff;
       x->fwd_txm16x16(src_diff, coeff, bw * 8);
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
-                     p->quant, p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, p->zbin_extra, eob, scan, iscan);
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob, scan, iscan);
       break;
     case TX_8X8:
       scan = vp9_default_scan_8x8;
@@ -635,9 +635,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_short_fht16x16(src_diff, coeff, bw * 4, tx_type);
       else
         x->fwd_txm16x16(src_diff, coeff, bw * 8);
-      vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round, p->quant,
-                     p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, p->zbin_extra, eob, scan, iscan);
+      vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob, scan, iscan);
       if (!x->skip_encode && *eob) {
         if (tx_type == DCT_DCT)
           inverse_transform_b_16x16_add(*eob, dqcoeff, dst, pd->dst.stride);
