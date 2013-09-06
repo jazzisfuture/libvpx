@@ -490,6 +490,7 @@ typedef struct VP9_COMP {
   int last_boost;
   int kf_boost;
   int kf_zeromotion_pct;
+  int gf_zeromotion_pct;
 
   int64_t target_bandwidth;
   struct vpx_codec_pkt_list  *output_pkt_list;
@@ -649,6 +650,9 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+
+  int enable_encode_breakout;   // Default value is 1. From first pass stats,
+                                // encode_breakout may be disabled.
 
 #if CONFIG_MULTIPLE_ARF
   // ARF tracking variables.

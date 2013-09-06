@@ -1718,6 +1718,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     old_boost_score = boost_score;
   }
 
+  cpi->gf_zeromotion_pct = (int)(zero_motion_accumulator * 1000.0);
+
   // Don't allow a gf too near the next kf
   if ((cpi->twopass.frames_to_key - i) < MIN_GF_INTERVAL) {
     while (i < cpi->twopass.frames_to_key) {
@@ -2155,6 +2157,8 @@ void vp9_second_pass(VP9_COMP *cpi) {
     // Define next gf group and assign bits to it
     this_frame_copy = this_frame;
 
+    cpi->gf_zeromotion_pct = 0;
+
 #if CONFIG_MULTIPLE_ARF
     if (cpi->multi_arf_enabled) {
       define_fixed_arf_period(cpi);
@@ -2164,6 +2168,13 @@ void vp9_second_pass(VP9_COMP *cpi) {
 #if CONFIG_MULTIPLE_ARF
     }
 #endif
+
+    if (cpi->gf_zeromotion_pct > 995) {
+      if (!cpi->common.show_frame)
+        cpi->enable_encode_breakout = 0;
+      else
+        cpi->enable_encode_breakout = 2;
+    }
 
     // If we are going to code an altref frame at the end of the group
     // and the current frame is not a key frame....
