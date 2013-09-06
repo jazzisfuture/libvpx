@@ -1143,6 +1143,7 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   {
     double sum_iiratio = 0.0;
     double IIRatio;
+    int num_static_frames = 0;
 
     start_pos = cpi->twopass.stats_in;               // Note starting "file" position
 
@@ -1150,10 +1151,19 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
       IIRatio = this_frame.intra_error / DOUBLE_DIVIDE_CHECK(this_frame.coded_error);
       IIRatio = (IIRatio < 1.0) ? 1.0 : (IIRatio > 20.0) ? 20.0 : IIRatio;
       sum_iiratio += IIRatio;
+
+    if(this_frame.pcnt_inter > 0.99 && this_frame.mvr_abs < 1.0 &&
+        this_frame.mvc_abs < 1.0 )
+      num_static_frames++;
     }
 
     cpi->twopass.avg_iiratio = sum_iiratio /
         DOUBLE_DIVIDE_CHECK((double)cpi->twopass.total_stats.count);
+
+    if ((double)(num_static_frames * 2.0) > cpi->twopass.total_stats.count)
+      cpi->twopass.static_frame_detected = 1;
+    else
+      cpi->twopass.static_frame_detected = 0;
 
     // Reset file position
     reset_fpf_position(cpi, start_pos);

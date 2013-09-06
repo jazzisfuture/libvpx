@@ -594,6 +594,7 @@ typedef struct VP9_COMP {
 
     int sr_update_lag;
     double est_max_qcorrection_factor;
+    int static_frame_detected;
   } twopass;
 
   YV12_BUFFER_CONFIG alt_ref_buffer;
@@ -649,6 +650,9 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+
+  int enable_encode_breakout;   // Default value is 1. From first pass stats,
+                                // encode_breakout may be disabled.
 
 #if CONFIG_MULTIPLE_ARF
   // ARF tracking variables.
