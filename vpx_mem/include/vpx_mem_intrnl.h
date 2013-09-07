@@ -50,7 +50,7 @@ vpx_memcpy, _memset, and _memmove*/
 calls to vpx_* functions other
 than vpx_memalign*/
 # else
-#  define DEFAULT_ALIGNMENT        1
+#  define DEFAULT_ALIGNMENT        (2 * sizeof(void*))
 # endif
 #endif
 
