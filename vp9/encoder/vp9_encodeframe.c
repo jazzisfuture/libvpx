@@ -1980,6 +1980,48 @@ static void rd_pick_reference_frame(VP9_COMP *cpi, int mi_row, int mi_col) {
   restore_context(cpi, mi_row, mi_col, a, l, sa, sl, BLOCK_64X64);
 }
 
+static double calc_dist_weight(VP9_COMP *cpi, int var) {
+  VP9_COMMON *cm = &cpi->common;
+
+  int base_q = vp9_dc_quant(cm->base_qindex + cm->y_dc_delta_q, 0);
+  int base_rdmult = (11 * base_q * base_q) / 4;
+
+  double factor = logbf(var + 1) - 14.427f;
+  double ideal_q = ((double)base_q) * pow(2.0, factor/6.0);
+  double ideal_rdmult = (11.0 * ideal_q * ideal_q) / 4.0;
+
+  return ((double)base_rdmult)/ideal_rdmult;
+}
+
+static void set_dist_weight_4x4s(VP9_COMP *cpi, int mi_row, int mi_col) {
+  VP9_COMMON * const cm = &cpi->common;
+  struct macroblock_plane *p;
+  const int bs = 64/4;
+  int r, c;
+
+  set_offsets(cpi, mi_row, mi_col, BLOCK_64X64);
+  p = &cpi->mb.plane[0];
+
+  for (r = 0; r < bs; r++) {
+    for (c = 0; c < bs; c++) {
+      if (mi_row + r/2 < cm->mi_rows && mi_col + c/2 < cm->mi_cols) {
+        unsigned int sse;
+        int var = cpi->fn_ptr[BLOCK_4X4].vf(&p->src.buf[4 * c + (4 * r) * p->src.stride],
+                                            p->src.stride, VP9_VAR_OFFS, 0, &sse);
+        var = (256 * var) >> num_pels_log2_lookup[BLOCK_4X4];
+#if WEIGHTED_DIST
+        cpi->dist_weight_4x4[r * bs + c] = calc_dist_weight(cpi, var);
+        //printf("(var %d)(%d, %d): %lf\n", var, c, r, cpi->dist_weight_4x4[r * bs + c]);
+#else
+        cpi->dist_weight_4x4[r * bs + c] = 1;
+#endif
+      } else {
+        cpi->dist_weight_4x4[r * bs + c] = 1;
+      }
+    }
+  }
+}
+
 static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
                           int *totalrate) {
   VP9_COMMON * const cm = &cpi->common;
@@ -2005,6 +2047,7 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
     if (cpi->sf.reference_masking)
       rd_pick_reference_frame(cpi, mi_row, mi_col);
 
+    set_dist_weight_4x4s(cpi, mi_row, mi_col);
     if (cpi->sf.partition_by_variance || cpi->sf.use_lastframe_partitioning ||
         cpi->sf.use_one_partition_size_always ) {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
