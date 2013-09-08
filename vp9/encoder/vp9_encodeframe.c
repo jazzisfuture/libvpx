@@ -1980,6 +1980,48 @@ static void rd_pick_reference_frame(VP9_COMP *cpi, int mi_row, int mi_col) {
   restore_context(cpi, mi_row, mi_col, a, l, sa, sl, BLOCK_64X64);
 }
 
+static int calc_segment_id(VP9_COMP *cpi, int var) {
+  int segments[] = { 5, 3, 1, 0, 2, 4, 6 };
+  double factor = (logbf(var + 1) - 14.427f)*3.0/5.0;
+  int segment = clamp(round(factor), -3, 3);
+  return segments[segment + 3];
+}
+
+static double calc_dist_weight(VP9_COMP *cpi, int var) {
+  int segment_id = calc_segment_id(cpi, var);
+  VP9_COMMON *cm = &cpi->common;
+  int qindex = vp9_get_qindex(&cpi->common.seg, segment_id,
+                              cpi->common.base_qindex);
+  double base_rdmult = vp9_compute_rd_mult(cm->base_qindex + cm->y_dc_delta_q);
+  double real_rdmult = vp9_compute_rd_mult(qindex + cm->y_dc_delta_q);
+
+  return base_rdmult/real_rdmult;
+}
+
+static void set_dist_weight_4x4s(VP9_COMP *cpi, int mi_row, int mi_col) {
+  VP9_COMMON * const cm = &cpi->common;
+  struct macroblock_plane *p;
+  const int bs = 64/4;
+  int r, c;
+
+  set_offsets(cpi, mi_row, mi_col, BLOCK_64X64);
+  p = &cpi->mb.plane[0];
+
+  for (r = 0; r < bs; r++) {
+    for (c = 0; c < bs; c++) {
+      if (mi_row + r/2 < cm->mi_rows && mi_col + c/2 < cm->mi_cols) {
+        unsigned int sse;
+        int var = cpi->fn_ptr[BLOCK_4X4].vf(&p->src.buf[4 * c + (4 * r) * p->src.stride],
+                                            p->src.stride, VP9_VAR_OFFS, 0, &sse);
+        var = (256 * var) >> num_pels_log2_lookup[BLOCK_4X4];
+        cpi->dist_weight_4x4[r * bs + c] = calc_dist_weight(cpi, var);
+      } else {
+        cpi->dist_weight_4x4[r * bs + c] = 1;
+      }
+    }
+  }
+}
+
 static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
                           int *totalrate) {
   VP9_COMMON * const cm = &cpi->common;
@@ -2004,6 +2046,8 @@ static void encode_sb_row(VP9_COMP *cpi, int mi_row, TOKENEXTRA **tp,
 
     if (cpi->sf.reference_masking)
       rd_pick_reference_frame(cpi, mi_row, mi_col);
+
+    set_dist_weight_4x4s(cpi, mi_row, mi_col);
 
     if (cpi->sf.partition_by_variance || cpi->sf.use_lastframe_partitioning ||
         cpi->sf.use_one_partition_size_always ) {

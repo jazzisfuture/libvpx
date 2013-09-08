@@ -343,6 +343,43 @@ static void model_rd_norm(double x, double *R, double *D) {
                       rate_tab, dist_tab, R, D);
 }
 
+// Assume uniform distribution
+static int weighted_dist(VP9_COMP *cpi, BLOCK_SIZE bsize,
+                         MACROBLOCK *x, int dist,
+                         int sb64_offset_in_4x4) {
+#if !VAQ
+  return dist;
+#else
+  int r, c;
+  double *dist_weight_4x4 = &cpi->dist_weight_4x4[sb64_offset_in_4x4];
+  double weights = 0;
+
+  const int bh = num_4x4_blocks_high_lookup[bsize];
+  const int bw = num_4x4_blocks_wide_lookup[bsize];
+
+  for (r = 0; r < bh; r++)
+    for (c = 0; c < bw; c++)
+      weights += dist_weight_4x4[r * (64/4) + c];
+  return round(dist*weights/(bw*bh));
+#endif
+}
+
+
+int partition_offset_in_sb64(MACROBLOCKD *xd) {
+  //Unit: 4x4
+  int b_x = -xd->mb_to_left_edge >> 5;
+  int b_y = -xd->mb_to_top_edge >> 5;
+  int sb64_x = b_x / 16 * 16;
+  int sb64_y = b_y / 16 * 16;
+  return 16*(b_y - sb64_y) + b_x - sb64_x;
+  /*
+  int raster_block = txfrm_block_to_raster_block(bsize, tx_size, block);
+  int tx_offset = raster_block_offset(bsize, raster_block, 64);
+
+  return b_offset + tx_offset;
+  */
+}
+
 static void model_rd_from_var_lapndz(int var, int n, int qstep,
                                      int *rate, int64_t *dist) {
   // This function models the rate and distortion for a Laplacian
@@ -388,7 +425,8 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
                              pd->dequant[1] >> 3, &rate, &dist);
 
     rate_sum += rate;
-    dist_sum += dist;
+    dist_sum += weighted_dist(cpi, bsize, x, dist,
+                              partition_offset_in_sb64(xd));
   }
 
   *out_rate_sum = rate_sum;
@@ -428,13 +466,16 @@ static void model_rd_for_sb_y_tx(VP9_COMP *cpi, BLOCK_SIZE bsize,
       int rate;
       int64_t dist;
       unsigned int sse;
+      int sb64_offset_in_4x4 = partition_offset_in_sb64(xd) +
+          (j/4) * (64/4) + k/4;
       cpi->fn_ptr[bs].vf(&p->src.buf[j * p->src.stride + k], p->src.stride,
                          &pd->dst.buf[j * pd->dst.stride + k], pd->dst.stride,
                          &sse);
       // sse works better than var, since there is no dc prediction used
       model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 3, &rate, &dist);
       rate_sum += rate;
-      dist_sum += dist;
+      dist_sum += weighted_dist(cpi, bsize, x, dist,
+                                sb64_offset_in_4x4);
       *out_skip &= (rate < 1024);
     }
   }
@@ -456,6 +497,62 @@ int64_t vp9_block_error_c(int16_t *coeff, int16_t *dqcoeff,
 
   *ssz = sqcoeff;
   return error;
+}
+
+const BLOCK_SIZE min_bsize_lookup[TX_SIZES] = {
+  BLOCK_4X4, // TX_4X4
+  BLOCK_8X8, // TX_8X8
+  BLOCK_16X16, // TX_16X16
+  BLOCK_32X32 // TX_32X32
+};
+
+int64_t vp9_block_error_2(TX_SIZE tx_size,
+                          int16_t *coeff, int16_t *dqcoeff,
+                          int64_t *ssz) {
+  int j, k;
+  BLOCK_SIZE bsize = min_bsize_lookup[tx_size];
+  const int stride = 4 << b_width_log2(bsize);
+  int64_t error = 0, sqcoeff = 0;
+
+  for (j = 0; j < 4; j++) {
+    for (k = 0; k < 4; k++) {
+      int this_diff = coeff[k] - dqcoeff[k];
+      error += (unsigned)this_diff * this_diff;
+      sqcoeff += (unsigned) coeff[k] * coeff[k];
+    }
+    coeff += stride;
+    dqcoeff += stride;
+  }
+
+  *ssz = sqcoeff;
+  return error;
+}
+
+int64_t vp9_weighted_block_error(VP9_COMP *cpi,
+                                 int16_t *coeff, int16_t *dqcoeff,
+                                 TX_SIZE tx_size, int sb64_offset_in_4x4,
+                                 int64_t *ssz) {
+  int r, c;
+  BLOCK_SIZE bsize = min_bsize_lookup[tx_size];
+  int64_t sum_error = 0, sum_sqcoeff = 0;
+  double *dist_weight_4x4 = &cpi->dist_weight_4x4[sb64_offset_in_4x4];
+  const int bh = num_4x4_blocks_high_lookup[bsize];
+  const int bw = num_4x4_blocks_wide_lookup[bsize];
+
+  for (r = 0; r < bh; r++) {
+    for (c = 0; c < bw; c++) {
+      int64_t sqcoeff = 0;
+      double weight = dist_weight_4x4[r * (64/4) + c];
+      sum_error += round(weight * vp9_block_error_2(tx_size,
+                                                    &coeff[4*(r * 4 * bw + c)],
+                                                    &dqcoeff[4*(r * 4 * bw + c)],
+                                                    &sqcoeff));
+      sum_sqcoeff += round(weight * sqcoeff);
+    }
+  }
+  *ssz = sum_sqcoeff;
+
+  return sum_error;
 }
 
 /* The trailing '0' is a terminator which is used inside cost_coeffs() to
@@ -539,6 +636,7 @@ static INLINE int cost_coeffs(MACROBLOCK *mb,
 }
 
 struct rdcost_block_args {
+  VP9_COMP *cpi;
   MACROBLOCK *x;
   ENTROPY_CONTEXT t_above[16];
   ENTROPY_CONTEXT t_left[16];
@@ -553,7 +651,8 @@ struct rdcost_block_args {
   const int16_t *scan, *nb;
 };
 
-static void dist_block(int plane, int block, TX_SIZE tx_size, void *arg) {
+static void dist_block(VP9_COMP *cpi, int plane, int block,
+                       BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg) {
   const int ss_txfrm_size = tx_size << 1;
   struct rdcost_block_args* args = arg;
   MACROBLOCK* const x = args->x;
@@ -564,8 +663,13 @@ static void dist_block(int plane, int block, TX_SIZE tx_size, void *arg) {
   int shift = args->tx_size == TX_32X32 ? 0 : 2;
   int16_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  args->dist += vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
-                                &this_sse) >> shift;
+  int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size, block);
+  int sb64_offset_in_4x4 = partition_offset_in_sb64(xd) +
+      raster_block_offset(plane_bsize, raster_block, 64/4)/16;
+
+  args->dist += vp9_weighted_block_error(cpi, coeff, dqcoeff, tx_size,
+                                         sb64_offset_in_4x4,
+                                         &this_sse) >> shift;
   args->sse += this_sse >> shift;
 
   if (x->skip_encode &&
@@ -594,6 +698,7 @@ static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
 static void block_yrd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
                            TX_SIZE tx_size, void *arg) {
   struct rdcost_block_args *args = arg;
+  VP9_COMP *const cpi = args->cpi;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
   struct encode_b_args encode_args = {x, NULL};
@@ -617,11 +722,11 @@ static void block_yrd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   else
     vp9_xform_quant(plane, block, plane_bsize, tx_size, &encode_args);
 
-  dist_block(plane, block, tx_size, args);
+  dist_block(cpi, plane, block, plane_bsize, tx_size, args);
   rate_block(plane, block, plane_bsize, tx_size, args);
 }
 
-static void txfm_rd_in_plane(MACROBLOCK *x,
+static void txfm_rd_in_plane(VP9_COMP *cpi, MACROBLOCK *x,
                              int *rate, int64_t *distortion,
                              int *skippable, int64_t *sse,
                              int64_t ref_best_rd, int plane,
@@ -632,7 +737,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bs];
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bs];
   int i;
-  struct rdcost_block_args args = { x, { 0 }, { 0 }, tx_size,
+  struct rdcost_block_args args = { cpi, x, { 0 }, { 0 }, tx_size,
                                     num_4x4_blocks_wide, num_4x4_blocks_high,
                                     0, 0, 0, ref_best_rd, 0 };
   if (plane == 0)
@@ -705,7 +810,7 @@ static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
   } else {
     mbmi->tx_size = TX_4X4;
   }
-  txfm_rd_in_plane(x, rate, distortion, skip,
+  txfm_rd_in_plane(cpi, x, rate, distortion, skip,
                    &sse[mbmi->tx_size], ref_best_rd, 0, bs,
                    mbmi->tx_size);
   cpi->txfm_stepdown_count[0]++;
@@ -889,7 +994,7 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Actually encode using the chosen mode if a model was used, but do not
   // update the r, d costs
-  txfm_rd_in_plane(x, rate, distortion, skip, &sse[mbmi->tx_size],
+  txfm_rd_in_plane(cpi, x, rate, distortion, skip, &sse[mbmi->tx_size],
                    ref_best_rd, 0, bs, mbmi->tx_size);
 
   if (max_txfm_size == TX_32X32 &&
@@ -952,14 +1057,14 @@ static void super_block_yrd(VP9_COMP *cpi,
                                   skip, sse, ref_best_rd, bs);
   } else {
     if (bs >= BLOCK_32X32)
-      txfm_rd_in_plane(x, &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32],
+      txfm_rd_in_plane(cpi, x, &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32],
                        &sse[TX_32X32], ref_best_rd, 0, bs, TX_32X32);
     if (bs >= BLOCK_16X16)
-      txfm_rd_in_plane(x, &r[TX_16X16][0], &d[TX_16X16], &s[TX_16X16],
+      txfm_rd_in_plane(cpi, x, &r[TX_16X16][0], &d[TX_16X16], &s[TX_16X16],
                        &sse[TX_16X16], ref_best_rd, 0, bs, TX_16X16);
-    txfm_rd_in_plane(x, &r[TX_8X8][0], &d[TX_8X8], &s[TX_8X8],
+    txfm_rd_in_plane(cpi, x, &r[TX_8X8][0], &d[TX_8X8], &s[TX_8X8],
                      &sse[TX_8X8], ref_best_rd, 0, bs, TX_8X8);
-    txfm_rd_in_plane(x, &r[TX_4X4][0], &d[TX_4X4], &s[TX_4X4],
+    txfm_rd_in_plane(cpi, x, &r[TX_4X4][0], &d[TX_4X4], &s[TX_4X4],
                      &sse[TX_4X4], ref_best_rd, 0, bs, TX_4X4);
     choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s,
                              skip, txfm_cache, bs);
@@ -1047,6 +1152,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
 
     for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
       for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
+        int sb64_offset_in_4x4 = partition_offset_in_sb64(xd) + 64/4*idy + idx;
         int64_t ssz;
         const int16_t *scan;
         uint8_t *src = src_init + idx * 4 + idy * 4 * src_stride;
@@ -1078,8 +1184,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         ratey += cost_coeffs(x, 0, block,
                              tempa + idx, templ + idy, TX_4X4, scan,
                              vp9_get_coef_neighbors_handle(scan));
-        distortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
-                                      16, &ssz) >> 2;
+        distortion += vp9_weighted_block_error(cpi, coeff,
+                                               BLOCK_OFFSET(pd->dqcoeff, block),
+                                               TX_4X4, sb64_offset_in_4x4,
+                                               &ssz) >> 2;
         if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
           goto next;
 
@@ -1265,7 +1373,7 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   return best_rd;
 }
 
-static void super_block_uvrd(VP9_COMMON *const cm, MACROBLOCK *x,
+static void super_block_uvrd(VP9_COMP *cpi, MACROBLOCK *x,
                              int *rate, int64_t *distortion, int *skippable,
                              int64_t *sse, BLOCK_SIZE bsize,
                              int64_t ref_best_rd) {
@@ -1288,7 +1396,7 @@ static void super_block_uvrd(VP9_COMMON *const cm, MACROBLOCK *x,
   *skippable = 1;
 
   for (plane = 1; plane < MAX_MB_PLANE; ++plane) {
-    txfm_rd_in_plane(x, &pnrate, &pndist, &pnskip, &pnsse,
+    txfm_rd_in_plane(cpi, x, &pnrate, &pndist, &pnskip, &pnsse,
                      ref_best_rd, plane, bsize, uv_txfm_size);
     if (pnrate == INT_MAX)
       goto term;
@@ -1326,7 +1434,7 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     x->e_mbd.mode_info_context->mbmi.uv_mode = mode;
-    super_block_uvrd(&cpi->common, x, &this_rate_tokenonly,
+    super_block_uvrd(cpi, x, &this_rate_tokenonly,
                      &this_distortion, &s, &this_sse, bsize, best_rd);
     if (this_rate_tokenonly == INT_MAX)
       continue;
@@ -1357,7 +1465,7 @@ static int64_t rd_sbuv_dcpred(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t this_sse;
 
   x->e_mbd.mode_info_context->mbmi.uv_mode = DC_PRED;
-  super_block_uvrd(&cpi->common, x, rate_tokenonly,
+  super_block_uvrd(cpi, x, rate_tokenonly,
                    distortion, skippable, &this_sse, bsize, INT64_MAX);
   *rate = *rate_tokenonly +
           x->intra_uv_mode_cost[cpi->common.frame_type][DC_PRED];
@@ -1536,6 +1644,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   for (idy = 0; idy < height / 4; ++idy) {
     for (idx = 0; idx < width / 4; ++idx) {
       int64_t ssz, rd, rd1, rd2;
+      int sb64_offset_in_4x4 = partition_offset_in_sb64(xd) + 64/4*idy + idx;
 
       k += (idy * 2 + idx);
       src_diff = raster_block_offset_int16(BLOCK_8X8, k,
@@ -1543,8 +1652,11 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
       coeff = BLOCK_OFFSET(x->plane[0].coeff, k);
       x->fwd_txm4x4(src_diff, coeff, 16);
       x->quantize_b_4x4(x, k, DCT_DCT, 16);
-      thisdistortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k),
-                                        16, &ssz);
+
+      thisdistortion += vp9_weighted_block_error(cpi, coeff,
+                                                 BLOCK_OFFSET(pd->dqcoeff, k),
+                                                 TX_4X4, sb64_offset_in_4x4,
+                                                 &ssz);
       thissse += ssz;
       thisrate += cost_coeffs(x, 0, k,
                               ta + (k & 1),
@@ -2960,7 +3072,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = MIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-    super_block_uvrd(cm, x, rate_uv, distortion_uv, &skippable_uv, &sseuv,
+    super_block_uvrd(cpi, x, rate_uv, distortion_uv, &skippable_uv, &sseuv,
                      bsize, ref_best_rd - rdcosty);
     if (*rate_uv == INT_MAX) {
       *rate2 = INT_MAX;
@@ -3594,7 +3706,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         // then dont bother looking at UV
         vp9_build_inter_predictors_sbuv(&x->e_mbd, mi_row, mi_col,
                                         BLOCK_8X8);
-        super_block_uvrd(cm, x, &rate_uv, &distortion_uv, &uv_skippable,
+        super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &uv_skippable,
                          &uv_sse, BLOCK_8X8, tmp_best_rdu);
         if (rate_uv == INT_MAX)
           continue;
