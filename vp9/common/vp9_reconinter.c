@@ -164,6 +164,8 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
                                                 pd->subsampling_x,
                                                 pd->subsampling_y);
 
+    // AWG arg->[x|y] are pixel offsets to a block; [x|y] are offsets to a
+    // 4x4 sub-block in that block.
     scale->set_scaled_offsets(scale, arg->y + y, arg->x + x);
     vp9_build_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                               &res_mv, scale,

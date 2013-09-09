@@ -113,20 +113,43 @@ static bool compare_img(const vpx_image_t *img1,
   const unsigned int width_y  = img1->d_w;
   const unsigned int height_y = img1->d_h;
   unsigned int i;
-  for (i = 0; i < height_y; ++i)
+  for (i = 0; i < height_y; ++i) {
     match = ( memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
                      img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
                      width_y) == 0) && match;
+    if (!match) {
+      int j;
+      unsigned char *p1 = img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y];
+      unsigned char *p2 = img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y];
+      for (j = 0; j < width_y; ++j, ++p1, ++p2) {
+        if (*p1 != *p2) {
+          printf("Mismatch @ (%d, %d): %d, %d\n", i, j, *p1, *p2);
+          return 0;
+        }
+      }
+      return 0;
+    }
+  }
   const unsigned int width_uv  = (img1->d_w + 1) >> 1;
   const unsigned int height_uv = (img1->d_h + 1) >> 1;
-  for (i = 0; i <  height_uv; ++i)
+  for (i = 0; i <  height_uv; ++i) {
     match = ( memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
                      img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
                      width_uv) == 0) && match;
-  for (i = 0; i < height_uv; ++i)
+//    if (!match) {
+//      printf("Mismatch in U, row: %d\n", i);
+//      return 0;
+//    }
+  }
+  for (i = 0; i < height_uv; ++i) {
     match = ( memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
                      img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
                      width_uv) == 0) && match;
+//    if (!match) {
+//      printf("Mismatch in V, row: %d\n", i);
+//      return 0;
+//    }
+  }
   return match;
 }
 
@@ -209,23 +232,25 @@ void EncoderTest::RunLoop(VideoSource *video) {
           default:
             break;
         }
-
-        if (has_dxdata && has_cxdata) {
-          const vpx_image_t *img_enc = encoder->GetPreviewFrame();
-          DxDataIterator dec_iter = decoder->GetDxData();
-          const vpx_image_t *img_dec = dec_iter.Next();
-          if (img_enc && img_dec) {
-            const bool res = compare_img(img_enc, img_dec);
-            if (!res) {  // Mismatch
-              MismatchHook(img_enc, img_dec);
-              //write_img(img_enc, "image_enc.yuv");
-              //write_img(img_dec, "image_dec.yuv");
-            }
-          }
-          if (img_dec)
-            DecompressedFrameHook(*img_dec, video->pts());
-        }
       }
+
+      if (has_dxdata && has_cxdata) {
+        const vpx_image_t *img_enc = encoder->GetPreviewFrame();
+        DxDataIterator dec_iter = decoder->GetDxData();
+        const vpx_image_t *img_dec = dec_iter.Next();
+        if (img_enc && img_dec) {
+          const bool res = compare_img(img_enc, img_dec);
+          if (!res) {  // Mismatch
+            MismatchHook(img_enc, img_dec);
+            write_img(img_enc, "image_enc.yuv");
+            write_img(img_dec, "image_dec.yuv");
+            exit(0);
+          }
+        }
+        if (img_dec)
+          DecompressedFrameHook(*img_dec, video->pts());
+      }
+
       if (!Continue())
         break;
     }
