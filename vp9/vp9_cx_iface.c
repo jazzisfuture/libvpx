@@ -241,7 +241,6 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
 
   switch (cfg.g_pass) {
     case VPX_RC_ONE_PASS:
-      oxcf->Mode = MODE_BESTQUALITY;
       break;
     case VPX_RC_FIRST_PASS:
       oxcf->Mode = MODE_FIRSTPASS;

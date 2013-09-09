@@ -1211,6 +1211,11 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   switch (cpi->oxcf.Mode) {
       // Real time and one pass deprecated in test code base
+    case MODE_GOODQUALITY:
+      cpi->pass = 0;
+      cpi->compressor_speed = 3;
+      cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
+      break;
     case MODE_FIRSTPASS:
       cpi->pass = 1;
       cpi->compressor_speed = 1;
