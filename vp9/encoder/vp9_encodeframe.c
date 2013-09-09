@@ -941,7 +941,7 @@ static void copy_partitioning(VP9_COMP *cpi, MODE_INFO **mi_8x8,
   }
 }
 
-static void set_block_size(VP9_COMMON * const cm, MODE_INFO **mi_8x8,
+static void set_block_size_orig(VP9_COMMON * const cm, MODE_INFO **mi_8x8,
                            BLOCK_SIZE bsize, int mis, int mi_row,
                            int mi_col) {
   int r, c;
@@ -952,6 +952,24 @@ static void set_block_size(VP9_COMMON * const cm, MODE_INFO **mi_8x8,
     for (c = 0; c < bs; c++)
       if (mi_row + r < cm->mi_rows && mi_col + c < cm->mi_cols)
         mi2[r * mis + c]->mbmi.sb_type = bsize;
+}
+
+static void set_block_size(VP9_COMMON * const cm, MODE_INFO **mi_8x8,
+                           BLOCK_SIZE bsize, int mis, int mi_row,
+                           int mi_col) {
+  int r, c;
+  const int bs = MAX(num_8x8_blocks_wide_lookup[bsize],
+                     num_8x8_blocks_high_lookup[bsize]);
+  const int idx_str = mis * mi_row + mi_col;
+  MODE_INFO **const mi2 = &mi_8x8[idx_str];
+
+  mi2[0] = cm->mi + idx_str;
+  mi2[0]->mbmi.sb_type = bsize;
+
+  for (r = 0; r < bs; r++)
+    for (c = 0; c < bs; c++)
+      if (mi_row + r < cm->mi_rows && mi_col + c < cm->mi_cols)
+        mi2[r * mis + c] = mi2[0];
 }
 
 typedef struct {
