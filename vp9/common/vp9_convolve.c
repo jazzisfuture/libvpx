@@ -195,7 +195,7 @@ static void convolve_c(const uint8_t *src, ptrdiff_t src_stride,
    * h == 64, taps == 8.
    */
   uint8_t temp[64 * 135];
-  int intermediate_height = MAX(((h * y_step_q4) >> 4), 1) + taps - 1;
+  int intermediate_height = ((h * y_step_q4 + 15) >> 4) + taps - 1;
 
   assert(w <= 64);
   assert(h <= 64);
