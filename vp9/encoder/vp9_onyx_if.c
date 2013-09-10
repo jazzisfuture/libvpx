@@ -805,9 +805,11 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->mode_skip_start = 9;
       }
       if (speed == 2) {
-        sf->adjust_thresholds_by_speed = 1;
+        // sf->adjust_thresholds_by_speed = 1;
         sf->less_rectangular_check  = 1;
-        sf->use_square_partition_only = 1;
+        sf->use_square_partition_only = !(cpi->common.frame_type == KEY_FRAME ||
+                                   cpi->common.intra_only ||
+                                   cpi->common.show_frame == 0);
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
         sf->use_lastframe_partitioning = 1;
         sf->adjust_partitioning_from_last_frame = 1;
