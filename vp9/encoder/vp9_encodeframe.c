@@ -1295,8 +1295,8 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO *m, TOKENEXTRA **tp,
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
   x->fast_ms = 0;
-  x->pred_mv.as_int = 0;
   x->subblock_ref = 0;
+//  vpx_memset(x->pred_mv, 0, sizeof(x->pred_mv));
 
   if (cpi->sf.adjust_partitioning_from_last_frame) {
     // Check if any of the sub blocks are further split.
@@ -1676,9 +1676,9 @@ static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
         // Set fast motion search level.
         x->fast_ms = 1;
 
-        // Calculate prediction MV.
-        x->pred_mv.as_mv.row = (mvr0 + mvr1 + mvr2 + mvr3) >> 2;
-        x->pred_mv.as_mv.col = (mvc0 + mvc1 + mvc2 + mvc3) >> 2;
+//        // Calculate prediction MV.
+//        x->pred_mv.as_mv.row = (mvr0 + mvr1 + mvr2 + mvr3) >> 2;
+//        x->pred_mv.as_mv.col = (mvc0 + mvc1 + mvc2 + mvc3) >> 2;
 
         if (ref0 == ref1 && ref1 == ref2 && ref2 == ref3 &&
             d01 < 2 && d23 < 2 && d02 < 2 && d13 < 2) {
@@ -1693,6 +1693,14 @@ static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
       }
     }
   }
+}
+
+static INLINE void store_pred_mv(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
+  vpx_memcpy(ctx->pred_mv, x->pred_mv, sizeof(x->pred_mv));
+}
+
+static INLINE void load_pred_mv(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
+  vpx_memcpy(x->pred_mv, ctx->pred_mv, sizeof(x->pred_mv));
 }
 
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
@@ -1790,6 +1798,10 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
 
+  // store estimated motion vector
+  if (cpi->sf.adaptive_motion_search)
+    store_pred_mv(x, get_block_context(x, bsize));
+
   // PARTITION_SPLIT
   sum_rd = 0;
   // TODO(jingning): use the motion vectors given by the above search as
@@ -1804,7 +1816,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
         continue;
 
       *get_sb_index(xd, subsize) = i;
-
+      if (cpi->sf.adaptive_motion_search)
+        load_pred_mv(x, get_block_context(x, bsize));
       rd_pick_partition(cpi, tp, mi_row + y_idx, mi_col + x_idx, subsize,
                         &this_rate, &this_dist, i != 3, best_rd - sum_rd);
 
@@ -1838,8 +1851,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   }
 
   x->fast_ms = 0;
-  x->pred_mv.as_int = 0;
   x->subblock_ref = 0;
+//  vpx_memset(x->pred_mv, 0, sizeof(x->pred_mv));
 
   if (partition_split_done &&
       cpi->sf.using_small_partition_info) {
@@ -1850,6 +1863,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   if (partition_horz_allowed && do_rect) {
     subsize = get_subsize(bsize, PARTITION_HORZ);
     *get_sb_index(xd, subsize) = 0;
+    if (cpi->sf.adaptive_motion_search)
+      load_pred_mv(x, get_block_context(x, bsize));
     pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
                   get_block_context(x, subsize), best_rd);
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
@@ -1859,6 +1874,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *get_sb_index(xd, subsize) = 1;
+      if (cpi->sf.adaptive_motion_search)
+        load_pred_mv(x, get_block_context(x, bsize));
       pick_sb_modes(cpi, mi_row + ms, mi_col, &this_rate,
                     &this_dist, subsize, get_block_context(x, subsize),
                     best_rd - sum_rd);
@@ -1890,6 +1907,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
     subsize = get_subsize(bsize, PARTITION_VERT);
 
     *get_sb_index(xd, subsize) = 0;
+    if (cpi->sf.adaptive_motion_search)
+      load_pred_mv(x, get_block_context(x, bsize));
     pick_sb_modes(cpi, mi_row, mi_col, &sum_rate, &sum_dist, subsize,
                   get_block_context(x, subsize), best_rd);
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
@@ -1898,6 +1917,8 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *get_sb_index(xd, subsize) = 1;
+      if (cpi->sf.adaptive_motion_search)
+        load_pred_mv(x, get_block_context(x, bsize));
       pick_sb_modes(cpi, mi_row, mi_col + ms, &this_rate,
                     &this_dist, subsize, get_block_context(x, subsize),
                     best_rd - sum_rd);
