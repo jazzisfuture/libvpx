@@ -743,6 +743,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_fast_lpf_pick = 0;
   sf->use_fast_coef_updates = 0;
   sf->using_small_partition_info = 0;
+
+  sf->adaptive_motion_search = 1;
   // Skip any mode not chosen at size < X for all sizes > X
   // Hence BLOCK_64X64 (skip is off)
   sf->unused_mode_skip_lvl = BLOCK_64X64;
