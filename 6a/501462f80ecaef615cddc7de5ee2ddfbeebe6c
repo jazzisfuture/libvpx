@@ -1,0 +1,8 @@
+Code-Review+1: Frank Galligan <fgalligan@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Christian Duvivier <cduvivier@google.com>
+Submitted-by: Christian Duvivier <cduvivier@google.com>
+Submitted-at: Thu, 12 Sep 2013 14:23:00 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/67153
+Project: webm/libvpx
+Branch: refs/heads/master
