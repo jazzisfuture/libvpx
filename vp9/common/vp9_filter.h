@@ -14,10 +14,15 @@
 #include "vpx_config.h"
 #include "vpx/vpx_integer.h"
 
+// VP9 sub-pixel filters produce output at 1/16th pixel resolution.
 #define SUBPEL_BITS 4
 #define SUBPEL_MASK ((1 << SUBPEL_BITS) - 1)
 #define SUBPEL_SHIFTS (1 << SUBPEL_BITS)
 #define SUBPEL_TAPS 8
+
+// Intermediate positional calculations are maintained to 8-bit precision.
+#define PRECISION_BITS 8
+#define PRECISION_MASK ((1 << PRECISION_BITS) - 1)
 
 extern const int16_t vp9_bilinear_filters[SUBPEL_SHIFTS][SUBPEL_TAPS];
 extern const int16_t vp9_sub_pel_filters_6[SUBPEL_SHIFTS][SUBPEL_TAPS];

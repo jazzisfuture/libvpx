@@ -18,41 +18,46 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
+#define FILTER_SELECT(x) (((x) >> (PRECISION_BITS - SUBPEL_BITS)) & SUBPEL_MASK)
+
 static void convolve_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                              uint8_t *dst, ptrdiff_t dst_stride,
-                             const int16_t *filter_x0, int x_step_q4,
-                             const int16_t *filter_y, int y_step_q4,
+                             const int16_t *filter_x0, int x_step_q8,
+                             const int16_t *filter_y, int y_step_q8,
                              int w, int h, int taps) {
   int x, y, k;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
-  const int16_t *const filter_x_base =
+  const int16_t *const filter_base =
       (const int16_t *)(((intptr_t)filter_x0) & ~(intptr_t)0xff);
+
+  (void) filter_y;
+  (void) y_step_q8;
 
   /* Adjust base pointer address for this source line */
   src -= taps / 2 - 1;
 
   for (y = 0; y < h; ++y) {
     /* Initial phase offset */
-    int x_q4 = (int)(filter_x0 - filter_x_base) / taps;
+    int x_q8 = ((filter_x0 - filter_base) / taps)
+        << (PRECISION_BITS - SUBPEL_BITS);
 
     for (x = 0; x < w; ++x) {
       /* Per-pixel src offset */
-      const int src_x = x_q4 >> SUBPEL_BITS;
+      const int src_x = x_q8 >> PRECISION_BITS;
       int sum = 0;
 
       /* Pointer to filter to use */
-      const int16_t *const filter_x = filter_x_base +
-          (x_q4 & SUBPEL_MASK) * taps;
+      const int16_t *const filter = filter_base + FILTER_SELECT(x_q8) * taps;
 
       for (k = 0; k < taps; ++k)
-        sum += src[src_x + k] * filter_x[k];
+        sum += src[src_x + k] * filter[k];
 
       dst[x] = clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
 
       /* Move to the next source pixel */
-      x_q4 += x_step_q4;
+      x_q8 += x_step_q8;
     }
     src += src_stride;
     dst += dst_stride;
@@ -61,40 +66,43 @@ static void convolve_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
 
 static void convolve_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                                  uint8_t *dst, ptrdiff_t dst_stride,
-                                 const int16_t *filter_x0, int x_step_q4,
-                                 const int16_t *filter_y, int y_step_q4,
+                                 const int16_t *filter_x0, int x_step_q8,
+                                 const int16_t *filter_y, int y_step_q8,
                                  int w, int h, int taps) {
   int x, y, k;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
-  const int16_t *const filter_x_base =
+  const int16_t *const filter_base =
       (const int16_t *)(((intptr_t)filter_x0) & ~(intptr_t)0xff);
+
+  (void) filter_y;
+  (void) y_step_q8;
 
   /* Adjust base pointer address for this source line */
   src -= taps / 2 - 1;
 
   for (y = 0; y < h; ++y) {
     /* Initial phase offset */
-    int x_q4 = (int)(filter_x0 - filter_x_base) / taps;
+    int x_q8 = ((filter_x0 - filter_base) / taps)
+        << (PRECISION_BITS - SUBPEL_BITS);
 
     for (x = 0; x < w; ++x) {
       /* Per-pixel src offset */
-      const int src_x = x_q4 >> SUBPEL_BITS;
+      const int src_x = x_q8 >> PRECISION_BITS;
       int sum = 0;
 
       /* Pointer to filter to use */
-      const int16_t *const filter_x = filter_x_base +
-          (x_q4 & SUBPEL_MASK) * taps;
+      const int16_t *const filter = filter_base + FILTER_SELECT(x_q8) * taps;
 
       for (k = 0; k < taps; ++k)
-        sum += src[src_x + k] * filter_x[k];
+        sum += src[src_x + k] * filter[k];
 
       dst[x] = ROUND_POWER_OF_TWO(dst[x] +
                    clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
 
       /* Move to the next source pixel */
-      x_q4 += x_step_q4;
+      x_q8 += x_step_q8;
     }
     src += src_stride;
     dst += dst_stride;
@@ -103,40 +111,43 @@ static void convolve_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
 
 static void convolve_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                             uint8_t *dst, ptrdiff_t dst_stride,
-                            const int16_t *filter_x, int x_step_q4,
-                            const int16_t *filter_y0, int y_step_q4,
+                            const int16_t *filter_x, int x_step_q8,
+                            const int16_t *filter_y0, int y_step_q8,
                             int w, int h, int taps) {
   int x, y, k;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
-  const int16_t *const filter_y_base =
+  const int16_t *const filter_base =
       (const int16_t *)(((intptr_t)filter_y0) & ~(intptr_t)0xff);
+
+  (void) filter_x;
+  (void) x_step_q8;
 
   /* Adjust base pointer address for this source column */
   src -= src_stride * (taps / 2 - 1);
 
   for (x = 0; x < w; ++x) {
     /* Initial phase offset */
-    int y_q4 = (int)(filter_y0 - filter_y_base) / taps;
+    int y_q8 = ((filter_y0 - filter_base) / taps)
+        << (PRECISION_BITS - SUBPEL_BITS);
 
     for (y = 0; y < h; ++y) {
       /* Per-pixel src offset */
-      const int src_y = y_q4 >> SUBPEL_BITS;
+      const int src_y = y_q8 >> PRECISION_BITS;
       int sum = 0;
 
       /* Pointer to filter to use */
-      const int16_t *const filter_y = filter_y_base +
-          (y_q4 & SUBPEL_MASK) * taps;
+      const int16_t *const filter = filter_base + FILTER_SELECT(y_q8) * taps;
 
       for (k = 0; k < taps; ++k)
-        sum += src[(src_y + k) * src_stride] * filter_y[k];
+        sum += src[(src_y + k) * src_stride] * filter[k];
 
       dst[y * dst_stride] =
           clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
 
       /* Move to the next source pixel */
-      y_q4 += y_step_q4;
+      y_q8 += y_step_q8;
     }
     ++src;
     ++dst;
@@ -145,40 +156,43 @@ static void convolve_vert_c(const uint8_t *src, ptrdiff_t src_stride,
 
 static void convolve_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                                 uint8_t *dst, ptrdiff_t dst_stride,
-                                const int16_t *filter_x, int x_step_q4,
-                                const int16_t *filter_y0, int y_step_q4,
+                                const int16_t *filter_x, int x_step_q8,
+                                const int16_t *filter_y0, int y_step_q8,
                                 int w, int h, int taps) {
   int x, y, k;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
-  const int16_t *const filter_y_base =
+  const int16_t *const filter_base =
       (const int16_t *)(((intptr_t)filter_y0) & ~(intptr_t)0xff);
+
+  (void) filter_x;
+  (void) x_step_q8;
 
   /* Adjust base pointer address for this source column */
   src -= src_stride * (taps / 2 - 1);
 
   for (x = 0; x < w; ++x) {
     /* Initial phase offset */
-    int y_q4 = (int)(filter_y0 - filter_y_base) / taps;
+    int y_q8 = ((filter_y0 - filter_base) / taps)
+        << (PRECISION_BITS - SUBPEL_BITS);
 
     for (y = 0; y < h; ++y) {
       /* Per-pixel src offset */
-      const int src_y = y_q4 >> SUBPEL_BITS;
+      const int src_y = y_q8 >> PRECISION_BITS;
       int sum = 0;
 
       /* Pointer to filter to use */
-      const int16_t *const filter_y = filter_y_base +
-          (y_q4 & SUBPEL_MASK) * taps;
+      const int16_t *const filter = filter_base + FILTER_SELECT(y_q8) * taps;
 
       for (k = 0; k < taps; ++k)
-        sum += src[(src_y + k) * src_stride] * filter_y[k];
+        sum += src[(src_y + k) * src_stride] * filter[k];
 
       dst[y * dst_stride] = ROUND_POWER_OF_TWO(dst[y * dst_stride] +
            clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
 
       /* Move to the next source pixel */
-      y_q4 += y_step_q4;
+      y_q8 += y_step_q8;
     }
     ++src;
     ++dst;
@@ -187,82 +201,82 @@ static void convolve_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
 
 static void convolve_c(const uint8_t *src, ptrdiff_t src_stride,
                        uint8_t *dst, ptrdiff_t dst_stride,
-                       const int16_t *filter_x, int x_step_q4,
-                       const int16_t *filter_y, int y_step_q4,
+                       const int16_t *filter_x, int x_step_q8,
+                       const int16_t *filter_y, int y_step_q8,
                        int w, int h, int taps) {
   /* Fixed size intermediate buffer places limits on parameters.
-   * Maximum intermediate_height is 324, for y_step_q4 == 80,
+   * Maximum intermediate_height is 324, for y_step_q8 == (5 << 8),
    * h == 64, taps == 8.
-   * y_step_q4 of 80 allows for 1/10 scale for 5 layer svc
+   * y_step_q8 of (5 << 8) allows for 1/10 scale for 5 layer svc
    */
   uint8_t temp[64 * 324];
-  int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + taps;
+  int intermediate_height = (((h - 1) * (y_step_q8 >> (PRECISION_BITS - SUBPEL_BITS)) + 15) >> SUBPEL_BITS) + taps;
 
   assert(w <= 64);
   assert(h <= 64);
   assert(taps <= 8);
-  assert(y_step_q4 <= 80);
-  assert(x_step_q4 <= 80);
+  assert(y_step_q8 <= (5 << PRECISION_BITS));
+  assert(x_step_q8 <= (5 << PRECISION_BITS));
 
   if (intermediate_height < h)
     intermediate_height = h;
 
   convolve_horiz_c(src - src_stride * (taps / 2 - 1), src_stride, temp, 64,
-                   filter_x, x_step_q4, filter_y, y_step_q4, w,
+                   filter_x, x_step_q8, filter_y, y_step_q8, w,
                    intermediate_height, taps);
   convolve_vert_c(temp + 64 * (taps / 2 - 1), 64, dst, dst_stride, filter_x,
-                  x_step_q4, filter_y, y_step_q4, w, h, taps);
+                  x_step_q8, filter_y, y_step_q8, w, h, taps);
 }
 
 void vp9_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
-                           const int16_t *filter_x, int x_step_q4,
-                           const int16_t *filter_y, int y_step_q4,
+                           const int16_t *filter_x, int x_step_q8,
+                           const int16_t *filter_y, int y_step_q8,
                            int w, int h) {
   convolve_horiz_c(src, src_stride, dst, dst_stride,
-                   filter_x, x_step_q4, filter_y, y_step_q4, w, h, 8);
+                   filter_x, x_step_q8, filter_y, y_step_q8, w, h, 8);
 }
 
 void vp9_convolve8_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                                uint8_t *dst, ptrdiff_t dst_stride,
-                               const int16_t *filter_x, int x_step_q4,
-                               const int16_t *filter_y, int y_step_q4,
+                               const int16_t *filter_x, int x_step_q8,
+                               const int16_t *filter_y, int y_step_q8,
                                int w, int h) {
   convolve_avg_horiz_c(src, src_stride, dst, dst_stride,
-                       filter_x, x_step_q4, filter_y, y_step_q4, w, h, 8);
+                       filter_x, x_step_q8, filter_y, y_step_q8, w, h, 8);
 }
 
 void vp9_convolve8_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                           uint8_t *dst, ptrdiff_t dst_stride,
-                          const int16_t *filter_x, int x_step_q4,
-                          const int16_t *filter_y, int y_step_q4,
+                          const int16_t *filter_x, int x_step_q8,
+                          const int16_t *filter_y, int y_step_q8,
                           int w, int h) {
   convolve_vert_c(src, src_stride, dst, dst_stride,
-                  filter_x, x_step_q4, filter_y, y_step_q4, w, h, 8);
+                  filter_x, x_step_q8, filter_y, y_step_q8, w, h, 8);
 }
 
 void vp9_convolve8_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                               uint8_t *dst, ptrdiff_t dst_stride,
-                              const int16_t *filter_x, int x_step_q4,
-                              const int16_t *filter_y, int y_step_q4,
+                              const int16_t *filter_x, int x_step_q8,
+                              const int16_t *filter_y, int y_step_q8,
                               int w, int h) {
   convolve_avg_vert_c(src, src_stride, dst, dst_stride,
-                      filter_x, x_step_q4, filter_y, y_step_q4, w, h, 8);
+                      filter_x, x_step_q8, filter_y, y_step_q8, w, h, 8);
 }
 
 void vp9_convolve8_c(const uint8_t *src, ptrdiff_t src_stride,
                      uint8_t *dst, ptrdiff_t dst_stride,
-                     const int16_t *filter_x, int x_step_q4,
-                     const int16_t *filter_y, int y_step_q4,
+                     const int16_t *filter_x, int x_step_q8,
+                     const int16_t *filter_y, int y_step_q8,
                      int w, int h) {
   convolve_c(src, src_stride, dst, dst_stride,
-             filter_x, x_step_q4, filter_y, y_step_q4, w, h, 8);
+             filter_x, x_step_q8, filter_y, y_step_q8, w, h, 8);
 }
 
 void vp9_convolve8_avg_c(const uint8_t *src, ptrdiff_t src_stride,
                          uint8_t *dst, ptrdiff_t dst_stride,
-                         const int16_t *filter_x, int x_step_q4,
-                         const int16_t *filter_y, int y_step_q4,
+                         const int16_t *filter_x, int x_step_q8,
+                         const int16_t *filter_y, int y_step_q8,
                          int w, int h) {
   /* Fixed size intermediate buffer places limits on parameters. */
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp, 64 * 64);
@@ -270,7 +284,7 @@ void vp9_convolve8_avg_c(const uint8_t *src, ptrdiff_t src_stride,
   assert(h <= 64);
 
   vp9_convolve8(src, src_stride, temp, 64,
-               filter_x, x_step_q4, filter_y, y_step_q4, w, h);
+               filter_x, x_step_q8, filter_y, y_step_q8, w, h);
   vp9_convolve_avg(temp, 64, dst, dst_stride, NULL, 0, NULL, 0, w, h);
 }
 

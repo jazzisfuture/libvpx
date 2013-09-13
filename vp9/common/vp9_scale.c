@@ -12,6 +12,7 @@
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_scale.h"
 
+// x_scale_fp has already been pre-scaled by REF_SCALE_SHIFT.
 static INLINE int scaled_x(int val, const struct scale_factors *scale) {
   return val * scale->x_scale_fp >> REF_SCALE_SHIFT;
 }
@@ -27,8 +28,8 @@ static int unscaled_value(int val, const struct scale_factors *scale) {
 
 static MV32 scaled_mv(const MV *mv, const struct scale_factors *scale) {
   const MV32 res = {
-    scaled_y(mv->row, scale) + scale->y_offset_q4,
-    scaled_x(mv->col, scale) + scale->x_offset_q4
+    scaled_y(mv->row << (PRECISION_BITS - SUBPEL_BITS), scale) + scale->y_offset_q8,
+    scaled_x(mv->col << (PRECISION_BITS - SUBPEL_BITS), scale) + scale->x_offset_q8
   };
   return res;
 }
@@ -43,14 +44,16 @@ static MV32 unscaled_mv(const MV *mv, const struct scale_factors *scale) {
 
 static void set_offsets_with_scaling(struct scale_factors *scale,
                                      int row, int col) {
-  scale->x_offset_q4 = scaled_x(col << SUBPEL_BITS, scale) & SUBPEL_MASK;
-  scale->y_offset_q4 = scaled_y(row << SUBPEL_BITS, scale) & SUBPEL_MASK;
+//  scale->x_offset_q8 = scaled_x(col << (PRECISION_BITS - SUBPEL_BITS), scale) & PRECISION_MASK;
+//  scale->y_offset_q8 = scaled_y(row << (PRECISION_BITS - SUBPEL_BITS), scale) & PRECISION_MASK;
+  scale->x_offset_q8 = scaled_x(col, scale) & PRECISION_MASK;
+  scale->y_offset_q8 = scaled_y(row, scale) & PRECISION_MASK;
 }
 
 static void set_offsets_without_scaling(struct scale_factors *scale,
                                         int row, int col) {
-  scale->x_offset_q4 = 0;
-  scale->y_offset_q4 = 0;
+  scale->x_offset_q8 = 0;
+  scale->y_offset_q8 = 0;
 }
 
 static int get_fixed_point_scale_factor(int other_size, int this_size) {
@@ -80,10 +83,10 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
 
   scale->x_scale_fp = get_fixed_point_scale_factor(other_w, this_w);
   scale->y_scale_fp = get_fixed_point_scale_factor(other_h, this_h);
-  scale->x_step_q4 = scaled_x(16, scale);
-  scale->y_step_q4 = scaled_y(16, scale);
-  scale->x_offset_q4 = 0;  // calculated per block
-  scale->y_offset_q4 = 0;  // calculated per block
+  scale->x_step_q8 = scaled_x((1 << PRECISION_BITS), scale);
+  scale->y_step_q8 = scaled_y((1 << PRECISION_BITS), scale);
+  scale->x_offset_q8 = 0;  // calculated per block
+  scale->y_offset_q8 = 0;  // calculated per block
 
   if (vp9_is_scaled(scale)) {
     scale->scale_value_x = scaled_x;
@@ -103,8 +106,8 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
   // applied in one direction only, and not at all for 0,0, seems to give the
   // best quality, but it may be worth trying an additional mode that does
   // do the filtering on full-pel.
-  if (scale->x_step_q4 == 16) {
-    if (scale->y_step_q4 == 16) {
+  if (scale->x_step_q8 == (1 << PRECISION_BITS)) {
+    if (scale->y_step_q8 == (1 << PRECISION_BITS)) {
       // No scaling in either direction.
       scale->predict[0][0][0] = vp9_convolve_copy;
       scale->predict[0][0][1] = vp9_convolve_avg;
@@ -122,7 +125,7 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *scale,
       scale->predict[1][0][1] = vp9_convolve8_avg;
     }
   } else {
-    if (scale->y_step_q4 == 16) {
+    if (scale->y_step_q8 == (1 << PRECISION_BITS)) {
       // No scaling in the y direction. Must always scale in the x direction.
       scale->predict[0][0][0] = vp9_convolve8_horiz;
       scale->predict[0][0][1] = vp9_convolve8_avg_horiz;

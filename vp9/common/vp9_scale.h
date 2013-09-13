@@ -21,10 +21,10 @@
 struct scale_factors {
   int x_scale_fp;   // horizontal fixed point scale factor
   int y_scale_fp;   // vertical fixed point scale factor
-  int x_offset_q4;
-  int x_step_q4;
-  int y_offset_q4;
-  int y_step_q4;
+  int x_offset_q8;  // horizontal offset in 1/8th pixel units.
+  int x_step_q8;    // horizontal inter-sample step in 1/8th pixel units.
+  int y_offset_q8;  // vertical offset in 1/8th pixel units.
+  int y_step_q8;    // vertical inter-sample step in 1/8th pixel units.
 
   int (*scale_value_x)(int val, const struct scale_factors *scale);
   int (*scale_value_y)(int val, const struct scale_factors *scale);

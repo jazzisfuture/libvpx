@@ -24,13 +24,11 @@
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
-  if (xd->mi_8x8 && xd->this_mi) {
-    MB_MODE_INFO * mbmi = &xd->this_mi->mbmi;
+  if (xd->mode_info_context) {
+    MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
 
     set_scale_factors(xd, mbmi->ref_frame[0] - 1, mbmi->ref_frame[1] - 1,
                       cm->active_ref_scale);
-  } else {
-    set_scale_factors(xd, -1, -1, cm->active_ref_scale);
   }
 
   switch (mcomp_filter_type) {
@@ -68,8 +66,8 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
   src += (mv.row >> SUBPEL_BITS) * src_stride + (mv.col >> SUBPEL_BITS);
   scale->predict[subpel_x != 0][subpel_y != 0][ref](
       src, src_stride, dst, dst_stride,
-      subpix->filter_x[subpel_x], scale->x_step_q4,
-      subpix->filter_y[subpel_y], scale->y_step_q4,
+      subpix->filter_x[subpel_x], scale->x_step_q8,
+      subpix->filter_y[subpel_y], scale->y_step_q8,
       w, h);
 }
 
@@ -130,7 +128,7 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
   const int bh = plane_block_height(bsize, pd);
   const int x = 4 * (block & ((1 << bwl) - 1));
   const int y = 4 * (block >> bwl);
-  const MODE_INFO *mi = xd->this_mi;
+  const MODE_INFO *const mi = xd->mode_info_context;
   const int use_second_ref = mi->mbmi.ref_frame[1] > 0;
   int ref;
 
@@ -195,7 +193,7 @@ static INLINE void foreach_predicted_block_in_plane(
   // size of the predictor to use.
   int pred_w, pred_h;
 
-  if (xd->this_mi->mbmi.sb_type < BLOCK_8X8) {
+  if (xd->mode_info_context->mbmi.sb_type < BLOCK_8X8) {
     assert(bsize == BLOCK_8X8);
     pred_w = 0;
     pred_h = 0;

@@ -203,34 +203,9 @@ const unsigned int kStepUpFrame = 6;
 
 class ResizeByRatioInternalTest : public ResizeTest {
  protected:
-#if WRITE_COMPRESSED_STREAM
-  ResizeInternalTest()
-      : ResizeTest(),
-        frame0_psnr_(0.0),
-        outfile_(NULL),
-        out_frames_(0) {}
-#else
-  ResizeInternalTest() : ResizeTest(), frame0_psnr_(0.0) {}
-#endif
+  ResizeByRatioInternalTest() : ResizeTest(), frame0_psnr_(0.0) {}
 
-  virtual ~ResizeInternalTest() {}
-
-  virtual void BeginPassHook(unsigned int /*pass*/) {
-#if WRITE_COMPRESSED_STREAM
-    outfile_ = fopen("vp90-2-05-resize.ivf", "wb");
-#endif
-  }
-
-  virtual void EndPassHook() {
-#if WRITE_COMPRESSED_STREAM
-    if (outfile_) {
-      if (!fseek(outfile_, 0, SEEK_SET))
-        write_ivf_file_header(&cfg_, out_frames_, outfile_);
-      fclose(outfile_);
-      outfile_ = NULL;
-    }
-#endif
-  }
+  virtual ~ResizeByRatioInternalTest() {}
 
   virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
                                   libvpx_test::Encoder *encoder) {
