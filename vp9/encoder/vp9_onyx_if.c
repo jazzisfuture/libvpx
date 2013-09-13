@@ -3562,7 +3562,6 @@ int vp9_receive_raw_frame(VP9_PTR ptr, unsigned int frame_flags,
   return res;
 }
 
-
 static int frame_is_reference(const VP9_COMP *cpi) {
   const VP9_COMMON *cm = &cpi->common;
 
@@ -4067,8 +4066,8 @@ int vp9_set_active_map(VP9_PTR comp, unsigned char *map,
   }
 }
 
-int vp9_set_internal_size(VP9_PTR comp,
-                          VPX_SCALING horiz_mode, VPX_SCALING vert_mode) {
+int vp9_set_internal_size_by_ratio(VP9_PTR comp, VPX_SCALING horiz_mode,
+                                   VPX_SCALING vert_mode) {
   VP9_COMP *cpi = (VP9_COMP *) comp;
   VP9_COMMON *cm = &cpi->common;
   int hr = 0, hs = 0, vr = 0, vs = 0;
