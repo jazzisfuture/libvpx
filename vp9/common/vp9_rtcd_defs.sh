@@ -32,16 +32,16 @@ forward_decls vp9_common_forward_decls
 #
 
 prototype void vp9_idct_add_16x16 "int16_t *input, uint8_t *dest, int stride, int eob"
-specialize vp9_idct_add_16x16
+specialize vp9_idct_add_16x16 dspr2
 
 prototype void vp9_idct_add_8x8 "int16_t *input, uint8_t *dest, int stride, int eob"
-specialize vp9_idct_add_8x8
+specialize vp9_idct_add_8x8 dspr2
 
 prototype void vp9_idct_add "int16_t *input, uint8_t *dest, int stride, int eob"
-specialize vp9_idct_add
+specialize vp9_idct_add dspr2
 
 prototype void vp9_idct_add_32x32 "int16_t *q, uint8_t *dst, int stride, int eob"
-specialize vp9_idct_add_32x32
+specialize vp9_idct_add_32x32 dspr2
 
 #
 # RECON
@@ -204,13 +204,13 @@ specialize vp9_dc_128_predictor_32x32
 
 if [ "$CONFIG_VP9_DECODER" = "yes" ]; then
 prototype void vp9_add_constant_residual_8x8 "const int16_t diff, uint8_t *dest, int stride"
-specialize vp9_add_constant_residual_8x8 sse2 neon
+specialize vp9_add_constant_residual_8x8 sse2 neon dspr2
 
 prototype void vp9_add_constant_residual_16x16 "const int16_t diff, uint8_t *dest, int stride"
-specialize vp9_add_constant_residual_16x16 sse2 neon
+specialize vp9_add_constant_residual_16x16 sse2 neon dspr2
 
 prototype void vp9_add_constant_residual_32x32 "const int16_t diff, uint8_t *dest, int stride"
-specialize vp9_add_constant_residual_32x32 sse2 neon
+specialize vp9_add_constant_residual_32x32 sse2 neon dspr2
 fi
 
 #
