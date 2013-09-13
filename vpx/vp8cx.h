@@ -194,6 +194,7 @@ enum vp8e_enc_control_id {
 
   VP9E_SET_WIDTH              = 99,
   VP9E_SET_HEIGHT,
+  VP9E_SET_FRAMESIZE,
   VP9E_SET_LAYER,
   VP9E_SET_SVC,
 
@@ -254,6 +255,12 @@ typedef struct vpx_scaling_mode {
   VPX_SCALING_MODE    h_scaling_mode;  /**< horizontal scaling mode */
   VPX_SCALING_MODE    v_scaling_mode;  /**< vertical scaling mode   */
 } vpx_scaling_mode_t;
+
+typedef struct vpx_absolute_scaling_mode {
+  int width;
+  int height;
+} vpx_absolute_scaling_mode_t;
+
 
 /*!\brief VP8 token partition mode
  *
