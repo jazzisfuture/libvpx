@@ -141,33 +141,35 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
   return mv;
 }
 
-// This macro is used to add a motion vector mv_ref list if it isn't
-// already in the list.  If it's the second motion vector it will also
-// skip all additional processing and jump to done!
-#define ADD_MV_REF_LIST(MV) \
-  do { \
-    if (refmv_count) { \
-      if ((MV).as_int != mv_ref_list[0].as_int) { \
-        mv_ref_list[refmv_count] = (MV); \
-        goto Done; \
-      } \
-    } else { \
-      mv_ref_list[refmv_count++] = (MV); \
-    } \
-  } while (0)
+// Add motion vector if it is not in the list. The return value indicates
+// if the list is full
+static INLINE int add_mv_ref_list(int_mv *mv_ref_list, int_mv mv, int *count) {
+  if (*count) {
+    if (mv.as_int != mv_ref_list[0].as_int) {
+      mv_ref_list[*count] = mv;
+      return 1;
+    }
+  } else {
+    mv_ref_list[*count] = mv;
+    ++(*count);
+  }
+  return 0;
+}
 
-// If either reference frame is different, not INTRA, and they
-// are different from each other scale and add the mv to our list.
-#define IF_DIFF_REF_FRAME_ADD_MV(CANDIDATE) \
-  do { \
-    if ((CANDIDATE)->ref_frame[0] != ref_frame) \
-      ADD_MV_REF_LIST(scale_mv((CANDIDATE), 0, ref_frame, ref_sign_bias)); \
-    if ((CANDIDATE)->ref_frame[1] != ref_frame && \
-        has_second_ref(CANDIDATE) && \
-        (CANDIDATE)->mv[1].as_int != (CANDIDATE)->mv[0].as_int) \
-      ADD_MV_REF_LIST(scale_mv((CANDIDATE), 1, ref_frame, ref_sign_bias)); \
-  } while (0)
-
+static INLINE int add_mv_diff_ref(const MB_MODE_INFO *mbmi, int_mv *mv_ref_list,
+                                  int rf, const int *sign_bias, int *count) {
+  if (mbmi->ref_frame[0] != rf) {
+    if (add_mv_ref_list(mv_ref_list,
+                        scale_mv(mbmi, 0, rf, sign_bias), count))
+      return 1;
+  }
+  if (mbmi->ref_frame[1] != rf &&
+      has_second_ref(mbmi) && mbmi->mv[1].as_int != mbmi->mv[0].as_int) {
+    return add_mv_ref_list(mv_ref_list, scale_mv(mbmi, 1, rf, sign_bias),
+                           count);
+  }
+  return 0;
+}
 
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.
@@ -207,19 +209,22 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
       const MODE_INFO *const candidate_mi = xd->mi_8x8[mv_ref->col + mv_ref->row
                                                    * xd->mode_info_stride];
       const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+      const int_mv mv = get_sub_block_mv(candidate_mi, check_sub_blocks,
+                                         candidate->ref_frame[0] != ref_frame,
+                                         mv_ref->col, block_idx);
+
       // Keep counts for entropy encoding.
       context_counter += mode_2_counter[candidate->mode];
 
       // Check if the candidate comes from the same reference frame.
       if (candidate->ref_frame[0] == ref_frame) {
-        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, check_sub_blocks, 0,
-                                         mv_ref->col, block_idx));
+        if (add_mv_ref_list(mv_ref_list, mv, &refmv_count))
+          goto Done;
         different_ref_found = candidate->ref_frame[1] != ref_frame;
       } else {
         if (candidate->ref_frame[1] == ref_frame)
-          // Add second motion vector if it has the same ref_frame.
-          ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, check_sub_blocks, 1,
-                                           mv_ref->col, block_idx));
+          if (add_mv_ref_list(mv_ref_list, mv, &refmv_count))
+            goto Done;
         different_ref_found = 1;
       }
     }
@@ -236,11 +241,13 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                             * xd->mode_info_stride]->mbmi;
 
       if (candidate->ref_frame[0] == ref_frame) {
-        ADD_MV_REF_LIST(candidate->mv[0]);
+        if (add_mv_ref_list(mv_ref_list, candidate->mv[0], &refmv_count))
+          goto Done;
         different_ref_found = candidate->ref_frame[1] != ref_frame;
       } else {
         if (candidate->ref_frame[1] == ref_frame)
-          ADD_MV_REF_LIST(candidate->mv[1]);
+          if (add_mv_ref_list(mv_ref_list, candidate->mv[1], &refmv_count))
+            goto Done;
         different_ref_found = 1;
       }
     }
@@ -248,10 +255,13 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   // Check the last frame's mode and mv info.
   if (prev_mbmi) {
-    if (prev_mbmi->ref_frame[0] == ref_frame)
-      ADD_MV_REF_LIST(prev_mbmi->mv[0]);
-    else if (prev_mbmi->ref_frame[1] == ref_frame)
-      ADD_MV_REF_LIST(prev_mbmi->mv[1]);
+    if (prev_mbmi->ref_frame[0] == ref_frame) {
+      if (add_mv_ref_list(mv_ref_list, prev_mbmi->mv[0], &refmv_count))
+        goto Done;
+    } else if (prev_mbmi->ref_frame[1] == ref_frame) {
+      if (add_mv_ref_list(mv_ref_list, prev_mbmi->mv[1], &refmv_count))
+        goto Done;
+    }
   }
 
   // Since we couldn't find 2 mvs from the same reference frame
@@ -266,15 +276,21 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                               * xd->mode_info_stride]->mbmi;
 
         // If the candidate is INTRA we don't want to consider its mv.
-        if (is_inter_block(candidate))
-          IF_DIFF_REF_FRAME_ADD_MV(candidate);
+        if (is_inter_block(candidate)) {
+          if (add_mv_diff_ref(candidate, mv_ref_list, ref_frame,
+                              ref_sign_bias, &refmv_count))
+            goto Done;
+        }
       }
     }
   }
 
   // Since we still don't have a candidate we'll try the last frame.
-  if (prev_mbmi && is_inter_block(prev_mbmi))
-    IF_DIFF_REF_FRAME_ADD_MV(prev_mbmi);
+  if (prev_mbmi && is_inter_block(prev_mbmi)) {
+    if (add_mv_diff_ref(prev_mbmi, mv_ref_list, ref_frame,
+                        ref_sign_bias, &refmv_count))
+      goto Done;
+  }
 
  Done:
 
