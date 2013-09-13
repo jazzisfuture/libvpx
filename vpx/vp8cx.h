@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 /*!\defgroup vp8_encoder WebM VP8 Encoder
  * \ingroup vp8
  *
@@ -30,17 +29,16 @@
  * be found in AVI files.
  * @{
  */
-extern vpx_codec_iface_t  vpx_codec_vp8_cx_algo;
+extern vpx_codec_iface_t vpx_codec_vp8_cx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp8_cx(void);
 
 /* TODO(jkoleszar): These move to VP9 in a later patch set. */
-extern vpx_codec_iface_t  vpx_codec_vp9_cx_algo;
+extern vpx_codec_iface_t vpx_codec_vp9_cx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9_cx(void);
-extern vpx_codec_iface_t  vpx_codec_vp9x_cx_algo;
+extern vpx_codec_iface_t vpx_codec_vp9x_cx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9x_cx(void);
 
 /*!@} - end algorithm interface member group*/
-
 
 /*
  * Algorithm Flags
@@ -52,8 +50,7 @@ extern vpx_codec_iface_t *vpx_codec_vp9x_cx(void);
  * predictor. When not set, the encoder will choose whether to use the
  * last frame or not automatically.
  */
-#define VP8_EFLAG_NO_REF_LAST      (1<<16)
-
+#define VP8_EFLAG_NO_REF_LAST (1<<16)
 
 /*!\brief Don't reference the golden frame
  *
@@ -61,8 +58,7 @@ extern vpx_codec_iface_t *vpx_codec_vp9x_cx(void);
  * predictor. When not set, the encoder will choose whether to use the
  * golden frame or not automatically.
  */
-#define VP8_EFLAG_NO_REF_GF        (1<<17)
-
+#define VP8_EFLAG_NO_REF_GF (1<<17)
 
 /*!\brief Don't reference the alternate reference frame
  *
@@ -70,99 +66,101 @@ extern vpx_codec_iface_t *vpx_codec_vp9x_cx(void);
  * predictor. When not set, the encoder will choose whether to use the
  * alt ref frame or not automatically.
  */
-#define VP8_EFLAG_NO_REF_ARF       (1<<21)
-
+#define VP8_EFLAG_NO_REF_ARF (1<<21)
 
 /*!\brief Don't update the last frame
  *
  * When this flag is set, the encoder will not update the last frame with
  * the contents of the current frame.
  */
-#define VP8_EFLAG_NO_UPD_LAST      (1<<18)
-
+#define VP8_EFLAG_NO_UPD_LAST (1<<18)
 
 /*!\brief Don't update the golden frame
  *
  * When this flag is set, the encoder will not update the golden frame with
  * the contents of the current frame.
  */
-#define VP8_EFLAG_NO_UPD_GF        (1<<22)
-
+#define VP8_EFLAG_NO_UPD_GF (1<<22)
 
 /*!\brief Don't update the alternate reference frame
  *
  * When this flag is set, the encoder will not update the alt ref frame with
  * the contents of the current frame.
  */
-#define VP8_EFLAG_NO_UPD_ARF       (1<<23)
-
+#define VP8_EFLAG_NO_UPD_ARF (1<<23)
 
 /*!\brief Force golden frame update
  *
  * When this flag is set, the encoder copy the contents of the current frame
  * to the golden frame buffer.
  */
-#define VP8_EFLAG_FORCE_GF         (1<<19)
-
+#define VP8_EFLAG_FORCE_GF (1<<19)
 
 /*!\brief Force alternate reference frame update
  *
  * When this flag is set, the encoder copy the contents of the current frame
  * to the alternate reference frame buffer.
  */
-#define VP8_EFLAG_FORCE_ARF        (1<<24)
-
+#define VP8_EFLAG_FORCE_ARF (1<<24)
 
 /*!\brief Disable entropy update
  *
  * When this flag is set, the encoder will not update its internal entropy
  * model based on the entropy of this frame.
  */
-#define VP8_EFLAG_NO_UPD_ENTROPY   (1<<20)
-
+#define VP8_EFLAG_NO_UPD_ENTROPY (1<<20)
 
 /*!\brief VP8 encoder control functions
  *
- * This set of macros define the control functions available for the VP8
+ * This set of macros defines the control functions available for the VP8
  * encoder interface.
  *
  * \sa #vpx_codec_control
  */
 enum vp8e_enc_control_id {
-  VP8E_UPD_ENTROPY           = 5,  /**< control function to set mode of entropy update in encoder */
-  VP8E_UPD_REFERENCE,              /**< control function to set reference update mode in encoder */
-  VP8E_USE_REFERENCE,              /**< control function to set which reference frame encoder can use */
-  VP8E_SET_ROI_MAP,                /**< control function to pass an ROI map to encoder */
-  VP8E_SET_ACTIVEMAP,              /**< control function to pass an Active map to encoder */
-  VP8E_SET_SCALEMODE         = 11, /**< control function to set encoder scaling mode */
+  VP8E_UPD_ENTROPY = 5,  //< control function to set mode of entropy update
+                         //  in encoder
+  VP8E_UPD_REFERENCE,  //< control function to set reference update mode in
+                       //  encoder
+  VP8E_USE_REFERENCE,  //< control function to set which reference frame
+                       //  encoder can use
+  VP8E_SET_ROI_MAP,  //< control function to pass an ROI map to encoder
+  VP8E_SET_ACTIVEMAP,  //< control function to pass an Active map to encoder
+  VP8E_SET_SCALEMODE = 11, //< control function to set encoder scaling mode
+
   /*!\brief control function to set vp8 encoder cpuused
    *
    * Changes in this value influences, among others, the encoder's selection
    * of motion estimation methods. Values greater than 0 will increase encoder
-   * speed at the expense of quality.
-   * The full set of adjustments can be found in
-   * onyx_if.c:vp8_set_speed_features().
+   * speed at the expense of quality. The full set of adjustments can be found
+   * in onyx_if.c:vp8_set_speed_features().
    * \todo List highlights of the changes at various levels.
    *
    * \note Valid range: -16..16
    */
-  VP8E_SET_CPUUSED           = 13,
-  VP8E_SET_ENABLEAUTOALTREF,       /**< control function to enable vp8 to automatic set and use altref frame */
-  VP8E_SET_NOISE_SENSITIVITY,      /**< control function to set noise sensitivity */
-  VP8E_SET_SHARPNESS,              /**< control function to set sharpness */
-  VP8E_SET_STATIC_THRESHOLD,       /**< control function to set the threshold for macroblocks treated static */
-  VP8E_SET_TOKEN_PARTITIONS,       /**< control function to set the number of token partitions  */
-  VP8E_GET_LAST_QUANTIZER,         /**< return the quantizer chosen by the
-                                          encoder for the last frame using the internal
-                                          scale */
-  VP8E_GET_LAST_QUANTIZER_64,      /**< return the quantizer chosen by the
-                                          encoder for the last frame, using the 0..63
-                                          scale as used by the rc_*_quantizer config
-                                          parameters */
-  VP8E_SET_ARNR_MAXFRAMES,         /**< control function to set the max number of frames blurred creating arf*/
-  VP8E_SET_ARNR_STRENGTH,         /**< control function to set the filter strength for the arf */
-  VP8E_SET_ARNR_TYPE,         /**< control function to set the type of filter to use for the arf*/
-  VP8E_SET_TUNING,                 /**< control function to set visual tuning */
+  VP8E_SET_CPUUSED = 13,
+  VP8E_SET_ENABLEAUTOALTREF,  //< control function to enable vp8 to automatic
+                              //  set and use altref frame
+  VP8E_SET_NOISE_SENSITIVITY,  //< control function to set noise sensitivity
+  VP8E_SET_SHARPNESS,  //< control function to set sharpness
+  VP8E_SET_STATIC_THRESHOLD,  //< control function to set the threshold for
+                              //  macroblocks treated static
+  VP8E_SET_TOKEN_PARTITIONS,  //< control function to set the number of token
+                              //  partitions
+  VP8E_GET_LAST_QUANTIZER,  //< return the quantizer chosen by the encoder for
+                            //  the last frame using the internal scale
+  VP8E_GET_LAST_QUANTIZER_64,  //< return the quantizer chosen by the encoder
+                               //  for the last frame, using the 0..63 scale
+                               //  as used by the rc_*_quantizer config
+                               //  parameters
+  VP8E_SET_ARNR_MAXFRAMES,  //< control function to set the max number of
+                            //  frames blurred creating arf
+  VP8E_SET_ARNR_STRENGTH,  //< control function to set the filter strength
+                           //  for the arf
+  VP8E_SET_ARNR_TYPE,  //< control function to set the type of filter to use
+                       //  for the arf
+  VP8E_SET_TUNING,  //< control function to set visual tuning
+
   /*!\brief control function to set constrained quality level
    *
    * \attention For this value to be used vpx_codec_enc_cfg_t::g_usage must be
@@ -192,13 +190,14 @@ enum vp8e_enc_control_id {
   VP9E_SET_TILE_ROWS,
   VP9E_SET_FRAME_PARALLEL_DECODING,
 
-  VP9E_SET_WIDTH              = 99,
-  VP9E_SET_HEIGHT,
-  VP9E_SET_LAYER,
-  VP9E_SET_SVC,
+  VP9E_SET_WIDTH = 99,  /**< control function to set frame width */
+  VP9E_SET_HEIGHT,  /**< control function to set frame height */
+  VP9E_SET_FRAMESIZE,  /**< control function to set frame size */
+  VP9E_SET_LAYER,  /**< control function to set the layer */
+  VP9E_SET_SVC,  /**< control function to set SVC */
 
-  VP9E_SET_MAX_Q,
-  VP9E_SET_MIN_Q
+  VP9E_SET_MAX_Q,  /**< control function to set maximum quantizer */
+  VP9E_SET_MIN_Q  /**< control function to set minimum quantizer */
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -220,16 +219,16 @@ typedef enum vpx_scaling_mode_1d {
  */
 
 typedef struct vpx_roi_map {
-  unsigned char *roi_map;      /**< specify an id between 0 and 3 for each 16x16 region within a frame */
-  unsigned int   rows;         /**< number of rows */
-  unsigned int   cols;         /**< number of cols */
+  unsigned char *roi_map;  /**< specify an id between 0 and 3 for each
+                                16x16 region within a frame */
+  unsigned int rows;  /**< number of rows */
+  unsigned int cols;  /**< number of cols */
   // TODO(paulwilkins): broken for VP9 which has 8 segments
-  // q and loop filter deltas for each segment
-  // (see MAX_MB_SEGMENTS)
-  int     delta_q[4];
-  int     delta_lf[4];
+  // q and loop filter deltas for each segment (see MAX_MB_SEGMENTS)
+  int delta_q[4];
+  int delta_lf[4];
   // Static breakout threshold for each segment
-  unsigned int   static_threshold[4];
+  unsigned int static_threshold[4];
 } vpx_roi_map_t;
 
 /*!\brief  vpx active region map
@@ -237,23 +236,34 @@ typedef struct vpx_roi_map {
  * These defines the data structures for active region map
  *
  */
-
-
 typedef struct vpx_active_map {
-  unsigned char  *active_map; /**< specify an on (1) or off (0) each 16x16 region within a frame */
-  unsigned int    rows;       /**< number of rows */
-  unsigned int    cols;       /**< number of cols */
+  unsigned char *active_map;  /**< specify an on (1) or off (0) each 16x16
+                               *   region within a frame
+                               */
+  unsigned int rows;  /**< number of rows */
+  unsigned int cols;  /**< number of cols */
 } vpx_active_map_t;
 
-/*!\brief  vpx image scaling mode
+/*!\brief  vpx image scaling mode, specified as a ratio
  *
- * This defines the data structure for image scaling mode
+ * This defines the data structure for image scaling mode when the
+ * desired frame size is specified as fixed ratio of the current frame size.
  *
  */
 typedef struct vpx_scaling_mode {
-  VPX_SCALING_MODE    h_scaling_mode;  /**< horizontal scaling mode */
-  VPX_SCALING_MODE    v_scaling_mode;  /**< vertical scaling mode   */
+  VPX_SCALING_MODE h_scaling_mode;  /**< horizontal scaling mode */
+  VPX_SCALING_MODE v_scaling_mode;  /**< vertical scaling mode   */
 } vpx_scaling_mode_t;
+
+/*!\brief  vpx image scaling mode, specified as an absolute frame size
+ *
+ * This defines the data structure for image scaling mode where the desired
+ * frame size is specified directly.
+ */
+typedef struct vpx_absolute_scaling_mode {
+  int width;  /**< frame width */
+  int height;  /**< frame height */
+} vpx_absolute_scaling_mode_t;
 
 /*!\brief VP8 token partition mode
  *
@@ -261,14 +271,12 @@ typedef struct vpx_scaling_mode {
  * sub-streams in the bitstream. Used for parallelized decoding.
  *
  */
-
 typedef enum {
-  VP8_ONE_TOKENPARTITION   = 0,
-  VP8_TWO_TOKENPARTITION   = 1,
-  VP8_FOUR_TOKENPARTITION  = 2,
+  VP8_ONE_TOKENPARTITION = 0,
+  VP8_TWO_TOKENPARTITION = 1,
+  VP8_FOUR_TOKENPARTITION = 2,
   VP8_EIGHT_TOKENPARTITION = 3
 } vp8e_token_partitions;
-
 
 /*!\brief VP8 model tuning parameters
  *
@@ -280,7 +288,6 @@ typedef enum {
   VP8_TUNE_SSIM
 } vp8e_tuning;
 
-
 /*!\brief VP8 encoder control function parameter type
  *
  * Defines the data types that VP8E control functions take. Note that
@@ -288,42 +295,41 @@ typedef enum {
  *
  */
 
-
 /* These controls have been deprecated in favor of the flags parameter to
  * vpx_codec_encode(). See the definition of VP8_EFLAG_* above.
  */
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_ENTROPY,            int)
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_REFERENCE,          int)
-VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_USE_REFERENCE,          int)
+VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_ENTROPY, int)
+VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_UPD_REFERENCE, int)
+VPX_CTRL_USE_TYPE_DEPRECATED(VP8E_USE_REFERENCE, int)
 
-VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP,            vpx_roi_map_t *)
-VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP,          vpx_active_map_t *)
-VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)
+VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP, vpx_roi_map_t *)
+VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP, vpx_active_map_t *)
+VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE, vpx_scaling_mode_t *)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_LAYER,              int *)
-VPX_CTRL_USE_TYPE(VP9E_SET_SVC,                int)
+VPX_CTRL_USE_TYPE(VP9E_SET_LAYER, int *)
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC, int)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_WIDTH,              unsigned int *)
-VPX_CTRL_USE_TYPE(VP9E_SET_HEIGHT,             unsigned int *)
+VPX_CTRL_USE_TYPE(VP9E_SET_WIDTH, unsigned int *)
+VPX_CTRL_USE_TYPE(VP9E_SET_HEIGHT, unsigned int *)
 
-VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED,            int)
-VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF,   unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_NOISE_SENSITIVITY,  unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_SHARPNESS,          unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_STATIC_THRESHOLD,   unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_TOKEN_PARTITIONS,   int) /* vp8e_token_partitions */
+VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED, int)
+VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_NOISE_SENSITIVITY, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_SHARPNESS, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_STATIC_THRESHOLD, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_TOKEN_PARTITIONS, int) /* vp8e_token_partitions */
 
-VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_MAXFRAMES,     unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_STRENGTH,     unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_TYPE,     unsigned int)
-VPX_CTRL_USE_TYPE(VP8E_SET_TUNING,             int) /* vp8e_tuning */
-VPX_CTRL_USE_TYPE(VP8E_SET_CQ_LEVEL,      unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_MAXFRAMES, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_STRENGTH, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_TYPE, unsigned int)
+VPX_CTRL_USE_TYPE(VP8E_SET_TUNING, int) /* vp8e_tuning */
+VPX_CTRL_USE_TYPE(VP8E_SET_CQ_LEVEL, unsigned int)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_TILE_COLUMNS,  int)
-VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS,  int)
+VPX_CTRL_USE_TYPE(VP9E_SET_TILE_COLUMNS, int)
+VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS, int)
 
-VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER,     int *)
-VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64,  int *)
+VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
+VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64, int *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
 
@@ -331,8 +337,8 @@ VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PARALLEL_DECODING, unsigned int)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_MAX_Q,      unsigned int)
-VPX_CTRL_USE_TYPE(VP9E_SET_MIN_Q,      unsigned int)
+VPX_CTRL_USE_TYPE(VP9E_SET_MAX_Q, unsigned int)
+VPX_CTRL_USE_TYPE(VP9E_SET_MIN_Q, unsigned int)
 /*! @} - end defgroup vp8_encoder */
 #include "vpx_codec_impl_bottom.h"
 #endif
