@@ -210,8 +210,9 @@ extern "C"
   int vp9_set_active_map(VP9_PTR comp, unsigned char *map,
                          unsigned int rows, unsigned int cols);
 
-  int vp9_set_internal_size(VP9_PTR comp,
-                            VPX_SCALING horiz_mode, VPX_SCALING vert_mode);
+  int vp9_set_internal_size_by_ratio(VP9_PTR comp, VPX_SCALING horiz_mode,
+                                     VPX_SCALING vert_mode);
+  int vp9_set_internal_size_absolute(VP9_PTR comp, int width, int height);
 
   int vp9_set_size_literal(VP9_PTR comp, unsigned int width,
                            unsigned int height);
