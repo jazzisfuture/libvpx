@@ -1009,14 +1009,14 @@ static vpx_codec_err_t vp9e_set_activemap(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t vp9e_set_scalemode(vpx_codec_alg_priv_t *ctx,
                                           int ctr_id,
                                           va_list args) {
-
   vpx_scaling_mode_t *data =  va_arg(args, vpx_scaling_mode_t *);
 
   if (data) {
     int res;
     vpx_scaling_mode_t scalemode = *(vpx_scaling_mode_t *)data;
-    res = vp9_set_internal_size(ctx->cpi, scalemode.h_scaling_mode,
-                                scalemode.v_scaling_mode);
+
+    res = vp9_set_internal_size_by_ratio(ctx->cpi, scalemode.h_scaling_mode,
+                                         scalemode.v_scaling_mode);
 
     if (!res) {
       return VPX_CODEC_OK;
@@ -1024,6 +1024,27 @@ static vpx_codec_err_t vp9e_set_scalemode(vpx_codec_alg_priv_t *ctx,
       return VPX_CODEC_INVALID_PARAM;
   } else
     return VPX_CODEC_INVALID_PARAM;
+}
+
+static vpx_codec_err_t vp9e_set_framesize(vpx_codec_alg_priv_t *ctx,
+                                          int ctr_id,
+                                          va_list args) {
+  vpx_absolute_scaling_mode_t *data =
+      va_arg(args, vpx_absolute_scaling_mode_t *);
+
+  if (data) {
+    int res;
+    vpx_absolute_scaling_mode_t scalemode = *data;
+
+    res = vp9_set_size_literal(ctx->cpi, scalemode.width, scalemode.height);
+
+    if (!res)
+      return VPX_CODEC_OK;
+    else
+      return VPX_CODEC_INVALID_PARAM;
+  } else {
+    return VPX_CODEC_INVALID_PARAM;
+  }
 }
 
 static vpx_codec_err_t vp9e_set_width(vpx_codec_alg_priv_t *ctx, int ctr_id,
@@ -1121,6 +1142,7 @@ static vpx_codec_ctrl_fn_map_t vp9e_ctf_maps[] = {
   {VP9_GET_REFERENCE,                 get_reference},
   {VP9E_SET_WIDTH,                    vp9e_set_width},
   {VP9E_SET_HEIGHT,                   vp9e_set_height},
+  {VP9E_SET_FRAMESIZE,                vp9e_set_framesize},
   {VP9E_SET_LAYER,                    vp9e_set_layer},
   {VP9E_SET_SVC,                      vp9e_set_svc},
   { -1, NULL},
