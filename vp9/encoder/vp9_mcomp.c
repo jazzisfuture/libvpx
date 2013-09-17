@@ -341,13 +341,13 @@ int vp9_find_best_sub_pixel_iterative(MACROBLOCK *x,
 
   int rr = ref_mv->as_mv.row;
   int rc = ref_mv->as_mv.col;
-  int br = bestmv->as_mv.row << 3;
-  int bc = bestmv->as_mv.col << 3;
+  int br = bestmv->as_mv.row * 8;
+  int bc = bestmv->as_mv.col * 8;
   int hstep = 4;
-  const int minc = MAX(x->mv_col_min << 3, ref_mv->as_mv.col - MV_MAX);
-  const int maxc = MIN(x->mv_col_max << 3, ref_mv->as_mv.col + MV_MAX);
-  const int minr = MAX(x->mv_row_min << 3, ref_mv->as_mv.row - MV_MAX);
-  const int maxr = MIN(x->mv_row_max << 3, ref_mv->as_mv.row + MV_MAX);
+  const int minc = MAX(x->mv_col_min * 8, ref_mv->as_mv.col - MV_MAX);
+  const int maxc = MIN(x->mv_col_max * 8, ref_mv->as_mv.col + MV_MAX);
+  const int minr = MAX(x->mv_row_min * 8, ref_mv->as_mv.row - MV_MAX);
+  const int maxr = MIN(x->mv_row_max * 8, ref_mv->as_mv.row + MV_MAX);
 
   int tr = br;
   int tc = bc;
@@ -447,16 +447,16 @@ int vp9_find_best_sub_pixel_tree(MACROBLOCK *x,
 
   rr = ref_mv->as_mv.row;
   rc = ref_mv->as_mv.col;
-  br = bestmv->as_mv.row << 3;
-  bc = bestmv->as_mv.col << 3;
+  br = bestmv->as_mv.row * 8;
+  bc = bestmv->as_mv.col * 8;
   hstep = 4;
-  minc = MAX(x->mv_col_min << 3,
+  minc = MAX(x->mv_col_min * 8,
              (ref_mv->as_mv.col) - ((1 << MV_MAX_BITS) - 1));
-  maxc = MIN(x->mv_col_max << 3,
+  maxc = MIN(x->mv_col_max * 8,
              (ref_mv->as_mv.col) + ((1 << MV_MAX_BITS) - 1));
-  minr = MAX(x->mv_row_min << 3,
+  minr = MAX(x->mv_row_min * 8,
              (ref_mv->as_mv.row) - ((1 << MV_MAX_BITS) - 1));
-  maxr = MIN(x->mv_row_max << 3,
+  maxr = MIN(x->mv_row_max * 8,
              (ref_mv->as_mv.row) + ((1 << MV_MAX_BITS) - 1));
 
   tr = br;
@@ -465,8 +465,8 @@ int vp9_find_best_sub_pixel_tree(MACROBLOCK *x,
   offset = (bestmv->as_mv.row) * y_stride + bestmv->as_mv.col;
 
   // central mv
-  bestmv->as_mv.row <<= 3;
-  bestmv->as_mv.col <<= 3;
+  bestmv->as_mv.row *= 8;
+  bestmv->as_mv.col *= 8;
 
   // calculate central point error
   besterr = vfp->vf(y, y_stride, z, src_stride, sse1);
@@ -551,13 +551,13 @@ int vp9_find_best_sub_pixel_comp_iterative(MACROBLOCK *x,
 
   int rr = ref_mv->as_mv.row;
   int rc = ref_mv->as_mv.col;
-  int br = bestmv->as_mv.row << 3;
-  int bc = bestmv->as_mv.col << 3;
+  int br = bestmv->as_mv.row * 8;
+  int bc = bestmv->as_mv.col * 8;
   int hstep = 4;
-  const int minc = MAX(x->mv_col_min << 3, ref_mv->as_mv.col - MV_MAX);
-  const int maxc = MIN(x->mv_col_max << 3, ref_mv->as_mv.col + MV_MAX);
-  const int minr = MAX(x->mv_row_min << 3, ref_mv->as_mv.row - MV_MAX);
-  const int maxr = MIN(x->mv_row_max << 3, ref_mv->as_mv.row + MV_MAX);
+  const int minc = MAX(x->mv_col_min * 8, ref_mv->as_mv.col - MV_MAX);
+  const int maxc = MIN(x->mv_col_max * 8, ref_mv->as_mv.col + MV_MAX);
+  const int minr = MAX(x->mv_row_min * 8, ref_mv->as_mv.row - MV_MAX);
+  const int maxr = MIN(x->mv_row_max * 8, ref_mv->as_mv.row + MV_MAX);
 
   int tr = br;
   int tc = bc;
@@ -565,8 +565,8 @@ int vp9_find_best_sub_pixel_comp_iterative(MACROBLOCK *x,
   const int offset = (bestmv->as_mv.row) * y_stride + bestmv->as_mv.col;
 
   // central mv
-  bestmv->as_mv.row <<= 3;
-  bestmv->as_mv.col <<= 3;
+  bestmv->as_mv.row *= 8;
+  bestmv->as_mv.col *= 8;
 
   // calculate central point error
   // TODO(yunqingwang): central pointer error was already calculated in full-
@@ -662,27 +662,26 @@ int vp9_find_best_sub_pixel_comp_tree(MACROBLOCK *x,
 
   rr = ref_mv->as_mv.row;
   rc = ref_mv->as_mv.col;
-  br = bestmv->as_mv.row << 3;
-  bc = bestmv->as_mv.col << 3;
+  br = bestmv->as_mv.row * 8;
+  bc = bestmv->as_mv.col * 8;
   hstep = 4;
-  minc = MAX(x->mv_col_min << 3, (ref_mv->as_mv.col) -
+  minc = MAX(x->mv_col_min * 8, (ref_mv->as_mv.col) -
              ((1 << MV_MAX_BITS) - 1));
-  maxc = MIN(x->mv_col_max << 3, (ref_mv->as_mv.col) +
+  maxc = MIN(x->mv_col_max * 8, (ref_mv->as_mv.col) +
              ((1 << MV_MAX_BITS) - 1));
-  minr = MAX(x->mv_row_min << 3, (ref_mv->as_mv.row) -
+  minr = MAX(x->mv_row_min * 8, (ref_mv->as_mv.row) -
              ((1 << MV_MAX_BITS) - 1));
-  maxr = MIN(x->mv_row_max << 3, (ref_mv->as_mv.row) +
+  maxr = MIN(x->mv_row_max * 8, (ref_mv->as_mv.row) +
              ((1 << MV_MAX_BITS) - 1));
 
   tr = br;
   tc = bc;
 
-
   offset = (bestmv->as_mv.row) * y_stride + bestmv->as_mv.col;
 
   // central mv
-  bestmv->as_mv.row <<= 3;
-  bestmv->as_mv.col <<= 3;
+  bestmv->as_mv.row *= 8;
+  bestmv->as_mv.col *= 8;
 
   // calculate central point error
   // TODO(yunqingwang): central pointer error was already calculated in full-
@@ -1015,8 +1014,8 @@ static int vp9_pattern_search(MACROBLOCK *x,
 
   this_offset = base_offset + (best_mv->as_mv.row * (in_what_stride)) +
       best_mv->as_mv.col;
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
   if (bestsad == INT_MAX)
     return INT_MAX;
   return
@@ -1278,8 +1277,8 @@ int vp9_diamond_search_sad_c(MACROBLOCK *x,
       (*num00)++;
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad == INT_MAX)
     return INT_MAX;
@@ -1451,8 +1450,8 @@ int vp9_diamond_search_sadx4(MACROBLOCK *x,
       (*num00)++;
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad == INT_MAX)
     return INT_MAX;
@@ -1602,8 +1601,8 @@ int vp9_full_search_sad_c(MACROBLOCK *x, int_mv *ref_mv,
     }
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX)
     return
@@ -1723,8 +1722,8 @@ int vp9_full_search_sadx3(MACROBLOCK *x, int_mv *ref_mv,
 
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX)
     return
@@ -1871,8 +1870,8 @@ int vp9_full_search_sadx8(MACROBLOCK *x, int_mv *ref_mv,
     }
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX)
     return
@@ -1947,8 +1946,8 @@ int vp9_refining_search_sad_c(MACROBLOCK *x,
     }
   }
 
-  this_mv.as_mv.row = ref_mv->as_mv.row << 3;
-  this_mv.as_mv.col = ref_mv->as_mv.col << 3;
+  this_mv.as_mv.row = ref_mv->as_mv.row * 8;
+  this_mv.as_mv.col = ref_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX)
     return
@@ -2053,8 +2052,8 @@ int vp9_refining_search_sadx4(MACROBLOCK *x,
     }
   }
 
-  this_mv.as_mv.row = ref_mv->as_mv.row << 3;
-  this_mv.as_mv.col = ref_mv->as_mv.col << 3;
+  this_mv.as_mv.row = ref_mv->as_mv.row * 8;
+  this_mv.as_mv.col = ref_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX)
     return
@@ -2144,8 +2143,8 @@ int vp9_refining_search_8p_c(MACROBLOCK *x,
     }
   }
 
-  this_mv.as_mv.row = ref_mv->as_mv.row << 3;
-  this_mv.as_mv.col = ref_mv->as_mv.col << 3;
+  this_mv.as_mv.row = ref_mv->as_mv.row * 8;
+  this_mv.as_mv.col = ref_mv->as_mv.col * 8;
 
   if (bestsad < INT_MAX) {
     // FIXME(rbultje, yunqing): add full-pixel averaging variance functions
