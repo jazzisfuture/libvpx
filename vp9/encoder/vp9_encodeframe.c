@@ -939,7 +939,7 @@ static void copy_partitioning(VP9_COMP *cpi, MODE_INFO **mi_8x8,
       int offset;
 
       if (prev_mi) {
-        offset = prev_mi - cm->prev_mi;
+        offset = (int)(prev_mi - cm->prev_mi);
         mi_8x8[block_row * mis + block_col] = cm->mi + offset;
         mi_8x8[block_row * mis + block_col]->mbmi.sb_type = sb_type;
       }
@@ -1044,9 +1044,9 @@ static void fill_variance(var *v, int64_t s2, int64_t s, int c) {
   v->sum_error = s;
   v->count = c;
   if (c > 0)
-    v->variance = 256
+    v->variance = (int)(256
         * (v->sum_square_error - v->sum_error * v->sum_error / v->count)
-        / v->count;
+        / v->count);
   else
     v->variance = 0;
 }
