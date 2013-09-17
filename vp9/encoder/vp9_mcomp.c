@@ -447,16 +447,16 @@ int vp9_find_best_sub_pixel_tree(MACROBLOCK *x,
 
   rr = ref_mv->as_mv.row;
   rc = ref_mv->as_mv.col;
-  br = bestmv->as_mv.row << 3;
-  bc = bestmv->as_mv.col << 3;
+  br = bestmv->as_mv.row * 8;
+  bc = bestmv->as_mv.col * 8;
   hstep = 4;
-  minc = MAX(x->mv_col_min << 3,
+  minc = MAX(x->mv_col_min * 8,
              (ref_mv->as_mv.col) - ((1 << MV_MAX_BITS) - 1));
-  maxc = MIN(x->mv_col_max << 3,
+  maxc = MIN(x->mv_col_max * 8,
              (ref_mv->as_mv.col) + ((1 << MV_MAX_BITS) - 1));
-  minr = MAX(x->mv_row_min << 3,
+  minr = MAX(x->mv_row_min * 8,
              (ref_mv->as_mv.row) - ((1 << MV_MAX_BITS) - 1));
-  maxr = MIN(x->mv_row_max << 3,
+  maxr = MIN(x->mv_row_max * 8,
              (ref_mv->as_mv.row) + ((1 << MV_MAX_BITS) - 1));
 
   tr = br;
@@ -465,8 +465,8 @@ int vp9_find_best_sub_pixel_tree(MACROBLOCK *x,
   offset = (bestmv->as_mv.row) * y_stride + bestmv->as_mv.col;
 
   // central mv
-  bestmv->as_mv.row <<= 3;
-  bestmv->as_mv.col <<= 3;
+  bestmv->as_mv.row *= 8;
+  bestmv->as_mv.col *= 8;
 
   // calculate central point error
   besterr = vfp->vf(y, y_stride, z, src_stride, sse1);
@@ -1015,8 +1015,8 @@ static int vp9_pattern_search(MACROBLOCK *x,
 
   this_offset = base_offset + (best_mv->as_mv.row * (in_what_stride)) +
       best_mv->as_mv.col;
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
   if (bestsad == INT_MAX)
     return INT_MAX;
   return
@@ -1451,8 +1451,8 @@ int vp9_diamond_search_sadx4(MACROBLOCK *x,
       (*num00)++;
   }
 
-  this_mv.as_mv.row = best_mv->as_mv.row << 3;
-  this_mv.as_mv.col = best_mv->as_mv.col << 3;
+  this_mv.as_mv.row = best_mv->as_mv.row * 8;
+  this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
   if (bestsad == INT_MAX)
     return INT_MAX;
