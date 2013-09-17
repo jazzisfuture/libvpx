@@ -883,10 +883,10 @@ static unsigned int murmur(const void *key, int len, unsigned int seed) {
   while (len >= 4) {
     unsigned int k;
 
-    k  = data[0];
-    k |= data[1] << 8;
-    k |= data[2] << 16;
-    k |= data[3] << 24;
+    k  = (unsigned int)data[0];
+    k |= (unsigned int)data[1] << 8;
+    k |= (unsigned int)data[2] << 16;
+    k |= (unsigned int)data[3] << 24;
 
     k *= m;
     k ^= k >> r;
