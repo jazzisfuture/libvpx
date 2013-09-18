@@ -17,8 +17,8 @@ pw_2: times 8 dw 2
 pb_7m1: times 8 db 7, -1
 pb_15: times 16 db 15
 
-sh_b01234577: db 0, 1, 2, 3, 4, 5, 7, 7
-sh_b12345677: db 1, 2, 3, 4, 5, 6, 7, 7
+sh_b01234577: db 0, 1, 2, 3, 4, 5, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
+sh_b12345677: db 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b23456777: db 2, 3, 4, 5, 6, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0
 sh_b0123456777777777: db 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7
 sh_b1234567777777777: db 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
@@ -289,3 +289,138 @@ cglobal d45_predictor_32x32, 3, 5, 7, dst, stride, above, dst16, line
   mova [dstq  +strideq*2+16], m4
   mova [dstq  +stride3q +16], m4
   RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_4x4, 3, 3, 5, dst, stride, above
+  movq                m3, [aboveq]
+  pshufb              m1, m3, [sh_b23456777]
+  pshufb              m2, m3, [sh_b12345677]
+  pavgb               m4, m3, m1
+  pxor                m1, m3
+  pand                m1, [pb_1]
+  psubb               m4, m1
+  pavgb               m4, m2
+  pavgb               m3, m2
+
+  ; store 4 lines
+  movd    [dstq        ], m3
+  movd    [dstq+strideq], m4
+  lea               dstq, [dstq+strideq*2]
+  psrldq              m3, 1
+  psrldq              m4, 1
+  movd    [dstq        ], m3
+  movd    [dstq+strideq], m4
+  RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_8x8, 3, 3, 5, dst, stride, above
+  movq                m3, [aboveq]
+  DEFINE_ARGS dst, stride, stride3
+  lea           stride3q, [strideq*3]
+  pshufb              m1, m3, [sh_b2345677777777777]
+  pshufb              m0, m3, [sh_b0123456777777777]
+  pshufb              m2, m3, [sh_b1234567777777777]
+  pavgb               m4, m0, m1
+  pxor                m0, m1
+  pand                m0, [pb_1]
+  pshufb              m3, [sh_b0123456777777777]
+  psubb               m4, m0
+  pavgb               m4, m2
+  pavgb               m3, m2
+
+  ; store 4 lines
+  movq    [dstq        ], m3
+  movq    [dstq+strideq], m4
+  psrldq              m3, 1
+  psrldq              m4, 1
+  movq  [dstq+strideq*2], m3
+  movq  [dstq+stride3q ], m4
+  lea               dstq, [dstq+strideq*4]
+  psrldq              m3, 1
+  psrldq              m4, 1
+
+  ; store 4 lines
+  movq    [dstq        ], m3
+  movq    [dstq+strideq], m4
+  psrldq              m3, 1
+  psrldq              m4, 1
+  movq  [dstq+strideq*2], m3
+  movq  [dstq+stride3q ], m4
+  RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_16x16, 3, 4, 5, dst, stride, above, line
+  mova                m0, [aboveq]
+  DEFINE_ARGS dst, stride, stride3, line
+  lea           stride3q, [strideq*3]
+  mova                m1, [sh_b123456789abcdeff]
+  pshufb              m2, m0, [sh_b23456789abcdefff]
+  pshufb              m3, m0, m1
+  pavgb               m4, m0, m2
+  pxor                m2, m0
+  pand                m2, [pb_1]
+  psubb               m4, m2
+  pavgb               m4, m3
+  pavgb               m0, m3
+  mov              lined, 4
+.loop:
+  mova  [dstq          ], m0
+  mova  [dstq+strideq  ], m4
+  pshufb              m0, m1
+  pshufb              m4, m1
+  mova  [dstq+strideq*2], m0
+  mova  [dstq+stride3q ], m4
+  pshufb              m0, m1
+  pshufb              m4, m1
+  lea               dstq, [dstq+strideq*4]
+  dec              lined
+  jnz .loop
+  REP_RET
+
+INIT_XMM ssse3
+cglobal d63_predictor_32x32, 3, 4, 8, dst, stride, above, line
+  mova                   m0, [aboveq]
+  mova                   m7, [aboveq+16]
+  DEFINE_ARGS dst, stride, stride3, line
+  mova                   m1, [sh_b123456789abcdeff]
+  lea              stride3q, [strideq*3]
+  pshufb                 m2, m7, [sh_b23456789abcdefff]
+  pshufb                 m3, m7, m1
+  pavgb                  m4, m7, m2
+  pxor                   m2, m7
+  pand                   m2, [pb_1]
+  psubb                  m4, m2
+  pavgb                  m4, m3         ; high 16px odd lines
+  palignr                m6, m7, m0, 1
+  palignr                m5, m7, m0, 2
+  pavgb                  m7, m3         ; high 16px even lines
+  pavgb                  m2, m0, m5
+  pxor                   m5, m0
+  pand                   m5, [pb_1]
+  psubb                  m2, m5
+  pavgb                  m2, m6         ; low 16px odd lines
+  pavgb                  m0, m6         ; low 16px even lines
+  mov                 lined, 8
+.loop:
+  mova  [dstq             ], m0
+  mova  [dstq          +16], m7
+  mova  [dstq+strideq     ], m2
+  mova  [dstq+strideq  +16], m4
+  palignr                m3, m7, m0, 1
+  palignr                m5, m4, m2, 1
+  pshufb                 m7, m1
+  pshufb                 m4, m1
+
+  mova  [dstq+strideq*2   ], m3
+  mova  [dstq+strideq*2+16], m7
+  mova  [dstq+stride3q    ], m5
+  mova  [dstq+stride3q +16], m4
+  palignr                m0, m7, m3, 1
+  palignr                m2, m4, m5, 1
+  pshufb                 m7, m1
+  pshufb                 m4, m1
+  lea                  dstq, [dstq+strideq*4]
+  dec                 lined
+  jnz .loop
+  REP_RET
+
