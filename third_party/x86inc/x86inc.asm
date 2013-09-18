@@ -97,21 +97,89 @@
     %endif
 %endmacro
 
-%if WIN64
-    %define PIC
-%elifidn __OUTPUT_FORMAT__,macho64
-    %define PIC
-%elif ARCH_X86_64 == 0
-; x86_32 doesn't require PIC.
-; Some distros prefer shared objects to be PIC, but nothing breaks if
-; the code contains a few textrels, so we'll skip that complexity.
-    %undef PIC
-%elif CONFIG_PIC
-    %define PIC
+;%if WIN64
+;    %define PIC
+;%elifidn __OUTPUT_FORMAT__,macho64
+;    %define PIC
+;%elif ARCH_X86_64 == 0
+;; x86_32 doesn't require PIC.
+;; Some distros prefer shared objects to be PIC, but nothing breaks if
+;; the code contains a few textrels, so we'll skip that complexity.
+;    %undef PIC
+;%elif CONFIG_PIC
+;    %define PIC
+;%endif
+;%ifdef PIC
+;    default rel
+;%endif
+
+; PIC macros are copied from vpx_ports/x86_abi_support.asm
+%ifidn __OUTPUT_FORMAT__,elf32
+%define ABI_IS_32BIT 1
+%elifidn __OUTPUT_FORMAT__,macho32
+%define ABI_IS_32BIT 1
+%elifidn __OUTPUT_FORMAT__,win32
+%define ABI_IS_32BIT 1
+%elifidn __OUTPUT_FORMAT__,aout
+%define ABI_IS_32BIT 1
+%else
+%define ABI_IS_32BIT 0
 %endif
-%ifdef PIC
-    default rel
+
+%if ABI_IS_32BIT
+  %if CONFIG_PIC=1
+  %ifidn __OUTPUT_FORMAT__,elf32
+    %define GET_GOT_SAVE_ARG 1
+    %define WRT_PLT wrt ..plt
+    %macro GET_GOT 1
+      extern _GLOBAL_OFFSET_TABLE_
+      push %1
+      call %%get_got
+      %%sub_offset:
+      jmp %%exitGG
+      %%get_got:
+      mov %1, [esp]
+      add %1, _GLOBAL_OFFSET_TABLE_ + $$ - %%sub_offset wrt ..gotpc
+      ret
+      %%exitGG:
+      %undef GLOBAL
+      %define GLOBAL(x) x + %1 wrt ..gotoff
+      %undef RESTORE_GOT
+      %define RESTORE_GOT pop %1
+    %endmacro
+  %elifidn __OUTPUT_FORMAT__,macho32
+    %define GET_GOT_SAVE_ARG 1
+    %macro GET_GOT 1
+      push %1
+      call %%get_got
+      %%get_got:
+      pop  %1
+      %undef GLOBAL
+      %define GLOBAL(x) x + %1 - %%get_got
+      %undef RESTORE_GOT
+      %define RESTORE_GOT pop %1
+    %endmacro
+  %endif
+  %endif
+%else
+  %macro GET_GOT 1
+  %endmacro
+  %define GLOBAL(x) rel x
+  %define WRT_PLT wrt ..plt
 %endif
+
+%ifnmacro GET_GOT
+    %macro GET_GOT 1
+    %endmacro
+    %define GLOBAL(x) x
+%endif
+%ifndef RESTORE_GOT
+%define RESTORE_GOT
+%endif
+%ifndef WRT_PLT
+%define WRT_PLT
+%endif
+; Done with PIC macros
 
 ; Always use long nops (reduces 0x90 spam in disassembly on x86_32)
 %ifndef __NASM_VER__
