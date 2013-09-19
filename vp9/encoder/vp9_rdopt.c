@@ -621,7 +621,7 @@ static void block_yrd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
-  if (!is_inter_block(&xd->this_mi->mbmi))
+  if (is_intra_block(&xd->this_mi->mbmi))
     vp9_encode_block_intra(plane, block, plane_bsize, tx_size, &encode_args);
   else
     vp9_xform_quant(plane, block, plane_bsize, tx_size, &encode_args);
@@ -928,12 +928,12 @@ static void super_block_yrd(VP9_COMP *cpi,
   MB_MODE_INFO *const mbmi = &xd->this_mi->mbmi;
 
   assert(bs == mbmi->sb_type);
-  if (mbmi->ref_frame[0] > INTRA_FRAME)
+  if (is_inter_block(mbmi))
     vp9_subtract_sby(x, bs);
 
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL ||
       (cpi->sf.tx_size_search_method != USE_FULL_RD &&
-       mbmi->ref_frame[0] == INTRA_FRAME)) {
+       is_intra_block(mbmi))) {
     vpx_memset(txfm_cache, 0, TX_MODES * sizeof(int64_t));
     choose_largest_txfm_size(cpi, x, rate, distortion, skip, sse,
                              ref_best_rd, bs);
@@ -943,7 +943,7 @@ static void super_block_yrd(VP9_COMP *cpi,
   }
 
   if (cpi->sf.tx_size_search_method == USE_LARGESTINTRA_MODELINTER &&
-      mbmi->ref_frame[0] > INTRA_FRAME) {
+      is_inter_block(mbmi)) {
     if (bs >= BLOCK_32X32)
       model_rd_for_sb_y_tx(cpi, bs, TX_32X32, x, xd,
                            &r[TX_32X32][0], &d[TX_32X32], &s[TX_32X32]);
@@ -2630,7 +2630,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->this_mi->mbmi;
-  const int is_comp_pred = (mbmi->ref_frame[1] > 0);
+  const int is_comp_pred = has_second_ref(mbmi);
   const int num_refs = is_comp_pred ? 2 : 1;
   const int this_mode = mbmi->mode;
   int_mv *frame_mv = mode_mv[this_mode];

@@ -157,6 +157,10 @@ typedef struct {
   union b_mode_info bmi[4];
 } MODE_INFO;
 
+static INLINE int is_intra_block(const MB_MODE_INFO *mbmi) {
+  return mbmi->ref_frame[0] == INTRA_FRAME;
+}
+
 static INLINE int is_inter_block(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[0] > INTRA_FRAME;
 }
