@@ -1763,13 +1763,14 @@ static void parse_global_config(struct global_config *global, char **argv) {
       argj++;
   }
 
+#if CONFIG_VP9_ENCODER
   /* Validate global config */
   if (global->passes == 0) {
     // Make default VP9 passes = 2 until there is a better quality 1-pass
     // encoder
     global->passes = (global->codec->iface == vpx_codec_vp9_cx ? 2 : 1);
   }
-
+#endif
   if (global->pass) {
     /* DWIM: Assume the user meant passes=2 if pass=2 is specified */
     if (global->pass > global->passes) {

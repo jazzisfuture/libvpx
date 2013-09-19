@@ -256,6 +256,7 @@ void SubpelVarianceTest<SubpelVarianceFunctionType>::RefTest() {
   }
 }
 
+#if CONFIG_VP9_ENCODER
 template<>
 void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
   for (int x = 0; x < 16; ++x) {
@@ -279,7 +280,7 @@ void SubpelVarianceTest<vp9_subp_avg_variance_fn_t>::RefTest() {
     }
   }
 }
-
+#endif
 // -----------------------------------------------------------------------------
 // VP8 test cases.
 
