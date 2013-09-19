@@ -1113,36 +1113,79 @@ static int set_vt_partitioning(VP9_COMP *cpi, void *data, MODE_INFO **m,
                                int mi_col, int mi_size) {
   VP9_COMMON * const cm = &cpi->common;
   vt_node vt;
+  int i;
+  int min_split_var;
+  double log2_min_split_var;
   const int mis = cm->mode_info_stride;
-  int64_t threshold = 50 * cpi->common.base_qindex;
+  int64_t flat_threshold = 50 * cpi->common.base_qindex;
+  double uniform_threshold = 0.0;
+
+  switch (bsize) {
+    case BLOCK_64X64:
+      uniform_threshold = 0.5;
+      break;
+    case BLOCK_32X32:
+      uniform_threshold = 1.5;
+      break;
+    case BLOCK_16X16:
+      uniform_threshold = 3.0;
+      break;
+    default:
+      assert(!"Invalid block size");
+  }
+  if (cm->frame_type != KEY_FRAME)
+    uniform_threshold /= 2.0;
+  uniform_threshold *= (int)((cm->base_qindex * cm->base_qindex) / 10000);
 
   tree_to_node(data, bsize, &vt);
+
+  min_split_var = vt.vt->none.variance;
+  for (i = 0; i < 4; i++) {
+    int var = vt.split[i]->variance;
+    if (var != 0)
+      min_split_var = MIN(min_split_var, var);
+  }
+  log2_min_split_var = log2(min_split_var + 1);
+
+#define FLAT_BLOCK(block_var) ((block_var) < flat_threshold)
+#define UNIFORM_BLOCK(block_var)\
+  (log2((block_var) + 1) - log2_min_split_var < uniform_threshold)
 
   // split none is available only if we have more than half a block size
   // in width and height inside the visible image
   if (mi_col + mi_size < cm->mi_cols && mi_row + mi_size < cm->mi_rows
-      && vt.vt->none.variance < threshold) {
+      && (FLAT_BLOCK(vt.vt->none.variance)
+          || UNIFORM_BLOCK(vt.vt->none.variance))) {
     set_block_size(cm, m, bsize, mis, mi_row, mi_col);
     return 1;
   }
 
   // vertical split is available on all but the bottom border
-  if (mi_row + mi_size < cm->mi_rows && vt.vt->vert[0].variance < threshold
-      && vt.vt->vert[1].variance < threshold) {
+  if (mi_row + mi_size < cm->mi_rows
+      && ((FLAT_BLOCK(vt.vt->vert[0].variance) &&
+           FLAT_BLOCK(vt.vt->vert[1].variance))
+          || (UNIFORM_BLOCK(vt.vt->vert[0].variance) &&
+              UNIFORM_BLOCK(vt.vt->vert[1].variance)))) {
     set_block_size(cm, m, get_subsize(bsize, PARTITION_VERT), mis, mi_row,
                    mi_col);
     return 1;
   }
 
   // horizontal split is available on all but the right border
-  if (mi_col + mi_size < cm->mi_cols && vt.vt->horz[0].variance < threshold
-      && vt.vt->horz[1].variance < threshold) {
+  if (mi_col + mi_size < cm->mi_cols
+      && ((FLAT_BLOCK(vt.vt->horz[0].variance) &&
+           FLAT_BLOCK(vt.vt->horz[1].variance))
+          || (UNIFORM_BLOCK(vt.vt->horz[0].variance) &&
+              UNIFORM_BLOCK(vt.vt->horz[1].variance)))) {
     set_block_size(cm, m, get_subsize(bsize, PARTITION_HORZ), mis, mi_row,
                    mi_col);
     return 1;
   }
 
   return 0;
+
+#undef FLAT_BLOCK
+#undef UNIFORM_BLOCK
 }
 #endif  // PERFORM_RANDOM_PARTITIONING
 
