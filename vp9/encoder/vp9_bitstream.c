@@ -503,14 +503,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
 #ifdef ENTROPY_STATS
             active_section = 11;
 #endif
-            vp9_encode_mv(cpi, bc, &blockmv.as_mv, &mi->best_mv.as_mv,
-                          nmvc, allow_hp);
+            vp9_encode_mv(cpi, bc, &blockmv.as_mv,
+                          &mi->best_mv[0].as_mv, nmvc, allow_hp);
 
-            if (mi->ref_frame[1] > INTRA_FRAME)
-              vp9_encode_mv(cpi, bc,
-                            &m->bmi[j].as_mv[1].as_mv,
-                            &mi->best_second_mv.as_mv,
-                            nmvc, allow_hp);
+            if (has_second_ref(mi))
+              vp9_encode_mv(cpi, bc, &m->bmi[j].as_mv[1].as_mv,
+                            &mi->best_mv[1].as_mv, nmvc, allow_hp);
           }
         }
       }
@@ -518,12 +516,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
 #ifdef ENTROPY_STATS
       active_section = 5;
 #endif
-      vp9_encode_mv(cpi, bc, &mi->mv[0].as_mv, &mi->best_mv.as_mv,
-                    nmvc, allow_hp);
+      vp9_encode_mv(cpi, bc, &mi->mv[0].as_mv,
+                    &mi->best_mv[0].as_mv, nmvc, allow_hp);
 
-      if (mi->ref_frame[1] > INTRA_FRAME)
-        vp9_encode_mv(cpi, bc, &mi->mv[1].as_mv, &mi->best_second_mv.as_mv,
-                      nmvc, allow_hp);
+      if (has_second_ref(mi))
+        vp9_encode_mv(cpi, bc, &mi->mv[1].as_mv,
+                      &mi->best_mv[1].as_mv, nmvc, allow_hp);
     }
   }
 }
