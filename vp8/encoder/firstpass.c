@@ -914,12 +914,12 @@ static double bitcost( double prob )
 static int64_t estimate_modemvcost(VP8_COMP *cpi,
                                      FIRSTPASS_STATS * fpstats)
 {
-    int mv_cost;
+    int64_t mv_cost;
     int64_t mode_cost;
 
-    double av_pct_inter = fpstats->pcnt_inter / fpstats->count;
-    double av_pct_motion = fpstats->pcnt_motion / fpstats->count;
-    double av_intra = (1.0 - av_pct_inter);
+    double av_pct_inter = MAX(fpstats->pcnt_inter / fpstats->count, 0.0001);
+    double av_pct_motion = MAX(fpstats->pcnt_motion / fpstats->count, 0.0001);
+    double av_intra = MAX((1.0 - av_pct_inter), 0.0001);
 
     double zz_cost;
     double motion_cost;
