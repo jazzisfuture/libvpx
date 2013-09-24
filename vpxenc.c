@@ -732,7 +732,6 @@ write_webm_file_header(EbmlGlobal                *glob,
           Ebml_SerializeUnsigned(glob, PixelWidth, pixelWidth);
           Ebml_SerializeUnsigned(glob, PixelHeight, pixelHeight);
           Ebml_SerializeUnsigned(glob, StereoMode, stereo_fmt);
-          Ebml_SerializeFloat(glob, FrameRate, frameRate);
           Ebml_EndSubElement(glob, &videoStart);
         }
         Ebml_EndSubElement(glob, &start); /* Track Entry */
