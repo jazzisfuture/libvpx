@@ -1,0 +1,10 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Erik Niemeyer <erik.a.niemeyer@gmail.com>
+Code-Review+1: Erik Niemeyer <erik.a.niemeyer@gmail.com>
+Verified+1: Erik Niemeyer <erik.a.niemeyer@gmail.com>
+Submitted-by: Erik Niemeyer <erik.a.niemeyer@gmail.com>
+Submitted-at: Thu, 26 Sep 2013 16:11:12 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/67264
+Project: webm/libvpx
+Branch: refs/heads/master
