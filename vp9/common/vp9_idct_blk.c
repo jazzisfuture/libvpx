@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vp9_rtcd.h"
+#include "./vp9_rtcd.h"
 #include "vp9/common/vp9_blockd.h"
-#include "vp9/decoder/vp9_idct_blk.h"
+#include "vp9/common/vp9_idct_blk.h"
 
 static void add_constant_residual(const int16_t diff, uint8_t *dest, int stride,
                                   int width, int height) {
@@ -51,13 +51,13 @@ void vp9_iht_add_c(TX_TYPE tx_type, int16_t *input, uint8_t *dest, int stride,
 
 void vp9_iht_add_8x8_c(TX_TYPE tx_type, int16_t *input, uint8_t *dest,
                        int stride, int eob) {
-  if (tx_type == DCT_DCT) {
-    vp9_idct_add_8x8(input, dest, stride, eob);
-  } else {
-    if (eob > 0) {
+  if (eob > 0) {
+    if (tx_type == DCT_DCT)
+      vp9_idct_add_8x8(input, dest, stride, eob);
+    else
       vp9_short_iht8x8_add(input, dest, stride, tx_type);
-      vpx_memset(input, 0, 128);
-    }
+
+    vpx_memset(input, 0, 128);
   }
 }
 
@@ -90,18 +90,13 @@ void vp9_idct_add_8x8_c(int16_t *input, uint8_t *dest, int stride, int eob) {
   // coefficients. Use eobs to decide what to do.
   // TODO(yunqingwang): "eobs = 1" case is also handled in vp9_short_idct8x8_c.
   // Combine that with code here.
-  if (eob) {
-    if (eob == 1) {
-      // DC only DCT coefficient
+  if (eob > 0) {
+    if (eob == 1)
       vp9_short_idct8x8_1_add(input, dest, stride);
-      input[0] = 0;
-    } else if (eob <= 10) {
+    else if (eob <= 10)
       vp9_short_idct10_8x8_add(input, dest, stride);
-      vpx_memset(input, 0, 128);
-    } else {
+    else
       vp9_short_idct8x8_add(input, dest, stride);
-      vpx_memset(input, 0, 128);
-    }
   }
 }
 
