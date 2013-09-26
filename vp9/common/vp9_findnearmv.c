@@ -41,9 +41,10 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                                    int_mv *dst_near,
                                    int block_idx, int ref_idx,
                                    int mi_row, int mi_col) {
-  int_mv dst_list[MAX_MV_REF_CANDIDATES];
   int_mv mv_list[MAX_MV_REF_CANDIDATES];
   MODE_INFO *const mi = xd->this_mi;
+  union b_mode_info *bmi = mi->bmi;
+  int n;
 
   assert(ref_idx == 0 || ref_idx == 1);
   assert(MAX_MV_REF_CANDIDATES == 2);  // makes code here slightly easier
@@ -52,35 +53,28 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
                        mi->mbmi.ref_frame[ref_idx],
                        mv_list, block_idx, mi_row, mi_col);
 
-  dst_list[1].as_int = 0;
+  dst_near->as_int = 0;
   if (block_idx == 0) {
-    vpx_memcpy(dst_list, mv_list, MAX_MV_REF_CANDIDATES * sizeof(int_mv));
+    dst_nearest->as_int = mv_list[0].as_int;
+    dst_near->as_int = mv_list[1].as_int;
   } else if (block_idx == 1 || block_idx == 2) {
-    int dst = 0, n;
-    union b_mode_info *bmi = mi->bmi;
-
-    dst_list[dst++].as_int = bmi[0].as_mv[ref_idx].as_int;
-    for (n = 0; dst < MAX_MV_REF_CANDIDATES &&
-                n < MAX_MV_REF_CANDIDATES; n++)
-      if (mv_list[n].as_int != dst_list[0].as_int)
-        dst_list[dst++].as_int = mv_list[n].as_int;
+    dst_nearest->as_int = bmi[0].as_mv[ref_idx].as_int;
+    for (n = 0; n < MAX_MV_REF_CANDIDATES; n++)
+      if (dst_nearest->as_int != mv_list[n].as_int) {
+        dst_near->as_int = mv_list[n].as_int;
+        break;
+      }
   } else {
-    int dst = 0, n;
-    union b_mode_info *bmi = mi->bmi;
-
+    int_mv candidates[2 + MAX_MV_REF_CANDIDATES] = { bmi[1].as_mv[ref_idx],
+                                                     bmi[0].as_mv[ref_idx],
+                                                     mv_list[0],
+                                                     mv_list[1] };
     assert(block_idx == 3);
-    dst_list[dst++].as_int = bmi[2].as_mv[ref_idx].as_int;
-    if (dst_list[0].as_int != bmi[1].as_mv[ref_idx].as_int)
-      dst_list[dst++].as_int = bmi[1].as_mv[ref_idx].as_int;
-    if (dst < MAX_MV_REF_CANDIDATES &&
-        dst_list[0].as_int != bmi[0].as_mv[ref_idx].as_int)
-      dst_list[dst++].as_int = bmi[0].as_mv[ref_idx].as_int;
-    for (n = 0; dst < MAX_MV_REF_CANDIDATES &&
-                n < MAX_MV_REF_CANDIDATES; n++)
-      if (mv_list[n].as_int != dst_list[0].as_int)
-        dst_list[dst++].as_int = mv_list[n].as_int;
+    dst_nearest->as_int = bmi[2].as_mv[ref_idx].as_int;
+    for (n = 0; n < 2 + MAX_MV_REF_CANDIDATES; ++n)
+      if (dst_nearest->as_int != candidates[n].as_int) {
+        dst_near->as_int = candidates[n].as_int;
+        break;
+      }
   }
-
-  dst_nearest->as_int = dst_list[0].as_int;
-  dst_near->as_int = dst_list[1].as_int;
 }
