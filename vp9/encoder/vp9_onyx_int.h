@@ -29,6 +29,8 @@
 #include "vp9/common/vp9_findnearmv.h"
 #include "vp9/encoder/vp9_lookahead.h"
 
+#define CONFIG_VAQ 1
+
 // Experimental rate control switches
 #if CONFIG_ONESHOTQ
 #define ONE_SHOT_Q_ESTIMATE 0
@@ -377,7 +379,7 @@ typedef struct VP9_COMP {
   int ref_frame_mask;
   int set_ref_frame_mask;
 
-  int rd_threshes[BLOCK_SIZES][MAX_MODES];
+  int rd_threshes[MAX_SEGMENTS][BLOCK_SIZES][MAX_MODES];
   int rd_thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
   int rd_thresh_sub8x8[BLOCK_SIZES][MAX_REFS];
   int rd_thresh_freq_sub8x8[BLOCK_SIZES][MAX_REFS];
