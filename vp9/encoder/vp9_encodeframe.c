@@ -38,6 +38,7 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include "vp9/encoder/vp9_vaq.h"
 
 #define DBG_PRNT_SEGMAP 0
 
@@ -373,6 +374,9 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       if ((xd->mb_to_right_edge >> (3 + MI_SIZE_LOG2)) + mi_width > x_idx
           && (xd->mb_to_bottom_edge >> (3 + MI_SIZE_LOG2)) + mi_height > y)
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
+#if CONFIG_VAQ
+  vp9_mb_init_quantizer(cpi, x);
+#endif
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -531,10 +535,11 @@ static void set_offsets(VP9_COMP *cpi, int mi_row, int mi_col,
 
   /* segment ID */
   if (seg->enabled) {
+#if !CONFIG_VAQ
     uint8_t *map = seg->update_map ? cpi->segmentation_map
                                    : cm->last_frame_seg_map;
     mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
-
+#endif
     vp9_mb_init_quantizer(cpi, x);
 
     if (seg->enabled && cpi->seg0_cnt > 0
@@ -568,6 +573,11 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+  int orig_rdmult = x->rdmult;
+  double rdmult_ratio = 1.0;
+#if CONFIG_VAQ
+  int energy;
+#endif
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
@@ -590,8 +600,22 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
 
   x->source_variance = get_sby_perpixel_variance(cpi, x, bsize);
 
+#if CONFIG_VAQ
+  if (bsize <= BLOCK_16X16) {
+    energy = x->mb_energy;
+  } else {
+    energy = vp9_block_energy(cpi, x, bsize);
+  }
+
+  xd->this_mi->mbmi.segment_id = vp9_vaq_segment_id(energy);
+  rdmult_ratio = vp9_vaq_rdmult_ratio(energy);
+  vp9_mb_init_quantizer(cpi, x);
+#endif
+
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
+
+  x->rdmult = round(x->rdmult * rdmult_ratio);
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
@@ -606,6 +630,10 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
       vp9_rd_pick_inter_mode_sub8x8(cpi, x, mi_row, mi_col, totalrate,
                                     totaldist, bsize, ctx, best_rd);
   }
+
+  x->rdmult = orig_rdmult;
+  if (*totalrate != INT_MAX)
+    *totalrate = round(*totalrate * rdmult_ratio);
 }
 
 static void update_stats(VP9_COMP *cpi) {
@@ -1022,6 +1050,11 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO **mi_8x8,
     *(get_sb_partitioning(x, bsize)) = subsize;
   }
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  if (bsize == BLOCK_16X16) {
+    set_offsets(cpi, mi_row, mi_col, bsize);
+    x->mb_energy = vp9_block_energy(cpi, x, bsize);
+  }
 
   x->fast_ms = 0;
   x->subblock_ref = 0;
@@ -1483,6 +1516,11 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   }
   assert(mi_height_log2(bsize) == mi_width_log2(bsize));
 
+  if (bsize == BLOCK_16X16) {
+    set_offsets(cpi, mi_row, mi_col, bsize);
+    x->mb_energy = vp9_block_energy(cpi, x, bsize);
+  }
+
   // Determine partition types in search according to the speed features.
   // The threshold set here has to be of square block size.
   if (cpi->sf.auto_min_max_partition_size) {
@@ -1935,7 +1973,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   vp9_frame_init_quantizer(cpi);
 
-  vp9_initialize_rd_consts(cpi, cm->base_qindex + cm->y_dc_delta_q);
+  vp9_initialize_rd_consts(cpi);
   vp9_initialize_me_consts(cpi, cm->base_qindex);
   switch_tx_mode(cpi);
 
