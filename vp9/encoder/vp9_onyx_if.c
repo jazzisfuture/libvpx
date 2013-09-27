@@ -42,6 +42,7 @@
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9/encoder/vp9_vaq.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -329,7 +330,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 // Computes a q delta (in "q index" terms) to get from a starting q value
 // to a target value
 // target q value
-static int compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
+int vp9_compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   int i;
   int start_index = cpi->worst_quality;
   int target_index = cpi->worst_quality;
@@ -393,7 +394,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       seg->update_map = 1;
       seg->update_data = 1;
 
-      qi_delta = compute_qdelta(cpi, cpi->avg_q, (cpi->avg_q * 0.875));
+      qi_delta = vp9_compute_qdelta(cpi, cpi->avg_q, (cpi->avg_q * 0.875));
       vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, (qi_delta - 2));
       vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
 
@@ -415,8 +416,8 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 1;
         seg->abs_delta = SEGMENT_DELTADATA;
 
-        qi_delta = compute_qdelta(cpi, cpi->avg_q,
-                                  (cpi->avg_q * 1.125));
+        qi_delta = vp9_compute_qdelta(cpi, cpi->avg_q,
+                                      (cpi->avg_q * 1.125));
         vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, (qi_delta + 2));
         vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
 
@@ -430,6 +431,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
           vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
         }
       } else {
+#if !CONFIG_VAQ
         // Disable segmentation and clear down features if alt ref
         // is not active for this group
 
@@ -441,6 +443,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 0;
 
         vp9_clearall_segfeatures(seg);
+#endif
       }
     } else if (cpi->is_src_frame_alt_ref) {
       // Special case where we are coding over the top of a previous
@@ -768,6 +771,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 #else
   sf->static_segmentation = 0;
 #endif
+
+  sf->variance_adaptive_quantization = 1;
 
   switch (mode) {
     case 0: // best quality mode
@@ -2748,8 +2753,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       int qindex = cpi->last_boosted_qindex;
       double last_boosted_q = vp9_convert_qindex_to_q(qindex);
 
-      delta_qindex = compute_qdelta(cpi, last_boosted_q,
-                                    (last_boosted_q * 0.75));
+      delta_qindex = vp9_compute_qdelta(cpi, last_boosted_q,
+                                        (last_boosted_q * 0.75));
 
       cpi->active_best_quality = MAX(qindex + delta_qindex,
                                      cpi->best_quality);
@@ -2777,14 +2782,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       // on active_best_quality.
       q_val = vp9_convert_qindex_to_q(cpi->active_best_quality);
       cpi->active_best_quality +=
-          compute_qdelta(cpi, q_val, (q_val * q_adj_factor));
+          vp9_compute_qdelta(cpi, q_val, (q_val * q_adj_factor));
     }
 #else
     double current_q;
     // Force the KF quantizer to be 30% of the active_worst_quality.
     current_q = vp9_convert_qindex_to_q(cpi->active_worst_quality);
     cpi->active_best_quality = cpi->active_worst_quality
-        + compute_qdelta(cpi, current_q, current_q * 0.3);
+        + vp9_compute_qdelta(cpi, current_q, current_q * 0.3);
 #endif
   } else if (!cpi->is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
@@ -2923,7 +2928,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
     // Set quantizer steps at 10% increments.
     new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
-    q = cpi->active_worst_quality + compute_qdelta(cpi, current_q, new_q);
+    q = cpi->active_worst_quality + vp9_compute_qdelta(cpi, current_q, new_q);
 
     bottom_index = q;
     top_index    = q;
@@ -3000,6 +3005,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
         vp9_setup_inter_frame(cpi);
       }
+    }
+
+    if (cpi->sf.variance_adaptive_quantization) {
+        vp9_vaq_frame_setup(cpi);
     }
 
     // transform / motion compensation build reconstruction frame
@@ -3889,6 +3898,10 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     vp9_setup_scale_factors(cm, i);
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
+
+  if (cpi->sf.variance_adaptive_quantization) {
+      vp9_vaq_init();
+  }
 
   if (cpi->pass == 1) {
     Pass1Encode(cpi, size, dest, frame_flags);
