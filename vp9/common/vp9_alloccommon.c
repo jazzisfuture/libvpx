@@ -176,7 +176,7 @@ void vp9_create_common(VP9_COMMON *cm) {
   cm->comp_pred_mode = HYBRID_PREDICTION;
 
   // Initialize reference frame sign bias structure to defaults
-  vpx_memset(cm->ref_frame_sign_bias, 0, sizeof(cm->ref_frame_sign_bias));
+  vp9_zero(cm->ref_frame_sign_bias);
 }
 
 void vp9_remove_common(VP9_COMMON *cm) {
