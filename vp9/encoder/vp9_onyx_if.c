@@ -42,6 +42,7 @@
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
+#include "vp9/encoder/vp9_vaq.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -403,6 +404,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
           vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
         }
       } else {
+#if !VAQ
         // Disable segmentation and clear down features if alt ref
         // is not active for this group
 
@@ -414,6 +416,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 0;
 
         vp9_clearall_segfeatures(seg);
+#endif
       }
     } else if (cpi->is_src_frame_alt_ref) {
       // Special case where we are coding over the top of a previous
@@ -2942,6 +2945,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       }
     }
 
+#if VAQ
+    vp9_vaq_frame_setup(cpi);
+#endif
+
     // transform / motion compensation build reconstruction frame
 
     vp9_encode_frame(cpi);
@@ -3827,6 +3834,10 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     vp9_setup_scale_factors(cm, i);
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
+
+#if VAQ
+  vp9_vaq_init();
+#endif
 
   if (cpi->pass == 1) {
     Pass1Encode(cpi, size, dest, frame_flags);

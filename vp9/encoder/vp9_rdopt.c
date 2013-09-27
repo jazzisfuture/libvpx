@@ -155,9 +155,16 @@ void vp9_init_me_luts() {
   }
 }
 
-static int compute_rd_mult(int qindex) {
+int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex) {
   const int q = vp9_dc_quant(qindex, 0);
-  return (11 * q * q) >> 2;
+  int rdmult = (11 * q * q) >> 2;
+  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
+    if (cpi->twopass.next_iiratio > 31)
+      rdmult += (rdmult * rd_iifactor[31]) >> 4;
+    else
+      rdmult += (rdmult * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+  }
+  return rdmult;
 }
 
 static MB_PREDICTION_MODE rd_mode_to_mode(RD_PREDICTION_MODE rd_mode) {
@@ -175,8 +182,9 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
 }
 
 
-void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
-  int q, i, bsize;
+void vp9_initialize_rd_consts(VP9_COMP *cpi) {
+  int qindex, i, bsize, segment_id;
+  VP9_COMMON *cm = &cpi->common;
 
   vp9_clear_system_state();  // __asm emms;
 
@@ -184,39 +192,38 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   // for key frames, golden frames and arf frames.
   // if (cpi->common.refresh_golden_frame ||
   //     cpi->common.refresh_alt_ref_frame)
-  qindex = clamp(qindex, 0, MAXQ);
+  qindex = clamp(cm->base_qindex + cm->y_dc_delta_q, 0, MAXQ);
 
   cpi->RDDIV = 100;
-  cpi->RDMULT = compute_rd_mult(qindex);
-  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
-    if (cpi->twopass.next_iiratio > 31)
-      cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 4;
-    else
-      cpi->RDMULT +=
-          (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
-  }
+  cpi->RDMULT = vp9_compute_rd_mult(cpi, qindex);
+
   cpi->mb.errorperbit = cpi->RDMULT >> 6;
   cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
-
   vp9_set_speed_features(cpi);
 
-  q = (int)pow(vp9_dc_quant(qindex, 0) >> 2, 1.25);
-  q <<= 2;
-  if (q < 8)
-    q = 8;
+  for (segment_id = 0; segment_id < MAX_SEGMENTS; segment_id++) {
+    int q;
+    int segment_qindex = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
+    segment_qindex = clamp(segment_qindex + cm->y_dc_delta_q, 0, MAXQ);
 
-  for (bsize = 0; bsize < BLOCK_SIZES; ++bsize) {
-    for (i = 0; i < MAX_MODES; i++) {
-      // Threshold here seem unecessarily harsh but fine given actual
-      // range of values used for cpi->sf.thresh_mult[]
-      int thresh_max = INT_MAX / (q * rd_thresh_block_size_factor[bsize]);
+    q = (int)pow(vp9_dc_quant(segment_qindex, 0) >> 2, 1.25);
+    q <<= 2;
+    if (q < 8)
+      q = 8;
 
-      if (cpi->sf.thresh_mult[i] < thresh_max) {
-        cpi->rd_threshes[bsize][i] =
-            cpi->sf.thresh_mult[i] * q *
-            rd_thresh_block_size_factor[bsize] / 4;
-      } else {
-        cpi->rd_threshes[bsize][i] = INT_MAX;
+    for (bsize = 0; bsize < BLOCK_SIZES; ++bsize) {
+      for (i = 0; i < MAX_MODES; i++) {
+        // Threshold here seem unecessarily harsh but fine given actual
+        // range of values used for cpi->sf.thresh_mult[]
+        int thresh_max = INT_MAX / (q * rd_thresh_block_size_factor[bsize]);
+
+        if (cpi->sf.thresh_mult[i] < thresh_max) {
+          cpi->rd_threshes[segment_id][bsize][i] =
+              cpi->sf.thresh_mult[i] * q *
+              rd_thresh_block_size_factor[bsize] / 4;
+        } else {
+          cpi->rd_threshes[segment_id][bsize][i] = INT_MAX;
+        }
       }
     }
   }
@@ -3288,9 +3295,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     // Test best rd so far against threshold for trying this mode.
-    if ((best_rd < ((int64_t)cpi->rd_threshes[bsize][mode_index] *
+    if ((best_rd < ((int64_t)cpi->rd_threshes[segment_id][bsize][mode_index] *
                      cpi->rd_thresh_freq_fact[bsize][mode_index] >> 5)) ||
-        cpi->rd_threshes[bsize][mode_index] == INT_MAX)
+        cpi->rd_threshes[segment_id][bsize][mode_index] == INT_MAX)
       continue;
 
     // Do not allow compound prediction if the segment level reference
@@ -3547,10 +3554,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
       this_rd_thresh = (ref_frame == LAST_FRAME) ?
-          cpi->rd_threshes[bsize][THR_NEWMV] :
-          cpi->rd_threshes[bsize][THR_NEWA];
+          cpi->rd_threshes[segment_id][bsize][THR_NEWMV] :
+          cpi->rd_threshes[segment_id][bsize][THR_NEWA];
       this_rd_thresh = (ref_frame == GOLDEN_FRAME) ?
-          cpi->rd_threshes[bsize][THR_NEWG] : this_rd_thresh;
+          cpi->rd_threshes[segment_id][bsize][THR_NEWG] : this_rd_thresh;
       xd->this_mi->mbmi.tx_size = TX_4X4;
 
       cpi->rd_filter_cache[SWITCHABLE_FILTERS] = INT64_MAX;
