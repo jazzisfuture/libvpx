@@ -616,19 +616,12 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
   sf->thresh_mult[THR_COMP_NEARGA] += 1500;
   sf->thresh_mult[THR_COMP_NEWGA] += 2000;
 
-  sf->thresh_mult[THR_SPLITMV] += 2500;
-  sf->thresh_mult[THR_SPLITG] += 2500;
-  sf->thresh_mult[THR_SPLITA] += 2500;
-  sf->thresh_mult[THR_COMP_SPLITLA] += 4500;
-  sf->thresh_mult[THR_COMP_SPLITGA] += 4500;
-
   sf->thresh_mult[THR_ZEROMV] += 2000;
   sf->thresh_mult[THR_ZEROG] += 2000;
   sf->thresh_mult[THR_ZEROA] += 2000;
   sf->thresh_mult[THR_COMP_ZEROLA] += 2500;
   sf->thresh_mult[THR_COMP_ZEROGA] += 2500;
 
-  sf->thresh_mult[THR_B_PRED] += 2500;
   sf->thresh_mult[THR_H_PRED] += 2000;
   sf->thresh_mult[THR_V_PRED] += 2000;
   sf->thresh_mult[THR_D45_PRED ] += 2500;
@@ -644,21 +637,18 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
     sf->thresh_mult[THR_NEARESTMV] = INT_MAX;
     sf->thresh_mult[THR_ZEROMV   ] = INT_MAX;
     sf->thresh_mult[THR_NEARMV   ] = INT_MAX;
-    sf->thresh_mult[THR_SPLITMV  ] = INT_MAX;
   }
   if (!(cpi->ref_frame_flags & VP9_GOLD_FLAG)) {
     sf->thresh_mult[THR_NEARESTG ] = INT_MAX;
     sf->thresh_mult[THR_ZEROG    ] = INT_MAX;
     sf->thresh_mult[THR_NEARG    ] = INT_MAX;
     sf->thresh_mult[THR_NEWG     ] = INT_MAX;
-    sf->thresh_mult[THR_SPLITG   ] = INT_MAX;
   }
   if (!(cpi->ref_frame_flags & VP9_ALT_FLAG)) {
     sf->thresh_mult[THR_NEARESTA ] = INT_MAX;
     sf->thresh_mult[THR_ZEROA    ] = INT_MAX;
     sf->thresh_mult[THR_NEARA    ] = INT_MAX;
     sf->thresh_mult[THR_NEWA     ] = INT_MAX;
-    sf->thresh_mult[THR_SPLITA   ] = INT_MAX;
   }
 
   if ((cpi->ref_frame_flags & (VP9_LAST_FLAG | VP9_ALT_FLAG)) !=
@@ -667,7 +657,6 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
     sf->thresh_mult[THR_COMP_NEARESTLA] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARLA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEWLA    ] = INT_MAX;
-    sf->thresh_mult[THR_COMP_SPLITLA  ] = INT_MAX;
   }
   if ((cpi->ref_frame_flags & (VP9_GOLD_FLAG | VP9_ALT_FLAG)) !=
       (VP9_GOLD_FLAG | VP9_ALT_FLAG)) {
@@ -675,16 +664,6 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
     sf->thresh_mult[THR_COMP_NEARESTGA] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEARGA   ] = INT_MAX;
     sf->thresh_mult[THR_COMP_NEWGA    ] = INT_MAX;
-    sf->thresh_mult[THR_COMP_SPLITGA  ] = INT_MAX;
-  }
-
-  if (sf->disable_splitmv == 1) {
-    sf->thresh_mult[THR_SPLITMV  ] = INT_MAX;
-    sf->thresh_mult[THR_SPLITG   ] = INT_MAX;
-    sf->thresh_mult[THR_SPLITA   ] = INT_MAX;
-
-    sf->thresh_mult[THR_COMP_SPLITLA  ] = INT_MAX;
-    sf->thresh_mult[THR_COMP_SPLITGA  ] = INT_MAX;
   }
 }
 
