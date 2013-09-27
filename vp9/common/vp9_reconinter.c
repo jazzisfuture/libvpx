@@ -53,14 +53,14 @@ void vp9_setup_interp_filters(MACROBLOCKD *xd,
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
-                               const MV *src_mv,
+                               const MV *src_mv, const MV32 *src_mv32,
                                const struct scale_factors *scale,
                                int w, int h, int ref,
                                const struct subpix_fn_table *subpix,
                                enum mv_precision precision) {
   const int is_q4 = precision == MV_PRECISION_Q4;
-  const MV mv_q4 = { is_q4 ? src_mv->row : src_mv->row * 2,
-                     is_q4 ? src_mv->col : src_mv->col * 2 };
+  const MV32 mv_q4 = {is_q4 ? src_mv32->row : (int32_t)src_mv->row * 2,
+                      is_q4 ? src_mv32->col : (int32_t)src_mv->col * 2};
   const MV32 mv = scale->scale_mv(&mv_q4, scale);
   const int subpel_x = mv.col & SUBPEL_MASK;
   const int subpel_y = mv.row & SUBPEL_MASK;
@@ -90,7 +90,7 @@ static MV mi_mv_pred_q4(const MODE_INFO *mi, int idx) {
 }
 
 // TODO(jkoleszar): yet another mv clamping function :-(
-MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
+MV32 clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
                              int bw, int bh, int ss_x, int ss_y) {
   // If the MV points so far into the UMV border that no visible pixels
   // are used for reconstruction, the subpel part of the MV can be
@@ -99,18 +99,18 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
   const int spel_right = spel_left - SUBPEL_SHIFTS;
   const int spel_top = (VP9_INTERP_EXTEND + bh) << SUBPEL_BITS;
   const int spel_bottom = spel_top - SUBPEL_SHIFTS;
-  MV clamped_mv = {
-    src_mv->row * (1 << (1 - ss_y)),
-    src_mv->col * (1 << (1 - ss_x))
+  MV32 clamped_mv = {
+    (int32_t)src_mv->row * (1 << (1 - ss_y)),
+    (int32_t)src_mv->col * (1 << (1 - ss_x))
   };
   assert(ss_x <= 1);
   assert(ss_y <= 1);
 
-  clamp_mv(&clamped_mv,
-           xd->mb_to_left_edge * (1 << (1 - ss_x)) - spel_left,
-           xd->mb_to_right_edge * (1 << (1 - ss_x)) + spel_right,
-           xd->mb_to_top_edge * (1 << (1 - ss_y)) - spel_top,
-           xd->mb_to_bottom_edge * (1 << (1 - ss_y)) + spel_bottom);
+  clamp_mv32(&clamped_mv,
+             xd->mb_to_left_edge * (1 << (1 - ss_x)) - spel_left,
+             xd->mb_to_right_edge * (1 << (1 - ss_x)) + spel_right,
+             xd->mb_to_top_edge * (1 << (1 - ss_y)) - spel_top,
+             xd->mb_to_bottom_edge * (1 << (1 - ss_y)) + spel_bottom);
 
   return clamped_mv;
 }
@@ -163,13 +163,13 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
     // scaling case. It needs to be done on the scaled MV, not the pre-scaling
     // MV. Note however that it performs the subsampling aware scaling so
     // that the result is always q4.
-    const MV res_mv = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
-                                                pd->subsampling_x,
-                                                pd->subsampling_y);
+    const MV32 res_mv = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
+                                                  pd->subsampling_x,
+                                                  pd->subsampling_y);
 
     scale->set_scaled_offsets(scale, arg->y + y, arg->x + x);
     vp9_build_inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
-                              &res_mv, scale,
+                              NULL, &res_mv, scale,
                               4 << pred_w, 4 << pred_h, ref,
                               &xd->subpix, MV_PRECISION_Q4);
   }

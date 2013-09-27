@@ -36,4 +36,9 @@ static void clamp_mv(MV *mv, int min_col, int max_col,
   mv->row = clamp(mv->row, min_row, max_row);
 }
 
+static void clamp_mv32(MV32 *mv32, int min_col, int max_col,
+                                   int min_row, int max_row) {
+  mv32->col = clamp(mv32->col, min_col, max_col);
+  mv32->row = clamp(mv32->row, min_row, max_row);
+}
 #endif  // VP9_COMMON_VP9_MV_H_

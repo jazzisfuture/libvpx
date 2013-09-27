@@ -25,7 +25,7 @@ static int unscaled_value(int val, const struct scale_factors *scale) {
   return val;
 }
 
-static MV32 scaled_mv(const MV *mv, const struct scale_factors *scale) {
+static MV32 scaled_mv(const MV32 *mv, const struct scale_factors *scale) {
   const MV32 res = {
     scaled_y(mv->row, scale) + scale->y_offset_q4,
     scaled_x(mv->col, scale) + scale->x_offset_q4
@@ -33,7 +33,7 @@ static MV32 scaled_mv(const MV *mv, const struct scale_factors *scale) {
   return res;
 }
 
-static MV32 unscaled_mv(const MV *mv, const struct scale_factors *scale) {
+static MV32 unscaled_mv(const MV32 *mv, const struct scale_factors *scale) {
   const MV32 res = {
     mv->row,
     mv->col

@@ -1574,7 +1574,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                      pd->pre[ref].buf, pd->pre[ref].stride);
     vp9_build_inter_predictor(pre, pd->pre[ref].stride,
                               dst, pd->dst.stride,
-                              &mi->bmi[i].as_mv[ref].as_mv,
+                              &mi->bmi[i].as_mv[ref].as_mv, NULL,
                               &xd->scale_factor[ref],
                               width, height, ref, &xd->subpix, MV_PRECISION_Q3);
   }
@@ -2578,7 +2578,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_build_inter_predictor(ref_yv12[!id].buf,
                               ref_yv12[!id].stride,
                               second_pred, pw,
-                              &frame_mv[refs[!id]].as_mv,
+                              &frame_mv[refs[!id]].as_mv, NULL,
                               &xd->scale_factor[!id],
                               pw, ph, 0,
                               &xd->subpix, MV_PRECISION_Q3);
