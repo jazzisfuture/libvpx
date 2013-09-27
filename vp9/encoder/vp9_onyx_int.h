@@ -36,7 +36,7 @@
 #define DISABLE_RC_LONG_TERM_MEM 0
 #endif
 
-// #define MODE_TEST_HIT_STATS
+#define MODE_TEST_HIT_STATS
 
 // #define SPEEDSTATS 1
 #if CONFIG_MULTIPLE_ARF
@@ -49,7 +49,8 @@
 
 #define KEY_FRAME_CONTEXT 5
 
-#define MAX_MODES 36
+#define MAX_MODES 30
+#define MAX_REFS  6
 
 #define MIN_THRESHMULT  32
 #define MAX_THRESHMULT  512
@@ -152,19 +153,12 @@ typedef enum {
   THR_COMP_NEARGA,
   THR_COMP_NEWGA,
 
-  THR_SPLITMV,
-  THR_SPLITG,
-  THR_SPLITA,
-  THR_COMP_SPLITLA,
-  THR_COMP_SPLITGA,
-
   THR_ZEROMV,
   THR_ZEROG,
   THR_ZEROA,
   THR_COMP_ZEROLA,
   THR_COMP_ZEROGA,
 
-  THR_B_PRED,
   THR_H_PRED,
   THR_V_PRED,
   THR_D135_PRED,
@@ -174,6 +168,15 @@ typedef enum {
   THR_D117_PRED,
   THR_D45_PRED,
 } THR_MODES;
+
+typedef enum {
+  THR_LAST,
+  THR_GOLD,
+  THR_ALTR,
+  THR_INTRA,
+  THR_COMP_LA,
+  THR_COMP_GA,
+} THR_MODES_SUB8X8;
 
 typedef enum {
   DIAMOND = 0,
@@ -237,6 +240,7 @@ typedef struct {
   SUBPEL_SEARCH_METHODS subpel_search_method;
   int subpel_iters_per_step;
   int thresh_mult[MAX_MODES];
+  int thresh_mult_sub8x8[MAX_REFS];
   int max_step_search_steps;
   int reduce_first_step_size;
   int auto_mv_step_size;
@@ -363,15 +367,16 @@ typedef struct VP9_COMP {
   // Ambient reconstruction err target for force key frames
   int ambient_err;
 
-  unsigned int mode_check_freq[MAX_MODES];
-  unsigned int mode_test_hit_counts[MAX_MODES];
   unsigned int mode_chosen_counts[MAX_MODES];
+  unsigned int sub8x8_mode_chosen_counts[MAX_REFS];
   int64_t mode_skip_mask;
   int ref_frame_mask;
   int set_ref_frame_mask;
 
   int rd_threshes[BLOCK_SIZES][MAX_MODES];
   int rd_thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
+  int rd_thresh_sub8x8[BLOCK_SIZES][MAX_REFS];
+  int rd_thresh_freq_sub8x8[BLOCK_SIZES][MAX_REFS];
 
   int64_t rd_comp_pred_diff[NB_PREDICTION_TYPES];
   int64_t rd_prediction_type_threshes[4][NB_PREDICTION_TYPES];

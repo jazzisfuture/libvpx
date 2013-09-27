@@ -687,6 +687,12 @@ static void write_modes(VP9_COMP *cpi, vp9_writer* const bc,
   MODE_INFO **mi_8x8 = cm->mi_grid_visible;
   MODE_INFO **m_8x8;
 
+  if (cm->frame_type != KEY_FRAME) {
+    int j = 0;
+    for (j = 0; j < BLOCK_SIZES; ++j)
+      cpi->mode_test_hits[j] = 0;
+  }
+
   mi_8x8 += cm->cur_tile_mi_col_start + cm->cur_tile_mi_row_start * mis;
 
   for (mi_row = cm->cur_tile_mi_row_start; mi_row < cm->cur_tile_mi_row_end;
