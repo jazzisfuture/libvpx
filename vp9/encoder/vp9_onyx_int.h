@@ -49,7 +49,8 @@
 
 #define KEY_FRAME_CONTEXT 5
 
-#define MAX_MODES 36
+#define MAX_MODES 30
+#define MAX_REFS  6
 
 #define MIN_THRESHMULT  32
 #define MAX_THRESHMULT  512
