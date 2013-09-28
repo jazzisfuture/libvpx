@@ -1339,29 +1339,55 @@ void FDCT32x32_2D(int16_t *input,
         {
           // to be continued...
           //
-          const __m128i k32_p16_p16 = pair_set_epi32(cospi_16_64, cospi_16_64);
-          const __m128i k32_p16_m16 = pair_set_epi32(cospi_16_64, -cospi_16_64);
+          const __m128i k16_p16_p16 = pair_set_epi16(cospi_16_64, cospi_16_64);
+          const __m128i k16_p16_m16 = pair_set_epi16(cospi_16_64, -cospi_16_64);
 
-          u[0] = _mm_unpacklo_epi32(lstep3[12], lstep3[10]);
-          u[1] = _mm_unpackhi_epi32(lstep3[12], lstep3[10]);
-          u[2] = _mm_unpacklo_epi32(lstep3[13], lstep3[11]);
-          u[3] = _mm_unpackhi_epi32(lstep3[13], lstep3[11]);
+          u[0] = _mm_unpacklo_epi16(lstep3[12], lstep3[10]);
+          u[1] = _mm_unpackhi_epi16(lstep3[12], lstep3[10]);
+          u[2] = _mm_unpacklo_epi16(lstep3[13], lstep3[11]);
+          u[3] = _mm_unpackhi_epi16(lstep3[13], lstep3[11]);
+          v[0]= _mm_shuffle_epi32(u[0],_MM_SHUFFLE(3,1,2,0));
+          v[1]= _mm_shuffle_epi32(u[1],_MM_SHUFFLE(3,1,2,0));
+          v[2]= _mm_shuffle_epi32(u[2],_MM_SHUFFLE(3,1,2,0));
+          v[3]= _mm_shuffle_epi32(u[3],_MM_SHUFFLE(3,1,2,0));
 
-          // TODO(jingning): manually inline k_madd_epi32_ to further hide
-          // instruction latency.
-          v[ 0] = k_madd_epi32(u[0], k32_p16_m16);
-          v[ 1] = k_madd_epi32(u[1], k32_p16_m16);
-          v[ 2] = k_madd_epi32(u[2], k32_p16_m16);
-          v[ 3] = k_madd_epi32(u[3], k32_p16_m16);
-          v[ 4] = k_madd_epi32(u[0], k32_p16_p16);
-          v[ 5] = k_madd_epi32(u[1], k32_p16_p16);
-          v[ 6] = k_madd_epi32(u[2], k32_p16_p16);
-          v[ 7] = k_madd_epi32(u[3], k32_p16_p16);
+          u[0]=_mm_unpacklo_epi32(v[0], v[1]);
+          u[1]=_mm_unpackhi_epi32(v[0], v[1]);
+          u[2]=_mm_unpacklo_epi32(v[2], v[3]);
+          u[3]=_mm_unpackhi_epi32(v[2], v[3]);
 
-          u[0] = k_packs_epi64(v[0], v[1]);
-          u[1] = k_packs_epi64(v[2], v[3]);
-          u[2] = k_packs_epi64(v[4], v[5]);
-          u[3] = k_packs_epi64(v[6], v[7]);
+          v[4]=_mm_cmpgt_epi16(u[1],kZero);
+          v[5]=_mm_cmpgt_epi16(u[3],kZero);
+          v[4]=_mm_and_si128(v[4],k16_p16_m16);
+          v[5]=_mm_and_si128(v[5],k16_p16_m16);
+
+          v[0]= _mm_madd_epi16(u[0],k16_p16_m16);
+          v[1]= _mm_madd_epi16(u[1],v[4]);
+          v[2]= _mm_madd_epi16(u[2],k16_p16_m16);
+          v[3]= _mm_madd_epi16(u[3],v[5]);
+          v[4]= _mm_madd_epi16(u[0],k16_p16_p16);
+          v[5]= _mm_madd_epi16(u[1],k16_p16_p16);
+          v[6]= _mm_madd_epi16(u[2],k16_p16_p16);
+          v[7]= _mm_madd_epi16(u[3],k16_p16_p16);
+
+          u[1]=_mm_slli_epi32(v[1],16);
+          u[3]=_mm_slli_epi32(v[3],16);
+          v[1]=_mm_add_epi32(v[0],u[1]);
+          v[3]=_mm_add_epi32(v[2],u[3]);
+
+          u[2]=_mm_slli_epi32(v[5],16);
+          u[3]=_mm_slli_epi32(v[7],16);
+          v[5]=_mm_cmpgt_epi16(u[2],kZero);
+          v[7]=_mm_cmpgt_epi16(u[3],kZero);
+          v[5]=_mm_and_si128(v[5],u[2]);
+          v[7]=_mm_and_si128(v[7],u[3]);
+          v[2]=_mm_add_epi32(v[4],v[5]);
+          v[4]=_mm_add_epi32(v[6],v[7]);
+
+          u[0]= _mm_shuffle_epi32(v[1],_MM_SHUFFLE(3,1,2,0));
+          u[1]= _mm_shuffle_epi32(v[3],_MM_SHUFFLE(3,1,2,0));
+          u[2]= _mm_shuffle_epi32(v[2],_MM_SHUFFLE(3,1,2,0));
+          u[3]= _mm_shuffle_epi32(v[4],_MM_SHUFFLE(3,1,2,0));
 
           v[0] = _mm_add_epi32(u[0], k__DCT_CONST_ROUNDING);
           v[1] = _mm_add_epi32(u[1], k__DCT_CONST_ROUNDING);
@@ -1371,8 +1397,7 @@ void FDCT32x32_2D(int16_t *input,
           lstep1[10] = _mm_srai_epi32(v[0], DCT_CONST_BITS);
           lstep1[11] = _mm_srai_epi32(v[1], DCT_CONST_BITS);
           lstep1[12] = _mm_srai_epi32(v[2], DCT_CONST_BITS);
-          lstep1[13] = _mm_srai_epi32(v[3], DCT_CONST_BITS);
-        }
+          lstep1[13] = _mm_srai_epi32(v[3], DCT_CONST_BITS);        }
         {
           const __m128i k32_m08_p24 = pair_set_epi32(-cospi_8_64, cospi_24_64);
           const __m128i k32_m24_m08 = pair_set_epi32(-cospi_24_64, -cospi_8_64);
