@@ -538,8 +538,14 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
             assert(!"Invalid inter mode value");
         }
         mi->bmi[j].as_mv[0].as_int = blockmv.as_int;
-        if (is_compound)
+        assert(blockmv.as_mv.row < MV_UPP && blockmv.as_mv.row > MV_LOW);
+        assert(blockmv.as_mv.col < MV_UPP && blockmv.as_mv.col > MV_LOW);
+
+        if (is_compound) {
           mi->bmi[j].as_mv[1].as_int = secondmv.as_int;
+          assert(secondmv.as_mv.row < MV_UPP && secondmv.as_mv.row > MV_LOW);
+          assert(secondmv.as_mv.col < MV_UPP && secondmv.as_mv.col > MV_LOW);
+        }
 
         if (num_4x4_h == 2)
           mi->bmi[j + 2] = mi->bmi[j];
@@ -579,6 +585,12 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
         break;
       default:
         assert(!"Invalid inter mode value");
+    }
+    assert(mv0->as_mv.row < MV_UPP && mv0->as_mv.row > MV_LOW);
+    assert(mv0->as_mv.col < MV_UPP && mv0->as_mv.col > MV_LOW);
+    if (is_compound) {
+      assert(mv1->as_mv.row < MV_UPP && mv1->as_mv.row > MV_LOW);
+      assert(mv1->as_mv.col < MV_UPP && mv1->as_mv.col > MV_LOW);
     }
   }
 }
