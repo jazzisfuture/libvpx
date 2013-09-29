@@ -17,7 +17,16 @@
 #ifndef VP9_DECODER_VP9_THREAD_H_
 #define VP9_DECODER_VP9_THREAD_H_
 
-#include "vpx_config.h"
+#if CONFIG_MULTITHREAD
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif    /* _WIN32 */
+#endif    /* CONFIG_MULTITHREAD */
+
+#include "./vpx_config.h"
+
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -26,8 +35,6 @@ extern "C" {
 #if CONFIG_MULTITHREAD
 
 #if defined(_WIN32)
-
-#include <windows.h>
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
 typedef struct {
@@ -35,10 +42,6 @@ typedef struct {
   HANDLE received_sem_;
   HANDLE signal_event_;
 } pthread_cond_t;
-
-#else
-
-#include <pthread.h>
 
 #endif    /* _WIN32 */
 #endif    /* CONFIG_MULTITHREAD */
@@ -90,4 +93,4 @@ void vp9_worker_end(VP9Worker* const worker);
 }    // extern "C"
 #endif
 
-#endif  /* VP9_DECODER_VP9_THREAD_H_ */
+#endif  // VP9_DECODER_VP9_THREAD_H_
