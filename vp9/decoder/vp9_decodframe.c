@@ -119,6 +119,8 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     default:
       assert(!"Invalid transform size");
   }
+
+  memset(qcoeff, 0, (16 << (tx_size << 1)) * sizeof(qcoeff[0]));
 }
 
 static void decode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
