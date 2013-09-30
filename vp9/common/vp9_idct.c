@@ -1269,7 +1269,7 @@ void vp9_short_idct32x32_add_c(int16_t *input, uint8_t *dest, int dest_stride) {
   }
 }
 
-void vp9_short_idct1_32x32_c(int16_t *input, int16_t *output) {
+void vp9_short_idct32x32_1_c(int16_t *input, int16_t *output) {
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
   out = dct_const_round_shift(out * cospi_16_64);
   output[0] = ROUND_POWER_OF_TWO(out, 6);

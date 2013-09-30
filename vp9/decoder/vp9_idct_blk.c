@@ -140,7 +140,7 @@ void vp9_idct_add_32x32_c(int16_t *input, uint8_t *dest, int stride, int eob) {
 
   if (eob) {
     if (eob == 1) {
-      vp9_short_idct1_32x32(input, output);
+      vp9_short_idct32x32_1(input, output);
       vp9_add_constant_residual_32x32(output[0], dest, stride);
       input[0] = 0;
     } else {
