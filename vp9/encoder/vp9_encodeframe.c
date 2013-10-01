@@ -38,6 +38,7 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include "vp9/encoder/vp9_satd_c.h"
 
 #define DBG_PRNT_SEGMAP 0
 
@@ -1736,6 +1737,80 @@ static INLINE void load_pred_mv(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
   vpx_memcpy(x->pred_mv, ctx->pred_mv, sizeof(x->pred_mv));
 }
 
+
+static void fast_intra_pred(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize) {
+  MACROBLOCKD *const xd = &x->e_mbd;
+  MB_MODE_INFO *const mbmi = &xd->this_mi->mbmi;
+
+  x->skip_encode = 0;
+  mbmi->mode = DC_PRED;
+  mbmi->ref_frame[0] = INTRA_FRAME;
+  mbmi->tx_size = vp9_largest_txfm_size(cpi, x, bsize);
+  vp9_encode_intra_block_y(x, bsize);
+}
+
+static void fast_inter_pred(VP9_COMP *cpi, MACROBLOCK *x,
+                            int mi_row, int mi_col, BLOCK_SIZE bsize) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD * const xd = &x->e_mbd;
+  int_mv nearest_mv, near_mv;
+  const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, LAST_FRAME)];
+  YV12_BUFFER_CONFIG *ref_fb = &cm->yv12_fb[idx];
+  YV12_BUFFER_CONFIG *second_ref_fb = NULL;
+  int_mv *mv_list = xd->this_mi->mbmi.ref_mvs[xd->this_mi->mbmi.ref_frame[0]];
+
+  vp9_setup_interp_filters(xd, cm->mcomp_filter_type, cm);
+
+  setup_pre_planes(xd, 0, ref_fb, mi_row, mi_col,
+                   &xd->scale_factor[0]);
+  setup_pre_planes(xd, 1, second_ref_fb, mi_row, mi_col,
+                   &xd->scale_factor[1]);
+
+  xd->this_mi->mbmi.ref_frame[0] = LAST_FRAME;
+  vp9_find_best_ref_mvs(xd, mv_list, &nearest_mv, &near_mv);
+
+  xd->this_mi->mbmi.mv[0] = nearest_mv;
+  vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+}
+
+static int estimate_pred_cost(VP9_COMP *cpi, MACROBLOCK *x,
+                              int mi_row, int mi_col, BLOCK_SIZE bsize) {
+  VP9_COMMON * const cm = &cpi->common;
+  MACROBLOCKD *const xd = &x->e_mbd;
+  uint8_t *s, *d;
+  int sp, dp;
+  int pl, pcost, lambda, satd;
+  int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+  int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+
+  set_offsets(cpi, mi_row, mi_col, bsize);
+  xd->this_mi->mbmi.sb_type = bsize;
+  set_partition_seg_context(cm, xd, mi_row, mi_col);
+
+  lambda = vp9_ac_quant(xd->q_index, 0);
+  pl = partition_plane_context(xd, bsize);
+  pcost = x->partition_cost[pl][PARTITION_NONE];
+
+  if (cm->frame_type == KEY_FRAME) {
+    // TODO(gmartres): handle this correctly
+    if (cm->tx_mode != TX_MODE_SELECT)
+      return 0;
+    fast_intra_pred(cpi, x, bsize);
+  } else {
+    // TODO(gmartres): also try fast_intra_pred
+    fast_inter_pred(cpi, x, mi_row, mi_col, bsize);
+  }
+
+  // TODO(gmartres): either use the other planes, or don't encode them
+  s = x->plane[0].src.buf;
+  sp = x->plane[0].src.stride;
+  d = xd->plane[0].dst.buf;
+  dp = xd->plane[0].dst.stride;
+  satd = vp9_satd_c(s, sp, d, dp, bw, bh);
+
+  return satd + lambda * pcost;
+}
+
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
 // results, for encoding speed-up.
@@ -1808,6 +1883,38 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
         do_rect = 0;
     }
   }
+
+  // TODO(gmartres): Add support for smaller blocks
+  // TODO(gmartres): Extend this to test rectangular splits
+  if (bsize >= BLOCK_16X16 && partition_none_allowed && do_split) {
+    int subsize = get_subsize(bsize, PARTITION_SPLIT);
+    if (cm->frame_type != KEY_FRAME ||
+        vp9_largest_txfm_size(cpi, x, bsize) >
+        vp9_largest_txfm_size(cpi, x, subsize)) {
+      int i, j;
+      int none_cost;
+      int split_cost = 0;
+      int bs = 4 * num_4x4_blocks_wide_lookup[bsize];
+      int diff = 0;
+
+      none_cost = estimate_pred_cost(cpi, x, mi_row, mi_col, bsize);
+      for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+          split_cost += estimate_pred_cost(cpi, x,
+                                           mi_row + i * bs / 16,
+                                           mi_col + j * bs / 16,
+                                           subsize);
+        }
+      }
+      diff = none_cost - split_cost;
+      if (diff > 100) {
+        partition_none_allowed = 0;
+      } else if (diff < -100) {
+        do_split = 0;
+      }
+    }
+  }
+
 
   // PARTITION_NONE
   if (partition_none_allowed) {

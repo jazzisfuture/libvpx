@@ -38,4 +38,6 @@ void vp9_get_entropy_contexts(TX_SIZE tx_size,
     const ENTROPY_CONTEXT *above, const ENTROPY_CONTEXT *left,
     int num_4x4_w, int num_4x4_h);
 
+int vp9_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs);
+
 #endif  // VP9_ENCODER_VP9_RDOPT_H_
