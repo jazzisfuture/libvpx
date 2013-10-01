@@ -313,7 +313,7 @@ static void init_intra_pred_fn_ptrs(void) {
 #undef intra_pred_allsizes
 }
 
-static void build_intra_predictors(const uint8_t *ref, int ref_stride,
+void build_intra_predictors(const uint8_t *ref, int ref_stride,
                                    uint8_t *dst, int dst_stride,
                                    MB_PREDICTION_MODE mode, TX_SIZE tx_size,
                                    int up_available, int left_available,

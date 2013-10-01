@@ -14,6 +14,12 @@
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_blockd.h"
 
+void build_intra_predictors(const uint8_t *ref, int ref_stride,
+                                   uint8_t *dst, int dst_stride,
+                                   MB_PREDICTION_MODE mode, TX_SIZE tx_size,
+                                   int up_available, int left_available,
+                            int right_available);
+
 void vp9_predict_intra_block(MACROBLOCKD *xd, int block_idx, int bwl_in,
                             TX_SIZE tx_size, int mode,
                             const uint8_t *ref, int ref_stride,
