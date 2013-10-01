@@ -707,29 +707,37 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   }
 }
 
+int vp9_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+  VP9_COMMON *const cm = &cpi->common;
+  const TX_SIZE max_tx_size = max_txsize_lookup[bs];
+
+  if (max_tx_size == TX_32X32 &&
+      (cm->tx_mode == ALLOW_32X32 ||
+       cm->tx_mode == TX_MODE_SELECT)) {
+    return TX_32X32;
+  }
+  if (max_tx_size >= TX_16X16 &&
+      (cm->tx_mode == ALLOW_16X16 ||
+       cm->tx_mode == ALLOW_32X32 ||
+       cm->tx_mode == TX_MODE_SELECT)) {
+    return TX_16X16;
+  }
+  if (cm->tx_mode != ONLY_4X4) {
+    return TX_8X8;
+  }
+  return TX_4X4;
+}
+
 static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
                                      int *rate, int64_t *distortion,
                                      int *skip, int64_t *sse,
                                      int64_t ref_best_rd,
                                      BLOCK_SIZE bs) {
-  const TX_SIZE max_tx_size = max_txsize_lookup[bs];
-  VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->this_mi->mbmi;
-  if (max_tx_size == TX_32X32 &&
-      (cm->tx_mode == ALLOW_32X32 ||
-       cm->tx_mode == TX_MODE_SELECT)) {
-    mbmi->tx_size = TX_32X32;
-  } else if (max_tx_size >= TX_16X16 &&
-             (cm->tx_mode == ALLOW_16X16 ||
-              cm->tx_mode == ALLOW_32X32 ||
-              cm->tx_mode == TX_MODE_SELECT)) {
-    mbmi->tx_size = TX_16X16;
-  } else if (cm->tx_mode != ONLY_4X4) {
-    mbmi->tx_size = TX_8X8;
-  } else {
-    mbmi->tx_size = TX_4X4;
-  }
+
+  mbmi->tx_size = vp9_largest_txfm_size(cpi, x, bs);
+
   txfm_rd_in_plane(x, rate, distortion, skip,
                    &sse[mbmi->tx_size], ref_best_rd, 0, bs,
                    mbmi->tx_size);
