@@ -989,10 +989,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   setup_block_dptrs(xd, cm->subsampling_x, cm->subsampling_y);
 
-  // clear out the coeff buffer
-  for (i = 0; i < MAX_MB_PLANE; ++i)
-    vp9_zero(xd->plane[i].qcoeff);
-
   set_prev_mi(cm);
 
   *p_data_end = decode_tiles(pbi, data + first_partition_size);
