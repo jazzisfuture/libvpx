@@ -243,6 +243,11 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 int vp9_decode_tokens(VP9D_COMP *pbi, vp9_reader *r, BLOCK_SIZE bsize) {
   int eobtotal = 0;
   struct decode_block_args args = {pbi, r, &eobtotal};
+  int i;
+
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    vp9_zero(pbi->mb.plane[i].qcoeff);
+
   foreach_transformed_block(&pbi->mb, bsize, decode_block, &args);
   return eobtotal;
 }

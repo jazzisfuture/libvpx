@@ -944,7 +944,6 @@ static void update_segmentation_map(VP9_COMMON *cm) {
 }
 
 int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
-  int i;
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
 
@@ -988,10 +987,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   new_fb->corrupted |= read_compressed_header(pbi, data, first_partition_size);
 
   setup_block_dptrs(xd, cm->subsampling_x, cm->subsampling_y);
-
-  // clear out the coeff buffer
-  for (i = 0; i < MAX_MB_PLANE; ++i)
-    vp9_zero(xd->plane[i].qcoeff);
 
   set_prev_mi(cm);
 
