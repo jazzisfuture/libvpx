@@ -92,32 +92,40 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   int16_t* const qcoeff = BLOCK_OFFSET(pd->qcoeff, block);
   const int stride = pd->dst.stride;
   const int eob = pd->eobs[block];
-  const int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size,
-                                                       block);
-  uint8_t* const dst = raster_block_offset_uint8(plane_bsize, raster_block,
-                                                 pd->dst.buf, stride);
-  switch (tx_size) {
-    case TX_4X4: {
-      const TX_TYPE tx_type = get_tx_type_4x4(pd->plane_type, xd, raster_block);
-      if (tx_type == DCT_DCT)
-        xd->itxm_add(qcoeff, dst, stride, eob);
-      else
-        vp9_iht_add_c(tx_type, qcoeff, dst, stride, eob);
-      break;
-    }
-    case TX_8X8:
-      vp9_iht_add_8x8_c(get_tx_type_8x8(pd->plane_type, xd), qcoeff, dst,
-                        stride, eob);
-      break;
-    case TX_16X16:
-      vp9_iht_add_16x16_c(get_tx_type_16x16(pd->plane_type, xd), qcoeff, dst,
+  if (eob > 0) {
+    const int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size,
+                                                         block);
+    uint8_t* const dst = raster_block_offset_uint8(plane_bsize, raster_block,
+                                                   pd->dst.buf, stride);
+    switch (tx_size) {
+      case TX_4X4: {
+        const TX_TYPE tx_type = get_tx_type_4x4(pd->plane_type, xd,
+                                                raster_block);
+        if (tx_type == DCT_DCT)
+          xd->itxm_add(qcoeff, dst, stride, eob);
+        else
+          vp9_iht_add_c(tx_type, qcoeff, dst, stride, eob);
+        break;
+      }
+      case TX_8X8:
+        vp9_iht_add_8x8_c(get_tx_type_8x8(pd->plane_type, xd), qcoeff, dst,
                           stride, eob);
-      break;
-    case TX_32X32:
-      vp9_idct_add_32x32(qcoeff, dst, stride, eob);
-      break;
-    default:
-      assert(!"Invalid transform size");
+        break;
+      case TX_16X16:
+        vp9_iht_add_16x16_c(get_tx_type_16x16(pd->plane_type, xd), qcoeff, dst,
+                            stride, eob);
+        break;
+      case TX_32X32:
+        vp9_idct_add_32x32(qcoeff, dst, stride, eob);
+        break;
+      default:
+        assert(!"Invalid transform size");
+    }
+
+    if (eob == 1)
+      *((int *)qcoeff) = 0;
+    else
+      memset(qcoeff, 0, (16 << (tx_size << 1)) * sizeof(qcoeff[0]));
   }
 }
 
