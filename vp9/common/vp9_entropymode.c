@@ -515,6 +515,4 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vp9_update_mode_info_border(cm, cm->prev_mip);
 
   vp9_zero(cm->ref_frame_sign_bias);
-
-  cm->frame_context_idx = 0;
 }
