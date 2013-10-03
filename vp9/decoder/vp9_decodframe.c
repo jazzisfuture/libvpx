@@ -1023,7 +1023,8 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
 
-  update_segmentation_map(cm);
+  if (cm->seg.update_map)
+    update_segmentation_map(cm);
 
   return 0;
 }
