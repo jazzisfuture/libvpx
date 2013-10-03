@@ -401,7 +401,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       cpi->rd_tx_select_diff[i] += ctx->tx_rd_diff[i];
   }
 
-  if (cm->frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     // Restore the coding modes to that held in the coding context
     // if (mb_mode == I4X4_PRED)
     //    for (i = 0; i < 16; i++)
@@ -597,7 +597,7 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
-  if (cm->frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     vp9_rd_pick_intra_mode_sb(cpi, x, totalrate, totaldist, bsize, ctx,
                               best_rd);
   else
@@ -612,7 +612,7 @@ static void update_stats(VP9_COMP *cpi) {
   MODE_INFO *mi = xd->this_mi;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
-  if (cm->frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(cm)) {
     const int seg_ref_active = vp9_segfeature_active(&cm->seg, mbmi->segment_id,
                                                      SEG_LVL_REF_FRAME);
 
@@ -1802,7 +1802,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   xd->mode_info_stride = cm->mode_info_stride;
 
   // reset intra mode contexts
-  if (cm->frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     vp9_init_mbmode_probs(cm);
 
   // Copy data over into macro block data structures.
@@ -2105,7 +2105,7 @@ static void reset_skip_txfm_size(VP9_COMP *cpi, TX_SIZE txfm_max) {
 
 static int get_frame_type(VP9_COMP *cpi) {
   int frame_type;
-  if (cpi->common.frame_type == KEY_FRAME)
+  if (frame_is_intra_only(&cpi->common))
     frame_type = 0;
   else if (cpi->is_src_frame_alt_ref && cpi->refresh_golden_frame)
     frame_type = 3;
@@ -2153,16 +2153,18 @@ void vp9_encode_frame(VP9_COMP *cpi) {
   // requires further work in the rd loop. For now the only supported encoder
   // side behavior is where the ALT ref buffer has opposite sign bias to
   // the other two.
-  if ((cm->ref_frame_sign_bias[ALTREF_FRAME]
-       == cm->ref_frame_sign_bias[GOLDEN_FRAME])
-      || (cm->ref_frame_sign_bias[ALTREF_FRAME]
-          == cm->ref_frame_sign_bias[LAST_FRAME])) {
-    cm->allow_comp_inter_inter = 0;
-  } else {
-    cm->allow_comp_inter_inter = 1;
-    cm->comp_fixed_ref = ALTREF_FRAME;
-    cm->comp_var_ref[0] = LAST_FRAME;
-    cm->comp_var_ref[1] = GOLDEN_FRAME;
+  if (!frame_is_intra_only(cm)) {
+    if ((cm->ref_frame_sign_bias[ALTREF_FRAME]
+         == cm->ref_frame_sign_bias[GOLDEN_FRAME])
+        || (cm->ref_frame_sign_bias[ALTREF_FRAME]
+            == cm->ref_frame_sign_bias[LAST_FRAME])) {
+      cm->allow_comp_inter_inter = 0;
+    } else {
+      cm->allow_comp_inter_inter = 1;
+      cm->comp_fixed_ref = ALTREF_FRAME;
+      cm->comp_var_ref[0] = LAST_FRAME;
+      cm->comp_var_ref[1] = GOLDEN_FRAME;
+    }
   }
 
   if (cpi->sf.RD) {
