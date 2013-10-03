@@ -2662,7 +2662,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
   // Set various flags etc to special state if it is a key frame
-  if (cm->frame_type == KEY_FRAME) {
+  if (cm->frame_type == KEY_FRAME || cm->intra_only) {
     // Reset the loop filter deltas and segmentation map
     setup_features(cm);
 
@@ -2677,11 +2677,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
     cm->error_resilient_mode = (cpi->oxcf.error_resilient_mode != 0);
     cm->frame_parallel_decoding_mode =
-      (cpi->oxcf.frame_parallel_decoding_mode != 0);
+        (cpi->oxcf.frame_parallel_decoding_mode != 0);
     if (cm->error_resilient_mode) {
       cm->frame_parallel_decoding_mode = 1;
-      cm->reset_frame_context = 0;
+      cm->reset_frame_context = 3;  // Reset all frame contexts.
       cm->refresh_frame_context = 0;
+    } else if (cm->intra_only) {
+      // Only reset the current context.
+      cm->reset_frame_context = 2;
     }
   }
 
@@ -2701,7 +2704,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Set an active best quality and if necessary active worst quality
   q = cpi->active_worst_quality;
 
-  if (cm->frame_type == KEY_FRAME) {
+  if (cm->frame_type == KEY_FRAME || cm->intra_only) {
 #if !CONFIG_MULTIPLE_ARF
       // Special case for key frames forced because we have reached
       // the maximum key frame interval. Here force the Q to a range
@@ -2891,7 +2894,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   loop_count = 0;
   vp9_zero(cpi->rd_tx_select_threshes);
 
-  if (cm->frame_type != KEY_FRAME) {
+  if (cm->frame_type != KEY_FRAME && !cm->intra_only) {
     cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
     /* TODO: Decide this more intelligently */
     xd->allow_high_precision_mv = q < HIGH_PRECISION_MV_QTHRESH;
@@ -2937,27 +2940,22 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_set_quantizer(cpi, q);
 
     if (loop_count == 0) {
-
-      // Set up entropy depending on frame type.
+      // Set up entropy context depending on frame type. The decoder mandates
+      // the use of the default context, index 0, for keyframes and inter
+      // frames where the error_resilient_mode or intra_only flag is set. For
+      // other inter-frames the encoder currently uses only two contexts;
+      // context 1 for ALTREF frames and context 0 for the others.
       if (cm->frame_type == KEY_FRAME) {
-        /* Choose which entropy context to use. When using a forward reference
-         * frame, it immediately follows the keyframe, and thus benefits from
-         * using the same entropy context established by the keyframe.
-         *  Otherwise, use the default context 0.
-         */
-        cm->frame_context_idx = cpi->oxcf.play_alternate;
         vp9_setup_key_frame(cpi);
       } else {
-        /* Choose which entropy context to use. Currently there are only two
-         * contexts used, one for normal frames and one for alt ref frames.
-         */
-        cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
+        if (!cm->intra_only && !cm->error_resilient_mode) {
+          cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
+        }
         vp9_setup_inter_frame(cpi);
       }
     }
 
     // transform / motion compensation build reconstruction frame
-
     vp9_encode_frame(cpi);
 
     // Update the skip mb flag probabilities based on the distribution
@@ -3170,7 +3168,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_adapt_coef_probs(&cpi->common);
   }
 
-  if (cpi->common.frame_type != KEY_FRAME) {
+  if (cpi->common.frame_type != KEY_FRAME && !cpi->common.intra_only) {
     FRAME_COUNTS *counts = &cpi->common.counts;
 
     vp9_copy(counts->y_mode, cpi->y_mode_count);
@@ -3653,7 +3651,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       }
 
       cm->show_frame = 0;
-      cm->intra_only = 0;
       cpi->refresh_alt_ref_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;
@@ -3675,6 +3672,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 #endif
     if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
       cm->show_frame = 1;
+      cm->intra_only = 0;
 
 #if CONFIG_MULTIPLE_ARF
       // Is this frame the ARF overlay.
