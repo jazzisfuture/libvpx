@@ -1209,6 +1209,12 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   switch (cpi->oxcf.Mode) {
       // Real time and one pass deprecated in test code base
+    case MODE_GOODQUALITY:
+      cpi->pass = 0;
+      cpi->compressor_speed = 2;
+      cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
+      break;
+
     case MODE_FIRSTPASS:
       cpi->pass = 1;
       cpi->compressor_speed = 1;
@@ -2858,7 +2864,19 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     q = cpi->last_boosted_qindex;
   } else {
     // Determine initial Q to try
-    q = vp9_regulate_q(cpi, cpi->this_frame_target);
+    // For now: for 1-pass to hit target rate: Keep the active best and worst to
+    // the fixed user-limit values, and let the rate correction factor adjust the qp.
+    // Use |x| * per-frame-bw for target size of first key frame.
+    int scale = 1;
+    if (cpi->pass == 0) {
+      cpi->active_best_quality = cpi->best_quality;
+      cpi->active_worst_quality = cpi->worst_quality;
+      if (cm->frame_type == KEY_FRAME) {
+        scale = 5;
+      }
+    }
+    // Determine initial Q to try.
+    q = vp9_regulate_q(cpi, scale * cpi->this_frame_target);
   }
 
   vp9_compute_frame_size_bounds(cpi, &frame_under_shoot_limit,
@@ -2962,7 +2980,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
 
     // transform / motion compensation build reconstruction frame
-
     vp9_encode_frame(cpi);
 
     // Update the skip mb flag probabilities based on the distribution
@@ -2984,8 +3001,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       frame_over_shoot_limit = 1;
     active_worst_qchanged = 0;
 
-    // Special case handling for forced key frames
-    if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
+    // Special case handling for forced key frames.
+    // No loop for 1-pass
+    if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY || cpi->pass == 0) {
       loop = 0;
     } else {
       if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
@@ -3268,7 +3286,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       ((cpi->long_rolling_actual_bits * 31) +
        cpi->projected_frame_size + 16) / 32;
   }
-
+  //printf("%d %d %d %d \n",cpi->frames_since_key, q, cpi->this_frame_target, cpi->projected_frame_size);
   // Actual bits spent
   cpi->total_actual_bits += cpi->projected_frame_size;
 
