@@ -1457,7 +1457,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
   vp9_update_skip_probs(cpi, &header_bc);
 
-  if (cm->frame_type != KEY_FRAME) {
+  if (cm->frame_type != KEY_FRAME && !cm->intra_only) {
     int i;
 #ifdef ENTROPY_STATS
     active_section = 1;

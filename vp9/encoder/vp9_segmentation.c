@@ -253,7 +253,7 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   no_pred_cost = cost_segmap(no_pred_segcounts, no_pred_tree);
 
   // Key frames cannot use temporal prediction
-  if (cm->frame_type != KEY_FRAME) {
+  if (cm->frame_type != KEY_FRAME && !cm->intra_only) {
     // Work out probability tree for coding those segments not
     // predicted using the temporal method and the cost.
     calc_segtree_probs(t_unpred_seg_counts, t_pred_tree);

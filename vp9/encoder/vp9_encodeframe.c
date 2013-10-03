@@ -401,7 +401,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       cpi->rd_tx_select_diff[i] += ctx->tx_rd_diff[i];
   }
 
-  if (cm->frame_type == KEY_FRAME) {
+  if (cm->frame_type == KEY_FRAME || cm->intra_only) {
     // Restore the coding modes to that held in the coding context
     // if (mb_mode == I4X4_PRED)
     //    for (i = 0; i < 16; i++)
@@ -597,7 +597,7 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
-  if (cm->frame_type == KEY_FRAME)
+  if (cm->frame_type == KEY_FRAME || cm->intra_only)
     vp9_rd_pick_intra_mode_sb(cpi, x, totalrate, totaldist, bsize, ctx,
                               best_rd);
   else
@@ -612,7 +612,7 @@ static void update_stats(VP9_COMP *cpi) {
   MODE_INFO *mi = xd->this_mi;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
 
-  if (cm->frame_type != KEY_FRAME) {
+  if (cm->frame_type != KEY_FRAME && !cm->intra_only) {
     const int seg_ref_active = vp9_segfeature_active(&cm->seg, mbmi->segment_id,
                                                      SEG_LVL_REF_FRAME);
 
