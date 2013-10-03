@@ -924,6 +924,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     sf->optimize_coefficients = 0;
   }
 
+  // No recode for 1 pass.
+  if (cpi->pass == 0) {
+    sf->recode_loop = 0;
+    sf->optimize_coefficients = 0;
+  }
+
   cpi->mb.fwd_txm16x16  = vp9_short_fdct16x16;
   cpi->mb.fwd_txm8x8    = vp9_short_fdct8x8;
   cpi->mb.fwd_txm8x4    = vp9_short_fdct8x4;
@@ -1209,6 +1215,12 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   switch (cpi->oxcf.Mode) {
       // Real time and one pass deprecated in test code base
+    case MODE_GOODQUALITY:
+      cpi->pass = 0;
+      cpi->compressor_speed = 2;
+      cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
+      break;
+
     case MODE_FIRSTPASS:
       cpi->pass = 1;
       cpi->compressor_speed = 1;
@@ -2821,6 +2833,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 #else
       cpi->active_best_quality = inter_minq[q];
+      // 1-pass: for now, use the average Q for the active_best, if its lower
+      // than active_worst.
+      if (cpi->pass == 0 && (cpi->avg_frame_qindex < cpi->active_worst_quality))
+        cpi->active_best_quality = inter_minq[cpi->avg_frame_qindex];
 #endif
 
       // For the constant/constrained quality mode we don't want
@@ -2857,8 +2873,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   } else if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
     q = cpi->last_boosted_qindex;
   } else {
-    // Determine initial Q to try
-    q = vp9_regulate_q(cpi, cpi->this_frame_target);
+    // Determine initial Q to try.
+    if (cpi->pass == 0) {
+      // 1-pass: for now, use per-frame-bw for target size of frame, scaled
+      // by |x| for key frame.
+      int scale = (cm->frame_type == KEY_FRAME) ? 5 : 1;
+      q = vp9_regulate_q(cpi, scale * cpi->av_per_frame_bandwidth);
+    } else {
+      q = vp9_regulate_q(cpi, cpi->this_frame_target);
+    }
   }
 
   vp9_compute_frame_size_bounds(cpi, &frame_under_shoot_limit,
