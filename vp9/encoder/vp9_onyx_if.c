@@ -3170,7 +3170,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_adapt_coef_probs(&cpi->common);
   }
 
-  if (cpi->common.frame_type != KEY_FRAME) {
+  if (cpi->common.frame_type != KEY_FRAME && !cpi->common.intra_only) {
     FRAME_COUNTS *counts = &cpi->common.counts;
 
     vp9_copy(counts->y_mode, cpi->y_mode_count);
@@ -3675,6 +3675,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 #endif
     if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
       cm->show_frame = 1;
+      cm->intra_only = 0;
 
 #if CONFIG_MULTIPLE_ARF
       // Is this frame the ARF overlay.
