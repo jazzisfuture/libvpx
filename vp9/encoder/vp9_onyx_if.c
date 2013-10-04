@@ -785,10 +785,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
 
       if (speed == 1) {
         sf->use_square_partition_only = !(cpi->common.frame_type == KEY_FRAME ||
-                                          cpi->common.intra_only);
-        sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
-                                      cpi->common.intra_only)
-                                     ? USE_FULL_RD : USE_LARGESTALL);
+                                          cpi->common.intra_only ||
+                                          cpi->common.show_frame == 0);
+        sf->less_rectangular_check  = !sf->use_square_partition_only;
+        sf->tx_size_search_method = (cpi->common.frame_type == KEY_FRAME ||
+                                     cpi->common.intra_only)
+                                     ? USE_FULL_RD : USE_LARGESTALL;
 
         if (MIN(cpi->common.width, cpi->common.height) >= 720)
           sf->disable_split_mask = DISABLE_ALL_SPLIT;
@@ -802,7 +804,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       }
       if (speed == 2) {
         sf->use_square_partition_only = !(cpi->common.frame_type == KEY_FRAME ||
-                                          cpi->common.intra_only);
+                                          cpi->common.intra_only ||
+                                          cpi->common.show_frame == 0);
+        sf->less_rectangular_check  = !sf->use_square_partition_only;
         sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
                                       cpi->common.intra_only)
                                      ? USE_FULL_RD : USE_LARGESTALL);
@@ -875,8 +879,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->adjust_partitioning_from_last_frame = 1;
         sf->last_partitioning_redo_frequency = 3;
         sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
-                                      cpi->common.intra_only ||
-                                      cpi->common.show_frame == 0) ?
+                                      cpi->common.intra_only ) ?
                                      USE_FULL_RD :
                                      USE_LARGESTALL);
         sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
@@ -909,11 +912,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
         sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
         sf->use_one_partition_size_always = 1;
         sf->always_this_block_size = BLOCK_16X16;
-        sf->tx_size_search_method = ((cpi->common.frame_type == KEY_FRAME ||
-                                      cpi->common.intra_only ||
-                                      cpi->common.show_frame == 0) ?
-                                     USE_FULL_RD :
-                                     USE_LARGESTALL);
+        sf->tx_size_search_method = (cpi->common.frame_type == KEY_FRAME ||
+                                     cpi->common.intra_only) ?
+                                     USE_FULL_RD : USE_LARGESTALL;
         sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
                                      FLAG_SKIP_INTRA_BESTINTER |
                                      FLAG_SKIP_COMP_BESTINTRA |
