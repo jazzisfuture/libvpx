@@ -54,7 +54,8 @@ static int calc_partial_ssl_err(YV12_BUFFER_CONFIG *source,
   src += srcoffset;
   dst += dstoffset;
 
-  // Loop through the Y plane raw and reconstruction data summing (square differences)
+  // Loop through the Y plane raw and reconstruction data summing (square
+  // differences)
   for (i = 0; i < linestocopy; i += 16) {
     for (j = 0; j < source->y_width; j += 16) {
       unsigned int sse;
@@ -74,7 +75,8 @@ static int get_min_filter_level(VP9_COMP *cpi, int base_qindex) {
   int min_filter_level;
   /*int q = (int) vp9_convert_qindex_to_q(base_qindex);
 
-  if (cpi->source_alt_ref_active && cpi->common.refresh_golden_frame && !cpi->common.refresh_alt_ref_frame)
+  if (cpi->source_alt_ref_active && cpi->common.refresh_golden_frame &&
+      !cpi->common.refresh_alt_ref_frame)
       min_filter_level = 0;
   else
   {
@@ -93,11 +95,7 @@ static int get_min_filter_level(VP9_COMP *cpi, int base_qindex) {
 
 // Enforce a maximum filter level based upon baseline Q
 static int get_max_filter_level(VP9_COMP *cpi, int base_qindex) {
-  // PGW August 2006: Highest filter values almost always a bad idea
-
-  // jbb chg: 20100118 - not so any more with this overquant stuff allow high values
-  // with lots of intra coming in.
-  int max_filter_level = MAX_LOOP_FILTER;// * 3 / 4;
+  int max_filter_level = MAX_LOOP_FILTER;
   (void)base_qindex;
 
   if (cpi->twopass.section_intra_rating > 8)
@@ -128,7 +126,7 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
   int filt_best;
   int filt_direction = 0;
 
-  int Bias = 0;                       // Bias against raising loop filter and in favour of lowering it
+  int Bias = 0;  // Bias against raising loop filter in favour of lowering it
 
   //  Make a copy of the unfiltered / processed recon buffer
   vpx_yv12_copy_y(cm->frame_to_show, &cpi->last_frame_uf);
@@ -136,7 +134,8 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
   lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0
                                                     : cpi->oxcf.Sharpness;
 
-  // Start the search at the previous frame filter level unless it is now out of range.
+  // Start the search at the previous frame filter level unless it is now out of
+  // range.
   filt_mid = clamp(lf->filter_level, min_filter_level, max_filter_level);
 
   // Define the initial step size
@@ -153,9 +152,8 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
   vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
 
   while (filter_step > 0) {
-    Bias = (best_err >> (15 - (filt_mid / 8))) * filter_step; // PGW change 12/12/06 for small images
+    Bias = (best_err >> (15 - (filt_mid / 8))) * filter_step;
 
-    // jbb chg: 20100118 - in sections with lots of new material coming in don't bias as much to a low filter value
     if (cpi->twopass.section_intra_rating < 20)
       Bias = Bias * cpi->twopass.section_intra_rating / 20;
 
@@ -163,8 +161,12 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
     if (cpi->common.tx_mode != ONLY_4X4)
       Bias >>= 1;
 
-    filt_high = ((filt_mid + filter_step) > max_filter_level) ? max_filter_level : (filt_mid + filter_step);
-    filt_low = ((filt_mid - filter_step) < min_filter_level) ? min_filter_level : (filt_mid - filter_step);
+    filt_high = ((filt_mid + filter_step) > max_filter_level)
+                    ? max_filter_level
+                    : (filt_mid + filter_step);
+    filt_low = ((filt_mid - filter_step) < min_filter_level)
+                   ? min_filter_level
+                   : (filt_mid - filter_step);
 
     if ((filt_direction <= 0) && (filt_low != filt_mid)) {
       // Get Low filter error score
@@ -176,7 +178,8 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
       //  Re-instate the unfiltered frame
       vpx_yv12_copy_y(&cpi->last_frame_uf, cm->frame_to_show);
 
-      // If value is close to the best so far then bias towards a lower loop filter value.
+      // If value is close to the best so far then bias towards a lower loop
+      // filter value.
       if ((filt_err - Bias) < best_err) {
         // Was it actually better than the previous best?
         if (filt_err < best_err)
@@ -215,4 +218,3 @@ void vp9_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi, int partial) {
 
   lf->filter_level = filt_best;
 }
-
