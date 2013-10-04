@@ -22,7 +22,6 @@
 #include "vp9/common/vp9_seg_common.h"
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_entropy.h"
-#include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_treecoder.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -1527,7 +1526,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   return header_bc.pos;
 }
 
-void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, unsigned long *size) {
+void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   uint8_t *data = dest;
   size_t first_part_size;
   struct vp9_write_bit_buffer wb = {data, 0};
