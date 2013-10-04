@@ -30,7 +30,7 @@ unsigned int vp9_sad##m##x##n##_avg_c(const uint8_t *src_ptr, \
                                       int  ref_stride, \
                                       const uint8_t *second_pred, \
                                       unsigned int max_sad) { \
-  uint8_t comp_pred[m * n]; \
+  uint8_t comp_pred[m * n]; \  // NOLINT
   comp_avg_pred(comp_pred, second_pred, m, n, ref_ptr, ref_stride); \
   return sad_mx_n_c(src_ptr, src_stride, comp_pred, m, m, n); \
 }
