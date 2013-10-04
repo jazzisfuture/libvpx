@@ -185,7 +185,7 @@ extern "C"
                             int64_t end_time_stamp);
 
   int vp9_get_compressed_data(VP9_PTR comp, unsigned int *frame_flags,
-                              unsigned long *size, unsigned char *dest,
+                              size_t *size, unsigned char *dest,
                               int64_t *time_stamp, int64_t *time_end,
                               int flush);
 
