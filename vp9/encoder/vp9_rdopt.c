@@ -169,31 +169,8 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
   cpi->mb.sadperbit4 = sad_per_bit4lut[qindex];
 }
 
-void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
+static void get_block_thresholds(VP9_COMP *cpi, int qindex) {
   int q, i, bsize;
-
-  vp9_clear_system_state();  // __asm emms;
-
-  // Further tests required to see if optimum is different
-  // for key frames, golden frames and arf frames.
-  // if (cpi->common.refresh_golden_frame ||
-  //     cpi->common.refresh_alt_ref_frame)
-  qindex = clamp(qindex, 0, MAXQ);
-
-  cpi->RDDIV = 100;
-  cpi->RDMULT = compute_rd_mult(qindex);
-  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
-    if (cpi->twopass.next_iiratio > 31)
-      cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 4;
-    else
-      cpi->RDMULT +=
-          (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
-  }
-  cpi->mb.errorperbit = cpi->RDMULT >> 6;
-  cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
-
-  vp9_set_speed_features(cpi);
-
   q = (int)pow(vp9_dc_quant(qindex, 0) >> 2, 1.25);
   q <<= 2;
   if (q < 8)
@@ -226,6 +203,34 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       }
     }
   }
+}
+
+void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
+  int i;
+
+  vp9_clear_system_state();  // __asm emms;
+
+  // Further tests required to see if optimum is different
+  // for key frames, golden frames and arf frames.
+  // if (cpi->common.refresh_golden_frame ||
+  //     cpi->common.refresh_alt_ref_frame)
+  qindex = clamp(qindex, 0, MAXQ);
+
+  cpi->RDDIV = 100;
+  cpi->RDMULT = compute_rd_mult(qindex);
+  if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
+    if (cpi->twopass.next_iiratio > 31)
+      cpi->RDMULT += (cpi->RDMULT * rd_iifactor[31]) >> 4;
+    else
+      cpi->RDMULT +=
+          (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+  }
+  cpi->mb.errorperbit = cpi->RDMULT >> 6;
+  cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
+
+  vp9_set_speed_features(cpi);
+
+  get_block_thresholds(cpi, qindex);
 
   fill_token_costs(cpi->mb.token_costs, cpi->common.fc.coef_probs);
 
