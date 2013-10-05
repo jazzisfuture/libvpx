@@ -1097,6 +1097,7 @@ void vp9_short_fdct16x16_sse2(int16_t *input, int16_t *output, int pitch) {
   const __m128i k__cospi_m26_p06 = pair_set_epi16(-cospi_26_64, cospi_6_64);
   const __m128i k__DCT_CONST_ROUNDING = _mm_set1_epi32(DCT_CONST_ROUNDING);
   const __m128i kOne = _mm_set1_epi16(1);
+
   // Do the two transform/transpose passes
   for (pass = 0; pass < 2; ++pass) {
     // We process eight columns (transposed rows in second pass) at a time.
