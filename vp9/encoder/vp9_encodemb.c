@@ -17,7 +17,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/common/vp9_systemdependent.h"
-#include "vp9_rtcd.h"
+#include "./vp9_rtcd.h"
 
 DECLARE_ALIGNED(16, extern const uint8_t,
                 vp9_pt_energy_class[MAX_ENTROPY_TOKENS]);
@@ -98,7 +98,7 @@ void vp9_subtract_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
 }
 
 
-#define RDTRUNC(RM,DM,R,D) ( (128+(R)*(RM)) & 0xFF )
+#define RDTRUNC(RM, DM, R, D) ((128 + (R) * (RM)) & 0xFF)
 typedef struct vp9_token_state vp9_token_state;
 
 struct vp9_token_state {
@@ -106,10 +106,9 @@ struct vp9_token_state {
   int           error;
   int           next;
   signed char   token;
-  short         qc;
+  int16_t       qc;
 };
 
-// TODO: experiments to find optimal multiple numbers
 #define Y1_RD_MULT 4
 #define UV_RD_MULT 2
 
@@ -289,11 +288,10 @@ static void optimize_b(MACROBLOCK *mb,
       best_index[i][1] = best;
       /* Finally, make this the new head of the trellis. */
       next = i;
-    }
-    /* There's no choice to make for a zero coefficient, so we don't
-     *  add a new trellis node, but we do need to update the costs.
-     */
-    else {
+    } else {
+      /* There's no choice to make for a zero coefficient, so we don't
+       *  add a new trellis node, but we do need to update the costs.
+       */
       band = get_coef_band(band_translate, i + 1);
       t0 = tokens[next][0].token;
       t1 = tokens[next][1].token;
