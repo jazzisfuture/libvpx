@@ -2791,7 +2791,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     int low = 400;
 
     // Use the lower of cpi->active_worst_quality and recent
-    // average Q as basis for GF/ARF Q limit unless last frame was
+    // average Q as basis for GF/ARF best Q limit unless last frame was
     // a key frame.
     if (cpi->frames_since_key > 1 &&
         cpi->avg_frame_qindex < cpi->active_worst_quality) {
@@ -2883,6 +2883,16 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cpi->active_worst_quality < cpi->active_best_quality)
     cpi->active_worst_quality = cpi->active_best_quality;
 
+  // Limit Q range for the adaptive loop.
+  if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
+    top_index = (cpi->active_worst_quality + cpi->active_best_quality * 3) / 4;
+  } else {
+    top_index = cpi->active_worst_quality;
+  }
+  q_high = top_index;
+  bottom_index = cpi->active_best_quality;
+  q_low  = bottom_index;
+
   // Special case code to try and match quality with forced key frames
   if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
     q = cpi->active_best_quality;
@@ -2891,6 +2901,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   } else {
     // Determine initial Q to try
     q = vp9_regulate_q(cpi, cpi->this_frame_target);
+    if (q > top_index)
+      q = top_index;
   }
 
   vp9_compute_frame_size_bounds(cpi, &frame_under_shoot_limit,
@@ -2915,16 +2927,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     q_high = q;
 
     printf("frame:%d q:%d\n", cm->current_video_frame, q);
-  } else {
-#endif
-    // Limit Q range for the adaptive loop.
-    bottom_index = cpi->active_best_quality;
-    top_index    = cpi->active_worst_quality;
-    q_low  = cpi->active_best_quality;
-    q_high = cpi->active_worst_quality;
-#if CONFIG_MULTIPLE_ARF
   }
 #endif
+
   loop_count = 0;
   vp9_zero(cpi->rd_tx_select_threshes);
 
@@ -3016,10 +3021,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       frame_over_shoot_limit = 1;
     active_worst_qchanged = 0;
 
-    // Special case handling for forced key frames
     if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
       loop = 0;
     } else {
+      // Special case handling for forced key frames
       if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
         int last_q = q;
         int kf_err = vp9_calc_ss_err(cpi->Source,
@@ -3324,7 +3329,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // in this frame.
   // update_base_skip_probs(cpi);
 
-#if 0  // CONFIG_INTERNAL_STATS
+#if 1  // CONFIG_INTERNAL_STATS
   {
     FILE *f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
     int recon_err;
