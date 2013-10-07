@@ -1,0 +1,151 @@
+#!/bin/sh
+# From Gerrit Code Review 2.1.2.4-43-g3c55dde
+#
+# Part of Gerrit Code Review (http://code.google.com/p/gerrit/)
+#
+# Copyright (C) 2009 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+CHANGE_ID_AFTER="Bug|Issue"
+MSG="$1"
+
+# Check for, and add if missing, a unique Change-Id
+#
+add_ChangeId() {
+	clean_message=$(sed -e '
+		/^diff --git a\/.*/{
+			s///
+			q
+		}
+		/^Signed-off-by:/d
+		/^#/d
+	' "$MSG" | git stripspace)
+	if test -z "$clean_message"
+	then
+		return
+	fi
+
+	if grep -i '^Change-Id:' "$MSG" >/dev/null
+	then
+		return
+	fi
+
+	id=$(_gen_ChangeId)
+	perl -e '
+		$MSG = shift;
+		$id = shift;
+		$CHANGE_ID_AFTER = shift;
+
+		undef $/;
+		open(I, $MSG); $_ = <I>; close I;
+		s|^diff --git a/.*||ms;
+		s|^#.*$||mg;
+		exit unless $_;
+
+		@message = split /\n/;
+		$haveFooter = 0;
+		$startFooter = @message;
+		for($line = @message - 1; $line >= 0; $line--) {
+			$_ = $message[$line];
+
+			if (/^[a-zA-Z0-9-]+:/ && !m,^[a-z0-9-]+://,) {
+				$haveFooter++;
+				next;
+			}
+			next if /^[ []/;
+			$startFooter = $line if ($haveFooter && /^\r?$/);
+			last;
+		}
+
+		@footer = @message[$startFooter+1..@message];
+		@message = @message[0..$startFooter];
+		push(@footer, "") unless @footer;
+
+		for ($line = 0; $line < @footer; $line++) {
+			$_ = $footer[$line];
+			next if /^($CHANGE_ID_AFTER):/i;
+			last;
+		}
+		splice(@footer, $line, 0, "Change-Id: I$id");
+
+		$_ = join("\n", @message, @footer);
+		open(O, ">$MSG"); print O; close O;
+	' "$MSG" "$id" "$CHANGE_ID_AFTER"
+}
+_gen_ChangeIdInput() {
+	echo "tree $(git write-tree)"
+	if parent=$(git rev-parse HEAD^0 2>/dev/null)
+	then
+		echo "parent $parent"
+	fi
+	echo "author $(git var GIT_AUTHOR_IDENT)"
+	echo "committer $(git var GIT_COMMITTER_IDENT)"
+	echo
+	printf '%s' "$clean_message"
+}
+_gen_ChangeId() {
+	_gen_ChangeIdInput |
+	git hash-object -t commit --stdin
+}
+
+
+add_ChangeId
+#!/bin/sh
+#
+# An example hook script to verify what is about to be committed.
+# Called by git-commit with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message if
+# it wants to stop the commit.
+#
+# To enable this hook, rename this file to "pre-commit".
+
+# If you want to allow non-ascii filenames set this variable to true.
+allownonascii=$(git config hooks.allownonascii)
+
+# Cross platform projects tend to avoid non-ascii filenames; prevent
+# them from being added to the repository. We exploit the fact that the
+# printable range starts at the space character and ends with tilde.
+if [ "$allownonascii" != "true" ] &&
+	# Note that the use of brackets around a tr range is ok here, (it's
+	# even required, for portability to Solaris 10's /usr/bin/tr), since
+	# the square bracket bytes happen to fall in the designated range.
+	test "$(git diff --cached --name-only --diff-filter=A -z |
+	  LC_ALL=C tr -d '[ -~]\0')"
+then
+	echo "Error: Attempt to add a non-ascii file name."
+	echo
+	echo "This can cause problems if you want to work"
+	echo "with people on other platforms."
+	echo
+	echo "To be portable it is advisable to rename the file ..."
+	echo
+	echo "If you know what you are doing you can disable this"
+	echo "check using:"
+	echo
+	echo "  git config hooks.allownonascii true"
+	echo
+	exit 1
+fi
+
+if git-rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+fi
+
+exec git diff-index --check --cached $against --
+
