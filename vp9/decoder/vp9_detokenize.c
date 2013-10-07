@@ -210,7 +210,9 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
 }
 
 struct decode_block_args {
-  VP9D_COMP *pbi;
+  VP9_COMMON *cm;
+  MACROBLOCKD *xd;
+  struct segmentation *seg;
   vp9_reader *r;
   int *eobtotal;
 };
@@ -220,8 +222,8 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   const struct decode_block_args* const arg = argv;
 
   // find the maximum eob for this transform size, adjusted by segment
-  MACROBLOCKD *xd = &arg->pbi->mb;
-  struct segmentation *seg = &arg->pbi->common.seg;
+  MACROBLOCKD *xd = arg->xd;
+  const struct segmentation *seg = arg->seg;
   struct macroblockd_plane* pd = &xd->plane[plane];
   const int segment_id = xd->this_mi->mbmi.segment_id;
   const int seg_eob = get_tx_eob(seg, segment_id, tx_size);
@@ -229,7 +231,7 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
 
-  eob = decode_coefs(&arg->pbi->common, xd, arg->r, block,
+  eob = decode_coefs(arg->cm, xd, arg->r, block,
                      pd->plane_type, seg_eob, BLOCK_OFFSET(pd->qcoeff, block),
                      tx_size, pd->dequant,
                      pd->above_context + aoff, pd->left_context + loff);
@@ -240,9 +242,11 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   *arg->eobtotal += eob;
 }
 
-int vp9_decode_tokens(VP9D_COMP *pbi, vp9_reader *r, BLOCK_SIZE bsize) {
+int vp9_decode_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
+                      struct segmentation *seg,
+                      vp9_reader *r, BLOCK_SIZE bsize) {
   int eobtotal = 0;
-  struct decode_block_args args = {pbi, r, &eobtotal};
-  foreach_transformed_block(&pbi->mb, bsize, decode_block, &args);
+  struct decode_block_args args = {cm, xd, seg, r, &eobtotal};
+  foreach_transformed_block(xd, bsize, decode_block, &args);
   return eobtotal;
 }
