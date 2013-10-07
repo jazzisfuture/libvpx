@@ -542,6 +542,7 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
         int_mv block[2];
         const int j = idy * 2 + idx;
         b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+        mi->bmi[j].as_mode = b_mode;
 
         if (b_mode == NEARESTMV || b_mode == NEARMV) {
           vp9_append_sub8x8_mvs_for_idx(cm, xd, &nearest[0],

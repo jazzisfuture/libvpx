@@ -316,13 +316,13 @@ static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
   const MODE_INFO *const mi = xd->this_mi;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
-  if (plane_type != PLANE_TYPE_Y_WITH_DC ||
-      xd->lossless ||
-      is_inter_block(mbmi))
+  if (xd->lossless)
     return DCT_DCT;
 
-  return mode2txfm_map[mbmi->sb_type < BLOCK_8X8 ?
-                       mi->bmi[ib].as_mode : mbmi->mode];
+  return plane_type == PLANE_TYPE_Y_WITH_DC ?
+             (mode2txfm_map[mbmi->sb_type < BLOCK_8X8 ? mi->bmi[ib].as_mode
+                                                      : mbmi->mode])
+                                            : DCT_DCT;
 }
 
 static INLINE TX_TYPE get_tx_type_8x8(PLANE_TYPE plane_type,
