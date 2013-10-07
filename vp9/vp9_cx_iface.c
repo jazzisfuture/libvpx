@@ -314,10 +314,10 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   oxcf->encode_breakout        =  vp8_cfg.static_thresh;
   oxcf->play_alternate         =  vp8_cfg.enable_auto_alt_ref;
   oxcf->noise_sensitivity      =  vp8_cfg.noise_sensitivity;
-  oxcf->Sharpness             =  vp8_cfg.Sharpness;
+  oxcf->Sharpness              =  vp8_cfg.Sharpness;
 
-  oxcf->two_pass_stats_in        =  cfg.rc_twopass_stats_in;
-  oxcf->output_pkt_list         =  vp8_cfg.pkt_list;
+  oxcf->two_pass_stats_in      =  cfg.rc_twopass_stats_in;
+  oxcf->output_pkt_list        =  vp8_cfg.pkt_list;
 
   oxcf->arnr_max_frames = vp8_cfg.arnr_max_frames;
   oxcf->arnr_strength =  vp8_cfg.arnr_strength;
