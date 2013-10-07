@@ -668,10 +668,9 @@ void vp9_prepare_read_mode_info(VP9D_COMP* pbi, vp9_reader *r) {
   }
 }
 
-void vp9_read_mode_info(VP9D_COMP* pbi, int mi_row, int mi_col, vp9_reader *r) {
-  VP9_COMMON *const cm = &pbi->common;
-  MACROBLOCKD *const xd = &pbi->mb;
-  MODE_INFO *mi = xd->this_mi;
+void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
+                        int mi_row, int mi_col, vp9_reader *r) {
+  MODE_INFO *const mi = xd->this_mi;
   const BLOCK_SIZE bsize = mi->mbmi.sb_type;
   const int bw = 1 << mi_width_log2(bsize);
   const int bh = 1 << mi_height_log2(bsize);
