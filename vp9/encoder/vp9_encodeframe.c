@@ -1991,6 +1991,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       intra_count += cpi->intra_inter_count[j][0];
       inter_count += cpi->intra_inter_count[j][1];
     }
+
     cpi->sf.skip_encode_frame = ((intra_count << 2) < inter_count);
     cpi->sf.skip_encode_frame &= (cm->frame_type != KEY_FRAME);
     cpi->sf.skip_encode_frame &= cm->show_frame;
