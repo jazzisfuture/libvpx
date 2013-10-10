@@ -443,8 +443,8 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
       // Skip all MBs if high Q (0,0 mv and skip coeffs)
       if (high_q) {
-          vp9_enable_segfeature(seg, 0, SEG_LVL_SKIP);
-          vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
+        vp9_enable_segfeature(seg, 0, SEG_LVL_SKIP);
+        vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
       }
       // Enable data update
       seg->update_data = 1;
@@ -2873,6 +2873,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Set various flags etc to special state if it is a key frame.
   if (cm->frame_type == KEY_FRAME) {
     // Reset the loop filter deltas and segmentation map.
+    vp9_setup_key_frame(cpi);
     setup_features(cm);
 
     // If segmentation is enabled force a map update for key frames.
