@@ -151,7 +151,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
 
   /*cpi->sf.search_method == HEX*/
   // Ignore mv costing by sending NULL pointer instead of cost arrays
-  ref_mv = &x->e_mbd.mi_8x8[0]->bmi[0].as_mv[0];
+  ref_mv = &x->e_mbd.mode_info_context->bmi[0].as_mv[0];
   bestsme = vp9_hex_search(x, &best_ref_mv1_full.as_mv,
                            step_param, sadpb, 1,
                            &cpi->fn_ptr[BLOCK_16X16],
@@ -243,8 +243,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         if (cpi->frames[frame] == NULL)
           continue;
 
-        mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.row = 0;
-        mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.col = 0;
+        mbd->mode_info_context->bmi[0].as_mv[0].as_mv.row = 0;
+        mbd->mode_info_context->bmi[0].as_mv[0].as_mv.col = 0;
 
         if (frame == alt_ref_index) {
           filter_weight = 2;
@@ -277,8 +277,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
            cpi->frames[frame]->u_buffer + mb_uv_offset,
            cpi->frames[frame]->v_buffer + mb_uv_offset,
            cpi->frames[frame]->y_stride,
-           mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.row,
-           mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.col,
+           mbd->mode_info_context->bmi[0].as_mv[0].as_mv.row,
+           mbd->mode_info_context->bmi[0].as_mv[0].as_mv.col,
            predictor);
 
           // Apply the filter (YUV)
