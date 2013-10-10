@@ -45,8 +45,7 @@ static void encode_mv_component(vp9_writer* w, int comp,
                 &vp9_mv_class0_encodings[d]);
   } else {
     int i;
-    const int n = mv_class + CLASS0_BITS - 1;  // number of bits
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < mv_class; ++i)
       vp9_write(w, (d >> i) & 1, mvcomp->bits[i]);
   }
 

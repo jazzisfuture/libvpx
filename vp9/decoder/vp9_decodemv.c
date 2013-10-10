@@ -226,10 +226,8 @@ static int read_mv_component(vp9_reader *r,
     d = treed_read(r, vp9_mv_class0_tree, mvcomp->class0);
   } else {
     int i;
-    const int n = mv_class + CLASS0_BITS - 1;  // number of bits
-
     d = 0;
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < mv_class; ++i)
       d |= vp9_read(r, mvcomp->bits[i]) << i;
   }
 

@@ -167,8 +167,7 @@ static void inc_mv_component(int v, nmv_component_counts *comp_counts,
     comp_counts->class0_hp[e] += usehp * incr;
   } else {
     int i;
-    int b = c + CLASS0_BITS - 1;  // number of bits
-    for (i = 0; i < b; ++i)
+    for (i = 0; i < c; ++i)
       comp_counts->bits[i][((d >> i) & 1)] += incr;
     comp_counts->fp[f] += incr;
     comp_counts->hp[e] += usehp * incr;
