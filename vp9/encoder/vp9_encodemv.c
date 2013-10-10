@@ -325,7 +325,7 @@ static void inc_mvs(int_mv mv[2], int_mv ref[2], int is_compound,
 }
 
 void vp9_update_mv_count(VP9_COMP *cpi, MACROBLOCK *x, int_mv best_ref_mv[2]) {
-  MODE_INFO *mi = x->e_mbd.mi_8x8[0];
+  MODE_INFO *mi = x->e_mbd.mode_info_context;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const int is_compound = has_second_ref(mbmi);
 

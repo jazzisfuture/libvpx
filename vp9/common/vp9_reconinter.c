@@ -23,12 +23,11 @@
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATIONFILTERTYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
-  if (xd->mi_8x8 && xd->this_mi) {
-    MB_MODE_INFO *const mbmi = &xd->this_mi->mbmi;
+  if (xd->mode_info_context) {
+    MB_MODE_INFO *mbmi = &xd->mode_info_context->mbmi;
 
-    set_scale_factors(xd, mbmi->ref_frame[0] - LAST_FRAME,
-                          mbmi->ref_frame[1] - LAST_FRAME,
-                          cm->active_ref_scale);
+    set_scale_factors(xd, mbmi->ref_frame[0] - 1, mbmi->ref_frame[1] - 1,
+                      cm->active_ref_scale);
   } else {
     set_scale_factors(xd, -1, -1, cm->active_ref_scale);
   }
@@ -120,7 +119,7 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
   const int bh = plane_block_height(bsize, pd);
   const int x = 4 * (block & ((1 << bwl) - 1));
   const int y = 4 * (block >> bwl);
-  const MODE_INFO *mi = xd->this_mi;
+  const MODE_INFO *const mi = xd->mode_info_context;
   const int is_compound = has_second_ref(&mi->mbmi);
   int ref;
 
@@ -177,7 +176,7 @@ static INLINE void foreach_predicted_block_in_plane(
   const int bwl = b_width_log2(bsize) - xd->plane[plane].subsampling_x;
   const int bhl = b_height_log2(bsize) - xd->plane[plane].subsampling_y;
 
-  if (xd->this_mi->mbmi.sb_type < BLOCK_8X8) {
+  if (xd->mode_info_context->mbmi.sb_type < BLOCK_8X8) {
     int i = 0, x, y;
     assert(bsize == BLOCK_8X8);
     for (y = 0; y < 1 << bhl; ++y)
