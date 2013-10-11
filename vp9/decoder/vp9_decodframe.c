@@ -174,6 +174,7 @@ static int decode_tokens(VP9D_COMP *pbi, BLOCK_SIZE bsize, vp9_reader *r) {
 }
 
 static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE bsize,
+                        int tile_col,
                         int mi_row, int mi_col) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
@@ -187,9 +188,9 @@ static void set_offsets(VP9D_COMP *pbi, BLOCK_SIZE bsize,
   xd->prev_mi_8x8 = cm->prev_mi_grid_visible + offset;
 
   // we are using the mode info context stream here
-  xd->mi_8x8[0] = xd->mic_stream_ptr;
+  xd->mi_8x8[0] = pbi->mi_streams[tile_col];
   xd->mi_8x8[0]->mbmi.sb_type = bsize;
-  xd->mic_stream_ptr++;
+  pbi->mi_streams[tile_col]++;
 
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
@@ -221,7 +222,8 @@ static void set_ref(VP9D_COMP *pbi, int i, int mi_row, int mi_col) {
   xd->corrupted |= cfg->corrupted;
 }
 
-static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+static void decode_modes_b(VP9D_COMP *pbi, int tile_col,
+                           int mi_row, int mi_col,
                            vp9_reader *r, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &pbi->mb;
   const int less8x8 = bsize < BLOCK_8X8;
@@ -232,7 +234,7 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
     if (xd->ab_index > 0)
       return;
 
-  set_offsets(pbi, bsize, mi_row, mi_col);
+  set_offsets(pbi, bsize, tile_col, mi_row, mi_col);
   vp9_read_mode_info(pbi, mi_row, mi_col, r);
 
   if (less8x8)
@@ -269,7 +271,8 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
   xd->corrupted |= vp9_reader_has_error(r);
 }
 
-static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
+static void decode_modes_sb(VP9D_COMP *pbi, int tile_col,
+                            int mi_row, int mi_col,
                             vp9_reader* r, BLOCK_SIZE bsize) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
@@ -307,26 +310,27 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
 
   switch (partition) {
     case PARTITION_NONE:
-      decode_modes_b(pbi, mi_row, mi_col, r, subsize);
+      decode_modes_b(pbi, tile_col, mi_row, mi_col, r, subsize);
       break;
     case PARTITION_HORZ:
-      decode_modes_b(pbi, mi_row, mi_col, r, subsize);
+      decode_modes_b(pbi, tile_col, mi_row, mi_col, r, subsize);
       *get_sb_index(xd, subsize) = 1;
       if (mi_row + hbs < cm->mi_rows)
-        decode_modes_b(pbi, mi_row + hbs, mi_col, r, subsize);
+        decode_modes_b(pbi, tile_col, mi_row + hbs, mi_col, r, subsize);
       break;
     case PARTITION_VERT:
-      decode_modes_b(pbi, mi_row, mi_col, r, subsize);
+      decode_modes_b(pbi, tile_col, mi_row, mi_col, r, subsize);
       *get_sb_index(xd, subsize) = 1;
       if (mi_col + hbs < cm->mi_cols)
-        decode_modes_b(pbi, mi_row, mi_col + hbs, r, subsize);
+        decode_modes_b(pbi, tile_col, mi_row, mi_col + hbs, r, subsize);
       break;
     case PARTITION_SPLIT: {
       int n;
       for (n = 0; n < 4; n++) {
         const int j = n >> 1, i = n & 1;
         *get_sb_index(xd, subsize) = n;
-        decode_modes_sb(pbi, mi_row + j * hbs, mi_col + i * hbs, r, subsize);
+        decode_modes_sb(pbi, tile_col, mi_row + j * hbs, mi_col + i * hbs,
+                        r, subsize);
       }
     } break;
     default:
@@ -583,7 +587,7 @@ static void setup_frame_size_with_refs(VP9D_COMP *pbi,
   setup_display_size(cm, rb);
 }
 
-static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
+static void decode_tile(VP9D_COMP *pbi, vp9_reader *r, int tile_col) {
   const int num_threads = pbi->oxcf.max_threads;
   VP9_COMMON *const cm = &pbi->common;
   int mi_row, mi_col;
@@ -608,7 +612,7 @@ static void decode_tile(VP9D_COMP *pbi, vp9_reader *r) {
     vp9_zero(cm->left_seg_context);
     for (mi_col = cm->cur_tile_mi_col_start; mi_col < cm->cur_tile_mi_col_end;
          mi_col += MI_BLOCK_SIZE)
-      decode_modes_sb(pbi, mi_row, mi_col, r, BLOCK_64X64);
+      decode_modes_sb(pbi, tile_col, mi_row, mi_col, r, BLOCK_64X64);
 
     if (pbi->do_loopfilter_inline) {
       // delay the loopfilter by 1 macroblock row.
@@ -710,7 +714,7 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
         setup_token_decoder(pbi, data_ptr2[tile_row][tile_col],
                             data_end - data_ptr2[tile_row][tile_col],
                             &residual_bc);
-        decode_tile(pbi, &residual_bc);
+        decode_tile(pbi, &residual_bc, tile_col);
         if (tile_row == tile_rows - 1 && tile_col == tile_cols - 1)
           bc_bak = residual_bc;
       }
@@ -739,7 +743,7 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
         }
 
         setup_token_decoder(pbi, data, size, &residual_bc);
-        decode_tile(pbi, &residual_bc);
+        decode_tile(pbi, &residual_bc, tile_col);
         data += size;
       }
     }
@@ -953,6 +957,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const size_t first_partition_size = read_uncompressed_header(pbi, &rb);
   const int keyframe = cm->frame_type == KEY_FRAME;
   YV12_BUFFER_CONFIG *new_fb = &cm->yv12_fb[cm->new_fb_idx];
+  int tile_col, tile_cols = 1 << cm->log2_tile_cols;
 
   if (!first_partition_size) {
     // showing a frame directly
@@ -975,8 +980,13 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   setup_plane_dequants(cm, &pbi->mb, cm->base_qindex);
 
   xd->mi_8x8 = cm->mi_grid_visible;
-  xd->mic_stream_ptr = cm->mi;
   xd->mode_info_stride = cm->mode_info_stride;
+
+  pbi->mi_streams = vpx_realloc(pbi->mi_streams, tile_cols * sizeof(*pbi->mi_streams));
+  for (tile_col = 0; tile_col < tile_cols; tile_col++) {
+    vp9_get_tile_col_offsets(cm, tile_col);
+    pbi->mi_streams[tile_col] = &cm->mi[cm->mi_rows * cm->cur_tile_mi_col_start];
+  }
 
   cm->fc = cm->frame_contexts[cm->frame_context_idx];
 
