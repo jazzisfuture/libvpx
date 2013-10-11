@@ -268,43 +268,43 @@ specialize vp9_convolve8_avg_vert ssse3 neon dspr2
 # dct
 #
 prototype void vp9_idct4x4_1_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct4x4_1_add sse2 neon
+specialize vp9_idct4x4_1_add sse2 neon dspr2
 
 prototype void vp9_idct4x4_16_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct4x4_16_add sse2 neon
+specialize vp9_idct4x4_16_add sse2 neon dspr2
 
 prototype void vp9_idct8x8_1_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct8x8_1_add sse2 neon
+specialize vp9_idct8x8_1_add sse2 neon dspr2
 
 prototype void vp9_idct8x8_64_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct8x8_64_add sse2 neon
+specialize vp9_idct8x8_64_add sse2 neon dspr2
 
 prototype void vp9_idct8x8_10_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct8x8_10_add sse2 neon
+specialize vp9_idct8x8_10_add sse2 neon dspr2
 
 prototype void vp9_idct16x16_1_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct16x16_1_add sse2 neon
+specialize vp9_idct16x16_1_add sse2 neon dspr2
 
 prototype void vp9_idct16x16_256_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct16x16_256_add sse2 neon
+specialize vp9_idct16x16_256_add sse2 neon dspr2
 
 prototype void vp9_idct16x16_10_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct16x16_10_add sse2 neon
+specialize vp9_idct16x16_10_add sse2 neon dspr2
 
 prototype void vp9_idct32x32_1024_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct32x32_1024_add sse2 neon
+specialize vp9_idct32x32_1024_add sse2 neon dspr2
 
 prototype void vp9_idct32x32_1_add "int16_t *input, uint8_t *dest, int dest_stride"
-specialize vp9_idct32x32_1_add sse2
+specialize vp9_idct32x32_1_add sse2 dspr2
 
 prototype void vp9_short_iht4x4_add "int16_t *input, uint8_t *dest, int dest_stride, int tx_type"
-specialize vp9_short_iht4x4_add sse2 neon
+specialize vp9_short_iht4x4_add sse2 neon dspr2
 
 prototype void vp9_short_iht8x8_add "int16_t *input, uint8_t *dest, int dest_stride, int tx_type"
-specialize vp9_short_iht8x8_add sse2 neon
+specialize vp9_short_iht8x8_add sse2 neon dspr2
 
 prototype void vp9_short_iht16x16_add "int16_t *input, uint8_t *output, int pitch, int tx_type"
-specialize vp9_short_iht16x16_add sse2
+specialize vp9_short_iht16x16_add sse2 dspr2
 
 prototype void vp9_idct4_1d "int16_t *input, int16_t *output"
 specialize vp9_idct4_1d sse2
