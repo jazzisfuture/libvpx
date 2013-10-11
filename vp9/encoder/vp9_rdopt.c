@@ -162,7 +162,7 @@ void vp9_init_me_luts() {
 
 static int compute_rd_mult(int qindex) {
   const int q = vp9_dc_quant(qindex, 0);
-  return (11 * q * q) >> 2;
+  return (88 * q * q / 25);
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
@@ -172,7 +172,7 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
 
 static void set_block_thresholds(VP9_COMP *cpi, int qindex) {
   int q, i, bsize;
-  q = ((int)pow(vp9_dc_quant(qindex, 0) >> 2, RD_THRESH_POW)) << 2;
+  q = (int)(pow(vp9_dc_quant(qindex, 0) / 4.0, RD_THRESH_POW) * 5.12);
   if (q < 8)
     q = 8;
 
@@ -216,7 +216,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
   //     cpi->common.refresh_alt_ref_frame)
   qindex = clamp(qindex, 0, MAXQ);
 
-  cpi->RDDIV = 100;
+  cpi->RDDIV = RDDIV_BITS;  // in bits (to multiply D by 128)
   cpi->RDMULT = compute_rd_mult(qindex);
   if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
     if (cpi->twopass.next_iiratio > 31)
@@ -225,7 +225,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex) {
       cpi->RDMULT +=
           (cpi->RDMULT * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
   }
-  cpi->mb.errorperbit = cpi->RDMULT >> 6;
+  cpi->mb.errorperbit = cpi->RDMULT / 50;
   cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
 
   vp9_set_speed_features(cpi);
