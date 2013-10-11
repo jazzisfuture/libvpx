@@ -427,10 +427,12 @@ static void filter_intra_predictors(uint8_t *ypred_ptr, int y_stride, int bs,
   const int c3 = taps[mode][2];
 
   k = 0;
+  r = 0;
+  c = 0;
   mean = 0;
   while (k < bs) {
-    mean = mean + (int)yleft_col[r];
-    mean = mean + (int)yabove_row[c];
+    mean = mean + (int)yleft_col[r + k];
+    mean = mean + (int)yabove_row[c + k];
     k++;
   }
   mean = (mean + bs) / (2 * bs);
