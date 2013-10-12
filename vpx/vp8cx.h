@@ -195,13 +195,8 @@ enum vp8e_enc_control_id {
   VP9E_SET_TILE_ROWS,
   VP9E_SET_FRAME_PARALLEL_DECODING,
 
-  VP9E_SET_WIDTH              = 99,
-  VP9E_SET_HEIGHT,
-  VP9E_SET_LAYER,
   VP9E_SET_SVC,
-
-  VP9E_SET_MAX_Q,
-  VP9E_SET_MIN_Q
+  VP9E_SET_SVC_PARAMETERS
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -283,6 +278,23 @@ typedef enum {
   VP8_TUNE_SSIM
 } vp8e_tuning;
 
+/*!\brief  vp9 svc parameters
+ *
+ * This defines parameters for svc encoding.
+ *
+ */
+typedef struct vpx_svc_parameters {
+  unsigned int width;
+  unsigned int height;
+  int layer;
+  int flags;
+  int max_quantizer;
+  int min_quantizer;
+  int distance_from_i_frame;
+  int lst_fb_idx;
+  int gld_fb_idx;
+  int alt_fb_idx;
+} vpx_svc_parameters_t;
 
 /*!\brief VP8 encoder control function parameter type
  *
@@ -303,11 +315,8 @@ VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP,            vpx_roi_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP,          vpx_active_map_t *)
 VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_LAYER,              int *)
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC,                int)
-
-VPX_CTRL_USE_TYPE(VP9E_SET_WIDTH,              unsigned int *)
-VPX_CTRL_USE_TYPE(VP9E_SET_HEIGHT,             unsigned int *)
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_PARAMETERS,     vpx_svc_parameters_t *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED,            int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF,   unsigned int)
@@ -334,8 +343,6 @@ VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PARALLEL_DECODING, unsigned int)
 
-VPX_CTRL_USE_TYPE(VP9E_SET_MAX_Q,      unsigned int)
-VPX_CTRL_USE_TYPE(VP9E_SET_MIN_Q,      unsigned int)
 /*! @} - end defgroup vp8_encoder */
 #ifdef __cplusplus
 }  // extern "C"
