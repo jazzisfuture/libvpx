@@ -127,6 +127,7 @@ struct macroblock {
   int mv_row_max;
 
   unsigned char zcoeff_blk[TX_SIZES][256];
+  unsigned char best_zcoeff_blk[256];
   int skip;
 
   int encode_breakout;
