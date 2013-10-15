@@ -1017,6 +1017,9 @@ int main_loop(int argc, const char **argv_) {
 
         vpx_usec_timer_mark(&timer);
         dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
+      } else {
+        fprintf(stderr, "Failed to parse input file\n");
+          goto fail;
       }
     }
 
