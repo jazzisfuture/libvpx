@@ -280,37 +280,6 @@ static void iadst4_1d(const int16_t *input, int16_t *output) {
   output[3] = dct_const_round_shift(s3);
 }
 
-void vp9_iht4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride,
-                         int tx_type) {
-  const transform_2d IHT_4[] = {
-    { idct4_1d, idct4_1d  },  // DCT_DCT  = 0
-    { iadst4_1d, idct4_1d  },   // ADST_DCT = 1
-    { idct4_1d, iadst4_1d },    // DCT_ADST = 2
-    { iadst4_1d, iadst4_1d }      // ADST_ADST = 3
-  };
-
-  int i, j;
-  int16_t out[4 * 4];
-  int16_t *outptr = out;
-  int16_t temp_in[4], temp_out[4];
-
-  // inverse transform row vectors
-  for (i = 0; i < 4; ++i) {
-    IHT_4[tx_type].rows(input, outptr);
-    input  += 4;
-    outptr += 4;
-  }
-
-  // inverse transform column vectors
-  for (i = 0; i < 4; ++i) {
-    for (j = 0; j < 4; ++j)
-      temp_in[j] = out[j * 4 + i];
-    IHT_4[tx_type].cols(temp_in, temp_out);
-    for (j = 0; j < 4; ++j)
-      dest[j * stride + i] = clip_pixel(ROUND_POWER_OF_TWO(temp_out[j], 4)
-                                  + dest[j * stride + i]);
-  }
-}
 static void iadst8_1d(const int16_t *input, int16_t *output) {
   int s0, s1, s2, s3, s4, s5, s6, s7;
 
@@ -386,39 +355,6 @@ static void iadst8_1d(const int16_t *input, int16_t *output) {
   output[5] = -x7;
   output[6] =  x5;
   output[7] = -x1;
-}
-
-static const transform_2d IHT_8[] = {
-  { idct8_1d,  idct8_1d  },  // DCT_DCT  = 0
-  { iadst8_1d, idct8_1d  },  // ADST_DCT = 1
-  { idct8_1d,  iadst8_1d },  // DCT_ADST = 2
-  { iadst8_1d, iadst8_1d }   // ADST_ADST = 3
-};
-
-void vp9_iht8x8_64_add_c(const int16_t *input, uint8_t *dest, int stride,
-                         int tx_type) {
-  int i, j;
-  int16_t out[8 * 8];
-  int16_t *outptr = out;
-  int16_t temp_in[8], temp_out[8];
-  const transform_2d ht = IHT_8[tx_type];
-
-  // inverse transform row vectors
-  for (i = 0; i < 8; ++i) {
-    ht.rows(input, outptr);
-    input += 8;
-    outptr += 8;
-  }
-
-  // inverse transform column vectors
-  for (i = 0; i < 8; ++i) {
-    for (j = 0; j < 8; ++j)
-      temp_in[j] = out[j * 8 + i];
-    ht.cols(temp_in, temp_out);
-    for (j = 0; j < 8; ++j)
-      dest[j * stride + i] = clip_pixel(ROUND_POWER_OF_TWO(temp_out[j], 5)
-                                  + dest[j * stride + i]);
-  }
 }
 
 void vp9_idct8x8_10_add_c(const int16_t *input, uint8_t *dest, int stride) {
@@ -804,38 +740,6 @@ static void iadst16_1d(const int16_t *input, int16_t *output) {
   output[13] = -x13;
   output[14] =  x9;
   output[15] = -x1;
-}
-
-static const transform_2d IHT_16[] = {
-  { idct16_1d,  idct16_1d  },  // DCT_DCT  = 0
-  { iadst16_1d, idct16_1d  },  // ADST_DCT = 1
-  { idct16_1d,  iadst16_1d },  // DCT_ADST = 2
-  { iadst16_1d, iadst16_1d }   // ADST_ADST = 3
-};
-
-void vp9_iht16x16_256_add_c(const int16_t *input, uint8_t *dest, int stride,
-                            int tx_type) {
-  int i, j;
-  int16_t out[16 * 16];
-  int16_t *outptr = out;
-  int16_t temp_in[16], temp_out[16];
-  const transform_2d ht = IHT_16[tx_type];
-
-  // Rows
-  for (i = 0; i < 16; ++i) {
-    ht.rows(input, outptr);
-    input += 16;
-    outptr += 16;
-  }
-
-  // Columns
-  for (i = 0; i < 16; ++i) {
-    for (j = 0; j < 16; ++j)
-      temp_in[j] = out[j * 16 + i];
-    ht.cols(temp_in, temp_out);
-    for (j = 0; j < 16; ++j)
-      dest[j * stride + i] = clip_pixel(ROUND_POWER_OF_TWO(temp_out[j], 6)
-                                  + dest[j * stride + i]);  }
 }
 
 void vp9_idct16x16_10_add_c(const int16_t *input, uint8_t *dest, int stride) {
@@ -1356,6 +1260,41 @@ void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
 }
 
 // iht
+#define DEFINE_IHT(func, N, precision)                                        \
+  static const transform_2d IHT_##N[] = {                                     \
+    { idct##N##_1d,  idct##N##_1d  }, /* DCT_DCT   */                         \
+    { iadst##N##_1d, idct##N##_1d  }, /* ADST_DCT  */                         \
+    { idct##N##_1d,  iadst##N##_1d }, /* DCT_ADST  */                         \
+    { iadst##N##_1d, iadst##N##_1d }  /* ADST_ADST */                         \
+  };                                                                          \
+                                                                              \
+  void func(const int16_t *in, uint8_t *out, int stride, int tx_type) {       \
+    int i, j;                                                                 \
+    int16_t rows[N * N];                                                      \
+    int16_t *rows_ptr = rows;                                                 \
+    int16_t col_in[N], col_out[N];                                            \
+    const transform_2d ht = IHT_##N[tx_type];                                 \
+                                                                              \
+    for (i = 0; i < N; ++i) {                                                 \
+      ht.rows(in, rows_ptr);                                                  \
+      rows_ptr += N;                                                          \
+      in += N;                                                                \
+    }                                                                         \
+                                                                              \
+    for (j = 0; j < N; ++j) {                                                 \
+      for (i = 0; i < N; ++i)                                                 \
+        col_in[i] = rows[i * N + j];                                          \
+      ht.cols(col_in, col_out);                                               \
+      for (i = 0; i < N; ++i)                                                 \
+        out[i * stride + j] = clip_pixel(out[i * stride + j] +                \
+                                  ROUND_POWER_OF_TWO(col_out[i], precision)); \
+    }                                                                         \
+  }
+
+DEFINE_IHT(vp9_iht4x4_16_add_c, 4, 4)
+DEFINE_IHT(vp9_iht8x8_64_add_c, 8, 5)
+DEFINE_IHT(vp9_iht16x16_256_add_c, 16, 6)
+
 void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
                     int stride, int eob) {
   if (tx_type == DCT_DCT)
