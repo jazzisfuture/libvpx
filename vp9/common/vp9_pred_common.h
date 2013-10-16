@@ -19,12 +19,14 @@ int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
 
 
 static INLINE int vp9_get_pred_context_seg_id(const MACROBLOCKD *xd) {
-  const MODE_INFO * const above_mi = xd->mi_8x8[-xd->mode_info_stride];
-  const MODE_INFO * const left_mi = xd->mi_8x8[-1];
-  const int above_sip = above_mi ? above_mi->mbmi.seg_id_predicted : 0;
-  const int left_sip = left_mi ? left_mi->mbmi.seg_id_predicted : 0;
+  const MODE_INFO *const above_mi = xd->up_available ?
+                                    xd->mi_8x8[-xd->mode_info_stride] : NULL;
+  const MODE_INFO *const left_mi = xd->left_available ? xd->mi_8x8[-1] : NULL;
+  const int above_sip = (above_mi != NULL) ?
+                        above_mi->mbmi.seg_id_predicted : 0;
+  const int left_sip = (left_mi != NULL) ? left_mi->mbmi.seg_id_predicted : 0;
 
-  return above_sip + (xd->left_available ? left_sip : 0);
+  return above_sip + left_sip;
 }
 
 static INLINE vp9_prob vp9_get_pred_prob_seg_id(struct segmentation *seg,
@@ -35,12 +37,14 @@ static INLINE vp9_prob vp9_get_pred_prob_seg_id(struct segmentation *seg,
 void vp9_set_pred_flag_seg_id(MACROBLOCKD *xd, uint8_t pred_flag);
 
 static INLINE int vp9_get_pred_context_mbskip(const MACROBLOCKD *xd) {
-  const MODE_INFO * const above_mi = xd->mi_8x8[-xd->mode_info_stride];
-  const MODE_INFO * const left_mi = xd->mi_8x8[-1];
-  const int above_skip_coeff = above_mi ? above_mi->mbmi.skip_coeff : 0;
-  const int left_skip_coeff = left_mi ? left_mi->mbmi.skip_coeff : 0;
+  const MODE_INFO *const above_mi = xd->up_available ?
+                                    xd->mi_8x8[-xd->mode_info_stride] : NULL;
+  const MODE_INFO *const left_mi = xd->left_available ? xd->mi_8x8[-1] : NULL;
+  const int above_skip_coeff = (above_mi != NULL) ?
+                               above_mi->mbmi.skip_coeff : 0;
+  const int left_skip_coeff = (left_mi != NULL) ? left_mi->mbmi.skip_coeff : 0;
 
-  return above_skip_coeff + (xd->left_available ? left_skip_coeff : 0);
+  return above_skip_coeff + left_skip_coeff;
 }
 
 static INLINE vp9_prob vp9_get_pred_prob_mbskip(const VP9_COMMON *cm,
