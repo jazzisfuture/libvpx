@@ -361,6 +361,51 @@ void vp9_activity_masking(VP9_COMP *cpi, MACROBLOCK *x) {
   adjust_act_zbin(cpi, x);
 }
 
+// Select a segment for the current SB64
+static void select_in_frame_q_segment(VP9_COMP *cpi,
+                                      int mi_row, int mi_col,
+                                      int output_enabled, int projected_rate) {
+  VP9_COMMON * const cm = &cpi->common;
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  int target_rate = cpi->sb64_target_rate << 8;   // convert to bits << 8
+
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = 1 << mi_width_log2(BLOCK_64X64);
+  const int bh = 1 << mi_height_log2(BLOCK_64X64);
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+  int x, y;
+
+  unsigned char segment;
+
+  if (!output_enabled) {
+    segment = 0;
+  } else {
+    // Rate depends on fraction of a SB64 in frame (xmis * ymis / bw * bh).
+    // It is converted to bits * 256 units
+    target_rate = (cpi->sb64_target_rate * xmis * ymis * 256) / (bw * bh);
+
+    /* if (projected_rate > (target_rate * 2)) {
+      segment = 2;
+    } else if (projected_rate < (target_rate * 1/2)) {
+      segment = 1; */
+    if (projected_rate < (target_rate / 4)) {
+      segment = 2;
+    } else if (projected_rate < (target_rate / 2)) {
+      segment = 1;
+    } else {
+      segment = 0;
+    }
+
+    cpi->tmp_ifaq_counter[segment]++;
+  }
+
+  // Fill in the entires in the segment map corresponding to this SB64
+  for (y = 0; y < ymis; y++)
+    for (x = 0; x < xmis; x++)
+      cpi->segmentation_map[mi_offset + y * cm->mi_cols + x] = segment;
+}
+
 static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
                          BLOCK_SIZE bsize, int output_enabled) {
   int i, x_idx, y;
@@ -381,17 +426,23 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   assert(mi->mbmi.ref_frame[1] < MAX_REF_FRAMES);
   assert(mi->mbmi.sb_type == bsize);
 
+  // For in frame adaptive Q copy over the chosen segment id into the
+  // mode innfo context for the chosen mode / partition.
+  if (cpi->sf.in_frame_q_adjustment && output_enabled)
+    mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
+
   *mi_addr = *mi;
 
-  // Restore the coding context of the MB to that that was in place
-  // when the mode was picked for it
+  // Restore the coding context that that was in place when the mode was picked
   for (y = 0; y < mi_height; y++)
     for (x_idx = 0; x_idx < mi_width; x_idx++)
       if ((xd->mb_to_right_edge >> (3 + MI_SIZE_LOG2)) + mi_width > x_idx
-          && (xd->mb_to_bottom_edge >> (3 + MI_SIZE_LOG2)) + mi_height > y)
+        && (xd->mb_to_bottom_edge >> (3 + MI_SIZE_LOG2)) + mi_height > y) {
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
+      }
 
-  if (cpi->sf.variance_adaptive_quantization) {
+  if (cpi->sf.variance_adaptive_quantization ||
+      cpi->sf.in_frame_q_adjustment) {
     vp9_mb_init_quantizer(cpi, x);
   }
 
@@ -1022,9 +1073,11 @@ static void rd_use_partition(VP9_COMP *cpi,
   }
   save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
 
-  if (bsize == BLOCK_16X16) {
-    set_offsets(cpi, tile, mi_row, mi_col, bsize);
-    x->mb_energy = vp9_block_energy(cpi, x, bsize);
+  if (cpi->sf.variance_adaptive_quantization) {
+    if (bsize == BLOCK_16X16) {
+      set_offsets(cpi, tile, mi_row, mi_col, bsize);
+      x->mb_energy = vp9_block_energy(cpi, x, bsize);
+    }
   }
 
   x->fast_ms = 0;
@@ -1237,8 +1290,19 @@ static void rd_use_partition(VP9_COMP *cpi,
   if ( bsize == BLOCK_64X64)
     assert(chosen_rate < INT_MAX && chosen_dist < INT_MAX);
 
-  if (do_recon)
-    encode_sb(cpi, tile, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
+  if (do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // Check the projected output rate for this SB against it's target
+    // and and if necessary apply a Q delta using segmentation to get
+    // closer to the target.
+    if (cpi->sf.in_frame_q_adjustment && cm->seg.update_map) {
+      select_in_frame_q_segment(cpi, mi_row, mi_col,
+                                output_enabled, chosen_rate);
+    }
+
+    encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
+  }
 
   *rate = chosen_rate;
   *dist = chosen_dist;
@@ -1492,9 +1556,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   }
   assert(mi_height_log2(bsize) == mi_width_log2(bsize));
 
-  if (bsize == BLOCK_16X16) {
-    set_offsets(cpi, tile, mi_row, mi_col, bsize);
-    x->mb_energy = vp9_block_energy(cpi, x, bsize);
+  if (cpi->sf.variance_adaptive_quantization) {
+    if (bsize == BLOCK_16X16) {
+      set_offsets(cpi, tile, mi_row, mi_col, bsize);
+      x->mb_energy = vp9_block_energy(cpi, x, bsize);
+    }
   }
 
   // Determine partition types in search according to the speed features.
@@ -1717,8 +1783,17 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   *rate = best_rate;
   *dist = best_dist;
 
-  if (best_rate < INT_MAX && best_dist < INT64_MAX && do_recon)
-    encode_sb(cpi, tile, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
+  if (best_rate < INT_MAX && best_dist < INT64_MAX && do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // Check the projected output rate for this SB against it's target
+    // and and if necessary apply a Q delta using segmentation to get
+    // closer to the target.
+    if (cpi->sf.in_frame_q_adjustment && cm->seg.update_map) {
+      select_in_frame_q_segment(cpi, mi_row, mi_col, output_enabled, best_rate);
+    }
+    encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
+  }
   if (bsize == BLOCK_64X64) {
     assert(tp_orig < *tp);
     assert(best_rate < INT_MAX);
