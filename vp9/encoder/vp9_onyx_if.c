@@ -757,7 +757,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->static_segmentation = 0;
 #endif
 
-  sf->variance_adaptive_quantization = 0;
+  sf->variance_adaptive_quantization = 1;
 
   switch (mode) {
     case 0:  // This is the best quality mode.
