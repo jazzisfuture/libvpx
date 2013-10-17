@@ -338,6 +338,56 @@ int vp9_compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   return target_index - start_index;
 }
 
+// This function performs any frame level / pre encode initialisation required
+// to support the in frame q adjustment mode.
+void init_in_frame_q_adj(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+
+  vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
+}
+
+// This function sets up a set of segments with delta Q values around
+// the baseline frame quantizer.
+static void setup_in_frame_q_adj(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+  struct segmentation *seg = &cm->seg;
+  double base_q;
+  double q_ratio;
+  int segment;
+  int qindex_delta;
+
+  // Make SURE use of floating point in this function is safe.
+  vp9_clear_system_state();
+
+  // Enable segmentation
+  vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
+  vp9_enable_segmentation((VP9_PTR)cpi);
+  vp9_clearall_segfeatures(seg);
+
+  // Select delta coding method
+  seg->abs_delta = SEGMENT_DELTADATA;
+
+  // Segment 0 "Q" feature is disabled so it defaults to the baseline Q
+  vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
+
+  // Seg 1-3 for lower Q boost,
+  // Segs 4-6 for higher Q to reduce bitrate.
+  // Last segment (segment 7) is reserved for future use.
+  base_q = vp9_convert_qindex_to_q(cm->base_qindex);
+  for (segment = 1; segment <= 3; segment++) {
+    q_ratio = 1.0 - (segment - 4) * 0.2;
+    qindex_delta = vp9_compute_qdelta(cpi, base_q, base_q * q_ratio);
+    vp9_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
+    vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
+  }
+  for (segment = 4; segment < 6; segment++) {
+    q_ratio = 1.0 + (segment - 3) * 0.2;
+    qindex_delta = vp9_compute_qdelta(cpi, base_q, base_q * q_ratio);
+    vp9_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
+    vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
+  }
+}
+
 static void configure_static_seg_features(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   struct segmentation *seg = &cm->seg;
@@ -750,14 +800,18 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
 
+  // These segment features are mutlually exclusive at the moment
+  // and only one can be on at a time.
 #if CONFIG_MULTIPLE_ARF
-  // Switch segmentation off.
+  // Switch segmentation off for multi arf.
   sf->static_segmentation = 0;
+  sf->variance_adaptive_quantization = 0;
+  sf->in_frame_q_adjustment = 0;
 #else
   sf->static_segmentation = 0;
-#endif
-
   sf->variance_adaptive_quantization = 0;
+  sf->in_frame_q_adjustment = 1;
+#endif
 
   switch (mode) {
     case 0:  // This is the best quality mode.
@@ -3047,8 +3101,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       }
     }
 
+    // Variance adaptive and in frame q adjustment experiments are mutually
+    // exclusive.
     if (cpi->sf.variance_adaptive_quantization) {
-        vp9_vaq_frame_setup(cpi);
+      vp9_vaq_frame_setup(cpi);
+    } else if (cpi->sf.in_frame_q_adjustment) {
+      setup_in_frame_q_adj(cpi);
     }
 
     // transform / motion compensation build reconstruction frame
@@ -3834,8 +3892,12 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
 
+  // Variance adaptive and in frame q adjustment experiments are mutually
+  // exclusive.
   if (cpi->sf.variance_adaptive_quantization) {
-      vp9_vaq_init();
+    vp9_vaq_init();
+  } else if (cpi->sf.in_frame_q_adjustment) {
+    init_in_frame_q_adj(cpi);
   }
 
   if (cpi->pass == 1) {
