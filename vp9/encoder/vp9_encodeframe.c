@@ -345,6 +345,10 @@ void vp9_activity_masking(VP9_COMP *cpi, MACROBLOCK *x) {
   adjust_act_zbin(cpi, x);
 }
 
+static void selecte_in_frame_q_segment(VP9_COMP *cpi, int projected_rate) {
+  // dummy stub. TODO(paulwilkins)
+}
+
 static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
                          BLOCK_SIZE bsize, int output_enabled) {
   int i, x_idx, y;
@@ -1250,8 +1254,18 @@ static void rd_use_partition(VP9_COMP *cpi, MODE_INFO **mi_8x8,
   if ( bsize == BLOCK_64X64)
     assert(chosen_rate < INT_MAX && chosen_dist < INT_MAX);
 
-  if (do_recon)
-    encode_sb(cpi, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
+  if (do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // If this is the final output, stage check the projected output rate
+    // for this SB against it's target and and if necessary apply a Q
+    // delta using segmentation to get closer to the target.
+    if (output_enabled && cpi->sf.in_frame_q_adjustment) {
+      selecte_in_frame_q_segment(cpi, chosen_rate);
+    }
+
+    encode_sb(cpi, tp, mi_row, mi_col, output_enabled, bsize);
+  }
 
   *rate = chosen_rate;
   *dist = chosen_dist;
@@ -1724,8 +1738,17 @@ static void rd_pick_partition(VP9_COMP *cpi, TOKENEXTRA **tp, int mi_row,
   *rate = best_rate;
   *dist = best_dist;
 
-  if (best_rate < INT_MAX && best_dist < INT64_MAX && do_recon)
-    encode_sb(cpi, tp, mi_row, mi_col, bsize == BLOCK_64X64, bsize);
+  if (best_rate < INT_MAX && best_dist < INT64_MAX && do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // If this is the final output, stage check the projected output rate
+    // for this SB against it's target and and if necessary apply a Q
+    // delta using segmentation to get closer to the target.
+    if (output_enabled && cpi->sf.in_frame_q_adjustment) {
+      selecte_in_frame_q_segment(cpi, best_rate);
+    }
+    encode_sb(cpi, tp, mi_row, mi_col, output_enabled, bsize);
+  }
   if (bsize == BLOCK_64X64) {
     assert(tp_orig < *tp);
     assert(best_rate < INT_MAX);
