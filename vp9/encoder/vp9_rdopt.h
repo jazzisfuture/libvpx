@@ -18,9 +18,7 @@
   (((128 + ((int64_t)R) * (RM)) >> 8) + (D << DM))
 #define QIDX_SKIP_THRESH     115
 
-int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex);
-
-void vp9_initialize_rd_consts(VP9_COMP *cpi);
+void vp9_initialize_rd_consts(VP9_COMP *cpi, int qindex);
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex);
 
