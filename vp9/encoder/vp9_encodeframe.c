@@ -602,7 +602,10 @@ static void pick_sb_modes(VP9_COMP *cpi, int mi_row, int mi_col,
   if (cpi->oxcf.tuning == VP8_TUNE_SSIM)
     vp9_activity_masking(cpi, x);
 
-  x->rdmult = round(x->rdmult * rdmult_ratio);
+  if (cpi->sf.variance_adaptive_quantization) {
+    vp9_clear_system_state();  // __asm emms;
+    x->rdmult = round(x->rdmult * rdmult_ratio);
+  }
 
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB

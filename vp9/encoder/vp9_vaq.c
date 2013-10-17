@@ -120,9 +120,14 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
+  double energy;
+  unsigned int var = block_variance(cpi, x, bs);
+
+  vp9_clear_system_state();  // __asm emms;
+
   // if (var <= 1000)
   //   return 0;
-  unsigned int var = block_variance(cpi, x, bs);
-  double energy = 0.9*(logf(var + 1) - 10.0);
+
+  energy = 0.9*(logf(var + 1) - 10.0);
   return clamp(round(energy), ENERGY_MIN, ENERGY_MAX);
 }
