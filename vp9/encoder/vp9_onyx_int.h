@@ -31,8 +31,8 @@
 
 // Experimental rate control switches
 #if CONFIG_ONESHOTQ
-#define ONE_SHOT_Q_ESTIMATE 0
-#define STRICT_ONE_SHOT_Q 0
+//#define ONE_SHOT_Q_ESTIMATE 0
+//#define STRICT_ONE_SHOT_Q 0
 #endif
 #define DISABLE_RC_LONG_TERM_MEM 0
 
@@ -254,6 +254,7 @@ typedef struct {
   int optimize_coefficients;
   int static_segmentation;
   int variance_adaptive_quantization;
+  int in_frame_q_adjustment;
   int comp_inter_joint_search_thresh;
   int adaptive_rd_thresh;
   int skip_encode_sb;
@@ -408,6 +409,8 @@ typedef struct VP9_COMP {
   // Rate targetting variables
   int this_frame_target;
   int projected_frame_size;
+  int sb64_target_rate;
+  int tmp_ifaq_counter[8];
   int last_q[2];                   // Separate values for Intra/Inter
   int last_boosted_qindex;         // Last boosted GF/KF/ARF q
 

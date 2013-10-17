@@ -121,6 +121,10 @@ static int inter_minq[QINDEX_RANGE];
 static int afq_low_motion_minq[QINDEX_RANGE];
 static int afq_high_motion_minq[QINDEX_RANGE];
 
+static const double in_frame_q_adj_ratio[MAX_SEGMENTS] =
+  // {1.0, 2.5, 1.67, 1.25, 0.833, 0.714, 0.625, 1.0 };
+  {1.0, 2.5, 1.67, 1.25, 0.9, 0.833, 0.75, 1.0};
+
 static INLINE void Scale2Ratio(int mode, int *hr, int *hs) {
   switch (mode) {
     case NORMAL:
@@ -336,6 +340,78 @@ int vp9_compute_qdelta(VP9_COMP *cpi, double qstart, double qtarget) {
   }
 
   return target_index - start_index;
+}
+
+// Computes a q delta (in "q index" terms) to get from a starting q value
+// to a target value
+// target q value
+int vp9_compute_qdelta_by_rate(VP9_COMP *cpi,
+                               double base_q_index, double rate_target_ratio) {
+  int i;
+  int base_bits_per_mb;
+  int target_bits_per_mb;
+  int target_index = cpi->worst_quality;
+
+  // Make SURE use of floating point in this function is safe.
+  vp9_clear_system_state();
+
+  // Look up the current projected bits per block for the base index
+  base_bits_per_mb = vp9_bits_per_mb(cpi->common.frame_type,
+                                     base_q_index, 1.0);
+
+  // Find the target bits per mb based on the base value and given ratio.
+  target_bits_per_mb = rate_target_ratio * base_bits_per_mb;
+
+  // Convert the q target to an index
+  for (i = cpi->best_quality; i < cpi->worst_quality; i++) {
+    target_index = i;
+    if (vp9_bits_per_mb(cpi->common.frame_type,
+                        i, 1.0) <= target_bits_per_mb )
+      break;
+  }
+
+  return target_index - base_q_index;
+}
+
+// This function sets up a set of segments with delta Q values around
+// the baseline frame quantizer.
+static void setup_in_frame_q_adj(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+  struct segmentation *seg = &cm->seg;
+  double base_q;
+  // double q_ratio;
+  int segment;
+  int qindex_delta;
+  int qindex_delta2;
+
+  vp9_zero(cpi->tmp_ifaq_counter);
+
+  // Make SURE use of floating point in this function is safe.
+  vp9_clear_system_state();
+
+  // Clear down the segment map
+  vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
+
+  // Enable segmentation
+  vp9_enable_segmentation((VP9_PTR)cpi);
+  vp9_clearall_segfeatures(seg);
+
+  // Select delta coding method
+  seg->abs_delta = SEGMENT_DELTADATA;
+
+  // Segment 0 "Q" feature is disabled so it defaults to the baseline Q
+  vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
+
+  // Seg 1-3 for lower Q boost,
+  // Segs 4-6 for higher Q to reduce bitrate.
+  // Last segment (segment 7) is reserved for future use.
+  for (segment = 1; segment < (MAX_SEGMENTS - 1); segment++) {
+    qindex_delta =
+      vp9_compute_qdelta_by_rate(cpi, cm->base_qindex,
+                                 in_frame_q_adj_ratio[segment]);
+    vp9_enable_segfeature(seg, segment, SEG_LVL_ALT_Q);
+    vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
+  }
 }
 
 static void configure_static_seg_features(VP9_COMP *cpi) {
@@ -750,14 +826,18 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
 
+  // These segment features are mutlually exclusive at the moment
+  // and only one can be on at a time.
 #if CONFIG_MULTIPLE_ARF
-  // Switch segmentation off.
+  // Switch segmentation off for multi arf.
   sf->static_segmentation = 0;
+  sf->variance_adaptive_quantization = 0;
+  sf->in_frame_q_adjustment = 0;
 #else
   sf->static_segmentation = 0;
-#endif
-
   sf->variance_adaptive_quantization = 0;
+  sf->in_frame_q_adjustment = 0;
+#endif
 
   switch (mode) {
     case 0:  // This is the best quality mode.
@@ -2571,7 +2651,7 @@ static void full_to_model_counts(
         }
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -3047,8 +3127,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       }
     }
 
+    // Variance adaptive and in frame q adjustment experiments are mutually
+    // exclusive.
     if (cpi->sf.variance_adaptive_quantization) {
-        vp9_vaq_frame_setup(cpi);
+      vp9_vaq_frame_setup(cpi);
+    } else if (cpi->sf.in_frame_q_adjustment) {
+      setup_in_frame_q_adj(cpi);
     }
 
     // transform / motion compensation build reconstruction frame
@@ -3388,7 +3472,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 #endif
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
   if (cpi->refresh_golden_frame == 1)
@@ -3834,8 +3918,10 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
   vp9_setup_interp_filters(&cpi->mb.e_mbd, DEFAULT_INTERP_FILTER, cm);
 
+  // Variance adaptive and in frame q adjustment experiments are mutually
+  // exclusive.
   if (cpi->sf.variance_adaptive_quantization) {
-      vp9_vaq_init();
+    vp9_vaq_init();
   }
 
   if (cpi->pass == 1) {

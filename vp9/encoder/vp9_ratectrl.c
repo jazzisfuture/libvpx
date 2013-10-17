@@ -164,6 +164,12 @@ static void calc_iframe_target_size(VP9_COMP *cpi) {
   }
 
   cpi->this_frame_target = target;
+
+  // Target rate per SB64 (including partial SB64s.
+  cpi->sb64_target_rate =
+    cpi->this_frame_target /
+    (((cpi->common.width >> 6) + ((cpi->common.width % 64) > 0)) *
+     ((cpi->common.height >> 6) + ((cpi->common.height % 64) > 0)));
 }
 
 
@@ -190,6 +196,12 @@ static void calc_pframe_target_size(VP9_COMP *cpi) {
     // Normal frames (gf,and inter)
     cpi->this_frame_target = cpi->per_frame_bandwidth;
   }
+
+  // Target rate per SB64 (including partial SB64s.
+  cpi->sb64_target_rate =
+    cpi->this_frame_target /
+    (((cpi->common.width >> 6) + ((cpi->common.width % 64) > 0)) *
+     ((cpi->common.height >> 6) + ((cpi->common.height % 64) > 0)));
 
   // Check that the total sum of adjustments is not above the maximum allowed.
   // That is, having allowed for the KF and GF penalties, we have not pushed
