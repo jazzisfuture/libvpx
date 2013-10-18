@@ -257,24 +257,6 @@ static INLINE void set_partition_seg_context(VP9_COMMON *cm, MACROBLOCKD *xd,
   xd->left_seg_context = cm->left_seg_context + (mi_row & MI_MASK);
 }
 
-// return the node index in the prob tree for binary coding
-static int check_bsize_coverage(int bs, int mi_rows, int mi_cols,
-                                int mi_row, int mi_col) {
-  const int r = (mi_row + bs < mi_rows);
-  const int c = (mi_col + bs < mi_cols);
-
-  if (r && c)
-    return 0;
-
-  if (c && !r)
-    return 1;  // only allow horizontal/split partition types
-
-  if (r && !c)
-    return 2;  // only allow vertical/split partition types
-
-  return -1;
-}
-
 static void set_mi_row_col(VP9_COMMON *cm, MACROBLOCKD *xd,
                        int mi_row, int bh,
                        int mi_col, int bw) {
