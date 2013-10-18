@@ -9,6 +9,7 @@
  */
 
 
+
 /*!\defgroup vp8 VP8
  * \ingroup codecs
  * VP8 is vpx's newest video compression algorithm that uses motion
@@ -30,6 +31,9 @@
  */
 #ifndef VP8_H
 #define VP8_H
+
+#include "./vpx_codec.h"
+#include "./vpx_image.h"
 
 #ifdef __cplusplus
 extern "C" {

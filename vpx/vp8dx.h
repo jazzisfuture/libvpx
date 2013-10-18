@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+
 /*!\name Algorithm interface for VP8
  *
  * This interface provides the capability to decode raw VP8 streams, as would
