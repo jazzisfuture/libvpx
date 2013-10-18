@@ -212,13 +212,13 @@ static void set_ref(VP9D_COMP *pbi, int i, int mi_row, int mi_col) {
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
   const int ref = mbmi->ref_frame[i] - LAST_FRAME;
   const YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[cm->active_ref_idx[ref]];
-  const struct scale_factors *sf = &cm->active_ref_scale[ref];
-  if (!vp9_is_valid_scale(sf))
+  const struct scale_factors_common *sfc = &cm->active_ref_scale_comm[ref];
+  if (!vp9_is_valid_scale(sfc))
     vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                        "Invalid scale factors");
 
-  xd->scale_factor[i] = *sf;
-  setup_pre_planes(xd, i, cfg, mi_row, mi_col, sf);
+  xd->scale_factor[i].sfc = sfc;
+  setup_pre_planes(xd, i, cfg, mi_row, mi_col, &xd->scale_factor[i]);
   xd->corrupted |= cfg->corrupted;
 }
 
