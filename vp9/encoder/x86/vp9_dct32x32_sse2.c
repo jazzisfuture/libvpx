@@ -95,13 +95,12 @@ void FDCT32x32_2D(int16_t *input,
       if (0 == pass) {
         int16_t *in  = &input[column_start];
         // step1[i] =  (in[ 0 * stride] + in[(32 -  1) * stride]) << 2;
-        // Note: the next four blocks could be in a loop. That would help the
-        //       instruction cache but is actually slower.
+        int16_t *ina =  in +  0 * str1;
+        int16_t *inb =  in + 31 * str1;
+        __m128i *step1a = &step1[ 0];
+        __m128i *step1b = &step1[31];
+        while (ina < inb)
         {
-          int16_t *ina =  in +  0 * str1;
-          int16_t *inb =  in + 31 * str1;
-          __m128i *step1a = &step1[ 0];
-          __m128i *step1b = &step1[31];
           const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
           const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
           const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
@@ -126,97 +125,12 @@ void FDCT32x32_2D(int16_t *input,
           step1b[-2] = _mm_slli_epi16(step1b[-2], 2);
           step1b[-1] = _mm_slli_epi16(step1b[-1], 2);
           step1b[-0] = _mm_slli_epi16(step1b[-0], 2);
+          ina += 4 * str1;
+          inb -= 4 * str1;
+          step1a += 4;
+          step1b -= 4;
         }
-        {
-          int16_t *ina =  in +  4 * str1;
-          int16_t *inb =  in + 27 * str1;
-          __m128i *step1a = &step1[ 4];
-          __m128i *step1b = &step1[27];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
-          step1a[ 0] = _mm_add_epi16(ina0, inb0);
-          step1a[ 1] = _mm_add_epi16(ina1, inb1);
-          step1a[ 2] = _mm_add_epi16(ina2, inb2);
-          step1a[ 3] = _mm_add_epi16(ina3, inb3);
-          step1b[-3] = _mm_sub_epi16(ina3, inb3);
-          step1b[-2] = _mm_sub_epi16(ina2, inb2);
-          step1b[-1] = _mm_sub_epi16(ina1, inb1);
-          step1b[-0] = _mm_sub_epi16(ina0, inb0);
-          step1a[ 0] = _mm_slli_epi16(step1a[ 0], 2);
-          step1a[ 1] = _mm_slli_epi16(step1a[ 1], 2);
-          step1a[ 2] = _mm_slli_epi16(step1a[ 2], 2);
-          step1a[ 3] = _mm_slli_epi16(step1a[ 3], 2);
-          step1b[-3] = _mm_slli_epi16(step1b[-3], 2);
-          step1b[-2] = _mm_slli_epi16(step1b[-2], 2);
-          step1b[-1] = _mm_slli_epi16(step1b[-1], 2);
-          step1b[-0] = _mm_slli_epi16(step1b[-0], 2);
-        }
-        {
-          int16_t *ina =  in +  8 * str1;
-          int16_t *inb =  in + 23 * str1;
-          __m128i *step1a = &step1[ 8];
-          __m128i *step1b = &step1[23];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
-          step1a[ 0] = _mm_add_epi16(ina0, inb0);
-          step1a[ 1] = _mm_add_epi16(ina1, inb1);
-          step1a[ 2] = _mm_add_epi16(ina2, inb2);
-          step1a[ 3] = _mm_add_epi16(ina3, inb3);
-          step1b[-3] = _mm_sub_epi16(ina3, inb3);
-          step1b[-2] = _mm_sub_epi16(ina2, inb2);
-          step1b[-1] = _mm_sub_epi16(ina1, inb1);
-          step1b[-0] = _mm_sub_epi16(ina0, inb0);
-          step1a[ 0] = _mm_slli_epi16(step1a[ 0], 2);
-          step1a[ 1] = _mm_slli_epi16(step1a[ 1], 2);
-          step1a[ 2] = _mm_slli_epi16(step1a[ 2], 2);
-          step1a[ 3] = _mm_slli_epi16(step1a[ 3], 2);
-          step1b[-3] = _mm_slli_epi16(step1b[-3], 2);
-          step1b[-2] = _mm_slli_epi16(step1b[-2], 2);
-          step1b[-1] = _mm_slli_epi16(step1b[-1], 2);
-          step1b[-0] = _mm_slli_epi16(step1b[-0], 2);
-        }
-        {
-          int16_t *ina =  in + 12 * str1;
-          int16_t *inb =  in + 19 * str1;
-          __m128i *step1a = &step1[12];
-          __m128i *step1b = &step1[19];
-          const __m128i ina0  = _mm_loadu_si128((const __m128i *)(ina));
-          const __m128i ina1  = _mm_loadu_si128((const __m128i *)(ina + str1));
-          const __m128i ina2  = _mm_loadu_si128((const __m128i *)(ina + str2));
-          const __m128i ina3  = _mm_loadu_si128((const __m128i *)(ina + str3));
-          const __m128i inb3  = _mm_loadu_si128((const __m128i *)(inb - str3));
-          const __m128i inb2  = _mm_loadu_si128((const __m128i *)(inb - str2));
-          const __m128i inb1  = _mm_loadu_si128((const __m128i *)(inb - str1));
-          const __m128i inb0  = _mm_loadu_si128((const __m128i *)(inb));
-          step1a[ 0] = _mm_add_epi16(ina0, inb0);
-          step1a[ 1] = _mm_add_epi16(ina1, inb1);
-          step1a[ 2] = _mm_add_epi16(ina2, inb2);
-          step1a[ 3] = _mm_add_epi16(ina3, inb3);
-          step1b[-3] = _mm_sub_epi16(ina3, inb3);
-          step1b[-2] = _mm_sub_epi16(ina2, inb2);
-          step1b[-1] = _mm_sub_epi16(ina1, inb1);
-          step1b[-0] = _mm_sub_epi16(ina0, inb0);
-          step1a[ 0] = _mm_slli_epi16(step1a[ 0], 2);
-          step1a[ 1] = _mm_slli_epi16(step1a[ 1], 2);
-          step1a[ 2] = _mm_slli_epi16(step1a[ 2], 2);
-          step1a[ 3] = _mm_slli_epi16(step1a[ 3], 2);
-          step1b[-3] = _mm_slli_epi16(step1b[-3], 2);
-          step1b[-2] = _mm_slli_epi16(step1b[-2], 2);
-          step1b[-1] = _mm_slli_epi16(step1b[-1], 2);
-          step1b[-0] = _mm_slli_epi16(step1b[-0], 2);
-        }
+
       } else {
         int16_t *in = &intermediate[column_start];
         // step1[i] =  in[ 0 * 32] + in[(32 -  1) * 32];
