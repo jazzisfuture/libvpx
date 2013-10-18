@@ -433,7 +433,8 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
-  vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+  if (xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8)
+    vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
 
   if (x->optimize)
     vp9_optimize_b(plane, block, plane_bsize, tx_size, x, args->ctx);

@@ -27,7 +27,12 @@ typedef struct {
 typedef struct {
   MODE_INFO mic;
   uint8_t *zcoeff_blk;
+  int16_t *coeff[MAX_MB_PLANE];
+  int16_t *qcoeff[MAX_MB_PLANE];
+  int16_t *dqcoeff[MAX_MB_PLANE];
+  uint16_t *eobs[MAX_MB_PLANE];
   int num_4x4_blk;
+  int num_pixel;
   int skip;
   int_mv best_ref_mv;
   int_mv second_best_ref_mv;
@@ -78,6 +83,11 @@ typedef unsigned int vp9_coeff_cost[BLOCK_TYPES][REF_TYPES][COEF_BANDS][2]
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
+
+  DECLARE_ALIGNED(16, int16_t, coeff[MAX_MB_PLANE][64 * 64]);
+  DECLARE_ALIGNED(16, int16_t, qcoeff[MAX_MB_PLANE][64 * 64]);
+  DECLARE_ALIGNED(16, int16_t, dqcoeff[MAX_MB_PLANE][64 * 64]);
+  DECLARE_ALIGNED(16, uint16_t, eobs[MAX_MB_PLANE][256]);
 
   MACROBLOCKD e_mbd;
   int skip_block;

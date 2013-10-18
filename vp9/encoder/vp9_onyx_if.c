@@ -1414,6 +1414,43 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
+static void mem_alloc_mode_context(VP9_COMMON *cm, int num_4x4_blk,
+                                   PICK_MODE_CONTEXT *ctx) {
+  int num_pixel = num_4x4_blk << 4;
+  int i;
+  ctx->num_4x4_blk = num_4x4_blk;
+  ctx->num_pixel   = num_pixel;
+  CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
+                  vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    CHECK_MEM_ERROR(cm, ctx->coeff[i],
+                    vpx_memalign(16, num_pixel * sizeof(int16_t)));
+    CHECK_MEM_ERROR(cm, ctx->eobs[i],
+                    vpx_memalign(16, num_4x4_blk * sizeof(uint16_t)));
+    CHECK_MEM_ERROR(cm, ctx->qcoeff[i],
+                    vpx_memalign(16, num_pixel * sizeof(int16_t)));
+    CHECK_MEM_ERROR(cm, ctx->dqcoeff[i],
+                    vpx_memalign(16, num_pixel * sizeof(int16_t)));
+  }
+}
+
+static void mem_free_mode_context(PICK_MODE_CONTEXT *ctx) {
+  int i;
+  vpx_free(ctx->zcoeff_blk);
+  ctx->zcoeff_blk = 0;
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    vpx_free(ctx->coeff[i]);
+    ctx->coeff[i] = 0;
+    vpx_free(ctx->eobs[i]);
+    ctx->eobs[i] = 0;
+    vpx_free(ctx->qcoeff[i]);
+    ctx->qcoeff[i] = 0;
+    vpx_free(ctx->dqcoeff[i]);
+    ctx->dqcoeff[i] = 0;
+  }
+}
+
 static void init_pick_mode_context(VP9_COMP *cpi) {
   int i;
   MACROBLOCK  *x  = &cpi->mb;
@@ -1429,9 +1466,7 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
         for (xd->mb_index = 0; xd->mb_index < 4; ++xd->mb_index) {
           for (xd->b_index = 0; xd->b_index < 16 / num_4x4_blk; ++xd->b_index) {
             PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-            ctx->num_4x4_blk = num_4x4_blk;
-            CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                            vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+            mem_alloc_mode_context(cm, num_4x4_blk, ctx);
           }
         }
       }
@@ -1440,23 +1475,17 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
         for (xd->mb_index = 0; xd->mb_index < 64 / num_4x4_blk;
                                ++xd->mb_index) {
           PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-          ctx->num_4x4_blk = num_4x4_blk;
-          CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                          vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+          mem_alloc_mode_context(cm, num_4x4_blk, ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (xd->sb_index = 0; xd->sb_index < 256 / num_4x4_blk; ++xd->sb_index) {
         PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-        ctx->num_4x4_blk = num_4x4_blk;
-        CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                        vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+        mem_alloc_mode_context(cm, num_4x4_blk, ctx);
       }
     } else {
       PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-      ctx->num_4x4_blk = num_4x4_blk;
-      CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                      vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+      mem_alloc_mode_context(cm, num_4x4_blk, ctx);
     }
   }
 }
@@ -1474,8 +1503,7 @@ static void free_pick_mode_context(MACROBLOCK *x) {
         for (xd->mb_index = 0; xd->mb_index < 4; ++xd->mb_index) {
           for (xd->b_index = 0; xd->b_index < 16 / num_4x4_blk; ++xd->b_index) {
             PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-            vpx_free(ctx->zcoeff_blk);
-            ctx->zcoeff_blk = 0;
+            mem_free_mode_context(ctx);
           }
         }
       }
@@ -1484,20 +1512,17 @@ static void free_pick_mode_context(MACROBLOCK *x) {
         for (xd->mb_index = 0; xd->mb_index < 64 / num_4x4_blk;
                                ++xd->mb_index) {
           PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-          vpx_free(ctx->zcoeff_blk);
-          ctx->zcoeff_blk = 0;
+          mem_free_mode_context(ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (xd->sb_index = 0; xd->sb_index < 256 / num_4x4_blk; ++xd->sb_index) {
         PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-        vpx_free(ctx->zcoeff_blk);
-        ctx->zcoeff_blk = 0;
+        mem_free_mode_context(ctx);
       }
     } else {
       PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-      vpx_free(ctx->zcoeff_blk);
-      ctx->zcoeff_blk = 0;
+      mem_free_mode_context(ctx);
     }
   }
 }
