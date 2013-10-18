@@ -599,10 +599,20 @@ static void block_yrd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   if (args->skip)
     return;
 
-  if (!is_inter_block(&xd->mi_8x8[0]->mbmi))
+  if (!is_inter_block(&xd->mi_8x8[0]->mbmi)) {
     vp9_encode_block_intra(plane, block, plane_bsize, tx_size, &encode_args);
-  else
+  } else {
     vp9_xform_quant(plane, block, plane_bsize, tx_size, &encode_args);
+    if (xd->mi_8x8[0]->mbmi.sb_type >= BLOCK_8X8) {
+      struct macroblockd_plane *const pd = &xd->plane[plane];
+      int num_pixel = 16 << (tx_size << 1);
+      x->eobs[plane][tx_size][block] = pd->eobs[block];
+      vpx_memcpy(BLOCK_OFFSET(x->qcoeff[plane][tx_size], block),
+                 BLOCK_OFFSET(pd->qcoeff, block), sizeof(int16_t) * num_pixel);
+      vpx_memcpy(BLOCK_OFFSET(x->dqcoeff[plane][tx_size], block),
+                 BLOCK_OFFSET(pd->dqcoeff, block), sizeof(int16_t) * num_pixel);
+    }
+  }
 
   dist_block(plane, block, tx_size, args);
   rate_block(plane, block, plane_bsize, tx_size, args);
@@ -3098,6 +3108,21 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   ctx->mic = *xd->mi_8x8[0];
 }
 
+static void store_plane(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
+  int i;
+  MACROBLOCKD *xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    const TX_SIZE tx_size = i ? get_uv_tx_size(mbmi) : mbmi->tx_size;
+    vpx_memcpy(ctx->eobs[i], x->eobs[i][tx_size],
+               sizeof(uint16_t) * ctx->num_4x4_blk);
+    vpx_memcpy(ctx->qcoeff[i], x->qcoeff[i][tx_size],
+               sizeof(int16_t) * ctx->num_pixel);
+    vpx_memcpy(ctx->dqcoeff[i], x->dqcoeff[i][tx_size],
+               sizeof(int16_t) * ctx->num_pixel);
+  }
+}
+
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   int mi_row, int mi_col,
                                   int *returnrate,
@@ -3588,6 +3613,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         best_skip2 = this_skip2;
         vpx_memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
                    sizeof(uint8_t) * ctx->num_4x4_blk);
+
+        if (is_inter_block(mbmi))
+          store_plane(x, ctx);
 
         // TODO(debargha): enhance this test with a better distortion prediction
         // based on qp, activity mask and history
