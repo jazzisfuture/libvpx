@@ -345,6 +345,16 @@ void vp9_activity_masking(VP9_COMP *cpi, MACROBLOCK *x) {
   adjust_act_zbin(cpi, x);
 }
 
+static void update_plane(MACROBLOCKD *xd, PICK_MODE_CONTEXT *ctx) {
+  int i;
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    struct macroblockd_plane *const pd = &xd->plane[i];
+    vpx_memcpy(pd->eobs, ctx->eobs[i], sizeof(uint16_t) * ctx->num_4x4_blk);
+    vpx_memcpy(pd->qcoeff, ctx->qcoeff[i], sizeof(int16_t) * ctx->num_pixel);
+    vpx_memcpy(pd->dqcoeff, ctx->dqcoeff[i], sizeof(int16_t) * ctx->num_pixel);
+  }
+}
+
 static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
                          BLOCK_SIZE bsize, int output_enabled) {
   int i, x_idx, y;
@@ -395,6 +405,10 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   x->skip = ctx->skip;
   vpx_memcpy(x->zcoeff_blk[mbmi->tx_size], ctx->zcoeff_blk,
              sizeof(uint8_t) * ctx->num_4x4_blk);
+
+  // TODO(jingning): need to enable proper buffer swap for sub8x8 blocks.
+  if (bsize >= BLOCK_8X8 && is_inter_block(mbmi))
+    update_plane(xd, ctx);
 
   if (!output_enabled)
     return;
