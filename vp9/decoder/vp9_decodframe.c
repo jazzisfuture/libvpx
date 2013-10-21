@@ -98,10 +98,7 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     switch (tx_size) {
       case TX_4X4:
         tx_type = get_tx_type_4x4(pd->plane_type, xd, raster_block);
-        if (tx_type == DCT_DCT)
-          xd->itxm_add(qcoeff, dst, stride, eob);
-        else
-          vp9_iht4x4_add(tx_type, qcoeff, dst, stride, eob);
+        vp9_iht4x4_add(tx_type, qcoeff, dst, stride, eob);
         break;
       case TX_8X8:
         tx_type = get_tx_type_8x8(pd->plane_type, xd);
