@@ -14,93 +14,7 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
-const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES]
-                                  [INTRA_MODES - 1] = {
-  { 144,  11,  54, 157, 195, 130,  46,  58, 108 } /* y = dc */,
-  { 118,  15, 123, 148, 131, 101,  44,  93, 131 } /* y = v */,
-  { 113,  12,  23, 188, 226, 142,  26,  32, 125 } /* y = h */,
-  { 120,  11,  50, 123, 163, 135,  64,  77, 103 } /* y = d45 */,
-  { 113,   9,  36, 155, 111, 157,  32,  44, 161 } /* y = d135 */,
-  { 116,   9,  55, 176,  76,  96,  37,  61, 149 } /* y = d117 */,
-  { 115,   9,  28, 141, 161, 167,  21,  25, 193 } /* y = d153 */,
-  { 120,  12,  32, 145, 195, 142,  32,  38,  86 } /* y = d207 */,
-  { 116,  12,  64, 120, 140, 125,  49, 115, 121 } /* y = d63 */,
-  { 102,  19,  66, 162, 182, 122,  35,  59, 128 } /* y = tm */
-};
-
-static const vp9_prob default_if_y_probs[BLOCK_SIZE_GROUPS]
-                                        [INTRA_MODES - 1] = {
-  {  65,  32,  18, 144, 162, 194,  41,  51,  98 } /* block_size < 8x8 */,
-  { 132,  68,  18, 165, 217, 196,  45,  40,  78 } /* block_size < 16x16 */,
-  { 173,  80,  19, 176, 240, 193,  64,  35,  46 } /* block_size < 32x32 */,
-  { 221, 135,  38, 194, 248, 121,  96,  85,  29 } /* block_size >= 32x32 */
-};
-
-static const vp9_prob default_if_uv_probs[INTRA_MODES]
-                                         [INTRA_MODES - 1] = {
-  { 120,   7,  76, 176, 208, 126,  28,  54, 103 } /* y = dc */,
-  {  48,  12, 154, 155, 139,  90,  34, 117, 119 } /* y = v */,
-  {  67,   6,  25, 204, 243, 158,  13,  21,  96 } /* y = h */,
-  {  97,   5,  44, 131, 176, 139,  48,  68,  97 } /* y = d45 */,
-  {  83,   5,  42, 156, 111, 152,  26,  49, 152 } /* y = d135 */,
-  {  80,   5,  58, 178,  74,  83,  33,  62, 145 } /* y = d117 */,
-  {  86,   5,  32, 154, 192, 168,  14,  22, 163 } /* y = d153 */,
-  {  85,   5,  32, 156, 216, 148,  19,  29,  73 } /* y = d207 */,
-  {  77,   7,  64, 116, 132, 122,  37, 126, 120 } /* y = d63 */,
-  { 101,  21, 107, 181, 192, 103,  19,  67, 125 } /* y = tm */
-};
-
-static const vp9_prob default_partition_probs[NUM_FRAME_TYPES]
-                                             [NUM_PARTITION_CONTEXTS]
-                                             [PARTITION_TYPES - 1] = {
-  { /* frame_type = keyframe */
-    /* 8x8 -> 4x4 */
-    { 158,  97,  94 } /* a/l both not split */,
-    {  93,  24,  99 } /* a split, l not split */,
-    {  85, 119,  44 } /* l split, a not split */,
-    {  62,  59,  67 } /* a/l both split */,
-    /* 16x16 -> 8x8 */
-    { 149,  53,  53 } /* a/l both not split */,
-    {  94,  20,  48 } /* a split, l not split */,
-    {  83,  53,  24 } /* l split, a not split */,
-    {  52,  18,  18 } /* a/l both split */,
-    /* 32x32 -> 16x16 */
-    { 150,  40,  39 } /* a/l both not split */,
-    {  78,  12,  26 } /* a split, l not split */,
-    {  67,  33,  11 } /* l split, a not split */,
-    {  24,   7,   5 } /* a/l both split */,
-    /* 64x64 -> 32x32 */
-    { 174,  35,  49 } /* a/l both not split */,
-    {  68,  11,  27 } /* a split, l not split */,
-    {  57,  15,   9 } /* l split, a not split */,
-    {  12,   3,   3 } /* a/l both split */
-  }, { /* frame_type = interframe */
-    /* 8x8 -> 4x4 */
-    { 199, 122, 141 } /* a/l both not split */,
-    { 147,  63, 159 } /* a split, l not split */,
-    { 148, 133, 118 } /* l split, a not split */,
-    { 121, 104, 114 } /* a/l both split */,
-    /* 16x16 -> 8x8 */
-    { 174,  73,  87 } /* a/l both not split */,
-    {  92,  41,  83 } /* a split, l not split */,
-    {  82,  99,  50 } /* l split, a not split */,
-    {  53,  39,  39 } /* a/l both split */,
-    /* 32x32 -> 16x16 */
-    { 177,  58,  59 } /* a/l both not split */,
-    {  68,  26,  63 } /* a split, l not split */,
-    {  52,  79,  25 } /* l split, a not split */,
-    {  17,  14,  12 } /* a/l both split */,
-    /* 64x64 -> 32x32 */
-    { 222,  34,  30 } /* a/l both not split */,
-    {  72,  16,  44 } /* a split, l not split */,
-    {  58,  32,  12 } /* l split, a not split */,
-    {  10,   7,   6 } /* a/l both split */
-  }
-};
-
-const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES]
-                                 [INTRA_MODES]
-                                 [INTRA_MODES - 1] = {
+const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   { /* above = dc */
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 } /* left = dc */,
     {  92,  45, 102, 136, 116, 180,  74,  90, 100 } /* left = v */,
@@ -213,6 +127,89 @@ const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES]
     {  43,  81,  53, 140, 169, 204,  68,  84,  72 } /* left = tm */
   }
 };
+
+const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1] = {
+  { 144,  11,  54, 157, 195, 130,  46,  58, 108 } /* y = dc */,
+  { 118,  15, 123, 148, 131, 101,  44,  93, 131 } /* y = v */,
+  { 113,  12,  23, 188, 226, 142,  26,  32, 125 } /* y = h */,
+  { 120,  11,  50, 123, 163, 135,  64,  77, 103 } /* y = d45 */,
+  { 113,   9,  36, 155, 111, 157,  32,  44, 161 } /* y = d135 */,
+  { 116,   9,  55, 176,  76,  96,  37,  61, 149 } /* y = d117 */,
+  { 115,   9,  28, 141, 161, 167,  21,  25, 193 } /* y = d153 */,
+  { 120,  12,  32, 145, 195, 142,  32,  38,  86 } /* y = d207 */,
+  { 116,  12,  64, 120, 140, 125,  49, 115, 121 } /* y = d63 */,
+  { 102,  19,  66, 162, 182, 122,  35,  59, 128 } /* y = tm */
+};
+
+static const vp9_prob default_if_y_probs[BLOCK_SIZE_GROUPS][INTRA_MODES - 1] = {
+  {  65,  32,  18, 144, 162, 194,  41,  51,  98 } /* block_size < 8x8 */,
+  { 132,  68,  18, 165, 217, 196,  45,  40,  78 } /* block_size < 16x16 */,
+  { 173,  80,  19, 176, 240, 193,  64,  35,  46 } /* block_size < 32x32 */,
+  { 221, 135,  38, 194, 248, 121,  96,  85,  29 } /* block_size >= 32x32 */
+};
+
+static const vp9_prob default_if_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
+  { 120,   7,  76, 176, 208, 126,  28,  54, 103 } /* y = dc */,
+  {  48,  12, 154, 155, 139,  90,  34, 117, 119 } /* y = v */,
+  {  67,   6,  25, 204, 243, 158,  13,  21,  96 } /* y = h */,
+  {  97,   5,  44, 131, 176, 139,  48,  68,  97 } /* y = d45 */,
+  {  83,   5,  42, 156, 111, 152,  26,  49, 152 } /* y = d135 */,
+  {  80,   5,  58, 178,  74,  83,  33,  62, 145 } /* y = d117 */,
+  {  86,   5,  32, 154, 192, 168,  14,  22, 163 } /* y = d153 */,
+  {  85,   5,  32, 156, 216, 148,  19,  29,  73 } /* y = d207 */,
+  {  77,   7,  64, 116, 132, 122,  37, 126, 120 } /* y = d63 */,
+  { 101,  21, 107, 181, 192, 103,  19,  67, 125 } /* y = tm */
+};
+
+static const vp9_prob default_partition_probs[NUM_FRAME_TYPES]
+                                             [NUM_PARTITION_CONTEXTS]
+                                             [PARTITION_TYPES - 1] = {
+  { /* frame_type = keyframe */
+    /* 8x8 -> 4x4 */
+    { 158,  97,  94 } /* a/l both not split */,
+    {  93,  24,  99 } /* a split, l not split */,
+    {  85, 119,  44 } /* l split, a not split */,
+    {  62,  59,  67 } /* a/l both split */,
+    /* 16x16 -> 8x8 */
+    { 149,  53,  53 } /* a/l both not split */,
+    {  94,  20,  48 } /* a split, l not split */,
+    {  83,  53,  24 } /* l split, a not split */,
+    {  52,  18,  18 } /* a/l both split */,
+    /* 32x32 -> 16x16 */
+    { 150,  40,  39 } /* a/l both not split */,
+    {  78,  12,  26 } /* a split, l not split */,
+    {  67,  33,  11 } /* l split, a not split */,
+    {  24,   7,   5 } /* a/l both split */,
+    /* 64x64 -> 32x32 */
+    { 174,  35,  49 } /* a/l both not split */,
+    {  68,  11,  27 } /* a split, l not split */,
+    {  57,  15,   9 } /* l split, a not split */,
+    {  12,   3,   3 } /* a/l both split */
+  }, { /* frame_type = interframe */
+    /* 8x8 -> 4x4 */
+    { 199, 122, 141 } /* a/l both not split */,
+    { 147,  63, 159 } /* a split, l not split */,
+    { 148, 133, 118 } /* l split, a not split */,
+    { 121, 104, 114 } /* a/l both split */,
+    /* 16x16 -> 8x8 */
+    { 174,  73,  87 } /* a/l both not split */,
+    {  92,  41,  83 } /* a split, l not split */,
+    {  82,  99,  50 } /* l split, a not split */,
+    {  53,  39,  39 } /* a/l both split */,
+    /* 32x32 -> 16x16 */
+    { 177,  58,  59 } /* a/l both not split */,
+    {  68,  26,  63 } /* a split, l not split */,
+    {  52,  79,  25 } /* l split, a not split */,
+    {  17,  14,  12 } /* a/l both split */,
+    /* 64x64 -> 32x32 */
+    { 222,  34,  30 } /* a/l both not split */,
+    {  72,  16,  44 } /* a split, l not split */,
+    {  58,  32,  12 } /* l split, a not split */,
+    {  10,   7,   6 } /* a/l both split */
+  }
+};
+
+
 
 static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [INTER_MODES - 1] = {
