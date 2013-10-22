@@ -1087,10 +1087,10 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         tx_type = get_tx_type_4x4(PLANE_TYPE_Y_WITH_DC, xd, block);
         if (tx_type != DCT_DCT) {
           vp9_short_fht4x4(src_diff, coeff, 8, tx_type);
-          x->quantize_b_4x4(x, block, tx_type, 16);
+          vp9_regular_quantize_b_4x4(x, block, tx_type, 16);
         } else {
           x->fwd_txm4x4(src_diff, coeff, 16);
-          x->quantize_b_4x4(x, block, tx_type, 16);
+          vp9_regular_quantize_b_4x4(x, block, tx_type, 16);
         }
 
         get_scan_nb_4x4(get_tx_type_4x4(PLANE_TYPE_Y_WITH_DC, xd, block),
@@ -1564,7 +1564,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
       coeff = BLOCK_OFFSET(p->coeff, k);
       x->fwd_txm4x4(raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                     coeff, 16);
-      x->quantize_b_4x4(x, k, DCT_DCT, 16);
+      vp9_regular_quantize_b_4x4(x, k, DCT_DCT, 16);
       thisdistortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k),
                                         16, &ssz);
       thissse += ssz;
