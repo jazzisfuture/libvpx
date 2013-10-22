@@ -41,15 +41,15 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm,
                                    int block_idx, int ref_idx,
                                    int mi_row, int mi_col);
 
-static MB_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mb,
-                                          const MODE_INFO *left_mb, int b) {
+static MB_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mi,
+                                          const MODE_INFO *left_mi, int b) {
   // FIXME(rbultje, jingning): temporary hack because jenkins doesn't
   // understand this condition. This will go away soon.
-  const MODE_INFO *mi = cur_mb;
+  const MODE_INFO *mi = cur_mi;
 
   if (b == 0 || b == 2) {
     /* On L edge, get from MB to left of us */
-    mi = left_mb;
+    mi = left_mi;
     if (!mi)
       return DC_PRED;
 
