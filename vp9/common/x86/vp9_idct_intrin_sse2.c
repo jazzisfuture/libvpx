@@ -36,19 +36,21 @@ void vp9_idct4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   __m128i input0, input1, input2, input3;
 
   // Rows
-  input0 = _mm_load_si128((const __m128i *)input);
-  input2 = _mm_load_si128((const __m128i *)(input + 8));
+  input0 = _mm_loadl_epi64((const __m128i *)input);
+  input1 = _mm_loadl_epi64((const __m128i *)(input + 4));
+  input2 = _mm_loadl_epi64((const __m128i *)(input + 8));
+  input3 = _mm_loadl_epi64((const __m128i *)(input + 12));
 
   // Construct i3, i1, i3, i1, i2, i0, i2, i0
   input0 = _mm_shufflelo_epi16(input0, 0xd8);
-  input0 = _mm_shufflehi_epi16(input0, 0xd8);
+  input1 = _mm_shufflelo_epi16(input1, 0xd8);
   input2 = _mm_shufflelo_epi16(input2, 0xd8);
-  input2 = _mm_shufflehi_epi16(input2, 0xd8);
+  input3 = _mm_shufflelo_epi16(input3, 0xd8);
 
-  input1 = _mm_unpackhi_epi32(input0, input0);
   input0 = _mm_unpacklo_epi32(input0, input0);
-  input3 = _mm_unpackhi_epi32(input2, input2);
+  input1 = _mm_unpacklo_epi32(input1, input1);
   input2 = _mm_unpacklo_epi32(input2, input2);
+  input3 = _mm_unpacklo_epi32(input3, input3);
 
   // Stage 1
   input0 = _mm_madd_epi16(input0, cst);
