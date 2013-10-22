@@ -2748,7 +2748,7 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
       cpi->active_best_quality = inter_minq[q];
       // 1-pass: for now, use the average Q for the active_best, if its lower
       // than active_worst.
-      if (cpi->pass == 0 && (cpi->avg_frame_qindex < cpi->active_worst_quality))
+      if (cpi->pass == 0 && (cpi->avg_frame_qindex < q))
         cpi->active_best_quality = inter_minq[cpi->avg_frame_qindex];
 #endif
 
@@ -2784,6 +2784,7 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
   if (cm->frame_type == KEY_FRAME && !cpi->this_key_frame_forced) {
     *top_index = cpi->active_best_quality;
   } else if (!cpi->is_src_frame_alt_ref &&
+             (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     *top_index =
       (cpi->active_worst_quality + cpi->active_best_quality * 3) / 4;
@@ -3359,7 +3360,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       ((cpi->long_rolling_actual_bits * 31) +
        cpi->projected_frame_size + 16) / 32;
   }
-
+printf("%d %d %d %d %d %d %d %d \n",cpi->frames_since_key, q, cpi->active_worst_quality, cpi->active_best_quality,
+       cpi->projected_frame_size, cpi->av_per_frame_bandwidth,q_high,q_low);
   // Actual bits spent
   cpi->total_actual_bits += cpi->projected_frame_size;
 

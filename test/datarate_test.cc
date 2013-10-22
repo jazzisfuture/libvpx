@@ -218,7 +218,7 @@ TEST_P(DatarateTestVP9, BasicRateTargeting) {
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 140);
-  for (int i = 200; i < 800; i += 200) {
+  for (int i = 150; i < 800; i += 200) {
     cfg_.rc_target_bitrate = i;
     ResetModel();
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
