@@ -128,13 +128,32 @@ void vp9_idct4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   input2 = _mm_srai_epi16(input2, 4);
   input3 = _mm_srai_epi16(input3, 4);
 
+//#define RECON_AND_STORE4X4(dest, in_x) \
+//  {                                                     \
+//      __m128i d0 = _mm_cvtsi32_si128(*(const int *)(dest)); \
+//      d0 = _mm_unpacklo_epi8(d0, zero); \
+//      d0 = _mm_add_epi16(in_x, d0); \
+//      d0 = _mm_packus_epi16(d0, d0); \
+//      *(int *)dest = _mm_cvtsi128_si32(d0); \
+//      dest += stride; \
+//  }
+//
+//  input0 = _mm_srli_si128(input2, 8);
+//  input1 = _mm_srli_si128(input3, 8);
+//
+//  RECON_AND_STORE4X4(dest, input2);
+//  RECON_AND_STORE4X4(dest, input0);
+//  RECON_AND_STORE4X4(dest, input1);
+//  RECON_AND_STORE4X4(dest, input3);
+
+  {
   // Reconstruction and Store
   __m128i d0 = _mm_cvtsi32_si128(*(const int *)(dest));
+  __m128i d1 = _mm_cvtsi32_si128(*(const int *)(dest + stride));
   __m128i d2 = _mm_cvtsi32_si128(*(const int *)(dest + stride * 2));
-  d0 = _mm_unpacklo_epi32(d0,
-       _mm_cvtsi32_si128(*(const int *) (dest + stride)));
-  d2 = _mm_unpacklo_epi32(d2,
-       _mm_cvtsi32_si128(*(const int *) (dest + stride * 3)));
+  __m128i d3 = _mm_cvtsi32_si128(*(const int *)(dest + stride * 3));
+  d0 = _mm_unpacklo_epi32(d0, d1);
+  d2 = _mm_unpacklo_epi32(d2, d3);
   d0 = _mm_unpacklo_epi8(d0, zero);
   d2 = _mm_unpacklo_epi8(d2, zero);
   d0 = _mm_add_epi16(d0, input2);
@@ -151,6 +170,7 @@ void vp9_idct4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   // store input3
   d0 = _mm_srli_si128(d0, 4);
   *(int *)(dest + stride * 3) = _mm_cvtsi128_si32(d0);
+  }
 }
 
 void vp9_idct4x4_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
