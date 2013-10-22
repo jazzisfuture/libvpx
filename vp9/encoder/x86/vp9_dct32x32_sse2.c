@@ -1374,6 +1374,7 @@ void FDCT32x32_2D(int16_t *input,
           lstep1[30] = _mm_add_epi32(lstep3[24], lstep2[30]);
           lstep1[31] = _mm_add_epi32(lstep3[25], lstep2[31]);
         }
+
         {
         // to be continued...
         //
