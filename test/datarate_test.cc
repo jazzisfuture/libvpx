@@ -16,7 +16,7 @@
 namespace {
 
 class DatarateTest : public ::libvpx_test::EncoderTest,
-    public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
+    public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  public:
   DatarateTest() : EncoderTest(GET_PARAM(0)) {}
 
@@ -24,6 +24,7 @@ class DatarateTest : public ::libvpx_test::EncoderTest,
   virtual void SetUp() {
     InitializeConfig();
     SetMode(GET_PARAM(1));
+    set_cpu_used_ = GET_PARAM(2);
     ResetModel();
   }
 
@@ -115,6 +116,7 @@ class DatarateTest : public ::libvpx_test::EncoderTest,
   double file_datarate_;
   double effective_datarate_;
   int bits_in_last_frame_;
+  int set_cpu_used_;
 };
 
 TEST_P(DatarateTest, BasicBufferModel) {
@@ -183,7 +185,7 @@ class DatarateTestVP9 : public DatarateTest {
   virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
                                     ::libvpx_test::Encoder *encoder) {
     if (video->frame() == 1) {
-      encoder->Control(VP8E_SET_CPUUSED, 2);
+      encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
     }
     const vpx_rational_t tb = video->timebase();
     timebase_ = static_cast<double>(tb.num) / tb.den;
@@ -218,7 +220,7 @@ TEST_P(DatarateTestVP9, BasicRateTargeting) {
 
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 140);
-  for (int i = 200; i < 800; i += 200) {
+  for (int i = 120; i < 800; i += 100) {
     cfg_.rc_target_bitrate = i;
     ResetModel();
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
@@ -229,7 +231,8 @@ TEST_P(DatarateTestVP9, BasicRateTargeting) {
   }
 }
 
-VP8_INSTANTIATE_TEST_CASE(DatarateTest, ALL_TEST_MODES);
+VP8_INSTANTIATE_TEST_CASE(DatarateTest, ALL_TEST_MODES, 0);
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9,
-                          ::testing::Values(::libvpx_test::kOnePassGood));
+                          ::testing::Values(::libvpx_test::kOnePassGood),
+                          ::testing::Range(0, 5));
 }  // namespace
