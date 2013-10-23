@@ -378,7 +378,6 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   vp9_clear_system_state();
 
-  cm->last_show_frame = cm->show_frame;
   if (cm->show_frame) {
     // current mip will be the prev_mip for the next frame
     MODE_INFO *temp = cm->prev_mip;

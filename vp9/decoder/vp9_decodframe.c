@@ -873,8 +873,6 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
   size_t sz;
   int i;
 
-  cm->last_frame_type = cm->frame_type;
-
   if (vp9_rb_read_literal(rb, 2) != 0x2)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Invalid frame marker");
@@ -1153,6 +1151,8 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   cm->last_width = cm->width;
   cm->last_height = cm->height;
+  cm->last_frame_type = cm->frame_type;
+  cm->last_show_frame = cm->show_frame;
 
   new_fb->corrupted |= xd->corrupted;
 
