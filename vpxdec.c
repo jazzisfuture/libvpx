@@ -903,14 +903,6 @@ int main_loop(int argc, const char **argv_) {
       return EXIT_FAILURE;
     }
 
-    if (input.kind == WEBM_FILE)
-      if (webm_guess_framerate(&input, &fps_den, &fps_num)) {
-        fprintf(stderr, "Failed to guess framerate -- error parsing "
-                "webm file?\n");
-        return EXIT_FAILURE;
-      }
-
-
     /*Note: We can't output an aspect ratio here because IVF doesn't
        store one, and neither does VP8.
       That will have to wait until these tools support WebM natively.*/
