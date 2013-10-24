@@ -31,6 +31,14 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
+=======
+/*!\def VPX_ENCODER_H
+ * \brief Macro to prevent multiple header file inclusion.
+ */
+#ifndef VPX_ENCODER_H
+#define VPX_ENCODER_H
+>>>>>>> 777666a... Resolved Doxygen warnings.
 #include "vpx_codec.h"
 
   /*! Temporal Scalability: Maximum length of the sequence defining frame

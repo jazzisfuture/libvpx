@@ -43,6 +43,14 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
+=======
+/*!\def VPX_CODEC_H
+ * Macro to prevent multiple header fille inclusion.
+ */
+#ifndef VPX_CODEC_H
+#define VPX_CODEC_H
+>>>>>>> 777666a... Resolved Doxygen warnings.
 #include "vpx_integer.h"
 #include "vpx_image.h"
 
