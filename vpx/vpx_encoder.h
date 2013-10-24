@@ -24,12 +24,13 @@
  * video encoder algorithm.
  *
  */
+#ifndef VPX_ENCODER_H
+#define VPX_ENCODER_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef VPX_ENCODER_H
-#define VPX_ENCODER_H
 #include "vpx_codec.h"
 
   /*! Temporal Scalability: Maximum length of the sequence defining frame
@@ -931,7 +932,8 @@ extern "C" {
 
   /*!@} - end defgroup encoder*/
 
-#endif
 #ifdef __cplusplus
 }
 #endif
+#endif  // VPX_ENCODER_H
+

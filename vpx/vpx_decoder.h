@@ -24,12 +24,13 @@
  * video decoder algorithm.
  *
  */
+#ifndef VPX_DECODER_H
+#define VPX_DECODER_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef VPX_DECODER_H
-#define VPX_DECODER_H
 #include "vpx_codec.h"
 
   /*!\brief Current ABI version number
@@ -328,9 +329,8 @@ extern "C" {
   /*!@} - end defgroup cap_put_slice*/
 
   /*!@} - end defgroup decoder*/
-
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+#endif  // VPX_DECODER_H
+

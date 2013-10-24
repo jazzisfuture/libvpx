@@ -14,14 +14,15 @@
  *
  * @{
  */
+#ifndef VP8CX_H
+#define VP8CX_H
+
 #include "vp8.h"
 
 /*!\file
  * \brief Provides definitions for using the VP8 encoder algorithm within the
  *        vpx Codec Interface.
  */
-#ifndef VP8CX_H
-#define VP8CX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -341,4 +342,5 @@ VPX_CTRL_USE_TYPE(VP9E_SET_MIN_Q,      unsigned int)
 }  // extern "C"
 #endif
 
-#endif
+#endif  // VP8CX_H
+
