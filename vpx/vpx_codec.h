@@ -40,6 +40,9 @@
 extern "C" {
 #endif
 
+/*!\def VPX_CODEC_H
+ * Macro to prevent multiple header fille inclusion.
+ */
 #ifndef VPX_CODEC_H
 #define VPX_CODEC_H
 #include "vpx_integer.h"

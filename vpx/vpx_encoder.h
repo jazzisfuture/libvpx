@@ -28,6 +28,9 @@
 extern "C" {
 #endif
 
+/*!\def VPX_ENCODER_H
+ * \brief Macro to prevent multiple header file inclusion.
+ */
 #ifndef VPX_ENCODER_H
 #define VPX_ENCODER_H
 #include "vpx_codec.h"

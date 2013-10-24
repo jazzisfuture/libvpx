@@ -45,7 +45,8 @@ extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
 #include "vp8.h"
 
 
-/*!\brief VP8 decoder control functions
+/*!\enum vp8_dec_control_id
+ * \brief VP8 decoder control functions
  *
  * This set of macros define the control functions available for the VP8
  * decoder interface.
@@ -78,14 +79,24 @@ enum vp8_dec_control_id {
   VP8_DECODER_CTRL_ID_MAX
 };
 
-typedef struct vp8_decrypt_init {
+/*!\struct vp8_decrypt
+ * \brief Structure to hold decryption state
+ *
+ * This defines a structure to hold the decryption state and access function.
+ */
+
+struct vp8_decrypt {
     /** Decrypt n bytes of data from input -> output, using the decrypt_state
      *  passed in VP8D_SET_DECRYPTOR.
      */
     void (*decrypt_cb)(void *decrypt_state, const unsigned char *input,
                        unsigned char *output, int count);
+    /*! Decryption state. */
     void *decrypt_state;
-} vp8_decrypt_init;
+};
+
+/*! Creates a type name for vp8_decrypt_init */
+typedef struct vp8_decrypt vp8_decrypt_init;
 
 /*!\brief VP8 decoder control function parameter type
  *

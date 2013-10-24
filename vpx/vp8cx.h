@@ -20,6 +20,10 @@
  * \brief Provides definitions for using the VP8 encoder algorithm within the
  *        vpx Codec Interface.
  */
+
+/*!\def VP8CX_H
+ * \brief Macro to prevent multiple header file inclusion.
+*/
 #ifndef VP8CX_H
 #define VP8CX_H
 
@@ -223,16 +227,17 @@ typedef enum vpx_scaling_mode_1d {
  */
 
 typedef struct vpx_roi_map {
-  unsigned char *roi_map;      /**< specify an id between 0 and 3 for each 16x16 region within a frame */
-  unsigned int   rows;         /**< number of rows */
-  unsigned int   cols;         /**< number of cols */
+  unsigned char *roi_map;  /**< An id between 0 and 3 for each
+                             *< 16x16 region within a frame. */
+  unsigned int rows;       /**< number of rows. */
+  unsigned int cols;       /**< number of cols. */
   // TODO(paulwilkins): broken for VP9 which has 8 segments
   // q and loop filter deltas for each segment
   // (see MAX_MB_SEGMENTS)
-  int     delta_q[4];
-  int     delta_lf[4];
-  // Static breakout threshold for each segment
-  unsigned int   static_threshold[4];
+  int delta_q[4];          /**< Quantizer deltas. */
+  int delta_lf[4];         /**< Loop filter deltas. */
+  /*! Static breakout threshold for each segment. */
+  unsigned int static_threshold[4];
 } vpx_roi_map_t;
 
 /*!\brief  vpx active region map
