@@ -88,8 +88,8 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
       vp9_diff_update_prob(r, &fc->inter_mode_probs[i][j]);
 }
 
-static INLINE COMPPREDMODE_TYPE read_comp_pred_mode(vp9_reader *r) {
-  COMPPREDMODE_TYPE mode = vp9_read_bit(r);
+static INLINE REFERENCE_MODE read_comp_pred_mode(vp9_reader *r) {
+    REFERENCE_MODE mode = vp9_read_bit(r);
   if (mode)
     mode += vp9_read_bit(r);
   return mode;
