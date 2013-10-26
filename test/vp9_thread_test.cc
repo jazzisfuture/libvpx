@@ -92,6 +92,7 @@ TEST_P(VP9WorkerThreadTest, HookFailure) {
 }
 
 TEST(VP9DecodeMTTest, MTDecode) {
+  // no tiles or frame parallel; this exercises loop filter threading.
   libvpx_test::WebMVideoSource video("vp90-2-03-size-226x226.webm");
   video.Init();
 
@@ -114,6 +115,35 @@ TEST(VP9DecodeMTTest, MTDecode) {
     }
   }
   EXPECT_STREQ("b35a1b707b28e82be025d960aba039bc", md5.Get());
+}
+
+TEST(VP9DecodeMTTest, MTDecode2) {
+  for (int t = 2; t <= 4; ++t) {
+    libvpx_test::WebMVideoSource video(
+        "vp90-2-08-tile_1x4_frame_parallel.webm");
+
+    video.Init();
+    vpx_codec_dec_cfg_t cfg = {0};
+    cfg.threads = t;
+    libvpx_test::VP9Decoder decoder(cfg, 0);
+
+    libvpx_test::MD5 md5;
+    for (video.Begin(); video.cxdata(); video.Next()) {
+      const vpx_codec_err_t res =
+          decoder.DecodeFrame(video.cxdata(), video.frame_size());
+      ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
+
+      libvpx_test::DxDataIterator dec_iter = decoder.GetDxData();
+      const vpx_image_t *img = NULL;
+
+      // Get decompressed data
+      while ((img = dec_iter.Next())) {
+        md5.Add(img);
+      }
+    }
+    EXPECT_STREQ("368ebc6ebf3a5e478d85b2c3149b2848", md5.Get())
+        << "threads = " << t;
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(Synchronous, VP9WorkerThreadTest, ::testing::Bool());
