@@ -56,6 +56,24 @@ typedef struct {
   uint8_t mode_lf_lut[MB_MODE_COUNT];
 } loop_filter_info_n;
 
+// This structure holds bit masks for all 8x8 blocks in a 64x64 region.
+// Each 1 bit represents a position in which we want to apply the loop filter.
+// Left_ entries refer to whether we apply a filter on the border to the
+// left of the block.   Above_ entries refer to whether or not to apply a
+// filter on the above border.   Int_ entries refer to whether or not to
+// apply borders on the 4x4 edges within the 8x8 block that each bit
+// represents.
+// Since each transform is accompanied by a potentially different type of
+// loop filter there is a different entry in the array for each transform size.
+typedef struct {
+  uint64_t left_y[TX_SIZES];
+  uint64_t above_y[TX_SIZES];
+  uint64_t int_4x4_y;
+  uint16_t left_uv[TX_SIZES];
+  uint16_t above_uv[TX_SIZES];
+  uint16_t int_4x4_uv;
+} LOOP_FILTER_MASK;
+
 /* assorted loopfilter functions which get used elsewhere */
 struct VP9Common;
 struct macroblockd;
@@ -77,6 +95,30 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm, struct macroblockd *xd,
                           int start, int stop, int y_only);
 
+void vp9_adjust_loop_filter_mask(struct VP9Common *cm, const int mi_row,
+                                 const int mi_col, LOOP_FILTER_MASK *lfm);
+
+// This function ors into the current lfm structure, where to do loop
+// filters for the specific mi we are looking at.   It uses information
+// including the block_size_type (32x16, 32x32, etc),  the transform size,
+// whether there were any coefficients encoded, and the loop filter strength
+// block we are currently looking at. Shift is used to position the
+// 1's we produce.
+// TODO(JBB) Need another function for different resolution color..
+void vp9_build_masks(const loop_filter_info_n *const lfi_n,
+                     const MODE_INFO *mi, const int shift_y,
+                     const int shift_uv,
+                     LOOP_FILTER_MASK *lfm);
+
+// This function does the same thing as the one above with the exception that
+// it only affects the y masks.   It exists because for blocks < 16x16 in size,
+// we only update u and v masks on the first block.
+void vp9_build_y_mask(const loop_filter_info_n *const lfi_n,
+                      const MODE_INFO *mi, const int shift_y,
+                      LOOP_FILTER_MASK *lfm);
+
+
+
 typedef struct LoopFilterWorkerData {
   const YV12_BUFFER_CONFIG *frame_buffer;
   struct VP9Common *cm;
@@ -87,6 +129,16 @@ typedef struct LoopFilterWorkerData {
   int stop;
   int y_only;
 } LFWorkerData;
+
+// Following variables represent shifts to position the current block
+// mask over the appropriate block.   A shift of 36 to the left will move
+// the bits for the final 32 by 32 block in the 64x64 up 4 rows and left
+// 4 rows to the appropriate spot.
+static const int shift_32_y[] = {0, 4, 32, 36};
+static const int shift_16_y[] = {0, 2, 16, 18};
+static const int shift_8_y[] = {0, 1, 8, 9};
+static const int shift_32_uv[] = {0, 2, 8, 10};
+static const int shift_16_uv[] = {0, 1, 4, 5};
 
 // Operates on the rows described by LFWorkerData passed as 'arg1'.
 int vp9_loop_filter_worker(void *arg1, void *arg2);
