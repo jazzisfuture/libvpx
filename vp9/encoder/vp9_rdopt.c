@@ -2205,7 +2205,7 @@ static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
                          int_mv *second_ref_mv,
                          int64_t comp_pred_diff[NB_PREDICTION_TYPES],
                          int64_t tx_size_diff[TX_MODES],
-                         int64_t best_filter_diff[SWITCHABLE_FILTERS + 1]) {
+                         int64_t best_filter_diff[SWITCHABLE_CONTEXTS]) {
   MACROBLOCKD *const xd = &x->e_mbd;
 
   // Take a snapshot of the coding context so it can be
@@ -2223,7 +2223,7 @@ static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
 
   vpx_memcpy(ctx->tx_rd_diff, tx_size_diff, sizeof(ctx->tx_rd_diff));
   vpx_memcpy(ctx->best_filter_diff, best_filter_diff,
-             sizeof(*best_filter_diff) * (SWITCHABLE_FILTERS + 1));
+             sizeof(*best_filter_diff) * SWITCHABLE_CONTEXTS);
 }
 
 static void setup_pred_block(const MACROBLOCKD *xd,
@@ -3112,8 +3112,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_tx_diff[TX_MODES];
   int64_t best_pred_diff[NB_PREDICTION_TYPES];
   int64_t best_pred_rd[NB_PREDICTION_TYPES];
-  int64_t best_filter_rd[SWITCHABLE_FILTERS + 1];
-  int64_t best_filter_diff[SWITCHABLE_FILTERS + 1];
+  int64_t best_filter_rd[SWITCHABLE_CONTEXTS];
+  int64_t best_filter_diff[SWITCHABLE_CONTEXTS];
   MB_MODE_INFO best_mbmode = { 0 };
   int j;
   int mode_index, best_mode_index = 0;
@@ -3151,7 +3151,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     best_pred_rd[i] = INT64_MAX;
   for (i = 0; i < TX_MODES; i++)
     best_tx_rd[i] = INT64_MAX;
-  for (i = 0; i <= SWITCHABLE_FILTERS; i++)
+  for (i = 0; i < SWITCHABLE_CONTEXTS; i++)
     best_filter_rd[i] = INT64_MAX;
   for (i = 0; i < TX_SIZES; i++)
     rate_uv_intra[i] = INT_MAX;
@@ -3539,7 +3539,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (!disable_skip && ref_frame == INTRA_FRAME) {
       for (i = 0; i < NB_PREDICTION_TYPES; ++i)
         best_pred_rd[i] = MIN(best_pred_rd[i], this_rd);
-      for (i = 0; i <= SWITCHABLE_FILTERS; i++)
+      for (i = 0; i < SWITCHABLE_CONTEXTS; i++)
         best_filter_rd[i] = MIN(best_filter_rd[i], this_rd);
     }
 
@@ -3622,7 +3622,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         cm->mcomp_filter_type != BILINEAR) {
       int64_t ref = cpi->rd_filter_cache[cm->mcomp_filter_type == SWITCHABLE ?
                               SWITCHABLE_FILTERS : cm->mcomp_filter_type];
-      for (i = 0; i <= SWITCHABLE_FILTERS; i++) {
+      for (i = 0; i < SWITCHABLE_CONTEXTS; i++) {
         int64_t adj_rd;
         // In cases of poor prediction, filter_cache[] can contain really big
         // values, which actually are bigger than this_rd itself. This can
@@ -3744,7 +3744,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   if (!x->skip) {
-    for (i = 0; i <= SWITCHABLE_FILTERS; i++) {
+    for (i = 0; i < SWITCHABLE_CONTEXTS; i++) {
       if (best_filter_rd[i] == INT64_MAX)
         best_filter_diff[i] = 0;
       else
@@ -3808,8 +3808,8 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_tx_diff[TX_MODES];
   int64_t best_pred_diff[NB_PREDICTION_TYPES];
   int64_t best_pred_rd[NB_PREDICTION_TYPES];
-  int64_t best_filter_rd[SWITCHABLE_FILTERS + 1];
-  int64_t best_filter_diff[SWITCHABLE_FILTERS + 1];
+  int64_t best_filter_rd[SWITCHABLE_CONTEXTS];
+  int64_t best_filter_diff[SWITCHABLE_CONTEXTS];
   MB_MODE_INFO best_mbmode = { 0 };
   int mode_index, best_mode_index = 0;
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
@@ -3846,7 +3846,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
     best_pred_rd[i] = INT64_MAX;
   for (i = 0; i < TX_MODES; i++)
     best_tx_rd[i] = INT64_MAX;
-  for (i = 0; i <= SWITCHABLE_FILTERS; i++)
+  for (i = 0; i < SWITCHABLE_CONTEXTS; i++)
     best_filter_rd[i] = INT64_MAX;
   for (i = 0; i < TX_SIZES; i++)
     rate_uv_intra[i] = INT_MAX;
@@ -4287,7 +4287,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
     if (!disable_skip && ref_frame == INTRA_FRAME) {
       for (i = 0; i < NB_PREDICTION_TYPES; ++i)
         best_pred_rd[i] = MIN(best_pred_rd[i], this_rd);
-      for (i = 0; i <= SWITCHABLE_FILTERS; i++)
+      for (i = 0; i < SWITCHABLE_CONTEXTS; i++)
         best_filter_rd[i] = MIN(best_filter_rd[i], this_rd);
     }
 
@@ -4365,7 +4365,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
         cm->mcomp_filter_type != BILINEAR) {
       int64_t ref = cpi->rd_filter_cache[cm->mcomp_filter_type == SWITCHABLE ?
                               SWITCHABLE_FILTERS : cm->mcomp_filter_type];
-      for (i = 0; i <= SWITCHABLE_FILTERS; i++) {
+      for (i = 0; i < SWITCHABLE_CONTEXTS; i++) {
         int64_t adj_rd;
         // In cases of poor prediction, filter_cache[] can contain really big
         // values, which actually are bigger than this_rd itself. This can
@@ -4481,7 +4481,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   if (!x->skip) {
-    for (i = 0; i <= SWITCHABLE_FILTERS; i++) {
+    for (i = 0; i < SWITCHABLE_CONTEXTS; i++) {
       if (best_filter_rd[i] == INT64_MAX)
         best_filter_diff[i] = 0;
       else
