@@ -336,14 +336,11 @@ static int build_lfi(const loop_filter_info_n *lfi_n,
   const int mode = lfi_n->mode_lf_lut[mbmi->mode];
   const int filter_level = lfi_n->lvl[seg][ref][mode];
 
-  if (filter_level > 0) {
-    lfi->mblim = lfi_n->mblim[filter_level];
-    lfi->lim = lfi_n->lim[filter_level];
-    lfi->hev_thr = lfi_n->hev_thr[filter_level >> 4];
-    return 1;
-  } else {
-    return 0;
-  }
+  lfi->mblim = lfi_n->mblim[filter_level];
+  lfi->lim = lfi_n->lim[filter_level];
+  lfi->hev_thr = lfi_n->hev_thr[filter_level >> 4];
+
+  return (filter_level > 0);
 }
 
 static void filter_selectively_vert(uint8_t *s, int pitch,
