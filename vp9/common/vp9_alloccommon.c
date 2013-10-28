@@ -45,6 +45,7 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
   vpx_free(cm->last_frame_seg_map);
   vpx_free(cm->mi_grid_base);
   vpx_free(cm->prev_mi_grid_base);
+  vpx_free(cm->lfm);
 
   vpx_free(cm->above_context[0]);
   for (i = 0; i < MAX_MB_PLANE; i++)
@@ -55,6 +56,7 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
   cm->last_frame_seg_map = NULL;
   cm->mi_grid_base = NULL;
   cm->prev_mi_grid_base = NULL;
+  cm->lfm = NULL;
 }
 
 static void set_mb_mi(VP9_COMMON *cm, int aligned_width, int aligned_height) {
@@ -158,6 +160,12 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
   // Create the segmentation map structure and set to 0.
   cm->last_frame_seg_map = vpx_calloc(cm->mi_rows * cm->mi_cols, 1);
   if (!cm->last_frame_seg_map)
+    goto fail;
+
+  cm->lfm_stride = ((7 + cm->mi_cols) / 8);
+  cm->lfm = vpx_calloc(((7 + cm->mi_rows) / 8)
+                       * cm->lfm_stride * sizeof(*cm->lfm), 1);
+  if (!cm->lfm)
     goto fail;
 
   return 0;

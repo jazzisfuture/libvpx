@@ -336,16 +336,12 @@ static void set_ref(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 }
 
 static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
-                           vp9_reader *r, BLOCK_SIZE bsize, int index) {
+                           vp9_reader *r, BLOCK_SIZE bsize) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
   const int less8x8 = bsize < BLOCK_8X8;
   MB_MODE_INFO *mbmi;
   int eobtotal;
-
-  if (less8x8)
-    if (index > 0)
-      return;
 
   set_offsets(pbi, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, mi_row, mi_col, r);
@@ -384,6 +380,215 @@ static void decode_modes_b(VP9D_COMP *pbi, int mi_row, int mi_col,
   xd->corrupted |= vp9_reader_has_error(r);
 }
 
+static PARTITION_TYPE read_partition(VP9_COMMON *const cm, BLOCK_SIZE bsize,
+                                     vp9_reader* r, int mi_row, int mi_col) {
+  PARTITION_TYPE partition = PARTITION_NONE;
+  const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
+  int pl;
+  const int idx = check_bsize_coverage(hbs, cm->mi_rows, cm->mi_cols,
+                                       mi_row, mi_col);
+  pl = partition_plane_context(cm, mi_row, mi_col, bsize);
+
+  if (idx == 0)
+    partition = treed_read(r, vp9_partition_tree,
+                           cm->fc.partition_prob[cm->frame_type][pl]);
+  else if (idx > 0 &&
+      !vp9_read(r, cm->fc.partition_prob[cm->frame_type][pl][idx]))
+    partition = (idx == 1) ? PARTITION_HORZ : PARTITION_VERT;
+  else
+    partition = PARTITION_SPLIT;
+
+  if (!cm->frame_parallel_decoding_mode)
+    ++cm->counts.partition[pl][partition];
+
+  return partition;
+}
+#if 1
+static INLINE void decode_and_mask(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                   vp9_reader* r, BLOCK_SIZE bsize,
+                                   LOOP_FILTER_MASK *lfm, int shift_y,
+                                   int shift_uv) {
+  MACROBLOCKD * const xd = &pbi->mb;
+  VP9_COMMON * const cm = &pbi->common;
+  const loop_filter_info_n * const lfi_n = &cm->lf_info;
+  decode_modes_b(pbi, mi_row, mi_col, r, bsize);
+  vp9_build_masks(lfi_n, xd->mi_8x8[0], shift_y, shift_uv, lfm);
+}
+static INLINE void decode_and_y_mask(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                     vp9_reader* r, BLOCK_SIZE bsize,
+                                     LOOP_FILTER_MASK *lfm, int shift_y) {
+  MACROBLOCKD * const xd = &pbi->mb;
+  VP9_COMMON * const cm = &pbi->common;
+  const loop_filter_info_n * const lfi_n = &cm->lf_info;
+  decode_modes_b(pbi, mi_row, mi_col, r, bsize);
+  vp9_build_y_mask(lfi_n, xd->mi_8x8[0], shift_y, lfm);
+}
+static INLINE void decode_none_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                 vp9_reader* r, BLOCK_SIZE bsize,
+                                 LOOP_FILTER_MASK *lfm, int shift_y,
+                                 int shift_uv) {
+  VP9_COMMON * const cm = &pbi->common;
+  decode_and_mask(pbi, mi_row, mi_col, r, bsize, lfm, shift_y, shift_uv);
+  update_partition_context(cm, mi_row, mi_col, bsize, bsize);
+}
+static INLINE void decode_horz_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                 vp9_reader* r, BLOCK_SIZE psize,
+                                 BLOCK_SIZE bsize, LOOP_FILTER_MASK *lfm,
+                                 int step, int shift_y, int shift_uv) {
+  VP9_COMMON * const cm = &pbi->common;
+  decode_and_mask(pbi, mi_row, mi_col, r, psize, lfm, shift_y, shift_uv);
+  if (mi_row + step < cm->mi_rows)
+    decode_and_mask(pbi, mi_row + step, mi_col, r, psize, lfm,
+                    shift_y + step * 8, shift_uv + step * 2);
+  update_partition_context(cm, mi_row, mi_col, psize, bsize);
+}
+static INLINE void decode_horz_no_uv_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                       vp9_reader* r, BLOCK_SIZE psize,
+                                       BLOCK_SIZE bsize, LOOP_FILTER_MASK *lfm,
+                                       int step, int shift_y, int shift_uv) {
+  VP9_COMMON * const cm = &pbi->common;
+  decode_and_mask(pbi, mi_row, mi_col, r, psize, lfm, shift_y, shift_uv);
+  if (mi_row + step < cm->mi_rows)
+    decode_and_y_mask(pbi, mi_row + step, mi_col, r, psize, lfm,
+                      shift_y + step * 8);
+  update_partition_context(cm, mi_row, mi_col, psize, bsize);
+}
+static INLINE void decode_vert_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                 vp9_reader* r, BLOCK_SIZE psize,
+                                 BLOCK_SIZE bsize, LOOP_FILTER_MASK *lfm,
+                                 int step, int shift_y, int shift_uv) {
+  VP9_COMMON * const cm = &pbi->common;
+  decode_and_mask(pbi, mi_row, mi_col, r, psize, lfm, shift_y, shift_uv);
+  if (mi_col + step < cm->mi_cols)
+    decode_and_mask(pbi, mi_row, mi_col + step, r, psize, lfm, shift_y + step,
+                    shift_uv + step / 2);
+
+  update_partition_context(cm, mi_row, mi_col, psize, bsize);
+}
+static INLINE void decode_vert_no_uv_b(VP9D_COMP *pbi, int mi_row, int mi_col,
+                                       vp9_reader* r, BLOCK_SIZE psize,
+                                       BLOCK_SIZE bsize, LOOP_FILTER_MASK *lfm,
+                                       int step, int shift_y, int shift_uv) {
+  VP9_COMMON * const cm = &pbi->common;
+  decode_and_mask(pbi, mi_row, mi_col, r, psize, lfm, shift_y, shift_uv);
+  if (mi_col + step < cm->mi_cols)
+    decode_and_y_mask(pbi, mi_row, mi_col + step, r, psize, lfm,
+                      shift_y + step);
+  update_partition_context(cm, mi_row, mi_col, psize, bsize);
+}
+
+static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
+                            vp9_reader* r, BLOCK_SIZE bsize, int index) {
+  VP9_COMMON * const cm = &pbi->common;
+  PARTITION_TYPE partition = PARTITION_NONE;
+  BLOCK_SIZE subsize;
+
+  int idx_32, idx_16, idx_8;
+  LOOP_FILTER_MASK *lfm = pick_lfm(cm, mi_row, mi_col);
+
+  vp9_zero(*lfm);
+  partition = read_partition(cm, BLOCK_64X64, r, mi_row, mi_col);
+
+  switch (partition) {
+    case PARTITION_NONE:
+      decode_none_b(pbi, mi_row, mi_col, r, BLOCK_64X64, lfm, 0, 0);
+      break;
+    case PARTITION_HORZ:
+      decode_horz_b(pbi, mi_row, mi_col, r, BLOCK_64X32, BLOCK_64X64, lfm,
+                    4, 0, 0);
+      break;
+    case PARTITION_VERT:
+      decode_vert_b(pbi, mi_row, mi_col, r, BLOCK_32X64, BLOCK_64X64, lfm,
+                    4, 0, 0);
+      break;
+    case PARTITION_INVALID:
+      assert(!"Invalid Partition");
+      break;
+    case PARTITION_SPLIT: {
+      for (idx_32 = 0; idx_32 < 4; ++idx_32) {
+        const int shift_y = shift_32_y[idx_32];
+        const int shift_uv = shift_32_uv[idx_32];
+        const int mi_32_col = mi_col + ((idx_32 & 1) << 2);
+        const int mi_32_row = mi_row + ((idx_32 >> 1) << 2);
+        if (mi_32_col >= cm->mi_cols || mi_32_row >= cm->mi_rows)
+          continue;
+        partition = read_partition(cm, BLOCK_32X32, r, mi_32_row, mi_32_col);
+        switch (partition) {
+          case PARTITION_NONE:
+            decode_none_b(pbi, mi_32_row, mi_32_col, r, BLOCK_32X32, lfm,
+                          shift_y, shift_uv);
+            break;
+          case PARTITION_HORZ:
+            decode_horz_b(pbi, mi_32_row, mi_32_col, r, BLOCK_32X16,
+                          BLOCK_32X32, lfm, 2, shift_y, shift_uv);
+            break;
+          case PARTITION_VERT:
+            decode_vert_b(pbi, mi_32_row, mi_32_col, r, BLOCK_16X32,
+                          BLOCK_32X32, lfm, 2, shift_y, shift_uv);
+            break;
+          default: {
+            for (idx_16 = 0; idx_16 < 4; ++idx_16) {
+              const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16];
+              const int shift_uv = shift_32_uv[idx_32] + shift_16_uv[idx_16];
+              const int mi_16_col = mi_32_col + ((idx_16 & 1) << 1);
+              const int mi_16_row = mi_32_row + ((idx_16 >> 1) << 1);
+
+              if (mi_16_col >= cm->mi_cols || mi_16_row >= cm->mi_rows)
+                continue;
+
+              partition = read_partition(cm, BLOCK_16X16, r, mi_16_row,
+                                         mi_16_col);
+
+              switch (partition) {
+                case PARTITION_NONE:
+                  decode_none_b(pbi, mi_16_row, mi_16_col, r, BLOCK_16X16, lfm,
+                                shift_y, shift_uv);
+                  break;
+                case PARTITION_HORZ:
+                  decode_horz_no_uv_b(pbi, mi_16_row, mi_16_col, r, BLOCK_16X8,
+                                      BLOCK_16X16, lfm, 1, shift_y, shift_uv);
+                  break;
+                case PARTITION_VERT:
+                  decode_vert_no_uv_b(pbi, mi_16_row, mi_16_col, r, BLOCK_8X16,
+                                      BLOCK_16X16, lfm, 1, shift_y, shift_uv);
+                  break;
+                default: {
+                  for (idx_8 = 0; idx_8 < 4; ++idx_8) {
+                    const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16]
+                                         + shift_8_y[idx_8];
+                    const int mi_8_col = mi_16_col + ((idx_8 & 1));
+                    const int mi_8_row = mi_16_row + ((idx_8 >> 1));
+
+                    if (mi_8_col >= cm->mi_cols || mi_8_row >= cm->mi_rows)
+                      continue;
+
+                    partition = read_partition(cm, BLOCK_8X8, r, mi_8_row,
+                                               mi_8_col);
+                    subsize = get_subsize(BLOCK_8X8, partition);
+
+                    if (idx_8 == 0)
+                      decode_and_mask(pbi, mi_8_row, mi_8_col, r, subsize, lfm,
+                                      shift_y, shift_uv);
+                    else
+                      decode_and_y_mask(pbi, mi_8_row, mi_8_col, r, subsize,
+                                        lfm, shift_y);
+                    update_partition_context(cm, mi_8_row, mi_8_col, subsize,
+                                             BLOCK_8X8);
+                  }
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+      break;
+    }
+  }
+  vp9_adjust_loop_filter_mask(cm, mi_row, mi_col, lfm);
+}
+#else
 static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
                             vp9_reader* r, BLOCK_SIZE bsize, int index) {
   VP9_COMMON *const cm = &pbi->common;
@@ -449,6 +654,7 @@ static void decode_modes_sb(VP9D_COMP *pbi, int mi_row, int mi_col,
       (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
     update_partition_context(cm, mi_row, mi_col, subsize, bsize);
 }
+#endif
 
 static void setup_token_decoder(const uint8_t *data,
                                 const uint8_t *data_end,

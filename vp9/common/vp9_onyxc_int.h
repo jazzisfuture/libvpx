@@ -54,6 +54,7 @@ typedef struct frame_contexts {
   nmv_context nmvc;
 } FRAME_CONTEXT;
 
+
 typedef struct {
   unsigned int y_mode[BLOCK_SIZE_GROUPS][INTRA_MODES];
   unsigned int uv_mode[INTRA_MODES][INTRA_MODES];
@@ -217,6 +218,8 @@ typedef struct VP9Common {
   int log2_tile_cols, log2_tile_rows;
   int cur_tile_mi_col_start, cur_tile_mi_col_end;
   int cur_tile_mi_row_start, cur_tile_mi_row_end;
+  LOOP_FILTER_MASK *lfm;
+  int lfm_stride;
 } VP9_COMMON;
 
 // ref == 0 => LAST_FRAME
@@ -239,6 +242,10 @@ static int get_free_fb(VP9_COMMON *cm) {
   assert(i < NUM_YV12_BUFFERS);
   cm->fb_idx_ref_cnt[i] = 1;
   return i;
+}
+
+static LOOP_FILTER_MASK * pick_lfm(VP9_COMMON *cm, int mi_row, int mi_col) {
+  return &cm->lfm[(mi_row / 8) * cm->lfm_stride + mi_col / 8];
 }
 
 static void ref_cnt_fb(int *buf, int *idx, int new_idx) {
