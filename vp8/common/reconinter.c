@@ -373,6 +373,15 @@ static void clamp_uvmv_to_umv_border(MV *mv, const MACROBLOCKD *xd)
         (xd->mb_to_bottom_edge + (16 << 3)) >> 1 : mv->row;
 }
 
+static int validate_mv(MV *mv, const MACROBLOCKD *xd)
+{
+    return (mv->col >= xd->mb_to_left_edge - (VP8BORDERINPIXELS << 3)) &&
+           (mv->col <= xd->mb_to_right_edge + (VP8BORDERINPIXELS << 3)) &&
+           (mv->row >= xd->mb_to_top_edge - (VP8BORDERINPIXELS << 3)) &&
+           (mv->row <= xd->mb_to_bottom_edge + (VP8BORDERINPIXELS << 3));
+}
+
+
 void vp8_build_inter16x16_predictors_mb(MACROBLOCKD *x,
                                         unsigned char *dst_y,
                                         unsigned char *dst_u,
@@ -391,9 +400,11 @@ void vp8_build_inter16x16_predictors_mb(MACROBLOCKD *x,
 
     _16x16mv.as_int = x->mode_info_context->mbmi.mv.as_int;
 
-    if (x->mode_info_context->mbmi.need_to_clamp_mvs)
-    {
-        clamp_mv_to_umv_border(&_16x16mv.as_mv, x);
+    if (x->mode_info_context->mbmi.need_to_clamp_mvs) {
+      clamp_mv_to_umv_border(&_16x16mv.as_mv, x);
+    } else if (!validate_mv(&_16x16mv.as_mv, x)) {
+      clamp_mv_to_umv_border(&_16x16mv.as_mv, x);
+      x->corrupted |= 1;
     }
 
     ptr = ptr_base + ( _16x16mv.as_mv.row >> 3) * pre_stride + (_16x16mv.as_mv.col >> 3);
