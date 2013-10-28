@@ -815,6 +815,24 @@ static void setup_tile_info(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
     cm->log2_tile_rows += vp9_rb_read_bit(rb);
 }
 
+// Reads the next tile adjusting '*data' and setting '*size' accordingly based
+// on 'is_last'.
+static void get_tile(const uint8_t *const data_end,
+                     int is_last,
+                     struct vpx_internal_error_info *error_info,
+                     const uint8_t **data, size_t *size) {
+  if (!is_last) {
+    if (!read_is_valid(*data, 4, data_end))
+      vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
+          "Truncated packet or corrupt tile length");
+
+    *size = read_be32(*data);
+    *data += 4;
+  } else {
+    *size = data_end - *data;
+  }
+}
+
 static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
   vp9_reader residual_bc;
 
@@ -840,20 +858,16 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
     const uint8_t *data_ptr2[4][1 << 6];
     vp9_reader bc_bak = {0};
 
-    // pre-initialize the offsets, we're going to read in inverse order
+    // pre-initialize the offsets, we're going to decode in inverse order
     data_ptr2[0][0] = data;
     for (tile_row = 0; tile_row < tile_rows; tile_row++) {
-      if (tile_row) {
-        const int size = read_be32(data_ptr2[tile_row - 1][tile_cols - 1]);
-        data_ptr2[tile_row - 1][tile_cols - 1] += 4;
-        data_ptr2[tile_row][0] = data_ptr2[tile_row - 1][tile_cols - 1] + size;
-      }
-
-      for (tile_col = 1; tile_col < tile_cols; tile_col++) {
-        const int size = read_be32(data_ptr2[tile_row][tile_col - 1]);
-        data_ptr2[tile_row][tile_col - 1] += 4;
-        data_ptr2[tile_row][tile_col] =
-            data_ptr2[tile_row][tile_col - 1] + size;
+      for (tile_col = 0; tile_col < tile_cols; tile_col++) {
+        const int last_tile =
+            tile_row == tile_rows - 1 && tile_col == tile_cols - 1;
+        size_t size;
+        get_tile(data_end, last_tile, &cm->error, &data, &size);
+        data_ptr2[tile_row][tile_col] = data;
+        data += size;
       }
     }
 
@@ -873,26 +887,15 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
     }
     residual_bc = bc_bak;
   } else {
-    int has_more;
-
     for (tile_row = 0; tile_row < tile_rows; tile_row++) {
       for (tile_col = 0; tile_col < tile_cols; tile_col++) {
+        const int last_tile =
+            tile_row == tile_rows - 1 && tile_col == tile_cols - 1;
         TileInfo tile;
         size_t size;
 
         vp9_tile_init(&tile, cm, tile_row, tile_col);
-
-        has_more = tile_col < tile_cols - 1 || tile_row < tile_rows - 1;
-        if (has_more) {
-          if (!read_is_valid(data, 4, data_end))
-            vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
-                         "Truncated packet or corrupt tile length");
-
-          size = read_be32(data);
-          data += 4;
-        } else {
-          size = data_end - data;
-        }
+        get_tile(data_end, last_tile, &cm->error, &data, &size);
 
         setup_token_decoder(data, data_end, size, &cm->error, &residual_bc);
         setup_tile_context(pbi, xd, tile_col);
