@@ -2718,6 +2718,23 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
 }
 #endif
 
+static void adjust_kf_q(VP9_COMP *cpi, int *active_best_quality) {
+  double q_adj_factor = 1.0;
+  double q_val;
+
+  // Make a further adjustment based on the kf zero motion measure.
+  if (cpi->kf_zeromotion_pct > 33)
+    q_adj_factor += 0.004 * (33.0 - (double)cpi->kf_zeromotion_pct);
+  else
+    q_adj_factor += 0.002 * (33.0 - (double)cpi->kf_zeromotion_pct);
+
+  // Convert the adjustment factor to a qindex delta
+  // on active_best_quality.
+  q_val = vp9_convert_qindex_to_q(*active_best_quality);
+  *active_best_quality += vp9_compute_qdelta(
+      cpi, q_val, (q_val * q_adj_factor));
+}
+
 static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
                                       int * bottom_index, int * top_index) {
   // Set an active best quality and if necessary active worst quality
@@ -2742,28 +2759,13 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
     } else {
       int high = 5000;
       int low = 400;
-      double q_adj_factor = 1.0;
-      double q_val;
 
       // Baseline value derived from cpi->active_worst_quality and kf boost
       cpi->active_best_quality = get_active_quality(q, cpi->kf_boost,
                                                     low, high,
                                                     kf_low_motion_minq,
                                                     kf_high_motion_minq);
-
-      // Allow somewhat lower kf minq with small image formats.
-      if ((cm->width * cm->height) <= (352 * 288)) {
-        q_adj_factor -= 0.25;
-      }
-
-      // Make a further adjustment based on the kf zero motion measure.
-      q_adj_factor += 0.05 - (0.001 * (double)cpi->kf_zeromotion_pct);
-
-      // Convert the adjustment factor to a qindex delta
-      // on active_best_quality.
-      q_val = vp9_convert_qindex_to_q(cpi->active_best_quality);
-      cpi->active_best_quality +=
-          vp9_compute_qdelta(cpi, q_val, (q_val * q_adj_factor));
+      adjust_kf_q(cpi, &cpi->active_best_quality);
     }
 #else
     double current_q;
@@ -2904,6 +2906,7 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
 
   return q;
 }
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       unsigned long *size,
                                       unsigned char *dest,
