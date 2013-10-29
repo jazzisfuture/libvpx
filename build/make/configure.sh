@@ -1107,6 +1107,18 @@ EOF
         else
             soft_enable sse4_1
         fi
+        
+        if enabled gcc && ! disabled avx && ! check_cflags -mavx; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx "
+        else
+            soft_enable avx
+        fi
+        
+        if enabled gcc && ! disabled avx2 && ! check_cflags -mavx2; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx2 "
+        else
+            soft_enable avx2
+        fi        
 
         case "${AS}" in
             auto|"")
