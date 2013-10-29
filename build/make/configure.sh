@@ -1106,9 +1106,11 @@ EOF
             RTCD_OPTIONS="${RTCD_OPTIONS}--disable-sse4_1 "
         else
             soft_enable sse4_1
+            soft_enable avx
+			soft_enable avx2
         fi
 
-        case "${AS}" in
+		case "${AS}" in
             auto|"")
                 which nasm >/dev/null 2>&1 && AS=nasm
                 which yasm >/dev/null 2>&1 && AS=yasm
