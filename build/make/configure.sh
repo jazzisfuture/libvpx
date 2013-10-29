@@ -1100,6 +1100,7 @@ EOF
         soft_enable sse2
         soft_enable sse3
         soft_enable ssse3
+        
         # We can't use 'check_cflags' until the compiler is configured and CC is
         # populated.
         if enabled gcc && ! disabled sse4_1 && ! check_cflags -msse4; then
@@ -1107,6 +1108,18 @@ EOF
         else
             soft_enable sse4_1
         fi
+        
+        if enabled gcc && ! disabled avx && ! check_cflags -mavx; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx "
+        else
+            soft_enable avx
+        fi
+        
+        if enabled gcc && ! disabled avx2 && ! check_cflags -mavx2; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx2 "
+        else
+            soft_enable avx2
+        fi        
 
         case "${AS}" in
             auto|"")
