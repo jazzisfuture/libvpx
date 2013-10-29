@@ -1106,6 +1106,8 @@ EOF
             RTCD_OPTIONS="${RTCD_OPTIONS}--disable-sse4_1 "
         else
             soft_enable sse4_1
+            soft_enable avx
+            soft_enable avx2
         fi
 
         case "${AS}" in
