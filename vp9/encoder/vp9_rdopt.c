@@ -1341,7 +1341,16 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   for (mode = DC_PRED; mode <= TM_PRED; mode ++) {
     // if (!(mode_mask & (1 << mode)))
-    if (!(cpi->sf.intra_uv_mode_mask[max_uv_txsize_lookup[bsize]]
+    // TODO(dkovalev): Assuming YUV 4:2:0 here.
+    TX_SIZE tx_size;
+    if (bsize < BLOCK_8X8) {
+      tx_size = TX_4X4;
+    } else {
+      const BLOCK_SIZE uv_bsize = ss_size_lookup[bsize][1][1];
+      tx_size = max_txsize_lookup[uv_bsize];
+    }
+
+    if (!(cpi->sf.intra_uv_mode_mask[tx_size]
           & (1 << mode)))
       continue;
 
@@ -3426,7 +3435,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (rate_y == INT_MAX)
         continue;
 
-      uv_tx = MIN(mbmi->tx_size, max_uv_txsize_lookup[bsize]);
+      uv_tx = get_uv_tx_size(mbmi);
       if (rate_uv_intra[uv_tx] == INT_MAX) {
         choose_intra_uv_mode(cpi, bsize, &rate_uv_intra[uv_tx],
                              &rate_uv_tokenonly[uv_tx],
