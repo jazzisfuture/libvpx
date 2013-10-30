@@ -387,10 +387,6 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   MB_MODE_INFO *mbmi;
   int eobtotal;
 
-  if (less8x8)
-    if (index > 0)
-      return;
-
   set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
 
@@ -456,46 +452,43 @@ static void decode_modes_sb(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  if (bsize < BLOCK_8X8) {
-    if (index > 0)
-      return;
-  } else {
-    const int ctx = partition_plane_context(xd->above_seg_context,
-                                            xd->left_seg_context,
-                                            mi_row, mi_col, bsize);
-    partition = read_partition(hbs, cm->mi_rows, cm->mi_cols, mi_row, mi_col,
-                               cm->fc.partition_prob[cm->frame_type][ctx], r);
+  const int ctx = partition_plane_context(xd->above_seg_context,
+                                          xd->left_seg_context,
+                                          mi_row, mi_col, bsize);
+  partition = read_partition(hbs, cm->mi_rows, cm->mi_cols, mi_row, mi_col,
+                             cm->fc.partition_prob[cm->frame_type][ctx], r);
 
-    if (!cm->frame_parallel_decoding_mode)
-      ++cm->counts.partition[ctx][partition];
-  }
+  if (!cm->frame_parallel_decoding_mode)
+    ++cm->counts.partition[ctx][partition];
 
   subsize = get_subsize(bsize, partition);
-
-  switch (partition) {
-    case PARTITION_NONE:
-      decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
-      break;
-    case PARTITION_HORZ:
-      decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
-      if (mi_row + hbs < cm->mi_rows)
-        decode_modes_b(cm, xd, tile, mi_row + hbs, mi_col, r, subsize, 1);
-      break;
-    case PARTITION_VERT:
-      decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
-      if (mi_col + hbs < cm->mi_cols)
-        decode_modes_b(cm, xd, tile, mi_row, mi_col + hbs, r, subsize, 1);
-      break;
-    case PARTITION_SPLIT: {
-      int n;
-      for (n = 0; n < 4; n++) {
-        const int j = n >> 1, i = n & 1;
-        decode_modes_sb(cm, xd, tile, mi_row + j * hbs, mi_col + i * hbs,
-                        r, subsize, n);
-      }
-    } break;
-    default:
-      assert(!"Invalid partition type");
+  if (subsize < BLOCK_8X8) {
+    decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
+  } else {
+    switch (partition) {
+      case PARTITION_NONE:
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
+        break;
+      case PARTITION_HORZ:
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
+        if (mi_row + hbs < cm->mi_rows)
+          decode_modes_b(cm, xd, tile, mi_row + hbs, mi_col, r, subsize, 1);
+        break;
+      case PARTITION_VERT:
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
+        if (mi_col + hbs < cm->mi_cols)
+          decode_modes_b(cm, xd, tile, mi_row, mi_col + hbs, r, subsize, 1);
+        break;
+      case PARTITION_SPLIT:
+        decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, subsize, 0);
+        decode_modes_sb(cm, xd, tile, mi_row, mi_col + hbs, r, subsize, 1);
+        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col, r, subsize, 2);
+        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize,
+                        3);
+        break;
+      default:
+        assert(!"Invalid partition type");
+    }
   }
 
   // update partition context
