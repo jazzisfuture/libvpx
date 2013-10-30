@@ -288,7 +288,9 @@ static void setup_block_dptrs(MACROBLOCKD *xd, int ss_x, int ss_y) {
 
 
 static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
-  return MIN(mbmi->tx_size, max_uv_txsize_lookup[mbmi->sb_type]);
+  // TODO(dkovalev): Assuming YUV 4:2:0 here.
+  const BLOCK_SIZE uv_bsize = ss_size_lookup[mbmi->sb_type][1][1];
+  return MIN(mbmi->tx_size, max_txsize_lookup[uv_bsize]);
 }
 
 static BLOCK_SIZE get_plane_block_size(BLOCK_SIZE bsize,
