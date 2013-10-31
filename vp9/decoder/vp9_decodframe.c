@@ -1300,8 +1300,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   cm->fc = cm->frame_contexts[cm->frame_context_idx];
   vp9_zero(cm->counts);
-  for (i = 0; i < MAX_MB_PLANE; ++i)
-    vp9_zero(xd->plane[i].qcoeff);
+//  for (i = 0; i < MAX_MB_PLANE; ++i)
+//    vp9_zero(xd->plane[i].qcoeff);
+//  vpx_memset(pbi->qcoeff, 0, sizeof(pbi->qcoeff));
 
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
