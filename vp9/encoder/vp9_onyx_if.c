@@ -1530,6 +1530,28 @@ static void free_pick_mode_context(MACROBLOCK *x) {
   }
 }
 
+static void init_macroblock(VP9_COMP *const cpi) {
+  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  struct macroblockd_plane *const pd = xd->plane;
+  pd[0].qcoeff  = cpi->y_qcoeff;
+  pd[0].dqcoeff = cpi->y_dqcoeff;
+  pd[0].eobs    = cpi->y_eobs;
+
+  pd[1].qcoeff  = cpi->u_qcoeff;
+  pd[1].dqcoeff = cpi->u_dqcoeff;
+  pd[1].eobs    = cpi->u_eobs;
+
+  pd[2].qcoeff  = cpi->v_qcoeff;
+  pd[2].dqcoeff = cpi->v_dqcoeff;
+  pd[2].eobs    = cpi->v_eobs;
+
+#if CONFIG_ALPHA
+  pd[3].qcoeff  = cpi->a_qcoeff;
+  pd[3].dqcoeff = cpi->a_dqcoeff;
+  pd[3].eobs    = cpi->a_eobs;
+#endif
+}
+
 VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   int i, j;
   volatile union {
@@ -1567,6 +1589,8 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   init_config((VP9_PTR)cpi, oxcf);
 
   init_pick_mode_context(cpi);
+
+  init_macroblock(cpi);
 
   cm->current_video_frame   = 0;
   cpi->kf_overspend_bits            = 0;
