@@ -318,6 +318,24 @@ typedef struct VP9_COMP {
   VP9_CONFIG oxcf;
   struct rdcost_block_args rdcost_stack;
 
+  DECLARE_ALIGNED(16, int16_t,  y_qcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, int16_t,  y_dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, uint16_t, y_eobs[256]);
+
+  DECLARE_ALIGNED(16, int16_t,  u_qcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, int16_t,  u_dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, uint16_t, u_eobs[256]);
+
+  DECLARE_ALIGNED(16, int16_t,  v_qcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, int16_t,  v_dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, uint16_t, v_eobs[256]);
+
+#if CONFIG_ALPHA
+  DECLARE_ALIGNED(16, int16_t,  a_qcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, int16_t,  a_dqcoeff[64 * 64]);
+  DECLARE_ALIGNED(16, uint16_t, a_eobs[256]);
+#endif
+
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *source;
 #if CONFIG_MULTIPLE_ARF
