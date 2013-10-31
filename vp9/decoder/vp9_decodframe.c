@@ -294,7 +294,7 @@ static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
 static void decode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
-  MACROBLOCKD* const xd = arg;
+  MACROBLOCKD* const xd = ((struct decode_block_args *)arg)->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   MODE_INFO *const mi = xd->mi_8x8[0];
   const int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size,
@@ -313,8 +313,10 @@ static void decode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                           b_width_log2(plane_bsize), tx_size, mode,
                           dst, pd->dst.stride, dst, pd->dst.stride);
 
-  if (!mi->mbmi.skip_coeff)
-    decode_block(plane, block, plane_bsize, tx_size, arg);
+ if (!mi->mbmi.skip_coeff) {
+    v9_decode_block_tokens(plane, block, plane_bsize, tx_size, arg);
+    decode_block(plane, block, plane_bsize, tx_size, xd);
+  }
 }
 
 static int decode_tokens(VP9_COMMON *const cm, MACROBLOCKD *const xd,
@@ -385,7 +387,6 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                            vp9_reader *r, BLOCK_SIZE bsize) {
   const int less8x8 = bsize < BLOCK_8X8;
   MB_MODE_INFO *mbmi;
-  int eobtotal;
 
   set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
@@ -395,20 +396,23 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
   // Has to be called after set_offsets
   mbmi = &xd->mi_8x8[0]->mbmi;
-  eobtotal = decode_tokens(cm, xd, bsize, r);
 
   if (!is_inter_block(mbmi)) {
     // Intra reconstruction
-    foreach_transformed_block(xd, bsize, decode_block_intra, xd);
+    if (cm->seg.enabled)
+      setup_plane_dequants(cm, xd, vp9_get_qindex(&cm->seg, mbmi->segment_id,
+                                                  cm->base_qindex));
+
+    // decode_tokens(cm, xd, bsize, r);
+    if (mbmi->skip_coeff)
+      reset_skip_context(xd, bsize);
+
+    int eobtotal = 0;
+    struct decode_block_args arg = { cm, xd, &cm->seg, r, &eobtotal };
+    foreach_transformed_block(xd, bsize, decode_block_intra, &arg);
   } else {
     // Inter reconstruction
-    const int decode_blocks = (eobtotal > 0);
-
-    if (!less8x8) {
-      assert(mbmi->sb_type == bsize);
-      if (eobtotal == 0)
-        mbmi->skip_coeff = 1;  // skip loopfilter
-    }
+    int eobtotal;
 
     set_ref(cm, xd, 0, mi_row, mi_col);
     if (has_second_ref(mbmi))
@@ -418,8 +422,15 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
         vp9_get_filter_kernel(mbmi->interp_filter);
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
 
-    if (decode_blocks)
+    eobtotal = decode_tokens(cm, xd, bsize, r);
+    if (eobtotal > 0)
       foreach_transformed_block(xd, bsize, decode_block, xd);
+
+    if (!less8x8) {
+      assert(mbmi->sb_type == bsize);
+      if (eobtotal == 0)
+         mbmi->skip_coeff = 1;  // skip loopfilter
+    }
   }
   xd->corrupted |= vp9_reader_has_error(r);
 }

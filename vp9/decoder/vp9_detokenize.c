@@ -210,16 +210,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   return c;
 }
 
-struct decode_block_args {
-  VP9_COMMON *cm;
-  MACROBLOCKD *xd;
-  struct segmentation *seg;
-  vp9_reader *r;
-  int *eobtotal;
-};
-
-static void decode_block(int plane, int block, BLOCK_SIZE plane_bsize,
-                         TX_SIZE tx_size, void *argv) {
+void v9_decode_block_tokens(int plane, int block, BLOCK_SIZE plane_bsize,
+                            TX_SIZE tx_size, void *argv) {
   const struct decode_block_args* const arg = argv;
 
   // find the maximum eob for this transform size, adjusted by segment
@@ -249,6 +241,6 @@ int vp9_decode_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                       vp9_reader *r, BLOCK_SIZE bsize) {
   int eobtotal = 0;
   struct decode_block_args args = {cm, xd, seg, r, &eobtotal};
-  foreach_transformed_block(xd, bsize, decode_block, &args);
+  foreach_transformed_block(xd, bsize, v9_decode_block_tokens, &args);
   return eobtotal;
 }

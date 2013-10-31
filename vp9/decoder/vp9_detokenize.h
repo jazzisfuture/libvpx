@@ -15,6 +15,17 @@
 #include "vp9/decoder/vp9_onyxd_int.h"
 #include "vp9/decoder/vp9_dboolhuff.h"
 
+struct decode_block_args {
+  VP9_COMMON *cm;
+  MACROBLOCKD *xd;
+  struct segmentation *seg;
+  vp9_reader *r;
+  int *eobtotal;
+};
+
+void v9_decode_block_tokens(int plane, int block, BLOCK_SIZE plane_bsize,
+                                   TX_SIZE tx_size, void *argv);
+
 int vp9_decode_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                       struct segmentation *seg,
                       vp9_reader *r, BLOCK_SIZE bsize);
