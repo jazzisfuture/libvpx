@@ -107,6 +107,28 @@ void vp9_initialize_dec() {
   }
 }
 
+static void init_macroblockd(VP9D_COMP *const pbi) {
+  MACROBLOCKD *xd = &pbi->mb;
+  struct macroblockd_plane *const pd = xd->plane;
+  pd[0].qcoeff  = pbi->y_qcoeff;
+  pd[0].dqcoeff = pbi->y_dqcoeff;
+  pd[0].eobs    = pbi->y_eobs;
+
+  pd[1].qcoeff  = pbi->u_qcoeff;
+  pd[1].dqcoeff = pbi->u_dqcoeff;
+  pd[1].eobs    = pbi->u_eobs;
+
+  pd[2].qcoeff  = pbi->v_qcoeff;
+  pd[2].dqcoeff = pbi->v_dqcoeff;
+  pd[2].eobs    = pbi->v_eobs;
+
+#if CONFIG_ALPHA
+  pd[3].qcoeff  = pbi->a_qcoeff;
+  pd[3].dqcoeff = pbi->a_dqcoeff;
+  pd[3].eobs    = pbi->a_eobs;
+#endif
+}
+
 VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   VP9D_COMP *const pbi = vpx_memalign(32, sizeof(VP9D_COMP));
   VP9_COMMON *const cm = pbi ? &pbi->common : NULL;
@@ -140,6 +162,8 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
 
   cm->error.setjmp = 0;
   pbi->decoded_key_frame = 0;
+
+  init_macroblockd(pbi);
 
   vp9_worker_init(&pbi->lf_worker);
 
