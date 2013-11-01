@@ -11,7 +11,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/ivf_video_source.h"

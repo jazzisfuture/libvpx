@@ -12,9 +12,9 @@
 
 #include <string>
 #include <vector>
+#include <gtest/gtest.h>
 
 #include "./vpx_config.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_encoder.h"
 
 namespace libvpx_test {
