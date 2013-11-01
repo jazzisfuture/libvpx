@@ -121,7 +121,8 @@ static void optimize_b(MACROBLOCK *mb,
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
   vp9_token_state tokens[1025][2];
   unsigned best_index[1025][2];
-  const int16_t *coeff_ptr = BLOCK_OFFSET(mb->plane[plane].coeff, block);
+//  const int16_t *coeff_ptr = BLOCK_OFFSET(mb->plane[plane].coeff, block);
+  const int16_t *coeff_ptr = BLOCK_OFFSET(mb->plane[plane].test_coeff, block);
   int16_t *qcoeff_ptr;
   int16_t *dqcoeff_ptr;
   int eob = pd->eobs[block], final_eob, sz = 0;
@@ -347,7 +348,8 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
   MACROBLOCKD* const xd = &x->e_mbd;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+//  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  int16_t *coeff = BLOCK_OFFSET(p->test_coeff, block);
   int16_t *qcoeff = BLOCK_OFFSET(pd->qcoeff, block);
   int16_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   const int16_t *scan, *iscan;
@@ -524,7 +526,8 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+//  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  int16_t *coeff = BLOCK_OFFSET(p->test_coeff, block);
   int16_t *qcoeff = BLOCK_OFFSET(pd->qcoeff, block);
   int16_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   const int16_t *scan, *iscan;
