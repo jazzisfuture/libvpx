@@ -1075,7 +1075,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         TX_TYPE tx_type;
         xd->mi_8x8[0]->bmi[block].as_mode = mode;
         src_diff = raster_block_offset_int16(BLOCK_8X8, block, p->src_diff);
-        coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
+//        coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
+        coeff = BLOCK_OFFSET(x->plane[0].test_coeff, block);
         vp9_predict_intra_block(xd, block, 1,
                                 TX_4X4, mode,
                                 x->skip_encode ? src : dst,
@@ -1557,7 +1558,8 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
       int16_t* coeff;
 
       k += (idy * 2 + idx);
-      coeff = BLOCK_OFFSET(p->coeff, k);
+      coeff = BLOCK_OFFSET(p->test_coeff, k);
+//      coeff = BLOCK_OFFSET(p->coeff, k);
       x->fwd_txm4x4(raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                     coeff, 8);
       vp9_regular_quantize_b_4x4(x, 16, k, get_scan_4x4(DCT_DCT),
