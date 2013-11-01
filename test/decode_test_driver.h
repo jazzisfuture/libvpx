@@ -10,8 +10,10 @@
 
 #ifndef TEST_DECODE_TEST_DRIVER_H_
 #define TEST_DECODE_TEST_DRIVER_H_
+
+#include <gtest/gtest.h>
 #include <cstring>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
 
