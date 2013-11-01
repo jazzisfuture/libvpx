@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/acm_random.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_mem/vpx_mem.h"

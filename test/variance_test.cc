@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <new>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"

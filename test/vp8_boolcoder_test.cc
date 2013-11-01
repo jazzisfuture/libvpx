@@ -17,7 +17,7 @@
 #include <sys/types.h>
 
 #include "test/acm_random.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "vpx/vpx_integer.h"
 
 extern "C" {
