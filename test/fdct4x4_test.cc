@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 extern "C" {
 #include "./vp9_rtcd.h"

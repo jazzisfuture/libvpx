@@ -20,7 +20,7 @@ extern void vp8_rtcd();
 extern void vp9_rtcd();
 #endif
 }
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 static void append_gtest_filter(const char *str) {
   std::string filter = ::testing::FLAGS_gtest_filter;

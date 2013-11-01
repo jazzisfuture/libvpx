@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "vpx/vpx_image.h"
 
 // Macros

@@ -12,7 +12,7 @@
 #include "test/acm_random.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 extern "C" {
 #include "./vpx_config.h"

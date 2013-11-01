@@ -14,7 +14,7 @@
 #include "test/decode_test_driver.h"
 #include "test/register_state_check.h"
 #include "test/video_source.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace libvpx_test {
 void Encoder::EncodeFrame(VideoSource *video, const unsigned long frame_flags) {
