@@ -16,8 +16,7 @@
 #define _WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winnt.h>
-
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <gtest/gtest.h>
 
 namespace testing {
 namespace internal {

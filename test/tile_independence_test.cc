@@ -8,15 +8,17 @@
  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <gtest/gtest.h>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
 #include "test/md5_helper.h"
+
 extern "C" {
 #include "vpx_mem/vpx_mem.h"
 }

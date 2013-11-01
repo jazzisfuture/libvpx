@@ -8,27 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <stdlib.h>
+#include <gtest/gtest.h>
 #include <new>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
-
+#include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
-
 #include "vpx/vpx_integer.h"
-#include "./vpx_config.h"
+#include "vpx_config.h"
+
 extern "C" {
 #include "vpx_mem/vpx_mem.h"
 #if CONFIG_VP8_ENCODER
 # include "vp8/common/variance.h"
-# include "./vp8_rtcd.h"
+# include "vp8_rtcd.h"
 #endif
 #if CONFIG_VP9_ENCODER
 # include "vp9/encoder/vp9_variance.h"
-# include "./vp9_rtcd.h"
+# include "vp9_rtcd.h"
 #endif
 }
-#include "test/acm_random.h"
 
 namespace {
 

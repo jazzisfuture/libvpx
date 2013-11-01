@@ -15,14 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-
+#include <gtest/gtest.h>
 
 extern "C" {
-#include "./vp8_rtcd.h"
+#include "vp8_rtcd.h"
 }
 
 #include "test/acm_random.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_integer.h"
 
 

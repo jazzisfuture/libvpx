@@ -12,14 +12,15 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <gtest/gtest.h>
 
 extern "C" {
-#include "./vpx_config.h"
+#include "vpx_config.h"
 #if CONFIG_VP8_ENCODER
-#include "./vp8_rtcd.h"
+#include "vp8_rtcd.h"
 #endif
 #if CONFIG_VP9_ENCODER
-#include "./vp9_rtcd.h"
+#include "vp9_rtcd.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
 }
@@ -28,8 +29,6 @@ extern "C" {
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
-
 
 typedef unsigned int (*sad_m_by_n_fn_t)(const unsigned char *source_ptr,
                                         int source_stride,

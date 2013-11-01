@@ -11,20 +11,19 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gtest/gtest.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
+#include "vpx/vpx_integer.h"
 
 extern "C" {
-#include "./vpx_config.h"
 #include "vp9/common/vp9_entropy.h"
-#include "./vp9_rtcd.h"
+#include "vp9_rtcd.h"
+#include "vpx_config.h"
 }
-
-#include "vpx/vpx_integer.h"
 
 using libvpx_test::ACMRandom;
 

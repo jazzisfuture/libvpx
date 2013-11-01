@@ -7,8 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include <gtest/gtest.h>
 #include <string>
-#include "./vpx_config.h"
+
+#include "vpx_config.h"
+
 extern "C" {
 #if ARCH_X86 || ARCH_X86_64
 #include "vpx_ports/x86.h"
@@ -20,7 +24,6 @@ extern void vp8_rtcd();
 extern void vp9_rtcd();
 #endif
 }
-#include "third_party/googletest/src/include/gtest/gtest.h"
 
 static void append_gtest_filter(const char *str) {
   std::string filter = ::testing::FLAGS_gtest_filter;
