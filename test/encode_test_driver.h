@@ -7,14 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #ifndef TEST_ENCODE_TEST_DRIVER_H_
 #define TEST_ENCODE_TEST_DRIVER_H_
 
+#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
 #include "./vpx_config.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_encoder.h"
 
 namespace libvpx_test {

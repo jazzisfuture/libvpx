@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <stdlib.h>
+#include <gtest/gtest.h>
 #include <new>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
-
+#include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
-
 #include "vpx/vpx_integer.h"
 #include "./vpx_config.h"
+
 extern "C" {
 #include "vpx_mem/vpx_mem.h"
 #if CONFIG_VP8_ENCODER
@@ -28,7 +28,6 @@ extern "C" {
 # include "./vp9_rtcd.h"
 #endif
 }
-#include "test/acm_random.h"
 
 namespace {
 

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <gtest/gtest.h>
 
 extern "C" {
 #include "./vpx_config.h"
@@ -28,8 +29,6 @@ extern "C" {
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
-
 
 typedef unsigned int (*sad_m_by_n_fn_t)(const unsigned char *source_ptr,
                                         int source_stride,
