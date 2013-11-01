@@ -184,7 +184,8 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int y_blocks, int b_idx,
   struct macroblock_plane* p = &x->plane[pb_idx.plane];
   struct macroblockd_plane* pd = &xd->plane[pb_idx.plane];
 
-  vp9_quantize_b(BLOCK_OFFSET(p->coeff, pb_idx.block),
+  vp9_quantize_b(BLOCK_OFFSET(p->test_coeff, pb_idx.block)
+                 /* BLOCK_OFFSET(p->coeff, pb_idx.block) */,
            16, x->skip_block,
            p->zbin, p->round, p->quant, p->quant_shift,
            BLOCK_OFFSET(pd->qcoeff, pb_idx.block),

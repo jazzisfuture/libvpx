@@ -524,7 +524,8 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+//  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  int16_t *coeff = BLOCK_OFFSET(p->test_coeff, block);
   int16_t *qcoeff = BLOCK_OFFSET(pd->qcoeff, block);
   int16_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   const int16_t *scan, *iscan;
