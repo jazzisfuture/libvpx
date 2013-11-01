@@ -1872,12 +1872,14 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
           mi_buf_restore(x, orig_src, orig_pre);
         }
 
-        if (has_second_rf && this_mode == NEWMV &&
-            mbmi->interp_filter == EIGHTTAP) {
+        if (has_second_rf) {
           if (seg_mvs[i][mbmi->ref_frame[1]].as_int == INVALID_MV ||
               seg_mvs[i][mbmi->ref_frame[0]].as_int == INVALID_MV)
             continue;
+        }
 
+        if (has_second_rf && this_mode == NEWMV &&
+            mbmi->interp_filter == EIGHTTAP) {
           // adjust src pointers
           mi_buf_shift(x, i);
           if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
@@ -1899,6 +1901,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                         &second_mode_mv[this_mode], frame_mv, seg_mvs[i],
                         bsi->ref_mv, bsi->second_ref_mv, x->nmvjointcost,
                         x->mvcost, cpi);
+
 
         bsi->rdstat[i][mode_idx].mvs[0].as_int = mode_mv[this_mode].as_int;
         if (num_4x4_blocks_wide > 1)
@@ -2661,6 +2664,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int orig_dst_stride[MAX_MB_PLANE];
   int rs = 0;
 
+  if (is_comp_pred) {
+    if (frame_mv[refs[0]].as_int == INVALID_MV ||
+        frame_mv[refs[1]].as_int == INVALID_MV)
+      return INT64_MAX;
+  }
+
   if (this_mode == NEWMV) {
     int rate_mv;
     if (is_comp_pred) {
@@ -2679,9 +2688,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                    &mbmi->ref_mvs[refs[1]][0].as_mv,
                                    x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
       }
-      if (frame_mv[refs[0]].as_int == INVALID_MV ||
-          frame_mv[refs[1]].as_int == INVALID_MV)
-        return INT64_MAX;
       *rate2 += rate_mv;
     } else {
       int_mv tmp_mv;
