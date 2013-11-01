@@ -682,7 +682,7 @@ static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi, int mode) {
 
   // Check for masked out split cases.
   for (i = 0; i < MAX_REFS; i++) {
-    if (sf->disable_split_mask & (1 << i))
+    if (/* sf->disable_split_mask */ DISABLE_COMPOUND_SPLIT & (1 << i))
       sf->thresh_mult_sub8x8[i] = INT_MAX;
   }
 
@@ -1442,6 +1442,49 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
+static void alloc_mode_context(VP9_COMMON *cm, int num_4x4_blk,
+                               PICK_MODE_CONTEXT *ctx) {
+  int num_pix = num_4x4_blk << 4;
+  int i, k;
+  ctx->num_4x4_blk = num_4x4_blk;
+  CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
+                  vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    for (k = 0; k < 2; ++k) {
+      CHECK_MEM_ERROR(cm, ctx->coeff[i][k],
+                      vpx_memalign(16, num_pix * sizeof(int16_t)));
+      CHECK_MEM_ERROR(cm, ctx->qcoeff[i][k],
+                      vpx_memalign(16, num_pix * sizeof(int16_t)));
+      CHECK_MEM_ERROR(cm, ctx->dqcoeff[i][k],
+                      vpx_memalign(16, num_pix * sizeof(int16_t)));
+      CHECK_MEM_ERROR(cm, ctx->eobs[i][k],
+                      vpx_memalign(16, num_pix * sizeof(uint16_t)));
+      ctx->coeff_pbuf[i][k]   = ctx->coeff[i][k];
+      ctx->qcoeff_pbuf[i][k]  = ctx->qcoeff[i][k];
+      ctx->dqcoeff_pbuf[i][k] = ctx->dqcoeff[i][k];
+      ctx->eobs_pbuf[i][k]    = ctx->eobs[i][k];
+    }
+  }
+}
+
+static void free_mode_context(PICK_MODE_CONTEXT *ctx) {
+  int i, k;
+  vpx_free(ctx->zcoeff_blk);
+  ctx->zcoeff_blk = 0;
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    for (k = 0; k < 2; ++k) {
+      vpx_free(ctx->coeff[i][k]);
+      ctx->coeff[i][k] = 0;
+      vpx_free(ctx->qcoeff[i][k]);
+      ctx->qcoeff[i][k] = 0;
+      vpx_free(ctx->dqcoeff[i][k]);
+      ctx->dqcoeff[i][k] = 0;
+      vpx_free(ctx->eobs[i][k]);
+      ctx->eobs[i][k] = 0;
+    }
+  }
+}
+
 static void init_pick_mode_context(VP9_COMP *cpi) {
   int i;
   MACROBLOCK  *x  = &cpi->mb;
@@ -1457,9 +1500,7 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
         for (xd->mb_index = 0; xd->mb_index < 4; ++xd->mb_index) {
           for (xd->b_index = 0; xd->b_index < 16 / num_4x4_blk; ++xd->b_index) {
             PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-            ctx->num_4x4_blk = num_4x4_blk;
-            CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                            vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+            alloc_mode_context(cm, num_4x4_blk, ctx);
           }
         }
       }
@@ -1469,22 +1510,19 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
                                ++xd->mb_index) {
           PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
           ctx->num_4x4_blk = num_4x4_blk;
-          CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                          vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+          alloc_mode_context(cm, num_4x4_blk, ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (xd->sb_index = 0; xd->sb_index < 256 / num_4x4_blk; ++xd->sb_index) {
         PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
         ctx->num_4x4_blk = num_4x4_blk;
-        CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                        vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+        alloc_mode_context(cm, num_4x4_blk, ctx);
       }
     } else {
       PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
       ctx->num_4x4_blk = num_4x4_blk;
-      CHECK_MEM_ERROR(cm, ctx->zcoeff_blk,
-                      vpx_calloc(num_4x4_blk, sizeof(uint8_t)));
+      alloc_mode_context(cm, num_4x4_blk, ctx);
     }
   }
 }
@@ -1502,8 +1540,7 @@ static void free_pick_mode_context(MACROBLOCK *x) {
         for (xd->mb_index = 0; xd->mb_index < 4; ++xd->mb_index) {
           for (xd->b_index = 0; xd->b_index < 16 / num_4x4_blk; ++xd->b_index) {
             PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-            vpx_free(ctx->zcoeff_blk);
-            ctx->zcoeff_blk = 0;
+            free_mode_context(ctx);
           }
         }
       }
@@ -1512,44 +1549,19 @@ static void free_pick_mode_context(MACROBLOCK *x) {
         for (xd->mb_index = 0; xd->mb_index < 64 / num_4x4_blk;
                                ++xd->mb_index) {
           PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-          vpx_free(ctx->zcoeff_blk);
-          ctx->zcoeff_blk = 0;
+          free_mode_context(ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (xd->sb_index = 0; xd->sb_index < 256 / num_4x4_blk; ++xd->sb_index) {
         PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-        vpx_free(ctx->zcoeff_blk);
-        ctx->zcoeff_blk = 0;
+        free_mode_context(ctx);
       }
     } else {
       PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
-      vpx_free(ctx->zcoeff_blk);
-      ctx->zcoeff_blk = 0;
+      free_mode_context(ctx);
     }
   }
-}
-
-static void init_macroblock(VP9_COMP *const cpi) {
-  MACROBLOCKD *xd = &cpi->mb.e_mbd;
-  struct macroblockd_plane *const pd = xd->plane;
-  pd[0].qcoeff  = cpi->y_qcoeff;
-  pd[0].dqcoeff = cpi->y_dqcoeff;
-  pd[0].eobs    = cpi->y_eobs;
-
-  pd[1].qcoeff  = cpi->u_qcoeff;
-  pd[1].dqcoeff = cpi->u_dqcoeff;
-  pd[1].eobs    = cpi->u_eobs;
-
-  pd[2].qcoeff  = cpi->v_qcoeff;
-  pd[2].dqcoeff = cpi->v_dqcoeff;
-  pd[2].eobs    = cpi->v_eobs;
-
-#if CONFIG_ALPHA
-  pd[3].qcoeff  = cpi->a_qcoeff;
-  pd[3].dqcoeff = cpi->a_dqcoeff;
-  pd[3].eobs    = cpi->a_eobs;
-#endif
 }
 
 VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
@@ -1589,8 +1601,6 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   init_config((VP9_PTR)cpi, oxcf);
 
   init_pick_mode_context(cpi);
-
-  init_macroblock(cpi);
 
   cm->current_video_frame   = 0;
   cpi->kf_overspend_bits            = 0;
