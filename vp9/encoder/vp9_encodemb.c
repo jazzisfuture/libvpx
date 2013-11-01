@@ -440,8 +440,8 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
 
-  if (x->optimize)
-    vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
+//  if (x->optimize)
+//    vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
 
   if (x->skip_encode || pd->eobs[block] == 0)
     return;
