@@ -558,10 +558,8 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 
   xd->mi_8x8 = mi_8x8;
 
-  set_mi_row_col(xd, tile,
-                 mi_row, num_8x8_blocks_high_lookup[m->mbmi.sb_type],
-                 mi_col, num_8x8_blocks_wide_lookup[m->mbmi.sb_type],
-                 cm->mi_rows, cm->mi_cols);
+  set_mi_row_col(xd, tile, mi_row, mi_col,
+                 cm->mi_rows, cm->mi_cols, m->mbmi.sb_type);
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cpi, mi_8x8, bc);
 #ifdef ENTROPY_STATS

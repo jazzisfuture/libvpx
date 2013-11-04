@@ -266,9 +266,10 @@ static INLINE void set_skip_context(
 }
 
 static void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
-                           int mi_row, int bh,
-                           int mi_col, int bw,
-                           int mi_rows, int mi_cols) {
+                           int mi_row, int mi_col,
+                           int mi_rows, int mi_cols, BLOCK_SIZE bsize) {
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
   xd->mb_to_top_edge    = -((mi_row * MI_SIZE) * 8);
   xd->mb_to_bottom_edge = ((mi_rows - bh - mi_row) * MI_SIZE) * 8;
   xd->mb_to_left_edge   = -((mi_col * MI_SIZE) * 8);

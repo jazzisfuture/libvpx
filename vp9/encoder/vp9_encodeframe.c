@@ -528,8 +528,8 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
 
   // Set up distance of MB to edge of frame in 1/8th pel units
   assert(!(mi_col & (mi_width - 1)) && !(mi_row & (mi_height - 1)));
-  set_mi_row_col(xd, tile, mi_row, mi_height, mi_col, mi_width,
-                 cm->mi_rows, cm->mi_cols);
+  set_mi_row_col(xd, tile, mi_row, mi_col,
+                 cm->mi_rows, cm->mi_cols, bsize);
 
   /* set up source buffers */
   vp9_setup_src_planes(x, cpi->Source, mi_row, mi_col);
