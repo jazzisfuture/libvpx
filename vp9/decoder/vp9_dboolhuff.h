@@ -38,13 +38,13 @@ void vp9_reader_fill(vp9_reader *r);
 
 const uint8_t *vp9_reader_find_end(vp9_reader *r);
 
-static int vp9_read(vp9_reader *br, int probability) {
+static INLINE int vp9_read(vp9_reader *br, int probability) {
   unsigned int bit = 0;
   VP9_BD_VALUE value;
   VP9_BD_VALUE bigsplit;
   int count;
   unsigned int range;
-  unsigned int split = 1 + (((br->range - 1) * probability) >> 8);
+  unsigned int split = ((br->range * probability) + (256 - probability)) >> 8;
 
   if (br->count < 0)
     vp9_reader_fill(br);
