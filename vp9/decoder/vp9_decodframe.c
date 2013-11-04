@@ -353,15 +353,8 @@ static void reconstruct_inter_block(int plane, int block,
 static void set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                         const TileInfo *const tile,
                         BLOCK_SIZE bsize, int mi_row, int mi_col) {
-  const int bh = num_8x8_blocks_high_lookup[bsize];
-  const int bw = num_8x8_blocks_wide_lookup[bsize];
   const int offset = mi_row * cm->mode_info_stride + mi_col;
-
-  xd->mode_info_stride = cm->mode_info_stride;
-
   xd->mi_8x8 = cm->mi_grid_visible + offset;
-  xd->prev_mi_8x8 = cm->prev_mi_grid_visible + offset;
-
   // we are using the mode info context stream here
   xd->mi_8x8[0] = xd->mi_stream;
   xd->mi_8x8[0]->mbmi.sb_type = bsize;
@@ -369,13 +362,14 @@ static void set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
   // Special case: if prev_mi is NULL, the previous mode info context
   // cannot be used.
-  xd->last_mi = cm->prev_mi ? xd->prev_mi_8x8[0] : NULL;
+  xd->last_mi = cm->prev_mi ?
+                cm->prev_mi_grid_visible[offset] : NULL;
 
   set_skip_context(xd, xd->above_context, xd->left_context, mi_row, mi_col);
 
   // Distance of Mb to the various image edges. These are specified to 8th pel
   // as they are always compared to values that are in 1/8th pel units
-  set_mi_row_col(xd, tile, mi_row, bh, mi_col, bw, cm->mi_rows, cm->mi_cols);
+  set_mi_row_col(xd, tile, mi_row, mi_col, cm->mi_rows, cm->mi_cols, bsize);
 
   setup_dst_planes(xd, get_frame_new_buffer(cm), mi_row, mi_col);
 }
