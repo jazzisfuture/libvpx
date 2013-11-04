@@ -513,7 +513,6 @@ typedef struct VP9_COMP {
   int compressor_speed;
 
   int interquantizer;
-  int goldfreq;
   int auto_worst_q;
   int cpu_used;
   int pass;
