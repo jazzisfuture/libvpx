@@ -18,16 +18,23 @@
 
 namespace libvpx_test {
 
-static FILE *OpenTestDataFile(const std::string& file_name) {
-  std::string path_to_source = file_name;
-  const char *kDataPath = getenv("LIBVPX_TEST_DATA_PATH");
-
-  if (kDataPath) {
-    path_to_source = kDataPath;
-    path_to_source += "/";
-    path_to_source += file_name;
+static std::string GetDataPath() {
+  const char *data_path = getenv("LIBVPX_TEST_DATA_PATH");
+  if (!data_path) {
+#ifdef LIBVPX_TEST_DATA_PATH
+    // In some environments, we cannot set environment variables
+    // Instead, we set the data path by using a preprocessor symbol
+    // which can be set from make files
+    return LIBVPX_TEST_DATA_PATH;
+#else
+    return ".";
+#endif
   }
+  return data_path;
+}
 
+static FILE *OpenTestDataFile(const std::string& file_name) {
+  std::string path_to_source = GetDataPath() + "/" + file_name;
   return fopen(path_to_source.c_str(), "rb");
 }
 
