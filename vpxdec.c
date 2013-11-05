@@ -50,8 +50,6 @@
 
 static const char *exec_name;
 
-#define VP8_FOURCC (0x00385056)
-#define VP9_FOURCC (0x00395056)
 static const struct {
   char const *name;
   const vpx_codec_iface_t *(*iface)(void);
@@ -143,7 +141,7 @@ static const arg_def_t *vp8_pp_args[] = {
 };
 #endif
 
-static void usage_exit() {
+void usage_exit() {
   int i;
 
   fprintf(stderr, "Usage: %s <options> filename\n\n"
@@ -176,14 +174,6 @@ static void usage_exit() {
             vpx_codec_iface_name(ifaces[i].iface()));
 
   exit(EXIT_FAILURE);
-}
-
-void die(const char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  usage_exit();
 }
 
 static unsigned int mem_get_le16(const void *vmem) {
