@@ -900,209 +900,71 @@ void vp9_generate_hard_mask_interintra(int mask_index, BLOCK_SIZE_TYPE sb_type,
 }
 #endif
 
-static void combine_interintra(MB_PREDICTION_MODE mode,
-#if CONFIG_MASKED_INTERINTRA
-                               int use_masked_interintra,
-                               int mask_index,
-                               BLOCK_SIZE_TYPE bsize,
-#endif
-                               uint8_t *interpred,
-                               int interstride,
-                               uint8_t *intrapred,
-                               int intrastride,
-                               int bw, int bh) {
-  static const int scale_bits = 8;
-  static const int scale_max = 256;
-  static const int scale_round = 127;
-  static const int weights1d[64] = {
-      128, 125, 122, 119, 116, 114, 111, 109,
-      107, 105, 103, 101,  99,  97,  96,  94,
-       93,  91,  90,  89,  88,  86,  85,  84,
-       83,  82,  81,  81,  80,  79,  78,  78,
-       77,  76,  76,  75,  75,  74,  74,  73,
-       73,  72,  72,  71,  71,  71,  70,  70,
-       70,  70,  69,  69,  69,  69,  68,  68,
-       68,  68,  68,  67,  67,  67,  67,  67,
+static void combine_interintra_filter(MB_PREDICTION_MODE mode,
+                                      uint8_t *interpred,
+                                      int interstride,
+                                      uint8_t *intrapred,
+                                      int intrastride,
+                                      int bw, int bh,
+                                      int up_available, int left_available) {
+  static const int scale_bits = 10;
+  static const int scale_round = 511;
+  static const int taps[FIL_INTERINTRA_MODES][4] = {
+      {537, 197,  132, 146, },
+      {475,  76, -120, 579, },
+      { 27, 478,  -33, 553, },
+      {105, 146,    2, 776, },
+      {263, 116,  -75, 788, },
+      {115, 151, -118, 873, },
+      { 94, 147, -142, 784, },
+      {232, 183, -260, 856, },
   };
 
-  int size = MAX(bw, bh);
-  int size_scale = (size >= 64 ? 1 :
-                    size == 32 ? 2 :
-                    size == 16 ? 4 :
-                    size == 8  ? 8 : 16);
-  int i, j;
+  int i, j, mean = 0;
+  int pred[65][65];
+  int cv, ch, cd, cm;
 
-#if CONFIG_MASKED_INTERINTRA
-  uint8_t mask[4096];
-  if (use_masked_interintra && get_mask_bits_interintra(bsize))
-    vp9_generate_masked_weight_interintra(mask_index, bsize, bh, bw, mask, bw);
-#endif
+  cv = taps[mode][0];
+  ch = taps[mode][1];
+  cd = taps[mode][2];
+  cm = taps[mode][3];
 
-  switch (mode) {
-    case V_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = weights1d[i * size_scale];
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
+  for (i = 0; i < bh; ++i)
+    for (j = 0; j < bw; ++j)
+      mean += (int)interpred[i * interstride + j];
 
-    case H_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = weights1d[j * size_scale];
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
+  mean = (mean + (bw * bh)/2)/(bw * bh);
 
-    case D63_PRED:
-    case D117_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = (weights1d[i * size_scale] * 3 +
-                       weights1d[j * size_scale]) >> 2;
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
-
-    case D27_PRED:
-    case D153_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = (weights1d[j * size_scale] * 3 +
-                       weights1d[i * size_scale]) >> 2;
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
-
-    case D135_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = weights1d[(i < j ? i : j) * size_scale];
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
-
-    case D45_PRED:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-          int scale = (weights1d[i * size_scale] +
-                       weights1d[j * size_scale]) >> 1;
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] =
-              ((scale_max - scale) * interpred[k] +
-                  scale * intrapred[i * intrastride + j] + scale_round)
-                  >> scale_bits;
-        }
-      }
-     break;
-
-    case TM_PRED:
-    case DC_PRED:
-    default:
-      for (i = 0; i < bh; ++i) {
-        for (j = 0; j < bw; ++j) {
-          int k = i * interstride + j;
-#if CONFIG_MASKED_INTERINTRA
-          int m = mask[i * bw + j];
-          if (use_masked_interintra && get_mask_bits_interintra(bsize))
-              interpred[k] = (intrapred[i * intrastride + j] * m +
-                              interpred[k] *
-                              ((1 << MASK_WEIGHT_BITS_INTERINTRA) - m) +
-                              (1 << (MASK_WEIGHT_BITS_INTERINTRA - 1))) >>
-                              MASK_WEIGHT_BITS_INTERINTRA;
-          else
-#endif
-          interpred[k] = (interpred[k] + intrapred[i * intrastride + j]) >> 1;
-        }
-      }
-      break;
+  for (i = 1; i <= bh; ++i) {
+    if (left_available)
+      pred[i][0] = (int)intrapred[(i - 1) * intrastride - 1] - mean;
+    else
+      pred[i][0] = 128 - mean;
   }
+  for (j = 0; j < bw; ++j) {
+    if (up_available)
+      pred[0][j + 1] = (int)intrapred[j - intrastride] - mean;
+    else
+      pred[0][j + 1] = 128 - mean;
+  }
+  if (up_available && left_available)
+    pred[0][0] = (int)intrapred[-1 - intrastride] - mean;
+  else
+    pred[0][0] = 128 - mean;
+
+  for (i = 0; i < bh; ++i) {
+    for (j = 0; j < bw; ++j) {
+      int k = i * interstride + j;
+      int ipred = cv * pred[i][j + 1] + ch * pred[i + 1][j] +
+                  cd * pred[i][j] + cm * ((int)interpred[k] - mean);
+      pred[i + 1][j + 1] = ipred < 0 ? -((-ipred + scale_round) >> scale_bits) :
+                                       ((ipred + scale_round) >> scale_bits);
+    }
+  }
+
+  for (i = 0; i < bh; ++i)
+    for (j = 0; j < bh; ++j)
+      interpred[i * interstride + j] = clip_pixel(pred[i + 1][j + 1] + mean);
 }
 
 // Break down rectangular intra prediction for joint spatio-temporal prediction
@@ -1147,19 +1009,10 @@ void vp9_build_interintra_predictors_sby(MACROBLOCKD *xd,
   const struct macroblockd_plane* const pd = &xd->plane[0];
   const int bw = plane_block_width(bsize, pd);
   const int bh = plane_block_height(bsize, pd);
-  uint8_t intrapredictor[4096];
-  build_intra_predictors_for_interintra(
-      xd->plane[0].dst.buf, xd->plane[0].dst.stride,
-      intrapredictor, bw,
-      xd->mode_info_context->mbmi.interintra_mode, bw, bh,
-      xd->up_available, xd->left_available, xd->right_available);
-  combine_interintra(xd->mode_info_context->mbmi.interintra_mode,
-#if CONFIG_MASKED_INTERINTRA
-                     xd->mode_info_context->mbmi.use_masked_interintra,
-                     xd->mode_info_context->mbmi.interintra_mask_index,
-                     bsize,
-#endif
-                     ypred, ystride, intrapredictor, bw, bw, bh);
+  combine_interintra_filter(xd->mode_info_context->mbmi.interintra_mode,
+                            ypred, ystride,
+                            xd->plane[0].dst.buf, xd->plane[0].dst.stride,
+                            bw, bh, xd->up_available, xd->left_available);
 }
 
 void vp9_build_interintra_predictors_sbuv(MACROBLOCKD *xd,
@@ -1169,32 +1022,14 @@ void vp9_build_interintra_predictors_sbuv(MACROBLOCKD *xd,
                                           BLOCK_SIZE_TYPE bsize) {
   int bwl = b_width_log2(bsize), bw = 2 << bwl;
   int bhl = b_height_log2(bsize), bh = 2 << bhl;
-  uint8_t uintrapredictor[1024];
-  uint8_t vintrapredictor[1024];
-  build_intra_predictors_for_interintra(
-      xd->plane[1].dst.buf, xd->plane[1].dst.stride,
-      uintrapredictor, bw,
-      xd->mode_info_context->mbmi.interintra_uv_mode, bw, bh,
-      xd->up_available, xd->left_available, xd->right_available);
-  build_intra_predictors_for_interintra(
-      xd->plane[2].dst.buf, xd->plane[1].dst.stride,
-      vintrapredictor, bw,
-      xd->mode_info_context->mbmi.interintra_uv_mode, bw, bh,
-      xd->up_available, xd->left_available, xd->right_available);
-  combine_interintra(xd->mode_info_context->mbmi.interintra_uv_mode,
-#if CONFIG_MASKED_INTERINTRA
-                     xd->mode_info_context->mbmi.use_masked_interintra,
-                     xd->mode_info_context->mbmi.interintra_uv_mask_index,
-                     bsize,
-#endif
-                     upred, uvstride, uintrapredictor, bw, bw, bh);
-  combine_interintra(xd->mode_info_context->mbmi.interintra_uv_mode,
-#if CONFIG_MASKED_INTERINTRA
-                     xd->mode_info_context->mbmi.use_masked_interintra,
-                     xd->mode_info_context->mbmi.interintra_uv_mask_index,
-                     bsize,
-#endif
-                     vpred, uvstride, vintrapredictor, bw, bw, bh);
+  combine_interintra_filter(xd->mode_info_context->mbmi.interintra_uv_mode,
+                            upred, uvstride,
+                            xd->plane[1].dst.buf, xd->plane[1].dst.stride,
+                            bw, bh, xd->up_available, xd->left_available);
+  combine_interintra_filter(xd->mode_info_context->mbmi.interintra_uv_mode,
+                            vpred, uvstride,
+                            xd->plane[2].dst.buf, xd->plane[1].dst.stride,
+                            bw, bh, xd->up_available, xd->left_available);
 }
 
 void vp9_build_interintra_predictors(MACROBLOCKD *xd,

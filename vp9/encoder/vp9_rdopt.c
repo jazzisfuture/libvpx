@@ -3261,26 +3261,13 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t best_interintra_rd = INT64_MAX;
     int rmode, rate_sum;
     int64_t dist_sum;
-#if CONFIG_MASKED_INTERINTRA
-#define MASKED_INTERINTRA_REFINE_SEARCH
-    int maskbits, mask_types, mask_index, best_mask_index = 0;
-    int64_t best_interintra_rd_nomask, best_interintra_rd_mask = INT64_MAX;
-    int rmask;
-#ifdef MASKED_INTERINTRA_REFINE_SEARCH
-    int bw = 4 << b_width_log2(bsize), bh = 4 << b_height_log2(bsize);
-    uint8_t mask[4096];
-    int_mv tmp_mv;
-    int tmp_rate_mv;
-    MB_PREDICTION_MODE best_interintra_mode_mask;
-#endif
-#endif
-    for (interintra_mode = DC_PRED; interintra_mode <= TM_PRED;
+
+    for (interintra_mode = 0; interintra_mode < FIL_INTERINTRA_MODES;
         ++interintra_mode) {
       mbmi->interintra_mode = interintra_mode;
-#if !SEPARATE_INTERINTRA_UV
       mbmi->interintra_uv_mode = interintra_mode;
-#endif
-      rmode = x->mbmode_cost[mbmi->interintra_mode];
+
+      rmode = FIL_INTERINTRA_BITS * 256;
       vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
       model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
       rd = RDCOST(x->rdmult, x->rddiv, rmode + rate_sum, dist_sum);
@@ -3290,9 +3277,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
     mbmi->interintra_mode = best_interintra_mode;
-#if !SEPARATE_INTERINTRA_UV
     mbmi->interintra_uv_mode = best_interintra_mode;
-#endif
+
 #if CONFIG_MASKED_INTERINTRA
     maskbits = get_mask_bits_interintra(bsize);
     rmode = x->mbmode_cost[mbmi->interintra_mode];
@@ -3412,11 +3398,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *compmode_interintra_cost = vp9_cost_bit(cm->fc.interintra_prob[bsize],
                                              is_comp_interintra_pred);
     if (is_comp_interintra_pred) {
-      *compmode_interintra_cost += x->mbmode_cost[mbmi->interintra_mode];
-#if SEPARATE_INTERINTRA_UV
-      *compmode_interintra_cost +=
-          x->intra_uv_mode_cost[xd->frame_type][mbmi->interintra_uv_mode];
-#endif
+      *compmode_interintra_cost += FIL_INTERINTRA_BITS * 256;
 #if CONFIG_MASKED_INTERINTRA
       if (get_mask_bits_interintra(bsize) && cm->use_masked_interintra) {
         *compmode_interintra_cost += vp9_cost_bit(
@@ -4432,12 +4414,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       if (second_ref_frame == INTRA_FRAME) {
         if (best_intra16_mode == DC_PRED -1)
           continue;
-        mbmi->interintra_mode = best_intra16_mode;
-#if SEPARATE_INTERINTRA_UV
-        mbmi->interintra_uv_mode = best_intra16_uv_mode;
-#else
-        mbmi->interintra_uv_mode = best_intra16_mode;
-#endif
+        mbmi->interintra_mode = DC_PRED;
+        mbmi->interintra_uv_mode = DC_PRED;
       }
 #endif
       this_rd = handle_inter_mode(cpi, x, bsize,
