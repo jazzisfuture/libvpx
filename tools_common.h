@@ -10,7 +10,19 @@
 #ifndef TOOLS_COMMON_H
 #define TOOLS_COMMON_H
 
+#include <stdio.h>
+
+#define VP8_FOURCC (0x30385056)
+#define VP9_FOURCC (0x30395056)
+
 /* Sets a stdio stream into binary mode */
 FILE *set_binary_mode(FILE *stream);
+
+void die(const char* fmt, ...);
+void fatal(const char* fmt, ...);
+void warn(const char* fmt, ...);
+
+/* The tool including this file must define usage_exit() */
+void usage_exit();
 
 #endif
