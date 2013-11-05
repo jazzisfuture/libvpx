@@ -140,6 +140,8 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
 }
 
 #if CONFIG_INTERINTRA
+#define FIL_INTERINTRA_BITS 3
+#define FIL_INTERINTRA_MODES 8
 static INLINE TX_SIZE intra_size_log2_for_interintra(int bs) {
   switch (bs) {
     case 4:
@@ -203,7 +205,7 @@ static inline int get_mask_bits(BLOCK_SIZE_TYPE sb_type) {
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
 #if CONFIG_INTERINTRA
-  MB_PREDICTION_MODE interintra_mode, interintra_uv_mode;
+  int interintra_mode, interintra_uv_mode;
 #if CONFIG_MASKED_INTERINTRA
   int interintra_mask_index;
   int interintra_uv_mask_index;

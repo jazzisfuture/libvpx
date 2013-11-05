@@ -568,16 +568,9 @@ static void read_inter_block_mode_info(VP9D_COMP *pbi, MODE_INFO *mi,
       mbmi->use_masked_interintra = 0;
 #endif
       if (mbmi->ref_frame[1] == INTRA_FRAME) {
-        int bsg = MIN(MIN(b_width_log2(bsize), b_height_log2(bsize)), 3);
-        mbmi->interintra_mode = read_intra_mode(r, cm->fc.y_mode_prob[bsg]);
-        cm->counts.y_mode[bsg][mbmi->interintra_mode]++;
-#if SEPARATE_INTERINTRA_UV
-        mbmi->interintra_uv_mode = read_intra_mode(r,
-                                   cm->fc.uv_mode_prob[mbmi->interintra_mode]);
-        cm->counts.uv_mode[mbmi->interintra_mode][mbmi->interintra_uv_mode]++;
-#else
+        mbmi->interintra_mode = vp9_read_literal(r, FIL_INTERINTRA_BITS);
         mbmi->interintra_uv_mode = mbmi->interintra_mode;
-#endif
+        // fprintf(stderr, "[%d %d]\n", mbmi->interintra_mode, bsize);
 #if CONFIG_MASKED_INTERINTRA
         if (cm->use_masked_interintra && get_mask_bits_interintra(bsize)) {
           mbmi->use_masked_interintra = vp9_read(r,
