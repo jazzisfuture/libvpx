@@ -512,14 +512,8 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
         vp9_write(bc, mi->ref_frame[1] == INTRA_FRAME,
                   pc->fc.interintra_prob[bsize]);
         if (mi->ref_frame[1] == INTRA_FRAME) {
-          const int bwl = b_width_log2(bsize),
-                    bhl = b_height_log2(bsize);
-          write_intra_mode(bc, mi->interintra_mode,
-                           pc->fc.y_mode_prob[MIN(3, MIN(bwl, bhl))]);
-#if SEPARATE_INTERINTRA_UV
-          write_intra_mode(bc, mi->interintra_uv_mode,
-                        pc->fc.uv_mode_prob[mi->interintra_mode]);
-#endif
+          assert(mi->interintra_mode >=0 && mi->interintra_mode < FIL_INTERINTRA_MODES);
+          vp9_write_literal(bc, mi->interintra_mode, FIL_INTERINTRA_BITS);
 #if CONFIG_MASKED_INTERINTRA
         if (get_mask_bits_interintra(mi->sb_type) &&
             pc->use_masked_interintra) {

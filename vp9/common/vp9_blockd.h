@@ -140,6 +140,8 @@ static INLINE int mi_height_log2(BLOCK_SIZE_TYPE sb_type) {
 }
 
 #if CONFIG_INTERINTRA
+#define FIL_INTERINTRA_BITS 3
+#define FIL_INTERINTRA_MODES 8
 static INLINE TX_SIZE intra_size_log2_for_interintra(int bs) {
   switch (bs) {
     case 4:

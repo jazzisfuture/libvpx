@@ -440,13 +440,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         && mbmi->mode >= NEARESTMV && mbmi->mode <= NEWMV &&
         mbmi->ref_frame[1] <= INTRA_FRAME) {
       if (mbmi->ref_frame[1] == INTRA_FRAME) {
-        const int bwl = b_width_log2(bsize), bhl = b_height_log2(bsize);
-        const int bsl = MIN(bwl, bhl);
-        ++cpi->y_mode_count[MIN(bsl, 3)][mbmi->interintra_mode];
         ++cpi->interintra_count[mbmi->sb_type][1];
-#if SEPARATE_INTERINTRA_UV
-        ++cpi->uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
-#endif
 #if CONFIG_MASKED_INTERINTRA
         if (cm->use_masked_interintra &&
             get_mask_bits_interintra(mbmi->sb_type))
