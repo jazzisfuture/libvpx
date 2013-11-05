@@ -1091,6 +1091,13 @@ EOF
                 # Skip the check by setting AS arbitrarily
                 AS=msvs
                 msvs_arch_dir=x86-msvs
+                vc_version=${tgt_cc##vs}
+                case $vc_version in
+                    [789])
+                         soft_disable avx
+                         soft_disable avx2
+                    ;;
+                esac
             ;;
         esac
 
