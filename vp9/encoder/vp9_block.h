@@ -32,7 +32,7 @@ typedef struct {
   int16_t *dqcoeff[MAX_MB_PLANE][2];
   uint16_t *eobs[MAX_MB_PLANE][2];
 
-  // dual buffer pointers
+  // dual buffer pointers, 0: in use, 1: best in store
   int16_t *coeff_pbuf[MAX_MB_PLANE][2];
   int16_t *qcoeff_pbuf[MAX_MB_PLANE][2];
   int16_t *dqcoeff_pbuf[MAX_MB_PLANE][2];
@@ -92,6 +92,7 @@ struct macroblock {
 
   MACROBLOCKD e_mbd;
   int skip_block;
+  int select_txfm_size;
 
   search_site *ss;
   int ss_count;
