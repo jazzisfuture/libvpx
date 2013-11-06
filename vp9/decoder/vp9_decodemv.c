@@ -33,8 +33,7 @@ static MB_PREDICTION_MODE read_intra_mode_y(VP9_COMMON *cm, vp9_reader *r,
                                             int size_group) {
   const MB_PREDICTION_MODE y_mode = read_intra_mode(r,
                                         cm->fc.y_mode_prob[size_group]);
-  if (!cm->frame_parallel_decoding_mode)
-    ++cm->counts.y_mode[size_group][y_mode];
+  cm->counts.y_mode[size_group][y_mode] += cm->count_increment;
   return y_mode;
 }
 
@@ -42,8 +41,7 @@ static MB_PREDICTION_MODE read_intra_mode_uv(VP9_COMMON *cm, vp9_reader *r,
                                              MB_PREDICTION_MODE y_mode) {
   const MB_PREDICTION_MODE uv_mode = read_intra_mode(r,
                                          cm->fc.uv_mode_prob[y_mode]);
-  if (!cm->frame_parallel_decoding_mode)
-    ++cm->counts.uv_mode[y_mode][uv_mode];
+  cm->counts.uv_mode[y_mode][uv_mode] += cm->count_increment;
   return uv_mode;
 }
 
@@ -51,8 +49,8 @@ static MB_PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
                                           uint8_t context) {
   const MB_PREDICTION_MODE mode = treed_read(r, vp9_inter_mode_tree,
                                              cm->fc.inter_mode_probs[context]);
-  if (!cm->frame_parallel_decoding_mode)
-    ++cm->counts.inter_mode[context][inter_mode_offset(mode)];
+  cm->counts.inter_mode[context][inter_mode_offset(mode)] +=
+      cm->count_increment;
   return mode;
 }
 
@@ -71,8 +69,8 @@ static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
       tx_size += vp9_read(r, tx_probs[2]);
   }
 
-  if (!cm->frame_parallel_decoding_mode)
-    ++get_tx_counts(bsize, context, &cm->counts.tx)[tx_size];
+  get_tx_counts(bsize, context, &cm->counts.tx)[tx_size] +=
+      cm->count_increment;
   return tx_size;
 }
 
@@ -156,8 +154,7 @@ static int read_skip_coeff(VP9_COMMON *cm, const MACROBLOCKD *xd,
   } else {
     const int ctx = vp9_get_pred_context_mbskip(xd);
     const int skip = vp9_read(r, cm->fc.mbskip_probs[ctx]);
-    if (!cm->frame_parallel_decoding_mode)
-      ++cm->counts.mbskip[ctx][skip];
+    cm->counts.mbskip[ctx][skip] += cm->count_increment;
     return skip;
   }
 }
@@ -276,8 +273,8 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
     if (cm->comp_pred_mode == HYBRID_PREDICTION) {
       is_comp = vp9_read(r, fc->comp_inter_prob[comp_ctx]);
-      if (!cm->frame_parallel_decoding_mode)
-        ++counts->comp_inter[comp_ctx][is_comp];
+      counts->comp_inter[comp_ctx][is_comp] +=
+          cm->count_increment;
     } else {
       is_comp = cm->comp_pred_mode == COMP_PREDICTION_ONLY;
     }
@@ -287,21 +284,18 @@ static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       const int fix_ref_idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
       const int ref_ctx = vp9_get_pred_context_comp_ref_p(cm, xd);
       const int b = vp9_read(r, fc->comp_ref_prob[ref_ctx]);
-      if (!cm->frame_parallel_decoding_mode)
-        ++counts->comp_ref[ref_ctx][b];
+      counts->comp_ref[ref_ctx][b] += cm->count_increment;
       ref_frame[fix_ref_idx] = cm->comp_fixed_ref;
       ref_frame[!fix_ref_idx] = cm->comp_var_ref[b];
     } else {
       const int ctx0 = vp9_get_pred_context_single_ref_p1(xd);
       const int bit0 = vp9_read(r, fc->single_ref_prob[ctx0][0]);
-      if (!cm->frame_parallel_decoding_mode)
-        ++counts->single_ref[ctx0][0][bit0];
+      counts->single_ref[ctx0][0][bit0] += cm->count_increment;
       if (bit0) {
         const int ctx1 = vp9_get_pred_context_single_ref_p2(xd);
         const int bit1 = vp9_read(r, fc->single_ref_prob[ctx1][1]);
         ref_frame[0] = bit1 ? ALTREF_FRAME : GOLDEN_FRAME;
-        if (!cm->frame_parallel_decoding_mode)
-          ++counts->single_ref[ctx1][1][bit1];
+        counts->single_ref[ctx1][1][bit1] += cm->count_increment;
       } else {
         ref_frame[0] = LAST_FRAME;
       }
@@ -317,8 +311,7 @@ static INLINE INTERPOLATION_TYPE read_switchable_filter_type(
   const int ctx = vp9_get_pred_context_switchable_interp(xd);
   const int type = treed_read(r, vp9_switchable_interp_tree,
                               cm->fc.switchable_interp_prob[ctx]);
-  if (!cm->frame_parallel_decoding_mode)
-    ++cm->counts.switchable_interp[ctx][type];
+  cm->counts.switchable_interp[ctx][type] += cm->count_increment;
   return type;
 }
 
@@ -407,8 +400,7 @@ static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   } else {
     const int ctx = vp9_get_pred_context_intra_inter(xd);
     const int is_inter = vp9_read(r, vp9_get_pred_prob_intra_inter(cm, xd));
-    if (!cm->frame_parallel_decoding_mode)
-      ++cm->counts.intra_inter[ctx][is_inter];
+    cm->counts.intra_inter[ctx][is_inter] += cm->count_increment;
     return is_inter;
   }
 }

@@ -206,6 +206,7 @@ typedef struct VP9Common {
 
   int error_resilient_mode;
   int frame_parallel_decoding_mode;
+  int count_increment;
 
   int log2_tile_cols, log2_tile_rows;
 } VP9_COMMON;

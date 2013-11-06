@@ -63,13 +63,12 @@ static const vp9_prob cat6_prob[15] = {
 
 #define INCREMENT_COUNT(token)                           \
   do {                                                   \
-    if (!cm->frame_parallel_decoding_mode) {             \
-      ++coef_counts[type][ref][band][pt]                 \
-                   [token >= TWO_TOKEN ?                 \
-                    (token == DCT_EOB_TOKEN ?            \
-                     DCT_EOB_MODEL_TOKEN : TWO_TOKEN) :  \
-                    token];                              \
-    }                                                    \
+    coef_counts[type][ref][band][pt]                     \
+               [token >= TWO_TOKEN ?                     \
+                (token == DCT_EOB_TOKEN ?                \
+                 DCT_EOB_MODEL_TOKEN : TWO_TOKEN) :      \
+                token] +=                                \
+        cm->count_increment;                             \
   } while (0)
 
 #define WRITE_COEF_CONTINUE(val, token)                  \
@@ -96,7 +95,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
-  int band, c = 0;
+  int band = 0, c = 0;
   const vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
   vp9_prob coef_probs_full[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
@@ -116,8 +115,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       pt = get_coef_context(nb, token_cache, c);
     band = get_coef_band(band_translate, c);
     prob = coef_probs[band][pt];
-    if (!cm->frame_parallel_decoding_mode)
-      ++counts->eob_branch[tx_size][type][ref][band][pt];
+    counts->eob_branch[tx_size][type][ref][band][pt] +=
+            cm->count_increment;
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
@@ -203,11 +202,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
     WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
   }
 
-  if (c < seg_eob) {
-    if (!cm->frame_parallel_decoding_mode)
-      ++coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN];
-  }
-
+  coef_counts[type][ref][band][pt][DCT_EOB_MODEL_TOKEN] +=
+          cm->count_increment && c < seg_eob;
   return c;
 }
 
