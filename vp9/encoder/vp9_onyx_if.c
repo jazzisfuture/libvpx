@@ -729,7 +729,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adaptive_rd_thresh = 0;
   sf->use_lastframe_partitioning = LAST_FRAME_PARTITION_OFF;
   sf->tx_size_search_method = USE_FULL_RD;
-  sf->use_lp32x32fdct = 0;
+  sf->use_lp32x32fdct = 1;
   sf->adaptive_motion_search = 0;
   sf->use_avoid_tested_higherror = 0;
   sf->reference_masking = 0;

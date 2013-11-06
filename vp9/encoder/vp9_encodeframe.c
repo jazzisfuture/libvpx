@@ -613,10 +613,10 @@ static void pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   xd->mi_8x8[0]->mbmi.sb_type = bsize;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
-    p[i].coeff = ctx->coeff_pbuf[i][1];
-    pd[i].qcoeff = ctx->qcoeff_pbuf[i][1];
-    pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][1];
-    pd[i].eobs = ctx->eobs_pbuf[i][1];
+    p[i].coeff = ctx->coeff_pbuf[i][0];
+    pd[i].qcoeff = ctx->qcoeff_pbuf[i][0];
+    pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
+    pd[i].eobs = ctx->eobs_pbuf[i][0];
   }
 
   // Set to zero to make sure we do not use the previous encoded frame stats
