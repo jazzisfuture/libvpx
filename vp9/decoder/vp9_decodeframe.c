@@ -1377,7 +1377,7 @@ int vp9_decode_frame(VP9Decoder *pbi,
                          "A stream must start with a complete key frame");
   }
 
-  if (!new_fb->corrupted) {
+  if (!new_fb->corrupted && cm->refresh_frame_context) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
       vp9_adapt_coef_probs(cm);
 
@@ -1388,10 +1388,9 @@ int vp9_decode_frame(VP9Decoder *pbi,
     } else {
       debug_check_frame_counts(cm);
     }
-  }
 
-  if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
+  }
 
   return 0;
 }
