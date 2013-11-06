@@ -438,9 +438,31 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
-  vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+  if (x->select_txfm_size || xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8 || 1) {
+    int16_t ref_coeff[4096];
+    int16_t *ptr_coeff = BLOCK_OFFSET(xd->plane[plane].dqcoeff, block);
+    int i;
+    int width = mi_width_log2_lookup[plane_bsize];
+    int height = mi_height_log2_lookup[plane_bsize];
+    int size = width * height * 64;
+    uint16_t eob_stack = pd->eobs[block];
+    vpx_memcpy(ref_coeff, ptr_coeff, size * sizeof(int16_t));
 
-  if (x->optimize)
+    vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+
+//    assert(eob_stack == pd->eobs[block]);
+
+    for (i = 0; i < size; ++i) {
+      if (ref_coeff[i] != ptr_coeff[i]) {
+        fprintf(stderr, "pos %d, ref: %d %d %d %d; ptr(act): %d %d %d %d\n",
+                i, ref_coeff[i], ref_coeff[i + 1], ref_coeff[i + 2], ref_coeff[i + 3],
+                   ptr_coeff[i], ptr_coeff[i + 1], ptr_coeff[i + 2], ptr_coeff[i + 3]);
+        assert(0);
+      }
+    }
+  }
+
+  if (x->optimize && 0)
     vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
 
   if (x->skip_encode || pd->eobs[block] == 0)
@@ -505,7 +527,8 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   struct optimize_ctx ctx;
   struct encode_b_args arg = {x, &ctx};
 
-  vp9_subtract_sb(x, bsize);
+  if (x->select_txfm_size || xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8 || 1)
+    vp9_subtract_sb(x, bsize);
 
   if (x->optimize) {
     int i;
