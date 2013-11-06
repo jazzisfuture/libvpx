@@ -136,7 +136,7 @@ struct macroblock {
 
   // note that token_costs is the cost when eob node is skipped
   vp9_coeff_cost token_costs[TX_SIZES];
-  uint8_t token_cache[1024];
+  DECLARE_ALIGNED(16, uint8_t, token_cache[1024]);
 
   int optimize;
 
@@ -173,6 +173,9 @@ struct macroblock {
   BLOCK_SIZE sb64_partitioning;
 
   void (*fwd_txm4x4)(const int16_t *input, int16_t *output, int stride);
+
+  // band cache
+  DECLARE_ALIGNED(16, uint8_t, coefband_trans_8x8plus[1024]);
 };
 
 // TODO(jingning): the variables used here are little complicated. need further
