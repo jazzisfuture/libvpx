@@ -473,9 +473,7 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd, int hbs,
   else
     p = PARTITION_SPLIT;
 
-  if (!cm->frame_parallel_decoding_mode)
-    ++cm->counts.partition[ctx][p];
-
+  cm->counts.partition[ctx][p] += cm->count_increment;
   return p;
 }
 
@@ -1163,6 +1161,8 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
     cm->refresh_frame_context = 0;
     cm->frame_parallel_decoding_mode = 1;
   }
+
+  cm->count_increment = !cm->frame_parallel_decoding_mode;
 
   // This flag will be overridden by the call to vp9_setup_past_independence
   // below, forcing the use of context 0 for those frame types.
