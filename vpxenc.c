@@ -1375,6 +1375,8 @@ static void parse_global_config(struct global_config *global, char **argv) {
 void open_input_file(struct input_state *input) {
   unsigned int fourcc;
 
+  fprintf(stderr, "opening: %s\n", input->fn);
+
   /* Parse certain options from the input file, if possible */
   input->file = strcmp(input->fn, "-") ? fopen(input->fn, "rb")
                 : set_binary_mode(stdin);
