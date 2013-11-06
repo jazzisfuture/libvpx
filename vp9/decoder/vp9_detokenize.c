@@ -92,7 +92,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
                         vp9_reader *r, int block_idx,
                         PLANE_TYPE type, int seg_eob, int16_t *qcoeff_ptr,
                         TX_SIZE tx_size, const int16_t *dq, int pt,
-                        uint8_t *token_cache) {
+                        uint8_t *token_cache,
+                        const uint8_t *const band_translate) {
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
@@ -104,7 +105,6 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const vp9_prob *prob;
   vp9_coeff_count_model *coef_counts = counts->coef[tx_size];
   const int16_t *scan, *nb;
-  const uint8_t *const band_translate = get_band_translate(tx_size);
   get_scan(xd, tx_size, type, block_idx, &scan, &nb);
 
   while (1) {
@@ -114,7 +114,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       break;
     if (c)
       pt = get_coef_context(nb, token_cache, c);
-    band = get_coef_band(band_translate, c);
+    band = band_translate[c];
     prob = coef_probs[band][pt];
     if (!cm->frame_parallel_decoding_mode)
       ++counts->eob_branch[tx_size][type][ref][band][pt];
@@ -126,7 +126,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       break;
     if (c)
       pt = get_coef_context(nb, token_cache, c);
-    band = get_coef_band(band_translate, c);
+    band = band_translate[c];
     prob = coef_probs[band][pt];
 
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
@@ -214,7 +214,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
 int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                             int plane, int block, BLOCK_SIZE plane_bsize,
                             TX_SIZE tx_size, vp9_reader *r,
-                            uint8_t *token_cache) {
+                            uint8_t *token_cache,
+                            const uint8_t *band_translate[2]) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int seg_eob = get_tx_eob(&cm->seg, xd->mi_8x8[0]->mbmi.segment_id,
                                  tx_size);
@@ -225,7 +226,8 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 
   eob = decode_coefs(cm, xd, r, block,
                      pd->plane_type, seg_eob, BLOCK_OFFSET(pd->qcoeff, block),
-                     tx_size, pd->dequant, pt, token_cache);
+                     tx_size, pd->dequant, pt, token_cache,
+                     band_translate[tx_size != TX_4X4]);
 
   set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, aoff, loff);
 
