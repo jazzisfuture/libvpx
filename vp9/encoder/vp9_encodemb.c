@@ -430,18 +430,62 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
   if (x->zcoeff_blk[tx_size][block] && plane == 0) {
-    int x, y;
+    int i, k;
     pd->eobs[block] = 0;
-    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-    ctx->ta[plane][x] = 0;
-    ctx->tl[plane][y] = 0;
+    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &k);
+    ctx->ta[plane][i] = 0;
+    ctx->tl[plane][k] = 0;
     return;
   }
 
-  vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+  if (x->select_txfm_size || xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8) {
+//    uint16_t eob_stack = pd->eobs[block];
 
-  if (x->optimize)
+    vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+
+//    if (eob_stack != pd->eobs[block]) {
+//      fprintf(stderr, "block %d, ref %d, stack %d\n", block, pd->eobs[block], eob_stack);
+//      assert(0);
+//    }
+
+  }
+
+  if (x->optimize && (x->select_txfm_size ||
+      xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8|| !x->output_enabled || 1)) {
+    int16_t ref_coeff[4097];
+    int16_t *ptr_coeff = BLOCK_OFFSET(xd->plane[plane].qcoeff, block);
+    int i;
+    int width = b_width_log2_lookup[tx_size];
+    int height = b_height_log2_lookup[tx_size];
+    int size = (1 << width) * (1 << height) * 16;
+    uint16_t eob_stack = pd->eobs[block];
+    vpx_memcpy(ref_coeff, ptr_coeff, size * sizeof(int16_t));
+
     vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
+
+    if (x->output_enabled) {
+      if (eob_stack != pd->eobs[block]) {
+        fprintf(stderr, "plane %d, block %d: ref %d, stack %d\n",
+                plane, block, pd->eobs[block], eob_stack);
+//        assert(0);
+      }
+
+      for (i = 0; i < size; ++i) {
+        if (ref_coeff[i] != ptr_coeff[i]) {
+          fprintf(stderr, "pos %d, ref: %d %d %d %d; ptr(act): %d %d %d %d\n",
+                        i, ref_coeff[i], ref_coeff[i + 1], ref_coeff[i + 2], ref_coeff[i + 3],
+                     ptr_coeff[i], ptr_coeff[i + 1], ptr_coeff[i + 2], ptr_coeff[i + 3]);
+//          assert(0);
+        }
+      }
+    }
+
+  } else {
+    int i, k;
+    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &k);
+    ctx->ta[plane][i] = pd->eobs[block] > 0;
+    ctx->tl[plane][k] = pd->eobs[block] > 0;
+  }
 
   if (x->skip_encode || pd->eobs[block] == 0)
     return;
@@ -505,7 +549,8 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   struct optimize_ctx ctx;
   struct encode_b_args arg = {x, &ctx};
 
-  vp9_subtract_sb(x, bsize);
+  if (x->select_txfm_size || xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8)
+    vp9_subtract_sb(x, bsize);
 
   if (x->optimize) {
     int i;
