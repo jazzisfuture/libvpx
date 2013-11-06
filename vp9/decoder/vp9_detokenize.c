@@ -67,26 +67,113 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
   TWO_TOKEN, TWO_TOKEN, TWO_TOKEN, DCT_EOB_MODEL_TOKEN
 };
 
-#define INCREMENT_COUNT(token)                              \
-  do {                                                      \
-     if (!cm->frame_parallel_decoding_mode)                 \
-       ++coef_counts[band][pt][token_to_counttoken[token]]; \
+#define INCREMENT_COUNT(token)                                \
+  do {                                                        \
+     if (!cm->frame_parallel_decoding_mode)                   \
+       ++coef_counts[band][pt][token_to_counttoken[token]];   \
   } while (0)
 
+#define ADJUST_COEF(prob, bits_count)                         \
+  do {                                                        \
+    val += (vp9_read(r, prob) << bits_count);                 \
+  } while (0)
 
-#define WRITE_COEF_CONTINUE(val, token)                  \
-  {                                                      \
-    dqcoeff_ptr[scan[c]] = (vp9_read_bit(r) ? -val : val) * \
-                            dq[c > 0] / (1 + (tx_size == TX_32X32)); \
-    INCREMENT_COUNT(token);                              \
-    token_cache[scan[c]] = vp9_pt_energy_class[token];   \
-    ++c;                                                 \
-    continue;                                            \
+#define WRITE_COEF(v, token)                                  \
+  {                                                           \
+    val = ((v) * (*dq)) >> dq_shift;                          \
+    dqcoeff_ptr[scan[c]] = (vp9_read_bit(r) ? -val : val);    \
+    INCREMENT_COUNT(token);                                   \
+    token_cache[scan[c]] = vp9_pt_energy_class[token];        \
   }
 
-#define ADJUST_COEF(prob, bits_count)                   \
-  do {                                                  \
-    val += (vp9_read(r, prob) << bits_count);           \
+// Decodes the non-zero part of the coefficient tree
+#define DECODE_NONZERO                                        \
+  do {                                                        \
+    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {               \
+      WRITE_COEF(1, ONE_TOKEN);                               \
+    } else {                                                  \
+      if (!load_map[band][pt]) {                              \
+        vp9_model_to_full_probs(coef_probs[band][pt],         \
+                                coef_probs_full[band][pt]);   \
+        load_map[band][pt] = 1;                               \
+      }                                                       \
+      prob = coef_probs_full[band][pt];                       \
+      if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {         \
+        if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {           \
+          WRITE_COEF(2, TWO_TOKEN);                           \
+        } else if (!vp9_read(r, prob[THREE_CONTEXT_NODE])) {  \
+          WRITE_COEF(3, THREE_TOKEN);                         \
+        } else {                                              \
+          WRITE_COEF(4, FOUR_TOKEN);                          \
+        }                                                     \
+      } else if (!vp9_read(r, prob[HIGH_LOW_CONTEXT_NODE])) { \
+        if (!vp9_read(r, prob[CAT_ONE_CONTEXT_NODE])) {       \
+          val = CAT1_MIN_VAL;                                 \
+          ADJUST_COEF(CAT1_PROB0, 0);                         \
+          WRITE_COEF(val, DCT_VAL_CATEGORY1);                 \
+        } else {                                              \
+          val = CAT2_MIN_VAL;                                 \
+          ADJUST_COEF(CAT2_PROB1, 1);                         \
+          ADJUST_COEF(CAT2_PROB0, 0);                         \
+          WRITE_COEF(val, DCT_VAL_CATEGORY2);                 \
+        }                                                     \
+      } else if (!vp9_read(                                   \
+          r, prob[CAT_THREEFOUR_CONTEXT_NODE])) {             \
+        if (!vp9_read(r, prob[CAT_THREE_CONTEXT_NODE])) {     \
+          val = CAT3_MIN_VAL;                                 \
+          ADJUST_COEF(CAT3_PROB2, 2);                         \
+          ADJUST_COEF(CAT3_PROB1, 1);                         \
+          ADJUST_COEF(CAT3_PROB0, 0);                         \
+          WRITE_COEF(val, DCT_VAL_CATEGORY3);                 \
+        } else {                                              \
+          val = CAT4_MIN_VAL;                                 \
+          ADJUST_COEF(CAT4_PROB3, 3);                         \
+          ADJUST_COEF(CAT4_PROB2, 2);                         \
+          ADJUST_COEF(CAT4_PROB1, 1);                         \
+          ADJUST_COEF(CAT4_PROB0, 0);                         \
+          WRITE_COEF(val, DCT_VAL_CATEGORY4);                 \
+        }                                                     \
+      } else if (!vp9_read(r, prob[CAT_FIVE_CONTEXT_NODE])) { \
+        val = CAT5_MIN_VAL;                                   \
+        ADJUST_COEF(CAT5_PROB4, 4);                           \
+        ADJUST_COEF(CAT5_PROB3, 3);                           \
+        ADJUST_COEF(CAT5_PROB2, 2);                           \
+        ADJUST_COEF(CAT5_PROB1, 1);                           \
+        ADJUST_COEF(CAT5_PROB0, 0);                           \
+        WRITE_COEF(val, DCT_VAL_CATEGORY5);                   \
+      } else {                                                \
+        val = 0;                                              \
+        cat6 = cat6_prob;                                     \
+        while (*cat6) {                                       \
+          val = (val << 1) | vp9_read(r, *cat6++);            \
+        }                                                     \
+        val += CAT6_MIN_VAL;                                  \
+        WRITE_COEF(val, DCT_VAL_CATEGORY6);                   \
+      }                                                       \
+    }                                                         \
+  } while (0)
+
+// Decodes a run of zeros followed by a non-zero coefficient
+#define DECODE_ZERORUN_NONZERO                                \
+  do {                                                        \
+    while (++c < seg_eob) {                                   \
+      pt = get_coef_context(nb, token_cache, c);              \
+      band = *band_translate++;                               \
+      prob = coef_probs[band][pt];                            \
+      if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {            \
+        INCREMENT_COUNT(ZERO_TOKEN);                          \
+        token_cache[scan[c]] =                                \
+            vp9_pt_energy_class[ZERO_TOKEN];                  \
+        continue;                                             \
+      } else {                                                \
+        break;                                                \
+      }                                                       \
+    }                                                         \
+    if (c >= seg_eob) {                                       \
+      goto FINISH_DECODE;                                     \
+    } else {                                                  \
+      DECODE_NONZERO;                                         \
+    }                                                         \
   } while (0)
 
 static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
@@ -97,7 +184,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
-  int band, c = 0;
+  int val, band, c = 0;
   const vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
   vp9_prob coef_probs_full[COEF_BANDS][PREV_COEF_CONTEXTS][ENTROPY_NODES];
@@ -110,109 +197,55 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int16_t *scan, *nb;
   const uint8_t *cat6;
   const uint8_t *band_translate = get_band_translate(tx_size);
+  const int dq_shift = (tx_size == TX_32X32);
   get_scan(xd, tx_size, type, block_idx, &scan, &nb);
 
-  while (c < seg_eob) {
-    int val;
-    if (c)
-      pt = get_coef_context(nb, token_cache, c);
+  // Decode the very first coefficient
+  if (seg_eob <= 0)
+    goto FINISH_DECODE;
+  band = *band_translate++;
+  prob = coef_probs[band][pt];
+  if (!cm->frame_parallel_decoding_mode)
+    ++eob_branch_count[band][pt];
+  if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
+    goto FINISH_DECODE;
+
+  if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+    INCREMENT_COUNT(ZERO_TOKEN);
+    token_cache[scan[c]] = vp9_pt_energy_class[ZERO_TOKEN];
+    dq++;   // advance dq multiplier pointer
+    // Loop to decode runs of zeros
+    DECODE_ZERORUN_NONZERO;
+  } else {
+    DECODE_NONZERO;
+    dq++;   // advance dq multiplier pointer
+  }
+
+  // Decode the remaining coefficients in a loop
+  while (++c < seg_eob) {
+    pt = get_coef_context(nb, token_cache, c);
     band = *band_translate++;
     prob = coef_probs[band][pt];
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][pt];
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
-    goto DECODE_ZERO;
 
-  SKIP_START:
-    if (c >= seg_eob)
-      break;
-    if (c)
-      pt = get_coef_context(nb, token_cache, c);
-    band = *band_translate++;
-    prob = coef_probs[band][pt];
-
-  DECODE_ZERO:
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       token_cache[scan[c]] = vp9_pt_energy_class[ZERO_TOKEN];
-      ++c;
-      goto SKIP_START;
+      // Loop to decode runs of zeros
+      DECODE_ZERORUN_NONZERO;
+    } else {
+      DECODE_NONZERO;
     }
-
-    // ONE_CONTEXT_NODE_0_
-    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
-      WRITE_COEF_CONTINUE(1, ONE_TOKEN);
-    }
-    // Load full probabilities if not already loaded
-    if (!load_map[band][pt]) {
-      vp9_model_to_full_probs(coef_probs[band][pt],
-                              coef_probs_full[band][pt]);
-      load_map[band][pt] = 1;
-    }
-    prob = coef_probs_full[band][pt];
-    // LOW_VAL_CONTEXT_NODE_0_
-    if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
-      if (!vp9_read(r, prob[TWO_CONTEXT_NODE])) {
-        WRITE_COEF_CONTINUE(2, TWO_TOKEN);
-      }
-      if (!vp9_read(r, prob[THREE_CONTEXT_NODE])) {
-        WRITE_COEF_CONTINUE(3, THREE_TOKEN);
-      }
-      WRITE_COEF_CONTINUE(4, FOUR_TOKEN);
-    }
-    // HIGH_LOW_CONTEXT_NODE_0_
-    if (!vp9_read(r, prob[HIGH_LOW_CONTEXT_NODE])) {
-      if (!vp9_read(r, prob[CAT_ONE_CONTEXT_NODE])) {
-        val = CAT1_MIN_VAL;
-        ADJUST_COEF(CAT1_PROB0, 0);
-        WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY1);
-      }
-      val = CAT2_MIN_VAL;
-      ADJUST_COEF(CAT2_PROB1, 1);
-      ADJUST_COEF(CAT2_PROB0, 0);
-      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY2);
-    }
-    // CAT_THREEFOUR_CONTEXT_NODE_0_
-    if (!vp9_read(r, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
-      if (!vp9_read(r, prob[CAT_THREE_CONTEXT_NODE])) {
-        val = CAT3_MIN_VAL;
-        ADJUST_COEF(CAT3_PROB2, 2);
-        ADJUST_COEF(CAT3_PROB1, 1);
-        ADJUST_COEF(CAT3_PROB0, 0);
-        WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY3);
-      }
-      val = CAT4_MIN_VAL;
-      ADJUST_COEF(CAT4_PROB3, 3);
-      ADJUST_COEF(CAT4_PROB2, 2);
-      ADJUST_COEF(CAT4_PROB1, 1);
-      ADJUST_COEF(CAT4_PROB0, 0);
-      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY4);
-    }
-    // CAT_FIVE_CONTEXT_NODE_0_:
-    if (!vp9_read(r, prob[CAT_FIVE_CONTEXT_NODE])) {
-      val = CAT5_MIN_VAL;
-      ADJUST_COEF(CAT5_PROB4, 4);
-      ADJUST_COEF(CAT5_PROB3, 3);
-      ADJUST_COEF(CAT5_PROB2, 2);
-      ADJUST_COEF(CAT5_PROB1, 1);
-      ADJUST_COEF(CAT5_PROB0, 0);
-      WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY5);
-    }
-    val = 0;
-    cat6 = cat6_prob;
-    while (*cat6)
-      val = (val << 1) | vp9_read(r, *cat6++);
-    val += CAT6_MIN_VAL;
-
-    WRITE_COEF_CONTINUE(val, DCT_VAL_CATEGORY6);
   }
 
+  FINISH_DECODE:
   if (c < seg_eob) {
     if (!cm->frame_parallel_decoding_mode)
       ++coef_counts[band][pt][DCT_EOB_MODEL_TOKEN];
   }
-
   return c;
 }
 
@@ -232,5 +265,3 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
   pd->eobs[block] = eob;
   return eob;
 }
-
-
