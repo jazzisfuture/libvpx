@@ -217,6 +217,8 @@ typedef struct macroblockd {
   int mb_to_top_edge;
   int mb_to_bottom_edge;
 
+  int tile_mi_row, tile_mi_col;
+
   int lossless;
   /* Inverse transform function pointers. */
   void (*itxm_add)(const int16_t *input, uint8_t *dest, int stride, int eob);
