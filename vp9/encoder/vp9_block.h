@@ -94,6 +94,7 @@ struct macroblock {
   MACROBLOCKD e_mbd;
   int skip_block;
   int select_txfm_size;
+  int skip_recode;
   int skip_optimize;
 
   search_site *ss;

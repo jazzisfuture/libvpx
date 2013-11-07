@@ -619,6 +619,7 @@ static void pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     pd[i].eobs = ctx->eobs_pbuf[i][0];
   }
   ctx->is_coded = 0;
+  x->skip_recode = 0;
 
   // Set to zero to make sure we do not use the previous encoded frame stats
   xd->mi_8x8[0]->mbmi.skip_coeff = 0;
@@ -2426,7 +2427,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mis = cm->mode_info_stride;
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
-//  x->skip_optimize = output_enabled && (*get_sb_index(xd, bsize) != 3);
+  x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
