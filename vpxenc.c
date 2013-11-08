@@ -1401,39 +1401,29 @@ void open_input_file(struct input_state *input) {
     if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4,
                        input->only_i420) >= 0) {
       input->file_type = FILE_TYPE_Y4M;
-      input->w = input->y4m.pic_w;
-      input->h = input->y4m.pic_h;
+      input->width = input->y4m.pic_w;
+      input->height = input->y4m.pic_h;
       input->framerate.num = input->y4m.fps_n;
       input->framerate.den = input->y4m.fps_d;
       input->use_i420 = 0;
     } else
       fatal("Unsupported Y4M stream.");
-  } else if (input->detect.buf_read == 4 && file_is_ivf(input, &fourcc)) {
-    input->file_type = FILE_TYPE_IVF;
-    switch (fourcc) {
-      case 0x32315659:
-        input->use_i420 = 0;
-        break;
-      case 0x30323449:
-        input->use_i420 = 1;
-        break;
-      default:
-        fatal("Unsupported fourcc (%08x) in IVF", fourcc);
-    }
+  } else if (input->detect.buf_read == 4 && file_is_ivf(input)) {
+    fatal("IVF is not supported as input.");
   } else {
     input->file_type = FILE_TYPE_RAW;
   }
 }
 
 
-static void close_input_file(struct input_state *input) {
+static void close_input_file(struct VpxInputContext *input) {
   fclose(input->file);
   if (input->file_type == FILE_TYPE_Y4M)
     y4m_input_close(&input->y4m);
 }
 
 static struct stream_state *new_stream(struct global_config *global,
-                                       struct stream_state  *prev) {
+                                       struct stream_state *prev) {
   struct stream_state *stream;
 
   stream = calloc(1, sizeof(*stream));
