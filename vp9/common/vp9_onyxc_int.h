@@ -324,28 +324,26 @@ static INLINE void update_partition_context(
 static INLINE int partition_plane_context(
     const PARTITION_CONTEXT *above_seg_context,
     const PARTITION_CONTEXT left_seg_context[8],
-    int mi_row, int mi_col,
-    BLOCK_SIZE sb_type) {
+    int mi_row, int mi_col, BLOCK_SIZE bsize) {
   const PARTITION_CONTEXT *above_ctx = above_seg_context + mi_col;
   const PARTITION_CONTEXT *left_ctx = left_seg_context + (mi_row & MI_MASK);
 
-  int bsl = mi_width_log2(sb_type), bs = 1 << bsl;
-  int above = 0, left = 0, i;
-  int boffset = mi_width_log2(BLOCK_64X64) - bsl;
 
-  assert(mi_width_log2(sb_type) == mi_height_log2(sb_type));
+  int above = 0, left = 0, i;
+  const int bsl = b_width_log2(bsize) - 1;
+  const int bs = 1 << bsl;
+  const int boffset = (b_width_log2(BLOCK_64X64) - 1) - bsl;
+
+  assert(b_width_log2(bsize) == b_height_log2(bsize));
   assert(bsl >= 0);
   assert(boffset >= 0);
 
-  for (i = 0; i < bs; i++)
-    above |= (above_ctx[i] & (1 << boffset));
-  for (i = 0; i < bs; i++)
-    left |= (left_ctx[i] & (1 << boffset));
+  for (i = 0; i < bs; i++) {
+    above |= above_ctx[i] & (1 << boffset);
+    left |= left_ctx[i] & (1 << boffset);
+  }
 
-  above = (above > 0);
-  left  = (left > 0);
-
-  return (left * 2 + above) + bsl * PARTITION_PLOFFSET;
+  return ((left > 0) * 2 + (above > 0)) + bsl * PARTITION_PLOFFSET;
 }
 
 #endif  // VP9_COMMON_VP9_ONYXC_INT_H_
