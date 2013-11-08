@@ -26,8 +26,8 @@ void vp9_fdct4x4_sse2(const int16_t *input, int16_t *output, int stride) {
   //    by constructing the 32 bit constant corresponding to that pair.
   const __m128i k__cospi_p16_p16 = _mm_set1_epi16(cospi_16_64);
   const __m128i k__cospi_p16_m16 = pair_set_epi16(cospi_16_64, -cospi_16_64);
-  const __m128i k__cospi_p24_p08 = pair_set_epi16(cospi_24_64, cospi_8_64);
-  const __m128i k__cospi_m08_p24 = pair_set_epi16(-cospi_8_64, cospi_24_64);
+  const __m128i k__cospi_p08_p24 = pair_set_epi16(cospi_8_64, cospi_24_64);
+  const __m128i k__cospi_p24_m08 = pair_set_epi16(cospi_24_64, -cospi_8_64);
   const __m128i k__DCT_CONST_ROUNDING = _mm_set1_epi32(DCT_CONST_ROUNDING);
   const __m128i k__nonzero_bias_a = _mm_setr_epi16(0, 1, 1, 1, 1, 1, 1, 1);
   const __m128i k__nonzero_bias_b = _mm_setr_epi16(1, 0, 0, 0, 0, 0, 0, 0);
@@ -60,18 +60,14 @@ void vp9_fdct4x4_sse2(const int16_t *input, int16_t *output, int stride) {
   // Do the two transform/transpose passes
   for (pass = 0; pass < 2; ++pass) {
     // Transform 1/2: Add/substract
-    const __m128i r0 = _mm_add_epi16(in0, in3);
-    const __m128i r1 = _mm_add_epi16(in1, in2);
-    const __m128i r2 = _mm_sub_epi16(in1, in2);
-    const __m128i r3 = _mm_sub_epi16(in0, in3);
+    const __m128i t0 = _mm_add_epi16(in0, in2);
+    const __m128i t2 = _mm_sub_epi16(in0, in2);
     // Transform 1/2: Interleave to do the multiply by constants which gets us
     //                into 32 bits.
-    const __m128i t0 = _mm_unpacklo_epi16(r0, r1);
-    const __m128i t2 = _mm_unpacklo_epi16(r2, r3);
     const __m128i u0 = _mm_madd_epi16(t0, k__cospi_p16_p16);
     const __m128i u2 = _mm_madd_epi16(t0, k__cospi_p16_m16);
-    const __m128i u4 = _mm_madd_epi16(t2, k__cospi_p24_p08);
-    const __m128i u6 = _mm_madd_epi16(t2, k__cospi_m08_p24);
+    const __m128i u4 = _mm_madd_epi16(t2, k__cospi_p08_p24);
+    const __m128i u6 = _mm_madd_epi16(t2, k__cospi_p24_m08);
     const __m128i v0 = _mm_add_epi32(u0, k__DCT_CONST_ROUNDING);
     const __m128i v2 = _mm_add_epi32(u2, k__DCT_CONST_ROUNDING);
     const __m128i v4 = _mm_add_epi32(u4, k__DCT_CONST_ROUNDING);
@@ -98,6 +94,8 @@ void vp9_fdct4x4_sse2(const int16_t *input, int16_t *output, int stride) {
       // only uses the first four values.
       in1 = _mm_unpackhi_epi64(in0, in0);
       in3 = _mm_unpackhi_epi64(in2, in2);
+      in0 = _mm_unpacklo_epi16(in0, in1);
+      in2 = _mm_unpacklo_epi16(in3, in2);
     } else {
       // Post-condition output and store it (v + 1) >> 2, taking advantage
       // of the fact 1/3 are stored just after 0/2.
