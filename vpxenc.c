@@ -16,6 +16,7 @@
 #define USE_POSIX_MMAP 1
 #endif
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -43,9 +44,10 @@
 #include "vpx/vp8dx.h"
 #endif
 
+#include "tools_common.h"
 #include "vpx_ports/mem_ops.h"
 #include "vpx_ports/vpx_timer.h"
-#include "tools_common.h"
+#include "vpxstats.h"
 #include "webmenc.h"
 #include "y4minput.h"
 
@@ -141,126 +143,6 @@ static void warn_or_exit_on_error(vpx_codec_ctx_t *ctx, int fatal,
   va_end(ap);
 }
 
-/* This structure is used to abstract the different ways of handling
- * first pass statistics.
- */
-typedef struct {
-  vpx_fixed_buf_t buf;
-  int             pass;
-  FILE           *file;
-  char           *buf_ptr;
-  size_t          buf_alloc_sz;
-} stats_io_t;
-
-int stats_open_file(stats_io_t *stats, const char *fpf, int pass) {
-  int res;
-
-  stats->pass = pass;
-
-  if (pass == 0) {
-    stats->file = fopen(fpf, "wb");
-    stats->buf.sz = 0;
-    stats->buf.buf = NULL,
-               res = (stats->file != NULL);
-  } else {
-#if 0
-#elif USE_POSIX_MMAP
-    struct stat stat_buf;
-    int fd;
-
-    fd = open(fpf, O_RDONLY);
-    stats->file = fdopen(fd, "rb");
-    fstat(fd, &stat_buf);
-    stats->buf.sz = stat_buf.st_size;
-    stats->buf.buf = mmap(NULL, stats->buf.sz, PROT_READ, MAP_PRIVATE,
-                          fd, 0);
-    res = (stats->buf.buf != NULL);
-#else
-    size_t nbytes;
-
-    stats->file = fopen(fpf, "rb");
-
-    if (fseek(stats->file, 0, SEEK_END))
-      fatal("First-pass stats file must be seekable!");
-
-    stats->buf.sz = stats->buf_alloc_sz = ftell(stats->file);
-    rewind(stats->file);
-
-    stats->buf.buf = malloc(stats->buf_alloc_sz);
-
-    if (!stats->buf.buf)
-      fatal("Failed to allocate first-pass stats buffer (%lu bytes)",
-            (unsigned long)stats->buf_alloc_sz);
-
-    nbytes = fread(stats->buf.buf, 1, stats->buf.sz, stats->file);
-    res = (nbytes == stats->buf.sz);
-#endif
-  }
-
-  return res;
-}
-
-int stats_open_mem(stats_io_t *stats, int pass) {
-  int res;
-  stats->pass = pass;
-
-  if (!pass) {
-    stats->buf.sz = 0;
-    stats->buf_alloc_sz = 64 * 1024;
-    stats->buf.buf = malloc(stats->buf_alloc_sz);
-  }
-
-  stats->buf_ptr = stats->buf.buf;
-  res = (stats->buf.buf != NULL);
-  return res;
-}
-
-
-void stats_close(stats_io_t *stats, int last_pass) {
-  if (stats->file) {
-    if (stats->pass == last_pass) {
-#if 0
-#elif USE_POSIX_MMAP
-      munmap(stats->buf.buf, stats->buf.sz);
-#else
-      free(stats->buf.buf);
-#endif
-    }
-
-    fclose(stats->file);
-    stats->file = NULL;
-  } else {
-    if (stats->pass == last_pass)
-      free(stats->buf.buf);
-  }
-}
-
-void stats_write(stats_io_t *stats, const void *pkt, size_t len) {
-  if (stats->file) {
-    (void) fwrite(pkt, 1, len, stats->file);
-  } else {
-    if (stats->buf.sz + len > stats->buf_alloc_sz) {
-      size_t  new_sz = stats->buf_alloc_sz + 64 * 1024;
-      char   *new_ptr = realloc(stats->buf.buf, new_sz);
-
-      if (new_ptr) {
-        stats->buf_ptr = new_ptr + (stats->buf_ptr - (char *)stats->buf.buf);
-        stats->buf.buf = new_ptr;
-        stats->buf_alloc_sz = new_sz;
-      } else
-        fatal("Failed to realloc firstpass stats buffer.");
-    }
-
-    memcpy(stats->buf_ptr, pkt, len);
-    stats->buf.sz += len;
-    stats->buf_ptr += len;
-  }
-}
-
-vpx_fixed_buf_t stats_get(stats_io_t *stats) {
-  return stats->buf;
-}
-
 enum video_file_type {
   FILE_TYPE_RAW,
   FILE_TYPE_IVF,
@@ -288,9 +170,8 @@ struct input_state {
   int                   only_i420;
 };
 
-
 #define IVF_FRAME_HDR_SZ (4+8) /* 4 byte size + 8 byte timestamp */
-static int read_frame(struct input_state *input, vpx_image_t *img) {
+int read_frame(struct input_state *input, vpx_image_t *img) {
   FILE *f = input->file;
   enum video_file_type file_type = input->file_type;
   y4m_input *y4m = &input->y4m;
@@ -501,22 +382,6 @@ static unsigned int murmur(const void *key, int len, unsigned int seed) {
   h ^= h >> 15;
 
   return h;
-}
-
-#include "math.h"
-#define MAX_PSNR 100
-static double vp8_mse2psnr(double Samples, double Peak, double Mse) {
-  double psnr;
-
-  if ((double)Mse > 0.0)
-    psnr = 10.0 * log10(Peak * Peak * Samples / Mse);
-  else
-    psnr = MAX_PSNR;      /* Limit to prevent / 0 */
-
-  if (psnr > MAX_PSNR)
-    psnr = MAX_PSNR;
-
-  return psnr;
 }
 
 
