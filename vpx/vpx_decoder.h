@@ -107,7 +107,6 @@ extern "C" {
     unsigned int h;      /**< Height */
   } vpx_codec_dec_cfg_t; /**< alias for struct vpx_codec_dec_cfg */
 
-
   /*!\brief Initialize a decoder instance
    *
    * Initializes a decoder context using the given interface. Applications
@@ -323,6 +322,9 @@ extern "C" {
                                                   vpx_codec_put_slice_cb_fn_t  cb,
                                                   void                        *user_priv);
 
+  // Callback type to callback to Android UI thread.
+  typedef void (*CallbackType)(char *str);
+  int vpxdec(int argc, const char **argv, CallbackType callback);
 
   /*!@} - end defgroup cap_put_slice*/
 

@@ -118,6 +118,7 @@ static const arg_def_t pp_disp_mvs = ARG_DEF(NULL, "pp-dbg-mvs", 1,
                                              "Draw only selected motion vectors");
 static const arg_def_t mfqe = ARG_DEF(NULL, "mfqe", 0,
                                       "Enable multiframe quality enhancement");
+static CallbackType globalCallback;
 
 static const arg_def_t *vp8_pp_args[] = {
   &addnoise_level, &deblock, &demacroblock_level, &pp_debug_info,
@@ -576,9 +577,13 @@ fail:
 
 
 void show_progress(int frame_in, int frame_out, unsigned long dx_time) {
-  fprintf(stderr, "%d decoded frames/%d showed frames in %lu us (%.2f fps)\r",
-          frame_in, frame_out, dx_time,
-          (float)frame_out * 1000000.0 / (float)dx_time);
+  char str[100];
+  sprintf(str, "%d decoded frames/%d showed frames in %lu us (%.2f fps)\n",
+           frame_in, frame_out, dx_time,
+           (float)frame_out * 1000000.0 / (float)dx_time);
+
+ if(globalCallback)
+    globalCallback(str);
 }
 
 
@@ -662,7 +667,7 @@ void generate_filename(const char *pattern, char *out, size_t q_len,
 }
 
 
-int main_loop(int argc, const char **argv_) {
+int vpxdec(int argc, const char **argv_, CallbackType callback) {
   vpx_codec_ctx_t          decoder;
   char                  *fn = NULL;
   int                    i;
@@ -706,6 +711,8 @@ int main_loop(int argc, const char **argv_) {
   /* Parse command line */
   exec_name = argv_[0];
   argv = argv_dup(argc - 1, argv_ + 1);
+
+  globalCallback = callback;
 
   for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step) {
     memset(&arg, 0, sizeof(arg));
@@ -1158,7 +1165,5 @@ int main(int argc, const char **argv_) {
     }
   }
   free(argv);
-  for (i = 0; !error && i < loops; i++)
-    error = main_loop(argc, argv_);
   return error;
 }

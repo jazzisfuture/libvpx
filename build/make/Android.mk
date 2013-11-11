@@ -129,6 +129,13 @@ TGT_ISA:=$(word 1, $(subst -, ,$(TOOLCHAIN)))
 target := libs
 
 LOCAL_SRC_FILES += vpx_config.c
+LOCAL_SRC_FILES += libvpx/nestegg/src/nestegg.c
+LOCAL_SRC_FILES += libvpx/tools_common.c
+LOCAL_SRC_FILES += libvpx/args.c
+LOCAL_SRC_FILES += libvpx/vpxdec.c
+LOCAL_SRC_FILES += libvpx/md5_utils.c
+LOCAL_SRC_FILES += libvpx/third_party/libyuv/source/scale.c
+LOCAL_SRC_FILES += libvpx/nestegg/halloc/src/halloc.c
 
 # Remove duplicate entries
 CODEC_SRCS_UNIQUE = $(sort $(CODEC_SRCS))
@@ -169,11 +176,10 @@ LOCAL_CFLAGS += \
     -I$(ASM_CNV_PATH)
 
 LOCAL_MODULE := libvpx
-
 LOCAL_LDLIBS := -llog
 
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
-  LOCAL_STATIC_LIBRARIES := cpufeatures
+  LOCAL_STATIC_LIBRARIES := cpufeatures android-ndk-profiler
 endif
 
 # Add a dependency to force generation of the RTCD files.
