@@ -1,0 +1,7 @@
+Android.mk will build vpx unittests on android.  These unittests must be
+manually transferred to an android device and run via adb shell.  To build
+these unittests you must have the android NDK.  Then, run configure with
+--sdk=$NDK.  Run the get_files.py script to dowload test files and then
+manually transfer them to an android device with adb.  Build these unit tests
+by invoking ndk-build from the parent directory of libvpx something like:
+NDK_PROJECT_PATH=. ndk-build APP_BUILD_SCRIPT=./libvpx/test/android/Android.mk APP_ABI=armeabi-v7a APP_PLATFORM=android-18 APP_OPTIM=release APP_STL=gnustl_static APP_CPPFLAGS=-frtti
