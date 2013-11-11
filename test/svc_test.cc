@@ -61,6 +61,8 @@ class SvcTest : public ::testing::Test {
 
   virtual void TearDown() {
     vpx_svc_release(&svc_);
+    delete(decoder_);
+    vpx_codec_destroy(&codec_);
   }
 
   SvcContext svc_;
@@ -73,17 +75,11 @@ class SvcTest : public ::testing::Test {
 };
 
 TEST_F(SvcTest, SvcInit) {
-  svc_.spatial_layers = 0;  // use default layers
-  vpx_codec_err_t res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  EXPECT_EQ(VPX_SS_DEFAULT_LAYERS, svc_.spatial_layers);
-
-  res = vpx_svc_init(NULL, &codec_, codec_iface_, &codec_enc_);
+  // test missing parameters
+  vpx_codec_err_t res = vpx_svc_init(NULL, &codec_, codec_iface_, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
   res = vpx_svc_init(&svc_, NULL, codec_iface_, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
   res = vpx_svc_init(&svc_, &codec_, NULL, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
@@ -94,9 +90,16 @@ TEST_F(SvcTest, SvcInit) {
   res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
+  svc_.spatial_layers = 0;  // use default layers
+  res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_OK, res);
+  EXPECT_EQ(VPX_SS_DEFAULT_LAYERS, svc_.spatial_layers);
+}
+
+TEST_F(SvcTest, InitTwoLayers) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16*16");  // invalid scale values
-  res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  vpx_codec_err_t res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");  // valid scale values
@@ -104,42 +107,58 @@ TEST_F(SvcTest, SvcInit) {
   EXPECT_EQ(VPX_CODEC_OK, res);
 }
 
-TEST_F(SvcTest, SetOptions) {
-  vpx_codec_err_t res = vpx_svc_set_options(NULL, "layers=3");
+TEST_F(SvcTest, InvalidOptions) {
+  vpx_codec_err_t res = vpx_svc_set_options(&svc_, NULL);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  vpx_svc_set_options(&svc_, NULL);
+  res = vpx_svc_set_options(&svc_, "not-an-option=1");
+  EXPECT_EQ(VPX_CODEC_OK, res);
+  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+}
 
-  vpx_svc_set_options(&svc_, "layers=3");
+TEST_F(SvcTest, SetLayersOption) {
+  vpx_codec_err_t res = vpx_svc_set_options(&svc_, "layers=3");
+  EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   EXPECT_EQ(3, svc_.spatial_layers);
+}
 
-  vpx_svc_set_options(&svc_, "not-an-option=1");
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
-  vpx_svc_set_options(&svc_, "encoding-mode=alt-ip");
+TEST_F(SvcTest, SetEncodingMode) {
+  vpx_codec_err_t res = vpx_svc_set_options(&svc_, "encoding-mode=alt-ip");
+  EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   EXPECT_EQ(ALT_INTER_LAYER_PREDICTION_IP, svc_.encoding_mode);
+}
 
-  vpx_svc_set_options(&svc_, "layers=2 encoding-mode=ip");
+TEST_F(SvcTest, SetMultipleOptions) {
+  vpx_codec_err_t res = vpx_svc_set_options(&svc_, "layers=2 encoding-mode=ip");
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   EXPECT_EQ(2, svc_.spatial_layers);
   EXPECT_EQ(INTER_LAYER_PREDICTION_IP, svc_.encoding_mode);
+}
 
-  vpx_svc_set_options(&svc_, "scale-factors=not-scale-factors");
+TEST_F(SvcTest, SetScaleFactorsOption) {
+  svc_.spatial_layers = 2;
+  vpx_codec_err_t res =
+      vpx_svc_set_options(&svc_, "scale-factors=not-scale-factors");
+  EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  vpx_svc_set_options(&svc_, "scale-factors=1/3,2/3");
+  res = vpx_svc_set_options(&svc_, "scale-factors=1/3,2/3");
+  EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
+}
 
-  vpx_svc_set_options(&svc_, "quantizers=not-quantizers");
+TEST_F(SvcTest, SetQuantizersOption) {
+  svc_.spatial_layers = 2;
+  vpx_codec_err_t res = vpx_svc_set_options(&svc_, "quantizers=not-quantizers");
+  EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
@@ -157,15 +176,15 @@ TEST_F(SvcTest, SetQuantizers) {
 
   svc_.first_frame_full_size = 0;
   svc_.spatial_layers = 2;
-  res = vpx_svc_set_quantizers(&svc_, "40,30");
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-
   res = vpx_svc_set_quantizers(&svc_, "40");
   EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+
+  res = vpx_svc_set_quantizers(&svc_, "40,30");
+  EXPECT_EQ(VPX_CODEC_OK, res);
+  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_OK, res);
 }
 
 TEST_F(SvcTest, SetScaleFactors) {
@@ -177,15 +196,15 @@ TEST_F(SvcTest, SetScaleFactors) {
 
   svc_.first_frame_full_size = 0;
   svc_.spatial_layers = 2;
-  res = vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-
   res = vpx_svc_set_scale_factors(&svc_, "4/16");
   EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+
+  res = vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
+  EXPECT_EQ(VPX_CODEC_OK, res);
+  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_OK, res);
 }
 
 // test that decoder can handle an SVC frame as the first frame in a sequence
