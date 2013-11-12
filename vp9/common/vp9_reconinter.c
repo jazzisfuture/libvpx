@@ -20,6 +20,50 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+extern int frame_width;
+extern int frame_height;
+
+
+static void reset_boarder(uint8_t *const src, int src_stride,
+                         int width, int height,
+                         int extend_top, int extend_left,
+                         int extend_bottom, int extend_right) {
+  int i;
+  const int linesize = extend_left + extend_right + width;
+
+  /* copy the left and right most columns out */
+  uint8_t *src_ptr1 = src - extend_left;
+  uint8_t *src_ptr2 = src + width - 1;
+  uint8_t *dst_ptr1 = src - extend_left;
+  uint8_t *dst_ptr2 = src + width;
+
+  for (i = 0; i < extend_top; ++i) {
+    if (i !=  0)    vpx_memset(src_ptr1, 0, linesize);
+    src_ptr1 -= src_stride;
+  }
+
+  *src_ptr1 = src + src_stride * (height - 1);
+
+      for (i = 0; i < extend_top; ++i) {
+        if (i != 0) vpx_memset(src_ptr1, 0, linesize);
+        src_ptr1 += src_stride;
+      }
+
+
+
+      /* copy the left and right most columns out */
+      src_ptr1 = src - extend_left;
+      src_ptr2 = src + width;
+
+
+      for (i = 0; i < height; ++i) {
+        vpx_memset(src_ptr1, 0, extend_left);
+        vpx_memset(src_ptr2, 0, extend_right);
+        src_ptr1 += src_stride;
+        src_ptr2 += src_stride;
+      }
+}
+
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATION_TYPE mcomp_filter_type,
                               VP9_COMMON *cm) {
@@ -49,8 +93,19 @@ static void inter_predictor(const uint8_t *src, int src_stride,
                             int xs, int ys) {
   const int subpel_x = mv->col & SUBPEL_MASK;
   const int subpel_y = mv->row & SUBPEL_MASK;
-
+  int count = 0, i, j;
+  uint8_t *src_ = src;
   src += (mv->row >> SUBPEL_BITS) * src_stride + (mv->col >> SUBPEL_BITS);
+  int test = mv->row >> SUBPEL_BITS;
+
+
+  for (i = 0; i < h; i++) {
+    for (j = 0; j < w; j++)
+      if (*(src + src_stride*i + j) == 0)
+        count = 0;
+  }
+
+
   scale->sfc->predict[subpel_x != 0][subpel_y != 0][ref](
       src, src_stride, dst, dst_stride,
       subpix->filter_x[subpel_x], xs,
@@ -58,6 +113,104 @@ static void inter_predictor(const uint8_t *src, int src_stride,
       w, h);
 }
 
+/***************************************************
+ * ondemand_boarder_extend implements on demand
+ * boarder extension. It extends the boarder when
+ * the reference block is out of the reference frame
+ * boundary. Below is a sketch of the coordinates in
+ * the function.
+   |<------------ frame_width ----------->|
+   |_ ____________________________________|____
+   |(0,0)                                 |  ^
+   |                                      |  |
+   |     (x0,y0)___(x1,y0)                |  |
+   |           |   |                      |  |
+   |     (x0,y1|___|(x1,y1)               |  |
+   |                                      | frame_height
+   |                                      |  |
+   |                                      |  |
+   |                                      |  |
+   |                                      |  |
+   |_ ____________________________________|__|
+***************************************************/
+static void ondemand_boarder_extend(struct buf_2d *const pre_buf,
+                                     const MACROBLOCKD *xd,
+                                     const MV32 *scaled_mv,
+                                     int bw, int bh, int ss_x,
+                                     int ss_y) {
+  const int frame_width = -xd->mb_to_left_edge / (8 << ss_x) + bw
+                          + xd->mb_to_right_edge / (8 << ss_y);
+  const int frame_height = -xd->mb_to_top_edge / (8 << ss_x) + bh
+                           + xd->mb_to_bottom_edge / (8 << ss_y);
+  const uint8_t *ref_frame = NULL, *src_ptr = NULL, *dst_ptr = NULL;
+  int x0, y0, x1, y1, i;
+  int factor = 20;
+
+  // get the current block position
+  x0 = -xd->mb_to_left_edge / (8 << ss_x);
+  y0 = -xd->mb_to_top_edge / (8 << ss_y);
+
+  // get reference frame pointer
+  ref_frame = pre_buf->buf - (y0 * pre_buf->stride + x0);
+
+  // get reference block position in reference frame based on scaled_mv
+  // get reference block top left pixel coordinate
+  x0 = (-xd->mb_to_left_edge + scaled_mv->col / 2) / (8 << ss_x);
+  y0 = (-xd->mb_to_top_edge + scaled_mv->row / 2) / (8 << ss_y);
+
+  // get reference block bottom right pixel coordinate
+  x1 = x0 + bw;
+  y1 = y0 + bh;
+
+  // extend top boarder if necessary
+  if (y0 <= 5) {
+    uint8_t extend_top = y0 <= 0 ? factor : -y0 + factor;
+    src_ptr = ref_frame + (x0 < 0 ? 0 : x0);
+    dst_ptr = src_ptr - pre_buf->stride * (extend_top);
+    for (i = 0; i < extend_top; i++) {
+      vpx_memcpy(dst_ptr, src_ptr, bw);
+      dst_ptr += pre_buf->stride;
+    }
+  }
+
+  // extend bottom boarder if necessary
+  if (y1 >= (frame_height - 5)) {
+    uint8_t extend_bottom = 
+             y1 <= frame_height ? factor : - frame_height + factor;
+    src_ptr = ref_frame +  
+             pre_buf->stride * (frame_height - 1) + (x0 < 0 ? 0 : x0);
+    dst_ptr = src_ptr + pre_buf->stride;
+    for (i = 0; i < extend_bottom; i++) {
+      vpx_memcpy(dst_ptr, src_ptr, bw);
+      dst_ptr += pre_buf->stride;
+    }
+  }
+
+  // extend left boarder if necessary
+  if (x0 <= 5) {
+    uint8_t extend_left = x0 <= 0 ? factor : -x0 + factor;
+    dst_ptr = ref_frame + pre_buf->stride * (y0-1) - extend_left;
+    src_ptr = ref_frame + pre_buf->stride * (y0-1);
+    for (i = 0; i < bh; i++) {
+      vpx_memset(dst_ptr, *src_ptr, extend_left);
+      src_ptr += pre_buf->stride;
+      dst_ptr += pre_buf->stride;
+    }
+  }
+
+  // extend right boarder if necessary
+  if (x1 >= (frame_width-5)) {
+    uint8_t extend_right = 
+               x1 <= frame_width ? factor : x1 - frame_width + factor;
+    src_ptr = ref_frame + pre_buf->stride * (y0 - 1) + frame_width - 1;
+    dst_ptr = src_ptr;
+    for (i = 0; i < bh; i++) {
+      vpx_memset(dst_ptr, *src_ptr, extend_right);
+      src_ptr += pre_buf->stride;
+      dst_ptr += pre_buf->stride;
+    }
+  }
+}
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const MV *src_mv,
@@ -136,6 +289,15 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
   const MODE_INFO *mi = xd->mi_8x8[0];
   const int is_compound = has_second_ref(&mi->mbmi);
   int ref;
+  int frame_width2;
+  int frame_height2;
+  uint8_t *ref_frame = NULL, *src_ptr = NULL, *dst_ptr = NULL, *dst_ptr1 = NULL;
+  int x0, y0, x1, y1, i;
+  int x0_, y0_, x1_, y1_;
+  int factor = 20;
+  int ss_x, ss_y;
+  int num = 0;
+  int test;
 
   assert(x < bw);
   assert(y < bh);
@@ -182,12 +344,164 @@ static void build_inter_predictors(int plane, int block, BLOCK_SIZE bsize,
       scaled_mv.col = mv_q4.col;
       xs = ys = 16;
     }
+    ss_x = pd->subsampling_x;
+    ss_y = pd->subsampling_y;
+  // if (plane == 0)
+  /* ondemand_boarder_extend(pre_buf, xd, &scaled_mv, bw, bh,
+                             pd->subsampling_x,
+                             pd->subsampling_y);*/
+
+  //  frame_width = -xd->mb_to_left_edge / (8 << ss_x) + bw
+                            + xd->mb_to_right_edge / (8 << ss_y);
+  //  frame_height = -xd->mb_to_top_edge / (8 << ss_x) + bh
+                             + xd->mb_to_bottom_edge / (8 << ss_y);
+
+    if (plane == 0) {
+      frame_width2 = frame_width;
+      frame_height2 = frame_height;
+    } else {
+      frame_width2 = frame_width/2;
+      frame_height2 = frame_height/2;
+    }
+
+    // get the current block position
+    x0 = -xd->mb_to_left_edge / (8 << ss_x);
+    y0 = -xd->mb_to_top_edge / (8 << ss_y);
+
+    // get reference frame pointer
+    ref_frame = pre_buf->buf - (y0 * pre_buf->stride + x0);
+    reset_boarder(ref_frame, pre_buf->stride, frame_width2, 
+                              frame_height2, 10, 10, 10, 10);
+
+    // get reference block position in reference frame based on scaled_mv
+    // get reference block top left pixel coordinate
+    x0 = (-xd->mb_to_left_edge + (scaled_mv.col >> (1 - ss_x))) / (8 << ss_x);
+    y0 = (-xd->mb_to_top_edge + (scaled_mv.row >> (1 - ss_y))) / (8 << ss_y);
+
+    // get reference block bottom right pixel coordinate
+    x1 = x0 + bw;
+    y1 = y0 + bh;
+
+    x0_ = x0;
+    y0_ = y0;
+    x1_ = x1;
+    y1_ = y1;
+
+    x0 -= 4;
+    y0 -= 4;
+    x1 += 4;
+    y1 += 4;
+
+    // extend top boarder if necessary
+    if (y0 <= 0) {
+      num |= 1 << 1;
+      uint8_t extend_top = -y0;
+      src_ptr = ref_frame + (x0 < 0 ? 0 : (x0 >= frame_width2 ? frame_width2 - 1: x0));
+      dst_ptr = src_ptr - pre_buf->stride;
+      if (x0 == 13 && y0 == -8)
+        test = 0;
+      for (i = 0; i < extend_top; i++) {
+        vpx_memcpy(dst_ptr, src_ptr, bw+8);
+        //*(dst_ptr-1) = 0;
+        *(dst_ptr+bw+9) = 0;
+        dst_ptr -= pre_buf->stride;
+      }
+      vpx_memset(dst_ptr, 0, bw+8);
+    }
+
+
+    // extend bottom boarder if necessary
+    if (y1 >= frame_height2) {
+      num |= 1 << 2;
+      uint8_t extend_bottom = y1 - frame_height2;
+      src_ptr = ref_frame +  pre_buf->stride * (frame_height2 - 1) 
+                   +(x0 < 0 ? 0 : (x0 >= frame_width2 ? frame_width2 - 1: x0));
+  //    src_ptr = ref_frame +  pre_buf->stride * (frame_height2 - 1) +(x0 < 0 ? 0 : x0);
+      dst_ptr = src_ptr + pre_buf->stride;
+      for (i = 0; i < extend_bottom; i++) {
+        if (*src_ptr == 0)
+          test = 0;
+        vpx_memcpy(dst_ptr, src_ptr, bw+8);
+      //  *(dst_ptr-1) = 0;
+     //   *(dst_ptr+bw+9) = 0;
+        dst_ptr += pre_buf->stride;
+      }
+     // vpx_memset(dst_ptr, 0, bw+8);
+    }
+
+    // extend left boarder if necessary
+    if (x0 <= 0) {
+      num |= 1 << 3;
+      uint8_t extend_left = -x0;
+
+      dst_ptr = ref_frame + pre_buf->stride * (y0-1) + x0;
+      vpx_memset(dst_ptr, 0, extend_left);
+      dst_ptr = ref_frame + pre_buf->stride * y0 + x0;
+      src_ptr = ref_frame + pre_buf->stride * y0;
+      for (i = 0; i < bh+8; i++) {
+        if (*src_ptr == 0)
+          test = 0;
+        vpx_memset(dst_ptr, *src_ptr, extend_left);
+        *(dst_ptr-1) = 0;
+        src_ptr += pre_buf->stride;
+        dst_ptr += pre_buf->stride;
+      }
+      vpx_memset(dst_ptr, 0, extend_left);
+    }
+
+
+    // extend right boarder if necessary
+   if (x1 >= frame_width2) {
+     int j;
+     uint8_t* test_ptr;
+      num |= 1 << 4;
+      uint8_t extend_right = x1 - frame_width2 +1;
+      src_ptr = ref_frame + pre_buf->stride * (y0 < 0 ? y0 : y0-1) + frame_width2 - 1;
+      test_ptr = ref_frame + pre_buf->stride * (-1) + frame_width2 - 1;
+      dst_ptr = src_ptr;
+
+      for (i = 0; i <= bh+ 12; i++) {
+        for (j = 0; j < extend_right; j++) {
+        if (*src_ptr != *(dst_ptr+j))
+          test = 0;
+        }
+        vpx_memset(dst_ptr, *src_ptr, extend_right);
+        src_ptr += pre_buf->stride;
+        dst_ptr += pre_buf->stride;
+      }
+    }
+
+
+
+
+   inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
+                   &scaled_mv, scale,
+                   4 << pred_w, 4 << pred_h, ref,
+                   &xd->subpix, xs, ys);
+   continue;
+
+    // extend right boarder if necessary
+   // if (x1 >= frame_width) {
+      {
+      num |= 1 << 4;
+      uint8_t extend_right = x1 - frame_width +1;
+      src_ptr = ref_frame + frame_width - 1 - 2*pre_buf->stride;
+      dst_ptr = src_ptr;
+      if (*src_ptr ==0)
+        test = 0;
+      for (i = 0; i <= frame_height + 40; i++) {
+        vpx_memset(dst_ptr, *src_ptr, 10);
+        src_ptr += pre_buf->stride;
+        dst_ptr += pre_buf->stride;
+      }
+    }
 
     inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                     &scaled_mv, scale,
                     4 << pred_w, 4 << pred_h, ref,
                     &xd->subpix, xs, ys);
   }
+
 }
 
 // TODO(jkoleszar): In principle, pred_w, pred_h are unnecessary, as we could
@@ -227,6 +541,18 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
   }
 }
 
+static void build_inter_predictors_for_planes2(VP9_COMMON *const cm, MACROBLOCKD *xd, BLOCK_SIZE bsize,
+                                              int mi_row, int mi_col,
+                                              int plane_from, int plane_to) {
+  int plane;
+  for (plane = plane_from; plane <= plane_to; ++plane) {
+    struct build_inter_predictors_args args = {
+      xd, mi_col * MI_SIZE, mi_row * MI_SIZE,
+    };
+    foreach_predicted_block_in_plane(xd, bsize, plane, build_inter_predictors,
+                                     &args);
+  }
+}
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0, 0);
