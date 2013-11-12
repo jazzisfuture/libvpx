@@ -40,6 +40,8 @@
 
 extern void print_tree_update_probs();
 
+extern int frame_width, frame_height;
+
 static void set_default_lf_deltas(struct loopfilter *lf);
 
 #define DEFAULT_INTERP_FILTER SWITCHABLE
@@ -2315,7 +2317,7 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
 }
 #endif
 
-static void scale_and_extend_frame(YV12_BUFFER_CONFIG *src_fb,
+static void scale_and_extend_frame  (YV12_BUFFER_CONFIG *src_fb,
                                    YV12_BUFFER_CONFIG *dst_fb) {
   const int in_w = src_fb->y_crop_width;
   const int in_h = src_fb->y_crop_height;
@@ -3161,7 +3163,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
 
     // transform / motion compensation build reconstruction frame
-
+    frame_width = cpi->common.display_width;
+    frame_height = cpi->common.display_height;
     vp9_encode_frame(cpi);
 
     // Update the skip mb flag probabilities based on the distribution
