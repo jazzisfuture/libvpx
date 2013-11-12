@@ -1,0 +1,8 @@
+Code-Review+2: Johann <johannkoenig@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: Johann <johannkoenig@google.com>
+Submitted-at: Tue, 12 Nov 2013 11:06:32 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/67802
+Project: webm/libvpx
+Branch: refs/heads/master
