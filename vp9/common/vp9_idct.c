@@ -1374,7 +1374,7 @@ void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
                        int eob) {
   if (eob) {
     if (eob == 1)
-      vp9_idct32x32_1_add(input, dest, stride);
+      vp9_idct32x32_1_add_c(input, dest, stride);
     else if (eob <= 34)
       // non-zero coeff only in upper-left 8x8
       vp9_idct32x32_34_add(input, dest, stride);

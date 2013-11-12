@@ -48,6 +48,8 @@ static int read_be32(const uint8_t *p) {
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
 
+int frame_width, frame_height;
+
 static int is_compound_prediction_allowed(const VP9_COMMON *cm) {
   int i;
   for (i = 1; i < ALLOWED_REFS_PER_FRAME; ++i)
@@ -390,6 +392,7 @@ static void set_ref(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   const int ref = mbmi->ref_frame[idx] - LAST_FRAME;
   const YV12_BUFFER_CONFIG *cfg = get_frame_ref_buffer(cm, ref);
   const struct scale_factors_common *sfc = &cm->active_ref_scale_comm[ref];
+  xd->ref_buf[idx] = cfg;
   if (!vp9_is_valid_scale(sfc))
     vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                        "Invalid scale factors");
@@ -437,6 +440,9 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     xd->subpix.filter_x = xd->subpix.filter_y =
         vp9_get_filter_kernel(mbmi->interp_filter);
 
+  //  frame_width = cm->display_width;
+   // frame_height = cm->display_height;
+   // printf("%d   %d\n", frame_width, frame_height);
     // Prediction
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
 
@@ -686,10 +692,17 @@ static INTERPOLATION_TYPE read_interp_filter_type(
                              : literal_to_type[vp9_rb_read_literal(rb, 2)];
 }
 
+static int frameNum = 0;
 static void read_frame_size(struct vp9_read_bit_buffer *rb,
                             int *width, int *height) {
   const int w = vp9_rb_read_literal(rb, 16) + 1;
   const int h = vp9_rb_read_literal(rb, 16) + 1;
+  int test;
+  if (w == 282)
+    test = 0;
+//  printf("frame %d  %d   %d\n", frameNum++,  w, h);
+ // frame_width = w;
+ // frame_height = h;
   *width = w;
   *height = h;
 }
@@ -723,6 +736,8 @@ static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
 
     cm->width = width;
     cm->height = height;
+    frame_width = width;
+    frame_height = height;
 
     vp9_update_frame_size(cm);
   }
@@ -1297,6 +1312,8 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
+
+  xd->cur_buf = new_fb;
 
   if (!first_partition_size) {
       // showing a frame directly
