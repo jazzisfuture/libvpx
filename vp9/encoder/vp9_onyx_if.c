@@ -40,6 +40,8 @@
 
 extern void print_tree_update_probs();
 
+extern int frame_width, frame_height;
+
 static void set_default_lf_deltas(struct loopfilter *lf);
 
 #define DEFAULT_INTERP_FILTER SWITCHABLE
@@ -2431,6 +2433,9 @@ static void Pass1Encode(VP9_COMP *cpi, unsigned long *size, unsigned char *dest,
   (void) size;
   (void) dest;
   (void) frame_flags;
+
+  frame_width = cpi->common.display_width;
+  frame_height = cpi->common.display_height;
 
   vp9_set_quantizer(cpi, find_fp_qindex());
   vp9_first_pass(cpi);
