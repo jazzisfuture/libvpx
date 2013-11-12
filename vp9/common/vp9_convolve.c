@@ -24,6 +24,7 @@ static void convolve_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                              const int16_t *filter_y, int y_step_q4,
                              int w, int h, int taps) {
   int x, y, k;
+  uint8_t *test;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
@@ -46,8 +47,16 @@ static void convolve_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
       const int16_t *const filter_x = filter_x_base +
           (x_q4 & SUBPEL_MASK) * taps;
 
-      for (k = 0; k < taps; ++k)
+      for (k = 0; k < taps; ++k) {
         sum += src[src_x + k] * filter_x[k];
+        if (src[src_x + k]  == 0 && src[src_x + k + 1]  == 0
+             && src[src_x + k + 2]  == 0 && src[src_x + k + 3]  == 0) {
+          test = src + src_x + k;
+        }
+        if (src[src_x + k]  == 0) {
+          test = src + src_x + k;
+        }
+      }
 
       dst[x] = clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
 
@@ -65,6 +74,7 @@ static void convolve_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                                  const int16_t *filter_y, int y_step_q4,
                                  int w, int h, int taps) {
   int x, y, k;
+  int test = 0;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
@@ -87,8 +97,13 @@ static void convolve_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
       const int16_t *const filter_x = filter_x_base +
           (x_q4 & SUBPEL_MASK) * taps;
 
-      for (k = 0; k < taps; ++k)
+
+      for (k = 0; k < taps; ++k) {
         sum += src[src_x + k] * filter_x[k];
+        if (src[src_x + k]  == 0)
+          test = src + src_x + k;
+          test = 0;
+      }
 
       dst[x] = ROUND_POWER_OF_TWO(dst[x] +
                    clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
@@ -107,7 +122,7 @@ static void convolve_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                             const int16_t *filter_y0, int y_step_q4,
                             int w, int h, int taps) {
   int x, y, k;
-
+  int test = 0;
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
   const int16_t *const filter_y_base =
@@ -129,8 +144,12 @@ static void convolve_vert_c(const uint8_t *src, ptrdiff_t src_stride,
       const int16_t *const filter_y = filter_y_base +
           (y_q4 & SUBPEL_MASK) * taps;
 
-      for (k = 0; k < taps; ++k)
+      for (k = 0; k < taps; ++k) {
         sum += src[(src_y + k) * src_stride] * filter_y[k];
+        if (src[(src_y + k) * src_stride] == 0) {
+          test = (src_y + k) * src_stride;
+        }
+      }
 
       dst[y * dst_stride] =
           clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS));
@@ -149,6 +168,7 @@ static void convolve_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                                 const int16_t *filter_y0, int y_step_q4,
                                 int w, int h, int taps) {
   int x, y, k;
+  int test;
 
   /* NOTE: This assumes that the filter table is 256-byte aligned. */
   /* TODO(agrange) Modify to make independent of table alignment. */
@@ -171,8 +191,11 @@ static void convolve_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
       const int16_t *const filter_y = filter_y_base +
           (y_q4 & SUBPEL_MASK) * taps;
 
-      for (k = 0; k < taps; ++k)
+      for (k = 0; k < taps; ++k) {
         sum += src[(src_y + k) * src_stride] * filter_y[k];
+        if (src[(src_y + k) * src_stride]  == 0)
+          test = 0;
+      }
 
       dst[y * dst_stride] = ROUND_POWER_OF_TWO(dst[y * dst_stride] +
            clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
@@ -197,6 +220,7 @@ static void convolve_c(const uint8_t *src, ptrdiff_t src_stride,
    */
   uint8_t temp[64 * 324];
   int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + taps;
+  int i, test;
 
   assert(w <= 64);
   assert(h <= 64);
@@ -210,6 +234,13 @@ static void convolve_c(const uint8_t *src, ptrdiff_t src_stride,
   convolve_horiz_c(src - src_stride * (taps / 2 - 1), src_stride, temp, 64,
                    filter_x, x_step_q4, filter_y, y_step_q4, w,
                    intermediate_height, taps);
+  for (i = 0; i < 64*234; i++) {
+    if (temp[i] == 0) {
+      test = 0;
+    }
+  }
+
+
   convolve_vert_c(temp + 64 * (taps / 2 - 1), 64, dst, dst_stride, filter_x,
                   x_step_q4, filter_y, y_step_q4, w, h, taps);
 }
