@@ -39,6 +39,7 @@ static void extend_plane(uint8_t *const src, int src_stride,
   /* Now copy the top and bottom lines into each line of the respective
    * borders
    */
+
   src_ptr1 = src - extend_left;
   src_ptr2 = src + src_stride * (height - 1) - extend_left;
   dst_ptr1 = src + src_stride * -extend_top - extend_left;
@@ -61,13 +62,13 @@ void vp8_yv12_extend_frame_borders_c(YV12_BUFFER_CONFIG *ybf) {
   assert(ybf->y_height - ybf->y_crop_height >= 0);
   assert(ybf->y_width - ybf->y_crop_width >= 0);
 
-  extend_plane(ybf->y_buffer, ybf->y_stride,
+ /* extend_plane(ybf->y_buffer, ybf->y_stride,
                ybf->y_crop_width, ybf->y_crop_height,
                ybf->border, ybf->border,
                ybf->border + ybf->y_height - ybf->y_crop_height,
-               ybf->border + ybf->y_width - ybf->y_crop_width);
+               ybf->border + ybf->y_width - ybf->y_crop_width);*/
 
-  extend_plane(ybf->u_buffer, ybf->uv_stride,
+ /* extend_plane(ybf->u_buffer, ybf->uv_stride,
                (ybf->y_crop_width + 1) / 2, (ybf->y_crop_height + 1) / 2,
                ybf->border / 2, ybf->border / 2,
                (ybf->border + ybf->y_height - ybf->y_crop_height + 1) / 2,
@@ -77,7 +78,7 @@ void vp8_yv12_extend_frame_borders_c(YV12_BUFFER_CONFIG *ybf) {
                (ybf->y_crop_width + 1) / 2, (ybf->y_crop_height + 1) / 2,
                ybf->border / 2, ybf->border / 2,
                (ybf->border + ybf->y_height - ybf->y_crop_height + 1) / 2,
-               (ybf->border + ybf->y_width - ybf->y_crop_width + 1) / 2);
+               (ybf->border + ybf->y_width - ybf->y_crop_width + 1) / 2);*/
 }
 
 #if CONFIG_VP9
