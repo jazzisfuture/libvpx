@@ -48,6 +48,8 @@ static int read_be32(const uint8_t *p) {
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
 
+int frame_width, frame_height;
+
 static int is_compound_prediction_allowed(const VP9_COMMON *cm) {
   int i;
   for (i = 1; i < ALLOWED_REFS_PER_FRAME; ++i)
@@ -436,6 +438,9 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
     xd->subpix.filter_x = xd->subpix.filter_y =
         vp9_get_filter_kernel(mbmi->interp_filter);
+
+    frame_width = cm->display_width;
+    frame_height = cm->display_height;
 
     // Prediction
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
