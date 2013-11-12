@@ -273,8 +273,6 @@ typedef struct macroblockd
     int mb_to_top_edge;
     int mb_to_bottom_edge;
 
-
-
     vp8_subpix_fn_t  subpixel_predict;
     vp8_subpix_fn_t  subpixel_predict8x4;
     vp8_subpix_fn_t  subpixel_predict8x8;
