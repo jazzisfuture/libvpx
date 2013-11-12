@@ -245,7 +245,7 @@ typedef struct macroblockd
     /* 0 (do not update) 1 (update) the macroblock segmentation map. */
     unsigned char update_mb_segmentation_map;
 
-    /* 0 (do not update) 1 (update) the macroblock segmentation feature data. */
+    /* 0 (do not update)   1 (update) the macroblock segmentation feature data. */
     unsigned char update_mb_segmentation_data;
 
     /* 0 (do not update) 1 (update) the macroblock segmentation feature data. */
@@ -272,8 +272,6 @@ typedef struct macroblockd
     int mb_to_right_edge;
     int mb_to_top_edge;
     int mb_to_bottom_edge;
-
-
 
     vp8_subpix_fn_t  subpixel_predict;
     vp8_subpix_fn_t  subpixel_predict8x4;
