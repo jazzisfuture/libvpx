@@ -92,6 +92,7 @@ struct macroblock {
 
   MACROBLOCKD e_mbd;
   int skip_block;
+  int q_index;
 
   search_site *ss;
   int ss_count;
