@@ -422,33 +422,30 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx *const ctx = args->ctx;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  const int raster_block = txfrm_block_to_raster_block(plane_bsize, tx_size,
-                                                       block);
-
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  uint8_t *const dst = raster_block_offset_uint8(plane_bsize, raster_block,
-                                                 pd->dst.buf, pd->dst.stride);
+  int i, k;
+  uint8_t *dst;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &k);
+  dst = &pd->dst.buf[4 * k * pd->dst.stride + 4 * i];
 
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
   if (x->zcoeff_blk[tx_size][block] && plane == 0) {
-    int i, k;
     pd->eobs[block] = 0;
-    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &k);
     ctx->ta[plane][i] = 0;
     ctx->tl[plane][k] = 0;
     return;
   }
 
-  if (x->select_txfm_size || xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8)
+  if (x->select_txfm_size ||
+      xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8)
     vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
 
   if (x->optimize && (x->select_txfm_size ||
-      xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8|| !x->skip_optimize)) {
+                      xd->mi_8x8[0]->mbmi.sb_type < BLOCK_8X8 ||
+                      !x->skip_optimize)) {
     vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
   } else {
-    int i, k;
-    txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &k);
     ctx->ta[plane][i] = pd->eobs[block] > 0;
     ctx->tl[plane][k] = pd->eobs[block] > 0;
   }
