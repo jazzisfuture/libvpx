@@ -546,7 +546,12 @@ process_common_cmdline() {
         [ -d "${optval}" ] || die "Not a directory: ${optval}"
         sdk_path="${optval}"
         ;;
-        --libc|--as|--prefix|--libdir|--sdk-path)
+        --ios-platform=*)
+        [ "${optval}" = "iphoneos" -o "${optval}" = "iphonesimulator" ] \
+            || die "Must be iphoneos or iphonesimulator: ${optval}"
+        ios_platform="${optval}"
+        ;;
+        --libc|--as|--prefix|--libdir|--sdk-path|--ios-platform)
         die "Option ${opt} requires argument"
         ;;
         --help|-h) show_help
@@ -925,41 +930,29 @@ EOF
           ;;
 
         darwin*)
-            if [ -z "${sdk_path}" ]; then
-                SDK_PATH=`xcode-select -print-path 2> /dev/null`
-                SDK_PATH=${SDK_PATH}/Platforms/iPhoneOS.platform/Developer
-            else
-                SDK_PATH=${sdk_path}
+            if [ -z "${ios_platform}" ]; then
+                ios_platform="iphoneos"
             fi
-            TOOLCHAIN_PATH=${SDK_PATH}/usr/bin
-            CXX=${TOOLCHAIN_PATH}/g++
-            CC=${TOOLCHAIN_PATH}/gcc
-            AR=${TOOLCHAIN_PATH}/ar
-            LD=${TOOLCHAIN_PATH}/arm-apple-darwin10-llvm-gcc-4.2
-            AS=${TOOLCHAIN_PATH}/as
-            STRIP=${TOOLCHAIN_PATH}/strip
-            NM=${TOOLCHAIN_PATH}/nm
+
+            XCRUN_FIND="xcrun --sdk ${ios_platform} -find"
+            CXX="$(${XCRUN_FIND} clang++)"
+            CC="$(${XCRUN_FIND} clang)"
+            AR="$(${XCRUN_FIND} ar)"
+            LD="$(${XCRUN_FIND} ld)"
+            AS="$(${XCRUN_FIND} as)"
+            STRIP="$(${XCRUN_FIND} strip)"
+            NM="$(${XCRUN_FIND} nm)"
+            RANLIB="$(${XCRUN_FIND} ranlib)"
             AS_SFX=.s
 
             # ASFLAGS is written here instead of using check_add_asflags
             # because we need to overwrite all of ASFLAGS and purge the
             # options that were put in above
-            ASFLAGS="-version -arch ${tgt_isa} -g"
+            ASFLAGS="-arch ${tgt_isa} -g"
 
-            add_cflags -arch ${tgt_isa}
-            add_ldflags -arch_only ${tgt_isa}
-
-            if [ -z "${alt_libc}" ]; then
-                alt_libc=${SDK_PATH}/SDKs/iPhoneOS6.0.sdk
-            fi
-
-            add_cflags  "-isysroot ${alt_libc}"
-
-            # Add the paths for the alternate libc
-            for d in usr/include; do
-                try_dir="${alt_libc}/${d}"
-                [ -d "${try_dir}" ] && add_cflags -I"${try_dir}"
-            done
+            alt_libc="$(xcrun --sdk ${ios_platform} --show-sdk-path)"
+            add_cflags -arch ${tgt_isa} -isysroot ${alt_libc}
+            add_ldflags -arch ${tgt_isa} -ios_version_min 7.0
 
             for d in lib usr/lib usr/lib/system; do
                 try_dir="${alt_libc}/${d}"
