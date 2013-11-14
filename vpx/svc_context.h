@@ -39,11 +39,14 @@ typedef enum SVC_LOG_LEVEL {
 typedef struct {
   // public interface to svc_command options
   int spatial_layers;               // number of layers
-  int first_frame_full_size;        // set to one to force first frame full size
   SVC_ENCODING_MODE encoding_mode;  // svc encoding strategy
   SVC_LOG_LEVEL log_level;  // amount of information to display
   int log_print;  // when set, printf log messages instead of returning the
                   // message with svc_get_message
+
+  // Encoder-decoder mismatch check members.
+  int test_decode;
+  int mismatch_seen;
 
   // private storage for vpx_svc_encode
   void *internal;
@@ -78,13 +81,16 @@ vpx_codec_err_t vpx_svc_set_scale_factors(SvcContext *svc_ctx,
 /**
  * initialize SVC encoding
  */
-vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
+vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *encoder_ctx,
+                             vpx_codec_ctx_t *decoder_ctx,
                              vpx_codec_iface_t *iface,
                              vpx_codec_enc_cfg_t *cfg);
 /**
  * encode a frame of video with multiple layers
  */
-vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
+vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
+                               vpx_codec_ctx_t *encoder_ctx,
+                               vpx_codec_ctx_t *decoder_ctx,
                                struct vpx_image *rawimg, vpx_codec_pts_t pts,
                                int64_t duration, int deadline);
 

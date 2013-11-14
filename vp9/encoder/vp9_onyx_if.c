@@ -2957,6 +2957,7 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
 
   return q;
 }
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       unsigned long *size,
                                       unsigned char *dest,
@@ -2988,6 +2989,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->mi_cols * 8 != cpi->un_scaled_source->y_width ||
       cm->mi_rows * 8 != cpi->un_scaled_source->y_height) {
     scale_and_extend_frame(cpi->un_scaled_source, &cpi->scaled_source);
+
     cpi->Source = &cpi->scaled_source;
   } else {
     cpi->Source = cpi->un_scaled_source;
@@ -3689,7 +3691,6 @@ static void check_initial_width(VP9_COMP *cpi, YV12_BUFFER_CONFIG *sd) {
     cpi->initial_height = cm->height;
   }
 }
-
 
 int vp9_receive_raw_frame(VP9_PTR ptr, unsigned int frame_flags,
                           YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
