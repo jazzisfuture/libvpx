@@ -1948,6 +1948,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   }
 #endif
 
+//  totalrate = 0;  // AWG not in head!
   vp9_zero(cm->counts.switchable_interp);
   vp9_zero(cpi->tx_stepdown_count);
 

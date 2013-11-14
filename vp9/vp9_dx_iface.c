@@ -232,6 +232,8 @@ update_error_state(vpx_codec_alg_priv_t                 *ctx,
   return res;
 }
 
+static unsigned int recon_count = 0;
+
 static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
                                   const uint8_t        **data,
                                   unsigned int           data_sz,
@@ -354,6 +356,14 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
     if (!res && 0 == vp9_get_raw_frame(ctx->pbi, &sd, &time_stamp,
                                        &time_end_stamp, &flags)) {
       yuvconfig2image(&ctx->img, &sd, user_priv);
+
+      // AWG Write out the reconstructed frame:
+      {
+        char name[128] = {0};
+        sprintf(name, "recon_frame_%04d.yuv", recon_count++);
+        write_img(&ctx->img, name);
+      }
+
       ctx->img_avail = 1;
     }
   }

@@ -147,6 +147,35 @@ static INLINE void Scale2Ratio(int mode, int *hr, int *hs) {
   }
 }
 
+void debug_write_frame(YV12_BUFFER_CONFIG *s, const char *filename) {
+  uint8_t *src = s->y_buffer;
+  int h = s->y_height;
+  FILE *yuv_file = fopen(filename, "w");
+  assert(yuv_file);
+
+  do {
+    fwrite(src, s->y_width, 1,  yuv_file);
+    src += s->y_stride;
+  } while (--h);
+
+  src = s->u_buffer;
+  h = s->uv_height;
+
+  do {
+    fwrite(src, s->uv_width, 1,  yuv_file);
+    src += s->uv_stride;
+  } while (--h);
+
+  src = s->v_buffer;
+  h = s->uv_height;
+
+  do {
+    fwrite(src, s->uv_width, 1, yuv_file);
+    src += s->uv_stride;
+  } while (--h);
+  fclose(yuv_file);
+}
+
 // Functions to compute the active minq lookup table entries based on a
 // formulaic approach to facilitate easier adjustment of the Q tables.
 // The formulae were derived from computing a 3rd order polynomial best
@@ -2676,6 +2705,13 @@ static void scale_references(VP9_COMP *cpi) {
                                VP9BORDERINPIXELS);
       scale_and_extend_frame(ref, &cm->yv12_fb[new_fb]);
       cpi->scaled_ref_idx[i] = new_fb;
+      {
+        char name[128];
+        sprintf(name, "scaled_REF_%d_%dx%d_%04d.yuv", i,
+                cm->yv12_fb[new_fb].y_width, cm->yv12_fb[new_fb].y_height,
+                cm->current_video_frame);
+        debug_write_frame(&cm->yv12_fb[new_fb], name);
+      }
     } else {
       cpi->scaled_ref_idx[i] = cm->ref_frame_map[refs[i]];
       cm->fb_idx_ref_cnt[cm->ref_frame_map[refs[i]]]++;
@@ -2715,7 +2751,7 @@ static void full_to_model_counts(
         }
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2725,7 +2761,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
 
   recon_err = vp9_calc_ss_err(cpi->Source, get_frame_new_buffer(cm));
 
-  if (cpi->twopass.total_left_stats.coded_error != 0.0)
+  //if (cpi->twopass.total_left_stats.coded_error != 0.0)
     fprintf(f, "%10d %10d %10d %10d %10d %10d %10d %10d %10d"
         "%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f"
         "%6d %6d %5d %5d %5d %8.2f %10d %10.3f"
@@ -2957,6 +2993,7 @@ static int pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
 
   return q;
 }
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       unsigned long *size,
                                       unsigned char *dest,
@@ -2988,8 +3025,25 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->mi_cols * 8 != cpi->un_scaled_source->y_width ||
       cm->mi_rows * 8 != cpi->un_scaled_source->y_height) {
     scale_and_extend_frame(cpi->un_scaled_source, &cpi->scaled_source);
+
+    {
+      char name[128];
+      sprintf(name, "unscaled_%dx%d_%04d.yuv", cpi->un_scaled_source->y_width,
+              cpi->un_scaled_source->y_height, cm->current_video_frame);
+      debug_write_frame(cpi->un_scaled_source, name);
+      sprintf(name, "scaled_%dx%d_%04d.yuv", cpi->scaled_source.y_width,
+              cpi->scaled_source.y_height, cm->current_video_frame);
+      debug_write_frame(&cpi->scaled_source, name);
+    }
+
     cpi->Source = &cpi->scaled_source;
   } else {
+    {
+      char name[128];
+      sprintf(name, "unscaled_%dx%d_%04d.yuv", cpi->un_scaled_source->y_width,
+              cpi->un_scaled_source->y_height, cm->current_video_frame);
+      debug_write_frame(cpi->un_scaled_source, name);
+    }
     cpi->Source = cpi->un_scaled_source;
   }
   scale_references(cpi);
@@ -3529,7 +3583,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 #endif
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
   if (cpi->refresh_golden_frame == 1)
@@ -3681,8 +3735,8 @@ static void check_initial_width(VP9_COMP *cpi, YV12_BUFFER_CONFIG *sd) {
   VP9_COMMON            *cm = &cpi->common;
   if (!cpi->initial_width) {
     // TODO(jkoleszar): Support 1/4 subsampling?
-    cm->subsampling_x = (sd != NULL) && sd->uv_width < sd->y_width;
-    cm->subsampling_y = (sd != NULL) && sd->uv_height < sd->y_height;
+    cm->subsampling_x = 1; //(sd != NULL) && sd->uv_width < sd->y_width;
+    cm->subsampling_y = 1; //(sd != NULL) && sd->uv_height < sd->y_height;
     alloc_raw_frame_buffers(cpi);
 
     cpi->initial_width = cm->width;
@@ -3729,6 +3783,8 @@ int is_next_frame_arf(VP9_COMP *cpi) {
   return cpi->frame_coding_order[cpi->sequence_number + 1] < 0 ? 1 : 0;
 }
 #endif
+
+static unsigned int frame_count = 0;
 
 int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
                             unsigned long *size, unsigned char *dest,
@@ -4008,6 +4064,12 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
   if (cpi->b_calculate_psnr && cpi->pass != 1 && cm->show_frame)
     generate_psnr_packet(cpi);
+
+  if (cm->frame_to_show) {
+    char name[128] = {0};
+    sprintf(name, "recon_%04d.yuv", frame_count++);
+    debug_write_frame(cm->frame_to_show, name);
+  }
 
 #if CONFIG_INTERNAL_STATS
 

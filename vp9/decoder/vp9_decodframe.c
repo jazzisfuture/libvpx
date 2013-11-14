@@ -704,6 +704,36 @@ static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
   VP9_COMMON *cm = &pbi->common;
 
   if (cm->width != width || cm->height != height) {
+    // Change in frame size.
+    if (cm->width == 0 || cm->height == 0) {
+      // Assign new frame buffer on first call.
+      cm->new_fb_idx = NUM_YV12_BUFFERS - 1;
+      cm->fb_idx_ref_cnt[cm->new_fb_idx] = 1;
+    }
+
+    // TODO(agrange) Don't test width/height, check overall size.
+    if (width > cm->width || height > cm->height) {
+      // Rescale frame buffers only if they're not big enough already.
+      if (vp9_resize_frame_buffers(cm, width, height))
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate frame buffers");
+    }
+
+    cm->width = width;
+    cm->height = height;
+
+    vp9_update_frame_size(cm);
+  }
+
+  vp9_realloc_frame_buffer(&cm->yv12_fb[cm->new_fb_idx], cm->width, cm->height,
+                           cm->subsampling_x, cm->subsampling_y,
+                           VP9BORDERINPIXELS);
+}
+#if 0
+static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
+  VP9_COMMON *cm = &pbi->common;
+
+  if (cm->width != width || cm->height != height) {
     if (!pbi->initial_width || !pbi->initial_height) {
       if (vp9_alloc_frame_buffers(cm, width, height))
         vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
@@ -730,6 +760,7 @@ static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
                            cm->subsampling_x, cm->subsampling_y,
                            VP9BORDERINPIXELS);
 }
+#endif
 
 static void setup_frame_size(VP9D_COMP *pbi,
                              struct vp9_read_bit_buffer *rb) {
