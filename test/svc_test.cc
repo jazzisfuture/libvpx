@@ -21,7 +21,39 @@ namespace {
 
 using libvpx_test::CodecFactory;
 using libvpx_test::Decoder;
+using libvpx_test::DxDataIterator;
 using libvpx_test::VP9CodecFactory;
+
+int compare_img(const vpx_image_t *img1, const vpx_image_t *img2)
+{
+  const unsigned int c_w = (img1->d_w + img1->x_chroma_shift)
+      >> img1->x_chroma_shift;
+  const unsigned int c_h = (img1->d_h + img1->y_chroma_shift)
+      >> img1->y_chroma_shift;
+  int match = 1;
+  unsigned int i;
+
+  match &= (img1->fmt == img2->fmt);
+  match &= (img1->w == img2->w);
+  match &= (img1->h == img2->h);
+
+  for (i = 0; i < img1->d_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_Y]+i*img1->stride[VPX_PLANE_Y],
+                     img2->planes[VPX_PLANE_Y]+i*img2->stride[VPX_PLANE_Y],
+                     img1->d_w) == 0);
+
+  for (i = 0; i < c_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_U]+i*img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_U]+i*img2->stride[VPX_PLANE_U],
+                     c_w) == 0);
+
+  for (i = 0; i < c_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_V]+i*img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_V]+i*img2->stride[VPX_PLANE_U],
+                     c_w) == 0);
+
+  return match;
+}
 
 class SvcTest : public ::testing::Test {
  protected:
@@ -34,14 +66,14 @@ class SvcTest : public ::testing::Test {
         codec_initialized_(false),
         decoder_(0) {
     memset(&svc_, 0, sizeof(svc_));
-    memset(&codec_, 0, sizeof(codec_));
+    memset(&encoder_ctx_, 0, sizeof(encoder_ctx_));
+    memset(&decoder_ctx_, 0, sizeof(decoder_ctx_));
     memset(&codec_enc_, 0, sizeof(codec_enc_));
   }
 
   virtual ~SvcTest() {}
 
   virtual void SetUp() {
-    svc_.first_frame_full_size = 1;
     svc_.encoding_mode = INTER_LAYER_PREDICTION_IP;
     svc_.log_level = SVC_LOG_DEBUG;
     svc_.log_print = 0;
@@ -51,10 +83,6 @@ class SvcTest : public ::testing::Test {
         vpx_codec_enc_config_default(codec_iface_, &codec_enc_, 0);
     EXPECT_EQ(VPX_CODEC_OK, res);
 
-    codec_enc_.g_w = kWidth;
-    codec_enc_.g_h = kHeight;
-    codec_enc_.g_timebase.num = 1;
-    codec_enc_.g_timebase.den = 60;
     codec_enc_.kf_min_dist = 100;
     codec_enc_.kf_max_dist = 100;
 
@@ -66,11 +94,15 @@ class SvcTest : public ::testing::Test {
   virtual void TearDown() {
     vpx_svc_release(&svc_);
     delete(decoder_);
-    if (codec_initialized_) vpx_codec_destroy(&codec_);
+    if (codec_initialized_) {
+      vpx_codec_destroy(&encoder_ctx_);
+      vpx_codec_destroy(&decoder_ctx_);
+    }
   }
 
   SvcContext svc_;
-  vpx_codec_ctx_t codec_;
+  vpx_codec_ctx_t encoder_ctx_;
+  vpx_codec_ctx_t decoder_ctx_;
   struct vpx_codec_enc_cfg codec_enc_;
   vpx_codec_iface_t *codec_iface_;
   std::string test_file_name_;
@@ -80,22 +112,30 @@ class SvcTest : public ::testing::Test {
 
 TEST_F(SvcTest, SvcInit) {
   // test missing parameters
-  vpx_codec_err_t res = vpx_svc_init(NULL, &codec_, codec_iface_, &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-  res = vpx_svc_init(&svc_, NULL, codec_iface_, &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-  res = vpx_svc_init(&svc_, &codec_, NULL, &codec_enc_);
+  vpx_codec_err_t res = vpx_svc_init(NULL, &encoder_ctx_, &decoder_ctx_,
+                                     codec_iface_, &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  res = vpx_svc_init(&svc_, &codec_, codec_iface_, NULL);
+  res = vpx_svc_init(&svc_, NULL, &decoder_ctx_, codec_iface_, &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+
+  res = vpx_svc_init(&svc_, &encoder_ctx_, NULL, codec_iface_, &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+
+  res = vpx_svc_init(&svc_, &encoder_ctx_,  &decoder_ctx_, NULL, &codec_enc_);
+  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
+
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, codec_iface_, NULL);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   svc_.spatial_layers = 6;  // too many layers
-  res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, codec_iface_,
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   svc_.spatial_layers = 0;  // use default layers
-  res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, codec_iface_,
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
   EXPECT_EQ(VPX_SS_DEFAULT_LAYERS, svc_.spatial_layers);
@@ -104,11 +144,13 @@ TEST_F(SvcTest, SvcInit) {
 TEST_F(SvcTest, InitTwoLayers) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16*16");  // invalid scale values
-  vpx_codec_err_t res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  vpx_codec_err_t res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_,
+                                     vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");  // valid scale values
-  res = vpx_svc_init(&svc_, &codec_, codec_iface_, &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 }
@@ -119,14 +161,16 @@ TEST_F(SvcTest, InvalidOptions) {
 
   res = vpx_svc_set_options(&svc_, "not-an-option=1");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 }
 
 TEST_F(SvcTest, SetLayersOption) {
   vpx_codec_err_t res = vpx_svc_set_options(&svc_, "layers=3");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
   EXPECT_EQ(3, svc_.spatial_layers);
@@ -135,7 +179,8 @@ TEST_F(SvcTest, SetLayersOption) {
 TEST_F(SvcTest, SetEncodingMode) {
   vpx_codec_err_t res = vpx_svc_set_options(&svc_, "encoding-mode=alt-ip");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
   EXPECT_EQ(ALT_INTER_LAYER_PREDICTION_IP, svc_.encoding_mode);
@@ -143,7 +188,8 @@ TEST_F(SvcTest, SetEncodingMode) {
 
 TEST_F(SvcTest, SetMultipleOptions) {
   vpx_codec_err_t res = vpx_svc_set_options(&svc_, "layers=2 encoding-mode=ip");
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
   EXPECT_EQ(2, svc_.spatial_layers);
@@ -155,12 +201,14 @@ TEST_F(SvcTest, SetScaleFactorsOption) {
   vpx_codec_err_t res =
       vpx_svc_set_options(&svc_, "scale-factors=not-scale-factors");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   res = vpx_svc_set_options(&svc_, "scale-factors=1/3,2/3");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 }
@@ -169,11 +217,13 @@ TEST_F(SvcTest, SetQuantizersOption) {
   svc_.spatial_layers = 2;
   vpx_codec_err_t res = vpx_svc_set_options(&svc_, "quantizers=not-quantizers");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   vpx_svc_set_options(&svc_, "quantizers=40,45");
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 }
@@ -185,16 +235,17 @@ TEST_F(SvcTest, SetQuantizers) {
   res = vpx_svc_set_quantizers(&svc_, NULL);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  svc_.first_frame_full_size = 0;
   svc_.spatial_layers = 2;
   res = vpx_svc_set_quantizers(&svc_, "40");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   res = vpx_svc_set_quantizers(&svc_, "40,30");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 }
@@ -206,31 +257,31 @@ TEST_F(SvcTest, SetScaleFactors) {
   res = vpx_svc_set_scale_factors(&svc_, NULL);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  svc_.first_frame_full_size = 0;
   svc_.spatial_layers = 2;
   res = vpx_svc_set_scale_factors(&svc_, "4/16");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   res = vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
   EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  res = vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                     &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 }
 
-// test that decoder can handle an SVC frame as the first frame in a sequence
-// this test is disabled since it always fails because of a decoder issue
-// https://code.google.com/p/webm/issues/detail?id=654
-TEST_F(SvcTest, DISABLED_FirstFrameHasLayers) {
-  svc_.first_frame_full_size = 0;
+// Test that the decoder can handle an SVC frame as the first frame in a
+// sequence.
+TEST_F(SvcTest, FirstFrameHasLayers) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
   vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
-      vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+      vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                   &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 
@@ -239,8 +290,8 @@ TEST_F(SvcTest, DISABLED_FirstFrameHasLayers) {
                                      codec_enc_.g_timebase.num, 0, 30);
   video.Begin();
 
-  res = vpx_svc_encode(&svc_, &codec_, video.img(), video.pts(),
-                       video.duration(), VPX_DL_REALTIME);
+  res = vpx_svc_encode(&svc_, &encoder_ctx_, &decoder_ctx_, video.img(),
+                       video.pts(), video.duration(), VPX_DL_REALTIME);
   EXPECT_EQ(VPX_CODEC_OK, res);
 
   const vpx_codec_err_t res_dec = decoder_->DecodeFrame(
@@ -249,27 +300,38 @@ TEST_F(SvcTest, DISABLED_FirstFrameHasLayers) {
 
   // this test fails with a decoder error
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
+
+  // Test that reconstructed & decoded frames match.
+  const vpx_image_t *img_enc = vpx_codec_get_preview_frame(&encoder_ctx_);
+  DxDataIterator dx_iter = decoder_->GetDxData();
+  const vpx_image_t *img_dec = dx_iter.Next();
+  if (img_enc && img_dec) {
+    write_img(img_enc, "image_enc.yuv");
+    write_img(img_dec, "image_dec.yuv");
+    const bool res = compare_img(img_enc, img_dec);
+    EXPECT_EQ(true, res);
+  }
 }
 
 TEST_F(SvcTest, EncodeThreeFrames) {
-  svc_.first_frame_full_size = 1;
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
   vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
-      vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+      vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                   &codec_enc_);
   ASSERT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 
   libvpx_test::I420VideoSource video(test_file_name_, kWidth, kHeight,
                                      codec_enc_.g_timebase.den,
                                      codec_enc_.g_timebase.num, 0, 30);
-  // FRAME 1
+  // FRAME 0
   video.Begin();
-  // this frame is full size, with only one layer
-  res = vpx_svc_encode(&svc_, &codec_, video.img(), video.pts(),
-                       video.duration(), VPX_DL_REALTIME);
+  // this is an I-frame
+  res = vpx_svc_encode(&svc_, &encoder_ctx_, &decoder_ctx_, video.img(),
+                       video.pts(), video.duration(), VPX_DL_REALTIME);
   ASSERT_EQ(VPX_CODEC_OK, res);
   EXPECT_EQ(1, vpx_svc_is_keyframe(&svc_));
 
@@ -278,13 +340,13 @@ TEST_F(SvcTest, EncodeThreeFrames) {
       vpx_svc_get_frame_size(&svc_));
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 
-  // FRAME 2
+  // FRAME 1
   video.Next();
-  // this is an I-frame
-  res = vpx_svc_encode(&svc_, &codec_, video.img(), video.pts(),
-                       video.duration(), VPX_DL_REALTIME);
+  // this is a P-frame
+  res = vpx_svc_encode(&svc_, &encoder_ctx_, &decoder_ctx_, video.img(),
+                       video.pts(), video.duration(), VPX_DL_REALTIME);
   ASSERT_EQ(VPX_CODEC_OK, res);
-  EXPECT_EQ(1, vpx_svc_is_keyframe(&svc_));
+  EXPECT_EQ(0, vpx_svc_is_keyframe(&svc_));
 
   res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
@@ -294,8 +356,8 @@ TEST_F(SvcTest, EncodeThreeFrames) {
   // FRAME 2
   video.Next();
   // this is a P-frame
-  res = vpx_svc_encode(&svc_, &codec_, video.img(), video.pts(),
-                       video.duration(), VPX_DL_REALTIME);
+  res = vpx_svc_encode(&svc_, &encoder_ctx_, &decoder_ctx_, video.img(),
+                       video.pts(), video.duration(), VPX_DL_REALTIME);
   ASSERT_EQ(VPX_CODEC_OK, res);
   EXPECT_EQ(0, vpx_svc_is_keyframe(&svc_));
 
@@ -306,13 +368,13 @@ TEST_F(SvcTest, EncodeThreeFrames) {
 }
 
 TEST_F(SvcTest, GetLayerResolution) {
-  svc_.first_frame_full_size = 0;
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,8/16");
   vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
-      vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+      vpx_svc_init(&svc_, &encoder_ctx_, &decoder_ctx_, vpx_codec_vp9_cx(),
+                   &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
   codec_initialized_ = true;
 

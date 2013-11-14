@@ -354,6 +354,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
     if (!res && 0 == vp9_get_raw_frame(ctx->pbi, &sd, &time_stamp,
                                        &time_end_stamp, &flags)) {
       yuvconfig2image(&ctx->img, &sd, user_priv);
+
       ctx->img_avail = 1;
     }
   }

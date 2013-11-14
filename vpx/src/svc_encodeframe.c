@@ -7,12 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
 /**
  * @file
  * VP9 SVC encoding support via libvpx
  */
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +19,8 @@
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/svc_context.h"
 #include "vpx/vp8cx.h"
+#include "vpx/vp8dx.h"
+#include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"
 
 #if defined(__MINGW32__) && !defined(MINGW_HAS_SECURE_API)
@@ -92,6 +92,120 @@ struct LayerData {
   size_t size;  // length of compressed data
   struct LayerData *next;
 };
+
+#define mmin(a, b)  ((a) < (b) ? (a) : (b))
+void find_mismatch(const vpx_image_t *img1, const vpx_image_t *img2,
+                   int yloc[4], int uloc[4], int vloc[4]) {
+  const unsigned int bsize = 64;
+  const unsigned int bsizey = bsize >> img1->y_chroma_shift;
+  const unsigned int bsizex = bsize >> img1->x_chroma_shift;
+  const int c_w = (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
+  const int c_h = (img1->d_h + img1->y_chroma_shift) >> img1->y_chroma_shift;
+  unsigned int match = 1;
+  unsigned int i, j;
+  yloc[0] = yloc[1] = yloc[2] = yloc[3] = -1;
+  for (i = 0, match = 1; match && i < img1->d_h; i += bsize) {
+    for (j = 0; match && j < img1->d_w; j += bsize) {
+      int k, l;
+      int si = mmin(i + bsize, img1->d_h) - i;
+      int sj = mmin(j + bsize, img1->d_w) - j;
+      for (k = 0; match && k < si; k++)
+        for (l = 0; match && l < sj; l++) {
+          if (*(img1->planes[VPX_PLANE_Y] +
+                (i + k) * img1->stride[VPX_PLANE_Y] + j + l) !=
+              *(img2->planes[VPX_PLANE_Y] +
+                (i + k) * img2->stride[VPX_PLANE_Y] + j + l)) {
+            yloc[0] = i + k;
+            yloc[1] = j + l;
+            yloc[2] = *(img1->planes[VPX_PLANE_Y] +
+                        (i + k) * img1->stride[VPX_PLANE_Y] + j + l);
+            yloc[3] = *(img2->planes[VPX_PLANE_Y] +
+                        (i + k) * img2->stride[VPX_PLANE_Y] + j + l);
+            match = 0;
+            break;
+          }
+        }
+    }
+  }
+
+  uloc[0] = uloc[1] = uloc[2] = uloc[3] = -1;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      int si = mmin(i + bsizey, c_h - i);
+      int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; k++)
+        for (l = 0; match && l < sj; l++) {
+          if (*(img1->planes[VPX_PLANE_U] +
+                (i + k) * img1->stride[VPX_PLANE_U] + j + l) !=
+              *(img2->planes[VPX_PLANE_U] +
+                (i + k) * img2->stride[VPX_PLANE_U] + j + l)) {
+            uloc[0] = i + k;
+            uloc[1] = j + l;
+            uloc[2] = *(img1->planes[VPX_PLANE_U] +
+                        (i + k) * img1->stride[VPX_PLANE_U] + j + l);
+            uloc[3] = *(img2->planes[VPX_PLANE_U] +
+                        (i + k) * img2->stride[VPX_PLANE_V] + j + l);
+            match = 0;
+            break;
+          }
+        }
+    }
+  }
+  vloc[0] = vloc[1] = vloc[2] = vloc[3] = -1;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      int si = mmin(i + bsizey, c_h - i);
+      int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; k++)
+        for (l = 0; match && l < sj; l++) {
+          if (*(img1->planes[VPX_PLANE_V] +
+                (i + k) * img1->stride[VPX_PLANE_V] + j + l) !=
+              *(img2->planes[VPX_PLANE_V] +
+                (i + k) * img2->stride[VPX_PLANE_V] + j + l)) {
+            vloc[0] = i + k;
+            vloc[1] = j + l;
+            vloc[2] = *(img1->planes[VPX_PLANE_V] +
+                        (i + k) * img1->stride[VPX_PLANE_V] + j + l);
+            vloc[3] = *(img2->planes[VPX_PLANE_V] +
+                        (i + k) * img2->stride[VPX_PLANE_V] + j + l);
+            match = 0;
+            break;
+          }
+        }
+    }
+  }
+}
+
+int compare_img(const vpx_image_t *img1, const vpx_image_t *img2)
+{
+  const int c_w = (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
+  const int c_h = (img1->d_h + img1->y_chroma_shift) >> img1->y_chroma_shift;
+  int match = 1;
+  unsigned int i;
+
+  match &= (img1->fmt == img2->fmt);
+  match &= (img1->w == img2->w);
+  match &= (img1->h == img2->h);
+
+  for (i = 0; i < img1->d_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_Y]+i*img1->stride[VPX_PLANE_Y],
+                     img2->planes[VPX_PLANE_Y]+i*img2->stride[VPX_PLANE_Y],
+                     img1->d_w) == 0);
+
+  for (i = 0; i < c_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_U]+i*img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_U]+i*img2->stride[VPX_PLANE_U],
+                     c_w) == 0);
+
+  for (i = 0; i < c_h; i++)
+    match &= (memcmp(img1->planes[VPX_PLANE_V]+i*img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_V]+i*img2->stride[VPX_PLANE_U],
+                     c_w) == 0);
+
+  return match;
+}
 
 // create LayerData from encoder output
 static struct LayerData *ld_create(void *buf, size_t size) {
@@ -451,19 +565,21 @@ vpx_codec_err_t vpx_svc_set_scale_factors(SvcContext *svc_ctx,
   return VPX_CODEC_OK;
 }
 
-vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
+vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *encoder_ctx,
+                             vpx_codec_ctx_t *decoder_ctx,
                              vpx_codec_iface_t *iface,
                              vpx_codec_enc_cfg_t *enc_cfg) {
   int max_intra_size_pct;
   vpx_codec_err_t res;
   SvcInternal *const si = get_svc_internal(svc_ctx);
-  if (svc_ctx == NULL || codec_ctx == NULL || iface == NULL ||
-      enc_cfg == NULL) {
+  if (svc_ctx == NULL || encoder_ctx == NULL || decoder_ctx == NULL
+      || iface == NULL || enc_cfg == NULL) {
     return VPX_CODEC_INVALID_PARAM;
   }
+
   if (si == NULL) return VPX_CODEC_MEM_ERROR;
 
-  si->codec_ctx = codec_ctx;
+  si->codec_ctx = encoder_ctx;
 
   si->width = enc_cfg->g_w;
   si->height = enc_cfg->g_h;
@@ -474,6 +590,10 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     return VPX_CODEC_INVALID_PARAM;
   }
   si->kf_dist = enc_cfg->kf_max_dist;
+
+  // Enable/Disable check for encoder-decoder mismatch.
+  svc_ctx->test_decode = 0;
+  svc_ctx->mismatch_seen = 0;
 
   if (svc_ctx->spatial_layers == 0)
     svc_ctx->spatial_layers = VPX_SS_DEFAULT_LAYERS;
@@ -519,23 +639,28 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   enc_cfg->g_error_resilient = 1;
 
   // Initialize codec
-  res = vpx_codec_enc_init(codec_ctx, iface, enc_cfg, VPX_CODEC_USE_PSNR);
+  res = vpx_codec_enc_init(encoder_ctx, iface, enc_cfg, VPX_CODEC_USE_PSNR);
   if (res != VPX_CODEC_OK) {
     svc_log(svc_ctx, SVC_LOG_ERROR, "svc_enc_init error\n");
     return res;
   }
 
-  vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_CPUUSED, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_STATIC_THRESHOLD, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_NOISE_SENSITIVITY, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
+  vpx_codec_control(encoder_ctx, VP9E_SET_SVC, 1);
+  vpx_codec_control(encoder_ctx, VP8E_SET_CPUUSED, 1);
+  vpx_codec_control(encoder_ctx, VP8E_SET_STATIC_THRESHOLD, 1);
+  vpx_codec_control(encoder_ctx, VP8E_SET_NOISE_SENSITIVITY, 1);
+  vpx_codec_control(encoder_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
 
   max_intra_size_pct =
       (int)(((double)enc_cfg->rc_buf_optimal_sz * 0.5) *
             ((double)enc_cfg->g_timebase.den / enc_cfg->g_timebase.num) / 10.0);
-  vpx_codec_control(codec_ctx, VP8E_SET_MAX_INTRA_BITRATE_PCT,
+  vpx_codec_control(encoder_ctx, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     max_intra_size_pct);
+
+  if (svc_ctx->test_decode) {
+    vpx_codec_dec_init(decoder_ctx, vpx_codec_vp9_dx(), NULL, 0);
+  }
+
   return VPX_CODEC_OK;
 }
 
@@ -584,21 +709,13 @@ static int map_vp8_flags(int svc_flags) {
   return flags;
 }
 
-/**
- * Helper to check if the current frame is the first, full resolution dummy.
- */
-static int vpx_svc_dummy_frame(SvcContext *svc_ctx) {
-  SvcInternal *const si = get_svc_internal(svc_ctx);
-  return svc_ctx->first_frame_full_size == 1 && si->encode_frame_count == 0;
-}
-
 static void calculate_enc_frame_flags(SvcContext *svc_ctx) {
   vpx_enc_frame_flags_t flags = VPX_EFLAG_FORCE_KF;
   SvcInternal *const si = get_svc_internal(svc_ctx);
   const int is_keyframe = (si->frame_within_gop == 0);
 
   // keyframe layer zero is identical for all modes
-  if ((is_keyframe && si->layer == 0) || vpx_svc_dummy_frame(svc_ctx)) {
+  if (is_keyframe && si->layer == 0) {
     si->enc_frame_flags = VPX_EFLAG_FORCE_KF;
     return;
   }
@@ -766,7 +883,9 @@ static void set_svc_parameters(SvcContext *svc_ctx,
  * Encode a frame into multiple layers
  * Create a superframe containing the individual layers
  */
-vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
+vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx,
+                               vpx_codec_ctx_t *encoder_ctx,
+                               vpx_codec_ctx_t *decoder_ctx,
                                struct vpx_image *rawimg, vpx_codec_pts_t pts,
                                int64_t duration, int deadline) {
   vpx_codec_err_t res;
@@ -776,17 +895,16 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   struct LayerData *layer_data;
   struct Superframe superframe;
   SvcInternal *const si = get_svc_internal(svc_ctx);
-  if (svc_ctx == NULL || codec_ctx == NULL || rawimg == NULL || si == NULL) {
+  if (svc_ctx == NULL || encoder_ctx == NULL || decoder_ctx == NULL
+      || rawimg == NULL || si == NULL) {
     return VPX_CODEC_INVALID_PARAM;
   }
 
   memset(&superframe, 0, sizeof(superframe));
   svc_log_reset(svc_ctx);
 
-  si->layers = vpx_svc_dummy_frame(svc_ctx) ? 1 : svc_ctx->spatial_layers;
-  if (si->frame_within_gop >= si->kf_dist ||
-      si->encode_frame_count == 0 ||
-      (si->encode_frame_count == 1 && svc_ctx->first_frame_full_size == 1)) {
+  si->layers = svc_ctx->spatial_layers;
+  if (si->frame_within_gop >= si->kf_dist || si->encode_frame_count == 0) {
     si->frame_within_gop = 0;
   }
   si->is_keyframe = (si->frame_within_gop == 0);
@@ -805,29 +923,23 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     }
     calculate_enc_frame_flags(svc_ctx);
 
-    if (vpx_svc_dummy_frame(svc_ctx)) {
-      // do not set svc parameters, use normal encode
-      svc_log(svc_ctx, SVC_LOG_DEBUG, "encoding full size first frame\n");
-    } else {
-      set_svc_parameters(svc_ctx, codec_ctx);
-    }
-    res = vpx_codec_encode(codec_ctx, rawimg, pts, (uint32_t)duration,
+    set_svc_parameters(svc_ctx, encoder_ctx);
+
+    res = vpx_codec_encode(encoder_ctx, rawimg, pts, (uint32_t)duration,
                            si->enc_frame_flags, deadline);
     if (res != VPX_CODEC_OK) {
       return res;
     }
     // save compressed data
     iter = NULL;
-    while ((cx_pkt = vpx_codec_get_cx_data(codec_ctx, &iter))) {
+    while ((cx_pkt = vpx_codec_get_cx_data(encoder_ctx, &iter))) {
       switch (cx_pkt->kind) {
         case VPX_CODEC_CX_FRAME_PKT: {
           const uint32_t frame_pkt_size = (uint32_t)(cx_pkt->data.frame.sz);
-          if (!vpx_svc_dummy_frame(svc_ctx)) {
-            si->bytes_in_layer[si->layer] += frame_pkt_size;
-            svc_log(svc_ctx, SVC_LOG_DEBUG,
-                    "SVC frame: %d, layer: %d, size: %u\n",
-                    si->encode_frame_count, si->layer, frame_pkt_size);
-          }
+          si->bytes_in_layer[si->layer] += frame_pkt_size;
+          svc_log(svc_ctx, SVC_LOG_DEBUG,
+                  "SVC frame: %d, layer: %d, size: %u\n",
+                  si->encode_frame_count, si->layer, frame_pkt_size);
           layer_data =
               ld_create(cx_pkt->data.frame.buf, (size_t)frame_pkt_size);
           if (layer_data == NULL) {
@@ -839,18 +951,42 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
           // save layer size in superframe index
           superframe.sizes[superframe.count++] = frame_pkt_size;
           superframe.magnitude |= frame_pkt_size;
+
+          // Test for encoder-decoder mismatch.
+          if (svc_ctx->test_decode && !svc_ctx->mismatch_seen) {
+            vpx_codec_decode(decoder_ctx, cx_pkt->data.frame.buf,
+                             cx_pkt->data.frame.sz, NULL, 0);
+            if (decoder_ctx->err) {
+              svc_log(svc_ctx, SVC_LOG_DEBUG, "Failed to decode frame %d", pts);
+              svc_ctx->mismatch_seen = 1;
+            } else {
+              vpx_image_t enc_img, dec_img;
+              struct vp9_ref_frame ref;
+
+              ref.idx = 0;
+              vpx_codec_control(encoder_ctx, VP9_GET_REFERENCE, &ref);
+              enc_img = ref.img;
+              vpx_codec_control(encoder_ctx, VP9_GET_REFERENCE, &ref);
+              dec_img = ref.img;
+
+              if (!compare_img(&enc_img, &dec_img)) {
+                int y[4], u[4], v[4];
+                find_mismatch(&enc_img, &dec_img, y, u, v);
+                decoder_ctx->err = 1;
+                svc_ctx->mismatch_seen = 1;
+              }
+            }
+          }
           break;
         }
         case VPX_CODEC_PSNR_PKT: {
-          if (!vpx_svc_dummy_frame(svc_ctx)) {
-            svc_log(svc_ctx, SVC_LOG_DEBUG,
-                    "SVC frame: %d, layer: %d, PSNR(Total/Y/U/V): "
-                    "%2.3f  %2.3f  %2.3f  %2.3f \n",
-                    si->encode_frame_count, si->layer,
-                    cx_pkt->data.psnr.psnr[0], cx_pkt->data.psnr.psnr[1],
-                    cx_pkt->data.psnr.psnr[2], cx_pkt->data.psnr.psnr[3]);
-            si->psnr_in_layer[si->layer] += cx_pkt->data.psnr.psnr[0];
-          }
+          svc_log(svc_ctx, SVC_LOG_DEBUG,
+                  "SVC frame: %d, layer: %d, PSNR(Total/Y/U/V): "
+                  "%2.3f  %2.3f  %2.3f  %2.3f \n",
+                  si->encode_frame_count, si->layer,
+                  cx_pkt->data.psnr.psnr[0], cx_pkt->data.psnr.psnr[1],
+                  cx_pkt->data.psnr.psnr[2], cx_pkt->data.psnr.psnr[3]);
+          si->psnr_in_layer[si->layer] += cx_pkt->data.psnr.psnr[0];
           break;
         }
         default: {
@@ -860,11 +996,10 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     }
   }
   // add superframe index to layer data list
-  if (!vpx_svc_dummy_frame(svc_ctx)) {
-    sf_create_index(&superframe);
-    layer_data = ld_create(superframe.buffer, superframe.index_size);
-    ld_list_add(&cx_layer_list, layer_data);
-  }
+  sf_create_index(&superframe);
+  layer_data = ld_create(superframe.buffer, superframe.index_size);
+  ld_list_add(&cx_layer_list, layer_data);
+
   // get accumulated size of layer data
   si->frame_size = ld_list_get_buffer_size(cx_layer_list);
   if (si->frame_size == 0) return VPX_CODEC_ERROR;
@@ -940,8 +1075,6 @@ const char *vpx_svc_dump_statistics(SvcContext *svc_ctx) {
   svc_log_reset(svc_ctx);
 
   encode_frame_count = si->encode_frame_count;
-  if (svc_ctx->first_frame_full_size) encode_frame_count--;
-  if (si->encode_frame_count <= 0) return vpx_svc_get_message(svc_ctx);
 
   svc_log(svc_ctx, SVC_LOG_INFO, "\n");
   number_of_keyframes = encode_frame_count / si->kf_dist + 1;

@@ -61,6 +61,9 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
   yv12->y_width  = img->d_w;
   yv12->y_height = img->d_h;
 
+  yv12->uv_crop_width = (img->d_w + img->x_chroma_shift) >> img->x_chroma_shift;
+  yv12->uv_crop_height = (img->d_h + img->y_chroma_shift)
+      >> img->y_chroma_shift;
   yv12->uv_width = img->x_chroma_shift == 1 ? (1 + yv12->y_width) / 2
                                             : yv12->y_width;
   yv12->uv_height = img->y_chroma_shift == 1 ? (1 + yv12->y_height) / 2
