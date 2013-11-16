@@ -51,9 +51,6 @@ int vp9_init_search_range(VP9_COMP *cpi, int size) {
   while ((size << sr) < MAX_FULL_PEL_VAL)
     sr++;
 
-  if (sr)
-    sr--;
-
   sr += cpi->sf.reduce_first_step_size;
   sr = MIN(sr, (cpi->sf.max_step_search_steps - 2));
   return sr;
@@ -364,8 +361,8 @@ int vp9_find_best_sub_pixel_iterative(MACROBLOCK *x,
   bestmv->row = br;
   bestmv->col = bc;
 
-  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
-      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 4)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 4)))
     return INT_MAX;
 
   return besterr;
@@ -450,8 +447,8 @@ int vp9_find_best_sub_pixel_tree(MACROBLOCK *x,
   bestmv->row = br;
   bestmv->col = bc;
 
-  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
-      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 4)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 4)))
     return INT_MAX;
 
   return besterr;
@@ -559,8 +556,8 @@ int vp9_find_best_sub_pixel_comp_iterative(MACROBLOCK *x,
   bestmv->row = br;
   bestmv->col = bc;
 
-  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
-      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 4)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 4)))
     return INT_MAX;
 
   return besterr;
@@ -655,8 +652,8 @@ int vp9_find_best_sub_pixel_comp_tree(MACROBLOCK *x,
   bestmv->row = br;
   bestmv->col = bc;
 
-  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
-      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 4)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 4)))
     return INT_MAX;
 
   return besterr;
