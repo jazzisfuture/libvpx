@@ -29,5 +29,10 @@ extern const TX_SIZE max_txsize_lookup[BLOCK_SIZES];
 extern const TX_SIZE max_uv_txsize_lookup[BLOCK_SIZES];
 extern const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES];
 extern const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2];
+extern const struct {
+  PARTITION_CONTEXT above;
+  PARTITION_CONTEXT left;
+} partition_context_lookup[BLOCK_SIZES];
+
 
 #endif  // VP9_COMMON_VP9_COMMON_DATA_H
