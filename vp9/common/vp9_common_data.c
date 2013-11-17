@@ -144,3 +144,20 @@ const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2] = {
 };
 
 
+const struct {
+  PARTITION_CONTEXT above;
+  PARTITION_CONTEXT left;
+} partition_context_lookup[]= {
+  {15, 15},
+  {15,  7},
+  {7,  15},
+  {7,   7},
+  {7,   3},
+  {3,   7},
+  {3,   3},
+  {3,   1},
+  {1,   3},
+  {1,   1},
+  {1,   0},
+  {0,   1},
+  {0,   0}};
