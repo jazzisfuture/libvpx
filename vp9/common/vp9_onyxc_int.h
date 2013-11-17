@@ -305,20 +305,12 @@ static INLINE void update_partition_context(
   PARTITION_CONTEXT *left_ctx = left_seg_context + (mi_row & MI_MASK);
 
   const int bsl = b_width_log2(sb_size), bs = (1 << bsl) / 2;
-  const int bwl = b_width_log2(sb_type);
-  const int bhl = b_height_log2(sb_type);
-  const int boffset = b_width_log2(BLOCK_64X64) - bsl;
-  const char pcval0 = ~(0xe << boffset);
-  const char pcval1 = ~(0xf << boffset);
-  const char pcvalue[2] = {pcval0, pcval1};
-
-  assert(MAX(bwl, bhl) <= bsl);
 
   // update the partition context at the end notes. set partition bits
   // of block sizes larger than the current one to be one, and partition
   // bits of smaller block sizes to be zero.
-  vpx_memset(above_ctx, pcvalue[bwl == bsl], bs);
-  vpx_memset(left_ctx, pcvalue[bhl == bsl], bs);
+  vpx_memset(above_ctx, partition_context_lookup[sb_type].above, bs);
+  vpx_memset(left_ctx, partition_context_lookup[sb_type].left, bs);
 }
 
 static INLINE int partition_plane_context(
