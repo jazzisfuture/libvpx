@@ -284,7 +284,7 @@ void out_put(void *out, const uint8_t *buf, unsigned int len, int do_md5) {
   }
 }
 
-void out_close(void *out, const char *out_fn, int do_md5) {
+void out_close(void *out, const char *out_fn, int do_md5, int num_frames) {
   if (do_md5) {
 #if CONFIG_MD5
     uint8_t md5[16];
@@ -296,7 +296,7 @@ void out_close(void *out, const char *out_fn, int do_md5) {
     for (i = 0; i < 16; i++)
       printf("%02x", md5[i]);
 
-    printf("  %s\n", out_fn);
+    printf("  %s MD5 from %d decoded frames\n", out_fn, num_frames);
 #endif
   } else {
     fclose(out);
@@ -897,11 +897,11 @@ int main_loop(int argc, const char **argv_) {
 
         if (vpx_codec_decode(&decoder, buf, bytes_in_buffer, NULL, 0)) {
           const char *detail = vpx_codec_error_detail(&decoder);
-          fprintf(stderr, "Failed to decode frame: %s\n",
-                  vpx_codec_error(&decoder));
+          warn("Failed to decode frame %d: %s",
+               frame_in, vpx_codec_error(&decoder));
 
           if (detail)
-            fprintf(stderr, "  Additional information: %s\n", detail);
+            warn("Additional information: %s", detail);
           goto fail;
         }
 
@@ -922,8 +922,7 @@ int main_loop(int argc, const char **argv_) {
     dx_time += (unsigned int)vpx_usec_timer_elapsed(&timer);
 
     if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
-      fprintf(stderr, "Failed VP8_GET_FRAME_CORRUPTED: %s\n",
-              vpx_codec_error(&decoder));
+      warn("Failed VP8_GET_FRAME_CORRUPTED: %s", vpx_codec_error(&decoder));
       goto fail;
     }
     frames_corrupted += corrupted;
@@ -1011,7 +1010,7 @@ int main_loop(int argc, const char **argv_) {
         }
 
         if (!single_file)
-          out_close(out, out_fn, do_md5);
+          out_close(out, out_fn, do_md5, frame_out);
       }
     }
 
@@ -1035,7 +1034,7 @@ fail:
   }
 
   if (single_file && !noblit)
-    out_close(out, outfile, do_md5);
+    out_close(out, outfile, do_md5, frame_out);
 
   if (input.nestegg_ctx)
     nestegg_destroy(input.nestegg_ctx);
