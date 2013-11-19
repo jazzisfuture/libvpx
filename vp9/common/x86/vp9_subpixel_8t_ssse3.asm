@@ -11,17 +11,6 @@
 
 %include "vpx_ports/x86_abi_support.asm"
 
-;/************************************************************************************
-; Notes: filter_block1d_h6 applies a 6 tap filter horizontally to the input pixels. The
-; input pixel array has output_height rows. This routine assumes that output_height is an
-; even number. This function handles 8 pixels in horizontal direction, calculating ONE
-; rows each iteration to take advantage of the 128 bits operations.
-;
-; This is an implementation of some of the SSE optimizations first seen in ffvp8
-;
-;*************************************************************************************/
-
-
 %macro VERTx4 1
     mov         rdx, arg(5)                 ;filter ptr
     mov         rsi, arg(0)                 ;src_ptr
@@ -30,23 +19,33 @@
 
     movdqa      xmm4, [rdx]                 ;load filters
     movd        xmm5, rcx
-    packsswb    xmm4, xmm4
-    pshuflw     xmm0, xmm4, 0b              ;k0_k1
-    pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
-    pshuflw     xmm2, xmm4, 10101010b       ;k4_k5
-    pshuflw     xmm3, xmm4, 11111111b       ;k6_k7
+    movdqa      xmm7, xmm4
+    packsswb    xmm7, xmm7
+    pshuflw     xmm0, xmm7, 0b              ;k0_k1
+    pshuflw     xmm3, xmm7, 11111111b       ;k6_k7
 
-    punpcklqdq  xmm0, xmm0
-    punpcklqdq  xmm1, xmm1
-    punpcklqdq  xmm2, xmm2
-    punpcklqdq  xmm3, xmm3
+    pshuflw     xmm1, xmm4, 10101010b       ;k2
+    pshuflw     xmm2, xmm4, 11111111b       ;k3
+    psrldq      xmm4, 8
+    pshuflw     xmm6, xmm4, 0b              ;k4
+    pshuflw     xmm4, xmm4, 01010101b       ;k5
 
+    punpcklwd   xmm1, xmm4
+    packsswb    xmm1, xmm1                  ;k2_k5
+
+    ; k3k4 is not interleaved
+    punpcklqdq  xmm2, xmm6                  ;k3k4
+
+    ; store filter coeff on stack
     movdqa      k0k1, xmm0
-    movdqa      k2k3, xmm1
+    movdqa      k2k5, xmm1
     pshufd      xmm5, xmm5, 0
-    movdqa      k4k5, xmm2
+    movdqa      k3k4, xmm2
     movdqa      k6k7, xmm3
     movdqa      krd, xmm5
+
+    pxor        xmm7, xmm7
+    movdqa      zero, xmm7
 
     movsxd      rdx, DWORD PTR arg(1)       ;pixels_per_line
 
@@ -67,25 +66,30 @@
     movd        xmm3, [rax + rdx * 2]       ;D
     movd        xmm4, [rsi + rdx * 4]       ;E
     movd        xmm5, [rax + rdx * 4]       ;F
-
-    punpcklbw   xmm0, xmm1                  ;A B
-    punpcklbw   xmm2, xmm3                  ;C D
-    punpcklbw   xmm4, xmm5                  ;E F
-
     movd        xmm6, [rsi + rbx]           ;G
     movd        xmm7, [rax + rbx]           ;H
 
+    punpcklbw   xmm0, xmm1
+    punpcklbw   xmm2, xmm5
+    punpcklbw   xmm6, xmm7
+
+    punpckldq   xmm3, xmm4
+    punpcklbw   xmm3, zero                  ;unpack to word
+
     pmaddubsw   xmm0, k0k1
-    pmaddubsw   xmm2, k2k3
-    punpcklbw   xmm6, xmm7                  ;G H
-    pmaddubsw   xmm4, k4k5
+    pmaddubsw   xmm2, k2k5
     pmaddubsw   xmm6, k6k7
+
+    pmullw      xmm3, k3k4
 
     paddsw      xmm0, xmm6
     paddsw      xmm0, xmm2
-    paddsw      xmm0, xmm4
-    paddsw      xmm0, krd
 
+    paddsw      xmm0, xmm3
+    psrldq      xmm3, 8
+    paddsw      xmm0, xmm3
+
+    paddsw      xmm0, krd
     psraw       xmm0, 7
     packuswb    xmm0, xmm0
 
@@ -332,16 +336,17 @@ sym(vp9_filter_block1d4_v8_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
-    %define k2k3 [rsp + 16*1]
-    %define k4k5 [rsp + 16*2]
+    %define k2k5 [rsp + 16*1]
+    %define k3k4 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
     %define krd [rsp + 16*4]
+    %define zero [rsp + 16*5]
 
     VERTx4 0
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -449,16 +454,17 @@ sym(vp9_filter_block1d4_v8_avg_ssse3):
     ; end prolog
 
     ALIGN_STACK 16, rax
-    sub         rsp, 16*5
+    sub         rsp, 16*6
     %define k0k1 [rsp + 16*0]
-    %define k2k3 [rsp + 16*1]
-    %define k4k5 [rsp + 16*2]
+    %define k2k5 [rsp + 16*1]
+    %define k3k4 [rsp + 16*2]
     %define k6k7 [rsp + 16*3]
     %define krd [rsp + 16*4]
+    %define zero [rsp + 16*5]
 
     VERTx4 1
 
-    add rsp, 16*5
+    add rsp, 16*6
     pop rsp
     pop rbx
     ; begin epilog
@@ -538,14 +544,22 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     movdqa      %2,   %1
     pshufb      %1,   [GLOBAL(shuf_t0t1)]
     pshufb      %2,   [GLOBAL(shuf_t2t3)]
-    pmaddubsw   %1,   xmm6
-    pmaddubsw   %2,   xmm7
+    pmaddubsw   %1,   k0k1k4k5
+    pmaddubsw   %2,   k2k3k6k7
 
-    paddsw      %1,   %2
-    movdqa      %2,   %1
+    movdqa      xmm4, %1
+    movdqa      xmm5, %2
+    psrldq      %1,   8
     psrldq      %2,   8
-    paddsw      %1,   %2
-    paddsw      %1,   xmm5
+    movdqa      xmm6, xmm5
+
+    paddsw      xmm4, %2
+    pmaxsw      xmm5, %1
+    pminsw      %1, xmm6
+    paddsw      %1, xmm4
+    paddsw      %1, xmm5
+
+    paddsw      %1,   krd
     psraw       %1,   7
     packuswb    %1,   %1
 %endm
@@ -564,6 +578,10 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     pshuflw     xmm7, xmm4, 01010101b       ;k2_k3
     pshufhw     xmm7, xmm7, 11111111b       ;k2_k3_k6_k7
     pshufd      xmm5, xmm5, 0               ;rounding
+
+    movdqa      k0k1k4k5, xmm6
+    movdqa      k2k3k6k7, xmm7
+    movdqa      krd, xmm5
 
     movsxd      rax, dword ptr arg(1)       ;src_pixels_per_line
     movsxd      rdx, dword ptr arg(3)       ;output_pitch
@@ -826,8 +844,15 @@ sym(vp9_filter_block1d4_h8_ssse3):
     push        rdi
     ; end prolog
 
+    ALIGN_STACK 16, rax
+    sub         rsp, 16 * 3
+    %define k0k1k4k5 [rsp + 16 * 0]
+    %define k2k3k6k7 [rsp + 16 * 1]
+    %define krd      [rsp + 16 * 2]
+
     HORIZx4 0
 
+    add rsp, 16 * 3
     ; begin epilog
     pop rdi
     pop rsi
@@ -932,8 +957,15 @@ sym(vp9_filter_block1d4_h8_avg_ssse3):
     push        rdi
     ; end prolog
 
+    ALIGN_STACK 16, rax
+    sub         rsp, 16 * 3
+    %define k0k1k4k5 [rsp + 16 * 0]
+    %define k2k3k6k7 [rsp + 16 * 1]
+    %define krd      [rsp + 16 * 2]
+
     HORIZx4 1
 
+    add rsp, 16 * 3
     ; begin epilog
     pop rdi
     pop rsi
