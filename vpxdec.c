@@ -772,8 +772,12 @@ int main_loop(int argc, const char **argv_) {
 
       if (do_scale) {
         if (img && frame_out == 1) {
-          stream_w = img->d_w;
-          stream_h = img->d_h;
+          if (vpx_codec_control(&decoder, VP8D_GET_DISPLAY_WIDTH, &stream_w)) {
+            stream_w = img->d_w;
+          }
+          if (vpx_codec_control(&decoder, VP8D_GET_DISPLAY_HEIGHT, &stream_h)) {
+            stream_h = img->d_h;
+          }
           scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420,
                                      stream_w, stream_h, 16);
         }
