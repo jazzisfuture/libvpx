@@ -264,6 +264,9 @@ typedef void (*fht_t) (const int16_t *in, int16_t *out, int stride,
 typedef void (*iht_t) (const int16_t *in, uint8_t *out, int stride,
                        int tx_type);
 
+typedef std::tr1::tuple<fdct_t, idct_t, int> dct_16x16_param_t;
+typedef std::tr1::tuple<fht_t, iht_t, int> ht_16x16_param_t;
+
 void fdct16x16_ref(const int16_t *in, int16_t *out, int stride, int tx_type) {
   vp9_fdct16x16_c(in, out, stride);
 }
@@ -413,7 +416,7 @@ class Trans16x16TestBase {
 };
 
 class Trans16x16DCT : public Trans16x16TestBase,
-                      public PARAMS(fdct_t, idct_t, int) {
+                      public ::testing::TestWithParam<dct_16x16_param_t> {
  public:
   virtual ~Trans16x16DCT() {}
 
@@ -455,7 +458,7 @@ TEST_P(Trans16x16DCT, InvAccuracyCheck) {
 }
 
 class Trans16x16HT : public Trans16x16TestBase,
-                     public PARAMS(fht_t, iht_t, int) {
+                     public ::testing::TestWithParam<ht_16x16_param_t> {
  public:
   virtual ~Trans16x16HT() {}
 
