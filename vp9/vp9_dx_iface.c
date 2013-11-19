@@ -668,6 +668,40 @@ static vpx_codec_err_t get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
   }
 }
 
+static vpx_codec_err_t get_display_width(vpx_codec_alg_priv_t *ctx,
+                                         int ctrl_id,
+                                         va_list args) {
+  int *display_width = va_arg(args, int *);
+
+  if (display_width) {
+    VP9D_COMP *pbi = (VP9D_COMP *)ctx->pbi;
+    if (pbi)
+      *display_width = pbi->common.display_width;
+    else
+      return VPX_CODEC_ERROR;
+    return VPX_CODEC_OK;
+  } else {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+}
+
+static vpx_codec_err_t get_display_height(vpx_codec_alg_priv_t *ctx,
+                                          int ctrl_id,
+                                          va_list args) {
+  int *display_height = va_arg(args, int *);
+
+  if (display_height) {
+    VP9D_COMP *pbi = (VP9D_COMP *)ctx->pbi;
+    if (pbi)
+      *display_height = pbi->common.display_height;
+    else
+      return VPX_CODEC_ERROR;
+    return VPX_CODEC_OK;
+  } else {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+}
+
 static vpx_codec_err_t set_invert_tile_order(vpx_codec_alg_priv_t *ctx,
                                              int ctr_id,
                                              va_list args) {
@@ -686,6 +720,8 @@ static vpx_codec_ctrl_fn_map_t ctf_maps[] = {
   {VP8D_GET_LAST_REF_UPDATES,     get_last_ref_updates},
   {VP8D_GET_FRAME_CORRUPTED,      get_frame_corrupted},
   {VP9_GET_REFERENCE,             get_reference},
+  {VP8D_GET_DISPLAY_WIDTH,        get_display_width},
+  {VP8D_GET_DISPLAY_HEIGHT,       get_display_height},
   {VP9_INVERT_TILE_DECODE_ORDER,  set_invert_tile_order},
   { -1, NULL},
 };
