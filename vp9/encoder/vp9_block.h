@@ -87,6 +87,12 @@ struct macroblock_plane {
 typedef unsigned int vp9_coeff_cost[BLOCK_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS];
 
+struct cache_control {
+  int start_row, start_col;
+  int end_row, end_col;
+  int in_use;    // in_use = 0, allows overwrite operation
+};
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
@@ -101,6 +107,14 @@ struct macroblock {
   search_site *ss;
   int ss_count;
   int searches_per_step;
+
+  int_mv cached_mv[MAX_REF_FRAMES - 1] [SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+  struct cache_control mc_cache_ctl[MAX_REF_FRAMES - 1]
+                                   [SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+  uint8_t *mc_cache[MAX_REF_FRAMES - 1][SWITCHABLE_FILTERS]
+                                       [SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+  DECLARE_ALIGNED(16, uint8_t,
+                  mc_temp[SWITCHABLE_FILTERS][64 * 64 * MAX_MB_PLANE]);
 
   int errorperbit;
   int sadperbit16;

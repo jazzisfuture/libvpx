@@ -19,6 +19,8 @@
   (((128 + ((int64_t)R) * (RM)) >> 8) + (D << DM))
 #define QIDX_SKIP_THRESH     115
 
+#define INVALID_MV 0x80008000
+
 struct TileInfo;
 
 int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex);

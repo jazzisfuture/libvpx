@@ -39,8 +39,6 @@
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_common.h"
 
-#define INVALID_MV 0x80008000
-
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
@@ -2482,6 +2480,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &sse);
   }
+
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv.as_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 
@@ -2640,7 +2639,7 @@ static INLINE void restore_dst_buf(MACROBLOCKD *xd,
                                    uint8_t *orig_dst[MAX_MB_PLANE],
                                    int orig_dst_stride[MAX_MB_PLANE]) {
   int i;
-  for (i = 0; i < MAX_MB_PLANE; i++) {
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
     xd->plane[i].dst.buf = orig_dst[i];
     xd->plane[i].dst.stride = orig_dst_stride[i];
   }
@@ -2673,14 +2672,19 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     (mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]) };
   int_mv cur_mv[2];
   int64_t this_rd = 0;
-  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
   int pred_exists = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
-  int best_needs_copy = 0;
   uint8_t *orig_dst[MAX_MB_PLANE];
   int orig_dst_stride[MAX_MB_PLANE];
   int rs = 0;
+  // Set up motion cache indexes
+  int ref_idx = mbmi->ref_frame[0] - 1;
+  int second_ref_idx = mbmi->ref_frame[1] - 1;
+  int offset[2];
+  int second_offset[2];
+  int cache_hit = 1;
+  int buf_dis[2];
 
   if (is_comp_pred) {
     if (frame_mv[refs[0]].as_int == INVALID_MV ||
@@ -2770,7 +2774,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   // of these currently holds the best predictor, and use the other
   // one for future predictions. In the end, copy from tmp_buf to
   // dst if necessary.
-  for (i = 0; i < MAX_MB_PLANE; i++) {
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
     orig_dst[i] = xd->plane[i].dst.buf;
     orig_dst_stride[i] = xd->plane[i].dst.stride;
   }
@@ -2797,6 +2801,73 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (is_comp_pred)
     intpel_mv &= (mbmi->mv[1].as_mv.row & 15) == 0 &&
         (mbmi->mv[1].as_mv.col & 15) == 0;
+
+
+  // Set up motion cache indexes
+  offset[0] = (cur_mv[0].as_mv.row & 0x0f);
+  offset[1] = (cur_mv[0].as_mv.col & 0x0f);
+  second_offset[0] = (cur_mv[1].as_mv.row & 0x0f);
+  second_offset[1] = (cur_mv[1].as_mv.col & 0x0f);
+
+  // =================================================
+  // sub-pixel motion search cache
+  // check reference block position. when hitting into the cache,
+  // swap the buffer pointers
+  // =================================================
+  {
+    struct cache_control mc_ctl[2] = {
+        x->mc_cache_ctl[ref_idx][offset[0]][offset[1]],
+        x->mc_cache_ctl[second_ref_idx][second_offset[0]][second_offset[1]],
+    };
+    int_mv *cached_mv[2] = { &x->cached_mv[ref_idx][offset[0]][offset[1]],
+                             &x->cached_mv[second_ref_idx]
+                                         [second_offset[0]][second_offset[1]] };
+    cache_hit &= !intpel_mv;
+    cache_hit &= cached_mv[0]->as_int != INVALID_MV;
+    cache_hit &= mc_ctl[0].start_row <= (mi_row * 8 + cur_mv[0].as_mv.row / 8);
+    cache_hit &= mc_ctl[0].start_col <= (mi_col * 8 + cur_mv[0].as_mv.col / 8);
+    cache_hit &= mc_ctl[0].end_row >= (mi_row * 8 + cur_mv[0].as_mv.row / 8 +
+                                       4 * num_4x4_blocks_high_lookup[bsize]);
+    cache_hit &= mc_ctl[0].end_col >= (mi_col * 8 + cur_mv[0].as_mv.col / 8 +
+                                       4 * num_4x4_blocks_wide_lookup[bsize]);
+
+    if (is_comp_pred && cache_hit) {
+      cache_hit = 0;
+      cache_hit &= cached_mv[1]->as_int != INVALID_MV;
+      cache_hit &= mc_ctl[1].start_row <= (mi_row * 8 + cur_mv[1].as_mv.row / 8);
+      cache_hit &= mc_ctl[1].start_col <= (mi_col * 8 + cur_mv[1].as_mv.col / 8);
+      cache_hit &= mc_ctl[1].end_row >= (mi_row * 8 + cur_mv[1].as_mv.row / 8 +
+                                         4 * num_4x4_blocks_high_lookup[bsize]);
+      cache_hit &= mc_ctl[1].end_col >= (mi_col * 8 + cur_mv[1].as_mv.col / 8 +
+                                         4 * num_4x4_blocks_wide_lookup[bsize]);
+    }
+
+    if (cache_hit) {
+      buf_dis[0] = (mi_row * 8 + cur_mv[0].as_mv.row / 8) - mc_ctl[0].start_row;
+      buf_dis[1] = (mi_col * 8 + cur_mv[0].as_mv.col / 8) - mc_ctl[0].start_col;
+    }
+  }
+  // =================================================
+
+  // if no cache hit, overwrite the buffer
+  x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].in_use = 1;
+  if (this_mode == NEWMV && !intpel_mv && !is_comp_pred) {
+    if (x->cached_mv[ref_idx][offset[0]][offset[1]].as_int == INVALID_MV) {
+      assert(cache_hit == 0);
+      x->cached_mv[ref_idx][offset[0]][offset[1]].as_int = cur_mv[0].as_int;
+      x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].start_row = mi_row * 8
+          + cur_mv[0].as_mv.row / 8;
+      x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].start_col = mi_col * 8
+          + cur_mv[0].as_mv.col / 8;
+      x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].end_row =
+          x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].start_row +
+          4 * num_4x4_blocks_wide_lookup[bsize];
+      x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].end_col =
+          x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].start_col +
+          4 * num_4x4_blocks_high_lookup[bsize];
+      x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].in_use = 0;
+    }
+  }
 
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used
@@ -2832,19 +2903,36 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         } else {
           int rate_sum = 0;
           int64_t dist_sum = 0;
-          if ((cm->mcomp_filter_type == SWITCHABLE &&
-               (!i || best_needs_copy)) ||
-              (cm->mcomp_filter_type != SWITCHABLE &&
-               (cm->mcomp_filter_type == mbmi->interp_filter ||
-                (i == 0 && intpel_mv)))) {
-            restore_dst_buf(xd, orig_dst, orig_dst_stride);
-          } else {
-            for (j = 0; j < MAX_MB_PLANE; j++) {
-              xd->plane[j].dst.buf = tmp_buf + j * 64 * 64;
+
+          if (cache_hit) {
+            // swap buffer pointer
+            for (j = 0; j < MAX_MB_PLANE; ++j) {
+              xd->plane[j].dst.buf =
+                  x->mc_cache[ref_idx][i][offset[0]][offset[1]] + j * 64 * 64
+                  + (buf_dis[0] >> xd->plane[j].subsampling_y) * 64
+                  + (buf_dis[1] >> xd->plane[j].subsampling_x);
               xd->plane[j].dst.stride = 64;
             }
+          } else {
+            if (!intpel_mv) {
+              if (x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].in_use) {
+                for (j = 0; j < MAX_MB_PLANE; ++j) {
+                  xd->plane[j].dst.buf = x->mc_temp[i] + j * 64 * 64;
+                  xd->plane[j].dst.stride = 64;
+                }
+              } else {
+                for (j = 0; j < MAX_MB_PLANE; ++j) {
+                  xd->plane[j].dst.buf =
+                      x->mc_cache[ref_idx][i][offset[0]][offset[1]] + j * 64 * 64;
+                  xd->plane[j].dst.stride = 64;
+                }
+              }
+            } else {
+              restore_dst_buf(xd, orig_dst, orig_dst_stride);
+            }
+            vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
           }
-          vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+
           model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
           cpi->rd_filter_cache[i] = RDCOST(x->rdmult, x->rddiv,
                                            rate_sum, dist_sum);
@@ -2859,19 +2947,19 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
             tmp_dist_sum = dist_sum;
           }
         }
+
         if (i == 0 && cpi->sf.use_rd_breakout && ref_best_rd < INT64_MAX) {
           if (rd / 2 > ref_best_rd) {
             restore_dst_buf(xd, orig_dst, orig_dst_stride);
             return INT64_MAX;
           }
         }
+
         newbest = i == 0 || rd < best_rd;
 
         if (newbest) {
           best_rd = rd;
           *best_filter = mbmi->interp_filter;
-          if (cm->mcomp_filter_type == SWITCHABLE && i && !intpel_mv)
-            best_needs_copy = !best_needs_copy;
         }
 
         if ((cm->mcomp_filter_type == SWITCHABLE && newbest) ||
@@ -2880,9 +2968,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           pred_exists = 1;
         }
       }
-      restore_dst_buf(xd, orig_dst, orig_dst_stride);
     }
   }
+
   // Set the appropriate filter
   mbmi->interp_filter = cm->mcomp_filter_type != SWITCHABLE ?
       cm->mcomp_filter_type : *best_filter;
@@ -2890,16 +2978,38 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   rs = cm->mcomp_filter_type == SWITCHABLE ? get_switchable_rate(x) : 0;
 
   if (pred_exists) {
-    if (best_needs_copy) {
-      // again temporarily set the buffers to local memory to prevent a memcpy
-      for (i = 0; i < MAX_MB_PLANE; i++) {
-        xd->plane[i].dst.buf = tmp_buf + i * 64 * 64;
+    if (cache_hit) {
+      for (i = 0; i < MAX_MB_PLANE; ++i) {
+        xd->plane[i].dst.buf =
+            x->mc_cache[ref_idx][mbmi->interp_filter][offset[0]][offset[1]]
+            + i * 64 *64 + (buf_dis[0] >> xd->plane[i].subsampling_y) * 64
+            + (buf_dis[1] >> xd->plane[i].subsampling_x);
         xd->plane[i].dst.stride = 64;
+      }
+    } else {
+      if (!intpel_mv) {
+        if (x->mc_cache_ctl[ref_idx][offset[0]][offset[1]].in_use) {
+          for (i = 0; i < MAX_MB_PLANE; ++i) {
+            xd->plane[i].dst.buf = i * 64 * 64
+                + x->mc_temp[mbmi->interp_filter];
+            xd->plane[i].dst.stride = 64;
+          }
+        } else {
+          for (i = 0; i < MAX_MB_PLANE; ++i) {
+            xd->plane[i].dst.buf = i * 64 * 64
+                + x->mc_cache[ref_idx][mbmi->interp_filter]
+                                      [offset[0]][offset[1]];
+            xd->plane[i].dst.stride = 64;
+          }
+        }
+      } else {
+        restore_dst_buf(xd, orig_dst, orig_dst_stride);
       }
     }
   } else {
     // Handles the special case when a filter that is not in the
     // switchable list (ex. bilinear, 6-tap) is indicated at the frame level
+    restore_dst_buf(xd, orig_dst, orig_dst_stride);
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
   }
 
