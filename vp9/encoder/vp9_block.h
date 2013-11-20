@@ -102,6 +102,10 @@ struct macroblock {
   int ss_count;
   int searches_per_step;
 
+  int_mv cached_mv[MAX_REF_FRAMES - 1] [SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+  uint8_t *mc_cache[MAX_REF_FRAMES - 1][SWITCHABLE_FILTERS]
+                                       [SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+
   int errorperbit;
   int sadperbit16;
   int sadperbit4;
