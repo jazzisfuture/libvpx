@@ -102,6 +102,8 @@ struct macroblock {
   int ss_count;
   int searches_per_step;
 
+  int_mv cached_mv[SUBPEL_SHIFTS][SUBPEL_SHIFTS];
+
   int errorperbit;
   int sadperbit16;
   int sadperbit4;

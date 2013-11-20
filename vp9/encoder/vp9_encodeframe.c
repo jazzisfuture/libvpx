@@ -1800,7 +1800,10 @@ static void encode_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
        mi_col += MI_BLOCK_SIZE) {
     int dummy_rate;
     int64_t dummy_dist;
-
+    int i, j;
+    for (j = 0; j < SUBPEL_SHIFTS; ++j)
+      for (i = 0; i < SUBPEL_SHIFTS; ++i)
+        cpi->mb.cached_mv[j][i].as_int = INVALID_MV;
     vp9_zero(cpi->mb.pred_mv);
 
     if (cpi->sf.reference_masking)

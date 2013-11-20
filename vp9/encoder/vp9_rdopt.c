@@ -39,8 +39,6 @@
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_common.h"
 
-#define INVALID_MV 0x80008000
-
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
@@ -2482,6 +2480,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &sse);
   }
+
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv.as_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 
@@ -2797,6 +2796,57 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (is_comp_pred)
     intpel_mv &= (mbmi->mv[1].as_mv.row & 15) == 0 &&
         (mbmi->mv[1].as_mv.col & 15) == 0;
+
+  // =====================================================
+  // gathering cache_hit statistics
+  // to be continued on motion search cache scheme
+  // =====================================================
+  {
+    static int count = 0;
+    static int cache_hit_count = 0;
+    int sub_offset[2] = {mbmi->mv[0].as_mv.row & 0x0f,
+                         mbmi->mv[0].as_mv.col & 0x0f};
+
+    if (mbmi->ref_frame[0] == LAST_FRAME && mbmi->ref_frame[1] == NONE &&
+        ((mbmi->mv[0].as_mv.row & 0x0f) || (mbmi->mv[1].as_mv.col & 0x0f)) &&
+        x->cached_mv[sub_offset[0]][sub_offset[1]].as_int != INVALID_MV) {
+      int mi_row_base = mi_row & 0xf8;
+      int mi_col_base = mi_col & 0xf8;
+      int cache_hit = 1;
+
+      cache_hit &= ((mbmi->mv[0].as_mv.row / 8 + mi_row * 8) >
+                    (x->cached_mv[sub_offset[0]][sub_offset[1]].as_mv.row / 8
+                        + mi_row_base * 8));
+      cache_hit &= ((mbmi->mv[0].as_mv.row / 8 + mi_row * 8
+                    + num_8x8_blocks_wide_lookup[bsize] * 8) <
+                    (x->cached_mv[sub_offset[0]][sub_offset[1]].as_mv.row / 8
+                        + mi_row_base * 8 + 8 * 8));
+
+      cache_hit &= ((mbmi->mv[0].as_mv.col / 8 + mi_col * 8) >
+                    (x->cached_mv[sub_offset[0]][sub_offset[1]].as_mv.col / 8
+                        + mi_col_base * 8));
+      cache_hit &= ((mbmi->mv[0].as_mv.col / 8 + mi_col * 8
+                    + num_8x8_blocks_high_lookup[bsize] * 8) <
+                    (x->cached_mv[sub_offset[0]][sub_offset[1]].as_mv.col / 8
+                        + mi_col_base * 8 + 8 * 8));
+
+      count++;
+      cache_hit_count += cache_hit;
+
+      if (count == 10000) {
+        fprintf(stderr, "cache_hit_count %d out of %d run\n",
+                cache_hit_count, count);
+        count = 0;
+        cache_hit_count = 0;
+      }
+    } else {
+      if (x->cached_mv[sub_offset[0]][sub_offset[1]].as_int == INVALID_MV &&
+          ((mbmi->mv[0].as_mv.row & 0x0f) || (mbmi->mv[1].as_mv.col & 0x0f)) &&
+          mbmi->ref_frame[0] == LAST_FRAME && mbmi->ref_frame[1] == NONE)
+        x->cached_mv[sub_offset[0]][sub_offset[1]].as_int = mbmi->mv[0].as_int;
+    }
+  }
+  // =====================================================
 
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used
