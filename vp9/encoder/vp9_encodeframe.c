@@ -1803,6 +1803,9 @@ static void encode_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 
     vp9_zero(cpi->mb.pred_mv);
 
+    cpi->mb.cached_mv[0].as_int = INVALID_MV;
+    cpi->mb.cached_mv[1].as_int = INVALID_MV;
+
     if (cpi->sf.reference_masking)
       rd_pick_reference_frame(cpi, tile, mi_row, mi_col);
 
