@@ -39,8 +39,6 @@
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_common.h"
 
-#define INVALID_MV 0x80008000
-
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
@@ -2482,6 +2480,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &sse);
   }
+
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv.as_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 
@@ -2797,6 +2796,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (is_comp_pred)
     intpel_mv &= (mbmi->mv[1].as_mv.row & 15) == 0 &&
         (mbmi->mv[1].as_mv.col & 15) == 0;
+
+  if (this_mode == NEWMV && !intpel_mv) {
+    int ref_idx = mbmi->ref_frame[0] - 1;
+    if (x->cached_mv[ref_idx].as_int == INVALID_MV)
+      x->cached_mv[ref_idx].as_int = mbmi->mv[0].as_int;
+  }
 
   // Search for best switchable filter by checking the variance of
   // pred error irrespective of whether the filter will be used

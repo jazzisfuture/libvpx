@@ -1483,6 +1483,13 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x  = &cpi->mb;
 
+  for (i = 0; i < MAX_REF_FRAMES - 1; ++i) {
+    int j, k;
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j)
+      for (k = 0; k < SUBPEL_SHIFTS - 1; ++k)
+        CHECK_MEM_ERROR(cm, x->mc_cache[i][j][k],
+                        vpx_memalign(16, MAX_MB_PLANE * 64 * 64));
+  }
 
   for (i = 0; i < BLOCK_SIZES; ++i) {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[i];
@@ -1521,6 +1528,16 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
 
 static void free_pick_mode_context(MACROBLOCK *x) {
   int i;
+
+  for (i = 0; i < MAX_REF_FRAMES - 1; ++i) {
+    int j, k;
+    for (j = 0; j < SWITCHABLE_FILTERS; ++j) {
+      for (k = 0; k < SUBPEL_SHIFTS - 1; ++k) {
+        vpx_free(x->mc_cache[i][j][k]);
+        x->mc_cache[i][j][k] = 0;
+      }
+    }
+  }
 
   for (i = 0; i < BLOCK_SIZES; ++i) {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[i];
