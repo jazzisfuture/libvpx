@@ -160,7 +160,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK_HI(cfg, rc_min_quantizer, 0);
   }
   RANGE_CHECK(vp8_cfg, aq_mode,           0, AQ_MODES_COUNT - 1);
-
   RANGE_CHECK_HI(cfg, g_threads,          64);
   RANGE_CHECK_HI(cfg, g_lag_in_frames,    MAX_LAG_BUFFERS);
   RANGE_CHECK(cfg, rc_end_usage,          VPX_VBR, VPX_Q);
@@ -174,7 +173,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
   RANGE_CHECK_HI(cfg, rc_resize_up_thresh,   100);
   RANGE_CHECK_HI(cfg, rc_resize_down_thresh, 100);
   RANGE_CHECK(cfg,        g_pass,         VPX_RC_ONE_PASS, VPX_RC_LAST_PASS);
-
   RANGE_CHECK(cfg, ss_number_layers,      1,
               VPX_SS_MAX_LAYERS); /*Spatial layers max */
   /* VP8 does not support a lower bound on the keyframe interval in
@@ -218,7 +216,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     if ((int)(stats->count + 0.5) != n_packets - 1)
       ERROR("rc_twopass_stats_in missing EOS stats packet");
   }
-
   return VPX_CODEC_OK;
 }
 
@@ -295,6 +292,13 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   oxcf->worst_allowed_q         = cfg.rc_max_quantizer;
   oxcf->cq_level                = vp8_cfg.cq_level;
   oxcf->fixed_q = -1;
+
+  if (oxcf->best_allowed_q == oxcf->worst_allowed_q) {
+    oxcf->end_usage = USAGE_CONSTANT_QUALITY;
+    oxcf->cq_level = oxcf->best_allowed_q;
+    oxcf->best_allowed_q = 0;
+    oxcf->worst_allowed_q = 63;
+  }
 
   oxcf->under_shoot_pct         = cfg.rc_undershoot_pct;
   oxcf->over_shoot_pct          = cfg.rc_overshoot_pct;
