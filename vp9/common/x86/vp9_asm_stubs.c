@@ -46,12 +46,12 @@ typedef void filter8_1dfunction (
 );
 
 #if HAVE_SSSE3
-filter8_1dfunction vp9_filter_block1d16_v8_ssse3;
-filter8_1dfunction vp9_filter_block1d16_h8_ssse3;
-filter8_1dfunction vp9_filter_block1d8_v8_ssse3;
-filter8_1dfunction vp9_filter_block1d8_h8_ssse3;
-filter8_1dfunction vp9_filter_block1d4_v8_ssse3;
-filter8_1dfunction vp9_filter_block1d4_h8_ssse3;
+filter8_1dfunction vp9_filter_block1d16_v8_intrin_ssse3;
+filter8_1dfunction vp9_filter_block1d16_h8_intrin_ssse3;
+filter8_1dfunction vp9_filter_block1d8_v8_intrin_ssse3;
+filter8_1dfunction vp9_filter_block1d8_h8_intrin_ssse3;
+filter8_1dfunction vp9_filter_block1d4_v8_intrin_ssse3;
+filter8_1dfunction vp9_filter_block1d4_h8_intrin_ssse3;
 filter8_1dfunction vp9_filter_block1d16_v8_avg_ssse3;
 filter8_1dfunction vp9_filter_block1d16_h8_avg_ssse3;
 filter8_1dfunction vp9_filter_block1d8_v8_avg_ssse3;
@@ -64,10 +64,11 @@ void vp9_convolve8_horiz_ssse3(const uint8_t *src, ptrdiff_t src_stride,
                                const int16_t *filter_x, int x_step_q4,
                                const int16_t *filter_y, int y_step_q4,
                                int w, int h) {
+
   /* Ensure the filter can be compressed to int16_t. */
   if (x_step_q4 == 16 && filter_x[3] != 128) {
     while (w >= 16) {
-      vp9_filter_block1d16_h8_ssse3(src, src_stride,
+      vp9_filter_block1d16_h8_intrin_ssse3(src, src_stride,
                                     dst, dst_stride,
                                     h, filter_x);
       src += 16;
@@ -75,7 +76,7 @@ void vp9_convolve8_horiz_ssse3(const uint8_t *src, ptrdiff_t src_stride,
       w -= 16;
     }
     while (w >= 8) {
-      vp9_filter_block1d8_h8_ssse3(src, src_stride,
+      vp9_filter_block1d8_h8_intrin_ssse3(src, src_stride,
                                    dst, dst_stride,
                                    h, filter_x);
       src += 8;
@@ -83,7 +84,7 @@ void vp9_convolve8_horiz_ssse3(const uint8_t *src, ptrdiff_t src_stride,
       w -= 8;
     }
     while (w >= 4) {
-      vp9_filter_block1d4_h8_ssse3(src, src_stride,
+      vp9_filter_block1d4_h8_intrin_ssse3(src, src_stride,
                                    dst, dst_stride,
                                    h, filter_x);
       src += 4;
@@ -105,7 +106,7 @@ void vp9_convolve8_vert_ssse3(const uint8_t *src, ptrdiff_t src_stride,
                               int w, int h) {
   if (y_step_q4 == 16 && filter_y[3] != 128) {
     while (w >= 16) {
-      vp9_filter_block1d16_v8_ssse3(src - src_stride * 3, src_stride,
+      vp9_filter_block1d16_v8_intrin_ssse3(src - src_stride * 3, src_stride,
                                     dst, dst_stride,
                                     h, filter_y);
       src += 16;
@@ -113,7 +114,7 @@ void vp9_convolve8_vert_ssse3(const uint8_t *src, ptrdiff_t src_stride,
       w -= 16;
     }
     while (w >= 8) {
-      vp9_filter_block1d8_v8_ssse3(src - src_stride * 3, src_stride,
+      vp9_filter_block1d8_v8_intrin_ssse3(src - src_stride * 3, src_stride,
                                    dst, dst_stride,
                                    h, filter_y);
       src += 8;
@@ -121,7 +122,7 @@ void vp9_convolve8_vert_ssse3(const uint8_t *src, ptrdiff_t src_stride,
       w -= 8;
     }
     while (w >= 4) {
-      vp9_filter_block1d4_v8_ssse3(src - src_stride * 3, src_stride,
+      vp9_filter_block1d4_v8_intrin_ssse3(src - src_stride * 3, src_stride,
                                    dst, dst_stride,
                                    h, filter_y);
       src += 4;
