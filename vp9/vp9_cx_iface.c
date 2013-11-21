@@ -20,6 +20,12 @@
 #include "vp9/common/vp9_onyx.h"
 #include "vp9/vp9_iface_common.h"
 
+enum {
+  DEFAULT_END_USAGE = VPX_VBR,
+  UNSET_END_USAGE = ~0
+};
+
+
 struct vp9_extracfg {
   struct vpx_codec_pkt_list *pkt_list;
   int                         cpu_used;  /* available cpu percentage in 1/16 */
@@ -526,6 +532,16 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx,
 
     vp9_initialize_enc();
 
+    /* First-time fixup of the end-usage variable. If the user didn't
+     * specify an end-usage, and they seem to want a fixed quantizer,
+     * they almost certainly want to be using the constant quality mode
+     * instead. Foot-shooting still possible by specifying a different
+     * rate control strategy via --end-usage.
+     */
+    if (cfg->rc_end_usage == UNSET_END_USAGE) {
+      cfg->rc_end_usage = (cfg->rc_max_quantizer == cfg->rc_min_quantizer)
+          ? VPX_Q : DEFAULT_END_USAGE;
+    }
     res = validate_config(priv, &priv->cfg, &priv->vp8_cfg);
 
     if (!res) {
@@ -1107,7 +1123,7 @@ static vpx_codec_enc_cfg_map_t vp9e_usage_cfg_map[] = {
       60,                 /* rc_resize_down_thresold */
       30,                 /* rc_resize_up_thresold */
 
-      VPX_VBR,            /* rc_end_usage */
+      UNSET_END_USAGE,    /* rc_end_usage */
 #if VPX_ENCODER_ABI_VERSION > (1 + VPX_CODEC_ABI_VERSION)
       {0},                /* rc_twopass_stats_in */
 #endif
