@@ -131,8 +131,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   SKIP_START:
     if (c >= seg_eob)
       break;
-    if (c)
-      pt = get_coef_context(nb, token_cache, c);
+    pt = get_coef_context(nb, token_cache, c);
     band = *band_translate++;
     prob = coef_probs[band][pt];
 
