@@ -238,7 +238,8 @@ TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
   init_flags_ = VPX_CODEC_USE_PSNR;
 
   // q picked such that initial keyframe on this clip is ~30dB PSNR
-  cfg_.rc_min_quantizer = cfg_.rc_max_quantizer = 48;
+  cfg_.rc_min_quantizer = 48;
+  cfg_.rc_max_quantizer = 52;
 
   // If the number of frames being encoded is smaller than g_lag_in_frames
   // the encoded frame is unavailable using the current API. Comparing
