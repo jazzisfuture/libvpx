@@ -233,26 +233,16 @@ DECLARE_ALIGNED(16, const int16_t, vp9_default_scan_32x32[1024]) = {
 // in {top, left, topleft, topright, bottomleft} order
 // for each position in raster scan order.
 // -1 indicates the neighbor does not exist.
-DECLARE_ALIGNED(16, int16_t,
-                vp9_default_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_col_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_row_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_col_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_row_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_default_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_col_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_row_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_default_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, int16_t,
-                vp9_default_scan_32x32_neighbors[1025 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_default_scan_4x4_nb[17 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_col_scan_4x4_nb[17 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_row_scan_4x4_nb[17 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_col_scan_8x8_nb[65 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_row_scan_8x8_nb[65 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_default_scan_8x8_nb[65 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_col_scan_16x16_nb[257 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_row_scan_16x16_nb[257 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_default_scan_16x16_nb[257 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, int16_t, vp9_default_scan_32x32_nb[1025 * MAX_NEIGHBORS]);
 
 
 DECLARE_ALIGNED(16, int16_t, vp9_default_iscan_4x4[16]);
@@ -266,61 +256,41 @@ DECLARE_ALIGNED(16, int16_t, vp9_row_iscan_16x16[256]);
 DECLARE_ALIGNED(16, int16_t, vp9_default_iscan_16x16[256]);
 DECLARE_ALIGNED(16, int16_t, vp9_default_iscan_32x32[1024]);
 
-const scan_order inter_scan_orders[TX_SIZES] = {
-  {vp9_default_scan_4x4,   vp9_default_scan_4x4_neighbors},    // NEWMV
-  {vp9_default_scan_8x8,   vp9_default_scan_8x8_neighbors},    // NEWMV
-  {vp9_default_scan_16x16, vp9_default_scan_16x16_neighbors},  // NEWMV
-  {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // NEWMV
+const scan_order default_scan_orders[TX_SIZES] = {
+  {vp9_default_scan_4x4,   vp9_default_iscan_4x4,   vp9_default_scan_4x4_nb},
+  {vp9_default_scan_8x8,   vp9_default_iscan_8x8,   vp9_default_scan_8x8_nb},
+  {vp9_default_scan_16x16, vp9_default_iscan_16x16, vp9_default_scan_16x16_nb},
+  {vp9_default_scan_32x32, vp9_default_iscan_32x32, vp9_default_scan_32x32_nb},
 };
 
-const scan_order intra_scan_orders[TX_SIZES][INTRA_MODES] = {
-  {  // 4X4
-    {vp9_default_scan_4x4,   vp9_default_scan_4x4_neighbors},    // DC
-    {vp9_row_scan_4x4,       vp9_row_scan_4x4_neighbors},        // V
-    {vp9_col_scan_4x4,       vp9_col_scan_4x4_neighbors},        // H
-    {vp9_default_scan_4x4,   vp9_default_scan_4x4_neighbors},    // D45
-    {vp9_default_scan_4x4,   vp9_default_scan_4x4_neighbors},    // D135
-    {vp9_row_scan_4x4,       vp9_row_scan_4x4_neighbors},        // D117
-    {vp9_col_scan_4x4,       vp9_col_scan_4x4_neighbors},        // D153
-    {vp9_col_scan_4x4,       vp9_col_scan_4x4_neighbors},        // D207
-    {vp9_row_scan_4x4,       vp9_row_scan_4x4_neighbors},        // D63
-    {vp9_default_scan_4x4,   vp9_default_scan_4x4_neighbors},    // TM
-  }, {  // 8x8
-    {vp9_default_scan_8x8,   vp9_default_scan_8x8_neighbors},    // DC
-    {vp9_row_scan_8x8,       vp9_row_scan_8x8_neighbors},        // V
-    {vp9_col_scan_8x8,       vp9_col_scan_8x8_neighbors},        // H
-    {vp9_default_scan_8x8,   vp9_default_scan_8x8_neighbors},    // D45
-    {vp9_default_scan_8x8,   vp9_default_scan_8x8_neighbors},    // D135
-    {vp9_row_scan_8x8,       vp9_row_scan_8x8_neighbors},        // D117
-    {vp9_col_scan_8x8,       vp9_col_scan_8x8_neighbors},        // D153
-    {vp9_col_scan_8x8,       vp9_col_scan_8x8_neighbors},        // D207
-    {vp9_row_scan_8x8,       vp9_row_scan_8x8_neighbors},        // D63
-    {vp9_default_scan_8x8,   vp9_default_scan_8x8_neighbors},    // TM
-  }, {  // 16x16
-    {vp9_default_scan_16x16, vp9_default_scan_16x16_neighbors},  // DC
-    {vp9_row_scan_16x16,     vp9_row_scan_16x16_neighbors},      // V
-    {vp9_col_scan_16x16,     vp9_col_scan_16x16_neighbors},      // H
-    {vp9_default_scan_16x16, vp9_default_scan_16x16_neighbors},  // D45
-    {vp9_default_scan_16x16, vp9_default_scan_16x16_neighbors},  // D135
-    {vp9_row_scan_16x16,     vp9_row_scan_16x16_neighbors},      // D117
-    {vp9_col_scan_16x16,     vp9_col_scan_16x16_neighbors},      // D153
-    {vp9_col_scan_16x16,     vp9_col_scan_16x16_neighbors},      // D207
-    {vp9_row_scan_16x16,     vp9_row_scan_16x16_neighbors},      // D63
-    {vp9_default_scan_16x16, vp9_default_scan_16x16_neighbors},  // TM
-  }, {  // 32x32
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // DC
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // V
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // H
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D45
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D135
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D117
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D153
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D207
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // D63
-    {vp9_default_scan_32x32, vp9_default_scan_32x32_neighbors},  // TM
+const scan_order scan_orders[TX_SIZES][TX_TYPES] = {
+  {  // TX_4X4
+    {vp9_default_scan_4x4, vp9_default_iscan_4x4, vp9_default_scan_4x4_nb},
+    {vp9_row_scan_4x4,     vp9_row_iscan_4x4,     vp9_row_scan_4x4_nb},
+    {vp9_col_scan_4x4,     vp9_col_iscan_4x4,     vp9_col_scan_4x4_nb},
+    {vp9_default_scan_4x4, vp9_default_iscan_4x4, vp9_default_scan_4x4_nb}
+  }, { // TX_8X8
+    {vp9_default_scan_8x8, vp9_default_iscan_8x8, vp9_default_scan_8x8_nb},
+    {vp9_row_scan_8x8,     vp9_row_iscan_8x8,     vp9_row_scan_8x8_nb},
+    {vp9_col_scan_8x8,     vp9_col_iscan_8x8,     vp9_col_scan_8x8_nb},
+    {vp9_default_scan_8x8, vp9_default_iscan_8x8, vp9_default_scan_8x8_nb}
+  }, { // TX_16X16
+    {vp9_default_scan_16x16, vp9_default_iscan_16x16,
+     vp9_default_scan_16x16_nb},
+    {vp9_row_scan_16x16,     vp9_row_iscan_16x16,     vp9_row_scan_16x16_nb},
+    {vp9_col_scan_16x16,     vp9_col_iscan_16x16,     vp9_col_scan_16x16_nb},
+    {vp9_default_scan_16x16, vp9_default_iscan_16x16, vp9_default_scan_16x16_nb}
+  }, { // TX_32X32
+    {vp9_default_scan_32x32, vp9_default_iscan_32x32,
+     vp9_default_scan_32x32_nb},
+    {vp9_default_scan_32x32, vp9_default_iscan_32x32,
+     vp9_default_scan_32x32_nb},
+    {vp9_default_scan_32x32, vp9_default_iscan_32x32,
+     vp9_default_scan_32x32_nb},
+    {vp9_default_scan_32x32, vp9_default_iscan_32x32,
+     vp9_default_scan_32x32_nb},
   }
 };
-
 
 static int find_in_scan(const int16_t *scan, int l, int idx) {
   int n, l2 = l * l;
@@ -332,9 +302,9 @@ static int find_in_scan(const int16_t *scan, int l, int idx) {
   assert(0);
   return -1;
 }
-static void init_scan_neighbors(const int16_t *scan,
-                                int16_t *iscan,
-                                int l, int16_t *neighbors) {
+
+static void init_scan_neighbors(const int16_t *scan, int16_t *iscan, int l,
+                                int16_t *neighbors) {
   int l2 = l * l;
   int n, i, j;
 
@@ -391,23 +361,23 @@ static void init_scan_neighbors(const int16_t *scan,
 
 void vp9_init_neighbors() {
   init_scan_neighbors(vp9_default_scan_4x4, vp9_default_iscan_4x4, 4,
-                      vp9_default_scan_4x4_neighbors);
+                      vp9_default_scan_4x4_nb);
   init_scan_neighbors(vp9_row_scan_4x4, vp9_row_iscan_4x4, 4,
-                      vp9_row_scan_4x4_neighbors);
+                      vp9_row_scan_4x4_nb);
   init_scan_neighbors(vp9_col_scan_4x4, vp9_col_iscan_4x4, 4,
-                      vp9_col_scan_4x4_neighbors);
+                      vp9_col_scan_4x4_nb);
   init_scan_neighbors(vp9_default_scan_8x8, vp9_default_iscan_8x8, 8,
-                      vp9_default_scan_8x8_neighbors);
+                      vp9_default_scan_8x8_nb);
   init_scan_neighbors(vp9_row_scan_8x8, vp9_row_iscan_8x8, 8,
-                      vp9_row_scan_8x8_neighbors);
+                      vp9_row_scan_8x8_nb);
   init_scan_neighbors(vp9_col_scan_8x8, vp9_col_iscan_8x8, 8,
-                      vp9_col_scan_8x8_neighbors);
+                      vp9_col_scan_8x8_nb);
   init_scan_neighbors(vp9_default_scan_16x16, vp9_default_iscan_16x16, 16,
-                      vp9_default_scan_16x16_neighbors);
+                      vp9_default_scan_16x16_nb);
   init_scan_neighbors(vp9_row_scan_16x16, vp9_row_iscan_16x16, 16,
-                      vp9_row_scan_16x16_neighbors);
+                      vp9_row_scan_16x16_nb);
   init_scan_neighbors(vp9_col_scan_16x16, vp9_col_iscan_16x16, 16,
-                      vp9_col_scan_16x16_neighbors);
+                      vp9_col_scan_16x16_nb);
   init_scan_neighbors(vp9_default_scan_32x32, vp9_default_iscan_32x32, 32,
-                      vp9_default_scan_32x32_neighbors);
+                      vp9_default_scan_32x32_nb);
 }
