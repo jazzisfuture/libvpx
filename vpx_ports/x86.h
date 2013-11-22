@@ -72,10 +72,10 @@ typedef enum {
 #else /* end __SUNPRO__ */
 #if ARCH_X86_64
 void __cpuid(int CPUInfo[4], int info_type);
-#pragma intrinsic(__cpuid)
+#pragma intrinsic(__cpuidex)
 #define cpuid(func, func2, a, b, c, d) do {\
     int regs[4];\
-    __cpuid(regs, func, func2);
+    __cpuidex(regs, func, func2); \
     a = regs[0];  b = regs[1];  c = regs[2];  d = regs[3];\
   } while(0)
 #else
