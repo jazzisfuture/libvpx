@@ -1122,6 +1122,9 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cm->subsampling_y = 0;
   vp9_alloc_compressor_data(cpi);
 
+//  cm->subsampling_x = 1; // AWG 0;
+//  cm->subsampling_y = 1; // AWG 0
+
   // change includes all joint functionality
   vp9_change_config(ptr, oxcf);
 
@@ -3608,6 +3611,9 @@ static void check_initial_width(VP9_COMP *cpi, YV12_BUFFER_CONFIG *sd) {
     cm->subsampling_x = (sd != NULL) && sd->uv_width < sd->y_width;
     cm->subsampling_y = (sd != NULL) && sd->uv_height < sd->y_height;
     alloc_raw_frame_buffers(cpi);
+
+//    cm->subsampling_x = 1; //(sd != NULL) && sd->uv_width < sd->y_width; // AWG
+//    cm->subsampling_y = 1; //(sd != NULL) && sd->uv_height < sd->y_height; // AWG
 
     cpi->initial_width = cm->width;
     cpi->initial_height = cm->height;

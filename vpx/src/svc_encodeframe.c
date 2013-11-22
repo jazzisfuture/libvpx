@@ -39,7 +39,8 @@ _CRTIMP char *__cdecl strtok_s(char *str, const char *delim, char **context);
 #define SUPERFRAME_BUFFER_SIZE (SUPERFRAME_SLOTS * sizeof(uint32_t) + 2)
 #define OPTION_BUFFER_SIZE 256
 
-static const char *DEFAULT_QUANTIZER_VALUES = "60,53,39,33,27";
+//static const char *DEFAULT_QUANTIZER_VALUES = "60,53,39,33,27";
+static const char *DEFAULT_QUANTIZER_VALUES = "1,53,39,33,27";
 static const char *DEFAULT_SCALE_FACTORS = "4/16,5/16,7/16,11/16,16/16";
 
 typedef struct SvcInternal {
@@ -654,6 +655,9 @@ static void calculate_enc_frame_flags(SvcContext *svc_ctx) {
   si->enc_frame_flags = flags;
 }
 
+static int counter = 0;
+int scaling_num[5] = {7, 11, 16, 11, 7};
+
 vpx_codec_err_t vpx_svc_get_layer_resolution(const SvcContext *svc_ctx,
                                              int layer,
                                              unsigned int *width,
@@ -667,8 +671,11 @@ vpx_codec_err_t vpx_svc_get_layer_resolution(const SvcContext *svc_ctx,
   if (layer < 0 || layer >= si->layers) return VPX_CODEC_INVALID_PARAM;
 
   index = layer + VPX_SS_MAX_LAYERS - si->layers;
-  num = si->scaling_factor_num[index];
-  den = si->scaling_factor_den[index];
+//  num = si->scaling_factor_num[index];
+//  den = si->scaling_factor_den[index];
+  num = scaling_num[counter++];
+  den = 16;
+  if (counter == 5) counter = 0;
   if (num == 0 || den == 0) return VPX_CODEC_INVALID_PARAM;
 
   w = si->width * num / den;
