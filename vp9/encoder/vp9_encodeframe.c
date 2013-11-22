@@ -884,7 +884,7 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
       break;
   }
 
-  if (partition != PARTITION_SPLIT || bsize == BLOCK_8X8)
+  if (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT)
     update_partition_context(cpi->above_seg_context, cpi->left_seg_context,
                              mi_row, mi_col, c1, bsize);
 }

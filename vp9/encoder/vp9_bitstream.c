@@ -618,9 +618,7 @@ static void write_modes_sb(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
-  // update partition context
-  if (bsize >= BLOCK_8X8 &&
-      (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
+  if (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT)
     update_partition_context(cpi->above_seg_context, cpi->left_seg_context,
                              mi_row, mi_col, subsize, bsize);
 }

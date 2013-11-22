@@ -533,9 +533,7 @@ static void decode_modes_sb(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     }
   }
 
-  // update partition context
-  if (bsize >= BLOCK_8X8 &&
-      (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
+  if (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT)
     update_partition_context(xd->above_seg_context, xd->left_seg_context,
                              mi_row, mi_col, subsize, bsize);
 }
