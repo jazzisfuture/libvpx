@@ -778,8 +778,8 @@ int main_loop(int argc, const char **argv_) {
           if (vpx_codec_control(&decoder, VP8D_GET_DISPLAY_HEIGHT, &stream_h)) {
             stream_h = img->d_h;
           }
-          scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420,
-                                     stream_w, stream_h, 16);
+          scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420, stream_w, stream_h,
+                                     16);
         }
         if (img && (img->d_w != stream_w || img->d_h != stream_h)) {
           assert(img->fmt == VPX_IMG_FMT_I420);
@@ -861,7 +861,8 @@ int main_loop(int argc, const char **argv_) {
 fail:
 
   if (vpx_codec_destroy(&decoder)) {
-    fprintf(stderr, "Failed to destroy decoder: %s\n", vpx_codec_error(&decoder));
+    fprintf(stderr, "Failed to destroy decoder: %s\n",
+            vpx_codec_error(&decoder));
     return EXIT_FAILURE;
   }
 
@@ -872,6 +873,8 @@ fail:
     webm_free(input.webm_ctx);
   else
     free(buf);
+
+  if (scaled_img) vpx_img_free(scaled_img);
 
   fclose(infile);
   free(argv);
