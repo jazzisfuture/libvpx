@@ -355,10 +355,8 @@ static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
     if (mask & 1) {
       if ((mask_16x16_0 | mask_16x16_1) & 1) {
         if ((mask_16x16_0 & mask_16x16_1) & 1) {
-          // TODO(yunqingwang): Combine 2 calls as 1 wide filtering.
-          vp9_mb_lpf_vertical_edge_w(s, pitch, lfi0->mblim, lfi0->lim,
-                                     lfi0->hev_thr);
-          vp9_mb_lpf_vertical_edge_w(s + 8 *pitch, pitch, lfi1->mblim,
+          vp9_mb_lpf_vertical_edge_w_16(s, pitch, lfi0->mblim, lfi0->lim,
+                                     lfi0->hev_thr, lfi1->mblim,
                                      lfi1->lim, lfi1->hev_thr);
         } else if (mask_16x16_0 & 1) {
           vp9_mb_lpf_vertical_edge_w(s, pitch, lfi0->mblim, lfi0->lim,
@@ -371,11 +369,9 @@ static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
 
       if ((mask_8x8_0 | mask_8x8_1) & 1) {
         if ((mask_8x8_0 & mask_8x8_1) & 1) {
-          // TODO(yunqingwang): Combine 2 calls as 1 wide filtering.
-          vp9_mbloop_filter_vertical_edge(s, pitch, lfi0->mblim, lfi0->lim,
-                                          lfi0->hev_thr, 1);
-          vp9_mbloop_filter_vertical_edge(s + 8 *pitch, pitch, lfi1->mblim,
-                                          lfi1->lim, lfi1->hev_thr, 1);
+          vp9_mbloop_filter_vertical_edge_16(s, pitch, lfi0->mblim, lfi0->lim,
+                                          lfi0->hev_thr, lfi1->mblim,
+                                          lfi1->lim, lfi1->hev_thr);
         } else if (mask_8x8_0 & 1) {
           vp9_mbloop_filter_vertical_edge(s, pitch, lfi0->mblim, lfi0->lim,
                                           lfi0->hev_thr, 1);
@@ -387,11 +383,9 @@ static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
 
       if ((mask_4x4_0 | mask_4x4_1) & 1) {
         if ((mask_4x4_0 & mask_4x4_1) & 1) {
-          // TODO(yunqingwang): Combine 2 calls as 1 wide filtering.
-          vp9_loop_filter_vertical_edge(s, pitch, lfi0->mblim, lfi0->lim,
-                                        lfi0->hev_thr, 1);
-          vp9_loop_filter_vertical_edge(s + 8 *pitch, pitch, lfi1->mblim,
-                                        lfi1->lim, lfi1->hev_thr, 1);
+          vp9_loop_filter_vertical_edge_16(s, pitch, lfi0->mblim, lfi0->lim,
+                                        lfi0->hev_thr, lfi1->mblim,
+                                        lfi1->lim, lfi1->hev_thr);
         } else if (mask_4x4_0 & 1) {
           vp9_loop_filter_vertical_edge(s, pitch, lfi0->mblim, lfi0->lim,
                                         lfi0->hev_thr, 1);
@@ -403,11 +397,9 @@ static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
 
       if ((mask_4x4_int_0 | mask_4x4_int_1) & 1) {
         if ((mask_4x4_int_0 & mask_4x4_int_1) & 1) {
-          // TODO(yunqingwang): Combine 2 calls as 1 wide filtering.
-          vp9_loop_filter_vertical_edge(s + 4, pitch, lfi0->mblim, lfi0->lim,
-                                        lfi0->hev_thr, 1);
-          vp9_loop_filter_vertical_edge(s + 8 *pitch + 4, pitch, lfi1->mblim,
-                                        lfi1->lim, lfi1->hev_thr, 1);
+          vp9_loop_filter_vertical_edge_16(s + 4, pitch, lfi0->mblim, lfi0->lim,
+                                        lfi0->hev_thr, lfi1->mblim,
+                                        lfi1->lim, lfi1->hev_thr);
         } else if (mask_4x4_int_0 & 1) {
           vp9_loop_filter_vertical_edge(s + 4, pitch, lfi0->mblim, lfi0->lim,
                                         lfi0->hev_thr, 1);
