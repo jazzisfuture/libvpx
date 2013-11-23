@@ -70,15 +70,6 @@ typedef enum {
                 : "a" (func), "c" (func2));
 #endif
 #else /* end __SUNPRO__ */
-#if ARCH_X86_64
-void __cpuidex(int CPUInfo[4], int info_type, int ecxvalue);
-#pragma intrinsic(__cpuidex)
-#define cpuid(func, func2, a, b, c, d) do {\
-    int regs[4];\
-    __cpuidex(regs, func, func2); \
-    a = regs[0];  b = regs[1];  c = regs[2];  d = regs[3];\
-  } while(0)
-#else
 #define cpuid(func, func2, a, b, c, d)\
   __asm mov eax, func\
   __asm mov ecx, func2\
@@ -87,7 +78,6 @@ void __cpuidex(int CPUInfo[4], int info_type, int ecxvalue);
   __asm mov b, ebx\
   __asm mov c, ecx\
   __asm mov d, edx
-#endif
 #endif /* end others */
 
 #define HAS_MMX     0x01
