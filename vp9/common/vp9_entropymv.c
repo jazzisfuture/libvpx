@@ -44,12 +44,12 @@ const vp9_tree_index vp9_mv_class0_tree[TREE_SIZE(CLASS0_SIZE)] = {
 };
 struct vp9_token vp9_mv_class0_encodings[CLASS0_SIZE];
 
-const vp9_tree_index vp9_mv_fp_tree[TREE_SIZE(4)] = {
+const vp9_tree_index vp9_mv_fp_tree[TREE_SIZE(MV_FP_SIZE)] = {
   -0, 2,
   -1, 4,
   -2, -3
 };
-struct vp9_token vp9_mv_fp_encodings[4];
+struct vp9_token vp9_mv_fp_encodings[MV_FP_SIZE];
 
 static const nmv_context default_nmv_context = {
   {32, 64, 96},
