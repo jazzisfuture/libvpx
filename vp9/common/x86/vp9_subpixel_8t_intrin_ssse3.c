@@ -31,7 +31,7 @@ void vp9_filter_block1d4_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int s
                                   unsigned char  *output_ptr,unsigned int  output_pitch,
                                   unsigned int    output_height, short *filter)
 {
-    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcReg,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4;
+    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcReg,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,minReg;
     unsigned int i;
 
     //create a register with 0,64,0,64,0,64,0,64,0,64,0,64,0,64,0,64
@@ -69,13 +69,16 @@ void vp9_filter_block1d4_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int s
         srcRegFilt3 =  _mm_srli_si128(srcRegFilt1,8);
         srcRegFilt4 =  _mm_srli_si128(srcRegFilt2,8);
 
+        minReg = _mm_min_epi16(srcRegFilt3,srcRegFilt2);
 
         //add and saturate all the results together
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt3);
-
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt4);
 
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt2);
+        srcRegFilt3 = _mm_max_epi16(srcRegFilt3,srcRegFilt2);
+
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,minReg);
+
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt3);
 
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,addFilterReg64);
 
@@ -101,7 +104,7 @@ void vp9_filter_block1d8_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int  
                                     unsigned char  *output_ptr, unsigned int    output_pitch,
                                     unsigned int    output_height, short *filter)
 {
-    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcReg,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4;
+    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcReg,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,minReg;
     __m128i filt1Reg,filt2Reg,filt3Reg,filt4Reg;
     unsigned int i;
 
@@ -146,11 +149,14 @@ void vp9_filter_block1d8_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int  
         srcRegFilt4 = _mm_maddubs_epi16(srcRegFilt4,forthFilters);
 
         //add and saturate all the results together
+        minReg = _mm_min_epi16(srcRegFilt4,srcRegFilt3);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt2);
 
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt4);
+        srcRegFilt4= _mm_max_epi16(srcRegFilt4,srcRegFilt3);
 
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt3);
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,minReg);
+
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt4);
 
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,addFilterReg64);
 
@@ -222,13 +228,13 @@ void vp9_filter_block1d16_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int 
         srcRegFilt2 = _mm_maddubs_epi16(srcRegFilt2,thirdFilters);
 
         //add and saturate the results together
-        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, srcRegFilt3);
+        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, _mm_min_epi16(srcRegFilt3,srcRegFilt2));
 
         //reading the next 16 bytes.(part of it was being read by earlier read)
         srcReg2 = _mm_loadu_si128((__m128i *)(src_ptr+5));
 
         //add and saturate the results together
-        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, srcRegFilt2);
+        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, _mm_max_epi16(srcRegFilt3,srcRegFilt2));
 
         //filter the source buffer
         srcRegFilt2_1= _mm_shuffle_epi8(srcReg2,filt1Reg);
@@ -250,8 +256,8 @@ void vp9_filter_block1d16_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int 
         srcRegFilt2 = _mm_maddubs_epi16(srcRegFilt2,thirdFilters);
 
         //add and saturate the results together
-        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, srcRegFilt3);
-        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, srcRegFilt2);
+        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, _mm_min_epi16(srcRegFilt3,srcRegFilt2));
+        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, _mm_max_epi16(srcRegFilt3,srcRegFilt2));
 
         srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1,addFilterReg64);
 
@@ -280,7 +286,7 @@ void vp9_filter_block1d4_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
                                   unsigned int   output_height, short *filter)
 {
 
-    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4;
+    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,minReg;
     unsigned int i;
 
     //create a register with 0,64,0,64,0,64,0,64,0,64,0,64,0,64,0,64
@@ -338,9 +344,11 @@ void vp9_filter_block1d4_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
         srcRegFilt2 = _mm_srli_si128(srcRegFilt1,8);
 
         //add and saturate the results together
+        minReg = _mm_min_epi16(srcRegFilt2,srcRegFilt3);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,_mm_srli_si128(srcRegFilt3,8));
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt2);
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt3);
+        srcRegFilt2 = _mm_max_epi16(srcRegFilt2,srcRegFilt3);
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,minReg);
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt2);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,addFilterReg64);
 
         //shift by 7 bit each 16 bit
@@ -364,7 +372,7 @@ void vp9_filter_block1d8_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
                                     unsigned char *output_ptr, unsigned int   out_pitch,
                                     unsigned int   output_height,short *filter)
 {
-    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,srcRegFilt5,srcRegFilt6;
+    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,srcRegFilt5,srcRegFilt6,minReg;
     unsigned int i;
 
     //create a register with 0,64,0,64,0,64,0,64,0,64,0,64,0,64,0,64
@@ -414,8 +422,10 @@ void vp9_filter_block1d8_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
         srcRegFilt5 = _mm_maddubs_epi16(srcRegFilt5,forthFilters);
 
         //add and saturate the results together
+        minReg = _mm_min_epi16(srcRegFilt2,srcRegFilt3);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt5);
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt3);
+        srcRegFilt2 = _mm_max_epi16(srcRegFilt2,srcRegFilt3);
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,minReg);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt2);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,addFilterReg64);
 
@@ -441,7 +451,7 @@ void vp9_filter_block1d16_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int  
                                     unsigned int   output_height, short *filter)
 {
 
-    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,srcRegFilt5,srcRegFilt6;
+    __m128i addFilterReg64,filtersReg,firstFilters,secondFilters,thirdFilters,forthFilters,srcRegFilt1,srcRegFilt2,srcRegFilt3,srcRegFilt4,srcRegFilt5,srcRegFilt6,srcRegFilt7,srcRegFilt8;
     unsigned int i;
 
     //create a register with 0,64,0,64,0,64,0,64,0,64,0,64,0,64,0,64
@@ -499,25 +509,27 @@ void vp9_filter_block1d16_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int  
         srcRegFilt4 = _mm_maddubs_epi16(srcRegFilt4,secondFilters);
         srcRegFilt6 = _mm_maddubs_epi16(srcRegFilt6,secondFilters);
 
-        //add and saturate the results together
-        srcRegFilt5 = _mm_adds_epi16(srcRegFilt5,srcRegFilt4);
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt6);
-
         //load the next 16 bytes in stride of four/five src_pitch
         srcRegFilt2 = _mm_loadu_si128((__m128i *)(src_ptr+src_pitch*4));
         srcRegFilt3 = _mm_loadu_si128((__m128i *)(src_ptr+src_pitch*5));
 
         //merge the result together
-        srcRegFilt4 = _mm_unpacklo_epi8(srcRegFilt2,srcRegFilt3);
-        srcRegFilt6 = _mm_unpackhi_epi8(srcRegFilt2,srcRegFilt3);
+        srcRegFilt7 = _mm_unpacklo_epi8(srcRegFilt2,srcRegFilt3);
+        srcRegFilt8 = _mm_unpackhi_epi8(srcRegFilt2,srcRegFilt3);
 
         //multiply 2 adjacent elements with the filter and add the result
-        srcRegFilt4 = _mm_maddubs_epi16(srcRegFilt4,thirdFilters);
-        srcRegFilt6 = _mm_maddubs_epi16(srcRegFilt6,thirdFilters);
+        srcRegFilt7 = _mm_maddubs_epi16(srcRegFilt7,thirdFilters);
+        srcRegFilt8 = _mm_maddubs_epi16(srcRegFilt8,thirdFilters);
+
 
         //add and saturate the results together
-        srcRegFilt5 = _mm_adds_epi16(srcRegFilt5,srcRegFilt4);
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, srcRegFilt6);
+        srcRegFilt5 = _mm_adds_epi16(srcRegFilt5,_mm_min_epi16(srcRegFilt4,srcRegFilt7));
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,_mm_min_epi16(srcRegFilt6,srcRegFilt8));
+
+
+        //add and saturate the results together
+        srcRegFilt5 = _mm_adds_epi16(srcRegFilt5, _mm_max_epi16(srcRegFilt4,srcRegFilt7));
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, _mm_max_epi16(srcRegFilt6,srcRegFilt8));
         srcRegFilt5 = _mm_adds_epi16(srcRegFilt5,addFilterReg64);
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,addFilterReg64);
 
