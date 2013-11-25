@@ -81,14 +81,14 @@ void vp9_filter_block1d16_h8_intrin_avx2(unsigned char  *src_ptr, unsigned int  
         srcRegFilt32b2 = _mm256_maddubs_epi16(srcRegFilt32b2,thirdFilters);
 
         //add and saturate the results together
-        srcRegFilt32b1_1 = _mm256_adds_epi16(srcRegFilt32b1_1, srcRegFilt32b3);
+        srcRegFilt32b1_1 = _mm256_adds_epi16(srcRegFilt32b1_1, _mm256_min_epi16(srcRegFilt32b3,srcRegFilt32b2));
 
         //reading 2 strides of the next 16 bytes.(part of it was being read by earlier read)
         srcReg32b2 = _mm256_castsi128_si256(_mm_loadu_si128((__m128i *)(src_ptr+5)));
         srcReg32b2 = _mm256_inserti128_si256(srcReg32b2,_mm_loadu_si128((__m128i *)(src_ptr+src_pixels_per_line+5)),1);
 
         //add and saturate the results together
-        srcRegFilt32b1_1 = _mm256_adds_epi16(srcRegFilt32b1_1, srcRegFilt32b2);
+        srcRegFilt32b1_1 = _mm256_adds_epi16(srcRegFilt32b1_1, _mm256_max_epi16(srcRegFilt32b3,srcRegFilt32b2));
 
         //filter the source buffer
         srcRegFilt32b2_1= _mm256_shuffle_epi8(srcReg32b2,filt1Reg);
@@ -110,8 +110,8 @@ void vp9_filter_block1d16_h8_intrin_avx2(unsigned char  *src_ptr, unsigned int  
         srcRegFilt32b2 = _mm256_maddubs_epi16(srcRegFilt32b2,thirdFilters);
 
         //add and saturate the results together
-        srcRegFilt32b2_1 = _mm256_adds_epi16(srcRegFilt32b2_1, srcRegFilt32b3);
-        srcRegFilt32b2_1 = _mm256_adds_epi16(srcRegFilt32b2_1, srcRegFilt32b2);
+        srcRegFilt32b2_1 = _mm256_adds_epi16(srcRegFilt32b2_1, _mm256_min_epi16(srcRegFilt32b3,srcRegFilt32b2));
+        srcRegFilt32b2_1 = _mm256_adds_epi16(srcRegFilt32b2_1, _mm256_max_epi16(srcRegFilt32b3,srcRegFilt32b2));
 
 
         srcRegFilt32b1_1 = _mm256_adds_epi16(srcRegFilt32b1_1,addFilterReg64);
@@ -164,13 +164,13 @@ void vp9_filter_block1d16_h8_intrin_avx2(unsigned char  *src_ptr, unsigned int  
         srcRegFilt2 = _mm_maddubs_epi16(srcRegFilt2,_mm256_castsi256_si128(thirdFilters));
 
         //add and saturate the results together
-        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, srcRegFilt3);
+        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, _mm_min_epi16(srcRegFilt3,srcRegFilt2));
 
         //reading the next 16 bytes.(part of it was being read by earlier read)
         srcReg2 = _mm_loadu_si128((__m128i *)(src_ptr+5));
 
         //add and saturate the results together
-        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, srcRegFilt2);
+        srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1, _mm_max_epi16(srcRegFilt3,srcRegFilt2));
 
         //filter the source buffer
         srcRegFilt2_1= _mm_shuffle_epi8(srcReg2,_mm256_castsi256_si128(filt1Reg));
@@ -192,8 +192,8 @@ void vp9_filter_block1d16_h8_intrin_avx2(unsigned char  *src_ptr, unsigned int  
         srcRegFilt2 = _mm_maddubs_epi16(srcRegFilt2,_mm256_castsi256_si128(thirdFilters));
 
         //add and saturate the results together
-        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, srcRegFilt3);
-        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, srcRegFilt2);
+        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, _mm_min_epi16(srcRegFilt3,srcRegFilt2));
+        srcRegFilt2_1 = _mm_adds_epi16(srcRegFilt2_1, _mm_max_epi16(srcRegFilt3,srcRegFilt2));
 
 
         srcRegFilt1_1 = _mm_adds_epi16(srcRegFilt1_1,_mm256_castsi256_si128(addFilterReg64));
@@ -221,7 +221,7 @@ void vp9_filter_block1d16_v8_intrin_avx2(unsigned char *src_ptr, unsigned int   
 
     __m128i filtersReg;
     __m256i addFilterReg64;
-    __m256i srcReg32b1,srcReg32b2,srcReg32b3,srcReg32b4,srcReg32b5,srcReg32b6,srcReg32b7,srcReg32b8,srcReg32b9,srcReg32b10,srcReg32b11,filtersReg32,firstFilters,secondFilters,thirdFilters,forthFilters;
+    __m256i srcReg32b1,srcReg32b2,srcReg32b3,srcReg32b4,srcReg32b5,srcReg32b6,srcReg32b7,srcReg32b8,srcReg32b9,srcReg32b10,srcReg32b11,srcReg32b12,srcReg32b13,filtersReg32,firstFilters,secondFilters,thirdFilters,forthFilters;
     unsigned int i;
     unsigned int src_stride,dst_stride;
 
@@ -304,17 +304,18 @@ void vp9_filter_block1d16_v8_intrin_avx2(unsigned char *src_ptr, unsigned int   
         srcReg32b8 = _mm256_maddubs_epi16(srcReg32b11,secondFilters);
         srcReg32b6 = _mm256_maddubs_epi16(srcReg32b3,secondFilters);
 
-        //add and saturate the results together
-        srcReg32b10 = _mm256_adds_epi16(srcReg32b10,srcReg32b8);
-        srcReg32b1 = _mm256_adds_epi16(srcReg32b1, srcReg32b6);
-
         //multiply 2 adjacent elements with the filter and add the result
-        srcReg32b8 = _mm256_maddubs_epi16(srcReg32b2,thirdFilters);
-        srcReg32b6 = _mm256_maddubs_epi16(srcReg32b5,thirdFilters);
+        srcReg32b12 = _mm256_maddubs_epi16(srcReg32b2,thirdFilters);
+        srcReg32b13 = _mm256_maddubs_epi16(srcReg32b5,thirdFilters);
+
 
         //add and saturate the results together
-        srcReg32b10 = _mm256_adds_epi16(srcReg32b10,srcReg32b8);
-        srcReg32b1 = _mm256_adds_epi16(srcReg32b1, srcReg32b6);
+        srcReg32b10 = _mm256_adds_epi16(srcReg32b10,_mm256_min_epi16(srcReg32b8,srcReg32b12));
+        srcReg32b1 = _mm256_adds_epi16(srcReg32b1, _mm256_min_epi16(srcReg32b6,srcReg32b13));
+
+        //add and saturate the results together
+        srcReg32b10 = _mm256_adds_epi16(srcReg32b10,_mm256_max_epi16(srcReg32b8,srcReg32b12));
+        srcReg32b1 = _mm256_adds_epi16(srcReg32b1, _mm256_max_epi16(srcReg32b6,srcReg32b13));
 
 
         srcReg32b10 = _mm256_adds_epi16(srcReg32b10,addFilterReg64);
@@ -372,18 +373,17 @@ void vp9_filter_block1d16_v8_intrin_avx2(unsigned char *src_ptr, unsigned int   
         srcRegFilt4 = _mm_maddubs_epi16(_mm256_castsi256_si128(srcReg32b11),_mm256_castsi256_si128(secondFilters));
         srcRegFilt5 = _mm_maddubs_epi16(_mm256_castsi256_si128(srcReg32b3),_mm256_castsi256_si128(secondFilters));
 
-
-        //add and saturate the results together
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt4);
-        srcRegFilt3 = _mm_adds_epi16(srcRegFilt3, srcRegFilt5);
-
         //multiply 2 adjacent elements with the filter and add the result
         srcRegFilt6 = _mm_maddubs_epi16(_mm256_castsi256_si128(srcReg32b2),_mm256_castsi256_si128(thirdFilters));
         srcRegFilt7 = _mm_maddubs_epi16(_mm256_castsi256_si128(srcReg32b5),_mm256_castsi256_si128(thirdFilters));
 
         //add and saturate the results together
-        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,srcRegFilt6);
-        srcRegFilt3 = _mm_adds_epi16(srcRegFilt3, srcRegFilt7);
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, _mm_min_epi16(srcRegFilt4,srcRegFilt6));
+        srcRegFilt3 = _mm_adds_epi16(srcRegFilt3, _mm_min_epi16(srcRegFilt5,srcRegFilt7));
+
+        //add and saturate the results together
+        srcRegFilt1 = _mm_adds_epi16(srcRegFilt1, _mm_max_epi16(srcRegFilt4,srcRegFilt6));
+        srcRegFilt3 = _mm_adds_epi16(srcRegFilt3, _mm_max_epi16(srcRegFilt5,srcRegFilt7));
 
 
         srcRegFilt1 = _mm_adds_epi16(srcRegFilt1,_mm256_castsi256_si128(addFilterReg64));
