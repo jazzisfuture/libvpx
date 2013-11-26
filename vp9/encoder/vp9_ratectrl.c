@@ -695,7 +695,7 @@ static int estimate_keyframe_frequency(VP9_COMP *cpi) {
 }
 
 
-void vp9_adjust_key_frame_context(VP9_COMP *cpi) {
+static void adjust_key_frame_context(VP9_COMP *cpi) {
   // Clear down mmx registers to allow floating point in what follows
   vp9_clear_system_state();
 
@@ -751,4 +751,108 @@ int vp9_pick_frame_size(VP9_COMP *cpi) {
     calc_pframe_target_size(cpi);
 
   return 1;
+}
+
+void vp9_postencode_rc_update(VP9_COMP *cpi, uint64_t bytes_used, int q) {
+  VP9_COMMON *const cm = &cpi->common;
+  // Update rate control heuristics
+  cpi->rc.projected_frame_size = (bytes_used << 3);
+
+  // Post encode loop adjustment of Q prediction.
+  vp9_update_rate_correction_factors(
+      cpi, (cpi->sf.recode_loop ||
+            cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) ? 2 : 0);
+
+
+  cpi->rc.last_q[cm->frame_type] = cm->base_qindex;
+
+  // Keep record of last boosted (KF/KF/ARF) Q value.
+  // If the current frame is coded at a lower Q then we also update it.
+  // If all mbs in this group are skipped only update if the Q value is
+  // better than that already stored.
+  // This is used to help set quality in forced key frames to reduce popping
+  if ((cm->base_qindex < cpi->rc.last_boosted_qindex) ||
+      ((cpi->static_mb_pct < 100) &&
+       ((cm->frame_type == KEY_FRAME) ||
+        cpi->refresh_alt_ref_frame ||
+        (cpi->refresh_golden_frame && !cpi->is_src_frame_alt_ref)))) {
+    cpi->rc.last_boosted_qindex = cm->base_qindex;
+  }
+
+  if (cm->frame_type == KEY_FRAME) {
+    adjust_key_frame_context(cpi);
+  }
+
+  // Keep a record of ambient average Q.
+  if (cm->frame_type != KEY_FRAME)
+    cpi->rc.avg_frame_qindex = (2 + 3 * cpi->rc.avg_frame_qindex +
+                            cm->base_qindex) >> 2;
+
+  // Keep a record from which we can calculate the average Q excluding GF
+  // updates and key frames.
+  if (cm->frame_type != KEY_FRAME &&
+      !cpi->refresh_golden_frame &&
+      !cpi->refresh_alt_ref_frame) {
+    cpi->rc.ni_frames++;
+    cpi->rc.tot_q += vp9_convert_qindex_to_q(q);
+    cpi->rc.avg_q = cpi->rc.tot_q / (double)cpi->rc.ni_frames;
+
+    // Calculate the average Q for normal inter frames (not key or GFU frames).
+    cpi->rc.ni_tot_qi += q;
+    cpi->rc.ni_av_qi = cpi->rc.ni_tot_qi / cpi->rc.ni_frames;
+  }
+
+  // Update the buffer level variable.
+  // Non-viewable frames are a special case and are treated as pure overhead.
+  if (!cm->show_frame)
+    cpi->rc.bits_off_target -= cpi->rc.projected_frame_size;
+  else
+    cpi->rc.bits_off_target += cpi->rc.av_per_frame_bandwidth -
+                               cpi->rc.projected_frame_size;
+
+  // Clip the buffer level at the maximum buffer size
+  if (cpi->rc.bits_off_target > cpi->oxcf.maximum_buffer_size)
+    cpi->rc.bits_off_target = cpi->oxcf.maximum_buffer_size;
+
+  // Rolling monitors of whether we are over or underspending used to help
+  // regulate min and Max Q in two pass.
+  if (cm->frame_type != KEY_FRAME) {
+    cpi->rc.rolling_target_bits =
+        ((cpi->rc.rolling_target_bits * 3) +
+         cpi->rc.this_frame_target + 2) / 4;
+    cpi->rc.rolling_actual_bits =
+        ((cpi->rc.rolling_actual_bits * 3) +
+         cpi->rc.projected_frame_size + 2) / 4;
+    cpi->rc.long_rolling_target_bits =
+        ((cpi->rc.long_rolling_target_bits * 31) +
+         cpi->rc.this_frame_target + 16) / 32;
+    cpi->rc.long_rolling_actual_bits =
+        ((cpi->rc.long_rolling_actual_bits * 31) +
+         cpi->rc.projected_frame_size + 16) / 32;
+  }
+
+  // Actual bits spent
+  cpi->rc.total_actual_bits += cpi->rc.projected_frame_size;
+
+  // Debug stats
+  cpi->rc.total_target_vs_actual += (cpi->rc.this_frame_target -
+                                     cpi->rc.projected_frame_size);
+
+  cpi->rc.buffer_level = cpi->rc.bits_off_target;
+
+#ifndef DISABLE_RC_LONG_TERM_MEM
+  // Update bits left to the kf and gf groups to account for overshoot or
+  // undershoot on these frames
+  if (cm->frame_type == KEY_FRAME) {
+    cpi->twopass.kf_group_bits += cpi->rc.this_frame_target -
+                                  cpi->rc.projected_frame_size;
+
+    cpi->twopass.kf_group_bits = MAX(cpi->twopass.kf_group_bits, 0);
+  } else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame) {
+    cpi->twopass.gf_group_bits += cpi->rc.this_frame_target -
+                                  cpi->rc.projected_frame_size;
+
+    cpi->twopass.gf_group_bits = MAX(cpi->twopass.gf_group_bits, 0);
+  }
+#endif
 }
