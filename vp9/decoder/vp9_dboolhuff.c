@@ -39,7 +39,7 @@ int vp9_reader_init(vp9_reader *r, const uint8_t *buffer, size_t size) {
 void vp9_reader_fill(vp9_reader *r) {
   const uint8_t *const buffer_end = r->buffer_end;
   const uint8_t *buffer = r->buffer;
-  VP9_BD_VALUE value = r->value;
+  BD_VALUE value = r->value;
   int count = r->count;
   int shift = BD_VALUE_SIZE - 8 - (count + 8);
   int loop_end = 0;
@@ -54,7 +54,7 @@ void vp9_reader_fill(vp9_reader *r) {
   if (x < 0 || bits_left) {
     while (shift >= loop_end) {
       count += CHAR_BIT;
-      value |= (VP9_BD_VALUE)*buffer++ << shift;
+      value |= (BD_VALUE)*buffer++ << shift;
       shift -= CHAR_BIT;
     }
   }
