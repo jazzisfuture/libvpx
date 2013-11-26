@@ -18,14 +18,14 @@
 #include "vpx_ports/mem.h"
 #include "vpx/vpx_integer.h"
 
-typedef size_t VP9_BD_VALUE;
+typedef size_t BD_VALUE;
 
-#define BD_VALUE_SIZE ((int)sizeof(VP9_BD_VALUE)*CHAR_BIT)
+#define BD_VALUE_SIZE ((int)sizeof(BD_VALUE) * CHAR_BIT)
 
 typedef struct {
   const uint8_t *buffer_end;
   const uint8_t *buffer;
-  VP9_BD_VALUE value;
+  BD_VALUE value;
   int count;
   unsigned int range;
 } vp9_reader;
@@ -38,39 +38,32 @@ void vp9_reader_fill(vp9_reader *r);
 
 const uint8_t *vp9_reader_find_end(vp9_reader *r);
 
-static int vp9_read(vp9_reader *br, int probability) {
-  unsigned int bit = 0;
-  VP9_BD_VALUE value;
-  VP9_BD_VALUE bigsplit;
-  int count;
-  unsigned int range;
-  unsigned int split = ((br->range * probability) + (256 - probability)) >> 8;
+static int vp9_read(vp9_reader *r, int prob) {
+  BD_VALUE value, big_split;
+  int shift, bit;
+  unsigned int range, split;
 
-  if (br->count < 0)
-    vp9_reader_fill(br);
+  if (r->count < 0)
+    vp9_reader_fill(r);
 
-  value = br->value;
-  count = br->count;
+  split = (r->range * prob + (256 - prob)) >> CHAR_BIT;
+  big_split = (BD_VALUE)split << (BD_VALUE_SIZE - CHAR_BIT);
+  value = r->value;
 
-  bigsplit = (VP9_BD_VALUE)split << (BD_VALUE_SIZE - 8);
-
-  range = split;
-
-  if (value >= bigsplit) {
-    range = br->range - split;
-    value = value - bigsplit;
+  if (value >= big_split) {
+    value -= big_split;
+    range = r->range - split;
     bit = 1;
+  } else {
+    range = split;
+    bit = 0;
   }
 
-  {
-    register unsigned int shift = vp9_norm[range];
-    range <<= shift;
-    value <<= shift;
-    count -= shift;
-  }
-  br->value = value;
-  br->count = count;
-  br->range = range;
+  shift = vp9_norm[range];
+
+  r->count -= shift;
+  r->value = value << shift;
+  r->range = range << shift;
 
   return bit;
 }
