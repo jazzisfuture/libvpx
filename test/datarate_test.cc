@@ -238,6 +238,11 @@ class DatarateTestVP9 : public ::libvpx_test::EncoderTest,
 // that effective datarate is within some range of target bitrate.
 // No frame dropper, so we can't go to low bitrates.
 TEST_P(DatarateTestVP9, BasicRateTargeting) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 0;
+  // Add separate test for frame dropper.
   cfg_.rc_min_quantizer = 0;
   cfg_.rc_max_quantizer = 63;
   cfg_.rc_end_usage = VPX_CBR;
@@ -248,9 +253,9 @@ TEST_P(DatarateTestVP9, BasicRateTargeting) {
     cfg_.rc_target_bitrate = i;
     ResetModel();
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-    ASSERT_GE(cfg_.rc_target_bitrate, effective_datarate_ * 0.9)
+    ASSERT_GE(effective_datarate_, cfg_.rc_target_bitrate * 0.9)
         << " The datarate for the file exceeds the target by too much!";
-    ASSERT_LE(cfg_.rc_target_bitrate, effective_datarate_ * 1.1)
+    ASSERT_LE(effective_datarate_, cfg_.rc_target_bitrate * 1.1)
         << " The datarate for the file missed the target!";
   }
 }
