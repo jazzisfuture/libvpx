@@ -326,6 +326,9 @@ typedef struct {
   int buffer_level;
   int bits_off_target;
 
+  int decimation_factor;
+  int decimation_count;
+
   int rolling_target_bits;
   int rolling_actual_bits;
 
@@ -488,9 +491,6 @@ typedef struct VP9_COMP {
   int mbgraph_n_frames;             // number of frames filled in the above
   int static_mb_pct;                // % forced skip mbs by segmentation
   int seg0_progress, seg0_idx, seg0_cnt;
-
-  int decimation_factor;
-  int decimation_count;
 
   // for real time encoding
   int speed;
