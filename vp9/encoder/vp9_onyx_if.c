@@ -2480,7 +2480,6 @@ static int recode_loop_test(VP9_COMP *cpi,
 
 static void update_reference_frames(VP9_COMP * const cpi) {
   VP9_COMMON * const cm = &cpi->common;
-
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {
@@ -3000,6 +2999,20 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     configure_static_seg_features(cpi);
   }
 
+  // For 1 pass CBR, check if we are dropping this frame.
+  // Never drop on key frame.
+  if (cpi->pass == 0 &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+      cm->frame_type != KEY_FRAME) {
+    if (vp9_drop_frame(cpi)) {
+      // Update buffer level with zero size, update frame counters, and return.
+      vp9_update_buffer_level(cpi, 0);
+      cm->current_video_frame++;
+      cpi->frames_since_key++;
+      return;
+    }
+  }
+
   // Decide how big to make the frame.
   vp9_pick_frame_size(cpi);
 
@@ -3200,19 +3213,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cpi->rc.ni_tot_qi += q;
     cpi->rc.ni_av_qi = cpi->rc.ni_tot_qi / cpi->rc.ni_frames;
   }
-
-  // Update the buffer level variable.
-  // Non-viewable frames are a special case and are treated as pure overhead.
-  if (!cm->show_frame)
-    cpi->rc.bits_off_target -= cpi->rc.projected_frame_size;
-  else
-    cpi->rc.bits_off_target += cpi->rc.av_per_frame_bandwidth -
-                               cpi->rc.projected_frame_size;
-
-  // Clip the buffer level at the maximum buffer size
-  if (cpi->rc.bits_off_target > cpi->oxcf.maximum_buffer_size)
-    cpi->rc.bits_off_target = cpi->oxcf.maximum_buffer_size;
-
+  vp9_update_buffer_level(cpi, cpi->rc.projected_frame_size);
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.
   if (cm->frame_type != KEY_FRAME) {
@@ -3236,8 +3237,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Debug stats
   cpi->rc.total_target_vs_actual += (cpi->rc.this_frame_target -
                                      cpi->rc.projected_frame_size);
-
-  cpi->rc.buffer_level = cpi->rc.bits_off_target;
 
 #ifndef DISABLE_RC_LONG_TERM_MEM
   // Update bits left to the kf and gf groups to account for overshoot or
@@ -3719,6 +3718,11 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
+
+  // Frame was dropped, release scaled references.
+  if (*size == 0) {
+    release_scaled_references(cpi);
+  }
 
   if (*size > 0) {
     // if its a dropped frame honor the requests on subsequent frames
