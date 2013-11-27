@@ -167,15 +167,15 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int y_blocks, int b_idx,
                                 const int16_t *scan, const int16_t *iscan) {
   MACROBLOCKD *const xd = &x->e_mbd;
   const struct plane_block_idx pb_idx = plane_block_idx(y_blocks, b_idx);
-  struct macroblock_plane* p = &x->plane[pb_idx.plane];
-  struct macroblockd_plane* pd = &xd->plane[pb_idx.plane];
+  struct macroblock_plane *p = &x->plane[pb_idx.plane];
+  struct macroblockd_plane *pd = &xd->plane[pb_idx.plane];
 
   vp9_quantize_b(BLOCK_OFFSET(p->coeff, pb_idx.block),
            16, x->skip_block,
            p->zbin, p->round, p->quant, p->quant_shift,
            BLOCK_OFFSET(p->qcoeff, pb_idx.block),
            BLOCK_OFFSET(pd->dqcoeff, pb_idx.block),
-           pd->dequant, p->zbin_extra, &pd->eobs[pb_idx.block], scan, iscan);
+           pd->dequant, p->zbin_extra, &p->eobs[pb_idx.block], scan, iscan);
 }
 
 static void invert_quant(int16_t *quant, int16_t *shift, int d) {
