@@ -39,5 +39,6 @@ int vp9_bits_per_mb(FRAME_TYPE frame_type, int qindex,
 void vp9_setup_inter_frame(VP9_COMP *cpi);
 int vp9_pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
                                    int * bottom_index, int * top_index);
-
+int vp9_drop_frame(VP9_COMP *cpi);
+void vp9_update_buffer_level(VP9_COMP *cpi, int encoded_frame_size);
 #endif  // VP9_ENCODER_VP9_RATECTRL_H_
