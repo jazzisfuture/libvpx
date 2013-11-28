@@ -309,18 +309,21 @@ static int find_in_scan(const int16_t *scan, int l, int idx) {
 
 static void init_scan_neighbors(const int16_t *scan, int16_t *iscan, int l,
                                 int16_t *neighbors) {
-  int l2 = l * l;
-  int n, i, j;
+  const int l2 = l * l;
+  int n;
+
+  for (n = 0; n < l2; ++n)
+    iscan[n] = find_in_scan(scan, l, n);
 
   // dc doesn't use this type of prediction
-  neighbors[MAX_NEIGHBORS * 0 + 0] = 0;
-  neighbors[MAX_NEIGHBORS * 0 + 1] = 0;
-  iscan[0] = find_in_scan(scan, l, 0);
-  for (n = 1; n < l2; n++) {
-    int rc = scan[n];
-    iscan[n] = find_in_scan(scan, l, n);
-    i = rc / l;
-    j = rc % l;
+  neighbors[MAX_NEIGHBORS * 0 + 0] = neighbors[MAX_NEIGHBORS * 0 + 1] = 0;
+  for (n = 1; n < l2; ++n) {
+    const int rc = scan[n];
+    const int i = rc / l;
+    const int j = rc % l;
+    const int above = (i - 1) * l + j;
+    const int left = i * l + (j - 1);
+    int16_t *nb = &neighbors[MAX_NEIGHBORS * n];
     if (i > 0 && j > 0) {
       // col/row scan is used for adst/dct, and generally means that
       // energy decreases to zero much faster in the dimension in
@@ -330,37 +333,37 @@ static void init_scan_neighbors(const int16_t *scan, int16_t *iscan, int l,
       // Therefore, if we use ADST/DCT, prefer the DCT neighbor coeff
       // as a context. If ADST or DCT is used in both directions, we
       // use the combination of the two as a context.
-      int a = (i - 1) * l + j;
-      int b =  i      * l + j - 1;
+
       if (scan == col_scan_4x4 || scan == col_scan_8x8 ||
           scan == col_scan_16x16) {
         // in the col/row scan cases (as well as left/top edge cases), we set
         // both contexts to the same value, so we can branchlessly do a+b+1>>1
         // which automatically becomes a if a == b
-        neighbors[MAX_NEIGHBORS * n + 0] =
-        neighbors[MAX_NEIGHBORS * n + 1] = a;
+        nb[0] = nb[1] = above;
       } else if (scan == row_scan_4x4 || scan == row_scan_8x8 ||
                  scan == row_scan_16x16) {
-        neighbors[MAX_NEIGHBORS * n + 0] =
-        neighbors[MAX_NEIGHBORS * n + 1] = b;
+        nb[0] = nb[1] = left;
       } else {
-        neighbors[MAX_NEIGHBORS * n + 0] = a;
-        neighbors[MAX_NEIGHBORS * n + 1] = b;
+        nb[0] = above;
+        nb[1] = left;
       }
     } else if (i > 0) {
-      neighbors[MAX_NEIGHBORS * n + 0] =
-      neighbors[MAX_NEIGHBORS * n + 1] = (i - 1) * l + j;
+      nb[0] = nb[1] = above;
     } else {
       assert(j > 0);
-      neighbors[MAX_NEIGHBORS * n + 0] =
-      neighbors[MAX_NEIGHBORS * n + 1] =  i      * l + j - 1;
+      nb[0] = nb[1] =  left;
     }
-    assert(iscan[neighbors[MAX_NEIGHBORS * n + 0]] < n);
+
+    assert(iscan[nb[0]] < n);
+    assert(iscan[nb[1]] < n);
+
+    nb[0] = iscan[nb[0]];
+    nb[1] = iscan[nb[1]];
   }
+
   // one padding item so we don't have to add branches in code to handle
   // calls to get_coef_context() for the token after the final dc token
-  neighbors[MAX_NEIGHBORS * l2 + 0] = 0;
-  neighbors[MAX_NEIGHBORS * l2 + 1] = 0;
+  neighbors[MAX_NEIGHBORS * l2 + 0] = neighbors[MAX_NEIGHBORS * l2 + 1] = 0;
 }
 
 void vp9_init_neighbors() {

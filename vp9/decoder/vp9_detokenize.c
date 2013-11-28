@@ -66,6 +66,22 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
   TWO_TOKEN, TWO_TOKEN, TWO_TOKEN, DCT_EOB_MODEL_TOKEN
 };
 
+static const int val_to_class[] = {
+  0, 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5,
+};
+
+static INLINE int get_context(const int16_t *neighbors,
+                              const int16_t *temp, int c) {
+  const int16_t *nb = &neighbors[MAX_NEIGHBORS * c];
+  const int val0 = abs(temp[nb[0]]);
+  const int val1 = abs(temp[nb[1]]);
+
+  const int cl0 = val0 > 15 ? 5 : val_to_class[val0];
+  const int cl1 = val1 > 15 ? 5 : val_to_class[val1];
+
+  return (cl0 + cl1 + 1) >> 1;
+}
+
 #define INCREMENT_COUNT(token)                              \
   do {                                                      \
      if (!cm->frame_parallel_decoding_mode)                 \
@@ -73,16 +89,13 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
   } while (0)
 
 
-#define WRITE_COEF_CONTINUE(val, token)                  \
-  {                                                      \
-    v = (val * dqv) >> dq_shift; \
-    dqcoeff_ptr[scan[c]] = (vp9_read_bit(r) ? -v : v); \
-    INCREMENT_COUNT(token);                              \
-    token_cache[scan[c]] = vp9_pt_energy_class[token];   \
-    ++c;                                                 \
-    pt = get_coef_context(nb, token_cache, c);           \
-    dqv = dq[1];                                          \
-    continue;                                            \
+#define WRITE_COEF_CONTINUE(val, token)       \
+  {                                           \
+    temp[c] = (vp9_read_bit(r) ? -val : val); \
+    INCREMENT_COUNT(token);                   \
+    ++c;                                      \
+    pt = get_context(nb, temp, c);            \
+    continue;                                 \
   }
 
 
@@ -94,11 +107,11 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
 static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
                         vp9_reader *r, int block_idx,
                         PLANE_TYPE type, int seg_eob, int16_t *dqcoeff_ptr,
-                        TX_SIZE tx_size, const int16_t *dq, int pt,
-                        uint8_t *token_cache) {
+                        TX_SIZE tx_size, const int16_t *dq, int pt) {
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
+  int16_t temp[32 * 32];
   int band, c = 0;
   const vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
@@ -109,14 +122,11 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       counts->eob_branch[tx_size][type][ref];
   const uint8_t *cat6;
   const uint8_t *band_translate = get_band_translate(tx_size);
-  const int dq_shift = (tx_size == TX_32X32);
   const scan_order *so = get_scan(xd, tx_size, type, block_idx);
   const int16_t *scan = so->scan;
   const int16_t *nb = so->neighbors;
-  int v;
-  int16_t dqv = dq[0];
 
-
+  temp[0] = 0;
 
   while (c < seg_eob) {
     int val;
@@ -130,11 +140,11 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   DECODE_ZERO:
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
-      dqv = dq[1];
+      temp[c] = 0;
       ++c;
       if (c >= seg_eob)
         break;
-      pt = get_coef_context(nb, token_cache, c);
+      pt = get_context(nb, temp, c);
       band = *band_translate++;
       prob = coef_probs[band][pt];
       goto DECODE_ZERO;
@@ -209,13 +219,24 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       ++coef_counts[band][pt][DCT_EOB_MODEL_TOKEN];
   }
 
+  int i;
+
+  if (tx_size == TX_32X32) {
+    dqcoeff_ptr[0] = temp[0] * dq[0] / 2;
+    for (i = 1; i < c; ++i)
+     dqcoeff_ptr[scan[i]] = temp[i] * dq[1] / 2;
+  } else {
+    dqcoeff_ptr[0] = temp[0] * dq[0];
+    for (i = 1; i < c; ++i)
+      dqcoeff_ptr[scan[i]] = temp[i] * dq[1];
+  }
+
   return c;
 }
 
 int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                             int plane, int block, BLOCK_SIZE plane_bsize,
-                            int x, int y, TX_SIZE tx_size, vp9_reader *r,
-                            uint8_t *token_cache) {
+                            int x, int y, TX_SIZE tx_size, vp9_reader *r) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int seg_eob = get_tx_eob(&cm->seg, xd->mi_8x8[0]->mbmi.segment_id,
                                  tx_size);
@@ -223,7 +244,7 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                                               pd->left_context + y);
   const int eob = decode_coefs(cm, xd, r, block, pd->plane_type, seg_eob,
                                BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
-                               pd->dequant, pt, token_cache);
+                               pd->dequant, pt);
   set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
   pd->eobs[block] = eob;
   return eob;
