@@ -66,20 +66,9 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
   TWO_TOKEN, TWO_TOKEN, TWO_TOKEN, DCT_EOB_MODEL_TOKEN
 };
 
-static const int val_to_class[] = {
-  0, 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5,
-};
-
-static INLINE int get_context(const int16_t *neighbors,
-                              const int16_t *temp, int c) {
+static INLINE int get_context(const int16_t *neighbors, const uint8_t *cache, int c) {
   const int16_t *nb = &neighbors[MAX_NEIGHBORS * c];
-  const int val0 = abs(temp[nb[0]]);
-  const int val1 = abs(temp[nb[1]]);
-
-  const int cl0 = val0 > 15 ? 5 : val_to_class[val0];
-  const int cl1 = val1 > 15 ? 5 : val_to_class[val1];
-
-  return (cl0 + cl1 + 1) >> 1;
+  return (cache[nb[0]] + cache[nb[1]] + 1) >> 1;
 }
 
 #define INCREMENT_COUNT(token)                              \
@@ -91,10 +80,11 @@ static INLINE int get_context(const int16_t *neighbors,
 
 #define WRITE_COEF_CONTINUE(val, token)       \
   {                                           \
-    temp[c] = (vp9_read_bit(r) ? -val : val); \
+    temp[c] = vp9_read_bit(r) ? -val : val;   \
+    cache[c] = vp9_pt_energy_class[token];    \
     INCREMENT_COUNT(token);                   \
     ++c;                                      \
-    pt = get_context(nb, temp, c);            \
+    pt = get_context(nb, cache, c);           \
     continue;                                 \
   }
 
@@ -112,6 +102,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   FRAME_COUNTS *const counts = &cm->counts;
   const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
   int16_t temp[32 * 32];
+  uint8_t cache[32 * 32];
   int band, c = 0;
   const vp9_prob (*coef_probs)[PREV_COEF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
@@ -127,6 +118,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int16_t *nb = so->neighbors;
 
   temp[0] = 0;
+  cache[0] = 0;
 
   while (c < seg_eob) {
     int val;
@@ -141,10 +133,11 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       temp[c] = 0;
+      cache[c] = 0;
       ++c;
       if (c >= seg_eob)
         break;
-      pt = get_context(nb, temp, c);
+      pt = get_context(nb, cache, c);
       band = *band_translate++;
       prob = coef_probs[band][pt];
       goto DECODE_ZERO;
@@ -220,15 +213,17 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   int i;
+  const int dq0 = dq[0];
+  const int dq1 = dq[1];
 
   if (tx_size == TX_32X32) {
-    dqcoeff_ptr[0] = temp[0] * dq[0] / 2;
+    dqcoeff_ptr[0] = temp[0] * dq0 / 2;
     for (i = 1; i < c; ++i)
-     dqcoeff_ptr[scan[i]] = temp[i] * dq[1] / 2;
+     dqcoeff_ptr[scan[i]] = temp[i] * dq1 / 2;
   } else {
-    dqcoeff_ptr[0] = temp[0] * dq[0];
+    dqcoeff_ptr[0] = temp[0] * dq0;
     for (i = 1; i < c; ++i)
-      dqcoeff_ptr[scan[i]] = temp[i] * dq[1];
+      dqcoeff_ptr[scan[i]] = temp[i] * dq1;
   }
 
   return c;
