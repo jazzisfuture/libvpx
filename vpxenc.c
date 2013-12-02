@@ -388,7 +388,11 @@ static const arg_def_t frame_parallel_decoding  = ARG_DEF(
     NULL, "frame-parallel", 1, "Enable frame parallel decodability features");
 static const arg_def_t aq_mode  = ARG_DEF(
     NULL, "aq-mode", 1,
+<<<<<<< HEAD   (862c22 Merge "Moving token-encoding related stuff from common to en)
     "Adaptive q mode (0: off (by default), 1: variance 2: complexity)");
+=======
+    "Adaptive quantization mode (0: disabled (by default), 1: variance based)");
+>>>>>>> BRANCH (2e88f2 Fix bug in extend_frame chroma extended too far)
 #endif
 
 #if CONFIG_VP8_ENCODER

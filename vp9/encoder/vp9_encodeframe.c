@@ -460,8 +460,12 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
       }
 
+<<<<<<< HEAD   (862c22 Merge "Moving token-encoding related stuff from common to en)
     if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
         (cpi->oxcf.aq_mode == COMPLEXITY_AQ)) {
+=======
+  if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+>>>>>>> BRANCH (2e88f2 Fix bug in extend_frame chroma extended too far)
     vp9_mb_init_quantizer(cpi, x);
   }
 
@@ -610,7 +614,11 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
 
   /* segment ID */
   if (seg->enabled) {
+<<<<<<< HEAD   (862c22 Merge "Moving token-encoding related stuff from common to en)
     if (cpi->oxcf.aq_mode != VARIANCE_AQ) {
+=======
+    if (!cpi->oxcf.aq_mode == VARIANCE_AQ) {
+>>>>>>> BRANCH (2e88f2 Fix bug in extend_frame chroma extended too far)
       uint8_t *map = seg->update_map ? cpi->segmentation_map
           : cm->last_frame_seg_map;
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);

@@ -3076,6 +3076,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_write_yuv_frame(cpi->Source);
 #endif
 
+<<<<<<< HEAD   (862c22 Merge "Moving token-encoding related stuff from common to en)
   encode_with_recode_loop(cpi,
                           size,
                           dest,
@@ -3084,6 +3085,193 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                           top_index,
                           frame_over_shoot_limit,
                           frame_under_shoot_limit);
+=======
+  do {
+    vp9_clear_system_state();  // __asm emms;
+
+    vp9_set_quantizer(cpi, q);
+
+    if (loop_count == 0) {
+      // Set up entropy context depending on frame type. The decoder mandates
+      // the use of the default context, index 0, for keyframes and inter
+      // frames where the error_resilient_mode or intra_only flag is set. For
+      // other inter-frames the encoder currently uses only two contexts;
+      // context 1 for ALTREF frames and context 0 for the others.
+      if (cm->frame_type == KEY_FRAME) {
+        vp9_setup_key_frame(cpi);
+      } else {
+        if (!cm->intra_only && !cm->error_resilient_mode) {
+          cpi->common.frame_context_idx = cpi->refresh_alt_ref_frame;
+        }
+        vp9_setup_inter_frame(cpi);
+      }
+    }
+
+    if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+        vp9_vaq_frame_setup(cpi);
+    }
+
+    // transform / motion compensation build reconstruction frame
+
+    vp9_encode_frame(cpi);
+
+    // Update the skip mb flag probabilities based on the distribution
+    // seen in the last encoder iteration.
+    // update_base_skip_probs(cpi);
+
+    vp9_clear_system_state();  // __asm emms;
+
+    // Dummy pack of the bitstream using up to date stats to get an
+    // accurate estimate of output frame size to determine if we need
+    // to recode.
+    vp9_save_coding_context(cpi);
+    cpi->dummy_packing = 1;
+    vp9_pack_bitstream(cpi, dest, size);
+    cpi->projected_frame_size = (*size) << 3;
+    vp9_restore_coding_context(cpi);
+
+    if (frame_over_shoot_limit == 0)
+      frame_over_shoot_limit = 1;
+    active_worst_qchanged = 0;
+
+    if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
+      loop = 0;
+    } else {
+      // Special case handling for forced key frames
+      if ((cm->frame_type == KEY_FRAME) && cpi->this_key_frame_forced) {
+        int last_q = q;
+        int kf_err = vp9_calc_ss_err(cpi->Source, get_frame_new_buffer(cm));
+
+        int high_err_target = cpi->ambient_err;
+        int low_err_target = cpi->ambient_err >> 1;
+
+        // Prevent possible divide by zero error below for perfect KF
+        kf_err += !kf_err;
+
+        // The key frame is not good enough or we can afford
+        // to make it better without undue risk of popping.
+        if ((kf_err > high_err_target &&
+             cpi->projected_frame_size <= frame_over_shoot_limit) ||
+            (kf_err > low_err_target &&
+             cpi->projected_frame_size <= frame_under_shoot_limit)) {
+          // Lower q_high
+          q_high = q > q_low ? q - 1 : q_low;
+
+          // Adjust Q
+          q = (q * high_err_target) / kf_err;
+          q = MIN(q, (q_high + q_low) >> 1);
+        } else if (kf_err < low_err_target &&
+                   cpi->projected_frame_size >= frame_under_shoot_limit) {
+          // The key frame is much better than the previous frame
+          // Raise q_low
+          q_low = q < q_high ? q + 1 : q_high;
+
+          // Adjust Q
+          q = (q * low_err_target) / kf_err;
+          q = MIN(q, (q_high + q_low + 1) >> 1);
+        }
+
+        // Clamp Q to upper and lower limits:
+        q = clamp(q, q_low, q_high);
+
+        loop = q != last_q;
+      } else if (recode_loop_test(
+          cpi, frame_over_shoot_limit, frame_under_shoot_limit,
+          q, top_index, bottom_index)) {
+        // Is the projected frame size out of range and are we allowed
+        // to attempt to recode.
+        int last_q = q;
+        int retries = 0;
+
+        // Frame size out of permitted range:
+        // Update correction factor & compute new Q to try...
+
+        // Frame is too large
+        if (cpi->projected_frame_size > cpi->this_frame_target) {
+          // Raise Qlow as to at least the current value
+          q_low = q < q_high ? q + 1 : q_high;
+
+          if (undershoot_seen || loop_count > 1) {
+            // Update rate_correction_factor unless
+            // cpi->active_worst_quality has changed.
+            if (!active_worst_qchanged)
+              vp9_update_rate_correction_factors(cpi, 1);
+
+            q = (q_high + q_low + 1) / 2;
+          } else {
+            // Update rate_correction_factor unless
+            // cpi->active_worst_quality has changed.
+            if (!active_worst_qchanged)
+              vp9_update_rate_correction_factors(cpi, 0);
+
+            q = vp9_regulate_q(cpi, cpi->this_frame_target);
+
+            while (q < q_low && retries < 10) {
+              vp9_update_rate_correction_factors(cpi, 0);
+              q = vp9_regulate_q(cpi, cpi->this_frame_target);
+              retries++;
+            }
+          }
+
+          overshoot_seen = 1;
+        } else {
+          // Frame is too small
+          q_high = q > q_low ? q - 1 : q_low;
+
+          if (overshoot_seen || loop_count > 1) {
+            // Update rate_correction_factor unless
+            // cpi->active_worst_quality has changed.
+            if (!active_worst_qchanged)
+              vp9_update_rate_correction_factors(cpi, 1);
+
+            q = (q_high + q_low) / 2;
+          } else {
+            // Update rate_correction_factor unless
+            // cpi->active_worst_quality has changed.
+            if (!active_worst_qchanged)
+              vp9_update_rate_correction_factors(cpi, 0);
+
+            q = vp9_regulate_q(cpi, cpi->this_frame_target);
+
+            // Special case reset for qlow for constrained quality.
+            // This should only trigger where there is very substantial
+            // undershoot on a frame and the auto cq level is above
+            // the user passsed in value.
+            if (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY && q < q_low) {
+              q_low = q;
+            }
+
+            while (q > q_high && retries < 10) {
+              vp9_update_rate_correction_factors(cpi, 0);
+              q = vp9_regulate_q(cpi, cpi->this_frame_target);
+              retries++;
+            }
+          }
+
+          undershoot_seen = 1;
+        }
+
+        // Clamp Q to upper and lower limits:
+        q = clamp(q, q_low, q_high);
+
+        loop = q != last_q;
+      } else {
+        loop = 0;
+      }
+    }
+
+    if (cpi->is_src_frame_alt_ref)
+      loop = 0;
+
+    if (loop) {
+      loop_count++;
+
+#if CONFIG_INTERNAL_STATS
+      cpi->tot_recode_hits++;
+#endif
+    }
+  } while (loop);
+>>>>>>> BRANCH (2e88f2 Fix bug in extend_frame chroma extended too far)
 
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before

@@ -67,7 +67,10 @@ extern "C"
   typedef enum {
     NO_AQ = 0,
     VARIANCE_AQ = 1,
+<<<<<<< HEAD   (862c22 Merge "Moving token-encoding related stuff from common to en)
     COMPLEXITY_AQ = 2,
+=======
+>>>>>>> BRANCH (2e88f2 Fix bug in extend_frame chroma extended too far)
     AQ_MODES_COUNT  // This should always be the last member of the enum
   } AQ_MODES;
 
