@@ -1298,6 +1298,7 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
   assert(!memcmp(&cm->counts.mv, &zero_counts.mv, sizeof(cm->counts.mv)));
 }
 #endif  // NDEBUG
+extern int is_full[BLOCK_TYPES][REF_TYPES][TX_SIZES][3];
 
 int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   int i;
@@ -1313,7 +1314,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
-
+  vp9_zero(is_full);
   if (!first_partition_size) {
       // showing a frame directly
       *p_data_end = data + 1;
