@@ -116,8 +116,6 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   int v;
   int16_t dqv = dq[0];
 
-
-
   while (c < seg_eob) {
     int val;
     band = *band_translate++;
@@ -127,17 +125,15 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
     if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
       break;
 
-  DECODE_ZERO:
-    if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+    while (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
       ++c;
       if (c >= seg_eob)
-        break;
+        return c;
       pt = get_coef_context(nb, token_cache, c);
       band = *band_translate++;
       prob = coef_probs[band][pt];
-      goto DECODE_ZERO;
     }
 
     // ONE_CONTEXT_NODE_0_
@@ -145,7 +141,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
 
-    prob = vp9_pareto8_full[coef_probs[band][pt][PIVOT_NODE]-1];
+    prob = vp9_pareto8_full[prob[PIVOT_NODE] - 1];
 
     // LOW_VAL_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[LOW_VAL_CONTEXT_NODE])) {
