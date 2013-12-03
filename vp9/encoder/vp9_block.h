@@ -250,7 +250,7 @@ struct rdcost_block_args {
   int64_t this_rd;
   int64_t best_rd;
   int skip;
-  const int16_t *scan, *nb;
+  const scan_order *so;
 };
 
 #endif  // VP9_ENCODER_VP9_BLOCK_H_

@@ -192,7 +192,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const int16_t *qcoeff_ptr = BLOCK_OFFSET(p->qcoeff, block);
 
   const int segment_id = mbmi->segment_id;
-  const int16_t *scan, *nb;
+  const int16_t *scan;
   const scan_order *so;
   vp9_coeff_count *const counts = cpi->coef_counts[tx_size];
   vp9_coeff_probs_model *const coef_probs = cpi->common.fc.coef_probs[tx_size];
@@ -209,7 +209,6 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
                                     pd->left_context + loff);
   so = get_scan(xd, tx_size, type, block);
   scan = so->scan;
-  nb = so->neighbors;
 
   c = 0;
   do {
@@ -218,7 +217,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     int v = 0;
     rc = scan[c];
     if (c)
-      pt = get_coef_context(nb, token_cache, c);
+      pt = get_coef_context(so->neighbors, token_cache, c);
     if (c < eob) {
       v = qcoeff_ptr[rc];
       assert(-DCT_MAX_VALUE <= v  &&  v < DCT_MAX_VALUE);
