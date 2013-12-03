@@ -557,26 +557,40 @@ static void setup_token_decoder(const uint8_t *data,
                        "Failed to allocate bool decoder %d", 1);
 }
 
+extern int is_full[BLOCK_TYPES][REF_TYPES][TX_SIZES][3][128];
+
 static void read_coef_probs_common(vp9_coeff_probs_model *coef_probs,
-                                   vp9_reader *r) {
+                                   vp9_reader *r, TX_SIZE tx_size) {
   int i, j, k, l, m;
 
   if (vp9_read_bit(r))
     for (i = 0; i < BLOCK_TYPES; i++)
       for (j = 0; j < REF_TYPES; j++)
         for (k = 0; k < COEF_BANDS; k++)
-          for (l = 0; l < PREV_COEF_CONTEXTS; l++)
+          for (l = 0; l < PREV_COEF_CONTEXTS; l++) {
+            vp9_prob old_eob = coef_probs[i][j][k][l][0];
+            vp9_prob old_zed = coef_probs[i][j][k][l][1];
             if (k > 0 || l < 3)
               for (m = 0; m < UNCONSTRAINED_NODES; m++)
                 vp9_diff_update_prob(r, &coef_probs[i][j][k][l][m]);
+
+            if (k == 0 && l < 3
+                && (old_eob != coef_probs[i][j][k][l][0]
+                || old_zed != coef_probs[i][j][k][l][1])) {
+              vpx_memset(is_full[i][j][tx_size][l], 0,
+                         sizeof(is_full[i][j][tx_size][l]));
+            }
+
+          }
 }
 
 static void read_coef_probs(FRAME_CONTEXT *fc, TX_MODE tx_mode,
                             vp9_reader *r) {
     const TX_SIZE max_tx_size = tx_mode_to_biggest_tx_size[tx_mode];
     TX_SIZE tx_size;
+
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
-      read_coef_probs_common(fc->coef_probs[tx_size], r);
+      read_coef_probs_common(fc->coef_probs[tx_size], r, tx_size);
 }
 
 static void setup_segmentation(struct segmentation *seg,
@@ -1086,6 +1100,7 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
   VP9_COMMON *const cm = &pbi->common;
   size_t sz;
   int i;
+  int last_frame_context_idx;
 
   cm->last_frame_type = cm->frame_type;
 
@@ -1182,7 +1197,10 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
 
   // This flag will be overridden by the call to vp9_setup_past_independence
   // below, forcing the use of context 0 for those frame types.
+  last_frame_context_idx = cm->frame_context_idx;
   cm->frame_context_idx = vp9_rb_read_literal(rb, NUM_FRAME_CONTEXTS_LOG2);
+  if (cm->frame_context_idx != last_frame_context_idx)
+    vp9_zero(is_full);
 
   if (frame_is_intra_only(cm) || cm->error_resilient_mode)
     vp9_setup_past_independence(cm);
@@ -1313,7 +1331,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
-
+  //vp9_zero(is_full);
   if (!first_partition_size) {
       // showing a frame directly
       *p_data_end = data + 1;
