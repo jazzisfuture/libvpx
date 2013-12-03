@@ -528,7 +528,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   const int eob = pd->eobs[block];
   const int16_t *const qcoeff_ptr = BLOCK_OFFSET(p->qcoeff, block);
   const int ref = mbmi->ref_frame[0] != INTRA_FRAME;
-  unsigned int (*token_costs)[2][PREV_COEF_CONTEXTS][MAX_ENTROPY_TOKENS] =
+  unsigned int (*token_costs)[2][PREV_COEF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][ref];
   const ENTROPY_CONTEXT above_ec = !!*A, left_ec = !!*L;
   uint8_t *p_tok = x->token_cache;

@@ -679,10 +679,10 @@ static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size) {
 #ifdef ENTROPY_STATS
           if (!cpi->dummy_packing) {
             int t;
-            for (t = 0; t < MAX_ENTROPY_TOKENS; ++t)
+            for (t = 0; t < ENTROPY_TOKENS; ++t)
               context_counters[tx_size][i][j][k][l][t] +=
                   coef_counts[i][j][k][l][t];
-            context_counters[tx_size][i][j][k][l][MAX_ENTROPY_TOKENS] +=
+            context_counters[tx_size][i][j][k][l][ENTROPY_TOKENS] +=
                 eob_branch_ct[i][j][k][l];
           }
 #endif
