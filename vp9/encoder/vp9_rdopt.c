@@ -518,7 +518,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
                               int plane, int block,
                               ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
                               TX_SIZE tx_size,
-                              const int16_t *scan, const int16_t *nb) {
+                              const int16_t *scan, const int16_t (*nb)[2]) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   struct macroblock_plane *p = &x->plane[plane];
@@ -616,7 +616,7 @@ static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   args->rate = cost_coeffs(args->x, plane, block, args->t_above + x_idx,
                            args->t_left + y_idx, args->tx_size,
-                           args->scan, args->nb);
+                           args->so->scan, args->so->neighbors);
 }
 
 static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -713,7 +713,6 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
   const int num_4x4_w = num_4x4_blocks_wide_lookup[bs];
   const int num_4x4_h = num_4x4_blocks_high_lookup[bs];
-  const scan_order *so;
 
   init_rdcost_stack(x, tx_size, num_4x4_w, num_4x4_h,
                     ref_best_rd, rd_stack);
@@ -724,9 +723,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
                            pd->above_context, pd->left_context,
                            num_4x4_w, num_4x4_h);
 
-  so = get_scan(xd, tx_size, pd->plane_type, 0);
-  rd_stack->scan = so->scan;
-  rd_stack->nb = so->neighbors;
+  rd_stack->so = get_scan(xd, tx_size, pd->plane_type, 0);
 
   foreach_transformed_block_in_plane(xd, bsize, plane,
                                      block_rd_txfm, rd_stack);

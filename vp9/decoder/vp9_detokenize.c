@@ -105,7 +105,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int dq_shift = (tx_size == TX_32X32);
   const scan_order *so = get_scan(xd, tx_size, type, block_idx);
   const int16_t *scan = so->scan;
-  const int16_t *nb = so->neighbors;
+  const int16_t (*nb)[2] = so->neighbors;
   int v;
   int16_t dqv = dq[0];
 

@@ -233,26 +233,16 @@ DECLARE_ALIGNED(16, static const int16_t, default_scan_32x32[1024]) = {
 // in {top, left, topleft, topright, bottomleft} order
 // for each position in raster scan order.
 // -1 indicates the neighbor does not exist.
-DECLARE_ALIGNED(16, static int16_t,
-                default_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                col_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                row_scan_4x4_neighbors[17 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                col_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                row_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                default_scan_8x8_neighbors[65 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                col_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                row_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                default_scan_16x16_neighbors[257 * MAX_NEIGHBORS]);
-DECLARE_ALIGNED(16, static int16_t,
-                default_scan_32x32_neighbors[1025 * MAX_NEIGHBORS]);
+DECLARE_ALIGNED(16, static int16_t, default_scan_4x4_neighbors[16 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, col_scan_4x4_neighbors[16 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, row_scan_4x4_neighbors[16 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, default_scan_8x8_neighbors[64 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, col_scan_8x8_neighbors[64 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, row_scan_8x8_neighbors[64 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, default_scan_16x16_neighbors[256 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, col_scan_16x16_neighbors[256 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, row_scan_16x16_neighbors[256 + 1][2]);
+DECLARE_ALIGNED(16, static int16_t, default_scan_32x32_neighbors[1024 + 1][2]);
 
 DECLARE_ALIGNED(16, static int16_t, vp9_default_iscan_4x4[16]);
 DECLARE_ALIGNED(16, static int16_t, vp9_col_iscan_4x4[16]);
@@ -308,19 +298,21 @@ static int find_in_scan(const int16_t *scan, int l, int idx) {
 }
 
 static void init_scan_neighbors(const int16_t *scan, int16_t *iscan, int l,
-                                int16_t *neighbors) {
-  int l2 = l * l;
-  int n, i, j;
+                                int16_t (*neighbors)[2]) {
+  const int l2 = l * l;
+  int n;
+
+  for (n = 0; n < l2; ++n)
+    iscan[0] = find_in_scan(scan, l, n);
 
   // dc doesn't use this type of prediction
-  neighbors[MAX_NEIGHBORS * 0 + 0] = 0;
-  neighbors[MAX_NEIGHBORS * 0 + 1] = 0;
-  iscan[0] = find_in_scan(scan, l, 0);
-  for (n = 1; n < l2; n++) {
-    int rc = scan[n];
-    iscan[n] = find_in_scan(scan, l, n);
-    i = rc / l;
-    j = rc % l;
+  neighbors[0][0] = neighbors[0][1] = 0;
+  for (n = 1; n < l2; ++n) {
+    const int rc = scan[n];
+    const int i = rc / l;
+    const int j = rc % l;
+    const int a = (i - 1) * l + j;
+    const int b =  i * l + (j - 1);
     if (i > 0 && j > 0) {
       // col/row scan is used for adst/dct, and generally means that
       // energy decreases to zero much faster in the dimension in
@@ -330,37 +322,34 @@ static void init_scan_neighbors(const int16_t *scan, int16_t *iscan, int l,
       // Therefore, if we use ADST/DCT, prefer the DCT neighbor coeff
       // as a context. If ADST or DCT is used in both directions, we
       // use the combination of the two as a context.
-      int a = (i - 1) * l + j;
-      int b =  i      * l + j - 1;
-      if (scan == col_scan_4x4 || scan == col_scan_8x8 ||
+      if (scan == col_scan_4x4 ||
+          scan == col_scan_8x8 ||
           scan == col_scan_16x16) {
         // in the col/row scan cases (as well as left/top edge cases), we set
         // both contexts to the same value, so we can branchlessly do a+b+1>>1
         // which automatically becomes a if a == b
-        neighbors[MAX_NEIGHBORS * n + 0] =
-        neighbors[MAX_NEIGHBORS * n + 1] = a;
-      } else if (scan == row_scan_4x4 || scan == row_scan_8x8 ||
+        neighbors[n][0] = neighbors[n][1] = a;
+      } else if (scan == row_scan_4x4 ||
+                 scan == row_scan_8x8 ||
                  scan == row_scan_16x16) {
-        neighbors[MAX_NEIGHBORS * n + 0] =
-        neighbors[MAX_NEIGHBORS * n + 1] = b;
+        neighbors[n][0] = neighbors[n][1] = b;
       } else {
-        neighbors[MAX_NEIGHBORS * n + 0] = a;
-        neighbors[MAX_NEIGHBORS * n + 1] = b;
+        neighbors[n][0] = a;
+        neighbors[n][1] = b;
       }
     } else if (i > 0) {
-      neighbors[MAX_NEIGHBORS * n + 0] =
-      neighbors[MAX_NEIGHBORS * n + 1] = (i - 1) * l + j;
+      neighbors[n][0] = neighbors[n][1] = a;
     } else {
       assert(j > 0);
-      neighbors[MAX_NEIGHBORS * n + 0] =
-      neighbors[MAX_NEIGHBORS * n + 1] =  i      * l + j - 1;
+      neighbors[n][0] = neighbors[n][1] = b;
     }
-    assert(iscan[neighbors[MAX_NEIGHBORS * n + 0]] < n);
+
+    assert(iscan[neighbors[n][0]] < n);
+    assert(iscan[neighbors[n][1]] < n);
   }
   // one padding item so we don't have to add branches in code to handle
   // calls to get_coef_context() for the token after the final dc token
-  neighbors[MAX_NEIGHBORS * l2 + 0] = 0;
-  neighbors[MAX_NEIGHBORS * l2 + 1] = 0;
+  neighbors[l2][0] = neighbors[l2][1] = 0;
 }
 
 void vp9_init_neighbors() {

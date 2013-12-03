@@ -17,23 +17,20 @@
 #include "vp9/common/vp9_enums.h"
 #include "vp9/common/vp9_blockd.h"
 
-#define MAX_NEIGHBORS 2
-
 void vp9_init_neighbors();
 
 typedef struct {
   const int16_t *scan;
   const int16_t *iscan;
-  const int16_t *neighbors;
+  const int16_t (*neighbors)[2];
 } scan_order;
 
 extern const scan_order vp9_default_scan_orders[TX_SIZES];
 extern const scan_order vp9_scan_orders[TX_SIZES][TX_TYPES];
 
-static INLINE int get_coef_context(const int16_t *neighbors,
+static INLINE int get_coef_context(const int16_t (*neighbors)[2],
                                    const uint8_t *token_cache, int c) {
-  return (1 + token_cache[neighbors[MAX_NEIGHBORS * c + 0]] +
-          token_cache[neighbors[MAX_NEIGHBORS * c + 1]]) >> 1;
+  return (1 + token_cache[neighbors[c][0]] + token_cache[neighbors[c][1]]) >> 1;
 }
 
 #endif  // VP9_COMMON_VP9_SCAN_H_

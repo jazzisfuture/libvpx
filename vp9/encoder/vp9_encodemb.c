@@ -121,7 +121,7 @@ static const int plane_rd_mult[4] = {
 // This function is a place holder for now but may ultimately need
 // to scan previous tokens to work out the correct context.
 static int trellis_get_coeff_context(const int16_t *scan,
-                                     const int16_t *nb,
+                                     const int16_t (*nb)[2],
                                      int idx, int token,
                                      uint8_t *token_cache) {
   int bak = token_cache[scan[idx]], pt;
@@ -160,7 +160,7 @@ static void optimize_b(MACROBLOCK *mb,
   const uint8_t *const band_translate = get_band_translate(tx_size);
   const scan_order *so = get_scan(xd, tx_size, type, block);
   const int16_t *scan = so->scan;
-  const int16_t *nb = so->neighbors;
+  const int16_t (*nb)[2] = so->neighbors;
 
   assert((!type && !plane) || (type && plane));
   dqcoeff_ptr = BLOCK_OFFSET(pd->dqcoeff, block);
