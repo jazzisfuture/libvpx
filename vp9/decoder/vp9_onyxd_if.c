@@ -29,6 +29,7 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "./vpx_scale_rtcd.h"
 
+extern int is_full[BLOCK_TYPES][REF_TYPES][TX_SIZES][3][128];
 #define WRITE_RECON_BUFFER 0
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(const char *name,
@@ -155,7 +156,7 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   init_macroblockd(pbi);
 
   vp9_worker_init(&pbi->lf_worker);
-
+  vp9_zero(is_full);
   return pbi;
 }
 
