@@ -19,6 +19,8 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/decoder/vp9_onyxd_int.h"
 
+#include "vp9/encoder/vp9_boolhuff.h"
+
 #define EOB_CONTEXT_NODE            0
 #define ZERO_CONTEXT_NODE           1
 #define ONE_CONTEXT_NODE            2
@@ -55,6 +57,68 @@
 #define CAT5_PROB2 141
 #define CAT5_PROB3 157
 #define CAT5_PROB4 180
+
+typedef struct {
+  BD_VALUE lowvalue;
+  unsigned int range;
+  int count;
+} bw_state;
+
+bw_state full_set[TX_SIZES][BLOCK_TYPES][REF_TYPES][3][128][3];
+int is_full[TX_SIZES][BLOCK_TYPES][REF_TYPES][3][128] = {0};
+
+#define BD_VALUEIZE(V, C) ((BD_VALUE)(V)) << (BD_VALUE_SIZE - 8 - (C));
+static void fill_table(bw_state *fs, PLANE_TYPE type, int is_inter,
+                        TX_SIZE tx_size, int context,
+                        int range, int prob1, int prob2) {
+  unsigned int split;
+  int count = 0;
+  unsigned int lowvalue = 0;
+  unsigned int shift;
+  is_full[tx_size][type][is_inter][context][range-128] = 1;
+
+  // bit 0 start
+  split = 1 + (((range - 1) * prob1) >> 8);
+
+  // 0 means eob -> store 0 values and end
+  shift = vp9_norm[split];
+  fs[0].range = split << shift;
+  fs[0].count = count + shift;
+  fs[0].lowvalue = 0;
+
+  // right side for zero node
+  lowvalue += split;
+  range -= split;
+  shift = vp9_norm[range];
+  range <<= shift;
+  count += shift;
+  lowvalue <<= shift;
+
+  // bit 0 complete
+
+  // bit 1 start
+  split = 1 + (((range - 1) * prob2) >> 8);
+
+  // store these for zero node
+  shift = vp9_norm[split];
+  fs[1].range = split << shift;
+  fs[1].count = count + shift;
+  fs[1].lowvalue = BD_VALUEIZE(lowvalue << shift, fs[1].count);
+
+  // right side for zero node
+  lowvalue += split;
+  range -= split;
+  shift = vp9_norm[range];
+  range <<= shift;
+  count += shift;
+  lowvalue <<= shift;
+
+  fs[2].range = range;
+  fs[2].count = count;
+  fs[2].lowvalue = BD_VALUEIZE(lowvalue, fs[2].count);
+
+  // bit 1 end
+}
 
 static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
@@ -115,8 +179,53 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int16_t *nb = so->neighbors;
   int v;
   int16_t dqv = dq[0];
+  bw_state *fs = &full_set[tx_size][type][ref][pt][r->range-128][0];
 
+  if (r->count < 0)
+    vp9_reader_fill(r);
 
+  if (!is_full[tx_size][type][ref][pt][r->range-128])
+    fill_table(fs, type, ref, tx_size, pt, r->range,
+               coef_probs[0][pt][EOB_CONTEXT_NODE],
+               coef_probs[0][pt][ZERO_CONTEXT_NODE]);
+
+  band = *band_translate++;
+
+  if (!cm->frame_parallel_decoding_mode)
+    ++eob_branch_count[band][pt];
+
+  if (r->value < fs[1].lowvalue) {
+    // eob
+    r->value <<= fs[0].count;
+    r->count -= fs[0].count;
+    r->range = fs[0].range;
+
+    if (!cm->frame_parallel_decoding_mode) {
+      ++coef_counts[band][pt][DCT_EOB_MODEL_TOKEN];
+    }
+    return c;
+
+  } else {
+    if (r->count < fs[1].count || r->count < fs[2].count )
+      vp9_reader_fill(r);
+    if (r->value < fs[2].lowvalue) {
+      // zero token
+      r->value -= fs[1].lowvalue;
+      r->value <<= fs[1].count;
+      r->count -= fs[1].count;
+      r->range = fs[1].range;
+      prob = coef_probs[band][pt];
+      goto ZERO_DECODED;
+    } else {
+      // not 0 or eob
+      r->value -= fs[2].lowvalue;
+      r->value <<= fs[2].count;
+      r->count -= fs[2].count;
+      r->range = fs[2].range;
+      prob = coef_probs[band][pt];
+      goto NON_ZERO;
+    }
+  }
 
   while (c < seg_eob) {
     int val;
@@ -129,6 +238,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   DECODE_ZERO:
     if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+      ZERO_DECODED:
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
       ++c;
@@ -139,7 +249,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       prob = coef_probs[band][pt];
       goto DECODE_ZERO;
     }
-
+    NON_ZERO:
     // ONE_CONTEXT_NODE_0_
     if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);

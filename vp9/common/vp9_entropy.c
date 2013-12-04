@@ -503,6 +503,7 @@ void vp9_coef_tree_initialize() {
 #define COEF_MAX_UPDATE_FACTOR_KEY 112
 #define COEF_COUNT_SAT_AFTER_KEY 24
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
+extern int is_full[TX_SIZES][BLOCK_TYPES][REF_TYPES][3][128];
 
 static void adapt_coef_probs(VP9_COMMON *cm, TX_SIZE tx_size,
                              unsigned int count_sat,
@@ -531,6 +532,14 @@ static void adapt_coef_probs(VP9_COMMON *cm, TX_SIZE tx_size,
                                                 pre_coef_probs[i][j][k][l][m],
                                                 branch_ct[m],
                                                 count_sat, update_factor);
+          if (k == 0) {
+            if (dst_coef_probs[i][j][k][l][0]
+                != pre_coef_probs[i][j][k][l][0]
+                || dst_coef_probs[i][j][k][l][1]
+                != pre_coef_probs[i][j][k][l][1])
+              vpx_memset(is_full[tx_size][i][j][l], 0,
+                         sizeof(is_full[tx_size][i][j][l]));
+          }
         }
 }
 
