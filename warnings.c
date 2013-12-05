@@ -81,7 +81,7 @@ static void check_lag_in_frames_realtime_deadline(
 
 static void check_quantizer(int min_q, int max_q,
                             struct WarningList *warning_list) {
-  if (min_q == max_q || abs(max_q - min_q) < 8)
+  if (max_q != 0 && (min_q == max_q || abs(max_q - min_q) < 8))
     add_warning(quantizer_warning_string, warning_list);
 }
 
