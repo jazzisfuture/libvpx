@@ -1654,7 +1654,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 
         // If obtained distortion is very small, choose current partition
         // and stop splitting.
-        if (this_dist < stop_thresh) {
+        if (!x->e_mbd.lossless && this_dist < stop_thresh) {
           do_split = 0;
           do_rect = 0;
         }
