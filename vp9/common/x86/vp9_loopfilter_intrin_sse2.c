@@ -12,7 +12,7 @@
 #include "vp9/common/vp9_loopfilter.h"
 #include "vpx_ports/emmintrin_compat.h"
 
-static void mb_lpf_horizontal_edge_w_sse2_8(unsigned char *s,
+static void vp9_mb_lpf_horizontal_edge_w_8_sse2(unsigned char *s,
                                             int p,
                                             const unsigned char *_blimit,
                                             const unsigned char *_limit,
@@ -364,7 +364,7 @@ static void mb_lpf_horizontal_edge_w_sse2_8(unsigned char *s,
   }
 }
 
-static void mb_lpf_horizontal_edge_w_sse2_16(unsigned char *s,
+static void vp9_mb_lpf_horizontal_edge_w_16_sse2(unsigned char *s,
                                              int p,
                                              const unsigned char *_blimit,
                                              const unsigned char *_limit,
@@ -843,19 +843,6 @@ static void mb_lpf_horizontal_edge_w_sse2_16(unsigned char *s,
       }
     }
   }
-}
-
-// TODO(yunqingwang): remove count and call these 2 functions(8 or 16) directly.
-void vp9_mb_lpf_horizontal_edge_w_sse2(unsigned char *s,
-                                       int p,
-                                       const unsigned char *_blimit,
-                                       const unsigned char *_limit,
-                                       const unsigned char *_thresh,
-                                       int count) {
-  if (count == 1)
-    mb_lpf_horizontal_edge_w_sse2_8(s, p, _blimit, _limit, _thresh);
-  else
-    mb_lpf_horizontal_edge_w_sse2_16(s, p, _blimit, _limit, _thresh);
 }
 
 void vp9_mbloop_filter_horizontal_edge_sse2(unsigned char *s,
@@ -1695,7 +1682,7 @@ void vp9_mb_lpf_vertical_edge_w_sse2(unsigned char *s, int p,
   transpose(src, p, dst, 8, 2);
 
   // Loop filtering
-  mb_lpf_horizontal_edge_w_sse2_8(t_dst + 8 * 8, 8, blimit, limit, thresh);
+  vp9_mb_lpf_horizontal_edge_w_8_sse2(t_dst + 8 * 8, 8, blimit, limit, thresh);
 
   src[0] = t_dst;
   src[1] = t_dst + 8 * 8;
@@ -1717,7 +1704,7 @@ void vp9_mb_lpf_vertical_edge_w_16_sse2(unsigned char *s, int p,
   transpose8x16(s, s + 8 * p, p, t_dst + 8 * 16, 16);
 
   // Loop filtering
-  mb_lpf_horizontal_edge_w_sse2_16(t_dst + 8 * 16, 16, blimit, limit,
+  vp9_mb_lpf_horizontal_edge_w_16_sse2(t_dst + 8 * 16, 16, blimit, limit,
                                    thresh);
 
   // Transpose back
