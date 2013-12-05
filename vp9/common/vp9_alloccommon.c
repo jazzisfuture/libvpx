@@ -19,18 +19,6 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_systemdependent.h"
 
-void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
-  const int stride = cm->mode_info_stride;
-  int i;
-
-  // Clear down top border row
-  vpx_memset(mi, 0, sizeof(MODE_INFO) * stride);
-
-  // Clear left border column
-  for (i = 1; i < cm->mi_rows + 1; i++)
-    vpx_memset(&mi[i * stride], 0, sizeof(MODE_INFO));
-}
-
 void vp9_free_frame_buffers(VP9_COMMON *cm) {
   int i;
 
@@ -74,9 +62,6 @@ static void setup_mi(VP9_COMMON *cm) {
   vpx_memset(cm->mi_grid_base, 0,
              cm->mode_info_stride * (cm->mi_rows + 1) *
              sizeof(*cm->mi_grid_base));
-
-  vp9_update_mode_info_border(cm, cm->mip);
-  vp9_update_mode_info_border(cm, cm->prev_mip);
 }
 
 int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
