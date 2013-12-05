@@ -79,6 +79,12 @@ enum vp8_dec_control_id {
   /** For testing. */
   VP9_INVERT_TILE_DECODE_ORDER,
 
+  /** control function to get the size of one reference frame in bytes. The
+   * control function parameter is an integer array with 3 elements. The first
+   * element is width in pixels. The second element is the height in pixels.
+   * The third element is the returned size of the reference frame in bytes. */
+  VP9D_GET_REF_FRAME_SIZE,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -110,6 +116,7 @@ VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED,      int *)
 VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,          vp8_decrypt_init *)
 VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,       int *)
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
+VPX_CTRL_USE_TYPE(VP9D_GET_REF_FRAME_SIZE,       int *)
 
 /*! @} - end defgroup vp8_decoder */
 

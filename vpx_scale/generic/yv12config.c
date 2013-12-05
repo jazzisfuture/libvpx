@@ -210,4 +210,29 @@ int vp9_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
   }
   return -2;
 }
+
+int vp9_get_frame_buffer_size(int width, int height,
+                              int ss_x, int ss_y, int border) {
+  const int aligned_width = (width + 7) & ~7;
+  const int aligned_height = (height + 7) & ~7;
+  const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
+  const int yplane_size = (aligned_height + 2 * border) * y_stride;
+  const int uv_height = aligned_height >> ss_y;
+  const int uv_stride = y_stride >> ss_x;
+  const int uv_border_h = border >> ss_y;
+  const int uvplane_size = (uv_height + 2 * uv_border_h) * uv_stride;
+#if CONFIG_ALPHA
+  const int alpha_height = aligned_height;
+  const int alpha_stride = y_stride;
+  const int alpha_border_h = border;
+  const int alpha_plane_size = (alpha_height + 2 * alpha_border_h) *
+                               alpha_stride;
+  const int frame_size = yplane_size + 2 * uvplane_size +
+                         alpha_plane_size;
+#else
+  const int frame_size = yplane_size + 2 * uvplane_size;
+#endif
+
+  return frame_size;
+}
 #endif

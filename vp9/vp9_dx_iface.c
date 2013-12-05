@@ -694,6 +694,48 @@ static vpx_codec_err_t set_invert_tile_order(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t get_reference_frame_size(vpx_codec_alg_priv_t *ctx,
+                                                int ctrl_id,
+                                                va_list args) {
+  int *const input_size = va_arg(args, int *);
+
+  if (input_size) {
+    int width = input_size[0];
+    int height = input_size[1];
+    int ss_x = 1;
+    int ss_y = 1;
+
+    const VP9D_COMP *const pbi = (VP9D_COMP *)ctx->pbi;
+    if (pbi) {
+      if (width <= 0)
+        width = pbi->common.width;
+      if (height <= 0)
+        height = pbi->common.height;
+
+      ss_x = pbi->common.subsampling_x;
+      ss_y = pbi->common.subsampling_y;
+    }
+
+    input_size[2] = 0;
+
+    if (width > 0 && height > 0) {
+      const int align_addr_extra_size = 31;
+      const int size = vp9_get_frame_buffer_size(width, height,
+                                                 ss_x, ss_y,
+                                                 VP9BORDERINPIXELS);
+
+      // Increase the size of the reference frame so the decoder can align any
+      // buffer passed in.
+      input_size[2] = size + align_addr_extra_size;
+      return VPX_CODEC_OK;
+    } else {
+      return VPX_CODEC_ERROR;
+    }
+  } else {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+}
+
 static vpx_codec_ctrl_fn_map_t ctf_maps[] = {
   {VP8_SET_REFERENCE,             set_reference},
   {VP8_COPY_REFERENCE,            copy_reference},
@@ -707,6 +749,7 @@ static vpx_codec_ctrl_fn_map_t ctf_maps[] = {
   {VP9_GET_REFERENCE,             get_reference},
   {VP9D_GET_DISPLAY_SIZE,         get_display_size},
   {VP9_INVERT_TILE_DECODE_ORDER,  set_invert_tile_order},
+  {VP9D_GET_REF_FRAME_SIZE,       get_reference_frame_size},
   { -1, NULL},
 };
 

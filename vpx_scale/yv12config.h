@@ -69,6 +69,9 @@ extern "C" {
                                int border);
   int vp9_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
 
+  int vp9_get_frame_buffer_size(int width, int height,
+                                int ss_x, int ss_y, int border);
+
 #ifdef __cplusplus
 }
 #endif
