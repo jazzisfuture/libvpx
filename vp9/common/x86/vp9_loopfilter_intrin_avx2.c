@@ -10,7 +10,7 @@
 
 #include <immintrin.h>  /* AVX2 */
 
-static void mb_lpf_horizontal_edge_w_avx2_8(unsigned char *s, int p,
+void vp9_mb_lpf_horizontal_edge_w_8_avx2(unsigned char *s, int p,
         const unsigned char *_blimit, const unsigned char *_limit,
         const unsigned char *_thresh) {
     __m128i mask, hev, flat, flat2;
@@ -392,7 +392,7 @@ static void mb_lpf_horizontal_edge_w_avx2_8(unsigned char *s, int p,
     }
 }
 
-static void mb_lpf_horizontal_edge_w_avx2_16(unsigned char *s, int p,
+void vp9_mb_lpf_horizontal_edge_w_16_avx2(unsigned char *s, int p,
         const unsigned char *_blimit, const unsigned char *_limit,
         const unsigned char *_thresh) {
     __m128i mask, hev, flat, flat2;
@@ -931,13 +931,4 @@ static void mb_lpf_horizontal_edge_w_avx2_16(unsigned char *s, int p,
         q6 = _mm_or_si128(flat2_q6, q6);
         _mm_storeu_si128((__m128i *) (s + 6 * p), q6);
     }
-}
-
-void vp9_mb_lpf_horizontal_edge_w_avx2(unsigned char *s, int p,
-        const unsigned char *_blimit, const unsigned char *_limit,
-        const unsigned char *_thresh, int count) {
-    if (count == 1)
-        mb_lpf_horizontal_edge_w_avx2_8(s, p, _blimit, _limit, _thresh);
-    else
-        mb_lpf_horizontal_edge_w_avx2_16(s, p, _blimit, _limit, _thresh);
 }

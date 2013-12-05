@@ -8,27 +8,28 @@
 ;  be found in the AUTHORS file in the root of the source tree.
 ;
 
-    EXPORT  |vp9_mb_lpf_horizontal_edge_w_neon|
+	EXPORT  |vp9_mb_lpf_horizontal_edge_w_8_neon|
+	EXPORT  |vp9_mb_lpf_horizontal_edge_w_16_neon|
     EXPORT  |vp9_mb_lpf_vertical_edge_w_neon|
     ARM
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
 
-; void vp9_mb_lpf_horizontal_edge_w_neon(uint8_t *s, int p,
+; void vp9_mb_lpf_horizontal_edge_w_8_neon(uint8_t *s, int p,
 ;                                        const uint8_t *blimit,
 ;                                        const uint8_t *limit,
-;                                        const uint8_t *thresh
-;                                        int count)
+;                                        const uint8_t *thresh)
 ; r0    uint8_t *s,
 ; r1    int p, /* pitch */
 ; r2    const uint8_t *blimit,
 ; r3    const uint8_t *limit,
 ; sp    const uint8_t *thresh,
-|vp9_mb_lpf_horizontal_edge_w_neon| PROC
+|vp9_mb_lpf_horizontal_edge_w_8_neon| PROC
     push        {r4-r8, lr}
     vpush       {d8-d15}
     ldr         r4, [sp, #88]              ; load thresh
     ldr         r12, [sp, #92]             ; load count
+    mov			r12, #8
 
 h_count
     vld1.8      {d16[]}, [r2]              ; load *blimit
@@ -115,7 +116,110 @@ h_next
     vpop        {d8-d15}
     pop         {r4-r8, pc}
 
-    ENDP        ; |vp9_mb_lpf_horizontal_edge_w_neon|
+    ENDP        ; |vp9_mb_lpf_horizontal_edge_w_8_neon|
+
+; void vp9_mb_lpf_horizontal_edge_w_16_neon(uint8_t *s, int p,
+;                                        const uint8_t *blimit,
+;                                        const uint8_t *limit,
+;                                        const uint8_t *thresh)
+; r0    uint8_t *s,
+; r1    int p, /* pitch */
+; r2    const uint8_t *blimit,
+; r3    const uint8_t *limit,
+; sp    const uint8_t *thresh,
+|vp9_mb_lpf_horizontal_edge_w_16_neon| PROC
+    push        {r4-r8, lr}
+    vpush       {d8-d15}
+    ldr         r4, [sp, #88]              ; load thresh
+    ldr         r12, [sp, #92]             ; load count
+    mov			r12, #16
+
+h_count
+    vld1.8      {d16[]}, [r2]              ; load *blimit
+    vld1.8      {d17[]}, [r3]              ; load *limit
+    vld1.8      {d18[]}, [r4]              ; load *thresh
+
+    sub         r8, r0, r1, lsl #3         ; move src pointer down by 8 lines
+
+    vld1.u8     {d0}, [r8@64], r1          ; p7
+    vld1.u8     {d1}, [r8@64], r1          ; p6
+    vld1.u8     {d2}, [r8@64], r1          ; p5
+    vld1.u8     {d3}, [r8@64], r1          ; p4
+    vld1.u8     {d4}, [r8@64], r1          ; p3
+    vld1.u8     {d5}, [r8@64], r1          ; p2
+    vld1.u8     {d6}, [r8@64], r1          ; p1
+    vld1.u8     {d7}, [r8@64], r1          ; p0
+    vld1.u8     {d8}, [r8@64], r1          ; q0
+    vld1.u8     {d9}, [r8@64], r1          ; q1
+    vld1.u8     {d10}, [r8@64], r1         ; q2
+    vld1.u8     {d11}, [r8@64], r1         ; q3
+    vld1.u8     {d12}, [r8@64], r1         ; q4
+    vld1.u8     {d13}, [r8@64], r1         ; q5
+    vld1.u8     {d14}, [r8@64], r1         ; q6
+    vld1.u8     {d15}, [r8@64], r1         ; q7
+
+    bl          vp9_wide_mbfilter_neon
+
+    tst         r7, #1
+    beq         h_mbfilter
+
+    ; flat && mask were not set for any of the channels. Just store the values
+    ; from filter.
+    sub         r8, r0, r1, lsl #1
+
+    vst1.u8     {d25}, [r8@64], r1         ; store op1
+    vst1.u8     {d24}, [r8@64], r1         ; store op0
+    vst1.u8     {d23}, [r8@64], r1         ; store oq0
+    vst1.u8     {d26}, [r8@64], r1         ; store oq1
+
+    b           h_next
+
+h_mbfilter
+    tst         r7, #2
+    beq         h_wide_mbfilter
+
+    ; flat2 was not set for any of the channels. Just store the values from
+    ; mbfilter.
+    sub         r8, r0, r1, lsl #1
+    sub         r8, r8, r1
+
+    vst1.u8     {d18}, [r8@64], r1         ; store op2
+    vst1.u8     {d19}, [r8@64], r1         ; store op1
+    vst1.u8     {d20}, [r8@64], r1         ; store op0
+    vst1.u8     {d21}, [r8@64], r1         ; store oq0
+    vst1.u8     {d22}, [r8@64], r1         ; store oq1
+    vst1.u8     {d23}, [r8@64], r1         ; store oq2
+
+    b           h_next
+
+h_wide_mbfilter
+    sub         r8, r0, r1, lsl #3
+    add         r8, r8, r1
+
+    vst1.u8     {d16}, [r8@64], r1         ; store op6
+    vst1.u8     {d24}, [r8@64], r1         ; store op5
+    vst1.u8     {d25}, [r8@64], r1         ; store op4
+    vst1.u8     {d26}, [r8@64], r1         ; store op3
+    vst1.u8     {d27}, [r8@64], r1         ; store op2
+    vst1.u8     {d18}, [r8@64], r1         ; store op1
+    vst1.u8     {d19}, [r8@64], r1         ; store op0
+    vst1.u8     {d20}, [r8@64], r1         ; store oq0
+    vst1.u8     {d21}, [r8@64], r1         ; store oq1
+    vst1.u8     {d22}, [r8@64], r1         ; store oq2
+    vst1.u8     {d23}, [r8@64], r1         ; store oq3
+    vst1.u8     {d1}, [r8@64], r1          ; store oq4
+    vst1.u8     {d2}, [r8@64], r1          ; store oq5
+    vst1.u8     {d3}, [r8@64], r1          ; store oq6
+
+h_next
+    add         r0, r0, #8
+    subs        r12, r12, #1
+    bne         h_count
+
+    vpop        {d8-d15}
+    pop         {r4-r8, pc}
+
+    ENDP        ; |vp9_mb_lpf_horizontal_edge_w_16_neon|
 
 ; void vp9_mb_lpf_vertical_edge_w_neon(uint8_t *s, int p,
 ;                                        const uint8_t *blimit,
