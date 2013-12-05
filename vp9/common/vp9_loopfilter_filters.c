@@ -373,16 +373,42 @@ static INLINE void filter16(int8_t mask, uint8_t hev,
   }
 }
 
-void vp9_mb_lpf_horizontal_edge_w_c(uint8_t *s, int p,
+void vp9_mb_lpf_horizontal_edge_w_8_c(uint8_t *s, int p,
                                     const uint8_t *blimit,
                                     const uint8_t *limit,
-                                    const uint8_t *thresh,
-                                    int count) {
+                                    const uint8_t *thresh) {
   int i;
 
   // loop filter designed to work using chars so that we can make maximum use
   // of 8 bit simd instructions.
-  for (i = 0; i < 8 * count; ++i) {
+  for (i = 0; i < 8 ; ++i) {
+    const uint8_t p3 = s[-4 * p], p2 = s[-3 * p], p1 = s[-2 * p], p0 = s[-p];
+    const uint8_t q0 = s[0 * p], q1 = s[1 * p], q2 = s[2 * p], q3 = s[3 * p];
+    const int8_t mask = filter_mask(*limit, *blimit,
+                                    p3, p2, p1, p0, q0, q1, q2, q3);
+    const int8_t hev = hev_mask(*thresh, p1, p0, q0, q1);
+    const int8_t flat = flat_mask4(1, p3, p2, p1, p0, q0, q1, q2, q3);
+    const int8_t flat2 = flat_mask5(1,
+                             s[-8 * p], s[-7 * p], s[-6 * p], s[-5 * p], p0,
+                             q0, s[4 * p], s[5 * p], s[6 * p], s[7 * p]);
+
+    filter16(mask, hev, flat, flat2,
+             s - 8 * p, s - 7 * p, s - 6 * p, s - 5 * p,
+             s - 4 * p, s - 3 * p, s - 2 * p, s - 1 * p,
+             s,         s + 1 * p, s + 2 * p, s + 3 * p,
+             s + 4 * p, s + 5 * p, s + 6 * p, s + 7 * p);
+    ++s;
+  }
+
+void vp9_mb_lpf_horizontal_edge_w_16_c(uint8_t *s, int p,
+                                    const uint8_t *blimit,
+                                    const uint8_t *limit,
+                                    const uint8_t *thresh) {
+  int i;
+
+  // loop filter designed to work using chars so that we can make maximum use
+  // of 8 bit simd instructions.
+  for (i = 0; i < 16; ++i) {
     const uint8_t p3 = s[-4 * p], p2 = s[-3 * p], p1 = s[-2 * p], p0 = s[-p];
     const uint8_t q0 = s[0 * p], q1 = s[1 * p], q2 = s[2 * p], q3 = s[3 * p];
     const int8_t mask = filter_mask(*limit, *blimit,
