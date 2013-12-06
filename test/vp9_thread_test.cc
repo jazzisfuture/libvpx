@@ -141,6 +141,8 @@ TEST(VP9DecodeMTTest, MTDecode2) {
       "68ede6abd66bae0a2edf2eb9232241b6" },
     { "vp90-2-08-tile_1x4_frame_parallel.webm",
       "368ebc6ebf3a5e478d85b2c3149b2848" },
+    { "vp90-2-08-tile_1x8_frame_parallel.webm",
+      "17e439da2388aff3a0f69cb22579c6c1" },
   };
 
   for (int i = 0; i < static_cast<int>(sizeof(files) / sizeof(files[0])); ++i) {
