@@ -20,6 +20,64 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+static void vpx_borders_set(uint8_t *dst, int width,
+                            int height, int dst_stride, int val) {
+  int i;
+  if (height < 0 || width < 0) {
+    i = 0;
+  }
+
+  for (i = 0; i < height; i++) {
+    vpx_memset(dst, val, width);
+    dst += dst_stride;
+  }
+}
+
+static void vpx_borders_copy_horz(uint8_t *dst, int width,
+                            int height, int dst_stride, uint8_t *src) {
+  int i, j, test;
+
+  if (height < 0 || width < 0) {
+    i = 0;
+  }
+
+  for (i = 0; i <= height; i++) {
+    vpx_memcpy(dst, src, width+1);
+    for (j = 0; j < width+1; j++) {
+      if (*(dst+j) != *(src+j)) {
+        test = 0;
+      }
+    }
+    dst += dst_stride;
+  }
+}
+
+static void vpx_borders_copy_vert(uint8_t *dst, int width,
+                            int height, int dst_stride, uint8_t *src, int src_stride) {
+  int i;
+  if (height < 0 || width < 0) {
+    i = 0;
+  }
+  for (i = 0; i <= height; i++) {
+    vpx_memset(dst, *src, width);
+    src += src_stride;
+    dst += dst_stride;
+  }
+}
+
+static void vpx_borders_copy_block(uint8_t *dst, int width,
+                            int height, int dst_stride, uint8_t *src, int src_stride) {
+  int i,j, test;
+  if (height < 0 || width < 0) {
+    i = 0;
+  }
+
+   for (i = 0; i <= height; i++) {
+    vpx_memcpy(dst, src, width);
+    src += src_stride;
+    dst += dst_stride;
+  }
+}
 
 static void inter_predictor(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
@@ -252,7 +310,18 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 
     uint8_t *pre;
     MV32 scaled_mv;
-    int xs, ys;
+    int xs, ys, x0, y0, x1, y1, i, frame_width, frame_height, buf_stride;
+    uint8_t *ref_frame = NULL, *buf_ptr = NULL, *src_ptr = NULL, *dst_ptr = NULL;
+
+    if (plane == 0) {
+      frame_width = xd->ref_buf[ref]->y_crop_width;
+      frame_height = xd->ref_buf[ref]->y_crop_height;
+      ref_frame = xd->ref_buf[ref]->y_buffer;
+    } else {
+      frame_width = xd->ref_buf[ref]->uv_crop_width;
+      frame_height = xd->ref_buf[ref]->uv_crop_height;
+      ref_frame =  plane == 1 ? xd->ref_buf[ref]->u_buffer : xd->ref_buf[ref]->v_buffer;
+    }
 
     if (vp9_is_scaled(scale->sfc)) {
       pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, scale);
@@ -267,10 +336,175 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       xs = ys = 16;
     }
 
+
+    if (scaled_mv.col != 0 || scaled_mv.row != 0 || (frame_width & 0xf) || (frame_height & 0xf)) {
+    // get reference block position in reference frame based on scaled_mv
+    // get reference block top left pixel coordinate
+    x0 = ((-xd->mb_to_left_edge + (mv_q4.col >> (1 - pd->subsampling_x))) >> (3 + pd->subsampling_x)) + x;
+    y0 = ((-xd->mb_to_top_edge + (mv_q4.row >> (1 - pd->subsampling_y))) >> (3 + pd->subsampling_y)) + y;
+
+    // get reference block bottom right pixel coordinate
+    x1 = x0 + (4 << pred_w);
+    y1 = y0 + (4 << pred_h);
+
+    if ((scaled_mv.col & 0xf) || scaled_mv.row & 0xf) {
+     x0 -= 3;
+     y0 -= 3;
+     x1 += 4;
+     y1 += 4;
+    }
+
+    buf_ptr = ref_frame +  y0 * pre_buf->stride + x0;
+    buf_stride = pre_buf->stride;
+
+
+
+    if (y0 < 0) {
+      if (x0 < 0) {
+        if (x1 < 0) {
+          if (y1 <= 0) {
+            vpx_borders_set(buf_ptr, x1 - x0, y1-y0, buf_stride, *ref_frame);
+          } else if (y1 >0 && y1 <= frame_height -1){
+            vpx_borders_set(buf_ptr, x1 - x0, -y0, buf_stride, *ref_frame);
+            vpx_borders_copy_vert(buf_ptr - y0 * buf_stride, x1 - x0, y1, buf_stride, ref_frame, pre_buf->stride);
+          } else {
+            vpx_borders_set(buf_ptr, x1 - x0, -y0, buf_stride, *ref_frame);
+            vpx_borders_copy_vert(buf_ptr - y0 * buf_stride, x1 - x0, frame_height, buf_stride, ref_frame, pre_buf->stride);
+            vpx_borders_set(buf_ptr + buf_stride*(frame_height - y0), x1 - x0, y1 - (frame_height -1), buf_stride, *(ref_frame + (frame_height -1 ) * pre_buf->stride));
+          }
+        } else if (x1 > frame_width -1) {
+          if (y1 <= 0) {
+            vpx_borders_set(buf_ptr, - x0, y1-y0, buf_stride, *ref_frame);
+            vpx_borders_copy_horz(buf_ptr - x0, frame_width-1,  y1-y0, buf_stride, ref_frame);
+            vpx_borders_set(buf_ptr + (frame_width-1) - x0, x1 - (frame_width-1), y1-y0, buf_stride, *(ref_frame+frame_width-1));
+          } else if (y1 > 0 && y1 <= frame_height -1) {
+            vpx_borders_copy_horz(buf_ptr - x0, frame_width-1,  -y0, buf_stride, ref_frame);
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 -y0, buf_stride, buf_ptr - x0, buf_stride);
+            vpx_borders_copy_vert(buf_ptr + frame_width -1 -x0, x1 - (frame_width -1), y1 -y0, buf_stride, buf_ptr + frame_width -1 -x0, buf_stride);
+          } else {
+            vpx_borders_copy_horz(buf_ptr - x0, frame_width-1,  -y0, buf_stride, ref_frame);
+            vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1 - y0) - x0, frame_width-1,  -y0, buf_stride, ref_frame + (frame_height -1 ) * pre_buf->stride);
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 -y0, buf_stride, buf_ptr - x0, buf_stride);
+            vpx_borders_copy_vert(buf_ptr + frame_width -1 -x0, x1 - (frame_width -1), y1 -y0, buf_stride, buf_ptr + frame_width -1 -x0, buf_stride);
+          }
+        } else {
+          if (y1 <= 0) {
+            vpx_borders_set(buf_ptr, - x0, y1-y0, buf_stride, *ref_frame);
+            vpx_borders_copy_horz(buf_ptr - x0, x1,  y1-y0, buf_stride, ref_frame);
+          } else if (y1 > 0 && y1 <= frame_height -1) {
+            vpx_borders_copy_horz(buf_ptr - x0, frame_width-1,  -y0, buf_stride, ref_frame);
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 -y0, buf_stride, buf_ptr - x0, buf_stride);
+          } else {
+            vpx_borders_copy_horz(buf_ptr - x0, frame_width-1,  -y0, buf_stride, ref_frame);
+            vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1 - y0) - x0, frame_width-1,  -y0, buf_stride, ref_frame + (frame_height -1 ) * pre_buf->stride);
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 -y0, buf_stride, buf_ptr - x0, buf_stride);
+          }
+        }
+      } else if (x0 >= 0 && x0 <= frame_width-1) {
+          if (x1 <= frame_width -1) {
+            if (y1 <= 0) {
+              vpx_borders_copy_horz(buf_ptr, x1 - x0,  y1-y0, buf_stride, ref_frame + x0 );
+            } else if (y1 > 0 && y1 <= frame_height -1) {
+              vpx_borders_copy_horz(buf_ptr, x1 - x0,  -y0, buf_stride, ref_frame + x0 );
+            } else {
+              vpx_borders_copy_horz(buf_ptr, x1 - x0,  -y0, buf_stride, ref_frame + x0 );
+              vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1-y0), x1 - x0,  -y0, buf_stride, ref_frame + (frame_height -1 ) * pre_buf->stride + x0 );
+            }
+          } else {
+            if (y1 <= 0) {
+              vpx_borders_copy_horz(buf_ptr, frame_width-1-x0,  y1-y0, buf_stride, ref_frame + x0 );
+              vpx_borders_set(buf_ptr + frame_width-1-x0, x1 - (frame_width-1), y1-y0, buf_stride, *(ref_frame+frame_width-1));
+            } else if (y1 > 0 && y1 <= frame_height -1) {
+              vpx_borders_copy_horz(buf_ptr, frame_width-1-x0,  -y0, buf_stride, ref_frame + x0 );
+              vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width-1), y1 -y0, buf_stride, buf_ptr + frame_width-1-x0, buf_stride);
+            } else {
+              vpx_borders_copy_horz(buf_ptr, frame_width-1-x0,  -y0, buf_stride, ref_frame + x0 );
+              vpx_borders_copy_horz(buf_ptr + buf_stride*(frame_height-1 - y0), frame_width-1-x0,  -y0, buf_stride, ref_frame + (frame_height -1 ) * pre_buf->stride + x0 );
+              vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width-1), y1 -y0, buf_stride, buf_ptr + frame_width-1-x0, buf_stride);
+            }
+          }
+      } else {
+        if (y1 < 0) {
+          vpx_borders_set(buf_ptr, x1 - x0, y1-y0, buf_stride, *(ref_frame+frame_width-1));
+        } else if (y1 > 0 && y1 <= frame_height -1) {
+          vpx_borders_set(buf_ptr, x1 - x0, -y0, buf_stride, *(ref_frame+frame_width-1));
+          vpx_borders_copy_vert(buf_ptr - buf_stride*y0, x1 - x0, y1, buf_stride, ref_frame + y1 * pre_buf->stride + frame_width-1, pre_buf->stride);
+        } else {
+          vpx_borders_set(buf_ptr, x1 - x0, -y0, buf_stride, *(ref_frame+frame_width-1));
+          vpx_borders_copy_vert(buf_ptr - buf_stride*y0, x1 - x0, frame_height-1, buf_stride, ref_frame + y1 * pre_buf->stride + frame_width-1, pre_buf->stride);
+          vpx_borders_set(buf_ptr +  buf_stride*(frame_height-1 -y0), x1 - x0, -y0, buf_stride, *(ref_frame+(frame_height -1 ) * pre_buf->stride+frame_width-1));
+        }
+      }
+    } else if (y0 >=0 && y0 <= frame_width -1) {
+      if (x0 <0 ) {
+        if (x1 <  0) {
+          if (y1 <= frame_height -1) {
+            vpx_borders_copy_vert(buf_ptr, x1 - x0, y1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride, pre_buf->stride);
+          } else {
+            vpx_borders_copy_vert(buf_ptr, x1 - x0, frame_height-1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride, pre_buf->stride);
+            vpx_borders_set(buf_ptr + buf_stride * (frame_height-1-y0), x1 - x0,  y1 - frame_height-1, buf_stride, *(ref_frame+(frame_height -1 ) * pre_buf->stride));
+          }
+        } else if (x1 >= 0 && x1 <= frame_width-1) {
+          if (y1 <= frame_height-1) {
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride, pre_buf->stride);
+          } else {
+            vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1-y0) - x0, x1, y1 - (frame_height -1), buf_stride, ref_frame + (frame_height-1) * pre_buf->stride);
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 - y0, buf_stride, buf_ptr - x0 , buf_stride);
+          }
+        } else {
+          if (y1 <= frame_height -1) {
+            vpx_borders_copy_vert(buf_ptr, -x0, y1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride, pre_buf->stride);
+            vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width-1), y1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride + frame_width-1, pre_buf->stride);
+          } else {
+            vpx_borders_copy_vert(buf_ptr, -x0, frame_height-1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride, pre_buf->stride);
+            vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width-1), frame_height-1 - y0, buf_stride, ref_frame + y0 * pre_buf->stride + frame_width-1, pre_buf->stride);
+            vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1-y0), x1 - x0,  y1 - (frame_height -1), buf_stride, buf_ptr + buf_stride * (frame_height-1-y0));
+          }
+        }
+      } else if (x0 >= 0 && x0 <= frame_width-1) {
+          if (x1 >= 0 && x1 <= frame_width-1 ) {
+            if (y1 > frame_height -1) {
+              vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1-y0), x1 - x0,  y1 - (frame_height -1), buf_stride, buf_ptr + buf_stride * (frame_height-1-y0));
+            }
+          } else {
+            if (y1 >= 0  && y1 <= frame_height -1 ) {
+              vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width -1), y1 - y0, buf_stride, buf_ptr + frame_width-1-x0, pre_buf->stride);
+            } else {
+              vpx_borders_copy_horz(buf_ptr + buf_stride * (frame_height-1-y0), frame_width -1 - x0,  y1 - (frame_height -1), buf_stride, ref_frame+(frame_height -1 ) * pre_buf->stride + x0);
+              vpx_borders_copy_vert(buf_ptr + frame_width-1-x0, x1 - (frame_width -1), y1 - y0, buf_stride, buf_ptr + frame_width-1-x0, pre_buf->stride);
+            }
+          }
+      } else {
+        if (y1 >= 0  && y1 <= frame_height -1 ) {
+          vpx_borders_copy_vert(buf_ptr, x1 - x0, y1 - y0, buf_stride, ref_frame+y0*pre_buf->stride+frame_width-1, pre_buf->stride);
+        } else {
+          vpx_borders_copy_vert(buf_ptr, x1 - x0, y1 - y0, buf_stride, ref_frame+y0*pre_buf->stride+frame_width-1, pre_buf->stride);
+          vpx_borders_set(buf_ptr + buf_stride*(frame_height -1 - y0), x1 - x0, y1 - (frame_height -1), buf_stride, *(ref_frame+(frame_height -1 ) * pre_buf->stride+frame_width-1));
+        }
+      }
+    } else {
+      if (x0 <0 ) {
+        if (x1 < 0) {
+          vpx_borders_set(buf_ptr, x1 - x0, y1-y0, buf_stride, *(ref_frame+(frame_height-1)*pre_buf->stride));
+        } else if ( x1 >= 0 && x1 <= frame_width -1) {
+          vpx_borders_set(buf_ptr, - x0, y1-y0, buf_stride, *(ref_frame+(frame_height-1)*pre_buf->stride));
+          //vpx_borders_copy_horz(buf_ptr -x0 , x1, y1 - y0, buf_stride, ref_frame+(frame_height-1)*pre_buf->stride);
+        } else {
+
+        }
+      } else if (x0 >= 0 && x0 <= frame_width-1) {
+
+      } else {
+
+      }
+    }
+
+
+    done:
     inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
-                    &scaled_mv, scale,
-                    4 << pred_w, 4 << pred_h, ref,
-                    &xd->subpix, xs, ys);
+                     &scaled_mv, scale,
+                     4 << pred_w, 4 << pred_h, ref,
+                     &xd->subpix, xs, ys);
   }
 }
 

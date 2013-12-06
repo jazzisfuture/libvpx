@@ -379,6 +379,8 @@ static void set_ref(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   const int ref = mbmi->ref_frame[idx] - LAST_FRAME;
   const YV12_BUFFER_CONFIG *cfg = get_frame_ref_buffer(cm, ref);
   const struct scale_factors_common *sfc = &cm->active_ref_scale_comm[ref];
+
+  xd->ref_buf[idx] = cfg;
   if (!vp9_is_valid_scale(sfc))
     vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                        "Invalid scale factors");
@@ -1285,6 +1287,8 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
+
+  xd->cur_buf = new_fb;
 
   if (!first_partition_size) {
       // showing a frame directly
