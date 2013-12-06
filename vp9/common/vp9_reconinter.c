@@ -21,6 +21,51 @@
 #include "vp9/common/vp9_reconintra.h"
 
 
+static void build_mc_border(uint8_t *dst, const uint8_t *src, int stride,
+                            int x, int y, int b_w, int b_h, int w, int h) {
+  const uint8_t *ref_row;
+
+  /* Get a pointer to the start of the real data for this row */
+  ref_row = src - x - y * stride;
+
+  if (y >= h)
+    ref_row += (h - 1) * stride;
+  else if (y > 0)
+    ref_row += y * stride;
+
+  do {
+    int left, right = 0, copy;
+
+    left = x < 0 ? -x : 0;
+
+    if (left > b_w)
+      left = b_w;
+
+    if (x + b_w > w)
+      right = x + b_w - w;
+
+    if (right > b_w)
+      right = b_w;
+
+    copy = b_w - left - right;
+
+    if (left)
+      memset(dst, ref_row[0], left);
+
+    if (copy)
+      memcpy(dst + left, ref_row + x + left, copy);
+
+    if (right)
+      memset(dst + left + copy, ref_row[w-1], right);
+
+      dst += stride;
+      y++;
+
+      if (y < h && y > 0)
+        ref_row += stride;
+  } while (--b_h);
+}
+
 static void inter_predictor(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
                             const MV32 *mv,
@@ -236,7 +281,19 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 
     uint8_t *pre;
     MV32 scaled_mv;
-    int xs, ys;
+    int xs, ys, x0, y0, x1, y1, frame_width, frame_height, buf_stride;
+    uint8_t *ref_frame = NULL, *buf_ptr = NULL;
+
+    if (plane == 0) {
+      frame_width = xd->ref_buf[ref]->y_crop_width;
+      frame_height = xd->ref_buf[ref]->y_crop_height;
+      ref_frame = xd->ref_buf[ref]->y_buffer;
+    } else {
+      frame_width = xd->ref_buf[ref]->uv_crop_width;
+      frame_height = xd->ref_buf[ref]->uv_crop_height;
+      ref_frame =  plane == 1 ? xd->ref_buf[ref]->u_buffer :
+                            xd->ref_buf[ref]->v_buffer;
+    }
 
     if (vp9_is_scaled(scale->sfc)) {
       pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, scale);
@@ -251,8 +308,46 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       xs = ys = 16;
     }
 
+    // extend boarder if need interpolation or width/height not alligned to 8
+    if (scaled_mv.col || scaled_mv.row ||
+        (frame_width & 0x7) || (frame_height & 0x7)) {
+      // get reference block position in reference frame based on scaled_mv
+      // get reference block top left pixel coordinate
+      x0 = ((-xd->mb_to_left_edge +
+        (mv_q4.col >> (1 - pd->subsampling_x))) >> (3 + pd->subsampling_x)) + x;
+      y0 = ((-xd->mb_to_top_edge +
+        (mv_q4.row >> (1 - pd->subsampling_y))) >> (3 + pd->subsampling_y)) + y;
+
+      // get reference block bottom right pixel coordinate
+      x1 = x0 + w;
+      y1 = y0 + h;
+
+      if (scaled_mv.col & SUBPEL_MASK) {
+       x0 -= VP9_INTERP_EXTEND - 1;
+       x1 += VP9_INTERP_EXTEND;
+      }
+
+      if (scaled_mv.row & SUBPEL_MASK) {
+        y0 -= VP9_INTERP_EXTEND - 1;
+        y1 += VP9_INTERP_EXTEND;
+      }
+
+      // skip if block is inside the frame
+      if (x0 < 0 || x0 > frame_width -1 || x1 < 0 || x1 > frame_width ||
+          y0 < 0 || y0 > frame_height -1 || y1 < 0 || y1 > frame_height -1) {
+        // get reference block pointer
+        buf_ptr = ref_frame +  y0 * pre_buf->stride + x0;
+        buf_stride = pre_buf->stride;
+
+        // extend the boarder
+        build_mc_border(buf_ptr, buf_ptr, buf_stride, x0, y0, x1 - x0, y1 - y0,
+                        frame_width, frame_height);
+      }
+    }
+
     inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
-                    &scaled_mv, scale, w, h, ref, &xd->subpix, xs, ys);
+                    &scaled_mv, scale,
+                    w, h, ref, &xd->subpix, xs, ys);
   }
 }
 
