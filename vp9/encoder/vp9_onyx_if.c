@@ -1785,7 +1785,9 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
       vp9_sad4x4x3, vp9_sad4x4x8, vp9_sad4x4x4d)
 
   cpi->full_search_sad = vp9_full_search_sad;
-  cpi->diamond_search_sad = vp9_diamond_search_sad;
+  cpi->diamond_search_sad = cpi->compressor_speed == 0 ?
+                                vp9_full_range_search_c :
+                                vp9_diamond_search_sad;
   cpi->refining_search_sad = vp9_refining_search_sad;
 
   // make sure frame 1 is okay
