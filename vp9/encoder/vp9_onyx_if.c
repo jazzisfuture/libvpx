@@ -3241,12 +3241,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->prev_mi_grid_visible = cm->prev_mi_grid_base + cm->mode_info_stride + 1;
 }
 
-static void Pass0Encode(VP9_COMP *cpi, unsigned long *size, unsigned char *dest,
+static void Pass0Encode(VP9_COMP *cpi, unsigned long *size, uint8_t *dest,
                         unsigned int *frame_flags) {
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
-static void Pass1Encode(VP9_COMP *cpi, unsigned long *size, unsigned char *dest,
+static void Pass1Encode(VP9_COMP *cpi, unsigned long *size, uint8_t *dest,
                         unsigned int *frame_flags) {
   (void) size;
   (void) dest;
@@ -3257,7 +3257,7 @@ static void Pass1Encode(VP9_COMP *cpi, unsigned long *size, unsigned char *dest,
 }
 
 static void Pass2Encode(VP9_COMP *cpi, unsigned long *size,
-                        unsigned char *dest, unsigned int *frame_flags) {
+                        uint8_t *dest, unsigned int *frame_flags) {
   cpi->enable_encode_breakout = 1;
 
   if (!cpi->refresh_alt_ref_frame)
@@ -3322,7 +3322,7 @@ int is_next_frame_arf(VP9_COMP *cpi) {
 #endif
 
 int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
-                            unsigned long *size, unsigned char *dest,
+                            uint64_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
   VP9_COMP *cpi = (VP9_COMP *) ptr;
   VP9_COMMON *cm = &cpi->common;
