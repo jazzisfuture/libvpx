@@ -708,7 +708,8 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
     unsigned int lib_flags;
     YV12_BUFFER_CONFIG sd;
     int64_t dst_time_stamp, dst_end_time_stamp;
-    unsigned long size, cx_data_sz;
+    unsigned long cx_data_sz;
+    uint64_t size;
     unsigned char *cx_data;
 
     /* Set up internal flags */
