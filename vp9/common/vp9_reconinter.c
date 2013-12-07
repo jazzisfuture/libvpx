@@ -159,6 +159,8 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
 static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
                                               int mi_row, int mi_col,
                                               int plane_from, int plane_to) {
+  assert(0);
+
   int plane;
   const int mi_x = mi_col * MI_SIZE;
   const int mi_y = mi_row * MI_SIZE;
@@ -239,13 +241,16 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     int xs, ys;
 
     if (vp9_is_scaled(scale->sfc)) {
-      pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, scale);
+      pre = &pre_buf->buf[scaled_buffer_offset((mi_x >> pd->subsampling_x) + x,
+                                               (mi_y >> pd->subsampling_y) + y,
+                                               pre_buf->stride, scale)];
       scale->sfc->set_scaled_offsets(scale, mi_y + y, mi_x + x);
       scaled_mv = scale->sfc->scale_mv(&mv_q4, scale);
       xs = scale->sfc->x_step_q4;
       ys = scale->sfc->y_step_q4;
     } else {
-      pre = pre_buf->buf + (y * pre_buf->stride + x);
+      pre = &pre_buf->buf[(y + (mi_y >> pd->subsampling_y)) * pre_buf->stride +
+                          (x + (mi_x >> pd->subsampling_x))];
       scaled_mv.row = mv_q4.row;
       scaled_mv.col = mv_q4.col;
       xs = ys = 16;

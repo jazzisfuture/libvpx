@@ -85,8 +85,8 @@ static void setup_pre_planes(MACROBLOCKD *xd, int i,
 
     for (j = 0; j < MAX_MB_PLANE; ++j) {
       struct macroblockd_plane *pd = &xd->plane[j];
-      setup_pred_plane(&pd->pre[i], buffers[j], strides[j],
-                     mi_row, mi_col, sf, pd->subsampling_x, pd->subsampling_y);
+      pd->pre[i].buf = buffers[j];
+      pd->pre[i].stride = strides[j];
     }
   }
 }
