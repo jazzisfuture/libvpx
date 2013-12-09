@@ -1499,6 +1499,22 @@ int vp9_diamond_search_sadx4(MACROBLOCK *x,
     }
   }
 
+
+  {
+    static int count = 0;
+    if (xd->mi_8x8[0]->mbmi.sb_type == BLOCK_32X32) {
+      FILE *pf = fopen("motion_search_hit.txt", "a");
+      fprintf(pf, "%d, %d\n", best_mv->as_mv.row - ref_row,
+                              best_mv->as_mv.col - ref_col);
+      fclose(pf);
+      count++;
+    }
+
+    if (count == 10000)
+      assert(0);
+  }
+
+
   this_mv.as_mv.row = best_mv->as_mv.row * 8;
   this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
