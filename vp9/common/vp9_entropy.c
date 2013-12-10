@@ -503,6 +503,16 @@ void vp9_coef_tree_initialize() {
 #define COEF_MAX_UPDATE_FACTOR_KEY 112
 #define COEF_COUNT_SAT_AFTER_KEY 24
 #define COEF_MAX_UPDATE_FACTOR_AFTER_KEY 128
+extern int is_full[TX_SIZES][BLOCK_TYPES][REF_TYPES][3][128];
+
+void fill_entire_table(VP9_COMMON *cm);
+void fill_table(PLANE_TYPE type, int is_inter,
+                TX_SIZE tx_size, int context,
+                int range, int prob1, int prob2);
+
+void fill_one_range(PLANE_TYPE type, int is_inter,
+                    TX_SIZE tx_size, int context,
+                    int prob1, int prob2, int prob3);
 
 static void adapt_coef_probs(VP9_COMMON *cm, TX_SIZE tx_size,
                              unsigned int count_sat,
@@ -531,6 +541,18 @@ static void adapt_coef_probs(VP9_COMMON *cm, TX_SIZE tx_size,
                                                 pre_coef_probs[i][j][k][l][m],
                                                 branch_ct[m],
                                                 count_sat, update_factor);
+          if (k == 0) {
+            if (dst_coef_probs[i][j][k][l][0]
+                != pre_coef_probs[i][j][k][l][0]
+                || dst_coef_probs[i][j][k][l][1]
+                != pre_coef_probs[i][j][k][l][1]
+                || dst_coef_probs[i][j][k][l][2]
+                != pre_coef_probs[i][j][k][l][2])
+
+              fill_one_range(i, j, tx_size, l, dst_coef_probs[i][j][k][l][0],
+                             dst_coef_probs[i][j][k][l][1],
+                             dst_coef_probs[i][j][k][l][2]);
+          }
         }
 }
 
