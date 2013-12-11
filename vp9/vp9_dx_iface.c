@@ -59,6 +59,7 @@ struct vpx_codec_alg_priv {
   int                     img_setup;
   int                     img_avail;
   int                     invert_tile_order;
+  int                     fb_lru;
 
   /* External buffer info to save for VP9 common. */
   vpx_codec_frame_buffer_t *fb_list;  // External frame buffers
@@ -327,10 +328,13 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t  *ctx,
         } else {
           cm->fb_count = FRAME_BUFFERS;
         }
+        cm->fb_lru = ctx->fb_lru;
         CHECK_MEM_ERROR(cm, cm->yv12_fb,
                         vpx_calloc(cm->fb_count, sizeof(*cm->yv12_fb)));
         CHECK_MEM_ERROR(cm, cm->fb_idx_ref_cnt,
                         vpx_calloc(cm->fb_count, sizeof(*cm->fb_idx_ref_cnt)));
+        CHECK_MEM_ERROR(cm, cm->fb_idx_ref_lru,
+                        vpx_calloc(cm->fb_count, sizeof(*cm->fb_idx_ref_lru)));
         ctx->pbi = optr;
       }
     }
@@ -738,6 +742,21 @@ static vpx_codec_err_t set_invert_tile_order(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t set_frame_buffer_lru_cache(vpx_codec_alg_priv_t *ctx,
+                                                  int32_t ctr_id,
+                                                  va_list args) {
+  VP9D_COMP *const pbi = (VP9D_COMP *)ctx->pbi;
+
+  // Save for later to pass into vp9 common.
+  ctx->fb_lru = va_arg(args, int32_t);
+
+  if (pbi) {
+    VP9_COMMON *const cm = &pbi->common;
+    cm->fb_lru = ctx->fb_lru;
+  }
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_ctrl_fn_map_t ctf_maps[] = {
   {VP8_SET_REFERENCE,             set_reference},
   {VP8_COPY_REFERENCE,            copy_reference},
@@ -751,6 +770,7 @@ static vpx_codec_ctrl_fn_map_t ctf_maps[] = {
   {VP9_GET_REFERENCE,             get_reference},
   {VP9D_GET_DISPLAY_SIZE,         get_display_size},
   {VP9_INVERT_TILE_DECODE_ORDER,  set_invert_tile_order},
+  {VP9D_SET_FRAME_BUFFER_LRU_CACHE, set_frame_buffer_lru_cache},
   { -1, NULL},
 };
 
