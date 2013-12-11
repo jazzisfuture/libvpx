@@ -1542,7 +1542,8 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
         if (oxcf->worst_allowed_q < 0)
             cpi->oxcf.fixed_q = q_trans[0];
         else
-            cpi->oxcf.fixed_q = q_trans[oxcf->worst_allowed_q];
+//          cpi->oxcf.fixed_q = q_trans[oxcf->worst_allowed_q];
+            cpi->oxcf.fixed_q = q_trans[oxcf->fixed_q];
 
         if (oxcf->alt_q < 0)
             cpi->oxcf.alt_q = q_trans[0];

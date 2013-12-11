@@ -142,8 +142,19 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK(cfg, g_timebase.den,        1, 1000000000);
     RANGE_CHECK(cfg, g_timebase.num,        1, cfg->g_timebase.den);
     RANGE_CHECK_HI(cfg, g_profile,          3);
-    RANGE_CHECK_HI(cfg, rc_max_quantizer,   63);
-    RANGE_CHECK_HI(cfg, rc_min_quantizer,   cfg->rc_max_quantizer);
+
+    RANGE_CHECK(cfg, rc_fixed_quantizer,    -1, 63);
+    if (cfg->rc_fixed_quantizer >= 0) {
+      // Check fixed-Q setup, ignore rc_min_quantizer & rc_max_quantizer.
+      RANGE_CHECK(cfg, rc_fixed_quantizer,  0, 63);
+      RANGE_CHECK(cfg, rc_key_quantizer,    0, 63);
+      RANGE_CHECK(cfg, rc_gold_quantizer,   0, 63);
+      RANGE_CHECK(cfg, rc_alt_quantizer,    0, 63);
+    } else {
+      RANGE_CHECK_HI(cfg, rc_max_quantizer,   63);
+      RANGE_CHECK_HI(cfg, rc_min_quantizer,   cfg->rc_max_quantizer);
+    }
+
     RANGE_CHECK_HI(cfg, g_threads,          64);
 #if CONFIG_REALTIME_ONLY
     RANGE_CHECK_HI(cfg, g_lag_in_frames,    0);
@@ -343,7 +354,11 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
     oxcf->best_allowed_q           = cfg.rc_min_quantizer;
     oxcf->worst_allowed_q          = cfg.rc_max_quantizer;
     oxcf->cq_level                 = vp8_cfg.cq_level;
-    oxcf->fixed_q = -1;
+
+    oxcf->fixed_q                  = cfg.rc_fixed_quantizer;
+    oxcf->key_q                    = cfg.rc_key_quantizer;
+    oxcf->gold_q                   = cfg.rc_gold_quantizer;
+    oxcf->alt_q                    = cfg.rc_alt_quantizer;
 
     oxcf->under_shoot_pct          = cfg.rc_undershoot_pct;
     oxcf->over_shoot_pct           = cfg.rc_overshoot_pct;
@@ -1249,6 +1264,10 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
         256,                /* rc_target_bandwidth */
         4,                  /* rc_min_quantizer */
         63,                 /* rc_max_quantizer */
+        -1,                 /* rc_fixed_quantizer */
+        -1,                 /* rc_key_quantizer */
+        -1,                 /* rc_gold_quantizer */
+        -1,                 /* rc_alt_quantizer */
         100,                /* rc_undershoot_pct */
         100,                /* rc_overshoot_pct */
 

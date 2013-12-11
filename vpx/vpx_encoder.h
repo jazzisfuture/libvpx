@@ -467,6 +467,11 @@ extern "C" {
      */
     unsigned int           rc_max_quantizer;
 
+    int                    rc_fixed_quantizer;
+    int                    rc_key_quantizer;
+    int                    rc_gold_quantizer;
+    int                    rc_alt_quantizer;
+
 
     /*
      * bitrate tolerance

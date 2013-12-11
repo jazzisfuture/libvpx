@@ -309,6 +309,16 @@ static const arg_def_t min_quantizer      = ARG_DEF(NULL, "min-q", 1,
                                                     "Minimum (best) quantizer");
 static const arg_def_t max_quantizer      = ARG_DEF(NULL, "max-q", 1,
                                                     "Maximum (worst) quantizer");
+
+static const arg_def_t fixed_quantizer    = ARG_DEF(NULL, "fixed-q", 1,
+                                                    "Fixed quantizer");
+static const arg_def_t key_quantizer      = ARG_DEF(NULL, "key-q", 1,
+                                                    "Key frame quantizer");
+static const arg_def_t gold_quantizer     = ARG_DEF(NULL, "gold-q", 1,
+                                                    "Golden frame quantizer");
+static const arg_def_t alt_quantizer      = ARG_DEF(NULL, "alt-q", 1,
+                                                    "ARF quantizer");
+
 static const arg_def_t undershoot_pct     = ARG_DEF(NULL, "undershoot-pct", 1,
                                                     "Datarate undershoot (min) target (%)");
 static const arg_def_t overshoot_pct      = ARG_DEF(NULL, "overshoot-pct", 1,
@@ -322,6 +332,7 @@ static const arg_def_t buf_optimal_sz     = ARG_DEF(NULL, "buf-optimal-sz", 1,
 static const arg_def_t *rc_args[] = {
   &dropframe_thresh, &resize_allowed, &resize_up_thresh, &resize_down_thresh,
   &end_usage, &target_bitrate, &min_quantizer, &max_quantizer,
+  &fixed_quantizer, &key_quantizer, &gold_quantizer, &alt_quantizer,
   &undershoot_pct, &overshoot_pct, &buf_sz, &buf_initial_sz, &buf_optimal_sz,
   NULL
 };
@@ -1196,6 +1207,14 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->cfg.rc_min_quantizer = arg_parse_uint(&arg);
     else if (arg_match(&arg, &max_quantizer, argi))
       config->cfg.rc_max_quantizer = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &fixed_quantizer, argi))
+      config->cfg.rc_fixed_quantizer = arg_parse_int(&arg);
+    else if (arg_match(&arg, &key_quantizer, argi))
+      config->cfg.rc_key_quantizer = arg_parse_int(&arg);
+    else if (arg_match(&arg, &gold_quantizer, argi))
+      config->cfg.rc_gold_quantizer = arg_parse_int(&arg);
+    else if (arg_match(&arg, &alt_quantizer, argi))
+      config->cfg.rc_alt_quantizer = arg_parse_int(&arg);
     else if (arg_match(&arg, &undershoot_pct, argi))
       config->cfg.rc_undershoot_pct = arg_parse_uint(&arg);
     else if (arg_match(&arg, &overshoot_pct, argi))
