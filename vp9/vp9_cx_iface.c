@@ -1344,6 +1344,12 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
       256,                // rc_target_bandwidth
       0,                  // rc_min_quantizer
       63,                 // rc_max_quantizer
+
+      -1,                 // rc_fixed_quantizer
+      -1,
+      -1,
+      -1,
+
       100,                // rc_undershoot_pct
       100,                // rc_overshoot_pct
 
