@@ -364,36 +364,32 @@ void vp9_end_first_pass(VP9_COMP *cpi) {
   output_stats(cpi, cpi->output_pkt_list, &cpi->twopass.total_stats);
 }
 
-static void zz_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
-                             YV12_BUFFER_CONFIG *recon_buffer,
-                             int *best_motion_err, int recon_yoffset) {
+static unsigned int zz_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
+                                     YV12_BUFFER_CONFIG *recon_buffer,
+                                     int recon_yoffset) {
   MACROBLOCKD *const xd = &x->e_mbd;
-
-  // Set up pointers for this macro block recon buffer
   xd->plane[0].pre[0].buf = recon_buffer->y_buffer + recon_yoffset;
+  const uint8_t *src = x->plane[0].src.buf;
+  const int src_stride = x->plane[0].src.stride;
+  const uint8_t *ref = xd->plane[0].pre[0].buf;
+  const int ref_stride = xd->plane[0].pre[0].stride;
 
+  unsigned int sse;
   switch (xd->mi_8x8[0]->mbmi.sb_type) {
     case BLOCK_8X8:
-      vp9_mse8x8(x->plane[0].src.buf, x->plane[0].src.stride,
-                 xd->plane[0].pre[0].buf, xd->plane[0].pre[0].stride,
-                 (unsigned int *)(best_motion_err));
+      vp9_mse8x8(src, src_stride, ref, ref_stride, &sse);
       break;
     case BLOCK_16X8:
-      vp9_mse16x8(x->plane[0].src.buf, x->plane[0].src.stride,
-                  xd->plane[0].pre[0].buf, xd->plane[0].pre[0].stride,
-                  (unsigned int *)(best_motion_err));
+      vp9_mse16x8(src, src_stride, ref, ref_stride, &sse);
       break;
     case BLOCK_8X16:
-      vp9_mse8x16(x->plane[0].src.buf, x->plane[0].src.stride,
-                  xd->plane[0].pre[0].buf, xd->plane[0].pre[0].stride,
-                  (unsigned int *)(best_motion_err));
+      vp9_mse8x16(src, src_stride, ref, ref_stride, &sse);
       break;
     default:
-      vp9_mse16x16(x->plane[0].src.buf, x->plane[0].src.stride,
-                   xd->plane[0].pre[0].buf, xd->plane[0].pre[0].stride,
-                   (unsigned int *)(best_motion_err));
+      vp9_mse16x16(src, src_stride, ref, ref_stride, &sse);
       break;
   }
+  return sse;
 }
 
 static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
@@ -651,7 +647,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
         int_mv mv, tmp_mv;
 
         // Simple 0,0 motion with no mv overhead
-        zz_motion_search(cpi, x, lst_yv12, &motion_error, recon_yoffset);
+        motion_error = zz_motion_search(cpi, x, lst_yv12, recon_yoffset);
         mv.as_int = tmp_mv.as_int = 0;
 
         // Test last reference frame using the previous best mv as the
@@ -684,8 +680,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
         // Experimental search in an older reference frame
         if (cm->current_video_frame > 1) {
           // Simple 0,0 motion with no mv overhead
-          zz_motion_search(cpi, x, gld_yv12,
-                           &gf_motion_error, recon_yoffset);
+          gf_motion_error = zz_motion_search(cpi, x, gld_yv12, recon_yoffset);
 
           first_pass_motion_search(cpi, x, &zero_ref_mv,
                                    &tmp_mv.as_mv, gld_yv12,
