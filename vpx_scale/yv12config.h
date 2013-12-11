@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+#include "vpx/vpx_external_frame_buffer.h"
 #include "vpx/vpx_integer.h"
 
 #define VP8BORDERINPIXELS       32
@@ -68,6 +69,19 @@ extern "C" {
                                int width, int height, int ss_x, int ss_y,
                                int border);
   int vp9_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
+
+  // Updates the yv12 buffer config with the external frame buffer. The
+  // function will check if the frame buffer is big enough to fit the decoded
+  // frame. If the frame buffer is not big enough libvpx will call cb with
+  // minimum size in bytes.
+  //
+  // Returns 0 on success. Returns < 0 on failure.
+  int vp9_update_external_frame_buffer(YV12_BUFFER_CONFIG *ybf,
+                                       vpx_codec_frame_buffer_t *fb,
+                                       vpx_realloc_frame_buffer_cb_fn_t cb,
+                                       void *user_priv,
+                                       int width, int height,
+                                       int ss_x, int ss_y, int border);
 
 #ifdef __cplusplus
 }
