@@ -144,6 +144,8 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
                     vpx_calloc(cm->fb_count, sizeof(*cm->yv12_fb)));
     CHECK_MEM_ERROR(cm, cm->fb_idx_ref_cnt,
                     vpx_calloc(cm->fb_count, sizeof(*cm->fb_idx_ref_cnt)));
+    CHECK_MEM_ERROR(cm, cm->fb_idx_ref_lru,
+                    vpx_calloc(cm->fb_count, sizeof(*cm->fb_idx_ref_lru)));
   }
 
   vp9_free_frame_buffers(cm);
@@ -214,9 +216,11 @@ void vp9_remove_common(VP9_COMMON *cm) {
 
   vpx_free(cm->yv12_fb);
   vpx_free(cm->fb_idx_ref_cnt);
+  vpx_free(cm->fb_idx_ref_lru);
 
   cm->yv12_fb = NULL;
   cm->fb_idx_ref_cnt = NULL;
+  cm->fb_idx_ref_lru = NULL;
 }
 
 void vp9_initialize_common() {
