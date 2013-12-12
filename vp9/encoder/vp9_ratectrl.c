@@ -300,7 +300,8 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   if (cpi->common.frame_type == KEY_FRAME) {
     rate_correction_factor = cpi->rc.key_frame_rate_correction_factor;
   } else {
-    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
+    if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
+        !cpi->use_svc)
       rate_correction_factor = cpi->rc.gf_rate_correction_factor;
     else
       rate_correction_factor = cpi->rc.rate_correction_factor;
@@ -359,7 +360,8 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   if (cpi->common.frame_type == KEY_FRAME) {
     cpi->rc.key_frame_rate_correction_factor = rate_correction_factor;
   } else {
-    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
+    if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
+        !cpi->use_svc)
       cpi->rc.gf_rate_correction_factor = rate_correction_factor;
     else
       cpi->rc.rate_correction_factor = rate_correction_factor;
@@ -380,7 +382,8 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame) {
   if (cpi->common.frame_type == KEY_FRAME) {
     correction_factor = cpi->rc.key_frame_rate_correction_factor;
   } else {
-    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
+    if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
+        !cpi->use_svc)
       correction_factor = cpi->rc.gf_rate_correction_factor;
     else
       correction_factor = cpi->rc.rate_correction_factor;
@@ -463,8 +466,8 @@ int vp9_rc_pick_q_and_adjust_q_bounds(VP9_COMP *cpi,
     } else if (cpi->pass == 0 && cpi->common.current_video_frame == 0) {
       // If this is the first (key) frame in 1-pass, active best/worst is
       // the user best/worst-allowed, and leave the top_index to active_worst.
-      cpi->rc.active_best_quality = cpi->oxcf.best_allowed_q;
-      cpi->rc.active_worst_quality = cpi->oxcf.worst_allowed_q;
+      cpi->rc.active_best_quality = cpi->rc.best_quality;
+      cpi->rc.active_worst_quality = cpi->rc.worst_quality;
     } else {
       int high = 5000;
       int low = 400;
@@ -739,6 +742,23 @@ int vp9_rc_pick_frame_size_and_bounds(VP9_COMP *cpi,
   return 1;
 }
 
+// Update the buffer level for higher layers, given the encoded current layer.
+static void update_layer_buffer_level(VP9_COMP *cpi) {
+  int layer = 0;
+  int current_layer = cpi->svc.layer_id;
+  for(layer = current_layer + 1; layer < cpi->svc.number_layers; layer++) {
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    int bits_off_for_this_layer = (int)(lc->target_bandwidth / lc->framerate -
+        cpi->rc.projected_frame_size);
+    lc->rc.bits_off_target += bits_off_for_this_layer;
+    // Clip buffer level to maximum buffer size for the layer.
+    if (lc->rc.bits_off_target > lc->maximum_buffer_size) {
+      lc->rc.bits_off_target = lc->maximum_buffer_size;
+    }
+    lc->rc.buffer_level = lc->rc.bits_off_target;
+  }
+}
+
 void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used, int q) {
   VP9_COMMON *const cm = &cpi->common;
   // Update rate control heuristics
@@ -796,6 +816,10 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used, int q) {
   // Clip the buffer level at the maximum buffer size
   if (cpi->rc.bits_off_target > cpi->oxcf.maximum_buffer_size)
     cpi->rc.bits_off_target = cpi->oxcf.maximum_buffer_size;
+
+  if (cpi->use_svc) {
+    update_layer_buffer_level(cpi);
+  }
 
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.
