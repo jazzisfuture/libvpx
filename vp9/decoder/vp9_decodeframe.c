@@ -756,9 +756,21 @@ static void setup_tile_context(VP9D_COMP *const pbi, MACROBLOCKD *const xd,
   xd->above_seg_context = pbi->above_seg_context;
 }
 
+static void loop_filter_rows(VP9Worker *worker, int start, int stop,
+                             int launch) {
+  LFWorkerData *const data = (LFWorkerData*)worker->data1;
+  vp9_worker_sync(worker);
+  data->start = start;
+  data->stop = stop;
+  if (launch)
+    vp9_worker_launch(worker);
+  else
+    vp9_worker_execute(worker);
+}
+
 static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
                         vp9_reader *r) {
-  const int num_threads = pbi->oxcf.max_threads;
+  const int launch = pbi->oxcf.max_threads > 1;
   VP9_COMMON *const cm = &pbi->common;
   int mi_row, mi_col;
   MACROBLOCKD *xd = &pbi->mb;
@@ -779,38 +791,19 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     vp9_zero(xd->left_context);
     vp9_zero(xd->left_seg_context);
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
-         mi_col += MI_BLOCK_SIZE) {
+         mi_col += MI_BLOCK_SIZE)
       decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, BLOCK_64X64);
-    }
 
-    if (pbi->do_loopfilter_inline) {
-      const int lf_start = mi_row - MI_BLOCK_SIZE;
-      LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
-      // delay the loopfilter by 1 macroblock row.
-      if (lf_start < 0) continue;
-
-      // decoding has completed: finish up the loop filter in this thread.
-      if (mi_row + MI_BLOCK_SIZE >= tile->mi_row_end) continue;
-
-      vp9_worker_sync(&pbi->lf_worker);
-      lf_data->start = lf_start;
-      lf_data->stop = mi_row;
-      if (num_threads > 1) {
-        vp9_worker_launch(&pbi->lf_worker);
-      } else {
-        vp9_worker_execute(&pbi->lf_worker);
-      }
-    }
+    // delay the loopfilter by 1 macroblock row.
+    if (pbi->do_loopfilter_inline &&
+        mi_row != tile->mi_row_start)
+      loop_filter_rows(&pbi->lf_worker, mi_row - MI_BLOCK_SIZE, mi_row, launch);
   }
 
   if (pbi->do_loopfilter_inline) {
+    // decoding has completed: finish up the loop filter in this thread.
     LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
-    vp9_worker_sync(&pbi->lf_worker);
-    lf_data->start = lf_data->stop;
-    lf_data->stop = cm->mi_rows;
-    vp9_worker_execute(&pbi->lf_worker);
+    loop_filter_rows(&pbi->lf_worker, lf_data->stop, tile->mi_row_end, 0);
   }
 }
 
