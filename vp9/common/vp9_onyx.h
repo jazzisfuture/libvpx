@@ -147,8 +147,11 @@ extern "C"
     // END DATARATE CONTROL OPTIONS
     // ----------------------------------------------------------------
 
-    // Spatial scalability
-    int ss_number_layers;
+    // Spatial and temporal scalability
+    int ss_number_layers;  // Number of spatial layers.
+    unsigned int ts_number_layers;  // Number of temporal layers.
+    unsigned int ts_target_bitrate[VPX_TS_MAX_LAYERS];
+    unsigned int ts_rate_decimator[VPX_TS_MAX_LAYERS];
 
     // these parameters aren't to be used in final build don't use!!!
     int play_alternate;

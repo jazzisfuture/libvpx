@@ -499,6 +499,7 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
 
   // modify encoder configuration
   enc_cfg->ss_number_layers = si->layers;
+  enc_cfg->ts_number_layers = 1;  // Temporal layers not used in this encoder.
   enc_cfg->kf_mode = VPX_KF_DISABLED;
   enc_cfg->g_pass = VPX_RC_ONE_PASS;
   // Lag in frames not currently supported
