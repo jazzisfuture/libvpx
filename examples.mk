@@ -62,6 +62,9 @@ vp9_spatial_scalable_encoder.SRCS += ivfenc.c ivfenc.h
 vp9_spatial_scalable_encoder.SRCS += tools_common.c tools_common.h
 vp9_spatial_scalable_encoder.GUID   = 4A38598D-627D-4505-9C7B-D4020C84100D
 vp9_spatial_scalable_encoder.DESCRIPTION = Spatial Scalable Encoder
+UTILS-$(CONFIG_ENCODERS)    += vpx_temporal_scalable_patterns.c
+vpx_temporal_scalable_patterns.GUID   = 0D6A210B-F482-4D6F-8570-4A9C01ACC88C
+vpx_temporal_scalable_patterns.DESCRIPTION = Temporal Scalability Encoder
 
 # XMA example disabled for now, not used in VP8
 #UTILS-$(CONFIG_DECODERS)    += example_xma.c
