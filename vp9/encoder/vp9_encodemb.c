@@ -572,9 +572,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, so->scan,
                              so->iscan);
+        if (*eob)
+          vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, *eob);
       }
-      if (!x->skip_encode && *eob)
-        vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, *eob);
       break;
     case TX_16X16:
       tx_type = get_tx_type_16x16(pd->plane_type, xd);
@@ -591,9 +591,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob, so->scan, so->iscan);
+        if (*eob)
+          vp9_iht16x16_add(tx_type, dqcoeff, dst, pd->dst.stride, *eob);
       }
-      if (!x->skip_encode && *eob)
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, pd->dst.stride, *eob);
       break;
     case TX_8X8:
       tx_type = get_tx_type_8x8(pd->plane_type, xd);
@@ -610,9 +610,9 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob, so->scan, so->iscan);
+        if (*eob)
+          vp9_iht8x8_add(tx_type, dqcoeff, dst, pd->dst.stride, *eob);
       }
-      if (!x->skip_encode && *eob)
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, pd->dst.stride, *eob);
       break;
     case TX_4X4:
       tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
@@ -637,16 +637,16 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob, so->scan, so->iscan);
-      }
+        if (*eob) {
+          if (tx_type == DCT_DCT)
+            // this is like vp9_short_idct4x4 but has a special case around eob<=1
+            // which is significant (not just an optimization) for the lossless
+            // case.
+            xd->itxm_add(dqcoeff, dst, pd->dst.stride, *eob);
+          else
+            vp9_iht4x4_16_add(dqcoeff, dst, pd->dst.stride, tx_type);
 
-      if (!x->skip_encode && *eob) {
-        if (tx_type == DCT_DCT)
-          // this is like vp9_short_idct4x4 but has a special case around eob<=1
-          // which is significant (not just an optimization) for the lossless
-          // case.
-          xd->itxm_add(dqcoeff, dst, pd->dst.stride, *eob);
-        else
-          vp9_iht4x4_16_add(dqcoeff, dst, pd->dst.stride, tx_type);
+        }
       }
       break;
     default:
