@@ -248,9 +248,11 @@ TEST_P(DatarateTestVP9, BasicRateTargeting) {
     cfg_.rc_target_bitrate = i;
     ResetModel();
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-    ASSERT_GE(cfg_.rc_target_bitrate, effective_datarate_ * 0.9)
+    ASSERT_GE(cfg_.rc_target_bitrate,
+              static_cast<unsigned int>(effective_datarate_ * 0.9))
         << " The datarate for the file exceeds the target by too much!";
-    ASSERT_LE(cfg_.rc_target_bitrate, effective_datarate_ * 1.1)
+    ASSERT_LE(cfg_.rc_target_bitrate,
+              static_cast<unsigned int>(effective_datarate_ * 1.1))
         << " The datarate for the file missed the target!";
   }
 }
