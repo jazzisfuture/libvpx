@@ -1119,7 +1119,9 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   // Initialize active best and worst q and average q values.
   cpi->rc.active_worst_quality      = cpi->oxcf.worst_allowed_q;
 
-  cpi->rc.avg_frame_qindex          = cpi->oxcf.worst_allowed_q;
+  cpi->rc.avg_frame_qindex[0]       = cpi->oxcf.worst_allowed_q;
+  cpi->rc.avg_frame_qindex[1]       = cpi->oxcf.worst_allowed_q;
+  cpi->rc.avg_frame_qindex[2]       = cpi->oxcf.worst_allowed_q;
 
   // Initialise the starting buffer levels
   cpi->rc.buffer_level              = cpi->oxcf.starting_buffer_level;
@@ -1283,6 +1285,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   if (cpi->oxcf.fixed_q >= 0) {
     cpi->rc.last_q[0] = cpi->oxcf.fixed_q;
     cpi->rc.last_q[1] = cpi->oxcf.fixed_q;
+    cpi->rc.last_q[2] = cpi->oxcf.fixed_q;
     cpi->rc.last_boosted_qindex = cpi->oxcf.fixed_q;
   }
 
@@ -2868,7 +2871,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
   int top_index;
-  int top_index_prop;
   int bottom_index;
 
   SPEED_FEATURES *const sf = &cpi->sf;
@@ -3024,8 +3026,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Decide q and q bounds
   q = vp9_rc_pick_q_and_adjust_q_bounds(cpi,
                                         &bottom_index,
-                                        &top_index,
-                                        &top_index_prop);
+                                        &top_index);
 
   if (!frame_is_intra_only(cm)) {
     cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
@@ -3118,7 +3119,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
    * needed in motion search besides loopfilter */
   cm->last_frame_type = cm->frame_type;
 
-  vp9_rc_postencode_update(cpi, *size, top_index_prop);
+  vp9_rc_postencode_update(cpi, *size);
 
 #if 0
   output_frame_level_debug_stats(cpi);

@@ -1641,8 +1641,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // bits to spare and are better with a smaller interval and smaller boost.
   // At high Q when there are few bits to spare we are better with a longer
   // interval to spread the cost of the GF.
+  //
   active_max_gf_interval =
-    12 + ((int)vp9_convert_qindex_to_q(cpi->rc.active_worst_quality) >> 5);
+    11 + ((int)vp9_convert_qindex_to_q(cpi->rc.last_q[INTER_FRAME]) >> 5);
 
   if (active_max_gf_interval > cpi->rc.max_gf_interval)
     active_max_gf_interval = cpi->rc.max_gf_interval;
