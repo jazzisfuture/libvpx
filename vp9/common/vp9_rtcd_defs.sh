@@ -14,6 +14,7 @@ struct macroblock;
 struct vp9_variance_vtable;
 
 #define DEC_MVCOSTS int *mvjcost, int *mvcost[2]
+struct mv;
 union int_mv;
 struct yv12_buffer_config;
 EOF
@@ -736,12 +737,12 @@ specialize vp9_fdct32x32_rd sse2 avx2
 #
 # Motion search
 #
-prototype int vp9_full_search_sad "struct macroblock *x, union int_mv *ref_mv, int sad_per_bit, int distance, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, union int_mv *center_mv, int n"
+prototype int vp9_full_search_sad "struct macroblock *x, struct mv *ref_mv, int sad_per_bit, int distance, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, const struct mv *center_mv, int n"
 specialize vp9_full_search_sad sse3 sse4_1
 vp9_full_search_sad_sse3=vp9_full_search_sadx3
 vp9_full_search_sad_sse4_1=vp9_full_search_sadx8
 
-prototype int vp9_refining_search_sad "struct macroblock *x, union int_mv *ref_mv, int sad_per_bit, int distance, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, union int_mv *center_mv"
+prototype int vp9_refining_search_sad "struct macroblock *x, struct mv *ref_mv, int sad_per_bit, int distance, struct vp9_variance_vtable *fn_ptr, DEC_MVCOSTS, const struct mv *center_mv"
 specialize vp9_refining_search_sad sse3
 vp9_refining_search_sad_sse3=vp9_refining_search_sadx4
 
