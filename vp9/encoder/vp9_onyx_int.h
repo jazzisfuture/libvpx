@@ -293,7 +293,7 @@ typedef struct {
   int this_frame_target;
   int projected_frame_size;
   int sb64_target_rate;
-  int last_q[2];                   // Separate values for Intra/Inter
+  int last_q[3];                   // Separate values for Intra/Inter/ARF-GF
   int last_boosted_qindex;         // Last boosted GF/KF/ARF q
 
   int gfu_boost;
@@ -319,7 +319,7 @@ typedef struct {
   int ni_av_qi;
   int ni_tot_qi;
   int ni_frames;
-  int avg_frame_qindex;
+  int avg_frame_qindex[3];  // 0 - KEY, 1 - INTER, 2 - ARF/GF
   double tot_q;
   double avg_q;
 
