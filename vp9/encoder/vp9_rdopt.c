@@ -1111,8 +1111,8 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP * const cpi,
   int i, j;
   MACROBLOCKD *const xd = &mb->e_mbd;
   MODE_INFO *const mic = xd->mi_8x8[0];
-  const MODE_INFO *above_mi = xd->mi_8x8[-xd->mode_info_stride];
-  const MODE_INFO *left_mi = xd->left_available ? xd->mi_8x8[-1] : NULL;
+  const MODE_INFO *const above_mi = get_above_mi(xd);
+  const MODE_INFO *const left_mi = get_left_mi(xd);
   const BLOCK_SIZE bsize = xd->mi_8x8[0]->mbmi.sb_type;
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
@@ -1196,8 +1196,8 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   /* Y Search for intra prediction mode */
   for (mode = DC_PRED; mode <= TM_PRED; mode++) {
     int64_t local_tx_cache[TX_MODES];
-    MODE_INFO *above_mi = xd->mi_8x8[-xd->mode_info_stride];
-    MODE_INFO *left_mi = xd->left_available ? xd->mi_8x8[-1] : NULL;
+    const MODE_INFO *const above_mi = get_above_mi(xd);
+    const MODE_INFO *const left_mi = get_left_mi(xd);
 
     if (!(cpi->sf.intra_y_mode_mask[max_txsize_lookup[bsize]] & (1 << mode)))
       continue;

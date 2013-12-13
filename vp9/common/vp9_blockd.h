@@ -254,7 +254,13 @@ typedef struct macroblockd {
   PARTITION_CONTEXT left_seg_context[8];
 } MACROBLOCKD;
 
+static INLINE const MODE_INFO *get_above_mi(const MACROBLOCKD *const xd) {
+  return xd->up_available ? xd->mi_8x8[-xd->mode_info_stride] : NULL;
+}
 
+static INLINE const MODE_INFO *get_left_mi(const MACROBLOCKD *const xd) {
+  return xd->left_available ? xd->mi_8x8[-1] : NULL;
+}
 
 static BLOCK_SIZE get_subsize(BLOCK_SIZE bsize, PARTITION_TYPE partition) {
   const BLOCK_SIZE subsize = subsize_lookup[partition][bsize];

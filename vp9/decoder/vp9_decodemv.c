@@ -166,8 +166,8 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
                                        int mi_row, int mi_col, vp9_reader *r) {
   MB_MODE_INFO *const mbmi = &m->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
-  const MODE_INFO *above_mi = xd->mi_8x8[-cm->mode_info_stride];
-  const MODE_INFO *left_mi  = xd->left_available ? xd->mi_8x8[-1] : NULL;
+  const MODE_INFO *const above_mi = get_above_mi(xd);
+  const MODE_INFO *const left_mi = get_left_mi(xd);
 
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip_coeff = read_skip_coeff(cm, xd, mbmi->segment_id, r);

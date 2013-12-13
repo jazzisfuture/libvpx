@@ -385,16 +385,15 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
   }
 }
 
-static void write_mb_modes_kf(const VP9_COMP *cpi, MODE_INFO **mi_8x8,
-                              vp9_writer *bc) {
+static void write_mb_modes_kf(const VP9_COMP *cpi, vp9_writer *bc) {
   const VP9_COMMON *const cm = &cpi->common;
   const MACROBLOCKD *const xd = &cpi->mb.e_mbd;
   const struct segmentation *const seg = &cm->seg;
-  MODE_INFO *m = mi_8x8[0];
+  MODE_INFO *m = xd->mi_8x8[0];
   const int ym = m->mbmi.mode;
   const int segment_id = m->mbmi.segment_id;
-  MODE_INFO *above_mi = mi_8x8[-xd->mode_info_stride];
-  MODE_INFO *left_mi = xd->left_available ? mi_8x8[-1] : NULL;
+  const MODE_INFO *const above_mi = get_above_mi(xd);
+  const MODE_INFO *const left_mi = get_left_mi(xd);
 
   if (seg->update_map)
     write_segment_id(bc, seg, m->mbmi.segment_id);
@@ -444,7 +443,7 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
                  mi_col, num_8x8_blocks_wide_lookup[m->mbmi.sb_type],
                  cm->mi_rows, cm->mi_cols);
   if (frame_is_intra_only(cm)) {
-    write_mb_modes_kf(cpi, xd->mi_8x8, w);
+    write_mb_modes_kf(cpi, w);
 #ifdef ENTROPY_STATS
     active_section = 8;
 #endif

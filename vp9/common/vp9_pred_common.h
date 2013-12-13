@@ -14,14 +14,6 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
-static INLINE const MODE_INFO *get_above_mi(const MACROBLOCKD *const xd) {
-  return xd->up_available ? xd->mi_8x8[-xd->mode_info_stride] : NULL;
-}
-
-static INLINE const MODE_INFO *get_left_mi(const MACROBLOCKD *const xd) {
-  return xd->left_available ? xd->mi_8x8[-1] : NULL;
-}
-
 int vp9_get_segment_id(VP9_COMMON *cm, const uint8_t *segment_ids,
                        BLOCK_SIZE bsize, int mi_row, int mi_col);
 
