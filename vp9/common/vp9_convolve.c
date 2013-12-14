@@ -121,7 +121,7 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
   // Maximum intermediate_height is 324, for y_step_q4 == 80,
   // h == 64, taps == 8.
   // y_step_q4 of 80 allows for 1/10 scale for 5 layer svc
-  uint8_t temp[64 * 324];
+  uint8_t temp[64 * (MAX_DOWNSCALE_FACTOR * 64 + SUBPEL_TAPS - 1)];
   int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + SUBPEL_TAPS;
 
   assert(w <= 64);
