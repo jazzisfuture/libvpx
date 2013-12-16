@@ -288,6 +288,11 @@ int vp9_compute_qdelta_by_rate(VP9_COMP *cpi,
   return target_index - base_q_index;
 }
 
+static void disable_segfeature(struct segmentation *seg, int segment_id,
+                            SEG_LVL_FEATURES feature_id) {
+  seg->feature_mask[segment_id] &= ~(1 << feature_id);
+}
+
 // This function sets up a set of segments with delta Q values around
 // the baseline frame quantizer.
 static void setup_in_frame_q_adj(VP9_COMP *cpi) {
@@ -317,7 +322,7 @@ static void setup_in_frame_q_adj(VP9_COMP *cpi) {
     seg->abs_delta = SEGMENT_DELTADATA;
 
     // Segment 0 "Q" feature is disabled so it defaults to the baseline Q
-    vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
+    disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
 
     // Use some of the segments for in frame Q adjustment
     for (segment = 1; segment < 3; segment++) {
@@ -328,6 +333,11 @@ static void setup_in_frame_q_adj(VP9_COMP *cpi) {
       vp9_set_segdata(seg, segment, SEG_LVL_ALT_Q, qindex_delta);
     }
   }
+}
+
+static void clear_segdata(struct segmentation *seg, int segment_id,
+                       SEG_LVL_FEATURES feature_id) {
+  seg->feature_data[segment_id][feature_id] = 0;
 }
 
 static void configure_static_seg_features(VP9_COMP *cpi) {
@@ -431,9 +441,9 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       vp9_enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
 
       // All mbs should use ALTREF_FRAME
-      vp9_clear_segdata(seg, 0, SEG_LVL_REF_FRAME);
+      clear_segdata(seg, 0, SEG_LVL_REF_FRAME);
       vp9_set_segdata(seg, 0, SEG_LVL_REF_FRAME, ALTREF_FRAME);
-      vp9_clear_segdata(seg, 1, SEG_LVL_REF_FRAME);
+      clear_segdata(seg, 1, SEG_LVL_REF_FRAME);
       vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
 
       // Skip all MBs if high Q (0,0 mv and skip coeffs)
@@ -3781,12 +3791,12 @@ int vp9_set_roimap(VP9_PTR comp, unsigned char *map, unsigned int rows,
     if (delta_q[i])
       vp9_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
     else
-      vp9_disable_segfeature(seg, i, SEG_LVL_ALT_Q);
+      disable_segfeature(seg, i, SEG_LVL_ALT_Q);
 
     if (delta_lf[i])
       vp9_enable_segfeature(seg, i, SEG_LVL_ALT_LF);
     else
-      vp9_disable_segfeature(seg, i, SEG_LVL_ALT_LF);
+      disable_segfeature(seg, i, SEG_LVL_ALT_LF);
   }
 
   // Initialize the feature data structure
