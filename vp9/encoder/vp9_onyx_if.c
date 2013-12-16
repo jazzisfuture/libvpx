@@ -329,6 +329,10 @@ static void setup_in_frame_q_adj(VP9_COMP *cpi) {
     }
   }
 }
+static void vp9_clear_segdata(struct segmentation *seg, int segment_id,
+                       SEG_LVL_FEATURES feature_id) {
+  seg->feature_data[segment_id][feature_id] = 0;
+}
 
 static void configure_static_seg_features(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
