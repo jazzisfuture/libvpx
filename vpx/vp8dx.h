@@ -9,7 +9,7 @@
  */
 
 
-#include "vp8.h"
+#include "./vp8.h"
 
 /*!\defgroup vp8_decoder WebM VP8 Decoder
  * \ingroup vp8
@@ -42,7 +42,7 @@ extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
 /*!@} - end algorithm interface member group*/
 
 /* Include controls common to both the encoder and decoder */
-#include "vp8.h"
+#include "./vp8.h"
 
 
 /*!\enum vp8_dec_control_id
