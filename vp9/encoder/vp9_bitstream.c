@@ -1092,12 +1092,10 @@ static void write_frame_size(VP9_COMP *cpi,
 static void write_frame_size_with_refs(VP9_COMP *cpi,
                                        struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
-  int refs[REFS_PER_FRAME] = {cpi->lst_fb_idx, cpi->gld_fb_idx,
-                              cpi->alt_fb_idx};
   int i, found = 0;
 
-  for (i = 0; i < REFS_PER_FRAME; ++i) {
-    YV12_BUFFER_CONFIG *cfg = &cm->yv12_fb[cm->ref_frame_map[refs[i]]];
+  for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+    YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi, i);
     found = cm->width == cfg->y_crop_width &&
             cm->height == cfg->y_crop_height;
 
@@ -1161,8 +1159,6 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
     write_frame_size(cpi, wb);
   } else {
-    const int refs[REFS_PER_FRAME] = {cpi->lst_fb_idx, cpi->gld_fb_idx,
-                                      cpi->alt_fb_idx};
     if (!cm->show_frame)
       vp9_wb_write_bit(wb, cm->intra_only);
 
@@ -1177,8 +1173,8 @@ static void write_uncompressed_header(VP9_COMP *cpi,
     } else {
       int i;
       vp9_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
-      for (i = 0; i < REFS_PER_FRAME; ++i) {
-        vp9_wb_write_literal(wb, refs[i], REF_FRAMES_LOG2);
+      for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+        vp9_wb_write_literal(wb, get_ref_frame_idx(cpi, i), REF_FRAMES_LOG2);
         vp9_wb_write_bit(wb, cm->ref_frame_sign_bias[LAST_FRAME + i]);
       }
 

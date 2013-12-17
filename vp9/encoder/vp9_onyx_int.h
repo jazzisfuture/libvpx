@@ -669,6 +669,12 @@ static int get_ref_frame_idx(VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
   }
 }
 
+static YV12_BUFFER_CONFIG *get_ref_frame_buffer(VP9_COMP *cpi,
+                                                MV_REFERENCE_FRAME ref_frame) {
+  VP9_COMMON *const cm = &cpi->common;
+  return &cm->yv12_fb[cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)]];
+}
+
 static int get_scale_ref_frame_idx(VP9_COMP *cpi,
                                    MV_REFERENCE_FRAME ref_frame) {
   if (ref_frame == LAST_FRAME) {

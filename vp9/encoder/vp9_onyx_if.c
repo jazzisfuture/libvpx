@@ -1846,8 +1846,7 @@ void vp9_remove_compressor(VP9_PTR *ptr) {
                   / time_encoded;
 
       if (cpi->b_calculate_psnr) {
-        YV12_BUFFER_CONFIG *lst_yv12 =
-            &cpi->common.yv12_fb[cpi->common.ref_frame_map[cpi->lst_fb_idx]];
+        YV12_BUFFER_CONFIG *lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
         double samples = 3.0 / 2 * cpi->count *
                          lst_yv12->y_width * lst_yv12->y_height;
         double total_psnr = vp9_mse2psnr(samples, 255.0, cpi->total_sq_error);
@@ -2556,11 +2555,10 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 static void scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   int i;
-  int refs[REFS_PER_FRAME] = {cpi->lst_fb_idx, cpi->gld_fb_idx,
-                              cpi->alt_fb_idx};
 
-  for (i = 0; i < 3; i++) {
-    YV12_BUFFER_CONFIG *ref = &cm->yv12_fb[cm->ref_frame_map[refs[i]]];
+  for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+    const int idx = get_ref_frame_idx(cpi, i);
+    YV12_BUFFER_CONFIG *ref = &cm->yv12_fb[cm->ref_frame_map[idx]];
 
     if (ref->y_crop_width != cm->width ||
         ref->y_crop_height != cm->height) {
@@ -2573,8 +2571,8 @@ static void scale_references(VP9_COMP *cpi) {
       scale_and_extend_frame(ref, &cm->yv12_fb[new_fb]);
       cpi->scaled_ref_idx[i] = new_fb;
     } else {
-      cpi->scaled_ref_idx[i] = cm->ref_frame_map[refs[i]];
-      cm->fb_idx_ref_cnt[cm->ref_frame_map[refs[i]]]++;
+      cpi->scaled_ref_idx[i] = cm->ref_frame_map[idx];
+      cm->fb_idx_ref_cnt[cm->ref_frame_map[idx]]++;
     }
   }
 }
