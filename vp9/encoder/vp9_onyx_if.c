@@ -302,7 +302,7 @@ static void setup_in_frame_q_adj(VP9_COMP *cpi) {
 
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||
-      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+      (cpi->refresh_golden_frame && !cpi->rc.fs.is_src_frame_alt_ref)) {
     // Clear down the segment map
     vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
 
@@ -387,9 +387,9 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
     // All other frames if segmentation has been enabled
 
     // First normal frame in a valid gf or alt ref group
-    if (cpi->rc.frames_since_golden == 0) {
+    if (cpi->rc.fs.frames_since_golden == 0) {
       // Set up segment features for normal frames in an arf group
-      if (cpi->rc.source_alt_ref_active) {
+      if (cpi->rc.fs.source_alt_ref_active) {
         seg->update_map = 0;
         seg->update_data = 1;
         seg->abs_delta = SEGMENT_DELTADATA;
@@ -421,7 +421,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
         vp9_clearall_segfeatures(seg);
       }
-    } else if (cpi->rc.is_src_frame_alt_ref) {
+    } else if (cpi->rc.fs.is_src_frame_alt_ref) {
       // Special case where we are coding over the top of a previous
       // alt ref frame.
       // Segment coding disabled for compred testing
@@ -1067,22 +1067,22 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
                                     FRAME_OVERHEAD_BITS);
 
   // Set Maximum gf/arf interval
-  cpi->rc.max_gf_interval = 16;
+  cpi->rc.fs.max_gf_interval = 16;
 
   // Extended interval for genuinely static scenes
   cpi->twopass.static_scene_max_gf_interval = cpi->key_frame_frequency >> 1;
 
   // Special conditions when alt ref frame enabled in lagged compress mode
   if (cpi->oxcf.play_alternate && cpi->oxcf.lag_in_frames) {
-    if (cpi->rc.max_gf_interval > cpi->oxcf.lag_in_frames - 1)
-      cpi->rc.max_gf_interval = cpi->oxcf.lag_in_frames - 1;
+    if (cpi->rc.fs.max_gf_interval > cpi->oxcf.lag_in_frames - 1)
+      cpi->rc.fs.max_gf_interval = cpi->oxcf.lag_in_frames - 1;
 
     if (cpi->twopass.static_scene_max_gf_interval > cpi->oxcf.lag_in_frames - 1)
       cpi->twopass.static_scene_max_gf_interval = cpi->oxcf.lag_in_frames - 1;
   }
 
-  if (cpi->rc.max_gf_interval > cpi->twopass.static_scene_max_gf_interval)
-    cpi->rc.max_gf_interval = cpi->twopass.static_scene_max_gf_interval;
+  if (cpi->rc.fs.max_gf_interval > cpi->twopass.static_scene_max_gf_interval)
+    cpi->rc.fs.max_gf_interval = cpi->twopass.static_scene_max_gf_interval;
 }
 
 static int64_t rescale(int val, int64_t num, int denom) {
@@ -1209,7 +1209,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->oxcf.lossless = oxcf->lossless;
   cpi->mb.e_mbd.itxm_add = cpi->oxcf.lossless ? vp9_iwht4x4_add
                                               : vp9_idct4x4_add;
-  cpi->rc.baseline_gf_interval = DEFAULT_GF_INTERVAL;
+  cpi->rc.fs.baseline_gf_interval = DEFAULT_GF_INTERVAL;
 
   cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
 
@@ -1317,7 +1317,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 #else
   cpi->alt_ref_source = NULL;
 #endif
-  cpi->rc.is_src_frame_alt_ref = 0;
+  cpi->rc.fs.is_src_frame_alt_ref = 0;
 
 #if 0
   // Experimental RD Code
@@ -1526,12 +1526,12 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   init_pick_mode_context(cpi);
 
   cm->current_video_frame   = 0;
-  cpi->rc.frames_till_gf_update_due = 0;
+  cpi->rc.fs.frames_till_gf_update_due = 0;
 
   // Set reference frame sign bias for ALTREF frame to 1 (for now)
   cm->ref_frame_sign_bias[ALTREF_FRAME] = 1;
 
-  cpi->rc.baseline_gf_interval = DEFAULT_GF_INTERVAL;
+  cpi->rc.fs.baseline_gf_interval = DEFAULT_GF_INTERVAL;
 
   cpi->gold_is_last = 0;
   cpi->alt_is_last  = 0;
@@ -1579,12 +1579,12 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   cpi->activity_avg = 90 << 12;
   cpi->key_frame_frequency = cpi->oxcf.key_freq;
 
-  cpi->rc.frames_since_key = 8;  // Sensible default for first frame.
-  cpi->rc.this_key_frame_forced = 0;
-  cpi->rc.next_key_frame_forced = 0;
+  cpi->rc.fs.frames_since_key = 8;  // Sensible default for first frame.
+  cpi->rc.fs.this_key_frame_forced = 0;
+  cpi->rc.fs.next_key_frame_forced = 0;
 
-  cpi->rc.source_alt_ref_pending = 0;
-  cpi->rc.source_alt_ref_active = 0;
+  cpi->rc.fs.source_alt_ref_pending = 0;
+  cpi->rc.fs.source_alt_ref_active = 0;
   cpi->refresh_alt_ref_frame = 0;
 
 #if CONFIG_MULTIPLE_ARF
@@ -1636,7 +1636,7 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 
   cpi->first_time_stamp_ever = INT64_MAX;
 
-  cpi->rc.frames_till_gf_update_due      = 0;
+  cpi->rc.fs.frames_till_gf_update_due      = 0;
 
   cpi->rc.ni_av_qi                     = cpi->oxcf.worst_allowed_q;
   cpi->rc.ni_tot_qi                    = 0;
@@ -2309,16 +2309,16 @@ static void scale_and_extend_frame(YV12_BUFFER_CONFIG *src_fb,
 
 static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
   // this frame refreshes means next frames don't unless specified by user
-  cpi->rc.frames_since_golden = 0;
+  cpi->rc.fs.frames_since_golden = 0;
 
 #if CONFIG_MULTIPLE_ARF
   if (!cpi->multi_arf_enabled)
 #endif
     // Clear the alternate reference update pending flag.
-    cpi->rc.source_alt_ref_pending = 0;
+    cpi->rc.fs.source_alt_ref_pending = 0;
 
   // Set the alternate reference frame active flag
-  cpi->rc.source_alt_ref_active = 1;
+  cpi->rc.fs.source_alt_ref_active = 1;
 }
 
 static void update_golden_frame_stats(VP9_COMP *cpi) {
@@ -2326,36 +2326,36 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
   if (cpi->refresh_golden_frame) {
     // this frame refreshes means next frames don't unless specified by user
     cpi->refresh_golden_frame = 0;
-    cpi->rc.frames_since_golden = 0;
+    cpi->rc.fs.frames_since_golden = 0;
 
     // ******** Fixed Q test code only ************
     // If we are going to use the ALT reference for the next group of frames
     // set a flag to say so.
     if (cpi->oxcf.fixed_q >= 0 &&
         cpi->oxcf.play_alternate && !cpi->refresh_alt_ref_frame) {
-      cpi->rc.source_alt_ref_pending = 1;
-      cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
+      cpi->rc.fs.source_alt_ref_pending = 1;
+      cpi->rc.fs.frames_till_gf_update_due = cpi->rc.fs.baseline_gf_interval;
 
       // TODO(ivan): For SVC encoder, GF automatic update is disabled by using
       // a large GF_interval.
       if (cpi->use_svc) {
-        cpi->rc.frames_till_gf_update_due = INT_MAX;
+        cpi->rc.fs.frames_till_gf_update_due = INT_MAX;
       }
     }
 
-    if (!cpi->rc.source_alt_ref_pending)
-      cpi->rc.source_alt_ref_active = 0;
+    if (!cpi->rc.fs.source_alt_ref_pending)
+      cpi->rc.fs.source_alt_ref_active = 0;
 
     // Decrement count down till next gf
-    if (cpi->rc.frames_till_gf_update_due > 0)
-      cpi->rc.frames_till_gf_update_due--;
+    if (cpi->rc.fs.frames_till_gf_update_due > 0)
+      cpi->rc.fs.frames_till_gf_update_due--;
 
   } else if (!cpi->refresh_alt_ref_frame) {
     // Decrement count down till next gf
-    if (cpi->rc.frames_till_gf_update_due > 0)
-      cpi->rc.frames_till_gf_update_due--;
+    if (cpi->rc.fs.frames_till_gf_update_due > 0)
+      cpi->rc.fs.frames_till_gf_update_due--;
 
-    cpi->rc.frames_since_golden++;
+    cpi->rc.fs.frames_since_golden++;
   }
 }
 
@@ -2740,7 +2740,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       loop = 0;
     } else {
       // Special case handling for forced key frames
-      if ((cm->frame_type == KEY_FRAME) && cpi->rc.this_key_frame_forced) {
+      if ((cm->frame_type == KEY_FRAME) && cpi->rc.fs.this_key_frame_forced) {
         int last_q = *q;
         int kf_err = vp9_calc_ss_err(cpi->Source, get_frame_new_buffer(cm));
 
@@ -2854,7 +2854,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       }
     }
 
-    if (cpi->rc.is_src_frame_alt_ref)
+    if (cpi->rc.fs.is_src_frame_alt_ref)
       loop = 0;
 
     if (loop) {
@@ -2915,14 +2915,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cpi->zbin_mode_boost_enabled = 0;
 
   // Current default encoder behavior for the altref sign bias.
-  cpi->common.ref_frame_sign_bias[ALTREF_FRAME] = cpi->rc.source_alt_ref_active;
+  cpi->common.ref_frame_sign_bias[ALTREF_FRAME] =
+      cpi->rc.fs.source_alt_ref_active;
 
   // Check to see if a key frame is signaled.
   // For two pass with auto key frame enabled cm->frame_type may already be
   // set, but not for one pass.
   if ((cm->current_video_frame == 0) ||
       (cm->frame_flags & FRAMEFLAGS_KEY) ||
-      (cpi->oxcf.auto_key && (cpi->rc.frames_since_key %
+      (cpi->oxcf.auto_key && (cpi->rc.fs.frames_since_key %
                               cpi->key_frame_frequency == 0))) {
     // Set frame type to key frame for the force key frame, if we exceed the
     // maximum distance in an automatic keyframe selection or for the first
@@ -2965,7 +2966,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
 
     // The alternate reference frame cannot be active for a key frame.
-    cpi->rc.source_alt_ref_active = 0;
+    cpi->rc.fs.source_alt_ref_active = 0;
 
     cm->error_resilient_mode = (cpi->oxcf.error_resilient_mode != 0);
     cm->frame_parallel_decoding_mode =
@@ -3052,7 +3053,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before
   // the force key frame
-  if (cpi->rc.next_key_frame_forced && (cpi->rc.frames_to_key == 0)) {
+  if (cpi->rc.fs.next_key_frame_forced && (cpi->rc.fs.frames_to_key == 0)) {
     cpi->ambient_err = vp9_calc_ss_err(cpi->Source, get_frame_new_buffer(cm));
   }
 
@@ -3190,7 +3191,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     // As this frame is a key frame the next defaults to an inter frame.
     cm->frame_type = INTER_FRAME;
     vp9_clear_system_state();
-    cpi->rc.frames_since_key = 0;
+    cpi->rc.fs.frames_since_key = 0;
   } else {
     *frame_flags = cm->frame_flags&~FRAMEFLAGS_KEY;
 
@@ -3240,7 +3241,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     // Don't increment frame counters if this was an altref buffer
     // update not a real frame
     ++cm->current_video_frame;
-    ++cpi->rc.frames_since_key;
+    ++cpi->rc.fs.frames_since_key;
   }
   // restore prev_mi
   cm->prev_mi = cm->prev_mip + cm->mode_info_stride + 1;
@@ -3347,7 +3348,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   set_high_precision_mv(cpi, ALTREF_HIGH_PRECISION_MV);
 
   // Should we code an alternate reference frame.
-  if (cpi->oxcf.play_alternate && cpi->rc.source_alt_ref_pending) {
+  if (cpi->oxcf.play_alternate && cpi->rc.fs.source_alt_ref_pending) {
     int frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
@@ -3359,9 +3360,9 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
         - cpi->next_frame_in_order;
     else
 #endif
-      frames_to_arf = cpi->rc.frames_till_gf_update_due;
+      frames_to_arf = cpi->rc.fs.frames_till_gf_update_due;
 
-    assert(frames_to_arf < cpi->rc.frames_to_key);
+    assert(frames_to_arf < cpi->rc.fs.frames_to_key);
 
     if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
 #if CONFIG_MULTIPLE_ARF
@@ -3385,12 +3386,12 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       cpi->refresh_alt_ref_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;
-      cpi->rc.is_src_frame_alt_ref = 0;
+      cpi->rc.fs.is_src_frame_alt_ref = 0;
 
 #if CONFIG_MULTIPLE_ARF
       if (!cpi->multi_arf_enabled)
 #endif
-        cpi->rc.source_alt_ref_pending = 0;   // Clear Pending altf Ref flag.
+        cpi->rc.fs.source_alt_ref_pending = 0;   // Clear Pending altf Ref flag.
     }
   }
 
@@ -3404,19 +3405,19 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
 #if CONFIG_MULTIPLE_ARF
       // Is this frame the ARF overlay.
-      cpi->rc.is_src_frame_alt_ref = 0;
+      cpi->rc.fs.is_src_frame_alt_ref = 0;
       for (i = 0; i < cpi->arf_buffered; ++i) {
         if (cpi->source == cpi->alt_ref_source[i]) {
-          cpi->rc.is_src_frame_alt_ref = 1;
+          cpi->rc.fs.is_src_frame_alt_ref = 1;
           cpi->refresh_golden_frame = 1;
           break;
         }
       }
 #else
-      cpi->rc.is_src_frame_alt_ref = cpi->alt_ref_source
+      cpi->rc.fs.is_src_frame_alt_ref = cpi->alt_ref_source
           && (cpi->source == cpi->alt_ref_source);
 #endif
-      if (cpi->rc.is_src_frame_alt_ref) {
+      if (cpi->rc.fs.is_src_frame_alt_ref) {
         // Current frame is an ARF overlay frame.
 #if CONFIG_MULTIPLE_ARF
         cpi->alt_ref_source[i] = NULL;
@@ -3454,7 +3455,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
 #if CONFIG_MULTIPLE_ARF
     if ((cm->frame_type != KEY_FRAME) && (cpi->pass == 2))
-      cpi->rc.source_alt_ref_pending = is_next_frame_arf(cpi);
+      cpi->rc.fs.source_alt_ref_pending = is_next_frame_arf(cpi);
 #endif
   } else {
     *size = 0;
@@ -3547,7 +3548,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
         cm->active_ref_idx[0], cm->active_ref_idx[1], cm->active_ref_idx[2]);
     if (cpi->refresh_alt_ref_frame)
       fprintf(fp_out, "  type:ARF");
-    if (cpi->rc.is_src_frame_alt_ref)
+    if (cpi->rc.fs.is_src_frame_alt_ref)
       fprintf(fp_out, "  type:OVERLAY[%d]", cpi->alt_fb_idx);
     fprintf(fp_out, "\n");
   }

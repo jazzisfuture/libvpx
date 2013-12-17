@@ -290,6 +290,20 @@ typedef struct {
 } SPEED_FEATURES;
 
 typedef struct {
+  unsigned int frames_since_golden;
+  unsigned int frames_till_gf_update_due;  // Count down till next GF
+  unsigned int max_gf_interval;
+  unsigned int baseline_gf_interval;
+  unsigned int frames_to_key;
+  unsigned int frames_since_key;
+  unsigned int this_key_frame_forced;
+  unsigned int next_key_frame_forced;
+  unsigned int source_alt_ref_active;
+  unsigned int source_alt_ref_pending;
+  unsigned int is_src_frame_alt_ref;
+} FRAME_SCHEDULE_PARAMS;
+
+typedef struct {
   // Rate targetting variables
   int this_frame_target;
   int projected_frame_size;
@@ -305,17 +319,7 @@ typedef struct {
   double key_frame_rate_correction_factor;
   double gf_rate_correction_factor;
 
-  unsigned int frames_since_golden;
-  unsigned int frames_till_gf_update_due;  // Count down till next GF
-  unsigned int max_gf_interval;
-  unsigned int baseline_gf_interval;
-  unsigned int frames_to_key;
-  unsigned int frames_since_key;
-  unsigned int this_key_frame_forced;
-  unsigned int next_key_frame_forced;
-  unsigned int source_alt_ref_pending;
-  unsigned int source_alt_ref_active;
-  unsigned int is_src_frame_alt_ref;
+  FRAME_SCHEDULE_PARAMS fs;
 
   int per_frame_bandwidth;  // Current section per frame bandwidth target
   int av_per_frame_bandwidth;  // Average frame size target for clip
@@ -343,7 +347,6 @@ typedef struct {
   int worst_quality;
   int active_worst_quality;
   int best_quality;
-  // int active_best_quality;
 } RATE_CONTROL;
 
 typedef struct VP9_COMP {
