@@ -469,7 +469,7 @@ void configure_arnr_filter(VP9_COMP *cpi, const unsigned int this_frame,
   // cases where the filter extends beyond the end of clip.
   // Note: this_frame->frame has been updated in the loop
   // so it now points at the ARF frame.
-  half_gf_int = cpi->rc.baseline_gf_interval >> 1;
+  half_gf_int = cpi->fs.baseline_gf_interval >> 1;
   frames_after_arf = (int)(cpi->twopass.total_stats.count - this_frame - 1);
 
   switch (cpi->oxcf.arnr_type) {
