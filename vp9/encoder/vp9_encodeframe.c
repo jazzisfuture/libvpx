@@ -1997,8 +1997,7 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_setup_src_planes(x, cpi->Source, 0, 0);
 
   // TODO(jkoleszar): are these initializations required?
-  setup_pre_planes(xd, 0, &cm->yv12_fb[cm->ref_frame_map[cpi->lst_fb_idx]],
-                   0, 0, NULL);
+  setup_pre_planes(xd, 0, get_ref_frame_buffer(cpi, LAST_FRAME), 0, 0, NULL);
   setup_dst_planes(xd, get_frame_new_buffer(cm), 0, 0);
 
   setup_block_dptrs(&x->e_mbd, cm->subsampling_x, cm->subsampling_y);
@@ -2588,18 +2587,13 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     if (output_enabled)
       sum_intra_stats(cpi, mi);
   } else {
-    int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->ref_frame[0])];
-    YV12_BUFFER_CONFIG *ref_fb = &cm->yv12_fb[idx];
-    YV12_BUFFER_CONFIG *second_ref_fb = NULL;
-    if (has_second_ref(mbmi)) {
-      idx = cm->ref_frame_map[get_ref_frame_idx(cpi, mbmi->ref_frame[1])];
-      second_ref_fb = &cm->yv12_fb[idx];
-    }
+    YV12_BUFFER_CONFIG *ref_fb = get_ref_frame_buffer(cpi, mbmi->ref_frame[0]);
+    YV12_BUFFER_CONFIG *second_ref_fb = has_second_ref(mbmi) ?
+       get_ref_frame_buffer(cpi, mbmi->ref_frame[1]) : NULL;
 
     assert(cm->frame_type != KEY_FRAME);
 
-    setup_pre_planes(xd, 0, ref_fb, mi_row, mi_col,
-                     &xd->scale_factor[0]);
+    setup_pre_planes(xd, 0, ref_fb, mi_row, mi_col, &xd->scale_factor[0]);
     setup_pre_planes(xd, 1, second_ref_fb, mi_row, mi_col,
                      &xd->scale_factor[1]);
 
