@@ -172,7 +172,7 @@ VP8_COMMON_SRCS-$(HAVE_MEDIA)  += common/arm/armv6/vp8_variance_halfpixvar16x16_
 #VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimplehorizontaledge_neon$(ASM)
 #VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimpleverticaledge_neon$(ASM)
 #VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/mbloopfilter_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/shortidct4x4llm_neon$(ASM)
+#VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/shortidct4x4llm_neon$(ASM)
 #VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sad8_neon$(ASM)
 #VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sad16_neon$(ASM)
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sixtappredict4x4_neon$(ASM)
@@ -204,6 +204,7 @@ VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimplehorizontaledge_
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimpleverticaledge_neon_intrinsics.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/mbloopfilter_neon_intrinsics.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sad_neon_intrinsics.c
+VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/shortidct4x4llm_neon_intrinsics.c
 
 
 $(eval $(call rtcd_h_template,vp8_rtcd,vp8/common/rtcd_defs.sh))
