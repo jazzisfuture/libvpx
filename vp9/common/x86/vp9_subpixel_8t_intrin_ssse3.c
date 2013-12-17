@@ -171,7 +171,7 @@ void vp9_filter_block1d8_h8_intrin_ssse3(unsigned char  *src_ptr, unsigned int  
         src_ptr+=src_pixels_per_line;
 
         //save only 8 bytes
-        *((int64_t*)&output_ptr[0])= _mm_cvtsi128_si64(srcRegFilt1);
+	_mm_storel_epi64((__m128i*)&output_ptr[0],srcRegFilt1);
 
         output_ptr+=output_pitch;
     }
@@ -394,23 +394,31 @@ void vp9_filter_block1d8_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
     for(i = 0 ; i < output_height ; i++)
     {
         //load the first 8 bytes
-        srcRegFilt1 = _mm_cvtsi64_si128(*((int64_t*)&src_ptr[0]));
+	srcRegFilt1 = _mm_loadl_epi64((__m128i *)&src_ptr[0]);
+        //srcRegFilt1 = _mm_cvtsi64_si128(*((int64_t*)));
         //load the next 8 bytes in stride of src_pitch
-        srcRegFilt2 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch)[0]));
+	srcRegFilt2 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch)[0]);
+        //srcRegFilt2 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch)[0]));
 
-        srcRegFilt3 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*2)[0]));
-        srcRegFilt4 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*3)[0]));
+	srcRegFilt3 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*2)[0]);
+        //srcRegFilt3 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*2)[0]));
+	srcRegFilt4 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*3)[0]);
+        //srcRegFilt4 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*3)[0]));
 
         //merge the result together
         srcRegFilt1 = _mm_unpacklo_epi8(srcRegFilt1,srcRegFilt2);
         srcRegFilt3 = _mm_unpacklo_epi8(srcRegFilt3,srcRegFilt4);
 
         //load the next 8 bytes in stride of src_pitch
-        srcRegFilt2 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*4)[0]));
-        srcRegFilt4 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*5)[0]));
+	srcRegFilt2 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*4)[0]);
+        //srcRegFilt2 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*4)[0]));
+	srcRegFilt4 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*5)[0]);
+        //srcRegFilt4 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*5)[0]));
 
-        srcRegFilt5 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*6)[0]));
-        srcRegFilt6 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*7)[0]));
+	srcRegFilt5 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*6)[0]);
+        //srcRegFilt5 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*6)[0]));
+	srcRegFilt6 = _mm_loadl_epi64((__m128i *)&(src_ptr+src_pitch*7)[0]);
+        //srcRegFilt6 = _mm_cvtsi64_si128(*((int64_t*)&(src_ptr+src_pitch*7)[0]));
 
         //merge the result together
         srcRegFilt2 = _mm_unpacklo_epi8(srcRegFilt2,srcRegFilt4);
@@ -439,7 +447,7 @@ void vp9_filter_block1d8_v8_intrin_ssse3(unsigned char *src_ptr, unsigned int   
         src_ptr+=src_pitch;
 
         //save only 8 bytes convolve result
-        *((int64_t*)&output_ptr[0])= _mm_cvtsi128_si64(srcRegFilt1);
+	_mm_storel_epi64((__m128i*)&output_ptr[0],srcRegFilt1);
 
         output_ptr+=out_pitch;
 
