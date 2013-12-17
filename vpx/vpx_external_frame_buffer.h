@@ -17,6 +17,14 @@ extern "C" {
 
 #include "./vpx_integer.h"
 
+/*!\brief The minimum number of work buffers used by libvpx.
+ */
+#define VPX_MINIMUM_WORK_BUFFER 1
+
+/*!\brief The minimum number of reference buffers that a VP9 encoder may use.
+ */
+#define VP9_MINIMUM_REF_BUFFER 8
+
 /*!\brief External frame buffer
  *
  * This structure is used to hold external frame buffers passed into the
