@@ -290,6 +290,20 @@ typedef struct {
 } SPEED_FEATURES;
 
 typedef struct {
+  unsigned int frames_since_golden;
+  unsigned int frames_till_gf_update_due;  // Count down till next GF
+  unsigned int max_gf_interval;
+  unsigned int baseline_gf_interval;
+  unsigned int frames_to_key;
+  unsigned int frames_since_key;
+  unsigned int this_key_frame_forced;
+  unsigned int next_key_frame_forced;
+  unsigned int source_alt_ref_active;
+  unsigned int source_alt_ref_pending;
+  unsigned int is_src_frame_alt_ref;
+} FRAME_SCHEDULE_PARAMS;
+
+typedef struct {
   // Rate targetting variables
   int this_frame_target;
   int projected_frame_size;
@@ -304,18 +318,6 @@ typedef struct {
   double rate_correction_factor;
   double key_frame_rate_correction_factor;
   double gf_rate_correction_factor;
-
-  unsigned int frames_since_golden;
-  unsigned int frames_till_gf_update_due;  // Count down till next GF
-  unsigned int max_gf_interval;
-  unsigned int baseline_gf_interval;
-  unsigned int frames_to_key;
-  unsigned int frames_since_key;
-  unsigned int this_key_frame_forced;
-  unsigned int next_key_frame_forced;
-  unsigned int source_alt_ref_pending;
-  unsigned int source_alt_ref_active;
-  unsigned int is_src_frame_alt_ref;
 
   int per_frame_bandwidth;  // Current section per frame bandwidth target
   int av_per_frame_bandwidth;  // Average frame size target for clip
@@ -343,7 +345,6 @@ typedef struct {
   int worst_quality;
   int active_worst_quality;
   int best_quality;
-  // int active_best_quality;
 } RATE_CONTROL;
 
 typedef struct VP9_COMP {
@@ -381,10 +382,6 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG scaled_source;
 
   unsigned int key_frame_frequency;
-
-  int gold_is_last;  // gold same as last frame ( short circuit gold searches)
-  int alt_is_last;  // Alt same as last ( short circuit altref search)
-  int gold_is_alt;  // don't do both alt and gold search ( just do gold).
 
   int scaled_ref_idx[3];
   int lst_fb_idx;
@@ -457,6 +454,7 @@ typedef struct VP9_COMP {
   int64_t first_time_stamp_ever;
 
   RATE_CONTROL rc;
+  FRAME_SCHEDULE_PARAMS fs;
 
   int cq_target_quality;
 
