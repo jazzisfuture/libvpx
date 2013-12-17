@@ -3209,9 +3209,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_copy(counts->y_mode, cpi->y_mode_count);
     vp9_copy(counts->uv_mode, cpi->y_uv_mode_count);
     vp9_copy(counts->intra_inter, cpi->intra_inter_count);
-    vp9_copy(counts->comp_inter, cpi->comp_inter_count);
-    vp9_copy(counts->single_ref, cpi->single_ref_count);
-    vp9_copy(counts->comp_ref, cpi->comp_ref_count);
 #if CONFIG_MASKED_INTERINTER
     vp9_copy(counts->masked_interinter, cpi->masked_interinter_counts);
 #endif
