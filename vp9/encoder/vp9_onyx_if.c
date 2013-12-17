@@ -493,16 +493,10 @@ static void update_reference_segmentation_map(VP9_COMP *cpi) {
 static void set_default_lf_deltas(struct loopfilter *lf) {
   lf->mode_ref_delta_enabled = 1;
   lf->mode_ref_delta_update = 1;
-
-  vp9_zero(lf->ref_deltas);
-  vp9_zero(lf->mode_deltas);
-
-  // Test of ref frame deltas
   lf->ref_deltas[INTRA_FRAME] = 2;
   lf->ref_deltas[LAST_FRAME] = 0;
   lf->ref_deltas[GOLDEN_FRAME] = -2;
   lf->ref_deltas[ALTREF_FRAME] = -2;
-
   lf->mode_deltas[0] = 0;   // Zero
   lf->mode_deltas[1] = 0;   // New mv
 }
