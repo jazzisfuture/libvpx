@@ -2084,6 +2084,7 @@ int vp9_use_as_reference(VP9_PTR ptr, int ref_frame_flags) {
   cpi->ref_frame_flags = ref_frame_flags;
   return 0;
 }
+
 int vp9_update_reference(VP9_PTR ptr, int ref_frame_flags) {
   VP9_COMP *cpi = (VP9_COMP *)(ptr);
 
@@ -2303,12 +2304,6 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
         cpi->oxcf.play_alternate && !cpi->refresh_alt_ref_frame) {
       cpi->rc.source_alt_ref_pending = 1;
       cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
-
-      // TODO(ivan): For SVC encoder, GF automatic update is disabled by using
-      // a large GF_interval.
-      if (cpi->use_svc) {
-        cpi->rc.frames_till_gf_update_due = INT_MAX;
-      }
     }
 
     if (!cpi->rc.source_alt_ref_pending)
@@ -3156,7 +3151,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
     // As this frame is a key frame the next defaults to an inter frame.
-    cm->frame_type = INTER_FRAME;
     vp9_clear_system_state();
     cpi->rc.frames_since_key = 0;
   } else {
@@ -3215,8 +3209,15 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->prev_mi_grid_visible = cm->prev_mi_grid_base + cm->mode_info_stride + 1;
 }
 
+static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
+                      unsigned int *frame_flags) {
+  vp9_get_svc_params(cpi);
+  encode_frame_to_data_rate(cpi, size, dest, frame_flags);
+}
+
 static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags) {
+  vp9_get_one_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
@@ -3226,6 +3227,7 @@ static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   (void) dest;
   (void) frame_flags;
 
+  vp9_get_first_pass_params(cpi);
   vp9_set_quantizer(cpi, find_fp_qindex());
   vp9_first_pass(cpi);
 }
@@ -3234,9 +3236,7 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->enable_encode_breakout = 1;
 
-  if (!cpi->refresh_alt_ref_frame)
-    vp9_second_pass(cpi);
-
+  vp9_get_second_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
   // vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
 
@@ -3521,7 +3521,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   }
 #endif
 
-  cm->frame_type = INTER_FRAME;
   cm->frame_flags = *frame_flags;
 
   // Reset the frame pointers to the current frame size
@@ -3544,7 +3543,9 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       vp9_vaq_init();
   }
 
-  if (cpi->pass == 1) {
+  if (cpi->use_svc) {
+    SvcEncode(cpi, size, dest, frame_flags);
+  } if (cpi->pass == 1) {
     Pass1Encode(cpi, size, dest, frame_flags);
   } else if (cpi->pass == 2) {
     Pass2Encode(cpi, size, dest, frame_flags);
@@ -3566,7 +3567,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     cpi->refresh_alt_ref_frame = 0;
     cpi->refresh_golden_frame = 0;
     cpi->refresh_last_frame = 1;
-    cm->frame_type = INTER_FRAME;
   }
 
   vpx_usec_timer_mark(&cmptimer);
