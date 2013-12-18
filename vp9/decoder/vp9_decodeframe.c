@@ -769,9 +769,42 @@ static void setup_tile_context(VP9D_COMP *const pbi, MACROBLOCKD *const xd,
   xd->above_seg_context = pbi->above_seg_context;
 }
 
+typedef struct {
+  const YV12_BUFFER_CONFIG *frame_buffer;
+  struct VP9Common *cm;
+  struct macroblockd xd;  // TODO(jzern): most of this is unnecessary to the
+                          // loopfilter. the planes are necessary as their state
+                          // is changed during decode.
+  int mi_start;
+  int mi_end;
+  int y_only;
+} LFWorkerData;
+
+static int loop_filter_worker(void *arg1, void *arg2) {
+  LFWorkerData *const lf_data = (LFWorkerData*)arg1;
+  (void)arg2;
+
+  vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
+                       lf_data->mi_start, lf_data->mi_end, lf_data->y_only);
+  return 1;
+}
+
+static void loop_filter_rows(VP9Worker *worker, int mi_start, int mi_end,
+                             int run_concurrently) {
+  LFWorkerData *const lf_data = (LFWorkerData*)worker->data1;
+  vp9_worker_sync(worker);
+  lf_data->mi_start = mi_start;
+  lf_data->mi_end = mi_end;
+  if (run_concurrently) {
+    vp9_worker_launch(worker);
+  } else {
+    vp9_worker_execute(worker);
+  }
+}
+
 static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
                         vp9_reader *r) {
-  const int num_threads = pbi->oxcf.max_threads;
+  const int run_concurrently = pbi->oxcf.max_threads > 1;
   VP9_COMMON *const cm = &pbi->common;
   int mi_row, mi_col;
   MACROBLOCKD *xd = &pbi->mb;
@@ -781,7 +814,7 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     lf_data->frame_buffer = get_frame_new_buffer(cm);
     lf_data->cm = cm;
     lf_data->xd = pbi->mb;
-    lf_data->stop = 0;
+    lf_data->mi_end = tile->mi_row_start;
     lf_data->y_only = 0;
     vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
   }
@@ -798,32 +831,19 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
 
     if (pbi->do_loopfilter_inline) {
       const int lf_start = mi_row - MI_BLOCK_SIZE;
-      LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
       // delay the loopfilter by 1 macroblock row.
-      if (lf_start < 0) continue;
+      if (lf_start < tile->mi_row_start) continue;
 
       // decoding has completed: finish up the loop filter in this thread.
       if (mi_row + MI_BLOCK_SIZE >= tile->mi_row_end) continue;
 
-      vp9_worker_sync(&pbi->lf_worker);
-      lf_data->start = lf_start;
-      lf_data->stop = mi_row;
-      if (num_threads > 1) {
-        vp9_worker_launch(&pbi->lf_worker);
-      } else {
-        vp9_worker_execute(&pbi->lf_worker);
-      }
+      loop_filter_rows(&pbi->lf_worker, lf_start, mi_row, run_concurrently);
     }
   }
 
   if (pbi->do_loopfilter_inline) {
     LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-
-    vp9_worker_sync(&pbi->lf_worker);
-    lf_data->start = lf_data->stop;
-    lf_data->stop = cm->mi_rows;
-    vp9_worker_execute(&pbi->lf_worker);
+    loop_filter_rows(&pbi->lf_worker, lf_data->mi_end, tile->mi_row_end, 0);
   }
 }
 
@@ -1370,7 +1390,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
       (cm->log2_tile_rows | cm->log2_tile_cols) == 0 && cm->lf.filter_level;
   if (pbi->do_loopfilter_inline && pbi->lf_worker.data1 == NULL) {
     CHECK_MEM_ERROR(cm, pbi->lf_worker.data1, vpx_malloc(sizeof(LFWorkerData)));
-    pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
+    pbi->lf_worker.hook = (VP9WorkerHook)loop_filter_worker;
     if (pbi->oxcf.max_threads > 1 && !vp9_worker_reset(&pbi->lf_worker)) {
       vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                          "Loop filter thread creation failed");
