@@ -76,9 +76,8 @@ static void setup_compound_reference(VP9_COMMON *cm) {
   }
 }
 
-// len == 0 is not allowed
 static int read_is_valid(const uint8_t *start, size_t len, const uint8_t *end) {
-  return start + len > start && start + len <= end;
+  return len > 0 && len <= end - start;
 }
 
 static int decode_unsigned_max(struct vp9_read_bit_buffer *rb, int max) {
@@ -858,6 +857,11 @@ static size_t get_tile(const uint8_t *const data_end,
           "Truncated packet or corrupt tile length");
 
     size = read_be32(*data);
+
+    if (size > data_end - *data)
+      vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
+          "Truncated packet or corrupt tile size");
+
     *data += 4;
   } else {
     size = data_end - *data;
