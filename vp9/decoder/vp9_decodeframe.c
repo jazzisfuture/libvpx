@@ -770,6 +770,8 @@ static void setup_tile_context(VP9D_COMP *const pbi, MACROBLOCKD *const xd,
   xd->above_seg_context = pbi->above_seg_context;
 }
 
+#define VP9_LOOP_FILTER_MT
+
 static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
                         vp9_reader *r) {
   const int num_threads = pbi->oxcf.max_threads;
@@ -784,6 +786,7 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     lf_data->xd = pbi->mb;
     lf_data->stop = 0;
     lf_data->y_only = 0;
+
     vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
   }
 
@@ -811,9 +814,23 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
       lf_data->start = lf_start;
       lf_data->stop = mi_row;
       if (num_threads > 1) {
+#ifdef VP9_LOOP_FILTER_MT
+        // u/v planes
         vp9_worker_launch(&pbi->lf_worker);
+        // y plane
+        vp9_loop_filter_worker(pbi->lf_worker.data1, (void*)1);
+        // wait for u/v worker
+        vp9_worker_sync(&pbi->lf_worker);
+#else
+        vp9_worker_launch(&pbi->lf_worker);
+#endif
       } else {
+#ifdef VP9_LOOP_FILTER_MT
+        vp9_loop_filter_worker(pbi->lf_worker.data1, (void*)0);
+        vp9_loop_filter_worker(pbi->lf_worker.data1, (void*)1);
+#else
         vp9_worker_execute(&pbi->lf_worker);
+#endif
       }
     }
   }

@@ -288,6 +288,7 @@ static void swap_frame_buffers(VP9D_COMP *pbi) {
     cm->active_ref_idx[ref_index] = INT_MAX;
 }
 
+#define VP9_LOOP_FILTER_MT
 int vp9_receive_compressed_data(VP9D_PTR ptr,
                                 size_t size, const uint8_t **psource,
                                 int64_t time_stamp) {
@@ -367,7 +368,36 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
+
+#ifdef VP9_LOOP_FILTER_MT
+    if (pbi->num_tile_workers > 0) {
+      LFWorkerData worker_data = {0};
+      VP9Worker *const worker = &pbi->tile_workers[0];
+      // setup_token_decoder/vp9_tile_init are not amused when the data fields
+      // in tile_workers do not point at TileInfo*s; store a copy.
+      VP9Worker orig_worker = *worker;
+      worker_data.frame_buffer = cm->frame_to_show;
+      worker_data.cm = cm;
+      worker_data.xd = pbi->mb;
+      worker_data.stop = 0;
+      worker_data.y_only = 0;
+      worker->hook = (VP9WorkerHook)vp9_loop_filter_worker;
+      worker->data1 = (void*)&worker_data;
+      worker->data2 = (void*)0;
+      // start the uv planes.
+      vp9_worker_launch(worker);
+      // filter the y plane.
+      vp9_loop_filter_worker((void*)&worker_data, (void*)1);
+      // wait for the uv plane.
+      vp9_worker_sync(worker);
+      // restore original worker.
+      *worker = orig_worker;
+    }
+#else
     vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+#endif
+
+
   }
 
 #if WRITE_RECON_BUFFER == 2
