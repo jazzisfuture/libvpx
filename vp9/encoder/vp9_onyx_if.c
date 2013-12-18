@@ -3156,7 +3156,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
     // As this frame is a key frame the next defaults to an inter frame.
-    cm->frame_type = INTER_FRAME;
+    // cm->frame_type = INTER_FRAME;
     vp9_clear_system_state();
     cpi->rc.frames_since_key = 0;
   } else {
@@ -3217,6 +3217,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
 static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags) {
+  vp9_get_one_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
@@ -3226,6 +3227,7 @@ static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   (void) dest;
   (void) frame_flags;
 
+  vp9_get_first_pass_params(cpi);
   vp9_set_quantizer(cpi, find_fp_qindex());
   vp9_first_pass(cpi);
 }
@@ -3234,8 +3236,7 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->enable_encode_breakout = 1;
 
-  if (!cpi->refresh_alt_ref_frame)
-    vp9_second_pass(cpi);
+  vp9_get_second_pass_params(cpi);
 
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
   // vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
@@ -3521,7 +3522,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   }
 #endif
 
-  cm->frame_type = INTER_FRAME;
+  // cm->frame_type = INTER_FRAME;
   cm->frame_flags = *frame_flags;
 
   // Reset the frame pointers to the current frame size
@@ -3566,7 +3567,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     cpi->refresh_alt_ref_frame = 0;
     cpi->refresh_golden_frame = 0;
     cpi->refresh_last_frame = 1;
-    cm->frame_type = INTER_FRAME;
+    // cm->frame_type = INTER_FRAME;
   }
 
   vpx_usec_timer_mark(&cmptimer);

@@ -2060,7 +2060,37 @@ static int adjust_active_maxq(int old_maxqi, int new_maxqi) {
   return new_maxqi;
 }
 
-void vp9_second_pass(VP9_COMP *cpi) {
+void vp9_get_one_pass_params(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+  if (cpi->refresh_alt_ref_frame) {
+    cm->frame_type = INTER_FRAME;
+  } else if ((cm->current_video_frame == 0) ||
+             (cm->frame_flags & FRAMEFLAGS_KEY) ||
+             (cpi->oxcf.auto_key && (cpi->rc.frames_since_key %
+                                     cpi->key_frame_frequency == 0))) {
+    cm->frame_type = KEY_FRAME;
+  } else {
+    cm->frame_type = INTER_FRAME;
+  }
+  if (cpi->rc.frames_till_gf_update_due == 0) {
+    cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
+    cpi->refresh_golden_frame = 1;
+  }
+}
+
+void vp9_get_first_pass_params(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+  if (cpi->refresh_alt_ref_frame) {
+    cm->frame_type = INTER_FRAME;
+  } else if (cm->current_video_frame == 0 ||
+             cm->frame_flags & FRAMEFLAGS_KEY) {
+    cm->frame_type = KEY_FRAME;
+  } else {
+    cm->frame_type = INTER_FRAME;
+  }
+}
+
+void vp9_get_second_pass_params(VP9_COMP *cpi) {
   int tmp_q;
   int frames_left = (int)(cpi->twopass.total_stats.count -
                           cpi->common.current_video_frame);
@@ -2071,6 +2101,10 @@ void vp9_second_pass(VP9_COMP *cpi) {
   double this_frame_intra_error;
   double this_frame_coded_error;
 
+  if (cpi->refresh_alt_ref_frame) {
+    cpi->common.frame_type = INTER_FRAME;
+    return;
+  }
   if (!cpi->twopass.stats_in)
     return;
 
@@ -2154,6 +2188,8 @@ void vp9_second_pass(VP9_COMP *cpi) {
       assign_std_frame_bits(cpi, &this_frame_copy);
       cpi->rc.per_frame_bandwidth = bak;
     }
+    cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
+    cpi->refresh_golden_frame = 1;
   } else {
     // Otherwise this is an ordinary frame
     // Assign bits from those allocated to the GF group

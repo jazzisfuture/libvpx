@@ -232,17 +232,6 @@ static void calc_iframe_target_size(VP9_COMP *cpi) {
   cpi->rc.this_frame_target = target;
 }
 
-//  Do the best we can to define the parameters for the next GF based
-//  on what information we have available.
-//
-//  In this experimental code only two pass is supported
-//  so we just use the interval determined in the two pass code.
-static void calc_gf_params(VP9_COMP *cpi) {
-  // Set the gf interval
-  cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
-}
-
-
 static void calc_pframe_target_size(VP9_COMP *cpi) {
   const int min_frame_target = MAX(cpi->rc.min_frame_bandwidth,
                                    cpi->rc.av_per_frame_bandwidth >> 5);
@@ -266,9 +255,7 @@ static void calc_pframe_target_size(VP9_COMP *cpi) {
     cpi->rc.this_frame_target = min_frame_target;
 
   // Adjust target frame size for Golden Frames:
-  if (cpi->rc.frames_till_gf_update_due == 0) {
-    cpi->refresh_golden_frame = 1;
-    calc_gf_params(cpi);
+  if (cpi->refresh_golden_frame) {
     // If we are using alternate ref instead of gf then do not apply the boost
     // It will instead be applied to the altref update
     // Jims modified boost
