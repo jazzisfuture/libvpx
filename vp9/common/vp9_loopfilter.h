@@ -77,6 +77,8 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm, struct macroblockd *xd,
                           int start, int stop, int y_only);
 
+int vp9_loop_filter_worker(void *arg1, void *arg2);
+
 typedef struct LoopFilterWorkerData {
   const YV12_BUFFER_CONFIG *frame_buffer;
   struct VP9Common *cm;
