@@ -271,8 +271,21 @@ static double calculate_modified_err(VP9_COMP *cpi,
   const FIRSTPASS_STATS *const stats = &cpi->twopass.total_stats;
   const double av_err = stats->ssim_weighted_pred_err / stats->count;
   const double this_err = this_frame->ssim_weighted_pred_err;
-  return av_err * pow(this_err / DOUBLE_DIVIDE_CHECK(av_err),
-                      this_err > av_err ? POW1 : POW2);
+  double prediction_ratio = 1.0;
+  FIRSTPASS_STATS next_frame;
+
+  if (lookup_next_frame_stats(cpi, &next_frame) != EOF) {
+    prediction_ratio = this_frame->ssim_weighted_pred_err /
+                       DOUBLE_DIVIDE_CHECK(next_frame.ssim_weighted_pred_err);
+    if (prediction_ratio < 0.5)
+      prediction_ratio = 0.5;
+    else if (prediction_ratio > 2.0)
+      prediction_ratio = 2.0;
+  }
+
+  return av_err * // prediction_ratio *
+         pow(this_err / DOUBLE_DIVIDE_CHECK(av_err),
+             this_err > av_err ? POW1 : POW2);
 }
 
 static const double weight_table[256] = {
