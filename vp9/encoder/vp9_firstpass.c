@@ -2060,7 +2060,7 @@ static int adjust_active_maxq(int old_maxqi, int new_maxqi) {
   return new_maxqi;
 }
 
-void vp9_second_pass(VP9_COMP *cpi) {
+void vp9_get_second_pass_params(VP9_COMP *cpi) {
   int tmp_q;
   int frames_left = (int)(cpi->twopass.total_stats.count -
                           cpi->common.current_video_frame);
