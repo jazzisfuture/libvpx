@@ -77,10 +77,11 @@ static void inter_predictor(const uint8_t *src, int src_stride,
       w, h);
 }
 
-void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
+void vp9_build_inter_predictor(int x, int y,
+                               const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const MV *src_mv,
-                               const struct scale_factors *scale,
+                               struct scale_factors *scale,
                                int w, int h, int ref,
                                const struct subpix_fn_table *subpix,
                                enum mv_precision precision) {
@@ -88,6 +89,7 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
   const MV mv_q4 = { is_q4 ? src_mv->row : src_mv->row * 2,
                      is_q4 ? src_mv->col : src_mv->col * 2 };
   const struct scale_factors_common *sfc = scale->sfc;
+  sfc->set_scaled_offsets(scale, y, x);
   const MV32 mv = sfc->scale_mv(&mv_q4, scale);
   const int subpel_x = mv.col & SUBPEL_MASK;
   const int subpel_y = mv.row & SUBPEL_MASK;
