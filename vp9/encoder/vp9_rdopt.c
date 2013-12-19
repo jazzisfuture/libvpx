@@ -1625,7 +1625,8 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                        int *labelyrate,
                                        int64_t *distortion, int64_t *sse,
                                        ENTROPY_CONTEXT *ta,
-                                       ENTROPY_CONTEXT *tl) {
+                                       ENTROPY_CONTEXT *tl,
+                                       int mi_row, int mi_col) {
   int k;
   MACROBLOCKD *xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[0];
@@ -1651,7 +1652,9 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                               dst, pd->dst.stride,
                               &mi->bmi[i].as_mv[ref].as_mv,
                               &xd->scale_factor[ref],
-                              width, height, ref, &xd->subpix, MV_PRECISION_Q3);
+                              width, height, ref, &xd->subpix, MV_PRECISION_Q3,
+                              mi_col * MI_SIZE + 4 * (i % 2),
+                              mi_row * MI_SIZE + 4 * (i / 2));
   }
 
   vp9_subtract_block(height, width,
@@ -2085,7 +2088,8 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                                     &bsi->rdstat[i][mode_idx].bdist,
                                     &bsi->rdstat[i][mode_idx].bsse,
                                     bsi->rdstat[i][mode_idx].ta,
-                                    bsi->rdstat[i][mode_idx].tl);
+                                    bsi->rdstat[i][mode_idx].tl,
+                                    mi_row, mi_col);
         if (bsi->rdstat[i][mode_idx].brdcost < INT64_MAX) {
           bsi->rdstat[i][mode_idx].brdcost += RDCOST(x->rdmult, x->rddiv,
                                             bsi->rdstat[i][mode_idx].brate, 0);
@@ -2616,8 +2620,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       setup_pre_planes(xd, ref, scaled_ref_frame[ref], mi_row, mi_col, NULL);
     }
 
-    xd->scale_factor[ref].sfc->set_scaled_offsets(&xd->scale_factor[ref],
-                                                  mi_row, mi_col);
     frame_mv[refs[ref]].as_int = single_newmv[refs[ref]].as_int;
   }
 
@@ -2647,7 +2649,8 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                               &frame_mv[refs[!id]].as_mv,
                               &xd->scale_factor[!id],
                               pw, ph, 0,
-                              &xd->subpix, MV_PRECISION_Q3);
+                              &xd->subpix, MV_PRECISION_Q3,
+                              mi_col * MI_SIZE, mi_row * MI_SIZE);
 
     // Compound motion search on first ref frame.
     if (id)
