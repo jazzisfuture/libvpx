@@ -8,14 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/****************************************************************************
-*
-*   Module Title :     vp9_boolhuff.h
-*
-*   Description  :     Bool Coder header file.
-*
-****************************************************************************/
 #ifndef VP9_ENCODER_VP9_BOOLHUFF_H_
 #define VP9_ENCODER_VP9_BOOLHUFF_H_
 
