@@ -39,7 +39,8 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                                             int mv_row,
                                             int mv_col,
                                             uint8_t *pred,
-                                            struct scale_factors *scale) {
+                                            struct scale_factors *scale,
+                                            int x, int y) {
   const int which_mv = 0;
   MV mv = { mv_row, mv_col };
 
@@ -49,7 +50,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                             scale,
                             16, 16,
                             which_mv,
-                            &xd->subpix, MV_PRECISION_Q3);
+                            &xd->subpix, MV_PRECISION_Q3, x, y);
 
   stride = (stride + 1) >> 1;
 
@@ -59,7 +60,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                             scale,
                             8, 8,
                             which_mv,
-                            &xd->subpix, MV_PRECISION_Q4);
+                            &xd->subpix, MV_PRECISION_Q4, x, y);
 
   vp9_build_inter_predictor(v_mb_ptr, stride,
                             &pred[320], 8,
@@ -67,7 +68,7 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                             scale,
                             8, 8,
                             which_mv,
-                            &xd->subpix, MV_PRECISION_Q4);
+                            &xd->subpix, MV_PRECISION_Q4, x, y);
 }
 
 void vp9_temporal_filter_apply_c(uint8_t *frame1,
@@ -282,7 +283,8 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
            cpi->frames[frame]->y_stride,
            mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.row,
            mbd->mi_8x8[0]->bmi[0].as_mv[0].as_mv.col,
-           predictor, scale);
+           predictor, scale,
+           mb_col * 16, mb_row * 16);
 
           // Apply the filter (YUV)
           vp9_temporal_filter_apply(f->y_buffer + mb_y_offset, f->y_stride,
