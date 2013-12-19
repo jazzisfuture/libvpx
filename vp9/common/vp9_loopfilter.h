@@ -77,6 +77,10 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm, struct macroblockd *xd,
                           int start, int stop, int y_only);
 
+// VP9WorkerHook Y and U/V plane loop filter workers.
+int vp9_loop_filter_worker_y(void *arg1, void *arg2);
+int vp9_loop_filter_worker_uv(void *arg1, void *arg2);
+
 typedef struct LoopFilterWorkerData {
   const YV12_BUFFER_CONFIG *frame_buffer;
   struct VP9Common *cm;

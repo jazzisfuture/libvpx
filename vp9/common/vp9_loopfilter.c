@@ -1274,6 +1274,24 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
   }
 }
 
+void vp9_loop_filter_plane_rows(const YV12_BUFFER_CONFIG *frame_buffer,
+                                VP9_COMMON *cm, MACROBLOCKD *xd,
+                                int start, int stop, int plane) {
+  int mi_row, mi_col;
+  LOOP_FILTER_MASK lfm;
+
+  for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
+    MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
+
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
+      setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
+      setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col, cm->mode_info_stride,
+                 &lfm);
+      filter_block_plane(cm, &xd->plane[plane], mi_row, &lfm);
+    }
+  }
+}
+
 void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                            int frame_filter_level,
                            int y_only, int partial) {
@@ -1298,5 +1316,21 @@ int vp9_loop_filter_worker(void *arg1, void *arg2) {
   (void)arg2;
   vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
                        lf_data->start, lf_data->stop, lf_data->y_only);
+  return 1;
+}
+
+int vp9_loop_filter_worker_y(void *arg1, void *arg2) {
+  LFWorkerData *const lf_data = (LFWorkerData*)arg1;
+  vp9_loop_filter_plane_rows(lf_data->frame_buffer, lf_data->cm,
+                             &lf_data->xd, lf_data->start, lf_data->stop, 0);
+  return 1;
+}
+
+int vp9_loop_filter_worker_uv(void *arg1, void *arg2) {
+  LFWorkerData *const lf_data = (LFWorkerData*)arg1;
+  vp9_loop_filter_plane_rows(lf_data->frame_buffer, lf_data->cm,
+                             &lf_data->xd, lf_data->start, lf_data->stop, 1);
+  vp9_loop_filter_plane_rows(lf_data->frame_buffer, lf_data->cm,
+                             &lf_data->xd, lf_data->start, lf_data->stop, 2);
   return 1;
 }

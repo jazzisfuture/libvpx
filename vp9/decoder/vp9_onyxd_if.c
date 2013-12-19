@@ -367,7 +367,39 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
-    vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+    if (pbi->num_tile_workers > 0) {
+      // When there is at least one tile worker, use it to filter the U and V
+      // planes.
+      LFWorkerData worker_data = {0};
+      VP9Worker *const worker = &pbi->tile_workers[0];
+
+      // The tile workers don't expect their data fields to be modified. Store
+      // a backup copy to restore after filtering the U and V planes.
+      VP9Worker orig_worker = *worker;
+
+      worker_data.frame_buffer = cm->frame_to_show;
+      worker_data.cm = cm;
+      worker_data.xd = pbi->mb;
+      worker_data.stop = 0;
+      worker_data.y_only = 0;
+      worker->hook = (VP9WorkerHook)vp9_loop_filter_worker_uv;
+      worker->data1 = (void*)&worker_data;
+      worker->data2 = NULL;
+
+      // Start filtering the U and V planes.
+      vp9_worker_launch(worker);
+
+      // Filter the y plane.
+      vp9_loop_filter_worker((void*)&worker_data, NULL);
+
+      // Wait for the U and V plane filter worker.
+      vp9_worker_sync(worker);
+
+      // Restore original worker.
+      *worker = orig_worker;
+    } else {
+      vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+    }
   }
 
 #if WRITE_RECON_BUFFER == 2
