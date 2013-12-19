@@ -8,14 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/****************************************************************************
-*
-*   Module Title :     vp9_boolhuff.h
-*
-*   Description  :     Bool Coder header file.
-*
-****************************************************************************/
 #ifndef VP9_ENCODER_VP9_BOOLHUFF_H_
 #define VP9_ENCODER_VP9_BOOLHUFF_H_
 
@@ -33,7 +25,7 @@ typedef struct {
 
   // Variables used to track bit costs without outputing to the bitstream
   unsigned int  measure_cost;
-  unsigned long bit_counter;
+  uint64_t bit_counter;
 } vp9_writer;
 
 extern const unsigned int vp9_prob_cost[256];
