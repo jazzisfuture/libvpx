@@ -733,6 +733,21 @@ int vp9_rc_pick_q_and_adjust_q_bounds(const VP9_COMP *cpi,
     }
   }
 
+#if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
+  // Limit Q range for the adaptive loop.
+  if (cm->frame_type == KEY_FRAME && !cpi->rc.this_key_frame_forced) {
+    if (!(cpi->pass == 0 && cpi->common.current_video_frame == 0)) {
+      active_worst_quality =
+          (active_worst_quality + active_best_quality * 3) / 4;
+    }
+  } else if (!cpi->rc.is_src_frame_alt_ref &&
+             (cpi->oxcf.end_usage != USAGE_STREAM_FROM_SERVER) &&
+             (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
+    active_worst_quality =
+      (active_worst_quality + active_best_quality) / 2;
+  }
+#endif
+
   // Clip the active best and worst quality values to limits
   if (active_worst_quality > cpi->rc.worst_quality)
     active_worst_quality = cpi->rc.worst_quality;
@@ -748,22 +763,6 @@ int vp9_rc_pick_q_and_adjust_q_bounds(const VP9_COMP *cpi,
 
   *top_index = active_worst_quality;
   *bottom_index = active_best_quality;
-
-#if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
-  // Limit Q range for the adaptive loop.
-  if (cm->frame_type == KEY_FRAME && !cpi->rc.this_key_frame_forced) {
-    if (!(cpi->pass == 0 && cpi->common.current_video_frame == 0)) {
-      *top_index = active_worst_quality;
-      *top_index =
-          (active_worst_quality + active_best_quality * 3) / 4;
-    }
-  } else if (!cpi->rc.is_src_frame_alt_ref &&
-             (cpi->oxcf.end_usage != USAGE_STREAM_FROM_SERVER) &&
-             (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
-    *top_index =
-      (active_worst_quality + active_best_quality) / 2;
-  }
-#endif
 
   if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
     q = active_best_quality;
