@@ -32,6 +32,7 @@
 #define ALT_REF_SUBPEL_ENABLED 1  // dis/enable subpel in MC AltRef filtering
 
 static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
+                                            int x, int y,
                                             uint8_t *y_mb_ptr,
                                             uint8_t *u_mb_ptr,
                                             uint8_t *v_mb_ptr,
@@ -43,7 +44,8 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
   const int which_mv = 0;
   MV mv = { mv_row, mv_col };
 
-  vp9_build_inter_predictor(y_mb_ptr, stride,
+  vp9_build_inter_predictor(x, y,
+                            y_mb_ptr, stride,
                             &pred[0], 16,
                             &mv,
                             scale,
@@ -53,7 +55,8 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
 
   stride = (stride + 1) >> 1;
 
-  vp9_build_inter_predictor(u_mb_ptr, stride,
+  vp9_build_inter_predictor(x, y,
+                            u_mb_ptr, stride,
                             &pred[256], 8,
                             &mv,
                             scale,
@@ -61,7 +64,8 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                             which_mv,
                             &xd->subpix, MV_PRECISION_Q4);
 
-  vp9_build_inter_predictor(v_mb_ptr, stride,
+  vp9_build_inter_predictor(x, y,
+                            v_mb_ptr, stride,
                             &pred[320], 8,
                             &mv,
                             scale,
@@ -276,6 +280,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           // Construct the predictors
           temporal_filter_predictors_mb_c
           (mbd,
+           mb_col * 16, mb_row * 16,
            cpi->frames[frame]->y_buffer + mb_y_offset,
            cpi->frames[frame]->u_buffer + mb_uv_offset,
            cpi->frames[frame]->v_buffer + mb_uv_offset,

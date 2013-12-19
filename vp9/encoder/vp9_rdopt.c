@@ -1496,7 +1496,8 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                        int *labelyrate,
                                        int64_t *distortion, int64_t *sse,
                                        ENTROPY_CONTEXT *ta,
-                                       ENTROPY_CONTEXT *tl) {
+                                       ENTROPY_CONTEXT *tl,
+                                       int mi_row, int mi_col) {
   int k;
   MACROBLOCKD *xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[0];
@@ -1518,7 +1519,9 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const uint8_t *pre = &pd->pre[ref].buf[raster_block_offset(BLOCK_8X8, i,
                                                pd->pre[ref].stride)];
-    vp9_build_inter_predictor(pre, pd->pre[ref].stride,
+    vp9_build_inter_predictor(mi_col * MI_SIZE + 4 * (i % 2),
+                              mi_row * MI_SIZE + 4 * (i / 2),
+                              pre, pd->pre[ref].stride,
                               dst, pd->dst.stride,
                               &mi->bmi[i].as_mv[ref].as_mv,
                               &xd->scale_factor[ref],
@@ -1956,7 +1959,8 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                                     &bsi->rdstat[i][mode_idx].bdist,
                                     &bsi->rdstat[i][mode_idx].bsse,
                                     bsi->rdstat[i][mode_idx].ta,
-                                    bsi->rdstat[i][mode_idx].tl);
+                                    bsi->rdstat[i][mode_idx].tl,
+                                    mi_row, mi_col);
         if (bsi->rdstat[i][mode_idx].brdcost < INT64_MAX) {
           bsi->rdstat[i][mode_idx].brdcost += RDCOST(x->rdmult, x->rddiv,
                                             bsi->rdstat[i][mode_idx].brate, 0);
@@ -2487,8 +2491,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       setup_pre_planes(xd, ref, scaled_ref_frame[ref], mi_row, mi_col, NULL);
     }
 
-    xd->scale_factor[ref].sfc->set_scaled_offsets(&xd->scale_factor[ref],
-                                                  mi_row, mi_col);
     frame_mv[refs[ref]].as_int = single_newmv[refs[ref]].as_int;
   }
 
@@ -2512,7 +2514,8 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     ref_yv12[1] = xd->plane[0].pre[1];
 
     // Get pred block from second frame.
-    vp9_build_inter_predictor(ref_yv12[!id].buf,
+    vp9_build_inter_predictor(mi_col * MI_SIZE, mi_row * MI_SIZE,
+                              ref_yv12[!id].buf,
                               ref_yv12[!id].stride,
                               second_pred, pw,
                               &frame_mv[refs[!id]].as_mv,
