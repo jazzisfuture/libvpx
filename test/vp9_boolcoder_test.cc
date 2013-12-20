@@ -16,7 +16,7 @@
 
 extern "C" {
 #include "vp9/encoder/vp9_boolhuff.h"
-#include "vp9/decoder/vp9_dboolhuff.h"
+#include "vp9/decoder/vp9_reader.h"
 }
 
 #include "test/acm_random.h"
