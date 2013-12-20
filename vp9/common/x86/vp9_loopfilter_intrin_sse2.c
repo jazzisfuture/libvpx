@@ -1672,7 +1672,8 @@ void vp9_lpf_vertical_8_dual_sse2(uint8_t *s, int p, const uint8_t *blimit0,
 void vp9_lpf_vertical_16_sse2(unsigned char *s, int p,
                               const unsigned char *blimit,
                               const unsigned char *limit,
-                              const unsigned char *thresh) {
+                              const unsigned char *thresh,
+                              int count) {
   DECLARE_ALIGNED_ARRAY(8, unsigned char, t_dst, 8 * 16);
   unsigned char *src[2];
   unsigned char *dst[2];
