@@ -118,7 +118,6 @@ void vp9_lpf_horizontal_4_c(uint8_t *s, int p /* pitch */,
     ++s;
   }
 }
-
 void vp9_lpf_horizontal_4_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
                                  const uint8_t *limit0, const uint8_t *thresh0,
                                  const uint8_t *blimit1, const uint8_t *limit1,
@@ -128,13 +127,13 @@ void vp9_lpf_horizontal_4_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
 }
 
 void vp9_lpf_vertical_4_c(uint8_t *s, int pitch, const uint8_t *blimit,
-                          const uint8_t *limit, const uint8_t *thresh,
-                          int count) {
+                             const uint8_t *limit, const uint8_t *thresh,
+                             int count) {
   int i;
 
   // loop filter designed to work using chars so that we can make maximum use
   // of 8 bit simd instructions.
-  for (i = 0; i < 8 * count; ++i) {
+  for (i = 0; i < count; ++i) {
     const uint8_t p3 = s[-4], p2 = s[-3], p1 = s[-2], p0 = s[-1];
     const uint8_t q0 = s[0],  q1 = s[1],  q2 = s[2],  q3 = s[3];
     const int8_t mask = filter_mask(*limit, *blimit,
@@ -145,13 +144,14 @@ void vp9_lpf_vertical_4_c(uint8_t *s, int pitch, const uint8_t *blimit,
   }
 }
 
+
 void vp9_lpf_vertical_4_dual_c(uint8_t *s, int pitch, const uint8_t *blimit0,
                                const uint8_t *limit0, const uint8_t *thresh0,
                                const uint8_t *blimit1, const uint8_t *limit1,
                                const uint8_t *thresh1) {
-  vp9_lpf_vertical_4_c(s, pitch, blimit0, limit0, thresh0, 1);
+  vp9_lpf_vertical_4_c(s, pitch, blimit0, limit0, thresh0, 8);
   vp9_lpf_vertical_4_c(s + 8 * pitch, pitch, blimit1, limit1,
-                                  thresh1, 1);
+                                  thresh1, 8);
 }
 
 static INLINE void filter8(int8_t mask, uint8_t hev, uint8_t flat,
@@ -195,7 +195,6 @@ void vp9_lpf_horizontal_8_c(uint8_t *s, int p, const uint8_t *blimit,
     ++s;
   }
 }
-
 void vp9_lpf_horizontal_8_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
                                  const uint8_t *limit0, const uint8_t *thresh0,
                                  const uint8_t *blimit1, const uint8_t *limit1,
@@ -209,7 +208,7 @@ void vp9_lpf_vertical_8_c(uint8_t *s, int pitch, const uint8_t *blimit,
                           int count) {
   int i;
 
-  for (i = 0; i < 8 * count; ++i) {
+  for (i = 0; i < count; ++i) {
     const uint8_t p3 = s[-4], p2 = s[-3], p1 = s[-2], p0 = s[-1];
     const uint8_t q0 = s[0], q1 = s[1], q2 = s[2], q3 = s[3];
     const int8_t mask = filter_mask(*limit, *blimit,
@@ -226,9 +225,8 @@ void vp9_lpf_vertical_8_dual_c(uint8_t *s, int pitch, const uint8_t *blimit0,
                                const uint8_t *limit0, const uint8_t *thresh0,
                                const uint8_t *blimit1, const uint8_t *limit1,
                                const uint8_t *thresh1) {
-  vp9_lpf_vertical_8_c(s, pitch, blimit0, limit0, thresh0, 1);
-  vp9_lpf_vertical_8_c(s + 8 * pitch, pitch, blimit1, limit1,
-                                    thresh1, 1);
+  vp9_lpf_vertical_8_c(s, pitch, blimit0, limit0, thresh0, 8);
+  vp9_lpf_vertical_8_c(s + 8 * pitch, pitch, blimit1, limit1, thresh1, 8);
 }
 
 static INLINE void filter16(int8_t mask, uint8_t hev,
@@ -334,8 +332,25 @@ static void mb_lpf_vertical_edge_w(uint8_t *s, int p,
 }
 
 void vp9_lpf_vertical_16_c(uint8_t *s, int p, const uint8_t *blimit,
-                           const uint8_t *limit, const uint8_t *thresh) {
-  mb_lpf_vertical_edge_w(s, p, blimit, limit, thresh, 8);
+                           const uint8_t *limit, const uint8_t *thresh,
+                           int count) {
+  int i;
+
+  for (i = 0; i < count; ++i) {
+    const uint8_t p3 = s[-4], p2 = s[-3], p1 = s[-2], p0 = s[-1];
+    const uint8_t q0 = s[0], q1 = s[1],  q2 = s[2], q3 = s[3];
+    const int8_t mask = filter_mask(*limit, *blimit,
+                                    p3, p2, p1, p0, q0, q1, q2, q3);
+    const int8_t hev = hev_mask(*thresh, p1, p0, q0, q1);
+    const int8_t flat = flat_mask4(1, p3, p2, p1, p0, q0, q1, q2, q3);
+    const int8_t flat2 = flat_mask5(1, s[-8], s[-7], s[-6], s[-5], p0,
+                                    q0, s[4], s[5], s[6], s[7]);
+
+    filter16(mask, hev, flat, flat2,
+             s - 8, s - 7, s - 6, s - 5, s - 4, s - 3, s - 2, s - 1,
+             s,     s + 1, s + 2, s + 3, s + 4, s + 5, s + 6, s + 7);
+    s += p;
+  }
 }
 
 void vp9_lpf_vertical_16_dual_c(uint8_t *s, int p, const uint8_t *blimit,

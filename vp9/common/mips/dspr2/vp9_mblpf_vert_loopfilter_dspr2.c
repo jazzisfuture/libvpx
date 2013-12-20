@@ -24,7 +24,8 @@ void vp9_lpf_vertical_16_dspr2(uint8_t *s,
                                int pitch,
                                const uint8_t *blimit,
                                const uint8_t *limit,
-                               const uint8_t *thresh) {
+                               const uint8_t *thresh,
+                               int count) {
   uint8_t   i;
   uint32_t  mask, hev, flat, flat2;
   uint8_t   *s1, *s2, *s3, *s4;
