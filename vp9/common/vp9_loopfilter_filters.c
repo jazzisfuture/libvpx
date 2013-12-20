@@ -118,7 +118,6 @@ void vp9_lpf_horizontal_4_c(uint8_t *s, int p /* pitch */,
     ++s;
   }
 }
-
 void vp9_lpf_horizontal_4_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
                                  const uint8_t *limit0, const uint8_t *thresh0,
                                  const uint8_t *blimit1, const uint8_t *limit1,
@@ -127,14 +126,14 @@ void vp9_lpf_horizontal_4_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
   vp9_lpf_horizontal_4_c(s + 8, p, blimit1, limit1, thresh1, 1);
 }
 
-void vp9_lpf_vertical_4_c(uint8_t *s, int pitch, const uint8_t *blimit,
-                          const uint8_t *limit, const uint8_t *thresh,
-                          int count) {
+static void lpf_vertical_4(uint8_t *s, int pitch, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh,
+                           int count) {
   int i;
 
   // loop filter designed to work using chars so that we can make maximum use
   // of 8 bit simd instructions.
-  for (i = 0; i < 8 * count; ++i) {
+  for (i = 0; i < count; ++i) {
     const uint8_t p3 = s[-4], p2 = s[-3], p1 = s[-2], p0 = s[-1];
     const uint8_t q0 = s[0],  q1 = s[1],  q2 = s[2],  q3 = s[3];
     const int8_t mask = filter_mask(*limit, *blimit,
@@ -143,6 +142,17 @@ void vp9_lpf_vertical_4_c(uint8_t *s, int pitch, const uint8_t *blimit,
     filter4(mask, hev, s - 2, s - 1, s, s + 1);
     s += pitch;
   }
+}
+
+void vp9_lpf_vertical_4_c(uint8_t *s, int pitch, const uint8_t *blimit,
+                          const uint8_t *limit, const uint8_t *thresh,
+                          int count) {
+  lpf_vertical_4(s, pitch, blimit, limit, thresh, 8 * count);
+}
+
+void vp9_lpf_vertical_4b(uint8_t *s, int pitch, const uint8_t *blimit,
+                          const uint8_t *limit, const uint8_t *thresh) {
+  lpf_vertical_4(s, pitch, blimit, limit, thresh, 4);
 }
 
 void vp9_lpf_vertical_4_dual_c(uint8_t *s, int pitch, const uint8_t *blimit0,
@@ -195,7 +205,6 @@ void vp9_lpf_horizontal_8_c(uint8_t *s, int p, const uint8_t *blimit,
     ++s;
   }
 }
-
 void vp9_lpf_horizontal_8_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
                                  const uint8_t *limit0, const uint8_t *thresh0,
                                  const uint8_t *blimit1, const uint8_t *limit1,
@@ -204,12 +213,12 @@ void vp9_lpf_horizontal_8_dual_c(uint8_t *s, int p, const uint8_t *blimit0,
   vp9_lpf_horizontal_8_c(s + 8, p, blimit1, limit1, thresh1, 1);
 }
 
-void vp9_lpf_vertical_8_c(uint8_t *s, int pitch, const uint8_t *blimit,
-                          const uint8_t *limit, const uint8_t *thresh,
-                          int count) {
+static void lpf_vertical_8(uint8_t *s, int pitch, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh,
+                           int count) {
   int i;
 
-  for (i = 0; i < 8 * count; ++i) {
+  for (i = 0; i < count; ++i) {
     const uint8_t p3 = s[-4], p2 = s[-3], p1 = s[-2], p0 = s[-1];
     const uint8_t q0 = s[0], q1 = s[1], q2 = s[2], q3 = s[3];
     const int8_t mask = filter_mask(*limit, *blimit,
@@ -220,6 +229,17 @@ void vp9_lpf_vertical_8_c(uint8_t *s, int pitch, const uint8_t *blimit,
                              s,     s + 1, s + 2, s + 3);
     s += pitch;
   }
+}
+
+void vp9_lpf_vertical_8_c(uint8_t *s, int pitch, const uint8_t *blimit,
+                          const uint8_t *limit, const uint8_t *thresh,
+                          int count) {
+  lpf_vertical_8(s, pitch, blimit, limit, thresh, count *  8);
+}
+
+void vp9_lpf_vertical_8b(uint8_t *s, int pitch, const uint8_t *blimit,
+                         const uint8_t *limit, const uint8_t *thresh) {
+  lpf_vertical_8(s, pitch, blimit, limit, thresh, 4);
 }
 
 void vp9_lpf_vertical_8_dual_c(uint8_t *s, int pitch, const uint8_t *blimit0,
@@ -331,6 +351,10 @@ static void mb_lpf_vertical_edge_w(uint8_t *s, int p,
              s,     s + 1, s + 2, s + 3, s + 4, s + 5, s + 6, s + 7);
     s += p;
   }
+}
+void vp9_lpf_vertical_16b(uint8_t *s, int p, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh) {
+  mb_lpf_vertical_edge_w(s, p, blimit, limit, thresh, 4);
 }
 
 void vp9_lpf_vertical_16_c(uint8_t *s, int p, const uint8_t *blimit,
