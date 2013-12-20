@@ -417,6 +417,8 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
   int i, rate_sum = 0, dist_sum = 0;
+  int ref = xd->mi_8x8[0]->mbmi.ref_frame[0];
+  unsigned int sse;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     struct macroblock_plane *const p = &x->plane[i];
@@ -425,9 +427,11 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     int rate;
     int64_t dist;
     (void) cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
-                              pd->dst.buf, pd->dst.stride, &x->pred_sse);
+                              pd->dst.buf, pd->dst.stride, &sse);
+    if (i == 0)
+      x->pred_sse[ref] = sse;
     // sse works better than var, since there is no dc prediction used
-    model_rd_from_var_lapndz(x->pred_sse, 1 << num_pels_log2_lookup[bs],
+    model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
                              pd->dequant[1] >> 3, &rate, &dist);
 
     rate_sum += rate;
@@ -1839,7 +1843,8 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                                          x->errorperbit, v_fn_ptr,
                                          0, cpi->sf.subpel_iters_per_step,
                                          x->nmvjointcost, x->mvcost,
-                                         &distortion, &x->pred_sse);
+                                         &distortion,
+                                         &x->pred_sse[mbmi->ref_frame[0]]);
 
             // save motion search result for use in compound prediction
             seg_mvs[i][mbmi->ref_frame[0]].as_int = mode_mv[NEWMV].as_int;
@@ -2386,6 +2391,12 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     step_param = MAX(step_param, boffset);
   }
 
+//  if (1) {
+//    int bwl = b_width_log2_lookup[bsize];
+//    int bhl = b_height_log2_lookup[bsize];
+//    unsigned int tlevel = x->pred_sse[ref] >> (bwl + bhl + 4);
+//  }
+
   mvp_full.as_int = x->mv_best_ref_index[ref] < MAX_MV_REF_CANDIDATES ?
       mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int :
       x->pred_mv[ref].as_int;
@@ -2426,6 +2437,27 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   x->mv_row_min = tmp_row_min;
   x->mv_row_max = tmp_row_max;
 
+  if (1) {
+    int bwl = b_width_log2_lookup[bsize];
+    int bhl = b_height_log2_lookup[bsize];
+    unsigned int tlevel = x->pred_sse[ref] >> (bwl + bhl + 4);
+
+    static int count = 0;
+    if (bsize == BLOCK_32X32) {
+      FILE *pf = fopen("motion_search_stats.txt", "a");
+      fprintf(pf, "pos (%d, %d), mv diff (%d, %d), ref %d, temperature: %d\n",
+              mi_row, mi_col,
+              mvp_full.as_mv.row - tmp_mv->as_mv.row / 8,
+              mvp_full.as_mv.col - tmp_mv->as_mv.col / 8,
+              ref, tlevel);
+      fclose(pf);
+      count++;
+    }
+
+    if (count == 10000)
+      assert(0);
+  }
+
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv.as_mv,
@@ -2434,7 +2466,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  &cpi->fn_ptr[bsize],
                                  0, cpi->sf.subpel_iters_per_step,
                                  x->nmvjointcost, x->mvcost,
-                                 &dis, &x->pred_sse);
+                                 &dis, &x->pred_sse[ref]);
   }
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv.as_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
@@ -2496,7 +2528,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   for (ite = 0; ite < 4; ite++) {
     struct buf_2d ref_yv12[2];
     int bestsme = INT_MAX;
-    unsigned int bestsse = INT_MAX;
     int sadpb = x->sadperbit16;
     int_mv tmp_mv;
     int search_range = 3;
@@ -2547,6 +2578,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (bestsme < INT_MAX) {
       int dis; /* TODO: use dis in distortion calculation later. */
+      unsigned int sse;
       bestsme = cpi->find_fractional_mv_step_comp(
           x, &tmp_mv.as_mv,
           &ref_mv[id].as_mv,
@@ -2555,7 +2587,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
           &cpi->fn_ptr[bsize],
           0, cpi->sf.subpel_iters_per_step,
           x->nmvjointcost, x->mvcost,
-          &dis, &bestsse, second_pred,
+          &dis, &sse, second_pred,
           pw, ph);
     }
 
@@ -2565,7 +2597,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     if (bestsme < last_besterr[id]) {
       frame_mv[refs[id]].as_int = tmp_mv.as_int;
       last_besterr[id] = bestsme;
-      x->pred_sse = bestsse;
     } else {
       break;
     }
@@ -2856,7 +2887,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // switchable list (ex. bilinear, 6-tap) is indicated at the frame level
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
   }
-
 
   if (cpi->sf.use_rd_breakout && ref_best_rd < INT64_MAX) {
     int tmp_rate;
@@ -3153,6 +3183,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     best_filter_rd[i] = INT64_MAX;
   for (i = 0; i < TX_SIZES; i++)
     rate_uv_intra[i] = INT_MAX;
+  for (i = 0; i < MAX_REF_FRAMES; ++i)
+    x->pred_sse[i] = INT_MAX;
 
   *returnrate = INT_MAX;
 
