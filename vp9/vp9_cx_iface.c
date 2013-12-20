@@ -1177,33 +1177,3 @@ CODEC_INTERFACE(vpx_codec_vp9_cx) = {
     vp9e_get_preview,
   } /* encoder functions */
 };
-
-
-#if CONFIG_EXPERIMENTAL
-
-CODEC_INTERFACE(vpx_codec_vp9x_cx) = {
-  "VP8 Experimental Encoder" VERSION_STRING,
-  VPX_CODEC_INTERNAL_ABI_VERSION,
-  VPX_CODEC_CAP_ENCODER | VPX_CODEC_CAP_PSNR,
-  /* vpx_codec_caps_t          caps; */
-  vp9e_exp_init,      /* vpx_codec_init_fn_t       init; */
-  vp9e_destroy,       /* vpx_codec_destroy_fn_t    destroy; */
-  vp9e_ctf_maps,      /* vpx_codec_ctrl_fn_map_t  *ctrl_maps; */
-  NOT_IMPLEMENTED,    /* vpx_codec_get_mmap_fn_t   get_mmap; */
-  NOT_IMPLEMENTED,    /* vpx_codec_set_mmap_fn_t   set_mmap; */
-  {  // NOLINT
-    NOT_IMPLEMENTED,    /* vpx_codec_peek_si_fn_t    peek_si; */
-    NOT_IMPLEMENTED,    /* vpx_codec_get_si_fn_t     get_si; */
-    NOT_IMPLEMENTED,    /* vpx_codec_decode_fn_t     decode; */
-    NOT_IMPLEMENTED,    /* vpx_codec_frame_get_fn_t  frame_get; */
-  },
-  {  // NOLINT
-    vp9e_usage_cfg_map, /* vpx_codec_enc_cfg_map_t    peek_si; */
-    vp9e_encode,        /* vpx_codec_encode_fn_t      encode; */
-    vp9e_get_cxdata,    /* vpx_codec_get_cx_data_fn_t   frame_get; */
-    vp9e_set_config,
-    NOT_IMPLEMENTED,
-    vp9e_get_preview,
-  } /* encoder functions */
-};
-#endif
