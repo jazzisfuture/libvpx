@@ -304,6 +304,51 @@ static void swap_frame_buffers(VP9D_COMP *pbi) {
     cm->frame_refs[ref_index].idx = INT_MAX;
 }
 
+static void apply_loop_filter(VP9D_COMP *const pbi) {
+  const int use_mt_plane_filter = 0;
+  VP9_COMMON *const cm = &pbi->common;
+  MACROBLOCKD *const xd = &pbi->mb;
+  if (cm->lf.filter_level == 0) return;
+
+  if (pbi->oxcf.max_threads > 1) {
+    if (use_mt_plane_filter) {
+      LFWorkerData *lf_data;
+
+      vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
+
+      if (pbi->lf_worker.data1 == NULL) {
+        CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
+                        vpx_malloc(sizeof(LFWorkerData)));
+        pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
+        if (!vp9_worker_reset(&pbi->lf_worker)) {
+          vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                             "Loop filter thread creation failed");
+        }
+      }
+
+      lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+      vp9_loop_filter_data_reset(lf_data, cm, xd);
+      lf_data->stop = cm->mi_rows;
+
+      // filter the U & V planes in the worker thread.
+      // TODO(jzern): tune for 444/alpha.
+      lf_data->filter_planes |= (1 << 1);  // U
+      lf_data->filter_planes |= (1 << 2);  // V
+
+      vp9_worker_launch(&pbi->lf_worker);
+
+      // filter the remaining planes in this thread.
+      vp9_loop_filter_rows(get_frame_new_buffer(cm), cm, xd,
+                           0, cm->mi_rows, ~lf_data->filter_planes);
+      vp9_worker_sync(&pbi->lf_worker);
+    } else {
+      vp9_loop_filter_frame_mt(pbi, cm, &pbi->mb, cm->lf.filter_level, 0, 0);
+    }
+  } else {
+    vp9_loop_filter_frame(cm, xd, cm->lf.filter_level, 0, 0);
+  }
+}
+
 int vp9_receive_compressed_data(VP9D_PTR ptr,
                                 size_t size, const uint8_t **psource,
                                 int64_t time_stamp) {
@@ -383,13 +428,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
-    // If multiple threads are used to decode tiles, then we use those threads
-    // to do parallel loopfiltering.
-    if (pbi->num_tile_workers) {
-      vp9_loop_filter_frame_mt(pbi, cm, &pbi->mb, cm->lf.filter_level, 0, 0);
-    } else {
-      vp9_loop_filter_frame(cm, &pbi->mb, cm->lf.filter_level, 0, 0);
-    }
+    apply_loop_filter(pbi);
   }
 
 #if WRITE_RECON_BUFFER == 2
