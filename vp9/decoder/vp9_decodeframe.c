@@ -782,7 +782,7 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     lf_data->cm = cm;
     lf_data->xd = pbi->mb;
     lf_data->stop = 0;
-    lf_data->y_only = 0;
+    lf_data->filter_planes = ~0;
     vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
   }
 
