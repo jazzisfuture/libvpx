@@ -110,9 +110,15 @@ void vp9_loop_filter_frame(struct VP9Common *cm,
                            int y_only, int partial_frame);
 
 // Apply the loop filter to [start, stop) macro block rows in frame_buffer.
+// 'filter_planes' is a bitmask indicating which planes to filter.
+// In MSB order YUVA would be:
+//  0 1 2 3 4 5 6 7
+// +-+-+-+-+-+-+-+-+
+// |X|X|X|X|A|V|U|Y|
+// +-+-+-+-+-+-+-+-+
 void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm, struct macroblockd *xd,
-                          int start, int stop, int y_only);
+                          int start, int stop, uint32_t filter_planes);
 
 typedef struct LoopFilterWorkerData {
   const YV12_BUFFER_CONFIG *frame_buffer;
@@ -122,7 +128,7 @@ typedef struct LoopFilterWorkerData {
                           // is changed during decode.
   int start;
   int stop;
-  int y_only;
+  uint32_t filter_planes;
 
   struct VP9LfSyncData *lf_sync;
   int num_lf_workers;

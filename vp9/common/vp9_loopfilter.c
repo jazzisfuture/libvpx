@@ -1203,22 +1203,26 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
 
 void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           VP9_COMMON *cm, MACROBLOCKD *xd,
-                          int start, int stop, int y_only) {
-  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+                          int start, int stop, uint32_t filter_planes) {
   int mi_row, mi_col;
   LOOP_FILTER_MASK lfm;
 #if CONFIG_NON420
-  int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
-      xd->plane[1].subsampling_x == 1);
+  const int use_420 = filter_planes == 1 ||
+                      (xd->plane[1].subsampling_y == 1 &&
+                       xd->plane[1].subsampling_x == 1);
 #endif
+  uint8_t *const buffers[4] = {frame_buffer->y_buffer,
+                               frame_buffer->u_buffer, frame_buffer->v_buffer,
+                               frame_buffer->alpha_buffer};
+  const int strides[4] = {frame_buffer->y_stride,
+                          frame_buffer->uv_stride, frame_buffer->uv_stride,
+                          frame_buffer->alpha_stride};
 
   for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
     MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
 
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
       int plane;
-
-      setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
 
       // TODO(JBB): Make setup_mask work for non 420.
 #if CONFIG_NON420
@@ -1227,15 +1231,20 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
         vp9_setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col,
                        cm->mode_info_stride, &lfm);
 
-      for (plane = 0; plane < num_planes; ++plane) {
+      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+        struct macroblockd_plane *const pd = &xd->plane[plane];
+        if (~filter_planes & (1 << plane)) continue;
+
+        setup_pred_plane(&pd->dst, buffers[plane], strides[plane],
+                         mi_row, mi_col,
+                         NULL, pd->subsampling_x, pd->subsampling_y);
 #if CONFIG_NON420
         if (use_420)
 #endif
-          vp9_filter_block_plane(cm, &xd->plane[plane], mi_row, &lfm);
+          vp9_filter_block_plane(cm, pd, mi_row, &lfm);
 #if CONFIG_NON420
         else
-          filter_block_plane_non420(cm, &xd->plane[plane], mi_8x8 + mi_col,
-                                    mi_row, mi_col);
+          filter_block_plane_non420(cm, pd, mi_8x8 + mi_col, mi_row, mi_col);
 #endif
       }
     }
@@ -1246,6 +1255,7 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                            int frame_filter_level,
                            int y_only, int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
+  const uint32_t filter_planes = y_only ? 1 : ~0;
   if (!frame_filter_level) return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
@@ -1258,13 +1268,13 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
   vp9_loop_filter_frame_init(cm, frame_filter_level);
   vp9_loop_filter_rows(cm->frame_to_show, cm, xd,
                        start_mi_row, end_mi_row,
-                       y_only);
+                       filter_planes);
 }
 
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
   LFWorkerData *const lf_data = (LFWorkerData*)arg1;
   (void)arg2;
   vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
-                       lf_data->start, lf_data->stop, lf_data->y_only);
+                       lf_data->start, lf_data->stop, lf_data->filter_planes);
   return 1;
 }

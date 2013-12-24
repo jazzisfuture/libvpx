@@ -121,9 +121,10 @@ static void loop_filter_rows_mt(const YV12_BUFFER_CONFIG *const frame_buffer,
 static int loop_filter_row_worker(void *arg1, void *arg2) {
   TileWorkerData *const tile_data = (TileWorkerData*)arg1;
   LFWorkerData *const lf_data = &tile_data->lfdata;
+  const int y_only = (lf_data->filter_planes == 1);
 
   loop_filter_rows_mt(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
-                      lf_data->start, lf_data->stop, lf_data->y_only,
+                      lf_data->start, lf_data->stop, y_only,
                       lf_data->lf_sync, lf_data->num_lf_workers);
   return 1;
 }
@@ -137,6 +138,7 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
                               int y_only, int partial_frame) {
   // Number of superblock rows and cols
   const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+  const uint32_t filter_planes = y_only ? 1 : ~0;
   int i;
 
   // Allocate memory used in thread synchronization.
@@ -179,7 +181,7 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
     lf_data->xd = pbi->mb;
     lf_data->start = i;
     lf_data->stop = sb_rows;
-    lf_data->y_only = y_only;   // always do all planes in decoder
+    lf_data->filter_planes = filter_planes;
 
     lf_data->lf_sync = &pbi->lf_row_sync;
     lf_data->num_lf_workers = pbi->num_tile_workers;
