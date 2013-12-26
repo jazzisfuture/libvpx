@@ -191,7 +191,7 @@ specialize vp9_dc_128_predictor_32x32
 #
 # Loopfilter
 #
-prototype void vp9_lpf_vertical_16 "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh"
+prototype void vp9_lpf_vertical_16 "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, int count"
 specialize vp9_lpf_vertical_16 sse2 neon dspr2
 
 prototype void vp9_lpf_vertical_16_dual "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh"

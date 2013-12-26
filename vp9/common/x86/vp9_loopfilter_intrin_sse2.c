@@ -1530,6 +1530,68 @@ static INLINE void transpose8x16(unsigned char *in0, unsigned char *in1,
   _mm_storeu_si128((__m128i *)(out + 7 * out_p), _mm_unpackhi_epi64(x7, x15));
 }
 
+static INLINE void store4x4(__m128i* x, uint8_t* dst, int stride) {
+  int i;
+  for (i = 0; i < 4; ++i, dst += stride) {
+    *((int32_t*)dst) = _mm_cvtsi128_si32(*x);
+    *x = _mm_srli_si128(*x, 4);
+  }
+}
+
+static INLINE void transpose4x4(unsigned char *src[], int in_p,
+                                unsigned char *dst[], int out_p,
+                                int num_4x4_to_transpose) {
+  int idx4x4 = 0;
+  __m128i x0, x1, x2, x3;
+
+  do {
+    unsigned char *in = src[idx4x4];
+    unsigned char *out = dst[idx4x4];
+    x0 = _mm_cvtsi32_si128(*((int32_t *) (in + 0*in_p)));
+    x1 = _mm_cvtsi32_si128(*((int32_t *) (in + 1*in_p)));
+    x2 = _mm_cvtsi32_si128(*((int32_t *) (in + 2*in_p)));
+    x3 = _mm_cvtsi32_si128(*((int32_t *) (in + 3*in_p)));
+
+    // 00 10 01 11 02 12 03 13 04 14 05 15 06 16 07 17
+    x0 = _mm_unpacklo_epi8(x0, x1);
+    // 20 30 21 31 22 32 23 33 24 34 25 35 26 36 27 37
+    x1 = _mm_unpacklo_epi8(x2, x3);
+    // 00 10 20 30 01 11 21 31 02 12 22 32 03 13 23 33
+    x2 = _mm_unpacklo_epi16(x0, x1);
+
+    store4x4(&x2, out, out_p);
+  } while (++idx4x4 < num_4x4_to_transpose);
+}
+
+static INLINE void transpose8x4(unsigned char *src[], int in_p,
+                                unsigned char *dst[], int out_p,
+                                int num_8x4_to_transpose) {
+  int idx8x4 = 0;
+  __m128i x0, x1, x2, x3;
+
+  do {
+    unsigned char *in = src[idx8x4];
+    unsigned char *out = dst[idx8x4];
+
+    x0 = _mm_loadl_epi64((__m128i *)(in + 0*in_p));  // 00 01 02 03 04 05 06 07
+    x1 = _mm_loadl_epi64((__m128i *)(in + 1*in_p));  // 10 11 12 13 14 15 16 17
+    x2 = _mm_loadl_epi64((__m128i *)(in + 2*in_p));  // 20 21 22 23 24 25 26 27
+    x3 = _mm_loadl_epi64((__m128i *)(in + 3*in_p));  // 30 31 32 33 34 35 36 37
+
+    // 00 10 01 11 02 12 03 13 04 14 05 15 06 16 07 17
+    x0 = _mm_unpacklo_epi8(x0, x1);
+    // 20 30 21 31 22 32 23 33 24 34 25 35 26 36 27 37
+    x1 = _mm_unpacklo_epi8(x2, x3);
+    // 00 10 20 30 01 11 21 31 02 12 22 32 03 13 23 33
+    x2 = _mm_unpacklo_epi16(x0, x1);
+
+    // 04 14 24 34 05 15 25 35 06 16 26 36 07 17 27 37
+    x3 = _mm_unpackhi_epi16(x0, x1);
+
+    store4x4(&x2, out, out_p);
+    store4x4(&x3, out + 4 * out_p, out_p);
+  } while (++idx8x4 < num_8x4_to_transpose);
+}
 static INLINE void transpose(unsigned char *src[], int in_p,
                              unsigned char *dst[], int out_p,
                              int num_8x8_to_transpose) {
@@ -1623,24 +1685,38 @@ void vp9_lpf_vertical_8_sse2(unsigned char *s, int p,
                              const unsigned char *limit,
                              const unsigned char *thresh, int count) {
   DECLARE_ALIGNED_ARRAY(8, unsigned char, t_dst, 8 * 8);
-  unsigned char *src[1];
-  unsigned char *dst[1];
-  (void)count;
+  unsigned char *src[2];
+  unsigned char *dst[2];
 
   // Transpose 8x8
   src[0] = s - 4;
   dst[0] = t_dst;
 
-  transpose(src, p, dst, 8, 1);
+  if ( count > 4 ) {
 
-  // Loop filtering
-  vp9_lpf_horizontal_8_sse2(t_dst + 4 * 8, 8, blimit, limit, thresh, 1);
+    transpose(src, p, dst, 8, 1);
 
-  src[0] = t_dst;
-  dst[0] = s - 4;
+    // Loop filtering
+    vp9_lpf_horizontal_8_sse2(t_dst + 4 * 8, 8, blimit, limit, thresh, 1);
 
-  // Transpose back
-  transpose(src, 8, dst, p, 1);
+    src[0] = t_dst;
+    dst[0] = s - 4;
+
+    // Transpose back
+    transpose(src, 8, dst, p, 1);
+  } else {
+    transpose8x4(src, p, dst, 8, 1);
+    // Loop filtering
+    vp9_lpf_horizontal_8_sse2(t_dst + 4 * 8, 8, blimit, limit, thresh, 1);
+
+    src[0] = t_dst;
+    src[1] = t_dst + 4 * 8;
+    dst[0] = s - 4;
+    dst[1] = s;
+
+    // Transpose back
+    transpose4x4(src, 8, dst, p, 2);
+  }
 }
 
 void vp9_lpf_vertical_8_dual_sse2(uint8_t *s, int p, const uint8_t *blimit0,
@@ -1672,29 +1748,50 @@ void vp9_lpf_vertical_8_dual_sse2(uint8_t *s, int p, const uint8_t *blimit0,
 void vp9_lpf_vertical_16_sse2(unsigned char *s, int p,
                               const unsigned char *blimit,
                               const unsigned char *limit,
-                              const unsigned char *thresh) {
+                              const unsigned char *thresh,
+                              int count) {
   DECLARE_ALIGNED_ARRAY(8, unsigned char, t_dst, 8 * 16);
-  unsigned char *src[2];
-  unsigned char *dst[2];
+  unsigned char *src[4];
+  unsigned char *dst[4];
 
   src[0] = s - 8;
   src[1] = s;
   dst[0] = t_dst;
   dst[1] = t_dst + 8 * 8;
 
-  // Transpose 16x8
-  transpose(src, p, dst, 8, 2);
+  if (count > 4) {
+    // Transpose 16x8
+    transpose(src, p, dst, 8, 2);
 
-  // Loop filtering
-  mb_lpf_horizontal_edge_w_sse2_8(t_dst + 8 * 8, 8, blimit, limit, thresh);
+    // Loop filtering
+    mb_lpf_horizontal_edge_w_sse2_8(t_dst + 8 * 8, 8, blimit, limit, thresh);
 
-  src[0] = t_dst;
-  src[1] = t_dst + 8 * 8;
-  dst[0] = s - 8;
-  dst[1] = s;
+    src[0] = t_dst;
+    src[1] = t_dst + 8 * 8;
+    dst[0] = s - 8;
+    dst[1] = s;
 
-  // Transpose back
-  transpose(src, 8, dst, p, 2);
+    // Transpose back
+    transpose(src, 8, dst, p, 2);
+  } else {
+    transpose8x4(src, p, dst, 8, 2);
+
+    // Loop filtering
+    mb_lpf_horizontal_edge_w_sse2_8(t_dst + 8 * 8, 8, blimit, limit, thresh);
+
+    src[0] = t_dst;
+    src[1] = t_dst + 4 * 8;
+    src[2] = t_dst + 8 * 8;
+    src[3] = t_dst + 12 * 8;
+    dst[0] = s - 8;
+    dst[1] = s - 4;
+    dst[2] = s;
+    dst[3] = s + 4;
+
+    // Transpose back
+    transpose4x4(src, 8, dst, p, 4);
+  }
+
 }
 
 void vp9_lpf_vertical_16_dual_sse2(unsigned char *s, int p,

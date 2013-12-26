@@ -255,6 +255,7 @@ sym(vp9_lpf_vertical_4_mmx):
         lea         rsi,        [rsi + rax*4 - 4]
 
         movsxd      rcx,        dword ptr arg(5) ;count
+        shr         rcx,        3             ; parameter is now in pixels
 .next8_v:
         mov         rdi,        rsi           ; rdi points to row +1 for indirect addressing
         add         rdi,        rax
