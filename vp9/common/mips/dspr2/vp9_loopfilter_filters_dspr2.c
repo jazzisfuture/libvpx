@@ -356,7 +356,7 @@ void vp9_lpf_vertical_16_dual_dspr2(uint8_t *s, int p,
                                     const uint8_t *blimit,
                                     const uint8_t *limit,
                                     const uint8_t *thresh) {
-  vp9_lpf_vertical_16_dspr2(s, p, blimit, limit, thresh);
-  vp9_lpf_vertical_16_dspr2(s + 8 * p, p, blimit, limit, thresh);
+  vp9_lpf_vertical_16_dspr2(s, p, blimit, limit, thresh, 8);
+  vp9_lpf_vertical_16_dspr2(s + 8 * p, p, blimit, limit, thresh, 8);
 }
 #endif  // #if HAVE_DSPR2
