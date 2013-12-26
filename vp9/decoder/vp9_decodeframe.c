@@ -778,10 +778,7 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
 
   if (pbi->do_loopfilter_inline) {
     LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-    lf_data->frame_buffer = get_frame_new_buffer(cm);
-    lf_data->cm = cm;
-    lf_data->xd = pbi->mb;
-    lf_data->stop = 0;
+    vp9_loop_filter_data_reset(lf_data, cm, xd);
     lf_data->filter_planes = ~0;
     vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
   }

@@ -94,6 +94,9 @@ typedef struct LoopFilterWorkerData {
   uint32_t filter_planes;
 } LFWorkerData;
 
+void vp9_loop_filter_data_reset(LFWorkerData *lf_data,
+                                struct VP9Common *cm, struct macroblockd *xd);
+
 // Operates on the rows described by LFWorkerData passed as 'arg1'.
 int vp9_loop_filter_worker(void *arg1, void *arg2);
 #endif  // VP9_COMMON_VP9_LOOPFILTER_H_

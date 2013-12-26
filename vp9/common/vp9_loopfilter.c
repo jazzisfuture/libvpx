@@ -1291,6 +1291,16 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                        filter_planes);
 }
 
+void vp9_loop_filter_data_reset(LFWorkerData *lf_data,
+                                struct VP9Common *cm, struct macroblockd *xd) {
+  lf_data->frame_buffer = get_frame_new_buffer(cm);
+  lf_data->cm = cm;
+  lf_data->xd = *xd;
+  lf_data->start = 0;
+  lf_data->stop = 0;
+  lf_data->filter_planes = 0;
+}
+
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
   LFWorkerData *const lf_data = (LFWorkerData*)arg1;
   (void)arg2;
