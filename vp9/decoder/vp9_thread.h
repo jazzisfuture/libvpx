@@ -68,6 +68,17 @@ typedef struct {
   int had_error;          // return value of the last call to 'hook'
 } VP9Worker;
 
+// Loopfilter row synchronization
+typedef struct VP9LfSyncData {
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t *mutex_;
+  pthread_cond_t  *cond_;
+#endif
+  // Allocate memory to store the loop-filtered superblock index in each row.
+  int *cur_sb_col;
+  int sync_range;
+} VP9LfSync;
+
 // Must be called first, before any other method.
 void vp9_worker_init(VP9Worker* const worker);
 // Must be called to initialize the object and spawn the thread. Re-entrant.
