@@ -95,4 +95,21 @@ void vp9_worker_end(VP9Worker* const worker);
 }    // extern "C"
 #endif
 
+// Macros used in multi-threaded tile-and-loopfilter case.
+#ifdef _WIN32
+#define thread_sleep(nms) Sleep(nms)
+#elif defined(__OS2__)
+#define thread_sleep(nms) DosSleep(nms)
+#else
+#include <unistd.h>
+#include <sched.h>
+#define thread_sleep(nms) sched_yield();
+#endif
+
+#if ARCH_X86 || ARCH_X86_64
+#include "vpx_ports/x86.h"
+#else
+#define x86_pause_hint()
+#endif
+
 #endif  // VP9_DECODER_VP9_THREAD_H_

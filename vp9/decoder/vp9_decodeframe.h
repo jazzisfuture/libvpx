@@ -18,4 +18,11 @@ struct VP9Decompressor;
 void vp9_init_dequantizer(struct VP9Common *cm);
 int vp9_decode_frame(struct VP9Decompressor *cpi, const uint8_t **p_data_end);
 
+// Implement row-based loopfiltering in decoder
+void vp9_loop_filter_frame_mt(struct VP9Decompressor *pbi,
+                              struct VP9Common *cm,
+                              MACROBLOCKD *xd,
+                              int frame_filter_level,
+                              int y_only, int partial);
+
 #endif  // VP9_DECODER_VP9_DECODEFRAME_H_
