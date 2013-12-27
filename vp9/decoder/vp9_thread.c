@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <string.h>   // for memset()
 #include "./vp9_thread.h"
+#include "vpx_mem/vpx_mem.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -60,6 +61,10 @@ static int pthread_mutex_init(pthread_mutex_t* const mutex, void* mutexattr) {
   (void)mutexattr;
   InitializeCriticalSection(mutex);
   return 0;
+}
+
+static int pthread_mutex_trylock(pthread_mutex_t* const mutex) {
+  return TryEnterCriticalSection(mutex) ? 0 : EBUSY;
 }
 
 static int pthread_mutex_lock(pthread_mutex_t* const mutex) {
@@ -242,6 +247,59 @@ void vp9_worker_end(VP9Worker* const worker) {
 #endif
   }
   assert(worker->status_ == NOT_OK);
+}
+
+// Allocate memory for lf row synchronization
+int vp9_lf_start(VP9LfSync *lf_sync, int rows, int width) {
+#if CONFIG_MULTITHREAD
+  int i;
+
+  lf_sync->mutex_ = vpx_malloc(sizeof(*lf_sync->mutex_) * rows);
+  if (!lf_sync->mutex_)
+    return -1;
+
+  lf_sync->cond_ = vpx_malloc(sizeof(*lf_sync->cond_) * rows);
+  if (!lf_sync->cond_)
+    return -1;
+
+  for (i = 0; i < rows; ++i)
+    pthread_mutex_init(&(lf_sync->mutex_[i]), NULL);
+
+  for (i = 0; i < rows; ++i)
+    pthread_cond_init(&(lf_sync->cond_[i]), NULL);
+#endif
+
+  lf_sync->cur_sb_col = vpx_malloc(sizeof(*lf_sync->cur_sb_col) * rows);
+  if (!lf_sync->cur_sb_col)
+    return -1;
+
+  // Set up nsync
+  if (width < 640)
+    lf_sync->sync_range = 1;
+  else if (width <= 1280)
+    lf_sync->sync_range = 2;
+  else if (width <= 2560)
+    lf_sync->sync_range = 4;
+  else
+    lf_sync->sync_range = 8;
+
+  return 0;
+}
+
+// Deallocate lf synchronization related mutex and data
+void vp9_lf_end(VP9LfSync *lf_sync, int rows) {
+#if CONFIG_MULTITHREAD
+  int i;
+
+  for (i = 0; i < rows; ++i) {
+    pthread_mutex_destroy(&(lf_sync->mutex_[i]));
+    pthread_cond_destroy(&(lf_sync->cond_[i]));
+  }
+
+  vpx_free(lf_sync->mutex_);
+  vpx_free(lf_sync->cond_);
+#endif
+  vpx_free(lf_sync->cur_sb_col);
 }
 
 //------------------------------------------------------------------------------
