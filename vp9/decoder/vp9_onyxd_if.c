@@ -367,7 +367,18 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
-    vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+    const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows)
+                        >> MI_BLOCK_SIZE_LOG2;
+
+    // If multiple threads are used to decode tiles, then we use those threads
+    // to do parallel loopfiltering.
+    if (pbi->num_tile_workers && pbi->common.lf.filter_level
+        && sb_rows >= pbi->num_tile_workers) {
+      vp9_loop_filter_frame_mt(pbi, cm, &pbi->mb,
+                               pbi->common.lf.filter_level, 0, 0);
+    } else {
+      vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+    }
   }
 
 #if WRITE_RECON_BUFFER == 2
