@@ -1,0 +1,40 @@
+/*
+ *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+#ifndef VP9_DECODER_VP9_DTHREAD_H_
+#define VP9_DECODER_VP9_DTHREAD_H_
+
+typedef struct TileWorkerData {
+  VP9_COMMON *cm;
+  vp9_reader bit_reader;
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+  DECLARE_ALIGNED(16, int16_t,  dqcoeff[MAX_MB_PLANE][64 * 64]);
+
+  // Row-based parallel loopfilter data
+  LFWorkerData lfdata;
+} TileWorkerData;
+
+/* assorted loopfilter functions which get used elsewhere */
+struct VP9Common;
+struct macroblockd;
+struct VP9LfSyncData;
+
+// Row-based multi-threaded loopfilter hook
+int vp9_loop_filter_row_worker(void *arg1, void *arg2);
+
+// VP9 decoder: Implement multi-threaded loopfilter that uses the tile
+// threads.
+void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
+                              VP9_COMMON *cm,
+                              MACROBLOCKD *xd,
+                              int frame_filter_level,
+                              int y_only, int partial);
+
+#endif  // VP9_DECODER_VP9_DTHREAD_H_
