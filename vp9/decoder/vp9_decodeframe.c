@@ -38,12 +38,16 @@
 #include "vp9/decoder/vp9_read_bit_buffer.h"
 #include "vp9/decoder/vp9_thread.h"
 
-typedef struct TileWorkerData {
+typedef struct TileLfWorkerData {
   VP9_COMMON *cm;
   vp9_reader bit_reader;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   DECLARE_ALIGNED(16, int16_t,  dqcoeff[MAX_MB_PLANE][64 * 64]);
-} TileWorkerData;
+
+  // Row-based parallel loopfilter data
+  VP9D_COMP *pbi;
+  LFWorkerData lfdata;
+} TileLfWorkerData;
 
 static int read_be32(const uint8_t *p) {
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
@@ -933,7 +937,7 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
   return end;
 }
 
-static void setup_tile_macroblockd(TileWorkerData *const tile_data) {
+static void setup_tile_macroblockd(TileLfWorkerData *const tile_data) {
   MACROBLOCKD *xd = &tile_data->xd;
   struct macroblockd_plane *const pd = xd->plane;
   int i;
@@ -945,7 +949,7 @@ static void setup_tile_macroblockd(TileWorkerData *const tile_data) {
 }
 
 static int tile_worker_hook(void *arg1, void *arg2) {
-  TileWorkerData *const tile_data = (TileWorkerData*)arg1;
+  TileLfWorkerData *const tile_data = (TileLfWorkerData*)arg1;
   const TileInfo *const tile = (TileInfo*)arg2;
   int mi_row, mi_col;
 
@@ -984,7 +988,7 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int num_workers = MIN(pbi->oxcf.max_threads & ~1, tile_cols);
   TileBuffer tile_buffers[1 << 6];
-  int n;
+  int n, t;
   int final_worker = -1;
 
   assert(tile_cols <= (1 << 6));
@@ -1003,13 +1007,20 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
       vp9_worker_init(worker);
       worker->hook = (VP9WorkerHook)tile_worker_hook;
       CHECK_MEM_ERROR(cm, worker->data1,
-                      vpx_memalign(32, sizeof(TileWorkerData)));
+                      vpx_memalign(32, sizeof(TileLfWorkerData)));
       CHECK_MEM_ERROR(cm, worker->data2, vpx_malloc(sizeof(TileInfo)));
       if (i < num_workers - 1 && !vp9_worker_reset(worker)) {
         vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                            "Tile decoder thread creation failed");
       }
     }
+  }
+
+  // Reset tile decoding hook
+  for (t = 0; t < pbi->num_tile_workers; ++t) {
+    VP9Worker *const worker = &pbi->tile_workers[t];
+
+    worker->hook = (VP9WorkerHook)tile_worker_hook;
   }
 
   // Note: this memset assumes above_context[0], [1] and [2]
@@ -1055,7 +1066,7 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
     int i;
     for (i = 0; i < num_workers && n < tile_cols; ++i) {
       VP9Worker *const worker = &pbi->tile_workers[i];
-      TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
+      TileLfWorkerData *const tile_data = (TileLfWorkerData*)worker->data1;
       TileInfo *const tile = (TileInfo*)worker->data2;
       TileBuffer *const buf = &tile_buffers[n];
 
@@ -1088,8 +1099,8 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
       pbi->mb.corrupted |= !vp9_worker_sync(worker);
     }
     if (final_worker > -1) {
-      TileWorkerData *const tile_data =
-          (TileWorkerData*)pbi->tile_workers[final_worker].data1;
+      TileLfWorkerData *const tile_data =
+          (TileLfWorkerData*)pbi->tile_workers[final_worker].data1;
       bit_reader_end = vp9_reader_find_end(&tile_data->bit_reader);
       final_worker = -1;
     }
@@ -1402,8 +1413,9 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     *p_data_end = decode_tiles(pbi, data + first_partition_size);
   }
 
-  cm->last_width = cm->width;
-  cm->last_height = cm->height;
+  // Moved after the loopfilter so that they can be used in loopfilter code.
+  // cm->last_width = cm->width;
+  // cm->last_height = cm->height;
 
   new_fb->corrupted |= xd->corrupted;
 
@@ -1430,4 +1442,205 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
 
   return 0;
+}
+
+// Implement row loopfiltering for each thread.
+void vp9_loop_filter_rows_mt(VP9D_COMP *pbi,
+                             const YV12_BUFFER_CONFIG *frame_buffer,
+                             VP9_COMMON *cm, MACROBLOCKD *xd,
+                             int start, int stop, int y_only) {
+#if CONFIG_MULTITHREAD
+  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+  int r, c;  // SB row and col
+  LOOP_FILTER_MASK lfm;
+  const int sb_cols = mi_cols_aligned_to_sb(cm->mi_cols) >> MI_BLOCK_SIZE_LOG2;
+
+  volatile const int *last_row_current_sb_col;
+  volatile int *current_sb_col;
+  const int nsync = pbi->sync_range;
+  const int first_row_no_sync_above = sb_cols + nsync;
+
+  for (r = start; r < stop; r += pbi->num_tile_workers) {
+    MODE_INFO **mi_8x8 = cm->mi_grid_visible + (r << MI_BLOCK_SIZE_LOG2)
+                         * cm->mode_info_stride;
+
+    if (r > 0)
+      last_row_current_sb_col = &pbi->lfmt_current_sb_col[r - 1];
+    else
+      last_row_current_sb_col = &first_row_no_sync_above;
+
+    current_sb_col = &pbi->lfmt_current_sb_col[r];
+
+    for (c = 0; c < sb_cols; c++) {
+      int plane;
+      int i;
+
+      if (r) {
+        if ((c & (nsync - 1)) == 0) {
+          for (i = 0; i < 4000; ++i)
+            if (!pthread_mutex_trylock(&(pbi->row_mutex[r - 1]))) {
+              break;
+            }
+          // pthread_mutex_lock(&(pbi->row_mutex[r - 1]));
+
+          while (c > (*last_row_current_sb_col - nsync)) {
+            pthread_cond_wait(&(pbi->row_cond[r - 1]),
+                              &(pbi->row_mutex[r - 1]));
+          }
+          pthread_mutex_unlock(&(pbi->row_mutex[r - 1]));
+        }
+      }
+
+      setup_dst_planes(xd, frame_buffer, (r << MI_BLOCK_SIZE_LOG2),
+                       (c << MI_BLOCK_SIZE_LOG2));
+      vp9_setup_mask(cm, (r << MI_BLOCK_SIZE_LOG2), (c << MI_BLOCK_SIZE_LOG2),
+                     mi_8x8 + (c << MI_BLOCK_SIZE_LOG2), cm->mode_info_stride,
+                     &lfm);
+
+      for (plane = 0; plane < num_planes; ++plane) {
+        vp9_filter_block_plane(cm, &xd->plane[plane],
+                               (r << MI_BLOCK_SIZE_LOG2), &lfm);
+      }
+
+      {
+        int cur;
+        // Only signal when there are enough filtered SB for next row to run.
+        int sig = 1;
+
+        if (c < sb_cols - 1) {
+          cur = c;
+          if (c % nsync)
+            sig = 0;
+        } else {
+          cur = sb_cols + nsync;
+        }
+
+        pthread_mutex_lock(&(pbi->row_mutex[r]));
+        *current_sb_col = cur;
+        if (sig)
+          pthread_cond_signal(&(pbi->row_cond[r]));
+        pthread_mutex_unlock(&(pbi->row_mutex[r]));
+      }
+    }
+  }
+#endif
+}
+
+// Row-based multi-threaded loopfilter hook
+int loop_filter_row_worker(void *arg1, void *arg2) {
+  TileLfWorkerData *const tile_data = (TileLfWorkerData*)arg1;
+  LFWorkerData *lf_data = &tile_data->lfdata;
+
+  (void)arg2;
+
+  vp9_loop_filter_rows_mt(tile_data->pbi, lf_data->frame_buffer,
+                          lf_data->cm, &lf_data->xd,
+                          lf_data->start, lf_data->stop, lf_data->y_only);
+  return 1;
+}
+
+// VP9 decoder: Implement multi-threaded loopfilter that uses the tile
+// threads.
+void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
+                              VP9_COMMON *cm,
+                              MACROBLOCKD *xd,
+                              int frame_filter_level,
+                              int y_only, int partial) {
+  // Number of superblock rows and cols
+  const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+  int i;
+
+  // Allocate memory used in thread synchronization.
+  // This always needs to be done even if frame_filter_level is 0.
+  if (!cm->current_video_frame || cm->last_height != cm->height) {
+    if (pbi->lfmt_current_sb_col)
+      vpx_free(pbi->lfmt_current_sb_col);
+
+    CHECK_MEM_ERROR(cm, pbi->lfmt_current_sb_col,
+                    vpx_malloc(sizeof(*pbi->lfmt_current_sb_col) * sb_rows));
+
+#if CONFIG_MULTITHREAD
+    if (cm->last_height != cm->height) {
+      const int aligned_last_height =
+          ALIGN_POWER_OF_TWO(cm->last_height, MI_SIZE_LOG2);
+      const int last_sb_rows =
+          mi_cols_aligned_to_sb(aligned_last_height >> MI_SIZE_LOG2) >>
+          MI_BLOCK_SIZE_LOG2;
+
+      for (i = 0; i < last_sb_rows; ++i)
+        pthread_mutex_destroy(&(pbi->row_mutex[i]));
+
+      vpx_free(pbi->row_mutex);
+
+      for (i = 0; i < last_sb_rows; ++i)
+        pthread_cond_destroy(&(pbi->row_cond[i]));
+
+      vpx_free(pbi->row_cond);
+    }
+
+    CHECK_MEM_ERROR(cm, pbi->row_mutex,
+                        vpx_malloc(sizeof(*pbi->row_mutex) * sb_rows));
+
+    for (i = 0; i < sb_rows; ++i)
+      pthread_mutex_init(&(pbi->row_mutex[i]), NULL);
+
+    CHECK_MEM_ERROR(cm, pbi->row_cond,
+                        vpx_malloc(sizeof(*pbi->row_cond) * sb_rows));
+
+    for (i = 0; i < sb_rows; ++i)
+      pthread_cond_init(&(pbi->row_cond[i]), NULL);
+#endif
+
+    // Set up nsync
+    if (cm->width < 640)
+      pbi->sync_range = 1;
+    else if (cm->width <= 1280)
+      pbi->sync_range = 2;
+    else if (cm->width <= 2560)
+      pbi->sync_range =4;
+    else
+      pbi->sync_range = 8;
+  }
+
+  if (!frame_filter_level) return;
+
+  vp9_loop_filter_frame_init(cm, frame_filter_level);
+
+  // Initialize lfmt_current_sb_col to -1 for all SB rows.
+  vpx_memset(pbi->lfmt_current_sb_col, -1,
+             sizeof(*pbi->lfmt_current_sb_col) * sb_rows);
+
+  // Set up loopfilter thread data.
+  for (i = 0; i < pbi->num_tile_workers; ++i) {
+    VP9Worker *const worker = &pbi->tile_workers[i];
+    TileLfWorkerData *const tile_data = (TileLfWorkerData*)worker->data1;
+    LFWorkerData *const lf_data = &tile_data->lfdata;
+
+    worker->hook = (VP9WorkerHook)loop_filter_row_worker;
+
+    // Loopfilter data
+    tile_data->pbi = pbi;
+
+    lf_data->frame_buffer = get_frame_new_buffer(cm);
+    lf_data->cm = cm;
+    lf_data->xd = pbi->mb;
+    lf_data->start = i;
+    lf_data->stop = sb_rows;
+    lf_data->y_only = y_only;   // always do all planes in decoder
+
+    // At this moment, all tile threads' status is OK.
+    // Ready to do loopfiltering.
+    if (i == pbi->num_tile_workers - 1) {
+      vp9_worker_execute(worker);
+    } else {
+      vp9_worker_launch(worker);
+    }
+  }
+
+  // Wait till all rows are finished
+  for (i = 0; i < pbi->num_tile_workers; ++i) {
+    VP9Worker *const worker = &pbi->tile_workers[i];
+
+    vp9_worker_sync(worker);
+  }
 }
