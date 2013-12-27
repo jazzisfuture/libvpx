@@ -51,6 +51,10 @@ typedef struct VP9Decompressor {
 
   ENTROPY_CONTEXT *above_context[MAX_MB_PLANE];
   PARTITION_CONTEXT *above_seg_context;
+
+  // Allocate memory to store the loopfiltered superblock index in each row.
+  int *lfmt_current_sb_col;
+  int sync_range;
 } VP9D_COMP;
 
 #endif  // VP9_DECODER_VP9_ONYXD_INT_H_
