@@ -37,13 +37,7 @@
 #include "vp9/decoder/vp9_onyxd_int.h"
 #include "vp9/decoder/vp9_read_bit_buffer.h"
 #include "vp9/decoder/vp9_thread.h"
-
-typedef struct TileWorkerData {
-  VP9_COMMON *cm;
-  vp9_reader bit_reader;
-  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
-  DECLARE_ALIGNED(16, int16_t,  dqcoeff[MAX_MB_PLANE][64 * 64]);
-} TileWorkerData;
+#include "vp9/decoder/vp9_dthread.h"
 
 static int read_be32(const uint8_t *p) {
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
@@ -1001,7 +995,6 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
       ++pbi->num_tile_workers;
 
       vp9_worker_init(worker);
-      worker->hook = (VP9WorkerHook)tile_worker_hook;
       CHECK_MEM_ERROR(cm, worker->data1,
                       vpx_memalign(32, sizeof(TileWorkerData)));
       CHECK_MEM_ERROR(cm, worker->data2, vpx_malloc(sizeof(TileInfo)));
@@ -1010,6 +1003,11 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi, const uint8_t *data) {
                            "Tile decoder thread creation failed");
       }
     }
+  }
+
+  // Reset tile decoding hook
+  for (n = 0; n < pbi->num_tile_workers; ++n) {
+    pbi->tile_workers[n].hook = (VP9WorkerHook)tile_worker_hook;
   }
 
   // Note: this memset assumes above_context[0], [1] and [2]
@@ -1401,9 +1399,6 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   } else {
     *p_data_end = decode_tiles(pbi, data + first_partition_size);
   }
-
-  cm->last_width = cm->width;
-  cm->last_height = cm->height;
 
   new_fb->corrupted |= xd->corrupted;
 
