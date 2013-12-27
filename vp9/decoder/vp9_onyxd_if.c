@@ -177,6 +177,7 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
     vpx_free(worker->data2);
   }
   vpx_free(pbi->tile_workers);
+  vpx_free(pbi->lfmt_current_sb_col);
   vpx_free(pbi->mi_streams);
   vpx_free(pbi->above_context[0]);
   vpx_free(pbi->above_seg_context);
@@ -367,7 +368,13 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
-    vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+    // If multiple threads are used to decode tiles, then we use those threads
+    // to do parallel loopfiltering.
+    if (pbi->num_tile_workers) {
+      vp9_loop_filter_frame_mt(pbi, cm, &pbi->mb, cm->lf.filter_level, 0, 0);
+    } else {
+      vp9_loop_filter_frame(cm, &pbi->mb, cm->lf.filter_level, 0, 0);
+    }
   }
 
 #if WRITE_RECON_BUFFER == 2
@@ -386,6 +393,9 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   vp9_clear_system_state();
+
+  cm->last_width = cm->width;
+  cm->last_height = cm->height;
 
   cm->last_show_frame = cm->show_frame;
   if (cm->show_frame) {
