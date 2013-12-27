@@ -45,6 +45,8 @@ typedef struct VP9Decompressor {
   VP9Worker *tile_workers;
   int num_tile_workers;
 
+  VP9LfSync lf_row_sync;
+
   /* Each tile column has its own MODE_INFO stream. This array indexes them by
      tile column index. */
   MODE_INFO **mi_streams;
