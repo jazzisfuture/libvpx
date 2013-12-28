@@ -145,8 +145,8 @@ typedef struct VP9Common {
   // roll new_fb_idx into it.
 
   // Each frame can reference REFS_PER_FRAME buffers
-  int active_ref_idx[REFS_PER_FRAME];
-  struct scale_factors active_ref_scale[REFS_PER_FRAME];
+  RefBuffer frame_refs[REFS_PER_FRAME];
+
   int new_fb_idx;
 
   YV12_BUFFER_CONFIG post_proc_buffer;
@@ -256,13 +256,6 @@ typedef struct VP9Common {
 #endif
 #endif
 } VP9_COMMON;
-
-// ref == 0 => LAST_FRAME
-// ref == 1 => GOLDEN_FRAME
-// ref == 2 => ALTREF_FRAME
-static YV12_BUFFER_CONFIG *get_frame_ref_buffer(VP9_COMMON *cm, int ref) {
-  return &cm->yv12_fb[cm->active_ref_idx[ref]];
-}
 
 static YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
   return &cm->yv12_fb[cm->new_fb_idx];
