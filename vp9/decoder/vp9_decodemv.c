@@ -179,6 +179,13 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
     const MB_PREDICTION_MODE A = above_block_mode(mi, above_mi, 0);
     const MB_PREDICTION_MODE L = left_block_mode(mi, left_mi, 0);
     mbmi->mode = read_intra_mode(r, vp9_kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_enabled(mbmi->tx_size) && is_filter_allowed(mbmi->mode))
+      mbmi->filterbit = vp9_read(r,
+          cm->fc.filterintra_prob[mbmi->tx_size][mbmi->mode]);
+    else
+      mbmi->filterbit = 0;
+#endif
   } else {
     // Only 4x4, 4x8, 8x4 blocks
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];  // 1 or 2
@@ -197,13 +204,35 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
           mi->bmi[ib + 2].as_mode = b_mode;
         if (num_4x4_w == 2)
           mi->bmi[ib + 1].as_mode = b_mode;
+#if CONFIG_FILTERINTRA
+        if (is_filter_allowed(b_mode))
+          mi->b_filter_info[ib] = vp9_read(r,
+                                 cm->fc.filterintra_prob[0][b_mode]);
+        else
+          mi->b_filter_info[ib] = 0;
+        if (num_4x4_h == 2)
+          mi->b_filter_info[ib + 2] = mi->b_filter_info[ib];
+        if (num_4x4_w == 2)
+          mi->b_filter_info[ib + 1] = mi->b_filter_info[ib];
+#endif
       }
     }
 
     mbmi->mode = mi->bmi[3].as_mode;
+#if CONFIG_FILTERINTRA
+    mbmi->filterbit = mi->b_filter_info[3];
+#endif
   }
 
   mbmi->uv_mode = read_intra_mode(r, vp9_kf_uv_mode_prob[mbmi->mode]);
+#if CONFIG_FILTERINTRA
+  if (is_filter_enabled(get_uv_tx_size(mbmi)) &&
+      is_filter_allowed(mbmi->uv_mode))
+    mbmi->uv_filterbit = vp9_read(r,
+        cm->fc.filterintra_prob[get_uv_tx_size(mbmi)][mbmi->uv_mode]);
+  else
+    mbmi->uv_filterbit = 0;
+#endif
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -334,6 +363,15 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm, MODE_INFO *mi,
 
   if (bsize >= BLOCK_8X8) {
     mbmi->mode = read_intra_mode_y(cm, r, size_group_lookup[bsize]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(mbmi->mode) && is_filter_enabled(mbmi->tx_size)) {
+      mbmi->filterbit = vp9_read(r,
+          cm->fc.filterintra_prob[mbmi->tx_size][mbmi->mode]);
+      cm->counts.filterintra[mbmi->tx_size][mbmi->mode][mbmi->filterbit]++;
+    } else {
+      mbmi->filterbit = 0;
+    }
+#endif
   } else {
      // Only 4x4, 4x8, 8x4 blocks
      const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];  // 1 or 2
@@ -349,12 +387,40 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm, MODE_INFO *mi,
            mi->bmi[ib + 2].as_mode = b_mode;
          if (num_4x4_w == 2)
            mi->bmi[ib + 1].as_mode = b_mode;
+#if CONFIG_FILTERINTRA
+         if (is_filter_allowed(b_mode)) {
+           mi->b_filter_info[ib] = vp9_read(r,
+               cm->fc.filterintra_prob[0][b_mode]);
+           cm->counts.filterintra[0][b_mode][mi->b_filter_info[ib]]++;
+         } else {
+           mi->b_filter_info[ib] = 0;
+         }
+
+         if (num_4x4_h == 2)
+           mi->b_filter_info[ib + 2] = mi->b_filter_info[ib];
+         if (num_4x4_w == 2)
+           mi->b_filter_info[ib + 1] = mi->b_filter_info[ib];
+#endif
       }
     }
     mbmi->mode = mi->bmi[3].as_mode;
+#if CONFIG_FILTERINTRA
+    mbmi->filterbit = mi->b_filter_info[3];
+#endif
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, r, mbmi->mode);
+#if CONFIG_FILTERINTRA
+  if (is_filter_allowed(mbmi->uv_mode) &&
+      is_filter_enabled(get_uv_tx_size(mbmi))) {
+    mbmi->uv_filterbit = vp9_read(r,
+        cm->fc.filterintra_prob[get_uv_tx_size(mbmi)][mbmi->uv_mode]);
+    cm->counts.filterintra[get_uv_tx_size(mbmi)]
+                           [mbmi->uv_mode][mbmi->uv_filterbit]++;
+  } else {
+    mbmi->uv_filterbit = 0;
+  }
+#endif
 }
 
 static INLINE int assign_mv(VP9_COMMON *cm, MB_PREDICTION_MODE mode,

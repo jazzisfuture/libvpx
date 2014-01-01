@@ -80,6 +80,28 @@ static INLINE int is_inter_mode(MB_PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
 
+#if CONFIG_FILTERINTRA
+static INLINE int
+is_filter_allowed(MB_PREDICTION_MODE mode) {
+#if CONFIG_FILTERINTRA_4TAP
+  return 1;
+#else
+  return mode != DC_PRED &&
+         mode != D45_PRED &&
+         mode != D207_PRED &&
+         mode != D63_PRED;
+#endif
+}
+
+static INLINE int is_filter_enabled(TX_SIZE txsize) {
+#if !CONFIG_FILTERINTRA_8X8
+  return (txsize <= TX_32X32);
+#else
+  return (txsize <= TX_8X8);
+#endif
+}
+#endif
+
 #define INTRA_MODES (TM_PRED + 1)
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
@@ -123,6 +145,9 @@ static INLINE int mi_height_log2(BLOCK_SIZE sb_type) {
 // This structure now relates to 8x8 block regions.
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
+#if CONFIG_FILTERINTRA
+  int filterbit, uv_filterbit;
+#endif
   MV_REFERENCE_FRAME ref_frame[2];
   TX_SIZE tx_size;
   int_mv mv[2];                // for each reference frame used
@@ -144,6 +169,9 @@ typedef struct {
 
 typedef struct {
   MB_MODE_INFO mbmi;
+#if CONFIG_FILTERINTRA
+  int b_filter_info[4];
+#endif
   b_mode_info bmi[4];
 } MODE_INFO;
 

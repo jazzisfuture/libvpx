@@ -161,6 +161,23 @@ static const vp9_prob default_if_uv_probs[INTRA_MODES][INTRA_MODES - 1] = {
   { 101,  21, 107, 181, 192, 103,  19,  67, 125 }   // y = tm
 };
 
+#if CONFIG_FILTERINTRA
+const vp9_prob vp9_default_filterintra_prob[TX_SIZES][INTRA_MODES] = {
+#if CONFIG_FILTERINTRA_4TAP
+    {153,   171,   147,   150,   129,   101,   100,   153,   132,   111},
+    {171,   173,   185,   131,    70,    53,    70,   148,   127,   114},
+    {175,   203,   213,    86,    45,    71,    41,   150,   125,   154},
+    {235,   230,   154,   202,   154,   205,    37,   128,     0,   202}
+#else
+  // DC   V    H    D45  D135 D117 D153 D207 D63  TM
+    {160, 153, 171, 160, 140, 117, 115, 160, 160, 116},  // TX_4X4
+    {180, 151, 191, 180, 118,  66,  97, 180, 180, 120},  // TX_8X8
+    {200, 200, 200, 200, 200, 200, 200, 200, 200, 200},  // TX_16X16
+    {220, 220, 220, 220, 220, 220, 220, 220, 220, 220},  // TX_32X32
+#endif
+};
+#endif
+
 const vp9_prob vp9_kf_partition_probs[PARTITION_CONTEXTS]
                                      [PARTITION_TYPES - 1] = {
   // 8x8 -> 4x4
@@ -327,6 +344,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
   cm->fc.tx_probs = default_tx_probs;
   vp9_copy(cm->fc.mbskip_probs, default_mbskip_probs);
   vp9_copy(cm->fc.inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_FILTERINTRA
+  vp9_copy(cm->fc.filterintra_prob, vp9_default_filterintra_prob);
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -418,6 +438,12 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < MBSKIP_CONTEXTS; ++i)
     fc->mbskip_probs[i] = adapt_prob(pre_fc->mbskip_probs[i],
                                      counts->mbskip[i]);
+#if CONFIG_FILTERINTRA
+  for (i = 0; i < TX_SIZES; ++i)
+    for (j = 0; j < INTRA_MODES; ++j)
+      fc->filterintra_prob[i][j] = adapt_prob(pre_fc->filterintra_prob[i][j],
+                                   counts->filterintra[i][j]);
+#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {

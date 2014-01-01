@@ -256,6 +256,9 @@ EXPERIMENT_LIST="
     multiple_arf
     non420
     alpha
+    filterintra
+    filterintra_4tap
+    filterintra_8x8
 "
 CONFIG_LIST="
     external_build

@@ -307,6 +307,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
 
     if (bsize >= BLOCK_8X8) {
       write_intra_mode(bc, mode, cm->fc.y_mode_prob[size_group_lookup[bsize]]);
+#if CONFIG_FILTERINTRA
+      if (is_filter_allowed(mode) && is_filter_enabled(mi->tx_size)) {
+        vp9_write(bc, mi->filterbit,
+                  cm->fc.filterintra_prob[mi->tx_size][mode]);
+      }
+#endif
     } else {
       int idx, idy;
       const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
@@ -315,10 +321,23 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
         for (idx = 0; idx < 2; idx += num_4x4_blocks_wide) {
           const MB_PREDICTION_MODE bm = m->bmi[idy * 2 + idx].as_mode;
           write_intra_mode(bc, bm, cm->fc.y_mode_prob[0]);
+#if CONFIG_FILTERINTRA
+          if (is_filter_allowed(bm)) {
+            vp9_write(bc, m->b_filter_info[idy * 2 + idx],
+                      cm->fc.filterintra_prob[0][bm]);
+          }
+#endif
         }
       }
     }
     write_intra_mode(bc, mi->uv_mode, cm->fc.uv_mode_prob[mode]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(mi->uv_mode) &&
+        is_filter_enabled(get_uv_tx_size(mi))) {
+      vp9_write(bc, mi->uv_filterbit,
+                cm->fc.filterintra_prob[get_uv_tx_size(mi)][mi->uv_mode]);
+    }
+#endif
   } else {
     vp9_prob *mv_ref_p;
     encode_ref_frame(cpi, bc);
@@ -407,6 +426,11 @@ static void write_mb_modes_kf(const VP9_COMP *cpi, MODE_INFO **mi_8x8,
     const MB_PREDICTION_MODE A = above_block_mode(m, above_mi, 0);
     const MB_PREDICTION_MODE L = left_block_mode(m, left_mi, 0);
     write_intra_mode(bc, ym, vp9_kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(ym) && is_filter_enabled(m->mbmi.tx_size))
+      vp9_write(bc, m->mbmi.filterbit,
+                cm->fc.filterintra_prob[m->mbmi.tx_size][ym]);
+#endif
   } else {
     int idx, idy;
     const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[m->mbmi.sb_type];
@@ -421,11 +445,21 @@ static void write_mb_modes_kf(const VP9_COMP *cpi, MODE_INFO **mi_8x8,
         ++intra_mode_stats[A][L][bm];
 #endif
         write_intra_mode(bc, bm, vp9_kf_y_mode_prob[A][L]);
+#if CONFIG_FILTERINTRA
+        if (is_filter_allowed(bm))
+          vp9_write(bc, m->b_filter_info[i], cm->fc.filterintra_prob[0][bm]);
+#endif
       }
     }
   }
 
   write_intra_mode(bc, m->mbmi.uv_mode, vp9_kf_uv_mode_prob[ym]);
+#if CONFIG_FILTERINTRA
+  if (is_filter_allowed(m->mbmi.uv_mode) &&
+      is_filter_enabled(get_uv_tx_size(&(m->mbmi))))
+    vp9_write(bc, m->mbmi.uv_filterbit,
+          cm->fc.filterintra_prob[get_uv_tx_size(&(m->mbmi))][m->mbmi.uv_mode]);
+#endif
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,

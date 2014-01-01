@@ -2005,6 +2005,10 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
 
   xd->mi_8x8[0]->mbmi.mode = DC_PRED;
   xd->mi_8x8[0]->mbmi.uv_mode = DC_PRED;
+#if CONFIG_FILTERINTRA
+  xd->mi_8x8[0]->mbmi.filterbit = 0;
+  xd->mi_8x8[0]->mbmi.uv_filterbit = 0;
+#endif
 
   vp9_zero(cpi->y_mode_count);
   vp9_zero(cpi->y_uv_mode_count);
@@ -2016,6 +2020,9 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
   vp9_zero(cpi->comp_ref_count);
   vp9_zero(cm->counts.tx);
   vp9_zero(cm->counts.mbskip);
+#if CONFIG_FILTERINTRA
+  vp9_zero(cm->counts.filterintra);
+#endif
 
   // Note: this memset assumes above_context[0], [1] and [2]
   // are allocated as part of the same buffer.
@@ -2488,8 +2495,18 @@ static void sum_intra_stats(VP9_COMP *cpi, const MODE_INFO *mi) {
   const MB_PREDICTION_MODE y_mode = mi->mbmi.mode;
   const MB_PREDICTION_MODE uv_mode = mi->mbmi.uv_mode;
   const BLOCK_SIZE bsize = mi->mbmi.sb_type;
+#if CONFIG_FILTERINTRA
+  const int uv_fbit = mi->mbmi.uv_filterbit;
+  int fbit = mi->mbmi.filterbit;
+#endif
 
   ++cpi->y_uv_mode_count[y_mode][uv_mode];
+#if CONFIG_FILTERINTRA
+  if (is_filter_allowed(uv_mode) &&
+      is_filter_enabled(get_uv_tx_size(&(mi->mbmi))))
+    ++cpi->common.counts.filterintra[get_uv_tx_size(&(mi->mbmi))]
+                                    [uv_mode][uv_fbit];
+#endif
 
   if (bsize < BLOCK_8X8) {
     int idx, idy;
@@ -2497,9 +2514,24 @@ static void sum_intra_stats(VP9_COMP *cpi, const MODE_INFO *mi) {
     const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
     for (idy = 0; idy < 2; idy += num_4x4_blocks_high)
       for (idx = 0; idx < 2; idx += num_4x4_blocks_wide)
+#if CONFIG_FILTERINTRA
+      {
+#endif
         ++cpi->y_mode_count[0][mi->bmi[idy * 2 + idx].as_mode];
+#if CONFIG_FILTERINTRA
+        if (is_filter_allowed(mi->bmi[idy * 2 + idx].as_mode)) {
+          fbit = mi->b_filter_info[idy * 2 + idx];
+          ++cpi->common.counts.filterintra[0][mi->bmi[idy * 2 + idx].as_mode]
+                                          [fbit];
+        }
+      }
+#endif
   } else {
     ++cpi->y_mode_count[size_group_lookup[bsize]][y_mode];
+#if CONFIG_FILTERINTRA
+    if (is_filter_allowed(y_mode) && is_filter_enabled(mi->mbmi.tx_size))
+      ++cpi->common.counts.filterintra[mi->mbmi.tx_size][y_mode][fbit];
+#endif
   }
 }
 
