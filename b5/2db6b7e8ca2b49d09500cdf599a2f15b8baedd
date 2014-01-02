@@ -1,0 +1,9 @@
+Code-Review+2: Yunqing Wang <yunqingwang@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Hangyu Kuang <hkuang@google.com>
+Code-Review+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: Christian Duvivier <cduvivier@google.com>
+Submitted-at: Thu, 02 Jan 2014 15:03:58 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/68261
+Project: webm/libvpx
+Branch: refs/heads/master
