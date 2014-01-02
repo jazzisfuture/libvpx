@@ -10,12 +10,12 @@ SCALE_SRCS-yes += vpx_scale_rtcd.c
 SCALE_SRCS-yes += vpx_scale_rtcd.pl
 
 #neon
-SCALE_SRCS-$(HAVE_NEON_ASM)  += arm/neon/vp8_vpxyv12_copyframe_func_neon$(ASM)
 SCALE_SRCS-$(HAVE_NEON_ASM)  += arm/neon/vp8_vpxyv12_copysrcframe_func_neon$(ASM)
 SCALE_SRCS-$(HAVE_NEON_ASM)  += arm/neon/yv12extend_arm.c
 
 #neon intrinsics
 SCALE_SRCS-$(HAVE_NEON)  += arm/neon/vp8_vpxyv12_extendframeborders_neon.c
+SCALE_SRCS-$(HAVE_NEON)  += arm/neon/vp8_vpxyv12_copyframe_func_neon.c
 
 #mips(dspr2)
 SCALE_SRCS-$(HAVE_DSPR2)  += mips/dspr2/yv12extend_dspr2.c
