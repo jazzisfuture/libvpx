@@ -13,6 +13,7 @@
 
 #ifdef _MSC_VER
 #include <math.h>
+#include <intrin.h>
 #define snprintf _snprintf
 #endif
 
@@ -33,6 +34,16 @@ static int round(double x) {
     return (int)floor(x + 0.5);
 }
 #endif
+
+static const inline int get_msb(int x) {
+#ifdef _MSC_VER
+int r = 0;
+_BitScanReverse(&r, x);
+return r;
+#else
+return 31 ^ __builtin_clz(x);
+#endif
+}
 
 struct VP9Common;
 void vp9_machine_specific_config(struct VP9Common *cm);
