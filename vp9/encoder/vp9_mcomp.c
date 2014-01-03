@@ -1312,13 +1312,13 @@ int vp9_diamond_search_sadx4(MACROBLOCK *x,
               refining search  */
 
 int vp9_full_pixel_diamond(VP9_COMP *cpi, MACROBLOCK *x,
-                           int_mv *mvp_full, int step_param,
+                           MV *mvp_full, int step_param,
                            int sadpb, int further_steps,
                            int do_refine, vp9_variance_fn_ptr_t *fn_ptr,
                            int_mv *ref_mv, int_mv *dst_mv) {
   int_mv temp_mv;
   int thissme, n, num00;
-  int bestsme = cpi->diamond_search_sad(x, &mvp_full->as_mv, &temp_mv.as_mv,
+  int bestsme = cpi->diamond_search_sad(x, mvp_full, &temp_mv.as_mv,
                                         step_param, sadpb, &num00,
                                         fn_ptr, x->nmvjointcost,
                                         x->mvcost, &ref_mv->as_mv);
@@ -1338,7 +1338,7 @@ int vp9_full_pixel_diamond(VP9_COMP *cpi, MACROBLOCK *x,
     if (num00) {
       num00--;
     } else {
-      thissme = cpi->diamond_search_sad(x, &mvp_full->as_mv, &temp_mv.as_mv,
+      thissme = cpi->diamond_search_sad(x, mvp_full, &temp_mv.as_mv,
                                         step_param + n, sadpb, &num00,
                                         fn_ptr, x->nmvjointcost, x->mvcost,
                                         &ref_mv->as_mv);

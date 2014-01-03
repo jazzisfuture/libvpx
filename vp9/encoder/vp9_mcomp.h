@@ -39,7 +39,7 @@ int vp9_init_search_range(struct VP9_COMP *cpi, int size);
 
 // Runs sequence of diamond searches in smaller steps for RD
 int vp9_full_pixel_diamond(struct VP9_COMP *cpi, MACROBLOCK *x,
-                           int_mv *mvp_full, int step_param,
+                           MV *mvp_full, int step_param,
                            int sadpb, int further_steps, int do_refine,
                            vp9_variance_fn_ptr_t *fn_ptr,
                            int_mv *ref_mv, int_mv *dst_mv);
