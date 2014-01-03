@@ -1708,7 +1708,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Don't allow a gf too near the next kf
   if ((cpi->rc.frames_to_key - i) < MIN_GF_INTERVAL) {
-    while (i < (cpi->rc.frames_to_key - 1)) {
+    while (i < (cpi->rc.frames_to_key - cpi->rc.next_key_frame_forced)) {
       i++;
 
       if (EOF == input_stats(cpi, this_frame))
@@ -1740,6 +1740,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   if (allow_alt_ref &&
       (i < cpi->oxcf.lag_in_frames) &&
       (i >= MIN_GF_INTERVAL) &&
+      // for real scene cuts (not forced kfs) dont allow arf very near kf.
+      (cpi->rc.next_key_frame_forced ||
+        (i <= (cpi->rc.frames_to_key - MIN_GF_INTERVAL))) &&
       ((next_frame.pcnt_inter > 0.75) ||
        (next_frame.pcnt_second_ref > 0.5)) &&
       ((mv_in_out_accumulator / (double)i > -0.2) ||
@@ -2428,6 +2431,8 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Reset to the start of the group
     reset_fpf_position(cpi, current_pos);
 
+    cpi->rc.next_key_frame_forced = 1;
+  } else if (cpi->twopass.stats_in == cpi->twopass.stats_in_end) {
     cpi->rc.next_key_frame_forced = 1;
   } else {
     cpi->rc.next_key_frame_forced = 0;
