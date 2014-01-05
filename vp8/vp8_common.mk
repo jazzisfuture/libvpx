@@ -165,9 +165,6 @@ VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/loopfiltersimpleverticaledg
 VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/idct_blk_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/idct_dequant_0_2x_neon$(ASM)
 VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/idct_dequant_full_2x_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance8x8_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance16x16_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance16x16s_neon$(ASM)
 
 # common (neon intrinsics)
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/bilinearpredict_neon.c
@@ -182,5 +179,6 @@ VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sad_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/shortidct4x4llm_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sixtappredict_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/variance_neon.c
+VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/vp8_subpixelvariance_neon.c
 
 $(eval $(call rtcd_h_template,vp8_rtcd,vp8/common/rtcd_defs.pl))
