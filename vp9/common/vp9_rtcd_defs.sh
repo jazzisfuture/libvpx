@@ -191,7 +191,7 @@ specialize vp9_dc_128_predictor_32x32
 #
 # Loopfilter
 #
-prototype void vp9_lpf_vertical_16 "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh"
+prototype void vp9_lpf_vertical_16 "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, int count"
 specialize vp9_lpf_vertical_16 sse2 neon dspr2
 
 prototype void vp9_lpf_vertical_16_dual "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh"
@@ -205,6 +205,9 @@ specialize vp9_lpf_vertical_8_dual sse2 neon dspr2
 
 prototype void vp9_lpf_vertical_4 "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, int count"
 specialize vp9_lpf_vertical_4 mmx neon dspr2
+
+prototype void vp9_lpf_vertical_4b "uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, int count"
+specialize vp9_lpf_vertical_4b mmx
 
 prototype void vp9_lpf_vertical_4_dual "uint8_t *s, int pitch, const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1"
 specialize vp9_lpf_vertical_4_dual sse2 neon dspr2
