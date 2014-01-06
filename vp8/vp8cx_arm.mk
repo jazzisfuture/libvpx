@@ -39,8 +39,8 @@ VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/fastquantizeb_neon$(ASM)
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/picklpf_arm.c
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/denoising_neon.c
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/shortfdct_neon$(ASM)
-VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/subtract_neon$(ASM)
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/vp8_memcpy_neon$(ASM)
 
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/vp8_mse16x16_neon.c
 VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/vp8_shortwalsh4x4_neon.c
+VP8_CX_SRCS-$(HAVE_NEON)  += encoder/arm/neon/subtract_neon.c
