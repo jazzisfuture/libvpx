@@ -19,6 +19,8 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/decoder/vp9_onyxd_int.h"
 
+#include "vp9/encoder/vp9_boolhuff.h"
+
 #define EOB_CONTEXT_NODE            0
 #define ZERO_CONTEXT_NODE           1
 #define ONE_CONTEXT_NODE            2
@@ -56,6 +58,104 @@
 #define CAT5_PROB3 157
 #define CAT5_PROB4 180
 
+
+typedef struct {
+  uint8_t range;
+  uint8_t count;
+} bool_coder_state;
+
+typedef struct {
+  uint32_t lowvalue[3];
+  bool_coder_state state[4];
+} bw_state;
+
+bw_state full_set[TX_SIZES][BLOCK_TYPES][REF_TYPES][COEF_BANDS]
+                 [PREV_COEF_CONTEXTS][2][128];
+static INLINE void set_state(bool_coder_state *fs, int range, int count) {
+  fs->range = range;
+  fs->count = count;
+}
+
+static INLINE void take_right(const unsigned int split, unsigned int *lowvalue,
+                         int *range, int *count) {
+  unsigned int shift;
+  *lowvalue += split;
+  *range -= split;
+  shift = vp9_norm[*range];
+  *range <<= shift;
+  *count += shift;
+  *lowvalue <<= shift;
+}
+static INLINE void one_bit(const int prob, bool_coder_state *bcs,
+                           unsigned int *lowvalue,
+                         int *range, int *count) {
+  unsigned int split = 1 + (((*range - 1) * prob) >> 8);
+  unsigned int shift = vp9_norm[split];
+  set_state(bcs, split << shift, *count + shift);
+  take_right(split, lowvalue, range, count);
+}
+
+#define BD_VALUEIZE(V, C) ((BD_VALUE)(V)) << (32 - 8 - (C));
+static INLINE void node_one_bit(const int prob, bw_state *fs, int node,
+                                unsigned int *lowvalue, int *range,
+                                int *count) {
+  unsigned int split = 1 + (((*range - 1) * prob) >> 8);
+  unsigned int shift = vp9_norm[split];
+  set_state(&fs->state[node+1], split << shift, *count + shift);
+  fs->lowvalue[node] = BD_VALUEIZE((*lowvalue) << shift,
+                                   fs->state[node+1].count);
+  take_right(split, lowvalue, range, count);
+}
+
+static INLINE bw_state * fill_table(PLANE_TYPE type, int is_inter, int band,
+                      TX_SIZE tx_size, int context, int range,
+                      int last_is_zero,
+                      int prob1, int prob2, int prob3) {
+  int count = 0;
+  unsigned int lowvalue = 0;
+  bw_state *fs = &full_set[tx_size][type][is_inter][band][context]
+                          [last_is_zero][range-128];
+
+  if (fs->state[0].range)
+    return fs;
+
+  if (last_is_zero)
+    fs->state[0].range = 1;
+  else
+    one_bit(prob1, &fs->state[0], &lowvalue, &range, &count);
+
+  // bit 1
+  node_one_bit(prob2, fs, 0, &lowvalue, &range, &count);
+
+  // bit 2
+  node_one_bit(prob3, fs, 1, &lowvalue, &range, &count);
+
+  // bit 2 / 1 branch
+  set_state(&fs->state[3], range, count);
+  fs->lowvalue[2] = BD_VALUEIZE(lowvalue, fs->state[3].count);
+
+  return fs;
+}
+
+void empty_one_range(PLANE_TYPE type, int is_inter, int band,
+                     TX_SIZE tx_size, int context) {
+  int k;
+  for (k = 0; k < 128; ++k) {
+    full_set[tx_size][type][is_inter][band][context][0][k].state[0].range = 0;
+    full_set[tx_size][type][is_inter][band][context][1][k].state[0].range = 0;
+  }
+}
+
+void empty_entire_table(void) {
+  int h, i, j, k, l;
+  for (h = 0; h < TX_SIZES; ++h)
+    for (i = 0; i < BLOCK_TYPES; ++i)
+      for (j = 0; j < REF_TYPES; ++j)
+        for (k = 0; k < COEF_BANDS; ++k)
+          for (l = 0; l < PREV_COEF_CONTEXTS; ++l)
+            empty_one_range(i, j, k, h, l);
+}
+
 static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
@@ -90,7 +190,22 @@ static const int token_to_counttoken[MAX_ENTROPY_TOKENS] = {
   do {                                                  \
     val += (vp9_read(r, prob) << bits_count);           \
   } while (0)
+#define ADJUSTED_LOW(V) (((BD_VALUE)V) << (BD_VALUE_SIZE - 32))
 
+inline void adjust_state(vp9_reader *r, bw_state *fs, int node) {
+  if (node) r->value -= ADJUSTED_LOW(fs->lowvalue[node-1]);
+  r->value <<= fs->state[node].count;
+  r->count -= fs->state[node].count;
+  r->range = fs->state[node].range;
+}
+
+inline int parse_bit(vp9_reader *r, bw_state *fs, int node) {
+  if (r->value < ADJUSTED_LOW(fs->lowvalue[node])) {
+    adjust_state(r, fs, node);
+    return 1;
+  }
+  return 0;
+}
 static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
                         vp9_reader *r, int block_idx,
                         PLANE_TYPE type, int seg_eob, int16_t *dqcoeff_ptr,
@@ -115,20 +230,30 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
   const int16_t *nb = so->neighbors;
   int v;
   int16_t dqv = dq[0];
-
-
+  bw_state *fs;
 
   while (c < seg_eob) {
     int val;
+
     band = *band_translate++;
     prob = coef_probs[band][pt];
+    fs = fill_table(type, ref, band, tx_size, pt, r->range, 0,
+                    prob[EOB_CONTEXT_NODE], prob[ZERO_CONTEXT_NODE],
+                    prob[ONE_CONTEXT_NODE]);
+
     if (!cm->frame_parallel_decoding_mode)
       ++eob_branch_count[band][pt];
-    if (!vp9_read(r, prob[EOB_CONTEXT_NODE]))
+
+    if (r->count < 0)
+      vp9_reader_fill(r);
+    if (parse_bit(r, fs, EOB_CONTEXT_NODE))
       break;
 
   DECODE_ZERO:
-    if (!vp9_read(r, prob[ZERO_CONTEXT_NODE])) {
+    if (r->count < fs->state[3].count)
+      vp9_reader_fill(r);
+
+    if (parse_bit(r, fs, ZERO_CONTEXT_NODE)) {
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
       ++c;
@@ -137,14 +262,16 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       pt = get_coef_context(nb, token_cache, c);
       band = *band_translate++;
       prob = coef_probs[band][pt];
+      fs = fill_table(type, ref, band, tx_size, pt, r->range, 1,
+                      prob[EOB_CONTEXT_NODE], prob[ZERO_CONTEXT_NODE],
+                      prob[ONE_CONTEXT_NODE]);
       goto DECODE_ZERO;
     }
-
     // ONE_CONTEXT_NODE_0_
-    if (!vp9_read(r, prob[ONE_CONTEXT_NODE])) {
+    if (parse_bit(r, fs, ONE_CONTEXT_NODE)) {
       WRITE_COEF_CONTINUE(1, ONE_TOKEN);
     }
-
+    adjust_state(r, fs, 3);
     prob = vp9_pareto8_full[coef_probs[band][pt][PIVOT_NODE]-1];
 
     // LOW_VAL_CONTEXT_NODE_0_

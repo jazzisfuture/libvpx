@@ -117,6 +117,7 @@ static void init_macroblockd(VP9D_COMP *const pbi) {
     pd[i].eobs    = pbi->eobs[i];
   }
 }
+void fill_entire_table(VP9_COMMON *cm);
 
 VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   VP9D_COMP *const pbi = vpx_memalign(32, sizeof(VP9D_COMP));
@@ -155,7 +156,6 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   init_macroblockd(pbi);
 
   vp9_worker_init(&pbi->lf_worker);
-
   return pbi;
 }
 
