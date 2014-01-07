@@ -2108,16 +2108,20 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
                      cpi->common.show_frame &&
                      block_size < cpi->sf.max_partition_size);
 
+  int_mv pred_mv[3] = {
+      mbmi->ref_mvs[ref_frame][0], mbmi->ref_mvs[ref_frame][1],
+      x->pred_mv[ref_frame]
+  };
+
   // Get the sad for each candidate reference mv
   for (i = 0; i < num_mv_refs; i++) {
-    this_mv.as_int = (i < MAX_MV_REF_CANDIDATES) ?
-        mbmi->ref_mvs[ref_frame][i].as_int : x->pred_mv[ref_frame].as_int;
+    this_mv.as_int = pred_mv[i].as_int;
 
     max_mv = MAX(max_mv,
                  MAX(abs(this_mv.as_mv.row), abs(this_mv.as_mv.col)) >> 3);
-    // The list is at an end if we see 0 for a second time.
+    // only need to check zero mv once
     if (!this_mv.as_int && zero_seen)
-      break;
+      continue;
     zero_seen = zero_seen || !this_mv.as_int;
 
     row_offset = this_mv.as_mv.row >> 3;
@@ -2336,6 +2340,10 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   YV12_BUFFER_CONFIG *scaled_ref_frame = get_scaled_ref_frame(cpi, ref);
 
+  int_mv pred_mv[3] = {
+      mbmi->ref_mvs[ref][0], mbmi->ref_mvs[ref][1], x->pred_mv[ref]
+  };
+
   if (scaled_ref_frame) {
     int i;
     // Swap out the reference frame for a version that's been scaled to
@@ -2411,9 +2419,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  mvp_full.as_int = x->mv_best_ref_index[ref] < MAX_MV_REF_CANDIDATES ?
-      mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_int :
-      x->pred_mv[ref].as_int;
+  mvp_full.as_int = pred_mv[x->mv_best_ref_index[ref]].as_int;
 
   mvp_full.as_mv.col >>= 3;
   mvp_full.as_mv.row >>= 3;
