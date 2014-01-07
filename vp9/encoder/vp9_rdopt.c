@@ -185,9 +185,7 @@ static const int rd_iifactor[32] = {
   0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-// 3* dc_qlookup[Q]*dc_qlookup[Q];
-
-/* values are now correlated to quantizer */
+// values are now correlated to quantizer
 static int sad_per_bit16lut[QINDEX_RANGE];
 static int sad_per_bit4lut[QINDEX_RANGE];
 
@@ -198,8 +196,7 @@ void vp9_init_me_luts() {
   // This is to make it easier to resolve the impact of experimental changes
   // to the quantizer tables.
   for (i = 0; i < QINDEX_RANGE; i++) {
-    sad_per_bit16lut[i] =
-      (int)((0.0418 * vp9_convert_qindex_to_q(i)) + 2.4107);
+    sad_per_bit16lut[i] = (int)((0.0418 * vp9_convert_qindex_to_q(i)) + 2.4107);
     sad_per_bit4lut[i] = (int)(0.063 * vp9_convert_qindex_to_q(i) + 2.742);
   }
 }
@@ -218,12 +215,9 @@ int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex) {
 }
 
 static int compute_rd_thresh_factor(int qindex) {
-  int q;
   // TODO(debargha): Adjust the function below
-  q = (int)(pow(vp9_dc_quant(qindex, 0) / 4.0, RD_THRESH_POW) * 5.12);
-  if (q < 8)
-    q = 8;
-  return q;
+  const int q = (int)(pow(vp9_dc_quant(qindex, 0) / 4.0, RD_THRESH_POW) * 5.12);
+  return MAX(q, 8);
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
@@ -786,15 +780,14 @@ static void choose_txfm_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   vp9_prob skip_prob = vp9_get_skip_prob(cm, xd);
   int64_t rd[TX_SIZES][2];
   int n, m;
-  int s0, s1;
   const TX_SIZE max_mode_tx_size = tx_mode_to_biggest_tx_size[cm->tx_mode];
   int64_t best_rd = INT64_MAX;
   TX_SIZE best_tx = TX_4X4;
-
   const vp9_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc.tx_probs);
+  const int s0 = vp9_cost_bit(skip_prob, 0);
+  const int s1 = vp9_cost_bit(skip_prob, 1);
+
   assert(skip_prob > 0);
-  s0 = vp9_cost_bit(skip_prob, 0);
-  s1 = vp9_cost_bit(skip_prob, 1);
 
   for (n = TX_4X4; n <= max_tx_size; n++) {
     r[n][1] = r[n][0];
@@ -1653,7 +1646,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
   const BLOCK_SIZE bsize = mbmi->sb_type;
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
-  vp9_variance_fn_ptr_t *v_fn_ptr;
+  vp9_variance_fn_ptr_t *v_fn_ptr = &cpi->fn_ptr[bsize];
   ENTROPY_CONTEXT t_above[2], t_left[2];
   BEST_SEG_INFO *bsi = bsi_buf + filter_idx;
   int mode_idx;
@@ -1662,8 +1655,6 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
 
   vpx_memcpy(t_above, pd->above_context, sizeof(t_above));
   vpx_memcpy(t_left, pd->left_context, sizeof(t_left));
-
-  v_fn_ptr = &cpi->fn_ptr[bsize];
 
   // 64 makes this threshold really big effectively
   // making it so that we very rarely check mvs on
@@ -2759,10 +2750,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   pred_exists = 0;
   // Are all MVs integer pel for Y and UV
   intpel_mv = (mbmi->mv[0].as_mv.row & 15) == 0 &&
-      (mbmi->mv[0].as_mv.col & 15) == 0;
+              (mbmi->mv[0].as_mv.col & 15) == 0;
   if (is_comp_pred)
     intpel_mv &= (mbmi->mv[1].as_mv.row & 15) == 0 &&
-        (mbmi->mv[1].as_mv.col & 15) == 0;
+                 (mbmi->mv[1].as_mv.col & 15) == 0;
 
 
   // Search for best switchable filter by checking the variance of
@@ -2773,8 +2764,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   if (cm->mcomp_filter_type != BILINEAR) {
     *best_filter = EIGHTTAP;
-    if (x->source_variance <
-        cpi->sf.disable_filter_search_var_thresh) {
+    if (x->source_variance < cpi->sf.disable_filter_search_var_thresh) {
       *best_filter = EIGHTTAP;
     } else {
       int newbest;
@@ -2890,9 +2880,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *rate2 += get_switchable_rate(x);
 
   if (!is_comp_pred && cpi->enable_encode_breakout) {
-    if (cpi->active_map_enabled && x->active_ptr[0] == 0)
+    if (cpi->active_map_enabled && x->active_ptr[0] == 0) {
       x->skip = 1;
-    else if (x->encode_breakout) {
+    } else if (x->encode_breakout) {
       const BLOCK_SIZE y_size = get_plane_block_size(bsize, &xd->plane[0]);
       const BLOCK_SIZE uv_size = get_plane_block_size(bsize, &xd->plane[1]);
       unsigned int var, sse;
@@ -2928,14 +2918,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       // Y skipping condition checking
       if (sse < thresh_ac || sse == 0) {
         // Skipping threshold for dc
-        unsigned int thresh_dc;
-
-        thresh_dc = (xd->plane[0].dequant[0] * xd->plane[0].dequant[0] >> 6);
+        unsigned int thresh_dc = (xd->plane[0].dequant[0] *
+                                     xd->plane[0].dequant[0] >> 6);
 
         // dc skipping checking
         if ((sse - var) < thresh_dc || sse == var) {
-          unsigned int sse_u, sse_v;
-          unsigned int var_u, var_v;
+          unsigned int sse_u, sse_v, var_u, var_v;
 
           var_u = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf,
                                           x->plane[1].src.stride,
@@ -3298,8 +3286,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // If the segment reference frame feature is enabled....
     // then do nothing if the current ref frame is not allowed..
     if (vp9_segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME) &&
-        vp9_get_segdata(seg, segment_id, SEG_LVL_REF_FRAME) !=
-            (int)ref_frame) {
+        vp9_get_segdata(seg, segment_id, SEG_LVL_REF_FRAME) != (int)ref_frame) {
       continue;
     // If the segment skip feature is enabled....
     // then do nothing if the current mode is not allowed..
