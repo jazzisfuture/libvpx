@@ -18,6 +18,9 @@
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_idct.h"
 
+#include "vpx_ports/x86.h"
+#include "stdio.h"
+
 void vp9_iwht4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride) {
 /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
    0.5 shifts per pixel. */
@@ -1361,8 +1364,25 @@ void vp9_idct16x16_add(const int16_t *input, uint8_t *dest, int stride,
   if (eob == 1)
     /* DC only DCT coefficient. */
     vp9_idct16x16_1_add(input, dest, stride);
-  else if (eob <= 10)
+  else if (eob <= 10) {
+    unsigned int a, b;
+    static unsigned int cycles = 0;
+    static int count = 0;
+
+    vp9_clear_system_state();
+    a = x86_readtsc();
     vp9_idct16x16_10_add(input, dest, stride);
+    b = x86_readtsc();
+
+    cycles += (b - a);
+    count++;
+
+    if (count == 10000) {
+      fprintf(stderr, "Time %u cycles\n", cycles);
+      cycles = 0;
+      count = 0;
+    }
+  }
   else
     vp9_idct16x16_256_add(input, dest, stride);
 }
