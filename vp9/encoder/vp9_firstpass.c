@@ -2024,6 +2024,21 @@ void vp9_get_one_pass_params(VP9_COMP *cpi) {
   }
 }
 
+void vp9_get_one_pass_cbr_params(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  if ((cm->current_video_frame == 0) ||
+      (cm->frame_flags & FRAMEFLAGS_KEY) ||
+      (cpi->oxcf.auto_key && (cpi->rc.frames_since_key %
+                              cpi->key_frame_frequency == 0))) {
+    cm->frame_type = KEY_FRAME;
+  } else {
+    cm->frame_type = INTER_FRAME;
+  }
+  // Don't use gf_update by default in CBR mode.
+  cpi->rc.frames_till_gf_update_due = INT_MAX;
+  cpi->rc.baseline_gf_interval = INT_MAX;
+}
+
 void vp9_get_first_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   if (!cpi->refresh_alt_ref_frame &&
