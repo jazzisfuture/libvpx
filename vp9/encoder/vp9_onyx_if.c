@@ -1350,7 +1350,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   cpi->oxcf = *oxcf;
 
-  switch (cpi->oxcf.Mode) {
+  switch (cpi->oxcf.mode) {
       // Real time and one pass deprecated in test code base
     case MODE_GOODQUALITY:
       cpi->pass = 0;
