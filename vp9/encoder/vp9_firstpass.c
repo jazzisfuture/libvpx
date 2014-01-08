@@ -2018,7 +2018,10 @@ void vp9_get_one_pass_params(VP9_COMP *cpi) {
   } else {
     cm->frame_type = INTER_FRAME;
   }
-  if (cpi->rc.frames_till_gf_update_due == 0) {
+  // Don't use gf_update by default in CBR mode. Usage of reference frames
+  // is determined by the encoder flags for 1-pass CBR.
+  if (cpi->rc.frames_till_gf_update_due == 0 &&
+      cpi->oxcf.end_usage != USAGE_STREAM_FROM_SERVER) {
     cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
     cpi->refresh_golden_frame = 1;
   }
