@@ -1079,7 +1079,7 @@ EOF
                 vc_version=${tgt_cc##vs}
                 case $vc_version in
                     7|8|9|10)
-                         echo "${tgt_cc} does not support avx/avx2, disabling....."
+                         echo "  ${tgt_cc} does not support avx/avx2, disabling....."
                          RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx --disable-avx2 "
                          soft_disable avx
                          soft_disable avx2
@@ -1102,18 +1102,27 @@ EOF
             soft_enable sse4_1
         fi
 
-        if enabled gcc && ! disabled avx && ! check_cflags -mavx; then
-            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx "
-        else
-            soft_enable avx
+        if enabled gcc; then
+            gcc_version=`gcc -dumpversion | sed 's/\.//'`
+            if [ "$gcc_version" -lt "46" ]; then
+                echo "  ${tgt_cc} `gcc -dumpversion` does not support avx/avx2, disabling....."
+                RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx --disable-avx2 "
+                soft_disable avx
+                soft_disable avx2
+            else
+                if ! disabled avx && ! check_cflags -mavx; then
+                    RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx "
+                else
+                    soft_enable avx
+                fi
+                if ! disabled avx2 && ! check_cflags -mavx2; then
+                    RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx2 "
+                else
+                    soft_enable avx2
+                fi
+            fi
         fi
-
-        if enabled gcc && ! disabled avx2 && ! check_cflags -mavx2; then
-            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx2 "
-        else
-            soft_enable avx2
-        fi
-
+        
         case "${AS}" in
             auto|"")
                 which nasm >/dev/null 2>&1 && AS=nasm
