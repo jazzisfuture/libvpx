@@ -2125,8 +2125,9 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
                      block_size < cpi->sf.max_partition_size);
 
   int_mv pred_mv[3] = {
-      mbmi->ref_mvs[ref_frame][0], mbmi->ref_mvs[ref_frame][1],
-      x->pred_mv[ref_frame]
+      mbmi->ref_mvs[ref_frame][0].as_int,
+      mbmi->ref_mvs[ref_frame][1].as_int,
+      x->pred_mv[ref_frame].as_int
   };
 
   // Get the sad for each candidate reference mv
@@ -2356,7 +2357,9 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   YV12_BUFFER_CONFIG *scaled_ref_frame = get_scaled_ref_frame(cpi, ref);
 
   int_mv pred_mv[3] = {
-      mbmi->ref_mvs[ref][0], mbmi->ref_mvs[ref][1], x->pred_mv[ref]
+      mbmi->ref_mvs[ref][0].as_int,
+      mbmi->ref_mvs[ref][1].as_int,
+      x->pred_mv[ref].as_int
   };
 
   if (scaled_ref_frame) {
