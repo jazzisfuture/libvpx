@@ -193,6 +193,8 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     if (!ybf->buffer_alloc)
       return -1;
 
+    vpx_memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
+
     /* Only support allocating buffers that have a border that's a multiple
      * of 32. The border restriction is required to get 16-byte alignment of
      * the start of the chroma rows without introducing an arbitrary gap
