@@ -1350,8 +1350,6 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
 
-  // cpi->use_golden_frame_only = 0;
-  // cpi->use_last_frame_only = 0;
   cpi->refresh_golden_frame = 0;
   cpi->refresh_last_frame = 1;
   cm->refresh_frame_context = 1;
@@ -1453,6 +1451,9 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 #endif
 
   set_tile_limits(cpi);
+
+  cpi->ext_refresh_frame_flags_pending = 0;
+  cpi->ext_refresh_frame_context_pending = 0;
 }
 
 #define M_LOG2_E 0.693147180559945309417
@@ -2249,19 +2250,20 @@ int vp9_update_reference(VP9_PTR ptr, int ref_frame_flags) {
   if (ref_frame_flags > 7)
     return -1;
 
-  cpi->refresh_golden_frame = 0;
-  cpi->refresh_alt_ref_frame = 0;
-  cpi->refresh_last_frame   = 0;
+  cpi->ext_refresh_golden_frame = 0;
+  cpi->ext_refresh_alt_ref_frame = 0;
+  cpi->ext_refresh_last_frame   = 0;
 
   if (ref_frame_flags & VP9_LAST_FLAG)
-    cpi->refresh_last_frame = 1;
+    cpi->ext_refresh_last_frame = 1;
 
   if (ref_frame_flags & VP9_GOLD_FLAG)
-    cpi->refresh_golden_frame = 1;
+    cpi->ext_refresh_golden_frame = 1;
 
   if (ref_frame_flags & VP9_ALT_FLAG)
-    cpi->refresh_alt_ref_frame = 1;
+    cpi->ext_refresh_alt_ref_frame = 1;
 
+  cpi->ext_refresh_frame_flags_pending = 1;
   return 0;
 }
 
@@ -2318,7 +2320,9 @@ int vp9_set_reference_enc(VP9_PTR ptr, VP9_REFFRAME ref_frame_flag,
 }
 
 int vp9_update_entropy(VP9_PTR comp, int update) {
-  ((VP9_COMP *)comp)->common.refresh_frame_context = update;
+  // ((VP9_COMP *)comp)->common.refresh_frame_context = update;
+  ((VP9_COMP *)comp)->ext_refresh_frame_context = update;
+  ((VP9_COMP *)comp)->ext_refresh_frame_context_pending = 1;
   return 0;
 }
 
@@ -2970,6 +2974,23 @@ static void get_ref_frame_flags(VP9_COMP *cpi) {
     cpi->ref_frame_flags &= ~VP9_ALT_FLAG;
 }
 
+static void set_ext_overrides(VP9_COMP *cpi) {
+  // Overrides the defaults with the externally supplied values with
+  // vp9_update_reference() and vp9_update_entropy() calls
+  // Note: The overrides are valid only for the next frame passed
+  // to encode_frame_to_data_rate() function
+  if (cpi->ext_refresh_frame_context_pending) {
+    cpi->common.refresh_frame_context = cpi->ext_refresh_frame_context;
+    cpi->ext_refresh_frame_context_pending = 0;
+  }
+  if (cpi->ext_refresh_frame_flags_pending) {
+    cpi->refresh_last_frame = cpi->ext_refresh_last_frame;
+    cpi->refresh_golden_frame = cpi->ext_refresh_golden_frame;
+    cpi->refresh_alt_ref_frame = cpi->ext_refresh_alt_ref_frame;
+    cpi->ext_refresh_frame_flags_pending = 0;
+  }
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2985,6 +3006,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   SPEED_FEATURES *const sf = &cpi->sf;
   unsigned int max_mv_def = MIN(cpi->common.width, cpi->common.height);
   struct segmentation *const seg = &cm->seg;
+
+  set_ext_overrides(cpi);
 
   /* Scale the source buffer, if required. */
   if (cm->mi_cols * 8 != cpi->un_scaled_source->y_width ||
@@ -3161,6 +3184,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cpi->ambient_err = vp9_calc_ss_err(cpi->Source, get_frame_new_buffer(cm));
   }
 
+  // If the encoder forced a KEY_FRAME decision
   if (cm->frame_type == KEY_FRAME)
     cpi->refresh_last_frame = 1;
 
@@ -3411,6 +3435,13 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 
   set_high_precision_mv(cpi, ALTREF_HIGH_PRECISION_MV);
 
+  // Normal defaults
+  cm->reset_frame_context = 0;
+  cm->refresh_frame_context = 1;
+  cpi->refresh_last_frame = 1;
+  cpi->refresh_golden_frame = 0;
+  cpi->refresh_alt_ref_frame = 0;
+
   // Should we code an alternate reference frame.
   if (cpi->oxcf.play_alternate && cpi->rc.source_alt_ref_pending) {
     int frames_to_arf;
@@ -3505,18 +3536,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     *time_end = cpi->source->ts_end;
     *frame_flags = cpi->source->flags;
 
-    // fprintf(fp_out, "   Frame:%d", cm->current_video_frame);
-#if CONFIG_MULTIPLE_ARF
-    if (cpi->multi_arf_enabled) {
-      // fprintf(fp_out, "   seq_no:%d  this_frame_weight:%d",
-      //         cpi->sequence_number, cpi->this_frame_weight);
-    } else {
-      // fprintf(fp_out, "\n");
-    }
-#else
-    // fprintf(fp_out, "\n");
-#endif
-
 #if CONFIG_MULTIPLE_ARF
     if ((cm->frame_type != KEY_FRAME) && (cpi->pass == 2))
       cpi->rc.source_alt_ref_pending = is_next_frame_arf(cpi);
@@ -3600,21 +3619,6 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   }
 #endif
 
-#if 0  // CONFIG_MULTIPLE_ARF
-  if (cpi->multi_arf_enabled) {
-    fprintf(fp_out, "      idx(%d, %d, %d, %d) active(%d, %d, %d)",
-        cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx, cm->new_fb_idx,
-        cm->ref_frame_map[cpi->lst_fb_idx],
-        cm->ref_frame_map[cpi->gld_fb_idx],
-        cm->ref_frame_map[cpi->alt_fb_idx]);
-    if (cpi->refresh_alt_ref_frame)
-      fprintf(fp_out, "  type:ARF");
-    if (cpi->rc.is_src_frame_alt_ref)
-      fprintf(fp_out, "  type:OVERLAY[%d]", cpi->alt_fb_idx);
-    fprintf(fp_out, "\n");
-  }
-#endif
-
   cm->frame_flags = *frame_flags;
 
   // Reset the frame pointers to the current frame size
@@ -3665,15 +3669,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
   }
 
   if (*size > 0) {
-    // if its a dropped frame honor the requests on subsequent frames
     cpi->droppable = !frame_is_reference(cpi);
-
-    // return to normal state
-    cm->reset_frame_context = 0;
-    cm->refresh_frame_context = 1;
-    cpi->refresh_alt_ref_frame = 0;
-    cpi->refresh_golden_frame = 0;
-    cpi->refresh_last_frame = 1;
   }
 
   vpx_usec_timer_mark(&cmptimer);
