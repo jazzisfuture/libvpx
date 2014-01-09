@@ -29,9 +29,10 @@ const double kUsecsInSec = 1000000.0;
 /*
  DecodePerfTest takes a tuple of filename + number of threads to decode with
  */
-typedef std::tr1::tuple<const char *, unsigned> decode_perf_param_t;
+typedef std::tr1::tuple<const char *const, unsigned> decode_perf_param_t;
 
 const decode_perf_param_t kVP9DecodePerfVectors[] = {
+  make_tuple("2T-Sp6vqwq4.original.272.webm", 1),/*
   make_tuple("vp90-2-bbb_426x240_tile_1x1_180kbps.webm", 1),
   make_tuple("vp90-2-bbb_640x360_tile_1x2_337kbps.webm", 2),
   make_tuple("vp90-2-bbb_854x480_tile_1x2_651kbps.webm", 2),
@@ -48,7 +49,7 @@ const decode_perf_param_t kVP9DecodePerfVectors[] = {
   make_tuple("vp90-2-tos_640x266_tile_1x2_336kbps.webm", 2),
   make_tuple("vp90-2-tos_854x356_tile_1x2_656kbps.webm", 2),
   make_tuple("vp90-2-tos_1280x534_tile_1x4_1306kbps.webm", 4),
-  make_tuple("vp90-2-tos_1920x800_tile_1x4_fpm_2335kbps.webm", 4),
+  make_tuple("vp90-2-tos_1920x800_tile_1x4_fpm_2335kbps.webm", 4),*/
 };
 
 /*

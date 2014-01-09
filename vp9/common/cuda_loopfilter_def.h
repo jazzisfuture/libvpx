@@ -1,10 +1,6 @@
 #ifndef CUDA_LOOPFILTER_DEF_H
 #define CUDA_LOOPFILTER_DEF_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
 // Each 1 bit represents a position in which we want to apply the loop filter.
 // Left_ entries refer to whether we apply a filter on the border to the
@@ -22,22 +18,10 @@ typedef enum {
   TX_SIZES
 } TX_SIZE;
 
-
-#define DECLARE_ALIGNED(n,typ,val)  typ val __attribute__ ((aligned (n)))
-#define SIMD_WIDTH 16
 #define MAX_LOOP_FILTER 63
 #define MI_SIZE 8
 #define Y_LFL_SHIFT 3
 #define UV_LFL_SHIFT 1
-
-/*typedef struct {
-  DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, mblim[SIMD_WIDTH]);
-  DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, lim[SIMD_WIDTH]);
-  DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, hev_thr[SIMD_WIDTH]);
-} loop_filter_thresh;
-*/
 #define SUPER_BLOCK_DIM 64
-#ifdef __cplusplus
-}
-#endif
+
 #endif
