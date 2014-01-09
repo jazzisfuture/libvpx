@@ -15,6 +15,129 @@
 #include "vpx_mem/vpx_mem.h"
 
 #include "vp9/common/vp9_seg_common.h"
+//#include "vp9/common/cuda_loopfilter.h"
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+#define MEM_SIZE (128)
+#define MAX_SOURCE_SIZE (0x100000)
+//typedef unsigned char uchar;
+//#include "cuda_loopfilter.h"
+typedef struct {
+  cl_uchar mblim;
+  cl_uchar lim;
+  cl_uchar hev_thr;
+} cuda_loop_filter_thresh;
+
+typedef struct {
+  cl_ulong left_y[TX_SIZES];
+  cl_ulong above_y[TX_SIZES];
+  cl_ulong int_4x4_y;
+  cl_ushort left_uv[TX_SIZES];
+  cl_ushort above_uv[TX_SIZES];
+  cl_ushort int_4x4_uv;
+  cl_uchar lfl_y[64];
+  cl_uchar lfl_uv[16];
+} LOOP_FILTER_MASK;
+
+void disable_filter(LOOP_FILTER_MASK* lfm, uint32_t mi_col, uint32_t mi_row, uint32_t tx, uint32_t ty) {
+ /* if (mi_col * 8 <= tx && (mi_col + 8) *8 >= tx) {
+    printf("c %d %d %d\n", mi_row * 64, (mi_row + 1) * 64, ty);
+  }
+  if (mi_row * 8 <= ty && (mi_row + 8) * 8 >= ty) {
+    printf("r %d %d %d\n", mi_col * 64, (mi_col + 1) * 64, tx);
+  }*/
+ // printf("col %d %d row %d %d tx %d ty %d\n", mi_col*8, mi_row*8, (mi_col+1) * 8, (mi_row +1)*8, tx, ty);
+ /* if (mi_col * 8 <= tx
+      && (mi_col + 8) * 8 >= tx
+      && mi_row * 8 <= ty
+      && (mi_row + 8) * 8 >= ty) {
+    lfm->above_y[TX_4X4] = 0;
+    lfm->above_y[TX_8X8] = 0;
+    lfm->above_y[TX_16X16] = 0;
+    lfm->above_y[TX_32X32] = 0;
+    lfm->int_4x4_y = 0;
+    lfm->left_y[TX_4X4] = 0;
+    lfm->left_y[TX_8X8] = 0;
+    //lfm->left_y[TX_16X16] = 0;
+    lfm->left_y[TX_32X32] = 0;
+    print_mask(lfm, mi_col, mi_row);
+
+  } else {*/
+    //lfm->above_y[TX_4X4] = 0;
+   // lfm->above_y[TX_8X8] = 0;
+   // lfm->above_y[TX_16X16] = 0;
+  //  lfm->above_y[TX_32X32] = 0;
+   // lfm->int_4x4_y = 0;
+  //lfm->left_y[TX_4X4] = 0;
+  //lfm->left_y[TX_8X8] = 0;
+  // lfm->left_y[TX_16X16] = 0;
+  // lfm->left_y[TX_32X32] = 0;
+    //lfm->above_uv[TX_4X4] = 0;
+    //lfm->above_uv[TX_8X8] = 0;
+    //lfm->above_uv[TX_16X16] = 0;
+    //lfm->above_uv[TX_32X32] = 0;
+   // lfm->int_4x4_uv = 0;
+  //lfm->left_uv[TX_4X4] = 0;
+  //lfm->left_uv[TX_8X8] = 0;
+   //lfm->left_uv[TX_16X16] = 0;
+   //lfm->left_uv[TX_32X32] = 0;
+  //}
+  //}
+
+}
+
+//test
+#include <sys/time.h>
+typedef struct {
+#if defined(_WIN32)
+  LARGE_INTEGER  begin, end;
+#else
+  struct timeval begin, end;
+#endif
+} vpx_usec_timer;
+
+
+static void
+vpx_usec_timer_start( vpx_usec_timer *t) {
+#if defined(_WIN32)
+  QueryPerformanceCounter(&t->begin);
+#else
+  gettimeofday(&t->begin, NULL);
+#endif
+}
+
+
+static void
+vpx_usec_timer_mark( vpx_usec_timer *t) {
+#if defined(_WIN32)
+  QueryPerformanceCounter(&t->end);
+#else
+  gettimeofday(&t->end, NULL);
+#endif
+}
+
+
+static int64_t
+vpx_usec_timer_elapsed( vpx_usec_timer *t) {
+#if defined(_WIN32)
+  LARGE_INTEGER freq, diff;
+
+  diff.QuadPart = t->end.QuadPart - t->begin.QuadPart;
+
+  QueryPerformanceFrequency(&freq);
+  return diff.QuadPart * 1000000 / freq.QuadPart;
+#else
+  struct timeval diff;
+
+  timersub(&t->end, &t->begin, &diff);
+  return diff.tv_sec * 1000000 + diff.tv_usec;
+#endif
+}
+//end test
 
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
 // Each 1 bit represents a position in which we want to apply the loop filter.
@@ -25,6 +148,7 @@
 // represents.
 // Since each transform is accompanied by a potentially different type of
 // loop filter there is a different entry in the array for each transform size.
+/*
 typedef struct {
   uint64_t left_y[TX_SIZES];
   uint64_t above_y[TX_SIZES];
@@ -35,7 +159,7 @@ typedef struct {
   uint8_t lfl_y[64];
   uint8_t lfl_uv[16];
 } LOOP_FILTER_MASK;
-
+*/
 // 64 bit masks for left transform size.  Each 1 represents a position where
 // we should apply a loop filter across the left border of an 8x8 block
 // boundary.
@@ -1247,6 +1371,7 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
         setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col, cm->mode_info_stride,
                    &lfm);
 
+      disable_filter(&lfm, mi_col, mi_row, 0, 0);
       for (plane = 0; plane < num_planes; ++plane) {
 #if CONFIG_NON420
         if (use_420)
@@ -1262,10 +1387,197 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
   }
 }
 
+#define kUsecsInSec 1000.0
+//I MUST USE STRIDE, TODO
+typedef struct {
+  uint8_t * y_buf;
+  uint8_t * u_buf;
+  uint8_t * v_buf;
+} cuda_buf;
+
+void opencl_loopfilter(LOOP_FILTER_MASK* lfm,
+                     cuda_loop_filter_thresh* lft,
+                     uint32_t y_rows,
+                     uint32_t y_cols,
+                     uint8_t * y_buf,
+                     uint32_t uv_rows,
+                     uint32_t uv_cols,
+                     uint8_t * u_buf,
+                     uint8_t * v_buf);
+
+cuda_buf vp9_cuda_loop_filter_frame(const YV12_BUFFER_CONFIG *frame_buffer,
+                          VP9_COMMON *cm, MACROBLOCKD *xd,
+                          int start, int stop, int y_only) {
+ // const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+  cuda_buf c_b;
+  uint32_t size, s, r, c,ic, ir,stride;
+  int mi_row, mi_col;//, plane;
+  uint32_t y_rows, y_cols, uv_rows, uv_cols;
+  uint32_t lfm_rows = (stop + MI_SIZE - 1) / MI_SIZE;
+  uint32_t lfm_cols = (cm->mi_cols + MI_SIZE - 1) / MI_SIZE;
+  uint32_t lfm_size = lfm_rows*lfm_cols*sizeof(LOOP_FILTER_MASK);
+  uint32_t lft_size = (MAX_LOOP_FILTER + 1) * sizeof(cuda_loop_filter_thresh);
+  cuda_loop_filter_thresh *lft = malloc(lft_size);
+  LOOP_FILTER_MASK* lfm = malloc(lfm_size);
+  uint8_t* y_buf;
+  uint8_t* u_buf;
+  uint8_t* v_buf;
+  FILE * pFile;
+  //printf("r %d c %d so %d lfm %d\n", lfm_rows, lfm_cols, sizeof(LOOP_FILTER_MASK), lfm_size);
+
+  memset((void*)lfm, 0, lfm_size);
+
+  y_cols = frame_buffer->y_width;
+  y_rows = frame_buffer->y_height;
+  uv_cols = frame_buffer->uv_width;
+  uv_rows = frame_buffer->uv_height;
+ // printf("rows %d cols %d\n", rows, cols);
+  y_buf = malloc(y_rows * y_cols);
+  memset(y_buf, 0, y_rows * y_cols);
+
+  u_buf = malloc(uv_rows * uv_cols);
+  memset(u_buf, 0, uv_rows * uv_cols);
+
+  v_buf = malloc(uv_rows * uv_cols);
+  memset(v_buf, 0, uv_rows * uv_cols);
+
+  //stride = xd->plane[0].dst.stride;
+
+  for (r = 0; r < y_rows; r++) {
+    for (c = 0; c < y_cols; c++ ) {
+      y_buf[r * y_cols + c] = frame_buffer->y_buffer[r * frame_buffer->y_stride + c];
+    }
+  }
+  for (r = 0; r < uv_rows; r++) {
+    for (c = 0; c < uv_cols; c++ ) {
+      u_buf[r * uv_cols + c] = frame_buffer->u_buffer[r * frame_buffer->uv_stride + c];
+    }
+  }
+  for (r = 0; r < uv_rows; r++) {
+    for (c = 0; c < uv_cols; c++ ) {
+      v_buf[r * uv_cols + c] = frame_buffer->v_buffer[r * frame_buffer->uv_stride + c];
+    }
+  }
+
+  printf("%dx%d %dx%d\n", y_rows, y_cols, uv_rows, uv_cols);
+
+  for (mi_row = start, r = 0; mi_row < stop; mi_row += MI_BLOCK_SIZE, r++) {
+    MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
+
+    for (mi_col = 0, c = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE, c++) {
+     // plane = 0;
+
+     // setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
+    // printf("offset-%d\n", r * lfm_cols + c);
+      setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col, cm->mode_info_stride,
+                 &lfm[r * lfm_cols + c]);
+      LOOP_FILTER_MASK* mask = &lfm[r * lfm_cols + c];
+      if (mi_row == start) {
+
+        mask->above_y[TX_16X16] = (mask->above_y[TX_16X16] >> MI_SIZE) << MI_SIZE;
+        mask->above_y[TX_8X8] = (mask->above_y[TX_8X8] >> MI_SIZE) << MI_SIZE;
+        mask->above_y[TX_4X4] = (mask->above_y[TX_4X4] >> MI_SIZE) << MI_SIZE;
+
+        mask->above_uv[TX_16X16] = (mask->above_uv[TX_16X16] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+        mask->above_uv[TX_8X8] = (mask->above_uv[TX_8X8] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+        mask->above_uv[TX_4X4] = (mask->above_uv[TX_4X4] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+      }
+   //   printf("%04x\n", mask->int_4x4_uv);
+      if (mi_row + MI_BLOCK_SIZE >= stop) {
+        mask->int_4x4_uv = (mask->int_4x4_uv << (MI_SIZE / 2)) >> (MI_SIZE / 2);
+      }
+      for (ir = 0; ir < MI_BLOCK_SIZE && mi_row + ir < cm->mi_rows; ir += 2) {
+        for (ic = 0; ic < (MI_BLOCK_SIZE >> 1); ic++)
+          mask->lfl_uv[(ir << 1) + ic] = mask->lfl_y[(ir << 3) + (ic << 1)];
+      }
+      disable_filter(&lfm[r*lfm_cols + c], mi_col, mi_row, 0, 0);
+
+    }
+  }
+
+  memset(lft, 0, lft_size);
+
+
+
+
+
+ // memcpy(buf, xd->plane[0].dst.buf, rows * cols);
+  for (size = 0; size < MAX_LOOP_FILTER + 1; size++) {
+      lft[size].mblim = cm->lf_info.lfthr[size].mblim[0];
+      lft[size].lim = cm->lf_info.lfthr[size].lim[0];
+      lft[size].hev_thr = cm->lf_info.lfthr[size].hev_thr[0];
+  }
+  double elapsed_secs;
+  vpx_usec_timer g;
+  vpx_usec_timer_start(&g);
+
+
+  opencl_loopfilter(lfm, lft, y_rows, y_cols, y_buf, uv_rows, uv_cols, u_buf, v_buf);
+  vpx_usec_timer_mark(&g);
+  elapsed_secs = (double)(vpx_usec_timer_elapsed(&g))
+                              / kUsecsInSec;
+
+  printf("GPU - %f\n", elapsed_secs);
+
+ // dump_buf(buf, NULL, rows, cols, cols, "post-gpu.txt");
+  //saveRedImg(buf, rows, cols, cols, "post-gpu.ppm");
+
+  free(lfm);
+  //free(u_buf);
+  //free(v_buf);
+
+  c_b.y_buf = y_buf;
+  c_b.u_buf = u_buf;
+  c_b.v_buf = v_buf;
+  return c_b;
+
+}
+void compareBuf(uint8_t* y_buf, uint8_t* u_buf, uint8_t* v_buf, const YV12_BUFFER_CONFIG *frame_buffer) {
+  uint32_t r, c,rows, cols;
+  int mismatch = 0;
+  cols = frame_buffer->y_width;
+  rows = frame_buffer->y_height;
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++ ) {
+      if (y_buf[r * cols + c] != frame_buffer->y_buffer[r * frame_buffer->y_stride + c]) {
+        printf ("Y(%03d,%03d) %03u %03u\n", c, r, y_buf[r*cols + c], frame_buffer->y_buffer[r * frame_buffer->y_stride + c]);
+        mismatch = 1;
+      }
+    }
+  }
+
+ /* cols = frame_buffer->uv_width;
+  rows = frame_buffer->uv_height;
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++ ) {
+      if (u_buf[r * cols + c] != frame_buffer->u_buffer[r * frame_buffer->uv_stride + c]) {
+        printf ("U(%03d,%03d) %03u %03u\n", c, r, u_buf[r*cols + c], frame_buffer->u_buffer[r * frame_buffer->uv_stride + c]);
+        mismatch = 1;
+      }
+    }
+  }
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++ ) {
+      if (v_buf[r * cols + c] != frame_buffer->v_buffer[r * frame_buffer->uv_stride + c]) {
+        printf ("V(%03d,%03d) %03u %03u\n", c, r, v_buf[r*cols + c], frame_buffer->v_buffer[r * frame_buffer->uv_stride + c]);
+        mismatch = 1;
+      }
+    }
+  }*/
+
+  assert(mismatch == 0);
+  printf("CRC OK\n");
+}
+
+
 void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                            int frame_filter_level,
                            int y_only, int partial) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
+  vpx_usec_timer g, c;
+  cuda_buf c_b;
+  double elapsed_secs = 0;
   if (!frame_filter_level) return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
@@ -1276,9 +1588,35 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
   }
   end_mi_row = start_mi_row + mi_rows_to_filter;
   vp9_loop_filter_frame_init(cm, frame_filter_level);
+  printf("----NEXT_FRAME----%d\n", cm->current_video_frame);
+  vpx_usec_timer_start(&g);
+
+  c_b = vp9_cuda_loop_filter_frame(cm->frame_to_show, cm, xd,
+                       start_mi_row, end_mi_row,
+                       y_only);
+  vpx_usec_timer_mark(&g);
+  elapsed_secs = (double)(vpx_usec_timer_elapsed(&g))
+                              / kUsecsInSec;
+
+  //printf("GPU - %f\n", elapsed_secs);
+
+  printf("___CPU___\n");
+//  vpx_usec_timer_mark(&s);
+  vpx_usec_timer_start(&c);
   vp9_loop_filter_rows(cm->frame_to_show, cm, xd,
                        start_mi_row, end_mi_row,
                        y_only);
+  vpx_usec_timer_mark(&c);
+ // vpx_usec_timer_start(&s);
+  elapsed_secs = (double)(vpx_usec_timer_elapsed(&c))
+                              / kUsecsInSec;
+
+
+  printf("CPU - %f\n", elapsed_secs);
+  compareBuf(c_b.y_buf, c_b.u_buf, c_b.v_buf, cm->frame_to_show);
+  free(c_b.y_buf);
+  free(c_b.u_buf);
+  free(c_b.v_buf);
 }
 
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
@@ -1288,3 +1626,293 @@ int vp9_loop_filter_worker(void *arg1, void *arg2) {
                        lf_data->start, lf_data->stop, lf_data->y_only);
   return 1;
 }
+
+// TESTING
+
+#define MAX_LOOP_FILTER 63
+#define MI_SIZE 8
+#define Y_LFL_SHIFT 3
+#define UV_LFL_SHIFT 1
+#define SUPER_BLOCK_DIM 64
+
+
+
+
+void opencl_loopfilter(LOOP_FILTER_MASK* lfm,
+                     cuda_loop_filter_thresh* lft,
+                     uint32_t y_rows,
+                     uint32_t y_cols,
+                     uint8_t * y_buf,
+                     uint32_t uv_rows,
+                     uint32_t uv_cols,
+                     uint8_t * u_buf,
+                     uint8_t * v_buf) {
+  cl_device_id device_id = NULL;
+  static cl_context context = NULL;
+  static cl_command_queue y_command_queue = NULL;
+  static cl_command_queue u_command_queue = NULL;
+  static cl_command_queue v_command_queue = NULL;
+  static cl_program program = NULL;
+  static cl_kernel kernel = NULL;
+  cl_platform_id platform_id = NULL;
+  cl_uint ret_num_devices;
+  cl_uint ret_num_platforms;
+  cl_int ret;
+
+  if (kernel == NULL) {
+    char string[MEM_SIZE];
+
+    FILE *fp;
+    char fileName[] = "./vp9/common/cuda_loopfilter.cl";
+    char *source_str;
+    size_t source_size;
+
+    /* Load the source code containing the kernel*/
+    fp = fopen(fileName, "r");
+    if (!fp) {
+      fprintf(stderr, "Failed to load kernel.\n");
+      exit(1);
+    }
+    source_str = (char*)malloc(MAX_SOURCE_SIZE);
+    source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+    fclose(fp);
+
+    /* Get Platform and Device Info */
+    ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+    ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &ret_num_devices);
+
+    /* Create OpenCL context */
+    context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+
+    /* Create Command Queue */
+    y_command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+    u_command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+    v_command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+
+    /* Create Kernel Program from the source */
+    program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
+      (const size_t *)&source_size, &ret);
+
+    /* Build Kernel Program */
+    ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+    if (ret == CL_BUILD_PROGRAM_FAILURE) {
+        // Determine the size of the log
+        size_t log_size;
+        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+
+        // Allocate memory for the log
+        char *log = (char *) malloc(log_size);
+
+        // Get the log
+        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+
+        // Print the log
+        printf("%s\n", log);
+    }
+  }
+
+  /* Set OpenCL Kernel Parameters */
+  uint32_t y_buf_size = y_rows * y_cols * sizeof(uint8_t);
+  uint32_t uv_buf_size = uv_rows * uv_cols * sizeof(uint8_t);
+  cl_mem d_y_buf = clCreateBuffer(context, CL_MEM_READ_WRITE |
+    CL_MEM_COPY_HOST_PTR, y_buf_size, y_buf, &ret);
+
+  cl_mem d_u_buf = clCreateBuffer(context, CL_MEM_READ_WRITE |
+    CL_MEM_COPY_HOST_PTR, uv_buf_size, u_buf, &ret);
+
+  cl_mem d_v_buf = clCreateBuffer(context, CL_MEM_READ_WRITE |
+    CL_MEM_COPY_HOST_PTR, uv_buf_size, v_buf, &ret);
+
+  cl_mem d_lft = clCreateBuffer(context, CL_MEM_READ_ONLY |
+      CL_MEM_COPY_HOST_PTR, (MAX_LOOP_FILTER + 1)
+      * sizeof(cuda_loop_filter_thresh), lft, &ret);
+
+  uint32_t sb_rows = (y_rows + SUPER_BLOCK_DIM - 1) / SUPER_BLOCK_DIM;
+  uint32_t sb_cols = (y_cols + SUPER_BLOCK_DIM - 1) / SUPER_BLOCK_DIM;
+  uint32_t sb_count = sb_rows * sb_cols;
+  uint32_t mask_bytes = sb_count * sizeof(LOOP_FILTER_MASK);
+  cl_mem d_masks = clCreateBuffer(context, CL_MEM_READ_ONLY |
+      CL_MEM_COPY_HOST_PTR, mask_bytes, lfm, &ret);
+
+  // setup mutexes
+  size_t mutex_size = sb_rows * sizeof(int32_t);
+  cl_mem d_col_col_y_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+  cl_mem d_col_row_y_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+  cl_mem d_col_col_u_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+  cl_mem d_col_row_u_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+  cl_mem d_col_col_v_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+  cl_mem d_col_row_v_filtered =
+    clCreateBuffer(context, CL_MEM_READ_WRITE,
+      mutex_size, 0, &ret);
+
+
+  kernel = clCreateKernel(program, "fill_pattern", &ret);
+  uint32_t fill_pattern = 0xFFFFFFFF;
+
+  // clear first mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_col_y_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  size_t local_ws = sb_rows;
+  size_t global_ws = sb_rows;
+  ret = clEnqueueNDRangeKernel(y_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // clear second mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_row_y_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  ret = clEnqueueNDRangeKernel(y_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // clear first mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_col_u_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  ret = clEnqueueNDRangeKernel(u_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // clear second mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_row_u_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  ret = clEnqueueNDRangeKernel(u_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // clear first mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_col_v_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  ret = clEnqueueNDRangeKernel(v_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // clear second mutex
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_col_row_v_filtered);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_int), &fill_pattern);
+  ret = clEnqueueNDRangeKernel(v_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  ret = clReleaseKernel(kernel);
+  kernel = clCreateKernel(program, "filter_all", &ret);
+
+  // run the filter on the y plane
+  int is_y = 1;
+  cl_uint step_max = MI_SIZE;
+  cl_uint lvl_shift = Y_LFL_SHIFT;
+  cl_uint row_mult = 1;
+  local_ws = SUPER_BLOCK_DIM;
+  global_ws = sb_rows * SUPER_BLOCK_DIM;
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_masks);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_lft);
+  ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_col_row_y_filtered);
+  ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &d_col_col_y_filtered);
+  ret |= clSetKernelArg(kernel, 4, sizeof(cl_int), &sb_rows);
+  ret |= clSetKernelArg(kernel, 5, sizeof(cl_int), &sb_cols);
+  ret |= clSetKernelArg(kernel, 6, sizeof(cl_int), &y_rows);
+  ret |= clSetKernelArg(kernel, 7, sizeof(cl_int), &y_cols);
+  ret |= clSetKernelArg(kernel, 8, sizeof(cl_mem), &d_y_buf);
+  ret |= clSetKernelArg(kernel, 9, sizeof(cl_int), &is_y);
+  ret |= clSetKernelArg(kernel, 10, sizeof(cl_uint), &step_max);
+  ret |= clSetKernelArg(kernel, 11, sizeof(cl_uint), &lvl_shift);
+  ret |= clSetKernelArg(kernel, 12, sizeof(cl_uint), &row_mult);
+  ret = clEnqueueNDRangeKernel(y_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  //U plane
+  is_y = 0;
+  step_max = MI_SIZE / 2;
+  lvl_shift = UV_LFL_SHIFT;
+  row_mult = 2;
+  local_ws = SUPER_BLOCK_DIM / 2;
+  global_ws = sb_rows * (SUPER_BLOCK_DIM / 2);
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_masks);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_lft);
+  ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_col_row_u_filtered);
+  ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &d_col_col_u_filtered);
+  ret |= clSetKernelArg(kernel, 4, sizeof(cl_int), &sb_rows);
+  ret |= clSetKernelArg(kernel, 5, sizeof(cl_int), &sb_cols);
+  ret |= clSetKernelArg(kernel, 6, sizeof(cl_int), &uv_rows);
+  ret |= clSetKernelArg(kernel, 7, sizeof(cl_int), &uv_cols);
+  ret |= clSetKernelArg(kernel, 8, sizeof(cl_mem), &d_u_buf);
+  ret |= clSetKernelArg(kernel, 9, sizeof(cl_int), &is_y);
+  ret |= clSetKernelArg(kernel, 10, sizeof(cl_uint), &step_max);
+  ret |= clSetKernelArg(kernel, 11, sizeof(cl_uint), &lvl_shift);
+  ret |= clSetKernelArg(kernel, 12, sizeof(cl_uint), &row_mult);
+  ret = clEnqueueNDRangeKernel(u_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+  // V plane
+  is_y = 0;
+  step_max = MI_SIZE / 2;
+  lvl_shift = UV_LFL_SHIFT;
+  row_mult = 2;
+  local_ws = SUPER_BLOCK_DIM / 2;
+  global_ws = sb_rows * (SUPER_BLOCK_DIM / 2);
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_masks);
+  ret |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_lft);
+  ret |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_col_row_v_filtered);
+  ret |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &d_col_col_v_filtered);
+  ret |= clSetKernelArg(kernel, 4, sizeof(cl_int), &sb_rows);
+  ret |= clSetKernelArg(kernel, 5, sizeof(cl_int), &sb_cols);
+  ret |= clSetKernelArg(kernel, 6, sizeof(cl_int), &uv_rows);
+  ret |= clSetKernelArg(kernel, 7, sizeof(cl_int), &uv_cols);
+  ret |= clSetKernelArg(kernel, 8, sizeof(cl_mem), &d_v_buf);
+  ret |= clSetKernelArg(kernel, 9, sizeof(cl_int), &is_y);
+  ret |= clSetKernelArg(kernel, 10, sizeof(cl_uint), &step_max);
+  ret |= clSetKernelArg(kernel, 11, sizeof(cl_uint), &lvl_shift);
+  ret |= clSetKernelArg(kernel, 12, sizeof(cl_uint), &row_mult);
+  ret = clEnqueueNDRangeKernel(v_command_queue, kernel, 1, NULL,
+    &global_ws, &local_ws, 0, NULL, NULL);
+
+
+  printf("r=%d\n", ret);
+
+  /* Copy results from the memory buffer */
+  ret = clEnqueueReadBuffer(y_command_queue, d_y_buf, CL_TRUE, 0,
+    y_buf_size, y_buf, 0, NULL, NULL);
+
+  ret = clEnqueueReadBuffer(u_command_queue, d_u_buf, CL_TRUE, 0,
+    uv_buf_size, u_buf, 0, NULL, NULL);
+
+  ret = clEnqueueReadBuffer(v_command_queue, d_v_buf, CL_TRUE, 0,
+    uv_buf_size, v_buf, 0, NULL, NULL);
+  printf("r=%d\n", ret);
+
+  /* Finalization */
+  ret = clFlush(y_command_queue);
+  ret = clFinish(y_command_queue);
+  ret = clFlush(u_command_queue);
+  ret = clFinish(u_command_queue);
+  ret = clFlush(v_command_queue);
+  ret = clFinish(v_command_queue);
+ // ret = clReleaseKernel(kernel);
+ // ret = clReleaseProgram(program);
+  ret = clReleaseMemObject(d_y_buf);
+  ret = clReleaseMemObject(d_u_buf);
+  ret = clReleaseMemObject(d_v_buf);
+  ret = clReleaseMemObject(d_lft);
+  ret = clReleaseMemObject(d_masks);
+  ret = clReleaseMemObject(d_col_col_y_filtered);
+  ret = clReleaseMemObject(d_col_row_y_filtered);
+  ret = clReleaseMemObject(d_col_col_u_filtered);
+  ret = clReleaseMemObject(d_col_row_u_filtered);
+  ret = clReleaseMemObject(d_col_col_v_filtered);
+  ret = clReleaseMemObject(d_col_row_v_filtered);
+//  ret = clReleaseCommandQueue(y_command_queue);
+//  ret = clReleaseCommandQueue(u_command_queue);
+// ret = clReleaseCommandQueue(v_command_queue);
+//  ret = clReleaseContext(context);
+
+//  free(source_str);
+}
+
