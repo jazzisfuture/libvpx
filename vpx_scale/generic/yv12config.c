@@ -176,6 +176,11 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
         }
 
         ybf->buffer_alloc = yv12_align_addr(ext_fb->data, 32);
+
+        // This memset is needed for fixing valgrind error from C loop filter
+        // due to access uninitialized memory. It could be removed if frame
+        // border is totally removed.
+        vpx_memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
       }
     } else {
       if (frame_size > ybf->buffer_alloc_sz) {
@@ -186,12 +191,14 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
         ybf->buffer_alloc_sz = frame_size;
       }
 
-      if (ybf->buffer_alloc_sz < frame_size)
+      if (!ybf->buffer_alloc || ybf->buffer_alloc_sz < frame_size)
         return -1;
-    }
 
-    if (!ybf->buffer_alloc)
-      return -1;
+      // This memset is needed for fixing valgrind error from C loop filter
+      // due to access uninitialized memory. It could be removed if frame
+      // border is totally removed.
+      vpx_memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
+    }
 
     /* Only support allocating buffers that have a border that's a multiple
      * of 32. The border restriction is required to get 16-byte alignment of
