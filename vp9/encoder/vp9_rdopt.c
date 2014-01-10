@@ -2276,14 +2276,14 @@ static void setup_pred_block(const MACROBLOCKD *xd,
   }
 }
 
-static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
-                               const TileInfo *const tile,
-                               int idx, MV_REFERENCE_FRAME frame_type,
-                               BLOCK_SIZE block_size,
-                               int mi_row, int mi_col,
-                               int_mv frame_nearest_mv[MAX_REF_FRAMES],
-                               int_mv frame_near_mv[MAX_REF_FRAMES],
-                               struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
+void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
+                        const TileInfo *const tile,
+                        int idx, MV_REFERENCE_FRAME frame_type,
+                        BLOCK_SIZE block_size,
+                        int mi_row, int mi_col,
+                        int_mv frame_nearest_mv[MAX_REF_FRAMES],
+                        int_mv frame_near_mv[MAX_REF_FRAMES],
+                        struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
   VP9_COMMON *cm = &cpi->common;
   YV12_BUFFER_CONFIG *yv12 = &cm->yv12_fb[cpi->common.ref_frame_map[idx]];
   MACROBLOCKD *const xd = &x->e_mbd;
