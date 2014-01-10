@@ -20,8 +20,9 @@ extern "C" {
 
 #define VP8BORDERINPIXELS       32
 #define VP9INNERBORDERINPIXELS  96
-#define VP9BORDERINPIXELS      160
 #define VP9_INTERP_EXTEND        4
+#define VP9ENCBORDERINPIXELS    160
+#define VP9DECBORDERINPIXELS    32 
 
   typedef struct yv12_buffer_config {
     int   y_width;
