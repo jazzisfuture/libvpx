@@ -621,6 +621,9 @@ static void set_good_speed_feature(VP9_COMMON *cm,
     else
       sf->disable_split_mask = LAST_AND_INTRA_SPLIT_ONLY;
 
+    sf->use_one_partition_size_always = 1;
+    sf->always_this_block_size = BLOCK_16X16;
+
     sf->mode_search_skip_flags = FLAG_SKIP_INTRA_DIRMISMATCH |
                                  FLAG_SKIP_INTRA_BESTINTER |
                                  FLAG_SKIP_COMP_BESTINTRA |

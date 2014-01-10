@@ -1056,6 +1056,127 @@ static int sb_has_motion(VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   return 0;
 }
 
+// TODO(jingning) This currently serves as a test framework for non-RD mode
+// decision. To be continued on optimizing the partition type decisions.
+static void pick_partition_type(VP9_COMP *cpi,
+                                const TileInfo *const tile,
+                                MODE_INFO **mi_8x8, TOKENEXTRA **tp,
+                                int mi_row, int mi_col,
+                                BLOCK_SIZE bsize, int *rate, int64_t *dist,
+                                int do_recon) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *const x = &cpi->mb;
+  const int mis = cm->mode_info_stride;
+  int bsl = b_width_log2(bsize);
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  int ms = num_4x4_blocks_wide / 2;
+  int mh = num_4x4_blocks_high / 2;
+  int bss = (1 << bsl) / 4;
+  int i;
+  PARTITION_TYPE partition = PARTITION_NONE;
+  BLOCK_SIZE subsize;
+  ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
+  PARTITION_CONTEXT sl[8], sa[8];
+  BLOCK_SIZE bs_type = mi_8x8[0]->mbmi.sb_type;
+
+  if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
+    return;
+
+  partition = partition_lookup[bsl][bs_type];
+
+  subsize = get_subsize(bsize, partition);
+
+  if (bsize < BLOCK_8X8) {
+    // When ab_index = 0 all sub-blocks are handled, so for ab_index != 0
+    // there is nothing to be done.
+    if (x->ab_index != 0) {
+      *rate = 0;
+      *dist = 0;
+      return;
+    }
+  } else {
+    *(get_sb_partitioning(x, bsize)) = subsize;
+  }
+  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  switch (partition) {
+    case PARTITION_NONE:
+      pick_sb_modes(cpi, tile, mi_row, mi_col, rate, dist,
+                    bsize, get_block_context(x, bsize), INT64_MAX);
+      break;
+    case PARTITION_HORZ:
+      *get_sb_index(x, subsize) = 0;
+      pick_sb_modes(cpi, tile, mi_row, mi_col, rate, dist,
+                    subsize, get_block_context(x, subsize), INT64_MAX);
+      if (bsize >= BLOCK_8X8 && mi_row + (mh >> 1) < cm->mi_rows) {
+        int rt = 0;
+        int64_t dt = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+        *get_sb_index(x, subsize) = 1;
+        pick_sb_modes(cpi, tile, mi_row + (ms >> 1), mi_col, &rt, &dt, subsize,
+                      get_block_context(x, subsize), INT64_MAX);
+      }
+      break;
+    case PARTITION_VERT:
+      *get_sb_index(x, subsize) = 0;
+      pick_sb_modes(cpi, tile, mi_row, mi_col, rate, dist,
+                    subsize, get_block_context(x, subsize), INT64_MAX);
+      if (bsize >= BLOCK_8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
+        int rt = 0;
+        int64_t dt = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+        *get_sb_index(x, subsize) = 1;
+        pick_sb_modes(cpi, tile, mi_row, mi_col + (ms >> 1), &rt, &dt, subsize,
+                      get_block_context(x, subsize), INT64_MAX);
+      }
+      break;
+    case PARTITION_SPLIT:
+      // Split partition.
+      rate = 0;
+      dist = 0;
+      for (i = 0; i < 4; i++) {
+        int x_idx = (i & 1) * (ms >> 1);
+        int y_idx = (i >> 1) * (ms >> 1);
+        int jj = i >> 1, ii = i & 0x01;
+        int rt;
+        int64_t dt;
+
+        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
+          continue;
+
+        *get_sb_index(x, subsize) = i;
+
+        pick_partition_type(cpi, tile, mi_8x8 + jj * bss * mis + ii * bss, tp,
+                            mi_row + y_idx, mi_col + x_idx, subsize, &rt, &dt,
+                            i != 3);
+        rate += rt;
+        dist += dt;
+      }
+      break;
+    default:
+      assert(0);
+  }
+
+  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  if (do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // Check the projected output rate for this SB against it's target
+    // and and if necessary apply a Q delta using segmentation to get
+    // closer to the target.
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
+      select_in_frame_q_segment(cpi, mi_row, mi_col,
+                                output_enabled, *rate);
+    }
+
+    encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
+  }
+}
+
 static void rd_use_partition(VP9_COMP *cpi,
                              const TileInfo *const tile,
                              MODE_INFO **mi_8x8,
