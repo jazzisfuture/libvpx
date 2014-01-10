@@ -16,6 +16,7 @@
     EXPORT  |vp9_h_predictor_8x8_neon|
     EXPORT  |vp9_h_predictor_16x16_neon|
     EXPORT  |vp9_h_predictor_32x32_neon|
+    EXPORT  |vp9_tm_predictor_4x4_neon|
     ARM
     REQUIRE8
     PRESERVE8
@@ -282,5 +283,59 @@ loop_h
     bgt                 loop_h
     bx                  lr
     ENDP                ; |vp9_h_predictor_32x32_neon|
+
+;void vp9_tm_predictor_4x4_neon (uint8_t *dst, ptrdiff_t y_stride,
+;                                const uint8_t *above,
+;                                const uint8_t *left)
+; r0  uint8_t *dst
+; r1  ptrdiff_t y_stride
+; r2  const uint8_t *above
+; r3  const uint8_t *left
+
+|vp9_tm_predictor_4x4_neon| PROC
+    ; Load ytop_left = above[-1];
+    sub                  r12, r2, #1
+    ldrb                 r12, [r12]
+    vdup.u16             q0, r12
+
+    ; Load above 4 pixels
+    vld1.32              {d7[0]}, [r2]
+
+    ; Compute above - ytop_left
+    mov                   r12, #1
+    vdup.u8              d1, r12
+    vmull.u8             q3, d7, d1
+    vsub.s16             q3, q3, q0
+
+    ; Load left row by row and compute left + (above - ytop_left)
+    ; 1st row
+    ldrb                 r12, [r3], #1
+    vdup.u16             q1, r12
+    vqadd.s16            q1, q1, q3
+    vqshrun.s16          d0, q1, #0
+    vst1.u8              {d0}, [r0], r1
+
+    ; 2nd row
+    ldrb                 r12, [r3], #1
+    vdup.u16             q1, r12
+    vqadd.s16            q1, q1, q3
+    vqshrun.s16          d0, q1, #0
+    vst1.u8              {d0}, [r0], r1
+
+    ; 3rd row
+    ldrb                 r12, [r3], #1
+    vdup.u16             q1, r12
+    vqadd.s16            q1, q1, q3
+    vqshrun.s16          d0, q1, #0
+    vst1.u8              {d0}, [r0], r1
+
+    ; 4th row
+    ldrb                 r12, [r3], #1
+    vdup.u16             q1, r12
+    vqadd.s16            q1, q1, q3
+    vqshrun.s16          d0, q1, #0
+    vst1.u8              {d0}, [r0], r1
+    bx                   lr
+    ENDP                 ; |vp9_tm_predictor_4x4_neon|
 
     END
