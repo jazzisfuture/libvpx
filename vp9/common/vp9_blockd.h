@@ -115,10 +115,6 @@ static INLINE int mi_width_log2(BLOCK_SIZE sb_type) {
   return mi_width_log2_lookup[sb_type];
 }
 
-static INLINE int mi_height_log2(BLOCK_SIZE sb_type) {
-  return mi_height_log2_lookup[sb_type];
-}
-
 #if CONFIG_MASKED_INTERINTER
 #define MASK_BITS_SML   3
 #define MASK_BITS_MED   4
