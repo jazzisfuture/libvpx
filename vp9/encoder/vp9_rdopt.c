@@ -37,8 +37,6 @@
 #include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_common.h"
 
-#define INVALID_MV 0x80008000
-
 /* Factor to weigh the rate for switchable interp filters */
 #define SWITCHABLE_INTERP_RATE_FACTOR 1
 
@@ -112,14 +110,6 @@ const REF_DEFINITION vp9_ref_order[MAX_REFS] = {
 // The factors here are << 2 (2 = x0.5, 32 = x8 etc).
 static int rd_thresh_block_size_factor[BLOCK_SIZES] =
   {2, 3, 3, 4, 6, 6, 8, 12, 12, 16, 24, 24, 32};
-
-#define RD_THRESH_MAX_FACT 64
-#define RD_THRESH_INC      1
-#define RD_THRESH_POW      1.25
-#define RD_MULT_EPB_RATIO  64
-
-#define MV_COST_WEIGHT      108
-#define MV_COST_WEIGHT_SUB  120
 
 static int raster_block_offset(BLOCK_SIZE plane_bsize,
                                int raster_block, int stride) {
@@ -2124,10 +2114,10 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
                      cpi->common.show_frame &&
                      block_size < cpi->sf.max_partition_size);
 
-  int_mv pred_mv[3];
-  pred_mv[0] = mbmi->ref_mvs[ref_frame][0];
-  pred_mv[1] = mbmi->ref_mvs[ref_frame][1];
-  pred_mv[2] = x->pred_mv[ref_frame];
+  int_mv pred_mv[3] = {
+      mbmi->ref_mvs[ref_frame][0], mbmi->ref_mvs[ref_frame][1],
+      x->pred_mv[ref_frame]
+  };
 
   // Get the sad for each candidate reference mv
   for (i = 0; i < num_mv_refs; i++) {
@@ -2148,7 +2138,7 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
     this_sad = cpi->fn_ptr[block_size].sdf(src_y_ptr, x->plane[0].src.stride,
                                            ref_y_ptr, ref_y_stride,
                                            0x7fffffff);
-
+    x->mode_sad_stack[ref_frame][i] = this_sad;
     // Note if it is the best so far.
     if (this_sad < best_sad) {
       best_sad = this_sad;
@@ -2276,14 +2266,14 @@ static void setup_pred_block(const MACROBLOCKD *xd,
   }
 }
 
-static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
-                               const TileInfo *const tile,
-                               int idx, MV_REFERENCE_FRAME frame_type,
-                               BLOCK_SIZE block_size,
-                               int mi_row, int mi_col,
-                               int_mv frame_nearest_mv[MAX_REF_FRAMES],
-                               int_mv frame_near_mv[MAX_REF_FRAMES],
-                               struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
+void vp9_setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
+                            const TileInfo *const tile,
+                            int idx, MV_REFERENCE_FRAME frame_type,
+                            BLOCK_SIZE block_size,
+                            int mi_row, int mi_col,
+                            int_mv frame_nearest_mv[MAX_REF_FRAMES],
+                            int_mv frame_near_mv[MAX_REF_FRAMES],
+                            struct buf_2d yv12_mb[4][MAX_MB_PLANE]) {
   VP9_COMMON *cm = &cpi->common;
   YV12_BUFFER_CONFIG *yv12 = &cm->yv12_fb[cpi->common.ref_frame_map[idx]];
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -2315,7 +2305,7 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
             frame_type, block_size);
 }
 
-static YV12_BUFFER_CONFIG *get_scaled_ref_frame(VP9_COMP *cpi, int ref_frame) {
+YV12_BUFFER_CONFIG *vp9_get_scaled_ref_frame(VP9_COMP *cpi, int ref_frame) {
   YV12_BUFFER_CONFIG *scaled_ref_frame = NULL;
   int fb = get_ref_frame_idx(cpi, ref_frame);
   int fb_scale = get_scale_ref_frame_idx(cpi, ref_frame);
@@ -2353,12 +2343,11 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   int tmp_row_min = x->mv_row_min;
   int tmp_row_max = x->mv_row_max;
 
-  YV12_BUFFER_CONFIG *scaled_ref_frame = get_scaled_ref_frame(cpi, ref);
+  YV12_BUFFER_CONFIG *scaled_ref_frame = vp9_get_scaled_ref_frame(cpi, ref);
 
-  int_mv pred_mv[3];
-  pred_mv[0] = mbmi->ref_mvs[ref][0];
-  pred_mv[1] = mbmi->ref_mvs[ref][1];
-  pred_mv[2] = x->pred_mv[ref];
+  int_mv pred_mv[3] = {
+      mbmi->ref_mvs[ref][0], mbmi->ref_mvs[ref][1], x->pred_mv[ref]
+  };
 
   if (scaled_ref_frame) {
     int i;
@@ -2501,8 +2490,8 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   struct buf_2d scaled_first_yv12 = xd->plane[0].pre[0];
   int last_besterr[2] = {INT_MAX, INT_MAX};
   YV12_BUFFER_CONFIG *const scaled_ref_frame[2] = {
-    get_scaled_ref_frame(cpi, mbmi->ref_frame[0]),
-    get_scaled_ref_frame(cpi, mbmi->ref_frame[1])
+    vp9_get_scaled_ref_frame(cpi, mbmi->ref_frame[0]),
+    vp9_get_scaled_ref_frame(cpi, mbmi->ref_frame[1])
   };
 
   for (ref = 0; ref < 2; ++ref) {
@@ -3175,15 +3164,27 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   *returnrate = INT_MAX;
 
-  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
+  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
-      setup_buffer_inter(cpi, x, tile, get_ref_frame_idx(cpi, ref_frame),
-                         ref_frame, block_size, mi_row, mi_col,
-                         frame_mv[NEARESTMV], frame_mv[NEARMV], yv12_mb);
+      vp9_setup_buffer_inter(cpi, x, tile, get_ref_frame_idx(cpi, ref_frame),
+                             ref_frame, block_size, mi_row, mi_col,
+                             frame_mv[NEARESTMV], frame_mv[NEARMV], yv12_mb);
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
+  }
+
+  cpi->ref_frame_mask = 0;
+  for (ref_frame = LAST_FRAME;
+       ref_frame <= ALTREF_FRAME && cpi->sf.reference_masking; ++ref_frame) {
+    int i;
+    for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+      if ((x->pred_mv_sad[ref_frame] >> 2) > x->pred_mv_sad[i]) {
+        cpi->ref_frame_mask |= (1 << ref_frame);
+        break;
+      }
+    }
   }
 
   for (mode_index = 0; mode_index < MAX_MODES; ++mode_index) {
@@ -3235,8 +3236,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     // Skip if the current reference frame has been masked off
-    if (cpi->sf.reference_masking && !cpi->set_ref_frame_mask &&
-        (cpi->ref_frame_mask & (1 << ref_frame)))
+    if (cpi->ref_frame_mask & (1 << ref_frame) && this_mode != NEWMV)
       continue;
 
     // Test best rd so far against threshold for trying this mode.
@@ -3641,11 +3641,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  // If we are using reference masking and the set mask flag is set then
-  // create the reference frame mask.
-  if (cpi->sf.reference_masking && cpi->set_ref_frame_mask)
-    cpi->ref_frame_mask = ~(1 << vp9_mode_order[best_mode_index].ref_frame[0]);
-
   // Flag all modes that have a distortion thats > 2x the best we found at
   // this level.
   for (mode_index = 0; mode_index < MB_MODE_COUNT; ++mode_index) {
@@ -3797,13 +3792,25 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
-      setup_buffer_inter(cpi, x, tile, get_ref_frame_idx(cpi, ref_frame),
-                         ref_frame, block_size, mi_row, mi_col,
-                         frame_mv[NEARESTMV], frame_mv[NEARMV],
-                         yv12_mb);
+      vp9_setup_buffer_inter(cpi, x, tile, get_ref_frame_idx(cpi, ref_frame),
+                             ref_frame, block_size, mi_row, mi_col,
+                             frame_mv[NEARESTMV], frame_mv[NEARMV],
+                             yv12_mb);
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
+  }
+
+  cpi->ref_frame_mask = 0;
+  for (ref_frame = LAST_FRAME;
+       ref_frame <= ALTREF_FRAME && cpi->sf.reference_masking; ++ref_frame) {
+    int i;
+    for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
+      if ((x->pred_mv_sad[ref_frame] >> 1) > x->pred_mv_sad[i]) {
+        cpi->ref_frame_mask |= (1 << ref_frame);
+        break;
+      }
+    }
   }
 
   for (mode_index = 0; mode_index < MAX_REFS; ++mode_index) {
@@ -3852,11 +3859,6 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
       if (cpi->mode_skip_mask & ((int64_t)1 << mode_index))
         continue;
     }
-
-    // Skip if the current reference frame has been masked off
-    if (cpi->sf.reference_masking && !cpi->set_ref_frame_mask &&
-        (cpi->ref_frame_mask & (1 << ref_frame)))
-      continue;
 
     // Test best rd so far against threshold for trying this mode.
     if ((best_rd <
@@ -4366,11 +4368,6 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                               BLOCK_8X8, uv_tx_size);
     }
   }
-
-  // If we are using reference masking and the set mask flag is set then
-  // create the reference frame mask.
-  if (cpi->sf.reference_masking && cpi->set_ref_frame_mask)
-    cpi->ref_frame_mask = ~(1 << vp9_ref_order[best_mode_index].ref_frame[0]);
 
   if (best_rd == INT64_MAX && bsize < BLOCK_8X8) {
     *returnrate = INT_MAX;
