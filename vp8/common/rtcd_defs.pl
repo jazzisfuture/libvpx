@@ -539,8 +539,7 @@ if (vpx_config("CONFIG_REALTIME_ONLY") ne "yes") {
 # Pick Loopfilter
 #
 add_proto qw/void vp8_yv12_copy_partial_frame/, "struct yv12_buffer_config *src_ybc, struct yv12_buffer_config *dst_ybc";
-specialize qw/vp8_yv12_copy_partial_frame neon_asm/;
-$vp8_yv12_copy_partial_frame_neon_asm=vp8_yv12_copy_partial_frame_neon;
+specialize qw/vp8_yv12_copy_partial_frame neon/;
 
 #
 # Denoiser filter
