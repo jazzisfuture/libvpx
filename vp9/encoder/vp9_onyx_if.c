@@ -2498,7 +2498,10 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
+    if(cpi->compressor_speed == 2)
+      lf->filter_level = 4;
+    else
+      vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
@@ -2683,7 +2686,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     // to recode.
     vp9_save_coding_context(cpi);
     cpi->dummy_packing = 1;
-    vp9_pack_bitstream(cpi, dest, size);
+    if (cpi->compressor_speed != 2)
+      vp9_pack_bitstream(cpi, dest, size);
+
     cpi->rc.projected_frame_size = (*size) << 3;
     vp9_restore_coding_context(cpi);
 

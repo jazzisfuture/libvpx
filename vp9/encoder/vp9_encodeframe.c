@@ -2280,6 +2280,378 @@ static void select_tx_mode(VP9_COMP *cpi) {
     }
   }
 }
+// Start RTC Exploration
+typedef enum {
+  BOTH_ZERO = 0,
+  ZERO_PLUS_PREDICTED = 1,
+  BOTH_PREDICTED = 2,
+  NEW_PLUS_NON_INTRA = 3,
+  BOTH_NEW = 4,
+  INTRA_PLUS_NON_INTRA = 5,
+  BOTH_INTRA = 6,
+  INVALID_CASE = 9
+} motion_vector_context;
+
+static void set_mode_info(MB_MODE_INFO *mbmi, BLOCK_SIZE bsize,
+                          MB_PREDICTION_MODE mode, int mi_row, int mi_col) {
+  mbmi->best_mv[0].as_int = 0;
+  mbmi->best_mv[1].as_int = 0;
+  mbmi->interp_filter = EIGHTTAP;
+  mbmi->mode = mode;
+  mbmi->mv[0].as_int = 0;
+  mbmi->mv[1].as_int = 0;
+  if (mode < NEARESTMV) {
+    mbmi->ref_frame[0] = INTRA_FRAME;
+  } else {
+    mbmi->ref_frame[0] = LAST_FRAME;
+    if (!mi_row && !mi_col)
+      mbmi->mode_context[LAST_FRAME] = BOTH_PREDICTED;
+    else if (!mi_row || !mi_col)
+      mbmi->mode_context[LAST_FRAME] = ZERO_PLUS_PREDICTED;
+    else
+      mbmi->mode_context[LAST_FRAME] = BOTH_ZERO;
+
+  }
+  mbmi->ref_frame[1] = INTRA_FRAME;
+  mbmi->tx_size = TX_16X16;
+  mbmi->uv_mode = mode;
+  mbmi->skip_coeff = 0;
+  mbmi->sb_type = bsize;
+  mbmi->segment_id = 0;
+}
+
+static void rtc_use_partition(VP9_COMP *cpi,
+                             const TileInfo *const tile,
+                             MODE_INFO **mi_8x8,
+                             TOKENEXTRA **tp, int mi_row, int mi_col,
+                             BLOCK_SIZE bsize, int *rate, int64_t *dist,
+                             int do_recon) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *const x = &cpi->mb;
+  const int mis = cm->mode_info_stride;
+  int bsl = b_width_log2(bsize);
+  const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
+  const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
+  int ms = num_4x4_blocks_wide / 2;
+  int mh = num_4x4_blocks_high / 2;
+  int bss = (1 << bsl) / 4;
+  int i, pl;
+  PARTITION_TYPE partition = PARTITION_NONE;
+  BLOCK_SIZE subsize;
+  ENTROPY_CONTEXT l[16 * MAX_MB_PLANE], a[16 * MAX_MB_PLANE];
+  PARTITION_CONTEXT sl[8], sa[8];
+  int last_part_rate = INT_MAX;
+  int64_t last_part_dist = INT_MAX;
+  int chosen_rate = INT_MAX;
+  int64_t chosen_dist = INT_MAX;
+  BLOCK_SIZE bs_type = mi_8x8[0]->mbmi.sb_type;
+  MB_PREDICTION_MODE mode = DC_PRED;
+
+  if (cm->frame_type != INTRA_FRAME) {
+    mode = ZEROMV;
+  }
+
+  if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
+    return;
+
+  partition = partition_lookup[bsl][bs_type];
+
+  subsize = get_subsize(bsize, partition);
+
+  if (bsize < BLOCK_8X8) {
+    // When ab_index = 0 all sub-blocks are handled, so for ab_index != 0
+    // there is nothing to be done.
+    if (x->ab_index != 0) {
+      *rate = 0;
+      *dist = 0;
+      return;
+    }
+  } else {
+    *(get_sb_partitioning(x, bsize)) = subsize;
+  }
+  save_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  x->fast_ms = 0;
+  x->subblock_ref = 0;
+
+  switch (partition) {
+    case PARTITION_NONE:
+      set_offsets(cpi, tile, mi_row, mi_col, bsize);
+      set_mode_info(&get_block_context(x, bsize)->mic.mbmi, bsize, mode,
+                    mi_row, mi_col);
+      //pick_sb_modes(cpi, tile, mi_row, mi_col, &last_part_rate, &last_part_dist,
+      //              bsize, get_block_context(x, bsize), INT64_MAX);
+      break;
+    case PARTITION_HORZ:
+      *get_sb_index(x, subsize) = 0;
+      set_offsets(cpi, tile, mi_row, mi_col, subsize);
+      set_mode_info(&get_block_context(x, subsize)->mic.mbmi, subsize, mode,
+                    mi_row, mi_col);
+      //pick_sb_modes(cpi, tile, mi_row, mi_col, &last_part_rate, &last_part_dist,
+       //             subsize, get_block_context(x, subsize), INT64_MAX);
+      if (last_part_rate != INT_MAX &&
+          bsize >= BLOCK_8X8 && mi_row + (mh >> 1) < cm->mi_rows) {
+        int rt = 0;
+        int64_t dt = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        //encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+        *get_sb_index(x, subsize) = 1;
+        //pick_sb_modes(cpi, tile, mi_row + (ms >> 1), mi_col, &rt, &dt, subsize,
+        //              get_block_context(x, subsize), INT64_MAX);
+        set_offsets(cpi, tile, mi_row + (ms >> 1), mi_col, subsize);
+        set_mode_info(&get_block_context(x, subsize)->mic.mbmi, subsize, mode,
+                      mi_row + (ms >> 1), mi_col);
+
+        if (rt == INT_MAX || dt == INT_MAX) {
+          last_part_rate = INT_MAX;
+          last_part_dist = INT_MAX;
+          break;
+        }
+
+        last_part_rate += rt;
+        last_part_dist += dt;
+      }
+      break;
+    case PARTITION_VERT:
+      *get_sb_index(x, subsize) = 0;
+      set_offsets(cpi, tile, mi_row, mi_col, subsize);
+      set_mode_info(&get_block_context(x, subsize)->mic.mbmi, subsize, mode,
+                    mi_row, mi_col);
+      //pick_sb_modes(cpi, tile, mi_row, mi_col, &last_part_rate, &last_part_dist,
+      //              subsize, get_block_context(x, subsize), INT64_MAX);
+      if (last_part_rate != INT_MAX &&
+          bsize >= BLOCK_8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
+        int rt = 0;
+        int64_t dt = 0;
+        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        //encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
+        *get_sb_index(x, subsize) = 1;
+        set_offsets(cpi, tile, mi_row, mi_col + (ms >> 1), subsize);
+        set_mode_info(&get_block_context(x, subsize)->mic.mbmi, subsize, mode,
+                      mi_row, mi_col + (ms >> 1));
+        //pick_sb_modes(cpi, tile, mi_row, mi_col + (ms >> 1), &rt, &dt, subsize,
+        //              get_block_context(x, subsize), INT64_MAX);
+        if (rt == INT_MAX || dt == INT_MAX) {
+          last_part_rate = INT_MAX;
+          last_part_dist = INT_MAX;
+          break;
+        }
+        last_part_rate += rt;
+        last_part_dist += dt;
+      }
+      break;
+    case PARTITION_SPLIT:
+      // Split partition.
+      last_part_rate = 0;
+      last_part_dist = 0;
+      for (i = 0; i < 4; i++) {
+        int x_idx = (i & 1) * (ms >> 1);
+        int y_idx = (i >> 1) * (ms >> 1);
+        int jj = i >> 1, ii = i & 0x01;
+        int rt;
+        int64_t dt;
+
+        if ((mi_row + y_idx >= cm->mi_rows) || (mi_col + x_idx >= cm->mi_cols))
+          continue;
+
+        *get_sb_index(x, subsize) = i;
+
+        rtc_use_partition(cpi, tile, mi_8x8 + jj * bss * mis + ii * bss, tp,
+                         mi_row + y_idx, mi_col + x_idx, subsize, &rt, &dt,
+                         i != 3);
+        if (rt == INT_MAX || dt == INT_MAX) {
+          last_part_rate = INT_MAX;
+          last_part_dist = INT_MAX;
+          break;
+        }
+        last_part_rate += rt;
+        last_part_dist += dt;
+      }
+      break;
+    default:
+      assert(0);
+  }
+
+  pl = partition_plane_context(cpi->above_seg_context, cpi->left_seg_context,
+                               mi_row, mi_col, bsize);
+  if (last_part_rate < INT_MAX)
+    last_part_rate += x->partition_cost[pl][partition];
+
+
+  // If last_part is better set the partitioning to that...
+  mi_8x8[0]->mbmi.sb_type = bsize;
+  if (bsize >= BLOCK_8X8)
+    *(get_sb_partitioning(x, bsize)) = subsize;
+  chosen_rate = 0;//last_part_rate;
+  chosen_dist = 0;//last_part_dist;
+
+  restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
+
+  // We must have chosen a partitioning and encoding or we'll fail later on.
+  // No other opportunities for success.
+  if ( bsize == BLOCK_64X64)
+    assert(chosen_rate < INT_MAX && chosen_dist < INT_MAX);
+
+  if (do_recon) {
+    int output_enabled = (bsize == BLOCK_64X64);
+
+    // Check the projected output rate for this SB against it's target
+    // and and if necessary apply a Q delta using segmentation to get
+    // closer to the target.
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
+      select_in_frame_q_segment(cpi, mi_row, mi_col,
+                                output_enabled, chosen_rate);
+    }
+
+    encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
+  }
+
+  *rate = chosen_rate;
+  *dist = chosen_dist;
+}
+
+static void encode_rtc_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
+                              int mi_row, TOKENEXTRA **tp) {
+  VP9_COMMON * const cm = &cpi->common;
+  int mi_col;
+
+  // Initialize the left context for the new SB row
+  vpx_memset(&cpi->left_context, 0, sizeof(cpi->left_context));
+  vpx_memset(cpi->left_seg_context, 0, sizeof(cpi->left_seg_context));
+
+  // Code each SB in the row
+  for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
+       mi_col += MI_BLOCK_SIZE) {
+    int dummy_rate;
+    int64_t dummy_dist;
+
+    const int idx_str = cm->mode_info_stride * mi_row + mi_col;
+    MODE_INFO **mi_8x8 = cm->mi_grid_visible + idx_str;
+
+    cpi->mb.source_variance = UINT_MAX;
+    set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
+    set_partitioning(cpi, tile, mi_8x8, mi_row, mi_col);
+    rtc_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                     &dummy_rate, &dummy_dist, 1);
+  }
+}
+
+
+static void encode_rtc_frame_internal(VP9_COMP *cpi) {
+  int mi_row;
+  MACROBLOCK * const x = &cpi->mb;
+  VP9_COMMON * const cm = &cpi->common;
+  MACROBLOCKD * const xd = &x->e_mbd;
+
+//  fprintf(stderr, "encode_frame_internal frame %d (%d) type %d\n",
+//           cpi->common.current_video_frame, cpi->common.show_frame,
+//           cm->frame_type);
+
+// debug output
+#if DBG_PRNT_SEGMAP
+  {
+    FILE *statsfile;
+    statsfile = fopen("segmap2.stt", "a");
+    fprintf(statsfile, "\n");
+    fclose(statsfile);
+  }
+#endif
+
+  vp9_zero(cm->counts.switchable_interp);
+  vp9_zero(cpi->tx_stepdown_count);
+
+  xd->mi_8x8 = cm->mi_grid_visible;
+  // required for vp9_frame_init_quantizer
+  xd->mi_8x8[0] = cm->mi;
+
+  xd->last_mi = cm->prev_mi;
+
+  vp9_zero(cpi->common.counts.mv);
+  vp9_zero(cpi->coef_counts);
+  vp9_zero(cm->counts.eob_branch);
+
+  cpi->mb.e_mbd.lossless = cm->base_qindex == 0 && cm->y_dc_delta_q == 0
+      && cm->uv_dc_delta_q == 0 && cm->uv_ac_delta_q == 0;
+  switch_lossless_mode(cpi, cpi->mb.e_mbd.lossless);
+
+  vp9_frame_init_quantizer(cpi);
+
+  vp9_initialize_rd_consts(cpi);
+  vp9_initialize_me_consts(cpi, cm->base_qindex);
+  switch_tx_mode(cpi);
+  cpi->sf.always_this_block_size = BLOCK_16X16;
+
+  if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
+    // Initialize encode frame context.
+    init_encode_frame_mb_context(cpi);
+
+    // Build a frame level activity map
+    build_activity_map(cpi);
+  }
+
+  // Re-initialize encode frame context.
+  init_encode_frame_mb_context(cpi);
+
+  vp9_zero(cpi->rd_comp_pred_diff);
+  vp9_zero(cpi->rd_filter_diff);
+  vp9_zero(cpi->rd_tx_select_diff);
+  vp9_zero(cpi->rd_tx_select_threshes);
+
+  set_prev_mi(cm);
+
+  {
+    struct vpx_usec_timer emr_timer;
+    vpx_usec_timer_start(&emr_timer);
+
+    {
+      // Take tiles into account and give start/end MB
+      int tile_col, tile_row;
+      TOKENEXTRA *tp = cpi->tok;
+      const int tile_cols = 1 << cm->log2_tile_cols;
+      const int tile_rows = 1 << cm->log2_tile_rows;
+
+      for (tile_row = 0; tile_row < tile_rows; tile_row++) {
+        for (tile_col = 0; tile_col < tile_cols; tile_col++) {
+          TileInfo tile;
+          TOKENEXTRA *tp_old = tp;
+
+          // For each row of SBs in the frame
+          vp9_tile_init(&tile, cm, tile_row, tile_col);
+          for (mi_row = tile.mi_row_start;
+               mi_row < tile.mi_row_end; mi_row += 8)
+            encode_rtc_sb_row(cpi, &tile, mi_row, &tp);
+
+          cpi->tok_count[tile_row][tile_col] = (unsigned int)(tp - tp_old);
+          assert(tp - cpi->tok <= get_token_alloc(cm->mb_rows, cm->mb_cols));
+        }
+      }
+    }
+
+    vpx_usec_timer_mark(&emr_timer);
+    cpi->time_encode_sb_row += vpx_usec_timer_elapsed(&emr_timer);
+  }
+
+  if (cpi->sf.skip_encode_sb) {
+    int j;
+    unsigned int intra_count = 0, inter_count = 0;
+    for (j = 0; j < INTRA_INTER_CONTEXTS; ++j) {
+      intra_count += cm->counts.intra_inter[j][0];
+      inter_count += cm->counts.intra_inter[j][1];
+    }
+    cpi->sf.skip_encode_frame = ((intra_count << 2) < inter_count);
+    cpi->sf.skip_encode_frame &= (cm->frame_type != KEY_FRAME);
+    cpi->sf.skip_encode_frame &= cm->show_frame;
+  } else {
+    cpi->sf.skip_encode_frame = 0;
+  }
+
+#if 0
+  // Keep record of the total distortion this time around for future use
+  cpi->last_frame_distortion = cpi->frame_distortion;
+#endif
+}
+// end RTC play code
+
 
 void vp9_encode_frame(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
@@ -2359,7 +2731,11 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     select_tx_mode(cpi);
     cm->reference_mode = reference_mode;
     cm->mcomp_filter_type = filter_type;
-    encode_frame_internal(cpi);
+
+    if (cpi->compressor_speed == 2)
+      encode_rtc_frame_internal(cpi);
+    else
+      encode_frame_internal(cpi);
 
     for (i = 0; i < REFERENCE_MODES; ++i) {
       const int diff = (int) (cpi->rd_comp_pred_diff[i] / cm->MBs);
@@ -2437,7 +2813,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       }
     }
   } else {
-    encode_frame_internal(cpi);
+    encode_rtc_frame_internal(cpi);
   }
 }
 
@@ -2513,7 +2889,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ);
+                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
+                   cpi->compressor_speed != 2;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
