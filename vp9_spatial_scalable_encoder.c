@@ -24,6 +24,7 @@
 #include "vpx/svc_context.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
+#include "./webmenc.h"
 
 static const struct arg_enum_list encoding_mode_enum[] = {
   {"i", INTER_LAYER_PREDICTION_I},
@@ -53,11 +54,13 @@ static const arg_def_t scale_factors_arg =
     ARG_DEF("r", "scale-factors", 1, "scale factors (lowest to highest layer)");
 static const arg_def_t quantizers_arg =
     ARG_DEF("q", "quantizers", 1, "quantizers (lowest to highest layer)");
+static const arg_def_t ivf_arg =
+    ARG_DEF(NULL, "ivf", 0, "Output IVF (default is WebM)");
 
 static const arg_def_t *svc_args[] = {
   &encoding_mode_arg, &frames_arg,        &width_arg,       &height_arg,
   &timebase_arg,      &bitrate_arg,       &skip_frames_arg, &layers_arg,
-  &kf_dist_arg,       &scale_factors_arg, &quantizers_arg,  NULL
+  &kf_dist_arg,       &scale_factors_arg, &quantizers_arg,  &ivf_arg, NULL
 };
 
 static const SVC_ENCODING_MODE default_encoding_mode =
@@ -77,6 +80,7 @@ typedef struct {
   uint32_t frames_to_code;
   uint32_t frames_to_skip;
   struct VpxInputContext input_ctx;
+  int write_ivf;
 } AppInput;
 
 static const char *exec_name;
@@ -155,6 +159,8 @@ static void parse_command_line(int argc, const char **argv_,
       vpx_svc_set_scale_factors(svc_ctx, arg.val);
     } else if (arg_match(&arg, &quantizers_arg, argi)) {
       vpx_svc_set_quantizers(svc_ctx, arg.val);
+    } else if (arg_match(&arg, &ivf_arg, argi)) {
+      app_input->write_ivf = 1;
     } else {
       ++argj;
     }
@@ -181,12 +187,14 @@ static void parse_command_line(int argc, const char **argv_,
       "mode: %d, layers: %d\n"
       "width %d, height: %d,\n"
       "num: %d, den: %d, bitrate: %d,\n"
-      "gop size: %d\n",
+      "gop size: %d\n"
+      "write ivf: %d\n",
       vpx_codec_iface_name(vpx_codec_vp9_cx()), app_input->frames_to_code,
       app_input->frames_to_skip, svc_ctx->encoding_mode,
       svc_ctx->spatial_layers, enc_cfg->g_w, enc_cfg->g_h,
       enc_cfg->g_timebase.num, enc_cfg->g_timebase.den,
-      enc_cfg->rc_target_bitrate, enc_cfg->kf_max_dist);
+      enc_cfg->rc_target_bitrate, enc_cfg->kf_max_dist,
+      app_input->write_ivf);
 }
 
 int main(int argc, const char **argv) {
@@ -202,12 +210,20 @@ int main(int argc, const char **argv) {
   int pts = 0;            /* PTS starts at 0 */
   int frame_duration = 1; /* 1 timebase tick per frame */
   vpx_codec_cx_pkt_t packet = {0};
+  uint32_t max_layer_width;
+  uint32_t max_layer_height;
+  uint32_t input_width;
+  uint32_t input_height;
+  struct EbmlGlobal ebml = { .last_pts_ms = -1 };
   packet.kind = VPX_CODEC_CX_FRAME_PKT;
 
   memset(&svc_ctx, 0, sizeof(svc_ctx));
   svc_ctx.log_print = 1;
   exec_name = argv[0];
   parse_command_line(argc, argv, &app_input, &svc_ctx, &enc_cfg);
+
+  input_width = enc_cfg.g_w;
+  input_height = enc_cfg.g_h;
 
   // Allocate image buffer
   if (!vpx_img_alloc(&raw, VPX_IMG_FMT_I420, enc_cfg.g_w, enc_cfg.g_h, 32))
@@ -224,7 +240,25 @@ int main(int argc, const char **argv) {
       VPX_CODEC_OK)
     die("Failed to initialize encoder\n");
 
-  ivf_write_file_header(outfile, &enc_cfg, VP9_FOURCC, 0);
+  // get resolution of highest layer
+  if (VPX_CODEC_OK != vpx_svc_get_layer_resolution(&svc_ctx,
+                                                   svc_ctx.spatial_layers - 1,
+                                                   &max_layer_width,
+                                                   &max_layer_height)) {
+      die("Failed to get output resolution");
+  }
+
+  if (app_input.write_ivf) {
+    ivf_write_file_header(outfile, &enc_cfg, VP9_FOURCC, 0);
+  } else {
+    vpx_rational_t framerate = {.num = enc_cfg.g_timebase.den, .den = enc_cfg.g_timebase.num};
+    ebml.stream = outfile;
+    enc_cfg.g_w = max_layer_width;
+    enc_cfg.g_h = max_layer_height;
+    write_webm_file_header(&ebml, &enc_cfg, &framerate, STEREO_FORMAT_MONO, VP9_FOURCC);
+    enc_cfg.g_w = input_width;
+    enc_cfg.g_h = input_height;
+  }
 
   // skip initial frames
   for (i = 0; i < app_input.frames_to_skip; ++i) {
@@ -244,9 +278,19 @@ int main(int argc, const char **argv) {
     if (vpx_svc_get_frame_size(&svc_ctx) > 0) {
       packet.data.frame.pts = pts;
       packet.data.frame.sz = vpx_svc_get_frame_size(&svc_ctx);
-      ivf_write_frame_header(outfile, &packet);
-      (void)fwrite(vpx_svc_get_buffer(&svc_ctx), 1,
-                   vpx_svc_get_frame_size(&svc_ctx), outfile);
+      if (vpx_svc_is_keyframe(&svc_ctx)) {
+        packet.data.frame.flags = VPX_FRAME_IS_KEY;
+      } else {
+        packet.data.frame.flags = 0;
+      }
+      if (app_input.write_ivf) {
+        ivf_write_frame_header(outfile, &packet);
+        (void)fwrite(vpx_svc_get_buffer(&svc_ctx), 1,
+                     vpx_svc_get_frame_size(&svc_ctx), outfile);
+      } else {
+        packet.data.frame.buf = vpx_svc_get_buffer(&svc_ctx);
+        write_webm_block(&ebml, &enc_cfg, &packet);
+      }
     }
     ++frame_cnt;
     pts += frame_duration;
@@ -259,15 +303,18 @@ int main(int argc, const char **argv) {
 
   // rewrite the output file headers with the actual frame count, and
   // resolution of the highest layer
-  if (!fseek(outfile, 0, SEEK_SET)) {
-    // get resolution of highest layer
-    if (VPX_CODEC_OK != vpx_svc_get_layer_resolution(&svc_ctx,
-                                                     svc_ctx.spatial_layers - 1,
-                                                     &enc_cfg.g_w,
-                                                     &enc_cfg.g_h)) {
-      die("Failed to get output resolution");
+  if (app_input.write_ivf) {
+    if (!fseek(outfile, 0, SEEK_SET)) {
+      enc_cfg.g_w = max_layer_width;
+      enc_cfg.g_h = max_layer_height;
+      ivf_write_file_header(outfile, &enc_cfg, VP9_FOURCC, frame_cnt);
+      enc_cfg.g_w = input_width;
+      enc_cfg.g_h = input_height;
     }
-    ivf_write_file_header(outfile, &enc_cfg, VP9_FOURCC, frame_cnt);
+  } else {
+    write_webm_file_footer(&ebml, 0);
+    free(ebml.cue_list);
+    ebml.cue_list = NULL;
   }
   fclose(outfile);
   vpx_img_free(&raw);
