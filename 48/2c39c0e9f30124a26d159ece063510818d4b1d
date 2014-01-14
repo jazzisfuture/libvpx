@@ -1,0 +1,8 @@
+Code-Review+1: Frank Galligan <fgalligan@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Adrian Grange <agrange@google.com>
+Submitted-at: Tue, 14 Jan 2014 07:52:37 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/68101
+Project: webm/libvpx
+Branch: refs/heads/master
