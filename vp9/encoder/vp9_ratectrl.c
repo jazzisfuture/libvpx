@@ -452,6 +452,89 @@ static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
   }
 }
 
+void vp9_rc_update_rate_correction_factors_onepass_cbr(VP9_COMP *cpi,
+                                                       int damp_var) {
+  const int q = cpi->common.base_qindex;
+  int correction_factor = 100;
+  double rate_correction_factor = get_rate_correction_factor(cpi);
+  double adjustment_limit;
+  int buffer_level_next_frame;
+  int steady_state = 100;  // We should try to detect this state.
+
+  int projected_size_based_on_q = 0;
+
+  // Clear down mmx registers to allow floating point in what follows
+  vp9_clear_system_state();  // __asm emms;
+
+  // Work out how big we would have expected the frame to be at this Q given
+  // the current correction factor.
+  // Stay in double to avoid int overflow when values are large
+  projected_size_based_on_q = estimate_bits_at_q(cpi->common.frame_type, q,
+                                                 cpi->common.MBs,
+                                                 rate_correction_factor);
+
+  // Work out a size correction factor.
+  if (projected_size_based_on_q > 0)
+    correction_factor =
+        (100 * cpi->rc.projected_frame_size) / projected_size_based_on_q;
+
+  // More heavily damped adjustment used if we have been oscillating either side
+  // of target.
+  switch (damp_var) {
+    case 0:
+      adjustment_limit = 0.75;
+      break;
+    case 1:
+      adjustment_limit = 0.375;
+      break;
+    case 2:
+    default:
+      adjustment_limit = 0.25;
+      break;
+  }
+
+  // State of buffer level for next frame (i.e., update with encoded size).
+  buffer_level_next_frame = cpi->rc.buffer_level +
+      cpi->rc.av_per_frame_bandwidth - cpi->rc.projected_frame_size;
+
+  // Increase rate correction factor for next frame (because we have overshoot
+  // for this frame) if this is consistent with state of the buffer level,
+  // otherwise leave it alone.
+  if (correction_factor > 102 &&
+      cpi->rc.frames_since_key > steady_state &&
+      cpi->rc.buffer_level  < cpi->oxcf.optimal_buffer_level &&
+      buffer_level_next_frame  < cpi->oxcf.optimal_buffer_level) {
+    // We are not already at the worst allowable quality
+    correction_factor =
+        (int)(100 + ((correction_factor - 100) * adjustment_limit));
+    rate_correction_factor =
+        ((rate_correction_factor * correction_factor) / 100);
+
+    // Keep rate_correction_factor within limits
+    if (rate_correction_factor > MAX_BPB_FACTOR)
+      rate_correction_factor = MAX_BPB_FACTOR;
+   // Decrease rate correction factor for next frame (because we have undershoot
+   // for this frame) if this is consistent with state of the buffer level,
+   // otherwise leave it alone.
+  } else if (correction_factor < 99 &&
+      cpi->rc.frames_since_key > steady_state &&
+      cpi->rc.buffer_level  > cpi->oxcf.optimal_buffer_level &&
+      buffer_level_next_frame  > cpi->oxcf.optimal_buffer_level) {
+    // We are not already at the best allowable quality
+    correction_factor =
+        (int)(100 - ((100 - correction_factor) * adjustment_limit));
+    rate_correction_factor =
+        ((rate_correction_factor * correction_factor) / 100);
+
+    // Keep rate_correction_factor within limits
+    if (rate_correction_factor < MIN_BPB_FACTOR)
+      rate_correction_factor = MIN_BPB_FACTOR;
+  }
+
+  set_rate_correction_factor(cpi, rate_correction_factor);
+}
+
+
 void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   const int q = cpi->common.base_qindex;
   int correction_factor = 100;
@@ -871,8 +954,11 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   rc->projected_frame_size = (bytes_used << 3);
 
   // Post encode loop adjustment of Q prediction.
-  vp9_rc_update_rate_correction_factors(cpi, (cpi->sf.recode_loop ||
-            cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) ? 2 : 0);
+  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+    vp9_rc_update_rate_correction_factors_onepass_cbr(cpi, 2);
+  } else {
+    vp9_rc_update_rate_correction_factors(cpi, (cpi->sf.recode_loop) ? 2 : 0);
+  }
 
   // Keep a record of last Q and ambient average Q.
   if (cm->frame_type == KEY_FRAME) {

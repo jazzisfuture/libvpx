@@ -27,6 +27,10 @@ double vp9_convert_qindex_to_q(int qindex);
 // Updates rate correction factors
 void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var);
 
+// Updates rate correction factor: specifc case for 1-pass CBR
+void vp9_rc_update_rate_correction_factors_onepass_cbr(VP9_COMP *cpi,
+                                                       int damp_var);
+
 // initialize luts for minq
 void vp9_rc_init_minq_luts(void);
 
