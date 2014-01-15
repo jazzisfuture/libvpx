@@ -198,9 +198,9 @@ void vp9_init_me_luts() {
   // This is to make it easier to resolve the impact of experimental changes
   // to the quantizer tables.
   for (i = 0; i < QINDEX_RANGE; i++) {
-    sad_per_bit16lut[i] =
-      (int)((0.0418 * vp9_convert_qindex_to_q(i)) + 2.4107);
-    sad_per_bit4lut[i] = (int)(0.063 * vp9_convert_qindex_to_q(i) + 2.742);
+    const int q = vp9_convert_qindex_to_q(i);
+    sad_per_bit16lut[i] = (int)(0.0418 * q + 2.4107);
+    sad_per_bit4lut[i] = (int)(0.063 * q + 2.742);
   }
 }
 
@@ -218,12 +218,9 @@ int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex) {
 }
 
 static int compute_rd_thresh_factor(int qindex) {
-  int q;
   // TODO(debargha): Adjust the function below
-  q = (int)(pow(vp9_dc_quant(qindex, 0) / 4.0, RD_THRESH_POW) * 5.12);
-  if (q < 8)
-    q = 8;
-  return q;
+  const int q = (int)(pow(vp9_dc_quant(qindex, 0) / 4.0, RD_THRESH_POW) * 5.12);
+  return MAX(q, 8);
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
@@ -232,88 +229,72 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
 }
 
 static void set_block_thresholds(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  SPEED_FEATURES *const sf = &cpi->sf;
   int i, bsize, segment_id;
-  VP9_COMMON *cm = &cpi->common;
 
   for (segment_id = 0; segment_id < MAX_SEGMENTS; ++segment_id) {
-    int q;
-    int segment_qindex = vp9_get_qindex(&cm->seg, segment_id, cm->base_qindex);
-    segment_qindex = clamp(segment_qindex + cm->y_dc_delta_q, 0, MAXQ);
-    q = compute_rd_thresh_factor(segment_qindex);
+    const int qindex = clamp(vp9_get_qindex(&cm->seg, segment_id,
+                                            cm->base_qindex) +
+                                                cm->y_dc_delta_q, 0, MAXQ);
+    const int q = compute_rd_thresh_factor(qindex);
 
     for (bsize = 0; bsize < BLOCK_SIZES; ++bsize) {
       // Threshold here seem unecessarily harsh but fine given actual
       // range of values used for cpi->sf.thresh_mult[]
-      int thresh_max = INT_MAX / (q * rd_thresh_block_size_factor[bsize]);
+      const int x = q * rd_thresh_block_size_factor[bsize];
+      const int thresh_max = INT_MAX / x;
 
-      for (i = 0; i < MAX_MODES; ++i) {
-        if (cpi->sf.thresh_mult[i] < thresh_max) {
-          cpi->rd_threshes[segment_id][bsize][i] =
-              cpi->sf.thresh_mult[i] * q *
-              rd_thresh_block_size_factor[bsize] / 4;
-        } else {
-          cpi->rd_threshes[segment_id][bsize][i] = INT_MAX;
-        }
-      }
+      for (i = 0; i < MAX_MODES; ++i)
+        cpi->rd_threshes[segment_id][bsize][i] =
+            sf->thresh_mult[i] < thresh_max ? sf->thresh_mult[i] * x / 4
+                                            : INT_MAX;
 
-      for (i = 0; i < MAX_REFS; ++i) {
-        if (cpi->sf.thresh_mult_sub8x8[i] < thresh_max) {
-          cpi->rd_thresh_sub8x8[segment_id][bsize][i] =
-              cpi->sf.thresh_mult_sub8x8[i] * q *
-              rd_thresh_block_size_factor[bsize] / 4;
-        } else {
-          cpi->rd_thresh_sub8x8[segment_id][bsize][i] = INT_MAX;
-        }
-      }
+      for (i = 0; i < MAX_REFS; ++i)
+        cpi->rd_thresh_sub8x8[segment_id][bsize][i] =
+            sf->thresh_mult_sub8x8[i] < thresh_max
+                ? sf->thresh_mult_sub8x8[i] * x / 4
+                : INT_MAX;
     }
   }
 }
 
 void vp9_initialize_rd_consts(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-  int qindex, i;
-
-  vp9_clear_system_state();  // __asm emms;
-
-  // Further tests required to see if optimum is different
-  // for key frames, golden frames and arf frames.
-  // if (cpi->common.refresh_golden_frame ||
-  //     cpi->common.refresh_alt_ref_frame)
-  qindex = clamp(cm->base_qindex + cm->y_dc_delta_q, 0, MAXQ);
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *const x = &cpi->mb;
+  const int qindex = clamp(cm->base_qindex + cm->y_dc_delta_q, 0, MAXQ);
+  int i;
 
   cpi->RDDIV = RDDIV_BITS;  // in bits (to multiply D by 128)
   cpi->RDMULT = vp9_compute_rd_mult(cpi, qindex);
 
-  cpi->mb.errorperbit = cpi->RDMULT / RD_MULT_EPB_RATIO;
-  cpi->mb.errorperbit += (cpi->mb.errorperbit == 0);
+  x->errorperbit = cpi->RDMULT / RD_MULT_EPB_RATIO + (x->errorperbit == 0);
 
   vp9_set_speed_features(cpi);
 
-  cpi->mb.select_txfm_size = (cpi->sf.tx_size_search_method == USE_LARGESTALL &&
-                              cm->frame_type != KEY_FRAME) ?
-                              0 : 1;
+  x->select_txfm_size = (cpi->sf.tx_size_search_method == USE_LARGESTALL &&
+                         cm->frame_type != KEY_FRAME) ? 0 : 1;
 
   set_block_thresholds(cpi);
 
-  fill_token_costs(cpi->mb.token_costs, cm->fc.coef_probs);
+  fill_token_costs(x->token_costs, cm->fc.coef_probs);
 
   for (i = 0; i < PARTITION_CONTEXTS; i++)
-    vp9_cost_tokens(cpi->mb.partition_cost[i], get_partition_probs(cm, i),
+    vp9_cost_tokens(x->partition_cost[i], get_partition_probs(cm, i),
                     vp9_partition_tree);
 
-  /*rough estimate for costing*/
   fill_mode_costs(cpi);
 
   if (!frame_is_intra_only(cm)) {
-    vp9_build_nmv_cost_table(
-        cpi->mb.nmvjointcost,
-        cm->allow_high_precision_mv ? cpi->mb.nmvcost_hp : cpi->mb.nmvcost,
-        &cm->fc.nmvc,
-        cm->allow_high_precision_mv, 1, 1);
+    vp9_build_nmv_cost_table(cpi->mb.nmvjointcost,
+                             cm->allow_high_precision_mv ? x->nmvcost_hp
+                                                         : x->nmvcost,
+                             &cm->fc.nmvc,
+                             cm->allow_high_precision_mv, 1, 1);
 
     for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
-      vp9_cost_tokens((int *)cpi->mb.inter_mode_cost[i],
-                      cm->fc.inter_mode_probs[i], vp9_inter_mode_tree);
+      vp9_cost_tokens((int *)x->inter_mode_cost[i], cm->fc.inter_mode_probs[i],
+                      vp9_inter_mode_tree);
   }
 }
 
