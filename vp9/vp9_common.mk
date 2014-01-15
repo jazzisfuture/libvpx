@@ -125,9 +125,9 @@ VP9_COMMON_SRCS-$(HAVE_SSE2) += common/x86/vp9_idct_intrin_sse2.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_convolve_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_idct16x16_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_loopfilter_16_neon.c
-VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_dc_only_idct_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_save_reg_neon$(ASM)
 
+VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_dc_only_idct_add_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_loopfilter_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_avg_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_copy_neon.c
