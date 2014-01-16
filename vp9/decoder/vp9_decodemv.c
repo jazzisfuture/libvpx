@@ -356,8 +356,7 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm, MODE_INFO *mi,
   mbmi->uv_mode = read_intra_mode_uv(cm, r, mbmi->mode);
 }
 
-static INLINE int assign_mv(VP9_COMMON *cm, MB_PREDICTION_MODE mode,
-                             int_mv mv[2], int_mv best_mv[2],
+static INLINE int assign_mv(VP9_COMMON *cm, MB_PREDICTION_MODE mode, int_mv mv[2],
                              int_mv nearest_mv[2], int_mv near_mv[2],
                              int is_compound, int allow_hp, vp9_reader *r) {
   int i;
@@ -367,10 +366,10 @@ static INLINE int assign_mv(VP9_COMMON *cm, MB_PREDICTION_MODE mode,
     case NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
                                             NULL : &cm->counts.mv;
-      read_mv(r, &mv[0].as_mv, &best_mv[0].as_mv,
+      read_mv(r, &mv[0].as_mv, &nearest_mv[0].as_mv,
               &cm->fc.nmvc, mv_counts, allow_hp);
       if (is_compound)
-        read_mv(r, &mv[1].as_mv, &best_mv[1].as_mv,
+        read_mv(r, &mv[1].as_mv, &nearest_mv[1].as_mv,
                 &cm->fc.nmvc, mv_counts, allow_hp);
       for (i = 0; i < 1 + is_compound; ++i) {
         ret = ret && mv[i].as_mv.row < MV_UPP && mv[i].as_mv.row > MV_LOW;
@@ -423,7 +422,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   const BLOCK_SIZE bsize = mbmi->sb_type;
   const int allow_hp = cm->allow_high_precision_mv;
 
-  int_mv nearest[2], nearmv[2], best[2];
+  int_mv nearest[2], nearmv[2];
   int inter_mode_ctx, ref, is_compound;
 
   read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
@@ -453,7 +452,6 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       vp9_find_best_ref_mvs(xd, allow_hp, mbmi->ref_mvs[mbmi->ref_frame[ref]],
                             &nearest[ref], &nearmv[ref]);
-      best[ref].as_int = nearest[ref].as_int;
     }
   }
 
@@ -477,7 +475,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
             vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, j, ref, mi_row, mi_col,
                                           &nearest[ref], &nearmv[ref]);
 
-        if (!assign_mv(cm, b_mode, block, best, nearest, nearmv,
+        if (!assign_mv(cm, b_mode, block, nearest, nearmv,
                        is_compound, allow_hp, r)) {
           xd->corrupted |= 1;
           break;
@@ -499,8 +497,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
-    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv,
-                                best, nearest, nearmv,
+    xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearest, nearmv,
                                 is_compound, allow_hp, r);
   }
 }
