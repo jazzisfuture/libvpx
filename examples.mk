@@ -24,6 +24,7 @@ vpxdec.SRCS                 += vpx_ports/vpx_timer.h
 vpxdec.SRCS                 += vpx/vpx_integer.h
 vpxdec.SRCS                 += args.c args.h
 vpxdec.SRCS                 += ivfdec.c ivfdec.h
+vpxdec.SRCS                 += y4menc.c y4menc.h
 vpxdec.SRCS                 += tools_common.c tools_common.h
 vpxdec.SRCS                 += webmdec.c webmdec.h
 vpxdec.SRCS                 += nestegg/halloc/halloc.h
