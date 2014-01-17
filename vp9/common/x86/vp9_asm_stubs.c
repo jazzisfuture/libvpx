@@ -23,6 +23,114 @@ typedef void filter8_1dfunction (
   const short *filter
 );
 
+#if (HAVE_AVX2)
+filter8_1dfunction vp9_filter_block1d16_v8_intrin_avx2;
+filter8_1dfunction vp9_filter_block1d16_h8_intrin_avx2;
+filter8_1dfunction vp9_filter_block1d8_v8_ssse3;
+filter8_1dfunction vp9_filter_block1d8_h8_ssse3;
+filter8_1dfunction vp9_filter_block1d4_v8_ssse3;
+filter8_1dfunction vp9_filter_block1d4_h8_ssse3;
+
+void vp9_convolve8_horiz_avx2(const uint8_t *src, ptrdiff_t src_stride,
+                               uint8_t *dst, ptrdiff_t dst_stride,
+                               const int16_t *filter_x, int x_step_q4,
+                               const int16_t *filter_y, int y_step_q4,
+                               int w, int h) {
+  /* Ensure the filter can be compressed to int16_t. */
+  if (x_step_q4 == 16 && filter_x[3] != 128) {
+    while (w >= 16) {
+      vp9_filter_block1d16_h8_intrin_avx2(src, src_stride,
+                                    dst, dst_stride,
+                                    h, filter_x);
+      src += 16;
+      dst += 16;
+      w -= 16;
+    }
+    while (w >= 8) {
+      vp9_filter_block1d8_h8_ssse3(src, src_stride,
+                                   dst, dst_stride,
+                                   h, filter_x);
+      src += 8;
+      dst += 8;
+      w -= 8;
+    }
+    while (w >= 4) {
+      vp9_filter_block1d4_h8_ssse3(src, src_stride,
+                                   dst, dst_stride,
+                                   h, filter_x);
+      src += 4;
+      dst += 4;
+      w -= 4;
+    }
+  }
+  if (w) {
+    vp9_convolve8_horiz_c(src, src_stride, dst, dst_stride,
+                          filter_x, x_step_q4, filter_y, y_step_q4,
+                          w, h);
+  }
+}
+
+void vp9_convolve8_vert_avx2(const uint8_t *src, ptrdiff_t src_stride,
+                              uint8_t *dst, ptrdiff_t dst_stride,
+                              const int16_t *filter_x, int x_step_q4,
+                              const int16_t *filter_y, int y_step_q4,
+                              int w, int h) {
+  if (y_step_q4 == 16 && filter_y[3] != 128) {
+    while (w >= 16) {
+      vp9_filter_block1d16_v8_intrin_avx2(src - src_stride * 3, src_stride,
+                                    dst, dst_stride,
+                                    h, filter_y);
+      src += 16;
+      dst += 16;
+      w -= 16;
+    }
+    while (w >= 8) {
+      vp9_filter_block1d8_v8_ssse3(src - src_stride * 3, src_stride,
+                                   dst, dst_stride,
+                                   h, filter_y);
+      src += 8;
+      dst += 8;
+      w -= 8;
+    }
+    while (w >= 4) {
+      vp9_filter_block1d4_v8_ssse3(src - src_stride * 3, src_stride,
+                                   dst, dst_stride,
+                                   h, filter_y);
+      src += 4;
+      dst += 4;
+      w -= 4;
+    }
+  }
+  if (w) {
+    vp9_convolve8_vert_c(src, src_stride, dst, dst_stride,
+                         filter_x, x_step_q4, filter_y, y_step_q4,
+                         w, h);
+  }
+}
+
+void vp9_convolve8_avx2(const uint8_t *src, ptrdiff_t src_stride,
+                         uint8_t *dst, ptrdiff_t dst_stride,
+                         const int16_t *filter_x, int x_step_q4,
+                         const int16_t *filter_y, int y_step_q4,
+                         int w, int h) {
+  DECLARE_ALIGNED_ARRAY(32, unsigned char, fdata2, 64 * 71);
+
+  assert(w <= 64);
+  assert(h <= 64);
+  if (x_step_q4 == 16 && y_step_q4 == 16) {
+    vp9_convolve8_horiz_avx2(src - 3 * src_stride, src_stride, fdata2, 64,
+                              filter_x, x_step_q4, filter_y, y_step_q4,
+                              w, h + 7);
+    vp9_convolve8_vert_avx2(fdata2 + 3 * 64, 64, dst, dst_stride,
+                             filter_x, x_step_q4, filter_y, y_step_q4, w, h);
+  } else {
+    vp9_convolve8_c(src, src_stride, dst, dst_stride,
+                    filter_x, x_step_q4, filter_y, y_step_q4, w, h);
+  }
+}
+
+#endif
+
 #if HAVE_SSSE3
 filter8_1dfunction vp9_filter_block1d16_v8_ssse3;
 filter8_1dfunction vp9_filter_block1d16_h8_ssse3;
