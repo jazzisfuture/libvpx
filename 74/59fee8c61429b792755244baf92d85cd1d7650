@@ -1,0 +1,8 @@
+Commit-Queue+1: Hangyu Kuang <hkuang@google.com>
+Code-Review+2: Hangyu Kuang <hkuang@google.com>
+Verified+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: Hangyu Kuang <hkuang@google.com>
+Submitted-at: Fri, 17 Jan 2014 16:17:36 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/68386
+Project: webm/libvpx
+Branch: refs/heads/master
