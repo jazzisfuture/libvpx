@@ -18,6 +18,7 @@
     EXPORT  |vp9_h_predictor_32x32_neon|
     EXPORT  |vp9_tm_predictor_4x4_neon|
     EXPORT  |vp9_tm_predictor_8x8_neon|
+    EXPORT  |vp9_tm_predictor_16x16_neon|
     ARM
     REQUIRE8
     PRESERVE8
@@ -402,5 +403,97 @@ loop_h
     vst1.64             {d1}, [r0], r1
     bx                  lr
     ENDP                ; |vp9_tm_predictor_8x8_neon|
+
+;void vp9_tm_predictor_16x16_neon (uint8_t *dst, ptrdiff_t y_stride,
+;                                const uint8_t *above,
+;                                const uint8_t *left)
+; r0  uint8_t *dst
+; r1  ptrdiff_t y_stride
+; r2  const uint8_t *above
+; r3  const uint8_t *left
+
+|vp9_tm_predictor_16x16_neon| PROC
+    ; Load ytop_left = above[-1];
+    sub                 r12, r2, #1
+    ldrb                r12, [r12]
+    vdup.u8             q0, r12
+
+    ; Load above 8 pixels
+    vld1.8              q1, [r2]
+
+    vld1.8              d18, [r3]!
+
+    ; Compute above - ytop_left
+    vsubl.u8            q2, d2, d0
+    vsubl.u8            q3, d3, d1
+
+    ; Load left row by row and compute left + (above - ytop_left)
+    ; Process 4 rows in each single loop and loop 4 times to process 16 rows.
+    mov                 r2, #2
+
+loop_16x16_neon
+    vmovl.u8            q10, d18
+    vdup.16             q0, d20[0]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d20[1]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d20[2]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d20[3]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d21[0]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d21[1]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d21[2]
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    vdup.16             q0, d21[3]
+    vld1.8              d18, [r3]!
+    vadd.s16            q1, q0, q2
+    vadd.s16            q0, q0, q3
+    vqshrun.s16         d2, q1, #0
+    vqshrun.s16         d3, q0, #0
+    vst1.64             {d2,d3}, [r0], r1
+
+    subs                r2, r2, #1
+    bgt                 loop_16x16_neon
+
+    bx                  lr
+    ENDP                ; |vp9_tm_predictor_16x16_neon|
 
     END
