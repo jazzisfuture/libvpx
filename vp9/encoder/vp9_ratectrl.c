@@ -252,6 +252,25 @@ static void calc_iframe_target_size(VP9_COMP *cpi) {
   rc->this_frame_target = target;
 }
 
+
+// Update the buffer level for higher layers, given the encoded current layer.
+static void update_layer_buffer_level(VP9_COMP *const cpi,
+                                      int encoded_frame_size) {
+  int layer = 0;
+  int current_layer = cpi->svc.layer_id;
+  for (layer = current_layer + 1; layer < cpi->svc.number_layers; layer++) {
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
+    int bits_off_for_this_layer = (int)(lc->target_bandwidth / lc->framerate -
+        encoded_frame_size);
+    lc->rc.bits_off_target += bits_off_for_this_layer;
+
+    // Clip buffer level to maximum buffer size for the layer.
+    lc->rc.bits_off_target = MIN(lc->rc.bits_off_target,
+                                 lc->maximum_buffer_size);
+    lc->rc.buffer_level = lc->rc.bits_off_target;
+  }
+}
+
 // Update the buffer level: leaky bucket model.
 void vp9_update_buffer_level(VP9_COMP *const cpi, int encoded_frame_size) {
   const VP9_COMMON *const cm = &cpi->common;
@@ -266,7 +285,12 @@ void vp9_update_buffer_level(VP9_COMP *const cpi, int encoded_frame_size) {
   }
 
   // Clip the buffer level to the maximum specified buffer size.
-  rc->buffer_level = MIN(rc->bits_off_target, oxcf->maximum_buffer_size);
+  rc->bits_off_target = MIN(rc->bits_off_target, oxcf->maximum_buffer_size);
+  rc->buffer_level = rc->bits_off_target;
+
+  if (cpi->use_svc && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+    update_layer_buffer_level(cpi, encoded_frame_size);
+  }
 }
 
 int vp9_drop_frame(VP9_COMP *const cpi) {
@@ -368,7 +392,6 @@ static int target_size_from_buffer_level(const VP9_CONFIG *oxcf,
     const int pct_high = MIN(-diff / one_pct_bits, oxcf->over_shoot_pct);
     target += (target * pct_high) / 200;
   }
-
   return target;
 }
 
@@ -408,7 +431,7 @@ static void calc_pframe_target_size(VP9_COMP *const cpi) {
     rc->this_frame_target = min_frame_target;
 
   // Adjust target frame size for Golden Frames:
-  if (cpi->refresh_golden_frame) {
+  if (cpi->refresh_golden_frame && !cpi->use_svc) {
     // If we are using alternate ref instead of gf then do not apply the boost
     // It will instead be applied to the altref update
     // Jims modified boost
@@ -430,7 +453,8 @@ static double get_rate_correction_factor(const VP9_COMP *cpi) {
   if (cpi->common.frame_type == KEY_FRAME) {
     return cpi->rc.key_frame_rate_correction_factor;
   } else {
-    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
+    if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
+        !cpi->use_svc)
       return cpi->rc.gf_rate_correction_factor;
     else
       return cpi->rc.rate_correction_factor;
@@ -441,7 +465,8 @@ static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
   if (cpi->common.frame_type == KEY_FRAME) {
     cpi->rc.key_frame_rate_correction_factor = factor;
   } else {
-    if (cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame)
+    if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
+        !cpi->use_svc)
       cpi->rc.gf_rate_correction_factor = factor;
     else
       cpi->rc.rate_correction_factor = factor;
