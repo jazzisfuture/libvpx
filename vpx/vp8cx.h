@@ -194,7 +194,8 @@ enum vp8e_enc_control_id {
   VP9E_SET_AQ_MODE,
 
   VP9E_SET_SVC,
-  VP9E_SET_SVC_PARAMETERS
+  VP9E_SET_SVC_PARAMETERS,
+  VP9E_SET_SVC_LAYER_ID
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -295,6 +296,11 @@ typedef struct vpx_svc_parameters {
   int alt_fb_idx;             /**< alt reference frame frame buffer index */
 } vpx_svc_parameters_t;
 
+typedef struct vpx_svc_layer_id {
+  int spatial_layer_id;
+  int temporal_layer_id;
+} vpx_svc_layer_id_t;
+
 /*!\brief VP8 encoder control function parameter type
  *
  * Defines the data types that VP8E control functions take. Note that
@@ -316,6 +322,7 @@ VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE,          vpx_scaling_mode_t *)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC,                int)
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_PARAMETERS,     vpx_svc_parameters_t *)
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_LAYER_ID,       vpx_svc_layer_id_t *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED,            int)
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF,   unsigned int)
