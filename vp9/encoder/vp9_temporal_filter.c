@@ -392,7 +392,6 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
   const int num_frames_backward = distance;
   const int num_frames_forward = vp9_lookahead_depth(cpi->lookahead)
                                - (num_frames_backward + 1);
-
   struct scale_factors sf;
 
   switch (blur_type) {
@@ -408,7 +407,6 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
 
     case 2:
       // Forward Blur
-
       frames_to_blur_forward = num_frames_forward;
 
       if (frames_to_blur_forward >= max_frames)
@@ -471,8 +469,9 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
                             strength, &sf);
 }
 
-void configure_arnr_filter(VP9_COMP *cpi, const unsigned int this_frame,
-                           const int group_boost) {
+void vp9_configure_arnr_filter(VP9_COMP *cpi,
+                               const unsigned int frames_to_arnr,
+                               const int group_boost) {
   int half_gf_int;
   int frames_after_arf;
   int frames_bwd = cpi->oxcf.arnr_max_frames - 1;
@@ -486,7 +485,8 @@ void configure_arnr_filter(VP9_COMP *cpi, const unsigned int this_frame,
   // Note: this_frame->frame has been updated in the loop
   // so it now points at the ARF frame.
   half_gf_int = cpi->rc.baseline_gf_interval >> 1;
-  frames_after_arf = (int)(cpi->twopass.total_stats.count - this_frame - 1);
+  frames_after_arf = vp9_lookahead_depth(cpi->lookahead)
+      - frames_to_arnr - 1;
 
   switch (cpi->oxcf.arnr_type) {
     case 1:  // Backward filter
