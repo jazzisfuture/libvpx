@@ -1957,8 +1957,13 @@ void vp9_get_one_pass_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   if (cpi->rc.frames_till_gf_update_due == 0) {
+    cpi->rc.baseline_gf_interval = DEFAULT_GF_INTERVAL;
     cpi->rc.frames_till_gf_update_due = cpi->rc.baseline_gf_interval;
+    if (cpi->rc.frames_till_gf_update_due > cpi->rc.frames_to_key)
+      cpi->rc.frames_till_gf_update_due = cpi->rc.frames_to_key;
     cpi->refresh_golden_frame = 1;
+    cpi->rc.source_alt_ref_pending = 1;
+    cpi->rc.gfu_boost = 300;
   }
 }
 
@@ -1977,6 +1982,7 @@ void vp9_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   // Don't use gf_update by default in CBR mode.
+  cpi->rc.baseline_gf_interval = INT_MAX;
   cpi->rc.frames_till_gf_update_due = INT_MAX;
   cpi->rc.baseline_gf_interval = INT_MAX;
 }
