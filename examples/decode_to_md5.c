@@ -33,17 +33,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define VPX_CODEC_DISABLE_COMPAT 1
-#include "./vpx_config.h"
+
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_decoder.h"
-#include "md5_utils.h"
+
+#include "./ivfdec.h"
+#include "./md5_utils.h"
+#include "./vpx_config.h"
 
 #define VP8_FOURCC 0x30385056
 #define VP9_FOURCC 0x30395056
-
-#define IVF_FILE_HDR_SZ  (32)
-#define IVF_FRAME_HDR_SZ (12)
 
 static vpx_codec_iface_t *get_codec_interface(unsigned int fourcc) {
   switch (fourcc) {
@@ -55,11 +56,11 @@ static vpx_codec_iface_t *get_codec_interface(unsigned int fourcc) {
   return NULL;
 }
 
-static unsigned int mem_get_le32(const unsigned char *mem) {
-  return (mem[3] << 24) | (mem[2] << 16) | (mem[1] << 8) | (mem[0]);
+void usage_exit() {
+  exit(EXIT_FAILURE);
 }
 
-static void die(const char *fmt, ...) {
+static void die_args(const char *fmt, ...) {
   va_list ap;
 
   va_start(ap, fmt);
@@ -111,45 +112,35 @@ int main(int argc, char **argv) {
   vpx_codec_ctx_t codec;
   vpx_codec_iface_t *iface;
   int flags = 0, frame_cnt = 0;
-  unsigned char file_hdr[IVF_FILE_HDR_SZ];
-  unsigned char frame_hdr[IVF_FRAME_HDR_SZ];
-  unsigned char frame[256 * 1024];
+  vpx_video_t *video;
 
   if (argc != 3)
-    die("Usage: %s <infile> <outfile>\n", argv[0]);
+    die_args("Usage: %s <infile> <outfile>\n", argv[0]);
 
   if (!(infile = fopen(argv[1], "rb")))
-    die("Failed to open %s for reading", argv[1]);
+    die_args("Failed to open %s for reading", argv[1]);
 
   if (!(outfile = fopen(argv[2], "wb")))
-    die("Failed to open %s for writing", argv[2]);
+    die_args("Failed to open %s for writing", argv[2]);
 
-  if (!(fread(file_hdr, 1, IVF_FILE_HDR_SZ, infile) == IVF_FILE_HDR_SZ &&
-     file_hdr[0] == 'D' && file_hdr[1] == 'K' &&
-     file_hdr[2] == 'I' && file_hdr[3] == 'F'))
-    die("%s is not an IVF file.", argv[1]);
+  video = vpx_video_open_file(infile);
+  if (!video)
+    die_args("%s is not an IVF file.", argv[1]);
 
-  iface = get_codec_interface(mem_get_le32(file_hdr + 8));
+  iface = get_codec_interface(vpx_video_get_fourcc(video));
   if (!iface)
-    die("Unknown FOURCC code.");
-
+    die_args("Unknown FOURCC code.");
 
   printf("Using %s\n", vpx_codec_iface_name(iface));
 
   if (vpx_codec_dec_init(&codec, iface, NULL, flags))
     die_codec(&codec, "Failed to initialize decoder");
 
-  while (fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, infile) == IVF_FRAME_HDR_SZ) {
-    const int frame_size = mem_get_le32(frame_hdr);
+  while (vpx_video_read_frame(video)) {
     vpx_codec_iter_t iter = NULL;
     vpx_image_t *img;
-
-    if (frame_size > sizeof(frame))
-      die("Frame %d data too big for example code buffer", frame_size);
-
-    if (fread(frame, 1, frame_size, infile) != frame_size)
-      die("Failed to read complete frame");
-
+    size_t frame_size;
+    const unsigned char *frame = vpx_video_get_frame(video, &frame_size);
     if (vpx_codec_decode(&codec, frame, frame_size, NULL, 0))
       die_codec(&codec, "Failed to decode frame");
 
@@ -166,6 +157,8 @@ int main(int argc, char **argv) {
   printf("Processed %d frames.\n", frame_cnt);
   if (vpx_codec_destroy(&codec))
     die_codec(&codec, "Failed to destroy codec");
+
+  vpx_video_close(video);
 
   fclose(outfile);
   fclose(infile);
