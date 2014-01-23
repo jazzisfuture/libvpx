@@ -3312,7 +3312,6 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
 
   vp9_get_second_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
-  // vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
 
   vp9_twopass_postencode_update(cpi, *size);
 }
@@ -3461,8 +3460,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       if (cpi->oxcf.arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
         // TODO(agrange) merge these two functions.
-        configure_arnr_filter(cpi, cm->current_video_frame + frames_to_arf,
-                              cpi->rc.gfu_boost);
+        vp9_configure_arnr_filter(cpi, frames_to_arf, cpi->rc.gfu_boost);
         vp9_temporal_filter_prepare(cpi, frames_to_arf);
         vp9_extend_frame_borders(&cpi->alt_ref_buffer,
                                  cm->subsampling_x, cm->subsampling_y);
@@ -3479,6 +3477,8 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       if (!cpi->multi_arf_enabled)
 #endif
         cpi->rc.source_alt_ref_pending = 0;   // Clear Pending altf Ref flag.
+    } else {
+      cpi->rc.source_alt_ref_pending = 0;   // Clear Pending altf Ref flag.
     }
   }
 
