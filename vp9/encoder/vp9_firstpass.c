@@ -49,6 +49,8 @@
 
 #define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
 
+static const int kMinKeyFrameBoost = 300;
+
 static void swap_yv12(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
   YV12_BUFFER_CONFIG temp = *a;
   *a = *b;
@@ -2271,8 +2273,8 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     if (kf_boost < (rc->frames_to_key * 3))
       kf_boost = (rc->frames_to_key * 3);
 
-    if (kf_boost < 300)  // Min KF boost
-      kf_boost = 300;
+    if (kf_boost < kMinKeyFrameBoost)
+      kf_boost = kMinKeyFrameBoost;
 
     // Make a note of baseline boost and the zero motion
     // accumulator value for use elsewhere.
@@ -2379,7 +2381,7 @@ void vp9_get_one_pass_params(VP9_COMP *cpi) {
     cpi->rc.this_key_frame_forced = cm->current_video_frame != 0 &&
                                     cpi->rc.frames_to_key == 0;
     cpi->rc.frames_to_key = cpi->key_frame_frequency;
-    cpi->rc.kf_boost = 300;
+    cpi->rc.kf_boost = kMinKeyFrameBoost;
   } else {
     cm->frame_type = INTER_FRAME;
   }
@@ -2399,7 +2401,7 @@ void vp9_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cpi->rc.this_key_frame_forced = cm->current_video_frame != 0 &&
                                     cpi->rc.frames_to_key == 0;
     cpi->rc.frames_to_key = cpi->key_frame_frequency;
-    cpi->rc.kf_boost = 300;
+    cpi->rc.kf_boost = kMinKeyFrameBoost;
   } else {
     cm->frame_type = INTER_FRAME;
   }
