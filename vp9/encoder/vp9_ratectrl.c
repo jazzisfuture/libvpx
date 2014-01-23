@@ -246,7 +246,7 @@ static void calc_iframe_target_size(VP9_COMP *cpi) {
 
   if (oxcf->rc_max_intra_bitrate_pct) {
     const int max_rate = rc->per_frame_bandwidth *
-                             oxcf->rc_max_intra_bitrate_pct / 100;
+        oxcf->rc_max_intra_bitrate_pct / 100;
     target = MIN(target, max_rate);
   }
   rc->this_frame_target = target;
@@ -377,14 +377,9 @@ static void calc_pframe_target_size(VP9_COMP *const cpi) {
   const VP9_CONFIG *const oxcf = &cpi->oxcf;
   int min_frame_target = MAX(rc->min_frame_bandwidth,
                              rc->av_per_frame_bandwidth >> 5);
-  if (cpi->refresh_alt_ref_frame) {
-    // Special alt reference frame case
-    // Per frame bit target for the alt ref frame
-    rc->per_frame_bandwidth = cpi->twopass.gf_bits;
-    rc->this_frame_target = rc->per_frame_bandwidth;
-  } else {
+  rc->this_frame_target = rc->per_frame_bandwidth;
+  if (!cpi->refresh_alt_ref_frame) {
     // Normal frames (gf and inter).
-    rc->this_frame_target = rc->per_frame_bandwidth;
     // Set target frame size based on buffer level, for 1 pass CBR.
     if (cpi->pass == 0 && oxcf->end_usage == USAGE_STREAM_FROM_SERVER) {
       // Need to decide how low min_frame_target should be for 1-pass CBR.
