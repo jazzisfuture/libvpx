@@ -3107,6 +3107,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     if (q == 0)
       q++;
   }
+  /*
+  printf("per_frame_bw = %d, this_frame_target = %d, q = %d\n",
+         cpi->rc.per_frame_bandwidth, cpi->rc.this_frame_target, q);
+         */
 
   if (!frame_is_intra_only(cm)) {
     cm->interp_filter = DEFAULT_INTERP_FILTER;
