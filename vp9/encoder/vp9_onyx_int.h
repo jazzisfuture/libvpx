@@ -412,6 +412,9 @@ typedef struct {
   // This feature limits the number of coefficients updates we actually do
   // by only looking at counts from 1/2 the bands.
   int use_fast_coef_updates;  // 0: 2-loop, 1: 1-loop, 2: 1-loop reduced
+
+  // This skips a search for lf level replacing it with an estimated value.
+  int use_estimated_lf_level;
 } SPEED_FEATURES;
 
 typedef struct {

@@ -851,6 +851,7 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
       sf->intra_y_mode_mask[i] = INTRA_DC_H_V;
       sf->intra_uv_mode_mask[i] = INTRA_DC_ONLY;
     }
+    sf->use_estimated_lf_level = 1;
   }
 }
 
@@ -909,6 +910,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_fast_coef_updates = 0;
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
+  sf->use_estimated_lf_level = 0;
 
   switch (mode) {
     case 0:  // This is the best quality mode.
