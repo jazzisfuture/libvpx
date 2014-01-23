@@ -1339,7 +1339,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
 
   cpi->cq_target_quality = cpi->oxcf.cq_level;
 
-  cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
+  cm->filter_type = DEFAULT_INTERP_FILTER;
 
   cpi->target_bandwidth = cpi->oxcf.target_bandwidth;
 
@@ -3113,7 +3113,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                         &top_index);
 
   if (!frame_is_intra_only(cm)) {
-    cm->mcomp_filter_type = DEFAULT_INTERP_FILTER;
+    cm->filter_type = DEFAULT_INTERP_FILTER;
     /* TODO: Decide this more intelligently */
     set_high_precision_mv(cpi, (q < HIGH_PRECISION_MV_QTHRESH));
   }

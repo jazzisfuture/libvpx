@@ -131,7 +131,7 @@ typedef struct {
   // Flags used for prediction status of various bit-stream signals
   unsigned char seg_id_predicted;
 
-  INTERPOLATION_TYPE interp_filter;
+  FILTER_TYPE filter_type;
 
   BLOCK_SIZE sb_type;
 } MB_MODE_INFO;

@@ -330,13 +330,13 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
       }
     }
 
-    if (cm->mcomp_filter_type == SWITCHABLE) {
+    if (cm->filter_type == SWITCHABLE) {
       const int ctx = vp9_get_pred_context_switchable_interp(xd);
       vp9_write_token(bc, vp9_switchable_interp_tree,
                       cm->fc.switchable_interp_prob[ctx],
-                      &switchable_interp_encodings[mi->interp_filter]);
+                      &switchable_interp_encodings[mi->filter_type]);
     } else {
-      assert(mi->interp_filter == cm->mcomp_filter_type);
+      assert(mi->filter_type == cm->filter_type);
     }
 
     if (bsize < BLOCK_8X8) {
@@ -918,8 +918,8 @@ static void encode_txfm_probs(VP9_COMP *cpi, vp9_writer *w) {
   }
 }
 
-static void write_interp_filter_type(INTERPOLATION_TYPE type,
-                                     struct vp9_write_bit_buffer *wb) {
+static void write_filter_type(FILTER_TYPE type,
+                              struct vp9_write_bit_buffer *wb) {
   const int type_to_literal[] = { 1, 0, 2, 3 };
 
   vp9_wb_write_bit(wb, type == SWITCHABLE);
@@ -927,8 +927,8 @@ static void write_interp_filter_type(INTERPOLATION_TYPE type,
     vp9_wb_write_literal(wb, type_to_literal[type], 2);
 }
 
-static void fix_mcomp_filter_type(VP9_COMMON *cm) {
-  if (cm->mcomp_filter_type == SWITCHABLE) {
+static void fix_filter_type(VP9_COMMON *cm) {
+  if (cm->filter_type == SWITCHABLE) {
     // Check to see if only one of the filters is actually used
     int count[SWITCHABLE_FILTERS];
     int i, j, c = 0;
@@ -942,7 +942,7 @@ static void fix_mcomp_filter_type(VP9_COMMON *cm) {
       // Only one filter is used. So set the filter at frame level
       for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
         if (count[i]) {
-          cm->mcomp_filter_type = i;
+          cm->filter_type = i;
           break;
         }
       }
@@ -1170,8 +1170,8 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
       vp9_wb_write_bit(wb, cm->allow_high_precision_mv);
 
-      fix_mcomp_filter_type(cm);
-      write_interp_filter_type(cm->mcomp_filter_type, wb);
+      fix_filter_type(cm);
+      write_filter_type(cm->filter_type, wb);
     }
   }
 
@@ -1222,7 +1222,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
     vp9_zero(cm->counts.inter_mode);
 
-    if (cm->mcomp_filter_type == SWITCHABLE)
+    if (cm->filter_type == SWITCHABLE)
       update_switchable_interp_probs(cpi, &header_bc);
 
     for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
