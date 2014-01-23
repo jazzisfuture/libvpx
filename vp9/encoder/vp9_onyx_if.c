@@ -3292,6 +3292,15 @@ static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   } else {
     vp9_get_one_pass_params(cpi);
   }
+  /*
+  printf("Frame %d [%d, %d]: %d %d %d\n",
+         cpi->common.current_video_frame,
+         cpi->common.frame_type,
+         cpi->common.show_frame,
+         cpi->rc.frames_till_gf_update_due,
+         cpi->rc.source_alt_ref_active,
+         cpi->rc.source_alt_ref_pending);
+         */
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
@@ -3311,8 +3320,16 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
   cpi->enable_encode_breakout = 1;
 
   vp9_get_second_pass_params(cpi);
+  /*
+  printf("Frame %d [%d, %d]: %d %d %d\n",
+         cpi->common.current_video_frame,
+         cpi->common.frame_type,
+         cpi->common.show_frame,
+         cpi->rc.frames_till_gf_update_due,
+         cpi->rc.source_alt_ref_active,
+         cpi->rc.source_alt_ref_pending);
+         */
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
-  // vp9_print_modes_and_motion_vectors(&cpi->common, "encode.stt");
 
   vp9_twopass_postencode_update(cpi, *size);
 }
@@ -3461,8 +3478,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
       if (cpi->oxcf.arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
         // TODO(agrange) merge these two functions.
-        configure_arnr_filter(cpi, cm->current_video_frame + frames_to_arf,
-                              cpi->rc.gfu_boost);
+        vp9_configure_arnr_filter(cpi, frames_to_arf, cpi->rc.gfu_boost);
         vp9_temporal_filter_prepare(cpi, frames_to_arf);
         vp9_extend_frame_borders(&cpi->alt_ref_buffer,
                                  cm->subsampling_x, cm->subsampling_y);
