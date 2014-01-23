@@ -12,6 +12,7 @@
 #define VP9_ENCODER_VP9_RESIZE_H_
 
 #include <stdio.h>
+#include "vpx/vpx_integer.h"
 
 void vp9_resize_plane(const uint8_t *const input,
                       int height,
