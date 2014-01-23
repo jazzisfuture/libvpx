@@ -790,17 +790,6 @@ static int get_ref_frame_idx(VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
   }
 }
 
-static int get_scale_ref_frame_idx(VP9_COMP *cpi,
-                                   MV_REFERENCE_FRAME ref_frame) {
-  if (ref_frame == LAST_FRAME) {
-    return 0;
-  } else if (ref_frame == GOLDEN_FRAME) {
-    return 1;
-  } else {
-    return 2;
-  }
-}
-
 static YV12_BUFFER_CONFIG *get_ref_frame_buffer(VP9_COMP *cpi,
                                                 MV_REFERENCE_FRAME ref_frame) {
   VP9_COMMON *const cm = &cpi->common;
