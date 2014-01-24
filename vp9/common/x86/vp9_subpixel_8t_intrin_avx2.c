@@ -48,10 +48,10 @@ void vp9_filter_block1d16_h8_intrin_avx2(unsigned char *src_ptr,
     // in both lanes of 128 bit register.
     filtersReg =_mm_packs_epi16(filtersReg, filtersReg);
     // have the same data in both lanes of a 256 bit register
-#if ( __GNUC__ < 4 || (__GNUC__ == 4 && \
-(__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
+#if ((__GCC__) && ( __GNUC__ < 4 || (__GNUC__ == 4 && \
+(__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0)))))
     filtersReg32 = _mm_broadcastsi128_si256((__m128i const *)&filtersReg);
-#elif(__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
+#elif ((__GCC__) && (__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0)))
     filtersReg32 = _mm_broadcastsi128_si256(filtersReg);
 #else
     filtersReg32 = _mm256_broadcastsi128_si256(filtersReg);
@@ -300,10 +300,10 @@ void vp9_filter_block1d16_v8_intrin_avx2(unsigned char *src_ptr,
     // same data in both lanes of 128 bit register.
     filtersReg =_mm_packs_epi16(filtersReg, filtersReg);
     // have the same data in both lanes of a 256 bit register
-#if ( __GNUC__ < 4 || (__GNUC__ == 4 && \
-(__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0))))
+#if ((__GCC__) && ( __GNUC__ < 4 || (__GNUC__ == 4 && \
+(__GNUC_MINOR__ < 6 || (__GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ > 0)))))
     filtersReg32 = _mm_broadcastsi128_si256((__m128i const *)&filtersReg);
-#elif(__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0))
+#elif ((__GCC__) && (__GNUC__ == 4 && (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ > 0)))
     filtersReg32 = _mm_broadcastsi128_si256(filtersReg);
 #else
     filtersReg32 = _mm256_broadcastsi128_si256(filtersReg);
