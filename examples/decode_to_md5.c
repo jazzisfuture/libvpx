@@ -29,7 +29,6 @@
 // is processed, then U, then V. It is important to honor the image's `stride`
 // values.
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,8 +60,8 @@ static void die_codec(vpx_codec_ctx_t *ctx, const char *s) {
   const char *detail = vpx_codec_error_detail(ctx);
 
   printf("%s: %s\n", s, vpx_codec_error(ctx));
-  if(detail)
-    printf("    %s\n",detail);
+  if (detail)
+    printf("    %s\n", detail);
   exit(EXIT_FAILURE);
 }
 
