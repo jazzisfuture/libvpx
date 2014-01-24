@@ -29,7 +29,6 @@
 // is processed, then U, then V. It is important to honor the image's `stride`
 // values.
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
