@@ -21,12 +21,12 @@
 extern "C" {
 #endif
 
-void y4m_write_file_header(FILE *file, int width, int height,
+#define Y4M_BUFFER_SIZE 1024
+
+int y4m_print_file_header(char *buf, size_t len, int width, int height,
                            const struct VpxRational *framerate,
                            vpx_img_fmt_t fmt);
-
-void y4m_write_frame_header(FILE *file);
-
+int y4m_print_frame_header(char *buf, size_t len);
 
 #ifdef __cplusplus
 }  // extern "C"
