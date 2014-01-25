@@ -54,10 +54,6 @@ typedef long off_t;  /* NOLINT */
 
 #define LITERALU64(hi, lo) ((((uint64_t)hi) << 32) | lo)
 
-#ifndef PATH_MAX
-#define PATH_MAX 512
-#endif
-
 #define IVF_FRAME_HDR_SZ (4 + 8)  /* 4 byte size + 8 byte timestamp */
 #define IVF_FILE_HDR_SZ 32
 

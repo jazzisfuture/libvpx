@@ -472,7 +472,7 @@ int main_loop(int argc, const char **argv_) {
   int                     frame_avail, got_data;
 
   const char *outfile_pattern = NULL;
-  char outfile_name[PATH_MAX] = {0};
+  char outfile_name[FILENAME_MAX] = {0};
   FILE *outfile = NULL;
 
   MD5Context md5_ctx;
@@ -636,7 +636,7 @@ int main_loop(int argc, const char **argv_) {
   single_file = is_single_file(outfile_pattern);
 
   if (!noblit && single_file) {
-    generate_filename(outfile_pattern, outfile_name, PATH_MAX,
+    generate_filename(outfile_pattern, outfile_name, FILENAME_MAX,
                       vpx_input_ctx.width, vpx_input_ctx.height, 0);
     if (do_md5)
       MD5Init(&md5_ctx);
@@ -830,7 +830,7 @@ int main_loop(int argc, const char **argv_) {
           write_image_file(img, planes, outfile);
         }
       } else {
-        generate_filename(outfile_pattern, outfile_name, PATH_MAX,
+        generate_filename(outfile_pattern, outfile_name, FILENAME_MAX,
                           img->d_w, img->d_h, frame_in);
         if (do_md5) {
           MD5Init(&md5_ctx);
