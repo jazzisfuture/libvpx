@@ -2681,7 +2681,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       vp9_update_zbin_extra(cpi, x);
     }
   } else {
-    vp9_setup_interp_filters(xd, mbmi->interp_filter, cm);
+    xd->interp_kernel = vp9_get_interp_kernel(mbmi->interp_filter);
 
     if (cpi->oxcf.tuning == VP8_TUNE_SSIM) {
       // Adjust the zbin based on this MB rate.
