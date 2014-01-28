@@ -2811,7 +2811,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (frame_over_shoot_limit == 0)
       frame_over_shoot_limit = 1;
 
-    if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
+    if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY ||
+        cpi->pass == 0) {
       loop = 0;
     } else {
       // Special case handling for forced key frames
