@@ -1258,6 +1258,11 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
       cpi->pass = 2;
       cpi->compressor_speed = 0;
       break;
+
+    case MODE_REALTIME:
+      cpi->pass = 0;
+      cpi->compressor_speed = 3;
+      break;
   }
 
   cpi->oxcf.worst_allowed_q = q_trans[oxcf->worst_allowed_q];
@@ -2541,7 +2546,10 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
+    if (cpi->compressor_speed == 3)
+      lf->filter_level = 4;
+    else
+      vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
@@ -2730,7 +2738,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (cpi->sf.recode_loop != 0) {
       vp9_save_coding_context(cpi);
       cpi->dummy_packing = 1;
-      vp9_pack_bitstream(cpi, dest, size);
+      if (cpi->compressor_speed != 3)
+        vp9_pack_bitstream(cpi, dest, size);
+
       cpi->rc.projected_frame_size = (*size) << 3;
       vp9_restore_coding_context(cpi);
 
@@ -3088,10 +3098,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                    &frame_under_shoot_limit,
                                    &frame_over_shoot_limit);
 
-  // Decide q and q bounds
+  // Decide q and q bounds.
   q = vp9_rc_pick_q_and_adjust_q_bounds(cpi,
                                         &bottom_index,
                                         &top_index);
+
+  if (cpi->common.current_video_frame == 0 && cpi->compressor_speed == 3) {
+    q /= 3;
+  }
 
   if (!frame_is_intra_only(cm)) {
     cm->interp_filter = DEFAULT_INTERP_FILTER;
