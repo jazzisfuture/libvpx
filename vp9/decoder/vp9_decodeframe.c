@@ -691,9 +691,20 @@ static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
     vp9_update_frame_size(cm);
   }
 
-  vp9_realloc_frame_buffer(get_frame_new_buffer(cm), cm->width, cm->height,
-                           cm->subsampling_x, cm->subsampling_y,
-                           VP9_DEC_BORDER_IN_PIXELS);
+  if (cm->get_ext_fb_cb != NULL && cm->release_ext_fb_cb != NULL) {
+    vpx_codec_frame_buffer_t *const ext_fb = &cm->fb_list[cm->new_fb_idx];
+    if (vp9_realloc_frame_buffer(get_frame_new_buffer(cm), cm->width,
+                                 cm->height, cm->subsampling_x,
+                                 cm->subsampling_y, VP9_DEC_BORDER_IN_PIXELS,
+                                 ext_fb, cm->get_ext_fb_cb, cm->user_priv)) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate external frame buffer");
+    }
+  } else {
+    vp9_realloc_frame_buffer(get_frame_new_buffer(cm), cm->width, cm->height,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_DEC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+  }
 }
 
 static void setup_frame_size(VP9D_COMP *pbi,
@@ -1114,8 +1125,9 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
   cm->show_existing_frame = vp9_rb_read_bit(rb);
   if (cm->show_existing_frame) {
     // Show an existing frame directly.
-    int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
+    const int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
     ref_cnt_fb(cm->frame_bufs, &cm->new_fb_idx, frame_to_show);
+
     pbi->refresh_frame_flags = 0;
     cm->lf.filter_level = 0;
     cm->show_frame = 1;

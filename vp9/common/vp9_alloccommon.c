@@ -33,8 +33,12 @@ void vp9_update_mode_info_border(VP9_COMMON *cm, MODE_INFO *mi) {
 void vp9_free_frame_buffers(VP9_COMMON *cm) {
   int i;
 
-  for (i = 0; i < FRAME_BUFFERS; i++)
+  for (i = 0; i < cm->fb_count; i++) {
     vp9_free_frame_buffer(&cm->frame_bufs[i].buf);
+
+    if (cm->release_ext_fb_cb != NULL && cm->frame_bufs[i].ref_count > 0)
+      cm->release_ext_fb_cb(cm->user_priv, &cm->fb_list[i]);
+  }
 
   vp9_free_frame_buffer(&cm->post_proc_buffer);
 
@@ -85,7 +89,7 @@ int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
   int mi_size;
 
   if (vp9_realloc_frame_buffer(&cm->post_proc_buffer, width, height, ss_x, ss_y,
-                               VP9_DEC_BORDER_IN_PIXELS) < 0)
+                               VP9_DEC_BORDER_IN_PIXELS, NULL, NULL, NULL) < 0)
     goto fail;
 
   set_mb_mi(cm, aligned_width, aligned_height);
@@ -137,16 +141,22 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
   const int ss_y = cm->subsampling_y;
   int mi_size;
 
+  if (cm->fb_count == 0) {
+    cm->fb_count = FRAME_BUFFERS;
+    CHECK_MEM_ERROR(cm, cm->frame_bufs,
+                    vpx_calloc(cm->fb_count, sizeof(*cm->frame_bufs)));
+  }
+
   vp9_free_frame_buffers(cm);
 
-  for (i = 0; i < FRAME_BUFFERS; i++) {
+  for (i = 0; i < cm->fb_count; i++) {
     cm->frame_bufs[i].ref_count = 0;
     if (vp9_alloc_frame_buffer(&cm->frame_bufs[i].buf, width, height,
                                ss_x, ss_y, VP9_ENC_BORDER_IN_PIXELS) < 0)
       goto fail;
   }
 
-  cm->new_fb_idx = FRAME_BUFFERS - 1;
+  cm->new_fb_idx = cm->fb_count - 1;
   cm->frame_bufs[cm->new_fb_idx].ref_count = 1;
 
   for (i = 0; i < REF_FRAMES; i++) {
@@ -199,6 +209,12 @@ void vp9_create_common(VP9_COMMON *cm) {
 
 void vp9_remove_common(VP9_COMMON *cm) {
   vp9_free_frame_buffers(cm);
+
+  vpx_free(cm->fb_list);
+  vpx_free(cm->frame_bufs);
+
+  cm->fb_list = NULL;
+  cm->frame_bufs = NULL;
 }
 
 void vp9_initialize_common() {
