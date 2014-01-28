@@ -135,7 +135,6 @@ VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_idct16x16_1_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_idct16x16_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_idct32x32_1_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_idct32x32_add_neon$(ASM)
-VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_iht8x8_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_mb_lpf_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_reconintra_neon$(ASM)
 
@@ -146,5 +145,6 @@ VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_avg_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_copy_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_convolve8_avg_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_iht4x4_add_neon.c
+VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_iht8x8_add_neon.c
 
 $(eval $(call rtcd_h_template,vp9_rtcd,vp9/common/vp9_rtcd_defs.sh))
