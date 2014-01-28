@@ -277,9 +277,14 @@ static void swap_frame_buffers(VP9D_COMP *pbi) {
   VP9_COMMON *const cm = &pbi->common;
 
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
-    if (mask & 1)
+    if (mask & 1) {
+      const int old_idx = cm->ref_frame_map[ref_index];
       ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->ref_frame_map[ref_index],
                  cm->new_fb_idx);
+      if (cm->release_ext_fb_cb != NULL && old_idx >= 0 &&
+          cm->fb_idx_ref_cnt[old_idx] == 0)
+        cm->release_ext_fb_cb(cm->user_priv, &cm->fb_list[old_idx]);
+    }
     ++ref_index;
   }
 

@@ -76,6 +76,15 @@ class Decoder {
     return detail ? detail : vpx_codec_error(&decoder_);
   }
 
+  // Passes the external frame buffer information to libvpx.
+  vpx_codec_err_t SetExternalFrameBufferFunctions(
+      vpx_get_frame_buffer_cb_fn_t cb_get,
+      vpx_release_frame_buffer_cb_fn_t cb_release, void *user_priv) {
+    InitOnce();
+    return vpx_codec_set_external_frame_buffer_functions(
+        &decoder_, cb_get, cb_release, user_priv);
+  }
+
  protected:
   virtual const vpx_codec_iface_t* CodecInterface() const = 0;
 
