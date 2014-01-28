@@ -80,7 +80,7 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   step_param = 6;
   further_steps = (cpi->sf.max_step_search_steps - 1) - step_param;
 
-  for (i = LAST_FRAME; i <= ALTREF_FRAME && cpi->common.show_frame; ++i) {
+  for (i = LAST_FRAME; i <= LAST_FRAME && cpi->common.show_frame; ++i) {
     if ((x->pred_mv_sad[ref] >> 3) > x->pred_mv_sad[i]) {
       tmp_mv->as_int = INVALID_MV;
 
@@ -134,7 +134,11 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   return bestsme;
 }
-
+int single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
+                                 const TileInfo *const tile,
+                                 BLOCK_SIZE bsize,
+                                 int mi_row, int mi_col,
+                                 int_mv *tmp_mv, int *rate_mv) ;
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
 // this needs various further optimizations. to be continued..
 int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
@@ -142,8 +146,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                             int mi_row, int mi_col,
                             int *returnrate,
                             int64_t *returndistortion,
-                            BLOCK_SIZE bsize,
-                            PICK_MODE_CONTEXT *ctx) {
+                            BLOCK_SIZE bsize) {
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
@@ -155,6 +158,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                     VP9_ALT_FLAG };
   int64_t best_rd = INT64_MAX;
   int64_t this_rd;
+  int64_t cost[4]= { 0, 250, 250,  25 };
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -171,7 +175,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->tx_size = MIN(max_txsize_lookup[bsize],
                       tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
 
-  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+  for (ref_frame = LAST_FRAME; ref_frame <= LAST_FRAME /* ALTREF_FRAME */; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
       vp9_setup_buffer_inter(cpi, x, tile,
@@ -182,7 +186,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
-  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+  for (ref_frame = LAST_FRAME; ref_frame <= LAST_FRAME /* ALTREF_FRAME */; ++ref_frame) {
     int rate_mv = 0;
 
     if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
@@ -203,17 +207,28 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
 
     for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
-      int rate = x->inter_mode_cost[mbmi->mode_context[ref_frame]]
-                                   [INTER_OFFSET(this_mode)];
-      int64_t dist = x->mode_sad[ref_frame][INTER_OFFSET(this_mode)] *
-                      x->mode_sad[ref_frame][INTER_OFFSET(this_mode)];
-      this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
+
+      int rate = cost[this_mode - NEARESTMV];
+          //x->inter_mode_cost[mbmi->mode_context[ref_frame]]
+          //                         [INTER_OFFSET(this_mode)];
+      int64_t dist = x->mode_sad[ref_frame][INTER_OFFSET(this_mode)];
+      this_rd = rate+dist;//RDCOST(x->rdmult, x->rddiv, rate, dist);
 
       if (this_rd < best_rd) {
         best_rd = this_rd;
         mbmi->mode = this_mode;
         mbmi->ref_frame[0] = ref_frame;
         mbmi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
+        xd->mi_8x8[0]->bmi[0].as_mv[0].as_int = mbmi->mv[0].as_int;
+        mbmi->interp_filter = EIGHTTAP;
+
+        mbmi->ref_frame[1] = INTRA_FRAME;
+        mbmi->tx_size = max_txsize_lookup[bsize];
+        mbmi->uv_mode = this_mode;
+        mbmi->skip_coeff = 0;
+        mbmi->sb_type = bsize;
+        mbmi->segment_id = 0;
+
       }
     }
   }
@@ -222,9 +237,6 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   // TODO(jingning) intra prediction search, if the best SAD is above a certain
   // threshold.
-
-  // store mode decisions
-  ctx->mic = *xd->mi_8x8[0];
 
   return INT64_MAX;
 }
