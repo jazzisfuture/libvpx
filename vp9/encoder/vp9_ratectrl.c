@@ -426,6 +426,37 @@ static void calc_pframe_target_size(VP9_COMP *const cpi) {
   }
 }
 
+static void rc_factor_adjustment_based_on_buffer(const VP9_COMP *cpi,
+                                                 const double prev_rc_factor,
+                                                 double *rate_correction_factor) {
+  // Only consider a change when current rate_correction_factor below some
+  // threshold, i.e., system has settled down somewhat.
+  if (prev_rc_factor < 0.1) {
+    // Get the state of buffer level for next frame (updated with encoded size).
+    int buffer_level_next_frame = cpi->rc.buffer_level +
+        cpi->rc.av_per_frame_bandwidth - cpi->rc.projected_frame_size;
+    if (*rate_correction_factor > prev_rc_factor) {
+    // We are going to increase the rate correction factor (because we have
+    // overshoot for this frame). This may lead to undershoot on next frame.
+    // Limit this increase if its not consistent with state of the buffer level
+    // (consistent here means buffer is below optimal).
+      if (!(cpi->rc.buffer_level  < cpi->oxcf.optimal_buffer_level &&
+          buffer_level_next_frame  < cpi->oxcf.optimal_buffer_level)) {
+        *rate_correction_factor = prev_rc_factor;
+      }
+    } else if (*rate_correction_factor < prev_rc_factor) {
+     // We are going to decrease rate correction factor for next frame (because
+     // we have undershoot for this frame). This may lead to overshoot on next
+     // frame. Limit this decrease if its not consistent with state of the
+     // buffer level (consistent here means buffer is above optimal).
+      if (!(cpi->rc.buffer_level  > cpi->oxcf.optimal_buffer_level &&
+          buffer_level_next_frame  > cpi->oxcf.optimal_buffer_level)) {
+        *rate_correction_factor = prev_rc_factor;
+      }
+    }
+  }
+}
+
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
   if (cpi->common.frame_type == KEY_FRAME) {
     return cpi->rc.key_frame_rate_correction_factor;
@@ -452,6 +483,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   const int q = cpi->common.base_qindex;
   int correction_factor = 100;
   double rate_correction_factor = get_rate_correction_factor(cpi);
+  double prev_rc_factor = rate_correction_factor;
   double adjustment_limit;
 
   int projected_size_based_on_q = 0;
@@ -508,6 +540,11 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
       rate_correction_factor = MIN_BPB_FACTOR;
   }
 
+  if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+    rc_factor_adjustment_based_on_buffer(cpi,
+                                         prev_rc_factor,
+                                         &rate_correction_factor);
+  }
   set_rate_correction_factor(cpi, rate_correction_factor);
 }
 
