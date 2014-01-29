@@ -1446,15 +1446,19 @@ static void rd_use_partition(VP9_COMP *cpi,
 }
 
 static const BLOCK_SIZE min_partition_size[BLOCK_SIZES] = {
-  BLOCK_4X4, BLOCK_4X4, BLOCK_4X4, BLOCK_4X4,
-  BLOCK_4X4, BLOCK_4X4, BLOCK_8X8, BLOCK_8X8,
-  BLOCK_8X8, BLOCK_16X16, BLOCK_16X16, BLOCK_16X16, BLOCK_16X16
+  BLOCK_4X4,   BLOCK_4X4,   BLOCK_4X4,
+  BLOCK_4X4,   BLOCK_4X4,   BLOCK_4X4,
+  BLOCK_8X8,   BLOCK_8X8,   BLOCK_8X8,
+  BLOCK_16X16, BLOCK_16X16, BLOCK_16X16,
+  BLOCK_16X16
 };
 
 static const BLOCK_SIZE max_partition_size[BLOCK_SIZES] = {
-  BLOCK_8X8, BLOCK_16X16, BLOCK_16X16, BLOCK_16X16,
-  BLOCK_32X32, BLOCK_32X32, BLOCK_32X32, BLOCK_64X64,
-  BLOCK_64X64, BLOCK_64X64, BLOCK_64X64, BLOCK_64X64, BLOCK_64X64
+  BLOCK_8X8,   BLOCK_16X16, BLOCK_16X16,
+  BLOCK_16X16, BLOCK_32X32, BLOCK_32X32,
+  BLOCK_32X32, BLOCK_64X64, BLOCK_64X64,
+  BLOCK_64X64, BLOCK_64X64, BLOCK_64X64,
+  BLOCK_64X64
 };
 
 // Look at all the mode_info entries for blocks that are part of this
@@ -1540,15 +1544,18 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
-  // Give a bit of leaway either side of the observed min and max
+  // adjust observed min and max
+  if (cpi->sf.auto_min_max_partition_size < 2) {
   *min_block_size = min_partition_size[*min_block_size];
   *max_block_size = max_partition_size[*max_block_size];
+  }
 
   // Check border cases where max and min from neighbours may not be legal.
   *max_block_size = find_partition_size(*max_block_size,
                                         row8x8_remaining, col8x8_remaining,
                                         &bh, &bw);
   *min_block_size = MIN(*min_block_size, *max_block_size);
+
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
