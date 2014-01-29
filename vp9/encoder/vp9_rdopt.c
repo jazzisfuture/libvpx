@@ -398,7 +398,7 @@ static void model_rd_from_var_lapndz(unsigned int var, unsigned int n,
     int d_q10, r_q10;
     uint64_t xsq_q10_64 =
         ((((uint64_t)qstep * qstep * n) << 10) + (var >> 1)) / var;
-    int xsq_q10 = xsq_q10_64 > MAX_XSQ_Q10 ? MAX_XSQ_Q10 : xsq_q10_64;
+    int xsq_q10 = (int)(xsq_q10_64 > MAX_XSQ_Q10 ? MAX_XSQ_Q10 : xsq_q10_64);
     model_rd_norm(xsq_q10, &r_q10, &d_q10);
     *rate = (n * r_q10 + 2) >> 2;
     *dist = (var * (int64_t)d_q10 + 512) >> 10;
@@ -875,10 +875,13 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
         r[n][1] += vp9_cost_one(tx_probs[m]);
     }
     if (s[n]) {
-      rd[n][0] = rd[n][1] = RDCOST(x->rdmult, x->rddiv, s1, d[n]) * scale;
+      rd[n][0] = rd[n][1] =
+          (int64_t)(RDCOST(x->rdmult, x->rddiv, s1, d[n]) * scale);
     } else {
-      rd[n][0] = RDCOST(x->rdmult, x->rddiv, r[n][0] + s0, d[n]) * scale;
-      rd[n][1] = RDCOST(x->rdmult, x->rddiv, r[n][1] + s0, d[n]) * scale;
+      rd[n][0] =
+          (int64_t)(RDCOST(x->rdmult, x->rddiv, r[n][0] + s0, d[n]) * scale);
+      rd[n][1] =
+          (int64_t)(RDCOST(x->rdmult, x->rddiv, r[n][1] + s0, d[n]) * scale);
     }
     if (rd[n][1] < best_rd) {
       best_rd = rd[n][1];

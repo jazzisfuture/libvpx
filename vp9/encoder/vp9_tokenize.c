@@ -241,7 +241,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
     }
     add_token(&t, coef_probs[type][ref][band[c]][pt],
               vp9_dct_value_tokens_ptr[v].extra,
-              vp9_dct_value_tokens_ptr[v].token, skip_eob,
+              (uint8_t)vp9_dct_value_tokens_ptr[v].token, skip_eob,
               counts[type][ref][band[c]][pt]);
 
     cpi->common.counts.eob_branch[tx_size][type][ref][band[c]][pt] += !skip_eob;

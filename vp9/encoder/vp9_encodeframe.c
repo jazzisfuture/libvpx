@@ -683,7 +683,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
   if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
     vp9_clear_system_state();  // __asm emms;
-    x->rdmult = round(x->rdmult * rdmult_ratio);
+    x->rdmult = (int)round(x->rdmult * rdmult_ratio);
   } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
     const int mi_offset = mi_row * cm->mi_cols + mi_col;
     unsigned char complexity = cpi->complexity_map[mi_offset];
@@ -712,7 +712,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     x->rdmult = orig_rdmult;
     if (*totalrate != INT_MAX) {
       vp9_clear_system_state();  // __asm emms;
-      *totalrate = round(*totalrate * rdmult_ratio);
+      *totalrate = (int)round(*totalrate * rdmult_ratio);
     }
   }
 }

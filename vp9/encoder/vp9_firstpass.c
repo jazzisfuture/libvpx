@@ -566,7 +566,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
       this_error = vp9_encode_intra(x, use_dc_pred);
       if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
         vp9_clear_system_state();  // __asm emms;
-        this_error *= error_weight;
+        this_error *= (int)error_weight;
       }
 
       // intrapenalty below deals with situations where the intra and inter
@@ -602,7 +602,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
                                  &motion_error);
         if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
           vp9_clear_system_state();  // __asm emms;
-          motion_error *= error_weight;
+          motion_error *= (int)error_weight;
         }
 
         // If the current best reference mv is not centered on 0,0 then do a 0,0
@@ -613,7 +613,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
                                    &tmp_err);
           if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
             vp9_clear_system_state();  // __asm emms;
-            tmp_err *= error_weight;
+            tmp_err *= (int)error_weight;
           }
 
           if (tmp_err < motion_error) {
@@ -634,7 +634,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
                                    &gf_motion_error);
           if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
             vp9_clear_system_state();  // __asm emms;
-            gf_motion_error *= error_weight;
+            gf_motion_error *= (int)error_weight;
           }
 
           if (gf_motion_error < motion_error && gf_motion_error < this_error)
@@ -752,9 +752,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
     FIRSTPASS_STATS fps;
 
     fps.frame = cm->current_video_frame;
-    fps.intra_error = intra_error >> 8;
-    fps.coded_error = coded_error >> 8;
-    fps.sr_coded_error = sr_coded_error >> 8;
+    fps.intra_error = (double)(intra_error >> 8);
+    fps.coded_error = (double)(coded_error >> 8);
+    fps.sr_coded_error = (double)(sr_coded_error >> 8);
     fps.ssim_weighted_pred_err = fps.coded_error * simple_weight(cpi->Source);
     fps.count = 1.0;
     fps.pcnt_inter = (double)intercount / cm->MBs;
@@ -1469,7 +1469,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int f_boost = 0;
   int b_boost = 0;
   int flash_detected;
-  int active_max_gf_interval;
+  unsigned int active_max_gf_interval;
   RATE_CONTROL *const rc = &cpi->rc;
 
   twopass->gf_group_bits = 0;
@@ -1507,7 +1507,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     active_max_gf_interval = rc->max_gf_interval;
 
   i = 0;
-  while (i < twopass->static_scene_max_gf_interval && i < rc->frames_to_key) {
+  while (i < twopass->static_scene_max_gf_interval &&
+         i < (int)rc->frames_to_key) {
     i++;    // Increment the loop counter
 
     // Accumulate error score of frames in this gf group
@@ -1556,7 +1557,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Break out conditions.
     if (
       // Break at cpi->max_gf_interval unless almost totally static
-      (i >= active_max_gf_interval && (zero_motion_accumulator < 0.995)) ||
+      (i >= (int)active_max_gf_interval && (zero_motion_accumulator < 0.995)) ||
       (
         // Don't break out with a very short interval
         (i > MIN_GF_INTERVAL) &&
@@ -1579,13 +1580,13 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Don't allow a gf too near the next kf
   if ((rc->frames_to_key - i) < MIN_GF_INTERVAL) {
-    while (i < (rc->frames_to_key + !rc->next_key_frame_forced)) {
+    while (i < (int)(rc->frames_to_key + !rc->next_key_frame_forced)) {
       i++;
 
       if (EOF == input_stats(twopass, this_frame))
         break;
 
-      if (i < rc->frames_to_key) {
+      if (i < (int)rc->frames_to_key) {
         mod_frame_err = calculate_modified_err(cpi, this_frame);
         gf_group_err += mod_frame_err;
       }
@@ -1616,7 +1617,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       (i >= MIN_GF_INTERVAL) &&
       // for real scene cuts (not forced kfs) dont allow arf very near kf.
       (rc->next_key_frame_forced ||
-        (i <= (rc->frames_to_key - MIN_GF_INTERVAL))) &&
+        (i <= (int)(rc->frames_to_key - MIN_GF_INTERVAL))) &&
       ((next_frame.pcnt_inter > 0.75) ||
        (next_frame.pcnt_second_ref > 0.5)) &&
       ((mv_in_out_accumulator / (double)i > -0.2) ||
@@ -1793,10 +1794,11 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // For normal GFs remove the score for the GF itself unless this is
     // also a key frame in which case it has already been accounted for.
     if (rc->source_alt_ref_pending) {
-      cpi->twopass.gf_group_error_left = (int64_t)gf_group_err - mod_frame_err;
+      cpi->twopass.gf_group_error_left =
+          (int64_t)(gf_group_err - mod_frame_err);
     } else if (cpi->common.frame_type != KEY_FRAME) {
-      cpi->twopass.gf_group_error_left = (int64_t)(gf_group_err
-                                                   - gf_first_frame_err);
+      cpi->twopass.gf_group_error_left =
+          (int64_t)(gf_group_err - gf_first_frame_err);
     } else {
       cpi->twopass.gf_group_error_left = (int64_t)gf_group_err;
     }
@@ -1829,7 +1831,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     zero_stats(&sectionstats);
     reset_fpf_position(&cpi->twopass, start_pos);
 
-    for (i = 0; i < rc->baseline_gf_interval; i++) {
+    for (i = 0; i < (int)rc->baseline_gf_interval; i++) {
       input_stats(&cpi->twopass, &next_frame);
       accumulate_stats(&sectionstats, &next_frame);
     }
@@ -2066,7 +2068,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
       // If we don't have a real key frame within the next two
       // forcekeyframeevery intervals then break out of the loop.
-      if (rc->frames_to_key >= 2 * (int)cpi->key_frame_frequency)
+      if (rc->frames_to_key >= 2 * cpi->key_frame_frequency)
         break;
     } else {
       rc->frames_to_key++;
@@ -2095,7 +2097,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     kf_group_coded_err = 0;
 
     // Rescan to get the correct error data for the forced kf group
-    for (i = 0; i < rc->frames_to_key; i++) {
+    for (i = 0; i < (int)rc->frames_to_key; i++) {
       // Accumulate kf group errors
       kf_group_err += calculate_modified_err(cpi, &tmp_frame);
       kf_group_intra_err += tmp_frame.intra_error;
@@ -2153,7 +2155,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   loop_decay_rate = 1.00;       // Starting decay rate
 
   // Scan through the kf group collating various stats.
-  for (i = 0; i < rc->frames_to_key; i++) {
+  for (i = 0; i < (int)rc->frames_to_key; i++) {
     double r;
 
     if (EOF == input_stats(twopass, &next_frame))
@@ -2167,7 +2169,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
 
     // For the first few frames collect data to decide kf boost.
-    if (i <= (rc->max_gf_interval * 2)) {
+    if (i <= (int)(rc->max_gf_interval * 2)) {
       if (next_frame.intra_error > twopass->kf_intra_err_min)
         r = (IIKFACTOR2 * next_frame.intra_error /
              DOUBLE_DIVIDE_CHECK(next_frame.coded_error));
@@ -2196,7 +2198,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     zero_stats(&sectionstats);
     reset_fpf_position(twopass, start_position);
 
-    for (i = 0; i < rc->frames_to_key; i++) {
+    for (i = 0; i < (int)rc->frames_to_key; i++) {
       input_stats(twopass, &next_frame);
       accumulate_stats(&sectionstats, &next_frame);
     }
@@ -2216,7 +2218,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     int allocation_chunks;
     int alt_kf_bits;
 
-    if (kf_boost < (rc->frames_to_key * 3))
+    if (kf_boost < (int)(rc->frames_to_key * 3))
       kf_boost = (rc->frames_to_key * 3);
 
     if (kf_boost < 300)  // Min KF boost

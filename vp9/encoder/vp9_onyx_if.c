@@ -239,10 +239,10 @@ int vp9_compute_qdelta_by_rate(VP9_COMP *cpi,
 
   // Look up the current projected bits per block for the base index
   base_bits_per_mb = vp9_rc_bits_per_mb(cpi->common.frame_type,
-                                        base_q_index, 1.0);
+                                        (int)base_q_index, 1.0);
 
   // Find the target bits per mb based on the base value and given ratio.
-  target_bits_per_mb = rate_target_ratio * base_bits_per_mb;
+  target_bits_per_mb = (int)(rate_target_ratio * base_bits_per_mb);
 
   // Convert the q target to an index
   for (i = cpi->rc.best_quality; i < cpi->rc.worst_quality; i++) {
@@ -252,7 +252,7 @@ int vp9_compute_qdelta_by_rate(VP9_COMP *cpi,
       break;
   }
 
-  return target_index - base_q_index;
+  return (int)(target_index - base_q_index);
 }
 
 // This function sets up a set of segments with delta Q values around
@@ -1118,7 +1118,7 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
   vbr_max_bits = ((int64_t)cpi->rc.av_per_frame_bandwidth *
                   (int64_t)cpi->oxcf.two_pass_vbrmax_section) / 100;
   cpi->rc.max_frame_bandwidth =
-    MAX(MAX((cm->MBs * MAX_MB_RATE), MAXRATE_1080P), vbr_max_bits);
+    MAX(MAX((cm->MBs * MAX_MB_RATE), MAXRATE_1080P), (int)vbr_max_bits);
 
   // Set Maximum gf/arf interval
   cpi->rc.max_gf_interval = 16;
@@ -1128,14 +1128,14 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
 
   // Special conditions when alt ref frame enabled in lagged compress mode
   if (cpi->oxcf.play_alternate && cpi->oxcf.lag_in_frames) {
-    if (cpi->rc.max_gf_interval > cpi->oxcf.lag_in_frames - 1)
+    if ((int)cpi->rc.max_gf_interval > cpi->oxcf.lag_in_frames - 1)
       cpi->rc.max_gf_interval = cpi->oxcf.lag_in_frames - 1;
 
     if (cpi->twopass.static_scene_max_gf_interval > cpi->oxcf.lag_in_frames - 1)
       cpi->twopass.static_scene_max_gf_interval = cpi->oxcf.lag_in_frames - 1;
   }
 
-  if (cpi->rc.max_gf_interval > cpi->twopass.static_scene_max_gf_interval)
+  if ((int)cpi->rc.max_gf_interval > cpi->twopass.static_scene_max_gf_interval)
     cpi->rc.max_gf_interval = cpi->twopass.static_scene_max_gf_interval;
 }
 
@@ -1196,8 +1196,8 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->rc.last_q[2]                 = cpi->oxcf.best_allowed_q;
 
   // Initialise the starting buffer levels
-  cpi->rc.buffer_level              = cpi->oxcf.starting_buffer_level;
-  cpi->rc.bits_off_target           = cpi->oxcf.starting_buffer_level;
+  cpi->rc.buffer_level              = (int)cpi->oxcf.starting_buffer_level;
+  cpi->rc.bits_off_target           = (int)cpi->oxcf.starting_buffer_level;
 
   cpi->rc.rolling_target_bits       = cpi->rc.av_per_frame_bandwidth;
   cpi->rc.rolling_actual_bits       = cpi->rc.av_per_frame_bandwidth;
@@ -1298,25 +1298,30 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   // Convert target bandwidth from Kbit/s to Bit/s
   cpi->oxcf.target_bandwidth       *= 1000;
 
-  cpi->oxcf.starting_buffer_level = rescale(cpi->oxcf.starting_buffer_level,
-                                            cpi->oxcf.target_bandwidth, 1000);
+  cpi->oxcf.starting_buffer_level =
+      rescale((int)cpi->oxcf.starting_buffer_level,
+              cpi->oxcf.target_bandwidth, 1000);
 
   // Set or reset optimal and maximum buffer levels.
-  if (cpi->oxcf.optimal_buffer_level == 0)
+  if (cpi->oxcf.optimal_buffer_level == 0) {
     cpi->oxcf.optimal_buffer_level = cpi->oxcf.target_bandwidth / 8;
-  else
-    cpi->oxcf.optimal_buffer_level = rescale(cpi->oxcf.optimal_buffer_level,
-                                             cpi->oxcf.target_bandwidth, 1000);
+  } else {
+    cpi->oxcf.optimal_buffer_level =
+        rescale((int)cpi->oxcf.optimal_buffer_level,
+                cpi->oxcf.target_bandwidth, 1000);
+  }
 
-  if (cpi->oxcf.maximum_buffer_size == 0)
+  if (cpi->oxcf.maximum_buffer_size == 0) {
     cpi->oxcf.maximum_buffer_size = cpi->oxcf.target_bandwidth / 8;
-  else
-    cpi->oxcf.maximum_buffer_size = rescale(cpi->oxcf.maximum_buffer_size,
-                                            cpi->oxcf.target_bandwidth, 1000);
+  } else {
+    cpi->oxcf.maximum_buffer_size =
+        rescale((int)cpi->oxcf.maximum_buffer_size,
+                cpi->oxcf.target_bandwidth, 1000);
+  }
   // Under a configuration change, where maximum_buffer_size may change,
   // keep buffer level clipped to the maximum allowed buffer size.
   if (cpi->rc.bits_off_target > cpi->oxcf.maximum_buffer_size) {
-    cpi->rc.bits_off_target = cpi->oxcf.maximum_buffer_size;
+    cpi->rc.bits_off_target = (int)cpi->oxcf.maximum_buffer_size;
     cpi->rc.buffer_level = cpi->rc.bits_off_target;
   }
 
@@ -2091,20 +2096,20 @@ static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
     const int w = widths[i];
     const int h = heights[i];
     const uint32_t samples = w * h;
-    const double sse = calc_plane_error(a_planes[i], a_strides[i],
-                                        b_planes[i], b_strides[i],
-                                        w, h);
-    psnr->sse[1 + i] = sse;
+    const double sse = (double)calc_plane_error(a_planes[i], a_strides[i],
+                                                b_planes[i], b_strides[i],
+                                                w, h);
+    psnr->sse[1 + i] = (uint64_t)sse;
     psnr->samples[1 + i] = samples;
     psnr->psnr[1 + i] = vp9_mse2psnr(samples, 255.0, sse);
 
-    total_sse += sse;
+    total_sse += (uint64_t)sse;
     total_samples += samples;
   }
 
   psnr->sse[0] = total_sse;
   psnr->samples[0] = total_samples;
-  psnr->psnr[0] = vp9_mse2psnr(total_samples, 255.0, total_sse);
+  psnr->psnr[0] = vp9_mse2psnr(total_samples, 255.0, (double)total_sse);
 }
 
 static void generate_psnr_packet(VP9_COMP *cpi) {
@@ -2733,7 +2738,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
       vp9_save_coding_context(cpi);
       cpi->dummy_packing = 1;
       vp9_pack_bitstream(cpi, dest, size);
-      cpi->rc.projected_frame_size = (*size) << 3;
+      cpi->rc.projected_frame_size = (int)((*size) << 3);
       vp9_restore_coding_context(cpi);
 
       if (frame_over_shoot_limit == 0)
@@ -3423,7 +3428,7 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
 #endif
       frames_to_arf = cpi->rc.frames_till_gf_update_due;
 
-    assert(frames_to_arf <= cpi->rc.frames_to_key);
+    assert(frames_to_arf <= (int)cpi->rc.frames_to_key);
 
     if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
 #if CONFIG_MULTIPLE_ARF

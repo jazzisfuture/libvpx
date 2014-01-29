@@ -68,10 +68,10 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi,
                                    uint64_t bytes_used);
 
 // Decide if we should drop this frame: For 1-pass CBR.
-int vp9_drop_frame(VP9_COMP *cpi);
+int vp9_drop_frame(VP9_COMP *const cpi);
 
 // Update the buffer level.
-void vp9_update_buffer_level(VP9_COMP *cpi, int encoded_frame_size);
+void vp9_update_buffer_level(VP9_COMP *const cpi, int encoded_frame_size);
 
 #ifdef __cplusplus
 }  // extern "C"
