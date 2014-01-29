@@ -1291,7 +1291,7 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
 
   first_part_size = write_compressed_header(cpi, data);
   data += first_part_size;
-  vp9_wb_write_literal(&saved_wb, first_part_size, 16);
+  vp9_wb_write_literal(&saved_wb, (int)first_part_size, 16);
 
   data += encode_tiles(cpi, data);
 

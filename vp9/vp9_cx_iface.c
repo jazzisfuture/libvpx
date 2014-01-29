@@ -610,7 +610,7 @@ static int write_superframe_index(vpx_codec_alg_priv_t *ctx) {
 
     *x++ = marker;
     for (i = 0; i < ctx->pending_frame_count; i++) {
-      int this_sz = ctx->pending_frame_sizes[i];
+      int this_sz = (int)ctx->pending_frame_sizes[i];
 
       for (j = 0; j <= mag; j++) {
         *x++ = this_sz & 0xff;

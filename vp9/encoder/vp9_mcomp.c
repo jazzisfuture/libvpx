@@ -874,11 +874,11 @@ int vp9_full_range_search_c(MACROBLOCK *x, MV *ref_mv, MV *best_mv,
 
   MV this_mv;
 
-  int bestsad = INT_MAX;
+  unsigned int bestsad = UINT_MAX;
   int ref_row, ref_col;
 
   uint8_t *check_here;
-  int thissad;
+  unsigned int thissad;
   MV fcenter_mv;
 
   int *mvjsadcost = x->nmvjointsadcost;
