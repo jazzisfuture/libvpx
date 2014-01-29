@@ -347,7 +347,10 @@ typedef struct {
 
   // Sets min and max partition sizes for this 64x64 region based on the
   // same superblock in last encoded frame, and the left and above neighbor
-  // in this block.
+  // in this block:
+  //   0: not use this feature.
+  //   1: use neighborhood size and relax min & max to allow more choices.
+  //   2: strictly use min and max sizes from neighbors.
   int auto_min_max_partition_size;
 
   // Min and max partition size we enable (block_size) as per auto
