@@ -2435,6 +2435,9 @@ void vp9_get_second_pass_params(VP9_COMP *cpi) {
   double this_frame_intra_error;
   double this_frame_coded_error;
 
+  cpi->rc.frames_till_gf_update_due = INT_MAX;
+  cpi->rc.baseline_gf_interval = INT_MAX;
+
   if (cpi->refresh_alt_ref_frame) {
     cpi->common.frame_type = INTER_FRAME;
     return;
@@ -2511,7 +2514,7 @@ void vp9_get_second_pass_params(VP9_COMP *cpi) {
   } else {
     // Otherwise this is an ordinary frame
     // Assign bits from those allocated to the GF group
-    this_frame_copy =  this_frame;
+    this_frame_copy = this_frame;
     assign_std_frame_bits(cpi, &this_frame_copy);
   }
 

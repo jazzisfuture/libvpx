@@ -114,6 +114,20 @@ extern void vp9_init_quantizer(VP9_COMP *cpi);
 static const double in_frame_q_adj_ratio[MAX_SEGMENTS] =
   {1.0, 1.5, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
+static const int show_existing_frame_flag[17] = {
+  0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1
+};
+
+static const int show_frame_flag[17] = {
+  1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1
+};
+
+static const int frame_buffer_idx[17] = {
+  -1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
+};
+
+int frame_count = 0;
+
 static INLINE void Scale2Ratio(int mode, int *hr, int *hs) {
   switch (mode) {
     case NORMAL:
@@ -2452,9 +2466,27 @@ static int recode_loop_test(VP9_COMP *cpi,
   return force_recode;
 }
 
+const int update_flags[] = {VP9_LAST_FLAG, VP9_GOLD_FLAG, -1, -1};
+
 static void update_reference_frames(VP9_COMP * const cpi) {
   VP9_COMMON * const cm = &cpi->common;
-
+  const int idx = frame_count ? (frame_count - 1) & 3 : 0;
+  const int update_flag = update_flags[idx];
+  if (!frame_count || ((update_flag != -1) && (update_flag & VP9_LAST_FLAG)))
+    ref_cnt_fb(cm->fb_idx_ref_cnt,
+                   &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
+  if (!frame_count || ((update_flag != -1) && (update_flag & VP9_GOLD_FLAG)))
+    ref_cnt_fb(cm->fb_idx_ref_cnt,
+                   &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
+  if (!frame_count || ((update_flag != -1) && (update_flag & VP9_ALT_FLAG)))
+    ref_cnt_fb(cm->fb_idx_ref_cnt,
+                   &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
+  ++frame_count;
+}
+#if 0
+static void update_reference_frames(VP9_COMP * const cpi) {
+  VP9_COMMON * const cm = &cpi->common;
+#if 1
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {
@@ -2509,7 +2541,9 @@ static void update_reference_frames(VP9_COMP * const cpi) {
     ref_cnt_fb(cm->fb_idx_ref_cnt,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+#endif
 }
+#endif
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
@@ -3372,6 +3406,21 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
+void handle_show_existing_frame(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
+  VP9_COMMON *cm = &cpi->common;
+
+  cm->show_existing_frame = 1;
+  cm->frame_to_show_idx = frame_buffer_idx[frame_count];
+  cm->new_fb_idx = cm->frame_to_show_idx;
+
+  cpi->dummy_packing = 0;
+  vp9_pack_bitstream(cpi, dest, size);
+
+  update_reference_frames(cpi);
+
+  ++cm->current_video_frame;
+}
+
 int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -3452,6 +3501,16 @@ int vp9_get_compressed_data(VP9_PTR ptr, unsigned int *frame_flags,
     if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
       cm->show_frame = 1;
       cm->intra_only = 0;
+
+  if (cpi->pass == 2) {
+    cm->show_frame = show_frame_flag[frame_count];
+    if (show_existing_frame_flag[frame_count]) {
+      handle_show_existing_frame(cpi, dest, size);
+      return 0;
+    } else {
+      cm->show_existing_frame = 0;
+    }
+  }
 
 #if CONFIG_MULTIPLE_ARF
       // Is this frame the ARF overlay.

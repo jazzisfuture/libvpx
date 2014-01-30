@@ -33,6 +33,8 @@
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_write_bit_buffer.h"
 
+extern int frame_count;
+extern const int update_flags[];
 
 #if defined(SECTIONBITS_OUTPUT)
 unsigned __int64 Sectionbits[500];
@@ -969,40 +971,52 @@ static void write_tile_info(VP9_COMMON *cm, struct vp9_write_bit_buffer *wb) {
 }
 
 static int get_refresh_mask(VP9_COMP *cpi) {
-    // Should the GF or ARF be updated using the transmitted frame or buffer
-#if CONFIG_MULTIPLE_ARF
-    if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
-        !cpi->refresh_alt_ref_frame) {
-#else
-    if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
-        !cpi->use_svc) {
-#endif
-      // Preserve the previously existing golden frame and update the frame in
-      // the alt ref slot instead. This is highly specific to the use of
-      // alt-ref as a forward reference, and this needs to be generalized as
-      // other uses are implemented (like RTC/temporal scaling)
-      //
-      // gld_fb_idx and alt_fb_idx need to be swapped for future frames, but
-      // that happens in vp9_onyx_if.c:update_reference_frames() so that it can
-      // be done outside of the recode loop.
-      return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
-             (cpi->refresh_golden_frame << cpi->alt_fb_idx);
-    } else {
-      int arf_idx = cpi->alt_fb_idx;
-#if CONFIG_MULTIPLE_ARF
-      // Determine which ARF buffer to use to encode this ARF frame.
-      if (cpi->multi_arf_enabled) {
-        int sn = cpi->sequence_number;
-        arf_idx = (cpi->frame_coding_order[sn] < 0) ?
-            cpi->arf_buffer_idx[sn + 1] :
-            cpi->arf_buffer_idx[sn];
-      }
-#endif
-      return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
-             (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
-             (cpi->refresh_alt_ref_frame << arf_idx);
-    }
+  VP9_COMMON *cm = &cpi->common;
+  int mask = 0;
+  // Hacked code for test: Modify update flags to suit test.
+  mask |= update_flags[(frame_count - 1) & 3] == VP9_LAST_FLAG ? 1 : 0;
+  mask |= update_flags[(frame_count - 1) & 3] == VP9_GOLD_FLAG ? 2 : 0;
+  mask |= update_flags[(frame_count - 1) & 3] == VP9_ALT_FLAG  ? 4 : 0;
+  return mask;
 }
+#if 0
+static int get_refresh_mask(VP9_COMP *cpi) {
+  // Should the GF or ARF be updated using the transmitted frame or buffer
+  VP9_COMMON *cm = &cpi->common;
+
+#if CONFIG_MULTIPLE_ARF
+  if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
+      !cpi->refresh_alt_ref_frame) {
+#else
+  if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+      !cpi->use_svc) {
+#endif
+    // Preserve the previously existing golden frame and update the frame in
+    // the alt ref slot instead. This is highly specific to the use of
+    // alt-ref as a forward reference, and this needs to be generalized as
+    // other uses are implemented (like RTC/temporal scaling)
+    //
+    // gld_fb_idx and alt_fb_idx need to be swapped for future frames, but
+    // that happens in vp9_onyx_if.c:update_reference_frames() so that it can
+    // be done outside of the recode loop.
+    return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+           (cpi->refresh_golden_frame << cpi->alt_fb_idx);
+  } else {
+    int arf_idx = cpi->alt_fb_idx;
+#if CONFIG_MULTIPLE_ARF
+    // Determine which ARF buffer to use to encode this ARF frame.
+    if (cpi->multi_arf_enabled) {
+      int sn = cpi->sequence_number;
+      arf_idx = (cpi->frame_coding_order[sn] < 0) ?
+          cpi->arf_buffer_idx[sn + 1] : cpi->arf_buffer_idx[sn];
+    }
+#endif
+    return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+           (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
+           (cpi->refresh_alt_ref_frame << arf_idx);
+  }
+}
+#endif
 
 static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   VP9_COMMON *const cm = &cpi->common;
@@ -1111,7 +1125,7 @@ static void write_sync_code(struct vp9_write_bit_buffer *wb) {
   vp9_wb_write_literal(wb, VP9_SYNC_CODE_2, 8);
 }
 
-static void write_uncompressed_header(VP9_COMP *cpi,
+static int write_uncompressed_header(VP9_COMP *cpi,
                                       struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -1123,7 +1137,12 @@ static void write_uncompressed_header(VP9_COMP *cpi,
   vp9_wb_write_bit(wb, cm->version);
   vp9_wb_write_bit(wb, 0);
 
-  vp9_wb_write_bit(wb, 0);
+  vp9_wb_write_bit(wb, cm->show_existing_frame);
+  if (cm->show_existing_frame) {
+    vp9_wb_write_literal(wb, cm->frame_to_show_idx, 3);
+    return -1;
+  }
+
   vp9_wb_write_bit(wb, cm->frame_type);
   vp9_wb_write_bit(wb, cm->show_frame);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
@@ -1187,6 +1206,8 @@ static void write_uncompressed_header(VP9_COMP *cpi,
   encode_segmentation(cpi, wb);
 
   write_tile_info(cm, wb);
+
+  return 0;
 }
 
 static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
@@ -1280,7 +1301,12 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   struct vp9_write_bit_buffer wb = {data, 0};
   struct vp9_write_bit_buffer saved_wb;
 
-  write_uncompressed_header(cpi, &wb);
+  if (write_uncompressed_header(cpi, &wb)) {
+    data += vp9_rb_bytes_written(&wb);
+    *size = data - dest;
+    return;
+  }
+
   saved_wb = wb;
   vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
 
