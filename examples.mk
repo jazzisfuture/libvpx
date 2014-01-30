@@ -78,16 +78,19 @@ GEN_EXAMPLES-$(CONFIG_VP8_DECODER) += simple_decoder.c
 simple_decoder.GUID                = D3BBF1E9-2427-450D-BBFF-B2843C1D44CC
 simple_decoder.SRCS                += ivfdec.h ivfdec.c
 simple_decoder.SRCS                += tools_common.h tools_common.c
+simple_decoder.SRCS                += video_reader.h video_reader.c
 simple_decoder.DESCRIPTION         = Simplified decoder loop
 GEN_EXAMPLES-$(CONFIG_VP8_DECODER) += postproc.c
 postproc.SRCS                      += ivfdec.h ivfdec.c
 postproc.SRCS                      += tools_common.h tools_common.c
+postproc.SRCS                      += video_reader.h video_reader.c
 postproc.GUID                    = 65E33355-F35E-4088-884D-3FD4905881D7
 postproc.DESCRIPTION             = Decoder postprocessor control
 GEN_EXAMPLES-$(CONFIG_VP8_DECODER) += decode_to_md5.c
 decode_to_md5.SRCS                 += md5_utils.h md5_utils.c
 decode_to_md5.SRCS                 += ivfdec.h ivfdec.c
 decode_to_md5.SRCS                 += tools_common.h tools_common.c
+decode_to_md5.SRCS                 += video_reader.h video_reader.c
 decode_to_md5.GUID                 = 59120B9B-2735-4BFE-B022-146CA340FE42
 decode_to_md5.DESCRIPTION          = Frame by frame MD5 checksum
 
@@ -104,6 +107,7 @@ ifeq ($(CONFIG_DECODERS),yes)
 GEN_EXAMPLES-$(CONFIG_VP8_ENCODER) += decode_with_drops.c
 decode_with_drops.SRCS             += ivfdec.h ivfdec.c
 decode_with_drops.SRCS             += tools_common.h tools_common.c
+decode_with_drops.SRCS             += video_reader.h video_reader.c
 endif
 decode_with_drops.GUID           = CE5C53C4-8DDA-438A-86ED-0DDD3CDB8D26
 decode_with_drops.DESCRIPTION    = Drops frames while decoding
