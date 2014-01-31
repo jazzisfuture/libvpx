@@ -153,33 +153,11 @@ static INLINE int has_second_ref(const MB_MODE_INFO *mbmi) {
   return mbmi->ref_frame[1] > INTRA_FRAME;
 }
 
-static MB_PREDICTION_MODE left_block_mode(const MODE_INFO *cur_mi,
-                                          const MODE_INFO *left_mi, int b) {
-  if (b == 0 || b == 2) {
-    if (!left_mi || is_inter_block(&left_mi->mbmi))
-      return DC_PRED;
+MB_PREDICTION_MODE vp9_left_block_mode(const MODE_INFO *cur_mi,
+                                       const MODE_INFO *left_mi, int b);
 
-    return left_mi->mbmi.sb_type < BLOCK_8X8 ? left_mi->bmi[b + 1].as_mode
-                                             : left_mi->mbmi.mode;
-  } else {
-    assert(b == 1 || b == 3);
-    return cur_mi->bmi[b - 1].as_mode;
-  }
-}
-
-static MB_PREDICTION_MODE above_block_mode(const MODE_INFO *cur_mi,
-                                           const MODE_INFO *above_mi, int b) {
-  if (b == 0 || b == 1) {
-    if (!above_mi || is_inter_block(&above_mi->mbmi))
-      return DC_PRED;
-
-    return above_mi->mbmi.sb_type < BLOCK_8X8 ? above_mi->bmi[b + 2].as_mode
-                                              : above_mi->mbmi.mode;
-  } else {
-    assert(b == 2 || b == 3);
-    return cur_mi->bmi[b - 2].as_mode;
-  }
-}
+MB_PREDICTION_MODE vp9_above_block_mode(const MODE_INFO *cur_mi,
+                                        const MODE_INFO *above_mi, int b);
 
 enum mv_precision {
   MV_PRECISION_Q3,
@@ -266,7 +244,8 @@ typedef struct macroblockd {
 
 
 
-static BLOCK_SIZE get_subsize(BLOCK_SIZE bsize, PARTITION_TYPE partition) {
+static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
+                                     PARTITION_TYPE partition) {
   const BLOCK_SIZE subsize = subsize_lookup[partition][bsize];
   assert(subsize < BLOCK_SIZES);
   return subsize;
@@ -314,7 +293,7 @@ static void setup_block_dptrs(MACROBLOCKD *xd, int ss_x, int ss_y) {
 #endif
 }
 
-static TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize) {
+static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize) {
   if (bsize < BLOCK_8X8) {
     return TX_4X4;
   } else {
@@ -324,12 +303,12 @@ static TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize) {
   }
 }
 
-static TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
+static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi) {
   return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type);
 }
 
-static BLOCK_SIZE get_plane_block_size(BLOCK_SIZE bsize,
-                                       const struct macroblockd_plane *pd) {
+static INLINE BLOCK_SIZE get_plane_block_size(BLOCK_SIZE bsize,
+    const struct macroblockd_plane *pd) {
   BLOCK_SIZE bs = ss_size_lookup[bsize][pd->subsampling_x][pd->subsampling_y];
   assert(bs < BLOCK_SIZES);
   return bs;
@@ -408,9 +387,9 @@ static INLINE void foreach_transformed_block_uv(
     foreach_transformed_block_in_plane(xd, bsize, plane, visit, arg);
 }
 
-static void txfrm_block_to_raster_xy(BLOCK_SIZE plane_bsize,
-                                     TX_SIZE tx_size, int block,
-                                     int *x, int *y) {
+static INLINE void txfrm_block_to_raster_xy(BLOCK_SIZE plane_bsize,
+                                            TX_SIZE tx_size, int block,
+                                            int *x, int *y) {
   const int bwl = b_width_log2(plane_bsize);
   const int tx_cols_log2 = bwl - tx_size;
   const int tx_cols = 1 << tx_cols_log2;
@@ -461,8 +440,8 @@ static void set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
   }
 }
 
-static int get_tx_eob(const struct segmentation *seg, int segment_id,
-                      TX_SIZE tx_size) {
+static INLINE int get_tx_eob(const struct segmentation *seg, int segment_id,
+                             TX_SIZE tx_size) {
   const int eob_max = 16 << (tx_size << 1);
   return vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP) ? 0 : eob_max;
 }
