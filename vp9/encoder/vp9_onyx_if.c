@@ -848,6 +848,9 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     }
     sf->use_fast_lpf_pick = 2;
   }
+  if (speed >= 6) {
+    sf->super_fast_rtc = 1;
+  }
 }
 
 void vp9_set_speed_features(VP9_COMP *cpi) {
@@ -906,16 +909,17 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_fast_coef_updates = 0;
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
+  sf->super_fast_rtc = 0;
 
   switch (mode) {
     case 0:  // This is the best quality mode.
       cpi->diamond_search_sad = vp9_full_range_search;
       break;
     case 1:
+    case 2:
       set_good_speed_feature(cm, sf, speed);
       break;
-      break;
-    case 2:
+    case 3:
       set_rt_speed_feature(cm, sf, speed);
       break;
   }; /* switch */
@@ -2550,10 +2554,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    if (cpi->compressor_speed == 3)
-      lf->filter_level = 4;
-    else
-      vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
+    vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
@@ -3101,7 +3102,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // JBB : This is realtime mode.  In real time mode the first frame
   // should be larger. Q of 0 is disabled because we force tx size to be
   // 16x16...
-  if (cpi->compressor_speed == 3) {
+  if (cpi->sf.super_fast_rtc) {
     if (cpi->common.current_video_frame == 0)
       q /= 3;
 
