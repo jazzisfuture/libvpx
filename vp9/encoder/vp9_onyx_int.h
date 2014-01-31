@@ -416,6 +416,10 @@ typedef struct {
   // This feature limits the number of coefficients updates we actually do
   // by only looking at counts from 1/2 the bands.
   int use_fast_coef_updates;  // 0: 2-loop, 1: 1-loop, 2: 1-loop reduced
+
+  // This flag to use Jim's super fast rtc mode
+  int super_fast_rtc;
+
 } SPEED_FEATURES;
 
 typedef struct VP9_COMP {
