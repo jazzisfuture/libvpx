@@ -474,14 +474,16 @@ static void update_reference_segmentation_map(VP9_COMP *cpi) {
     cache_ptr += cm->mi_cols;
   }
 }
-
-static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
+static int is_slowest_mode(int mode) {
+  return (mode == MODE_SECONDPASS_BEST || mode == MODE_BESTQUALITY);
+}
+static void set_rd_speed_thresholds(VP9_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
   int i;
 
   // Set baseline threshold values
   for (i = 0; i < MAX_MODES; ++i)
-    sf->thresh_mult[i] = mode == 0 ? -500 : 0;
+    sf->thresh_mult[i] = is_slowest_mode(cpi->oxcf.Mode) ? -500 : 0;
 
   sf->thresh_mult[THR_NEARESTMV] = 0;
   sf->thresh_mult[THR_NEARESTG] = 0;
@@ -557,12 +559,12 @@ static void set_rd_speed_thresholds(VP9_COMP *cpi, int mode) {
   }
 }
 
-static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi, int mode) {
+static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
   int i;
 
   for (i = 0; i < MAX_REFS; ++i)
-    sf->thresh_mult_sub8x8[i] = mode == 0 ? -500 : 0;
+    sf->thresh_mult_sub8x8[i] = is_slowest_mode(cpi->oxcf.Mode) ? -500 : 0;
 
   sf->thresh_mult_sub8x8[THR_LAST] += 2500;
   sf->thresh_mult_sub8x8[THR_GOLD] += 2500;
@@ -594,13 +596,8 @@ static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi, int mode) {
 
 void vp9_set_speed_features(VP9_COMP *cpi) {
   SPEED_FEATURES *sf = &cpi->sf;
-  int mode = cpi->compressor_speed;
   int speed = cpi->speed;
   int i;
-
-  // Only modes 0 and 1 supported for now in experimental code basae
-  if (mode > 1)
-    mode = 1;
 
   for (i = 0; i < MAX_MODES; ++i)
     cpi->mode_chosen_counts[i] = 0;
@@ -656,12 +653,15 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->static_segmentation = 0;
 #endif
 
-  switch (mode) {
-    case 0:  // This is the best quality mode.
+  switch (cpi->oxcf.Mode) {
+    case MODE_BESTQUALITY:
+    case MODE_SECONDPASS_BEST:  // This is the best quality mode.
       cpi->diamond_search_sad = vp9_full_range_search;
       break;
 
-    case 1:
+    case MODE_FIRSTPASS:
+    case MODE_GOODQUALITY:
+    case MODE_SECONDPASS:
 #if CONFIG_MULTIPLE_ARF
       // Switch segmentation off.
       sf->static_segmentation = 0;
@@ -846,8 +846,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   }; /* switch */
 
   // Set rd thresholds based on mode and speed setting
-  set_rd_speed_thresholds(cpi, mode);
-  set_rd_speed_thresholds_sub8x8(cpi, mode);
+  set_rd_speed_thresholds(cpi);
+  set_rd_speed_thresholds_sub8x8(cpi);
 
   // Slow quant, dct and trellis not worthwhile for first pass
   // so make sure they are always turned off.
@@ -1149,24 +1149,20 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
       // Real time and one pass deprecated in test code base
     case MODE_GOODQUALITY:
       cpi->pass = 0;
-      cpi->compressor_speed = 2;
       cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
       break;
 
     case MODE_FIRSTPASS:
       cpi->pass = 1;
-      cpi->compressor_speed = 1;
       break;
 
     case MODE_SECONDPASS:
       cpi->pass = 2;
-      cpi->compressor_speed = 1;
       cpi->oxcf.cpu_used = clamp(cpi->oxcf.cpu_used, -5, 5);
       break;
 
     case MODE_SECONDPASS_BEST:
       cpi->pass = 2;
-      cpi->compressor_speed = 0;
       break;
   }
 
