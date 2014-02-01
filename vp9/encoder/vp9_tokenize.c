@@ -172,7 +172,8 @@ static void set_entropy_context_b(int plane, int block, BLOCK_SIZE plane_bsize,
   struct macroblockd_plane *pd = &xd->plane[plane];
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
-  set_contexts(xd, pd, plane_bsize, tx_size, p->eobs[block] > 0, aoff, loff);
+  vp9_set_contexts(xd, pd, plane_bsize, tx_size, p->eobs[block] > 0,
+                   aoff, loff);
 }
 
 static INLINE void add_token(TOKENEXTRA **t, const vp9_prob *context_tree,
@@ -259,7 +260,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 
   *tp = t;
 
-  set_contexts(xd, pd, plane_bsize, tx_size, c > 0, aoff, loff);
+  vp9_set_contexts(xd, pd, plane_bsize, tx_size, c > 0, aoff, loff);
 }
 
 struct is_skippable_args {
@@ -284,7 +285,7 @@ static int sb_is_skippable(MACROBLOCK *x, BLOCK_SIZE bsize) {
 int vp9_is_skippable_in_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   int result = 1;
   struct is_skippable_args args = {x, &result};
-  foreach_transformed_block_in_plane(&x->e_mbd, bsize, plane, is_skippable,
+  vp9_foreach_transformed_block_in_plane(&x->e_mbd, bsize, plane, is_skippable,
                                      &args);
   return result;
 }
