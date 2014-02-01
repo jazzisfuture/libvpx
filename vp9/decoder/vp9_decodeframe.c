@@ -1374,7 +1374,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   set_prev_mi(cm);
 
   setup_plane_dequants(cm, xd, cm->base_qindex);
-  setup_block_dptrs(xd, cm->subsampling_x, cm->subsampling_y);
+  vp9_setup_block_dptrs(xd, cm->subsampling_x, cm->subsampling_y);
 
   cm->fc = cm->frame_contexts[cm->frame_context_idx];
   vp9_zero(cm->counts);
