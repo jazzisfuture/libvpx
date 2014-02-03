@@ -53,7 +53,7 @@ static UInt64 generateTrackID(unsigned int trackNumber) {
 }
 
 void writeVideoTrack(EbmlGlobal *glob, unsigned int trackNumber, int flagLacing,
-                     char *codecId, unsigned int pixelWidth, unsigned int pixelHeight,
+                     const char *codecId, unsigned int pixelWidth, unsigned int pixelHeight,
                      double frameRate) {
   EbmlLoc start;
   Ebml_StartSubElement(glob, &start, TrackEntry);
