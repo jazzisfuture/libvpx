@@ -157,8 +157,8 @@ static const transform_2d FHT_4[] = {
   { fadst4, fadst4 }   // ADST_ADST = 3
 };
 
-void vp9_short_fht4x4_c(const int16_t *input, int16_t *output,
-                        int stride, int tx_type) {
+void vp9_fht4x4_raw_c(const int16_t *input, int16_t *output,
+                      int stride, int tx_type) {
   int16_t out[4 * 4];
   int16_t *outptr = &out[0];
   int i, j;
@@ -1381,7 +1381,7 @@ void vp9_fht4x4(TX_TYPE tx_type, const int16_t *input, int16_t *output,
   if (tx_type == DCT_DCT)
     vp9_fdct4x4(input, output, stride);
   else
-    vp9_short_fht4x4(input, output, stride, tx_type);
+    vp9_fht4x4_raw(input, output, stride, tx_type);
 }
 
 void vp9_fht8x8(TX_TYPE tx_type, const int16_t *input, int16_t *output,

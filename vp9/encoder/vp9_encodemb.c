@@ -617,7 +617,7 @@ void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_subtract_block(4, 4, src_diff, diff_stride,
                            src, p->src.stride, dst, pd->dst.stride);
         if (tx_type != DCT_DCT)
-          vp9_short_fht4x4(src_diff, coeff, diff_stride, tx_type);
+          vp9_fht4x4_raw(src_diff, coeff, diff_stride, tx_type);
         else
           x->fwd_txm4x4(src_diff, coeff, diff_stride);
         vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round, p->quant,

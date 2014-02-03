@@ -242,8 +242,8 @@ void fadst4_sse2(__m128i *in) {
   transpose_4x4(in);
 }
 
-void vp9_short_fht4x4_sse2(const int16_t *input, int16_t *output,
-                           int stride, int tx_type) {
+void vp9_fht4x4_raw_sse2(const int16_t *input, int16_t *output,
+                         int stride, int tx_type) {
   __m128i in[4];
   load_buffer_4x4(input, in, stride);
   switch (tx_type) {
