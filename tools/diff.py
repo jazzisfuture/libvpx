@@ -56,6 +56,8 @@ class DiffHunk(object):
         elif line[0] == " ":
             self.left.Append(line)
             self.right.Append(line)
+        elif line[0] == "\\":
+            print "Not displaying missing newline"
         else:
             assert False, ("Unrecognized character at start of diff line "
                            "%r" % line[0])
