@@ -9,6 +9,8 @@
  */
 
 #include <immintrin.h>  // AVX2
+#include "vpx_ports/mem.h"
+#include "vp9/encoder/vp9_variance.h"
 
 void vp9_get16x16var_avx2(const unsigned char *src_ptr,
                           int source_stride,
