@@ -46,7 +46,6 @@ typedef struct {
   unsigned int source_alt_ref_active;
   unsigned int is_src_frame_alt_ref;
 
-  int per_frame_bandwidth;        // Current section per frame bandwidth target
   int av_per_frame_bandwidth;     // Average frame size target for clip
   int min_frame_bandwidth;        // Minimum allocation used for any frame
   int max_frame_bandwidth;        // Maximum burst rate allowed for a frame.
@@ -133,6 +132,20 @@ int vp9_drop_frame(struct VP9_COMP *cpi);
 
 // Update the buffer level.
 void vp9_update_buffer_level(struct VP9_COMP *cpi, int encoded_frame_size);
+
+// Functions to set parameters for encoding before the actual
+// encode_frame_to_data_rate() function.
+void vp9_get_one_pass_vbr_params(struct VP9_COMP *cpi);
+void vp9_get_one_pass_cbr_params(struct VP9_COMP *cpi);
+void vp9_get_svc_params(struct VP9_COMP *cpi);
+
+// Clamping utilities for bitrate targets for iframes and pframes.
+int vp9_rc_clamp_iframe_target_size(const struct VP9_COMP *const cpi,
+                                    int target);
+int vp9_rc_clamp_pframe_target_size(const struct VP9_COMP *const cpi,
+                                    int target);
+// Utility to set frame_target into the RATE_CONTROL structure
+void vp9_rc_set_frame_target(struct VP9_COMP *cpi, int target);
 
 #ifdef __cplusplus
 }  // extern "C"
