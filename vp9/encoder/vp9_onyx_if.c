@@ -744,6 +744,8 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
   sf->static_segmentation = 0;
   sf->adaptive_rd_thresh = 1;
   sf->recode_loop = ((speed < 1) ? ALLOW_RECODE : ALLOW_RECODE_KFMAXBW);
+  sf->use_encode_breakout = 1;
+
   if (speed == 1) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->less_rectangular_check = 1;
@@ -765,6 +767,7 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
+    sf->use_encode_breakout = 8;
   }
   if (speed >= 2) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
@@ -804,6 +807,7 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->intra_y_mode_mask[TX_16X16] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
+    sf->use_encode_breakout = 200;
   }
   if (speed >= 3) {
     sf->use_square_partition_only = 1;
@@ -826,11 +830,13 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->use_fast_coef_updates = 2;
     sf->adaptive_rd_thresh = 4;
     sf->mode_skip_start = 6;
+    sf->use_encode_breakout = 400;
   }
   if (speed >= 4) {
     sf->optimize_coefficients = 0;
     sf->disable_split_mask = DISABLE_ALL_SPLIT;
     sf->use_fast_lpf_pick = 2;
+    sf->use_encode_breakout = 700;
   }
   if (speed >= 5) {
     int i;
@@ -843,10 +849,12 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
       sf->intra_uv_mode_mask[i] = INTRA_DC_ONLY;
     }
     sf->RD = 0;
+    sf->use_encode_breakout = 1000;
   }
   if (speed >= 6) {
     sf->super_fast_rtc = 1;
     sf->always_this_block_size = BLOCK_16X16;
+    sf->use_encode_breakout = 1000;
   }
 }
 
@@ -906,6 +914,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
   sf->super_fast_rtc = 0;
+  sf->use_encode_breakout = 0;
 
   switch (cpi->oxcf.mode) {
     case MODE_BESTQUALITY:
@@ -949,6 +958,10 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   }
 
   cpi->mb.optimize = cpi->sf.optimize_coefficients == 1 && cpi->pass != 1;
+
+  if (cpi->encode_breakout && cpi->oxcf.mode == MODE_REALTIME &&
+      sf->use_encode_breakout > cpi->encode_breakout)
+    cpi->encode_breakout = sf->use_encode_breakout;
 }
 
 static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
@@ -1408,6 +1421,7 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
     for (i = 0; i < MAX_SEGMENTS; i++)
       cpi->segment_encode_breakout[i] = cpi->oxcf.encode_breakout;
   }
+  cpi->encode_breakout = cpi->oxcf.encode_breakout;
 
   // local file playback mode == really big buffer
   if (cpi->oxcf.end_usage == USAGE_LOCAL_FILE_PLAYBACK) {
@@ -1848,7 +1862,7 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
 
   cpi->output_pkt_list = oxcf->output_pkt_list;
 
-  cpi->enable_encode_breakout = 1;
+  cpi->allow_encode_breakout = 1;
 
   if (cpi->pass == 1) {
     vp9_init_first_pass(cpi);
@@ -3398,7 +3412,7 @@ static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
 
 static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
-  cpi->enable_encode_breakout = 1;
+  cpi->allow_encode_breakout = 1;
 
   vp9_rc_get_second_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
