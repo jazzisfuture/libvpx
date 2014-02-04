@@ -1107,8 +1107,6 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
 
   cpi->oxcf.framerate = framerate;
   cpi->output_framerate = cpi->oxcf.framerate;
-  cpi->rc.per_frame_bandwidth = (int)(cpi->oxcf.target_bandwidth
-                                      / cpi->output_framerate);
   cpi->rc.av_per_frame_bandwidth = (int)(cpi->oxcf.target_bandwidth
                                          / cpi->output_framerate);
   cpi->rc.min_frame_bandwidth = (int)(cpi->rc.av_per_frame_bandwidth *
@@ -1346,8 +1344,6 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->cq_target_quality = cpi->oxcf.cq_level;
 
   cm->interp_filter = DEFAULT_INTERP_FILTER;
-
-  cpi->target_bandwidth = cpi->oxcf.target_bandwidth;
 
   cm->display_width = cpi->oxcf.width;
   cm->display_height = cpi->oxcf.height;
@@ -3086,9 +3082,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_write_yuv_frame(cpi->Source);
 #endif
 
-  // Decide how big to make the frame.
-  vp9_rc_pick_frame_size_target(cpi);
-
   // Decide frame size bounds
   vp9_rc_compute_frame_size_bounds(cpi, cpi->rc.this_frame_target,
                                    &frame_under_shoot_limit,
@@ -3289,7 +3282,7 @@ static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   if (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
     vp9_get_one_pass_cbr_params(cpi);
   } else {
-    vp9_get_one_pass_params(cpi);
+    vp9_get_one_pass_vbr_params(cpi);
   }
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
