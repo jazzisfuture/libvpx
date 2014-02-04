@@ -419,6 +419,10 @@ typedef struct {
 
   // This flag control the use of the new super fast rtc mode
   int super_fast_rtc;
+
+  // This variable sets the encode_breakout threshold. Currently, it is only
+  // enabled in real time mode.
+  int use_encode_breakout;
 } SPEED_FEATURES;
 
 typedef struct VP9_COMP {
@@ -567,6 +571,12 @@ typedef struct VP9_COMP {
   unsigned int max_mv_magnitude;
   int mv_step_param;
 
+  int allow_encode_breakout;   // Default value is 1. From first pass stats,
+                               // encode_breakout may be disabled.
+  int encode_breakout;         // Get threshold from external input. In real
+                               // time mode, it can be overwritten according to
+                               // encoding speed.
+
   unsigned char *segmentation_map;
 
   // segment threashold for encode breakout
@@ -685,8 +695,6 @@ typedef struct VP9_COMP {
   int initial_height;
 
   int number_spatial_layers;
-  int enable_encode_breakout;   // Default value is 1. From first pass stats,
-                                // encode_breakout may be disabled.
 
 #if CONFIG_MULTIPLE_ARF
   // ARF tracking variables.
