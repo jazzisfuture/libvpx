@@ -74,6 +74,11 @@ endif
 #example_xma.GUID             = A955FC4A-73F1-44F7-135E-30D84D32F022
 #example_xma.DESCRIPTION      = External Memory Allocation mode usage
 
+GEN_EXAMPLES-$(CONFIG_ENCODERS)    += vpx_temporal_scalable_patterns.c
+vpx_temporal_scalable_patterns.SRCS += ivfenc.c ivfenc.h
+vpx_temporal_scalable_patterns.SRCS += tools_common.c tools_common.h
+vpx_temporal_scalable_patterns.GUID   = B18C08F2-A439-4502-A78E-849BE3D60947
+vpx_temporal_scalable_patterns.DESCRIPTION = Temporal Scalability Encoder
 GEN_EXAMPLES-$(CONFIG_VP8_DECODER) += simple_decoder.c
 simple_decoder.GUID                = D3BBF1E9-2427-450D-BBFF-B2843C1D44CC
 simple_decoder.SRCS                += ivfdec.h ivfdec.c

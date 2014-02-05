@@ -2245,7 +2245,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->modified_error_left -= kf_group_err;
 }
 
-void vp9_rc_get_first_pass_params(VP9_COMP *cpi) {
+void vp9_get_first_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   if (!cpi->refresh_alt_ref_frame &&
       (cm->current_video_frame == 0 ||
