@@ -244,32 +244,32 @@ void fadst4_avx2(__m128i *in) {
   transpose_4x4_avx2(in);
 }
 
-void vp9_short_fht4x4_avx2(const int16_t *input, int16_t *output,
-                           int stride, int tx_type) {
-  __m128i in[4];
-  load_buffer_4x4_avx2(input, in, stride);
-  switch (tx_type) {
-    case 0:  // DCT_DCT
-      fdct4_avx2(in);
-      fdct4_avx2(in);
-      break;
-    case 1:  // ADST_DCT
-      fadst4_avx2(in);
-      fdct4_avx2(in);
-      break;
-    case 2:  // DCT_ADST
-      fdct4_avx2(in);
-      fadst4_avx2(in);
-      break;
-    case 3:  // ADST_ADST
-      fadst4_avx2(in);
-      fadst4_avx2(in);
-      break;
-    default:
-      assert(0);
-      break;
+void vp9_fht4x4_avx2(const int16_t *input, int16_t *output,
+                     int stride, int tx_type) {
+  if (tx_type == DCT_DCT) {
+    vp9_fdct4x4_avx2(input, output, stride);
+  } else {
+    __m128i in[4];
+    load_buffer_4x4_avx2(input, in, stride);
+    switch (tx_type) {
+      case ADST_DCT:
+        fadst4_avx2(in);
+        fdct4_avx2(in);
+        break;
+      case DCT_ADST:
+        fdct4_avx2(in);
+        fadst4_avx2(in);
+        break;
+      case ADST_ADST:
+        fadst4_avx2(in);
+        fadst4_avx2(in);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+    write_buffer_4x4_avx2(output, in);
   }
-  write_buffer_4x4_avx2(output, in);
 }
 
 void vp9_fdct8x8_avx2(const int16_t *input, int16_t *output, int stride) {
@@ -1028,33 +1028,33 @@ void fadst8_avx2(__m128i *in) {
   array_transpose_8x8_avx2(in, in);
 }
 
-void vp9_short_fht8x8_avx2(const int16_t *input, int16_t *output,
-                           int stride, int tx_type) {
-  __m128i in[8];
-  load_buffer_8x8_avx2(input, in, stride);
-  switch (tx_type) {
-    case 0:  // DCT_DCT
-      fdct8_avx2(in);
-      fdct8_avx2(in);
-      break;
-    case 1:  // ADST_DCT
-      fadst8_avx2(in);
-      fdct8_avx2(in);
-      break;
-    case 2:  // DCT_ADST
-      fdct8_avx2(in);
-      fadst8_avx2(in);
-      break;
-    case 3:  // ADST_ADST
-      fadst8_avx2(in);
-      fadst8_avx2(in);
-      break;
-    default:
-      assert(0);
-      break;
+void vp9_fht8x8_avx2(const int16_t *input, int16_t *output,
+                     int stride, int tx_type) {
+  if (tx_type == DCT_DCT) {
+    vp9_fdct8x8_avx2(input, output, stride);
+  } else {
+    __m128i in[8];
+    load_buffer_8x8_avx2(input, in, stride);
+    switch (tx_type) {
+      case ADST_DCT:
+        fadst8_avx2(in);
+        fdct8_avx2(in);
+        break;
+      case DCT_ADST:
+        fdct8_avx2(in);
+        fadst8_avx2(in);
+        break;
+      case ADST_ADST:
+        fadst8_avx2(in);
+        fadst8_avx2(in);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+    right_shift_8x8_avx2(in, 1);
+    write_buffer_8x8_avx2(output, in, 8);
   }
-  right_shift_8x8_avx2(in, 1);
-  write_buffer_8x8_avx2(output, in, 8);
 }
 
 void vp9_fdct16x16_avx2(const int16_t *input, int16_t *output, int stride) {
@@ -2534,36 +2534,35 @@ void fadst16_avx2(__m128i *in0, __m128i *in1) {
   array_transpose_16x16_avx2(in0, in1);
 }
 
-void vp9_short_fht16x16_avx2(const int16_t *input, int16_t *output,
-                             int stride, int tx_type) {
-  __m128i in0[16], in1[16];
-  load_buffer_16x16_avx2(input, in0, in1, stride);
-  switch (tx_type) {
-    case 0:  // DCT_DCT
-      fdct16_avx2(in0, in1);
-      right_shift_16x16_avx2(in0, in1);
-      fdct16_avx2(in0, in1);
-      break;
-    case 1:  // ADST_DCT
-      fadst16_avx2(in0, in1);
-      right_shift_16x16_avx2(in0, in1);
-      fdct16_avx2(in0, in1);
-      break;
-    case 2:  // DCT_ADST
-      fdct16_avx2(in0, in1);
-      right_shift_16x16_avx2(in0, in1);
-      fadst16_avx2(in0, in1);
-      break;
-    case 3:  // ADST_ADST
-      fadst16_avx2(in0, in1);
-      right_shift_16x16_avx2(in0, in1);
-      fadst16_avx2(in0, in1);
-      break;
-    default:
-      assert(0);
-      break;
+void vp9_fht16x16_avx2(const int16_t *input, int16_t *output,
+                      int stride, int tx_type) {
+  if (tx_type == DCT_DCT) {
+    vp9_fdct16x16_avx2(input, output, stride);
+  } else {
+    __m128i in0[16], in1[16];
+    load_buffer_16x16_avx2(input, in0, in1, stride);
+    switch (tx_type) {
+      case ADST_DCT:
+        fadst16_avx2(in0, in1);
+        right_shift_16x16_avx2(in0, in1);
+        fdct16_avx2(in0, in1);
+        break;
+      case DCT_ADST:
+        fdct16_avx2(in0, in1);
+        right_shift_16x16_avx2(in0, in1);
+        fadst16_avx2(in0, in1);
+        break;
+      case ADST_ADST:
+        fadst16_avx2(in0, in1);
+        right_shift_16x16_avx2(in0, in1);
+        fadst16_avx2(in0, in1);
+        break;
+      default:
+        assert(0);
+        break;
+    }
+    write_buffer_16x16_avx2(output, in0, in1, 16);
   }
-  write_buffer_16x16_avx2(output, in0, in1, 16);
 }
 
 #define FDCT32x32_2D_AVX2 vp9_fdct32x32_rd_avx2
