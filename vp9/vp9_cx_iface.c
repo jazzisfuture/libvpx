@@ -205,7 +205,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     int              n_packets = (int)(cfg->rc_twopass_stats_in.sz / packet_sz);
     FIRSTPASS_STATS *stats;
 
-    if (!cfg->rc_twopass_stats_in.buf)
+    if (cfg->rc_twopass_stats_in.buf == NULL)
       ERROR("rc_twopass_stats_in.buf not set.");
 
     if (cfg->rc_twopass_stats_in.sz % packet_sz)
@@ -396,7 +396,7 @@ static vpx_codec_err_t vp9e_set_config(vpx_codec_alg_priv_t       *ctx,
 
   res = validate_config(ctx, cfg, &ctx->vp8_cfg);
 
-  if (!res) {
+  if (res == VPX_CODEC_OK) {
     ctx->cfg = *cfg;
     set_vp9e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg);
     vp9_change_config(ctx->cpi, &ctx->oxcf);
@@ -416,8 +416,7 @@ static vpx_codec_err_t get_param(vpx_codec_alg_priv_t *ctx,
 
 #define MAP(id, var) case id: *(RECAST(id, arg)) = var; break
 
-  if (!arg)
-    return VPX_CODEC_INVALID_PARAM;
+  if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
 
   switch (ctrl_id) {
       MAP(VP8E_GET_LAST_QUANTIZER, vp9_get_quantizer(ctx->cpi));
@@ -459,7 +458,7 @@ static vpx_codec_err_t set_param(vpx_codec_alg_priv_t *ctx,
 
   res = validate_config(ctx, &ctx->cfg, &xcfg);
 
-  if (!res) {
+  if (res == VPX_CODEC_OK) {
     ctx->vp8_cfg = xcfg;
     set_vp9e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg);
     vp9_change_config(ctx->cpi, &ctx->oxcf);
@@ -478,12 +477,10 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx) {
 
   VP9_PTR optr;
 
-  if (!ctx->priv) {
+  if (ctx->priv == NULL) {
     priv = calloc(1, sizeof(struct vpx_codec_alg_priv));
 
-    if (!priv) {
-      return VPX_CODEC_MEM_ERROR;
-    }
+    if (priv == NULL) return VPX_CODEC_MEM_ERROR;
 
     ctx->priv = &priv->base;
     ctx->priv->sz = sizeof(*ctx->priv);
@@ -520,21 +517,19 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx) {
 
     priv->cx_data = malloc(priv->cx_data_sz);
 
-    if (!priv->cx_data) {
-      return VPX_CODEC_MEM_ERROR;
-    }
+    if (priv->cx_data == NULL) return VPX_CODEC_MEM_ERROR;
 
     vp9_initialize_enc();
 
     res = validate_config(priv, &priv->cfg, &priv->vp8_cfg);
 
-    if (!res) {
+    if (res == VPX_CODEC_OK) {
       set_vp9e_config(&ctx->priv->alg_priv->oxcf,
                       ctx->priv->alg_priv->cfg,
                       ctx->priv->alg_priv->vp8_cfg);
       optr = vp9_create_compressor(&ctx->priv->alg_priv->oxcf);
 
-      if (!optr)
+      if (optr == NULL)
         res = VPX_CODEC_MEM_ERROR;
       else
         ctx->priv->alg_priv->cpi = optr;
@@ -702,7 +697,7 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
   }
 
   /* Initialize the encoder instance on the first frame. */
-  if (!res && ctx->cpi) {
+  if (res == VPX_CODEC_OK && ctx->cpi != NULL) {
     unsigned int lib_flags;
     YV12_BUFFER_CONFIG sd;
     int64_t dst_time_stamp, dst_end_time_stamp;
@@ -762,8 +757,8 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
         VP9_COMP *cpi = (VP9_COMP *)ctx->cpi;
 
         /* Pack invisible frames with the next visible frame */
-        if (!cpi->common.show_frame) {
-          if (!ctx->pending_cx_data)
+        if (cpi->common.show_frame == 0) {
+          if (ctx->pending_cx_data == 0)
             ctx->pending_cx_data = cx_data;
           ctx->pending_cx_data_sz += size;
           ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;
@@ -788,7 +783,7 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
         if (lib_flags & FRAMEFLAGS_KEY)
           pkt.data.frame.flags |= VPX_FRAME_IS_KEY;
 
-        if (!cpi->common.show_frame) {
+        if (cpi->common.show_frame == 0) {
           pkt.data.frame.flags |= VPX_FRAME_IS_INVISIBLE;
 
           // This timestamp should be as close as possible to the
@@ -1001,12 +996,7 @@ static vpx_codec_err_t vp9e_set_scalemode(vpx_codec_alg_priv_t *ctx,
     res = vp9_set_internal_size(ctx->cpi,
                                 (VPX_SCALING)scalemode.h_scaling_mode,
                                 (VPX_SCALING)scalemode.v_scaling_mode);
-
-    if (!res) {
-      return VPX_CODEC_OK;
-    } else {
-      return VPX_CODEC_INVALID_PARAM;
-    }
+    return (res == 0) ? VPX_CODEC_OK : VPX_CODEC_INVALID_PARAM;
   } else {
     return VPX_CODEC_INVALID_PARAM;
   }
@@ -1025,9 +1015,7 @@ static vpx_codec_err_t vp9e_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
   VP9_COMP *cpi = (VP9_COMP *)ctx->cpi;
   vpx_svc_parameters_t params;
 
-  if (data == NULL) {
-    return VPX_CODEC_INVALID_PARAM;
-  }
+  if (data == NULL) return VPX_CODEC_INVALID_PARAM;
 
   params = *(vpx_svc_parameters_t *)data;
 
@@ -1036,9 +1024,8 @@ static vpx_codec_err_t vp9e_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
   cpi->gld_fb_idx = params.gld_fb_idx;
   cpi->alt_fb_idx = params.alt_fb_idx;
 
-  if (vp9_set_size_literal(ctx->cpi, params.width, params.height) != 0) {
+  if (vp9_set_size_literal(ctx->cpi, params.width, params.height) != 0)
     return VPX_CODEC_INVALID_PARAM;
-  }
 
   ctx->cfg.rc_max_quantizer = params.max_quantizer;
   ctx->cfg.rc_min_quantizer = params.min_quantizer;
