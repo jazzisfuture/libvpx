@@ -862,10 +862,9 @@ static const vpx_codec_cx_pkt_t *vp9e_get_cxdata(vpx_codec_alg_priv_t  *ctx,
 static vpx_codec_err_t vp9e_set_reference(vpx_codec_alg_priv_t *ctx,
                                           int ctr_id,
                                           va_list args) {
-  vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
+  vpx_ref_frame_t *frame = va_arg(args, vpx_ref_frame_t *);
 
-  if (data) {
-    vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
+  if (frame) {
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
@@ -880,10 +879,9 @@ static vpx_codec_err_t vp9e_set_reference(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t vp9e_copy_reference(vpx_codec_alg_priv_t *ctx,
                                            int ctr_id,
                                            va_list args) {
-  vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
+  vpx_ref_frame_t *frame = va_arg(args, vpx_ref_frame_t *);
 
-  if (data) {
-    vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
+  if (frame) {
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
@@ -993,14 +991,13 @@ static vpx_codec_err_t vp9e_set_activemap(vpx_codec_alg_priv_t *ctx,
 static vpx_codec_err_t vp9e_set_scalemode(vpx_codec_alg_priv_t *ctx,
                                           int ctr_id,
                                           va_list args) {
-  vpx_scaling_mode_t *data =  va_arg(args, vpx_scaling_mode_t *);
+  vpx_scaling_mode_t *scalemode =  va_arg(args, vpx_scaling_mode_t *);
 
-  if (data) {
+  if (scalemode) {
     int res;
-    vpx_scaling_mode_t scalemode = *(vpx_scaling_mode_t *)data;
     res = vp9_set_internal_size(ctx->cpi,
-                                (VPX_SCALING)scalemode.h_scaling_mode,
-                                (VPX_SCALING)scalemode.v_scaling_mode);
+                                (VPX_SCALING)scalemode->h_scaling_mode,
+                                (VPX_SCALING)scalemode->v_scaling_mode);
 
     if (!res) {
       return VPX_CODEC_OK;
@@ -1021,27 +1018,24 @@ static vpx_codec_err_t vp9e_set_svc(vpx_codec_alg_priv_t *ctx, int ctr_id,
 
 static vpx_codec_err_t vp9e_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
                                                int ctr_id, va_list args) {
-  vpx_svc_parameters_t *data = va_arg(args, vpx_svc_parameters_t *);
   VP9_COMP *cpi = (VP9_COMP *)ctx->cpi;
-  vpx_svc_parameters_t params;
+  vpx_svc_parameters_t *params = va_arg(args, vpx_svc_parameters_t *);
 
-  if (data == NULL) {
+  if (params == NULL) {
     return VPX_CODEC_INVALID_PARAM;
   }
 
-  params = *(vpx_svc_parameters_t *)data;
+  cpi->current_layer = params->layer;
+  cpi->lst_fb_idx = params->lst_fb_idx;
+  cpi->gld_fb_idx = params->gld_fb_idx;
+  cpi->alt_fb_idx = params->alt_fb_idx;
 
-  cpi->current_layer = params.layer;
-  cpi->lst_fb_idx = params.lst_fb_idx;
-  cpi->gld_fb_idx = params.gld_fb_idx;
-  cpi->alt_fb_idx = params.alt_fb_idx;
-
-  if (vp9_set_size_literal(ctx->cpi, params.width, params.height) != 0) {
+  if (vp9_set_size_literal(ctx->cpi, params->width, params->height) != 0) {
     return VPX_CODEC_INVALID_PARAM;
   }
 
-  ctx->cfg.rc_max_quantizer = params.max_quantizer;
-  ctx->cfg.rc_min_quantizer = params.min_quantizer;
+  ctx->cfg.rc_max_quantizer = params->max_quantizer;
+  ctx->cfg.rc_min_quantizer = params->min_quantizer;
 
   set_vp9e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg);
   vp9_change_config(ctx->cpi, &ctx->oxcf);
