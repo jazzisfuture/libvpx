@@ -2253,21 +2253,6 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->modified_error_left -= kf_group_err;
 }
 
-void vp9_get_svc_params(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  if ((cm->current_video_frame == 0) ||
-      (cm->frame_flags & FRAMEFLAGS_KEY) ||
-      (cpi->oxcf.auto_key && (cpi->rc.frames_since_key %
-                              cpi->key_frame_frequency == 0))) {
-    cm->frame_type = KEY_FRAME;
-    cpi->rc.source_alt_ref_active = 0;
-  } else {
-    cm->frame_type = INTER_FRAME;
-  }
-  cpi->rc.frames_till_gf_update_due = INT_MAX;
-  cpi->rc.baseline_gf_interval = INT_MAX;
-}
-
 // Use this macro to turn on/off use of alt-refs in one-pass mode.
 #define USE_ALTREF_FOR_ONE_PASS   1
 
@@ -2395,6 +2380,30 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
         ((16 + kf_boost) * rc->av_per_frame_bandwidth) >> 4;
   }
   return per_frame_bandwidth;
+}
+
+void vp9_get_svc_params(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  if ((cm->current_video_frame == 0) ||
+      (cm->frame_flags & FRAMEFLAGS_KEY) ||
+      (cpi->oxcf.auto_key && (cpi->rc.frames_since_key %
+                              cpi->key_frame_frequency == 0))) {
+    cm->frame_type = KEY_FRAME;
+    cpi->rc.source_alt_ref_active = 0;
+    if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+      cpi->rc.per_frame_bandwidth = calc_iframe_target_size_one_pass_cbr(cpi);
+      cpi->rc.active_worst_quality = cpi->rc.worst_quality;
+    }
+  } else {
+    cm->frame_type = INTER_FRAME;
+    if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+      cpi->rc.per_frame_bandwidth = calc_pframe_target_size_one_pass_cbr(cpi);
+      cpi->rc.active_worst_quality =
+          calc_active_worst_quality_from_buffer_level(cpi);
+    }
+  }
+  cpi->rc.frames_till_gf_update_due = INT_MAX;
+  cpi->rc.baseline_gf_interval = INT_MAX;
 }
 
 void vp9_get_one_pass_cbr_params(VP9_COMP *cpi) {
