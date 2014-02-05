@@ -481,9 +481,8 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx) {
   if (!ctx->priv) {
     priv = calloc(1, sizeof(struct vpx_codec_alg_priv));
 
-    if (!priv) {
+    if (!priv)
       return VPX_CODEC_MEM_ERROR;
-    }
 
     ctx->priv = &priv->base;
     ctx->priv->sz = sizeof(*ctx->priv);
@@ -520,9 +519,8 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx) {
 
     priv->cx_data = malloc(priv->cx_data_sz);
 
-    if (!priv->cx_data) {
+    if (!priv->cx_data)
       return VPX_CODEC_MEM_ERROR;
-    }
 
     vp9_initialize_enc();
 
@@ -1001,12 +999,7 @@ static vpx_codec_err_t vp9e_set_scalemode(vpx_codec_alg_priv_t *ctx,
     res = vp9_set_internal_size(ctx->cpi,
                                 (VPX_SCALING)scalemode.h_scaling_mode,
                                 (VPX_SCALING)scalemode.v_scaling_mode);
-
-    if (!res) {
-      return VPX_CODEC_OK;
-    } else {
-      return VPX_CODEC_INVALID_PARAM;
-    }
+    return (!res) ? VPX_CODEC_OK : VPX_CODEC_INVALID_PARAM;
   } else {
     return VPX_CODEC_INVALID_PARAM;
   }
@@ -1025,9 +1018,8 @@ static vpx_codec_err_t vp9e_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
   VP9_COMP *cpi = (VP9_COMP *)ctx->cpi;
   vpx_svc_parameters_t params;
 
-  if (data == NULL) {
+  if (data == NULL)
     return VPX_CODEC_INVALID_PARAM;
-  }
 
   params = *(vpx_svc_parameters_t *)data;
 
@@ -1036,9 +1028,8 @@ static vpx_codec_err_t vp9e_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
   cpi->gld_fb_idx = params.gld_fb_idx;
   cpi->alt_fb_idx = params.alt_fb_idx;
 
-  if (vp9_set_size_literal(ctx->cpi, params.width, params.height) != 0) {
+  if (vp9_set_size_literal(ctx->cpi, params.width, params.height) != 0)
     return VPX_CODEC_INVALID_PARAM;
-  }
 
   ctx->cfg.rc_max_quantizer = params.max_quantizer;
   ctx->cfg.rc_min_quantizer = params.min_quantizer;
