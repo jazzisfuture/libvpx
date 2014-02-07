@@ -32,50 +32,68 @@ void vp9_convolve8_##name##_##opt(const uint8_t *src, ptrdiff_t src_stride, \
   if (step_q4 == 16 && filter[3] != 128) { \
     if (filter[0] || filter[1] || filter[2]) { \
       while (w >= 16) { \
-        vp9_filter_block1d16_##dir##8_##avg##opt(src_start, src_stride, \
-                                                  dst, dst_stride, \
-                                                  h, filter); \
+        vp9_filter_block1d16_##dir##8_##avg##opt(src_start, \
+                                                 (unsigned int)src_stride, \
+                                                 dst, \
+                                                 (unsigned int)dst_stride, \
+                                                 h, \
+                                                 filter); \
         src += 16; \
         dst += 16; \
         w -= 16; \
       } \
       while (w >= 8) { \
-        vp9_filter_block1d8_##dir##8_##avg##opt(src_start, src_stride, \
-                                                 dst, dst_stride, \
-                                                 h, filter); \
+        vp9_filter_block1d8_##dir##8_##avg##opt(src_start, \
+                                                (unsigned int)src_stride, \
+                                                dst, \
+                                                (unsigned int)dst_stride, \
+                                                h, \
+                                                filter); \
         src += 8; \
         dst += 8; \
         w -= 8; \
       } \
       while (w >= 4) { \
-        vp9_filter_block1d4_##dir##8_##avg##opt(src_start, src_stride, \
-                                                 dst, dst_stride, \
-                                                 h, filter); \
+        vp9_filter_block1d4_##dir##8_##avg##opt(src_start, \
+                                                (unsigned int)src_stride, \
+                                                dst, \
+                                                (unsigned int)dst_stride, \
+                                                h, \
+                                                filter); \
         src += 4; \
         dst += 4; \
         w -= 4; \
       } \
     } else { \
       while (w >= 16) { \
-        vp9_filter_block1d16_##dir##2_##avg##opt(src, src_stride, \
-                                                  dst, dst_stride, \
-                                                  h, filter); \
+        vp9_filter_block1d16_##dir##2_##avg##opt(src, \
+                                                 (unsigned int)src_stride, \
+                                                 dst, \
+                                                 (unsigned int)dst_stride, \
+                                                 h, \
+                                                 filter); \
         src += 16; \
         dst += 16; \
         w -= 16; \
       } \
       while (w >= 8) { \
-        vp9_filter_block1d8_##dir##2_##avg##opt(src, src_stride, \
-                                                 dst, dst_stride, \
-                                                 h, filter); \
+        vp9_filter_block1d8_##dir##2_##avg##opt(src, \
+                                                (unsigned int)src_stride, \
+                                                dst, \
+                                                (unsigned int)dst_stride, \
+                                                h, \
+                                                filter); \
         src += 8; \
         dst += 8; \
         w -= 8; \
       } \
       while (w >= 4) { \
-        vp9_filter_block1d4_##dir##2_##avg##opt(src, src_stride, \
-                                                 dst, dst_stride, \
-                                                 h, filter); \
+        vp9_filter_block1d4_##dir##2_##avg##opt(src, \
+                                                (unsigned int)src_stride, \
+                                                dst, \
+                                                (unsigned int)dst_stride, \
+                                                h, \
+                                                filter); \
         src += 4; \
         dst += 4; \
         w -= 4; \
