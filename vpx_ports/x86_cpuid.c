@@ -9,14 +9,13 @@
  */
 
 #include <string.h>
-#include "x86.h"
 
-struct cpuid_vendors {
-  char vendor_string[12];
-  vpx_cpu_t vendor_id;
-};
+#include "./x86.h"
 
-static struct cpuid_vendors cpuid_vendor_list[VPX_CPU_LAST] = {
+static struct cpuid_vendors {
+  const char *string;
+  vpx_cpu_t id;
+} cpuid_vendors[VPX_CPU_LAST] = {
   { "AuthenticAMD", VPX_CPU_AMD           },
   { "AMDisbetter!", VPX_CPU_AMD_OLD       },
   { "CentaurHauls", VPX_CPU_CENTAUR       },
@@ -32,17 +31,17 @@ static struct cpuid_vendors cpuid_vendor_list[VPX_CPU_LAST] = {
   { "VIA VIA VIA ", VPX_CPU_VIA           },
 };
 
-vpx_cpu_t vpx_x86_vendor(void) {
+vpx_cpu_t vpx_x86_vendor() {
   unsigned int reg_eax;
   unsigned int vs[3];
   int i;
 
-  /* Get the Vendor String from the CPU */
+  // Get the Vendor String from the CPU
   cpuid(0, 0, reg_eax, vs[0], vs[2], vs[1]);
 
-  for (i = 0; i < VPX_CPU_LAST; i++) {
-    if (strncmp((const char *)vs, cpuid_vendor_list[i].vendor_string, 12) == 0)
-      return (cpuid_vendor_list[i].vendor_id);
+  for (i = 0; i < VPX_CPU_LAST; ++i) {
+    if (strncmp((const char *)vs, cpuid_vendors[i].string, 12) == 0)
+      return cpuid_vendors[i].id;
   }
 
   return VPX_CPU_UNKNOWN;

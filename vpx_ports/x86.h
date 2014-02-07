@@ -168,7 +168,7 @@ x86_simd_caps(void) {
   return flags & mask;
 }
 
-vpx_cpu_t vpx_x86_vendor(void);
+vpx_cpu_t vpx_x86_vendor();
 
 #if ARCH_X86_64 && defined(_MSC_VER)
 unsigned __int64 __rdtsc(void);
