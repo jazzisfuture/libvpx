@@ -1176,11 +1176,19 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
 static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   const VP9_CONFIG *oxcf = &cpi->oxcf;
   const RATE_CONTROL *rc = &cpi->rc;
-  int target = rc->av_per_frame_bandwidth;
   const int min_frame_target = MAX(rc->av_per_frame_bandwidth >> 4,
                                    FRAME_OVERHEAD_BITS);
   const int64_t diff = oxcf->optimal_buffer_level - rc->buffer_level;
   const int one_pct_bits = 1 + oxcf->optimal_buffer_level / 100;
+  int target = rc->av_per_frame_bandwidth;
+  if (cpi->use_svc && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+    // Note that for layers, av_per_frame_bandwidth is the cumulative
+    // per-frame-bandwidth. For the target size of this frame, use the
+    // layer average frame size (i.e., non-cumulative per-frame-bw).
+    int current_temporal_layer = cpi->svc.temporal_layer_id;
+    const LAYER_CONTEXT *lc = &cpi->svc.layer_context[current_temporal_layer];
+    target = lc->avg_frame_size;
+  }
   if (diff > 0) {
     // Lower the target bandwidth for this frame.
     const int pct_low = MIN(diff / one_pct_bits, oxcf->under_shoot_pct);

@@ -1180,6 +1180,8 @@ static void update_layer_context_change_config(VP9_COMP *const cpi,
   const RATE_CONTROL *const rc = &cpi->rc;
   int temporal_layer = 0;
   float bitrate_alloc = 1.0;
+  double prev_layer_framerate = 0.0;
+  int prev_layer_target_bandwidth = 0;
   for (temporal_layer = 0; temporal_layer < cpi->svc.number_temporal_layers;
       ++temporal_layer) {
     LAYER_CONTEXT *const lc = &cpi->svc.layer_context[temporal_layer];
@@ -1200,6 +1202,13 @@ static void update_layer_context_change_config(VP9_COMP *const cpi,
     lrc->worst_quality = rc->worst_quality;
     lrc->best_quality = rc->best_quality;
     lrc->active_worst_quality = rc->active_worst_quality;
+    lc->avg_frame_size = lrc->av_per_frame_bandwidth;
+    if (temporal_layer > 0)
+      lc->avg_frame_size =
+          (int)(lc->target_bandwidth - prev_layer_target_bandwidth) /
+          (lc->framerate - prev_layer_framerate);
+    prev_layer_framerate = lc->framerate;
+    prev_layer_target_bandwidth = lc->target_bandwidth;
   }
 }
 
@@ -1214,6 +1223,8 @@ static void update_layer_framerate(VP9_COMP *const cpi) {
   lrc->av_per_frame_bandwidth = (int)(lc->target_bandwidth /
       lc->framerate);
   lrc->max_frame_bandwidth = cpi->rc.max_frame_bandwidth;
+  // TODO(marpan) Need to update the lc->avg_frame_size as well here (for
+  // current and upper layer), since framerate may have changed.
 }
 
 // Prior to encoding the frame, set the layer context, for the current layer
