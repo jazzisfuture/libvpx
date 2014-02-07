@@ -215,7 +215,7 @@ int vp9_rc_clamp_pframe_target_size(const VP9_COMP *const cpi, int target) {
                                    rc->av_per_frame_bandwidth >> 5);
   if (target < min_frame_target)
     target = min_frame_target;
-  if (cpi->refresh_golden_frame && rc->source_alt_ref_active) {
+  if (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) {
     // If there is an active ARF at this location use the minimum
     // bits on this frame even if it is a constructed arf.
     // The active maximum quantizer insures that an appropriate
@@ -487,8 +487,7 @@ static int rc_pick_q_and_adjust_q_bounds_one_pass(const VP9_COMP *cpi,
       double q_adj_factor = 1.0;
       double q_val;
 
-      // Baseline value derived from cpi->active_worst_quality and kf boost
-      active_best_quality = get_active_quality(active_worst_quality,
+      active_best_quality = get_active_quality(rc->avg_frame_qindex[KEY_FRAME],
                                                rc->kf_boost,
                                                kf_low, kf_high,
                                                kf_low_motion_minq,
@@ -521,7 +520,8 @@ static int rc_pick_q_and_adjust_q_bounds_one_pass(const VP9_COMP *cpi,
         rc->avg_frame_qindex[INTER_FRAME] < active_worst_quality) {
       q = rc->avg_frame_qindex[INTER_FRAME];
     } else {
-      q = active_worst_quality;
+      q = (oxcf->end_usage == USAGE_STREAM_FROM_SERVER) ?
+          active_worst_quality : rc->avg_frame_qindex[KEY_FRAME];
     }
     // For constrained quality dont allow Q less than the cq level
     if (oxcf->end_usage == USAGE_CONSTRAINED_QUALITY) {
@@ -566,7 +566,7 @@ static int rc_pick_q_and_adjust_q_bounds_one_pass(const VP9_COMP *cpi,
     } else {
       // Use the lower of active_worst_quality and recent/average Q.
       if (rc->avg_frame_qindex[INTER_FRAME] < active_worst_quality)
-       active_best_quality = inter_minq[rc->avg_frame_qindex[INTER_FRAME]];
+        active_best_quality = inter_minq[rc->avg_frame_qindex[INTER_FRAME]];
       else
         active_best_quality = inter_minq[active_worst_quality];
       // For the constrained quality mode we don't want
@@ -1056,13 +1056,12 @@ static int test_for_kf_one_pass(VP9_COMP *cpi) {
 #define USE_ALTREF_FOR_ONE_PASS   1
 
 static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
-  static const int af_ratio = 5;
+  static const int af_ratio = 10;
   const RATE_CONTROL *rc = &cpi->rc;
   int target;
 #if USE_ALTREF_FOR_ONE_PASS
   target = (!rc->is_src_frame_alt_ref &&
             (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) ?
-      (rc->av_per_frame_bandwidth * cpi->rc.baseline_gf_interval * af_ratio) /
       (cpi->rc.baseline_gf_interval + af_ratio - 1) :
       (rc->av_per_frame_bandwidth * cpi->rc.baseline_gf_interval) /
       (cpi->rc.baseline_gf_interval + af_ratio - 1);
@@ -1073,7 +1072,7 @@ static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
 }
 
 static int calc_iframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
-  static const int kf_ratio = 12;
+  static const int kf_ratio = 20;
   const RATE_CONTROL *rc = &cpi->rc;
   int target = rc->av_per_frame_bandwidth * kf_ratio;
   return vp9_rc_clamp_iframe_target_size(cpi, target);
