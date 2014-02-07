@@ -22,6 +22,8 @@ void vp9_first_pass(VP9_COMP *cpi);
 void vp9_end_first_pass(VP9_COMP *cpi);
 
 void vp9_init_second_pass(VP9_COMP *cpi);
+int vp9_twopass_worst_quality(VP9_COMP *cpi, FIRSTPASS_STATS *fpstats,
+                              int section_target_bandwitdh);
 void vp9_rc_get_second_pass_params(VP9_COMP *cpi);
 void vp9_end_second_pass(VP9_COMP *cpi);
 
