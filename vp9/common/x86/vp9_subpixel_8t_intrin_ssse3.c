@@ -12,26 +12,25 @@
 #include "vpx_ports/mem.h"
 #include "vpx_ports/emmintrin_compat.h"
 
-
 // filters only for the 4_h8 convolution
-DECLARE_ALIGNED(16, const unsigned char,
-filt1_4_h8[16])= {0, 1, 1, 2, 2, 3, 3, 4, 2, 3, 3, 4, 4, 5, 5, 6};
+DECLARE_ALIGNED(16, const unsigned char, filt1_4_h8[16])= {
+  0, 1, 1, 2, 2, 3, 3, 4, 2, 3, 3, 4, 4, 5, 5, 6};
 
-DECLARE_ALIGNED(16, const unsigned char,
-filt2_4_h8[16])= {4, 5, 5, 6, 6, 7, 7, 8, 6, 7, 7, 8, 8, 9, 9, 10};
+DECLARE_ALIGNED(16, const unsigned char, filt2_4_h8[16])= {
+  4, 5, 5, 6, 6, 7, 7, 8, 6, 7, 7, 8, 8, 9, 9, 10};
 
 // filters for 8_h8 and 16_h8
-DECLARE_ALIGNED(16, const unsigned char,
-filt1_global[16])= {0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8};
+DECLARE_ALIGNED(16, const unsigned char, filt1_global[16])= {
+  0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8};
 
-DECLARE_ALIGNED(16, const unsigned char,
-filt2_global[16])= {2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10};
+DECLARE_ALIGNED(16, const unsigned char, filt2_global[16])= {
+  2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10};
 
-DECLARE_ALIGNED(16, const unsigned char,
-filt3_global[16])= {4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12};
+DECLARE_ALIGNED(16, const unsigned char, filt3_global[16])= {
+  4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12};
 
-DECLARE_ALIGNED(16, const unsigned char,
-filt4_global[16])= {6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14};
+DECLARE_ALIGNED(16, const unsigned char, filt4_global[16])= {
+  6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14};
 
 
 
