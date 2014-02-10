@@ -842,10 +842,10 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
       sf->intra_y_mode_mask[i] = INTRA_DC_H_V;
       sf->intra_uv_mode_mask[i] = INTRA_DC_ONLY;
     }
-    sf->RD = 0;
+    sf->frame_parameter_update = 0;
   }
   if (speed >= 6) {
-    sf->super_fast_rtc = 1;
+    sf->use_pick_mode = 1;
   }
 }
 
@@ -863,7 +863,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     cpi->mode_chosen_counts[i] = 0;
 
   // best quality defaults
-  sf->RD = 1;
+  sf->frame_parameter_update = 1;
   sf->search_method = NSTEP;
   sf->recode_loop = ALLOW_RECODE;
   sf->subpel_search_method = SUBPEL_TREE;
@@ -904,7 +904,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_fast_coef_updates = 0;
   sf->using_small_partition_info = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set
-  sf->super_fast_rtc = 0;
+  sf->use_pick_mode = 0;
 
   switch (cpi->oxcf.mode) {
     case MODE_BESTQUALITY:
@@ -2860,7 +2860,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) {
       vp9_save_coding_context(cpi);
       cpi->dummy_packing = 1;
-      if (!cpi->sf.super_fast_rtc)
+      if (!cpi->sf.use_pick_mode)
         vp9_pack_bitstream(cpi, dest, size);
 
       cpi->rc.projected_frame_size = (*size) << 3;
