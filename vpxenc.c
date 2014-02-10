@@ -1352,7 +1352,7 @@ static void get_cx_data(struct stream_state *stream,
 #if CONFIG_DECODERS
         if (global->test_decode != TEST_DECODE_OFF && !stream->mismatch_seen) {
           vpx_codec_decode(&stream->decoder, pkt->data.frame.buf,
-                           pkt->data.frame.sz, NULL, 0);
+                           (unsigned int)pkt->data.frame.sz, NULL, 0);
           if (stream->decoder.err) {
             warn_or_exit_on_error(&stream->decoder,
                                   global->test_decode == TEST_DECODE_FATAL,
@@ -1475,7 +1475,9 @@ static void test_decode(struct stream_state  *stream,
 
 
 static void print_time(const char *label, int64_t etl) {
-  int hours, mins, secs;
+  int64_t hours;
+  int64_t mins;
+  int64_t secs;
 
   if (etl >= 0) {
     hours = etl / 3600;
@@ -1688,7 +1690,7 @@ int main(int argc, const char **argv_) {
           int64_t rate;
 
           if (global.limit) {
-            int frame_in_lagged = (seen_frames - lagged_count) * 1000;
+            off_t frame_in_lagged = (seen_frames - lagged_count) * 1000;
 
             rate = cx_time ? frame_in_lagged * (int64_t)1000000 / cx_time : 0;
             remaining = 1000 * (global.limit - global.skip_frames
