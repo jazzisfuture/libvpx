@@ -1594,6 +1594,14 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
                                         row8x8_remaining, col8x8_remaining,
                                         &bh, &bw);
   *min_block_size = MIN(*min_block_size, *max_block_size);
+
+  // When use_square_partition_only is true, make sure at least one square
+  // partition is allowed.
+  if (cpi->sf.use_square_partition_only &&
+      (*max_block_size - *min_block_size) < 2) {
+    *max_block_size = (BLOCK_SIZE)MIN(*max_block_size + 1, BLOCK_64X64);
+    *min_block_size = (BLOCK_SIZE)MAX(*max_block_size - 2, BLOCK_8X8);
+  }
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
