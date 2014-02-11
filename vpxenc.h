@@ -12,6 +12,8 @@
 
 #include "vpx/vpx_encoder.h"
 
+#include "./tools_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,7 +26,7 @@ enum TestDecodeFatality {
 
 /* Configuration elements common to all streams. */
 struct VpxEncoderConfig {
-  const struct codec_item *codec;
+  const VpxIface *codec;
   int passes;
   int pass;
   int usage;
