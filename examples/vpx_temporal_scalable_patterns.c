@@ -355,13 +355,21 @@ int main(int argc, char **argv) {
   int pts = 0;  // PTS starts at 0.
   int frame_duration = 1;  // 1 timebase tick per frame.
   int layering_mode = 0;
-  int frames_in_layer[VPX_TS_MAX_LAYERS] = {0};
   int layer_flags[VPX_TS_MAX_PERIODICITY] = {0};
+  // For rate control encoding stats.
+  int tot_frames_in_layer[VPX_TS_MAX_LAYERS] = {0};
+  int frames_in_layer[VPX_TS_MAX_LAYERS] = {0};
+  float layer_enc_rate[VPX_TS_MAX_LAYERS] = {0.0};
+  float avg_layer_frame_size[VPX_TS_MAX_LAYERS] = {0.0};
+  float layer_pfb[VPX_TS_MAX_LAYERS] = {0.0};
+  float avg_layer_rate_mismatch[VPX_TS_MAX_LAYERS] = {0.0};
+  float layer_frame_rate[VPX_TS_MAX_LAYERS] = {0.0};
+  float framerate = 0.0;
   int flag_periodicity = 1;
   int max_intra_size_pct;
   vpx_svc_layer_id_t layer_id = {0, 0};
   char *codec_type;
-  const vpx_codec_iface_t *(*interface)(void);
+  vpx_codec_iface_t *(*interface)(void);
   unsigned int fourcc;
   struct VpxInputContext input_ctx = {0};
 
@@ -456,6 +464,17 @@ int main(int argc, char **argv) {
                              &cfg,
                              layer_flags,
                              &flag_periodicity);
+  // Set target layer framerate and per-frame-bandwidth, for rate control
+  // encoding stats below.
+  framerate = cfg.g_timebase.den / cfg.g_timebase.num;
+  layer_frame_rate[0] = framerate / cfg.ts_rate_decimator[0];
+  layer_pfb[0] = 1000.0 * cfg.ts_target_bitrate[0] / layer_frame_rate[0];
+  for (i = 1; i < cfg.ts_number_layers; ++i) {
+    layer_frame_rate[i] = framerate / cfg.ts_rate_decimator[i];
+    layer_pfb[i] = 1000.0 *
+        (cfg.ts_target_bitrate[i] - cfg.ts_target_bitrate[i - 1])
+        / (layer_frame_rate[i] - layer_frame_rate[i - 1]);
+  }
 
   // Open input file.
   input_ctx.filename = argv[1];
@@ -528,7 +547,14 @@ int main(int argc, char **argv) {
               i < cfg.ts_number_layers; ++i) {
             vpx_video_writer_write_frame(outfile[i], pkt->data.frame.buf,
                                          pkt->data.frame.sz, pts);
-            ++frames_in_layer[i];
+            ++tot_frames_in_layer[i];
+            layer_enc_rate[i] += 8.0 * pkt->data.frame.sz;
+            if (i == cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity]) {
+              avg_layer_frame_size[i] += 8.0 * pkt->data.frame.sz;
+              avg_layer_rate_mismatch[i] +=
+                  fabs(8.0 * pkt->data.frame.sz - layer_pfb[i]) / layer_pfb[i];
+              ++frames_in_layer[i];
+            }
           }
           break;
           default:
@@ -540,6 +566,18 @@ int main(int argc, char **argv) {
   }
   fclose(input_ctx.file);
   printf("Processed %d frames: \n", frame_cnt - 1);
+  printf("Rate control layer stats: for %d layers \n", cfg.ts_number_layers);
+  for (i = 0; i < cfg.ts_number_layers; ++i) {
+    layer_enc_rate[i] = 0.001 * layer_frame_rate[i] * layer_enc_rate[i] /
+        tot_frames_in_layer[i];
+    avg_layer_frame_size[i] = avg_layer_frame_size[i] / frames_in_layer[i];
+    avg_layer_rate_mismatch[i] = 100.0 * avg_layer_rate_mismatch[i] /
+        frames_in_layer[i];
+    printf("Bitrate: %d %d %f \n",
+           i, cfg.ts_target_bitrate[i], layer_enc_rate[i]);
+    printf("Frame size: %d %f %f \n", i, layer_pfb[i], avg_layer_frame_size[i]);
+    printf("Rate_mismatch: %d %f \n", i, avg_layer_rate_mismatch[i]);
+  }
   if (vpx_codec_destroy(&codec))
     die_codec(&codec, "Failed to destroy codec");
 
