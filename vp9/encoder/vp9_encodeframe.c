@@ -1590,6 +1590,10 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
                                         row8x8_remaining, col8x8_remaining,
                                         &bh, &bw);
   *min_block_size = MIN(*min_block_size, *max_block_size);
+
+  if (cpi->sf.use_square_partition_only)
+    *min_block_size = MIN(*min_block_size, *max_block_size - 2);
+
 }
 
 static void compute_fast_motion_search_level(VP9_COMP *cpi, BLOCK_SIZE bsize) {
