@@ -1155,10 +1155,10 @@ static void init_layer_context(VP9_COMP *const cpi) {
       ++temporal_layer) {
     LAYER_CONTEXT *const lc = &cpi->svc.layer_context[temporal_layer];
     RATE_CONTROL *const lrc = &lc->rc;
-    lrc->active_worst_quality = q_trans[oxcf->worst_allowed_q];
-    lrc->avg_frame_qindex[INTER_FRAME] = lrc->active_worst_quality;
-    lrc->last_q[INTER_FRAME] = lrc->active_worst_quality;
-    lrc->ni_av_qi = lrc->active_worst_quality;
+    // lrc->active_worst_quality = q_trans[oxcf->worst_allowed_q];
+    lrc->avg_frame_qindex[INTER_FRAME] = q_trans[oxcf->worst_allowed_q];
+    lrc->last_q[INTER_FRAME] = q_trans[oxcf->worst_allowed_q];
+    lrc->ni_av_qi = q_trans[oxcf->worst_allowed_q];
     lrc->total_actual_bits = 0;
     lrc->total_target_vs_actual = 0;
     lrc->ni_tot_qi = 0;
@@ -1203,7 +1203,7 @@ static void update_layer_context_change_config(VP9_COMP *const cpi,
     // Update qp-related quantities.
     lrc->worst_quality = rc->worst_quality;
     lrc->best_quality = rc->best_quality;
-    lrc->active_worst_quality = rc->active_worst_quality;
+    // lrc->active_worst_quality = rc->active_worst_quality;
   }
 }
 
@@ -1302,7 +1302,7 @@ static void init_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   vp9_change_config(ptr, oxcf);
 
   // Initialize active best and worst q and average q values.
-  cpi->rc.active_worst_quality      = cpi->oxcf.worst_allowed_q;
+  // cpi->rc.active_worst_quality      = cpi->oxcf.worst_allowed_q;
 
   if (cpi->pass == 0 && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
     cpi->rc.avg_frame_qindex[0] = cpi->oxcf.worst_allowed_q;
@@ -1449,9 +1449,11 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   cpi->rc.best_quality = cpi->oxcf.best_allowed_q;
 
   // active values should only be modified if out of new range
+  /*
   cpi->rc.active_worst_quality = clamp(cpi->rc.active_worst_quality,
                                        cpi->rc.best_quality,
                                        cpi->rc.worst_quality);
+                                       */
 
   cpi->cq_target_quality = cpi->oxcf.cq_level;
 
@@ -3209,9 +3211,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
   // Decide q and q bounds.
-  q = vp9_rc_pick_q_and_adjust_q_bounds(cpi,
-                                        &bottom_index,
-                                        &top_index);
+  q = vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
 
   if (!frame_is_intra_only(cm)) {
     cm->interp_filter = DEFAULT_INTERP_FILTER;
