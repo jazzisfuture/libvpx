@@ -1169,17 +1169,24 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   // (at buffer = critical level).
   const VP9_CONFIG *oxcf = &cpi->oxcf;
   const RATE_CONTROL *rc = &cpi->rc;
-  int active_worst_quality = rc->active_worst_quality;
+  // int active_worst_quality = rc->active_worst_quality;
   // Maximum limit for down adjustment, ~20%.
   // Buffer level below which we push active_worst to worst_quality.
   int critical_level = oxcf->optimal_buffer_level >> 2;
   int adjustment = 0;
   int buff_lvl_step = 0;
+  int active_worst_quality;
   if (cpi->common.frame_type == KEY_FRAME)
     return rc->worst_quality;
+  if (cpi->common.current_video_frame > 1)
+    active_worst_quality = MIN(rc->worst_quality,
+                               rc->avg_frame_qindex[INTER_FRAME] * 5 / 4);
+  else
+    active_worst_quality = MIN(rc->worst_quality,
+                               rc->avg_frame_qindex[KEY_FRAME] * 3 / 2);
   if (rc->buffer_level > oxcf->optimal_buffer_level) {
     // Adjust down.
-    int max_adjustment_down = active_worst_quality / 5;
+    int max_adjustment_down = active_worst_quality / 3;
     if (max_adjustment_down) {
       buff_lvl_step = (int)((oxcf->maximum_buffer_size -
           oxcf->optimal_buffer_level) / max_adjustment_down);
