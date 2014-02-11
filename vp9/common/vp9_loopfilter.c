@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include<dlfcn.h>
+
 #include "./vpx_config.h"
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -48,7 +50,7 @@ static const uint64_t left_64x64_txform_mask[TX_SIZES]= {
 // a mask that looks like this
 //
 //    11111111
-//    00000000
+
 //    00000000
 //    00000000
 //    11111111
@@ -205,6 +207,55 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // INTRA_MODES
   1, 1, 0, 1                     // INTER_MODES (ZEROMV == 0)
 };
+
+
+
+// test code
+void disable_filter(LOOP_FILTER_MASK* lfm, uint32_t mi_col, uint32_t mi_row, uint32_t tx, uint32_t ty) {
+/* if (mi_col * 8 <= tx && (mi_col + 8) *8 >= tx) {
+   printf("c %d %d %d\n", mi_row * 64, (mi_row + 1) * 64, ty);
+ }
+ if (mi_row * 8 <= ty && (mi_row + 8) * 8 >= ty) {
+   printf("r %d %d %d\n", mi_col * 64, (mi_col + 1) * 64, tx);
+ }*/
+// printf("col %d %d row %d %d tx %d ty %d\n", mi_col*8, mi_row*8, (mi_col+1) * 8, (mi_row +1)*8, tx, ty);
+ if (mi_col * 8 < 64
+     && mi_row * 8 < 64) {
+   lfm->left_y[TX_4X4] = 0;
+   lfm->left_y[TX_8X8] = 0;
+    lfm->left_y[TX_16X16] = 0;
+    lfm->left_y[TX_32X32] = 0;
+   //lfm->above_y[TX_4X4] = 0;
+   lfm->above_y[TX_8X8] = 0;
+   lfm->above_y[TX_16X16] = 0;
+   lfm->above_y[TX_32X32] = 0;
+  lfm->int_4x4_y = 0;
+ } else {
+   lfm->above_y[TX_4X4] = 0;
+   lfm->above_y[TX_8X8] = 0;
+   lfm->above_y[TX_16X16] = 0;
+   lfm->above_y[TX_32X32] = 0;
+  lfm->int_4x4_y = 0;
+ lfm->left_y[TX_4X4] = 0;
+ lfm->left_y[TX_8X8] = 0;
+  lfm->left_y[TX_16X16] = 0;
+  lfm->left_y[TX_32X32] = 0;
+ }
+ //lfm->above_uv[TX_4X4] = 0;
+   //lfm->above_uv[TX_8X8] = 0;
+   //lfm->above_uv[TX_16X16] = 0;
+   //lfm->above_uv[TX_32X32] = 0;
+  // lfm->int_4x4_uv = 0;
+ //lfm->left_uv[TX_4X4] = 0;
+ //lfm->left_uv[TX_8X8] = 0;
+  //lfm->left_uv[TX_16X16] = 0;
+  //lfm->left_uv[TX_32X32] = 0;
+ //}
+ //}
+
+}
+
+// end test code
 
 static void update_sharpness(loop_filter_info_n *lfi, int sharpness_lvl) {
   int lvl;
@@ -1205,7 +1256,7 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           VP9_COMMON *cm, MACROBLOCKD *xd,
                           int start, int stop, int y_only) {
   const int num_planes = y_only ? 1 : MAX_MB_PLANE;
-  int mi_row, mi_col;
+  int mi_row, mi_col, _tx, _ty;
   LOOP_FILTER_MASK lfm;
 #if CONFIG_NON420
   int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
@@ -1226,6 +1277,7 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
 #endif
         vp9_setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col,
                        cm->mode_info_stride, &lfm);
+      disable_filter(&lfm, mi_col, mi_row, _tx, _ty);
 
       for (plane = 0; plane < num_planes; ++plane) {
 #if CONFIG_NON420
@@ -1242,9 +1294,233 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
   }
 }
 
+//////////////////////
+typedef struct {
+  uint8_t * y_buf;
+  uint8_t * u_buf;
+  uint8_t * v_buf;
+} cuda_buf;
+
+typedef struct {
+  uint8_t mblim;
+  uint8_t lim;
+  uint8_t hev_thr;
+} cuda_loop_filter_thresh;
+
+
+typedef void (*lf_fp)(const LOOP_FILTER_MASK* lfm,
+                  const cuda_loop_filter_thresh* lft,
+                  uint32_t rows,
+                  uint32_t cols,
+                  uint8_t * buf,
+                  uint32_t uv_rows,
+                  uint32_t uv_cols,
+                  uint8_t * u_buf,
+                  uint8_t * v_buf);
+
+#include <stdio.h>
+lf_fp hello_world() {
+  void * lib_handle;
+  lf_fp hrs;
+  lib_handle = dlopen("rs_lf.so", RTLD_NOW);
+  if(lib_handle == NULL) {
+    printf("null lib %s\n", dlerror());
+    return NULL;
+  }
+
+  hrs = dlsym(lib_handle,
+                                   "lf_rs");
+  if(hrs == NULL) {
+    printf("NULL FUNCTION, %s\n", dlerror());
+    return NULL;
+  }
+  return hrs;
+
+}
+
+
+cuda_buf vp9_cuda_loop_filter_frame(const YV12_BUFFER_CONFIG *frame_buffer,
+                          VP9_COMMON *cm, MACROBLOCKD *xd,
+                          int start, int stop, int y_only) {
+ // const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+  cuda_buf c_b;
+  uint32_t size, s, r, c,ic, ir,stride;
+  int mi_row, mi_col;//, plane;
+  uint32_t y_rows, y_cols, uv_rows, uv_cols;
+  uint32_t lfm_rows = (stop + MI_SIZE - 1) / MI_SIZE;
+  uint32_t lfm_cols = (cm->mi_cols + MI_SIZE - 1) / MI_SIZE;
+  uint32_t lfm_size = lfm_rows*lfm_cols*sizeof(LOOP_FILTER_MASK);
+  uint32_t lft_size = (MAX_LOOP_FILTER + 1) * sizeof(cuda_loop_filter_thresh);
+  cuda_loop_filter_thresh *lft = malloc(lft_size);
+  LOOP_FILTER_MASK* lfm = malloc(lfm_size);
+  uint8_t* y_buf;
+  uint8_t* u_buf;
+  uint8_t* v_buf;
+  lf_fp lf_fp_p;
+  FILE * pFile;
+  //printf("r %d c %d so %d lfm %d\n", lfm_rows, lfm_cols, sizeof(LOOP_FILTER_MASK), lfm_size);
+
+  memset((void*)lfm, 0, lfm_size);
+
+  y_cols = frame_buffer->y_width;
+  y_rows = frame_buffer->y_height;
+  uv_cols = frame_buffer->uv_width;
+  uv_rows = frame_buffer->uv_height;
+ // printf("rows %d cols %d\n", rows, cols);
+  y_buf = malloc(y_rows * y_cols);
+  memset(y_buf, 0, y_rows * y_cols);
+
+  u_buf = malloc(uv_rows * uv_cols);
+  memset(u_buf, 0, uv_rows * uv_cols);
+
+  v_buf = malloc(uv_rows * uv_cols);
+  memset(v_buf, 0, uv_rows * uv_cols);
+
+  //stride = xd->plane[0].dst.stride;
+
+  for (r = 0; r < y_rows; r++) {
+    for (c = 0; c < y_cols; c++ ) {
+      y_buf[r * y_cols + c] = frame_buffer->y_buffer[r * frame_buffer->y_stride + c];
+    }
+  }
+  for (r = 0; r < uv_rows; r++) {
+    for (c = 0; c < uv_cols; c++ ) {
+      u_buf[r * uv_cols + c] = frame_buffer->u_buffer[r * frame_buffer->uv_stride + c];
+    }
+  }
+  for (r = 0; r < uv_rows; r++) {
+    for (c = 0; c < uv_cols; c++ ) {
+      v_buf[r * uv_cols + c] = frame_buffer->v_buffer[r * frame_buffer->uv_stride + c];
+    }
+  }
+
+  printf("%dx%d %dx%d\n", y_rows, y_cols, uv_rows, uv_cols);
+
+  for (mi_row = start, r = 0; mi_row < stop; mi_row += MI_BLOCK_SIZE, r++) {
+    MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
+
+    for (mi_col = 0, c = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE, c++) {
+     // plane = 0;
+
+     // setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
+    // printf("offset-%d\n", r * lfm_cols + c);
+      vp9_setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col, cm->mode_info_stride,
+                 &lfm[r * lfm_cols + c]);
+      LOOP_FILTER_MASK* mask = &lfm[r * lfm_cols + c];
+      if (mi_row == start) {
+
+        mask->above_y[TX_16X16] = (mask->above_y[TX_16X16] >> MI_SIZE) << MI_SIZE;
+        mask->above_y[TX_8X8] = (mask->above_y[TX_8X8] >> MI_SIZE) << MI_SIZE;
+        mask->above_y[TX_4X4] = (mask->above_y[TX_4X4] >> MI_SIZE) << MI_SIZE;
+
+        mask->above_uv[TX_16X16] = (mask->above_uv[TX_16X16] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+        mask->above_uv[TX_8X8] = (mask->above_uv[TX_8X8] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+        mask->above_uv[TX_4X4] = (mask->above_uv[TX_4X4] >> (MI_SIZE / 2)) << (MI_SIZE / 2);
+      }
+   //   printf("%04x\n", mask->int_4x4_uv);
+      if (mi_row + MI_BLOCK_SIZE >= stop) {
+        mask->int_4x4_uv = (mask->int_4x4_uv << (MI_SIZE / 2)) >> (MI_SIZE / 2);
+      }
+      for (ir = 0; ir < MI_BLOCK_SIZE && mi_row + ir < cm->mi_rows; ir += 2) {
+        for (ic = 0; ic < (MI_BLOCK_SIZE >> 1); ic++)
+          mask->lfl_uv[(ir << 1) + ic] = mask->lfl_y[(ir << 3) + (ic << 1)];
+      }
+      disable_filter(&lfm[r*lfm_cols + c], mi_col, mi_row, 0, 0);
+
+    }
+  }
+  printf("%d %d siz %d\n",start, stop, lfm_size);
+
+  memset(lft, 0, lft_size);
+
+
+
+
+
+ // memcpy(buf, xd->plane[0].dst.buf, rows * cols);
+  for (size = 0; size < MAX_LOOP_FILTER + 1; size++) {
+   /* cm->lf_info.lfthr[size].mblim[0] = 0;
+    cm->lf_info.lfthr[size].lim[0] = 0;
+    cm->lf_info.lfthr[size].hev_thr[0] = 0;*/
+      lft[size].mblim = cm->lf_info.lfthr[size].mblim[0];
+      lft[size].lim = cm->lf_info.lfthr[size].lim[0];
+      lft[size].hev_thr = cm->lf_info.lfthr[size].hev_thr[0];
+  }
+  //double elapsed_secs;
+  //vpx_usec_timer g;
+  //vpx_usec_timer_start(&g);
+  lf_fp_p = hello_world();
+  if (lf_fp_p != NULL) {
+    (*lf_fp_p)(lfm, lft, y_rows, y_cols, y_buf, uv_rows, uv_cols, u_buf, v_buf);
+  }
+  //vpx_usec_timer_mark(&g);
+  //elapsed_secs = (double)(vpx_usec_timer_elapsed(&g))
+  //                            / kUsecsInSec;
+
+  //printf("GPU - %f\n", elapsed_secs);
+
+ // dump_buf(buf, NULL, rows, cols, cols, "post-gpu.txt");
+  //saveRedImg(buf, rows, cols, cols, "post-gpu.ppm");
+
+  free(lfm);
+  free(lft);
+  //free(y_buf);
+  //free(u_buf);
+  //free(v_buf);
+
+  c_b.y_buf = y_buf;
+  c_b.u_buf = u_buf;
+  c_b.v_buf = v_buf;
+  return c_b;
+
+}
+
+void compareBuf(uint8_t* y_buf, uint8_t* u_buf, uint8_t* v_buf, const YV12_BUFFER_CONFIG *frame_buffer) {
+  uint32_t r, c,rows, cols;
+ int mismatch = 0;
+ cols = frame_buffer->y_width;
+ rows = frame_buffer->y_height;
+ for (r = 0; r < 64; r++) {
+   for (c = 0; c < 64; c++ ) {
+     if (y_buf[r * cols + c] != frame_buffer->y_buffer[r * frame_buffer->y_stride + c]) {
+       printf ("Y(%03d,%03d) %03u %03u\n", c, r, y_buf[r*cols + c], frame_buffer->y_buffer[r * frame_buffer->y_stride + c]);
+       mismatch = 1;
+     }
+   }
+ }
+/*
+ cols = frame_buffer->uv_width;
+ rows = frame_buffer->uv_height;
+ for (r = 0; r < rows; r++) {
+   for (c = 0; c < cols; c++ ) {
+     if (u_buf[r * cols + c] != frame_buffer->u_buffer[r * frame_buffer->uv_stride + c]) {
+       printf ("U(%03d,%03d) %03u %03u\n", c, r, u_buf[r*cols + c], frame_buffer->u_buffer[r * frame_buffer->uv_stride + c]);
+       mismatch = 1;
+     }
+   }
+ }
+
+ for (r = 0; r < rows; r++) {
+   for (c = 0; c < cols; c++ ) {
+     if (v_buf[r * cols + c] != frame_buffer->v_buffer[r * frame_buffer->uv_stride + c]) {
+       printf ("V(%03d,%03d) %03u %03u\n", c, r, v_buf[r*cols + c], frame_buffer->v_buffer[r * frame_buffer->uv_stride + c]);
+       mismatch = 1;
+     }
+   }
+ }*/
+
+ assert(mismatch == 0);
+ printf("CRC OK\n");
+}
+
+
+///////////////////////
+
+static int fc = 0;
 void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                            int frame_filter_level,
                            int y_only, int partial_frame) {
+  cuda_buf cb;
   int start_mi_row, end_mi_row, mi_rows_to_filter;
   if (!frame_filter_level) return;
   start_mi_row = 0;
@@ -1254,11 +1530,28 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
     start_mi_row &= 0xfffffff8;
     mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
   }
+
+  //hello_world();
   end_mi_row = start_mi_row + mi_rows_to_filter;
+
+  cb = vp9_cuda_loop_filter_frame(cm->frame_to_show, cm, xd,
+                       start_mi_row, end_mi_row,
+                       y_only);
+
   vp9_loop_filter_frame_init(cm, frame_filter_level);
   vp9_loop_filter_rows(cm->frame_to_show, cm, xd,
                        start_mi_row, end_mi_row,
                        y_only);
+
+  compareBuf(cb.y_buf, cb.u_buf, cb.v_buf, cm->frame_to_show);
+
+  free(cb.y_buf);
+  free(cb.u_buf);
+  free(cb.v_buf);
+  printf("---%u---\n",fc);
+  fc++;
+
+
 }
 
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
