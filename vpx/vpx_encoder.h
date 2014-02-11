@@ -614,7 +614,7 @@ extern "C" {
      *
      * This value specifies the number of temporal layers to be used.
      */
-    unsigned int           ts_number_layers;
+    int ts_number_layers;
 
     /*!\brief Target bitrate for each temporal layer.
      *

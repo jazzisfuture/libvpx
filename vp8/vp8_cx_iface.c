@@ -237,7 +237,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
 
     if (cfg->ts_number_layers > 1)
     {
-        unsigned int i;
+        int i;
         RANGE_CHECK_HI(cfg, ts_periodicity, 16);
 
         for (i=1; i<cfg->ts_number_layers; i++)
@@ -249,7 +249,8 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
             if (cfg->ts_rate_decimator[i-1] != 2*cfg->ts_rate_decimator[i])
                 ERROR("ts_rate_decimator factors are not powers of 2");
 
-        RANGE_CHECK_HI(cfg, ts_layer_id[i], cfg->ts_number_layers-1);
+        RANGE_CHECK_HI(cfg, ts_layer_id[i],
+                       (unsigned int)cfg->ts_number_layers-1);
     }
 
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
