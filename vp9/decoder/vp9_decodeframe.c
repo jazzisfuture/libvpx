@@ -1364,6 +1364,7 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
                          "Loop filter thread creation failed");
     }
   }
+  pbi->do_loopfilter_inline = 0;
 
   alloc_tile_storage(pbi, tile_rows, tile_cols);
 
