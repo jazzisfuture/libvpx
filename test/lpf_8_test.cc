@@ -107,7 +107,7 @@ void wrapper_vertical_16_dual_c(uint8_t *s, int p, const uint8_t *blimit,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SSE2
 
-#if HAVE_NEON_ASM
+#if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
 // No neon high bitdepth functions.
 #else
@@ -135,7 +135,7 @@ void wrapper_vertical_16_dual_c(uint8_t *s, int p, const uint8_t *blimit,
   vp9_lpf_vertical_16_dual_c(s, p, blimit, limit, thresh);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-#endif  // HAVE_NEON_ASM
+#endif  // HAVE_NEON
 
 class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
  public:
@@ -631,20 +631,16 @@ INSTANTIATE_TEST_CASE_P(
 INSTANTIATE_TEST_CASE_P(
     NEON, Loop8Test6Param,
     ::testing::Values(
-#if HAVE_NEON_ASM
-// Using #if inside the macro is unsupported on MSVS but the tests are not
-// currently built for MSVS with ARM and NEON.
         make_tuple(&vp9_lpf_horizontal_16_neon,
                    &vp9_lpf_horizontal_16_c, 8),
-        make_tuple(&wrapper_vertical_16_neon,
-                   &wrapper_vertical_16_c, 8),
-        make_tuple(&wrapper_vertical_16_dual_neon,
-                   &wrapper_vertical_16_dual_c, 8),
-#endif  // HAVE_NEON_ASM
         make_tuple(&vp9_lpf_horizontal_4_neon,
                    &vp9_lpf_horizontal_4_c, 8),
         make_tuple(&vp9_lpf_horizontal_8_neon,
                    &vp9_lpf_horizontal_8_c, 8),
+        make_tuple(&wrapper_vertical_16_neon,
+                   &wrapper_vertical_16_c, 8),
+        make_tuple(&wrapper_vertical_16_dual_neon,
+                   &wrapper_vertical_16_dual_c, 8),
         make_tuple(&vp9_lpf_vertical_4_neon,
                    &vp9_lpf_vertical_4_c, 8),
         make_tuple(&vp9_lpf_vertical_8_neon,
