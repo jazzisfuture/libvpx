@@ -350,9 +350,8 @@ static void set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
   xd->mi_8x8 = cm->mi_grid_visible + offset;
   xd->prev_mi_8x8 = cm->prev_mi_grid_visible + offset;
-  // Special case: if prev_mi is NULL, the previous mode info context
-  // cannot be used.
-  xd->last_mi = cm->prev_mi ? xd->prev_mi_8x8[0] : NULL;
+
+  xd->last_mi = cm->coding_use_prev_mi ? xd->prev_mi_8x8[0] : NULL;
 
   xd->mi_8x8[0] = xd->mi_stream + offset - tile_offset;
   xd->mi_8x8[0]->mbmi.sb_type = bsize;
@@ -1203,11 +1202,13 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
   }
 
   if (!cm->error_resilient_mode) {
+    cm->coding_use_prev_mi = 1;
     cm->refresh_frame_context = vp9_rb_read_bit(rb);
     cm->frame_parallel_decoding_mode = vp9_rb_read_bit(rb);
   } else {
     cm->refresh_frame_context = 0;
     cm->frame_parallel_decoding_mode = 1;
+    cm->coding_use_prev_mi = 0;
   }
 
   // This flag will be overridden by the call to vp9_setup_past_independence
