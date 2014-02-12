@@ -101,7 +101,7 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
                                    sadpb, further_steps, 1,
                                    &cpi->fn_ptr[bsize],
-                                   &ref_mv.as_mv, tmp_mv);
+                                   &ref_mv.as_mv, &tmp_mv->as_mv);
 
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;
