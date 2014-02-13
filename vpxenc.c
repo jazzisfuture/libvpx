@@ -722,7 +722,8 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
 #if CONFIG_VP9_ENCODER
     // Make default VP9 passes = 2 until there is a better quality 1-pass
     // encoder
-    global->passes = strcmp(global->codec->name, "vp9") == 0 ? 2 : 1;
+    global->passes = (strcmp(global->codec->name, "vp9") == 0 &&
+                      global->deadline != VPX_DL_REALTIME) ? 2 : 1;
 #else
     global->passes = 1;
 #endif
@@ -735,6 +736,11 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
            global->pass, global->pass);
       global->passes = global->pass;
     }
+  }
+  if (global->deadline == VPX_DL_REALTIME &&
+      global->passes > 1) {
+    warn("Enforcing one-pass encoding in realtime mode\n");
+    global->passes = 1;
   }
 }
 
@@ -826,6 +832,10 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
 
     /* Allows removal of the application version from the EBML tags */
     stream->ebml.debug = global->debug;
+
+    /* Default lag_in_frames is 0 in realtime mode */
+    if (global->deadline == VPX_DL_REALTIME)
+      stream->config.cfg.g_lag_in_frames = 0;
   }
 
   /* Output files must be specified for each stream */
@@ -896,9 +906,14 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       validate_positive_rational(arg.name, &config->cfg.g_timebase);
     } else if (arg_match(&arg, &error_resilient, argi))
       config->cfg.g_error_resilient = arg_parse_uint(&arg);
-    else if (arg_match(&arg, &lag_in_frames, argi))
+    else if (arg_match(&arg, &lag_in_frames, argi)) {
       config->cfg.g_lag_in_frames = arg_parse_uint(&arg);
-    else if (arg_match(&arg, &dropframe_thresh, argi))
+      if (global->deadline == VPX_DL_REALTIME &&
+          config->cfg.g_lag_in_frames != 0) {
+        warn("Ignoring non-zero %s option in realtime mode.\n", arg.name);
+        config->cfg.g_lag_in_frames = 0;
+      }
+    } else if (arg_match(&arg, &dropframe_thresh, argi))
       config->cfg.rc_dropframe_thresh = arg_parse_uint(&arg);
     else if (arg_match(&arg, &resize_allowed, argi))
       config->cfg.rc_resize_allowed = arg_parse_uint(&arg);
@@ -977,7 +992,6 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
         argj++;
     }
   }
-
   return eos_mark_found;
 }
 
