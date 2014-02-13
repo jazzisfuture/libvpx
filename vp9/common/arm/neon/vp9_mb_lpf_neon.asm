@@ -386,9 +386,6 @@ v_end
 
     vmov.u8     d22, #0x80
 
-    orrs        r5, r5, r6                 ; Check for 0
-    orreq       r7, r7, #1                 ; Only do filter branch
-
     vand        d17, d18, d16              ; flat2 && flat && mask
     vmov        r5, r6, d17
 
@@ -402,6 +399,9 @@ v_end
     veor        d26, d9, d22               ; qs1
 
     vmov.u8     d27, #3
+
+    orrs        r5, r5, r6                 ; Check for 0
+    orreq       r7, r7, #2                 ; Only do mbfilter branch
 
     vsub.s8     d28, d23, d24              ; ( qs0 - ps0)
     vqsub.s8    d29, d25, d26              ; filter = clamp(ps1-qs1)
@@ -438,6 +438,9 @@ v_end
 
     tst         r7, #1
     bxne        lr
+
+    orrs        r5, r5, r6                 ; Check for 0
+    orreq       r7, r7, #1                 ; Only do filter branch
 
     ; mbfilter flat && mask branch
     ; TODO(fgalligan): Can I decrease the cycles shifting to consective d's
