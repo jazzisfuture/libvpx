@@ -403,6 +403,9 @@ v_end
 
     vmov.u8     d27, #3
 
+    orrs        r5, r5, r6                 ; Check for 0
+    orreq       r7, r7, #2                 ; Only do mbfilter branch
+
     vsub.s8     d28, d23, d24              ; ( qs0 - ps0)
     vqsub.s8    d29, d25, d26              ; filter = clamp(ps1-qs1)
     vmull.s8    q15, d28, d27              ; 3 * ( qs0 - ps0)
