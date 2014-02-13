@@ -138,13 +138,15 @@ const VpxInterface *get_vpx_decoder_by_index(int i);
 const VpxInterface *get_vpx_decoder_by_name(const char *name);
 const VpxInterface *get_vpx_decoder_by_fourcc(uint32_t fourcc);
 
-// TODO(dkovalev): move this function to vpx_image.{c, h}, so it will be part
-// of vpx_image_t support
-void vpx_img_write(const vpx_image_t *img, FILE *file);
+// TODO(dkovalev): move these vpx_* functions to vpx_image.{c, h}, so they will
+// be a part of vpx_image_t support
+int vpx_img_plane_width(const vpx_image_t *img, int plane);
 
-// TODO(dkovalev): move this function to vpx_image.{c, h}, so it will be part
-// of vpx_image_t support
-int vpx_img_read(vpx_image_t *img, FILE *file);
+int vpx_img_plane_height(const vpx_image_t *img, int plane);
+
+void vpx_img_write(const vpx_image_t *img, int flip_uv, FILE *file);
+
+int vpx_img_read(vpx_image_t *img, int flip_uv, FILE *file);
 
 #ifdef __cplusplus
 }  /* extern "C" */

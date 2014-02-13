@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
       putc('.', stdout);
 
       while ((img = vpx_codec_get_frame(&codec, &iter)) != NULL)
-        vpx_img_write(img, outfile);
+        vpx_img_write(img, 0, outfile);
     } else {
       putc('X', stdout);
     }

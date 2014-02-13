@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   if (vpx_codec_enc_init(&codec, encoder->interface(), &cfg, 0))
     die_codec(&codec, "Failed to initialize encoder");
 
-  while (vpx_img_read(&raw, infile)) {
+  while (vpx_img_read(&raw, 0, infile)) {
     vpx_codec_iter_t iter = NULL;
     const vpx_codec_cx_pkt_t *pkt = NULL;
 

@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
   int max_intra_size_pct;
   vpx_svc_layer_id_t layer_id = {0, 0};
   const VpxInterface *encoder = NULL;
-  struct VpxInputContext input_ctx = {0};
+  FILE *infile = NULL;
 
   exec_name = argv[0];
   // Check usage and arguments.
@@ -444,8 +444,7 @@ int main(int argc, char **argv) {
                              &flag_periodicity);
 
   // Open input file.
-  input_ctx.filename = argv[1];
-  if (!(input_ctx.file = fopen(input_ctx.filename, "rb"))) {
+  if (!(infile = fopen(argv[1], "rb"))) {
     die("Failed to open %s for reading", argv[1]);
   }
 
@@ -496,7 +495,7 @@ int main(int argc, char **argv) {
         cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity];
     vpx_codec_control(&codec, VP9E_SET_SVC_LAYER_ID, &layer_id);
     flags = layer_flags[frame_cnt % flag_periodicity];
-    frame_avail = !read_yuv_frame(&input_ctx, &raw);
+    frame_avail = vpx_img_read(&raw, 0, infile);
     if (vpx_codec_encode(&codec, frame_avail? &raw : NULL, pts, 1, flags,
         VPX_DL_REALTIME)) {
       die_codec(&codec, "Failed to encode frame");
@@ -524,7 +523,7 @@ int main(int argc, char **argv) {
     ++frame_cnt;
     pts += frame_duration;
   }
-  fclose(input_ctx.file);
+  fclose(infile);
   printf("Processed %d frames: \n", frame_cnt - 1);
   if (vpx_codec_destroy(&codec))
     die_codec(&codec, "Failed to destroy codec");

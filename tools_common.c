@@ -105,8 +105,8 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
 
   for (plane = 0; plane < 3; ++plane) {
     uint8_t *ptr;
-    const int w = (plane ? (1 + yuv_frame->d_w) / 2 : yuv_frame->d_w);
-    const int h = (plane ? (1 + yuv_frame->d_h) / 2 : yuv_frame->d_h);
+    const int w = vpx_img_plane_width(yuv_frame, plane);
+    const int h = vpx_img_plane_height(yuv_frame, plane);
     int r;
 
     /* Determine the correct plane based on the image format. The for-loop
@@ -220,14 +220,34 @@ const VpxInterface *get_vpx_decoder_by_fourcc(uint32_t fourcc) {
   return NULL;
 }
 
-void vpx_img_write(const vpx_image_t *img, FILE *file) {
-  int plane, y;
+// TODO(dkovalev): move these vpx_* functions to vpx_image.{c, h}, so they will
+// be a part of vpx_image_t support
+int vpx_img_plane_width(const vpx_image_t *img, int plane) {
+  return (plane > 0 && img->x_chroma_shift > 0) ?
+             (img->d_w + 1) >> img->x_chroma_shift :
+             img->d_w;
+}
 
-  for (plane = 0; plane < 3; ++plane) {
+int vpx_img_plane_height(const vpx_image_t *img, int plane) {
+  return (plane > 0 &&  img->y_chroma_shift > 0) ?
+             (img->d_h + 1) >> img->y_chroma_shift :
+             img->d_h;
+}
+
+static const int PLANES_YUV[] = {VPX_PLANE_Y, VPX_PLANE_U, VPX_PLANE_V};
+static const int PLANES_YVU[] = {VPX_PLANE_Y, VPX_PLANE_V, VPX_PLANE_U};
+
+void vpx_img_write(const vpx_image_t *img, int flip_uv, FILE *file) {
+  const int *planes = flip_uv ? PLANES_YVU : PLANES_YUV;
+  int i;
+
+  for (i = 0; i < 3; ++i) {
+    const int plane = planes[i];
     const unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = plane ? (img->d_w + 1) >> 1 : img->d_w;
-    const int h = plane ? (img->d_h + 1) >> 1 : img->d_h;
+    const int w = vpx_img_plane_width(img, plane);
+    const int h = vpx_img_plane_height(img, plane);
+    int y;
 
     for (y = 0; y < h; ++y) {
       fwrite(buf, 1, w, file);
@@ -236,14 +256,16 @@ void vpx_img_write(const vpx_image_t *img, FILE *file) {
   }
 }
 
-int vpx_img_read(vpx_image_t *img, FILE *file) {
-  int plane;
+int vpx_img_read(vpx_image_t *img, int flip_uv, FILE *file) {
+  const int *planes = flip_uv ? PLANES_YVU : PLANES_YUV;
+  int i;
 
-  for (plane = 0; plane < 3; ++plane) {
+  for (i = 0; i < 3; ++i) {
+    const int plane = planes[i];
     unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = plane ? (img->d_w + 1) >> 1 : img->d_w;
-    const int h = plane ? (img->d_h + 1) >> 1 : img->d_h;
+    const int w = vpx_img_plane_width(img, plane);
+    const int h = vpx_img_plane_height(img, plane);
     int y;
 
     for (y = 0; y < h; ++y) {
