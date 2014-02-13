@@ -139,9 +139,6 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
   return clamped_mv;
 }
 
-// TODO(jkoleszar): In principle, pred_w, pred_h are unnecessary, as we could
-// calculate the subsampled BLOCK_SIZE, but that type isn't defined for
-// sizes smaller than 16x16 yet.
 static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                    int bw, int bh,
                                    int x, int y, int w, int h,
@@ -180,6 +177,9 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     int xs, ys, subpel_x, subpel_y;
 
     if (vp9_is_scaled(sf)) {
+      // AWG pre_buf->buf is truncated top-left position of the containing block
+      // in the ref frame. (x,y) is the offset of block within the containing
+      // block in the current frame.
       pre = pre_buf->buf + scaled_buffer_offset(x, y, pre_buf->stride, sf);
       scaled_mv = vp9_scale_mv(&mv_q4, mi_x + x, mi_y + y, sf);
       xs = sf->x_step_q4;
@@ -269,6 +269,16 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                ? (plane == 0 ? mi->bmi[block].as_mv[ref].as_mv
                              : mi_mv_pred_q4(mi, ref))
                : mi->mbmi.mv[ref].as_mv;
+#if 0 // AWG
+    // TODO(jkoleszar): This clamping is done in the incorrect place for the
+    // scaling case. It needs to be done on the scaled MV, not the pre-scaling
+    // MV. Note however that it performs the subsampling aware scaling so
+    // that the result is always q4.
+    // mv_precision precision is MV_PRECISION_Q4.
+//    const MV mv_q4 = clamp_mv_to_umv_border_sb(xd, &mv, bw, bh,
+//                                               pd->subsampling_x,
+//                                               pd->subsampling_y);
+#endif
     MV32 scaled_mv;
     int xs, ys, x0, y0, x0_16, y0_16, frame_width, frame_height, buf_stride,
         subpel_x, subpel_y;
