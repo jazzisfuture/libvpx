@@ -913,12 +913,13 @@ int vp9_full_range_search_c(const MACROBLOCK *x, MV *ref_mv, MV *best_mv,
   for (tr = start_row; tr <= end_row; ++tr) {
     for (tc = start_col; tc <= end_col; tc += 4) {
       if ((tc + 3) <= end_col) {
-        unsigned int sad_array[4];
+        int sad_array[4];
         unsigned char const *addr_ref[4];
         for (i = 0; i < 4; ++i)
           addr_ref[i] = in_what + tr * in_what_stride + tc + i;
 
-        fn_ptr->sdx4df(what, what_stride, addr_ref, in_what_stride, sad_array);
+        fn_ptr->sdx4df(what, what_stride, addr_ref, in_what_stride,
+                       (unsigned int *)sad_array);
 
         for (i = 0; i < 4; ++i) {
           if (sad_array[i] < bestsad) {
