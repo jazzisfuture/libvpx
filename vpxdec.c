@@ -944,8 +944,11 @@ fail:
 
   if (scaled_img) vpx_img_free(scaled_img);
 
-  for (i = 0; i < ext_fb_list.num_external_frame_buffers; ++i) {
-    free(ext_fb_list.ext_fb[i].data);
+  {
+    int i;
+    for (i = 0; i < ext_fb_list.num_external_frame_buffers; ++i) {
+      free(ext_fb_list.ext_fb[i].data);
+    }
   }
   free(ext_fb_list.ext_fb);
 
