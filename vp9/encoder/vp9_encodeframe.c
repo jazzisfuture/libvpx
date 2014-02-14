@@ -398,7 +398,6 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
   MODE_INFO *mi_addr = xd->mi_8x8[0];
 
-  const int mb_mode_index = ctx->best_mode_index;
   const int mis = cm->mode_info_stride;
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
@@ -470,8 +469,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       cpi->rd_tx_select_diff[i] += ctx->tx_rd_diff[i];
   }
 
-  if (frame_is_intra_only(cm)) {
 #if CONFIG_INTERNAL_STATS
+  if (frame_is_intra_only(cm)) {
     static const int kf_mode_index[] = {
       THR_DC        /*DC_PRED*/,
       THR_V_PRED    /*V_PRED*/,
@@ -484,12 +483,13 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       THR_D63_PRED  /*D63_PRED*/,
       THR_TM        /*TM_PRED*/,
     };
-    cpi->mode_chosen_counts[kf_mode_index[mbmi->mode]]++;
-#endif
+    ++cpi->mode_chosen_counts[kf_mode_index[mbmi->mode]];
   } else {
     // Note how often each mode chosen as best
-    cpi->mode_chosen_counts[mb_mode_index]++;
-
+    ++cpi->mode_chosen_counts[ctx->best_mode_index];
+  }
+#endif
+  if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
       if (mbmi->sb_type < BLOCK_8X8 || mbmi->mode == NEWMV) {
         int_mv best_mv[2];
@@ -1051,7 +1051,6 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   struct macroblockd_plane *const pd = xd->plane;
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
 
-  const int mb_mode_index = ctx->best_mode_index;
   int max_plane;
 
   max_plane = is_inter_block(mbmi) ? MAX_MB_PLANE : 1;
@@ -1071,8 +1070,8 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   x->skip = ctx->skip;
 
-  if (frame_is_intra_only(cm)) {
 #if CONFIG_INTERNAL_STATS
+  if (frame_is_intra_only(cm)) {
     static const int kf_mode_index[] = {
       THR_DC /*DC_PRED*/,
       THR_V_PRED /*V_PRED*/,
@@ -1086,10 +1085,12 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
       THR_TM /*TM_PRED*/,
     };
     ++cpi->mode_chosen_counts[kf_mode_index[mbmi->mode]];
-#endif
   } else {
     // Note how often each mode chosen as best
-    cpi->mode_chosen_counts[mb_mode_index]++;
+    ++cpi->mode_chosen_counts[ctx->best_mode_index];
+  }
+#endif
+  if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
       if (mbmi->sb_type < BLOCK_8X8 || mbmi->mode == NEWMV) {
         int_mv best_mv[2];
