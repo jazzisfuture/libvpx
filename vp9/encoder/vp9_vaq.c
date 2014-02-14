@@ -75,7 +75,7 @@ void vp9_vaq_init() {
 void vp9_vaq_frame_setup(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   struct segmentation *seg = &cm->seg;
-  int base_q = vp9_convert_qindex_to_q(cm->base_qindex);
+  double base_q = vp9_convert_qindex_to_q(cm->base_qindex);
   int base_rdmult = vp9_compute_rd_mult(cpi, cm->base_qindex +
                                         cm->y_dc_delta_q);
   int i;
@@ -146,6 +146,6 @@ int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   // if (var <= 1000)
   //   return 0;
 
-  energy = 0.9*(logf(var + 1) - 10.0);
+  energy = 0.9*(logf((float)var + 1) - 10.0);
   return clamp(round(energy), ENERGY_MIN, ENERGY_MAX);
 }
