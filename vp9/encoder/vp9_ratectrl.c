@@ -1337,9 +1337,10 @@ static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
 
 static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   const RATE_CONTROL *rc = &cpi->rc;
+  int target;
 
   if (cpi->common.current_video_frame == 0) {
-    return cpi->oxcf.starting_buffer_level / 2;
+    target = cpi->oxcf.starting_buffer_level / 2;
   } else {
     const int initial_boost = 32;
     int kf_boost = MAX(initial_boost, (int)(2 * cpi->output_framerate - 16));
@@ -1347,8 +1348,9 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
       kf_boost = (int)(kf_boost * rc->frames_since_key /
                        (cpi->output_framerate / 2));
     }
-    return ((16 + kf_boost) * rc->av_per_frame_bandwidth) >> 4;
+    target = ((16 + kf_boost) * rc->av_per_frame_bandwidth) >> 4;
   }
+  return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
 
 void vp9_rc_get_svc_params(VP9_COMP *cpi) {
