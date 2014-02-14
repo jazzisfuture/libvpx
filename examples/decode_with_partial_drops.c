@@ -60,269 +60,213 @@
 // The example decides whether to drop the frame based on the current
 // frame number, immediately before decoding the frame.
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "./vpx_config.h"
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_decoder.h"
-#define interface (vpx_codec_vp8_dx())
-#include <time.h>
+#include "./tools_common.h"
+#include "./video_reader.h"
 
+static const char *exec_name;
 
-#define IVF_FILE_HDR_SZ  (32)
-#define IVF_FRAME_HDR_SZ (12)
-
-static unsigned int mem_get_le32(const unsigned char *mem) {
-    return (mem[3] << 24)|(mem[2] << 16)|(mem[1] << 8)|(mem[0]);
+void usage_exit() {
+  fprintf(stderr, "Usage: %s <infile> <outfile> <num-threads> <N-M|N/M|L,S>\n",
+          exec_name);
+  exit(EXIT_FAILURE);
 }
 
-static void die(const char *fmt, ...) {
-    va_list ap;
-
-    va_start(ap, fmt);
-    vprintf(fmt, ap);
-    if(fmt[strlen(fmt)-1] != '\n')
-        printf("\n");
-    exit(EXIT_FAILURE);
-}
-
-static void die_codec(vpx_codec_ctx_t *ctx, const char *s) {
-    const char *detail = vpx_codec_error_detail(ctx);
-
-    printf("%s: %s\n", s, vpx_codec_error(ctx));
-    if(detail)
-        printf("    %s\n",detail);
-    exit(EXIT_FAILURE);
-}
-
-struct parsed_header
-{
-    char key_frame;
-    int version;
-    char show_frame;
-    int first_part_size;
+enum drop_mode {
+  DROP_FRAME_RANGE,
+  DROP_FRAME_PATTERN,
+  DROP_RANDOM_PACKETS
 };
 
-int next_packet(struct parsed_header* hdr, int pos, int length, int mtu)
-{
-    int size = 0;
-    int remaining = length - pos;
-    /* Uncompressed part is 3 bytes for P frames and 10 bytes for I frames */
-    int uncomp_part_size = (hdr->key_frame ? 10 : 3);
-    /* number of bytes yet to send from header and the first partition */
-    int remainFirst = uncomp_part_size + hdr->first_part_size - pos;
-    if (remainFirst > 0)
-    {
-        if (remainFirst <= mtu)
-        {
-            size = remainFirst;
-        }
-        else
-        {
-            size = mtu;
-        }
+struct parsed_header {
+  char key_frame;
+  int version;
+  char show_frame;
+  int first_partition_size;
+};
 
-        return size;
-    }
+static int next_packet(const struct parsed_header *header, int pos, int length,
+                       int mtu) {
+  // Uncompressed part is 3 bytes for P frames and 10 bytes for I frames
+  const int uncompressed_size = header->key_frame ? 10 : 3;
+  // Number of bytes yet to send from the whole frame
+  const int remaining = length - pos;
+  // Number of bytes yet to send from header and the first partition
+  const int remaining_first = uncompressed_size + header->first_partition_size -
+                                  pos;
+  if (remaining_first > 0)
+    return remaining_first <= mtu ? remaining_first : mtu;
 
-    /* second partition; just slot it up according to MTU */
-    if (remaining <= mtu)
-    {
-        size = remaining;
-        return size;
-    }
-    return mtu;
+  return remaining <= mtu ? remaining : mtu;
 }
 
-void throw_packets(unsigned char* frame, int* size, int loss_rate,
-                   int* thrown, int* kept)
-{
-    unsigned char loss_frame[256*1024];
-    int pkg_size = 1;
+size_t throw_packets(uint8_t *frame, size_t frame_size, int loss_rate) {
+  struct parsed_header header;
+  const int mtu = 1500;
+  const unsigned int tmp = (frame[2] << 16) | (frame[1] << 8) | frame[0];
+
+  if (frame_size < 3)
+    return 0;
+
+  putc('|', stdout);
+
+  // Parse uncompressed 3 bytes
+  header.key_frame = !(tmp & 0x1);
+  header.version = (tmp >> 1) & 0x7;
+  header.show_frame = (tmp >> 4) & 0x1;
+  header.first_partition_size = (tmp >> 5) & 0x7FFFF;
+
+  // Don't drop key frames
+  if (header.key_frame) {
+    int i;
+    const int kept = frame_size / mtu + ((frame_size % mtu) > 0 ? 1 : 0);
+    for (i = 0; i < kept; ++i)
+      putc('.', stdout);  // per packet
+    return 0;
+  } else {
+    unsigned char loss_frame[256 * 1024];
+    int thrown = 0;
+    int pkg_size = 0;
     int pos = 0;
     int loss_pos = 0;
-    struct parsed_header hdr;
-    unsigned int tmp;
-    int mtu = 1500;
-
-    if (*size < 3)
-    {
-        return;
-    }
-    putc('|', stdout);
-    /* parse uncompressed 3 bytes */
-    tmp = (frame[2] << 16) | (frame[1] << 8) | frame[0];
-    hdr.key_frame = !(tmp & 0x1); /* inverse logic */
-    hdr.version = (tmp >> 1) & 0x7;
-    hdr.show_frame = (tmp >> 4) & 0x1;
-    hdr.first_part_size = (tmp >> 5) & 0x7FFFF;
-
-    /* don't drop key frames */
-    if (hdr.key_frame)
-    {
-        int i;
-        *kept = *size/mtu + ((*size % mtu > 0) ? 1 : 0); /* approximate */
-        for (i=0; i < *kept; i++)
-            putc('.', stdout);
-        return;
-    }
-
-    while ((pkg_size = next_packet(&hdr, pos, *size, mtu)) > 0)
-    {
-        int loss_event = ((rand() + 1.0)/(RAND_MAX + 1.0) < loss_rate/100.0);
-        if (*thrown == 0 && !loss_event)
-        {
-            memcpy(loss_frame + loss_pos, frame + pos, pkg_size);
-            loss_pos += pkg_size;
-            (*kept)++;
-            putc('.', stdout);
-        }
-        else
-        {
-            (*thrown)++;
-            putc('X', stdout);
-        }
-        pos += pkg_size;
+    while ((pkg_size = next_packet(&header, pos, frame_size, mtu)) > 0) {
+      const int loss = (rand() + 1.0) / (RAND_MAX + 1.0) < loss_rate / 100.0;
+      if (thrown == 0 && !loss) {
+        memcpy(loss_frame + loss_pos, frame + pos, pkg_size);
+        loss_pos += pkg_size;
+        putc('.', stdout);
+      } else {
+        ++thrown;
+        putc('X', stdout);
+      }
+      pos += pkg_size;
     }
     memcpy(frame, loss_frame, loss_pos);
-    memset(frame + loss_pos, 0, *size - loss_pos);
-    *size = loss_pos;
+    memset(frame + loss_pos, 0, frame_size - loss_pos);
+
+    return loss_pos;
+  }
+}
+
+static int is_delimeter(char p) {
+  return p == '-' || p  == '/' || p == ',';
+}
+
+static enum drop_mode get_mode(char p) {
+  switch (p) {
+    case '-': return DROP_FRAME_RANGE;
+    case '/': return DROP_FRAME_PATTERN;
+    case ',': return DROP_RANDOM_PACKETS;
+  }
+  return -1;
 }
 
 int main(int argc, char **argv) {
-    FILE            *infile, *outfile;
-    vpx_codec_ctx_t  codec;
-    int              flags = 0, frame_cnt = 0;
-    unsigned char    file_hdr[IVF_FILE_HDR_SZ];
-    unsigned char    frame_hdr[IVF_FRAME_HDR_SZ];
-    unsigned char    frame[256*1024];
-    vpx_codec_err_t  res;
-    int              n, m, mode;
-    unsigned int     seed;
-    int              thrown=0, kept=0;
-    int              thrown_frame=0, kept_frame=0;
-    vpx_codec_dec_cfg_t  dec_cfg = {0};
+  FILE *outfile = NULL;
+  VpxVideoReader *reader = NULL;
+  vpx_codec_ctx_t codec = {0};
+  int frame_cnt = 0;
+  vpx_codec_err_t res;
+  int n, m, mode;
+  unsigned int seed;
+  vpx_codec_dec_cfg_t dec_cfg = {0};
+  const VpxVideoInfo *info = NULL;
+  const VpxInterface *decoder = NULL;
+  char *p = NULL;
 
-    (void)res;
-    /* Open files */
-    if(argc < 4 || argc > 6)
-        die("Usage: %s <infile> <outfile> [-t <num threads>] <N-M|N/M|L,S>\n",
-            argv[0]);
-    {
-        char *nptr;
-        int arg_num = 3;
-        if (argc == 6 && strncmp(argv[arg_num++], "-t", 2) == 0)
-            dec_cfg.threads = strtol(argv[arg_num++], NULL, 0);
-        n = strtol(argv[arg_num], &nptr, 0);
-        mode = (*nptr == '\0' || *nptr == ',') ? 2 : (*nptr == '-') ? 1 : 0;
+  exec_name = argv[0];
 
-        m = strtol(nptr+1, NULL, 0);
-        if((!n && !m) || (*nptr != '-' && *nptr != '/' &&
-            *nptr != '\0' && *nptr != ','))
-            die("Couldn't parse pattern %s\n", argv[3]);
+  if (argc != 5)
+    die("Invalid number of arguments.");
+
+  reader = vpx_video_reader_open(argv[1]);
+  if (!reader)
+    die("Failed to open %s for reading", argv[1]);
+
+  if (!(outfile = fopen(argv[2], "wb")))
+    die("Failed to open %s for writing", argv[2]);
+
+  dec_cfg.threads = strtol(argv[3], NULL, 0);
+  if (!dec_cfg.threads)
+    die("Couldn't parse number of threads\n", argv[3]);
+  printf("Threads: %d\n", dec_cfg.threads);
+
+  n = strtol(argv[4], &p, 0);
+  if (n == 0 || *p == '\0' || !is_delimeter(*p))
+    die("Couldn't parse pattern %s\n", argv[4]);
+  mode = get_mode(*p);
+  m = strtol(p + 1, NULL, 0);
+  if (m == 0)
+    die("Couldn't parse pattern %s\n", argv[4]);
+
+  seed = (m > 0) ? m : (unsigned int)time(NULL);
+  srand(seed);
+  printf("Seed: %u\n", seed);
+
+  info = vpx_video_reader_get_info(reader);
+  decoder = get_vpx_decoder_by_fourcc(info->codec_fourcc);
+  printf("Using %s\n", vpx_codec_iface_name(decoder->interface()));
+
+  res = vpx_codec_dec_init(&codec, decoder->interface(), &dec_cfg,
+                           VPX_CODEC_USE_ERROR_CONCEALMENT);
+  if (res)
+    die_codec(&codec, "Failed to initialize decoder");
+
+  while (vpx_video_reader_read_frame(reader)) {
+    vpx_codec_iter_t iter = NULL;
+    vpx_image_t *img = NULL;
+    size_t frame_size = 0;
+    const uint8_t *frame = vpx_video_reader_get_frame(reader, &frame_size);
+    int drop_frame = 0;
+
+    frame_cnt++;
+
+    switch (mode) {
+      case DROP_FRAME_PATTERN:
+        printf("DROP_FRAME_PATTERN\n");
+        drop_frame = !((m - (frame_cnt - 1) % m <= n));
+        putc(drop_frame ? 'X' : '.', stdout);
+        if (drop_frame)
+          frame_size = 0;
+        break;
+      case DROP_FRAME_RANGE:
+        printf("DROP_FRAME_RANGE\n");
+        drop_frame = !(frame_cnt >= n && frame_cnt <= m);
+        putc(drop_frame ? 'X' : '.', stdout);
+        //if (drop_frame)
+          //frame_size = 0;
+        break;
+      case DROP_RANDOM_PACKETS:
+        printf("DROP_RANDOM_PACKETS\n");
+        throw_packets((uint8_t *)frame, frame_size, n);
+        break;
+      default:
+        break;
     }
-    seed = (m > 0) ? m : (unsigned int)time(NULL);
-    srand(seed);thrown_frame = 0;
-    printf("Seed: %u\n", seed);
-    printf("Threads: %d\n", dec_cfg.threads);
-    if(!(infile = fopen(argv[1], "rb")))
-        die("Failed to open %s for reading", argv[1]);
-    if(!(outfile = fopen(argv[2], "wb")))
-        die("Failed to open %s for writing", argv[2]);
 
-    /* Read file header */
-    if(!(fread(file_hdr, 1, IVF_FILE_HDR_SZ, infile) == IVF_FILE_HDR_SZ
-         && file_hdr[0]=='D' && file_hdr[1]=='K' && file_hdr[2]=='I'
-         && file_hdr[3]=='F'))
-        die("%s is not an IVF file.", argv[1]);
+    fflush(stdout);
 
-    printf("Using %s\n",vpx_codec_iface_name(interface));
-    /* Initialize codec */
-    flags = VPX_CODEC_USE_ERROR_CONCEALMENT;
-    res = vpx_codec_dec_init(&codec, interface, &dec_cfg, flags);
-    if(res)
-        die_codec(&codec, "Failed to initialize decoder");
+    if (vpx_codec_decode(&codec, frame, frame_size, NULL, 0))
+      die_codec(&codec, "Failed to decode frame");
 
+    while ((img = vpx_codec_get_frame(&codec, &iter)) != NULL)
+      vpx_img_write(img, outfile);
+  }
 
-    /* Read each frame */
-    while(fread(frame_hdr, 1, IVF_FRAME_HDR_SZ, infile) == IVF_FRAME_HDR_SZ) {
-        int               frame_sz = mem_get_le32(frame_hdr);
-        vpx_codec_iter_t  iter = NULL;
-        vpx_image_t      *img;
+  printf("Processed %d frames.\n", frame_cnt);
+  if (vpx_codec_destroy(&codec))
+    die_codec(&codec, "Failed to destroy codec");
 
+  vpx_video_reader_close(reader);
+  fclose(outfile);
 
-        frame_cnt++;
-        if(frame_sz > sizeof(frame))
-            die("Frame %d data too big for example code buffer", frame_sz);
-        if(fread(frame, 1, frame_sz, infile) != frame_sz)
-            die("Frame %d failed to read complete frame", frame_cnt);
-
-        /* Decide whether to throw parts of the frame or the whole frame
-           depending on the drop mode */
-        thrown_frame = 0;
-        kept_frame = 0;
-        switch (mode)
-        {
-        case 0:
-            if (m - (frame_cnt-1)%m <= n)
-            {
-                frame_sz = 0;
-            }
-            break;
-        case 1:
-            if (frame_cnt >= n && frame_cnt <= m)
-            {
-                frame_sz = 0;
-            }
-            break;
-        case 2:
-            throw_packets(frame, &frame_sz, n, &thrown_frame, &kept_frame);
-            break;
-        default: break;
-        }
-        if (mode < 2)
-        {
-            if (frame_sz == 0)
-            {
-                putc('X', stdout);
-                thrown_frame++;
-            }
-            else
-            {
-                putc('.', stdout);
-                kept_frame++;
-            }
-        }
-        thrown += thrown_frame;
-        kept += kept_frame;
-        fflush(stdout);
-        /* Decode the frame */
-        if(vpx_codec_decode(&codec, frame, frame_sz, NULL, 0))
-            die_codec(&codec, "Failed to decode frame");
-
-        /* Write decoded data to disk */
-        while((img = vpx_codec_get_frame(&codec, &iter))) {
-            unsigned int plane, y;
-
-            for(plane=0; plane < 3; plane++) {
-                unsigned char *buf =img->planes[plane];
-            
-                for(y=0; y < (plane ? (img->d_h + 1) >> 1 : img->d_h); y++) {
-                    (void) fwrite(buf, 1, (plane ? (img->d_w + 1) >> 1 : img->d_w),
-                                  outfile);
-                    buf += img->stride[plane];
-                }
-            }
-        }
-    }
-    printf("Processed %d frames.\n",frame_cnt);
-    if(vpx_codec_destroy(&codec))
-        die_codec(&codec, "Failed to destroy codec");
-
-    fclose(outfile);
-    fclose(infile);
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

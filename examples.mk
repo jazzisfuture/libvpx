@@ -136,6 +136,10 @@ decode_with_drops.GUID           = CE5C53C4-8DDA-438A-86ED-0DDD3CDB8D26
 decode_with_drops.DESCRIPTION    = Drops frames while decoding
 ifeq ($(CONFIG_VP8_DECODER),yes)
 EXAMPLES-$(CONFIG_ERROR_CONCEALMENT)    += decode_with_partial_drops.c
+decode_with_partial_drops.SRCS          += ivfdec.h ivfdec.c
+decode_with_partial_drops.SRCS          += tools_common.h tools_common.c
+decode_with_partial_drops.SRCS          += video_common.h
+decode_with_partial_drops.SRCS          += video_reader.h video_reader.c 
 endif
 decode_with_partial_drops.GUID           = 61C2D026-5754-46AC-916F-1343ECC5537E
 decode_with_partial_drops.DESCRIPTION    = Drops parts of frames while decoding
