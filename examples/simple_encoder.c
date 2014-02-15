@@ -88,15 +88,78 @@
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 
+#include "./args.h"
 #include "./tools_common.h"
 #include "./video_writer.h"
 
 static const char *exec_name;
 
+static const arg_def_t codec_arg = ARG_DEF(NULL, "codec", 1, "Codec to use");
+static const arg_def_t width_arg = ARG_DEF("w", "width", 1, "Frame width");
+static const arg_def_t height_arg = ARG_DEF("h", "height", 1, "Frame height");
+static const arg_def_t input_file_arg = ARG_DEF("i", "input", 1, "Input file");
+static const arg_def_t output_file_arg = ARG_DEF("o", "output", 1,
+                                                 "Output file");
+
+static const arg_def_t *program_args[] = {
+  &codec_arg,
+  &width_arg,
+  &height_arg,
+  &input_file_arg,
+  &output_file_arg,
+  NULL
+};
+
 void usage_exit() {
-  fprintf(stderr, "Usage: %s <codec> <width> <height> <infile> <outfile>\n",
-          exec_name);
+  fprintf(stderr, "Usage: %s <options>\n\n", exec_name);
+  fprintf(stderr, "Options:\n");
+  arg_show_usage(stderr, program_args);
   exit(EXIT_FAILURE);
+}
+
+typedef struct  {
+  const char *codec;
+  int width;
+  int height;
+  const char *infile;
+  const char *outfile;
+} ProgramArgs;
+
+static void parse_args(int argc, char **argv, ProgramArgs *args) {
+  char **iter = &argv[1];
+  while (iter < argv + argc) {
+    struct arg arg = {0};
+    int found = 1;
+
+    if (arg_match(&arg, &codec_arg, iter))
+      args->codec = arg.val;
+    else if (arg_match(&arg, &width_arg, iter))
+      args->width = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &height_arg, iter))
+      args->height = arg_parse_uint(&arg);
+    else if (arg_match(&arg, &input_file_arg, iter))
+      args->infile = arg.val;
+    else if (arg_match(&arg, &output_file_arg, iter))
+      args->outfile = arg.val;
+    else
+      found = 0;
+
+    iter += found ? arg.argv_step : 1;
+  }
+}
+
+static void validate_args(const ProgramArgs *args) {
+  if (!args->codec)
+    die("Codec is not specified.");
+
+  if (!args->infile)
+    die("Input file is not specified.");
+
+  if (!args->outfile)
+    die("Output file is not specified.");
+
+  if (args->width == 0 || args->height == 0)
+    die("Frame size is not specified.");
 }
 
 static void encode_frame(vpx_codec_ctx_t *codec,
@@ -132,30 +195,26 @@ int main(int argc, char **argv) {
   vpx_codec_enc_cfg_t cfg;
   int frame_count = 0;
   vpx_image_t raw;
-  vpx_codec_err_t res;
   VpxVideoInfo info = {0};
   VpxVideoWriter *writer = NULL;
   const VpxInterface *encoder = NULL;
+  ProgramArgs args = {0};
   const int fps = 30;        // TODO(dkovalev) add command line argument
   const int bitrate = 200;   // kbit/s TODO(dkovalev) add command line argument
-  const char *const codec_arg = argv[1];
-  const char *const width_arg = argv[2];
-  const char *const height_arg = argv[3];
-  const char *const infile_arg = argv[4];
-  const char *const outfile_arg = argv[5];
 
   exec_name = argv[0];
+  parse_args(argc, argv, &args);
+  validate_args(&args);
 
-  if (argc != 6)
-    die("Invalid number of arguments");
-
-  encoder = get_vpx_encoder_by_name(codec_arg);
+  encoder = get_vpx_encoder_by_name(args.codec);
   if (!encoder)
-     die("Unsupported codec.");
+    die("Unsupported codec: '%s'", args.codec);
+
+  printf("Using %s\n", vpx_codec_iface_name(encoder->interface()));
 
   info.codec_fourcc = encoder->fourcc;
-  info.frame_width = strtol(width_arg, NULL, 0);
-  info.frame_height = strtol(height_arg, NULL, 0);
+  info.frame_width = args.width;
+  info.frame_height = args.height;
   info.time_base.numerator = 1;
   info.time_base.denominator = fps;
 
@@ -171,24 +230,21 @@ int main(int argc, char **argv) {
     die("Failed to allocate image.");
   }
 
-  printf("Using %s\n", vpx_codec_iface_name(encoder->interface()));
+  writer = vpx_video_writer_open(args.outfile, kContainerIVF, &info);
+  if (!writer)
+    die("Failed to open '%s' for writing.", args.outfile);
 
-  res = vpx_codec_enc_config_default(encoder->interface(), &cfg, 0);
-  if (res)
-    die_codec(&codec, "Failed to get default codec config.");
+  if (!(infile = fopen(args.infile, "rb")))
+    die("Failed to open '%s' for reading.", args.infile);
+
+  if (vpx_codec_enc_config_default(encoder->interface(), &cfg, 0))
+      die_codec(&codec, "Failed to get default codec config.");
 
   cfg.g_w = info.frame_width;
   cfg.g_h = info.frame_height;
   cfg.g_timebase.num = info.time_base.numerator;
   cfg.g_timebase.den = info.time_base.denominator;
   cfg.rc_target_bitrate = bitrate;
-
-  writer = vpx_video_writer_open(outfile_arg, kContainerIVF, &info);
-  if (!writer)
-    die("Failed to open %s for writing.", outfile_arg);
-
-  if (!(infile = fopen(infile_arg, "rb")))
-    die("Failed to open %s for reading.", infile_arg);
 
   if (vpx_codec_enc_init(&codec, encoder->interface(), &cfg, 0))
     die_codec(&codec, "Failed to initialize encoder");

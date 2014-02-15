@@ -102,6 +102,7 @@ decode_to_md5.SRCS                 += video_reader.h video_reader.c
 decode_to_md5.GUID                  = 59120B9B-2735-4BFE-B022-146CA340FE42
 decode_to_md5.DESCRIPTION           = Frame by frame MD5 checksum
 EXAMPLES-$(CONFIG_VP8_ENCODER)  += simple_encoder.c
+simple_encoder.SRCS             += args.h args.c
 simple_encoder.SRCS             += ivfenc.h ivfenc.c
 simple_encoder.SRCS             += tools_common.h tools_common.c
 simple_encoder.SRCS             += video_common.h
