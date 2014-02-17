@@ -9,74 +9,21 @@
  */
 #include <climits>
 #include <vector>
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
+
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/video_source.h"
 #include "test/util.h"
 
+#include "./video_writer.h"
+
 // Enable(1) or Disable(0) writing of the compressed bitstream.
 #define WRITE_COMPRESSED_STREAM 0
 
 namespace {
-
-#if WRITE_COMPRESSED_STREAM
-static void mem_put_le16(char *const mem, const unsigned int val) {
-  mem[0] = val;
-  mem[1] = val >> 8;
-}
-
-static void mem_put_le32(char *const mem, const unsigned int val) {
-  mem[0] = val;
-  mem[1] = val >> 8;
-  mem[2] = val >> 16;
-  mem[3] = val >> 24;
-}
-
-static void write_ivf_file_header(const vpx_codec_enc_cfg_t *const cfg,
-                                  int frame_cnt, FILE *const outfile) {
-  char header[32];
-
-  header[0] = 'D';
-  header[1] = 'K';
-  header[2] = 'I';
-  header[3] = 'F';
-  mem_put_le16(header + 4,  0);                   /* version */
-  mem_put_le16(header + 6,  32);                  /* headersize */
-  mem_put_le32(header + 8,  0x30395056);          /* fourcc (vp9) */
-  mem_put_le16(header + 12, cfg->g_w);            /* width */
-  mem_put_le16(header + 14, cfg->g_h);            /* height */
-  mem_put_le32(header + 16, cfg->g_timebase.den); /* rate */
-  mem_put_le32(header + 20, cfg->g_timebase.num); /* scale */
-  mem_put_le32(header + 24, frame_cnt);           /* length */
-  mem_put_le32(header + 28, 0);                   /* unused */
-
-  (void)fwrite(header, 1, 32, outfile);
-}
-
-static void write_ivf_frame_size(FILE *const outfile, const size_t size) {
-  char header[4];
-  mem_put_le32(header, static_cast<unsigned int>(size));
-  (void)fwrite(header, 1, 4, outfile);
-}
-
-static void write_ivf_frame_header(const vpx_codec_cx_pkt_t *const pkt,
-                                   FILE *const outfile) {
-  char header[12];
-  vpx_codec_pts_t pts;
-
-  if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
-    return;
-
-  pts = pkt->data.frame.pts;
-  mem_put_le32(header, static_cast<unsigned int>(pkt->data.frame.sz));
-  mem_put_le32(header + 4, pts & 0xFFFFFFFF);
-  mem_put_le32(header + 8, pts >> 32);
-
-  (void)fwrite(header, 1, 12, outfile);
-}
-#endif  // WRITE_COMPRESSED_STREAM
 
 const unsigned int kInitialWidth = 320;
 const unsigned int kInitialHeight = 240;
@@ -168,8 +115,7 @@ class ResizeInternalTest : public ResizeTest {
   ResizeInternalTest()
       : ResizeTest(),
         frame0_psnr_(0.0),
-        outfile_(NULL),
-        out_frames_(0) {}
+        writer_(NULL) {}
 #else
   ResizeInternalTest() : ResizeTest(), frame0_psnr_(0.0) {}
 #endif
@@ -178,17 +124,23 @@ class ResizeInternalTest : public ResizeTest {
 
   virtual void BeginPassHook(unsigned int /*pass*/) {
 #if WRITE_COMPRESSED_STREAM
-    outfile_ = fopen("vp90-2-05-resize.ivf", "wb");
+    VpxVideoInfo info = {0};
+    info.codec_fourcc = VP9_FOURCC;
+    info.frame_width = cfg_.g_w;
+    info.frame_height = cfg_.g_h;
+    info.time_base.numerator = cfg_.g_timebase.num;
+    info.time_base.denominator = cfg_.g_timebase.den;
+
+    writer_ = vpx_video_writer_open("vp90-2-05-resize.ivf", kContainerIVF,
+                                    &info);
 #endif
   }
 
   virtual void EndPassHook() {
 #if WRITE_COMPRESSED_STREAM
-    if (outfile_) {
-      if (!fseek(outfile_, 0, SEEK_SET))
-        write_ivf_file_header(&cfg_, out_frames_, outfile_);
-      fclose(outfile_);
-      outfile_ = NULL;
+    if (writer_) {
+      vpx_video_writer_close(writer_);
+      writer_ = NULL;
     }
 #endif
   }
@@ -213,22 +165,16 @@ class ResizeInternalTest : public ResizeTest {
 
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
 #if WRITE_COMPRESSED_STREAM
-    ++out_frames_;
-
-    // Write initial file header if first frame.
-    if (pkt->data.frame.pts == 0)
-      write_ivf_file_header(&cfg_, 0, outfile_);
-
-    // Write frame header and data.
-    write_ivf_frame_header(pkt, outfile_);
-    (void)fwrite(pkt->data.frame.buf, 1, pkt->data.frame.sz, outfile_);
+    vpx_video_writer_write_frame(writer_,
+        reinterpret_cast<const uint8_t *>(pkt->data.frame.buf),
+        pkt->data.frame.sz,
+        pkt->data.frame.pts);
 #endif
   }
 
   double frame0_psnr_;
 #if WRITE_COMPRESSED_STREAM
-  FILE *outfile_;
-  unsigned int out_frames_;
+  VpxVideoWriter *writer_;
 #endif
 };
 
