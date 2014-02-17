@@ -14,3 +14,4 @@ text vpx_img_flip
 text vpx_img_free
 text vpx_img_set_rect
 text vpx_img_wrap
+text vpx_sse_to_psnr
