@@ -14,6 +14,8 @@
 
 #include "./ivfdec.h"
 
+#include "vpx_ports/mem_ops.h"
+
 static const char *IVF_SIGNATURE = "DKIF";
 
 static void fix_framerate(int *num, int *den) {
