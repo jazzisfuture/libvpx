@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
+ *  Copyright (c) 2014 The WebM project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,22 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "vpx/vpx_psnr.h"
+
 #include <math.h>
 
 #include "vpx_scale/yv12config.h"
 
 #define MAX_PSNR 100
 
-double vp9_mse2psnr(double samples, double peak, double mse) {
-  double psnr;
-
-  if (mse > 0.0)
-    psnr = 10.0 * log10(peak * peak * samples / mse);
-  else
-    psnr = MAX_PSNR;  // Limit to prevent / 0
-
-  if (psnr > MAX_PSNR)
-    psnr = MAX_PSNR;
-
-  return psnr;
+double vpx_sse_to_psnr(double samples, double peak, double sse) {
+  if (sse > 0.0) {
+    const double psnr = 10.0 * log10(samples * peak * peak / sse);
+    return psnr > MAX_PSNR ? MAX_PSNR : psnr;
+  } else {
+    return MAX_PSNR;
+  }
 }

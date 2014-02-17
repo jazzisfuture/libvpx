@@ -11,6 +11,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include "vpx/vpx_psnr.h"
+
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_quant_common.h"
@@ -20,7 +22,6 @@
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
 #include "vp9/encoder/vp9_onyx_int.h"
-#include "vp9/encoder/vp9_psnr.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"

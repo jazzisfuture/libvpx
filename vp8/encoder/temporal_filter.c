@@ -16,7 +16,7 @@
 #include "vp8/common/alloccommon.h"
 #include "mcomp.h"
 #include "firstpass.h"
-#include "psnr.h"
+#include "vpx/vpx_psnr.h"
 #include "vpx_scale/vpx_scale.h"
 #include "vp8/common/extend.h"
 #include "ratectrl.h"
