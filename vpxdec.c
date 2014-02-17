@@ -23,7 +23,9 @@
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
+#include "vpx_ports/mem_ops.h"
 #include "vpx_ports/vpx_timer.h"
+
 
 #if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
 #include "vpx/vp8dx.h"
