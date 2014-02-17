@@ -23,6 +23,7 @@
 #if CONFIG_DECODERS
 #include "vpx/vpx_decoder.h"
 #endif
+#include "vpx/vpx_psnr.h"
 
 #include "third_party/libyuv/include/libyuv/scale.h"
 #include "./args.h"
@@ -1386,8 +1387,8 @@ static void show_psnr(struct stream_state  *stream) {
     return;
 
   fprintf(stderr, "Stream %d PSNR (Overall/Avg/Y/U/V)", stream->index);
-  ovpsnr = vp8_mse2psnr((double)stream->psnr_samples_total, 255.0,
-                        (double)stream->psnr_sse_total);
+  ovpsnr = vpx_sse_to_psnr((double)stream->psnr_samples_total, 255.0,
+                           (double)stream->psnr_sse_total);
   fprintf(stderr, " %.3f", ovpsnr);
 
   for (i = 0; i < 4; i++) {

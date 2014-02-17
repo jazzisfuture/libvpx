@@ -121,15 +121,3 @@ vpx_fixed_buf_t stats_get(stats_io_t *stats) {
   return stats->buf;
 }
 
-double vp8_mse2psnr(double samples, double peak, double mse) {
-  const int kMaxPSNR = 100;
-  double psnr = kMaxPSNR;
-
-  if (mse > 0.0)
-    psnr = 10.0 * log10(peak * peak * samples / mse);
-
-  if (psnr > kMaxPSNR)
-    psnr = kMaxPSNR;
-
-  return psnr;
-}
