@@ -454,12 +454,12 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
       int quantizer = (pd->dequant[1] >> 3);
 
       if ( quantizer < 120)
-        rate = (square_error * (280-quantizer) )>> 8;
+        rate = (int)((square_error * (280 - quantizer)) >> 8);
       else
         rate = 0;
       dist = (square_error * quantizer) >> 8;
       rate_sum += rate;
-      dist_sum += dist;
+      dist_sum += (int)dist;
     } else {
       int rate;
       int64_t dist;
