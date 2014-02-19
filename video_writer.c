@@ -78,3 +78,35 @@ int vpx_video_writer_write_frame(VpxVideoWriter *writer,
 
   return 1;
 }
+
+#if CONFIG_ENCODERS
+void vpx_video_writer_encode_frame(VpxVideoWriter *writer,
+                                   vpx_codec_ctx_t *codec_context,
+                                   const vpx_image_t *image,
+                                   int64_t timestamp,
+                                   int64_t duration,
+                                   vpx_enc_frame_flags_t flags,
+                                   unsigned int deadline) {
+  vpx_codec_iter_t iter = NULL;
+  const vpx_codec_cx_pkt_t *packet = NULL;
+  const vpx_codec_err_t res = vpx_codec_encode(codec_context,
+                                               image,
+                                               timestamp,
+                                               (unsigned int)duration,
+                                               flags,
+                                               deadline);
+  if (res != VPX_CODEC_OK)
+    die_codec(codec_context, "Failed to encode frame");
+
+  while ((packet = vpx_codec_get_cx_data(codec_context, &iter)) != NULL) {
+    if (packet->kind == VPX_CODEC_CX_FRAME_PKT) {
+      if (!vpx_video_writer_write_frame(writer,
+                                        packet->data.frame.buf,
+                                        packet->data.frame.sz,
+                                        packet->data.frame.pts)) {
+        die_codec(codec_context, "Failed to write compressed frame");
+      }
+    }
+  }
+}
+#endif

@@ -13,6 +13,10 @@
 
 #include "./video_common.h"
 
+#if CONFIG_ENCODERS
+#include "vpx/vpx_encoder.h"
+#endif
+
 typedef enum {
   kContainerIVF
 } VpxContainer;
@@ -39,6 +43,19 @@ void vpx_video_writer_close(VpxVideoWriter *writer);
 int vpx_video_writer_write_frame(VpxVideoWriter *writer,
                                  const uint8_t *buffer, size_t size,
                                  int64_t pts);
+
+#if CONFIG_ENCODERS
+// Passes |image| to libvpx for encoding, extracts compressed frames from the
+// library, and passes them to vpx_video_writer_write_frame(). Calls
+// die_codec() upon failure.
+void vpx_video_writer_encode_frame(VpxVideoWriter *writer,
+                                   vpx_codec_ctx_t *codec_context,
+                                   const vpx_image_t *image,
+                                   int64_t timestamp,
+                                   int64_t duration,
+                                   vpx_enc_frame_flags_t flags,
+                                   unsigned int deadline);
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
