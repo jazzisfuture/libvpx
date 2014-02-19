@@ -66,17 +66,17 @@ class CQTest : public ::libvpx_test::EncoderTest,
     return pow(10.0, avg_psnr / 10.0) / file_size_;
   }
 
-  int file_size() const { return file_size_; }
+  size_t file_size() const { return file_size_; }
   int n_frames() const { return n_frames_; }
 
  private:
   int cq_level_;
-  int file_size_;
+  size_t file_size_;
   double psnr_;
   int n_frames_;
 };
 
-int prev_actual_bitrate = kCQTargetBitrate;
+size_t prev_actual_bitrate = kCQTargetBitrate;
 TEST_P(CQTest, LinearPSNRIsHigherForCQLevel) {
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
@@ -88,14 +88,14 @@ TEST_P(CQTest, LinearPSNRIsHigherForCQLevel) {
                                      timebase.den, timebase.num, 0, 30);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   const double cq_psnr_lin = GetLinearPSNROverBitrate();
-  const int cq_actual_bitrate = file_size() * 8 * 30 / (n_frames() * 1000);
+  const size_t cq_actual_bitrate = file_size() * 8 * 30 / (n_frames() * 1000);
   EXPECT_LE(cq_actual_bitrate, kCQTargetBitrate);
   EXPECT_LE(cq_actual_bitrate, prev_actual_bitrate);
   prev_actual_bitrate = cq_actual_bitrate;
 
   // try targeting the approximate same bitrate with VBR mode
   cfg_.rc_end_usage = VPX_VBR;
-  cfg_.rc_target_bitrate = cq_actual_bitrate;
+  cfg_.rc_target_bitrate = static_cast<unsigned int>(cq_actual_bitrate);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   const double vbr_psnr_lin = GetLinearPSNROverBitrate();
   EXPECT_GE(cq_psnr_lin, vbr_psnr_lin);
