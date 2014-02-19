@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "math.h"
+#include "vpx/internal/vpx_psnr.h"
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
@@ -43,21 +44,6 @@
 #include "third_party/libyuv/include/libyuv/basic_types.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 #include "third_party/libyuv/include/libyuv/cpu_id.h"
-
-static double vp8_mse2psnr(double Samples, double Peak, double Mse)
-{
-    double psnr;
-
-    if ((double)Mse > 0.0)
-        psnr = 10.0 * log10(Peak * Peak * Samples / Mse);
-    else
-        psnr = 60;      // Limit to prevent / 0
-
-    if (psnr > 60)
-        psnr = 60;
-
-    return psnr;
-}
 
 static void die(const char *fmt, ...) {
     va_list ap;
@@ -454,8 +440,8 @@ int main(int argc, char **argv)
         if ( (show_psnr) && (psnr_count[i]>0) )
         {
             int j;
-            double ovpsnr = vp8_mse2psnr(psnr_samples_total[i], 255.0,
-                                         psnr_sse_total[i]);
+            double ovpsnr = vpx_sse_to_psnr((double)psnr_samples_total[i],
+                                            255.0, (double)psnr_sse_total[i]);
 
             fprintf(stderr, "\n ENC%d PSNR (Overall/Avg/Y/U/V)", i);
 
