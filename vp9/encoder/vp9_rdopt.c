@@ -431,7 +431,8 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
-  int i, rate_sum = 0, dist_sum = 0;
+  int i, rate_sum = 0;
+  int64_t dist_sum = 0;
   int ref = xd->mi_8x8[0]->mbmi.ref_frame[0];
   unsigned int sse;
 
@@ -454,7 +455,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
       int quantizer = (pd->dequant[1] >> 3);
 
       if ( quantizer < 120)
-        rate = (square_error * (280-quantizer) )>> 8;
+        rate = (int)((square_error * (280-quantizer)) >> 8);
       else
         rate = 0;
       dist = (square_error * quantizer) >> 8;
