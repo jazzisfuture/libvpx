@@ -941,6 +941,12 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
       break;
   }; /* switch */
 
+  if (cpi->oxcf.mode != MODE_FIRSTPASS) {
+    sf->always_this_block_size = BLOCK_16X16;
+    sf->use_pick_mode = 1;
+    sf->encode_breakout_thresh = 1000;
+  }
+
   // Set rd thresholds based on mode and speed setting
   set_rd_speed_thresholds(cpi);
   set_rd_speed_thresholds_sub8x8(cpi);
@@ -1380,6 +1386,9 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   }
 
   cpi->oxcf = *oxcf;
+
+  if (cpi->oxcf.cpu_used == -6)
+    cpi->oxcf.play_alternate = 0;
 
   switch (cpi->oxcf.mode) {
       // Real time and one pass deprecated in test code base
