@@ -18,6 +18,7 @@
 #include "vpx/vpx_integer.h"
 
 #if CONFIG_ENCODERS
+#include "vpx/vpx_encoder.h"
 #include "./y4minput.h"
 #endif
 
@@ -144,6 +145,13 @@ int vpx_img_plane_width(const vpx_image_t *img, int plane);
 int vpx_img_plane_height(const vpx_image_t *img, int plane);
 void vpx_img_write(const vpx_image_t *img, FILE *file);
 int vpx_img_read(vpx_image_t *img, FILE *file);
+
+#if CONFIG_ENCODERS
+void encode_vpx_frame(vpx_codec_ctx_t *codec_context,
+                      const vpx_image_t *image,
+                      int64_t timestamp,
+                      vpx_codec_cx_pkt_t *frame);
+#endif
 
 #ifdef __cplusplus
 }  /* extern "C" */

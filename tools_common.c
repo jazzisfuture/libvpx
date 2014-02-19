@@ -15,11 +15,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
+#if CONFIG_ENCODERS
 #include "vpx/vp8cx.h"
 #endif
 
-#if CONFIG_VP8_DECODER || CONFIG_VP9_DECODER
+#if CONFIG_DECODERS
 #include "vpx/vp8dx.h"
 #endif
 
@@ -273,3 +273,26 @@ int vpx_img_read(vpx_image_t *img, FILE *file) {
   return 1;
 }
 
+// Utility functions that require at least one encoder enabled.
+#if CONFIG_ENCODERS
+void encode_vpx_frame(vpx_codec_ctx_t *codec_context,
+                      const vpx_image_t *image,
+                      int64_t timestamp,
+                      vpx_codec_cx_pkt_t *frame) {
+  vpx_codec_iter_t iter = NULL;
+  const vpx_codec_cx_pkt_t *packet = NULL;
+  const vpx_codec_err_t res = vpx_codec_encode(codec_context,
+                                               image,
+                                               timestamp,
+                                               1, /* duration */
+                                               0, /* flags */
+                                               VPX_DL_GOOD_QUALITY);
+  if (res != VPX_CODEC_OK)
+    die_codec(codec_context, "Failed to encode frame");
+
+  while ((packet = vpx_codec_get_cx_data(codec_context, &iter)) != NULL) {
+    if (packet->kind == VPX_CODEC_CX_FRAME_PKT)
+      *frame = *packet;
+  }
+}
+#endif
