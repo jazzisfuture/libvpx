@@ -332,7 +332,8 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
 
   oxcf->cpu_used               =  vp9_cfg.cpu_used;
   oxcf->encode_breakout        =  vp9_cfg.static_thresh;
-  oxcf->play_alternate         =  vp9_cfg.enable_auto_alt_ref;
+  oxcf->play_alternate         =  vp9_cfg.cpu_used >= -5 ?
+                                  vp9_cfg.enable_auto_alt_ref : 0;
   oxcf->noise_sensitivity      =  vp9_cfg.noise_sensitivity;
   oxcf->sharpness              =  vp9_cfg.sharpness;
 
