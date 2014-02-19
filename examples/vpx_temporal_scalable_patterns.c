@@ -54,19 +54,19 @@ struct RateControlMetrics {
 
 static void set_rate_control_metrics(struct RateControlMetrics *rc,
                                      vpx_codec_enc_cfg_t *cfg) {
-  int i = 0;
+  unsigned int i = 0;
   // Set the layer (cumulative) framerate and the target layer (non-cumulative)
   // per-frame-bandwidth, for the rate control encoding stats below.
-  float framerate = cfg->g_timebase.den / cfg->g_timebase.num;
+  float framerate = (float)(cfg->g_timebase.den / cfg->g_timebase.num);
   rc->layer_framerate[0] = framerate / cfg->ts_rate_decimator[0];
-  rc->layer_pfb[0] = 1000.0 * cfg->ts_target_bitrate[0] /
-      rc->layer_framerate[0];
+  rc->layer_pfb[0] =
+      (float)(1000.0 * cfg->ts_target_bitrate[0] / rc->layer_framerate[0]);
   for (i = 0; i < cfg->ts_number_layers; ++i) {
     if (i > 0) {
       rc->layer_framerate[i] = framerate / cfg->ts_rate_decimator[i];
-      rc->layer_pfb[i] = 1000.0 *
+      rc->layer_pfb[i] = (float)(1000.0 *
           (cfg->ts_target_bitrate[i] - cfg->ts_target_bitrate[i - 1]) /
-          (rc->layer_framerate[i] - rc->layer_framerate[i - 1]);
+          (rc->layer_framerate[i] - rc->layer_framerate[i - 1]));
     }
     rc->layer_input_frames[i] = 0;
     rc->layer_enc_frames[i] = 0;
@@ -80,7 +80,7 @@ static void set_rate_control_metrics(struct RateControlMetrics *rc,
 static void printout_rate_control_summary(struct RateControlMetrics *rc,
                                           vpx_codec_enc_cfg_t *cfg,
                                           int frame_cnt) {
-  int i = 0;
+  unsigned int i = 0;
   int check_num_frames = 0;
   printf("Total number of processed frames: %d\n\n", frame_cnt -1);
   printf("Rate control layer stats for %d layer(s):\n\n",
@@ -89,12 +89,13 @@ static void printout_rate_control_summary(struct RateControlMetrics *rc,
     const int num_dropped = (i > 0) ?
         (rc->layer_input_frames[i] - rc->layer_enc_frames[i]) :
         (rc->layer_input_frames[i] - rc->layer_enc_frames[i] - 1);
-    rc->layer_encoding_bitrate[i] = 0.001 * rc->layer_framerate[i] *
-        rc->layer_encoding_bitrate[i] / rc->layer_tot_enc_frames[i];
+    rc->layer_encoding_bitrate[i] = (float)(0.001 * rc->layer_framerate[i] *
+        rc->layer_encoding_bitrate[i] / rc->layer_tot_enc_frames[i]);
     rc->layer_avg_frame_size[i] = rc->layer_avg_frame_size[i] /
         rc->layer_enc_frames[i];
-    rc->layer_avg_rate_mismatch[i] = 100.0 * rc->layer_avg_rate_mismatch[i] /
-        rc->layer_enc_frames[i];
+    rc->layer_avg_rate_mismatch[i] =
+        (float)(100.0 * rc->layer_avg_rate_mismatch[i] /
+            rc->layer_enc_frames[i]);
     printf("For layer#: %d \n", i);
     printf("Bitrate (target vs actual): %d %f \n", cfg->ts_target_bitrate[i],
            rc->layer_encoding_bitrate[i]);
@@ -432,7 +433,7 @@ int main(int argc, char **argv) {
   int frame_avail;
   int got_data;
   int flags = 0;
-  int i;
+  unsigned int i;
   int pts = 0;  // PTS starts at 0.
   int frame_duration = 1;  // 1 timebase tick per frame.
   int layering_mode = 0;
@@ -492,7 +493,7 @@ int main(int argc, char **argv) {
   cfg.g_timebase.num = strtol(argv[6], NULL, 0);
   cfg.g_timebase.den = strtol(argv[7], NULL, 0);
 
-  for (i = 10; i < 10 + mode_to_num_layers[layering_mode]; ++i) {
+  for (i = 10; (int)i < 10 + mode_to_num_layers[layering_mode]; ++i) {
     cfg.ts_target_bitrate[i - 10] = strtol(argv[i], NULL, 0);
   }
 
@@ -601,14 +602,14 @@ int main(int argc, char **argv) {
             vpx_video_writer_write_frame(outfile[i], pkt->data.frame.buf,
                                          pkt->data.frame.sz, pts);
             ++rc.layer_tot_enc_frames[i];
-            rc.layer_encoding_bitrate[i] += 8.0 * pkt->data.frame.sz;
+            rc.layer_encoding_bitrate[i] += (float)(8.0 * pkt->data.frame.sz);
             // Keep count of rate control stats per layer (for non-key frames).
             if (i == cfg.ts_layer_id[frame_cnt % cfg.ts_periodicity] &&
                 !(pkt->data.frame.flags & VPX_FRAME_IS_KEY)) {
-              rc.layer_avg_frame_size[i] += 8.0 * pkt->data.frame.sz;
+              rc.layer_avg_frame_size[i] += (float)(8.0 * pkt->data.frame.sz);
               rc.layer_avg_rate_mismatch[i] +=
-                  fabs(8.0 * pkt->data.frame.sz - rc.layer_pfb[i]) /
-                  rc.layer_pfb[i];
+                  (float)(fabs(8.0 * pkt->data.frame.sz - rc.layer_pfb[i]) /
+                      rc.layer_pfb[i]);
               ++rc.layer_enc_frames[i];
             }
           }
