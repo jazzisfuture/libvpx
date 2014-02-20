@@ -1,0 +1,8 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+1: Jim Bankoski <jimbankoski@google.com>
+Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Thu, 20 Feb 2014 14:28:57 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/68854
+Project: webm/libvpx
+Branch: refs/heads/master
