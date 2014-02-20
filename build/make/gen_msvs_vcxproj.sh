@@ -440,7 +440,7 @@ generate_vcxproj() {
                 Condition="'\$(Configuration)|\$(Platform)'=='$config|$plat'"
             if [ "$name" = "vpx" ]; then
                 open_tag PreBuildEvent
-                tag_content Command "call obj_int_extract.bat $src_path_bare"
+                tag_content Command "call obj_int_extract.bat $src_path_bare \$(Platform)\\\$(Configuration)"
                 close_tag PreBuildEvent
             fi
             open_tag ClCompile
@@ -483,9 +483,7 @@ generate_vcxproj() {
             case "$proj_kind" in
             exe)
                 open_tag Link
-                if [ "$name" = "obj_int_extract" ]; then
-                    tag_content OutputFile "${name}.exe"
-                else
+                if [ "$name" != "obj_int_extract" ]; then
                     tag_content AdditionalDependencies "$curlibs"
                     tag_content AdditionalLibraryDirectories "$libdirs;%(AdditionalLibraryDirectories)"
                 fi
