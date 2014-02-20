@@ -443,6 +443,17 @@ generate_vcxproj() {
                 tag_content Command "call obj_int_extract.bat $src_path_bare"
                 close_tag PreBuildEvent
             fi
+            if [ "$name" == "vpx" ] || [ "$name" == "gtest" ]; then
+                open_tag PostBuildEvent
+                if [ "$config" = "Debug" ]; then
+                  target_suffix=d
+                else
+                  target_suffix=""
+                fi
+                lib_target="\$(OutDir)${name}${lib_sfx}${target_suffix}.lib"
+                tag_content Command "copy \$(TargetPath) $lib_target"
+                close_tag PostBuildEvent
+            fi
             open_tag ClCompile
             if [ "$config" = "Debug" ]; then
                 opt=Disabled
@@ -499,9 +510,6 @@ generate_vcxproj() {
                 close_tag Link
                 ;;
             lib)
-                open_tag Lib
-                tag_content OutputFile "\$(OutDir)${name}${lib_sfx}${confsuffix}.lib"
-                close_tag Lib
                 ;;
             esac
             close_tag ItemDefinitionGroup
