@@ -55,7 +55,8 @@ class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
     nframes_++;
   }
 
-  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video) {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
     frame_flags_ &= ~(VP8_EFLAG_NO_UPD_LAST |
                       VP8_EFLAG_NO_UPD_GF |
                       VP8_EFLAG_NO_UPD_ARF);
@@ -71,6 +72,29 @@ class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
           return;
         }
       }
+    }
+    // For the 2 temporal layer test. Allow update entropy on base layer,
+    // no update on enhancement layer.
+    if (cfg_.ts_number_layers > 1) {
+      frame_flags_ = 0;
+      vpx_svc_layer_id_t layer_id = {0, 0};
+      layer_id.spatial_layer_id = 0;
+      if (video->frame()%2 == 0) {
+        frame_flags_ = VP8_EFLAG_NO_REF_GF |
+                       VP8_EFLAG_NO_UPD_GF |
+                       VP8_EFLAG_NO_UPD_ARF;
+        layer_id.temporal_layer_id = 0;
+      } else {
+        frame_flags_ = VP8_EFLAG_NO_UPD_LAST |
+                       VP8_EFLAG_NO_UPD_ARF |
+                       VP8_EFLAG_NO_UPD_ENTROPY;
+        layer_id.temporal_layer_id = 1;
+      }
+      // FOR VP9
+      if (video->frame() == 1)
+        encoder->Control(VP9E_SET_SVC, 1);
+      if (video->frame() > 0)
+        encoder->Control(VP9E_SET_SVC_LAYER_ID, &layer_id);
     }
   }
 
@@ -143,6 +167,47 @@ class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
   unsigned int droppable_frames_[kMaxDroppableFrames];
   libvpx_test::TestMode encoding_mode_;
 };
+
+// For temporal layers: with error resilience off, and entropy update on for
+// base layer and off for enhancement layers. Test that we can drop enhancement
+// layer frames and still decode successfully.
+TEST_P(ErrorResilienceTest, LayersEntropyUpdate) {
+  cfg_.rc_target_bitrate = 300;
+  cfg_.g_lag_in_frames = 0;
+  cfg_.rc_end_usage = VPX_CBR;
+
+  // 2 Temporal layers, no spatial layers: Framerate decimation (2, 1).
+  cfg_.ss_number_layers = 1;
+  cfg_.ts_number_layers = 2;
+  // FOR VP8
+  cfg_.ts_periodicity = 2;
+  cfg_.ts_layer_id[0] = 0;
+  cfg_.ts_layer_id[1] = 1;
+  //
+  cfg_.ts_rate_decimator[0] = 2;
+  cfg_.ts_rate_decimator[1] = 1;
+  // 60-40 bitrate allocation for 2 temporal layers.
+  cfg_.ts_target_bitrate[0] = 180;
+  cfg_.ts_target_bitrate[1] = 300;
+
+  // Error resilient mode OFF.
+  cfg_.g_error_resilient = 0;
+
+  init_flags_ = VPX_CODEC_USE_PSNR;
+
+  libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 100);
+
+  // Drop (lose frame after encoding) some arbitrary frames in enhancement
+  // layers (odd frames).
+  unsigned int num_droppable_frames = 6;
+  //unsigned int droppable_frame_list[] = {2, 10, 20, 40, 60, 80};
+  unsigned int droppable_frame_list[] = {3, 13, 23, 41, 65, 83};
+  SetErrorFrames(num_droppable_frames, droppable_frame_list);
+
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
 
 TEST_P(ErrorResilienceTest, OnVersusOff) {
   const vpx_rational timebase = { 33333333, 1000000000 };
