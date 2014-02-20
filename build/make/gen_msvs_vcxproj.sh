@@ -156,6 +156,8 @@ generate_filter() {
                 objf=$(echo ${f%.*}.obj | sed -e 's/^[\./]\+//g' -e 's,/,_,g')
 
                 if ([ "$pat" == "asm" ] || [ "$pat" == "s" ]) && $asm_use_custom_step; then
+                    # Avoid object file name collisions (i.e. vpx_config.c/vpx_config.asm).
+                    objf=${objf%.obj}_asm.obj
                     open_tag CustomBuild \
                         Include=".\\$f"
                     for plat in "${platforms[@]}"; do
