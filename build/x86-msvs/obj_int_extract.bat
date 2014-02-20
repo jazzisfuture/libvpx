@@ -8,5 +8,5 @@ REM   be found in the AUTHORS file in the root of the source tree.
 echo on
 
 cl /I "./" /I "%1" /nologo /c "%1/vp8/encoder/vp8_asm_enc_offsets.c"
-obj_int_extract.exe rvds "vp8_asm_enc_offsets.obj" > "vp8_asm_enc_offsets.asm"
+%2\obj_int_extract.exe rvds "vp8_asm_enc_offsets.obj" > "vp8_asm_enc_offsets.asm"
 
