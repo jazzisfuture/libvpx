@@ -252,7 +252,6 @@ HAVE_LIST="
 "
 EXPERIMENT_LIST="
     multiple_arf
-    non420
     alpha
 "
 CONFIG_LIST="
