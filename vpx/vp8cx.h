@@ -195,6 +195,9 @@ enum vp8e_enc_control_id {
 
   VP9E_SET_SVC,
   VP9E_SET_SVC_PARAMETERS,
+  /*!\brief control function to set svc layer id
+   * \note Valid range: 0..#vpx_codec_enc_cfg::ts_number_layers
+   */
   VP9E_SET_SVC_LAYER_ID
 };
 
