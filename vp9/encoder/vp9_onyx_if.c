@@ -2581,9 +2581,11 @@ static int recode_loop_test(const VP9_COMP *cpi,
     force_recode = 1;
 
   // Is frame recode allowed.
+  // No if it is an arf overlay frame else
   // Yes if either recode mode 1 is selected or mode 2 is selected
   // and the frame is a key frame, golden frame or alt_ref_frame
-  } else if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
+  } else if (!rc->is_src_frame_alt_ref &&
+             (cpi->sf.recode_loop == ALLOW_RECODE) ||
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
               (cm->frame_type == KEY_FRAME ||
                cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame))) {
