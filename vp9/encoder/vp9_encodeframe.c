@@ -102,6 +102,30 @@ static unsigned int get_sby_perpixel_variance(VP9_COMP *cpi, MACROBLOCK *x,
   return ROUND_POWER_OF_TWO(var, num_pels_log2_lookup[bs]);
 }
 
+static BLOCK_SIZE get_rd_var_based_fixed_partition(VP9_COMP *cpi) {
+  unsigned int var = get_sby_perpixel_variance(cpi, &cpi->mb, BLOCK_64X64);
+  if (var < 512)
+    return BLOCK_64X64;
+  else if (var < 2048)
+    return BLOCK_32X32;
+  else if (var < 4096)
+    return BLOCK_16X16;
+  else
+    return BLOCK_8X8;
+}
+
+static BLOCK_SIZE get_nonrd_var_based_fixed_partition(VP9_COMP *cpi) {
+  unsigned int var = get_sby_perpixel_variance(cpi, &cpi->mb, BLOCK_64X64);
+  if (var < 512)
+    return BLOCK_64X64;
+  else if (var < 1024)
+    return BLOCK_32X32;
+  else if (var < 4096)
+    return BLOCK_16X16;
+  else
+    return BLOCK_8X8;
+}
+
 // Original activity measure from Tim T's code.
 static unsigned int tt_activity_measure(MACROBLOCK *x) {
   unsigned int sse;
@@ -994,11 +1018,12 @@ static void set_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
       for (block_col = 0; block_col < MI_BLOCK_SIZE; block_col += bw) {
         int index = block_row * mis + block_col;
         // Find a partition size that fits
-        bsize = find_partition_size(cpi->sf.always_this_block_size,
-                                    (row8x8_remaining - block_row),
-                                    (col8x8_remaining - block_col), &bh, &bw);
+        BLOCK_SIZE usize = find_partition_size(
+            bsize,
+            (row8x8_remaining - block_row),
+            (col8x8_remaining - block_col), &bh, &bw);
         mi_8x8[index] = mi_upper_left + index;
-        mi_8x8[index]->mbmi.sb_type = bsize;
+        mi_8x8[index]->mbmi.sb_type = usize;
       }
     }
   }
@@ -1918,8 +1943,8 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   }
 }
 
-static void encode_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
-                          int mi_row, TOKENEXTRA **tp) {
+static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
+                             int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *const cm = &cpi->common;
   int mi_col;
 
@@ -1947,17 +1972,30 @@ static void encode_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 
     vp9_zero(cpi->mb.pred_mv);
 
-    if (cpi->sf.use_lastframe_partitioning ||
-        cpi->sf.use_one_partition_size_always ) {
+    if ((cpi->sf.partition_search_type == SEARCH_PARTITION &&
+         cpi->sf.use_lastframe_partitioning) ||
+        cpi->sf.partition_search_type == FIXED_PARTITION ||
+        cpi->sf.partition_search_type == VAR_BASED_FIXED_PARTITION) {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
       MODE_INFO **mi_8x8 = cm->mi_grid_visible + idx_str;
       MODE_INFO **prev_mi_8x8 = cm->prev_mi_grid_visible + idx_str;
 
       cpi->mb.source_variance = UINT_MAX;
-      if (cpi->sf.use_one_partition_size_always) {
+      if (cpi->sf.partition_search_type == FIXED_PARTITION) {
         set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
         set_partitioning(cpi, tile, mi_8x8, mi_row, mi_col,
                          cpi->sf.always_this_block_size);
+        rd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                         &dummy_rate, &dummy_dist, 1);
+      } else if (cpi->sf.partition_search_type == VAR_BASED_FIXED_PARTITION ||
+                 cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
+        // TODO(debargha): Implement VAR_BASED_PARTITION as a separate case.
+        // Currently both VAR_BASED_FIXED_PARTITION/VAR_BASED_PARTITION
+        // map to the same thing.
+        BLOCK_SIZE bsize;
+        set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
+        bsize = get_rd_var_based_fixed_partition(cpi);
+        set_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, bsize);
         rd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1);
       } else {
@@ -2253,12 +2291,12 @@ static INLINE int get_block_col(int b32i, int b16i, int b8i) {
   return ((b32i & 1) << 2) + ((b16i & 1) << 1) + (b8i & 1);
 }
 
-static void rtc_use_partition(VP9_COMP *cpi,
-                              const TileInfo *const tile,
-                              MODE_INFO **mi_8x8,
-                              TOKENEXTRA **tp, int mi_row, int mi_col,
-                              BLOCK_SIZE bsize, int *rate, int64_t *dist,
-                              int do_recon) {
+static void nonrd_use_partition(VP9_COMP *cpi,
+                                const TileInfo *const tile,
+                                MODE_INFO **mi_8x8,
+                                TOKENEXTRA **tp, int mi_row, int mi_col,
+                                BLOCK_SIZE bsize, int *rate, int64_t *dist,
+                                int do_recon) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
@@ -2310,8 +2348,8 @@ static void rtc_use_partition(VP9_COMP *cpi,
   *dist = chosen_dist;
 }
 
-static void encode_rtc_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
-                              int mi_row, TOKENEXTRA **tp) {
+static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
+                                int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON * const cm = &cpi->common;
   int mi_col;
 
@@ -2329,9 +2367,21 @@ static void encode_rtc_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     MODE_INFO **mi_8x8 = cm->mi_grid_visible + idx_str;
     cpi->mb.source_variance = UINT_MAX;
 
-    rtc_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col,
-                      cpi->sf.always_this_block_size,
-                      &dummy_rate, &dummy_dist, 1);
+    if (cpi->sf.partition_search_type == FIXED_PARTITION) {
+      nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col,
+                          cpi->sf.always_this_block_size,
+                          &dummy_rate, &dummy_dist, 1);
+    } else if (cpi->sf.partition_search_type == VAR_BASED_FIXED_PARTITION ||
+               cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
+      // TODO(debargha): Implement VAR_BASED_PARTITION as a separate case.
+      // Currently both VAR_BASED_FIXED_PARTITION/VAR_BASED_PARTITION
+      // map to the same thing.
+      BLOCK_SIZE bsize = get_nonrd_var_based_fixed_partition(cpi);
+      nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col,
+                          bsize, &dummy_rate, &dummy_dist, 1);
+    } else {
+      assert(0);
+    }
   }
 }
 // end RTC play code
@@ -2387,7 +2437,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 
   set_prev_mi(cm);
 
-  if (cpi->sf.use_pick_mode) {
+  if (cpi->sf.use_nonrd_pick_mode) {
     // Initialize internal buffer pointers for rtc coding, where non-RD
     // mode decision is used and hence no buffer pointer swap needed.
     int i;
@@ -2423,10 +2473,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
           vp9_tile_init(&tile, cm, tile_row, tile_col);
           for (mi_row = tile.mi_row_start;
                mi_row < tile.mi_row_end; mi_row += MI_BLOCK_SIZE) {
-            if (cpi->sf.use_pick_mode)
-              encode_rtc_sb_row(cpi, &tile, mi_row, &tp);
+            if (cpi->sf.use_nonrd_pick_mode)
+              encode_nonrd_sb_row(cpi, &tile, mi_row, &tp);
             else
-              encode_sb_row(cpi, &tile, mi_row, &tp);
+              encode_rd_sb_row(cpi, &tile, mi_row, &tp);
           }
           cpi->tok_count[tile_row][tile_col] = (unsigned int)(tp - tp_old);
           assert(tp - cpi->tok <= get_token_alloc(cm->mb_rows, cm->mb_cols));
@@ -2689,7 +2739,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
                    (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
-                   !cpi->sf.use_pick_mode;
+                   !cpi->sf.use_nonrd_pick_mode;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
