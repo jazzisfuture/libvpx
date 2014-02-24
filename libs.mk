@@ -49,7 +49,7 @@ endif # !gcc
 define rtcd_h_template
 $$(BUILD_PFX)$(1).h: $$(SRC_PATH_BARE)/$(2)
 	@echo "    [CREATE] $$@"
-	$$(qexec)$$(SRC_PATH_BARE)/build/make/rtcd.sh --arch=$$(TGT_ISA) \
+	$$(qexec)$$(SRC_PATH_BARE)/build/make/rtcd.pl --arch=$$(TGT_ISA) \
           --sym=$(1) \
           --config=$$(CONFIG_DIR)$$(target)$$(if $$(FAT_ARCHS),,-$$(TOOLCHAIN)).mk \
           $$(RTCD_OPTIONS) $$^ > $$@
