@@ -44,6 +44,7 @@ vpxenc.SRCS                 += rate_hist.c rate_hist.h
 vpxenc.SRCS                 += tools_common.c tools_common.h
 vpxenc.SRCS                 += warnings.c warnings.h
 vpxenc.SRCS                 += webmenc.c webmenc.h
+vpxenc.SRCS                 += vpx/internal/vpx_psnr.h
 vpxenc.SRCS                 += vpx_ports/mem_ops.h
 vpxenc.SRCS                 += vpx_ports/mem_ops_aligned.h
 vpxenc.SRCS                 += vpx_ports/vpx_timer.h
