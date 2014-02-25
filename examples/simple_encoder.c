@@ -94,7 +94,9 @@
 static const char *exec_name;
 
 void usage_exit() {
-  fprintf(stderr, "Usage: %s <codec> <width> <height> <infile> <outfile>\n",
+  fprintf(stderr,
+          "Usage: %s <codec> <width> <height> <infile> <outfile> "
+              "[<error-resilient>]\n",
           exec_name);
   exit(EXIT_FAILURE);
 }
@@ -138,16 +140,18 @@ int main(int argc, char **argv) {
   const VpxInterface *encoder = NULL;
   const int fps = 30;        // TODO(dkovalev) add command line argument
   const int bitrate = 200;   // kbit/s TODO(dkovalev) add command line argument
-  const char *const codec_arg = argv[1];
-  const char *const width_arg = argv[2];
-  const char *const height_arg = argv[3];
-  const char *const infile_arg = argv[4];
-  const char *const outfile_arg = argv[5];
+  const char *codec_arg, *width_arg, *height_arg, *infile_arg, *outfile_arg;
 
   exec_name = argv[0];
 
-  if (argc != 6)
+  if (argc < 6)
     die("Invalid number of arguments");
+
+  codec_arg = argv[1];
+  width_arg = argv[2];
+  height_arg = argv[3];
+  infile_arg = argv[4];
+  outfile_arg = argv[5];
 
   encoder = get_vpx_encoder_by_name(codec_arg);
   if (!encoder)
@@ -182,6 +186,7 @@ int main(int argc, char **argv) {
   cfg.g_timebase.num = info.time_base.numerator;
   cfg.g_timebase.den = info.time_base.denominator;
   cfg.rc_target_bitrate = bitrate;
+  cfg.g_error_resilient = argc > 6 ? strtol(argv[6], NULL, 0) : 0;
 
   writer = vpx_video_writer_open(outfile_arg, kContainerIVF, &info);
   if (!writer)
