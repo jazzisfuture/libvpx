@@ -16,8 +16,8 @@
 
 namespace {
 
-const int kMaxErrorFrames = 8;
-const int kMaxDroppableFrames = 8;
+const int kMaxErrorFrames = 12;
+const int kMaxDroppableFrames = 12;
 
 class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
     public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
@@ -186,14 +186,17 @@ TEST_P(ErrorResilienceTest, DropFramesWithoutRecovery) {
   init_flags_ = VPX_CODEC_USE_PSNR;
 
   libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                     timebase.den, timebase.num, 0, 30);
+                                     timebase.den, timebase.num, 0, 40);
 
   // Error resilient mode ON.
   cfg_.g_error_resilient = 1;
 
-  // Set an arbitrary set of error frames same as droppable frames
-  unsigned int num_droppable_frames = 2;
-  unsigned int droppable_frame_list[] = {5, 16};
+  // Set an arbitrary set of error frames same as droppable frames.
+  // In particular, in addition to the isolated loss, add a consecutive 
+  // series of drops of size 9.
+  unsigned int num_droppable_frames = 11;
+  unsigned int droppable_frame_list[] = {5, 16, 22, 23, 24, 25, 26, 27, 28, 
+                                         29, 30};
   SetDroppableFrames(num_droppable_frames, droppable_frame_list);
   SetErrorFrames(num_droppable_frames, droppable_frame_list);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
