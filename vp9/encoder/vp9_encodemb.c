@@ -25,6 +25,10 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+#if CONFIG_GBT
+double *basis;
+#endif
+
 void vp9_subtract_block_c(int rows, int cols,
                           int16_t *diff_ptr, ptrdiff_t diff_stride,
                           const uint8_t *src_ptr, ptrdiff_t src_stride,
@@ -397,6 +401,113 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 }
 
+
+#if CONFIG_GBT
+
+void vp9_xform_quant_g(int plane, int block, BLOCK_SIZE plane_bsize,
+                     TX_SIZE tx_size, void *arg, double *basis) {
+  struct encode_b_args* const args = arg;
+  MACROBLOCK* const x = args->x;
+  MACROBLOCKD* const xd = &x->e_mbd;
+  struct macroblock_plane *const p = &x->plane[plane];
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  int16_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
+  int16_t *dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  const scan_order *scan_order;
+  uint16_t *eob = &p->eobs[block];
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  int i, j;
+  int16_t *src_diff;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_GBT
+  uint8_t *dst;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+  dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
+  uint8_t *src;
+  src = &p->src.buf[4 * j * p->src.stride + 4 * i];
+#endif
+
+  switch (tx_size) {
+    case TX_32X32:
+      scan_order = &vp9_default_scan_orders[TX_32X32];
+//#if CONFIG_GBT
+//      vp9_fgbt(src_diff, coeff, diff_stride, pd->pre[0].buf, pd->pre[0].stride, 32, 32);
+//#else
+      if (x->use_lp32x32fdct)
+        vp9_fdct32x32_rd(src_diff, coeff, diff_stride);
+      else
+        vp9_fdct32x32(src_diff, coeff, diff_stride);
+//#endif
+
+      vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob, scan_order->scan,
+                           scan_order->iscan);
+      break;
+    case TX_16X16:
+      scan_order = &vp9_default_scan_orders[TX_16X16];
+//#if CONFIG_GBT
+//      vp9_fgbt(src_diff, coeff, diff_stride, pd->pre[0].buf, pd->pre[0].stride, 16, 16);
+//#else
+      vp9_fdct16x16(src_diff, coeff, diff_stride);
+//#endif
+      vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, p->zbin_extra, eob,
+                     scan_order->scan, scan_order->iscan);
+      break;
+    case TX_8X8:
+#if CONFIG_GBT
+      if ( plane == 0 )
+      {
+        scan_order = &vp9_default_scan_orders_g[TX_8X8];
+//        // output predictor
+//        printf("src before fgbt\n");
+//        for (i = 0; i < 8; i++)
+//        {
+//          for ( j = 0; j < 8; j++)
+//          {
+//            printf("%d ", src[i * p->src.stride + j]);
+//          }
+//          printf("\n");
+//        }
+        vp9_fgbt(src_diff, coeff, diff_stride, dst, pd->pre[0].stride, 8, 8, basis);
+//        printf("*\n");
+      }else
+      {
+        scan_order = &vp9_default_scan_orders[TX_8X8];
+        vp9_fdct8x8(src_diff, coeff, diff_stride);
+      }
+#else
+      scan_order = &vp9_default_scan_orders[TX_8X8];
+      vp9_fdct8x8(src_diff, coeff, diff_stride);
+#endif
+      vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, p->zbin_extra, eob,
+                     scan_order->scan, scan_order->iscan);
+      break;
+    case TX_4X4:
+      scan_order = &vp9_default_scan_orders[TX_4X4];
+//#if CONFIG_GBT
+//      vp9_fgbt(src_diff, coeff, diff_stride, pd->pre[0].buf, pd->pre[0].stride, 4, 4);
+//#else
+      x->fwd_txm4x4(src_diff, coeff, diff_stride);
+//#endif
+      vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                     p->quant, p->quant_shift, qcoeff, dqcoeff,
+                     pd->dequant, p->zbin_extra, eob,
+                     scan_order->scan, scan_order->iscan);
+      break;
+    default:
+      assert(0);
+  }
+}
+#endif
+
 static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
                          TX_SIZE tx_size, void *arg) {
   struct encode_b_args *const args = arg;
@@ -411,6 +522,16 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
 
+#if CONFIG_GBT
+  int16_t *coeff = BLOCK_OFFSET(p->coeff, block);
+  const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+  int16_t *src_diff;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
+  src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+  uint8_t *src;
+  src = &p->src.buf[4 * j * p->src.stride + 4 * i];
+#endif
+
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
   if (x->zcoeff_blk[tx_size][block] && plane == 0) {
@@ -420,8 +541,64 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
+#if CONFIG_GBT
+  if (!x->skip_recode)
+  {
+    if ( plane == 0 )
+    {
+      basis = malloc( sizeof(double) * 64 * 64 );
+      vp9_xform_quant_g(plane, block, plane_bsize, tx_size, arg, basis);
+
+      if ( tx_size == TX_8X8 )
+      {
+  //      // output basis
+  //        printf("basis\n");
+  //        for (i = 0; i < 64; i++)
+  //        {
+  //          for (j = 0; j < 64; j++)
+  //          {
+  //            printf("%7.4f ", basis[i*64 + j]);
+  //          }
+  //          printf("\n");
+  //        }
+
+
+
+
+//        // output coeff
+//        printf("coeff after vp9_xform_quant_g\n");
+//        for (i = 0; i < 8; i++)
+//        {
+//          for ( j = 0; j < 8; j++)
+//          {
+//            printf("%d ", coeff[i * 8 + j]);
+//          }
+//          printf("\n");
+//        }
+  //      // output dqcoeff
+  //      printf("dqcoeff after vp9_xform_quant_g\n");
+  //      for (i = 0; i < 8; i++)
+  //      {
+  //        for ( j = 0; j < 8; j++)
+  //        {
+  //          printf("%d ", dqcoeff[i * 8 + j]);
+  //        }
+  //        printf("\n");
+  //      }
+      }
+    }else
+    {
+      vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+    }
+  }
+
+
+#else
+
   if (!x->skip_recode)
     vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
+#endif
+
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     vp9_optimize_b(plane, block, plane_bsize, tx_size, x, ctx);
@@ -436,6 +613,142 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   if (x->skip_encode || p->eobs[block] == 0)
     return;
 
+//#if CONFIG_GBT
+//  if ( tx_size == TX_4X4 )
+//  {
+//    for (i=0; i<16; i++)
+//    {
+//      printf("%f\n", basis[i*4+0]);
+//    }
+//  }
+//#endif
+
+#if CONFIG_GBT
+  switch (tx_size) {
+    case TX_32X32:
+      vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    case TX_16X16:
+      vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    case TX_8X8:
+      if ( plane == 0 )
+      {
+
+        vp9_igbt_add( dqcoeff, dst, pd->dst.stride, p->eobs[block], 8, 8, basis);
+
+        // check if src - dst == 0
+        int flag = 0;
+//        for (  i = 0; i < 8; i++ )
+//        {
+//          for ( j = 0; j < 8; j++ )
+//          {
+//              if ( src[i*p->src.stride+j] - dst[i*pd->dst.stride+j] != 0 ) flag = 1;
+//          }
+//        }
+        if ( flag == 1 )
+        {
+
+#if VERBOSE
+          // write basis to file
+          FILE* fp;
+          char fn[500] = "/tmp/debug_tmp/basis.txt";
+          fp = fopen(fn, "w");
+
+          for ( i = 0; i < 64; i++ )
+          {
+            for ( j = 0; j < 64; j++ )
+            {
+              fprintf(fp, "%f ", basis[i*64 + j]);
+            }
+            fprintf(fp, "\n");
+          }
+          fclose(fp);
+
+          // orig residual
+          printf("orig residual\n");
+          for ( i = 0; i < 8; i++ )
+          {
+            for ( j = 0; j < 8; j++ )
+            {
+              printf("%d ", src_diff[i * diff_stride + j]);
+            }
+            printf("\n");
+          }
+
+          // coeff after igbt
+          printf("coeff after igbt\n");
+          for (  i = 0; i < 8; i++ )
+          {
+            for ( j = 0; j < 8; j++ )
+            {
+              printf("%d ", coeff[i*8+j]);
+            }
+            printf("\n");
+          }
+
+          // src
+          printf("src after igbt\n");
+          for (  i = 0; i < 8; i++ )
+          {
+            for ( j = 0; j < 8; j++ )
+            {
+              printf("%d ", src[i*p->src.stride+j]);
+            }
+            printf("\n");
+          }
+
+          // dst
+          printf("dst after igbt\n");
+          for (  i = 0; i < 8; i++ )
+          {
+            for ( j = 0; j < 8; j++ )
+            {
+              printf("%d ", dst[i*pd->dst.stride+j]);
+            }
+            printf("\n");
+          }
+#endif
+          printf("src - dst\n");
+          for (  i = 0; i < 8; i++ )
+          {
+            for ( j = 0; j < 8; j++ )
+            {
+                printf("%d ", src[i*p->src.stride+j] - dst[i*pd->dst.stride+j]);
+            }
+            printf("\n");
+          }
+        }
+      }else
+      {
+
+        vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+        // src - dst
+//        printf("src - dst\n");
+//        for (  i = 0; i < 4; i++ )
+//        {
+//          for ( j = 0; j < 4; j++ )
+//          {
+//            if  (src[i*p->src.stride+j] - dst[i*pd->dst.stride+j] != 0)
+//            {
+//              printf("%d ", src[i*p->src.stride+j] - dst[i*pd->dst.stride+j]);
+//            }
+//          }
+////          printf("\n");
+//        }
+      }
+
+      break;
+    case TX_4X4:
+      // this is like vp9_short_idct4x4 but has a special case around eob<=1
+      // which is significant (not just an optimization) for the lossless
+      // case.
+      xd->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+      break;
+    default:
+      assert(0 && "Invalid transform size");
+  }
+#else
   switch (tx_size) {
     case TX_32X32:
       vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
@@ -455,7 +768,14 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     default:
       assert(0 && "Invalid transform size");
   }
+#endif
+
+#if CONFIG_GBT
+  if ( plane == 0 ) free(basis);
+#endif
+
 }
+
 static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
   struct encode_b_args *const args = arg;
@@ -468,7 +788,6 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   uint8_t *dst;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
-
   vp9_xform_quant(plane, block, plane_bsize, tx_size, arg);
 
   if (p->eobs[block] == 0)

@@ -181,7 +181,7 @@ struct macroblockd_plane {
   int subsampling_x;
   int subsampling_y;
   struct buf_2d dst;
-  struct buf_2d pre[2];
+  struct buf_2d pre[2]; //yongzhe: single frame reference pre[0]. double frame pre[0] and [1].
   int16_t *dequant;
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
@@ -340,6 +340,21 @@ static INLINE int get_tx_eob(const struct segmentation *seg, int segment_id,
   const int eob_max = 16 << (tx_size << 1);
   return vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP) ? 0 : eob_max;
 }
+
+#if CONFIG_GBT
+
+
+#define VERBOSE 0
+#define ROTATE(a,i,j,k,l) g=a[i][j];h=a[k][l];a[i][j]=g-s*(h+g*tau); a[k][l]=h+s*(g-h*tau);
+void jacobi(double **a, int n, double d[], double **v, int *nrot);
+void eigsrt(double d[], double **v, int n);
+void eig(double *aa, double *vv, int n);
+
+
+
+
+
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

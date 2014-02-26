@@ -1399,3 +1399,217 @@ void vp9_fht16x16(TX_TYPE tx_type, const int16_t *input, int16_t *output,
   else
     vp9_short_fht16x16(input, output, stride, tx_type);
 }
+
+#if CONFIG_GBT
+
+
+
+void sub2ind( int height, int width, int i, int j, int* ind )
+{
+  *ind = i * width + j;
+}
+
+void ind2sub( int height, int width, int ind, int *i, int *j )
+{
+  *i = (int)((double)ind/(double)width);
+  *j = ind - ( *j * width );
+}
+
+void build_graph(const uint8_t *pred, int pred_stride, double *adj, double* lap, int height, int width, int num_nodes)
+{
+  int row, col, ind, row2, col2, ind2, diff;
+  int offsets[8] = {-1, 0, 1, 0, 0, -1, 0, 1};
+  int offsetInd, len = 4;
+  double diag_d[1024], tmp_sum;
+
+  // adjacency matrix
+  for ( row = 0; row < height; row++ )
+    for ( col = 0; col < width; col++ )
+    {
+      sub2ind( height, width, row, col, &ind );
+      for ( offsetInd = 0; offsetInd < len; offsetInd++ )
+      {
+        row2 = row + offsets[offsetInd * 2];
+        col2 = col + offsets[offsetInd * 2 + 1];
+        if ( row2 >= 0 && row2 < height && col2 >= 0 && col2 < width )
+        {
+          sub2ind( height, width, row2, col2, &ind2 );
+          diff = abs( pred[ row * pred_stride + col ] - pred[ row2 * pred_stride + col2 ]);
+          adj[ ind * num_nodes + ind2 ] = LUT_r[ diff ];
+          adj[ ind2 * num_nodes + ind ] = adj[ ind * num_nodes + ind2 ];
+        }
+      }
+    }
+
+  // degree matrix
+  for ( ind = 0; ind < num_nodes; ind++ )
+  {
+    tmp_sum = 0;
+    for (ind2 = 0; ind2 < num_nodes; ind2++ )
+    {
+      tmp_sum += adj[ ind * num_nodes + ind2 ];
+    }
+    diag_d[ ind ] = tmp_sum;
+  }
+
+  // Laplacian
+  for ( ind = 0; ind < num_nodes; ind++ )
+    for ( ind2 = 0; ind2 < num_nodes; ind2++ )
+    {
+      if ( ind == ind2 )
+      {
+        lap[ind * num_nodes + ind2] = diag_d[ind];
+      }else
+      {
+        lap[ind * num_nodes + ind2] = - adj[ind * num_nodes + ind2];
+      }
+    }
+
+
+}
+
+
+void vp9_fgbt(const int16_t *input, int16_t *out, int input_stride, const uint8_t *pred, int pred_stride, int height, int width, double *basis)
+{
+
+  int num_nodes = height * width;
+  int i, j;
+  double tmp_sum;
+
+//  double *basis = malloc( sizeof(double) * ( num_nodes * num_nodes ) );
+  double *adj = malloc( sizeof(double) * ( num_nodes * num_nodes ) );
+  double *lap = malloc( sizeof(double) * ( num_nodes * num_nodes ) );
+
+  //initialization
+  for ( i = 0; i < num_nodes * num_nodes; i++ )
+  {
+    basis[i] = 0.0;
+    adj[i] = 0.0;
+    lap[i] = 0.0;
+  }
+
+  build_graph(pred, pred_stride, adj, lap, height, width, num_nodes);
+
+#if VERBOSE
+//  // output laplacian
+//  printf("lap\n");
+//  for (i = 0; i < num_nodes; i++)
+//  {
+//    for ( j = 0; j < num_nodes; j++)
+//    {
+//      printf("%.4f ", lap[i*num_nodes + j]);
+//    }
+//    printf("\n");
+//  }
+
+
+
+  // output predictor
+  printf("predictor inside fgbt\n");
+  for (i = 0; i < height; i++)
+  {
+    for ( j = 0; j < width; j++)
+    {
+      printf("%d ", pred[i * pred_stride + j]);
+    }
+    printf("\n");
+  }
+#endif
+
+  eig(lap, basis, num_nodes);
+
+
+//  // output basis
+//  printf("basis\n");
+//  for (i = 0; i < num_nodes; i++)
+//  {
+////    for ( j = 0; j < num_nodes; j++)
+//    {
+//      printf("%7.4f ", basis[i*num_nodes + 20]);
+//    }
+//    printf("\n");
+//  }
+
+  // prepare input data
+  int16_t tmp_input[1024];
+  for ( i = 0; i < num_nodes; i++ )
+  {
+    for ( j = 0; j < num_nodes; j++ )
+    {
+      tmp_input[i * width + j] = input[i * input_stride + j];
+    }
+  }
+
+  // projection
+  for ( i = 0; i < num_nodes; i++ )
+  {
+    tmp_sum = 0.0;
+    for ( j = 0; j < num_nodes; j++ )
+    {
+      tmp_sum = tmp_sum + (double) ( tmp_input[j] ) * basis[j * num_nodes + i];
+    }
+    if ( tmp_sum >= 0 )
+      out[i] = (int16_t)( tmp_sum * 8 + 0.5 );
+    else
+      out[i] = (int16_t)( tmp_sum * 8 - 0.5 );
+  }
+
+#if VERBOSE
+  // output coeff
+  printf("coeff inside fgbt\n");
+  for (i = 0; i < height; i++)
+  {
+    for ( j = 0; j < width; j++)
+    {
+      printf("%d ", out[i * 8 + j]);
+    }
+    printf("\n");
+  }
+
+
+//  // inverse transform
+//  int8_t rec[64];
+//  for ( i = 0; i < num_nodes; i++ )
+//  {
+//    tmp_sum = 0.0;
+//    for ( j = 0; j < num_nodes; j++ )
+//    {
+//      tmp_sum = tmp_sum + (double) ( out[j] ) * basis[i * num_nodes + j];
+//    }
+//    if ( tmp_sum >= 0 )
+//      rec[i] = (int8_t)( tmp_sum / 8 + 0.5 );
+//    else
+//      rec[i] = (int8_t)( tmp_sum / 8 - 0.5 );
+//  }
+
+  // output residual
+  printf("res inside fgbt\n");
+  for (i = 0; i < height; i++)
+  {
+    for ( j = 0; j < width; j++)
+    {
+      printf("%d ", input[i * input_stride + j]);
+    }
+    printf("\n");
+  }
+
+//  // output rec residual
+//  printf("rec res\n");
+//  for (i = 0; i < height; i++)
+//  {
+//    for ( j = 0; j < width; j++)
+//    {
+//      printf("%d ", rec[i * 8 + j]);
+//    }
+//    printf("\n");
+//  }
+
+#endif
+
+//  free( basis );
+  free( adj );
+  free( lap );
+
+}
+
+#endif

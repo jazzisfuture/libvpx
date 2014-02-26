@@ -165,3 +165,163 @@ void vp9_setup_block_planes(MACROBLOCKD *xd, int ss_x, int ss_y) {
   xd->plane[3].subsampling_y = 0;
 #endif
 }
+
+#if CONFIG_GBT
+
+void jacobi(double **a, int n, double d[], double **v, int *nrot)
+// input a, output v
+{
+  int j,iq,ip,i;
+  double tresh,theta,tau,t,sm,s,h,g,c,*b,*z;
+
+  b=(double*)malloc(sizeof(double)*(n+1));
+  z=(double*)malloc(sizeof(double)*(n+1));
+  for (ip=1;ip<=n;ip++) {
+    for (iq=1;iq<=n;iq++) v[ip][iq]=0.0;
+    v[ip][ip]=1.0;
+  }
+  for (ip=1;ip<=n;ip++) {
+    b[ip]=d[ip]=a[ip][ip];
+    z[ip]=0.0;
+  }
+  *nrot=0;
+  for (i=1;i<=50;i++) {
+    sm=0.0;
+    for (ip=1;ip<=n-1;ip++) {
+      for (iq=ip+1;iq<=n;iq++)
+        sm += fabs(a[ip][iq]);
+    }
+    if (sm == 0.0) {
+      free(z);
+      free(b);
+      return;
+    }
+    if (i < 4)
+      tresh=0.2*sm/(n*n);
+    else
+      tresh=0.0;
+    for (ip=1;ip<=n-1;ip++) {
+      for (iq=ip+1;iq<=n;iq++) {
+        g=100.0*fabs(a[ip][iq]);
+        if (i > 4 && (double)(fabs(d[ip])+g) == (double)fabs(d[ip])
+          && (double)(fabs(d[iq])+g) == (double)fabs(d[iq]))
+          a[ip][iq]=0.0;
+        else if (fabs(a[ip][iq]) > tresh) {
+          h=d[iq]-d[ip];
+          if ((double)(fabs(h)+g) == (double)fabs(h))
+            t=(a[ip][iq])/h;
+          else {
+            theta=0.5*h/(a[ip][iq]);
+            t=1.0/(fabs(theta)+sqrt(1.0+theta*theta));
+            if (theta < 0.0) t = -t;
+          }
+          c=1.0/sqrt(1+t*t);
+          s=t*c;
+          tau=s/(1.0+c);
+          h=t*a[ip][iq];
+          z[ip] -= h;
+          z[iq] += h;
+          d[ip] -= h;
+          d[iq] += h;
+          a[ip][iq]=0.0;
+          for (j=1;j<=ip-1;j++) {
+            ROTATE(a,j,ip,j,iq)
+          }
+          for (j=ip+1;j<=iq-1;j++) {
+            ROTATE(a,ip,j,j,iq)
+          }
+          for (j=iq+1;j<=n;j++) {
+            ROTATE(a,ip,j,iq,j)
+          }
+          for (j=1;j<=n;j++) {
+            ROTATE(v,j,ip,j,iq)
+          }
+          ++(*nrot);
+        }
+      }
+    }
+    for (ip=1;ip<=n;ip++) {
+      b[ip] += z[ip];
+      d[ip]=b[ip];
+      z[ip]=0.0;
+    }
+  }
+  printf("Too many iterations in routine jacobi");
+}
+
+void eigsrt( double d[], double **v, int n )
+{
+  int k,j,i;
+  double p;
+
+  for (i=1;i<n;i++) {
+    p=d[k=i];
+    for (j=i+1;j<=n;j++)
+      if (d[j] <= p) p=d[k=j];
+    if (k != i) {
+      d[k]=d[i];
+      d[i]=p;
+      for (j=1;j<=n;j++) {
+        p=v[j][i];
+        v[j][i]=v[j][k];
+        v[j][k]=p;
+      }
+    }
+  }
+}
+
+void eig(double *aa, double *vv, int n) // nxn matrix
+{
+  // malloc memory
+  int i, j, nrot;
+  double **a;
+  double **v;
+  double d[65*65];
+  a = malloc( sizeof(double*) * (n+1) );
+  v = malloc( sizeof(double*) * (n+1) );
+  for (i = 0; i <= n; i++)
+  {
+    a[i] = malloc( sizeof(double) * (n+1) );
+    v[i] = malloc( sizeof(double) * (n+1) );
+  }
+
+  // set indexing starting from 1
+  for (i = 1; i <= n; i++)
+    for (j = 1; j <=n; j++)
+      a[i][j] = aa[(i-1) * n + j-1];
+
+  // calculation using jacobi
+  jacobi( a, n, d, v, &nrot );
+
+//  for (i = 1; i <= n; i++)
+//    printf("%f ", d[i]);
+//  printf("\n");
+
+
+  // sort the eval and evec
+  eigsrt( d, v, n );
+
+//  for (i = 1; i <= n; i++)
+//    printf("%f ", d[i]);
+//  printf("\n");
+
+  // set indexing starting from 0
+  for (i = 0; i < n; i++)
+      for (j = 0; j < n; j++)
+        vv[i * n + j] = v[i+1][j+1];
+
+//  for (i = 0; i < n; i++)
+//    printf("%f\n", vv[i*n+2]);
+
+
+  // free memory
+  for (i = 0; i <= n; i++)
+  {
+    free(a[i]);
+    free(v[i]);
+  }
+  free(a);
+  free(v);
+}
+
+#endif

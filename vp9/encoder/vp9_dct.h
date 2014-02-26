@@ -25,6 +25,10 @@ void vp9_fht8x8(TX_TYPE tx_type, const int16_t *input, int16_t *output,
 void vp9_fht16x16(TX_TYPE tx_type, const int16_t *input, int16_t *output,
                   int stride);
 
+#if CONFIG_GBT
+void vp9_fgbt(const int16_t *input, int16_t *out, int input_stride, const uint8_t *pred, int pred_stride, int height, int width, double *basis);
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

@@ -889,7 +889,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adaptive_motion_search = 0;
   sf->adaptive_pred_interp_filter = 0;
   sf->reference_masking = 0;
-  sf->use_one_partition_size_always = 0;
+  sf->use_one_partition_size_always = 0; // Yongzhe: modified, default is 0
+//  sf->always_this_block_size = BLOCK_8X8; // added this line
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
   sf->auto_min_max_partition_size = NOT_IN_USE;

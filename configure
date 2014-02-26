@@ -254,6 +254,7 @@ EXPERIMENT_LIST="
     multiple_arf
     non420
     alpha
+    gbt
 "
 CONFIG_LIST="
     external_build

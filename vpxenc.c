@@ -1485,6 +1485,7 @@ static void print_time(const char *label, int64_t etl) {
 
 
 int main(int argc, const char **argv_) {
+
   int pass;
   vpx_image_t raw;
   int frame_avail, got_data;
@@ -1515,6 +1516,11 @@ int main(int argc, const char **argv_) {
   argv = argv_dup(argc - 1, argv_ + 1);
   parse_global_config(&global, argv);
 
+#if CONFIG_GBT
+
+  makeLUT( 5.0f, 10.0f ); // sigma_s, sigma_r
+
+#endif
 
   {
     /* Now parse each stream's parameters. Using a local scope here

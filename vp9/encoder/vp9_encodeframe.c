@@ -1233,6 +1233,10 @@ static void rd_use_partition(VP9_COMP *cpi,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
+#if CONFIG_GBT // yongzhe
+printf("%d, %d, %d\n", cm->current_video_frame, mi_row*4, mi_col*4);
+#endif
+
   partition = partition_lookup[bsl][bs_type];
   subsize = get_subsize(bsize, partition);
 

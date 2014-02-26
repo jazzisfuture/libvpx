@@ -44,6 +44,19 @@ DECLARE_ALIGNED(16, static const int16_t, default_scan_8x8[64]) = {
   46, 39, 61, 54, 47, 62, 55, 63,
 };
 
+#if CONFIG_GBT
+DECLARE_ALIGNED(16, static const int16_t, default_scan_8x8_g[64]) = {
+  0, 1, 2, 4, 5, 6, 7,
+  8, 9, 10, 11, 12, 13, 14, 15,
+  16, 17, 18, 19, 20, 21, 22, 23,
+  24, 25, 26, 27, 28, 29, 30, 31,
+  32, 33, 34, 35, 36, 37, 38, 39,
+  40, 41, 42, 43, 44, 45, 46, 47,
+  48, 49, 50, 51, 52, 53, 54, 55,
+  56, 57, 58, 59, 60, 61, 62, 63,
+};
+#endif
+
 DECLARE_ALIGNED(16, static const int16_t, col_scan_8x8[64]) = {
   0,  8, 16,  1, 24,  9, 32, 17,
   2, 40, 25, 10, 33, 18, 48,  3,
@@ -271,6 +284,15 @@ const scan_order vp9_default_scan_orders[TX_SIZES] = {
   {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
   {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
 };
+
+#if CONFIG_GBT
+const scan_order vp9_default_scan_orders_g[TX_SIZES] = {
+  {default_scan_4x4,   vp9_default_iscan_4x4,   default_scan_4x4_neighbors},
+  {default_scan_8x8_g,   vp9_default_iscan_8x8,   default_scan_8x8_neighbors},
+  {default_scan_16x16, vp9_default_iscan_16x16, default_scan_16x16_neighbors},
+  {default_scan_32x32, vp9_default_iscan_32x32, default_scan_32x32_neighbors},
+};
+#endif
 
 const scan_order vp9_scan_orders[TX_SIZES][TX_TYPES] = {
   {  // TX_4X4

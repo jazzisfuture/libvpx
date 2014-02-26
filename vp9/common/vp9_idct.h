@@ -106,6 +106,15 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
 void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
                       int stride, int eob);
 
+#if CONFIG_GBT
+
+extern double LUT_s[1024];
+extern double LUT_r[256];
+void makeLUT( double sigma_s, double sigma_r );
+void vp9_igbt_add(const int16_t *input, uint8_t *dest, int dest_stride, int eob, int height, int width, double* basis);
+
+
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -37,6 +37,11 @@ void vp9_encode_sby(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
                      TX_SIZE tx_size, void *arg);
 
+#if CONFIG_GBT
+void vp9_xform_quant_g(int plane, int block, BLOCK_SIZE plane_bsize,
+                     TX_SIZE tx_size, void *arg, double *basis);
+#endif
+
 void vp9_subtract_sby(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp9_subtract_sbuv(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp9_subtract_sb(MACROBLOCK *x, BLOCK_SIZE bsize);
@@ -48,6 +53,10 @@ void vp9_encode_intra_block_y(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp9_encode_intra_block_uv(MACROBLOCK *x, BLOCK_SIZE bsize);
 
 int vp9_encode_intra(MACROBLOCK *x, int use_16x16_pred);
+
+//#ifdef CONFIG_GBT
+//extern double basis[1024*1024];
+//#endif
 
 #ifdef __cplusplus
 }  // extern "C"

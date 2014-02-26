@@ -650,10 +650,27 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
   if (args->skip)
     return;
 
+
+
   if (!is_inter_block(&xd->mi_8x8[0]->mbmi))
     vp9_encode_block_intra(plane, block, plane_bsize, tx_size, &encode_args);
   else
+  {
+#if CONFIG_GBT
+    if (plane == 0)
+    {
+      double *basis = malloc( sizeof(double) * 64 * 64 );
+      vp9_xform_quant_g(plane, block, plane_bsize, tx_size, &encode_args, basis);
+      free( basis );
+    }else
+    {
+      vp9_xform_quant(plane, block, plane_bsize, tx_size, &encode_args);
+    }
+#else
     vp9_xform_quant(plane, block, plane_bsize, tx_size, &encode_args);
+#endif
+  }
+
 
   dist_block(plane, block, tx_size, args);
   rate_block(plane, block, plane_bsize, tx_size, args);
@@ -953,7 +970,7 @@ static void super_block_yrd(VP9_COMP *cpi,
                                   skip, sse, ref_best_rd, bs);
   } else {
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
-      txfm_rd_in_plane(x, &r[tx_size][0], &d[tx_size],
+      txfm_rd_in_plane(x, &r[tx_size][0], &d[tx_size], //Yongzhe: compare the rd cost of each transform
                        &s[tx_size], &sse[tx_size],
                        ref_best_rd, 0, bs, tx_size);
     choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s,
@@ -2894,6 +2911,39 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
   }
 
+// Yongzhe: (1) output the predictor here
+//  has_second_ref(mbmi)
+
+//  int blk_size = 16;
+//  if ( this_mode == NEARMV && bsize == BLOCK_16X16 && mbmi->ref_frame[1] == -1 )
+//  {
+//
+//    // write the predictor to file
+//    FILE* fp;
+//    char fn[500];
+//    sprintf(fn, "/tmp/foreman16x16/pred_%d_%d_%d_%d.txt", cm->current_video_frame, mi_row * 8, mi_col * 8, mbmi->ref_frame[0]);
+//    fp = fopen(fn, "w");
+//
+//    int stride, r, c;
+////    stride = xd->plane[0].pre[0].stride;
+//    stride = xd->plane[0].dst.stride;
+//    for ( r = 0; r < blk_size; r++ )
+//    {
+//      for ( c = 0; c < blk_size; c++ )
+//      {
+//        fprintf(fp, "%d ", xd->plane[0].dst.buf[r * stride + c]);
+//      }
+//      fprintf(fp, "\n");
+//    }
+//    fclose(fp);
+//
+////    printf("*");
+//  }
+
+//  mbmi->ref_frame[0] == LAST_FRAME;
+
+
+
   if (cpi->sf.use_rd_breakout && ref_best_rd < INT64_MAX) {
     int tmp_rate;
     int64_t tmp_dist;
@@ -3000,7 +3050,48 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     // Y cost and distortion
     super_block_yrd(cpi, x, rate_y, distortion_y, &skippable_y, psse,
-                    bsize, txfm_cache, ref_best_rd);
+                    bsize, txfm_cache, ref_best_rd); // Yongzhe: calculate residual and transform
+
+// Yongzhe: (2) grab residual here
+//    if ( this_mode == NEARMV && bsize == BLOCK_16X16 && mbmi->ref_frame[1] == -1 )
+//    {
+//
+//      // write the residual to file
+//      FILE* fp;
+//      FILE* fp1;
+//      char fn[500], fn1[500];
+//      sprintf(fn, "/tmp/foreman16x16/res_%d_%d_%d_%d.txt", cm->current_video_frame, mi_row * 8, mi_col * 8, mbmi->ref_frame[0]);
+//      sprintf(fn1, "/tmp/foreman16x16/src_%d_%d_%d.txt", cm->current_video_frame, mi_row * 8, mi_col * 8);
+//      fp = fopen(fn, "w");
+//      fp1 = fopen(fn1, "w");
+//
+//      int stride, stride1, r, c;
+//      stride = blk_size;
+//      stride1 = x->plane[0].src.stride;
+//      for ( r = 0; r < blk_size; r++ )
+//      {
+//        for ( c = 0; c < blk_size; c++ )
+//        {
+//          fprintf(fp, "%d ", x->plane[0].src_diff[r*stride+c]);
+//          fprintf(fp1, "%d ", x->plane[0].src.buf[r*stride1+c]);
+//        }
+//        fprintf(fp, "\n");
+//        fprintf(fp1, "\n");
+//
+//      }
+//      fclose(fp);
+//      fclose(fp1);
+//
+////      printf("#");
+//
+//    }
+
+
+
+//    x->plane[0].src_diff
+//    mi_row
+//    mi_col
+
 
     if (*rate_y == INT_MAX) {
       *rate2 = INT_MAX;

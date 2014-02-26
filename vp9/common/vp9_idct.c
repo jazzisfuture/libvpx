@@ -1404,3 +1404,103 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
     vp9_iht16x16_256_add(input, dest, stride, tx_type);
   }
 }
+
+#if CONFIG_GBT
+
+double LUT_s[1024];
+double LUT_r[256];
+
+
+
+void makeLUT( double sigma_s, double sigma_r )
+{
+//  sigma_s = 5.0f;
+//  sigma_r = 10.0f;
+
+//  printf("%f\n", sigma_s);
+
+  int row, col, r;
+  double const_s, const_r;
+  const_s = 1 / ( 2 * sigma_s * sigma_s );
+  const_r = 1 / ( 2 * sigma_r * sigma_r );
+
+  for ( row = 0; row < 32; row++ )
+    for ( col = 0; col < 32; col++ )
+      LUT_s[ row * 32 + col ] = exp( -sqrt( row * row + col * col ) * const_s);
+
+  for ( r = 0; r < 256; r++ )
+  {
+    LUT_r[ r ] = exp( - r * r * const_r );
+//    printf("%f \n", LUT_r[r]);
+  }
+
+}
+
+void vp9_igbt_add(const int16_t *input, uint8_t *dest, int dest_stride, int eob, int height, int width, double* basis)
+{
+  int i, j;
+  int num_nodes = height * width;
+  double tmp_sum;
+  int16_t out[1024];
+
+#if VERBOSE
+  // output coeff
+  printf("coeff in igbt\n");
+  for (i = 0; i < height; i++)
+  {
+    for ( j = 0; j < width; j++)
+    {
+      printf("%d ", input[i * width + j]);
+    }
+    printf("\n");
+  }
+#endif
+
+  for ( i = 0; i < num_nodes; i++ )
+  {
+    tmp_sum = 0.0;
+    for ( j = 0; j < num_nodes; j++ )
+    {
+      tmp_sum = tmp_sum + (double) ( input[j] ) * basis[i * num_nodes + j];
+    }
+    if ( tmp_sum >= 0 )
+      out[i] = (int16_t)( tmp_sum / 8 + 0.5 );
+    else
+      out[i] = (int16_t)( tmp_sum / 8 - 0.5 );
+  }
+
+#if VERBOSE
+  // rec residual
+  printf("rec residual inside igbt\n");
+  for ( i = 0; i < 8; i++ )
+  {
+    for ( j = 0; j < 8; j++ )
+    {
+      printf("%d ", out[i * width + j]);
+    }
+    printf("\n");
+  }
+
+  // predictor
+  printf("predictor inside igbt\n");
+  for ( i = 0; i < 8; i++ )
+  {
+    for ( j = 0; j < 8; j++ )
+    {
+      printf("%d ", dest[i * dest_stride + j]);
+    }
+    printf("\n");
+  }
+#endif
+
+  // add predictor?
+  for ( i = 0; i < height; i++ )
+  {
+    for ( j = 0; j < width; j++ )
+    {
+      dest[i * dest_stride + j] = dest[i * dest_stride + j] + out[i * width + j];
+    }
+  }
+}
+
+#endif
