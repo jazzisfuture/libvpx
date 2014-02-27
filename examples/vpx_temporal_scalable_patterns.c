@@ -16,8 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #define VPX_CODEC_DISABLE_COMPAT 1
+#include "vpx_ports/vpx_timer.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
 
@@ -449,6 +451,8 @@ int main(int argc, char **argv) {
   const VpxInterface *encoder = NULL;
   FILE *infile = NULL;
   struct RateControlMetrics rc;
+  double cx_time = 0;
+  struct timeval tv1, tv2, difftv;
 
   exec_name = argv[0];
   // Check usage and arguments.
@@ -593,10 +597,14 @@ int main(int argc, char **argv) {
     frame_avail = vpx_img_read(&raw, infile);
     if (frame_avail)
       ++rc.layer_input_frames[layer_id.temporal_layer_id];
+    gettimeofday(&tv1, NULL);
     if (vpx_codec_encode(&codec, frame_avail? &raw : NULL, pts, 1, flags,
         VPX_DL_REALTIME)) {
       die_codec(&codec, "Failed to encode frame");
     }
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &difftv);
+    cx_time += (double)(difftv.tv_sec * 1000000 + difftv.tv_usec);
     // Reset KF flag.
     if (layering_mode != 7) {
       layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
@@ -632,7 +640,11 @@ int main(int argc, char **argv) {
   }
   fclose(infile);
   printout_rate_control_summary(&rc, &cfg, frame_cnt);
-
+  printf("\n");
+  printf("Frame cnt and encoding time/FPS stats for encoding: %d %f %f \n",
+          frame_cnt,
+          1000 * (float)cx_time / (double)(frame_cnt * 1000000),
+          1000000 * (double)frame_cnt / (double)cx_time);
   if (vpx_codec_destroy(&codec))
     die_codec(&codec, "Failed to destroy codec");
 
