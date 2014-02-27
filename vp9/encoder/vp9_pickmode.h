@@ -20,6 +20,11 @@ extern "C" {
 int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                             const struct TileInfo *const tile,
                             int mi_row, int mi_col,
+                            // A binary mask indicating if
+                            // NEARESTMV, NEARMV, ZEROMV, NEWMV
+                            // modes are disabled in order from
+                            // LSB to MSB.
+                            int disable_mode_search_mask,
                             int *returnrate,
                             int64_t *returndistortion,
                             BLOCK_SIZE bsize);
