@@ -2357,7 +2357,9 @@ static void nonrd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
       set_offsets(cpi, tile, row, col, bs);
 
       if (cm->frame_type != KEY_FRAME)
-        vp9_pick_inter_mode(cpi, x, tile, row, col, &brate, &bdist, bs);
+        vp9_pick_inter_mode(cpi, x, tile, row, col,
+                            (cpi->speed > 7 ? 14 : 0),
+                            &brate, &bdist, bs);
       else
         set_mode_info(&xd->mi_8x8[0]->mbmi, bs, mode, row, col);
 
