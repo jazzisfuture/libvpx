@@ -23,6 +23,7 @@
 ; r2  int dest_stride)
 
 |vp9_idct16x16_1_add_neon| PROC
+    vpush            {d8-d15}
     ldrsh            r0, [r0]
 
     ; generate cospi_16_64 = 11585
@@ -192,6 +193,7 @@
     vst1.64          {d30}, [r12], r0
     vst1.64          {d31}, [r12], r2
 
+    vpop             {d8-d15}
     bx               lr
     ENDP             ; |vp9_idct16x16_1_add_neon|
 
