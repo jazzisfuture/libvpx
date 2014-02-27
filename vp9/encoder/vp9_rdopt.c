@@ -3255,13 +3255,13 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   for (mode_index = 0; mode_index < MAX_MODES; ++mode_index) {
-    int mode_excluded = 0;
-    int64_t this_rd = INT64_MAX;
-    int disable_skip = 0;
-    int compmode_cost = 0;
-    int rate2 = 0, rate_y = 0, rate_uv = 0;
-    int64_t distortion2 = 0, distortion_y = 0, distortion_uv = 0;
-    int skippable = 0;
+    int mode_excluded;
+    int64_t this_rd;
+    int disable_skip;
+    int compmode_cost;
+    int rate2, rate_y, rate_uv;
+    int64_t distortion2, distortion_y, distortion_uv;
+    int skippable;
     int64_t tx_cache[TX_MODES];
     int i;
     int this_skip2 = 0;
@@ -3302,6 +3302,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
 
     comp_pred = second_ref_frame > INTRA_FRAME;
+    mode_excluded = 0;
     if (comp_pred) {
       // Do not allow compound prediction if the segment level reference
       // frame feature is in use as in this case there can only be one
@@ -3415,7 +3416,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // Keep a rcord of the number of test hits at each size
     cpi->mode_test_hits[bsize]++;
 #endif
-
+    this_rd = INT64_MAX;
+    disable_skip = 0;
+    compmode_cost = 0;
     if (ref_frame == INTRA_FRAME) {
       TX_SIZE uv_tx;
       intra_super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable, NULL,
@@ -3441,6 +3444,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
     } else {
+      rate2 = 0;
+      distortion2 = 0;
       this_rd = handle_inter_mode(cpi, x, tile, bsize,
                                   tx_cache,
                                   &rate2, &distortion2, &skippable,
