@@ -98,8 +98,28 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   mvp_full.col >>= 3;
   mvp_full.row >>= 3;
 
-  vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param, sadpb, further_steps, 1,
-                         &cpi->fn_ptr[bsize], &ref_mv.as_mv, &tmp_mv->as_mv);
+  if (cpi->sf.search_method == FAST_HEX) {
+    bestsme = vp9_fast_hex_search(x, &mvp_full, step_param, sadpb,
+                                  &cpi->fn_ptr[bsize], 1,
+                                  &ref_mv.as_mv, &tmp_mv->as_mv);
+  } else if (cpi->sf.search_method == HEX) {
+    bestsme = vp9_hex_search(x, &mvp_full, step_param, sadpb, 1,
+                             &cpi->fn_ptr[bsize], 1,
+                             &ref_mv.as_mv, &tmp_mv->as_mv);
+  } else if (cpi->sf.search_method == SQUARE) {
+    bestsme = vp9_square_search(x, &mvp_full, step_param, sadpb, 1,
+                                &cpi->fn_ptr[bsize], 1,
+                                &ref_mv.as_mv, &tmp_mv->as_mv);
+  } else if (cpi->sf.search_method == BIGDIA) {
+    bestsme = vp9_bigdia_search(x, &mvp_full, step_param, sadpb, 1,
+                                &cpi->fn_ptr[bsize], 1,
+                                &ref_mv.as_mv, &tmp_mv->as_mv);
+  } else {
+    bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
+                                     sadpb, further_steps, 1,
+                                     &cpi->fn_ptr[bsize],
+                                     &ref_mv.as_mv, &tmp_mv->as_mv);
+  }
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;
   x->mv_row_min = tmp_row_min;
@@ -178,6 +198,7 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                             const TileInfo *const tile,
                             int mi_row, int mi_col,
+                            int disable_mode_search_mask,
                             int *returnrate,
                             int64_t *returndistortion,
                             BLOCK_SIZE bsize) {
@@ -193,7 +214,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
                                     VP9_ALT_FLAG };
   int64_t best_rd = INT64_MAX;
-  int64_t this_rd;
+  int64_t this_rd = INT64_MAX;
   static const int cost[4]= { 0, 50, 75, 100 };
 
   const int64_t inter_mode_thresh = 300;
@@ -232,7 +253,6 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   for (ref_frame = LAST_FRAME; ref_frame <= LAST_FRAME ; ++ref_frame) {
     int rate_mv = 0;
-
     if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
       continue;
 
@@ -247,6 +267,8 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
       int rate = cost[INTER_OFFSET(this_mode)];
       int64_t dist;
+      if (disable_mode_search_mask & (1 << (this_mode - NEARESTMV)))
+        continue;
 
       if (this_mode == NEWMV) {
         if (this_rd < 500)
@@ -307,6 +329,5 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
   }
-
   return INT64_MAX;
 }
