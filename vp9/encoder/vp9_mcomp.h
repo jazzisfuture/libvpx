@@ -35,6 +35,13 @@ extern "C" {
 void vp9_set_mv_search_range(MACROBLOCK *x, const MV *mv);
 int vp9_mv_bit_cost(const MV *mv, const MV *ref,
                     const int *mvjcost, int *mvcost[2], int weight);
+
+// Utility to compute variance + MV rate cost for a given MV
+int vp9_get_mvpred_var(const MACROBLOCK *x,
+                       MV *best_mv,
+                       const MV *center_mv,
+                       const vp9_variance_fn_ptr_t *vfp,
+                       int use_mvcost);
 void vp9_init_dsmotion_compensation(MACROBLOCK *x, int stride);
 void vp9_init3smotion_compensation(MACROBLOCK *x,  int stride);
 
@@ -79,6 +86,7 @@ int vp9_fast_hex_search(const MACROBLOCK *x,
                         MV *ref_mv,
                         int search_param,
                         int sad_per_bit,
+                        int do_init_search,
                         const vp9_variance_fn_ptr_t *vfp,
                         int use_mvcost,
                         const MV *center_mv,
