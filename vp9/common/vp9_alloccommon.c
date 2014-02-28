@@ -200,7 +200,7 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
   return 1;
 }
 
-void vp9_create_common(VP9_COMMON *cm) {
+void vp9_create_common() {
   vp9_rtcd();
 }
 
