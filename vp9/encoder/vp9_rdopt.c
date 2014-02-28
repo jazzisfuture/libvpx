@@ -567,7 +567,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   const int16_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
-  uint8_t *p_tok = x->token_cache;
+  uint8_t token_cache[32 * 32];
   int pt = combine_entropy_contexts(*A, *L);
   int c, cost;
 
@@ -586,7 +586,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
     int v = qcoeff[0];
     int prev_t = vp9_dct_value_tokens_ptr[v].token;
     cost = (*token_costs)[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
-    p_tok[0] = vp9_pt_energy_class[prev_t];
+    token_cache[0] = vp9_pt_energy_class[prev_t];
     ++token_costs;
 
     // ac tokens
@@ -596,9 +596,9 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
       v = qcoeff[rc];
       t = vp9_dct_value_tokens_ptr[v].token;
-      pt = get_coef_context(nb, p_tok, c);
+      pt = get_coef_context(nb, token_cache, c);
       cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
-      p_tok[rc] = vp9_pt_energy_class[t];
+      token_cache[rc] = vp9_pt_energy_class[t];
       prev_t = t;
       if (!--band_left) {
         band_left = *band_count++;
@@ -608,7 +608,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
     // eob token
     if (band_left) {
-      pt = get_coef_context(nb, p_tok, c);
+      pt = get_coef_context(nb, token_cache, c);
       cost += (*token_costs)[0][pt][EOB_TOKEN];
     }
   }

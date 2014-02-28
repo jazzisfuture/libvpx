@@ -160,7 +160,6 @@ struct tokenize_b_args {
   VP9_COMP *cpi;
   MACROBLOCKD *xd;
   TOKENEXTRA **tp;
-  uint8_t *token_cache;
 };
 
 static void set_entropy_context_b(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -205,7 +204,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   VP9_COMP *cpi = args->cpi;
   MACROBLOCKD *xd = args->xd;
   TOKENEXTRA **tp = args->tp;
-  uint8_t *token_cache = args->token_cache;
+  uint8_t token_cache[32 * 32];
   struct macroblock_plane *p = &cpi->mb.plane[plane];
   struct macroblockd_plane *pd = &xd->plane[plane];
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
@@ -314,7 +313,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
   const int ctx = vp9_get_skip_context(xd);
   const int skip_inc = !vp9_segfeature_active(&cm->seg, mbmi->segment_id,
                                               SEG_LVL_SKIP);
-  struct tokenize_b_args arg = {cpi, xd, t, cpi->mb.token_cache};
+  struct tokenize_b_args arg = {cpi, xd, t};
   if (mbmi->skip) {
     if (!dry_run)
       cm->counts.skip[ctx][1] += skip_inc;
