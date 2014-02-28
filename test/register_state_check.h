@@ -83,12 +83,68 @@ class RegisterStateCheck {
 
 #else  // !_WIN64
 
+#ifdef HAVE_NEON
+
+#include "third_party/googletest/src/include/gtest/gtest.h"
+
+extern "C" {
+// Save the q4-q7 registers into store.
+void vp9_push_neon(int64_t *store);
+}
+
+namespace libvpx_test {
+
+// Compares the state of q4-q7 at construction with their state at
+// destruction. These registers should be preserved by the callee on
+// arm platform.
+// Usage:
+// {
+//   RegisterStateCheck reg_check;
+//   FunctionToVerify();
+// }
+class RegisterStateCheck {
+ public:
+  RegisterStateCheck() { initialized_ = StoreRegisters(pre_store); }
+  ~RegisterStateCheck() { EXPECT_TRUE(Check()); }
+
+ private:
+  static bool StoreRegisters(int64_t store[8]) {
+    vp9_push_neon(store);
+    return true;
+  }
+
+  // Compares the register state. Returns true if the states match.
+  bool Check() const {
+    if (!initialized_) return false;
+    int64_t post_store[8];
+    vp9_push_neon(post_store);
+    for (int i = 0; i < 4; i++) {
+      EXPECT_EQ(pre_store[i], post_store[i]) << "q" << i + 4 << " has been modified";
+    }
+    return !testing::Test::HasNonfatalFailure();
+  }
+
+  bool initialized_;
+  int64_t pre_store[8];
+};
+
+#define REGISTER_STATE_CHECK(statement) do { \
+  libvpx_test::RegisterStateCheck reg_check; \
+  statement;                               \
+} while (false)
+
+}  // namespace libvpx_test
+
+#else
+
 namespace libvpx_test {
 
 class RegisterStateCheck {};
 #define REGISTER_STATE_CHECK(statement) statement
 
 }  // namespace libvpx_test
+
+#endif  // HAVE_NEON
 
 #endif  // _WIN64
 
