@@ -22,6 +22,12 @@ clean:: .DEFAULT
 install:: .DEFAULT
 test:: .DEFAULT
 testdata:: .DEFAULT
+vpxenc::
+	$(MAKE) --no-print-directory target=libs libvpx.a || exit $$?;\
+	$(MAKE) --no-print-directory target=examples vpxenc || exit $$?;
+vpxdec::
+	$(MAKE) --no-print-directory target=libs libvpx.a || exit $$?;\
+	$(MAKE) --no-print-directory target=examples vpxdec || exit $$?;
 
 
 # Note: md5sum is not installed on OS X, but openssl is. Openssl may not be
