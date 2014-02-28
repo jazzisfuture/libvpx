@@ -1078,8 +1078,6 @@ static void update_frame_size(VP9_COMP *cpi) {
 
     if (cpi->sf.search_method == NSTEP) {
       vp9_init3smotion_compensation(&cpi->mb, y_stride);
-    } else if (cpi->sf.search_method == DIAMOND) {
-      vp9_init_dsmotion_compensation(&cpi->mb, y_stride);
     }
   }
 
