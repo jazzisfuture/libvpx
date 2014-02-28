@@ -1832,18 +1832,30 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
                                      sadpb, 1, v_fn_ptr, 1,
                                      &bsi->ref_mv->as_mv,
                                      &new_mv->as_mv);
+            if (bestsme < INT_MAX)
+              bestsme = vp9_get_mvpred_var(x, &new_mv->as_mv,
+                                           &bsi->ref_mv->as_mv,
+                                           v_fn_ptr, 1);
           } else if (cpi->sf.search_method == SQUARE) {
             bestsme = vp9_square_search(x, &mvp_full,
                                         step_param,
                                         sadpb, 1, v_fn_ptr, 1,
                                         &bsi->ref_mv->as_mv,
                                         &new_mv->as_mv);
+            if (bestsme < INT_MAX)
+              bestsme = vp9_get_mvpred_var(x, &new_mv->as_mv,
+                                           &bsi->ref_mv->as_mv,
+                                           v_fn_ptr, 1);
           } else if (cpi->sf.search_method == BIGDIA) {
             bestsme = vp9_bigdia_search(x, &mvp_full,
                                         step_param,
                                         sadpb, 1, v_fn_ptr, 1,
                                         &bsi->ref_mv->as_mv,
                                         &new_mv->as_mv);
+            if (bestsme < INT_MAX)
+              bestsme = vp9_get_mvpred_var(x, &new_mv->as_mv,
+                                           &bsi->ref_mv->as_mv,
+                                           v_fn_ptr, 1);
           } else {
             bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
                                              sadpb, further_steps, 0, v_fn_ptr,
@@ -2457,18 +2469,30 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     bestsme = vp9_fast_hex_search(x, &mvp_full, step_param, sadpb,
                                   &cpi->fn_ptr[bsize], 1,
                                   &ref_mv, &tmp_mv->as_mv);
+    if (bestsme < INT_MAX)
+      bestsme = vp9_get_mvpred_var(x, &tmp_mv->as_mv, &ref_mv,
+                                   &cpi->fn_ptr[bsize], 1);
   } else if (cpi->sf.search_method == HEX) {
     bestsme = vp9_hex_search(x, &mvp_full, step_param, sadpb, 1,
                              &cpi->fn_ptr[bsize], 1,
                              &ref_mv, &tmp_mv->as_mv);
+    if (bestsme < INT_MAX)
+      bestsme = vp9_get_mvpred_var(x, &tmp_mv->as_mv, &ref_mv,
+                                   &cpi->fn_ptr[bsize], 1);
   } else if (cpi->sf.search_method == SQUARE) {
     bestsme = vp9_square_search(x, &mvp_full, step_param, sadpb, 1,
                                 &cpi->fn_ptr[bsize], 1,
                                 &ref_mv, &tmp_mv->as_mv);
+    if (bestsme < INT_MAX)
+      bestsme = vp9_get_mvpred_var(x, &tmp_mv->as_mv, &ref_mv,
+                                   &cpi->fn_ptr[bsize], 1);
   } else if (cpi->sf.search_method == BIGDIA) {
     bestsme = vp9_bigdia_search(x, &mvp_full, step_param, sadpb, 1,
                                 &cpi->fn_ptr[bsize], 1,
                                 &ref_mv, &tmp_mv->as_mv);
+    if (bestsme < INT_MAX)
+      bestsme = vp9_get_mvpred_var(x, &tmp_mv->as_mv, &ref_mv,
+                                   &cpi->fn_ptr[bsize], 1);
   } else {
     bestsme = vp9_full_pixel_diamond(cpi, x, &mvp_full, step_param,
                                      sadpb, further_steps, 1,
@@ -2594,6 +2618,9 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                        x->nmvjointcost, x->mvcost,
                                        &ref_mv[id].as_mv, second_pred,
                                        pw, ph);
+    if (bestsme < INT_MAX)
+      bestsme = vp9_get_mvpred_var(x, &tmp_mv.as_mv, &ref_mv[id].as_mv,
+                                   &cpi->fn_ptr[bsize], 1);
 
     x->mv_col_min = tmp_col_min;
     x->mv_col_max = tmp_col_max;
