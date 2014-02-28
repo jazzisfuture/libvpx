@@ -420,6 +420,11 @@ typedef struct {
   // A binary mask indicating if NEARESTMV, NEARMV, ZEROMV, NEWMV
   // modes are disabled in order from LSB to MSB for each BLOCK_SIZE.
   int disable_inter_mode_mask[BLOCK_SIZES];
+
+  // This variable controls the maximum block size where intra blocks can be 
+  // used in inter frames.
+  // TODO(aconverse): Fold this into one of the other many mode skips
+  BLOCK_SIZE max_intra_bsize;
 } SPEED_FEATURES;
 
 typedef struct {
