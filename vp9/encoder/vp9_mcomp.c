@@ -1887,7 +1887,6 @@ int vp9_refining_search_sadx4(const MACROBLOCK *x,
   const MACROBLOCKD *const xd = &x->e_mbd;
   MV neighbors[4] = {{ -1, 0}, {0, -1}, {0, 1}, {1, 0}};
   int i, j;
-  int this_row_offset, this_col_offset;
 
   const int what_stride = x->plane[0].src.stride;
   const int in_what_stride = xd->plane[0].pre[0].stride;
@@ -1895,8 +1894,6 @@ int vp9_refining_search_sadx4(const MACROBLOCK *x,
   const uint8_t *best_address = xd->plane[0].pre[0].buf +
                           (ref_mv->row * xd->plane[0].pre[0].stride) +
                           ref_mv->col;
-  unsigned int thissad;
-  MV this_mv;
 
   const MV fcenter_mv = {center_mv->row >> 3, center_mv->col >> 3};
 
@@ -1928,8 +1925,8 @@ int vp9_refining_search_sadx4(const MACROBLOCK *x,
 
       for (j = 0; j < 4; j++) {
         if (sad_array[j] < bestsad) {
-          this_mv.row = ref_mv->row + neighbors[j].row;
-          this_mv.col = ref_mv->col + neighbors[j].col;
+          const MV this_mv = {ref_mv->row + neighbors[j].row,
+                              ref_mv->col + neighbors[j].col };
           sad_array[j] += mvsad_err_cost(&this_mv, &fcenter_mv,
                                          mvjsadcost, mvsadcost, error_per_bit);
 
@@ -1941,21 +1938,16 @@ int vp9_refining_search_sadx4(const MACROBLOCK *x,
       }
     } else {
       for (j = 0; j < 4; j++) {
-        this_row_offset = ref_mv->row + neighbors[j].row;
-        this_col_offset = ref_mv->col + neighbors[j].col;
+        const MV this_mv = { ref_mv->row + neighbors[j].row,
+                             ref_mv->col + neighbors[j].col };
 
-        if ((this_col_offset > x->mv_col_min) &&
-            (this_col_offset < x->mv_col_max) &&
-            (this_row_offset > x->mv_row_min) &&
-            (this_row_offset < x->mv_row_max)) {
+        if (is_mv_in(x, &this_mv)) {
           const uint8_t *check_here = neighbors[j].row * in_what_stride +
                                       neighbors[j].col + best_address;
-          thissad = fn_ptr->sdf(what, what_stride, check_here, in_what_stride,
-                                bestsad);
+          unsigned int thissad = fn_ptr->sdf(what, what_stride, check_here,
+                                             in_what_stride, bestsad);
 
           if (thissad < bestsad) {
-            this_mv.row = this_row_offset;
-            this_mv.col = this_col_offset;
             thissad += mvsad_err_cost(&this_mv, &fcenter_mv,
                                       mvjsadcost, mvsadcost, error_per_bit);
 
@@ -1978,16 +1970,15 @@ int vp9_refining_search_sadx4(const MACROBLOCK *x,
     }
   }
 
-  this_mv.row = ref_mv->row * 8;
-  this_mv.col = ref_mv->col * 8;
-
-  if (bestsad < INT_MAX)
+  if (bestsad < INT_MAX) {
+    unsigned int unused;
+    const MV mv = { ref_mv->row * 8, ref_mv->col * 8 };
     return fn_ptr->vf(what, what_stride, best_address, in_what_stride,
-                      (unsigned int *)(&thissad)) +
-                      mv_err_cost(&this_mv, center_mv,
-                                  mvjcost, mvcost, x->errorperbit);
-  else
+                      &unused) + mv_err_cost(&mv, center_mv, mvjcost, mvcost,
+                                             x->errorperbit);
+  } else {
     return INT_MAX;
+  }
 }
 
 // This function is called when we do joint motion search in comp_inter_inter
