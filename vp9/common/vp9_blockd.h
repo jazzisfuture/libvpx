@@ -331,6 +331,15 @@ void vp9_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
                       BLOCK_SIZE plane_bsize, TX_SIZE tx_size, int has_eob,
                       int aoff, int loff);
 
+
+static INLINE vp9_prob get_y_mode_prob(const MODE_INFO *mi,
+                                       const MODE_INFO *above_mi,
+                                       const MODE_INFO *left_mi, int block) {
+  const MB_PREDICTION_MODE above = vp9_above_block_mode(mi, above_mi, block);
+  const MB_PREDICTION_MODE left = vp9_left_block_mode(mi, left_mi, block);
+  return vp9_kf_y_mode_prob[above][left];
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
