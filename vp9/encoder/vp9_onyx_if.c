@@ -1715,7 +1715,7 @@ VP9_PTR vp9_create_compressor(VP9_CONFIG *oxcf) {
   CHECK_MEM_ERROR(cm, cpi->mb.ss, vpx_calloc(sizeof(search_site),
                                              (MAX_MVSEARCH_STEPS * 8) + 1));
 
-  vp9_create_common(cm);
+  vp9_create_common();
 
   cpi->use_svc = 0;
 
