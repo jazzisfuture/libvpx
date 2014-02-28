@@ -3344,24 +3344,28 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         mode_excluded = cm->reference_mode == COMPOUND_REFERENCE;
     }
 
-    if (ref_frame == INTRA_FRAME && this_mode != DC_PRED) {
-      // Disable intra modes other than DC_PRED for blocks with low variance
-      // Threshold for intra skipping based on source variance
-      // TODO(debargha): Specialize the threshold for super block sizes
-      const unsigned int skip_intra_var_thresh = 64;
-      if ((mode_search_skip_flags & FLAG_SKIP_INTRA_LOWVAR) &&
-          x->source_variance < skip_intra_var_thresh)
+    if (ref_frame == INTRA_FRAME) {
+      if (!(cpi->sf.intra_y_mode_mask[max_txsize_lookup[bsize]] & (1 << this_mode)))
         continue;
-      // Only search the oblique modes if the best so far is
-      // one of the neighboring directional modes
-      if ((mode_search_skip_flags & FLAG_SKIP_INTRA_BESTINTER) &&
-          (this_mode >= D45_PRED && this_mode <= TM_PRED)) {
-        if (vp9_mode_order[best_mode_index].ref_frame[0] > INTRA_FRAME)
+      if (this_mode != DC_PRED) {
+        // Disable intra modes other than DC_PRED for blocks with low variance
+        // Threshold for intra skipping based on source variance
+        // TODO(debargha): Specialize the threshold for super block sizes
+        const unsigned int skip_intra_var_thresh = 64;
+        if ((mode_search_skip_flags & FLAG_SKIP_INTRA_LOWVAR) &&
+            x->source_variance < skip_intra_var_thresh)
           continue;
-      }
-      if (mode_search_skip_flags & FLAG_SKIP_INTRA_DIRMISMATCH) {
-        if (conditional_skipintra(this_mode, best_intra_mode))
+        // Only search the oblique modes if the best so far is
+        // one of the neighboring directional modes
+        if ((mode_search_skip_flags & FLAG_SKIP_INTRA_BESTINTER) &&
+            (this_mode >= D45_PRED && this_mode <= TM_PRED)) {
+          if (vp9_mode_order[best_mode_index].ref_frame[0] > INTRA_FRAME)
             continue;
+        }
+        if (mode_search_skip_flags & FLAG_SKIP_INTRA_DIRMISMATCH) {
+          if (conditional_skipintra(this_mode, best_intra_mode))
+              continue;
+        }
       }
     }
 
