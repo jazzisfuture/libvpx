@@ -228,48 +228,46 @@ static void alloc_tile_storage(VP9D_COMP *pbi, int tile_rows, int tile_cols) {
                               aligned_mi_cols));
 }
 
-static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
-                                    TX_SIZE tx_size, uint8_t *dst, int stride,
-                                    int eob) {
-  struct macroblockd_plane *const pd = &xd->plane[plane];
-  if (eob > 0) {
-    TX_TYPE tx_type;
-    const int plane_type = pd->plane_type;
-    int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-    switch (tx_size) {
-      case TX_4X4:
-        tx_type = get_tx_type_4x4(plane_type, xd, block);
-        if (tx_type == DCT_DCT)
-          xd->itxm_add(dqcoeff, dst, stride, eob);
-        else
-          vp9_iht4x4_16_add(dqcoeff, dst, stride, tx_type);
-        break;
-      case TX_8X8:
-        tx_type = get_tx_type(plane_type, xd);
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
-        break;
-      case TX_16X16:
-        tx_type = get_tx_type(plane_type, xd);
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
-        break;
-      case TX_32X32:
-        tx_type = DCT_DCT;
-        vp9_idct32x32_add(dqcoeff, dst, stride, eob);
-        break;
-      default:
-        assert(0 && "Invalid transform size");
-    }
-
-    if (eob == 1) {
-      vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
-    } else {
-      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
-        vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
-      else if (tx_size == TX_32X32 && eob <= 34)
-        vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
+static void inverse_transform_block(MACROBLOCKD *xd,
+                                    struct macroblockd_plane *pd,
+                                    int block, TX_SIZE tx_size,
+                                    uint8_t *dst, int dst_stride, int eob) {
+  TX_TYPE tx_type;
+  const int plane_type = pd->plane_type;
+  int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+  switch (tx_size) {
+    case TX_4X4:
+      tx_type = get_tx_type_4x4(plane_type, xd, block);
+      if (tx_type == DCT_DCT)
+        xd->itxm_add(dqcoeff, dst, dst_stride, eob);
       else
-        vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
-    }
+        vp9_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type);
+      break;
+    case TX_8X8:
+      tx_type = get_tx_type(plane_type, xd);
+      vp9_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, eob);
+      break;
+    case TX_16X16:
+      tx_type = get_tx_type(plane_type, xd);
+      vp9_iht16x16_add(tx_type, dqcoeff, dst, dst_stride, eob);
+      break;
+    case TX_32X32:
+      tx_type = DCT_DCT;
+      vp9_idct32x32_add(dqcoeff, dst, dst_stride, eob);
+      break;
+    default:
+      assert(0 && "Invalid transform size");
+  }
+
+  if (eob == 1) {
+    vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
+  } else {
+    if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
+      vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
+    else if (tx_size == TX_32X32 && eob <= 34)
+      vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
+    else
+      vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
   }
 }
 
@@ -286,25 +284,24 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mi_8x8[0];
+  const MODE_INFO *const mi = xd->mi_8x8[0];
   const MB_PREDICTION_MODE mode = (plane == 0) ? get_y_mode(mi, block)
                                                : mi->mbmi.uv_mode;
+  const int dst_stride = pd->dst.stride;
   int x, y;
   uint8_t *dst;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
+  dst = &pd->dst.buf[4 * y * dst_stride + 4 * x];
 
   vp9_predict_intra_block(xd, block >> (tx_size << 1),
                           b_width_log2(plane_bsize), tx_size, mode,
-                          dst, pd->dst.stride, dst, pd->dst.stride,
-                          x, y, plane);
+                          dst, dst_stride, dst, dst_stride, x, y, plane);
 
   if (!mi->mbmi.skip) {
-    const int eob = vp9_decode_block_tokens(cm, xd, plane, block,
-                                            plane_bsize, x, y, tx_size,
-                                            args->r);
-    inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
-                            eob);
+    const int eob = vp9_decode_block_tokens(cm, xd, pd, block, plane_bsize,
+                                            x, y, tx_size, args->r);
+    if (eob > 0)
+      inverse_transform_block(xd, pd, block, tx_size, dst, dst_stride, eob);
   }
 }
 
@@ -324,12 +321,14 @@ static void reconstruct_inter_block(int plane, int block,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int x, y, eob;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
+  eob = vp9_decode_block_tokens(cm, xd, pd, block, plane_bsize, x, y,
                                 tx_size, args->r);
-  inverse_transform_block(xd, plane, block, tx_size,
-                          &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
-                          pd->dst.stride, eob);
-  *args->eobtotal += eob;
+  if (eob > 0) {
+    inverse_transform_block(xd, pd, block, tx_size,
+                            &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
+                            pd->dst.stride, eob);
+    *args->eobtotal += eob;
+  }
 }
 
 static void set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,

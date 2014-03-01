@@ -79,27 +79,23 @@ static const vp9_prob cat6_prob[15] = {
     val += (vp9_read(r, prob) << bits_count);           \
   } while (0)
 
-static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
+static int decode_coefs(VP9_COMMON *cm, int is_inter, PLANE_TYPE plane_type,
                        int16_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
                        int ctx, const int16_t *scan, const int16_t *nb,
                        vp9_reader *r) {
   const int max_eob = 16 << (tx_size << 1);
-  const FRAME_CONTEXT *const fc = &cm->fc;
-  FRAME_COUNTS *const counts = &cm->counts;
-  const int ref = is_inter_block(&xd->mi_8x8[0]->mbmi);
-  int band, c = 0;
   const vp9_prob (*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
-      fc->coef_probs[tx_size][type][ref];
-  const vp9_prob *prob;
+      cm->fc.coef_probs[tx_size][plane_type][is_inter];
   unsigned int (*coef_counts)[COEFF_CONTEXTS][UNCONSTRAINED_NODES + 1] =
-      counts->coef[tx_size][type][ref];
+      cm->counts.coef[tx_size][plane_type][is_inter];
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS] =
-      counts->eob_branch[tx_size][type][ref];
+      cm->counts.eob_branch[tx_size][plane_type][is_inter];
   uint8_t token_cache[32 * 32];
+  int v, band, c = 0;
+  const vp9_prob *prob;
   const uint8_t *cat6;
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
-  int v;
   int16_t dqv = dq[0];
 
   while (c < max_eob) {
@@ -195,13 +191,14 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 }
 
 int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
-                            int plane, int block, BLOCK_SIZE plane_bsize,
-                            int x, int y, TX_SIZE tx_size, vp9_reader *r) {
-  struct macroblockd_plane *const pd = &xd->plane[plane];
+                            struct macroblockd_plane *pd, int block,
+                            BLOCK_SIZE plane_bsize, int x, int y,
+                            TX_SIZE tx_size, vp9_reader *r) {
   const int ctx = get_entropy_context(tx_size, pd->above_context + x,
                                                pd->left_context + y);
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
-  const int eob = decode_coefs(cm, xd, pd->plane_type,
+  const int is_inter = is_inter_block(&xd->mi_8x8[0]->mbmi);
+  const int eob = decode_coefs(cm, is_inter, pd->plane_type,
                                BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
                                pd->dequant, ctx, so->scan, so->neighbors, r);
   vp9_set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
