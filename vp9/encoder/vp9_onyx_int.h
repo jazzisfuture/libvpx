@@ -416,6 +416,11 @@ typedef struct {
   // This variable sets the encode_breakout threshold. Currently, it is only
   // enabled in real time mode.
   int encode_breakout_thresh;
+
+  // This feature controls whether we do the expensive context update and
+  // calculation in the rd coefficient costing loop.
+  int use_fast_coef_costing;
+
 } SPEED_FEATURES;
 
 typedef struct {
