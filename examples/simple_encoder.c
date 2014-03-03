@@ -64,6 +64,12 @@
 // frame is shown for one frame-time in duration. The flags parameter is
 // unused in this example. The deadline is set to VPX_DL_REALTIME to
 // make the example run as quickly as possible.
+
+// Keyframes
+// -------------
+// Keyframes can be forced by setting the VPX_EFLAG_FORCE_KF bit of the
+// flags passed to `vpx_codec_control()`. In this example, we force a
+// keyframe every <keyframe-interval> frames.
 //
 // Processing The Encoded Data
 // ---------------------------
@@ -103,8 +109,8 @@ static const char *exec_name;
 void usage_exit() {
   fprintf(stderr,
           "Usage: %s <codec> <width> <height> <infile> <outfile> "
-              "[<error-resilient>]\nSee comments in simple_encoder.c for more "
-              "information.\n",
+              "<keyframe-interval> [<error-resilient>]\nSee comments in "
+              "simple_encoder.c for more information.\n",
           exec_name);
   exit(EXIT_FAILURE);
 }
@@ -112,11 +118,12 @@ void usage_exit() {
 static void encode_frame(vpx_codec_ctx_t *codec,
                          vpx_image_t *img,
                          int frame_index,
+                         int flags,
                          VpxVideoWriter *writer) {
   vpx_codec_iter_t iter = NULL;
   const vpx_codec_cx_pkt_t *pkt = NULL;
-  const vpx_codec_err_t res = vpx_codec_encode(codec, img, frame_index, 1, 0,
-                                               VPX_DL_GOOD_QUALITY);
+  const vpx_codec_err_t res = vpx_codec_encode(codec, img, frame_index, 1,
+                                               flags, VPX_DL_GOOD_QUALITY);
   if (res != VPX_CODEC_OK)
     die_codec(codec, "Failed to encode frame");
 
@@ -148,15 +155,17 @@ int main(int argc, char **argv) {
   const VpxInterface *encoder = NULL;
   const int fps = 30;        // TODO(dkovalev) add command line argument
   const int bitrate = 200;   // kbit/s TODO(dkovalev) add command line argument
+  int keyframe_interval = 0;
   const char *codec_arg = NULL;
   const char *width_arg = NULL;
   const char *height_arg = NULL;
   const char *infile_arg = NULL;
   const char *outfile_arg = NULL;
+  const char *keyframe_interval_arg = NULL;
 
   exec_name = argv[0];
 
-  if (argc < 6)
+  if (argc < 7)
     die("Invalid number of arguments");
 
   codec_arg = argv[1];
@@ -164,6 +173,7 @@ int main(int argc, char **argv) {
   height_arg = argv[3];
   infile_arg = argv[4];
   outfile_arg = argv[5];
+  keyframe_interval_arg = argv[6];
 
   encoder = get_vpx_encoder_by_name(codec_arg);
   if (!encoder)
@@ -187,6 +197,10 @@ int main(int argc, char **argv) {
     die("Failed to allocate image.");
   }
 
+  keyframe_interval = strtol(keyframe_interval_arg, NULL, 0);
+  if (keyframe_interval < 0)
+    die("Invalid keyframe interval value.");
+
   printf("Using %s\n", vpx_codec_iface_name(encoder->interface()));
 
   res = vpx_codec_enc_config_default(encoder->interface(), &cfg, 0);
@@ -198,7 +212,7 @@ int main(int argc, char **argv) {
   cfg.g_timebase.num = info.time_base.numerator;
   cfg.g_timebase.den = info.time_base.denominator;
   cfg.rc_target_bitrate = bitrate;
-  cfg.g_error_resilient = argc > 6 ? strtol(argv[6], NULL, 0) : 0;
+  cfg.g_error_resilient = argc > 7 ? strtol(argv[7], NULL, 0) : 0;
 
   writer = vpx_video_writer_open(outfile_arg, kContainerIVF, &info);
   if (!writer)
@@ -210,9 +224,13 @@ int main(int argc, char **argv) {
   if (vpx_codec_enc_init(&codec, encoder->interface(), &cfg, 0))
     die_codec(&codec, "Failed to initialize encoder");
 
-  while (vpx_img_read(&raw, infile))
-    encode_frame(&codec, &raw, frame_count++, writer);
-  encode_frame(&codec, NULL, -1, writer);  // flush the encoder
+  while (vpx_img_read(&raw, infile)) {
+    int flags = 0;
+    if (keyframe_interval > 0 && frame_count % keyframe_interval == 0)
+      flags |= VPX_EFLAG_FORCE_KF;
+    encode_frame(&codec, &raw, frame_count++, flags, writer);
+  }
+  encode_frame(&codec, NULL, -1, 0, writer);  // flush the encoder
 
   printf("\n");
   fclose(infile);
