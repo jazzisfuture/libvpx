@@ -68,6 +68,7 @@ struct rdcost_block_args {
   int64_t this_rd;
   int64_t best_rd;
   int skip;
+  int use_fast_coef_costing;
   const scan_order *so;
 };
 
@@ -552,12 +553,12 @@ static const int16_t band_counts[TX_SIZES][8] = {
   { 1, 2, 3, 4, 11,  256 - 21, 0 },
   { 1, 2, 3, 4, 11, 1024 - 21, 0 },
 };
-
 static INLINE int cost_coeffs(MACROBLOCK *x,
                               int plane, int block,
                               ENTROPY_CONTEXT *A, ENTROPY_CONTEXT *L,
                               TX_SIZE tx_size,
-                              const int16_t *scan, const int16_t *nb) {
+                              const int16_t *scan, const int16_t *nb,
+                              int use_fast_coef_costing) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   struct macroblock_plane *p = &x->plane[plane];
@@ -573,7 +574,6 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   uint8_t *p_tok = x->token_cache;
   int pt = combine_entropy_contexts(above_ec, left_ec);
   int c, cost;
-
   // Check for consistency of tx_size with mode info
   assert(type == PLANE_TYPE_Y ? mbmi->tx_size == tx_size
                                       : get_uv_tx_size(mbmi) == tx_size);
@@ -599,9 +599,13 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
       v = qcoeff_ptr[rc];
       t = vp9_dct_value_tokens_ptr[v].token;
-      pt = get_coef_context(nb, p_tok, c);
-      cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
-      p_tok[rc] = vp9_pt_energy_class[t];
+      if (use_fast_coef_costing) {
+        cost += (*token_costs)[!prev_t][!prev_t][t] + vp9_dct_value_cost_ptr[v];
+      } else {
+        pt = get_coef_context(nb, p_tok, c);
+        cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+        p_tok[rc] = vp9_pt_energy_class[t];
+      }
       prev_t = t;
       if (!--band_left) {
         band_left = *band_count++;
@@ -611,8 +615,12 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
     // eob token
     if (band_left) {
-      pt = get_coef_context(nb, p_tok, c);
-      cost += (*token_costs)[0][pt][EOB_TOKEN];
+      if (use_fast_coef_costing) {
+        cost += (*token_costs)[0][!prev_t][EOB_TOKEN];
+      } else {
+        pt = get_coef_context(nb, p_tok, c);
+        cost += (*token_costs)[0][pt][EOB_TOKEN];
+      }
     }
   }
 
@@ -621,7 +629,6 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
   return cost;
 }
-
 static void dist_block(int plane, int block, TX_SIZE tx_size,
                        struct rdcost_block_args* args) {
   const int ss_txfrm_size = tx_size << 1;
@@ -653,7 +660,8 @@ static void rate_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   args->rate = cost_coeffs(args->x, plane, block, args->t_above + x_idx,
                            args->t_left + y_idx, tx_size,
-                           args->so->scan, args->so->neighbors);
+                           args->so->scan, args->so->neighbors,
+                           args->use_fast_coef_costing);
 }
 
 static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -731,7 +739,8 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
                              int *rate, int64_t *distortion,
                              int *skippable, int64_t *sse,
                              int64_t ref_best_rd, int plane,
-                             BLOCK_SIZE bsize, TX_SIZE tx_size) {
+                             BLOCK_SIZE bsize, TX_SIZE tx_size,
+                             int use_fast_coef_casting) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
@@ -740,6 +749,7 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   struct rdcost_block_args args = { 0 };
   args.x = x;
   args.best_rd = ref_best_rd;
+  args.use_fast_coef_costing = use_fast_coef_casting;
 
   if (plane == 0)
     xd->mi_8x8[0]->mbmi.tx_size = tx_size;
@@ -780,7 +790,7 @@ static void choose_largest_txfm_size(VP9_COMP *cpi, MACROBLOCK *x,
 
   txfm_rd_in_plane(x, rate, distortion, skip,
                    &sse[mbmi->tx_size], ref_best_rd, 0, bs,
-                   mbmi->tx_size);
+                   mbmi->tx_size, cpi->sf.use_fast_coef_costing);
   cpi->tx_stepdown_count[0]++;
 }
 
@@ -924,7 +934,8 @@ static void choose_txfm_size_from_modelrd(VP9_COMP *cpi, MACROBLOCK *x,
   // Actually encode using the chosen mode if a model was used, but do not
   // update the r, d costs
   txfm_rd_in_plane(x, rate, distortion, skip,
-                   &sse[mbmi->tx_size], ref_best_rd, 0, bs, mbmi->tx_size);
+                   &sse[mbmi->tx_size], ref_best_rd, 0, bs, mbmi->tx_size,
+                   cpi->sf.use_fast_coef_costing);
 
   if (max_tx_size == TX_32X32 && best_tx == TX_32X32) {
     cpi->tx_stepdown_count[0]++;
@@ -977,7 +988,8 @@ static void super_block_yrd(VP9_COMP *cpi,
     for (tx_size = TX_4X4; tx_size <= max_tx_size; ++tx_size)
       txfm_rd_in_plane(x, &r[tx_size][0], &d[tx_size],
                        &s[tx_size], &sse[tx_size],
-                       ref_best_rd, 0, bs, tx_size);
+                       ref_best_rd, 0, bs, tx_size,
+                       cpi->sf.use_fast_coef_costing);
     choose_txfm_size_from_rd(cpi, x, r, rate, d, distortion, s,
                              skip, txfm_cache, bs);
   }
@@ -1093,7 +1105,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
         vp9_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
 
         ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
-                             so->scan, so->neighbors);
+                             so->scan, so->neighbors,
+                             cpi->sf.use_fast_coef_costing);
         distortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, block),
                                       16, &ssz) >> 2;
         if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
@@ -1308,7 +1321,8 @@ static void super_block_uvrd(VP9_COMP *const cpi, MACROBLOCK *x,
 
   for (plane = 1; plane < MAX_MB_PLANE; ++plane) {
     txfm_rd_in_plane(x, &pnrate, &pndist, &pnskip, &pnsse,
-                     ref_best_rd, plane, bsize, uv_txfm_size);
+                     ref_best_rd, plane, bsize, uv_txfm_size,
+                     cpi->sf.use_fast_coef_costing);
     if (pnrate == INT_MAX)
       goto term;
     *rate += pnrate;
@@ -1587,7 +1601,8 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                                         16, &ssz);
       thissse += ssz;
       thisrate += cost_coeffs(x, 0, k, ta + (k & 1), tl + (k >> 1), TX_4X4,
-                              so->scan, so->neighbors);
+                              so->scan, so->neighbors,
+                              cpi->sf.use_fast_coef_costing);
       rd1 = RDCOST(x->rdmult, x->rddiv, thisrate, thisdistortion >> 2);
       rd2 = RDCOST(x->rdmult, x->rddiv, 0, thissse >> 2);
       rd = MIN(rd1, rd2);
