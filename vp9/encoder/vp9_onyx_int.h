@@ -702,8 +702,8 @@ typedef struct VP9_COMP {
   PARTITION_CONTEXT left_seg_context[8];
 } VP9_COMP;
 
-static int get_ref_frame_idx(const VP9_COMP *cpi,
-                             MV_REFERENCE_FRAME ref_frame) {
+static INLINE int get_ref_frame_idx(const VP9_COMP *cpi,
+                                    MV_REFERENCE_FRAME ref_frame) {
   if (ref_frame == LAST_FRAME) {
     return cpi->lst_fb_idx;
   } else if (ref_frame == GOLDEN_FRAME) {
@@ -713,11 +713,11 @@ static int get_ref_frame_idx(const VP9_COMP *cpi,
   }
 }
 
-static YV12_BUFFER_CONFIG *get_ref_frame_buffer(VP9_COMP *cpi,
-                                                MV_REFERENCE_FRAME ref_frame) {
-  VP9_COMMON *const cm = &cpi->common;
-  return &cm->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi,
-                                                             ref_frame)]].buf;
+static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
+    VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
+  VP9_COMMON * const cm = &cpi->common;
+  return &cm->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)]]
+      .buf;
 }
 
 void vp9_encode_frame(VP9_COMP *cpi);
@@ -731,12 +731,13 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi);
 
 int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget);
 
-static int get_token_alloc(int mb_rows, int mb_cols) {
+static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
   return mb_rows * mb_cols * (48 * 16 + 4);
 }
 
-static void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
-                         MV_REFERENCE_FRAME ref0, MV_REFERENCE_FRAME ref1) {
+static INLINE void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
+                                MV_REFERENCE_FRAME ref0,
+                                MV_REFERENCE_FRAME ref1) {
   xd->block_refs[0] = &cm->frame_refs[ref0 >= LAST_FRAME ? ref0 - LAST_FRAME
                                                          : 0];
   xd->block_refs[1] = &cm->frame_refs[ref1 >= LAST_FRAME ? ref1 - LAST_FRAME
