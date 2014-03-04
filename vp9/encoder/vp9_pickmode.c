@@ -218,7 +218,6 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   x->skip = 0;
   if (cpi->active_map_enabled && x->active_ptr[0] == 0)
     x->skip = 1;
-
   // initialize mode decisions
   *returnrate = INT_MAX;
   *returndistortion = INT64_MAX;
