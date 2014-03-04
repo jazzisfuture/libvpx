@@ -359,7 +359,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
                                        &time_end_stamp, &flags)) {
       VP9D_COMP *const pbi = (VP9D_COMP*)ctx->pbi;
       VP9_COMMON *const cm = &pbi->common;
-      yuvconfig2image(&ctx->img, &sd, user_priv);
+      vp9_yuvconfig2image(&ctx->img, &sd, user_priv);
 
       ctx->img.fb_priv = cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
       ctx->img_avail = 1;
@@ -576,7 +576,7 @@ static vpx_codec_err_t set_reference(vpx_codec_alg_priv_t *ctx, int ctr_id,
     vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
     YV12_BUFFER_CONFIG sd;
 
-    image2yuvconfig(&frame->img, &sd);
+    vp9_image2yuvconfig(&frame->img, &sd);
     return vp9_set_reference_dec(ctx->pbi,
                                  (VP9_REFFRAME)frame->frame_type, &sd);
   } else {
@@ -592,7 +592,7 @@ static vpx_codec_err_t copy_reference(vpx_codec_alg_priv_t *ctx, int ctr_id,
     vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
     YV12_BUFFER_CONFIG sd;
 
-    image2yuvconfig(&frame->img, &sd);
+    vp9_image2yuvconfig(&frame->img, &sd);
 
     return vp9_copy_reference_dec(ctx->pbi,
                                   (VP9_REFFRAME)frame->frame_type, &sd);
@@ -609,7 +609,7 @@ static vpx_codec_err_t get_reference(vpx_codec_alg_priv_t *ctx, int ctr_id,
     YV12_BUFFER_CONFIG* fb;
 
     vp9_get_reference_dec(ctx->pbi, data->idx, &fb);
-    yuvconfig2image(&data->img, fb, NULL);
+    vp9_yuvconfig2image(&data->img, fb, NULL);
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;

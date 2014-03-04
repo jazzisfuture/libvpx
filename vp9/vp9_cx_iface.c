@@ -745,7 +745,7 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
                          ctx->cfg.g_timebase.den;
 
     if (img != NULL) {
-      res = image2yuvconfig(img, &sd);
+      res = vp9_image2yuvconfig(img, &sd);
 
       if (vp9_receive_raw_frame(ctx->cpi, lib_flags,
                                 &sd, dst_time_stamp, dst_end_time_stamp)) {
@@ -889,7 +889,7 @@ static vpx_codec_err_t vp9e_set_reference(vpx_codec_alg_priv_t *ctx,
   if (frame != NULL) {
     YV12_BUFFER_CONFIG sd;
 
-    image2yuvconfig(&frame->img, &sd);
+    vp9_image2yuvconfig(&frame->img, &sd);
     vp9_set_reference_enc(ctx->cpi, ref_frame_to_vp9_reframe(frame->frame_type),
                           &sd);
     return VPX_CODEC_OK;
@@ -906,7 +906,7 @@ static vpx_codec_err_t vp9e_copy_reference(vpx_codec_alg_priv_t *ctx,
   if (frame != NULL) {
     YV12_BUFFER_CONFIG sd;
 
-    image2yuvconfig(&frame->img, &sd);
+    vp9_image2yuvconfig(&frame->img, &sd);
     vp9_copy_reference_enc(ctx->cpi,
                            ref_frame_to_vp9_reframe(frame->frame_type), &sd);
     return VPX_CODEC_OK;
@@ -924,7 +924,7 @@ static vpx_codec_err_t get_reference(vpx_codec_alg_priv_t *ctx,
     YV12_BUFFER_CONFIG* fb;
 
     vp9_get_reference_enc(ctx->cpi, frame->idx, &fb);
-    yuvconfig2image(&frame->img, fb, NULL);
+    vp9_yuvconfig2image(&frame->img, fb, NULL);
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;
@@ -964,7 +964,7 @@ static vpx_image_t *vp9e_get_preview(vpx_codec_alg_priv_t *ctx) {
   }
 
   if (0 == vp9_get_preview_raw_frame(ctx->cpi, &sd, &flags)) {
-    yuvconfig2image(&ctx->preview_img, &sd, NULL);
+    vp9_yuvconfig2image(&ctx->preview_img, &sd, NULL);
     return &ctx->preview_img;
   } else {
     return NULL;
