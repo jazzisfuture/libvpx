@@ -333,5 +333,62 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
   }
+
+  return INT64_MAX;
+}
+
+int64_t vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
+                            const TileInfo *const tile,
+                            int mi_row, int mi_col,
+                            int *returnrate,
+                            int64_t *returndistortion,
+                            BLOCK_SIZE bsize) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
+  struct macroblock_plane *const p = &x->plane[0];
+  struct macroblockd_plane *const pd = &xd->plane[0];
+  MB_PREDICTION_MODE this_mode;
+
+  int64_t best_rd = INT64_MAX;
+  int64_t this_rd = INT64_MAX;
+
+  x->skip = 0;
+  if (cpi->active_map_enabled && x->active_ptr[0] == 0)
+    x->skip = 1;
+
+  // initialize mode decisions
+  *returnrate = INT_MAX;
+  *returndistortion = INT64_MAX;
+  vpx_memset(mbmi, 0, sizeof(MB_MODE_INFO));
+  mbmi->sb_type = bsize;
+  mbmi->ref_frame[0] = INTRA_FRAME;
+  mbmi->ref_frame[1] = NONE;
+  mbmi->tx_size = MIN(max_txsize_lookup[bsize],
+                      tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
+  mbmi->skip = 0;
+  mbmi->segment_id = 0;
+
+  // Perform intra prediction search, if the best SAD is above a certain
+  // threshold.
+  for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
+    vp9_predict_intra_block(xd, 0, b_width_log2(bsize),
+                            mbmi->tx_size, this_mode,
+                            &p->src.buf[0], p->src.stride,
+                            &pd->dst.buf[0], pd->dst.stride, 0, 0, 0);
+
+    this_rd = cpi->fn_ptr[bsize].sdf(p->src.buf,
+                                     p->src.stride,
+                                     pd->dst.buf,
+                                     pd->dst.stride, INT_MAX);
+
+    if (this_rd < best_rd) {
+      best_rd = this_rd;
+      mbmi->mode = this_mode;
+      mbmi->ref_frame[0] = INTRA_FRAME;
+      mbmi->uv_mode = this_mode;
+      mbmi->mv[0].as_int = INVALID_MV;
+    }
+  }
+
   return INT64_MAX;
 }

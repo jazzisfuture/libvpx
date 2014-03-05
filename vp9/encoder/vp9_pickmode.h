@@ -24,6 +24,13 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                             int64_t *returndistortion,
                             BLOCK_SIZE bsize);
 
+int64_t vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x,
+                            const struct TileInfo *const tile,
+                            int mi_row, int mi_col,
+                            int *returnrate,
+                            int64_t *returndistortion,
+                            BLOCK_SIZE bsize);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

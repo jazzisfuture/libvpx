@@ -2294,20 +2294,6 @@ typedef enum {
   INVALID_CASE = 9
 } motion_vector_context;
 
-static void set_mode_info(MB_MODE_INFO *mbmi, BLOCK_SIZE bsize,
-                          MB_PREDICTION_MODE mode) {
-  mbmi->mode = mode;
-  mbmi->uv_mode = mode;
-  mbmi->mv[0].as_int = 0;
-  mbmi->mv[1].as_int = 0;
-  mbmi->ref_frame[0] = INTRA_FRAME;
-  mbmi->ref_frame[1] = NONE;
-  mbmi->tx_size = max_txsize_lookup[bsize];
-  mbmi->skip = 0;
-  mbmi->sb_type = bsize;
-  mbmi->segment_id = 0;
-}
-
 static INLINE int get_block_row(int b32i, int b16i, int b8i) {
   return ((b32i >> 1) << 2) + ((b16i >> 1) << 1) + (b8i >> 1);
 }
@@ -2325,7 +2311,6 @@ static void nonrd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
   int mis = cm->mode_info_stride;
   int br, bc;
   int i, j;
-  MB_PREDICTION_MODE mode = DC_PRED;
   int rows = MIN(MI_BLOCK_SIZE, tile->mi_row_end - mi_row);
   int cols = MIN(MI_BLOCK_SIZE, tile->mi_col_end - mi_col);
 
@@ -2351,7 +2336,8 @@ static void nonrd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
         vp9_pick_inter_mode(cpi, x, tile, row, col,
                             &brate, &bdist, bs);
       else
-        set_mode_info(&xd->mi_8x8[0]->mbmi, bs, mode);
+        vp9_pick_intra_mode(cpi, x, tile, row, col,
+                            &brate, &bdist, bs);
 
       *rate += brate;
       *dist += bdist;
