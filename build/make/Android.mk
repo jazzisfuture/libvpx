@@ -27,7 +27,7 @@
 # Android.mk file in the libvpx directory:
 # LOCAL_PATH := $(call my-dir)
 # include $(CLEAR_VARS)
-# include libvpx/build/make/Android.mk
+# include jni/libvpx/build/make/Android.mk
 #
 # There are currently two TARGET_ARCH_ABI targets for ARM.
 # armeabi and armeabi-v7a.  armeabi-v7a is selected by creating an
@@ -48,14 +48,21 @@
 # Running ndk-build will build libvpx and include it in your project.
 #
 
-CONFIG_DIR := $(LOCAL_PATH)
+CONFIG_DIR := $(LOCAL_PATH)/
 LIBVPX_PATH := $(LOCAL_PATH)/libvpx
 ASM_CNV_PATH_LOCAL := $(TARGET_ARCH_ABI)/ads2gas
 ASM_CNV_PATH := $(LOCAL_PATH)/$(ASM_CNV_PATH_LOCAL)
 
 # Makefiles created by the libvpx configure process
 # This will need to be fixed to handle x86.
-  include $(CONFIG_DIR)/libs-x86-android-gcc.mk
+ifeq ($(TARGET_ARCH_ABI),x86)
+  include $(CONFIG_DIR)libs-x86-android-gcc.mk
+  LOCAL_ASMFLAGS := -I$(CONFIG_DIR) -I$(LIBVPX_PATH)
+else ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
+    include $(CONFIG_DIR)libs-armv7-android-gcc.mk
+  else
+    include $(CONFIG_DIR)libs-armv5te-android-gcc.mk
+endif
 
 # Rule that is normally in Makefile created by libvpx
 # configure.  Used to filter out source files based on configuration.
@@ -71,8 +78,6 @@ include $(LIBVPX_PATH)/libs.mk
 # Want arm, not thumb, optimized
 LOCAL_ARM_MODE := arm
 LOCAL_CFLAGS := -O3
-
-LOCAL_ASMFLAGS := -I$(CONFIG_DIR) -I$(LIBVPX_PATH)
 
 # -----------------------------------------------------------------------------
 # Template  : asm_offsets_template
@@ -104,26 +109,25 @@ $$(eval $$(call ev-build-file))
 
 $(1) : $$(_OBJ) $(2)
 	@mkdir -p $$(dir $$@)
-	@grep $(OFFSET_PATTERN) $$< | tr -d '\#' | $(CONFIG_DIR)/$(ASM_CONVERSION) > $$@
+	@grep $(OFFSET_PATTERN) $$< | tr -d '\#' | $(CONFIG_DIR)$(ASM_CONVERSION) > $$@
 endef
 
 # Use ads2gas script to convert from RVCT format to GAS format.  This passes
 #  puts the processed file under $(ASM_CNV_PATH).  Local clean rule
 #  to handle removing these
-ASM_CNV_OFFSETS_DEPEND = $(ASM_CNV_PATH)/asm_com_offsets.asm
-ifeq ($(CONFIG_VP8_DECODER), yes)
-  ASM_CNV_OFFSETS_DEPEND += $(ASM_CNV_PATH)/asm_dec_offsets.asm
-endif
 ifeq ($(CONFIG_VP8_ENCODER), yes)
-  ASM_CNV_OFFSETS_DEPEND += $(ASM_CNV_PATH)/asm_enc_offsets.asm
+  ASM_CNV_OFFSETS_DEPEND += $(ASM_CNV_PATH)/vp8_asm_enc_offsets.asm
+endif
+ifeq ($(HAVE_NEON), yes)
+  ASM_CNV_OFFSETS_DEPEND += $(ASM_CNV_PATH)/vpx_scale_asm_offsets.asm
 endif
 
-#.PRECIOUS: %.asm.s
-#$(ASM_CNV_PATH)/libvpx/%.asm.s: $(LIBVPX_PATH)/%.asm $(ASM_CNV_OFFSETS_DEPEND)
-#	@mkdir -p $(dir $@)
-#	@$(CONFIG_DIR)/$(ASM_CONVERSION) <$< > $@
+.PRECIOUS: %.asm.s
+$(ASM_CNV_PATH)/libvpx/%.asm.s: $(LIBVPX_PATH)/%.asm $(ASM_CNV_OFFSETS_DEPEND)
+	@mkdir -p $(dir $@)
+	@$(CONFIG_DIR)$(ASM_CONVERSION) <$< > $@
 
-# For building vpx_rtcd.h, which has a rule in libs.mk
+# For building *_rtcd.h, which have rules in libs.mk
 TGT_ISA:=$(word 1, $(subst -, ,$(TOOLCHAIN)))
 target := libs
 
@@ -134,12 +138,16 @@ CODEC_SRCS_UNIQUE = $(sort $(CODEC_SRCS))
 
 # Pull out C files.  vpx_config.c is in the immediate directory and
 # so it does not need libvpx/ prefixed like the rest of the source files.
+# The neon files with intrinsics need to have .neon appended so the proper
+# flags are applied.
 CODEC_SRCS_C = $(filter %.c, $(CODEC_SRCS_UNIQUE))
-CODEC_SRCS_ASM = $(filter %.asm, $(CODEC_SRCS_UNIQUE))
-LOCAL_CODEC_SRCS_C = $(filter-out vpx_config.c, $(CODEC_SRCS_C))
+LOCAL_NEON_SRCS_C = $(filter %_neon.c, $(CODEC_SRCS_C))
+LOCAL_CODEC_SRCS_C = $(filter-out vpx_config.c %_neon.c, $(CODEC_SRCS_C))
+LOCAL_CODEC_SRCS_ASM = $(filter %.asm, $(CODEC_SRCS_UNIQUE))
 
 LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_C), libvpx/$(file))
-LOCAL_SRC_FILES += $(foreach file, $(CODEC_SRCS_ASM), libvpx/$(file))
+LOCAL_SRC_FILES += $(foreach file, $(LOCAL_NEON_SRCS_C), libvpx/$(file).neon)
+LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_ASM), libvpx/$(file))
 
 # Pull out assembly files, splitting NEON from the rest.  This is
 # done to specify that the NEON assembly files use NEON assembler flags.
@@ -150,7 +158,7 @@ CODEC_SRCS_ASM = $(foreach v, \
 CODEC_SRCS_ASM_ADS2GAS = $(patsubst %.s, \
                          $(ASM_CNV_PATH_LOCAL)/libvpx/%.s, \
                          $(CODEC_SRCS_ASM))
-#LOCAL_SRC_FILES += libvpx/$(CODEC_SRCS_UNIQUE)
+LOCAL_SRC_FILES += $(CODEC_SRCS_ASM_ADS2GAS)
 
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
   CODEC_SRCS_ASM_NEON = $(foreach v, \
@@ -173,11 +181,19 @@ LOCAL_MODULE := libvpx
 
 LOCAL_LDLIBS := -llog
 
+# Add a dependency to force generation of the RTCD files.
+#
+ifeq ($(CONFIG_VP8), yes)
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vp8_rtcd.h
+endif
+ifeq ($(CONFIG_VP9), yes)
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vp9_rtcd.h
+endif
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vpx_scale_rtcd.h
+
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
   LOCAL_STATIC_LIBRARIES := cpufeatures
 endif
-
-$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vpx_rtcd.h
 
 .PHONY: clean
 clean:
@@ -189,23 +205,18 @@ clean:
 
 include $(BUILD_SHARED_LIBRARY)
 
-$(eval $(call asm_offsets_template,\
-    $(ASM_CNV_PATH)/asm_com_offsets.asm, \
-    $(LIBVPX_PATH)/vp8/common/asm_com_offsets.c))
-
-ifeq ($(CONFIG_VP8_DECODER), yes)
+ifeq ($(HAVE_NEON), yes)
   $(eval $(call asm_offsets_template,\
-    $(ASM_CNV_PATH)/asm_dec_offsets.asm, \
-    $(LIBVPX_PATH)/vp8/decoder/asm_dec_offsets.c))
+    $(ASM_CNV_PATH)/vpx_scale_asm_offsets.asm, \
+    $(LIBVPX_PATH)/vpx_scale/vpx_scale_asm_offsets.c))
 endif
 
 ifeq ($(CONFIG_VP8_ENCODER), yes)
   $(eval $(call asm_offsets_template,\
-    $(ASM_CNV_PATH)/asm_enc_offsets.asm, \
-    $(LIBVPX_PATH)/vp8/encoder/asm_enc_offsets.c))
+    $(ASM_CNV_PATH)/vp8_asm_enc_offsets.asm, \
+    $(LIBVPX_PATH)/vp8/encoder/vp8_asm_enc_offsets.c))
 endif
 
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
 $(call import-module,cpufeatures)
 endif
-
