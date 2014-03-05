@@ -2345,7 +2345,6 @@ static void nonrd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
 
       BLOCK_SIZE bs = find_partition_size(bsize, rows - br, cols - bc,
                                           &bh, &bw);
-
       set_offsets(cpi, tile, row, col, bs);
 
       if (cm->frame_type != KEY_FRAME)
