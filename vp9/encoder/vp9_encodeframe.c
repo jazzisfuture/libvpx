@@ -457,8 +457,11 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   // For in frame adaptive Q copy over the chosen segment id into the
   // mode innfo context for the chosen mode / partition.
-  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && output_enabled)
+  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
+      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) &&
+      output_enabled) {
     mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
+  }
 
   *mi_addr = *mi;
 
@@ -486,10 +489,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
       }
 
-    if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
-        (cpi->oxcf.aq_mode == COMPLEXITY_AQ)) {
+  if (cpi->oxcf.aq_mode)
     vp9_init_plane_quantizers(cpi, x);
-  }
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -634,6 +635,11 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      // Check for resetting segment_id based on coding mode selected.
+      if (bsize >= cpi->cyclic_refresh.min_block_size && mbmi->segment_id) {
+        if ((mbmi->mv[0].as_int != 0) || (mbmi->ref_frame[0] != LAST_FRAME))
+          mbmi->segment_id = 0;
+      }
     }
     vp9_init_plane_quantizers(cpi, x);
 
@@ -741,6 +747,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     if (!is_edge && (complexity > 128)) {
       x->rdmult = x->rdmult  + ((x->rdmult * (complexity - 128)) / 256);
     }
+  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
+        : cm->last_frame_seg_map;
+    // If segment 1, use rdmult for that segment.
+    if (vp9_get_segment_id(cm, map, bsize, mi_row, mi_col))
+      x->rdmult = cpi->cyclic_refresh.rdmult;
   }
 
   // Find best coding mode & reconstruct the MB so it is available
@@ -763,8 +775,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
       vp9_clear_system_state();
       *totalrate = (int)round(*totalrate * rdmult_ratio);
     }
-  }
-  else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+  } else if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+      (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)) {
     x->rdmult = orig_rdmult;
   }
 }
@@ -2757,7 +2769,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
+                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
+                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) &&
                    !cpi->sf.use_nonrd_pick_mode;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
