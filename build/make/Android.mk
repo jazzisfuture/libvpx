@@ -55,10 +55,13 @@ ASM_CNV_PATH := $(LOCAL_PATH)/$(ASM_CNV_PATH_LOCAL)
 
 # Makefiles created by the libvpx configure process
 # This will need to be fixed to handle x86.
-ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
-  include $(CONFIG_DIR)libs-armv7-android-gcc.mk
-else
-  include $(CONFIG_DIR)libs-armv5te-android-gcc.mk
+ifeq ($(TARGET_ARCH_ABI),x86)
+  include $(CONFIG_DIR)libs-x86-android-gcc.mk
+  LOCAL_ASMFLAGS := -I$(CONFIG_DIR) -I$(LIBVPX_PATH)
+else ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
+    include $(CONFIG_DIR)libs-armv7-android-gcc.mk
+  else
+    include $(CONFIG_DIR)libs-armv5te-android-gcc.mk
 endif
 
 # Rule that is normally in Makefile created by libvpx
@@ -140,9 +143,11 @@ CODEC_SRCS_UNIQUE = $(sort $(CODEC_SRCS))
 CODEC_SRCS_C = $(filter %.c, $(CODEC_SRCS_UNIQUE))
 LOCAL_NEON_SRCS_C = $(filter %_neon.c, $(CODEC_SRCS_C))
 LOCAL_CODEC_SRCS_C = $(filter-out vpx_config.c %_neon.c, $(CODEC_SRCS_C))
+LOCAL_CODEC_SRCS_ASM = $(filter %.asm, $(CODEC_SRCS_UNIQUE))
 
 LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_C), libvpx/$(file))
 LOCAL_SRC_FILES += $(foreach file, $(LOCAL_NEON_SRCS_C), libvpx/$(file).neon)
+LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_ASM), libvpx/$(file))
 
 # Pull out assembly files, splitting NEON from the rest.  This is
 # done to specify that the NEON assembly files use NEON assembler flags.
@@ -176,18 +181,19 @@ LOCAL_MODULE := libvpx
 
 LOCAL_LDLIBS := -llog
 
+# Add a dependency to force generation of the RTCD files.
+#
+ifeq ($(CONFIG_VP8), yes)
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vp8_rtcd.h
+endif
+ifeq ($(CONFIG_VP9), yes)
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vp9_rtcd.h
+endif
+$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): $(CONFIG_DIR)vpx_scale_rtcd.h
+
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
   LOCAL_STATIC_LIBRARIES := cpufeatures
 endif
-
-# Add a dependency to force generation of the RTCD files.
-ifeq ($(CONFIG_VP8), yes)
-$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vp8_rtcd.h
-endif
-ifeq ($(CONFIG_VP9), yes)
-$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vp9_rtcd.h
-endif
-$(foreach file, $(LOCAL_SRC_FILES), $(LOCAL_PATH)/$(file)): vpx_scale_rtcd.h
 
 .PHONY: clean
 clean:
