@@ -463,6 +463,24 @@ typedef enum {
   USAGE_CONSTANT_QUALITY      = 0x3,
 } END_USAGE;
 
+typedef struct {
+  // Target percentage of blocks per frame that are cyclicly refreshed.
+  int max_mbs_perframe;
+  // Maximum q-delta as percentage of base q.
+  int max_qdelta_perc;
+  // Block size below which we don't apply cyclic refresh.
+  BLOCK_SIZE min_block_size;
+  // Macroblock starting index (unit of 8x8) for cycling through the frame.
+  int mb_index;
+  // Actual number of blocks that were applied delta-q (segment 1).
+  int num_seg_blocks;
+  // Actual encoding bits for segment 1.
+  int actual_seg_bits;
+  // RD mult. parameters for segment 1.
+  int rdmult;
+  // Cyclic refresh map.
+  signed char *map;
+} CYCLIC_REFRESH;
 
 typedef enum {
   MODE_GOODQUALITY    = 0x1,
@@ -483,6 +501,7 @@ typedef enum {
   NO_AQ = 0,
   VARIANCE_AQ = 1,
   COMPLEXITY_AQ = 2,
+  CYCLIC_REFRESH_AQ = 3,
   AQ_MODES_COUNT  // This should always be the last member of the enum
 } AQ_MODES;
 
@@ -753,6 +772,8 @@ typedef struct VP9_COMP {
 
   unsigned char *active_map;
   unsigned int active_map_enabled;
+
+  CYCLIC_REFRESH cyclic_refresh;
 
   fractional_mv_step_fp *find_fractional_mv_step;
   fractional_mv_step_comp_fp *find_fractional_mv_step_comp;
