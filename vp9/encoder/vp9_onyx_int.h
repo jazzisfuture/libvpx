@@ -428,6 +428,21 @@ typedef struct {
   int avg_frame_size;
 } LAYER_CONTEXT;
 
+typedef struct {
+  // Percentage of blocks per frame that are cyclicly refreshed.
+  int max_mbs_perframe;
+  // Maximum q-delta as percentage of base q.
+  int max_qdelta_perc;
+  // Block size above which we apply cyclic refresh.
+  BLOCK_SIZE min_block_size;
+  // Macroblock starting index for cyclicing through the frame.
+  int mb_index;
+  // Controls how long a block will need to wait to be refreshed again.
+  int time_for_refresh;
+  // Cyclic refresh map.
+  signed char *map;
+} CYCLIC_REFRESH;
+
 typedef struct VP9_COMP {
   DECLARE_ALIGNED(16, int16_t, y_quant[QINDEX_RANGE][8]);
   DECLARE_ALIGNED(16, int16_t, y_quant_shift[QINDEX_RANGE][8]);
@@ -580,6 +595,8 @@ typedef struct VP9_COMP {
 
   unsigned char *active_map;
   unsigned int active_map_enabled;
+
+  CYCLIC_REFRESH cyclic_refresh;
 
   fractional_mv_step_fp *find_fractional_mv_step;
   fractional_mv_step_comp_fp *find_fractional_mv_step_comp;
