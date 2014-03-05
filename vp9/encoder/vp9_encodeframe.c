@@ -2344,7 +2344,7 @@ static void nonrd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
       int col = mi_col + bc;
 
       BLOCK_SIZE bs = find_partition_size(bsize, rows - br, cols - bc,
-                                          &bh, &bw);
+                                          &bh, &bw);;
 
       set_offsets(cpi, tile, row, col, bs);
 
@@ -2380,7 +2380,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 
     cpi->mb.source_variance = UINT_MAX;
 
-    if (cpi->sf.partition_search_type == FIXED_PARTITION) {
+    if (cpi->sf.partition_search_type == FIXED_PARTITION || 1) {
       nonrd_use_partition(cpi, tile, tp, mi_row, mi_col,
                           cpi->sf.always_this_block_size,
                           &dummy_rate, &dummy_dist);
