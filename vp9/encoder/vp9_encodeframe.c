@@ -2381,8 +2381,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     cpi->mb.source_variance = UINT_MAX;
 
     if (cpi->sf.partition_search_type == FIXED_PARTITION) {
-      nonrd_use_partition(cpi, tile, tp, mi_row, mi_col,
-                          cpi->sf.always_this_block_size,
+      nonrd_use_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_16X16,
                           &dummy_rate, &dummy_dist);
       encode_sb_rt(cpi, tile, tp, mi_row, mi_col, 1, BLOCK_64X64);
     } else if (cpi->sf.partition_search_type == VAR_BASED_FIXED_PARTITION ||
