@@ -428,8 +428,11 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   // For in frame adaptive Q copy over the chosen segment id into the
   // mode innfo context for the chosen mode / partition.
-  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && output_enabled)
+  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
+      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) &&
+      output_enabled) {
     mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
+  }
 
   *mi_addr = *mi;
 
@@ -457,9 +460,10 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
       }
 
-    if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
-        (cpi->oxcf.aq_mode == COMPLEXITY_AQ)) {
-    vp9_mb_init_quantizer(cpi, x);
+      if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
+          (cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+          (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)) {
+      vp9_mb_init_quantizer(cpi, x);
   }
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
@@ -605,6 +609,13 @@ static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      /*
+      if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && mbmi->segment_id == 1) {
+        // Reset the segment_id to 0 if block will not be coded as ZERO_LAST.
+        if ((mbmi->mode != ZEROMV) || (mbmi->ref_frame[0] != LAST_FRAME))
+          mbmi->segment_id = 0;
+      }
+      */
     }
     vp9_mb_init_quantizer(cpi, x);
 
@@ -735,7 +746,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
       *totalrate = (int)round(*totalrate * rdmult_ratio);
     }
   }
-  else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+  else if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+      (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)) {
     x->rdmult = orig_rdmult;
   }
 }
@@ -2730,7 +2742,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
+                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
+                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) &&
                    !cpi->sf.use_nonrd_pick_mode;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
