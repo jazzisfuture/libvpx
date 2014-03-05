@@ -68,6 +68,7 @@ extern "C" {
     NO_AQ = 0,
     VARIANCE_AQ = 1,
     COMPLEXITY_AQ = 2,
+    CYCLIC_REFRESH_AQ = 3,
     AQ_MODES_COUNT  // This should always be the last member of the enum
   } AQ_MODES;
 
