@@ -39,6 +39,7 @@
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_vaq.h"
+#include "vp9/encoder/vp9_craq.h"
 
 static INLINE uint8_t *get_sb_index(MACROBLOCK *x, BLOCK_SIZE subsize) {
   switch (subsize) {
@@ -457,8 +458,19 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   // For in frame adaptive Q copy over the chosen segment id into the
   // mode innfo context for the chosen mode / partition.
-  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && output_enabled)
+  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
+      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) &&
+      output_enabled) {
+    // If segment 1, check for reseting segment_id based on coding state.
+    if ( cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+        xd->mi_8x8[0]->mbmi.segment_id) {
+      if (!vp9_candidate_refresh_aq(cpi, xd->mi_8x8[0], bsize)) {
+        xd->mi_8x8[0]->mbmi.segment_id = 0;
+        vp9_init_plane_quantizers(cpi, x);
+      }
+    }
     mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
+  }
 
   *mi_addr = *mi;
 
@@ -486,10 +498,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
       }
 
-    if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
-        (cpi->oxcf.aq_mode == COMPLEXITY_AQ)) {
+  if (cpi->oxcf.aq_mode)
     vp9_init_plane_quantizers(cpi, x);
-  }
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -741,6 +751,12 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     if (!is_edge && (complexity > 128)) {
       x->rdmult = x->rdmult  + ((x->rdmult * (complexity - 128)) / 256);
     }
+  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
+        : cm->last_frame_seg_map;
+    // If segment 1, use rdmult for that segment.
+    if (vp9_get_segment_id(cm, map, bsize, mi_row, mi_col))
+      x->rdmult = cpi->cyclic_refresh.rdmult;
   }
 
   // Find best coding mode & reconstruct the MB so it is available
@@ -763,8 +779,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
       vp9_clear_system_state();
       *totalrate = (int)round(*totalrate * rdmult_ratio);
     }
-  }
-  else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+  } else if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+      (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)) {
     x->rdmult = orig_rdmult;
   }
 }
@@ -1088,7 +1104,8 @@ static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   return 0;
 }
 
-static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
+static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx,
+                            int bsize) {
   int i;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -1096,6 +1113,15 @@ static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
 
   x->skip = ctx->skip;
+
+  // If segment 1, check for reseting segment_id based on coding state.
+ if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+     xd->mi_8x8[0]->mbmi.segment_id) {
+   if (!vp9_candidate_refresh_aq(cpi, xd->mi_8x8[0], bsize)) {
+     xd->mi_8x8[0]->mbmi.segment_id = 0;
+     vp9_init_plane_quantizers(cpi, x);
+   }
+ }
 
 #if CONFIG_INTERNAL_STATS
   if (frame_is_intra_only(cm)) {
@@ -1146,7 +1172,7 @@ static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
       return;
   }
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state_rt(cpi, get_block_context(x, bsize));
+  update_state_rt(cpi, get_block_context(x, bsize), bsize);
 
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
   update_stats(cpi);
@@ -2757,7 +2783,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
+                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
+                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) &&
                    !cpi->sf.use_nonrd_pick_mode;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;
