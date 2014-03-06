@@ -889,7 +889,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adaptive_motion_search = 0;
   sf->adaptive_pred_interp_filter = 0;
   sf->reference_masking = 0;
-  sf->use_one_partition_size_always = 0;
+//  sf->use_one_partition_size_always = 0;
+  sf->use_one_partition_size_always = 1;  // AWG
+  sf->always_this_block_size = BLOCK_16X16;  // AWG
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
   sf->auto_min_max_partition_size = NOT_IN_USE;
@@ -2382,7 +2384,7 @@ static int find_fp_qindex() {
   return i;
 }
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 2
 #if WRITE_RECON_BUFFER
 void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
   FILE *yframe;
@@ -2453,7 +2455,7 @@ static int recode_loop_test(VP9_COMP *cpi,
                             int q, int maxq, int minq) {
   int force_recode = 0;
   VP9_COMMON *cm = &cpi->common;
-
+return 0;
   // Special case trap if maximum allowed frame size exceeded.
   if (cpi->rc.projected_frame_size > cpi->rc.max_frame_bandwidth) {
     force_recode = 1;

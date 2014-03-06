@@ -30,7 +30,7 @@
 #include "vp9/decoder/vp9_dthread.h"
 #include "./vpx_scale_rtcd.h"
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 2
 #if WRITE_RECON_BUFFER == 1
 static void recon_write_yuv_frame(const char *name,
                                   const YV12_BUFFER_CONFIG *s,
@@ -373,6 +373,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   swap_frame_buffers(pbi);
 
+  printf("Current Decoded Frame =%d\n", pbi->common.current_video_frame);
 #if WRITE_RECON_BUFFER == 2
   if (cm->show_frame)
     write_dx_frame_to_file(cm->frame_to_show,
