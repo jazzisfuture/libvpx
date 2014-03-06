@@ -23,7 +23,7 @@ prototype void vp8_yv12_copy_frame "const struct yv12_buffer_config *src_ybc, st
 specialize vp8_yv12_copy_frame neon
 
 prototype void vpx_yv12_copy_y "const struct yv12_buffer_config *src_ybc, struct yv12_buffer_config *dst_ybc"
-specialize vpx_yv12_copy_y neon
+specialize vpx_yv12_copy_y
 
 if [ "$CONFIG_VP9" = "yes" ]; then
     prototype void vp9_extend_frame_borders "struct yv12_buffer_config *ybf"
