@@ -2383,7 +2383,8 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   vp9_set_mv_search_range(x, &ref_mv.as_mv);
-
+// AWG
+#if 0
   // Adjust search parameters based on small partitions' result.
   if (x->fast_ms) {
     // adjust search range
@@ -2430,6 +2431,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
           for (i = 0; i < MAX_MB_PLANE; i++)
             xd->plane[i].pre[0] = backup_yv12[i];
         }
+        // AWG Restore (x->mv_col_min = tmp_col_min) etc here before return??
         return;
       }
     }
@@ -2461,12 +2463,19 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                      &cpi->fn_ptr[bsize],
                                      &ref_mv.as_mv, tmp_mv);
   }
+#endif
+
+  // AWG
+  force_mv_to_max(cpi, x, mi_row, mi_col, &tmp_mv->as_mv);
+//  bestsme = 0;
 
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;
   x->mv_row_min = tmp_row_min;
   x->mv_row_max = tmp_row_max;
 
+// AWG
+#if 0
   if (bestsme < INT_MAX) {
     int dis;  /* TODO: use dis in distortion calculation later. */
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv.as_mv,
@@ -2478,6 +2487,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref]);
   }
+#endif
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv.as_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
 
@@ -2685,6 +2695,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (this_mode == NEWMV) {
     int rate_mv;
     if (is_comp_pred) {
+      // AWG
+      assert(0);
+
       // Initialize mv using single prediction mode result.
       frame_mv[refs[0]].as_int = single_newmv[refs[0]].as_int;
       frame_mv[refs[1]].as_int = single_newmv[refs[1]].as_int;
@@ -2754,6 +2767,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (this_mode != NEWMV)
       clamp_mv2(&cur_mv[i].as_mv, xd);
 
+    // AWG Checks that mv is within
+    // ((mv_row_min, mv_row_max), (mv_col_min, mv_col_max))
     if (mv_check_bounds(x, &cur_mv[i]))
       return INT64_MAX;
     mbmi->mv[i].as_int = cur_mv[i].as_int;
@@ -3115,6 +3130,34 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   ctx->mic = *xd->mi_8x8[0];
 }
 
+void force_mv_to_max(VP9_COMP *cpi, MACROBLOCK *x, int mi_row, int mi_col,
+                     MV *mv) {
+  int half_y = cpi->common.mi_rows / 2;
+  int half_x = cpi->common.mi_cols / 2;
+//#define MIN_MV_COMPONENT   -2048
+//#define MAX_MV_COMPONENT   2048
+  // Set MV to max extent depending on which quadrant of the frame it is in.
+  if (mi_row < half_y) {
+    if (mi_col < half_x) {
+      // Upper-left quadrant.
+      mv->row = SHRT_MIN >> 1; //x->mv_row_min << 3;
+      mv->col = SHRT_MIN >> 1; //x->mv_col_min << 3;
+    } else {
+      // Upper-right quadrant.
+      mv->row = SHRT_MIN >> 1; //x->mv_row_min << 3;
+      mv->col = SHRT_MAX >> 1; //x->mv_col_max << 3;
+    }
+  } else if (mi_col < half_x) {
+    // Lower-left quadrant.
+    mv->row = SHRT_MAX >> 1; //x->mv_row_max << 3;
+    mv->col = SHRT_MIN >> 1; //x->mv_col_min << 3;
+  } else {
+    // Lower-right quadrant.
+    mv->row = SHRT_MAX >> 1; //x->mv_row_max << 3;
+    mv->col = SHRT_MAX >> 1; //x->mv_col_max << 3;
+  }
+}
+
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   const TileInfo *const tile,
                                   int mi_row, int mi_col,
@@ -3132,7 +3175,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   unsigned char segment_id = mbmi->segment_id;
   int comp_pred, i;
-  int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
+  int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES] = {0};  // AWG Added initialization.
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   int_mv single_newmv[MAX_REF_FRAMES] = { { 0 } };
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
@@ -3228,6 +3271,13 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame[0];
     second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
+
+    // AWG Only test NEWMV for inter frames & disable composite prediction.
+    if ((cm->current_video_frame > 0) /*&& (mi_row == 0 && mi_col == 0)*/) {
+      if (this_mode != NEWMV || second_ref_frame != NONE) continue;
+    } else if (cm->current_video_frame > 0) {
+      if (this_mode != NEARESTMV || second_ref_frame != NONE) continue;
+    }
 
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
@@ -3787,6 +3837,9 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv seg_mvs[4][MAX_REF_FRAMES];
   b_mode_info best_bmodes[4];
   int best_skip2 = 0;
+
+  // AWG Min 8x8 blocksize set for sf->min_partition_size:
+  assert(0);
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   vpx_memset(x->zcoeff_blk[TX_4X4], 0, 4);

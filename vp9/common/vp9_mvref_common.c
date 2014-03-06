@@ -286,8 +286,10 @@ void vp9_find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
 
   // Clamp vectors
+  // AWG Set all reference vectors to (0, 0).
   for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
-    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+    mv_ref_list[i].as_int = 0;
+//    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
 }
 
 static void lower_mv_precision(MV *mv, int allow_hp) {

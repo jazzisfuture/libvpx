@@ -17,7 +17,7 @@
 #include "test/util.h"
 
 // Enable(1) or Disable(0) writing of the compressed bitstream.
-#define WRITE_COMPRESSED_STREAM 0
+#define WRITE_COMPRESSED_STREAM 1
 
 namespace {
 
@@ -178,7 +178,7 @@ class ResizeInternalTest : public ResizeTest {
 
   virtual void BeginPassHook(unsigned int /*pass*/) {
 #if WRITE_COMPRESSED_STREAM
-    outfile_ = fopen("vp90-2-05-resize.ivf", "wb");
+    outfile_ = fopen("scaled_example.ivf", "wb");
 #endif
   }
 
@@ -195,11 +195,11 @@ class ResizeInternalTest : public ResizeTest {
 
   virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
                                   libvpx_test::Encoder *encoder) {
-    if (video->frame() == kStepDownFrame) {
-      struct vpx_scaling_mode mode = {VP8E_FOURFIVE, VP8E_THREEFIVE};
+    if (video->frame() == 1) {
+      struct vpx_scaling_mode mode = {VP8E_ONETWO, VP8E_ONETWO};
       encoder->Control(VP8E_SET_SCALEMODE, &mode);
     }
-    if (video->frame() == kStepUpFrame) {
+    if (video->frame() == 2) {
       struct vpx_scaling_mode mode = {VP8E_NORMAL, VP8E_NORMAL};
       encoder->Control(VP8E_SET_SCALEMODE, &mode);
     }
@@ -208,7 +208,7 @@ class ResizeInternalTest : public ResizeTest {
   virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
     if (!frame0_psnr_)
       frame0_psnr_ = pkt->data.psnr.psnr[0];
-    EXPECT_NEAR(pkt->data.psnr.psnr[0], frame0_psnr_, 2.0);
+//    EXPECT_NEAR(pkt->data.psnr.psnr[0], frame0_psnr_, 2.0);
   }
 
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
@@ -233,7 +233,9 @@ class ResizeInternalTest : public ResizeTest {
 };
 
 TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
-  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+//  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+//                                       30, 1, 0, 10);
+  ::libvpx_test::I420VideoSource video("city_cif.yuv", 352, 288,
                                        30, 1, 0, 10);
   init_flags_ = VPX_CODEC_USE_PSNR;
 
@@ -250,10 +252,9 @@ TEST_P(ResizeInternalTest, TestInternalResizeWorks) {
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
     const vpx_codec_pts_t pts = info->pts;
-    if (pts >= kStepDownFrame && pts < kStepUpFrame) {
-      ASSERT_EQ(282U, info->w) << "Frame " << pts << " had unexpected width";
-      ASSERT_EQ(173U, info->h) << "Frame " << pts << " had unexpected height";
-    } else {
+    if (pts == 1) {
+      ASSERT_EQ(176U, info->w) << "Frame " << pts << " had unexpected width";
+      ASSERT_EQ(144U, info->h) << "Frame " << pts << " had unexpected height";    } else {
       EXPECT_EQ(352U, info->w) << "Frame " << pts << " had unexpected width";
       EXPECT_EQ(288U, info->h) << "Frame " << pts << " had unexpected height";
     }

@@ -50,6 +50,9 @@ static MB_PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
                                           int ctx) {
   const int mode = vp9_read_tree(r, vp9_inter_mode_tree,
                                  cm->fc.inter_mode_probs[ctx]);
+  // AWG
+  assert(mode == 3 || mode == 0);
+
   if (!cm->frame_parallel_decoding_mode)
     ++cm->counts.inter_mode[ctx][mode];
 
@@ -525,10 +528,18 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                !mbmi->skip_coeff || !inter_block, r);
 
-  if (inter_block)
+  if (inter_block) {
     read_inter_block_mode_info(cm, xd, tile, mi, mi_row, mi_col, r);
-  else
+    {
+      FILE *fp = fopen("mv_decoder.txt", "a");
+      //fprintf(fp, "(%4d,%4d) (%4d, %4d)\n", mi_row * 8, mi_col * 8,
+      //        mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col);
+      fprintf(fp, "(%4d, %4d)\n", mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col);
+      fclose(fp);
+    }
+  } else {
     read_intra_block_mode_info(cm, mi, r);
+  }
 }
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
