@@ -348,10 +348,17 @@ EOF
     esac
 }
 
-check_add_cflags() {
-    check_cxxflags "$@" && add_cxxflags_only "$@"
-    check_cflags "$@" && add_cflags_only "$@"
+check_unknown_flag_warning(){
+    local warning_output=$(tail -n2 $logfile)
+    if [[ "${warning_output}" =~ ^warning\:\ unknown\ warning\ option ]]; then
+        return 1
+    fi
 }
+
+check_add_cflags() {
+    check_cxxflags "$@" && check_unknown_flag_warning && add_cxxflags_only "$@"
+    check_cflags "$@" && check_unknown_flag_warning && add_cflags_only "$@"
+ }
 
 check_add_asflags() {
     log add_asflags "$@"
