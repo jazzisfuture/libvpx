@@ -889,7 +889,11 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adaptive_motion_search = 0;
   sf->adaptive_pred_interp_filter = 0;
   sf->reference_masking = 0;
-  sf->use_one_partition_size_always = 0;
+
+  // TEST Force fixed 16x16 partition size.
+  sf->use_one_partition_size_always = 1;
+  sf->always_this_block_size = BLOCK_16X16;
+
   sf->less_rectangular_check = 0;
   sf->use_square_partition_only = 0;
   sf->auto_min_max_partition_size = NOT_IN_USE;
@@ -2382,7 +2386,7 @@ static int find_fp_qindex() {
   return i;
 }
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 2
 #if WRITE_RECON_BUFFER
 void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
   FILE *yframe;
@@ -2453,7 +2457,7 @@ static int recode_loop_test(VP9_COMP *cpi,
                             int q, int maxq, int minq) {
   int force_recode = 0;
   VP9_COMMON *cm = &cpi->common;
-
+return 0;
   // Special case trap if maximum allowed frame size exceeded.
   if (cpi->rc.projected_frame_size > cpi->rc.max_frame_bandwidth) {
     force_recode = 1;
@@ -2623,7 +2627,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2936,6 +2940,46 @@ static void set_ext_overrides(VP9_COMP *cpi) {
   }
 }
 
+static void create_dummy_frame(int frame_no, const YV12_BUFFER_CONFIG *frame) {
+  int i, k;
+  int frame_height = frame->y_height;
+  int frame_width  = frame->y_width;
+  uint8_t *buf = frame->y_buffer;
+  const char y_border_val = frame_no == 1 ? 0xFF : 0x0;
+
+  // TEST All frames are black apart from frame 1 which is black with a
+  // 1 pixel white border.
+
+  // Y
+  for (i = 0; i < frame_height; i++) {
+    if (i == 0 || (i == (frame_height - 1))) {
+      memset(buf, y_border_val, frame_width);
+    } else {
+      buf[0] = buf[frame_width - 1] = y_border_val;
+      memset(&buf[1], 0x0, frame_width - 2);
+    }
+    buf += frame->y_stride;
+  }
+  // UV
+  frame_height = frame->uv_height;
+  frame_width  = frame->uv_width;
+  for (k = 0; k < 2; k++) {
+    const char uv_inner = k == 0 ? 0x80 : 0x80;
+    const char uv_outer = (frame_no == 1) ?
+        (k == 0 ? 0x80 : 0x80) : (k == 0 ? 0x80 : 0x80);
+    buf = k ? frame->v_buffer : frame->u_buffer;
+    for (i = 0; i < frame_height; i++) {
+      if (i == 0 || (i == (frame_height - 1))) {
+        memset(buf, uv_outer, frame_width);
+      } else {
+        buf[0] = buf[frame_width - 1] = uv_outer;
+        memset(&buf[1], uv_inner, frame_width - 2);
+      }
+      buf += frame->uv_stride;
+    }
+  }
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2961,8 +3005,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                         &cpi->scaled_source);
     cpi->Source = &cpi->scaled_source;
   } else {
+
     cpi->Source = cpi->un_scaled_source;
   }
+
+  // TEST Overwrite scaled frame with dummy frame.
+  create_dummy_frame(cm->current_video_frame, cpi->Source);
+
   scale_references(cpi);
 
   // Clear down mmx registers to allow floating point in what follows.
@@ -3193,7 +3242,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
    * needed in motion search besides loopfilter */
   cm->last_frame_type = cm->frame_type;
 
-#if 0
+#if CONFIG_INTERNAL_STATS
   output_frame_level_debug_stats(cpi);
 #endif
   if (cpi->refresh_golden_frame == 1)

@@ -4620,7 +4620,7 @@ static void encode_frame_to_data_rate
         }
     }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1  // CONFIG_INTERNAL_STATS
     {
         FILE *f = fopen("tmp.stt", "a");
 
