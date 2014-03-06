@@ -24,15 +24,22 @@
 // #define NEW_DIAMOND_SEARCH
 
 void vp9_set_mv_search_range(MACROBLOCK *x, const MV *mv) {
+  // AWG First bound is within 255 pels of the mv:
   int col_min = (mv->col >> 3) - MAX_FULL_PEL_VAL + (mv->col & 7 ? 1 : 0);
   int row_min = (mv->row >> 3) - MAX_FULL_PEL_VAL + (mv->row & 7 ? 1 : 0);
   int col_max = (mv->col >> 3) + MAX_FULL_PEL_VAL;
   int row_max = (mv->row >> 3) + MAX_FULL_PEL_VAL;
 
-  col_min = MAX(col_min, (MV_LOW >> 3) + 1);
-  row_min = MAX(row_min, (MV_LOW >> 3) + 1);
-  col_max = MIN(col_max, (MV_UPP >> 3) - 1);
-  row_max = MIN(row_max, (MV_UPP >> 3) - 1);
+  // Check that mv lies in range(-2049, +2046) in full pel:
+  col_min = (MV_LOW >> 3) + 1;
+  row_min = (MV_LOW >> 3) + 1;
+  col_max = (MV_UPP >> 3) - 1;
+  row_max = (MV_UPP >> 3) - 1;
+  // AWG Second bound is within (-2049, +2046) pels:
+//  col_min = MAX(col_min, (MV_LOW >> 3) + 1);
+//  row_min = MAX(row_min, (MV_LOW >> 3) + 1);
+//  col_max = MIN(col_max, (MV_UPP >> 3) - 1);
+//  row_max = MIN(row_max, (MV_UPP >> 3) - 1);
 
   // Get intersection of UMV window and valid MV window to reduce # of checks
   // in diamond search.

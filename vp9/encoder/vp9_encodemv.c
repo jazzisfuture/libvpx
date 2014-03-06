@@ -206,8 +206,20 @@ void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
                    const nmv_context* mvctx, int usehp) {
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
+
   const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
   usehp = usehp && vp9_use_mv_hp(ref);
+
+    // AWG Write out the MV.
+  if (!cpi->dummy_packing) {
+    FILE *fp = fopen("mv_encoder.txt", "a");
+    //fprintf(fp, "(%4d, %4d) (%4d, %4d)\n", mv->row, mv->col,
+    //    ref->row, ref->col);
+    fprintf(fp, "(%4d, %4d)\n", mv->row, mv->col);
+    fclose(fp);
+  }
+
+
 
   vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
   if (mv_joint_vertical(j))
