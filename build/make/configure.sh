@@ -289,14 +289,14 @@ check_cc() {
     log check_cc "$@"
     cat >${TMP_C}
     log_file ${TMP_C}
-    check_cmd ${CC} ${CFLAGS} "$@" -c -o ${TMP_O} ${TMP_C}
+    check_cmd ${CC} ${CFLAGS} "$@" -c -Werror -o ${TMP_O} ${TMP_C}
 }
 
 check_cxx() {
     log check_cxx "$@"
     cat >${TMP_CC}
     log_file ${TMP_CC}
-    check_cmd ${CXX} ${CXXFLAGS} "$@" -c -o ${TMP_O} ${TMP_CC}
+    check_cmd ${CXX} ${CXXFLAGS} "$@" -c -Werror -o ${TMP_O} ${TMP_CC}
 }
 
 check_cpp() {
