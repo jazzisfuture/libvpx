@@ -855,13 +855,19 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->frame_parameter_update = 0;
     sf->encode_breakout_thresh = 1000;
     sf->search_method = FAST_HEX;
+    // ============================================
+    // for testing purpose only
+    // ============================================
+    sf->partition_search_type = FIXED_PARTITION;
+    sf->always_this_block_size = BLOCK_16X16;
+    // ============================================
   }
   if (speed >= 6) {
     sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
     sf->search_method = HEX;
   }
   if (speed >= 7) {
-    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
+    sf->partition_search_type = FIXED_PARTITION; // VAR_BASED_FIXED_PARTITION;
     sf->use_nonrd_pick_mode = 1;
     sf->search_method = FAST_HEX;
   }

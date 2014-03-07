@@ -387,11 +387,22 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
 
+//  if (cm->current_video_frame == 2)
+//    assert(0);
+
   if (less8x8)
     bsize = BLOCK_8X8;
 
   // Has to be called after set_offsets
   mbmi = &xd->mi_8x8[0]->mbmi;
+
+//  if (cm->frame_type != KEY_FRAME) {
+//    FILE *pf = fopen("test_modes.txt", "a");
+//    fprintf(pf, "pos (%d, %d), bsize %d, mode %d, motion vector (%d, %d)\n",
+//            mi_row, mi_col, mbmi->sb_type, mbmi->mode,
+//            mbmi->mv[0].as_mv.row, mbmi->mv[0].as_mv.col);
+//    fclose(pf);
+//  }
 
   if (mbmi->skip) {
     reset_skip_context(xd, bsize);
