@@ -16,6 +16,8 @@
 
 #include "vp9/common/vp9_seg_common.h"
 
+#include "vp9/ppa.h"
+
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
 // Each 1 bit represents a position in which we want to apply the loop filter.
 // Left_ entries refer to whether we apply a filter on the border to the
@@ -1284,7 +1286,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
   LFWorkerData *const lf_data = (LFWorkerData*)arg1;
   (void)arg2;
+  PPAStartCpuEventFunc(loopfilter_inline_time);
+
   vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
                        lf_data->start, lf_data->stop, lf_data->y_only);
+  PPAStopCpuEventFunc(loopfilter_inline_time);
   return 1;
 }
