@@ -43,6 +43,10 @@ int vp9_receive_compressed_data(VP9D_PTR comp,
                                 size_t size, const uint8_t **dest,
                                 int64_t time_stamp);
 
+int vp9_receive_compressed_data_mt(VP9D_PTR comp,
+                                uint64_t size, const uint8_t **dest,
+                                int64_t time_stamp);
+
 int vp9_get_raw_frame(VP9D_PTR comp, YV12_BUFFER_CONFIG *sd,
                       int64_t *time_stamp, int64_t *time_end_stamp,
                       vp9_ppflags_t *flags);
