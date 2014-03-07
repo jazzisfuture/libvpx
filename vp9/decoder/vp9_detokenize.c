@@ -82,7 +82,7 @@ static const vp9_prob cat6_prob[15] = {
 static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
                        int16_t *dqcoeff, TX_SIZE tx_size, const int16_t *dq,
                        int ctx, const int16_t *scan, const int16_t *nb,
-                       vp9_reader *r) {
+                       vp9_reader *r, uint8_t *token_cache) {
   const int max_eob = 16 << (tx_size << 1);
   const FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
@@ -95,7 +95,6 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
       counts->coef[tx_size][type][ref];
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS] =
       counts->eob_branch[tx_size][type][ref];
-  uint8_t token_cache[32 * 32];
   const uint8_t *cat6;
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
@@ -191,20 +190,28 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     WRITE_COEF_CONTINUE(val, CATEGORY6_TOKEN);
   }
 
+  if (c < max_eob) {
+    if (!cm->frame_parallel_decoding_mode)
+      ++coef_counts[band][ctx][EOB_MODEL_TOKEN];
+  }
+
   return c;
 }
 
 int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                             int plane, int block, BLOCK_SIZE plane_bsize,
-                            int x, int y, TX_SIZE tx_size, vp9_reader *r) {
+                            int x, int y, TX_SIZE tx_size, vp9_reader *r,
+                            uint8_t *token_cache) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   const int ctx = get_entropy_context(tx_size, pd->above_context + x,
                                                pd->left_context + y);
   const scan_order *so = get_scan(xd, tx_size, pd->plane_type, block);
   const int eob = decode_coefs(cm, xd, pd->plane_type,
                                BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
-                               pd->dequant, ctx, so->scan, so->neighbors, r);
+                               pd->dequant, ctx, so->scan, so->neighbors, r,
+							   token_cache);
   set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);
+  pd->eobs[block] = eob;
   return eob;
 }
 
