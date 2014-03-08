@@ -2590,7 +2590,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
   return force_recode;
 }
 
-static void update_reference_frames(VP9_COMP * const cpi) {
+void vp9_update_reference_frames(VP9_COMP *const cpi) {
   VP9_COMMON * const cm = &cpi->common;
 
   // At this point the new frame has been encoded.
@@ -2674,7 +2674,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   vp9_extend_frame_inner_borders(cm->frame_to_show);
 }
 
-static void scale_references(VP9_COMP *cpi) {
+void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
 
@@ -3109,7 +3109,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   } else {
     cpi->Source = cpi->un_scaled_source;
   }
-  scale_references(cpi);
+  vp9_scale_references(cpi);
 
   vp9_clear_system_state();
 
@@ -3287,7 +3287,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     update_reference_segmentation_map(cpi);
 
   release_scaled_references(cpi);
-  update_reference_frames(cpi);
+  vp9_update_reference_frames(cpi);
 
   for (t = TX_4X4; t <= TX_32X32; t++)
     full_to_model_counts(cm->counts.coef[t], cpi->coef_counts[t]);
@@ -3726,12 +3726,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     vp9_vaq_init();
   }
 
-  if (cpi->use_svc) {
-    SvcEncode(cpi, size, dest, frame_flags);
-  } else if (cpi->pass == 1) {
+  if (cpi->pass == 1 &&
+      (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
     Pass1Encode(cpi, size, dest, frame_flags);
-  } else if (cpi->pass == 2) {
+  } else if (cpi->pass == 2 && !cpi->use_svc) {
     Pass2Encode(cpi, size, dest, frame_flags);
+  } else if (cpi->use_svc) {
+    SvcEncode(cpi, size, dest, frame_flags);
   } else {
     // One pass encode
     Pass0Encode(cpi, size, dest, frame_flags);
