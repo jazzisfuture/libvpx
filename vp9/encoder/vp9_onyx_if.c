@@ -2036,12 +2036,10 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                   / time_encoded;
 
       if (cpi->b_calculate_psnr) {
-        const double total_psnr =
-            vpx_sse_to_psnr((double)cpi->total_samples, 255.0,
-                            (double)cpi->total_sq_error);
-        const double totalp_psnr =
-            vpx_sse_to_psnr((double)cpi->totalp_samples, 255.0,
-                            (double)cpi->totalp_sq_error);
+        const double total_psnr = vpx_sse_to_psnr(cpi->total_sq_error,
+                                                  cpi->total_samples, 255);
+        const double totalp_psnr = vpx_sse_to_psnr(cpi->totalp_sq_error,
+                                                   cpi->totalp_samples, 255);
         const double total_ssim = 100 * pow(cpi->summed_quality /
                                                 cpi->summed_weights, 8.0);
         const double totalp_ssim = 100 * pow(cpi->summedp_quality /
@@ -2195,9 +2193,9 @@ static uint64_t calc_plane_error(const uint8_t *orig, int orig_stride,
 }
 
 typedef struct {
-  double psnr[4];       // total/y/u/v
-  uint64_t sse[4];      // total/y/u/v
-  uint32_t samples[4];  // total/y/u/v
+  double psnr[4];      // total/y/u/v
+  int64_t sse[4];      // total/y/u/v
+  int64_t samples[4];  // total/y/u/v
 } PSNR_STATS;
 
 static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
@@ -2209,19 +2207,19 @@ static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
   const uint8_t *b_planes[3] = {b->y_buffer, b->u_buffer,  b->v_buffer };
   const int b_strides[3]     = {b->y_stride, b->uv_stride, b->uv_stride};
   int i;
-  uint64_t total_sse = 0;
-  uint32_t total_samples = 0;
+  int64_t total_sse = 0;
+  int64_t total_samples = 0;
 
   for (i = 0; i < 3; ++i) {
     const int w = widths[i];
     const int h = heights[i];
-    const uint32_t samples = w * h;
-    const uint64_t sse = calc_plane_error(a_planes[i], a_strides[i],
-                                          b_planes[i], b_strides[i],
-                                          w, h);
+    const int samples = w * h;
+    const int64_t sse = calc_plane_error(a_planes[i], a_strides[i],
+                                         b_planes[i], b_strides[i],
+                                         w, h);
     psnr->sse[1 + i] = sse;
     psnr->samples[1 + i] = samples;
-    psnr->psnr[1 + i] = vpx_sse_to_psnr(samples, 255.0, (double)sse);
+    psnr->psnr[1 + i] = vpx_sse_to_psnr(sse, samples, 255);
 
     total_sse += sse;
     total_samples += samples;
@@ -2229,8 +2227,7 @@ static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
 
   psnr->sse[0] = total_sse;
   psnr->samples[0] = total_samples;
-  psnr->psnr[0] = vpx_sse_to_psnr((double)total_samples, 255.0,
-                                  (double)total_sse);
+  psnr->psnr[0] = vpx_sse_to_psnr(total_sse, total_samples, 255);
 }
 
 static void generate_psnr_packet(VP9_COMP *cpi) {
