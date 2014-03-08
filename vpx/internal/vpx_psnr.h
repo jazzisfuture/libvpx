@@ -11,11 +11,11 @@
 #ifndef VPX_INTERNAL_VPX_PSNR_H_
 #define VPX_INTERNAL_VPX_PSNR_H_
 
+#include "vpx/vpx_integer.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO(dkovalev) change vpx_sse_to_psnr signature: double -> int64_t
 
 /*!\brief Converts SSE to PSNR
  *
@@ -25,7 +25,7 @@ extern "C" {
  * \param[in]    peak          Max sample value
  * \param[in]    sse           Sum of squared errors
  */
-double vpx_sse_to_psnr(double samples, double peak, double sse);
+double vpx_sse_to_psnr(int64_t sse, int64_t samples, int peak);
 
 #ifdef __cplusplus
 }  // extern "C"
