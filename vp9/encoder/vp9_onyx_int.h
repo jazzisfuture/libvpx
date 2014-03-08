@@ -439,6 +439,7 @@ typedef struct {
   int64_t maximum_buffer_size;
   double framerate;
   int avg_frame_size;
+  struct twopass_rc twopass;
 } LAYER_CONTEXT;
 
 #define MAX_SEGMENTS 8
@@ -831,9 +832,10 @@ typedef struct VP9_COMP {
     int temporal_layer_id;
     int number_spatial_layers;
     int number_temporal_layers;
-    // Layer context used for rate control in CBR mode, only defined for
-    // temporal layers for now.
-    LAYER_CONTEXT layer_context[VPX_TS_MAX_LAYERS];
+    // Layer context used for rate control in temporal CBR mode or spatial
+    // two pass mode. Defined for temporal or spatial layers for now.
+    // Does not support temporal combined with spatial RC.
+    LAYER_CONTEXT layer_context[MAX(VPX_TS_MAX_LAYERS, VPX_SS_MAX_LAYERS)];
   } svc;
 
 #if CONFIG_MULTIPLE_ARF
@@ -944,6 +946,10 @@ int vp9_calc_ss_err(const YV12_BUFFER_CONFIG *source,
 void vp9_alloc_compressor_data(VP9_COMP *cpi);
 
 int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget);
+
+void vp9_scale_references(VP9_COMP *cpi);
+
+void vp9_update_reference_frames(VP9_COMP *cpi);
 
 static int get_token_alloc(int mb_rows, int mb_cols) {
   return mb_rows * mb_cols * (48 * 16 + 4);
