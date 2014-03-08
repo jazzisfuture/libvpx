@@ -439,6 +439,7 @@ typedef struct {
   int64_t maximum_buffer_size;
   double framerate;
   int avg_frame_size;
+  struct twopass_rc twopass;
 } LAYER_CONTEXT;
 
 #define MAX_SEGMENTS 8
@@ -833,7 +834,7 @@ typedef struct VP9_COMP {
     int number_temporal_layers;
     // Layer context used for rate control in CBR mode, only defined for
     // temporal layers for now.
-    LAYER_CONTEXT layer_context[VPX_TS_MAX_LAYERS];
+    LAYER_CONTEXT layer_context[MAX(VPX_TS_MAX_LAYERS, VPX_SS_MAX_LAYERS)];
   } svc;
 
 #if CONFIG_MULTIPLE_ARF
