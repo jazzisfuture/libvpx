@@ -56,6 +56,9 @@
 
 #define DISABLE_RC_LONG_TERM_MEM 0
 
+void scale_references(VP9_COMP *cpi);
+void update_reference_frames(VP9_COMP *cpi);
+
 static void swap_yv12(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
   YV12_BUFFER_CONFIG temp = *a;
   *a = *b;
@@ -201,6 +204,7 @@ static void zero_stats(FIRSTPASS_STATS *section) {
 
 static void accumulate_stats(FIRSTPASS_STATS *section, FIRSTPASS_STATS *frame) {
   section->frame += frame->frame;
+  section->spatial_layer_id = frame->spatial_layer_id;
   section->intra_error += frame->intra_error;
   section->coded_error += frame->coded_error;
   section->sr_coded_error += frame->sr_coded_error;
@@ -356,7 +360,15 @@ void vp9_init_first_pass(VP9_COMP *cpi) {
 }
 
 void vp9_end_first_pass(VP9_COMP *cpi) {
-  output_stats(&cpi->twopass.total_stats, cpi->output_pkt_list);
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    int i;
+    for (i = 0; i < cpi->svc.number_spatial_layers; ++i) {
+      output_stats(&cpi->svc.layer_context[i].twopass.total_stats,
+                   cpi->output_pkt_list);
+    }
+  } else {
+    output_stats(&cpi->twopass.total_stats, cpi->output_pkt_list);
+  }
 }
 
 static vp9_variance_fn_t get_block_variance_fn(BLOCK_SIZE bsize) {
@@ -477,12 +489,12 @@ void vp9_first_pass(VP9_COMP *cpi) {
   int i;
 
   int recon_yoffset, recon_uvoffset;
-  YV12_BUFFER_CONFIG *const lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
-  YV12_BUFFER_CONFIG *const gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+  YV12_BUFFER_CONFIG *lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
+  YV12_BUFFER_CONFIG *gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
   YV12_BUFFER_CONFIG *const new_yv12 = get_frame_new_buffer(cm);
-  const int recon_y_stride = lst_yv12->y_stride;
-  const int recon_uv_stride = lst_yv12->uv_stride;
-  const int uv_mb_height = 16 >> (lst_yv12->y_height > lst_yv12->uv_height);
+  int recon_y_stride = lst_yv12->y_stride;
+  int recon_uv_stride = lst_yv12->uv_stride;
+  int uv_mb_height = 16 >> (lst_yv12->y_height > lst_yv12->uv_height);
   int64_t intra_error = 0;
   int64_t coded_error = 0;
   int64_t sr_coded_error = 0;
@@ -498,13 +510,43 @@ void vp9_first_pass(VP9_COMP *cpi) {
   int new_mv_count = 0;
   int sum_in_vectors = 0;
   uint32_t lastmv_as_int = 0;
-  struct twopass_rc *const twopass = &cpi->twopass;
+  struct twopass_rc *twopass = &cpi->twopass;
   const MV zero_mv = {0, 0};
+  const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
 
   vp9_clear_system_state();
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    MV_REFERENCE_FRAME ref_frame = LAST_FRAME;
+    const YV12_BUFFER_CONFIG *scaled_ref_buf = NULL;
+    twopass = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].twopass;
+
+    scale_references(cpi);
+
+    // Use either last frame or alt frame for motion search.
+    // Disable golden frame for svc first pass for now.
+    if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
+      scaled_ref_buf = vp9_get_scaled_ref_frame(cpi, LAST_FRAME);
+      ref_frame = LAST_FRAME;
+    } else if (cpi->ref_frame_flags & VP9_ALT_FLAG) {
+      scaled_ref_buf = vp9_get_scaled_ref_frame(cpi, ALTREF_FRAME);
+      ref_frame = ALTREF_FRAME;
+    }
+
+    if (scaled_ref_buf) {
+      // We have to update the stride since we use scaled reference buffer
+      first_ref_buf = scaled_ref_buf;
+      recon_y_stride = first_ref_buf->y_stride;
+      recon_uv_stride = first_ref_buf->uv_stride;
+      uv_mb_height = 16 >> (first_ref_buf->y_height > first_ref_buf->uv_height);
+    }
+
+    gld_yv12 = NULL;
+    set_ref_ptrs(cm, xd, ref_frame, NONE);
+  }
+
   vp9_setup_src_planes(x, cpi->Source, 0, 0);
-  setup_pre_planes(xd, 0, lst_yv12, 0, 0, NULL);
+  setup_pre_planes(xd, 0, first_ref_buf, 0, 0, NULL);
   setup_dst_planes(xd, new_yv12, 0, 0);
 
   xd->mi_8x8 = cm->mi_grid_visible;
@@ -597,7 +639,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
         int tmp_err, motion_error;
         int_mv mv, tmp_mv;
 
-        xd->plane[0].pre[0].buf = lst_yv12->y_buffer + recon_yoffset;
+        xd->plane[0].pre[0].buf = first_ref_buf->y_buffer + recon_yoffset;
         motion_error = zz_motion_search(x);
         // Assume 0,0 motion with no mv overhead.
         mv.as_int = tmp_mv.as_int = 0;
@@ -629,7 +671,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
         }
 
         // Search in an older reference frame.
-        if (cm->current_video_frame > 1) {
+        if (cm->current_video_frame > 1 && gld_yv12) {
           // Assume 0,0 motion with no mv overhead.
           int gf_motion_error;
 
@@ -647,9 +689,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
             ++second_ref_count;
 
           // Reset to last frame as reference buffer.
-          xd->plane[0].pre[0].buf = lst_yv12->y_buffer + recon_yoffset;
-          xd->plane[1].pre[0].buf = lst_yv12->u_buffer + recon_uvoffset;
-          xd->plane[2].pre[0].buf = lst_yv12->v_buffer + recon_uvoffset;
+          xd->plane[0].pre[0].buf = first_ref_buf->y_buffer + recon_yoffset;
+          xd->plane[1].pre[0].buf = first_ref_buf->u_buffer + recon_uvoffset;
+          xd->plane[2].pre[0].buf = first_ref_buf->v_buffer + recon_uvoffset;
 
           // In accumulating a score for the older reference frame take the
           // best of the motion predicted score and the intra coded error
@@ -757,6 +799,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
     FIRSTPASS_STATS fps;
 
     fps.frame = cm->current_video_frame;
+    fps.spatial_layer_id = cpi->svc.spatial_layer_id;
     fps.intra_error = (double)(intra_error >> 8);
     fps.coded_error = (double)(coded_error >> 8);
     fps.sr_coded_error = (double)(sr_coded_error >> 8);
@@ -806,20 +849,28 @@ void vp9_first_pass(VP9_COMP *cpi) {
        (twopass->this_frame_stats.pcnt_inter > 0.20) &&
        ((twopass->this_frame_stats.intra_error /
          DOUBLE_DIVIDE_CHECK(twopass->this_frame_stats.coded_error)) > 2.0))) {
-    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    if (gld_yv12) {
+      vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    }
     twopass->sr_update_lag = 1;
   } else {
     ++twopass->sr_update_lag;
   }
-  // Swap frame pointers so last frame refers to the frame we just compressed.
-  swap_yv12(lst_yv12, new_yv12);
+
+  if (cpi->use_svc  && cpi->svc.number_temporal_layers == 1) {
+    update_reference_frames(cpi);
+  } else {
+    // Swap frame pointers so last frame refers to the frame we just compressed.
+    swap_yv12(lst_yv12, new_yv12);
+  }
 
   vp9_extend_frame_borders(lst_yv12);
 
   // Special case for the first frame. Copy into the GF buffer as a second
   // reference.
-  if (cm->current_video_frame == 0)
+  if (cm->current_video_frame == 0 && gld_yv12) {
     vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+  }
 
   // Use this to see what the first pass reconstruction looks like.
   if (0) {
