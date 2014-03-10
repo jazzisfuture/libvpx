@@ -19,16 +19,16 @@ namespace {
 
 const int kMaxPsnr = 100;
 
-class LossLessTest : public ::libvpx_test::EncoderTest,
+class LargeLossLessTest : public ::libvpx_test::EncoderTest,
     public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  protected:
-  LossLessTest() : EncoderTest(GET_PARAM(0)),
+  LargeLossLessTest() : EncoderTest(GET_PARAM(0)),
                    psnr_(kMaxPsnr),
                    nframes_(0),
                    encoding_mode_(GET_PARAM(1)) {
   }
 
-  virtual ~LossLessTest() {}
+  virtual ~LargeLossLessTest() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -55,7 +55,7 @@ class LossLessTest : public ::libvpx_test::EncoderTest,
   libvpx_test::TestMode encoding_mode_;
 };
 
-TEST_P(LossLessTest, TestLossLessEncoding) {
+TEST_P(LargeLossLessTest, TestLossLessEncoding) {
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = 2000;
@@ -73,7 +73,7 @@ TEST_P(LossLessTest, TestLossLessEncoding) {
   EXPECT_GE(psnr_lossless, kMaxPsnr);
 }
 
-TEST_P(LossLessTest, TestLossLessEncoding444) {
+TEST_P(LargeLossLessTest, TestLossLessEncoding444) {
   libvpx_test::Y4mVideoSource video("rush_hour_444.y4m", 0, 10);
 
   cfg_.g_profile = 1;
@@ -90,5 +90,5 @@ TEST_P(LossLessTest, TestLossLessEncoding444) {
   EXPECT_GE(psnr_lossless, kMaxPsnr);
 }
 
-VP9_INSTANTIATE_TEST_CASE(LossLessTest, ALL_TEST_MODES);
+VP9_INSTANTIATE_TEST_CASE(LargeLossLessTest, ALL_TEST_MODES);
 }  // namespace
