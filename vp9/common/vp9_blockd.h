@@ -228,7 +228,8 @@ typedef struct macroblockd {
   const YV12_BUFFER_CONFIG *cur_buf;
 
   /* mc buffer */
-  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * MAX_DOWNSCALE_FACTOR *
+                                          80 * MAX_DOWNSCALE_FACTOR]);
 
   int lossless;
   /* Inverse transform function pointers. */

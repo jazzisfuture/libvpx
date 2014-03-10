@@ -35,10 +35,10 @@ static int get_fixed_point_scale_factor(int other_size, int this_size) {
 
 static int check_scale_factors(int other_w, int other_h,
                                int this_w, int this_h) {
-  return 2 * this_w >= other_w &&
-         2 * this_h >= other_h &&
-         this_w <= 16 * other_w &&
-         this_h <= 16 * other_h;
+  return MAX_DOWNSCALE_FACTOR * this_w >= other_w &&
+         MAX_DOWNSCALE_FACTOR * this_h >= other_h &&
+         this_w <= MAX_UPSCALE_FACTOR * other_w &&
+         this_h <= MAX_UPSCALE_FACTOR * other_h;
 }
 
 MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {

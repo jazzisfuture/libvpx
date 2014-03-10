@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+#define MAX_DOWNSCALE_FACTOR 2
+#define MAX_UPSCALE_FACTOR 16
+
 typedef void (*convolve_fn_t)(const uint8_t *src, ptrdiff_t src_stride,
                               uint8_t *dst, ptrdiff_t dst_stride,
                               const int16_t *filter_x, int x_step_q4,

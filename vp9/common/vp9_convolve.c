@@ -117,23 +117,22 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
                      const InterpKernel *const y_filters,
                      int y0_q4, int y_step_q4,
                      int w, int h) {
-  // Fixed size intermediate buffer places limits on parameters.
-  // Maximum intermediate_height is 324, for y_step_q4 == 80,
-  // h == 64, taps == 8.
-  // y_step_q4 of 80 allows for 1/10 scale for 5 layer svc
-  uint8_t temp[64 * 324];
-  int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + SUBPEL_TAPS;
+  // Fixed size temp buffer places limits on parameters. Maximum temp_height is
+  // MAX_DOWNSCALE_FACTOR * 64 + SUBPEL_TAPS - 1, for
+  //   y_step_q4 == 16 * MAX_DOWNSCALE_FACTOR,
+  //   h == 64,
+  //   taps == 8.
+  // y_step_q4 of 80 allows for 1/10 scale for 5 layer svc.
+  uint8_t temp[64 * (MAX_DOWNSCALE_FACTOR * 64 + SUBPEL_TAPS - 1)];
+  const int temp_height = (((h - 1) * y_step_q4 + 15) >> 4) + SUBPEL_TAPS;
 
   assert(w <= 64);
   assert(h <= 64);
-  assert(y_step_q4 <= 80);
-  assert(x_step_q4 <= 80);
-
-  if (intermediate_height < h)
-    intermediate_height = h;
+  assert(y_step_q4 <= 16 * MAX_DOWNSCALE_FACTOR);
+  assert(x_step_q4 <= 16 * MAX_DOWNSCALE_FACTOR);
 
   convolve_horiz(src - src_stride * (SUBPEL_TAPS / 2 - 1), src_stride, temp, 64,
-                 x_filters, x0_q4, x_step_q4, w, intermediate_height);
+                 x_filters, x0_q4, x_step_q4, w, temp_height);
   convolve_vert(temp + 64 * (SUBPEL_TAPS / 2 - 1), 64, dst, dst_stride,
                 y_filters, y0_q4, y_step_q4, w, h);
 }
