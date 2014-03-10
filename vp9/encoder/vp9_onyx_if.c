@@ -1644,7 +1644,7 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
       for (x->sb_index = 0; x->sb_index < 4; ++x->sb_index) {
         for (x->mb_index = 0; x->mb_index < 4; ++x->mb_index) {
           for (x->b_index = 0; x->b_index < 16 / num_4x4_blk; ++x->b_index) {
-            PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+            PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
             alloc_mode_context(cm, num_4x4_blk, ctx);
           }
         }
@@ -1652,19 +1652,19 @@ static void init_pick_mode_context(VP9_COMP *cpi) {
     } else if (i < BLOCK_32X32) {
       for (x->sb_index = 0; x->sb_index < 4; ++x->sb_index) {
         for (x->mb_index = 0; x->mb_index < 64 / num_4x4_blk; ++x->mb_index) {
-          PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+          PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
           ctx->num_4x4_blk = num_4x4_blk;
           alloc_mode_context(cm, num_4x4_blk, ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (x->sb_index = 0; x->sb_index < 256 / num_4x4_blk; ++x->sb_index) {
-        PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+        PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
         ctx->num_4x4_blk = num_4x4_blk;
         alloc_mode_context(cm, num_4x4_blk, ctx);
       }
     } else {
-      PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+      PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
       ctx->num_4x4_blk = num_4x4_blk;
       alloc_mode_context(cm, num_4x4_blk, ctx);
     }
@@ -1682,7 +1682,7 @@ static void free_pick_mode_context(MACROBLOCK *x) {
       for (x->sb_index = 0; x->sb_index < 4; ++x->sb_index) {
         for (x->mb_index = 0; x->mb_index < 4; ++x->mb_index) {
           for (x->b_index = 0; x->b_index < 16 / num_4x4_blk; ++x->b_index) {
-            PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+            PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
             free_mode_context(ctx);
           }
         }
@@ -1690,17 +1690,17 @@ static void free_pick_mode_context(MACROBLOCK *x) {
     } else if (i < BLOCK_32X32) {
       for (x->sb_index = 0; x->sb_index < 4; ++x->sb_index) {
         for (x->mb_index = 0; x->mb_index < 64 / num_4x4_blk; ++x->mb_index) {
-          PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+          PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
           free_mode_context(ctx);
         }
       }
     } else if (i < BLOCK_64X64) {
       for (x->sb_index = 0; x->sb_index < 256 / num_4x4_blk; ++x->sb_index) {
-        PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+        PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
         free_mode_context(ctx);
       }
     } else {
-      PICK_MODE_CONTEXT *ctx = get_block_context(x, i);
+      PICK_MODE_CONTEXT *ctx = vp9_get_block_context(x, i);
       free_mode_context(ctx);
     }
   }
