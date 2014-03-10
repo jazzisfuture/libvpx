@@ -19,10 +19,10 @@ namespace {
 const int kMaxErrorFrames = 12;
 const int kMaxDroppableFrames = 12;
 
-class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
+class LargeErrorResilienceTest : public ::libvpx_test::EncoderTest,
     public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  protected:
-  ErrorResilienceTest() : EncoderTest(GET_PARAM(0)),
+  LargeErrorResilienceTest() : EncoderTest(GET_PARAM(0)),
                           psnr_(0.0),
                           nframes_(0),
                           mismatch_psnr_(0.0),
@@ -31,7 +31,7 @@ class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
     Reset();
   }
 
-  virtual ~ErrorResilienceTest() {}
+  virtual ~LargeErrorResilienceTest() {}
 
   void Reset() {
     error_nframes_ = 0;
@@ -144,7 +144,7 @@ class ErrorResilienceTest : public ::libvpx_test::EncoderTest,
   libvpx_test::TestMode encoding_mode_;
 };
 
-TEST_P(ErrorResilienceTest, OnVersusOff) {
+TEST_P(LargeErrorResilienceTest, OnVersusOff) {
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = 2000;
@@ -179,7 +179,7 @@ TEST_P(ErrorResilienceTest, OnVersusOff) {
 // if we lose (i.e., drop before decoding) a set of droppable
 // frames (i.e., frames that don't update any reference buffers).
 // Check both isolated and consecutive loss.
-TEST_P(ErrorResilienceTest, DropFramesWithoutRecovery) {
+TEST_P(LargeErrorResilienceTest, DropFramesWithoutRecovery) {
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = 500;
@@ -235,7 +235,7 @@ TEST_P(ErrorResilienceTest, DropFramesWithoutRecovery) {
 #endif
 }
 
-VP8_INSTANTIATE_TEST_CASE(ErrorResilienceTest, ONE_PASS_TEST_MODES);
-VP9_INSTANTIATE_TEST_CASE(ErrorResilienceTest, ONE_PASS_TEST_MODES);
+VP8_INSTANTIATE_TEST_CASE(LargeErrorResilienceTest, ONE_PASS_TEST_MODES);
+VP9_INSTANTIATE_TEST_CASE(LargeErrorResilienceTest, ONE_PASS_TEST_MODES);
 
 }  // namespace
