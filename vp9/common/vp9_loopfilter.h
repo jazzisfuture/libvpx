@@ -43,6 +43,26 @@ struct loopfilter {
   signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
 };
 
+// This structure holds bit masks for all 8x8 blocks in a 64x64 region.
+// Each 1 bit represents a position in which we want to apply the loop filter.
+// Left_ entries refer to whether we apply a filter on the border to the
+// left of the block.   Above_ entries refer to whether or not to apply a
+// filter on the above border.   Int_ entries refer to whether or not to
+// apply borders on the 4x4 edges within the 8x8 block that each bit
+// represents.
+// Since each transform is accompanied by a potentially different type of
+// loop filter there is a different entry in the array for each transform size.
+typedef struct {
+  uint64_t left_y[TX_SIZES];
+  uint64_t above_y[TX_SIZES];
+  uint64_t int_4x4_y;
+  uint16_t left_uv[TX_SIZES];
+  uint16_t above_uv[TX_SIZES];
+  uint16_t int_4x4_uv;
+  uint8_t lfl_y[64];
+  uint8_t lfl_uv[16];
+} LOOP_FILTER_MASK;
+
 // Need to align this structure so when it is declared and
 // passed it can be loaded into vector registers.
 typedef struct {
@@ -54,6 +74,7 @@ typedef struct {
 typedef struct {
   loop_filter_thresh lfthr[MAX_LOOP_FILTER + 1];
   uint8_t lvl[MAX_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
+  uint8_t mode_lf_lut[MB_MODE_COUNT];
 } loop_filter_info_n;
 
 /* assorted loopfilter functions which get used elsewhere */

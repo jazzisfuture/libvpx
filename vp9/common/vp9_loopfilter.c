@@ -16,25 +16,7 @@
 
 #include "vp9/common/vp9_seg_common.h"
 
-// This structure holds bit masks for all 8x8 blocks in a 64x64 region.
-// Each 1 bit represents a position in which we want to apply the loop filter.
-// Left_ entries refer to whether we apply a filter on the border to the
-// left of the block.   Above_ entries refer to whether or not to apply a
-// filter on the above border.   Int_ entries refer to whether or not to
-// apply borders on the 4x4 edges within the 8x8 block that each bit
-// represents.
-// Since each transform is accompanied by a potentially different type of
-// loop filter there is a different entry in the array for each transform size.
-typedef struct {
-  uint64_t left_y[TX_SIZES];
-  uint64_t above_y[TX_SIZES];
-  uint64_t int_4x4_y;
-  uint16_t left_uv[TX_SIZES];
-  uint16_t above_uv[TX_SIZES];
-  uint16_t int_4x4_uv;
-  uint8_t lfl_y[64];
-  uint8_t lfl_uv[16];
-} LOOP_FILTER_MASK;
+#include "vp9/ppa.h"
 
 // 64 bit masks for left transform size.  Each 1 represents a position where
 // we should apply a loop filter across the left border of an 8x8 block
@@ -1284,7 +1266,10 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
 int vp9_loop_filter_worker(void *arg1, void *arg2) {
   LFWorkerData *const lf_data = (LFWorkerData*)arg1;
   (void)arg2;
+  PPAStartCpuEventFunc(loopfilter_inline_time);
+
   vp9_loop_filter_rows(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
                        lf_data->start, lf_data->stop, lf_data->y_only);
+  PPAStopCpuEventFunc(loopfilter_inline_time);
   return 1;
 }

@@ -83,6 +83,7 @@ int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
   const int ss_x = cm->subsampling_x;
   const int ss_y = cm->subsampling_y;
   int mi_size;
+  int size_lfms;
 
   if (vp9_realloc_frame_buffer(&cm->post_proc_buffer, width, height, ss_x, ss_y,
                                VP9BORDERINPIXELS, NULL, NULL, NULL) < 0)
@@ -120,6 +121,14 @@ int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
   cm->last_frame_seg_map = vpx_calloc(cm->mi_rows * cm->mi_cols, 1);
   if (!cm->last_frame_seg_map)
     goto fail;
+
+  vpx_free(cm->lfms);
+  size_lfms = (cm->mi_rows + MI_BLOCK_SIZE) / MI_BLOCK_SIZE *
+              (cm->mi_cols + MI_BLOCK_SIZE) / MI_BLOCK_SIZE *
+              sizeof(LOOP_FILTER_MASK);
+  cm->lfms = vpx_memalign(32, size_lfms);
+  if (!cm->lfms)
+      goto fail;
 
   return 0;
 

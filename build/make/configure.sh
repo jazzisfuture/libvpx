@@ -1255,6 +1255,7 @@ EOF
     if enabled linux; then
         add_cflags -D_LARGEFILE_SOURCE
         add_cflags -D_FILE_OFFSET_BITS=64
+        add_extralibs -ldl
     fi
 
     # append any user defined extra cflags

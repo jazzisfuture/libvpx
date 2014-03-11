@@ -183,6 +183,7 @@ typedef struct VP9Common {
   INTERPOLATION_TYPE mcomp_filter_type;
 
   loop_filter_info_n lf_info;
+  LOOP_FILTER_MASK *lfms;
 
   int refresh_frame_context;    /* Two state 0 = NO, 1 = YES */
 
