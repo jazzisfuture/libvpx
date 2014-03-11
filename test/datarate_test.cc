@@ -17,10 +17,10 @@
 
 namespace {
 
-class DatarateTest : public ::libvpx_test::EncoderTest,
+class DatarateTestLarge : public ::libvpx_test::EncoderTest,
     public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  public:
-  DatarateTest() : EncoderTest(GET_PARAM(0)) {}
+  DatarateTestLarge() : EncoderTest(GET_PARAM(0)) {}
 
  protected:
   virtual void SetUp() {
@@ -120,7 +120,7 @@ class DatarateTest : public ::libvpx_test::EncoderTest,
   size_t bits_in_last_frame_;
 };
 
-TEST_P(DatarateTest, BasicBufferModel) {
+TEST_P(DatarateTestLarge, BasicBufferModel) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_dropframe_thresh = 1;
   cfg_.rc_max_quantizer = 56;
@@ -151,7 +151,7 @@ TEST_P(DatarateTest, BasicBufferModel) {
   }
 }
 
-TEST_P(DatarateTest, ChangingDropFrameThresh) {
+TEST_P(DatarateTestLarge, ChangingDropFrameThresh) {
   cfg_.rc_buf_initial_sz = 500;
   cfg_.rc_max_quantizer = 36;
   cfg_.rc_end_usage = VPX_CBR;
@@ -574,7 +574,7 @@ TEST_P(DatarateTestVP9, BasicRateTargeting3TemporalLayersFrameDropping) {
   }
 }
 
-VP8_INSTANTIATE_TEST_CASE(DatarateTest, ALL_TEST_MODES);
+VP8_INSTANTIATE_TEST_CASE(DatarateTestLarge, ALL_TEST_MODES);
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9,
                           ::testing::Values(::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
