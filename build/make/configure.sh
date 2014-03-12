@@ -588,6 +588,8 @@ setup_gnu_toolchain() {
         CXX=${CXX:-${CROSS}g++}
         AR=${AR:-${CROSS}ar}
         LD=${LD:-${CROSS}${link_with_cc:-ld}}
+        # libwebm needs to be linked with C++ stl
+        enabled libwebm && LD=${CXX}
         AS=${AS:-${CROSS}as}
     STRIP=${STRIP:-${CROSS}strip}
     NM=${NM:-${CROSS}nm}

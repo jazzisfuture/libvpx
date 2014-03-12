@@ -15,6 +15,10 @@ LIBYUV_SRCS +=  third_party/libyuv/include/libyuv/basic_types.h  \
                 third_party/libyuv/source/scale.c  \
                 third_party/libyuv/source/cpu_id.c
 
+LIBWEBM_MUXER_SRCS += third_party/libwebm/mkvmuxer.cpp \
+                      third_party/libwebm/mkvwriter.cpp \
+                      third_party/libwebm/mkvmuxerutil.cpp
+
 # List of examples to build. UTILS are tools meant for distribution
 # while EXAMPLES demonstrate specific portions of the API.
 UTILS-$(CONFIG_DECODERS)    += vpxdec.c
@@ -45,15 +49,15 @@ vpxenc.SRCS                 += ivfenc.c ivfenc.h
 vpxenc.SRCS                 += rate_hist.c rate_hist.h
 vpxenc.SRCS                 += tools_common.c tools_common.h
 vpxenc.SRCS                 += warnings.c warnings.h
-vpxenc.SRCS                 += webmenc.c webmenc.h
 vpxenc.SRCS                 += vpx_ports/mem_ops.h
 vpxenc.SRCS                 += vpx_ports/mem_ops_aligned.h
 vpxenc.SRCS                 += vpx_ports/vpx_timer.h
 vpxenc.SRCS                 += vpxstats.c vpxstats.h
-vpxenc.SRCS                 += third_party/libmkv/EbmlIDs.h
-vpxenc.SRCS                 += third_party/libmkv/EbmlWriter.c
-vpxenc.SRCS                 += third_party/libmkv/EbmlWriter.h
 vpxenc.SRCS                 += $(LIBYUV_SRCS)
+ifeq ($(CONFIG_LIBWEBM),yes)
+  vpxenc.SRCS               += webmenc.cc webmenc.h
+  vpxenc.SRCS               += $(LIBWEBM_MUXER_SRCS)
+endif
 vpxenc.GUID                  = 548DEC74-7A15-4B2B-AFC3-AA102E7C25C1
 vpxenc.DESCRIPTION           = Full featured encoder
 EXAMPLES-$(CONFIG_VP9_ENCODER)    += vp9_spatial_scalable_encoder.c
