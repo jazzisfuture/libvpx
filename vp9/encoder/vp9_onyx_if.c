@@ -154,6 +154,7 @@ void vp9_initialize_enc() {
 
 static void dealloc_compressor_data(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  int i;
 
   // Delete sementation map
   vpx_free(cpi->segmentation_map);
@@ -189,6 +190,13 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 
   vpx_free(cpi->above_seg_context);
   cpi->above_seg_context = NULL;
+
+  for (i = 0; i < cpi->svc.number_spatial_layers; ++i) {
+    LAYER_CONTEXT *lc = &cpi->svc.layer_context[i];
+    vpx_free(lc->rc_twopass_stats_in.buf);
+    lc->rc_twopass_stats_in.buf = NULL;
+    lc->rc_twopass_stats_in.sz = 0;
+  }
 }
 
 // Computes a q delta (in "q index" terms) to get from a starting q value
@@ -1882,10 +1890,53 @@ VP9_COMP *vp9_create_compressor(VP9_CONFIG *oxcf) {
     size_t packet_sz = sizeof(FIRSTPASS_STATS);
     int packets = (int)(oxcf->two_pass_stats_in.sz / packet_sz);
 
-    cpi->twopass.stats_in_start = oxcf->two_pass_stats_in.buf;
-    cpi->twopass.stats_in = cpi->twopass.stats_in_start;
-    cpi->twopass.stats_in_end = (void *)((char *)cpi->twopass.stats_in
-                                         + (packets - 1) * packet_sz);
+    if (cpi->svc.number_spatial_layers > 1
+        && cpi->svc.number_temporal_layers == 1) {
+      FIRSTPASS_STATS *stats = oxcf->two_pass_stats_in.buf;
+      int i;
+
+      for (i = 0; i < oxcf->ss_number_layers; ++i) {
+        FIRSTPASS_STATS *last_packet_for_layer =
+            &stats[packets - oxcf->ss_number_layers + i];
+        unsigned int layer_id = last_packet_for_layer->spatial_layer_id;
+        unsigned int packets_in_layer = last_packet_for_layer->count + 1;
+        if (layer_id < oxcf->ss_number_layers) {
+          LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer_id];
+
+          vpx_free(lc->rc_twopass_stats_in.buf);
+
+          lc->rc_twopass_stats_in.sz = packets_in_layer * packet_sz;
+          CHECK_MEM_ERROR(cm, lc->rc_twopass_stats_in.buf,
+                          vpx_malloc(lc->rc_twopass_stats_in.sz));
+          lc->twopass.stats_in_start = lc->rc_twopass_stats_in.buf;
+          lc->twopass.stats_in = lc->twopass.stats_in_start;
+          lc->twopass.stats_in_end = lc->twopass.stats_in_start
+                                     + packets_in_layer - 1;
+        }
+      }
+
+      for (i = 0; i < packets; ++i) {
+        unsigned int layer_id = stats[i].spatial_layer_id;
+        if (layer_id < oxcf->ss_number_layers) {
+          LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer_id];
+          if (lc->twopass.stats_in != NULL) {
+            *(lc->twopass.stats_in) = stats[i];
+            lc->twopass.stats_in++;
+          }
+        }
+      }
+
+      for (i = 0; i < oxcf->ss_number_layers; ++i) {
+        cpi->svc.layer_context[i].twopass.stats_in =
+            cpi->svc.layer_context[i].twopass.stats_in_start;
+      }
+    } else {
+      cpi->twopass.stats_in_start = oxcf->two_pass_stats_in.buf;
+      cpi->twopass.stats_in = cpi->twopass.stats_in_start;
+      cpi->twopass.stats_in_end = (void *)((char *)cpi->twopass.stats_in
+                                           + (packets - 1) * packet_sz);
+    }
+
     vp9_init_second_pass(cpi);
   }
 

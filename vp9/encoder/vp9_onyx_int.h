@@ -440,6 +440,7 @@ typedef struct {
   double framerate;
   int avg_frame_size;
   struct twopass_rc twopass;
+  struct vpx_fixed_buf rc_twopass_stats_in;
 } LAYER_CONTEXT;
 
 #define MAX_SEGMENTS 8
