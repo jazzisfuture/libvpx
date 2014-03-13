@@ -84,12 +84,33 @@ static void setup_mi(VP9_COMMON *cm) {
   vp9_update_mode_info_border(cm, cm->prev_mip);
 }
 
+static int alloc_mi(VP9_COMMON *cm, int mi_size) {
+  cm->mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(*cm->mip));
+  if (!cm->mip)
+    return 0;
+
+  cm->prev_mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(*cm->prev_mip));
+  if (!cm->prev_mip)
+    return 0;
+
+  cm->mi_grid_base =
+      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->mi_grid_base));
+  if (!cm->mi_grid_base)
+    return 0;
+
+  cm->prev_mi_grid_base =
+      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->prev_mi_grid_base));
+  if (!cm->prev_mi_grid_base)
+    return 0;
+
+  return 1;
+}
+
 int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
   const int aligned_width = ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2);
   const int aligned_height = ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2);
   const int ss_x = cm->subsampling_x;
   const int ss_y = cm->subsampling_y;
-  int mi_size;
 
   if (vp9_realloc_frame_buffer(&cm->post_proc_buffer, width, height, ss_x, ss_y,
                                VP9_DEC_BORDER_IN_PIXELS, NULL, NULL, NULL) < 0)
@@ -97,29 +118,12 @@ int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
 
   set_mb_mi(cm, aligned_width, aligned_height);
 
-  // Allocation
-  mi_size = cm->mode_info_stride * (cm->mi_rows + MI_BLOCK_SIZE);
-
   vpx_free(cm->mip);
-  cm->mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(MODE_INFO));
-  if (!cm->mip)
-    goto fail;
-
   vpx_free(cm->prev_mip);
-  cm->prev_mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(MODE_INFO));
-  if (!cm->prev_mip)
-    goto fail;
-
   vpx_free(cm->mi_grid_base);
-  cm->mi_grid_base =
-      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->mi_grid_base));
-  if (!cm->mi_grid_base)
-    goto fail;
-
   vpx_free(cm->prev_mi_grid_base);
-  cm->prev_mi_grid_base =
-      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->prev_mi_grid_base));
-  if (!cm->prev_mi_grid_base)
+
+  if (!alloc_mi(cm, cm->mode_info_stride * (cm->mi_rows + MI_BLOCK_SIZE)))
     goto fail;
 
   setup_mi(cm);
@@ -144,7 +148,6 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
   const int aligned_height = ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2);
   const int ss_x = cm->subsampling_x;
   const int ss_y = cm->subsampling_y;
-  int mi_size;
 
   vp9_free_frame_buffers(cm);
 
@@ -169,27 +172,7 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
 
   set_mb_mi(cm, aligned_width, aligned_height);
 
-  // Allocation
-  mi_size = cm->mode_info_stride * (cm->mi_rows + MI_BLOCK_SIZE);
-
-  cm->mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(MODE_INFO));
-  if (!cm->mip)
-    goto fail;
-
-  cm->prev_mip = (MODE_INFO *)vpx_calloc(mi_size, sizeof(MODE_INFO));
-  if (!cm->prev_mip)
-    goto fail;
-
-  cm->mi_grid_base =
-      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->mi_grid_base));
-  if (!cm->mi_grid_base)
-    goto fail;
-
-  cm->prev_mi_grid_base =
-      (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->prev_mi_grid_base));
-  if (!cm->prev_mi_grid_base)
-    goto fail;
-
+  alloc_mi(cm, cm->mode_info_stride * (cm->mi_rows + MI_BLOCK_SIZE));
   setup_mi(cm);
 
   // Create the segmentation map structure and set to 0.
