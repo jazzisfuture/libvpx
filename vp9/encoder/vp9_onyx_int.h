@@ -432,15 +432,28 @@ typedef struct {
   BLOCK_SIZE max_intra_bsize;
 } SPEED_FEATURES;
 
+// Table that converts 0-63 Q range values passed in outside to the Qindex
+// range used internally.
+static const int q_trans[] = {
+  0,    4,   8,  12,  16,  20,  24,  28,
+  32,   36,  40,  44,  48,  52,  56,  60,
+  64,   68,  72,  76,  80,  84,  88,  92,
+  96,  100, 104, 108, 112, 116, 120, 124,
+  128, 132, 136, 140, 144, 148, 152, 156,
+  160, 164, 168, 172, 176, 180, 184, 188,
+  192, 196, 200, 204, 208, 212, 216, 220,
+  224, 228, 232, 236, 240, 244, 249, 255,
+};
+
 typedef struct {
-  RATE_CONTROL rc;
-  int target_bandwidth;
-  int64_t starting_buffer_level;
-  int64_t optimal_buffer_level;
-  int64_t maximum_buffer_size;
-  double framerate;
-  int avg_frame_size;
-} LAYER_CONTEXT;
+    RATE_CONTROL rc;
+    int target_bandwidth;
+    int64_t starting_buffer_level;
+    int64_t optimal_buffer_level;
+    int64_t maximum_buffer_size;
+    double framerate;
+    int avg_frame_size;
+  } LAYER_CONTEXT;
 
 typedef enum {
   NORMAL      = 0,
@@ -943,6 +956,14 @@ int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget);
 
 static int get_token_alloc(int mb_rows, int mb_cols) {
   return mb_rows * mb_cols * (48 * 16 + 4);
+}
+
+static int64_t rescale(int64_t val, int64_t num, int denom) {
+  int64_t llnum = num;
+  int64_t llden = denom;
+  int64_t llval = val;
+
+  return (llval * llnum / llden);
 }
 
 static void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
