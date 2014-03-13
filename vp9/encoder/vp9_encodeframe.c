@@ -40,6 +40,7 @@
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_vaq.h"
+#include "vp9/encoder/vp9_craq.h"
 
 static INLINE uint8_t *get_sb_index(MACROBLOCK *x, BLOCK_SIZE subsize) {
   switch (subsize) {
@@ -871,7 +872,8 @@ static void select_in_frame_q_segment(VP9_COMP *cpi,
 }
 
 static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
-                         BLOCK_SIZE bsize, int output_enabled) {
+                         int mi_row, int mi_col, BLOCK_SIZE bsize,
+                         int output_enabled) {
   int i, x_idx, y;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -891,8 +893,16 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   // For in frame adaptive Q copy over the chosen segment id into the
   // mode innfo context for the chosen mode / partition.
-  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && output_enabled)
+  if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
+      cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) &&
+      output_enabled) {
+    // If segment 1, check for reseting segment_id based on coding state.
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vp9_update_segment_aq(cpi, xd->mi_8x8[0], mi_row, mi_col, bsize, 1);
+      vp9_init_plane_quantizers(cpi, x);
+    }
     mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
+  }
 
   *mi_addr = *mi;
 
@@ -920,10 +930,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         xd->mi_8x8[x_idx + y * mis] = mi_addr;
       }
 
-    if ((cpi->oxcf.aq_mode == VARIANCE_AQ) ||
-        (cpi->oxcf.aq_mode == COMPLEXITY_AQ)) {
+  if (cpi->oxcf.aq_mode)
     vp9_init_plane_quantizers(cpi, x);
-  }
 
   // FIXME(rbultje) I'm pretty sure this should go to the end of this block
   // (i.e. after the output_enabled)
@@ -1089,9 +1097,14 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     unsigned char complexity = cpi->complexity_map[mi_offset];
     const int is_edge = (mi_row <= 1) || (mi_row >= (cm->mi_rows - 2)) ||
                         (mi_col <= 1) || (mi_col >= (cm->mi_cols - 2));
-
     if (!is_edge && (complexity > 128))
       x->rdmult += ((x->rdmult * (complexity - 128)) / 256);
+  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
+        : cm->last_frame_seg_map;
+    // If segment 1, use rdmult for that segment.
+    if (vp9_get_segment_id(cm, map, bsize, mi_row, mi_col))
+      x->rdmult = cpi->cyclic_refresh.rdmult;
   }
 
   // Find best coding mode & reconstruct the MB so it is available
@@ -1114,7 +1127,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
       vp9_clear_system_state();
       *totalrate = (int)round(*totalrate * rdmult_ratio);
     }
-  } else if (aq_mode == COMPLEXITY_AQ) {
+  } else if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+      (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)) {
     x->rdmult = orig_rdmult;
   }
 }
@@ -1251,7 +1265,8 @@ static void encode_b(VP9_COMP *cpi, const TileInfo *const tile,
       return;
   }
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state(cpi, get_block_context(x, bsize), bsize, output_enabled);
+  update_state(cpi, get_block_context(x, bsize), mi_row, mi_col, bsize,
+               output_enabled);
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
 
   if (output_enabled) {
@@ -1438,7 +1453,8 @@ static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   return 0;
 }
 
-static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
+static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx,
+                            int mi_row, int mi_col, int bsize) {
   int i;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -1446,6 +1462,14 @@ static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
 
   x->skip = ctx->skip;
+
+  // If segment 1, check for reseting segment_id based on coding state.
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    // TODO(marpan): Set last argument (i.e. use rate/distortion for selection)
+    // to 1 once we return these from vp9_pick_inter_mode in nonrd_partition.
+    vp9_update_segment_aq(cpi, xd->mi_8x8[0], mi_row, mi_col, bsize, 0);
+    vp9_init_plane_quantizers(cpi, x);
+  }
 
 #if CONFIG_INTERNAL_STATS
   if (frame_is_intra_only(cm)) {
@@ -1496,7 +1520,7 @@ static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
       return;
   }
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state_rt(cpi, get_block_context(x, bsize));
+  update_state_rt(cpi, get_block_context(x, bsize), mi_row, mi_col, bsize);
 
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
   update_stats(cpi);
@@ -1697,7 +1721,8 @@ static void rd_use_partition(VP9_COMP *cpi,
           bsize >= BLOCK_8X8 && mi_row + (mh >> 1) < cm->mi_rows) {
         int rt = 0;
         int64_t dt = 0;
-        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        update_state(cpi, get_block_context(x, subsize), mi_row, mi_col,
+                     subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
         *get_sb_index(x, subsize) = 1;
         rd_pick_sb_modes(cpi, tile, mi_row + (ms >> 1), mi_col, &rt, &dt,
@@ -1721,7 +1746,8 @@ static void rd_use_partition(VP9_COMP *cpi,
           bsize >= BLOCK_8X8 && mi_col + (ms >> 1) < cm->mi_cols) {
         int rt = 0;
         int64_t dt = 0;
-        update_state(cpi, get_block_context(x, subsize), subsize, 0);
+        update_state(cpi, get_block_context(x, subsize), mi_row, mi_col,
+                     subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
         *get_sb_index(x, subsize) = 1;
         rd_pick_sb_modes(cpi, tile, mi_row, mi_col + (ms >> 1), &rt, &dt,
@@ -1868,6 +1894,10 @@ static void rd_use_partition(VP9_COMP *cpi,
     if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
       select_in_frame_q_segment(cpi, mi_row, mi_col,
                                 output_enabled, chosen_rate);
+    }
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      cpi->cyclic_refresh.projected_rate_sb = chosen_rate;
+      cpi->cyclic_refresh.projected_dist_sb = chosen_dist;
     }
 
     encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
@@ -2211,7 +2241,8 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
 
     if (sum_rd < best_rd && mi_row + ms < cm->mi_rows) {
-      update_state(cpi, get_block_context(x, subsize), subsize, 0);
+      update_state(cpi, get_block_context(x, subsize), mi_row, mi_col,
+                   subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *get_sb_index(x, subsize) = 1;
@@ -2263,7 +2294,8 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
                      get_block_context(x, subsize), best_rd);
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
     if (sum_rd < best_rd && mi_col + ms < cm->mi_cols) {
-      update_state(cpi, get_block_context(x, subsize), subsize, 0);
+      update_state(cpi, get_block_context(x, subsize), mi_row, mi_col,
+                   subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize);
 
       *get_sb_index(x, subsize) = 1;
@@ -2317,6 +2349,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
       select_in_frame_q_segment(cpi, mi_row, mi_col, output_enabled, best_rate);
     }
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      cpi->cyclic_refresh.projected_rate_sb = best_rate;
+      cpi->cyclic_refresh.projected_dist_sb = best_dist;
+    }
+
     encode_sb(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
   }
   if (bsize == BLOCK_64X64) {
@@ -2718,6 +2755,10 @@ static void nonrd_use_fixed_partition(VP9_COMP *cpi,
       *dist += bdist;
     }
   }
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    cpi->cyclic_refresh.projected_rate_sb = *rate;
+    cpi->cyclic_refresh.projected_dist_sb = *dist;
+  }
   encode_sb_rt(cpi, tile, tp, mi_row, mi_col, 1, BLOCK_64X64);
 }
 
@@ -2845,8 +2886,13 @@ static void nonrd_use_partition(VP9_COMP *cpi,
       assert("Invalid partition type.");
   }
 
-  if (bsize == BLOCK_64X64)
+  if (bsize == BLOCK_64X64) {
+    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      cpi->cyclic_refresh.projected_rate_sb = *totrate;
+      cpi->cyclic_refresh.projected_dist_sb = *totdist;
+    }
     encode_sb_rt(cpi, tile, tp, mi_row, mi_col, 1, bsize);
+  }
 }
 
 static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
@@ -3238,7 +3284,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
+                   (cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
+                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ) &&
                    !cpi->sf.use_nonrd_pick_mode;
   x->skip_optimize = ctx->is_coded;
   ctx->is_coded = 1;

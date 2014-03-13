@@ -28,6 +28,7 @@
 #include "vp9/common/vp9_tile_common.h"
 
 #include "vp9/encoder/vp9_bitstream.h"
+#include "vp9/encoder/vp9_craq.h"
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemv.h"
 #include "vp9/encoder/vp9_firstpass.h"
@@ -167,6 +168,8 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 
   vpx_free(cpi->complexity_map);
   cpi->complexity_map = 0;
+  vpx_free(cpi->cyclic_refresh.map);
+  cpi->cyclic_refresh.map = 0;
   vpx_free(cpi->active_map);
   cpi->active_map = 0;
 
@@ -194,8 +197,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 }
 
 // Computes a q delta (in "q index" terms) to get from a starting q value
-// to a target value
-// target q value
+// to a target q value
 int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget) {
   const RATE_CONTROL *const rc = &cpi->rc;
   int start_index = rc->worst_quality;
@@ -220,8 +222,7 @@ int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget) {
 }
 
 // Computes a q delta (in "q index" terms) to get from a starting q value
-// to a value that should equate to thegiven rate ratio.
-
+// to a value that should equate to the given rate ratio.
 static int compute_qdelta_by_rate(VP9_COMP *cpi, int base_q_index,
                                   double rate_target_ratio) {
   int i;
@@ -1642,6 +1643,9 @@ VP9_COMP *vp9_create_compressor(VP9_CONFIG *oxcf) {
   CHECK_MEM_ERROR(cm, cpi->complexity_map,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
+  // Create a map used for cyclic background refresh.
+  CHECK_MEM_ERROR(cm, cpi->cyclic_refresh.map,
+                  vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
   // And a place holder structure is the coding context
   // for use if we want to save and restore it
@@ -2701,6 +2705,8 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
     vp9_vaq_frame_setup(cpi);
   } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
     setup_in_frame_q_adj(cpi);
+  } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    vp9_setup_cyclic_refresh_aq(cpi);
   }
   // transform / motion compensation build reconstruction frame
   vp9_encode_frame(cpi);
