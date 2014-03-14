@@ -242,6 +242,8 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int64_t inter_mode_thresh = 300;
   const int64_t intra_mode_cost = 50;
 
+  MB_PREDICTION_MODE max_mode;
+
   int rate = INT_MAX;
   int64_t dist = INT64_MAX;
 
@@ -264,6 +266,13 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->skip = 0;
   mbmi->segment_id = 0;
   xd->interp_kernel = vp9_get_interp_kernel(mbmi->interp_filter);
+
+  // Don't do new mv search since we know large block is quite static.
+  if (cpi->sf.partition_search_type == SOURCE_VAR_BASED_PARTITION &&
+      bsize >= BLOCK_32X32)
+    max_mode = ZEROMV;
+  else
+    max_mode = NEWMV;
 
   for (ref_frame = LAST_FRAME; ref_frame <= LAST_FRAME ; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
@@ -288,7 +297,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     mbmi->ref_frame[0] = ref_frame;
 
-    for (this_mode = NEARESTMV; this_mode <= NEWMV; ++this_mode) {
+    for (this_mode = NEARESTMV; this_mode <= max_mode; ++this_mode) {
       int rate_mv = 0;
 
       if (cpi->sf.disable_inter_mode_mask[bsize] &

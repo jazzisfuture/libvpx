@@ -30,6 +30,7 @@
 #include "vp9/encoder/vp9_bitstream.h"
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemv.h"
+#include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mbgraph.h"
 #include "vp9/encoder/vp9_onyx_int.h"
@@ -869,7 +870,9 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->search_method = HEX;
   }
   if (speed >= 7) {
-    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
+    // sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
+    sf->partition_search_type = SOURCE_VAR_BASED_PARTITION;  // for testing
+
     sf->use_nonrd_pick_mode = 1;
     sf->search_method = FAST_DIAMOND;
   }
@@ -1899,6 +1902,12 @@ VP9_COMP *vp9_create_compressor(VP9_CONFIG *oxcf) {
   vp9_zero(cpi->mode_test_hits);
 #endif
 
+  // Temporarily put here.
+  vpx_memset(&cpi->pre_img, 0, sizeof(YV12_BUFFER_CONFIG));
+  vp9_alloc_frame_buffer(&cpi->pre_img, oxcf->width, oxcf->height,
+                         cm->subsampling_x, cm->subsampling_y,
+                         VP9_ENC_BORDER_IN_PIXELS);
+
   return cpi;
 }
 
@@ -2001,6 +2010,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   dealloc_compressor_data(cpi);
   vpx_free(cpi->mb.ss);
   vpx_free(cpi->tok);
+  vp9_free_frame_buffer(&cpi->pre_img);
 
   for (i = 0; i < sizeof(cpi->mbgraph_stats) /
                   sizeof(cpi->mbgraph_stats[0]); ++i) {
@@ -3623,6 +3633,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   } else {
     // One pass encode
     Pass0Encode(cpi, size, dest, frame_flags);
+  }
+
+  // Temperorily put here.
+  if (cpi->source &&
+      cpi->sf.partition_search_type == SOURCE_VAR_BASED_PARTITION) {
+    vp9_copy_and_extend_frame(&cpi->source->img, &cpi->pre_img);
   }
 
   if (cm->refresh_frame_context)
