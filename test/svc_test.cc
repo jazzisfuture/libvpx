@@ -31,6 +31,7 @@ class SvcTest : public ::testing::Test {
   SvcTest()
       : codec_iface_(0),
         test_file_name_("hantro_collage_w352h288.yuv"),
+        stats_file_name_("hantro_collage_w352h288.stat"),
         codec_initialized_(false),
         decoder_(0) {
     memset(&svc_, 0, sizeof(svc_));
@@ -73,6 +74,7 @@ class SvcTest : public ::testing::Test {
   struct vpx_codec_enc_cfg codec_enc_;
   vpx_codec_iface_t *codec_iface_;
   std::string test_file_name_;
+  std::string stats_file_name_;
   bool codec_initialized_;
   Decoder *decoder_;
 };
@@ -395,6 +397,36 @@ TEST_F(SvcTest, FirstPassEncode) {
                        video.duration(), VPX_DL_GOOD_QUALITY);
   ASSERT_EQ(VPX_CODEC_OK, res);
   EXPECT_GT(vpx_svc_get_rc_stats_buffer_size(&svc_), 0UL);
+}
+
+TEST_F(SvcTest, SecondPassEncode) {
+  struct vpx_fixed_buf stats_buf;
+  FILE *stats_file;
+
+  svc_.spatial_layers = 2;
+  codec_enc_.g_pass = VPX_RC_LAST_PASS;
+
+  stats_file = libvpx_test::OpenTestDataFile(stats_file_name_);
+  ASSERT_TRUE(stats_file != NULL) << "Stats file open failed. Filename: "
+          << stats_file_name_;
+
+  fseek(stats_file, 0, SEEK_END);
+  stats_buf.sz = ftell(stats_file);
+  EXPECT_GT(stats_buf.sz, (size_t)0);
+  fseek(stats_file, 0, SEEK_SET);
+
+  stats_buf.buf = malloc(stats_buf.sz);
+  ASSERT_TRUE(stats_buf.buf != NULL);
+  unsigned int bytes_read = fread(stats_buf.buf, 1, stats_buf.sz, stats_file);
+  ASSERT_EQ(bytes_read, stats_buf.sz);
+  fclose(stats_file);
+  codec_enc_.rc_twopass_stats_in = stats_buf;
+
+  vpx_codec_err_t res =
+      vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
+  ASSERT_EQ(VPX_CODEC_OK, res);
+
+  free(stats_buf.buf);
 }
 
 }  // namespace
