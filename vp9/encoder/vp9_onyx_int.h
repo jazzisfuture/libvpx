@@ -922,6 +922,10 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi);
 
 int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget);
 
+void vp9_scale_references(VP9_COMP *cpi);
+
+void vp9_update_reference_frames(VP9_COMP *cpi);
+
 static int get_token_alloc(int mb_rows, int mb_cols) {
   return mb_rows * mb_cols * (48 * 16 + 4);
 }
