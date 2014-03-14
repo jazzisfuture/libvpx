@@ -314,6 +314,7 @@ CONFIG_LIST="
     postproc_visualizer
     os_support
     unit_tests
+    webm_io
     decode_perf_tests
     multi_res_encoding
     temporal_denoising
@@ -367,6 +368,7 @@ CMDLINE_SELECT="
     small
     postproc_visualizer
     unit_tests
+    webm_io
     decode_perf_tests
     multi_res_encoding
     temporal_denoising
@@ -703,10 +705,11 @@ process_toolchain() {
         enabled postproc || die "postproc_visualizer requires postproc to be enabled"
     fi
 
-    # Enable unit tests by default if we have a working C++ compiler.
+    # Enable unit tests and WebM IO by default if we have a working C++ compiler.
     case "$toolchain" in
         *-vs*)
             soft_enable unit_tests
+            soft_enable webm_io
         ;;
         *-android-*)
             # GTestLog must be modified to use Android logging utilities.
@@ -722,9 +725,15 @@ process_toolchain() {
             check_cxx "$@" <<EOF && soft_enable unit_tests
 int z;
 EOF
+            check_cxx "$@" <<EOF && soft_enable webm_io
+int z;
+EOF
         ;;
         *)
             enabled pthread_h && check_cxx "$@" <<EOF && soft_enable unit_tests
+int z;
+EOF
+            check_cxx "$@" <<EOF && soft_enable webm_io
 int z;
 EOF
         ;;
