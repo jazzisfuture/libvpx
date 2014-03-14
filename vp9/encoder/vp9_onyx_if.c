@@ -863,14 +863,19 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->disable_inter_mode_mask[BLOCK_64X64] = ~(1 << INTER_OFFSET(NEARESTMV));
     sf->max_intra_bsize = BLOCK_32X32;
   }
-  if (speed >= 6) {
-    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
-    sf->search_method = HEX;
-  }
+//  if (speed >= 6) {
+//    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
+//    sf->search_method = HEX;
+//  }
   if (speed >= 7) {
-    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
-    sf->use_nonrd_pick_mode = 1;
-    sf->search_method = FAST_DIAMOND;
+    if ((cm->current_video_frame + 1) % sf->last_partitioning_redo_frequency != 1) {
+      sf->partition_search_type = FIXED_PARTITION; // VAR_BASED_FIXED_PARTITION;
+      sf->use_nonrd_pick_mode = 1;
+      sf->search_method = FAST_DIAMOND;
+    } else {
+      sf->partition_search_type = SEARCH_PARTITION;
+      sf->use_nonrd_pick_mode = 0;
+    }
   }
   if (speed >= 8) {
     int i;
