@@ -233,7 +233,10 @@ typedef enum {
 
   // Use an arbitrary partitioning scheme based on source variance within
   // a 64X64 SB
-  VAR_BASED_PARTITION
+  VAR_BASED_PARTITION,
+
+  // Use non-fixed partitions based on source variance
+  SOURCE_VAR_BASED_PARTITION
 } PARTITION_SEARCH_TYPE;
 
 typedef struct {
@@ -623,6 +626,8 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG *Source;
   YV12_BUFFER_CONFIG *un_scaled_source;
   YV12_BUFFER_CONFIG scaled_source;
+
+  YV12_BUFFER_CONFIG pre_img;
 
   int key_frame_frequency;
 
