@@ -1465,11 +1465,6 @@ static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
   if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
       vp9_update_mv_count(cm, xd);
-
-      if (cm->interp_filter == SWITCHABLE) {
-        const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
-        ++cm->counts.switchable_interp[pred_ctx][mbmi->interp_filter];
-      }
     }
   }
 }
