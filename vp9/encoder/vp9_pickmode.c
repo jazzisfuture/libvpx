@@ -26,14 +26,13 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rdopt.h"
 
-static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
+static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                     const TileInfo *const tile,
                                     BLOCK_SIZE bsize, int mi_row, int mi_col,
                                     int_mv *tmp_mv, int *rate_mv) {
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
-  int bestsme = INT_MAX;
   int step_param;
   int sadpb = x->sadperbit16;
   MV mvp_full;
@@ -130,15 +129,6 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       xd->plane[i].pre[0] = backup_yv12[i];
   }
 
-  // TODO(jingning) This step can be merged into full pixel search step in the
-  // re-designed log-diamond search
-  buf_offset = tmp_mv->as_mv.row * stride + tmp_mv->as_mv.col;
-
-  // Find sad for current vector.
-  bestsme = cpi->fn_ptr[bsize].sdf(x->plane[0].src.buf, x->plane[0].src.stride,
-                                   xd->plane[0].pre[0].buf + buf_offset,
-                                   stride, 0x7fffffff);
-
   // scale to 1/8 pixel resolution
   tmp_mv->as_mv.row = tmp_mv->as_mv.row * 8;
   tmp_mv->as_mv.col = tmp_mv->as_mv.col * 8;
@@ -146,7 +136,6 @@ static int full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   // calculate the bit cost on motion vector
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
-  return bestsme;
 }
 
 static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
@@ -201,7 +190,6 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
   unsigned int sse;
   int rate;
   int64_t dist;
-
 
   struct macroblock_plane *const p = &x->plane[0];
   struct macroblockd_plane *const pd = &xd->plane[0];
@@ -299,9 +287,8 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         if (this_rd < (int64_t)(1 << num_pels_log2_lookup[bsize]))
           continue;
 
-        x->mode_sad[ref_frame][INTER_OFFSET(NEWMV)] =
-            full_pixel_motion_search(cpi, x, tile, bsize, mi_row, mi_col,
-                                     &frame_mv[NEWMV][ref_frame], &rate_mv);
+        full_pixel_motion_search(cpi, x, tile, bsize, mi_row, mi_col,
+                                 &frame_mv[NEWMV][ref_frame], &rate_mv);
 
         if (frame_mv[NEWMV][ref_frame].as_int == INVALID_MV)
           continue;
