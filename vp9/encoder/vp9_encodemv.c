@@ -239,13 +239,18 @@ static void inc_mvs(const int_mv mv[2], const MV ref[2], int is_compound,
   }
 }
 
-void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd,
-                         const MV best_ref_mv[2]) {
+void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
   const MODE_INFO *mi = xd->mi_8x8[0];
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
   const int is_compound = has_second_ref(mbmi);
   nmv_context_counts *counts = &cm->counts.mv;
+  MV best_ref_mv[2];
+  int i;
 
+  if (mbmi->sb_type < BLOCK_8X8 || mbmi->mode == NEWMV) {
+    for (i = 0; i < 1 + has_second_ref(mbmi); ++i)
+      best_ref_mv[i] = mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
+  }
   if (mbmi->sb_type < BLOCK_8X8) {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[mbmi->sb_type];
     const int num_4x4_h = num_4x4_blocks_high_lookup[mbmi->sb_type];
