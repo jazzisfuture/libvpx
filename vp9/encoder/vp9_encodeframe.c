@@ -2885,6 +2885,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
       p[i].eobs = ctx->eobs_pbuf[i][0];
     }
+    vp9_zero(x->zcoeff_blk);
   }
 
   {
@@ -3175,6 +3176,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   x->use_lp32x32fdct = cpi->sf.use_lp32x32fdct;
   x->skip_encode = (!output_enabled && cpi->sf.skip_encode_frame &&
                     x->q_index < QIDX_SKIP_THRESH);
+
   if (x->skip_encode)
     return;
 
@@ -3198,6 +3200,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                                                cpi->zbin_mode_boost_enabled);
     vp9_update_zbin_extra(cpi, x);
   }
+
 
   if (!is_inter_block(mbmi)) {
     int plane;
