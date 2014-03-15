@@ -424,6 +424,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
       assert(0 && "Invalid transform size");
   }
 }
+
 static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
   MACROBLOCK *const x = (MACROBLOCK *)arg;
@@ -459,7 +460,7 @@ void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
     if (!x->skip_recode)
       vp9_subtract_plane(x, bsize, plane);
 
-    if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
+    if (0 && x->optimize && (!x->skip_recode || !x->skip_optimize)) {
       const struct macroblockd_plane* const pd = &xd->plane[plane];
       const TX_SIZE tx_size = plane ? get_uv_tx_size(mbmi) : mbmi->tx_size;
       vp9_get_entropy_contexts(bsize, tx_size, pd,

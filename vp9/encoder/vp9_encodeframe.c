@@ -1444,41 +1444,22 @@ static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
 
-  x->skip = ctx->skip;
+  // TODO(jingning) We might need PICK_MODE_CONTEXT to buffer coding modes
+  // associated with variable block sizes. Otherwise, remove this ctx
+  // from argument list.
+  (void)ctx;
 
-#if CONFIG_INTERNAL_STATS
-  if (frame_is_intra_only(cm)) {
-    static const int kf_mode_index[] = {
-      THR_DC /*DC_PRED*/,
-      THR_V_PRED /*V_PRED*/,
-      THR_H_PRED /*H_PRED*/,
-      THR_D45_PRED /*D45_PRED*/,
-      THR_D135_PRED /*D135_PRED*/,
-      THR_D117_PRED /*D117_PRED*/,
-      THR_D153_PRED /*D153_PRED*/,
-      THR_D207_PRED /*D207_PRED*/,
-      THR_D63_PRED /*D63_PRED*/,
-      THR_TM /*TM_PRED*/,
-    };
-    ++cpi->mode_chosen_counts[kf_mode_index[mbmi->mode]];
-  } else {
-    // Note how often each mode chosen as best
-    ++cpi->mode_chosen_counts[ctx->best_mode_index];
-  }
-#endif
-  if (!frame_is_intra_only(cm)) {
-    if (is_inter_block(mbmi)) {
-      if (mbmi->sb_type < BLOCK_8X8 || mbmi->mode == NEWMV) {
-        MV best_mv[2];
-        for (i = 0; i < 1 + has_second_ref(mbmi); ++i)
-          best_mv[i] = mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
-        vp9_update_mv_count(cm, xd, best_mv);
-      }
+  if (is_inter_block(mbmi)) {
+    if (mbmi->sb_type < BLOCK_8X8 || mbmi->mode == NEWMV) {
+      MV best_mv[2];
+      for (i = 0; i < 1 + has_second_ref(mbmi); ++i)
+        best_mv[i] = mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
+      vp9_update_mv_count(cm, xd, best_mv);
+    }
 
-      if (cm->interp_filter == SWITCHABLE) {
-        const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
-        ++cm->counts.switchable_interp[pred_ctx][mbmi->interp_filter];
-      }
+    if (cm->interp_filter == SWITCHABLE) {
+      const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
+      ++cm->counts.switchable_interp[pred_ctx][mbmi->interp_filter];
     }
   }
 }
@@ -2332,6 +2313,9 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   VP9_COMMON *const cm = &cpi->common;
   int mi_col;
 
+  if (mi_row == 0)
+    fprintf(stderr, "rd coding mode frame %d\n", cm->current_video_frame);
+
   // Initialize the left context for the new SB row
   vpx_memset(&cpi->left_context, 0, sizeof(cpi->left_context));
   vpx_memset(cpi->left_seg_context, 0, sizeof(cpi->left_seg_context));
@@ -2690,7 +2674,7 @@ static void nonrd_use_partition(VP9_COMP *cpi,
                                 MODE_INFO **mi_8x8,
                                 TOKENEXTRA **tp,
                                 int mi_row, int mi_col,
-                                BLOCK_SIZE bsize,
+                                BLOCK_SIZE bsize, int output_enabled,
                                 int *totrate, int64_t *totdist) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -2749,10 +2733,10 @@ static void nonrd_use_partition(VP9_COMP *cpi,
 
       *get_sb_index(x, subsize) = 0;
       nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col,
-                          subsize, totrate, totdist);
+                          subsize, output_enabled, totrate, totdist);
       *get_sb_index(x, subsize) = 1;
       nonrd_use_partition(cpi, tile, mi_8x8 + hbs, tp,
-                          mi_row, mi_col + hbs, subsize,
+                          mi_row, mi_col + hbs, subsize, output_enabled,
                           &rate, &dist);
       if (rate != INT_MAX && dist != INT64_MAX &&
           *totrate != INT_MAX && *totdist != INT64_MAX) {
@@ -2761,7 +2745,7 @@ static void nonrd_use_partition(VP9_COMP *cpi,
       }
       *get_sb_index(x, subsize) = 2;
       nonrd_use_partition(cpi, tile, mi_8x8 + hbs * mis, tp,
-                          mi_row + hbs, mi_col, subsize,
+                          mi_row + hbs, mi_col, subsize, output_enabled,
                           &rate, &dist);
       if (rate != INT_MAX && dist != INT64_MAX &&
           *totrate != INT_MAX && *totdist != INT64_MAX) {
@@ -2770,7 +2754,7 @@ static void nonrd_use_partition(VP9_COMP *cpi,
       }
       *get_sb_index(x, subsize) = 3;
       nonrd_use_partition(cpi, tile, mi_8x8 + hbs * mis + hbs, tp,
-                          mi_row + hbs, mi_col + hbs, subsize,
+                          mi_row + hbs, mi_col + hbs, subsize, output_enabled,
                           &rate, &dist);
       if (rate != INT_MAX && dist != INT64_MAX &&
           *totrate != INT_MAX && *totdist != INT64_MAX) {
@@ -2782,14 +2766,18 @@ static void nonrd_use_partition(VP9_COMP *cpi,
       assert("Invalid partition type.");
   }
 
-  if (bsize == BLOCK_64X64)
-    encode_sb_rt(cpi, tile, tp, mi_row, mi_col, 1, bsize);
+  if (bsize == BLOCK_64X64 && output_enabled)
+    encode_sb_rt(cpi, tile, tp, mi_row, mi_col, output_enabled, bsize);
 }
 
 static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                                 int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *cm = &cpi->common;
+  MACROBLOCK *x = &cpi->mb;
   int mi_col;
+
+  if (mi_row == 0)
+    fprintf(stderr, "qindex %d\n", cm->base_qindex);
 
   // Initialize the left context for the new SB row
   vpx_memset(&cpi->left_context, 0, sizeof(cpi->left_context));
@@ -2814,7 +2802,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     else
       set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, bsize);
 
-    nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+    nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64, 1,
                         &dummy_rate, &dummy_dist);
   }
 }

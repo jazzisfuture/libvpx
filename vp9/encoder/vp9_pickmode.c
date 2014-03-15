@@ -245,6 +245,9 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int rate = INT_MAX;
   int64_t dist = INT64_MAX;
 
+  if (mi_row == 0 && mi_col == 0)
+    fprintf(stderr, "rd mult %d, rd div %d\n", x->rdmult, x->rddiv);
+
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
   x->skip = 0;
@@ -342,7 +345,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
-  if (best_rd > inter_mode_thresh) {
+  if (best_rd > inter_mode_thresh && 0) {
     for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
       vp9_predict_intra_block(xd, 0, b_width_log2(bsize),
                               mbmi->tx_size, this_mode,

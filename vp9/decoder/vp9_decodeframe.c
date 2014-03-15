@@ -389,6 +389,8 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   // Has to be called after set_offsets
   mbmi = &xd->mi_8x8[0]->mbmi;
 
+  cm->mode_count[mbmi->mode]++;
+
   if (mbmi->skip) {
     reset_skip_context(xd, bsize);
   } else {
@@ -1392,6 +1394,8 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
+  vp9_zero(cm->mode_count);
+
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
   if (pbi->oxcf.max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
@@ -1399,6 +1403,13 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size);
   } else {
     *p_data_end = decode_tiles(pbi, data + first_partition_size);
+  }
+
+  if (cm->current_video_frame == 15) {
+    int i;
+    fprintf(stderr, "\n");
+    for (i = 0; i < MB_MODE_COUNT; ++i)
+      fprintf(stderr, "mode %d: %d\n", i, cm->mode_count[i]);
   }
 
   new_fb->corrupted |= xd->corrupted;

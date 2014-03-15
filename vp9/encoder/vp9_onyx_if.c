@@ -868,9 +868,15 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->search_method = HEX;
   }
   if (speed >= 7) {
-    sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
-    sf->use_nonrd_pick_mode = 1;
-    sf->search_method = FAST_DIAMOND;
+    sf->last_partitioning_redo_frequency = 2;
+    if ((cm->current_video_frame + 1) % sf->last_partitioning_redo_frequency != 1) {
+      sf->partition_search_type = FIXED_PARTITION; // VAR_BASED_FIXED_PARTITION;
+      sf->use_nonrd_pick_mode = 1;
+      sf->search_method = FAST_DIAMOND;
+    } else {
+      sf->partition_search_type = SEARCH_PARTITION;
+      sf->use_nonrd_pick_mode = 0;
+    }
   }
   if (speed >= 8) {
     int i;
@@ -3232,6 +3238,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Decide q and q bounds.
   q = vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
+
+  if (cm->current_video_frame == 15)
+    q = 146;
 
   if (!frame_is_intra_only(cm)) {
     cm->interp_filter = DEFAULT_INTERP_FILTER;
