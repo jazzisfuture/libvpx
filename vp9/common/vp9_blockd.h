@@ -105,7 +105,7 @@ typedef enum {
   GOLDEN_FRAME = 2,
   ALTREF_FRAME = 3,
   MAX_REF_FRAMES = 4
-} MV_REFERENCE_FRAME;
+} REFERENCE_FRAME;
 
 static INLINE int b_width_log2(BLOCK_SIZE sb_type) {
   return b_width_log2_lookup[sb_type];
@@ -121,7 +121,7 @@ static INLINE int mi_width_log2(BLOCK_SIZE sb_type) {
 // This structure now relates to 8x8 block regions.
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
-  MV_REFERENCE_FRAME ref_frame[2];
+  REFERENCE_FRAME ref_frame[2];
   TX_SIZE tx_size;
   int_mv mv[2];                // for each reference frame used
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];

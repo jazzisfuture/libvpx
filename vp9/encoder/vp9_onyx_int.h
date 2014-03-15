@@ -895,8 +895,7 @@ void vp9_set_svc(VP9_COMP *cpi, int use_svc);
 
 int vp9_get_quantizer(struct VP9_COMP *cpi);
 
-static int get_ref_frame_idx(const VP9_COMP *cpi,
-                             MV_REFERENCE_FRAME ref_frame) {
+static int get_ref_frame_idx(const VP9_COMP *cpi, REFERENCE_FRAME ref_frame) {
   if (ref_frame == LAST_FRAME) {
     return cpi->lst_fb_idx;
   } else if (ref_frame == GOLDEN_FRAME) {
@@ -907,7 +906,7 @@ static int get_ref_frame_idx(const VP9_COMP *cpi,
 }
 
 static YV12_BUFFER_CONFIG *get_ref_frame_buffer(VP9_COMP *cpi,
-                                                MV_REFERENCE_FRAME ref_frame) {
+                                                REFERENCE_FRAME ref_frame) {
   VP9_COMMON *const cm = &cpi->common;
   return &cm->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi,
                                                              ref_frame)]].buf;
@@ -931,7 +930,7 @@ extern const int q_trans[];
 int64_t vp9_rescale(int64_t val, int64_t num, int denom);
 
 static void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
-                         MV_REFERENCE_FRAME ref0, MV_REFERENCE_FRAME ref1) {
+                         REFERENCE_FRAME ref0, REFERENCE_FRAME ref1) {
   xd->block_refs[0] = &cm->frame_refs[ref0 >= LAST_FRAME ? ref0 - LAST_FRAME
                                                          : 0];
   xd->block_refs[1] = &cm->frame_refs[ref1 >= LAST_FRAME ? ref1 - LAST_FRAME

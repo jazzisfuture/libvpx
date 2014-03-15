@@ -135,7 +135,7 @@ static INLINE int_mv get_sub_block_mv(const MODE_INFO *candidate, int which_mv,
 
 // Performs mv sign inversion if indicated by the reference frame combination.
 static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
-                              const MV_REFERENCE_FRAME this_ref_frame,
+                              const REFERENCE_FRAME this_ref_frame,
                               const int *ref_sign_bias) {
   int_mv mv = mbmi->mv[ref];
   if (ref_sign_bias[mbmi->ref_frame[ref]] != ref_sign_bias[this_ref_frame]) {
@@ -188,7 +188,7 @@ static INLINE int is_inside(const TileInfo *const tile,
 // to try and find candidate reference vectors.
 static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                              const TileInfo *const tile,
-                             MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                             MODE_INFO *mi, REFERENCE_FRAME ref_frame,
                              int_mv *mv_ref_list,
                              int block, int mi_row, int mi_col) {
   const int *ref_sign_bias = cm->ref_frame_sign_bias;
@@ -283,7 +283,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
 void vp9_find_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                                     const TileInfo *const tile,
-                                    MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                                    MODE_INFO *mi, REFERENCE_FRAME ref_frame,
                                     int_mv *mv_ref_list,
                                     int mi_row, int mi_col) {
   find_mv_refs_idx(cm, xd, tile, mi, ref_frame, mv_ref_list, -1,

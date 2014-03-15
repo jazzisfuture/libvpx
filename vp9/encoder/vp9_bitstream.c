@@ -996,7 +996,7 @@ static void write_frame_size_with_refs(VP9_COMP *cpi,
   VP9_COMMON *const cm = &cpi->common;
   int found = 0;
 
-  MV_REFERENCE_FRAME ref_frame;
+  REFERENCE_FRAME ref_frame;
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi, ref_frame);
     found = cm->width == cfg->y_crop_width &&
@@ -1074,7 +1074,7 @@ static void write_uncompressed_header(VP9_COMP *cpi,
       vp9_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
       write_frame_size(cm, wb);
     } else {
-      MV_REFERENCE_FRAME ref_frame;
+      REFERENCE_FRAME ref_frame;
       vp9_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
       for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
         vp9_wb_write_literal(wb, get_ref_frame_idx(cpi, ref_frame),

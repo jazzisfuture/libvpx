@@ -270,7 +270,7 @@ static REFERENCE_MODE read_block_reference_mode(VP9_COMMON *cm,
 // Read the referncence frame
 static void read_ref_frames(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                             vp9_reader *r,
-                            int segment_id, MV_REFERENCE_FRAME ref_frame[2]) {
+                            int segment_id, REFERENCE_FRAME ref_frame[2]) {
   FRAME_CONTEXT *const fc = &cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
 
@@ -431,7 +431,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   is_compound = has_second_ref(mbmi);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
-    const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
+    const REFERENCE_FRAME frame = mbmi->ref_frame[ref];
     vp9_find_mv_refs(cm, xd, tile, mi, frame, mbmi->ref_mvs[frame],
                      mi_row, mi_col);
   }

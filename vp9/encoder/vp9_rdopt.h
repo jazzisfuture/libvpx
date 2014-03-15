@@ -47,7 +47,7 @@ void vp9_model_rd_from_var_lapndz(unsigned int var, unsigned int n,
 
 void vp9_setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
                             const TileInfo *const tile,
-                            MV_REFERENCE_FRAME ref_frame,
+                            REFERENCE_FRAME ref_frame,
                             BLOCK_SIZE block_size,
                             int mi_row, int mi_col,
                             int_mv frame_nearest_mv[MAX_REF_FRAMES],

@@ -52,11 +52,11 @@
 
 typedef struct {
   MB_PREDICTION_MODE mode;
-  MV_REFERENCE_FRAME ref_frame[2];
+  REFERENCE_FRAME ref_frame[2];
 } MODE_DEFINITION;
 
 typedef struct {
-  MV_REFERENCE_FRAME ref_frame[2];
+  REFERENCE_FRAME ref_frame[2];
 } REF_DEFINITION;
 
 struct rdcost_block_args {
@@ -1715,7 +1715,7 @@ static void rd_check_segment_txsize(VP9_COMP *cpi, MACROBLOCK *x,
       int ref;
 
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
-        const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
+        const REFERENCE_FRAME frame = mbmi->ref_frame[ref];
         frame_mv[ZEROMV][frame].as_int = 0;
         vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
@@ -2314,7 +2314,7 @@ static void setup_pred_block(const MACROBLOCKD *xd,
 
 void vp9_setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
                             const TileInfo *const tile,
-                            MV_REFERENCE_FRAME ref_frame,
+                            REFERENCE_FRAME ref_frame,
                             BLOCK_SIZE block_size,
                             int mi_row, int mi_col,
                             int_mv frame_nearest_mv[MAX_REF_FRAMES],
@@ -3130,7 +3130,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   const struct segmentation *const seg = &cm->seg;
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
   MB_PREDICTION_MODE this_mode;
-  MV_REFERENCE_FRAME ref_frame, second_ref_frame;
+  REFERENCE_FRAME ref_frame, second_ref_frame;
   unsigned char segment_id = mbmi->segment_id;
   int comp_pred, i;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
@@ -3152,7 +3152,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_intra_rd = INT64_MAX;
   int64_t best_inter_rd = INT64_MAX;
   MB_PREDICTION_MODE best_intra_mode = DC_PRED;
-  MV_REFERENCE_FRAME best_inter_ref_frame = LAST_FRAME;
+  REFERENCE_FRAME best_inter_ref_frame = LAST_FRAME;
   INTERP_FILTER tmp_best_filter = SWITCHABLE;
   int rate_uv_intra[TX_SIZES], rate_uv_tokenonly[TX_SIZES];
   int64_t dist_uv[TX_SIZES];
@@ -3796,7 +3796,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   const struct segmentation *seg = &cm->seg;
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
-  MV_REFERENCE_FRAME ref_frame, second_ref_frame;
+  REFERENCE_FRAME ref_frame, second_ref_frame;
   unsigned char segment_id = mbmi->segment_id;
   int comp_pred, i;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
@@ -3816,7 +3816,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
   vp9_prob comp_mode_p;
   int64_t best_inter_rd = INT64_MAX;
-  MV_REFERENCE_FRAME best_inter_ref_frame = LAST_FRAME;
+  REFERENCE_FRAME best_inter_ref_frame = LAST_FRAME;
   INTERP_FILTER tmp_best_filter = SWITCHABLE;
   int rate_uv_intra[TX_SIZES], rate_uv_tokenonly[TX_SIZES];
   int64_t dist_uv[TX_SIZES];

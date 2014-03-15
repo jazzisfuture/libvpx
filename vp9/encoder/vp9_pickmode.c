@@ -231,7 +231,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   struct macroblockd_plane *const pd = &xd->plane[0];
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
   MB_PREDICTION_MODE this_mode, best_mode = ZEROMV;
-  MV_REFERENCE_FRAME ref_frame, best_ref_frame = LAST_FRAME;
+  REFERENCE_FRAME ref_frame, best_ref_frame = LAST_FRAME;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,

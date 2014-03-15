@@ -2166,7 +2166,7 @@ int vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags) {
 
 static YV12_BUFFER_CONFIG *get_vp9_ref_frame_buffer(VP9_COMP *cpi,
                                 VP9_REFFRAME ref_frame_flag) {
-  MV_REFERENCE_FRAME ref_frame = NONE;
+  REFERENCE_FRAME ref_frame = NONE;
   if (ref_frame_flag == VP9_LAST_FLAG)
     ref_frame = LAST_FRAME;
   else if (ref_frame_flag == VP9_GOLD_FLAG)
@@ -2564,7 +2564,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
 static void scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
-  MV_REFERENCE_FRAME ref_frame;
+  REFERENCE_FRAME ref_frame;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
@@ -3407,7 +3407,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
   struct vpx_usec_timer  cmptimer;
   YV12_BUFFER_CONFIG *force_src_buffer = NULL;
-  MV_REFERENCE_FRAME ref_frame;
+  REFERENCE_FRAME ref_frame;
 
   if (!cpi)
     return -1;

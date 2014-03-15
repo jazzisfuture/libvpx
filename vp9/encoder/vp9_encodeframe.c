@@ -1140,7 +1140,7 @@ static void update_stats(VP9_COMP *cpi) {
       // reference frame allowed for the segment so exclude it from
       // the reference frame counts used to work out probabilities.
       if (inter_block) {
-        const MV_REFERENCE_FRAME ref0 = mbmi->ref_frame[0];
+        const REFERENCE_FRAME ref0 = mbmi->ref_frame[0];
 
         if (cm->reference_mode == REFERENCE_MODE_SELECT)
           counts->comp_inter[vp9_get_reference_mode_context(cm, xd)]
@@ -2594,7 +2594,7 @@ static void reset_skip_txfm_size(VP9_COMMON *cm, TX_SIZE txfm_max) {
   }
 }
 
-static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
+static REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
   if (frame_is_intra_only(&cpi->common))
     return INTRA_FRAME;
   else if (cpi->rc.is_src_frame_alt_ref && cpi->refresh_golden_frame)
@@ -2614,7 +2614,7 @@ static TX_MODE select_tx_mode(const VP9_COMP *cpi) {
     if (cpi->sf.tx_size_search_method == USE_LARGESTALL) {
       return ALLOW_32X32;
     } else if (cpi->sf.tx_size_search_method == USE_FULL_RD) {
-      const MV_REFERENCE_FRAME frame_type = get_frame_type(cpi);
+      const REFERENCE_FRAME frame_type = get_frame_type(cpi);
       return cpi->rd_tx_select_threshes[frame_type][ALLOW_32X32] >
                  cpi->rd_tx_select_threshes[frame_type][TX_MODE_SELECT] ?
                      ALLOW_32X32 : TX_MODE_SELECT;
@@ -2980,7 +2980,7 @@ void vp9_encode_frame(VP9_COMP *cpi) {
      * that for subsequent frames.
      * It does the same analysis for transform size selection also.
      */
-    const MV_REFERENCE_FRAME frame_type = get_frame_type(cpi);
+    const REFERENCE_FRAME frame_type = get_frame_type(cpi);
     const int64_t *mode_thresh = cpi->rd_prediction_type_threshes[frame_type];
     const int64_t *filter_thresh = cpi->rd_filter_threshes[frame_type];
 
