@@ -938,7 +938,6 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   }
 
-  x->skip = ctx->skip;
   vpx_memcpy(x->zcoeff_blk[mbmi->tx_size], ctx->zcoeff_blk,
              sizeof(uint8_t) * ctx->num_4x4_blk);
 
@@ -972,7 +971,6 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 #endif
   if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
-      vp9_update_mv_count(cm, xd);
 
       if (cm->interp_filter == SWITCHABLE) {
         const int ctx = vp9_get_pred_context_switchable_interp(xd);
@@ -1433,41 +1431,6 @@ static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   return 0;
 }
 
-static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx) {
-  VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCK *const x = &cpi->mb;
-  MACROBLOCKD *const xd = &x->e_mbd;
-  MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
-
-  x->skip = ctx->skip;
-
-#if CONFIG_INTERNAL_STATS
-  if (frame_is_intra_only(cm)) {
-    static const int kf_mode_index[] = {
-      THR_DC /*DC_PRED*/,
-      THR_V_PRED /*V_PRED*/,
-      THR_H_PRED /*H_PRED*/,
-      THR_D45_PRED /*D45_PRED*/,
-      THR_D135_PRED /*D135_PRED*/,
-      THR_D117_PRED /*D117_PRED*/,
-      THR_D153_PRED /*D153_PRED*/,
-      THR_D207_PRED /*D207_PRED*/,
-      THR_D63_PRED /*D63_PRED*/,
-      THR_TM /*TM_PRED*/,
-    };
-    ++cpi->mode_chosen_counts[kf_mode_index[mbmi->mode]];
-  } else {
-    // Note how often each mode chosen as best
-    ++cpi->mode_chosen_counts[ctx->best_mode_index];
-  }
-#endif
-  if (!frame_is_intra_only(cm)) {
-    if (is_inter_block(mbmi)) {
-      vp9_update_mv_count(cm, xd);
-    }
-  }
-}
-
 static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
                      TOKENEXTRA **tp, int mi_row, int mi_col,
                      int output_enabled, BLOCK_SIZE bsize) {
@@ -1480,7 +1443,6 @@ static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
       return;
   }
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state_rt(cpi, get_block_context(x, bsize));
 
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize);
   update_stats(cpi);
@@ -3221,6 +3183,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
+  x->skip = ctx->skip;
+
   x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
                    (cpi->oxcf.aq_mode != COMPLEXITY_AQ) &&
                    !cpi->sf.use_nonrd_pick_mode;
@@ -3264,6 +3228,8 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);
+    vp9_update_mv_count(cm, xd);
+
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi,
                                                      mbmi->ref_frame[ref]);
