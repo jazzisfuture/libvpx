@@ -899,8 +899,7 @@ static YV12_BUFFER_CONFIG *get_ref_frame_buffer(VP9_COMP *cpi,
 
 void vp9_set_speed_features(VP9_COMP *cpi);
 
-int vp9_calc_ss_err(const YV12_BUFFER_CONFIG *source,
-                    const YV12_BUFFER_CONFIG *reference);
+int vp9_get_y_sse(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b);
 
 void vp9_alloc_compressor_data(VP9_COMP *cpi);
 
