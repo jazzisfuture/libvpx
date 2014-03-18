@@ -1236,8 +1236,9 @@ static void init_config(struct VP9_COMP *cpi, VP9_CONFIG *oxcf) {
   // Temporal scalability.
   cpi->svc.number_temporal_layers = oxcf->ts_number_layers;
 
-  if (cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+  if ((cpi->svc.number_temporal_layers > 1 &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER)
+       || (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
     vp9_init_layer_context(cpi);
   }
 
@@ -1422,8 +1423,9 @@ void vp9_change_config(struct VP9_COMP *cpi, VP9_CONFIG *oxcf) {
   }
   update_frame_size(cpi);
 
-  if (cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
+  if ((cpi->svc.number_temporal_layers > 1 &&
+      cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER)
+      || (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
   }
@@ -3574,7 +3576,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   if (cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
-    vp9_update_layer_framerate(cpi);
+    vp9_update_temporal_layer_framerate(cpi);
     vp9_restore_layer_context(cpi);
   }
 
