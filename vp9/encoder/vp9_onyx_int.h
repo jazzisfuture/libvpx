@@ -436,17 +436,18 @@ typedef enum {
 } END_USAGE;
 
 typedef struct {
-  // Target percentage of blocks per frame that are cyclicly refreshed.
-  int max_mbs_perframe;
+  // Percentage of super-blocks per frame that are targeted as candidates for
+  // cyclic refresh.
+  int max_sbs_perframe;
   // Maximum q-delta as percentage of base q.
   int max_qdelta_perc;
   // Block size below which we don't apply cyclic refresh.
   BLOCK_SIZE min_block_size;
-  // Macroblock starting index (unit of 8x8) for cycling through the frame.
-  int mb_index;
+  // Superblock starting index for cycling through the frame.
+  int sb_index;
   // Controls how long a block will need to wait to be refreshed again.
   int time_for_refresh;
-  // Actual number of blocks that were applied delta-q (segment 1).
+  // Actual number of (8x8) blocks that were applied delta-q (segment 1).
   int num_seg_blocks;
   // Actual encoding bits for segment 1.
   int actual_seg_bits;
