@@ -826,12 +826,6 @@ void vp9_first_pass(VP9_COMP *cpi) {
   ++cm->current_video_frame;
 }
 
-// Estimate a cost per mb attributable to overheads such as the coding of modes
-// and motion vectors. This currently makes simplistic assumptions for testing.
-static double bitcost(double prob) {
-  return -(log(prob) / log(2.0));
-}
-
 static double calc_correction_factor(double err_per_mb,
                                      double err_divisor,
                                      double pt_low,
