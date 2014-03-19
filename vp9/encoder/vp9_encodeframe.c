@@ -1460,6 +1460,25 @@ static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   return 0;
 }
 
+static void copy_partitioning_rt(VP9_COMMON *cm, MODE_INFO **mi_8x8,
+                                 MODE_INFO **prev_mi_8x8,
+                                 int mi_row, int mi_col) {
+  const int mis = cm->mode_info_stride;
+  int block_row, block_col;
+
+  for (block_row = 0; block_row < 8; ++block_row) {
+    for (block_col = 0; block_col < 8; ++block_col) {
+      MODE_INFO *const prev_mi = prev_mi_8x8[block_row * mis + block_col];
+      const BLOCK_SIZE sb_type = prev_mi ? prev_mi->mbmi.sb_type : 0;
+      if (prev_mi) {
+        const ptrdiff_t offset = prev_mi - cm->prev_mi;
+        mi_8x8[block_row * mis + block_col] = cm->mi + offset;
+        mi_8x8[block_row * mis + block_col]->mbmi.sb_type = sb_type;
+      }
+    }
+  }
+}
+
 static void update_state_rt(VP9_COMP *cpi, const PICK_MODE_CONTEXT *ctx,
                             int mi_row, int mi_col, int bsize) {
   int i;
@@ -2358,6 +2377,9 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   VP9_COMMON *const cm = &cpi->common;
   int mi_col;
 
+  if (mi_row == 0)
+    fprintf(stderr, "RD coding frame\n");
+
   // Initialize the left context for the new SB row
   vpx_memset(&cpi->left_context, 0, sizeof(cpi->left_context));
   vpx_memset(cpi->left_seg_context, 0, sizeof(cpi->left_seg_context));
@@ -2413,6 +2435,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
       } else {
         if ((cm->current_video_frame
             % cpi->sf.last_partitioning_redo_frequency) == 0
+            || cm->last_frame_type != cm->frame_type
             || cm->prev_mi == 0
             || cm->show_frame == 0
             || cm->frame_type == KEY_FRAME
@@ -2693,6 +2716,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   MACROBLOCKD *const xd = &x->e_mbd;
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
   xd->mi_8x8[0]->mbmi.sb_type = bsize;
+
   if (!frame_is_intra_only(cm)) {
     vp9_pick_inter_mode(cpi, x, tile, mi_row, mi_col,
                         rate, dist, bsize);
@@ -2825,6 +2849,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     int64_t dummy_dist;
     const int idx_str = cm->mode_info_stride * mi_row + mi_col;
     MODE_INFO **mi_8x8 = cm->mi_grid_visible + idx_str;
+    MODE_INFO **prev_mi_8x8 = cm->prev_mi_grid_visible + idx_str;
+
     BLOCK_SIZE bsize = cpi->sf.partition_search_type == FIXED_PARTITION ?
         cpi->sf.always_this_block_size :
         get_nonrd_var_based_fixed_partition(cpi, mi_row, mi_col);
@@ -2834,6 +2860,47 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     // Set the partition type of the 64X64 block
     if (cpi->sf.partition_search_type == VAR_BASED_PARTITION)
       choose_partitioning(cpi, tile, mi_row, mi_col);
+    else if (cpi->sf.partition_search_type == REFERENCE_PARTITION) {
+      if (cpi->sf.partition_check) {
+        MACROBLOCK *x = &cpi->mb;
+        int rate1, rate2, rate3;
+        int64_t dist1, dist2, dist3;
+        set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, BLOCK_8X8);
+        nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                            0, &rate1, &dist1);
+        set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, BLOCK_16X16);
+        nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                            0, &rate2, &dist2);
+        set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, BLOCK_32X32);
+        nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                            0, &rate3, &dist3);
+
+        if (RDCOST(x->rdmult, x->rddiv, rate1, dist1) <
+            RDCOST(x->rdmult, x->rddiv, rate2, dist2)) {
+          if (RDCOST(x->rdmult, x->rddiv, rate1, dist1) <
+              RDCOST(x->rdmult, x->rddiv, rate3, dist3))
+            set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col,
+                                   BLOCK_8X8);
+          else
+            set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col,
+                                   BLOCK_32X32);
+        } else {
+          if (RDCOST(x->rdmult, x->rddiv, rate2, dist2) <
+              RDCOST(x->rdmult, x->rddiv, rate3, dist3))
+            set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col,
+                                   BLOCK_16X16);
+          else
+            set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col,
+                                   BLOCK_32X32);
+        }
+
+      } else {
+        if (!sb_has_motion(cm, prev_mi_8x8))
+          copy_partitioning_rt(cm, mi_8x8, prev_mi_8x8, mi_row, mi_col);
+        else
+          set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, bsize);
+      }
+    }
     else
       set_fixed_partitioning(cpi, tile, mi_8x8, mi_row, mi_col, bsize);
 
