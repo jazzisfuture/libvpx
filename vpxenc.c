@@ -836,7 +836,9 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
     stream->config.stereo_fmt = STEREO_FORMAT_MONO;
     stream->config.write_webm = 1;
 #if CONFIG_WEBM_IO
-    stream->ebml.last_pts_ms = -1;
+    stream->ebml.last_pts_ns = -1;
+    stream->ebml.writer = NULL;
+    stream->ebml.segment = NULL;
 #endif
 
     /* Allows removal of the application version from the EBML tags */
@@ -1172,8 +1174,6 @@ static void close_output_file(struct stream_state *stream,
 #if CONFIG_WEBM_IO
   if (stream->config.write_webm) {
     write_webm_file_footer(&stream->ebml, stream->hash);
-    free(stream->ebml.cue_list);
-    stream->ebml.cue_list = NULL;
   }
 #endif
 
