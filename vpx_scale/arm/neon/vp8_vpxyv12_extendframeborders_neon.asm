@@ -9,7 +9,7 @@
 ;
 
 
-    EXPORT  |vp8_yv12_extend_frame_borders_neon|
+    EXPORT  |vp8_yv12_extend_frame_borders_32_neon|
     ARM
     REQUIRE8
     PRESERVE8
@@ -17,10 +17,10 @@
     INCLUDE vpx_scale_asm_offsets.asm
 
     AREA ||.text||, CODE, READONLY, ALIGN=2
-;void vp8_yv12_extend_frame_borders_neon (YV12_BUFFER_CONFIG *ybf);
+;void vp8_yv12_extend_frame_borders_32_neon (YV12_BUFFER_CONFIG *ybf);
 ; we depend on VP8BORDERINPIXELS being 32
 
-|vp8_yv12_extend_frame_borders_neon| PROC
+|vp8_yv12_extend_frame_borders_32_neon| PROC
     push            {r4 - r10, lr}
     vpush           {d8 - d15}
 
