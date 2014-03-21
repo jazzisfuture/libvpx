@@ -31,7 +31,10 @@ static int apply_cyclic_refresh_bitrate(VP9_COMP *const cpi) {
   int number_blocks = cpi->common.mi_rows  * cpi->common.mi_cols;
   // The condition below corresponds to turning off at target bitrates:
   // ~24kbps for CIF, 72kbps for VGA (at 30fps).
-  if (cpi->rc.av_per_frame_bandwidth < factor * number_blocks)
+  // Also turn off at very small frame sizes, to avoid too large fraction of
+  // superblocks to be refreshed per frame. Threshold below is less than QCIF.
+  if (cpi->rc.av_per_frame_bandwidth < factor * number_blocks ||
+      number_blocks / 64 < 5)
     return 0;
   else
     return 1;
@@ -144,19 +147,18 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     vpx_memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
     vp9_disable_segmentation(&cm->seg);
     if (cpi->common.frame_type == KEY_FRAME)
-      cr->mb_index = 0;
+      cr->sb_index = 0;
     return;
   } else {
     int qindex_delta = 0;
-    int mbs_in_frame = cm->mi_rows * cm->mi_cols;
-    int i, x, y, block_count, bl_index, bl_index2;
-    int sum_map, new_value, mi_row, mi_col, xmis, ymis, qindex2;
+    int i, block_count, bl_index, bl_index2, sb_rows, sb_cols, sbs_in_frame;
+    int mi_row, mi_col, xmis, ymis, x, y, bw, bh, qindex2;
 
     // Rate target ratio to set q delta.
     float rate_ratio_qdelta = 2.0;
     vp9_clear_system_state();
     // Some of these parameters may be set via codec-control function later.
-    cr->max_mbs_perframe = 10;
+    cr->max_sbs_perframe = 10;
     cr->max_qdelta_perc = 50;
     cr->min_block_size = BLOCK_16X16;
     cr->time_for_refresh = 1;
@@ -209,59 +211,68 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     cr->rdmult = vp9_compute_rd_mult(cpi, qindex2);
 
     vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qindex_delta);
-    // Number of target macroblocks to get the q delta (segment 1).
-    block_count = cr->max_mbs_perframe * mbs_in_frame / 100;
-    // Set the segmentation map: cycle through the macroblocks, starting at
+
+    sb_cols = (cm->mi_cols + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    sb_rows = (cm->mi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE;
+    sbs_in_frame = sb_cols * sb_rows;
+    // Number of target superblocks to get the q delta (segment 1).
+    block_count = cr->max_sbs_perframe * sbs_in_frame / 100;
+    // Set the segmentation map: cycle through the superblocks, starting at
     // cr->mb_index, and stopping when either block_count blocks have been found
     // to be refreshed, or we have passed through whole frame.
-    // Note the setting of seg_map below is done in two steps (one over 8x8)
-    // and then another over SB, in order to keep the value constant over SB.
-    // TODO(marpan): Do this in one pass in SB order.
-    assert(cr->mb_index < mbs_in_frame);
-    i = cr->mb_index;
+    assert(cr->sb_index < sbs_in_frame);
+    i = cr->sb_index;
+    bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+    bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
     do {
-      // If the macroblock is as a candidate for clean up then mark it
-      // for possible boost/refresh (segment 1). The segment id may get reset to
-      // 0 later if the macroblock gets coded anything other than ZEROMV.
-      if (cr->map[i] == 0) {
-        seg_map[i] = 1;
-        block_count--;
-      } else if (cr->map[i] < 0) {
-        cr->map[i]++;
-      }
-      i++;
-      if (i == mbs_in_frame) {
-        i = 0;
-      }
-    } while (block_count && i != cr->mb_index);
-    cr->mb_index = i;
-    // Enforce constant segment map over superblock.
-    for (mi_row = 0; mi_row < cm->mi_rows; mi_row +=  MI_BLOCK_SIZE)
-      for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
-        bl_index = mi_row * cm->mi_cols + mi_col;
-        xmis = num_8x8_blocks_wide_lookup[BLOCK_64X64];
-        ymis = num_8x8_blocks_high_lookup[BLOCK_64X64];
-        xmis = MIN(cm->mi_cols - mi_col, xmis);
-        ymis = MIN(cm->mi_rows - mi_row, ymis);
-        sum_map = 0;
-        for (y = 0; y < ymis; y++)
-          for (x = 0; x < xmis; x++) {
-            bl_index2 = bl_index + y * cm->mi_cols + x;
-               sum_map += seg_map[bl_index2];
+      int sum_map = 0;
+      // Get the mi_row/mi_col corresponding to superblock index i.
+      int sb_row_index = (i / sb_cols);
+      int sb_col_index = i - sb_row_index * sb_cols;
+      mi_row = sb_row_index * MI_BLOCK_SIZE;
+      mi_col = sb_col_index * MI_BLOCK_SIZE;
+      assert(mi_row >= 0 && mi_row < cm->mi_rows);
+      assert(mi_col >= 0 && mi_col < cm->mi_cols);
+      bl_index = mi_row * cm->mi_cols + mi_col;
+      // Loop through all 8x8 blocks in superblock and update map.
+      xmis = MIN(cm->mi_cols - mi_col, bw);
+      ymis = MIN(cm->mi_rows - mi_row, bh);
+      for (y = 0; y < ymis; y++) {
+        for (x = 0; x < xmis; x++) {
+          bl_index2 = bl_index + y * cm->mi_cols + x;
+          // If the block is as a candidate for clean up then mark it
+          // for possible boost/refresh (segment 1). The segment id may get
+          // reset to 0 later if block gets coded anything other than ZEROMV.
+          if (cr->map[bl_index2] == 0) {
+            seg_map[bl_index2] = 1;
+            sum_map++;
+          } else if (cr->map[bl_index2] < 0) {
+            cr->map[bl_index2]++;
           }
-        new_value = 0;
-        // If segment is partial over superblock, reset.
-        if (sum_map > 0 && sum_map < xmis * ymis) {
-          if (sum_map < xmis * ymis / 2)
-            new_value = 0;
-          else
-            new_value = 1;
-          for (y = 0; y < ymis; y++)
-            for (x = 0; x < xmis; x++) {
-              bl_index2 = bl_index + y * cm->mi_cols + x;
-              seg_map[bl_index2] = new_value;
-            }
         }
       }
+      // Enforce constant segment over superblock.
+      // If segment is partial over superblock, reset to either all 1 or 0.
+      if (sum_map > 0 && sum_map < xmis * ymis) {
+        int new_value;
+        if (sum_map < xmis * ymis / 2)
+          new_value = 0;
+        else
+          new_value = 1;
+        for (y = 0; y < ymis; y++) {
+          for (x = 0; x < xmis; x++) {
+            bl_index2 = bl_index + y * cm->mi_cols + x;
+            seg_map[bl_index2] = new_value;
+          }
+        }
+      }
+      i++;
+      if (i == sbs_in_frame) {
+        i = 0;
+      }
+      if (sum_map >= xmis * ymis /2)
+        block_count--;
+    } while (block_count && i != cr->sb_index);
+    cr->sb_index = i;
   }
 }
