@@ -76,11 +76,14 @@ static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       return;
     }
   }
-
-  mvp_full = mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_mv;
-
-  mvp_full.col >>= 3;
-  mvp_full.row >>= 3;
+  if (x->mv_best_ref_index[ref] < 2) {
+    mvp_full = mbmi->ref_mvs[ref][x->mv_best_ref_index[ref]].as_mv;
+    mvp_full.col >>= 3;
+    mvp_full.row >>= 3;
+  } else {
+    mvp_full.row =0;
+    mvp_full.col =0;
+  }
 
   if (cpi->sf.search_method == FAST_DIAMOND) {
     // NOTE: this returns SAD
