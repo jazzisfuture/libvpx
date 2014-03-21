@@ -571,7 +571,16 @@ static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
     sf->thresh_mult_sub8x8[THR_COMP_GA] = INT_MAX;
 }
 
-static void set_good_speed_feature(VP9_COMMON *cm,
+// Intra only frames, golden frames (except alt ref overlays) and
+// alt ref frames tend to be coded at a higher than ambient quality
+static INLINE int frame_is_boosted(const VP9_COMP *cpi,
+                                   const VP9_COMMON *const cm) {
+  return frame_is_intra_only(cm) || cpi->refresh_alt_ref_frame ||
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
+}
+
+static void set_good_speed_feature(VP9_COMP *cpi,
+                                   VP9_COMMON *cm,
                                    SPEED_FEATURES *sf,
                                    int speed) {
   int i;
@@ -580,7 +589,7 @@ static void set_good_speed_feature(VP9_COMMON *cm,
   if (speed == 1) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->less_rectangular_check  = 1;
-    sf->tx_size_search_method = frame_is_intra_only(cm)
+    sf->tx_size_search_method = frame_is_boosted(cpi, cm)
       ? USE_FULL_RD : USE_LARGESTALL;
 
     if (MIN(cm->width, cm->height) >= 720)
@@ -593,11 +602,13 @@ static void set_good_speed_feature(VP9_COMMON *cm,
     sf->adaptive_motion_search = 1;
     sf->adaptive_pred_interp_filter = 1;
     sf->auto_mv_step_size = 1;
+    sf->comp_inter_joint_search_thresh = BLOCK_SIZES;
     sf->adaptive_rd_thresh = 2;
     sf->recode_loop = ALLOW_RECODE_KFARFGF;
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
+    sf->subpel_iters_per_step = 1;
   }
   if (speed == 2) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
@@ -963,7 +974,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
     case MODE_FIRSTPASS:
     case MODE_GOODQUALITY:
     case MODE_SECONDPASS:
-      set_good_speed_feature(cm, sf, speed);
+      set_good_speed_feature(cpi, cm, sf, speed);
       break;
     case MODE_REALTIME:
       set_rt_speed_feature(cm, sf, speed);
