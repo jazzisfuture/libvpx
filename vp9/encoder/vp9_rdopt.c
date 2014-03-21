@@ -214,14 +214,20 @@ void vp9_init_me_luts() {
 }
 
 int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
+  const struct twopass_rc *twopass = &cpi->twopass;
   const int q = vp9_dc_quant(qindex, 0);
   // TODO(debargha): Adjust the function below
   int rdmult = 88 * q * q / 25;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    twopass = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].twopass;
+  }
+
   if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
-    if (cpi->twopass.next_iiratio > 31)
+    if (twopass->next_iiratio > 31)
       rdmult += (rdmult * rd_iifactor[31]) >> 4;
     else
-      rdmult += (rdmult * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+      rdmult += (rdmult * rd_iifactor[twopass->next_iiratio]) >> 4;
   }
   return rdmult;
 }
@@ -3127,6 +3133,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi_8x8[0]->mbmi;
+  const RATE_CONTROL *rc = &cpi->rc;
   const struct segmentation *const seg = &cm->seg;
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
   MB_PREDICTION_MODE this_mode;
@@ -3171,6 +3178,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   const int intra_y_mode_mask =
       cpi->sf.intra_y_mode_mask[max_txsize_lookup[bsize]];
   int disable_inter_mode_mask = cpi->sf.disable_inter_mode_mask[bsize];
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -3246,7 +3257,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // unless ARNR filtering is enabled in which case we want
     // an unfiltered alternative. We allow near/nearest as well
     // because they may result in zero-zero MVs but be cheaper.
-    if (cpi->rc.is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0)) {
+    if (rc->is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0)) {
       const int altref_zero_mask =
           ~((1 << THR_NEARESTA) | (1 << THR_NEARA) | (1 << THR_ZEROA));
       mode_skip_mask |= altref_zero_mask;
@@ -3793,6 +3804,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                                       int64_t best_rd_so_far) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
+  const RATE_CONTROL *rc = &cpi->rc;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
   const struct segmentation *seg = &cm->seg;
   const BLOCK_SIZE block_size = get_plane_block_size(bsize, &xd->plane[0]);
@@ -3828,6 +3840,10 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   int best_skip2 = 0;
   int ref_frame_mask = 0;
   int mode_skip_mask = 0;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   vpx_memset(x->zcoeff_blk[TX_4X4], 0, 4);
@@ -4015,7 +4031,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
       // unless ARNR filtering is enabled in which case we want
       // an unfiltered alternative. We allow near/nearest as well
       // because they may result in zero-zero MVs but be cheaper.
-      if (cpi->rc.is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0))
+      if (rc->is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0))
         continue;
     }
 
