@@ -204,6 +204,8 @@ typedef struct VP9Common {
   InternalFrameBufferList int_frame_buffers;
 
   PARTITION_CONTEXT *above_seg_context;
+
+  int mode_count[MB_MODE_COUNT];
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {

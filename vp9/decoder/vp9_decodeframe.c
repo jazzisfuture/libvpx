@@ -368,6 +368,13 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   // Has to be called after set_offsets
   mbmi = &xd->mi_8x8[0]->mbmi;
 
+  // =====================================
+  // for observation purpose only
+  // =====================================
+  if (mbmi->sb_type == BLOCK_8X8)
+    ++cm->mode_count[mbmi->mode];
+  // =====================================
+
   if (mbmi->skip) {
     reset_skip_context(xd, bsize);
   } else {
@@ -735,6 +742,12 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
   }
 
+  // =====================================
+  // for observation purpose only
+  // =====================================
+  vp9_zero(cm->mode_count);
+  // =====================================
+
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
        mi_row += MI_BLOCK_SIZE) {
     // For a SB there are 2 left contexts, each pertaining to a MB row within
@@ -765,6 +778,16 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
       }
     }
   }
+
+  // =====================================
+  // for observation purpose only
+  // =====================================
+//  if (cm->current_video_frame) {
+//    int i;
+//    for (i = 0; i < MB_MODE_COUNT; ++i)
+//      fprintf(stderr, "mode %d, count %d\n", i, cm->mode_count[i]);
+//  }
+  // =====================================
 
   if (pbi->do_loopfilter_inline) {
     LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
