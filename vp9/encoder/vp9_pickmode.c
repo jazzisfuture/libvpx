@@ -172,6 +172,8 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     for (i = 0; i < MAX_MB_PLANE; i++)
       xd->plane[i].pre[0] = backup_yv12[i];
   }
+
+  x->pred_mv[ref].as_mv = *tmp_mv;
 }
 
 static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
@@ -298,6 +300,10 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           rd_thresh_freq_fact[this_mode] >> 5) ||
           rd_threshes[mode_idx[this_mode]] == INT_MAX)
         continue;
+
+//      if (bsize == BLOCK_8X8)
+//        if (this_mode != NEWMV)
+//          continue;
 
       if (this_mode == NEWMV) {
         if (this_rd < (int64_t)(1 << num_pels_log2_lookup[bsize]))
