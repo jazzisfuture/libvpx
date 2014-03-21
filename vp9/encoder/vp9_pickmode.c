@@ -184,6 +184,8 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     for (i = 0; i < MAX_MB_PLANE; i++)
       xd->plane[i].pre[0] = backup_yv12[i];
   }
+
+  x->pred_mv[ref].as_mv = *tmp_mv;
 }
 
 static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
@@ -340,7 +342,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
-  if (best_rd > inter_mode_thresh) {
+  if (best_rd > inter_mode_thresh || 1) {
     for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
       vp9_predict_intra_block(xd, 0, b_width_log2(bsize),
                               mbmi->tx_size, this_mode,
@@ -352,7 +354,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       rate += intra_cost_penalty;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
 
-      if (this_rd + intra_mode_cost < best_rd) {
+      if (this_rd + intra_mode_cost < best_rd || 1) {
         best_rd = this_rd;
         *returnrate = rate;
         *returndistortion = dist;
