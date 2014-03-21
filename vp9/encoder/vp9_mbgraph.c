@@ -304,6 +304,7 @@ static void update_mbgraph_frame_stats(VP9_COMP *cpi,
 // void separate_arf_mbs_byzz
 static void separate_arf_mbs(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  const RATE_CONTROL *rc = &cpi->rc;
   int mb_col, mb_row, offset, i;
   int mi_row, mi_col;
   int ncnt[4] = { 0 };
@@ -311,13 +312,17 @@ static void separate_arf_mbs(VP9_COMP *cpi) {
 
   int *arf_not_zz;
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   CHECK_MEM_ERROR(cm, arf_not_zz,
                   vpx_calloc(cm->mb_rows * cm->mb_cols * sizeof(*arf_not_zz),
                              1));
 
   // We are not interested in results beyond the alt ref itself.
-  if (n_frames > cpi->rc.frames_till_gf_update_due)
-    n_frames = cpi->rc.frames_till_gf_update_due;
+  if (n_frames > rc->frames_till_gf_update_due)
+    n_frames = rc->frames_till_gf_update_due;
 
   // defer cost to reference frames
   for (i = n_frames - 1; i >= 0; i--) {
@@ -383,12 +388,17 @@ static void separate_arf_mbs(VP9_COMP *cpi) {
 
 void vp9_update_mbgraph_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
+  const RATE_CONTROL *rc = &cpi->rc;
   int i, n_frames = vp9_lookahead_depth(cpi->lookahead);
   YV12_BUFFER_CONFIG *golden_ref = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   // we need to look ahead beyond where the ARF transitions into
   // being a GF - so exit if we don't look ahead beyond that
-  if (n_frames <= cpi->rc.frames_till_gf_update_due)
+  if (n_frames <= rc->frames_till_gf_update_due)
     return;
 
   if (n_frames > MAX_LAG_BUFFERS)

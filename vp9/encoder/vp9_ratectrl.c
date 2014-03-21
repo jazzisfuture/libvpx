@@ -215,7 +215,13 @@ static int estimate_bits_at_q(int frame_kind, int q, int mbs,
 
 int vp9_rc_clamp_pframe_target_size(const VP9_COMP *const cpi, int target) {
   const RATE_CONTROL *rc = &cpi->rc;
-  const int min_frame_target = MAX(rc->min_frame_bandwidth,
+  int min_frame_target;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+      rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+    }
+
+  min_frame_target = MAX(rc->min_frame_bandwidth,
                                    rc->av_per_frame_bandwidth >> 5);
   if (target < min_frame_target)
     target = min_frame_target;
@@ -235,6 +241,11 @@ int vp9_rc_clamp_pframe_target_size(const VP9_COMP *const cpi, int target) {
 int vp9_rc_clamp_iframe_target_size(const VP9_COMP *const cpi, int target) {
   const RATE_CONTROL *rc = &cpi->rc;
   const VP9_CONFIG *oxcf = &cpi->oxcf;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   if (oxcf->rc_max_intra_bitrate_pct) {
     const int max_rate = rc->av_per_frame_bandwidth *
         oxcf->rc_max_intra_bitrate_pct / 100;
@@ -269,7 +280,11 @@ static void update_layer_buffer_level(VP9_COMP *const cpi,
 static void update_buffer_level(VP9_COMP *cpi, int encoded_frame_size) {
   const VP9_COMMON *const cm = &cpi->common;
   const VP9_CONFIG *oxcf = &cpi->oxcf;
-  RATE_CONTROL *const rc = &cpi->rc;
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   // Non-viewable frames are a special case and are treated as pure overhead.
   if (!cm->show_frame) {
@@ -326,36 +341,52 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
 }
 
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
+  const RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    return cpi->rc.key_frame_rate_correction_factor;
+    return rc->key_frame_rate_correction_factor;
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
         !(cpi->use_svc && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER))
-      return cpi->rc.gf_rate_correction_factor;
+      return rc->gf_rate_correction_factor;
     else
-      return cpi->rc.rate_correction_factor;
+      return rc->rate_correction_factor;
   }
 }
 
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    cpi->rc.key_frame_rate_correction_factor = factor;
+    rc->key_frame_rate_correction_factor = factor;
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
         !(cpi->use_svc && cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER))
-      cpi->rc.gf_rate_correction_factor = factor;
+      rc->gf_rate_correction_factor = factor;
     else
-      cpi->rc.rate_correction_factor = factor;
+      rc->rate_correction_factor = factor;
   }
 }
 
 void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
+  const RATE_CONTROL *rc = &cpi->rc;
   const int q = cpi->common.base_qindex;
   int correction_factor = 100;
   double rate_correction_factor = get_rate_correction_factor(cpi);
   double adjustment_limit;
-
   int projected_size_based_on_q = 0;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   // Clear down mmx registers to allow floating point in what follows
   vp9_clear_system_state();
@@ -368,7 +399,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
                                                  rate_correction_factor);
   // Work out a size correction factor.
   if (projected_size_based_on_q > 0)
-    correction_factor = (100 * cpi->rc.projected_frame_size) /
+    correction_factor = (100 * rc->projected_frame_size) /
                             projected_size_based_on_q;
 
   // More heavily damped adjustment used if we have been oscillating either side
@@ -836,11 +867,20 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                          int *bottom_index,
                                          int *top_index) {
   const VP9_COMMON *const cm = &cpi->common;
-  const RATE_CONTROL *const rc = &cpi->rc;
+  const struct twopass_rc *twopass = &cpi->twopass;
+  const RATE_CONTROL *rc = &cpi->rc;
   const VP9_CONFIG *const oxcf = &cpi->oxcf;
   int active_best_quality;
   int active_worst_quality = cpi->twopass.active_worst_quality;
   int q;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    const LAYER_CONTEXT *const lc =
+        &cpi->svc.layer_context[cpi->svc.spatial_layer_id];
+    rc = &lc->rc;
+    twopass = &lc->twopass;
+    active_worst_quality = twopass->active_worst_quality;
+  }
 
   if (frame_is_intra_only(cm)) {
 #if !CONFIG_MULTIPLE_ARF
@@ -870,7 +910,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       }
 
       // Make a further adjustment based on the kf zero motion measure.
-      q_adj_factor += 0.05 - (0.001 * (double)cpi->twopass.kf_zeromotion_pct);
+      q_adj_factor += 0.05 - (0.001 * (double)twopass->kf_zeromotion_pct);
 
       // Convert the adjustment factor to a qindex delta
       // on active_best_quality.
@@ -984,7 +1024,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                           active_best_quality, active_worst_quality);
     if (q > *top_index) {
       // Special case when we are targeting the max allowed rate.
-      if (cpi->rc.this_frame_target >= cpi->rc.max_frame_bandwidth)
+      if (rc->this_frame_target >= rc->max_frame_bandwidth)
         *top_index = q;
       else
         q = *top_index;
@@ -1048,6 +1088,10 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi,
                                       int this_frame_target,
                                       int *frame_under_shoot_limit,
                                       int *frame_over_shoot_limit) {
+  const RATE_CONTROL *rc = &cpi->rc;
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
   // Set-up bounds on acceptable frame size:
   if (cpi->oxcf.end_usage == USAGE_CONSTANT_QUALITY) {
     *frame_under_shoot_limit = 0;
@@ -1081,15 +1125,19 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi,
       *frame_under_shoot_limit = 0;
 
     // Clip to maximum allowed rate for a frame.
-    if (*frame_over_shoot_limit > cpi->rc.max_frame_bandwidth) {
-      *frame_over_shoot_limit = cpi->rc.max_frame_bandwidth;
+    if (*frame_over_shoot_limit > rc->max_frame_bandwidth) {
+      *frame_over_shoot_limit = rc->max_frame_bandwidth;
     }
   }
 }
 
 void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
   const VP9_COMMON *const cm = &cpi->common;
-  RATE_CONTROL *const rc = &cpi->rc;
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   rc->this_frame_target = target;
   // Target rate per SB64 (including partial SB64s.
@@ -1098,21 +1146,31 @@ void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
 }
 
 static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   // this frame refreshes means next frames don't unless specified by user
-  cpi->rc.frames_since_golden = 0;
+  rc->frames_since_golden = 0;
 
 #if CONFIG_MULTIPLE_ARF
   if (!cpi->multi_arf_enabled)
 #endif
-    // Clear the alternate reference update pending flag.
-    cpi->rc.source_alt_ref_pending = 0;
+  // Clear the alternate reference update pending flag.
+  rc->source_alt_ref_pending = 0;
 
   // Set the alternate reference frame active flag
-  cpi->rc.source_alt_ref_active = 1;
+  rc->source_alt_ref_active = 1;
 }
 
 static void update_golden_frame_stats(VP9_COMP *cpi) {
-  RATE_CONTROL *const rc = &cpi->rc;
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   // Update the Golden frame usage counts.
   if (cpi->refresh_golden_frame) {
@@ -1137,7 +1195,11 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
 
 void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   VP9_COMMON *const cm = &cpi->common;
-  RATE_CONTROL *const rc = &cpi->rc;
+  RATE_CONTROL *rc = &cpi->rc;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   cm->last_frame_type = cm->frame_type;
   // Update rate control heuristics

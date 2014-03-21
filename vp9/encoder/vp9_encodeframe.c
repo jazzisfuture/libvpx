@@ -834,6 +834,7 @@ static void select_in_frame_q_segment(VP9_COMP *cpi,
                                       int mi_row, int mi_col,
                                       int output_enabled, int projected_rate) {
   VP9_COMMON *const cm = &cpi->common;
+  const RATE_CONTROL *rc = &cpi->rc;
 
   const int mi_offset = mi_row * cm->mi_cols + mi_col;
   const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
@@ -845,12 +846,16 @@ static void select_in_frame_q_segment(VP9_COMP *cpi,
 
   unsigned char segment;
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   if (!output_enabled) {
     segment = 0;
   } else {
     // Rate depends on fraction of a SB64 in frame (xmis * ymis / bw * bh).
     // It is converted to bits * 256 units
-    const int target_rate = (cpi->rc.sb64_target_rate * xmis * ymis * 256) /
+    const int target_rate = (rc->sb64_target_rate * xmis * ymis * 256) /
                             (bw * bh);
 
     if (projected_rate < (target_rate / 4)) {
@@ -1032,12 +1037,17 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+  const RATE_CONTROL *rc = &cpi->rc;
   MB_MODE_INFO *mbmi;
   struct macroblock_plane *const p = x->plane;
   struct macroblockd_plane *const pd = xd->plane;
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
   double rdmult_ratio;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   vp9_clear_system_state();
   rdmult_ratio = 1.0;  // avoid uninitialized warnings
@@ -1079,7 +1089,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
-        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+        (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref)) {
       mbmi->segment_id = vp9_vaq_segment_id(energy);
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
@@ -2374,7 +2384,12 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                              int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *const cm = &cpi->common;
+  const RATE_CONTROL *rc = &cpi->rc;
   int mi_col;
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
 
   // Initialize the left context for the new SB row
   vpx_memset(&cpi->left_context, 0, sizeof(cpi->left_context));
@@ -2434,7 +2449,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
             || cm->prev_mi == 0
             || cm->show_frame == 0
             || cm->frame_type == KEY_FRAME
-            || cpi->rc.is_src_frame_alt_ref
+            || rc->is_src_frame_alt_ref
             || ((cpi->sf.use_lastframe_partitioning ==
                  LAST_FRAME_PARTITION_LOW_MOTION) &&
                  sb_has_motion(cm, prev_mi_8x8))) {
@@ -2637,9 +2652,13 @@ static void reset_skip_txfm_size(VP9_COMMON *cm, TX_SIZE txfm_max) {
 }
 
 static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
+  const RATE_CONTROL *rc = &cpi->rc;
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
   if (frame_is_intra_only(&cpi->common))
     return INTRA_FRAME;
-  else if (cpi->rc.is_src_frame_alt_ref && cpi->refresh_golden_frame)
+  else if (rc->is_src_frame_alt_ref && cpi->refresh_golden_frame)
     return ALTREF_FRAME;
   else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
     return LAST_FRAME;
