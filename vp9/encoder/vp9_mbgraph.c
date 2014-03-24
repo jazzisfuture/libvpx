@@ -316,8 +316,8 @@ static void separate_arf_mbs(VP9_COMP *cpi) {
                              1));
 
   // We are not interested in results beyond the alt ref itself.
-  if (n_frames > cpi->rc.frames_till_gf_update_due)
-    n_frames = cpi->rc.frames_till_gf_update_due;
+  if (n_frames > vp9_get_const_rc(cpi)->frames_till_gf_update_due)
+    n_frames = vp9_get_const_rc(cpi)->frames_till_gf_update_due;
 
   // defer cost to reference frames
   for (i = n_frames - 1; i >= 0; i--) {
@@ -388,7 +388,7 @@ void vp9_update_mbgraph_stats(VP9_COMP *cpi) {
 
   // we need to look ahead beyond where the ARF transitions into
   // being a GF - so exit if we don't look ahead beyond that
-  if (n_frames <= cpi->rc.frames_till_gf_update_due)
+  if (n_frames <= vp9_get_const_rc(cpi)->frames_till_gf_update_due)
     return;
 
   if (n_frames > MAX_LAG_BUFFERS)

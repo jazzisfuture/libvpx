@@ -82,7 +82,8 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
 
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||
-      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+      (cpi->refresh_golden_frame &&
+      !vp9_get_const_rc(cpi)->is_src_frame_alt_ref)) {
     vp9_enable_segmentation(seg);
     vp9_clearall_segfeatures(seg);
 
