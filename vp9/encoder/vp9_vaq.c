@@ -74,15 +74,20 @@ void vp9_vaq_init() {
 
 void vp9_vaq_frame_setup(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  const RATE_CONTROL *rc = &cpi->rc;
   struct segmentation *seg = &cm->seg;
   const double base_q = vp9_convert_qindex_to_q(cm->base_qindex);
   const int base_rdmult = vp9_compute_rd_mult(cpi, cm->base_qindex +
                                               cm->y_dc_delta_q);
   int i;
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    rc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].rc;
+  }
+
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||
-      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+      (cpi->refresh_golden_frame && !rc->is_src_frame_alt_ref)) {
     vp9_enable_segmentation(seg);
     vp9_clearall_segfeatures(seg);
 
