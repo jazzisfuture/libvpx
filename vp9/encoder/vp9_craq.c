@@ -29,9 +29,10 @@ static int apply_cyclic_refresh_bitrate(VP9_COMP *const cpi) {
   // Number of (8x8) blocks in frame = mi_rows * mi_cols;
   float factor  = 0.5;
   int number_blocks = cpi->common.mi_rows  * cpi->common.mi_cols;
+
   // The condition below corresponds to turning off at target bitrates:
   // ~24kbps for CIF, 72kbps for VGA (at 30fps).
-  if (cpi->rc.av_per_frame_bandwidth < factor * number_blocks)
+  if (vp9_get_const_rc(cpi)->av_per_frame_bandwidth < factor * number_blocks)
     return 0;
   else
     return 1;
@@ -136,6 +137,7 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
   struct segmentation *const seg = &cm->seg;
   unsigned char *seg_map = cpi->segmentation_map;
   int apply_cyclic_refresh  = apply_cyclic_refresh_bitrate(cpi);
+
   // Don't apply refresh on key frame or enhancement layer frames.
   if (!apply_cyclic_refresh ||
       (cpi->common.frame_type == KEY_FRAME) ||
@@ -161,14 +163,14 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     cr->min_block_size = BLOCK_16X16;
     cr->time_for_refresh = 1;
     // Set rate threshold to some fraction of target (and scaled by 256).
-    cr->thresh_rate_sb = (cpi->rc.sb64_target_rate * 256) >> 2;
+    cr->thresh_rate_sb = (vp9_get_const_rc(cpi)->sb64_target_rate * 256) >> 2;
     // Distortion threshold, quadratic in Q, scale factor to be adjusted.
     cr->thresh_dist_sb = 8 * (int)(vp9_convert_qindex_to_q(cm->base_qindex) *
         vp9_convert_qindex_to_q(cm->base_qindex));
     if (cpi->sf.use_nonrd_pick_mode) {
       // May want to be more conservative with thresholds in non-rd mode for now
       // as rate/distortion are derived from model based on prediction residual.
-      cr->thresh_rate_sb = (cpi->rc.sb64_target_rate * 256) >> 3;
+      cr->thresh_rate_sb = (vp9_get_const_rc(cpi)->sb64_target_rate * 256) >> 3;
       cr->thresh_dist_sb = 4 * (int)(vp9_convert_qindex_to_q(cm->base_qindex) *
           vp9_convert_qindex_to_q(cm->base_qindex));
     }
