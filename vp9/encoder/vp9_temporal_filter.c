@@ -462,7 +462,8 @@ void vp9_temporal_filter_prepare(VP9_COMP *cpi, int distance) {
 void vp9_configure_arnr_filter(VP9_COMP *cpi,
                                const unsigned int frames_to_arnr,
                                const int group_boost) {
-  int half_gf_int;
+  const RATE_CONTROL *const rc = vp9_get_const_rc(cpi);
+  int half_gf_int = rc->baseline_gf_interval >> 1;
   int frames_after_arf;
   int frames_bwd = cpi->oxcf.arnr_max_frames - 1;
   int frames_fwd = cpi->oxcf.arnr_max_frames - 1;
@@ -474,7 +475,6 @@ void vp9_configure_arnr_filter(VP9_COMP *cpi,
   // extends beyond the end of the lookahead buffer.
   // Note: frames_to_arnr parameter is the offset of the arnr
   // frame from the current frame.
-  half_gf_int = cpi->rc.baseline_gf_interval >> 1;
   frames_after_arf = vp9_lookahead_depth(cpi->lookahead)
       - frames_to_arnr - 1;
 
@@ -515,10 +515,10 @@ void vp9_configure_arnr_filter(VP9_COMP *cpi,
   // Adjust the strength based on active max q
   if (cpi->common.current_video_frame > 1)
     q = ((int)vp9_convert_qindex_to_q(
-        cpi->rc.avg_frame_qindex[INTER_FRAME]));
+        rc->avg_frame_qindex[INTER_FRAME]));
   else
     q = ((int)vp9_convert_qindex_to_q(
-        cpi->rc.avg_frame_qindex[KEY_FRAME]));
+        rc->avg_frame_qindex[KEY_FRAME]));
   if (q > 16) {
     cpi->active_arnr_strength = cpi->oxcf.arnr_strength;
   } else {

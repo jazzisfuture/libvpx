@@ -30,8 +30,8 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   for (layer = 0; layer < layer_end; ++layer) {
     LAYER_CONTEXT *const lc = &cpi->svc.layer_context[layer];
     RATE_CONTROL *const lrc = &lc->rc;
+    lc->current_video_frame_in_layer = 0;
     lrc->avg_frame_qindex[INTER_FRAME] = q_trans[oxcf->worst_allowed_q];
-    lrc->last_q[INTER_FRAME] = q_trans[oxcf->worst_allowed_q];
     lrc->ni_av_qi = q_trans[oxcf->worst_allowed_q];
     lrc->total_actual_bits = 0;
     lrc->total_target_vs_actual = 0;
@@ -46,8 +46,12 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
 
     if (cpi->svc.number_temporal_layers > 1) {
       lc->target_bandwidth = oxcf->ts_target_bitrate[layer] * 1000;
+      lrc->last_q[INTER_FRAME] = q_trans[oxcf->worst_allowed_q];
     } else {
       lc->target_bandwidth = oxcf->ss_target_bitrate[layer] * 1000;
+      lrc->last_q[0] = q_trans[oxcf->best_allowed_q];
+      lrc->last_q[1] = q_trans[oxcf->best_allowed_q];
+      lrc->last_q[2] = q_trans[oxcf->best_allowed_q];
     }
 
     lrc->buffer_level =
@@ -140,6 +144,19 @@ void vp9_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
   lrc->max_frame_bandwidth = (int)(((int64_t)lrc->av_per_frame_bandwidth *
                                    oxcf->two_pass_vbrmax_section) / 100);
   lrc->max_gf_interval = 16;
+
+  lrc->static_scene_max_gf_interval = cpi->key_frame_frequency >> 1;
+
+  if (oxcf->play_alternate && oxcf->lag_in_frames) {
+    if (lrc->max_gf_interval > oxcf->lag_in_frames - 1)
+      lrc->max_gf_interval = oxcf->lag_in_frames - 1;
+
+    if (lrc->static_scene_max_gf_interval > oxcf->lag_in_frames - 1)
+      lrc->static_scene_max_gf_interval = oxcf->lag_in_frames - 1;
+  }
+
+  if (lrc->max_gf_interval > lrc->static_scene_max_gf_interval)
+    lrc->max_gf_interval = lrc->static_scene_max_gf_interval;
 }
 
 void vp9_restore_layer_context(VP9_COMP *const cpi) {

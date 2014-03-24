@@ -908,6 +908,14 @@ void vp9_set_svc(VP9_COMP *cpi, int use_svc);
 
 int vp9_get_quantizer(struct VP9_COMP *cpi);
 
+RATE_CONTROL *vp9_get_rc(VP9_COMP *cpi);
+
+const RATE_CONTROL *vp9_get_const_rc(const VP9_COMP *cpi);
+
+struct twopass_rc *vp9_get_twopass(VP9_COMP *cpi);
+
+const struct twopass_rc *vp9_get_const_twopass(const VP9_COMP *cpi);
+
 static int get_ref_frame_idx(const VP9_COMP *cpi,
                              MV_REFERENCE_FRAME ref_frame) {
   if (ref_frame == LAST_FRAME) {

@@ -29,6 +29,7 @@ typedef struct {
   int avg_frame_size;
   struct twopass_rc twopass;
   struct vpx_fixed_buf rc_twopass_stats_in;
+  unsigned int current_video_frame_in_layer;
 } LAYER_CONTEXT;
 
 typedef struct {
