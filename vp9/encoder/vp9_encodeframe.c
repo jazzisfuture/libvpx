@@ -850,8 +850,8 @@ static void select_in_frame_q_segment(VP9_COMP *cpi,
   } else {
     // Rate depends on fraction of a SB64 in frame (xmis * ymis / bw * bh).
     // It is converted to bits * 256 units
-    const int target_rate = (cpi->rc.sb64_target_rate * xmis * ymis * 256) /
-                            (bw * bh);
+    const int target_rate = (vp9_get_const_rc(cpi)->sb64_target_rate *
+                            xmis * ymis * 256) / (bw * bh);
 
     if (projected_rate < (target_rate / 4)) {
       segment = 1;
@@ -1079,7 +1079,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
-        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+        (cpi->refresh_golden_frame &&
+        vp9_get_const_rc(cpi)->is_src_frame_alt_ref)) {
       mbmi->segment_id = vp9_vaq_segment_id(energy);
     } else {
       const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
@@ -2434,7 +2435,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
             || cm->prev_mi == 0
             || cm->show_frame == 0
             || cm->frame_type == KEY_FRAME
-            || cpi->rc.is_src_frame_alt_ref
+            || vp9_get_const_rc(cpi)->is_src_frame_alt_ref
             || ((cpi->sf.use_lastframe_partitioning ==
                  LAST_FRAME_PARTITION_LOW_MOTION) &&
                  sb_has_motion(cm, prev_mi_8x8))) {
@@ -2639,7 +2640,7 @@ static void reset_skip_txfm_size(VP9_COMMON *cm, TX_SIZE txfm_max) {
 static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
   if (frame_is_intra_only(&cpi->common))
     return INTRA_FRAME;
-  else if (cpi->rc.is_src_frame_alt_ref && cpi->refresh_golden_frame)
+  else if (vp9_get_const_rc(cpi)->is_src_frame_alt_ref && cpi->refresh_golden_frame)
     return ALTREF_FRAME;
   else if (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)
     return LAST_FRAME;

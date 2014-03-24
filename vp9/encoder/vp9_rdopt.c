@@ -217,11 +217,13 @@ int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
   const int q = vp9_dc_quant(qindex, 0);
   // TODO(debargha): Adjust the function below
   int rdmult = 88 * q * q / 25;
+
   if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
-    if (cpi->twopass.next_iiratio > 31)
+    if (vp9_get_const_twopass(cpi)->next_iiratio > 31)
       rdmult += (rdmult * rd_iifactor[31]) >> 4;
     else
-      rdmult += (rdmult * rd_iifactor[cpi->twopass.next_iiratio]) >> 4;
+      rdmult +=
+          (rdmult * rd_iifactor[vp9_get_const_twopass(cpi)->next_iiratio]) >> 4;
   }
   return rdmult;
 }
@@ -3246,7 +3248,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // unless ARNR filtering is enabled in which case we want
     // an unfiltered alternative. We allow near/nearest as well
     // because they may result in zero-zero MVs but be cheaper.
-    if (cpi->rc.is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0)) {
+    if (vp9_get_const_rc(cpi)->is_src_frame_alt_ref &&
+        (cpi->oxcf.arnr_max_frames == 0)) {
       const int altref_zero_mask =
           ~((1 << THR_NEARESTA) | (1 << THR_NEARA) | (1 << THR_ZEROA));
       mode_skip_mask |= altref_zero_mask;
@@ -4015,7 +4018,8 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
       // unless ARNR filtering is enabled in which case we want
       // an unfiltered alternative. We allow near/nearest as well
       // because they may result in zero-zero MVs but be cheaper.
-      if (cpi->rc.is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0))
+      if (vp9_get_const_rc(cpi)->is_src_frame_alt_ref &&
+          (cpi->oxcf.arnr_max_frames == 0))
         continue;
     }
 
