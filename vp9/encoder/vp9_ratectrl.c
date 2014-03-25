@@ -18,6 +18,7 @@
 #include "vpx_mem/vpx_mem.h"
 
 #include "vp9/common/vp9_alloccommon.h"
+#include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_quant_common.h"
@@ -363,9 +364,18 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   // Work out how big we would have expected the frame to be at this Q given
   // the current correction factor.
   // Stay in double to avoid int overflow when values are large
-  projected_size_based_on_q = estimate_bits_at_q(cpi->common.frame_type, q,
-                                                 cpi->common.MBs,
-                                                 rate_correction_factor);
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    projected_size_based_on_q =
+        vp9_estimate_bits_at_q_cyclicrefresh(cpi,
+                                             cpi->common.frame_type,
+                                             q,
+                                             cpi->common.MBs,
+                                             rate_correction_factor);
+  } else {
+    projected_size_based_on_q = estimate_bits_at_q(cpi->common.frame_type, q,
+                                                   cpi->common.MBs,
+                                                   rate_correction_factor);
+  }
   // Work out a size correction factor.
   if (projected_size_based_on_q > 0)
     correction_factor = (100 * cpi->rc.projected_frame_size) /
@@ -428,24 +438,30 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
   else
     target_bits_per_mb = (target_bits_per_frame << BPER_MB_NORMBITS) / cm->MBs;
 
-  i = active_best_quality;
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    q = vp9_regulate_q_cyclic_refresh(cpi,
+                                      target_bits_per_mb,
+                                      active_best_quality,
+                                      active_worst_quality,
+                                      correction_factor);
+  } else {
+    i = active_best_quality;
+    do {
+      const int bits_per_mb_at_this_q = (int)vp9_rc_bits_per_mb(cm->frame_type, i,
+                                                               correction_factor);
 
-  do {
-    const int bits_per_mb_at_this_q = (int)vp9_rc_bits_per_mb(cm->frame_type, i,
-                                                             correction_factor);
+      if (bits_per_mb_at_this_q <= target_bits_per_mb) {
+        if ((target_bits_per_mb - bits_per_mb_at_this_q) <= last_error)
+          q = i;
+        else
+          q = i - 1;
 
-    if (bits_per_mb_at_this_q <= target_bits_per_mb) {
-      if ((target_bits_per_mb - bits_per_mb_at_this_q) <= last_error)
-        q = i;
-      else
-        q = i - 1;
-
-      break;
-    } else {
-      last_error = bits_per_mb_at_this_q - target_bits_per_mb;
-    }
-  } while (++i <= active_worst_quality);
-
+        break;
+      } else {
+        last_error = bits_per_mb_at_this_q - target_bits_per_mb;
+      }
+    } while (++i <= active_worst_quality);
+  }
   return q;
 }
 
