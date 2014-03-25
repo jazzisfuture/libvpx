@@ -248,7 +248,11 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
                     vp8_short_inv_walsh4x4(&b->dqcoeff[0],
                         xd->qcoeff);
-                    vpx_memset(b->qcoeff, 0, 16 * sizeof(b->qcoeff[0]));
+                    // TODO(johannkoenig): figure out why bzero below
+                    // works great on iOS Release but memset or
+                    // vpx_memset create terrible corruption on decode
+                    // (https://code.google.com/p/webm/issues/detail?id=603).
+                    bzero(b->qcoeff, 16 * sizeof(b->qcoeff[0]));
                 }
                 else
                 {
