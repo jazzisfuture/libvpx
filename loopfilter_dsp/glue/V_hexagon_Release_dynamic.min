@@ -1,0 +1,33 @@
+#  min file
+
+MAKE_D_4_LIBDIR = $(HEXAGON_SDK_ROOT)/test/common/test_util/hexagon_Release_dynamic/ship
+MAKE_D_DIR = $(HEXAGON_SDK_ROOT)/tools/make.d
+MAKE_D_3_LIBDIR = $(HEXAGON_SDK_ROOT)/lib/fastcv/dspCV/hexagon_Release_dynamic/ship
+MAKE_D_DSPCV_INCDIR = $(HEXAGON_SDK_ROOT)/lib/fastcv/dspCV/hexagon_Release_dynamic/ship
+MAKE_D_EXT_c_DIR = $(HEXAGON_SDK_ROOT)/tools/make.d.ext/c/hexagon_Release_dynamic
+MAKE_D_1_INCDIR = $(HEXAGON_SDK_ROOT)/inc
+MAKE_D_EXT_1_DIR = $(HEXAGON_SDK_ROOT)/tools/make.d.ext/hexagon
+MAKE_D_3_INCDIR = $(HEXAGON_SDK_ROOT)/inc/stddef
+MAKE_D_1_LIBDIR = $(HEXAGON_SDK_ROOT)/lib/common/remote/hexagon_Release_dynamic
+QURT_IMAGE_DIR = $(HEXAGON_SDK_ROOT)/lib/common/qurt
+MAKE_D_4_INCDIR = $(HEXAGON_SDK_ROOT)/lib/common/rpcmem/hexagon_Release_dynamic/ship
+MAKE_D_EXT_2_DIR = $(HEXAGON_SDK_ROOT)/tools/make.d.ext/android
+MAKE_D_5_INCDIR = $(HEXAGON_SDK_ROOT)/test/common/test_util/hexagon_Release_dynamic/ship
+MAKE_D_2_INCDIR = $(HEXAGON_SDK_ROOT)/lib/common/remote/hexagon_Release_dynamic
+MAKE_D_2_LIBDIR = $(HEXAGON_SDK_ROOT)/lib/common/rpcmem/hexagon_Release_dynamic/ship
+MAKE_D_EXT_3_DIR = $(HEXAGON_SDK_ROOT)/tools/make.d.ext/qaic
+
+# adjust paths to be relative to current working dir
+_pkg_deps = MAKE_D_4_LIBDIR MAKE_D_DIR MAKE_D_3_LIBDIR MAKE_D_DSPCV_INCDIR MAKE_D_EXT_c_DIR MAKE_D_1_INCDIR MAKE_D_EXT_1_DIR MAKE_D_3_INCDIR MAKE_D_1_LIBDIR QURT_IMAGE_DIR MAKE_D_4_INCDIR MAKE_D_EXT_2_DIR MAKE_D_5_INCDIR MAKE_D_2_INCDIR MAKE_D_2_LIBDIR MAKE_D_EXT_3_DIR
+__pkg_dir := $(filter-out ./,$(dir $(lastword $(MAKEFILE_LIST))))
+#$(foreach v,$(_pkg_deps),$(eval $v := $(__pkg_dir)$$($v)))
+
+# assign these variables only for the top-level makefile
+ifeq ($(origin __pkg_root),undefined)
+  __pkg_root    := $(__pkg_dir)..
+  __pkg_result  := $(__pkg_root)$(filter-out /.,/hexagon_Release_dynamic/ship)
+  __pkg_deps    := $(_pkg_deps)
+endif
+__pkg_version ?= 4358573
+
+SHIP_DIR := $(__pkg_dir)../hexagon_Release_dynamic/ship

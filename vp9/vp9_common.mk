@@ -17,7 +17,6 @@ VP9_COMMON_SRCS-yes += common/vp9_alloccommon.c
 VP9_COMMON_SRCS-yes += common/vp9_convolve.c
 VP9_COMMON_SRCS-yes += common/vp9_convolve.h
 VP9_COMMON_SRCS-yes += common/vp9_debugmodes.c
-VP9_COMMON_SRCS-yes += common/vp9_default_coef_probs.h
 VP9_COMMON_SRCS-yes += common/vp9_entropy.c
 VP9_COMMON_SRCS-yes += common/vp9_entropymode.c
 VP9_COMMON_SRCS-yes += common/vp9_entropymv.c
@@ -53,7 +52,6 @@ VP9_COMMON_SRCS-yes += common/vp9_systemdependent.h
 VP9_COMMON_SRCS-yes += common/vp9_textblit.h
 VP9_COMMON_SRCS-yes += common/vp9_tile_common.h
 VP9_COMMON_SRCS-yes += common/vp9_tile_common.c
-VP9_COMMON_SRCS-yes += common/vp9_treecoder.h
 VP9_COMMON_SRCS-yes += common/vp9_loopfilter.c
 VP9_COMMON_SRCS-yes += common/vp9_loopfilter_filters.c
 VP9_COMMON_SRCS-yes += common/vp9_mvref_common.c
@@ -62,7 +60,6 @@ VP9_COMMON_SRCS-yes += common/vp9_quant_common.c
 VP9_COMMON_SRCS-yes += common/vp9_reconinter.c
 VP9_COMMON_SRCS-yes += common/vp9_reconintra.c
 VP9_COMMON_SRCS-$(CONFIG_POSTPROC_VISUALIZER) += common/vp9_textblit.c
-VP9_COMMON_SRCS-yes += common/vp9_treecoder.c
 VP9_COMMON_SRCS-yes += common/vp9_common_data.c
 VP9_COMMON_SRCS-yes += common/vp9_common_data.h
 VP9_COMMON_SRCS-yes += common/vp9_scan.c
@@ -146,5 +143,8 @@ VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_copy_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_avg_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_save_reg_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_reconintra_neon$(ASM)
+
+VP9_COMMON_SRCS-yes += ppa.h
+VP9_COMMON_SRCS-yes += ppa.c
 
 $(eval $(call rtcd_h_template,vp9_rtcd,vp9/common/vp9_rtcd_defs.sh))

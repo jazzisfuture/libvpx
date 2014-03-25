@@ -3,10 +3,11 @@
 #pragma rs_fp_relaxed
 #include "inter_rs.rsh"
 
+uchar *pool_buf; // not used now
 uchar *pred_param;
 uchar *block_index;
-uchar *dst_buf;
 uchar *mid_buf;
+uchar *dst_buf;
 int buffer_size;
 int counts_8x8;
 
@@ -59,7 +60,6 @@ static void vert_rs(const uint8_t *src,
 }
 
 void root(uchar *count, uint32_t x) {
-
   if (x >= counts_8x8) return;
   uchar *base_param = &block_index[x * sizeof(INTER_PARAM_INDEX)];
   INTER_PARAM_INDEX *param = (INTER_PARAM_INDEX *)base_param;
@@ -68,11 +68,10 @@ void root(uchar *count, uint32_t x) {
   base_param = &pred_param[block_num * sizeof(INTER_PRED_PARAM)];
 
   const INTER_PRED_PARAM *block_param = (INTER_PRED_PARAM *)base_param;
-  uint8_t *buf = mid_buf + x * 120;
   uint8_t *dst = dst_buf + block_param->dst_mv;
+  uint8_t *buf = mid_buf + x * 120;
   const int16_t *filter_x = vp9_filters + block_param->filter_x_mv;
   const int16_t *filter_y = vp9_filters + block_param->filter_y_mv;
-
   vert_rs(
       buf, dst, block_param->dst_stride, filter_y,
       param->x_mv << 3,

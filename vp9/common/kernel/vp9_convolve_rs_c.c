@@ -68,14 +68,13 @@ void build_inter_pred_calcu_rs_c(
   uint8_t *dst;
   const int16_t *filter_x;
   const int16_t *filter_y;
-  const YV12_BUFFER_CONFIG *cfg_source;
 
   for (i = 0; i < fri_block_count; ++i) {
     mode_num = vp9_convolve_mode_rs_c[(pred_param_fri[i].x_step_q4 == 16)]
                                       [(pred_param_fri[i].y_step_q4 == 16)];
 
     src = pred_param_fri[i].psrc;
-    dst = new_buffer + pred_param_fri[i].dst_mv;
+    dst = pred_param_fri[i].pdst;
 
     filter_x = vp9_inter_pred_filters_8_rs_c + pred_param_fri[i].filter_x_mv;
     filter_y = vp9_inter_pred_filters_8_rs_c + pred_param_fri[i].filter_y_mv;
@@ -92,9 +91,8 @@ void build_inter_pred_calcu_rs_c(
     mode_num = vp9_convolve_mode_rs_c[(pred_param_sec[i].x_step_q4 == 16)]
                                       [(pred_param_sec[i].y_step_q4 == 16)];
 
-    cfg_source= &cm->yv12_fb[pred_param_sec[i].src_num];
-    src = cfg_source->buffer_alloc + pred_param_sec[i].src_mv;
-    dst = new_buffer + pred_param_sec[i].dst_mv;
+    src = pred_param_sec[i].psrc;
+    dst = pred_param_sec[i].pdst;
 
     filter_x = vp9_inter_pred_filters_8_rs_c + pred_param_sec[i].filter_x_mv;
     filter_y = vp9_inter_pred_filters_8_rs_c + pred_param_sec[i].filter_y_mv;

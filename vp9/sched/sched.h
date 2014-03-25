@@ -11,6 +11,10 @@
 #ifndef SCHED_SCHED_H_
 #define SCHED_SCHED_H_
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/task.h"
 #include "vp9/sched/device.h"
 #include "vp9/sched/atomic.h"
@@ -71,5 +75,7 @@ void scheduler_sched_task(struct scheduler *sched, struct task *tsk);
 void scheduler_finish_task(struct scheduler *sched, struct task *tsk);
 
 void scheduler_stop(struct scheduler *sched);
+
+#endif
 
 #endif  // SCHED_SCHED_H_

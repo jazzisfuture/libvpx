@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vp9/decoder/vp9_device.h"
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
 
+#include "vp9/decoder/vp9_device.h"
+extern int rs_init;
 static struct device devs[] = {
   {
     DEV_CPU,            // type
@@ -39,6 +42,9 @@ void vp9_register_devices(struct scheduler *sched) {
     scheduler_add_devices(sched, devs, 2);
   } else {
     printf("if want to enanble renderscript, please set RSENABLE as environment variable\n");
+    rs_init = 1;
     scheduler_add_devices(sched, devs, 1);
   }
 }
+
+#endif

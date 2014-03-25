@@ -25,11 +25,29 @@ static void hor_rs(const uint8_t *src, int src_stride,
 
   for (int y = 0; y < 15; y++) {
     float4 res;
+    uchar4 convert_value;
     float4 value_part1, value_part2, value_part3, value_part4;
-    value_part1 = convert_float4(*((uchar4 *)(src + 0)));
-    value_part2 = convert_float4(*((uchar4 *)(src + 4)));
-    value_part3 = convert_float4(*((uchar4 *)(src + 8)));
-    value_part4 = convert_float4(*((uchar4 *)(src + 12)));
+
+    convert_value.x = src[0];
+    convert_value.y = src[1];
+    convert_value.z = src[2];
+    convert_value.w = src[3];
+    value_part1 = convert_float4(convert_value);
+    convert_value.x = src[4];
+    convert_value.y = src[5];
+    convert_value.z = src[6];
+    convert_value.w = src[7];
+    value_part2 = convert_float4(convert_value);
+    convert_value.x = src[8];
+    convert_value.y = src[9];
+    convert_value.z = src[10];
+    convert_value.w = src[11];
+    value_part3 = convert_float4(convert_value);
+    convert_value.x = src[12];
+    convert_value.y = src[13];
+    convert_value.z = src[14];
+    convert_value.w = src[15];
+    value_part4 = convert_float4(convert_value);
 
     res.x = value_part1.x * filter_part1.x;
     res.x += value_part1.y * filter_part1.y;
@@ -211,9 +229,7 @@ void root(uchar *count, uint32_t x) {
   base_param = &pred_param[block_num * sizeof(INTER_PRED_PARAM)];
 
   const INTER_PRED_PARAM *block_param = (INTER_PRED_PARAM *)base_param;
-  const uint8_t *pre_src_buffer =
-      &pool_buf[block_param->src_num * buffer_size];
-  const uint8_t *src = &pre_src_buffer[block_param->src_mv];
+  const uint8_t *src = pool_buf + block_param->src_mv;
   uint8_t *dst = dst_buf + block_param->dst_mv;
   const int16_t *filter_x = vp9_filters + block_param->filter_x_mv;
   const int16_t *filter_y = vp9_filters + block_param->filter_y_mv;
@@ -228,4 +244,5 @@ void root(uchar *count, uint32_t x) {
       buf, dst, block_param->dst_stride, filter_y,
       param->x_mv << 3,
       param->y_mv << 3);
+
 }

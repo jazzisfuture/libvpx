@@ -69,6 +69,10 @@
 /vpx_version.h
 /vpxdec
 /vpxenc
+/*.webm
+/*.webm.md5
+/*.patch
+*.dox
 TAGS
 .cproject
 .project
