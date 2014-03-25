@@ -896,6 +896,8 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   assert(mi->mbmi.sb_type == bsize);
 
+  *mi_addr = *mi;
+
   // For in frame adaptive Q copy over the chosen segment id into the
   // mode innfo context for the chosen mode / partition.
   if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ ||
@@ -909,8 +911,6 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     }
     mi->mbmi.segment_id = xd->mi_8x8[0]->mbmi.segment_id;
   }
-
-  *mi_addr = *mi;
 
   max_plane = is_inter_block(mbmi) ? MAX_MB_PLANE : 1;
   for (i = 0; i < max_plane; ++i) {
