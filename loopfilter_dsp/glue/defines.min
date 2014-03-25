@@ -1,0 +1,10 @@
+GLUE_DIR:=$(dir $(lastword $(MAKEFILE_LIST)))
+include $(GLUE_DIR)/lastv.min
+include $(GLUE_DIR)/V_$V.min
+MDLIB_PKG_DEPS:=$(__pkg_deps)
+include $(MAKE_D_DIR)/defines.min
+$(foreach v,$(MDLIB_PKG_DEPS),$(eval $v := $$(call cleanPath,$$($v))))
+GLUE_DIR  := $(call cleanPath,$(GLUE_DIR))
+SHIP_DIR  := $(call cleanPath,$(SHIP_DIR))
+EVERY_V   := $(patsubst $(GLUE_DIR)/V_%.min,%,$(wildcard $(GLUE_DIR)/V_*.min))
+RULES_MIN := $(RULES_MIN) $(GLUE_DIR)/$V.mak

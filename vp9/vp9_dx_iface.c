@@ -130,7 +130,7 @@ static vpx_codec_err_t vp9_init(vpx_codec_ctx_t *ctx,
   }
   rs_init = vp9_init_rs();
   if (rs_init == -1) {
-    printf("we can't use rs, it will back to cpu \n");
+    printf("we can't use rs, it will fall back to run on cpu \n");
   }
   return res;
 }

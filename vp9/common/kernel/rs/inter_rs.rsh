@@ -14,7 +14,6 @@ typedef uchar uint8_t;
 typedef short int16_t;
 
 typedef struct inter_pred_param {
-  int src_num;
   int src_mv;
   int src_stride;
 

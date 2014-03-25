@@ -41,7 +41,7 @@ VP9_DX_SRCS-yes += decoder/vp9_intra_predict.h
 VP9_DX_SRCS-yes += decoder/vp9_detokenize_recon.c
 VP9_DX_SRCS-yes += decoder/vp9_detokenize_recon.h
 
-P9_DX_SRCS-yes += sched/list.h
+VP9_DX_SRCS-yes += sched/list.h
 VP9_DX_SRCS-yes += sched/thread.h
 VP9_DX_SRCS-yes += sched/queue.h
 VP9_DX_SRCS-yes += sched/queue.c
@@ -64,8 +64,5 @@ VP9_DX_SRCS-yes += decoder/vp9_loopfilter_recon.c
 VP9_DX_SRCS-yes += decoder/vp9_loopfilter_recon.h
 VP9_DX_SRCS-yes += decoder/vp9_loopfilter_step.c
 VP9_DX_SRCS-yes += decoder/vp9_loopfilter_step.h
-
-VP9_DX_SRCS-yes += ppa.h
-VP9_DX_SRCS-yes += ppa.c
 
 VP9_DX_SRCS-yes := $(filter-out $(VP9_DX_SRCS_REMOVE-yes),$(VP9_DX_SRCS-yes))

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -132,6 +133,7 @@ static void init_macroblockd(VP9D_COMP *const pbi) {
 #define MAX_TASKS 16
 
 static void vp9_sched_init(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   pbi->sched = scheduler_create();
   assert(pbi->sched);
 
@@ -147,14 +149,17 @@ static void vp9_sched_init(VP9D_COMP *const pbi) {
   assert(pbi->lf_tsk_cache);
 
   vp9_register_devices(pbi->sched);
+#endif
 }
 
 static void vp9_sched_fini(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   scheduler_delete(pbi->sched);
   task_cache_delete(pbi->tsk_cache);
   task_cache_delete(pbi->lf_tsk_cache);
   task_steps_pool_delete(pbi->steps_pool);
   task_steps_pool_delete(pbi->lf_steps_pool);
+#endif
 }
 
 
@@ -166,6 +171,7 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
     return NULL;
 
   vp9_zero(*pbi);
+  PPA_INIT();
 
   // Initialize the references to not point to any frame buffers.
   memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
@@ -211,6 +217,7 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
 
   if (!pbi)
     return;
+  PPA_END();
 
   vp9_sched_fini(pbi);
   vp9_remove_common(&pbi->common);
@@ -233,7 +240,7 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   vpx_free(pbi->above_context[0]);
   vpx_free(pbi->above_seg_context);
   vpx_free(pbi);
-  if (rs_init == 2) {
+  if (rs_init == 0 || rs_init == 1) {
     vp9_release_rs();
   }
 }
@@ -405,9 +412,8 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   cm->error.setjmp = 1;
 
 //mcw mt
-  //retcode = vp9_decode_frame(pbi, psource);
-  //retcode = vp9_decode_frame_recon(pbi, psource);
   retcode = vp9_decode_frame_mt(pbi, psource);
+  //retcode = vp9_decode_frame_recon(pbi, psource);
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;

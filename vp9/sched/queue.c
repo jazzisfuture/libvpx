@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include <assert.h>
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/sched/thread.h"
@@ -119,3 +123,5 @@ struct list_node *queue_try_pop(struct queue *q) {
 
   return n;
 }
+
+#endif

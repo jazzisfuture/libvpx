@@ -11,8 +11,8 @@
 #ifndef VP9_APPEND_H_
 #define VP9_APPEND_H_
 
-enum { MAX_64X64_ROWS = 30};
-enum { MAX_64X64_COLS = 17};
+enum { MAX_64X64_ROWS = 60};
+enum { MAX_64X64_COLS = 34};
 enum { DEV_THREE = 3};
 
 #include "vp9/common/vp9_enums.h"
