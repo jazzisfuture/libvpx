@@ -39,7 +39,6 @@ extern const MB_PREDICTION_MODE vp8_mode_order[MAX_MODES];
 
 extern int vp8_cost_mv_ref(MB_PREDICTION_MODE m, const int near_mv_ref_ct[4]);
 
-
 int vp8_skip_fractional_mv_step(MACROBLOCK *mb, BLOCK *b, BLOCKD *d,
                                 int_mv *bestmv, int_mv *ref_mv,
                                 int error_per_bit,
@@ -871,6 +870,11 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             int tmp_col_max = x->mv_col_max;
             int tmp_row_min = x->mv_row_min;
             int tmp_row_max = x->mv_row_max;
+            // TODO(johannkoenig): figure out why this is necessary to
+            // avoid a crash on iOS Release:
+            // https://code.google.com/p/webrtc/issues/detail?id=3038.
+            if ((intptr_t)&tmp_row_min == 0x42)
+              *(char*)0x1 = 1;
 
             int speed_adjust = (cpi->Speed > 5) ? ((cpi->Speed >= 8)? 3 : 2) : 1;
 
