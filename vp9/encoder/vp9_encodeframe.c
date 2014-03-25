@@ -2789,7 +2789,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
     sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
     subsize = get_subsize(bsize, PARTITION_SPLIT);
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < 4 && sum_rd < best_rd; ++i) {
       const int x_idx = (i & 1) * ms;
       const int y_idx = (i >> 1) * ms;
 
@@ -2800,7 +2800,8 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
       load_pred_mv(x, ctx);
 
       nonrd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
-                           subsize, &this_rate, &this_dist, 0, INT64_MAX);
+                           subsize, &this_rate, &this_dist, 0,
+                           best_rd - sum_rd);
 
       if (this_rate == INT_MAX) {
         sum_rd = INT64_MAX;
@@ -2906,9 +2907,11 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     }
   }
 
-  (void) best_rd;
   *rate = best_rate;
   *dist = best_dist;
+
+  if (best_rate == INT_MAX)
+    return;
 
   // update mode info array
   fill_mode_info_sb(cm, x, mi_row, mi_col, bsize,
