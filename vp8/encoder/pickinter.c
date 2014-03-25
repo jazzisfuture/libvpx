@@ -874,6 +874,12 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
             int speed_adjust = (cpi->Speed > 5) ? ((cpi->Speed >= 8)? 3 : 2) : 1;
 
+            // TODO(johannkoenig): figure out why this is necessary to
+            // avoid a crash on iOS Release:
+            // https://code.google.com/p/webrtc/issues/detail?id=3038.
+            if ((intptr_t)&tmp_row_min == 0x42)
+              *(char*)0x1 = 1;
+
             /* Further step/diamond searches as necessary */
             step_param = cpi->sf.first_step + speed_adjust;
 
