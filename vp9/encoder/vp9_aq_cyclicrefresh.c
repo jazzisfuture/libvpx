@@ -19,13 +19,15 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+// Bits Per MB at different Q (Multiplied by 512).
+#define BPER_MB_NORMBITS    9
 
 // Check if we should turn off cyclic refresh based on bitrate condition.
 static int apply_cyclic_refresh_bitrate(VP9_COMP *const cpi) {
   // Turn off cyclic refresh if bits available per frame is not sufficiently
   // larger than bit cost of segmentation. Segment map bit cost should scale
   // with number of seg blocks, so compare available bits to number of blocks.
-  // Average bits available per frame = av_per_frame_bandwidth
+  // Average bits available per frame = av_per_frame_bandwidth.
   // Number of (8x8) blocks in frame = mi_rows * mi_cols;
   float factor  = 0.5;
   int number_blocks = cpi->common.mi_rows  * cpi->common.mi_cols;
@@ -72,6 +74,68 @@ static int candidate_refresh_aq(VP9_COMP *const cpi,
     else
       return 1;
   }
+}
+
+// TODO(marpan): There is duplicate code here in the two functions below, from
+// ratectrl. Need to clean this up or put this somewhere else (in ratectrl).
+int vp9_estimate_bits_at_q_cyclicrefresh(const VP9_COMP *cpi,
+                                         int frame_kind,
+                                         int q,
+                                         int mbs,
+                                         double correction_factor) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const CYCLIC_REFRESH *const cr = &cpi->cyclic_refresh;
+  int bpm;
+  // Weight for segment 1 in previous encoded frame.
+  float weight_segment =
+      (float)cr->num_seg_blocks / (cm->mi_rows * cm->mi_cols);
+
+  // Compute delta-q that was used in previous encoded frame.
+  int deltaq = vp9_compute_qdelta_by_rate(cpi, q, cr->rate_ratio_qdelta);
+  if ((-deltaq) > cr->max_qdelta_perc * q / 100) {
+    deltaq = -cr->max_qdelta_perc * q / 100;
+  }
+
+  bpm =
+      (int)((1.0 - weight_segment) *
+          vp9_rc_bits_per_mb(frame_kind, q, correction_factor) +
+          weight_segment *
+          vp9_rc_bits_per_mb(frame_kind, q + deltaq, correction_factor));
+
+  // Attempt to retain reasonable accuracy without overflow. The cutoff is
+  // chosen such that the maximum product of Bpm and MBs fits 31 bits. The
+  // largest Bpm takes 20 bits.
+  return (mbs > (1 << 11)) ? (bpm >> BPER_MB_NORMBITS) * mbs
+                             : (bpm * mbs) >> BPER_MB_NORMBITS;
+}
+
+int vp9_rc_bits_per_mb_cyclicrefresh(const VP9_COMP *cpi, int i,
+                                     double correction_factor) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const CYCLIC_REFRESH *const cr = &cpi->cyclic_refresh;
+  int bits_per_mb_seg0, bits_per_mb_seg1, deltaq, bits_per_mb_at_this_q;
+
+  // Estimate weight for segment 1 in next frame: take average of actual number
+  // in previous frame and target for next frame.
+  float weight_segment =
+      0.5 * ((float)cr->num_seg_blocks / (cm->mi_rows * cm->mi_cols)) +
+      0.5 * ((float)cr->max_mbs_perframe / 100.0);
+
+  bits_per_mb_seg0 =
+      vp9_rc_bits_per_mb(cm->frame_type, i, correction_factor);
+
+  deltaq = vp9_compute_qdelta_by_rate(cpi, i, cr->rate_ratio_qdelta);
+  if ((-deltaq) > cr->max_qdelta_perc * i / 100) {
+    deltaq = -cr->max_qdelta_perc * i / 100;
+  }
+
+  bits_per_mb_seg1 =
+      vp9_rc_bits_per_mb(cm->frame_type, i + deltaq, correction_factor);
+
+  bits_per_mb_at_this_q = (int)((1.0 - weight_segment) * bits_per_mb_seg0 +
+      weight_segment * bits_per_mb_seg1);
+
+  return bits_per_mb_at_this_q;
 }
 
 // Prior to coding a given prediction block, of size bsize at (mi_row, mi_col),
@@ -152,11 +216,10 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     int i, x, y, block_count, bl_index, bl_index2;
     int sum_map, mi_row, mi_col, xmis, ymis, qindex2;
 
-    // Rate target ratio to set q delta.
-    float rate_ratio_qdelta = 2.0;
     vp9_clear_system_state();
     // Some of these parameters may be set via codec-control function later.
     cr->max_mbs_perframe = 10;
+    cr->rate_ratio_qdelta = 2.0;
     cr->max_qdelta_perc = 50;
     cr->min_block_size = BLOCK_16X16;
     cr->time_for_refresh = 1;
@@ -197,9 +260,7 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     // Set the q delta for segment 1.
     qindex_delta = vp9_compute_qdelta_by_rate(cpi,
                                               cm->base_qindex,
-                                              rate_ratio_qdelta);
-    // TODO(marpan): Incorporate the actual-vs-target rate over/undershoot from
-    // previous encoded frame.
+                                              cr->rate_ratio_qdelta);
     if ((-qindex_delta) > cr->max_qdelta_perc * cm->base_qindex / 100) {
       qindex_delta = -cr->max_qdelta_perc * cm->base_qindex / 100;
     }
