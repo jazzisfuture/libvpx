@@ -19,7 +19,6 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
-
 // Check if we should turn off cyclic refresh based on bitrate condition.
 static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
                                         const RATE_CONTROL *rc) {
@@ -68,6 +67,55 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
     else
       return 1;
   }
+}
+
+static int compute_deltaq(const VP9_COMP *cpi, int q) {
+  const CYCLIC_REFRESH *const cr = &cpi->cyclic_refresh;
+  int deltaq = vp9_compute_qdelta_by_rate(cpi, q, cr->rate_ratio_qdelta);
+  if ((-deltaq) > cr->max_qdelta_perc * q / 100) {
+    deltaq = -cr->max_qdelta_perc * q / 100;
+  }
+  return deltaq;
+}
+
+int vp9_cyclic_refresh_estimate_bits_at_q(const VP9_COMP *cpi, int q,
+                                          double correction_factor) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const CYCLIC_REFRESH *const cr = &cpi->cyclic_refresh;
+  int mbs = cm->MBs;
+  int estimated_bits;
+  // Weight for segment 1: use actual number of blocks refreshed in
+  // previous/just encoded frame.
+  float weight_segment =
+      (float)cr->num_seg_blocks / mbs;
+  // Compute delta-q that was used in previous encoded frame.
+  int deltaq = compute_deltaq(cpi, q);
+  // Take segment weighted average for estimated bits.
+  estimated_bits = (int)((1.0 - weight_segment) *
+      vp9_estimate_bits_at_q(cm->frame_type, q, mbs, correction_factor) +
+      weight_segment *
+      vp9_estimate_bits_at_q(cm->frame_type, q + deltaq, mbs,
+                             correction_factor));
+  return estimated_bits;
+}
+
+int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
+                                      double correction_factor) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const CYCLIC_REFRESH *const cr = &cpi->cyclic_refresh;
+  // Weight for segment 1 prior to encoding: take the average of the actual
+  // number/percent in previous frame and target for next frame.
+  float weight_segment =
+      0.5 * ((float)cr->num_seg_blocks / (cm->mi_rows * cm->mi_cols)) +
+      0.5 * ((float)cr->max_mbs_perframe / 100.0);
+  // Compute delta-q corresponding to qindex i.
+  int deltaq = compute_deltaq(cpi, i);
+  // Take segment weighted average for bits per mb.
+  int bits_per_mb = (int)((1.0 - weight_segment) *
+      vp9_rc_bits_per_mb(cm->frame_type, i, correction_factor) +
+      weight_segment *
+      vp9_rc_bits_per_mb(cm->frame_type, i + deltaq, correction_factor));
+  return bits_per_mb;
 }
 
 // Prior to coding a given prediction block, of size bsize at (mi_row, mi_col),
@@ -149,11 +197,10 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     int i, x, y, block_count;
     int mi_row, mi_col, qindex2;
 
-    // Rate target ratio to set q delta.
-    const float rate_ratio_qdelta = 2.0;
     vp9_clear_system_state();
     // Some of these parameters may be set via codec-control function later.
-    cr->max_mbs_perframe = 10;
+    cr->max_mbs_perframe = 20;
+    cr->rate_ratio_qdelta = 2.0;
     cr->max_qdelta_perc = 50;
     cr->min_block_size = BLOCK_16X16;
     cr->time_for_refresh = 1;
@@ -192,13 +239,7 @@ void vp9_setup_cyclic_refresh_aq(VP9_COMP *const cpi) {
     vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
 
     // Set the q delta for segment 1.
-    qindex_delta = vp9_compute_qdelta_by_rate(cpi,
-                                              cm->base_qindex,
-                                              rate_ratio_qdelta);
-    // TODO(marpan): Incorporate the actual-vs-target rate over/undershoot from
-    // previous encoded frame.
-    if (-qindex_delta > cr->max_qdelta_perc * cm->base_qindex / 100)
-      qindex_delta = -cr->max_qdelta_perc * cm->base_qindex / 100;
+    qindex_delta = compute_deltaq(cpi, cm->base_qindex);
 
     // Compute rd-mult for segment 1.
     qindex2 = clamp(cm->base_qindex + cm->y_dc_delta_q + qindex_delta, 0, MAXQ);

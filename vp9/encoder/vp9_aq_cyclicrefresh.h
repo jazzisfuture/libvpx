@@ -43,9 +43,21 @@ typedef struct {
   // Thresholds applied to projected rate/distortion of the superblock.
   int64_t thresh_rate_sb;
   int64_t thresh_dist_sb;
+  // Rate target ratio to set q delta.
+  float rate_ratio_qdelta;
 } CYCLIC_REFRESH;
 
 struct VP9_COMP;
+
+// Estimate the bits for a given q and a corresponding delta-q (for segment 1),
+// after encoding the frame.
+int vp9_cyclic_refresh_estimate_bits_at_q(const struct VP9_COMP *cpi,
+                                          int q, double correction_factor);
+
+// Estimate the bits per mb, for a given q = i and a corresponding delta-q
+// (for segment 1), prior to encoding the frame.
+int vp9_cyclic_refresh_rc_bits_per_mb(const struct VP9_COMP *cpi, int i,
+                                      double correction_factor);
 
 // Prior to coding a given prediction block, of size bsize at (mi_row, mi_col),
 // check if we should reset the segment_id, and update the cyclic_refresh map
