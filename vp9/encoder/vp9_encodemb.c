@@ -309,7 +309,7 @@ static void optimize_b(int plane, int block, BLOCK_SIZE plane_bsize,
 static INLINE void fdct32x32(int rd_transform,
                              const int16_t *src, int16_t *dst, int src_stride) {
   if (rd_transform)
-    vp9_fdct32x32_rd(src, dst, src_stride);
+    vp9_fdct32x32_rd_c(src, dst, src_stride);
   else
     vp9_fdct32x32(src, dst, src_stride);
 }
