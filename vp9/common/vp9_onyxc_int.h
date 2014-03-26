@@ -126,7 +126,7 @@ typedef struct VP9Common {
   int MBs;
   int mb_rows, mi_rows;
   int mb_cols, mi_cols;
-  int mode_info_stride;
+  int mi_stride;
 
   /* profile settings */
   TX_MODE tx_mode;
@@ -280,7 +280,7 @@ static INLINE void set_prev_mi(VP9_COMMON *cm) {
   // Special case: set prev_mi to NULL when the previous mode info
   // context cannot be used.
   cm->prev_mi = use_prev_in_find_mv_refs ?
-                  cm->prev_mip + cm->mode_info_stride + 1 : NULL;
+                  cm->prev_mip + cm->mi_stride + 1 : NULL;
 }
 
 static INLINE int frame_is_intra_only(const VP9_COMMON *const cm) {
