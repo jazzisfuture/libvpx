@@ -241,7 +241,7 @@ int vp9_compute_qdelta(const VP9_COMP *cpi, double qstart, double qtarget) {
 
 // Computes a q delta (in "q index" terms) to get from a starting q value
 // to a value that should equate to the given rate ratio.
-int vp9_compute_qdelta_by_rate(VP9_COMP *cpi, int base_q_index,
+int vp9_compute_qdelta_by_rate(const VP9_COMP *cpi, int base_q_index,
                                double rate_target_ratio) {
   int i;
   int target_index = cpi->rc.worst_quality;
