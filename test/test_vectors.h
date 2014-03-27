@@ -21,7 +21,7 @@ extern const char *kVP8TestVectors[kNumVP8TestVectors];
 #endif
 
 #if CONFIG_VP9_DECODER
-const int kNumVP9TestVectors = 223;
+const int kNumVP9TestVectors = 224;
 
 extern const char *kVP9TestVectors[kNumVP9TestVectors];
 #endif  // CONFIG_VP9_DECODER
