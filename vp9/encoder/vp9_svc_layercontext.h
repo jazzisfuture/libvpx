@@ -29,6 +29,7 @@ typedef struct {
   int avg_frame_size;
   struct twopass_rc twopass;
   struct vpx_fixed_buf rc_twopass_stats_in;
+  unsigned int current_video_frame_in_layer;
 } LAYER_CONTEXT;
 
 typedef struct {
@@ -65,6 +66,9 @@ void vp9_restore_layer_context(struct VP9_COMP *const cpi);
 
 // Save the layer context after encoding the frame.
 void vp9_save_layer_context(struct VP9_COMP *const cpi);
+
+// Initialize send pass rc for spatial svc.
+void vp9_init_second_pass_spatial_svc(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
