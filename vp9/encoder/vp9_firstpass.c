@@ -910,21 +910,23 @@ static double calc_correction_factor(double err_per_mb,
   return fclamp(pow(error_term, power_term), 0.05, 5.0);
 }
 
-static int get_twopass_worst_quality(const VP9_COMP *cpi,
-                                     const FIRSTPASS_STATS *stats,
-                                     int section_target_bandwidth) {
+int get_twopass_worst_quality(const VP9_COMP *cpi,
+                              const FIRSTPASS_STATS *stats,
+                              int section_target_bandwidth,
+                              int num_mbs) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
 
   if (section_target_bandwidth <= 0) {
     return rc->worst_quality;  // Highest value allowed
   } else {
-    const int num_mbs = cpi->common.MBs;
+    const int full_size_num_mbs = cpi->common.MBs;
     const double section_err = stats->coded_error / stats->count;
-    const double err_per_mb = section_err / num_mbs;
+    const double err_per_mb = section_err / cpi->common.full_size_MBs *
+        cpi->error_scale_factor;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
     const int target_norm_bits_per_mb = ((uint64_t)section_target_bandwidth <<
-                                            BPER_MB_NORMBITS) / num_mbs;
+                                        BPER_MB_NORMBITS) / full_size_num_mbs;
     int q;
     int is_svc_upper_layer = 0;
     if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
@@ -2283,8 +2285,10 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     // Special case code for first frame.
     const int section_target_bandwidth = (int)(twopass->bits_left /
                                                frames_left);
+
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
-                                                section_target_bandwidth);
+                                                section_target_bandwidth,
+                                                cm->MBs);
     twopass->active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q);

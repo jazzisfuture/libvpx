@@ -91,6 +91,9 @@ void vp9_end_first_pass(struct VP9_COMP *cpi);
 
 void vp9_init_second_pass(struct VP9_COMP *cpi);
 void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);
+int get_twopass_worst_quality(const struct VP9_COMP *cpi,
+                              const FIRSTPASS_STATS *fpstats,
+                              int section_target_bandwitdh, int num_mbs);
 
 // Post encode update of the rate control parameters for 2-pass
 void vp9_twopass_postencode_update(struct VP9_COMP *cpi);

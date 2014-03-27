@@ -2477,6 +2477,35 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
+static const double scale_factor[4] = {1.00, 0.80,  0.60, 0.50};
+static const double err_scale_factor[4] = {1.00, 0.80, 0.60, 0.50};
+
+VPX_SCALING calculate_coded_size(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  VPX_SCALING scale_ratio = NORMAL;
+
+  // Check for a high projected Q.
+  struct twopass_rc *const twopass = &cpi->twopass;
+  const int frames_left = (int)(twopass->total_stats.count -
+                            cm->current_video_frame);
+  const int per_frame_bandwidth = (int)(twopass->bits_left / frames_left);
+
+  cm->full_size_MBs = cm->MBs;
+  for (scale_ratio = NORMAL; scale_ratio < ONETWO; ++scale_ratio) {
+    int tmp_q;
+    const int number_of_mbs = cpi->common.MBs *
+        scale_factor[scale_ratio] * scale_factor[scale_ratio];
+
+    cpi->error_scale_factor = err_scale_factor[scale_ratio];
+
+    tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
+                                      per_frame_bandwidth, number_of_mbs);
+    if (tmp_q <= 200) break;
+  }
+  cpi->error_scale_factor = err_scale_factor[scale_ratio];
+  return scale_ratio;
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -2677,6 +2706,17 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, cpi->oxcf.scaled_frame_width,
                          cpi->oxcf.scaled_frame_height);
+  }
+
+  if (cpi->pass == 2 &&
+      cm->current_video_frame == 0 &&
+      cpi->oxcf.allow_spatial_resampling &&
+      cpi->oxcf.rc_mode == RC_MODE_VBR) {
+    VPX_SCALING scale_ratio = calculate_coded_size(cpi);
+    vp9_set_internal_size(cpi, scale_ratio, scale_ratio);
+  } else {
+    cpi->error_scale_factor = 1.0;
+    cm->full_size_MBs = cm->MBs;
   }
 
   // Reset the frame pointers to the current frame size
