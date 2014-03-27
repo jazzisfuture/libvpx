@@ -40,6 +40,9 @@
 extern "C" {
 #endif
 
+// Enable(0) or disable(0) the internal scaling decision.
+#define INTERNAL_SCALING_DECISION 1
+
 #define DEFAULT_GF_INTERVAL         10
 
 #define MAX_MODES 30
@@ -477,6 +480,9 @@ typedef struct VP9_COMP {
   int b_calculate_ssimg;
 #endif
   int b_calculate_psnr;
+
+  // Factor determining how per block error values change with scaling.
+  double error_scale_factor;
 
   int droppable;
 

@@ -1677,7 +1677,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2236,9 +2236,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
   }
 
-#if 0
-  output_frame_level_debug_stats(cpi);
-#endif
   if (cpi->refresh_golden_frame == 1)
     cpi->frame_flags |= FRAMEFLAGS_GOLDEN;
   else
@@ -2253,6 +2250,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   cm->last_frame_type = cm->frame_type;
   vp9_rc_postencode_update(cpi, *size);
+
+#if 1
+  output_frame_level_debug_stats(cpi);
+#endif
 
   if (cm->frame_type == KEY_FRAME) {
     // Tell the caller that the frame was coded as a key frame
@@ -2445,6 +2446,62 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
+#if INTERNAL_SCALING_DECISION
+#if 0
+static int step_down(int scale_factor, const int full_width,
+                     const int full_height, int *width, int *height) {
+  // Scale factors should be multiples of 1/16th to match scaling filters.
+  assert(scale_factor >= 1 && scale_factor <= 16);
+  if (--scale_factor < 9) return 0;
+  *width = (full_width * scale_factor + 8) >> 4;
+  *height = (full_height * scale_factor + 8) >> 4;
+  return scale_factor;
+}
+
+void calculate_coded_size(const VP9_COMP *const cpi, int *const scaled_width,
+                          int *const scaled_height) {
+  int q;
+  const int full_width = cpi->common.width;
+  const int full_height = cpi->common.height;
+  const struct twopass_rc *const twopass = &cpi->twopass;
+  const int frames_left = (int)(twopass->total_stats.count -
+                                cpi->common.current_video_frame);
+  const int per_frame_bandwidth = (int)(twopass->bits_left / frames_left);
+  int width = full_width;
+  int height = full_height;
+  int scale_factor = 16;  // Scaling factor in 1/16th units.
+
+  do {
+    int number_of_mbs =
+        (ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2) >> MI_SIZE_LOG2 + 1) >> 1;
+    number_of_mbs *=
+        (ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2) >> MI_SIZE_LOG2 + 1) >> 1;
+
+    q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
+                                  per_frame_bandwidth, number_of_mbs);
+
+    if (q <= 200) break;
+
+    scale_factor = step_down(scale_factor, full_width, full_height,
+                             &width, &height);
+  } while ((q > 200) && (scale_factor != 0));
+
+  *scaled_width = width;
+  *scaled_height = height;
+}
+#endif
+static const int scale_factor = 12;  // 12/16 = 75%
+
+void calculate_coded_size(const VP9_COMP *const cpi, int *const scaled_width,
+                          int *const scaled_height) {
+  const int full_width = cpi->common.width;
+  const int full_height = cpi->common.height;
+  // Scale factors should be multiples of 1/16th to match scaling filters.
+  *scaled_width = (full_width * scale_factor + 8) >> 4;
+  *scaled_height = (full_height * scale_factor + 8) >> 4;
+}
+#endif
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -2574,11 +2631,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
 
-  if (cpi->last_source != NULL) {
-    cpi->unscaled_last_source = &cpi->last_source->img;
-  } else {
-    cpi->unscaled_last_source = NULL;
-  }
+    if (cpi->last_source != NULL) {
+      cpi->unscaled_last_source = &cpi->last_source->img;
+    } else {
+      cpi->unscaled_last_source = NULL;
+    }
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
@@ -2642,6 +2699,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cm->current_video_frame == 0 &&
       cpi->oxcf.allow_spatial_resampling &&
       cpi->oxcf.rc_mode == RC_MODE_VBR) {
+#if INTERNAL_SCALING_DECISION
+    // Internal scaling is triggered on the first frame.
+    calculate_coded_size(cpi, &cpi->oxcf.scaled_frame_width,
+                         &cpi->oxcf.scaled_frame_height);
+#endif
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, cpi->oxcf.scaled_frame_width,
                          cpi->oxcf.scaled_frame_height);
