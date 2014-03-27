@@ -365,7 +365,12 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->two_pass_stats_in      =  cfg->rc_twopass_stats_in;
   oxcf->output_pkt_list        =  extra_cfg->pkt_list;
 
+#if INTERNAL_SCALING_DECISION
+  // Force ARNR off to test internal scaling.
+  oxcf->arnr_max_frames = 0;
+#else
   oxcf->arnr_max_frames = extra_cfg->arnr_max_frames;
+#endif
   oxcf->arnr_strength   = extra_cfg->arnr_strength;
   oxcf->arnr_type       = extra_cfg->arnr_type;
 
