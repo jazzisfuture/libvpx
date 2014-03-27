@@ -886,7 +886,8 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
     } else if (arg_match(&arg, &dropframe_thresh, argi)) {
       config->cfg.rc_dropframe_thresh = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &resize_allowed, argi)) {
-      config->cfg.rc_resize_allowed = arg_parse_uint(&arg);
+      // AWG Leave at forced initial value.
+//      config->cfg.rc_resize_allowed = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &resize_width, argi)) {
       config->cfg.rc_scaled_width = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &resize_height, argi)) {
@@ -900,9 +901,11 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
     } else if (arg_match(&arg, &target_bitrate, argi)) {
       config->cfg.rc_target_bitrate = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &min_quantizer, argi)) {
-      config->cfg.rc_min_quantizer = arg_parse_uint(&arg);
+      // AWG Leave at forced initial value.
+//      config->cfg.rc_min_quantizer = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &max_quantizer, argi)) {
-      config->cfg.rc_max_quantizer = arg_parse_uint(&arg);
+      // AWG Leave at forced initial value.
+//      config->cfg.rc_max_quantizer = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &undershoot_pct, argi)) {
       config->cfg.rc_undershoot_pct = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &overshoot_pct, argi)) {
@@ -1483,7 +1486,7 @@ int main(int argc, const char **argv_) {
   if (argc < 3)
     usage_exit();
 
-  /* Setup default input stream settings */
+  /* Setup default input stream settings */  // TODO(agrange) Move down.
   input.framerate.numerator = 30;
   input.framerate.denominator = 1;
   input.use_i420 = 1;
