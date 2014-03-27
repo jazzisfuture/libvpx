@@ -103,6 +103,89 @@ static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   }
 }
 
+static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                                YV12_BUFFER_CONFIG *dst) {
+  // TODO(dkovalev): replace YV12_BUFFER_CONFIG with vpx_image_t
+  int i;
+  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                                  src->alpha_buffer};
+  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
+                              src->alpha_stride};
+  const int src_widths[4] = {src->y_crop_width, src->uv_crop_width,
+                             src->uv_crop_width, src->y_crop_width};
+  const int src_heights[4] = {src->y_crop_height, src->uv_crop_height,
+                              src->uv_crop_height, src->y_crop_height};
+  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+                            dst->alpha_buffer};
+  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
+                              dst->alpha_stride};
+  const int dst_widths[4] = {dst->y_crop_width, dst->uv_crop_width,
+                             dst->uv_crop_width, dst->y_crop_width};
+  const int dst_heights[4] = {dst->y_crop_height, dst->uv_crop_height,
+                              dst->uv_crop_height, dst->y_crop_height};
+
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    vp9_resize_plane(srcs[i], src_heights[i], src_widths[i], src_strides[i],
+                     dsts[i], dst_heights[i], dst_widths[i], dst_strides[i]);
+
+  // TODO(hkuang): Call C version explicitly
+  // as neon version only expand border size 32.
+  vp8_yv12_extend_frame_borders_c(dst);
+}
+
+static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
+                                   YV12_BUFFER_CONFIG *dst) {
+  const int src_w = src->y_crop_width;
+  const int src_h = src->y_crop_height;
+  const int dst_w = dst->y_crop_width;
+  const int dst_h = dst->y_crop_height;
+  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                                  src->alpha_buffer};
+  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
+                              src->alpha_stride};
+  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+                            dst->alpha_buffer};
+  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
+                              dst->alpha_stride};
+  int x, y, i;
+
+  for (y = 0; y < dst_h; y += 16) {
+    for (x = 0; x < dst_w; x += 16) {
+      for (i = 0; i < MAX_MB_PLANE; ++i) {
+        const int factor = (i == 0 || i == 3 ? 1 : 2);
+        const int x_q4 = x * (16 / factor) * src_w / dst_w;
+        const int y_q4 = y * (16 / factor) * src_h / dst_h;
+        const int src_stride = src_strides[i];
+        const int dst_stride = dst_strides[i];
+        const uint8_t *src_ptr = srcs[i] + (y / factor) * src_h / dst_h *
+                                     src_stride + (x / factor) * src_w / dst_w;
+        uint8_t *dst_ptr = dsts[i] + (y / factor) * dst_stride + (x / factor);
+
+        vp9_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
+                      vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * src_w / dst_w,
+                      vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * src_h / dst_h,
+                      16 / factor, 16 / factor);
+      }
+    }
+  }
+
+  // TODO(hkuang): Call C version explicitly
+  // as neon version only expand border size 32.
+  vp8_yv12_extend_frame_borders_c(dst);
+}
+
+YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
+                                          YV12_BUFFER_CONFIG *unscaled,
+                                          YV12_BUFFER_CONFIG *scaled) {
+  if (cm->mi_cols * MI_SIZE != unscaled->y_width ||
+      cm->mi_rows * MI_SIZE != unscaled->y_height) {
+    scale_and_extend_frame_nonnormative(unscaled, scaled);
+    return scaled;
+  } else {
+    return unscaled;
+  }
+}
+
 static void set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv) {
   MACROBLOCK *const mb = &cpi->mb;
   cpi->common.allow_high_precision_mv = allow_high_precision_mv;
@@ -547,7 +630,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cm->height = oxcf->height;
   cm->subsampling_x = 0;
   cm->subsampling_y = 0;
-  vp9_alloc_compressor_data(cpi);
+  vp9_alloc_compressor_data(cpi);  // TODO(agrange) Move after chroma sampling known.
 
   // Spatial scalability.
   cpi->svc.number_spatial_layers = oxcf->ss_number_layers;
@@ -1231,11 +1314,55 @@ static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
                                   (double)total_sse);
 }
 
+void write_yuv_frame(YV12_BUFFER_CONFIG *frame, const char *const fname) {
+  int i, j;
+  FILE *fp = fopen(fname, "a");
+  int width = frame->y_crop_width;
+  int height = frame->y_crop_height;
+  int stride = frame->y_stride;
+  uint8_t *ptr = frame->y_buffer;
+
+  for (i = 0; i < height; ++i) {
+    fwrite(ptr + i * stride, 1, width, fp);
+  }
+
+  width = frame->uv_crop_width;
+  height = frame->uv_crop_height;
+  stride = frame->uv_stride;
+  ptr = frame->u_buffer;
+
+  for (i = 0; i < 2; ++i ) {
+    for (j = 0; j < height; ++j) {
+      fwrite(ptr + j * stride, 1, width, fp);
+    }
+    ptr = frame->v_buffer;
+  }
+  fclose(fp);
+}
+
+
 static void generate_psnr_packet(VP9_COMP *cpi) {
   struct vpx_codec_cx_pkt pkt;
   int i;
   PSNR_STATS psnr;
-  calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
+  VP9_COMMON *cm = &cpi->common;
+  YV12_BUFFER_CONFIG *unscaled = cpi->un_scaled_source;
+
+  if (cpi->b_calculate_psnr &&
+      ((cm->mi_cols * MI_SIZE != unscaled->y_width) ||
+      (cm->mi_rows * MI_SIZE != unscaled->y_height))) {
+    // Scale the decoded frame to the same size as the original input frame so
+    // we can compute the psnr correctly.
+    //vp9_scale_if_required(cm, cm->frame_to_show, &scaled_frame);
+    scale_and_extend_frame_nonnormative(cm->frame_to_show,
+                                        &cm->scaled_output_buffer);
+    calc_psnr(unscaled, &cm->scaled_output_buffer, &psnr);
+
+    write_yuv_frame(&cm->scaled_output_buffer, "scaled_output.yuv");
+  } else {
+    calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
+    write_yuv_frame(cpi->common.frame_to_show, "fullsize_output.yuv");
+  }
   for (i = 0; i < 4; ++i) {
     pkt.data.psnr.samples[i] = psnr.samples[i];
     pkt.data.psnr.sse[i] = psnr.sse[i];
@@ -1381,77 +1508,6 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
   fflush(yuv_rec_file);
 }
 #endif
-
-static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
-                                                YV12_BUFFER_CONFIG *dst) {
-  // TODO(dkovalev): replace YV12_BUFFER_CONFIG with vpx_image_t
-  int i;
-  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
-                                  src->alpha_buffer};
-  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
-                              src->alpha_stride};
-  const int src_widths[4] = {src->y_crop_width, src->uv_crop_width,
-                             src->uv_crop_width, src->y_crop_width};
-  const int src_heights[4] = {src->y_crop_height, src->uv_crop_height,
-                              src->uv_crop_height, src->y_crop_height};
-  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
-                            dst->alpha_buffer};
-  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
-                              dst->alpha_stride};
-  const int dst_widths[4] = {dst->y_crop_width, dst->uv_crop_width,
-                             dst->uv_crop_width, dst->y_crop_width};
-  const int dst_heights[4] = {dst->y_crop_height, dst->uv_crop_height,
-                              dst->uv_crop_height, dst->y_crop_height};
-
-  for (i = 0; i < MAX_MB_PLANE; ++i)
-    vp9_resize_plane(srcs[i], src_heights[i], src_widths[i], src_strides[i],
-                     dsts[i], dst_heights[i], dst_widths[i], dst_strides[i]);
-
-  // TODO(hkuang): Call C version explicitly
-  // as neon version only expand border size 32.
-  vp8_yv12_extend_frame_borders_c(dst);
-}
-
-static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
-                                   YV12_BUFFER_CONFIG *dst) {
-  const int src_w = src->y_crop_width;
-  const int src_h = src->y_crop_height;
-  const int dst_w = dst->y_crop_width;
-  const int dst_h = dst->y_crop_height;
-  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
-                                  src->alpha_buffer};
-  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
-                              src->alpha_stride};
-  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
-                            dst->alpha_buffer};
-  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
-                              dst->alpha_stride};
-  int x, y, i;
-
-  for (y = 0; y < dst_h; y += 16) {
-    for (x = 0; x < dst_w; x += 16) {
-      for (i = 0; i < MAX_MB_PLANE; ++i) {
-        const int factor = (i == 0 || i == 3 ? 1 : 2);
-        const int x_q4 = x * (16 / factor) * src_w / dst_w;
-        const int y_q4 = y * (16 / factor) * src_h / dst_h;
-        const int src_stride = src_strides[i];
-        const int dst_stride = dst_strides[i];
-        const uint8_t *src_ptr = srcs[i] + (y / factor) * src_h / dst_h *
-                                     src_stride + (x / factor) * src_w / dst_w;
-        uint8_t *dst_ptr = dsts[i] + (y / factor) * dst_stride + (x / factor);
-
-        vp9_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
-                      vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * src_w / dst_w,
-                      vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * src_h / dst_h,
-                      16 / factor, 16 / factor);
-      }
-    }
-  }
-
-  // TODO(hkuang): Call C version explicitly
-  // as neon version only expand border size 32.
-  vp8_yv12_extend_frame_borders_c(dst);
-}
 
 static int find_fp_qindex() {
   int i;
@@ -1677,7 +1733,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2010,18 +2066,6 @@ static void set_ext_overrides(VP9_COMP *cpi) {
   }
 }
 
-YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
-                                          YV12_BUFFER_CONFIG *unscaled,
-                                          YV12_BUFFER_CONFIG *scaled) {
-  if (cm->mi_cols * MI_SIZE != unscaled->y_width ||
-      cm->mi_rows * MI_SIZE != unscaled->y_height) {
-    scale_and_extend_frame_nonnormative(unscaled, scaled);
-    return scaled;
-  } else {
-    return unscaled;
-  }
-}
-
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2036,6 +2080,17 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   const unsigned int max_mv_def = MIN(cm->width, cm->height);
   struct segmentation *const seg = &cm->seg;
   set_ext_overrides(cpi);
+
+  // Allocate buffer to scale output frame up.
+  if (cpi->oxcf.allow_spatial_resampling &&
+      cm->scaled_output_buffer.buffer_alloc == NULL) {
+    if (vp9_alloc_frame_buffer(&cm->scaled_output_buffer,
+                               cpi->un_scaled_source->y_crop_width,
+                               cpi->un_scaled_source->y_crop_height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS) < 0) {
+    }
+  }
 
   cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
                                       &cpi->scaled_source);
@@ -2236,9 +2291,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
   }
 
-#if 0
-  output_frame_level_debug_stats(cpi);
-#endif
   if (cpi->refresh_golden_frame == 1)
     cpi->frame_flags |= FRAMEFLAGS_GOLDEN;
   else
@@ -2253,6 +2305,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   cm->last_frame_type = cm->frame_type;
   vp9_rc_postencode_update(cpi, *size);
+
+#if 1 && CONFIG_INTERNAL_STATS
+  output_frame_level_debug_stats(cpi);
+#endif
 
   if (cm->frame_type == KEY_FRAME) {
     // Tell the caller that the frame was coded as a key frame
@@ -2445,6 +2501,62 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
+#if INTERNAL_SCALING_DECISION
+#if 0
+static int step_down(int scale_factor, const int full_width,
+                     const int full_height, int *width, int *height) {
+  // Scale factors should be multiples of 1/16th to match scaling filters.
+  assert(scale_factor >= 1 && scale_factor <= 16);
+  if (--scale_factor < 9) return 0;
+  *width = (full_width * scale_factor + 8) >> 4;
+  *height = (full_height * scale_factor + 8) >> 4;
+  return scale_factor;
+}
+
+void calculate_coded_size(const VP9_COMP *const cpi, int *const scaled_width,
+                          int *const scaled_height) {
+  int q;
+  const int full_width = cpi->common.width;
+  const int full_height = cpi->common.height;
+  const struct twopass_rc *const twopass = &cpi->twopass;
+  const int frames_left = (int)(twopass->total_stats.count -
+                                cpi->common.current_video_frame);
+  const int per_frame_bandwidth = (int)(twopass->bits_left / frames_left);
+  int width = full_width;
+  int height = full_height;
+  int scale_factor = 16;  // Scaling factor in 1/16th units.
+
+  do {
+    int number_of_mbs =
+        (ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2) >> MI_SIZE_LOG2 + 1) >> 1;
+    number_of_mbs *=
+        (ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2) >> MI_SIZE_LOG2 + 1) >> 1;
+
+    q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
+                                  per_frame_bandwidth, number_of_mbs);
+
+    if (q <= 200) break;
+
+    scale_factor = step_down(scale_factor, full_width, full_height,
+                             &width, &height);
+  } while ((q > 200) && (scale_factor != 0));
+
+  *scaled_width = width;
+  *scaled_height = height;
+}
+#endif
+static const int scale_factor = 12;  // 12/16 = 75%
+
+void calculate_coded_size(const VP9_COMP *const cpi, int *const scaled_width,
+                          int *const scaled_height) {
+  const int full_width = cpi->common.width;
+  const int full_height = cpi->common.height;
+  // Scale factors should be multiples of 1/16th to match scaling filters.
+  *scaled_width = (full_width * scale_factor + 8) >> 4;
+  *scaled_height = (full_height * scale_factor + 8) >> 4;
+}
+#endif
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -2574,11 +2686,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
 
-  if (cpi->last_source != NULL) {
-    cpi->unscaled_last_source = &cpi->last_source->img;
-  } else {
-    cpi->unscaled_last_source = NULL;
-  }
+    if (cpi->last_source != NULL) {
+      cpi->unscaled_last_source = &cpi->last_source->img;
+    } else {
+      cpi->unscaled_last_source = NULL;
+    }
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
@@ -2642,6 +2754,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cm->current_video_frame == 0 &&
       cpi->oxcf.allow_spatial_resampling &&
       cpi->oxcf.rc_mode == RC_MODE_VBR) {
+#if INTERNAL_SCALING_DECISION
+    // Internal scaling is triggered on the first frame.
+    calculate_coded_size(cpi, &cpi->oxcf.scaled_frame_width,
+                         &cpi->oxcf.scaled_frame_height);
+#endif
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, cpi->oxcf.scaled_frame_width,
                          cpi->oxcf.scaled_frame_height);
@@ -2724,7 +2841,15 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         YV12_BUFFER_CONFIG *recon = cpi->common.frame_to_show;
         YV12_BUFFER_CONFIG *pp = &cm->post_proc_buffer;
         PSNR_STATS psnr;
-        calc_psnr(orig, recon, &psnr);
+
+        if (cpi->oxcf.allow_spatial_resampling &&
+            (recon->y_crop_height != cpi->un_scaled_source->y_crop_height ||
+            recon->y_crop_width != cpi->un_scaled_source->y_crop_width ||
+            recon->uv_crop_height != cpi->un_scaled_source->uv_crop_height ||
+            recon->uv_crop_width != cpi->un_scaled_source->uv_crop_width))
+          calc_psnr(cpi->un_scaled_source, &cm->scaled_output_buffer, &psnr);
+        else
+          calc_psnr(orig, recon, &psnr);
 
         cpi->total += psnr.psnr[0];
         cpi->total_y += psnr.psnr[1];

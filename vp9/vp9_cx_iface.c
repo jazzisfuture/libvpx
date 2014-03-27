@@ -365,7 +365,12 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->two_pass_stats_in      =  cfg->rc_twopass_stats_in;
   oxcf->output_pkt_list        =  extra_cfg->pkt_list;
 
+#if INTERNAL_SCALING_DECISION
+  // Force ARNR off to test internal scaling.
+  oxcf->arnr_max_frames = 0;
+#else
   oxcf->arnr_max_frames = extra_cfg->arnr_max_frames;
+#endif
   oxcf->arnr_strength   = extra_cfg->arnr_strength;
   oxcf->arnr_type       = extra_cfg->arnr_type;
 
@@ -548,7 +553,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 
     cfg = &ctx->priv->alg_priv->cfg;
 
-    // Select the extra vp6 configuration table based on the current
+    // Select the extra configuration table based on the current
     // usage value. If the current usage value isn't found, use the
     // values for usage case 0.
     for (i = 0;
@@ -557,7 +562,8 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 
     priv->extra_cfg = extracfg_map[i].cfg;
     priv->extra_cfg.pkt_list = &priv->pkt_list.head;
-     // Maximum buffer size approximated based on having multiple ARF.
+
+    // Maximum buffer size approximated based on 4:2:0 and having multiple ARF.
     priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 * 8;
 
     if (priv->cx_data_sz < 4096)
@@ -1151,7 +1157,7 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
       25,                 // g_lag_in_frames
 
       0,                  // rc_dropframe_thresh
-      0,                  // rc_resize_allowed
+      0,                  // rc_resize_allowed    // AWG Force resize_allowed flag.
       1,                  // rc_scaled_width
       1,                  // rc_scaled_height
       60,                 // rc_resize_down_thresold

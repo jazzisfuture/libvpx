@@ -357,7 +357,7 @@ static int frame_max_bits(VP8_COMP *cpi)
         double buffer_fullness_ratio = (double)cpi->buffer_level / DOUBLE_DIVIDE_CHECK((double)cpi->oxcf.optimal_buffer_level);
 
         /* For CBR base this on the target average bits per frame plus the
-         * maximum sedction rate passed in by the user
+         * maximum section rate passed in by the user
          */
         max_bits = (int)(cpi->av_per_frame_bandwidth * ((double)cpi->oxcf.two_pass_vbrmax_section / 100.0));
 

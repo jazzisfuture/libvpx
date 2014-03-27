@@ -102,6 +102,7 @@ typedef struct VP9Common {
   int new_fb_idx;
 
   YV12_BUFFER_CONFIG post_proc_buffer;
+  YV12_BUFFER_CONFIG scaled_output_buffer;
 
   FRAME_TYPE last_frame_type;  /* last frame's frame type for motion search.*/
   FRAME_TYPE frame_type;

@@ -100,6 +100,7 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
   }
 
   vp9_free_frame_buffer(&cm->post_proc_buffer);
+  vp9_free_frame_buffer(&cm->scaled_output_buffer);
 
   free_mi(cm);
 
@@ -186,6 +187,10 @@ int vp9_alloc_frame_buffers(VP9_COMMON *cm, int width, int height) {
   if (vp9_alloc_frame_buffer(&cm->post_proc_buffer, width, height, ss_x, ss_y,
                              VP9_ENC_BORDER_IN_PIXELS) < 0)
     goto fail;
+
+//  if (vp9_alloc_frame_buffer(&cm->scaled_output_buffer, width, height,
+//                             ss_x, ss_y, VP9_ENC_BORDER_IN_PIXELS) < 0)
+//    goto fail;
 
   set_mb_mi(cm, aligned_width, aligned_height);
 
