@@ -528,6 +528,9 @@ typedef struct {
   int lossless;
   AQ_MODE aq_mode;  // Adaptive Quantization mode
 
+  // Internal frame size scaling.
+  int allow_spatial_resampling;
+
   // two pass datarate control
   int two_pass_vbrbias;        // two pass datarate control tweaks
   int two_pass_vbrmin_section;
@@ -783,6 +786,9 @@ typedef struct VP9_COMP {
   unsigned int activity_avg;
   unsigned int *mb_activity_map;
   int *mb_norm_activity_map;
+
+  // Factor determining how per block error values change with scaling.
+  double error_scale_factor;
 
   int droppable;
 

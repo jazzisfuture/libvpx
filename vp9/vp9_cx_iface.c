@@ -300,6 +300,8 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   oxcf->under_shoot_pct         = cfg->rc_undershoot_pct;
   oxcf->over_shoot_pct          = cfg->rc_overshoot_pct;
 
+  oxcf->allow_spatial_resampling = cfg->rc_resize_allowed;
+
   oxcf->maximum_buffer_size     = cfg->rc_buf_sz;
   oxcf->starting_buffer_level   = cfg->rc_buf_initial_sz;
   oxcf->optimal_buffer_level    = cfg->rc_buf_optimal_sz;
@@ -376,6 +378,7 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   printf("fixed_q: %d\n",  oxcf->fixed_q);
   printf("worst_allowed_q: %d\n", oxcf->worst_allowed_q);
   printf("best_allowed_q: %d\n", oxcf->best_allowed_q);
+  printf("allow_spatial_resampling: %d\n", oxcf->allow_spatial_resampling);
   printf("two_pass_vbrbias: %d\n",  oxcf->two_pass_vbrbias);
   printf("two_pass_vbrmin_section: %d\n", oxcf->two_pass_vbrmin_section);
   printf("two_pass_vbrmax_section: %d\n", oxcf->two_pass_vbrmax_section);
