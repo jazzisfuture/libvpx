@@ -480,6 +480,9 @@ typedef struct VP9_COMP {
 #endif
   int b_calculate_psnr;
 
+  // Factor determining how per block error values change with scaling.
+  double error_scale_factor;
+
   int droppable;
 
   int dummy_packing;    /* flag to indicate if packing is dummy */

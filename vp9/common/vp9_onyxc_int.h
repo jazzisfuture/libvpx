@@ -123,6 +123,7 @@ typedef struct VP9Common {
   // MBs, mb_rows/cols is in 16-pixel units; mi_rows/cols is in
   // MODE_INFO (8-pixel) units.
   int MBs;
+  int full_size_MBs;
   int mb_rows, mi_rows;
   int mb_cols, mi_cols;
   int mi_stride;
