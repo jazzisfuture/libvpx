@@ -3394,6 +3394,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #if CONFIG_MULTIPLE_ARF
     int i;
 #endif
+
+    // Get last frame source.
+    if (cm->current_video_frame > 0) {
+      if ((cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1)) == NULL)
+        return -1;
+    }
+
     if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
       cm->show_frame = 1;
       cm->intra_only = 0;
@@ -3432,6 +3439,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (cpi->source) {
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
+
+  if (cm->current_video_frame > 0) {
+    cpi->unscaled_last_source = &cpi->last_source->img;
+  }
+
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
     *frame_flags = cpi->source->flags;
