@@ -372,7 +372,7 @@ int vp9_receive_compressed_data(VP9D_COMP *pbi,
     // If multiple threads are used to decode tiles, then we use those threads
     // to do parallel loopfiltering.
     if (pbi->num_tile_workers) {
-      vp9_loop_filter_frame_mt(pbi, cm, &pbi->mb, cm->lf.filter_level, 0, 0);
+      vp9_loop_filter_frame_mt(pbi, cm->lf.filter_level, 0, 0);
     } else {
       vp9_loop_filter_frame(cm, &pbi->mb, cm->lf.filter_level, 0, 0);
     }
