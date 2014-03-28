@@ -633,6 +633,22 @@ static int write_superframe_index(vpx_codec_alg_priv_t *ctx) {
   return index_sz;
 }
 
+int ab_sizes[12][2] =  {
+  {38400, 216},
+  {40800, 240},
+  {43200, 192},
+  {45600, 176},
+  {48000, 160},
+  {50400, 144},
+  {52800, 128},
+  {55200, 112},
+  {57600, 96},
+  {60000, 80},
+  {62400, 64},
+};
+
+int start_frame_n=0;
+
 static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
                                    const vpx_image_t     *img,
                                    vpx_codec_pts_t        pts,
@@ -643,6 +659,13 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
 
   if (img)
     res = validate_img(ctx, img);
+
+  if (start_frame_n < 12) {
+  vp9_set_size_literal(ctx->cpi,
+                       ab_sizes[start_frame_n][0]/2,
+                       ab_sizes[start_frame_n][1]/2);
+  start_frame_n ++;
+}
 
   pick_quickcompress_mode(ctx, duration, deadline);
   vpx_codec_pkt_list_init(&ctx->pkt_list);

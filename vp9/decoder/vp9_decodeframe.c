@@ -619,6 +619,8 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
 }
 
 static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
+  printf("Width = %d, Height=%d\n", width, height);
+
   if (cm->width != width || cm->height != height) {
     // Change in frame size.
     // TODO(agrange) Don't test width/height, check overall size.

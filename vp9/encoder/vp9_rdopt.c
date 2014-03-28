@@ -3334,6 +3334,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame[0];
+
+    if (this_mode != NEWMV && this_mode != ZEROMV)
+      continue;
+
     if (ref_frame != INTRA_FRAME &&
         disable_inter_mode_mask & (1 << INTER_OFFSET(this_mode)))
       continue;
