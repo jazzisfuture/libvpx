@@ -596,10 +596,14 @@ typedef struct VP9_COMP {
 #else
   struct lookahead_entry  *alt_ref_source;
 #endif
+  struct lookahead_entry  *last_source;
 
   YV12_BUFFER_CONFIG *Source;
+  YV12_BUFFER_CONFIG *Last_Source;
   YV12_BUFFER_CONFIG *un_scaled_source;
   YV12_BUFFER_CONFIG scaled_source;
+  YV12_BUFFER_CONFIG *unscaled_last_source;
+  YV12_BUFFER_CONFIG scaled_last_source;
 
   int key_frame_frequency;
 
