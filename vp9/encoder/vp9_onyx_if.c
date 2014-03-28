@@ -547,13 +547,6 @@ static void set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
     cpi->rd_thresh_mult_sub8x8[THR_COMP_GA] = INT_MAX;
 }
 
-// Intra only frames, golden frames (except alt ref overlays) and
-// alt ref frames tend to be coded at a higher than ambient quality
-static INLINE int frame_is_boosted(const VP9_COMP *cpi) {
-  return frame_is_intra_only(&cpi->common) || cpi->refresh_alt_ref_frame ||
-         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
-}
-
 static void set_good_speed_feature(VP9_COMP *cpi,
                                    VP9_COMMON *cm,
                                    SPEED_FEATURES *sf,
@@ -566,7 +559,7 @@ static void set_good_speed_feature(VP9_COMP *cpi,
   if (speed >= 1) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->less_rectangular_check  = 1;
-    sf->tx_size_search_method = frame_is_boosted(cpi)
+    sf->tx_size_search_method = vp9_frame_is_boosted(cpi)
       ? USE_FULL_RD : USE_LARGESTALL;
 
     if (MIN(cm->width, cm->height) >= 720)
@@ -868,6 +861,9 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   // This setting only takes effect when partition_search_type is set
   // to FIXED_PARTITION.
   sf->always_this_block_size = BLOCK_16X16;
+
+  // Recode loop tolerence is 25% for normal frames (hlaf that kfs and arfs)
+  sf->recode_tolerance = 25;
 
   switch (cpi->oxcf.mode) {
     case MODE_BESTQUALITY:

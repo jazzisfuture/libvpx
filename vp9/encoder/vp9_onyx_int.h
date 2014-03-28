@@ -407,6 +407,11 @@ typedef struct {
   // calculation in the rd coefficient costing loop.
   int use_fast_coef_costing;
 
+  // This feature controls the tolerence vs target used in deciding whether to
+  // recode a frame. It has no meaning if recode is disabled.
+  // Else it is a % tolerence either side (half value used for kfs and arfs)
+  int recode_tolerance;
+
   // This variable controls the maximum block size where intra blocks can be
   // used in inter frames.
   // TODO(aconverse): Fold this into one of the other many mode skips
@@ -886,6 +891,13 @@ static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
   VP9_COMMON * const cm = &cpi->common;
   return &cm->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)]]
       .buf;
+}
+
+// Intra only frames, golden frames (except alt ref overlays) and
+// alt ref frames tend to be coded at a higher than ambient quality
+static INLINE int vp9_frame_is_boosted(const VP9_COMP *cpi) {
+  return frame_is_intra_only(&cpi->common) || cpi->refresh_alt_ref_frame ||
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
 }
 
 void vp9_set_speed_features(VP9_COMP *cpi);
