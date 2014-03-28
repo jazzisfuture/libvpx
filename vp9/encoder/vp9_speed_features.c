@@ -61,7 +61,7 @@ static void set_good_speed_feature(VP9_COMP *cpi,
   }
   // Additions or changes from speed 1 for speed >= 2.
   if (speed >= 2) {
-    sf->tx_size_search_method = vp9_frame_is_boosted(cpi)
+    sf->tx_size_search_method = frame_is_intra_only(cm)
       ? USE_FULL_RD : USE_LARGESTALL;
 
     if (MIN(cm->width, cm->height) >= 720)
