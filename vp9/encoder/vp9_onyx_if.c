@@ -3053,6 +3053,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   vp9_write_yuv_frame(cpi->Source);
 #endif
 
+  vp9_set_speed_features(cpi);
+
   // Decide q and q bounds.
   q = vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
 
@@ -3062,7 +3064,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     set_high_precision_mv(cpi, q < HIGH_PRECISION_MV_QTHRESH);
   }
 
-  vp9_set_speed_features(cpi);
+//  vp9_set_speed_features(cpi);
 
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     encode_without_recode_loop(cpi, size, dest, q);
