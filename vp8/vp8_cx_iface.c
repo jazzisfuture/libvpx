@@ -919,6 +919,8 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t  *ctx,
                 if (cpi->droppable)
                     pkt.data.frame.flags |= VPX_FRAME_IS_DROPPABLE;
 
+                pkt.data.frame.base_qindex = vp8_get_quantizer(ctx->cpi);
+
                 if (cpi->output_partition)
                 {
                     int i;

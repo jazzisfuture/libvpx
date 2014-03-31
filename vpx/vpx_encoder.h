@@ -182,6 +182,7 @@ extern "C" {
                                               applicable when "output partition"
                                               mode is enabled. First partition
                                               has id 0.*/
+        int                      base_qindex; /**< base q for this frame */
 
       } frame;  /**< data for compressed frame packet */
       struct vpx_fixed_buf twopass_stats;  /**< data for two-pass packet */
