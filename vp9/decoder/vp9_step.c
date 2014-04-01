@@ -158,69 +158,69 @@ static int vp9_loopfilter(struct task *tsk,
  */
 static struct task_step steps[] = {
   {
-    "vp9_frame_entropy_dec",// name
-    STEP_KEEP,              // type
-    DEV_CPU,                // dev_type
-    0,                      // step_nr
-    (1 << 1),               // next_steps_map
-    1,                      // next_count
-    0,                      // prev_steps_map
-    0,                      // prev_count
-    vp9_frame_entropy_dec,  // process
-    NULL,                   // pool
-    NULL                    // priv
+    "vp9_frame_entropy_dec",  // name
+    STEP_KEEP,                // type
+    DEV_CPU,                  // dev_type
+    0,                        // step_nr
+    (1 << 1),                 // next_steps_map
+    1,                        // next_count
+    0,                        // prev_steps_map
+    0,                        // prev_count
+    vp9_frame_entropy_dec,    // process
+    NULL,                     // pool
+    NULL                      // priv
   },
   {
-    "vp9_tile_entropy_dec", // name
-    STEP_SPLIT,             // type
-    DEV_CPU,                // dev_type
-    1,                      // step_nr
-    (1 << 2),               // next_steps_map
-    1,                      // next_count
-    (1 << 0),               // prev_steps_map
-    1,                      // prev_count
-    vp9_tile_entropy_dec,   // process
-    NULL,                   // pool
-    NULL                    // priv
+    "vp9_tile_entropy_dec",   // name
+    STEP_SPLIT,               // type
+    DEV_CPU,                  // dev_type
+    1,                        // step_nr
+    (1 << 2),                 // next_steps_map
+    1,                        // next_count
+    (1 << 0),                 // prev_steps_map
+    1,                        // prev_count
+    vp9_tile_entropy_dec,     // process
+    NULL,                     // pool
+    NULL                      // priv
   },
   {
-    "vp9_inter_pred",       // name
-    STEP_KEEP,              // type
-    DEV_CPU,                // dev_type
-    2,                      // step_nr
-    (1 << 3),               // next_steps_map
-    1,                      // next_count
-    (1 << 1),               // prev_steps_map
-    1,                      // prev_count
-    vp9_inter_pred,         // process
-    NULL,                   // pool
-    NULL                    // priv
+    "vp9_inter_pred",         // name
+    STEP_KEEP,                // type
+    DEV_CPU,                  // dev_type
+    2,                        // step_nr
+    (1 << 3),                 // next_steps_map
+    1,                        // next_count
+    (1 << 1),                 // prev_steps_map
+    1,                        // prev_count
+    vp9_inter_pred,           // process
+    NULL,                     // pool
+    NULL                      // priv
   },
   {
-    "vp9_intra_pred",       // name
-    STEP_SYNC,              // type
-    DEV_CPU,                // dev_type
-    3,                      // step_nr
-    (1 << 4),               // next_steps_map
-    1,                      // next_count
-    (1 << 2),               // prev_steps_map
-    1,                      // prev_count
-    vp9_intra_pred,         // process
-    NULL,                   // pool
-    NULL                    // priv
+    "vp9_intra_pred",         // name
+    STEP_SYNC,                // type
+    DEV_CPU,                  // dev_type
+    3,                        // step_nr
+    (1 << 4),                 // next_steps_map
+    1,                        // next_count
+    (1 << 2),                 // prev_steps_map
+    1,                        // prev_count
+    vp9_intra_pred,           // process
+    NULL,                     // pool
+    NULL                      // priv
   },
   {
-    "vp9_loopfilter",       // name
-    STEP_MERGE,             // type
-    DEV_CPU,                // dev_type
-    4,                      // step_nr
-    0,                      // next_steps_map
-    0,                      // next_count
-    (1 << 3),               // prev_steps_map
-    1,                      // prev_count
-    vp9_loopfilter,         // process
-    NULL,                   // pool
-    NULL                    // priv
+    "vp9_loopfilter",         // name
+    STEP_MERGE,               // type
+    DEV_CPU,                  // dev_type
+    4,                        // step_nr
+    0,                        // next_steps_map
+    0,                        // next_count
+    (1 << 3),                 // prev_steps_map
+    1,                        // prev_count
+    vp9_loopfilter,           // process
+    NULL,                     // pool
+    NULL                      // priv
   }
 };
 

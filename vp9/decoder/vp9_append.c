@@ -137,18 +137,14 @@ int alloc_buffers_recon(VP9_COMMON *cm, VP9_DECODER_RECON *decoder_recon) {
   mi8x8_size = (cm->mi_rows) * cm->mi_cols;
   mi64x64_size = MAX_64X64_COLS * MAX_64X64_ROWS;
 
-  if(cm->width < 1080 && cm->width < 1920) {
-
+  if (cm->width < 1080 && cm->width < 1920) {
     mi64x64_size = mi64x64_size / 4;
-
   }
 
-  if(tile_cols > 0) {
-
+  if (tile_cols > 0) {
     col_offset = 1 << (tile_cols + 1);
     mi8x8_size = mi8x8_size * DEV_THREE / col_offset;
     mi64x64_size = mi64x64_size * DEV_THREE / col_offset;
-
   }
 
   decoder_recon->dequant_recon =

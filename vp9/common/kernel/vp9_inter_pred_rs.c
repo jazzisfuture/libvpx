@@ -622,8 +622,9 @@ void vp9_init_inter_rs() {
   int tile_count = MAX_TILE_COUNT_RS;
   char *rs_enable = getenv("RSENABLE");
   if (rs_enable) {
-    if (*rs_enable == '1') rs_inter_init = 0;
-    else {
+    if (*rs_enable == '1') {
+      rs_inter_init = 0;
+    } else {
       rs_inter_init = -1;
       return;
     }

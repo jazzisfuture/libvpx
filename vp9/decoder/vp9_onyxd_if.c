@@ -441,9 +441,9 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   cm->error.setjmp = 1;
 
-   //mcw mt
-   retcode = vp9_decode_frame_mt(pbi, psource);
-   //retcode = vp9_decode_frame_recon(pbi, psource);
+  // mcw mt
+  retcode = vp9_decode_frame_mt(pbi, psource);
+  // retcode = vp9_decode_frame_recon(pbi, psource);
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;
