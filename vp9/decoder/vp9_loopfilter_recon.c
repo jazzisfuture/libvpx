@@ -1253,6 +1253,12 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
   MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
   int plane;
 
+#if CONFIG_NON420
+  int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
+      xd->plane[1].subsampling_x == 1);
+#endif
+
+
   setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
 
 #if CONFIG_NON420
@@ -1275,6 +1281,7 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
 }
 
 #define MAX_CPU 32
+#define ENABLE_WPP
 
 void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
                               const YV12_BUFFER_CONFIG *frame_buffer,
@@ -1288,12 +1295,8 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
   int cpu_count;
   struct task *last_tsk = NULL;
 
-#if CONFIG_NON420
-  int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
-      xd->plane[1].subsampling_x == 1);
-#endif
 
-#if 1
+#ifdef ENABLE_WPP
 
   dev = scheduler_get_dev(pbi->sched, DEV_CPU);
   assert(dev);
