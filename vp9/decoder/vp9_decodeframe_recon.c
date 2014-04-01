@@ -57,6 +57,9 @@ typedef struct TileWorkerData {
   DECLARE_ALIGNED(16, uint16_t, eobs[MAX_MB_PLANE][256]);
 } TileWorkerData;
 
+static void decode_tile_recon(VP9D_COMP *pbi, const TileInfo *const tile,
+    vp9_reader *r, int tile_col);
+
 static int read_be32(const uint8_t *p) {
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
@@ -250,11 +253,10 @@ static void alloc_tile_storage(VP9D_COMP *pbi, int tile_rows, int tile_cols) {
 
 static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
-                                    uint8_t *token_cache) {
+                                    int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  const int eob = pd->eobs[block];
   if (eob > 0) {
-    TX_TYPE tx_type = 0;
+    TX_TYPE tx_type;
     const int plane_type = pd->plane_type;
     int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
     switch (tx_size) {
@@ -283,20 +285,13 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 
     if (eob == 1) {
       vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
-      vpx_memset(token_cache, 0, 2 * sizeof(token_cache[0]));
     } else {
-      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10) {
+      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
         vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
-        vpx_memset(token_cache, 0,
-                   4 * (4 << tx_size) * sizeof(token_cache[0]));
-      } else if (tx_size == TX_32X32 && eob <= 34) {
+      else if (tx_size == TX_32X32 && eob <= 34)
         vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
-        vpx_memset(token_cache, 0, 256 * sizeof(token_cache[0]));
-      } else {
+      else
         vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
-        vpx_memset(token_cache, 0,
-                   (16 << (tx_size << 1)) * sizeof(token_cache[0]));
-      }
     }
   }
 }
@@ -305,7 +300,6 @@ struct intra_args {
   VP9_COMMON *cm;
   MACROBLOCKD *xd;
   vp9_reader *r;
-  uint8_t *token_cache;
 };
 
 static void predict_and_reconstruct_intra_block(int plane, int block,
@@ -325,19 +319,17 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
 
-  if (xd->mb_to_right_edge < 0 || xd->mb_to_bottom_edge < 0)
-    extend_for_intra(xd, plane_bsize, plane, x, y);
-
   vp9_predict_intra_block(xd, block >> (tx_size << 1),
                           b_width_log2(plane_bsize), tx_size, mode,
                           dst, pd->dst.stride, dst, pd->dst.stride,
                           x, y, plane);
 
   if (!mi->mbmi.skip_coeff) {
-    vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y, tx_size,
-                            args->r, args->token_cache);
+    const int eob = vp9_decode_block_tokens(cm, xd, plane, block,
+                                            plane_bsize, x, y, tx_size,
+                                            args->r);
     inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
-                            args->token_cache);
+                            eob);
   }
 }
 
@@ -346,7 +338,6 @@ struct inter_args {
   MACROBLOCKD *xd;
   vp9_reader *r;
   int *eobtotal;
-  uint8_t *token_cache;
 };
 
 static void reconstruct_inter_block(int plane, int block,
@@ -356,14 +347,14 @@ static void reconstruct_inter_block(int plane, int block,
   VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  int x, y;
+  int x, y, eob;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  *args->eobtotal += vp9_decode_block_tokens(cm, xd, plane, block,
-                                             plane_bsize, x, y, tx_size,
-                                             args->r, args->token_cache);
+  eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
+                                tx_size, args->r);
   inverse_transform_block(xd, plane, block, tx_size,
                           &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
-                          pd->dst.stride, args->token_cache);
+                          pd->dst.stride, eob);
+  *args->eobtotal += eob;
 }
 
 static void set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
@@ -414,8 +405,7 @@ static void set_ref(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                            const TileInfo *const tile,
                            int mi_row, int mi_col,
-                           vp9_reader *r, BLOCK_SIZE bsize,
-                           uint8_t *token_cache) {
+                           vp9_reader *r, BLOCK_SIZE bsize) {
   const int less8x8 = bsize < BLOCK_8X8;
   MB_MODE_INFO *mbmi;
 
@@ -437,12 +427,9 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   }
 
   if (!is_inter_block(mbmi)) {
-    struct intra_args arg = {
-      cm, xd, r, token_cache
-    };
+    struct intra_args arg = { cm, xd, r };
     foreach_transformed_block(xd, bsize, predict_and_reconstruct_intra_block,
                               &arg);
-
   } else {
     // Setup
     set_ref(cm, xd, 0, mi_row, mi_col);
@@ -458,14 +445,11 @@ static void decode_modes_b(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     // Reconstruction
     if (!mbmi->skip_coeff) {
       int eobtotal = 0;
-      struct inter_args arg = {
-        cm, xd, r, &eobtotal, token_cache
-      };
+      struct inter_args arg = { cm, xd, r, &eobtotal };
       foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
       if (!less8x8 && eobtotal == 0)
         mbmi->skip_coeff = 1;  // skip loopfilter
     }
-
   }
 
   xd->corrupted |= vp9_reader_has_error(r);
@@ -500,8 +484,7 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd, int hbs,
 static void decode_modes_sb(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                             const TileInfo *const tile,
                             int mi_row, int mi_col,
-                            vp9_reader* r, BLOCK_SIZE bsize,
-                            uint8_t *token_cache) {
+                            vp9_reader* r, BLOCK_SIZE bsize) {
   const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
   PARTITION_TYPE partition;
   BLOCK_SIZE subsize;
@@ -512,33 +495,27 @@ static void decode_modes_sb(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
   subsize = get_subsize(bsize, partition);
   if (subsize < BLOCK_8X8) {
-    decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, token_cache);
+    decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize);
   } else {
     switch (partition) {
       case PARTITION_NONE:
-        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, token_cache);
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize);
         break;
       case PARTITION_HORZ:
-        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, token_cache);
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize);
         if (mi_row + hbs < cm->mi_rows)
-          decode_modes_b(cm, xd, tile, mi_row + hbs, mi_col, r, subsize,
-                         token_cache);
+          decode_modes_b(cm, xd, tile, mi_row + hbs, mi_col, r, subsize);
         break;
       case PARTITION_VERT:
-        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize, token_cache);
+        decode_modes_b(cm, xd, tile, mi_row, mi_col, r, subsize);
         if (mi_col + hbs < cm->mi_cols)
-          decode_modes_b(cm, xd, tile, mi_row, mi_col + hbs, r, subsize,
-                         token_cache);
+          decode_modes_b(cm, xd, tile, mi_row, mi_col + hbs, r, subsize);
         break;
       case PARTITION_SPLIT:
-        decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, subsize,
-                        token_cache);
-        decode_modes_sb(cm, xd, tile, mi_row, mi_col + hbs, r, subsize,
-                        token_cache);
-        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col, r, subsize,
-                        token_cache);
-        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize,
-                        token_cache);
+        decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, subsize);
+        decode_modes_sb(cm, xd, tile, mi_row, mi_col + hbs, r, subsize);
+        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col, r, subsize);
+        decode_modes_sb(cm, xd, tile, mi_row + hbs, mi_col + hbs, r, subsize);
         break;
       default:
         assert(0 && "Invalid partition type");
@@ -747,6 +724,42 @@ static void apply_frame_size(VP9D_COMP *pbi, int width, int height) {
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to allocate external frame buffer");
     }
+  } else {
+    vp9_realloc_frame_buffer(get_frame_new_buffer(cm), cm->width, cm->height,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9BORDERINPIXELS, NULL, NULL, NULL);
+  }
+}
+
+static void apply_frame_size_recon(VP9D_COMP *pbi, int width, int height) {
+  VP9_COMMON *cm = &pbi->common;
+
+  if (cm->width != width || cm->height != height) {
+    // Change in frame size.
+    // TODO(agrange) Don't test width/height, check overall size.
+    if (width > cm->width || height > cm->height) {
+      // Rescale frame buffers only if they're not big enough already.
+      if (vp9_resize_frame_buffers(cm, width, height))
+        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                           "Failed to allocate frame buffers");
+    }
+
+    cm->width = width;
+    cm->height = height;
+
+    vp9_update_frame_size(cm);
+  }
+
+  if (cm->fb_list != NULL) {
+    vpx_codec_frame_buffer_t *const ext_fb = &cm->fb_list[cm->new_fb_idx];
+    if (vp9_realloc_frame_buffer(get_frame_new_buffer(cm),
+                                 cm->width, cm->height,
+                                 cm->subsampling_x, cm->subsampling_y,
+                                 VP9BORDERINPIXELS, ext_fb,
+                                 cm->realloc_fb_cb, cm->user_priv)) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate external frame buffer");
+    }
     rs_init = 1;
   } else {
     if (rs_init == 0) {
@@ -767,6 +780,14 @@ static void setup_frame_size(VP9D_COMP *pbi,
   int width, height;
   read_frame_size(rb, &width, &height);
   apply_frame_size(pbi, width, height);
+  setup_display_size(&pbi->common, rb);
+}
+
+static void setup_frame_size_recon(VP9D_COMP *pbi,
+                             struct vp9_read_bit_buffer *rb) {
+  int width, height;
+  read_frame_size(rb, &width, &height);
+  apply_frame_size_recon(pbi, width, height);
   setup_display_size(&pbi->common, rb);
 }
 
@@ -794,6 +815,33 @@ static void setup_frame_size_with_refs(VP9D_COMP *pbi,
                        "Referenced frame with invalid size");
 
   apply_frame_size(pbi, width, height);
+  setup_display_size(cm, rb);
+}
+
+static void setup_frame_size_with_refs_recon(VP9D_COMP *pbi,
+                                       struct vp9_read_bit_buffer *rb) {
+  VP9_COMMON *const cm = &pbi->common;
+
+  int width, height;
+  int found = 0, i;
+  for (i = 0; i < REFS_PER_FRAME; ++i) {
+    if (vp9_rb_read_bit(rb)) {
+      YV12_BUFFER_CONFIG *const buf = cm->frame_refs[i].buf;
+      width = buf->y_crop_width;
+      height = buf->y_crop_height;
+      found = 1;
+      break;
+    }
+  }
+
+  if (!found)
+    read_frame_size(rb, &width, &height);
+
+  if (!width || !height)
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Referenced frame with invalid size");
+
+  apply_frame_size_recon(pbi, width, height);
   setup_display_size(cm, rb);
 }
 
@@ -834,8 +882,7 @@ static void decode_tile(VP9D_COMP *pbi, const TileInfo *const tile,
     vp9_zero(xd->left_seg_context);
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE) {
-      decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, BLOCK_64X64,
-                      pbi->token_cache);
+      decode_modes_sb(cm, xd, tile, mi_row, mi_col, r, BLOCK_64X64);
     }
 
     if (pbi->do_loopfilter_inline) {
@@ -987,6 +1034,65 @@ static const uint8_t *decode_tiles(VP9D_COMP *pbi, const uint8_t *data) {
   return end;
 }
 
+static const uint8_t *decode_tiles_recon(VP9D_COMP *pbi, const uint8_t *data) {
+  VP9_COMMON *const cm = &pbi->common;
+  MACROBLOCKD *const xd = &pbi->mb;
+  const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int tile_rows = 1 << cm->log2_tile_rows;
+  TileBuffer tile_buffers[4][1 << 6];
+  int tile_row, tile_col;
+  const uint8_t *const data_end = pbi->source + pbi->source_sz;
+  const uint8_t *end = NULL;
+  vp9_reader r;
+
+  assert(tile_rows <= 4);
+  assert(tile_cols <= (1 << 6));
+
+  // Note: this memset assumes above_context[0], [1] and [2]
+  // are allocated as part of the same buffer.
+  vpx_memset(pbi->above_context[0], 0,
+             sizeof(*pbi->above_context[0]) * MAX_MB_PLANE * 2 * aligned_cols);
+
+  vpx_memset(pbi->above_seg_context, 0,
+             sizeof(*pbi->above_seg_context) * aligned_cols);
+
+  // Load tile data into tile_buffers
+  for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+      const int last_tile = tile_row == tile_rows - 1 &&
+                            tile_col == tile_cols - 1;
+      const size_t size = get_tile(data_end, last_tile, &cm->error, &data);
+      TileBuffer *const buf = &tile_buffers[tile_row][tile_col];
+      buf->data = data;
+      buf->size = size;
+      data += size;
+    }
+  }
+
+  // Decode tiles using data from tile_buffers
+  for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+    for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+      const int col = pbi->oxcf.inv_tile_order ? tile_cols - tile_col - 1
+                                               : tile_col;
+      const int last_tile = tile_row == tile_rows - 1 &&
+                                 col == tile_cols - 1;
+      const TileBuffer *const buf = &tile_buffers[tile_row][col];
+      TileInfo tile;
+
+      vp9_tile_init(&tile, cm, tile_row, col);
+      setup_token_decoder(buf->data, data_end, buf->size, &cm->error, &r);
+      setup_tile_context(pbi, xd, tile_row, col);
+      decode_tile_recon(pbi, &tile, &r, tile_col);
+
+      if (last_tile)
+        end = vp9_reader_find_end(&r);
+    }
+  }
+
+  return end;
+}
+
 static void setup_tile_macroblockd(TileWorkerData *const tile_data) {
   MACROBLOCKD *xd = &tile_data->xd;
   struct macroblockd_plane *const pd = xd->plane;
@@ -1013,8 +1119,7 @@ static int tile_worker_hook(void *arg1, void *arg2) {
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE) {
       decode_modes_sb(tile_data->cm, &tile_data->xd, tile,
-                      mi_row, mi_col, &tile_data->bit_reader, BLOCK_64X64,
-                      tile_data->token_cache);
+                      mi_row, mi_col, &tile_data->bit_reader, BLOCK_64X64);
     }
   }
   return !tile_data->xd.corrupted;
@@ -1180,6 +1285,135 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
   VP9_COMMON *const cm = &pbi->common;
   size_t sz;
   int i;
+
+  cm->last_frame_type = cm->frame_type;
+
+  if (vp9_rb_read_literal(rb, 2) != VP9_FRAME_MARKER)
+      vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                         "Invalid frame marker");
+
+  cm->version = vp9_rb_read_bit(rb);
+  RESERVED;
+
+  cm->show_existing_frame = vp9_rb_read_bit(rb);
+  if (cm->show_existing_frame) {
+    // show an existing frame directly
+    int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
+    ref_cnt_fb(cm->fb_idx_ref_cnt, &cm->new_fb_idx, frame_to_show);
+    pbi->refresh_frame_flags = 0;
+    cm->lf.filter_level = 0;
+    return 0;
+  }
+
+  cm->frame_type = (FRAME_TYPE) vp9_rb_read_bit(rb);
+  cm->show_frame = vp9_rb_read_bit(rb);
+  cm->error_resilient_mode = vp9_rb_read_bit(rb);
+
+  if (cm->frame_type == KEY_FRAME) {
+    check_sync_code(cm, rb);
+
+    cm->color_space = vp9_rb_read_literal(rb, 3);  // colorspace
+    if (cm->color_space != SRGB) {
+      vp9_rb_read_bit(rb);  // [16,235] (including xvycc) vs [0,255] range
+      if (cm->version == 1) {
+        cm->subsampling_x = vp9_rb_read_bit(rb);
+        cm->subsampling_y = vp9_rb_read_bit(rb);
+        vp9_rb_read_bit(rb);  // has extra plane
+      } else {
+        cm->subsampling_y = cm->subsampling_x = 1;
+      }
+    } else {
+      if (cm->version == 1) {
+        cm->subsampling_y = cm->subsampling_x = 0;
+        vp9_rb_read_bit(rb);  // has extra plane
+      } else {
+        vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                           "RGB not supported in profile 0");
+      }
+    }
+
+    pbi->refresh_frame_flags = (1 << REF_FRAMES) - 1;
+
+    for (i = 0; i < REFS_PER_FRAME; ++i) {
+      cm->frame_refs[i].idx = cm->new_fb_idx;
+      cm->frame_refs[i].buf = get_frame_new_buffer(cm);
+    }
+
+    setup_frame_size(pbi, rb);
+  } else {
+    cm->intra_only = cm->show_frame ? 0 : vp9_rb_read_bit(rb);
+
+    cm->reset_frame_context = cm->error_resilient_mode ?
+        0 : vp9_rb_read_literal(rb, 2);
+
+    if (cm->intra_only) {
+      check_sync_code(cm, rb);
+
+      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+      setup_frame_size(pbi, rb);
+    } else {
+      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+
+      for (i = 0; i < REFS_PER_FRAME; ++i) {
+        const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
+        const int idx = cm->ref_frame_map[ref];
+        cm->frame_refs[i].idx = idx;
+        cm->frame_refs[i].buf = &cm->yv12_fb[idx];
+        cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
+      }
+
+      setup_frame_size_with_refs(pbi, rb);
+
+      cm->allow_high_precision_mv = vp9_rb_read_bit(rb);
+      cm->mcomp_filter_type = read_interp_filter_type(rb);
+
+      for (i = 0; i < REFS_PER_FRAME; ++i) {
+        RefBuffer *const ref_buf = &cm->frame_refs[i];
+        vp9_setup_scale_factors_for_frame(&ref_buf->sf,
+                                          ref_buf->buf->y_crop_width,
+                                          ref_buf->buf->y_crop_height,
+                                          cm->width, cm->height);
+        if (vp9_is_scaled(&ref_buf->sf))
+          vp9_extend_frame_borders(ref_buf->buf,
+                                   cm->subsampling_x, cm->subsampling_y);
+      }
+    }
+  }
+
+  if (!cm->error_resilient_mode) {
+    cm->refresh_frame_context = vp9_rb_read_bit(rb);
+    cm->frame_parallel_decoding_mode = vp9_rb_read_bit(rb);
+  } else {
+    cm->refresh_frame_context = 0;
+    cm->frame_parallel_decoding_mode = 1;
+  }
+
+  // This flag will be overridden by the call to vp9_setup_past_independence
+  // below, forcing the use of context 0 for those frame types.
+  cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
+
+  if (frame_is_intra_only(cm) || cm->error_resilient_mode)
+    vp9_setup_past_independence(cm);
+
+  setup_loopfilter(&cm->lf, rb);
+  setup_quantization(cm, &pbi->mb, rb);
+  setup_segmentation(&cm->seg, rb);
+
+  setup_tile_info(cm, rb);
+  sz = vp9_rb_read_literal(rb, 16);
+
+  if (sz == 0)
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Invalid header size");
+
+  return sz;
+}
+
+static size_t read_uncompressed_header_recon(VP9D_COMP *pbi,
+                                       struct vp9_read_bit_buffer *rb) {
+  VP9_COMMON *const cm = &pbi->common;
+  size_t sz;
+  int i;
   int width = 0;
   int height = 0;
   
@@ -1236,8 +1470,8 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
       cm->frame_refs[i].buf = get_frame_new_buffer(cm);
     }
 
-    store_frame_size(pbi, &width, &height);
-    setup_frame_size(pbi, rb);
+    store_frame_size_recon(pbi, &width, &height);
+    setup_frame_size_recon(pbi, rb);
   } else {
     cm->intra_only = cm->show_frame ? 0 : vp9_rb_read_bit(rb);
 
@@ -1248,8 +1482,8 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
       check_sync_code(cm, rb);
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
-      store_frame_size(pbi, &width, &height);
-      setup_frame_size(pbi, rb);
+      store_frame_size_recon(pbi, &width, &height);
+      setup_frame_size_recon(pbi, rb);
     } else {
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
 
@@ -1261,7 +1495,7 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
       }
 
-      setup_frame_size_with_refs(pbi, rb);
+      setup_frame_size_with_refs_recon(pbi, rb);
 
       cm->allow_high_precision_mv = vp9_rb_read_bit(rb);
       cm->mcomp_filter_type = read_interp_filter_type(rb);
@@ -2096,67 +2330,6 @@ void decode_tile_recon_intra(VP9D_COMP *pbi, const TileInfo *const tile,
   PPAStopCpuEventFunc(vp9_tiles_intra_pred_time);
 }
 
-static const uint8_t *decode_tiles_mt_recon(VP9D_COMP *pbi,
-    const uint8_t *data) {
-  VP9_COMMON *const cm = &pbi->common;
-  VP9_DECODER_RECON *decoder_recon;
-  const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
-  const int tile_cols = 1 << cm->log2_tile_cols;
-  const int tile_rows = 1 << cm->log2_tile_rows;
-  TileBuffer tile_buffers[4][1 << 6];
-  int tile_row, tile_col;
-  const uint8_t *const data_end = pbi->source + pbi->source_sz;
-  const uint8_t *end = NULL;
-
-  assert(tile_rows <= 4);
-  assert(tile_cols <= (1 << 6));
-
-  // Note: this memset assumes above_context[0], [1] and [2]
-  // are allocated as part of the same buffer.
-  vpx_memset(pbi->above_context[0], 0,
-             sizeof(*pbi->above_context[0]) * MAX_MB_PLANE * 2 * aligned_cols);
-
-  vpx_memset(pbi->above_seg_context, 0,
-             sizeof(*pbi->above_seg_context) * aligned_cols);
-
-  // Load tile data into tile_buffers
-  for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
-    const int last_tile = tile_row == tile_rows - 1 &&
-                          tile_col == tile_cols - 1;
-    const size_t size = get_tile(data_end, last_tile, &cm->error, &data);
-    TileBuffer *const buf = &tile_buffers[tile_row][tile_col];
-    buf->data = data;
-    buf->size = size;
-    data += size;
-  }
-
-  // Decode tiles using data from tile_buffers
-  for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
-    const int col = pbi->oxcf.inv_tile_order ? tile_cols - tile_col - 1
-                                             : tile_col;
-    const int last_tile = tile_row == tile_rows - 1 &&
-                               col == tile_cols - 1;
-    const TileBuffer *const buf = &tile_buffers[tile_row][col];
-    TileInfo tile;
-
-    decoder_recon = &pbi->decoder_recon[tile_col];
-    //decoder_recon->common = pbi->common;
-    decoder_recon->cm = cm;
-    decoder_recon->mb = pbi->mb;
-    vp9_tile_init(&tile, decoder_recon->cm, tile_row, col);
-    setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-        &decoder_recon->r);
-    setup_tile_context(pbi, &decoder_recon->mb, tile_row, col);
-    setup_tile_macroblockd_recon(decoder_recon);
-    decode_tile_recon(pbi, &tile, &decoder_recon->r, tile_col);
-
-    if (last_tile)
-      end = vp9_reader_find_end(&decoder_recon->r);
-  }
-
-  return end;
-}
-
 static const uint8_t *decode_tiles_mt_recon_for_mt(VP9D_COMP *pbi,
     const uint8_t *data) {
   VP9_COMMON *const cm = &pbi->common;
@@ -2253,48 +2426,6 @@ static const uint8_t *decode_tiles_mt_recon_for_mt(VP9D_COMP *pbi,
   return end;
 }
 
-static void apply_frame_size_recon(VP9D_COMP *pbi, int width, int height) {
-  VP9_COMMON *cm = &pbi->common;
-  
-  if (cm->width != width || cm->height != height) {
-    // Change in frame size.
-    if (cm->width == 0 || cm->height == 0) {
-      // Assign new frame buffer on first call.
-      cm->new_fb_idx = FRAME_BUFFERS - 1;
-      cm->fb_idx_ref_cnt[cm->new_fb_idx] = 1;
-    }
-
-    // TODO(agrange) Don't test width/height, check overall size.
-    if (width > cm->width || height > cm->height) {
-      // Rescale frame buffers only if they're not big enough already.
-      if (vp9_resize_frame_buffers(cm, width, height))
-        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                           "Failed to allocate frame buffers");
-    }
-
-    cm->width = width;
-    cm->height = height;
-
-    vp9_update_frame_size(cm);
-  }
-
-  if (cm->fb_list != NULL) {
-    vpx_codec_frame_buffer_t *const ext_fb = &cm->fb_list[cm->new_fb_idx];
-    if (vp9_realloc_frame_buffer(get_frame_new_buffer(cm),
-                                 cm->width, cm->height,
-                                 cm->subsampling_x, cm->subsampling_y,
-                                 VP9BORDERINPIXELS, ext_fb,
-                                 cm->realloc_fb_cb, cm->user_priv)) {
-      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                         "Failed to allocate external frame buffer");
-    }
-  } else {
-    vp9_realloc_frame_buffer(get_frame_new_buffer(cm), cm->width, cm->height,
-                             cm->subsampling_x, cm->subsampling_y,
-                             VP9BORDERINPIXELS, NULL, NULL, NULL);
-  }
-}
-
 int vp9_decode_frame_recon(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   int i;
   VP9_COMMON *const cm = &pbi->common;
@@ -2304,7 +2435,7 @@ int vp9_decode_frame_recon(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   const uint8_t *const data_end = pbi->source + pbi->source_sz;
 
   struct vp9_read_bit_buffer rb = { data, data_end, 0, cm, error_handler };
-  const size_t first_partition_size = read_uncompressed_header(pbi, &rb);
+  const size_t first_partition_size = read_uncompressed_header_recon(pbi, &rb);
   const int keyframe = cm->frame_type == KEY_FRAME;
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
@@ -2363,7 +2494,7 @@ int vp9_decode_frame_recon(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   if (pbi->oxcf.max_threads > 1 && tile_rows == 1) {
     *p_data_end = decode_tiles_mt_recon_for_mt(pbi, data + first_partition_size);
   } else {
-    *p_data_end = decode_tiles(pbi, data + first_partition_size);
+    *p_data_end = decode_tiles_recon(pbi, data + first_partition_size);
   }
 
   cm->last_width = cm->width;
@@ -2396,7 +2527,7 @@ int vp9_decode_frame_recon(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   return 0;
 }
 
-int vp9_decode_frame_head(VP9D_COMP *pbi,
+static int vp9_decode_frame_head_recon(VP9D_COMP *pbi,
                           const uint8_t **p_data_end,
                           size_t *p_first_partition_size,
                           const uint8_t **p_data) {
@@ -2408,7 +2539,7 @@ int vp9_decode_frame_head(VP9D_COMP *pbi,
   const uint8_t *const data_end = pbi->source + pbi->source_sz;
 
   struct vp9_read_bit_buffer rb = { data, data_end, 0, cm, error_handler };
-  const size_t first_partition_size = read_uncompressed_header(pbi, &rb);
+  const size_t first_partition_size = read_uncompressed_header_recon(pbi, &rb);
   const int keyframe = cm->frame_type == KEY_FRAME;
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
@@ -2603,7 +2734,7 @@ void vp9_tiles_intra_pred(VP9D_COMP *pbi) {
   }
 }
 
-int vp9_single_thread_decode(VP9D_COMP *pbi,
+static int vp9_single_thread_decode(VP9D_COMP *pbi,
                              const uint8_t **p_data_end,
                              size_t first_partition_size,
                              const uint8_t *data) {
@@ -2661,7 +2792,7 @@ static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
 #endif
   int tile_rows;
 
-  vp9_decode_frame_head(pbi, p_data_end, &first_partition_size, &data);
+  vp9_decode_frame_head_recon(pbi, p_data_end, &first_partition_size, &data);
 
   tile_rows = 1 << cm->log2_tile_rows;
   if (tile_rows != 1) {

@@ -160,7 +160,7 @@ static MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
 
 static void vp9_update_buffer(int buffer_sz, int tile_count) {
   int i = 0;
-  int param_count_cpu = (buffer_sz >> 4) / tile_count;
+  int param_count_cpu = (buffer_sz >> 4);
   int param_count_gpu = param_count_cpu;
 
   inter_rs_obj.globalThreads = param_count_gpu > STABLE_THREAD_COUNT_RS ?

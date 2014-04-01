@@ -19,7 +19,7 @@ enum { DEV_THREE = 3};
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/decoder/vp9_onyxd_int.h"
 
-void store_frame_size(VP9D_COMP *pbi, int *width, int *height);
+void store_frame_size_recon(VP9D_COMP *pbi, int *width, int *height);
 
 void store_inter_info_recon(MACROBLOCKD *xd, int offset,int mi_col,
     int mi_row, BLOCK_SIZE bsize, VP9_DECODER_RECON *decoder_recon);

@@ -91,7 +91,7 @@ static const int token_to_counttoken[ENTROPY_TOKENS] = {
     val += (vp9_read(r, prob) << bits_count);           \
   } while (0)
 
-static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
+static int decode_coefs_recon(VP9_COMMON *cm, const MACROBLOCKD *xd,
                         vp9_reader *r, int block_idx,
                         PLANE_TYPE type, int seg_eob, int16_t *dqcoeff_ptr,
                         TX_SIZE tx_size, const int16_t *dq, int pt,
@@ -228,7 +228,7 @@ int vp9_decode_block_tokens_recon(VP9_DECODER_RECON *decoder_recon,
   uint16_t *eobs =
       decoder_recon->dequant_recon[decoder_recon->dequant_count].eobs[plane]
           + offset / 16;
-  const int eob = decode_coefs(cm, xd, r, block, pd->plane_type, seg_eob,
+  const int eob = decode_coefs_recon(cm, xd, r, block, pd->plane_type, seg_eob,
                                BLOCK_OFFSET(qcoeff, block), tx_size,
                                pd->dequant, pt, token_cache);
   set_contexts(xd, pd, plane_bsize, tx_size, eob > 0, x, y);

@@ -19,7 +19,7 @@ struct intra_predict_args {
   uint8_t *token_cache;
 };
 
-static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
+static void inverse_transform_block_recon(MACROBLOCKD* xd, int plane, int block,
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
                                     uint8_t *token_cache) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
@@ -96,7 +96,7 @@ static void decode_block_intra_recon(int plane, int block,
                           x, y, plane);
 
   if (!mi->mbmi.skip_coeff)
-    inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
+    inverse_transform_block_recon(xd, plane, block, tx_size, dst, pd->dst.stride,
                             arg->token_cache);
 }
 

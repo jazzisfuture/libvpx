@@ -22,7 +22,7 @@
 /*store_intra_info_recon, this function store the necessary
     parameter used by the intra predicition,intra dequantization,
     intra inv-transformation of intra block*/
-void store_frame_size(VP9D_COMP *pbi, int *width, int *height) {
+void store_frame_size_recon(VP9D_COMP *pbi, int *width, int *height) {
   VP9_COMMON *cm = &pbi->common;
   *width = cm->width;
   *height = cm->height;
@@ -128,12 +128,12 @@ int alloc_buffers_recon(VP9_COMMON *cm, VP9_DECODER_RECON *decoder_recon) {
   int mi8x8_size;
   int mi64x64_size;
   int col_offset;
-  const int tile_rows = 1 << cm->log2_tile_rows;
+  //const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = cm->log2_tile_cols;
 
   free_buffers_recon(decoder_recon);
 
-  assert(tile_rows <= 1);
+  //assert(tile_rows <= 1);
   mi8x8_size = (cm->mi_rows) * cm->mi_cols;
   mi64x64_size = MAX_64X64_COLS * MAX_64X64_ROWS;
   
