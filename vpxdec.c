@@ -35,6 +35,7 @@
 #include "./webmdec.h"
 #include "./y4menc.h"
 
+#include "./vp9/ppa.h"
 static const char *exec_name;
 
 static const struct {
@@ -957,6 +958,7 @@ int main(int argc, const char **argv_) {
   char **argv, **argi, **argj;
   struct arg arg;
   int error = 0;
+  PPA_INIT();
 
   argv = argv_dup(argc - 1, argv_ + 1);
   for (argi = argj = argv; (*argj = *argi); argi += arg.argv_step) {
@@ -971,5 +973,6 @@ int main(int argc, const char **argv_) {
   free(argv);
   for (i = 0; !error && i < loops; i++)
     error = main_loop(argc, argv_);
+  PPA_END();
   return error;
 }

@@ -19,6 +19,7 @@
 #include "vp9/decoder/vp9_onyxd_int.h"
 #include "vp9/decoder/vp9_read_bit_buffer.h"
 #include "vp9/vp9_iface_common.h"
+#include "vp9/common/kernel/vp9_inter_pred_rs.h"
 
 #define VP9_CAP_POSTPROC (CONFIG_VP9_POSTPROC ? VPX_CODEC_CAP_POSTPROC : 0)
 typedef vpx_codec_stream_info_t  vp9_stream_info_t;
@@ -127,7 +128,10 @@ static vpx_codec_err_t vp9_init(vpx_codec_ctx_t *ctx,
       ctx->priv->alg_priv->defer_alloc = 1;
     }
   }
-
+  rs_init = vp9_init_rs();
+  if (rs_init == -1) {
+    printf("we can't use rs, it will back to cpu \n");
+  }
   return res;
 }
 
