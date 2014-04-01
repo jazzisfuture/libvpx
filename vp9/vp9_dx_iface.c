@@ -21,7 +21,6 @@
 #include "vp9/vp9_iface_common.h"
 
 #define VP9_CAP_POSTPROC (CONFIG_VP9_POSTPROC ? VPX_CODEC_CAP_POSTPROC : 0)
-typedef vpx_codec_stream_info_t  vp9_stream_info_t;
 
 /* Structures for handling memory allocations */
 typedef enum {
@@ -42,7 +41,7 @@ struct vpx_codec_alg_priv {
   vpx_codec_priv_t        base;
   vpx_codec_mmap_t        mmaps[NELEMENTS(vp9_mem_req_segs) - 1];
   vpx_codec_dec_cfg_t     cfg;
-  vp9_stream_info_t       si;
+  vpx_codec_stream_info_t si;
   int                     defer_alloc;
   int                     decoder_init;
   struct VP9Decompressor *pbi;
@@ -206,12 +205,10 @@ static vpx_codec_err_t vp9_peek_si(const uint8_t *data, unsigned int data_sz,
 
 static vpx_codec_err_t vp9_get_si(vpx_codec_alg_priv_t    *ctx,
                                   vpx_codec_stream_info_t *si) {
-  const size_t sz = (si->sz >= sizeof(vp9_stream_info_t))
-                       ? sizeof(vp9_stream_info_t)
-                       : sizeof(vpx_codec_stream_info_t);
-  memcpy(si, &ctx->si, sz);
-  si->sz = (unsigned int)sz;
+  if (!ctx || !si || si->sz != sizeof(vpx_codec_stream_info_t))
+    return VPX_CODEC_INVALID_PARAM;
 
+  *si = *ctx->si;
   return VPX_CODEC_OK;
 }
 
