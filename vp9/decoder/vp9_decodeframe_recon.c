@@ -2773,11 +2773,9 @@ static int vp9_decode_frame_no_mt(VP9D_COMP *pbi,
                                             const uint8_t **p_data_end,
                                             size_t first_partition_size,
                                             const uint8_t *data) {
-
   *p_data_end = decode_tiles(pbi, data + first_partition_size);
 
   return vp9_decode_frame_tail(pbi);
-
 }
 
 static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
