@@ -96,8 +96,8 @@ static void decode_block_intra_recon(int plane, int block,
                           x, y, plane);
 
   if (!mi->mbmi.skip_coeff)
-    inverse_transform_block_recon(xd, plane, block, tx_size, dst, pd->dst.stride,
-                            arg->token_cache);
+    inverse_transform_block_recon(xd, plane, block, tx_size, dst,
+        pd->dst.stride, arg->token_cache);
 }
 
 int vp9_intra_predict_recon(void *func, MACROBLOCKD *xd,

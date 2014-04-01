@@ -921,7 +921,7 @@ static void setup_tile_size_recon(VP9D_COMP *pbi, int width, int height) {
   VP9_COMMON *cm = &pbi->common;
   int i = 0;
   int tile_cols = 1 << cm->log2_tile_cols;
- 
+
   if (cm->width != width || cm->height != height) {
     if (cm->width > width || cm->height > height) {
       for (i = 0; i < tile_cols; i++) {
@@ -1416,7 +1416,7 @@ static size_t read_uncompressed_header_recon(VP9D_COMP *pbi,
   int i;
   int width = 0;
   int height = 0;
-  
+
   cm->last_frame_type = cm->frame_type;
 
   if (vp9_rb_read_literal(rb, 2) != VP9_FRAME_MARKER)
@@ -2773,7 +2773,7 @@ static int vp9_decode_frame_no_mt(VP9D_COMP *pbi,
                                             const uint8_t **p_data_end,
                                             size_t first_partition_size,
                                             const uint8_t *data) {
- 
+
   *p_data_end = decode_tiles(pbi, data + first_partition_size);
 
   return vp9_decode_frame_tail(pbi);
