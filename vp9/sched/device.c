@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include <assert.h>
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/sched/thread.h"
@@ -15,16 +18,6 @@
 #include "vp9/sched/device.h"
 #include "vp9/sched/task.h"
 #include "vp9/sched/debug.h"
-
-#if __ANDROID__ ||  _BSD_SOURCE || _SVID_SOURCE || _XOPEN_SOURCE
-#include <unistd.h>
-static INLINE void vp9_nice(int inc) {
-  nice(inc);
-}
-#else
-static INLINE void vp9_nice(int inc) {
-}
-#endif
 
 struct step_fn_args {
   struct task *tsk;
@@ -130,8 +123,6 @@ static THREADFN thread_fn(void *arg) {
   struct thread *thr = (struct thread *)arg;
   struct device *dev = thr->dev;
   struct list_node *n;
-
-  vp9_nice(-10);
 
   for ( ; ; ) {
     n = queue_pop(dev->q);
@@ -262,3 +253,5 @@ int cpu_device_exec(struct device *dev) {
 
   return 0;
 }
+
+#endif

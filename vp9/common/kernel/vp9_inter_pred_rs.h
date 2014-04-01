@@ -10,12 +10,11 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
-#define MAX_TILE_COUNT_RS 4
+#define MAX_TILE_COUNT_RS 8
 
 #define MALLOC_INTER_RS(type, n) (type *)malloc((n)*sizeof(type))
 
 typedef struct inter_pred_param_gpu_rs {
-  int src_num;
   int src_mv;
   int src_stride;
 
@@ -29,12 +28,10 @@ typedef struct inter_pred_param_gpu_rs {
 typedef struct inter_pred_param_cpu_rs {
   int pred_mode;
 
-  int src_num;
-  int src_mv;
   int src_stride;
   uint8_t *psrc;
-  int dst_mv;
   int dst_stride;
+  uint8_t *pdst;
 
   int filter_x_mv;
   int x_step_q4;
@@ -62,7 +59,6 @@ typedef struct inter_pred_args_rs {
 }INTER_PRED_ARGS_RS;
 
 typedef struct inter_rs_obj {
-  int previous_f;
   int tile_count;
   int buffer_size;
   int pred_param_size;
@@ -94,8 +90,8 @@ typedef struct inter_rs_obj {
   INTER_PRED_PARAM_CPU_RS *pred_param_cpu_sec_pre[MAX_TILE_COUNT_RS];
   uint8_t *ref_buffer[MAX_TILE_COUNT_RS];
   uint8_t *pref[MAX_TILE_COUNT_RS];
-  uint8_t *new_buffer[MAX_TILE_COUNT_RS];
-  uint8_t *mid_buffer[MAX_TILE_COUNT_RS];
+  uint8_t *pool;
+  uint8_t *dst;
 }INTER_RS_OBJ;
 
 int vp9_setup_interp_filters_rs(MACROBLOCKD *xd,
@@ -120,13 +116,9 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
                                         const int tile_num);
 
 int vp9_init_rs();
-int vp9_check_buff_size(VP9_COMMON *const cm, int tile_count);
 int vp9_release_rs();
-
-int vp9_mem_cpu_to_gpu_rs(VP9_COMMON *const cm);
-
 int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num);
-
+uint8_t *vp9_get_buf(int offset, int buf_sz);
 extern INTER_RS_OBJ inter_rs_obj;
 extern int rs_init;
 

@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/step.h"
 #include "vp9/decoder/vp9_step.h"
 #include "vp9/decoder/vp9_decodeframe_recon.h"
@@ -97,7 +101,7 @@ static int vp9_inter_pred_gpu(struct task *tsk,
   VP9_DECODER_RECON *decoder_recon = pbi->decoder_recon + param->tile_col;
   int tile_col = param->tile_col;
   TileInfo *tile = &decoder_recon->tile;
-  if (rs_init == 2) {
+  if (rs_init == 0) {
     decode_tile_recon_inter_rs(pbi, tile, &decoder_recon->r, tile_col);
   } else {
     decode_tile_recon_inter(pbi, tile, &decoder_recon->r, tile_col);
@@ -275,3 +279,5 @@ struct entropy_dec_param *entropy_dec_param_get(struct task *tsk) {
 
   return param;
 }
+
+#endif

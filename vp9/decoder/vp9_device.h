@@ -11,8 +11,14 @@
 #ifndef VP9_DECODER_VP9_DEVICE_H_
 #define VP9_DECODER_VP9_DEVICE_H_
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/sched.h"
 
 void vp9_register_devices(struct scheduler *sched);
+
+#endif
 
 #endif  // VP9_DECODER_VP9_DEVICE_H_

@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+
+
 #include "./vpx_config.h"
+
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/decoder/vp9_loopfilter_recon.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -1258,7 +1261,6 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
       xd->plane[1].subsampling_x == 1);
 #endif
 
-
   setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
 
 #if CONFIG_NON420
@@ -1281,22 +1283,19 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
 }
 
 #define MAX_CPU 32
-#define ENABLE_WPP
 
 void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
                               const YV12_BUFFER_CONFIG *frame_buffer,
                               VP9_COMMON *cm, MACROBLOCKD *xd,
                               int start, int stop, int y_only) {
-  struct lf_blk_param *params[MAX_CPU];
+#if CONFIG_MULTITHREAD
+  struct lf_blk_param *params[MAX_CPU] = { 0 };
   struct task *tsks[MAX_CPU];
   int i;
   VP9_DECODER_RECON *decoder_recon;
   struct device *dev;
   int cpu_count;
   struct task *last_tsk = NULL;
-
-
-#ifdef ENABLE_WPP
 
   dev = scheduler_get_dev(pbi->sched, DEV_CPU);
   assert(dev);

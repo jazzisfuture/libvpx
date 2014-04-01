@@ -14,6 +14,7 @@
 #include "vp9/common/vp9_scale.h"
 #include "vp9/common/kernel/vp9_inter_pred_rs.h"
 #include "vp9/common/kernel/vp9_convolve_rs_c.h"
+#include "vp9/ppa.h"
 
 #include <stdio.h>
 #include <dlfcn.h>
@@ -22,7 +23,25 @@
 
 #define STABLE_THREAD_COUNT_RS 18375
 #define STABLE_BUFFER_SIZE_RS  4704000
-#define MAX_TILE 4
+#define MAX_TILE 8
+
+typedef struct {
+  void *lib_handle;
+  int (*init_rs)(int pred_param_size, int param_index_size, int buff_size,
+                 int pool_size, int global_size, int tile_count);
+
+  void (*release_rs)(int tile_count);
+
+  void (*invoke_inter_rs)(int tile_index, int counts_8x8);
+
+  uint8_t *(*get_alloc_ptr)(int flag, int index);
+
+  void (*finish_rs)();
+} LIB_CONTEXT;
+
+LIB_CONTEXT inter_rs_context;
+int rs_init = -1;
+INTER_RS_OBJ inter_rs_obj = { 0 };
 
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
@@ -65,34 +84,6 @@ static void build_mc_border(const uint8_t *src, int src_stride,
       ref_row += src_stride;
   } while (--b_h);
 }
-
-
-typedef struct {
-  void *lib_handle;
-  int (*init_rs)(int pred_param_size, int param_index_size, int buff_size,
-                 int pool_size, int global_size, int tile_index,
-                 uint8_t *block_param, uint8_t *index_param,
-                 uint8_t *dst_buf, uint8_t *mid_buf);
-  void (*release_rs)(int tile_count);
-  void (*update_pool_rs)(unsigned char *per_buf, int frame_num);
-  void (*get_rs_res)(unsigned char *dst_buf, int frame_num);
-  void (*invoke_inter_rs)(unsigned char *dst_buf, unsigned char *block_param,
-                          unsigned char *index_param, int tile_index,
-                          int counts_8x8, int block_param_size,
-                          int index_param_size);
-  void (*create_buffer_rs)(int pred_param_size, int param_index_size,
-                           int buf_size, int pool_size, int global_size,
-                           int tile_count, uint8_t **block, uint8_t **index,
-                           uint8_t **buf, uint8_t **mid_buf);
-  void (*update_buffer_size_rs)(int pred_param_size, int param_index_size,
-                               int buf_size, int pool_size);
-
-  void (*release_buffer_rs)(int tile_count);
-
-} LIB_CONTEXT;
-LIB_CONTEXT inter_rs_context;
-int rs_init = 1;
-INTER_RS_OBJ inter_rs_obj = { 0 };
 
 static const int16_t *inter_filter_rs[4] = {
                                   vp9_sub_pel_filters_8[0],
@@ -167,30 +158,50 @@ static MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
   return clamped_mv;
 }
 
-static void update_buffer(int tile_count, int param_count_cpu,
-                          int param_count_gpu) {
-  uint8_t *pblock[MAX_TILE];
-  uint8_t *pindex[MAX_TILE];
-  uint8_t *pbuf[MAX_TILE];
-  uint8_t *pmid[MAX_TILE];
+static void vp9_update_buffer(int buffer_sz, int tile_count) {
   int i = 0;
+  int param_count_cpu = (buffer_sz >> 4) / tile_count;
+  int param_count_gpu = param_count_cpu;
+
+  inter_rs_obj.globalThreads = param_count_gpu > STABLE_THREAD_COUNT_RS ?
+                                param_count_gpu : STABLE_THREAD_COUNT_RS;
+
+  inter_rs_obj.tile_count = tile_count;
+  inter_rs_obj.buffer_size = buffer_sz;
+  inter_rs_obj.buffer_pool_size =
+      inter_rs_obj.buffer_size * FRAME_BUFFERS;
+
+  inter_rs_obj.pred_param_size =
+      param_count_gpu * sizeof(INTER_PRED_PARAM_GPU_RS);
+  inter_rs_obj.param_index_size =
+      param_count_gpu * sizeof(INTER_PARAM_INDEX_GPU_RS);
+
+  inter_rs_context.init_rs(
+      inter_rs_obj.pred_param_size,
+      inter_rs_obj.param_index_size,
+      inter_rs_obj.buffer_size,
+      inter_rs_obj.buffer_pool_size,
+      inter_rs_obj.globalThreads, tile_count);
+
+  inter_rs_obj.pool = inter_rs_context.get_alloc_ptr(0, -1);
+  inter_rs_obj.dst = inter_rs_context.get_alloc_ptr(3, -1);
+  assert(inter_rs_obj.pool != NULL);
+
   for (i = 0; i < tile_count; ++i) {
     inter_rs_obj.pred_param_cpu_fri[i] =
         MALLOC_INTER_RS(INTER_PRED_PARAM_CPU_RS, param_count_cpu);
     inter_rs_obj.pred_param_cpu_sec[i] =
         inter_rs_obj.pred_param_cpu_fri[i] + (param_count_cpu >> 1);
     inter_rs_obj.pred_param_gpu[i] =
-        MALLOC_INTER_RS(INTER_PRED_PARAM_GPU_RS, param_count_gpu);
+        (INTER_PRED_PARAM_GPU_RS *)inter_rs_context.get_alloc_ptr(1, i);
     inter_rs_obj.pred_param_index_gpu[i] =
-        MALLOC_INTER_RS(INTER_PARAM_INDEX_GPU_RS, param_count_gpu);
+        (INTER_PARAM_INDEX_GPU_RS *)inter_rs_context.get_alloc_ptr(2, i);
     inter_rs_obj.pred_block_size_gpu[i] =
         MALLOC_INTER_RS(INTER_BLOCK_SIZE_GPU_RS, param_count_gpu);
 
     inter_rs_obj.ref_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
     inter_rs_obj.pref[i] = inter_rs_obj.ref_buffer[i];
 
-    inter_rs_obj.new_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
-    inter_rs_obj.mid_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
     assert(inter_rs_obj.pred_param_gpu[i] != NULL);
     assert(inter_rs_obj.pred_param_cpu_fri[i] != NULL);
     assert(inter_rs_obj.pred_block_size_gpu[i] != NULL);
@@ -211,20 +222,6 @@ static void update_buffer(int tile_count, int param_count_cpu,
     inter_rs_obj.gpu_block_count[i] = 0;
     inter_rs_obj.gpu_index_count[i] = 0;
   }
-  for (i = 0; i < tile_count; i++) {
-    pblock[i] = (uint8_t *)inter_rs_obj.pred_param_gpu[i];
-    pindex[i] = (uint8_t *)inter_rs_obj.pred_param_index_gpu[i];
-    pbuf[i]   = inter_rs_obj.new_buffer[i];
-    pmid[i]   = inter_rs_obj.mid_buffer[i];
-  }
-  inter_rs_context.create_buffer_rs(
-            inter_rs_obj.pred_param_size,
-            inter_rs_obj.param_index_size,
-            inter_rs_obj.buffer_size,
-            inter_rs_obj.buffer_pool_size,
-            inter_rs_obj.globalThreads, tile_count,
-            (uint8_t **)&pblock, (uint8_t **)&pindex, (uint8_t **)&pbuf,
-            (uint8_t **)&pmid);
 }
 
 void build_inter_pred_param_sec_ref_rs(const int plane,
@@ -238,16 +235,13 @@ void build_inter_pred_param_sec_ref_rs(const int plane,
   int filter_radix;
   int subpel_x, subpel_y;
   const int16_t *filter;
-  const uint8_t *src_fri, *dst_fri;
-  const uint8_t *dst;
+  uint8_t *dst;
 
   MV32 scaled_mv;
   MV mv, mv_q4;
   struct scale_factors *sf;
   struct subpix_fn_table *subpix;
   struct buf_2d *pre_buf, *dst_buf;
-  const YV12_BUFFER_CONFIG *cfg_src;
-  const YV12_BUFFER_CONFIG *cfg_dst;
   int x0, y0, x0_16, y0_16, x1, y1, frame_width,
       frame_height, buf_stride;
   uint8_t *ref_frame, *buf_ptr;
@@ -361,23 +355,16 @@ void build_inter_pred_param_sec_ref_rs(const int plane,
     }
   }
 
-  cfg_src = &cm->yv12_fb[src_num];
-  cfg_dst = &cm->yv12_fb[cm->new_fb_idx];
-  src_fri = cfg_src->buffer_alloc;
-  dst_fri = cfg_dst->buffer_alloc;
-
   filter = inter_filter_rs[filter_num];
   filter_radix = filter_num << 7;
 
   inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->pred_mode =
       ((subpel_x != 0) << 2) + ((subpel_y != 0) << 1);
 
-  inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->src_num = src_num;
-  inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->src_mv = buf_ptr - src_fri;
   inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->psrc = buf_ptr;
   inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->src_stride = buf_stride;
 
-  inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->dst_mv = dst - dst_fri;
+  inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->pdst = (uint8_t *)dst;
   inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->dst_stride = dst_buf->stride;
 
   inter_rs_obj.pred_param_cpu_sec_pre[tile_num]->filter_x_mv =
@@ -411,15 +398,13 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
 
   const int16_t *filter;
   const uint8_t *src_fri, *dst_fri;
-  const uint8_t *dst;
+  uint8_t *dst;
 
   MV32 scaled_mv;
   MV mv, mv_q4;
   struct scale_factors *sf;
   struct subpix_fn_table *subpix;
   struct buf_2d *pre_buf, *dst_buf;
-  const YV12_BUFFER_CONFIG *cfg_src;
-  const YV12_BUFFER_CONFIG *cfg_dst;
   int w, h;
   int x0, y0, x0_16, y0_16, x1, y1, frame_width,
       frame_height, buf_stride;
@@ -539,10 +524,8 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
     }
   }
 
-  cfg_src = &cm->yv12_fb[src_num];
-  cfg_dst = &cm->yv12_fb[cm->new_fb_idx];
-  src_fri = cfg_src->buffer_alloc;
-  dst_fri = cfg_dst->buffer_alloc;
+  src_fri = inter_rs_obj.pool;
+  dst_fri = cm->yv12_fb[cm->new_fb_idx].buffer_alloc;
 
   filter = inter_filter_rs[filter_num];
   filter_radix = filter_num << 7;
@@ -551,7 +534,6 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
 
   if (pred_mode == 6 && !ref_idx && w > 4 && h > 4 && xs == 16 && ys == 16 &&
       !changed) {
-    inter_rs_obj.pred_param_gpu_pre[tile_num]->src_num = src_num;
     inter_rs_obj.pred_param_gpu_pre[tile_num]->src_mv = buf_ptr - src_fri;
     inter_rs_obj.pred_param_gpu_pre[tile_num]->src_stride = pre_buf->stride;
 
@@ -586,7 +568,7 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
     inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->psrc = buf_ptr;
     inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->src_stride = buf_stride;
 
-    inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->dst_mv = dst - dst_fri;
+    inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->pdst = dst;
     inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->dst_stride = dst_buf->stride;
 
     inter_rs_obj.pred_param_cpu_fri_pre[tile_num]->filter_x_mv =
@@ -611,49 +593,6 @@ static inline void * load_rs_inter_library() {
     printf("%s\n", dlerror());
   }
   return lib_handle;
-}
-
-int vp9_check_buff_size(VP9_COMMON *const cm, int tile_count) {
-  const YV12_BUFFER_CONFIG *cfg_source;
-  int param_count_cpu, param_count_gpu;
-  cfg_source = &cm->yv12_fb[cm->new_fb_idx];
-  param_count_cpu = (cfg_source->buffer_alloc_sz >> 2) / tile_count;
-  param_count_gpu = param_count_cpu >> 3;
-
-  inter_rs_obj.tile_count = tile_count;
-  inter_rs_obj.globalThreads = param_count_gpu > STABLE_THREAD_COUNT_RS ?
-                                param_count_gpu : STABLE_THREAD_COUNT_RS;
-  if (cfg_source->buffer_alloc_sz > STABLE_BUFFER_SIZE_RS) {
-    inter_rs_obj.buffer_size = cfg_source->buffer_alloc_sz;
-    inter_rs_obj.buffer_pool_size =
-      inter_rs_obj.buffer_size * FRAME_BUFFERS;
-
-    inter_rs_obj.pred_param_size =
-      param_count_gpu * sizeof(INTER_PRED_PARAM_GPU_RS);
-    inter_rs_obj.param_index_size =
-      param_count_gpu * sizeof(INTER_PARAM_INDEX_GPU_RS);
-
-    vp9_release_rs();
-    update_buffer(tile_count, param_count_cpu, param_count_gpu);
-
-  } else {
-    inter_rs_obj.buffer_size = cfg_source->buffer_alloc_sz;
-    inter_rs_obj.buffer_pool_size =
-      inter_rs_obj.buffer_size * FRAME_BUFFERS;
-    inter_rs_obj.pred_param_size =
-      param_count_gpu * sizeof(INTER_PRED_PARAM_GPU_RS);
-    inter_rs_obj.param_index_size =
-      param_count_gpu * sizeof(INTER_PARAM_INDEX_GPU_RS);
-
-    inter_rs_context.update_buffer_size_rs(inter_rs_obj.pred_param_size,
-                                           inter_rs_obj.param_index_size,
-                                           inter_rs_obj.buffer_size,
-                                           inter_rs_obj.buffer_pool_size);
-
-  }
-  inter_rs_obj.previous_f = cm->new_fb_idx;
-  rs_init = 2;
-  return 0;
 }
 
 static void vp9_init_convolve_t() {
@@ -694,11 +633,7 @@ static void vp9_init_convolve_t() {
   inter_rs_obj.switch_convolve_t[31] = vp9_convolve8_avg;
 }
 
-int vp9_init_rs() {
-  int i;
-  int param_count_cpu;
-  int param_count_gpu;
-  int tile_count = MAX_TILE;
+static int init_context() {
   inter_rs_context.lib_handle = load_rs_inter_library();
   if (inter_rs_context.lib_handle == NULL) {
     return -1;
@@ -707,16 +642,6 @@ int vp9_init_rs() {
                                    "init_rs");
   if (inter_rs_context.init_rs == NULL) {
     printf("get init_rs failed %s\n", dlerror());
-  }
-  inter_rs_context.update_pool_rs = dlsym(inter_rs_context.lib_handle,
-                                          "update_pool_rs");
-  if (inter_rs_context.update_pool_rs == NULL) {
-    printf("get update_pool_rs %s\n", dlerror());
-  }
-  inter_rs_context.get_rs_res = dlsym(inter_rs_context.lib_handle,
-                                      "get_rs_res");
-  if (inter_rs_context.get_rs_res == NULL) {
-    printf("get get_rs_res %s\n", dlerror());
   }
   inter_rs_context.invoke_inter_rs = dlsym(inter_rs_context.lib_handle,
                                            "invoke_inter_rs");
@@ -728,97 +653,32 @@ int vp9_init_rs() {
   if (inter_rs_context.release_rs == NULL) {
     printf("get release_rs %s\n", dlerror());
   }
-  inter_rs_context.release_buffer_rs = dlsym(inter_rs_context.lib_handle,
-                                      "release_buffer_rs");
-  if (inter_rs_context.release_buffer_rs == NULL) {
-    printf("get release_buffer_rs %s\n", dlerror());
+  inter_rs_context.get_alloc_ptr = dlsym(inter_rs_context.lib_handle,
+                                      "get_alloc_ptr");
+  if (inter_rs_context.get_alloc_ptr == NULL) {
+    printf("get get_alloc_ptr %s\n", dlerror());
   }
-  inter_rs_context.create_buffer_rs = dlsym(inter_rs_context.lib_handle,
-                                      "create_buffer_rs");
-  if (inter_rs_context.create_buffer_rs == NULL) {
-    printf("get create_buffer_rs %s\n", dlerror());
+  inter_rs_context.finish_rs = dlsym(inter_rs_context.lib_handle,
+                                      "finish_rs");
+  if (inter_rs_context.finish_rs == NULL) {
+    printf("get finish_rs %s\n", dlerror());
   }
-  inter_rs_context.update_buffer_size_rs = dlsym(inter_rs_context.lib_handle,
-                                      "update_buffer_size_rs");
-  if (inter_rs_context.update_buffer_size_rs == NULL) {
-    printf("get update_buffer_size_rs %s\n", dlerror());
-  }
+  return 0;
+}
 
+int vp9_init_rs() {
+
+  if (init_context() == -1) {
+    return -1;
+  }
   vp9_init_convolve_t();
-
-  param_count_cpu = (STABLE_BUFFER_SIZE_RS >> 2) / tile_count;
-  param_count_gpu = param_count_cpu >> 3;
-
-  inter_rs_obj.tile_count = tile_count;
-  inter_rs_obj.globalThreads = param_count_gpu > STABLE_THREAD_COUNT_RS ?
-                                param_count_gpu : STABLE_THREAD_COUNT_RS;
-
-  inter_rs_obj.buffer_size = STABLE_BUFFER_SIZE_RS;
-  inter_rs_obj.buffer_pool_size =
-      inter_rs_obj.buffer_size * FRAME_BUFFERS;
-
-  inter_rs_obj.pred_param_size =
-      param_count_gpu * sizeof(INTER_PRED_PARAM_GPU_RS);
-  inter_rs_obj.param_index_size =
-      param_count_gpu * sizeof(INTER_PARAM_INDEX_GPU_RS);
-
-  for (i = 0; i < tile_count; ++i) {
-    inter_rs_obj.pred_param_cpu_fri[i] =
-        MALLOC_INTER_RS(INTER_PRED_PARAM_CPU_RS, param_count_cpu);
-    inter_rs_obj.pred_param_cpu_sec[i] =
-        inter_rs_obj.pred_param_cpu_fri[i] + (param_count_cpu >> 1);
-    inter_rs_obj.pred_param_gpu[i] =
-        MALLOC_INTER_RS(INTER_PRED_PARAM_GPU_RS, param_count_gpu);
-    inter_rs_obj.pred_param_index_gpu[i] =
-        MALLOC_INTER_RS(INTER_PARAM_INDEX_GPU_RS, param_count_gpu);
-    inter_rs_obj.pred_block_size_gpu[i] =
-        MALLOC_INTER_RS(INTER_BLOCK_SIZE_GPU_RS, param_count_gpu);
-
-    inter_rs_obj.ref_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
-    inter_rs_obj.pref[i] = inter_rs_obj.ref_buffer[i];
-
-    inter_rs_obj.new_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
-    inter_rs_obj.mid_buffer[i] = (uint8_t *)malloc(inter_rs_obj.buffer_size);
-    assert(inter_rs_obj.pred_param_gpu[i] != NULL);
-    assert(inter_rs_obj.pred_param_cpu_fri[i] != NULL);
-    assert(inter_rs_obj.pred_block_size_gpu[i] != NULL);
-    assert(inter_rs_obj.pred_param_index_gpu[i] != NULL);
-
-    inter_rs_context.init_rs(inter_rs_obj.pred_param_size,
-            inter_rs_obj.param_index_size,
-            inter_rs_obj.buffer_size, inter_rs_obj.buffer_pool_size,
-            inter_rs_obj.globalThreads, i,
-            (uint8_t *)inter_rs_obj.pred_param_gpu[i],
-            (uint8_t *)inter_rs_obj.pred_param_index_gpu[i],
-            (uint8_t *)inter_rs_obj.new_buffer[i],
-            (uint8_t *)inter_rs_obj.mid_buffer[i]);
-
-    inter_rs_obj.pred_param_cpu_fri_pre[i] =
-        inter_rs_obj.pred_param_cpu_fri[i];
-    inter_rs_obj.pred_param_cpu_sec_pre[i] =
-        inter_rs_obj.pred_param_cpu_sec[i];
-    inter_rs_obj.pred_param_gpu_pre[i] =
-        inter_rs_obj.pred_param_gpu[i];
-    inter_rs_obj.pred_param_index_gpu_pre[i] =
-        inter_rs_obj.pred_param_index_gpu[i];
-    inter_rs_obj.pred_block_size_gpu_pre[i] =
-        inter_rs_obj.pred_block_size_gpu[i];
-    inter_rs_obj.cpu_fri_count[i] = 0;
-    inter_rs_obj.cpu_sec_count[i] = 0;
-    inter_rs_obj.gpu_block_count[i] = 0;
-    inter_rs_obj.gpu_index_count[i] = 0;
-  }
-
+  vp9_update_buffer(STABLE_BUFFER_SIZE_RS, MAX_TILE);
   return 0;
 }
 
 int vp9_release_rs() {
   int i;
   for (i = 0; i < inter_rs_obj.tile_count; ++i) {
-    if (inter_rs_obj.new_buffer[i] != NULL) {
-      free(inter_rs_obj.new_buffer[i]);
-      inter_rs_obj.new_buffer[i] = NULL;
-    }
     if (inter_rs_obj.pred_param_cpu_fri[i] != NULL) {
       free(inter_rs_obj.pred_param_cpu_fri[i]);
       inter_rs_obj.pred_param_cpu_fri[i] = NULL;
@@ -826,34 +686,19 @@ int vp9_release_rs() {
       inter_rs_obj.pred_param_cpu_sec[i] = NULL;
       inter_rs_obj.pred_param_cpu_sec_pre[i] = NULL;
     }
-    if (inter_rs_obj.pred_param_gpu[i] != NULL) {
-      free(inter_rs_obj.pred_param_gpu[i]);
-      inter_rs_obj.pred_param_gpu[i] = NULL;
-      inter_rs_obj.pred_param_gpu_pre[i] = NULL;
-    }
-    if (inter_rs_obj.pred_param_index_gpu[i] != NULL) {
-      free(inter_rs_obj.pred_param_index_gpu[i]);
-      inter_rs_obj.pred_param_index_gpu[i] = NULL;
-      inter_rs_obj.pred_param_index_gpu_pre[i] = NULL;
-    }
+
     if (inter_rs_obj.pred_block_size_gpu[i]) {
       free(inter_rs_obj.pred_block_size_gpu[i]);
       inter_rs_obj.pred_block_size_gpu[i] = NULL;
       inter_rs_obj.pred_block_size_gpu_pre[i] = NULL;
     }
-    free(inter_rs_obj.ref_buffer[i]);
-    free(inter_rs_obj.mid_buffer[i]);
-  }
-  inter_rs_context.release_rs(inter_rs_obj.tile_count);
-  return 0;
-}
 
-int vp9_mem_cpu_to_gpu_rs(VP9_COMMON *const cm) {
-  const YV12_BUFFER_CONFIG *cfg_source =
-            cfg_source = &cm->yv12_fb[inter_rs_obj.previous_f];
-  inter_rs_context.update_pool_rs(cfg_source->buffer_alloc,
-                                  inter_rs_obj.previous_f);
-  inter_rs_obj.previous_f = cm->new_fb_idx;
+    free(inter_rs_obj.ref_buffer[i]);
+  }
+
+  if (inter_rs_context.release_rs)
+    inter_rs_context.release_rs(inter_rs_obj.tile_count);
+
   return 0;
 }
 
@@ -864,29 +709,24 @@ int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num) {
   const YV12_BUFFER_CONFIG *cfg_source = &cm->yv12_fb[cm->new_fb_idx];
 
   if (inter_rs_obj.gpu_index_count[tile_num] > 0) {
-    inter_rs_context.invoke_inter_rs(inter_rs_obj.new_buffer[tile_num],
-                   (uint8_t *)inter_rs_obj.pred_param_gpu[tile_num],
-                   (uint8_t *)inter_rs_obj.pred_param_index_gpu[tile_num],
-                   tile_num, inter_rs_obj.gpu_index_count[tile_num],
-                   inter_rs_obj.gpu_block_count[tile_num]
-                   * sizeof(INTER_PRED_PARAM_GPU_RS),
-                   inter_rs_obj.gpu_index_count[tile_num]
-                   * sizeof(INTER_PARAM_INDEX_GPU_RS)
-                   );
+
+    inter_rs_context.invoke_inter_rs(
+                   tile_num,
+                   inter_rs_obj.gpu_index_count[tile_num]);
+
     // Executive inter prediction CPU part
     build_inter_pred_calcu_rs_c(cm, cfg_source->buffer_alloc,
-                                 inter_rs_obj.cpu_fri_count[tile_num],
-                                 inter_rs_obj.cpu_sec_count[tile_num],
-                                 inter_rs_obj.pred_param_cpu_fri[tile_num],
-                                 inter_rs_obj.pred_param_cpu_sec[tile_num],
-                                 inter_rs_obj.switch_convolve_t);
-    inter_rs_context.get_rs_res(inter_rs_obj.new_buffer[tile_num], tile_num);
+                                inter_rs_obj.cpu_fri_count[tile_num],
+                                inter_rs_obj.cpu_sec_count[tile_num],
+                                inter_rs_obj.pred_param_cpu_fri[tile_num],
+                                inter_rs_obj.pred_param_cpu_sec[tile_num],
+                                inter_rs_obj.switch_convolve_t);
+    inter_rs_context.finish_rs();
 
     pred_param = inter_rs_obj.pred_param_gpu[tile_num];
     pred_block_size = inter_rs_obj.pred_block_size_gpu[tile_num];
-
     for (i = 0; i < inter_rs_obj.gpu_block_count[tile_num]; ++i) {
-      const uint8_t *src = inter_rs_obj.new_buffer[tile_num] + pred_param[i].dst_mv;
+      const uint8_t *src = inter_rs_obj.dst + pred_param[i].dst_mv;
       uint8_t *dst = cfg_source->buffer_alloc + pred_param[i].dst_mv;
       for (y = 0; y < pred_block_size[i].h; ++y) {
         memcpy(dst, src, sizeof(uint8_t) * pred_block_size[i].w);
@@ -896,11 +736,11 @@ int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num) {
     }
   } else {
     build_inter_pred_calcu_rs_c(cm, cfg_source->buffer_alloc,
-                                 inter_rs_obj.cpu_fri_count[tile_num],
-                                 inter_rs_obj.cpu_sec_count[tile_num],
-                                 inter_rs_obj.pred_param_cpu_fri[tile_num],
-                                 inter_rs_obj.pred_param_cpu_sec[tile_num],
-                                 inter_rs_obj.switch_convolve_t);
+                                inter_rs_obj.cpu_fri_count[tile_num],
+                                inter_rs_obj.cpu_sec_count[tile_num],
+                                inter_rs_obj.pred_param_cpu_fri[tile_num],
+                                inter_rs_obj.pred_param_cpu_sec[tile_num],
+                                inter_rs_obj.switch_convolve_t);
   }
 
   inter_rs_obj.pred_param_cpu_fri_pre[tile_num] =
@@ -918,6 +758,15 @@ int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num) {
   inter_rs_obj.cpu_sec_count[tile_num] = 0;
   inter_rs_obj.gpu_block_count[tile_num] = 0;
   inter_rs_obj.gpu_index_count[tile_num] = 0;
-
   return 0;
+}
+
+uint8_t *vp9_get_buf(int offset, int buf_sz) {
+  static int checked = 0;
+  if (buf_sz > STABLE_BUFFER_SIZE_RS && !checked) {
+    vp9_release_rs();
+    vp9_update_buffer(buf_sz, MAX_TILE);
+    checked = 1;
+  }
+  return (inter_rs_obj.pool + offset);
 }
