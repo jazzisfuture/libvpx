@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/step.h"
 #include "vp9/decoder/vp9_loopfilter_step.h"
 #include "vp9/decoder/vp9_decodeframe_recon.h"
@@ -33,9 +36,9 @@ static int vp9_lf_block_cpu(struct task *tsk,
         pthread_mutex_unlock(&up->mutex);
       }
 
-      vp9_loop_filter_block(param->frame_buffer, param->cm,
-                            param->xd, mi_row, mi_col,
-                            param->y_only);
+      vp9_loop_filter_block_recon(param->frame_buffer, param->cm,
+                                  param->planes, mi_row, mi_col,
+                                  param->y_only);
 
       pthread_mutex_lock(&param->mutex);
       param->mi_row = mi_row;
@@ -171,3 +174,5 @@ void lf_setup_masks_param_put(struct task *tsk,
                               struct lf_setup_masks_param *param) {
   vpx_free(param);
 }
+
+#endif

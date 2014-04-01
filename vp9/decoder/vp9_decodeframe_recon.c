@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <stdlib.h>  // qsort()
 
@@ -29,6 +30,7 @@
 #include "vp9/common/vp9_seg_common.h"
 #include "vp9/common/vp9_tile_common.h"
 #include "vp9/common/kernel/vp9_inter_pred_rs.h"
+#include "vp9/common/kernel/vp9_intra_pred_rs.h"
 #include "vp9/common/kernel/vp9_loopfilter_rs.h"
 
 #include "vp9/decoder/vp9_decodeframe.h"
@@ -1929,8 +1931,8 @@ static void inter_transform_recon(VP9_DECODER_RECON *const decoder_recon,
   VP9_COMMON *const cm = decoder_recon->cm;
   MACROBLOCKD *const xd = &decoder_recon->mb;
   int eobtotal = 0;
-  vp9_reader *r;
-  int16_t offset;
+  vp9_reader *r = NULL;
+  int16_t offset = 0;
 
   int i;
   BLOCK_SIZE bsize;
@@ -2077,6 +2079,14 @@ void decode_tile_recon_inter_transform(VP9D_COMP *pbi,
     inter_transform_recon(decoder_recon, i_inter_blocks_count);
   }
   PPAStopCpuEventFunc(vp9_tiles_inter_transform_time);
+}
+
+void decode_tile_recon_intra_rs(VP9D_COMP *pbi, const TileInfo *const tile,
+    vp9_reader *r, int tile_col) {
+  VP9_DECODER_RECON *const decoder_recon = &pbi->decoder_recon[tile_col];
+  MACROBLOCKD *const xd = &decoder_recon->mb;
+  vp9_intra_prepare_rs(pbi->mb.itxm_add, xd, decoder_recon, tile_col);
+  vp9_do_intra_rs(tile_col, decoder_recon->intra_blocks_count);
 }
 
 void decode_tile_recon_intra(VP9D_COMP *pbi, const TileInfo *const tile,
@@ -2550,10 +2560,14 @@ void vp9_tiles_entropy_dec(VP9D_COMP *pbi, const uint8_t *data) {
       setup_tile_context(pbi, &decoder_recon->mb, tile_row, col);
       setup_tile_macroblockd_recon(decoder_recon);
 
+#if CONFIG_MULTITHREAD
       if (tile_cols == 1 || !cm->frame_parallel_decoding_mode) {
+#endif
         decode_tile_recon_entropy(pbi, &decoder_recon->tile,
                                   &decoder_recon->r, tile_col);
+#if CONFIG_MULTITHREAD
       }
+#endif
 
       if (last_tile)
         pbi->last_reader = &decoder_recon->r;
@@ -2571,12 +2585,12 @@ void vp9_tiles_inter_pred(VP9D_COMP *pbi) {
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
     for (tile_col = tile_cols - 1; tile_col >= 0; tile_col--) {
       decoder_recon = &pbi->decoder_recon[tile_col];
-      if (rs_init == 2) {
+      if (rs_inter_init == 0) {
         decode_tile_recon_inter_rs(pbi, &decoder_recon->tile,
-                                    &decoder_recon->r, tile_col);
+                                   &decoder_recon->r, tile_col);
       } else {
         decode_tile_recon_inter(pbi, &decoder_recon->tile,
-                                    &decoder_recon->r, tile_col);
+                                &decoder_recon->r, tile_col);
       }
       decode_tile_recon_inter_transform(pbi, &decoder_recon->tile,
                                         &decoder_recon->r, tile_col);
@@ -2594,8 +2608,13 @@ void vp9_tiles_intra_pred(VP9D_COMP *pbi) {
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
     for (tile_col = tile_cols - 1; tile_col >= 0; tile_col--) {
       decoder_recon = &pbi->decoder_recon[tile_col];
-      decode_tile_recon_intra(pbi, &decoder_recon->tile,
-                              &decoder_recon->r, tile_col);
+      if (rs_intra_init == 0) {
+        decode_tile_recon_intra_rs(pbi, &decoder_recon->tile,
+                                   &decoder_recon->r, tile_col);
+      } else {
+        decode_tile_recon_intra(pbi, &decoder_recon->tile,
+                                &decoder_recon->r, tile_col);
+      }
     }
   }
 }
@@ -2634,28 +2653,30 @@ int vp9_single_thread_decode(VP9D_COMP *pbi,
   return vp9_decode_frame_tail(pbi);
 }
 
+
 static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
                                       const uint8_t **p_data_end) {
+#if CONFIG_MULTITHREAD
   struct task *tsk;
   struct frame_entropy_dec_param *param;
-  const uint8_t *data = pbi->source;
-  size_t first_partition_size;
+#endif
   VP9_COMMON *const cm = &pbi->common;
   int tile_cols;
-  char *rs_enable;
+  const uint8_t *data = pbi->source;
+  size_t first_partition_size;
 
   vp9_decode_frame_head(pbi, p_data_end, &first_partition_size, &data);
   tile_cols = 1 << cm->log2_tile_cols;
-  rs_enable = getenv("RSENABLE");
-  if (rs_enable) {
-    if (*rs_enable == '1') {
-      if (rs_init == 0) vp9_check_buff_size(cm, tile_cols);
-    }
-  }
+  if (rs_inter_init == 0) vp9_check_inter_rs(cm, tile_cols);
+  if (rs_intra_init == 0) vp9_check_intra_rs(cm, tile_cols);
 
+
+#if CONFIG_MULTITHREAD
   if (tile_cols == 1) {
+#endif
     return vp9_single_thread_decode(pbi, p_data_end,
                                     first_partition_size, data);
+#if CONFIG_MULTITHREAD
   }
 
   vp9_tiles_entropy_dec(pbi, data + first_partition_size);
@@ -2673,6 +2694,8 @@ static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
   task_cache_put_task(tsk->cache, tsk);
   task_param_free(tsk);
   return 0;
+
+#endif
 }
 
 int vp9_decode_frame_mt(VP9D_COMP *pbi, const uint8_t **p_data_end) {

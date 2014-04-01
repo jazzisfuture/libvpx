@@ -24,10 +24,14 @@ void vp9_loop_filter_frame_wpp(VP9D_COMP *pbi, VP9_COMMON *cm,
                                MACROBLOCKD *xd, int frame_filter_level,
                                int y_only, int partial);
 
-
 void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
                            VP9_COMMON *cm, MACROBLOCKD *xd,
                            int mi_row, int mi_col, int y_only);
+
+void vp9_loop_filter_block_recon(const YV12_BUFFER_CONFIG *frame_buffer,
+                                 VP9_COMMON *cm,
+                                 struct macroblockd_plane *planes,
+                                 int mi_row, int mi_col, int y_only);
 
 void vp9_loop_filter_setup_masks(VP9_COMMON *cm, int mi_row, int mi_col);
 

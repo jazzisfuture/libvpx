@@ -18,7 +18,6 @@ struct VP9Decompressor;
 int vp9_decode_frame_recon(struct VP9Decompressor *cpi,
                            const uint8_t **p_data_end);
 
-
 void decode_tile_recon_entropy(VP9D_COMP *pbi, const TileInfo *const tile,
                                vp9_reader *r, int tile_col);
 
@@ -32,9 +31,11 @@ void decode_tile_recon_inter(VP9D_COMP *pbi, const TileInfo *const tile,
 void decode_tile_recon_inter_rs(VP9D_COMP *pbi, const TileInfo *const tile,
                                 vp9_reader *r, int tile_col);
 
-
 void decode_tile_recon_intra(VP9D_COMP *pbi, const TileInfo *const tile,
                              vp9_reader *r, int tile_col);
+
+void decode_tile_recon_intra_rs(VP9D_COMP *pbi, const TileInfo *const tile,
+                                vp9_reader *r, int tile_col);
 
 int vp9_decode_frame_tail(VP9D_COMP *pbi);
 

@@ -10,6 +10,9 @@
 #ifndef SCHED_QUEUE_H_
 #define SCHED_QUEUE_H_
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/list.h"
 
 struct queue {
@@ -40,5 +43,7 @@ static INLINE void queue_stop(struct queue *q) {
   pthread_mutex_unlock(&q->qlock);
   pthread_cond_signal(&q->qready);
 }
+
+#endif
 
 #endif  // SCHED_QUEUE_H_

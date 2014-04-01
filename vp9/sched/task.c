@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include <assert.h>
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/sched/task.h"
@@ -149,4 +152,4 @@ int task_need_wait(struct task *tsk, int step_nr) {
              != step->prev_steps_map;
 }
 
-
+#endif

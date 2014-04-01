@@ -11,6 +11,9 @@
 #ifndef SCHED_DEVICDE_H_
 #define SCHED_DEVICDE_H_
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/task.h"
 #include "vp9/sched/queue.h"
 #include "vp9/sched/atomic.h"
@@ -81,5 +84,7 @@ int device_fini(struct device *dev);
 int device_push_task(struct device *dev, struct task *tsk);
 
 int cpu_device_exec(struct device *dev);
+
+#endif
 
 #endif // SCHED_DEVICDE_H_

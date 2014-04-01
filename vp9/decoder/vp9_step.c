@@ -8,12 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/step.h"
 #include "vp9/decoder/vp9_step.h"
 #include "vp9/decoder/vp9_decodeframe_recon.h"
 #include "vp9/decoder/vp9_append.h"
+#include "vp9/common/kernel/vp9_inter_pred_rs.h"
+#include "vp9/common/kernel/vp9_intra_pred_rs.h"
 
-extern int rs_init;
 static INLINE int sched_tiles_entropy_dec(struct task *tsk,
                                           struct task_step *step) {
   struct frame_entropy_dec_param *param = tsk->priv;
@@ -83,21 +88,7 @@ static int vp9_inter_pred_cpu(struct task *tsk,
   VP9_DECODER_RECON *decoder_recon = pbi->decoder_recon + param->tile_col;
   int tile_col = param->tile_col;
   TileInfo *tile = &decoder_recon->tile;
-
-  decode_tile_recon_inter(pbi, tile, &decoder_recon->r, tile_col);
-  decode_tile_recon_inter_transform(pbi, tile, &decoder_recon->r, tile_col);
-
-  return 0;
-}
-
-static int vp9_inter_pred_gpu(struct task *tsk,
-                              struct task_step *step) {
-  struct entropy_dec_param *param = tsk->priv;
-  VP9D_COMP *pbi = param->pbi;
-  VP9_DECODER_RECON *decoder_recon = pbi->decoder_recon + param->tile_col;
-  int tile_col = param->tile_col;
-  TileInfo *tile = &decoder_recon->tile;
-  if (rs_init == 2) {
+  if (rs_inter_init == 0) {
     decode_tile_recon_inter_rs(pbi, tile, &decoder_recon->r, tile_col);
   } else {
     decode_tile_recon_inter(pbi, tile, &decoder_recon->r, tile_col);
@@ -110,33 +101,30 @@ static int vp9_inter_pred_gpu(struct task *tsk,
 static int vp9_inter_pred(struct task *tsk,
                           struct task_step *step,
                           int dev_type) {
-  if (dev_type == DEV_CPU) {
-    vp9_inter_pred_gpu(tsk, step);
-  }else {
-    vp9_inter_pred_gpu(tsk, step);
-  }
-
+  assert(dev_type == DEV_CPU);
+  vp9_inter_pred_cpu(tsk, step);
   return 0;
 }
 
 static int vp9_intra_pred_cpu(struct task *tsk,
-                              struct task_step *step) {
+                               struct task_step *step) {
   struct entropy_dec_param *param = tsk->priv;
   VP9D_COMP *pbi = param->pbi;
   VP9_DECODER_RECON *decoder_recon = pbi->decoder_recon + param->tile_col;
   TileInfo *tile = &decoder_recon->tile;
-
-  decode_tile_recon_intra(pbi, tile, &decoder_recon->r, param->tile_col);
+  if (rs_intra_init == 0) {
+    decode_tile_recon_intra_rs(pbi, tile, &decoder_recon->r, param->tile_col);
+  } else {
+    decode_tile_recon_intra(pbi, tile, &decoder_recon->r, param->tile_col);
+  }
   return 0;
 }
 
 static int vp9_intra_pred(struct task *tsk,
                           struct task_step *step,
                           int dev_type) {
-  /*FIXME now we only support CPU */
   assert(dev_type == DEV_CPU);
   vp9_intra_pred_cpu(tsk, step);
-
   return 0;
 }
 
@@ -170,20 +158,20 @@ static int vp9_loopfilter(struct task *tsk,
  */
 static struct task_step steps[] = {
   {
-    "vp9_frame_entropy_dec",      // name
-    STEP_KEEP,                    // type
-    DEV_CPU,                      // dev_type
-    0,                            // step_nr
-    (1 << 1),                     // next_steps_map
-    1,                            // next_count
-    0,                            // prev_steps_map
-    0,                            // prev_count
-    vp9_frame_entropy_dec,        // process
-    NULL,                         // pool
-    NULL                          // priv
+    "vp9_frame_entropy_dec",// name
+    STEP_KEEP,              // type
+    DEV_CPU,                // dev_type
+    0,                      // step_nr
+    (1 << 1),               // next_steps_map
+    1,                      // next_count
+    0,                      // prev_steps_map
+    0,                      // prev_count
+    vp9_frame_entropy_dec,  // process
+    NULL,                   // pool
+    NULL                    // priv
   },
   {
-    "vp9_tile_entropy_dec",      // name
+    "vp9_tile_entropy_dec", // name
     STEP_SPLIT,             // type
     DEV_CPU,                // dev_type
     1,                      // step_nr
@@ -198,13 +186,13 @@ static struct task_step steps[] = {
   {
     "vp9_inter_pred",       // name
     STEP_KEEP,              // type
-    DEV_CPU | DEV_GPU,      // dev_type
+    DEV_CPU,                // dev_type
     2,                      // step_nr
     (1 << 3),               // next_steps_map
     1,                      // next_count
     (1 << 1),               // prev_steps_map
     1,                      // prev_count
-    vp9_inter_pred,      // process
+    vp9_inter_pred,         // process
     NULL,                   // pool
     NULL                    // priv
   },
@@ -275,3 +263,5 @@ struct entropy_dec_param *entropy_dec_param_get(struct task *tsk) {
 
   return param;
 }
+
+#endif

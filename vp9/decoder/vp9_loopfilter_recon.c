@@ -9,6 +9,7 @@
  */
 
 #include "./vpx_config.h"
+
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/decoder/vp9_loopfilter_recon.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -1236,7 +1237,7 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
 
 #if CONFIG_NON420
   int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
-      xd->plane[1].subsampling_x == 1);
+                           xd->plane[1].subsampling_x == 1);
 #endif
 
   setup_dst_planes(xd, frame_buffer, mi_row, mi_col);
@@ -1260,23 +1261,54 @@ void vp9_loop_filter_block(const YV12_BUFFER_CONFIG *frame_buffer,
   }
 }
 
+void vp9_loop_filter_block_recon(const YV12_BUFFER_CONFIG *frame_buffer,
+                                 VP9_COMMON *cm,
+                                 struct macroblockd_plane *planes,
+                                 int mi_row, int mi_col, int y_only) {
+  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+  LOOP_FILTER_MASK lfm;
+  MODE_INFO **mi_8x8 = cm->mi_grid_visible + mi_row * cm->mode_info_stride;
+  int plane;
+
+#if CONFIG_NON420
+  int use_420 = y_only || (xd->plane[1].subsampling_y == 1 &&
+                           xd->plane[1].subsampling_x == 1);
+#endif
+
+  setup_dst_planes_recon(planes, frame_buffer, mi_row, mi_col);
+
+#if CONFIG_NON420
+  if (use_420)
+#endif
+    setup_mask(cm, mi_row, mi_col, mi_8x8 + mi_col, cm->mode_info_stride,
+                   &lfm);
+
+  for (plane = 0; plane < num_planes; ++plane) {
+#if CONFIG_NON420
+     if (use_420)
+#endif
+       filter_block_plane(cm, &planes[plane], mi_row, &lfm);
+#if CONFIG_NON420
+     else
+      filter_block_plane_non420(cm, &xd->plane[plane], mi_8x8 + mi_col,
+                                mi_row, mi_col);
+#endif
+  }
+}
+
 #define MAX_CPU 32
-#define ENABLE_WPP
 
 void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
                               const YV12_BUFFER_CONFIG *frame_buffer,
                               VP9_COMMON *cm, MACROBLOCKD *xd,
                               int start, int stop, int y_only) {
-  struct lf_blk_param *params[MAX_CPU];
+#if CONFIG_MULTITHREAD
+  struct lf_blk_param *params[MAX_CPU] = {0};
   struct task *tsks[MAX_CPU];
   int i;
-  VP9_DECODER_RECON *decoder_recon;
   struct device *dev;
   int cpu_count;
   struct task *last_tsk = NULL;
-
-
-#ifdef ENABLE_WPP
 
   dev = scheduler_get_dev(pbi->sched, DEV_CPU);
   assert(dev);
@@ -1286,8 +1318,6 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
   for (i = 0; i < cpu_count; i++) {
     tsks[i] = task_cache_get_task(pbi->lf_tsk_cache, NULL, 0);
     assert(tsks[i]);
-    decoder_recon = &pbi->decoder_recon[i];
-    decoder_recon->mb = pbi->mb;
 
     params[i] = lf_blk_param_get(tsks[i]);
     assert(params[i]);
@@ -1295,7 +1325,7 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
     params[i]->step_length = cpu_count * MI_BLOCK_SIZE;
     params[i]->frame_buffer = frame_buffer;
     params[i]->cm = cm;
-    params[i]->xd = &decoder_recon->mb;
+    memcpy(params[i]->planes, pbi->mb.plane, sizeof(pbi->mb.plane));
     params[i]->start_mi_row = start + MI_BLOCK_SIZE * i;
     params[i]->end_mi_row = stop;
     params[i]->mi_row = params[i]->start_mi_row;
@@ -1338,6 +1368,27 @@ void vp9_loop_filter_setup_masks(VP9_COMMON *cm, int mi_row, int mi_col) {
              &cm->lfms[lf_idx]);
 }
 
+void vp9_loop_filter_frame_wpp(VP9D_COMP *pbi, VP9_COMMON *cm,
+                               MACROBLOCKD *xd, int frame_filter_level,
+                               int y_only, int partial) {
+  int start_mi_row, end_mi_row, mi_rows_to_filter;
+  if (!frame_filter_level) return;
+  start_mi_row = 0;
+  mi_rows_to_filter = cm->mi_rows;
+  if (partial && cm->mi_rows > 8) {
+    start_mi_row = cm->mi_rows >> 1;
+    start_mi_row &= 0xfffffff8;
+    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
+  }
+  end_mi_row = start_mi_row + mi_rows_to_filter;
+
+  vp9_loop_filter_frame_init_wpp(cm, frame_filter_level);
+  vp9_loop_filter_rows_wpp(pbi, cm->frame_to_show, cm, xd,
+                           start_mi_row, end_mi_row, y_only);
+}
+
+#if CONFIG_MULTITHREAD
+
 void vp9_loop_filter_setup_masks_rs(VP9D_COMP *pbi,
                                     const YV12_BUFFER_CONFIG *frame_buffer,
                                     VP9_COMMON *cm, MACROBLOCKD *xd,
@@ -1376,25 +1427,6 @@ void vp9_loop_filter_setup_masks_rs(VP9D_COMP *pbi,
     lf_setup_masks_param_put(tsks[i], params[i]);
     task_cache_put_task(pbi->lf_tsk_cache, tsks[i]);
   }
-}
-
-void vp9_loop_filter_frame_wpp(VP9D_COMP *pbi, VP9_COMMON *cm,
-                               MACROBLOCKD *xd, int frame_filter_level,
-                               int y_only, int partial) {
-  int start_mi_row, end_mi_row, mi_rows_to_filter;
-  if (!frame_filter_level) return;
-  start_mi_row = 0;
-  mi_rows_to_filter = cm->mi_rows;
-  if (partial && cm->mi_rows > 8) {
-    start_mi_row = cm->mi_rows >> 1;
-    start_mi_row &= 0xfffffff8;
-    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
-  }
-  end_mi_row = start_mi_row + mi_rows_to_filter;
-
-  vp9_loop_filter_frame_init_wpp(cm, frame_filter_level);
-  vp9_loop_filter_rows_wpp(pbi, cm->frame_to_show, cm, xd,
-                           start_mi_row, end_mi_row, y_only);
 }
 
 static void vp9_loop_filter_rows_rs(const YV12_BUFFER_CONFIG *frame_buffer,
@@ -1449,3 +1481,5 @@ void vp9_loop_filter_frame_rs(VP9D_COMP *pbi, VP9_COMMON *cm,
   vp9_loop_filter_rows_rs(cm->frame_to_show, pbi, cm, xd,
                           start_mi_row, end_mi_row, y_only);
 }
+
+#endif

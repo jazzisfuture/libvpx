@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/kernel/vp9_inter_pred_rs.h"
+#include "vp9/common/kernel/vp9_intra_pred_rs.h"
 #include "vp9/common/kernel/vp9_loopfilter_rs.h"
 #include "vpx_scale/vpx_scale.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -133,6 +135,7 @@ static void init_macroblockd(VP9D_COMP *const pbi) {
 #define MAX_TASKS 16
 
 static void vp9_sched_init(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   pbi->sched = scheduler_create();
   assert(pbi->sched);
 
@@ -152,26 +155,32 @@ static void vp9_sched_init(VP9D_COMP *const pbi) {
   assert(pbi->lf_tsk_cache);
 
   vp9_register_devices(pbi->sched);
+#endif
 }
 
 static void vp9_sched_fini(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   scheduler_delete(pbi->sched);
   task_cache_delete(pbi->tsk_cache);
   task_cache_delete(pbi->lf_tsk_cache);
   task_steps_pool_delete(pbi->steps_pool);
   task_steps_pool_delete(pbi->lf_steps_pool);
+#endif
 }
 
 
 VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   VP9D_COMP *const pbi = vpx_memalign(32, sizeof(VP9D_COMP));
   VP9_COMMON *const cm = pbi ? &pbi->common : NULL;
+#if CONFIG_MULTITHREAD
   const char *rs_enable_val = NULL;
+#endif
 
   if (!cm)
     return NULL;
 
   vp9_zero(*pbi);
+  PPA_INIT();
 
   // Initialize the references to not point to any frame buffers.
   memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
@@ -192,6 +201,8 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   cm->current_video_frame = 0;
 
   pbi->rs_enabled = 0;
+
+#if CONFIG_MULTITHREAD
   rs_enable_val = getenv("RSENABLE");
   if (rs_enable_val) {
     if (*rs_enable_val == '1') {
@@ -202,6 +213,7 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
       }
     }
   }
+#endif
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of
@@ -230,9 +242,15 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   if (!pbi)
     return;
 
+  PPA_END();
+
   vp9_sched_fini(pbi);
+
+#if CONFIG_MULTITHREAD
   if (pbi->loop_filter_rs_handle)
     vp9_loop_filter_rs_fini(pbi->loop_filter_rs_handle);
+#endif
+
   vp9_remove_common(&pbi->common);
   vp9_worker_end(&pbi->lf_worker);
   vpx_free(pbi->lf_worker.data1);
@@ -253,9 +271,8 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   vpx_free(pbi->above_context[0]);
   vpx_free(pbi->above_seg_context);
   vpx_free(pbi);
-  if (rs_init == 2) {
-    vp9_release_rs();
-  }
+  vp9_release_inter_rs();
+  vp9_release_intra_rs();
 }
 
 static int equal_dimensions(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
@@ -424,10 +441,9 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   cm->error.setjmp = 1;
 
-//mcw mt
-  //retcode = vp9_decode_frame(pbi, psource);
-  //retcode = vp9_decode_frame_recon(pbi, psource);
-  retcode = vp9_decode_frame_mt(pbi, psource);
+   //mcw mt
+   retcode = vp9_decode_frame_mt(pbi, psource);
+   //retcode = vp9_decode_frame_recon(pbi, psource);
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;
@@ -450,6 +466,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   if (!pbi->do_loopfilter_inline) {
     PPAStartCpuEventFunc(loopfilter_time);
+#if CONFIG_MULTITHREAD
     if (pbi->rs_enabled) {
       vp9_loop_filter_frame_rs(pbi, cm, &pbi->mb,
                                pbi->common.lf.filter_level, 0, 0);
@@ -457,6 +474,10 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
       vp9_loop_filter_frame_wpp(pbi, cm, &pbi->mb,
                                 pbi->common.lf.filter_level, 0, 0);
     }
+#else
+    vp9_loop_filter_frame_wpp(pbi, cm, &pbi->mb,
+                              pbi->common.lf.filter_level, 0, 0);
+#endif
     //vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
     PPAStopCpuEventFunc(loopfilter_time);
   }

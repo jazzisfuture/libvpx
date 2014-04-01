@@ -90,7 +90,7 @@ extern "C" int vp9_loop_filter_rs_init(void **handle_) {
   handle->start = 0;
   handle->stop = 0;
   handle->rs = new RS();
-  handle->rs->init("/data/local/com.example.vp9");
+  handle->rs->init("/data/data/com.example.vp9");
   handle->e = Element::U8(handle->rs);
   handle->sc = ScriptIntrinsicVP9LoopFilter::create(handle->rs, handle->e);
   memset((uint8_t *)&handle->fb_pointers, 0, sizeof(handle->fb_pointers));

@@ -98,12 +98,12 @@ void build_inter_pred_param_fri_ref_rs(const int plane,
                                        const int filter_num,
                                        const int tile_num);
 
-int vp9_init_rs();
-int vp9_check_buff_size(VP9_COMMON *const cm, int tile_count);
-int vp9_release_rs();
+void vp9_init_inter_rs();
+int vp9_check_inter_rs(VP9_COMMON *const cm, int tile_count);
+int vp9_release_inter_rs();
 int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num);
 
 extern INTER_RS_OBJ inter_rs_obj;
-extern int rs_init;
+extern int rs_inter_init;
 
 #endif // VP9_INTER_PRED_RS_H_

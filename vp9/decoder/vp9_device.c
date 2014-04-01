@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
 
 #include "vp9/decoder/vp9_device.h"
 
@@ -36,7 +38,7 @@ void vp9_register_devices(struct scheduler *sched) {
   char *rs_enable = getenv("RSENABLE");
   if (rs_enable) {
     if (*rs_enable == '1') {
-      printf("enable renderscript\n");
+      printf("enabled renderscript\n");
       scheduler_add_devices(sched, devs, 2);
       return;
     }
@@ -44,3 +46,5 @@ void vp9_register_devices(struct scheduler *sched) {
   printf("if want to enable renderscript, please set RSENABLE as environment variable\n");
   scheduler_add_devices(sched, devs, 1);
 }
+
+#endif

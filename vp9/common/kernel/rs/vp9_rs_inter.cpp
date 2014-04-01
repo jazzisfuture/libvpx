@@ -1,23 +1,23 @@
 #include <RenderScript.h>
-#include "vp9_rs_packing.h"
+#include "vp9_rs_inter.h"
 
 #define MAX_TILE 4
 using namespace android::RSC;
 
-typedef struct context_rs {
+typedef struct context_inter {
   sp<ScriptIntrinsicVP9InterPred> sc[MAX_TILE];
   sp<Allocation> a_ref_buf[MAX_TILE];
   sp<Allocation> a_param[MAX_TILE];
   sp<Allocation> a_gsize[MAX_TILE];
   sp<RS> rs[MAX_TILE];
-} context_rs;
+} context_inter;
 
-context_rs context;
+static context_inter context;
 
-int init_rs(int frame_size, int param_size, int tile_index,
+int init_inter_rs(int frame_size, int param_size, int tile_index,
             uint8_t *ref_buf, uint8_t *param) {
   context.rs[tile_index] = new RS();
-  context.rs[tile_index]->init("/data/local/com.example.vp9");
+  context.rs[tile_index]->init("/data/data/com.example.vp9");
 
   sp<const Element> const_e = Element::U8(context.rs[tile_index]);
   sp<Element> e = (Element*)(const_e.get());
@@ -71,10 +71,13 @@ void invoke_inter_rs(int fri_count, int sec_count, int offset, int index) {
   context.rs[index]->finish();
 }
 
-void release_rs(int tile_count) {
+void release_inter_rs(int tile_count) {
   for (int i = 0; i < tile_count; i++) {
     if (context.rs[i] != NULL) {
       context.rs[i].clear();
+    }
+    if (context.sc[i] != NULL) {
+      context.sc[i].clear();
     }
     if (context.a_param[i] != NULL) {
       context.a_param[i].clear();

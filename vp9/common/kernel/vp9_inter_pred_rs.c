@@ -22,7 +22,6 @@
 
 #define STABLE_THREAD_COUNT_RS 18375
 #define STABLE_BUFFER_SIZE_RS  4704000
-#define MAX_TILE 4
 
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
@@ -69,10 +68,10 @@ static void build_mc_border(const uint8_t *src, int src_stride,
 
 typedef struct {
   void *lib_handle;
-  int (*init_rs)(int frame_size, int param_size, int tile_index,
-                 uint8_t *ref_buf, uint8_t *param);
+  int (*init_inter_rs)(int frame_size, int param_size, int tile_index,
+                       uint8_t *ref_buf, uint8_t *param);
 
-  void (*release_rs)(int tile_count);
+  void (*release_inter_rs)(int tile_count);
   void (*invoke_inter_rs)(int fri_count,
                           int sec_count,
                           int offset,
@@ -80,8 +79,8 @@ typedef struct {
 } LIB_CONTEXT;
 
 LIB_CONTEXT inter_rs_context;
-int rs_init = 1;
 INTER_RS_OBJ inter_rs_obj = { 0 };
+int rs_inter_init = -1;
 
 static const int16_t *inter_filter_rs[4] = { vp9_sub_pel_filters_8[0],
                                              vp9_sub_pel_filters_8lp[0],
@@ -168,7 +167,7 @@ static void update_buffer(int tile_count, int param_count_cpu) {
     inter_rs_obj.ref_buffer[i] = (uint8_t *)malloc(inter_rs_obj.per_frame_size);
     inter_rs_obj.pref[i] = inter_rs_obj.ref_buffer[i];
 
-    inter_rs_context.init_rs(
+    inter_rs_context.init_inter_rs(
             inter_rs_obj.per_frame_size,
             inter_rs_obj.param_size,
             i,
@@ -524,15 +523,23 @@ static inline void * load_rs_inter_library() {
   return lib_handle;
 }
 
-int vp9_check_buff_size(VP9_COMMON *const cm, int tile_count) {
+int vp9_check_inter_rs(VP9_COMMON *const cm, int tile_count) {
   const YV12_BUFFER_CONFIG *cfg_source;
   int param_count_cpu;
+  static int checked = 0;
+  if (checked) return 0;
+  if (tile_count >= 8) {
+    rs_inter_init = -1;
+    checked = 1;
+    vp9_release_inter_rs();
+    return 0;
+  }
   cfg_source = &cm->yv12_fb[cm->new_fb_idx];
-  param_count_cpu = (cfg_source->buffer_alloc_sz >> 2) / tile_count;
+  param_count_cpu = (cfg_source->buffer_alloc_sz >> 2);
 
   inter_rs_obj.tile_count = tile_count;
   if (cfg_source->buffer_alloc_sz > STABLE_BUFFER_SIZE_RS) {
-    vp9_release_rs();
+    vp9_release_inter_rs();
     inter_rs_obj.per_frame_size = cfg_source->buffer_alloc_sz;
     update_buffer(tile_count, param_count_cpu);
 
@@ -541,7 +548,7 @@ int vp9_check_buff_size(VP9_COMMON *const cm, int tile_count) {
     inter_rs_obj.param_size = (param_count_cpu) *
                                   sizeof(INTER_PRED_PARAM_CPU_RS);
   }
-  rs_init = 2;
+  checked = 1;
   return 0;
 }
 
@@ -583,33 +590,53 @@ static void vp9_init_convolve_t() {
   inter_rs_obj.switch_convolve_t[31] = vp9_convolve8_avg;
 }
 
-int vp9_init_rs() {
-  int i;
-  int param_count_cpu;
-  int tile_count = MAX_TILE;
+static int init_library() {
   inter_rs_context.lib_handle = load_rs_inter_library();
   if (inter_rs_context.lib_handle == NULL) {
     return -1;
   }
-  inter_rs_context.init_rs = dlsym(inter_rs_context.lib_handle,
-                                   "init_rs");
-  if (inter_rs_context.init_rs == NULL) {
-    printf("get init_rs failed %s\n", dlerror());
+  inter_rs_context.init_inter_rs = dlsym(inter_rs_context.lib_handle,
+                                   "init_inter_rs");
+  if (inter_rs_context.init_inter_rs == NULL) {
+    printf("get init_inter_rs failed %s\n", dlerror());
+    return -1;
   }
   inter_rs_context.invoke_inter_rs = dlsym(inter_rs_context.lib_handle,
                                            "invoke_inter_rs");
   if (inter_rs_context.invoke_inter_rs == NULL) {
     printf("get invoke_inter_rs %s\n", dlerror());
+    return -1;
   }
-  inter_rs_context.release_rs = dlsym(inter_rs_context.lib_handle,
-                                      "release_rs");
-  if (inter_rs_context.release_rs == NULL) {
-    printf("get release_rs %s\n", dlerror());
+  inter_rs_context.release_inter_rs = dlsym(inter_rs_context.lib_handle,
+                                      "release_inter_rs");
+  if (inter_rs_context.release_inter_rs == NULL) {
+    printf("get release_inter_rs %s\n", dlerror());
+    return -1;
+  }
+  return 0;
+}
+
+void vp9_init_inter_rs() {
+  int i;
+  int param_count_cpu;
+  int tile_count = MAX_TILE_COUNT_RS;
+  char *rs_enable = getenv("RSENABLE");
+  if (rs_enable) {
+    if (*rs_enable == '1') rs_inter_init = 0;
+    else {
+      rs_inter_init = -1;
+      return;
+    }
+  }
+  if (init_library()) {
+    rs_inter_init = -1;
+    printf("init inter rs failed, back to cpu \n");
+    return;
   }
 
   vp9_init_convolve_t();
 
-  param_count_cpu = (STABLE_BUFFER_SIZE_RS >> 2) / tile_count;
+  param_count_cpu = (STABLE_BUFFER_SIZE_RS >> 2);
 
   inter_rs_obj.tile_count = tile_count;
 
@@ -627,7 +654,7 @@ int vp9_init_rs() {
                                  (inter_rs_obj.per_frame_size);
     inter_rs_obj.pref[i] = inter_rs_obj.ref_buffer[i];
 
-    inter_rs_context.init_rs(
+    inter_rs_context.init_inter_rs(
             inter_rs_obj.per_frame_size,
             inter_rs_obj.param_size,
             i,
@@ -641,12 +668,12 @@ int vp9_init_rs() {
     inter_rs_obj.cpu_fri_count[i] = 0;
     inter_rs_obj.cpu_sec_count[i] = 0;
   }
-
-  return 0;
+  return;
 }
 
-int vp9_release_rs() {
+int vp9_release_inter_rs() {
   int i;
+  if (rs_inter_init != 0) return 0;
   for (i = 0; i < inter_rs_obj.tile_count; ++i) {
     if (inter_rs_obj.pred_param_cpu_fri[i] != NULL) {
       free(inter_rs_obj.pred_param_cpu_fri[i]);
@@ -657,12 +684,11 @@ int vp9_release_rs() {
     }
     free(inter_rs_obj.ref_buffer[i]);
   }
-  inter_rs_context.release_rs(inter_rs_obj.tile_count);
+  inter_rs_context.release_inter_rs(inter_rs_obj.tile_count);
   return 0;
 }
 
 int inter_pred_calcu_rs(VP9_COMMON *const cm, const int tile_num) {
-
   inter_rs_context.invoke_inter_rs(
                   inter_rs_obj.cpu_fri_count[tile_num],
                   inter_rs_obj.cpu_sec_count[tile_num],

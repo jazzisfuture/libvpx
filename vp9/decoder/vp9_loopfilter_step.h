@@ -23,7 +23,7 @@ struct lf_blk_param {
   int step_length;
   const YV12_BUFFER_CONFIG *frame_buffer;
   VP9_COMMON *cm;
-  MACROBLOCKD *xd;
+  struct macroblockd_plane planes[MAX_MB_PLANE];
   int start_mi_row;
   int end_mi_row;
   int mi_row;
