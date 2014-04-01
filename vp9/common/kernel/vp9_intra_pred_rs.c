@@ -90,8 +90,9 @@ void vp9_check_intra_rs(VP9_COMMON *const cm, int tile_count) {
 void vp9_init_intra_rs() {
   char *rs_enable = getenv("RSENABLE");
   if (rs_enable) {
-    if (*rs_enable == '1') rs_intra_init = 0;
-    else {
+    if (*rs_enable == '1') {
+      rs_intra_init = 0;
+    } else {
       rs_intra_init = -1;
       return;
     }
@@ -181,8 +182,9 @@ void vp9_intra_prepare_rs(void *func, MACROBLOCKD *xd,
       xd->plane[i].dqcoeff =
           decoder_recon->dequant_recon[intra->qcoeff_flag].qcoeff[i] +
           intra->offset;
-      xd->plane[i].eobs = decoder_recon->dequant_recon[intra->qcoeff_flag].eobs[i]
-          + intra->offset / 16;
+      xd->plane[i].eobs =
+          decoder_recon->dequant_recon[intra->qcoeff_flag].eobs[i] +
+          intra->offset / 16;
     }
     xd->mi_8x8 = intra->mi_8x8;
     xd->itxm_add = func;

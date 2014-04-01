@@ -1,12 +1,13 @@
 #ifndef VP9_INTRA_RS_H
 #define VP9_INTRA_RS_H
+#include <dlfcn.h>
 #include "vp9/common/vp9_enums.h"
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_idct.h"
 #include "vp9/decoder/vp9_onyxd_int.h"
-#include <dlfcn.h>
+
 #define STABLE_BUFFER_SIZE_RS  4704000
 #define MAX_TILE 4
 
@@ -28,7 +29,6 @@ typedef struct {
   unsigned char skip_coeff;
   int sb_type;
   int as_mode[4];
-
 
   int up_available;
   int left_available;

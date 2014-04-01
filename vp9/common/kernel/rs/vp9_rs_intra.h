@@ -1,10 +1,11 @@
 #ifndef VP_RS_INTRA_H
-#define VP_RS_INTRA_H 
+#define VP_RS_INTRA_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int init_intra_rs(int frame_size, int tile_count, uint8_t *param_buf, int param_size);
+int init_intra_rs(int frame_size, int tile_count, uint8_t *param_buf,
+                  int param_size);
 
 void release_intra_rs(int tile_count);
 
