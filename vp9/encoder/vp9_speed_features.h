@@ -110,7 +110,10 @@ typedef enum {
 
   // Use an arbitrary partitioning scheme based on source variance within
   // a 64X64 SB
-  VAR_BASED_PARTITION
+  VAR_BASED_PARTITION,
+
+  // Use non-fixed partitions based on source variance
+  SOURCE_VAR_BASED_PARTITION
 } PARTITION_SEARCH_TYPE;
 
 typedef struct {
