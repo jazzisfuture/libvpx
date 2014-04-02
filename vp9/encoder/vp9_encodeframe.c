@@ -1392,6 +1392,141 @@ static void copy_partitioning(VP9_COMMON *cm, MODE_INFO **mi_8x8,
   }
 }
 
+static unsigned int get_source_diff_variance16x16(VP9_COMP *cpi,
+                                                    MACROBLOCK *x,
+                                                    int mi_row,
+                                                    int mi_col,
+                                                    int block_offset) {
+  const YV12_BUFFER_CONFIG *pre_source = cpi->Last_Source;
+  const int pre_stride = cpi->unscaled_last_source->y_stride;
+  int offset = (mi_row * MI_SIZE) * pre_stride + (mi_col * MI_SIZE) +
+               block_offset;
+  unsigned int var, sse;
+
+  var = cpi->fn_ptr[BLOCK_16X16].vf(x->plane[0].src.buf + block_offset,
+                                    x->plane[0].src.stride,
+                                    pre_source->y_buffer + offset,
+                                    pre_source->y_stride,
+                                    &sse);
+  return var;
+}
+
+  const struct {
+    int row;
+    int col;
+  } coord_lookup[16] = {
+      // 32x32 index = 0
+      {0, 0}, {0, 2}, {2, 0}, {2, 2},
+      // 32x32 index = 1
+      {0, 4}, {0, 6}, {2, 4}, {2, 6},
+      // 32x32 index = 2
+      {4, 0}, {4, 2}, {6, 0}, {6, 2},
+      // 32x32 index = 3
+      {4, 4}, {4, 6}, {6, 4}, {6, 6},
+  };
+
+static void set_source_var_based_partition(VP9_COMP *cpi,
+                                           const TileInfo *const tile,
+                                           MODE_INFO **mi_8x8,
+                                           int mi_row,
+                                           int mi_col) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCK *x = &cpi->mb;
+
+  const int mis = cm->mode_info_stride;
+  int row8x8_remaining = tile->mi_row_end - mi_row;
+  int col8x8_remaining = tile->mi_col_end - mi_col;
+  int r, c;
+  MODE_INFO *mi_upper_left = cm->mi + mi_row * mis + mi_col;
+
+  assert((row8x8_remaining > 0) && (col8x8_remaining > 0));
+
+  // In-image SB64
+  // TODO(yunqingwang): add 8x8 patition size to further improve quality.
+  if ((col8x8_remaining >= MI_BLOCK_SIZE) &&
+      (row8x8_remaining >= MI_BLOCK_SIZE)) {
+    int i, j, k;
+    int index;
+    unsigned var32[4] = {0};
+    int use16x16 = 0;
+
+    int thr_32 = 360;  //  600
+    int thr_64 = thr_32 * 2;
+
+    for (i = 0; i < 4; i++) {
+      unsigned int var16[4] = {0};
+
+      for (j = 0; j < 4; j++) {
+        int b_mi_row = coord_lookup[i * 4 + j].row;
+        int b_mi_col = coord_lookup[i * 4 + j].col;
+        int b_offset = b_mi_row * MI_SIZE * x->plane[0].src.stride +
+                       b_mi_col * MI_SIZE;
+
+        var16[j] = get_source_diff_variance16x16(cpi, x, mi_row, mi_col,
+                                                 b_offset);
+
+        index = b_mi_row * mis + b_mi_col;
+        mi_8x8[index] = mi_upper_left + index;
+        mi_8x8[index]->mbmi.sb_type = BLOCK_16X16;
+
+//        if (var16[j] > 10000) {
+//          int idx = index;
+//          mi_8x8[idx] = mi_upper_left + idx;
+//          mi_8x8[idx]->mbmi.sb_type = BLOCK_8X8;
+//
+//          idx = index + 1;
+//          mi_8x8[idx] = mi_upper_left + idx;
+//          mi_8x8[idx]->mbmi.sb_type = BLOCK_8X8;
+//
+//          idx = index + mis;
+//          mi_8x8[idx] = mi_upper_left + idx;
+//          mi_8x8[idx]->mbmi.sb_type = BLOCK_8X8;
+//
+//          idx = index + mis + 1;
+//          mi_8x8[idx] = mi_upper_left + idx;
+//          mi_8x8[idx]->mbmi.sb_type = BLOCK_8X8;
+//        }
+      }
+
+      if (var16[0] < thr_32 && var16[1] < thr_32 &&
+          var16[2] < thr_32 && var16[3] < thr_32) {
+        for (k = 0; k < 4; k++)
+          var32[i] += var16[k];
+
+        index = coord_lookup[i*4].row * mis + coord_lookup[i*4].col;
+        mi_8x8[index] = mi_upper_left + index;
+        mi_8x8[index]->mbmi.sb_type = BLOCK_32X32;
+      } else {
+        use16x16 = 1;
+      }
+    }
+
+    if (!use16x16) {
+      if (var32[0] < thr_64 && var32[1] < thr_64 &&
+          var32[2] < thr_64 && var32[3] < thr_64)  {
+        mi_8x8[0] = mi_upper_left;
+        mi_8x8[0]->mbmi.sb_type = BLOCK_64X64;
+      }
+    }
+  } else {   // partial in-image SB64
+    BLOCK_SIZE bsize = BLOCK_16X16;
+    int bh = num_8x8_blocks_high_lookup[bsize];
+    int bw = num_8x8_blocks_wide_lookup[bsize];
+
+    for (r = 0; r < MI_BLOCK_SIZE; r += bh) {
+      for (c = 0; c < MI_BLOCK_SIZE; c += bw) {
+        int index = r * mis + c;
+        // Find a partition size that fits
+        bsize = find_partition_size(bsize,
+                                    (row8x8_remaining - r),
+                                    (col8x8_remaining - c), &bh, &bw);
+        mi_8x8[index] = mi_upper_left + index;
+        mi_8x8[index]->mbmi.sb_type = bsize;
+      }
+    }
+  }
+}
+
 static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
   const int mis = cm->mode_info_stride;
   int block_row, block_col;
@@ -3050,6 +3185,12 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     switch (cpi->sf.partition_search_type) {
       case VAR_BASED_PARTITION:
         choose_partitioning(cpi, tile, mi_row, mi_col);
+        nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
+                            1, &dummy_rate, &dummy_dist);
+        break;
+      case SOURCE_VAR_BASED_PARTITION:
+        set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
+        set_source_var_based_partition(cpi, tile, mi_8x8, mi_row, mi_col);
         nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
                             1, &dummy_rate, &dummy_dist);
         break;
