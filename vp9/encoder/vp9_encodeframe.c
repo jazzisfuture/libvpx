@@ -1419,6 +1419,7 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   const struct segmentation *const seg = &cm->seg;
 
   *(xd->mi[0]) = ctx->mic;
+  x->skip = ctx->skip;
 
   // For in frame adaptive Q, check for reseting the segment_id and updating
   // the cyclic refresh map.
@@ -2561,7 +2562,7 @@ static void set_mode_info(MB_MODE_INFO *mbmi, BLOCK_SIZE bsize,
 static void nonrd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
                                 int mi_row, int mi_col,
                                 int *rate, int64_t *dist,
-                                BLOCK_SIZE bsize) {
+                                BLOCK_SIZE bsize, PICK_MODE_CONTEXT *ctx) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -2576,6 +2577,9 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     set_mode_info(&xd->mi[0]->mbmi, bsize, intramode);
   }
   duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, bsize);
+
+  ctx->mic.mbmi = xd->mi[0]->mbmi;
+  ctx->skip = x->skip;
 }
 
 static void fill_mode_info_sb(VP9_COMMON *cm, MACROBLOCK *x,
@@ -2709,8 +2713,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   // PARTITION_NONE
   if (partition_none_allowed) {
     nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col,
-                        &this_rate, &this_dist, bsize);
-    ctx->mic.mbmi = xd->mi[0]->mbmi;
+                        &this_rate, &this_dist, bsize, ctx);
 
     if (this_rate != INT_MAX) {
       int pl = partition_plane_context(xd, mi_row, mi_col, bsize);
@@ -2794,25 +2797,19 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   if (partition_horz_allowed && do_rect) {
     subsize = get_subsize(bsize, PARTITION_HORZ);
     *get_sb_index(x, subsize) = 0;
-    if (cpi->sf.adaptive_motion_search)
-      load_pred_mv(x, ctx);
+    load_pred_mv(x, ctx);
 
-    nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col,
-                        &this_rate, &this_dist, subsize);
-
-    get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+    nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, &this_rate, &this_dist,
+                        subsize, get_block_context(x, subsize));
 
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
 
     if (sum_rd < best_rd && mi_row + ms < cm->mi_rows) {
       *get_sb_index(x, subsize) = 1;
-
       load_pred_mv(x, ctx);
 
-      nonrd_pick_sb_modes(cpi, tile, mi_row + ms, mi_col,
-                          &this_rate, &this_dist, subsize);
-
-      get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+      nonrd_pick_sb_modes(cpi, tile, mi_row + ms, mi_col, &this_rate,
+                          &this_dist, subsize, get_block_context(x, subsize));
 
       if (this_rate == INT_MAX) {
         sum_rd = INT64_MAX;
@@ -2837,22 +2834,18 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     subsize = get_subsize(bsize, PARTITION_VERT);
 
     *get_sb_index(x, subsize) = 0;
-    if (cpi->sf.adaptive_motion_search)
-      load_pred_mv(x, ctx);
+    load_pred_mv(x, ctx);
 
-    nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col,
-                        &this_rate, &this_dist, subsize);
-    get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+    nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, &this_rate, &this_dist,
+                        subsize, get_block_context(x, subsize));
+
     sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
     if (sum_rd < best_rd && mi_col + ms < cm->mi_cols) {
       *get_sb_index(x, subsize) = 1;
-
       load_pred_mv(x, ctx);
 
-      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col + ms,
-                          &this_rate, &this_dist, subsize);
-
-      get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col + ms, &this_rate,
+                          &this_dist, subsize, get_block_context(x, subsize));
 
       if (this_rate == INT_MAX) {
         sum_rd = INT64_MAX;
@@ -2918,7 +2911,6 @@ static void nonrd_use_partition(VP9_COMP *cpi,
                                 int *totrate, int64_t *totdist) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
-  MACROBLOCKD *const xd = &x->e_mbd;
   const int bsl = b_width_log2(bsize), hbs = (1 << bsl) / 4;
   const int mis = cm->mi_stride;
   PARTITION_TYPE partition;
@@ -2939,18 +2931,17 @@ static void nonrd_use_partition(VP9_COMP *cpi,
 
   switch (partition) {
     case PARTITION_NONE:
-      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist, subsize);
-      get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist,
+                          subsize, get_block_context(x, subsize));
       break;
     case PARTITION_VERT:
       *get_sb_index(x, subsize) = 0;
-      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist, subsize);
-      get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist,
+                          subsize, get_block_context(x, subsize));
       if (mi_col + hbs < cm->mi_cols) {
         *get_sb_index(x, subsize) = 1;
-        nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col + hbs,
-                            &rate, &dist, subsize);
-        get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+        nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col + hbs, &rate, &dist,
+                            subsize, get_block_context(x, subsize));
         if (rate != INT_MAX && dist != INT64_MAX &&
             *totrate != INT_MAX && *totdist != INT64_MAX) {
           *totrate += rate;
@@ -2960,13 +2951,12 @@ static void nonrd_use_partition(VP9_COMP *cpi,
       break;
     case PARTITION_HORZ:
       *get_sb_index(x, subsize) = 0;
-      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist, subsize);
-      get_block_context(x, subsize)->mic.mbmi = xd->mi[0]->mbmi;
+      nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist,
+                          subsize, get_block_context(x, subsize));
       if (mi_row + hbs < cm->mi_rows) {
         *get_sb_index(x, subsize) = 1;
-        nonrd_pick_sb_modes(cpi, tile, mi_row + hbs, mi_col,
-                            &rate, &dist, subsize);
-        get_block_context(x, subsize)->mic.mbmi = mi_8x8[0]->mbmi;
+        nonrd_pick_sb_modes(cpi, tile, mi_row + hbs, mi_col, &rate, &dist,
+                            subsize, get_block_context(x, subsize));
         if (rate != INT_MAX && dist != INT64_MAX &&
             *totrate != INT_MAX && *totdist != INT64_MAX) {
           *totrate += rate;
