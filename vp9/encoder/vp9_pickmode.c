@@ -236,6 +236,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int *const rd_thresh_freq_fact = cpi->rd_thresh_freq_fact[bsize];
   // Mode index conversion form THR_MODES to MB_PREDICTION_MODE for a ref frame.
   int mode_idx[MB_MODE_COUNT] = {0};
+  int skip_flag = 0;
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -324,6 +325,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
 
       model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+      skip_flag = (rate == 0);
       rate += rate_mv;
       rate += x->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                 [INTER_OFFSET(this_mode)];
@@ -335,6 +337,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         *returndistortion = dist;
         best_mode = this_mode;
         best_ref_frame = ref_frame;
+        x->skip = skip_flag;
       }
     }
   }
@@ -354,6 +357,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                               &pd->dst.buf[0], pd->dst.stride, 0, 0, 0);
 
       model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+      skip_flag = (rate == 0);
       rate += x->mbmode_cost[this_mode];
       rate += intra_cost_penalty;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
@@ -366,6 +370,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->ref_frame[0] = INTRA_FRAME;
         mbmi->uv_mode = this_mode;
         mbmi->mv[0].as_int = INVALID_MV;
+        x->skip = skip_flag;
       }
     }
   }
