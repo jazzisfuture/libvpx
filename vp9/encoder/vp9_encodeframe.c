@@ -2376,6 +2376,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     if ((cpi->sf.partition_search_type == SEARCH_PARTITION &&
          cpi->sf.use_lastframe_partitioning) ||
         cpi->sf.partition_search_type == FIXED_PARTITION ||
+        cpi->sf.partition_search_type == VAR_BASED_PARTITION ||
         cpi->sf.partition_search_type == VAR_BASED_FIXED_PARTITION) {
       const int idx_str = cm->mode_info_stride * mi_row + mi_col;
       MODE_INFO **mi_8x8 = cm->mi_grid_visible + idx_str;
