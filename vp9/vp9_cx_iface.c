@@ -720,7 +720,7 @@ static vpx_codec_err_t vp9e_encode(vpx_codec_alg_priv_t  *ctx,
     lib_flags = (flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
     /* vp8 use 10,000,000 ticks/second as time stamp */
-    dst_time_stamp = pts * 10000000 * ctx->cfg.g_timebase.num
+    dst_time_stamp = (pts * 10000000 * ctx->cfg.g_timebase.num)
                      / ctx->cfg.g_timebase.den;
     dst_end_time_stamp = (pts + duration) * 10000000 * ctx->cfg.g_timebase.num /
                          ctx->cfg.g_timebase.den;
