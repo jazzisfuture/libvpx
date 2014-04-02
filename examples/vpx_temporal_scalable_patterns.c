@@ -34,6 +34,24 @@ void usage_exit() {
 
 static int mode_to_num_layers[12] = {1, 2, 2, 3, 3, 3, 3, 5, 2, 3, 3, 3};
 
+enum ref_frames {
+  LAST = (1 << 0),
+  GF = (1 << 1),
+  ARF = (1 << 2)
+};
+
+static unsigned int no_upd(unsigned int flags) {
+  return ((flags & LAST) ? VP8_EFLAG_NO_UPD_LAST : 0) |
+         ((flags & GF)   ? VP8_EFLAG_NO_UPD_GF : 0) |
+         ((flags & ARF)  ? VP8_EFLAG_NO_UPD_ARF : 0);
+}
+
+static unsigned int no_ref(unsigned int flags) {
+  return ((flags & LAST) ? VP8_EFLAG_NO_REF_LAST : 0) |
+         ((flags & GF)   ? VP8_EFLAG_NO_REF_GF : 0) |
+         ((flags & ARF)  ? VP8_EFLAG_NO_REF_ARF : 0);
+}
+
 // For rate control encoding stats.
 struct RateControlMetrics {
   // Number of input frames per layer.
@@ -139,8 +157,7 @@ static void set_temporal_layer_pattern(int layering_mode,
       cfg->ts_rate_decimator[0] = 1;
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
       // Update L only.
-      layer_flags[0] = VPX_EFLAG_FORCE_KF  | VP8_EFLAG_NO_UPD_GF |
-          VP8_EFLAG_NO_UPD_ARF;
+      layer_flags[0] = VPX_EFLAG_FORCE_KF  | no_upd(GF | ARF);
       break;
     }
     case 1: {
@@ -154,10 +171,8 @@ static void set_temporal_layer_pattern(int layering_mode,
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
 #if 1
       // 0=L, 1=GF, Intra-layer prediction enabled.
-      layer_flags[0] = VPX_EFLAG_FORCE_KF  | VP8_EFLAG_NO_UPD_GF |
-          VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF;
-      layer_flags[1] = VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST |
-          VP8_EFLAG_NO_REF_ARF;
+      layer_flags[0] = VPX_EFLAG_FORCE_KF | no_upd(GF | ARF) | no_ref(GF | ARF);
+      layer_flags[1] = no_upd(ARF | LAST) | no_ref(ARF);
 #else
        // 0=L, 1=GF, Intra-layer prediction disabled.
       layer_flags[0] = VPX_EFLAG_FORCE_KF  | VP8_EFLAG_NO_UPD_GF |
@@ -177,11 +192,9 @@ static void set_temporal_layer_pattern(int layering_mode,
       cfg->ts_rate_decimator[1] = 1;
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
       // 0=L, 1=GF, Intra-layer prediction enabled.
-      layer_flags[0] = VPX_EFLAG_FORCE_KF  | VP8_EFLAG_NO_REF_GF |
-          VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF;
+      layer_flags[0] = VPX_EFLAG_FORCE_KF | no_ref(GF | ARF) | no_upd(GF | ARF);
       layer_flags[1] =
-      layer_flags[2] = VP8_EFLAG_NO_REF_GF  | VP8_EFLAG_NO_REF_ARF |
-          VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
+      layer_flags[2] = no_ref(GF | ARF) | no_upd(ARF | LAST);
       break;
     }
     case 3: {
@@ -195,9 +208,8 @@ static void set_temporal_layer_pattern(int layering_mode,
       cfg->ts_rate_decimator[2] = 1;
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
       // 0=L, 1=GF, 2=ARF, Intra-layer prediction enabled.
-      layer_flags[0] = VPX_EFLAG_FORCE_KF  | VP8_EFLAG_NO_REF_GF |
-          VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF;
-      layer_flags[3] = VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_ARF |
+      layer_flags[0] = VPX_EFLAG_FORCE_KF | no_ref(GF | ARF) | no_upd(GF | ARF);
+      layer_flags[3] = no_ref(ARF) | no_upd(ARF);
           VP8_EFLAG_NO_UPD_LAST;
       layer_flags[1] =
       layer_flags[2] =
