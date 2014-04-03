@@ -103,9 +103,10 @@ void vp9_temporal_filter_apply_c(uint8_t *frame1,
       // modifier =  (int)roundf(coeff > 16 ? 0 : 16-coeff);
       modifier  *= modifier;
       modifier  *= 3;
-      modifier  += 1 << (strength - 1);
-      modifier >>= strength;
-
+      if (strength >= 1) {
+        modifier  += 1 << (strength - 1);
+        modifier >>= strength;
+      }
       if (modifier > 16)
         modifier = 16;
 
