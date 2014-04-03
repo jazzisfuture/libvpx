@@ -27,6 +27,16 @@ CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols);
 
 void vp9_cyclic_refresh_free(CYCLIC_REFRESH *cr);
 
+// Estimate the bits, incorporating the delta-q from segment 1, after encoding
+// the frame.
+int vp9_cyclic_refresh_estimate_bits_at_q(const struct VP9_COMP *cpi,
+                                          double correction_factor);
+
+// Estimate the bits per mb, for a given q = i and a corresponding delta-q
+// (for segment 1), prior to encoding the frame.
+int vp9_cyclic_refresh_rc_bits_per_mb(const struct VP9_COMP *cpi, int i,
+                                      double correction_factor);
+
 // Prior to coding a given prediction block, of size bsize at (mi_row, mi_col),
 // check if we should reset the segment_id, and update the cyclic_refresh map
 // and segmentation map.
