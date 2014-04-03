@@ -16,16 +16,19 @@
 extern "C" {
 #endif
 
-struct nestegg;
-struct nestegg_packet;
 struct VpxInputContext;
 
 struct WebmInputContext {
-  uint32_t chunk;
-  uint32_t chunks;
-  uint32_t video_track;
-  struct nestegg *nestegg_ctx;
-  struct nestegg_packet *pkt;
+  void *reader;
+  void *segment;
+  uint8_t *buffer;
+  const void *cluster;
+  const void *block_entry;
+  const void *block;
+  int block_frame_index;
+  int video_track_index;
+  int is_first_block;
+  uint64_t timestamp_ns;
 };
 
 int file_is_webm(struct WebmInputContext *webm_ctx,
