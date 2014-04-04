@@ -232,6 +232,7 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
   if (speed >= 4) {
     int i;
     sf->last_partitioning_redo_frequency = 4;
+    sf->constrain_copy_partition = 1;
     sf->adaptive_rd_thresh = 5;
     sf->use_fast_coef_costing = 0;
     sf->auto_min_max_partition_size = STRICT_NEIGHBORING_MIN_MAX;
@@ -313,6 +314,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->min_partition_size = BLOCK_4X4;
   sf->adjust_partitioning_from_last_frame = 0;
   sf->last_partitioning_redo_frequency = 4;
+  sf->constrain_copy_partition = 0;
   sf->disable_split_mask = 0;
   sf->mode_search_skip_flags = 0;
   sf->force_frame_boost = 0;

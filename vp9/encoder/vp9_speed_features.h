@@ -232,6 +232,12 @@ typedef struct {
   // use_lastframe_partitioning is set.
   int last_partitioning_redo_frequency;
 
+  // This enables constrained copy partitioning, which will only copy complete
+  // previous partition if there no motion is detected in superblock.
+  // If motion is detected, then we only copy if partition is less than bsize,
+  // otherwise we fix partition to bsize. bsize is currently set to 16x16.
+  int constrain_copy_partition;
+
   // Disables sub 8x8 blocksizes in different scenarios: Choices are to disable
   // it always, to allow it for only Last frame and Intra, disable it for all
   // inter modes or to enable it always.
