@@ -255,6 +255,8 @@ static void set_rt_speed_feature(VP9_COMMON *cm,
     sf->allow_skip_recode = 1;
   }
   if (speed >= 5) {
+//    sf->frame_parameter_update = 1;
+
     sf->max_partition_size = BLOCK_32X32;
     sf->min_partition_size = BLOCK_8X8;
     sf->partition_check =
