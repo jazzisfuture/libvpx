@@ -101,13 +101,8 @@ void write_dx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
 #endif
 
 void vp9_initialize_dec() {
-  static int init_done = 0;
-
-  if (!init_done) {
     vp9_init_neighbors();
     vp9_init_quant_tables();
-    init_done = 1;
-  }
 }
 
 VP9D_COMP *vp9_create_decompressor(const VP9D_CONFIG *oxcf) {
