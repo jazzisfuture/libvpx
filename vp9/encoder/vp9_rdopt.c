@@ -2358,7 +2358,7 @@ const YV12_BUFFER_CONFIG *vp9_get_scaled_ref_frame(const VP9_COMP *cpi,
   return (scaled_idx != ref_idx) ? &cm->frame_bufs[scaled_idx].buf : NULL;
 }
 
-static INLINE int get_switchable_rate(const MACROBLOCK *x) {
+int get_switchable_rate(const MACROBLOCK *x) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
   const int ctx = vp9_get_pred_context_switchable_interp(xd);
