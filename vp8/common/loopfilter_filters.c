@@ -13,7 +13,6 @@
 #include "loopfilter.h"
 #include "onyxc_int.h"
 
-typedef unsigned char uc;
 
 static signed char vp8_signed_char_clamp(int t)
 {
