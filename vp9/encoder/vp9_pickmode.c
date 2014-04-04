@@ -176,7 +176,7 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   x->pred_mv[ref].as_mv = *tmp_mv;
 }
 
-static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
+static unsigned int model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                               MACROBLOCK *x, MACROBLOCKD *xd,
                               int *out_rate_sum, int64_t *out_dist_sum) {
   // Note our transform coeffs are 8 times an orthogonal transform.
@@ -196,6 +196,8 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                pd->dequant[1] >> 3, &rate, &dist);
   *out_rate_sum = rate;
   *out_dist_sum = dist << 3;
+
+  return sse;
 }
 
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
@@ -309,6 +311,41 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
         sub_pixel_motion_search(cpi, x, tile, bsize, mi_row, mi_col,
                                 &frame_mv[NEWMV][ref_frame].as_mv, &rate_mv);
+
+        mbmi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
+        if ((mbmi->mv[0].as_mv.row & 0x07) != 0 ||
+            (mbmi->mv[0].as_mv.col & 0x07) != 0) {
+          int64_t tmp_rdcost1 = INT64_MAX;
+          int64_t tmp_rdcost2 = INT64_MAX;
+          int64_t tmp_rdcost3 = INT64_MAX;
+
+          mbmi->interp_filter = EIGHTTAP;
+          vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+          tmp_rdcost1 = model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+          tmp_rdcost1 = RDCOST(x->rdmult, x->rddiv, get_switchable_rate(x) + rate, dist);
+
+          mbmi->interp_filter = EIGHTTAP_SHARP;
+          vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+          tmp_rdcost2 = model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+          tmp_rdcost2 = RDCOST(x->rdmult, x->rddiv, get_switchable_rate(x) + rate, dist);
+
+          mbmi->interp_filter = EIGHTTAP_SMOOTH;
+          vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+          tmp_rdcost3 = model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+          tmp_rdcost3 = RDCOST(x->rdmult, x->rddiv, get_switchable_rate(x) + rate, dist);
+
+          if (tmp_rdcost2 < tmp_rdcost1) {
+            if (tmp_rdcost2 < tmp_rdcost3)
+              mbmi->interp_filter = EIGHTTAP_SHARP;
+            else
+              mbmi->interp_filter = EIGHTTAP_SMOOTH;
+          } else {
+            if (tmp_rdcost1 < tmp_rdcost3)
+              mbmi->interp_filter = EIGHTTAP;
+            else
+              mbmi->interp_filter = EIGHTTAP_SMOOTH;
+          }
+        }
       }
 
       if (this_mode != NEARESTMV)
@@ -317,6 +354,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           continue;
 
       mbmi->mode = this_mode;
+
       mbmi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
 

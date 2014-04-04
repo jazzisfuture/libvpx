@@ -3344,7 +3344,8 @@ void vp9_encode_frame(VP9_COMP *cpi) {
     cpi->mb.e_mbd.lossless = cpi->oxcf.lossless;
     cm->reference_mode = SINGLE_REFERENCE;
     // Force the usage of the BILINEAR interp_filter.
-    cm->interp_filter = BILINEAR;
+//    cm->interp_filter = BILINEAR;
+    cm->interp_filter = SWITCHABLE;
     encode_frame_internal(cpi);
   }
 }
