@@ -178,9 +178,9 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   x->pred_mv[ref].as_mv = *tmp_mv;
 }
 
-static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
-                              MACROBLOCK *x, MACROBLOCKD *xd,
-                              int *out_rate_sum, int64_t *out_dist_sum) {
+static unsigned int model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
+                                      MACROBLOCK *x, MACROBLOCKD *xd,
+                                      int *out_rate_sum, int64_t *out_dist_sum) {
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
@@ -198,6 +198,8 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                pd->dequant[1] >> 3, &rate, &dist);
   *out_rate_sum = rate;
   *out_dist_sum = dist << 3;
+
+  return sse;
 }
 
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
@@ -214,6 +216,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   struct macroblockd_plane *const pd = &xd->plane[0];
   MB_PREDICTION_MODE this_mode, best_mode = ZEROMV;
   MV_REFERENCE_FRAME ref_frame, best_ref_frame = LAST_FRAME;
+  INTERP_FILTER best_pred_filter = EIGHTTAP;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
@@ -236,6 +239,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int *const rd_thresh_freq_fact = cpi->rd_thresh_freq_fact[bsize];
   // Mode index conversion form THR_MODES to MB_PREDICTION_MODE for a ref frame.
   int mode_idx[MB_MODE_COUNT] = {0};
+  INTERP_FILTER filter_ref = SWITCHABLE;
 
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -266,6 +270,11 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
+
+  if (xd->up_available)
+    filter_ref = xd->mi[-xd->mi_stride]->mbmi.interp_filter;
+  else if (xd->left_available)
+    filter_ref = xd->mi[-1]->mbmi.interp_filter;
 
   for (ref_frame = LAST_FRAME; ref_frame <= LAST_FRAME ; ++ref_frame) {
     if (!(cpi->ref_frame_flags & flag_list[ref_frame]))
@@ -326,9 +335,61 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
       mbmi->mode = this_mode;
       mbmi->mv[0].as_int = frame_mv[this_mode][ref_frame].as_int;
-      vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
 
-      model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+
+      if ((this_mode == NEWMV || filter_ref == SWITCHABLE) &&
+          ((mbmi->mv[0].as_mv.row & 0x07) != 0 ||
+           (mbmi->mv[0].as_mv.col & 0x07) != 0)) {
+        int64_t tmp_rdcost1 = INT64_MAX;
+        int64_t tmp_rdcost2 = INT64_MAX;
+        int64_t tmp_rdcost3 = INT64_MAX;
+        int pf_rate[3];
+        int64_t pf_dist[3];
+
+        mbmi->interp_filter = EIGHTTAP;
+        vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP],
+                          &pf_dist[EIGHTTAP]);
+        tmp_rdcost1 = RDCOST(x->rdmult, x->rddiv,
+                             vp9_get_switchable_rate(x) + pf_rate[EIGHTTAP],
+                             pf_dist[EIGHTTAP]);
+
+        mbmi->interp_filter = EIGHTTAP_SHARP;
+        vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP_SHARP],
+                          &pf_dist[EIGHTTAP_SHARP]);
+        tmp_rdcost2 = RDCOST(x->rdmult, x->rddiv,
+                          vp9_get_switchable_rate(x) + pf_rate[EIGHTTAP_SHARP],
+                          pf_dist[EIGHTTAP_SHARP]);
+
+        mbmi->interp_filter = EIGHTTAP_SMOOTH;
+        vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP_SMOOTH],
+                          &pf_dist[EIGHTTAP_SMOOTH]);
+        tmp_rdcost3 = RDCOST(x->rdmult, x->rddiv,
+                          vp9_get_switchable_rate(x) + pf_rate[EIGHTTAP_SMOOTH],
+                          pf_dist[EIGHTTAP_SMOOTH]);
+
+        if (tmp_rdcost2 < tmp_rdcost1) {
+          if (tmp_rdcost2 < tmp_rdcost3)
+            mbmi->interp_filter = EIGHTTAP_SHARP;
+          else
+            mbmi->interp_filter = EIGHTTAP_SMOOTH;
+        } else {
+          if (tmp_rdcost1 < tmp_rdcost3)
+            mbmi->interp_filter = EIGHTTAP;
+          else
+            mbmi->interp_filter = EIGHTTAP_SMOOTH;
+        }
+
+        rate = pf_rate[mbmi->interp_filter];
+        dist = pf_dist[mbmi->interp_filter];
+      } else {
+        mbmi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP: filter_ref;
+        vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+      }
+
       rate += rate_mv;
       rate += x->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                 [INTER_OFFSET(this_mode)];
@@ -339,12 +400,14 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         *returnrate = rate;
         *returndistortion = dist;
         best_mode = this_mode;
+        best_pred_filter = mbmi->interp_filter;
         best_ref_frame = ref_frame;
       }
     }
   }
 
   mbmi->mode = best_mode;
+  mbmi->interp_filter = best_pred_filter;
   mbmi->ref_frame[0] = best_ref_frame;
   mbmi->mv[0].as_int = frame_mv[best_mode][best_ref_frame].as_int;
   xd->mi[0]->bmi[0].as_mv[0].as_int = mbmi->mv[0].as_int;
