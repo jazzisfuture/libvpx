@@ -1,0 +1,9 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Dmitry Kovalev <dkovalev@google.com>
+Commit-Queue+1: Hangyu Kuang <hkuang@google.com>
+Verified+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: Hangyu Kuang <hkuang@google.com>
+Submitted-at: Fri, 04 Apr 2014 15:32:14 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/69471
+Project: webm/libvpx
+Branch: refs/heads/master
