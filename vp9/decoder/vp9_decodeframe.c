@@ -943,11 +943,9 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi,
       group_start = group_end + 1;
     }
   }
-
-  n = 0;
-  while (n < tile_cols) {
+{
     int i;
-    for (i = 0; i < num_workers && n < tile_cols; ++i) {
+    for (i = 0; i < num_workers; ++i) {
       VP9Worker *const worker = &pbi->tile_workers[i];
       TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
       TileInfo *const tile = (TileInfo*)worker->data2;
@@ -973,8 +971,6 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi,
         final_worker = i;
       }
 
-      ++n;
-    }
 
     for (; i > 0; --i) {
       VP9Worker *const worker = &pbi->tile_workers[i - 1];
@@ -987,7 +983,7 @@ static const uint8_t *decode_tiles_mt(VP9D_COMP *pbi,
       final_worker = -1;
     }
   }
-
+}
   return bit_reader_end;
 }
 
