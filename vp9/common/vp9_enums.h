@@ -25,6 +25,18 @@ extern "C" {
 
 #define MI_MASK (MI_BLOCK_SIZE - 1)
 
+typedef enum BITSTREAM_PROFILE {
+  PROFILE_0,
+  PROFILE_1,
+  PROFILE_2,
+  MAX_PROFILES
+} BITSTREAM_PROFILE;
+
+typedef enum BIT_DEPTH {
+  BITS_8,
+  BITS_10,
+  BITS_12
+} BIT_DEPTH;
 
 typedef enum BLOCK_SIZE {
   BLOCK_4X4,
