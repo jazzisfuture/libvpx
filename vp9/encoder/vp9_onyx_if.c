@@ -791,6 +791,7 @@ static void init_config(struct VP9_COMP *cpi, VP9_CONFIG *oxcf) {
   cpi->oxcf = *oxcf;
 
   cm->version = oxcf->version;
+  cm->bit_depth = oxcf->bit_depth;
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
@@ -832,6 +833,12 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9_CONFIG *oxcf) {
 
   if (cm->version != oxcf->version)
     cm->version = oxcf->version;
+  cm->bit_depth = oxcf->bit_depth;
+
+  if (cm->version <= 1)
+    assert(cm->bit_depth == BITS_8);
+  if (cm->version > 1)
+    assert(cm->bit_depth > BITS_8);
 
   cpi->oxcf = *oxcf;
 

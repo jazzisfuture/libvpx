@@ -1005,10 +1005,12 @@ static void error_handler(void *data) {
   vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME, "Truncated packet");
 }
 
-#define RESERVED \
-  if (vp9_rb_read_bit(rb)) \
-      vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM, \
-                         "Reserved bit must be unset")
+static int read_version(struct vp9_read_bit_buffer *rb) {
+  int version;
+  version = vp9_rb_read_bit(rb);
+  version |= (vp9_rb_read_bit(rb) << 1);
+  return version;
+}
 
 static size_t read_uncompressed_header(VP9D_COMP *pbi,
                                        struct vp9_read_bit_buffer *rb) {
@@ -1022,8 +1024,10 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Invalid frame marker");
 
-  cm->version = vp9_rb_read_bit(rb);
-  RESERVED;
+  cm->version = read_version(rb);
+  if (cm->version > 2)
+    vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM, \
+                       "Unsupported bitstream profile");
 
   cm->show_existing_frame = vp9_rb_read_bit(rb);
   if (cm->show_existing_frame) {
@@ -1048,7 +1052,8 @@ static size_t read_uncompressed_header(VP9D_COMP *pbi,
 
   if (cm->frame_type == KEY_FRAME) {
     check_sync_code(cm, rb);
-
+    if (cm->version > 1)
+      cm->bit_depth = (vp9_rb_read_bit(rb) ? BITS_12 : BITS_10);
     cm->color_space = (COLOR_SPACE)vp9_rb_read_literal(rb, 3);
     if (cm->color_space != SRGB) {
       vp9_rb_read_bit(rb);  // [16,235] (including xvycc) vs [0,255] range
