@@ -38,6 +38,7 @@ struct vp9_extracfg {
   unsigned int                frame_parallel_decoding_mode;
   AQ_MODE                     aq_mode;
   unsigned int                frame_periodic_boost;
+  BIT_DEPTH                   bit_depth;
 };
 
 struct extraconfig_map {
@@ -67,6 +68,7 @@ static const struct extraconfig_map extracfg_map[] = {
       0,                          // frame_parallel_decoding_mode
       NO_AQ,                      // aq_mode
       0,                          // frame_periodic_delta_q
+      BITS_8,                     // Bit depth
     }
   }
 };
@@ -252,6 +254,10 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
         ERROR("rc_twopass_stats_in missing EOS stats packet");
     }
   }
+  if (cfg->g_profile <= 1 && extra_cfg->bit_depth > BITS_8)
+    ERROR("High bit-depth not supported in profile < 2");
+  if (cfg->g_profile > 1 && extra_cfg->bit_depth == BITS_8)
+    ERROR("Bit-depth 8 not supported in profile > 1");
 
   return VPX_CODEC_OK;
 }
@@ -283,6 +289,7 @@ static vpx_codec_err_t set_vp9e_config(VP9_CONFIG *oxcf,
   oxcf->version = cfg->g_profile;
   oxcf->width   = cfg->g_w;
   oxcf->height  = cfg->g_h;
+  oxcf->bit_depth = extra_cfg->bit_depth;
   // guess a frame rate if out of whack, use 30
   oxcf->framerate = (double)cfg->g_timebase.den / cfg->g_timebase.num;
   if (oxcf->framerate > 180)

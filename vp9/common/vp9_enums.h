@@ -25,6 +25,11 @@ extern "C" {
 
 #define MI_MASK (MI_BLOCK_SIZE - 1)
 
+typedef enum BIT_DEPTH {
+  BITS_8,
+  BITS_10,
+  BITS_12
+} BIT_DEPTH;
 
 typedef enum BLOCK_SIZE {
   BLOCK_4X4,
