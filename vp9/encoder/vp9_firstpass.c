@@ -1769,6 +1769,9 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   if (cpi->common.frame_type != KEY_FRAME) {
     FIRSTPASS_STATS sectionstats;
+    int qindex = twopass->active_worst_quality;
+    int q = vp9_convert_qindex_to_q(qindex);
+    int projected_min_frame_bits;
 
     zero_stats(&sectionstats);
     reset_fpf_position(twopass, start_pos);
@@ -1783,6 +1786,19 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     twopass->section_intra_rating = (int)
       (sectionstats.intra_error /
       DOUBLE_DIVIDE_CHECK(sectionstats.coded_error));
+
+    // Adapt active_worst_quality to avoid missing the bitrate target
+    projected_min_frame_bits =
+        vp9_estimate_bits_at_q(cpi->common.frame_type,
+                               qindex,
+                               cpi->common.MBs,
+                               cpi->rc.gf_rate_correction_factor);
+    if (1.5 * twopass->gf_bits < projected_min_frame_bits)
+      twopass->active_worst_quality +=
+          vp9_compute_qdelta(cpi, q, 3 * q / 2);
+    else if (twopass->gf_bits >= 4 * projected_min_frame_bits)
+      twopass->active_worst_quality +=
+          vp9_compute_qdelta(cpi, q, 2 * q / 3);
 
     reset_fpf_position(twopass, start_pos);
   }
