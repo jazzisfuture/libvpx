@@ -148,8 +148,8 @@ void vp9_restore_coding_context(VP9_COMP *cpi) {
   cm->fc = cc->fc;
 }
 
-static int estimate_bits_at_q(int frame_kind, int q, int mbs,
-                              double correction_factor) {
+int vp9_estimate_bits_at_q(int frame_kind, int q, int mbs,
+                           double correction_factor) {
   const int bpm = (int)(vp9_rc_bits_per_mb(frame_kind, q, correction_factor));
 
   return ((uint64_t)bpm * mbs) >> BPER_MB_NORMBITS;
@@ -307,9 +307,9 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   // Work out how big we would have expected the frame to be at this Q given
   // the current correction factor.
   // Stay in double to avoid int overflow when values are large
-  projected_size_based_on_q = estimate_bits_at_q(cpi->common.frame_type, q,
-                                                 cpi->common.MBs,
-                                                 rate_correction_factor);
+  projected_size_based_on_q = vp9_estimate_bits_at_q(cpi->common.frame_type, q,
+                                                     cpi->common.MBs,
+                                                     rate_correction_factor);
   // Work out a size correction factor.
   if (projected_size_based_on_q > 0)
     correction_factor = (100 * cpi->rc.projected_frame_size) /
