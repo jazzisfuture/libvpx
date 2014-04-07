@@ -274,21 +274,29 @@ struct inter_args {
   int *eobtotal;
 };
 
-static void reconstruct_inter_block(int plane, int block,
+static void decode_inter_block(int plane, int block,
                                     BLOCK_SIZE plane_bsize,
                                     TX_SIZE tx_size, void *arg) {
   struct inter_args *args = (struct inter_args *)arg;
   VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
-  struct macroblockd_plane *const pd = &xd->plane[plane];
-  int x, y, eob;
+  int x, y;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
-  eob = vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
-                                tx_size, args->r);
+  *args->eobtotal += vp9_decode_block_tokens(cm, xd, plane, block, plane_bsize, x, y,
+                                             tx_size, args->r);
+}
+
+static void inverse_transform_inter_block(int plane, int block,
+                                          BLOCK_SIZE plane_bsize,
+                                          TX_SIZE tx_size, void *arg) {
+  struct inter_args *args = (struct inter_args *)arg;
+  MACROBLOCKD *const xd = args->xd;
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  int x, y;
+  txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   inverse_transform_block(xd, plane, block, tx_size,
                           &pd->dst.buf[4 * y * pd->dst.stride + 4 * x],
-                          pd->dst.stride, eob);
-  *args->eobtotal += eob;
+                          pd->dst.stride, pd->eobs[block]);
 }
 
 static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
@@ -355,22 +363,35 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     vp9_foreach_transformed_block(xd, bsize,
                                   predict_and_reconstruct_intra_block, &arg);
   } else {
+    const int skip = mbmi->skip;
+
     // Setup
     set_ref(cm, xd, 0, mi_row, mi_col);
     if (has_second_ref(mbmi))
       set_ref(cm, xd, 1, mi_row, mi_col);
 
-    // Prediction
-    vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-
-    // Reconstruction
-    if (!mbmi->skip) {
+    if (!skip) {
       int eobtotal = 0;
       struct inter_args arg = { cm, xd, r, &eobtotal };
-      vp9_foreach_transformed_block(xd, bsize, reconstruct_inter_block, &arg);
+      vp9_foreach_transformed_block(xd, bsize, decode_inter_block, &arg);
+
       if (!less8x8 && eobtotal == 0)
         mbmi->skip = 1;  // skip loopfilter
     }
+
+    if (!skip) {
+      struct inter_args arg = { cm, xd, r };
+
+      // >>>>> These iterations are completely independent and could run in parallel <<<<<
+      int plane;
+      for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+        vp9_dec_build_inter_predictors_plane(xd, mi_row, mi_col, bsize, plane);
+        vp9_foreach_transformed_block_in_plane(xd, bsize, plane, inverse_transform_inter_block, &arg);
+      }
+    } else {
+      vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+    }
+
   }
 
   xd->corrupted |= vp9_reader_has_error(r);

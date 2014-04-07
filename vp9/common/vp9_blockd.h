@@ -189,6 +189,7 @@ struct macroblockd_plane {
   const int16_t *dequant;
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
+  int eobs[256];
 };
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
@@ -225,7 +226,7 @@ typedef struct macroblockd {
   const YV12_BUFFER_CONFIG *cur_buf;
 
   /* mc buffer */
-  DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+  DECLARE_ALIGNED(16, uint8_t, mc_buf[MAX_MB_PLANE][80 * 2 * 80 * 2]);
 
   int lossless;
   /* Inverse transform function pointers. */

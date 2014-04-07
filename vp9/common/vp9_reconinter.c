@@ -369,11 +369,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
           y0 < 0 || y0 > frame_height - 1 || y1 < 0 || y1 > frame_height - 1) {
         uint8_t *buf_ptr1 = ref_frame + y0 * pre_buf->stride + x0;
         // Extend the border.
-        build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf, x1 - x0 + 1,
+        build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf[plane], x1 - x0 + 1,
                         x0, y0, x1 - x0 + 1, y1 - y0 + 1, frame_width,
                         frame_height);
         buf_stride = x1 - x0 + 1;
-        buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+        buf_ptr = xd->mc_buf[plane] + y_pad * 3 * buf_stride + x_pad * 3;
       }
     }
 
@@ -382,31 +382,37 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
   }
 }
 
+void vp9_dec_build_inter_predictors_plane(MACROBLOCKD *xd,
+                                          int mi_row, int mi_col,
+                                          BLOCK_SIZE bsize, int plane) {
+  const int mi_x = mi_col * MI_SIZE;
+  const int mi_y = mi_row * MI_SIZE;
+
+  const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
+                                                      &xd->plane[plane]);
+  const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+  const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+  const int bw = 4 * num_4x4_w;
+  const int bh = 4 * num_4x4_h;
+
+  if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
+    int i = 0, x, y;
+    assert(bsize == BLOCK_8X8);
+    for (y = 0; y < num_4x4_h; ++y)
+      for (x = 0; x < num_4x4_w; ++x)
+        dec_build_inter_predictors(xd, plane, i++, bw, bh,
+                                   4 * x, 4 * y, 4, 4, mi_x, mi_y);
+  } else {
+    dec_build_inter_predictors(xd, plane, 0, bw, bh,
+                               0, 0, bw, bh, mi_x, mi_y);
+  }
+}
+
 void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                        BLOCK_SIZE bsize) {
   int plane;
-  const int mi_x = mi_col * MI_SIZE;
-  const int mi_y = mi_row * MI_SIZE;
-  for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
-    const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
-                                                        &xd->plane[plane]);
-    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
-    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
-    const int bw = 4 * num_4x4_w;
-    const int bh = 4 * num_4x4_h;
-
-    if (xd->mi[0]->mbmi.sb_type < BLOCK_8X8) {
-      int i = 0, x, y;
-      assert(bsize == BLOCK_8X8);
-      for (y = 0; y < num_4x4_h; ++y)
-        for (x = 0; x < num_4x4_w; ++x)
-          dec_build_inter_predictors(xd, plane, i++, bw, bh,
-                                     4 * x, 4 * y, 4, 4, mi_x, mi_y);
-    } else {
-      dec_build_inter_predictors(xd, plane, 0, bw, bh,
-                                 0, 0, bw, bh, mi_x, mi_y);
-    }
-  }
+  for (plane = 0; plane < MAX_MB_PLANE; ++plane)
+    vp9_dec_build_inter_predictors_plane(xd, mi_row, mi_col, bsize, plane);
 }
 
 void vp9_setup_dst_planes(MACROBLOCKD *xd,
