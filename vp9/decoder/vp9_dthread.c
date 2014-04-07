@@ -139,6 +139,8 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
                               int y_only, int partial_frame) {
   // Number of superblock rows and cols
   const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int num_workers = MIN(pbi->oxcf.max_threads & ~1, tile_cols);
   int i;
 
   // Allocate memory used in thread synchronization.
@@ -168,7 +170,7 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
              sizeof(*pbi->lf_row_sync.cur_sb_col) * sb_rows);
 
   // Set up loopfilter thread data.
-  for (i = 0; i < pbi->num_tile_workers; ++i) {
+  for (i = 0; i < num_workers; ++i) {
     VP9Worker *const worker = &pbi->tile_workers[i];
     TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
     LFWorkerData *const lf_data = &tile_data->lfdata;
@@ -184,10 +186,10 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
     lf_data->y_only = y_only;   // always do all planes in decoder
 
     lf_data->lf_sync = &pbi->lf_row_sync;
-    lf_data->num_lf_workers = pbi->num_tile_workers;
+    lf_data->num_lf_workers = num_workers;
 
     // Start loopfiltering
-    if (i == pbi->num_tile_workers - 1) {
+    if (i == num_workers - 1) {
       vp9_worker_execute(worker);
     } else {
       vp9_worker_launch(worker);
@@ -195,7 +197,7 @@ void vp9_loop_filter_frame_mt(VP9D_COMP *pbi,
   }
 
   // Wait till all rows are finished
-  for (i = 0; i < pbi->num_tile_workers; ++i) {
+  for (i = 0; i < num_workers; ++i) {
     vp9_worker_sync(&pbi->tile_workers[i]);
   }
 }
