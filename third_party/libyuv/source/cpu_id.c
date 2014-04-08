@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/libyuv/include/libyuv/cpu_id.h"
 
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
 #ifdef __ANDROID__
-#include <cpu-features.h>
+#include <machine/cpu-features.h>
 #endif
+
+#include "third_party/libyuv/include/libyuv/cpu_id.h"
 
 #include "third_party/libyuv/include/libyuv/basic_types.h"  // for CPU_X86
 
