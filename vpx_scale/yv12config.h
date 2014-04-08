@@ -52,6 +52,8 @@ extern "C" {
     int border;
     int frame_size;
 
+    uint8_t nFrameNum;
+
     int corrupted;
     int flags;
   } YV12_BUFFER_CONFIG;
@@ -80,6 +82,13 @@ extern "C" {
                                vpx_realloc_frame_buffer_cb_fn_t cb,
                                void *user_priv);
   int vp9_free_frame_buffer(YV12_BUFFER_CONFIG *ybf);
+
+  int vp9_realloc_frame_buffer_rs(YV12_BUFFER_CONFIG *ybf,
+                                  int width, int height,
+                                  int ss_x, int ss_y, int border,
+                                  vpx_codec_frame_buffer_t *ext_fb,
+                                  vpx_realloc_frame_buffer_cb_fn_t cb,
+                                  void *user_priv, int new_fb_idx);
 
 #ifdef __cplusplus
 }
