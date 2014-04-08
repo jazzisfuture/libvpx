@@ -123,10 +123,12 @@ vp8_multi_resolution_encoder.DESCRIPTION  = VP8 Multiple-resolution Encoding
 ifeq ($(CONFIG_OS_SUPPORT), yes)
 CODEC_EXTRA_LIBS-$(CONFIG_VP8)         += m
 CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += m
+CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += dl
 else
     ifeq ($(CONFIG_GCC), yes)
     CODEC_EXTRA_LIBS-$(CONFIG_VP8)         += m
     CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += m
+    CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += dl
     endif
 endif
 #
@@ -197,7 +199,7 @@ $(foreach bin,$(BINS-yes),\
         $(LIB_PATH)/lib$(CODEC_LIB)$(CODEC_LIB_SUF)))\
     $(if $(BUILD_OBJS),$(eval $(call linker_template,$(bin),\
         $(call objs,$($(notdir $(bin:$(EXE_SFX)=)).SRCS)) \
-        -l$(CODEC_LIB) $(addprefix -l,$(CODEC_EXTRA_LIBS))\
+        -l$(CODEC_LIB) -ldl $(addprefix -l,$(CODEC_EXTRA_LIBS))\
         )))\
     $(if $(LIPO_OBJS),$(eval $(call lipo_bin_template,$(bin))))\
     )

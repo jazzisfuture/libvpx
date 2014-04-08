@@ -24,6 +24,7 @@
 #include "vp9/common/vp9_mv.h"
 #include "vp9/common/vp9_scale.h"
 #include "vp9/common/vp9_seg_common.h"
+#include "vp9/common/vp9_prob.h"
 
 #define BLOCK_SIZE_GROUPS 4
 #define MBSKIP_CONTEXTS 3
@@ -115,6 +116,10 @@ static INLINE int mi_width_log2(BLOCK_SIZE sb_type) {
   return mi_width_log2_lookup[sb_type];
 }
 
+static INLINE int mi_height_log2(BLOCK_SIZE sb_type) {
+  return mi_height_log2_lookup[sb_type];
+}
+
 // This structure now relates to 8x8 block regions.
 typedef struct {
   MB_PREDICTION_MODE mode, uv_mode;
@@ -195,7 +200,9 @@ struct buf_2d {
 };
 
 struct macroblockd_plane {
+  int16_t *qcoeff;
   int16_t *dqcoeff;
+  uint16_t *eobs;
   PLANE_TYPE plane_type;
   int subsampling_x;
   int subsampling_y;
@@ -414,6 +421,44 @@ static void txfrm_block_to_raster_xy(BLOCK_SIZE plane_bsize,
   const int raster_mb = block >> (tx_size << 1);
   *x = (raster_mb & (tx_cols - 1)) << tx_size;
   *y = (raster_mb >> tx_cols_log2) << tx_size;
+}
+
+static void extend_for_intra(MACROBLOCKD *xd, BLOCK_SIZE plane_bsize,
+                             int plane, int aoff, int loff) {
+  struct macroblockd_plane *const pd = &xd->plane[plane];
+  uint8_t *const buf = pd->dst.buf;
+  const int stride = pd->dst.stride;
+  const int x = aoff * 4 - 1;
+  const int y = loff * 4 - 1;
+  // Copy a pixel into the umv if we are in a situation where the block size
+  // extends into the UMV.
+  // TODO(JBB): Should be able to do the full extend in place so we don't have
+  // to do this multiple times.
+  if (xd->mb_to_right_edge < 0) {
+    const int bw = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
+    const int umv_border_start = bw + (xd->mb_to_right_edge >>
+                                       (3 + pd->subsampling_x));
+
+    if (x + bw > umv_border_start)
+      vpx_memset(&buf[y * stride + umv_border_start],
+                 buf[y * stride + umv_border_start - 1], bw);
+  }
+
+  if (xd->mb_to_bottom_edge < 0) {
+    if (xd->left_available || x >= 0) {
+      const int bh = 4 * num_4x4_blocks_high_lookup[plane_bsize];
+      const int umv_border_start =
+          bh + (xd->mb_to_bottom_edge >> (3 + pd->subsampling_y));
+
+      if (y + bh > umv_border_start) {
+        const uint8_t c = buf[(umv_border_start - 1) * stride + x];
+        uint8_t *d = &buf[umv_border_start * stride + x];
+        int i;
+        for (i = 0; i < bh; ++i, d += stride)
+          *d = c;
+      }
+    }
+  }
 }
 
 static void set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,

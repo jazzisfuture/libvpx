@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -22,12 +23,22 @@
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/common/vp9_quant_common.h"
+#include "vp9/common/kernel/vp9_inter_pred_rs.h"
 #include "vpx_scale/vpx_scale.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "vpx_ports/vpx_timer.h"
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_detokenize.h"
 #include "./vpx_scale_rtcd.h"
+
+#include "vp9/decoder/vp9_append.h"
+#include "vp9/decoder/vp9_decodeframe_recon.h"
+#include "vp9/decoder/vp9_step.h"
+#include "vp9/decoder/vp9_loopfilter_step.h"
+#include "vp9/decoder/vp9_device.h"
+#include "vp9/decoder/vp9_loopfilter_recon.h"
+
+#include "vp9/ppa.h"
 
 #define WRITE_RECON_BUFFER 0
 #if WRITE_RECON_BUFFER == 1
@@ -112,9 +123,45 @@ static void init_macroblockd(VP9D_COMP *const pbi) {
   struct macroblockd_plane *const pd = xd->plane;
   int i;
 
-  for (i = 0; i < MAX_MB_PLANE; ++i)
+  for (i = 0; i < MAX_MB_PLANE; ++i) {
+    pd[i].qcoeff  = pbi->qcoeff[i];
     pd[i].dqcoeff = pbi->dqcoeff[i];
+    pd[i].eobs    = pbi->eobs[i];
+  }
 }
+
+#define MAX_TASKS 16
+
+static void vp9_sched_init(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
+  pbi->sched = scheduler_create();
+  assert(pbi->sched);
+
+  pbi->steps_pool = steps_pool_get();
+  assert(pbi->steps_pool);
+  pbi->tsk_cache = task_cache_create(MAX_TASKS, pbi->steps_pool);
+  assert(pbi->tsk_cache);
+  scheduler_set_strategy(pbi->sched, SCHED_PERF_FIRST);
+
+  pbi->lf_steps_pool = lf_steps_pool_get();
+  assert(pbi->steps_pool);
+  pbi->lf_tsk_cache = task_cache_create(MAX_TASKS, pbi->lf_steps_pool);
+  assert(pbi->lf_tsk_cache);
+
+  vp9_register_devices(pbi->sched);
+#endif
+}
+
+static void vp9_sched_fini(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
+  scheduler_delete(pbi->sched);
+  task_cache_delete(pbi->tsk_cache);
+  task_cache_delete(pbi->lf_tsk_cache);
+  task_steps_pool_delete(pbi->steps_pool);
+  task_steps_pool_delete(pbi->lf_steps_pool);
+#endif
+}
+
 
 VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   VP9D_COMP *const pbi = vpx_memalign(32, sizeof(VP9D_COMP));
@@ -124,6 +171,7 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
     return NULL;
 
   vp9_zero(*pbi);
+  PPA_INIT();
 
   // Initialize the references to not point to any frame buffers.
   memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
@@ -148,7 +196,9 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   // vp9_init_dequantizer() for every frame.
   vp9_init_dequantizer(cm);
 
-  vp9_loop_filter_init(cm);
+#if CONFIG_MULTITHREAD
+  vp9_loop_filter_init_wpp(cm);
+#endif
 
   cm->error.setjmp = 0;
   pbi->decoded_key_frame = 0;
@@ -157,19 +207,31 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
 
   vp9_worker_init(&pbi->lf_worker);
 
+  vp9_sched_init(pbi);
+
   return pbi;
 }
 
 void vp9_remove_decompressor(VP9D_PTR ptr) {
   int i;
   VP9D_COMP *const pbi = (VP9D_COMP *)ptr;
+  VP9_DECODER_RECON *decoder_recon;
+
+  PPA_END();
 
   if (!pbi)
     return;
 
+  vp9_sched_fini(pbi);
   vp9_remove_common(&pbi->common);
   vp9_worker_end(&pbi->lf_worker);
   vpx_free(pbi->lf_worker.data1);
+
+  for (i = 0; i < MAX_TILES; i++) {
+    decoder_recon = &pbi->decoder_recon[i];
+    free_buffers_recon(decoder_recon);
+  }
+
   for (i = 0; i < pbi->num_tile_workers; ++i) {
     VP9Worker *const worker = &pbi->tile_workers[i];
     vp9_worker_end(worker);
@@ -181,6 +243,9 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   vpx_free(pbi->above_context[0]);
   vpx_free(pbi->above_seg_context);
   vpx_free(pbi);
+  if (rs_init == 0 || rs_init == 1) {
+    vp9_release_rs();
+  }
 }
 
 static int equal_dimensions(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
@@ -299,6 +364,7 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   const uint8_t *source = *psource;
   int retcode = 0;
 
+  PPAStartCpuEventFunc(vp9_decode_frame_time);
   /*if(pbi->ready_for_new_data == 0)
       return -1;*/
 
@@ -348,7 +414,12 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   cm->error.setjmp = 1;
 
-  retcode = vp9_decode_frame(pbi, psource);
+#if CONFIG_MULTITHREAD
+// mcw mt
+  retcode = vp9_decode_frame_mt(pbi, psource);
+#else
+  retcode = vp9_decode_frame_recon(pbi, psource);
+#endif
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;
@@ -370,7 +441,14 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 #endif
 
   if (!pbi->do_loopfilter_inline) {
+    PPAStartCpuEventFunc(loopfilter_time);
+#if CONFIG_MULTITHREAD
+    vp9_loop_filter_frame_wpp(pbi, cm, &pbi->mb, pbi->common.lf.filter_level,
+                              0, 0);
+#else
     vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+#endif
+    PPAStopCpuEventFunc(loopfilter_time);
   }
 
 #if WRITE_RECON_BUFFER == 2
@@ -419,6 +497,8 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
   pbi->source_sz = 0;
 
   cm->error.setjmp = 0;
+  PPAStopCpuEventFunc(vp9_decode_frame_time);
+
   return retcode;
 }
 
