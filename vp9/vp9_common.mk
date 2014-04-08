@@ -17,6 +17,7 @@ VP9_COMMON_SRCS-yes += common/vp9_alloccommon.c
 VP9_COMMON_SRCS-yes += common/vp9_convolve.c
 VP9_COMMON_SRCS-yes += common/vp9_convolve.h
 VP9_COMMON_SRCS-yes += common/vp9_debugmodes.c
+VP9_COMMON_SRCS-yes += common/vp9_default_coef_probs.h
 VP9_COMMON_SRCS-yes += common/vp9_entropy.c
 VP9_COMMON_SRCS-yes += common/vp9_entropymode.c
 VP9_COMMON_SRCS-yes += common/vp9_entropymv.c
@@ -64,6 +65,11 @@ VP9_COMMON_SRCS-yes += common/vp9_common_data.c
 VP9_COMMON_SRCS-yes += common/vp9_common_data.h
 VP9_COMMON_SRCS-yes += common/vp9_scan.c
 VP9_COMMON_SRCS-yes += common/vp9_scan.h
+#renderscript
+VP9_COMMON_SRCS-yes += common/kernel/vp9_convolve_rs_c.c
+VP9_COMMON_SRCS-yes += common/kernel/vp9_convolve_rs_c.h
+VP9_COMMON_SRCS-yes += common/kernel/vp9_inter_pred_rs.c
+VP9_COMMON_SRCS-yes += common/kernel/vp9_inter_pred_rs.h
 
 VP9_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/vp9_postproc_x86.h
 VP9_COMMON_SRCS-$(ARCH_X86)$(ARCH_X86_64) += common/x86/vp9_asm_stubs.c
@@ -139,4 +145,9 @@ VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_avg_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_save_reg_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_reconintra_neon$(ASM)
 
+VP9_COMMON_SRCS-yes += ppa.h
+VP9_COMMON_SRCS-yes += ppa.c
+VP9_COMMON_SRCS-yes += ppaCPUEvents.h
+
 $(eval $(call rtcd_h_template,vp9_rtcd,vp9/common/vp9_rtcd_defs.sh))
+
