@@ -17,5 +17,6 @@ struct VP9Decompressor;
 
 void vp9_init_dequantizer(struct VP9Common *cm);
 int vp9_decode_frame(struct VP9Decompressor *cpi, const uint8_t **p_data_end);
+int vp9_decode_frame_mt(struct VP9Decompressor *cpi, const uint8_t **p_data_end);
 
 #endif  // VP9_DECODER_VP9_DECODEFRAME_H_
