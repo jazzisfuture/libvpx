@@ -347,6 +347,8 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     // width/height is not a multiple of 8 pixels.
     if (scaled_mv.col || scaled_mv.row ||
         (frame_width & 0x7) || (frame_height & 0x7)) {
+      DECLARE_ALIGNED_ARRAY(16, uint8_t, mc_buf, 80 * 2 * 80 * 2);
+
       // Get reference block bottom right coordinate.
       int x1 = ((x0_16 + (w - 1) * xs) >> SUBPEL_BITS) + 1;
       int y1 = ((y0_16 + (h - 1) * ys) >> SUBPEL_BITS) + 1;
@@ -369,11 +371,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
           y0 < 0 || y0 > frame_height - 1 || y1 < 0 || y1 > frame_height - 1) {
         uint8_t *buf_ptr1 = ref_frame + y0 * pre_buf->stride + x0;
         // Extend the border.
-        build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf, x1 - x0 + 1,
+        build_mc_border(buf_ptr1, pre_buf->stride, mc_buf, x1 - x0 + 1,
                         x0, y0, x1 - x0 + 1, y1 - y0 + 1, frame_width,
                         frame_height);
         buf_stride = x1 - x0 + 1;
-        buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
+        buf_ptr = mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
       }
     }
 
