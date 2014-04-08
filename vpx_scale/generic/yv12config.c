@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vp9/common/kernel/vp9_inter_pred_rs.h"
+
 #include "./vpx_config.h"
 #include "vpx_scale/yv12config.h"
 #include "vpx_mem/vpx_mem.h"
@@ -23,8 +25,8 @@
 #define yv12_align_addr(addr, align) \
   (void*)(((size_t)(addr) + ((align) - 1)) & (size_t)-(align))
 
-int
-vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
+int vp9_free_frame_buffer_rs(YV12_BUFFER_CONFIG *ybf);
+int vp8_yv12_de_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
   if (ybf) {
     // If libvpx is using external frame buffers then buffer_alloc_sz must
     // not be set.
@@ -117,7 +119,9 @@ int vp8_yv12_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 int vp9_free_frame_buffer(YV12_BUFFER_CONFIG *ybf) {
   if (ybf) {
     if (ybf->buffer_alloc_sz > 0) {
-      vpx_free(ybf->buffer_alloc);
+      if (rs_init != 0) {
+        vpx_free(ybf->buffer_alloc);
+      }
     }
 
     /* buffer_alloc isn't accessed by most functions.  Rather y_buffer,
@@ -252,6 +256,138 @@ int vp9_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     vp9_free_frame_buffer(ybf);
     return vp9_realloc_frame_buffer(ybf, width, height, ss_x, ss_y, border,
                                     NULL, NULL, NULL);
+  }
+  return -2;
+}
+
+int vp9_free_frame_buffer_rs(YV12_BUFFER_CONFIG *ybf) {
+  vp9_release_rs();
+  return 0;
+}
+
+void *vpx_memalign_rs(size_t align, size_t size, YV12_BUFFER_CONFIG *ybf) {
+  void *addr, *x = NULL;
+  // Should be RS memory like map
+  addr = vp9_get_buf(ybf->nFrameNum * (size + 32 - 1 + sizeof(size_t)), size);
+  if (addr) {
+    x = (void*)(((size_t)((unsigned char *)addr +
+        sizeof(size_t)) + (32 - 1)) & (size_t)-32);
+
+    /* save the actual malloc address */
+    ((size_t *)x)[-1] = (size_t)addr;
+  }
+  return x;
+}
+
+int vp9_realloc_frame_buffer_rs(YV12_BUFFER_CONFIG *ybf,
+                                int width, int height,
+                                int ss_x, int ss_y, int border,
+                                vpx_codec_frame_buffer_t *ext_fb,
+                                vpx_realloc_frame_buffer_cb_fn_t cb,
+                                void *user_priv, int new_fb_idx) {
+  if (ybf) {
+    const int aligned_width = (width + 7) & ~7;
+    const int aligned_height = (height + 7) & ~7;
+    const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
+    const int yplane_size = (aligned_height + 2 * border) * y_stride;
+    const int uv_width = aligned_width >> ss_x;
+    const int uv_height = aligned_height >> ss_y;
+    const int uv_stride = y_stride >> ss_x;
+    const int uv_border_w = border >> ss_x;
+    const int uv_border_h = border >> ss_y;
+    const int uvplane_size = (uv_height + 2 * uv_border_h) * uv_stride;
+#if CONFIG_ALPHA
+    const int alpha_width = aligned_width;
+    const int alpha_height = aligned_height;
+    const int alpha_stride = y_stride;
+    const int alpha_border_w = border;
+    const int alpha_border_h = border;
+    const int alpha_plane_size = (alpha_height + 2 * alpha_border_h) *
+                                 alpha_stride;
+    const int frame_size = yplane_size + 2 * uvplane_size +
+                           alpha_plane_size;
+#else
+    const int frame_size = yplane_size + 2 * uvplane_size;
+#endif
+
+    if (ext_fb != NULL) {
+      const int align_addr_extra_size = 31;
+      const size_t external_frame_size = frame_size + align_addr_extra_size;
+      if (external_frame_size > ext_fb->size) {
+        // Allocation to hold larger frame, or first allocation.
+        if (cb(user_priv, external_frame_size, ext_fb) < 0) {
+          return -1;
+        }
+
+        if (ext_fb->data == NULL || ext_fb->size < external_frame_size) {
+          return -1;
+        }
+
+        // This memset is needed for fixing valgrind error from C loop filter
+        // due to access uninitialized memory in frame border. It could be
+        // removed if border is totally removed.
+        vpx_memset(ext_fb->data, 0, ext_fb->size);
+
+        ybf->buffer_alloc = yv12_align_addr(ext_fb->data, 32);
+      }
+    } else {
+      if (frame_size > ybf->buffer_alloc_sz) {
+        // Allocation to hold larger frame, or first allocation.
+        ybf->nFrameNum = new_fb_idx;
+        ybf->buffer_alloc = vpx_memalign_rs(32, frame_size, ybf);
+        if (!ybf->buffer_alloc)
+          return -1;
+
+        ybf->buffer_alloc_sz = frame_size;
+
+        // This memset is needed for fixing valgrind error from C loop filter
+        // due to access uninitialized memory in frame boarder. It could be
+        // removed if border is totally removed.
+        vpx_memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
+      }
+
+      if (ybf->buffer_alloc_sz < frame_size)
+        return -1;
+    }
+
+    /* Only support allocating buffers that have a border that's a multiple
+     * of 32. The border restriction is required to get 16-byte alignment of
+     * the start of the chroma rows without introducing an arbitrary gap
+     * between planes, which would break the semantics of things like
+     * vpx_img_set_rect(). */
+    if (border & 0x1f)
+      return -3;
+
+    ybf->y_crop_width = width;
+    ybf->y_crop_height = height;
+    ybf->y_width  = aligned_width;
+    ybf->y_height = aligned_height;
+    ybf->y_stride = y_stride;
+
+    ybf->uv_crop_width = (width + ss_x) >> ss_x;
+    ybf->uv_crop_height = (height + ss_y) >> ss_y;
+    ybf->uv_width = uv_width;
+    ybf->uv_height = uv_height;
+    ybf->uv_stride = uv_stride;
+
+    ybf->border = border;
+    ybf->frame_size = frame_size;
+
+    ybf->y_buffer = ybf->buffer_alloc + (border * y_stride) + border;
+    ybf->u_buffer = ybf->buffer_alloc + yplane_size +
+                    (uv_border_h * uv_stride) + uv_border_w;
+    ybf->v_buffer = ybf->buffer_alloc + yplane_size + uvplane_size +
+                    (uv_border_h * uv_stride) + uv_border_w;
+
+#if CONFIG_ALPHA
+    ybf->alpha_width = alpha_width;
+    ybf->alpha_height = alpha_height;
+    ybf->alpha_stride = alpha_stride;
+    ybf->alpha_buffer = ybf->buffer_alloc + yplane_size + 2 * uvplane_size +
+                        (alpha_border_h * alpha_stride) + alpha_border_w;
+#endif
+    ybf->corrupted = 0; /* assume not corrupted by errors */
+    return 0;
   }
   return -2;
 }
