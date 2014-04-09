@@ -284,9 +284,8 @@ static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
   xd->left_available  = (mi_col > tile->mi_col_start);
 }
 
-static INLINE MODE_INFO *get_prev_mi(VP9_COMMON *cm) {
-  const int use_prev_mi = cm->coding_use_prev_mi &&
-                          cm->width == cm->last_width &&
+static MODE_INFO *get_prev_mi(VP9_COMMON *cm) {
+  const int use_prev_mi = cm->width == cm->last_width &&
                           cm->height == cm->last_height &&
                           !cm->intra_only &&
                           cm->last_show_frame;
