@@ -266,8 +266,6 @@ static void set_rt_speed_feature(VP9_COMMON *cm, SPEED_FEATURES *sf,
 
   if (speed >= 6) {
     sf->partition_search_type = VAR_BASED_FIXED_PARTITION;
-    sf->use_nonrd_pick_mode = 1;
-    sf->search_method = FAST_DIAMOND;
   }
 
   if (speed >= 7) {
