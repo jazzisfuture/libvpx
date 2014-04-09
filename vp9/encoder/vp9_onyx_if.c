@@ -679,11 +679,10 @@ void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
   int vbr_max_bits;
 
   oxcf->framerate = framerate < 0.1 ? 30 : framerate;
-  cpi->output_framerate = cpi->oxcf.framerate;
-  rc->av_per_frame_bandwidth = (int)(oxcf->target_bandwidth /
-                                     cpi->output_framerate);
+
+  rc->av_per_frame_bandwidth = (int)(oxcf->target_bandwidth / oxcf->framerate);
   rc->min_frame_bandwidth = (int)(rc->av_per_frame_bandwidth *
-                                  oxcf->two_pass_vbrmin_section / 100);
+                                      oxcf->two_pass_vbrmin_section / 100);
 
   rc->min_frame_bandwidth = MAX(rc->min_frame_bandwidth, FRAME_OVERHEAD_BITS);
 
