@@ -1257,18 +1257,19 @@ static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
 }
 
 static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
-  const RATE_CONTROL *rc = &cpi->rc;
+  const VP9_CONFIG *const oxcf = &cpi->oxcf;
+  const RATE_CONTROL *const rc = &cpi->rc;
   int target;
 
   if (cpi->common.current_video_frame == 0) {
-    target = ((cpi->oxcf.starting_buffer_level / 2) > INT_MAX)
-      ? INT_MAX : (int)(cpi->oxcf.starting_buffer_level / 2);
+    target = ((oxcf->starting_buffer_level / 2) > INT_MAX)
+      ? INT_MAX : (int)(oxcf->starting_buffer_level / 2);
   } else {
     const int initial_boost = 32;
-    int kf_boost = MAX(initial_boost, (int)(2 * cpi->output_framerate - 16));
-    if (rc->frames_since_key < cpi->output_framerate / 2) {
+    int kf_boost = MAX(initial_boost, (int)(2 * oxcf->framerate - 16));
+    if (rc->frames_since_key < oxcf->framerate / 2) {
       kf_boost = (int)(kf_boost * rc->frames_since_key /
-                       (cpi->output_framerate / 2));
+                       (oxcf->framerate / 2));
     }
     target = ((16 + kf_boost) * rc->av_per_frame_bandwidth) >> 4;
   }
