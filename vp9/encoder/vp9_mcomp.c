@@ -177,8 +177,8 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c,
 
 /* returns subpixel variance error function */
 #define DIST(r, c) \
-    vfp->svf(pre(y, y_stride, r, c, offset), y_stride, sp(c), sp(r), z, \
-             src_stride, &sse)
+    vfp->svf(pre(what->buf, what->stride, r, c, offset), what->stride, \
+                 sp(c), sp(r), in_what->buf, in_what->stride, &sse)
 
 /* checks if (r, c) has better score than previous best */
 #define CHECK_BETTER(v, r, c) \
@@ -270,9 +270,9 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
                                  int *mvjcost, int *mvcost[2],
                                  int *distortion,
                                  unsigned int *sse1) {
-  const uint8_t *z = x->plane[0].src.buf;
-  const int src_stride = x->plane[0].src.stride;
   const MACROBLOCKD *xd = &x->e_mbd;
+  const struct buf_2d *const what = &x->plane[0].src;
+  const struct buf_2d *const in_what = &xd->plane[0].pre[0];
   unsigned int besterr = INT_MAX;
   unsigned int sse;
   unsigned int whichdir;
@@ -280,11 +280,7 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
   unsigned int halfiters = iters_per_step;
   unsigned int quarteriters = iters_per_step;
   unsigned int eighthiters = iters_per_step;
-
-  const int y_stride = xd->plane[0].pre[0].stride;
-  const int offset = bestmv->row * y_stride + bestmv->col;
-  const uint8_t *y = xd->plane[0].pre[0].buf + offset;
-
+  const int offset = bestmv->row * in_what->stride + bestmv->col;
   int rr = ref_mv->row;
   int rc = ref_mv->col;
   int br = bestmv->row * 8;
@@ -303,7 +299,8 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
   bestmv->col *= 8;
 
   // calculate central point error
-  besterr = vfp->vf(y, y_stride, z, src_stride, sse1);
+  besterr = vfp->vf(in_what->buf, in_what->stride, what->buf, what->stride,
+                    sse1);
   *distortion = besterr;
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
 
