@@ -1361,7 +1361,9 @@ void vp9_change_config(VP9_PTR ptr, VP9_CONFIG *oxcf) {
   set_tile_limits(cpi);
 }
 
+#ifndef M_LOG2_E
 #define M_LOG2_E 0.693147180559945309417
+#endif
 #define log2f(x) (log (x) / (float) M_LOG2_E)
 
 static void cal_nmvjointsadcost(int *mvjointsadcost) {
