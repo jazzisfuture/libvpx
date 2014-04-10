@@ -112,7 +112,7 @@ static int estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
 int vp9_rc_clamp_pframe_target_size(const VP9_COMP *const cpi, int target) {
   const RATE_CONTROL *rc = &cpi->rc;
   const int min_frame_target = MAX(rc->min_frame_bandwidth,
-                                   rc->av_per_frame_bandwidth >> 5);
+                                   rc->avg_frame_bandwidth >> 5);
   if (target < min_frame_target)
     target = min_frame_target;
   if (cpi->refresh_golden_frame && rc->is_src_frame_alt_ref) {
@@ -132,8 +132,8 @@ int vp9_rc_clamp_iframe_target_size(const VP9_COMP *const cpi, int target) {
   const RATE_CONTROL *rc = &cpi->rc;
   const VP9_CONFIG *oxcf = &cpi->oxcf;
   if (oxcf->rc_max_intra_bitrate_pct) {
-    const int max_rate = rc->av_per_frame_bandwidth *
-        oxcf->rc_max_intra_bitrate_pct / 100;
+    const int max_rate = rc->avg_frame_bandwidth *
+                             oxcf->rc_max_intra_bitrate_pct / 100;
     target = MIN(target, max_rate);
   }
   if (target > rc->max_frame_bandwidth)
@@ -170,7 +170,7 @@ static void update_buffer_level(VP9_COMP *cpi, int encoded_frame_size) {
   if (!cm->show_frame) {
     rc->bits_off_target -= encoded_frame_size;
   } else {
-    rc->bits_off_target += rc->av_per_frame_bandwidth - encoded_frame_size;
+    rc->bits_off_target += rc->avg_frame_bandwidth - encoded_frame_size;
   }
 
   // Clip the buffer level to the maximum specified buffer size.
@@ -203,10 +203,10 @@ void vp9_rc_init(const VP9_CONFIG *oxcf, int pass, RATE_CONTROL *rc) {
   rc->buffer_level =    oxcf->starting_buffer_level;
   rc->bits_off_target = oxcf->starting_buffer_level;
 
-  rc->rolling_target_bits      = rc->av_per_frame_bandwidth;
-  rc->rolling_actual_bits      = rc->av_per_frame_bandwidth;
-  rc->long_rolling_target_bits = rc->av_per_frame_bandwidth;
-  rc->long_rolling_actual_bits = rc->av_per_frame_bandwidth;
+  rc->rolling_target_bits      = rc->avg_frame_bandwidth;
+  rc->rolling_actual_bits      = rc->avg_frame_bandwidth;
+  rc->long_rolling_target_bits = rc->avg_frame_bandwidth;
+  rc->long_rolling_actual_bits = rc->avg_frame_bandwidth;
 
   rc->total_actual_bits = 0;
   rc->total_target_vs_actual = 0;
@@ -1131,7 +1131,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   // Actual bits spent
   rc->total_actual_bits += rc->projected_frame_size;
-  rc->total_target_bits += (cm->show_frame ? rc->av_per_frame_bandwidth : 0);
+  rc->total_target_bits += cm->show_frame ? rc->avg_frame_bandwidth : 0;
 
   rc->total_target_vs_actual = rc->total_actual_bits - rc->total_target_bits;
 
@@ -1173,12 +1173,12 @@ static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
 #if USE_ALTREF_FOR_ONE_PASS
   target = (!rc->is_src_frame_alt_ref &&
             (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) ?
-      (rc->av_per_frame_bandwidth * rc->baseline_gf_interval * af_ratio) /
+      (rc->avg_frame_bandwidth * rc->baseline_gf_interval * af_ratio) /
       (rc->baseline_gf_interval + af_ratio - 1) :
-      (rc->av_per_frame_bandwidth * rc->baseline_gf_interval) /
+      (rc->avg_frame_bandwidth * rc->baseline_gf_interval) /
       (rc->baseline_gf_interval + af_ratio - 1);
 #else
-  target = rc->av_per_frame_bandwidth;
+  target = rc->avg_frame_bandwidth;
 #endif
   return vp9_rc_clamp_pframe_target_size(cpi, target);
 }
@@ -1186,7 +1186,7 @@ static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
 static int calc_iframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
   static const int kf_ratio = 25;
   const RATE_CONTROL *rc = &cpi->rc;
-  int target = rc->av_per_frame_bandwidth * kf_ratio;
+  const int target = rc->avg_frame_bandwidth * kf_ratio;
   return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
 
@@ -1231,12 +1231,11 @@ static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
   const SVC *const svc = &cpi->svc;
   const int64_t diff = oxcf->optimal_buffer_level - rc->buffer_level;
   const int64_t one_pct_bits = 1 + oxcf->optimal_buffer_level / 100;
-  int min_frame_target = MAX(rc->av_per_frame_bandwidth >> 4,
-                             FRAME_OVERHEAD_BITS);
-  int target = rc->av_per_frame_bandwidth;
+  int min_frame_target = MAX(rc->avg_frame_bandwidth >> 4, FRAME_OVERHEAD_BITS);
+  int target = rc->avg_frame_bandwidth;
   if (svc->number_temporal_layers > 1 &&
       oxcf->end_usage == USAGE_STREAM_FROM_SERVER) {
-    // Note that for layers, av_per_frame_bandwidth is the cumulative
+    // Note that for layers, avg_frame_bandwidth is the cumulative
     // per-frame-bandwidth. For the target size of this frame, use the
     // layer average frame size (i.e., non-cumulative per-frame-bw).
     int current_temporal_layer = svc->temporal_layer_id;
@@ -1270,7 +1269,7 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
       kf_boost = (int)(kf_boost * rc->frames_since_key /
                        (cpi->output_framerate / 2));
     }
-    target = ((16 + kf_boost) * rc->av_per_frame_bandwidth) >> 4;
+    target = ((16 + kf_boost) * rc->avg_frame_bandwidth) >> 4;
   }
   return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
@@ -1278,7 +1277,7 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
 void vp9_rc_get_svc_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
-  int target = rc->av_per_frame_bandwidth;
+  int target = rc->avg_frame_bandwidth;
   if ((cm->current_video_frame == 0) ||
       (cm->frame_flags & FRAMEFLAGS_KEY) ||
       (cpi->oxcf.auto_key && (rc->frames_since_key %
