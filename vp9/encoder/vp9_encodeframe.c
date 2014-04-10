@@ -3201,7 +3201,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                             1, &dummy_rate, &dummy_dist);
         break;
       case SOURCE_VAR_BASED_PARTITION:
-        set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
         set_source_var_based_partition(cpi, tile, mi_8x8, mi_row, mi_col);
         nonrd_use_partition(cpi, tile, mi_8x8, tp, mi_row, mi_col, BLOCK_64X64,
                             1, &dummy_rate, &dummy_dist);
