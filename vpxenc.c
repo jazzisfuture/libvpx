@@ -44,6 +44,10 @@
 #include "./webmenc.h"
 #include "./y4minput.h"
 
+#if CONFIG_EXT_TX
+extern int block_index;
+#endif
+
 /* Swallow warnings about unused results of fread/fwrite */
 static size_t wrap_fread(void *ptr, size_t size, size_t nmemb,
                          FILE *stream) {
@@ -1750,6 +1754,10 @@ int main(int argc, const char **argv_) {
   uint64_t cx_time = 0;
   int stream_cnt = 0;
   int res = 0;
+
+//#if CONFIG_EXT_TX
+//  block_index = 54;
+//#endif
 
   exec_name = argv_[0];
 
