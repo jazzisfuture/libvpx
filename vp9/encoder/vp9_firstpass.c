@@ -61,7 +61,7 @@
 #define MIN_GF_INTERVAL             4
 #endif
 
-#define DISABLE_RC_LONG_TERM_MEM
+// #define DISABLE_RC_LONG_TERM_MEM
 
 static void swap_yv12(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
   YV12_BUFFER_CONFIG temp = *a;
@@ -2329,7 +2329,19 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
 #ifdef DISABLE_RC_LONG_TERM_MEM
   const uint64_t bits_used = cpi->rc.this_frame_target;
 #else
-  const uint64_t bits_used = cpi->rc.projected_frame_size;
+  // Change the balance of target vs. actual bitrate gradually as we progress
+  // towards the end of the sequence in order to mitigate the effect of
+  // starving the last few frames.
+  uint64_t bits_used;
+  const int frames_left = cpi->twopass.stats_in_end - cpi->twopass.stats_in;
+  if (frames_left > 96)
+    bits_used = cpi->rc.projected_frame_size;
+  else if (frames_left < 32)
+    bits_used = cpi->rc.this_frame_target;
+  else
+    bits_used = (cpi->rc.projected_frame_size * (frames_left - 32) +
+                 cpi->rc.this_frame_target * (96 - frames_left) + 32) >> 6;
+
 #endif
   cpi->twopass.bits_left -= bits_used;
   cpi->twopass.bits_left = MAX(cpi->twopass.bits_left, 0);
