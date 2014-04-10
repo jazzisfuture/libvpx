@@ -14,6 +14,10 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_EXT_TX
+const vp9_prob default_ext_tx_prob = 178; // 0.6 = 153, 0.7 = 178
+#endif
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc
@@ -327,6 +331,9 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
   cm->fc.tx_probs = default_tx_probs;
   vp9_copy(cm->fc.mbskip_probs, default_mbskip_probs);
   vp9_copy(cm->fc.inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_EXT_TX
+  cm->fc.ext_tx_prob = default_ext_tx_prob;
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -386,9 +393,11 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
                 counts->partition[i], fc->partition_prob[i]);
 
   if (cm->mcomp_filter_type == SWITCHABLE) {
-    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++)
+    for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; i++){
       adapt_probs(vp9_switchable_interp_tree, pre_fc->switchable_interp_prob[i],
                   counts->switchable_interp[i], fc->switchable_interp_prob[i]);
+      // printf("S %d %d\n", counts->switchable_interp[i][0], counts->switchable_interp[i][1]);
+    }
   }
 
   if (cm->tx_mode == TX_MODE_SELECT) {
@@ -418,6 +427,12 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < MBSKIP_CONTEXTS; ++i)
     fc->mbskip_probs[i] = adapt_prob(pre_fc->mbskip_probs[i],
                                      counts->mbskip[i]);
+
+#if CONFIG_EXT_TX
+//  printf("%d, %d\n", counts->ext_tx[0], counts->ext_tx[1]);
+  fc->ext_tx_prob = adapt_prob(pre_fc->ext_tx_prob, counts->ext_tx);
+  printf("%.2f\n", pre_fc->ext_tx_prob/255.0);
+#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {

@@ -1261,6 +1261,11 @@ static int read_compressed_header(VP9D_COMP *pbi, const uint8_t *data,
     nmv_context *const nmvc = &fc->nmvc;
     int i, j;
 
+#if CONFIG_EXT_TX
+    vp9_diff_update_prob(&r, &fc->ext_tx_prob);
+//    printf("dec: %d\n", fc->ext_tx_prob);
+#endif
+
     read_inter_mode_probs(fc, &r);
 
     if (cm->mcomp_filter_type == SWITCHABLE)
@@ -1319,6 +1324,10 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
                  sizeof(cm->counts.eob_branch)));
   assert(!memcmp(cm->counts.switchable_interp, zero_counts.switchable_interp,
                  sizeof(cm->counts.switchable_interp)));
+#if CONFIG_EXT_TX
+  assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
+                 sizeof(cm->counts.ext_tx)));
+#endif
   assert(!memcmp(cm->counts.inter_mode, zero_counts.inter_mode,
                  sizeof(cm->counts.inter_mode)));
   assert(!memcmp(cm->counts.intra_inter, zero_counts.intra_inter,

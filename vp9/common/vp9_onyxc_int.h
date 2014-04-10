@@ -58,6 +58,9 @@ typedef struct frame_contexts {
   struct tx_probs tx_probs;
   vp9_prob mbskip_probs[MBSKIP_CONTEXTS];
   nmv_context nmvc;
+#if CONFIG_EXT_TX
+  vp9_prob ext_tx_prob;
+#endif
 } FRAME_CONTEXT;
 
 typedef struct {
@@ -77,6 +80,9 @@ typedef struct {
   struct tx_counts tx;
   unsigned int mbskip[MBSKIP_CONTEXTS][2];
   nmv_context_counts mv;
+#if CONFIG_EXT_TX
+  unsigned int ext_tx[2];
+#endif
 } FRAME_COUNTS;
 
 
