@@ -494,6 +494,21 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   int inter_mode_ctx, ref, is_compound;
 
   read_ref_frames(cm, xd, r, mbmi->segment_id, mbmi->ref_frame);
+
+#if CONFIG_EXT_TX
+  assert(is_inter_block(mbmi));
+  if (mbmi->tx_size <= TX_16X16 &&
+      !mbmi->skip_coeff) {
+    mbmi->ext_txfrm = vp9_read(r, cm->fc.ext_tx_prob);
+    if (!cm->frame_parallel_decoding_mode)
+      ++cm->counts.ext_tx[mbmi->ext_txfrm];
+
+  } else {
+    mbmi->ext_txfrm = NORM;
+  }
+
+#endif
+
   is_compound = has_second_ref(mbmi);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
