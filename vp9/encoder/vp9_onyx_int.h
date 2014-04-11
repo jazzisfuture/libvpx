@@ -352,8 +352,6 @@ typedef struct VP9_COMP {
 
   int rd_threshes[MAX_SEGMENTS][BLOCK_SIZES][MAX_MODES];
   int rd_thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
-  int rd_thresh_sub8x8[MAX_SEGMENTS][BLOCK_SIZES][MAX_REFS];
-  int rd_thresh_freq_sub8x8[BLOCK_SIZES][MAX_REFS];
 
   int64_t rd_comp_pred_diff[REFERENCE_MODES];
   int64_t rd_prediction_type_threshes[MAX_REF_FRAMES][REFERENCE_MODES];

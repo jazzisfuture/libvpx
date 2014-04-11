@@ -259,16 +259,19 @@ static void set_block_thresholds(VP9_COMP *cpi) {
       const int t = q * rd_thresh_block_size_factor[bsize];
       const int thresh_max = INT_MAX / t;
 
-      for (i = 0; i < MAX_MODES; ++i)
-        cpi->rd_threshes[segment_id][bsize][i] =
-            cpi->rd_thresh_mult[i] < thresh_max ? cpi->rd_thresh_mult[i] * t / 4
-                                            : INT_MAX;
-
-      for (i = 0; i < MAX_REFS; ++i) {
-        cpi->rd_thresh_sub8x8[segment_id][bsize][i] =
-            cpi->rd_thresh_mult_sub8x8[i] < thresh_max
-                ? cpi->rd_thresh_mult_sub8x8[i] * t / 4
-                : INT_MAX;
+      if (bsize >= BLOCK_8X8) {
+        for (i = 0; i < MAX_MODES; ++i)
+          cpi->rd_threshes[segment_id][bsize][i] =
+              cpi->rd_thresh_mult[i] < thresh_max
+                  ? cpi->rd_thresh_mult[i] * t / 4
+                  : INT_MAX;
+      } else {
+        for (i = 0; i < MAX_REFS; ++i) {
+          cpi->rd_threshes[segment_id][bsize][i] =
+              cpi->rd_thresh_mult_sub8x8[i] < thresh_max
+                  ? cpi->rd_thresh_mult_sub8x8[i] * t / 4
+                  : INT_MAX;
+        }
       }
     }
   }
@@ -3117,6 +3120,35 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   ctx->mic = *xd->mi[0];
 }
 
+static INLINE int rd_less_than_thresh(int64_t best_rd, int rd_thresh,
+                                      int rd_thresh_fact) {
+    return best_rd < ((int64_t)rd_thresh * rd_thresh_fact >> 5) ||
+           rd_thresh == INT_MAX;
+}
+
+// Updating rd_thresh_freq_fact[] here means that the different
+// partition/block sizes are handled independently based on the best
+// choice for the current partition. It may well be better to keep a scaled
+// best rd so far value and update rd_thresh_freq_fact based on the mode/size
+// combination that wins out.
+static void update_rd_thresh_fact(VP9_COMP *cpi, int bsize,
+                                  int best_mode_index) {
+  if (cpi->sf.adaptive_rd_thresh) {
+    const int top_mode = bsize < BLOCK_8X8 ? MAX_REFS : MAX_MODES;
+    int mode_index;
+    for (mode_index = 0; mode_index < top_mode; ++mode_index) {
+      int *const fact = &cpi->rd_thresh_freq_fact[bsize][mode_index];
+
+      if (mode_index == best_mode_index) {
+        *fact -= (*fact >> 3);
+      } else {
+        *fact = MIN(*fact + RD_THRESH_INC,
+                    cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
+      }
+    }
+  }
+}
+
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   const TileInfo *const tile,
                                   int mi_row, int mi_col,
@@ -3325,10 +3357,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       continue;
 
     // Test best rd so far against threshold for trying this mode.
-    if (best_rd < ((int64_t)rd_threshes[mode_index] *
-                  rd_thresh_freq_fact[mode_index] >> 5) ||
-        rd_threshes[mode_index] == INT_MAX)
-     continue;
+    if (rd_less_than_thresh(best_rd, rd_threshes[mode_index],
+        rd_thresh_freq_fact[mode_index]))
+      continue;
 
     this_mode = vp9_mode_order[mode_index].mode;
     ref_frame = vp9_mode_order[mode_index].ref_frame[0];
@@ -3680,23 +3711,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
          (cm->interp_filter == best_mbmode.interp_filter) ||
          !is_inter_block(&best_mbmode));
 
-  // Updating rd_thresh_freq_fact[] here means that the different
-  // partition/block sizes are handled independently based on the best
-  // choice for the current partition. It may well be better to keep a scaled
-  // best rd so far value and update rd_thresh_freq_fact based on the mode/size
-  // combination that wins out.
-  if (cpi->sf.adaptive_rd_thresh) {
-    for (mode_index = 0; mode_index < MAX_MODES; ++mode_index) {
-      int *const fact = &cpi->rd_thresh_freq_fact[bsize][mode_index];
-
-      if (mode_index == best_mode_index) {
-        *fact -= (*fact >> 3);
-      } else {
-        *fact = MIN(*fact + RD_THRESH_INC,
-                    cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
-      }
-    }
-  }
+  update_rd_thresh_fact(cpi, bsize, best_mode_index);
 
   // macroblock modes
   *mbmi = best_mbmode;
@@ -3879,10 +3894,9 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     // Test best rd so far against threshold for trying this mode.
-    if ((best_rd <
-         ((int64_t)cpi->rd_thresh_sub8x8[segment_id][bsize][mode_index] *
-          cpi->rd_thresh_freq_sub8x8[bsize][mode_index] >> 5)) ||
-        cpi->rd_thresh_sub8x8[segment_id][bsize][mode_index] == INT_MAX)
+    if (rd_less_than_thresh(best_rd,
+                            cpi->rd_threshes[segment_id][bsize][mode_index],
+                            cpi->rd_thresh_freq_fact[bsize][mode_index]))
       continue;
 
     if (ref_frame > INTRA_FRAME &&
@@ -4011,10 +4025,10 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
       int uv_skippable;
 
       this_rd_thresh = (ref_frame == LAST_FRAME) ?
-          cpi->rd_thresh_sub8x8[segment_id][bsize][THR_LAST] :
-          cpi->rd_thresh_sub8x8[segment_id][bsize][THR_ALTR];
+          cpi->rd_threshes[segment_id][bsize][THR_LAST] :
+          cpi->rd_threshes[segment_id][bsize][THR_ALTR];
       this_rd_thresh = (ref_frame == GOLDEN_FRAME) ?
-          cpi->rd_thresh_sub8x8[segment_id][bsize][THR_GOLD] : this_rd_thresh;
+          cpi->rd_threshes[segment_id][bsize][THR_GOLD] : this_rd_thresh;
 
       cpi->mask_filter_rd = 0;
       for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
@@ -4345,23 +4359,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
          (cm->interp_filter == best_mbmode.interp_filter) ||
          !is_inter_block(&best_mbmode));
 
-  // Updating rd_thresh_freq_fact[] here means that the different
-  // partition/block sizes are handled independently based on the best
-  // choice for the current partition. It may well be better to keep a scaled
-  // best rd so far value and update rd_thresh_freq_fact based on the mode/size
-  // combination that wins out.
-  if (cpi->sf.adaptive_rd_thresh) {
-    for (mode_index = 0; mode_index < MAX_REFS; ++mode_index) {
-      int *const fact = &cpi->rd_thresh_freq_sub8x8[bsize][mode_index];
-
-      if (mode_index == best_mode_index) {
-        *fact -= (*fact >> 3);
-      } else {
-        *fact = MIN(*fact + RD_THRESH_INC,
-                    cpi->sf.adaptive_rd_thresh * RD_THRESH_MAX_FACT);
-      }
-    }
-  }
+  update_rd_thresh_fact(cpi, bsize, best_mode_index);
 
   // macroblock modes
   *mbmi = best_mbmode;
