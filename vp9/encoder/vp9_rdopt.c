@@ -1101,7 +1101,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                                             p->src_diff);
         int16_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
         xd->mi_8x8[0]->bmi[block].as_mode = mode;
-        vp9_predict_intra_block(xd, block, 1,
+        vp9_predict_intra_block(xd, block, b_width_log2(bsize),
                                 TX_4X4, mode,
                                 x->skip_encode ? src : dst,
                                 x->skip_encode ? src_stride : dst_stride,
