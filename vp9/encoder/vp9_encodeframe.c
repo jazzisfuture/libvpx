@@ -539,10 +539,11 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         is_inter_mode(mbmi->mode) &&
         (mbmi->ref_frame[1] <= INTRA_FRAME)) {
       if (mbmi->ref_frame[1] == INTRA_FRAME) {
-        ++cpi->y_mode_count[size_group_lookup[mbmi->sb_type]]
-                           [mbmi->interintra_mode];
+        ++cpi->common.counts.y_mode[size_group_lookup[mbmi->sb_type]]
+            [mbmi->interintra_mode];
 #if SEPARATE_INTERINTRA_UV
-        ++cpi->y_uv_mode_count[mbmi->interintra_mode][mbmi->interintra_uv_mode];
+        ++cpi->common.counts.y_uv_mode[mbmi->interintra_mode]
+                                      [mbmi->interintra_uv_mode];
 #endif
         ++cpi->interintra_count[mbmi->sb_type][1];
 #if CONFIG_MASKED_INTERINTRA
@@ -2529,8 +2530,8 @@ static void sum_intra_stats(VP9_COMMON *cm, const MODE_INFO *mi) {
 #if CONFIG_FILTERINTRA
   if (is_filter_allowed(uv_mode) &&
       is_filter_enabled(get_uv_tx_size(&(mi->mbmi))))
-    ++cpi->common.counts.filterintra[get_uv_tx_size(&(mi->mbmi))]
-                                    [uv_mode][uv_fbit];
+    ++cm->counts.filterintra[get_uv_tx_size(&(mi->mbmi))]
+        [uv_mode][uv_fbit];
 #endif
 
   if (bsize < BLOCK_8X8) {
@@ -2546,8 +2547,7 @@ static void sum_intra_stats(VP9_COMMON *cm, const MODE_INFO *mi) {
 #if CONFIG_FILTERINTRA
         if (is_filter_allowed(mi->bmi[idy * 2 + idx].as_mode)) {
           fbit = mi->b_filter_info[idy * 2 + idx];
-          ++cpi->common.counts.filterintra[0][mi->bmi[idy * 2 + idx].as_mode]
-                                          [fbit];
+          ++cm->counts.filterintra[0][mi->bmi[idy * 2 + idx].as_mode][fbit];
         }
       }
 #endif
@@ -2555,7 +2555,7 @@ static void sum_intra_stats(VP9_COMMON *cm, const MODE_INFO *mi) {
     ++cm->counts.y_mode[size_group_lookup[bsize]][y_mode];
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(y_mode) && is_filter_enabled(mi->mbmi.tx_size))
-      ++cpi->common.counts.filterintra[mi->mbmi.tx_size][y_mode][fbit];
+      ++cm->counts.filterintra[mi->mbmi.tx_size][y_mode][fbit];
 #endif
   }
 }

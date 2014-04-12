@@ -497,7 +497,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
         && mi->mbmi.use_masked_interinter) {
       uint8_t tmp_dst[4096];
       inter_predictor(pre, pre_buf->stride, tmp_dst, 64,
-                     subpel_x, subpel_y, scale, w, h, 0, &xd->subpix, xs, ys);
+                      subpel_x, subpel_y, sf, w, h, 0, &xd->subpix, xs, ys);
       build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
                             mi->mbmi.mask_index, mi->mbmi.sb_type, h, w);
     } else {
@@ -687,7 +687,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
         && mi->mbmi.use_masked_interinter) {
       uint8_t tmp_dst[4096];
       inter_predictor(buf_ptr, pre_buf->stride, tmp_dst, 64,
-                     subpel_x, subpel_y, scale, w, h, 0, &xd->subpix, xs, ys);
+                     subpel_x, subpel_y, sf, w, h, 0, &xd->subpix, xs, ys);
       build_masked_compound(dst, dst_buf->stride, tmp_dst, 64,
                             mi->mbmi.mask_index, mi->mbmi.sb_type, h, w);
     } else {

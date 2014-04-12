@@ -2961,10 +2961,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_MASKED_INTERINTER || CONFIG_INTERINTRA
   int rate_mv_tmp = 0;
 #endif
-#if CONFIG_MASKED_INTERINTER
-  mbmi->use_masked_interinter = 0;
-  mbmi->mask_index = MASK_NONE;
-#endif
 #if CONFIG_INTERINTRA
   const int is_comp_interintra_pred = (mbmi->ref_frame[1] == INTRA_FRAME);
 #if CONFIG_MASKED_INTERINTRA
@@ -2972,6 +2968,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->interintra_mask_index = -1;
   mbmi->interintra_uv_mask_index = -1;
 #endif
+#endif
+#if CONFIG_MASKED_INTERINTER
+  mbmi->use_masked_interinter = 0;
+  mbmi->mask_index = MASK_NONE;
 #endif
 
   if (is_comp_pred) {
