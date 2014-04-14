@@ -131,26 +131,19 @@ static int search_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
   return filt_best;
 }
 
-void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
+int vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
                            LPF_PICK_METHOD method) {
-  VP9_COMMON *const cm = &cpi->common;
-  struct loopfilter *const lf = &cm->lf;
-
-  lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0
-                                                    : cpi->oxcf.sharpness;
+  const VP9_COMMON *const cm = &cpi->common;
 
   if (method == LPF_PICK_FROM_Q) {
-    const int min_filter_level = 0;
-    const int max_filter_level = get_max_filter_level(cpi);
     const int q = vp9_ac_quant(cm->base_qindex, 0);
     // These values were determined by linear fitting the result of the
     // searched level, filt_guess = q * 0.316206 + 3.87252
-    int filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
+    int guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
     if (cm->frame_type == KEY_FRAME)
-      filt_guess -= 4;
-    lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
+      guess -= 4;
+    return clamp(guess, 0, get_max_filter_level(cpi));
   } else {
-    lf->filter_level = search_filter_level(sd, cpi,
-                                           method == LPF_PICK_FROM_SUBIMAGE);
+    return search_filter_level(sd, cpi, method == LPF_PICK_FROM_SUBIMAGE);
   }
 }

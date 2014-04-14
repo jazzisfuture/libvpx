@@ -1939,7 +1939,9 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 
     vpx_usec_timer_start(&timer);
 
-    vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
+    lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0
+                                                      : cpi->oxcf.sharpness;
+    lf->filter_level = vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.lpf_pick);
 
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
