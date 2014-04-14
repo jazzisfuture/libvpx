@@ -1702,42 +1702,36 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
 }
 #endif
 
-static void scale_and_extend_frame_nonnormative(YV12_BUFFER_CONFIG *src_fb,
-                                                YV12_BUFFER_CONFIG *dst_fb) {
-  const int in_w = src_fb->y_crop_width;
-  const int in_h = src_fb->y_crop_height;
-  const int out_w = dst_fb->y_crop_width;
-  const int out_h = dst_fb->y_crop_height;
-  const int in_w_uv = src_fb->uv_crop_width;
-  const int in_h_uv = src_fb->uv_crop_height;
-  const int out_w_uv = dst_fb->uv_crop_width;
-  const int out_h_uv = dst_fb->uv_crop_height;
+static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                                YV12_BUFFER_CONFIG *dst) {
   int i;
-
-  uint8_t *srcs[4] = {src_fb->y_buffer, src_fb->u_buffer, src_fb->v_buffer,
-    src_fb->alpha_buffer};
-  int src_strides[4] = {src_fb->y_stride, src_fb->uv_stride, src_fb->uv_stride,
-    src_fb->alpha_stride};
-
-  uint8_t *dsts[4] = {dst_fb->y_buffer, dst_fb->u_buffer, dst_fb->v_buffer,
-    dst_fb->alpha_buffer};
-  int dst_strides[4] = {dst_fb->y_stride, dst_fb->uv_stride, dst_fb->uv_stride,
-    dst_fb->alpha_stride};
+  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                                  src->alpha_buffer};
+  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
+                              src->alpha_stride};
+  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+                            dst->alpha_buffer};
+  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
+                              dst->alpha_stride};
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     if (i == 0 || i == 3) {
       // Y and alpha planes
-      vp9_resize_plane(srcs[i], in_h, in_w, src_strides[i],
-                       dsts[i], out_h, out_w, dst_strides[i]);
+      vp9_resize_plane(srcs[i], src->y_crop_height, src->y_crop_width,
+                       src_strides[i],
+                       dsts[i], dst->y_crop_height, dst->y_crop_width,
+                       dst_strides[i]);
     } else {
       // Chroma planes
-      vp9_resize_plane(srcs[i], in_h_uv, in_w_uv, src_strides[i],
-                       dsts[i], out_h_uv, out_w_uv, dst_strides[i]);
+      vp9_resize_plane(srcs[i], src->uv_crop_height, src->uv_crop_width,
+                       src_strides[i],
+                       dsts[i], dst->uv_crop_height, dst->uv_crop_width,
+                       dst_strides[i]);
     }
   }
   // TODO(hkuang): Call C version explicitly
   // as neon version only expand border size 32.
-  vp8_yv12_extend_frame_borders_c(dst_fb);
+  vp8_yv12_extend_frame_borders_c(dst);
 }
 
 static void scale_and_extend_frame(YV12_BUFFER_CONFIG *src_fb,
