@@ -258,6 +258,9 @@ static void set_rt_speed_feature(VP9_COMMON *cm, SPEED_FEATURES *sf,
         (cm->current_video_frame %
             (sf->last_partitioning_redo_frequency << 1) == 1);
     sf->max_delta_qindex = (cm->frame_type == KEY_FRAME) ? 20 : 15;
+
+    sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
+
     sf->partition_search_type = REFERENCE_PARTITION;
     sf->use_nonrd_pick_mode = 1;
     sf->search_method = FAST_DIAMOND;
