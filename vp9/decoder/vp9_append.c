@@ -109,10 +109,12 @@ void store_eobtotal_less8x8_recon(int less8x8, int16_t eobtotal,
 }
 
 void free_buffers_recon(VP9_DECODER_RECON *decoder_recon) {
-
-  vpx_free(decoder_recon->inter_pre_recon);
-  vpx_free(decoder_recon->intra_pre_recon);
-  vpx_free(decoder_recon->dequant_recon);
+  if (decoder_recon->inter_pre_recon)
+    vpx_free(decoder_recon->inter_pre_recon);
+  if (decoder_recon->intra_pre_recon)
+    vpx_free(decoder_recon->intra_pre_recon);
+  if (decoder_recon->dequant_recon)
+    vpx_free(decoder_recon->dequant_recon);
 
   decoder_recon->inter_pre_recon = NULL;
   decoder_recon->intra_pre_recon = NULL;
@@ -121,7 +123,6 @@ void free_buffers_recon(VP9_DECODER_RECON *decoder_recon) {
   decoder_recon->inter_blocks_count = 0;
   decoder_recon->intra_blocks_count = 0;
   decoder_recon->dequant_count = 0;
-
 }
 
 int alloc_buffers_recon(VP9_COMMON *cm, VP9_DECODER_RECON *decoder_recon) {
