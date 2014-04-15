@@ -3046,6 +3046,35 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   }
 }
 
+static int merge_splits(const MODE_INFO **mi_8x8,
+                        const int hbs, const int mis) {
+  const MODE_INFO *mi_0 = mi_8x8[0];
+  const MODE_INFO *mi_1= mi_8x8[hbs];
+  const MODE_INFO *mi_2 = mi_8x8[mis * hbs];
+  const MODE_INFO *mi_3 = mi_8x8[mis * hbs + hbs];
+
+  if (mi_0->mbmi.sb_type != mi_1->mbmi.sb_type ||
+      mi_0->mbmi.sb_type != mi_2->mbmi.sb_type ||
+      mi_0->mbmi.sb_type != mi_3->mbmi.sb_type)
+    return 0;
+  if (mi_0->mbmi.ref_frame[0] != mi_1->mbmi.ref_frame[0] ||
+      mi_0->mbmi.ref_frame[0] != mi_2->mbmi.ref_frame[0] ||
+      mi_0->mbmi.ref_frame[0] != mi_3->mbmi.ref_frame[0])
+    return 0;
+  if (mi_0->mbmi.ref_frame[0] > INTRA_FRAME) {
+    if (mi_0->mbmi.mv[0].as_int != mi_1->mbmi.mv[0].as_int ||
+        mi_0->mbmi.mv[0].as_int != mi_2->mbmi.mv[0].as_int ||
+        mi_0->mbmi.mv[0].as_int != mi_3->mbmi.mv[0].as_int)
+      return 0;
+  } else {
+    if (mi_0->mbmi.mode != mi_1->mbmi.mode ||
+        mi_0->mbmi.mode != mi_2->mbmi.mode ||
+        mi_0->mbmi.mode != mi_3->mbmi.mode)
+      return 0;
+  }
+  return 1;
+}
+
 static void nonrd_use_partition(VP9_COMP *cpi,
                                 const TileInfo *const tile,
                                 MODE_INFO **mi_8x8,
@@ -3137,6 +3166,14 @@ static void nonrd_use_partition(VP9_COMP *cpi,
           *totrate != INT_MAX && *totdist != INT64_MAX) {
         *totrate += rate;
         *totdist += dist;
+      }
+      // shall we actually code NONE
+      if (1 &&
+          mi_row + num_8x8_blocks_high_lookup[bsize] < cm->mi_rows &&
+          mi_col + num_8x8_blocks_wide_lookup[bsize] < cm->mi_cols &&
+          merge_splits(mi_8x8, hbs, mis)) {
+        nonrd_pick_sb_modes(cpi, tile, mi_row, mi_col, totrate, totdist, bsize);
+        get_block_context(x, bsize)->mic.mbmi = xd->mi[0]->mbmi;
       }
       break;
     default:
