@@ -10,6 +10,10 @@
 #ifndef SCHED_TASK_H_
 #define SCHED_TASK_H_
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/sched/thread.h"
 #include "vp9/sched/list.h"
@@ -159,5 +163,7 @@ static INLINE int task_finish(struct task *tsk) {
 
   return 0;
 }
+
+#endif
 
 #endif  // SCHED_TASK_H_

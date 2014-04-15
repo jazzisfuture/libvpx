@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/step.h"
 #include "vp9/decoder/vp9_loopfilter_step.h"
 #include "vp9/decoder/vp9_decodeframe_recon.h"
@@ -107,3 +110,5 @@ void lf_blk_param_put(struct task *tsk, struct lf_blk_param *param) {
   pthread_cond_destroy(&param->cond);
   vpx_free(param);
 }
+
+#endif

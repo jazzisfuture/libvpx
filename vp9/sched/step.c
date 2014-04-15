@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include <assert.h>
 #include "vpx_mem/vpx_mem.h"
 #include "vp9/sched/step.h"
@@ -95,3 +99,5 @@ void task_step_for_each_next(struct task_step *step,
     fn(step->pool->steps + nr - 1, args);
   }
 }
+
+#endif

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -132,6 +133,7 @@ static void init_macroblockd(VP9D_COMP *const pbi) {
 #define MAX_TASKS 16
 
 static void vp9_sched_init(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   pbi->sched = scheduler_create();
   assert(pbi->sched);
 
@@ -147,14 +149,17 @@ static void vp9_sched_init(VP9D_COMP *const pbi) {
   assert(pbi->lf_tsk_cache);
 
   vp9_register_devices(pbi->sched);
+#endif
 }
 
 static void vp9_sched_fini(VP9D_COMP *const pbi) {
+#if CONFIG_MULTITHREAD
   scheduler_delete(pbi->sched);
   task_cache_delete(pbi->tsk_cache);
   task_cache_delete(pbi->lf_tsk_cache);
   task_steps_pool_delete(pbi->steps_pool);
   task_steps_pool_delete(pbi->lf_steps_pool);
+#endif
 }
 
 
@@ -190,7 +195,9 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
   // vp9_init_dequantizer() for every frame.
   vp9_init_dequantizer(cm);
 
+#if CONFIG_MULTITHREAD
   vp9_loop_filter_init_wpp(cm);
+#endif
 
   cm->error.setjmp = 0;
   pbi->decoded_key_frame = 0;
@@ -404,10 +411,12 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   cm->error.setjmp = 1;
 
+#if CONFIG_MULTITHREAD
 //mcw mt
-  //retcode = vp9_decode_frame(pbi, psource);
-  //retcode = vp9_decode_frame_recon(pbi, psource);
   retcode = vp9_decode_frame_mt(pbi, psource);
+#else
+  retcode = vp9_decode_frame_recon(pbi, psource);
+#endif
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;
@@ -430,8 +439,11 @@ int vp9_receive_compressed_data(VP9D_PTR ptr,
 
   if (!pbi->do_loopfilter_inline) {
     PPAStartCpuEventFunc(loopfilter_time);
+#if CONFIG_MULTITHREAD
     vp9_loop_filter_frame_wpp(pbi, cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
-    //vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+#else
+    vp9_loop_filter_frame(cm, &pbi->mb, pbi->common.lf.filter_level, 0, 0);
+#endif
     PPAStopCpuEventFunc(loopfilter_time);
   }
 

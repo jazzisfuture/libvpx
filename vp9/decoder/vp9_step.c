@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/step.h"
 #include "vp9/decoder/vp9_step.h"
 #include "vp9/decoder/vp9_decodeframe_recon.h"
@@ -275,3 +279,5 @@ struct entropy_dec_param *entropy_dec_param_get(struct task *tsk) {
 
   return param;
 }
+
+#endif

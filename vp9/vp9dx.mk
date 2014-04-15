@@ -41,7 +41,7 @@ VP9_DX_SRCS-yes += decoder/vp9_intra_predict.h
 VP9_DX_SRCS-yes += decoder/vp9_detokenize_recon.c
 VP9_DX_SRCS-yes += decoder/vp9_detokenize_recon.h
 
-P9_DX_SRCS-yes += sched/list.h
+VP9_DX_SRCS-yes += sched/list.h
 VP9_DX_SRCS-yes += sched/thread.h
 VP9_DX_SRCS-yes += sched/queue.h
 VP9_DX_SRCS-yes += sched/queue.c

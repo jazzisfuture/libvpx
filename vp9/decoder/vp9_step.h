@@ -11,6 +11,10 @@
 #ifndef VP9_DECODER_VP9_STEP_H_
 #define VP9_DECODER_VP9_STEP_H_
 
+#include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/sched/sched.h"
 #include "vp9/decoder/vp9_onyxd_int.h"
 
@@ -33,5 +37,7 @@ struct entropy_dec_param {
 };
 
 struct entropy_dec_param *entropy_dec_param_get(struct task *tsk);
+
+#endif
 
 #endif  // VP9_DECODER_VP9_STEP_H_

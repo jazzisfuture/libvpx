@@ -8,7 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+
+
 #include "./vpx_config.h"
+
+#if CONFIG_MULTITHREAD
+
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/decoder/vp9_loopfilter_recon.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -1369,3 +1374,4 @@ void vp9_loop_filter_frame_wpp(VP9D_COMP *pbi, VP9_COMMON *cm,
                            start_mi_row, end_mi_row, y_only);
 }
 
+#endif

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
 #include <assert.h>
 #include <stdlib.h>  // qsort()
-
 #include "./vp9_rtcd.h"
 #include "./vpx_scale_rtcd.h"
 
@@ -2627,6 +2627,8 @@ int vp9_single_thread_decode(VP9D_COMP *pbi,
   return vp9_decode_frame_tail(pbi);
 }
 
+#if CONFIG_MULTITHREAD
+
 static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
                                       const uint8_t **p_data_end) {
   struct task *tsk;
@@ -2670,3 +2672,5 @@ static int vp9_sched_frame_entrop_dec(VP9D_COMP *pbi,
 int vp9_decode_frame_mt(VP9D_COMP *pbi, const uint8_t **p_data_end) {
   return vp9_sched_frame_entrop_dec(pbi, p_data_end);
 }
+
+#endif

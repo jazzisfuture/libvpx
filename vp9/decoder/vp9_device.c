@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+#if CONFIG_MULTITHREAD
+
 #include "vp9/decoder/vp9_device.h"
 
 static struct device devs[] = {
@@ -42,3 +45,5 @@ void vp9_register_devices(struct scheduler *sched) {
     scheduler_add_devices(sched, devs, 1);
   }
 }
+
+#endif
