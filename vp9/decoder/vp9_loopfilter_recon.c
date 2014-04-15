@@ -1324,7 +1324,8 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
     last_tsk = tsks[i];
   }
 
-  params[0]->upper = last_tsk;
+  if (params[0]->upper)
+    params[0]->upper = last_tsk;
  
   for (i = 0; i < cpu_count; i++) {
     scheduler_sched_task(pbi->sched, tsks[i]);

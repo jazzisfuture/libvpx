@@ -35,7 +35,7 @@
 #include "./webmdec.h"
 #include "./y4menc.h"
 
-#include "./vp9/ppa.h"
+#include "vp9/ppa.h"
 static const char *exec_name;
 
 static const struct {
