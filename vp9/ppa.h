@@ -54,7 +54,7 @@ Copyright (c) 2011 Multicoreware Inc. All rights reserved
 
 #ifdef __i386__
 #define PPA_LIB_NAME "libppa.so"
-#elif defined (__amd64__) || (__ia64__)
+#elif defined(__amd64__) || (__ia64__)
 #define PPA_LIB_NAME "libppa.so"
 #else
 #define PPA_LIB_NAME "/data/local/tmp/libppa.so"
@@ -103,7 +103,7 @@ typedef bool (FUNC_PPAIsEventEnable)(EventID );
 typedef EventID (FUNC_PPARegisterCpuEvent)(const char* );
 typedef GrpID (FUNC_PPARegisterGrpName)(const char* );
 typedef void (FUNC_PPATIDCpuEvent)(EventID , unsigned int );
-typedef void (FUNC_PPADebugCpuEvent)(EventID ,unsigned int , unsigned int );
+typedef void (FUNC_PPADebugCpuEvent)(EventID , unsigned int , unsigned int );
 typedef EventID (FUNC_PPARegisterCpuEventExGrpID)(const char* , GrpID );
 typedef int (FUNC_PPASetGrpCpuEventEnDis)(bool , GrpID );
 typedef bool (FUNC_PPASetSingleCpuEventEnDis)(bool , EventID );
@@ -143,7 +143,7 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  */
 #define PPAStopCpuEventFunc(e)            \
     if (PPAStopCpuEvent)            \
-      PPA_CLEANUP((PPAStopCpuEvent( (e) )))
+      PPA_CLEANUP((PPAStopCpuEvent((e))))
 
 /**
  * Macro for ppaStartRSEvent
@@ -159,8 +159,8 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  * @see ppaStopRSEvent
  */
 #define PPAStopRSEventFunc(e)             \
-   if (PPAStopRSEvent)             \
-     PPA_CLEANUP((PPAStopRSEvent( (e) )))
+    if (PPAStopRSEvent)             \
+      PPA_CLEANUP((PPAStopRSEvent( (e) )))
 
 /**
  * Macro for ppaIsEventEnabled
@@ -171,9 +171,9 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
 #define PPAIsEventEnabledFunc(e) dumbrt()
 #else
 #define PPAIsEventEnabledFunc(e)           \
-    (PPAIsEventEnable ? PPAIsEventEnable( (e) ) : false)
+    (PPAIsEventEnable ? PPAIsEventEnable((e)) : false)
 #endif
- 
+
 
 /**
 * Macro for ppaRegisterCpuEvent
@@ -184,9 +184,8 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
 #define PPARegisterCpuEventFunc(s) dumbrt()
 #else
 #define PPARegisterCpuEventFunc(s)           \
-    (PPARegisterCpuEvent ? PPARegisterCpuEvent( (s) ) : 0xFFFF)
+    (PPARegisterCpuEvent ? PPARegisterCpuEvent((s)) : 0xFFFF)
 #endif
-          
 
 /**
 * Macro for ppaRegisterGrpName
@@ -197,9 +196,9 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
 #define PPARegisterGrpNameFunc(s) dumbrt()
 #else
 #define PPARegisterGrpNameFunc(s)             \
-    (PPARegisterGrpName ? PPARegisterGrpName( (s) ) : 0xFF) 
+    (PPARegisterGrpName ? PPARegisterGrpName((s)) : 0xFF)
 #endif
-           
+
 /**
  * Macro for ppaTIDCpuEvent
  * @param e CPU event id
@@ -208,7 +207,7 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  */
 #define PPATIDCpuEventFunc(e,data)             \
     if (PPATIDCpuEvent)               \
-      PPA_CLEANUP((PPATIDCpuEvent( (e) ,(data) )))
+      PPA_CLEANUP((PPATIDCpuEvent((e), (data))))
 
 /**
  * Macro for ppaStartCpuEvent
@@ -217,9 +216,9 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  * @param data1 additional data
  * @see ppaDebugCpuEvent
  */
-#define PPADebugCpuEventFunc(e,data0,data1)     \
+#define PPADebugCpuEventFunc(e, data0, data1)     \
     if (PPADebugCpuEvent)             \
-      PPA_CLEANUP((PPADebugCpuEvent((e),(data0),(data1))))
+      PPA_CLEANUP((PPADebugCpuEvent((e), (data0), (data1))))
 
 /**
  * Macro for ppaRegisterCpuEventExGrpID
@@ -231,7 +230,7 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
 #define PPARegisterCpuEventExGrpIDFunc(s,e) dumbrt()
 #else
 #define PPARegisterCpuEventExGrpIDFunc(s,e)     \
-    (PPARegisterCpuEventExGrpID ? PPARegisterCpuEventExGrpID((s),(e)) : 0xFFFF)
+    (PPARegisterCpuEventExGrpID ? PPARegisterCpuEventExGrpID((s), (e)) : 0xFFFF)
 #endif
 
 
@@ -242,10 +241,10 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  * @see ppaSetGrpCpuEventsEnDis
  */
 #ifdef PPA_DISABLE
-    #define PPASetGrpCpuEventsEnDisFunc(en_dis,e) dumbrt()
+    #define PPASetGrpCpuEventsEnDisFunc(en_dis, e) dumbrt()
 #else
-#define PPASetGrpCpuEventsEnDisFunc(en_dis,e)   \
-    (PPASetGrpCpuEventEnDis ? PPASetGrpCpuEventEnDis((en_dis),(e)) : 0)
+#define PPASetGrpCpuEventsEnDisFunc(en_dis, e)   \
+    (PPASetGrpCpuEventEnDis ? PPASetGrpCpuEventEnDis((en_dis), (e)) : 0)
 #endif
 /**
  * Macro for ppaSetSingleCpuEventEnDis
@@ -254,12 +253,13 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  * @see ppaSetSingleCpuEventEnDis
  */
 #ifdef PPA_DISABLE
-    #define PPASetSingleCpuEventEnDisFunc(en_dis,e) dumbrt()
+    #define PPASetSingleCpuEventEnDisFunc(en_dis, e) dumbrt()
 #else
-#define PPASetSingleCpuEventEnDisFunc(en_dis,e) \
-    (PPASetSingleCpuEventEnDis ? PPASetSingleCpuEventEnDis((en_dis),(e)) : false)
+#define PPASetSingleCpuEventEnDisFunc(en_dis, e) \
+    (PPASetSingleCpuEventEnDis ?   \
+        PPASetSingleCpuEventEnDis((en_dis), (e)) : false)
 #endif
- 
+
  /**
   * Initialize PPA
   * @return a pointer to the PpaBase class
@@ -268,7 +268,7 @@ void initializePPA();
 
 /**
  *  Release PPA
- *  @return void 
+ *  @return void
  */
  void releasePPA();
 
@@ -279,7 +279,7 @@ void initializePPA();
  /**
   * PPA_END macro to shut down PPA
   */
-#define PPA_END()  PPA_CLEANUP(releasePPA();) 
+#define PPA_END()  PPA_CLEANUP(releasePPA();)
 
 #ifdef __cplusplus
 }

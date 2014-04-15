@@ -12,7 +12,7 @@
 #undef PPA_REGISTER_CPU_EVENT2GROUP
 #endif
 
-#define PPA_REGISTER_CPU_EVENT2GROUP(x, y) #x,#y,
+#define PPA_REGISTER_CPU_EVENT2GROUP(x, y) #x, #y,
 #define PPA_REGISTER_CPU_EVENT(x) PPA_REGISTER_CPU_EVENT2GROUP(x, NoGroup)
 char* PPACpuAndGroup[] = {
     #include "vp9/ppaCPUEvents.h"
@@ -52,7 +52,7 @@ void initializePPA() {
     ++init_count;
     return;
   }
-  
+
   ppaHandle = LoadLibrary(PPA_LIB_NAME);
   if (!ppaHandle) {
     return;
@@ -74,10 +74,10 @@ void initializePPA() {
   PPASetSingleCpuEventEnDis     = (FUNC_PPASetSingleCpuEventEnDis *)GetProcAddress(ppaHandle,"mcw_ppaSetSingleCpuEventEnDis");
 
 
-  if (!PPAInitFunc  || !PPADelFunc || !PPAStartCpuEvent || !PPAStopCpuEvent 
-    || !PPAIsEventEnable || !PPASetGrpCpuEventEnDis|| !PPARegisterCpuEvent 
+  if (!PPAInitFunc  || !PPADelFunc || !PPAStartCpuEvent || !PPAStopCpuEvent
+    || !PPAIsEventEnable || !PPASetGrpCpuEventEnDis|| !PPARegisterCpuEvent
     || !PPARegisterGrpName || !PPATIDCpuEvent || !PPADebugCpuEvent
-    || !PPARegisterCpuEventExGrpID 
+    || !PPARegisterCpuEventExGrpID
     || !PPASetSingleCpuEventEnDis) {
     FreeLibrary(ppaHandle);
     ppaHandle = 0;
@@ -121,7 +121,7 @@ void initializePPA() {
     ++init_count;
     return;
   }
-  
+
   ppaHandle = dlopen(PPA_LIB_NAME, RTLD_LAZY | RTLD_GLOBAL);
   if (!ppaHandle) {
     return;
@@ -144,10 +144,10 @@ void initializePPA() {
   PPASetSingleCpuEventEnDis     = (FUNC_PPASetSingleCpuEventEnDis *)dlsym(ppaHandle,"mcw_ppaSetSingleCpuEventEnDis");
 
 
-  if (!PPAInitFunc  || !PPADelFunc || !PPAStartCpuEvent || !PPAStopCpuEvent 
+  if (!PPAInitFunc  || !PPADelFunc || !PPAStartCpuEvent || !PPAStopCpuEvent
     /*|| !PPAIsEventEnable || !PPASetGrpCpuEventEnDis*/|| !PPARegisterCpuEvent
     || !PPARegisterGrpName || !PPATIDCpuEvent || !PPADebugCpuEvent
-    || !PPARegisterCpuEventExGrpID 
+    || !PPARegisterCpuEventExGrpID
     || !PPAStartRSEvent || !PPAStopRSEvent
     /*|| !PPASetSingleCpuEventEnDis*/) {
     dlclose(ppaHandle);
