@@ -1320,12 +1320,12 @@ static void set_fixed_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                                    BLOCK_SIZE bsize) {
   VP9_COMMON *const cm = &cpi->common;
   const int mis = cm->mi_stride;
-  int row8x8_remaining = tile->mi_row_end - mi_row;
-  int col8x8_remaining = tile->mi_col_end - mi_col;
+  const int row8x8_remaining = tile->mi_row_end - mi_row;
+  const int col8x8_remaining = tile->mi_col_end - mi_col;
   int block_row, block_col;
   MODE_INFO *mi_upper_left = cm->mi + mi_row * mis + mi_col;
-  int bh = num_8x8_blocks_high_lookup[bsize];
-  int bw = num_8x8_blocks_wide_lookup[bsize];
+  const int bh = num_8x8_blocks_high_lookup[bsize];
+  const int bw = num_8x8_blocks_wide_lookup[bsize];
 
   assert((row8x8_remaining > 0) && (col8x8_remaining > 0));
 
