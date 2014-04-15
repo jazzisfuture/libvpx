@@ -451,7 +451,9 @@ static void setup_token_decoder(const uint8_t *data,
                                 const uint8_t *data_end,
                                 size_t read_size,
                                 struct vpx_internal_error_info *error_info,
-                                vp9_reader *r) {
+                                vp9_reader *r,
+                                vp8_decrypt_cb decrypt_cb,
+                                void *decrypt_state) {
   // Validate the calculated partition length. If the buffer
   // described by the partition can't be fully read, then restrict
   // it to the portion that can be (for EC mode) or throw an error.
@@ -459,7 +461,7 @@ static void setup_token_decoder(const uint8_t *data,
     vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt tile length");
 
-  if (vp9_reader_init(r, data, read_size))
+  if (vp9_reader_init(r, data, read_size, decrypt_cb, decrypt_state))
     vpx_internal_error(error_info, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder %d", 1);
 }
@@ -750,7 +752,9 @@ static void setup_tile_info(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
 static size_t get_tile(const uint8_t *const data_end,
                        int is_last,
                        struct vpx_internal_error_info *error_info,
-                       const uint8_t **data) {
+                       const uint8_t **data,
+                       vp8_decrypt_cb decrypt_cb,
+                       void *decrypt_state) {
   size_t size;
 
   if (!is_last) {
@@ -758,7 +762,13 @@ static size_t get_tile(const uint8_t *const data_end,
       vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
                          "Truncated packet or corrupt tile length");
 
-    size = mem_get_be32(*data);
+    if (decrypt_cb) {
+      uint8_t be_data[4];
+      decrypt_cb(decrypt_state, *data, be_data, 4);
+      size = mem_get_be32(be_data);
+    } else {
+      size = mem_get_be32(*data);
+    }
     *data += 4;
 
     if (size > (size_t)(data_end - *data))
@@ -804,7 +814,8 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
     for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
       const int last_tile = tile_row == tile_rows - 1 &&
                             tile_col == tile_cols - 1;
-      const size_t size = get_tile(data_end, last_tile, &cm->error, &data);
+      const size_t size = get_tile(data_end, last_tile, &cm->error, &data,
+                                   pbi->decrypt_cb, pbi->decrypt_state);
       TileBuffer *const buf = &tile_buffers[tile_row][tile_col];
       buf->data = data;
       buf->size = size;
@@ -823,7 +834,8 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       TileInfo tile;
 
       vp9_tile_init(&tile, cm, tile_row, col);
-      setup_token_decoder(buf->data, data_end, buf->size, &cm->error, &r);
+      setup_token_decoder(buf->data, data_end, buf->size, &cm->error, &r,
+                          pbi->decrypt_cb, pbi->decrypt_state);
       decode_tile(pbi, &tile, &r);
 
       if (last_tile)
@@ -921,7 +933,8 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   // Load tile data into tile_buffers
   for (n = 0; n < tile_cols; ++n) {
     const size_t size =
-        get_tile(data_end, n == tile_cols - 1, &cm->error, &data);
+        get_tile(data_end, n == tile_cols - 1, &cm->error, &data,
+                 pbi->decrypt_cb, pbi->decrypt_state);
     TileBuffer *const buf = &tile_buffers[n];
     buf->data = data;
     buf->size = size;
@@ -962,7 +975,8 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       tile_data->xd.corrupted = 0;
       vp9_tile_init(tile, tile_data->cm, 0, buf->col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-                          &tile_data->bit_reader);
+                          &tile_data->bit_reader, pbi->decrypt_cb,
+                          pbi->decrypt_state);
       init_macroblockd(cm, &tile_data->xd);
       vp9_zero(tile_data->xd.dqcoeff);
 
@@ -1163,7 +1177,8 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   vp9_reader r;
   int k;
 
-  if (vp9_reader_init(&r, data, partition_size))
+  if (vp9_reader_init(&r, data, partition_size, pbi->decrypt_cb,
+                      pbi->decrypt_state))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
 
@@ -1261,7 +1276,18 @@ int vp9_decode_frame(VP9Decoder *pbi,
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
 
-  struct vp9_read_bit_buffer rb = { data, data_end, 0, cm, error_handler };
+  const uint8_t *rb_data = data;
+  const uint8_t *rb_data_end = data_end;
+  uint8_t clear_data[80];
+  if (pbi->decrypt_cb) {
+    int n = (data_end - data) > 80 ? 80 : (data_end - data);
+    pbi->decrypt_cb(pbi->decrypt_state, data, clear_data, n);
+    rb_data = clear_data;
+    rb_data_end = clear_data + n;
+  }
+
+  struct vp9_read_bit_buffer rb = { rb_data, rb_data_end, 0, cm,
+                                    error_handler };
   const size_t first_partition_size = read_uncompressed_header(pbi, &rb);
   const int keyframe = cm->frame_type == KEY_FRAME;
   const int tile_rows = 1 << cm->log2_tile_rows;
