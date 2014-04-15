@@ -160,7 +160,7 @@ extern FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
  */
 #define PPAStopRSEventFunc(e)             \
     if (PPAStopRSEvent)             \
-      PPA_CLEANUP((PPAStopRSEvent( (e) )))
+      PPA_CLEANUP((PPAStopRSEvent((e))))
 
 /**
  * Macro for ppaIsEventEnabled
