@@ -1319,7 +1319,8 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
     params[i]->mi_col = -MI_BLOCK_SIZE;
     params[i]->y_only = y_only;
     params[i]->nr = i;
-    params[i]->upper = tsks[i-1];
+    if (i > 0)
+      params[i]->upper = tsks[i-1];
     last_tsk = tsks[i];
   }
 

@@ -123,10 +123,12 @@ vp8_multi_resolution_encoder.DESCRIPTION  = VP8 Multiple-resolution Encoding
 ifeq ($(CONFIG_OS_SUPPORT), yes)
 CODEC_EXTRA_LIBS-$(CONFIG_VP8)         += m
 CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += m
+CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += dl
 else
     ifeq ($(CONFIG_GCC), yes)
     CODEC_EXTRA_LIBS-$(CONFIG_VP8)         += m
     CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += m
+    CODEC_EXTRA_LIBS-$(CONFIG_VP9)         += dl
     endif
 endif
 #
