@@ -14,7 +14,7 @@
 int vp8dx_start_decode(BOOL_DECODER *br,
                        const unsigned char *source,
                        unsigned int source_sz,
-                       vp8_decrypt_cb *decrypt_cb,
+                       vp8_decrypt_cb decrypt_cb,
                        void *decrypt_state)
 {
     br->user_buffer_end = source+source_sz;
@@ -39,7 +39,7 @@ void vp8dx_bool_decoder_fill(BOOL_DECODER *br)
     const unsigned char *bufptr = br->user_buffer;
     VP8_BD_VALUE value = br->value;
     int count = br->count;
-    int shift = VP8_BD_VALUE_SIZE - 8 - (count + 8);
+    int shift = VP8_BD_VALUE_SIZE - CHAR_BIT - (count + CHAR_BIT);
     size_t bytes_left = br->user_buffer_end - bufptr;
     size_t bits_left = bytes_left * CHAR_BIT;
     int x = (int)(shift + CHAR_BIT - bits_left);

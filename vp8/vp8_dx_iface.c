@@ -56,7 +56,7 @@ struct vpx_codec_alg_priv
     int                     dbg_color_b_modes_flag;
     int                     dbg_display_mv_flag;
 #endif
-    vp8_decrypt_cb          *decrypt_cb;
+    vp8_decrypt_cb          decrypt_cb;
     void                    *decrypt_state;
     vpx_image_t             img;
     int                     img_setup;
@@ -156,7 +156,7 @@ static vpx_codec_err_t vp8_destroy(vpx_codec_alg_priv_t *ctx)
 static vpx_codec_err_t vp8_peek_si_internal(const uint8_t *data,
                                             unsigned int data_sz,
                                             vpx_codec_stream_info_t *si,
-                                            vp8_decrypt_cb *decrypt_cb,
+                                            vp8_decrypt_cb decrypt_cb,
                                             void *decrypt_state)
 {
     vpx_codec_err_t res = VPX_CODEC_OK;

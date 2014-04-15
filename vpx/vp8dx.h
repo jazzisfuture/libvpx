@@ -80,16 +80,20 @@ enum vp8_dec_control_id {
   VP8_DECODER_CTRL_ID_MAX
 };
 
+/** Decrypt n bytes of data from input -> output, using the decrypt_state
+ *  passed in VP8D_SET_DECRYPTOR.
+ */
+typedef void (*vp8_decrypt_cb)(void *decrypt_state, const unsigned char *input,
+                               unsigned char *output, int count);
+
 /*!\brief Structure to hold decryption state
  *
  * Defines a structure to hold the decryption state and access function.
  */
 typedef struct vp8_decrypt_init {
-    /** Decrypt n bytes of data from input -> output, using the decrypt_state
-     *  passed in VP8D_SET_DECRYPTOR.
-     */
-    void (*decrypt_cb)(void *decrypt_state, const unsigned char *input,
-                       unsigned char *output, int count);
+    /*! Decrypt callback. */
+    vp8_decrypt_cb decrypt_cb;
+
     /*! Decryption state. */
     void *decrypt_state;
 } vp8_decrypt_init;
@@ -102,11 +106,11 @@ typedef struct vp8_decrypt_init {
  */
 
 
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES,   int *)
-VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED,    int *)
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED,      int *)
-VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,          vp8_decrypt_init *)
-VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,       int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES,    int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED,     int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED,       int *)
+VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,           vp8_decrypt_init *)
+VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,        int *)
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 
 /*! @} - end defgroup vp8_decoder */

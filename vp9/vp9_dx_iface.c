@@ -43,6 +43,8 @@ struct vpx_codec_alg_priv {
   int                     dbg_color_b_modes_flag;
   int                     dbg_display_mv_flag;
 #endif
+  vp8_decrypt_cb          decrypt_cb;
+  void                   *decrypt_state;
   vpx_image_t             img;
   int                     img_setup;
   int                     img_avail;
@@ -94,9 +96,13 @@ static vpx_codec_err_t decoder_destroy(vpx_codec_alg_priv_t *ctx) {
   return VPX_CODEC_OK;
 }
 
-static vpx_codec_err_t decoder_peek_si(const uint8_t *data,
-                                       unsigned int data_sz,
-                                       vpx_codec_stream_info_t *si) {
+static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
+                                                unsigned int data_sz,
+                                                vpx_codec_stream_info_t *si,
+                                                vp8_decrypt_cb decrypt_cb,
+                                                void *decrypt_state) {
+  uint8_t clear_buffer[9];
+
   if (data_sz <= 8)
     return VPX_CODEC_UNSUP_BITSTREAM;
 
@@ -105,6 +111,12 @@ static vpx_codec_err_t decoder_peek_si(const uint8_t *data,
 
   si->is_kf = 0;
   si->w = si->h = 0;
+
+  if (decrypt_cb) {
+    data_sz = data_sz > 9 ? 9 : data_sz;
+    decrypt_cb(decrypt_state, data, clear_buffer, data_sz);
+    data = clear_buffer;
+  }
 
   {
     struct vp9_read_bit_buffer rb = { data, data + data_sz, 0, NULL, NULL };
@@ -157,6 +169,12 @@ static vpx_codec_err_t decoder_peek_si(const uint8_t *data,
   }
 
   return VPX_CODEC_OK;
+}
+
+static vpx_codec_err_t decoder_peek_si(const uint8_t *data,
+                                       unsigned int data_sz,
+                                       vpx_codec_stream_info_t *si) {
+  return decoder_peek_si_internal(data, data_sz, si, NULL, NULL);
 }
 
 static vpx_codec_err_t decoder_get_si(vpx_codec_alg_priv_t *ctx,
@@ -235,6 +253,8 @@ static void init_decoder(vpx_codec_alg_priv_t *ctx) {
   oxcf.inv_tile_order = ctx->invert_tile_order;
 
   ctx->pbi = vp9_decoder_create(&oxcf);
+  ctx->pbi->decrypt_cb = ctx->decrypt_cb;
+  ctx->pbi->decrypt_state = ctx->decrypt_state;
   if (ctx->pbi == NULL)
     return;
 
@@ -264,7 +284,8 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   // of the heap.
   if (!ctx->si.h) {
     const vpx_codec_err_t res =
-        ctx->base.iface->dec.peek_si(*data, data_sz, &ctx->si);
+        decoder_peek_si_internal(*data, data_sz, &ctx->si, ctx->decrypt_cb,
+                                 ctx->decrypt_state);
     if (res != VPX_CODEC_OK)
       return res;
   }
@@ -297,22 +318,44 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
 }
 
 static void parse_superframe_index(const uint8_t *data, size_t data_sz,
-                                   uint32_t sizes[8], int *count) {
+                                   uint32_t sizes[8], int *count,
+                                   vp8_decrypt_cb decrypt_cb,
+                                   void *decrypt_state) {
   uint8_t marker;
 
   assert(data_sz);
-  marker = data[data_sz - 1];
   *count = 0;
+
+  if (decrypt_cb) {
+    decrypt_cb(decrypt_state, data + data_sz - 1, &marker, 1);
+  } else {
+    marker = data[data_sz - 1];
+  }
 
   if ((marker & 0xe0) == 0xc0) {
     const uint32_t frames = (marker & 0x7) + 1;
     const uint32_t mag = ((marker >> 3) & 0x3) + 1;
     const size_t index_sz = 2 + mag * frames;
 
-    if (data_sz >= index_sz && data[data_sz - index_sz] == marker) {
+    uint8_t marker2;
+    if (decrypt_cb) {
+      decrypt_cb(decrypt_state, data + data_sz - index_sz, &marker2, 1);
+    } else {
+      marker2 = data[data_sz - index_sz];
+    }
+
+    if (data_sz >= index_sz && marker2 == marker) {
       // found a valid superframe index
       uint32_t i, j;
       const uint8_t *x = &data[data_sz - index_sz + 1];
+
+      // frames has a maximum of 8 and mag has a maximum of 4.
+      uint8_t clear_buffer[32];
+      assert(sizeof(clear_buffer) >= frames * mag);
+      if (decrypt_cb) {
+        decrypt_cb(decrypt_state, x, clear_buffer, frames * mag);
+        x = clear_buffer;
+      }
 
       for (i = 0; i < frames; i++) {
         uint32_t this_sz = 0;
@@ -339,17 +382,36 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
   if (data == NULL || data_sz == 0)
     return VPX_CODEC_INVALID_PARAM;
 
-  parse_superframe_index(data, data_sz, sizes, &frames_this_pts);
+  parse_superframe_index(data, data_sz, sizes, &frames_this_pts,
+                         ctx->decrypt_cb, ctx->decrypt_state);
 
   do {
+    uint8_t marker;
+    if (data_sz) {
+      if (ctx->decrypt_cb) {
+        ctx->decrypt_cb(ctx->decrypt_state, data_start, &marker, 1);
+      } else {
+        marker = *data_start;
+      }
+    }
+
     // Skip over the superframe index, if present
-    if (data_sz && (*data_start & 0xe0) == 0xc0) {
-      const uint8_t marker = *data_start;
+    if (data_sz && (marker & 0xe0) == 0xc0) {
       const uint32_t frames = (marker & 0x7) + 1;
       const uint32_t mag = ((marker >> 3) & 0x3) + 1;
       const uint32_t index_sz = 2 + mag * frames;
 
-      if (data_sz >= index_sz && data_start[index_sz - 1] == marker) {
+      uint8_t marker2;
+      if (data_sz >= index_sz) {
+        if (ctx->decrypt_cb) {
+          ctx->decrypt_cb(ctx->decrypt_state, data_start + index_sz - 1,
+                          &marker2, 1);
+        } else {
+          marker2 = data_start[index_sz - 1];
+        }
+      }
+
+      if (data_sz >= index_sz && marker2 == marker) {
         data_start += index_sz;
         data_sz -= index_sz;
         if (data_start < data_end)
@@ -381,8 +443,17 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
       break;
 
     // Account for suboptimal termination by the encoder.
-    while (data_start < data_end && *data_start == 0)
+    while (data_start < data_end) {
+      uint8_t marker3;
+      if (ctx->decrypt_cb) {
+        ctx->decrypt_cb(ctx->decrypt_state, data_start, &marker3, 1);
+      } else {
+        marker3 = *data_start;
+      }
+      if (marker3)
+        break;
       data_start++;
+    }
 
     data_sz = (unsigned int)(data_end - data_start);
   } while (data_start < data_end);
@@ -565,6 +636,21 @@ static vpx_codec_err_t ctrl_set_invert_tile_order(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_set_decryptor(vpx_codec_alg_priv_t *ctx,
+                                          int ctrl_id,
+                                          va_list args) {
+  vp8_decrypt_init *init = va_arg(args, vp8_decrypt_init *);
+
+  if (init) {
+    ctx->decrypt_cb = init->decrypt_cb;
+    ctx->decrypt_state = init->decrypt_state;
+  } else {
+    ctx->decrypt_cb = NULL;
+    ctx->decrypt_state = NULL;
+  }
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_ctrl_fn_map_t decoder_ctrl_maps[] = {
   {VP8_COPY_REFERENCE,            ctrl_copy_reference},
 
@@ -576,6 +662,7 @@ static vpx_codec_ctrl_fn_map_t decoder_ctrl_maps[] = {
   {VP8_SET_DBG_COLOR_B_MODES,     ctrl_set_dbg_options},
   {VP8_SET_DBG_DISPLAY_MV,        ctrl_set_dbg_options},
   {VP9_INVERT_TILE_DECODE_ORDER,  ctrl_set_invert_tile_order},
+  {VP8D_SET_DECRYPTOR,            ctrl_set_decryptor},
 
   // Getters
   {VP8D_GET_LAST_REF_UPDATES,     ctrl_get_last_ref_updates},
