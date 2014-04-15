@@ -1922,8 +1922,8 @@ static void inter_transform_recon(VP9_DECODER_RECON *const decoder_recon,
   VP9_COMMON *const cm = decoder_recon->cm;
   MACROBLOCKD *const xd = &decoder_recon->mb;
   int eobtotal = 0;
-  vp9_reader *r;
-  int16_t offset;
+  vp9_reader *r = NULL;
+  int16_t offset = 0;
 
   int i;
   BLOCK_SIZE bsize;

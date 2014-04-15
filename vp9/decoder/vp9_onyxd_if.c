@@ -171,6 +171,7 @@ VP9D_PTR vp9_create_decompressor(VP9D_CONFIG *oxcf) {
     return NULL;
 
   vp9_zero(*pbi);
+  PPA_INIT();
 
   // Initialize the references to not point to any frame buffers.
   memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
@@ -215,6 +216,8 @@ void vp9_remove_decompressor(VP9D_PTR ptr) {
   int i;
   VP9D_COMP *const pbi = (VP9D_COMP *)ptr;
   VP9_DECODER_RECON *decoder_recon;
+
+  PPA_END();
 
   if (!pbi)
     return;
