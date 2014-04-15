@@ -1,6 +1,6 @@
-#include "ppa.h"
-#include "stdlib.h"
-#include "stdio.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include "vp9/ppa.h"
 
 #if !defined(PPA_DISABLE)
 
@@ -12,24 +12,23 @@
 #undef PPA_REGISTER_CPU_EVENT2GROUP
 #endif
 
-#define PPA_REGISTER_CPU_EVENT2GROUP(x,y) #x,#y,
-#define PPA_REGISTER_CPU_EVENT(x) PPA_REGISTER_CPU_EVENT2GROUP(x,NoGroup)
+#define PPA_REGISTER_CPU_EVENT2GROUP(x, y) #x,#y,
+#define PPA_REGISTER_CPU_EVENT(x) PPA_REGISTER_CPU_EVENT2GROUP(x, NoGroup)
 char* PPACpuAndGroup[] = {
-    #include "ppaCPUEvents.h"
+    #include "vp9/ppaCPUEvents.h"
     ""
   };
 #undef PPA_REGISTER_CPU_EVENT
 #undef PPA_REGISTER_CPU_EVENT2GROUP
 
 #if defined(WINDOWS) || defined(_WIN32)
-#include <stdio.h>
-#include <stdlib.h>
 #include <Windows.h>
 
 static int init_count = 0;
 
-bool dumbrt() 
-{return 0;}
+bool dumbrt() {
+  return 0;
+}
 
 HMODULE ppaHandle;
 FUNC_PPAInit*       PPAInitFunc;
@@ -45,24 +44,17 @@ FUNC_PPARegisterCpuEventExGrpID * PPARegisterCpuEventExGrpID;
 FUNC_PPASetGrpCpuEventEnDis     * PPASetGrpCpuEventEnDis;
 FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
 
-void ErrorManage()
-{
-
+void ErrorManage() {
 }
 
-void initializePPA()
-{
-  if (ppaHandle)
-  {
+void initializePPA() {
+  if (ppaHandle) {
     ++init_count;
     return;
   }
   
   ppaHandle = LoadLibrary(PPA_LIB_NAME);
-  if (!ppaHandle)
-  {
-    //printf("Load library fails \n");
-    //exit(0);
+  if (!ppaHandle) {
     return;
   }
 
@@ -86,22 +78,19 @@ void initializePPA()
     || !PPAIsEventEnable || !PPASetGrpCpuEventEnDis|| !PPARegisterCpuEvent 
     || !PPARegisterGrpName || !PPATIDCpuEvent || !PPADebugCpuEvent
     || !PPARegisterCpuEventExGrpID 
-    || !PPASetSingleCpuEventEnDis)
-  {
+    || !PPASetSingleCpuEventEnDis) {
     FreeLibrary(ppaHandle);
     ppaHandle = 0;
     printf("Load function fails\n");
     exit(0);
     return;
   }
-  //PPAInitFunc((char**)PPACpuAndGroup, PPACpuGroupNums);
+
   ++init_count;
 }
 
-void releasePPA()
-{
-  if (--init_count == 0)
-  {
+void releasePPA() {
+  if (--init_count == 0) {
     PPADelFunc();
   }
 }
@@ -109,36 +98,32 @@ void releasePPA()
 #elif defined(__ANDROID__)
 #include <dlfcn.h>
 
-static void* ppaHandle;
+static void *ppaHandle;
 static int init_count = 0;
 
-FUNC_PPAInit*       PPAInitFunc;
-FUNC_PPADel*                PPADelFunc;
-FUNC_PPAStartCpuEvent      *       PPAStartCpuEvent;
-FUNC_PPAStopCpuEvent     *       PPAStopCpuEvent;
-FUNC_PPAStartRSEvent       *       PPAStartRSEvent;
-FUNC_PPAStopRSEvent    *       PPAStopRSEvent;
-FUNC_PPAIsEventEnable      *     PPAIsEventEnable;
-FUNC_PPARegisterCpuEvent     *       PPARegisterCpuEvent;
-FUNC_PPARegisterGrpName      *       PPARegisterGrpName;
-FUNC_PPATIDCpuEvent         *       PPATIDCpuEvent;
-FUNC_PPADebugCpuEvent        *       PPADebugCpuEvent;
-FUNC_PPARegisterCpuEventExGrpID * PPARegisterCpuEventExGrpID;
-FUNC_PPASetGrpCpuEventEnDis     * PPASetGrpCpuEventEnDis;
-FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
+FUNC_PPAInit *PPAInitFunc;
+FUNC_PPADel *PPADelFunc;
+FUNC_PPAStartCpuEvent *PPAStartCpuEvent;
+FUNC_PPAStopCpuEvent *PPAStopCpuEvent;
+FUNC_PPAStartRSEvent *PPAStartRSEvent;
+FUNC_PPAStopRSEvent *PPAStopRSEvent;
+FUNC_PPAIsEventEnable *PPAIsEventEnable;
+FUNC_PPARegisterCpuEvent *PPARegisterCpuEvent;
+FUNC_PPARegisterGrpName *PPARegisterGrpName;
+FUNC_PPATIDCpuEvent *PPATIDCpuEvent;
+FUNC_PPADebugCpuEvent *PPADebugCpuEvent;
+FUNC_PPARegisterCpuEventExGrpID *PPARegisterCpuEventExGrpID;
+FUNC_PPASetGrpCpuEventEnDis     *PPASetGrpCpuEventEnDis;
+FUNC_PPASetSingleCpuEventEnDis  *PPASetSingleCpuEventEnDis;
 
-void initializePPA()
-{
-  if (ppaHandle)
-  {
+void initializePPA() {
+  if (ppaHandle) {
     ++init_count;
     return;
   }
   
-  ppaHandle = dlopen(PPA_LIB_NAME, RTLD_LAZY|RTLD_GLOBAL);
-  if (!ppaHandle)
-  {
-    //printf("Load library fails \n");
+  ppaHandle = dlopen(PPA_LIB_NAME, RTLD_LAZY | RTLD_GLOBAL);
+  if (!ppaHandle) {
     return;
   }
 
@@ -164,8 +149,7 @@ void initializePPA()
     || !PPARegisterGrpName || !PPATIDCpuEvent || !PPADebugCpuEvent
     || !PPARegisterCpuEventExGrpID 
     || !PPAStartRSEvent || !PPAStopRSEvent
-    /*|| !PPASetSingleCpuEventEnDis*/)
-  {
+    /*|| !PPASetSingleCpuEventEnDis*/) {
     dlclose(ppaHandle);
     ppaHandle = 0;
     printf("Load function fails\n");
@@ -176,10 +160,8 @@ void initializePPA()
   ++init_count;
 }
 
-void releasePPA()
-{
-  if (--init_count == 0)
-  {
+void releasePPA() {
+  if (--init_count == 0) {
     PPADelFunc();
     dlclose(ppaHandle);
     ppaHandle = 0;
@@ -187,88 +169,26 @@ void releasePPA()
 }
 #else
 
-//static void* ppaHandle;
-//static int init_count = 0;
-
-FUNC_PPAInit*       PPAInitFunc;
-FUNC_PPADel*                PPADelFunc;
-FUNC_PPAStartCpuEvent      *       PPAStartCpuEvent;
-FUNC_PPAStopCpuEvent     *       PPAStopCpuEvent;
-FUNC_PPAStartRSEvent       *       PPAStartRSEvent;
-FUNC_PPAStopRSEvent    *       PPAStopRSEvent;
-FUNC_PPAIsEventEnable      *     PPAIsEventEnable;
-FUNC_PPARegisterCpuEvent     *       PPARegisterCpuEvent;
-FUNC_PPARegisterGrpName      *       PPARegisterGrpName;
-FUNC_PPATIDCpuEvent         *       PPATIDCpuEvent;
-FUNC_PPADebugCpuEvent        *       PPADebugCpuEvent;
+FUNC_PPAInit *PPAInitFunc;
+FUNC_PPADel *PPADelFunc;
+FUNC_PPAStartCpuEvent *PPAStartCpuEvent;
+FUNC_PPAStopCpuEvent *PPAStopCpuEvent;
+FUNC_PPAStartRSEvent *PPAStartRSEvent;
+FUNC_PPAStopRSEvent *PPAStopRSEvent;
+FUNC_PPAIsEventEnable *PPAIsEventEnable;
+FUNC_PPARegisterCpuEvent *PPARegisterCpuEvent;
+FUNC_PPARegisterGrpName *PPARegisterGrpName;
+FUNC_PPATIDCpuEvent *PPATIDCpuEvent;
+FUNC_PPADebugCpuEvent *PPADebugCpuEvent;
 FUNC_PPARegisterCpuEventExGrpID * PPARegisterCpuEventExGrpID;
-FUNC_PPASetGrpCpuEventEnDis     * PPASetGrpCpuEventEnDis;
-FUNC_PPASetSingleCpuEventEnDis  * PPASetSingleCpuEventEnDis;
+FUNC_PPASetGrpCpuEventEnDis *PPASetGrpCpuEventEnDis;
+FUNC_PPASetSingleCpuEventEnDis *PPASetSingleCpuEventEnDis;
 
-void initializePPA()
-{
-#if 0
-  if(ppaHandle)
-  {
-    ++init_count;
-    return;
-  }
-  
-    ppaHandle = dlopen(PPA_LIB_NAME, RTLD_LAZY|RTLD_GLOBAL);
-    if(!ppaHandle)
-    {
-      //printf("Load library fails \n");
-    }
-
-    /** get the function pointers to the event src api */
-    PPAInitFunc                   = (FUNC_PPAInit*)dlsym(ppaHandle, "InitPpaUtil");
-    PPADelFunc                    = (FUNC_PPADel*)dlsym(ppaHandle,"DeletePpa");
-    PPAStartCpuEvent              = (FUNC_PPAStartCpuEvent *)dlsym(ppaHandle,"mcw_ppaStartCpuEvent");
-    PPAStopCpuEvent               = (FUNC_PPAStopCpuEvent *)dlsym(ppaHandle,"mcw_ppaStopCpuEvent");
-    PPAStartRSEvent              = (FUNC_PPAStartRSEvent *)dlsym(ppaHandle,"mcw_ppaStartRSEvent");
-    PPAStopRSEvent               = (FUNC_PPAStopRSEvent *)dlsym(ppaHandle,"mcw_ppaStopRSEvent");
-    PPAIsEventEnable              = (FUNC_PPAIsEventEnable *)dlsym(ppaHandle,"mcw_ppaIsEventEnable");
-    PPARegisterCpuEvent           = (FUNC_PPARegisterCpuEvent *)dlsym(ppaHandle,"mcw_ppaRegisterCpuEvent");
-    PPARegisterGrpName            = (FUNC_PPARegisterGrpName *)dlsym(ppaHandle,"mcw_ppaRegisterGrpName");
-    PPATIDCpuEvent               = (FUNC_PPATIDCpuEvent *)dlsym(ppaHandle,"mcw_ppaTIDCpuEvent");
-    PPADebugCpuEvent              = (FUNC_PPADebugCpuEvent *)dlsym(ppaHandle,"mcw_ppaDebugCpuEvent");
-    PPARegisterCpuEventExGrpID    = (FUNC_PPARegisterCpuEventExGrpID *)dlsym(ppaHandle,"mcw_ppaRegisterCpuEventExGrpID");
-    PPASetGrpCpuEventEnDis        = (FUNC_PPASetGrpCpuEventEnDis *)dlsym(ppaHandle,"mcw_ppaSetGrpCpuEventEnDis");
-    PPASetSingleCpuEventEnDis     = (FUNC_PPASetSingleCpuEventEnDis *)dlsym(ppaHandle,"mcw_ppaSetSingleCpuEventEnDis");
-
-
-
-    if(!PPAInitFunc  || !PPADelFunc || !PPAStartCpuEvent || !PPAStopCpuEvent 
-      /*|| !PPAIsEventEnable || !PPASetGrpCpuEventEnDis*/|| !PPARegisterCpuEvent
-      || !PPARegisterGrpName || !PPATIDCpuEvent || !PPADebugCpuEvent
-      || !PPARegisterCpuEventExGrpID 
-      || !PPAStartRSEvent || !PPAStopRSEvent
-      /*|| !PPASetSingleCpuEventEnDis*/)
-    {
-      dlclose(ppaHandle);
-      ppaHandle = 0;
-      printf("Load function fails\n");
-      abort();
-      return;
-    }
-    PPAInitFunc((char**)PPACpuAndGroup, PPACpuGroupNums);
-    ++init_count;
-#endif
+void initializePPA() {
 }
 
-void releasePPA()
-{
-#if 0
-  if(--init_count == 0)
-  {
-    PPADelFunc();
-    dlclose(ppaHandle);
-    ppaHandle = 0;
-  }
-#endif
+void releasePPA() {
 }
 
 #endif
-
-
 #endif
