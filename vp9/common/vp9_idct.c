@@ -18,7 +18,11 @@
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_idct.h"
 
+#if CONFIG_B10_EXT
+void vp9_iwht4x4_16_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_iwht4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
 /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
    0.5 shifts per pixel. */
   int i;
@@ -70,7 +74,11 @@ void vp9_iwht4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_iwht4x4_1_add_c(const int16_t *in, uint16_t *dest, int dest_stride) {
+#else
 void vp9_iwht4x4_1_add_c(const int16_t *in, uint8_t *dest, int dest_stride) {
+#endif
   int i;
   int a1, e1;
   int16_t tmp[4];
@@ -116,7 +124,11 @@ static void idct4(const int16_t *input, int16_t *output) {
   output[3] = step[0] - step[3];
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct4x4_16_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[4 * 4];
   int16_t *outptr = out;
   int i, j;
@@ -140,7 +152,11 @@ void vp9_idct4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct4x4_1_add_c(const int16_t *input, uint16_t *dest, int dest_stride) {
+#else
 void vp9_idct4x4_1_add_c(const int16_t *input, uint8_t *dest, int dest_stride) {
+#endif
   int i;
   int a1;
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
@@ -201,7 +217,11 @@ static void idct8(const int16_t *input, int16_t *output) {
   output[7] = step1[0] - step1[7];
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct8x8_64_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct8x8_64_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[8 * 8];
   int16_t *outptr = out;
   int i, j;
@@ -225,7 +245,11 @@ void vp9_idct8x8_64_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct8x8_1_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct8x8_1_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int i, j;
   int a1;
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
@@ -280,7 +304,11 @@ static void iadst4(const int16_t *input, int16_t *output) {
   output[3] = dct_const_round_shift(s3);
 }
 
+#if CONFIG_B10_EXT
+void vp9_iht4x4_16_add_c(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_iht4x4_16_add_c(const int16_t *input, uint8_t *dest, int stride,
+#endif
                          int tx_type) {
   const transform_2d IHT_4[] = {
     { idct4, idct4  },  // DCT_DCT  = 0
@@ -395,7 +423,11 @@ static const transform_2d IHT_8[] = {
   { iadst8, iadst8 }   // ADST_ADST = 3
 };
 
+#if CONFIG_B10_EXT
+void vp9_iht8x8_64_add_c(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_iht8x8_64_add_c(const int16_t *input, uint8_t *dest, int stride,
+#endif
                          int tx_type) {
   int i, j;
   int16_t out[8 * 8];
@@ -421,7 +453,11 @@ void vp9_iht8x8_64_add_c(const int16_t *input, uint8_t *dest, int stride,
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct8x8_10_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct8x8_10_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[8 * 8] = { 0 };
   int16_t *outptr = out;
   int i, j;
@@ -611,7 +647,11 @@ static void idct16(const int16_t *input, int16_t *output) {
   output[15] = step2[0] - step2[15];
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct16x16_256_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct16x16_256_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[16 * 16];
   int16_t *outptr = out;
   int i, j;
@@ -813,7 +853,11 @@ static const transform_2d IHT_16[] = {
   { iadst16, iadst16 }   // ADST_ADST = 3
 };
 
+#if CONFIG_B10_EXT
+void vp9_iht16x16_256_add_c(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_iht16x16_256_add_c(const int16_t *input, uint8_t *dest, int stride,
+#endif
                             int tx_type) {
   int i, j;
   int16_t out[16 * 16];
@@ -839,7 +883,11 @@ void vp9_iht16x16_256_add_c(const int16_t *input, uint8_t *dest, int stride,
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct16x16_10_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct16x16_10_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[16 * 16] = { 0 };
   int16_t *outptr = out;
   int i, j;
@@ -864,7 +912,11 @@ void vp9_idct16x16_10_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct16x16_1_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct16x16_1_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int i, j;
   int a1;
   int16_t out = dct_const_round_shift(input[0] * cospi_16_64);
@@ -1244,7 +1296,11 @@ static void idct32(const int16_t *input, int16_t *output) {
   output[31] = step1[0] - step1[31];
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct32x32_1024_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct32x32_1024_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[32 * 32];
   int16_t *outptr = out;
   int i, j;
@@ -1281,7 +1337,11 @@ void vp9_idct32x32_1024_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct32x32_34_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct32x32_34_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int16_t out[32 * 32] = {0};
   int16_t *outptr = out;
   int i, j;
@@ -1306,7 +1366,11 @@ void vp9_idct32x32_34_add_c(const int16_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct32x32_1_add_c(const int16_t *input, uint16_t *dest, int stride) {
+#else
 void vp9_idct32x32_1_add_c(const int16_t *input, uint8_t *dest, int stride) {
+#endif
   int i, j;
   int a1;
 
@@ -1322,7 +1386,11 @@ void vp9_idct32x32_1_add_c(const int16_t *input, uint8_t *dest, int stride) {
 }
 
 // idct
+#if CONFIG_B10_EXT
+void vp9_idct4x4_add(const int16_t *input, uint16_t *dest, int stride, int eob) {
+#else
 void vp9_idct4x4_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
+#endif
   if (eob > 1)
     vp9_idct4x4_16_add(input, dest, stride);
   else
@@ -1330,14 +1398,22 @@ void vp9_idct4x4_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
 }
 
 
+#if CONFIG_B10_EXT
+void vp9_iwht4x4_add(const int16_t *input, uint16_t *dest, int stride, int eob) {
+#else
 void vp9_iwht4x4_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
+#endif
   if (eob > 1)
     vp9_iwht4x4_16_add(input, dest, stride);
   else
     vp9_iwht4x4_1_add(input, dest, stride);
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct8x8_add(const int16_t *input, uint16_t *dest, int stride, int eob) {
+#else
 void vp9_idct8x8_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
+#endif
   // If dc is 1, then input[0] is the reconstructed value, do not need
   // dequantization. Also, when dc is 1, dc is counted in eobs, namely eobs >=1.
 
@@ -1354,7 +1430,11 @@ void vp9_idct8x8_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
     vp9_idct8x8_64_add(input, dest, stride);
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct16x16_add(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_idct16x16_add(const int16_t *input, uint8_t *dest, int stride,
+#endif
                        int eob) {
   /* The calculation can be simplified if there are not many non-zero dct
    * coefficients. Use eobs to separate different cases. */
@@ -1367,7 +1447,11 @@ void vp9_idct16x16_add(const int16_t *input, uint8_t *dest, int stride,
     vp9_idct16x16_256_add(input, dest, stride);
 }
 
+#if CONFIG_B10_EXT
+void vp9_idct32x32_add(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
+#endif
                        int eob) {
   if (eob == 1)
     vp9_idct32x32_1_add(input, dest, stride);
@@ -1379,7 +1463,11 @@ void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
 }
 
 // iht
+#if CONFIG_B10_EXT
+void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                     int stride, int eob) {
   if (tx_type == DCT_DCT)
     vp9_idct4x4_add(input, dest, stride, eob);
@@ -1387,7 +1475,11 @@ void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
     vp9_iht4x4_16_add(input, dest, stride, tx_type);
 }
 
+#if CONFIG_B10_EXT
+void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                     int stride, int eob) {
   if (tx_type == DCT_DCT) {
     vp9_idct8x8_add(input, dest, stride, eob);
@@ -1396,7 +1488,11 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                       int stride, int eob) {
   if (tx_type == DCT_DCT) {
     vp9_idct16x16_add(input, dest, stride, eob);

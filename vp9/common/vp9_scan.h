@@ -35,7 +35,11 @@ extern const scan_order vp9_default_scan_orders[TX_SIZES];
 extern const scan_order vp9_scan_orders[TX_SIZES][TX_TYPES];
 
 static INLINE int get_coef_context(const int16_t *neighbors,
+#if CONFIG_B10_EXT
+                                   const uint16_t *token_cache, int c) {
+#else
                                    const uint8_t *token_cache, int c) {
+#endif
   return (1 + token_cache[neighbors[MAX_NEIGHBORS * c + 0]] +
           token_cache[neighbors[MAX_NEIGHBORS * c + 1]]) >> 1;
 }

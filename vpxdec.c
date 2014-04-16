@@ -240,13 +240,21 @@ static void update_image_md5(const vpx_image_t *img, const int planes[3],
 
   for (i = 0; i < 3; ++i) {
     const int plane = planes[i];
+#if CONFIG_B10_EXT
+    const unsigned short *buf = img->planes[plane];
+#else
     const unsigned char *buf = img->planes[plane];
+#endif
     const int stride = img->stride[plane];
     const int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
 
     for (y = 0; y < h; ++y) {
+#if CONFIG_B10_EXT
+      MD5Update(md5, (const unsigned char*)buf, w);
+#else
       MD5Update(md5, buf, w);
+#endif
       buf += stride;
     }
   }
@@ -255,19 +263,47 @@ static void update_image_md5(const vpx_image_t *img, const int planes[3],
 static void write_image_file(const vpx_image_t *img, const int planes[3],
                              FILE *file) {
   int i, y;
+#if CONFIG_B10_EXT
+  unsigned char *write_buf;
+  write_buf=malloc(2*(img->d_w));
+#endif
 
   for (i = 0; i < 3; ++i) {
     const int plane = planes[i];
+#if CONFIG_B10_EXT
+    const unsigned short *buf = img->planes[plane];
+#else
     const unsigned char *buf = img->planes[plane];
+#endif
     const int stride = img->stride[plane];
     const int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
 
     for (y = 0; y < h; ++y) {
-      fwrite(buf, 1, w, file);
-      buf += stride;
+#if CONFIG_B10_EXT
+     int colIndex;
+     //if(img->out_bitdepth==8){
+        for(colIndex=0; colIndex<w; colIndex++){
+            write_buf[colIndex]=buf[colIndex];
+        }
+        fwrite(write_buf, 1, w, file);
+    /* }else{
+        for(colIndex=0; colIndex<w; colIndex++){
+            write_buf[colIndex*2]=buf[colIndex] & 0xff;
+            write_buf[colIndex*2+1]=buf[colIndex] >>8;
+        }
+        fwrite(write_buf, 1, 2*w, file);
+     } */
+     buf += stride;
+#else
+     fwrite(buf, 1, w, file);
+     buf += stride;
+#endif
     }
   }
+#if CONFIG_B10_EXT
+    free(write_buf);
+#endif
 }
 
 int file_is_raw(struct VpxInputContext *input) {

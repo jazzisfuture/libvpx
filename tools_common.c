@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
+#include <assert.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -83,9 +83,20 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
   struct FileTypeDetectionBuffer *detect = &input_ctx->detect;
   int plane = 0;
   int shortread = 0;
-
+#if CONFIG_B10_EXT
+  int col=0;
+  unsigned char *buf;
+    buf=malloc(2*yuv_frame->d_w);
+    yuv_frame->in_bitdepth=input_ctx->in_bitdepth;
+    yuv_frame->path_bitdepth=input_ctx->path_bitdepth;
+    yuv_frame->out_bitdepth=input_ctx->out_bitdepth;
+#endif
   for (plane = 0; plane < 3; ++plane) {
+#if CONFIG_B10_EXT
+    unsigned short *ptr;
+#else
     uint8_t *ptr;
+#endif
     const int w = (plane ? (1 + yuv_frame->d_w) / 2 : yuv_frame->d_w);
     const int h = (plane ? (1 + yuv_frame->d_h) / 2 : yuv_frame->d_h);
     int r;
@@ -106,26 +117,48 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
       default:
         ptr = yuv_frame->planes[plane];
     }
-
     for (r = 0; r < h; ++r) {
+#if !CONFIG_B10_EXT
       size_t needed = w;
       size_t buf_position = 0;
+#endif
       const size_t left = detect->buf_read - detect->position;
       if (left > 0) {
+#if CONFIG_B10_EXT
+        fseek(f,0,SEEK_SET);
+        detect->buf_read=detect->position;
+
+#else
         const size_t more = (left < needed) ? left : needed;
         memcpy(ptr, detect->buf + detect->position, more);
         buf_position = more;
         needed -= more;
         detect->position += more;
+#endif
       }
+        #if CONFIG_B10_EXT
+            if (input_ctx->in_bitdepth==8){
+                shortread|=(fread(buf,1,w,f) < w);
+                for(col=0; col<w; col++){
+                    ptr[col]=buf[col];
+                }
+            }else{ 
+                shortread|=(fread(buf,1,w*2,f) < 2*w);
+                for(col=0; col<w; col++){
+                    ptr[col]=(buf[col*2+1]<<8) + buf[col*2];
+                }
+            } 
+        #else
       if (needed > 0) {
-        shortread |= (fread(ptr + buf_position, 1, needed, f) < needed);
+            shortread |= (fread(ptr + buf_position, 1, needed, f) < needed);
       }
-
+        #endif
       ptr += yuv_frame->stride[plane];
     }
   }
-
+#if CONFIG_B10_EXT
+    free(buf);
+#endif
   return shortread;
 }
 
@@ -219,38 +252,89 @@ int vpx_img_plane_height(const vpx_image_t *img, int plane) {
 
 void vpx_img_write(const vpx_image_t *img, FILE *file) {
   int plane;
-
+#if CONFIG_B10_EXT
+  unsigned char *write_buf;
+  write_buf=malloc(2*(img->d_w));
+#endif
   for (plane = 0; plane < 3; ++plane) {
+#if CONFIG_B10_EXT
+    const unsigned short *buf = img->planes[plane];
+#else
     const unsigned char *buf = img->planes[plane];
+#endif
     const int stride = img->stride[plane];
     const int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
     for (y = 0; y < h; ++y) {
+#if CONFIG_B10_EXT
+     int colIndex;
+     if(img->out_bitdepth==8){
+        for(colIndex=0; colIndex<w; colIndex++){
+            write_buf[colIndex]=buf[colIndex];
+        }
+        fwrite(write_buf, 1, w, file);
+     }else{
+        for(colIndex=0; colIndex<w; colIndex++){
+            write_buf[colIndex*2]=buf[colIndex] & 0xff;
+            write_buf[colIndex*2+1]=buf[colIndex] >>8;
+        }
+        fwrite(write_buf, 1, 2*w, file);
+     } 
+     buf += stride;
+#else
       fwrite(buf, 1, w, file);
       buf += stride;
+#endif
     }
   }
+#if CONFIG_B10_EXT
+    free(write_buf);
+#endif
 }
 
 int vpx_img_read(vpx_image_t *img, FILE *file) {
   int plane;
-
+#if CONFIG_B10_EXT
+    unsigned char *read_buf;
+    read_buf=malloc(2*(img->d_w));
+#endif
   for (plane = 0; plane < 3; ++plane) {
+#if CONFIG_B10_EXT
+    unsigned short *buf = img->planes[plane];
+#else
     unsigned char *buf = img->planes[plane];
+#endif
     const int stride = img->stride[plane];
     const int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
     for (y = 0; y < h; ++y) {
+#if CONFIG_B10_EXT
+        int col;
+        if (img->in_bitdepth==8){
+            fread(read_buf,1,w,file);
+            for(col=0; col<w; col++){
+                buf[col]=read_buf[col];
+            }
+        }else{ 
+            fread(read_buf,1,w*2,file);
+            for(col=0; col<w; col++){
+                buf[col]=(read_buf[col*2+1]<<8) + read_buf[col*2];
+            }
+        } 
+#else
       if (fread(buf, 1, w, file) != w)
         return 0;
+#endif
       buf += stride;
     }
   }
-
+#if CONFIG_B10_EXT
+    free(read_buf);
+#endif
   return 1;
 }
 

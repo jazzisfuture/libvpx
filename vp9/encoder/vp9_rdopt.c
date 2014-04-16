@@ -565,7 +565,11 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   const int16_t *const qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   unsigned int (*token_costs)[2][COEFF_CONTEXTS][ENTROPY_TOKENS] =
                    x->token_costs[tx_size][type][is_inter_block(mbmi)];
+#if CONFIG_B10_EXT
+  uint16_t token_cache[32 * 32];
+#else
   uint8_t token_cache[32 * 32];
+#endif
   int pt = combine_entropy_contexts(*A, *L);
   int c, cost;
   // Check for consistency of tx_size with mode info
@@ -1054,17 +1058,29 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   struct macroblockd_plane *pd = &xd->plane[0];
   const int src_stride = p->src.stride;
   const int dst_stride = pd->dst.stride;
+#if CONFIG_B10_EXT
+  const uint16_t *src_init = &p->src.buf[raster_block_offset(BLOCK_8X8, ib,
+                                                            src_stride)];
+
+  uint16_t *dst_init = &pd->dst.buf[raster_block_offset(BLOCK_8X8, ib,
+                                                       dst_stride)];
+#else
   const uint8_t *src_init = &p->src.buf[raster_block_offset(BLOCK_8X8, ib,
                                                             src_stride)];
   uint8_t *dst_init = &pd->dst.buf[raster_block_offset(BLOCK_8X8, ib,
                                                        dst_stride)];
+#endif
   ENTROPY_CONTEXT ta[2], tempa[2];
   ENTROPY_CONTEXT tl[2], templ[2];
 
   const int num_4x4_blocks_wide = num_4x4_blocks_wide_lookup[bsize];
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int idx, idy;
+#if CONFIG_B10_EXT
+  uint16_t best_dst[8 * 8];
+#else
   uint8_t best_dst[8 * 8];
+#endif
 
   assert(ib < 4);
 
@@ -1094,8 +1110,14 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     for (idy = 0; idy < num_4x4_blocks_high; ++idy) {
       for (idx = 0; idx < num_4x4_blocks_wide; ++idx) {
         const int block = ib + idy * 2 + idx;
+#if CONFIG_B10_EXT
+        //int k,l;
+        const uint16_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
+        uint16_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
+#else
         const uint8_t *const src = &src_init[idx * 4 + idy * 4 * src_stride];
         uint8_t *const dst = &dst_init[idx * 4 + idy * 4 * dst_stride];
+#endif
         int16_t *const src_diff = raster_block_offset_int16(BLOCK_8X8, block,
                                                             p->src_diff);
         int16_t *const coeff = BLOCK_OFFSET(x->plane[0].coeff, block);
@@ -1106,6 +1128,34 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                 x->skip_encode ? src_stride : dst_stride,
                                 dst, dst_stride, idx, idy, 0);
         vp9_subtract_block(4, 4, src_diff, 8, src, src_stride, dst, dst_stride);
+#if CONFIG_B10_EXT
+   /* printf("inside rd pick intra \r\n");
+        
+        for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",src[k*src_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+
+        for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",dst[k*dst_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+
+        for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",src_diff[k*8+l]);
+            }
+        printf("\r\n");
+        }
+        printf("\r\n");
+*/
+#endif
 
         if (xd->lossless) {
           const scan_order *so = &vp9_default_scan_orders[TX_4X4];
@@ -1122,7 +1172,14 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
           int64_t unused;
           const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
           const scan_order *so = &vp9_scan_orders[TX_4X4][tx_type];
+#if CONFIG_B10_EXT
+         /* printf("start fht tx_type %d\r\n",tx_type);*/
+#endif
           vp9_fht4x4(src_diff, coeff, 8, tx_type);
+#if CONFIG_B10_EXT
+         /* printf("end fht tx_type %d\r\n",tx_type);*/
+#endif
+ 
           vp9_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
           ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
                              so->scan, so->neighbors,
@@ -1149,8 +1206,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
       vpx_memcpy(a, tempa, sizeof(tempa));
       vpx_memcpy(l, templ, sizeof(templ));
       for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy)
+#if CONFIG_B10_EXT
+        vpx_memcpy(best_dst + idy * 8, dst_init + idy * dst_stride,
+                   num_4x4_blocks_wide * 4 * sizeof(uint16_t));
+#else
         vpx_memcpy(best_dst + idy * 8, dst_init + idy * dst_stride,
                    num_4x4_blocks_wide * 4);
+#endif
     }
   next:
     {}
@@ -1160,8 +1222,13 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
     return best_rd;
 
   for (idy = 0; idy < num_4x4_blocks_high * 4; ++idy)
+#if CONFIG_B10_EXT
+    vpx_memcpy(dst_init + idy * dst_stride, best_dst + idy * 8,
+               num_4x4_blocks_wide * 4*sizeof(uint16_t));
+#else
     vpx_memcpy(dst_init + idy * dst_stride, best_dst + idy * 8,
                num_4x4_blocks_wide * 4);
+#endif
 
   return best_rd;
 }
@@ -1551,10 +1618,17 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   const int height = 4 * num_4x4_blocks_high_lookup[plane_bsize];
   int idx, idy;
 
+#if CONFIG_B10_EXT
+  const uint16_t *const src = &p->src.buf[raster_block_offset(BLOCK_8X8, i,
+                                                             p->src.stride)];
+  uint16_t *const dst = &pd->dst.buf[raster_block_offset(BLOCK_8X8, i,
+                                                        pd->dst.stride)];
+#else
   const uint8_t *const src = &p->src.buf[raster_block_offset(BLOCK_8X8, i,
                                                              p->src.stride)];
   uint8_t *const dst = &pd->dst.buf[raster_block_offset(BLOCK_8X8, i,
                                                         pd->dst.stride)];
+#endif
   int64_t thisdistortion = 0, thissse = 0;
   int thisrate = 0, ref;
   const scan_order *so = &vp9_default_scan_orders[TX_4X4];
@@ -1562,8 +1636,13 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
   const InterpKernel *kernel = vp9_get_interp_kernel(mi->mbmi.interp_filter);
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
+#if CONFIG_B10_EXT
+    const uint16_t *pre = &pd->pre[ref].buf[raster_block_offset(BLOCK_8X8, i,
+                                               pd->pre[ref].stride)];
+#else
     const uint8_t *pre = &pd->pre[ref].buf[raster_block_offset(BLOCK_8X8, i,
                                                pd->pre[ref].stride)];
+#endif
     vp9_build_inter_predictor(pre, pd->pre[ref].stride,
                               dst, pd->dst.stride,
                               &mi->bmi[i].as_mv[ref].as_mv,
@@ -2142,7 +2221,11 @@ static int64_t rd_pick_best_mbsegmentation(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
+#if CONFIG_B10_EXT
+                    uint16_t *ref_y_buffer, int ref_y_stride,
+#else
                     uint8_t *ref_y_buffer, int ref_y_stride,
+#endif
                     int ref_frame, BLOCK_SIZE block_size ) {
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
@@ -2154,8 +2237,13 @@ static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
   int this_sad = INT_MAX;
   int max_mv = 0;
 
+#if CONFIG_B10_EXT
+  uint16_t *src_y_ptr = x->plane[0].src.buf;
+  uint16_t *ref_y_ptr;
+#else
   uint8_t *src_y_ptr = x->plane[0].src.buf;
   uint8_t *ref_y_ptr;
+#endif
   int row_offset, col_offset;
   int num_mv_refs = MAX_MV_REF_CANDIDATES +
                     (cpi->sf.adaptive_motion_search &&
@@ -2544,9 +2632,12 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   int_mv ref_mv[2];
   int ite, ref;
   // Prediction buffer from second frame.
+#if CONFIG_B10_EXT
+  uint16_t *second_pred = vpx_memalign(16, pw * ph * sizeof(uint16_t));
+#else
   uint8_t *second_pred = vpx_memalign(16, pw * ph * sizeof(uint8_t));
+#endif
   const InterpKernel *kernel = vp9_get_interp_kernel(mbmi->interp_filter);
-
   // Do joint motion search in compound mode to get more accurate mv.
   struct buf_2d backup_yv12[2][MAX_MB_PLANE];
   struct buf_2d scaled_first_yv12 = xd->plane[0].pre[0];
@@ -2674,7 +2765,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 }
 
 static INLINE void restore_dst_buf(MACROBLOCKD *xd,
+#if CONFIG_B10_EXT
+                                   uint16_t *orig_dst[MAX_MB_PLANE],
+#else
                                    uint8_t *orig_dst[MAX_MB_PLANE],
+#endif           
                                    int orig_dst_stride[MAX_MB_PLANE]) {
   int i;
   for (i = 0; i < MAX_MB_PLANE; i++) {
@@ -2709,12 +2804,20 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     (mbmi->ref_frame[1] < 0 ? 0 : mbmi->ref_frame[1]) };
   int_mv cur_mv[2];
   int64_t this_rd = 0;
+#if CONFIG_B10_EXT
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
+#else
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
+#endif
   int pred_exists = 0;
   int intpel_mv;
   int64_t rd, best_rd = INT64_MAX;
   int best_needs_copy = 0;
+#if CONFIG_B10_EXT
+  uint16_t *orig_dst[MAX_MB_PLANE];
+#else
   uint8_t *orig_dst[MAX_MB_PLANE];
+#endif
   int orig_dst_stride[MAX_MB_PLANE];
   int rs = 0;
 

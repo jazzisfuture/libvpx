@@ -208,7 +208,9 @@ static const int mode_lf_lut[MB_MODE_COUNT] = {
 
 static void update_sharpness(loop_filter_info_n *lfi, int sharpness_lvl) {
   int lvl;
-
+  #if CONFIG_B10_EXT
+  int c;
+  #endif
   // For each possible value for the loop filter fill out limits
   for (lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++) {
     // Set loop filter paramaeters that control sharpness.
@@ -221,10 +223,14 @@ static void update_sharpness(loop_filter_info_n *lfi, int sharpness_lvl) {
 
     if (block_inside_limit < 1)
       block_inside_limit = 1;
-
+#if CONFIG_B10_EXT
+    for(c=0; c<SIMD_WIDTH; c++) lfi->lfthr[lvl].lim[c]=block_inside_limit;
+    for(c=0; c<SIMD_WIDTH; c++) lfi->lfthr[lvl].mblim[c]=(2 * (lvl + 2) + block_inside_limit);
+#else
     vpx_memset(lfi->lfthr[lvl].lim, block_inside_limit, SIMD_WIDTH);
     vpx_memset(lfi->lfthr[lvl].mblim, (2 * (lvl + 2) + block_inside_limit),
                SIMD_WIDTH);
+#endif
   }
 }
 
@@ -238,14 +244,22 @@ void vp9_loop_filter_init(VP9_COMMON *cm) {
   loop_filter_info_n *lfi = &cm->lf_info;
   struct loopfilter *lf = &cm->lf;
   int lvl;
+#if CONFIG_B10_EXT
+  int c;
+#endif
 
   // init limits for given sharpness
   update_sharpness(lfi, lf->sharpness_level);
   lf->last_sharpness_level = lf->sharpness_level;
 
   // init hev threshold const vectors
+#if CONFIG_B10_EXT
+  for (lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++)
+    for(c=0; c<= MAX_LOOP_FILTER; c++) lfi->lfthr[lvl].hev_thr[c]=lvl>>4;
+#else
   for (lvl = 0; lvl <= MAX_LOOP_FILTER; lvl++)
     vpx_memset(lfi->lfthr[lvl].hev_thr, (lvl >> 4), SIMD_WIDTH);
+#endif
 }
 
 void vp9_loop_filter_frame_init(VP9_COMMON *cm, int default_filt_lvl) {
@@ -257,6 +271,9 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm, int default_filt_lvl) {
   loop_filter_info_n *const lfi = &cm->lf_info;
   struct loopfilter *const lf = &cm->lf;
   const struct segmentation *const seg = &cm->seg;
+#if CONFIG_B10_EXT
+  int c,d;
+#endif
 
   // update limits if sharpness has changed
   if (lf->last_sharpness_level != lf->sharpness_level) {
@@ -276,7 +293,13 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm, int default_filt_lvl) {
     if (!lf->mode_ref_delta_enabled) {
       // we could get rid of this if we assume that deltas are set to
       // zero when not in use; encoder always uses deltas
+#if CONFIG_B10_EXT
+      for(c=0; c< MAX_REF_FRAMES; c++)
+        for(d=0; d< MAX_MODE_LF_DELTAS; d++)
+            lfi->lvl[seg_id][c][d]=lvl_seg;
+#else
       vpx_memset(lfi->lvl[seg_id], lvl_seg, sizeof(lfi->lvl[seg_id]));
+#endif
     } else {
       int ref, mode;
       const int intra_lvl = lvl_seg + lf->ref_deltas[INTRA_FRAME] * scale;
@@ -294,13 +317,21 @@ void vp9_loop_filter_frame_init(VP9_COMMON *cm, int default_filt_lvl) {
 }
 
 static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
+#if CONFIG_B10_EXT
+                                         uint16_t *s, int pitch,
+#else
                                          uint8_t *s, int pitch,
+#endif
                                          unsigned int mask_16x16_l,
                                          unsigned int mask_8x8_l,
                                          unsigned int mask_4x4_l,
                                          unsigned int mask_4x4_int_l,
                                          const loop_filter_info_n *lfi_n,
+#if CONFIG_B10_EXT
+                                         const uint16_t *lfl) {
+#else
                                          const uint8_t *lfl) {
+#endif
   const int mask_shift = plane_type ? 4 : 8;
   const int mask_cutoff = plane_type ? 0xf : 0xff;
   const int lfl_forward = plane_type ? 4 : 8;
@@ -392,13 +423,21 @@ static void filter_selectively_vert_row2(PLANE_TYPE plane_type,
   }
 }
 
+#if CONFIG_B10_EXT
+static void filter_selectively_horiz(uint16_t *s, int pitch,
+#else
 static void filter_selectively_horiz(uint8_t *s, int pitch,
+#endif
                                      unsigned int mask_16x16,
                                      unsigned int mask_8x8,
                                      unsigned int mask_4x4,
                                      unsigned int mask_4x4_int,
                                      const loop_filter_info_n *lfi_n,
+#if CONFIG_B10_EXT
+                                     const uint16_t *lfl) {
+#else
                                      const uint8_t *lfl) {
+#endif
   unsigned int mask;
   int count;
 
@@ -520,7 +559,11 @@ static void build_masks(const loop_filter_info_n *const lfi_n,
     const int h = num_8x8_blocks_high_lookup[block_size];
     int index = shift_y;
     for (i = 0; i < h; i++) {
+#if CONFIG_B10_EXT
+     int j; for(j=0; j<w; j++) lfm->lfl_y[index+j]=filter_level;
+#else
       vpx_memset(&lfm->lfl_y[index], filter_level, w);
+#endif
       index += 8;
     }
   }
@@ -585,8 +628,11 @@ static void build_y_mask(const loop_filter_info_n *const lfi_n,
   uint64_t *const left_y = &lfm->left_y[tx_size_y];
   uint64_t *const above_y = &lfm->above_y[tx_size_y];
   uint64_t *const int_4x4_y = &lfm->int_4x4_y;
+#if CONFIG_B10_EXT
+  int i,c;
+#else
   int i;
-
+#endif
   if (!filter_level) {
     return;
   } else {
@@ -594,7 +640,11 @@ static void build_y_mask(const loop_filter_info_n *const lfi_n,
     const int h = num_8x8_blocks_high_lookup[block_size];
     int index = shift_y;
     for (i = 0; i < h; i++) {
+#if CONFIG_B10_EXT
+      for(c=0; c<w; c++) lfm->lfl_y[index+c]=filter_level;
+#else
       vpx_memset(&lfm->lfl_y[index], filter_level, w);
+#endif
       index += 8;
     }
   }
@@ -868,13 +918,21 @@ void vp9_setup_mask(VP9_COMMON *const cm, const int mi_row, const int mi_col,
   assert(!(lfm->int_4x4_uv & lfm->above_uv[TX_16X16]));
 }
 
+#if CONFIG_B10_EXT
+static void filter_selectively_vert(uint16_t *s, int pitch,
+#else
 static void filter_selectively_vert(uint8_t *s, int pitch,
+#endif
                                     unsigned int mask_16x16,
                                     unsigned int mask_8x8,
                                     unsigned int mask_4x4,
                                     unsigned int mask_4x4_int,
                                     const loop_filter_info_n *lfi_n,
+#if CONFIG_B10_EXT
+                                    const uint16_t *lfl) {
+#else
                                     const uint8_t *lfl) {
+#endif
   unsigned int mask;
 
   for (mask = mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int;
@@ -911,12 +969,20 @@ static void filter_block_plane_non420(VP9_COMMON *cm,
   const int col_step = 1 << ss_y;
   const int row_step_stride = cm->mi_stride * row_step;
   struct buf_2d *const dst = &plane->dst;
+#if CONFIG_B10_EXT
+  uint16_t* const dst0 = dst->buf;
+#else
   uint8_t* const dst0 = dst->buf;
+#endif
   unsigned int mask_16x16[MI_BLOCK_SIZE] = {0};
   unsigned int mask_8x8[MI_BLOCK_SIZE] = {0};
   unsigned int mask_4x4[MI_BLOCK_SIZE] = {0};
   unsigned int mask_4x4_int[MI_BLOCK_SIZE] = {0};
+#if CONFIG_B10_EXT
+  uint16_t lfl[MI_BLOCK_SIZE * MI_BLOCK_SIZE];
+#else
   uint8_t lfl[MI_BLOCK_SIZE * MI_BLOCK_SIZE];
+#endif
   int r, c;
 
   for (r = 0; r < MI_BLOCK_SIZE && mi_row + r < cm->mi_rows; r += row_step) {
@@ -1044,7 +1110,11 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                             int mi_row,
                             LOOP_FILTER_MASK *lfm) {
   struct buf_2d *const dst = &plane->dst;
+#if CONFIG_B10_EXT
+  uint16_t* const dst0 = dst->buf;
+#else
   uint8_t* const dst0 = dst->buf;
+#endif
   int r, c;
 
   if (!plane->plane_type) {

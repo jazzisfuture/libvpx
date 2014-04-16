@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #include "./vpx_codec.h"
-
+#include "vpx_config.h"
   /*! Temporal Scalability: Maximum length of the sequence defining frame
    * layer membership
    */
@@ -315,7 +315,11 @@ extern "C" {
      * resolution, independent of any spatial resampling the encoder may do.
      */
     unsigned int           g_h;
-
+    #if CONFIG_B10_EXT
+    unsigned char in_bitdepth;
+    unsigned char path_bitdepth;
+    unsigned char out_bitdepth;
+    #endif
 
     /*!\brief Stream timebase units
      *

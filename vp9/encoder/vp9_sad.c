@@ -16,8 +16,13 @@
 #include "vpx/vpx_integer.h"
 #include "vp9/encoder/vp9_variance.h"
 
+#if CONFIG_B10_EXT
+static INLINE unsigned int sad(const uint16_t *a, int a_stride,
+                               const uint16_t *b, int b_stride,
+#else
 static INLINE unsigned int sad(const uint8_t *a, int a_stride,
                                const uint8_t *b, int b_stride,
+#endif
                                int width, int height) {
   int y, x;
   unsigned int sad = 0;
@@ -33,6 +38,22 @@ static INLINE unsigned int sad(const uint8_t *a, int a_stride,
   return sad;
 }
 
+#if CONFIG_B10_EXT
+#define sad_mxn_func(m, n) \
+unsigned int vp9_sad##m##x##n##_c(const uint16_t *src_ptr, int src_stride, \
+                                  const uint16_t *ref_ptr, int ref_stride, \
+                                  unsigned int max_sad) { \
+  return sad(src_ptr, src_stride, ref_ptr, ref_stride, m, n); \
+} \
+unsigned int vp9_sad##m##x##n##_avg_c(const uint16_t *src_ptr, int src_stride, \
+                                      const uint16_t *ref_ptr, int ref_stride, \
+                                      const uint16_t *second_pred, \
+                                      unsigned int max_sad) { \
+  uint16_t comp_pred[m * n]; \
+  vp9_comp_avg_pred(comp_pred, second_pred, m, n, ref_ptr, ref_stride); \
+  return sad(src_ptr, src_stride, comp_pred, m, m, n); \
+}
+#else
 #define sad_mxn_func(m, n) \
 unsigned int vp9_sad##m##x##n##_c(const uint8_t *src_ptr, int src_stride, \
                                   const uint8_t *ref_ptr, int ref_stride, \
@@ -47,6 +68,7 @@ unsigned int vp9_sad##m##x##n##_avg_c(const uint8_t *src_ptr, int src_stride, \
   vp9_comp_avg_pred(comp_pred, second_pred, m, n, ref_ptr, ref_stride); \
   return sad(src_ptr, src_stride, comp_pred, m, m, n); \
 }
+#endif
 
 sad_mxn_func(64, 64)
 sad_mxn_func(64, 32)
@@ -62,8 +84,13 @@ sad_mxn_func(8, 4)
 sad_mxn_func(4, 8)
 sad_mxn_func(4, 4)
 
+#if CONFIG_B10_EXT
+void vp9_sad64x32x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad64x32x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -71,8 +98,13 @@ void vp9_sad64x32x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad32x64x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad32x64x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -80,8 +112,13 @@ void vp9_sad32x64x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad32x16x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad32x16x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -89,8 +126,16 @@ void vp9_sad32x16x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x32x4d_c(const uint16_t *src_ptr, int src_stride,
+#else
 void vp9_sad16x32x4d_c(const uint8_t *src_ptr, int src_stride,
+#endif
+#if CONFIG_B10_EXT
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -98,8 +143,13 @@ void vp9_sad16x32x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad64x64x3_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad64x64x3_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -107,8 +157,13 @@ void vp9_sad64x64x3_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad32x32x3_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad32x32x3_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -116,8 +171,13 @@ void vp9_sad32x32x3_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad64x64x8_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad64x64x8_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -125,8 +185,13 @@ void vp9_sad64x64x8_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad32x32x8_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad32x32x8_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -134,8 +199,13 @@ void vp9_sad32x32x8_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x16x3_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad16x16x3_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -143,8 +213,13 @@ void vp9_sad16x16x3_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x16x8_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad16x16x8_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t *ref_ptr, int ref_stride,
+#endif
                       uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -152,8 +227,13 @@ void vp9_sad16x16x8_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x8x3_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad16x8x3_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t *ref_ptr, int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -161,8 +241,13 @@ void vp9_sad16x8x3_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x8x8_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad16x8x8_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t *ref_ptr, int ref_stride,
+#endif
                      uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -170,8 +255,13 @@ void vp9_sad16x8x8_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x8x3_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad8x8x3_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -179,8 +269,13 @@ void vp9_sad8x8x3_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x8x8_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad8x8x8_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -188,8 +283,13 @@ void vp9_sad8x8x8_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x16x3_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad8x16x3_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t *ref_ptr, int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -197,8 +297,13 @@ void vp9_sad8x16x3_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x16x8_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad8x16x8_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t *ref_ptr, int ref_stride,
+#endif
                      uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -206,8 +311,13 @@ void vp9_sad8x16x8_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad4x4x3_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad4x4x3_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     unsigned int *sad_array) {
   int i;
   for (i = 0; i < 3; ++i)
@@ -215,8 +325,13 @@ void vp9_sad4x4x3_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad4x4x8_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad4x4x8_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -224,8 +339,13 @@ void vp9_sad4x4x8_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad64x64x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad64x64x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -233,8 +353,13 @@ void vp9_sad64x64x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad32x32x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad32x32x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -242,8 +367,13 @@ void vp9_sad32x32x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x16x4d_c(const uint16_t *src_ptr, int src_stride,
+                       const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad16x16x4d_c(const uint8_t *src_ptr, int src_stride,
                        const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                        unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -251,8 +381,13 @@ void vp9_sad16x16x4d_c(const uint8_t *src_ptr, int src_stride,
                                 0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad16x8x4d_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad16x8x4d_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -260,8 +395,13 @@ void vp9_sad16x8x4d_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x8x4d_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad8x8x4d_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -269,8 +409,13 @@ void vp9_sad8x8x4d_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x16x4d_c(const uint16_t *src_ptr, int src_stride,
+                      const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad8x16x4d_c(const uint8_t *src_ptr, int src_stride,
                       const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                       unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -278,8 +423,13 @@ void vp9_sad8x16x4d_c(const uint8_t *src_ptr, int src_stride,
                                0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x4x4d_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad8x4x4d_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -287,8 +437,13 @@ void vp9_sad8x4x4d_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad8x4x8_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad8x4x8_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -296,8 +451,13 @@ void vp9_sad8x4x8_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad4x8x4d_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad4x8x4d_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)
@@ -305,8 +465,13 @@ void vp9_sad4x8x4d_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad4x8x8_c(const uint16_t *src_ptr, int src_stride,
+                    const uint16_t *ref_ptr, int ref_stride,
+#else
 void vp9_sad4x8x8_c(const uint8_t *src_ptr, int src_stride,
                     const uint8_t *ref_ptr, int ref_stride,
+#endif
                     uint32_t *sad_array) {
   int i;
   for (i = 0; i < 8; ++i)
@@ -314,8 +479,13 @@ void vp9_sad4x8x8_c(const uint8_t *src_ptr, int src_stride,
                               0x7fffffff);
 }
 
+#if CONFIG_B10_EXT
+void vp9_sad4x4x4d_c(const uint16_t *src_ptr, int src_stride,
+                     const uint16_t* const ref_ptr[], int ref_stride,
+#else
 void vp9_sad4x4x4d_c(const uint8_t *src_ptr, int src_stride,
                      const uint8_t* const ref_ptr[], int ref_stride,
+#endif
                      unsigned int *sad_array) {
   int i;
   for (i = 0; i < 4; ++i)

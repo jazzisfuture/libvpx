@@ -256,6 +256,12 @@ static const arg_def_t width            = ARG_DEF("w", "width", 1,
                                                   "Frame width");
 static const arg_def_t height           = ARG_DEF("h", "height", 1,
                                                   "Frame height");
+#if CONFIG_B10_EXT
+static const arg_def_t in_bitdepth=ARG_DEF(NULL,"inBitDepth",1,"input bitDepth of source file");    
+static const arg_def_t path_bitdepth=ARG_DEF(NULL,"pathBitDepth",1,"path bitDepth of source file");    
+static const arg_def_t out_bitdepth=ARG_DEF(NULL,"outBitDepth",1,"output bitDepth of compressed file"); 
+#endif
+
 static const struct arg_enum_list stereo_mode_enum[] = {
   {"mono", STEREO_FORMAT_MONO},
   {"left-right", STEREO_FORMAT_LEFT_RIGHT},
@@ -276,6 +282,9 @@ static const arg_def_t lag_in_frames    = ARG_DEF(NULL, "lag-in-frames", 1,
 static const arg_def_t *global_args[] = {
   &use_yv12, &use_i420, &usage, &threads, &profile,
   &width, &height, &stereo_mode, &timebase, &framerate,
+#if CONFIG_B10_EXT
+  &in_bitdepth, &path_bitdepth, &out_bitdepth, 
+#endif
   &error_resilient,
   &lag_in_frames, NULL
 };
@@ -913,7 +922,19 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->cfg.g_w = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &height, argi)) {
       config->cfg.g_h = arg_parse_uint(&arg);
-    } else if (arg_match(&arg, &stereo_mode, argi)) {
+    } 
+#if CONFIG_B10_EXT
+    else if(arg_match(&arg, &in_bitdepth, argi)){
+      config->cfg.in_bitdepth=arg_parse_uint(&arg);
+    }
+    else if(arg_match(&arg, &path_bitdepth, argi)){
+      config->cfg.path_bitdepth=arg_parse_uint(&arg);
+    }
+    else if(arg_match(&arg, &out_bitdepth, argi)){
+      config->cfg.out_bitdepth=arg_parse_uint(&arg);
+    }
+#endif
+    else if (arg_match(&arg, &stereo_mode, argi)) {
       config->stereo_fmt = arg_parse_enum_or_int(&arg);
     } else if (arg_match(&arg, &timebase, argi)) {
       config->cfg.g_timebase = arg_parse_rational(&arg);
@@ -1108,6 +1129,11 @@ static void show_stream_config(struct stream_state *stream,
   SHOW(g_profile);
   SHOW(g_w);
   SHOW(g_h);
+#if CONFIG_B10_EXT
+  SHOW(in_bitdepth);
+  SHOW(path_bitdepth);
+  SHOW(out_bitdepth);
+#endif
   SHOW(g_timebase.num);
   SHOW(g_timebase.den);
   SHOW(g_error_resilient);
@@ -1592,6 +1618,11 @@ int main(int argc, const char **argv_) {
       if (stream->config.cfg.g_w && stream->config.cfg.g_h) {
         input.width = stream->config.cfg.g_w;
         input.height = stream->config.cfg.g_h;
+#if CONFIG_B10_EXT
+        input.in_bitdepth=stream->config.cfg.in_bitdepth;
+        input.path_bitdepth=stream->config.cfg.path_bitdepth;
+        input.out_bitdepth=stream->config.cfg.out_bitdepth;
+#endif
         break;
       }
     });
@@ -1642,10 +1673,22 @@ int main(int argc, const char **argv_) {
            frames.*/
         memset(&raw, 0, sizeof(raw));
       else
+#if CONFIG_B10_EXT
+       {
         vpx_img_alloc(&raw,
                       input.use_i420 ? VPX_IMG_FMT_I420
                       : VPX_IMG_FMT_YV12,
                       input.width, input.height, 32);
+        raw.in_bitdepth=input.in_bitdepth;
+        raw.path_bitdepth=input.path_bitdepth;
+        raw.out_bitdepth=input.out_bitdepth;
+       }
+#else
+        vpx_img_alloc(&raw,
+                      input.use_i420 ? VPX_IMG_FMT_I420
+                      : VPX_IMG_FMT_YV12,
+                      input.width, input.height, 32);
+#endif
 
       FOREACH_STREAM(stream->rate_hist =
                          init_rate_histogram(&stream->config.cfg,

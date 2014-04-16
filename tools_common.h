@@ -95,6 +95,11 @@ struct VpxInputContext {
   enum VideoFileType file_type;
   uint32_t width;
   uint32_t height;
+#if CONFIG_B10_EXT
+  unsigned char in_bitdepth;
+  unsigned char path_bitdepth;
+  unsigned char out_bitdepth;
+#endif 
   int use_i420;
   int only_i420;
   uint32_t fourcc;

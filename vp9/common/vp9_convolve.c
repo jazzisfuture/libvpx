@@ -18,8 +18,13 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
 
+#if CONFIG_B10_EXT
+static void convolve_horiz(const uint16_t *src, ptrdiff_t src_stride,
+                           uint16_t *dst, ptrdiff_t dst_stride,
+#else
 static void convolve_horiz(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                            const InterpKernel *x_filters,
                            int x0_q4, int x_step_q4, int w, int h) {
   int x, y;
@@ -27,7 +32,11 @@ static void convolve_horiz(const uint8_t *src, ptrdiff_t src_stride,
   for (y = 0; y < h; ++y) {
     int x_q4 = x0_q4;
     for (x = 0; x < w; ++x) {
+#if CONFIG_B10_EXT
+      const uint16_t *const src_x = &src[x_q4 >> SUBPEL_BITS];
+#else
       const uint8_t *const src_x = &src[x_q4 >> SUBPEL_BITS];
+#endif
       const int16_t *const x_filter = x_filters[x_q4 & SUBPEL_MASK];
       int k, sum = 0;
       for (k = 0; k < SUBPEL_TAPS; ++k)
@@ -40,8 +49,13 @@ static void convolve_horiz(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
+#if CONFIG_B10_EXT
+static void convolve_avg_horiz(const uint16_t *src, ptrdiff_t src_stride,
+                               uint16_t *dst, ptrdiff_t dst_stride,
+#else
 static void convolve_avg_horiz(const uint8_t *src, ptrdiff_t src_stride,
                                uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                                const InterpKernel *x_filters,
                                int x0_q4, int x_step_q4, int w, int h) {
   int x, y;
@@ -49,7 +63,11 @@ static void convolve_avg_horiz(const uint8_t *src, ptrdiff_t src_stride,
   for (y = 0; y < h; ++y) {
     int x_q4 = x0_q4;
     for (x = 0; x < w; ++x) {
+#if CONFIG_B10_EXT
+      const uint16_t *const src_x = &src[x_q4 >> SUBPEL_BITS];
+#else
       const uint8_t *const src_x = &src[x_q4 >> SUBPEL_BITS];
+#endif
       const int16_t *const x_filter = x_filters[x_q4 & SUBPEL_MASK];
       int k, sum = 0;
       for (k = 0; k < SUBPEL_TAPS; ++k)
@@ -63,8 +81,13 @@ static void convolve_avg_horiz(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
+#if CONFIG_B10_EXT
+static void convolve_vert(const uint16_t *src, ptrdiff_t src_stride,
+                          uint16_t *dst, ptrdiff_t dst_stride,
+#else
 static void convolve_vert(const uint8_t *src, ptrdiff_t src_stride,
                           uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                           const InterpKernel *y_filters,
                           int y0_q4, int y_step_q4, int w, int h) {
   int x, y;
@@ -73,7 +96,11 @@ static void convolve_vert(const uint8_t *src, ptrdiff_t src_stride,
   for (x = 0; x < w; ++x) {
     int y_q4 = y0_q4;
     for (y = 0; y < h; ++y) {
+#if CONFIG_B10_EXT
+      const unsigned short *src_y = &src[(y_q4 >> SUBPEL_BITS) * src_stride];
+#else
       const unsigned char *src_y = &src[(y_q4 >> SUBPEL_BITS) * src_stride];
+#endif
       const int16_t *const y_filter = y_filters[y_q4 & SUBPEL_MASK];
       int k, sum = 0;
       for (k = 0; k < SUBPEL_TAPS; ++k)
@@ -86,8 +113,13 @@ static void convolve_vert(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
+#if CONFIG_B10_EXT
+static void convolve_avg_vert(const uint16_t *src, ptrdiff_t src_stride,
+                              uint16_t *dst, ptrdiff_t dst_stride,
+#else
 static void convolve_avg_vert(const uint8_t *src, ptrdiff_t src_stride,
                               uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                               const InterpKernel *y_filters,
                               int y0_q4, int y_step_q4, int w, int h) {
   int x, y;
@@ -96,13 +128,18 @@ static void convolve_avg_vert(const uint8_t *src, ptrdiff_t src_stride,
   for (x = 0; x < w; ++x) {
     int y_q4 = y0_q4;
     for (y = 0; y < h; ++y) {
+#if CONFIG_B10_EXT
+      const unsigned short *src_y = &src[(y_q4 >> SUBPEL_BITS) * src_stride];
+#else
       const unsigned char *src_y = &src[(y_q4 >> SUBPEL_BITS) * src_stride];
+#endif
       const int16_t *const y_filter = y_filters[y_q4 & SUBPEL_MASK];
       int k, sum = 0;
       for (k = 0; k < SUBPEL_TAPS; ++k)
         sum += src_y[k * src_stride] * y_filter[k];
       dst[y * dst_stride] = ROUND_POWER_OF_TWO(dst[y * dst_stride] +
           clip_pixel(ROUND_POWER_OF_TWO(sum, FILTER_BITS)), 1);
+
       y_q4 += y_step_q4;
     }
     ++src;
@@ -110,8 +147,13 @@ static void convolve_avg_vert(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
+#if CONFIG_B10_EXT
+static void convolve(const uint16_t *src, ptrdiff_t src_stride,
+                     uint16_t *dst, ptrdiff_t dst_stride,
+#else
 static void convolve(const uint8_t *src, ptrdiff_t src_stride,
                      uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                      const InterpKernel *const x_filters,
                      int x0_q4, int x_step_q4,
                      const InterpKernel *const y_filters,
@@ -121,7 +163,11 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
   // Maximum intermediate_height is 324, for y_step_q4 == 80,
   // h == 64, taps == 8.
   // y_step_q4 of 80 allows for 1/10 scale for 5 layer svc
+#if CONFIG_B10_EXT
+  uint16_t temp[64 * 324];
+#else
   uint8_t temp[64 * 324];
+#endif
   int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + SUBPEL_TAPS;
 
   assert(w <= 64);
@@ -148,8 +194,13 @@ static int get_filter_offset(const int16_t *f, const InterpKernel *base) {
   return (int)((const InterpKernel *)(intptr_t)f - base);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_horiz_c(const uint16_t *src, ptrdiff_t src_stride,
+                           uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                            const int16_t *filter_x, int x_step_q4,
                            const int16_t *filter_y, int y_step_q4,
                            int w, int h) {
@@ -160,8 +211,13 @@ void vp9_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                  x0_q4, x_step_q4, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_avg_horiz_c(const uint16_t *src, ptrdiff_t src_stride,
+                               uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                                uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                                const int16_t *filter_x, int x_step_q4,
                                const int16_t *filter_y, int y_step_q4,
                                int w, int h) {
@@ -172,8 +228,13 @@ void vp9_convolve8_avg_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                      x0_q4, x_step_q4, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_vert_c(const uint16_t *src, ptrdiff_t src_stride,
+                          uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                           uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                           const int16_t *filter_x, int x_step_q4,
                           const int16_t *filter_y, int y_step_q4,
                           int w, int h) {
@@ -183,8 +244,13 @@ void vp9_convolve8_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                 y0_q4, y_step_q4, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_avg_vert_c(const uint16_t *src, ptrdiff_t src_stride,
+                              uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                               uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                               const int16_t *filter_x, int x_step_q4,
                               const int16_t *filter_y, int y_step_q4,
                               int w, int h) {
@@ -194,8 +260,13 @@ void vp9_convolve8_avg_vert_c(const uint8_t *src, ptrdiff_t src_stride,
                     y0_q4, y_step_q4, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_c(const uint16_t *src, ptrdiff_t src_stride,
+                     uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_c(const uint8_t *src, ptrdiff_t src_stride,
                      uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                      const int16_t *filter_x, int x_step_q4,
                      const int16_t *filter_y, int y_step_q4,
                      int w, int h) {
@@ -210,13 +281,22 @@ void vp9_convolve8_c(const uint8_t *src, ptrdiff_t src_stride,
            filters_y, y0_q4, y_step_q4, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve8_avg_c(const uint16_t *src, ptrdiff_t src_stride,
+                         uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve8_avg_c(const uint8_t *src, ptrdiff_t src_stride,
                          uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                          const int16_t *filter_x, int x_step_q4,
                          const int16_t *filter_y, int y_step_q4,
                          int w, int h) {
   /* Fixed size intermediate buffer places limits on parameters. */
+#if CONFIG_B10_EXT
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp, 64 * 64);
+#else
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp, 64 * 64);
+#endif
   assert(w <= 64);
   assert(h <= 64);
 
@@ -225,22 +305,36 @@ void vp9_convolve8_avg_c(const uint8_t *src, ptrdiff_t src_stride,
   vp9_convolve_avg_c(temp, 64, dst, dst_stride, NULL, 0, NULL, 0, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve_copy_c(const uint16_t *src, ptrdiff_t src_stride,
+                         uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve_copy_c(const uint8_t *src, ptrdiff_t src_stride,
                          uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                          const int16_t *filter_x, int filter_x_stride,
                          const int16_t *filter_y, int filter_y_stride,
                          int w, int h) {
   int r;
 
   for (r = h; r > 0; --r) {
+#if CONFIG_B10_EXT
+    vpx_memcpy(dst, src, w*sizeof(uint16_t));
+#else
     vpx_memcpy(dst, src, w);
+#endif
     src += src_stride;
     dst += dst_stride;
   }
 }
 
+#if CONFIG_B10_EXT
+void vp9_convolve_avg_c(const uint16_t *src, ptrdiff_t src_stride,
+                        uint16_t *dst, ptrdiff_t dst_stride,
+#else
 void vp9_convolve_avg_c(const uint8_t *src, ptrdiff_t src_stride,
                         uint8_t *dst, ptrdiff_t dst_stride,
+#endif
                         const int16_t *filter_x, int filter_x_stride,
                         const int16_t *filter_y, int filter_y_stride,
                         int w, int h) {

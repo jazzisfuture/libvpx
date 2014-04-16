@@ -13,7 +13,7 @@
 
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_onyxc_int.h"
-
+#include "vpx_config.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,9 +29,13 @@ void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
 
 void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                        BLOCK_SIZE bsize);
-
+#if CONFIG_B10_EXT
+void vp9_build_inter_predictor(const uint16_t *src, int src_stride,
+                               uint16_t *dst, int dst_stride,
+#else
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
+#endif
                                const MV *mv_q3,
                                const struct scale_factors *sf,
                                int w, int h, int do_avg,
@@ -47,7 +51,11 @@ static INLINE int scaled_buffer_offset(int x_offset, int y_offset, int stride,
 }
 
 static INLINE void setup_pred_plane(struct buf_2d *dst,
+#if CONFIG_B10_EXT
+                                    uint16_t *src, int stride,
+#else
                                     uint8_t *src, int stride,
+#endif
                                     int mi_row, int mi_col,
                                     const struct scale_factors *scale,
                                     int subsampling_x, int subsampling_y) {
