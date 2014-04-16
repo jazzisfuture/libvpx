@@ -599,6 +599,12 @@ static vpx_codec_err_t encoder_destroy(vpx_codec_alg_priv_t *ctx) {
   return VPX_CODEC_OK;
 }
 
+// Convert duration parameter from stream timebase to microseconds
+static uint64_t get_duration_us(const vpx_rational_t *timebase,
+                                uint64_t duration) {
+  return 1000000 * duration * (uint64_t)timebase->num / (uint64_t)timebase->den;
+}
+
 static void pick_quickcompress_mode(vpx_codec_alg_priv_t  *ctx,
                                     unsigned long duration,
                                     unsigned long deadline) {
@@ -606,14 +612,10 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t  *ctx,
   MODE new_qc = ONE_PASS_BEST;
 
   if (deadline) {
-    // Convert duration parameter from stream timebase to microseconds
-    const uint64_t duration_us = (uint64_t)duration * 1000000 *
-                               (uint64_t)ctx->cfg.g_timebase.num /
-                               (uint64_t)ctx->cfg.g_timebase.den;
-
     // If the deadline is more that the duration this frame is to be shown,
     // use good quality mode. Otherwise use realtime mode.
-    new_qc = (deadline > duration_us) ? ONE_PASS_GOOD : REALTIME;
+    new_qc = (deadline > get_duration_us(&ctx->cfg.g_timebase, duration)) ?
+                 ONE_PASS_GOOD : REALTIME;
   }
 
   if (ctx->cfg.g_pass == VPX_RC_FIRST_PASS)
@@ -753,10 +755,8 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
     lib_flags = (flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
     /* vp9 use 10,000,000 ticks/second as time stamp */
-    dst_time_stamp = (pts * 10000000 * ctx->cfg.g_timebase.num)
-                     / ctx->cfg.g_timebase.den;
-    dst_end_time_stamp = (pts + duration) * 10000000 * ctx->cfg.g_timebase.num /
-                         ctx->cfg.g_timebase.den;
+    dst_time_stamp = get_duration_us(&ctx->cfg.g_timebase, pts);
+    dst_end_time_stamp = get_duration_us(&ctx->cfg.g_timebase, pts + duration);
 
     if (img != NULL) {
       res = image2yuvconfig(img, &sd);
