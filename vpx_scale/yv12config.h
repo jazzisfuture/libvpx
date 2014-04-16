@@ -17,6 +17,7 @@ extern "C" {
 
 #include "vpx/vpx_frame_buffer.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_config.h"
 
 #define VP8BORDERINPIXELS           32
 #define VP9INNERBORDERINPIXELS      96
@@ -40,13 +41,21 @@ typedef struct yv12_buffer_config {
   int   alpha_width;
   int   alpha_height;
   int   alpha_stride;
+#if CONFIG_B10_EXT
+  uint16_t *y_buffer;
+  uint16_t *u_buffer;
+  uint16_t *v_buffer;
+  uint16_t *alpha_buffer;
 
+  uint16_t *buffer_alloc;
+#else
   uint8_t *y_buffer;
   uint8_t *u_buffer;
   uint8_t *v_buffer;
   uint8_t *alpha_buffer;
 
   uint8_t *buffer_alloc;
+#endif
   int buffer_alloc_sz;
   int border;
   int frame_size;

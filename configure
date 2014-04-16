@@ -266,6 +266,7 @@ HAVE_LIST="
 EXPERIMENT_LIST="
     multiple_arf
     alpha
+    B10_EXT
 "
 CONFIG_LIST="
     external_build

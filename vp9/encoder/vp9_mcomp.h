@@ -14,6 +14,7 @@
 
 #include "vp9/encoder/vp9_block.h"
 #include "vp9/encoder/vp9_variance.h"
+#include "vpx_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +44,11 @@ int vp9_get_mvpred_var(const MACROBLOCK *x,
                        int use_mvcost);
 int vp9_get_mvpred_av_var(const MACROBLOCK *x,
                           const MV *best_mv, const MV *center_mv,
+#if CONFIG_B10_EXT
+                          const uint16_t *second_pred,
+#else
                           const uint8_t *second_pred,
+#endif
                           const vp9_variance_fn_ptr_t *vfp,
                           int use_mvcost);
 void vp9_init_dsmotion_compensation(MACROBLOCK *x, int stride);
@@ -101,7 +106,11 @@ typedef int (fractional_mv_step_comp_fp) (
     int iters_per_step,
     int *mvjcost, int *mvcost[2],
     int *distortion, unsigned int *sse1,
+#if CONFIG_B10_EXT
+    const uint16_t *second_pred,
+#else
     const uint8_t *second_pred,
+#endif
     int w, int h);
 
 extern fractional_mv_step_comp_fp vp9_find_best_sub_pixel_comp_tree;
@@ -133,7 +142,11 @@ int vp9_refining_search_8p_c(const MACROBLOCK *x,
                              int search_range,
                              const vp9_variance_fn_ptr_t *fn_ptr,
                              int *mvjcost, int *mvcost[2],
+#if CONFIG_B10_EXT
+                             const MV *center_mv, const uint16_t *second_pred,
+#else
                              const MV *center_mv, const uint8_t *second_pred,
+#endif
                              int w, int h);
 #ifdef __cplusplus
 }  // extern "C"
