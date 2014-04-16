@@ -336,7 +336,8 @@ static double simple_weight(const YV12_BUFFER_CONFIG *buf) {
 }
 
 // This function returns the maximum target rate per frame.
-static int frame_max_bits(const RATE_CONTROL *rc, const VP9_CONFIG *oxcf) {
+static int frame_max_bits(const RATE_CONTROL *rc,
+                          const VP9EncoderConfig *oxcf) {
   int64_t max_bits = ((int64_t)rc->avg_frame_bandwidth *
                           (int64_t)oxcf->two_pass_vbrmax_section) / 100;
   if (max_bits < 0)
@@ -941,7 +942,7 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   FIRSTPASS_STATS this_frame;
   const FIRSTPASS_STATS *start_pos;
   struct twopass_rc *twopass = &cpi->twopass;
-  const VP9_CONFIG *const oxcf = &cpi->oxcf;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   const int is_spatial_svc = (svc->number_spatial_layers > 1) &&
                              (svc->number_temporal_layers == 1);
   double frame_rate;
@@ -1401,7 +1402,7 @@ void define_fixed_arf_period(VP9_COMP *cpi) {
 // Analyse and define a gf/arf group.
 static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   RATE_CONTROL *const rc = &cpi->rc;
-  VP9_CONFIG *const oxcf = &cpi->oxcf;
+  VP9EncoderConfig *const oxcf = &cpi->oxcf;
   struct twopass_rc *const twopass = &cpi->twopass;
   FIRSTPASS_STATS next_frame = { 0 };
   const FIRSTPASS_STATS *start_pos;
