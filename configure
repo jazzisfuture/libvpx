@@ -266,6 +266,7 @@ HAVE_LIST="
 EXPERIMENT_LIST="
     multiple_arf
     alpha
+    highbitdepth
 "
 CONFIG_LIST="
     external_build

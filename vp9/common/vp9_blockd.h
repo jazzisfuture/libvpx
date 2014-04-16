@@ -175,7 +175,11 @@ enum { MAX_MB_PLANE = 3 };
 #endif
 
 struct buf_2d {
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *buf;
+#else
   uint8_t *buf;
+#endif
   int stride;
 };
 
@@ -225,11 +229,19 @@ typedef struct macroblockd {
   const YV12_BUFFER_CONFIG *cur_buf;
 
   /* mc buffer */
+#if CONFIG_HIGHBITDEPTH
+  DECLARE_ALIGNED(16, uint16_t, mc_buf[80 * 2 * 80 * 2]);
+#else
   DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
+#endif
 
   int lossless;
   /* Inverse transform function pointers. */
+#if CONFIG_HIGHBITDEPTH
+  void (*itxm_add)(const int16_t *input, uint16_t *dest, int stride, int eob);
+#else
   void (*itxm_add)(const int16_t *input, uint8_t *dest, int stride, int eob);
+#endif
 
   int corrupted;
 

@@ -20,6 +20,10 @@
 
 static INLINE int fdct_round_shift(int input) {
   int rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
+#if CONFIG_HIGHBITDEPTH
+ /* if(rv>=INT16_MAX)
+       printf("rv %d\r\n",rv);*/
+#endif
   assert(INT16_MIN <= rv && rv <= INT16_MAX);
   return rv;
 }
@@ -27,6 +31,18 @@ static INLINE int fdct_round_shift(int input) {
 static void fdct4(const int16_t *input, int16_t *output) {
   int16_t step[4];
   int temp1, temp2;
+#if CONFIG_HIGHBITDEPTH
+ /*
+  int k,l;
+        printf("fdct4--------------------\r\n");
+    for(k=0;k<4;k++){
+        for(l=0;l<4;l++){
+            printf("%d ",input[k*4+l]);
+        }
+        printf("\r\n");
+      }
+   */
+#endif
 
   step[0] = input[0] + input[3];
   step[1] = input[1] + input[2];
@@ -55,6 +71,20 @@ void vp9_fdct4x4_c(const int16_t *input, int16_t *output, int stride) {
   int16_t intermediate[4 * 4];
   const int16_t *in = input;
   int16_t *out = intermediate;
+#if CONFIG_HIGHBITDEPTH
+ /* 
+  int k,l;
+        printf("vp9_fdct4x4_c--------------------\r\n");
+    for(k=0;k<4;k++){
+        for(l=0;l<4;l++){
+            printf("%d ",input[k*stride+l]);
+        }
+        printf("\r\n");
+      }
+      */
+#endif
+
+
   // Do the two transform/transpose passes
   for (pass = 0; pass < 2; ++pass) {
     /*canbe16*/ int input[4];
@@ -157,6 +187,7 @@ static const transform_2d FHT_4[] = {
 
 void vp9_fht4x4_c(const int16_t *input, int16_t *output,
                   int stride, int tx_type) {
+      
   if (tx_type == DCT_DCT) {
     vp9_fdct4x4_c(input, output, stride);
   } else {
@@ -1008,6 +1039,17 @@ static INLINE int half_round_shift(int input) {
 
 static void fdct32(const int *input, int *output, int round) {
   int step[32];
+#if CONFIG_HIGHBITDEPTH
+  /*int k,l;
+      printf("32x32: \r\n");
+      for(k=0;k<32;k++){
+        for(l=0;l<32;l++){
+            printf("%d ",input[k*32+l]);
+        }
+        printf("\r\n");
+      }*/
+#endif
+
   // Stage 1
   step[0] = input[0] + input[(32 - 1)];
   step[1] = input[1] + input[(32 - 2)];

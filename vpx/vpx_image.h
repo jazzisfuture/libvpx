@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "vpx_config.h"
   /*!\brief Current ABI version number
    *
    * \internal
@@ -102,6 +102,12 @@ extern "C" {
     /* Image storage dimensions */
     unsigned int  w;   /**< Stored image width */
     unsigned int  h;   /**< Stored image height */
+    
+    #if CONFIG_HIGHBITDEPTH
+    unsigned char in_bitdepth;
+    unsigned char path_bitdepth;
+    unsigned char out_bitdepth;
+    #endif
 
     /* Image display dimensions */
     unsigned int  d_w;   /**< Displayed image width */
@@ -124,7 +130,12 @@ extern "C" {
 #define PLANE_V          VPX_PLANE_V
 #define PLANE_ALPHA      VPX_PLANE_ALPHA
 #endif
+
+#if CONFIG_HIGHBITDEPTH
+    unsigned short *planes[4];  /**< pointer to the top left pixel for each plane */
+#else
     unsigned char *planes[4];  /**< pointer to the top left pixel for each plane */
+#endif
     int      stride[4];  /**< stride between rows for each plane */
 
     int     bps; /**< bits per sample (for packed formats) */
@@ -136,7 +147,11 @@ extern "C" {
                          *   with this image. */
 
     /* The following members should be treated as private. */
+#if CONFIG_HIGHBITDEPTH
+    unsigned short *img_data;       /**< private */
+#else
     unsigned char *img_data;       /**< private */
+#endif
     int      img_data_owner; /**< private */
     int      self_allocd;    /**< private */
 
@@ -199,7 +214,12 @@ extern "C" {
                             unsigned int d_w,
                             unsigned int d_h,
                             unsigned int align,
-                            unsigned char      *img_data);
+#if CONFIG_HIGHBITDEPTH
+                            unsigned short *img_data
+#else
+                            unsigned char  *img_data
+#endif
+                            );
 
 
   /*!\brief Set the rectangle identifying the displayed portion of the image

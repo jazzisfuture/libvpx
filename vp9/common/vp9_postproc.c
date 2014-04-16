@@ -130,21 +130,41 @@ const short vp9_rv[] = {
   0, 9, 5, 5, 11, 10, 13, 9, 10, 13,
 };
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_post_proc_down_and_across_c(const uint16_t *src_ptr,
+#else
 void vp9_post_proc_down_and_across_c(const uint8_t *src_ptr,
+#endif
+#if CONFIG_HIGHBITDEPTH
+                                     uint16_t *dst_ptr,
+#else
                                      uint8_t *dst_ptr,
+#endif
                                      int src_pixels_per_line,
                                      int dst_pixels_per_line,
                                      int rows,
                                      int cols,
                                      int flimit) {
+#if CONFIG_HIGHBITDEPTH
+  uint16_t const *p_src;
+#else
   uint8_t const *p_src;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *p_dst;
+#else
   uint8_t *p_dst;
+#endif
   int row;
   int col;
   int i;
   int v;
   int pitch = src_pixels_per_line;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t d[8];
+#else
   uint8_t d[8];
+#endif
   (void)dst_pixels_per_line;
 
   for (row = 0; row < rows; row++) {
@@ -213,12 +233,24 @@ static int q2mbl(int x) {
   return x * x / 3;
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_mbpost_proc_across_ip_c(uint16_t *src, int pitch,
+#else
 void vp9_mbpost_proc_across_ip_c(uint8_t *src, int pitch,
+#endif
                                  int rows, int cols, int flimit) {
   int r, c, i;
 
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *s = src;
+#else
   uint8_t *s = src;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16_t d[16];
+#else
   uint8_t d[16];
+#endif
 
 
   for (r = 0; r < rows; r++) {
@@ -251,16 +283,28 @@ void vp9_mbpost_proc_across_ip_c(uint8_t *src, int pitch,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_mbpost_proc_down_c(uint16_t *dst, int pitch,
+#else
 void vp9_mbpost_proc_down_c(uint8_t *dst, int pitch,
+#endif
                             int rows, int cols, int flimit) {
   int r, c, i;
   const short *rv3 = &vp9_rv[63 & rand()]; // NOLINT
 
   for (c = 0; c < cols; c++) {
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *s = &dst[c];
+#else
     uint8_t *s = &dst[c];
+#endif
     int sumsq = 0;
     int sum   = 0;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t d[16];
+#else
     uint8_t d[16];
+#endif
     const short *rv2 = rv3 + ((c * 17) & 127);
 
     for (i = -8; i <= 6; i++) {
@@ -317,7 +361,11 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                         + 0.0065 + 0.5);
   int i;
 
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+#else
   const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+#endif
                                   src->alpha_buffer};
   const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                               src->alpha_stride};
@@ -326,7 +374,11 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
   const int src_heights[4] = {src->y_height, src->uv_height, src->uv_height,
                               src->alpha_height};
 
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+#else
   uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+#endif
                             dst->alpha_buffer};
   const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
                               dst->alpha_stride};
@@ -343,7 +395,11 @@ void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                         + 0.0065 + 0.5);
   int i;
 
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+#else
   const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+#endif
                                   src->alpha_buffer};
   const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                               src->alpha_stride};
@@ -352,19 +408,31 @@ void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
   const int src_heights[4] = {src->y_height, src->uv_height, src->uv_height,
                               src->alpha_height};
 
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+#else
   uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+#endif
                             dst->alpha_buffer};
   const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
                               dst->alpha_stride};
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     const int src_stride = src_strides[i];
+#if CONFIG_HIGHBITDEPTH
+    const uint16_t *const src = srcs[i] + 2 * src_stride + 2;
+#else
     const uint8_t *const src = srcs[i] + 2 * src_stride + 2;
+#endif
     const int src_width = src_widths[i] - 4;
     const int src_height = src_heights[i] - 4;
 
     const int dst_stride = dst_strides[i];
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *const dst = dsts[i] + 2 * dst_stride + 2;
+#else
     uint8_t *const dst = dsts[i] + 2 * dst_stride + 2;
+#endif
 
     vp9_post_proc_down_and_across(src, dst, src_stride, dst_stride,
                                   src_height, src_width, ppl);
@@ -425,7 +493,11 @@ static void fillrd(struct postproc_state *state, int q, int a) {
   state->last_noise = a;
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_plane_add_noise_c(uint16_t *start, char *noise,
+#else
 void vp9_plane_add_noise_c(uint8_t *start, char *noise,
+#endif
                            char blackclamp[16],
                            char whiteclamp[16],
                            char bothclamp[16],
@@ -433,7 +505,11 @@ void vp9_plane_add_noise_c(uint8_t *start, char *noise,
   unsigned int i, j;
 
   for (i = 0; i < height; i++) {
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *pos = start + i * pitch;
+#else
     uint8_t *pos = start + i * pitch;
+#endif
     char  *ref = (char *)(noise + (rand() & 0xff));  // NOLINT
 
     for (j = 0; j < width; j++) {
@@ -452,7 +528,11 @@ void vp9_plane_add_noise_c(uint8_t *start, char *noise,
  * edges unblended to give distinction to macro blocks in areas
  * filled with the same color block.
  */
+#if CONFIG_HIGHBITDEPTH
+void vp9_blend_mb_inner_c(uint16_t *y, uint16_t *u, uint16_t *v,
+#else
 void vp9_blend_mb_inner_c(uint8_t *y, uint8_t *u, uint8_t *v,
+#endif
                           int y1, int u1, int v1, int alpha, int stride) {
   int i, j;
   int y1_const = y1 * ((1 << 16) - alpha);
@@ -485,7 +565,11 @@ void vp9_blend_mb_inner_c(uint8_t *y, uint8_t *u, uint8_t *v,
 /* Blend only the edge of the macro block.  Leave center
  * unblended to allow for other visualizations to be layered.
  */
+#if CONFIG_HIGHBITDEPTH
+void vp9_blend_mb_outer_c(uint16_t *y, uint16_t *u, uint16_t *v,
+#else
 void vp9_blend_mb_outer_c(uint8_t *y, uint8_t *u, uint8_t *v,
+#endif
                           int y1, int u1, int v1, int alpha, int stride) {
   int i, j;
   int y1_const = y1 * ((1 << 16) - alpha);
@@ -540,7 +624,11 @@ void vp9_blend_mb_outer_c(uint8_t *y, uint8_t *u, uint8_t *v,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_blend_b_c(uint16_t *y, uint16_t *u, uint16_t *v,
+#else
 void vp9_blend_b_c(uint8_t *y, uint8_t *u, uint8_t *v,
+#endif
                    int y1, int u1, int v1, int alpha, int stride) {
   int i, j;
   int y1_const = y1 * ((1 << 16) - alpha);
@@ -659,7 +747,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   if (flags & VP9D_DEBUG_TXT_MBLK_MODES) {
     int i, j;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *y_ptr;
+#else
     uint8_t *y_ptr;
+#endif
     int mb_rows = ppbuf->y_height >> 4;
     int mb_cols = ppbuf->y_width  >> 4;
     int mb_index = 0;
@@ -686,7 +778,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   if (flags & VP9D_DEBUG_TXT_DC_DIFF) {
     int i, j;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *y_ptr;
+#else
     uint8_t *y_ptr;
+#endif
     int mb_rows = ppbuf->y_height >> 4;
     int mb_cols = ppbuf->y_width  >> 4;
     int mb_index = 0;
@@ -729,7 +825,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
   if ((flags & VP9D_DEBUG_DRAW_MV) && ppflags->display_mv_flag) {
     int width  = ppbuf->y_width;
     int height = ppbuf->y_height;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *y_buffer = ppbuf->y_buffer;
+#else
     uint8_t *y_buffer = ppbuf->y_buffer;
+#endif
     int y_stride = ppbuf->y_stride;
     MODE_INFO *mi = cm->mi;
     int x0, y0;
@@ -871,9 +971,21 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     int y, x;
     int width  = ppbuf->y_width;
     int height = ppbuf->y_height;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *y_ptr = ppbuf->y_buffer;
+#else
     uint8_t *y_ptr = ppbuf->y_buffer;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *u_ptr = ppbuf->u_buffer;
+#else
     uint8_t *u_ptr = ppbuf->u_buffer;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *v_ptr = ppbuf->v_buffer;
+#else
     uint8_t *v_ptr = ppbuf->v_buffer;
+#endif
     int y_stride = ppbuf->y_stride;
     MODE_INFO *mi = cm->mi;
 
@@ -885,7 +997,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
             ((ppflags->display_mb_modes_flag & I4X4_PRED) ||
              ppflags->display_b_modes_flag)) {
           int by, bx;
+#if CONFIG_HIGHBITDEPTH
+          uint16_t *yl, *ul, *vl;
+#else
           uint8_t *yl, *ul, *vl;
+#endif
           union b_mode_info *bmi = mi->bmi;
 
           yl = y_ptr + x;
@@ -935,9 +1051,21 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     int y, x;
     int width  = ppbuf->y_width;
     int height = ppbuf->y_height;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *y_ptr = ppbuf->y_buffer;
+#else
     uint8_t *y_ptr = ppbuf->y_buffer;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *u_ptr = ppbuf->u_buffer;
+#else
     uint8_t *u_ptr = ppbuf->u_buffer;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *v_ptr = ppbuf->v_buffer;
+#else
     uint8_t *v_ptr = ppbuf->v_buffer;
+#endif
     int y_stride = ppbuf->y_stride;
     MODE_INFO *mi = cm->mi;
 

@@ -46,22 +46,38 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
                                      unsigned int  d_h,
                                      unsigned int  buf_align,
                                      unsigned int  stride_align,
-                                     unsigned char      *img_data) {
+#if CONFIG_HIGHBITDEPTH
+                                     unsigned short *img_data
+#else
+                                     unsigned char  *img_data
+#endif
+        ){
 
   unsigned int  h, w, s, xcs, ycs, bps;
   int           align;
 
   /* Treat align==0 like align==1 */
+#if CONFIG_HIGHBITDEPTH
+  buf_align/=2;
+  if (!buf_align)
+    buf_align = 1; //yuebing:here the align is in term of short
+#else
   if (!buf_align)
     buf_align = 1;
-
+#endif
   /* Validate alignment (must be power of 2) */
   if (buf_align & (buf_align - 1))
     goto fail;
 
   /* Treat align==0 like align==1 */
+#if CONFIG_HIGHBITDEPTH
+  stride_align/=2;
+  if (!stride_align)
+    stride_align = 1; // yuebing:here the align is in term ofr short.
+#else
   if (!stride_align)
     stride_align = 1;
+#endif
 
   /* Validate alignment (must be power of 2) */
   if (stride_align & (stride_align - 1))
@@ -98,7 +114,9 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
       bps = 16;
       break;
   }
-
+#if CONFIG_HIGHBITDEPTH
+    bps*=2;
+#endif
   /* Get chroma shift values for this format */
   switch (fmt) {
     case VPX_IMG_FMT_I420:
@@ -129,9 +147,13 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
   w = (d_w + align) & ~align;
   align = (1 << ycs) - 1;
   h = (d_h + align) & ~align;
+#if CONFIG_HIGHBITDEPTH
+  s = (fmt & VPX_IMG_FMT_PLANAR) ? w : (bps) * w / 16;
+  s = (s + stride_align - 1) & ~(stride_align - 1);
+#else
   s = (fmt & VPX_IMG_FMT_PLANAR) ? w : bps * w / 8;
   s = (s + stride_align - 1) & ~(stride_align - 1);
-
+#endif
   /* Allocate the new image */
   if (!img) {
     img = (vpx_image_t *)calloc(1, sizeof(vpx_image_t));
@@ -147,8 +169,13 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
   img->img_data = img_data;
 
   if (!img_data) {
+#if CONFIG_HIGHBITDEPTH
+    img->img_data = img_buf_memalign(buf_align, ((fmt & VPX_IMG_FMT_PLANAR) ?
+                                                 h * s * bps / 8 : h * s*2));
+#else
     img->img_data = img_buf_memalign(buf_align, ((fmt & VPX_IMG_FMT_PLANAR) ?
                                                  h * s * bps / 8 : h * s));
+#endif
     img->img_data_owner = 1;
   }
 
@@ -165,7 +192,6 @@ static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
   /* Calculate strides */
   img->stride[VPX_PLANE_Y] = img->stride[VPX_PLANE_ALPHA] = s;
   img->stride[VPX_PLANE_U] = img->stride[VPX_PLANE_V] = s >> xcs;
-
   /* Default viewport to entire image */
   if (!vpx_img_set_rect(img, 0, 0, d_w, d_h))
     return img;
@@ -188,7 +214,12 @@ vpx_image_t *vpx_img_wrap(vpx_image_t  *img,
                           unsigned int  d_w,
                           unsigned int  d_h,
                           unsigned int  stride_align,
-                          unsigned char       *img_data) {
+#if CONFIG_HIGHBITDEPTH
+                          unsigned short *img_data
+#else
+                          unsigned char  *img_data
+#endif
+                          ) {
   /* By setting buf_align = 1, we don't change buffer alignment in this
    * function. */
   return img_alloc_helper(img, fmt, d_w, d_h, 1, stride_align, img_data);
@@ -199,8 +230,11 @@ int vpx_img_set_rect(vpx_image_t  *img,
                      unsigned int  y,
                      unsigned int  w,
                      unsigned int  h) {
+#if CONFIG_HIGHBITDEPTH
+  unsigned short     *data;
+#else
   unsigned char      *data;
-
+#endif
   if (x + w <= img->w && y + h <= img->h) {
     img->d_w = w;
     img->d_h = h;

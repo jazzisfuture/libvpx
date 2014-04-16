@@ -60,8 +60,13 @@ void SetUseReferenceImpl(int use) {
 
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SCALEROWDOWN2_NEON
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown2_NEON(const uint16* src_ptr, int  src_stride,
+                        uint16* dst, int dst_width) {
+#else
 void ScaleRowDown2_NEON(const uint8* src_ptr, int  src_stride,
                         uint8* dst, int dst_width) {
+#endif
   asm volatile (
     "1:                                        \n"
     "vld2.u8    {q0,q1}, [%0]!                 \n"  // load even pixels into q0, odd into q1
@@ -76,8 +81,13 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int  src_stride,
   );
 }
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown2Int_NEON(const uint16* src_ptr, int src_stride,
+                           uint16* dst, int dst_width) {
+#else
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
+#endif
   asm volatile (
     "add        %1, %0                         \n"  // change the stride to row 2 pointer
     "1:                                        \n"
@@ -102,8 +112,13 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN4_NEON
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4_NEON(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4_NEON(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "1:                                        \n"
     "vld2.u8    {d0, d1}, [%0]!                \n"
@@ -121,8 +136,13 @@ static void ScaleRowDown4_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4Int_NEON(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "add        r4, %0, %3                     \n"
     "add        r5, r4, %3                     \n"
@@ -160,8 +180,13 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
 // Down scale from 4 to 3 pixels.  Use the neon multilane read/write
 //  to load up the every 4th pixel into a 4 different registers.
 // Point samples 32 pixels to 24 pixels.
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_NEON(const uint16* src_ptr, int src_stride,
+                                uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_NEON(const uint8* src_ptr, int src_stride,
                                 uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "1:                                        \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
@@ -177,8 +202,13 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_0_Int_NEON(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
@@ -232,8 +262,13 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_1_Int_NEON(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
@@ -272,9 +307,17 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN38_NEON
+#if CONFIG_HIGHBITDEPTH
+const uint16 shuf38[16] __attribute__ ((aligned(16))) =
+#else
 const uint8 shuf38[16] __attribute__ ((aligned(16))) =
+#endif
   { 0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0 };
+#if CONFIG_HIGHBITDEPTH
+const uint16 shuf38_2[16] __attribute__ ((aligned(16))) =
+#else
 const uint8 shuf38_2[16] __attribute__ ((aligned(16))) =
+#endif
   { 0, 8, 16, 2, 10, 17, 4, 12, 18, 6, 14, 19, 0, 0, 0, 0 };
 const unsigned short mult38_div6[8] __attribute__ ((aligned(16))) =
   { 65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12,
@@ -284,8 +327,13 @@ const unsigned short mult38_div9[8] __attribute__ ((aligned(16))) =
     65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18 };
 
 // 32 -> 12
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_NEON(const uint16* src_ptr, int src_stride,
+                                uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_NEON(const uint8* src_ptr, int src_stride,
                                 uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "vld1.u8      {q3}, [%3]                   \n"
     "1:                                        \n"
@@ -305,8 +353,13 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int src_stride,
 }
 
 // 32x3 -> 12x1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_3_Int_NEON(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
     "vld1.u8      {q14}, [%5]                  \n"
@@ -414,8 +467,13 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 // 32x2 -> 12x1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_2_Int_NEON(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
     "vld1.u8      {q14}, [%5]                  \n"
@@ -540,47 +598,83 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 
 // Offsets for source bytes 0 to 9
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf0[16]) =
+#else
 TALIGN16(const uint8, shuf0[16]) =
+#endif
   { 0, 1, 3, 4, 5, 7, 8, 9, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 11 to 20 with 8 subtracted = 3 to 12.
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf1[16]) =
+#else
 TALIGN16(const uint8, shuf1[16]) =
+#endif
   { 3, 4, 5, 7, 8, 9, 11, 12, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf2[16]) =
+#else
 TALIGN16(const uint8, shuf2[16]) =
+#endif
   { 5, 7, 8, 9, 11, 12, 13, 15, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 0 to 10
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf01[16]) =
+#else
 TALIGN16(const uint8, shuf01[16]) =
+#endif
   { 0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10 };
 
 // Offsets for source bytes 10 to 21 with 8 subtracted = 3 to 13.
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf11[16]) =
+#else
 TALIGN16(const uint8, shuf11[16]) =
+#endif
   { 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13 };
 
 // Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf21[16]) =
+#else
 TALIGN16(const uint8, shuf21[16]) =
+#endif
   { 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13, 13, 14, 14, 15 };
 
 // Coefficients for source bytes 0 to 10
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, madd01[16]) =
+#else
 TALIGN16(const uint8, madd01[16]) =
+#endif
   { 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2 };
 
 // Coefficients for source bytes 10 to 21
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, madd11[16]) =
+#else
 TALIGN16(const uint8, madd11[16]) =
+#endif
   { 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1 };
 
 // Coefficients for source bytes 21 to 31
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, madd21[16]) =
+#else
 TALIGN16(const uint8, madd21[16]) =
+#endif
   { 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3 };
 
 // Coefficients for source bytes 21 to 31
@@ -589,21 +683,37 @@ TALIGN16(const int16, round34[8]) =
   { 2, 2, 2, 2, 2, 2, 2, 2 };
 
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf38a[16]) =
+#else
 TALIGN16(const uint8, shuf38a[16]) =
+#endif
   { 0, 3, 6, 8, 11, 14, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shuf38b[16]) =
+#else
 TALIGN16(const uint8, shuf38b[16]) =
+#endif
   { 128, 128, 128, 128, 128, 128, 0, 3, 6, 8, 11, 14, 128, 128, 128, 128 };
 
 // Arrange words 0,3,6 into 0,1,2
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shufac0[16]) =
+#else
 TALIGN16(const uint8, shufac0[16]) =
+#endif
   { 0, 1, 6, 7, 12, 13, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Arrange words 0,3,6 into 3,4,5
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shufac3[16]) =
+#else
 TALIGN16(const uint8, shufac3[16]) =
+#endif
   { 128, 128, 128, 128, 128, 128, 0, 1, 6, 7, 12, 13, 128, 128, 128, 128 };
 
 // Scaling values for boxes of 3x3 and 2x3
@@ -613,17 +723,29 @@ TALIGN16(const uint16, scaleac3[8]) =
 
 // Arrange first value for pixels 0,1,2,3,4,5
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shufab0[16]) =
+#else
 TALIGN16(const uint8, shufab0[16]) =
+#endif
   { 0, 128, 3, 128, 6, 128, 8, 128, 11, 128, 14, 128, 128, 128, 128, 128 };
 
 // Arrange second value for pixels 0,1,2,3,4,5
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shufab1[16]) =
+#else
 TALIGN16(const uint8, shufab1[16]) =
+#endif
   { 1, 128, 4, 128, 7, 128, 9, 128, 12, 128, 15, 128, 128, 128, 128, 128 };
 
 // Arrange third value for pixels 0,1,2,3,4,5
 //extern "C"
+#if CONFIG_HIGHBITDEPTH
+TALIGN16(const uint16, shufab2[16]) =
+#else
 TALIGN16(const uint8, shufab2[16]) =
+#endif
   { 2, 128, 5, 128, 128, 128, 10, 128, 13, 128, 128, 128, 128, 128, 128, 128 };
 
 // Scaling values for boxes of 3x2 and 2x2
@@ -638,8 +760,13 @@ TALIGN16(const uint16, scaleab2[8]) =
 // Reads 32 pixels, throws half away and writes 16 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown2_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     mov        eax, [esp + 4]        // src_ptr
                                      // src_stride ignored
@@ -666,8 +793,13 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown2Int_SSE2(const uint16* src_ptr, int src_stride,
+                           uint16* dst_ptr, int dst_width) {
+#else
 void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]    // src_ptr
@@ -710,8 +842,13 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 // Point samples 32 pixels to 8 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -742,8 +879,13 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x4 rectangle to 8x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4Int_SSE2(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -801,8 +943,13 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 // Point samples 32 pixels to 4 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -834,8 +981,13 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x8 rectangle to 4x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8Int_SSE2(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -907,8 +1059,13 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_SSSE3(const uint16* src_ptr, int src_stride,
+                                 uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -957,8 +1114,13 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_1_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -1014,8 +1176,13 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_0_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -1076,8 +1243,13 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 32 pixels to 12
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_SSSE3(const uint16* src_ptr, int src_stride,
+                                 uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -1109,8 +1281,13 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 16x3 pixels to 6x1 with interpolation
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_3_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -1173,8 +1350,13 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 16x2 pixels to 6x1 with interpolation
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_2_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   __asm {
     pushad
     mov        esi, [esp + 32 + 4]   // src_ptr
@@ -1218,7 +1400,11 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Reads 8xN bytes and produces 16 shorts at a time.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleAddRows_SSE2(const uint16* src_ptr, int src_stride,
+#else
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+#endif
                               uint16* dst_ptr, int src_width,
                               int src_height) {
   __asm {
@@ -1268,7 +1454,11 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
 #define HAS_SCALEFILTERROWS_SSE2
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterRows_SSE2(uint16* dst_ptr, const uint16* src_ptr,
+#else
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                                  int src_stride, int dst_width,
                                  int source_y_fraction) {
   __asm {
@@ -1359,7 +1549,11 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version.
 #define HAS_SCALEFILTERROWS_SSSE3
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterRows_SSSE3(uint16* dst_ptr, const uint16* src_ptr,
+#else
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                                   int src_stride, int dst_width,
                                   int source_y_fraction) {
   __asm {
@@ -1442,7 +1636,11 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterCols34_SSSE3(uint16* dst_ptr, const uint16* src_ptr,
+#else
 static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                                     int dst_width) {
   __asm {
     mov        edx, [esp + 4]    // dst_ptr
@@ -1492,8 +1690,13 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
 #define HAS_SCALEROWDOWN2_SSE2
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown2_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
@@ -1516,8 +1719,13 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown2Int_SSE2(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
@@ -1551,8 +1759,13 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN4_SSE2
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrld      $0x18,%%xmm5                     \n"
@@ -1576,8 +1789,13 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4Int_SSE2(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   intptr_t temp = 0;
   asm volatile (
   "pcmpeqb    %%xmm7,%%xmm7                    \n"
@@ -1630,8 +1848,13 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN8_SSE2
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8_SSE2(const uint16* src_ptr, int src_stride,
+                               uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlq      $0x38,%%xmm5                     \n"
@@ -1657,8 +1880,13 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #if defined(__i386__)
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown8Int_SSE2(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown8Int_SSE2)
     "pusha                                     \n"
@@ -1721,8 +1949,13 @@ void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 // fpic is used for magiccam plugin
 #if !defined(__PIC__)
 #define HAS_SCALEROWDOWN34_SSSE3
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown34_SSSE3(const uint16* src_ptr, int src_stride,
+                                     uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown34_SSSE3)
     "pusha                                     \n"
@@ -1752,8 +1985,13 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown34_1_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                           uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown34_1_Int_SSSE3)
     "pusha                                     \n"
@@ -1806,8 +2044,13 @@ void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown34_0_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                           uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown34_0_Int_SSSE3)
     "pusha                                     \n"
@@ -1863,8 +2106,13 @@ void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 );
 
 #define HAS_SCALEROWDOWN38_SSSE3
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown38_SSSE3(const uint16* src_ptr, int src_stride,
+                                     uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown38_SSSE3)
     "pusha                                     \n"
@@ -1892,8 +2140,13 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown38_3_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                           uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown38_3_Int_SSSE3)
     "pusha                                     \n"
@@ -1949,8 +2202,13 @@ void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleRowDown38_2_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                           uint16* dst_ptr, int dst_width);
+#else
 void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
+#endif
   asm(
     DECLARE_FUNCTION(ScaleRowDown38_2_Int_SSSE3)
     "pusha                                     \n"
@@ -1988,7 +2246,11 @@ void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 #endif // __PIC__
 
 #define HAS_SCALEADDROWS_SSE2
+#if CONFIG_HIGHBITDEPTH
+void ScaleAddRows_SSE2(const uint16* src_ptr, int src_stride,
+#else
 void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+#endif
                                   uint16* dst_ptr, int src_width,
                                   int src_height);
   asm(
@@ -2032,8 +2294,13 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2
+#if CONFIG_HIGHBITDEPTH
+void ScaleFilterRows_SSE2(uint16* dst_ptr,
+                                     const uint16* src_ptr, int src_stride,
+#else
 void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                      const uint8* src_ptr, int src_stride,
+#endif
                                      int dst_width, int source_y_fraction);
   asm(
     DECLARE_FUNCTION(ScaleFilterRows_SSE2)
@@ -2120,8 +2387,13 @@ void ScaleFilterRows_SSE2(uint8* dst_ptr,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3
+#if CONFIG_HIGHBITDEPTH
+void ScaleFilterRows_SSSE3(uint16* dst_ptr,
+                                      const uint16* src_ptr, int src_stride,
+#else
 void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                       const uint8* src_ptr, int src_stride,
+#endif
                                       int dst_width, int source_y_fraction);
   asm(
     DECLARE_FUNCTION(ScaleFilterRows_SSSE3)
@@ -2196,8 +2468,13 @@ void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 );
 
 #elif defined(__x86_64__)
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8Int_SSE2(const uint16* src_ptr, int src_stride,
+                                  uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "lea        (%3,%3,2),%%r10                  \n"
   "pxor       %%xmm7,%%xmm7                    \n"
@@ -2255,8 +2532,13 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN34_SSSE3
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_SSSE3(const uint16* src_ptr, int src_stride,
+                                 uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%3),%%xmm3                      \n"
   "movdqa     (%4),%%xmm4                      \n"
@@ -2286,8 +2568,13 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_1_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%4),%%xmm2                      \n"  // _shuf01
   "movdqa     (%5),%%xmm3                      \n"  // _shuf11
@@ -2343,8 +2630,13 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_0_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%4),%%xmm2                      \n"  // _shuf01
   "movdqa     (%5),%%xmm3                      \n"  // _shuf11
@@ -2404,8 +2696,13 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN38_SSSE3
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_SSSE3(const uint16* src_ptr, int src_stride,
+                                 uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%3),%%xmm4                      \n"
   "movdqa     (%4),%%xmm5                      \n"
@@ -2431,8 +2728,13 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_3_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
@@ -2488,8 +2790,13 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_2_Int_SSSE3(const uint16* src_ptr, int src_stride,
+                                       uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
+#endif
   asm volatile (
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
@@ -2527,7 +2834,11 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEADDROWS_SSE2
+#if CONFIG_HIGHBITDEPTH
+static void ScaleAddRows_SSE2(const uint16* src_ptr, int src_stride,
+#else
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+#endif
                               uint16* dst_ptr, int src_width,
                               int src_height) {
   asm volatile (
@@ -2568,8 +2879,13 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterRows_SSE2(uint16* dst_ptr,
+                                 const uint16* src_ptr, int src_stride,
+#else
 static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  const uint8* src_ptr, int src_stride,
+#endif
                                  int dst_width, int source_y_fraction) {
   if (source_y_fraction == 0) {
     asm volatile (
@@ -2659,8 +2975,13 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterRows_SSSE3(uint16* dst_ptr,
+                                  const uint16* src_ptr, int src_stride,
+#else
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                   const uint8* src_ptr, int src_stride,
+#endif
                                   int dst_width, int source_y_fraction) {
   source_y_fraction >>= 1;
   if (source_y_fraction == 0) {
@@ -2742,8 +3063,13 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 #endif
 
 // CPU agnostic row functions
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown2_C(const uint16* src_ptr, int src_stride,
+                            uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown2_C(const uint8* src_ptr, int src_stride,
                             uint8* dst, int dst_width) {
+#endif
   int x;
   for (x = 0; x < dst_width; ++x) {
     *dst++ = *src_ptr;
@@ -2751,8 +3077,13 @@ static void ScaleRowDown2_C(const uint8* src_ptr, int src_stride,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown2Int_C(const uint16* src_ptr, int src_stride,
+                               uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
+#endif
   int x;
   for (x = 0; x < dst_width; ++x) {
     *dst++ = (src_ptr[0] + src_ptr[1] +
@@ -2761,8 +3092,13 @@ static void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4_C(const uint16* src_ptr, int src_stride,
+                            uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown4_C(const uint8* src_ptr, int src_stride,
                             uint8* dst, int dst_width) {
+#endif
   int x;
   for (x = 0; x < dst_width; ++x) {
     *dst++ = *src_ptr;
@@ -2770,8 +3106,13 @@ static void ScaleRowDown4_C(const uint8* src_ptr, int src_stride,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown4Int_C(const uint16* src_ptr, int src_stride,
+                               uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
+#endif
   int x;
   for (x = 0; x < dst_width; ++x) {
     *dst++ = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
@@ -2794,8 +3135,13 @@ static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
 #define kMaxOutputWidth   640
 #define kMaxRow12         1280
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8_C(const uint16* src_ptr, int src_stride,
+                            uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown8_C(const uint8* src_ptr, int src_stride,
                             uint8* dst, int dst_width) {
+#endif
   int x;
   for (x = 0; x < dst_width; ++x) {
     *dst++ = *src_ptr;
@@ -2805,9 +3151,18 @@ static void ScaleRowDown8_C(const uint8* src_ptr, int src_stride,
 
 // Note calling code checks width is less than max and if not
 // uses ScaleRowDown8_C instead.
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown8Int_C(const uint16* src_ptr, int src_stride,
+                               uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  ALIGN16(uint16 src_row[kMaxRow12 * 2]);
+#else
   ALIGN16(uint8 src_row[kMaxRow12 * 2]);
+#endif
   assert(dst_width <= kMaxOutputWidth);
   ScaleRowDown4Int_C(src_ptr, src_stride, src_row, dst_width * 2);
   ScaleRowDown4Int_C(src_ptr + src_stride * 4, src_stride,
@@ -2816,9 +3171,18 @@ static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
   ScaleRowDown2Int_C(src_row, kMaxOutputWidth, dst, dst_width);
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_C(const uint16* src_ptr, int src_stride,
+                             uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown34_C(const uint8* src_ptr, int src_stride,
                              uint8* dst, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16* dend;
+#else
   uint8* dend;
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   dend = dst + dst_width;
   do {
@@ -2831,22 +3195,51 @@ static void ScaleRowDown34_C(const uint8* src_ptr, int src_stride,
 }
 
 // Filter rows 0 and 1 together, 3 : 1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_0_Int_C(const uint16* src_ptr, int src_stride,
+                                   uint16* d, int dst_width) {
+#else
 static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* d, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16* dend;
+  const uint16* s;
+#else
   uint8* dend;
   const uint8* s;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  const uint16* t;
+#else
   const uint8* t;
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   dend = d + dst_width;
   s = src_ptr;
   t = src_ptr + src_stride;
   do {
+#if CONFIG_HIGHBITDEPTH
+    uint16 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
+    uint16 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+#else
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
+    uint16 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+#else
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
     uint8 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
+    uint16 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+#else
     uint8 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
     uint8 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+#endif
     d[0] = (a0 * 3 + b0 + 2) >> 2;
     d[1] = (a1 * 3 + b1 + 2) >> 2;
     d[2] = (a2 * 3 + b2 + 2) >> 2;
@@ -2857,22 +3250,51 @@ static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_1_Int_C(const uint16* src_ptr, int src_stride,
+                                   uint16* d, int dst_width) {
+#else
 static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* d, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16* dend;
+  const uint16* s;
+#else
   uint8* dend;
   const uint8* s;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  const uint16* t;
+#else
   const uint8* t;
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   dend = d + dst_width;
   s = src_ptr;
   t = src_ptr + src_stride;
   do {
+#if CONFIG_HIGHBITDEPTH
+    uint16 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
+    uint16 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+#else
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
+    uint16 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+#else
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
     uint8 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+#endif
+#if CONFIG_HIGHBITDEPTH
+    uint16 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
+    uint16 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+#else
     uint8 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
     uint8 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+#endif
     d[0] = (a0 + b0 + 1) >> 1;
     d[1] = (a1 + b1 + 1) >> 1;
     d[2] = (a2 + b2 + 1) >> 1;
@@ -2884,10 +3306,19 @@ static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
 
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 // Filter row to 3/4
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterCols34_C(uint16* dst_ptr, const uint16* src_ptr,
+#else
 static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                                 int dst_width) {
+#if CONFIG_HIGHBITDEPTH
+  uint16* dend;
+  const uint16* s;
+#else
   uint8* dend;
   const uint8* s;
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   dend = dst_ptr + dst_width;
   s = src_ptr;
@@ -2901,7 +3332,11 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterCols_C(uint16* dst_ptr, const uint16* src_ptr,
+#else
 static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                               int dst_width, int dx) {
   int x = 0;
   int j;
@@ -2921,26 +3356,49 @@ static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 #define HAS_SCALEROWDOWN34_SSE2
 // Filter rows 0 and 1 together, 3 : 1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_0_Int_SSE2(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  ALIGN16(uint16 row[kMaxInputWidth]);
+#else
   ALIGN16(uint8 row[kMaxInputWidth]);
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 4);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
 
 // Filter rows 1 and 2 together, 1 : 1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown34_1_Int_SSE2(const uint16* src_ptr, int src_stride,
+                                      uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
+#endif
+#if CONFIG_HIGHBITDEPTH
+  ALIGN16(uint16 row[kMaxInputWidth]);
+#else
   ALIGN16(uint8 row[kMaxInputWidth]);
+#endif
   assert((dst_width % 3 == 0) && (dst_width > 0));
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 2);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
 #endif
 
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_C(const uint16* src_ptr, int src_stride,
+                             uint16* dst, int dst_width) {
+#else
 static void ScaleRowDown38_C(const uint8* src_ptr, int src_stride,
                              uint8* dst, int dst_width) {
+#endif
   int x;
   assert(dst_width % 3 == 0);
   for (x = 0; x < dst_width; x += 3) {
@@ -2953,8 +3411,13 @@ static void ScaleRowDown38_C(const uint8* src_ptr, int src_stride,
 }
 
 // 8x3 -> 3x1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_3_Int_C(const uint16* src_ptr, int src_stride,
+                                   uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
+#endif
   int i;
   assert((dst_width % 3 == 0) && (dst_width > 0));
   for (i = 0; i < dst_width; i+=3) {
@@ -2978,8 +3441,13 @@ static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
 }
 
 // 8x2 -> 3x1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleRowDown38_2_Int_C(const uint16* src_ptr, int src_stride,
+                                   uint16* dst_ptr, int dst_width) {
+#else
 static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
+#endif
   int i;
   assert((dst_width % 3 == 0) && (dst_width > 0));
   for (i = 0; i < dst_width; i+=3) {
@@ -2998,13 +3466,23 @@ static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
 }
 
 // C version 8x2 -> 8x1
+#if CONFIG_HIGHBITDEPTH
+static void ScaleFilterRows_C(uint16* dst_ptr,
+                              const uint16* src_ptr, int src_stride,
+#else
 static void ScaleFilterRows_C(uint8* dst_ptr,
                               const uint8* src_ptr, int src_stride,
+#endif
                               int dst_width, int source_y_fraction) {
   int y1_fraction;
   int y0_fraction;
+#if CONFIG_HIGHBITDEPTH
+  const uint16* src_ptr1;
+  uint16* end;
+#else
   const uint8* src_ptr1;
   uint8* end;
+#endif
   assert(dst_width > 0);
   y1_fraction = source_y_fraction;
   y0_fraction = 256 - y1_fraction;
@@ -3026,13 +3504,21 @@ static void ScaleFilterRows_C(uint8* dst_ptr,
   dst_ptr[0] = dst_ptr[-1];
 }
 
+#if CONFIG_HIGHBITDEPTH
+void ScaleAddRows_C(const uint16* src_ptr, int src_stride,
+#else
 void ScaleAddRows_C(const uint8* src_ptr, int src_stride,
+#endif
                     uint16* dst_ptr, int src_width, int src_height) {
   int x,y;
   assert(src_width > 0);
   assert(src_height > 0);
   for (x = 0; x < src_width; ++x) {
+#if CONFIG_HIGHBITDEPTH
+    const uint16* s = src_ptr + x;
+#else
     const uint8* s = src_ptr + x;
+#endif
     int sum = 0;
     for (y = 0; y < src_height; ++y) {
       sum += s[0];
@@ -3052,10 +3538,19 @@ void ScaleAddRows_C(const uint8* src_ptr, int src_stride,
 static void ScalePlaneDown2(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                            const uint16* src_ptr, uint16* dst_ptr,
+#else
                             const uint8* src_ptr, uint8* dst_ptr,
+#endif
                             FilterMode filtering) {
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown2)(const uint16* src_ptr, int src_stride,
+                        uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
                         uint8* dst_ptr, int dst_width);
+#endif
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
 
@@ -3096,10 +3591,19 @@ static void ScalePlaneDown2(int src_width, int src_height,
 static void ScalePlaneDown4(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                            const uint16* src_ptr, uint16* dst_ptr,
+#else
                             const uint8* src_ptr, uint8* dst_ptr,
+#endif
                             FilterMode filtering) {
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown4)(const uint16* src_ptr, int src_stride,
+                        uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown4)(const uint8* src_ptr, int src_stride,
                         uint8* dst_ptr, int dst_width);
+#endif
   assert(IS_ALIGNED(src_width, 4));
   assert(IS_ALIGNED(src_height, 4));
 
@@ -3141,10 +3645,19 @@ static void ScalePlaneDown4(int src_width, int src_height,
 static void ScalePlaneDown8(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                            const uint16* src_ptr, uint16* dst_ptr,
+#else
                             const uint8* src_ptr, uint8* dst_ptr,
+#endif
                             FilterMode filtering) {
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown8)(const uint16* src_ptr, int src_stride,
+                        uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown8)(const uint8* src_ptr, int src_stride,
                         uint8* dst_ptr, int dst_width);
+#endif
   assert(IS_ALIGNED(src_width, 8));
   assert(IS_ALIGNED(src_height, 8));
 
@@ -3180,12 +3693,26 @@ static void ScalePlaneDown8(int src_width, int src_height,
 static void ScalePlaneDown34(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                             const uint16* src_ptr, uint16* dst_ptr,
+#else
                              const uint8* src_ptr, uint8* dst_ptr,
+#endif
                              FilterMode filtering) {
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown34_0)(const uint16* src_ptr, int src_stride,
+                           uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown34_0)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#endif
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown34_1)(const uint16* src_ptr, int src_stride,
+                           uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#endif
   assert(dst_width % 3 == 0);
 #if defined(HAS_SCALEROWDOWN34_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
@@ -3273,12 +3800,26 @@ static void ScalePlaneDown34(int src_width, int src_height,
 static void ScalePlaneDown38(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                             const uint16* src_ptr, uint16* dst_ptr,
+#else
                              const uint8* src_ptr, uint8* dst_ptr,
+#endif
                              FilterMode filtering) {
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown38_3)(const uint16* src_ptr, int src_stride,
+                           uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown38_3)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#endif
+#if CONFIG_HIGHBITDEPTH
+  void (*ScaleRowDown38_2)(const uint16* src_ptr, int src_stride,
+                           uint16* dst_ptr, int dst_width);
+#else
   void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#endif
   assert(dst_width % 3 == 0);
 #if defined(HAS_SCALEROWDOWN38_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
@@ -3340,7 +3881,11 @@ static void ScalePlaneDown38(int src_width, int src_height,
 }
 
 __inline static uint32 SumBox(int iboxwidth, int iboxheight,
+#if CONFIG_HIGHBITDEPTH
+                            int src_stride, const uint16* src_ptr) {
+#else
                             int src_stride, const uint8* src_ptr) {
+#endif
   int x, y;
   uint32 sum;
   assert(iboxwidth > 0);
@@ -3357,7 +3902,11 @@ __inline static uint32 SumBox(int iboxwidth, int iboxheight,
 
 static void ScalePlaneBoxRow(int dst_width, int boxheight,
                              int dx, int src_stride,
+#if CONFIG_HIGHBITDEPTH
+                             const uint16* src_ptr, uint16* dst_ptr) {
+#else
                              const uint8* src_ptr, uint8* dst_ptr) {
+#endif
   int x = 0;
   int i;
   for (i = 0; i < dst_width; ++i) {
@@ -3382,7 +3931,11 @@ __inline static uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
 }
 
 static void ScaleAddCols2_C(int dst_width, int boxheight, int dx,
+#if CONFIG_HIGHBITDEPTH
+                            const uint16* src_ptr, uint16* dst_ptr) {
+#else
                             const uint16* src_ptr, uint8* dst_ptr) {
+#endif
   int scaletbl[2];
   int minboxwidth = (dx >> 16);
   scaletbl[0] = 65536 / (minboxwidth * boxheight);
@@ -3402,7 +3955,11 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int dx,
 }
 
 static void ScaleAddCols1_C(int dst_width, int boxheight, int dx,
+#if CONFIG_HIGHBITDEPTH
+                            const uint16* src_ptr, uint16* dst_ptr) {
+#else
                             const uint16* src_ptr, uint8* dst_ptr) {
+#endif
   int boxwidth = (dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int x = 0;
@@ -3425,7 +3982,11 @@ static void ScaleAddCols1_C(int dst_width, int boxheight, int dx,
 static void ScalePlaneBox(int src_width, int src_height,
                           int dst_width, int dst_height,
                           int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                          const uint16* src_ptr, uint16* dst_ptr) {
+#else
                           const uint8* src_ptr, uint8* dst_ptr) {
+#endif
   int dx, dy;
   assert(dst_width > 0);
   assert(dst_height > 0);
@@ -3433,14 +3994,22 @@ static void ScalePlaneBox(int src_width, int src_height,
   dx = (src_width << 16) / dst_width;
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxInputWidth) ||
       dst_height * 2 > src_height) {
+#if CONFIG_HIGHBITDEPTH
+    uint16* dst = dst_ptr;
+#else
     uint8* dst = dst_ptr;
+#endif
     int dy = (src_height << 16) / dst_height;
     int dx = (src_width << 16) / dst_width;
     int y = 0;
     int j;
     for (j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
+#if CONFIG_HIGHBITDEPTH
+      const uint16* const src = src_ptr + iy * src_stride;
+#else
       const uint8* const src = src_ptr + iy * src_stride;
+#endif
       int boxheight;
       y += dy;
       if (y > (src_height << 16)) {
@@ -3455,10 +4024,18 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
   } else {
     ALIGN16(uint16 row[kMaxInputWidth]);
+#if CONFIG_HIGHBITDEPTH
+    void (*ScaleAddRows)(const uint16* src_ptr, int src_stride,
+#else
     void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
+#endif
                          uint16* dst_ptr, int src_width, int src_height);
     void (*ScaleAddCols)(int dst_width, int boxheight, int dx,
+#if CONFIG_HIGHBITDEPTH
+                         const uint16* src_ptr, uint16* dst_ptr);
+#else
                          const uint16* src_ptr, uint8* dst_ptr);
+#endif
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
         IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16) &&
@@ -3480,7 +4057,11 @@ static void ScalePlaneBox(int src_width, int src_height,
       int j;
       for (j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
+#if CONFIG_HIGHBITDEPTH
+      const uint16* const src = src_ptr + iy * src_stride;
+#else
       const uint8* const src = src_ptr + iy * src_stride;
+#endif
         int boxheight;
       y += dy;
       if (y > (src_height << 16)) {
@@ -3501,9 +4082,17 @@ static void ScalePlaneBox(int src_width, int src_height,
 static void ScalePlaneBilinearSimple(int src_width, int src_height,
                                      int dst_width, int dst_height,
                                      int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                                     const uint16* src_ptr, uint16* dst_ptr) {
+#else
                                      const uint8* src_ptr, uint8* dst_ptr) {
+#endif
   int i, j;
+#if CONFIG_HIGHBITDEPTH
+  uint16* dst = dst_ptr;
+#else
   uint8* dst = dst_ptr;
+#endif
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int maxx = ((src_width - 1) << 16) - 1;
@@ -3514,7 +4103,11 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
     int cy = (y < 0) ? 0 : y;
     int yi = cy >> 16;
     int yf = cy & 0xffff;
+#if CONFIG_HIGHBITDEPTH
+    const uint16* const src = src_ptr + yi * src_stride;
+#else
     const uint8* const src = src_ptr + yi * src_stride;
+#endif
     int x = (dst_width < src_width) ? 32768 :
         (src_width << 16) / dst_width - 32768;
     for (j = 0; j < dst_width; ++j) {
@@ -3543,7 +4136,11 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
 static void ScalePlaneBilinear(int src_width, int src_height,
                                int dst_width, int dst_height,
                                int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                               const uint16* src_ptr, uint16* dst_ptr) {
+#else
                                const uint8* src_ptr, uint8* dst_ptr) {
+#endif
   int dy;
   int dx;
   assert(dst_width > 0);
@@ -3555,11 +4152,20 @@ static void ScalePlaneBilinear(int src_width, int src_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
   } else {
+#if CONFIG_HIGHBITDEPTH
+    ALIGN16(uint16 row[kMaxInputWidth + 1]);
+    void (*ScaleFilterRows)(uint16* dst_ptr, const uint16* src_ptr,
+#else
     ALIGN16(uint8 row[kMaxInputWidth + 1]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                             int src_stride,
                             int dst_width, int source_y_fraction);
+#if CONFIG_HIGHBITDEPTH
+    void (*ScaleFilterCols)(uint16* dst_ptr, const uint16* src_ptr,
+#else
     void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
+#endif
                             int dst_width, int dx);
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
     if (TestCpuFlag(kCpuHasSSSE3) &&
@@ -3587,7 +4193,11 @@ static void ScalePlaneBilinear(int src_width, int src_height,
       for (j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
       int fy = (y >> 8) & 255;
+#if CONFIG_HIGHBITDEPTH
+      const uint16* const src = src_ptr + iy * src_stride;
+#else
       const uint8* const src = src_ptr + iy * src_stride;
+#endif
       ScaleFilterRows(row, src, src_stride, src_width, fy);
       ScaleFilterCols(dst_ptr, row, dst_width, dx);
       dst_ptr += dst_stride;
@@ -3609,12 +4219,21 @@ static void ScalePlaneBilinear(int src_width, int src_height,
 static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                             const uint16* src_ptr, uint16* dst_ptr) {
+  uint16* dst = dst_ptr;
+#else
                              const uint8* src_ptr, uint8* dst_ptr) {
   uint8* dst = dst_ptr;
+#endif
   int dx = (src_width << 16) / dst_width;
   int y;
   for (y = 0; y < dst_height; ++y) {
+#if CONFIG_HIGHBITDEPTH
+    const uint16* const src = src_ptr + (y * src_height / dst_height) *
+#else
     const uint8* const src = src_ptr + (y * src_height / dst_height) *
+#endif
         src_stride;
     // TODO(fbarchard): Round X coordinate by setting x=0x8000.
     int x = 0;
@@ -3633,7 +4252,11 @@ static void ScalePlaneSimple(int src_width, int src_height,
 static void ScalePlaneAnySize(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                              const uint16* src_ptr, uint16* dst_ptr,
+#else
                               const uint8* src_ptr, uint8* dst_ptr,
+#endif
                               FilterMode filtering) {
   if (!filtering) {
     ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
@@ -3656,7 +4279,11 @@ static void ScalePlaneAnySize(int src_width, int src_height,
 static void ScalePlaneDown(int src_width, int src_height,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                           const uint16* src_ptr, uint16* dst_ptr,
+#else
                            const uint8* src_ptr, uint8* dst_ptr,
+#endif
                            FilterMode filtering) {
   if (!filtering) {
     ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
@@ -3682,14 +4309,23 @@ static void ScalePlaneDown(int src_width, int src_height,
 static void CopyPlane(int src_width, int src_height,
                       int dst_width, int dst_height,
                       int src_stride, int dst_stride,
+#if CONFIG_HIGHBITDEPTH
+                      const uint16* src_ptr, uint16* dst_ptr) {
+#else
                       const uint8* src_ptr, uint8* dst_ptr) {
+#endif
   if (src_stride == src_width && dst_stride == dst_width) {
     // All contiguous, so can use REALLY fast path.
     memcpy(dst_ptr, src_ptr, src_width * src_height);
   } else {
     // Not all contiguous; must copy scanlines individually
+#if CONFIG_HIGHBITDEPTH
+    const uint16* src = src_ptr;
+    uint16* dst = dst_ptr;
+#else
     const uint8* src = src_ptr;
     uint8* dst = dst_ptr;
+#endif
     int i;
     for (i = 0; i < src_height; ++i) {
       memcpy(dst, src, src_width);
@@ -3699,9 +4335,17 @@ static void CopyPlane(int src_width, int src_height,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void ScalePlane(const uint16* src, int src_stride,
+#else
 static void ScalePlane(const uint8* src, int src_stride,
+#endif
                        int src_width, int src_height,
+#if CONFIG_HIGHBITDEPTH
+                       uint16* dst, int dst_stride,
+#else
                        uint8* dst, int dst_stride,
+#endif
                        int dst_width, int dst_height,
                        FilterMode filtering, int use_ref) {
   // Use specialized scales to improve performance for common resolutions.
@@ -3759,13 +4403,31 @@ static void ScalePlane(const uint8* src, int src_stride,
  *
  */
 
+#if CONFIG_HIGHBITDEPTH
+int I420Scale(const uint16* src_y, int src_stride_y,
+              const uint16* src_u, int src_stride_u,
+#else
 int I420Scale(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
+#endif
+#if CONFIG_HIGHBITDEPTH
+              const uint16* src_v, int src_stride_v,
+#else
               const uint8* src_v, int src_stride_v,
+#endif
               int src_width, int src_height,
+#if CONFIG_HIGHBITDEPTH
+              uint16* dst_y, int dst_stride_y,
+              uint16* dst_u, int dst_stride_u,
+#else
               uint8* dst_y, int dst_stride_y,
               uint8* dst_u, int dst_stride_u,
+#endif
+#if CONFIG_HIGHBITDEPTH
+              uint16* dst_v, int dst_stride_v,
+#else
               uint8* dst_v, int dst_stride_v,
+#endif
               int dst_width, int dst_height,
               FilterMode filtering) {
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
@@ -3804,10 +4466,18 @@ int I420Scale(const uint8* src_y, int src_stride_y,
 }
 
 // Deprecated api
+#if CONFIG_HIGHBITDEPTH
+int Scale(const uint16* src_y, const uint16* src_u, const uint16* src_v,
+#else
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
+#endif
           int src_stride_y, int src_stride_u, int src_stride_v,
           int src_width, int src_height,
+#if CONFIG_HIGHBITDEPTH
+          uint16* dst_y, uint16* dst_u, uint16* dst_v,
+#else
           uint8* dst_y, uint8* dst_u, uint8* dst_v,
+#endif
           int dst_stride_y, int dst_stride_u, int dst_stride_v,
           int dst_width, int dst_height,
           int interpolate) {
@@ -3848,8 +4518,13 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
 }
 
 // Deprecated api
+#if CONFIG_HIGHBITDEPTH
+int ScaleOffset(const uint16* src, int src_width, int src_height,
+                uint16* dst, int dst_width, int dst_height, int dst_yoffset,
+#else
 int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
+#endif
           int interpolate) {
   if (!src || src_width <= 0 || src_height <= 0 ||
       !dst || dst_width <= 0 || dst_height <= 0 || dst_yoffset < 0 ||
@@ -3863,14 +4538,32 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
   int dst_halfwidth = (dst_width + 1) >> 1;
   int dst_halfheight = (dst_height + 1) >> 1;
   int aheight = dst_height - dst_yoffset * 2;  // actual output height
+#if CONFIG_HIGHBITDEPTH
+  const uint16* const src_y = src;
+  const uint16* const src_u = src + src_width * src_height;
+#else
   const uint8* const src_y = src;
   const uint8* const src_u = src + src_width * src_height;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  const uint16* const src_v = src + src_width * src_height +
+#else
   const uint8* const src_v = src + src_width * src_height +
+#endif
                              src_halfwidth * src_halfheight;
+#if CONFIG_HIGHBITDEPTH
+  uint16* dst_y = dst + dst_yoffset * dst_width;
+  uint16* dst_u = dst + dst_width * dst_height +
+#else
   uint8* dst_y = dst + dst_yoffset * dst_width;
   uint8* dst_u = dst + dst_width * dst_height +
+#endif
                  (dst_yoffset >> 1) * dst_halfwidth;
+#if CONFIG_HIGHBITDEPTH
+  uint16* dst_v = dst + dst_width * dst_height + dst_halfwidth * dst_halfheight +
+#else
   uint8* dst_v = dst + dst_width * dst_height + dst_halfwidth * dst_halfheight +
+#endif
                  (dst_yoffset >> 1) * dst_halfwidth;
   return Scale(src_y, src_u, src_v, src_width, src_halfwidth, src_halfwidth,
                src_width, src_height, dst_y, dst_u, dst_v, dst_width,

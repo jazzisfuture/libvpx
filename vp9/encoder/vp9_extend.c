@@ -12,24 +12,42 @@
 
 #include "vp9/common/vp9_common.h"
 #include "vp9/encoder/vp9_extend.h"
-
+#if CONFIG_HIGHBITDEPTH
+static void copy_and_extend_plane(const uint16_t *src, int src_pitch,
+                                  uint16_t *dst, int dst_pitch,
+#else
 static void copy_and_extend_plane(const uint8_t *src, int src_pitch,
                                   uint8_t *dst, int dst_pitch,
+#endif
                                   int w, int h,
                                   int extend_top, int extend_left,
                                   int extend_bottom, int extend_right) {
   int i, linesize;
 
   // copy the left and right most columns out
+#if CONFIG_HIGHBITDEPTH
+  int c;
+  const uint16_t *src_ptr1 = src;
+  const uint16_t *src_ptr2 = src + w - 1;
+  uint16_t *dst_ptr1 = dst - extend_left;
+  uint16_t *dst_ptr2 = dst + w;
+#else
   const uint8_t *src_ptr1 = src;
   const uint8_t *src_ptr2 = src + w - 1;
   uint8_t *dst_ptr1 = dst - extend_left;
   uint8_t *dst_ptr2 = dst + w;
+#endif
 
   for (i = 0; i < h; i++) {
+#if CONFIG_HIGHBITDEPTH
+    for(c=0; c<extend_left; c++) dst_ptr1[c]=src_ptr1[0] ;
+    for(c=0; c<w; c++) dst_ptr1[extend_left+c]=src_ptr1[c] ;
+    for(c=0; c<extend_right; c++) dst_ptr2[c]=src_ptr2[0] ;
+#else
     vpx_memset(dst_ptr1, src_ptr1[0], extend_left);
     vpx_memcpy(dst_ptr1 + extend_left, src_ptr1, w);
     vpx_memset(dst_ptr2, src_ptr2[0], extend_right);
+#endif
     src_ptr1 += src_pitch;
     src_ptr2 += src_pitch;
     dst_ptr1 += dst_pitch;
@@ -45,12 +63,22 @@ static void copy_and_extend_plane(const uint8_t *src, int src_pitch,
   linesize = extend_left + extend_right + w;
 
   for (i = 0; i < extend_top; i++) {
+#if CONFIG_HIGHBITDEPTH
+    for(c=0; c<linesize; c++) dst_ptr1[c]=src_ptr1[c];
+    //vpx_memcpy(dst_ptr1, src_ptr1, linesize*2);
+#else
     vpx_memcpy(dst_ptr1, src_ptr1, linesize);
+#endif
     dst_ptr1 += dst_pitch;
   }
 
   for (i = 0; i < extend_bottom; i++) {
+#if CONFIG_HIGHBITDEPTH
+    for(c=0; c<linesize; c++) dst_ptr2[c]=src_ptr2[c];
+    //vpx_memcpy(dst_ptr2, src_ptr2, linesize*2);
+#else
     vpx_memcpy(dst_ptr2, src_ptr2, linesize);
+#endif
     dst_ptr2 += dst_pitch;
   }
 }

@@ -37,8 +37,13 @@ struct encode_b_args {
 
 void vp9_subtract_block_c(int rows, int cols,
                           int16_t *diff, ptrdiff_t diff_stride,
+#if CONFIG_HIGHBITDEPTH
+                          const uint16_t *src, ptrdiff_t src_stride,
+                          const uint16_t *pred, ptrdiff_t pred_stride) {
+#else
                           const uint8_t *src, ptrdiff_t src_stride,
                           const uint8_t *pred, ptrdiff_t pred_stride) {
+#endif
   int r, c;
 
   for (r = 0; r < rows; r++) {
@@ -97,7 +102,11 @@ static const int plane_rd_mult[4] = {
 static int trellis_get_coeff_context(const int16_t *scan,
                                      const int16_t *nb,
                                      int idx, int token,
+#if CONFIG_HIGHBITDEPTH
+                                     uint16_t *token_cache) {
+#else
                                      uint8_t *token_cache) {
+#endif
   int bak = token_cache[scan[idx]], pt;
   token_cache[scan[idx]] = vp9_pt_energy_class[token];
   pt = get_coef_context(nb, token_cache, idx + 1);
@@ -127,7 +136,11 @@ static void optimize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   int err_mult = plane_rd_mult[type];
   const int default_eob = 16 << (tx_size << 1);
   const int mul = 1 + (tx_size == TX_32X32);
+#if CONFIG_HIGHBITDEPTH
+  uint16_t token_cache[1024];
+#else
   uint8_t token_cache[1024];
+#endif
   const int16_t *dequant_ptr = pd->dequant;
   const uint8_t *const band_translate = get_band_translate(tx_size);
   const scan_order *so = get_scan(xd, tx_size, type, block);
@@ -374,7 +387,11 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   int i, j;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *dst;
+#else
   uint8_t *dst;
+#endif
   ENTROPY_CONTEXT *a, *l;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
@@ -433,7 +450,11 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   int i, j;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *dst;
+#else
   uint8_t *dst;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
 
@@ -488,7 +509,12 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   MB_PREDICTION_MODE mode;
   const int bwl = b_width_log2(plane_bsize);
   const int diff_stride = 4 * (1 << bwl);
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *src, *dst;
+  int k,l,found;
+#else
   uint8_t *src, *dst;
+#endif
   int16_t *src_diff;
   uint16_t *eob = &p->eobs[block];
   const int src_stride = p->src.stride;
@@ -510,6 +536,34 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vp9_subtract_block(32, 32, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
+#if CONFIG_HIGHBITDEPTH
+      found=0;
+      for(k=0;k<32;k++){
+        for(l=0;l<32;l++){
+            if(src_diff[k*diff_stride+l]>256 || src_diff[k*diff_stride+l]<-256){
+                found=1;
+                break;
+            }
+            }
+        }
+        if(found==1){
+    printf("Intra 32x32: mode %d\r\n", mode);
+      for(k=0;k<32;k++){
+        for(l=0;l<32;l++){
+            printf("%d ",dst[k*dst_stride+l]);
+        }
+        printf("\r\n");
+      }
+    printf("diff---------------diff_stride %d,\r\n",diff_stride);
+    for(k=0;k<32;k++){
+            for(l=0;l<32;l++){
+                printf("%d ",src_diff[k*diff_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+        }
+#endif
         fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
         vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
@@ -530,6 +584,35 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vp9_subtract_block(16, 16, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
+#if CONFIG_HIGHBITDEPTH
+found=0;
+      for(k=0;k<16;k++){
+        for(l=0;l<16;l++){
+            if(src_diff[k*diff_stride+l]>256 || src_diff[k*diff_stride+l]<-256){
+                found=1;
+                break;
+            }
+            }
+        }
+        if(found==1){
+    printf("16x16: mode %d\r\n", mode);
+      for(k=0;k<16;k++){
+        for(l=0;l<16;l++){
+            printf("%d ",dst[k*dst_stride+l]);
+        }
+        printf("\r\n");
+      }
+    printf("diff---------------diff_stride %d,\r\n",diff_stride);
+    for(k=0;k<16;k++){
+            for(l=0;l<16;l++){
+                printf("%d ",src_diff[k*diff_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+        }
+
+#endif
         vp9_fht16x16(src_diff, coeff, diff_stride, tx_type);
         vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
@@ -550,6 +633,34 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vp9_subtract_block(8, 8, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
+#if CONFIG_HIGHBITDEPTH
+      found=0;
+      for(k=0;k<8;k++){
+        for(l=0;l<8;l++){
+            if(src_diff[k*diff_stride+l]>256 || src_diff[k*diff_stride+l]<-256){
+                found=1;
+                break;
+            }
+            }
+        }
+        if(found==1){
+    printf("8x8: mode %d\r\n", mode);
+      for(k=0;k<8;k++){
+        for(l=0;l<8;l++){
+            printf("%d ",dst[k*dst_stride+l]);
+        }
+        printf("\r\n");
+      }
+    printf("diff---------------diff_stride %d,\r\n",diff_stride);
+    for(k=0;k<8;k++){
+            for(l=0;l<8;l++){
+                printf("%d ",src_diff[k*diff_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+        }
+#endif
         vp9_fht8x8(src_diff, coeff, diff_stride, tx_type);
         vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round, p->quant,
                        p->quant_shift, qcoeff, dqcoeff,
@@ -567,10 +678,46 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
-
       if (!x->skip_recode) {
         vp9_subtract_block(4, 4, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
+#if CONFIG_HIGHBITDEPTH
+      found=0;
+      for(k=0;k<4;k++){
+        for(l=0;l<4;l++){
+            if(src_diff[k*diff_stride+l]>256 || src_diff[k*diff_stride+l]<-256){
+                found=1;
+                break;
+            }
+            }
+        }
+        if(found==1){
+
+    printf("Intra 4x4: mode %d tx type %d,\r\n", mode,tx_type);
+    for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",src[k*src_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+    printf("diff---------------diff_stride %d,\r\n",diff_stride);
+    for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",dst[k*dst_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+    for(k=0;k<4;k++){
+            for(l=0;l<4;l++){
+                printf("%d ",src_diff[k*diff_stride+l]);
+            }
+        printf("\r\n");
+          }
+        printf("\r\n");
+        }
+#endif
         if (tx_type != DCT_DCT)
           vp9_fht4x4(src_diff, coeff, diff_stride, tx_type);
         else

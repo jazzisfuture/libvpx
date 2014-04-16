@@ -91,7 +91,11 @@ static void adjust_act_zbin(VP9_COMP *cpi, MACROBLOCK *x);
 //  purposes of activity masking.
 // Eventually this should be replaced by custom no-reference routines,
 //  which will be faster.
+#if CONFIG_HIGHBITDEPTH
+static const uint16_t VP9_VAR_OFFS[64] = {
+#else
 static const uint8_t VP9_VAR_OFFS[64] = {
+#endif
   128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128,
@@ -461,8 +465,13 @@ static void choose_partitioning(VP9_COMP *cpi,
 
   int i, j, k;
   v64x64 vt;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *s;
+  const uint16_t *d;
+#else
   uint8_t *s;
   const uint8_t *d;
+#endif
   int sp;
   int dp;
   int pixels_wide = 64, pixels_high = 64;
@@ -951,8 +960,13 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
 void vp9_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col) {
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                               src->alpha_buffer};
+#else
   uint8_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
                                src->alpha_buffer};
+#endif
   const int strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                           src->alpha_stride};
   int i;
@@ -1479,10 +1493,18 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
       (row8x8_remaining >= MI_BLOCK_SIZE)) {
     const int src_stride = x->plane[0].src.stride;
     const int pre_stride = cpi->Last_Source->y_stride;
+#if CONFIG_HIGHBITDEPTH
+    const uint16_t *src = x->plane[0].src.buf;
+#else
     const uint8_t *src = x->plane[0].src.buf;
+#endif
     const int pre_offset = (mi_row * MI_SIZE) * pre_stride +
                            (mi_col * MI_SIZE);
+#if CONFIG_HIGHBITDEPTH
+    const uint16_t *pre_src = cpi->Last_Source->y_buffer + pre_offset;
+#else
     const uint8_t *pre_src = cpi->Last_Source->y_buffer + pre_offset;
+#endif
     const int thr_32x32 = cpi->sf.source_var_thresh;
     const int thr_64x64 = thr_32x32 << 1;
     int i, j;

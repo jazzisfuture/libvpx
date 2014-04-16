@@ -60,8 +60,13 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     const int frame_size = yplane_size + 2 * uvplane_size;
 
     if (!ybf->buffer_alloc) {
+#if CONFIG_HIGHBITDEPTH
+      ybf->buffer_alloc = (uint16_t *)vpx_memalign(32, frame_size*2);
+      ybf->buffer_alloc_sz = frame_size*2;
+#else
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
       ybf->buffer_alloc_sz = frame_size;
+#endif
     }
 
     if (!ybf->buffer_alloc || ybf->buffer_alloc_sz < frame_size)
@@ -164,7 +169,11 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #endif
     if (cb != NULL) {
       const int align_addr_extra_size = 31;
+#if CONFIG_HIGHBITDEPTH
+      const size_t external_frame_size = sizeof(uint16_t)*(frame_size + align_addr_extra_size);
+#else
       const size_t external_frame_size = frame_size + align_addr_extra_size;
+#endif
 
       assert(fb != NULL);
 
@@ -179,17 +188,31 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       // due to access uninitialized memory in frame border. It could be
       // removed if border is totally removed.
       vpx_memset(fb->data, 0, fb->size);
-
+#if CONFIG_HIGHBITDEPTH
+      ybf->buffer_alloc = (uint16_t *)yv12_align_addr(fb->data, 32);
+#else
       ybf->buffer_alloc = (uint8_t *)yv12_align_addr(fb->data, 32);
+#endif
+#if CONFIG_HIGHBITDEPTH
+    } else if (frame_size*sizeof(uint16_t) > ybf->buffer_alloc_sz) {
+#else
     } else if (frame_size > ybf->buffer_alloc_sz) {
+#endif
       // Allocation to hold larger frame, or first allocation.
       if (ybf->buffer_alloc)
         vpx_free(ybf->buffer_alloc);
+#if CONFIG_HIGHBITDEPTH
+      ybf->buffer_alloc = (uint16_t *)vpx_memalign(32, sizeof(uint16_t)*frame_size);
+#else
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
+#endif
       if (!ybf->buffer_alloc)
         return -1;
-
+#if CONFIG_HIGHBITDEPTH
+      ybf->buffer_alloc_sz = sizeof(uint16_t)*frame_size;
+#else
       ybf->buffer_alloc_sz = frame_size;
+#endif
 
       // This memset is needed for fixing valgrind error from C loop filter
       // due to access uninitialized memory in frame border. It could be

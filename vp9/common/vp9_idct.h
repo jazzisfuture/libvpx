@@ -90,20 +90,52 @@ typedef struct {
   transform_1d cols, rows;  // vertical and horizontal
 } transform_2d;
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_iwht4x4_add(const int16_t *input, uint16_t *dest, int stride, int eob);
+#else
 void vp9_iwht4x4_add(const int16_t *input, uint8_t *dest, int stride, int eob);
+#endif
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_idct4x4_add(const int16_t *input, uint16_t *dest, int stride, int eob);
+#else
 void vp9_idct4x4_add(const int16_t *input, uint8_t *dest, int stride, int eob);
+#endif
+#if CONFIG_HIGHBITDEPTH
+void vp9_idct8x8_add(const int16_t *input, uint16_t *dest, int stride, int eob);
+#else
 void vp9_idct8x8_add(const int16_t *input, uint8_t *dest, int stride, int eob);
+#endif
+#if CONFIG_HIGHBITDEPTH
+void vp9_idct16x16_add(const int16_t *input, uint16_t *dest, int stride, int
+#else
 void vp9_idct16x16_add(const int16_t *input, uint8_t *dest, int stride, int
+#endif
                        eob);
+#if CONFIG_HIGHBITDEPTH
+void vp9_idct32x32_add(const int16_t *input, uint16_t *dest, int stride,
+#else
 void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
+#endif
                        int eob);
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht4x4_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                     int stride, int eob);
+#if CONFIG_HIGHBITDEPTH
+void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht8x8_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                     int stride, int eob);
+#if CONFIG_HIGHBITDEPTH
+void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint16_t *dest,
+#else
 void vp9_iht16x16_add(TX_TYPE tx_type, const int16_t *input, uint8_t *dest,
+#endif
                       int stride, int eob);
 
 

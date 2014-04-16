@@ -35,8 +35,16 @@ struct loopfilter {
   int sharpness_level;
   int last_sharpness_level;
 
+#if CONFIG_HIGHBITDEPTH
+  uint16_t mode_ref_delta_enabled;
+#else
   uint8_t mode_ref_delta_enabled;
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16_t mode_ref_delta_update;
+#else
   uint8_t mode_ref_delta_update;
+#endif
 
   // 0 = Intra, Last, GF, ARF
   signed char ref_deltas[MAX_REF_LF_DELTAS];
@@ -50,14 +58,24 @@ struct loopfilter {
 // Need to align this structure so when it is declared and
 // passed it can be loaded into vector registers.
 typedef struct {
+#if CONFIG_HIGHBITDEPTH
+  DECLARE_ALIGNED(SIMD_WIDTH, uint16_t, mblim[SIMD_WIDTH]);
+  DECLARE_ALIGNED(SIMD_WIDTH, uint16_t, lim[SIMD_WIDTH]);
+  DECLARE_ALIGNED(SIMD_WIDTH, uint16_t, hev_thr[SIMD_WIDTH]);
+#else
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, mblim[SIMD_WIDTH]);
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, lim[SIMD_WIDTH]);
   DECLARE_ALIGNED(SIMD_WIDTH, uint8_t, hev_thr[SIMD_WIDTH]);
+#endif
 } loop_filter_thresh;
 
 typedef struct {
   loop_filter_thresh lfthr[MAX_LOOP_FILTER + 1];
+#if CONFIG_HIGHBITDEPTH
+  uint16_t lvl[MAX_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
+#else
   uint8_t lvl[MAX_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
+#endif
 } loop_filter_info_n;
 
 // This structure holds bit masks for all 8x8 blocks in a 64x64 region.
@@ -76,8 +94,16 @@ typedef struct {
   uint16_t left_uv[TX_SIZES];
   uint16_t above_uv[TX_SIZES];
   uint16_t int_4x4_uv;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t lfl_y[64];
+#else
   uint8_t lfl_y[64];
+#endif
+#if CONFIG_HIGHBITDEPTH
+  uint16_t lfl_uv[16];
+#else
   uint8_t lfl_uv[16];
+#endif
 } LOOP_FILTER_MASK;
 
 /* assorted loopfilter functions which get used elsewhere */

@@ -323,10 +323,17 @@ static double simple_weight(const YV12_BUFFER_CONFIG *buf) {
   double sum = 0.0;
   const int w = buf->y_crop_width;
   const int h = buf->y_crop_height;
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *row = buf->y_buffer;
+#else
   const uint8_t *row = buf->y_buffer;
-
+#endif
   for (i = 0; i < h; ++i) {
+#if CONFIG_HIGHBITDEPTH
+    const uint16_t *pixel = row;
+#else
     const uint8_t *pixel = row;
+#endif
     for (j = 0; j < w; ++j)
       sum += weight_table[*pixel++];
     row += buf->y_stride;
@@ -378,9 +385,17 @@ static vp9_variance_fn_t get_block_variance_fn(BLOCK_SIZE bsize) {
 
 static unsigned int zz_motion_search(const MACROBLOCK *x) {
   const MACROBLOCKD *const xd = &x->e_mbd;
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *const src = x->plane[0].src.buf;
+#else
   const uint8_t *const src = x->plane[0].src.buf;
+#endif
   const int src_stride = x->plane[0].src.stride;
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *const ref = xd->plane[0].pre[0].buf;
+#else
   const uint8_t *const ref = xd->plane[0].pre[0].buf;
+#endif
   const int ref_stride = xd->plane[0].pre[0].stride;
   unsigned int sse;
   vp9_variance_fn_t fn = get_block_variance_fn(xd->mi[0]->mbmi.sb_type);

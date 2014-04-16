@@ -225,14 +225,23 @@ static const interp_kernel *choose_interp_filter(int inlength, int outlength) {
     return vp9_filteredinterp_filters500;
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void interpolate(const uint16_t *const input, int inlength,
+                        uint16_t *output, int outlength) {
+#else
 static void interpolate(const uint8_t *const input, int inlength,
                         uint8_t *output, int outlength) {
+#endif
   const int64_t delta = (((uint64_t)inlength << 32) + outlength / 2) /
       outlength;
   const int64_t offset = inlength > outlength ?
       (((int64_t)(inlength - outlength) << 31) + outlength / 2) / outlength :
       -(((int64_t)(outlength - inlength) << 31) + outlength / 2) / outlength;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *optr = output;
+#else
   uint8_t *optr = output;
+#endif
   int x, x1, x2, sum, k, int_pel, sub_pel;
   int64_t y;
 
@@ -309,13 +318,22 @@ static void interpolate(const uint8_t *const input, int inlength,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void down2_symeven(const uint16_t *const input, int length,
+                          uint16_t *output) {
+#else
 static void down2_symeven(const uint8_t *const input, int length,
                           uint8_t *output) {
+#endif
   // Actual filter len = 2 * filter_len_half.
   static const int16_t *filter = vp9_down2_symeven_half_filter;
   const int filter_len_half = sizeof(vp9_down2_symeven_half_filter) / 2;
   int i, j;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *optr = output;
+#else
   uint8_t *optr = output;
+#endif
   int l1 = filter_len_half;
   int l2 = (length - filter_len_half);
   l1 += (l1 & 1);
@@ -365,13 +383,22 @@ static void down2_symeven(const uint8_t *const input, int length,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void down2_symodd(const uint16_t *const input, int length,
+                         uint16_t *output) {
+#else
 static void down2_symodd(const uint8_t *const input, int length,
                          uint8_t *output) {
+#endif
   // Actual filter len = 2 * filter_len_half - 1.
   static const int16_t *filter = vp9_down2_symodd_half_filter;
   const int filter_len_half = sizeof(vp9_down2_symodd_half_filter) / 2;
   int i, j;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *optr = output;
+#else
   uint8_t *optr = output;
+#endif
   int l1 = filter_len_half - 1;
   int l2 = (length - filter_len_half + 1);
   l1 += (l1 & 1);
@@ -437,26 +464,52 @@ int get_down2_steps(int in_length, int out_length) {
   return steps;
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void resize_multistep(const uint16_t *const input,
+#else
 static void resize_multistep(const uint8_t *const input,
+#endif
                              int length,
+#if CONFIG_HIGHBITDEPTH
+                             uint16_t *output,
+#else
                              uint8_t *output,
+#endif
                              int olength,
+#if CONFIG_HIGHBITDEPTH
+                             uint16_t *buf) {
+#else
                              uint8_t *buf) {
+#endif
   int steps;
   if (length == olength) {
+#if CONFIG_HIGHBITDEPTH
+    memcpy(output, input, sizeof(uint16_t) * length);
+#else
     memcpy(output, input, sizeof(uint8_t) * length);
+#endif
     return;
   }
   steps = get_down2_steps(length, olength);
 
   if (steps > 0) {
     int s;
+#if CONFIG_HIGHBITDEPTH
+    uint16_t *out = NULL;
+    uint16_t *tmpbuf = NULL;
+    uint16_t *otmp, *otmp2;
+#else
     uint8_t *out = NULL;
     uint8_t *tmpbuf = NULL;
     uint8_t *otmp, *otmp2;
+#endif
     int filteredlength = length;
     if (!tmpbuf) {
+#if CONFIG_HIGHBITDEPTH
+      tmpbuf = (uint16_t *)malloc(sizeof(uint16_t) * length);
+#else
       tmpbuf = (uint8_t *)malloc(sizeof(uint8_t) * length);
+#endif
       otmp = tmpbuf;
     } else {
       otmp = buf;
@@ -464,7 +517,11 @@ static void resize_multistep(const uint8_t *const input,
     otmp2 = otmp + get_down2_length(length, 1);
     for (s = 0; s < steps; ++s) {
       const int proj_filteredlength = get_down2_length(filteredlength, 1);
+#if CONFIG_HIGHBITDEPTH
+      const uint16_t *const in = (s == 0 ? input : out);
+#else
       const uint8_t *const in = (s == 0 ? input : out);
+#endif
       if (s == steps - 1 && proj_filteredlength == olength)
         out = output;
       else
@@ -485,37 +542,70 @@ static void resize_multistep(const uint8_t *const input,
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void fill_col_to_arr(uint16_t *img, int stride, int len, uint16_t *arr) {
+#else
 static void fill_col_to_arr(uint8_t *img, int stride, int len, uint8_t *arr) {
+#endif
   int i;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *iptr = img;
+  uint16_t *aptr = arr;
+#else
   uint8_t *iptr = img;
   uint8_t *aptr = arr;
+#endif
   for (i = 0; i < len; ++i, iptr += stride) {
     *aptr++ = *iptr;
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+static void fill_arr_to_col(uint16_t *img, int stride, int len, uint16_t *arr) {
+#else
 static void fill_arr_to_col(uint8_t *img, int stride, int len, uint8_t *arr) {
+#endif
   int i;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *iptr = img;
+  uint16_t *aptr = arr;
+#else
   uint8_t *iptr = img;
   uint8_t *aptr = arr;
+#endif
   for (i = 0; i < len; ++i, iptr += stride) {
     *iptr = *aptr++;
   }
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_resize_plane(const uint16_t *const input,
+#else
 void vp9_resize_plane(const uint8_t *const input,
+#endif
                       int height,
                       int width,
                       int in_stride,
+#if CONFIG_HIGHBITDEPTH
+                      uint16_t *output,
+#else
                       uint8_t *output,
+#endif
                       int height2,
                       int width2,
                       int out_stride) {
   int i;
+#if CONFIG_HIGHBITDEPTH
+  uint16_t *intbuf = (uint16_t *)malloc(sizeof(uint16_t) * width2 * height);
+  uint16_t *tmpbuf = (uint16_t *)malloc(sizeof(uint16_t) *
+                                      (width < height ? height : width));
+  uint16_t *arrbuf = (uint16_t *)malloc(sizeof(uint16_t) * (height + height2));
+#else
   uint8_t *intbuf = (uint8_t *)malloc(sizeof(uint8_t) * width2 * height);
   uint8_t *tmpbuf = (uint8_t *)malloc(sizeof(uint8_t) *
                                       (width < height ? height : width));
   uint8_t *arrbuf = (uint8_t *)malloc(sizeof(uint8_t) * (height + height2));
+#endif
   for (i = 0; i < height; ++i)
     resize_multistep(input + in_stride * i, width,
                         intbuf + width2 * i, width2, tmpbuf);
@@ -529,13 +619,22 @@ void vp9_resize_plane(const uint8_t *const input,
   free(arrbuf);
 }
 
-void vp9_resize_frame420(const uint8_t *const y,
-                         int y_stride,
+#if CONFIG_HIGHBITDEPTH
+void vp9_resize_frame420(const uint16_t *const y, int y_stride,
+                         const uint16_t *const u, const uint16_t *const v,
+#else
+void vp9_resize_frame420(const uint8_t *const y,  int y_stride,
                          const uint8_t *const u, const uint8_t *const v,
+#endif
                          int uv_stride,
                          int height, int width,
+#if CONFIG_HIGHBITDEPTH
+                         uint16_t *oy, int oy_stride,
+                         uint16_t *ou, uint16_t *ov, int ouv_stride,
+#else
                          uint8_t *oy, int oy_stride,
                          uint8_t *ou, uint8_t *ov, int ouv_stride,
+#endif
                          int oheight, int owidth) {
   vp9_resize_plane(y, height, width, y_stride,
                    oy, oheight, owidth, oy_stride);
@@ -545,12 +644,22 @@ void vp9_resize_frame420(const uint8_t *const y,
                    ov, oheight / 2, owidth / 2, ouv_stride);
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_resize_frame422(const uint16_t *const y, int y_stride,
+                         const uint16_t *const u, const uint16_t *const v,
+#else
 void vp9_resize_frame422(const uint8_t *const y, int y_stride,
                          const uint8_t *const u, const uint8_t *const v,
+#endif
                          int uv_stride,
                          int height, int width,
+#if CONFIG_HIGHBITDEPTH
+                         uint16_t *oy, int oy_stride,
+                         uint16_t *ou, uint16_t *ov, int ouv_stride,
+#else
                          uint8_t *oy, int oy_stride,
                          uint8_t *ou, uint8_t *ov, int ouv_stride,
+#endif
                          int oheight, int owidth) {
   vp9_resize_plane(y, height, width, y_stride,
                    oy, oheight, owidth, oy_stride);
@@ -560,12 +669,22 @@ void vp9_resize_frame422(const uint8_t *const y, int y_stride,
                    ov, oheight, owidth / 2, ouv_stride);
 }
 
+#if CONFIG_HIGHBITDEPTH
+void vp9_resize_frame444(const uint16_t *const y, int y_stride,
+                         const uint16_t *const u, const uint16_t *const v,
+#else
 void vp9_resize_frame444(const uint8_t *const y, int y_stride,
                          const uint8_t *const u, const uint8_t *const v,
+#endif
                          int uv_stride,
                          int height, int width,
+#if CONFIG_HIGHBITDEPTH
+                         uint16_t *oy, int oy_stride,
+                         uint16_t *ou, uint16_t *ov, int ouv_stride,
+#else
                          uint8_t *oy, int oy_stride,
                          uint8_t *ou, uint8_t *ov, int ouv_stride,
+#endif
                          int oheight, int owidth) {
   vp9_resize_plane(y, height, width, y_stride,
                    oy, oheight, owidth, oy_stride);

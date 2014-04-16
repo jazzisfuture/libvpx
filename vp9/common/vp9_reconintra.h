@@ -13,15 +13,20 @@
 
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_blockd.h"
-
+#include "vpx_config.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
                              TX_SIZE tx_size, MB_PREDICTION_MODE mode,
+#if CONFIG_HIGHBITDEPTH
+                             const uint16_t *ref, int ref_stride,
+                             uint16_t *dst, int dst_stride,
+#else
                              const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
+#endif
                              int aoff, int loff, int plane);
 #ifdef __cplusplus
 }  // extern "C"

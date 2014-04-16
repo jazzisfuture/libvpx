@@ -16,6 +16,7 @@
 
 # include <stdio.h>
 # include "vpx/vpx_image.h"
+# include "vpx_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,8 +56,13 @@ struct y4m_input {
   /*The amount to read into the auxilliary buffer.*/
   size_t            aux_buf_read_sz;
   y4m_convert_func  convert;
+#if CONFIG_HIGHBITDEPTH
+  unsigned short   *dst_buf;
+  unsigned short    *aux_buf;
+#else
   unsigned char    *dst_buf;
   unsigned char    *aux_buf;
+#endif
   enum vpx_img_fmt  vpx_fmt;
   int               vpx_bps;
 };

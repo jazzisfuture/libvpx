@@ -13,8 +13,11 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_scale/yv12config.h"
-
+#if CONFIG_HIGHBITDEPTH
+static void extend_plane(uint16_t *const src, int src_stride,
+#else
 static void extend_plane(uint8_t *const src, int src_stride,
+#endif
                          int width, int height,
                          int extend_top, int extend_left,
                          int extend_bottom, int extend_right) {
@@ -22,14 +25,26 @@ static void extend_plane(uint8_t *const src, int src_stride,
   const int linesize = extend_left + extend_right + width;
 
   /* copy the left and right most columns out */
+#if CONFIG_HIGHBITDEPTH
+  int c;
+  uint16_t *src_ptr1 = src;
+  uint16_t *src_ptr2 = src + width - 1;
+  uint16_t *dst_ptr1 = src - extend_left;
+  uint16_t *dst_ptr2 = src + width;
+#else
   uint8_t *src_ptr1 = src;
   uint8_t *src_ptr2 = src + width - 1;
   uint8_t *dst_ptr1 = src - extend_left;
   uint8_t *dst_ptr2 = src + width;
-
+#endif
   for (i = 0; i < height; ++i) {
+#if CONFIG_HIGHBITDEPTH
+    for(c=0; c<extend_left; c++) dst_ptr1[c]=src_ptr1[0];
+    for(c=0; c<extend_right; c++) dst_ptr2[c]=src_ptr2[0];
+#else
     vpx_memset(dst_ptr1, src_ptr1[0], extend_left);
     vpx_memset(dst_ptr2, src_ptr2[0], extend_right);
+#endif
     src_ptr1 += src_stride;
     src_ptr2 += src_stride;
     dst_ptr1 += src_stride;
@@ -45,12 +60,20 @@ static void extend_plane(uint8_t *const src, int src_stride,
   dst_ptr2 = src + src_stride * height - extend_left;
 
   for (i = 0; i < extend_top; ++i) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst_ptr1, src_ptr1, linesize*sizeof(uint16_t));
+#else
     vpx_memcpy(dst_ptr1, src_ptr1, linesize);
+#endif
     dst_ptr1 += src_stride;
   }
 
   for (i = 0; i < extend_bottom; ++i) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst_ptr2, src_ptr2, linesize*sizeof(uint16_t));
+#else
     vpx_memcpy(dst_ptr2, src_ptr2, linesize);
+#endif
     dst_ptr2 += src_stride;
   }
 }
@@ -125,9 +148,13 @@ void vp9_extend_frame_inner_borders_c(YV12_BUFFER_CONFIG *ybf) {
 void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
                            YV12_BUFFER_CONFIG *dst_ybc) {
   int row;
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *src = src_ybc->y_buffer;
+  uint16_t *dst = dst_ybc->y_buffer;
+#else
   const uint8_t *src = src_ybc->y_buffer;
   uint8_t *dst = dst_ybc->y_buffer;
-
+#endif
 #if 0
   /* These assertions are valid in the codec, but the libvpx-tester uses
    * this code slightly differently.
@@ -137,7 +164,11 @@ void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
 #endif
 
   for (row = 0; row < src_ybc->y_height; ++row) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst, src, sizeof(uint16_t)*src_ybc->y_width);
+#else
     vpx_memcpy(dst, src, src_ybc->y_width);
+#endif
     src += src_ybc->y_stride;
     dst += dst_ybc->y_stride;
   }
@@ -146,7 +177,11 @@ void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
   dst = dst_ybc->u_buffer;
 
   for (row = 0; row < src_ybc->uv_height; ++row) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst, src, sizeof(uint16_t)*src_ybc->uv_width);
+#else
     vpx_memcpy(dst, src, src_ybc->uv_width);
+#endif
     src += src_ybc->uv_stride;
     dst += dst_ybc->uv_stride;
   }
@@ -155,7 +190,11 @@ void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
   dst = dst_ybc->v_buffer;
 
   for (row = 0; row < src_ybc->uv_height; ++row) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst, src, sizeof(uint16_t)*src_ybc->uv_width);
+#else
     vpx_memcpy(dst, src, src_ybc->uv_width);
+#endif
     src += src_ybc->uv_stride;
     dst += dst_ybc->uv_stride;
   }
@@ -166,11 +205,19 @@ void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
 void vpx_yv12_copy_y_c(const YV12_BUFFER_CONFIG *src_ybc,
                        YV12_BUFFER_CONFIG *dst_ybc) {
   int row;
+#if CONFIG_HIGHBITDEPTH
+  const uint16_t *src = src_ybc->y_buffer;
+  uint16_t *dst = dst_ybc->y_buffer;
+#else
   const uint8_t *src = src_ybc->y_buffer;
   uint8_t *dst = dst_ybc->y_buffer;
-
+#endif
   for (row = 0; row < src_ybc->y_height; ++row) {
+#if CONFIG_HIGHBITDEPTH
+    vpx_memcpy(dst, src, sizeof(uint16_t)*(src_ybc->y_width));
+#else
     vpx_memcpy(dst, src, src_ybc->y_width);
+#endif
     src += src_ybc->y_stride;
     dst += dst_ybc->y_stride;
   }
