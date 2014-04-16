@@ -46,10 +46,10 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     lrc->key_frame_rate_correction_factor = 1.0;
 
     if (svc->number_temporal_layers > 1) {
-      lc->target_bandwidth = oxcf->ts_target_bitrate[layer] * 1000;
+      lc->target_bandwidth = oxcf->ts_target_bitrate[layer];
       lrc->last_q[INTER_FRAME] = oxcf->worst_allowed_q;
     } else {
-      lc->target_bandwidth = oxcf->ss_target_bitrate[layer] * 1000;
+      lc->target_bandwidth = oxcf->ss_target_bitrate[layer];
       lrc->last_q[0] = oxcf->best_allowed_q;
       lrc->last_q[1] = oxcf->best_allowed_q;
       lrc->last_q[2] = oxcf->best_allowed_q;
@@ -82,9 +82,9 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
     RATE_CONTROL *const lrc = &lc->rc;
 
     if (svc->number_temporal_layers > 1) {
-      lc->target_bandwidth = oxcf->ts_target_bitrate[layer] * 1000;
+      lc->target_bandwidth = oxcf->ts_target_bitrate[layer];
     } else {
-      lc->target_bandwidth = oxcf->ss_target_bitrate[layer] * 1000;
+      lc->target_bandwidth = oxcf->ss_target_bitrate[layer];
     }
     bitrate_alloc = (float)lc->target_bandwidth / target_bandwidth;
     // Update buffer-related quantities.
