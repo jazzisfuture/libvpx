@@ -52,8 +52,8 @@ dist:
                 | sed -e 's/MD5(\(.*\))= \([0-9a-f]\{32\}\)/\2  \1/' \
                 > md5sums.txt;\
         fi
-
-
+else
+.PHONY: utiltest
 endif
 
 ifneq ($(target),)
@@ -63,7 +63,31 @@ ifneq ($(target),)
 # don't want to include TOOLCHAIN in that case. FAT_ARCHS is used to test
 # if we're in the universal case.
 include $(target)$(if $(FAT_ARCHS),,-$(TOOLCHAIN)).mk
+else
+include libs-$(TOOLCHAIN).mk
+.PHONY: utiltest
+utiltest: testdata
+	echo word2=$(word 2,$(subst -, , $(TOOLCHAIN)))
+	echo CONFIG_MSVS=$(CONFIG_MSVS)
+
+ifeq ($(CONFIG_MSVS),yes)
+# Find and run the _Release_ tools.
+	@echo ITS MSVS RUN
+ifeq ($(word 1,$(subst -, , $(TOOLCHAIN))),win32)
+	$(SRC_PATH_BARE)/test/vpxdec.sh --test-data-path $(LIBVPX_TEST_DATA_PATH) --bin-path Win32/Release
+	$(SRC_PATH_BARE)/test/vpxenc.sh --test-data-path $(LIBVPX_TEST_DATA_PATH) --bin-path Win32/Release
+else
+	$(SRC_PATH_BARE)/test/vpxdec.sh --test-data-path $(LIBVPX_TEST_DATA_PATH) --bin-path x64/Release
+	$(SRC_PATH_BARE)/test/vpxenc.sh --test-data-path $(LIBVPX_TEST_DATA_PATH) --bin-path x64/Release
 endif
+# TODO: ARM?
+else
+# Not MSVC: Just run the test scripts directly.
+	$(SRC_PATH_BARE)/test/vpxdec.sh --test-data-path $(LIBVPX_TEST_DATA_PATH)
+	$(SRC_PATH_BARE)/test/vpxenc.sh --test-data-path $(LIBVPX_TEST_DATA_PATH)
+endif
+endif
+
 BUILD_ROOT?=.
 VPATH=$(SRC_PATH_BARE)
 CFLAGS+=-I$(BUILD_PFX)$(BUILD_ROOT) -I$(SRC_PATH)
