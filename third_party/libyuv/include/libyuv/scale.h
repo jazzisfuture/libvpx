@@ -12,6 +12,7 @@
 #define INCLUDE_LIBYUV_SCALE_H_
 
 #include "third_party/libyuv/include/libyuv/basic_types.h"
+#include "vpx_config.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -35,6 +36,17 @@ typedef enum {
 // quality image, at further expense of speed.
 // Returns 0 if successful.
 
+#if CONFIG_B10_EXT
+int I420Scale(const uint16* src_y, int src_stride_y,
+              const uint16* src_u, int src_stride_u,
+              const uint16* src_v, int src_stride_v,
+              int src_width, int src_height,
+              uint16* dst_y, int dst_stride_y,
+              uint16* dst_u, int dst_stride_u,
+              uint16* dst_v, int dst_stride_v,
+              int dst_width, int dst_height,
+              FilterMode filtering);
+#else
 int I420Scale(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
               const uint8* src_v, int src_stride_v,
@@ -44,8 +56,18 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               uint8* dst_v, int dst_stride_v,
               int dst_width, int dst_height,
               FilterMode filtering);
+#endif
 
 // Legacy API.  Deprecated
+#if CONFIG_B10_EXT
+int Scale(const uint16* src_y, const uint16* src_u, const uint16* src_v,
+          int src_stride_y, int src_stride_u, int src_stride_v,
+          int src_width, int src_height,
+          uint16* dst_y, uint16* dst_u, uint16* dst_v,
+          int dst_stride_y, int dst_stride_u, int dst_stride_v,
+          int dst_width, int dst_height,
+          int interpolate);
+#else
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int src_stride_y, int src_stride_u, int src_stride_v,
           int src_width, int src_height,
@@ -53,11 +75,18 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int dst_stride_y, int dst_stride_u, int dst_stride_v,
           int dst_width, int dst_height,
           int interpolate);
+#endif
 
 // Legacy API.  Deprecated
+#if CONFIG_B10_EXT
+int ScaleOffset(const uint16* src, int src_width, int src_height,
+                uint16* dst, int dst_width, int dst_height, int dst_yoffset,
+                int interpolate);
+#else
 int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
                 int interpolate);
+#endif
 
 // For testing, allow disabling of optimizations.
 void SetUseReferenceImpl(int use);

@@ -228,7 +228,11 @@ static void alloc_tile_storage(VP9D_COMP *pbi, int tile_rows, int tile_cols) {
 }
 
 static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
+#if CONFIG_B10_EXT
+                                    TX_SIZE tx_size, uint16_t *dst, int stride,
+#else
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
+#endif
                                     int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
   if (eob > 0) {
@@ -289,7 +293,11 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   const MB_PREDICTION_MODE mode = (plane == 0) ? get_y_mode(mi, block)
                                                : mi->mbmi.uv_mode;
   int x, y;
+#if CONFIG_B10_EXT
+  uint16_t *dst;
+#else
   uint8_t *dst;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
 

@@ -162,7 +162,11 @@ struct tokenize_b_args {
   VP9_COMP *cpi;
   MACROBLOCKD *xd;
   TOKENEXTRA **tp;
+#if CONFIG_B10_EXT
+  uint16_t *token_cache;
+#else
   uint8_t *token_cache;
+#endif
 };
 
 static void set_entropy_context_b(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -213,7 +217,11 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   VP9_COMP *cpi = args->cpi;
   MACROBLOCKD *xd = args->xd;
   TOKENEXTRA **tp = args->tp;
+#if CONFIG_B10_EXT
+  uint16_t *token_cache = args->token_cache;
+#else
   uint8_t *token_cache = args->token_cache;
+#endif
   struct macroblock_plane *p = &cpi->mb.plane[plane];
   struct macroblockd_plane *pd = &xd->plane[plane];
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;

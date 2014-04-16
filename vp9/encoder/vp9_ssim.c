@@ -10,8 +10,12 @@
 
 
 #include "vp9/encoder/vp9_onyx_int.h"
-
+#include "vpx_config.h"
+#if CONFIG_B10_EXT
+void vp9_ssim_parms_16x16_c(uint16_t *s, int sp, uint16_t *r,
+#else
 void vp9_ssim_parms_16x16_c(uint8_t *s, int sp, uint8_t *r,
+#endif
                             int rp, unsigned long *sum_s, unsigned long *sum_r,
                             unsigned long *sum_sq_s, unsigned long *sum_sq_r,
                             unsigned long *sum_sxr) {
@@ -26,7 +30,11 @@ void vp9_ssim_parms_16x16_c(uint8_t *s, int sp, uint8_t *r,
     }
   }
 }
+#if CONFIG_B10_EXT
+void vp9_ssim_parms_8x8_c(uint16_t *s, int sp, uint16_t *r, int rp,
+#else
 void vp9_ssim_parms_8x8_c(uint8_t *s, int sp, uint8_t *r, int rp,
+#endif
                           unsigned long *sum_s, unsigned long *sum_r,
                           unsigned long *sum_sq_s, unsigned long *sum_sq_r,
                           unsigned long *sum_sxr) {
@@ -65,7 +73,11 @@ static double similarity(unsigned long sum_s, unsigned long sum_r,
   return ssim_n * 1.0 / ssim_d;
 }
 
+#if CONFIG_B10_EXT
+static double ssim_8x8(uint16_t *s, int sp, uint16_t *r, int rp) {
+#else
 static double ssim_8x8(uint8_t *s, int sp, uint8_t *r, int rp) {
+#endif
   unsigned long sum_s = 0, sum_r = 0, sum_sq_s = 0, sum_sq_r = 0, sum_sxr = 0;
   vp9_ssim_parms_8x8(s, sp, r, rp, &sum_s, &sum_r, &sum_sq_s, &sum_sq_r,
                      &sum_sxr);
@@ -75,7 +87,11 @@ static double ssim_8x8(uint8_t *s, int sp, uint8_t *r, int rp) {
 // We are using a 8x8 moving window with starting location of each 8x8 window
 // on the 4x4 pixel grid. Such arrangement allows the windows to overlap
 // block boundaries to penalize blocking artifacts.
+#if CONFIG_B10_EXT
+double vp9_ssim2(uint16_t *img1, uint16_t *img2, int stride_img1,
+#else
 double vp9_ssim2(uint8_t *img1, uint8_t *img2, int stride_img1,
+#endif
                  int stride_img2, int width, int height) {
   int i, j;
   int samples = 0;

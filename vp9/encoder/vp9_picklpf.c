@@ -31,7 +31,6 @@ static int try_filter_frame(const YV12_BUFFER_CONFIG *sd, VP9_COMP *const cpi,
                             MACROBLOCKD *const xd, VP9_COMMON *const cm,
                             int filt_level, int partial_frame) {
   int filt_err;
-
   vp9_loop_filter_frame(cm, xd, filt_level, 1, partial_frame);
   filt_err = vp9_calc_ss_err(sd, cm->frame_to_show);
 
@@ -86,6 +85,7 @@ static void search_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     if (filt_direction <= 0 && filt_low != filt_mid) {
       // Get Low filter error score
       if (ss_err[filt_low] < 0) {
+
         filt_err = try_filter_frame(sd, cpi, xd, cm, filt_low, partial_frame);
         ss_err[filt_low] = filt_err;
       } else {
@@ -105,6 +105,7 @@ static void search_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     // Now look at filt_high
     if (filt_direction >= 0 && filt_high != filt_mid) {
       if (ss_err[filt_high] < 0) {
+
         filt_err = try_filter_frame(sd, cpi, xd, cm, filt_high, partial_frame);
         ss_err[filt_high] = filt_err;
       } else {

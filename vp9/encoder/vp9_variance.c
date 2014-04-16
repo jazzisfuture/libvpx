@@ -18,9 +18,17 @@
 
 #include "vp9/encoder/vp9_variance.h"
 
+#if CONFIG_B10_EXT
+void variance(const uint16_t *src_ptr,
+#else
 void variance(const uint8_t *src_ptr,
+#endif
               int  source_stride,
+#if CONFIG_B10_EXT
+              const uint16_t *ref_ptr,
+#else
               const uint8_t *ref_ptr,
+#endif
               int  recon_stride,
               int  w,
               int  h,
@@ -28,7 +36,6 @@ void variance(const uint8_t *src_ptr,
               int *sum) {
   int i, j;
   int diff;
-
   *sum = 0;
   *sse = 0;
 
@@ -48,7 +55,11 @@ void variance(const uint8_t *src_ptr,
  *
  *  ROUTINE       : filter_block2d_bil_first_pass
  *
+#if CONFIG_B10_EXT
+ *  INPUTS        : uint16_t  *src_ptr          : Pointer to source block.
+#else
  *  INPUTS        : uint8_t  *src_ptr          : Pointer to source block.
+#endif
  *                  uint32_t src_pixels_per_line : Stride of input block.
  *                  uint32_t pixel_step        : Offset between filter input
  *                                               samples (see notes).
@@ -75,7 +86,11 @@ void variance(const uint8_t *src_ptr,
  *                  to the next.
  *
  ****************************************************************************/
+#if CONFIG_B10_EXT
+static void var_filter_block2d_bil_first_pass(const uint16_t *src_ptr,
+#else
 static void var_filter_block2d_bil_first_pass(const uint8_t *src_ptr,
+#endif
                                               uint16_t *output_ptr,
                                               unsigned int src_pixels_per_line,
                                               int pixel_step,
@@ -132,7 +147,11 @@ static void var_filter_block2d_bil_first_pass(const uint8_t *src_ptr,
  *
  ****************************************************************************/
 static void var_filter_block2d_bil_second_pass(const uint16_t *src_ptr,
+#if CONFIG_B10_EXT
+                                               uint16_t *output_ptr,
+#else
                                                uint8_t *output_ptr,
+#endif
                                                unsigned int src_pixels_per_line,
                                                unsigned int pixel_step,
                                                unsigned int output_height,
@@ -163,9 +182,17 @@ unsigned int vp9_get_mb_ss_c(const int16_t *src_ptr) {
   return sum;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance64x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance64x32_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -176,15 +203,27 @@ unsigned int vp9_variance64x32_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 11));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance64x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance64x32_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+#else
   uint8_t temp2[68 * 64];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -197,17 +236,34 @@ unsigned int vp9_sub_pixel_variance64x32_c(const uint8_t *src_ptr,
   return vp9_variance64x32(temp2, 64, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance64x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance64x32_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 64 * 64);  // compound pred buffer
+#else
   uint8_t temp2[68 * 64];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 64 * 64);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -220,9 +276,17 @@ unsigned int vp9_sub_pixel_avg_variance64x32_c(const uint8_t *src_ptr,
   return vp9_variance64x32(temp3, 64, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance32x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance32x64_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -233,15 +297,27 @@ unsigned int vp9_variance32x64_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 11));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance32x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance32x64_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+#else
   uint8_t temp2[68 * 64];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -254,17 +330,34 @@ unsigned int vp9_sub_pixel_variance32x64_c(const uint8_t *src_ptr,
   return vp9_variance32x64(temp2, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance32x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance32x64_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 32 * 64);  // compound pred buffer
+#else
   uint8_t temp2[68 * 64];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 32 * 64);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -277,9 +370,17 @@ unsigned int vp9_sub_pixel_avg_variance32x64_c(const uint8_t *src_ptr,
   return vp9_variance32x64(temp3, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance32x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance32x16_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -290,15 +391,27 @@ unsigned int vp9_variance32x16_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 9));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance32x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance32x16_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+#else
   uint8_t temp2[36 * 32];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -311,17 +424,34 @@ unsigned int vp9_sub_pixel_variance32x16_c(const uint8_t *src_ptr,
   return vp9_variance32x16(temp2, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance32x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance32x16_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 32 * 16);  // compound pred buffer
+#else
   uint8_t temp2[36 * 32];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 32 * 16);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -334,9 +464,17 @@ unsigned int vp9_sub_pixel_avg_variance32x16_c(const uint8_t *src_ptr,
   return vp9_variance32x16(temp3, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance16x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance16x32_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -347,15 +485,27 @@ unsigned int vp9_variance16x32_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 9));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance16x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance16x32_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+#else
   uint8_t temp2[36 * 32];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -368,17 +518,34 @@ unsigned int vp9_sub_pixel_variance16x32_c(const uint8_t *src_ptr,
   return vp9_variance16x32(temp2, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance16x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance16x32_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 16 * 32);  // compound pred buffer
+#else
   uint8_t temp2[36 * 32];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 16 * 32);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -391,9 +558,17 @@ unsigned int vp9_sub_pixel_avg_variance16x32_c(const uint8_t *src_ptr,
   return vp9_variance16x32(temp3, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance64x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance64x64_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -404,9 +579,17 @@ unsigned int vp9_variance64x64_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 12));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance32x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance32x32_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -417,9 +600,17 @@ unsigned int vp9_variance32x32_c(const uint8_t *src_ptr,
   return (var - (((int64_t)avg * avg) >> 10));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance16x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance16x16_c(const uint8_t *src_ptr,
+#endif
                                  int  source_stride,
+#if CONFIG_B10_EXT
+                                 const uint16_t *ref_ptr,
+#else
                                  const uint8_t *ref_ptr,
+#endif
                                  int  recon_stride,
                                  unsigned int *sse) {
   unsigned int var;
@@ -430,9 +621,17 @@ unsigned int vp9_variance16x16_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 8));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance8x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance8x16_c(const uint8_t *src_ptr,
+#endif
                                 int  source_stride,
+#if CONFIG_B10_EXT
+                                const uint16_t *ref_ptr,
+#else
                                 const uint8_t *ref_ptr,
+#endif
                                 int  recon_stride,
                                 unsigned int *sse) {
   unsigned int var;
@@ -443,9 +642,17 @@ unsigned int vp9_variance8x16_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 7));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance16x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance16x8_c(const uint8_t *src_ptr,
+#endif
                                 int  source_stride,
+#if CONFIG_B10_EXT
+                                const uint16_t *ref_ptr,
+#else
                                 const uint8_t *ref_ptr,
+#endif
                                 int  recon_stride,
                                 unsigned int *sse) {
   unsigned int var;
@@ -456,15 +663,31 @@ unsigned int vp9_variance16x8_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 7));
 }
 
+#if CONFIG_B10_EXT
+void vp9_get_sse_sum_8x8_c(const uint16_t *src_ptr, int source_stride,
+#else
 void vp9_get_sse_sum_8x8_c(const uint8_t *src_ptr, int source_stride,
+#endif
+#if CONFIG_B10_EXT
+                       const uint16_t *ref_ptr, int ref_stride,
+#else
                        const uint8_t *ref_ptr, int ref_stride,
+#endif
                        unsigned int *sse, int *sum) {
   variance(src_ptr, source_stride, ref_ptr, ref_stride, 8, 8, sse, sum);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance8x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance8x8_c(const uint8_t *src_ptr,
+#endif
                                int  source_stride,
+#if CONFIG_B10_EXT
+                               const uint16_t *ref_ptr,
+#else
                                const uint8_t *ref_ptr,
+#endif
                                int  recon_stride,
                                unsigned int *sse) {
   unsigned int var;
@@ -475,9 +698,17 @@ unsigned int vp9_variance8x8_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 6));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance8x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance8x4_c(const uint8_t *src_ptr,
+#endif
                                int  source_stride,
+#if CONFIG_B10_EXT
+                               const uint16_t *ref_ptr,
+#else
                                const uint8_t *ref_ptr,
+#endif
                                int  recon_stride,
                                unsigned int *sse) {
   unsigned int var;
@@ -488,9 +719,17 @@ unsigned int vp9_variance8x4_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 5));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance4x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance4x8_c(const uint8_t *src_ptr,
+#endif
                                int  source_stride,
+#if CONFIG_B10_EXT
+                               const uint16_t *ref_ptr,
+#else
                                const uint8_t *ref_ptr,
+#endif
                                int  recon_stride,
                                unsigned int *sse) {
   unsigned int var;
@@ -501,9 +740,17 @@ unsigned int vp9_variance4x8_c(const uint8_t *src_ptr,
   return (var - (((unsigned int)avg * avg) >> 5));
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance4x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance4x4_c(const uint8_t *src_ptr,
+#endif
                                int  source_stride,
+#if CONFIG_B10_EXT
+                               const uint16_t *ref_ptr,
+#else
                                const uint8_t *ref_ptr,
+#endif
                                int  recon_stride,
                                unsigned int *sse) {
   unsigned int var;
@@ -515,9 +762,17 @@ unsigned int vp9_variance4x4_c(const uint8_t *src_ptr,
 }
 
 
+#if CONFIG_B10_EXT
+unsigned int vp9_mse16x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_mse16x16_c(const uint8_t *src_ptr,
+#endif
                             int  source_stride,
+#if CONFIG_B10_EXT
+                            const uint16_t *ref_ptr,
+#else
                             const uint8_t *ref_ptr,
+#endif
                             int  recon_stride,
                             unsigned int *sse) {
   unsigned int var;
@@ -528,9 +783,17 @@ unsigned int vp9_mse16x16_c(const uint8_t *src_ptr,
   return var;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_mse16x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_mse16x8_c(const uint8_t *src_ptr,
+#endif
                            int  source_stride,
+#if CONFIG_B10_EXT
+                           const uint16_t *ref_ptr,
+#else
                            const uint8_t *ref_ptr,
+#endif
                            int  recon_stride,
                            unsigned int *sse) {
   unsigned int var;
@@ -541,9 +804,17 @@ unsigned int vp9_mse16x8_c(const uint8_t *src_ptr,
   return var;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_mse8x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_mse8x16_c(const uint8_t *src_ptr,
+#endif
                            int  source_stride,
+#if CONFIG_B10_EXT
+                           const uint16_t *ref_ptr,
+#else
                            const uint8_t *ref_ptr,
+#endif
                            int  recon_stride,
                            unsigned int *sse) {
   unsigned int var;
@@ -554,9 +825,17 @@ unsigned int vp9_mse8x16_c(const uint8_t *src_ptr,
   return var;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_mse8x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_mse8x8_c(const uint8_t *src_ptr,
+#endif
                           int  source_stride,
+#if CONFIG_B10_EXT
+                          const uint16_t *ref_ptr,
+#else
                           const uint8_t *ref_ptr,
+#endif
                           int  recon_stride,
                           unsigned int *sse) {
   unsigned int var;
@@ -568,14 +847,26 @@ unsigned int vp9_mse8x8_c(const uint8_t *src_ptr,
 }
 
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance4x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance4x4_c(const uint8_t *src_ptr,
+#endif
                                          int  src_pixels_per_line,
                                          int  xoffset,
                                          int  yoffset,
+#if CONFIG_B10_EXT
+                                         const uint16_t *dst_ptr,
+#else
                                          const uint8_t *dst_ptr,
+#endif
                                          int dst_pixels_per_line,
                                          unsigned int *sse) {
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
   uint16_t fdata3[5 * 4];  // Temp data buffer used in filtering
 
@@ -592,17 +883,34 @@ unsigned int vp9_sub_pixel_variance4x4_c(const uint8_t *src_ptr,
   return vp9_variance4x4(temp2, 4, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance4x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance4x4_c(const uint8_t *src_ptr,
+#endif
                                              int  src_pixels_per_line,
                                              int  xoffset,
                                              int  yoffset,
+#if CONFIG_B10_EXT
+                                             const uint16_t *dst_ptr,
+#else
                                              const uint8_t *dst_ptr,
+#endif
                                              int dst_pixels_per_line,
                                              unsigned int *sse,
+#if CONFIG_B10_EXT
+                                             const uint16_t *second_pred) {
+#else
                                              const uint8_t *second_pred) {
+#endif
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 4 * 4);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
-  const int16_t *hfilter, *vfilter;
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 4 * 4);  // compound pred buffer
+#endif
+  const int16_t *hfilter, *vfilter;
   uint16_t fdata3[5 * 4];  // Temp data buffer used in filtering
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -618,15 +926,27 @@ unsigned int vp9_sub_pixel_avg_variance4x4_c(const uint8_t *src_ptr,
   return vp9_variance4x4(temp3, 4, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance8x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance8x8_c(const uint8_t *src_ptr,
+#endif
                                          int  src_pixels_per_line,
                                          int  xoffset,
                                          int  yoffset,
+#if CONFIG_B10_EXT
+                                         const uint16_t *dst_ptr,
+#else
                                          const uint8_t *dst_ptr,
+#endif
                                          int dst_pixels_per_line,
                                          unsigned int *sse) {
   uint16_t fdata3[9 * 8];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -639,17 +959,34 @@ unsigned int vp9_sub_pixel_variance8x8_c(const uint8_t *src_ptr,
   return vp9_variance8x8(temp2, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance8x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance8x8_c(const uint8_t *src_ptr,
+#endif
                                              int  src_pixels_per_line,
                                              int  xoffset,
                                              int  yoffset,
+#if CONFIG_B10_EXT
+                                             const uint16_t *dst_ptr,
+#else
                                              const uint8_t *dst_ptr,
+#endif
                                              int dst_pixels_per_line,
                                              unsigned int *sse,
+#if CONFIG_B10_EXT
+                                             const uint16_t *second_pred) {
+#else
                                              const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[9 * 8];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 8 * 8);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 8 * 8);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -662,15 +999,27 @@ unsigned int vp9_sub_pixel_avg_variance8x8_c(const uint8_t *src_ptr,
   return vp9_variance8x8(temp3, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance16x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance16x16_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[17 * 16];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -683,17 +1032,34 @@ unsigned int vp9_sub_pixel_variance16x16_c(const uint8_t *src_ptr,
   return vp9_variance16x16(temp2, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance16x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance16x16_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[17 * 16];
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 16 * 16);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 16 * 16);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -707,15 +1073,27 @@ unsigned int vp9_sub_pixel_avg_variance16x16_c(const uint8_t *src_ptr,
   return vp9_variance16x16(temp3, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance64x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance64x64_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+#else
   uint8_t temp2[68 * 64];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -728,17 +1106,34 @@ unsigned int vp9_sub_pixel_variance64x64_c(const uint8_t *src_ptr,
   return vp9_variance64x64(temp2, 64, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance64x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance64x64_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[65 * 64];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[68 * 64];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 64 * 64);  // compound pred buffer
+#else
   uint8_t temp2[68 * 64];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 64 * 64);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -751,15 +1146,27 @@ unsigned int vp9_sub_pixel_avg_variance64x64_c(const uint8_t *src_ptr,
   return vp9_variance64x64(temp3, 64, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance32x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance32x32_c(const uint8_t *src_ptr,
+#endif
                                            int  src_pixels_per_line,
                                            int  xoffset,
                                            int  yoffset,
+#if CONFIG_B10_EXT
+                                           const uint16_t *dst_ptr,
+#else
                                            const uint8_t *dst_ptr,
+#endif
                                            int dst_pixels_per_line,
                                            unsigned int *sse) {
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+#else
   uint8_t temp2[36 * 32];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -772,17 +1179,34 @@ unsigned int vp9_sub_pixel_variance32x32_c(const uint8_t *src_ptr,
   return vp9_variance32x32(temp2, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance32x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance32x32_c(const uint8_t *src_ptr,
+#endif
                                                int  src_pixels_per_line,
                                                int  xoffset,
                                                int  yoffset,
+#if CONFIG_B10_EXT
+                                               const uint16_t *dst_ptr,
+#else
                                                const uint8_t *dst_ptr,
+#endif
                                                int dst_pixels_per_line,
                                                unsigned int *sse,
+#if CONFIG_B10_EXT
+                                               const uint16_t *second_pred) {
+#else
                                                const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[33 * 32];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[36 * 32];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 32 * 32);  // compound pred buffer
+#else
   uint8_t temp2[36 * 32];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 32 * 32);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -795,92 +1219,172 @@ unsigned int vp9_sub_pixel_avg_variance32x32_c(const uint8_t *src_ptr,
   return vp9_variance32x32(temp3, 32, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar16x16_h_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar16x16_h_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance16x16_c(src_ptr, source_stride, 8, 0,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar32x32_h_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar32x32_h_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance32x32_c(src_ptr, source_stride, 8, 0,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar64x64_h_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar64x64_h_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance64x64_c(src_ptr, source_stride, 8, 0,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar16x16_v_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar16x16_v_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance16x16_c(src_ptr, source_stride, 0, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar32x32_v_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar32x32_v_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance32x32_c(src_ptr, source_stride, 0, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar64x64_v_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar64x64_v_c(const uint8_t *src_ptr,
+#endif
                                               int  source_stride,
+#if CONFIG_B10_EXT
+                                              const uint16_t *ref_ptr,
+#else
                                               const uint8_t *ref_ptr,
+#endif
                                               int  recon_stride,
                                               unsigned int *sse) {
   return vp9_sub_pixel_variance64x64_c(src_ptr, source_stride, 0, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar16x16_hv_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar16x16_hv_c(const uint8_t *src_ptr,
+#endif
                                                int  source_stride,
+#if CONFIG_B10_EXT
+                                               const uint16_t *ref_ptr,
+#else
                                                const uint8_t *ref_ptr,
+#endif
                                                int  recon_stride,
                                                unsigned int *sse) {
   return vp9_sub_pixel_variance16x16_c(src_ptr, source_stride, 8, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar32x32_hv_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar32x32_hv_c(const uint8_t *src_ptr,
+#endif
                                                int  source_stride,
+#if CONFIG_B10_EXT
+                                               const uint16_t *ref_ptr,
+#else
                                                const uint8_t *ref_ptr,
+#endif
                                                int  recon_stride,
                                                unsigned int *sse) {
   return vp9_sub_pixel_variance32x32_c(src_ptr, source_stride, 8, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_variance_halfpixvar64x64_hv_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_variance_halfpixvar64x64_hv_c(const uint8_t *src_ptr,
+#endif
                                                int  source_stride,
+#if CONFIG_B10_EXT
+                                               const uint16_t *ref_ptr,
+#else
                                                const uint8_t *ref_ptr,
+#endif
                                                int  recon_stride,
                                                unsigned int *sse) {
   return vp9_sub_pixel_variance64x64_c(src_ptr, source_stride, 8, 8,
                                        ref_ptr, recon_stride, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_mse16x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_mse16x16_c(const uint8_t *src_ptr,
+#endif
                                       int  src_pixels_per_line,
                                       int  xoffset,
                                       int  yoffset,
+#if CONFIG_B10_EXT
+                                      const uint16_t *dst_ptr,
+#else
                                       const uint8_t *dst_ptr,
+#endif
                                       int dst_pixels_per_line,
                                       unsigned int *sse) {
   vp9_sub_pixel_variance16x16_c(src_ptr, src_pixels_per_line,
@@ -889,11 +1393,19 @@ unsigned int vp9_sub_pixel_mse16x16_c(const uint8_t *src_ptr,
   return *sse;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_mse32x32_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_mse32x32_c(const uint8_t *src_ptr,
+#endif
                                       int  src_pixels_per_line,
                                       int  xoffset,
                                       int  yoffset,
+#if CONFIG_B10_EXT
+                                      const uint16_t *dst_ptr,
+#else
                                       const uint8_t *dst_ptr,
+#endif
                                       int dst_pixels_per_line,
                                       unsigned int *sse) {
   vp9_sub_pixel_variance32x32_c(src_ptr, src_pixels_per_line,
@@ -902,11 +1414,19 @@ unsigned int vp9_sub_pixel_mse32x32_c(const uint8_t *src_ptr,
   return *sse;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_mse64x64_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_mse64x64_c(const uint8_t *src_ptr,
+#endif
                                       int  src_pixels_per_line,
                                       int  xoffset,
                                       int  yoffset,
+#if CONFIG_B10_EXT
+                                      const uint16_t *dst_ptr,
+#else
                                       const uint8_t *dst_ptr,
+#endif
                                       int dst_pixels_per_line,
                                       unsigned int *sse) {
   vp9_sub_pixel_variance64x64_c(src_ptr, src_pixels_per_line,
@@ -915,15 +1435,27 @@ unsigned int vp9_sub_pixel_mse64x64_c(const uint8_t *src_ptr,
   return *sse;
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance16x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance16x8_c(const uint8_t *src_ptr,
+#endif
                                           int  src_pixels_per_line,
                                           int  xoffset,
                                           int  yoffset,
+#if CONFIG_B10_EXT
+                                          const uint16_t *dst_ptr,
+#else
                                           const uint8_t *dst_ptr,
+#endif
                                           int dst_pixels_per_line,
                                           unsigned int *sse) {
   uint16_t fdata3[16 * 9];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -936,17 +1468,34 @@ unsigned int vp9_sub_pixel_variance16x8_c(const uint8_t *src_ptr,
   return vp9_variance16x8(temp2, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance16x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance16x8_c(const uint8_t *src_ptr,
+#endif
                                               int  src_pixels_per_line,
                                               int  xoffset,
                                               int  yoffset,
+#if CONFIG_B10_EXT
+                                              const uint16_t *dst_ptr,
+#else
                                               const uint8_t *dst_ptr,
+#endif
                                               int dst_pixels_per_line,
                                               unsigned int *sse,
+#if CONFIG_B10_EXT
+                                              const uint16_t *second_pred) {
+#else
                                               const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[16 * 9];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 16 * 8);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 16 * 8);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -959,15 +1508,27 @@ unsigned int vp9_sub_pixel_avg_variance16x8_c(const uint8_t *src_ptr,
   return vp9_variance16x8(temp3, 16, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance8x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance8x16_c(const uint8_t *src_ptr,
+#endif
                                           int  src_pixels_per_line,
                                           int  xoffset,
                                           int  yoffset,
+#if CONFIG_B10_EXT
+                                          const uint16_t *dst_ptr,
+#else
                                           const uint8_t *dst_ptr,
+#endif
                                           int dst_pixels_per_line,
                                           unsigned int *sse) {
   uint16_t fdata3[9 * 16];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -980,17 +1541,34 @@ unsigned int vp9_sub_pixel_variance8x16_c(const uint8_t *src_ptr,
   return vp9_variance8x16(temp2, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance8x16_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance8x16_c(const uint8_t *src_ptr,
+#endif
                                               int  src_pixels_per_line,
                                               int  xoffset,
                                               int  yoffset,
+#if CONFIG_B10_EXT
+                                              const uint16_t *dst_ptr,
+#else
                                               const uint8_t *dst_ptr,
+#endif
                                               int dst_pixels_per_line,
                                               unsigned int *sse,
+#if CONFIG_B10_EXT
+                                              const uint16_t *second_pred) {
+#else
                                               const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[9 * 16];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 8 * 16);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 8 * 16);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -1003,15 +1581,27 @@ unsigned int vp9_sub_pixel_avg_variance8x16_c(const uint8_t *src_ptr,
   return vp9_variance8x16(temp3, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance8x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance8x4_c(const uint8_t *src_ptr,
+#endif
                                          int  src_pixels_per_line,
                                          int  xoffset,
                                          int  yoffset,
+#if CONFIG_B10_EXT
+                                         const uint16_t *dst_ptr,
+#else
                                          const uint8_t *dst_ptr,
+#endif
                                          int dst_pixels_per_line,
                                          unsigned int *sse) {
   uint16_t fdata3[8 * 5];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -1024,17 +1614,34 @@ unsigned int vp9_sub_pixel_variance8x4_c(const uint8_t *src_ptr,
   return vp9_variance8x4(temp2, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance8x4_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance8x4_c(const uint8_t *src_ptr,
+#endif
                                              int  src_pixels_per_line,
                                              int  xoffset,
                                              int  yoffset,
+#if CONFIG_B10_EXT
+                                             const uint16_t *dst_ptr,
+#else
                                              const uint8_t *dst_ptr,
+#endif
                                              int dst_pixels_per_line,
                                              unsigned int *sse,
+#if CONFIG_B10_EXT
+                                             const uint16_t *second_pred) {
+#else
                                              const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[8 * 5];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 8 * 4);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 8 * 4);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -1047,17 +1654,29 @@ unsigned int vp9_sub_pixel_avg_variance8x4_c(const uint8_t *src_ptr,
   return vp9_variance8x4(temp3, 8, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_variance4x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_variance4x8_c(const uint8_t *src_ptr,
+#endif
                                          int  src_pixels_per_line,
                                          int  xoffset,
                                          int  yoffset,
+#if CONFIG_B10_EXT
+                                         const uint16_t *dst_ptr,
+#else
                                          const uint8_t *dst_ptr,
+#endif
                                          int dst_pixels_per_line,
                                          unsigned int *sse) {
   uint16_t fdata3[5 * 8];  // Temp data buffer used in filtering
   // FIXME(jingning,rbultje): this temp2 buffer probably doesn't need to be
   // of this big? same issue appears in all other block size settings.
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+#else
   uint8_t temp2[20 * 16];
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);
@@ -1070,17 +1689,34 @@ unsigned int vp9_sub_pixel_variance4x8_c(const uint8_t *src_ptr,
   return vp9_variance4x8(temp2, 4, dst_ptr, dst_pixels_per_line, sse);
 }
 
+#if CONFIG_B10_EXT
+unsigned int vp9_sub_pixel_avg_variance4x8_c(const uint16_t *src_ptr,
+#else
 unsigned int vp9_sub_pixel_avg_variance4x8_c(const uint8_t *src_ptr,
+#endif
                                              int  src_pixels_per_line,
                                              int  xoffset,
                                              int  yoffset,
+#if CONFIG_B10_EXT
+                                             const uint16_t *dst_ptr,
+#else
                                              const uint8_t *dst_ptr,
+#endif
                                              int dst_pixels_per_line,
                                              unsigned int *sse,
+#if CONFIG_B10_EXT
+                                             const uint16_t *second_pred) {
+#else
                                              const uint8_t *second_pred) {
+#endif
   uint16_t fdata3[5 * 8];  // Temp data buffer used in filtering
+#if CONFIG_B10_EXT
+  uint16_t temp2[20 * 16];
+  DECLARE_ALIGNED_ARRAY(16, uint16_t, temp3, 4 * 8);  // compound pred buffer
+#else
   uint8_t temp2[20 * 16];
   DECLARE_ALIGNED_ARRAY(16, uint8_t, temp3, 4 * 8);  // compound pred buffer
+#endif
   const int16_t *hfilter, *vfilter;
 
   hfilter = BILINEAR_FILTERS_2TAP(xoffset);

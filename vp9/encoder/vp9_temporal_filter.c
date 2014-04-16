@@ -26,18 +26,29 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/vpx_timer.h"
 #include "vpx_scale/vpx_scale.h"
+#include "vpx_config.h"
 
 #define ALT_REF_MC_ENABLED 1    // dis/enable MC in AltRef filtering
 
 static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
+#if CONFIG_B10_EXT
+                                            uint16_t *y_mb_ptr,
+                                            uint16_t *u_mb_ptr,
+                                            uint16_t *v_mb_ptr,
+#else
                                             uint8_t *y_mb_ptr,
                                             uint8_t *u_mb_ptr,
                                             uint8_t *v_mb_ptr,
+#endif
                                             int stride,
                                             int uv_block_size,
                                             int mv_row,
                                             int mv_col,
+#if CONFIG_B10_EXT
+                                            uint16_t *pred,
+#else
                                             uint8_t *pred,
+#endif
                                             struct scale_factors *scale,
                                             int x, int y) {
   const int which_mv = 0;
@@ -77,9 +88,15 @@ static void temporal_filter_predictors_mb_c(MACROBLOCKD *xd,
                             xd->interp_kernel, mv_precision_uv, x, y);
 }
 
+#if CONFIG_B10_EXT
+void vp9_temporal_filter_apply_c(uint16_t *frame1,
+                                 unsigned int stride,
+                                 uint16_t *frame2,
+#else
 void vp9_temporal_filter_apply_c(uint8_t *frame1,
                                  unsigned int stride,
                                  uint8_t *frame2,
+#endif
                                  unsigned int block_size,
                                  int strength,
                                  int filter_weight,
@@ -122,8 +139,13 @@ void vp9_temporal_filter_apply_c(uint8_t *frame1,
 #if ALT_REF_MC_ENABLED
 
 static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
+#if CONFIG_B10_EXT
+                                              uint16_t *arf_frame_buf,
+                                              uint16_t *frame_ptr_buf,
+#else
                                               uint8_t *arf_frame_buf,
                                               uint8_t *frame_ptr_buf,
+#endif
                                               int stride) {
   MACROBLOCK *x = &cpi->mb;
   MACROBLOCKD* const xd = &x->e_mbd;
@@ -201,12 +223,21 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   DECLARE_ALIGNED_ARRAY(16, uint16_t, count, 16 * 16 * 3);
   MACROBLOCKD *mbd = &cpi->mb.e_mbd;
   YV12_BUFFER_CONFIG *f = cpi->frames[alt_ref_index];
+#if CONFIG_B10_EXT
+  uint16_t *dst1, *dst2;
+  DECLARE_ALIGNED_ARRAY(16, uint16_t,  predictor, 16 * 16 * 3);
+#else
   uint8_t *dst1, *dst2;
   DECLARE_ALIGNED_ARRAY(16, uint8_t,  predictor, 16 * 16 * 3);
+#endif
   const int mb_uv_height = 16 >> mbd->plane[1].subsampling_y;
 
   // Save input state
+#if CONFIG_B10_EXT
+  uint16_t* input_buffer[MAX_MB_PLANE];
+#else
   uint8_t* input_buffer[MAX_MB_PLANE];
+#endif
   int i;
 
   // TODO(aconverse): Add 4:2:2 support
@@ -315,8 +346,11 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           unsigned int pval = accumulator[k] + (count[k] >> 1);
           pval *= cpi->fixed_divide[count[k]];
           pval >>= 19;
-
+#if CONFIG_B10_EXT
+          dst1[byte] = (uint16_t)pval;
+#else
           dst1[byte] = (uint8_t)pval;
+#endif
 
           // move to next pixel
           byte++;
@@ -337,13 +371,21 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           unsigned int pval = accumulator[k] + (count[k] >> 1);
           pval *= cpi->fixed_divide[count[k]];
           pval >>= 19;
+#if CONFIG_B10_EXT
+          dst1[byte] = (uint16_t)pval;
+#else
           dst1[byte] = (uint8_t)pval;
+#endif
 
           // V
           pval = accumulator[m] + (count[m] >> 1);
           pval *= cpi->fixed_divide[count[m]];
           pval >>= 19;
+#if CONFIG_B10_EXT
+          dst2[byte] = (uint16_t)pval;
+#else
           dst2[byte] = (uint8_t)pval;
+#endif
 
           // move to next pixel
           byte++;

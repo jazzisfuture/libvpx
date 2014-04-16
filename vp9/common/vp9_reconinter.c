@@ -20,11 +20,21 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+#if CONFIG_B10_EXT
+static void build_mc_border(const uint16_t *src, int src_stride,
+                            uint16_t *dst, int dst_stride,
+#else
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
+#endif
                             int x, int y, int b_w, int b_h, int w, int h) {
   // Get a pointer to the start of the real data for this row.
+#if CONFIG_B10_EXT
+  int i;
+  const uint16_t *ref_row = src - x - y * src_stride;
+#else
   const uint8_t *ref_row = src - x - y * src_stride;
+#endif
 
   if (y >= h)
     ref_row += (h - 1) * src_stride;
@@ -47,13 +57,25 @@ static void build_mc_border(const uint8_t *src, int src_stride,
     copy = b_w - left - right;
 
     if (left)
+#if CONFIG_B10_EXT
+    for(i=0; i<left; i++) dst[i]=ref_row[0];
+#else
       memset(dst, ref_row[0], left);
+#endif
 
     if (copy)
+#if CONFIG_B10_EXT
+      memcpy(dst + left, ref_row + x + left, copy*sizeof(uint16_t));
+#else
       memcpy(dst + left, ref_row + x + left, copy);
+#endif
 
     if (right)
+#if CONFIG_B10_EXT
+      for (i=0; i<right; i++) dst[left+copy+i]=ref_row[w-1];
+#else
       memset(dst + left + copy, ref_row[w - 1], right);
+#endif
 
     dst += dst_stride;
     ++y;
@@ -63,8 +85,13 @@ static void build_mc_border(const uint8_t *src, int src_stride,
   } while (--b_h);
 }
 
+#if CONFIG_B10_EXT
+static void inter_predictor(const uint16_t *src, int src_stride,
+                            uint16_t *dst, int dst_stride,
+#else
 static void inter_predictor(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
+#endif
                             const int subpel_x,
                             const int subpel_y,
                             const struct scale_factors *sf,
@@ -76,8 +103,13 @@ static void inter_predictor(const uint8_t *src, int src_stride,
       kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
 }
 
+#if CONFIG_B10_EXT
+void vp9_build_inter_predictor(const uint16_t *src, int src_stride,
+                               uint16_t *dst, int dst_stride,
+#else
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
+#endif
                                const MV *src_mv,
                                const struct scale_factors *sf,
                                int w, int h, int ref,
@@ -152,7 +184,11 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
     struct buf_2d *const pre_buf = &pd->pre[ref];
     struct buf_2d *const dst_buf = &pd->dst;
+#if CONFIG_B10_EXT
+    uint16_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+#else
     uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+#endif
 
     // TODO(jkoleszar): All chroma MVs in SPLITMV mode are taken as the
     // same MV (the average of the 4 luma MVs) but we could do something
@@ -172,7 +208,11 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                                pd->subsampling_x,
                                                pd->subsampling_y);
 
+#if CONFIG_B10_EXT
+    uint16_t *pre;
+#else
     uint8_t *pre;
+#endif
     MV32 scaled_mv;
     int xs, ys, subpel_x, subpel_y;
 
@@ -256,7 +296,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     const struct scale_factors *const sf = &xd->block_refs[ref]->sf;
     struct buf_2d *const pre_buf = &pd->pre[ref];
     struct buf_2d *const dst_buf = &pd->dst;
+#if CONFIG_B10_EXT
+    uint16_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+#else
     uint8_t *const dst = dst_buf->buf + dst_buf->stride * y + x;
+#endif
 
     // TODO(jkoleszar): All chroma MVs in SPLITMV mode are taken as the
     // same MV (the average of the 4 luma MVs) but we could do something
@@ -279,7 +323,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
     MV32 scaled_mv;
     int xs, ys, x0, y0, x0_16, y0_16, frame_width, frame_height, buf_stride,
         subpel_x, subpel_y;
+#if CONFIG_B10_EXT
+    uint16_t *ref_frame, *buf_ptr;
+#else
     uint8_t *ref_frame, *buf_ptr;
+#endif
     const YV12_BUFFER_CONFIG *ref_buf = xd->block_refs[ref]->buf;
 
     // Get reference frame pointer, width and height.
@@ -368,7 +416,11 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       // Skip border extension if block is inside the frame.
       if (x0 < 0 || x0 > frame_width - 1 || x1 < 0 || x1 > frame_width ||
           y0 < 0 || y0 > frame_height - 1 || y1 < 0 || y1 > frame_height - 1) {
+#if CONFIG_B10_EXT
+        uint16_t *buf_ptr1 = ref_frame + y0 * pre_buf->stride + x0;
+#else
         uint8_t *buf_ptr1 = ref_frame + y0 * pre_buf->stride + x0;
+#endif
         // Extend the border.
         build_mc_border(buf_ptr1, pre_buf->stride, xd->mc_buf, x1 - x0 + 1,
                         x0, y0, x1 - x0 + 1, y1 - y0 + 1, frame_width,
@@ -413,8 +465,13 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
 void vp9_setup_dst_planes(MACROBLOCKD *xd,
                           const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col) {
+#if CONFIG_B10_EXT
+  uint16_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                               src->alpha_buffer};
+#else
   uint8_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
                                src->alpha_buffer};
+#endif
   const int strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                           src->alpha_stride};
   int i;
@@ -432,8 +489,13 @@ void vp9_setup_pre_planes(MACROBLOCKD *xd, int idx,
                           const struct scale_factors *sf) {
   if (src != NULL) {
     int i;
+#if CONFIG_B10_EXT
+    uint16_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                                 src->alpha_buffer};
+#else
     uint8_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
                                  src->alpha_buffer};
+#endif
     const int strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                             src->alpha_stride};
 

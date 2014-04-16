@@ -18,6 +18,7 @@
 #include "vpx/vp8cx.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/vp9_iface_common.h"
+#include "vpx_config.h"
 
 struct vp9_extracfg {
   struct vpx_codec_pkt_list *pkt_list;
@@ -525,12 +526,13 @@ static vpx_codec_err_t vp9e_common_init(vpx_codec_ctx_t *ctx) {
     priv->extra_cfg.pkt_list = &priv->pkt_list.head;
 
     // Maximum buffer size approximated based on having multiple ARF.
+#if CONFIG_B10_EXT
+    priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 * 8*2;
+#else
     priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 * 8;
-
+#endif
     if (priv->cx_data_sz < 4096) priv->cx_data_sz = 4096;
-
     priv->cx_data = (unsigned char *)malloc(priv->cx_data_sz);
-
     if (priv->cx_data == NULL) return VPX_CODEC_MEM_ERROR;
 
     vp9_initialize_enc();
@@ -1118,6 +1120,11 @@ static vpx_codec_enc_cfg_map_t vp9e_usage_cfg_map[] = {
 
       320,                /* g_width */
       240,                /* g_height */
+#if CONFIG_B10_EXT
+      8,
+      8,
+      8,
+#endif
       {1, 30},            /* g_timebase */
 
       0,                  /* g_error_resilient */

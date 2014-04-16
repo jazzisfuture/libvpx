@@ -33,7 +33,11 @@ static int segment_id[MAX_SEGMENTS] = { 5, 3, 1, 0, 2, 4, 6, 7 };
 #define RDMULT_RATIO(i) rdmult_ratio[(i) - ENERGY_MIN]
 #define SEGMENT_ID(i) segment_id[(i) - ENERGY_MIN]
 
+#if CONFIG_B10_EXT
+DECLARE_ALIGNED(16, static const uint16_t, vp9_64_zeros[64]) = {0};
+#else
 DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = {0};
+#endif
 
 unsigned int vp9_vaq_segment_id(int energy) {
   ENERGY_IN_BOUNDS(energy);

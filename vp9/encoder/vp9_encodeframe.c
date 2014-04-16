@@ -90,7 +90,11 @@ static void adjust_act_zbin(VP9_COMP *cpi, MACROBLOCK *x);
 //  purposes of activity masking.
 // Eventually this should be replaced by custom no-reference routines,
 //  which will be faster.
+#if CONFIG_B10_EXT
+static const uint16_t VP9_VAR_OFFS[64] = {
+#else
 static const uint8_t VP9_VAR_OFFS[64] = {
+#endif
   128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128,
   128, 128, 128, 128, 128, 128, 128, 128,
@@ -473,8 +477,13 @@ static void choose_partitioning(VP9_COMP *cpi,
 
   int i, j, k;
   v64x64 vt;
+#if CONFIG_B10_EXT
+  uint16_t *s;
+  const uint16_t *d;
+#else
   uint8_t *s;
   const uint8_t *d;
+#endif
   int sp;
   int dp;
   int pixels_wide = 64, pixels_high = 64;
@@ -1004,8 +1013,13 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
 void vp9_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
                           int mi_row, int mi_col) {
+#if CONFIG_B10_EXT
+  uint16_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                               src->alpha_buffer};
+#else
   uint8_t *const buffers[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
                                src->alpha_buffer};
+#endif
   const int strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
                           src->alpha_stride};
   int i;

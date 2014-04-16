@@ -2047,9 +2047,13 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #endif
 }
 
-
+#if CONFIG_B10_EXT
+static uint64_t calc_plane_error(const uint16_t *orig, int orig_stride,
+                                 const uint16_t *recon, int recon_stride,
+#else
 static uint64_t calc_plane_error(const uint8_t *orig, int orig_stride,
                                  const uint8_t *recon, int recon_stride,
+#endif
                                  unsigned int cols, unsigned int rows) {
   unsigned int row, col;
   uint64_t total_sse = 0;
@@ -2066,8 +2070,13 @@ static uint64_t calc_plane_error(const uint8_t *orig, int orig_stride,
     /* Handle odd-sized width */
     if (col < cols) {
       unsigned int border_row, border_col;
+#if CONFIG_B10_EXT
+      const uint16_t *border_orig = orig;
+      const uint16_t *border_recon = recon;
+#else
       const uint8_t *border_orig = orig;
       const uint8_t *border_recon = recon;
+#endif
 
       for (border_row = 0; border_row < 16; border_row++) {
         for (border_col = col; border_col < cols; border_col++) {
@@ -2108,9 +2117,17 @@ static void calc_psnr(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
                       PSNR_STATS *psnr) {
   const int widths[3]        = {a->y_width,  a->uv_width,  a->uv_width };
   const int heights[3]       = {a->y_height, a->uv_height, a->uv_height};
+#if CONFIG_B10_EXT
+  const uint16_t *a_planes[3] = {a->y_buffer, a->u_buffer,  a->v_buffer };
+#else
   const uint8_t *a_planes[3] = {a->y_buffer, a->u_buffer,  a->v_buffer };
+#endif
   const int a_strides[3]     = {a->y_stride, a->uv_stride, a->uv_stride};
+#if CONFIG_B10_EXT
+  const uint16_t *b_planes[3] = {b->y_buffer, b->u_buffer,  b->v_buffer };
+#else
   const uint8_t *b_planes[3] = {b->y_buffer, b->u_buffer,  b->v_buffer };
+#endif
   const int b_strides[3]     = {b->y_stride, b->uv_stride, b->uv_stride};
   int i;
   uint64_t total_sse = 0;
@@ -2220,7 +2237,11 @@ int vp9_update_entropy(VP9_COMP * cpi, int update) {
 
 #ifdef OUTPUT_YUV_SRC
 void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
+#if CONFIG_B10_EXT
+  uint16_t *src = s->y_buffer;
+#else
   uint8_t *src = s->y_buffer;
+#endif
   int h = s->y_height;
 
   do {
@@ -2249,7 +2270,12 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
 #ifdef OUTPUT_YUV_REC
 void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
   YV12_BUFFER_CONFIG *s = cm->frame_to_show;
+#if CONFIG_B10_EXT
+  uint16_t *src = s->y_buffer;
+#else
   uint8_t *src = s->y_buffer;
+#endif
+
   int h = cm->height;
 
   do {
@@ -2299,14 +2325,22 @@ static void scale_and_extend_frame_nonnormative(YV12_BUFFER_CONFIG *src_fb,
   const int out_w_uv = dst_fb->uv_crop_width;
   const int out_h_uv = dst_fb->uv_crop_height;
   int i;
-
+#if CONFIG_B10_EXT
+  uint16_t *srcs[4] = {src_fb->y_buffer, src_fb->u_buffer, src_fb->v_buffer,
+    src_fb->alpha_buffer};
+#else
   uint8_t *srcs[4] = {src_fb->y_buffer, src_fb->u_buffer, src_fb->v_buffer,
     src_fb->alpha_buffer};
+#endif
   int src_strides[4] = {src_fb->y_stride, src_fb->uv_stride, src_fb->uv_stride,
     src_fb->alpha_stride};
-
+#if CONFIG_B10_EXT
+  uint16_t *dsts[4] = {dst_fb->y_buffer, dst_fb->u_buffer, dst_fb->v_buffer,
+    dst_fb->alpha_buffer};
+#else
   uint8_t *dsts[4] = {dst_fb->y_buffer, dst_fb->u_buffer, dst_fb->v_buffer,
     dst_fb->alpha_buffer};
+#endif
   int dst_strides[4] = {dst_fb->y_stride, dst_fb->uv_stride, dst_fb->uv_stride,
     dst_fb->alpha_stride};
 
@@ -2332,13 +2366,23 @@ static void scale_and_extend_frame(YV12_BUFFER_CONFIG *src_fb,
   const int out_h = dst_fb->y_crop_height;
   int x, y, i;
 
+#if CONFIG_B10_EXT
+  uint16_t *srcs[4] = {src_fb->y_buffer, src_fb->u_buffer, src_fb->v_buffer,
+                      src_fb->alpha_buffer};
+#else
   uint8_t *srcs[4] = {src_fb->y_buffer, src_fb->u_buffer, src_fb->v_buffer,
                       src_fb->alpha_buffer};
+#endif
   int src_strides[4] = {src_fb->y_stride, src_fb->uv_stride, src_fb->uv_stride,
                         src_fb->alpha_stride};
 
+#if CONFIG_B10_EXT
+  uint16_t *dsts[4] = {dst_fb->y_buffer, dst_fb->u_buffer, dst_fb->v_buffer,
+                      dst_fb->alpha_buffer};
+#else
   uint8_t *dsts[4] = {dst_fb->y_buffer, dst_fb->u_buffer, dst_fb->v_buffer,
                       dst_fb->alpha_buffer};
+#endif
   int dst_strides[4] = {dst_fb->y_stride, dst_fb->uv_stride, dst_fb->uv_stride,
                         dst_fb->alpha_stride};
 
@@ -2350,10 +2394,15 @@ static void scale_and_extend_frame(YV12_BUFFER_CONFIG *src_fb,
         const int y_q4 = y * (16 / factor) * in_h / out_h;
         const int src_stride = src_strides[i];
         const int dst_stride = dst_strides[i];
+#if CONFIG_B10_EXT
+        uint16_t *src = srcs[i] + y / factor * in_h / out_h * src_stride +
+                                 x / factor * in_w / out_w;
+        uint16_t *dst = dsts[i] + y / factor * dst_stride + x / factor;
+#else
         uint8_t *src = srcs[i] + y / factor * in_h / out_h * src_stride +
                                  x / factor * in_w / out_w;
         uint8_t *dst = dsts[i] + y / factor * dst_stride + x / factor;
-
+#endif
         vp9_convolve8(src, src_stride, dst, dst_stride,
                       vp9_sub_pel_filters_8[x_q4 & 0xf], 16 * in_w / out_w,
                       vp9_sub_pel_filters_8[y_q4 & 0xf], 16 * in_h / out_h,
@@ -2520,9 +2569,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
     vp9_clear_system_state();
 
     vpx_usec_timer_start(&timer);
-
     vp9_pick_filter_level(cpi->Source, cpi, cpi->sf.use_fast_lpf_pick);
-
     vpx_usec_timer_mark(&timer);
     cpi->time_pick_lpf += vpx_usec_timer_elapsed(&timer);
   }
@@ -3100,7 +3147,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
   vp9_set_speed_features(cpi);
-
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     encode_without_recode_loop(cpi, size, dest, q);
   } else {
@@ -3244,8 +3290,9 @@ static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
-static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
-                        unsigned int *frame_flags) {
+static void Pass0Encode(VP9_COMP *cpi, size_t *size, 
+                uint8_t *dest,
+                unsigned int *frame_flags) {
   if (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
     vp9_rc_get_one_pass_cbr_params(cpi);
   } else {
@@ -3375,7 +3422,8 @@ void adjust_frame_rate(VP9_COMP *cpi) {
 }
 
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
-                            size_t *size, uint8_t *dest,
+                            size_t *size, 
+                            uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &cpi->mb.e_mbd;
@@ -3847,10 +3895,13 @@ int vp9_calc_ss_err(const YV12_BUFFER_CONFIG *source,
                     const YV12_BUFFER_CONFIG *reference) {
   int i, j;
   int total = 0;
-
+#if CONFIG_B10_EXT
+  const uint16_t *src = source->y_buffer;
+  const uint16_t *ref = reference->y_buffer;
+#else
   const uint8_t *src = source->y_buffer;
   const uint8_t *ref = reference->y_buffer;
-
+#endif
   // Loop through the Y plane raw and reconstruction data summing
   // (square differences)
   for (i = 0; i < source->y_height; i += 16) {
