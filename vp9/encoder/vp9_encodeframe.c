@@ -1273,6 +1273,7 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
 
 static int is_background(VP9_COMP *cpi, const TileInfo *const tile,
                          int mi_row, int mi_col) {
+  MACROBLOCK *x = &cpi->mb;
   uint8_t *src, *pre;
   int src_stride, pre_stride;
 
@@ -1304,7 +1305,7 @@ static int is_background(VP9_COMP *cpi, const TileInfo *const tile,
     threshold = (row8x8_remaining * col8x8_remaining) << 6;
   }
 
-  return (this_sad < 2 * threshold);
+  return x->in_static_area = (this_sad < 2 * threshold);
 }
 
 static int sb_has_motion(const VP9_COMMON *cm, MODE_INFO **prev_mi_8x8) {
@@ -1338,11 +1339,11 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
   // For in frame adaptive Q, check for reseting the segment_id and updating
   // the cyclic refresh map.
-  if ((cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) && seg->enabled) {
-    vp9_cyclic_refresh_update_segment(cpi, &xd->mi[0]->mbmi,
-                                      mi_row, mi_col, bsize, 1);
-    vp9_init_plane_quantizers(cpi, x);
-  }
+//  if ((cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) && seg->enabled) {
+//    vp9_cyclic_refresh_update_segment(cpi, &xd->mi[0]->mbmi,
+//                                      mi_row, mi_col, bsize, 1);
+//    vp9_init_plane_quantizers(cpi, x);
+//  }
 
   if (is_inter_block(mbmi)) {
     vp9_update_mv_count(cm, xd);
@@ -2435,6 +2436,15 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
   xd->mi[0]->mbmi.sb_type = bsize;
 
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
+    if (xd->mi[0]->mbmi.segment_id && x->in_static_area) {
+      vp9_cyclic_refresh_update_segment(cpi, &xd->mi[0]->mbmi,
+                                        mi_row, mi_col, bsize, 1);
+      vp9_init_plane_quantizers(cpi, x);
+      x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
+    }
+  }
+
   if (!frame_is_intra_only(cm)) {
     vp9_pick_inter_mode(cpi, x, tile, mi_row, mi_col,
                         rate, dist, bsize);
@@ -2858,7 +2868,8 @@ static void nonrd_use_partition(VP9_COMP *cpi,
 static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                                 int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *cm = &cpi->common;
-  MACROBLOCKD *xd = &cpi->mb.e_mbd;
+  MACROBLOCK *x = &cpi->mb;
+  MACROBLOCKD *xd = &x->e_mbd;
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -2876,8 +2887,9 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     MODE_INFO **prev_mi_8x8 = cm->prev_mi_grid_visible + idx_str;
     BLOCK_SIZE bsize;
 
-    cpi->mb.source_variance = UINT_MAX;
-    vp9_zero(cpi->mb.pred_mv);
+    x->in_static_area = 0;
+    x->source_variance = UINT_MAX;
+    vp9_zero(x->pred_mv);
 
     // Set the partition type of the 64X64 block
     switch (cpi->sf.partition_search_type) {
