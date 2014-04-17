@@ -531,3 +531,26 @@ $(OBJS-yes:.o=.d): $(RTCD)
 
 ## Update the global src list
 SRCS += $(CODEC_SRCS) $(LIBVPX_TEST_SRCS) $(GTEST_SRCS)
+
+##
+## vpxdec/vpxenc tests.
+##
+TEST_BIN_PATH=.
+ifeq ($(CONFIG_MSVS),yes)
+# MSVC will build both Debug and Release configurations of tools. Assume the
+# user wants to run the Release tools, and assign TEST_BIN_PATH accordingly.
+# TODO(tomfinegan): ARM? Support running the debug versions of tools?
+ifeq ($(word 2, $(subst -, , $(TOOLCHAIN))), win32)
+TEST_BIN_PATH=Win32/Release
+else
+TEST_BIN_PATH=x64/Release
+endif
+endif
+.PHONY: utiltest
+utiltest: testdata
+	$(qexec)$(SRC_PATH_BARE)/test/vpxdec.sh \
+		--test-data-path $(LIBVPX_TEST_DATA_PATH) \
+		--bin-path $(TEST_BIN_PATH)
+	$(qexec)$(SRC_PATH_BARE)/test/vpxenc.sh \
+		--test-data-path $(LIBVPX_TEST_DATA_PATH) \
+		--bin-path $(TEST_BIN_PATH)
