@@ -254,7 +254,6 @@ static void update_mbgraph_frame_stats(VP9_COMP *cpi,
   mi_local.mbmi.ref_frame[1] = NONE;
 
   for (mb_row = 0; mb_row < cm->mb_rows; mb_row++) {
-    MV arf_left_mv = arf_top_mv, gld_left_mv = gld_top_mv;
     int mb_y_in_offset  = mb_y_offset;
     int arf_y_in_offset = arf_y_offset;
     int gld_y_in_offset = gld_y_offset;
@@ -266,10 +265,11 @@ static void update_mbgraph_frame_stats(VP9_COMP *cpi,
     xd->left_available = 0;
 
     for (mb_col = 0; mb_col < cm->mb_cols; mb_col++) {
-      MBGRAPH_MB_STATS *mb_stats = &stats->mb_stats[offset + mb_col];
+      MBGRAPH_MB_STATS *const mb_stats = &stats->mb_stats[offset + mb_col];
+      MV arf_left_mv, gld_left_mv;
 
       update_mbgraph_mb_stats(cpi, mb_stats, buf, mb_y_in_offset,
-                              golden_ref, &gld_left_mv, alt_ref,
+                              golden_ref, &gld_top_mv, alt_ref,
                               mb_row, mb_col);
       arf_left_mv = mb_stats->ref[ALTREF_FRAME].m.mv.as_mv;
       gld_left_mv = mb_stats->ref[GOLDEN_FRAME].m.mv.as_mv;
