@@ -2015,7 +2015,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
       } else {
         sum_rd = RDCOST(x->rdmult, x->rddiv, sum_rate, sum_dist);
         if (sum_rd < best_rd) {
-          update_state(cpi, ctx, mi_row, mi_col, bsize, 0);
+          update_state(cpi, pc_tree->leaf_split[0], mi_row, mi_col, subsize, 0);
           encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize, ctx);
           update_partition_context(xd, mi_row, mi_col, subsize, bsize);
         }
@@ -2044,6 +2044,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         }
       }
     }
+
     if (sum_rd < best_rd && i == 4) {
       pl = partition_plane_context(xd, mi_row, mi_col, bsize);
       sum_rate += x->partition_cost[pl][PARTITION_SPLIT];
@@ -2062,6 +2063,7 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
+
   // PARTITION_HORZ
   if (partition_horz_allowed && do_rect) {
     subsize = get_subsize(bsize, PARTITION_HORZ);
