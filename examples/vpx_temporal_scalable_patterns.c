@@ -34,6 +34,126 @@ void usage_exit() {
 
 static int mode_to_num_layers[12] = {1, 2, 2, 3, 3, 3, 3, 5, 2, 3, 3, 3};
 
+enum update_reference_state {
+  kUpdateLastRefLast,
+  kUpdateLastRefLastGolden,
+  kUpdateLastRefLastAlt,
+  kUpdateLastRefAll,
+  kUpdateGoldenRefLast,
+  kUpdateGoldenRefLastGolden,
+  kUpdateGoldenRefLastAlt,
+  kUpdateGoldenRefAll,
+  kUpdateAltRefLast,
+  kUpdateAltRefGolden,
+  kUpdateAltRefLastGolden,
+  kUpdateAltRefLastAlt,
+  kUpdateAltRefGoldenAlt,
+  kUpdateAltRefAll,
+  kUpdateLastGoldenRefLast,
+  kUpdateLastGoldenRefLastAlt,
+  kUpdateNoneRefLastAlt,
+  kUpdateNoneRefAll,
+};
+
+int encoder_flags(int upd_ref) {
+  int flags = 0;
+  switch (upd_ref) {
+    case kUpdateLastRefLast:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateLastRefLastGolden:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateLastRefLastAlt:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      break;
+    case kUpdateLastRefAll:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      break;
+    case kUpdateGoldenRefLast:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateGoldenRefLastGolden:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateGoldenRefLastAlt:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      break;
+    case kUpdateGoldenRefAll:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      break;
+    case kUpdateAltRefLast:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateAltRefGolden:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_LAST;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateAltRefLastGolden:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateAltRefLastAlt:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      break;
+    case kUpdateAltRefGoldenAlt:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_REF_LAST;
+      break;
+    case kUpdateAltRefAll:
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      break;
+    case kUpdateLastGoldenRefLast:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      break;
+    case kUpdateLastGoldenRefLastAlt:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      break;
+    case kUpdateNoneRefLastAlt:
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_REF_GF;
+      break;
+    case kUpdateNoneRefAll:
+      flags |= VP8_EFLAG_NO_UPD_LAST;
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      break;
+  }
+  return flags;
+}
+
+
 // For rate control encoding stats.
 struct RateControlMetrics {
   // Number of input frames per layer.
@@ -374,25 +494,19 @@ static void set_temporal_layer_pattern(int layering_mode,
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
       // 0=L, 1=GF, 2=ARF.
       // Layer 0: predict from L and ARF; update L and G.
-      layer_flags[0] = VPX_EFLAG_FORCE_KF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_REF_GF;
+      layer_flags[0] = encoder_flags(kUpdateLastGoldenRefLastAlt);
       // Layer 2: sync point: predict from L and ARF; update none.
-      layer_flags[1] = VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_GF |
-          VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST |
-          VP8_EFLAG_NO_UPD_ENTROPY;
+      layer_flags[1] = encoder_flags(kUpdateNoneRefLastAlt);
       // Layer 1: sync point: predict from L and ARF; update G.
-      layer_flags[2] = VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_UPD_LAST;
+      layer_flags[2] = encoder_flags(kUpdateGoldenRefLastAlt);
       // Layer 2: predict from L, G, ARF; update none.
-      layer_flags[3] = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ENTROPY;
+      layer_flags[3] = encoder_flags(kUpdateNoneRefAll);
       // Layer 0: predict from L and ARF; update L.
-      layer_flags[4] = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_REF_GF;
+      layer_flags[4] = encoder_flags(kUpdateLastRefLastAlt);
       // Layer 2: predict from L, G, ARF; update none.
       layer_flags[5] = layer_flags[3];
       // Layer 1: predict from L, G, ARF; update G.
-      layer_flags[6] = VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
+      layer_flags[6] = encoder_flags(kUpdateGoldenRefAll);
       // Layer 2: predict from L, G, ARF; update none.
       layer_flags[7] = layer_flags[3];
       break;
@@ -411,15 +525,13 @@ static void set_temporal_layer_pattern(int layering_mode,
       memcpy(cfg->ts_layer_id, ids, sizeof(ids));
       // 0=L, 1=GF, 2=ARF.
       // Layer 0: predict from L and ARF; update L.
-      layer_flags[0] = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_REF_GF;
+      layer_flags[0] = encoder_flags(kUpdateLastRefLastAlt);
       layer_flags[4] = layer_flags[0];
       // Layer 1: predict from L, G, ARF; update G.
-      layer_flags[2] = VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
+      layer_flags[2] = encoder_flags(kUpdateGoldenRefAll);
       layer_flags[6] = layer_flags[2];
       // Layer 2: predict from L, G, ARF; update none.
-      layer_flags[1] = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
-          VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ENTROPY;
+      layer_flags[1] = encoder_flags(kUpdateNoneRefAll);
       layer_flags[3] = layer_flags[1];
       layer_flags[5] = layer_flags[1];
       layer_flags[7] = layer_flags[1];
