@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include "./vpx_config.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
@@ -18,7 +19,9 @@
 #include "test/md5_helper.h"
 #include "test/test_vectors.h"
 #include "test/util.h"
+#if CONFIG_WEBM_IO
 #include "test/webm_video_source.h"
+#endif
 #include "vpx_mem/vpx_mem.h"
 
 namespace {
@@ -75,7 +78,11 @@ TEST_P(TestVectorTest, MD5Match) {
   if (filename.substr(filename.length() - 3, 3) == "ivf") {
     video = new libvpx_test::IVFVideoSource(filename);
   } else if (filename.substr(filename.length() - 4, 4) == "webm") {
+#if CONFIG_WEBM_IO
     video = new libvpx_test::WebMVideoSource(filename);
+#else
+    return;
+#endif
   }
   video->Init();
 

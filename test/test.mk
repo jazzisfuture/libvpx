@@ -56,8 +56,9 @@ LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += webm_video_source.h
 
 LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += test_vector_test.cc
 
-# Currently we only support decoder perf tests for vp9
-ifeq ($(CONFIG_DECODE_PERF_TESTS)$(CONFIG_VP9_DECODER), yesyes)
+# Currently we only support decoder perf tests for vp9. Also they read from WebM
+# files, so WebM IO is required.
+ifeq ($(CONFIG_DECODE_PERF_TESTS)$(CONFIG_VP9_DECODER)$(CONFIG_WEBM_IO), yesyesyes)
 LIBVPX_TEST_SRCS-yes                   += decode_perf_test.cc
 endif
 
@@ -105,7 +106,10 @@ LIBVPX_TEST_SRCS-yes                   += vp9_boolcoder_test.cc
 endif
 
 LIBVPX_TEST_SRCS-$(CONFIG_VP9)         += convolve_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += vp9_thread_test.cc
+# vp9_thread_test reads from WebM files, so WebM IO is required.
+ifeq ($(CONFIG_VP9_DECODER)$(CONFIG_WEBM_IO), yesyes)
+LIBVPX_TEST_SRCS-yes += vp9_thread_test.cc
+endif
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct16x16_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += dct32x32_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct4x4_test.cc
