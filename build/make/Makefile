@@ -52,8 +52,6 @@ dist:
                 | sed -e 's/MD5(\(.*\))= \([0-9a-f]\{32\}\)/\2  \1/' \
                 > md5sums.txt;\
         fi
-
-
 endif
 
 ifneq ($(target),)
