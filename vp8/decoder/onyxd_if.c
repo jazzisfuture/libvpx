@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
+test
 
 #include "vp8/common/onyxc_int.h"
 #if CONFIG_POSTPROC
