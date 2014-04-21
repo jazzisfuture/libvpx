@@ -27,9 +27,9 @@
 #include "vp9/encoder/vp9_rdopt.h"
 
 static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
-                                    const TileInfo *const tile,
-                                    BLOCK_SIZE bsize, int mi_row, int mi_col,
-                                    int_mv *tmp_mv, int *rate_mv) {
+                                     const TileInfo *const tile,
+                                     BLOCK_SIZE bsize, int mi_row, int mi_col,
+                                     int_mv *tmp_mv, int *rate_mv) {
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
   struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0}};
@@ -265,7 +265,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                              ref_frame, bsize, mi_row, mi_col,
                              frame_mv[NEARESTMV], frame_mv[NEARMV], yv12_mb);
     }
-    frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
+    frame_mv[NEWMV][ref_frame].as_int = 0; // INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
   }
 
