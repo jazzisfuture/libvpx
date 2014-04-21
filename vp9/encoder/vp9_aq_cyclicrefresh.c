@@ -136,7 +136,8 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
-  const int refresh_this_block = cpi->mb.in_static_area ||
+  const int refresh_this_block = cpi->mb.in_static_area[(mi_row >> 1) & 0x03]
+                                                       [(mi_col >> 1) & 0x03] ||
                                  candidate_refresh_aq(cr, mbmi, bsize, use_rd);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];

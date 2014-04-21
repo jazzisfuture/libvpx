@@ -162,7 +162,9 @@ struct macroblock {
   // note that token_costs is the cost when eob node is skipped
   vp9_coeff_cost token_costs[TX_SIZES];
 
-  int in_static_area;
+  // Indicate if the current block is in the background area
+  // in a resolution of 16x16 block size.
+  int in_static_area[4][4];
 
   int optimize;
 
