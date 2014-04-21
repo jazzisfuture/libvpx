@@ -363,7 +363,7 @@ static const arg_def_t frame_periodic_boost = ARG_DEF(
 
 static const arg_def_t *vp9_args[] = {
   &cpu_used, &auto_altref, &noise_sens, &sharpness, &static_thresh,
-  &tile_cols, &tile_rows, &arnr_maxframes, &arnr_strength, &arnr_type,
+  &tile_cols, &tile_rows,
   &tune_ssim, &cq_level, &max_intra_rate_pct, &lossless,
   &frame_parallel_decoding, &aq_mode, &frame_periodic_boost,
   NULL
