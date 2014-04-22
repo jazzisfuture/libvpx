@@ -279,6 +279,9 @@ typedef struct VP9_CONFIG {
   struct vpx_codec_pkt_list  *output_pkt_list;
 
   vp8e_tuning tuning;
+  
+  /* Flag to say whether we are using 16bit frame buffers */
+  int use_high;
 } VP9_CONFIG;
 
 typedef struct VP9_COMP {

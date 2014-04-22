@@ -325,6 +325,20 @@ static double simple_weight(const YV12_BUFFER_CONFIG *buf) {
   const int h = buf->y_crop_height;
   const uint8_t *row = buf->y_buffer;
 
+#if CONFIG_VP9_HIGH
+  if (buf->flags & YV12_FLAG_HIGH) {
+    uint16_t *row16 = CONVERT_TO_SHORTPTR(row);
+    for (i = 0; i < h; ++i) {
+      const uint16_t *pixel = row16;
+      for (j = 0; j < w; ++j)
+        sum += weight_table[MIN(255,*pixel++)];  // TODO is this appropriate for high bitdepth images?
+      row16 += buf->y_stride;
+    }
+
+    return MAX(0.1, sum / (w * h));
+  }
+#endif
+
   for (i = 0; i < h; ++i) {
     const uint8_t *pixel = row;
     for (j = 0; j < w; ++j)
@@ -376,6 +390,75 @@ static vp9_variance_fn_t get_block_variance_fn(BLOCK_SIZE bsize) {
   }
 }
 
+#if CONFIG_VP9_HIGH
+
+#define MAKE_MSE_WRAPPER(fnname) \
+      static unsigned int fnname##_bits10(const uint8_t *src_ptr, \
+                                      int source_stride, \
+                                      const uint8_t *ref_ptr, \
+                                      int ref_stride, \
+                                      unsigned int *sse) {  \
+          unsigned int val = fnname(src_ptr,source_stride,ref_ptr,ref_stride,sse); \
+          *sse >>= 4; \
+          return val >> 4; \
+      } \
+      static unsigned int fnname##_bits12(const uint8_t *src_ptr, \
+                                      int source_stride, \
+                                      const uint8_t *ref_ptr, \
+                                      int ref_stride, \
+                                      unsigned int *sse) {  \
+          unsigned int val = fnname(src_ptr,source_stride,ref_ptr,ref_stride,sse); \
+          *sse >>= 8; \
+          return val>>8; \
+      } 
+      
+MAKE_MSE_WRAPPER(vp9_high_mse8x8)  
+MAKE_MSE_WRAPPER(vp9_high_mse16x8)  
+MAKE_MSE_WRAPPER(vp9_high_mse8x16)  
+MAKE_MSE_WRAPPER(vp9_high_mse16x16)  
+      
+static vp9_variance_fn_t high_get_block_variance_fn(BLOCK_SIZE bsize, int bps) {
+  switch(bps) {
+  default:
+    switch (bsize) {
+      case BLOCK_8X8:
+        return vp9_high_mse8x8;
+      case BLOCK_16X8:
+        return vp9_high_mse16x8;
+      case BLOCK_8X16:
+        return vp9_high_mse8x16;
+      default:
+        return vp9_high_mse16x16;
+    }
+    break;
+  case 10:
+    switch (bsize) {
+      case BLOCK_8X8:
+        return vp9_high_mse8x8_bits10;
+      case BLOCK_16X8:
+        return vp9_high_mse16x8_bits10;
+      case BLOCK_8X16:
+        return vp9_high_mse8x16_bits10;
+      default:
+        return vp9_high_mse16x16_bits10;
+    }
+    break;
+  case 12:
+    switch (bsize) {
+      case BLOCK_8X8:
+        return vp9_high_mse8x8_bits12;
+      case BLOCK_16X8:
+        return vp9_high_mse16x8_bits12;
+      case BLOCK_8X16:
+        return vp9_high_mse8x16_bits12;
+      default:
+        return vp9_high_mse16x16_bits12;
+    }
+    break;
+  }
+}
+#endif
+
 static unsigned int zz_motion_search(const MACROBLOCK *x) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   const uint8_t *const src = x->plane[0].src.buf;
@@ -384,6 +467,11 @@ static unsigned int zz_motion_search(const MACROBLOCK *x) {
   const int ref_stride = xd->plane[0].pre[0].stride;
   unsigned int sse;
   vp9_variance_fn_t fn = get_block_variance_fn(xd->mi[0]->mbmi.sb_type);
+#if CONFIG_VP9_HIGH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+    fn = high_get_block_variance_fn(xd->mi[0]->mbmi.sb_type, xd->bps);
+  } 
+#endif
   fn(src, src_stride, ref, ref_stride, &sse);
   return sse;
 }
@@ -412,6 +500,11 @@ static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Override the default variance function to use MSE.
   v_fn_ptr.vf = get_block_variance_fn(bsize);
+#if CONFIG_VP9_HIGH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+    v_fn_ptr.vf = high_get_block_variance_fn(xd->mi[0]->mbmi.sb_type,xd->bps);
+  } 
+#endif
 
   // Center the initial step/diamond search on best mv.
   tmp_err = cpi->diamond_search_sad(x, &ref_mv_full, &tmp_mv,
