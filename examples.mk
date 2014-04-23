@@ -199,7 +199,7 @@ $(foreach bin,$(BINS-yes),\
         $(LIB_PATH)/lib$(CODEC_LIB)$(CODEC_LIB_SUF)))\
     $(if $(BUILD_OBJS),$(eval $(call linker_template,$(bin),\
         $(call objs,$($(notdir $(bin:$(EXE_SFX)=)).SRCS)) \
-        -l$(CODEC_LIB) $(addprefix -l,$(CODEC_EXTRA_LIBS))\
+        -l$(CODEC_LIB) -ldl $(addprefix -l,$(CODEC_EXTRA_LIBS))\
         )))\
     $(if $(LIPO_OBJS),$(eval $(call lipo_bin_template,$(bin))))\
     )
