@@ -32,6 +32,8 @@ VP9_DX_SRCS-yes += decoder/vp9_thread.h
 VP9_DX_SRCS-yes += decoder/vp9_onyxd_if.c
 VP9_DX_SRCS-yes += decoder/vp9_dsubexp.c
 VP9_DX_SRCS-yes += decoder/vp9_dsubexp.h
+VP9_DX_SRCS-yes += decoder/vp9_decodeframe.h
+VP9_DX_SRCS-yes += decoder/vp9_tile_info.h
 VP9_DX_SRCS-yes += decoder/vp9_decodeframe_recon.c
 VP9_DX_SRCS-yes += decoder/vp9_decodeframe_recon.h
 VP9_DX_SRCS-yes += decoder/vp9_append.c
@@ -54,6 +56,8 @@ VP9_DX_SRCS-yes += sched/sched.c
 VP9_DX_SRCS-yes += sched/step.h
 VP9_DX_SRCS-yes += sched/step.c
 VP9_DX_SRCS-yes += sched/atomic.h
+VP9_DX_SRCS-yes += sched/debug.h
+VP9_DX_SRCS-yes += sched/sleep.h
 
 VP9_DX_SRCS-yes += decoder/vp9_device.h
 VP9_DX_SRCS-yes += decoder/vp9_device.c
@@ -66,6 +70,7 @@ VP9_DX_SRCS-yes += decoder/vp9_loopfilter_step.c
 VP9_DX_SRCS-yes += decoder/vp9_loopfilter_step.h
 
 VP9_DX_SRCS-yes += ppa.h
+VP9_DX_SRCS-yes += ppaCPUEvents.h
 VP9_DX_SRCS-yes += ppa.c
 
 VP9_DX_SRCS-yes := $(filter-out $(VP9_DX_SRCS_REMOVE-yes),$(VP9_DX_SRCS-yes))
