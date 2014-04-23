@@ -314,6 +314,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
+
+  int16_t test_input[64];
+  int16_t test_output[64];
+
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
@@ -333,7 +337,23 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
-      vp9_fdct8x8(src_diff, coeff, diff_stride);
+      for (i = 0; i < 8; ++i) {
+        vpx_memcpy(&test_input[i * 8], &src_diff[i * diff_stride], 16);
+        for (j = 0; j < 8; ++j)
+          fprintf(stderr, "%d ", test_input[i * 8 + j]);
+        fprintf(stderr, "\n");
+      }
+
+      vp9_fdct8x8_ssse3(src_diff, coeff, diff_stride);
+
+      fprintf(stderr, "\n");
+      for (i = 0; i < 8; ++i) {
+        vpx_memcpy(&test_output[i * 8], &coeff[i * 8], 16);
+        for (j = 0; j < 8; ++j)
+          fprintf(stderr, "%d ", test_output[i * 8 + j]);
+        fprintf(stderr, "\n");
+      }
+
       vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
