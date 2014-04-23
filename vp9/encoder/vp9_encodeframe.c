@@ -1865,6 +1865,122 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
   *max_block_size = max_size;
 }
 
+static void auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
+                                 int mi_row, int mi_col,
+                                 BLOCK_SIZE *min_block_size,
+                                 BLOCK_SIZE *max_block_size) {
+  VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MODE_INFO **mi_8x8 = xd->mi;
+  const int left_in_image = xd->left_available && mi_8x8[-1];
+  const int above_in_image = xd->up_available &&
+                             mi_8x8[-xd->mi_stride];
+//  MODE_INFO **above_sb64_mi_8x8;
+//  MODE_INFO **left_sb64_mi_8x8;
+//
+  int row8x8_remaining = tile->mi_row_end - mi_row;
+  int col8x8_remaining = tile->mi_col_end - mi_col;
+  int bh, bw;
+  BLOCK_SIZE min_size = BLOCK_32X32;
+  BLOCK_SIZE max_size = BLOCK_8X8;
+  int bsl = mi_width_log2_lookup[BLOCK_64X64];
+  int search_range_ctrl = (((mi_row + mi_col) >> bsl) +
+                           cpi->sf.chessboard_index) & 0x01;
+  int block;
+  MODE_INFO **mi;
+  BLOCK_SIZE sb_type;
+  // Trap case where we do not have a prediction.
+  if (search_range_ctrl &&
+      (left_in_image || above_in_image || cm->frame_type != KEY_FRAME)) {
+//    // Default "min to max" and "max to min"
+//    min_size = BLOCK_64X64;
+//    max_size = BLOCK_4X4;
+
+    // NOTE: each call to get_sb_partition_size_range() uses the previous
+    // passed in values for min and max as a starting point.
+    // Find the min and max partition used in previous frame at this location
+//    if (cm->frame_type != KEY_FRAME && cpi->mb.in_static_area) {
+//      MODE_INFO **const prev_mi =
+//          &cm->prev_mi_grid_visible[mi_row * xd->mi_stride + mi_col];
+//      get_sb_partition_size_range(cpi, prev_mi, &min_size, &max_size);
+//    }
+    // Find the min and max partition sizes used in the left SB64
+    if (left_in_image) {
+      MODE_INFO *cur_mi;
+      mi = &mi_8x8[-1];
+      for (block = 0; block < MI_BLOCK_SIZE; ++block) {
+        cur_mi = mi[block * xd->mi_stride];
+        sb_type = cur_mi ? cur_mi->mbmi.sb_type : 0;
+        min_size = MIN(min_size, sb_type);
+        max_size = MAX(max_size, sb_type);
+      }
+
+//      for (i = 0; i < sb_height_in_blocks; ++i) {
+//        for (j = 0; j < sb_width_in_blocks; ++j) {
+//          MODE_INFO * mi = mi_8x8[index+j];
+//          BLOCK_SIZE sb_type = mi ? mi->mbmi.sb_type : 0;
+//          *min_block_size = MIN(*min_block_size, sb_type);
+//          *max_block_size = MAX(*max_block_size, sb_type);
+//        }
+//        index += xd->mi_stride;
+//      }
+//
+//      left_sb64_mi_8x8 = &mi_8x8[-MI_BLOCK_SIZE];
+//      get_sb_partition_size_range(cpi, left_sb64_mi_8x8,
+//                                  &min_size, &max_size);
+    }
+    // Find the min and max partition sizes used in the above SB64.
+    if (above_in_image) {
+      mi = &mi_8x8[-xd->mi_stride * MI_BLOCK_SIZE];
+      for (block = 0; block < MI_BLOCK_SIZE; ++block) {
+        sb_type = mi[block] ? mi[block]->mbmi.sb_type : 0;
+        min_size = MIN(min_size, sb_type);
+        max_size = MAX(max_size, sb_type);
+      }
+
+//      above_sb64_mi_8x8 = &mi_8x8[-xd->mi_stride * MI_BLOCK_SIZE];
+//      get_sb_partition_size_range(cpi, above_sb64_mi_8x8,
+//                                  &min_size, &max_size);
+    }
+    // adjust observed min and max
+//    if (cpi->sf.auto_min_max_partition_size == RELAXED_NEIGHBORING_MIN_MAX) {
+//      min_size = min_partition_size[min_size];
+//      max_size = max_partition_size[max_size];
+//    }
+
+    min_size = min_partition_size[min_size];
+//    max_size = max_partition_size[max_size];
+
+    max_size = find_partition_size(max_size, row8x8_remaining, col8x8_remaining,
+                                   &bh, &bw);
+    min_size = MIN(min_size, max_size);
+    min_size = MAX(min_size, BLOCK_8X8);
+    max_size = MIN(max_size, BLOCK_32X32);
+  } else {
+    min_size = BLOCK_8X8;
+    max_size = BLOCK_32X32;
+  }
+
+  // Check border cases where max and min from neighbors may not be legal.
+//  max_size = find_partition_size(max_size,
+//                                 row8x8_remaining, col8x8_remaining,
+//                                 &bh, &bw);
+//  min_size = MIN(min_size, max_size);
+//  min_size = MAX(min_size, BLOCK_8X8);
+//  max_size = MIN(max_size, BLOCK_32X32);
+
+  // When use_square_partition_only is true, make sure at least one square
+  // partition is allowed by selecting the next smaller square size as
+  // *min_block_size.
+//  if (cpi->sf.use_square_partition_only &&
+//      next_square_size[max_size] < min_size) {
+//     min_size = next_square_size[max_size];
+//  }
+
+  *min_block_size = min_size;
+  *max_block_size = max_size;
+}
+
 static INLINE void store_pred_mv(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx) {
   vpx_memcpy(ctx->pred_mv, x->pred_mv, sizeof(x->pred_mv));
 }
@@ -2618,9 +2734,7 @@ static void nonrd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 
       if (mi_row + y_idx >= cm->mi_rows || mi_col + x_idx >= cm->mi_cols)
         continue;
-
       load_pred_mv(x, ctx);
-
       nonrd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
                            subsize, &this_rate, &this_dist, 0,
                            best_rd - sum_rd, pc_tree->split[i]);
@@ -2910,6 +3024,10 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
       case REFERENCE_PARTITION:
         if (cpi->sf.partition_check ||
             !is_background(cpi, tile, mi_row, mi_col)) {
+          set_modeinfo_offsets(cm, xd, mi_row, mi_col);
+          auto_partition_range(cpi, tile, mi_row, mi_col,
+                               &cpi->sf.min_partition_size,
+                               &cpi->sf.max_partition_size);
           nonrd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
                                &dummy_rate, &dummy_dist, 1, INT64_MAX,
                                x->pc_root);
