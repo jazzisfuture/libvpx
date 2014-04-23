@@ -269,7 +269,7 @@ struct frame_entropy_dec_param *frame_entropy_dec_param_get(struct task *tsk) {
 struct entropy_dec_param *entropy_dec_param_get(struct task *tsk) {
   struct entropy_dec_param *param;
 
-  param = malloc(sizeof(*param));
+  param = vpx_malloc(sizeof(*param));
   if (!param) {
     return NULL;
   }

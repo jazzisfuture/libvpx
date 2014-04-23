@@ -1329,7 +1329,7 @@ void vp9_loop_filter_rows_wpp(VP9D_COMP *pbi,
     last_tsk = tsks[i];
   }
 
-  if (params[0]->upper)
+  if (params[0])
     params[0]->upper = last_tsk;
  
   for (i = 0; i < cpu_count; i++) {
