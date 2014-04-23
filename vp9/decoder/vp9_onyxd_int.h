@@ -20,7 +20,7 @@
 #include "vp9/sched/sched.h"
 #include "vp9/decoder/vp9_tile_info.h"
 
-#define MAX_TILES 4
+#define MAX_TILES 8
 
 typedef struct inter_pre_recon {
   int qcoeff_flag;
