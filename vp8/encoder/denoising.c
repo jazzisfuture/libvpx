@@ -289,8 +289,8 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
 
         /* Filter. */
         decision = vp8_denoiser_filter(mc_running_avg_y, mc_avg_y_stride,
-                                         running_avg_y, avg_y_stride,
-                                         x->thismb, 16, motion_magnitude2);
+                                       running_avg_y, avg_y_stride,
+                                       x->thismb, 16, motion_magnitude2);
     }
     if (decision == COPY_BLOCK)
     {

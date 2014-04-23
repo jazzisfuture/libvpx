@@ -22,8 +22,8 @@ extern "C" {
 
 enum vp8_denoiser_decision
 {
-  COPY_BLOCK,
-  FILTER_BLOCK
+  COPY_BLOCK = 0,
+  FILTER_BLOCK = 1
 };
 
 typedef struct vp8_denoiser
