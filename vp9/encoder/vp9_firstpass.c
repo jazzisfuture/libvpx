@@ -44,7 +44,7 @@
 #define IIKFACTOR2 15.0
 #define RMAX       512.0
 #define GF_RMAX    96.0
-#define ERR_DIVISOR   150.0
+#define ERR_DIVISOR   160.0
 #define MIN_DECAY_FACTOR 0.1
 
 #define KF_MB_INTRA_MIN 150
