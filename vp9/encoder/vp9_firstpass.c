@@ -1936,7 +1936,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Find the next keyframe.
   i = 0;
   while (twopass->stats_in < twopass->stats_in_end &&
-      rc->frames_to_key < cpi->key_frame_frequency) {
+         rc->frames_to_key < cpi->key_frame_frequency) {
     // Accumulate kf group error.
     kf_group_err += calculate_modified_err(cpi, this_frame);
 
@@ -2005,7 +2005,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
     rc->next_key_frame_forced = 1;
   } else if (twopass->stats_in == twopass->stats_in_end ||
-      rc->frames_to_key >= cpi->key_frame_frequency) {
+             rc->frames_to_key >= cpi->key_frame_frequency) {
     rc->next_key_frame_forced = 1;
   } else {
     rc->next_key_frame_forced = 0;
