@@ -591,8 +591,16 @@ static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
 // Intra only frames, golden frames (except alt ref overlays) and
 // alt ref frames tend to be coded at a higher than ambient quality
 static INLINE int frame_is_boosted(const VP9_COMP *cpi) {
+  int is_upper_layer_key_frame = 0;
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+      cpi->svc.spatial_layer_id > 0) {
+    if (cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame) {
+      is_upper_layer_key_frame = 1;
+    }
+  }
   return frame_is_intra_only(&cpi->common) || cpi->refresh_alt_ref_frame ||
-         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref) ||
+         is_upper_layer_key_frame;
 }
 
 static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
