@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Verified+1: Joey Parrish <joeyparrish@google.com>
+Code-Review+2: Dmitry Kovalev <dkovalev@google.com>
+Submitted-by: Joey Parrish <joeyparrish@google.com>
+Submitted-at: Thu, 24 Apr 2014 07:45:20 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/69779
+Project: webm/libvpx
+Branch: refs/heads/master
