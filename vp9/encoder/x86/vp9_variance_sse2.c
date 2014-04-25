@@ -14,230 +14,165 @@
 #include "vp9/common/vp9_pragmas.h"
 #include "vpx_ports/mem.h"
 
-extern unsigned int vp9_get4x4var_mmx
-(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *SSE,
-  int *Sum
-);
+typedef unsigned int (get_var_sse2)(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum, int *sum);
 
-unsigned int vp9_get16x16var_sse2
-(
-  const unsigned char *src_ptr,
-  int source_stride,
-  const unsigned char *ref_ptr,
-  int recon_stride,
-  unsigned int *SSE,
-  int *Sum
-);
-unsigned int vp9_get8x8var_sse2
-(
-  const unsigned char *src_ptr,
-  int source_stride,
-  const unsigned char *ref_ptr,
-  int recon_stride,
-  unsigned int *SSE,
-  int *Sum
-);
-void vp9_half_horiz_vert_variance8x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
-void vp9_half_horiz_vert_variance16x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
-void vp9_half_horiz_variance8x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
-void vp9_half_horiz_variance16x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
-void vp9_half_vert_variance8x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
-void vp9_half_vert_variance16x_h_sse2
-(
-  const unsigned char *ref_ptr,
-  int ref_pixels_per_line,
-  const unsigned char *src_ptr,
-  int src_pixels_per_line,
-  unsigned int Height,
-  int *sum,
-  unsigned int *sumsquared
-);
+extern get_var_sse2 vp9_get4x4var_mmx;
+extern get_var_sse2 vp9_get8x8var_sse2;
+extern get_var_sse2 vp9_get16x16var_sse2;
 
-typedef unsigned int (*get_var_sse2) (
-  const unsigned char *src_ptr,
-  int source_stride,
-  const unsigned char *ref_ptr,
-  int recon_stride,
-  unsigned int *SSE,
-  int *Sum
-);
+typedef void (half_variance_sse2)(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride,
+                                  unsigned int height,
+                                  int *sum, unsigned int *ssum);
 
-static void variance_sse2(const unsigned char *src_ptr, int  source_stride,
-                        const unsigned char *ref_ptr, int  recon_stride,
-                        int  w, int  h, unsigned int *sse, int *sum,
-                        get_var_sse2 var_fn, int block_size) {
-  unsigned int sse0;
+extern half_variance_sse2 vp9_half_horiz_vert_variance8x_h_sse2;
+extern half_variance_sse2 vp9_half_horiz_vert_variance16x_h_sse2;
+
+extern half_variance_sse2 vp9_half_horiz_variance8x_h_sse2;
+extern half_variance_sse2 vp9_half_horiz_variance16x_h_sse2;
+
+extern half_variance_sse2 vp9_half_vert_variance8x_h_sse2;
+extern half_variance_sse2 vp9_half_vert_variance16x_h_sse2;
+
+static void variance_sse2(const uint8_t *a, int a_stride,
+                          const uint8_t *b, int b_stride,
+                          int  w, int  h,
+                          unsigned int *ssum, int *sum,
+                          get_var_sse2 var_fn, int block_size) {
+  unsigned int ssum0;
   int sum0;
   int i, j;
 
-  *sse = 0;
+  *ssum = 0;
   *sum = 0;
 
   for (i = 0; i < h; i += block_size) {
     for (j = 0; j < w; j += block_size) {
-      var_fn(src_ptr + source_stride * i + j, source_stride,
-             ref_ptr + recon_stride * i + j, recon_stride, &sse0, &sum0);
-      *sse += sse0;
+      var_fn(a + a_stride * i + j, a_stride,
+             b + b_stride * i + j, b_stride, &ssum0, &sum0);
+      *ssum += ssum0;
       *sum += sum0;
     }
   }
 }
 
-unsigned int vp9_variance4x4_sse2(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 4, 4,
-                  &var, &avg, vp9_get4x4var_mmx, 4);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 4));
+unsigned int vp9_variance4x4_sse2(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride,
+                                  unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 4, 4,
+                ssum, &sum, vp9_get4x4var_mmx, 4);
+  return (*ssum - (((unsigned int)sum * sum) >> 4));
 }
 
-unsigned int vp9_variance8x4_sse2(const uint8_t *src_ptr,
-                                  int  source_stride,
-                                  const uint8_t *ref_ptr,
-                                  int  recon_stride,
-                                  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 8, 4,
-                  &var, &avg, vp9_get4x4var_mmx, 4);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 5));
+unsigned int vp9_variance4x8_sse2(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride,
+                                  unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 4, 8,
+                ssum, &sum, vp9_get4x4var_mmx, 4);
+  return (*ssum - (((unsigned int)sum * sum) >> 5));
 }
 
-unsigned int vp9_variance4x8_sse2(const uint8_t *src_ptr,
-                                  int  source_stride,
-                                  const uint8_t *ref_ptr,
-                                  int  recon_stride,
-                                  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 4, 8,
-                  &var, &avg, vp9_get4x4var_mmx, 4);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 5));
+unsigned int vp9_variance8x4_sse2(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride,
+                                  unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 8, 4,
+                ssum, &sum, vp9_get4x4var_mmx, 4);
+  return (*ssum - (((unsigned int)sum * sum) >> 5));
 }
 
-unsigned int vp9_variance8x8_sse2
-(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 8, 8,
-                  &var, &avg, vp9_get8x8var_sse2, 8);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 6));
+unsigned int vp9_variance8x8_sse2(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride,
+                                  unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 8, 8,
+                ssum, &sum, vp9_get8x8var_sse2, 8);
+  return (*ssum - (((unsigned int)sum * sum) >> 6));
 }
 
-unsigned int vp9_variance16x8_sse2
-(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 16, 8,
-                  &var, &avg, vp9_get8x8var_sse2, 8);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 7));
+unsigned int vp9_variance8x16_sse2(const uint8_t *a, int a_stride,
+                                   const uint8_t *b, int b_stride,
+                                   unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 8, 16,
+                ssum, &sum, vp9_get8x8var_sse2, 8);
+  return (*ssum - (((unsigned int)sum * sum) >> 7));
 }
 
-unsigned int vp9_variance8x16_sse2
-(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 8, 16,
-                &var, &avg, vp9_get8x8var_sse2, 8);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 7));
+unsigned int vp9_variance16x8_sse2(const uint8_t *a, int a_stride,
+                                   const uint8_t *b, int b_stride,
+                                   unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 16, 8,
+                ssum, &sum, vp9_get8x8var_sse2, 8);
+  return (*ssum - (((unsigned int)sum * sum) >> 7));
 }
 
-unsigned int vp9_variance16x16_sse2
-(
-  const unsigned char *src_ptr,
-  int  source_stride,
-  const unsigned char *ref_ptr,
-  int  recon_stride,
-  unsigned int *sse) {
-  unsigned int var;
-  int avg;
+unsigned int vp9_variance16x16_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 16, 16,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((unsigned int)sum * sum) >> 8));
+}
 
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 16, 16,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((unsigned int)avg * avg) >> 8));
+unsigned int vp9_variance16x32_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 16, 32,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 9));
+}
+
+unsigned int vp9_variance32x16_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 32, 16,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 9));
+}
+
+unsigned int vp9_variance32x32_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 32, 32,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 10));
+}
+
+unsigned int vp9_variance32x64_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 32, 64,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 11));
+}
+
+unsigned int vp9_variance64x32_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 64, 32,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 11));
+}
+
+unsigned int vp9_variance64x64_sse2(const uint8_t *a, int a_stride,
+                                    const uint8_t *b, int b_stride,
+                                    unsigned int *ssum) {
+  int sum;
+  variance_sse2(a, a_stride, b, b_stride, 64, 64,
+                ssum, &sum, vp9_get16x16var_sse2, 16);
+  return (*ssum - (((int64_t)sum * sum) >> 12));
 }
 
 unsigned int vp9_mse16x16_sse2(
@@ -254,97 +189,13 @@ unsigned int vp9_mse16x16_sse2(
   return sse0;
 }
 
-unsigned int vp9_variance32x32_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 32, 32,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 10));
-}
-
-unsigned int vp9_variance32x16_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 32, 16,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 9));
-}
-
-unsigned int vp9_variance16x32_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 16, 32,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 9));
-}
-
-unsigned int vp9_variance64x64_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 64, 64,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 12));
-}
-
-unsigned int vp9_variance64x32_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 64, 32,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 11));
-}
-
-unsigned int vp9_variance32x64_sse2(const uint8_t *src_ptr,
-                                    int  source_stride,
-                                    const uint8_t *ref_ptr,
-                                    int  recon_stride,
-                                    unsigned int *sse) {
-  unsigned int var;
-  int avg;
-
-  variance_sse2(src_ptr, source_stride, ref_ptr, recon_stride, 32, 64,
-                &var, &avg, vp9_get16x16var_sse2, 16);
-  *sse = var;
-  return (var - (((int64_t)avg * avg) >> 11));
-}
-
 #define DECL(w, opt) \
 int vp9_sub_pixel_variance##w##xh_##opt(const uint8_t *src, \
                                         ptrdiff_t src_stride, \
                                         int x_offset, int y_offset, \
                                         const uint8_t *dst, \
                                         ptrdiff_t dst_stride, \
-                                        int height, unsigned int *sse)
+                                        int height, unsigned int *ssum)
 #define DECLS(opt1, opt2) \
 DECL(4, opt2); \
 DECL(8, opt1); \
@@ -423,7 +274,7 @@ int vp9_sub_pixel_avg_variance##w##xh_##opt(const uint8_t *src, \
                                             ptrdiff_t dst_stride, \
                                             const uint8_t *sec, \
                                             ptrdiff_t sec_stride, \
-                                            int height, unsigned int *sse)
+                                            int height, unsigned int *ssum)
 #define DECLS(opt1, opt2) \
 DECL(4, opt2); \
 DECL(8, opt1); \
