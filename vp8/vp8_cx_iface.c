@@ -31,7 +31,6 @@ struct vp8_extracfg
     unsigned int                token_partitions;
     unsigned int                arnr_max_frames;    /* alt_ref Noise Reduction Max Frame Count */
     unsigned int                arnr_strength;    /* alt_ref Noise Reduction Strength */
-    unsigned int                arnr_type;        /* alt_ref filter type */
     vp8e_tuning                 tuning;
     unsigned int                cq_level;         /* constrained quality level */
     unsigned int                rc_max_intra_bitrate_pct;
@@ -66,7 +65,6 @@ static const struct extraconfig_map extracfg_map[] =
 #endif
             0,                          /* arnr_max_frames */
             3,                          /* arnr_strength */
-            3,                          /* arnr_type*/
             0,                          /* tuning*/
             10,                         /* cq_level */
             0,                          /* rc_max_intra_bitrate_pct */
@@ -202,7 +200,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t      *ctx,
     RANGE_CHECK_HI(vp8_cfg, Sharpness,       7);
     RANGE_CHECK(vp8_cfg, arnr_max_frames, 0, 15);
     RANGE_CHECK_HI(vp8_cfg, arnr_strength,   6);
-    RANGE_CHECK(vp8_cfg, arnr_type,       1, 3);
     RANGE_CHECK(vp8_cfg, cq_level, 0, 63);
     if (finalize && (cfg->rc_end_usage == VPX_CQ || cfg->rc_end_usage == VPX_Q))
         RANGE_CHECK(vp8_cfg, cq_level,
@@ -403,7 +400,6 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
 
     oxcf->arnr_max_frames        = vp8_cfg.arnr_max_frames;
     oxcf->arnr_strength          = vp8_cfg.arnr_strength;
-    oxcf->arnr_type              = vp8_cfg.arnr_type;
 
     oxcf->tuning                 = vp8_cfg.tuning;
 
@@ -518,7 +514,6 @@ static vpx_codec_err_t set_param(vpx_codec_alg_priv_t *ctx,
 
         MAP(VP8E_SET_ARNR_MAXFRAMES,        xcfg.arnr_max_frames);
         MAP(VP8E_SET_ARNR_STRENGTH ,        xcfg.arnr_strength);
-        MAP(VP8E_SET_ARNR_TYPE     ,        xcfg.arnr_type);
         MAP(VP8E_SET_TUNING,                xcfg.tuning);
         MAP(VP8E_SET_CQ_LEVEL,              xcfg.cq_level);
         MAP(VP8E_SET_MAX_INTRA_BITRATE_PCT, xcfg.rc_max_intra_bitrate_pct);
@@ -1207,7 +1202,6 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_GET_LAST_QUANTIZER_64,        get_param},
     {VP8E_SET_ARNR_MAXFRAMES,           set_param},
     {VP8E_SET_ARNR_STRENGTH ,           set_param},
-    {VP8E_SET_ARNR_TYPE     ,           set_param},
     {VP8E_SET_TUNING,                   set_param},
     {VP8E_SET_CQ_LEVEL,                 set_param},
     {VP8E_SET_MAX_INTRA_BITRATE_PCT,    set_param},

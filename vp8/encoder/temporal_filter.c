@@ -431,70 +431,28 @@ void vp8_temporal_filter_prepare_c
 )
 {
     int frame = 0;
-
-    int num_frames_backward = 0;
-    int num_frames_forward = 0;
-    int frames_to_blur_backward = 0;
-    int frames_to_blur_forward = 0;
     int frames_to_blur = 0;
     int start_frame = 0;
-
+    int frames_to_blur_backward = distance;
+    int frames_to_blur_forward = vp8_lookahead_depth(cpi->lookahead)
+                                 - (frames_to_blur_backward + 1);
     int strength = cpi->oxcf.arnr_strength;
-
-    int blur_type = cpi->oxcf.arnr_type;
-
     int max_frames = cpi->active_arnr_frames;
 
-    num_frames_backward = distance;
-    num_frames_forward = vp8_lookahead_depth(cpi->lookahead)
-                         - (num_frames_backward + 1);
+    if (frames_to_blur_forward > frames_to_blur_backward)
+        frames_to_blur_forward = frames_to_blur_backward;
 
-    switch (blur_type)
-    {
-    case 1:
-        /* Backward Blur */
+    if (frames_to_blur_backward > frames_to_blur_forward)
+        frames_to_blur_backward = frames_to_blur_forward;
 
-        frames_to_blur_backward = num_frames_backward;
+    /* When max_frames is even we have 1 more frame backward than forward */
+    if (frames_to_blur_forward > (max_frames - 1) / 2)
+        frames_to_blur_forward = ((max_frames - 1) / 2);
 
-        if (frames_to_blur_backward >= max_frames)
-            frames_to_blur_backward = max_frames - 1;
+    if (frames_to_blur_backward > (max_frames / 2))
+        frames_to_blur_backward = (max_frames / 2);
 
-        frames_to_blur = frames_to_blur_backward + 1;
-        break;
-
-    case 2:
-        /* Forward Blur */
-
-        frames_to_blur_forward = num_frames_forward;
-
-        if (frames_to_blur_forward >= max_frames)
-            frames_to_blur_forward = max_frames - 1;
-
-        frames_to_blur = frames_to_blur_forward + 1;
-        break;
-
-    case 3:
-    default:
-        /* Center Blur */
-        frames_to_blur_forward = num_frames_forward;
-        frames_to_blur_backward = num_frames_backward;
-
-        if (frames_to_blur_forward > frames_to_blur_backward)
-            frames_to_blur_forward = frames_to_blur_backward;
-
-        if (frames_to_blur_backward > frames_to_blur_forward)
-            frames_to_blur_backward = frames_to_blur_forward;
-
-        /* When max_frames is even we have 1 more frame backward than forward */
-        if (frames_to_blur_forward > (max_frames - 1) / 2)
-            frames_to_blur_forward = ((max_frames - 1) / 2);
-
-        if (frames_to_blur_backward > (max_frames / 2))
-            frames_to_blur_backward = (max_frames / 2);
-
-        frames_to_blur = frames_to_blur_backward + frames_to_blur_forward + 1;
-        break;
-    }
+    frames_to_blur = frames_to_blur_backward + frames_to_blur_forward + 1;
 
     start_frame = distance + frames_to_blur_forward;
 

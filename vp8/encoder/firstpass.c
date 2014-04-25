@@ -1928,14 +1928,14 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
     cpi->gfu_boost = (int)(boost_score * 100.0) >> 4;
 
 #if NEW_BOOST
-    /* Alterrnative boost calculation for alt ref */
+    /* Alternative boost calculation for alt ref */
     alt_boost = calc_arf_boost( cpi, 0, (i-1), (i-1), &f_boost, &b_boost );
 #endif
 
-    /* Should we use the alternate refernce frame */
+    /* Should we use the alternate reference frame */
     if (allow_alt_ref &&
         (i >= MIN_GF_INTERVAL) &&
-        /* dont use ARF very near next kf */
+        /* Don't use ARF very near next kf */
         (i <= (cpi->twopass.frames_to_key - MIN_GF_INTERVAL)) &&
 #if NEW_BOOST
         ((next_frame.pcnt_inter > 0.75) ||
@@ -2016,8 +2016,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
         {
             int half_gf_int;
             int frames_after_arf;
-            int frames_bwd = cpi->oxcf.arnr_max_frames - 1;
-            int frames_fwd = cpi->oxcf.arnr_max_frames - 1;
+            int frames_bwd;
+            int frames_fwd = (cpi->oxcf.arnr_max_frames - 1) >> 1;
 
             cpi->source_alt_ref_pending = 1;
 
@@ -2052,39 +2052,18 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame)
             frames_after_arf = (int)(cpi->twopass.total_stats.count -
                                this_frame->frame - 1);
 
-            switch (cpi->oxcf.arnr_type)
-            {
-            case 1: /* Backward filter */
-                frames_fwd = 0;
-                if (frames_bwd > half_gf_int)
-                    frames_bwd = half_gf_int;
-                break;
+            if (frames_fwd > frames_after_arf)
+                frames_fwd = frames_after_arf;
+            if (frames_fwd > half_gf_int)
+                frames_fwd = half_gf_int;
 
-            case 2: /* Forward filter */
-                if (frames_fwd > half_gf_int)
-                    frames_fwd = half_gf_int;
-                if (frames_fwd > frames_after_arf)
-                    frames_fwd = frames_after_arf;
-                frames_bwd = 0;
-                break;
+            frames_bwd = frames_fwd;
 
-            case 3: /* Centered filter */
-            default:
-                frames_fwd >>= 1;
-                if (frames_fwd > frames_after_arf)
-                    frames_fwd = frames_after_arf;
-                if (frames_fwd > half_gf_int)
-                    frames_fwd = half_gf_int;
-
-                frames_bwd = frames_fwd;
-
-                /* For even length filter there is one more frame backward
-                 * than forward: e.g. len=6 ==> bbbAff, len=7 ==> bbbAfff.
-                 */
-                if (frames_bwd < half_gf_int)
-                    frames_bwd += (cpi->oxcf.arnr_max_frames+1) & 0x1;
-                break;
-            }
+            /* For even length filter there is one more frame backward
+             * than forward: e.g. len=6 ==> bbbAff, len=7 ==> bbbAfff.
+             */
+            if (frames_bwd < half_gf_int)
+                frames_bwd += (cpi->oxcf.arnr_max_frames+1) & 0x1;
 
             cpi->active_arnr_frames = frames_bwd + 1 + frames_fwd;
         }

@@ -312,8 +312,6 @@ static const arg_def_t arnr_maxframes = ARG_DEF(NULL, "arnr-maxframes", 1,
                                                 "AltRef Max Frames");
 static const arg_def_t arnr_strength = ARG_DEF(NULL, "arnr-strength", 1,
                                                "AltRef Strength");
-static const arg_def_t arnr_type = ARG_DEF(NULL, "arnr-type", 1,
-                                           "AltRef Type");
 static const struct arg_enum_list tuning_enum[] = {
   {"psnr", VP8_TUNE_PSNR},
   {"ssim", VP8_TUNE_SSIM},
@@ -331,7 +329,7 @@ static const arg_def_t token_parts =
     ARG_DEF(NULL, "token-parts", 1, "Number of token partitions to use, log2");
 static const arg_def_t *vp8_args[] = {
   &cpu_used, &auto_altref, &noise_sens, &sharpness, &static_thresh,
-  &token_parts, &arnr_maxframes, &arnr_strength, &arnr_type,
+  &token_parts, &arnr_maxframes, &arnr_strength,
   &tune_ssim, &cq_level, &max_intra_rate_pct,
   NULL
 };
@@ -339,7 +337,7 @@ static const int vp8_arg_ctrl_map[] = {
   VP8E_SET_CPUUSED, VP8E_SET_ENABLEAUTOALTREF,
   VP8E_SET_NOISE_SENSITIVITY, VP8E_SET_SHARPNESS, VP8E_SET_STATIC_THRESHOLD,
   VP8E_SET_TOKEN_PARTITIONS,
-  VP8E_SET_ARNR_MAXFRAMES, VP8E_SET_ARNR_STRENGTH, VP8E_SET_ARNR_TYPE,
+  VP8E_SET_ARNR_MAXFRAMES, VP8E_SET_ARNR_STRENGTH,
   VP8E_SET_TUNING, VP8E_SET_CQ_LEVEL, VP8E_SET_MAX_INTRA_BITRATE_PCT,
   0
 };
