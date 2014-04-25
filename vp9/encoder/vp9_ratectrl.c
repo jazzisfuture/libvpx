@@ -303,6 +303,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   double adjustment_limit;
 
   int projected_size_based_on_q = 0;
+  if (cpi->rc.is_src_frame_alt_ref) return;
 
   // Clear down mmx registers to allow floating point in what follows
   vp9_clear_system_state();
