@@ -82,8 +82,10 @@ typedef enum {
 #if CONFIG_EXT_TX
 typedef enum {
   NORM   = 0,
-  ALT = 1,
-  EXT_TX_TYPES = 2
+  ALT_1 = 1,
+  ALT_2 = 2,
+  ALT_3 = 3,
+  EXT_TX_TYPES = 4
 } EXT_TX_TYPE;
 #endif
 

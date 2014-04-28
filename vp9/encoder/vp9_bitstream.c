@@ -53,12 +53,18 @@ static struct vp9_token intra_mode_encodings[INTRA_MODES];
 static struct vp9_token switchable_interp_encodings[SWITCHABLE_FILTERS];
 static struct vp9_token partition_encodings[PARTITION_TYPES];
 static struct vp9_token inter_mode_encodings[INTER_MODES];
+#if CONFIG_EXT_TX
+static struct vp9_token ext_tx_encodings[EXT_TX_TYPES];
+#endif
 
 void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(intra_mode_encodings, vp9_intra_mode_tree);
   vp9_tokens_from_tree(switchable_interp_encodings, vp9_switchable_interp_tree);
   vp9_tokens_from_tree(partition_encodings, vp9_partition_tree);
   vp9_tokens_from_tree(inter_mode_encodings, vp9_inter_mode_tree);
+#if CONFIG_EXT_TX
+  vp9_tokens_from_tree(ext_tx_encodings, vp9_ext_tx_tree);
+#endif
 }
 
 static void write_intra_mode(vp9_writer *w, MB_PREDICTION_MODE mode,
@@ -348,8 +354,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, MODE_INFO *m, vp9_writer *bc) {
     if (mi->tx_size <= TX_16X16 &&
         !mi->skip_coeff &&
         !vp9_segfeature_active(&cm->seg, mi->segment_id, SEG_LVL_SKIP)) {
-//      printf("enc: writing bit\n");
-      vp9_write(bc, mi->ext_txfrm, cm->fc.ext_tx_prob);
+      vp9_write_token(bc, vp9_ext_tx_tree, cm->fc.ext_tx_prob, &ext_tx_encodings[mi->ext_txfrm]);
     }
 #endif
 
@@ -1322,7 +1327,8 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 #endif
 
 #if CONFIG_EXT_TX
-    vp9_cond_prob_diff_update(&header_bc, &fc->ext_tx_prob, cm->counts.ext_tx);
+    prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob,
+                     cm->counts.ext_tx, EXT_TX_TYPES, &header_bc);
 #endif
 
     for (i = 0; i < INTER_MODE_CONTEXTS; ++i)

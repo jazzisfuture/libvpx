@@ -71,7 +71,7 @@ typedef struct frame_contexts {
 #endif
 #endif
 #if CONFIG_EXT_TX
-  vp9_prob ext_tx_prob;
+  vp9_prob ext_tx_prob[EXT_TX_TYPES - 1];
 #endif
 } FRAME_CONTEXT;
 
@@ -105,7 +105,7 @@ typedef struct {
 #endif
 #endif
 #if CONFIG_EXT_TX
-  unsigned int ext_tx[2];
+  unsigned int ext_tx[4];
 #endif
 } FRAME_COUNTS;
 

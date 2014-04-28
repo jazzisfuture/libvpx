@@ -482,8 +482,105 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
           default:
             assert(0);
         }
-      break;
-      case ALT:
+        break;
+      case ALT_1:
+        switch (tx_size) {
+          case TX_32X32:
+            scan_order = &vp9_default_scan_orders[TX_32X32];
+            if (x->use_lp32x32fdct)
+              vp9_fdct32x32_rd(src_diff, coeff, diff_stride);
+            else
+              vp9_fdct32x32(src_diff, coeff, diff_stride);
+            vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
+                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                 pd->dequant, p->zbin_extra, eob,
+                                 scan_order->scan, scan_order->iscan);
+            break;
+          case TX_16X16:
+//            scan_order = &vp9_scan_orders[TX_16X16][ADST_DCT];
+//            vp9_fht16x16(ADST_DCT, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_16X16][DCT_DCT];
+//            vp9_fslt(src_diff, coeff, diff_stride, 16);
+            vp9_fnt(src_diff, coeff, diff_stride, 16);
+            vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          case TX_8X8:
+//            scan_order = &vp9_scan_orders[TX_8X8][ADST_DCT];
+//            vp9_fht8x8(ADST_DCT, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_8X8][DCT_DCT];
+//            vp9_fslt(src_diff, coeff, diff_stride, 8);
+            vp9_fnt(src_diff, coeff, diff_stride, 8);
+            vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          case TX_4X4:
+//            scan_order = &vp9_scan_orders[TX_4X4][ADST_DCT];
+//            vp9_fht4x4(ADST_DCT, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_4X4][DCT_DCT];
+//            vp9_fslt(src_diff, coeff, diff_stride, 4);
+            vp9_fnt(src_diff, coeff, diff_stride, 4);
+            vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          default:
+            assert(0);
+        }
+        break;
+      case ALT_2:
+        switch (tx_size) {
+          case TX_32X32:
+            scan_order = &vp9_default_scan_orders[TX_32X32];
+            if (x->use_lp32x32fdct)
+              vp9_fdct32x32_rd(src_diff, coeff, diff_stride);
+            else
+              vp9_fdct32x32(src_diff, coeff, diff_stride);
+            vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
+                                 p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                 pd->dequant, p->zbin_extra, eob,
+                                 scan_order->scan, scan_order->iscan);
+            break;
+          case TX_16X16:
+//            scan_order = &vp9_scan_orders[TX_16X16][DCT_ADST];
+//            vp9_fht16x16(DCT_ADST, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_16X16][DCT_DCT];
+            vp9_fhaar(src_diff, coeff, diff_stride, 16);
+            vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          case TX_8X8:
+//            scan_order = &vp9_scan_orders[TX_8X8][DCT_ADST];
+//            vp9_fht8x8(DCT_ADST, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_8X8][DCT_DCT];
+            vp9_fhaar(src_diff, coeff, diff_stride, 8);
+            vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          case TX_4X4:
+//            scan_order = &vp9_scan_orders[TX_4X4][DCT_ADST];
+//            vp9_fht4x4(DCT_ADST, src_diff, coeff, diff_stride);
+            scan_order = &vp9_scan_orders[TX_4X4][DCT_DCT];
+            vp9_fhaar(src_diff, coeff, diff_stride, 4);
+            vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                           p->quant, p->quant_shift, qcoeff, dqcoeff,
+                           pd->dequant, p->zbin_extra, eob,
+                           scan_order->scan, scan_order->iscan);
+            break;
+          default:
+            assert(0);
+        }
+        break;
+      case ALT_3:
         switch (tx_size) {
           case TX_32X32:
             scan_order = &vp9_default_scan_orders[TX_32X32];
@@ -685,7 +782,58 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
             assert(0 && "Invalid transform size");
         }
         break;
-      case ALT:
+      case ALT_1:
+        switch (tx_size) {
+          case TX_32X32:
+            vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+            break;
+          case TX_16X16:
+//            vp9_iht16x16_add(ADST_DCT, dqcoeff, dst, pd->dst.stride,
+//                             p->eobs[block]);
+//            vp9_islt_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 16);
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 16);
+            break;
+          case TX_8X8:
+//            vp9_iht8x8_add(ADST_DCT, dqcoeff, dst, pd->dst.stride,
+//                           p->eobs[block]);
+//            vp9_islt_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 8);
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 8);
+            break;
+          case TX_4X4:
+//            vp9_iht4x4_add(ADST_DCT, dqcoeff, dst, pd->dst.stride,
+//                           p->eobs[block]);
+//            vp9_islt_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 4);
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 4);
+            break;
+          default:
+            assert(0 && "Invalid transform size");
+        }
+        break;
+      case ALT_2:
+        switch (tx_size) {
+          case TX_32X32:
+            vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+            break;
+          case TX_16X16:
+//            vp9_iht16x16_add(DCT_ADST, dqcoeff, dst, pd->dst.stride,
+//                             p->eobs[block]);
+            vp9_ihaar_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 16);
+            break;
+          case TX_8X8:
+//            vp9_iht8x8_add(DCT_ADST, dqcoeff, dst, pd->dst.stride,
+//                           p->eobs[block]);
+            vp9_ihaar_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 8);
+            break;
+          case TX_4X4:
+//            vp9_iht4x4_add(DCT_ADST, dqcoeff, dst, pd->dst.stride,
+//                           p->eobs[block]);
+            vp9_ihaar_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 4);
+            break;
+          default:
+            assert(0 && "Invalid transform size");
+        }
+        break;
+      case ALT_3:
         switch (tx_size) {
           case TX_32X32:
             vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);

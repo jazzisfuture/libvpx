@@ -48,6 +48,9 @@ extern const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vp9_tree_index vp9_switchable_interp_tree
                                 [TREE_SIZE(SWITCHABLE_FILTERS)];
+#if CONFIG_EXT_TX
+extern const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)];
+#endif
 
 void vp9_setup_past_independence(struct VP9Common *cm);
 

@@ -383,10 +383,18 @@ static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
     return DCT_DCT;
 
   if (is_inter_block(mbmi)) {
-    if (mbmi->ext_txfrm == NORM)
-      return DCT_DCT;
-    else
-      return ADST_ADST;
+    switch (mbmi->ext_txfrm) {
+      case NORM:
+        return DCT_DCT;
+      case ALT_1:
+        return ADST_DCT;
+      case ALT_2:
+        return DCT_ADST;
+      case ALT_3:
+        return ADST_ADST;
+      default:
+        assert(0);
+    }
   }
 
   return mode2txfm_map[mbmi->sb_type < BLOCK_8X8 ? mi->bmi[ib].as_mode
@@ -409,10 +417,18 @@ static INLINE TX_TYPE get_tx_type_8x8(PLANE_TYPE plane_type,
     return plane_type == PLANE_TYPE_Y ? mode2txfm_map[xd->mi_8x8[0]->mbmi.mode]
                                     : DCT_DCT;
   } else {
-    if (mbmi->ext_txfrm == NORM)
-      return DCT_DCT;
-    else
-      return ADST_ADST;
+    switch (mbmi->ext_txfrm) {
+      case NORM:
+        return DCT_DCT;
+      case ALT_1:
+        return ADST_DCT;
+      case ALT_2:
+        return DCT_ADST;
+      case ALT_3:
+        return ADST_ADST;
+      default:
+        assert(0);
+    }
   }
 }
 #endif
@@ -432,10 +448,18 @@ static INLINE TX_TYPE get_tx_type_16x16(PLANE_TYPE plane_type,
     return plane_type == PLANE_TYPE_Y ? mode2txfm_map[xd->mi_8x8[0]->mbmi.mode]
                                     : DCT_DCT;
   } else {
-    if (mbmi->ext_txfrm == NORM)
-      return DCT_DCT;
-    else
-      return ADST_ADST;
+    switch (mbmi->ext_txfrm) {
+      case NORM:
+        return DCT_DCT;
+      case ALT_1:
+        return ADST_DCT;
+      case ALT_2:
+        return DCT_ADST;
+      case ALT_3:
+        return ADST_ADST;
+      default:
+        assert(0);
+    }
   }
 }
 static INLINE TX_TYPE get_tx_type_32x32(PLANE_TYPE plane_type,
@@ -445,10 +469,18 @@ static INLINE TX_TYPE get_tx_type_32x32(PLANE_TYPE plane_type,
   if (!is_inter_block(mbmi) || plane_type != PLANE_TYPE_Y) {
     return DCT_DCT;
   } else {
-    if (mbmi->ext_txfrm == NORM)
-      return DCT_DCT;
-    else
-      return ADST_ADST;
+    switch (mbmi->ext_txfrm) {
+      case NORM:
+        return DCT_DCT;
+      case ALT_1:
+        return ADST_DCT;
+      case ALT_2:
+        return DCT_ADST;
+      case ALT_3:
+        return ADST_ADST;
+      default:
+        assert(0);
+    }
   }
 }
 #endif

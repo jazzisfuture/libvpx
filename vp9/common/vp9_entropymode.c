@@ -31,7 +31,9 @@ static const vp9_prob default_masked_interintra_prob[BLOCK_SIZES] = {
 #endif
 #endif
 #if CONFIG_EXT_TX
-const vp9_prob default_ext_tx_prob = 204;  // 0.6 = 153, 0.7 = 178, 0.8 = 204
+const vp9_prob default_ext_tx_prob[EXT_TX_TYPES - 1] = {
+    204, 55, 55 // 0.6 = 153, 0.7 = 178, 0.8 = 204
+};
 #endif
 
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
@@ -275,6 +277,14 @@ const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
   -PARTITION_VERT, -PARTITION_SPLIT
 };
 
+#if CONFIG_EXT_TX
+const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
+  -NORM, 2,
+  -ALT_1, 4,
+  -ALT_2, -ALT_3
+};
+#endif
+
 static const vp9_prob default_intra_inter_p[INTRA_INTER_CONTEXTS] = {
   9, 102, 187, 225
 };
@@ -370,7 +380,7 @@ void vp9_init_mbmode_probs(VP9_COMMON *cm) {
 #endif
 #endif
 #if CONFIG_EXT_TX
-  cm->fc.ext_tx_prob = default_ext_tx_prob;
+  vp9_copy(cm->fc.ext_tx_prob, default_ext_tx_prob);
 #endif
 }
 
@@ -504,7 +514,8 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
 #endif
 
 #if CONFIG_EXT_TX
-  fc->ext_tx_prob = adapt_prob(pre_fc->ext_tx_prob, counts->ext_tx);
+  adapt_probs(vp9_ext_tx_tree, pre_fc->ext_tx_prob,
+              counts->ext_tx, fc->ext_tx_prob);
 #endif
 }
 
