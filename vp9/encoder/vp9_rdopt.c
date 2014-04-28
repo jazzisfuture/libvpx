@@ -165,6 +165,11 @@ static void fill_mode_costs(VP9_COMP *c) {
     vp9_cost_tokens((int *)c->mb.switchable_interp_costs[i],
                     cm->fc.switchable_interp_prob[i],
                     vp9_switchable_interp_tree);
+
+#if CONFIG_EXT_TX
+  vp9_cost_tokens((int *)c->mb.ext_tx_costs, cm->fc.ext_tx_prob,
+                  vp9_ext_tx_tree);
+#endif
 }
 
 static void fill_token_costs(vp9_coeff_cost *c,
@@ -3605,29 +3610,41 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t rdcosty = INT64_MAX;
 
 #if CONFIG_EXT_TX
-
     int64_t rdcost_tx;
     int rate_y_tx;
     int64_t distortion_y_tx;
     int dummy;
     int64_t best_rdcost_tx = INT64_MAX;
     int best_ext_tx = NORM;
-    double th = 0.97;
-
-
+    double th1 = 1.031;
+    double th2 = 1.031;
+    double th3 = 1.031;
     for (i = 0; i < EXT_TX_TYPES; i++) {
       mbmi->ext_txfrm = i;
       super_block_yrd(cpi, x, &rate_y_tx, &distortion_y_tx, &dummy, psse,
                       bsize, txfm_cache, INT64_MAX);
       assert(rate_y_tx != INT_MAX);
-      rate_y_tx += vp9_cost_bit(cm->fc.ext_tx_prob, i);
+      if (mbmi->tx_size < TX_32X32)
+        rate_y_tx += x->ext_tx_costs[mbmi->ext_txfrm];
       assert(rate_y_tx >= 0);
       rdcost_tx = RDCOST(x->rdmult, x->rddiv, rate_y_tx, distortion_y_tx);
       rdcost_tx = MIN(rdcost_tx, RDCOST(x->rdmult, x->rddiv, 0, *psse));
+      if (mbmi->ext_txfrm == 1)
+        rdcost_tx *= th1;
+      else if (mbmi->ext_txfrm == 2)
+        rdcost_tx *= th2;
+      if (mbmi->ext_txfrm == 3)
+        rdcost_tx *= th3;
       assert(rdcost_tx >= 0);
-      if (rdcost_tx < best_rdcost_tx * th) {
+      if (rdcost_tx < best_rdcost_tx) {
         best_ext_tx = i;
         best_rdcost_tx = rdcost_tx;
+        if (mbmi->ext_txfrm == 1)
+          best_rdcost_tx /= th1;
+        else if (mbmi->ext_txfrm == 2)
+          best_rdcost_tx /= th2;
+        if (mbmi->ext_txfrm == 3)
+          best_rdcost_tx /= th3;
       }
     }
     if (mbmi->tx_size == TX_32X32)
@@ -3649,7 +3666,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     *rate2 += *rate_y;
 #if CONFIG_EXT_TX
-    *rate2 += vp9_cost_bit(cm->fc.ext_tx_prob, mbmi->ext_txfrm);
+    if (mbmi->tx_size < TX_32X32)
+      *rate2 += x->ext_tx_costs[mbmi->ext_txfrm];
 #endif
     *distortion += *distortion_y;
 

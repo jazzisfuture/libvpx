@@ -250,18 +250,51 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
     switch (tx_size) {
       case TX_4X4:
         tx_type = get_tx_type_4x4(plane_type, xd, block);
-        if (tx_type == DCT_DCT)
-          xd->itxm_add(dqcoeff, dst, stride, eob);
-        else
-          vp9_iht4x4_16_add(dqcoeff, dst, stride, tx_type);
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_1) {
+//          vp9_islt_add(dqcoeff, dst, stride, eob, 4);
+          vp9_int_add(dqcoeff, dst, stride, eob, 4);
+        } else if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_2) {
+          vp9_ihaar_add(dqcoeff, dst, stride, eob, 4);
+        } else {
+          if (tx_type == DCT_DCT)
+            xd->itxm_add(dqcoeff, dst, stride, eob);
+          else
+            vp9_iht4x4_16_add(dqcoeff, dst, stride, tx_type);
+        }
         break;
       case TX_8X8:
         tx_type = get_tx_type_8x8(plane_type, xd);
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_1) {
+//          vp9_islt_add(dqcoeff, dst, stride, eob, 8);
+          vp9_int_add(dqcoeff, dst, stride, eob, 8);
+        } else if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_2) {
+          vp9_ihaar_add(dqcoeff, dst, stride, eob, 8);
+        } else {
+          vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+        }
         break;
       case TX_16X16:
         tx_type = get_tx_type_16x16(plane_type, xd);
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_1) {
+//          vp9_islt_add(dqcoeff, dst, stride, eob, 16);
+          vp9_int_add(dqcoeff, dst, stride, eob, 16);
+        } else if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            xd->mi_8x8[0]->mbmi.ext_txfrm == ALT_2) {
+          vp9_ihaar_add(dqcoeff, dst, stride, eob, 16);
+        } else {
+          vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+        }
         break;
       case TX_32X32:
 #if !CONFIG_EXT_TX
@@ -1289,7 +1322,10 @@ static int read_compressed_header(VP9D_COMP *pbi, const uint8_t *data,
     int i, j;
 
 #if CONFIG_EXT_TX
-    vp9_diff_update_prob(&r, &fc->ext_tx_prob);
+    for (i = 0; i < TX_TYPES - 1; ++i)
+      vp9_diff_update_prob(&r, &fc->ext_tx_prob[i]);
+    printf("%d, %d, %d\n", (int)fc->ext_tx_prob[0],
+           (int)fc->ext_tx_prob[1], (int)fc->ext_tx_prob[2]);
 #endif
 
     read_inter_mode_probs(fc, &r);
