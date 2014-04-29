@@ -178,12 +178,6 @@ vpx_codec_err_t vp8dx_set_reference(VP8D_COMP *pbi, enum vpx_ref_frame_type ref_
    return pbi->common.error.error_code;
 }
 
-/*For ARM NEON, d8-d15 are callee-saved registers, and need to be saved by us.*/
-#if HAVE_NEON
-extern void vp8_push_neon(int64_t *store);
-extern void vp8_pop_neon(int64_t *store);
-#endif
-
 static int get_free_fb (VP8_COMMON *cm)
 {
     int i;
@@ -319,15 +313,6 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     if(retcode <= 0)
         return retcode;
 
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_push_neon(dx_store_reg);
-    }
-#endif
-
     cm->new_fb_idx = get_free_fb (cm);
 
     /* setup reference frames for vp8_decode_frame */
@@ -403,15 +388,6 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
     pbi->last_time_stamp = time_stamp;
 
 decode_exit:
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_pop_neon(dx_store_reg);
-    }
-#endif
-
     pbi->common.error.setjmp = 0;
     return retcode;
 }
