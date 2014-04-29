@@ -4820,13 +4820,6 @@ static void Pass2Encode(VP8_COMP *cpi, unsigned long *size, unsigned char *dest,
 }
 #endif
 
-/* For ARM NEON, d8-d15 are callee-saved registers, and need to be saved. */
-#if HAVE_NEON
-extern void vp8_push_neon(int64_t *store);
-extern void vp8_pop_neon(int64_t *store);
-#endif
-
-
 int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags, YV12_BUFFER_CONFIG *sd, int64_t time_stamp, int64_t end_time)
 {
 #if HAVE_NEON
@@ -4837,15 +4830,6 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags, YV12_BUFFER_C
 #endif
     struct vpx_usec_timer  timer;
     int                    res = 0;
-
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_push_neon(store_reg);
-    }
-#endif
 
     vpx_usec_timer_start(&timer);
 
@@ -4862,15 +4846,6 @@ int vp8_receive_raw_frame(VP8_COMP *cpi, unsigned int frame_flags, YV12_BUFFER_C
         res = -1;
     vpx_usec_timer_mark(&timer);
     cpi->time_receive_data += vpx_usec_timer_elapsed(&timer);
-
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_pop_neon(store_reg);
-    }
-#endif
 
     return res;
 }
@@ -4913,15 +4888,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
     }
 
     cpi->common.error.setjmp = 1;
-
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_push_neon(store_reg);
-    }
-#endif
 
     vpx_usec_timer_start(&cmptimer);
 
@@ -5005,14 +4971,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
 
 #endif
 
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-        if (cm->cpu_caps & HAS_NEON)
-#endif
-        {
-            vp8_pop_neon(store_reg);
-        }
-#endif
         return -1;
     }
 
@@ -5414,15 +5372,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
     }
 
 #endif
-#endif
-
-#if HAVE_NEON
-#if CONFIG_RUNTIME_CPU_DETECT
-    if (cm->cpu_caps & HAS_NEON)
-#endif
-    {
-        vp8_pop_neon(store_reg);
-    }
 #endif
 
     cpi->common.error.setjmp = 0;
