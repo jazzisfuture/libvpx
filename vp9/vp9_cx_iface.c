@@ -88,6 +88,7 @@ struct vpx_codec_alg_priv {
   vp8_postproc_cfg_t      preview_ppcfg;
   vpx_codec_pkt_list_decl(64) pkt_list;
   unsigned int                fixed_kf_cntr;
+  BufferPool              *buffer_pool;
 };
 
 static VP9_REFFRAME ref_frame_to_vp9_reframe(vpx_ref_frame_type_t frame) {
@@ -534,6 +535,11 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     ctx->priv->alg_priv = priv;
     ctx->priv->init_flags = ctx->init_flags;
     ctx->priv->enc.total_encoders = 1;
+    ctx->priv->alg_priv->buffer_pool =
+        (BufferPool *)vpx_calloc(1, sizeof(BufferPool));
+    if (ctx->priv->alg_priv->buffer_pool == NULL)
+      return;
+
 
     if (ctx->config.enc) {
       // Update the reference to the config structure to an internal copy.
@@ -571,7 +577,8 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
       set_encoder_config(&ctx->priv->alg_priv->oxcf,
                          &ctx->priv->alg_priv->cfg,
                          &ctx->priv->alg_priv->extra_cfg);
-      cpi = vp9_create_compressor(&ctx->priv->alg_priv->oxcf);
+      cpi = vp9_create_compressor(&ctx->priv->alg_priv->oxcf,
+                                  ctx->priv->alg_priv->buffer_pool);
       if (cpi == NULL)
         res = VPX_CODEC_MEM_ERROR;
       else
