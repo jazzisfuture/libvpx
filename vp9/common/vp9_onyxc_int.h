@@ -63,6 +63,20 @@ typedef struct {
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
 
+typedef struct {
+  // Private data associated with the frame buffer callbacks.
+  void *cb_priv;
+
+  vpx_get_frame_buffer_cb_fn_t get_fb_cb;
+  vpx_release_frame_buffer_cb_fn_t release_fb_cb;
+
+  RefCntBuffer frame_bufs[FRAME_BUFFERS];
+
+  // Handles memory for the codec.
+  InternalFrameBufferList int_frame_buffers;
+} BufferPool;
+
+
 typedef struct VP9Common {
   struct vpx_internal_error_info  error;
 
@@ -88,8 +102,6 @@ typedef struct VP9Common {
   int subsampling_y;
 
   YV12_BUFFER_CONFIG *frame_to_show;
-
-  RefCntBuffer frame_bufs[FRAME_BUFFERS];
 
   int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
 
@@ -197,30 +209,25 @@ typedef struct VP9Common {
 
   int log2_tile_cols, log2_tile_rows;
 
-  // Private data associated with the frame buffer callbacks.
-  void *cb_priv;
-  vpx_get_frame_buffer_cb_fn_t get_fb_cb;
-  vpx_release_frame_buffer_cb_fn_t release_fb_cb;
-
-  // Handles memory for the codec.
-  InternalFrameBufferList int_frame_buffers;
+  BufferPool *buffer_pool;
 
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
-  return &cm->frame_bufs[cm->new_fb_idx].buf;
+  return &cm->buffer_pool->frame_bufs[cm->new_fb_idx].buf;
 }
 
 static INLINE int get_free_fb(VP9_COMMON *cm) {
+  BufferPool *pool = cm->buffer_pool;
   int i;
   for (i = 0; i < FRAME_BUFFERS; i++)
-    if (cm->frame_bufs[i].ref_count == 0)
+    if (pool->frame_bufs[i].ref_count == 0)
       break;
 
   assert(i < FRAME_BUFFERS);
-  cm->frame_bufs[i].ref_count = 1;
+  pool->frame_bufs[i].ref_count = 1;
   return i;
 }
 
