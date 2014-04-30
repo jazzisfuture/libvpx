@@ -5329,7 +5329,8 @@ long ContentEncoding::ParseCompressionEntry(
       if (buf == NULL)
         return -1;
 
-      const int read_status = pReader->Read(pos, buflen, buf);
+      const int read_status = pReader->Read(pos, static_cast<long>(buflen),
+                                            buf);
       if (read_status) {
         delete [] buf;
         return status;
@@ -5391,7 +5392,8 @@ long ContentEncoding::ParseEncryptionEntry(
       if (buf == NULL)
         return -1;
 
-      const int read_status = pReader->Read(pos, buflen, buf);
+      const int read_status = pReader->Read(pos, static_cast<long>(buflen),
+                                            buf);
       if (read_status) {
         delete [] buf;
         return status;
@@ -5414,7 +5416,8 @@ long ContentEncoding::ParseEncryptionEntry(
       if (buf == NULL)
         return -1;
 
-      const int read_status = pReader->Read(pos, buflen, buf);
+      const int read_status = pReader->Read(pos, static_cast<long>(buflen),
+                                            buf);
       if (read_status) {
         delete [] buf;
         return status;
@@ -5437,7 +5440,8 @@ long ContentEncoding::ParseEncryptionEntry(
       if (buf == NULL)
         return -1;
 
-      const int read_status = pReader->Read(pos, buflen, buf);
+      const int read_status = pReader->Read(pos, static_cast<long>(buflen),
+                                            buf);
       if (read_status) {
         delete [] buf;
         return status;
@@ -6779,7 +6783,8 @@ long Tracks::ParseTrackEntry(
                 if (buf == NULL)
                     return -1;
 
-                const int status = pReader->Read(pos, buflen, buf);
+                const int status = pReader->Read(pos, static_cast<long>(buflen),
+                                                 buf);
 
                 if (status)
                 {
