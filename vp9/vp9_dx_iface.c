@@ -49,6 +49,7 @@ struct vpx_codec_alg_priv {
   int                     img_setup;
   int                     img_avail;
   int                     invert_tile_order;
+  BufferPool              *buffer_pool;
 
   // External frame buffer info to save for VP9 common.
   void *ext_priv;  // Private data associated with the external frame buffers.
@@ -198,22 +199,23 @@ static vpx_codec_err_t update_error_state(vpx_codec_alg_priv_t *ctx,
 
 static void init_buffer_callbacks(vpx_codec_alg_priv_t *ctx) {
   VP9_COMMON *const cm = &ctx->pbi->common;
+  BufferPool *pool = cm->buffer_pool;
 
   cm->new_fb_idx = -1;
 
   if (ctx->get_ext_fb_cb != NULL && ctx->release_ext_fb_cb != NULL) {
-    cm->get_fb_cb = ctx->get_ext_fb_cb;
-    cm->release_fb_cb = ctx->release_ext_fb_cb;
-    cm->cb_priv = ctx->ext_priv;
+    pool->get_fb_cb = ctx->get_ext_fb_cb;
+    pool->release_fb_cb = ctx->release_ext_fb_cb;
+    pool->cb_priv = ctx->ext_priv;
   } else {
-    cm->get_fb_cb = vp9_get_frame_buffer;
-    cm->release_fb_cb = vp9_release_frame_buffer;
+    pool->get_fb_cb = vp9_get_frame_buffer;
+    pool->release_fb_cb = vp9_release_frame_buffer;
 
-    if (vp9_alloc_internal_frame_buffers(&cm->int_frame_buffers))
+    if (vp9_alloc_internal_frame_buffers(&pool->int_frame_buffers))
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to initialize internal frame buffers");
 
-    cm->cb_priv = &cm->int_frame_buffers;
+    pool->cb_priv = &pool->int_frame_buffers;
   }
 }
 
@@ -252,7 +254,11 @@ static void init_decoder(vpx_codec_alg_priv_t *ctx) {
   oxcf.max_threads = ctx->cfg.threads;
   oxcf.inv_tile_order = ctx->invert_tile_order;
 
-  ctx->pbi = vp9_decoder_create(&oxcf);
+  ctx->buffer_pool = (BufferPool *)vpx_calloc(1, sizeof(BufferPool));
+  if (ctx->buffer_pool == NULL)
+    return;
+
+  ctx->pbi = vp9_decoder_create(&oxcf, ctx->buffer_pool);
   if (ctx->pbi == NULL)
     return;
 
@@ -314,7 +320,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
     return update_error_state(ctx, &cm->error);
 
   yuvconfig2image(&ctx->img, &sd, user_priv);
-  ctx->img.fb_priv = cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
+  ctx->img.fb_priv = cm->buffer_pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
   ctx->img_avail = 1;
 
   return VPX_CODEC_OK;

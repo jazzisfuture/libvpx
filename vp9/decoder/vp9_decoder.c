@@ -42,7 +42,7 @@ void vp9_initialize_dec() {
   }
 }
 
-VP9Decoder *vp9_decoder_create(const VP9DecoderConfig *oxcf) {
+VP9Decoder *vp9_decoder_create(const VP9DecoderConfig *oxcf, BufferPool *pool) {
   VP9Decoder *const pbi = vpx_memalign(32, sizeof(*pbi));
   VP9_COMMON *const cm = pbi ? &pbi->common : NULL;
 
@@ -69,6 +69,7 @@ VP9Decoder *vp9_decoder_create(const VP9DecoderConfig *oxcf) {
   pbi->oxcf = *oxcf;
   pbi->ready_for_new_data = 1;
   pbi->decoded_key_frame = 0;
+  pbi->common.buffer_pool = pool;
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of
@@ -118,6 +119,7 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
                                        VP9_REFFRAME ref_frame_flag,
                                        YV12_BUFFER_CONFIG *sd) {
   VP9_COMMON *cm = &pbi->common;
+  BufferPool *pool = cm->buffer_pool;
 
   /* TODO(jkoleszar): The decoder doesn't have any real knowledge of what the
    * encoder is using the frame buffers for. This is just a stub to keep the
@@ -126,7 +128,7 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
    */
   if (ref_frame_flag == VP9_LAST_FLAG) {
     const YV12_BUFFER_CONFIG *const cfg =
-        &cm->frame_bufs[cm->ref_frame_map[0]].buf;
+        &pool->frame_bufs[cm->ref_frame_map[0]].buf;
     if (!equal_dimensions(cfg, sd))
       vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                          "Incorrect buffer dimensions");
@@ -145,6 +147,7 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
                                       VP9_REFFRAME ref_frame_flag,
                                       YV12_BUFFER_CONFIG *sd) {
   RefBuffer *ref_buf = NULL;
+  BufferPool *pool = cm->buffer_pool;
 
   // TODO(jkoleszar): The decoder doesn't have any real knowledge of what the
   // encoder is using the frame buffers for. This is just a stub to keep the
@@ -172,11 +175,11 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
     const int free_fb = get_free_fb(cm);
     // Decrease ref_count since it will be increased again in
     // ref_cnt_fb() below.
-    cm->frame_bufs[free_fb].ref_count--;
+    pool->frame_bufs[free_fb].ref_count--;
 
     // Manage the reference counters and copy image.
-    ref_cnt_fb(cm->frame_bufs, ref_fb_ptr, free_fb);
-    ref_buf->buf = &cm->frame_bufs[*ref_fb_ptr].buf;
+    ref_cnt_fb(pool->frame_bufs, ref_fb_ptr, free_fb);
+    ref_buf->buf = &pool->frame_bufs[*ref_fb_ptr].buf;
     vp8_yv12_copy_frame(sd, ref_buf->buf);
   }
 
@@ -186,11 +189,12 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
 
 int vp9_get_reference_dec(VP9Decoder *pbi, int index, YV12_BUFFER_CONFIG **fb) {
   VP9_COMMON *cm = &pbi->common;
+  BufferPool *pool = cm->buffer_pool;
 
   if (index < 0 || index >= REF_FRAMES)
     return -1;
 
-  *fb = &cm->frame_bufs[cm->ref_frame_map[index]].buf;
+  *fb = &pool->frame_bufs[cm->ref_frame_map[index]].buf;
   return 0;
 }
 
@@ -198,21 +202,22 @@ int vp9_get_reference_dec(VP9Decoder *pbi, int index, YV12_BUFFER_CONFIG **fb) {
 static void swap_frame_buffers(VP9Decoder *pbi) {
   int ref_index = 0, mask;
   VP9_COMMON *const cm = &pbi->common;
+  BufferPool *pool = cm->buffer_pool;
 
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
     if (mask & 1) {
       const int old_idx = cm->ref_frame_map[ref_index];
-      ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[ref_index],
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[ref_index],
                  cm->new_fb_idx);
-      if (old_idx >= 0 && cm->frame_bufs[old_idx].ref_count == 0)
-        cm->release_fb_cb(cm->cb_priv,
-                          &cm->frame_bufs[old_idx].raw_frame_buffer);
+      if (old_idx >= 0 && pool->frame_bufs[old_idx].ref_count == 0)
+        pool->release_fb_cb(pool->cb_priv,
+                          &pool->frame_bufs[old_idx].raw_frame_buffer);
     }
     ++ref_index;
   }
 
   cm->frame_to_show = get_frame_new_buffer(cm);
-  cm->frame_bufs[cm->new_fb_idx].ref_count--;
+  pool->frame_bufs[cm->new_fb_idx].ref_count--;
 
   // Invalidate these references until the next frame starts.
   for (ref_index = 0; ref_index < 3; ref_index++)
@@ -223,6 +228,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                                 size_t size, const uint8_t **psource,
                                 int64_t time_stamp) {
   VP9_COMMON *const cm = &pbi->common;
+  BufferPool *pool = cm->buffer_pool;
   const uint8_t *source = *psource;
   int retcode = 0;
 
@@ -242,9 +248,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   }
 
   // Check if the previous frame was a frame without any references to it.
-  if (cm->new_fb_idx >= 0 && cm->frame_bufs[cm->new_fb_idx].ref_count == 0)
-    cm->release_fb_cb(cm->cb_priv,
-                      &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+  if (cm->new_fb_idx >= 0 && pool->frame_bufs[cm->new_fb_idx].ref_count == 0)
+    pool->release_fb_cb(pool->cb_priv,
+                        &pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
   if (setjmp(cm->error.jmp)) {
@@ -260,8 +266,8 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     if (cm->frame_refs[0].idx != INT_MAX)
       cm->frame_refs[0].buf->corrupted = 1;
 
-    if (cm->frame_bufs[cm->new_fb_idx].ref_count > 0)
-      cm->frame_bufs[cm->new_fb_idx].ref_count--;
+    if (pool->frame_bufs[cm->new_fb_idx].ref_count > 0)
+      pool->frame_bufs[cm->new_fb_idx].ref_count--;
 
     return -1;
   }
@@ -273,8 +279,8 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;
     cm->error.setjmp = 0;
-    if (cm->frame_bufs[cm->new_fb_idx].ref_count > 0)
-      cm->frame_bufs[cm->new_fb_idx].ref_count--;
+    if (pool->frame_bufs[cm->new_fb_idx].ref_count > 0)
+      pool->frame_bufs[cm->new_fb_idx].ref_count--;
     return retcode;
   }
 
