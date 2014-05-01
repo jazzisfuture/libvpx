@@ -1435,7 +1435,7 @@ specialize qw/vp9_high_quantize_b_32x32/;
 # Structured Similarity (SSIM)
 #
 if (vpx_config("CONFIG_INTERNAL_STATS") eq "yes") {
-    add_proto qw/void vp9_high_ssim_parms_8x8/, "uint8_t *s, int sp, uint8_t *r, int rp, unsigned long *sum_s, unsigned long *sum_r, unsigned long *sum_sq_s, unsigned long *sum_sq_r, unsigned long *sum_sxr";
+    add_proto qw/void vp9_high_ssim_parms_8x8/, "uint16_t *s, int sp, uint16_t *r, int rp, unsigned long *sum_s, unsigned long *sum_r, unsigned long *sum_sq_s, unsigned long *sum_sq_r, unsigned long *sum_sxr";
     specialize qw/vp9_high_ssim_parms_8x8/;
 
     add_proto qw/void vp9_high_ssim_parms_16x16/, "uint8_t *s, int sp, uint8_t *r, int rp, unsigned long *sum_s, unsigned long *sum_r, unsigned long *sum_sq_s, unsigned long *sum_sq_r, unsigned long *sum_sxr";
