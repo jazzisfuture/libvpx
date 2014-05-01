@@ -399,7 +399,8 @@ typedef struct VP9_COMP {
 
   SVC svc;
 
-  int use_large_partition_rate;
+  diff *source_diff_var;
+  int use_fixed_partition;
 
   int frame_flags;
 
