@@ -350,9 +350,6 @@ typedef struct SPEED_FEATURES {
   // The frequency that we check if SOURCE_VAR_BASED_PARTITION or
   // FIXED_PARTITION search type should be used.
   int search_type_check_frequency;
-
-  // The threshold used in SOURCE_VAR_BASED_PARTITION search type.
-  unsigned int source_var_thresh;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
