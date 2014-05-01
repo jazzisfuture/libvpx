@@ -70,12 +70,6 @@ static const uint8_t VP9_VAR_OFFS[64] = {
   128, 128, 128, 128, 128, 128, 128, 128
 };
 
-typedef struct {
-  unsigned int sse;
-  int sum;
-  unsigned int var;
-} diff;
-
 static unsigned int get_sby_perpixel_variance(VP9_COMP *cpi,
                                               const struct buf_2d *ref,
                                               BLOCK_SIZE bs) {
@@ -1174,34 +1168,24 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
   // In-image SB64
   if ((col8x8_remaining >= MI_BLOCK_SIZE) &&
       (row8x8_remaining >= MI_BLOCK_SIZE)) {
-    const int src_stride = x->plane[0].src.stride;
-    const int pre_stride = cpi->Last_Source->y_stride;
-    const uint8_t *src = x->plane[0].src.buf;
-    const int pre_offset = (mi_row * MI_SIZE) * pre_stride +
-                           (mi_col * MI_SIZE);
-    const uint8_t *pre_src = cpi->Last_Source->y_buffer + pre_offset;
-    const unsigned int thr_32x32 = cpi->sf.source_var_thresh;
-    const unsigned int thr_64x64 = thr_32x32 << 1;
     int i, j;
     int index;
     diff d32[4];
     int use16x16 = 0;
+    int offset = (mi_row/2) * cm->mb_cols + (mi_col / 2);
+    int good_neighbours = 0;
+    int thr = cpi->sf.source_var_thresh;
 
     for (i = 0; i < 4; i++) {
-      diff d16[4];
+      diff *d16[4];
 
       for (j = 0; j < 4; j++) {
         int b_mi_row = coord_lookup[i * 4 + j].row;
         int b_mi_col = coord_lookup[i * 4 + j].col;
-        int b_offset = b_mi_row * MI_SIZE * src_stride +
-                       b_mi_col * MI_SIZE;
+        int boffset = b_mi_row / 2 * cm->mb_cols +
+                      b_mi_col / 2;
 
-        vp9_get16x16var(src + b_offset, src_stride,
-                        pre_src + b_offset, pre_stride,
-                        &d16[j].sse, &d16[j].sum);
-
-        d16[j].var = d16[j].sse -
-            (((uint32_t)d16[j].sum * d16[j].sum) >> 8);
+        d16[j] = cpi->source_diff_var + offset + boffset;
 
         index = b_mi_row * mis + b_mi_col;
         mi_8x8[index] = mi_upper_left + index;
@@ -1210,15 +1194,20 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
         // TODO(yunqingwang): If d16[j].var is very large, use 8x8 partition
         // size to further improve quality.
       }
+      good_neighbours = 0;
 
-      if (d16[0].var < thr_32x32 && d16[1].var < thr_32x32 &&
-          d16[2].var < thr_32x32 && d16[3].var < thr_32x32) {
-        d32[i].sse = d16[0].sse;
-        d32[i].sum = d16[0].sum;
+      for (j = 0; j < 4; j++) {
+        if (d16[j]->var < thr)
+          good_neighbours++;
+      }
+
+      if (good_neighbours >= 4) {
+        d32[i].sse = d16[0]->sse;
+        d32[i].sum = d16[0]->sum;
 
         for (j = 1; j < 4; j++) {
-          d32[i].sse += d16[j].sse;
-          d32[i].sum += d16[j].sum;
+          d32[i].sse += d16[j]->sse;
+          d32[i].sum += d16[j]->sum;
         }
 
         d32[i].var = d32[i].sse - (((int64_t)d32[i].sum * d32[i].sum) >> 10);
@@ -1226,18 +1215,21 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
         index = coord_lookup[i*4].row * mis + coord_lookup[i*4].col;
         mi_8x8[index] = mi_upper_left + index;
         mi_8x8[index]->mbmi.sb_type = BLOCK_32X32;
-
-        if (!((cm->current_video_frame - 1) %
-            cpi->sf.search_type_check_frequency))
-          cpi->use_large_partition_rate += 1;
       } else {
         use16x16 = 1;
       }
     }
 
     if (!use16x16) {
-      if (d32[0].var < thr_64x64 && d32[1].var < thr_64x64 &&
-          d32[2].var < thr_64x64 && d32[3].var < thr_64x64)  {
+      good_neighbours = 0;
+      thr <<= 1;
+
+      for (j = 0; j < 4; j++) {
+        if (d32[j].var < thr)
+          good_neighbours++;
+      }
+
+      if (good_neighbours >= 4) {
         mi_8x8[0] = mi_upper_left;
         mi_8x8[0]->mbmi.sb_type = BLOCK_64X64;
       }
@@ -2938,6 +2930,66 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 }
 // end RTC play code
 
+static void set_var_thresh_from_histogram(VP9_COMP *cpi) {
+  SPEED_FEATURES *const sf = &cpi->sf;
+  VP9_COMMON *const cm = &cpi->common;
+
+  const uint8_t *src = cpi->Source->y_buffer;
+  const uint8_t *last_src = cpi->Last_Source->y_buffer;
+  const int src_stride = cpi->Source->y_stride;
+  const int last_stride = cpi->Last_Source->y_stride;
+
+  const int cutoff = (cm->MBs > 1200) ? (cm->MBs * 75 / 100)
+      : (cm->MBs * 45 / 100);
+  const int factor = 10;
+  const int max_bg_variance = 1000;  //800
+  const int hist_bins = max_bg_variance / factor + 1;
+  int *hist = vpx_calloc(hist_bins, sizeof(int));
+  diff *var16 = cpi->source_diff_var;
+
+  int sum = 0;
+  int i, j;
+
+  for (i = 0; i < cm->mb_rows; i++) {
+    for (j = 0; j < cm->mb_cols; j++) {
+      vp9_get16x16var(src, src_stride, last_src, last_stride,
+                      &var16->sse, &var16->sum);
+
+      var16->var = var16->sse -
+          (((uint32_t)var16->sum * var16->sum) >> 8);
+
+       if (var16->var >= max_bg_variance)
+        hist[hist_bins - 1]++;
+      else
+        hist[var16->var/factor]++;
+
+      src += 16;
+      last_src += 16;
+      var16++;
+    }
+
+    src = src - cm->mb_cols * 16 + 16 * src_stride;
+    last_src = last_src - cm->mb_cols * 16 + 16 * last_stride;
+  }
+
+  cpi->use_fixed_partition = sf->search_type_check_frequency;
+
+  if (hist[hist_bins - 1] < cutoff) {
+    for (i = 0; i < hist_bins - 1; i++) {
+      sum += hist[i];
+
+      if (sum > cutoff) {
+        cpi->sf.source_var_thresh = (i + 1) * factor;
+        cpi->use_fixed_partition = 0;
+        break;
+      }
+    }
+  }
+
+  vpx_free(hist);
+  return;
+}
+
 static int get_skip_encode_frame(const VP9_COMMON *cm) {
   unsigned int intra_count = 0, inter_count = 0;
   int j;
@@ -3037,26 +3089,25 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     }
     vp9_zero(x->zcoeff_blk);
 
-    if (sf->partition_search_type == SOURCE_VAR_BASED_PARTITION &&
-        cm->current_video_frame > 0) {
-      int check_freq = sf->search_type_check_frequency;
+    if (sf->partition_search_type == SOURCE_VAR_BASED_PARTITION) {
+      if (cm->current_video_frame == 0)
+        sf->partition_search_type = FIXED_PARTITION;
+      else {
+        if (cm->last_width != cm->width || cm->last_height != cm->height) {
+          if (cpi->source_diff_var)
+            vpx_free(cpi->source_diff_var);
 
-      if ((cm->current_video_frame - 1) % check_freq == 0) {
-        cpi->use_large_partition_rate = 0;
-      }
+          CHECK_MEM_ERROR(cm, cpi->source_diff_var,
+                          vpx_calloc(cm->MBs, sizeof(diff)));
+        }
 
-      if ((cm->current_video_frame - 1) % check_freq == 1) {
-        const int mbs_in_b32x32 = 1 << ((b_width_log2_lookup[BLOCK_32X32] -
-                                  b_width_log2_lookup[BLOCK_16X16]) +
-                                  (b_height_log2_lookup[BLOCK_32X32] -
-                                  b_height_log2_lookup[BLOCK_16X16]));
-        cpi->use_large_partition_rate = cpi->use_large_partition_rate * 100 *
-                                        mbs_in_b32x32 / cm->MBs;
-      }
+        if (cpi->use_fixed_partition <= 0)
+          set_var_thresh_from_histogram(cpi);  // cpi->source_diff_var, cpi->sf.source_var_thresh
 
-      if ((cm->current_video_frame - 1) % check_freq >= 1) {
-        if (cpi->use_large_partition_rate < 15)
-          sf->partition_search_type = FIXED_PARTITION;
+        if (cpi->use_fixed_partition > 0) {
+                   sf->partition_search_type = FIXED_PARTITION;
+          cpi->use_fixed_partition--;
+        }
       }
     }
   }
