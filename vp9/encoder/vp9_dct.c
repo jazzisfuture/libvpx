@@ -20,6 +20,29 @@
 
 #include "vp9/encoder/vp9_dct.h"
 
+#if CONFIG_EXT_TX_GBT
+static double b[5000];
+static double z[5000];
+static double a[5000][5000];
+static double v[5000][5000];
+double LUT_s[1024];
+double LUT_r[256];
+int block_index;
+int block_index_dec;
+char fn_enc[500];
+char fn_dec[500];
+static double diag_d[4096];
+static double adj[4096];
+static double lap[4096];
+static int16_t tmp_input[4096];
+static double links[4096];
+
+#define ROTATE(a, i, j, k, l) g = a[i][j]; \
+  h = a[k][l]; \
+  a[i][j] = g - s * (h + g * tau); \
+  a[k][l] = h + s * (g - h * tau);
+#endif
+
 static INLINE int fdct_round_shift(int input) {
   int rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
   assert(INT16_MIN <= rv && rv <= INT16_MAX);
@@ -1796,3 +1819,277 @@ void vp9_fht16x16(TX_TYPE tx_type, const int16_t *input, int16_t *output,
   else
     vp9_short_fht16x16(input, output, stride, tx_type);
 }
+
+#if CONFIG_EXT_TX_GBT
+
+void jacobi(int n, double d[], int *nrot) {
+  int j, iq, ip, i;
+  double tresh, theta, tau, t, sm, s, h, g, c;
+
+  for (ip = 1; ip <= n; ip++) {
+    for (iq = 1; iq <= n; iq++)
+      v[ip][iq] = 0.0;
+    v[ip][ip] = 1.0;
+  }
+  for (ip = 1; ip <= n; ip++) {
+    b[ip] = d[ip] = a[ip][ip];
+    z[ip] = 0.0;
+  }
+  *nrot = 0;
+  for (i = 1; i <= 50; i++) {
+    sm = 0.0;
+    for (ip = 1; ip <= n - 1; ip++) {
+      for (iq = ip + 1; iq <= n; iq++)
+        sm += fabs(a[ip][iq]);
+    }
+    if (sm == 0.0) {
+      return;
+    }
+    if (i < 4)
+      tresh = 0.2 * sm / (n * n);
+    else
+      tresh = 0.0;
+    for (ip = 1; ip <= n - 1; ip++) {
+      for (iq = ip + 1; iq <= n; iq++) {
+        g = 100.0 * fabs(a[ip][iq]);
+        if (i > 4 && (double) (fabs(d[ip]) + g) == (double) fabs(d[ip])
+            && (double) (fabs(d[iq]) + g) == (double) fabs(d[iq]))
+          a[ip][iq] = 0.0;
+        else if (fabs(a[ip][iq]) > tresh) {
+          h = d[iq] - d[ip];
+          if ((double) (fabs(h) + g) == (double) fabs(h)) {
+            t = (a[ip][iq]) / h;
+          } else {
+            theta = 0.5 * h / (a[ip][iq]);
+            t = 1.0 / (fabs(theta) + sqrt(1.0 + theta * theta));
+            if (theta < 0.0)
+              t = -t;
+          }
+          c = 1.0 / sqrt(1 + t * t);
+          s = t * c;
+          tau = s / (1.0 + c);
+          h = t * a[ip][iq];
+          z[ip] -= h;
+          z[iq] += h;
+          d[ip] -= h;
+          d[iq] += h;
+          a[ip][iq] = 0.0;
+          for (j = 1; j <= ip - 1; j++) {
+            ROTATE(a, j, ip, j, iq)
+          }
+          for (j = ip + 1; j <= iq - 1; j++) {
+            ROTATE(a, ip, j, j, iq)
+          }
+          for (j = iq + 1; j <= n; j++) {
+            ROTATE(a, ip, j, iq, j)
+          }
+          for (j = 1; j <= n; j++) {
+            ROTATE(v, j, ip, j, iq)
+          }
+          ++(*nrot);
+        }
+      }
+    }
+    for (ip = 1; ip <= n; ip++) {
+      b[ip] += z[ip];
+      d[ip] = b[ip];
+      z[ip] = 0.0;
+    }
+  }
+//  printf("Too many iterations in routine jacobi");
+}
+
+void eigsrt(double d[], int n) {
+  int k, j, i;
+  double p;
+
+  for (i = 1; i < n; i++) {
+    p = d[k = i];
+    for (j = i + 1; j <= n; j++)
+      if (d[j] <= p)
+        p = d[k = j];
+    if (k != i) {
+      d[k] = d[i];
+      d[i] = p;
+      for (j = 1; j <= n; j++) {
+        p = v[j][i];
+        v[j][i] = v[j][k];
+        v[j][k] = p;
+      }
+    }
+  }
+}
+
+void eig(double *aa, double *vv, int n) {
+  int i, j, nrot;
+  double d[65 * 65];
+
+  // set indexing starting from 1
+  for (i = 1; i <= n; i++)
+    for (j = 1; j <= n; j++)
+      a[i][j] = aa[(i - 1) * n + j - 1];
+
+  // calculation using jacobi
+  jacobi(n, d, &nrot);
+
+  // sort the eval and evec
+  eigsrt(d, n);
+
+  // set indexing starting from 0
+  for (i = 0; i < n; i++)
+    for (j = 0; j < n; j++)
+      vv[i * n + j] = v[i + 1][j + 1];
+}
+
+void makeLUT(double sigma_s, double sigma_r) {
+  int row, col, r;
+  double const_s, const_r;
+  const_s = 1 / (2 * sigma_s * sigma_s);
+  const_r = 1 / (2 * sigma_r * sigma_r);
+
+  for (row = 0; row < 32; row++)
+    for (col = 0; col < 32; col++)
+      LUT_s[row * 32 + col] = exp(-sqrt(row * row + col * col) * const_s);
+
+  for (r = 0; r < 256; r++) {
+    LUT_r[r] = exp(-r * r * const_r);
+  }
+}
+
+void vp9_igbt_add(const int16_t *input, uint8_t *dest, int dest_stride,
+                  int eob, int height, int width, double* basis) {
+  int i, j;
+  int num_nodes = height * width;
+  double tmp_sum;
+  int out[64];
+
+  for (i = 0; i < num_nodes; i++) {
+    tmp_sum = 0.0;
+    for (j = 0; j < num_nodes; j++) {
+      tmp_sum = tmp_sum + (double) (input[j]) * basis[i * num_nodes + j];
+    }
+    if (tmp_sum >= 0)
+      out[i] = (int) (tmp_sum / 8 + 0.5);
+    else
+      out[i] = (int) (tmp_sum / 8 - 0.5);
+  }
+
+  // add predictor
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < width; j++) {
+      dest[i * dest_stride + j] = clip_pixel(
+          dest[i * dest_stride + j] + out[i * width + j]);
+    }
+  }
+}
+
+void sub2ind(int height, int width, int i, int j, int* ind) {
+  *ind = i * width + j;
+}
+
+void ind2sub(int height, int width, int ind, int *i, int *j) {
+  *i = (int) ((double) ind / (double) width);
+  *j = ind - (*j * width);
+}
+
+void build_graph(const uint8_t *pred, int pred_stride, double *adj,
+                 double* lap, int height, int width, int num_nodes) {
+  int row, col, ind, row2, col2, ind2, diff;
+  int offsets[8] = {-1, 0, 1, 0, 0, -1, 0, 1};
+  int offsetInd, len = 4;
+  double tmp_sum;
+
+  int num_links = 0;
+
+  // reset adjacency matrix
+  for (row = 0; row < num_nodes; row++)
+    for (col = 0; col < num_nodes; col++)
+      adj[row * num_nodes + col] = 0.0;
+
+  // adjacency matrix
+  for (row = 0; row < height; row++)
+    for (col = 0; col < width; col++) {
+      sub2ind(height, width, row, col, &ind);
+      for (offsetInd = 0; offsetInd < len; offsetInd++) {
+        row2 = row + offsets[offsetInd * 2];
+        col2 = col + offsets[offsetInd * 2 + 1];
+        if (row2 >= 0 && row2 < height && col2 >= 0 && col2 < width) {
+          sub2ind(height, width, row2, col2, &ind2);
+          diff = abs(
+              pred[row * pred_stride + col] - pred[row2 * pred_stride + col2]);
+          adj[ind * num_nodes + ind2] = LUT_r[diff];
+          adj[ind2 * num_nodes + ind] = adj[ind * num_nodes + ind2];
+          links[num_links] = LUT_r[diff];
+          num_links++;
+        }
+      }
+    }
+
+  // degree matrix
+  for (ind = 0; ind < num_nodes; ind++) {
+    tmp_sum = 0;
+    for (ind2 = 0; ind2 < num_nodes; ind2++) {
+      tmp_sum += adj[ind * num_nodes + ind2];
+    }
+    diag_d[ind] = tmp_sum;
+  }
+
+  // Laplacian
+  for (ind = 0; ind < num_nodes; ind++) {
+    for (ind2 = 0; ind2 < num_nodes; ind2++) {
+      if (ind == ind2) {
+        lap[ind * num_nodes + ind2] = diag_d[ind];
+      } else {
+        lap[ind * num_nodes + ind2] = -adj[ind * num_nodes + ind2];
+      }
+    }
+  }
+}
+
+void vp9_fgbt(const int16_t *input, int16_t *out, int input_stride,
+              const uint8_t *pred, int pred_stride, int height, int width,
+              double *basis) {
+  int num_nodes = height * width;
+  int i, j;
+  double tmp_sum;
+
+  build_graph(pred, pred_stride, adj, lap, height, width, num_nodes);
+  eig(lap, basis, num_nodes);
+
+  // prepare input data
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < width; j++) {
+      tmp_input[i * width + j] = input[i * input_stride + j];
+    }
+  }
+
+  // projection
+  for (i = 0; i < num_nodes; i++) {
+    tmp_sum = 0.0;
+    for (j = 0; j < num_nodes; j++) {
+      tmp_sum = tmp_sum + (double) (tmp_input[j]) * basis[j * num_nodes + i];
+    }
+    if (tmp_sum >= 0)
+      out[i] = (int16_t) (tmp_sum * 8 + 0.5);
+    else
+      out[i] = (int16_t) (tmp_sum * 8 - 0.5);
+  }
+}
+
+#endif
+
+#if CONFIG_EXT_TX_NT
+void vp9_fnt(const int16_t *input, int16_t *output, int stride, int size) {
+  int i, j, k;
+  int factor = (size == 32) ? 4 : 8;
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      if (input[i*stride+j] >= 0)
+        output[i*size+j] = (int16_t)(input[i*stride+j] * factor + 0.5);
+      else
+        output[i*size+j] = (int16_t)(input[i*stride+j] * factor - 0.5);
+    }
+  }
+}
+#endif

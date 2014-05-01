@@ -38,6 +38,12 @@
 #include "vp9/decoder/vp9_read_bit_buffer.h"
 #include "vp9/decoder/vp9_thread.h"
 
+#if CONFIG_EXT_TX_GBT
+double adj[4096];
+double lap[4096];
+double basis[4096];
+#endif
+
 typedef struct TileWorkerData {
   VP9_COMMON *cm;
   vp9_reader bit_reader;
@@ -250,18 +256,72 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
     switch (tx_size) {
       case TX_4X4:
         tx_type = get_tx_type_4x4(plane_type, xd, block);
-        if (tx_type == DCT_DCT)
-          xd->itxm_add(dqcoeff, dst, stride, eob);
-        else
-          vp9_iht4x4_16_add(dqcoeff, dst, stride, tx_type);
+#if CONFIG_EXT_TX_GBT
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            tx_type == ADST_ADST) {
+          build_graph(dst, stride, adj, lap, 4, 4, 16);
+          eig(lap, basis, 16);
+          vp9_igbt_add(dqcoeff, dst, stride, eob, 4, 4, basis);
+        } else {
+#endif
+#if CONFIG_EXT_TX_NT
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            tx_type == ADST_ADST) {
+          vp9_int_add(dqcoeff, dst, stride, eob, 4);
+        } else {
+#endif
+          if (tx_type == DCT_DCT)
+            xd->itxm_add(dqcoeff, dst, stride, eob);
+          else
+            vp9_iht4x4_16_add(dqcoeff, dst, stride, tx_type);
+#if CONFIG_EXT_TX_GBT
+        }
+#endif
+#if CONFIG_EXT_TX_NT
+        }
+#endif
         break;
       case TX_8X8:
         tx_type = get_tx_type_8x8(plane_type, xd);
-        vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+#if CONFIG_EXT_TX_GBT
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            tx_type == ADST_ADST) {
+          build_graph(dst, stride, adj, lap, 8, 8, 64);
+          eig(lap, basis, 64);
+          vp9_igbt_add(dqcoeff, dst, stride, eob, 8, 8, basis);
+        } else {
+#endif
+#if CONFIG_EXT_TX_NT
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            tx_type == ADST_ADST) {
+          vp9_int_add(dqcoeff, dst, stride, eob, 8);
+        } else {
+#endif
+          vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+#if CONFIG_EXT_TX_GBT
+        }
+#endif
+#if CONFIG_EXT_TX_NT
+        }
+#endif
         break;
       case TX_16X16:
         tx_type = get_tx_type_16x16(plane_type, xd);
-        vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+#if CONFIG_EXT_TX_NT
+        if (is_inter_block(&xd->mi_8x8[0]->mbmi) &&
+            plane == 0 &&
+            tx_type == ADST_ADST) {
+          vp9_int_add(dqcoeff, dst, stride, eob, 16);
+        } else {
+#endif
+          vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+#if CONFIG_EXT_TX_NT
+        }
+#endif
         break;
       case TX_32X32:
 #if !CONFIG_EXT_TX

@@ -262,6 +262,8 @@ EXPERIMENT_LIST="
     filterintra
     ext_tx
     ext_tx_dst32
+    ext_tx_gbt
+    ext_tx_nt
 "
 
 CONFIG_LIST="

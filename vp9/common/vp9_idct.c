@@ -1423,7 +1423,25 @@ void vp9_idst_add(const int16_t *input, uint8_t *dest, int stride,
     }
   }
 }
+#endif
 
+#if CONFIG_EXT_TX_NT
+void vp9_int_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size) {
+  int i, j, k;
+  int factor = (size == 32) ? 4 : 8;
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      if (input[i*size+j] >= 0)
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(input[i*size+j] / factor + 0.5));
+      else
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(input[i*size+j] / factor - 0.5));
+    }
+  }
+}
 #endif
 
 // iht

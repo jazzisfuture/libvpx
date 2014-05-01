@@ -25,7 +25,11 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
-
+#if CONFIG_EXT_TX_GBT
+double basis[4096];
+double adj[4096];
+double lap[4096];
+#endif
 
 void vp9_setup_interp_filters(MACROBLOCKD *xd,
                               INTERPOLATION_TYPE mcomp_filter_type,
@@ -421,6 +425,7 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 }
 #else
+
 void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
                      TX_SIZE tx_size, void *arg) {
   struct encode_b_args* const args = arg;
@@ -437,8 +442,14 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
   int i, j;
   int16_t *src_diff;
   MB_MODE_INFO *mbmi = &xd->mi_8x8[0]->mbmi;
+#if CONFIG_EXT_TX_GBT
+  uint8_t *dst;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+#if CONFIG_EXT_TX_GBT
+  dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
+#endif
 
   if (plane == 0) {
     switch (mbmi->ext_txfrm) {
@@ -502,7 +513,11 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
             break;
           case TX_16X16:
             scan_order = &vp9_scan_orders[TX_16X16][ADST_ADST];
+#if CONFIG_EXT_TX_NT
+            vp9_fnt(src_diff, coeff, diff_stride, 16);
+#else
             vp9_fht16x16(ADST_ADST, src_diff, coeff, diff_stride);
+#endif
             vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob,
@@ -510,7 +525,15 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
             break;
           case TX_8X8:
             scan_order = &vp9_scan_orders[TX_8X8][ADST_ADST];
+#if CONFIG_EXT_TX_GBT
+            vp9_fgbt(src_diff, coeff, diff_stride, dst, pd->dst.stride,
+                     8, 8, basis);
+
+#elif CONFIG_EXT_TX_NT
+            vp9_fnt(src_diff, coeff, diff_stride, 8);
+#else
             vp9_fht8x8(ADST_ADST, src_diff, coeff, diff_stride);
+#endif
             vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob,
@@ -518,7 +541,14 @@ void vp9_xform_quant(int plane, int block, BLOCK_SIZE plane_bsize,
             break;
           case TX_4X4:
             scan_order = &vp9_scan_orders[TX_4X4][ADST_ADST];
+#if CONFIG_EXT_TX_GBT
+            vp9_fgbt(src_diff, coeff, diff_stride, dst, pd->dst.stride,
+                                 4, 4, basis);
+#elif CONFIG_EXT_TX_NT
+            vp9_fnt(src_diff, coeff, diff_stride, 4);
+#else
             vp9_fht4x4(ADST_ADST, src_diff, coeff, diff_stride);
+#endif
             vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob,
@@ -699,16 +729,34 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 #endif
             break;
           case TX_16X16:
+#if CONFIG_EXT_TX_NT
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 16);
+#else
             vp9_iht16x16_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
                              p->eobs[block]);
+#endif
             break;
           case TX_8X8:
+#if CONFIG_EXT_TX_GBT
+            vp9_igbt_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                         8, 8, basis);
+#elif CONFIG_EXT_TX_NT
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 8);
+#else
             vp9_iht8x8_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
                            p->eobs[block]);
+#endif
             break;
           case TX_4X4:
+#if CONFIG_EXT_TX_GBT
+            vp9_igbt_add(dqcoeff, dst, pd->dst.stride, p->eobs[block],
+                                     4, 4, basis);
+#elif CONFIG_EXT_TX_NT
+            vp9_int_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], 4);
+#else
             vp9_iht4x4_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
                            p->eobs[block]);
+#endif
             break;
           default:
             assert(0 && "Invalid transform size");
