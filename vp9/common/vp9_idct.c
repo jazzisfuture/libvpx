@@ -1351,7 +1351,7 @@ void vp9_idct8x8_add(const int16_t *input, uint8_t *dest, int stride, int eob) {
   else if (eob <= 10)
     vp9_idct8x8_10_add(input, dest, stride);
   else
-    vp9_idct8x8_64_add(input, dest, stride);
+    vp9_idct8x8_64_add_ssse3(input, dest, stride);
 }
 
 void vp9_idct16x16_add(const int16_t *input, uint8_t *dest, int stride,
