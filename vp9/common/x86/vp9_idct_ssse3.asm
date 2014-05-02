@@ -128,6 +128,7 @@ SECTION .text
 %endmacro
 
 INIT_XMM ssse3
+; full inverse 8x8 2D-DCT transform
 cglobal idct8x8_64_add, 3, 5, 13, input, output, stride
   mova     m8, [pd_8192]
   mova    m11, [pw_16]
@@ -158,5 +159,26 @@ cglobal idct8x8_64_add, 3, 5, 13, input, output, stride
   lea              outputq, [outputq + r3]
   ADD_STORE_8P_2X  6, 7, 9, 10, 12
   RET
+
+; inverse 8x8 2D-DCT transform with only first 10 coeffs non-zero
+cglobal idct8x8_10_add, 3, 5, 13, input, output, stride
+  mova       m8, [pd_8192]
+  mova      m11, [pw_16]
+  mova      m12, [pw_11585x2]
+
+  lea        r3, [2 * strideq]
+
+  mova       m0, [inputq +  0]
+  mova       m1, [inputq + 16]
+  mova       m2, [inputq + 32]
+  mova       m3, [inputq + 48]
+
+  punpcklwd  m0, m1
+  punpcklwd  m2, m3
+  punpckldq  m9, m0, m2
+  punpckhdq  m0, m2
+  SWAP       2, 9
+
+
 
 %endif
