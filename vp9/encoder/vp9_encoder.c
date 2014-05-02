@@ -2156,6 +2156,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       cm->frame_type != KEY_FRAME) {
     if (vp9_rc_drop_frame(cpi)) {
       vp9_rc_postencode_update_drop_frame(cpi);
+      cm->last_frame_type = cm->frame_type;
       ++cm->current_video_frame;
       return;
     }
