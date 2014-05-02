@@ -28,6 +28,14 @@ TRANSFORM_COEFFS    6270, 15137
 TRANSFORM_COEFFS    3196, 16069
 TRANSFORM_COEFFS   13623,  9102
 
+%macro PAIR_PP_COEFFS 2
+pw_%1_%2:   dw  %1,  %1,  %1,  %1,  %2,  %2,  %2,  %2
+%endmacro
+
+%macro PAIR_MP_COEFFS 2
+pw_m%1_%1:  dw -%1, -%1, -%1, -%1,  %2,  %2,  %2,  %2
+%endmacro
+
 SECTION .text
 
 %if ARCH_X86_64
@@ -128,6 +136,7 @@ SECTION .text
 %endmacro
 
 INIT_XMM ssse3
+; full inverse 8x8 2D-DCT transform
 cglobal idct8x8_64_add, 3, 5, 13, input, output, stride
   mova     m8, [pd_8192]
   mova    m11, [pw_16]
@@ -159,4 +168,36 @@ cglobal idct8x8_64_add, 3, 5, 13, input, output, stride
   ADD_STORE_8P_2X  6, 7, 9, 10, 12
 
   RET
+
+; inverse 8x8 2D-DCT transform with only first 10 coeffs non-zero
+cglobal idct8x8_10_add, 3, 5, 13, input, output, stride
+  mova       m8, [pd_8192]
+  mova      m11, [pw_16]
+  mova      m12, [pw_11585x2]
+
+  lea        r3, [2 * strideq]
+
+  mova       m0, [inputq +  0]
+  mova       m1, [inputq + 16]
+  mova       m2, [inputq + 32]
+  mova       m3, [inputq + 48]
+
+  punpcklwd  m0, m1
+  punpcklwd  m2, m3
+  punpckldq  m9, m0, m2
+  punpckhdq  m0, m2
+  SWAP       2, 9
+
+  punpckhqdq m10, m0, m0
+  punpcklqdq m0,  m0
+  punpckhqdq m9,  m2, m2
+  punpcklqdq m2,  m2
+  SWAP       1, 10
+  SWAP       3,  9
+
+  ; m0 -> [0], [0]
+  ; m1 -> [1], [1]
+  ; m2 -> [2], [2]
+  ; m3 -> [3], [3]
+
 %endif
