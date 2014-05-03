@@ -98,6 +98,10 @@ void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
 #if CONFIG_EXT_TX
 void vp9_idst_add(const int16_t *input, uint8_t *dest, int stride,
                   int eob, int size);
+void vp9_islt_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size);
+void vp9_ihaar_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size);
 #endif
 
 

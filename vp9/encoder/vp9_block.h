@@ -138,6 +138,9 @@ struct macroblock {
   int intra_uv_mode_cost[2][MB_MODE_COUNT];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
+#if CONFIG_EXT_TX
+  int ext_tx_costs[EXT_TX_TYPES];
+#endif
 
   unsigned char sb_index;   // index of 32x32 block inside the 64x64 block
   unsigned char mb_index;   // index of 16x16 block inside the 32x32 block

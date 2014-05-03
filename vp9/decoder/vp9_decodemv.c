@@ -497,18 +497,17 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 
 #if CONFIG_EXT_TX
   assert(is_inter_block(mbmi));
-#if CONFIG_EXT_TX_DST32
-  if (
-#else
   if (mbmi->tx_size <= TX_16X16 &&
-#endif
       !mbmi->skip_coeff) {
-    mbmi->ext_txfrm = vp9_read(r, cm->fc.ext_tx_prob);
+    mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
+                                   cm->fc.ext_tx_prob);
     if (!cm->frame_parallel_decoding_mode)
       ++cm->counts.ext_tx[mbmi->ext_txfrm];
+
   } else {
     mbmi->ext_txfrm = NORM;
   }
+
 #endif
 
   is_compound = has_second_ref(mbmi);

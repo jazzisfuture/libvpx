@@ -1382,6 +1382,12 @@ void vp9_idct32x32_add(const int16_t *input, uint8_t *dest, int stride,
 static double tmp[32*32];
 static double tmp2[32*32];
 extern double dstmtx32[32*32];
+extern double sltmtx16[16*16];
+extern double sltmtx8[8*8];
+extern double sltmtx4[4*4];
+extern double haarmtx16[16*16];
+extern double haarmtx8[8*8];
+extern double haarmtx4[4*4];
 
 void vp9_idst_add(const int16_t *input, uint8_t *dest, int stride,
                   int eob, int size) {
@@ -1424,6 +1430,116 @@ void vp9_idst_add(const int16_t *input, uint8_t *dest, int stride,
   }
 }
 
+void vp9_islt_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size) {
+  int i, j, k;
+
+  double *basis;
+  int factor = (size == 32) ? 4 : 8;
+
+  switch (size) {
+    case 16:
+      basis = sltmtx16;
+      break;
+    case 8:
+      basis = sltmtx8;
+      break;
+    case 4:
+      basis = sltmtx4;
+      break;
+    default:
+      assert(0);
+      break;
+  }
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      tmp[i*size+j] = 0;
+      for (k = 0; k < size; k++) {
+        tmp[i*size+j] += input[i*size+k] * basis[j*size+k];  // row
+      }
+    }
+  }
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      tmp2[i*size+j] = 0;
+      for (k = 0; k < size; k++) {
+        tmp2[i*size+j] += basis[i*size+k] * tmp[k*size+j];  // col
+      }
+      if (tmp2[i*size+j] >= 0)
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(tmp2[i*size+j] / factor + 0.5));
+      else
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(tmp2[i*size+j] / factor - 0.5));
+    }
+  }
+}
+
+void vp9_ihaar_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size) {
+  int i, j, k;
+
+  double *basis;
+  int factor = (size == 32) ? 4 : 8;
+
+  switch (size) {
+    case 16:
+      basis = haarmtx16;
+      break;
+    case 8:
+      basis = haarmtx8;
+      break;
+    case 4:
+      basis = haarmtx4;
+      break;
+    default:
+      assert(0);
+      break;
+  }
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      tmp[i*size+j] = 0;
+      for (k = 0; k < size; k++) {
+        tmp[i*size+j] += input[i*size+k] * basis[j*size+k];  // row
+      }
+    }
+  }
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      tmp2[i*size+j] = 0;
+      for (k = 0; k < size; k++) {
+        tmp2[i*size+j] += basis[i*size+k] * tmp[k*size+j];  // col
+      }
+      if (tmp2[i*size+j] >= 0)
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(tmp2[i*size+j] / factor + 0.5));
+      else
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(tmp2[i*size+j] / factor - 0.5));
+    }
+  }
+}
+
+void vp9_int_add(const int16_t *input, uint8_t *dest, int stride,
+                  int eob, int size) {
+  int i, j, k;
+  int factor = (size == 32) ? 4 : 8;
+
+  for (i = 0; i < size; i++) {
+    for (j = 0; j < size; j++) {
+      if (input[i*size+j] >= 0)
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(input[i*size+j] / factor + 0.5));
+      else
+        dest[i*stride+j] = clip_pixel((int)dest[i*stride+j] +
+                                      (int)(input[i*size+j] / factor - 0.5));
+    }
+  }
+}
 #endif
 
 // iht
