@@ -45,7 +45,7 @@
  *      [16, 255]       3               6                    7
  */
 
-int vp8_denoiser_filter_neon(unsigned char *mc_running_avg_y,
+int vp8_denoiser_filter_neonx(unsigned char *mc_running_avg_y,
                              int mc_running_avg_y_stride,
                              unsigned char *running_avg_y,
                              int running_avg_y_stride,
