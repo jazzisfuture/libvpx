@@ -1302,7 +1302,6 @@ int vp9_decode_frame(VP9Decoder *pbi,
   uint8_t clear_data[MAX_VP9_HEADER_SIZE];
   const size_t first_partition_size = read_uncompressed_header(pbi,
       init_read_bit_buffer(pbi, &rb, data, data_end, clear_data));
-  const int keyframe = cm->frame_type == KEY_FRAME;
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int tile_cols = 1 << cm->log2_tile_cols;
   YV12_BUFFER_CONFIG *const new_fb = get_frame_new_buffer(cm);
@@ -1314,7 +1313,7 @@ int vp9_decode_frame(VP9Decoder *pbi,
     return 0;
   }
 
-  if (!pbi->decoded_key_frame && !keyframe)
+  if (!pbi->decoded_key_frame && !frame_is_intra_only(cm))
     return -1;
 
   data += vp9_rb_bytes_read(&rb);
@@ -1363,11 +1362,12 @@ int vp9_decode_frame(VP9Decoder *pbi,
   new_fb->corrupted |= xd->corrupted;
 
   if (!pbi->decoded_key_frame) {
-    if (keyframe && !new_fb->corrupted)
+    if (frame_is_intra_only(cm) && !new_fb->corrupted)
       pbi->decoded_key_frame = 1;
     else
       vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
-                         "A stream must start with a complete key frame");
+                         "A stream must start with either a complete key frame "
+                         "or an intra-only coded inter-frame");
   }
 
   if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode &&
