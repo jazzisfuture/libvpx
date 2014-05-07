@@ -26,6 +26,10 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rdopt.h"
 
+////
+#include "vp9/encoder/vp9_cost.h"
+#include "vp9/common/vp9_pred_common.h"
+
 static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                     const TileInfo *const tile,
                                     BLOCK_SIZE bsize, int mi_row, int mi_col,
@@ -150,7 +154,8 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
 static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                               MACROBLOCK *x, MACROBLOCKD *xd,
-                              int *out_rate_sum, int64_t *out_dist_sum) {
+                              int *out_rate_sum, int64_t *out_dist_sum,
+                              unsigned int *var_y, unsigned int *sse_y) {
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
@@ -163,6 +168,9 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
   int var = cpi->fn_ptr[bsize].vf(p->src.buf, p->src.stride,
                                   pd->dst.buf, pd->dst.stride, &sse);
+
+  *var_y = var;
+  *sse_y = sse;
 
   vp9_model_rd_from_var_lapndz(sse + var, 1 << num_pels_log2_lookup[bsize],
                                pd->dequant[1] >> 3, &rate, &dist);
@@ -194,6 +202,9 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   int rate = INT_MAX;
   int64_t dist = INT64_MAX;
+  // var_y and sse_y are saved to be used in skipping checking
+  unsigned int var_y = UINT_MAX;
+  unsigned int sse_y = UINT_MAX;
 
   VP9_COMMON *cm = &cpi->common;
   int intra_cost_penalty = 20 * vp9_dc_quant(cm->base_qindex, cm->y_dc_delta_q);
@@ -215,8 +226,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
   x->skip = 0;
-  if (!x->in_active_map)
-    x->skip = 1;
+
   // initialize mode decisions
   *returnrate = INT_MAX;
   *returndistortion = INT64_MAX;
@@ -319,11 +329,14 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         int64_t tmp_rdcost3 = INT64_MAX;
         int pf_rate[3];
         int64_t pf_dist[3];
+        unsigned int pf_var[3];
+        unsigned int pf_sse[3];
 
         mbmi->interp_filter = EIGHTTAP;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
         model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP],
-                          &pf_dist[EIGHTTAP]);
+                          &pf_dist[EIGHTTAP], &pf_var[EIGHTTAP],
+                          &pf_sse[EIGHTTAP]);
         tmp_rdcost1 = RDCOST(x->rdmult, x->rddiv,
                              vp9_get_switchable_rate(cpi) + pf_rate[EIGHTTAP],
                              pf_dist[EIGHTTAP]);
@@ -331,7 +344,8 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->interp_filter = EIGHTTAP_SHARP;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
         model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP_SHARP],
-                          &pf_dist[EIGHTTAP_SHARP]);
+                          &pf_dist[EIGHTTAP_SHARP], &pf_var[EIGHTTAP_SHARP],
+                          &pf_sse[EIGHTTAP_SHARP]);
         tmp_rdcost2 = RDCOST(x->rdmult, x->rddiv, vp9_get_switchable_rate(cpi) +
                                  pf_rate[EIGHTTAP_SHARP],
                              pf_dist[EIGHTTAP_SHARP]);
@@ -339,7 +353,8 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->interp_filter = EIGHTTAP_SMOOTH;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
         model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[EIGHTTAP_SMOOTH],
-                          &pf_dist[EIGHTTAP_SMOOTH]);
+                          &pf_dist[EIGHTTAP_SMOOTH], &pf_var[EIGHTTAP_SMOOTH],
+                          &pf_sse[EIGHTTAP_SMOOTH]);
         tmp_rdcost3 = RDCOST(x->rdmult, x->rddiv, vp9_get_switchable_rate(cpi) +
                                  pf_rate[EIGHTTAP_SMOOTH],
                              pf_dist[EIGHTTAP_SMOOTH]);
@@ -358,18 +373,101 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
         rate = pf_rate[mbmi->interp_filter];
         dist = pf_dist[mbmi->interp_filter];
+        var_y = pf_var[mbmi->interp_filter];
+        sse_y = pf_sse[mbmi->interp_filter];
       } else {
         mbmi->interp_filter = (filter_ref == SWITCHABLE) ? EIGHTTAP: filter_ref;
         vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
-        model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+        model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
       }
 
       rate += rate_mv;
       rate += cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
-                                [INTER_OFFSET(this_mode)];
+                                   [INTER_OFFSET(this_mode)];
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
 
-      if (this_rd < best_rd) {
+      // Skipping checking: test to see if this block can be reconstructed by
+      // prediction only.
+      if (!x->in_active_map) {
+        x->skip = 1;
+      } else if (cpi->allow_encode_breakout && x->encode_breakout) {
+        //const BLOCK_SIZE y_size = get_plane_block_size(bsize, &xd->plane[0]);
+        const BLOCK_SIZE uv_size = get_plane_block_size(bsize, &xd->plane[1]);
+        unsigned int var = var_y, sse = sse_y;
+        // Skipping threshold for ac.
+        unsigned int thresh_ac;
+        // Set a maximum for threshold to avoid big PSNR loss in low bitrate case.
+        // Use extreme low threshold for static frames to limit skipping.
+        const unsigned int max_thresh = 36000;
+        // The encode_breakout input
+        const unsigned int min_thresh =
+            MIN(((unsigned int)x->encode_breakout << 4), max_thresh);
+
+//      const YV12_BUFFER_CONFIG *last = get_ref_frame_buffer(cpi,  mbmi->ref_frame[0]);  //LAST_FRAME;
+//      vp9_setup_pre_planes(xd, 0, last, mi_row, mi_col,NULL);
+
+        // Calculate threshold according to dequant value.
+        thresh_ac = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1]) / 9;
+        thresh_ac = clamp(thresh_ac, min_thresh, max_thresh);
+
+        // Adjust threshold according to partition size.
+        thresh_ac >>= 8 - (b_width_log2_lookup[bsize] +
+            b_height_log2_lookup[bsize]);
+
+//            vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
+//            var = cpi->fn_ptr[y_size].vf(x->plane[0].src.buf, x->plane[0].src.stride,
+//                                         xd->plane[0].dst.buf,
+//                                         xd->plane[0].dst.stride, &sse);
+
+        // Y skipping condition checking
+        if (var <= thresh_ac) {
+          // Skipping threshold for dc
+          unsigned int thresh_dc;
+
+          thresh_dc = (xd->plane[0].dequant[0] * xd->plane[0].dequant[0] >> 6);
+
+          // dc skipping checking
+          if ((sse - var) <= thresh_dc) {
+            unsigned int sse_u, sse_v;
+            unsigned int var_u, var_v;
+
+      //        vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
+            var_u = cpi->fn_ptr[uv_size].vf(x->plane[1].src.buf,
+                                            x->plane[1].src.stride,
+                                            xd->plane[1].dst.buf,
+                                            xd->plane[1].dst.stride, &sse_u);
+
+            // U skipping condition checking
+            if ((var_u * 4 <= thresh_ac) && (sse_u - var_u <= thresh_dc)) {
+              var_v = cpi->fn_ptr[uv_size].vf(x->plane[2].src.buf,
+                                              x->plane[2].src.stride,
+                                              xd->plane[2].dst.buf,
+                                              xd->plane[2].dst.stride, &sse_v);
+
+              // V skipping condition checking
+              if ((var_v * 4 <= thresh_ac) && (sse_v - var_v <= thresh_dc)) {
+                x->skip = 1;
+
+                // The cost of skip bit needs to be added.
+                rate = rate_mv;
+                rate += cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
+                                             [INTER_OFFSET(this_mode)];
+
+                // this part very large. rate didn't include all.
+                //rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
+
+                // Scaling factor for SSE from spatial domain to frequency
+                // domain is 16. Adjust distortion accordingly.
+                dist = (sse << 4);  // + ((sse_u + sse_v) << 4);
+                this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
+                //*disable_skip = 1;
+              }
+            }
+          }
+        }
+      }
+
+      if (this_rd < best_rd || x->skip) {
         best_rd = this_rd;
         *returnrate = rate;
         *returndistortion = dist;
@@ -377,6 +475,9 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         best_pred_filter = mbmi->interp_filter;
         best_ref_frame = ref_frame;
       }
+
+      if (x->skip)
+        break;
     }
   }
 
@@ -388,14 +489,15 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
-  if (best_rd > inter_mode_thresh && bsize < cpi->sf.max_intra_bsize) {
+  if (!x->skip && best_rd > inter_mode_thresh &&
+      bsize < cpi->sf.max_intra_bsize) {
     for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
       vp9_predict_intra_block(xd, 0, b_width_log2(bsize),
                               mbmi->tx_size, this_mode,
                               &p->src.buf[0], p->src.stride,
                               &pd->dst.buf[0], pd->dst.stride, 0, 0, 0);
 
-      model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist);
+      model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
       rate += cpi->mbmode_cost[this_mode];
       rate += intra_cost_penalty;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
