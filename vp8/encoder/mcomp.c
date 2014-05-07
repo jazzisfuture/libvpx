@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include "onyx_int.h"
 #include "mcomp.h"
 #include "vpx_mem/vpx_mem.h"
@@ -889,7 +888,8 @@ int vp8_hex_search
     fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
 
     /* adjust ref_mv to make sure it is within MV range */
-    vp8_clamp_mv(ref_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min, x->mv_row_max);
+    vp8_clamp_mv(&ref_mv->as_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+                 x->mv_row_max);
     br = ref_mv->as_mv.row;
     bc = ref_mv->as_mv.col;
 
@@ -1085,7 +1085,8 @@ int vp8_diamond_search_sad_c
     fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
     fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
 
-    vp8_clamp_mv(ref_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min, x->mv_row_max);
+    vp8_clamp_mv(&ref_mv->as_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+                 x->mv_row_max);
     ref_row = ref_mv->as_mv.row;
     ref_col = ref_mv->as_mv.col;
     *num00 = 0;
@@ -1201,15 +1202,13 @@ int vp8_diamond_search_sadx4
 
     unsigned char *check_here;
 
-    int *mvsadcost[2];
     int_mv fcenter_mv;
 
-    mvsadcost[0] = x->mvsadcost[0];
-    mvsadcost[1] = x->mvsadcost[1];
     fcenter_mv.as_mv.row = center_mv->as_mv.row >> 3;
     fcenter_mv.as_mv.col = center_mv->as_mv.col >> 3;
 
-    vp8_clamp_mv(ref_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min, x->mv_row_max);
+    vp8_clamp_mv(&ref_mv->as_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+                 x->mv_row_max);
     ref_row = ref_mv->as_mv.row;
     ref_col = ref_mv->as_mv.col;
     *num00 = 0;
@@ -1222,7 +1221,7 @@ int vp8_diamond_search_sadx4
 
     /* Check the starting position */
     bestsad = fn_ptr->sdf(what, what_stride, in_what, in_what_stride, UINT_MAX)
-            + mvsad_err_cost(best_mv, &fcenter_mv, mvsadcost, sad_per_bit);
+            + mvsad_err_cost(best_mv, &fcenter_mv, x->mvsadcost, sad_per_bit);
 
     /* search_param determines the length of the initial step and hence the
      * number of iterations 0 = initial step (MAX_FIRST_STEP) pel : 1 =
@@ -1266,7 +1265,7 @@ int vp8_diamond_search_sadx4
                         this_mv.as_mv.row = best_mv->as_mv.row + ss[i].mv.row;
                         this_mv.as_mv.col = best_mv->as_mv.col + ss[i].mv.col;
                         sad_array[t] += mvsad_err_cost(&this_mv, &fcenter_mv,
-                                                       mvsadcost, sad_per_bit);
+                                                       x->mvsadcost, sad_per_bit);
 
                         if (sad_array[t] < bestsad)
                         {
@@ -1296,7 +1295,7 @@ int vp8_diamond_search_sadx4
                         this_mv.as_mv.row = this_row_offset;
                         this_mv.as_mv.col = this_col_offset;
                         thissad += mvsad_err_cost(&this_mv, &fcenter_mv,
-                                                  mvsadcost, sad_per_bit);
+                                                  x->mvsadcost, sad_per_bit);
 
                         if (thissad < bestsad)
                         {
@@ -1324,7 +1323,7 @@ int vp8_diamond_search_sadx4
     this_mv.as_mv.col = best_mv->as_mv.col * 8;
 
     return fn_ptr->vf(what, what_stride, best_address, in_what_stride, &thissad)
-           + mv_err_cost(&this_mv, center_mv, mvcost, x->errorperbit);
+        + mv_err_cost(&this_mv, center_mv, mvcost, x->errorperbit);
 }
 
 int vp8_full_search_sad_c(MACROBLOCK *x, BLOCK *b, BLOCKD *d, int_mv *ref_mv,

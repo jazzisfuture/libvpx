@@ -1268,7 +1268,8 @@ static void rd_check_segment(VP8_COMP *cpi, MACROBLOCK *x,
                     if ((cpi->compressor_speed == 0) && (bestsme >> sseshift) > 4000)
                     {
                         /* Check if mvp_full is within the range. */
-                        vp8_clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max, x->mv_row_min, x->mv_row_max);
+                        vp8_clamp_mv(&mvp_full.as_mv, x->mv_col_min, x->mv_col_max,
+                                     x->mv_row_min, x->mv_row_max);
 
                         thissme = cpi->full_search_sad(x, c, e, &mvp_full,
                                                        sadpb, 16, v_fn_ptr,
