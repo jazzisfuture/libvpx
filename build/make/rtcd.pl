@@ -374,14 +374,11 @@ if ($opts{arch} eq 'x86') {
   }
   close CONFIG_FILE;
   mips;
-} elsif ($opts{arch} eq 'armv5te') {
-  @ALL_ARCHS = filter(qw/edsp/);
-  arm;
 } elsif ($opts{arch} eq 'armv6') {
-  @ALL_ARCHS = filter(qw/edsp media/);
+  @ALL_ARCHS = filter(qw/media/);
   arm;
 } elsif ($opts{arch} eq 'armv7') {
-  @ALL_ARCHS = filter(qw/edsp media neon/);
+  @ALL_ARCHS = filter(qw/media neon/);
   arm;
 } else {
   unoptimized;

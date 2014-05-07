@@ -87,10 +87,7 @@ EOF
 
 # all_platforms is a list of all supported target platforms. Maintain
 # alphabetically by architecture, generic-gnu last.
-all_platforms="${all_platforms} armv5te-android-gcc"
-all_platforms="${all_platforms} armv5te-linux-rvct"
-all_platforms="${all_platforms} armv5te-linux-gcc"
-all_platforms="${all_platforms} armv5te-none-rvct"
+all_platforms="${all_platforms} armv6-android-gcc"
 all_platforms="${all_platforms} armv6-darwin-gcc"
 all_platforms="${all_platforms} armv6-linux-rvct"
 all_platforms="${all_platforms} armv6-linux-gcc"
@@ -236,7 +233,6 @@ ARCH_LIST="
     ppc64
 "
 ARCH_EXT_LIST="
-    edsp
     media
     neon
 

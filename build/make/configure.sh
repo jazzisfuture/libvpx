@@ -626,9 +626,6 @@ process_common_toolchain() {
                 tgt_isa=armv7
                 float_abi=softfp
                 ;;
-            armv5te*)
-                tgt_isa=armv5te
-                ;;
             *x86_64*|*amd64*)
                 tgt_isa=x86_64
                 ;;
@@ -795,17 +792,11 @@ process_common_toolchain() {
         armv7)
             soft_enable neon
             soft_enable media
-            soft_enable edsp
             soft_enable fast_unaligned
             ;;
         armv6)
             soft_enable media
-            soft_enable edsp
             soft_enable fast_unaligned
-            ;;
-        armv5te)
-            soft_enable edsp
-            disable_feature fast_unaligned
             ;;
         esac
 

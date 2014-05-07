@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /*ARMv5TE "Enhanced DSP" instructions.*/
-#define HAS_EDSP  0x01
+#define HAS_EDSP  0x01 /* Unused */
 /*ARMv6 "Parallel" or "Media" instructions.*/
 #define HAS_MEDIA 0x02
 /*ARMv7 optional NEON instructions.*/

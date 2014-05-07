@@ -59,7 +59,7 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
   include $(CONFIG_DIR)libs-armv7-android-gcc.mk
   LOCAL_ARM_MODE := arm
 else ifeq  ($(TARGET_ARCH_ABI),armeabi)
-  include $(CONFIG_DIR)libs-armv5te-android-gcc.mk
+  include $(CONFIG_DIR)libs-armv6-android-gcc.mk
   LOCAL_ARM_MODE := arm
 else ifeq ($(TARGET_ARCH_ABI),x86)
   include $(CONFIG_DIR)libs-x86-android-gcc.mk

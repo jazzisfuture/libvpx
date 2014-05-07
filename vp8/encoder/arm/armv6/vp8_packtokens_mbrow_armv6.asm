@@ -9,7 +9,7 @@
 ;
 
 
-    EXPORT |vp8cx_pack_mb_row_tokens_armv5|
+    EXPORT |vp8cx_pack_mb_row_tokens_armv6|
     IMPORT |vp8_validate_buffer_arm|
 
     INCLUDE vp8_asm_enc_offsets.asm
@@ -41,7 +41,7 @@
 ; r3 vp8_extra_bits
 ; s0 vp8_coef_tree
 
-|vp8cx_pack_mb_row_tokens_armv5| PROC
+|vp8cx_pack_mb_row_tokens_armv6| PROC
     push    {r4-r12, lr}
     sub     sp, sp, #24
 
