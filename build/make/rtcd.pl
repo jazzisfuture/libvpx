@@ -381,7 +381,10 @@ if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/edsp media/);
   arm;
 } elsif ($opts{arch} eq 'armv7') {
-  @ALL_ARCHS = filter(qw/edsp media neon/);
+  @ALL_ARCHS = filter(qw/edsp media neon-asm neon/);
+  arm;
+} elsif ($opts{arch} eq 'armv8') {
+  @ALL_ARCHS = filter(qw/neon/);
   arm;
 } else {
   unoptimized;

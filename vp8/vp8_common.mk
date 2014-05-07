@@ -159,13 +159,13 @@ VP8_COMMON_SRCS-$(HAVE_MEDIA)  += common/arm/armv6/vp8_variance_halfpixvar16x16_
 VP8_COMMON_SRCS-$(HAVE_MEDIA)  += common/arm/armv6/vp8_variance_halfpixvar16x16_hv_armv6$(ASM)
 
 # common (neon)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfilter_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimpleverticaledge_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/buildintrapredictorsmby_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/idct_blk_neon.c
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/vp8_subpixelvariance8x8_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/vp8_subpixelvariance16x16_neon$(ASM)
-VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/vp8_subpixelvariance16x16s_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/loopfilter_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/loopfiltersimpleverticaledge_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/buildintrapredictorsmby_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/idct_blk_neon.c
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance8x8_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance16x16_neon$(ASM)
+VP8_COMMON_SRCS-$(HAVE_NEON_ASM)  += common/arm/neon/vp8_subpixelvariance16x16s_neon$(ASM)
 
 # common (neon intrinsics)
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/bilinearpredict_neon.c
