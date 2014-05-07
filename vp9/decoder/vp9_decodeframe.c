@@ -1106,15 +1106,12 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 
     cm->reset_frame_context = cm->error_resilient_mode ?
         0 : vp9_rb_read_literal(rb, 2);
+    pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
 
     if (cm->intra_only) {
       check_sync_code(cm, rb);
-
-      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       setup_frame_size(cm, rb);
     } else {
-      pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
-
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
