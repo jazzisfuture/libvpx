@@ -169,7 +169,6 @@ static void set_rt_speed_feature(VP9_COMMON *cm, SPEED_FEATURES *sf,
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
-    sf->encode_breakout_thresh = 8;
   }
 
   if (speed >= 2) {
@@ -226,7 +225,9 @@ static void set_rt_speed_feature(VP9_COMMON *cm, SPEED_FEATURES *sf,
     sf->optimize_coefficients = 0;
     sf->disable_split_mask = DISABLE_ALL_SPLIT;
     sf->lpf_pick = LPF_PICK_FROM_Q;
-    sf->encode_breakout_thresh = 700;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->encode_breakout_thresh = 500;
   }
 
   if (speed >= 4) {
@@ -245,7 +246,12 @@ static void set_rt_speed_feature(VP9_COMMON *cm, SPEED_FEATURES *sf,
     }
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_ONLY;
     sf->frame_parameter_update = 0;
-    sf->encode_breakout_thresh = 1000;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->encode_breakout_thresh = 800;
+    else
+      sf->encode_breakout_thresh = 300;
+
     sf->search_method = FAST_HEX;
     sf->disable_inter_mode_mask[BLOCK_32X32] = 1 << INTER_OFFSET(ZEROMV);
     sf->disable_inter_mode_mask[BLOCK_32X64] = ~(1 << INTER_OFFSET(NEARESTMV));
