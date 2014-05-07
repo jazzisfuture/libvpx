@@ -272,6 +272,7 @@ sub arm() {
   # Assign the helper variable for each enabled extension
   foreach my $opt (@ALL_ARCHS) {
     my $opt_uc = uc $opt;
+    if ($opt eq 'neon_asm') { $opt_uc = 'NEON' }
     eval "\$have_${opt}=\"flags & HAS_${opt_uc}\"";
   }
 
@@ -381,7 +382,10 @@ if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/edsp media/);
   arm;
 } elsif ($opts{arch} eq 'armv7') {
-  @ALL_ARCHS = filter(qw/edsp media neon/);
+  @ALL_ARCHS = filter(qw/edsp media neon_asm neon/);
+  arm;
+} elsif ($opts{arch} eq 'armv8') {
+  @ALL_ARCHS = filter(qw/neon/);
   arm;
 } else {
   unoptimized;
