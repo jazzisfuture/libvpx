@@ -620,7 +620,7 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   // modify encoder configuration
   enc_cfg->ss_number_layers = si->layers;
   enc_cfg->ts_number_layers = 1;  // Temporal layers not used in this encoder.
-  enc_cfg->kf_mode = VPX_KF_DISABLED;
+//  enc_cfg->kf_mode = VPX_KF_DISABLED;
   // Lag in frames not currently supported
   enc_cfg->g_lag_in_frames = 0;
 
@@ -652,16 +652,17 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   }
 
   vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_CPUUSED, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_STATIC_THRESHOLD, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_NOISE_SENSITIVITY, 1);
+//  vpx_codec_control(codec_ctx, VP8E_SET_CPUUSED, 1);
+//  vpx_codec_control(codec_ctx, VP8E_SET_STATIC_THRESHOLD, 1);
+//  vpx_codec_control(codec_ctx, VP8E_SET_NOISE_SENSITIVITY, 1);
   vpx_codec_control(codec_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
-
+/*
   max_intra_size_pct =
       (int)(((double)enc_cfg->rc_buf_optimal_sz * 0.5) *
             ((double)enc_cfg->g_timebase.den / enc_cfg->g_timebase.num) / 10.0);
   vpx_codec_control(codec_ctx, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     max_intra_size_pct);
+*/
   return VPX_CODEC_OK;
 }
 
@@ -916,7 +917,7 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   si->rc_stats_buf_used = 0;
 
   si->layers = svc_ctx->spatial_layers;
-  if (si->frame_within_gop >= si->kf_dist ||
+  if (/*si->frame_within_gop >= si->kf_dist ||*/
       si->encode_frame_count == 0) {
     si->frame_within_gop = 0;
   }
