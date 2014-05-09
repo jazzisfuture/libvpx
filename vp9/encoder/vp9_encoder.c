@@ -556,7 +556,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == RC_MODE_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 &&
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc &&
       cpi->oxcf.mode == TWO_PASS_SECOND_BEST)) {
     vp9_init_layer_context(cpi);
   }
@@ -693,7 +693,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == RC_MODE_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2)) {
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
   }
@@ -912,7 +912,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
     const size_t packet_sz = sizeof(FIRSTPASS_STATS);
     const int packets = (int)(oxcf->two_pass_stats_in.sz / packet_sz);
 
-    if (cpi->svc.number_spatial_layers > 1
+    if (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc
         && cpi->svc.number_temporal_layers == 1) {
       FIRSTPASS_STATS *const stats = oxcf->two_pass_stats_in.buf;
       FIRSTPASS_STATS *stats_copy[VPX_SS_MAX_LAYERS] = {0};
@@ -2458,7 +2458,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (!cpi)
     return -1;
 
-  if (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2) {
+  if (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2) {
     vp9_restore_layer_context(cpi);
   }
 
@@ -2701,7 +2701,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Save layer specific state.
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == RC_MODE_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2)) {
     vp9_save_layer_context(cpi);
   }
 
