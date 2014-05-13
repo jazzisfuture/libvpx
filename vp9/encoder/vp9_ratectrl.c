@@ -1147,6 +1147,7 @@ void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
 
 static int test_for_kf_one_pass(VP9_COMP *cpi) {
   // Placeholder function for auto key frame
+  (void)cpi;
   return 0;
 }
 // Use this macro to turn on/off use of alt-refs in one-pass mode.
