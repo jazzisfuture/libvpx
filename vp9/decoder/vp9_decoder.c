@@ -282,11 +282,10 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   if (!pbi->do_loopfilter_inline) {
     // If multiple threads are used to decode tiles, then we use those threads
     // to do parallel loopfiltering.
-    if (pbi->num_tile_workers) {
-      vp9_loop_filter_frame_mt(pbi, cm, cm->lf.filter_level, 0, 0);
-    } else {
+    if (pbi->num_tile_workers)
+      vp9_loop_filter_frame_mt(pbi, cm, cm->lf.filter_level, 0);
+    else
       vp9_loop_filter_frame(cm, &pbi->mb, cm->lf.filter_level, 0, 0);
-    }
   }
 
   vp9_clear_system_state();
@@ -314,11 +313,14 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
                       int64_t *time_stamp, int64_t *time_end_stamp,
                       vp9_ppflags_t *flags) {
   int ret = -1;
+#if !CONFIG_VP9_POSTPROC
+  (void)*flags;
+#endif
 
   if (pbi->ready_for_new_data == 1)
     return ret;
 
-  /* ie no raw frame to show!!! */
+  /* no raw frame to show!!! */
   if (pbi->common.show_frame == 0)
     return ret;
 
@@ -329,8 +331,8 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
 #if CONFIG_VP9_POSTPROC
   ret = vp9_post_proc_frame(&pbi->common, sd, flags);
 #else
-    *sd = *pbi->common.frame_to_show;
-    ret = 0;
+  *sd = *pbi->common.frame_to_show;
+  ret = 0;
 #endif /*!CONFIG_POSTPROC*/
   vp9_clear_system_state();
   return ret;
