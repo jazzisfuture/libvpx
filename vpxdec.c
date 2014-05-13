@@ -36,6 +36,8 @@
 #include "./webmdec.h"
 #include "./y4menc.h"
 
+#include "vp9/common/vp9_common.h"
+
 static const char *exec_name;
 
 struct VpxDecInputContext {
@@ -519,9 +521,9 @@ static FILE *open_outfile(const char *name) {
 static void img_convert_16_to_8(vpx_image_t *dst, vpx_image_t *src,
                                 int output_shift) {
   int plane;
-  // int offset = 0;
-  // if (output_shift>0)
-  //  offset = 1<<(output_shift-1);
+  int offset = 0;
+  if (output_shift > 0)
+    offset = 1 << (output_shift - 1);
   if (src->fmt != dst->fmt + VPX_IMG_FMT_HIGH ||
       dst->d_w != src->d_w || dst->d_h != src->d_h ||
       dst->x_chroma_shift != src->x_chroma_shift ||
@@ -550,7 +552,7 @@ static void img_convert_16_to_8(vpx_image_t *dst, vpx_image_t *src,
       uint16_t *p_src = (uint16_t *)(src->planes[plane] +
                                      y * src->stride[plane]);
       for (x = 0; x < w; x++) {
-        *p_dst++ = (*p_src++) >> output_shift;
+        *p_dst++ = clip_pixel((*p_src++ + offset) >> output_shift);
       }
     }
   }
