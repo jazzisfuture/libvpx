@@ -119,7 +119,8 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_subtract_test.cc
 
 endif # VP9
 
-LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += sad_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += sad_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += sad_test_vp9.cc
 
 endif # CONFIG_SHARED
 
