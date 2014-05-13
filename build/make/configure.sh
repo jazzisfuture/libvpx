@@ -835,7 +835,7 @@ EOF
                 check_add_cflags  -march=armv7-a -mfloat-abi=${float_abi}
                 check_add_asflags -march=armv7-a -mfloat-abi=${float_abi}
 
-                if enabled neon
+                if enabled neon || enabled neon_asm
                 then
                     check_add_cflags -mfpu=neon #-ftree-vectorize
                     check_add_asflags -mfpu=neon
@@ -882,7 +882,7 @@ EOF
             tune_asflags="--cpu="
             if [ -z "${tune_cpu}" ]; then
                 if [ ${tgt_isa} = "armv7" ]; then
-                    if enabled neon
+                    if enabled neon || enabled neon_asm
                     then
                         check_add_cflags --fpu=softvfp+vfpv3
                         check_add_asflags --fpu=softvfp+vfpv3
