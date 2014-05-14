@@ -2814,7 +2814,7 @@ int vp9_set_roimap(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
   const VP9_COMMON *const cm = &cpi->common;
   int i;
 
-  if (cm->mb_rows != rows || cm->mb_cols != cols)
+  if (cm->mb_rows != (int)rows || cm->mb_cols != (int)cols)
     return -1;
 
   if (!map) {
@@ -2856,7 +2856,7 @@ int vp9_set_roimap(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
 
 int vp9_set_active_map(VP9_COMP *cpi, unsigned char *map,
                        unsigned int rows, unsigned int cols) {
-  if (rows == cpi->common.mb_rows && cols == cpi->common.mb_cols) {
+  if ((int)rows == cpi->common.mb_rows && (int)cols == cpi->common.mb_cols) {
     if (map) {
       vpx_memcpy(cpi->active_map, map, rows * cols);
       cpi->active_map_enabled = 1;
