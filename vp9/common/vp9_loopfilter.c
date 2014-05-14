@@ -1228,6 +1228,7 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
                            int frame_filter_level,
                            int y_only, int partial_frame) {
   int start_mi_row, end_mi_row, mi_rows_to_filter;
+  const YV12_BUFFER_CONFIG *frame_buffer = get_frame_new_buffer(cm);
   if (!frame_filter_level) return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
@@ -1238,7 +1239,7 @@ void vp9_loop_filter_frame(VP9_COMMON *cm, MACROBLOCKD *xd,
   }
   end_mi_row = start_mi_row + mi_rows_to_filter;
   vp9_loop_filter_frame_init(cm, frame_filter_level);
-  vp9_loop_filter_rows(cm->frame_to_show, cm, xd,
+  vp9_loop_filter_rows(frame_buffer, cm, xd,
                        start_mi_row, end_mi_row,
                        y_only);
 }
