@@ -109,7 +109,7 @@ static int cost_segmap(int *segcounts, vp9_prob *probs) {
 }
 
 static void count_segs(VP9_COMP *cpi, const TileInfo *const tile,
-                       MODE_INFO **mi_8x8,
+                       MODE_INFO **mi,
                        int *no_pred_segcounts,
                        int (*temporal_predictor_count)[2],
                        int *t_unpred_seg_counts,
@@ -121,7 +121,7 @@ static void count_segs(VP9_COMP *cpi, const TileInfo *const tile,
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
-  xd->mi = mi_8x8;
+  xd->mi = mi;
   segment_id = xd->mi[0]->mbmi.segment_id;
 
   set_mi_row_col(xd, tile, mi_row, bh, mi_col, bw, cm->mi_rows, cm->mi_cols);
@@ -131,7 +131,7 @@ static void count_segs(VP9_COMP *cpi, const TileInfo *const tile,
 
   // Temporal prediction not allowed on key frames
   if (cm->frame_type != KEY_FRAME) {
-    const BLOCK_SIZE bsize = mi_8x8[0]->mbmi.sb_type;
+    const BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
     // Test to see if the segment id matches the predicted value.
     const int pred_segment_id = vp9_get_segment_id(cm, cm->last_frame_seg_map,
                                                    bsize, mi_row, mi_col);
@@ -143,8 +143,8 @@ static void count_segs(VP9_COMP *cpi, const TileInfo *const tile,
     xd->mi[0]->mbmi.seg_id_predicted = pred_flag;
     temporal_predictor_count[pred_context][pred_flag]++;
 
+    // Update the "unpredicted" segment count
     if (!pred_flag)
-      // Update the "unpredicted" segment count
       t_unpred_seg_counts[segment_id]++;
   }
 }
@@ -217,9 +217,6 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
   vp9_prob t_pred_tree[SEG_TREE_PROBS];
   vp9_prob t_nopred_prob[PREDICTION_PROBS];
 
-  const int mis = cm->mi_stride;
-  MODE_INFO **mi_ptr, **mi;
-
   // Set default state for the segment tree probabilities and the
   // temporal coding probabilities
   vpx_memset(seg->tree_probs, 255, sizeof(seg->tree_probs));
@@ -231,10 +228,10 @@ void vp9_choose_segmap_coding_method(VP9_COMP *cpi) {
     TileInfo tile;
 
     vp9_tile_init(&tile, cm, 0, tile_col);
-    mi_ptr = cm->mi_grid_visible + tile.mi_col_start;
+    MODE_INFO **mi_ptr = cm->mi_grid_visible + tile.mi_col_start;
     for (mi_row = 0; mi_row < cm->mi_rows;
-         mi_row += 8, mi_ptr += 8 * mis) {
-      mi = mi_ptr;
+         mi_row += 8, mi_ptr += 8 * cm->mi_stride) {
+      MODE_INFO ** mi = mi_ptr;
       for (mi_col = tile.mi_col_start; mi_col < tile.mi_col_end;
            mi_col += 8, mi += 8)
         count_segs_sb(cpi, &tile, mi, no_pred_segcounts,
