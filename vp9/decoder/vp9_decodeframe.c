@@ -1323,15 +1323,6 @@ int vp9_decode_frame(VP9Decoder *pbi,
 
   pbi->do_loopfilter_inline =
       (cm->log2_tile_rows | cm->log2_tile_cols) == 0 && cm->lf.filter_level;
-  if (pbi->do_loopfilter_inline && pbi->lf_worker.data1 == NULL) {
-    CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
-                    vpx_memalign(32, sizeof(LFWorkerData)));
-    pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
-    if (pbi->max_threads > 1 && !vp9_worker_reset(&pbi->lf_worker)) {
-      vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
-                         "Loop filter thread creation failed");
-    }
-  }
 
   init_macroblockd(cm, &pbi->mb);
 
@@ -1355,8 +1346,20 @@ int vp9_decode_frame(VP9Decoder *pbi,
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
       cm->frame_parallel_decoding_mode) {
     *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
+    vp9_loop_filter_frame_mt(pbi, cm, cm->lf.filter_level, 0, 0);
   } else {
+    if (pbi->do_loopfilter_inline && pbi->lf_worker.data1 == NULL) {
+      CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
+                      vpx_memalign(32, sizeof(LFWorkerData)));
+      pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
+      if (pbi->max_threads > 1 && !vp9_worker_reset(&pbi->lf_worker)) {
+        vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                           "Loop filter thread creation failed");
+      }
+    }
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
+    if (!pbi->do_loopfilter_inline)
+      vp9_loop_filter_frame(cm, &pbi->mb, cm->lf.filter_level, 0, 0);
   }
 
   new_fb->corrupted |= xd->corrupted;
