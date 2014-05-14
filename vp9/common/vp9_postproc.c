@@ -24,6 +24,9 @@
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/common/vp9_textblit.h"
 
+#if CONFIG_VP9_POSTPROC
+
+#if 0 && CONFIG_POSTPROC_VISUALIZER
 #define RGB_TO_YUV(t)                                            \
   ( (0.257*(float)(t >> 16))  + (0.504*(float)(t >> 8 & 0xff)) + \
     (0.098*(float)(t & 0xff)) + 16),                             \
@@ -33,7 +36,6 @@
     (0.071*(float)(t & 0xff)) + 128)
 
 /* global constants */
-#if 0 && CONFIG_POSTPROC_VISUALIZER
 static const unsigned char PREDICTION_MODE_colors[MB_MODE_COUNT][3] = {
   { RGB_TO_YUV(0x98FB98) },   /* PaleGreen */
   { RGB_TO_YUV(0x00FF00) },   /* Green */
@@ -448,6 +450,7 @@ void vp9_plane_add_noise_c(uint8_t *start, char *noise,
   }
 }
 
+#if 0 && CONFIG_POSTPROC_VISUALIZER
 /* Blend the macro block with a solid colored square.  Leave the
  * edges unblended to give distinction to macro blocks in areas
  * filled with the same color block.
@@ -604,6 +607,7 @@ static void constrain_line(int x0, int *x1, int y0, int *y1,
       *x1 = ((0 - y0) * dx) / dy + x0;
   }
 }
+#endif
 
 int vp9_post_proc_frame(struct VP9Common *cm,
                         YV12_BUFFER_CONFIG *dest, vp9_ppflags_t *ppflags) {
@@ -975,3 +979,4 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   return 0;
 }
+#endif
