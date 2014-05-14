@@ -963,7 +963,11 @@ static vpx_image_t *encoder_get_preview(vpx_codec_alg_priv_t *ctx) {
     flags.noise_level      = ctx->preview_ppcfg.noise_level;
   }
 
+#if CONFIG_VP9_POSTPROC
   if (vp9_get_preview_raw_frame(ctx->cpi, &sd, &flags) == 0) {
+#else
+  if (vp9_get_preview_raw_frame(ctx->cpi, &sd) == 0) {
+#endif
     yuvconfig2image(&ctx->preview_img, &sd, NULL);
     return &ctx->preview_img;
   } else {

@@ -534,8 +534,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush);
 
+#if CONFIG_VP9_POSTPROC
 int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
                               vp9_ppflags_t *flags);
+#else
+int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest);
+#endif
 
 int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags);
 
