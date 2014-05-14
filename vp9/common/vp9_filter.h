@@ -42,10 +42,6 @@ const InterpKernel *vp9_get_interp_kernel(INTERP_FILTER filter);
 DECLARE_ALIGNED(256, extern const InterpKernel,
                 vp9_bilinear_filters[SUBPEL_SHIFTS]);
 DECLARE_ALIGNED(256, extern const InterpKernel,
-                vp9_sub_pel_filters_8[SUBPEL_SHIFTS]);
-DECLARE_ALIGNED(256, extern const InterpKernel,
-                vp9_sub_pel_filters_8s[SUBPEL_SHIFTS]);
-DECLARE_ALIGNED(256, extern const InterpKernel,
                 vp9_sub_pel_filters_8lp[SUBPEL_SHIFTS]);
 
 // The VP9_BILINEAR_FILTERS_2TAP macro returns a pointer to the bilinear

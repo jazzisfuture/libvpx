@@ -544,6 +544,7 @@ TEST_P(ConvolveTest, ChangeFilterWorks) {
 TEST_P(ConvolveTest, CheckScalingFiltering) {
   uint8_t* const in = input();
   uint8_t* const out = output();
+  const InterpKernel *const kernel = vp9_get_interp_kernel(EIGHTTAP);
 
   SetConstantInput(127);
 
@@ -551,8 +552,7 @@ TEST_P(ConvolveTest, CheckScalingFiltering) {
     for (int step = 1; step <= 32; ++step) {
       /* Test the horizontal and vertical filters in combination. */
       REGISTER_STATE_CHECK(UUT_->hv8_(in, kInputStride, out, kOutputStride,
-                                      vp9_sub_pel_filters_8[frac], step,
-                                      vp9_sub_pel_filters_8[frac], step,
+                                      kernel[frac], step, kernel[frac], step,
                                       Width(), Height()));
 
       CheckGuardBlocks();
