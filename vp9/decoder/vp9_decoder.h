@@ -27,6 +27,11 @@
 extern "C" {
 #endif
 
+typedef struct VP9Decrypter{
+  vpx_decrypt_cb cb;
+  void *state;
+} VP9Decrypter;
+
 typedef struct VP9Decoder {
   DECLARE_ALIGNED(16, MACROBLOCKD, mb);
 
@@ -46,8 +51,7 @@ typedef struct VP9Decoder {
 
   VP9LfSync lf_row_sync;
 
-  vpx_decrypt_cb decrypt_cb;
-  void *decrypt_state;
+  VP9Decrypter decrypter;
 
   int max_threads;
   int inv_tile_order;

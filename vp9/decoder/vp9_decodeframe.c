@@ -454,8 +454,7 @@ static void setup_token_decoder(const uint8_t *data,
                                 size_t read_size,
                                 struct vpx_internal_error_info *error_info,
                                 vp9_reader *r,
-                                vpx_decrypt_cb decrypt_cb,
-                                void *decrypt_state) {
+                                VP9Decrypter *decrypter) {
   // Validate the calculated partition length. If the buffer
   // described by the partition can't be fully read, then restrict
   // it to the portion that can be (for EC mode) or throw an error.
@@ -463,7 +462,7 @@ static void setup_token_decoder(const uint8_t *data,
     vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt tile length");
 
-  if (vp9_reader_init(r, data, read_size, decrypt_cb, decrypt_state))
+  if (vp9_reader_init(r, data, read_size, decrypter->cb, decrypter->state))
     vpx_internal_error(error_info, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder %d", 1);
 }
@@ -761,7 +760,7 @@ static void get_tile_buffer(const uint8_t *const data_end,
                             int is_last,
                             struct vpx_internal_error_info *error_info,
                             const uint8_t **data,
-                            vpx_decrypt_cb decrypt_cb, void *decrypt_state,
+                            VP9Decrypter *decrypter,
                             TileBuffer *buf) {
   size_t size;
 
@@ -770,9 +769,9 @@ static void get_tile_buffer(const uint8_t *const data_end,
       vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
                          "Truncated packet or corrupt tile length");
 
-    if (decrypt_cb) {
+    if (decrypter->cb) {
       uint8_t be_data[4];
-      decrypt_cb(decrypt_state, *data, be_data, 4);
+      decrypter->cb(decrypter->state, *data, be_data, 4);
       size = mem_get_be32(be_data);
     } else {
       size = mem_get_be32(*data);
@@ -804,7 +803,7 @@ static void get_tile_buffers(VP9Decoder *pbi,
       TileBuffer *const buf = &tile_buffers[r][c];
       buf->col = c;
       get_tile_buffer(data_end, is_last, &pbi->common.error, &data,
-                      pbi->decrypt_cb, pbi->decrypt_state, buf);
+                      &pbi->decrypter, buf);
     }
   }
 }
@@ -846,7 +845,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
 
       vp9_tile_init(&tile, cm, tile_row, col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error, &r,
-                          pbi->decrypt_cb, pbi->decrypt_state);
+                          &pbi->decrypter);
       decode_tile(pbi, &tile, do_loopfilter_inline, &r);
 
       if (last_tile)
@@ -978,8 +977,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       tile_data->xd.corrupted = 0;
       vp9_tile_init(tile, tile_data->cm, 0, buf->col);
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
-                          &tile_data->bit_reader, pbi->decrypt_cb,
-                          pbi->decrypt_state);
+                          &tile_data->bit_reader, &pbi->decrypter);
       init_macroblockd(cm, &tile_data->xd);
       vp9_zero(tile_data->xd.dqcoeff);
 
@@ -1180,8 +1178,8 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
   vp9_reader r;
   int k;
 
-  if (vp9_reader_init(&r, data, partition_size, pbi->decrypt_cb,
-                      pbi->decrypt_state))
+  if (vp9_reader_init(&r, data, partition_size,
+                      pbi->decrypter.cb, pbi->decrypter.state))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate bool decoder 0");
 
@@ -1282,9 +1280,9 @@ static struct vp9_read_bit_buffer* init_read_bit_buffer(
   rb->bit_offset = 0;
   rb->error_handler = error_handler;
   rb->error_handler_data = &pbi->common;
-  if (pbi->decrypt_cb) {
+  if (pbi->decrypter.cb) {
     const int n = (int)MIN(MAX_VP9_HEADER_SIZE, data_end - data);
-    pbi->decrypt_cb(pbi->decrypt_state, data, clear_data, n);
+    pbi->decrypter.cb(pbi->decrypter.state, data, clear_data, n);
     rb->bit_buffer = clear_data;
     rb->bit_buffer_end = clear_data + n;
   } else {

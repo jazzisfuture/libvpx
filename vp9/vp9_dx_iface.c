@@ -43,8 +43,7 @@ struct vpx_codec_alg_priv {
   int                     dbg_color_b_modes_flag;
   int                     dbg_display_mv_flag;
 #endif
-  vpx_decrypt_cb          decrypt_cb;
-  void                   *decrypt_state;
+  vpx_decrypt_init        decrypt_init;
   vpx_image_t             img;
   int                     img_setup;
   int                     img_avail;
@@ -278,8 +277,9 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   // of the heap.
   if (!ctx->si.h) {
     const vpx_codec_err_t res =
-        decoder_peek_si_internal(*data, data_sz, &ctx->si, ctx->decrypt_cb,
-                                 ctx->decrypt_state);
+        decoder_peek_si_internal(*data, data_sz, &ctx->si,
+                                 ctx->decrypt_init.decrypt_cb,
+                                 ctx->decrypt_init.decrypt_state);
     if (res != VPX_CODEC_OK)
       return res;
   }
@@ -295,8 +295,8 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
 
   // Set these even if already initialized.  The caller may have changed the
   // decrypt config between frames.
-  ctx->pbi->decrypt_cb = ctx->decrypt_cb;
-  ctx->pbi->decrypt_state = ctx->decrypt_state;
+  ctx->pbi->decrypter.cb = ctx->decrypt_init.decrypt_cb;
+  ctx->pbi->decrypter.state = ctx->decrypt_init.decrypt_state;
 
   cm = &ctx->pbi->common;
 
@@ -316,12 +316,11 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
-static INLINE uint8_t read_marker(vpx_decrypt_cb decrypt_cb,
-                                  void *decrypt_state,
+static INLINE uint8_t read_marker(vpx_decrypt_init *decrypt_init,
                                   const uint8_t *data) {
-  if (decrypt_cb) {
+  if (decrypt_init->decrypt_cb) {
     uint8_t marker;
-    decrypt_cb(decrypt_state, data, &marker, 1);
+    decrypt_init->decrypt_cb(decrypt_init->decrypt_state, data, &marker, 1);
     return marker;
   }
   return *data;
@@ -329,21 +328,19 @@ static INLINE uint8_t read_marker(vpx_decrypt_cb decrypt_cb,
 
 static void parse_superframe_index(const uint8_t *data, size_t data_sz,
                                    uint32_t sizes[8], int *count,
-                                   vpx_decrypt_cb decrypt_cb,
-                                   void *decrypt_state) {
+                                   vpx_decrypt_init *decrypt_init) {
   uint8_t marker;
 
   assert(data_sz);
-  marker = read_marker(decrypt_cb, decrypt_state, data + data_sz - 1);
+  marker = read_marker(decrypt_init, data + data_sz - 1);
   *count = 0;
 
   if ((marker & 0xe0) == 0xc0) {
     const uint32_t frames = (marker & 0x7) + 1;
     const uint32_t mag = ((marker >> 3) & 0x3) + 1;
     const size_t index_sz = 2 + mag * frames;
-
-    uint8_t marker2 = read_marker(decrypt_cb, decrypt_state,
-                                  data + data_sz - index_sz);
+    const uint8_t marker2 = read_marker(decrypt_init,
+                                        data + data_sz - index_sz);
 
     if (data_sz >= index_sz && marker2 == marker) {
       // found a valid superframe index
@@ -353,8 +350,9 @@ static void parse_superframe_index(const uint8_t *data, size_t data_sz,
       // frames has a maximum of 8 and mag has a maximum of 4.
       uint8_t clear_buffer[32];
       assert(sizeof(clear_buffer) >= frames * mag);
-      if (decrypt_cb) {
-        decrypt_cb(decrypt_state, x, clear_buffer, frames * mag);
+      if (decrypt_init->decrypt_cb) {
+        decrypt_init->decrypt_cb(decrypt_init->decrypt_state, x, clear_buffer,
+                                 frames * mag);
         x = clear_buffer;
       }
 
@@ -383,8 +381,7 @@ static vpx_codec_err_t decode_one_iter(vpx_codec_alg_priv_t *ctx,
 
   // Account for suboptimal termination by the encoder.
   while (*data_start_ptr < data_end) {
-    const uint8_t marker = read_marker(ctx->decrypt_cb, ctx->decrypt_state,
-                                       *data_start_ptr);
+    const uint8_t marker = read_marker(&ctx->decrypt_init, *data_start_ptr);
     if (marker)
       break;
     (*data_start_ptr)++;
@@ -406,7 +403,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
     return VPX_CODEC_INVALID_PARAM;
 
   parse_superframe_index(data, data_sz, frame_sizes, &frame_count,
-                         ctx->decrypt_cb, ctx->decrypt_state);
+                         &ctx->decrypt_init);
 
   if (frame_count > 0) {
     int i;
@@ -616,8 +613,8 @@ static vpx_codec_err_t ctrl_set_decryptor(vpx_codec_alg_priv_t *ctx,
                                           int ctrl_id,
                                           va_list args) {
   vpx_decrypt_init *init = va_arg(args, vpx_decrypt_init *);
-  ctx->decrypt_cb = init ? init->decrypt_cb : NULL;
-  ctx->decrypt_state = init ? init->decrypt_state : NULL;
+  ctx->decrypt_init.decrypt_cb = init ? init->decrypt_cb : NULL;
+  ctx->decrypt_init.decrypt_state = init ? init->decrypt_state : NULL;
   return VPX_CODEC_OK;
 }
 
