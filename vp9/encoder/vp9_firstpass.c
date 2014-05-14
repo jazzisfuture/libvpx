@@ -1020,9 +1020,6 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
       sum_iiratio += fclamp(iiratio, 1.0, 20.0);
     }
 
-    twopass->avg_iiratio = sum_iiratio /
-                               DOUBLE_DIVIDE_CHECK((double)stats->count);
-
     reset_fpf_position(twopass, start_pos);
   }
 
@@ -2257,9 +2254,6 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     assign_std_frame_bits(cpi, &this_frame_copy);
   }
 
-  // Keep a globally available copy of this and the next frame's iiratio.
-  twopass->this_iiratio = (int)(this_frame_intra_error /
-                              DOUBLE_DIVIDE_CHECK(this_frame_coded_error));
   {
     FIRSTPASS_STATS next_frame;
     if (lookup_next_frame_stats(twopass, &next_frame) != EOF) {
