@@ -1,0 +1,220 @@
+message Point {
+  required int32 x = 1;
+  required int32 y = 2;
+}
+
+message VP9Syntax {
+  message SyntaxElement {
+    required string name = 1;
+    optional int32 intValue = 2;
+    optional string stringValue = 3;
+    optional int32 bcRange = 4;
+    optional int32 bcValue = 5;
+  }
+  repeated SyntaxElement elements = 1;
+}
+
+message LoopFilterEdge {
+  required Point p = 1;
+  required int32 component = 2;
+  required bool isVertical = 3;
+  enum FilterType {
+    LF_16WIDE = 0;
+    LF_8WIDE = 1;
+    LF_4WIDE = 2;
+    LF_2WIDE = 3;
+  }
+  required FilterType type = 4;
+  required int32 level = 5;
+}
+
+message SampleBlock {
+  required Point p = 1;
+  required int32 w = 3; // width
+  required int32 h = 4; // height
+  required bytes samples = 5;
+  optional bytes flags = 6; // optional flags per sample
+}
+
+message StreamInfo {
+  required int32 numPics = 1;
+
+}
+
+
+message Thumbnail {
+  required int32 w = 1;
+  required int32 h = 2;
+  required bytes thumbnail = 3;
+}
+
+
+message PictureInfo {
+  required int32 decodeIndex = 1;
+  required int32 displayIndex = 2;
+  required int32 w = 3; // width
+  required int32 h = 4; // height
+  required bool isInter = 5;
+  optional string digest = 6;
+
+  repeated int32 references = 7; // should always have 8 entries
+  optional int32 lastRefIdx = 8;
+  optional int32 goldRefIdx = 9;
+  optional int32 altRefIdx = 10;
+
+  message SegmentData {
+    required bool skip = 1;
+    optional sint32 altQ = 2;
+    optional sint32 altLF = 3;
+    optional int32 ref = 4;
+  }
+
+  repeated SegmentData segmentData = 11;
+  optional bool segementAbsData = 12;
+
+  repeated int32 frameCtxOrigin = 13; // should always have 4 of these
+  required int32 frameCtxIdx = 14;
+
+  required int32 numBytes = 15;
+  required int32 numBools = 16;
+
+  message Stat {
+    message StatEntry {
+      required string name = 1;
+      required int32 value = 2;
+    }
+    required string name = 1;
+    repeated StatEntry rawEntries = 2;
+    repeated StatEntry areaNormalizedEntries = 3;
+    repeated StatEntry bitsNormalizedEntries = 4;
+  }
+  repeated Stat stats = 17;
+
+
+  message NumericTree {
+    optional int32 nodeValue = 1;
+    optional string nodeName = 2;
+    repeated NumericTree children = 3;
+  }
+
+  required NumericTree probs = 18;
+  required NumericTree counts = 19;
+
+  repeated int32 tileColPos = 20;
+  repeated int32 tileRowPos = 21;
+
+  repeated int32 lfRefDelta = 22; // should be 4 of these
+  repeated int32 lfModeDelta = 23; // should be 2 of these
+
+  repeated int32 signBias = 24; // 3 of these on inter frames
+  
+
+  repeated int32 tileSizes = 25;
+
+  optional Thumbnail thumbnail = 26;
+  
+  required int32 bytePos = 27;
+
+}
+
+// Losslessly compressed byte arrays, representing the decoded image in the main phases
+message PictureImgs {
+  required bytes predImg = 1;
+  required bytes resImg = 2;
+  required bytes reconImg = 3;
+  required bytes finalImg = 4;
+}
+
+message BlockInfo {
+  required Point p = 1;
+  required int32 w = 2; // width
+  required int32 h = 3; // height
+  required int32 bools = 4;
+  required int32 bits = 5;
+  
+  required bool intra = 6;
+  optional int32 segment_id = 7;
+  enum TxSize {
+    TX_4X4 = 0;
+    TX_8X8 = 1;
+    TX_16X16 = 2;
+    TX_32X32 = 3;
+  }
+  optional TxSize txSize = 8;
+  required bool skip = 9;
+  message MV {
+    message MVPredictor {
+      required MV predictor = 1;
+      optional Point loc = 2;
+      optional string label = 3;
+    }
+
+    required sint32 mvx = 1;
+    required sint32 mvy = 2;
+    optional sint32 deltax = 3;
+    optional sint32 deltay = 4;
+    required int32 ref = 5;
+    repeated MVPredictor preds = 6;
+  }
+
+  repeated MV mv = 10;
+  enum SwitchableFilterType {
+    MC_8TAP = 0;
+    MC_8TAP_SHARP = 1;
+    MC_8TAP_SMOOTH = 2;
+  }
+  optional SwitchableFilterType mcType = 11;
+  enum IntraMode {
+    DC_PRED = 0;
+    V_PRED = 1;
+    H_PRED = 2;
+    D45_PRED = 3;
+    D135_PRED = 4;
+    D117_PRED = 5;
+    D153_PRED = 6;
+    D207_PRED = 7;
+    D63_PRED = 8;
+    TM_PRED = 9;
+  }
+  optional IntraMode intraLumaMode = 12;
+  optional IntraMode intraChromaMode = 13;
+  
+  required int32 coeffBools = 14;
+  required int32 coeffBits = 15;
+
+  required int32 lumaDcScale = 16;
+  required int32 lumaAcScale = 17;
+  required int32 chromaDcScale = 18;
+  required int32 chromaAcScale = 19;
+
+  required int32 bitPos = 20;
+  required int32 syntaxStart = 21;
+  
+}
+
+message Coeffs {
+  repeated sint32 coeffs = 1;
+}
+
+message SuperblockInfo {
+  required int32 sbCol = 1;
+  required int32 sbRow = 2;
+  repeated BlockInfo blocks = 3;
+}
+
+message SuperblockRegion {
+  required int32 sbCol = 1;
+  required int32 sbRow = 2;
+  required int32 sbCols = 3;
+  required int32 sbRows = 4;
+  repeated SuperblockInfo superblocks = 5;
+}
+
+
+
+
+message RawBytes {
+  required int32 pos = 1; // position in the input file
+  required bytes data = 2;
+}
+
