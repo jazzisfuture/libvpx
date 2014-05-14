@@ -115,18 +115,17 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           struct VP9Common *cm, struct macroblockd *xd,
                           int start, int stop, int y_only);
 
-typedef struct LoopFilterWorkerData {
-  const YV12_BUFFER_CONFIG *frame_buffer;
+typedef struct LFWorkerData {
   struct VP9Common *cm;
-  struct macroblockd xd;  // TODO(jzern): most of this is unnecessary to the
-                          // loopfilter. the planes are necessary as their state
-                          // is changed during decode.
+  // TODO(jzern): most of this is unnecessary to the
+  // loopfilter. the planes are necessary as their state
+  // is changed during decode.
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+
+  const YV12_BUFFER_CONFIG *frame_buffer;
   int start;
   int stop;
   int y_only;
-
-  struct VP9LfSyncData *lf_sync;
-  int num_lf_workers;
 } LFWorkerData;
 
 // Operates on the rows described by LFWorkerData passed as 'arg1'.

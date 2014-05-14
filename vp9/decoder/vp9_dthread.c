@@ -121,12 +121,11 @@ static void loop_filter_rows_mt(const YV12_BUFFER_CONFIG *const frame_buffer,
 
 // Row-based multi-threaded loopfilter hook
 static int loop_filter_row_worker(void *arg1, void *arg2) {
-  TileWorkerData *const tile_data = (TileWorkerData*)arg1;
-  LFWorkerData *const lf_data = &tile_data->lfdata;
+  TileWorkerData *const data = (TileWorkerData*)arg1;
 
-  loop_filter_rows_mt(lf_data->frame_buffer, lf_data->cm, &lf_data->xd,
-                      lf_data->start, lf_data->stop, lf_data->y_only,
-                      lf_data->lf_sync, lf_data->num_lf_workers);
+  loop_filter_rows_mt(data->frame_buffer, data->cm, &data->xd,
+                      data->start, data->stop, data->y_only,
+                      data->lf_sync, data->num_lf_workers);
   return 1;
 }
 
@@ -179,20 +178,17 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
   for (i = 0; i < num_workers; ++i) {
     VP9Worker *const worker = &pbi->tile_workers[i];
     TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
-    LFWorkerData *const lf_data = &tile_data->lfdata;
 
     worker->hook = (VP9WorkerHook)loop_filter_row_worker;
 
-    // Loopfilter data
-    lf_data->frame_buffer = frame;
-    lf_data->cm = cm;
-    lf_data->xd = pbi->mb;
-    lf_data->start = i;
-    lf_data->stop = sb_rows;
-    lf_data->y_only = y_only;   // always do all planes in decoder
-
-    lf_data->lf_sync = lf_sync;
-    lf_data->num_lf_workers = num_workers;
+    tile_data->frame_buffer = frame;
+    tile_data->cm = cm;
+    tile_data->xd = pbi->mb;
+    tile_data->start = i;
+    tile_data->stop = sb_rows;
+    tile_data->y_only = y_only;
+    tile_data->lf_sync = lf_sync;
+    tile_data->num_lf_workers = num_workers;
 
     // Start loopfiltering
     if (i == num_workers - 1) {

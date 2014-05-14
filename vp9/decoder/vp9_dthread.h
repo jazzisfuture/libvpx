@@ -20,11 +20,15 @@ struct VP9Decoder;
 
 typedef struct TileWorkerData {
   struct VP9Common *cm;
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   vp9_reader bit_reader;
-  DECLARE_ALIGNED(16, struct macroblockd, xd);
 
-  // Row-based parallel loopfilter data
-  LFWorkerData lfdata;
+  const YV12_BUFFER_CONFIG *frame_buffer;
+  int start;
+  int stop;
+  int y_only;
+  int num_lf_workers;
+  struct VP9LfSyncData *lf_sync;
 } TileWorkerData;
 
 // Loopfilter row synchronization
