@@ -171,4 +171,50 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
   mova              [outputq + 112], m7
 
   RET
+
+%if WIN64 == 0
+%macro WIN64_PUSH_XMM 0
+%endmacro
+%else
+%macro WIN64_PUSH_XMM 0
+    ; Use the shadow space to store XMM6 and XMM7, the rest needs stack space allocated.
+    %if xmm_regs_used > 6
+        movaps [rstk + stack_offset +  8], xmm6
+    %endif
+    %if xmm_regs_used > 7
+        movaps [rstk + stack_offset + 24], xmm7
+    %endif
+    %if xmm_regs_used > 8
+        %assign %%i 8
+        %rep xmm_regs_used-8
+            movaps [rsp + (%%i-8)*16 + stack_size + 32], xmm %+ %%i
+            %assign %%i %%i+1
+        %endrep
+    %endif
+%endmacro
+%endif
+
+%macro ALLOC_STACK 3; stack_size, num_regs, num_xmm_regs
+  %assign %%stack_aligment ((mmsize + 15) & ~15)
+  %assign stack_size_padded %1
+  %if WIN64
+    %assign xmm_reg_used %3
+    %if xmm_reg_used > 8
+      %assign stack_size_padded stack_size_padded + (xmm_regs_used - 8) * 16
+    %endif
+  %endif
+
+  %assign %%reg_num (%2 - 1)
+  %xdefine rsp_tmp r %+ %%reg_num
+  mov  rsp_tmp, rsp
+  sub  rsp, stack_size_padded
+  and  rsp, ~(%%stack_aligment - 1)
+  WIN64_PUSH_XMM
+%endmacro
+
+INIT_XMM ssse3
+cglobal fdct16x16, 3, 5, 16, input, output, stride
+  ALLOC_STACK 512, 5, 16
+  RET
+
 %endif

@@ -326,7 +326,7 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            scan_order->iscan);
       break;
     case TX_16X16:
-      vp9_fdct16x16(src_diff, coeff, diff_stride);
+      vp9_fdct16x16_sse2(src_diff, coeff, diff_stride);
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
