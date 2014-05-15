@@ -27,7 +27,8 @@ TRANSFORM_COEFFS 15137,   6270
 TRANSFORM_COEFFS 16069,   3196
 TRANSFORM_COEFFS  9102,  13623
 
-SECTION .text
+segment .text
+; SECTION .text
 
 %if ARCH_X86_64
 %macro SUM_SUB 3
@@ -171,4 +172,40 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
   mova              [outputq + 112], m7
 
   RET
+
+INIT_XMM ssse3
+cglobal fdct16x16, 3, 7, 16, input, output, stride
+  ALLOC_STACK 512, 7, 16
+
+  mov                r5, inputq
+  lea                r3, [2 * strideq]
+  lea                r4, [4 * strideq]
+  mova               m0, [inputq]
+  mova               m1, [inputq + r3]
+  lea                inputq, [inputq + r4]
+  mova               m2, [inputq]
+  mova               m3, [inputq + r3]
+    lea                inputq, [inputq + r4]
+  mova               m4, [inputq]
+  mova               m5, [inputq + r3]
+  lea                inputq, [inputq + r4]
+  mova               m6, [inputq]
+  mova               m7, [inputq + r3]
+
+  mov               inputq, r5
+  mova              [inputq], m0
+  mova              [inputq +  r3], m1
+  lea               inputq, [inputq + r4]
+  mova              [inputq], m2
+  mova              [inputq +  r3], m3
+  lea               inputq, [inputq + r4]
+  mova              [inputq], m4
+  mova              [inputq +  r3], m5
+  lea               inputq, [inputq + r4]
+  mova              [inputq], m6
+  mova              [inputq +  r3], m7
+
+  RESTORE_STACK
+  RET
+
 %endif

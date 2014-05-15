@@ -313,7 +313,10 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   uint16_t *const eob = &p->eobs[block];
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
-  const int16_t *src_diff;
+  int16_t *src_diff;
+
+  int16_t buf_input[256], buf_output[256];
+
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
@@ -326,7 +329,17 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            scan_order->iscan);
       break;
     case TX_16X16:
-      vp9_fdct16x16(src_diff, coeff, diff_stride);
+
+      for (j = 0; j < 16; ++j)
+        vpx_memcpy(&buf_input[j * 16], &src_diff[j * diff_stride], 16 * sizeof(int16_t));
+
+      vp9_fdct16x16_ssse3(src_diff, coeff, diff_stride);
+
+      for (j = 0; j < 8; ++j) {
+        for (i = 0; i < 8; ++i)
+          assert(buf_input[j * 16 + i] == src_diff[j * diff_stride + i]);
+      }
+
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
