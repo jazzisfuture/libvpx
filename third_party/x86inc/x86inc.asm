@@ -395,6 +395,31 @@ DECLARE_REG_TMP_SIZE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
     %assign n_arg_names %0
 %endmacro
 
+%if ARCH_X86_64
+%macro ALLOC_STACK 3  ; stack_size, num_regs, num_xmm_regs
+  %assign %%stack_aligment ((mmsize + 15) & ~15)
+  %assign stack_size %1
+  %assign stack_size_padded %1
+;  %if WIN64  ; FIXME (jingning) should this part be enabled only in win64?
+    %assign xmm_regs_used %3
+    %if xmm_regs_used > 6
+      %assign stack_size_padded stack_size_padded + (xmm_regs_used - 6) * 16
+    %endif
+;  %endif
+
+  %assign %%reg_num (%2 - 1)
+  %xdefine rsp_tmp r %+ %%reg_num
+  mov  rsp_tmp, rsp
+  sub  rsp, stack_size_padded
+  and  rsp, ~(%%stack_aligment - 1)
+  WIN64_PUSH_XMM
+%endmacro
+
+%macro RESTORE_STACK 0  ; reset rsp register
+  mov  rsp, rsp_tmp
+%endmacro
+%endif
+
 %if WIN64 ; Windows x64 ;=================================================
 
 DECLARE_REG 0,  rcx, ecx,  cx,   cl
@@ -426,6 +451,14 @@ DECLARE_REG 14, R15, R15D, R15W, R15B, 120
     %endif
     LOAD_IF_USED 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
     DEFINE_ARGS %4
+%endmacro
+
+%macro WIN64_PUSH_XMM 0
+  %assign %%i xmm_regs_used
+  %rep (xmm_regs_used - 6)
+    %assgin %%i (%%i - 1)
+    movdqa [rsp + (%%i - 6) * 16 + stack_size], xmm %+ %%i
+  %endrep
 %endmacro
 
 %macro WIN64_SPILL_XMM 1
@@ -565,6 +598,8 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %macro WIN64_SPILL_XMM 1
 %endmacro
 %macro WIN64_RESTORE_XMM 1
+%endmacro
+%macro WIN64_PUSH_XMM 0
 %endmacro
 %endif
 

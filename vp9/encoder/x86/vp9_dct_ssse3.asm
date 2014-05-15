@@ -27,7 +27,8 @@ TRANSFORM_COEFFS 15137,   6270
 TRANSFORM_COEFFS 16069,   3196
 TRANSFORM_COEFFS  9102,  13623
 
-SECTION .text
+segment .text
+; SECTION .text
 
 %if ARCH_X86_64
 %macro SUM_SUB 3
@@ -171,4 +172,5 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
   mova              [outputq + 112], m7
 
   RET
+
 %endif
