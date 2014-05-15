@@ -840,18 +840,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
     cpi->total_sq_error = 0;
     cpi->total_samples = 0;
 
-    cpi->totalp_y = 0.0;
-    cpi->totalp_u = 0.0;
-    cpi->totalp_v = 0.0;
-    cpi->totalp = 0.0;
-    cpi->totalp_sq_error = 0;
-    cpi->totalp_samples = 0;
-
     cpi->tot_recode_hits = 0;
     cpi->summed_quality = 0;
     cpi->summed_weights = 0;
-    cpi->summedp_quality = 0;
-    cpi->summedp_weights = 0;
   }
 
   if (cpi->b_calculate_ssimg) {
@@ -1049,9 +1040,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
   if (cpi && (cpi->common.current_video_frame > 0)) {
 #if CONFIG_INTERNAL_STATS
-
     vp9_clear_system_state();
-
     // printf("\n8x8-4x4:%d-%d\n", cpi->t8x8_count, cpi->t4x4_count);
     if (cpi->pass != 1) {
       FILE *f = fopen("opsnr.stt", "a");
@@ -1066,19 +1055,17 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
         const double total_psnr =
             vpx_sse_to_psnr((double)cpi->total_samples, 255.0,
                             (double)cpi->total_sq_error);
-        const double totalp_psnr =
-            vpx_sse_to_psnr((double)cpi->totalp_samples, 255.0,
-                            (double)cpi->totalp_sq_error);
         const double total_ssim = 100 * pow(cpi->summed_quality /
                                                 cpi->summed_weights, 8.0);
-        const double totalp_ssim = 100 * pow(cpi->summedp_quality /
-                                                cpi->summedp_weights, 8.0);
 
+        // Note: The encoder no longer calculates the psnr and ssim of the
+        // post-processed frame. To retain the format of the log files, we
+        // repeat the figures for the non post-processed frame.
         fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
                 "VPXSSIM\tVPSSIMP\t  Time(ms)\n");
         fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%8.0f\n",
                 dr, cpi->total / cpi->count, total_psnr,
-                cpi->totalp / cpi->count, totalp_psnr, total_ssim, totalp_ssim,
+                cpi->total / cpi->count, total_psnr, total_ssim, total_ssim,
                 total_encode_time);
       }
 
@@ -1090,10 +1077,8 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                 cpi->total_ssimg_v / cpi->count,
                 cpi->total_ssimg_all / cpi->count, total_encode_time);
       }
-
       fclose(f);
     }
-
 #endif
 
 #if 0
@@ -2699,20 +2684,20 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     generate_psnr_packet(cpi);
 
 #if CONFIG_INTERNAL_STATS
-
   if (cpi->pass != 1) {
     cpi->bytes += (int)(*size);
 
     if (cm->show_frame) {
+      YV12_BUFFER_CONFIG *orig = cpi->Source;
+      YV12_BUFFER_CONFIG *recon = cpi->common.frame_to_show;
+
       cpi->count++;
 
       if (cpi->b_calculate_psnr) {
-        YV12_BUFFER_CONFIG *orig = cpi->Source;
-        YV12_BUFFER_CONFIG *recon = cpi->common.frame_to_show;
-        YV12_BUFFER_CONFIG *pp = &cm->post_proc_buffer;
         PSNR_STATS psnr;
-        calc_psnr(orig, recon, &psnr);
+        double frame_ssim = 0, weight = 0;
 
+        calc_psnr(orig, recon, &psnr);
         cpi->total += psnr.psnr[0];
         cpi->total_y += psnr.psnr[1];
         cpi->total_u += psnr.psnr[2];
@@ -2720,56 +2705,22 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         cpi->total_sq_error += psnr.sse[0];
         cpi->total_samples += psnr.samples[0];
 
-        {
-          PSNR_STATS psnr2;
-          double frame_ssim2 = 0, weight = 0;
-#if CONFIG_VP9_POSTPROC
-          vp9_deblock(cm->frame_to_show, &cm->post_proc_buffer,
-                      cm->lf.filter_level * 10 / 6);
-#endif
-          vp9_clear_system_state();
+        vp9_clear_system_state();
 
-          calc_psnr(orig, pp, &psnr2);
-
-          cpi->totalp += psnr2.psnr[0];
-          cpi->totalp_y += psnr2.psnr[1];
-          cpi->totalp_u += psnr2.psnr[2];
-          cpi->totalp_v += psnr2.psnr[3];
-          cpi->totalp_sq_error += psnr2.sse[0];
-          cpi->totalp_samples += psnr2.samples[0];
-
-          frame_ssim2 = vp9_calc_ssim(orig, recon, 1, &weight);
-
-          cpi->summed_quality += frame_ssim2 * weight;
-          cpi->summed_weights += weight;
-
-          frame_ssim2 = vp9_calc_ssim(orig, &cm->post_proc_buffer, 1, &weight);
-
-          cpi->summedp_quality += frame_ssim2 * weight;
-          cpi->summedp_weights += weight;
-#if 0
-          {
-            FILE *f = fopen("q_used.stt", "a");
-            fprintf(f, "%5d : Y%f7.3:U%f7.3:V%f7.3:F%f7.3:S%7.3f\n",
-                    cpi->common.current_video_frame, y2, u2, v2,
-                    frame_psnr2, frame_ssim2);
-            fclose(f);
-          }
-#endif
-        }
+        frame_ssim = vp9_calc_ssim(orig, recon, 1, &weight);
+        cpi->summed_quality += frame_ssim * weight;
+        cpi->summed_weights += weight;
       }
 
       if (cpi->b_calculate_ssimg) {
-        double y, u, v, frame_all;
-        frame_all = vp9_calc_ssimg(cpi->Source, cm->frame_to_show, &y, &u, &v);
+        double y, u, v;
+        cpi->total_ssimg_all += vp9_calc_ssimg(orig, recon, &y, &u, &v);
         cpi->total_ssimg_y += y;
         cpi->total_ssimg_u += u;
         cpi->total_ssimg_v += v;
-        cpi->total_ssimg_all += frame_all;
       }
     }
   }
-
 #endif
   return 0;
 }

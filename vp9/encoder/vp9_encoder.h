@@ -453,20 +453,10 @@ typedef struct VP9_COMP {
   uint64_t total_sq_error;
   uint64_t total_samples;
 
-  double totalp_y;
-  double totalp_u;
-  double totalp_v;
-  double totalp;
-  uint64_t totalp_sq_error;
-  uint64_t totalp_samples;
-
   int    bytes;
   double summed_quality;
   double summed_weights;
-  double summedp_quality;
-  double summedp_weights;
   unsigned int tot_recode_hits;
-
 
   double total_ssimg_y;
   double total_ssimg_u;
