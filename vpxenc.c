@@ -188,8 +188,8 @@ static const arg_def_t experimental_bitstream =
             "Allow experimental bitstream features.");
 
 #if CONFIG_VP9_HIGH
-static const arg_def_t inputshiftarg = ARG_DEF(NULL, "input-shift", 1,
-                                          "Amount to upshift input images");
+static const arg_def_t testhighinternalarg = ARG_DEF(
+    NULL, "test-high-internal", 0, "Force use of 16 bit internal buffer");
 #endif
 
 static const arg_def_t *main_args[] = {
@@ -233,7 +233,7 @@ static const arg_def_t *global_args[] = {
   &width, &height, &stereo_mode, &timebase, &framerate,
   &error_resilient,
 #if CONFIG_VP9_HIGH
-  &inputshiftarg,
+  &testhighinternalarg,
 #endif
   &lag_in_frames, NULL
 };
@@ -690,10 +690,8 @@ struct stream_config {
   int                       have_kf_max_dist;
 #if CONFIG_VP9_HIGH
   int                       use_high;
-  int                       input_shift;
 #endif
 };
-
 
 struct stream_state {
   int                       index;
@@ -716,7 +714,6 @@ struct stream_state {
   vpx_codec_ctx_t           decoder;
   int                       mismatch_seen;
 };
-
 
 void validate_positive_rational(const char          *msg,
                                 struct vpx_rational *rat) {
@@ -1063,9 +1060,8 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
     } else if (arg_match(&arg, &kf_disabled, argi)) {
       config->cfg.kf_mode = VPX_KF_DISABLED;
 #if CONFIG_VP9_HIGH
-    } else if (arg_match(&arg, &inputshiftarg, argi)) {
+    } else if (arg_match(&arg, &testhighinternalarg, argi)) {
       config->use_high = 1;
-      config->input_shift = arg_parse_uint(&arg);
 #endif
     } else {
       int i, match = 0;
@@ -1089,13 +1085,17 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
             if (j == config->arg_ctrl_cnt)
               config->arg_ctrl_cnt++;
           }
-
         }
       }
       if (!match)
         argj++;
     }
   }
+#if CONFIG_VP9_HIGH
+  if (strcmp(global->codec->name, "vp9") == 0) {
+    config->use_high |= (config->cfg.g_profile > 1);
+  }
+#endif
   return eos_mark_found;
 }
 
@@ -1802,16 +1802,6 @@ int main(int argc, const char **argv_) {
 
     open_input_file(&input);
 
-#if CONFIG_VP9_HIGH
-    FOREACH_STREAM({
-      if (stream->config.use_high) {
-        use_high = stream->config.use_high;
-        input_shift = stream->config.input_shift;
-        break;
-      }
-    });
-#endif
-
     /* If the input file doesn't specify its w/h (raw files), try to get
      * the data from the first stream's configuration.
      */
@@ -1883,6 +1873,25 @@ int main(int argc, const char **argv_) {
     FOREACH_STREAM(setup_pass(stream, &global, pass));
     FOREACH_STREAM(open_output_file(stream, &global));
     FOREACH_STREAM(initialize_encoder(stream, &global));
+
+#if CONFIG_VP9_HIGH
+    if (strcmp(global.codec->name, "vp9") == 0) {
+      FOREACH_STREAM({
+        if (stream->config.use_high) {
+          unsigned int bit_depth;
+          vpx_codec_control_(&stream->encoder, VP9E_GET_BIT_DEPTH, &bit_depth);
+          if (stream->config.cfg.g_profile <= 1)
+            input_shift = 0;
+          else
+            // TODO(Peter): Decide this based on the input-bit-depth.
+            // Currently we assume input-bit-depth = 8, but that will change.
+            input_shift = bit_depth * 2;
+          use_high = 1;
+          break;
+        }
+      });
+    }
+#endif
 
     frame_avail = 1;
     got_data = 0;
