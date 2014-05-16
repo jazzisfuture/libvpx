@@ -266,7 +266,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   if (cfg->g_profile > (unsigned int)PROFILE_1 &&
       extra_cfg->bit_depth == BITS_8)
     ERROR("Bit-depth 8 not supported in profile > 1");
-  */
+    */
   if ( extra_cfg->bit_depth > BITS_12)
     ERROR("Bit-depth option must be 0(BITS_8),1(BITS_10), or 2(BITS_12)");
 
