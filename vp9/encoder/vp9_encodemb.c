@@ -335,10 +335,8 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
 
       vp9_fdct16x16_ssse3(src_diff, coeff, diff_stride);
 
-      for (j = 0; j < 8; ++j) {
-        for (i = 0; i < 8; ++i)
-          assert(buf_input[j * 16 + i] == src_diff[j * diff_stride + i]);
-      }
+      for (j = 0; j < 16; ++j)
+        vpx_memcpy(&buf_input[j * 16], &src_diff[j * diff_stride], 16 * sizeof(int16_t));
 
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
