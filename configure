@@ -52,6 +52,7 @@ Advanced options:
   ${toggle_multi_res_encoding}    enable multiple-resolution encoding
   ${toggle_temporal_denoising}    enable temporal denoising and disable the spatial denoiser
   ${toggle_webm_io}               enable input from and output to WebM container
+  ${toggle_libyuv}                enable libyuv
 
 Codecs:
   Codecs can be selectively enabled or disabled individually, or by family:
@@ -314,6 +315,7 @@ CONFIG_LIST="
     os_support
     unit_tests
     webm_io
+    libyuv
     decode_perf_tests
     multi_res_encoding
     temporal_denoising
@@ -367,6 +369,7 @@ CMDLINE_SELECT="
     postproc_visualizer
     unit_tests
     webm_io
+    libyuv
     decode_perf_tests
     multi_res_encoding
     temporal_denoising
@@ -708,9 +711,11 @@ process_toolchain() {
         *-vs*)
             soft_enable unit_tests
             soft_enable webm_io
+            soft_enable libyuv
         ;;
         *-android-*)
             soft_enable webm_io
+            soft_enable libyuv
             # GTestLog must be modified to use Android logging utilities.
         ;;
         *-darwin-*)
@@ -727,12 +732,18 @@ EOF
             check_cxx "$@" <<EOF && soft_enable webm_io
 int z;
 EOF
+            check_cxx "$@" <<EOF && soft_enable libyuv
+int z;
+EOF
         ;;
         *)
             enabled pthread_h && check_cxx "$@" <<EOF && soft_enable unit_tests
 int z;
 EOF
             check_cxx "$@" <<EOF && soft_enable webm_io
+int z;
+EOF
+            check_cxx "$@" <<EOF && soft_enable libyuv
 int z;
 EOF
         ;;

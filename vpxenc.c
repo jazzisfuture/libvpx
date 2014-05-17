@@ -1245,6 +1245,7 @@ static void encode_frame(struct stream_state *stream,
 
   /* Scale if necessary */
   if (img && (img->d_w != cfg->g_w || img->d_h != cfg->g_h)) {
+#if CONFIG_LIBYUV
     if (!stream->img)
       stream->img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420,
                                   cfg->g_w, cfg->g_h, 16);
@@ -1260,8 +1261,15 @@ static void encode_frame(struct stream_state *stream,
               stream->img->stride[VPX_PLANE_V],
               stream->img->d_w, stream->img->d_h,
               kFilterBox);
-
     img = stream->img;
+#else
+    stream->encoder.err = 1;
+    ctx_exit_on_error(&stream->encoder,
+                      "Stream %d: Failed to encode frame, "
+                      "due to unsupported scaling",
+                      stream->index);
+#endif
+
   }
 
   vpx_usec_timer_start(&timer);
