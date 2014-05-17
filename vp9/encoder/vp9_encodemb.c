@@ -24,6 +24,9 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+#include "vpx_ports/x86.h"
+#include <stdio.h>
+
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
   ENTROPY_CONTEXT tl[MAX_MB_PLANE][16];
@@ -326,7 +329,26 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            scan_order->iscan);
       break;
     case TX_16X16:
+    {
+      unsigned int a, b;
+      static unsigned int cycles = 0;
+      static int count = 0;
+
+      vp9_clear_system_state();
+      a = x86_readtsc();
       vp9_fdct16x16(src_diff, coeff, diff_stride);
+      b = x86_readtsc();
+
+      cycles += (b - a);
+      ++count;
+
+      if (count == 10000) {
+        fprintf(stderr, "cycles: %d\n", cycles);
+        cycles = 0;
+        count = 0;
+      }
+
+    }
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
