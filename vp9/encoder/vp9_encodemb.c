@@ -24,6 +24,8 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+#include <stdio.h>
+
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
   ENTROPY_CONTEXT tl[MAX_MB_PLANE][16];
@@ -330,15 +332,35 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
       break;
     case TX_16X16:
 
-      for (j = 0; j < 16; ++j)
+      fprintf(stderr, "input: \n");
+      vpx_memset(&coeff[0], 0, 256 * sizeof(int16_t));
+      for (j = 0; j < 16; ++j) {
         vpx_memcpy(&buf_input[j * 16], &src_diff[j * diff_stride], 16 * sizeof(int16_t));
+        for (i = 0; i < 16; ++i)
+          fprintf(stderr, "%4d  ", buf_input[j * 16 + i]);
+        fprintf(stderr, "\n");
+      }
 
       vp9_fdct16x16_ssse3(src_diff, coeff, diff_stride);
 
-      for (j = 0; j < 8; ++j) {
-        for (i = 0; i < 8; ++i)
-          assert(buf_input[j * 16 + i] == src_diff[j * diff_stride + i]);
+      fprintf(stderr, "output: \n");
+      for (j = 0; j < 16; ++j) {
+        vpx_memcpy(&buf_input[j * 16], &src_diff[j * 16], 16 * sizeof(int16_t));
+        for (i = 0; i < 16; ++i)
+          fprintf(stderr, "%4d  ", buf_input[j * 16 + i]);
+        fprintf(stderr, "\n");
       }
+
+
+      fprintf(stderr, "output: \n");
+      for (j = 0; j < 16; ++j) {
+        vpx_memcpy(&buf_output[j * 16], &coeff[j * 16], 16 * sizeof(int16_t));
+        for (i = 0; i < 16; ++i)
+          fprintf(stderr, "%4d  ", buf_output[j * 16 + i]);
+        fprintf(stderr, "\n");
+      }
+
+      assert(0);
 
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
