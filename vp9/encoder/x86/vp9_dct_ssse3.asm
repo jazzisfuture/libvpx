@@ -173,6 +173,66 @@ cglobal fdct8x8, 3, 5, 13, input, output, stride
 
   RET
 
+; handle 8 columns
+%macro FDCT16_1D 2 ; inputq, index
+  mova               m0,  [%1]
+  mova               m1,  [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m2,  [%1]
+  mova               m3,  [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m4,  [%1]
+  mova               m5,  [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m6,  [%1]
+  mova               m7,  [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m8,  [%1]
+  mova               m9,  [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m10, [%1]
+  mova               m11, [%1 + r3]
+  lea                %1,  [%1 + r4]
+  mova               m12, [%1]
+  mova               m13, [%1 + r3]
+
+%if %2 == 0 ; multiply by 4 in first pass
+  psllw              m0,  2
+  psllw              m1,  2
+  psllw              m2,  2
+  psllw              m3,  2
+  psllw              m4,  2
+  psllw              m5,  2
+  psllw              m6,  2
+  psllw              m7,  2
+  psllw              m8,  2
+  psllw              m9,  2
+  psllw              m10, 2
+  psllw              m11, 2
+  psllw              m12, 2
+  psllw              m13, 2
+%endif
+
+  SUM_SUB            2, 13, 15
+  SUM_SUB            3, 12, 15
+  SUM_SUB            4, 11, 15
+  SUM_SUB            5, 10, 15
+  SUM_SUB            6,  9, 15
+  SUM_SUB            7,  8, 15
+
+  ; step2[2], [3], [4], [5]
+  ;      m10, m11, m12, m13
+  SUM_SUB           12, 11
+  SUM_SUB           13, 10
+
+  mova              m14, [pw_11585x2]
+  pmulhrsw          m12, m14
+  pmulhrsw          m11, m14
+  pmulhrsw          m13, m14
+  pmulhrsw          m10, m14
+
+%endmacro
+
 INIT_XMM ssse3
 cglobal fdct16x16, 3, 7, 16, input, output, stride
   ALLOC_STACK 512, 7, 16
@@ -180,18 +240,11 @@ cglobal fdct16x16, 3, 7, 16, input, output, stride
   mov                r5, inputq
   lea                r3, [2 * strideq]
   lea                r4, [4 * strideq]
-  mova               m0, [inputq]
-  mova               m1, [inputq + r3]
-  lea                inputq, [inputq + r4]
-  mova               m2, [inputq]
-  mova               m3, [inputq + r3]
-    lea                inputq, [inputq + r4]
-  mova               m4, [inputq]
-  mova               m5, [inputq + r3]
-  lea                inputq, [inputq + r4]
-  mova               m6, [inputq]
-  mova               m7, [inputq + r3]
 
+
+  ; =========================================
+  ; observation point
+  ; =========================================
   mov               inputq, r5
   mova              [inputq], m0
   mova              [inputq +  r3], m1
@@ -204,6 +257,7 @@ cglobal fdct16x16, 3, 7, 16, input, output, stride
   lea               inputq, [inputq + r4]
   mova              [inputq], m6
   mova              [inputq +  r3], m7
+  ; =========================================
 
   RESTORE_STACK
   RET
