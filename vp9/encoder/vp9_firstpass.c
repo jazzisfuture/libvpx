@@ -162,96 +162,78 @@ static void output_stats(FIRSTPASS_STATS *stats,
 #endif
 }
 
-static void zero_stats(FIRSTPASS_STATS *section) {
-  section->frame      = 0.0;
-  section->intra_error = 0.0;
-  section->coded_error = 0.0;
-  section->sr_coded_error = 0.0;
-  section->ssim_weighted_pred_err = 0.0;
-  section->pcnt_inter  = 0.0;
-  section->pcnt_motion  = 0.0;
-  section->pcnt_second_ref = 0.0;
-  section->pcnt_neutral = 0.0;
-  section->MVr        = 0.0;
-  section->mvr_abs     = 0.0;
-  section->MVc        = 0.0;
-  section->mvc_abs     = 0.0;
-  section->MVrv       = 0.0;
-  section->MVcv       = 0.0;
-  section->mv_in_out_count  = 0.0;
-  section->new_mv_count = 0.0;
-  section->count      = 0.0;
-  section->duration   = 1.0;
-  section->spatial_layer_id = 0;
+static void zero_stats(FIRSTPASS_STATS *stats) {
+  vp9_zero(*stats);
+  stats->duration = 1.0;
 }
 
-static void accumulate_stats(FIRSTPASS_STATS *section,
-                             const FIRSTPASS_STATS *frame) {
-  section->frame += frame->frame;
-  section->spatial_layer_id = frame->spatial_layer_id;
-  section->intra_error += frame->intra_error;
-  section->coded_error += frame->coded_error;
-  section->sr_coded_error += frame->sr_coded_error;
-  section->ssim_weighted_pred_err += frame->ssim_weighted_pred_err;
-  section->pcnt_inter  += frame->pcnt_inter;
-  section->pcnt_motion += frame->pcnt_motion;
-  section->pcnt_second_ref += frame->pcnt_second_ref;
-  section->pcnt_neutral += frame->pcnt_neutral;
-  section->MVr        += frame->MVr;
-  section->mvr_abs     += frame->mvr_abs;
-  section->MVc        += frame->MVc;
-  section->mvc_abs     += frame->mvc_abs;
-  section->MVrv       += frame->MVrv;
-  section->MVcv       += frame->MVcv;
-  section->mv_in_out_count  += frame->mv_in_out_count;
-  section->new_mv_count += frame->new_mv_count;
-  section->count      += frame->count;
-  section->duration   += frame->duration;
+static void accumulate_stats(FIRSTPASS_STATS *stats,
+                             const FIRSTPASS_STATS *delta) {
+  stats->frame += delta->frame;
+  stats->spatial_layer_id = delta->spatial_layer_id;
+  stats->intra_error += delta->intra_error;
+  stats->coded_error += delta->coded_error;
+  stats->sr_coded_error += delta->sr_coded_error;
+  stats->ssim_weighted_pred_err += delta->ssim_weighted_pred_err;
+  stats->pcnt_inter += delta->pcnt_inter;
+  stats->pcnt_motion += delta->pcnt_motion;
+  stats->pcnt_second_ref += delta->pcnt_second_ref;
+  stats->pcnt_neutral += delta->pcnt_neutral;
+  stats->MVr += delta->MVr;
+  stats->mvr_abs += delta->mvr_abs;
+  stats->MVc += delta->MVc;
+  stats->mvc_abs += delta->mvc_abs;
+  stats->MVrv += delta->MVrv;
+  stats->MVcv += delta->MVcv;
+  stats->mv_in_out_count += delta->mv_in_out_count;
+  stats->new_mv_count += delta->new_mv_count;
+  stats->count += delta->count;
+  stats->duration += delta->duration;
 }
 
-static void subtract_stats(FIRSTPASS_STATS *section,
-                           const FIRSTPASS_STATS *frame) {
-  section->frame -= frame->frame;
-  section->intra_error -= frame->intra_error;
-  section->coded_error -= frame->coded_error;
-  section->sr_coded_error -= frame->sr_coded_error;
-  section->ssim_weighted_pred_err -= frame->ssim_weighted_pred_err;
-  section->pcnt_inter  -= frame->pcnt_inter;
-  section->pcnt_motion -= frame->pcnt_motion;
-  section->pcnt_second_ref -= frame->pcnt_second_ref;
-  section->pcnt_neutral -= frame->pcnt_neutral;
-  section->MVr        -= frame->MVr;
-  section->mvr_abs     -= frame->mvr_abs;
-  section->MVc        -= frame->MVc;
-  section->mvc_abs     -= frame->mvc_abs;
-  section->MVrv       -= frame->MVrv;
-  section->MVcv       -= frame->MVcv;
-  section->mv_in_out_count  -= frame->mv_in_out_count;
-  section->new_mv_count -= frame->new_mv_count;
-  section->count      -= frame->count;
-  section->duration   -= frame->duration;
+static void subtract_stats(FIRSTPASS_STATS *stats,
+                           const FIRSTPASS_STATS *delta) {
+  stats->frame -= delta->frame;
+  stats->intra_error -= delta->intra_error;
+  stats->coded_error -= delta->coded_error;
+  stats->sr_coded_error -= delta->sr_coded_error;
+  stats->ssim_weighted_pred_err -= delta->ssim_weighted_pred_err;
+  stats->pcnt_inter -= delta->pcnt_inter;
+  stats->pcnt_motion -= delta->pcnt_motion;
+  stats->pcnt_second_ref -= delta->pcnt_second_ref;
+  stats->pcnt_neutral -= delta->pcnt_neutral;
+  stats->MVr -= delta->MVr;
+  stats->mvr_abs -= delta->mvr_abs;
+  stats->MVc -= delta->MVc;
+  stats->mvc_abs -= delta->mvc_abs;
+  stats->MVrv -= delta->MVrv;
+  stats->MVcv -= delta->MVcv;
+  stats->mv_in_out_count -= delta->mv_in_out_count;
+  stats->new_mv_count -= delta->new_mv_count;
+  stats->count -= delta->count;
+  stats->duration -= delta->duration;
 }
 
-static void avg_stats(FIRSTPASS_STATS *section) {
-  if (section->count < 1.0)
+static void avg_stats(FIRSTPASS_STATS *stats) {
+  if (stats->count < 1.0)
     return;
 
-  section->intra_error /= section->count;
-  section->coded_error /= section->count;
-  section->sr_coded_error /= section->count;
-  section->ssim_weighted_pred_err /= section->count;
-  section->pcnt_inter  /= section->count;
-  section->pcnt_second_ref /= section->count;
-  section->pcnt_neutral /= section->count;
-  section->pcnt_motion /= section->count;
-  section->MVr        /= section->count;
-  section->mvr_abs     /= section->count;
-  section->MVc        /= section->count;
-  section->mvc_abs     /= section->count;
-  section->MVrv       /= section->count;
-  section->MVcv       /= section->count;
-  section->mv_in_out_count   /= section->count;
-  section->duration   /= section->count;
+  stats->intra_error /= stats->count;
+  stats->coded_error /= stats->count;
+  stats->sr_coded_error /= stats->count;
+  stats->ssim_weighted_pred_err /= stats->count;
+  stats->pcnt_inter /= stats->count;
+  stats->pcnt_second_ref /= stats->count;
+  stats->pcnt_neutral /= stats->count;
+  stats->pcnt_motion /= stats->count;
+  stats->MVr /= stats->count;
+  stats->mvr_abs /= stats->count;
+  stats->MVc /= stats->count;
+  stats->mvc_abs /= stats->count;
+  stats->MVrv /= stats->count;
+  stats->MVcv /= stats->count;
+  stats->mv_in_out_count /= stats->count;
+  stats->duration /= stats->count;
 }
 
 // Calculate a modified Error used in distributing bits between easier and
