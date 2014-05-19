@@ -62,7 +62,7 @@
 #endif
 
 
-// #define LONG_TERM_VBR_CORRECTION
+#define LONG_TERM_VBR_CORRECTION
 
 static void swap_yv12(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
   YV12_BUFFER_CONFIG temp = *a;
