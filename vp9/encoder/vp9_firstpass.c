@@ -1400,30 +1400,18 @@ void define_fixed_arf_period(VP9_COMP *cpi) {
 #endif
 
 // Calculate a section intra ratio used in setting max loop filter.
-static void calculate_section_intra_ratio(TWO_PASS *twopass,
-                                          const FIRSTPASS_STATS *start_pos,
-                                          int section_length) {
-  FIRSTPASS_STATS next_frame;
-  FIRSTPASS_STATS sectionstats;
+static int calculate_section_intra_ratio(const FIRSTPASS_STATS *start_pos,
+                                         int section_length) {
+  FIRSTPASS_STATS stats;
+  const FIRSTPASS_STATS *pos = start_pos;
   int i;
 
-  vp9_zero(next_frame);
-  vp9_zero(sectionstats);
+  vp9_zero(stats);
+  for (i = 0; i < section_length; ++i)
+    accumulate_stats(&stats, pos++);
+  avg_stats(&stats);
 
-  reset_fpf_position(twopass, start_pos);
-
-  for (i = 0; i < section_length; ++i) {
-    input_stats(twopass, &next_frame);
-    accumulate_stats(&sectionstats, &next_frame);
-  }
-
-  avg_stats(&sectionstats);
-
-  twopass->section_intra_rating =
-    (int)(sectionstats.intra_error /
-          DOUBLE_DIVIDE_CHECK(sectionstats.coded_error));
-
-  reset_fpf_position(twopass, start_pos);
+  return (int)(stats.intra_error / DOUBLE_DIVIDE_CHECK(stats.coded_error));
 }
 
 // Calculate the total bits to allocate in this GF/ARF group.
@@ -1765,7 +1753,8 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Calculate a section intra ratio used in setting max loop filter.
   if (cpi->common.frame_type != KEY_FRAME) {
-    calculate_section_intra_ratio(twopass, start_pos, rc->baseline_gf_interval);
+    twopass->section_intra_rating =
+        calculate_section_intra_ratio(start_pos, rc->baseline_gf_interval);
   }
 }
 
@@ -2065,7 +2054,8 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->kf_zeromotion_pct = (int)(zero_motion_accumulator * 100.0);
 
   // Calculate a section intra ratio used in setting max loop filter.
-  calculate_section_intra_ratio(twopass, start_position, rc->frames_to_key);
+  twopass->section_intra_rating =
+      calculate_section_intra_ratio(start_position, rc->frames_to_key);
 
   // Work out how many bits to allocate for the key frame itself.
   rc->kf_boost = (int)boost_score;
