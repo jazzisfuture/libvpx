@@ -751,9 +751,9 @@ static void get_tile_buffers(VP9Decoder *pbi,
   }
 }
 
-static const uint8_t *decode_tiles(VP9Decoder *pbi,
-                                   const uint8_t *data,
-                                   const uint8_t *data_end) {
+static void decode_tiles(VP9Decoder *pbi,
+                         const uint8_t *data,
+                         const uint8_t *data_end) {
   VP9_COMMON *const cm = &pbi->common;
   const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int tile_cols = 1 << cm->log2_tile_cols;
@@ -873,11 +873,6 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
     lf_data->stop = cm->mi_rows;
     vp9_worker_execute(&pbi->lf_worker);
   }
-
-  // Get last tile data.
-  tile_data = pbi->tile_data + tile_cols * tile_rows - 1;
-
-  return vp9_reader_find_end(&tile_data->bit_reader);
 }
 
 static int tile_worker_hook(void *arg1, void *arg2) {
@@ -911,18 +906,16 @@ static int compare_tile_buffers(const void *a, const void *b) {
   }
 }
 
-static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
+static void decode_tiles_mt(VP9Decoder *pbi,
                                       const uint8_t *data,
                                       const uint8_t *data_end) {
   VP9_COMMON *const cm = &pbi->common;
-  const uint8_t *bit_reader_end = NULL;
   const int aligned_mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
   const int num_workers = MIN(pbi->max_threads & ~1, tile_cols);
   TileBuffer tile_buffers[1][1 << 6];
   int n;
-  int final_worker = -1;
 
   assert(tile_cols <= (1 << 6));
   assert(tile_rows == 1);
@@ -1012,11 +1005,6 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       } else {
         vp9_worker_launch(worker);
       }
-
-      if (buf->col == tile_cols - 1) {
-        final_worker = i;
-      }
-
       ++n;
     }
 
@@ -1024,15 +1012,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       VP9Worker *const worker = &pbi->tile_workers[i - 1];
       pbi->mb.corrupted |= !vp9_worker_sync(worker);
     }
-    if (final_worker > -1) {
-      TileWorkerData *const tile_data =
-          (TileWorkerData*)pbi->tile_workers[final_worker].data1;
-      bit_reader_end = vp9_reader_find_end(&tile_data->bit_reader);
-      final_worker = -1;
-    }
   }
-
-  return bit_reader_end;
 }
 
 static void check_sync_code(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
@@ -1318,8 +1298,7 @@ static struct vp9_read_bit_buffer* init_read_bit_buffer(
 }
 
 int vp9_decode_frame(VP9Decoder *pbi,
-                     const uint8_t *data, const uint8_t *data_end,
-                     const uint8_t **p_data_end) {
+                     const uint8_t *data, const uint8_t *data_end) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
   struct vp9_read_bit_buffer rb = { 0 };
@@ -1334,7 +1313,6 @@ int vp9_decode_frame(VP9Decoder *pbi,
 
   if (!first_partition_size) {
     // showing a frame directly
-    *p_data_end = data + 1;
     return 0;
   }
 
@@ -1367,12 +1345,12 @@ int vp9_decode_frame(VP9Decoder *pbi,
   // single-frame tile decoding.
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
       cm->frame_parallel_decoding_mode) {
-    *p_data_end = decode_tiles_mt(pbi, data + first_partition_size, data_end);
+    decode_tiles_mt(pbi, data + first_partition_size, data_end);
     // If multiple threads are used to decode tiles, then we use those threads
     // to do parallel loopfiltering.
     vp9_loop_filter_frame_mt(new_fb, pbi, cm, cm->lf.filter_level, 0);
   } else {
-    *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
+    decode_tiles(pbi, data + first_partition_size, data_end);
   }
 
   new_fb->corrupted |= xd->corrupted;

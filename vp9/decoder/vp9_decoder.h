@@ -63,7 +63,7 @@ typedef struct VP9Decoder {
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi,
-                                size_t size, const uint8_t **dest,
+                                size_t size, const uint8_t *dest,
                                 int64_t time_stamp);
 
 int vp9_get_raw_frame(struct VP9Decoder *pbi,

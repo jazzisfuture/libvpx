@@ -220,10 +220,10 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
 }
 
 int vp9_receive_compressed_data(VP9Decoder *pbi,
-                                size_t size, const uint8_t **psource,
+                                size_t size, const uint8_t *psource,
                                 int64_t time_stamp) {
   VP9_COMMON *const cm = &pbi->common;
-  const uint8_t *source = *psource;
+  const uint8_t *source = psource;
   int retcode = 0;
 
   cm->error.error_code = VPX_CODEC_OK;
@@ -268,7 +268,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   cm->error.setjmp = 1;
 
-  retcode = vp9_decode_frame(pbi, source, source + size, psource);
+  retcode = vp9_decode_frame(pbi, source, source + size);
 
   if (retcode < 0) {
     cm->error.error_code = VPX_CODEC_ERROR;

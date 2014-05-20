@@ -241,7 +241,7 @@ static void init_decoder(vpx_codec_alg_priv_t *ctx) {
 }
 
 static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
-                                  const uint8_t **data, unsigned int data_sz,
+                                  const uint8_t *data, unsigned int data_sz,
                                   void *user_priv, int64_t deadline) {
   YV12_BUFFER_CONFIG sd = { 0 };
   int64_t time_stamp = 0, time_end_stamp = 0;
@@ -255,7 +255,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   // of the heap.
   if (!ctx->si.h) {
     const vpx_codec_err_t res =
-        decoder_peek_si_internal(*data, data_sz, &ctx->si, ctx->decrypt_cb,
+        decoder_peek_si_internal(data, data_sz, &ctx->si, ctx->decrypt_cb,
                                  ctx->decrypt_state);
     if (res != VPX_CODEC_OK)
       return res;
@@ -346,28 +346,6 @@ static void parse_superframe_index(const uint8_t *data, size_t data_sz,
   }
 }
 
-static vpx_codec_err_t decode_one_iter(vpx_codec_alg_priv_t *ctx,
-                                       const uint8_t **data_start_ptr,
-                                       const uint8_t *data_end,
-                                       uint32_t frame_size, void *user_priv,
-                                       long deadline) {
-  const vpx_codec_err_t res = decode_one(ctx, data_start_ptr, frame_size,
-                                         user_priv, deadline);
-  if (res != VPX_CODEC_OK)
-    return res;
-
-  // Account for suboptimal termination by the encoder.
-  while (*data_start_ptr < data_end) {
-    const uint8_t marker = read_marker(ctx->decrypt_cb, ctx->decrypt_state,
-                                       *data_start_ptr);
-    if (marker)
-      break;
-    (*data_start_ptr)++;
-  }
-
-  return VPX_CODEC_OK;
-}
-
 static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
                                       const uint8_t *data, unsigned int data_sz,
                                       void *user_priv, long deadline) {
@@ -394,19 +372,18 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
         return VPX_CODEC_CORRUPT_FRAME;
       }
 
-      res = decode_one_iter(ctx, &data_start, data_end, frame_size,
-                            user_priv, deadline);
+      res = decode_one(ctx, data_start, frame_size, user_priv, deadline);
       if (res != VPX_CODEC_OK)
         return res;
+
+      // Move on to next frame.
+      data_start += frame_size;
     }
   } else {
-    while (data_start < data_end) {
-      res = decode_one_iter(ctx, &data_start, data_end,
-                            (uint32_t)(data_end - data_start),
-                            user_priv, deadline);
-      if (res != VPX_CODEC_OK)
-        return res;
-    }
+    // There should be only one frame if it is not super frame.
+    res = decode_one(ctx, data_start, data_sz, user_priv, deadline);
+    if (res != VPX_CODEC_OK)
+      return res;
   }
 
   return VPX_CODEC_OK;
