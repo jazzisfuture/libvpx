@@ -154,9 +154,8 @@ typedef vpx_codec_err_t (*vpx_codec_get_si_fn_t)(vpx_codec_alg_priv_t    *ctx,
  * \retval #VPX_CODEC_OK
  *     The internal state data was deserialized.
  */
-typedef vpx_codec_err_t (*vpx_codec_control_fn_t)(vpx_codec_alg_priv_t  *ctx,
-                                                  int                  ctrl_id,
-                                                  va_list              ap);
+typedef vpx_codec_err_t (*vpx_codec_control_fn_t)(vpx_codec_alg_priv_t *ctx,
+                                                  va_list ap);
 
 /*!\brief control function pointer mapping
  *
@@ -430,8 +429,6 @@ struct vpx_codec_priv_enc_mr_cfg
   }
 
 #define CAST(id, arg) id##__value(arg)
-#define RECAST(id, x) id##__convert(x)
-
 
 /* CODEC_INTERFACE convenience macro
  *
