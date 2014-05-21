@@ -1317,9 +1317,9 @@ static struct vp9_read_bit_buffer* init_read_bit_buffer(
   return rb;
 }
 
-int vp9_decode_frame(VP9Decoder *pbi,
-                     const uint8_t *data, const uint8_t *data_end,
-                     const uint8_t **p_data_end) {
+void vp9_decode_frame(VP9Decoder *pbi,
+                      const uint8_t *data, const uint8_t *data_end,
+                      const uint8_t **p_data_end) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
   struct vp9_read_bit_buffer rb = { 0 };
@@ -1335,11 +1335,8 @@ int vp9_decode_frame(VP9Decoder *pbi,
   if (!first_partition_size) {
     // showing a frame directly
     *p_data_end = data + 1;
-    return 0;
+    return;
   }
-
-  if (!pbi->decoded_key_frame && !keyframe)
-    return -1;
 
   data += vp9_rb_bytes_read(&rb);
   if (!read_is_valid(data, first_partition_size, data_end))
@@ -1377,14 +1374,6 @@ int vp9_decode_frame(VP9Decoder *pbi,
 
   new_fb->corrupted |= xd->corrupted;
 
-  if (!pbi->decoded_key_frame) {
-    if (keyframe && !new_fb->corrupted)
-      pbi->decoded_key_frame = 1;
-    else
-      vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
-                         "A stream must start with a complete key frame");
-  }
-
   if (!new_fb->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
       vp9_adapt_coef_probs(cm);
@@ -1400,6 +1389,4 @@ int vp9_decode_frame(VP9Decoder *pbi,
 
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
-
-  return 0;
 }
