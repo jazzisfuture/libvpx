@@ -1007,7 +1007,7 @@ int vp8_estimate_entropy_savings(VP8_COMP *cpi)
     int new_intra, new_last, new_garf, oldtotal, newtotal;
     int ref_frame_cost[MAX_REF_FRAMES];
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     if (cpi->common.frame_type != KEY_FRAME)
     {
@@ -1081,7 +1081,7 @@ void vp8_update_coef_probs(VP8_COMP *cpi)
 #endif
     int savings = 0;
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     do
     {
@@ -1535,7 +1535,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest, unsigned char * dest
 
 #endif
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
     pack_coef_probs(cpi);

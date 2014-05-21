@@ -316,7 +316,7 @@ static void fillrd(struct postproc_state *state, int q, int a) {
   double sigma;
   int ai = a, qi = q, i;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   sigma = ai + .5 + .6 * (63 - qi) / 63.0;
 
@@ -400,7 +400,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
     return 0;
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
 #if CONFIG_VP9_POSTPROC || CONFIG_INTERNAL_STATS
   if (vp9_realloc_frame_buffer(&cm->post_proc_buffer, cm->width, cm->height,
