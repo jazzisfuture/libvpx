@@ -202,7 +202,7 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     // Rate target ratio to set q delta.
     const float rate_ratio_qdelta = 2.0;
     const double q = vp9_convert_qindex_to_q(cm->base_qindex);
-    vp9_clear_system_state();
+    vpx_clear_system_state();
     // Some of these parameters may be set via codec-control function later.
     cr->max_sbs_perframe = 10;
     cr->max_qdelta_perc = 50;

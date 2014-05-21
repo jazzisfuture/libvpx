@@ -740,7 +740,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   int i, orig_rdmult;
   double rdmult_ratio;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   rdmult_ratio = 1.0;  // avoid uninitialized warnings
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
@@ -795,7 +795,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
     rdmult_ratio = vp9_vaq_rdmult_ratio(energy);
     vp9_init_plane_quantizers(cpi, x);
-    vp9_clear_system_state();
+    vpx_clear_system_state();
     x->rdmult = (int)round(x->rdmult * rdmult_ratio);
   } else if (aq_mode == COMPLEXITY_AQ) {
     const int mi_offset = mi_row * cm->mi_cols + mi_col;
@@ -829,7 +829,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   x->rdmult = orig_rdmult;
 
   if (aq_mode == VARIANCE_AQ && *totalrate != INT_MAX) {
-    vp9_clear_system_state();
+    vpx_clear_system_state();
     *totalrate = (int)round(*totalrate * rdmult_ratio);
   }
 }

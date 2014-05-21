@@ -2484,7 +2484,7 @@ static uint64_t calc_plane_error(unsigned char *orig, int orig_stride,
         recon += recon_stride;
     }
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
     return total_sse;
 }
 
@@ -2937,7 +2937,7 @@ static int decide_key_frame(VP8_COMP *cpi)
         return 0;
 
     /* Clear down mmx registers */
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     if ((cpi->compressor_speed == 2) && (cpi->Speed >= 5) && (cpi->sf.RD == 0))
     {
@@ -3280,7 +3280,7 @@ void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
     {
         struct vpx_usec_timer timer;
 
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         vpx_usec_timer_start(&timer);
         if (cpi->sf.auto_filter == 0)
@@ -3350,7 +3350,7 @@ static void encode_frame_to_data_rate
 
 
     /* Clear down mmx registers to allow floating point in what follows */
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
 #if CONFIG_MULTITHREAD
     /*  wait for the last picture loopfilter thread done */
@@ -3660,7 +3660,7 @@ static void encode_frame_to_data_rate
      */
     if ( (cpi->pass == 2) || (cpi->ni_frames > 150))
     {
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         Q = cpi->active_worst_quality;
 
@@ -3900,7 +3900,7 @@ static void encode_frame_to_data_rate
 
     do
     {
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         vp8_set_quantizer(cpi, Q);
 
@@ -4032,7 +4032,7 @@ static void encode_frame_to_data_rate
         cpi->projected_frame_size -= vp8_estimate_entropy_savings(cpi);
         cpi->projected_frame_size = (cpi->projected_frame_size > 0) ? cpi->projected_frame_size : 0;
 #endif
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         /* Test to see if the stats generated for this frame indicate that
          * we should have coded a key frame (assuming that we didn't)!
@@ -4077,7 +4077,7 @@ static void encode_frame_to_data_rate
 #endif
         }
 
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         if (frame_over_shoot_limit == 0)
             frame_over_shoot_limit = 1;
@@ -4630,7 +4630,7 @@ static void encode_frame_to_data_rate
     {
         FILE *f = fopen("tmp.stt", "a");
 
-        vp8_clear_system_state();
+        vpx_clear_system_state();
 
         if (cpi->twopass.total_left_stats.coded_error != 0.0)
             fprintf(f, "%10d %10d %10d %10d %10d %10"PRId64" %10"PRId64
@@ -5088,7 +5088,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
     *size = 0;
 
     /* Clear down mmx registers */
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     cm->frame_type = INTER_FRAME;
     cm->frame_flags = *frame_flags;
@@ -5255,7 +5255,7 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags, unsigned l
                     double weight = 0;
 
                     vp8_deblock(cm, cm->frame_to_show, &cm->post_proc_buffer, cm->filter_level * 10 / 6, 1, 0);
-                    vp8_clear_system_state();
+                    vpx_clear_system_state();
 
                     ye = calc_plane_error(orig->y_buffer, orig->y_stride,
                       pp->y_buffer, pp->y_stride, orig->y_width, orig->y_height);
@@ -5406,7 +5406,7 @@ int vp8_get_preview_raw_frame(VP8_COMP *cpi, YV12_BUFFER_CONFIG *dest, vp8_ppfla
         }
 
 #endif
-        vp8_clear_system_state();
+        vpx_clear_system_state();
         return ret;
     }
 }

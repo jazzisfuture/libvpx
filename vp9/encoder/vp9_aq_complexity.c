@@ -23,7 +23,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
   struct segmentation *const seg = &cm->seg;
 
   // Make SURE use of floating point in this function is safe.
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   if (cm->frame_type == KEY_FRAME ||
       cpi->refresh_alt_ref_frame ||

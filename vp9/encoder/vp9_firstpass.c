@@ -508,7 +508,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
   const MV zero_mv = {0, 0};
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
     MV_REFERENCE_FRAME ref_frame = LAST_FRAME;
@@ -589,7 +589,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
       double error_weight = 1.0;
       const BLOCK_SIZE bsize = get_bsize(cm, mb_row, mb_col);
 
-      vp9_clear_system_state();
+      vpx_clear_system_state();
 
       xd->plane[0].dst.buf = new_yv12->y_buffer + recon_yoffset;
       xd->plane[1].dst.buf = new_yv12->u_buffer + recon_uvoffset;
@@ -616,7 +616,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
       this_error = vp9_get_mb_ss(x->plane[0].src_diff);
 
       if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-        vp9_clear_system_state();
+        vpx_clear_system_state();
         this_error = (int)(this_error * error_weight);
       }
 
@@ -653,7 +653,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
         first_pass_motion_search(cpi, x, &best_ref_mv.as_mv, &mv.as_mv,
                                  &motion_error);
         if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-          vp9_clear_system_state();
+          vpx_clear_system_state();
           motion_error = (int)(motion_error * error_weight);
         }
 
@@ -664,7 +664,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
           first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv.as_mv,
                                    &tmp_err);
           if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-            vp9_clear_system_state();
+            vpx_clear_system_state();
             tmp_err = (int)(tmp_err * error_weight);
           }
 
@@ -686,7 +686,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
           first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv.as_mv,
                                    &gf_motion_error);
           if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-            vp9_clear_system_state();
+            vpx_clear_system_state();
             gf_motion_error = (int)(gf_motion_error * error_weight);
           }
 
@@ -796,10 +796,10 @@ void vp9_first_pass(VP9_COMP *cpi) {
     x->plane[2].src.buf += uv_mb_height * x->plane[1].src.stride -
                            uv_mb_height * cm->mb_cols;
 
-    vp9_clear_system_state();
+    vpx_clear_system_state();
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   {
     FIRSTPASS_STATS fps;
 
@@ -1504,7 +1504,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int flash_detected;
   int active_max_gf_interval;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   vp9_zero(next_frame);
 
   twopass->gf_group_bits = 0;
@@ -2157,7 +2157,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     return;
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   if (is_spatial_svc && twopass->kf_intra_err_min == 0) {
     twopass->kf_intra_err_min = KF_MB_INTRA_MIN * cpi->common.MBs;

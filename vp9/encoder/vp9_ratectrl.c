@@ -313,7 +313,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
     return;
 
   // Clear down mmx registers to allow floating point in what follows
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   // Work out how big we would have expected the frame to be at this Q given
   // the current correction factor.
@@ -577,7 +577,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
       !rc->this_key_frame_forced  &&
       !(cm->current_video_frame == 0)) {
     int qdelta = 0;
-    vp9_clear_system_state();
+    vpx_clear_system_state();
     qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
                                         active_worst_quality, 2.0);
     *top_index = active_worst_quality + qdelta;
@@ -726,7 +726,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
   {
     int qdelta = 0;
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     // Limit Q range for the adaptive loop.
     if (cm->frame_type == KEY_FRAME &&
@@ -903,7 +903,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
   {
     int qdelta = 0;
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     // Limit Q range for the adaptive loop.
     if ((cm->frame_type == KEY_FRAME || vp9_is_upper_layer_key_frame(cpi)) &&

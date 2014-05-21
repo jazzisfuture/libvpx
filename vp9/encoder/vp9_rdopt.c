@@ -305,7 +305,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   RD_OPT *const rd = &cpi->rd;
   int i;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   rd->RDDIV = RDDIV_BITS;  // in bits (to multiply D by 128)
   rd->RDMULT = vp9_compute_rd_mult(cpi, cm->base_qindex + cm->y_dc_delta_q);

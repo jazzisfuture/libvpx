@@ -230,7 +230,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue)
     double capped_q = (Qvalue < 160) ? (double)Qvalue : 160.0;
     double rdconst = 2.80;
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     /* Further tests required to see if optimum is different
      * for key frames, golden frames and arf frames.

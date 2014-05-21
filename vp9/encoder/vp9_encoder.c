@@ -1050,7 +1050,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   if (cpi && (cpi->common.current_video_frame > 0)) {
 #if CONFIG_INTERNAL_STATS
 
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     // printf("\n8x8-4x4:%d-%d\n", cpi->t8x8_count, cpi->t4x4_count);
     if (cpi->pass != 1) {
@@ -1595,7 +1595,7 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   } else {
     struct vpx_usec_timer timer;
 
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     vpx_usec_timer_start(&timer);
 
@@ -1672,7 +1672,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
   int recon_err;
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
@@ -1728,7 +1728,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
 static void encode_without_recode_loop(VP9_COMP *cpi,
                                        int q) {
   VP9_COMMON *const cm = &cpi->common;
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   vp9_set_quantizer(cm, q);
   setup_frame(cpi);
   // Variance adaptive and in frame q adjustment experiments are mutually
@@ -1746,7 +1746,7 @@ static void encode_without_recode_loop(VP9_COMP *cpi,
   // Update the skip mb flag probabilities based on the distribution
   // seen in the last encoder iteration.
   // update_base_skip_probs(cpi);
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 }
 
 static void encode_with_recode_loop(VP9_COMP *cpi,
@@ -1771,7 +1771,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
                                    &frame_over_shoot_limit);
 
   do {
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     vp9_set_quantizer(cm, q);
 
@@ -1793,7 +1793,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     // seen in the last encoder iteration.
     // update_base_skip_probs(cpi);
 
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     // Dummy pack of the bitstream using up to date stats to get an
     // accurate estimate of output frame size to determine if we need
@@ -2033,7 +2033,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   vp9_scale_references(cpi);
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   // Enable or disable mode based tweaking of the zbin.
   // For 2 pass only used where GF/ARF prediction quality
@@ -2116,7 +2116,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     }
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   vp9_zero(cpi->rd.tx_select_threshes);
 
@@ -2604,8 +2604,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // start with a 0 size frame
   *size = 0;
 
-  // Clear down mmx registers
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   /* find a free buffer for the new frame, releasing the reference previously
    * held.
@@ -2728,7 +2727,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           vp9_deblock(cm->frame_to_show, &cm->post_proc_buffer,
                       cm->lf.filter_level * 10 / 6);
 #endif
-          vp9_clear_system_state();
+          vpx_clear_system_state();
 
           calc_psnr(orig, pp, &psnr2);
 
@@ -2800,7 +2799,7 @@ int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
       ret = -1;
     }
 #endif  // !CONFIG_VP9_POSTPROC
-    vp9_clear_system_state();
+    vpx_clear_system_state();
     return ret;
   }
 }
