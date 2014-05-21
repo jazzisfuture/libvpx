@@ -2991,11 +2991,6 @@ void vp9_rd_pick_intra_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   ctx->mic = *xd->mi[0];
 }
 
-static INLINE int rd_less_than_thresh(int64_t best_rd, int thresh,
-                                      int thresh_fact) {
-    return best_rd < ((int64_t)thresh * thresh_fact >> 5) || thresh == INT_MAX;
-}
-
 // Updating rd_thresh_freq_fact[] here means that the different
 // partition/block sizes are handled independently based on the best
 // choice for the current partition. It may well be better to keep a scaled

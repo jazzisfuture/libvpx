@@ -87,6 +87,11 @@ void vp9_set_rd_speed_thresholds(VP9_COMP *cpi);
 
 void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi);
 
+static INLINE int rd_less_than_thresh(int64_t best_rd, int thresh,
+                                      int thresh_fact) {
+    return best_rd < ((int64_t)thresh * thresh_fact >> 5) || thresh == INT_MAX;
+}
+
 static INLINE int full_pixel_search(VP9_COMP *cpi, MACROBLOCK *x,
                                     BLOCK_SIZE bsize, MV *mvp_full,
                                     int step_param, int error_per_bit,
