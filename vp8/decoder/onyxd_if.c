@@ -351,7 +351,7 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
         goto decode_exit;
     }
 
-    vp8_clear_system_state();
+    vpx_clear_system_state();
 
     if (cm->show_frame)
     {
@@ -386,7 +386,7 @@ int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
 
 decode_exit:
     pbi->common.error.setjmp = 0;
-    vp8_clear_system_state();
+    vpx_clear_system_state();
     return retcode;
 }
 int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd, int64_t *time_stamp, int64_t *time_end_stamp, vp8_ppflags_t *flags)
@@ -422,7 +422,7 @@ int vp8dx_get_raw_frame(VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd, int64_t *time_st
     }
 
 #endif /*!CONFIG_POSTPROC*/
-    vp8_clear_system_state();
+    vpx_clear_system_state();
     return ret;
 }
 

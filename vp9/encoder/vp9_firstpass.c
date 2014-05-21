@@ -431,7 +431,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   }
 #endif
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   set_first_pass_params(cpi);
   vp9_set_quantizer(cm, find_fp_qindex());
@@ -524,7 +524,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       const int mb_index = mb_row * cm->mb_cols + mb_col;
 #endif
 
-      vp9_clear_system_state();
+      vpx_clear_system_state();
 
       xd->plane[0].dst.buf = new_yv12->y_buffer + recon_yoffset;
       xd->plane[1].dst.buf = new_yv12->u_buffer + recon_uvoffset;
@@ -551,7 +551,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       this_error = vp9_get_mb_ss(x->plane[0].src_diff);
 
       if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-        vp9_clear_system_state();
+        vpx_clear_system_state();
         this_error = (int)(this_error * error_weight);
       }
 
@@ -589,7 +589,6 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
         xd->plane[0].pre[0].buf = first_ref_buf->y_buffer + recon_yoffset;
         motion_error = get_prediction_error(bsize, &x->plane[0].src,
                                             &xd->plane[0].pre[0]);
-
         // Compute the motion error of the 0,0 motion using the last source
         // frame as the reference. Skip the further motion search on
         // reconstructed frame if this error is small.
@@ -606,7 +605,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
           // starting point (best reference) for the search.
           first_pass_motion_search(cpi, x, &best_ref_mv, &mv, &motion_error);
           if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-            vp9_clear_system_state();
+            vpx_clear_system_state();
             motion_error = (int)(motion_error * error_weight);
           }
 
@@ -616,7 +615,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
             tmp_err = INT_MAX;
             first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv, &tmp_err);
             if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-              vp9_clear_system_state();
+              vpx_clear_system_state();
               tmp_err = (int)(tmp_err * error_weight);
             }
 
@@ -635,10 +634,11 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
             gf_motion_error = get_prediction_error(bsize, &x->plane[0].src,
                                                    &xd->plane[0].pre[0]);
 
+
             first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv,
                                      &gf_motion_error);
             if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
-              vp9_clear_system_state();
+              vpx_clear_system_state();
               gf_motion_error = (int)(gf_motion_error * error_weight);
             }
 
@@ -810,10 +810,10 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     x->plane[2].src.buf += uv_mb_height * x->plane[1].src.stride -
                            uv_mb_height * cm->mb_cols;
 
-    vp9_clear_system_state();
+    vpx_clear_system_state();
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   {
     FIRSTPASS_STATS fps;
 
@@ -1533,7 +1533,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     vp9_zero(twopass->gf_group);
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   vp9_zero(next_frame);
 
   // Load stats for the current frame.
@@ -2149,7 +2149,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     return;
   }
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   if (lc != NULL && twopass->kf_intra_err_min == 0) {
     twopass->kf_intra_err_min = KF_MB_INTRA_MIN * cpi->common.MBs;
