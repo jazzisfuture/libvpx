@@ -46,6 +46,12 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     if (pkt->kind != VPX_CODEC_CX_FRAME_PKT)
       return pkt;
 
+    // A superframe is a bunch of frames that bundled as one frame. It is mostly
+    // used to combine one or more non-displayable frames and one displayable frame.
+    // If a frame that passed to decoder_decode is not a superframe, there
+    // should be only one displayable frame in it. If a frame that passed to
+    // decoder_decode is a superframe, then superframe index should be presented
+    // with the frame. Then each frame's size could be retrieved from that.
     const uint8_t *buffer = reinterpret_cast<uint8_t*>(pkt->data.frame.buf);
     const uint8_t marker = buffer[pkt->data.frame.sz - 1];
     const int frames = (marker & 0x7) + 1;
@@ -54,19 +60,9 @@ class SuperframeTest : public ::libvpx_test::EncoderTest,
     if ((marker & 0xe0) == 0xc0 &&
         pkt->data.frame.sz >= index_sz &&
         buffer[pkt->data.frame.sz - index_sz] == marker) {
-      // frame is a superframe. strip off the index.
-      if (modified_buf_)
-        delete[] modified_buf_;
-      modified_buf_ = new uint8_t[pkt->data.frame.sz - index_sz];
-      memcpy(modified_buf_, pkt->data.frame.buf,
-             pkt->data.frame.sz - index_sz);
-      modified_pkt_ = *pkt;
-      modified_pkt_.data.frame.buf = modified_buf_;
-      modified_pkt_.data.frame.sz -= index_sz;
-
       sf_count_++;
       last_sf_pts_ = pkt->data.frame.pts;
-      return &modified_pkt_;
+      return pkt;
     }
 
     // Make sure we do a few frames after the last SF
