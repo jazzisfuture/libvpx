@@ -117,14 +117,9 @@ extern loop_filter_block_function *vp8_lf_mbhsimple;
 extern loop_filter_block_function *vp8_lf_bvsimple;
 extern loop_filter_block_function *vp8_lf_bhsimple;
 
-void vp8_clear_c(void)
-{
-}
-
 void vp8_machine_specific_config(void)
 {
     // Pure C:
-    vp8_clear_system_state                = vp8_clear_c;
     vp8_recon_b                          = vp8_recon_b_c;
     vp8_recon4b                         = vp8_recon4b_c;
     vp8_recon2b                         = vp8_recon2b_c;
