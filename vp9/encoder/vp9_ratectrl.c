@@ -213,6 +213,7 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->long_rolling_actual_bits = rc->avg_frame_bandwidth;
 
   rc->total_actual_bits = 0;
+  rc->total_target_bits = 0;
   rc->total_target_vs_actual = 0;
 
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
