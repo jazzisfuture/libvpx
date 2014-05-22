@@ -234,6 +234,9 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->rate_correction_factor = 1.0;
   rc->key_frame_rate_correction_factor = 1.0;
   rc->gf_rate_correction_factor = 1.0;
+
+  rc->total_target_bits = 0;
+  rc->total_actual_bits = 0;
 }
 
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
