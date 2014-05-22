@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+1: Minghai Shang <minghai@google.com>
+Submitted-by: Dmitry Kovalev <dkovalev@google.com>
+Submitted-at: Thu, 22 May 2014 12:09:48 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70225
+Project: webm/libvpx
+Branch: refs/heads/master
