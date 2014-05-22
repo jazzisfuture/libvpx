@@ -199,4 +199,5 @@ INSTANTIATE_TEST_CASE_P(
                    &vp9_idct8x8_12_add_ssse3,
                    TX_8X8, 12)));
 #endif
+
 }  // namespace
