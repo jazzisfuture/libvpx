@@ -319,13 +319,13 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->lag_in_frames = cfg->g_pass == VPX_RC_FIRST_PASS ? 0
                                                          : cfg->g_lag_in_frames;
 
-  oxcf->rc_mode = RC_MODE_VBR;
+  oxcf->rc_mode = VPX_VBR;
   if (cfg->rc_end_usage == VPX_CQ)
-    oxcf->rc_mode = RC_MODE_CONSTRAINED_QUALITY;
+    oxcf->rc_mode = VPX_CQ;
   else if (cfg->rc_end_usage == VPX_Q)
-    oxcf->rc_mode = RC_MODE_CONSTANT_QUALITY;
+    oxcf->rc_mode = VPX_Q;
   else if (cfg->rc_end_usage == VPX_CBR)
-    oxcf->rc_mode = RC_MODE_CBR;
+    oxcf->rc_mode = VPX_CBR;
 
   oxcf->target_bandwidth         = cfg->rc_target_bitrate;
   oxcf->rc_max_intra_bitrate_pct = extra_cfg->rc_max_intra_bitrate_pct;
