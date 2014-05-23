@@ -193,10 +193,19 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_SSSE3 && ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(
-    SSSE3, PartialIDctTest,
+    SSSE3_64, PartialIDctTest,
     ::testing::Values(
         make_tuple(&vp9_idct8x8_64_add_c,
                    &vp9_idct8x8_12_add_ssse3,
                    TX_8X8, 12)));
+#endif
+
+#if HAVE_SSSE3
+INSTANTIATE_TEST_CASE_P(
+    SSSE3, PartialIDctTest,
+    ::testing::Values(
+        make_tuple(&vp9_idct16x16_256_add_c,
+                   &vp9_idct16x16_10_add_ssse3,
+                   TX_16X16, 10)));
 #endif
 }  // namespace
