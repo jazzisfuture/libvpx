@@ -38,7 +38,6 @@ struct vpx_codec_alg_priv {
   vpx_decrypt_cb          decrypt_cb;
   void                   *decrypt_state;
   vpx_image_t             img;
-  int                     img_avail;
   int                     invert_tile_order;
 
   // External frame buffer info to save for VP9 common.
@@ -245,14 +244,10 @@ static void init_decoder(vpx_codec_alg_priv_t *ctx) {
 static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
                                   const uint8_t **data, unsigned int data_sz,
                                   void *user_priv, int64_t deadline) {
-  YV12_BUFFER_CONFIG sd;
-  vp9_ppflags_t flags = {0, 0, 0};
+  vp9_ppflags_t flags = {0};
   VP9_COMMON *cm = NULL;
 
   (void)deadline;
-
-  vp9_zero(sd);
-  ctx->img_avail = 0;
 
   // Determine the stream parameters. Note that we rely on peek_si to
   // validate that we have a buffer that does not wrap around the top
@@ -287,13 +282,6 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
 
   if (ctx->base.init_flags & VPX_CODEC_USE_POSTPROC)
     set_ppflags(ctx, &flags);
-
-  if (vp9_get_raw_frame(ctx->pbi, &sd, &flags))
-    return update_error_state(ctx, &cm->error);
-
-  yuvconfig2image(&ctx->img, &sd, user_priv);
-  ctx->img.fb_priv = cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
-  ctx->img_avail = 1;
 
   return VPX_CODEC_OK;
 }
@@ -423,15 +411,20 @@ static vpx_image_t *decoder_get_frame(vpx_codec_alg_priv_t *ctx,
                                       vpx_codec_iter_t *iter) {
   vpx_image_t *img = NULL;
 
-  if (ctx->img_avail) {
-    // iter acts as a flip flop, so an image is only returned on the first
-    // call to get_frame.
-    if (!(*iter)) {
+  // iter acts as a flip flop, so an image is only returned on the first
+  // call to get_frame.
+  if (*iter == NULL && ctx->pbi != NULL) {
+    YV12_BUFFER_CONFIG sd;
+    vp9_ppflags_t flags = {0, 0, 0};
+
+    if (vp9_get_raw_frame(ctx->pbi, &sd, &flags) == 0) {
+      VP9_COMMON *cm = &ctx->pbi->common;
+      yuvconfig2image(&ctx->img, &sd, NULL);
+      ctx->img.fb_priv = cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
       img = &ctx->img;
       *iter = img;
     }
   }
-  ctx->img_avail = 0;
 
   return img;
 }
@@ -455,7 +448,7 @@ static vpx_codec_err_t decoder_set_fb_fn(
 }
 
 static vpx_codec_err_t ctrl_set_reference(vpx_codec_alg_priv_t *ctx,
-                                          va_list args) {
+                                          int ctr_id, va_list args) {
   vpx_ref_frame_t *const data = va_arg(args, vpx_ref_frame_t *);
 
   if (data) {
@@ -471,7 +464,7 @@ static vpx_codec_err_t ctrl_set_reference(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t ctrl_copy_reference(vpx_codec_alg_priv_t *ctx,
-                                           va_list args) {
+                                           int ctr_id, va_list args) {
   vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
   if (data) {
@@ -488,7 +481,7 @@ static vpx_codec_err_t ctrl_copy_reference(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
-                                          va_list args) {
+                                          int ctr_id, va_list args) {
   vp9_ref_frame_t *data = va_arg(args, vp9_ref_frame_t *);
 
   if (data) {
@@ -503,7 +496,7 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t ctrl_set_postproc(vpx_codec_alg_priv_t *ctx,
-                                         va_list args) {
+                                         int ctr_id, va_list args) {
 #if CONFIG_VP9_POSTPROC
   vp8_postproc_cfg_t *data = va_arg(args, vp8_postproc_cfg_t *);
 
@@ -515,21 +508,17 @@ static vpx_codec_err_t ctrl_set_postproc(vpx_codec_alg_priv_t *ctx,
     return VPX_CODEC_INVALID_PARAM;
   }
 #else
-  (void)ctx;
-  (void)args;
   return VPX_CODEC_INCAPABLE;
 #endif
 }
 
 static vpx_codec_err_t ctrl_set_dbg_options(vpx_codec_alg_priv_t *ctx,
-                                            va_list args) {
-  (void)ctx;
-  (void)args;
+                                            int ctrl_id, va_list args) {
   return VPX_CODEC_INCAPABLE;
 }
 
 static vpx_codec_err_t ctrl_get_last_ref_updates(vpx_codec_alg_priv_t *ctx,
-                                                 va_list args) {
+                                                 int ctrl_id, va_list args) {
   int *const update_info = va_arg(args, int *);
 
   if (update_info) {
@@ -545,7 +534,7 @@ static vpx_codec_err_t ctrl_get_last_ref_updates(vpx_codec_alg_priv_t *ctx,
 
 
 static vpx_codec_err_t ctrl_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
-                                                va_list args) {
+                                                int ctrl_id, va_list args) {
   int *corrupted = va_arg(args, int *);
 
   if (corrupted) {
@@ -560,7 +549,7 @@ static vpx_codec_err_t ctrl_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t ctrl_get_display_size(vpx_codec_alg_priv_t *ctx,
-                                             va_list args) {
+                                             int ctrl_id, va_list args) {
   int *const display_size = va_arg(args, int *);
 
   if (display_size) {
@@ -578,12 +567,13 @@ static vpx_codec_err_t ctrl_get_display_size(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t ctrl_set_invert_tile_order(vpx_codec_alg_priv_t *ctx,
-                                                  va_list args) {
+                                                  int ctr_id, va_list args) {
   ctx->invert_tile_order = va_arg(args, int);
   return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t ctrl_set_decryptor(vpx_codec_alg_priv_t *ctx,
+                                          int ctrl_id,
                                           va_list args) {
   vpx_decrypt_init *init = va_arg(args, vpx_decrypt_init *);
   ctx->decrypt_cb = init ? init->decrypt_cb : NULL;
@@ -634,12 +624,11 @@ CODEC_INTERFACE(vpx_codec_vp9_dx) = {
     decoder_set_fb_fn,  // vpx_codec_set_fb_fn_t
   },
   { // NOLINT
-    NOT_IMPLEMENTED,  // vpx_codec_enc_cfg_map_t
-    NOT_IMPLEMENTED,  // vpx_codec_encode_fn_t
-    NOT_IMPLEMENTED,  // vpx_codec_get_cx_data_fn_t
-    NOT_IMPLEMENTED,  // vpx_codec_enc_config_set_fn_t
-    NOT_IMPLEMENTED,  // vpx_codec_get_global_headers_fn_t
-    NOT_IMPLEMENTED,  // vpx_codec_get_preview_frame_fn_t
-    NOT_IMPLEMENTED   // vpx_codec_enc_mr_get_mem_loc_fn_t
+    NOT_IMPLEMENTED,
+    NOT_IMPLEMENTED,
+    NOT_IMPLEMENTED,
+    NOT_IMPLEMENTED,
+    NOT_IMPLEMENTED,
+    NOT_IMPLEMENTED
   }
 };
