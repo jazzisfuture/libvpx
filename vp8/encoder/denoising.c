@@ -51,7 +51,7 @@ static const unsigned int SSE_THRESHOLD_HIGH = 16 * 16 * 60;
  * [8, 15]                4                                    5
  * [16, 255]              6                                    7
  */
-
+test
 int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
                           unsigned char *running_avg_y, int avg_y_stride,
                           unsigned char *sig, int sig_stride,
