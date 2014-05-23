@@ -41,6 +41,8 @@ typedef struct {
   double key_frame_rate_correction_factor;
   double gf_rate_correction_factor;
 
+  double framerate;
+
   int frames_since_golden;
   int frames_till_gf_update_due;
   int max_gf_interval;
