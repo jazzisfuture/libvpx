@@ -327,7 +327,8 @@ static vpx_codec_err_t set_encoder_config(
   else if (cfg->rc_end_usage == VPX_CBR)
     oxcf->rc_mode = RC_MODE_CBR;
 
-  oxcf->target_bandwidth         = cfg->rc_target_bitrate;
+  // Convert target bandwidth from Kbit/s to Bit/s
+  oxcf->target_bandwidth = 1000 * cfg->rc_target_bitrate;
   oxcf->rc_max_intra_bitrate_pct = extra_cfg->rc_max_intra_bitrate_pct;
 
   oxcf->best_allowed_q  = vp9_quantizer_to_qindex(cfg->rc_min_quantizer);
