@@ -154,8 +154,8 @@ static void update_layer_buffer_level(SVC *svc, int encoded_frame_size) {
       temporal_layer < svc->number_temporal_layers; ++temporal_layer) {
     LAYER_CONTEXT *lc = &svc->layer_context[temporal_layer];
     RATE_CONTROL *lrc = &lc->rc;
-    int bits_off_for_this_layer = (int)(lc->target_bandwidth / lc->framerate -
-        encoded_frame_size);
+    int bits_off_for_this_layer = (int)(lc->target_bandwidth / lrc->framerate -
+                                            encoded_frame_size);
     lrc->bits_off_target += bits_off_for_this_layer;
 
     // Clip buffer level to maximum buffer size for the layer.
@@ -1265,12 +1265,14 @@ static int calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
       ? INT_MAX : (int)(cpi->oxcf.starting_buffer_level / 2);
   } else {
     int kf_boost = 32;
-    double framerate = oxcf->framerate;
+    double framerate;
     if (svc->number_temporal_layers > 1 &&
         oxcf->rc_mode == RC_MODE_CBR) {
       // Use the layer framerate for temporal layers CBR mode.
       const LAYER_CONTEXT *lc = &svc->layer_context[svc->temporal_layer_id];
-      framerate = lc->framerate;
+      framerate = lc->rc.framerate;
+    } else {
+      framerate = rc->framerate;
     }
     kf_boost = MAX(kf_boost, (int)(2 * framerate - 16));
     if (rc->frames_since_key <  framerate / 2) {
@@ -1396,7 +1398,7 @@ void vp9_rc_update_framerate(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   int vbr_max_bits;
 
-  rc->avg_frame_bandwidth = (int)(oxcf->target_bandwidth / oxcf->framerate);
+  rc->avg_frame_bandwidth = (int)(oxcf->target_bandwidth / rc->framerate);
   rc->min_frame_bandwidth = (int)(rc->avg_frame_bandwidth *
                                 oxcf->two_pass_vbrmin_section / 100);
 

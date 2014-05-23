@@ -25,7 +25,6 @@ typedef struct {
   int64_t starting_buffer_level;
   int64_t optimal_buffer_level;
   int64_t maximum_buffer_size;
-  double framerate;
   int avg_frame_size;
   TWO_PASS twopass;
   struct vpx_fixed_buf rc_twopass_stats_in;
