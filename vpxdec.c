@@ -127,6 +127,7 @@ static const arg_def_t *vp8_pp_args[] = {
 #endif
 
 static int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
+<<<<<<< HEAD   (edd1fa Rename test-high-internal to test-16bit-internal)
                            FilterMode mode) {
 #if CONFIG_VP9_HIGH
   if (src->fmt == VPX_IMG_FMT_I42016) {
@@ -148,6 +149,9 @@ static int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                        mode);
   }
 #endif
+=======
+                           FilterModeEnum mode) {
+>>>>>>> BRANCH (9e7b09 SSSE3 8x8 inverse 2D-DCT with first 10 coeffs non-zero)
   assert(src->fmt == VPX_IMG_FMT_I420);
   assert(dst->fmt == VPX_IMG_FMT_I420);
   return I420Scale(src->planes[VPX_PLANE_Y], src->stride[VPX_PLANE_Y],
