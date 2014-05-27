@@ -698,6 +698,9 @@ specialize qw/vp9_mse16x8/;
 add_proto qw/unsigned int vp9_mse8x8/, "const uint8_t *src_ptr, int  source_stride, const uint8_t *ref_ptr, int  recon_stride, unsigned int *sse";
 specialize qw/vp9_mse8x8/;
 
+add_proto qw/void vp9_get16x16var/, "const uint8_t *src_ptr, int  source_stride, const uint8_t *ref_ptr, int  recon_stride, unsigned int *sse, int *sum";
+specialize qw/vp9_get16x16var sse2 avx2/;
+
 add_proto qw/unsigned int vp9_get_mb_ss/, "const int16_t *";
 specialize qw/vp9_get_mb_ss mmx sse2/;
 # ENCODEMB INVOKE

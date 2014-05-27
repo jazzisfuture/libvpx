@@ -82,9 +82,9 @@ static void get_sse_sum_8x8(const uint8_t *src, int src_stride,
   variance(src, src_stride, ref, ref_stride, 8, 8, sse, sum);
 }
 
-static void get_sse_sum_16x16(const uint8_t *src, int src_stride,
-                              const uint8_t *ref, int ref_stride,
-                              unsigned int *sse, int *sum) {
+void vp9_get16x16var_c(const uint8_t *src, int src_stride,
+                       const uint8_t *ref, int ref_stride,
+                       unsigned int *sse, int *sum) {
   variance(src, src_stride, ref, ref_stride, 16, 16, sse, sum);
 }
 
@@ -1226,9 +1226,9 @@ static void set_source_var_based_partition(VP9_COMP *cpi,
         int b_offset = b_mi_row * MI_SIZE * src_stride +
                        b_mi_col * MI_SIZE;
 
-        get_sse_sum_16x16(src + b_offset, src_stride,
-                          pre_src + b_offset, pre_stride,
-                          &d16[j].sse, &d16[j].sum);
+        vp9_get16x16var(src + b_offset, src_stride,
+                        pre_src + b_offset, pre_stride,
+                        &d16[j].sse, &d16[j].sum);
 
         d16[j].var = d16[j].sse -
             (((uint32_t)d16[j].sum * d16[j].sum) >> 8);
