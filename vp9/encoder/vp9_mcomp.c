@@ -92,11 +92,11 @@ static int mv_err_cost(const MV *mv, const MV *ref,
 
 static int mvsad_err_cost(const MACROBLOCK *x, const MV *mv, const MV *ref,
                           int error_per_bit) {
-  if (x->nmvsadcost) {
+  if (x->mv_sad_costs.cost) {
     const MV diff = { mv->row - ref->row,
                       mv->col - ref->col };
-    return ROUND_POWER_OF_TWO(mv_cost(&diff, x->nmvjointsadcost,
-                                      x->nmvsadcost) * error_per_bit, 8);
+    return ROUND_POWER_OF_TWO(mv_cost(&diff, x->mv_sad_costs.joint,
+                                      x->mv_sad_costs.cost) * error_per_bit, 8);
   }
   return 0;
 }
@@ -702,8 +702,8 @@ int vp9_get_mvpred_var(const MACROBLOCK *x,
 
   return vfp->vf(what->buf, what->stride,
                  get_buf_from_mv(in_what, best_mv), in_what->stride, &unused) +
-      (use_mvcost ?  mv_err_cost(&mv, center_mv, x->nmvjointcost,
-                                 x->mvcost, x->errorperbit) : 0);
+      (use_mvcost ?  mv_err_cost(&mv, center_mv, x->mv_costs.joint,
+                                 x->mv_costs.cost, x->errorperbit) : 0);
 }
 
 int vp9_get_mvpred_av_var(const MACROBLOCK *x,
@@ -719,8 +719,8 @@ int vp9_get_mvpred_av_var(const MACROBLOCK *x,
 
   return vfp->svaf(get_buf_from_mv(in_what, best_mv), in_what->stride, 0, 0,
                    what->buf, what->stride, &unused, second_pred) +
-      (use_mvcost ?  mv_err_cost(&mv, center_mv, x->nmvjointcost,
-                                 x->mvcost, x->errorperbit) : 0);
+      (use_mvcost ?  mv_err_cost(&mv, center_mv, x->mv_costs.joint,
+                                 x->mv_costs.cost, x->errorperbit) : 0);
 }
 
 int vp9_hex_search(const MACROBLOCK *x,

@@ -329,9 +329,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
     fill_mode_costs(cpi);
 
     if (!frame_is_intra_only(cm)) {
-      vp9_build_nmv_cost_table(x->nmvjointcost,
-                               cm->allow_high_precision_mv ? x->nmvcost_hp
-                                                           : x->nmvcost,
+      vp9_build_nmv_cost_table(x->mv_costs.joint, x->mv_costs.cost,
                                &cm->fc.nmvc, cm->allow_high_precision_mv);
 
       for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
@@ -1891,7 +1889,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                          x->errorperbit, &cpi->fn_ptr[bsize],
                                          cpi->sf.subpel_force_stop,
                                          cpi->sf.subpel_iters_per_step,
-                                         x->nmvjointcost, x->mvcost,
+                                         x->mv_costs.joint, x->mv_costs.cost,
                                          &distortion,
                                          &x->pred_sse[mbmi->ref_frame[0]]);
 
@@ -1933,7 +1931,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
         bsi->rdstat[i][mode_idx].brate =
             set_and_cost_bmi_mvs(cpi, xd, i, this_mode, mode_mv[this_mode],
                                  frame_mv, seg_mvs[i], bsi->ref_mv,
-                                 x->nmvjointcost, x->mvcost);
+                                 x->mv_costs.joint, x->mv_costs.cost);
 
         for (ref = 0; ref < 1 + has_second_rf; ++ref) {
           bsi->rdstat[i][mode_idx].mvs[ref].as_int =
@@ -2030,8 +2028,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vpx_memcpy(t_left, bsi->rdstat[i][mode_idx].tl, sizeof(t_left));
 
       set_and_cost_bmi_mvs(cpi, xd, i, mode_selected, mode_mv[mode_selected],
-                           frame_mv, seg_mvs[i], bsi->ref_mv, x->nmvjointcost,
-                           x->mvcost);
+                           frame_mv, seg_mvs[i], bsi->ref_mv,
+                           x->mv_costs.joint, x->mv_costs.cost);
 
       br += bsi->rdstat[i][mode_idx].brate;
       bd += bsi->rdstat[i][mode_idx].bdist;
@@ -2411,11 +2409,12 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  &cpi->fn_ptr[bsize],
                                  cpi->sf.subpel_force_stop,
                                  cpi->sf.subpel_iters_per_step,
-                                 x->nmvjointcost, x->mvcost,
+                                 x->mv_costs.joint, x->mv_costs.cost,
                                  &dis, &x->pred_sse[ref]);
   }
   *rate_mv = vp9_mv_bit_cost(&tmp_mv->as_mv, &ref_mv,
-                             x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                             x->mv_costs.joint, x->mv_costs.cost,
+                             MV_COST_WEIGHT);
 
   if (cpi->sf.adaptive_motion_search && cm->show_frame)
     x->pred_mv[ref] = tmp_mv->as_mv;
@@ -2535,7 +2534,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
           x->errorperbit,
           &cpi->fn_ptr[bsize],
           0, cpi->sf.subpel_iters_per_step,
-          x->nmvjointcost, x->mvcost,
+          x->mv_costs.joint, x->mv_costs.cost,
           &dis, &sse, second_pred,
           pw, ph);
     }
@@ -2563,7 +2562,8 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
     *rate_mv += vp9_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
                                 &mbmi->ref_mvs[refs[ref]][0].as_mv,
-                                x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                                x->mv_costs.joint,
+                                x->mv_costs.cost, MV_COST_WEIGHT);
   }
 
   vpx_free(second_pred);
@@ -2634,10 +2634,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       } else {
         rate_mv  = vp9_mv_bit_cost(&frame_mv[refs[0]].as_mv,
                                    &mbmi->ref_mvs[refs[0]][0].as_mv,
-                                   x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                                   x->mv_costs.joint,
+                                   x->mv_costs.cost, MV_COST_WEIGHT);
         rate_mv += vp9_mv_bit_cost(&frame_mv[refs[1]].as_mv,
                                    &mbmi->ref_mvs[refs[1]][0].as_mv,
-                                   x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                                   x->mv_costs.joint,
+                                   x->mv_costs.cost, MV_COST_WEIGHT);
       }
       *rate2 += rate_mv;
     } else {
