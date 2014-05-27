@@ -33,7 +33,9 @@
 #include "./md5_utils.h"
 
 #include "./tools_common.h"
+#if CONFIG_WEBM_IO
 #include "./webmdec.h"
+#endif
 #include "./y4menc.h"
 
 static const char *exec_name;
@@ -610,9 +612,11 @@ int main_loop(int argc, const char **argv_) {
 
   struct VpxDecInputContext input = {0};
   struct VpxInputContext vpx_input_ctx = {0};
+#if CONFIG_WEBM_IO
   struct WebmInputContext webm_ctx = {0};
-  input.vpx_input_ctx = &vpx_input_ctx;
   input.webm_ctx = &webm_ctx;
+#endif
+  input.vpx_input_ctx = &vpx_input_ctx;
 
   /* Parse command line */
   exec_name = argv_[0];
@@ -967,8 +971,16 @@ int main_loop(int argc, const char **argv_) {
         }
 
         if (img->d_w != scaled_img->d_w || img->d_h != scaled_img->d_h) {
+#if CONFIG_LIBYUV
           vpx_image_scale(img, scaled_img, kFilterBox);
           img = scaled_img;
+#else
+          fprintf(stderr, "Failed  to scale output frame: %s.\n"
+                  "Scaling is disabled in this configuration. "
+                  "To enable scaling, configure with --enable-libyuv\n",
+                  vpx_codec_error(&decoder));
+          return EXIT_FAILURE;
+#endif
         }
       }
 #if CONFIG_VP9_HIGH

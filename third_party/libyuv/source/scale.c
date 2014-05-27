@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (efd115 Merge commit '9e7b09bc' into highbitdepth)
 /*
  *  Copyright (c) 2011 The LibYuv project authors. All Rights Reserved.
  *
@@ -4363,3 +4364,5 @@ int I42016Scale(const uint16* src_y, int src_stride_y,
 }  // extern "C"
 }  // namespace libyuv
 #endif
+=======
+>>>>>>> BRANCH (debd04 Merge "Further first pass allocation changes.")
