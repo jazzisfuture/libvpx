@@ -9,6 +9,11 @@
  */
 
 #include <assert.h>
+#if defined(_MSC_VER) && _MSC_VER <= 1500
+// Need to include math.h before calling emmintrin.h in certain
+// versions of MSVS.
+#include <math.h>
+#endif
 #include <emmintrin.h>  // SSE2
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
