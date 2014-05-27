@@ -40,6 +40,10 @@ static INLINE void clamp_mv(MV *mv, int min_col, int max_col,
   mv->row = clamp(mv->row, min_row, max_row);
 }
 
+static INLINE int is_zero_mv(const MV *mv) {
+  return mv->row == 0 && mv->col == 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

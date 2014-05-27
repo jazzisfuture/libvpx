@@ -2088,52 +2088,41 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
 static void mv_pred(VP9_COMP *cpi, MACROBLOCK *x,
                     uint8_t *ref_y_buffer, int ref_y_stride,
                     int ref_frame, BLOCK_SIZE block_size ) {
-  MACROBLOCKD *xd = &x->e_mbd;
-  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
-  int_mv this_mv;
+  const MACROBLOCKD *const xd = &x->e_mbd;
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const struct buf_2d *src = &x->plane[0].src;
+  const int num_mv_refs = MAX_MV_REF_CANDIDATES +
+                          (cpi->sf.adaptive_motion_search &&
+                           cpi->common.show_frame &&
+                           block_size < cpi->sf.max_partition_size);
   int i;
   int zero_seen = 0;
+  int max_mv = 0;
   int best_index = 0;
   int best_sad = INT_MAX;
-  int this_sad = INT_MAX;
-  int max_mv = 0;
-
-  uint8_t *src_y_ptr = x->plane[0].src.buf;
-  uint8_t *ref_y_ptr;
-  int row_offset, col_offset;
-  int num_mv_refs = MAX_MV_REF_CANDIDATES +
-                    (cpi->sf.adaptive_motion_search &&
-                     cpi->common.show_frame &&
-                     block_size < cpi->sf.max_partition_size);
-
   MV pred_mv[3];
   pred_mv[0] = mbmi->ref_mvs[ref_frame][0].as_mv;
   pred_mv[1] = mbmi->ref_mvs[ref_frame][1].as_mv;
   pred_mv[2] = x->pred_mv[ref_frame];
 
-  // Get the sad for each candidate reference mv
-  for (i = 0; i < num_mv_refs; i++) {
-    this_mv.as_mv = pred_mv[i];
+  // Get the sad for each candidate reference mv.
+  for (i = 0; i < num_mv_refs; ++i) {
+    const MV mv = {pred_mv[i].row >> 3, pred_mv[i].col >> 3};
+    const int is_zero = is_zero_mv(&mv);
+    const uint8_t *ref_y_ptr = NULL;
+    int sad;
 
-    max_mv = MAX(max_mv,
-                 MAX(abs(this_mv.as_mv.row), abs(this_mv.as_mv.col)) >> 3);
-    // only need to check zero mv once
-    if (!this_mv.as_int && zero_seen)
+    max_mv = MAX(max_mv, MAX(abs(mv.row), abs(mv.col)));
+    // Only need to check zero mv once.
+    if (is_zero && zero_seen)
       continue;
 
-    zero_seen = zero_seen || !this_mv.as_int;
-
-    row_offset = this_mv.as_mv.row >> 3;
-    col_offset = this_mv.as_mv.col >> 3;
-    ref_y_ptr = ref_y_buffer + (ref_y_stride * row_offset) + col_offset;
-
-    // Find sad for current vector.
-    this_sad = cpi->fn_ptr[block_size].sdf(src_y_ptr, x->plane[0].src.stride,
-                                           ref_y_ptr, ref_y_stride);
-
-    // Note if it is the best so far.
-    if (this_sad < best_sad) {
-      best_sad = this_sad;
+    zero_seen |= is_zero;
+    ref_y_ptr = &ref_y_buffer[ref_y_stride * mv.row + mv.col];
+    sad = cpi->fn_ptr[block_size].sdf(src->buf, src->stride,
+                                      ref_y_ptr, ref_y_stride);
+    if (sad < best_sad) {
+      best_sad = sad;
       best_index = i;
     }
   }
