@@ -107,11 +107,11 @@ static void set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv) {
   MACROBLOCK *const mb = &cpi->mb;
   cpi->common.allow_high_precision_mv = allow_high_precision_mv;
   if (cpi->common.allow_high_precision_mv) {
-    mb->mvcost = mb->nmvcost_hp;
-    mb->mvsadcost = mb->nmvsadcost_hp;
+    mb->mv_costs.cost = mb->mv_costs.comp_hp;
+    mb->mv_sad_costs.cost = mb->mv_sad_costs.comp_hp;
   } else {
-    mb->mvcost = mb->nmvcost;
-    mb->mvsadcost = mb->nmvsadcost;
+    mb->mv_costs.cost = mb->mv_costs.comp;
+    mb->mv_sad_costs.cost = mb->mv_sad_costs.comp;
   }
 }
 
@@ -205,9 +205,9 @@ static void save_coding_context(VP9_COMP *cpi) {
   // restored with a call to vp9_restore_coding_context. These functions are
   // intended for use in a re-code loop in vp9_compress_frame where the
   // quantizer value is adjusted between loop iterations.
-  vp9_copy(cc->nmvjointcost,  cpi->mb.nmvjointcost);
-  vp9_copy(cc->nmvcosts,  cpi->mb.nmvcosts);
-  vp9_copy(cc->nmvcosts_hp,  cpi->mb.nmvcosts_hp);
+  vp9_copy(cc->nmvjointcost,  cpi->mb.mv_costs.joint);
+  vp9_copy(cc->nmvcosts,  cpi->mb.mv_costs.comps);
+  vp9_copy(cc->nmvcosts_hp,  cpi->mb.mv_costs.comps_hp);
 
   vp9_copy(cc->segment_pred_probs, cm->seg.pred_probs);
 
@@ -226,9 +226,9 @@ static void restore_coding_context(VP9_COMP *cpi) {
 
   // Restore key state variables to the snapshot state stored in the
   // previous call to vp9_save_coding_context.
-  vp9_copy(cpi->mb.nmvjointcost, cc->nmvjointcost);
-  vp9_copy(cpi->mb.nmvcosts, cc->nmvcosts);
-  vp9_copy(cpi->mb.nmvcosts_hp, cc->nmvcosts_hp);
+  vp9_copy(cpi->mb.mv_costs.joint, cc->nmvjointcost);
+  vp9_copy(cpi->mb.mv_costs.comps, cc->nmvcosts);
+  vp9_copy(cpi->mb.mv_costs.comps_hp, cc->nmvcosts_hp);
 
   vp9_copy(cm->seg.pred_probs, cc->segment_pred_probs);
 
@@ -862,18 +862,18 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cpi->first_time_stamp_ever = INT64_MAX;
 
-  cal_nmvjointsadcost(cpi->mb.nmvjointsadcost);
-  cpi->mb.nmvcost[0] = &cpi->mb.nmvcosts[0][MV_MAX];
-  cpi->mb.nmvcost[1] = &cpi->mb.nmvcosts[1][MV_MAX];
-  cpi->mb.nmvsadcost[0] = &cpi->mb.nmvsadcosts[0][MV_MAX];
-  cpi->mb.nmvsadcost[1] = &cpi->mb.nmvsadcosts[1][MV_MAX];
-  cal_nmvsadcosts(cpi->mb.nmvsadcost);
+  cpi->mb.mv_costs.comp[0] = &cpi->mb.mv_costs.comps[0][MV_MAX];
+  cpi->mb.mv_costs.comp[1] = &cpi->mb.mv_costs.comps[1][MV_MAX];
+  cpi->mb.mv_costs.comp_hp[0] = &cpi->mb.mv_costs.comps_hp[0][MV_MAX];
+  cpi->mb.mv_costs.comp_hp[1] = &cpi->mb.mv_costs.comps_hp[1][MV_MAX];
 
-  cpi->mb.nmvcost_hp[0] = &cpi->mb.nmvcosts_hp[0][MV_MAX];
-  cpi->mb.nmvcost_hp[1] = &cpi->mb.nmvcosts_hp[1][MV_MAX];
-  cpi->mb.nmvsadcost_hp[0] = &cpi->mb.nmvsadcosts_hp[0][MV_MAX];
-  cpi->mb.nmvsadcost_hp[1] = &cpi->mb.nmvsadcosts_hp[1][MV_MAX];
-  cal_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
+  cpi->mb.mv_sad_costs.comp[0] = &cpi->mb.mv_sad_costs.comps[0][MV_MAX];
+  cpi->mb.mv_sad_costs.comp[1] = &cpi->mb.mv_sad_costs.comps[1][MV_MAX];
+  cpi->mb.mv_sad_costs.comp_hp[0] = &cpi->mb.mv_sad_costs.comps_hp[0][MV_MAX];
+  cpi->mb.mv_sad_costs.comp_hp[1] = &cpi->mb.mv_sad_costs.comps_hp[1][MV_MAX];
+  cal_nmvjointsadcost(cpi->mb.mv_sad_costs.joint);
+  cal_nmvsadcosts(cpi->mb.mv_sad_costs.comp);
+  cal_nmvsadcosts_hp(cpi->mb.mv_sad_costs.comp_hp);
 
 #ifdef OUTPUT_YUV_SRC
   yuv_file = fopen("bd.yuv", "ab");

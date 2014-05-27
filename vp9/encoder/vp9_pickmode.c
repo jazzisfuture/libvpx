@@ -102,7 +102,8 @@ static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   mvp_full.row = tmp_mv->as_mv.row * 8;
   mvp_full.col = tmp_mv->as_mv.col * 8;
   *rate_mv = vp9_mv_bit_cost(&mvp_full, &ref_mv,
-                             x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+                             x->mv_costs.joint,
+                             x->mv_costs.cost, MV_COST_WEIGHT);
 }
 
 static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
@@ -134,7 +135,7 @@ static void sub_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                &cpi->fn_ptr[bsize],
                                cpi->sf.subpel_force_stop,
                                cpi->sf.subpel_iters_per_step,
-                               x->nmvjointcost, x->mvcost,
+                               x->mv_costs.joint, x->mv_costs.cost,
                                &dis, &x->pred_sse[ref]);
 
   if (scaled_ref_frame) {

@@ -42,6 +42,15 @@ struct macroblock_plane {
 typedef unsigned int vp9_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [COEFF_CONTEXTS][ENTROPY_TOKENS];
 
+typedef struct MVCosts {
+  int joint[MV_JOINTS];
+  int comps[2][MV_VALS];
+  int *comp[2];
+  int comps_hp[2][MV_VALS];
+  int *comp_hp[2];
+  int **cost;
+} MVCosts;
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
@@ -66,19 +75,8 @@ struct macroblock {
   unsigned int pred_sse[MAX_REF_FRAMES];
   int pred_mv_sad[MAX_REF_FRAMES];
 
-  int nmvjointcost[MV_JOINTS];
-  int nmvcosts[2][MV_VALS];
-  int *nmvcost[2];
-  int nmvcosts_hp[2][MV_VALS];
-  int *nmvcost_hp[2];
-  int **mvcost;
-
-  int nmvjointsadcost[MV_JOINTS];
-  int nmvsadcosts[2][MV_VALS];
-  int *nmvsadcost[2];
-  int nmvsadcosts_hp[2][MV_VALS];
-  int *nmvsadcost_hp[2];
-  int **mvsadcost;
+  MVCosts mv_costs;
+  MVCosts mv_sad_costs;
 
   // These define limits to motion vector components to prevent them
   // from extending outside the UMV borders
