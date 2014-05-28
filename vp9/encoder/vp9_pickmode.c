@@ -33,7 +33,6 @@ static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
   struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0, 0}};
   int step_param;
-  int sadpb = x->sadperbit16;
   MV mvp_full;
   int ref = mbmi->ref_frame[0];
   const MV ref_mv = mbmi->ref_mvs[ref][0].as_mv;
@@ -84,8 +83,8 @@ static void full_pixel_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   mvp_full.col >>= 3;
   mvp_full.row >>= 3;
 
-  full_pixel_search(cpi, x, bsize, &mvp_full, step_param, sadpb, &ref_mv,
-                    &tmp_mv->as_mv, INT_MAX, 0);
+  full_pixel_search(cpi, x, bsize, &mvp_full, step_param, cpi->sadperbit16,
+                    &ref_mv, &tmp_mv->as_mv, INT_MAX, 0);
 
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;

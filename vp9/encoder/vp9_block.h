@@ -54,8 +54,6 @@ struct macroblock {
   int q_index;
 
   int errorperbit;
-  int sadperbit16;
-  int sadperbit4;
   int rddiv;
   int rdmult;
   unsigned int mb_energy;

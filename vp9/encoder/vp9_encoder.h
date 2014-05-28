@@ -502,11 +502,14 @@ typedef struct VP9_COMP {
   int intra_uv_mode_cost[FRAME_TYPES][INTRA_MODES];
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
+  int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
 
   PICK_MODE_CONTEXT *leaf_tree;
   PC_TREE *pc_tree;
   PC_TREE *pc_root;
-  int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
+
+  int sadperbit16;
+  int sadperbit4;
 
 #if CONFIG_MULTIPLE_ARF
   // ARF tracking variables.

@@ -137,10 +137,9 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
                                               uint8_t *arf_frame_buf,
                                               uint8_t *frame_ptr_buf,
                                               int stride) {
-  MACROBLOCK *x = &cpi->mb;
-  MACROBLOCKD* const xd = &x->e_mbd;
+  MACROBLOCK *const x = &cpi->mb;
+  MACROBLOCKD *const xd = &x->e_mbd;
   int step_param;
-  int sadpb = x->sadperbit16;
   int bestsme = INT_MAX;
   int distortion;
   unsigned int sse;
@@ -166,7 +165,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   step_param = MIN(step_param, cpi->sf.max_step_search_steps - 2);
 
   // Ignore mv costing by sending NULL pointer instead of cost arrays
-  vp9_hex_search(x, &best_ref_mv1_full, step_param, sadpb, 1,
+  vp9_hex_search(x, &best_ref_mv1_full, step_param, cpi->sadperbit16, 1,
                  &cpi->fn_ptr[BLOCK_16X16], 0, &best_ref_mv1, ref_mv);
 
   // Ignore mv costing by sending NULL pointer instead of cost array

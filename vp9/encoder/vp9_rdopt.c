@@ -236,8 +236,8 @@ static int compute_rd_thresh_factor(int qindex) {
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
-  cpi->mb.sadperbit16 = sad_per_bit16lut[qindex];
-  cpi->mb.sadperbit4 = sad_per_bit4lut[qindex];
+  cpi->sadperbit16 = sad_per_bit16lut[qindex];
+  cpi->sadperbit4 = sad_per_bit4lut[qindex];
 }
 
 static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
@@ -1812,7 +1812,6 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
           MV *const new_mv = &mode_mv[NEWMV][0].as_mv;
           int step_param = 0;
           int thissme, bestsme = INT_MAX;
-          int sadpb = x->sadperbit4;
           MV mvp_full;
           int max_mv;
 
@@ -1859,8 +1858,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
           vp9_set_mv_search_range(x, &bsi->ref_mv[0]->as_mv);
 
           bestsme = full_pixel_search(cpi, x, bsize, &mvp_full, step_param,
-                                      sadpb, &bsi->ref_mv[0]->as_mv, new_mv,
-                                      INT_MAX, 1);
+                                      cpi->sadperbit4, &bsi->ref_mv[0]->as_mv,
+                                      new_mv, INT_MAX, 1);
 
           // Should we do a full search (best quality only)
           if (is_best_mode(cpi->oxcf.mode)) {
@@ -1868,8 +1867,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
             /* Check if mvp_full is within the range. */
             clamp_mv(&mvp_full, x->mv_col_min, x->mv_col_max,
                      x->mv_row_min, x->mv_row_max);
-            thissme = cpi->full_search_sad(x, &mvp_full,
-                                           sadpb, 16, &cpi->fn_ptr[bsize],
+            thissme = cpi->full_search_sad(x, &mvp_full, cpi->sadperbit4, 16,
+                                           &cpi->fn_ptr[bsize],
                                            &bsi->ref_mv[0]->as_mv,
                                            &best_mv->as_mv);
             if (thissme < bestsme) {
@@ -2313,7 +2312,6 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   struct buf_2d backup_yv12[MAX_MB_PLANE] = {{0, 0}};
   int bestsme = INT_MAX;
   int step_param;
-  int sadpb = x->sadperbit16;
   MV mvp_full;
   int ref = mbmi->ref_frame[0];
   MV ref_mv = mbmi->ref_mvs[ref][0].as_mv;
@@ -2393,7 +2391,8 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   mvp_full.col >>= 3;
   mvp_full.row >>= 3;
 
-  bestsme = full_pixel_search(cpi, x, bsize, &mvp_full, step_param, sadpb,
+  bestsme = full_pixel_search(cpi, x, bsize, &mvp_full, step_param,
+                              cpi->sadperbit16,
                               &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
 
   x->mv_col_min = tmp_col_min;
@@ -2474,7 +2473,6 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   for (ite = 0; ite < 4; ite++) {
     struct buf_2d ref_yv12[2];
     int bestsme = INT_MAX;
-    int sadpb = x->sadperbit16;
     MV tmp_mv;
     int search_range = 3;
 
@@ -2510,7 +2508,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     tmp_mv.row >>= 3;
 
     // Small-range full-pixel motion search
-    bestsme = vp9_refining_search_8p_c(x, &tmp_mv, sadpb,
+    bestsme = vp9_refining_search_8p_c(x, &tmp_mv, cpi->sadperbit16,
                                        search_range,
                                        &cpi->fn_ptr[bsize],
                                        &ref_mv[id].as_mv, second_pred);
