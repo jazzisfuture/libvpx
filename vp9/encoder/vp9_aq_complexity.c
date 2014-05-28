@@ -16,7 +16,7 @@
 #include "vp9/encoder/vp9_segmentation.h"
 
 static const double in_frame_q_adj_ratio[MAX_SEGMENTS] =
-  {1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+  {1.0, 1.5, 2.5, 1.0, 1.0, 1.0, 1.0, 1.0};
 
 void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
@@ -46,7 +46,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
     vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
 
     // Use some of the segments for in frame Q adjustment.
-    for (segment = 1; segment < 2; segment++) {
+    for (segment = 1; segment < 3; segment++) {
       const int qindex_delta =
           vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
                                      in_frame_q_adj_ratio[segment]);
@@ -81,6 +81,8 @@ void vp9_select_in_frame_q_segment(VP9_COMP *cpi,
                             (bw * bh);
 
     if (projected_rate < (target_rate / 4)) {
+      segment = 2;
+    } else if (projected_rate < (target_rate / 2)) {
       segment = 1;
     } else {
       segment = 0;
