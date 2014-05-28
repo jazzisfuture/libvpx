@@ -45,8 +45,8 @@ sym(vp9_temporal_filter_apply_sse2):
 
         mov         rdx,            arg(3)
         mov         [rsp + block_width], rdx
-        mov         rdx,            arg(4)
-        mov         [rsp + block_height], rdx
+        movd        xmm6,           arg(4)
+        movdqa      [rsp + block_height], xmm6
         movd        xmm6,           arg(5)
         movdqa      [rsp + strength], xmm6 ; where strength is used, all 16 bytes are read
 
