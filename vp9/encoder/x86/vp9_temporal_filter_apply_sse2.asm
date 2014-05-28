@@ -27,7 +27,7 @@ sym(vp9_temporal_filter_apply_sse2):
     push        rbp
     mov         rbp, rsp
     SHADOW_ARGS_TO_STACK 9
-    SAVE_XMM 7
+    SAVE_XMM 8
     GET_GOT     rbx
     push        rsi
     push        rdi
