@@ -276,6 +276,10 @@ void fht16x16_ref(const int16_t *in, int16_t *out, int stride, int tx_type) {
   vp9_fht16x16_c(in, out, stride, tx_type);
 }
 
+void idct16x16_ref(const int16_t *in, uint8_t *dest, int stride) {
+  vp9_idct16x16_256_add_c(in, dest, stride);
+}
+
 class Trans16x16TestBase {
  public:
   virtual ~Trans16x16TestBase() {}
@@ -352,6 +356,9 @@ class Trans16x16TestBase {
     DECLARE_ALIGNED_ARRAY(16, int16_t, output_ref_block, kNumCoeffs);
     DECLARE_ALIGNED_ARRAY(16, int16_t, output_block, kNumCoeffs);
 
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, dst, kNumCoeffs);
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, ref, kNumCoeffs);
+
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-255, 255].
       for (int j = 0; j < kNumCoeffs; ++j) {
@@ -375,6 +382,20 @@ class Trans16x16TestBase {
         EXPECT_GE(4 * DCT_MAX_VALUE, abs(output_block[j]))
             << "Error: 16x16 FDCT has coefficient larger than 4*DCT_MAX_VALUE";
       }
+
+      // clear reconstructed pixel buffers
+      vpx_memset(dst, 0, kNumCoeffs * sizeof(uint8_t));
+      vpx_memset(ref, 0, kNumCoeffs * sizeof(uint8_t));
+
+      // quantization with maximum allowed step sizes
+      output_ref_block[0] = (output_ref_block[0] / 1336) * 1336;
+      for (int j = 1; j < kNumCoeffs; ++j)
+        output_ref_block[j] = (output_ref_block[j] / 1828) * 1828;
+      inv_txfm_ref(output_ref_block, ref, pitch_);
+      REGISTER_STATE_CHECK(RunInvTxfm(output_ref_block, dst, pitch_));
+
+      for (int j = 0; j < kNumCoeffs; ++j)
+        EXPECT_EQ(ref[j], dst[j]);
     }
   }
 
@@ -414,6 +435,7 @@ class Trans16x16TestBase {
   int pitch_;
   int tx_type_;
   fht_t fwd_txfm_ref;
+  idct_t inv_txfm_ref;
 };
 
 class Trans16x16DCT
@@ -428,6 +450,7 @@ class Trans16x16DCT
     tx_type_  = GET_PARAM(2);
     pitch_    = 16;
     fwd_txfm_ref = fdct16x16_ref;
+    inv_txfm_ref = idct16x16_ref;
   }
   virtual void TearDown() { libvpx_test::ClearSystemState(); }
 
