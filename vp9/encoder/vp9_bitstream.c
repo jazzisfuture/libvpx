@@ -1126,9 +1126,7 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
   vp9_start_encode(&header_bc, data);
 
-  if (xd->lossless)
-    cm->tx_mode = ONLY_4X4;
-  else
+  if (!xd->lossless)
     encode_txfm_probs(cm, &header_bc);
 
   update_coef_probs(cpi, &header_bc);
