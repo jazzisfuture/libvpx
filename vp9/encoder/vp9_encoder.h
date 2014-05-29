@@ -216,9 +216,9 @@ typedef struct VP9EncoderConfig {
   int over_shoot_pct;
 
   // buffering parameters
-  int64_t starting_buffer_level;  // in seconds
-  int64_t optimal_buffer_level;
-  int64_t maximum_buffer_size;
+  int64_t _starting_buffer_level;  // in seconds
+  int64_t _optimal_buffer_level;
+  int64_t _maximum_buffer_size;
 
   // Frame drop threshold.
   int drop_frames_water_mark;
