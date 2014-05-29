@@ -2377,7 +2377,6 @@ static void switch_lossless_mode(VP9_COMP *cpi, int lossless) {
     cpi->mb.optimize = 0;
     cpi->common.lf.filter_level = 0;
     cpi->zbin_mode_boost_enabled = 0;
-    cpi->common.tx_mode = ONLY_4X4;
   } else {
     // printf("Not lossless\n");
     cpi->mb.fwd_txm4x4 = vp9_fdct4x4;
