@@ -207,8 +207,17 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height)
             vp8_denoiser_free(denoiser);
             return 1;
         }
-        vpx_memset(denoiser->yv12_running_avg[i].buffer_alloc, 0,
-                   denoiser->yv12_running_avg[i].frame_size);
+        if (i == INTRA_FRAME)
+        {
+           /* Start INTRA_FRAME at 128 for grayscale. */
+           vpx_memset(denoiser->yv12_running_avg[i].buffer_alloc, 128,
+                      denoiser->yv12_running_avg[i].frame_size);
+        }
+        else
+        {
+           vpx_memset(denoiser->yv12_running_avg[i].buffer_alloc, 0,
+                      denoiser->yv12_running_avg[i].frame_size);
+        }
 
     }
     denoiser->yv12_mc_running_avg.flags = 0;
