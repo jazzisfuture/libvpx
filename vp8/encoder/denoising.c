@@ -207,7 +207,7 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height)
             vp8_denoiser_free(denoiser);
             return 1;
         }
-        vpx_memset(denoiser->yv12_running_avg[i].buffer_alloc, 0,
+        vpx_memset(denoiser->yv12_running_avg[i].buffer_alloc, 128,
                    denoiser->yv12_running_avg[i].frame_size);
 
     }
