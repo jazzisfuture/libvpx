@@ -105,6 +105,9 @@ struct macroblock {
   int use_lp32x32fdct;
   int skip_encode;
 
+  // skip forward transform and quantization
+  int skip_txfm;
+
   // Used to store sub partition's choices.
   MV pred_mv[MAX_REF_FRAMES];
 
