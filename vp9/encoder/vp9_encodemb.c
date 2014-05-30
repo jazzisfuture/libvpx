@@ -349,6 +349,15 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
     default:
       assert(0);
   }
+
+//  if (x->skip_txfm == 1)
+//    *eob = 0;
+//
+//  if (x->skip_txfm == 2) {
+//    *eob = MIN(*eob, 1);
+//    if (qcoeff[0] == 0)
+//      *eob = 0;
+//  }
 }
 
 static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
@@ -375,6 +384,17 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     *a = *l = 0;
     return;
   }
+
+  if (x->skip_txfm == 1) {
+    p->eobs[block] = 0;
+    *a = *l = 0;
+    return;
+  }
+  //  if (x->skip_txfm == 2) {
+  //    *eob = MIN(*eob, 1);
+  //    if (qcoeff[0] == 0)
+  //      *eob = 0;
+  //  }
 
   if (!x->skip_recode)
     vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
