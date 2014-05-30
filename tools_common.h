@@ -17,9 +17,7 @@
 #include "vpx/vpx_image.h"
 #include "vpx/vpx_integer.h"
 
-#if CONFIG_ENCODERS
 #include "./y4minput.h"
-#endif
 
 #if defined(_MSC_VER)
 /* MSVS uses _f{seek,tell}i64. */
@@ -93,9 +91,7 @@ struct VpxInputContext {
   int only_i420;
   uint32_t fourcc;
   struct VpxRational framerate;
-#if CONFIG_ENCODERS
   y4m_input y4m;
-#endif
 };
 
 #ifdef __cplusplus
