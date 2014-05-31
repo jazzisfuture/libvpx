@@ -157,6 +157,32 @@ void vp9_quantize_b_c(const int16_t *coeff_ptr, intptr_t count,
   *eob_ptr = eob + 1;
 }
 
+void vp9_quantize_b_q0_c(const int16_t *coeff_ptr, intptr_t count,
+                         int skip_block,
+                         int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                         uint16_t *eob_ptr,
+                         const int16_t *scan, const int16_t *iscan) {
+  int i, eob = -1;
+  (void)iscan;
+
+  if (!skip_block) {
+    // Quantization pass: All coefficients with index >= zero_flag are
+    // skippable. Note: zero_flag can be zero.
+    for (i = 0; i < 16; i++) {
+      const int rc = scan[i];
+      const int coeff = coeff_ptr[rc];
+      qcoeff_ptr[rc] = coeff >> 2;
+      dqcoeff_ptr[rc] = coeff;
+      if (coeff)
+        eob = i;
+    }
+  } else {
+    vpx_memset(qcoeff_ptr, 0, count * sizeof(int16_t));
+    vpx_memset(dqcoeff_ptr, 0, count * sizeof(int16_t));
+  }
+  *eob_ptr = eob + 1;
+}
+
 void vp9_quantize_b_32x32_c(const int16_t *coeff_ptr, intptr_t n_coeffs,
                             int skip_block,
                             const int16_t *zbin_ptr, const int16_t *round_ptr,

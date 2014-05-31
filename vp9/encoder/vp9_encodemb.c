@@ -436,11 +436,17 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
-      x->fwd_txm4x4(src_diff, coeff, diff_stride);
-      vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
-                     p->quant, p->quant_shift, qcoeff, dqcoeff,
-                     pd->dequant, p->zbin_extra, eob,
-                     scan_order->scan, scan_order->iscan);
+      if (xd->lossless) {
+        vp9_fwht4x4(src_diff, coeff, diff_stride);
+        vp9_quantize_b_q0(coeff, 16, x->skip_block, qcoeff, dqcoeff, eob,
+                          scan_order->scan, scan_order->iscan);
+      } else {
+        vp9_fdct4x4(src_diff, coeff, diff_stride);
+        vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                       p->quant, p->quant_shift, qcoeff, dqcoeff,
+                       pd->dequant, p->zbin_extra, eob,
+                       scan_order->scan, scan_order->iscan);
+      }
       break;
     default:
       assert(0);
