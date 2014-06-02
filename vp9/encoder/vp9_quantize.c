@@ -59,8 +59,7 @@ void vp9_quantize_b_c(const int16_t *coeff_ptr, intptr_t count,
 
       if (abs_coeff >= zbins[rc != 0]) {
         int tmp = clamp(abs_coeff + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
-        tmp = ((((tmp * quant_ptr[rc != 0]) >> 16) + tmp) *
-                  quant_shift_ptr[rc != 0]) >> 16;  // quantization
+        tmp = (tmp * quant_ptr[rc != 0]) >> 16;
         qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
         dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
 
@@ -115,9 +114,8 @@ void vp9_quantize_b_32x32_c(const int16_t *coeff_ptr, intptr_t n_coeffs,
       int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
       abs_coeff += ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1);
       abs_coeff = clamp(abs_coeff, INT16_MIN, INT16_MAX);
-      tmp = ((((abs_coeff * quant_ptr[rc != 0]) >> 16) + abs_coeff) *
-               quant_shift_ptr[rc != 0]) >> 15;
 
+      tmp = (abs_coeff * quant_ptr[rc != 0]) >> 15;
       qcoeff_ptr[rc] = (tmp ^ coeff_sign) - coeff_sign;
       dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
 
@@ -134,23 +132,12 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
   struct macroblock_plane *p = &x->plane[plane];
   struct macroblockd_plane *pd = &xd->plane[plane];
 
-  vp9_quantize_b(BLOCK_OFFSET(p->coeff, block),
+  vp9_quantize_b_c(BLOCK_OFFSET(p->coeff, block),
            16, x->skip_block,
            p->zbin, p->round, p->quant, p->quant_shift,
            BLOCK_OFFSET(p->qcoeff, block),
            BLOCK_OFFSET(pd->dqcoeff, block),
            pd->dequant, p->zbin_extra, &p->eobs[block], scan, iscan);
-}
-
-static void invert_quant(int16_t *quant, int16_t *shift, int d) {
-  unsigned t;
-  int l;
-  t = d;
-  for (l = 0; t > 1; l++)
-    t >>= 1;
-  t = 1 + (1 << (16 + l)) / d;
-  *quant = (int16_t)(t - (1 << 16));
-  *shift = 1 << (16 - l);
 }
 
 void vp9_init_quantizer(VP9_COMP *cpi) {
@@ -166,7 +153,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       // y
       quant = i == 0 ? vp9_dc_quant(q, cm->y_dc_delta_q)
                      : vp9_ac_quant(q, 0);
-      invert_quant(&quants->y_quant[q][i], &quants->y_quant_shift[q][i], quant);
+      quants->y_quant[q][i] = (1 << 16) / quant;
       quants->y_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
       quants->y_round[q][i] = (qrounding_factor * quant) >> 7;
       cm->y_dequant[q][i] = quant;
@@ -174,8 +161,7 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       // uv
       quant = i == 0 ? vp9_dc_quant(q, cm->uv_dc_delta_q)
                      : vp9_ac_quant(q, cm->uv_ac_delta_q);
-      invert_quant(&quants->uv_quant[q][i],
-                   &quants->uv_quant_shift[q][i], quant);
+      quants->uv_quant[q][i] = (1 << 16) / quant;
       quants->uv_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
       quants->uv_round[q][i] = (qrounding_factor * quant) >> 7;
       cm->uv_dequant[q][i] = quant;
