@@ -756,12 +756,17 @@ void open_input_file(struct VpxInputContext *input) {
       input->framerate.numerator = input->y4m.fps_n;
       input->framerate.denominator = input->y4m.fps_d;
       input->fmt = input->y4m.vpx_fmt;
+      input->subsampling_x = input->y4m.dst_c_dec_h - 1;
+      input->subsampling_y = input->y4m.dst_c_dec_v - 1;
     } else
       fatal("Unsupported Y4M stream.");
   } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
     fatal("IVF is not supported as input.");
   } else {
     input->file_type = FILE_TYPE_RAW;
+    // The only raw format supported is 4:2:0.
+    input->subsampling_x = 1;
+    input->subsampling_y = 1;
   }
 }
 
@@ -1594,6 +1599,11 @@ int main(int argc, const char **argv_) {
         input.height = stream->config.cfg.g_h;
         break;
       }
+    });
+
+    FOREACH_STREAM( {
+      stream->config.cfg.g_subsampling_x = input.subsampling_x;
+      stream->config.cfg.g_subsampling_y = input.subsampling_y;
     });
 
     /* Update stream configurations from the input file's parameters */

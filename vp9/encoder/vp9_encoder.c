@@ -533,8 +533,8 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
-  cm->subsampling_x = 0;
-  cm->subsampling_y = 0;
+  cm->subsampling_x = oxcf->subsampling_x;
+  cm->subsampling_y = oxcf->subsampling_y;
   vp9_alloc_compressor_data(cpi);
 
   // Spatial scalability.

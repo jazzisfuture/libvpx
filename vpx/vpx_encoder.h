@@ -316,6 +316,21 @@ extern "C" {
      */
     unsigned int           g_h;
 
+//#if VP9
+    /*!\brief Horizontal chroma sub-sampling factor
+     *
+     * This value specifies whether the chroma component of the video
+     * frames is subsampled (1) in the horizontal direction, or not (0).
+     */
+    unsigned int           g_subsampling_x;
+
+    /*!\brief Vertical chroma sub-sampling factor
+     *
+     * This value specifies whether the chroma component of the video
+     * frames is subsampled (1) in the vertical direction, or not (0).
+     */
+    unsigned int           g_subsampling_y;
+//#endif
 
     /*!\brief Stream timebase units
      *
