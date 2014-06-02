@@ -95,6 +95,8 @@ struct VpxInputContext {
   struct VpxRational framerate;
 #if CONFIG_ENCODERS
   y4m_input y4m;
+  int subsampling_x;
+  int subsampling_y;
 #endif
 };
 

@@ -1272,6 +1272,8 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
 
         320,                /* g_width */
         240,                /* g_height */
+        1,                  /* g_subsampling_x */
+        1,                  /* g_subsampling_y */
         {1, 30},            /* g_timebase */
 
         0,                  /* g_error_resilient */

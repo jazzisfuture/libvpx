@@ -298,6 +298,8 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->profile = cfg->g_profile;
   oxcf->width   = cfg->g_w;
   oxcf->height  = cfg->g_h;
+  oxcf->subsampling_x = cfg->g_subsampling_x;
+  oxcf->subsampling_y = cfg->g_subsampling_y;
   oxcf->bit_depth = extra_cfg->bit_depth;
   // guess a frame rate if out of whack, use 30
   oxcf->framerate = (double)cfg->g_timebase.den / cfg->g_timebase.num;
@@ -1245,6 +1247,8 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
 
       320,                // g_width
       240,                // g_height
+      1,                  // g_subsampling_x */
+      1,                  // g_subsampling_y */
       {1, 30},            // g_timebase
 
       0,                  // g_error_resilient

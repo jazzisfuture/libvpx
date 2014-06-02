@@ -190,6 +190,8 @@ typedef struct VP9EncoderConfig {
   BIT_DEPTH bit_depth;
   int width;  // width of data passed to the compressor
   int height;  // height of data passed to the compressor
+  int subsampling_x;
+  int subsampling_y;
   double framerate;  // set to passed in framerate
   int64_t target_bandwidth;  // bandwidth to be used in kilobits per second
 
