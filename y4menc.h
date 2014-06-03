@@ -13,6 +13,7 @@
 
 #include "./tools_common.h"
 
+#include "vpx/vpx_encoder.h"
 #include "vpx/vpx_decoder.h"
 
 #ifdef __cplusplus
@@ -23,7 +24,7 @@ extern "C" {
 
 int y4m_write_file_header(char *buf, size_t len, int width, int height,
                           const struct VpxRational *framerate,
-                          vpx_img_fmt_t fmt);
+                          vpx_img_fmt_t fmt, vpx_bit_depth_t bit_depth);
 int y4m_write_frame_header(char *buf, size_t len);
 
 #ifdef __cplusplus
