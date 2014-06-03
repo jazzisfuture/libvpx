@@ -28,7 +28,7 @@ die_unknown(){
 }
 
 fix_path() {
-    $FIXPATH "$1"
+    $FIXPATH "$@"
 }
 
 generate_uuid() {
