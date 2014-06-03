@@ -24,8 +24,8 @@ extern "C" {
 
 void vp9_init_quant_tables();
 
-int16_t vp9_dc_quant(int qindex, int delta);
-int16_t vp9_ac_quant(int qindex, int delta);
+int16_t vp9_dc_quant(int qindex, int delta, BIT_DEPTH bit_depth);
+int16_t vp9_ac_quant(int qindex, int delta, BIT_DEPTH bit_depth);
 
 int vp9_get_qindex(const struct segmentation *seg, int segment_id,
                    int base_qindex);
