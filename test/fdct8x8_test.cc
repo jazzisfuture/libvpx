@@ -361,7 +361,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht8x8_sse2, &vp9_iht8x8_64_add_sse2, 3)));
 #endif
 
-#if HAVE_SSSE3 && ARCH_X86_64 && 0
+#if HAVE_SSSE3 && ARCH_X86_64
 INSTANTIATE_TEST_CASE_P(
     DISABLED_SSSE3, FwdTrans8x8DCT,
     ::testing::Values(
