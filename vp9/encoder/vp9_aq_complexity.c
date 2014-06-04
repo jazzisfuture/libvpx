@@ -15,8 +15,22 @@
 
 #include "vp9/encoder/vp9_segmentation.h"
 
-static const double in_frame_q_adj_ratio[MAX_SEGMENTS] =
-  {1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+static const double aq2_q_adj_ratio[3][MAX_SEGMENTS] =
+  {{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},  // dummy entry for segment 0
+   {1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+   {1.0, 1.5, 2.5, 1.0, 1.0, 1.0, 1.0, 1.0}};
+static const int aq2_active_segments[3] = {1,2,3};
+static const double aq2_transitions[3][MAX_SEGMENTS] =
+  {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},  // dummy entry for segment 0
+   {0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+   {0.0, 0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0}};
+
+
+static int get_aq2_strength(int q_index) {
+  // Approximate base quatizer (truncated to int)
+  int base_quant = vp9_ac_quant(q_index, 0) / 4;
+  return (base_quant > 20) + (base_quant > 45);
+}
 
 void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
@@ -29,6 +43,8 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
       cpi->refresh_alt_ref_frame ||
       (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
     int segment;
+    int aq_strength = get_aq2_strength(cm->base_qindex);
+    int active_segments = aq2_active_segments[aq_strength];
 
     // Clear down the segment map.
     vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
@@ -36,8 +52,16 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
     // Clear down the complexity map used for rd.
     vpx_memset(cpi->complexity_map, 0, cm->mi_rows * cm->mi_cols);
 
-    vp9_enable_segmentation(seg);
     vp9_clearall_segfeatures(seg);
+
+    // Segmentation only makes sense if the target bits per SB is above a
+    // threshold. Below this the overheads will usually outweigh any benefit.
+    if (cpi->rc.sb64_target_rate < 256) {
+      vp9_disable_segmentation(seg);
+      return;
+    }
+
+    vp9_enable_segmentation(seg);
 
     // Select delta coding method.
     seg->abs_delta = SEGMENT_DELTADATA;
@@ -46,10 +70,10 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
     vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
 
     // Use some of the segments for in frame Q adjustment.
-    for (segment = 1; segment < 2; segment++) {
+    for (segment = 1; segment < active_segments; segment++) {
       int qindex_delta =
           vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
-                                     in_frame_q_adj_ratio[segment]);
+                                     aq2_q_adj_ratio[aq_strength][segment]);
 
       // For AQ mode 2, we dont allow Q0 in a segment if the base Q is not 0.
       // Q0 (lossless) implies 4x4 only and in AQ mode 2 a segment Q delta
@@ -68,7 +92,7 @@ void vp9_setup_in_frame_q_adj(VP9_COMP *cpi) {
 
 // Select a segment for the current SB64
 void vp9_select_in_frame_q_segment(VP9_COMP *cpi,
-                                      int mi_row, int mi_col,
+                                     int mi_row, int mi_col,
                                       int output_enabled, int projected_rate) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -89,11 +113,16 @@ void vp9_select_in_frame_q_segment(VP9_COMP *cpi,
     // It is converted to bits * 256 units.
     const int target_rate = (cpi->rc.sb64_target_rate * xmis * ymis * 256) /
                             (bw * bh);
+    int aq_strength = get_aq2_strength(cm->base_qindex);
+    int active_segments = aq2_active_segments[aq_strength];
 
-    if (projected_rate < (target_rate / 4)) {
-      segment = 1;
-    } else {
-      segment = 0;
+    segment = active_segments - 1;
+    while (segment > 0) {
+      if (projected_rate <
+          (target_rate * aq2_transitions[aq_strength][segment])) {
+        break;
+      }
+      --segment;
     }
 
     if (target_rate > 0) {
