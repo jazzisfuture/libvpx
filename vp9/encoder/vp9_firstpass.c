@@ -598,10 +598,27 @@ void vp9_first_pass(VP9_COMP *cpi) {
       if (cm->current_video_frame > 0) {
         int tmp_err, motion_error;
         int_mv mv, tmp_mv;
+        int raw_motion_error;
 
         xd->plane[0].pre[0].buf = first_ref_buf->y_buffer + recon_yoffset;
         motion_error = get_prediction_error(bsize, &x->plane[0].src,
                                             &xd->plane[0].pre[0]);
+
+        // compute the motion error of the zero motion vector using the last
+        // source frame as the reference
+        // skip the further motion search on reconstructed frame
+        // if this error is small
+        xd->plane[0].pre[0].buf = cpi->unscaled_last_source->y_buffer
+                                  + recon_yoffset;
+        raw_motion_error = get_prediction_error(bsize, &x->plane[0].src,
+                                                &xd->plane[0].pre[0]);
+        xd->plane[0].pre[0].buf = first_ref_buf->y_buffer + recon_yoffset;
+
+        // TODO(Pengchong): Replace the hard-coded threshold
+        if (raw_motion_error < 50) {
+          goto skip_firstpass_motion_search;
+        }
+
         // Assume 0,0 motion with no mv overhead.
         mv.as_int = tmp_mv.as_int = 0;
 
@@ -668,6 +685,8 @@ void vp9_first_pass(VP9_COMP *cpi) {
         }
         // Start by assuming that intra mode is best.
         best_ref_mv.as_int = 0;
+
+skip_firstpass_motion_search:
 
         if (motion_error <= this_error) {
           // Keep a count of cases where the inter and intra were very close
