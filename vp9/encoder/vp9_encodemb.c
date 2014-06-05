@@ -64,15 +64,14 @@ void vp9_high_subtract_block_c(int rows, int cols,
   (void) bps;
 #else
   int shift = bps - 8;
-  int rnd = shift > 0 ? 1 << (shift - 1) : 0;
+  // int rnd = shift > 0 ? 1 << (shift - 1) : 0;
 #endif
 
   for (r = 0; r < rows; r++) {
     for (c = 0; c < cols; c++) {
-#if CONFIG_HIGH_TRANSFORMS
       diff[c] = src[c] - pred[c];
-#else
-      diff[c] = ((src[c] + rnd) >> shift) - ((pred[c] + rnd) >> shift);
+#if !CONFIG_HIGH_TRANSFORMS
+      diff[c] = diff[c] >> shift;
 #endif
     }
 
