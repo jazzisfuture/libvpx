@@ -409,10 +409,9 @@ static INLINE int16_t high_hev_mask(uint8_t thresh, uint16_t p1, uint16_t p0,
 static INLINE void high_filter4(int8_t mask, uint8_t thresh, uint16_t *op1,
                                 uint16_t *op0, uint16_t *oq0, uint16_t *oq1,
                                 int bps) {
-  int8_t filter1, filter2;
+  int16_t filter1, filter2;
   // ^0x80 equivalent to subtracting 0x80 from the values to turn them
   // into -128 to +127 instead of 0 to 255
-  // TODO(Peter): the subtraction should depend on bitdepth
   int shift = bps-8;
   const int16_t ps1 = (int16_t) *op1 - (0x80 << shift);
   const int16_t ps0 = (int16_t) *op0 - (0x80 << shift);
