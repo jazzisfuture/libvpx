@@ -682,6 +682,12 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cpi->ext_refresh_frame_flags_pending = 0;
   cpi->ext_refresh_frame_context_pending = 0;
+
+#if CONFIG_DENOISING
+  vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
+                     cm->subsampling_x, cm->subsampling_y,
+                     VP9_ENC_BORDER_IN_PIXELS);
+#endif
 }
 
 #ifndef M_LOG2_E
@@ -1086,6 +1092,10 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
     }
 #endif
   }
+
+#if CONFIG_DENOISING
+  vp9_denoiser_free(&(cpi->denoiser));
+#endif
 
   dealloc_compressor_data(cpi);
   vpx_free(cpi->tok);
@@ -1549,6 +1559,13 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+#if CONFIG_DENOISING
+  vp9_denoiser_update_frame_info(&cpi->denoiser,
+                                cpi->common.frame_type,
+                                cpi->refresh_alt_ref_frame,
+                                cpi->refresh_golden_frame,
+                                cpi->refresh_last_frame);
+#endif
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
