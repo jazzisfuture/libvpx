@@ -2380,7 +2380,7 @@ static int check_dual_ref_flags(VP9_COMP *cpi) {
   }
 }
 
-static void reset_skip_txfm_size(VP9_COMMON *cm, TX_SIZE txfm_max) {
+static void reset_skip_tx_size(VP9_COMMON *cm, TX_SIZE txfm_max) {
   int mi_row, mi_col;
   const int mis = cm->mi_stride;
   MODE_INFO **mi_ptr = cm->mi_grid_visible;
@@ -3232,16 +3232,16 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       if (count4x4 == 0 && count16x16_lp == 0 && count16x16_16x16p == 0 &&
           count32x32 == 0) {
         cm->tx_mode = ALLOW_8X8;
-        reset_skip_txfm_size(cm, TX_8X8);
+        reset_skip_tx_size(cm, TX_8X8);
       } else if (count8x8_8x8p == 0 && count16x16_16x16p == 0 &&
                  count8x8_lp == 0 && count16x16_lp == 0 && count32x32 == 0) {
         cm->tx_mode = ONLY_4X4;
-        reset_skip_txfm_size(cm, TX_4X4);
+        reset_skip_tx_size(cm, TX_4X4);
       } else if (count8x8_lp == 0 && count16x16_lp == 0 && count4x4 == 0) {
         cm->tx_mode = ALLOW_32X32;
       } else if (count32x32 == 0 && count8x8_lp == 0 && count4x4 == 0) {
         cm->tx_mode = ALLOW_16X16;
-        reset_skip_txfm_size(cm, TX_16X16);
+        reset_skip_tx_size(cm, TX_16X16);
       }
     }
   } else {
@@ -3302,7 +3302,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
-  x->skip_recode = !x->select_txfm_size && mbmi->sb_type >= BLOCK_8X8 &&
+  x->skip_recode = !x->select_tx_size && mbmi->sb_type >= BLOCK_8X8 &&
                    cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
                    cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ &&
                    cpi->sf.allow_skip_recode;
