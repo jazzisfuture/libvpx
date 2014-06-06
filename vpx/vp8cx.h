@@ -189,6 +189,9 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_MAX_INTRA_BITRATE_PCT,
 
+  VP8E_SET_BUFFER_LEVEL,           /**< control function to set the buffer level to the 
+                                           optimal_buffer_level  */
+
 
   /* TODO(jkoleszar): Move to vp9cx.h */
   VP9E_SET_LOSSLESS,
@@ -362,6 +365,8 @@ VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER,     int *)
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64,  int *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
+
+VPX_CTRL_USE_TYPE(VP8E_SET_BUFFER_LEVEL, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
 

@@ -35,7 +35,7 @@ struct vp8_extracfg
     vp8e_tuning                 tuning;
     unsigned int                cq_level;         /* constrained quality level */
     unsigned int                rc_max_intra_bitrate_pct;
-
+    unsigned int                rc_reset_buffer_level;
 };
 
 struct extraconfig_map
@@ -70,6 +70,7 @@ static const struct extraconfig_map extracfg_map[] =
             0,                          /* tuning*/
             10,                         /* cq_level */
             0,                          /* rc_max_intra_bitrate_pct */
+            0,                          /* rc_reset_buffer_level */
         }
     }
 };
@@ -355,6 +356,7 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
     oxcf->maximum_buffer_size      = cfg.rc_buf_sz;
     oxcf->starting_buffer_level    = cfg.rc_buf_initial_sz;
     oxcf->optimal_buffer_level     = cfg.rc_buf_optimal_sz;
+    oxcf->rc_reset_buffer_level    = vp8_cfg.rc_reset_buffer_level;
 
     oxcf->two_pass_vbrbias         = cfg.rc_2pass_vbr_bias_pct;
     oxcf->two_pass_vbrmin_section  = cfg.rc_2pass_vbr_minsection_pct;
@@ -593,6 +595,14 @@ static vpx_codec_err_t set_rc_max_intra_bitrate_pct(vpx_codec_alg_priv_t *ctx,
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
   extra_cfg.rc_max_intra_bitrate_pct =
       CAST(VP8E_SET_MAX_INTRA_BITRATE_PCT, args);
+  return update_extracfg(ctx, &extra_cfg);
+}
+
+static vpx_codec_err_t set_rc_reset_buffer_level(vpx_codec_alg_priv_t *ctx,
+                                                 va_list args) {
+  struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
+  extra_cfg.rc_reset_buffer_level =
+      CAST(VP8E_SET_BUFFER_LEVEL, args);
   return update_extracfg(ctx, &extra_cfg);
 }
 
@@ -1258,6 +1268,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_SET_TUNING,                   set_tuning},
     {VP8E_SET_CQ_LEVEL,                 set_cq_level},
     {VP8E_SET_MAX_INTRA_BITRATE_PCT,    set_rc_max_intra_bitrate_pct},
+    {VP8E_SET_BUFFER_LEVEL,             set_rc_reset_buffer_level},
     { -1, NULL},
 };
 
