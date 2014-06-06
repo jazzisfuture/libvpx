@@ -1631,6 +1631,12 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
       cpi->buffer_level = cpi->bits_off_target;
     }
 
+    if (cpi->oxcf.rc_reset_buffer_level) {
+      cpi->buffer_level = cpi->oxcf.optimal_buffer_level;
+      // Default is not to reset buffer level.
+      cpi->oxcf.rc_reset_buffer_level = 0;
+    }
+
     /* Set up frame rate and related parameters rate control values. */
     vp8_new_framerate(cpi, cpi->framerate);
 
