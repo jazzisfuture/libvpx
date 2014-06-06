@@ -18,7 +18,6 @@ extern "C" {
 #endif
 
 typedef enum {
-  DIAMOND = 0,
   NSTEP = 1,
   HEX = 2,
   BIGDIA = 3,

@@ -481,15 +481,8 @@ static void update_frame_size(VP9_COMP *cpi) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to reallocate scaled last source buffer");
 
-  {
-    int y_stride = cpi->scaled_source.y_stride;
-
-    if (cpi->sf.search_method == NSTEP) {
-      vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
-    } else if (cpi->sf.search_method == DIAMOND) {
-      vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
-    }
-  }
+  if (cpi->sf.search_method == NSTEP)
+    vp9_init3smotion_compensation(&cpi->ss_cfg, cpi->scaled_source.y_stride);
 
   init_macroblockd(cm, xd);
 }
