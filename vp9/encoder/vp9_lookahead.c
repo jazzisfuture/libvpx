@@ -18,21 +18,9 @@
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_lookahead.h"
 
-// The max of past frames we want to keep in the queue.
-#define MAX_PRE_FRAMES 1
-
-struct lookahead_ctx {
-  unsigned int max_sz;         /* Absolute size of the queue */
-  unsigned int sz;             /* Number of buffers currently in the queue */
-  unsigned int read_idx;       /* Read index */
-  unsigned int write_idx;      /* Write index */
-  struct lookahead_entry *buf; /* Buffer list */
-};
-
-
 /* Return the buffer at the given absolute index and increment the index */
-static struct lookahead_entry *pop(struct lookahead_ctx *ctx,
-                                   unsigned int *idx) {
+struct lookahead_entry *vp9_lookahead_pop_on_index(struct lookahead_ctx *ctx,
+                                                   unsigned int *idx) {
   unsigned int index = *idx;
   struct lookahead_entry *buf = ctx->buf + index;
 
@@ -105,7 +93,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
   if (ctx->sz + 1  + MAX_PRE_FRAMES > ctx->max_sz)
     return 1;
   ctx->sz++;
-  buf = pop(ctx, &ctx->write_idx);
+  buf = vp9_lookahead_pop_on_index(ctx, &ctx->write_idx);
 
 #if USE_PARTIAL_COPY
   // TODO(jkoleszar): This is disabled for now, as
@@ -170,7 +158,7 @@ struct lookahead_entry *vp9_lookahead_pop(struct lookahead_ctx *ctx,
   struct lookahead_entry *buf = NULL;
 
   if (ctx->sz && (drain || ctx->sz == ctx->max_sz - MAX_PRE_FRAMES)) {
-    buf = pop(ctx, &ctx->read_idx);
+    buf = vp9_lookahead_pop_on_index(ctx, &ctx->read_idx);
     ctx->sz--;
   }
   return buf;

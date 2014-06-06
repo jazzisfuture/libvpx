@@ -2307,11 +2307,21 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   int res = 0;
   const int subsampling_x = sd->uv_width  < sd->y_width;
   const int subsampling_y = sd->uv_height < sd->y_height;
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1);
 
   check_initial_width(cpi, subsampling_x, subsampling_y);
   vpx_usec_timer_start(&timer);
-  if (vp9_lookahead_push(cpi->lookahead,
-                         sd, time_stamp, end_time, frame_flags))
+
+#ifdef CONFIG_SPATIAL_SVC
+  if (is_spatial_svc) {
+    res = vp9_svc_lookahead_push(cpi, cpi->lookahead, sd, time_stamp, end_time,
+                                 frame_flags);
+  } else
+#endif
+    res = vp9_lookahead_push(cpi->lookahead,
+                             sd, time_stamp, end_time, frame_flags);
+  if (res)
     res = -1;
   vpx_usec_timer_mark(&timer);
   cpi->time_receive_data += vpx_usec_timer_elapsed(&timer);
@@ -2393,6 +2403,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct vpx_usec_timer  cmptimer;
   YV12_BUFFER_CONFIG *force_src_buffer = NULL;
   MV_REFERENCE_FRAME ref_frame;
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1);
 
   if (!cpi)
     return -1;
@@ -2432,7 +2444,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
     assert(frames_to_arf <= rc->frames_to_key);
 
-    if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
+#ifdef CONFIG_SPATIAL_SVC
+    if (is_spatial_svc) {
+      cpi->source = vp9_svc_lookahead_peek(cpi, cpi->lookahead,
+                                           frames_to_arf, 1);
+    } else
+#endif
+      cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf);
+    if (cpi->source != NULL) {
 #if CONFIG_MULTIPLE_ARF
       cpi->alt_ref_source[cpi->arf_buffered] = cpi->source;
 #else
@@ -2470,11 +2489,22 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
     // Get last frame source.
     if (cm->current_video_frame > 0) {
-      if ((cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1)) == NULL)
+#ifdef CONFIG_SPATIAL_SVC
+      if (is_spatial_svc) {
+        cpi->last_source = vp9_svc_lookahead_peek(cpi, cpi->lookahead, -1, 0);
+      } else
+#endif
+        cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1);
+      if (cpi->last_source == NULL)
         return -1;
     }
-
-    if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
+#ifdef CONFIG_SPATIAL_SVC
+    if (is_spatial_svc) {
+      cpi->source = vp9_svc_lookahead_pop(cpi, cpi->lookahead, flush);
+    } else
+#endif
+      cpi->source = vp9_lookahead_pop(cpi->lookahead, flush);
+    if (cpi->source != NULL) {
       cm->show_frame = 1;
       cm->intra_only = 0;
 
@@ -2521,7 +2551,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
-    *frame_flags = cpi->source->flags;
+    *frame_flags = (cpi->source->flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
 #if CONFIG_MULTIPLE_ARF
     if (cm->frame_type != KEY_FRAME && cpi->pass == 2)
