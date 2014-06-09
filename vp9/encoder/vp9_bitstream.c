@@ -895,7 +895,9 @@ static int get_refresh_mask(VP9_COMP *cpi) {
     if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
         !cpi->refresh_alt_ref_frame) {
 #else
-    if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+    // if (0 && cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+    // if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+    if (cpi->refresh_golden_frame && cpi->rc.is_src_frame_alt_ref &&
         !cpi->use_svc) {
 #endif
       // Preserve the previously existing golden frame and update the frame in

@@ -1507,7 +1507,9 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   else if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
       !cpi->refresh_alt_ref_frame) {
 #else
-  else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  // else if (0 && cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  // else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  else if (cpi->refresh_golden_frame && cpi->rc.is_src_frame_alt_ref &&
            !cpi->use_svc) {
 #endif
     /* Preserve the previously existing golden frame and update the frame in
@@ -1653,7 +1655,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
         cpi->rc.vbr_bits_off_target,
         cpi->rc.total_target_vs_actual,
-        (cpi->oxcf.starting_buffer_level - cpi->rc.bits_off_target),
+        (cpi->rc.starting_buffer_level - cpi->rc.bits_off_target),
         cpi->rc.total_actual_bits, cm->base_qindex,
         vp9_convert_qindex_to_q(cm->base_qindex),
         (double)vp9_dc_quant(cm->base_qindex, 0) / 4.0,
