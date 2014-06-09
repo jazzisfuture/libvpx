@@ -98,8 +98,10 @@ static vpx_codec_err_t decoder_destroy(vpx_codec_alg_priv_t *ctx) {
 static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
                                                 unsigned int data_sz,
                                                 vpx_codec_stream_info_t *si,
+                                                int *is_intra_only,
                                                 vpx_decrypt_cb decrypt_cb,
                                                 void *decrypt_state) {
+  int intra_only_flag = 0;
   uint8_t clear_buffer[9];
 
   if (data + data_sz <= data)
@@ -115,6 +117,8 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
   }
 
   {
+    int show_frame;
+    int error_resilient;
     struct vp9_read_bit_buffer rb = { data, data + data_sz, 0, NULL, NULL };
     const int frame_marker = vp9_rb_read_literal(&rb, 2);
     const int version = vp9_rb_read_bit(&rb);
@@ -126,6 +130,7 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
     if (version > 1) return VPX_CODEC_UNSUP_BITSTREAM;
 
     if (vp9_rb_read_bit(&rb)) {  // show an existing frame
+      vp9_rb_read_literal(&rb, 3);  // Frame buffer to show.
       return VPX_CODEC_OK;
     }
 
@@ -133,18 +138,15 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
       return VPX_CODEC_UNSUP_BITSTREAM;
 
     si->is_kf = !vp9_rb_read_bit(&rb);
+    show_frame = vp9_rb_read_bit(&rb);
+    error_resilient = vp9_rb_read_bit(&rb);
+
     if (si->is_kf) {
       const int sRGB = 7;
       int colorspace;
 
-      rb.bit_offset += 1;  // show frame
-      rb.bit_offset += 1;  // error resilient
-
-      if (vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_0 ||
-          vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_1 ||
-          vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_2) {
+      if (check_sync_code(&rb) == 0)
         return VPX_CODEC_UNSUP_BITSTREAM;
-      }
 
       colorspace = vp9_rb_read_literal(&rb, 3);
       if (colorspace != sRGB) {
@@ -161,20 +163,28 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
           return VPX_CODEC_UNSUP_BITSTREAM;
         }
       }
+      read_frame_size(&rb, &si->w, &si->h);
+    } else {
+      intra_only_flag = show_frame ? 0 : vp9_rb_read_bit(&rb);
+      rb.bit_offset += error_resilient ? 0 : 2;  // reset_frame_context
 
-      // TODO(jzern): these are available on non-keyframes in intra only mode.
-      si->w = vp9_rb_read_literal(&rb, 16) + 1;
-      si->h = vp9_rb_read_literal(&rb, 16) + 1;
+      if (intra_only_flag == 1) {
+        if (check_sync_code(&rb) == 0)
+          return VPX_CODEC_UNSUP_BITSTREAM;
+        rb.bit_offset += REF_FRAMES;  // refresh_frame_flags
+        read_frame_size(&rb, &si->w, &si->h);
+      }
     }
   }
-
+  if (is_intra_only != NULL)
+    *is_intra_only = intra_only_flag;
   return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t decoder_peek_si(const uint8_t *data,
                                        unsigned int data_sz,
                                        vpx_codec_stream_info_t *si) {
-  return decoder_peek_si_internal(data, data_sz, si, NULL, NULL);
+  return decoder_peek_si_internal(data, data_sz, si, NULL, NULL, NULL);
 }
 
 static vpx_codec_err_t decoder_get_si(vpx_codec_alg_priv_t *ctx,
@@ -266,13 +276,14 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
   // validate that we have a buffer that does not wrap around the top
   // of the heap.
   if (!ctx->si.h) {
+    int is_intra_only = 0;
     const vpx_codec_err_t res =
-        decoder_peek_si_internal(*data, data_sz, &ctx->si, ctx->decrypt_cb,
-                                 ctx->decrypt_state);
+        decoder_peek_si_internal(*data, data_sz, &ctx->si, &is_intra_only,
+                                 ctx->decrypt_cb, ctx->decrypt_state);
     if (res != VPX_CODEC_OK)
       return res;
 
-    if (!ctx->si.is_kf)
+    if ((ctx->si.is_kf == 0) && (is_intra_only == 0))
       return VPX_CODEC_ERROR;
   }
 
