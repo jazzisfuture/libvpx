@@ -1147,6 +1147,13 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
       check_sync_code(cm, rb);
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+
+      // NOTE: The intra-only frame header does not include the specification of
+      // either the color format or color sub-sampling. VP9 specifies that the
+      // default color space should be YUV 4:2:0 in this case (normative).
+      cm->color_space = BT_601;
+      cm->subsampling_y = cm->subsampling_x = 1;
+
       setup_frame_size(cm, rb);
     } else {
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
