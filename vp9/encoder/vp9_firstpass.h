@@ -40,6 +40,23 @@ typedef struct {
   int64_t spatial_layer_id;
 } FIRSTPASS_STATS;
 
+typedef enum {
+  KF_UPDATE = 0,
+  LF_UPDATE = 1,
+  GF_UPDATE = 2,
+  ARF_UPDATE = 3,
+  OVERLAY_UPDATE = 4,
+  FRAME_UPDATE_TYPES = 5
+} FRAME_UPDATE_TYPE;
+
+typedef struct {
+  unsigned char index;
+  FRAME_UPDATE_TYPE update_type[MAX_LAG_BUFFERS * 2];
+  // unsigned char update_buffers[MAX_LAG_BUFFERS * 2];
+  // unsigned char ref_buffers[MAX_LAG_BUFFERS * 2];
+  int bit_allocation[MAX_LAG_BUFFERS * 2];
+} GF_GROUP;
+
 typedef struct {
   unsigned int section_intra_rating;
   unsigned int next_iiratio;
@@ -69,8 +86,7 @@ typedef struct {
 
   int active_worst_quality;
 
-  int gf_group_index;
-  int gf_group_bit_allocation[MAX_LAG_BUFFERS * 2];
+  GF_GROUP gf_group;
 } TWO_PASS;
 
 struct VP9_COMP;
