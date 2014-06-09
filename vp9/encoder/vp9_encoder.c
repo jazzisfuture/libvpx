@@ -1505,7 +1505,9 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   else if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
       !cpi->refresh_alt_ref_frame) {
 #else
-  else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  // else if (0 && cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  // else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
+  else if (cpi->refresh_golden_frame && cpi->rc.is_src_frame_alt_ref &&
            !cpi->use_svc) {
 #endif
     /* Preserve the previously existing golden frame and update the frame in
@@ -2424,9 +2426,17 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     if (cpi->multi_arf_enabled && (cpi->pass == 2))
       frames_to_arf = (-cpi->frame_coding_order[cpi->sequence_number])
           - cpi->next_frame_in_order;
-    else
+    else {
 #endif
-      frames_to_arf = rc->frames_till_gf_update_due;
+      if (cpi->pass == 2) {
+        frames_to_arf =
+          cpi->twopass.gf_group.arf_src_offset[cpi->twopass.gf_group.index];
+      } else {
+        frames_to_arf = rc->frames_till_gf_update_due;
+      }
+#if CONFIG_MULTIPLE_ARF
+    }
+#endif
 
     assert(frames_to_arf <= rc->frames_to_key);
 
