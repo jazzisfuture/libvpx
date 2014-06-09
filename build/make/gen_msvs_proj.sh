@@ -155,7 +155,7 @@ for opt in "$@"; do
             opt=${opt##-I}
             opt=$(fix_path "$opt")
             incs="${incs}${incs:+;}&quot;${opt}&quot;"
-            yasmincs="${yasmincs} -I&quot;${opt}&quot;"
+            yasmincs="${yasmincs} -I${opt}"
         ;;
         -D*) defines="${defines}${defines:+;}${opt##-D}"
         ;;
@@ -307,7 +307,7 @@ generate_vcproj() {
                     vpx)
                         tag Tool \
                             Name="VCPreBuildEventTool" \
-                            CommandLine="call obj_int_extract.bat &quot;$src_path_bare&quot; $plat_no_ws\\\$(ConfigurationName)" \
+                            CommandLine="call obj_int_extract.bat $src_path_bare $plat_no_ws\\\$(ConfigurationName)" \
 
                         tag Tool \
                             Name="VCCLCompilerTool" \
