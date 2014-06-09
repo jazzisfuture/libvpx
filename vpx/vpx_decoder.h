@@ -90,6 +90,7 @@ extern "C" {
     unsigned int w;      /**< Width (or 0 for unknown/default) */
     unsigned int h;      /**< Height (or 0 for unknown/default) */
     unsigned int is_kf;  /**< Current frame is a keyframe */
+    unsigned int is_intra_only;  /**< Current frame is coded intra-only */
   } vpx_codec_stream_info_t;
 
   /* REQUIRED FUNCTIONS

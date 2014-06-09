@@ -102,6 +102,7 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
     return VPX_CODEC_INVALID_PARAM;
 
   si->is_kf = 0;
+  si->is_intra_only = 0;
   si->w = si->h = 0;
 
   if (decrypt_cb) {
@@ -129,8 +130,7 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
       const int sRGB = 7;
       int colorspace;
 
-      rb.bit_offset += 1;  // show frame
-      rb.bit_offset += 1;  // error resilient
+      rb.bit_offset += 2;  // show_frame and error_resilient
 
       if (vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_0 ||
           vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_1 ||
@@ -153,13 +153,27 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
           return VPX_CODEC_UNSUP_BITSTREAM;
         }
       }
-
-      // TODO(jzern): these are available on non-keyframes in intra only mode.
       si->w = vp9_rb_read_literal(&rb, 16) + 1;
       si->h = vp9_rb_read_literal(&rb, 16) + 1;
+    } else {
+      const int show_frame = vp9_rb_read_bit(&rb);
+      const int error_resilient = vp9_rb_read_bit(&rb);
+
+      si->is_intra_only = show_frame ? 0 : vp9_rb_read_bit(&rb);
+      rb.bit_offset += error_resilient ? 0 : 2;  // reset_frame_context
+
+      if (si->is_intra_only == 1) {
+        if (vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_0 ||
+            vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_1 ||
+            vp9_rb_read_literal(&rb, 8) != VP9_SYNC_CODE_2) {
+          return VPX_CODEC_UNSUP_BITSTREAM;
+        }
+        rb.bit_offset += REF_FRAMES;  // refresh_frame_flags
+        si->w = vp9_rb_read_literal(&rb, 16) + 1;
+        si->h = vp9_rb_read_literal(&rb, 16) + 1;
+      }
     }
   }
-
   return VPX_CODEC_OK;
 }
 
@@ -259,7 +273,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
     if (res != VPX_CODEC_OK)
       return res;
 
-    if (!ctx->si.is_kf)
+    if ((ctx->si.is_kf == 0) && (ctx->si.is_intra_only == 0))
       return VPX_CODEC_ERROR;
   }
 
