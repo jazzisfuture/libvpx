@@ -177,7 +177,7 @@ for opt in "$@"; do
             opt=${opt##-I}
             opt=$(fix_path "$opt")
             incs="${incs}${incs:+;}&quot;${opt}&quot;"
-            yasmincs="${yasmincs} -I&quot;${opt}&quot;"
+            yasmincs="${yasmincs} -I${opt}"
         ;;
         -D*) defines="${defines}${defines:+;}${opt##-D}"
         ;;
@@ -399,7 +399,7 @@ generate_vcxproj() {
                     hostplat=Win32
                 fi
                 open_tag PreBuildEvent
-                tag_content Command "call obj_int_extract.bat &quot;$src_path_bare&quot; $hostplat\\\$(Configuration)"
+                tag_content Command "call obj_int_extract.bat $src_path_bare $hostplat\\\$(Configuration)"
                 close_tag PreBuildEvent
             fi
             open_tag ClCompile
