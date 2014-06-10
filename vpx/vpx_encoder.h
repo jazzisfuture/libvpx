@@ -623,6 +623,9 @@ extern "C" {
      */
     unsigned int           ss_number_layers;
 
+    int use_svc;
+    int simulcast_layer;
+
     /*!\brief Target bitrate for each spatial layer.
      *
      * These values specify the target coding bitrate to be used for each

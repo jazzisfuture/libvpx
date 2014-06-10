@@ -46,6 +46,7 @@ typedef struct {
 
   // private storage for vpx_svc_encode
   void *internal;
+  int simulcast_layer;
 } SvcContext;
 
 /**
