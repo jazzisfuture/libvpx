@@ -39,6 +39,7 @@ struct vpx_codec_alg_priv {
   void                   *decrypt_state;
   vpx_image_t             img;
   int                     invert_tile_order;
+  int                     last_show_frame;  // Index of last output frame.
 
   // External frame buffer info to save for VP9 common.
   void *ext_priv;  // Private data associated with the external frame buffers.
@@ -231,6 +232,7 @@ static void init_decoder(vpx_codec_alg_priv_t *ctx) {
 
   ctx->pbi->max_threads = ctx->cfg.threads;
   ctx->pbi->inv_tile_order = ctx->invert_tile_order;
+  ctx->last_show_frame = -1;
 
   // If postprocessing was enabled by the application and a
   // configuration has not been provided, default it.
@@ -423,6 +425,15 @@ static vpx_image_t *decoder_get_frame(vpx_codec_alg_priv_t *ctx,
       ctx->img.fb_priv = cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
       img = &ctx->img;
       *iter = img;
+      // Decrease reference count of last output frame.
+      if (ctx->last_show_frame >= 0) {
+        cm->frame_bufs[ctx->last_show_frame].ref_count--;
+        if (cm->frame_bufs[ctx->last_show_frame].ref_count == 0) {
+          cm->release_fb_cb(cm->cb_priv,
+              &cm->frame_bufs[ctx->last_show_frame].raw_frame_buffer);
+        }
+      }
+      ctx->last_show_frame = ctx->pbi->common.new_fb_idx;
     }
   }
 
