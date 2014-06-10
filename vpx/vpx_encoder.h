@@ -623,6 +623,9 @@ extern "C" {
      */
     unsigned int           ss_number_layers;
 
+    int use_svc;
+    int ss_viewport_id[VPX_SS_MAX_LAYERS];
+
     /*!\brief Target bitrate for each spatial layer.
      *
      * These values specify the target coding bitrate to be used for each
