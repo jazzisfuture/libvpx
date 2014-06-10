@@ -1235,6 +1235,16 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { -1, NULL},
 };
 
+// The -1 as end of a list is codified as part of the sdk,  changing this
+// would require a change to the sdk.   Rather than risk that, we ignore
+// a false negative around the use of an initializer format {0} to
+// initialize a substructure vpx_codec_enc_cfg,  an alternative is to
+// actually initialize each value even though it can't ever be used.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
 static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
   {
     0,
@@ -1297,6 +1307,10 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
   },
   { -1, {NOT_IMPLEMENTED}}
 };
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #ifndef VERSION_STRING
 #define VERSION_STRING
