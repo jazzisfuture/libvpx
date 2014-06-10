@@ -479,6 +479,20 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
       int64_t dist;
       int64_t square_error = sse;
       int quantizer = (pd->dequant[1] >> 3);
+#if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS
+      if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+        switch (xd->bps) {
+          case 10:
+            quantizer >>= 2;
+            break;
+          case 12:
+            quantizer >>= 4;
+            break;
+          default:
+            break;
+        }
+      }
+#endif
 
       if (quantizer < 120)
         rate = (square_error * (280 - quantizer)) >> 8;
@@ -490,8 +504,30 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     } else {
       int rate;
       int64_t dist;
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+        switch (xd->bps) {
+          default:
+            vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                         pd->dequant[1] >> 3, &rate, &dist);
+            break;
+          case 10:
+            vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                         pd->dequant[1] >> 5, &rate, &dist);
+            break;
+          case 12:
+            vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                         pd->dequant[1] >> 7, &rate, &dist);
+            break;
+        }
+      } else {
+        vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                     pd->dequant[1] >> 3, &rate, &dist);
+      }
+#else
       vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
                                    pd->dequant[1] >> 3, &rate, &dist);
+#endif
       rate_sum += rate;
       dist_sum += dist;
     }
@@ -538,8 +574,30 @@ static void model_rd_for_sb_y_tx(VP9_COMP *cpi, BLOCK_SIZE bsize,
                          &pd->dst.buf[j * pd->dst.stride + k], pd->dst.stride,
                          &sse);
       // sse works better than var, since there is no dc prediction used
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+        switch (xd->bps) {
+          default:
+            vp9_model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 3,
+                                         &rate, &dist);
+            break;
+          case 10:
+            vp9_model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 5,
+                                         &rate, &dist);
+            break;
+          case 12:
+            vp9_model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 7,
+                                         &rate, &dist);
+            break;
+        }
+      } else {
+        vp9_model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 3,
+                                     &rate, &dist);
+      }
+#else
       vp9_model_rd_from_var_lapndz(sse, t * t, pd->dequant[1] >> 3,
                                    &rate, &dist);
+#endif
       rate_sum += rate;
       dist_sum += dist;
       *out_skip &= (rate < 1024);
@@ -702,6 +760,20 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
     // TODO(jingning): tune the model to better capture the distortion.
     int64_t p = (pd->dequant[1] * pd->dequant[1] *
                     (1 << ss_txfrm_size)) >> (shift + 2);
+#if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS
+    if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+      switch (xd->bps) {
+        case 10:
+          p >>= 4;
+          break;
+        case 12:
+          p >>= 8;
+          break;
+        default:
+          break;
+      }
+    }
+#endif
     args->dist += (p >> 4);
     args->sse  += p;
   }
@@ -3076,7 +3148,27 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
       // Calculate threshold according to dequant value.
       thresh_ac = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1]) / 9;
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+        switch (xd->bps) {
+          default:
+            thresh_ac = clamp(thresh_ac, min_thresh, max_thresh);
+            break;
+          case 10:
+            thresh_ac = clamp(ROUND_POWER_OF_TWO(thresh_ac, 4),
+                              min_thresh, max_thresh);
+            break;
+          case 12:
+            thresh_ac = clamp(ROUND_POWER_OF_TWO(thresh_ac, 8),
+                              min_thresh, max_thresh);
+            break;
+        }
+      } else {
+        thresh_ac = clamp(thresh_ac, min_thresh, max_thresh);
+      }
+#else
       thresh_ac = clamp(thresh_ac, min_thresh, max_thresh);
+#endif
 
       var = cpi->fn_ptr[y_size].vf(x->plane[0].src.buf, x->plane[0].src.stride,
                                    xd->plane[0].dst.buf,
@@ -3092,6 +3184,20 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         unsigned int thresh_dc;
 
         thresh_dc = (xd->plane[0].dequant[0] * xd->plane[0].dequant[0] >> 6);
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+        if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+          switch (xd->bps) {
+            case 10:
+              thresh_dc = ROUND_POWER_OF_TWO(thresh_dc, 4);
+              break;
+            case 12:
+              thresh_dc = ROUND_POWER_OF_TWO(thresh_dc, 8);
+              break;
+            default:
+              break;
+          }
+        }
+#endif
 
         // dc skipping checking
         if ((sse - var) < thresh_dc || sse == var) {
@@ -3704,9 +3810,23 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         // based on qp, activity mask and history
         if ((mode_search_skip_flags & FLAG_EARLY_TERMINATE) &&
             (mode_index > MIN_EARLY_TERM_INDEX)) {
-          const int qstep = xd->plane[0].dequant[1];
+          int qstep = xd->plane[0].dequant[1];
           // TODO(debargha): Enhance this by specializing for each mode_index
           int scale = 4;
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+        if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+          switch (xd->bps) {
+            case 10:
+              qstep >>= 2;
+              break;
+            case 12:
+              qstep >>= 4;
+              break;
+            default:
+              break;
+          }
+        }
+#endif
           if (x->source_variance < UINT_MAX) {
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;
@@ -4363,9 +4483,23 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
         // based on qp, activity mask and history
         if ((cpi->sf.mode_search_skip_flags & FLAG_EARLY_TERMINATE) &&
             (ref_index > MIN_EARLY_TERM_INDEX)) {
-          const int qstep = xd->plane[0].dequant[1];
+          int qstep = xd->plane[0].dequant[1];
           // TODO(debargha): Enhance this by specializing for each mode_index
           int scale = 4;
+#if CONFIG_HIGH_TRANSFORMS && CONFIG_VP9_HIGH
+          if (xd->cur_buf->flags & YV12_FLAG_HIGH) {
+            switch (xd->bps) {
+              case 10:
+                qstep >>= 2;
+                break;
+              case 12:
+                qstep >>= 4;
+                break;
+              default:
+                break;
+            }
+          }
+#endif
           if (x->source_variance < UINT_MAX) {
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;
