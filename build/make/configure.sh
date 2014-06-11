@@ -809,7 +809,14 @@ process_common_toolchain() {
             soft_enable edsp
             soft_enable fast_unaligned
             ;;
-        armv6)
+        armv7s)
+            soft_enable neon
+            soft_enable neon_asm
+            soft_enable media
+            soft_enable edsp
+            soft_enable fast_unaligned
+            ;;
+         armv6)
             soft_enable media
             soft_enable edsp
             soft_enable fast_unaligned
@@ -831,7 +838,7 @@ process_common_toolchain() {
             arch_int=${arch_int%%te}
             check_add_asflags --defsym ARCHITECTURE=${arch_int}
             tune_cflags="-mtune="
-            if [ ${tgt_isa} = "armv7" ]; then
+            if [ ${tgt_isa} = "armv7" ] || [ ${tgt_isa} = "armv7s" ]; then
                 if [ -z "${float_abi}" ]; then
                     check_cpp <<EOF && float_abi=hard || float_abi=softfp
 #ifndef __ARM_PCS_VFP
