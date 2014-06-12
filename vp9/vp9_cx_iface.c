@@ -264,9 +264,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   if (cfg->g_profile <= (unsigned int)PROFILE_1 &&
       cfg->g_bit_depth > VPX_BITS_8)
     ERROR("Codec high bit-depth not supported in profile < 2");
-  if (cfg->g_profile <= (unsigned int)PROFILE_1 &&
-      cfg->g_in_bit_depth > 8)
-    ERROR("Source high bit-depth not supported in profile < 2");
   if (cfg->g_profile > (unsigned int)PROFILE_1 &&
       cfg->g_bit_depth == VPX_BITS_8)
     ERROR("Codec bit-depth 8 not supported in profile > 1");

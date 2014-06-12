@@ -1778,19 +1778,38 @@ static int64_t high_get_sse_shift(const uint8_t *a8, int a_stride,
                                   const uint8_t *b8, int b_stride,
                                   int width, int height,
                                   unsigned int bit_depth,
-                                  unsigned int input_shift) {
+                                  int input_shift) {
   const uint16_t *a = CONVERT_TO_SHORTPTR(a8);
   const uint16_t *b = CONVERT_TO_SHORTPTR(b8);
   int64_t total_sse = 0;
   int x, y;
-  for (y = 0; y < height; ++y) {
-    for (x = 0; x < width; ++x) {
-      int64_t diff;
-      diff = (a[x] >> input_shift) - (b[x] >> input_shift);
-      total_sse += diff * diff;
+  if (input_shift > 0) {
+    for (y = 0; y < height; ++y) {
+      for (x = 0; x < width; ++x) {
+        int64_t diff;
+        diff = (a[x] >> input_shift) - (b[x] >> input_shift);
+        total_sse += diff * diff;
+      }
+      a += a_stride;
+      b += b_stride;
     }
-    a += a_stride;
-    b += b_stride;
+  } else {
+    // Ideally we would compute PSNR with the original source,
+    // but that is not passed into the encoder so we make do with 
+    // an up-shifted version of the input. 
+    // 
+    // This only affects cases when we are encoding at a lower bitdepth
+    // than the input stream.
+    input_shift = -input_shift;
+    for (y = 0; y < height; ++y) {
+      for (x = 0; x < width; ++x) {
+        int64_t diff;
+        diff = (a[x] << input_shift) - (b[x] << input_shift);
+        total_sse += diff * diff;
+      }
+      a += a_stride;
+      b += b_stride;
+    }
   }
   return total_sse;
 }
@@ -1886,7 +1905,7 @@ static void calc_high_psnr(const YV12_BUFFER_CONFIG *a,
   uint64_t total_sse = 0;
   uint32_t total_samples = 0;
   const double peak = (double)((1 << in_bit_depth) - 1);
-  unsigned int input_shift = bit_depth - in_bit_depth;
+  int input_shift = bit_depth - in_bit_depth;
 
   for (i = 0; i < 3; ++i) {
     const int w = widths[i];
@@ -1902,9 +1921,10 @@ static void calc_high_psnr(const YV12_BUFFER_CONFIG *a,
         sse = high_get_sse(a_planes[i], a_strides[i],
                            b_planes[i], b_strides[i], w, h);
     } else {
+      assert(input_shift <= 0);
       sse = get_sse(a_planes[i], a_strides[i],
                     b_planes[i], b_strides[i],
-                    w, h);
+                    w, h) << -2 * input_shift;
     }
     psnr->sse[1 + i] = sse;
     psnr->samples[1 + i] = samples;
@@ -1926,8 +1946,12 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   int i;
   PSNR_STATS psnr;
 #if CONFIG_VP9_HIGH
-  calc_high_psnr(cpi->Source, cpi->common.frame_to_show, &psnr,
-                 cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+  if (cpi->Source->flags & YV12_FLAG_HIGH)
+    calc_high_psnr(cpi->Source, cpi->common.frame_to_show, &psnr,
+                   cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+  else
+    calc_high_psnr(cpi->Source, cpi->common.frame_to_show, &psnr,
+                   8, cpi->oxcf.in_bit_depth);
 #else
   calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
 #endif
@@ -3547,8 +3571,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         YV12_BUFFER_CONFIG *pp = &cm->post_proc_buffer;
         PSNR_STATS psnr;
 #if CONFIG_VP9_HIGH
-        calc_high_psnr(orig, recon, &psnr,
-                       cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+        if (orig->flags & YV12_FLAG_HIGH)
+          calc_high_psnr(orig, recon, &psnr,
+                         cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+        else
+          calc_high_psnr(orig, recon, &psnr, 8, cpi->oxcf.in_bit_depth);
 #else
         calc_psnr(orig, recon, &psnr);
 #endif
@@ -3570,8 +3597,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           vp9_clear_system_state();
 
 #if CONFIG_VP9_HIGH
-          calc_high_psnr(orig, pp, &psnr2,
-                         cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+          if (orig->flags & YV12_FLAG_HIGH)
+            calc_high_psnr(orig, pp, &psnr2,
+                           cpi->mb.e_mbd.bps, cpi->oxcf.in_bit_depth);
+          else
+            calc_high_psnr(orig, pp, &psnr2, 8, cpi->oxcf.in_bit_depth);
 #else
           calc_psnr(orig, pp, &psnr2);
 #endif
