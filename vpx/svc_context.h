@@ -111,7 +111,7 @@ size_t vpx_svc_get_frame_size(const SvcContext *svc_ctx);
 /**
  * return buffer with encoded data
  */
-void *vpx_svc_get_buffer(const SvcContext *svc_ctx);
+void *vpx_svc_get_buffer(SvcContext *svc_ctx);
 
 /**
  * return size of two pass rate control stats data to be returned by
