@@ -41,6 +41,9 @@ LIBVPX_TEST_SRCS-yes                   += decode_test_driver.h
 LIBVPX_TEST_SRCS-yes                   += encode_test_driver.cc
 LIBVPX_TEST_SRCS-yes                   += encode_test_driver.h
 
+## Y4m psrsing
+LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += y4m_test.cc
+
 ## WebM Parsing
 ifeq ($(CONFIG_WEBM_IO), yes)
 LIBWEBM_PARSER_SRCS                    += ../third_party/libwebm/mkvparser.cpp
@@ -130,6 +133,16 @@ endif # CONFIG_SHARED
 ##
 ## TEST DATA
 ##
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_8_420.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_10_420.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_12_420.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_8_422.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_10_422.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_12_422.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_8_444.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_10_444.y4m
+LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += park_joy_90p_12_444.y4m
+
 LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += hantro_collage_w352h288.yuv
 LIBVPX_TEST_DATA-$(CONFIG_ENCODERS) += hantro_odd.yuv
 LIBVPX_TEST_DATA-$(CONFIG_VP9_ENCODER) += rush_hour_444.y4m
