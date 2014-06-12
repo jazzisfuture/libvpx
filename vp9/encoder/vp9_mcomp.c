@@ -60,8 +60,8 @@ int vp9_init_search_range(const SPEED_FEATURES *sf, int size) {
   while ((size << sr) < MAX_FULL_PEL_VAL)
     sr++;
 
-  sr += sf->reduce_first_step_size;
-  sr = MIN(sr, (sf->max_step_search_steps - 2));
+  sr += sf->mv.reduce_first_step_size;
+  sr = MIN(sr, (sf->mv.max_step_search_steps - 2));
   return sr;
 }
 
