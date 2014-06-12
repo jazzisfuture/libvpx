@@ -351,7 +351,7 @@ int main(int argc, const char **argv) {
       die_codec(&codec, "Failed to encode frame");
     }
     if (!(app_input.passes == 2 && app_input.pass == 1)) {
-      if (vpx_svc_get_frame_size(&svc_ctx) > 0) {
+      while (vpx_svc_get_frame_size(&svc_ctx) > 0) {
         vpx_video_writer_write_frame(writer,
                                      vpx_svc_get_buffer(&svc_ctx),
                                      vpx_svc_get_frame_size(&svc_ctx),
