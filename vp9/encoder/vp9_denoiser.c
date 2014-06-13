@@ -46,9 +46,11 @@ static int update_running_avg(uint8_t *mc_avg, int mc_avg_stride, uint8_t *avg,
         switch (absdiff) {
           case 4: case 5: case 6: case 7:
             adj = adj_val[0];
+            break;
           case 8: case 9: case 10: case 11:
           case 12: case 13: case 14: case 15:
             adj = adj_val[1];
+            break;
           default:
             adj = adj_val[2];
         }
