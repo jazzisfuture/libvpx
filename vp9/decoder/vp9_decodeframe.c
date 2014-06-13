@@ -44,7 +44,7 @@
 
 #if CONFIG_TRANSCODE
 #define WRITE_MI_ARRAY 0
-#define READ_MI_ARRAY  1
+#define READ_MI_ARRAY  0
 #endif
 
 static int is_compound_reference_allowed(const VP9_COMMON *cm) {
@@ -429,22 +429,22 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   // contains the right mode_info array.
   if (bsize == BLOCK_64X64) {
     MODE_INFO mi_array[64];
-    FILE *pf = fopen("mi_array.vpx_tmp", "r");
+    FILE *pf = cm->mi_array_pf;
     if (pf) {
       int i, j;
       for (j = 0; j < MI_BLOCK_SIZE; ++j)
         for (i = 0; i < MI_BLOCK_SIZE; ++i)
           fread(&mi_array[j * 8 + i], 1, sizeof(MODE_INFO), pf);
     }
-    fclose(pf);
 
-    {
+    if (pf && mi_row == 0 && mi_col == 8) {
       int i, j;
       for (j = 0; j < MI_BLOCK_SIZE; ++j) {
         for (i = 0; i < MI_BLOCK_SIZE; ++i) {
           MB_MODE_INFO *mbmi = &mi_array[j * 8 + i].mbmi;
+          b_mode_info *bmi = mi_array[j * 8 + i].bmi;
           fprintf(stderr, "pos (%d, %d), bsize %d, mode %d\n",
-                  mi_row + j , mi_col + i, mbmi->sb_type, mbmi->mode);
+                  mi_row + j , mi_col + i, mbmi->sb_type, bmi[0].as_mode);
         }
       }
       fprintf(stderr, "\n");
@@ -490,9 +490,22 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       (bsize == BLOCK_8X8 || partition != PARTITION_SPLIT))
     update_partition_context(xd, mi_row, mi_col, subsize, bsize);
 
+//  if (bsize == BLOCK_64X64 && mi_row == 0 && mi_col == 8) {
+//    int i, j;
+//    fprintf(stderr, "current frame %d\n", cm->current_video_frame);
+//    for (j = 0; j < MI_BLOCK_SIZE; ++j) {
+//      for (i = 0; i < MI_BLOCK_SIZE; ++i) {
+//        MODE_INFO *mi_tmp = &cm->mi[(mi_row + j) * cm->mi_stride + mi_col + i];
+//        fprintf(stderr, "pos (%d, %d), bsize %d, bmi mode %d\n",
+//                mi_row + j, mi_col + i, mi_tmp->mbmi.sb_type,
+//                mi_tmp->bmi[0].as_mode);
+//      }
+//    }
+//  }
+
 #if CONFIG_TRANSCODE && WRITE_MI_ARRAY
   if (bsize == BLOCK_64X64) {
-    FILE *pf = fopen("mi_array.vpx_tmp", "a");
+    FILE *pf = cm->mi_array_pf;
     if (pf) {
       int i, j;
       int offset = mi_row * cm->mi_stride + mi_col;
@@ -500,9 +513,9 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
         for (i = 0; i < MI_BLOCK_SIZE; ++i)
           fwrite(&cm->mi[offset + j * cm->mi_stride + i],
                  1, sizeof(MODE_INFO), pf);
+    } else {
+      assert(0);
     }
-
-    fclose(pf);
   }
 #endif
 }
