@@ -357,6 +357,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
                                       void *user_priv, long deadline) {
   const uint8_t *data_start = data;
   const uint8_t *const data_end = data + data_sz;
+  vpx_codec_err_t res;
   uint32_t frame_sizes[8];
   int frame_count;
 
@@ -366,6 +367,37 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
   parse_superframe_index(data, data_sz, frame_sizes, &frame_count,
                          ctx->decrypt_cb, ctx->decrypt_state);
 
+  if (ctx->frame_parallel_decode == 1) {
+    // Decode in frame parallel mode. When decoding in this mode, the frame
+    // passed to the decoder must be either a normal frame or a superframe with
+    // superframe index so the decoder could get each frame's start position
+    // in the superframe.
+    if (frame_count > 0) {
+      int i;
+
+    for (i = 0; i < frame_count; ++i) {
+      const uint8_t *data_start_copy = data_start;
+      const uint32_t frame_size = frame_sizes[i];
+      vpx_codec_err_t res;
+      if (data_start < data ||
+          frame_size > (uint32_t)(data_end - data_start)) {
+        ctx->base.err_detail = "Invalid frame size in index";
+        return VPX_CODEC_CORRUPT_FRAME;
+      }
+
+      res = decode_one(ctx, &data_start_copy, frame_size, user_priv, deadline);
+      if (res != VPX_CODEC_OK)
+        return res;
+
+      data_start += frame_size;
+    }
+    } else {
+      res = decode_one(ctx, &data_start, data_sz, user_priv, deadline);
+      if (res != VPX_CODEC_OK)
+          return res;
+    }
+  } else {
+    // Decode in serial mode.
   if (frame_count > 0) {
     int i;
 
@@ -402,6 +434,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
         ++data_start;
       }
     }
+  }
   }
 
   return VPX_CODEC_OK;
