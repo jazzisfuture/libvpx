@@ -64,6 +64,9 @@ void vp9_coef_tree_initialize();
 
 // #define OUTPUT_YUV_REC
 
+#ifdef OUTPUT_YUV_DENOISED
+FILE *yuv_denoised_file;
+#endif
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
 #endif
@@ -862,6 +865,9 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->mb.nmvsadcost_hp[1] = &cpi->mb.nmvsadcosts_hp[1][MV_MAX];
   cal_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
 
+#ifdef OUTPUT_YUV_DENOISED
+  yuv_denoised_file = fopen("denoised.yuv", "ab");
+#endif
 #ifdef OUTPUT_YUV_SRC
   yuv_file = fopen("bd.yuv", "ab");
 #endif
@@ -1107,6 +1113,9 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   vp9_remove_common(&cpi->common);
   vpx_free(cpi);
 
+#ifdef OUTPUT_YUV_DENOISED
+  fclose(yuv_denoised_file);
+#endif
 #ifdef OUTPUT_YUV_SRC
   fclose(yuv_file);
 #endif
@@ -1288,13 +1297,13 @@ int vp9_update_entropy(VP9_COMP * cpi, int update) {
 }
 
 
-#ifdef OUTPUT_YUV_SRC
-void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
+#if defined(OUTPUT_YUV_SRC) || defined(OUTPUT_YUV_DENOISED)
+void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s, FILE *f) {
   uint8_t *src = s->y_buffer;
   int h = s->y_height;
 
   do {
-    fwrite(src, s->y_width, 1,  yuv_file);
+    fwrite(src, s->y_width, 1, f);
     src += s->y_stride;
   } while (--h);
 
@@ -1302,7 +1311,7 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1,  yuv_file);
+    fwrite(src, s->uv_width, 1, f);
     src += s->uv_stride;
   } while (--h);
 
@@ -1310,7 +1319,7 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1, yuv_file);
+    fwrite(src, s->uv_width, 1, f);
     src += s->uv_stride;
   } while (--h);
 }
@@ -2124,8 +2133,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 #endif
 
+#ifdef OUTPUT_YUV_DENOISED
+  vp9_write_yuv_frame(&cpi->denoiser.running_avg_y[INTRA_FRAME], yuv_denoised_file);
+#endif
 #ifdef OUTPUT_YUV_SRC
-  vp9_write_yuv_frame(cpi->Source);
+  vp9_write_yuv_frame(cpi->Source, yuv_file);
 #endif
 
   set_speed_features(cpi);
