@@ -164,7 +164,7 @@ int vp8_denoiser_filter_neon(unsigned char *mc_running_avg_y,
           // threshold.
           int delta = ((sum_diff - sum_diff_thresh) >> 8) + 1;
           // Only apply the adjustment for max delta up to 3.
-          if (delta < 4) {
+          if (0 && delta < 4) {
             const uint8x16_t k_delta = vmovq_n_u8(delta);
             sig -= sig_stride * 16;
             mc_running_avg_y -= mc_running_avg_y_stride * 16;
