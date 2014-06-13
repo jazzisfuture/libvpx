@@ -44,7 +44,7 @@
 
 #if CONFIG_TRANSCODE
 #define WRITE_MI_ARRAY 0
-#define READ_MI_ARRAY  1
+#define READ_MI_ARRAY  0
 #endif
 
 static int is_compound_reference_allowed(const VP9_COMMON *cm) {
@@ -429,16 +429,17 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   // contains the right mode_info array.
   if (bsize == BLOCK_64X64) {
     MODE_INFO mi_array[64];
-    FILE *pf = fopen("mi_array.vpx_tmp", "r");
+    FILE *pf = cm->mi_array_pf;
+//    FILE *pf = fopen("mi_array.vpx_tmp", "r");
     if (pf) {
       int i, j;
       for (j = 0; j < MI_BLOCK_SIZE; ++j)
         for (i = 0; i < MI_BLOCK_SIZE; ++i)
           fread(&mi_array[j * 8 + i], 1, sizeof(MODE_INFO), pf);
     }
-    fclose(pf);
+//    fclose(pf);
 
-    {
+    if (pf) {
       int i, j;
       for (j = 0; j < MI_BLOCK_SIZE; ++j) {
         for (i = 0; i < MI_BLOCK_SIZE; ++i) {

@@ -1017,6 +1017,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cm->error.setjmp = 0;
 
+#if CONFIG_TRANSCODE
+  cm->mi_array_pf = fopen("mi_array.txt", "a");
+  fseek(cm->mi_array_pf, 0, SEEK_SET);
+#endif
   return cpi;
 }
 
@@ -1025,6 +1029,11 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
   if (!cpi)
     return;
+
+#if CONFIG_TRANSCODE
+  if (cpi->common.mi_array_pf)
+    fclose(cpi->common.mi_array_pf);
+#endif
 
   if (cpi && (cpi->common.current_video_frame > 0)) {
 #if CONFIG_INTERNAL_STATS
