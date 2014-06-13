@@ -2233,7 +2233,9 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                              int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+#if !CONFIG_TRANSCODE
   SPEED_FEATURES *const sf = &cpi->sf;
+#endif
   int mi_col;
 
   // Initialize the left context for the new SB row
@@ -2243,6 +2245,26 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   // Code each SB in the row
   for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
        mi_col += MI_BLOCK_SIZE) {
+#if CONFIG_TRANSCODE
+    FILE *pf = fopen("mi_array.vpx_tmp", "r");
+    if (pf) {
+      int offset = mi_row * cm->mi_stride + mi_col;
+      int i, j;
+      for (j = 0; j < MI_BLOCK_SIZE; ++j)
+        for (i = 0; i < MI_BLOCK_SIZE; ++i)
+          fread(&cm->mi[offset + j * cm->mi_stride + i],
+                1, sizeof(MODE_INFO), pf);
+    }
+    fclose(pf);
+
+    int dummy_rate;
+    int64_t dummy_dist;
+
+    int i;
+
+    rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
+                      &dummy_rate, &dummy_dist, 1, INT64_MAX, cpi->pc_root);
+#else
     int dummy_rate;
     int64_t dummy_dist;
 
@@ -2330,6 +2352,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
       rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
                         &dummy_rate, &dummy_dist, 1, INT64_MAX, cpi->pc_root);
     }
+#endif
   }
 }
 
