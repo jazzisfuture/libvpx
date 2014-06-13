@@ -385,29 +385,66 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
   parse_superframe_index(data, data_sz, frame_sizes, &frame_count,
                          ctx->decrypt_cb, ctx->decrypt_state);
 
-  if (frame_count > 0) {
-    int i;
+  if (ctx->frame_parallel_decode == 1) {
+    // Decode in frame parallel mode. When decoding in this mode, the frame
+    // passed to the decoder must be either a normal frame or a superframe with
+    // superframe index so the decoder could get each frame's start position
+    // in the superframe.
+    if (frame_count > 0) {
+      int i;
 
-    for (i = 0; i < frame_count; ++i) {
-      const uint32_t frame_size = frame_sizes[i];
-      if (data_start < data ||
-          frame_size > (uint32_t)(data_end - data_start)) {
-        ctx->base.err_detail = "Invalid frame size in index";
-        return VPX_CODEC_CORRUPT_FRAME;
+      for (i = 0; i < frame_count; ++i) {
+        const uint32_t frame_size = frame_sizes[i];
+        const uint8_t *nextStart =  data_start + frame_size;
+        res = decode_one_iter(ctx, &data_start, nextStart - 1, frame_size,
+                              user_priv, deadline);
+        if (res != VPX_CODEC_OK)
+          return res;
+
+        if (data_start != nextStart - 1) {
+            fprintf(stderr,
+                    "WARNING: Extra data detected at the end of frame.");
+        }
+
+        data_start = nextStart;
       }
-
-      res = decode_one_iter(ctx, &data_start, data_end, frame_size,
-                            user_priv, deadline);
+    } else {
+      res = decode_one_iter(ctx, &data_start,
+                            data_start + data_sz - 1, data_sz, user_priv, deadline);
       if (res != VPX_CODEC_OK)
-        return res;
+          return res;
+
+      if (data_start != data_start + data_sz - 1) {
+          fprintf(stderr,
+                  "WARNING: Extra data detected at the end of frame.");
+        }
     }
   } else {
-    while (data_start < data_end) {
-      res = decode_one_iter(ctx, &data_start, data_end,
-                            (uint32_t)(data_end - data_start),
-                            user_priv, deadline);
-      if (res != VPX_CODEC_OK)
-        return res;
+    // Decode in serial mode.
+    if (frame_count > 0) {
+      int i;
+
+      for (i = 0; i < frame_count; ++i) {
+        const uint32_t frame_size = frame_sizes[i];
+        if (data_start < data
+            || frame_size > (uint32_t) (data_end - data_start)) {
+          ctx->base.err_detail = "Invalid frame size in index";
+          return VPX_CODEC_CORRUPT_FRAME;
+        }
+
+        res = decode_one_iter(ctx, &data_start, data_end, frame_size, user_priv,
+                              deadline);
+        if (res != VPX_CODEC_OK)
+          return res;
+      }
+    } else {
+      while (data_start < data_end) {
+        res = decode_one_iter(ctx, &data_start, data_end,
+                              (uint32_t) (data_end - data_start), user_priv,
+                              deadline);
+        if (res != VPX_CODEC_OK)
+          return res;
+      }
     }
   }
 
