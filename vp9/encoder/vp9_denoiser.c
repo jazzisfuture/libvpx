@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include "vp9/encoder/vp9_denoiser.h"
+#include <assert.h>
 #include "vpx_scale/yv12config.h"
+#include "vpx/vpx_integer.h"
+#include "vp9/encoder/vp9_denoiser.h"
 
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
@@ -26,7 +26,7 @@ int update_running_avg(uint8_t *mc_avg, int mc_avg_stride, uint8_t *avg,
   int r, c;
   int diff, adj, absdiff;
   int shift_inc1 = 0, shift_inc2 = 1;
-  int adj_val[] = {3,4,6};
+  int adj_val[] = {3, 4, 6};
   int total_adj = 0;
 
   if (increase_denoising) {
@@ -46,9 +46,11 @@ int update_running_avg(uint8_t *mc_avg, int mc_avg_stride, uint8_t *avg,
         switch (absdiff) {
           case 4: case 5: case 6: case 7:
             adj = adj_val[0];
+            break;
           case 8: case 9: case 10: case 11:
           case 12: case 13: case 14: case 15:
             adj = adj_val[1];
+            break;
           default:
             adj = adj_val[2];
         }
@@ -83,7 +85,6 @@ void copy_partition(uint8_t *dest, int dest_stride,
     dest += dest_stride;
     src += src_stride;
   }
-  return;
 }
 
 void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
@@ -100,15 +101,15 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                      mb->plane[0].src.buf, mb->plane[0].src.stride, 0, bs);
 
   if (decision == FILTER_BLOCK) {
+    // TODO(tkopp)
   }
   if (decision == COPY_BLOCK) {
     copy_partition(partition_start(avg.y_buffer, avg.y_stride, mi_row, mi_col),
                    avg.y_stride, src.buf, src.stride, bs);
   }
-  return;
 }
 
-void copy_frame(YV12_BUFFER_CONFIG dest, YV12_BUFFER_CONFIG src) {
+void copy_frame(YV12_BUFFER_CONFIG dest, const YV12_BUFFER_CONFIG src) {
   int r, c;
   uint8_t *srcbuf = src.y_buffer;
   uint8_t *destbuf = dest.y_buffer;
@@ -122,7 +123,6 @@ void copy_frame(YV12_BUFFER_CONFIG dest, YV12_BUFFER_CONFIG src) {
     destbuf += dest.y_stride;
     srcbuf += src.y_stride;
   }
-  return;
 }
 
 void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
@@ -138,7 +138,7 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
       copy_frame(denoiser->running_avg_y[i],
                  denoiser->running_avg_y[LAST_FRAME]);
     }
-  } else { /* For non key frames */
+  } else {  /* For non key frames */
     if (refresh_alt_ref_frame) {
       copy_frame(denoiser->running_avg_y[ALTREF_FRAME],
                  denoiser->running_avg_y[INTRA_FRAME]);
@@ -152,22 +152,19 @@ void vp9_denoiser_update_frame_info(VP9_DENOISER *denoiser,
                  denoiser->running_avg_y[INTRA_FRAME]);
     }
   }
-
-  return;
 }
 
 void vp9_denoiser_update_frame_stats() {
-  return;
 }
 
 int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int ssx, int ssy, int border) {
   int i, fail;
-  assert(denoiser);
+  assert(denoiser != NULL);
 
   for (i = 0; i < MAX_REF_FRAMES; ++i) {
     fail = vp9_alloc_frame_buffer(&denoiser->running_avg_y[i], width, height,
-                                ssx, ssy, border);
+                                  ssx, ssy, border);
     if (fail) {
       vp9_denoiser_free(denoiser);
       return 1;
@@ -175,7 +172,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
   }
 
   fail = vp9_alloc_frame_buffer(&denoiser->mc_running_avg_y, width, height,
-                              ssx, ssy, border);
+                                ssx, ssy, border);
   if (fail) {
     vp9_denoiser_free(denoiser);
     return 1;
@@ -194,6 +191,5 @@ void vp9_denoiser_free(VP9_DENOISER *denoiser) {
   if (&denoiser->mc_running_avg_y != NULL) {
     vp9_free_frame_buffer(&denoiser->mc_running_avg_y);
   }
-  return;
 }
 
