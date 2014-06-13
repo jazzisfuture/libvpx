@@ -179,8 +179,8 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
   // used by the loopfilter should be revisited.
   for (i = 0; i < num_workers; ++i) {
     VP9Worker *const worker = &pbi->tile_workers[i];
-    TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
-    LFWorkerData *const lf_data = &tile_data->lfdata;
+    TileWorkerData *const worker_data = (TileWorkerData*)worker->priv_data;
+    LFWorkerData *const lf_data = &worker_data->lfdata;
 
     worker->hook = (VP9WorkerHook)loop_filter_row_worker;
 

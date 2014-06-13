@@ -159,9 +159,9 @@ typedef enum {
   WORK          // busy finishing the current task
 } VP9WorkerStatus;
 
-// Function to be called by the worker thread. Takes two opaque pointers as
-// arguments (data1 and data2), and should return false in case of error.
-typedef int (*VP9WorkerHook)(void*, void*);
+// Function to be called by the worker thread. Takes worker's private data as
+// arguments (priv_data), and should return false in case of error.
+typedef int (*VP9WorkerHook)(void*);
 
 // Synchronize object used to launch job in the worker thread
 typedef struct {
@@ -172,8 +172,7 @@ typedef struct {
 #endif
   VP9WorkerStatus status_;
   VP9WorkerHook hook;     // hook to call
-  void* data1;            // first argument passed to 'hook'
-  void* data2;            // second argument passed to 'hook'
+  void* priv_data;        // worker's private data that passed to 'hook'
   int had_error;          // return value of the last call to 'hook'
 } VP9Worker;
 

@@ -18,11 +18,15 @@
 struct VP9Common;
 struct VP9Decoder;
 
-typedef struct TileWorkerData {
-  struct VP9Common *cm;
+typedef struct TileData {
+  VP9_COMMON *cm;
   vp9_reader bit_reader;
-  DECLARE_ALIGNED(16, struct macroblockd, xd);
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+} TileData;
 
+typedef struct TileWorkerData {
+  TileData    tile_data;
+  TileInfo    tile_info;
   // Row-based parallel loopfilter data
   LFWorkerData lfdata;
 } TileWorkerData;

@@ -24,6 +24,11 @@ namespace {
 
 using std::string;
 
+typedef struct TileWorkerData {
+  int data1;
+  int data2;
+} TestWorkerData;
+
 class VP9WorkerThreadTest : public ::testing::TestWithParam<bool> {
  protected:
   virtual ~VP9WorkerThreadTest() {}
@@ -38,23 +43,25 @@ class VP9WorkerThreadTest : public ::testing::TestWithParam<bool> {
   VP9Worker worker_;
 };
 
-int ThreadHook(void* data, void* return_value) {
-  int* const hook_data = reinterpret_cast<int*>(data);
+int ThreadHook(void* data) {
+  TileWorkerData* const worker_data = reinterpret_cast<TileWorkerData*>(data);
+  int* const hook_data = reinterpret_cast<int*>(worker_data->data1);
   *hook_data = 5;
-  return *reinterpret_cast<int*>(return_value);
+  return *reinterpret_cast<int*>(worker_data->data2);
 }
 
 TEST_P(VP9WorkerThreadTest, HookSuccess) {
   EXPECT_NE(vp9_worker_sync(&worker_), 0);  // should be a no-op.
+  TestWorkerData worker_data;
 
   for (int i = 0; i < 2; ++i) {
     EXPECT_NE(vp9_worker_reset(&worker_), 0);
-
     int hook_data = 0;
     int return_value = 1;  // return successfully from the hook
     worker_.hook = ThreadHook;
-    worker_.data1 = &hook_data;
-    worker_.data2 = &return_value;
+    worker_data.data1= hook_data;
+    worker_data.data2 = return_value;
+    worker_.priv_data = &worker_data;
 
     const bool synchronous = GetParam();
     if (synchronous) {
@@ -72,12 +79,14 @@ TEST_P(VP9WorkerThreadTest, HookSuccess) {
 
 TEST_P(VP9WorkerThreadTest, HookFailure) {
   EXPECT_NE(vp9_worker_reset(&worker_), 0);
+  TestWorkerData worker_data;
 
   int hook_data = 0;
   int return_value = 0;  // return failure from the hook
   worker_.hook = ThreadHook;
-  worker_.data1 = &hook_data;
-  worker_.data2 = &return_value;
+  worker_data.data1 = hook_data;
+  worker_data.data2 = return_value;
+  worker_.priv_data = &worker_data;
 
   const bool synchronous = GetParam();
   if (synchronous) {

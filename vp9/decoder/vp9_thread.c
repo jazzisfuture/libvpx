@@ -108,7 +108,7 @@ int vp9_worker_reset(VP9Worker* const worker) {
 
 void vp9_worker_execute(VP9Worker* const worker) {
   if (worker->hook != NULL) {
-    worker->had_error |= !worker->hook(worker->data1, worker->data2);
+    worker->had_error |= !worker->hook(worker->priv_data);
   }
 }
 

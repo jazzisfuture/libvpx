@@ -763,8 +763,8 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   int mi_row, mi_col;
   TileData *tile_data = NULL;
 
-  if (cm->lf.filter_level && pbi->lf_worker.data1 == NULL) {
-    CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
+  if (cm->lf.filter_level && pbi->lf_worker.priv_data == NULL) {
+    CHECK_MEM_ERROR(cm, pbi->lf_worker.priv_data,
                     vpx_memalign(32, sizeof(LFWorkerData)));
     pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
     if (pbi->max_threads > 1 && !vp9_worker_reset(&pbi->lf_worker)) {
@@ -774,7 +774,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   }
 
   if (cm->lf.filter_level) {
-    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.priv_data;
     lf_data->frame_buffer = get_frame_new_buffer(cm);
     lf_data->cm = cm;
     vp9_copy(lf_data->planes, pbi->mb.plane);
@@ -845,7 +845,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       // Loopfilter one row.
       if (cm->lf.filter_level) {
         const int lf_start = mi_row - MI_BLOCK_SIZE;
-        LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+        LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.priv_data;
 
         // delay the loopfilter by 1 macroblock row.
         if (lf_start < 0) continue;
@@ -867,7 +867,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
 
   // Loopfilter remaining rows in the frame.
   if (cm->lf.filter_level) {
-    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
+    LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.priv_data;
     vp9_worker_sync(&pbi->lf_worker);
     lf_data->start = lf_data->stop;
     lf_data->stop = cm->mi_rows;
@@ -880,9 +880,10 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   return vp9_reader_find_end(&tile_data->bit_reader);
 }
 
-static int tile_worker_hook(void *arg1, void *arg2) {
-  TileWorkerData *const tile_data = (TileWorkerData*)arg1;
-  const TileInfo *const tile = (TileInfo*)arg2;
+static int tile_worker_hook(void *arg) {
+  TileWorkerData *const worker_data = (TileWorkerData*)arg;
+  const TileInfo *const tile = &worker_data->tile_info;
+  TileData* const tile_data = &worker_data->tile_data;
   int mi_row, mi_col;
 
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
@@ -942,9 +943,8 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       ++pbi->num_tile_workers;
 
       vp9_worker_init(worker);
-      CHECK_MEM_ERROR(cm, worker->data1,
+      CHECK_MEM_ERROR(cm, worker->priv_data,
                       vpx_memalign(32, sizeof(TileWorkerData)));
-      CHECK_MEM_ERROR(cm, worker->data2, vpx_malloc(sizeof(TileInfo)));
       if (i < num_threads - 1 && !vp9_worker_reset(worker)) {
         vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                            "Tile decoder thread creation failed");
@@ -992,9 +992,10 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
     int i;
     for (i = 0; i < num_workers && n < tile_cols; ++i) {
       VP9Worker *const worker = &pbi->tile_workers[i];
-      TileWorkerData *const tile_data = (TileWorkerData*)worker->data1;
-      TileInfo *const tile = (TileInfo*)worker->data2;
+      TileWorkerData *const worker_data = (TileWorkerData*)worker->priv_data;
+      TileInfo *const tile = &worker_data->tile_info;
       TileBuffer *const buf = &tile_buffers[0][n];
+      TileData *tile_data = &worker_data->tile_data;
 
       tile_data->cm = cm;
       tile_data->xd = pbi->mb;
@@ -1025,9 +1026,9 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       pbi->mb.corrupted |= !vp9_worker_sync(worker);
     }
     if (final_worker > -1) {
-      TileWorkerData *const tile_data =
-          (TileWorkerData*)pbi->tile_workers[final_worker].data1;
-      bit_reader_end = vp9_reader_find_end(&tile_data->bit_reader);
+      TileWorkerData *const worker_data =
+          (TileWorkerData*)pbi->tile_workers[final_worker].priv_data;
+      bit_reader_end = vp9_reader_find_end(&worker_data->tile_data.bit_reader);
       final_worker = -1;
     }
   }
