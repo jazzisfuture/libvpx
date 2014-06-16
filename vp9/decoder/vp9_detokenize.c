@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "./vpx_config.h"
+
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 
@@ -57,6 +59,12 @@
 static const vp9_prob cat6_prob[15] = {
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
+
+static const vp9_prob cat6_prob_high[19] = {
+  254, 254, 254, 254, 254, 254, 254, 252, 249,
+  243, 230, 196, 177, 153, 140, 133, 130, 129, 0
+};
+
 
 #define INCREMENT_COUNT(token)                              \
   do {                                                      \
@@ -184,7 +192,14 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
       WRITE_COEF_CONTINUE(val, CATEGORY5_TOKEN);
     }
     val = 0;
+#if CONFIG_HIGH_QUANT && CONFIG_VP9_HIGH
+    if (cm->use_high)
+      cat6 = cat6_prob_high;
+    else
+      cat6 = cat6_prob;
+#else
     cat6 = cat6_prob;
+#endif
     while (*cat6)
       val = (val << 1) | vp9_read(r, *cat6++);
     val += CAT6_MIN_VAL;

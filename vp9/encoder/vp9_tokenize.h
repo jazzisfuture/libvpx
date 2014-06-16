@@ -26,12 +26,12 @@ void vp9_tokenize_initialize();
 
 typedef struct {
   int16_t token;
-  int16_t extra;
+  int32_t extra;
 } TOKENVALUE;
 
 typedef struct {
   const vp9_prob *context_tree;
-  int16_t         extra;
+  int32_t         extra;
   uint8_t         token;
   uint8_t         skip_eob_node;
 } TOKENEXTRA;
@@ -48,11 +48,13 @@ void vp9_tokenize_sb(struct VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
                      BLOCK_SIZE bsize);
 
 extern const int16_t *vp9_dct_value_cost_ptr;
+extern const int16_t *vp9_dct_value_cost_high_ptr;
 /* TODO: The Token field should be broken out into a separate char array to
  *  improve cache locality, since it's needed for costing when the rest of the
  *  fields are not.
  */
 extern const TOKENVALUE *vp9_dct_value_tokens_ptr;
+extern const TOKENVALUE *vp9_dct_value_tokens_high_ptr;
 
 #ifdef __cplusplus
 }  // extern "C"

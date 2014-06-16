@@ -289,9 +289,10 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       seg->update_map = 1;
       seg->update_data = 1;
 
-      qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 0.875);
-      vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta - 2);
-      vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
+      qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 0.875,
+                                    cm->bit_depth);
+      vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta - 2, cm->bit_depth);
+      vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2, cm->bit_depth);
 
       vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
       vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
@@ -310,16 +311,18 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 1;
         seg->abs_delta = SEGMENT_DELTADATA;
 
-        qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 1.125);
-        vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta + 2);
+        qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 1.125,
+                                      cm->bit_depth);
+        vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta + 2, cm->bit_depth);
         vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
 
-        vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
+        vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2, cm->bit_depth);
         vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_LF);
 
         // Segment coding disabled for compred testing
         if (high_q || (cpi->static_mb_pct == 100)) {
-          vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+          vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME,
+                          cm->bit_depth);
           vp9_enable_segfeature(seg, 1, SEG_LVL_REF_FRAME);
           vp9_enable_segfeature(seg, 1, SEG_LVL_SKIP);
         }
@@ -347,9 +350,9 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
       // All mbs should use ALTREF_FRAME
       vp9_clear_segdata(seg, 0, SEG_LVL_REF_FRAME);
-      vp9_set_segdata(seg, 0, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+      vp9_set_segdata(seg, 0, SEG_LVL_REF_FRAME, ALTREF_FRAME, cm->bit_depth);
       vp9_clear_segdata(seg, 1, SEG_LVL_REF_FRAME);
-      vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME);
+      vp9_set_segdata(seg, 1, SEG_LVL_REF_FRAME, ALTREF_FRAME, cm->bit_depth);
 
       // Skip all MBs if high Q (0,0 mv and skip coeffs)
       if (high_q) {
@@ -2214,16 +2217,17 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp8_yv12_extend_frame_borders_c(dst);
 }
 
-static int find_fp_qindex() {
+static int find_fp_qindex(vpx_bit_depth_t bit_depth) {
   int i;
+  int range = vp9_get_qindex_range(bit_depth);
 
-  for (i = 0; i < QINDEX_RANGE; i++) {
-    if (vp9_convert_qindex_to_q(i) >= 30.0) {
+  for (i = 0; i < range; i++) {
+    if (vp9_convert_qindex_to_q(i, bit_depth) >= 30.0) {
       break;
     }
   }
 
-  if (i == QINDEX_RANGE)
+  if (i == range)
     i--;
 
   return i;
@@ -2962,6 +2966,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     encode_with_recode_loop(cpi, size, dest, q, bottom_index, top_index);
   }
 
+
   // Special case code to reduce pulsing when key frames are forced at a
   // fixed interval. Note the reconstruction error if it is the frame before
   // the force key frame
@@ -3130,7 +3135,7 @@ static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   (void) frame_flags;
 
   vp9_rc_get_first_pass_params(cpi);
-  vp9_set_quantizer(&cpi->common, find_fp_qindex());
+  vp9_set_quantizer(&cpi->common, find_fp_qindex(cpi->common.bit_depth));
   vp9_first_pass(cpi);
 }
 

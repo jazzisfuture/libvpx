@@ -23,6 +23,7 @@
 #include "vp9/common/vp9_reconintra.h"
 
 #include "vp9/encoder/vp9_encoder.h"
+#include "vp9/encoder/vp9_pickmode.h"
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rdopt.h"
 
@@ -219,8 +220,9 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   unsigned int sse_y = UINT_MAX;
 
   VP9_COMMON *cm = &cpi->common;
-  int intra_cost_penalty = 20 * vp9_dc_quant(cm->base_qindex, cm->y_dc_delta_q,
-                                             VPX_BITS_8);
+  int intra_cost_penalty = vp9_get_intra_cost_penalty(cm->base_qindex,
+                                                      cm->y_dc_delta_q,
+                                                      cm->bit_depth);
 
   const int64_t inter_mode_thresh = RDCOST(x->rdmult, x->rddiv,
                                            intra_cost_penalty, 0);
@@ -508,4 +510,22 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   return INT64_MAX;
+}
+
+int vp9_get_intra_cost_penalty(int qindex, int qdelta,
+                               vpx_bit_depth_t bit_depth) {
+  const int q = vp9_dc_quant(qindex, qdelta, bit_depth);
+#if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS
+  switch (bit_depth) {
+    case VPX_BITS_8:
+    default:
+      return 20 * q;
+    case VPX_BITS_10:
+      return 5 * q;
+    case VPX_BITS_12:
+      return ROUND_POWER_OF_TWO(5 * q, 2);
+  }
+#else
+  return 20 * q;
+#endif
 }
