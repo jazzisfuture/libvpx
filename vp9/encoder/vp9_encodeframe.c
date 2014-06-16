@@ -2331,16 +2331,26 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
             || ((sf->use_lastframe_partitioning ==
                  LAST_FRAME_PARTITION_LOW_MOTION) &&
                  sb_has_motion(cm, prev_mi, sf->lf_motion_threshold))) {
-          // If required set upper and lower partition size limits
-          if (sf->auto_min_max_partition_size) {
+          // PJ
+          if (cpi->twopass.stats_in_start[cpi->common.current_video_frame].mvr_abs +
+              cpi->twopass.stats_in_start[cpi->common.current_video_frame].mvc_abs < 10) {
+//          if (0) {
             set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
-            rd_auto_partition_range(cpi, tile, mi_row, mi_col,
-                                    &sf->min_partition_size,
-                                    &sf->max_partition_size);
+            set_fixed_partitioning(cpi, tile, mi, mi_row, mi_col, BLOCK_64X64);
+            rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
+                             &dummy_rate, &dummy_dist, 1, cpi->pc_root);
+          } else {
+            // If required set upper and lower partition size limits
+            if (sf->auto_min_max_partition_size) {
+              set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
+              rd_auto_partition_range(cpi, tile, mi_row, mi_col,
+                                      &sf->min_partition_size,
+                                      &sf->max_partition_size);
+            }
+            rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
+                              &dummy_rate, &dummy_dist, 1, INT64_MAX,
+                              cpi->pc_root);
           }
-          rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
-                            &dummy_rate, &dummy_dist, 1, INT64_MAX,
-                            cpi->pc_root);
         } else {
           if (sf->constrain_copy_partition &&
               sb_has_motion(cm, prev_mi, sf->lf_motion_threshold))
