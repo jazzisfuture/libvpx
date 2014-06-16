@@ -641,6 +641,7 @@ static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate frame buffer");
   }
+  cm->frame_bufs[cm->new_fb_idx].needs_release = 1;
 }
 
 static void setup_frame_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {

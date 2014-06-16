@@ -61,6 +61,7 @@ typedef struct {
   int ref_count;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
+  int needs_release;
 } RefCntBuffer;
 
 typedef struct VP9Common {

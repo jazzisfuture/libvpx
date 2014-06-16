@@ -102,8 +102,10 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
     vp9_free_frame_buffer(&cm->frame_bufs[i].buf);
 
     if (cm->frame_bufs[i].ref_count > 0 &&
+        cm->frame_bufs[i].needs_release &&
         cm->frame_bufs[i].raw_frame_buffer.data != NULL) {
       cm->release_fb_cb(cm->cb_priv, &cm->frame_bufs[i].raw_frame_buffer);
+      cm->frame_bufs[i].needs_release = 0;
       cm->frame_bufs[i].ref_count = 0;
     }
   }
