@@ -177,6 +177,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   cpi->active_map = NULL;
 
   vp9_free_frame_buffers(cm);
+  vp9_free_context_buffers(cm);
 
   vp9_free_frame_buffer(&cpi->last_frame_uf);
   vp9_free_frame_buffer(&cpi->scaled_source);
@@ -419,33 +420,53 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                        "Failed to allocate altref buffer");
 }
 
-void vp9_alloc_compressor_data(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-
+static void alloc_ref_frame_buffers(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
   if (vp9_alloc_frame_buffers(cm, cm->width, cm->height))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate frame buffers");
+}
 
-  if (vp9_alloc_frame_buffer(&cpi->last_frame_uf,
-                             cm->width, cm->height,
-                             cm->subsampling_x, cm->subsampling_y,
-                             VP9_ENC_BORDER_IN_PIXELS))
+static void init_motion_estimation(VP9_COMP *cpi) {
+  int y_stride = cpi->scaled_source.y_stride;
+
+  if (cpi->sf.search_method == NSTEP) {
+    vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
+  } else if (cpi->sf.search_method == DIAMOND) {
+    vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
+  }
+}
+
+static void alloc_util_frame_buffers(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate last frame buffer");
 
-  if (vp9_alloc_frame_buffer(&cpi->scaled_source,
-                             cm->width, cm->height,
-                             cm->subsampling_x, cm->subsampling_y,
-                             VP9_ENC_BORDER_IN_PIXELS))
+  if (vp9_realloc_frame_buffer(&cpi->scaled_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled source buffer");
 
-  if (vp9_alloc_frame_buffer(&cpi->scaled_last_source,
-                             cm->width, cm->height,
-                             cm->subsampling_x, cm->subsampling_y,
-                             VP9_ENC_BORDER_IN_PIXELS))
+  if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
+
+  init_motion_estimation(cpi);
+}
+
+void vp9_alloc_compressor_data(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+
+  vp9_alloc_context_buffers(cm, cm->width, cm->height);
 
   vpx_free(cpi->tok);
 
@@ -461,41 +482,7 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
 static void update_frame_size(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
-
   vp9_update_frame_size(cm);
-
-  // Update size of buffers local to this frame
-  if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to reallocate last frame buffer");
-
-  if (vp9_realloc_frame_buffer(&cpi->scaled_source,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to reallocate scaled source buffer");
-
-  if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to reallocate scaled last source buffer");
-
-  {
-    int y_stride = cpi->scaled_source.y_stride;
-
-    if (cpi->sf.search_method == NSTEP) {
-      vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
-    } else if (cpi->sf.search_method == DIAMOND) {
-      vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
-    }
-  }
-
   init_macroblockd(cm, xd);
 }
 
@@ -533,8 +520,6 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
-  cm->subsampling_x = 0;
-  cm->subsampling_y = 0;
   vp9_alloc_compressor_data(cpi);
 
   // Spatial scalability.
@@ -1602,18 +1587,19 @@ void vp9_scale_references(VP9_COMP *cpi) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
     const YV12_BUFFER_CONFIG *const ref = &cm->frame_bufs[idx].buf;
 
-    if (ref->y_crop_width != cm->width ||
-        ref->y_crop_height != cm->height) {
-      const int new_fb = get_free_fb(cm);
-      vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
-      scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
-      cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
-    } else {
-      cpi->scaled_ref_idx[ref_frame - 1] = idx;
-      cm->frame_bufs[idx].ref_count++;
+    if (ref->y_crop_width != 0 && ref->y_crop_height != 0) {
+      if (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height) {
+        const int new_fb = get_free_fb(cm);
+        vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
+                                 cm->width, cm->height,
+                                 cm->subsampling_x, cm->subsampling_y,
+                                 VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+        scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
+        cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
+      } else {
+        cpi->scaled_ref_idx[ref_frame - 1] = idx;
+        cm->frame_bufs[idx].ref_count++;
+      }
     }
   }
 }
@@ -2310,7 +2296,11 @@ static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
   if (!cpi->initial_width) {
     cm->subsampling_x = subsampling_x;
     cm->subsampling_y = subsampling_y;
+
     alloc_raw_frame_buffers(cpi);
+    alloc_ref_frame_buffers(cpi);
+    alloc_util_frame_buffers(cpi);
+
     cpi->initial_width = cm->width;
     cpi->initial_height = cm->height;
   }
@@ -2327,6 +2317,7 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   const int subsampling_y = sd->uv_height < sd->y_height;
 
   check_initial_width(cpi, subsampling_x, subsampling_y);
+
   vpx_usec_timer_start(&timer);
   if (vp9_lookahead_push(cpi->lookahead,
                          sd, time_stamp, end_time, frame_flags))
@@ -2531,11 +2522,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
 
-  if (cpi->last_source != NULL) {
-    cpi->unscaled_last_source = &cpi->last_source->img;
-  } else {
-    cpi->unscaled_last_source = NULL;
-  }
+    if (cpi->last_source != NULL) {
+      cpi->unscaled_last_source = &cpi->last_source->img;
+    } else {
+      cpi->unscaled_last_source = NULL;
+    }
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
@@ -2609,6 +2600,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                            cm->width, cm->height,
                            cm->subsampling_x, cm->subsampling_y,
                            VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+
+  alloc_util_frame_buffers(cpi);
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
