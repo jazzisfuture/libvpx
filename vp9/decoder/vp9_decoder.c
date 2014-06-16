@@ -46,6 +46,7 @@ VP9Decoder *vp9_decoder_create() {
   VP9Decoder *const pbi = vpx_memalign(32, sizeof(*pbi));
   VP9_COMMON *const cm = pbi ? &pbi->common : NULL;
 
+
   if (!cm)
     return NULL;
 
