@@ -1298,6 +1298,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   double err_fraction;
   int mid_boost_bits = 0;
   int middle_frame_idx;
+  // int boost_pct;
 
   key_frame = cpi->common.frame_type == KEY_FRAME ||
               vp9_is_upper_layer_key_frame(cpi);
@@ -1324,6 +1325,9 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       return;
   }
 
+  // Calculate the % of group bits in primary boosted frame.
+  // boost_pct = (int)(((int64_t)gf_arf_bits * 100) / total_group_bits);
+
   // Deduct the boost bits for arf (or gf if it is not a key frame)
   // from the group total.
   if (rc->source_alt_ref_pending || !key_frame)
@@ -1340,7 +1344,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     twopass->gf_group.rf_level[frame_index] = GF_ARF_STD;
     twopass->gf_group.bit_allocation[frame_index] = gf_arf_bits;
     twopass->gf_group.arf_src_offset[frame_index] =
-      rc->baseline_gf_interval - 1;
+      (unsigned char)(rc->baseline_gf_interval - 1);
     twopass->gf_group.arf_update_idx[frame_index] = 2;
     twopass->gf_group.arf_ref_idx[frame_index] = 2;
     ++frame_index;
@@ -1350,7 +1354,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       twopass->gf_group.update_type[frame_index] = ARF_UPDATE;
       twopass->gf_group.rf_level[frame_index] = GF_ARF_LOW;
       twopass->gf_group.arf_src_offset[frame_index] =
-        ((rc->baseline_gf_interval - 1) >> 1);
+        (unsigned char)((rc->baseline_gf_interval >> 1) - 1);
       twopass->gf_group.arf_update_idx[frame_index] = 3;
       twopass->gf_group.arf_ref_idx[frame_index] = 2;
       ++frame_index;
@@ -1375,8 +1379,11 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     target_frame_size = (int)((double)total_group_bits * err_fraction);
 
     if (rc->source_alt_ref_pending && cpi->multi_arf_enabled) {
+      // int reserve_bits = (boost_pct * target_frame_size) / 100;
       mid_boost_bits += (target_frame_size >> 4);
       target_frame_size -= (target_frame_size >> 4);
+      // mid_boost_bits += reserve_bits;
+      // target_frame_size -= reserve_bits;
 
       if (frame_index <= middle_frame_idx) {
         twopass->gf_group.arf_update_idx[frame_index] = 3;
@@ -1385,6 +1392,9 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
         twopass->gf_group.arf_update_idx[frame_index] = 2;
         twopass->gf_group.arf_ref_idx[frame_index] = 2;
       }
+    } else {
+      twopass->gf_group.arf_update_idx[frame_index] = 2;
+      twopass->gf_group.arf_ref_idx[frame_index] = 2;
     }
 
     target_frame_size = clamp(target_frame_size, 0,
@@ -1402,6 +1412,16 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
       twopass->gf_group.bit_allocation[middle_frame_idx] + mid_boost_bits;
     twopass->gf_group.update_type[middle_frame_idx] = OVERLAY_UPDATE;
     twopass->gf_group.bit_allocation[middle_frame_idx] = 0;
+
+    // Configure the overlay frame at the end of the sequence that will also
+    // be the start frame of the next group. The reason for doing this here
+    // is that on entry to vp9_get_compressed_data() for the overlay
+    // frame, but before the call to vp9_rc_get_second_pass_params() the
+    // data will otherwise be undefined.
+    twopass->gf_group.update_type[frame_index] = OVERLAY_UPDATE;
+    twopass->gf_group.rf_level[frame_index] = INTER_NORMAL;
+    twopass->gf_group.arf_update_idx[frame_index] = 2;
+    twopass->gf_group.arf_ref_idx[frame_index] = 2;
   }
 }
 
