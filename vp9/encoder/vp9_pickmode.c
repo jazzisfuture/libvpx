@@ -259,6 +259,10 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   PRED_BUFFER *this_mode_pred = NULL;
   int i;
 
+#if CONFIG_DENOISING
+  vp9_denoiser_reset_frame_stats(&cpi->denoiser);
+#endif
+
   if (cpi->sf.reuse_inter_pred_sby) {
     for (i = 0; i < 3; i++) {
       tmp[i].data = &pred_buf[pixels_in_block * i];
@@ -513,7 +517,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
 #if CONFIG_DENOISING
-    vp9_denoiser_update_frame_stats();
+      vp9_denoiser_update_frame_stats(&cpi->denoiser, mbmi, sse_y, this_mode);
 #endif
 
       if (this_rd < best_rd || x->skip) {
