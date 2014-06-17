@@ -35,7 +35,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
     PreDecodeFrameHook(*video, decoder);
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                    video->frame_size());
-    ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
+    HandleDecodeResult(decoder, res_dec, video->frame_number());
 
     DxDataIterator dec_iter = decoder->GetDxData();
     const vpx_image_t *img = NULL;
