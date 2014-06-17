@@ -40,6 +40,20 @@ typedef struct VP9LfSyncData {
   int sync_range;
 } VP9LfSync;
 
+typedef struct FrameWorkerData {
+  struct VP9Decoder *pbi;
+  const uint8_t *data;
+  const uint8_t *data_end;
+  int data_size;
+  int result;
+  int worker_id;
+
+  // scratch_buffer is used in frame parallel mode only.
+  // It is used to make a copy of the compressed data.
+  uint8_t *scratch_buffer;
+  uint8_t scratch_buffer_size;
+} FrameWorkerData;
+
 // Allocate memory for loopfilter row synchronization.
 void vp9_loop_filter_alloc(struct VP9Common *cm, VP9LfSync *lf_sync,
                            int rows, int width);
@@ -53,5 +67,4 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
                               struct VP9Common *cm,
                               int frame_filter_level,
                               int y_only);
-
 #endif  // VP9_DECODER_VP9_DTHREAD_H_
