@@ -1009,8 +1009,7 @@ static void write_frame_size_with_refs(VP9_COMP *cpi,
 
     // Set "found" to 0 for temporal svc and for spatial svc key frame
     if (cpi->use_svc &&
-        (cpi->svc.number_spatial_layers == 1 ||
-         cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame)) {
+        cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame) {
       found = 0;
     }
     vp9_wb_write_bit(wb, found);
