@@ -112,7 +112,7 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
 
 static void copy_frame(YV12_BUFFER_CONFIG dest, const YV12_BUFFER_CONFIG src) {
   int r, c;
-  uint8_t *srcbuf = src.y_buffer;
+  const uint8_t *srcbuf = src.y_buffer;
   uint8_t *destbuf = dest.y_buffer;
   assert(dest.y_width == src.y_width);
   assert(dest.y_height == src.y_height);
