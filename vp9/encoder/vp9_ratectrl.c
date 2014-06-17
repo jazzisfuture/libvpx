@@ -1387,7 +1387,10 @@ void vp9_rc_set_gf_max_interval(const VP9EncoderConfig *const oxcf,
   rc->max_gf_interval = 16;
 
   // Extended interval for genuinely static scenes
-  rc->static_scene_max_gf_interval = oxcf->key_freq >> 1;
+  // TODO(libvpx-dev) fix this, MAX_LAG_BUFFERS is based on
+  // TWO_PASS->gf_group_bit_allocation size
+  rc->static_scene_max_gf_interval =
+      MIN(oxcf->key_freq >> 1, MAX_LAG_BUFFERS * 2);
 
   if (is_altref_enabled(oxcf)) {
     if (rc->static_scene_max_gf_interval > oxcf->lag_in_frames - 1)
