@@ -177,48 +177,20 @@ TEST_F(SvcTest, SetQuantizersOption) {
   codec_initialized_ = true;
 }
 
-TEST_F(SvcTest, SetKeyFrameQuantizersOption) {
-  svc_.spatial_layers = 2;
-  vpx_codec_err_t res = vpx_svc_set_options(&svc_,
-                                       "quantizers-keyframe=not-quantizers");
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
-  vpx_svc_set_options(&svc_, "quantizers-keyframe=40,45");
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  codec_initialized_ = true;
-}
-
 TEST_F(SvcTest, SetQuantizers) {
-  vpx_codec_err_t res = vpx_svc_set_quantizers(NULL, "40,30", 0);
+  vpx_codec_err_t res = vpx_svc_set_quantizers(NULL, "40,30");
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  res = vpx_svc_set_quantizers(&svc_, NULL, 0);
+  res = vpx_svc_set_quantizers(&svc_, NULL);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
   svc_.spatial_layers = 2;
-  res = vpx_svc_set_quantizers(&svc_, "40", 0);
+  res = vpx_svc_set_quantizers(&svc_, "40");
   EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
 
-  res = vpx_svc_set_quantizers(&svc_, "40,30", 0);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
-  EXPECT_EQ(VPX_CODEC_OK, res);
-  codec_initialized_ = true;
-}
-
-TEST_F(SvcTest, SetKeyFrameQuantizers) {
-  vpx_codec_err_t res = vpx_svc_set_quantizers(NULL, "40,31", 1);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
-  res = vpx_svc_set_quantizers(&svc_, NULL, 1);
-  EXPECT_EQ(VPX_CODEC_INVALID_PARAM, res);
-
-  res = vpx_svc_set_quantizers(&svc_, "40,30", 1);
+  res = vpx_svc_set_quantizers(&svc_, "40,30");
   EXPECT_EQ(VPX_CODEC_OK, res);
   res = vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
   EXPECT_EQ(VPX_CODEC_OK, res);
@@ -249,7 +221,7 @@ TEST_F(SvcTest, SetScaleFactors) {
 TEST_F(SvcTest, FirstFrameHasLayers) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
-  vpx_svc_set_quantizers(&svc_, "40,30", 0);
+  vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
       vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
@@ -276,7 +248,7 @@ TEST_F(SvcTest, FirstFrameHasLayers) {
 TEST_F(SvcTest, EncodeThreeFrames) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
-  vpx_svc_set_quantizers(&svc_, "40,30", 0);
+  vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
       vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
@@ -329,7 +301,7 @@ TEST_F(SvcTest, EncodeThreeFrames) {
 TEST_F(SvcTest, GetLayerResolution) {
   svc_.spatial_layers = 2;
   vpx_svc_set_scale_factors(&svc_, "4/16,8/16");
-  vpx_svc_set_quantizers(&svc_, "40,30", 0);
+  vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
       vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
@@ -368,7 +340,7 @@ TEST_F(SvcTest, TwoPassEncode) {
   svc_.spatial_layers = 2;
   codec_enc_.g_pass = VPX_RC_FIRST_PASS;
   vpx_svc_set_scale_factors(&svc_, "4/16,16/16");
-  vpx_svc_set_quantizers(&svc_, "40,30", 0);
+  vpx_svc_set_quantizers(&svc_, "40,30");
 
   vpx_codec_err_t res =
       vpx_svc_init(&svc_, &codec_, vpx_codec_vp9_cx(), &codec_enc_);
