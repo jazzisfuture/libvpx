@@ -59,6 +59,8 @@ typedef struct SvcInternal {
   int scaling_factor_den[VPX_SS_MAX_LAYERS];
   int quantizer_keyframe[VPX_SS_MAX_LAYERS];
   int quantizer[VPX_SS_MAX_LAYERS];
+  int bitrate[VPX_SS_MAX_LAYERS];
+  int viewport_id[VPX_SS_MAX_LAYERS];
 
   // accumulated statistics
   double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];   // total/Y/U/V
@@ -215,11 +217,16 @@ static void sf_create_index(struct Superframe *sf) {
 static SvcInternal *get_svc_internal(SvcContext *svc_ctx) {
   if (svc_ctx == NULL) return NULL;
   if (svc_ctx->internal == NULL) {
+    int i;
     SvcInternal *const si = (SvcInternal *)malloc(sizeof(*si));
     if (si != NULL) {
       memset(si, 0, sizeof(*si));
     }
     svc_ctx->internal = si;
+    svc_ctx->encoding_mode = INTER_LAYER_PREDICTION_IP;
+    for (i = 0; i < VPX_SS_MAX_LAYERS; ++i) {
+      si->viewport_id[i] = -1;
+    }
   }
   return (SvcInternal *)svc_ctx->internal;
 }
@@ -323,6 +330,78 @@ static vpx_codec_err_t parse_quantizer_values(SvcContext *svc_ctx,
     } else {
       si->quantizer[i + VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers] = q;
     }
+  }
+  if (res == VPX_CODEC_OK && found != svc_ctx->spatial_layers) {
+    svc_log(svc_ctx, SVC_LOG_ERROR,
+            "svc: quantizers: %d values required, but only %d specified\n",
+            svc_ctx->spatial_layers, found);
+    res = VPX_CODEC_INVALID_PARAM;
+  }
+  free(input_string);
+  return res;
+}
+
+static vpx_codec_err_t parse_bitrate_values(SvcContext *svc_ctx,
+                                              const char *bitrate_values) {
+  char *input_string;
+  char *token;
+  const char *delim = ",";
+  char *save_ptr;
+  int found = 0;
+  int i, bitrate;
+  vpx_codec_err_t res = VPX_CODEC_OK;
+  SvcInternal *const si = get_svc_internal(svc_ctx);
+
+  input_string = strdup(bitrate_values);
+  token = strtok_r(input_string, delim, &save_ptr);
+  for (i = 0; i < svc_ctx->spatial_layers; ++i) {
+    if (token != NULL) {
+      bitrate = atoi(token);
+      token = strtok_r(NULL, delim, &save_ptr);
+      found = i + 1;
+    } else {
+      bitrate = 0;
+    }
+      si->bitrate[i + VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers] = bitrate;
+  }
+  if (res == VPX_CODEC_OK && found != svc_ctx->spatial_layers) {
+    svc_log(svc_ctx, SVC_LOG_ERROR,
+            "svc: quantizers: %d values required, but only %d specified\n",
+            svc_ctx->spatial_layers, found);
+    res = VPX_CODEC_INVALID_PARAM;
+  }
+  free(input_string);
+  return res;
+}
+
+static vpx_codec_err_t parse_viewport_values(SvcContext *svc_ctx,
+                                              const char *bitrate_values) {
+  char *input_string;
+  char *token;
+  const char *delim = ",";
+  char *save_ptr;
+  int found = 0;
+  int i, viewport_id;
+  vpx_codec_err_t res = VPX_CODEC_OK;
+  SvcInternal *const si = get_svc_internal(svc_ctx);
+
+  input_string = strdup(bitrate_values);
+  token = strtok_r(input_string, delim, &save_ptr);
+  for (i = 0; i < svc_ctx->spatial_layers; ++i) {
+    if (token != NULL) {
+      viewport_id = atoi(token);
+      if (viewport_id < 0 || viewport_id > 4) {
+        svc_log(svc_ctx, SVC_LOG_ERROR,
+                "viewports: invalid value %s\n", token);
+        res = VPX_CODEC_INVALID_PARAM;
+        break;
+      }
+      token = strtok_r(NULL, delim, &save_ptr);
+      found = i + 1;
+    } else {
+      viewport_id = -1;
+    }
+      si->viewport_id[i] = viewport_id;
   }
   if (res == VPX_CODEC_OK && found != svc_ctx->spatial_layers) {
     svc_log(svc_ctx, SVC_LOG_ERROR,
@@ -444,6 +523,12 @@ static vpx_codec_err_t parse_options(SvcContext *svc_ctx, const char *options) {
       res = parse_quantizer_values(svc_ctx, option_value, 1);
       if (res != VPX_CODEC_OK) break;
       is_keyframe_qaunt_set = 1;
+    } else if (strcmp("bitrates", option_name) == 0) {
+      res = parse_bitrate_values(svc_ctx, option_value);
+      if (res != VPX_CODEC_OK) break;
+    } else if (strcmp("viewports", option_name) == 0) {
+      res = parse_viewport_values(svc_ctx, option_value);
+      if (res != VPX_CODEC_OK) break;
     } else {
       svc_log(svc_ctx, SVC_LOG_ERROR, "invalid option: %s\n", option_name);
       res = VPX_CODEC_INVALID_PARAM;
@@ -546,28 +631,38 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   // from the resolution for now.
   // TODO(Minghai): Optimize the mechanism of allocating bits after
   // implementing svc two pass rate control.
-  if (si->layers > 1) {
+  if (si->layers >= 1) {
     int i;
-    float total = 0;
-    float alloc_ratio[VPX_SS_MAX_LAYERS] = {0};
+    if (si->bitrate[VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers] != 0) {
+      for (i = 0; i < si->layers; ++i) {
+        enc_cfg->ss_target_bitrate[i] = (unsigned int)
+            si->bitrate[i + VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers];
+      }
+    } else {
+      float total = 0;
+      float alloc_ratio[VPX_SS_MAX_LAYERS] = {0};
 
-    assert(si->layers <= VPX_SS_MAX_LAYERS);
-    for (i = 0; i < si->layers; ++i) {
-      int pos = i + VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers;
-      if (pos < VPX_SS_MAX_LAYERS && si->scaling_factor_den[pos] > 0) {
-        alloc_ratio[i] = (float)(si->scaling_factor_num[pos] * 1.0 /
-            si->scaling_factor_den[pos]);
+      assert(si->layers <= VPX_SS_MAX_LAYERS);
+      for (i = 0; i < si->layers; ++i) {
+        int pos = i + VPX_SS_MAX_LAYERS - svc_ctx->spatial_layers;
+        if (pos < VPX_SS_MAX_LAYERS && si->scaling_factor_den[pos] > 0) {
+          alloc_ratio[i] = (float)(si->scaling_factor_num[pos] * 1.0 /
+              si->scaling_factor_den[pos]);
 
-        alloc_ratio[i] *= alloc_ratio[i];
-        total += alloc_ratio[i];
+          alloc_ratio[i] *= alloc_ratio[i];
+          total += alloc_ratio[i];
+        }
+      }
+
+      for (i = 0; i < si->layers; ++i) {
+        if (total > 0) {
+          enc_cfg->ss_target_bitrate[i] = (unsigned int)
+              (enc_cfg->rc_target_bitrate * alloc_ratio[i] / total);
+        }
       }
     }
-
     for (i = 0; i < si->layers; ++i) {
-      if (total > 0) {
-        enc_cfg->ss_target_bitrate[i] = (unsigned int)
-            (enc_cfg->rc_target_bitrate * alloc_ratio[i] / total);
-      }
+      enc_cfg->ss_viewport_id[i] = si->viewport_id[i];
     }
   }
 
@@ -581,6 +676,8 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   // svc, or if the normal default/override mechanism can be used
   enc_cfg->rc_dropframe_thresh = 0;
   enc_cfg->rc_resize_allowed = 0;
+
+  enc_cfg->use_svc = 1;
 
   if (enc_cfg->g_pass == VPX_RC_ONE_PASS) {
     enc_cfg->rc_min_quantizer = 33;
@@ -604,7 +701,6 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
   vpx_codec_control(codec_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
   vpx_codec_control(codec_ctx, VP8E_SET_ENABLEAUTOALTREF, 0);
-
   return VPX_CODEC_OK;
 }
 

@@ -221,7 +221,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
     if (cfg->rc_twopass_stats_in.sz % packet_sz)
       ERROR("rc_twopass_stats_in.sz indicates truncated packet.");
 
-    if (cfg->ss_number_layers > 1) {
+    if (cfg->ss_number_layers >= 1 && cfg->use_svc) {
       int i;
       unsigned int n_packets_per_layer[VPX_SS_MAX_LAYERS] = {0};
 
@@ -380,10 +380,13 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->ss_number_layers = cfg->ss_number_layers;
 
-  if (oxcf->ss_number_layers > 1) {
+  oxcf->use_svc = cfg->use_svc;
+  if (oxcf->ss_number_layers >= 1 && oxcf->use_svc) {
     int i;
-    for (i = 0; i < VPX_SS_MAX_LAYERS; ++i)
+    for (i = 0; i < VPX_SS_MAX_LAYERS; ++i) {
       oxcf->ss_target_bitrate[i] =  1000 * cfg->ss_target_bitrate[i];
+      oxcf->ss_viewport_id[i] =  cfg->ss_viewport_id[i];
+    }
   } else if (oxcf->ss_number_layers == 1) {
     oxcf->ss_target_bitrate[0] = (int)oxcf->target_bandwidth;
   }
@@ -1277,6 +1280,7 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
       9999,               // kf_max_dist
 
       VPX_SS_DEFAULT_LAYERS,  // ss_number_layers
+      0,{-1, -1, -1, -1, -1},
       {0},                    // ss_target_bitrate
       1,                      // ts_number_layers
       {0},                    // ts_target_bitrate
