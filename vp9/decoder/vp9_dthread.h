@@ -54,4 +54,17 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame,
                               int frame_filter_level,
                               int y_only);
 
+typedef struct FrameWorkerData {
+  struct VP9Decoder *pbi;
+  const uint8_t *data;
+  const uint8_t *data_end;
+  int data_size;
+  int result;
+  int worker_id;
+
+  // read_buffer is used in frame parallel mode only.
+  // It is used to make a copy of the compressed data.
+  uint8_t *read_uffer;
+  uint8_t size;
+} FrameWorkerData;
 #endif  // VP9_DECODER_VP9_DTHREAD_H_
