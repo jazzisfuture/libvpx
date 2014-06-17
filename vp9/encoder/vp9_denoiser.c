@@ -18,25 +18,27 @@
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
 
-int vp9_denoiser_filter() {
-  return 0;
-}
-
-static int update_running_avg(const uint8_t *mc_avg, int mc_avg_stride,
-                              uint8_t *avg, int avg_stride,
-                              const uint8_t *sig, int sig_stride,
-                              int increase_denoising, BLOCK_SIZE bs) {
+static int denoiser_filter(const uint8_t *sig, int sig_stride,
+                           const uint8_t *mc_avg, int mc_avg_stride,
+                           uint8_t *avg, int avg_stride,
+                           int increase_denoising, BLOCK_SIZE bs) {
   int r, c;
-  int diff, adj, absdiff;
+  const uint8_t *sig_start = sig;
+  const uint8_t *mc_avg_start = mc_avg;
+  uint8_t *avg_start = avg;
+  int diff, adj, absdiff, delta;
   int shift_inc1 = 0, shift_inc2 = 1;
   int adj_val[] = {3, 4, 6};
   int total_adj = 0;
+  int total_adj_threshold = heights[bs] * widths[bs] *
+      (increase_denoising ? 3 : 2);
 
   if (increase_denoising) {
     shift_inc1 = 1;
     shift_inc2 = 2;
   }
 
+  // First attempt to apply a strong temporal denoising filter.
   for (r = 0; r < heights[bs]; ++r) {
     for (c = 0; c < widths[bs]; ++c) {
       diff = mc_avg[c] - sig[c];
@@ -70,7 +72,45 @@ static int update_running_avg(const uint8_t *mc_avg, int mc_avg_stride,
     avg += avg_stride;
     mc_avg += mc_avg_stride;
   }
-  return total_adj;
+
+  // If the strong filter did not modify the signal too much, we're all set.
+  if (abs(total_adj) <= total_adj_threshold) {
+    return FILTER_BLOCK;
+  }
+
+  // Otherwise, we try to dampen the filter if the delta is not too high.
+  delta = ((abs(total_adj) - total_adj_threshold) >> 8) + 1;
+  if (delta > INT_MAX) {
+    // TODO(tkopp): Empirically determine a constant or function to compare
+    // against delta, and substitute it for INT_MAX.
+    return COPY_BLOCK;
+  }
+
+  mc_avg =  mc_avg_start;
+  avg = avg_start;
+  sig = sig_start;
+  for (r = 0; r < heights[bs]; ++r) {
+    for (c = 0; c < widths[bs]; ++c) {
+      diff = mc_avg[c] - sig[c];
+      adj = abs(diff);
+      if (adj > delta) {
+        adj = delta;
+      }
+      if (diff > 0) {
+        avg[c] = MAX(0, avg[c] - adj);
+        total_adj += adj;
+      } else {
+        avg[c] = MIN(UINT8_MAX, avg[c] + adj);
+        total_adj -= adj;
+      }
+    }
+    sig += sig_stride;
+    avg += avg_stride;
+    mc_avg += mc_avg_stride;
+  }
+
+  // We can use the filter if it has been sufficiently dampened
+  return (abs(total_adj) > total_adj_threshold) ? COPY_BLOCK : FILTER_BLOCK;
 }
 
 static uint8_t *block_start(uint8_t *framebuf, int stride,
@@ -224,7 +264,7 @@ static int perform_motion_compensation(VP9_DENOISER *denoiser, MACROBLOCK *mb,
 
 void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                           int mi_row, int mi_col, BLOCK_SIZE bs) {
-  int decision = COPY_BLOCK;
+  int decision = FILTER_BLOCK;
 
   YV12_BUFFER_CONFIG avg = denoiser->running_avg_y[INTRA_FRAME];
   YV12_BUFFER_CONFIG mc_avg = denoiser->mc_running_avg_y;
@@ -236,13 +276,17 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
   decision = perform_motion_compensation(denoiser, mb, bs,
                                          denoiser->increase_denoising,
                                          mi_row, mi_col);
-  update_running_avg(mc_avg_start, mc_avg.y_stride, avg_start, avg.y_stride,
-                     mb->plane[0].src.buf, mb->plane[0].src.stride, 0, bs);
 
   if (decision == FILTER_BLOCK) {
-    // TODO(tkopp)
+    decision = denoiser_filter(src.buf, src.stride,
+                               mc_avg_start, mc_avg.y_stride,
+                               avg_start, avg.y_stride,
+                               0, bs);
   }
-  if (decision == COPY_BLOCK) {
+
+  if (decision == FILTER_BLOCK) {
+    copy_block(src.buf, src.stride, avg_start, avg.y_stride, bs);
+  } else {  // COPY_BLOCK
     copy_block(avg_start, avg.y_stride, src.buf, src.stride, bs);
   }
 }
