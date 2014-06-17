@@ -229,6 +229,10 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int pred_filter_search = (((mi_row + mi_col) >> bsl) +
                                       get_chessboard_index(cm)) % 2;
 
+#if CONFIG_DENOISING
+  vp9_denoiser_reset_frame_stats(&cpi->denoiser);
+#endif
+
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
   x->skip = 0;
@@ -438,7 +442,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
 #if CONFIG_DENOISING
-    vp9_denoiser_update_frame_stats();
+      vp9_denoiser_update_frame_stats(&cpi->denoiser, mbmi, sse_y, this_mode);
 #endif
 
       if (this_rd < best_rd || x->skip) {
