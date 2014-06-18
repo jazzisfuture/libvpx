@@ -55,6 +55,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += webm_video_source.h
 endif
 
 LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += test_vector_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += invalid_file_test.cc
 
 # Currently we only support decoder perf tests for vp9. Also they read from WebM
 # files, so WebM IO is required.
@@ -756,6 +757,10 @@ LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-15-segkey_adpq.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-15-segkey_adpq.webm.md5
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-15-fuzz-flicker.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-15-fuzz-flicker.webm.md5
+
+# Invalid files for testing libvpx error checking.
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-01.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-01.webm.res
 
 ifeq ($(CONFIG_DECODE_PERF_TESTS),yes)
 # BBB VP9 streams
