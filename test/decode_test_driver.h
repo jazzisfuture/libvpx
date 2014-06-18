@@ -114,6 +114,13 @@ class DecoderTest {
   virtual void PreDecodeFrameHook(const CompressedVideoSource& video,
                                   Decoder *decoder) {}
 
+  // Hook to be called to handle decode result.
+  virtual void HandleDecodeResult(Decoder *decoder,
+                                  const vpx_codec_err_t res_dec,
+                                  const CompressedVideoSource& /* video */) {
+    ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
+  }
+
   // Hook to be called on every decompressed frame.
   virtual void DecompressedFrameHook(const vpx_image_t& img,
                                      const unsigned int frame_number) {}
