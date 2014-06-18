@@ -22,10 +22,12 @@ static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
 
-static int denoiser_filter(const uint8_t *sig, int sig_stride,
-                           const uint8_t *mc_avg, int mc_avg_stride,
-                           uint8_t *avg, int avg_stride,
-                           int increase_denoising, BLOCK_SIZE bs) {
+static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
+                                             const uint8_t *mc_avg,
+                                             int mc_avg_stride,
+                                             uint8_t *avg, int avg_stride,
+                                             int increase_denoising,
+                                             BLOCK_SIZE bs) {
   int r, c;
   const uint8_t *sig_start = sig;
   const uint8_t *mc_avg_start = mc_avg;
@@ -134,9 +136,12 @@ void copy_block(uint8_t *dest, int dest_stride,
   }
 }
 
-static int perform_motion_compensation(VP9_DENOISER *denoiser, MACROBLOCK *mb,
-                                       BLOCK_SIZE bs, int increase_denoising,
-                                       int mi_row, int mi_col) {
+static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
+                                                         MACROBLOCK *mb,
+                                                         BLOCK_SIZE bs,
+                                                         int increase_denoising,
+                                                         int mi_row,
+                                                         int mi_col) {
   // constants
   // TODO(tkopp): empirically determine good constants, or functions of block
   // size.
@@ -268,7 +273,7 @@ static int perform_motion_compensation(VP9_DENOISER *denoiser, MACROBLOCK *mb,
 
 void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                           int mi_row, int mi_col, BLOCK_SIZE bs) {
-  int decision = FILTER_BLOCK;
+  VP9_DENOISER_DECISION decision = FILTER_BLOCK;
 
   YV12_BUFFER_CONFIG avg = denoiser->running_avg_y[INTRA_FRAME];
   YV12_BUFFER_CONFIG mc_avg = denoiser->mc_running_avg_y;
