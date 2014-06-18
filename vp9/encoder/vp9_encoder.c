@@ -2009,7 +2009,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
                                              &cpi->scaled_last_source);
 
-  vp9_scale_references(cpi);
+  if (frame_is_intra_only(cm) == 0) {
+    vp9_scale_references(cpi);
+  }
 
   vp9_clear_system_state();
 
