@@ -470,7 +470,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
     const YV12_BUFFER_CONFIG *scaled_ref_buf = NULL;
     twopass = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].twopass;
 
-    vp9_scale_references(cpi);
+    if (frame_is_intra_only(cm) == 0) {
+      vp9_scale_references(cpi);
+    }
 
     // Use either last frame or alt frame for motion search.
     if (cpi->ref_frame_flags & VP9_LAST_FLAG) {
