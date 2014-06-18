@@ -118,16 +118,20 @@ static void convolve(const uint8_t *src, ptrdiff_t src_stride,
                      int y0_q4, int y_step_q4,
                      int w, int h) {
   // Fixed size intermediate buffer places limits on parameters.
-  // Maximum intermediate_height is 324, for y_step_q4 == 80,
-  // h == 64, taps == 8.
-  // y_step_q4 of 80 allows for 1/10 scale for 5 layer svc
-  uint8_t temp[64 * 324];
+  // Normative scaling lower limit is x1/2 corresponding to y_step_q4 = 32.
+  // The maximum intermediate buffer, temp, will require 135 rows of 64
+  // columns for the largest 64x64 block, therefore:
+  // 64 pixel rows in the dst span ((64 - 1) * 32) rows in the src
+  // (i.e. ref frame) in 1/16th pixel units. Rounding to the nearest full
+  // pixel position and adding the additional pixels required by the filter
+  // tails results in a maximum intermediate buffer size of (135 * 64).
+  uint8_t temp[135 * 64];
   int intermediate_height = (((h - 1) * y_step_q4 + 15) >> 4) + SUBPEL_TAPS;
 
   assert(w <= 64);
   assert(h <= 64);
-  assert(y_step_q4 <= 80);
-  assert(x_step_q4 <= 80);
+  assert(y_step_q4 <= 32);
+  assert(x_step_q4 <= 32);
 
   if (intermediate_height < h)
     intermediate_height = h;
