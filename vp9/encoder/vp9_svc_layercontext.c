@@ -45,6 +45,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     lrc->decimation_factor = 0;
     lrc->rate_correction_factor = 1.0;
     lrc->key_frame_rate_correction_factor = 1.0;
+    lrc->gf_rate_correction_factor = 1.0;
 
     if (svc->number_temporal_layers > 1) {
       lc->target_bandwidth = oxcf->ts_target_bitrate[layer];
@@ -161,6 +162,7 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
   cpi->rc = lc->rc;
   cpi->twopass = lc->twopass;
   cpi->oxcf.target_bandwidth = lc->target_bandwidth;
+  cpi->alt_ref_source = lc->alt_ref_source;
   // Reset the frames_since_key and frames_to_key counters to their values
   // before the layer restore. Keep these defined for the stream (not layer).
   if (cpi->svc.number_temporal_layers > 1) {
@@ -176,6 +178,7 @@ void vp9_save_layer_context(VP9_COMP *const cpi) {
   lc->rc = cpi->rc;
   lc->twopass = cpi->twopass;
   lc->target_bandwidth = (int)oxcf->target_bandwidth;
+  lc->alt_ref_source = cpi->alt_ref_source;
 }
 
 void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
@@ -266,6 +269,8 @@ static int copy_svc_params(VP9_COMP *const cpi, struct lookahead_entry *buf) {
   vp9_change_config(cpi, &cpi->oxcf);
 
   vp9_set_high_precision_mv(cpi, 1);
+
+  cpi->alt_ref_source = get_layer_context(&cpi->svc)->alt_ref_source;
 
   // Retrieve the encoding flags for each layer and apply it to encoder.
   // It includes reference frame flags and update frame flags.

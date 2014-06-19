@@ -1264,6 +1264,9 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   }
   pkt.kind = VPX_CODEC_PSNR_PKT;
   vpx_codec_pkt_list_add(cpi->output_pkt_list, &pkt);
+
+  printf("%f    %f    %f    %f    ", psnr.psnr[0], psnr.psnr[1], psnr.psnr[2],
+         psnr.psnr[3]);
 }
 
 int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags) {
@@ -2340,10 +2343,15 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
 
+  if (cpi->common.current_video_frame == 40)
+      cpi->common.current_video_frame = 40;
+
   vp9_rc_get_second_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 
   vp9_twopass_postencode_update(cpi);
+
+  printf("%d    ", *size);
 }
 
 static void check_initial_width(VP9_COMP *cpi, int subsampling_x,

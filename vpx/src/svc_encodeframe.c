@@ -633,7 +633,6 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
 
   vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
   vpx_codec_control(codec_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
-  vpx_codec_control(codec_ctx, VP8E_SET_ENABLEAUTOALTREF, 0);
   return VPX_CODEC_OK;
 }
 
@@ -691,7 +690,7 @@ static int map_vp8_flags(int svc_flags) {
   if (!(svc_flags & USE_LAST)) flags |= VP8_EFLAG_NO_REF_LAST;
   if (!(svc_flags & USE_ARF)) flags |= VP8_EFLAG_NO_REF_ARF;
   if (!(svc_flags & USE_GF)) flags |= VP8_EFLAG_NO_REF_GF;
-
+/*
   if (svc_flags & UPDATE_LAST) {
     // last is updated automatically
   } else {
@@ -707,6 +706,7 @@ static int map_vp8_flags(int svc_flags) {
   } else {
     flags |= VP8_EFLAG_NO_UPD_GF;
   }
+  */
   return flags;
 }
 
@@ -746,7 +746,7 @@ static void calculate_enc_frame_flags(SvcContext *svc_ctx) {
       break;
     case INTER_LAYER_PREDICTION_IP:
       if (si->layer == 0) {
-        flags = map_vp8_flags(USE_LAST | UPDATE_LAST);
+        flags = map_vp8_flags(USE_LAST | USE_ARF);
       } else if (is_keyframe) {
         flags = map_vp8_flags(USE_ARF | UPDATE_LAST);
       } else {
@@ -852,8 +852,10 @@ static void set_svc_parameters(SvcContext *svc_ctx,
   svc_params.distance_from_i_frame = si->frame_within_gop;
 
   // Use buffer i for layer i LST
-  svc_params.lst_fb_idx = si->layer;
-
+  svc_params.lst_fb_idx = 0;
+  svc_params.gld_fb_idx = 1;
+  svc_params.alt_fb_idx = 2;
+/*
   // Use buffer i-1 for layer i Alt (Inter-layer prediction)
   if (si->layer != 0) {
     const int use_higher_layer =
@@ -869,8 +871,8 @@ static void set_svc_parameters(SvcContext *svc_ctx,
       svc_params.gld_fb_idx = svc_params.lst_fb_idx;
     else
       svc_params.gld_fb_idx = 2 * si->layers - 1 - si->layer;
-  }
-
+  }*/
+/*
   svc_log(svc_ctx, SVC_LOG_DEBUG, "SVC frame: %d, layer: %d, %dx%d, q: %d\n",
           si->encode_frame_count, si->layer, svc_params.width,
           svc_params.height, svc_params.min_quantizer);
@@ -889,7 +891,7 @@ static void set_svc_parameters(SvcContext *svc_ctx,
         svc_params.flags & VP8_EFLAG_NO_UPD_GF ? -1 : svc_params.gld_fb_idx,
         svc_params.flags & VP8_EFLAG_NO_UPD_ARF ? -1 : svc_params.alt_fb_idx);
   }
-
+*/
   vpx_codec_control(codec_ctx, VP9E_SET_SVC_PARAMETERS, &svc_params);
 }
 
@@ -919,11 +921,13 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
   si->is_keyframe = (si->frame_within_gop == 0);
 
   if (rawimg != NULL) {
-    svc_log(svc_ctx, SVC_LOG_DEBUG,
+    /*svc_log(svc_ctx, SVC_LOG_DEBUG,
             "vpx_svc_encode  layers: %d, frame_count: %d, "
             "frame_within_gop: %d\n", si->layers, si->encode_frame_count,
-            si->frame_within_gop);
+            si->frame_within_gop);*/
   }
+
+  printf("%d    ", si->encode_frame_count);
 
   if (rawimg != NULL) {
     // encode each layer
@@ -954,10 +958,10 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
         accumulate_frame_size_for_each_layer(si, cx_pkt->data.frame.buf,
                                              cx_pkt->data.frame.sz);
 
-        svc_log(svc_ctx, SVC_LOG_DEBUG, "SVC frame: %d, kf: %d, size: %d, "
+        /*svc_log(svc_ctx, SVC_LOG_DEBUG, "SVC frame: %d, kf: %d, size: %d, "
                 "pts: %d\n", si->frame_received,
                 (cx_pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? 1 : 0,
-                (int)cx_pkt->data.frame.sz, (int)cx_pkt->data.frame.pts);
+                (int)cx_pkt->data.frame.sz, (int)cx_pkt->data.frame.pts);*/
 
         ++si->frame_received;
         layer_for_psnr = 0;
@@ -965,7 +969,7 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
       }
       case VPX_CODEC_PSNR_PKT: {
         int i;
-        svc_log(svc_ctx, SVC_LOG_DEBUG,
+        /*svc_log(svc_ctx, SVC_LOG_DEBUG,
                 "SVC frame: %d, layer: %d, PSNR(Total/Y/U/V): "
                 "%2.3f  %2.3f  %2.3f  %2.3f \n",
                 si->frame_received, layer_for_psnr,
@@ -976,7 +980,7 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
                 "%2.3f  %2.3f  %2.3f  %2.3f \n",
                 si->frame_received, layer_for_psnr,
                 cx_pkt->data.psnr.sse[0], cx_pkt->data.psnr.sse[1],
-                cx_pkt->data.psnr.sse[2], cx_pkt->data.psnr.sse[3]);
+                cx_pkt->data.psnr.sse[2], cx_pkt->data.psnr.sse[3]);*/
         for (i = 0; i < COMPONENTS; i++) {
           si->psnr_sum[layer_for_psnr][i] += cx_pkt->data.psnr.psnr[i];
           si->sse_sum[layer_for_psnr][i] += cx_pkt->data.psnr.sse[i];
@@ -1013,6 +1017,8 @@ vpx_codec_err_t vpx_svc_encode(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     ++si->frame_within_gop;
     ++si->encode_frame_count;
   }
+
+  printf("\n");
 
   return VPX_CODEC_OK;
 }

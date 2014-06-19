@@ -2147,6 +2147,18 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 #endif
     vp9_rc_set_frame_target(cpi, target_rate);
     cm->frame_type = INTER_FRAME;
+
+    if (is_spatial_svc) {
+      if (cpi->svc.spatial_layer_id == 0) {
+        lc->is_key_frame = 0;
+      } else {
+        lc->is_key_frame = cpi->svc.layer_context[0].is_key_frame;
+
+        if (lc->is_key_frame)
+          cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
+      }
+    }
+
     return;
   }
 
@@ -2222,7 +2234,8 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     }
 
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
-    cpi->refresh_golden_frame = 1;
+    if (!is_spatial_svc)
+      cpi->refresh_golden_frame = 1;
   }
 
   {
@@ -2296,4 +2309,6 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
     twopass->kf_group_bits -= bits_used;
   }
   twopass->kf_group_bits = MAX(twopass->kf_group_bits, 0);
+
+  printf("%d    ", twopass->kf_group_bits);
 }

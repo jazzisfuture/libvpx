@@ -29,6 +29,7 @@ typedef struct {
   unsigned int current_video_frame_in_layer;
   int is_key_frame;
   vpx_svc_parameters_t svc_params_received;
+  struct lookahead_entry  *alt_ref_source;
 } LAYER_CONTEXT;
 
 typedef struct {
