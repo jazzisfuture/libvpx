@@ -919,6 +919,14 @@ static int get_refresh_mask(VP9_COMP *cpi) {
             cpi->arf_buffer_idx[sn];
       }
 #endif
+      {
+        int x = cpi->common.current_video_frame % 5 + 3;
+        return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
+               (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
+               (cpi->refresh_alt_ref_frame << arf_idx) |
+               (1<<x);
+      }
+
       return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
              (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
              (cpi->refresh_alt_ref_frame << arf_idx);

@@ -1556,6 +1556,10 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+  {
+    int x = cpi->common.current_video_frame % 5 + 3;
+    ref_cnt_fb(cm->frame_bufs, &x, cm->new_fb_idx);
+  }
 #if CONFIG_DENOISING
   vp9_denoiser_update_frame_info(&cpi->denoiser,
                                 cpi->common.frame_type,
