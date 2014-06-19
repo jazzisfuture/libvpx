@@ -49,6 +49,9 @@ class Decoder {
     vpx_codec_destroy(&decoder_);
   }
 
+  vpx_codec_err_t PeakStream(const uint8_t *cxdata, size_t size,
+                             vpx_codec_stream_info_t *stream_info);
+
   vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, size_t size);
 
   DxDataIterator GetDxData() {

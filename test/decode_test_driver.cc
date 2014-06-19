@@ -15,6 +15,12 @@
 
 namespace libvpx_test {
 
+vpx_codec_err_t Decoder::PeakStream(const uint8_t *cxdata, size_t size,
+                                    vpx_codec_stream_info_t *stream_info) {
+  return vpx_codec_peek_stream_info(CodecInterface(), cxdata, size,
+                                    stream_info);
+}
+
 vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
   vpx_codec_err_t res_dec;
   InitOnce();
@@ -33,6 +39,15 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
   // Decode frames.
   for (video->Begin(); video->cxdata(); video->Next()) {
     PreDecodeFrameHook(*video, decoder);
+
+    vpx_codec_stream_info_t stream_info;
+    vpx_codec_err_t res_peak = decoder->PeakStream(video->cxdata(),
+                                                   video->frame_size(),
+                                                   &stream_info);
+
+    ASSERT_EQ(VPX_CODEC_OK, res_peak) << decoder->DecodeError();
+
+
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                    video->frame_size());
     ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
