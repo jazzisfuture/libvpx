@@ -357,7 +357,6 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
     mv_col = x->best_sse_mv.as_mv.col;
     motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
     sse_thresh = SSE_THRESHOLD;
-    if (x->increase_denoising) sse_thresh = SSE_THRESHOLD_HIGH;
 
     if (best_sse > sse_thresh || motion_magnitude2
            > 8 * NOISE_MOTION_THRESHOLD)
@@ -378,7 +377,7 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
         decision = vp8_denoiser_filter(mc_running_avg_y, mc_avg_y_stride,
                                          running_avg_y, avg_y_stride,
                                          x->thismb, 16, motion_magnitude2,
-                                         x->increase_denoising);
+                                         0);
         denoiser->denoise_state[block_index] = motion_magnitude2 > 0 ?
             kFilterNonZeroMV : kFilterZeroMV;
     }
