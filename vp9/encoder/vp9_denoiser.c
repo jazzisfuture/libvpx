@@ -22,6 +22,45 @@ static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
 
+static int absdiff_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  (void)bs;
+  return 3 + (increase_denoising ? 1 : 0);
+}
+
+static int delta_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  (void)bs;
+  (void)increase_denoising;
+  return 4;
+}
+
+static int noise_motion_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  (void)bs;
+  (void)increase_denoising;
+  return 25 * 25;
+}
+
+static unsigned int sse_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  return widths[bs] * heights[bs] * (increase_denoising ? 60 : 40);
+}
+
+static int sse_diff_thresh(BLOCK_SIZE bs, int increase_denoising,
+                           int mv_row, int mv_col) {
+  if (mv_row * mv_row + mv_col * mv_col >
+      noise_motion_thresh(bs, increase_denoising)) {
+    return 0;
+  } else {
+    return widths[bs] * heights[bs] * 20;
+  }
+}
+
+static int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  return widths[bs] * heights[bs] * (increase_denoising ? 3 : 2);
+}
+
+static int total_adj_weak_thresh(BLOCK_SIZE bs, int increase_denoising) {
+  return widths[bs] * heights[bs] * (increase_denoising ? 3 : 2);
+}
+
 static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
                                              const uint8_t *mc_avg,
                                              int mc_avg_stride,
@@ -33,16 +72,8 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
   const uint8_t *mc_avg_start = mc_avg;
   uint8_t *avg_start = avg;
   int diff, adj, absdiff, delta;
-  int shift_inc1 = 0, shift_inc2 = 1;
   int adj_val[] = {3, 4, 6};
   int total_adj = 0;
-  int total_adj_threshold = heights[bs] * widths[bs] *
-      (increase_denoising ? 3 : 2);
-
-  if (increase_denoising) {
-    shift_inc1 = 1;
-    shift_inc2 = 2;
-  }
 
   // First attempt to apply a strong temporal denoising filter.
   for (r = 0; r < heights[bs]; ++r) {
@@ -50,7 +81,7 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
       diff = mc_avg[c] - sig[c];
       absdiff = abs(diff);
 
-      if (absdiff <= 3 + shift_inc1) {
+      if (absdiff <= absdiff_thresh(bs, increase_denoising)) {
         avg[c] = mc_avg[c];
         total_adj += diff;
       } else {
@@ -80,15 +111,14 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
   }
 
   // If the strong filter did not modify the signal too much, we're all set.
-  if (abs(total_adj) <= total_adj_threshold) {
+  if (abs(total_adj) <= total_adj_strong_thresh(bs, increase_denoising)) {
     return FILTER_BLOCK;
   }
 
   // Otherwise, we try to dampen the filter if the delta is not too high.
-  delta = ((abs(total_adj) - total_adj_threshold) >> 8) + 1;
-  if (delta > INT_MAX) {
-    // TODO(tkopp): Empirically determine a constant or function to compare
-    // against delta, and substitute it for INT_MAX.
+  delta = ((abs(total_adj) - total_adj_strong_thresh(bs, increase_denoising))
+           >> 8) + 1;
+  if (delta > delta_thresh(bs, increase_denoising)) {
     return COPY_BLOCK;
   }
 
@@ -116,7 +146,10 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
   }
 
   // We can use the filter if it has been sufficiently dampened
-  return (abs(total_adj) > total_adj_threshold) ? COPY_BLOCK : FILTER_BLOCK;
+  if (abs(total_adj) <= total_adj_weak_thresh(bs, increase_denoising)) {
+    return FILTER_BLOCK;
+  }
+  return COPY_BLOCK;
 }
 
 static uint8_t *block_start(uint8_t *framebuf, int stride,
@@ -142,18 +175,8 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
                                                          int increase_denoising,
                                                          int mi_row,
                                                          int mi_col) {
-  // constants
-  // TODO(tkopp): empirically determine good constants, or functions of block
-  // size.
-  int NOISE_MOTION_THRESHOLD = 25 * 25;
-  int SSE_DIFF_THRESHOLD = heights[bs] * widths[bs] * 20;
-  unsigned int SSE_THRESH = heights[bs] * widths[bs] * 40;
-  unsigned int SSE_THRESH_HI = heights[bs] * widths[bs] * 60;
-
   int mv_col, mv_row;
   int sse_diff = denoiser->zero_mv_sse - denoiser->best_sse;
-  int sse_diff_thresh;
-  int sse_thresh;
   MV_REFERENCE_FRAME frame;
   MACROBLOCKD *filter_mbd = &mb->e_mbd;
   MB_MODE_INFO *mbmi = &filter_mbd->mi[0]->mbmi;
@@ -165,20 +188,15 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
   saved_pre[0] = filter_mbd->plane[0].pre[0];
   saved_pre[1] = filter_mbd->plane[0].pre[1];
 
-  // Decide the threshold for sum squared error.
   mv_col = denoiser->best_sse_mv.as_mv.col;
   mv_row = denoiser->best_sse_mv.as_mv.row;
-  if (mv_row * mv_row + mv_col * mv_col > NOISE_MOTION_THRESHOLD) {
-    sse_diff_thresh = 0;
-  } else {
-    sse_diff_thresh = SSE_DIFF_THRESHOLD;
-  }
 
   frame = denoiser->best_reference_frame;
 
   // If the best reference frame uses inter-prediction and there is enough of a
   // difference in sum-squared-error, use it.
-  if (frame != INTRA_FRAME && sse_diff > sse_diff_thresh) {
+  if (frame != INTRA_FRAME &&
+      sse_diff > sse_diff_thresh(bs, increase_denoising, mv_row, mv_col)) {
     mbmi->ref_frame[0] = denoiser->best_reference_frame;
     mbmi->mode = denoiser->best_sse_inter_mode;
     mbmi->mv[0] = denoiser->best_sse_mv;
@@ -244,11 +262,12 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
 
   mv_row = denoiser->best_sse_mv.as_mv.row;
   mv_col = denoiser->best_sse_mv.as_mv.col;
-  sse_thresh = denoiser->increase_denoising ? SSE_THRESH_HI : SSE_THRESH;
 
-  // TODO(tkopp) why 8?
-  if (denoiser->best_sse > sse_thresh ||
-    mv_row * mv_row + mv_col * mv_col > 8 * NOISE_MOTION_THRESHOLD) {
+  if (denoiser->best_sse > sse_thresh(bs, increase_denoising)) {
+    return COPY_BLOCK;
+  }
+  if (mv_row * mv_row + mv_col * mv_col >
+      8 * noise_motion_thresh(bs, increase_denoising)) {
     return COPY_BLOCK;
   }
   return FILTER_BLOCK;
