@@ -15,6 +15,14 @@
 
 namespace libvpx_test {
 
+const char vp8_name[] = "WebM Project VP8";
+
+vpx_codec_err_t Decoder::PeekStream(const uint8_t *cxdata, size_t size,
+                                    vpx_codec_stream_info_t *stream_info) {
+  return vpx_codec_peek_stream_info(CodecInterface(), cxdata, size,
+                                    stream_info);
+}
+
 vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
   vpx_codec_err_t res_dec;
   InitOnce();
@@ -28,11 +36,32 @@ vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
 void DecoderTest::RunLoop(CompressedVideoSource *video) {
   vpx_codec_dec_cfg_t dec_cfg = {0};
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
+
+  const char *codec_name = decoder->GetDecoderName();
+
+  bool is_vp8 = strncmp(vp8_name, codec_name, sizeof(vp8_name)-1) == 0;
+
   ASSERT_TRUE(decoder != NULL);
 
   // Decode frames.
   for (video->Begin(); video->cxdata(); video->Next()) {
     PreDecodeFrameHook(*video, decoder);
+
+    vpx_codec_stream_info_t stream_info;
+
+    const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
+                                                         video->frame_size(),
+                                                         &stream_info);
+
+    if (is_vp8) {
+      if (video->frame_number() == 0)
+        ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
+            << vpx_codec_err_to_string(res_peek);
+    } else {
+      ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
+          << vpx_codec_err_to_string(res_peek);
+    }
+
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                    video->frame_size());
     ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
