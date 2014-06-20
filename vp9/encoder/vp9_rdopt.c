@@ -3002,6 +3002,17 @@ static void update_rd_thresh_fact(VP9_COMP *cpi, int bsize,
   }
 }
 
+int get_inter_mode_mask(const VP9_COMP *cpi, const MACROBLOCK *x,
+                        BLOCK_SIZE bsize, int segment_id) {
+  if (vp9_segfeature_active(&cpi->common.seg, segment_id, SEG_LVL_SKIP))
+    return (1 << ZEROMV);
+
+  if (!x->in_active_map)
+    return (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV);
+
+  return cpi->sf.inter_mode_mask[bsize];
+}
+
 int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   const TileInfo *const tile,
                                   int mi_row, int mi_col,
@@ -3056,7 +3067,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   const int mode_search_skip_flags = cpi->sf.mode_search_skip_flags;
   const int intra_y_mode_mask =
       cpi->sf.intra_y_mode_mask[max_txsize_lookup[bsize]];
-  int inter_mode_mask = cpi->sf.inter_mode_mask[bsize];
+  const int inter_mode_mask = get_inter_mode_mask(cpi, x, bsize, segment_id);
   vp9_zero(best_mbmode);
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -3121,7 +3132,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   // then do nothing if the current mode is not allowed..
   if (vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
     mode_skip_mask = ~(1 << THR_ZEROMV);
-    inter_mode_mask = (1 << ZEROMV);
   }
 
   // Disable this drop out case if the ref frame
@@ -3173,8 +3183,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       mode_index = THR_ZEROMV;
     mode_skip_mask = ~(1 << mode_index);
     mode_skip_start = MAX_MODES;
-    inter_mode_mask = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) |
-                      (1 << NEWMV);
   }
 
   for (mode_index = 0; mode_index < MAX_MODES; ++mode_index) {
