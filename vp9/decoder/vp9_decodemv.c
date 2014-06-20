@@ -464,6 +464,37 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                       ? read_switchable_interp_filter(cm, xd, r)
                       : cm->interp_filter;
 
+#if CONFIG_INTERINTRA
+    if ((cm->use_interintra) &&
+        is_interintra_allowed(bsize) &&
+        is_inter_mode(mbmi->mode) &&
+        (mbmi->ref_frame[1] <= INTRA_FRAME)) {
+      mbmi->ref_frame[1] = vp9_read(r, cm->fc.interintra_prob[bsize]) ?
+                           INTRA_FRAME : NONE;
+      cm->counts.interintra[bsize][mbmi->ref_frame[1] == INTRA_FRAME]++;
+#if CONFIG_MASKED_INTERINTRA
+      mbmi->use_masked_interintra = 0;
+#endif
+      if (mbmi->ref_frame[1] == INTRA_FRAME) {
+        mbmi->interintra_mode =
+            read_intra_mode_y(cm, r, size_group_lookup[bsize]);
+        mbmi->interintra_uv_mode = mbmi->interintra_mode;
+#if CONFIG_MASKED_INTERINTRA
+        if (cm->use_masked_interintra && get_mask_bits_interintra(bsize)) {
+          mbmi->use_masked_interintra = vp9_read(r,
+                                          cm->fc.masked_interintra_prob[bsize]);
+          cm->counts.masked_interintra[bsize][mbmi->use_masked_interintra]++;
+          if (mbmi->use_masked_interintra) {
+            mbmi->interintra_mask_index = vp9_read_literal(r,
+                                               get_mask_bits_interintra(bsize));
+            mbmi->interintra_uv_mask_index = mbmi->interintra_mask_index;
+          }
+        }
+#endif
+      }
+    }
+#endif
+
   if (bsize < BLOCK_8X8) {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];  // 1 or 2
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];  // 1 or 2
@@ -508,6 +539,21 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
+#if CONFIG_MASKED_INTERINTER
+  mbmi->use_masked_interinter = 0;
+  if (cm->use_masked_interinter &&
+      cm->reference_mode != SINGLE_REFERENCE &&
+      is_inter_mode(mbmi->mode) &&
+      get_mask_bits(bsize) &&
+      mbmi->ref_frame[1] > INTRA_FRAME) {
+    mbmi->use_masked_interinter =
+        vp9_read(r, cm->fc.masked_interinter_prob[bsize]);
+    cm->counts.masked_interinter[bsize][mbmi->use_masked_interinter]++;
+    if (mbmi->use_masked_interinter) {
+      mbmi->mask_index = vp9_read_literal(r, get_mask_bits(bsize));
+    }
+  }
+#endif
 }
 
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,

@@ -13,6 +13,23 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_MASKED_INTERINTER
+static const vp9_prob default_masked_interinter_prob[BLOCK_SIZES] = {
+    192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192
+};
+#endif
+
+#if CONFIG_INTERINTRA
+static const vp9_prob default_interintra_prob[BLOCK_SIZES] = {
+  192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192
+};
+#if CONFIG_MASKED_INTERINTRA
+static const vp9_prob default_masked_interintra_prob[BLOCK_SIZES] = {
+  192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192
+};
+#endif
+#endif
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc
@@ -326,6 +343,15 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_MASKED_INTERINTER
+  vp9_copy(fc->masked_interinter_prob, default_masked_interinter_prob);
+#endif
+#if CONFIG_INTERINTRA
+  vp9_copy(fc->interintra_prob, default_interintra_prob);
+#if CONFIG_MASKED_INTERINTRA
+  vp9_copy(fc->masked_interintra_prob, default_masked_interintra_prob);
+#endif
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -416,6 +442,37 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
 
   for (i = 0; i < SKIP_CONTEXTS; ++i)
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
+
+#if CONFIG_MASKED_INTERINTER
+  if (cm->use_masked_interinter) {
+    for (i = 0; i < BLOCK_SIZES; ++i) {
+      if (get_mask_bits(i))
+        fc->masked_interinter_prob[i] = adapt_prob
+                                      (pre_fc->masked_interinter_prob[i],
+                                       counts->masked_interinter[i]);
+    }
+  }
+#endif
+
+#if CONFIG_INTERINTRA
+  if (cm->use_interintra) {
+    for (i = 0; i < BLOCK_SIZES; ++i) {
+      if (is_interintra_allowed(i))
+        fc->interintra_prob[i] = adapt_prob(pre_fc->interintra_prob[i],
+                                            counts->interintra[i]);
+    }
+#if CONFIG_MASKED_INTERINTRA
+    if (cm->use_masked_interintra) {
+      for (i = 0; i < BLOCK_SIZES; ++i) {
+        if (is_interintra_allowed(i) && get_mask_bits_interintra(i))
+          fc->masked_interintra_prob[i] = adapt_prob(
+                                          pre_fc->masked_interintra_prob[i],
+                                          counts->masked_interintra[i]);
+      }
+    }
+#endif
+  }
+#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {

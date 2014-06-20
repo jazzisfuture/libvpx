@@ -131,3 +131,59 @@ sadMxN(4, 4)
 sadMxNxK(4, 4, 3)
 sadMxNxK(4, 4, 8)
 sadMxNx4D(4, 4)
+
+#if ((CONFIG_MASKED_INTERINTRA && CONFIG_INTERINTRA) || \
+    CONFIG_MASKED_INTERINTER)
+static INLINE unsigned int masked_sad(const uint8_t *a, int a_stride,
+                                      const uint8_t *b, int b_stride,
+                                      const uint8_t *m, int m_stride,
+                                      int width, int height) {
+  int y, x;
+  unsigned int sad = 0;
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++)
+      sad += m[x] * abs(a[x] - b[x]);
+
+    a += a_stride;
+    b += b_stride;
+    m += m_stride;
+  }
+  sad = (sad + 31) >> 6;
+
+  return sad;
+}
+
+#define mask_sadMxN(m, n) \
+unsigned int vp9_masked_sad##m##x##n##_c(const uint8_t *src, int src_stride, \
+                                         const uint8_t *ref, int ref_stride, \
+                                         const uint8_t *msk, int msk_stride) { \
+  return masked_sad(src, src_stride, ref, ref_stride, msk, msk_stride, m, n); \
+}
+
+mask_sadMxN(64, 64)
+
+mask_sadMxN(64, 32)
+
+mask_sadMxN(32, 64)
+
+mask_sadMxN(32, 32)
+
+mask_sadMxN(32, 16)
+
+mask_sadMxN(16, 32)
+
+mask_sadMxN(16, 16)
+
+mask_sadMxN(16, 8)
+
+mask_sadMxN(8, 16)
+
+mask_sadMxN(8, 8)
+
+mask_sadMxN(8, 4)
+
+mask_sadMxN(4, 8)
+
+mask_sadMxN(4, 4)
+#endif

@@ -1242,6 +1242,49 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
         vp9_diff_update_prob(&r, &fc->partition_prob[j][i]);
 
     read_mv_probs(nmvc, cm->allow_high_precision_mv, &r);
+
+#if CONFIG_MASKED_INTERINTER
+    if (cm->reference_mode != SINGLE_REFERENCE) {
+      cm->use_masked_interinter = vp9_read_bit(&r);
+      if (cm->use_masked_interinter) {
+        for (i = 0; i < BLOCK_SIZES; i++) {
+          if (get_mask_bits(i))
+            vp9_diff_update_prob(&r, &fc->masked_interinter_prob[i]);
+        }
+      }
+    } else {
+      cm->use_masked_interinter = 0;
+    }
+#endif
+
+#if CONFIG_INTERINTRA
+    if (cm->reference_mode != COMPOUND_REFERENCE) {
+      cm->use_interintra = vp9_read_bit(&r);
+      if (cm->use_interintra) {
+        for (i = 0; i < BLOCK_SIZES; i++) {
+          if (is_interintra_allowed(i)) {
+            vp9_diff_update_prob(&r, &fc->interintra_prob[i]);
+          }
+        }
+#if CONFIG_MASKED_INTERINTRA
+        cm->use_masked_interintra = vp9_read_bit(&r);
+        if (cm->use_masked_interintra) {
+          for (i = 0; i < BLOCK_SIZES; i++) {
+            if (is_interintra_allowed(i) && get_mask_bits_interintra(i))
+              vp9_diff_update_prob(&r, &fc->masked_interintra_prob[i]);
+          }
+        }
+      } else {
+        cm->use_masked_interintra = 0;
+#endif
+      }
+    } else {
+      cm->use_interintra = 0;
+#if CONFIG_MASKED_INTERINTRA
+      cm->use_masked_interintra = 0;
+#endif
+    }
+#endif
   }
 
   return vp9_reader_has_error(&r);
