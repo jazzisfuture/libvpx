@@ -453,6 +453,7 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
 
   {
     unsigned int tokens = get_token_alloc(cm->mb_rows, cm->mb_cols);
+
     CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
   }
 
@@ -706,7 +707,7 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
 }
 
 
-VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
+VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf, BufferPool *const pool) {
   unsigned int i, j;
   VP9_COMP *const cpi = vpx_memalign(32, sizeof(VP9_COMP));
   VP9_COMMON *const cm = cpi != NULL ? &cpi->common : NULL;
@@ -727,6 +728,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   vp9_rtcd();
 
   cpi->use_svc = 0;
+  cpi->common.buffer_pool = pool;
 
   init_config(cpi, oxcf);
   vp9_rc_init(&cpi->oxcf, cpi->pass, &cpi->rc);
@@ -757,6 +759,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   CHECK_MEM_ERROR(cm, cpi->coding_context.last_frame_seg_map_copy,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
+  CHECK_MEM_ERROR(cm, cpi->active_map, vpx_calloc(cm->MBs, 1));
+  vpx_memset(cpi->active_map, 1, cm->MBs);
+  cpi->active_map_enabled = 0;
+
   for (i = 0; i < (sizeof(cpi->mbgraph_stats) /
                    sizeof(cpi->mbgraph_stats[0])); i++) {
     CHECK_MEM_ERROR(cm, cpi->mbgraph_stats[i].mb_stats,
@@ -766,23 +772,18 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cpi->refresh_alt_ref_frame = 0;
 
-  // Note that at the moment multi_arf will not work with svc.
-  // For the current check in all the execution paths are defaulted to 0
-  // pending further tuning and testing. The code is left in place here
-  // as a place holder in regard to the required paths.
-  if (cpi->pass == 2) {
-    if (cpi->use_svc) {
-      cpi->multi_arf_allowed = 0;
-      cpi->multi_arf_enabled = 0;
-    } else {
-      // Disable by default for now.
-      cpi->multi_arf_allowed = 0;
-      cpi->multi_arf_enabled = 0;
-    }
-  } else {
-    cpi->multi_arf_allowed = 0;
-    cpi->multi_arf_enabled = 0;
+#if CONFIG_MULTIPLE_ARF
+  // Turn multiple ARF usage on/off. This is a quick hack for the initial test
+  // version. It should eventually be set via the codec API.
+  cpi->multi_arf_enabled = 1;
+
+  if (cpi->multi_arf_enabled) {
+    cpi->sequence_number = 0;
+    cpi->frame_coding_order_period = 0;
+    vp9_zero(cpi->frame_coding_order);
+    vp9_zero(cpi->arf_buffer_idx);
   }
+#endif
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
@@ -1243,11 +1244,12 @@ int vp9_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
 
 int vp9_get_reference_enc(VP9_COMP *cpi, int index, YV12_BUFFER_CONFIG **fb) {
   VP9_COMMON *cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
 
   if (index < 0 || index >= REF_FRAMES)
     return -1;
 
-  *fb = &cm->frame_bufs[cm->ref_frame_map[index]].buf;
+  *fb = &pool->frame_bufs[cm->ref_frame_map[index]].buf;
   return 0;
 }
 
@@ -1484,13 +1486,14 @@ static int recode_loop_test(const VP9_COMP *cpi,
 
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
   } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
              cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
@@ -1505,7 +1508,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
      */
     int tmp;
 
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
 
     tmp = cpi->alt_fb_idx;
@@ -1524,13 +1527,13 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     }
 
     if (cpi->refresh_golden_frame) {
-      ref_cnt_fb(cm->frame_bufs,
+      ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     }
   }
 
   if (cpi->refresh_last_frame) {
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
 #if CONFIG_DENOISING
@@ -1572,34 +1575,36 @@ void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
   const VP9_REFFRAME ref_mask[3] = {VP9_LAST_FLAG, VP9_GOLD_FLAG, VP9_ALT_FLAG};
+  BufferPool *const pool = cm->buffer_pool;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
-    const YV12_BUFFER_CONFIG *const ref = &cm->frame_bufs[idx].buf;
+    const YV12_BUFFER_CONFIG *const ref = &pool->frame_bufs[idx].buf;
 
     // Need to convert from VP9_REFFRAME to index into ref_mask (subtract 1).
     if ((cpi->ref_frame_flags & ref_mask[ref_frame - 1]) &&
         (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height)) {
       const int new_fb = get_free_fb(cm);
-      vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
+      vp9_realloc_frame_buffer(&pool->frame_bufs[new_fb].buf,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
-      scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
+      scale_and_extend_frame(ref, &pool->frame_bufs[new_fb].buf);
       cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
     } else {
       cpi->scaled_ref_idx[ref_frame - 1] = idx;
-      cm->frame_bufs[idx].ref_count++;
+      pool->frame_bufs[idx].ref_count++;
     }
   }
 }
 
 static void release_scaled_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
   int i;
 
   for (i = 0; i < 3; i++)
-    cm->frame_bufs[cpi->scaled_ref_idx[i]].ref_count--;
+    pool->frame_bufs[cpi->scaled_ref_idx[i]].ref_count--;
 }
 
 static void full_to_model_count(unsigned int *model_count,
@@ -2468,6 +2473,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->source = vp9_lookahead_peek(cpi->lookahead, arf_src_index);
     if (cpi->source != NULL) {
       cpi->alt_ref_source = cpi->source;
+#endif
 
       if (cpi->oxcf.arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
@@ -2568,7 +2574,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   /* find a free buffer for the new frame, releasing the reference previously
    * held.
    */
-  cm->frame_bufs[cm->new_fb_idx].ref_count--;
+  pool->frame_bufs[cm->new_fb_idx].ref_count--;
   cm->new_fb_idx = get_free_fb(cm);
 
   if (!cpi->use_svc && cpi->multi_arf_allowed) {
@@ -2602,7 +2608,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
-    YV12_BUFFER_CONFIG *const buf = &cm->frame_bufs[idx].buf;
+    YV12_BUFFER_CONFIG *const buf = &pool->frame_bufs[idx].buf;
     RefBuffer *const ref_buf = &cm->frame_refs[ref_frame - 1];
     ref_buf->buf = buf;
     ref_buf->idx = idx;
