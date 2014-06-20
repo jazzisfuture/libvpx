@@ -890,7 +890,7 @@ static void write_tile_info(VP9_COMMON *cm, struct vp9_write_bit_buffer *wb) {
 }
 
 static int get_refresh_mask(VP9_COMP *cpi) {
-    if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
+    if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
         cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
       // Preserve the previously existing golden frame and update the frame in
       // the alt ref slot instead. This is highly specific to the use of
@@ -904,8 +904,7 @@ static int get_refresh_mask(VP9_COMP *cpi) {
              (cpi->refresh_golden_frame << cpi->alt_fb_idx);
     } else {
       int arf_idx = cpi->alt_fb_idx;
-
-      if ((cpi->pass == 2) && cpi->multi_arf_enabled) {
+      if (cpi->pass == 2) {
         GF_GROUP *gf_group = &cpi->twopass.gf_group;
         arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
