@@ -617,6 +617,7 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
 }
 
 static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
+  BufferPool *const pool = cm->buffer_pool;
   if (cm->width != width || cm->height != height) {
     // Change in frame size.
     // TODO(agrange) Don't test width/height, check overall size.
@@ -636,8 +637,8 @@ static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
   if (vp9_realloc_frame_buffer(
           get_frame_new_buffer(cm), cm->width, cm->height,
           cm->subsampling_x, cm->subsampling_y, VP9_DEC_BORDER_IN_PIXELS,
-          &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer, cm->get_fb_cb,
-          cm->cb_priv)) {
+          &pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer, pool->get_fb_cb,
+          pool->cb_priv)) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate frame buffer");
   }
@@ -1062,6 +1063,7 @@ static BITSTREAM_PROFILE read_profile(struct vp9_read_bit_buffer *rb) {
 static size_t read_uncompressed_header(VP9Decoder *pbi,
                                        struct vp9_read_bit_buffer *rb) {
   VP9_COMMON *const cm = &pbi->common;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   size_t sz;
   int i;
 
@@ -1081,12 +1083,12 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     // Show an existing frame directly.
     const int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
 
-    if (frame_to_show < 0 || cm->frame_bufs[frame_to_show].ref_count < 1)
+    if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Buffer %d does not contain a decoded frame",
                          frame_to_show);
 
-    ref_cnt_fb(cm->frame_bufs, &cm->new_fb_idx, frame_to_show);
+    ref_cnt_fb(frame_bufs, &cm->new_fb_idx, frame_to_show);
     pbi->refresh_frame_flags = 0;
     cm->lf.filter_level = 0;
     cm->show_frame = 1;
@@ -1147,7 +1149,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
         cm->frame_refs[i].idx = idx;
-        cm->frame_refs[i].buf = &cm->frame_bufs[idx].buf;
+        cm->frame_refs[i].buf = &frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
       }
 
