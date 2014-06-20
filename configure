@@ -273,6 +273,10 @@ EXPERIMENT_LIST="
     multiple_arf
     spatial_svc
     denoising
+    masked_interinter
+    interintra
+    masked_interintra
+    filterintra
 "
 CONFIG_LIST="
     external_build
