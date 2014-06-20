@@ -229,6 +229,15 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int pred_filter_search = (((mi_row + mi_col) >> bsl) +
                                       get_chessboard_index(cm)) % 2;
 
+  // For speed 6, the result of interp filter is reused later in actual encoding
+  // process. pred_buf is used for temporary prediction result.
+  int bh = num_4x4_blocks_high_lookup[bsize] << 2;
+  int bw = num_4x4_blocks_wide_lookup[bsize] << 2;
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, pred_buf, 4 * 64 * 64);
+  struct buf_2d orig_dst = pd->dst;
+  uint8_t *newmv_pred = NULL;
+  int pixels_in_block = bh * bw;
+
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
   x->skip = 0;
@@ -324,6 +333,11 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       // Search for the best prediction filter type, when the resulting
       // motion vector is at sub-pixel accuracy level for luma component, i.e.,
       // the last three bits are all zeros.
+      if (cpi->sf.reuse_inter_pred_sby && this_mode != NEARESTMV) {
+        pd->dst.buf = pred_buf + (this_mode - NEARESTMV -1) * pixels_in_block;
+        pd->dst.stride = bw;
+      }
+
       if ((this_mode == NEWMV || filter_ref == SWITCHABLE) &&
           pred_filter_search &&
           ((mbmi->mv[0].as_mv.row & 0x07) != 0 ||
@@ -348,6 +362,13 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
               best_filter = filter;
               best_cost = cost;
               skip_txfm = x->skip_txfm;
+              if (cpi->sf.reuse_inter_pred_sby) {
+                newmv_pred = pd->dst.buf;
+                if (filter > EIGHTTAP)
+                  pd->dst.buf -= pixels_in_block;
+                else
+                  pd->dst.buf += pixels_in_block;
+              }
           }
         }
 
@@ -458,6 +479,25 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  // If best_mode is not NEARESTMV, then copy the prediction block from
+  // temp buf to dst buf.
+  if (cpi->sf.reuse_inter_pred_sby && best_mode > NEARESTMV) {
+    uint8_t *copy_from, *copy_to;
+
+    pd->dst = orig_dst;
+    copy_to = pd->dst.buf;
+
+    if((best_mode == NEWMV || filter_ref == SWITCHABLE) &&
+        pred_filter_search &&
+        ((frame_mv[best_mode][best_ref_frame].as_mv.row & 0x07) != 0 ||
+        (frame_mv[best_mode][best_ref_frame].as_mv.col & 0x07) != 0))
+      copy_from = newmv_pred;
+    else
+      copy_from = pred_buf + (best_mode - NEARESTMV -1) * pixels_in_block;
+
+    vp9_convolve_copy(copy_from, bw, copy_to, pd->dst.stride, NULL, 0, NULL, 0,
+                      bw, bh);
+  }
 
   mbmi->mode = best_mode;
   mbmi->interp_filter = best_pred_filter;
@@ -471,12 +511,21 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (!x->skip && best_rd > inter_mode_thresh &&
       bsize <= cpi->sf.max_intra_bsize) {
     for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
+      if (cpi->sf.reuse_inter_pred_sby) {
+        pd->dst.buf = pred_buf;
+        pd->dst.stride = bw;
+      }
+
       vp9_predict_intra_block(xd, 0, b_width_log2(bsize),
                               mbmi->tx_size, this_mode,
                               &p->src.buf[0], p->src.stride,
                               &pd->dst.buf[0], pd->dst.stride, 0, 0, 0);
 
       model_rd_for_sb_y(cpi, bsize, x, xd, &rate, &dist, &var_y, &sse_y);
+
+      if (cpi->sf.reuse_inter_pred_sby)
+        pd->dst = orig_dst;
+
       rate += cpi->mbmode_cost[this_mode];
       rate += intra_cost_penalty;
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
@@ -494,6 +543,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
   }
+
 #if CONFIG_DENOISING
   vp9_denoiser_denoise(&cpi->denoiser, x, mi_row, mi_col, bsize);
 #endif
