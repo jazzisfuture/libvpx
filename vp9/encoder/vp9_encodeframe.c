@@ -669,6 +669,31 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         const int ctx = vp9_get_pred_context_switchable_interp(xd);
         ++cm->counts.switchable_interp[ctx][mbmi->interp_filter];
       }
+#if CONFIG_MASKED_INTERINTER
+      if (cm->use_masked_interinter &&
+          cm->reference_mode != SINGLE_REFERENCE &&
+          get_mask_bits(bsize) &&
+          mbmi->ref_frame[1] > INTRA_FRAME)
+        ++cm->counts.masked_interinter[bsize][mbmi->use_masked_interinter];
+#endif
+
+#if CONFIG_INTERINTRA
+    if (cm->use_interintra &&
+        is_interintra_allowed(bsize) &&
+        is_inter_mode(mbmi->mode) &&
+        (mbmi->ref_frame[1] <= INTRA_FRAME)) {
+      if (mbmi->ref_frame[1] == INTRA_FRAME) {
+        ++cm->counts.y_mode[size_group_lookup[bsize]][mbmi->interintra_mode];
+        ++cm->counts.interintra[bsize][1];
+#if CONFIG_MASKED_INTERINTRA
+        if (cm->use_masked_interintra && get_mask_bits_interintra(bsize))
+          ++cm->counts.masked_interintra[bsize][mbmi->use_masked_interintra];
+#endif
+      } else {
+        ++cm->counts.interintra[bsize][0];
+      }
+    }
+#endif
     }
 
     rd_opt->comp_pred_diff[SINGLE_REFERENCE] += ctx->single_pred_diff;
@@ -2384,6 +2409,16 @@ static void init_encode_frame_mb_context(VP9_COMP *cpi) {
              2 * aligned_mi_cols * MAX_MB_PLANE);
   vpx_memset(xd->above_seg_context, 0,
              sizeof(*xd->above_seg_context) * aligned_mi_cols);
+
+#if CONFIG_MASKED_INTERINTER
+  vp9_zero(cpi->masked_interinter_select_counts);
+#endif
+#if CONFIG_INTERINTRA
+  vp9_zero(cpi->interintra_select_count);
+#if CONFIG_MASKED_INTERINTRA
+  vp9_zero(cpi->masked_interintra_select_count);
+#endif
+#endif
 }
 
 static int check_dual_ref_flags(VP9_COMP *cpi) {
