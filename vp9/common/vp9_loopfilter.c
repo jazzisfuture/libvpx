@@ -1043,7 +1043,7 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                             struct macroblockd_plane *const plane,
                             int mi_row,
                             LOOP_FILTER_MASK *lfm) {
-  struct buf_2d *const dst = &plane->dst;
+/*  struct buf_2d *const dst = &plane->dst;
   uint8_t* const dst0 = dst->buf;
   int r, c;
 
@@ -1188,14 +1188,14 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
       mask_4x4 >>= 4;
       mask_4x4_int >>= 4;
     }
-  }
+  }*/
 }
 
 void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                           VP9_COMMON *cm,
                           struct macroblockd_plane planes[MAX_MB_PLANE],
                           int start, int stop, int y_only) {
-  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+/*  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
   const int use_420 = y_only || (planes[1].subsampling_y == 1 &&
                                  planes[1].subsampling_x == 1);
   LOOP_FILTER_MASK lfm;
@@ -1222,7 +1222,7 @@ void vp9_loop_filter_rows(const YV12_BUFFER_CONFIG *frame_buffer,
                                     mi_row, mi_col);
       }
     }
-  }
+  }*/
 }
 
 void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
