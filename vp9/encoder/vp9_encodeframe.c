@@ -689,7 +689,7 @@ void vp9_setup_src_planes(MACROBLOCK *x, const YV12_BUFFER_CONFIG *src,
   int i;
 
   // Set current frame pointer.
-  x->e_mbd.cur_buf = src;
+  //x->e_mbd.cur_buf = src;
 
   for (i = 0; i < MAX_MB_PLANE; i++)
     setup_pred_plane(&x->plane[i].src, buffers[i], strides[i], mi_row, mi_col,
