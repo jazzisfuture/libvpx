@@ -145,6 +145,8 @@ void vp9_initialize_enc() {
 
   if (!init_done) {
     vp9_init_neighbors();
+    vp9_init_quant_tables();
+
     vp9_coef_tree_initialize();
     vp9_tokenize_initialize();
     vp9_init_me_luts();
@@ -174,8 +176,10 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
 
+  vpx_free(cpi->active_map);
+  cpi->active_map = NULL;
+
   vp9_free_frame_buffers(cm);
-  vp9_free_context_buffers(cm);
 
   vp9_free_frame_buffer(&cpi->last_frame_uf);
   vp9_free_frame_buffer(&cpi->scaled_source);
@@ -413,46 +417,39 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                        "Failed to allocate altref buffer");
 }
 
-static void alloc_ref_frame_buffers(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  if (vp9_alloc_frame_buffers(cm, cm->width, cm->height))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate frame buffers");
-}
-
-static void alloc_util_frame_buffers(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate last frame buffer");
-
-  if (vp9_realloc_frame_buffer(&cpi->scaled_source,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate scaled source buffer");
-
-  if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
-                               cm->width, cm->height,
-                               cm->subsampling_x, cm->subsampling_y,
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate scaled last source buffer");
-}
-
 void vp9_alloc_compressor_data(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
 
-  vp9_alloc_context_buffers(cm, cm->width, cm->height);
+  if (vp9_alloc_frame_buffers(cm, cm->width, cm->height))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate frame buffers");
+
+  if (vp9_alloc_frame_buffer(&cpi->last_frame_uf,
+                             cm->width, cm->height,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_ENC_BORDER_IN_PIXELS))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate last frame buffer");
+
+  if (vp9_alloc_frame_buffer(&cpi->scaled_source,
+                             cm->width, cm->height,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_ENC_BORDER_IN_PIXELS))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate scaled source buffer");
+
+  if (vp9_alloc_frame_buffer(&cpi->scaled_last_source,
+                             cm->width, cm->height,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_ENC_BORDER_IN_PIXELS))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate scaled last source buffer");
 
   vpx_free(cpi->tok);
 
   {
     unsigned int tokens = get_token_alloc(cm->mb_rows, cm->mb_cols);
+
     CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
   }
 
@@ -462,7 +459,41 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
 static void update_frame_size(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+
   vp9_update_frame_size(cm);
+
+  // Update size of buffers local to this frame
+  if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to reallocate last frame buffer");
+
+  if (vp9_realloc_frame_buffer(&cpi->scaled_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to reallocate scaled source buffer");
+
+  if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to reallocate scaled last source buffer");
+
+  {
+    int y_stride = cpi->scaled_source.y_stride;
+
+    if (cpi->sf.mv.search_method == NSTEP) {
+      vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
+    } else if (cpi->sf.mv.search_method == DIAMOND) {
+      vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
+    }
+  }
+
   init_macroblockd(cm, xd);
 }
 
@@ -490,12 +521,6 @@ static void set_tile_limits(VP9_COMP *cpi) {
   cm->log2_tile_rows = cpi->oxcf.tile_rows;
 }
 
-static void init_buffer_indices(VP9_COMP *cpi) {
-  cpi->lst_fb_idx = 0;
-  cpi->gld_fb_idx = 1;
-  cpi->alt_fb_idx = 2;
-}
-
 static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -506,6 +531,8 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
+  cm->subsampling_x = 0;
+  cm->subsampling_y = 0;
   vp9_alloc_compressor_data(cpi);
 
   // Spatial scalability.
@@ -525,7 +552,9 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cpi->static_mb_pct = 0;
 
-  init_buffer_indices(cpi);
+  cpi->lst_fb_idx = 0;
+  cpi->gld_fb_idx = 1;
+  cpi->alt_fb_idx = 2;
 
   set_tile_limits(cpi);
 }
@@ -637,7 +666,11 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                                            (int)cpi->oxcf.target_bandwidth);
   }
 
+#if CONFIG_MULTIPLE_ARF
+  vp9_zero(cpi->alt_ref_source);
+#else
   cpi->alt_ref_source = NULL;
+#endif
   rc->is_src_frame_alt_ref = 0;
 
 #if 0
@@ -706,7 +739,7 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
 }
 
 
-VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
+VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf, BufferPool *const pool) {
   unsigned int i, j;
   VP9_COMP *const cpi = vpx_memalign(32, sizeof(VP9_COMP));
   VP9_COMMON *const cm = cpi != NULL ? &cpi->common : NULL;
@@ -727,6 +760,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   vp9_rtcd();
 
   cpi->use_svc = 0;
+  cpi->common.buffer_pool = pool;
 
   init_config(cpi, oxcf);
   vp9_rc_init(&cpi->oxcf, cpi->pass, &cpi->rc);
@@ -757,6 +791,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   CHECK_MEM_ERROR(cm, cpi->coding_context.last_frame_seg_map_copy,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
+  CHECK_MEM_ERROR(cm, cpi->active_map, vpx_calloc(cm->MBs, 1));
+  vpx_memset(cpi->active_map, 1, cm->MBs);
+  cpi->active_map_enabled = 0;
+
   for (i = 0; i < (sizeof(cpi->mbgraph_stats) /
                    sizeof(cpi->mbgraph_stats[0])); i++) {
     CHECK_MEM_ERROR(cm, cpi->mbgraph_stats[i].mb_stats,
@@ -766,23 +804,18 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cpi->refresh_alt_ref_frame = 0;
 
-  // Note that at the moment multi_arf will not work with svc.
-  // For the current check in all the execution paths are defaulted to 0
-  // pending further tuning and testing. The code is left in place here
-  // as a place holder in regard to the required paths.
-  if (cpi->pass == 2) {
-    if (cpi->use_svc) {
-      cpi->multi_arf_allowed = 0;
-      cpi->multi_arf_enabled = 0;
-    } else {
-      // Disable by default for now.
-      cpi->multi_arf_allowed = 0;
-      cpi->multi_arf_enabled = 0;
-    }
-  } else {
-    cpi->multi_arf_allowed = 0;
-    cpi->multi_arf_enabled = 0;
+#if CONFIG_MULTIPLE_ARF
+  // Turn multiple ARF usage on/off. This is a quick hack for the initial test
+  // version. It should eventually be set via the codec API.
+  cpi->multi_arf_enabled = 1;
+
+  if (cpi->multi_arf_enabled) {
+    cpi->sequence_number = 0;
+    cpi->frame_coding_order_period = 0;
+    vp9_zero(cpi->frame_coding_order);
+    vp9_zero(cpi->arf_buffer_idx);
   }
+#endif
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
@@ -1243,11 +1276,12 @@ int vp9_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
 
 int vp9_get_reference_enc(VP9_COMP *cpi, int index, YV12_BUFFER_CONFIG **fb) {
   VP9_COMMON *cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
 
   if (index < 0 || index >= REF_FRAMES)
     return -1;
 
-  *fb = &cm->frame_bufs[cm->ref_frame_map[index]].buf;
+  *fb = &pool->frame_bufs[cm->ref_frame_map[index]].buf;
   return 0;
 }
 
@@ -1484,13 +1518,14 @@ static int recode_loop_test(const VP9_COMP *cpi,
 
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
   } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
              cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
@@ -1505,7 +1540,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
      */
     int tmp;
 
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
 
     tmp = cpi->alt_fb_idx;
@@ -1518,19 +1553,19 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
         const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
         arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
-
-      ref_cnt_fb(cm->frame_bufs,
+#endif
+      ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
     }
 
     if (cpi->refresh_golden_frame) {
-      ref_cnt_fb(cm->frame_bufs,
+      ref_cnt_fb(pool->frame_bufs,
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     }
   }
 
   if (cpi->refresh_last_frame) {
-    ref_cnt_fb(cm->frame_bufs,
+    ref_cnt_fb(pool->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
 #if CONFIG_DENOISING
@@ -1571,32 +1606,35 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
+  BufferPool *const pool = cm->buffer_pool;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
-    const YV12_BUFFER_CONFIG *const ref = &cm->frame_bufs[idx].buf;
+    const YV12_BUFFER_CONFIG *const ref = &pool->frame_bufs[idx].buf;
 
-    if (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height) {
+    if (ref->y_crop_width != cm->width ||
+        ref->y_crop_height != cm->height) {
       const int new_fb = get_free_fb(cm);
-      vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
+      vp9_realloc_frame_buffer(&pool->frame_bufs[new_fb].buf,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
-      scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
+      scale_and_extend_frame(ref, &pool->frame_bufs[new_fb].buf);
       cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
     } else {
       cpi->scaled_ref_idx[ref_frame - 1] = idx;
-      cm->frame_bufs[idx].ref_count++;
+      pool->frame_bufs[idx].ref_count++;
     }
   }
 }
 
 static void release_scaled_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  BufferPool *const pool = cm->buffer_pool;
   int i;
 
   for (i = 0; i < 3; i++)
-    cm->frame_bufs[cpi->scaled_ref_idx[i]].ref_count--;
+    pool->frame_bufs[cpi->scaled_ref_idx[i]].ref_count--;
 }
 
 static void full_to_model_count(unsigned int *model_count,
@@ -2202,8 +2240,31 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->frame_type == KEY_FRAME) {
     // Tell the caller that the frame was coded as a key frame
     *frame_flags = cpi->frame_flags | FRAMEFLAGS_KEY;
+
+#if CONFIG_MULTIPLE_ARF
+    // Reset the sequence number.
+    if (cpi->multi_arf_enabled) {
+      cpi->sequence_number = 0;
+      cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
+      cpi->new_frame_coding_order_period = -1;
+    }
+#endif
   } else {
     *frame_flags = cpi->frame_flags & ~FRAMEFLAGS_KEY;
+
+#if CONFIG_MULTIPLE_ARF
+    /* Increment position in the coded frame sequence. */
+    if (cpi->multi_arf_enabled) {
+      ++cpi->sequence_number;
+      if (cpi->sequence_number >= cpi->frame_coding_order_period) {
+        cpi->sequence_number = 0;
+        cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
+        cpi->new_frame_coding_order_period = -1;
+      }
+      cpi->this_frame_weight = cpi->arf_weight[cpi->sequence_number];
+      assert(cpi->this_frame_weight >= 0);
+    }
+#endif
   }
 
   // Clear the one shot update flags for segmentation map and mode/ref loop
@@ -2257,16 +2318,6 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
   vp9_twopass_postencode_update(cpi);
 }
 
-static void init_motion_estimation(VP9_COMP *cpi) {
-  int y_stride = cpi->scaled_source.y_stride;
-
-  if (cpi->sf.mv.search_method == NSTEP) {
-    vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
-  } else if (cpi->sf.mv.search_method == DIAMOND) {
-    vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
-  }
-}
-
 static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
                                 int subsampling_y) {
   VP9_COMMON *const cm = &cpi->common;
@@ -2274,13 +2325,7 @@ static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
   if (!cpi->initial_width) {
     cm->subsampling_x = subsampling_x;
     cm->subsampling_y = subsampling_y;
-
     alloc_raw_frame_buffers(cpi);
-    alloc_ref_frame_buffers(cpi);
-    alloc_util_frame_buffers(cpi);
-
-    init_motion_estimation(cpi);
-
     cpi->initial_width = cm->width;
     cpi->initial_height = cm->height;
   }
@@ -2297,7 +2342,6 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   const int subsampling_y = sd->uv_height < sd->y_height;
 
   check_initial_width(cpi, subsampling_x, subsampling_y);
-
   vpx_usec_timer_start(&timer);
   if (vp9_lookahead_push(cpi->lookahead,
                          sd, time_stamp, end_time, frame_flags))
@@ -2327,6 +2371,13 @@ static int frame_is_reference(const VP9_COMP *cpi) {
          cm->seg.update_map ||
          cm->seg.update_data;
 }
+
+#if CONFIG_MULTIPLE_ARF
+int is_next_frame_arf(VP9_COMP *cpi) {
+  // Negative entry in frame_coding_order indicates an ARF at this position.
+  return cpi->frame_coding_order[cpi->sequence_number + 1] < 0 ? 1 : 0;
+}
+#endif
 
 void adjust_frame_rate(VP9_COMP *cpi) {
   int64_t this_duration;
@@ -2366,46 +2417,6 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
-// Returns 0 if this is not an alt ref else the offset of the source frame
-// used as the arf midpoint.
-static int get_arf_src_index(VP9_COMP *cpi) {
-  RATE_CONTROL *const rc = &cpi->rc;
-  int arf_src_index = 0;
-  if (is_altref_enabled(&cpi->oxcf)) {
-    if (cpi->pass == 2) {
-      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
-      if (gf_group->update_type[gf_group->index] == ARF_UPDATE) {
-        arf_src_index = gf_group->arf_src_offset[gf_group->index];
-      }
-    } else if (rc->source_alt_ref_pending) {
-      arf_src_index = rc->frames_till_gf_update_due;
-    }
-  }
-  return arf_src_index;
-}
-
-static void is_src_altref(VP9_COMP *cpi) {
-  RATE_CONTROL *const rc = &cpi->rc;
-
-  if (cpi->pass == 2) {
-    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
-    rc->is_src_frame_alt_ref =
-      (gf_group->update_type[gf_group->index] == OVERLAY_UPDATE);
-  } else {
-    rc->is_src_frame_alt_ref = cpi->alt_ref_source &&
-                               (cpi->source == cpi->alt_ref_source);
-  }
-
-  if (rc->is_src_frame_alt_ref) {
-    // Current frame is an ARF overlay frame.
-    cpi->alt_ref_source = NULL;
-
-    // Don't refresh the last buffer for an ARF overlay frame. It will
-    // become the GF so preserve last as an alternative prediction option.
-    cpi->refresh_last_frame = 0;
-  }
-}
-
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -2415,7 +2426,6 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct vpx_usec_timer  cmptimer;
   YV12_BUFFER_CONFIG *force_src_buffer = NULL;
   MV_REFERENCE_FRAME ref_frame;
-  int arf_src_index;
 
   if (!cpi)
     return -1;
@@ -2438,19 +2448,35 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->refresh_golden_frame = 0;
   cpi->refresh_alt_ref_frame = 0;
 
-  // Should we encode an arf frame.
-  arf_src_index = get_arf_src_index(cpi);
-  if (arf_src_index) {
-    assert(arf_src_index <= rc->frames_to_key);
+  // Should we code an alternate reference frame.
+  if (is_altref_enabled(&cpi->oxcf) && rc->source_alt_ref_pending) {
+    int frames_to_arf;
 
-    if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, arf_src_index))) {
+#if CONFIG_MULTIPLE_ARF
+    assert(!cpi->multi_arf_enabled ||
+           cpi->frame_coding_order[cpi->sequence_number] < 0);
+
+    if (cpi->multi_arf_enabled && (cpi->pass == 2))
+      frames_to_arf = (-cpi->frame_coding_order[cpi->sequence_number])
+          - cpi->next_frame_in_order;
+    else
+#endif
+      frames_to_arf = rc->frames_till_gf_update_due;
+
+    assert(frames_to_arf <= rc->frames_to_key);
+
+    if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
+#if CONFIG_MULTIPLE_ARF
+      cpi->alt_ref_source[cpi->arf_buffered] = cpi->source;
+#else
       cpi->alt_ref_source = cpi->source;
+#endif
 
       if (cpi->oxcf.arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
         // TODO(agrange) merge these two functions.
-        vp9_configure_arnr_filter(cpi, arf_src_index, rc->gfu_boost);
-        vp9_temporal_filter_prepare(cpi, arf_src_index);
+        vp9_configure_arnr_filter(cpi, frames_to_arf, rc->gfu_boost);
+        vp9_temporal_filter_prepare(cpi, frames_to_arf);
         vp9_extend_frame_borders(&cpi->alt_ref_buffer);
         force_src_buffer = &cpi->alt_ref_buffer;
       }
@@ -2460,27 +2486,59 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;
       rc->is_src_frame_alt_ref = 0;
-      rc->source_alt_ref_pending = 0;
+
+#if CONFIG_MULTIPLE_ARF
+      if (!cpi->multi_arf_enabled)
+#endif
+        rc->source_alt_ref_pending = 0;
     } else {
       rc->source_alt_ref_pending = 0;
     }
   }
 
   if (!cpi->source) {
+#if CONFIG_MULTIPLE_ARF
+    int i;
+#endif
+
     // Get last frame source.
     if (cm->current_video_frame > 0) {
       if ((cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1)) == NULL)
         return -1;
     }
 
-    // Read in the source frame.
     if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
       cm->show_frame = 1;
       cm->intra_only = 0;
 
-      // Check to see if the frame to be encoded is an overlay for a previous
-      // arf frame and if so configure it as such.
-      is_src_altref(cpi);
+#if CONFIG_MULTIPLE_ARF
+      // Is this frame the ARF overlay.
+      rc->is_src_frame_alt_ref = 0;
+      for (i = 0; i < cpi->arf_buffered; ++i) {
+        if (cpi->source == cpi->alt_ref_source[i]) {
+          rc->is_src_frame_alt_ref = 1;
+          cpi->refresh_golden_frame = 1;
+          break;
+        }
+      }
+#else
+      rc->is_src_frame_alt_ref = cpi->alt_ref_source &&
+                                 (cpi->source == cpi->alt_ref_source);
+#endif
+      if (rc->is_src_frame_alt_ref) {
+        // Current frame is an ARF overlay frame.
+#if CONFIG_MULTIPLE_ARF
+        cpi->alt_ref_source[i] = NULL;
+#else
+        cpi->alt_ref_source = NULL;
+#endif
+        // Don't refresh the last buffer for an ARF overlay frame. It will
+        // become the GF so preserve last as an alternative prediction option.
+        cpi->refresh_last_frame = 0;
+      }
+#if CONFIG_MULTIPLE_ARF
+      ++cpi->next_frame_in_order;
+#endif
     }
   }
 
@@ -2488,15 +2546,20 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
 
-    if (cpi->last_source != NULL) {
-      cpi->unscaled_last_source = &cpi->last_source->img;
-    } else {
-      cpi->unscaled_last_source = NULL;
-    }
+  if (cpi->last_source != NULL) {
+    cpi->unscaled_last_source = &cpi->last_source->img;
+  } else {
+    cpi->unscaled_last_source = NULL;
+  }
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
     *frame_flags = cpi->source->flags;
+
+#if CONFIG_MULTIPLE_ARF
+    if (cm->frame_type != KEY_FRAME && cpi->pass == 2)
+      rc->source_alt_ref_pending = is_next_frame_arf(cpi);
+#endif
   } else {
     *size = 0;
     if (flush && cpi->pass == 1 && !cpi->twopass.first_pass_done) {
@@ -2531,7 +2594,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   /* find a free buffer for the new frame, releasing the reference previously
    * held.
    */
-  cm->frame_bufs[cm->new_fb_idx].ref_count--;
+  pool->frame_bufs[cm->new_fb_idx].ref_count--;
   cm->new_fb_idx = get_free_fb(cm);
 
   if (!cpi->use_svc && cpi->multi_arf_allowed) {
@@ -2565,7 +2628,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
-    YV12_BUFFER_CONFIG *const buf = &cm->frame_bufs[idx].buf;
+    YV12_BUFFER_CONFIG *const buf = &pool->frame_bufs[idx].buf;
     RefBuffer *const ref_buf = &cm->frame_refs[ref_frame - 1];
     ref_buf->buf = buf;
     ref_buf->idx = idx;
