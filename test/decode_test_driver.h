@@ -52,7 +52,8 @@ class Decoder {
   vpx_codec_err_t PeekStream(const uint8_t *cxdata, size_t size,
                              vpx_codec_stream_info_t *stream_info);
 
-  vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, size_t size);
+  vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, size_t size,
+                              void *user_priv);
 
   DxDataIterator GetDxData() {
     return DxDataIterator(&decoder_);
