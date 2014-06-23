@@ -743,6 +743,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->alt_is_last = 0;
   cpi->gold_is_alt = 0;
 
+  cpi->skippable_frame = 0;
+
   // Create the encoder segmentation map and set all entries to 0
   CHECK_MEM_ERROR(cm, cpi->segmentation_map,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
