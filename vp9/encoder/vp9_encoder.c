@@ -743,6 +743,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->alt_is_last = 0;
   cpi->gold_is_alt = 0;
 
+  cpi->skippable_frame = 0;
+
   // Create the encoder segmentation map and set all entries to 0
   CHECK_MEM_ERROR(cm, cpi->segmentation_map,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
@@ -1972,6 +1974,26 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
   }
 }
 
+static INLINE void configure_skippable_frame(VP9_COMP *cpi) {
+  // If the current frame does not have non-zero motion vector detected in the
+  // first  pass, and so do its previous and forward frames, then this frame
+  // can be skipped for partition check, and the partition size is assigned
+  // according to the variance
+  cpi->skippable_frame = (!frame_is_intra_only(&cpi->common) &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_motion
+    == 1  &&
+    cpi->common.current_video_frame > 1 &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_motion
+    == 1  &&
+    cpi->twopass.stats_in_start + cpi->common.current_video_frame + 1
+    < cpi->twopass.stats_in_end &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_motion
+    == 1);
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2066,6 +2088,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // and if the relevant speed feature flag is set.
   if (cpi->pass == 2 && cpi->sf.static_segmentation)
     configure_static_seg_features(cpi);
+
+  if (cpi->pass == 2 &&
+      (!cpi->use_svc || cpi->svc.number_temporal_layers == 1))
+    configure_skippable_frame(cpi);
 
   // For 1 pass CBR, check if we are dropping this frame.
   // Never drop on key frame.
