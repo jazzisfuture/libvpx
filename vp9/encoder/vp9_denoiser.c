@@ -17,6 +17,23 @@
 
 #ifdef OUTPUT_YUV_DENOISED
 static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
+
+struct vp9_denoiser_log {
+  FILE *f;
+  int n_strongfiltered;
+  int n_weakfiltered;
+  int strong;
+  int n_total;
+  int n_absdiff_stopped;
+  int n_delta_stopped;
+  int n_noise_motion_stopped;
+  int n_sse_stopped;
+  int n_sse_diff_stopped;
+  int n_total_adj_strong_stopped;
+  int n_total_adj_weak_stopped;
+};
+
+static struct vp9_denoiser_log log;
 #endif
 
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
@@ -112,6 +129,9 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
 
   // If the strong filter did not modify the signal too much, we're all set.
   if (abs(total_adj) <= total_adj_strong_thresh(bs, increase_denoising)) {
+#if OUTPUT_YUV_DENOISED
+    log.strong = 1;
+#endif
     return FILTER_BLOCK;
   }
 
@@ -119,6 +139,9 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
   delta = ((abs(total_adj) - total_adj_strong_thresh(bs, increase_denoising))
            >> 8) + 1;
   if (delta > delta_thresh(bs, increase_denoising)) {
+#if OUTPUT_YUV_DENOISED
+    log.n_delta_stopped++;
+#endif
     return COPY_BLOCK;
   }
 
@@ -147,8 +170,15 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
 
   // We can use the filter if it has been sufficiently dampened
   if (abs(total_adj) <= total_adj_weak_thresh(bs, increase_denoising)) {
+#if OUTPUT_YUV_DENOISED
+    log.n_total_adj_strong_stopped++; // Was stopped from strong filter but not weak
+    log.strong = 0;
+#endif
     return FILTER_BLOCK;
   }
+#if OUTPUT_YUV_DENOISED
+  log.n_total_adj_weak_stopped++;
+#endif
   return COPY_BLOCK;
 }
 
@@ -281,10 +311,16 @@ static VP9_DENOISER_DECISION perform_motion_compensation(VP9_DENOISER *denoiser,
   mv_col = denoiser->best_sse_mv.as_mv.col;
 
   if (denoiser->best_sse > sse_thresh(bs, increase_denoising)) {
+#if OUTPUT_YUV_DENOISED
+    log.n_sse_stopped++;
+#endif
     return COPY_BLOCK;
   }
   if (mv_row * mv_row + mv_col * mv_col >
       8 * noise_motion_thresh(bs, increase_denoising)) {
+#if OUTPUT_YUV_DENOISED
+    log.n_noise_motion_stopped++;
+#endif
     return COPY_BLOCK;
   }
   return FILTER_BLOCK;
@@ -313,10 +349,18 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
   }
 
   if (decision == FILTER_BLOCK) {
+#if OUTPUT_YUV_DENOISED
+    log.n_strongfiltered += log.strong;
+    log.n_weakfiltered += !log.strong;
+#endif
     copy_block(src.buf, src.stride, avg_start, avg.y_stride, bs);
   } else {  // COPY_BLOCK
+
     copy_block(avg_start, avg.y_stride, src.buf, src.stride, bs);
   }
+#if OUTPUT_YUV_DENOISED
+  log.n_total++;
+#endif
 }
 
 static void copy_frame(YV12_BUFFER_CONFIG dest, const YV12_BUFFER_CONFIG src) {
@@ -447,5 +491,39 @@ static void make_grayscale(YV12_BUFFER_CONFIG *yuv) {
     u += yuv->uv_stride + yuv->uv_width / 2;
     v += yuv->uv_stride + yuv->uv_width / 2;
   }
+}
+#endif
+
+#ifdef OUTPUT_YUV_DENOISED
+int vp9_denoiser_init_log(const char *fname) {
+  log.f = fopen(fname, "w");
+  if (log.f == NULL) {
+    return 1;
+  }
+  log.n_strongfiltered = 0;
+  log.n_weakfiltered = 0;
+  log.n_total = 0;
+
+  log.n_absdiff_stopped = 0;
+  log.n_delta_stopped = 0;
+  log.n_noise_motion_stopped = 0;
+  log.n_sse_stopped = 0;
+  log.n_sse_diff_stopped = 0;
+  log.n_total_adj_strong_stopped = 0;
+  log.n_total_adj_weak_stopped = 0;
+  return 0;
+}
+
+void vp9_denoiser_close_log() {
+  fprintf(log.f, "strongfiltered\t%f\n", (double)log.n_strongfiltered / (double) log.n_total);
+  fprintf(log.f, "weakfiltered\t%f\n", (double)log.n_weakfiltered / (double) log.n_total);
+  fprintf(log.f, "absdiff\t%f\n", (double)log.n_absdiff_stopped / (double) log.n_total);
+  fprintf(log.f, "delta\t%f\n", (double)log.n_delta_stopped / (double) log.n_total);
+  fprintf(log.f, "noise_motion\t%f\n", (double)log.n_noise_motion_stopped / (double) log.n_total);
+  fprintf(log.f, "sse\t%f\n", (double)log.n_sse_stopped / (double) log.n_total);
+  fprintf(log.f, "sse_diff\t%f\n", (double)log.n_sse_diff_stopped / (double) log.n_total);
+  fprintf(log.f, "total_adj_strong\t%f\n", (double)log.n_total_adj_strong_stopped / (double) log.n_total);
+  fprintf(log.f, "total_adj_weak\t%f\n", (double)log.n_total_adj_weak_stopped / (double) log.n_total);
+  fclose(log.f);
 }
 #endif

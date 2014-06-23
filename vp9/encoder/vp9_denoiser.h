@@ -56,6 +56,12 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
 
 void vp9_denoiser_free(VP9_DENOISER *denoiser);
 
+#ifdef OUTPUT_YUV_DENOISED
+int vp9_denoiser_init_log(const char *fname);
+
+void vp9_denoiser_close_log();
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

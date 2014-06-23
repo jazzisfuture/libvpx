@@ -834,6 +834,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
 #ifdef OUTPUT_YUV_DENOISED
   yuv_denoised_file = fopen("denoised.yuv", "ab");
+  vp9_denoiser_init_log("log.txt");
 #endif
 #ifdef OUTPUT_YUV_SRC
   yuv_file = fopen("bd.yuv", "ab");
@@ -1082,6 +1083,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
 #ifdef OUTPUT_YUV_DENOISED
   fclose(yuv_denoised_file);
+  vp9_denoiser_close_log();
 #endif
 #ifdef OUTPUT_YUV_SRC
   fclose(yuv_file);
