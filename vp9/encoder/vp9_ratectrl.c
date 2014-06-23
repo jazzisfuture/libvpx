@@ -784,6 +784,10 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
   return q;
 }
 
+#define INTER_RATE_FACTOR 1.0
+#define KF_RATE_FACTOR 2.0
+#define GF_ARF_STD_RATE_FACTOR 1.75
+#define GF_ARF_LOW_RATE_FACTOR 1.5
 static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                          int *bottom_index,
                                          int *top_index) {
@@ -892,21 +896,20 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   *bottom_index = active_best_quality;
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
+  vp9_clear_system_state();
   {
-    int qdelta = 0;
-    vp9_clear_system_state();
-
-    // Limit Q range for the adaptive loop.
-    if ((cm->frame_type == KEY_FRAME || vp9_is_upper_layer_key_frame(cpi)) &&
-        !rc->this_key_frame_forced) {
-      qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
-                                          active_worst_quality, 2.0);
-    } else if (!rc->is_src_frame_alt_ref &&
-               (oxcf->rc_mode != VPX_CBR) &&
-               (cpi->refresh_alt_ref_frame)) {
-      qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
-                                          active_worst_quality, 1.75);
-    }
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    const double rate_factor_deltas[RATE_FACTOR_LEVELS] = {
+      1.00, // INTER_NORMAL
+      1.00, // INTER_HIGH
+      1.50, // GF_ARF_LOW
+      1.75, // GF_ARF_STD
+      2.00, // KF_STD
+    };
+    const double rate_factor =
+      rate_factor_deltas[gf_group->rf_level[gf_group->index]];
+    int qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                            active_worst_quality, rate_factor);
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
