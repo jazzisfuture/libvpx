@@ -44,7 +44,8 @@ string DecodeFile(const string& filename) {
   for (video.Begin(); video.cxdata(); video.Next()) {
     void* user_priv = reinterpret_cast<void*>(&frame_num);
     const vpx_codec_err_t res =
-        decoder.DecodeFrame(video.cxdata(), video.frame_size(), user_priv);
+        decoder.DecodeFrame(video.cxdata(), video.frame_size(),
+                            (frame_num == 0) ? NULL : user_priv);
     if (res != VPX_CODEC_OK) {
       EXPECT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
       break;
@@ -52,14 +53,20 @@ string DecodeFile(const string& filename) {
     libvpx_test::DxDataIterator dec_iter = decoder.GetDxData();
     const vpx_image_t *img = NULL;
 
-    // Get decompressed data
+    // Get decompressed data.
     while ((img = dec_iter.Next())) {
-      // user_priv pointer value should be the same.
-      EXPECT_EQ(img->user_priv, reinterpret_cast<void *>(&frame_num)) <<
-          "user_priv pointer value not match.";
-      // value in user_priv pointer should also be the same.
-      EXPECT_EQ(*reinterpret_cast<int *>(img->user_priv), frame_num) <<
-          "value in user_priv not match.";
+      if (frame_num == 0) {
+        // user_priv pointer value should be the same.
+        EXPECT_EQ(img->user_priv, reinterpret_cast<void *>(NULL)) <<
+            "user_priv pointer value does not match.";
+      } else {
+        // user_priv pointer value should be the same.
+        EXPECT_EQ(img->user_priv, reinterpret_cast<void *>(&frame_num)) <<
+            "user_priv pointer value does not match.";
+        // value in user_priv pointer should also be the same.
+        EXPECT_EQ(*reinterpret_cast<int *>(img->user_priv), frame_num) <<
+            "Value in user_priv does not match.";
+      }
       md5.Add(img);
     }
 
@@ -69,7 +76,7 @@ string DecodeFile(const string& filename) {
 }
 
 TEST(UserPrivTest, VideoDecode) {
-  // no tiles or frame parallel; this exercises the decodering to test the
+  // no tiles or frame parallel; this exercises the decoding to test the
   // user_priv.
   EXPECT_STREQ("b35a1b707b28e82be025d960aba039bc",
                DecodeFile("vp90-2-03-size-226x226.webm").c_str());
