@@ -53,7 +53,8 @@ TEST(TestDecrypt, DecryptWorksVp9) {
   video.Begin();
 
   // no decryption
-  vpx_codec_err_t res = decoder.DecodeFrame(video.cxdata(), video.frame_size());
+  vpx_codec_err_t res = decoder.DecodeFrame(video.cxdata(), video.frame_size(),
+                                            NULL);
   ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
 
   // decrypt frame
@@ -64,7 +65,7 @@ TEST(TestDecrypt, DecryptWorksVp9) {
   vpx_decrypt_init di = { test_decrypt_cb, &encrypted[0] };
   decoder.Control(VPXD_SET_DECRYPTOR, &di);
 
-  res = decoder.DecodeFrame(&encrypted[0], encrypted.size());
+  res = decoder.DecodeFrame(&encrypted[0], encrypted.size(), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
 }
 
