@@ -23,13 +23,14 @@ vpx_codec_err_t Decoder::PeekStream(const uint8_t *cxdata, size_t size,
                                     stream_info);
 }
 
-vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
+vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
+                                     void *user_priv) {
   vpx_codec_err_t res_dec;
   InitOnce();
   REGISTER_STATE_CHECK(
       res_dec = vpx_codec_decode(&decoder_,
                                  cxdata, static_cast<unsigned int>(size),
-                                 NULL, 0));
+                                 user_priv, 0));
   return res_dec;
 }
 
@@ -64,7 +65,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
     }
 
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
-                                                   video->frame_size());
+                                                   video->frame_size(), NULL);
     if (!HandleDecodeResult(res_dec, *video, decoder))
       break;
 

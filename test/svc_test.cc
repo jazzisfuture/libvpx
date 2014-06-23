@@ -267,7 +267,7 @@ TEST_F(SvcTest, FirstFrameHasLayers) {
 
   const vpx_codec_err_t res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
 
   // this test fails with a decoder error
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
@@ -296,7 +296,7 @@ TEST_F(SvcTest, EncodeThreeFrames) {
 
   vpx_codec_err_t res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 
   // FRAME 1
@@ -309,7 +309,7 @@ TEST_F(SvcTest, EncodeThreeFrames) {
 
   res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 
   // FRAME 2
@@ -322,7 +322,7 @@ TEST_F(SvcTest, EncodeThreeFrames) {
 
   res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 }
 
@@ -431,7 +431,7 @@ TEST_F(SvcTest, TwoPassEncode) {
 
   vpx_codec_err_t res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 
   // FRAME 1
@@ -444,7 +444,7 @@ TEST_F(SvcTest, TwoPassEncode) {
 
   res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 
   // FRAME 2
@@ -457,7 +457,7 @@ TEST_F(SvcTest, TwoPassEncode) {
 
   res_dec = decoder_->DecodeFrame(
       static_cast<const uint8_t *>(vpx_svc_get_buffer(&svc_)),
-      vpx_svc_get_frame_size(&svc_));
+      vpx_svc_get_frame_size(&svc_), NULL);
   ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder_->DecodeError();
 }
 

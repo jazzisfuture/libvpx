@@ -113,7 +113,7 @@ string DecodeFile(const string& filename, int num_threads) {
   libvpx_test::MD5 md5;
   for (video.Begin(); video.cxdata(); video.Next()) {
     const vpx_codec_err_t res =
-        decoder.DecodeFrame(video.cxdata(), video.frame_size());
+        decoder.DecodeFrame(video.cxdata(), video.frame_size(), NULL);
     if (res != VPX_CODEC_OK) {
       EXPECT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
       break;
