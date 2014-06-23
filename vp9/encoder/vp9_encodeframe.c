@@ -2272,6 +2272,10 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   vpx_memset(&xd->left_context, 0, sizeof(xd->left_context));
   vpx_memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
 
+  // Check if the current frame is skippable for the partition search in the
+  // second pass according to the first pass stats
+  // cpi->skippable_frame = frame_is_skippable(cpi);
+
   // Code each SB in the row
   for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
        mi_col += MI_BLOCK_SIZE) {
@@ -2309,7 +2313,8 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                                sf->always_this_block_size);
         rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1, cpi->pc_root);
-      } else if (sf->partition_search_type == VAR_BASED_FIXED_PARTITION) {
+      } else if (cpi->skippable_frame ||
+                 sf->partition_search_type == VAR_BASED_FIXED_PARTITION) {
         BLOCK_SIZE bsize;
         set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
         bsize = get_rd_var_based_fixed_partition(cpi, mi_row, mi_col);
