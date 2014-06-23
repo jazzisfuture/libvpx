@@ -44,7 +44,22 @@ static void fdct4(const tran_low_t *input, tran_low_t *output) {
   output[3] = fdct_round_shift(temp2);
 }
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 void vp9_fdct4x4_c(const int16_t *input, tran_low_t *output, int stride) {
+=======
+void vp9_fdct4x4_1_c(const int16_t *input, int16_t *output, int stride) {
+  int r, c;
+  int16_t sum = 0;
+  for (r = 0; r < 4; ++r)
+    for (c = 0; c < 4; ++c)
+      sum += input[r * stride + c];
+
+  output[0] = sum << 1;
+  output[1] = 0;
+}
+
+void vp9_fdct4x4_c(const int16_t *input, int16_t *output, int stride) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
   // The 2D transform is done with two passes which are actually pretty
   // similar. In the first one, we transform the columns and transpose
   // the results. In the second one, we transform the rows. To achieve that,
@@ -243,7 +258,22 @@ static void fdct8(const tran_low_t *input, tran_low_t *output) {
   output[7] = fdct_round_shift(t3);
 }
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 void vp9_fdct8x8_c(const int16_t *input, tran_low_t *final_output, int stride) {
+=======
+void vp9_fdct8x8_1_c(const int16_t *input, int16_t *output, int stride) {
+  int r, c;
+  int16_t sum = 0;
+  for (r = 0; r < 8; ++r)
+    for (c = 0; c < 8; ++c)
+      sum += input[r * stride + c];
+
+  output[0] = sum;
+  output[1] = 0;
+}
+
+void vp9_fdct8x8_c(const int16_t *input, int16_t *final_output, int stride) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
   int i, j;
   tran_low_t intermediate[64];
 
@@ -314,7 +344,22 @@ void vp9_fdct8x8_c(const int16_t *input, tran_low_t *final_output, int stride) {
   }
 }
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 void vp9_fdct16x16_c(const int16_t *input, tran_low_t *output, int stride) {
+=======
+void vp9_fdct16x16_1_c(const int16_t *input, int16_t *output, int stride) {
+  int r, c;
+  int16_t sum = 0;
+  for (r = 0; r < 16; ++r)
+    for (c = 0; c < 16; ++c)
+      sum += input[r * stride + c];
+
+  output[0] = sum >> 1;
+  output[1] = 0;
+}
+
+void vp9_fdct16x16_c(const int16_t *input, int16_t *output, int stride) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
   // The 2D transform is done with two passes which are actually pretty
   // similar. In the first one, we transform the columns and transpose
   // the results. In the second one, we transform the rows. To achieve that,
@@ -1337,7 +1382,22 @@ static void fdct32(const tran_high_t *input, tran_high_t *output, int round) {
   output[31] = dct_32_round(step[31] * cospi_31_64 + step[16] * -cospi_1_64);
 }
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 void vp9_fdct32x32_c(const int16_t *input, tran_low_t *out, int stride) {
+=======
+void vp9_fdct32x32_1_c(const int16_t *input, int16_t *output, int stride) {
+  int r, c;
+  int16_t sum = 0;
+  for (r = 0; r < 32; ++r)
+    for (c = 0; c < 32; ++c)
+      sum += input[r * stride + c];
+
+  output[0] = sum >> 3;
+  output[1] = 0;
+}
+
+void vp9_fdct32x32_c(const int16_t *input, int16_t *out, int stride) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
   int i, j;
   tran_high_t output[32 * 32];
 

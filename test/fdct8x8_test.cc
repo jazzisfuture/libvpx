@@ -250,9 +250,15 @@ class FwdTrans8x8TestBase {
     ACMRandom rnd(ACMRandom::DeterministicSeed());
     int max_error = 0;
     int total_error = 0;
+    int total_coeff_error = 0;
     const int count_test_block = 100000;
     DECLARE_ALIGNED_ARRAY(16, int16_t, test_input_block, 64);
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
     DECLARE_ALIGNED_ARRAY(16, tran_low_t, test_temp_block, 64);
+=======
+    DECLARE_ALIGNED_ARRAY(16, int16_t, test_temp_block, 64);
+    DECLARE_ALIGNED_ARRAY(16, int16_t, ref_temp_block, 64);
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
     DECLARE_ALIGNED_ARRAY(16, uint8_t, dst, 64);
     DECLARE_ALIGNED_ARRAY(16, uint16_t, dst16, 64);
     DECLARE_ALIGNED_ARRAY(16, uint8_t, src, 64);
@@ -261,6 +267,7 @@ class FwdTrans8x8TestBase {
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-mask_, mask_].
       for (int j = 0; j < 64; ++j) {
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
         if (bit_depth_ == 8) {
           src[j] = rnd.Rand8() % 2 ? 255 : 0;
           dst[j] = src[j] > 0 ? 0 : 255;
@@ -270,10 +277,25 @@ class FwdTrans8x8TestBase {
           dst16[j] = src16[j] > 0 ? 0 : mask_;
           test_input_block[j] = src16[j] - dst16[j];
         }
+=======
+        if (i == 0) {
+          src[j] = 255;
+          dst[j] = 0;
+        } else if (i == 1) {
+          src[j] = 0;
+          dst[j] = 255;
+        } else {
+          src[j] = rnd.Rand8() % 2 ? 255 : 0;
+          dst[j] = rnd.Rand8() % 2 ? 255 : 0;
+        }
+
+        test_input_block[j] = src[j] - dst[j];
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
       }
 
       REGISTER_STATE_CHECK(
           RunFwdTxfm(test_input_block, test_temp_block, pitch_));
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
       if (bit_depth_ == 8)
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, dst, pitch_));
@@ -282,6 +304,12 @@ class FwdTrans8x8TestBase {
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, CONVERT_TO_BYTEPTR(dst16), pitch_));
 #endif
+=======
+      REGISTER_STATE_CHECK(
+          fwd_txfm_ref(test_input_block, ref_temp_block, pitch_, tx_type_));
+      REGISTER_STATE_CHECK(
+          RunInvTxfm(test_temp_block, dst, pitch_));
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 
       for (int j = 0; j < 64; ++j) {
         const int diff = bit_depth_ == 8 ? dst[j] - src[j] :
@@ -290,6 +318,9 @@ class FwdTrans8x8TestBase {
         if (max_error < error)
           max_error = error;
         total_error += error;
+
+        const int coeff_diff = test_temp_block[j] - ref_temp_block[j];
+        total_coeff_error += abs(coeff_diff);
       }
 
       EXPECT_GE(1 << 2 * (bit_depth_ - 8), max_error)
@@ -299,6 +330,10 @@ class FwdTrans8x8TestBase {
       EXPECT_GE((count_test_block << 2 * (bit_depth_ - 8))/5, total_error)
           << "Error: Extremal 8x8 FDCT/IDCT or FHT/IHT has average"
           << " roundtrip error > 1/5 per block";
+
+      EXPECT_EQ(0, total_coeff_error)
+          << "Error: Extremal 8x8 FDCT/FHT has"
+          << "overflow issues in the intermediate steps > 1";
     }
   }
 
@@ -548,5 +583,19 @@ INSTANTIATE_TEST_CASE_P(
     SSSE3, FwdTrans8x8DCT,
     ::testing::Values(
         make_tuple(&vp9_fdct8x8_ssse3, &vp9_idct8x8_64_add_ssse3, 0, 8)));
+#endif
+
+#if HAVE_AVX2
+INSTANTIATE_TEST_CASE_P(
+    AVX2, FwdTrans8x8DCT,
+    ::testing::Values(
+        make_tuple(&vp9_fdct8x8_avx2, &vp9_idct8x8_64_add_c, 0)));
+INSTANTIATE_TEST_CASE_P(
+    AVX2, FwdTrans8x8HT,
+    ::testing::Values(
+        make_tuple(&vp9_fht8x8_avx2, &vp9_iht8x8_64_add_c, 0),
+        make_tuple(&vp9_fht8x8_avx2, &vp9_iht8x8_64_add_c, 1),
+        make_tuple(&vp9_fht8x8_avx2, &vp9_iht8x8_64_add_c, 2),
+        make_tuple(&vp9_fht8x8_avx2, &vp9_iht8x8_64_add_c, 3)));
 #endif
 }  // namespace

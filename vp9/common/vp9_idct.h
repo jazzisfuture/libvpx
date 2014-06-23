@@ -33,6 +33,7 @@ extern "C" {
 #define pair_set_epi16(a, b) \
   _mm_set_epi16(b, a, b, a, b, a, b, a)
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS
 typedef int64_t tran_high_t;
 typedef int32_t tran_low_t;
@@ -40,6 +41,10 @@ typedef int32_t tran_low_t;
 typedef int32_t tran_high_t;
 typedef int16_t tran_low_t;
 #endif
+=======
+#define dual_set_epi16(a, b) \
+  _mm_set_epi16(b, b, b, b, a, a, a, a)
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 
 // Constants:
 //  for (int i = 1; i< 32; ++i)
