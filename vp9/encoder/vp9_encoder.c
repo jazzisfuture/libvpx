@@ -1002,6 +1002,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cm->error.setjmp = 0;
 
+  cpi->skippable_frame = 0;
+
   return cpi;
 }
 
