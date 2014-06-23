@@ -743,6 +743,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->alt_is_last = 0;
   cpi->gold_is_alt = 0;
 
+  cpi->skippable_frame = 0;
+
   // Create the encoder segmentation map and set all entries to 0
   CHECK_MEM_ERROR(cm, cpi->segmentation_map,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
@@ -2278,11 +2280,34 @@ static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
+static INLINE int frame_is_skippable(const VP9_COMP *const cpi) {
+  // If the current frame does not have non-zero motion vector detected in the
+  // first  pass, and so do its previous and forward frames, then this frame
+  // can be skipped for partition check, and the partition size is assigned
+  // according to the variance
+  return (!frame_is_intra_only(&cpi->common) &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_motion
+    == 1  &&
+    cpi->common.current_video_frame > 1 &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_motion
+    == 1  &&
+    cpi->twopass.stats_in_start + cpi->common.current_video_frame + 1
+    < cpi->twopass.stats_in_end &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_motion
+    == 1);
+}
+
 static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
 
   vp9_rc_get_second_pass_params(cpi);
+
+  cpi->skippable_frame = frame_is_skippable(cpi);
+
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 
   vp9_twopass_postencode_update(cpi);
