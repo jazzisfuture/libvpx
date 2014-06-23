@@ -33,6 +33,17 @@ vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
   return res_dec;
 }
 
+vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
+                                     void *user_priv) {
+  vpx_codec_err_t res_dec;
+  InitOnce();
+  REGISTER_STATE_CHECK(
+      res_dec = vpx_codec_decode(&decoder_,
+                                 cxdata, static_cast<unsigned int>(size),
+                                 user_priv, 0));
+  return res_dec;
+}
+
 void DecoderTest::RunLoop(CompressedVideoSource *video) {
   vpx_codec_dec_cfg_t dec_cfg = {0};
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
@@ -65,6 +76,31 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
 
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                    video->frame_size());
+    if (!HandleDecodeResult(res_dec, *video, decoder))
+      break;
+
+    DxDataIterator dec_iter = decoder->GetDxData();
+    const vpx_image_t *img = NULL;
+
+    // Get decompressed data
+    while ((img = dec_iter.Next()))
+      DecompressedFrameHook(*img, video->frame_number());
+  }
+
+  delete decoder;
+}
+
+void DecoderTest::RunLoop(CompressedVideoSource *video, void *user_priv) {
+  vpx_codec_dec_cfg_t dec_cfg = {0};
+  Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
+  ASSERT_TRUE(decoder != NULL);
+
+  // Decode frames.
+  for (video->Begin(); video->cxdata(); video->Next()) {
+    PreDecodeFrameHook(*video, decoder, user_priv);
+    vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
+                                                   video->frame_size(),
+                                                   user_priv);
     if (!HandleDecodeResult(res_dec, *video, decoder))
       break;
 

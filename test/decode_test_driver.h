@@ -54,6 +54,9 @@ class Decoder {
 
   vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, size_t size);
 
+  vpx_codec_err_t DecodeFrame(const uint8_t *cxdata, size_t size,
+                              void *user_priv);
+
   DxDataIterator GetDxData() {
     return DxDataIterator(&decoder_);
   }
@@ -117,9 +120,14 @@ class DecoderTest {
   // Main decoding loop
   virtual void RunLoop(CompressedVideoSource *video);
 
+  virtual void RunLoop(CompressedVideoSource *video, void *user_priv);
+
   // Hook to be called before decompressing every frame.
   virtual void PreDecodeFrameHook(const CompressedVideoSource& video,
                                   Decoder *decoder) {}
+
+  virtual void PreDecodeFrameHook(const CompressedVideoSource& video,
+                                  Decoder *decoder, void *user_priv) {}
 
   // Hook to be called to handle decode result. Return true to continue.
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
