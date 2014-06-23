@@ -2106,6 +2106,26 @@ void vbr_rate_correction(int * this_frame_target,
   }
 }
 
+static INLINE int frame_is_skippable(const VP9_COMP *const cpi) {
+  // If the current frame does not have non-zero motion vector detected in the
+  // first  pass, and so do its previous and forward frames, then this frame
+  // can be skipped for partition check, and the partition size is assigned
+  // according to the variance
+  return (!frame_is_intra_only(&cpi->common) &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_motion
+    == 1  &&
+    cpi->common.current_video_frame > 1 &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_motion
+    == 1  &&
+    cpi->twopass.stats_in_start + cpi->common.current_video_frame + 1
+    < cpi->twopass.stats_in_end &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_motion
+    == 1);
+}
+
 void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -2249,6 +2269,10 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
   // Update the total stats remaining structure.
   subtract_stats(&twopass->total_left_stats, &this_frame);
+
+  // Check if the current frame is skippable for the partition search in the
+  // second pass according to the first pass stats
+  cpi->skippable_frame = frame_is_skippable(cpi);
 }
 
 void vp9_twopass_postencode_update(VP9_COMP *cpi) {
