@@ -901,11 +901,18 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
         !rc->this_key_frame_forced) {
       qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
                                           active_worst_quality, 2.0);
-    } else if (!rc->is_src_frame_alt_ref &&
-               (oxcf->rc_mode != VPX_CBR) &&
+    } else if (!rc->is_src_frame_alt_ref && (oxcf->rc_mode != VPX_CBR) &&
                (cpi->refresh_alt_ref_frame)) {
-      qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
-                                          active_worst_quality, 1.75);
+      if (cpi->pass == 2) {
+        const GF_GROUP * const gf_group = &cpi->twopass.gf_group;
+        if (gf_group->rf_level[gf_group->index] == GF_ARF_STD) {
+          qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                              active_worst_quality, 1.75);
+        }
+      } else {
+        qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                            active_worst_quality, 1.75);
+      }
     }
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
