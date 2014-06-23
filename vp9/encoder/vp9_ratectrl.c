@@ -1214,6 +1214,8 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   else
     target = calc_pframe_target_size_one_pass_vbr(cpi);
   vp9_rc_set_frame_target(cpi, target);
+
+  cpi->skippable_frame = 0;
 }
 
 static int calc_pframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
@@ -1310,6 +1312,8 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
   vp9_rc_set_frame_target(cpi, target);
   rc->frames_till_gf_update_due = INT_MAX;
   rc->baseline_gf_interval = INT_MAX;
+
+  cpi->skippable_frame = 0;
 }
 
 void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
@@ -1336,6 +1340,8 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
   // Don't use gf_update by default in CBR mode.
   rc->frames_till_gf_update_due = INT_MAX;
   rc->baseline_gf_interval = INT_MAX;
+
+  cpi->skippable_frame = 0;
 }
 
 int vp9_compute_qdelta(const RATE_CONTROL *rc, double qstart, double qtarget) {
