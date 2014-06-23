@@ -210,12 +210,22 @@ TEST_P(Trans32x32Test, MemCheck) {
       input_block[j] = (rnd.Rand16() & mask_) - (rnd.Rand16() & mask_);
       input_extreme_block[j] = rnd.Rand8() & 1 ? mask_ : -mask_;
     }
-    if (i == 0)
+    if (i == 0) {
       for (int j = 0; j < kNumCoeffs; ++j)
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
         input_extreme_block[j] = mask_;
     if (i == 1)
+=======
+        input_extreme_block[j] = 255;
+    } else if (i == 1) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
       for (int j = 0; j < kNumCoeffs; ++j)
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
         input_extreme_block[j] = -mask_;
+=======
+        input_extreme_block[j] = -255;
+    }
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 
     const int stride = 32;
     vp9_fdct32x32_c(input_extreme_block, output_ref_block, stride);

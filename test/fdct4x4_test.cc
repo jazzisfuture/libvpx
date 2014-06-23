@@ -177,12 +177,22 @@ class Trans4x4TestBase {
         input_block[j] = (rnd.Rand16() & mask_) - (rnd.Rand16() & mask_);
         input_extreme_block[j] = rnd.Rand8() % 2 ? mask_ : -mask_;
       }
-      if (i == 0)
+      if (i == 0) {
         for (int j = 0; j < kNumCoeffs; ++j)
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
           input_extreme_block[j] = mask_;
       if (i == 1)
+=======
+          input_extreme_block[j] = 255;
+      } else if (i == 1) {
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
         for (int j = 0; j < kNumCoeffs; ++j)
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
           input_extreme_block[j] = -mask_;
+=======
+          input_extreme_block[j] = -255;
+      }
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 
       fwd_txfm_ref(input_extreme_block, output_ref_block, pitch_, tx_type_);
       REGISTER_STATE_CHECK(RunFwdTxfm(input_extreme_block,
@@ -465,6 +475,21 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 1, 8),
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 2, 8),
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 3, 8)));
+#endif
+
+#if HAVE_AVX2
+INSTANTIATE_TEST_CASE_P(
+    AVX2, Trans4x4DCT,
+    ::testing::Values(
+        make_tuple(&vp9_fdct4x4_avx2,
+                   &vp9_idct4x4_16_add_c, 0)));
+INSTANTIATE_TEST_CASE_P(
+    AVX2, Trans4x4HT,
+    ::testing::Values(
+        make_tuple(&vp9_fht4x4_avx2, &vp9_iht4x4_16_add_c, 0),
+        make_tuple(&vp9_fht4x4_avx2, &vp9_iht4x4_16_add_c, 1),
+        make_tuple(&vp9_fht4x4_avx2, &vp9_iht4x4_16_add_c, 2),
+        make_tuple(&vp9_fht4x4_avx2, &vp9_iht4x4_16_add_c, 3)));
 #endif
 
 }  // namespace

@@ -237,8 +237,11 @@ typedef struct macroblockd {
   DECLARE_ALIGNED(16, uint8_t, mc_buf[80 * 2 * 80 * 2]);
 
   int lossless;
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
   /* Inverse transform function pointers. */
   void (*itxm_add)(const tran_low_t *input, uint8_t *dest, int stride, int eob);
+=======
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 
   int corrupted;
 
