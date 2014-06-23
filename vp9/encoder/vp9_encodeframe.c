@@ -2261,6 +2261,28 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   }
 }
 
+static INLINE int frame_is_skippable(const VP9_COMP *const cpi) {
+  // If the current frame does not have non-zero motion vector detected in the
+  // first  pass, and so do its previous and forward frames, then this frame
+  // can be skipped for partition check, and the partition size is assigned
+  // according to the variance
+  return (cpi->pass == 2 &&
+    (!cpi->use_svc || cpi->svc.number_temporal_layers == 1) &&
+    !frame_is_intra_only(&cpi->common) &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame].pcnt_motion
+    == 1  &&
+    cpi->common.current_video_frame > 1 &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame-1].pcnt_motion
+    == 1  &&
+    cpi->twopass.stats_in_start + cpi->common.current_video_frame + 1
+    < cpi->twopass.stats_in_end &&
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_inter -
+    cpi->twopass.stats_in_start[cpi->common.current_video_frame+1].pcnt_motion
+    == 1);
+}
+
 static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                              int mi_row, TOKENEXTRA **tp) {
   VP9_COMMON *const cm = &cpi->common;
@@ -2271,6 +2293,10 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   // Initialize the left context for the new SB row
   vpx_memset(&xd->left_context, 0, sizeof(xd->left_context));
   vpx_memset(xd->left_seg_context, 0, sizeof(xd->left_seg_context));
+
+  // Check if the current frame is skippable for the partition search in the
+  // second pass according to the first pass stats
+  cpi->skippable_frame = frame_is_skippable(cpi);
 
   // Code each SB in the row
   for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
@@ -2309,7 +2335,8 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
                                sf->always_this_block_size);
         rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1, cpi->pc_root);
-      } else if (sf->partition_search_type == VAR_BASED_FIXED_PARTITION) {
+      } else if (cpi->skippable_frame ||
+                 sf->partition_search_type == VAR_BASED_FIXED_PARTITION) {
         BLOCK_SIZE bsize;
         set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
         bsize = get_rd_var_based_fixed_partition(cpi, mi_row, mi_col);
