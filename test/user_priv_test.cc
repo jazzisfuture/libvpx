@@ -22,6 +22,7 @@
 #include "test/webm_video_source.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
+#include "vpx/vp8.h"
 
 namespace {
 
@@ -65,6 +66,19 @@ string DecodeFile(const string &filename) {
             "user_priv pointer value does not match.";
         // value in user_priv pointer should also be the same.
         EXPECT_EQ(*reinterpret_cast<int *>(img->user_priv), frame_num) <<
+            "Value in user_priv does not match.";
+
+        // Also test ctrl_get_reference api.
+        struct vp9_ref_frame ref;
+        // Randomly fetch a reference frame.
+        ref.idx = rand()%12;
+        decoder.Control(VP9_GET_REFERENCE, &ref);
+
+        // user_priv pointer value should be the same.
+        EXPECT_EQ(ref.img.user_priv, reinterpret_cast<void *>(&frame_num)) <<
+            "user_priv pointer value does not match.";
+        // value in user_priv pointer should also be the same.
+        EXPECT_EQ(*reinterpret_cast<int *>(ref.img.user_priv), frame_num) <<
             "Value in user_priv does not match.";
       }
       md5.Add(img);
