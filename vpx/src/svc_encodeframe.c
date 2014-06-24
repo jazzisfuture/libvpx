@@ -601,6 +601,8 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
     }
   }
 
+  enc_cfg->ss_enable_auto_alt_ref[0] = 1;
+
   // modify encoder configuration
   enc_cfg->ss_number_layers = si->layers;
   enc_cfg->ts_number_layers = 1;  // Temporal layers not used in this encoder.
@@ -633,6 +635,7 @@ vpx_codec_err_t vpx_svc_init(SvcContext *svc_ctx, vpx_codec_ctx_t *codec_ctx,
 
   vpx_codec_control(codec_ctx, VP9E_SET_SVC, 1);
   vpx_codec_control(codec_ctx, VP8E_SET_TOKEN_PARTITIONS, 1);
+  vpx_codec_control(codec_ctx, VP8E_SET_ENABLEAUTOALTREF, 0);
   return VPX_CODEC_OK;
 }
 

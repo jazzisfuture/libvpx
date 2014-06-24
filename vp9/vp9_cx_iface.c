@@ -385,6 +385,9 @@ static vpx_codec_err_t set_encoder_config(
     int i;
     for (i = 0; i < VPX_SS_MAX_LAYERS; ++i) {
       oxcf->ss_target_bitrate[i] =  1000 * cfg->ss_target_bitrate[i];
+#ifdef CONFIG_SPATIAL_SVC
+      oxcf->ss_play_alternate[i] =  cfg->ss_enable_auto_alt_ref[i];
+#endif
       oxcf->ss_viewport_id[i] =  cfg->ss_viewport_id[i];
     }
   } else if (oxcf->ss_number_layers == 1) {
@@ -1284,6 +1287,7 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
 
       VPX_SS_DEFAULT_LAYERS,  // ss_number_layers
       0,{-1, -1, -1, -1, -1},
+      {0},
       {0},                    // ss_target_bitrate
       1,                      // ts_number_layers
       {0},                    // ts_target_bitrate

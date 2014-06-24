@@ -33,7 +33,6 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     LAYER_CONTEXT *const lc = &svc->layer_context[layer];
     RATE_CONTROL *const lrc = &lc->rc;
     lc->current_video_frame_in_layer = 0;
-    lrc->avg_frame_qindex[INTER_FRAME] = oxcf->worst_allowed_q;
     lrc->ni_av_qi = oxcf->worst_allowed_q;
     lrc->total_actual_bits = 0;
     lrc->total_target_vs_actual = 0;
@@ -50,10 +49,15 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     if (svc->number_temporal_layers > 1) {
       lc->target_bandwidth = oxcf->ts_target_bitrate[layer];
       lrc->last_q[INTER_FRAME] = oxcf->worst_allowed_q;
+      lrc->avg_frame_qindex[INTER_FRAME] = oxcf->worst_allowed_q;
     } else {
       lc->target_bandwidth = oxcf->ss_target_bitrate[layer];
       lrc->last_q[KEY_FRAME] = oxcf->best_allowed_q;
       lrc->last_q[INTER_FRAME] = oxcf->best_allowed_q;
+      lrc->avg_frame_qindex[KEY_FRAME] = (oxcf->worst_allowed_q +
+                                          oxcf->best_allowed_q) / 2;
+      lrc->avg_frame_qindex[INTER_FRAME] = (oxcf->worst_allowed_q +
+                                            oxcf->best_allowed_q) / 2;
     }
 
     lrc->buffer_level = vp9_rescale((int)(oxcf->starting_buffer_level_ms),
@@ -151,7 +155,7 @@ void vp9_update_spatial_layer_framerate(VP9_COMP *const cpi, double framerate) {
                                    oxcf->two_pass_vbrmin_section / 100);
   lrc->max_frame_bandwidth = (int)(((int64_t)lrc->avg_frame_bandwidth *
                                    oxcf->two_pass_vbrmax_section) / 100);
-  vp9_rc_set_gf_max_interval(oxcf, lrc);
+  vp9_rc_set_gf_max_interval(cpi, lrc);
 }
 
 void vp9_restore_layer_context(VP9_COMP *const cpi) {

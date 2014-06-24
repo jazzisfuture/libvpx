@@ -628,6 +628,13 @@ extern "C" {
 
     /*!\brief Target bitrate for each spatial layer.
      *
+     * These values specify if auto alt reference frame is enabled for each
+     * spatial layer.
+     */
+    int                    ss_enable_auto_alt_ref[VPX_SS_MAX_LAYERS];
+
+    /*!\brief Target bitrate for each spatial layer.
+     *
      * These values specify the target coding bitrate to be used for each
      * spatial layer.
      */

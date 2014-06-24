@@ -2498,7 +2498,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->refresh_alt_ref_frame = 0;
 
   // Should we code an alternate reference frame.
-  if (is_altref_enabled(&cpi->oxcf) && rc->source_alt_ref_pending) {
+  if (is_altref_enabled(cpi) && rc->source_alt_ref_pending) {
     int frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
