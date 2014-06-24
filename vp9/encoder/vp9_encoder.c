@@ -400,6 +400,7 @@ static void set_speed_features(VP9_COMP *cpi) {
   // Set rd thresholds based on mode and speed setting
   vp9_set_rd_speed_thresholds(cpi);
   vp9_set_rd_speed_thresholds_sub8x8(cpi);
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 
   cpi->mb.fwd_txm4x4 = vp9_fdct4x4;
   if (cpi->oxcf.lossless || cpi->mb.e_mbd.lossless) {
@@ -413,6 +414,8 @@ static void set_speed_features(VP9_COMP *cpi) {
     }
   }
 #endif
+=======
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 }
 
 static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
@@ -528,9 +531,9 @@ static void update_frame_size(VP9_COMP *cpi) {
   {
     int y_stride = cpi->scaled_source.y_stride;
 
-    if (cpi->sf.search_method == NSTEP) {
+    if (cpi->sf.mv.search_method == NSTEP) {
       vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
-    } else if (cpi->sf.search_method == DIAMOND) {
+    } else if (cpi->sf.mv.search_method == DIAMOND) {
       vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
     }
   }
@@ -585,7 +588,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cpi->svc.number_temporal_layers = oxcf->ts_number_layers;
 
   if ((cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.rc_mode == RC_MODE_CBR) ||
+      cpi->oxcf.rc_mode == VPX_CBR) ||
       (cpi->svc.number_spatial_layers > 1 &&
       cpi->oxcf.mode == TWO_PASS_SECOND_BEST)) {
     vp9_init_layer_context(cpi);
@@ -632,9 +635,8 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   cpi->oxcf = *oxcf;
   cpi->pass = get_pass(cpi->oxcf.mode);
-  if (cpi->oxcf.mode == REALTIME)
-    cpi->oxcf.play_alternate = 0;
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
   cpi->oxcf.lossless = oxcf->lossless;
   if (cpi->oxcf.lossless) {
     // In lossless mode, make sure right quantizer range and correct transform
@@ -652,6 +654,8 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     cpi->mb.e_mbd.bps = bit_depth_to_bps(cm->bit_depth);
   }
 #endif
+=======
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
   cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
 
@@ -672,37 +676,31 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cpi->encode_breakout = cpi->oxcf.encode_breakout;
 
   // local file playback mode == really big buffer
-  if (cpi->oxcf.rc_mode == RC_MODE_VBR) {
-    cpi->oxcf.starting_buffer_level   = 60000;
-    cpi->oxcf.optimal_buffer_level    = 60000;
-    cpi->oxcf.maximum_buffer_size     = 240000;
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    cpi->oxcf.starting_buffer_level_ms = 60000;
+    cpi->oxcf.optimal_buffer_level_ms = 60000;
+    cpi->oxcf.maximum_buffer_size_ms = 240000;
   }
 
-  // Convert target bandwidth from Kbit/s to Bit/s
-  cpi->oxcf.target_bandwidth       *= 1000;
-
-  cpi->oxcf.starting_buffer_level =
-      vp9_rescale(cpi->oxcf.starting_buffer_level,
-                  cpi->oxcf.target_bandwidth, 1000);
+  rc->starting_buffer_level = vp9_rescale(cpi->oxcf.starting_buffer_level_ms,
+                                          cpi->oxcf.target_bandwidth, 1000);
 
   // Set or reset optimal and maximum buffer levels.
-  if (cpi->oxcf.optimal_buffer_level == 0)
-    cpi->oxcf.optimal_buffer_level = cpi->oxcf.target_bandwidth / 8;
+  if (cpi->oxcf.optimal_buffer_level_ms == 0)
+    rc->optimal_buffer_level = cpi->oxcf.target_bandwidth / 8;
   else
-    cpi->oxcf.optimal_buffer_level =
-        vp9_rescale(cpi->oxcf.optimal_buffer_level,
-                    cpi->oxcf.target_bandwidth, 1000);
+    rc->optimal_buffer_level = vp9_rescale(cpi->oxcf.optimal_buffer_level_ms,
+                                           cpi->oxcf.target_bandwidth, 1000);
 
-  if (cpi->oxcf.maximum_buffer_size == 0)
-    cpi->oxcf.maximum_buffer_size = cpi->oxcf.target_bandwidth / 8;
+  if (cpi->oxcf.maximum_buffer_size_ms == 0)
+    rc->maximum_buffer_size = cpi->oxcf.target_bandwidth / 8;
   else
-    cpi->oxcf.maximum_buffer_size =
-        vp9_rescale(cpi->oxcf.maximum_buffer_size,
-                    cpi->oxcf.target_bandwidth, 1000);
+    rc->maximum_buffer_size = vp9_rescale(cpi->oxcf.maximum_buffer_size_ms,
+                                          cpi->oxcf.target_bandwidth, 1000);
   // Under a configuration change, where maximum_buffer_size may change,
   // keep buffer level clipped to the maximum allowed buffer size.
-  rc->bits_off_target = MIN(rc->bits_off_target, cpi->oxcf.maximum_buffer_size);
-  rc->buffer_level = MIN(rc->buffer_level, cpi->oxcf.maximum_buffer_size);
+  rc->bits_off_target = MIN(rc->bits_off_target, rc->maximum_buffer_size);
+  rc->buffer_level = MIN(rc->buffer_level, rc->maximum_buffer_size);
 
   // Set up frame rate and related parameters rate control values.
   vp9_new_framerate(cpi, cpi->oxcf.framerate);
@@ -726,7 +724,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   update_frame_size(cpi);
 
   if ((cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.rc_mode == RC_MODE_CBR) ||
+      cpi->oxcf.rc_mode == VPX_CBR) ||
       (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
@@ -750,8 +748,14 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cpi->ext_refresh_frame_flags_pending = 0;
   cpi->ext_refresh_frame_context_pending = 0;
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 #if CONFIG_VP9_HIGH
   high_set_var_fns(cpi);
+=======
+#if CONFIG_DENOISING
+  vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
+                     VP9_ENC_BORDER_IN_PIXELS);
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 #endif
 }
 
@@ -1707,6 +1711,10 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #endif
   }
 
+#if CONFIG_DENOISING
+  vp9_denoiser_free(&(cpi->denoiser));
+#endif
+
   dealloc_compressor_data(cpi);
   vpx_free(cpi->tok);
 
@@ -2220,6 +2228,7 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp8_yv12_extend_frame_borders_c(dst);
 }
 
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 static int find_fp_qindex(vpx_bit_depth_t bit_depth) {
   int i;
   int range = vp9_get_qindex_range(bit_depth);
@@ -2236,6 +2245,8 @@ static int find_fp_qindex(vpx_bit_depth_t bit_depth) {
   return i;
 }
 
+=======
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 #define WRITE_RECON_BUFFER 0
 #if WRITE_RECON_BUFFER
 void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
@@ -2295,7 +2306,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
     if ((rc->projected_frame_size > high_limit && q < maxq) ||
         (rc->projected_frame_size < low_limit && q > minq)) {
       force_recode = 1;
-    } else if (cpi->oxcf.rc_mode == RC_MODE_CONSTRAINED_QUALITY) {
+    } else if (cpi->oxcf.rc_mode == VPX_CQ) {
       // Deal with frame undershoot and whether or not we are
       // below the automatically set cq level.
       if (q > oxcf->cq_level &&
@@ -2364,6 +2375,13 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+#if CONFIG_DENOISING
+  vp9_denoiser_update_frame_info(&cpi->denoiser,
+                                cpi->common.frame_type,
+                                cpi->refresh_alt_ref_frame,
+                                cpi->refresh_golden_frame,
+                                cpi->refresh_last_frame);
+#endif
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
@@ -2478,7 +2496,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
         cpi->rc.vbr_bits_off_target,
         cpi->rc.total_target_vs_actual,
-        (cpi->oxcf.starting_buffer_level - cpi->rc.bits_off_target),
+        (cpi->rc.starting_buffer_level - cpi->rc.bits_off_target),
         cpi->rc.total_actual_bits, cm->base_qindex,
         vp9_convert_qindex_to_q(cm->base_qindex),
         (double)vp9_dc_quant(cm->base_qindex, 0) / 4.0,
@@ -2600,7 +2618,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         frame_over_shoot_limit = 1;
     }
 
-    if (cpi->oxcf.rc_mode == RC_MODE_CONSTANT_QUALITY) {
+    if (cpi->oxcf.rc_mode == VPX_Q) {
       loop = 0;
     } else {
       if ((cm->frame_type == KEY_FRAME) &&
@@ -2707,7 +2725,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
             // This should only trigger where there is very substantial
             // undershoot on a frame and the auto cq level is above
             // the user passsed in value.
-            if (cpi->oxcf.rc_mode == RC_MODE_CONSTRAINED_QUALITY &&
+            if (cpi->oxcf.rc_mode == VPX_CQ &&
                 q < q_low) {
               q_low = q;
             }
@@ -2853,7 +2871,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // Initialize cpi->mv_step_param to default based on max resolution.
   cpi->mv_step_param = vp9_init_search_range(sf, max_mv_def);
   // Initialize cpi->max_mv_magnitude and cpi->mv_step_param if appropriate.
-  if (sf->auto_mv_step_size) {
+  if (sf->mv.auto_mv_step_size) {
     if (frame_is_intra_only(cm)) {
       // Initialize max_mv_magnitude for use in the first INTER frame
       // after a key/intra-only frame.
@@ -2910,7 +2928,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // For 1 pass CBR, check if we are dropping this frame.
   // Never drop on key frame.
   if (cpi->pass == 0 &&
-      cpi->oxcf.rc_mode == RC_MODE_CBR &&
+      cpi->oxcf.rc_mode == VPX_CBR &&
       cm->frame_type != KEY_FRAME) {
     if (vp9_rc_drop_frame(cpi)) {
       vp9_rc_postencode_update_drop_frame(cpi);
@@ -2920,8 +2938,6 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   }
 
   vp9_clear_system_state();
-
-  vp9_zero(cpi->rd.tx_select_threshes);
 
 #if CONFIG_VP9_POSTPROC
   if (cpi->oxcf.noise_sensitivity > 0) {
@@ -3122,12 +3138,13 @@ static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
 
 static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags) {
-  if (cpi->oxcf.rc_mode == RC_MODE_CBR) {
+  if (cpi->oxcf.rc_mode == VPX_CBR) {
     vp9_rc_get_one_pass_cbr_params(cpi);
   } else {
     vp9_rc_get_one_pass_vbr_params(cpi);
   }
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
+<<<<<<< HEAD   (a13f21 Corrected check for valid upshifts)
 }
 
 static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
@@ -3139,6 +3156,8 @@ static void Pass1Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
   vp9_rc_get_first_pass_params(cpi);
   vp9_set_quantizer(&cpi->common, find_fp_qindex(cpi->common.bit_depth));
   vp9_first_pass(cpi);
+=======
+>>>>>>> BRANCH (19125a Merge "iosbuild.sh: Add vpx_config.h and vpx_version.h to VP)
 }
 
 static void Pass2Encode(VP9_COMP *cpi, size_t *size,
@@ -3296,7 +3315,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->refresh_alt_ref_frame = 0;
 
   // Should we code an alternate reference frame.
-  if (cpi->oxcf.play_alternate && rc->source_alt_ref_pending) {
+  if (is_altref_enabled(&cpi->oxcf) && rc->source_alt_ref_pending) {
     int frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
@@ -3427,7 +3446,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   }
 
   if (cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.rc_mode == RC_MODE_CBR) {
+      cpi->oxcf.rc_mode == VPX_CBR) {
     vp9_update_temporal_layer_framerate(cpi);
     vp9_restore_layer_context(cpi);
   }
@@ -3460,7 +3479,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (cpi->pass == 2 &&
       cm->current_video_frame == 0 &&
       cpi->oxcf.allow_spatial_resampling &&
-      cpi->oxcf.rc_mode == RC_MODE_VBR) {
+      cpi->oxcf.rc_mode == VPX_VBR) {
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, cpi->oxcf.scaled_frame_width,
                          cpi->oxcf.scaled_frame_height);
@@ -3504,7 +3523,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   if (cpi->pass == 1 &&
       (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
-    Pass1Encode(cpi, size, dest, frame_flags);
+    const int lossless = is_lossless_requested(&cpi->oxcf);
+    cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
+    cpi->mb.itxm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
+    vp9_first_pass(cpi);
   } else if (cpi->pass == 2 &&
       (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
     Pass2Encode(cpi, size, dest, frame_flags);
@@ -3529,7 +3551,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   // Save layer specific state.
   if ((cpi->svc.number_temporal_layers > 1 &&
-      cpi->oxcf.rc_mode == RC_MODE_CBR) ||
+      cpi->oxcf.rc_mode == VPX_CBR) ||
       (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
     vp9_save_layer_context(cpi);
   }
