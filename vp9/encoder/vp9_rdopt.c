@@ -2921,11 +2921,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_MASKED_INTERINTER || CONFIG_INTERINTRA
   int rate_mv_tmp = 0;
 #endif
-#if CONFIG_MASKED_INTERINTER
-  mbmi->use_masked_interinter = 0;
-  mbmi->mask_index = MASK_NONE;
-  *compmode_interinter_cost = 0;
-#endif
 #if CONFIG_INTERINTRA
   const int is_comp_interintra_pred = (mbmi->ref_frame[1] == INTRA_FRAME);
 #if CONFIG_MASKED_INTERINTRA
@@ -2933,6 +2928,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->interintra_mask_index = -1;
   mbmi->interintra_uv_mask_index = -1;
 #endif
+#endif
+#if CONFIG_MASKED_INTERINTER
+  mbmi->use_masked_interinter = 0;
+  mbmi->mask_index = MASK_NONE;
+  *compmode_interinter_cost = 0;
 #endif
 
   if (is_comp_pred) {
@@ -3255,6 +3255,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (!cm->use_masked_interinter) {
       mbmi->use_masked_interinter = 0;
     }
+    if (ref_best_rd < INT64_MAX &&
+        MIN(best_rd_mask, best_rd_nomask) / 2 > ref_best_rd)
+      return INT64_MAX;
+
     pred_exists = 0;
     if (mbmi->use_masked_interinter)
       *compmode_interinter_cost = get_mask_bits(bsize) * 256 +
@@ -3382,11 +3386,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif
         } else {
           mbmi->interintra_mode = best_interintra_mode;
-          #if !SEPARATE_INTERINTRA_UV
           mbmi->interintra_uv_mode = best_interintra_mode;
-          #endif
           mbmi->mv[0].as_int = cur_mv[0].as_int;
         }
+        best_interintra_rd = best_interintra_rd_mask;
       } else {
         mbmi->use_masked_interintra = 0;
 #ifdef MASKED_INTERINTRA_REFINE_SEARCH
@@ -3394,6 +3397,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->interintra_uv_mode = best_interintra_mode;
         mbmi->mv[0].as_int = cur_mv[0].as_int;
 #endif
+        best_interintra_rd = best_interintra_rd_nomask;
       }
 
       ++cpi->masked_interintra_select_count[mbmi->use_masked_interintra];
@@ -3401,6 +3405,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->use_masked_interintra = 0;
     }
 #endif
+    if (ref_best_rd < INT64_MAX &&
+        best_interintra_rd / 2 > ref_best_rd)
+      return INT64_MAX;
+
     pred_exists = 0;
   }
 
@@ -3757,6 +3765,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_INTERINTRA
   int64_t best_overall_rd = INT64_MAX;
   int is_best_interintra = 0;
+  int start_skip = 0;
+  int mode_skip_mask_interintra = 0;
 #endif
   vp9_zero(best_mbmode);
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
@@ -3898,6 +3908,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t total_sse = INT64_MAX;
     int early_term = 0;
 
+#if CONFIG_INTERINTRA
+    if (mode_index < 30) {
+#endif
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
     if (mode_index == mode_skip_start && best_mode_index >= 0) {
@@ -3920,6 +3933,54 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
     if (mode_skip_mask & (1 << mode_index))
       continue;
+#if CONFIG_INTERINTRA
+    }
+#define INTERINTRA_SPEEDUP
+#ifdef INTERINTRA_SPEEDUP
+    if (!start_skip && mode_index >= 30) {
+      start_skip = 1;
+      if (best_mode_index >= 0) {
+        if (vp9_mode_order[best_mode_index].ref_frame[1] == NONE) {
+          switch (vp9_mode_order[best_mode_index].ref_frame[0]) {
+            case INTRA_FRAME:
+              break;
+            case LAST_FRAME:
+              if (vp9_mode_order[best_mode_index].mode == NEWMV)
+                mode_skip_mask_interintra |= 0xFF0;
+              else
+                mode_skip_mask_interintra |= 0xFF8;
+              break;
+            case GOLDEN_FRAME:
+              if (vp9_mode_order[best_mode_index].mode == NEWMV)
+                mode_skip_mask_interintra |= 0xF0F;
+              else
+                mode_skip_mask_interintra |= 0xF8F;
+              break;
+            case ALTREF_FRAME:
+              if (vp9_mode_order[best_mode_index].mode == NEWMV)
+                mode_skip_mask_interintra |= 0x0FF;
+              else
+                mode_skip_mask_interintra |= 0x8FF;
+              break;
+            default:
+              break;
+          }
+        } else {
+          switch (vp9_mode_order[best_mode_index].ref_frame[0]) {
+            case LAST_FRAME:
+              mode_skip_mask_interintra |= 0x0F0;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
+    if (mode_skip_mask_interintra & (1 << (mode_index - 30)))
+      continue;
+#endif
+#endif
+
 
     // Test best rd so far against threshold for trying this mode.
     if (rd_less_than_thresh(best_rd, rd_threshes[mode_index],
