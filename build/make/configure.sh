@@ -799,7 +799,7 @@ process_common_toolchain() {
     arm*)
         # on arm, isa versions are supersets
         case ${tgt_isa} in
-        armv8)
+        arm64|armv8)
             soft_enable neon
             ;;
         armv7|armv7s)
@@ -1222,10 +1222,9 @@ EOF
         fi
     fi
 
-    # default use_x86inc to yes if pic is no or 64bit or we are not on darwin
-    if [ ${tgt_isa} = x86_64 -o ! "$pic" = "yes" -o \
-         "${tgt_os#darwin}" = "${tgt_os}"  ]; then
-      soft_enable use_x86inc
+    # Default use_x86inc to yes when we are 64 bit or non-pic.
+    if [ "${tgt_isa}" = "x86_64" ] || [ "${pic}" != "yes" ]; then
+        soft_enable use_x86inc
     fi
 
     # Position Independent Code (PIC) support, for building relocatable
