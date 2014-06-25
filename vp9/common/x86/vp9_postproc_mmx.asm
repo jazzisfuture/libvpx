@@ -464,6 +464,7 @@ sym(vp9_mbpost_proc_down_mmx):
 ;                            unsigned char whiteclamp[16],
 ;                            unsigned char bothclamp[16],
 ;                            unsigned int width, unsigned int height, int pitch)
+extern sym(LIBVPX_RAND)
 global sym(vp9_plane_add_noise_mmx) PRIVATE
 sym(vp9_plane_add_noise_mmx):
     push        rbp

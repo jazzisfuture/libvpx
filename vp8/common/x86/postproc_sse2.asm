@@ -660,6 +660,7 @@ sym(vp8_mbpost_proc_across_ip_xmm):
 ;                            unsigned char whiteclamp[16],
 ;                            unsigned char bothclamp[16],
 ;                            unsigned int Width, unsigned int Height, int Pitch)
+extern sym(LIBVPX_RAND)
 global sym(vp8_plane_add_noise_wmt) PRIVATE
 sym(vp8_plane_add_noise_wmt):
     push        rbp
