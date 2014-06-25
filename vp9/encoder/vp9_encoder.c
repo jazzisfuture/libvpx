@@ -198,6 +198,12 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
     lc->rc_twopass_stats_in.buf = NULL;
     lc->rc_twopass_stats_in.sz = 0;
   }
+
+  for (i = 0; i < MAX_LAG_BUFFERS; ++i) {
+    vp9_free_frame_buffer(&cpi->svc.scaled_frames[i]);
+  }
+  vpx_memset(&cpi->svc.scaled_frames[0], 0,
+             MAX_LAG_BUFFERS * sizeof(cpi->svc.scaled_frames[0]));
 }
 
 static void save_coding_context(VP9_COMP *cpi) {
@@ -483,6 +489,15 @@ static void update_frame_size(VP9_COMP *cpi) {
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to reallocate scaled last source buffer");
+
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
+                                 cm->width, cm->height,
+                                 cm->subsampling_x, cm->subsampling_y,
+                                 VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to reallocate alt_ref_buffer");
+  }
 
   {
     int y_stride = cpi->scaled_source.y_stride;
@@ -1264,6 +1279,9 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   }
   pkt.kind = VPX_CODEC_PSNR_PKT;
   vpx_codec_pkt_list_add(cpi->output_pkt_list, &pkt);
+
+  printf("%f    %f    %f    %f    ", psnr.psnr[0], psnr.psnr[1], psnr.psnr[2],
+         psnr.psnr[3]);
 }
 
 int vp9_use_as_reference(VP9_COMP *cpi, int ref_frame_flags) {
@@ -2340,10 +2358,15 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
                         uint8_t *dest, unsigned int *frame_flags) {
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
 
+  if (cpi->common.current_video_frame == 40)
+      cpi->common.current_video_frame = 40;
+
   vp9_rc_get_second_pass_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 
   vp9_twopass_postencode_update(cpi);
+
+  printf("%d    ", *size);
 }
 
 static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
@@ -2490,7 +2513,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->refresh_alt_ref_frame = 0;
 
   // Should we code an alternate reference frame.
-  if (is_altref_enabled(&cpi->oxcf) && rc->source_alt_ref_pending) {
+  if (is_altref_enabled(cpi) && rc->source_alt_ref_pending) {
     int frames_to_arf;
 
 #if CONFIG_MULTIPLE_ARF
@@ -2509,7 +2532,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #ifdef CONFIG_SPATIAL_SVC
     if (is_spatial_svc)
       cpi->source = vp9_svc_lookahead_peek(cpi, cpi->lookahead,
-                                           frames_to_arf, 1);
+                                           frames_to_arf, 0);
     else
 #endif
       cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf);
@@ -2518,6 +2541,19 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->alt_ref_source[cpi->arf_buffered] = cpi->source;
 #else
       cpi->alt_ref_source = cpi->source;
+#endif
+
+#ifdef CONFIG_SPATIAL_SVC
+      if (is_spatial_svc && cpi->svc.spatial_layer_id > 0) {
+        int i;
+        // Use the alt ref from a lower layer
+        for (i = cpi->svc.spatial_layer_id - 1; i >= 0; --i) {
+          if (cpi->oxcf.ss_play_alternate[i]) {
+            cpi->gld_fb_idx = cpi->svc.layer_context[i].alt_ref_idx;
+            break;
+          }
+        }
+      }
 #endif
 
       if (cpi->oxcf.arnr_max_frames > 0) {
