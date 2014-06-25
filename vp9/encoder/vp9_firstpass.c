@@ -1313,8 +1313,8 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   int middle_frame_idx;
   unsigned char arf_buffer_indices[MAX_ACTIVE_ARFS];
 
-  key_frame = cpi->common.frame_type == KEY_FRAME ||
-              vp9_is_upper_layer_key_frame(cpi);
+  key_frame = frame_is_intra_only(&cpi->common) ||
+      vp9_is_upper_layer_key_frame(cpi);
 
   get_arf_buffer_indices(arf_buffer_indices);
 
@@ -1493,7 +1493,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // If this is a key frame or the overlay from a previous arf then
   // the error score / cost of this frame has already been accounted for.
-  if (cpi->common.frame_type == KEY_FRAME || rc->source_alt_ref_active)
+  if (frame_is_intra_only(&cpi->common) || rc->source_alt_ref_active)
     gf_group_err -= gf_first_frame_err;
 
   // Motion breakout threshold for loop below depends on image size.
@@ -1599,7 +1599,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   }
 
   // Set the interval until the next gf.
-  if (cpi->common.frame_type == KEY_FRAME || rc->source_alt_ref_active)
+  if (frame_is_intra_only(&cpi->common) || rc->source_alt_ref_active)
     rc->baseline_gf_interval = i - 1;
   else
     rc->baseline_gf_interval = i;
@@ -1653,7 +1653,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // also a key frame in which case it has already been accounted for.
   if (rc->source_alt_ref_pending) {
     gf_group_error_left = gf_group_err - mod_frame_err;
-  } else if (cpi->common.frame_type != KEY_FRAME) {
+  } else if (!frame_is_intra_only(&cpi->common)) {
     gf_group_error_left = gf_group_err - gf_first_frame_err;
   } else {
     gf_group_error_left = gf_group_err;
@@ -1666,7 +1666,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   reset_fpf_position(twopass, start_pos);
 
   // Calculate a section intra ratio used in setting max loop filter.
-  if (cpi->common.frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(&cpi->common)) {
     twopass->section_intra_rating =
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
@@ -2151,7 +2151,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   configure_buffer_updates(cpi);
 
   target_rate = twopass->gf_group.bit_allocation[twopass->gf_group.index];
-  if (cpi->common.frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     target_rate = vp9_rc_clamp_iframe_target_size(cpi, target_rate);
   else
     target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
@@ -2200,10 +2200,10 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   twopass->bits_left = MAX(twopass->bits_left - bits_used, 0);
 
 #ifdef LONG_TERM_VBR_CORRECTION
-  if (cpi->common.frame_type != KEY_FRAME &&
-      !vp9_is_upper_layer_key_frame(cpi)) {
+    if (!frame_is_intra_only(&cpi->common) &&
+        !vp9_is_upper_layer_key_frame(cpi)) {
 #else
-  if (cpi->common.frame_type == KEY_FRAME ||
+    if (frame_is_intra_only(cm) ||
       vp9_is_upper_layer_key_frame(cpi)) {
     // For key frames kf_group_bits already had the target bits subtracted out.
     // So now update to the correct value based on the actual bits used.

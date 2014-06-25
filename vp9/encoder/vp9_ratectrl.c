@@ -275,7 +275,7 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
 
-  if (cpi->common.frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(&cpi->common)) {
     return rc->rate_correction_factors[KF_STD];
   } else if (cpi->pass == 2) {
     RATE_FACTOR_LEVEL rf_lvl =
@@ -294,7 +294,7 @@ static double get_rate_correction_factor(const VP9_COMP *cpi) {
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
   RATE_CONTROL *const rc = &cpi->rc;
 
-  if (cpi->common.frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(&cpi->common)) {
     rc->rate_correction_factors[KF_STD] = factor;
   } else if (cpi->pass == 2) {
     RATE_FACTOR_LEVEL rf_lvl =
@@ -429,7 +429,7 @@ static int calc_active_worst_quality_one_pass_vbr(const VP9_COMP *cpi) {
   const unsigned int curr_frame = cpi->common.current_video_frame;
   int active_worst_quality;
 
-  if (cpi->common.frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(&cpi->common)) {
     active_worst_quality = curr_frame == 0 ? rc->worst_quality
                                            : rc->last_q[KEY_FRAME] * 2;
   } else {
@@ -459,7 +459,7 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   int64_t buff_lvl_step = 0;
   int adjustment = 0;
   int active_worst_quality;
-  if (cm->frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     return rc->worst_quality;
   if (cm->current_video_frame > 1)
     active_worst_quality = MIN(rc->worst_quality,
@@ -581,8 +581,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
   // Limit Q range for the adaptive loop.
-  if (cm->frame_type == KEY_FRAME &&
-      !rc->this_key_frame_forced  &&
+  if (frame_is_intra_only(cm) && !rc->this_key_frame_forced  &&
       !(cm->current_video_frame == 0)) {
     int qdelta = 0;
     vp9_clear_system_state();
@@ -594,7 +593,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
 #endif
 
   // Special case code to try and match quality with forced key frames
-  if (cm->frame_type == KEY_FRAME && rc->this_key_frame_forced) {
+  if (frame_is_intra_only(cm) && rc->this_key_frame_forced) {
     q = rc->last_boosted_qindex;
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
@@ -744,7 +743,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     vp9_clear_system_state();
 
     // Limit Q range for the adaptive loop.
-    if (cm->frame_type == KEY_FRAME &&
+    if (frame_is_intra_only(cm) &&
         !rc->this_key_frame_forced &&
         !(cm->current_video_frame == 0)) {
       qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
@@ -762,7 +761,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
   if (oxcf->rc_mode == VPX_Q) {
     q = active_best_quality;
   // Special case code to try and match quality with forced key frames
-  } else if ((cm->frame_type == KEY_FRAME) && rc->this_key_frame_forced) {
+  } else if ((frame_is_intra_only(cm)) && rc->this_key_frame_forced) {
     q = rc->last_boosted_qindex;
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
@@ -914,7 +913,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   if (oxcf->rc_mode == VPX_Q) {
     q = active_best_quality;
   // Special case code to try and match quality with forced key frames.
-  } else if ((cm->frame_type == KEY_FRAME) && rc->this_key_frame_forced) {
+  } else if (frame_is_intra_only(cm) && rc->this_key_frame_forced) {
     q = rc->last_boosted_qindex;
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
@@ -1043,7 +1042,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
             oxcf->rc_mode == VPX_CBR) ? 2 : 0);
 
   // Keep a record of last Q and ambient average Q.
-  if (cm->frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     rc->last_q[KEY_FRAME] = qindex;
     rc->avg_frame_qindex[KEY_FRAME] =
         ROUND_POWER_OF_TWO(3 * rc->avg_frame_qindex[KEY_FRAME] + qindex, 2);
@@ -1071,7 +1070,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // This is used to help set quality in forced key frames to reduce popping
   if ((qindex < rc->last_boosted_qindex) ||
       ((cpi->static_mb_pct < 100) &&
-       ((cm->frame_type == KEY_FRAME) || cpi->refresh_alt_ref_frame ||
+        (frame_is_intra_only(cm) || cpi->refresh_alt_ref_frame ||
         (cpi->refresh_golden_frame && !rc->is_src_frame_alt_ref)))) {
     rc->last_boosted_qindex = qindex;
   }
@@ -1080,7 +1079,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   // Rolling monitors of whether we are over or underspending used to help
   // regulate min and Max Q in two pass.
-  if (cm->frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(cm)) {
     rc->rolling_target_bits = ROUND_POWER_OF_TWO(
         rc->rolling_target_bits * 3 + rc->this_frame_target, 2);
     rc->rolling_actual_bits = ROUND_POWER_OF_TWO(
@@ -1098,7 +1097,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   rc->total_target_vs_actual = rc->total_actual_bits - rc->total_target_bits;
 
   if (is_altref_enabled(oxcf) && cpi->refresh_alt_ref_frame &&
-      (cm->frame_type != KEY_FRAME))
+      (!frame_is_intra_only(cm)))
     // Update the alternate reference frame stats as appropriate.
     update_alt_ref_frame_stats(cpi);
   else
@@ -1148,10 +1147,19 @@ static int calc_iframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
   return vp9_rc_clamp_iframe_target_size(cpi, target);
 }
 
+// Variables for test vector generation:
+static int frame_count = 0;
+static const int show_flag[10]      = {0, 0, 0, 1, 1, 1, 1, 1, 1, 1};
+static const int existing_flag[10]  = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
+static const int existing_frame[10] = {0, 0, 0, 0, 0, 2, 1, 0, 0, 0};
+static const int upd_buf[10]        = {0, 1, 2, 3, 4, 7, 7, 7, 0, 1};
+static const int ref_buf[10]        = {0, 0, 1, 2, 3, 4, 4, 4, 4, 0};
+
 void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   int target;
+#if 0
   // TODO(yaowu): replace the "auto_key && 0" below with proper decision logic.
   if (!cpi->refresh_alt_ref_frame &&
       (cm->current_video_frame == 0 ||
@@ -1165,8 +1173,30 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     rc->kf_boost = DEFAULT_KF_BOOST;
     rc->source_alt_ref_active = 0;
   } else {
+#endif
+    // TEST VECTOR GENERATION:
+    if (frame_count == 0)
+      rc->frames_to_key = cpi->oxcf.key_freq;
     cm->frame_type = INTER_FRAME;
-  }
+    if (frame_count < 10) {
+      cm->show_frame = show_flag[frame_count];
+      cm->intra_only = !cm->show_frame;
+      cm->show_existing_frame = existing_flag[frame_count];
+      cm->existing_frame_to_show = existing_frame[frame_count];
+      cm->upd_buf = upd_buf[frame_count];
+      cpi->ref_frame_flags = 1 << ref_buf[frame_count];
+
+    } else {
+      const int idx = 9 - (frame_count & 0x1);
+      cm->show_frame = show_flag[idx];
+      cm->intra_only = !cm->show_frame;
+      cm->show_existing_frame = existing_flag[idx];
+      cm->existing_frame_to_show = existing_frame[idx];
+      cm->upd_buf = upd_buf[idx];
+      cpi->ref_frame_flags = 1 << ref_buf[idx];
+    }
+    ++frame_count;
+
   if (rc->frames_till_gf_update_due == 0) {
     rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
@@ -1177,7 +1207,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
-  if (cm->frame_type == KEY_FRAME)
+  if (frame_is_intra_only(cm))
     target = calc_iframe_target_size_one_pass_vbr(cpi);
   else
     target = calc_pframe_target_size_one_pass_vbr(cpi);
