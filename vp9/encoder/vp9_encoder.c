@@ -250,7 +250,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
   int qi_delta;
 
   // Disable and clear down for KF
-  if (cm->frame_type == KEY_FRAME) {
+  if (frame_is_intra_only(cm)) {
     // Clear down the global segmentation map
     vpx_memset(cpi->segmentation_map, 0, cm->mi_rows * cm->mi_cols);
     seg->update_map = 0;
@@ -1411,14 +1411,14 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp8_yv12_extend_frame_borders_c(dst);
 }
 
-#define WRITE_RECON_BUFFER 0
+#define WRITE_RECON_BUFFER 1
 #if WRITE_RECON_BUFFER
 void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
   FILE *yframe;
   int i;
   char filename[255];
 
-  snprintf(filename, sizeof(filename), "cx\\y%04d.raw", this_frame);
+  snprintf(filename, sizeof(filename), "cx_y%04d.raw", this_frame);
   yframe = fopen(filename, "wb");
 
   for (i = 0; i < frame->y_height; i++)
@@ -1426,7 +1426,7 @@ void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
            frame->y_width, 1, yframe);
 
   fclose(yframe);
-  snprintf(filename, sizeof(filename), "cx\\u%04d.raw", this_frame);
+  snprintf(filename, sizeof(filename), "cx_u%04d.raw", this_frame);
   yframe = fopen(filename, "wb");
 
   for (i = 0; i < frame->uv_height; i++)
@@ -1434,7 +1434,7 @@ void write_cx_frame_to_file(YV12_BUFFER_CONFIG *frame, int this_frame) {
            frame->uv_width, 1, yframe);
 
   fclose(yframe);
-  snprintf(filename, sizeof(filename), "cx\\v%04d.raw", this_frame);
+  snprintf(filename, sizeof(filename), "cx_v%04d.raw", this_frame);
   yframe = fopen(filename, "wb");
 
   for (i = 0; i < frame->uv_height; i++)
@@ -1464,7 +1464,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
   // and the frame is a key frame, golden frame or alt_ref_frame
   } else if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
-              (cm->frame_type == KEY_FRAME ||
+              (frame_is_intra_only(cm) ||
                cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame))) {
     // General over and under shoot tests
     if ((rc->projected_frame_size > high_limit && q < maxq) ||
@@ -1492,7 +1492,12 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
-  } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
+  } else {
+    ref_cnt_fb(cm->frame_bufs,
+                   &cm->ref_frame_map[cm->upd_buf], cm->new_fb_idx);
+  }
+#if 0
+  else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
              cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
     /* Preserve the previously existing golden frame and update the frame in
      * the alt ref slot instead. This is highly specific to the current use of
@@ -1528,11 +1533,11 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     }
   }
-
   if (cpi->refresh_last_frame) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+#endif
 #if CONFIG_DENOISING
   vp9_denoiser_update_frame_info(&cpi->denoiser,
                                 *cpi->Source,
@@ -1624,7 +1629,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -1634,7 +1639,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
 
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
-  if (cpi->twopass.total_left_stats.coded_error != 0.0)
+//  if (cpi->twopass.total_left_stats.coded_error != 0.0)
     fprintf(f, "%10u %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
@@ -1772,8 +1777,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
     if (cpi->oxcf.rc_mode == VPX_Q) {
       loop = 0;
     } else {
-      if ((cm->frame_type == KEY_FRAME) &&
-           rc->this_key_frame_forced &&
+        if (frame_is_intra_only(cm) && rc->this_key_frame_forced &&
            (rc->projected_frame_size < rc->max_frame_bandwidth)) {
         int last_q = q;
         int kf_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
@@ -1980,6 +1984,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   const SPEED_FEATURES *const sf = &cpi->sf;
   const unsigned int max_mv_def = MIN(cm->width, cm->height);
   struct segmentation *const seg = &cm->seg;
+
+  if (cm->show_existing_frame == 1) {
+    // Write the show_existing_frame header.
+    vp9_pack_bitstream(cpi, dest, size);
+    return;
+  }
+
   set_ext_overrides(cpi);
 
   cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
@@ -2064,9 +2075,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // For 1 pass CBR, check if we are dropping this frame.
   // Never drop on key frame.
-  if (cpi->pass == 0 &&
-      cpi->oxcf.rc_mode == VPX_CBR &&
-      cm->frame_type != KEY_FRAME) {
+  if (cpi->pass == 0 && cpi->oxcf.rc_mode == VPX_CBR &&
+      !frame_is_intra_only(cm)) {
     if (vp9_rc_drop_frame(cpi)) {
       vp9_rc_postencode_update_drop_frame(cpi);
       ++cm->current_video_frame;
@@ -2198,7 +2208,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->last_frame_type = cm->frame_type;
   vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
@@ -2331,7 +2341,7 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
 static int frame_is_reference(const VP9_COMP *cpi) {
   const VP9_COMMON *cm = &cpi->common;
 
-  return cm->frame_type == KEY_FRAME ||
+  return frame_is_intra_only(cm) ||
          cpi->refresh_last_frame ||
          cpi->refresh_golden_frame ||
          cpi->refresh_alt_ref_frame ||
@@ -2635,6 +2645,8 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // One pass encode
     Pass0Encode(cpi, size, dest, frame_flags);
   }
+
+  if (cm->show_existing_frame == 1) return 0;
 
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;

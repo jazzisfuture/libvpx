@@ -130,7 +130,8 @@ static void count_segs(VP9_COMP *cpi, const TileInfo *const tile,
   no_pred_segcounts[segment_id]++;
 
   // Temporal prediction not allowed on key frames
-  if (cm->frame_type != KEY_FRAME) {
+//  if (cm->frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(cm)) {
     const BLOCK_SIZE bsize = xd->mi[0]->mbmi.sb_type;
     // Test to see if the segment id matches the predicted value.
     const int pred_segment_id = vp9_get_segment_id(cm, cm->last_frame_seg_map,

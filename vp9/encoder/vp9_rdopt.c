@@ -312,11 +312,12 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   x->errorperbit += (x->errorperbit == 0);
 
   x->select_tx_size = (cpi->sf.tx_size_search_method == USE_LARGESTALL &&
-                       cm->frame_type != KEY_FRAME) ? 0 : 1;
+      !frame_is_intra_only(cm)) ? 0 : 1;
+//  cm->frame_type != KEY_FRAME) ? 0 : 1;
 
   set_block_thresholds(cm, rd);
 
-  if (!cpi->sf.use_nonrd_pick_mode || cm->frame_type == KEY_FRAME) {
+  if (!cpi->sf.use_nonrd_pick_mode || frame_is_intra_only(cm)) {
     fill_token_costs(x->token_costs, cm->fc.coef_probs);
 
     for (i = 0; i < PARTITION_CONTEXTS; i++)
@@ -325,7 +326,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   }
 
   if (!cpi->sf.use_nonrd_pick_mode || (cm->current_video_frame & 0x07) == 1 ||
-      cm->frame_type == KEY_FRAME) {
+      frame_is_intra_only(cm)) {
     fill_mode_costs(cpi);
 
     if (!frame_is_intra_only(cm)) {
@@ -1214,7 +1215,8 @@ static int64_t rd_pick_intra_sub_8x8_y_mode(VP9_COMP *cpi, MACROBLOCK *mb,
       int r = INT_MAX, ry = INT_MAX;
       int64_t d = INT64_MAX, this_rd = INT64_MAX;
       i = idy * 2 + idx;
-      if (cpi->common.frame_type == KEY_FRAME) {
+//      if (cpi->common.frame_type == KEY_FRAME) {
+      if (frame_is_intra_only(&cpi->common)) {
         const PREDICTION_MODE A = vp9_above_block_mode(mic, above_mi, i);
         const PREDICTION_MODE L = vp9_left_block_mode(mic, left_mi, i);
 
@@ -1277,7 +1279,7 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     MODE_INFO *above_mi = xd->mi[-xd->mi_stride];
     MODE_INFO *left_mi = xd->left_available ? xd->mi[-1] : NULL;
 
-    if (cpi->common.frame_type == KEY_FRAME) {
+    if (frame_is_intra_only(&cpi->common)) {
       const PREDICTION_MODE A = vp9_above_block_mode(mic, above_mi, 0);
       const PREDICTION_MODE L = vp9_left_block_mode(mic, left_mi, 0);
 
