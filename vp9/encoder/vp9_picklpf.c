@@ -141,8 +141,8 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
   VP9_COMMON *const cm = &cpi->common;
   struct loopfilter *const lf = &cm->lf;
 
-  lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0
-                                                    : cpi->oxcf.sharpness;
+  lf->sharpness_level = frame_is_intra_only(cm) ? 0
+                                                : cpi->oxcf.sharpness;
 
   if (method == LPF_PICK_FROM_Q) {
     const int min_filter_level = 0;
@@ -151,7 +151,7 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
     // These values were determined by linear fitting the result of the
     // searched level, filt_guess = q * 0.316206 + 3.87252
     int filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
-    if (cm->frame_type == KEY_FRAME)
+    if (frame_is_intra_only(cm))
       filt_guess -= 4;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
   } else {

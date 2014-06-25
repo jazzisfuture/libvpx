@@ -903,6 +903,8 @@ static int get_refresh_mask(VP9_COMP *cpi) {
       return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
              (cpi->refresh_golden_frame << cpi->alt_fb_idx);
     } else {
+      return 1 << cpi->common.upd_buf;
+#if 0
       int arf_idx = cpi->alt_fb_idx;
       if (cpi->pass == 2) {
         const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
@@ -911,6 +913,7 @@ static int get_refresh_mask(VP9_COMP *cpi) {
       return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
              (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
              (cpi->refresh_alt_ref_frame << arf_idx);
+#endif
     }
 }
 
@@ -1033,11 +1036,20 @@ static void write_uncompressed_header(VP9_COMP *cpi,
                                       struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
 
+  printf("%3d: type=%1d show_exist=%1d (%d) show=%1d intra_only=%1d ",
+         cm->current_video_frame, cm->frame_type, cm->show_existing_frame,
+         cm->existing_frame_to_show, cm->show_frame, cm->intra_only);
+
   vp9_wb_write_literal(wb, VP9_FRAME_MARKER, 2);
 
   write_profile(cm->profile, wb);
 
-  vp9_wb_write_bit(wb, 0);  // show_existing_frame
+  vp9_wb_write_bit(wb, cm->show_existing_frame);
+  if (cm->show_existing_frame == 1) {
+    vp9_wb_write_literal(wb, cm->existing_frame_to_show, 3);
+    return;
+  }
+
   vp9_wb_write_bit(wb, cm->frame_type);
   vp9_wb_write_bit(wb, cm->show_frame);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
@@ -1071,16 +1083,22 @@ static void write_uncompressed_header(VP9_COMP *cpi,
       vp9_wb_write_literal(wb, cm->reset_frame_context, 2);
 
     if (cm->intra_only) {
+      const int refresh_mask = get_refresh_mask(cpi);
+      printf("refresh:%d ", refresh_mask);
+
       write_sync_code(wb);
 
-      vp9_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
+      vp9_wb_write_literal(wb, refresh_mask, REF_FRAMES);
       write_frame_size(cm, wb);
     } else {
+      const int refresh_mask = get_refresh_mask(cpi);
       MV_REFERENCE_FRAME ref_frame;
-      vp9_wb_write_literal(wb, get_refresh_mask(cpi), REF_FRAMES);
+      printf("refresh:%d ", refresh_mask);
+      vp9_wb_write_literal(wb, refresh_mask, REF_FRAMES);
       for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-        vp9_wb_write_literal(wb, get_ref_frame_idx(cpi, ref_frame),
-                             REF_FRAMES_LOG2);
+        const int ref_frame_idx = get_ref_frame_idx(cpi, ref_frame);
+        printf("ref[%d]=%d ", ref_frame, ref_frame_idx);
+        vp9_wb_write_literal(wb, ref_frame_idx, REF_FRAMES_LOG2);
         vp9_wb_write_bit(wb, cm->ref_frame_sign_bias[ref_frame]);
       }
 
@@ -1091,6 +1109,7 @@ static void write_uncompressed_header(VP9_COMP *cpi,
       fix_interp_filter(cm);
       write_interp_filter(cm->interp_filter, wb);
     }
+    printf("\n");
   }
 
   if (!cm->error_resilient_mode) {
@@ -1191,6 +1210,12 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   struct vp9_write_bit_buffer saved_wb;
 
   write_uncompressed_header(cpi, &wb);
+
+  if (cpi->common.show_existing_frame == 1) {
+    *size = 1;
+    return;
+  }
+
   saved_wb = wb;
   vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
 

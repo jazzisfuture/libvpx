@@ -406,7 +406,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   s = x->plane[0].src.buf;
   sp = x->plane[0].src.stride;
 
-  if (cm->frame_type != KEY_FRAME) {
+  if (!frame_is_intra_only(cm)) {
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col, sf);
 
     xd->mi[0]->mbmi.ref_frame[0] = LAST_FRAME;
@@ -747,7 +747,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   if (aq_mode == VARIANCE_AQ) {
     const int energy = bsize <= BLOCK_16X16 ? x->mb_energy
                                             : vp9_block_energy(cpi, x, bsize);
-    if (cm->frame_type == KEY_FRAME ||
+    if (frame_is_intra_only(cm) ||
         cpi->refresh_alt_ref_frame ||
         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
       mbmi->segment_id = vp9_vaq_segment_id(energy);
@@ -1780,7 +1780,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
   BLOCK_SIZE min_size = BLOCK_4X4;
   BLOCK_SIZE max_size = BLOCK_64X64;
   // Trap case where we do not have a prediction.
-  if (left_in_image || above_in_image || cm->frame_type != KEY_FRAME) {
+  if (left_in_image || above_in_image || !frame_is_intra_only(cm)) {
     // Default "min to max" and "max to min"
     min_size = BLOCK_64X64;
     max_size = BLOCK_4X4;
@@ -1788,7 +1788,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
     // NOTE: each call to get_sb_partition_size_range() uses the previous
     // passed in values for min and max as a starting point.
     // Find the min and max partition used in previous frame at this location
-    if (cm->frame_type != KEY_FRAME) {
+    if (!frame_is_intra_only(cm)) {
       MODE_INFO **const prev_mi =
           &cm->prev_mi_grid_visible[mi_row * xd->mi_stride + mi_col];
       get_sb_partition_size_range(cpi, prev_mi, &min_size, &max_size);
@@ -1847,7 +1847,7 @@ static void auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
                                      get_chessboard_index(cm)) % 2;
   // Trap case where we do not have a prediction.
   if (search_range_ctrl &&
-      (left_in_image || above_in_image || cm->frame_type != KEY_FRAME)) {
+      (left_in_image || above_in_image || !frame_is_intra_only(cm))) {
     int block;
     MODE_INFO **mi;
     BLOCK_SIZE sb_type;
@@ -2279,7 +2279,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
             || last_was_mid_sequence_overlay
             || cm->prev_mi == 0
             || cm->show_frame == 0
-            || cm->frame_type == KEY_FRAME
+            || frame_is_intra_only(cm)
             || cpi->rc.is_src_frame_alt_ref
             || ((sf->use_lastframe_partitioning ==
                  LAST_FRAME_PARTITION_LOW_MOTION) &&
@@ -2948,8 +2948,7 @@ static int get_skip_encode_frame(const VP9_COMMON *cm) {
   }
 
   return (intra_count << 2) < inter_count &&
-         cm->frame_type != KEY_FRAME &&
-         cm->show_frame;
+      !frame_is_intra_only(cm) && cm->show_frame;
 }
 
 static void encode_tiles(VP9_COMP *cpi) {
@@ -2968,7 +2967,7 @@ static void encode_tiles(VP9_COMP *cpi) {
       vp9_tile_init(&tile, cm, tile_row, tile_col);
       for (mi_row = tile.mi_row_start; mi_row < tile.mi_row_end;
            mi_row += MI_BLOCK_SIZE) {
-        if (cpi->sf.use_nonrd_pick_mode && cm->frame_type != KEY_FRAME)
+        if (cpi->sf.use_nonrd_pick_mode && !frame_is_intra_only(cm))
           encode_nonrd_sb_row(cpi, &tile, mi_row, &tok);
         else
           encode_rd_sb_row(cpi, &tile, mi_row, &tok);
