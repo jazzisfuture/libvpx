@@ -303,7 +303,9 @@ static vpx_codec_err_t init_decoder(vpx_codec_alg_priv_t *ctx) {
       set_error_detail(ctx, "Failed to allocate worker_data");
       return VPX_CODEC_MEM_ERROR;
     }
-
+    worker_data->pbi->owner_frame_worker = worker;
+    worker_data->worker_id = i;
+    worker_data->frame_context_ready = 0;
     // If decoding in serial mode, FrameWorker thread could create tile worker
     // thread or loopfilter thread.
     worker_data->pbi->max_threads =
