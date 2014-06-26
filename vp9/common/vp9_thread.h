@@ -35,7 +35,7 @@ typedef struct {
   HANDLE received_sem_;
   HANDLE signal_event_;
 } pthread_cond_t;
-
+kjkj
 //------------------------------------------------------------------------------
 // simplistic pthread emulation layer
 
