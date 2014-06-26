@@ -254,6 +254,17 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                       &pool->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
+  if (pbi->common.frame_parallel_decoding_mode) {
+    VP9Worker *worker = pbi->frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    pbi->cur_buf = &pool->frame_bufs[cm->new_fb_idx];
+    pool->frame_bufs[cm->new_fb_idx].owner_thread_id = worker_data->worker_id;
+
+    // Reset the decoding progress.
+    pbi->cur_buf->row = -1;
+    pbi->cur_buf->col = -1;
+  }
+
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
 

@@ -1379,6 +1379,17 @@ void vp9_decode_frame(VP9Decoder *pbi,
 
   new_fb->corrupted |= xd->corrupted;
 
+  // Update progress in frame parallel decode.
+  if (pbi->common.frame_parallel_decoding_mode) {
+    VP9Worker *worker = pbi->frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    pthread_mutex_lock(&worker_data->stats_mutex);
+    pbi->cur_buf->row = INT_MAX;
+    pbi->cur_buf->col = INT_MAX;
+    pthread_cond_signal(&worker_data->stats_cond);
+    pthread_mutex_unlock(&worker_data->stats_mutex);
+  }
+
   if (!new_fb->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
       vp9_adapt_coef_probs(cm);

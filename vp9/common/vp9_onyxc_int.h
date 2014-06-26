@@ -62,18 +62,6 @@ typedef struct {
   int ref_count;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
-
-  // Following variables will only be used in frame parallel decode.
-
-  // owner_thread_id indicates which FrameWorker owns this buffer and
-  // the FrameWorker may be decoding the buffer or already fully decoded
-  // the buffer. -1 means nobody is decoding this buffer or owning this buffer.
-  int owner_thread_id;
-
-  // Buffer has been decoded to (row, col) position. If a frame has
-  // been fully decoded, row and col will be set to INT_MAX.
-  int row;
-  int col;
 } RefCntBuffer;
 
 typedef struct {
