@@ -538,11 +538,25 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0, 0);
+#if CONFIG_INTERINTRA
+  if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors_sby(xd, xd->plane[0].dst.buf,
+                                        xd->plane[0].dst.stride, bsize);
+#endif
 }
 void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 1,
                                     MAX_MB_PLANE - 1);
+#if CONFIG_INTERINTRA
+  if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors_sbuv(xd, xd->plane[1].dst.buf,
+                                         xd->plane[2].dst.buf,
+                                         xd->plane[1].dst.stride,
+                                         xd->plane[2].dst.stride, bsize);
+#endif
 }
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize) {
@@ -558,10 +572,19 @@ void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     MAX_MB_PLANE - 1);
 #if CONFIG_INTERINTRA
   if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+<<<<<<< HEAD   (1a4b01 Migrating old experiments into new playground branch)
       is_interintra_allowed(xd->mi[0]->mbmi.sb_type)) {
     vp9_build_interintra_predictors(xd, y, u, v,
                                     y_stride, u_stride, v_stride, bsize);
   }
+=======
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors(xd, xd->plane[0].dst.buf,
+                                    xd->plane[1].dst.buf, xd->plane[2].dst.buf,
+                                    xd->plane[0].dst.stride,
+                                    xd->plane[1].dst.stride,
+                                    xd->plane[2].dst.stride, bsize);
+>>>>>>> BRANCH (df6686 Migrating old experiments into new playground branch and spe)
 #endif
 }
 
@@ -754,10 +777,19 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
   }
 #if CONFIG_INTERINTRA
   if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+<<<<<<< HEAD   (1a4b01 Migrating old experiments into new playground branch)
       is_interintra_allowed(xd->mi[0]->mbmi.sb_type)) {
     vp9_build_interintra_predictors(xd, y, u, v,
                                     y_stride, u_stride, v_stride, bsize);
   }
+=======
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors(xd, xd->plane[0].dst.buf,
+                                    xd->plane[1].dst.buf, xd->plane[2].dst.buf,
+                                    xd->plane[0].dst.stride,
+                                    xd->plane[1].dst.stride,
+                                    xd->plane[2].dst.stride, bsize);
+>>>>>>> BRANCH (df6686 Migrating old experiments into new playground branch and spe)
 #endif
 }
 

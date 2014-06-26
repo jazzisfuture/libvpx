@@ -32,6 +32,7 @@
 #include "vp9/encoder/vp9_mcomp.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_ratectrl.h"
+#include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_tokenize.h"
@@ -45,6 +46,7 @@ extern "C" {
 #endif
 
 #define DEFAULT_GF_INTERVAL         10
+<<<<<<< HEAD   (1a4b01 Migrating old experiments into new playground branch)
 
 #if !CONFIG_INTERINTRA
 #define MAX_MODES 30
@@ -52,6 +54,8 @@ extern "C" {
 #define MAX_MODES 42
 #endif
 #define MAX_REFS  6
+=======
+>>>>>>> BRANCH (df6686 Migrating old experiments into new playground branch and spe)
 
 typedef struct {
   int nmvjointcost[MV_JOINTS];
@@ -69,6 +73,7 @@ typedef struct {
 
   FRAME_CONTEXT fc;
 } CODING_CONTEXT;
+<<<<<<< HEAD   (1a4b01 Migrating old experiments into new playground branch)
 
 // This enumerator type needs to be kept aligned with the mode order in
 // const MODE_DEFINITION vp9_mode_order[MAX_MODES] used in the rd code.
@@ -137,6 +142,8 @@ typedef enum {
   THR_COMP_GA,
   THR_INTRA,
 } THR_MODES_SUB8X8;
+=======
+>>>>>>> BRANCH (df6686 Migrating old experiments into new playground branch and spe)
 
 typedef enum {
   // encode_breakout is disabled.
@@ -314,32 +321,6 @@ static INLINE int is_best_mode(MODE mode) {
   return mode == ONE_PASS_BEST || mode == TWO_PASS_SECOND_BEST;
 }
 
-typedef struct RD_OPT {
-  // Thresh_mult is used to set a threshold for the rd score. A higher value
-  // means that we will accept the best mode so far more often. This number
-  // is used in combination with the current block size, and thresh_freq_fact
-  // to pick a threshold.
-  int thresh_mult[MAX_MODES];
-  int thresh_mult_sub8x8[MAX_REFS];
-
-  int threshes[MAX_SEGMENTS][BLOCK_SIZES][MAX_MODES];
-  int thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
-
-  int64_t comp_pred_diff[REFERENCE_MODES];
-  int64_t prediction_type_threshes[MAX_REF_FRAMES][REFERENCE_MODES];
-  int64_t tx_select_diff[TX_MODES];
-  // FIXME(rbultje) can this overflow?
-  int tx_select_threshes[MAX_REF_FRAMES][TX_MODES];
-
-  int64_t filter_diff[SWITCHABLE_FILTER_CONTEXTS];
-  int64_t filter_threshes[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
-  int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
-  int64_t mask_filter;
-
-  int RDMULT;
-  int RDDIV;
-} RD_OPT;
-
 typedef struct VP9_COMP {
   QUANTS quants;
   MACROBLOCK mb;
@@ -347,11 +328,7 @@ typedef struct VP9_COMP {
   VP9EncoderConfig oxcf;
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *source;
-#if CONFIG_MULTIPLE_ARF
-  struct lookahead_entry  *alt_ref_source[REF_FRAMES];
-#else
   struct lookahead_entry  *alt_ref_source;
-#endif
   struct lookahead_entry  *last_source;
 
   YV12_BUFFER_CONFIG *Source;
@@ -370,9 +347,6 @@ typedef struct VP9_COMP {
   int gld_fb_idx;
   int alt_fb_idx;
 
-#if CONFIG_MULTIPLE_ARF
-  int alt_ref_fb_idx[REF_FRAMES - 3];
-#endif
   int refresh_last_frame;
   int refresh_golden_frame;
   int refresh_alt_ref_frame;
@@ -389,13 +363,6 @@ typedef struct VP9_COMP {
 
   TOKENEXTRA *tok;
   unsigned int tok_count[4][1 << 6];
-
-#if CONFIG_MULTIPLE_ARF
-  // Position within a frame coding order (including any additional ARF frames).
-  unsigned int sequence_number;
-  // Next frame in naturally occurring order that has not yet been coded.
-  int next_frame_in_order;
-#endif
 
   // Ambient reconstruction err target for force key frames
   int ambient_err;
@@ -445,9 +412,6 @@ typedef struct VP9_COMP {
   int  segment_encode_breakout[MAX_SEGMENTS];
 
   unsigned char *complexity_map;
-
-  unsigned char *active_map;
-  unsigned int active_map_enabled;
 
   CYCLIC_REFRESH *cyclic_refresh;
 
@@ -532,21 +496,21 @@ typedef struct VP9_COMP {
   PC_TREE *pc_root;
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
 
-#if CONFIG_MULTIPLE_ARF
-  // ARF tracking variables.
+  int multi_arf_allowed;
   int multi_arf_enabled;
-  unsigned int frame_coding_order_period;
-  unsigned int new_frame_coding_order_period;
-  int frame_coding_order[MAX_LAG_BUFFERS * 2];
-  int arf_buffer_idx[MAX_LAG_BUFFERS * 3 / 2];
-  int arf_weight[MAX_LAG_BUFFERS];
-  int arf_buffered;
-  int this_frame_weight;
-  int max_arf_level;
-#endif
 
 #if CONFIG_DENOISING
   VP9_DENOISER denoiser;
+#endif
+
+#if CONFIG_MASKED_INTERINTER
+  unsigned int masked_interinter_select_counts[2];
+#endif
+#if CONFIG_INTERINTRA
+  unsigned int interintra_select_count[2];
+#if CONFIG_MASKED_INTERINTRA
+  unsigned int masked_interintra_select_count[2];
+#endif
 #endif
 
 #if CONFIG_MASKED_INTERINTER
@@ -653,9 +617,13 @@ void vp9_update_reference_frames(VP9_COMP *cpi);
 
 int64_t vp9_rescale(int64_t val, int64_t num, int denom);
 
+void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv);
+
 YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
                                           YV12_BUFFER_CONFIG *unscaled,
                                           YV12_BUFFER_CONFIG *scaled);
+
+void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
 static INLINE void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
                                 MV_REFERENCE_FRAME ref0,
