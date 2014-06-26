@@ -25,10 +25,7 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize);
 
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
-                                   BLOCK_SIZE bsize);
-
-void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
-                                       BLOCK_SIZE bsize);
+                                    BLOCK_SIZE bsize);
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
@@ -38,6 +35,17 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                const InterpKernel *kernel,
                                enum mv_precision precision,
                                int x, int y);
+
+void inter_predictor(const uint8_t *src, int src_stride, uint8_t *dst,
+                     int dst_stride, const int subpel_x, const int subpel_y,
+                     const struct scale_factors *sf, int w, int h, int ref,
+                     const InterpKernel *kernel, int xs, int ys);
+
+MV average_split_mvs(const struct macroblockd_plane *pd, int plane,
+                     const MODE_INFO *mi, int ref, int block);
+
+MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
+                             int bw, int bh, int ss_x, int ss_y);
 
 static INLINE int scaled_buffer_offset(int x_offset, int y_offset, int stride,
                                        const struct scale_factors *sf) {
