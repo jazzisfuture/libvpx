@@ -63,12 +63,11 @@ typedef struct {
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
 
-  // Following variables will only be used in frame parallel decode.
+  // The Following variables will only be used in frame parallel decode.
 
-  // owner_thread_id indicates which FrameWorker owns this buffer and
-  // the FrameWorker may be decoding the buffer or already fully decoded
-  // the buffer. -1 means nobody is decoding this buffer or owning this buffer.
-  int owner_thread_id;
+  // owner_thread_id indicates which FrameWorker owns this buffer. -1 means
+  // that no FrameWorker owns, or is decoding, this buffer.
+  int owner_worker_id;
 
   // Buffer has been decoded to (row, col) position. If a frame has
   // been fully decoded, row and col will be set to INT_MAX.
@@ -123,6 +122,9 @@ typedef struct VP9Common {
   YV12_BUFFER_CONFIG *frame_to_show;
 
   int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
+
+  // Prepare ref_frame_map for next frame. Only used in frame parallel decode.
+  int next_ref_frame_map[REF_FRAMES];
 
   // TODO(jkoleszar): could expand active_ref_idx to 4, with 0 as intra, and
   // roll new_fb_idx into it.
