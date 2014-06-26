@@ -651,7 +651,11 @@ static void setup_frame_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
 }
 
 static void setup_frame_size_with_refs(VP9_COMMON *cm,
-                                       struct vp9_read_bit_buffer *rb) {
+                                       struct vp9_read_bit_buffer *rb,
+                                       int min_width,
+                                       int min_height,
+                                       int max_width,
+                                       int max_height) {
   int width, height;
   int found = 0, i;
   for (i = 0; i < REFS_PER_FRAME; ++i) {
@@ -667,7 +671,8 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
   if (!found)
     read_frame_size(rb, &width, &height);
 
-  if (width <= 0 || height <= 0)
+  if (width < min_width || height < min_height ||
+      width > max_width || height > max_height)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Referenced frame with invalid size");
 
@@ -1141,6 +1146,16 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       setup_frame_size(cm, rb);
     } else {
+
+      // This sets up minimum and maximum valid dimensions for
+      // this frame based on the frames it refers to.   A frame can
+      // only refer to a frame that's between 2x and 1/16th its
+      // frame size.
+      int min_width = INT_MAX;
+      int max_width = 0;
+      int min_height = INT_MAX;
+      int max_height = 0;
+
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
 
       for (i = 0; i < REFS_PER_FRAME; ++i) {
@@ -1149,9 +1164,23 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         cm->frame_refs[i].idx = idx;
         cm->frame_refs[i].buf = &cm->frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
+
+        if (cm->frame_refs[i].buf->y_width / 2 < min_width)
+          min_width = cm->frame_refs[i].buf->y_width / 2;
+
+        if (cm->frame_refs[i].buf->y_height / 2 < min_height)
+          min_height = cm->frame_refs[i].buf->y_height / 2;
+
+        if (cm->frame_refs[i].buf->y_width * 16 > max_width)
+          max_width = cm->frame_refs[i].buf->y_width * 16;
+
+        if (cm->frame_refs[i].buf->y_height * 16 > max_height)
+          max_height = cm->frame_refs[i].buf->y_height * 16;
+
       }
 
-      setup_frame_size_with_refs(cm, rb);
+      setup_frame_size_with_refs(cm, rb, min_width, min_height, max_width,
+                                 max_height);
 
       cm->allow_high_precision_mv = vp9_rb_read_bit(rb);
       cm->interp_filter = read_interp_filter(rb);
