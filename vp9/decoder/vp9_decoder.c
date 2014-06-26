@@ -26,6 +26,7 @@
 #endif
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_systemdependent.h"
+#include "vp9/common/vp9_thread.h"
 
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_decoder.h"
@@ -63,6 +64,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
 
   // Initialize the references to not point to any frame buffers.
   vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
+  vpx_memset(&cm->next_ref_frame_map, -1, sizeof(cm->next_ref_frame_map));
 
   cm->current_video_frame = 0;
   pbi->ready_for_new_data = 1;
@@ -202,16 +204,37 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   BufferPool * const pool = cm->buffer_pool;
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
-  for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
-    if (mask & 1) {
-      const int old_idx = cm->ref_frame_map[ref_index];
-      ref_cnt_fb(frame_bufs, &cm->ref_frame_map[ref_index],
-                 cm->new_fb_idx);
-      if (old_idx >= 0 && frame_bufs[old_idx].ref_count == 0)
-        pool->release_fb_cb(pool->cb_priv,
-                            &frame_bufs[old_idx].raw_frame_buffer);
+  if (pbi->frame_parallel_decode) {
+    // No need to increase current frame's reference count as it is already
+    // increased in generating next_ref_frame_map.
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        const int old_idx = cm->ref_frame_map[ref_index];
+#if CONFIG_MULTITHREAD
+        pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+#endif
+        if (old_idx >= 0)
+          pool->frame_bufs[old_idx].ref_count--;
+        if (old_idx >= 0 && frame_bufs[old_idx].ref_count == 0)
+          pool->release_fb_cb(pool->cb_priv,
+                              &frame_bufs[old_idx].raw_frame_buffer);
+#if CONFIG_MULTITHREAD
+        pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+#endif
+      }
+      ++ref_index;
     }
-    ++ref_index;
+  } else {
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        const int old_idx = cm->ref_frame_map[ref_index];
+        ref_cnt_fb(frame_bufs, &cm->ref_frame_map[ref_index], cm->new_fb_idx);
+        if (old_idx >= 0 && frame_bufs[old_idx].ref_count == 0)
+          pool->release_fb_cb(pool->cb_priv,
+                              &frame_bufs[old_idx].raw_frame_buffer);
+      }
+      ++ref_index;
+    }
   }
 
   cm->frame_to_show = get_frame_new_buffer(cm);
@@ -232,6 +255,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   const uint8_t *source = *psource;
   int retcode = 0;
+  int i;
 
   cm->error.error_code = VPX_CODEC_OK;
 
@@ -254,7 +278,18 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
       && frame_bufs[cm->new_fb_idx].ref_count == 0)
     pool->release_fb_cb(pool->cb_priv,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+
   cm->new_fb_idx = get_free_fb(cm);
+
+  if (pbi->frame_parallel_decode) {
+    VP9Worker *const worker = pbi->owner_frame_worker;
+    pbi->cur_buf = &pool->frame_bufs[cm->new_fb_idx];
+    pool->frame_bufs[cm->new_fb_idx].owner_frame_worker = worker;
+
+    // Reset decoding progress.
+    pbi->cur_buf->row = -1;
+    pbi->cur_buf->col = -1;
+  }
 
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
@@ -293,6 +328,24 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
       vp9_swap_mi_and_prev_mi(cm);
 
     cm->current_video_frame++;
+  }
+
+  // Update progress in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    // Need to lock the mutex here as another thread may
+    // be accessing this buffer.
+#if CONFIG_MULTITHREAD
+    VP9Worker *worker = pbi->owner_frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    pthread_mutex_lock(&worker_data->stats_mutex);
+#endif
+    pbi->cur_buf->row = INT_MAX;
+    pbi->cur_buf->col = INT_MAX;
+    pbi->cur_buf->owner_frame_worker = NULL;
+#if CONFIG_MULTITHREAD
+    pthread_cond_signal(&worker_data->stats_cond);
+    pthread_mutex_unlock(&worker_data->stats_mutex);
+#endif
   }
 
   pbi->ready_for_new_data = 0;

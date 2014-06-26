@@ -23,7 +23,7 @@ extern "C" {
 
 /*!\brief The maximum number of work buffers used by libvpx.
  */
-#define VPX_MAXIMUM_WORK_BUFFERS 1
+#define VPX_MAXIMUM_WORK_BUFFERS 10
 
 /*!\brief The maximum number of reference buffers that a VP9 encoder may use.
  */
