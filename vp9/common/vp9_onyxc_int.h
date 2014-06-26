@@ -43,6 +43,11 @@ extern "C" {
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
 
+// Given the dimension of a reference frame calculate the min
+// and max size of a frame that can use it as a reference.
+#define REF_SIZE_TO_MIN_SIZE(X) ((X) / 2)
+#define REF_SIZE_TO_MAX_SIZE(X) ((X) * 16)
+
 extern const struct {
   PARTITION_CONTEXT above;
   PARTITION_CONTEXT left;
@@ -238,6 +243,17 @@ static INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
   *idx = new_idx;
 
   bufs[new_idx].ref_count++;
+}
+
+static INLINE int valid_ref_size(int width, int height,
+                                 int ref_width, int ref_height) {
+  if (width < REF_SIZE_TO_MIN_SIZE(ref_width) ||
+      height < REF_SIZE_TO_MIN_SIZE(ref_height) ||
+      width > REF_SIZE_TO_MAX_SIZE(ref_width) ||
+      height > REF_SIZE_TO_MAX_SIZE(ref_height))
+    return 0;
+  else
+    return 1;
 }
 
 static INLINE int mi_cols_aligned_to_sb(int n_mis) {
