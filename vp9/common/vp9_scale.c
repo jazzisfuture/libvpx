@@ -33,14 +33,6 @@ static int get_fixed_point_scale_factor(int other_size, int this_size) {
   return (other_size << REF_SCALE_SHIFT) / this_size;
 }
 
-static int check_scale_factors(int other_w, int other_h,
-                               int this_w, int this_h) {
-  return 2 * this_w >= other_w &&
-         2 * this_h >= other_h &&
-         this_w <= 16 * other_w &&
-         this_h <= 16 * other_h;
-}
-
 MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf) {
   const int x_off_q4 = scaled_x(x << SUBPEL_BITS, sf) & SUBPEL_MASK;
   const int y_off_q4 = scaled_y(y << SUBPEL_BITS, sf) & SUBPEL_MASK;

@@ -50,6 +50,14 @@ static INLINE int vp9_is_scaled(const struct scale_factors *sf) {
          (sf->x_scale_fp != REF_NO_SCALE || sf->y_scale_fp != REF_NO_SCALE);
 }
 
+static INLINE int check_scale_factors(int other_w, int other_h,
+                                      int this_w, int this_h) {
+  return 2 * this_w >= other_w &&
+         2 * this_h >= other_h &&
+         this_w <= 16 * other_w &&
+         this_h <= 16 * other_h;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
