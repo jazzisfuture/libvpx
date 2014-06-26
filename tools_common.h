@@ -136,6 +136,7 @@ const VpxInterface *get_vpx_decoder_by_fourcc(uint32_t fourcc);
 // of vpx_image_t support
 int vpx_img_plane_width(const vpx_image_t *img, int plane);
 int vpx_img_plane_height(const vpx_image_t *img, int plane);
+
 void vpx_img_write(const vpx_image_t *img, FILE *file);
 int vpx_img_read(vpx_image_t *img, FILE *file);
 

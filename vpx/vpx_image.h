@@ -241,7 +241,6 @@ extern "C" {
    * \param[in]    img       Image descriptor
    */
   void vpx_img_free(vpx_image_t *img);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif

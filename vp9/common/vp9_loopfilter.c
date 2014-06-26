@@ -1469,7 +1469,8 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                                             mask_4x4_int_l,
                                             &cm->lf_info,
                                             &lfm->lfl_uv[r << 1],
-                                            bit_depth_to_bps(cm->bit_depth));
+                                            bit_depth_to_bps(
+                                                cm->bit_depth));
         } else {
           filter_selectively_vert_row2(plane->plane_type,
                                        dst->buf, dst->stride,
