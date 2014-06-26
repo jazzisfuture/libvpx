@@ -13,6 +13,7 @@
 
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_onyxc_int.h"
+#include "vp9/decoder/vp9_decoder.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,9 +26,10 @@ void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize);
 
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
-                                   BLOCK_SIZE bsize);
+                                    BLOCK_SIZE bsize);
 
-void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
+                                       int mi_row, int mi_col,
                                        BLOCK_SIZE bsize);
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
