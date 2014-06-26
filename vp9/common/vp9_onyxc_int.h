@@ -39,7 +39,7 @@ extern "C" {
 // 1 scratch frame for the new frame, 3 for scaled references on the encoder
 // TODO(jkoleszar): These 3 extra references could probably come from the
 // normal reference pool.
-#define FRAME_BUFFERS (REF_FRAMES + 4)
+#define FRAME_BUFFERS (REF_FRAMES + 9)
 
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
@@ -64,6 +64,18 @@ typedef struct {
   int ref_count;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
+
+  // The Following variables will only be used in frame parallel decode.
+
+  // owner_worker indicates which FrameWorker owns this buffer. NULL means
+  // that no FrameWorker owns, or is decoding, this buffer.
+  VP9Worker *owner_frame_worker;
+
+  // row and col indicate which position frame has been decoded to. When first
+  // start decoding, they are reset to -1. when fully decoded, they will be set
+  // to INT_MAX.
+  int row;
+  int col;
 } RefCntBuffer;
 
 typedef struct {
@@ -113,6 +125,9 @@ typedef struct VP9Common {
   YV12_BUFFER_CONFIG *frame_to_show;
 
   int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
+
+  // Prepare ref_frame_map for next frame. Only used in frame parallel decode.
+  int next_ref_frame_map[REF_FRAMES];
 
   // TODO(jkoleszar): could expand active_ref_idx to 4, with 0 as intra, and
   // roll new_fb_idx into it.
@@ -165,8 +180,8 @@ typedef struct VP9Common {
 
   int mi_idx;
   int prev_mi_idx;
-  MODE_INFO *mip_array[NUM_PING_PONG_BUFFERS];
-  MODE_INFO **mi_grid_base_array[NUM_PING_PONG_BUFFERS];
+  MODE_INFO *mip_array[2];
+  MODE_INFO **mi_grid_base_array[2];
 
   MODE_INFO *mip; /* Base of allocated array */
   MODE_INFO *mi;  /* Corresponds to upper left visible macroblock */
@@ -196,6 +211,10 @@ typedef struct VP9Common {
 
   struct loopfilter lf;
   struct segmentation seg;
+
+  // TODO(hkuang): Remove this as it is the same as frame_parallel_decode
+  // in pbi.
+  int frame_parallel_decode;  // frame-based threading.
 
   // Context probabilities for reference frame prediction
   int allow_comp_inter_inter;
@@ -242,12 +261,19 @@ static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
 static INLINE int get_free_fb(VP9_COMMON *cm) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
+
+#if CONFIG_MULTITHREAD
+  pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+#endif
   for (i = 0; i < FRAME_BUFFERS; ++i)
     if (frame_bufs[i].ref_count == 0)
       break;
 
   assert(i < FRAME_BUFFERS);
   frame_bufs[i].ref_count = 1;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+#endif
   return i;
 }
 
