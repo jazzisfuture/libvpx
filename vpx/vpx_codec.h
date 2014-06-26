@@ -137,7 +137,6 @@ extern "C" {
      *
      */
     VPX_CODEC_LIST_END
-
   }
   vpx_codec_err_t;
 
