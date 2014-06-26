@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+1: Yue Chen <yuec@google.com>
+Submitted-by: Paul Wilkins <paulwilkins@google.com>
+Submitted-at: Thu, 26 Jun 2014 09:41:40 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70638
+Project: webm/libvpx
+Branch: refs/heads/master
