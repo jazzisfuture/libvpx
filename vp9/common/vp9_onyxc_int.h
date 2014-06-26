@@ -69,7 +69,6 @@ typedef struct {
   // the FrameWorker may be decoding the buffer or already fully decoded
   // the buffer. -1 means nobody is decoding this buffer or owning this buffer.
   int owner_thread_id;
-
   // Buffer has been decoded to (row, col) position. If a frame has
   // been fully decoded, row and col will be set to INT_MAX.
   int row;

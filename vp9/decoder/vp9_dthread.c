@@ -278,3 +278,34 @@ void vp9_loop_filter_dealloc(VP9LfSync *lf_sync, int rows) {
     vp9_zero(*lf_sync);
   }
 }
+
+void vp9_frameworker_wait(VP9Worker* const worker, int r, int c,
+                          RefCntBuffer *ref_buf) {
+  FrameWorkerData *const worker_data = (FrameWorkerData *)worker->data1;
+  const VP9Decoder *const pbi = worker_data->pbi;
+  RefCntBuffer *const cur_buf = pbi->cur_buf;
+
+  // Check if worker already release the ref_buf.
+  if (!worker || ref_buf->owner_thread_id == -1) return;
+
+  pthread_mutex_lock(&worker_data->stats_mutex);
+  while (!(cur_buf->row >= r && cur_buf->col >= c) && pbi->cur_buf == ref_buf
+      && ref_buf->owner_thread_id != -1) {
+    pthread_cond_wait(&worker_data->stats_cond, &worker_data->stats_mutex);
+  }
+  pthread_mutex_unlock(&worker_data->stats_mutex);
+
+}
+
+
+void vp9_frameworker_broadcast(VP9Worker* const worker, int r, int c) {
+  FrameWorkerData *const worker_data = (FrameWorkerData *)worker->data1;
+  const VP9Decoder *const pbi = worker_data->pbi;
+  RefCntBuffer *const cur_buf = pbi->cur_buf;
+
+  pthread_mutex_lock(&worker_data->stats_mutex);
+  cur_buf->row = r;
+  cur_buf->col = c;
+  pthread_cond_signal(&worker_data->stats_cond);
+  pthread_mutex_unlock(&worker_data->stats_mutex);
+}
