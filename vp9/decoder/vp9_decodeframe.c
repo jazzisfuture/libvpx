@@ -335,10 +335,11 @@ static void set_ref(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   xd->corrupted |= ref_buffer->buf->corrupted;
 }
 
-static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
+static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
                          const TileInfo *const tile,
                          int mi_row, int mi_col,
                          vp9_reader *r, BLOCK_SIZE bsize) {
+  VP9_COMMON *const cm = &pbi->common;
   const int less8x8 = bsize < BLOCK_8X8;
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
@@ -365,7 +366,7 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       set_ref(cm, xd, 1, mi_row, mi_col);
 
     // Prediction
-    vp9_dec_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+    vp9_dec_build_inter_predictors_sb(pbi, xd, mi_row, mi_col, bsize);
 
     // Reconstruction
     if (!mbmi->skip) {
@@ -1078,8 +1079,8 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
                                        struct vp9_read_bit_buffer *rb) {
   VP9_COMMON *const cm = &pbi->common;
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+  int mask, i, ref_index = 0;
   size_t sz;
-  int i;
 
   cm->last_frame_type = cm->frame_type;
 
@@ -1097,12 +1098,18 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     // Show an existing frame directly.
     const int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
 
+#if CONFIG_MULTITHREAD
+    pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+#endif
     if (frame_to_show < 0 || frame_bufs[frame_to_show].ref_count < 1)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Buffer %d does not contain a decoded frame",
                          frame_to_show);
 
     ref_cnt_fb(frame_bufs, &cm->new_fb_idx, frame_to_show);
+#if CONFIG_MULTITHREAD
+    pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+#endif
     pbi->refresh_frame_flags = 0;
     cm->lf.filter_level = 0;
     cm->show_frame = 1;
@@ -1197,6 +1204,28 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   // This flag will be overridden by the call to vp9_setup_past_independence
   // below, forcing the use of context 0 for those frame types.
   cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
+
+  // Update next_ref_frame_map in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        cm->next_ref_frame_map[ref_index] = cm->new_fb_idx;
+#if CONFIG_MULTITHREAD
+        pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+#endif
+        ++cm->buffer_pool->frame_bufs[cm->new_fb_idx].ref_count;
+#if CONFIG_MULTITHREAD
+        pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+#endif
+      } else {
+        cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+      }
+      ++ref_index;
+    }
+
+    for (; ref_index < REF_FRAMES; ++ref_index)
+      cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+  }
 
   if (frame_is_intra_only(cm) || cm->error_resilient_mode)
     vp9_setup_past_independence(cm);
@@ -1380,6 +1409,14 @@ void vp9_decode_frame(VP9Decoder *pbi,
   xd->corrupted = 0;
   new_fb->corrupted = read_compressed_header(pbi, data, first_partition_size);
 
+  // If encoded in frame parallel mode, frame context is ready after decoding
+  // the frame header.
+  if (pbi->frame_parallel_decode && pbi->common.frame_parallel_decoding_mode) {
+    VP9Worker *const worker = pbi->owner_frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    worker_data->frame_context_ready = 1;
+  }
+
   // TODO(jzern): remove frame_parallel_decoding_mode restriction for
   // single-frame tile decoding.
   if (pbi->max_threads > 1 && tile_rows == 1 && tile_cols > 1 &&
@@ -1409,4 +1446,12 @@ void vp9_decode_frame(VP9Decoder *pbi,
 
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = cm->fc;
+
+  // frame context is ready after decoding the whole frame if not encoded in
+  // frame parallel mode.
+  if (pbi->frame_parallel_decode && !pbi->common.frame_parallel_decoding_mode) {
+    VP9Worker *const worker = pbi->owner_frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    worker_data->frame_context_ready = 1;
+  }
 }
