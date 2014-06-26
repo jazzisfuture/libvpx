@@ -105,8 +105,8 @@ const char *const kVP9InvalidFileTests[] = {
 #define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
 
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
-                          ::testing::ValuesIn(kVP9InvalidFileTests,
-                                              kVP9InvalidFileTests +
-                                              NELEMENTS(kVP9InvalidFileTests)));
+    ::testing::ValuesIn(kVP9InvalidFileTests,
+        kVP9InvalidFileTests +
+        NELEMENTS(kVP9InvalidFileTests)));
 
 }  // namespace
