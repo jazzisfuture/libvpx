@@ -35,6 +35,15 @@ void vp9_build_interintra_predictors(MACROBLOCKD *xd,
                                      int ustride,
                                      int vstride,
                                      BLOCK_SIZE bsize);
+void vp9_build_interintra_predictors_sby(MACROBLOCKD *xd,
+                                         uint8_t *ypred,
+                                         int ystride,
+                                         BLOCK_SIZE bsize);
+void vp9_build_interintra_predictors_sbuv(MACROBLOCKD *xd,
+                                          uint8_t *upred,
+                                          uint8_t *vpred,
+                                          int ustride, int vstride,
+                                          BLOCK_SIZE bsize);
 #if CONFIG_MASKED_INTERINTRA
 void vp9_generate_masked_weight_interintra(int mask_index,
                                            BLOCK_SIZE sb_type,

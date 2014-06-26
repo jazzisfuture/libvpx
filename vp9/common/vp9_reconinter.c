@@ -538,30 +538,38 @@ static void build_inter_predictors_for_planes(MACROBLOCKD *xd, BLOCK_SIZE bsize,
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0, 0);
+#if CONFIG_INTERINTRA
+  if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors_sby(xd, xd->plane[0].dst.buf,
+                                        xd->plane[0].dst.stride, bsize);
+#endif
 }
 void vp9_build_inter_predictors_sbuv(MACROBLOCKD *xd, int mi_row, int mi_col,
                                      BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 1,
                                     MAX_MB_PLANE - 1);
+#if CONFIG_INTERINTRA
+  if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors_sbuv(xd, xd->plane[1].dst.buf,
+                                         xd->plane[2].dst.buf,
+                                         xd->plane[1].dst.stride,
+                                         xd->plane[2].dst.stride, bsize);
+#endif
 }
 void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize) {
-#if CONFIG_INTERINTRA
-  uint8_t *const y = xd->plane[0].dst.buf;
-  uint8_t *const u = xd->plane[1].dst.buf;
-  uint8_t *const v = xd->plane[2].dst.buf;
-  const int y_stride = xd->plane[0].dst.stride;
-  const int u_stride = xd->plane[1].dst.stride;
-  const int v_stride = xd->plane[2].dst.stride;
-#endif
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0,
                                     MAX_MB_PLANE - 1);
 #if CONFIG_INTERINTRA
   if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
-      is_interintra_allowed(xd->mi[0]->mbmi.sb_type)) {
-    vp9_build_interintra_predictors(xd, y, u, v,
-                                    y_stride, u_stride, v_stride, bsize);
-  }
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors(xd, xd->plane[0].dst.buf,
+                                    xd->plane[1].dst.buf, xd->plane[2].dst.buf,
+                                    xd->plane[0].dst.stride,
+                                    xd->plane[1].dst.stride,
+                                    xd->plane[2].dst.stride, bsize);
 #endif
 }
 
@@ -724,14 +732,6 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
   int plane;
   const int mi_x = mi_col * MI_SIZE;
   const int mi_y = mi_row * MI_SIZE;
-#if CONFIG_INTERINTRA
-  uint8_t *const y = xd->plane[0].dst.buf;
-  uint8_t *const u = xd->plane[1].dst.buf;
-  uint8_t *const v = xd->plane[2].dst.buf;
-  const int y_stride = xd->plane[0].dst.stride;
-  const int u_stride = xd->plane[1].dst.stride;
-  const int v_stride = xd->plane[2].dst.stride;
-#endif
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
     const BLOCK_SIZE plane_bsize = get_plane_block_size(bsize,
                                                         &xd->plane[plane]);
@@ -754,10 +754,12 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
   }
 #if CONFIG_INTERINTRA
   if (xd->mi[0]->mbmi.ref_frame[1] == INTRA_FRAME &&
-      is_interintra_allowed(xd->mi[0]->mbmi.sb_type)) {
-    vp9_build_interintra_predictors(xd, y, u, v,
-                                    y_stride, u_stride, v_stride, bsize);
-  }
+      is_interintra_allowed(xd->mi[0]->mbmi.sb_type))
+    vp9_build_interintra_predictors(xd, xd->plane[0].dst.buf,
+                                    xd->plane[1].dst.buf, xd->plane[2].dst.buf,
+                                    xd->plane[0].dst.stride,
+                                    xd->plane[1].dst.stride,
+                                    xd->plane[2].dst.stride, bsize);
 #endif
 }
 
