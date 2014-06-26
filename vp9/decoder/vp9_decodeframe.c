@@ -1064,8 +1064,8 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
                                        struct vp9_read_bit_buffer *rb) {
   VP9_COMMON *const cm = &pbi->common;
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+  int mask, i, ref_index = 0;
   size_t sz;
-  int i;
 
   cm->last_frame_type = cm->frame_type;
 
@@ -1183,6 +1183,24 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   // This flag will be overridden by the call to vp9_setup_past_independence
   // below, forcing the use of context 0 for those frame types.
   cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
+
+  // Update next_ref_frame_map in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+      if (mask & 1) {
+        cm->next_ref_frame_map[ref_index] = cm->new_fb_idx;
+        pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+        ++cm->buffer_pool->frame_bufs[cm->new_fb_idx].ref_count;
+        pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+      } else {
+        cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+      }
+      ++ref_index;
+    }
+
+    for (; ref_index < REF_FRAMES; ++ref_index)
+      cm->next_ref_frame_map[ref_index] = cm->ref_frame_map[ref_index];
+  }
 
   if (frame_is_intra_only(cm) || cm->error_resilient_mode)
     vp9_setup_past_independence(cm);
@@ -1378,6 +1396,18 @@ void vp9_decode_frame(VP9Decoder *pbi,
   }
 
   new_fb->corrupted |= xd->corrupted;
+
+  // Update progress in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    // Fetch worker that owns the pbi.
+    VP9Worker *worker = pbi->owner_frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    pthread_mutex_lock(&worker_data->stats_mutex);
+    pbi->cur_buf->row = INT_MAX;
+    pbi->cur_buf->col = INT_MAX;
+    pthread_cond_signal(&worker_data->stats_cond);
+    pthread_mutex_unlock(&worker_data->stats_mutex);
+  }
 
   if (!new_fb->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
