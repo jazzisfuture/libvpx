@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jingning Han <jingning@google.com>
+Code-Review+1: Minghai Shang <minghai@google.com>
+Submitted-by: Tim Kopp <tkopp@google.com>
+Submitted-at: Fri, 27 Jun 2014 15:42:14 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70647
+Project: webm/libvpx
+Branch: refs/heads/master
