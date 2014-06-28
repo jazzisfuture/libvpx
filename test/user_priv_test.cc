@@ -13,7 +13,6 @@
 #include <string>
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_config.h"
-#include "test/acm_random.h"
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/ivf_video_source.h"
@@ -23,27 +22,17 @@
 #include "test/webm_video_source.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
-#include "vpx/vp8.h"
 
 namespace {
 
 using std::string;
-using libvpx_test::ACMRandom;
 
 #if CONFIG_WEBM_IO
-
-void CheckUserPrivateData(void *user_priv, int *target) {
-  // actual pointer value should be the same as expected.
-  EXPECT_EQ(reinterpret_cast<void *>(target), user_priv) <<
-      "user_priv pointer value does not match.";
-}
-
 // Decodes |filename|. Passes in user_priv data when calling DecodeFrame and
 // compares the user_priv from return img with the original user_priv to see if
 // they match. Both the pointer values and the values inside the addresses
 // should match.
 string DecodeFile(const string &filename) {
-  ACMRandom rnd(ACMRandom::DeterministicSeed());
   libvpx_test::WebMVideoSource video(filename);
   video.Init();
 
@@ -52,8 +41,7 @@ string DecodeFile(const string &filename) {
 
   libvpx_test::MD5 md5;
   int frame_num = 0;
-  for (video.Begin(); !::testing::Test::HasFailure() && video.cxdata();
-       video.Next()) {
+  for (video.Begin(); video.cxdata(); video.Next()) {
     void *user_priv = reinterpret_cast<void *>(&frame_num);
     const vpx_codec_err_t res =
         decoder.DecodeFrame(video.cxdata(), video.frame_size(),
@@ -68,17 +56,16 @@ string DecodeFile(const string &filename) {
     // Get decompressed data.
     while ((img = dec_iter.Next())) {
       if (frame_num == 0) {
-        CheckUserPrivateData(img->user_priv, NULL);
+        // user_priv pointer value should be the same.
+        EXPECT_EQ(img->user_priv, reinterpret_cast<void *>(NULL)) <<
+            "user_priv pointer value does not match.";
       } else {
-        CheckUserPrivateData(img->user_priv, &frame_num);
-
-        // Also test ctrl_get_reference api.
-        struct vp9_ref_frame ref;
-        // Randomly fetch a reference frame.
-        ref.idx = rnd.Rand8() % 3;
-        decoder.Control(VP9_GET_REFERENCE, &ref);
-
-        CheckUserPrivateData(ref.img.user_priv, &frame_num);
+        // user_priv pointer value should be the same.
+        EXPECT_EQ(img->user_priv, reinterpret_cast<void *>(&frame_num)) <<
+            "user_priv pointer value does not match.";
+        // value in user_priv pointer should also be the same.
+        EXPECT_EQ(*reinterpret_cast<int *>(img->user_priv), frame_num) <<
+            "Value in user_priv does not match.";
       }
       md5.Add(img);
     }
