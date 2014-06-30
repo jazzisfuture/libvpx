@@ -106,6 +106,23 @@ static int read_frame_stats(const TWO_PASS *p,
   return 1;
 }
 
+static int input_mb_stats(FIRSTPASS_FRAME_MB_STATS *fps_frame_stats,
+                          const VP9_COMMON * const cm) {
+  FILE *fpfile;
+  int ret;
+
+  fpfile = fopen("firstpass_mb.stt", "r");
+  fseek(fpfile, cm->current_video_frame * cm->MBs * sizeof(FIRSTPASS_MB_STATS),
+        SEEK_SET);
+  ret = fread(fps_frame_stats->mb_stats, sizeof(FIRSTPASS_MB_STATS), cm->MBs,
+              fpfile);
+  fclose(fpfile);
+  if (ret < cm->MBs) {
+    return EOF;
+  }
+  return 1;
+}
+
 static int input_stats(TWO_PASS *p, FIRSTPASS_STATS *fps) {
   if (p->stats_in >= p->stats_in_end)
     return EOF;
@@ -113,6 +130,16 @@ static int input_stats(TWO_PASS *p, FIRSTPASS_STATS *fps) {
   *fps = *p->stats_in;
   ++p->stats_in;
   return 1;
+}
+
+static void output_mb_stats(FIRSTPASS_FRAME_MB_STATS *fps_frame_stats,
+                          const VP9_COMMON * const cm) {
+  FILE *fpfile;
+
+  fpfile = fopen("firstpass_mb.stt", "a");
+  fwrite(fps_frame_stats->mb_stats, sizeof(FIRSTPASS_MB_STATS), cm->MBs,
+         fpfile);
+  fclose(fpfile);
 }
 
 static void output_stats(FIRSTPASS_STATS *stats,
@@ -452,6 +479,8 @@ void vp9_first_pass(VP9_COMP *cpi) {
   const MV zero_mv = {0, 0};
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
 
+  FIRSTPASS_FRAME_MB_STATS *this_frame_mb_stats = &twopass->this_frame_mb_stats;
+
   vp9_clear_system_state();
 
   set_first_pass_params(cpi);
@@ -565,6 +594,15 @@ void vp9_first_pass(VP9_COMP *cpi) {
       if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
         vp9_clear_system_state();
         this_error = (int)(this_error * error_weight);
+      }
+
+      if (cpi->use_fp_mb_stats) {
+        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mode =
+            DC_PRED;
+        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].err =
+            this_error;
+        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mv.as_int =
+            0;
       }
 
       // Intrapenalty below deals with situations where the intra and inter
@@ -704,6 +742,15 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
           best_ref_mv.as_int = mv.as_int;
 
+          if (cpi->use_fp_mb_stats) {
+            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mode =
+                NEWMV;
+            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].err =
+                motion_error;
+            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col]
+                .mv.as_int = mv.as_int;
+          }
+
           if (mv.as_int) {
             ++mvcount;
 
@@ -808,6 +855,10 @@ void vp9_first_pass(VP9_COMP *cpi) {
     twopass->this_frame_stats = fps;
     output_stats(&twopass->this_frame_stats, cpi->output_pkt_list);
     accumulate_stats(&twopass->total_stats, &fps);
+
+    if (cpi->use_fp_mb_stats) {
+      output_mb_stats(this_frame_mb_stats, cm);
+    }
   }
 
   // Copy the previous Last Frame back into gf and and arf buffers if
@@ -2167,6 +2218,8 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
   // Update the total stats remaining structure.
   subtract_stats(&twopass->total_left_stats, &this_frame);
+
+  input_mb_stats(&twopass->this_frame_mb_stats, cm);
 }
 
 void vp9_twopass_postencode_update(VP9_COMP *cpi) {
