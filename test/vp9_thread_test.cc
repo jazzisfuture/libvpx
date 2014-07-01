@@ -12,6 +12,7 @@
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_config.h"
+#include "test/acm_random.h"
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
 #include "test/md5_helper.h"
@@ -23,6 +24,7 @@
 namespace {
 
 using std::string;
+using libvpx_test::ACMRandom;
 
 class VP9WorkerThreadTest : public ::testing::TestWithParam<bool> {
  protected:
@@ -215,6 +217,51 @@ TEST(VP9DecodeMTTest, MTDecode3) {
           << "threads = " << t;
     }
   }
+}
+
+void DecodeFileFuzzy(const string& filename, int num_threads) {
+  libvpx_test::WebMVideoSource video(filename);
+  video.Init();
+  uint8_t *modified_buf = NULL;
+  size_t modified_buf_size = 0;
+  ACMRandom rnd(ACMRandom::DeterministicSeed());
+
+  vpx_codec_dec_cfg_t cfg = {0};
+  cfg.threads = num_threads;
+  libvpx_test::VP9Decoder decoder(cfg, 0);
+
+  for (video.Begin(); video.cxdata(); video.Next()) {
+    vpx_codec_err_t res = VPX_CODEC_OK;
+    // Randomly select corrupt the frame or not.
+    int corrupt_frame = rnd.Rand8() % 2;
+
+    if (corrupt_frame) {
+      if (modified_buf == NULL || modified_buf_size < video.frame_size()) {
+        delete[] modified_buf;
+        modified_buf = new uint8_t[video.frame_size()];
+        modified_buf_size = video.frame_size();
+      }
+      // Only copy partial of the compressed data.
+      memcpy(modified_buf, video.cxdata(), video.frame_size()-1000);
+      res = decoder.DecodeFrame(modified_buf, video.frame_size());
+      EXPECT_EQ(VPX_CODEC_CORRUPT_FRAME, res) << "Result does not match";
+    } else {
+      res = decoder.DecodeFrame(video.cxdata(), video.frame_size());
+      EXPECT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
+    }
+  }
+
+  if (modified_buf)
+    delete[] modified_buf;
+
+  return;
+}
+
+// Test tile decoding error handling. Randomly introduce error to some key
+// frames to let the tile decoding fail. But decoder should recover from error
+// when getting next key frame.
+TEST(VP9DecodeMTTest, MTDecode4) {
+  DecodeFileFuzzy("vp90-2-08-tile_1x4_frame_parallel.webm_all_key.webm",4);
 }
 #endif  // CONFIG_WEBM_IO
 
