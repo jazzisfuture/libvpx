@@ -279,6 +279,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->reuse_inter_pred_sby = 1;
   }
   if (speed >= 7) {
+    sf->mv.fullpel_search_step_param = 10;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
     sf->encode_breakout_thresh = (MIN(cm->width, cm->height) >= 720) ?
         800 : 300;
@@ -307,6 +308,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->mv.reduce_first_step_size = 0;
   sf->mv.auto_mv_step_size = 0;
   sf->mv.max_step_search_steps = MAX_MVSEARCH_STEPS;
+  sf->mv.fullpel_search_step_param = 6;
   sf->comp_inter_joint_search_thresh = BLOCK_4X4;
   sf->adaptive_rd_thresh = 0;
   sf->use_lastframe_partitioning = LAST_FRAME_PARTITION_OFF;
@@ -352,7 +354,6 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->always_this_block_size = BLOCK_16X16;
   sf->search_type_check_frequency = 50;
   sf->encode_breakout_thresh = 0;
-
   // Recode loop tolerence %.
   sf->recode_tolerance = 25;
 
