@@ -25,9 +25,14 @@
 
 namespace {
 
+using std::string;
+using std::tr1::make_tuple;
+
+typedef std::tr1::tuple<const char *, unsigned> decode_param_t;
+
 class InvalidFileTest
     : public ::libvpx_test::DecoderTest,
-      public ::libvpx_test::CodecTestWithParam<const char*> {
+      public ::libvpx_test::CodecTestWithParam<decode_param_t> {
  protected:
   InvalidFileTest() : DecoderTest(GET_PARAM(0)), res_file_(NULL) {}
 
@@ -65,8 +70,11 @@ class InvalidFileTest
 };
 
 TEST_P(InvalidFileTest, ReturnCode) {
-  const std::string filename = GET_PARAM(1);
   libvpx_test::CompressedVideoSource *video = NULL;
+  decode_param_t input = GET_PARAM(1);
+  vpx_codec_dec_cfg_t cfg = {0};
+  cfg.threads = std::tr1::get<1>(input);
+  const std::string filename = std::tr1::get<0>(input);
 
   // Open compressed video file.
   if (filename.substr(filename.length() - 3, 3) == "ivf") {
@@ -89,24 +97,22 @@ TEST_P(InvalidFileTest, ReturnCode) {
   OpenResFile(res_filename);
 
   // Decode frame, and check the md5 matching.
-  ASSERT_NO_FATAL_FAILURE(RunLoop(video));
+  ASSERT_NO_FATAL_FAILURE(RunLoop(video, &cfg));
   delete video;
 }
 
-const char *const kVP9InvalidFileTests[] = {
-  "invalid-vp90-01.webm",
-  "invalid-vp90-02.webm",
-  "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf",
-  "invalid-vp90-03.webm",
-  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf",
-  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf",
+const decode_param_t kVP9InvalidFileTests[] = {
+  make_tuple("invalid-vp90-01-v2.webm", 1),
+  make_tuple("invalid-vp90-02-v2.webm", 1),
+  make_tuple("invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf", 1),
+  make_tuple("invalid-vp90-03-v2.webm", 1),
+  make_tuple("invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf",
+             1),
+  make_tuple("invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf",
+             1),
+  make_tuple("invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm", 4),
 };
 
-#define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
-
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
-                          ::testing::ValuesIn(kVP9InvalidFileTests,
-                                              kVP9InvalidFileTests +
-                                              NELEMENTS(kVP9InvalidFileTests)));
-
+                          ::testing::ValuesIn(kVP9InvalidFileTests));
 }  // namespace
