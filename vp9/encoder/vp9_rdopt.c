@@ -464,6 +464,8 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     struct macroblock_plane *const p = &x->plane[i];
     struct macroblockd_plane *const pd = &xd->plane[i];
     const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+    int rate;
+    int64_t dist;
 
     (void) cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
                               pd->dst.buf, pd->dst.stride, &sse);
@@ -471,28 +473,10 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     if (i == 0)
       x->pred_sse[ref] = sse;
 
-    // Fast approximate the modelling function.
-    if (cpi->oxcf.speed > 4) {
-      int64_t rate;
-      int64_t dist;
-      int64_t square_error = sse;
-      int quantizer = (pd->dequant[1] >> 3);
-
-      if (quantizer < 120)
-        rate = (square_error * (280 - quantizer)) >> 8;
-      else
-        rate = 0;
-      dist = (square_error * quantizer) >> 8;
-      rate_sum += rate;
-      dist_sum += dist;
-    } else {
-      int rate;
-      int64_t dist;
-      vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
-                                   pd->dequant[1] >> 3, &rate, &dist);
-      rate_sum += rate;
-      dist_sum += dist;
-    }
+    vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                 pd->dequant[1] >> 3, &rate, &dist);
+    rate_sum += rate;
+    dist_sum += dist;
   }
 
   *out_rate_sum = (int)rate_sum;
