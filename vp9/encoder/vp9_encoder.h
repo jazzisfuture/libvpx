@@ -193,6 +193,8 @@ typedef struct VP9EncoderConfig {
   // Spatial and temporal scalability.
   int ss_number_layers;  // Number of spatial layers.
   int ts_number_layers;  // Number of temporal layers.
+  int use_svc;
+  int ss_viewport_id[VPX_SS_MAX_LAYERS];
   // Bitrate allocation for spatial layers.
   int ss_target_bitrate[VPX_SS_MAX_LAYERS];
   int ss_play_alternate[VPX_SS_MAX_LAYERS];
@@ -530,8 +532,8 @@ void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
 static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
   return cpi->oxcf.mode != REALTIME && cpi->oxcf.lag_in_frames > 0 &&
-         (cpi->oxcf.play_alternate ||
-          (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+         (cpi->oxcf.play_alternate &&
+          (!(cpi->use_svc && cpi->svc.number_temporal_layers == 1) ||
            cpi->oxcf.ss_play_alternate[cpi->svc.spatial_layer_id]));
 }
 
