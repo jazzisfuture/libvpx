@@ -523,7 +523,7 @@ static vpx_codec_err_t set_noise_sensitivity(vpx_codec_alg_priv_t *ctx,
                                              va_list args)
 {
   struct vp8_extracfg extra_cfg = ctx->vp8_cfg;
-  extra_cfg.noise_sensitivity = CAST(VP8E_SET_NOISE_SENSITIVITY, args);
+  extra_cfg.noise_sensitivity = CAST(VPXE_SET_NOISE_SENSITIVITY, args);
   return update_extracfg(ctx, &extra_cfg);
 }
 
@@ -1245,7 +1245,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] =
     {VP8E_SET_ACTIVEMAP,                vp8e_set_activemap},
     {VP8E_SET_SCALEMODE,                vp8e_set_scalemode},
     {VP8E_SET_CPUUSED,                  set_cpu_used},
-    {VP8E_SET_NOISE_SENSITIVITY,        set_noise_sensitivity},
+    {VPXE_SET_NOISE_SENSITIVITY,        set_noise_sensitivity},
     {VP8E_SET_ENABLEAUTOALTREF,         set_enable_auto_alt_ref},
     {VP8E_SET_SHARPNESS,                set_sharpness},
     {VP8E_SET_STATIC_THRESHOLD,         set_static_thresh},
