@@ -25,6 +25,8 @@
 
 namespace {
 
+using std::string;
+
 class InvalidFileTest
     : public ::libvpx_test::DecoderTest,
       public ::libvpx_test::CodecTestWithParam<const char*> {
@@ -94,10 +96,10 @@ TEST_P(InvalidFileTest, ReturnCode) {
 }
 
 const char *const kVP9InvalidFileTests[] = {
-  "invalid-vp90-01.webm",
-  "invalid-vp90-02.webm",
+  "invalid-vp90-01-v2.webm",
+  "invalid-vp90-02-v2.webm",
   "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf",
-  "invalid-vp90-03.webm",
+  "invalid-vp90-03-v2.webm",
 };
 
 #define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
@@ -106,5 +108,44 @@ VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
                           ::testing::ValuesIn(kVP9InvalidFileTests,
                                               kVP9InvalidFileTests +
                                               NELEMENTS(kVP9InvalidFileTests)));
+
+void DecodeFile(const string& filename, int num_threads) {
+  libvpx_test::WebMVideoSource video(filename);
+  video.Init();
+
+  vpx_codec_dec_cfg_t cfg = {0};
+  cfg.threads = num_threads;
+  libvpx_test::VP9Decoder decoder(cfg, 0);
+
+  // Construct result file name. The file holds a list of expected integer
+  // results, one for each decoded frame.  Any result that doesn't match
+  // the files list will cause a test failure.
+  const std::string res_filename = filename + ".res";
+  FILE *res_file = libvpx_test::OpenTestDataFile(res_filename);
+  ASSERT_TRUE(res_file != NULL) << "Result file open failed. Filename: "
+      << res_filename;
+
+  for (video.Begin(); video.cxdata(); video.Next()) {
+    vpx_codec_err_t res_dec = decoder.DecodeFrame(video.cxdata(),
+                                              video.frame_size());
+    int expected_res_dec;
+
+    // Read integer result.
+    const int res = fscanf(res_file, "%d", &expected_res_dec);
+    EXPECT_NE(res, EOF) << "Read result data failed";
+
+    // Check results match.
+    EXPECT_EQ(expected_res_dec, res_dec)
+        << "Results don't match: frame number = " << video.frame_number();
+  }
+  return;
+}
+
+// Test multi-thread tile decoding error handling. Decode a video with
+// good key frames and corrupted key frames. Decoder should recover from error
+// after decoding corrupt key frames and be able to decode next good key frame.
+TEST(InvalidFileTest, VP9MultiThreadedTest) {
+  DecodeFile("invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm", 4);
+}
 
 }  // namespace
