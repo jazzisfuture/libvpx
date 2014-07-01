@@ -279,6 +279,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->reuse_inter_pred_sby = 1;
   }
   if (speed >= 7) {
+    sf->mv_search_step_param = 10;
     sf->lpf_pick = LPF_PICK_MINIMAL_LPF;
     sf->encode_breakout_thresh = (MIN(cm->width, cm->height) >= 720) ?
         800 : 300;
@@ -352,7 +353,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->always_this_block_size = BLOCK_16X16;
   sf->search_type_check_frequency = 50;
   sf->encode_breakout_thresh = 0;
-
+  sf->mv_search_step_param = 6;
   // Recode loop tolerence %.
   sf->recode_tolerance = 25;
 

@@ -361,6 +361,9 @@ typedef struct SPEED_FEATURES {
   // This variable sets the encode_breakout threshold. Currently, it is only
   // enabled in real time mode.
   int encode_breakout_thresh;
+
+  // This variable sets the step_param used in full pel motion search.
+  int mv_search_step_param;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
