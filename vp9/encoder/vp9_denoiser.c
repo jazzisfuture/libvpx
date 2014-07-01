@@ -19,6 +19,14 @@
 static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
 #endif
 
+/* The VP9 denoiser is a work-in-progress. It currently is only designed to work
+ * with speed 6, though it (inexplicably) seems to also work with speed 5 (one
+ * would need to modify the source code in vp9_pickmode.c and vp9_encoder.c to
+ * make the calls to the vp9_denoiser_* functions when in speed 5).
+ *
+ * The implementation is very similar to that of the VP8 denoiser.
+ *
+ */
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
 
