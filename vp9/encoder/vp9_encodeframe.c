@@ -2374,9 +2374,24 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
       int i, j;
       for (j = 0; j < MI_BLOCK_SIZE; ++j) {
         for (i = 0; i < MI_BLOCK_SIZE; ++i) {
-          fread(&cm->mi[offset + j * cm->mi_stride + i],
-                1, sizeof(MODE_INFO), pf);
-#if PRINT_MODE_INFO_LOAD
+
+          MODE_INFO *mi = &cm->mi[offset + j * cm->mi_stride + i];
+          int ref_frame = LAST_FRAME;
+          int_mv *const candidates = mi->mbmi.ref_mvs[ref_frame];
+
+          fread(mi, 1, sizeof(MODE_INFO), pf);
+
+          mi->mbmi.mode_context[LAST_FRAME] = 43;
+          // Gets an initial list of candidate vectors from neighbours and orders them
+           vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
+
+           // Candidate refinement carried out at encoder and decoder
+           /*vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
+                                 &frame_nearest_mv[ref_frame],
+                                 &frame_near_mv[ref_frame]);
+          */
+
+          #if PRINT_MODE_INFO_LOAD
           // print out the mode_info loaded in from external file
           print_mode_info(&cm->mi[offset + j * cm->mi_stride + i],
                           mi_row + j, mi_col + i);
