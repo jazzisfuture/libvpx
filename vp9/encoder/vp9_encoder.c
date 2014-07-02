@@ -1329,7 +1329,11 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->use_svc = 0;
 
   init_config(cpi, oxcf);
+#if CONFIG_VP9_HIGH
+  vp9_rc_init(&cpi->oxcf, cpi->pass, &cpi->rc, oxcf->bit_depth);
+#else
   vp9_rc_init(&cpi->oxcf, cpi->pass, &cpi->rc);
+#endif
 
   cm->current_video_frame = 0;
 

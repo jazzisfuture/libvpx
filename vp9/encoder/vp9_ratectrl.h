@@ -95,8 +95,13 @@ typedef struct {
 struct VP9_COMP;
 struct VP9EncoderConfig;
 
+#if CONFIG_VP9_HIGH
+void vp9_rc_init(const struct VP9EncoderConfig *oxcf, int pass,
+                 RATE_CONTROL *rc, vpx_bit_depth_t bit_depth);
+#else
 void vp9_rc_init(const struct VP9EncoderConfig *oxcf, int pass,
                  RATE_CONTROL *rc);
+#endif
 
 double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth);
 
