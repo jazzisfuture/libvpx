@@ -84,7 +84,7 @@ void vp9_rc_init_minq_luts() {
     kf_high_motion_minq[i] = get_minq_index(maxq, 0.000002, -0.0012, 0.50);
     arfgf_low_motion_minq[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30);
     arfgf_high_motion_minq[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.50);
-    inter_minq[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.90);
+    inter_minq[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.75);
     rtc_minq[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70);
   }
 }
@@ -107,8 +107,8 @@ int vp9_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
   return (int)(0.5 + (enumerator * correction_factor / q));
 }
 
-static int estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
-                              double correction_factor) {
+int vp9_estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
+                           double correction_factor) {
   const int bpm = (int)(vp9_rc_bits_per_mb(frame_type, q, correction_factor));
   return ((uint64_t)bpm * mbs) >> BPER_MB_NORMBITS;
 }
@@ -328,9 +328,9 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi, int damp_var) {
   // Work out how big we would have expected the frame to be at this Q given
   // the current correction factor.
   // Stay in double to avoid int overflow when values are large
-  projected_size_based_on_q = estimate_bits_at_q(cm->frame_type,
-                                                 cm->base_qindex, cm->MBs,
-                                                 rate_correction_factor);
+  projected_size_based_on_q = vp9_estimate_bits_at_q(cm->frame_type,
+                                                     cm->base_qindex, cm->MBs,
+                                                     rate_correction_factor);
   // Work out a size correction factor.
   if (projected_size_based_on_q > 0)
     correction_factor = (100 * cpi->rc.projected_frame_size) /
@@ -424,12 +424,12 @@ static int get_active_quality(int q, int gfu_boost, int low, int high,
   }
 }
 
-static int get_kf_active_quality(const RATE_CONTROL *const rc, int q) {
+int vp9_rc_kf_active_quality(const RATE_CONTROL *const rc, int q) {
   return get_active_quality(q, rc->kf_boost, kf_low, kf_high,
                             kf_low_motion_minq, kf_high_motion_minq);
 }
 
-static int get_gf_active_quality(const RATE_CONTROL *const rc, int q) {
+int vp9_rc_gf_active_quality(const RATE_CONTROL *const rc, int q) {
   return get_active_quality(q, rc->gfu_boost, gf_low, gf_high,
                             arfgf_low_motion_minq, arfgf_high_motion_minq);
 }
@@ -534,7 +534,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
       double q_val;
 
       active_best_quality =
-          get_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
+          vp9_rc_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -559,7 +559,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
     } else {
       q = active_worst_quality;
     }
-    active_best_quality = get_gf_active_quality(rc, q);
+    active_best_quality = vp9_rc_gf_active_quality(rc, q);
   } else {
     // Use the lower of active_worst_quality and recent/average Q.
     if (cm->current_video_frame > 1) {
@@ -663,7 +663,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       double q_val;
 
       active_best_quality =
-          get_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
+          vp9_rc_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -692,7 +692,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       if (q < cq_level)
         q = cq_level;
 
-      active_best_quality = get_gf_active_quality(rc, q);
+      active_best_quality = vp9_rc_gf_active_quality(rc, q);
 
       // Constrained quality use slightly lower active best.
       active_best_quality = active_best_quality * 15 / 16;
@@ -701,10 +701,10 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       if (!cpi->refresh_alt_ref_frame) {
         active_best_quality = cq_level;
       } else {
-        active_best_quality = get_gf_active_quality(rc, q);
+        active_best_quality = vp9_rc_gf_active_quality(rc, q);
       }
     } else {
-      active_best_quality = get_gf_active_quality(rc, q);
+      active_best_quality = vp9_rc_gf_active_quality(rc, q);
     }
   } else {
     if (oxcf->rc_mode == VPX_Q) {
@@ -805,7 +805,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       double q_adj_factor = 1.0;
       double q_val;
       // Baseline value derived from cpi->active_worst_quality and kf boost.
-      active_best_quality = get_kf_active_quality(rc, active_worst_quality);
+      active_best_quality = vp9_rc_kf_active_quality(rc, active_worst_quality);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -837,7 +837,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       if (q < cq_level)
         q = cq_level;
 
-      active_best_quality = get_gf_active_quality(rc, q);
+      active_best_quality = vp9_rc_gf_active_quality(rc, q);
 
       // Constrained quality use slightly lower active best.
       active_best_quality = active_best_quality * 15 / 16;
@@ -846,10 +846,10 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       if (!cpi->refresh_alt_ref_frame) {
         active_best_quality = cq_level;
       } else {
-        active_best_quality = get_gf_active_quality(rc, q);
+        active_best_quality = vp9_rc_gf_active_quality(rc, q);
       }
     } else {
-      active_best_quality = get_gf_active_quality(rc, q);
+      active_best_quality = vp9_rc_gf_active_quality(rc, q);
     }
   } else {
     if (oxcf->rc_mode == VPX_Q) {

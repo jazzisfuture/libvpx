@@ -1721,6 +1721,50 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
   }
+
+  // Adjust active_worst_quality to make it possible to code the KF/GF/ARF at
+  // the expected bitrate.
+  {
+    int worst_qindex = twopass->active_worst_quality;
+    double worst_q = vp9_convert_qindex_to_q(worst_qindex);
+    int best_qindex, rate_factor, expected_bits;
+    int max_allowed_bits, min_allowed_bits;
+
+    if (cpi->common.frame_type == KEY_FRAME) {
+      best_qindex = vp9_rc_kf_active_quality(rc, worst_qindex);
+      rate_factor = KF_STD;
+      expected_bits = twopass->gf_group.bit_allocation[0];
+    } else {
+      best_qindex = vp9_rc_gf_active_quality(rc, worst_qindex);
+      rate_factor = GF_ARF_STD;
+      expected_bits = gf_arf_bits;
+    }
+
+    max_allowed_bits =
+        vp9_estimate_bits_at_q(cpi->common.frame_type, best_qindex,
+                               cpi->common.MBs,
+                               rc->rate_correction_factors[rate_factor]);
+    min_allowed_bits =
+        vp9_estimate_bits_at_q(cpi->common.frame_type, worst_qindex,
+                               cpi->common.MBs,
+                               rc->rate_correction_factors[rate_factor]);
+
+    if (1.2 * max_allowed_bits < expected_bits) {
+      twopass->active_worst_quality +=
+          vp9_compute_qdelta(rc, worst_q, worst_q / 1.2);
+      printf("expected_bits: %d >> max_allowed_bits: %d\n",
+             expected_bits, max_allowed_bits);
+      printf("worst_qindex: %d -> %d\n",
+             worst_qindex, twopass->active_worst_quality);
+    } else if (min_allowed_bits > 1.2 * expected_bits) {
+      twopass->active_worst_quality +=
+          vp9_compute_qdelta(rc, worst_q, worst_q * 1.2);
+      printf("expected_bits: %d << min_allowed_bits: %d\n",
+             expected_bits, min_allowed_bits);
+      printf("worst_qindex: %d -> %d\n",
+             worst_qindex, twopass->active_worst_quality);
+    }
+  }
 }
 
 static int test_candidate_kf(TWO_PASS *twopass,
