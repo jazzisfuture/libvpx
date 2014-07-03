@@ -165,9 +165,15 @@ int vp9_rc_pick_q_and_bounds(const struct VP9_COMP *cpi,
 int vp9_rc_regulate_q(const struct VP9_COMP *cpi, int target_bits_per_frame,
                       int active_best_quality, int active_worst_quality);
 
+int vp9_rc_kf_active_quality(const RATE_CONTROL *const rc, int q);
+int vp9_rc_gf_active_quality(const RATE_CONTROL *const rc, int q);
+
 // Estimates bits per mb for a given qindex and correction factor.
 int vp9_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
                        double correction_factor);
+
+int vp9_estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
+                           double correction_factor);
 
 // Clamping utilities for bitrate targets for iframes and pframes.
 int vp9_rc_clamp_iframe_target_size(const struct VP9_COMP *const cpi,
