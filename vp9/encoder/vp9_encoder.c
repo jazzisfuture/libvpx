@@ -51,6 +51,9 @@
 
 void vp9_coef_tree_initialize();
 
+static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                                YV12_BUFFER_CONFIG *dst);
+
 #define DEFAULT_INTERP_FILTER SWITCHABLE
 
 #define SHARP_FILTER_QTHRESH 0          /* Q threshold for 8-tap sharp filter */
@@ -542,7 +545,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == VPX_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 &&
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc &&
       cpi->oxcf.mode == TWO_PASS_SECOND_BEST)) {
     vp9_init_layer_context(cpi);
   }
@@ -659,7 +662,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == VPX_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2)) {
     vp9_update_layer_context_change_config(cpi,
                                            (int)cpi->oxcf.target_bandwidth);
   }
@@ -902,7 +905,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
     const size_t packet_sz = sizeof(FIRSTPASS_STATS);
     const int packets = (int)(oxcf->two_pass_stats_in.sz / packet_sz);
 
-    if (cpi->svc.number_spatial_layers > 1
+    if (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc
         && cpi->svc.number_temporal_layers == 1) {
       FIRSTPASS_STATS *const stats = oxcf->two_pass_stats_in.buf;
       FIRSTPASS_STATS *stats_copy[VPX_SS_MAX_LAYERS] = {0};
@@ -1242,7 +1245,51 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
   struct vpx_codec_cx_pkt pkt;
   int i;
   PSNR_STATS psnr;
-  calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
+  int viewport_id = -1;
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+      (viewport_id = cpi->oxcf.ss_viewport_id[cpi->svc.spatial_layer_id]) >=0) {
+    int w = 1920, h = 1080;
+    VP9_COMMON *cm = &cpi->common;
+    YV12_BUFFER_CONFIG src = {0};
+    YV12_BUFFER_CONFIG ref = {0};
+
+    switch (viewport_id) {
+      case 0:
+        w = 426;
+        break;
+      case 1:
+        w = 640;
+        break;
+      case 2:
+        w = 854;
+        break;
+      case 3:
+        w = 1280;
+        break;
+      case 4:
+        w = 1920;
+        break;
+    }
+
+    h = (int)(w * 1080.0 /1920 + 0.5);
+
+    vp9_realloc_frame_buffer(&src,
+                             w, h,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+    vp9_realloc_frame_buffer(&ref,
+                             w, h,
+                             cm->subsampling_x, cm->subsampling_y,
+                             VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+    scale_and_extend_frame_nonnormative(cpi->un_scaled_source, &src);
+    scale_and_extend_frame_nonnormative(cpi->common.frame_to_show, &ref);
+    calc_psnr(&src, &ref, &psnr);
+    vp9_free_frame_buffer(&src);
+    vp9_free_frame_buffer(&ref);
+  }
+  else
+    calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
+
   for (i = 0; i < 4; ++i) {
     pkt.data.psnr.samples[i] = psnr.samples[i];
     pkt.data.psnr.sse[i] = psnr.sse[i];
@@ -2056,8 +2103,10 @@ static void configure_skippable_frame(VP9_COMP *cpi) {
   // according to the variance
 
   SVC *const svc = &cpi->svc;
-  const int is_spatial_svc = (svc->number_spatial_layers > 1) &&
-                             (svc->number_temporal_layers == 1);
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1) &&
+                             (cpi->svc.number_spatial_layers >= 1 &&
+                              cpi->oxcf.use_svc);
   TWO_PASS *const twopass = is_spatial_svc ?
                             &svc->layer_context[svc->spatial_layer_id].twopass
                             : &cpi->twopass;
@@ -2548,12 +2597,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   int arf_src_index;
   const int is_spatial_svc = cpi->use_svc &&
                              (cpi->svc.number_temporal_layers == 1) &&
-                             (cpi->svc.number_spatial_layers > 1);
+                             (cpi->svc.number_spatial_layers >= 1 &&
+                              cpi->oxcf.use_svc);
 
   if (!cpi)
     return -1;
 
-  if (is_spatial_svc && cpi->pass == 2) {
+  if (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2) {
     vp9_svc_lookahead_peek(cpi, cpi->lookahead, 0, 1);
     vp9_restore_layer_context(cpi);
   }
@@ -2782,7 +2832,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Save layer specific state.
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == VPX_CBR) ||
-      (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2)) {
+      (cpi->svc.number_spatial_layers >= 1 && cpi->oxcf.use_svc && cpi->pass == 2)) {
     vp9_save_layer_context(cpi);
   }
 

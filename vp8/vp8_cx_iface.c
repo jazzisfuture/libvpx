@@ -1318,6 +1318,7 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
 #ifdef CONFIG_SPATIAL_SVC
         {0},
 #endif
+        0,{-1, -1, -1, -1, -1},
         {0},                /* ss_target_bitrate */
         1,                  /* ts_number_layers */
         {0},                /* ts_target_bitrate */
