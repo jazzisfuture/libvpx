@@ -142,29 +142,29 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     const int aligned_width = (width + 7) & ~7;
     const int aligned_height = (height + 7) & ~7;
     const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
-    const int yplane_size = (aligned_height + 2 * border) * y_stride;
+    const int64_t yplane_size = (aligned_height + 2 * border) * y_stride;
     const int uv_width = aligned_width >> ss_x;
     const int uv_height = aligned_height >> ss_y;
     const int uv_stride = y_stride >> ss_x;
     const int uv_border_w = border >> ss_x;
     const int uv_border_h = border >> ss_y;
-    const int uvplane_size = (uv_height + 2 * uv_border_h) * uv_stride;
+    const int64_t uvplane_size = (uv_height + 2 * uv_border_h) * uv_stride;
 #if CONFIG_ALPHA
     const int alpha_width = aligned_width;
     const int alpha_height = aligned_height;
     const int alpha_stride = y_stride;
     const int alpha_border_w = border;
     const int alpha_border_h = border;
-    const int alpha_plane_size = (alpha_height + 2 * alpha_border_h) *
-                                 alpha_stride;
-    const int frame_size = yplane_size + 2 * uvplane_size +
-                           alpha_plane_size;
+    const int64_t alpha_plane_size = (alpha_height + 2 * alpha_border_h) *
+                                     alpha_stride;
+    const int64_t frame_size = yplane_size + 2 * uvplane_size +
+                               alpha_plane_size;
 #else
-    const int frame_size = yplane_size + 2 * uvplane_size;
+    const int64_t frame_size = yplane_size + 2 * uvplane_size;
 #endif
     if (cb != NULL) {
       const int align_addr_extra_size = 31;
-      const size_t external_frame_size = frame_size + align_addr_extra_size;
+      const int64_t external_frame_size = frame_size + align_addr_extra_size;
 
       assert(fb != NULL);
 
@@ -173,6 +173,9 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
         return -1;
 
       if (fb->data == NULL || fb->size < external_frame_size)
+        return -1;
+
+      if (fb->size != (size_t)fb->size)
         return -1;
 
       // This memset is needed for fixing valgrind error from C loop filter
@@ -184,6 +187,10 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     } else if (frame_size > ybf->buffer_alloc_sz) {
       // Allocation to hold larger frame, or first allocation.
       vpx_free(ybf->buffer_alloc);
+
+      if (frame_size != (size_t)frame_size)
+        return -1;
+
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
       if (!ybf->buffer_alloc)
         return -1;
