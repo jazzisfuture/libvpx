@@ -61,7 +61,11 @@ static const vp9_prob cat6_prob[15] = {
 };
 
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT
-static const vp9_prob cat6_prob_high[19] = {
+static const vp9_prob cat6_prob_high10[17] = {
+  254, 254, 254, 254, 254, 252, 249,
+  243, 230, 196, 177, 153, 140, 133, 130, 129, 0
+};
+static const vp9_prob cat6_prob_high12[19] = {
   254, 254, 254, 254, 254, 254, 254, 252, 249,
   243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
@@ -115,7 +119,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
 
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT
   if (cm->use_high)
-    cat6_ptr = cat6_prob_high;
+    cat6_ptr = (cm->bit_depth == VPX_BITS_10 ?
+                cat6_prob_high10 : cat6_prob_high12);
   else
     cat6_ptr = cat6_prob;
 #else
