@@ -15,6 +15,34 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx/vpx_integer.h"
 
+const vp9_prob vp9_cat1_prob[] = { 159};
+const vp9_prob vp9_cat2_prob[] = { 165, 145};
+const vp9_prob vp9_cat3_prob[] = { 173, 148, 140};
+const vp9_prob vp9_cat4_prob[] = { 176, 155, 140, 135};
+const vp9_prob vp9_cat5_prob[] = { 180, 157, 141, 134, 130};
+const vp9_prob vp9_cat6_prob[] = {
+  254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
+};
+#if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT
+const vp9_prob vp9_cat1_prob_high10[] = { 149};
+const vp9_prob vp9_cat2_prob_high10[] = { 155, 135};
+const vp9_prob vp9_cat3_prob_high10[] = { 163, 140, 134};
+const vp9_prob vp9_cat4_prob_high10[] = { 166, 146, 133, 130};
+const vp9_prob vp9_cat5_prob_high10[] = { 170, 149, 136, 130, 129};
+const vp9_prob vp9_cat6_prob_high10[] = {
+  255, 255, 255, 254, 252, 249, 243, 230, 196,
+  177, 153, 140, 133, 130, 129, 128, 0
+};
+const vp9_prob vp9_cat1_prob_high12[] = { 149};
+const vp9_prob vp9_cat2_prob_high12[] = { 155, 135};
+const vp9_prob vp9_cat3_prob_high12[] = { 163, 140, 134};
+const vp9_prob vp9_cat4_prob_high12[] = { 166, 146, 133, 130};
+const vp9_prob vp9_cat5_prob_high12[] = { 170, 149, 136, 130, 129};
+const vp9_prob vp9_cat6_prob_high12[] = {
+  255, 255, 255, 255, 254, 252, 249, 243, 230, 196, 177,
+  153, 140, 133, 130, 129, 128, 128, 0
+};
+#endif
 
 const uint8_t vp9_coefband_trans_8x8plus[1024] = {
   0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
