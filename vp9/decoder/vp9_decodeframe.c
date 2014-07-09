@@ -350,6 +350,13 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
   vp9_read_mode_info(cm, xd, tile, mi_row, mi_col, r);
 
+  {
+    FILE *pf = fopen("dec_mode.txt", "a+");
+    fprintf(pf, "pos (%d, %d), bsize %d, mode %d, range %d\n",
+            mi_row, mi_col, mbmi->sb_type, mbmi->mode, r->range);
+    fclose(pf);
+  }
+
   if (less8x8)
     bsize = BLOCK_8X8;
 
