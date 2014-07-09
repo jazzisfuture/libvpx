@@ -65,10 +65,18 @@ class InvalidFileTest
 };
 
 TEST_P(InvalidFileTest, ReturnCode) {
-  const std::string filename = GET_PARAM(1);
+  const std::string res_filename = GET_PARAM(1);
   libvpx_test::CompressedVideoSource *video = NULL;
 
-  // Open compressed video file.
+  // We pass in the result file name and then remove everything after the last
+  // period to determine the filename.
+  const std::string filename =
+      res_filename.substr(0, res_filename.find_last_of('.'));
+
+  // Open the result file, given by the parm.
+  OpenResFile(res_filename);
+
+  // Construct the appropriate video file source.
   if (filename.substr(filename.length() - 3, 3) == "ivf") {
     video = new libvpx_test::IVFVideoSource(filename);
   } else if (filename.substr(filename.length() - 4, 4) == "webm") {
@@ -82,11 +90,6 @@ TEST_P(InvalidFileTest, ReturnCode) {
   }
   video->Init();
 
-  // Construct result file name. The file holds a list of expected integer
-  // results, one for each decoded frame.  Any result that doesn't match
-  // the files list will cause a test failure.
-  const std::string res_filename = filename + ".res";
-  OpenResFile(res_filename);
 
   // Decode frame, and check the md5 matching.
   ASSERT_NO_FATAL_FAILURE(RunLoop(video));
@@ -94,19 +97,23 @@ TEST_P(InvalidFileTest, ReturnCode) {
 }
 
 const char *const kVP9InvalidFileTests[] = {
-  "invalid-vp90-01.webm",
-  "invalid-vp90-02.webm",
-  "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf",
-  "invalid-vp90-03.webm",
-  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf",
-  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf",
+  "invalid-vp90-01.webm.res",
+  "invalid-vp90-02.webm.res",
+  "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf.res",
+  "invalid-vp90-03.webm.res",
+  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf.res",
+  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf.res",
+#if ARCH_X86_64 || ARCH_PPC64
+  "invalid-vp90-2-00-quantizer-16.webm.ivf.s22671_r01-05_b6-.ivf.64_res",
+#else
+  "invalid-vp90-2-00-quantizer-16.webm.ivf.s22671_r01-05_b6-.ivf.32_res",
+#endif
 };
 
-#define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
 
+#define NELEMENTS(x) static_cast<int>(sizeof(x) / sizeof(x[0]))
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
                           ::testing::ValuesIn(kVP9InvalidFileTests,
                                               kVP9InvalidFileTests +
                                               NELEMENTS(kVP9InvalidFileTests)));
-
 }  // namespace
