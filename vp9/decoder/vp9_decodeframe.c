@@ -621,25 +621,34 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
 }
 
 static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
+  const int ss_x = cm->subsampling_x;
+  const int ss_y = cm->subsampling_y;
   if (cm->width != width || cm->height != height) {
-    // Change in frame size.
-    // TODO(agrange) Don't test width/height, check overall size.
-    if (width > cm->width || height > cm->height) {
-      // Rescale frame buffers only if they're not big enough already.
-      if (vp9_resize_frame_buffers(cm, width, height))
+    // Change in frame size (assumption that color format does not change).
+    if (cm->width == 0 || cm->height == 0 ||
+        width * height > cm->width * cm->height) {
+      if (vp9_realloc_context_buffers(cm, width, height))
         vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate frame buffers");
+    } else {
+      vp9_set_mb_mi(cm, width, height);
     }
-
     cm->width = width;
     cm->height = height;
+    vp9_init_context_buffers(cm);
 
-    vp9_update_frame_size(cm);
+#if CONFIG_INTERNAL_STATS || CONFIG_VP9_POSTPROC
+    // TODO(agrange): this should be conditionally allocated.
+    if (vp9_realloc_frame_buffer(&cm->post_proc_buffer, width, height,
+                                 ss_x, ss_y, VP9_DEC_BORDER_IN_PIXELS,
+                                 NULL, NULL, NULL) < 0)
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate post-processing buffer");
+#endif
   }
-
   if (vp9_realloc_frame_buffer(
-          get_frame_new_buffer(cm), cm->width, cm->height,
-          cm->subsampling_x, cm->subsampling_y, VP9_DEC_BORDER_IN_PIXELS,
+          get_frame_new_buffer(cm), cm->width, cm->height, ss_x, ss_y,
+          VP9_DEC_BORDER_IN_PIXELS,
           &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer, cm->get_fb_cb,
           cm->cb_priv)) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
