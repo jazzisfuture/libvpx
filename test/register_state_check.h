@@ -14,6 +14,19 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_config.h"
 
+// REGISTER_STATE_CHECK(asm_function)
+//   Minimally validates the environment pre & post function execution. This
+//   variant should be used with assembly functions which are not expected to
+//   fully restore the system state. See platform implementations of
+//   RegisterStateCheck for.
+//
+// REGISTER_STATE_CHECK2(api_function)
+//   Performs all the checks done by REGISTER_STATE_CHECK() and any additional
+//   checks to ensure the environment is in a consistent state pre and post
+//   function call. This variant should be used with API functions. See
+//   platform implementations of RegisterStateCheckXXX for details.
+//
+
 #if defined(_WIN64)
 
 #define _WIN32_LEAN_AND_MEAN
@@ -35,11 +48,6 @@ namespace libvpx_test {
 // Compares the state of xmm[6-15] at construction with their state at
 // destruction. These registers should be preserved by the callee on
 // Windows x64.
-// Usage:
-// {
-//   RegisterStateCheck reg_check;
-//   FunctionToVerify();
-// }
 class RegisterStateCheck {
  public:
   RegisterStateCheck() { initialized_ = StoreRegisters(&pre_context_); }
@@ -97,11 +105,6 @@ namespace libvpx_test {
 // Compares the state of d8-d15 at construction with their state at
 // destruction. These registers should be preserved by the callee on
 // arm platform.
-// Usage:
-// {
-//   RegisterStateCheck reg_check;
-//   FunctionToVerify();
-// }
 class RegisterStateCheck {
  public:
   RegisterStateCheck() { initialized_ = StoreRegisters(pre_store_); }
@@ -146,5 +149,51 @@ class RegisterStateCheck {};
 }  // namespace libvpx_test
 
 #endif  // _WIN64
+
+#if ARCH_X86 || ARCH_X86_64
+#if defined(__GNUC__)
+
+#include "vpx/vpx_integer.h"
+
+namespace libvpx_test {
+
+// Checks the FPU tag word pre/post execution to ensure emms has been called.
+class RegisterStateCheckMMX {
+ public:
+  RegisterStateCheckMMX() {
+    __asm__ volatile("fstenv %0" : "=rm"(pre_fpu_env_));
+  }
+  ~RegisterStateCheckMMX() { EXPECT_TRUE(Check()); }
+
+ private:
+  // Checks the FPU tag word pre/post execution, returning false if not cleared
+  // to 0xffff.
+  bool Check() const {
+    EXPECT_EQ(0xffff, pre_fpu_env_[4])
+        << "FPU was in an inconsistent state prior to call";
+
+    uint16_t post_fpu_env[14];
+    __asm__ volatile("fstenv %0" : "=rm"(post_fpu_env));
+    EXPECT_EQ(0xffff, post_fpu_env[4])
+        << "FPU was left in an inconsistent state after call";
+    return !testing::Test::HasNonfatalFailure();
+  }
+
+  uint16_t pre_fpu_env_[14];
+};
+
+#define REGISTER_STATE_CHECK2(statement) do {    \
+  libvpx_test::RegisterStateCheckMMX reg_check;  \
+  REGISTER_STATE_CHECK(statement);               \
+} while (false)
+
+}  // namespace libvpx_test
+
+#endif  // __GNUC__
+#endif  // ARCH_X86 || ARCH_X86_64
+
+#ifndef REGISTER_STATE_CHECK2
+#define REGISTER_STATE_CHECK2 REGISTER_STATE_CHECK
+#endif
 
 #endif  // TEST_REGISTER_STATE_CHECK_H_
