@@ -294,51 +294,6 @@ generate_vcproj() {
 
         case "$target" in
             x86*)
-                case "$name" in
-                    obj_int_extract)
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            Optimization="0" \
-                            AdditionalIncludeDirectories="$incs" \
-                            PreprocessorDefinitions="WIN32;DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE" \
-                            RuntimeLibrary="$debug_runtime" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="1" \
-                            $warn_64bit \
-                    ;;
-                    vpx)
-                        tag Tool \
-                            Name="VCPreBuildEventTool" \
-                            CommandLine="call obj_int_extract.bat &quot;$src_path_bare&quot; $plat_no_ws\\\$(ConfigurationName)" \
-
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            Optimization="0" \
-                            AdditionalIncludeDirectories="$incs" \
-                            PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;$defines" \
-                            RuntimeLibrary="$debug_runtime" \
-                            UsePrecompiledHeader="0" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="2" \
-                            $warn_64bit \
-
-                        $uses_asm && tag Tool Name="YASM"  IncludePaths="$incs" Debug="true"
-                    ;;
-                    *)
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            Optimization="0" \
-                            AdditionalIncludeDirectories="$incs" \
-                            PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;$defines" \
-                            RuntimeLibrary="$debug_runtime" \
-                            UsePrecompiledHeader="0" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="2" \
-                            $warn_64bit \
-
-                        $uses_asm && tag Tool Name="YASM"  IncludePaths="$incs" Debug="true"
-                    ;;
-                esac
             ;;
         esac
 
@@ -346,21 +301,6 @@ generate_vcproj() {
             exe)
                 case "$target" in
                     x86*)
-                        case "$name" in
-                            obj_int_extract)
-                                tag Tool \
-                                    Name="VCLinkerTool" \
-                                    GenerateDebugInformation="true" \
-                            ;;
-                            *)
-                                tag Tool \
-                                    Name="VCLinkerTool" \
-                                    AdditionalDependencies="$debug_libs \$(NoInherit)" \
-                                    AdditionalLibraryDirectories="$libdirs" \
-                                    GenerateDebugInformation="true" \
-                                    ProgramDatabaseFile="\$(OutDir)/${name}.pdb" \
-                            ;;
-                        esac
                     ;;
                  esac
             ;;
@@ -399,55 +339,6 @@ generate_vcproj() {
 
         case "$target" in
             x86*)
-                case "$name" in
-                    obj_int_extract)
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            Optimization="2" \
-                            FavorSizeorSpeed="1" \
-                            AdditionalIncludeDirectories="$incs" \
-                            PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE" \
-                            RuntimeLibrary="$release_runtime" \
-                            UsePrecompiledHeader="0" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="0" \
-                            $warn_64bit \
-                    ;;
-                    vpx)
-                        tag Tool \
-                            Name="VCPreBuildEventTool" \
-                            CommandLine="call obj_int_extract.bat &quot;$src_path_bare&quot; $plat_no_ws\\\$(ConfigurationName)" \
-
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            Optimization="2" \
-                            FavorSizeorSpeed="1" \
-                            AdditionalIncludeDirectories="$incs" \
-                            PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;$defines" \
-                            RuntimeLibrary="$release_runtime" \
-                            UsePrecompiledHeader="0" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="0" \
-                            $warn_64bit \
-
-                        $uses_asm && tag Tool Name="YASM"  IncludePaths="$incs"
-                    ;;
-                    *)
-                        tag Tool \
-                            Name="VCCLCompilerTool" \
-                            AdditionalIncludeDirectories="$incs" \
-                            Optimization="2" \
-                            FavorSizeorSpeed="1" \
-                            PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;$defines" \
-                            RuntimeLibrary="$release_runtime" \
-                            UsePrecompiledHeader="0" \
-                            WarningLevel="3" \
-                            DebugInformationFormat="0" \
-                            $warn_64bit \
-
-                        $uses_asm && tag Tool Name="YASM"  IncludePaths="$incs"
-                    ;;
-                esac
             ;;
         esac
 
@@ -455,20 +346,6 @@ generate_vcproj() {
             exe)
                 case "$target" in
                     x86*)
-                        case "$name" in
-                            obj_int_extract)
-                                tag Tool \
-                                    Name="VCLinkerTool" \
-                                    GenerateDebugInformation="true" \
-                            ;;
-                            *)
-                                tag Tool \
-                                    Name="VCLinkerTool" \
-                                    AdditionalDependencies="$libs \$(NoInherit)" \
-                                    AdditionalLibraryDirectories="$libdirs" \
-
-                            ;;
-                        esac
                     ;;
                  esac
             ;;
