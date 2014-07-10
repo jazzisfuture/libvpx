@@ -16,6 +16,7 @@ VPX_TEST_TOOLS_COMMON_SH=included
 
 set -e
 devnull='> /dev/null 2>&1'
+VPX_TEST_PREFIX=""
 
 elog() {
   echo "$@" 1>&2
@@ -204,9 +205,12 @@ vpxdec() {
   local decoder="${LIBVPX_BIN_PATH}/vpxdec${VPX_TEST_EXE_SUFFIX}"
 
   if [ -z "${pipe_input}" ]; then
-    eval "${decoder}" "$input" --summary --noblit "$@" ${devnull}
+    eval "${VPX_TEST_PREFIX}" "${decoder}" "$input" --summary --noblit "$@" \
+        ${devnull}
   else
-    cat "${input}" | eval "${decoder}" - --summary --noblit "$@" ${devnull}
+    cat "${input}" \
+        | eval "${VPX_TEST_PREFIX}" "${decoder}" - --summary --noblit "$@" \
+            ${devnull}
   fi
 }
 
@@ -252,16 +256,14 @@ vpxenc() {
   fi
 
   if [ -z "${pipe_input}" ]; then
-    eval "${encoder}" --codec=${codec} --width=${width} --height=${height} \
-        --limit=${frames} ${use_ivf} ${extra_flags} --output="${output}" \
-        "${input}" \
-        ${devnull}
+    eval "${VPX_TEST_PREFIX}" "${encoder}" --codec=${codec} --width=${width} \
+        --height=${height} --limit=${frames} ${use_ivf} ${extra_flags} \
+        --output="${output}" "${input}" ${devnull}
   else
     cat "${input}" \
-        | eval "${encoder}" --codec=${codec} --width=${width} \
-              --height=${height} --limit=${frames} ${use_ivf} ${extra_flags} \
-              --output="${output}" - \
-              ${devnull}
+        | eval "${VPX_TEST_PREFIX}" "${encoder}" --codec=${codec} \
+            --width=${width} --height=${height} --limit=${frames} ${use_ivf} \
+            ${extra_flags} --output="${output}" - ${devnull}
   fi
 
   if [ ! -e "${output}" ]; then
@@ -351,6 +353,13 @@ cat << EOF
     --help: Display this message and exit.
     --test-data-path <path to libvpx test data directory>
     --show-program-output: Shows output from all programs being tested.
+    --valgrind: Runs test programs within valgrind.
+                Use the environment variable VPX_TEST_VALGRIND to control
+                valgrind parameters.
+                Requirements:
+                  1) VPX_TEST_VALGRIND must be a string that ends with '--'.
+                  2) Valgrind's --error-exitcode parameter to must be non-zero
+                     for valgrind errors to cause test failure.
     --verbose: Verbose output.
 
     When the --bin-path option is not specified the script attempts to use
@@ -399,6 +408,9 @@ while [ -n "$1" ]; do
     --test-data-path)
       LIBVPX_TEST_DATA_PATH="$2"
       shift
+      ;;
+    --valgrind)
+      VPX_TEST_PREFIX="${VPX_TEST_VALGRIND:-valgrind --error-exitcode=1 --}"
       ;;
     --verbose)
       VPX_TEST_VERBOSE_OUTPUT=yes
@@ -466,6 +478,7 @@ vlog "$(basename "${0%.*}") test configuration:
   VPX_TEST_EXE_SUFFIX=${VPX_TEST_EXE_SUFFIX}
   VPX_TEST_FILTER=${VPX_TEST_FILTER}
   VPX_TEST_OUTPUT_DIR=${VPX_TEST_OUTPUT_DIR}
+  VPX_TEST_PREFIX=${VPX_TEST_PREFIX}
   VPX_TEST_RAND=${VPX_TEST_RAND}
   VPX_TEST_RUN_DISABLED_TESTS=${VPX_TEST_RUN_DISABLED_TESTS}
   VPX_TEST_SHOW_PROGRAM_OUTPUT=${VPX_TEST_SHOW_PROGRAM_OUTPUT}

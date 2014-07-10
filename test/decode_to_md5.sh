@@ -39,7 +39,10 @@ decode_to_md5() {
     return 1
   fi
 
-  eval "${decoder}" "${input_file}" "${output_file}" ${devnull}
+  eval "${VPX_TEST_PREFIX}" "${decoder}" "${input_file}" "${output_file}" \
+      ${devnull}
+
+  echo "decode_to_md5(possibly wrapped) result: $?"
 
   [ -e "${output_file}" ] || return 1
 
