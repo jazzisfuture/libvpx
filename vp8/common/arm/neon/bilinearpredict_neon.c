@@ -103,8 +103,8 @@ void vp8_bilinear_predict4x4_neon(
         dst_ptr += dst_pitch;
         vst1_lane_u32((uint32_t *)dst_ptr, vreinterpret_u32_u8(d29u8), 1);
     } else {
-        d0u8 = vdup_n_u8(bifilter4_coeff[yoffset][0]);
-        d1u8 = vdup_n_u8(bifilter4_coeff[yoffset][1]);
+        d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][0]);
+        d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][1]);
 
         q1u16 = vmull_u8(d28u8, d0u8);
         q2u16 = vmull_u8(d29u8, d0u8);
@@ -190,8 +190,8 @@ void vp8_bilinear_predict8x4_neon(
         vst1_u8((uint8_t *)dst_ptr, d24u8); dst_ptr += dst_pitch;
         vst1_u8((uint8_t *)dst_ptr, d25u8);
     } else {
-        d0u8 = vdup_n_u8(bifilter4_coeff[yoffset][0]);
-        d1u8 = vdup_n_u8(bifilter4_coeff[yoffset][1]);
+        d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][0]);
+        d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][1]);
 
         q1u16 = vmull_u8(d22u8, d0u8);
         q2u16 = vmull_u8(d23u8, d0u8);
@@ -311,8 +311,8 @@ void vp8_bilinear_predict8x8_neon(
         vst1_u8((uint8_t *)dst_ptr, d28u8); dst_ptr += dst_pitch;
         vst1_u8((uint8_t *)dst_ptr, d29u8);
     } else {
-        d0u8 = vdup_n_u8(bifilter4_coeff[yoffset][0]);
-        d1u8 = vdup_n_u8(bifilter4_coeff[yoffset][1]);
+        d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][0]);
+        d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][1]);
 
         q1u16 = vmull_u8(d22u8, d0u8);
         q2u16 = vmull_u8(d23u8, d0u8);
@@ -372,8 +372,8 @@ void vp8_bilinear_predict16x16_neon(
     uint16x8_t q9u16, q10u16, q11u16, q12u16, q13u16, q14u16;
 
     if (xoffset == 0) {  // secondpass_bfilter16x16_only
-        d0u8 = vdup_n_u8(bifilter4_coeff[yoffset][0]);
-        d1u8 = vdup_n_u8(bifilter4_coeff[yoffset][1]);
+        d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][0]);
+        d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][1]);
 
         q11u8 = vld1q_u8(src_ptr);
         src_ptr += src_pixels_per_line;
@@ -426,8 +426,8 @@ void vp8_bilinear_predict16x16_neon(
     }
 
     if (yoffset == 0) {  // firstpass_bfilter16x16_only
-        d0u8 = vdup_n_u8(bifilter4_coeff[xoffset][0]);
-        d1u8 = vdup_n_u8(bifilter4_coeff[xoffset][1]);
+        d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[xoffset][0]);
+        d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[xoffset][1]);
 
         for (i = 4; i > 0 ; i--) {
             d2u8 = vld1_u8(src_ptr);
@@ -494,8 +494,8 @@ void vp8_bilinear_predict16x16_neon(
         return;
     }
 
-    d0u8 = vdup_n_u8(bifilter4_coeff[xoffset][0]);
-    d1u8 = vdup_n_u8(bifilter4_coeff[xoffset][1]);
+    d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[xoffset][0]);
+    d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[xoffset][1]);
 
     d2u8 = vld1_u8(src_ptr);
     d3u8 = vld1_u8(src_ptr + 8);
@@ -644,8 +644,8 @@ void vp8_bilinear_predict16x16_neon(
     vst1q_u8((uint8_t *)tmpp, q9u8);
 
     // secondpass_filter
-    d0u8 = vdup_n_u8(bifilter4_coeff[yoffset][0]);
-    d1u8 = vdup_n_u8(bifilter4_coeff[yoffset][1]);
+    d0u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][0]);
+    d1u8 = vdup_n_u8((uint8_t)bifilter4_coeff[yoffset][1]);
 
     tmpp = tmp;
     q11u8 = vld1q_u8(tmpp);
