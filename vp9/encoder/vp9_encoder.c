@@ -2108,7 +2108,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         // Allow mv_steps to correspond to twice the max mv magnitude found
         // in the previous frame, capped by the default max_mv_magnitude based
         // on resolution.
-        cpi->mv_step_param = vp9_init_search_range(sf, MIN(max_mv_def, 2 *
+        cpi->mv_step_param = vp9_init_search_range(MIN(max_mv_def, 2 *
                                  cpi->max_mv_magnitude));
       cpi->max_mv_magnitude = 0;
     }
