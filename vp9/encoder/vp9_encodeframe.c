@@ -2393,7 +2393,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
   for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
        mi_col += MI_BLOCK_SIZE) {
 #if CONFIG_TRANSCODE
-    if (cm->frame_type == KEY_FRAME) {
+    if (cm->frame_type == KEY_FRAME && 0) {
       int dummy_rate;
       int64_t dummy_dist;
       rd_pick_partition(cpi, tile, tp, mi_row, mi_col, BLOCK_64X64,
@@ -3508,6 +3508,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       vp9_setup_pre_planes(xd, ref, cfg, mi_row, mi_col,
                            &xd->block_refs[ref]->sf);
     }
+
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
 
     if (!x->skip) {
