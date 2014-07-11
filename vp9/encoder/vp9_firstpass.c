@@ -106,34 +106,6 @@ static int read_frame_stats(const TWO_PASS *p,
   return 1;
 }
 
-#if CONFIG_FP_MB_STATS
-static int input_mb_stats(FIRSTPASS_FRAME_MB_STATS *fp_frame_stats,
-                          const VP9_COMMON *const cm) {
-  FILE *fpfile;
-  int ret;
-
-  fpfile = fopen("firstpass_mb.stt", "r");
-  fseek(fpfile, cm->current_video_frame * cm->MBs * sizeof(FIRSTPASS_MB_STATS),
-        SEEK_SET);
-  ret = fread(fp_frame_stats->mb_stats, sizeof(FIRSTPASS_MB_STATS), cm->MBs,
-              fpfile);
-  fclose(fpfile);
-  if (ret < cm->MBs) {
-    return EOF;
-  }
-  return 1;
-}
-
-static void output_mb_stats(FIRSTPASS_FRAME_MB_STATS *fp_frame_stats,
-                          const VP9_COMMON *const cm) {
-  FILE *fpfile;
-
-  fpfile = fopen("firstpass_mb.stt", "a");
-  fwrite(fp_frame_stats->mb_stats, sizeof(FIRSTPASS_MB_STATS), cm->MBs, fpfile);
-  fclose(fpfile);
-}
-#endif
-
 static int input_stats(TWO_PASS *p, FIRSTPASS_STATS *fps) {
   if (p->stats_in >= p->stats_in_end)
     return EOF;
@@ -182,6 +154,29 @@ static void output_stats(FIRSTPASS_STATS *stats,
   }
 #endif
 }
+
+#if CONFIG_FP_MB_STATS
+static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
+                            VP9_COMMON *cm, uint8_t **this_frame_mb_stats) {
+  if (firstpass_mb_stats->mb_stats_in > firstpass_mb_stats->mb_stats_end)
+    return EOF;
+
+  *this_frame_mb_stats = firstpass_mb_stats->mb_stats_in;
+  firstpass_mb_stats->mb_stats_in += cm->MBs * sizeof(uint8_t);
+  return 1;
+}
+
+static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
+                         struct vpx_codec_pkt_list *pktlist) {
+//  fprintf(stdout, "output_fpmb_stats\n");
+  struct vpx_codec_cx_pkt pkt;
+  pkt.kind = VPX_CODEC_FPMB_STATS_PKT;
+  pkt.data.firstpass_mb_stats.buf = this_frame_mb_stats;
+//  fprintf(stdout, "-------- pkt.data.firstpass_mb_stats.buf = %d\n", pkt.data.firstpass_mb_stats.buf);
+  pkt.data.firstpass_mb_stats.sz = cm->MBs * sizeof(uint8_t);
+  vpx_codec_pkt_list_add(pktlist, &pkt);
+}
+#endif
 
 static void zero_stats(FIRSTPASS_STATS *section) {
   section->frame      = 0.0;
@@ -481,7 +476,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
 
 #if CONFIG_FP_MB_STATS
-  FIRSTPASS_FRAME_MB_STATS *this_frame_mb_stats = &twopass->this_frame_mb_stats;
+  if (cpi->use_fp_mb_stats) {
+    vp9_zero_array(cpi->twopass.this_frame_mb_stats, cm->MBs);
+  }
 #endif
 
   vp9_clear_system_state();
@@ -613,12 +610,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
       if (cpi->use_fp_mb_stats) {
-        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mode =
-            DC_PRED;
-        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].err =
-            this_error;
-        this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mv.as_int
-            = 0;
+        twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = cm->current_video_frame;
       }
 #endif
 
@@ -749,12 +741,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
           if (cpi->use_fp_mb_stats) {
-            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mode =
-                NEWMV;
-            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].err =
-                motion_error;
-            this_frame_mb_stats->mb_stats[mb_row * cm->mb_cols + mb_col].mv.
-                as_int = mv.as_int;
+            twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = cm->current_video_frame;
+//            fprintf(stdout, "mb_stats[] = %d\n",
+//                    twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col]);
           }
 #endif
 
@@ -797,6 +786,14 @@ void vp9_first_pass(VP9_COMP *cpi) {
         sr_coded_error += (int64_t)this_error;
       }
       coded_error += (int64_t)this_error;
+
+#if CONFIG_FP_MB_STATS
+      if (cpi->use_fp_mb_stats) {
+        if (cm->current_video_frame == 1) {
+          twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 255;
+        }
+      }
+#endif
 
       // Adjust to the next column of MBs.
       x->plane[0].src.buf += 16;
@@ -863,9 +860,12 @@ void vp9_first_pass(VP9_COMP *cpi) {
     output_stats(&twopass->this_frame_stats, cpi->output_pkt_list);
     accumulate_stats(&twopass->total_stats, &fps);
 
+//    fprintf(stdout, "inter = %f, motion = %f, new_mv = %f\n",
+//            fps.pcnt_inter, fps.pcnt_motion, fps.new_mv_count);
+
 #if CONFIG_FP_MB_STATS
     if (cpi->use_fp_mb_stats) {
-      output_mb_stats(this_frame_mb_stats, cm);
+      output_fpmb_stats(twopass->this_frame_mb_stats, cm, cpi->output_pkt_list);
     }
 #endif
   }
@@ -2230,7 +2230,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    input_mb_stats(&twopass->this_frame_mb_stats, cm);
+    input_fpmb_stats(&twopass->firstpass_mb_stats, cm, &twopass->this_frame_mb_stats);
   }
 #endif
 }

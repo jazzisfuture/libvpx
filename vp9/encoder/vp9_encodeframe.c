@@ -3096,6 +3096,14 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       source_var_based_partition_search_method(cpi);
   }
 
+//  fprintf(stdout, "inter = %f, motion = %f, new_mv = %f\n",
+//          cpi->twopass.stats_in->pcnt_inter,
+//          cpi->twopass.stats_in->pcnt_motion,
+//          cpi->twopass.stats_in->new_mv_count);
+
+//  if (cm->current_video_frame == 10) {
+//    fprintf(stdout, "mb_stats = %d\n", cpi->twopass.this_frame_mb_stats[0]);
+//  }
   {
     struct vpx_usec_timer emr_timer;
     vpx_usec_timer_start(&emr_timer);

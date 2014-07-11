@@ -260,6 +260,13 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
         ERROR("rc_twopass_stats_in missing EOS stats packet");
     }
   }
+
+#if CONFIG_FP_MB_STATS
+  // TODO. validate first pass mb stats
+  if (cfg->g_pass == VPX_RC_LAST_PASS) {
+  }
+#endif
+
   if (cfg->g_profile <= (unsigned int)PROFILE_1 &&
       extra_cfg->bit_depth > BITS_8)
     ERROR("High bit-depth not supported in profile < 2");
@@ -361,6 +368,22 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->two_pass_stats_in      =  cfg->rc_twopass_stats_in;
   oxcf->output_pkt_list        =  extra_cfg->pkt_list;
+
+#if CONFIG_FP_MB_STATS
+  oxcf->firstpass_mb_stats_in  = cfg->rc_firstpass_mb_stats_in;
+//  fprintf(stdout, "ENCODER_CONFIG: oxcf->firstpass_mb_stats_in ptr = %d\n", oxcf->firstpass_mb_stats_in);
+//  fprintf(stdout, "size = %d\n", oxcf->firstpass_mb_stats_in.sz);
+//  int i = 0;
+//  for (i = 0; i < oxcf->firstpass_mb_stats_in.sz; i++) {
+//    fprintf(stdout, "%d ",
+//            *((uint8_t *)oxcf->firstpass_mb_stats_in.buf + i));
+//  }
+//  fprintf(stdout, "\n");
+//  fprintf(stdout, "======================= oxcf_firstpass_mb_stats_in  = %d\n",
+//          *((uint8_t *)oxcf->firstpass_mb_stats_in.buf));
+//  fprintf(stdout, "======================= oxcf_firstpass_mb_stats_in.buf = %d\n",
+//          oxcf->firstpass_mb_stats_in.buf);
+#endif
 
   oxcf->arnr_max_frames = extra_cfg->arnr_max_frames;
   oxcf->arnr_strength   = extra_cfg->arnr_strength;
@@ -648,6 +671,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 
     priv->extra_cfg = extracfg_map[i].cfg;
     priv->extra_cfg.pkt_list = &priv->pkt_list.head;
+
      // Maximum buffer size approximated based on having multiple ARF.
     priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 * 8;
 
@@ -1224,6 +1248,7 @@ static vpx_codec_enc_cfg_map_t encoder_usage_cfg_map[] = {
       VPX_VBR,            // rc_end_usage
 #if VPX_ENCODER_ABI_VERSION > (1 + VPX_CODEC_ABI_VERSION)
       {NULL, 0},          // rc_twopass_stats_in
+      {NULL, 0},          // rc_firstpass_mb_stats_in
 #endif
       256,                // rc_target_bandwidth
       0,                  // rc_min_quantizer

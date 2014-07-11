@@ -199,13 +199,6 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
     vpx_free(cpi->source_diff_var);
     cpi->source_diff_var = NULL;
   }
-
-#if CONFIG_FP_MB_STATS
-  if (cpi->use_fp_mb_stats) {
-    vpx_free(cpi->twopass.this_frame_mb_stats.mb_stats);
-    cpi->twopass.this_frame_mb_stats.mb_stats = NULL;
-  }
-#endif
 }
 
 static void save_coding_context(VP9_COMP *cpi) {
@@ -774,13 +767,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   }
 
 #if CONFIG_FP_MB_STATS
-  cpi->use_fp_mb_stats = 0;
+  cpi->use_fp_mb_stats = 1;
   if (cpi->use_fp_mb_stats) {
-    // a place holder for the mb stats obtained from the first pass
-    CHECK_MEM_ERROR(cm, cpi->twopass.this_frame_mb_stats.mb_stats,
-                    vpx_calloc(cm->MBs * sizeof(FIRSTPASS_MB_STATS), 1));
-  } else {
-    cpi->twopass.this_frame_mb_stats.mb_stats = NULL;
+    CHECK_MEM_ERROR(cm, cpi->twopass.this_frame_mb_stats,
+                    vpx_calloc(cm->MBs * sizeof(uint8_t), 1));
   }
 #endif
 
@@ -920,6 +910,32 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
       vp9_init_second_pass_spatial_svc(cpi);
     } else {
+#if CONFIG_FP_MB_STATS
+      if (cpi->use_fp_mb_stats) {
+//        fprintf(stdout, "CREATE COMPRESSOR: oxcf->firstpass_mb_stats_in ptr = %d\n", oxcf->firstpass_mb_stats_in);
+        const size_t psz = cpi->common.MBs * sizeof(uint8_t);
+        const int ps = (int)(oxcf->firstpass_mb_stats_in.sz / psz);
+
+        cpi->twopass.firstpass_mb_stats.mb_stats_start =
+            oxcf->firstpass_mb_stats_in.buf;
+        cpi->twopass.firstpass_mb_stats.mb_stats_in =
+            cpi->twopass.firstpass_mb_stats.mb_stats_start;
+        cpi->twopass.firstpass_mb_stats.mb_stats_end =
+            cpi->twopass.firstpass_mb_stats.mb_stats_start +
+            (ps - 1) * cpi->common.MBs * sizeof(uint8_t);
+
+//        fprintf(stdout, "CREATE COMPRESSOR: cpi->twopass.firstpass_mb_stats.mb_stats_start ptr = %d\n",
+//                cpi->twopass.firstpass_mb_stats.mb_stats_start);
+//        int i = 0;
+//        int sz = oxcf->firstpass_mb_stats_in.sz;
+//        for (i = 0; i < sz; i++) {
+//          fprintf(stdout, "%d ", cpi->twopass.firstpass_mb_stats.mb_stats_start[i]);
+//        }
+//        fprintf(stdout, "\n");
+//        fprintf(stdout, "mb packests = %d\n", ps);
+      }
+#endif
+
       cpi->twopass.stats_in_start = oxcf->two_pass_stats_in.buf;
       cpi->twopass.stats_in = cpi->twopass.stats_in_start;
       cpi->twopass.stats_in_end = &cpi->twopass.stats_in[packets - 1];
@@ -1107,6 +1123,15 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                   sizeof(cpi->mbgraph_stats[0]); ++i) {
     vpx_free(cpi->mbgraph_stats[i].mb_stats);
   }
+
+#if CONFIG_FP_MB_STATS
+  if (cpi->use_fp_mb_stats) {
+//    fprintf(stdout, "before vpx_free this_frame_mb_stats\n");
+//    fprintf(stdout, "this_frame_mb_stat ptr = %d\n", cpi->twopass.this_frame_mb_stats);
+//    vpx_free(cpi->twopass.this_frame_mb_stats);
+//    fprintf(stdout, "after vpx_free this_frame_mb_stats\n");
+  }
+#endif
 
   vp9_remove_common(&cpi->common);
   vpx_free(cpi);
