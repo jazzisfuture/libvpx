@@ -1088,7 +1088,6 @@ int main_loop(int argc, const char **argv_) {
           if (img->fmt & VPX_IMG_FMT_HIGH) {
             scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I42016, display_width,
                                        display_height, 16);
-            scaled_img->bit_depth = img->bit_depth;
           } else {
             scaled_img = vpx_img_alloc(NULL, VPX_IMG_FMT_I420, display_width,
                                        display_height, 16);
