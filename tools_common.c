@@ -83,6 +83,7 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
   struct FileTypeDetectionBuffer *detect = &input_ctx->detect;
   int plane = 0;
   int shortread = 0;
+  const int bytespp = (input_ctx->fmt & VPX_IMG_FMT_HIGH) ? 2 : 1;
 
   for (plane = 0; plane < 3; ++plane) {
     uint8_t *ptr;
@@ -119,7 +120,7 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
         detect->position += more;
       }
       if (needed > 0) {
-        shortread |= (fread(ptr + buf_position, 1, needed, f) < needed);
+        shortread |= (fread(ptr + buf_position, bytespp, needed, f) < needed);
       }
 
       ptr += yuv_frame->stride[plane];
