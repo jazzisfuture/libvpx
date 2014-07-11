@@ -11,11 +11,11 @@
 #ifndef VP9_COMMON_VP9_ONYXC_INT_H_
 #define VP9_COMMON_VP9_ONYXC_INT_H_
 
-#include <pthread.h>
 #include "./vpx_config.h"
 #include "vpx/internal/vpx_codec_internal.h"
 #include "./vp9_rtcd.h"
 #include "vp9/common/vp9_loopfilter.h"
+#include "vp9/common/vp9_thread.h"
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymode.h"
