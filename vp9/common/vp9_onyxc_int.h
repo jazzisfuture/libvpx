@@ -62,18 +62,6 @@ typedef struct {
   int ref_count;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
-
-  // The Following variables will only be used in frame parallel decode.
-
-  // owner_thread_id indicates which FrameWorker owns this buffer. -1 means
-  // that no FrameWorker owns, or is decoding, this buffer.
-  int owner_worker_id;
-
-  // Buffer has been decoded to (row, col) position. When first start decoding,
-  // they are reset to -1. If a frame has been fully decoded, row and col will
-  // be set to INT_MAX.
-  int row;
-  int col;
 } RefCntBuffer;
 
 typedef struct {
@@ -92,7 +80,7 @@ typedef struct {
 
   RefCntBuffer frame_bufs[FRAME_BUFFERS];
 
-  // Handles memory for the codec.
+  // Frame buffers allocated internally by the codec.
   InternalFrameBufferList int_frame_buffers;
 } BufferPool;
 
@@ -123,9 +111,6 @@ typedef struct VP9Common {
   YV12_BUFFER_CONFIG *frame_to_show;
 
   int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
-
-  // Prepare ref_frame_map for next frame. Only used in frame parallel decode.
-  int next_ref_frame_map[REF_FRAMES];
 
   // TODO(jkoleszar): could expand active_ref_idx to 4, with 0 as intra, and
   // roll new_fb_idx into it.
@@ -250,19 +235,12 @@ static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
 static INLINE int get_free_fb(VP9_COMMON *cm) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
-#endif
-  for (i = 0; i < FRAME_BUFFERS; i++)
+  for (i = 0; i < FRAME_BUFFERS; ++i)
     if (frame_bufs[i].ref_count == 0)
       break;
 
   assert(i < FRAME_BUFFERS);
   frame_bufs[i].ref_count = 1;
-#if CONFIG_MULTITHREAD
-  pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
-#endif
   return i;
 }
 
@@ -347,7 +325,6 @@ static INLINE void update_partition_context(MACROBLOCKD *xd,
   PARTITION_CONTEXT *const above_ctx = xd->above_seg_context + mi_col;
   PARTITION_CONTEXT *const left_ctx = xd->left_seg_context + (mi_row & MI_MASK);
 
-  // num_4x4_blocks_wide_lookup[bsize] / 2
   const int bs = num_8x8_blocks_wide_lookup[bsize];
 
   // update the partition context at the end notes. set partition bits
