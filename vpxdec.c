@@ -77,6 +77,8 @@ static const arg_def_t error_concealment = ARG_DEF(NULL, "error-concealment", 0,
                                                    "Enable decoder error-concealment");
 static const arg_def_t scalearg = ARG_DEF("S", "scale", 0,
                                             "Scale output frames uniformly");
+static const arg_def_t continuearg =
+    ARG_DEF("k", "keep-going", 0, "(debug) Continue decoding after error");
 
 static const arg_def_t fb_arg =
     ARG_DEF(NULL, "frame-buffers", 1, "Number of frame buffers to use");
@@ -93,8 +95,7 @@ static const arg_def_t *all_args[] = {
   &codecarg, &use_yv12, &use_i420, &flipuvarg, &noblitarg,
   &progressarg, &limitarg, &skiparg, &postprocarg, &summaryarg, &outputfile,
   &threadsarg, &verbosearg, &scalearg, &fb_arg,
-  &md5arg,
-  &error_concealment,
+  &md5arg, &error_concealment, &continuearg,
 #if CONFIG_VP9_HIGH
   &outbitdeptharg,
 #endif
@@ -702,6 +703,7 @@ int main_loop(int argc, const char **argv_) {
   int                    stop_after = 0, postproc = 0, summary = 0, quiet = 1;
   int                    arg_skip = 0;
   int                    ec_enabled = 0;
+  int                    keep_going = 0;
   const VpxInterface *interface = NULL;
   const VpxInterface *fourcc_interface = NULL;
   uint64_t dx_time = 0;
@@ -849,6 +851,8 @@ int main_loop(int argc, const char **argv_) {
       }
     } else if (arg_match(&arg, &error_concealment, argi)) {
       ec_enabled = 1;
+    } else if (arg_match(&arg, &continuearg, argi)) {
+      keep_going = 1;
     }
 
 #endif
@@ -1030,7 +1034,8 @@ int main_loop(int argc, const char **argv_) {
 
           if (detail)
             warn("Additional information: %s", detail);
-          goto fail;
+          if (!keep_going)
+            goto fail;
         }
 
         vpx_usec_timer_mark(&timer);
@@ -1145,8 +1150,8 @@ int main_loop(int argc, const char **argv_) {
             len = y4m_write_file_header(buf, sizeof(buf),
                                         vpx_input_ctx.width,
                                         vpx_input_ctx.height,
-                                        &vpx_input_ctx.framerate, img->fmt,
-                                        img->bit_depth);
+                                        &vpx_input_ctx.framerate,
+                                        img->fmt, img->bit_depth);
             if (do_md5) {
               MD5Update(&md5_ctx, (md5byte *)buf, (unsigned int)len);
             } else {
