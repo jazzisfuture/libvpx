@@ -72,12 +72,6 @@ int stats_open_mem(stats_io_t *stats, int pass) {
   }
 
   stats->buf_ptr = stats->buf.buf;
-//  fprintf(stdout, "size = %d\n", stats->buf.sz);
-//  int i;
-//  for (i = 0; i < stats->buf.sz; i++) {
-//    fprintf(stdout, "%d ", *((uint8_t *)stats->buf.buf + i));
-//  }
-//  fprintf(stdout, "\n");
   res = (stats->buf.buf != NULL);
   return res;
 }
@@ -118,13 +112,6 @@ void stats_write(stats_io_t *stats, const void *pkt, size_t len) {
     }
 
     memcpy(stats->buf_ptr, pkt, len);
-
-//    int i = 0;
-//    for (i = 0; i < len; i++) {
-//      fprintf(stdout, "%d ", *((uint8_t *)stats->buf_ptr + i));
-//    }
-//    fprintf(stdout, "\n");
-
     stats->buf.sz += len;
     stats->buf_ptr += len;
   }

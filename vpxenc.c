@@ -1221,10 +1221,8 @@ static void setup_pass(struct stream_state *stream,
                          pass))
       fatal("Failed to open statistics store");
   } else {
-//    fprintf(stdout, "==== LOAD STATS ====\n");
     if (!stats_open_mem(&stream->stats, pass))
       fatal("Failed to open statistics store");
-//    fprintf(stdout, "====\n");
   }
 
 #if CONFIG_FP_MB_STATS
@@ -1232,10 +1230,8 @@ static void setup_pass(struct stream_state *stream,
     if (!stats_open_file(&stream->fpmb_stats, stream->config.fpmb_stats_fn, pass))
       fatal("Failed to open mb statistics store");
   } else {
-//    fprintf(stdout, "==== LOAD FPMB STATS ====\n");
     if (!stats_open_mem(&stream->fpmb_stats, pass))
       fatal("Failed to open mb statistics store");
-//    fprintf(stdout, "====\n");
   }
 #endif
 
@@ -1246,12 +1242,6 @@ static void setup_pass(struct stream_state *stream,
     stream->config.cfg.rc_twopass_stats_in = stats_get(&stream->stats);
 #if CONFIG_FP_MB_STATS
     stream->config.cfg.rc_firstpass_mb_stats_in = stats_get(&stream->fpmb_stats);
-//    fprintf(stdout, "size = %d\n", stream->config.cfg.rc_firstpass_mb_stats_in.sz);
-//    int i = 0;
-//    for (i = 0; i < stream->config.cfg.rc_firstpass_mb_stats_in.sz; i++) {
-//      fprintf(stdout, "%d ", *((uint8_t *)stream->config.cfg.rc_firstpass_mb_stats_in.buf + i));
-//    }
-//    fprintf(stdout, "\n");
 #endif
   }
 
@@ -1432,21 +1422,16 @@ static void get_cx_data(struct stream_state *stream,
         break;
       case VPX_CODEC_STATS_PKT:
         stream->frames_out++;
-//        fprintf(stdout, "==== stats_write: STATS_PKT ====\n");
         stats_write(&stream->stats,
                     pkt->data.twopass_stats.buf,
                     pkt->data.twopass_stats.sz);
-//        fprintf(stdout, "====\n");
         stream->nbytes += pkt->data.raw.sz;
         break;
 #if CONFIG_FP_MB_STATS
       case VPX_CODEC_FPMB_STATS_PKT:
-//        stream->frames_out++;
-//        fprintf(stdout, "==== stats_write: FPMB_STATS_PKT ====\n");
         stats_write(&stream->fpmb_stats,
                     pkt->data.firstpass_mb_stats.buf,
                     pkt->data.firstpass_mb_stats.sz);
-//        fprintf(stdout, "====\n");
         stream->nbytes += pkt->data.raw.sz;
         break;
 #endif
