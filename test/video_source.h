@@ -55,8 +55,17 @@ static FILE *OpenTestOutFile(const std::string& file_name) {
   return fopen(path_to_source.c_str(), "wb");
 }
 
-static FILE *OpenTempOutFile() {
-  return tmpfile();
+static void GetTempOutFilename(std::string *file_name) {
+  char *fname = tempnam(GetDataPath().c_str(), "lvpx_");
+  if (fname) {
+    file_name->assign(fname);
+    free(fname);
+  }
+}
+
+static FILE *OpenTempTestOutFile(std::string *file_name) {
+  GetTempOutFilename(file_name);
+  return OpenTestOutFile(*file_name);
 }
 
 // Abstract base class for test video sources, which provide a stream of
