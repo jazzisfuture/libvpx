@@ -13,6 +13,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#if defined(_WIN32) || defined(_WIN64)
+#include <fcntl.h>
+#include <share.h>
+#endif
 #include "test/acm_random.h"
 #include "vpx/vpx_encoder.h"
 
@@ -55,8 +59,31 @@ static FILE *OpenTestOutFile(const std::string& file_name) {
   return fopen(path_to_source.c_str(), "wb");
 }
 
-static FILE *OpenTempOutFile() {
-  return tmpfile();
+#if defined(_WIN32) || defined(_WIN64)
+static int mkstemp(char *templ) {
+  int maxtry = 26, rtn = -1;
+  while( maxtry-- && (rtn < 0) ) {
+    char *ctry = mktemp(templ);
+    if (ctry == NULL)
+      return -1;
+    rtn = sopen(ctry, O_RDWR | O_CREAT | O_EXCL | O_BINARY, SH_DENYRW, 0600 );
+  }
+  return rtn;
+}
+#endif
+
+static void GetTempOutFilename(std::string *file_name) {
+  char fname[256];
+  const std::string templ = GetDataPath() + "/libvpx_test_XXXXXX";
+  strcpy(fname, templ.c_str());
+  int fd = mkstemp(fname);
+  close(fd);
+  file_name->assign(fname);
+}
+
+static FILE *OpenTempTestOutFile(std::string *file_name) {
+  GetTempOutFilename(file_name);
+  return fopen(file_name->c_str(), "wb");
 }
 
 // Abstract base class for test video sources, which provide a stream of
