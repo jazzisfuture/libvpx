@@ -10,6 +10,10 @@
 #ifndef TEST_VIDEO_SOURCE_H_
 #define TEST_VIDEO_SOURCE_H_
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <share.h>
+#endif
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -55,9 +59,61 @@ static FILE *OpenTestOutFile(const std::string& file_name) {
   return fopen(path_to_source.c_str(), "wb");
 }
 
-static FILE *OpenTempOutFile() {
-  return tmpfile();
+#if defined(_WIN32)
+static int mkstemp(char *templ) {
+  int maxtry = 26, rtn = -1;
+  while (maxtry-- && (rtn < 0)) {
+    char *ctry = mktemp(templ);
+    if (ctry == NULL)
+      return -1;
+    rtn = _sopen(ctry, O_RDWR | O_CREAT | O_EXCL | O_BINARY, SH_DENYRW, 0600);
+  }
+  return rtn;
 }
+#endif
+
+static std::string GetTempOutFilename() {
+  std::string basename;
+  char fname[256];
+  const std::string templ = GetDataPath() + "/libvpx_test_XXXXXX";
+  strncpy(fname, templ.c_str(), templ.size());
+  fname[templ.size()] = 0;
+  int fd = mkstemp(fname);
+  if (fd != -1) {
+    close(fd);
+    basename.assign(strrchr(fname, '/') + 1);
+  } else {
+    basename.clear();
+  }
+  return basename;
+}
+
+static void DeleteTestOutFile(const std::string& file_name) {
+  const std::string path_to_source = GetDataPath() + "/" + file_name;
+  if (remove(path_to_source.c_str()))
+    printf("remove %s failed!\n", path_to_source.c_str());
+}
+
+class TempOutFile {
+ public:
+  TempOutFile() {
+    file_name_ = GetTempOutFilename();
+    file_ = OpenTestOutFile(file_name_);
+  }
+  ~TempOutFile() {
+    if (!file_name_.empty())
+      DeleteTestOutFile(file_name_);
+  }
+  FILE *File() {
+    return file_;
+  }
+  const std::string& Name() {
+    return file_name_;
+  }
+ protected:
+  FILE *file_;
+  std::string file_name_;
+};
 
 // Abstract base class for test video sources, which provide a stream of
 // vpx_image_t images with associated timestamps and duration.
