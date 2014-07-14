@@ -155,6 +155,7 @@ extern "C" {
   enum vpx_codec_cx_pkt_kind {
     VPX_CODEC_CX_FRAME_PKT,    /**< Compressed video frame */
     VPX_CODEC_STATS_PKT,       /**< Two-pass statistics for this frame */
+    VPX_CODEC_FPMB_STATS_PKT,  /**< first pass mb statistics for this frame */
     VPX_CODEC_PSNR_PKT,        /**< PSNR statistics for this frame */
     VPX_CODEC_CUSTOM_PKT = 256 /**< Algorithm extensions  */
   };
@@ -185,6 +186,7 @@ extern "C" {
 
       } frame;  /**< data for compressed frame packet */
       struct vpx_fixed_buf twopass_stats;  /**< data for two-pass packet */
+      struct vpx_fixed_buf firstpass_mb_stats; /**< first pass mb packet */
       struct vpx_psnr_pkt {
         unsigned int samples[4];  /**< Number of samples, total/y/u/v */
         uint64_t     sse[4];      /**< sum squared error, total/y/u/v */
@@ -446,6 +448,12 @@ extern "C" {
      */
     struct vpx_fixed_buf   rc_twopass_stats_in;
 
+    /*!\brief first pass mb stats buffer.
+     *
+     * A buffer containing all of the first pass mb stats packets produced
+     * in the first pass, concatenated.
+     */
+    struct vpx_fixed_buf   rc_firstpass_mb_stats_in;
 
     /*!\brief Target data rate
      *
