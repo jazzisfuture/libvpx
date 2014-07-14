@@ -138,14 +138,11 @@ INSTANTIATE_TEST_CASE_P(C, Y4mVideoSourceTest,
 class Y4mVideoWriteTest
     : public Y4mVideoSourceTest {
  protected:
-  Y4mVideoWriteTest() : Y4mVideoSourceTest() {}
+  Y4mVideoWriteTest() : written_file_name_("") {}
 
-  virtual void ReplaceInputFp(FILE *input_file) {
-    CloseSource();
-    frame_ = 0;
-    input_file_ = input_file;
-    rewind(input_file_);
-    ReadSourceToStart();
+  virtual void TearDown() {
+    if (!written_file_name_.empty())
+      remove(written_file_name_.c_str());
   }
 
   // Writes out a y4m file and then reads it back
@@ -153,7 +150,7 @@ class Y4mVideoWriteTest
     ASSERT_TRUE(input_file_ != NULL);
     char buf[Y4M_BUFFER_SIZE] = {0};
     const struct VpxRational framerate = {y4m_.fps_n, y4m_.fps_d};
-    FILE *out_file = libvpx_test::OpenTempOutFile();
+    FILE *out_file = libvpx_test::OpenTempTestOutFile(written_file_name_);
     ASSERT_TRUE(out_file != NULL);
     y4m_write_file_header(buf, sizeof(buf),
                           kWidth, kHeight,
@@ -166,13 +163,16 @@ class Y4mVideoWriteTest
       write_image_file(img(), out_file);
       Next();
     }
-    ReplaceInputFp(out_file);
+    fclose(out_file);
+    Y4mVideoSourceTest::Init(written_file_name_, limit_);
   }
 
   virtual void Init(const std::string &file_name, int limit) {
     Y4mVideoSourceTest::Init(file_name, limit);
     WriteY4mAndReadBack();
   }
+
+  string written_file_name_;
 };
 
 TEST_P(Y4mVideoWriteTest, WriteTest) {
