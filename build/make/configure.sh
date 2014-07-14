@@ -799,7 +799,7 @@ process_common_toolchain() {
     arm*)
         # on arm, isa versions are supersets
         case ${tgt_isa} in
-        armv8)
+        arm64|armv8)
             soft_enable neon
             ;;
         armv7|armv7s)
@@ -1048,14 +1048,6 @@ EOF
         esac
     ;;
     x86*)
-        bits=32
-        enabled x86_64 && bits=64
-        check_cpp <<EOF && bits=x32
-#ifndef __ILP32__
-#error "not x32"
-#endif
-EOF
-
         case  ${tgt_os} in
             win*)
                 enabled gcc && add_cflags -fno-common
@@ -1094,8 +1086,6 @@ EOF
                 esac
             ;;
             gcc*)
-                add_cflags -m${bits}
-                add_ldflags -m${bits}
                 link_with_cc=gcc
                 tune_cflags="-march="
                 setup_gnu_toolchain
@@ -1117,6 +1107,20 @@ EOF
                          soft_disable avx2
                     ;;
                 esac
+            ;;
+        esac
+
+        bits=32
+        enabled x86_64 && bits=64
+        check_cpp <<EOF && bits=x32
+#ifndef __ILP32__
+#error "not x32"
+#endif
+EOF
+        case ${tgt_cc} in
+            gcc*)
+                add_cflags -m${bits}
+                add_ldflags -m${bits}
             ;;
         esac
 
@@ -1222,10 +1226,12 @@ EOF
         fi
     fi
 
-    # default use_x86inc to yes if pic is no or 64bit or we are not on darwin
-    if [ ${tgt_isa} = x86_64 -o ! "$pic" = "yes" -o \
-         "${tgt_os#darwin}" = "${tgt_os}"  ]; then
-      soft_enable use_x86inc
+    tgt_os_no_version=$(echo "${tgt_os}" | tr -d "[0-9]")
+    # Default use_x86inc to yes when we are 64 bit, non-pic, or on any
+    # non-Darwin target.
+    if [ "${tgt_isa}" = "x86_64" ] || [ "${pic}" != "yes" ] || \
+            [ "${tgt_os_no_version}" != "darwin" ]; then
+        soft_enable use_x86inc
     fi
 
     # Position Independent Code (PIC) support, for building relocatable

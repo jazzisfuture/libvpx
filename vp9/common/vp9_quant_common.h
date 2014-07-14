@@ -23,10 +23,15 @@ extern "C" {
 #define QINDEX_RANGE (MAXQ - MINQ + 1)
 #define QINDEX_BITS 8
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 void vp9_init_quant_tables();
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
+=======
+int16_t vp9_dc_quant(int qindex, int delta);
+int16_t vp9_ac_quant(int qindex, int delta);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
 int vp9_get_qindex(const struct segmentation *seg, int segment_id,
                    int base_qindex, vpx_bit_depth_t bit_depth);

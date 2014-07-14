@@ -28,6 +28,7 @@
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_seg_common.h"
+#include "vp9/common/vp9_thread.h"
 #include "vp9/common/vp9_tile_common.h"
 
 #include "vp9/decoder/vp9_decodeframe.h"
@@ -38,7 +39,6 @@
 #include "vp9/decoder/vp9_dthread.h"
 #include "vp9/decoder/vp9_read_bit_buffer.h"
 #include "vp9/decoder/vp9_reader.h"
-#include "vp9/decoder/vp9_thread.h"
 
 #define MAX_VP9_HEADER_SIZE 80
 
@@ -466,13 +466,17 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                              vp9_reader* r, BLOCK_SIZE bsize) {
   const int hbs = num_8x8_blocks_wide_lookup[bsize] / 2;
   PARTITION_TYPE partition;
-  BLOCK_SIZE subsize;
+  BLOCK_SIZE subsize, uv_subsize;
 
   if (mi_row >= cm->mi_rows || mi_col >= cm->mi_cols)
     return;
 
   partition = read_partition(cm, xd, hbs, mi_row, mi_col, bsize, r);
   subsize = get_subsize(bsize, partition);
+  uv_subsize = ss_size_lookup[subsize][cm->subsampling_x][cm->subsampling_y];
+  if (subsize >= BLOCK_8X8 && uv_subsize == BLOCK_INVALID)
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Invalid block size.");
   if (subsize < BLOCK_8X8) {
     decode_block(cm, xd, tile, mi_row, mi_col, r, subsize);
   } else {
@@ -662,8 +666,8 @@ static INTERP_FILTER read_interp_filter(struct vp9_read_bit_buffer *rb) {
                              : literal_to_filter[vp9_rb_read_literal(rb, 2)];
 }
 
-static void read_frame_size(struct vp9_read_bit_buffer *rb,
-                            int *width, int *height) {
+void vp9_read_frame_size(struct vp9_read_bit_buffer *rb,
+                         int *width, int *height) {
   const int w = vp9_rb_read_literal(rb, 16) + 1;
   const int h = vp9_rb_read_literal(rb, 16) + 1;
   *width = w;
@@ -674,7 +678,7 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
   cm->display_width = cm->width;
   cm->display_height = cm->height;
   if (vp9_rb_read_bit(rb))
-    read_frame_size(rb, &cm->display_width, &cm->display_height);
+    vp9_read_frame_size(rb, &cm->display_width, &cm->display_height);
 }
 
 static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
@@ -710,7 +714,7 @@ static void apply_frame_size(VP9_COMMON *cm, int width, int height) {
 
 static void setup_frame_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
   int width, height;
-  read_frame_size(rb, &width, &height);
+  vp9_read_frame_size(rb, &width, &height);
   apply_frame_size(cm, width, height);
   setup_display_size(cm, rb);
 }
@@ -730,11 +734,19 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
   }
 
   if (!found)
-    read_frame_size(rb, &width, &height);
+    vp9_read_frame_size(rb, &width, &height);
 
-  if (width <= 0 || height <= 0)
-    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
-                       "Referenced frame with invalid size");
+  // Check that each of the frames that this frame references has valid
+  // dimensions.
+  for (i = 0; i < REFS_PER_FRAME; ++i) {
+    RefBuffer *const ref_frame = &cm->frame_refs[i];
+    const int ref_width = ref_frame->buf->y_width;
+    const int ref_height = ref_frame->buf->y_height;
+
+    if (!valid_ref_frame_size(ref_width, ref_height, width, height))
+      vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                         "Referenced frame has invalid size");
+  }
 
   apply_frame_size(cm, width, height);
   setup_display_size(cm, rb);
@@ -749,6 +761,10 @@ static void setup_tile_info(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
   cm->log2_tile_cols = min_log2_tile_cols;
   while (max_ones-- && vp9_rb_read_bit(rb))
     cm->log2_tile_cols++;
+
+  if (cm->log2_tile_cols > 6)
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Invalid number of tile columns");
 
   // rows
   cm->log2_tile_rows = vp9_rb_read_bit(rb);
@@ -820,6 +836,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
                                    const uint8_t *data,
                                    const uint8_t *data_end) {
   VP9_COMMON *const cm = &pbi->common;
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
   const int aligned_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
@@ -832,7 +849,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
     CHECK_MEM_ERROR(cm, pbi->lf_worker.data1,
                     vpx_memalign(32, sizeof(LFWorkerData)));
     pbi->lf_worker.hook = (VP9WorkerHook)vp9_loop_filter_worker;
-    if (pbi->max_threads > 1 && !vp9_worker_reset(&pbi->lf_worker)) {
+    if (pbi->max_threads > 1 && !winterface->reset(&pbi->lf_worker)) {
       vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                          "Loop filter thread creation failed");
     }
@@ -906,6 +923,7 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
           decode_partition(tile_data->cm, &tile_data->xd, &tile, mi_row, mi_col,
                            &tile_data->bit_reader, BLOCK_64X64);
         }
+        pbi->mb.corrupted |= tile_data->xd.corrupted;
       }
       // Loopfilter one row.
       if (cm->lf.filter_level) {
@@ -918,13 +936,13 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
         // decoding has completed: finish up the loop filter in this thread.
         if (mi_row + MI_BLOCK_SIZE >= cm->mi_rows) continue;
 
-        vp9_worker_sync(&pbi->lf_worker);
+        winterface->sync(&pbi->lf_worker);
         lf_data->start = lf_start;
         lf_data->stop = mi_row;
         if (pbi->max_threads > 1) {
-          vp9_worker_launch(&pbi->lf_worker);
+          winterface->launch(&pbi->lf_worker);
         } else {
-          vp9_worker_execute(&pbi->lf_worker);
+          winterface->execute(&pbi->lf_worker);
         }
       }
     }
@@ -933,10 +951,10 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
   // Loopfilter remaining rows in the frame.
   if (cm->lf.filter_level) {
     LFWorkerData *const lf_data = (LFWorkerData*)pbi->lf_worker.data1;
-    vp9_worker_sync(&pbi->lf_worker);
+    winterface->sync(&pbi->lf_worker);
     lf_data->start = lf_data->stop;
     lf_data->stop = cm->mi_rows;
-    vp9_worker_execute(&pbi->lf_worker);
+    winterface->execute(&pbi->lf_worker);
   }
 
   // Get last tile data.
@@ -980,6 +998,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
                                       const uint8_t *data,
                                       const uint8_t *data_end) {
   VP9_COMMON *const cm = &pbi->common;
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
   const uint8_t *bit_reader_end = NULL;
   const int aligned_mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
   const int tile_cols = 1 << cm->log2_tile_cols;
@@ -1006,11 +1025,11 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
       VP9Worker *const worker = &pbi->tile_workers[i];
       ++pbi->num_tile_workers;
 
-      vp9_worker_init(worker);
+      winterface->init(worker);
       CHECK_MEM_ERROR(cm, worker->data1,
                       vpx_memalign(32, sizeof(TileWorkerData)));
       CHECK_MEM_ERROR(cm, worker->data2, vpx_malloc(sizeof(TileInfo)));
-      if (i < num_threads - 1 && !vp9_worker_reset(worker)) {
+      if (i < num_threads - 1 && !winterface->reset(worker)) {
         vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                            "Tile decoder thread creation failed");
       }
@@ -1073,9 +1092,9 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
 
       worker->had_error = 0;
       if (i == num_workers - 1 || n == tile_cols - 1) {
-        vp9_worker_execute(worker);
+        winterface->execute(worker);
       } else {
-        vp9_worker_launch(worker);
+        winterface->launch(worker);
       }
 
       if (buf->col == tile_cols - 1) {
@@ -1087,7 +1106,7 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
 
     for (; i > 0; --i) {
       VP9Worker *const worker = &pbi->tile_workers[i - 1];
-      pbi->mb.corrupted |= !vp9_worker_sync(worker);
+      pbi->mb.corrupted |= !winterface->sync(worker);
     }
     if (final_worker > -1) {
       TileWorkerData *const tile_data =
@@ -1100,21 +1119,22 @@ static const uint8_t *decode_tiles_mt(VP9Decoder *pbi,
   return bit_reader_end;
 }
 
-static void check_sync_code(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
-  if (vp9_rb_read_literal(rb, 8) != VP9_SYNC_CODE_0 ||
-      vp9_rb_read_literal(rb, 8) != VP9_SYNC_CODE_1 ||
-      vp9_rb_read_literal(rb, 8) != VP9_SYNC_CODE_2) {
-    vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
-                       "Invalid frame sync code");
-  }
-}
-
 static void error_handler(void *data) {
   VP9_COMMON *const cm = (VP9_COMMON *)data;
   vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME, "Truncated packet");
 }
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 BITSTREAM_PROFILE vp9_read_profile(struct vp9_read_bit_buffer *rb) {
+=======
+int vp9_read_sync_code(struct vp9_read_bit_buffer *const rb) {
+  return vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_0 &&
+         vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_1 &&
+         vp9_rb_read_literal(rb, 8) == VP9_SYNC_CODE_2;
+}
+
+static BITSTREAM_PROFILE read_profile(struct vp9_read_bit_buffer *rb) {
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   int profile = vp9_rb_read_bit(rb);
   profile |= vp9_rb_read_bit(rb) << 1;
   if (profile > 2)
@@ -1144,7 +1164,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     // Show an existing frame directly.
     const int frame_to_show = cm->ref_frame_map[vp9_rb_read_literal(rb, 3)];
 
-    if (cm->frame_bufs[frame_to_show].ref_count < 1)
+    if (frame_to_show < 0 || cm->frame_bufs[frame_to_show].ref_count < 1)
       vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
                          "Buffer %d does not contain a decoded frame",
                          frame_to_show);
@@ -1161,6 +1181,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   cm->error_resilient_mode = vp9_rb_read_bit(rb);
 
   if (cm->frame_type == KEY_FRAME) {
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     check_sync_code(cm, rb);
     if (cm->profile > PROFILE_1) {
       cm->bit_depth = vp9_rb_read_bit(rb) ? VPX_BITS_12 : VPX_BITS_10;
@@ -1177,6 +1198,13 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     // need the bit depth to init dequantizers
     vp9_init_dequantizer(cm);
 
+=======
+    if (!vp9_read_sync_code(rb))
+      vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                         "Invalid frame sync code");
+    if (cm->profile > PROFILE_1)
+      cm->bit_depth = vp9_rb_read_bit(rb) ? BITS_12 : BITS_10;
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     cm->color_space = (COLOR_SPACE)vp9_rb_read_literal(rb, 3);
     if (cm->color_space != SRGB) {
       vp9_rb_read_bit(rb);  // [16,235] (including xvycc) vs [0,255] range
@@ -1212,18 +1240,27 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         0 : vp9_rb_read_literal(rb, 2);
 
     if (cm->intra_only) {
-      check_sync_code(cm, rb);
+      if (!vp9_read_sync_code(rb))
+        vpx_internal_error(&cm->error, VPX_CODEC_UNSUP_BITSTREAM,
+                           "Invalid frame sync code");
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
+
+      // NOTE: The intra-only frame header does not include the specification of
+      // either the color format or color sub-sampling. VP9 specifies that the
+      // default color space should be YUV 4:2:0 in this case (normative).
+      cm->color_space = BT_601;
+      cm->subsampling_y = cm->subsampling_x = 1;
+
       setup_frame_size(cm, rb);
     } else {
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
-
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
         const int idx = cm->ref_frame_map[ref];
-        cm->frame_refs[i].idx = idx;
-        cm->frame_refs[i].buf = &cm->frame_bufs[idx].buf;
+        RefBuffer *const ref_frame = &cm->frame_refs[i];
+        ref_frame->idx = idx;
+        ref_frame->buf = &cm->frame_bufs[idx].buf;
         cm->ref_frame_sign_bias[LAST_FRAME + i] = vp9_rb_read_bit(rb);
       }
 
@@ -1409,7 +1446,8 @@ void vp9_decode_frame(VP9Decoder *pbi,
                       const uint8_t **p_data_end) {
   VP9_COMMON *const cm = &pbi->common;
   MACROBLOCKD *const xd = &pbi->mb;
-  struct vp9_read_bit_buffer rb = { 0 };
+  struct vp9_read_bit_buffer rb = { NULL, NULL, 0, NULL, 0};
+
   uint8_t clear_data[MAX_VP9_HEADER_SIZE];
   const size_t first_partition_size = read_uncompressed_header(pbi,
       init_read_bit_buffer(pbi, &rb, data, data_end, clear_data));
@@ -1471,6 +1509,9 @@ void vp9_decode_frame(VP9Decoder *pbi,
     } else {
       debug_check_frame_counts(cm);
     }
+  } else {
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Decode failed. Frame data is corrupted.");
   }
 
   if (cm->refresh_frame_context)

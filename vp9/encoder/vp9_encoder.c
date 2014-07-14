@@ -39,7 +39,7 @@
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vp9/encoder/vp9_ratectrl.h"
-#include "vp9/encoder/vp9_rdopt.h"
+#include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_speed_features.h"
 #if CONFIG_INTERNAL_STATS
@@ -64,6 +64,9 @@ void vp9_coef_tree_initialize();
 
 // #define OUTPUT_YUV_REC
 
+#ifdef OUTPUT_YUV_DENOISED
+FILE *yuv_denoised_file = NULL;
+#endif
 #ifdef OUTPUT_YUV_SRC
 FILE *yuv_file;
 #endif
@@ -107,7 +110,7 @@ static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   }
 }
 
-static void set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv) {
+void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv) {
   MACROBLOCK *const mb = &cpi->mb;
   cpi->common.allow_high_precision_mv = allow_high_precision_mv;
   if (cpi->common.allow_high_precision_mv) {
@@ -146,8 +149,6 @@ void vp9_initialize_enc() {
 
   if (!init_done) {
     vp9_init_neighbors();
-    vp9_init_quant_tables();
-
     vp9_coef_tree_initialize();
     vp9_tokenize_initialize();
     vp9_init_me_luts();
@@ -177,10 +178,8 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
 
-  vpx_free(cpi->active_map);
-  cpi->active_map = NULL;
-
   vp9_free_frame_buffers(cm);
+  vp9_free_context_buffers(cm);
 
   vp9_free_frame_buffer(&cpi->last_frame_uf);
   vp9_free_frame_buffer(&cpi->scaled_source);
@@ -199,6 +198,18 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
     lc->rc_twopass_stats_in.buf = NULL;
     lc->rc_twopass_stats_in.sz = 0;
   }
+
+  if (cpi->source_diff_var != NULL) {
+    vpx_free(cpi->source_diff_var);
+    cpi->source_diff_var = NULL;
+  }
+
+#if CONFIG_FP_MB_STATS
+  if (cpi->use_fp_mb_stats) {
+    vpx_free(cpi->twopass.this_frame_mb_stats.mb_stats);
+    cpi->twopass.this_frame_mb_stats.mb_stats = NULL;
+  }
+#endif
 }
 
 static void save_coding_context(VP9_COMP *cpi) {
@@ -426,13 +437,14 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                        "Failed to allocate altref buffer");
 }
 
-void vp9_alloc_compressor_data(VP9_COMP *cpi) {
-  VP9_COMMON *cm = &cpi->common;
-
+static void alloc_ref_frame_buffers(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
   if (vp9_alloc_frame_buffers(cm, cm->width, cm->height))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate frame buffers");
+}
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
   if (vp9_alloc_frame_buffer(&cpi->last_frame_uf,
                              cm->width, cm->height,
                              cm->subsampling_x, cm->subsampling_y,
@@ -440,9 +452,18 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
                              cm->use_high,
 #endif
                              VP9_ENC_BORDER_IN_PIXELS))
+=======
+static void alloc_util_frame_buffers(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate last frame buffer");
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
   if (vp9_alloc_frame_buffer(&cpi->scaled_source,
                              cm->width, cm->height,
                              cm->subsampling_x, cm->subsampling_y,
@@ -450,9 +471,16 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
                              cm->use_high,
 #endif
                              VP9_ENC_BORDER_IN_PIXELS))
+=======
+  if (vp9_realloc_frame_buffer(&cpi->scaled_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled source buffer");
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
   if (vp9_alloc_frame_buffer(&cpi->scaled_last_source,
                              cm->width, cm->height,
                              cm->subsampling_x, cm->subsampling_y,
@@ -460,14 +488,25 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
                              cm->use_high,
 #endif
                              VP9_ENC_BORDER_IN_PIXELS))
+=======
+  if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
+}
+
+void vp9_alloc_compressor_data(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+
+  vp9_alloc_context_buffers(cm, cm->width, cm->height);
 
   vpx_free(cpi->tok);
 
   {
     unsigned int tokens = get_token_alloc(cm->mb_rows, cm->mb_cols);
-
     CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
   }
 
@@ -477,8 +516,8 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
 static void update_frame_size(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
-
   vp9_update_frame_size(cm);
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 
   // Update size of buffers local to this frame
   if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
@@ -521,6 +560,8 @@ static void update_frame_size(VP9_COMP *cpi) {
     }
   }
 
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   init_macroblockd(cm, xd);
 }
 
@@ -548,6 +589,12 @@ static void set_tile_limits(VP9_COMP *cpi) {
   cm->log2_tile_rows = cpi->oxcf.tile_rows;
 }
 
+static void init_buffer_indices(VP9_COMP *cpi) {
+  cpi->lst_fb_idx = 0;
+  cpi->gld_fb_idx = 1;
+  cpi->alt_fb_idx = 2;
+}
+
 static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -561,8 +608,6 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
-  cm->subsampling_x = 0;
-  cm->subsampling_y = 0;
   vp9_alloc_compressor_data(cpi);
 
   // Spatial scalability.
@@ -581,10 +626,9 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   vp9_change_config(cpi, oxcf);
 
   cpi->static_mb_pct = 0;
+  cpi->ref_frame_flags = 0;
 
-  cpi->lst_fb_idx = 0;
-  cpi->gld_fb_idx = 1;
-  cpi->alt_fb_idx = 2;
+  init_buffer_indices(cpi);
 
   set_tile_limits(cpi);
 }
@@ -625,7 +669,6 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #endif
 
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
-  cpi->ref_frame_flags = VP9_ALT_FLAG | VP9_GOLD_FLAG | VP9_LAST_FLAG;
 
   cpi->refresh_golden_frame = 0;
   cpi->refresh_last_frame = 1;
@@ -633,7 +676,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cm->reset_frame_context = 0;
 
   vp9_reset_segment_features(&cm->seg);
-  set_high_precision_mv(cpi, 0);
+  vp9_set_high_precision_mv(cpi, 0);
 
   {
     int i;
@@ -698,11 +741,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                                            (int)cpi->oxcf.target_bandwidth);
   }
 
-#if CONFIG_MULTIPLE_ARF
-  vp9_zero(cpi->alt_ref_source);
-#else
   cpi->alt_ref_source = NULL;
-#endif
   rc->is_src_frame_alt_ref = 0;
 
 #if 0
@@ -721,8 +760,11 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #endif
 
 #if CONFIG_DENOISING
-  vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
-                     VP9_ENC_BORDER_IN_PIXELS);
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
+                       cm->subsampling_x, cm->subsampling_y,
+                       VP9_ENC_BORDER_IN_PIXELS);
+  }
 #endif
 }
 
@@ -1339,6 +1381,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->alt_is_last = 0;
   cpi->gold_is_alt = 0;
 
+  cpi->skippable_frame = 0;
+
   // Create the encoder segmentation map and set all entries to 0
   CHECK_MEM_ERROR(cm, cpi->segmentation_map,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
@@ -1356,10 +1400,6 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   CHECK_MEM_ERROR(cm, cpi->coding_context.last_frame_seg_map_copy,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
-  CHECK_MEM_ERROR(cm, cpi->active_map, vpx_calloc(cm->MBs, 1));
-  vpx_memset(cpi->active_map, 1, cm->MBs);
-  cpi->active_map_enabled = 0;
-
   for (i = 0; i < (sizeof(cpi->mbgraph_stats) /
                    sizeof(cpi->mbgraph_stats[0])); i++) {
     CHECK_MEM_ERROR(cm, cpi->mbgraph_stats[i].mb_stats,
@@ -1367,20 +1407,37 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
                                sizeof(*cpi->mbgraph_stats[i].mb_stats), 1));
   }
 
-  cpi->refresh_alt_ref_frame = 0;
-
-#if CONFIG_MULTIPLE_ARF
-  // Turn multiple ARF usage on/off. This is a quick hack for the initial test
-  // version. It should eventually be set via the codec API.
-  cpi->multi_arf_enabled = 1;
-
-  if (cpi->multi_arf_enabled) {
-    cpi->sequence_number = 0;
-    cpi->frame_coding_order_period = 0;
-    vp9_zero(cpi->frame_coding_order);
-    vp9_zero(cpi->arf_buffer_idx);
+#if CONFIG_FP_MB_STATS
+  cpi->use_fp_mb_stats = 0;
+  if (cpi->use_fp_mb_stats) {
+    // a place holder for the mb stats obtained from the first pass
+    CHECK_MEM_ERROR(cm, cpi->twopass.this_frame_mb_stats.mb_stats,
+                    vpx_calloc(cm->MBs * sizeof(FIRSTPASS_MB_STATS), 1));
+  } else {
+    cpi->twopass.this_frame_mb_stats.mb_stats = NULL;
   }
 #endif
+
+  cpi->refresh_alt_ref_frame = 0;
+
+  // Note that at the moment multi_arf will not work with svc.
+  // For the current check in all the execution paths are defaulted to 0
+  // pending further tuning and testing. The code is left in place here
+  // as a place holder in regard to the required paths.
+  cpi->multi_arf_last_grp_enabled = 0;
+  if (cpi->pass == 2) {
+    if (cpi->use_svc) {
+      cpi->multi_arf_allowed = 0;
+      cpi->multi_arf_enabled = 0;
+    } else {
+      // Disable by default for now.
+      cpi->multi_arf_allowed = 0;
+      cpi->multi_arf_enabled = 0;
+    }
+  } else {
+    cpi->multi_arf_allowed = 0;
+    cpi->multi_arf_enabled = 0;
+  }
 
   cpi->b_calculate_psnr = CONFIG_INTERNAL_STATS;
 #if CONFIG_INTERNAL_STATS
@@ -1435,6 +1492,11 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cpi->mb.nmvsadcost_hp[1] = &cpi->mb.nmvsadcosts_hp[1][MV_MAX];
   cal_nmvsadcosts_hp(cpi->mb.nmvsadcost_hp);
 
+#if CONFIG_DENOISING
+#ifdef OUTPUT_YUV_DENOISED
+  yuv_denoised_file = fopen("denoised.yuv", "ab");
+#endif
+#endif
 #ifdef OUTPUT_YUV_SRC
   yuv_file = fopen("bd.yuv", "ab");
 #endif
@@ -1504,6 +1566,12 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   }
 
   set_speed_features(cpi);
+
+  // Allocate memory to store variances for a frame.
+  CHECK_MEM_ERROR(cm, cpi->source_diff_var,
+                  vpx_calloc(cm->MBs, sizeof(diff)));
+  cpi->source_var_thresh = 0;
+  cpi->frames_till_next_var_check = 0;
 
   // Default rd threshold factors for mode selection
   for (i = 0; i < BLOCK_SIZES; ++i) {
@@ -1671,7 +1739,9 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   }
 
 #if CONFIG_DENOISING
-  vp9_denoiser_free(&(cpi->denoiser));
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    vp9_denoiser_free(&(cpi->denoiser));
+  }
 #endif
 
   dealloc_compressor_data(cpi);
@@ -1685,6 +1755,11 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   vp9_remove_common(&cpi->common);
   vpx_free(cpi);
 
+#if CONFIG_DENOISING
+#ifdef OUTPUT_YUV_DENOISED
+  fclose(yuv_denoised_file);
+#endif
+#endif
 #ifdef OUTPUT_YUV_SRC
   fclose(yuv_file);
 #endif
@@ -1980,13 +2055,13 @@ int vp9_update_entropy(VP9_COMP * cpi, int update) {
 }
 
 
-#ifdef OUTPUT_YUV_SRC
-void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
+#if defined(OUTPUT_YUV_SRC)
+void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s, FILE *f) {
   uint8_t *src = s->y_buffer;
   int h = s->y_height;
 
   do {
-    fwrite(src, s->y_width, 1,  yuv_file);
+    fwrite(src, s->y_width, 1, f);
     src += s->y_stride;
   } while (--h);
 
@@ -1994,7 +2069,7 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1,  yuv_file);
+    fwrite(src, s->uv_width, 1, f);
     src += s->uv_stride;
   } while (--h);
 
@@ -2002,10 +2077,44 @@ void vp9_write_yuv_frame(YV12_BUFFER_CONFIG *s) {
   h = s->uv_height;
 
   do {
-    fwrite(src, s->uv_width, 1, yuv_file);
+    fwrite(src, s->uv_width, 1, f);
     src += s->uv_stride;
   } while (--h);
 }
+#endif
+
+#if CONFIG_DENOISING
+#if defined(OUTPUT_YUV_DENOISED)
+// The denoiser buffer is allocated as a YUV 440 buffer. This function writes it
+// as YUV 420. We simply use the top-left pixels of the UV buffers, since we do
+// not denoise the UV channels at this time. If ever we implement UV channel
+// denoising we will have to modify this.
+void vp9_write_yuv_frame_420(YV12_BUFFER_CONFIG *s, FILE *f) {
+  uint8_t *src = s->y_buffer;
+  int h = s->y_height;
+
+  do {
+    fwrite(src, s->y_width, 1, f);
+    src += s->y_stride;
+  } while (--h);
+
+  src = s->u_buffer;
+  h = s->uv_height / 2;
+
+  do {
+    fwrite(src, s->uv_width / 2, 1, f);
+    src += s->uv_stride + s->uv_width / 2;
+  } while (--h);
+
+  src = s->v_buffer;
+  h = s->uv_height / 2;
+
+  do {
+    fwrite(src, s->uv_width / 2, 1, f);
+    src += s->uv_stride + s->uv_width / 2;
+  } while (--h);
+}
+#endif
 #endif
 
 #ifdef OUTPUT_YUV_REC
@@ -2120,11 +2229,16 @@ static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
 #else
     vp9_resize_plane(srcs[i], src_heights[i], src_widths[i], src_strides[i],
                      dsts[i], dst_heights[i], dst_widths[i], dst_strides[i]);
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #endif
   }
   // TODO(hkuang): Call C version explicitly
   // as neon version only expand border size 32.
   vp8_yv12_extend_frame_borders_c(dst);
+=======
+
+  vp9_extend_frame_borders(dst);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 }
 
 #if CONFIG_VP9_HIGH
@@ -2182,9 +2296,7 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
     }
   }
 
-  // TODO(hkuang): Call C version explicitly
-  // as neon version only expand border size 32.
-  vp8_yv12_extend_frame_borders_c(dst);
+  vp9_extend_frame_borders(dst);
 }
 
 #define WRITE_RECON_BUFFER 0
@@ -2268,14 +2380,8 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
-  }
-#if CONFIG_MULTIPLE_ARF
-  else if (!cpi->multi_arf_enabled && cpi->refresh_golden_frame &&
-      !cpi->refresh_alt_ref_frame) {
-#else
-  else if (cpi->refresh_golden_frame && !cpi->refresh_alt_ref_frame &&
-           !cpi->use_svc) {
-#endif
+  } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
+             cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
     /* Preserve the previously existing golden frame and update the frame in
      * the alt ref slot instead. This is highly specific to the current use of
      * alt-ref as a forward reference, and this needs to be generalized as
@@ -2293,14 +2399,14 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     tmp = cpi->alt_fb_idx;
     cpi->alt_fb_idx = cpi->gld_fb_idx;
     cpi->gld_fb_idx = tmp;
-  }  else { /* For non key/golden frames */
+  } else { /* For non key/golden frames */
     if (cpi->refresh_alt_ref_frame) {
       int arf_idx = cpi->alt_fb_idx;
-#if CONFIG_MULTIPLE_ARF
-      if (cpi->multi_arf_enabled) {
-        arf_idx = cpi->arf_buffer_idx[cpi->sequence_number + 1];
+      if ((cpi->pass == 2) && cpi->multi_arf_allowed) {
+        const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+        arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
-#endif
+
       ref_cnt_fb(cm->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
     }
@@ -2316,11 +2422,14 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
 #if CONFIG_DENOISING
-  vp9_denoiser_update_frame_info(&cpi->denoiser,
-                                cpi->common.frame_type,
-                                cpi->refresh_alt_ref_frame,
-                                cpi->refresh_golden_frame,
-                                cpi->refresh_last_frame);
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    vp9_denoiser_update_frame_info(&cpi->denoiser,
+                                   *cpi->Source,
+                                   cpi->common.frame_type,
+                                   cpi->refresh_alt_ref_frame,
+                                   cpi->refresh_golden_frame,
+                                   cpi->refresh_last_frame);
+  }
 #endif
 }
 
@@ -2352,16 +2461,21 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
 void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #if CONFIG_VP9_HIGH
   int bps = bit_depth_to_bps(cm->bit_depth);
 #endif
+=======
+  const VP9_REFFRAME ref_mask[3] = {VP9_LAST_FLAG, VP9_GOLD_FLAG, VP9_ALT_FLAG};
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
     const YV12_BUFFER_CONFIG *const ref = &cm->frame_bufs[idx].buf;
 
-    if (ref->y_crop_width != cm->width ||
-        ref->y_crop_height != cm->height) {
+    // Need to convert from VP9_REFFRAME to index into ref_mask (subtract 1).
+    if ((cpi->ref_frame_flags & ref_mask[ref_frame - 1]) &&
+        (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height)) {
       const int new_fb = get_free_fb(cm);
       vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
                                cm->width, cm->height,
@@ -2770,6 +2884,29 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
   }
 }
 
+static void configure_skippable_frame(VP9_COMP *cpi) {
+  // If the current frame does not have non-zero motion vector detected in the
+  // first  pass, and so do its previous and forward frames, then this frame
+  // can be skipped for partition check, and the partition size is assigned
+  // according to the variance
+
+  SVC *const svc = &cpi->svc;
+  const int is_spatial_svc = (svc->number_spatial_layers > 1) &&
+                             (svc->number_temporal_layers == 1);
+  TWO_PASS *const twopass = is_spatial_svc ?
+                            &svc->layer_context[svc->spatial_layer_id].twopass
+                            : &cpi->twopass;
+
+  cpi->skippable_frame = (!frame_is_intra_only(&cpi->common) &&
+    twopass->stats_in - 2 > twopass->stats_in_start &&
+    twopass->stats_in < twopass->stats_in_end &&
+    (twopass->stats_in - 1)->pcnt_inter - (twopass->stats_in - 1)->pcnt_motion
+    == 1 &&
+    (twopass->stats_in - 2)->pcnt_inter - (twopass->stats_in - 2)->pcnt_motion
+    == 1 &&
+    twopass->stats_in->pcnt_inter - twopass->stats_in->pcnt_motion == 1);
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2809,7 +2946,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->lf.mode_ref_delta_update = 0;
 
   // Initialize cpi->mv_step_param to default based on max resolution.
-  cpi->mv_step_param = vp9_init_search_range(sf, max_mv_def);
+  cpi->mv_step_param = vp9_init_search_range(max_mv_def);
   // Initialize cpi->max_mv_magnitude and cpi->mv_step_param if appropriate.
   if (sf->mv.auto_mv_step_size) {
     if (frame_is_intra_only(cm)) {
@@ -2821,7 +2958,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
         // Allow mv_steps to correspond to twice the max mv magnitude found
         // in the previous frame, capped by the default max_mv_magnitude based
         // on resolution.
-        cpi->mv_step_param = vp9_init_search_range(sf, MIN(max_mv_def, 2 *
+        cpi->mv_step_param = vp9_init_search_range(MIN(max_mv_def, 2 *
                                  cpi->max_mv_magnitude));
       cpi->max_mv_magnitude = 0;
     }
@@ -2865,6 +3002,13 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cpi->pass == 2 && cpi->sf.static_segmentation)
     configure_static_seg_features(cpi);
 
+  // Check if the current frame is skippable for the partition search in the
+  // second pass according to the first pass stats
+  if (cpi->pass == 2 &&
+      (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
+    configure_skippable_frame(cpi);
+  }
+
   // For 1 pass CBR, check if we are dropping this frame.
   // Never drop on key frame.
   if (cpi->pass == 0 &&
@@ -2905,10 +3049,19 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 #endif
 
 #ifdef OUTPUT_YUV_SRC
-  vp9_write_yuv_frame(cpi->Source);
+  vp9_write_yuv_frame(cpi->Source, yuv_file);
 #endif
 
   set_speed_features(cpi);
+
+#if CONFIG_DENOISING
+#ifdef OUTPUT_YUV_DENOISED
+  if (cpi->oxcf.noise_sensitivity > 0) {
+    vp9_write_yuv_frame_420(&cpi->denoiser.running_avg_y[INTRA_FRAME],
+                            yuv_denoised_file);
+  }
+#endif
+#endif
 
   // Decide q and q bounds.
   q = vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
@@ -2916,7 +3069,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (!frame_is_intra_only(cm)) {
     cm->interp_filter = DEFAULT_INTERP_FILTER;
     /* TODO: Decide this more intelligently */
-    set_high_precision_mv(cpi, q < HIGH_PRECISION_MV_QTHRESH);
+    vp9_set_high_precision_mv(cpi, q < HIGH_PRECISION_MV_QTHRESH);
   }
 
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
@@ -3013,31 +3166,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (cm->frame_type == KEY_FRAME) {
     // Tell the caller that the frame was coded as a key frame
     *frame_flags = cpi->frame_flags | FRAMEFLAGS_KEY;
-
-#if CONFIG_MULTIPLE_ARF
-    // Reset the sequence number.
-    if (cpi->multi_arf_enabled) {
-      cpi->sequence_number = 0;
-      cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
-      cpi->new_frame_coding_order_period = -1;
-    }
-#endif
   } else {
     *frame_flags = cpi->frame_flags & ~FRAMEFLAGS_KEY;
-
-#if CONFIG_MULTIPLE_ARF
-    /* Increment position in the coded frame sequence. */
-    if (cpi->multi_arf_enabled) {
-      ++cpi->sequence_number;
-      if (cpi->sequence_number >= cpi->frame_coding_order_period) {
-        cpi->sequence_number = 0;
-        cpi->frame_coding_order_period = cpi->new_frame_coding_order_period;
-        cpi->new_frame_coding_order_period = -1;
-      }
-      cpi->this_frame_weight = cpi->arf_weight[cpi->sequence_number];
-      assert(cpi->this_frame_weight >= 0);
-    }
-#endif
   }
 
   // Clear the one shot update flags for segmentation map and mode/ref loop
@@ -3096,6 +3226,16 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
   vp9_twopass_postencode_update(cpi);
 }
 
+static void init_motion_estimation(VP9_COMP *cpi) {
+  int y_stride = cpi->scaled_source.y_stride;
+
+  if (cpi->sf.mv.search_method == NSTEP) {
+    vp9_init3smotion_compensation(&cpi->ss_cfg, y_stride);
+  } else if (cpi->sf.mv.search_method == DIAMOND) {
+    vp9_init_dsmotion_compensation(&cpi->ss_cfg, y_stride);
+  }
+}
+
 static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
                                 int subsampling_y
 #if CONFIG_VP9_HIGH
@@ -3107,10 +3247,19 @@ static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
   if (!cpi->initial_width) {
     cm->subsampling_x = subsampling_x;
     cm->subsampling_y = subsampling_y;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #if CONFIG_VP9_HIGH
     cm->use_high = use_high;
 #endif
+=======
+
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     alloc_raw_frame_buffers(cpi);
+    alloc_ref_frame_buffers(cpi);
+    alloc_util_frame_buffers(cpi);
+
+    init_motion_estimation(cpi);
+
     cpi->initial_width = cm->width;
     cpi->initial_height = cm->height;
   }
@@ -3125,18 +3274,35 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   int res = 0;
   const int subsampling_x = sd->uv_width  < sd->y_width;
   const int subsampling_y = sd->uv_height < sd->y_height;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #if CONFIG_VP9_HIGH
   const int use_high = sd->flags & YV12_FLAG_HIGH;
 #endif
+=======
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
 #if CONFIG_VP9_HIGH
   check_initial_width(cpi, subsampling_x, subsampling_y, use_high);
 #else
   check_initial_width(cpi, subsampling_x, subsampling_y);
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #endif
+=======
+
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   vpx_usec_timer_start(&timer);
-  if (vp9_lookahead_push(cpi->lookahead,
-                         sd, time_stamp, end_time, frame_flags))
+
+#ifdef CONFIG_SPATIAL_SVC
+  if (is_spatial_svc)
+    res = vp9_svc_lookahead_push(cpi, cpi->lookahead, sd, time_stamp, end_time,
+                                 frame_flags);
+  else
+#endif
+    res = vp9_lookahead_push(cpi->lookahead,
+                             sd, time_stamp, end_time, frame_flags);
+  if (res)
     res = -1;
   vpx_usec_timer_mark(&timer);
   cpi->time_receive_data += vpx_usec_timer_elapsed(&timer);
@@ -3163,13 +3329,6 @@ static int frame_is_reference(const VP9_COMP *cpi) {
          cm->seg.update_map ||
          cm->seg.update_data;
 }
-
-#if CONFIG_MULTIPLE_ARF
-int is_next_frame_arf(VP9_COMP *cpi) {
-  // Negative entry in frame_coding_order indicates an ARF at this position.
-  return cpi->frame_coding_order[cpi->sequence_number + 1] < 0 ? 1 : 0;
-}
-#endif
 
 void adjust_frame_rate(VP9_COMP *cpi) {
   int64_t this_duration;
@@ -3209,6 +3368,46 @@ void adjust_frame_rate(VP9_COMP *cpi) {
   cpi->last_end_time_stamp_seen = cpi->source->ts_end;
 }
 
+// Returns 0 if this is not an alt ref else the offset of the source frame
+// used as the arf midpoint.
+static int get_arf_src_index(VP9_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  int arf_src_index = 0;
+  if (is_altref_enabled(&cpi->oxcf)) {
+    if (cpi->pass == 2) {
+      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+      if (gf_group->update_type[gf_group->index] == ARF_UPDATE) {
+        arf_src_index = gf_group->arf_src_offset[gf_group->index];
+      }
+    } else if (rc->source_alt_ref_pending) {
+      arf_src_index = rc->frames_till_gf_update_due;
+    }
+  }
+  return arf_src_index;
+}
+
+static void check_src_altref(VP9_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+
+  if (cpi->pass == 2) {
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    rc->is_src_frame_alt_ref =
+      (gf_group->update_type[gf_group->index] == OVERLAY_UPDATE);
+  } else {
+    rc->is_src_frame_alt_ref = cpi->alt_ref_source &&
+                               (cpi->source == cpi->alt_ref_source);
+  }
+
+  if (rc->is_src_frame_alt_ref) {
+    // Current frame is an ARF overlay frame.
+    cpi->alt_ref_source = NULL;
+
+    // Don't refresh the last buffer for an ARF overlay frame. It will
+    // become the GF so preserve last as an alternative prediction option.
+    cpi->refresh_last_frame = 0;
+  }
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -3218,11 +3417,16 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct vpx_usec_timer  cmptimer;
   YV12_BUFFER_CONFIG *force_src_buffer = NULL;
   MV_REFERENCE_FRAME ref_frame;
+  int arf_src_index;
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1) &&
+                             (cpi->svc.number_spatial_layers > 1);
 
   if (!cpi)
     return -1;
 
-  if (cpi->svc.number_spatial_layers > 1 && cpi->pass == 2) {
+  if (is_spatial_svc && cpi->pass == 2) {
+    vp9_svc_lookahead_peek(cpi, cpi->lookahead, 0, 1);
     vp9_restore_layer_context(cpi);
   }
 
@@ -3231,7 +3435,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->source = NULL;
   cpi->last_source = NULL;
 
-  set_high_precision_mv(cpi, ALTREF_HIGH_PRECISION_MV);
+  vp9_set_high_precision_mv(cpi, ALTREF_HIGH_PRECISION_MV);
 
   // Normal defaults
   cm->reset_frame_context = 0;
@@ -3240,35 +3444,24 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cpi->refresh_golden_frame = 0;
   cpi->refresh_alt_ref_frame = 0;
 
-  // Should we code an alternate reference frame.
-  if (is_altref_enabled(&cpi->oxcf) && rc->source_alt_ref_pending) {
-    int frames_to_arf;
+  // Should we encode an arf frame.
+  arf_src_index = get_arf_src_index(cpi);
+  if (arf_src_index) {
+    assert(arf_src_index <= rc->frames_to_key);
 
-#if CONFIG_MULTIPLE_ARF
-    assert(!cpi->multi_arf_enabled ||
-           cpi->frame_coding_order[cpi->sequence_number] < 0);
-
-    if (cpi->multi_arf_enabled && (cpi->pass == 2))
-      frames_to_arf = (-cpi->frame_coding_order[cpi->sequence_number])
-          - cpi->next_frame_in_order;
+#ifdef CONFIG_SPATIAL_SVC
+    if (is_spatial_svc)
+      cpi->source = vp9_svc_lookahead_peek(cpi, cpi->lookahead,
+                                           arf_src_index, 1);
     else
 #endif
-      frames_to_arf = rc->frames_till_gf_update_due;
-
-    assert(frames_to_arf <= rc->frames_to_key);
-
-    if ((cpi->source = vp9_lookahead_peek(cpi->lookahead, frames_to_arf))) {
-#if CONFIG_MULTIPLE_ARF
-      cpi->alt_ref_source[cpi->arf_buffered] = cpi->source;
-#else
+      cpi->source = vp9_lookahead_peek(cpi->lookahead, arf_src_index);
+    if (cpi->source != NULL) {
       cpi->alt_ref_source = cpi->source;
-#endif
 
       if (cpi->oxcf.arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
-        // TODO(agrange) merge these two functions.
-        vp9_configure_arnr_filter(cpi, frames_to_arf, rc->gfu_boost);
-        vp9_temporal_filter_prepare(cpi, frames_to_arf);
+        vp9_temporal_filter(cpi, arf_src_index);
         vp9_extend_frame_borders(&cpi->alt_ref_buffer);
         force_src_buffer = &cpi->alt_ref_buffer;
       }
@@ -3278,59 +3471,38 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;
       rc->is_src_frame_alt_ref = 0;
-
-#if CONFIG_MULTIPLE_ARF
-      if (!cpi->multi_arf_enabled)
-#endif
-        rc->source_alt_ref_pending = 0;
+      rc->source_alt_ref_pending = 0;
     } else {
       rc->source_alt_ref_pending = 0;
     }
   }
 
   if (!cpi->source) {
-#if CONFIG_MULTIPLE_ARF
-    int i;
-#endif
-
     // Get last frame source.
     if (cm->current_video_frame > 0) {
-      if ((cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1)) == NULL)
+#ifdef CONFIG_SPATIAL_SVC
+      if (is_spatial_svc)
+        cpi->last_source = vp9_svc_lookahead_peek(cpi, cpi->lookahead, -1, 0);
+      else
+#endif
+        cpi->last_source = vp9_lookahead_peek(cpi->lookahead, -1);
+      if (cpi->last_source == NULL)
         return -1;
     }
 
-    if ((cpi->source = vp9_lookahead_pop(cpi->lookahead, flush))) {
+    // Read in the source frame.
+#ifdef CONFIG_SPATIAL_SVC
+    if (is_spatial_svc)
+      cpi->source = vp9_svc_lookahead_pop(cpi, cpi->lookahead, flush);
+    else
+#endif
+      cpi->source = vp9_lookahead_pop(cpi->lookahead, flush);
+    if (cpi->source != NULL) {
       cm->show_frame = 1;
       cm->intra_only = 0;
 
-#if CONFIG_MULTIPLE_ARF
-      // Is this frame the ARF overlay.
-      rc->is_src_frame_alt_ref = 0;
-      for (i = 0; i < cpi->arf_buffered; ++i) {
-        if (cpi->source == cpi->alt_ref_source[i]) {
-          rc->is_src_frame_alt_ref = 1;
-          cpi->refresh_golden_frame = 1;
-          break;
-        }
-      }
-#else
-      rc->is_src_frame_alt_ref = cpi->alt_ref_source &&
-                                 (cpi->source == cpi->alt_ref_source);
-#endif
-      if (rc->is_src_frame_alt_ref) {
-        // Current frame is an ARF overlay frame.
-#if CONFIG_MULTIPLE_ARF
-        cpi->alt_ref_source[i] = NULL;
-#else
-        cpi->alt_ref_source = NULL;
-#endif
-        // Don't refresh the last buffer for an ARF overlay frame. It will
-        // become the GF so preserve last as an alternative prediction option.
-        cpi->refresh_last_frame = 0;
-      }
-#if CONFIG_MULTIPLE_ARF
-      ++cpi->next_frame_in_order;
-#endif
+      // Check to see if the frame should be encoded as an arf overlay.
+      check_src_altref(cpi);
     }
   }
 
@@ -3338,20 +3510,17 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->un_scaled_source = cpi->Source = force_src_buffer ? force_src_buffer
                                                            : &cpi->source->img;
 
-  if (cpi->last_source != NULL) {
-    cpi->unscaled_last_source = &cpi->last_source->img;
-  } else {
-    cpi->unscaled_last_source = NULL;
-  }
+    if (cpi->last_source != NULL) {
+      cpi->unscaled_last_source = &cpi->last_source->img;
+    } else {
+      cpi->unscaled_last_source = NULL;
+    }
 
     *time_stamp = cpi->source->ts_start;
     *time_end = cpi->source->ts_end;
-    *frame_flags = cpi->source->flags;
+    *frame_flags =
+        (cpi->source->flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
-#if CONFIG_MULTIPLE_ARF
-    if (cm->frame_type != KEY_FRAME && cpi->pass == 2)
-      rc->source_alt_ref_pending = is_next_frame_arf(cpi);
-#endif
   } else {
     *size = 0;
     if (flush && cpi->pass == 1 && !cpi->twopass.first_pass_done) {
@@ -3389,16 +3558,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cm->frame_bufs[cm->new_fb_idx].ref_count--;
   cm->new_fb_idx = get_free_fb(cm);
 
-#if CONFIG_MULTIPLE_ARF
-  /* Set up the correct ARF frame. */
-  if (cpi->refresh_alt_ref_frame) {
-    ++cpi->arf_buffered;
+  if (!cpi->use_svc && cpi->multi_arf_allowed) {
+    if (cm->frame_type == KEY_FRAME) {
+      init_buffer_indices(cpi);
+    } else if (cpi->pass == 2) {
+      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+      cpi->alt_fb_idx = gf_group->arf_ref_idx[gf_group->index];
+    }
   }
-  if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
-      (cpi->pass == 2)) {
-    cpi->alt_fb_idx = cpi->arf_buffer_idx[cpi->sequence_number];
-  }
-#endif
 
   cpi->frame_flags = *frame_flags;
 
@@ -3419,6 +3586,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                            cm->use_high,
 #endif
                            VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+
+  alloc_util_frame_buffers(cpi);
+  init_motion_estimation(cpi);
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
@@ -3645,16 +3815,23 @@ int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
 
 int vp9_set_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols) {
   if (rows == cpi->common.mb_rows && cols == cpi->common.mb_cols) {
+    const int mi_rows = cpi->common.mi_rows;
+    const int mi_cols = cpi->common.mi_cols;
     if (map) {
-      vpx_memcpy(cpi->active_map, map, rows * cols);
-      cpi->active_map_enabled = 1;
+      int r, c;
+      for (r = 0; r < mi_rows; r++) {
+        for (c = 0; c < mi_cols; c++) {
+          cpi->segmentation_map[r * mi_cols + c] =
+              !map[(r >> 1) * cols + (c >> 1)];
+        }
+      }
+      vp9_enable_segfeature(&cpi->common.seg, 1, SEG_LVL_SKIP);
+      vp9_enable_segmentation(&cpi->common.seg);
     } else {
-      cpi->active_map_enabled = 0;
+      vp9_disable_segmentation(&cpi->common.seg);
     }
-
     return 0;
   } else {
-    // cpi->active_map_enabled = 0;
     return -1;
   }
 }
@@ -3762,4 +3939,43 @@ int vp9_high_get_y_sse(const YV12_BUFFER_CONFIG *a, const YV12_BUFFER_CONFIG *b,
 
 int vp9_get_quantizer(VP9_COMP *cpi) {
   return cpi->common.base_qindex;
+}
+
+void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags) {
+  if (flags & (VP8_EFLAG_NO_REF_LAST | VP8_EFLAG_NO_REF_GF |
+               VP8_EFLAG_NO_REF_ARF)) {
+    int ref = 7;
+
+    if (flags & VP8_EFLAG_NO_REF_LAST)
+      ref ^= VP9_LAST_FLAG;
+
+    if (flags & VP8_EFLAG_NO_REF_GF)
+      ref ^= VP9_GOLD_FLAG;
+
+    if (flags & VP8_EFLAG_NO_REF_ARF)
+      ref ^= VP9_ALT_FLAG;
+
+    vp9_use_as_reference(cpi, ref);
+  }
+
+  if (flags & (VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_GF |
+               VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_FORCE_GF |
+               VP8_EFLAG_FORCE_ARF)) {
+    int upd = 7;
+
+    if (flags & VP8_EFLAG_NO_UPD_LAST)
+      upd ^= VP9_LAST_FLAG;
+
+    if (flags & VP8_EFLAG_NO_UPD_GF)
+      upd ^= VP9_GOLD_FLAG;
+
+    if (flags & VP8_EFLAG_NO_UPD_ARF)
+      upd ^= VP9_ALT_FLAG;
+
+    vp9_update_reference(cpi, upd);
+  }
+
+  if (flags & VP8_EFLAG_NO_UPD_ENTROPY) {
+    vp9_update_entropy(cpi, 0);
+  }
 }

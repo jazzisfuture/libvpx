@@ -102,9 +102,15 @@ extern "C" {
     vpx_img_fmt_t fmt; /**< Image Format */
 
     /* Image storage dimensions */
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     unsigned int    w;           /**< Stored image width */
     unsigned int    h;           /**< Stored image height */
     unsigned int    bit_depth;   /**< Stored image bit-depth */
+=======
+    unsigned int  w;           /**< Stored image width */
+    unsigned int  h;           /**< Stored image height */
+    unsigned int  bit_depth;   /**< Stored image bit-depth */
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
     /* Image display dimensions */
     unsigned int    d_w;   /**< Displayed image width */

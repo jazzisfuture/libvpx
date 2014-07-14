@@ -40,13 +40,13 @@ static void img_buf_free(void *memblk) {
   }
 }
 
-static vpx_image_t *img_alloc_helper(vpx_image_t  *img,
-                                     vpx_img_fmt_t fmt,
-                                     unsigned int  d_w,
-                                     unsigned int  d_h,
-                                     unsigned int  buf_align,
-                                     unsigned int  stride_align,
-                                     unsigned char      *img_data) {
+static vpx_image_t *img_alloc_helper(vpx_image_t   *img,
+                                     vpx_img_fmt_t  fmt,
+                                     unsigned int   d_w,
+                                     unsigned int   d_h,
+                                     unsigned int   buf_align,
+                                     unsigned int   stride_align,
+                                     unsigned char *img_data) {
 
   unsigned int  h, w, s, xcs, ycs, bps;
   int           align;

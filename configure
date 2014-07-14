@@ -96,6 +96,7 @@ all_platforms="${all_platforms} armv6-darwin-gcc"
 all_platforms="${all_platforms} armv6-linux-rvct"
 all_platforms="${all_platforms} armv6-linux-gcc"
 all_platforms="${all_platforms} armv6-none-rvct"
+all_platforms="${all_platforms} arm64-darwin-gcc"
 all_platforms="${all_platforms} armv7-android-gcc"   #neon Cortex-A8
 all_platforms="${all_platforms} armv7-darwin-gcc"    #neon Cortex-A8
 all_platforms="${all_platforms} armv7-linux-rvct"    #neon Cortex-A8
@@ -276,7 +277,11 @@ EXPERIMENT_LIST="
     high_transforms
     high_quant
     denoising
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     emulate_hw_high
+=======
+    fp_mb_stats
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 "
 CONFIG_LIST="
     external_build
