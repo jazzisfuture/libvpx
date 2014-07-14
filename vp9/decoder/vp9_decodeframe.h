@@ -26,7 +26,13 @@ void vp9_decode_frame(struct VP9Decoder *pbi,
                       const uint8_t *data, const uint8_t *data_end,
                       const uint8_t **p_data_end);
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 BITSTREAM_PROFILE vp9_read_profile(struct vp9_read_bit_buffer *rb);
+=======
+int vp9_read_sync_code(struct vp9_read_bit_buffer *const rb);
+void vp9_read_frame_size(struct vp9_read_bit_buffer *rb,
+                         int *width, int *height);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
 #ifdef __cplusplus
 }  // extern "C"

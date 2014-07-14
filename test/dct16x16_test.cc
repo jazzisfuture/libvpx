@@ -354,6 +354,7 @@ class Trans16x16TestBase {
         }
       }
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
       REGISTER_STATE_CHECK(RunFwdTxfm(test_input_block,
                                       test_temp_block, pitch_));
       if (bit_depth_ == 8)
@@ -364,6 +365,11 @@ class Trans16x16TestBase {
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, CONVERT_TO_BYTEPTR(dst16), pitch_));
 #endif
+=======
+      ASM_REGISTER_STATE_CHECK(RunFwdTxfm(test_input_block,
+                                          test_temp_block, pitch_));
+      ASM_REGISTER_STATE_CHECK(RunInvTxfm(test_temp_block, dst, pitch_));
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
       for (int j = 0; j < kNumCoeffs; ++j) {
         const uint32_t diff = bit_depth_ == 8 ? dst[j] - src[j] :
@@ -395,7 +401,7 @@ class Trans16x16TestBase {
         input_block[j] = (rnd.Rand16() & mask_) - (rnd.Rand16() & mask_);
 
       fwd_txfm_ref(input_block, output_ref_block, pitch_, tx_type_);
-      REGISTER_STATE_CHECK(RunFwdTxfm(input_block, output_block, pitch_));
+      ASM_REGISTER_STATE_CHECK(RunFwdTxfm(input_block, output_block, pitch_));
 
       // The minimum quant value is 4.
       for (int j = 0; j < kNumCoeffs; ++j)
@@ -426,8 +432,8 @@ class Trans16x16TestBase {
       }
 
       fwd_txfm_ref(input_extreme_block, output_ref_block, pitch_, tx_type_);
-      REGISTER_STATE_CHECK(RunFwdTxfm(input_extreme_block,
-                                      output_block, pitch_));
+      ASM_REGISTER_STATE_CHECK(RunFwdTxfm(input_extreme_block,
+                                          output_block, pitch_));
 
       // The minimum quant value is 4.
       for (int j = 0; j < kNumCoeffs; ++j) {
@@ -478,6 +484,7 @@ class Trans16x16TestBase {
       output_ref_block[0] = (output_ref_block[0] / dc_thred) * dc_thred;
       for (int j = 1; j < kNumCoeffs; ++j)
         output_ref_block[j] = (output_ref_block[j] / ac_thred) * ac_thred;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
       if (bit_depth_ == 8) {
         inv_txfm_ref(output_ref_block, ref, pitch_, tx_type_);
         REGISTER_STATE_CHECK(RunInvTxfm(output_ref_block, dst, pitch_));
@@ -497,6 +504,13 @@ class Trans16x16TestBase {
       else
         for (int j = 0; j < kNumCoeffs; ++j)
           EXPECT_EQ(ref16[j], dst16[j]);
+=======
+      inv_txfm_ref(output_ref_block, ref, pitch_, tx_type_);
+      ASM_REGISTER_STATE_CHECK(RunInvTxfm(output_ref_block, dst, pitch_));
+
+      for (int j = 0; j < kNumCoeffs; ++j)
+        EXPECT_EQ(ref[j], dst[j]);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     }
   }
 
@@ -530,12 +544,16 @@ class Trans16x16TestBase {
       for (int j = 0; j < kNumCoeffs; ++j)
         coeff[j] = round(out_r[j]);
 
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
       if (bit_depth_ == 8)
         REGISTER_STATE_CHECK(RunInvTxfm(coeff, dst, 16));
 #if CONFIG_VP9_HIGH
       else
         REGISTER_STATE_CHECK(RunInvTxfm(coeff, CONVERT_TO_BYTEPTR(dst16), 16));
 #endif
+=======
+      ASM_REGISTER_STATE_CHECK(RunInvTxfm(coeff, dst, 16));
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
       for (int j = 0; j < kNumCoeffs; ++j) {
         const uint32_t diff = bit_depth_ == 8 ? dst[j] - src[j] :

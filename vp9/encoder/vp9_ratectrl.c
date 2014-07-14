@@ -258,6 +258,8 @@ static void update_buffer_level(VP9_COMP *cpi, int encoded_frame_size) {
 }
 
 void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
+  int i;
+
   if (pass == 0 && oxcf->rc_mode == VPX_CBR) {
     rc->avg_frame_qindex[KEY_FRAME] = oxcf->worst_allowed_q;
     rc->avg_frame_qindex[INTER_FRAME] = oxcf->worst_allowed_q;
@@ -299,9 +301,9 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->tot_q = 0.0;
   rc->avg_q = vp9_convert_qindex_to_q(oxcf->worst_allowed_q, oxcf->bit_depth);
 
-  rc->rate_correction_factor = 1.0;
-  rc->key_frame_rate_correction_factor = 1.0;
-  rc->gf_rate_correction_factor = 1.0;
+  for (i = 0; i < RATE_FACTOR_LEVELS; ++i) {
+    rc->rate_correction_factors[i] = 1.0;
+  }
 }
 
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
@@ -343,28 +345,40 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
 }
 
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
+  const RATE_CONTROL *const rc = &cpi->rc;
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    return cpi->rc.key_frame_rate_correction_factor;
+    return rc->rate_correction_factors[KF_STD];
+  } else if (cpi->pass == 2) {
+    RATE_FACTOR_LEVEL rf_lvl =
+      cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
+    return rc->rate_correction_factors[rf_lvl];
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
-        !cpi->rc.is_src_frame_alt_ref &&
+        !rc->is_src_frame_alt_ref &&
         !(cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR))
-      return cpi->rc.gf_rate_correction_factor;
+      return rc->rate_correction_factors[GF_ARF_STD];
     else
-      return cpi->rc.rate_correction_factor;
+      return rc->rate_correction_factors[INTER_NORMAL];
   }
 }
 
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
+  RATE_CONTROL *const rc = &cpi->rc;
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    cpi->rc.key_frame_rate_correction_factor = factor;
+    rc->rate_correction_factors[KF_STD] = factor;
+  } else if (cpi->pass == 2) {
+    RATE_FACTOR_LEVEL rf_lvl =
+      cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
+    rc->rate_correction_factors[rf_lvl] = factor;
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
-        !cpi->rc.is_src_frame_alt_ref &&
+        !rc->is_src_frame_alt_ref &&
         !(cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR))
-      cpi->rc.gf_rate_correction_factor = factor;
+      rc->rate_correction_factors[GF_ARF_STD] = factor;
     else
-      cpi->rc.rate_correction_factor = factor;
+      rc->rate_correction_factors[INTER_NORMAL] = factor;
   }
 }
 
@@ -732,8 +746,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
 
   if (frame_is_intra_only(cm)) {
     active_best_quality = rc->best_quality;
-#if !CONFIG_MULTIPLE_ARF
-    // Handle the special case for key frames forced when we have75 reached
+
+    // Handle the special case for key frames forced when we have reached
     // the maximum key frame interval. Here force the Q to a range
     // based on the ambient Q to reduce the risk of popping.
     if (rc->this_key_frame_forced) {
@@ -766,6 +780,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
                                                 q_val * q_adj_factor,
                                                 cm->bit_depth);
     }
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #else
     double current_q;
     // Force the KF quantizer to be 30% of the active_worst_quality.
@@ -773,6 +788,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     active_best_quality = active_worst_quality
         + vp9_compute_qdelta(rc, current_q, current_q * 0.3, cm->bit_depth);
 #endif
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   } else if (!rc->is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     // Use the lower of active_worst_quality and recent
@@ -876,6 +893,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
         q = *top_index;
     }
   }
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
   if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
@@ -888,12 +906,9 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
     q = active_worst_quality +
         vp9_compute_qdelta(rc, current_q, new_q, cm->bit_depth);
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
-    *bottom_index = q;
-    *top_index    = q;
-    printf("frame:%d q:%d\n", cm->current_video_frame, q);
-  }
-#endif
   assert(*top_index <= rc->worst_quality &&
          *top_index >= rc->best_quality);
   assert(*bottom_index <= rc->worst_quality &&
@@ -929,7 +944,6 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   ASSIGN_MINQ_TABLE(cm->bit_depth, inter_minq);
 
   if (frame_is_intra_only(cm) || vp9_is_upper_layer_key_frame(cpi)) {
-#if !CONFIG_MULTIPLE_ARF
     // Handle the special case for key frames forced when we have75 reached
     // the maximum key frame interval. Here force the Q to a range
     // based on the ambient Q to reduce the risk of popping.
@@ -966,6 +980,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                                 q_val * q_adj_factor,
                                                 cm->bit_depth);
     }
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #else
     double current_q;
     // Force the KF quantizer to be 30% of the active_worst_quality.
@@ -973,6 +988,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     active_best_quality = active_worst_quality
         + vp9_compute_qdelta(rc, current_q, current_q * 0.3, cm->bit_depth);
 #endif
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   } else if (!rc->is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     // Use the lower of active_worst_quality and recent
@@ -1035,7 +1052,9 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   *bottom_index = active_best_quality;
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
+  vp9_clear_system_state();
   {
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     int qdelta = 0;
     vp9_clear_system_state();
 
@@ -1052,6 +1071,20 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                           active_worst_quality, 1.75,
                                           cm->bit_depth);
     }
+=======
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    const double rate_factor_deltas[RATE_FACTOR_LEVELS] = {
+      1.00,  // INTER_NORMAL
+      1.00,  // INTER_HIGH
+      1.50,  // GF_ARF_LOW
+      1.75,  // GF_ARF_STD
+      2.00,  // KF_STD
+    };
+    const double rate_factor =
+      rate_factor_deltas[gf_group->rf_level[gf_group->index]];
+    int qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                            active_worst_quality, rate_factor);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
@@ -1073,6 +1106,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
         q = *top_index;
     }
   }
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
   if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
@@ -1085,12 +1119,9 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
     q = active_worst_quality +
         vp9_compute_qdelta(rc, current_q, new_q, cm->bit_depth);
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
-    *bottom_index = q;
-    *top_index    = q;
-    printf("frame:%d q:%d\n", cm->current_video_frame, q);
-  }
-#endif
   assert(*top_index <= rc->worst_quality &&
          *top_index >= rc->best_quality);
   assert(*bottom_index <= rc->worst_quality &&
@@ -1155,11 +1186,8 @@ static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   rc->frames_since_golden = 0;
 
-#if CONFIG_MULTIPLE_ARF
-  if (!cpi->multi_arf_enabled)
-#endif
-    // Clear the alternate reference update pending flag.
-    rc->source_alt_ref_pending = 0;
+  // Mark the alt ref as done (setting to 0 means no further alt refs pending).
+  rc->source_alt_ref_pending = 0;
 
   // Set the alternate reference frame active flag
   rc->source_alt_ref_active = 1;
@@ -1173,8 +1201,13 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
     // this frame refreshes means next frames don't unless specified by user
     rc->frames_since_golden = 0;
 
-    if (!rc->source_alt_ref_pending)
+    if (cpi->pass == 2) {
+      if (!rc->source_alt_ref_pending &&
+          cpi->twopass.gf_group.rf_level[0] == GF_ARF_STD)
       rc->source_alt_ref_active = 0;
+    } else if (!rc->source_alt_ref_pending) {
+      rc->source_alt_ref_active = 0;
+    }
 
     // Decrement count down till next gf
     if (rc->frames_till_gf_update_due > 0)
@@ -1520,6 +1553,8 @@ void vp9_rc_set_gf_max_interval(const VP9EncoderConfig *const oxcf,
 
   // Extended interval for genuinely static scenes
   rc->static_scene_max_gf_interval = oxcf->key_freq >> 1;
+  if (rc->static_scene_max_gf_interval > (MAX_LAG_BUFFERS * 2))
+    rc->static_scene_max_gf_interval = MAX_LAG_BUFFERS * 2;
 
   if (is_altref_enabled(oxcf)) {
     if (rc->static_scene_max_gf_interval > oxcf->lag_in_frames - 1)

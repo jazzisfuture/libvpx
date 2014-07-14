@@ -12,7 +12,6 @@
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_seg_common.h"
 
-#if 1
 static const int16_t dc_qlookup[QINDEX_RANGE] = {
   4,       8,    8,    9,   10,   11,   12,   12,
   13,     14,   15,   16,   17,   18,   19,   19,
@@ -154,6 +153,7 @@ static const int16_t ac_qlookup[QINDEX_RANGE] = {
   1369, 1396, 1423, 1451, 1479, 1508, 1537, 1567,
   1597, 1628, 1660, 1692, 1725, 1759, 1793, 1828,
 };
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
 
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT
 static const int16_t ac_qlookup_10[QINDEX_RANGE] = {
@@ -265,6 +265,8 @@ void vp9_init_quant_tables() {
   }
 }
 #endif
+=======
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT

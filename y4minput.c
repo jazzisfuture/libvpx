@@ -744,7 +744,7 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->src_c_dec_h = _y4m->dst_c_dec_h = _y4m->src_c_dec_v = _y4m->dst_c_dec_v = 2;
     _y4m->dst_buf_read_sz = _y4m->pic_w * _y4m->pic_h
                             + 2 * ((_y4m->pic_w + 1) / 2) * ((_y4m->pic_h + 1) / 2);
-    /*Natively supported: no conversion required.*/
+    /* Natively supported: no conversion required. */
     _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
     _y4m->convert = y4m_convert_null;
   } else if (strcmp(_y4m->chroma_type, "420p10") == 0) {
@@ -752,6 +752,7 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->dst_c_dec_h = 2;
     _y4m->src_c_dec_v = 2;
     _y4m->dst_c_dec_v = 2;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h
                             + 2 * ((_y4m->pic_w + 1) / 2)
                             * ((_y4m->pic_h + 1) / 2));
@@ -776,6 +777,34 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
     _y4m->convert = y4m_convert_null;
     _y4m->bit_depth = 12;
+=======
+    _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h +
+                                 2 * ((_y4m->pic_w + 1) / 2) *
+                                 ((_y4m->pic_h + 1) / 2));
+    /* Natively supported: no conversion required. */
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+    _y4m->bit_depth = 10;
+    _y4m->bps = 15;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I42016;
+    if (only_420) {
+      fprintf(stderr, "Unsupported conversion from 420p10 to 420jpeg\n");
+      return -1;
+    }
+  } else if (strcmp(_y4m->chroma_type, "420p12") == 0) {
+    _y4m->src_c_dec_h = 2;
+    _y4m->dst_c_dec_h = 2;
+    _y4m->src_c_dec_v = 2;
+    _y4m->dst_c_dec_v = 2;
+    _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h +
+                                 2 * ((_y4m->pic_w + 1) / 2) *
+                                 ((_y4m->pic_h + 1) / 2));
+    /* Natively supported: no conversion required. */
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+    _y4m->bit_depth = 12;
+    _y4m->bps = 18;
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     _y4m->vpx_fmt = VPX_IMG_FMT_I42016;
     if (only_420) {
       fprintf(stderr, "Unsupported conversion from 420p12 to 420jpeg\n");
@@ -829,6 +858,7 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
       /*Natively supported: no conversion required.*/
       _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
       _y4m->convert = y4m_convert_null;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
       }
   } else if (strcmp(_y4m->chroma_type, "422p10") == 0) {
     _y4m->src_c_dec_h = 2;
@@ -856,6 +886,35 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
     _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h
                             + 2 * ((_y4m->pic_w + 1) / 2) * _y4m->pic_h);
+=======
+    }
+  } else if (strcmp(_y4m->chroma_type, "422p10") == 0) {
+    _y4m->src_c_dec_h = 2;
+    _y4m->src_c_dec_v = 1;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I42216;
+    _y4m->bps = 20;
+    _y4m->bit_depth = 10;
+    _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
+    _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
+    _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h +
+                                 2 * ((_y4m->pic_w + 1) / 2) * _y4m->pic_h);
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+    if (only_420) {
+      fprintf(stderr, "Unsupported conversion from 422p10 to 420jpeg\n");
+      return -1;
+    }
+  } else if (strcmp(_y4m->chroma_type, "422p12") == 0) {
+    _y4m->src_c_dec_h = 2;
+    _y4m->src_c_dec_v = 1;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I42216;
+    _y4m->bps = 24;
+    _y4m->bit_depth = 12;
+    _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
+    _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
+    _y4m->dst_buf_read_sz = 2 * (_y4m->pic_w * _y4m->pic_h +
+                                 2 * ((_y4m->pic_w + 1) / 2) * _y4m->pic_h);
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
     _y4m->convert = y4m_convert_null;
     if (only_420) {
@@ -902,6 +961,7 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->src_c_dec_h = 1;
     _y4m->src_c_dec_v = 1;
     _y4m->vpx_fmt = VPX_IMG_FMT_I44416;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
     _y4m->bps = 24;
     _y4m->bit_depth = 10;
     _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
@@ -918,6 +978,24 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->src_c_dec_v = 1;
     _y4m->vpx_fmt = VPX_IMG_FMT_I44416;
     _y4m->bps = 24;
+=======
+    _y4m->bps = 30;
+    _y4m->bit_depth = 10;
+    _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
+    _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
+    _y4m->dst_buf_read_sz = 2 * 3 * _y4m->pic_w * _y4m->pic_h;
+    _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
+    _y4m->convert = y4m_convert_null;
+    if (only_420) {
+      fprintf(stderr, "Unsupported conversion from 444p10 to 420jpeg\n");
+      return -1;
+    }
+  } else if (strcmp(_y4m->chroma_type, "444p12") == 0) {
+    _y4m->src_c_dec_h = 1;
+    _y4m->src_c_dec_v = 1;
+    _y4m->vpx_fmt = VPX_IMG_FMT_I44416;
+    _y4m->bps = 36;
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
     _y4m->bit_depth = 12;
     _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
     _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
@@ -1033,8 +1111,13 @@ int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *_img) {
   c_w *= bytes_per_sample;
   c_h = (_y4m->pic_h + _y4m->dst_c_dec_v - 1) / _y4m->dst_c_dec_v;
   c_sz = c_w * c_h;
+<<<<<<< HEAD   (b0bcd5 Generalize read_yuv_frame)
   _img->stride[PLANE_Y] = _y4m->pic_w * bytes_per_sample;
   _img->stride[PLANE_ALPHA] = _y4m->pic_w * bytes_per_sample;
+=======
+  _img->stride[PLANE_Y] = _img->stride[PLANE_ALPHA] =
+      _y4m->pic_w * bytes_per_sample;
+>>>>>>> BRANCH (6ce515 Merge "Fix chrome valgrind warning due to the use of mismatc)
   _img->stride[PLANE_U] = _img->stride[PLANE_V] = c_w;
   _img->planes[PLANE_Y] = _y4m->dst_buf;
   _img->planes[PLANE_U] = _y4m->dst_buf + pic_sz;
