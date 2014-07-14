@@ -37,6 +37,7 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
   void Reset() {
     error_nframes_ = 0;
     droppable_nframes_ = 0;
+    periodic_nolastref_ = 0;
   }
 
   virtual void SetUp() {
@@ -56,7 +57,15 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
     nframes_++;
   }
 
-  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video) {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    if (periodic_nolastref_) {
+      if (video->frame() == 1)
+        encoder->Control(VP8E_SET_CPUUSED, cpu_speed_);
+      frame_flags_ = 0;
+      if (video->frame()%periodic_nolastref_ == 0)
+        frame_flags_ = VP8_EFLAG_NO_REF_LAST;
+    }
     frame_flags_ &= ~(VP8_EFLAG_NO_UPD_LAST |
                       VP8_EFLAG_NO_UPD_GF |
                       VP8_EFLAG_NO_UPD_ARF);
@@ -133,6 +142,9 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
     return mismatch_nframes_;
   }
 
+  int periodic_nolastref_;
+  int cpu_speed_;
+
  private:
   double psnr_;
   unsigned int nframes_;
@@ -144,6 +156,27 @@ class ErrorResilienceTestLarge : public ::libvpx_test::EncoderTest,
   unsigned int droppable_frames_[kMaxDroppableFrames];
   libvpx_test::TestMode encoding_mode_;
 };
+
+TEST_P(ErrorResilienceTestLarge, TestFlagsPeriodicNoRefLast) {
+  const vpx_rational timebase = { 33333333, 1000000000 };
+  cfg_.g_timebase = timebase;
+  cfg_.rc_target_bitrate = 400;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 10;
+  cfg_.rc_min_quantizer = 2;
+  cfg_.rc_max_quantizer = 56;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_error_resilient = 1;
+  cfg_.g_lag_in_frames = 0;
+  init_flags_ = VPX_CODEC_USE_PSNR;
+  cpu_speed_ = 6;
+  periodic_nolastref_ = 4;
+  libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                     timebase.den, timebase.num, 0, 30);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
 
 TEST_P(ErrorResilienceTestLarge, OnVersusOff) {
   const vpx_rational timebase = { 33333333, 1000000000 };
