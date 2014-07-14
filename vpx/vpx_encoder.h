@@ -637,6 +637,8 @@ extern "C" {
      */
     int                    ss_enable_auto_alt_ref[VPX_SS_MAX_LAYERS];
 #endif
+    int use_svc;
+    int ss_viewport_id[VPX_SS_MAX_LAYERS];
 
     /*!\brief Target bitrate for each spatial layer.
      *
