@@ -193,6 +193,8 @@ typedef struct VP9EncoderConfig {
   // Spatial and temporal scalability.
   int ss_number_layers;  // Number of spatial layers.
   int ts_number_layers;  // Number of temporal layers.
+  int use_svc;
+  int ss_viewport_id[VPX_SS_MAX_LAYERS];
   // Bitrate allocation for spatial layers.
   int ss_target_bitrate[VPX_SS_MAX_LAYERS];
   int ss_play_alternate[VPX_SS_MAX_LAYERS];
