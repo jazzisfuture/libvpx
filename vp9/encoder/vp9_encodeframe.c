@@ -2211,6 +2211,22 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
 
     int i;
 
+    int mb_row = mi_row >> 1;
+    int mb_col = mi_col >> 1;
+    int skip_this_sb = 0;
+    if (mb_row + 4 <= cm->mb_rows && mb_col + 4 <= cm->mb_cols) {
+      int r, c;
+      int total_nonzero = 0;
+      for (r = mb_row; r < mb_row + 4; r++) {
+        for (c = mb_col; c < mb_col + 4; c++) {
+          total_nonzero += cpi->twopass.this_frame_mb_stats[r * cm->mb_cols + c];
+        }
+      }
+      if (total_nonzero < 3) {
+        skip_this_sb = 1;
+      }
+    }
+
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
         cpi->leaf_tree[i].pred_interp_filter = SWITCHABLE;
@@ -2241,6 +2257,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
         rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1, cpi->pc_root);
       } else if (cpi->skippable_frame ||
+                 skip_this_sb ||
                  sf->partition_search_type == VAR_BASED_FIXED_PARTITION) {
         BLOCK_SIZE bsize;
         set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
@@ -3096,14 +3113,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       source_var_based_partition_search_method(cpi);
   }
 
-//  fprintf(stdout, "inter = %f, motion = %f, new_mv = %f\n",
-//          cpi->twopass.stats_in->pcnt_inter,
-//          cpi->twopass.stats_in->pcnt_motion,
-//          cpi->twopass.stats_in->new_mv_count);
-
-//  if (cm->current_video_frame == 10) {
-//    fprintf(stdout, "mb_stats = %d\n", cpi->twopass.this_frame_mb_stats[0]);
-//  }
   {
     struct vpx_usec_timer emr_timer;
     vpx_usec_timer_start(&emr_timer);

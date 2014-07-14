@@ -610,7 +610,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
       if (cpi->use_fp_mb_stats) {
-        twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = cm->current_video_frame;
+        twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 0;
       }
 #endif
 
@@ -741,9 +741,10 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
           if (cpi->use_fp_mb_stats) {
-            twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = cm->current_video_frame;
-//            fprintf(stdout, "mb_stats[] = %d\n",
-//                    twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col]);
+            // TODO(pengchong): hard-coded threshold here
+            if (mv.as_mv.row > 0 || mv.as_mv.col > 0) {
+              twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 1;
+            }
           }
 #endif
 
@@ -786,14 +787,6 @@ void vp9_first_pass(VP9_COMP *cpi) {
         sr_coded_error += (int64_t)this_error;
       }
       coded_error += (int64_t)this_error;
-
-#if CONFIG_FP_MB_STATS
-      if (cpi->use_fp_mb_stats) {
-        if (cm->current_video_frame == 1) {
-          twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 255;
-        }
-      }
-#endif
 
       // Adjust to the next column of MBs.
       x->plane[0].src.buf += 16;
