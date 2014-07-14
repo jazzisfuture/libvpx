@@ -2214,18 +2214,18 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
     int mb_row = mi_row >> 1;
     int mb_col = mi_col >> 1;
     int skip_this_sb = 0;
-    if (mb_row + 4 <= cm->mb_rows && mb_col + 4 <= cm->mb_cols) {
-      int r, c;
-      int total_nonzero = 0;
-      for (r = mb_row; r < mb_row + 4; r++) {
-        for (c = mb_col; c < mb_col + 4; c++) {
-          total_nonzero += cpi->twopass.this_frame_mb_stats[r * cm->mb_cols + c];
-        }
-      }
-      if (total_nonzero < 3) {
-        skip_this_sb = 1;
-      }
-    }
+//    if (mb_row + 4 <= cm->mb_rows && mb_col + 4 <= cm->mb_cols) {
+//      int r, c;
+//      int total_nonzero = 0;
+//      for (r = mb_row; r < mb_row + 4; r++) {
+//        for (c = mb_col; c < mb_col + 4; c++) {
+//          total_nonzero += cpi->twopass.this_frame_mb_stats[r * cm->mb_cols + c];
+//        }
+//      }
+//      if (total_nonzero < 10) {
+//        skip_this_sb = 1;
+//      }
+//    }
 
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)

@@ -168,11 +168,9 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 
 static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
                          struct vpx_codec_pkt_list *pktlist) {
-//  fprintf(stdout, "output_fpmb_stats\n");
   struct vpx_codec_cx_pkt pkt;
   pkt.kind = VPX_CODEC_FPMB_STATS_PKT;
   pkt.data.firstpass_mb_stats.buf = this_frame_mb_stats;
-//  fprintf(stdout, "-------- pkt.data.firstpass_mb_stats.buf = %d\n", pkt.data.firstpass_mb_stats.buf);
   pkt.data.firstpass_mb_stats.sz = cm->MBs * sizeof(uint8_t);
   vpx_codec_pkt_list_add(pktlist, &pkt);
 }
@@ -477,7 +475,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    vp9_zero_array(cpi->twopass.this_frame_mb_stats, cm->MBs);
+    vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->MBs);
   }
 #endif
 
@@ -610,7 +608,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
 #if CONFIG_FP_MB_STATS
       if (cpi->use_fp_mb_stats) {
-        twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 0;
+        twopass->frame_mb_stats_buf[mb_row * cm->mb_cols + mb_col] = 0;
       }
 #endif
 
@@ -742,8 +740,8 @@ void vp9_first_pass(VP9_COMP *cpi) {
 #if CONFIG_FP_MB_STATS
           if (cpi->use_fp_mb_stats) {
             // TODO(pengchong): hard-coded threshold here
-            if (mv.as_mv.row > 0 || mv.as_mv.col > 0) {
-              twopass->this_frame_mb_stats[mb_row * cm->mb_cols + mb_col] = 1;
+            if (mv.as_mv.row > 100 || mv.as_mv.col > 100) {
+              twopass->frame_mb_stats_buf[mb_row * cm->mb_cols + mb_col] = 1;
             }
           }
 #endif
@@ -853,12 +851,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
     output_stats(&twopass->this_frame_stats, cpi->output_pkt_list);
     accumulate_stats(&twopass->total_stats, &fps);
 
-//    fprintf(stdout, "inter = %f, motion = %f, new_mv = %f\n",
-//            fps.pcnt_inter, fps.pcnt_motion, fps.new_mv_count);
-
 #if CONFIG_FP_MB_STATS
     if (cpi->use_fp_mb_stats) {
-      output_fpmb_stats(twopass->this_frame_mb_stats, cm, cpi->output_pkt_list);
+      output_fpmb_stats(twopass->frame_mb_stats_buf, cm, cpi->output_pkt_list);
     }
 #endif
   }

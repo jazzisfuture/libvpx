@@ -85,6 +85,7 @@ typedef struct {
   double gf_intra_err_min;
 
 #if CONFIG_FP_MB_STATS
+  uint8_t *frame_mb_stats_buf;
   uint8_t *this_frame_mb_stats;
   FIRSTPASS_MB_STATS firstpass_mb_stats;
 #endif
