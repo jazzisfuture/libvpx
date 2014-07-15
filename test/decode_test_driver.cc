@@ -40,7 +40,8 @@ vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
 }
 
 void DecoderTest::RunLoop(CompressedVideoSource *video,
-                          const vpx_codec_dec_cfg_t &dec_cfg) {
+                          const vpx_codec_dec_cfg_t &dec_cfg,
+                          bool expect_peek_ok) {
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
   ASSERT_TRUE(decoder != NULL);
   const char *codec_name = decoder->GetDecoderName();
@@ -56,18 +57,20 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
                                                          video->frame_size(),
                                                          &stream_info);
-    if (is_vp8) {
-      /* Vp8's implementation of PeekStream returns an error if the frame you
-       * pass it is not a keyframe, so we only expect VPX_CODEC_OK on the first
-       * frame, which must be a keyframe. */
-      if (video->frame_number() == 0)
+    if (expect_peek_ok) {
+      if (is_vp8) {
+        /* Vp8's implementation of PeekStream returns an error if the frame you
+         * pass it is not a keyframe, so we only expect VPX_CODEC_OK on the first
+         * frame, which must be a keyframe. */
+        if (video->frame_number() == 0)
+          ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
+                                            << vpx_codec_err_to_string(res_peek);
+      } else {
+        /* The Vp9 implementation of PeekStream returns an error only if the
+         * data passed to it isn't a valid Vp9 chunk. */
         ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
-            << vpx_codec_err_to_string(res_peek);
-    } else {
-      /* The Vp9 implementation of PeekStream returns an error only if the
-       * data passed to it isn't a valid Vp9 chunk. */
-      ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
-          << vpx_codec_err_to_string(res_peek);
+                                          << vpx_codec_err_to_string(res_peek);
+      }
     }
 
     vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
@@ -87,7 +90,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
 
 void DecoderTest::RunLoop(CompressedVideoSource *video) {
   vpx_codec_dec_cfg_t dec_cfg = {0};
-  RunLoop(video, dec_cfg);
+  RunLoop(video, dec_cfg, true);
 }
 
 }  // namespace libvpx_test
