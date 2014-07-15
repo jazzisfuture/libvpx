@@ -212,6 +212,8 @@ typedef struct VP9Common {
 
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
+
+  int existing_frame_to_show;
 } VP9_COMMON;
 
 static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {

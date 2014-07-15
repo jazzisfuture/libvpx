@@ -890,6 +890,9 @@ static void write_tile_info(VP9_COMMON *cm, struct vp9_write_bit_buffer *wb) {
 }
 
 static int get_refresh_mask(VP9_COMP *cpi) {
+  const int frame = cpi->common.current_video_frame & 0x7;
+  return 1 << frame;
+#if 0
     if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
         cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
       // Preserve the previously existing golden frame and update the frame in
@@ -912,6 +915,7 @@ static int get_refresh_mask(VP9_COMP *cpi) {
              (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
              (cpi->refresh_alt_ref_frame << arf_idx);
     }
+#endif
 }
 
 static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
@@ -1037,7 +1041,12 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
   write_profile(cm->profile, wb);
 
-  vp9_wb_write_bit(wb, 0);  // show_existing_frame
+  vp9_wb_write_bit(wb, cm->show_existing_frame);
+  if (cm->show_existing_frame == 1) {
+    vp9_wb_write_literal(wb, cm->existing_frame_to_show, 3);
+    return;
+  }
+
   vp9_wb_write_bit(wb, cm->frame_type);
   vp9_wb_write_bit(wb, cm->show_frame);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
@@ -1191,6 +1200,12 @@ void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
   struct vp9_write_bit_buffer saved_wb;
 
   write_uncompressed_header(cpi, &wb);
+
+  if (cpi->common.show_existing_frame == 1) {
+    *size = 1;
+    return;
+  }
+
   saved_wb = wb;
   vp9_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
 

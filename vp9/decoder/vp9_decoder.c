@@ -222,6 +222,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   VP9_COMMON *const cm = &pbi->common;
   const uint8_t *source = *psource;
   int retcode = 0;
+//  int i;
 
   cm->error.error_code = VPX_CODEC_OK;
 
@@ -243,6 +244,18 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     cm->release_fb_cb(cm->cb_priv,
                       &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
+
+#if 0
+  printf("Frame %d: new_fb_idx: %d ", cm->current_video_frame, cm->new_fb_idx);
+  for (i = 0; i < 8; ++i) {
+    const int buffer = cm->ref_frame_map[i];
+    if (buffer >= 0)
+      printf("%2d(%d,%d) ", i, buffer, cm->frame_bufs[buffer].ref_count);
+    else
+      printf("%2d(-1,X) ", i);
+  }
+  printf("\n");
+#endif
 
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
@@ -268,10 +281,12 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   vp9_decode_frame(pbi, source, source + size, psource);
 
-  if (!cm->show_existing_frame)
+  // Commented out the broken part of the code that the test vector is
+  // being generated to catch:
+//  if (!cm->show_existing_frame)
     swap_frame_buffers(pbi);
-  else
-    cm->frame_to_show = get_frame_new_buffer(cm);
+//  else
+//    cm->frame_to_show = get_frame_new_buffer(cm);
 
   vp9_clear_system_state();
 

@@ -1557,7 +1557,14 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
-  } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
+  }
+  // AWG
+  {
+    int x = cpi->common.current_video_frame % 8;
+    ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[x], cm->new_fb_idx);
+  }
+#if 0
+  else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
              cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
     /* Preserve the previously existing golden frame and update the frame in
      * the alt ref slot instead. This is highly specific to the current use of
@@ -1598,6 +1605,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
   }
+#endif
 #if CONFIG_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
     vp9_denoiser_update_frame_info(&cpi->denoiser,
@@ -2070,6 +2078,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   const SPEED_FEATURES *const sf = &cpi->sf;
   const unsigned int max_mv_def = MIN(cm->width, cm->height);
   struct segmentation *const seg = &cm->seg;
+
+  if (cm->show_existing_frame == 1) {
+      // Write the show_existing_frame header.
+      vp9_pack_bitstream(cpi, dest, size);
+      ++cm->current_video_frame;
+      return;
+  }
+
   set_ext_overrides(cpi);
 
   cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
