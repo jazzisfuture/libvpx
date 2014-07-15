@@ -104,7 +104,12 @@ extern "C"
         struct vpx_rational  timebase;
         unsigned int target_bandwidth;    /* kilobits per second */
 
-        /* parameter used for applying pre processing blur: recommendation 0 */
+        /* Parameter used for applying denoiser.
+         * For spatial denoiser: controls the amount of pre processing blur:
+         * 0 means off. For temporal denoiser: 0 means off, 1 means temporal
+         * denoiser on for Y channel only, 2 means temporal denoiser on for
+         * all channels.
+         */
         int noise_sensitivity;
 
         /* parameter used for sharpening output: recommendation 0: */
