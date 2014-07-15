@@ -1150,8 +1150,17 @@ static int calc_iframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
 
 void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
-  RATE_CONTROL *const rc = &cpi->rc;
+//  RATE_CONTROL *const rc = &cpi->rc;
   int target;
+  cm->frame_type = cm->current_video_frame == 0 ? KEY_FRAME : INTER_FRAME;
+  if (cm->current_video_frame > 7 && cm->current_video_frame < 24) {
+    cm->show_existing_frame = 1;
+    cm->existing_frame_to_show = cm->current_video_frame & 0x7;
+  } else {
+    cm->show_existing_frame = 0;
+    cm->existing_frame_to_show = -1;
+  }
+#if 0
   // TODO(yaowu): replace the "auto_key && 0" below with proper decision logic.
   if (!cpi->refresh_alt_ref_frame &&
       (cm->current_video_frame == 0 ||
@@ -1177,6 +1186,7 @@ void vp9_rc_get_one_pass_vbr_params(VP9_COMP *cpi) {
     rc->source_alt_ref_pending = USE_ALTREF_FOR_ONE_PASS;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
+#endif
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_vbr(cpi);
   else
