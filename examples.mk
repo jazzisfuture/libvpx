@@ -48,6 +48,7 @@ LIBWEBM_PARSER_SRCS = third_party/libwebm/mkvparser.cpp \
 # while EXAMPLES demonstrate specific portions of the API.
 UTILS-$(CONFIG_DECODERS)    += vpxdec.c
 vpxdec.SRCS                 += md5_utils.c md5_utils.h
+vpxdec.SRCS                 += vpx_ports/mem.h
 vpxdec.SRCS                 += vpx_ports/mem_ops.h
 vpxdec.SRCS                 += vpx_ports/mem_ops_aligned.h
 vpxdec.SRCS                 += vpx_ports/vpx_timer.h
