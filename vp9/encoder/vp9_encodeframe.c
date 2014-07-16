@@ -403,6 +403,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   sp = x->plane[0].src.stride;
 
   if (cm->frame_type != KEY_FRAME) {
+    assert(yv12 != NULL);
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col, sf);
 
     xd->mi[0].src_mi->mbmi.ref_frame[0] = LAST_FRAME;
