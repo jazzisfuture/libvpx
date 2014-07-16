@@ -142,24 +142,23 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     const int aligned_width = (width + 7) & ~7;
     const int aligned_height = (height + 7) & ~7;
     const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
-    const uint64_t yplane_size = (uint64_t)(aligned_height + 2 * border) *
-                                 y_stride;
+    const uint64_t yplane_size = (aligned_height + 2 * border) *
+                                 (uint64_t)y_stride;
     const int uv_width = aligned_width >> ss_x;
     const int uv_height = aligned_height >> ss_y;
     const int uv_stride = y_stride >> ss_x;
     const int uv_border_w = border >> ss_x;
     const int uv_border_h = border >> ss_y;
-    const uint64_t uvplane_size = (uint64_t)(uv_height + 2 * uv_border_h) *
-                                  uv_stride;
+    const uint64_t uvplane_size = (uv_height + 2 * uv_border_h) *
+                                  (uint64_t)uv_stride;
 #if CONFIG_ALPHA
     const int alpha_width = aligned_width;
     const int alpha_height = aligned_height;
     const int alpha_stride = y_stride;
     const int alpha_border_w = border;
     const int alpha_border_h = border;
-    const uint64_t alpha_plane_size = (uint64_t)(alpha_height +
-                                      2 * alpha_border_h) *
-                                      alpha_stride;
+    const uint64_t alpha_plane_size = (alpha_height + 2 * alpha_border_h) *
+                                      (uint64_t)alpha_stride;
     const uint64_t frame_size = yplane_size + 2 * uvplane_size +
                                 alpha_plane_size;
 #else
