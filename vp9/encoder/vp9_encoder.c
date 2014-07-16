@@ -416,19 +416,13 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate lag buffers");
 
+  // TODO(agrange) Check if ARF is enabled and skip allocation if not.
   if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
                                oxcf->width, oxcf->height,
                                cm->subsampling_x, cm->subsampling_y,
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate altref buffer");
-}
-
-static void alloc_ref_frame_buffers(VP9_COMP *cpi) {
-  VP9_COMMON *const cm = &cpi->common;
-  if (vp9_alloc_ref_frame_buffers(cm, cm->width, cm->height))
-    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                       "Failed to allocate frame buffers");
 }
 
 static void alloc_util_frame_buffers(VP9_COMP *cpi) {
@@ -2404,6 +2398,15 @@ static void init_motion_estimation(VP9_COMP *cpi) {
   }
 }
 
+static void init_frame_bufs(VP9_COMMON *cm) {
+  int i;
+  cm->new_fb_idx = -1;
+  for (i = 0; i < REF_FRAMES; ++i) {
+    cm->ref_frame_map[i] = -1;
+    cm->frame_bufs[i].ref_count = 0;
+  }
+}
+
 static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
                                 int subsampling_y) {
   VP9_COMMON *const cm = &cpi->common;
@@ -2413,7 +2416,7 @@ static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
     cm->subsampling_y = subsampling_y;
 
     alloc_raw_frame_buffers(cpi);
-    alloc_ref_frame_buffers(cpi);
+    init_frame_bufs(cm);
     alloc_util_frame_buffers(cpi);
 
     init_motion_estimation(cpi);
@@ -2711,10 +2714,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Clear down mmx registers
   vp9_clear_system_state();
 
-  /* find a free buffer for the new frame, releasing the reference previously
-   * held.
-   */
-  cm->frame_bufs[cm->new_fb_idx].ref_count--;
+  // Find a free buffer for the new frame & release the reference previously
+  // held.
+  if (cm->new_fb_idx >= 0)
+    --cm->frame_bufs[cm->new_fb_idx].ref_count;
   cm->new_fb_idx = get_free_fb(cm);
 
   if (!cpi->use_svc && cpi->multi_arf_allowed) {
@@ -2833,8 +2836,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           PSNR_STATS psnr2;
           double frame_ssim2 = 0, weight = 0;
 #if CONFIG_VP9_POSTPROC
-          // TODO(agrange) Add resizing of post-proc buffer in here when encoder
-          // changed to on-demand buffer allocation.
+          if (vp9_alloc_frame_buffer(&cm->post_proc_buffer,
+                                     recon->y_crop_width, recon->y_crop_height,
+                                     cm->subsampling_x, cm->subsampling_y,
+                                     VP9_ENC_BORDER_IN_PIXELS) < 0)
+            vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                               "Failed to allocate post processing buffer");
+
           vp9_deblock(cm->frame_to_show, &cm->post_proc_buffer,
                       cm->lf.filter_level * 10 / 6);
 #endif
