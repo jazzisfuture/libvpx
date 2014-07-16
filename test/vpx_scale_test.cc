@@ -22,13 +22,12 @@
 namespace {
 
 typedef void (*extend_frame_border_fn_t)(YV12_BUFFER_CONFIG *ybf);
+typedef void (*copy_frame_fn_t)(const YV12_BUFFER_CONFIG *src_ybf,
+                                YV12_BUFFER_CONFIG *dst_ybf);
 
-class ExtendBorderTest
-    : public ::testing::TestWithParam<extend_frame_border_fn_t> {
+class VpxScaleBase {
  public:
-  virtual ~ExtendBorderTest() {
-    libvpx_test::ClearSystemState();
-  }
+  virtual ~VpxScaleBase() { libvpx_test::ClearSystemState(); }
 
   void SetupImage(int width, int height) {
     width_ = width;
@@ -50,16 +49,15 @@ class ExtendBorderTest
     ASSERT_EQ(0,
               vp8_yv12_alloc_frame_buffer(&ref_img_, width_, height_,
                                           VP8BORDERINPIXELS));
-
     vpx_memset(ref_img_.buffer_alloc, kBufFiller, ref_img_.frame_size);
-    FillPlane(ref_img_.y_buffer, ref_img_.y_width, ref_img_.y_height,
-              ref_img_.y_stride);
-    FillPlane(ref_img_.u_buffer,
-              ref_img_.uv_crop_width, ref_img_.uv_crop_height,
-              ref_img_.uv_stride);
-    FillPlane(ref_img_.v_buffer,
-              ref_img_.uv_crop_width, ref_img_.uv_crop_height,
-              ref_img_.uv_stride);
+
+    vpx_memset(&cpy_img_, 0, sizeof(YV12_BUFFER_CONFIG));
+    ASSERT_EQ(0,
+              vp8_yv12_alloc_frame_buffer(&cpy_img_, width_, height_,
+                                          VP8BORDERINPIXELS));
+
+    vpx_memset(cpy_img_.buffer_alloc, kBufFiller, cpy_img_.frame_size);
+    ReferenceCopyFrame();
   }
 
   void DeallocImage() {
@@ -71,10 +69,6 @@ class ExtendBorderTest
   static const int kBufFiller = 123;
   static const int kBufMax = kBufFiller - 1;
 
-  virtual void SetUp() {
-    extend_fn_ = GetParam();
-  }
-
   void FillPlane(uint8_t *buf, int w, int h, int s) {
     for (int height = 0; height < h; ++height) {
       for (int width = 0; width < w; ++width) {
@@ -82,6 +76,34 @@ class ExtendBorderTest
             (width + (w * height)) % kBufMax;
       }
     }
+  }
+
+  void ReferenceCopyFrame() {
+    // Copy img_ to ref_img_ and extend frame borders. This will be used for
+    // verifying extend_fn_ as well as copy_frame_fn_.
+    EXPECT_EQ(ref_img_.frame_size, img_.frame_size);
+    for (int h = 0; h < img_.y_crop_height; ++h) {
+      for (int w = 0; w < img_.y_crop_width; ++w) {
+        ref_img_.y_buffer[w + h * ref_img_.y_stride] =
+            img_.y_buffer[w + h * img_.y_stride];
+      }
+    }
+
+    for (int h = 0; h < img_.uv_crop_height; ++h) {
+      for (int w = 0; w < img_.uv_crop_width; ++w) {
+        ref_img_.u_buffer[w + h * ref_img_.uv_stride] =
+            img_.u_buffer[w + h * img_.uv_stride];
+      }
+    }
+
+    for (int h = 0; h < img_.uv_crop_height; ++h) {
+      for (int w = 0; w < img_.uv_crop_width; ++w) {
+        ref_img_.v_buffer[w + h * ref_img_.uv_stride] =
+            img_.v_buffer[w + h * img_.uv_stride];
+      }
+    }
+
+    ReferenceExtendBorder();
   }
 
   void ReferenceExtendBorder() {
@@ -141,14 +163,30 @@ class ExtendBorderTest
     }
   }
 
-  void ExtendBorder() {
-    ASM_REGISTER_STATE_CHECK(extend_fn_(&img_));
+  void CompareImages(YV12_BUFFER_CONFIG exp) {
+    EXPECT_EQ(ref_img_.frame_size, exp.frame_size);
+    EXPECT_EQ(0, memcmp(ref_img_.buffer_alloc, exp.buffer_alloc,
+                        ref_img_.frame_size));
   }
 
-  void CompareImages() {
-    assert(ref_img_.frame_size == img_.frame_size);
-    EXPECT_EQ(0, memcmp(ref_img_.buffer_alloc, img_.buffer_alloc,
-                        ref_img_.frame_size));
+  YV12_BUFFER_CONFIG img_;
+  YV12_BUFFER_CONFIG ref_img_;
+  YV12_BUFFER_CONFIG cpy_img_;
+  int width_;
+  int height_;
+};
+
+class ExtendBorderTest
+    : public VpxScaleBase,
+      public ::testing::TestWithParam<extend_frame_border_fn_t> {
+ public:
+ protected:
+  virtual void SetUp() {
+    extend_fn_ = GetParam();
+  }
+
+  void ExtendBorder() {
+    ASM_REGISTER_STATE_CHECK(extend_fn_(&img_));
   }
 
   void RunTest() {
@@ -164,17 +202,13 @@ class ExtendBorderTest
         SetupImage(kSizesToTest[w], kSizesToTest[h]);
         ExtendBorder();
         ReferenceExtendBorder();
-        CompareImages();
+        CompareImages(img_);
         DeallocImage();
       }
     }
   }
 
-  YV12_BUFFER_CONFIG img_;
-  YV12_BUFFER_CONFIG ref_img_;
   extend_frame_border_fn_t extend_fn_;
-  int width_;
-  int height_;
 };
 
 TEST_P(ExtendBorderTest, ExtendBorder) {
@@ -184,5 +218,52 @@ TEST_P(ExtendBorderTest, ExtendBorder) {
 INSTANTIATE_TEST_CASE_P(C, ExtendBorderTest,
                         ::testing::Values(
                             vp8_yv12_extend_frame_borders_c));
+class CopyFrameTest
+    : public VpxScaleBase,
+      public ::testing::TestWithParam<copy_frame_fn_t> {
+ public:
+ protected:
+  virtual void SetUp() {
+    copy_frame_fn_ = GetParam();
+  }
 
+  void CopyFrame() {
+    ASM_REGISTER_STATE_CHECK(copy_frame_fn_(&img_, &cpy_img_));
+  }
+
+  void RunTest() {
+#if ARCH_ARM
+    // Some arm devices OOM when trying to allocate the largest buffers.
+    static const int kNumSizesToTest = 6;
+#else
+    static const int kNumSizesToTest = 7;
+#endif
+    static const int kSizesToTest[] = {1, 15, 33, 145, 512, 1025, 16383};
+    for (int h = 0; h < kNumSizesToTest; ++h) {
+      for (int w = 0; w < kNumSizesToTest; ++w) {
+        SetupImage(kSizesToTest[w], kSizesToTest[h]);
+        ReferenceCopyFrame();
+        CopyFrame();
+        CompareImages(cpy_img_);
+        DeallocImage();
+      }
+    }
+  }
+
+  copy_frame_fn_t copy_frame_fn_;
+};
+
+TEST_P(CopyFrameTest, CopyFrame) {
+  RunTest();
+}
+
+INSTANTIATE_TEST_CASE_P(C, CopyFrameTest,
+                        ::testing::Values(
+                            vp8_yv12_copy_frame_c));
+
+#if HAVE_NEON
+INSTANTIATE_TEST_CASE_P(NEON, CopyFrameTest,
+                        ::testing::Values(
+                            vp8_yv12_copy_frame_neon));
+#endif
 }  // namespace
