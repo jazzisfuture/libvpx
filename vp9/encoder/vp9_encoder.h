@@ -469,8 +469,8 @@ static INLINE int get_ref_frame_idx(const VP9_COMP *cpi,
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
     VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
   VP9_COMMON * const cm = &cpi->common;
-  return &cm->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)]]
-      .buf;
+  const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
+  return idx == -1 ? NULL : &cm->frame_bufs[idx].buf;
 }
 
 static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
