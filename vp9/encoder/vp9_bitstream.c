@@ -993,8 +993,8 @@ static void write_frame_size_with_refs(VP9_COMP *cpi,
   MV_REFERENCE_FRAME ref_frame;
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi, ref_frame);
-    found = cm->width == cfg->y_crop_width &&
-            cm->height == cfg->y_crop_height;
+    found = cfg ?
+        cm->width == cfg->y_crop_width && cm->height == cfg->y_crop_height : 0;
 
     // Set "found" to 0 for temporal svc and for spatial svc key frame
     if (cpi->use_svc &&
