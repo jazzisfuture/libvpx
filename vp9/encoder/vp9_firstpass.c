@@ -441,11 +441,16 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   int recon_yoffset, recon_uvoffset;
   YV12_BUFFER_CONFIG *const lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
-  YV12_BUFFER_CONFIG *gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+//  YV12_BUFFER_CONFIG *gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+//  const int lst_idx = cm->ref_frame_map[cpi->lst_fb_idx];
+  int gld_idx = cm->ref_frame_map[cpi->gld_fb_idx];
+//  const int new_idx = cm->ref_frame_map[cpi->alt_fb_idx]; // TODO(agrange) Check what all other buffers map to the ARF slot!?
   YV12_BUFFER_CONFIG *const new_yv12 = get_frame_new_buffer(cm);
-  int recon_y_stride = lst_yv12->y_stride;
-  int recon_uv_stride = lst_yv12->uv_stride;
-  int uv_mb_height = 16 >> (lst_yv12->y_height > lst_yv12->uv_height);
+  YV12_BUFFER_CONFIG *const ref_frame =
+      cm->frame_type == KEY_FRAME ? new_yv12 : lst_yv12;
+  int recon_y_stride = ref_frame->y_stride;
+  int recon_uv_stride = ref_frame->uv_stride;
+  int uv_mb_height = 16 >> (ref_frame->y_height > ref_frame->uv_height);
   int64_t intra_error = 0;
   int64_t coded_error = 0;
   int64_t sr_coded_error = 0;
@@ -510,7 +515,8 @@ void vp9_first_pass(VP9_COMP *cpi) {
     uv_mb_height = 16 >> (new_yv12->y_height > new_yv12->uv_height);
 
     // Disable golden frame for svc first pass for now.
-    gld_yv12 = NULL;
+//    gld_yv12 = NULL;
+    gld_idx = -1;
     set_ref_ptrs(cm, xd, ref_frame, NONE);
 
     cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
@@ -520,7 +526,9 @@ void vp9_first_pass(VP9_COMP *cpi) {
   vp9_setup_block_planes(&x->e_mbd, cm->subsampling_x, cm->subsampling_y);
 
   vp9_setup_src_planes(x, cpi->Source, 0, 0);
-  vp9_setup_pre_planes(xd, 0, first_ref_buf, 0, 0, NULL);
+  if (!frame_is_intra_only(cm)) {
+    vp9_setup_pre_planes(xd, 0, first_ref_buf, 0, 0, NULL);
+  }
   vp9_setup_dst_planes(xd->plane, new_yv12, 0, 0);
 
   xd->mi = cm->mi_grid_visible;
@@ -669,7 +677,10 @@ void vp9_first_pass(VP9_COMP *cpi) {
           }
 
           // Search in an older reference frame.
-          if (cm->current_video_frame > 1 && gld_yv12 != NULL) {
+//          if (cm->current_video_frame > 1 && gld_yv12 != NULL) {
+          if (cm->current_video_frame > 1 && gld_idx != -1) {
+            YV12_BUFFER_CONFIG *gld_yv12 =
+                get_ref_frame_buffer(cpi, GOLDEN_FRAME);
             // Assume 0,0 motion with no mv overhead.
             int gf_motion_error;
 
@@ -863,8 +874,13 @@ void vp9_first_pass(VP9_COMP *cpi) {
        (twopass->this_frame_stats.pcnt_inter > 0.20) &&
        ((twopass->this_frame_stats.intra_error /
          DOUBLE_DIVIDE_CHECK(twopass->this_frame_stats.coded_error)) > 2.0))) {
-    if (gld_yv12 != NULL) {
-      vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+//    if (gld_yv12 != NULL) {
+    if (gld_idx != -1) {
+      //vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+      // TDOD(agrange) Check whether I have to extend UMV border or whether this
+      // is already correct.
+      ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+                 cm->ref_frame_map[cpi->lst_fb_idx]);
     }
     twopass->sr_update_lag = 1;
   } else {
@@ -877,19 +893,26 @@ void vp9_first_pass(VP9_COMP *cpi) {
     vp9_update_reference_frames(cpi);
   } else {
     // Swap frame pointers so last frame refers to the frame we just compressed.
-    swap_yv12(lst_yv12, new_yv12);
+    //swap_yv12(lst_yv12, new_yv12);
+    const RefCntBuffer last_buf = cm->frame_bufs[cpi->lst_fb_idx];
+    cm->frame_bufs[cpi->lst_fb_idx] = cm->frame_bufs[cm->new_fb_idx];
+    cm->frame_bufs[cm->new_fb_idx] = last_buf;
   }
 
   // Special case for the first frame. Copy into the GF buffer as a second
   // reference.
-  if (cm->current_video_frame == 0 && gld_yv12 != NULL) {
-    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+//  if (cm->current_video_frame == 0 && gld_yv12 != NULL) {
+  if (cm->current_video_frame == 0 && gld_idx != -1) {
+//    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+               cm->ref_frame_map[cpi->lst_fb_idx]);
   }
 
   // Use this to see what the first pass reconstruction looks like.
   if (0) {
     char filename[512];
     FILE *recon_file;
+    YV12_BUFFER_CONFIG *last = get_ref_frame_buffer(cpi, LAST_FRAME);
     snprintf(filename, sizeof(filename), "enc%04d.yuv",
              (int)cm->current_video_frame);
 
@@ -898,7 +921,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
     else
       recon_file = fopen(filename, "ab");
 
-    (void)fwrite(lst_yv12->buffer_alloc, lst_yv12->frame_size, 1, recon_file);
+    (void)fwrite(last->buffer_alloc, last->frame_size, 1, recon_file);
     fclose(recon_file);
   }
 
