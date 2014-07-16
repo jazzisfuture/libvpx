@@ -547,7 +547,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   }
 }
 
-#if CONFIG_TRANSCODE
+#if CONFIG_TRANSCODE || 1
 // TODO(jingning) This is the place where the encoder reads preliminary
 // coding mode information from external file, and converts them into
 // effective VP9 conformable coding decisions. Certain optimization work
@@ -615,7 +615,7 @@ static void mode_info_conversion(VP9_COMP *cpi, const TileInfo *const tile,
           }
         }
 
-        if (b_mode == ZEROMV)
+        if (b_mode == ZEROMV || b_mode <= TM_PRED)
           for (ref = 0; ref < 1 + has_second_ref(mbmi); ++ref)
             mi->bmi[j].as_mv[ref].as_int = 0;
 
@@ -627,6 +627,20 @@ static void mode_info_conversion(VP9_COMP *cpi, const TileInfo *const tile,
     }
 
     mbmi->mode = mi->bmi[3].as_mode;
+  } else {
+    switch (mbmi->mode) {
+      case NEARESTMV:
+        mbmi->mv[0].as_int = nearest_mv.as_int;
+        break;
+      case NEARMV:
+        mbmi->mv[0].as_int = near_mv.as_int;
+        break;
+      case ZEROMV:
+        mbmi->mv[0].as_int = 0;
+        break;
+      default:
+        break;
+    }
   }
 }
 #endif
