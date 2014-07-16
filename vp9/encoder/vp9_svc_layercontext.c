@@ -67,8 +67,8 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
       if (oxcf->ss_play_alternate[layer])
         lc->alt_ref_idx = alt_ref_idx++;
       else
-        lc->alt_ref_idx = -1;
-      lc->gold_ref_idx = -1;
+        lc->alt_ref_idx = INVALID_REF_BUFFER_IDX;
+      lc->gold_ref_idx = INVALID_REF_BUFFER_IDX;
     }
 
     lrc->buffer_level = oxcf->starting_buffer_level_ms *
@@ -306,7 +306,6 @@ int vp9_svc_start_frame(VP9_COMP *const cpi) {
       }
     }
   }
-
   get_layer_resolution(cpi->oxcf.width, cpi->oxcf.height,
                        lc->scaling_factor_num, lc->scaling_factor_den,
                        &width, &height);

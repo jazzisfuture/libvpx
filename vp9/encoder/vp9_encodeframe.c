@@ -403,6 +403,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   sp = x->plane[0].src.stride;
 
   if (cm->frame_type != KEY_FRAME) {
+    assert(yv12 != NULL);
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col, sf);
 
     xd->mi[0].src_mi->mbmi.ref_frame[0] = LAST_FRAME;
@@ -3616,6 +3617,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi,
                                                      mbmi->ref_frame[ref]);
+      assert(cfg != NULL);
       vp9_setup_pre_planes(xd, ref, cfg, mi_row, mi_col,
                            &xd->block_refs[ref]->sf);
     }
