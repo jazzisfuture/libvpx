@@ -1,0 +1,8 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Code-Review+1: WebmJenkinsRoleAccount
+Verified+1: Jingning Han <jingning@google.com>
+Submitted-by: Jingning Han <jingning@google.com>
+Submitted-at: Tue, 15 Jul 2014 19:47:09 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70853
+Project: webm/libvpx
+Branch: refs/heads/sandbox/Jingning/transcode
