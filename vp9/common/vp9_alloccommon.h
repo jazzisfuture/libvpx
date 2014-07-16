@@ -24,7 +24,6 @@ int vp9_alloc_context_buffers(struct VP9Common *cm, int width, int height);
 void vp9_init_context_buffers(struct VP9Common *cm);
 void vp9_free_context_buffers(struct VP9Common *cm);
 
-int vp9_alloc_ref_frame_buffers(struct VP9Common *cm, int width, int height);
 void vp9_free_ref_frame_buffers(struct VP9Common *cm);
 
 int vp9_alloc_state_buffers(struct VP9Common *cm, int width, int height);
