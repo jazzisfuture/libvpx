@@ -55,6 +55,8 @@ static const arg_def_t use_i420 = ARG_DEF(NULL, "i420", 0,
                                           "Output raw I420 frames");
 static const arg_def_t flipuvarg = ARG_DEF(NULL, "flipuv", 0,
                                            "Flip the chroma planes in the output");
+static const arg_def_t rawvideo = ARG_DEF(NULL, "rawvideo", 0,
+                                          "Output raw YUV frames in the output");
 static const arg_def_t noblitarg = ARG_DEF(NULL, "noblit", 0,
                                            "Don't process the decoded frames");
 static const arg_def_t progressarg = ARG_DEF(NULL, "progress", 0,
@@ -90,7 +92,7 @@ static const arg_def_t outbitdeptharg = ARG_DEF(
 #endif
 
 static const arg_def_t *all_args[] = {
-  &codecarg, &use_yv12, &use_i420, &flipuvarg, &noblitarg,
+  &codecarg, &use_yv12, &use_i420, &flipuvarg, &rawvideo, &noblitarg,
   &progressarg, &limitarg, &skiparg, &postprocarg, &summaryarg, &outputfile,
   &threadsarg, &verbosearg, &scalearg, &fb_arg,
   &md5arg,
@@ -771,6 +773,9 @@ int main_loop(int argc, const char **argv_) {
       flipuv = 0;
     } else if (arg_match(&arg, &flipuvarg, argi))
       flipuv = 1;
+    else if (arg_match(&arg, &rawvideo, argi)) {
+      use_y4m = 0;
+    }
     else if (arg_match(&arg, &noblitarg, argi))
       noblit = 1;
     else if (arg_match(&arg, &progressarg, argi))
