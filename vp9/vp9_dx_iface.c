@@ -17,6 +17,7 @@
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_decoder.h"
 
+#include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_frame_buffers.h"
 
 #include "vp9/decoder/vp9_decoder.h"
@@ -217,7 +218,7 @@ static vpx_codec_err_t update_error_state(vpx_codec_alg_priv_t *ctx,
 static void init_buffer_callbacks(vpx_codec_alg_priv_t *ctx) {
   VP9_COMMON *const cm = &ctx->pbi->common;
 
-  cm->new_fb_idx = -1;
+  cm->new_fb_idx = INVALID_REF_BUFFER_IDX;
 
   if (ctx->get_ext_fb_cb != NULL && ctx->release_ext_fb_cb != NULL) {
     cm->get_fb_cb = ctx->get_ext_fb_cb;
