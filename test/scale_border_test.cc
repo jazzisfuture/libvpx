@@ -67,6 +67,13 @@ class ExtendBorderTest
   }
 
  protected:
+#if ARCH_ARM
+  /* Some arm devices OOM when trying to allocate the largest bufers */
+  static const int kNumSizesToTest = 6;
+#else
+  static const int kNumSizesToTest = 7;
+#endif
+
   virtual void SetUp() {
     extend_fn_ = GetParam();
   }
@@ -151,8 +158,8 @@ class ExtendBorderTest
   void RunTest() {
     {
       int sides[] = {1, 15, 33, 145, 512, 1025, 16383};
-      for (int h = 0; h < 7; ++h) {
-        for (int w = 0; w < 7; ++w) {
+      for (int h = 0; h < kNumSizesToTest; ++h) {
+        for (int w = 0; w < kNumSizesToTest; ++w) {
           SetupImage(sides[w], sides[h]);
           ExtendBorder();
           ReferenceExtendBorder();
@@ -177,11 +184,5 @@ TEST_P(ExtendBorderTest, ExtendBorder) {
 INSTANTIATE_TEST_CASE_P(C, ExtendBorderTest,
                         ::testing::Values(
                             vp8_yv12_extend_frame_borders_c));
-
-#if HAVE_NEON
-INSTANTIATE_TEST_CASE_P(NEON, ExtendBorderTest,
-                        ::testing::Values(
-                            vp8_yv12_extend_frame_borders_neon));
-#endif
 
 }  // namespace
