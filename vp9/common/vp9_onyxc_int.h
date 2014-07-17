@@ -177,7 +177,12 @@ typedef struct VP9Common {
   MODE_INFO **prev_mi_grid_visible;
 
   // Persistent mb segment id map used in prediction.
-  unsigned char *last_frame_seg_map;
+  int seg_map_idx;
+  int prev_seg_map_idx;
+
+  uint8_t *seg_map_array[2];
+  uint8_t *last_frame_seg_map;
+  uint8_t *current_frame_seg_map;
 
   INTERP_FILTER interp_filter;
 
