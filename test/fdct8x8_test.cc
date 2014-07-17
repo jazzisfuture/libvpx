@@ -29,15 +29,15 @@ void vp9_idct8x8_64_add_c(const int16_t *input, uint8_t *output, int pitch);
 using libvpx_test::ACMRandom;
 
 namespace {
-typedef void (*fdct_t)(const int16_t *in, int16_t *out, int stride);
-typedef void (*idct_t)(const int16_t *in, uint8_t *out, int stride);
-typedef void (*fht_t) (const int16_t *in, int16_t *out, int stride,
-                       int tx_type);
-typedef void (*iht_t) (const int16_t *in, uint8_t *out, int stride,
-                       int tx_type);
+typedef void (*FDCTFunc)(const int16_t *in, int16_t *out, int stride);
+typedef void (*IDCTFunc)(const int16_t *in, uint8_t *out, int stride);
+typedef void (*FHTFunc)(const int16_t *in, int16_t *out, int stride,
+                        int tx_type);
+typedef void (*IHTFunc)(const int16_t *in, uint8_t *out, int stride,
+                        int tx_type);
 
-typedef std::tr1::tuple<fdct_t, idct_t, int> dct_8x8_param_t;
-typedef std::tr1::tuple<fht_t, iht_t, int> ht_8x8_param_t;
+typedef std::tr1::tuple<FDCTFunc, IDCTFunc, int> DCT8x8Param;
+typedef std::tr1::tuple<FHTFunc, IHTFunc, int> HT8x8Param;
 
 void fdct8x8_ref(const int16_t *in, int16_t *out, int stride, int tx_type) {
   vp9_fdct8x8_c(in, out, stride);
@@ -236,12 +236,12 @@ class FwdTrans8x8TestBase {
 
   int pitch_;
   int tx_type_;
-  fht_t fwd_txfm_ref;
+  FHTFunc fwd_txfm_ref;
 };
 
 class FwdTrans8x8DCT
     : public FwdTrans8x8TestBase,
-      public ::testing::TestWithParam<dct_8x8_param_t> {
+      public ::testing::TestWithParam<DCT8x8Param> {
  public:
   virtual ~FwdTrans8x8DCT() {}
 
@@ -263,8 +263,8 @@ class FwdTrans8x8DCT
     inv_txfm_(out, dst, stride);
   }
 
-  fdct_t fwd_txfm_;
-  idct_t inv_txfm_;
+  FDCTFunc fwd_txfm_;
+  IDCTFunc inv_txfm_;
 };
 
 TEST_P(FwdTrans8x8DCT, SignBiasCheck) {
@@ -281,7 +281,7 @@ TEST_P(FwdTrans8x8DCT, ExtremalCheck) {
 
 class FwdTrans8x8HT
     : public FwdTrans8x8TestBase,
-      public ::testing::TestWithParam<ht_8x8_param_t> {
+      public ::testing::TestWithParam<HT8x8Param> {
  public:
   virtual ~FwdTrans8x8HT() {}
 
@@ -303,8 +303,8 @@ class FwdTrans8x8HT
     inv_txfm_(out, dst, stride, tx_type_);
   }
 
-  fht_t fwd_txfm_;
-  iht_t inv_txfm_;
+  FHTFunc fwd_txfm_;
+  IHTFunc inv_txfm_;
 };
 
 TEST_P(FwdTrans8x8HT, SignBiasCheck) {
