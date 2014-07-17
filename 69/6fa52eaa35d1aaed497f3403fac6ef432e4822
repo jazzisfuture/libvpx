@@ -1,0 +1,7 @@
+Code-Review+2: Frank Galligan <fgalligan@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Scott LaVarnway <slavarnway@google.com>
+Submitted-at: Thu, 17 Jul 2014 11:42:16 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70778
+Project: webm/libvpx
+Branch: refs/heads/master
