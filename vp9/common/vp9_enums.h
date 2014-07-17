@@ -27,7 +27,7 @@ extern "C" {
 
 // Bitstream profiles indicated by 2 bits in the uncompressed header.
 // 00: Profile 0. 4:2:0 only.
-// 10: Profile 1. adds 4:4:4, 4:2:2, alpha.
+// 10: Profile 1. adds 4:4:4, 4:2:2, 4:4:0.
 // 01: Profile 2. Supports 10-bit and 12-bit color only.
 // 11: Undefined profile.
 typedef enum BITSTREAM_PROFILE {
