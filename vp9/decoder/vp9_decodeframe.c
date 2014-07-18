@@ -675,8 +675,8 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
   // dimensions.
   for (i = 0; i < REFS_PER_FRAME; ++i) {
     RefBuffer *const ref_frame = &cm->frame_refs[i];
-    const int ref_width = ref_frame->buf->y_width;
-    const int ref_height = ref_frame->buf->y_height;
+    const int ref_width = ref_frame->buf->y_crop_width;
+    const int ref_height = ref_frame->buf->y_crop_height;
 
     if (!valid_ref_frame_size(ref_width, ref_height, width, height))
       vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
