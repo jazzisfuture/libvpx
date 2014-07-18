@@ -213,6 +213,7 @@ extern "C" {
   } vpx_codec_ctx_t;
 
   /*!\brief Bit depth for codec
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
    *
    * This enumeration determines the bit depth of the codec.
    */
@@ -222,6 +223,16 @@ extern "C" {
     VPX_BITS_12   /**< 12 bits */
   } vpx_bit_depth_t;
 
+=======
+   * *
+   * This enumeration determines the bit depth of the codec.
+   */
+  typedef enum vpx_bit_depth {
+    VPX_BITS_8,   /**< 8 bits  */
+    VPX_BITS_10,  /**< 10 bits */
+    VPX_BITS_12   /**< 12 bits */
+  } vpx_bit_depth_t;
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
   /*
    * Library Version Number Interface

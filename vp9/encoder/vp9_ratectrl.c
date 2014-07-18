@@ -258,6 +258,8 @@ static void update_buffer_level(VP9_COMP *cpi, int encoded_frame_size) {
 }
 
 void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
+  int i;
+
   if (pass == 0 && oxcf->rc_mode == VPX_CBR) {
     rc->avg_frame_qindex[KEY_FRAME] = oxcf->worst_allowed_q;
     rc->avg_frame_qindex[INTER_FRAME] = oxcf->worst_allowed_q;
@@ -299,9 +301,9 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
   rc->tot_q = 0.0;
   rc->avg_q = vp9_convert_qindex_to_q(oxcf->worst_allowed_q, oxcf->bit_depth);
 
-  rc->rate_correction_factor = 1.0;
-  rc->key_frame_rate_correction_factor = 1.0;
-  rc->gf_rate_correction_factor = 1.0;
+  for (i = 0; i < RATE_FACTOR_LEVELS; ++i) {
+    rc->rate_correction_factors[i] = 1.0;
+  }
 }
 
 int vp9_rc_drop_frame(VP9_COMP *cpi) {
@@ -343,28 +345,40 @@ int vp9_rc_drop_frame(VP9_COMP *cpi) {
 }
 
 static double get_rate_correction_factor(const VP9_COMP *cpi) {
+  const RATE_CONTROL *const rc = &cpi->rc;
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    return cpi->rc.key_frame_rate_correction_factor;
+    return rc->rate_correction_factors[KF_STD];
+  } else if (cpi->pass == 2) {
+    RATE_FACTOR_LEVEL rf_lvl =
+      cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
+    return rc->rate_correction_factors[rf_lvl];
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
-        !cpi->rc.is_src_frame_alt_ref &&
+        !rc->is_src_frame_alt_ref &&
         !(cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR))
-      return cpi->rc.gf_rate_correction_factor;
+      return rc->rate_correction_factors[GF_ARF_STD];
     else
-      return cpi->rc.rate_correction_factor;
+      return rc->rate_correction_factors[INTER_NORMAL];
   }
 }
 
 static void set_rate_correction_factor(VP9_COMP *cpi, double factor) {
+  RATE_CONTROL *const rc = &cpi->rc;
+
   if (cpi->common.frame_type == KEY_FRAME) {
-    cpi->rc.key_frame_rate_correction_factor = factor;
+    rc->rate_correction_factors[KF_STD] = factor;
+  } else if (cpi->pass == 2) {
+    RATE_FACTOR_LEVEL rf_lvl =
+      cpi->twopass.gf_group.rf_level[cpi->twopass.gf_group.index];
+    rc->rate_correction_factors[rf_lvl] = factor;
   } else {
     if ((cpi->refresh_alt_ref_frame || cpi->refresh_golden_frame) &&
-        !cpi->rc.is_src_frame_alt_ref &&
+        !rc->is_src_frame_alt_ref &&
         !(cpi->use_svc && cpi->oxcf.rc_mode == VPX_CBR))
-      cpi->rc.gf_rate_correction_factor = factor;
+      rc->rate_correction_factors[GF_ARF_STD] = factor;
     else
-      cpi->rc.rate_correction_factor = factor;
+      rc->rate_correction_factors[INTER_NORMAL] = factor;
   }
 }
 
@@ -484,6 +498,16 @@ static int get_active_quality(int q, int gfu_boost, int low, int high,
   }
 }
 
+static int get_kf_active_quality(const RATE_CONTROL *const rc, int q) {
+  return get_active_quality(q, rc->kf_boost, kf_low, kf_high,
+                            kf_low_motion_minq, kf_high_motion_minq);
+}
+
+static int get_gf_active_quality(const RATE_CONTROL *const rc, int q) {
+  return get_active_quality(q, rc->gfu_boost, gf_low, gf_high,
+                            arfgf_low_motion_minq, arfgf_high_motion_minq);
+}
+
 static int calc_active_worst_quality_one_pass_vbr(const VP9_COMP *cpi) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const unsigned int curr_frame = cpi->common.current_video_frame;
@@ -595,11 +619,8 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
       double q_adj_factor = 1.0;
       double q_val;
 
-      active_best_quality = get_active_quality(rc->avg_frame_qindex[KEY_FRAME],
-                                               rc->kf_boost,
-                                               kf_low, kf_high,
-                                               kf_low_motion_minq,
-                                               kf_high_motion_minq);
+      active_best_quality =
+          get_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -625,9 +646,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
     } else {
       q = active_worst_quality;
     }
-    active_best_quality = get_active_quality(
-        q, rc->gfu_boost, gf_low, gf_high,
-        arfgf_low_motion_minq, arfgf_high_motion_minq);
+    active_best_quality = get_gf_active_quality(rc, q);
   } else {
     // Use the lower of active_worst_quality and recent/average Q.
     if (cm->current_video_frame > 1) {
@@ -732,8 +751,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
 
   if (frame_is_intra_only(cm)) {
     active_best_quality = rc->best_quality;
-#if !CONFIG_MULTIPLE_ARF
-    // Handle the special case for key frames forced when we have75 reached
+
+    // Handle the special case for key frames forced when we have reached
     // the maximum key frame interval. Here force the Q to a range
     // based on the ambient Q to reduce the risk of popping.
     if (rc->this_key_frame_forced) {
@@ -748,11 +767,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       double q_adj_factor = 1.0;
       double q_val;
 
-      active_best_quality = get_active_quality(rc->avg_frame_qindex[KEY_FRAME],
-                                               rc->kf_boost,
-                                               kf_low, kf_high,
-                                               kf_low_motion_minq,
-                                               kf_high_motion_minq);
+      active_best_quality =
+          get_kf_active_quality(rc, rc->avg_frame_qindex[KEY_FRAME]);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -766,6 +782,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
                                                 q_val * q_adj_factor,
                                                 cm->bit_depth);
     }
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 #else
     double current_q;
     // Force the KF quantizer to be 30% of the active_worst_quality.
@@ -773,6 +790,8 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     active_best_quality = active_worst_quality
         + vp9_compute_qdelta(rc, current_q, current_q * 0.3, cm->bit_depth);
 #endif
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
   } else if (!rc->is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     // Use the lower of active_worst_quality and recent
@@ -789,10 +808,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       if (q < cq_level)
         q = cq_level;
 
-      active_best_quality = get_active_quality(q, rc->gfu_boost,
-                                               gf_low, gf_high,
-                                               arfgf_low_motion_minq,
-                                               arfgf_high_motion_minq);
+      active_best_quality = get_gf_active_quality(rc, q);
 
       // Constrained quality use slightly lower active best.
       active_best_quality = active_best_quality * 15 / 16;
@@ -801,14 +817,10 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
       if (!cpi->refresh_alt_ref_frame) {
         active_best_quality = cq_level;
       } else {
-        active_best_quality = get_active_quality(
-            q, rc->gfu_boost, gf_low, gf_high,
-            arfgf_low_motion_minq, arfgf_high_motion_minq);
+        active_best_quality = get_gf_active_quality(rc, q);
       }
     } else {
-      active_best_quality = get_active_quality(
-          q, rc->gfu_boost, gf_low, gf_high,
-          arfgf_low_motion_minq, arfgf_high_motion_minq);
+      active_best_quality = get_gf_active_quality(rc, q);
     }
   } else {
     if (oxcf->rc_mode == VPX_Q) {
@@ -876,6 +888,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
         q = *top_index;
     }
   }
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
   if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
@@ -888,12 +901,9 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
     q = active_worst_quality +
         vp9_compute_qdelta(rc, current_q, new_q, cm->bit_depth);
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
-    *bottom_index = q;
-    *top_index    = q;
-    printf("frame:%d q:%d\n", cm->current_video_frame, q);
-  }
-#endif
   assert(*top_index <= rc->worst_quality &&
          *top_index >= rc->best_quality);
   assert(*bottom_index <= rc->worst_quality &&
@@ -929,7 +939,6 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   ASSIGN_MINQ_TABLE(cm->bit_depth, inter_minq);
 
   if (frame_is_intra_only(cm) || vp9_is_upper_layer_key_frame(cpi)) {
-#if !CONFIG_MULTIPLE_ARF
     // Handle the special case for key frames forced when we have75 reached
     // the maximum key frame interval. Here force the Q to a range
     // based on the ambient Q to reduce the risk of popping.
@@ -945,11 +954,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       double q_adj_factor = 1.0;
       double q_val;
       // Baseline value derived from cpi->active_worst_quality and kf boost.
-      active_best_quality = get_active_quality(active_worst_quality,
-                                               rc->kf_boost,
-                                               kf_low, kf_high,
-                                               kf_low_motion_minq,
-                                               kf_high_motion_minq);
+      active_best_quality = get_kf_active_quality(rc, active_worst_quality);
 
       // Allow somewhat lower kf minq with small image formats.
       if ((cm->width * cm->height) <= (352 * 288)) {
@@ -966,6 +971,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                                 q_val * q_adj_factor,
                                                 cm->bit_depth);
     }
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 #else
     double current_q;
     // Force the KF quantizer to be 30% of the active_worst_quality.
@@ -973,6 +979,8 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     active_best_quality = active_worst_quality
         + vp9_compute_qdelta(rc, current_q, current_q * 0.3, cm->bit_depth);
 #endif
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
   } else if (!rc->is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     // Use the lower of active_worst_quality and recent
@@ -989,10 +997,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       if (q < cq_level)
         q = cq_level;
 
-      active_best_quality = get_active_quality(q, rc->gfu_boost,
-                                               gf_low, gf_high,
-                                               arfgf_low_motion_minq,
-                                               arfgf_high_motion_minq);
+      active_best_quality = get_gf_active_quality(rc, q);
 
       // Constrained quality use slightly lower active best.
       active_best_quality = active_best_quality * 15 / 16;
@@ -1001,14 +1006,10 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
       if (!cpi->refresh_alt_ref_frame) {
         active_best_quality = cq_level;
       } else {
-        active_best_quality = get_active_quality(
-            q, rc->gfu_boost, gf_low, gf_high,
-            arfgf_low_motion_minq, arfgf_high_motion_minq);
+        active_best_quality = get_gf_active_quality(rc, q);
       }
     } else {
-      active_best_quality = get_active_quality(
-          q, rc->gfu_boost, gf_low, gf_high,
-          arfgf_low_motion_minq, arfgf_high_motion_minq);
+      active_best_quality = get_gf_active_quality(rc, q);
     }
   } else {
     if (oxcf->rc_mode == VPX_Q) {
@@ -1035,7 +1036,9 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
   *bottom_index = active_best_quality;
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
+  vp9_clear_system_state();
   {
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
     int qdelta = 0;
     vp9_clear_system_state();
 
@@ -1052,6 +1055,20 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
                                           active_worst_quality, 1.75,
                                           cm->bit_depth);
     }
+=======
+    const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    const double rate_factor_deltas[RATE_FACTOR_LEVELS] = {
+      1.00,  // INTER_NORMAL
+      1.00,  // INTER_HIGH
+      1.50,  // GF_ARF_LOW
+      1.75,  // GF_ARF_STD
+      2.00,  // KF_STD
+    };
+    const double rate_factor =
+      rate_factor_deltas[gf_group->rf_level[gf_group->index]];
+    int qdelta = vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                            active_worst_quality, rate_factor);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
@@ -1073,6 +1090,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
         q = *top_index;
     }
   }
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 #if CONFIG_MULTIPLE_ARF
   // Force the quantizer determined by the coding order pattern.
   if (cpi->multi_arf_enabled && (cm->frame_type != KEY_FRAME) &&
@@ -1085,12 +1103,9 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     new_q = current_q * (1.0 - (0.2 * (cpi->max_arf_level - level)));
     q = active_worst_quality +
         vp9_compute_qdelta(rc, current_q, new_q, cm->bit_depth);
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
-    *bottom_index = q;
-    *top_index    = q;
-    printf("frame:%d q:%d\n", cm->current_video_frame, q);
-  }
-#endif
   assert(*top_index <= rc->worst_quality &&
          *top_index >= rc->best_quality);
   assert(*bottom_index <= rc->worst_quality &&
@@ -1155,11 +1170,8 @@ static void update_alt_ref_frame_stats(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   rc->frames_since_golden = 0;
 
-#if CONFIG_MULTIPLE_ARF
-  if (!cpi->multi_arf_enabled)
-#endif
-    // Clear the alternate reference update pending flag.
-    rc->source_alt_ref_pending = 0;
+  // Mark the alt ref as done (setting to 0 means no further alt refs pending).
+  rc->source_alt_ref_pending = 0;
 
   // Set the alternate reference frame active flag
   rc->source_alt_ref_active = 1;
@@ -1173,8 +1185,13 @@ static void update_golden_frame_stats(VP9_COMP *cpi) {
     // this frame refreshes means next frames don't unless specified by user
     rc->frames_since_golden = 0;
 
-    if (!rc->source_alt_ref_pending)
+    if (cpi->pass == 2) {
+      if (!rc->source_alt_ref_pending &&
+          cpi->twopass.gf_group.rf_level[0] == GF_ARF_STD)
       rc->source_alt_ref_active = 0;
+    } else if (!rc->source_alt_ref_pending) {
+      rc->source_alt_ref_active = 0;
+    }
 
     // Decrement count down till next gf
     if (rc->frames_till_gf_update_due > 0)
@@ -1258,7 +1275,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
 
   rc->total_target_vs_actual = rc->total_actual_bits - rc->total_target_bits;
 
-  if (is_altref_enabled(oxcf) && cpi->refresh_alt_ref_frame &&
+  if (is_altref_enabled(cpi) && cpi->refresh_alt_ref_frame &&
       (cm->frame_type != KEY_FRAME))
     // Update the alternate reference frame stats as appropriate.
     update_alt_ref_frame_stats(cpi);
@@ -1513,15 +1530,18 @@ int vp9_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
   return target_index - qindex;
 }
 
-void vp9_rc_set_gf_max_interval(const VP9EncoderConfig *const oxcf,
+void vp9_rc_set_gf_max_interval(const VP9_COMP *const cpi,
                                 RATE_CONTROL *const rc) {
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   // Set Maximum gf/arf interval
   rc->max_gf_interval = 16;
 
   // Extended interval for genuinely static scenes
   rc->static_scene_max_gf_interval = oxcf->key_freq >> 1;
+  if (rc->static_scene_max_gf_interval > (MAX_LAG_BUFFERS * 2))
+    rc->static_scene_max_gf_interval = MAX_LAG_BUFFERS * 2;
 
-  if (is_altref_enabled(oxcf)) {
+  if (is_altref_enabled(cpi)) {
     if (rc->static_scene_max_gf_interval > oxcf->lag_in_frames - 1)
       rc->static_scene_max_gf_interval = oxcf->lag_in_frames - 1;
   }
@@ -1554,5 +1574,5 @@ void vp9_rc_update_framerate(VP9_COMP *cpi) {
   rc->max_frame_bandwidth = MAX(MAX((cm->MBs * MAX_MB_RATE), MAXRATE_1080P),
                                     vbr_max_bits);
 
-  vp9_rc_set_gf_max_interval(oxcf, rc);
+  vp9_rc_set_gf_max_interval(cpi, rc);
 }

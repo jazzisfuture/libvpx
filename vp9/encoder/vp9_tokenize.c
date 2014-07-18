@@ -116,6 +116,7 @@ static void init_bit_trees() {
 }
 
 const vp9_extra_bit vp9_extra_bits[ENTROPY_TOKENS] = {
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
   {0, 0, 0, 0},           // ZERO_TOKEN
   {0, 0, 0, 1},           // ONE_TOKEN
   {0, 0, 0, 2},           // TWO_TOKEN
@@ -128,6 +129,20 @@ const vp9_extra_bit vp9_extra_bits[ENTROPY_TOKENS] = {
   {cat5, vp9_cat5_prob, 5, 35},   // CATEGORY5_TOKEN
   {cat6, vp9_cat6_prob, 14, 67},  // CATEGORY6_TOKEN
   {0, 0, 0, 0}            // EOB_TOKEN
+=======
+  {0, 0, 0, 0},                              // ZERO_TOKEN
+  {0, 0, 0, 1},                              // ONE_TOKEN
+  {0, 0, 0, 2},                              // TWO_TOKEN
+  {0, 0, 0, 3},                              // THREE_TOKEN
+  {0, 0, 0, 4},                              // FOUR_TOKEN
+  {cat1, vp9_cat1_prob, 1,  CAT1_MIN_VAL},   // CATEGORY1_TOKEN
+  {cat2, vp9_cat2_prob, 2,  CAT2_MIN_VAL},   // CATEGORY2_TOKEN
+  {cat3, vp9_cat3_prob, 3,  CAT3_MIN_VAL},   // CATEGORY3_TOKEN
+  {cat4, vp9_cat4_prob, 4,  CAT4_MIN_VAL},   // CATEGORY4_TOKEN
+  {cat5, vp9_cat5_prob, 5,  CAT5_MIN_VAL},   // CATEGORY5_TOKEN
+  {cat6, vp9_cat6_prob, 14, CAT6_MIN_VAL},   // CATEGORY6_TOKEN
+  {0, 0, 0, 0}                               // EOB_TOKEN
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 };
 
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT

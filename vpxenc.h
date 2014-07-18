@@ -26,7 +26,11 @@ typedef enum {
   I420,  // 4:2:0 8+ bit-depth
   I422,  // 4:2:2 8+ bit-depth
   I444,  // 4:4:4 8+ bit-depth
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
   YV12,  // 4:2:0 with uv flipped, only 8 bit-depth
+=======
+  YV12,  // 4:2:0 with uv flipped, only 8-bit depth
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 } ColorInputType;
 
 struct VpxInterface;

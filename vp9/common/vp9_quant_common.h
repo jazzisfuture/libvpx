@@ -23,10 +23,15 @@ extern "C" {
 #define QINDEX_RANGE (MAXQ - MINQ + 1)
 #define QINDEX_BITS 8
 
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 void vp9_init_quant_tables();
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
+=======
+int16_t vp9_dc_quant(int qindex, int delta);
+int16_t vp9_ac_quant(int qindex, int delta);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
 int vp9_get_qindex(const struct segmentation *seg, int segment_id,
                    int base_qindex, vpx_bit_depth_t bit_depth);

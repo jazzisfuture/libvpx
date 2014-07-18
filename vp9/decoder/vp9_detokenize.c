@@ -31,6 +31,7 @@
 #define CAT_THREE_CONTEXT_NODE      6
 #define CAT_FIVE_CONTEXT_NODE       7
 
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 #define CAT1_MIN_VAL    5
 #define CAT2_MIN_VAL    7
 #define CAT3_MIN_VAL   11
@@ -38,6 +39,8 @@
 #define CAT5_MIN_VAL   35
 #define CAT6_MIN_VAL   67
 
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 #define INCREMENT_COUNT(token)                              \
   do {                                                      \
      if (!cm->frame_parallel_decoding_mode)                 \
@@ -77,9 +80,12 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS] =
       counts->eob_branch[tx_size][type][ref];
   uint8_t token_cache[32 * 32];
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
   const uint8_t *cat1_ptr, *cat2_ptr, *cat3_ptr, *cat4_ptr, *cat5_ptr;
   const uint8_t *cat6_ptr;
   const uint8_t *cat6;
+=======
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
   int v;
@@ -165,45 +171,92 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     if (!vp9_read(r, prob[HIGH_LOW_CONTEXT_NODE])) {
       if (!vp9_read(r, prob[CAT_ONE_CONTEXT_NODE])) {
         val = CAT1_MIN_VAL;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
         ADJUST_COEF(cat1_ptr[0], 0);
+=======
+        ADJUST_COEF(vp9_cat1_prob[0], 0);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
         WRITE_COEF_CONTINUE(val, CATEGORY1_TOKEN);
       }
       val = CAT2_MIN_VAL;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
       ADJUST_COEF(cat2_ptr[0], 1);
       ADJUST_COEF(cat2_ptr[1], 0);
+=======
+      ADJUST_COEF(vp9_cat2_prob[0], 1);
+      ADJUST_COEF(vp9_cat2_prob[1], 0);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
       WRITE_COEF_CONTINUE(val, CATEGORY2_TOKEN);
     }
 
     if (!vp9_read(r, prob[CAT_THREEFOUR_CONTEXT_NODE])) {
       if (!vp9_read(r, prob[CAT_THREE_CONTEXT_NODE])) {
         val = CAT3_MIN_VAL;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
         ADJUST_COEF(cat3_ptr[0], 2);
         ADJUST_COEF(cat3_ptr[1], 1);
         ADJUST_COEF(cat3_ptr[2], 0);
+=======
+        ADJUST_COEF(vp9_cat3_prob[0], 2);
+        ADJUST_COEF(vp9_cat3_prob[1], 1);
+        ADJUST_COEF(vp9_cat3_prob[2], 0);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
         WRITE_COEF_CONTINUE(val, CATEGORY3_TOKEN);
       }
       val = CAT4_MIN_VAL;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
       ADJUST_COEF(cat4_ptr[0], 3);
       ADJUST_COEF(cat4_ptr[1], 2);
       ADJUST_COEF(cat4_ptr[2], 1);
       ADJUST_COEF(cat4_ptr[3], 0);
+=======
+      ADJUST_COEF(vp9_cat4_prob[0], 3);
+      ADJUST_COEF(vp9_cat4_prob[1], 2);
+      ADJUST_COEF(vp9_cat4_prob[2], 1);
+      ADJUST_COEF(vp9_cat4_prob[3], 0);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
       WRITE_COEF_CONTINUE(val, CATEGORY4_TOKEN);
     }
 
     if (!vp9_read(r, prob[CAT_FIVE_CONTEXT_NODE])) {
       val = CAT5_MIN_VAL;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
       ADJUST_COEF(cat5_ptr[0], 4);
       ADJUST_COEF(cat5_ptr[1], 3);
       ADJUST_COEF(cat5_ptr[2], 2);
       ADJUST_COEF(cat5_ptr[3], 1);
       ADJUST_COEF(cat5_ptr[4], 0);
+=======
+      ADJUST_COEF(vp9_cat5_prob[0], 4);
+      ADJUST_COEF(vp9_cat5_prob[1], 3);
+      ADJUST_COEF(vp9_cat5_prob[2], 2);
+      ADJUST_COEF(vp9_cat5_prob[3], 1);
+      ADJUST_COEF(vp9_cat5_prob[4], 0);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
       WRITE_COEF_CONTINUE(val, CATEGORY5_TOKEN);
     }
     val = 0;
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 
     cat6 = cat6_ptr;
     while (*cat6)
       val = (val << 1) | vp9_read(r, *cat6++);
+=======
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[0]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[1]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[2]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[3]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[4]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[5]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[6]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[7]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[8]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[9]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[10]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[11]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[12]);
+    val = (val << 1) | vp9_read(r, vp9_cat6_prob[13]);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
     val += CAT6_MIN_VAL;
 
     WRITE_COEF_CONTINUE(val, CATEGORY6_TOKEN);

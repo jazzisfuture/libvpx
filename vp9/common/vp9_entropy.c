@@ -21,6 +21,7 @@ const vp9_prob vp9_cat3_prob[] = { 173, 148, 140 };
 const vp9_prob vp9_cat4_prob[] = { 176, 155, 140, 135 };
 const vp9_prob vp9_cat5_prob[] = { 180, 157, 141, 134, 130 };
 const vp9_prob vp9_cat6_prob[] = {
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
   254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_TRANSFORMS && CONFIG_HIGH_QUANT
@@ -43,6 +44,10 @@ const vp9_prob vp9_cat6_prob_high12[] = {
   243, 230, 196, 177, 153, 140, 133, 130, 129, 0
 };
 #endif
+=======
+    254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129
+};
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
 const uint8_t vp9_coefband_trans_8x8plus[1024] = {
   0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,

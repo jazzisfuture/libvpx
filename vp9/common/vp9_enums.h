@@ -25,10 +25,17 @@ extern "C" {
 
 #define MI_MASK (MI_BLOCK_SIZE - 1)
 
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
 // Bitstream profiles indicated by 2 bits in the uncompressed header.
 // 00:  Profile 0. 8-bit 4:2:0 only.
 // 10:  Profile 1. Adds 4:4:4, 4:2:2, alpha to Profile 0.
 // 01:  Profile 2. Supports 10-bit and 12-bit color only, with 4:2:0 sampling.
+=======
+// Bitstream profiles indicated by 2-3 bits in the uncompressed header.
+// 00: Profile 0.  8-bit 4:2:0 only.
+// 10: Profile 1.  Adds 4:4:4, 4:2:2, alpha to Profile 0.
+// 01: Profile 2.  Supports 10-bit and 12-bit color only, with 4:2:0 sampling.
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 // 110: Profile 3. Supports 10-bit and 12-bit color only, with 4:2:2/4:4:4
 //                 sampling and alpha.
 // 111: Undefined profile.

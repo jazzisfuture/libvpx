@@ -26,6 +26,12 @@ void vp9_decode_frame(struct VP9Decoder *pbi,
                       const uint8_t *data, const uint8_t *data_end,
                       const uint8_t **p_data_end);
 
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
+=======
+int vp9_read_sync_code(struct vp9_read_bit_buffer *const rb);
+void vp9_read_frame_size(struct vp9_read_bit_buffer *rb,
+                         int *width, int *height);
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 BITSTREAM_PROFILE vp9_read_profile(struct vp9_read_bit_buffer *rb);
 
 #ifdef __cplusplus

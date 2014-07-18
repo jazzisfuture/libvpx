@@ -102,9 +102,15 @@ extern "C" {
     vpx_img_fmt_t fmt; /**< Image Format */
 
     /* Image storage dimensions */
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
     unsigned int    w;           /**< Stored image width */
     unsigned int    h;           /**< Stored image height */
     unsigned int    bit_depth;   /**< Stored image bit-depth */
+=======
+    unsigned int  w;           /**< Stored image width */
+    unsigned int  h;           /**< Stored image height */
+    unsigned int  bit_depth;   /**< Stored image bit-depth */
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
     /* Image display dimensions */
     unsigned int    d_w;   /**< Displayed image width */

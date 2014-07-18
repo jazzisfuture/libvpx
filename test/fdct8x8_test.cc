@@ -123,9 +123,14 @@ class FwdTrans8x8TestBase {
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-255, 255].
       for (int j = 0; j < 64; ++j)
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
         test_input_block[j] = ((rnd.Rand16() >> (16 - bit_depth_)) & mask_) -
                               ((rnd.Rand16() >> (16 - bit_depth_)) & mask_);
       REGISTER_STATE_CHECK(
+=======
+        test_input_block[j] = rnd.Rand8() - rnd.Rand8();
+      ASM_REGISTER_STATE_CHECK(
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
           RunFwdTxfm(test_input_block, test_output_block, pitch_));
 
       for (int j = 0; j < 64; ++j) {
@@ -153,9 +158,14 @@ class FwdTrans8x8TestBase {
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-15, 15].
       for (int j = 0; j < 64; ++j)
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
         test_input_block[j] = ((rnd.Rand16() & mask_) >> 4) -
                               ((rnd.Rand16() & mask_) >> 4);
       REGISTER_STATE_CHECK(
+=======
+        test_input_block[j] = (rnd.Rand8() >> 4) - (rnd.Rand8() >> 4);
+      ASM_REGISTER_STATE_CHECK(
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
           RunFwdTxfm(test_input_block, test_output_block, pitch_));
 
       for (int j = 0; j < 64; ++j) {
@@ -205,7 +215,7 @@ class FwdTrans8x8TestBase {
         }
       }
 
-      REGISTER_STATE_CHECK(
+      ASM_REGISTER_STATE_CHECK(
           RunFwdTxfm(test_input_block, test_temp_block, pitch_));
       for (int j = 0; j < 64; ++j) {
           if (test_temp_block[j] > 0) {
@@ -218,6 +228,7 @@ class FwdTrans8x8TestBase {
             test_temp_block[j] *= 4;
           }
       }
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
       if (bit_depth_ == 8)
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, dst, pitch_));
@@ -226,6 +237,10 @@ class FwdTrans8x8TestBase {
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, CONVERT_TO_BYTEPTR(dst16), pitch_));
 #endif
+=======
+      ASM_REGISTER_STATE_CHECK(
+          RunInvTxfm(test_temp_block, dst, pitch_));
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
       for (int j = 0; j < 64; ++j) {
         const int diff = bit_depth_ == 8 ? dst[j] - src[j] :
@@ -292,10 +307,11 @@ class FwdTrans8x8TestBase {
         }
       }
 
-      REGISTER_STATE_CHECK(
+      ASM_REGISTER_STATE_CHECK(
           RunFwdTxfm(test_input_block, test_temp_block, pitch_));
-      REGISTER_STATE_CHECK(
+      ASM_REGISTER_STATE_CHECK(
           fwd_txfm_ref(test_input_block, ref_temp_block, pitch_, tx_type_));
+<<<<<<< HEAD   (0a9047 Merge "Support for raw yuv input in 422/444 sampling" into h)
       if (bit_depth_ == 8)
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, dst, pitch_));
@@ -304,6 +320,10 @@ class FwdTrans8x8TestBase {
         REGISTER_STATE_CHECK(
             RunInvTxfm(test_temp_block, CONVERT_TO_BYTEPTR(dst16), pitch_));
 #endif
+=======
+      ASM_REGISTER_STATE_CHECK(
+          RunInvTxfm(test_temp_block, dst, pitch_));
+>>>>>>> BRANCH (24715c Merge "Fix FrameSizeTestsLarge unit-test on 32-bit arch.")
 
       for (int j = 0; j < 64; ++j) {
         const int diff = bit_depth_ == 8 ? dst[j] - src[j] :
