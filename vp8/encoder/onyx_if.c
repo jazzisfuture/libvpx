@@ -3239,7 +3239,7 @@ static void update_reference_frames(VP8_COMP *cpi)
             vp8_yv12_extend_frame_borders(
                     &cpi->denoiser.yv12_running_avg[LAST_FRAME]);
 
-            for (i = 2; i < MAX_REF_FRAMES - 1; i++)
+            for (i = 2; i < MAX_REF_FRAMES; i++)
                 vp8_yv12_copy_frame(
                         &cpi->denoiser.yv12_running_avg[LAST_FRAME],
                         &cpi->denoiser.yv12_running_avg[i]);
