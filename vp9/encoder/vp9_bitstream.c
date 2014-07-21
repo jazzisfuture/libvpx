@@ -387,6 +387,12 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
     pack_inter_mode_mvs(cpi, m, w);
   }
 
+  {
+    FILE *pf = fopen("enc_mode.txt", "a");
+    fprintf(pf, "pos (%d, %d), range %d\n", mi_row, mi_col, w->range);
+    fclose(pf);
+  }
+
   assert(*tok < tok_end);
   pack_mb_tokens(w, tok, tok_end);
 }
