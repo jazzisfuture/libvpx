@@ -33,7 +33,7 @@ typedef std::tr1::tuple<const char *, unsigned> decode_perf_param_t;
 
 const decode_perf_param_t kVP9DecodePerfVectors[] = {
   make_tuple("vp90-2-bbb_426x240_tile_1x1_180kbps.webm", 1),
-  make_tuple("vp90-2-bbb_640x360_tile_1x2_337kbps.webm", 2),
+  /*make_tuple("vp90-2-bbb_640x360_tile_1x2_337kbps.webm", 2),
   make_tuple("vp90-2-bbb_854x480_tile_1x2_651kbps.webm", 2),
   make_tuple("vp90-2-bbb_1280x720_tile_1x4_1310kbps.webm", 4),
   make_tuple("vp90-2-bbb_1920x1080_tile_1x1_2581kbps.webm", 1),
@@ -50,7 +50,7 @@ const decode_perf_param_t kVP9DecodePerfVectors[] = {
   make_tuple("vp90-2-tos_854x356_tile_1x2_fpm_546kbps.webm", 2),
   make_tuple("vp90-2-tos_1280x534_tile_1x4_1306kbps.webm", 4),
   make_tuple("vp90-2-tos_1280x534_tile_1x4_fpm_952kbps.webm", 4),
-  make_tuple("vp90-2-tos_1920x800_tile_1x4_fpm_2335kbps.webm", 4),
+  make_tuple("vp90-2-tos_1920x800_tile_1x4_fpm_2335kbps.webm", 4),*/
 };
 
 /*
@@ -92,6 +92,7 @@ TEST_P(DecodePerfTest, PerfTest) {
   const double fps = double(frames) / elapsed_secs;
 
   printf("{\n");
+  printf("\t\"type\" : \"decode_perf_test\",\n");
   printf("\t\"version\" : \"%s\",\n", VERSION_STRING_NOSP);
   printf("\t\"videoName\" : \"%s\",\n", video_name);
   printf("\t\"threadCount\" : %u,\n", threads);
