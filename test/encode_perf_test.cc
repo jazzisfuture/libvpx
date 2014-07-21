@@ -30,18 +30,19 @@ const double kUsecsInSec = 1000000.0;
 #define VIDEO_HEIGHT 2
 #define TARGET_BITRATE 3
 #define VIDEO_FRAMES 4
-typedef std::tr1::tuple<const char *, unsigned, unsigned, unsigned, unsigned> encode_perf_test_t;
+typedef std::tr1::tuple<const char *, unsigned, unsigned, unsigned, unsigned>
+    encode_perf_test_t;
 
 const encode_perf_test_t kVP9EncodePerfTestVectors[] = {
   make_tuple("desktop_640_360_30.yuv", 640, 360, 200, 2484),
-  /*make_tuple("kirland_640_480_30.yuv", 640, 480, 200, 300),
+  make_tuple("kirland_640_480_30.yuv", 640, 480, 200, 300),
   make_tuple("macmarcomoving_640_480_30.yuv", 640, 480, 200, 987),
   make_tuple("macmarcostationary_640_480_30.yuv", 640, 480, 200, 718),
   make_tuple("niklas_640_480_30.yuv", 640, 480, 200, 471),
   make_tuple("tacomanarrows_640_480_30.yuv", 640, 480, 200, 300),
   make_tuple("tacomasmallcameramovement_640_480_30.yuv", 640, 480, 200, 300),
   make_tuple("thaloundeskmtg_640_480_30.yuv", 640, 480, 200, 300),
-  make_tuple("niklas_1280_720_30.yuv", 1280, 720, 600, 470),*/
+  make_tuple("niklas_1280_720_30.yuv", 1280, 720, 600, 470),
 };
 
 #define LENGTH(x) sizeof((x)) / sizeof((x)[0])
@@ -108,7 +109,8 @@ TEST_P(VP9EncodePerfTest, PerfTest) {
       SetUp();
       const vpx_rational timebase = { 33333333, 1000000000 };
       cfg_.g_timebase = timebase;
-      cfg_.rc_target_bitrate = get<TARGET_BITRATE>(kVP9EncodePerfTestVectors[i]);
+      cfg_.rc_target_bitrate =
+          get<TARGET_BITRATE>(kVP9EncodePerfTestVectors[i]);
       cfg_.g_lag_in_frames = 0;
       cfg_.rc_min_quantizer = 2;
       cfg_.rc_max_quantizer = 56;
@@ -158,5 +160,6 @@ TEST_P(VP9EncodePerfTest, PerfTest) {
   }
 }
 
-VP9_INSTANTIATE_TEST_CASE(VP9EncodePerfTest, ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_CASE(VP9EncodePerfTest,
+    ::testing::Values(::libvpx_test::kRealTime));
 }  // namespace
