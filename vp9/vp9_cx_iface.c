@@ -672,16 +672,6 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     priv->extra_cfg = extracfg_map[i].cfg;
     priv->extra_cfg.pkt_list = &priv->pkt_list.head;
 
-     // Maximum buffer size approximated based on having multiple ARF.
-    priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 * 8;
-
-    if (priv->cx_data_sz < 4096)
-      priv->cx_data_sz = 4096;
-
-    priv->cx_data = (unsigned char *)malloc(priv->cx_data_sz);
-    if (priv->cx_data == NULL)
-      return VPX_CODEC_MEM_ERROR;
-
     vp9_initialize_enc();
 
     res = validate_config(priv, &priv->cfg, &priv->extra_cfg);
@@ -692,10 +682,23 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
                          &ctx->priv->alg_priv->cfg,
                          &ctx->priv->alg_priv->extra_cfg);
       cpi = vp9_create_compressor(&ctx->priv->alg_priv->oxcf);
-      if (cpi == NULL)
+      if (cpi == NULL) {
         res = VPX_CODEC_MEM_ERROR;
-      else
+      } else {
         ctx->priv->alg_priv->cpi = cpi;
+
+        // There's no codec control for multiple alt-refs so check the encoder
+        // instance for its status to determine the compressed data size.
+        priv->cx_data_sz = priv->cfg.g_w * priv->cfg.g_h * 3 / 2 *
+                           (cpi->multi_arf_allowed ? 8 : 2);
+
+        if (priv->cx_data_sz < 4096)
+          priv->cx_data_sz = 4096;
+
+        priv->cx_data = (unsigned char *)malloc(priv->cx_data_sz);
+        if (priv->cx_data == NULL)
+          return VPX_CODEC_MEM_ERROR;
+      }
     }
   }
 
