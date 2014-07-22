@@ -201,8 +201,7 @@ ifeq ($(HAVE_GNU_STRIP),yes)
 # keep them.
 %.a: %_g.a
 	$(if $(quiet),@echo "    [STRIP] $@ < $<")
-	$(qexec)$(STRIP) --strip-unneeded \
-         `$(NM) $< | grep ' [A-TV-Z] ' | awk '{print "-K"$$3'}`\
+	$(qexec)$(STRIP) --strip-debug \
           -o $@ $<
 else
 %.a: %_g.a
