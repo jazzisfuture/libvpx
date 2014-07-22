@@ -9,7 +9,6 @@
  */
 
 
-#include "./vpx_config.h"
 #include "vp8_rtcd.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/internal/vpx_codec_internal.h"
@@ -1316,9 +1315,6 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] =
         "vp8.fpf"           /* first pass filename */
 #endif
         VPX_SS_DEFAULT_LAYERS, /* ss_number_layers */
-#ifdef CONFIG_SPATIAL_SVC
-        {0},
-#endif
         {0},                /* ss_target_bitrate */
         1,                  /* ts_number_layers */
         {0},                /* ts_target_bitrate */
