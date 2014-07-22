@@ -1,0 +1,7 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Peter de Rivaz <peter.derivaz@gmail.com>
+Submitted-at: Tue, 22 Jul 2014 13:27:02 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70925
+Project: webm/libvpx
+Branch: refs/heads/highbitdepth
