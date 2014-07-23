@@ -1252,6 +1252,8 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
         lc->is_key_frame = 0;
       } else {
         lc->is_key_frame = cpi->svc.layer_context[0].is_key_frame;
+        if (lc->is_key_frame)
+          cpi->ref_frame_flags &= (~VP9_LAST_FLAG);
       }
     }
 
