@@ -445,7 +445,7 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
                                    int *skip,
                                    int64_t *psse,
                                    int64_t tx_cache[TX_MODES],
-                                   int64_t ref_best_rd,
+                                   const int64_t ref_best_rd,
                                    BLOCK_SIZE bs) {
   const TX_SIZE max_tx_size = max_txsize_lookup[bs];
   VP9_COMMON *const cm = &cpi->common;
@@ -462,7 +462,9 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   int s0, s1;
   const TX_SIZE max_mode_tx_size = tx_mode_to_biggest_tx_size[cm->tx_mode];
   int64_t best_rd = INT64_MAX;
+  int64_t loop_best_rd = ref_best_rd;
   TX_SIZE best_tx = TX_4X4;
+  const TX_SIZE mode_tx_size = MIN(max_tx_size, max_mode_tx_size);
 
   const vp9_prob *tx_probs = get_tx_probs2(max_tx_size, xd, &cm->fc.tx_probs);
   assert(skip_prob > 0);
@@ -470,8 +472,12 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   s1 = vp9_cost_bit(skip_prob, 1);
 
   for (n = TX_4X4; n <= max_tx_size; n++) {
+    // If tx_mode forces use of a specific size, make sure to evaluate it
+    // against other modes rather than just other sizes.
+    int64_t rd_limit = n == mode_tx_size && cm->tx_mode != TX_MODE_SELECT ?
+        ref_best_rd : loop_best_rd;
     txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
-                     &sse[n], ref_best_rd, 0, bs, n,
+                     &sse[n], rd_limit, 0, bs, n,
                      cpi->sf.use_fast_coef_costing);
     r[n][1] = r[n][0];
     if (r[n][0] < INT_MAX) {
@@ -494,11 +500,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
     if (rd[n][1] < best_rd) {
       best_tx = n;
       best_rd = rd[n][1];
+      if (best_rd < loop_best_rd)
+        loop_best_rd = best_rd;
     }
   }
-  mbmi->tx_size = cm->tx_mode == TX_MODE_SELECT ?
-                      best_tx : MIN(max_tx_size, max_mode_tx_size);
-
+  mbmi->tx_size = cm->tx_mode == TX_MODE_SELECT ? best_tx : mode_tx_size;
 
   *distortion = d[mbmi->tx_size];
   *rate       = r[mbmi->tx_size][cm->tx_mode == TX_MODE_SELECT];
