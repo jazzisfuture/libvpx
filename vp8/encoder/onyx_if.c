@@ -613,6 +613,26 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment)
         while(block_count && i != cpi->cyclic_refresh_mode_index);
 
         cpi->cyclic_refresh_mode_index = i;
+
+#if CONFIG_TEMPORAL_DENOISING
+        if (cpi->denoiser.aggressive_mode != 0 &&
+            Q < cpi->denoiser.denoise_pars.qp_thresh) {
+          // Under aggressive denoising mode, use segmentation to turn off loop
+          // filter below some qp thresh. The loop filter is turned off for all
+          // blocks that have been encoded as ZEROMV LAST x frames in a row,
+          // where x is set by cpi->denoiser.denoise_pars.consec_zerolast.
+          // This is to avoid "dot" artifacts that can occur from repeated
+          // loop filtering on noisy input source.
+          cpi->cyclic_refresh_q = Q;
+          lf_adjustment = -MAX_LOOP_FILTER;
+          vpx_memset(cpi->segmentation_map, 0, mbs_in_frame);
+          for (i = 0; i < mbs_in_frame; ++i) {
+            if (cpi->consec_zero_last[i] >
+                cpi->denoiser.denoise_pars.consec_zerolast)
+              seg_map[i] = 1;
+          }
+        }
+#endif
     }
 
     /* Activate segmentation. */
@@ -1752,7 +1772,8 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf)
         int width = (cpi->oxcf.Width + 15) & ~15;
         int height = (cpi->oxcf.Height + 15) & ~15;
         vp8_denoiser_allocate(&cpi->denoiser, width, height,
-                              cpi->common.mb_rows, cpi->common.mb_cols);
+                              cpi->common.mb_rows, cpi->common.mb_cols,
+                              ((cpi->oxcf.noise_sensitivity == 3) ? 1 : 0));
       }
     }
 #endif
@@ -1895,6 +1916,9 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     }
     else
         cpi->cyclic_refresh_map = (signed char *) NULL;
+
+    CHECK_MEM_ERROR(cpi->consec_zero_last,
+                    vpx_calloc((cpi->common.mb_rows * cpi->common.mb_cols), 1));
 
 #ifdef VP8_ENTROPY_STATS
     init_context_counters();
@@ -2416,6 +2440,7 @@ void vp8_remove_compressor(VP8_COMP **ptr)
     vpx_free(cpi->mb.ss);
     vpx_free(cpi->tok);
     vpx_free(cpi->cyclic_refresh_map);
+    vpx_free(cpi->consec_zero_last);
 
     vp8_remove_common(&cpi->common);
     vpx_free(cpi);
@@ -3478,6 +3503,10 @@ static void encode_frame_to_data_rate
         {
             cpi->mb.rd_thresh_mult[i] = 128;
         }
+
+        // Reset the zero_last counter to 0 on key frame.
+        vpx_memset(cpi->consec_zero_last, 0,
+                   (cpi->common.mb_rows * cpi->common.mb_cols));
     }
 
 #if 0
@@ -3899,6 +3928,7 @@ static void encode_frame_to_data_rate
 
 #endif
 
+
 #ifdef OUTPUT_YUV_SRC
     vp8_write_yuv_frame(yuv_file, cpi->Source);
 #endif
@@ -3994,6 +4024,9 @@ static void encode_frame_to_data_rate
                 else
                   disable_segmentation(cpi);
               }
+              // Reset the zero_last counter to 0 on key frame.
+              vpx_memset(cpi->consec_zero_last, 0,
+                         (cpi->common.mb_rows * cpi->common.mb_cols));
               vp8_set_quantizer(cpi, Q);
             }
 
