@@ -511,6 +511,9 @@ typedef struct VP8_COMP
     int cyclic_refresh_mode_index;
     int cyclic_refresh_q;
     signed char *cyclic_refresh_map;
+    // Counter that is reset when a block is checked for a mode-bias against
+    // ZEROMV_LASTREF.
+    unsigned char *consec_zero_last;
 
     // Frame counter for the temporal pattern. Counter is rest when the temporal
     // layers are changed dynamically (run-time change).
