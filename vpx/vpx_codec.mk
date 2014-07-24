@@ -38,6 +38,7 @@ API_SRCS-yes                += vpx_encoder.h
 API_SRCS-yes                += internal/vpx_codec_internal.h
 API_SRCS-yes                += internal/vpx_psnr.h
 API_SRCS-yes                += src/vpx_codec.c
+API_SRCS-yes                += src/api_vpx_decoder.c
 API_SRCS-yes                += src/vpx_image.c
 API_SRCS-yes                += src/vpx_psnr.c
 API_SRCS-yes                += vpx_codec.h
