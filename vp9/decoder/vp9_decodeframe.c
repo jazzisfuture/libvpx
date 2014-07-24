@@ -629,7 +629,7 @@ static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
   if (cm->width != width || cm->height != height) {
     // Change in frame size (assumption: color format does not change).
     if (cm->width == 0 || cm->height == 0 ||
-        width * height > cm->width * cm->height) {
+        width > cm->width || height > cm->height) {
       if (vp9_alloc_context_buffers(cm, width, height))
         vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate frame buffers");
