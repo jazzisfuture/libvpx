@@ -1,0 +1,9 @@
+Code-Review+2: James Zern <jzern@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+1: KO Myung-Hun <komh@chollian.net>
+Verified+1: KO Myung-Hun <komh@chollian.net>
+Submitted-by: James Zern <jzern@google.com>
+Submitted-at: Wed, 23 Jul 2014 22:42:17 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/70942
+Project: webm/libvpx
+Branch: refs/heads/master
