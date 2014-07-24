@@ -40,6 +40,87 @@ extern const MB_PREDICTION_MODE vp8_mode_order[MAX_MODES];
 
 extern int vp8_cost_mv_ref(MB_PREDICTION_MODE m, const int near_mv_ref_ct[4]);
 
+static int macroblock_corner_grad(unsigned char* signal, int stride,
+                                  int offsetx, int offsety, int sgnx,
+                                  int sgny) {
+  int y1 = signal[offsetx * stride + offsety];
+  int y2 = signal[offsetx * stride + offsety + sgny];
+  int y3 = signal[(offsetx + sgnx) * stride + offsety];
+  int y4 = signal[(offsetx + sgnx) * stride + offsety + sgny];
+  return MAX(MAX(abs(y1 - y2), abs(y1 - y3)), abs(y1 - y4));
+}
+
+static int check_dot_artifact_candidate(VP8_COMP *cpi,
+                                        MACROBLOCK *x,
+                                        unsigned char *target_last,
+                                        int stride,
+                                        unsigned char* last_ref,
+                                        int mb_row,
+                                        int mb_col,
+                                        int channel) {
+  int threshold1 = 6;
+  int threshold2 = 3;
+  unsigned int max_num = (cpi->common.MBs) / 10;
+  int grad_last = 0;
+  int grad_source = 0;
+  int index = mb_row * cpi->common.mb_cols + mb_col;
+  // Threshold for #consecutive (base layer) frames using zero_last mode.
+  int num_frames = 30;
+  int shift = 15;
+  if (channel > 0) {
+    shift = 7;
+  }
+  if (cpi->oxcf.number_of_layers > 1) {
+    num_frames = 20;
+  }
+  x->zero_last_dot_suppress = 0;
+  // Blocks on base layer frames that have been using ZEROMV_LAST repeatedly
+  // (i.e, at least |x| consecutive frames are candidates for increasing the
+  // rd adjustment for zero_last mode.
+  // Only allow this for at most |max_num| blocks per frame.
+  // Don't allow this for screen content input.
+  if (cpi->current_layer == 0 &&
+      cpi->consec_zero_last_mvbias[index] > num_frames &&
+      x->mbs_zero_last_dot_suppress < max_num) {
+    // If this block is checked here, label it so we don't check it again until
+    // ~|x| framaes later.
+    x->zero_last_dot_suppress = 1;
+    // Dot artifact is noticeable as strong gradient at corners of macroblock,
+    // for flat areas. As a simple detector for now, we look for a high
+    // corner gradient on last ref, and a smaller gradient on source.
+    // Check 4 corners, return if any satisfy condition.
+    // Top-left:
+    grad_last = macroblock_corner_grad(last_ref, stride, 0, 0, 1, 1);
+    grad_source = macroblock_corner_grad(target_last, stride, 0, 0, 1, 1);
+    if (grad_last >= threshold1 && grad_source <= threshold2) {
+       x->mbs_zero_last_dot_suppress++;
+       return 1;
+    }
+    // Top-right:
+    grad_last = macroblock_corner_grad(last_ref, stride, 0, shift, 1, -1);
+    grad_source = macroblock_corner_grad(target_last, stride, 0, shift, 1, -1);
+    if (grad_last >= threshold1 && grad_source <= threshold2) {
+      x->mbs_zero_last_dot_suppress++;
+      return 1;
+    }
+    // Bottom-left:
+    grad_last = macroblock_corner_grad(last_ref, stride, shift, 0, -1, 1);
+    grad_source = macroblock_corner_grad(target_last, stride, shift, 0, -1, 1);
+    if (grad_last >= threshold1 && grad_source <= threshold2) {
+      x->mbs_zero_last_dot_suppress++;
+      return 1;
+    }
+    // Bottom-right:
+    grad_last = macroblock_corner_grad(last_ref, stride, shift, shift, -1, -1);
+    grad_source = macroblock_corner_grad(target_last, stride, shift, shift, -1, -1);
+    if (grad_last >= threshold1 && grad_source <= threshold2) {
+      x->mbs_zero_last_dot_suppress++;
+      return 1;
+    }
+    return 0;
+  }
+  return 0;
+}
 
 int vp8_skip_fractional_mv_step(MACROBLOCK *mb, BLOCK *b, BLOCKD *d,
                                 int_mv *bestmv, int_mv *ref_mv,
@@ -606,6 +687,50 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
     unsigned char *plane[4][3];
     int ref_frame_map[4];
     int sign_bias = 0;
+    int dot_artifact_candidate = 0;
+    // For detecting dot artifact.
+    unsigned char* target = x->src.y_buffer;
+    unsigned char* target_u = x->block[16].src + *x->block[16].base_src;
+    unsigned char* target_v = x->block[20].src + *x->block[20].base_src;
+    int stride = x->src.y_stride;
+    int stride_uv = x->block[16].src_stride;
+#if CONFIG_TEMPORAL_DENOISING
+    if (cpi->oxcf.noise_sensitivity) {
+      int uv_denoise = (cpi->oxcf.noise_sensitivity >= 2) ? 1 : 0;
+      target =
+          cpi->denoiser.yv12_running_avg[LAST_FRAME].y_buffer + recon_yoffset;
+      stride = cpi->denoiser.yv12_running_avg[LAST_FRAME].y_stride;
+      if (uv_denoise) {
+        target_u =
+            cpi->denoiser.yv12_running_avg[LAST_FRAME].u_buffer +
+            recon_uvoffset;
+        target_v =
+            cpi->denoiser.yv12_running_avg[LAST_FRAME].v_buffer +
+            recon_uvoffset;
+        stride_uv = cpi->denoiser.yv12_running_avg[LAST_FRAME].uv_stride;
+      }
+    }
+#endif
+
+    get_predictor_pointers(cpi, plane, recon_yoffset, recon_uvoffset);
+
+    dot_artifact_candidate =
+        check_dot_artifact_candidate(cpi, x,
+            target, stride,
+            plane[LAST_FRAME][0], mb_row, mb_col, 0);
+    // If not found in Y channel, check UV channel.
+    if (!dot_artifact_candidate) {
+      dot_artifact_candidate =
+          check_dot_artifact_candidate(cpi, x,
+              target_u, stride_uv,
+              plane[LAST_FRAME][1], mb_row, mb_col, 1);
+      if (!dot_artifact_candidate) {
+        dot_artifact_candidate =
+            check_dot_artifact_candidate(cpi, x,
+                target_v, stride_uv,
+                plane[LAST_FRAME][2], mb_row, mb_col, 2);
+      }
+    }
 
 #if CONFIG_MULTI_RES_ENCODING
     int dissim = INT_MAX;
@@ -679,8 +804,6 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         best_ref_mv.as_int = best_ref_mv_sb[sign_bias].as_int;
     }
 
-    get_predictor_pointers(cpi, plane, recon_yoffset, recon_uvoffset);
-
     /* Count of the number of MBs tested so far this frame */
     x->mbs_tested_so_far++;
 
@@ -693,6 +816,16 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
      * motion area, its mode decision is biased to ZEROMV mode.
      */
     calculate_zeromv_rd_adjustment(cpi, x, &rd_adjustment);
+
+#if CONFIG_TEMPORAL_DENOISING
+    rd_adjustment = (int)(rd_adjustment *
+        cpi->denoiser.denoise_pars.pickmode_mv_bias / 100);
+#endif
+
+    if (dot_artifact_candidate) {
+      // Bias against ZEROMV_LAST mode.
+      rd_adjustment = 150;
+    }
 
     /* if we encode a new mv this is important
      * find the best new motion vector
@@ -1168,7 +1301,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 #if CONFIG_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity)
     {
-        int uv_denoise = (cpi->oxcf.noise_sensitivity == 2) ? 1 : 0;
+        int uv_denoise = (cpi->oxcf.noise_sensitivity >= 2) ? 1 : 0;
         int block_index = mb_row * cpi->common.mb_cols + mb_col;
         if (x->best_sse_inter_mode == DC_PRED)
         {
