@@ -385,7 +385,6 @@ void vp8_deblock(VP8_COMMON                 *cm,
 }
 #endif
 
-#if !(CONFIG_TEMPORAL_DENOISING)
 void vp8_de_noise(VP8_COMMON                 *cm,
                   YV12_BUFFER_CONFIG         *source,
                   YV12_BUFFER_CONFIG         *post,
@@ -423,7 +422,6 @@ void vp8_de_noise(VP8_COMMON                 *cm,
             source->uv_stride, source->uv_stride, source->uv_width, limits, 8);
     }
 }
-#endif
 
 double vp8_gaussian(double sigma, double mu, double x)
 {
