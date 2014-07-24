@@ -743,7 +743,7 @@ const vp9_subpixvariance_fn_t subpel_variance32x32_avx2 =
 const vp9_subpixvariance_fn_t subpel_variance64x64_avx2 =
     vp9_sub_pixel_variance64x64_avx2;
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_AVX2, VP9SubpelVarianceTest,
+    AVX2, VP9SubpelVarianceTest,
     ::testing::Values(make_tuple(5, 5, subpel_variance32x32_avx2),
                       make_tuple(6, 6, subpel_variance64x64_avx2)));
 
@@ -752,7 +752,7 @@ const vp9_subp_avg_variance_fn_t subpel_avg_variance32x32_avx2 =
 const vp9_subp_avg_variance_fn_t subpel_avg_variance64x64_avx2 =
     vp9_sub_pixel_avg_variance64x64_avx2;
 INSTANTIATE_TEST_CASE_P(
-    DISABLED_AVX2, VP9SubpelAvgVarianceTest,
+    AVX2, VP9SubpelAvgVarianceTest,
     ::testing::Values(make_tuple(5, 5, subpel_avg_variance32x32_avx2),
                       make_tuple(6, 6, subpel_avg_variance64x64_avx2)));
 #endif  // HAVE_AVX2
