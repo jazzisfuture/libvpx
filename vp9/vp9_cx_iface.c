@@ -883,7 +883,8 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
            -1 != vp9_get_compressed_data(ctx->cpi, &lib_flags, &size,
                                          cx_data, &dst_time_stamp,
                                          &dst_end_time_stamp, !img)) {
-      if (size) {
+      if (size && ctx->cpi->use_svc && ctx->cpi->svc.number_temporal_layers == 1 &&
+          ctx->cpi->svc.spatial_layer_id == 0) {
         vpx_codec_pts_t round, delta;
         vpx_codec_cx_pkt_t pkt;
         VP9_COMP *const cpi = (VP9_COMP *)ctx->cpi;
@@ -895,7 +896,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
 
         // Pack invisible frames with the next visible frame
         if (cpi->common.show_frame == 0
-#if CONFIG_SPATIAL_SVC
+#if CONFIG_SPATIAL_SVC1
             || (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
                 cpi->svc.spatial_layer_id < cpi->svc.number_spatial_layers - 1)
 #endif

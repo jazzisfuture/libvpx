@@ -2105,6 +2105,9 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   vp9_clear_system_state();
 
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1)
+    cm->frame_context_idx = cpi->svc.spatial_layer_id;
+
   // Enable or disable mode based tweaking of the zbin.
   // For 2 pass only used where GF/ARF prediction quality
   // is above a threshold.
@@ -2165,6 +2168,12 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       // Only reset the current context.
       cm->reset_frame_context = 2;
     }
+  } else {
+   /* cm->coding_use_prev_mi = 1;
+    cm->frame_parallel_decoding_mode = 1;
+    cm->reset_frame_context = 0;
+    cm->refresh_frame_context = 0;
+    */
   }
 
   // Configure experimental use of segmentation for enhanced coding of
