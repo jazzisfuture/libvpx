@@ -646,8 +646,6 @@ INSTANTIATE_TEST_CASE_P(SSSE3, ConvolveTest, ::testing::Values(
 #endif
 
 #if HAVE_AVX2
-// TODO(jzern): these prototypes can be removed after the avx2 versions are
-// reenabled in vp9_rtcd_defs.pl.
 extern "C" {
 void vp9_convolve8_vert_avx2(const uint8_t *src, ptrdiff_t src_stride,
                              uint8_t *dst, ptrdiff_t dst_stride,
