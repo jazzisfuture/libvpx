@@ -18,7 +18,7 @@
     mov         rcx, 0x0400040
 
     movdqa      xmm4, [rdx]                 ;load filters
-    movd        xmm5, rcx
+    movq        xmm5, rcx
     packsswb    xmm4, xmm4
     pshuflw     xmm0, xmm4, 0b              ;k0_k1
     pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
@@ -624,7 +624,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     pavgb       xmm0,   xmm1
 %endif
     movd        [rdi],  xmm0
-.done
+.done:
 %endm
 
 %macro HORIZx8_ROW 4
@@ -661,7 +661,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     mov         rcx, 0x0400040
 
     movdqa      xmm4, [rdx]                 ;load filters
-    movd        xmm5, rcx
+    movq        xmm5, rcx
     packsswb    xmm4, xmm4
     pshuflw     xmm0, xmm4, 0b              ;k0_k1
     pshuflw     xmm1, xmm4, 01010101b       ;k2_k3
@@ -727,7 +727,7 @@ sym(vp9_filter_block1d16_v8_avg_ssse3):
     pavgb       xmm0,   xmm1
 %endif
     movq        [rdi],  xmm0
-.done
+.done:
 %endm
 
 %macro HORIZx16 1
