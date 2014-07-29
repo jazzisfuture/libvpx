@@ -27,6 +27,12 @@ class VP9FrameSizeTestsLarge
 
   virtual void SetUp() {
     InitializeConfig();
+
+    // At default we overflow 2 gig limit.
+
+    // TODO(JBB): increase this to default when we've addressed allocation
+    // size.
+    cfg_.g_lag_in_frames = 10;
     SetMode(::libvpx_test::kRealTime);
   }
 
@@ -35,7 +41,7 @@ class VP9FrameSizeTestsLarge
                                   libvpx_test::Decoder *decoder) {
     EXPECT_EQ(expected_res_, res_dec)
         << "Expected " << expected_res_
-        << "but got " << res_dec;
+        << " but got " << res_dec;
 
     return !::testing::Test::HasFailure();
   }
@@ -77,8 +83,8 @@ TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
   // This test produces a pretty large single frame allocation,  (roughly
   // 25 megabits). The encoder allocates a good number of these frames
   // one for each lag in frames (for 2 pass), and then one for each possible
-  // reference buffer (8) - we can end up with up to 30 buffers of roughly this
-  // size or almost 1 gig of memory.
+  // reference buffer (8) - we can end up with up to 47 buffers of roughly this
+  // size or ~2 gig of memory.
   video.SetSize(4096, 4096);
   video.set_limit(2);
   expected_res_ = VPX_CODEC_OK;
