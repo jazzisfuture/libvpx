@@ -81,6 +81,9 @@ static const int sinpi_4_9 = 15212;
 
 static INLINE int dct_const_round_shift(int input) {
   int rv = ROUND_POWER_OF_TWO(input, DCT_CONST_BITS);
+#if CONFIG_ERROR_CHECKING
+  assert(INT16_MIN <= rv && rv <= INT16_MAX);
+#endif
   return (int16_t)rv;
 }
 

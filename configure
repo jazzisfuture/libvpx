@@ -328,6 +328,7 @@ CONFIG_LIST="
     encode_perf_tests
     multi_res_encoding
     temporal_denoising
+    error_checking
     experimental
     size_limit
     ${EXPERIMENT_LIST}
@@ -385,6 +386,7 @@ CMDLINE_SELECT="
     encode_perf_tests
     multi_res_encoding
     temporal_denoising
+    error_checking
     experimental
 "
 
