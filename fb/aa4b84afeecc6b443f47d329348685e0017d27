@@ -1,0 +1,7 @@
+Code-Review+2: James Zern <jzern@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Marco Paniconi <marpan@google.com>
+Submitted-at: Wed, 30 Jul 2014 10:33:35 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71034
+Project: webm/libvpx
+Branch: refs/heads/master
