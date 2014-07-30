@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include "vp9/encoder/vp9_encoder.h"
+#include "vp9/common/vp9_mvref_common.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_extend.h"
 
@@ -35,6 +36,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     RATE_CONTROL *const lrc = &lc->rc;
     int i;
     lc->current_video_frame_in_layer = 0;
+    lc->last_frame_type = FRAME_TYPES;
     lrc->ni_av_qi = oxcf->worst_allowed_q;
     lrc->total_actual_bits = 0;
     lrc->total_target_vs_actual = 0;
@@ -209,11 +211,12 @@ void vp9_init_second_pass_spatial_svc(VP9_COMP *cpi) {
   svc->spatial_layer_id = 0;
 }
 
-void vp9_inc_frame_in_layer(SVC *svc) {
-  LAYER_CONTEXT *const lc = (svc->number_temporal_layers > 1)
-      ? &svc->layer_context[svc->temporal_layer_id]
-      : &svc->layer_context[svc->spatial_layer_id];
+void vp9_inc_frame_store_frame_type_in_layer(VP9_COMP *cpi) {
+  LAYER_CONTEXT *const lc = (cpi->svc.number_temporal_layers > 1)
+      ? &cpi->svc.layer_context[cpi->svc.temporal_layer_id]
+      : &cpi->svc.layer_context[cpi->svc.spatial_layer_id];
   ++lc->current_video_frame_in_layer;
+  lc->last_frame_type = cpi->common.frame_type;
 }
 
 int vp9_is_upper_layer_key_frame(const VP9_COMP *const cpi) {
@@ -354,3 +357,181 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
   return buf;
 }
 #endif
+
+static void svc_find_mv_refs_idx(VP9_COMP *const cpi, const MACROBLOCKD *xd,
+                                 const TileInfo *const tile,
+                                 MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                                 int_mv *mv_ref_list,
+                                 int block, int mi_row, int mi_col) {
+  const VP9_COMMON *cm = &cpi->common;
+  const int *ref_sign_bias = cm->ref_frame_sign_bias;
+  int i, refmv_count = 0;
+  const MODE_INFO *prev_mi = cm->coding_use_prev_mi && cm->prev_mi
+        ? cm->prev_mi_grid_visible[mi_row * xd->mi_stride + mi_col]
+        : NULL;
+  const MB_MODE_INFO *const prev_mbmi = prev_mi ? &prev_mi->mbmi : NULL;
+  const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
+  LAYER_CONTEXT *lc = get_layer_context(&cpi->svc);
+  int different_ref_found = 0;
+  int context_counter = 0;
+
+  // Blank the reference vector list
+  vpx_memset(mv_ref_list, 0, sizeof(*mv_ref_list) * MAX_MV_REF_CANDIDATES);
+
+  // The nearest 2 blocks are treated differently
+  // if the size < 8x8 we get the mv from the bmi substructure,
+  // and we also need to keep a mode count.
+  for (i = 0; i < 2; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
+                                                   xd->mi_stride];
+      const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+      // Keep counts for entropy encoding.
+      context_counter += mode_2_counter[candidate->mode];
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, 0, mv_ref->col, block));
+      else if (candidate->ref_frame[1] == ref_frame)
+        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, 1, mv_ref->col, block));
+    }
+  }
+
+  // Check the rest of the neighbors in much the same way
+  // as before except we don't need to keep track of sub blocks or
+  // mode counts.
+  for (; i < MVREF_NEIGHBOURS; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row *
+                                                    xd->mi_stride]->mbmi;
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_LIST(candidate->mv[0]);
+      else if (candidate->ref_frame[1] == ref_frame)
+        ADD_MV_REF_LIST(candidate->mv[1]);
+    }
+  }
+
+  lc->refmv_from_prev_mi[ref_frame][1] = 1;
+  if (refmv_count == 0) {
+    lc->refmv_from_prev_mi[ref_frame][0] = 1;
+  }
+  // Check the last frame's mode and mv info.
+  if (prev_mbmi) {
+    if (prev_mbmi->ref_frame[0] == ref_frame)
+      ADD_MV_REF_LIST(prev_mbmi->mv[0]);
+    else if (prev_mbmi->ref_frame[1] == ref_frame)
+      ADD_MV_REF_LIST(prev_mbmi->mv[1]);
+  }
+
+  // Not to compare with old_refmv_count if it goes to Done from below code
+
+  // Since we couldn't find 2 mvs from the same reference frame
+  // go back through the neighbors and find motion vectors from
+  // different reference frames.
+  if (different_ref_found) {
+    for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
+      const POSITION *mv_ref = &mv_ref_search[i];
+      if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+        const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row
+                                              * xd->mi_stride]->mbmi;
+
+        // If the candidate is INTRA we don't want to consider its mv.
+        IF_DIFF_REF_FRAME_ADD_MV(candidate);
+      }
+    }
+  }
+
+  // Since we still don't have a candidate we'll try the last frame.
+  if (prev_mbmi)
+    IF_DIFF_REF_FRAME_ADD_MV(prev_mbmi);
+
+ Done:
+
+  mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
+
+  // Clamp vectors
+  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
+    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+}
+
+void vp9_svc_find_mv_refs(VP9_COMP *const cpi, const MACROBLOCKD *xd,
+                          const TileInfo *const tile,
+                          MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                          int_mv *mv_ref_list,
+                          int mi_row, int mi_col) {
+  svc_find_mv_refs_idx(cpi, xd, tile, mi, ref_frame, mv_ref_list, -1,
+                       mi_row, mi_col);
+}
+
+void vp9_svc_append_sub8x8_mvs_for_idx(VP9_COMP *const cpi, MACROBLOCKD *xd,
+                                       const TileInfo *const tile,
+                                       int block, int ref,
+                                       int mi_row, int mi_col,
+                                       int_mv *nearest, int_mv *near) {
+  int_mv mv_list[MAX_MV_REF_CANDIDATES];
+  MODE_INFO *const mi = xd->mi[0];
+  b_mode_info *bmi = mi->bmi;
+  int n;
+  LAYER_CONTEXT *lc = get_layer_context(&cpi->svc);
+  int old_near, old_nearest;
+
+  assert(MAX_MV_REF_CANDIDATES == 2);
+
+  svc_find_mv_refs_idx(cpi, xd, tile, mi, mi->mbmi.ref_frame[ref], mv_list, block,
+                   mi_row, mi_col);
+
+  old_nearest = lc->refmv_from_prev_mi[ref][0];
+  old_near = lc->refmv_from_prev_mi[ref][1];
+  lc->refmv_from_prev_mi[ref][0] = lc->refmv_from_prev_mi[ref][1] = 0;
+  near->as_int = 0;
+  switch (block) {
+    case 0:
+      nearest->as_int = mv_list[0].as_int;
+      near->as_int = mv_list[1].as_int;
+      lc->refmv_from_prev_mi[ref][0] = old_nearest;
+      lc->refmv_from_prev_mi[ref][1] = old_near;
+      break;
+    case 1:
+    case 2:
+      nearest->as_int = bmi[0].as_mv[ref].as_int;
+      for (n = 0; n < MAX_MV_REF_CANDIDATES; ++n)
+        if (nearest->as_int != mv_list[n].as_int) {
+          near->as_int = mv_list[n].as_int;
+
+          if (n == 0)
+            lc->refmv_from_prev_mi[ref][1] = old_nearest;
+          else
+            lc->refmv_from_prev_mi[ref][1] = old_near;
+
+          break;
+        }
+      break;
+    case 3: {
+      int_mv candidates[2 + MAX_MV_REF_CANDIDATES];
+      candidates[0] = bmi[1].as_mv[ref];
+      candidates[1] = bmi[0].as_mv[ref];
+      candidates[2] = mv_list[0];
+      candidates[3] = mv_list[1];
+
+      nearest->as_int = bmi[2].as_mv[ref].as_int;
+      for (n = 0; n < 2 + MAX_MV_REF_CANDIDATES; ++n)
+        if (nearest->as_int != candidates[n].as_int) {
+          near->as_int = candidates[n].as_int;
+
+          if (n == 2)
+            lc->refmv_from_prev_mi[ref][1] = old_nearest;
+          else if (n == 3)
+            lc->refmv_from_prev_mi[ref][1] = old_near;
+
+          break;
+        }
+      break;
+    }
+    default:
+      assert("Invalid block index.");
+  }
+}

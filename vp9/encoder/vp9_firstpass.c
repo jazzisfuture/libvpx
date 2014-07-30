@@ -894,7 +894,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   ++cm->current_video_frame;
   if (cpi->use_svc)
-    vp9_inc_frame_in_layer(&cpi->svc);
+    vp9_inc_frame_store_frame_type_in_layer(cpi);
 }
 
 static double calc_correction_factor(double err_per_mb,
@@ -962,7 +962,8 @@ extern void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 void vp9_init_second_pass(VP9_COMP *cpi) {
   SVC *const svc = &cpi->svc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
-  const int is_spatial_svc = (svc->number_spatial_layers > 1) &&
+  const int is_spatial_svc = (svc->number_spatial_layers >= 1 &&
+                              cpi->oxcf.use_svc) &&
                              (svc->number_temporal_layers == 1);
   TWO_PASS *const twopass = is_spatial_svc ?
       &svc->layer_context[svc->spatial_layer_id].twopass : &cpi->twopass;

@@ -33,6 +33,8 @@ typedef struct {
   int alt_ref_idx;
   int has_alt_frame;
   size_t layer_size;
+  FRAME_TYPE last_frame_type;
+  int refmv_from_prev_mi[MAX_REF_FRAMES][2];
 } LAYER_CONTEXT;
 
 typedef struct {
@@ -79,7 +81,7 @@ void vp9_save_layer_context(struct VP9_COMP *const cpi);
 void vp9_init_second_pass_spatial_svc(struct VP9_COMP *cpi);
 
 // Increment number of video frames in layer
-void vp9_inc_frame_in_layer(SVC *svc);
+void vp9_inc_frame_store_frame_type_in_layer(struct VP9_COMP *cpi);
 
 // Check if current layer is key frame in spatial upper layer
 int vp9_is_upper_layer_key_frame(const struct VP9_COMP *const cpi);
@@ -100,6 +102,19 @@ struct lookahead_entry *vp9_svc_lookahead_pop(struct VP9_COMP *const cpi,
 struct lookahead_entry *vp9_svc_lookahead_peek(struct VP9_COMP *const cpi,
                                                struct lookahead_ctx *ctx,
                                                int index, int copy_params);
+
+void vp9_svc_find_mv_refs(struct VP9_COMP *const cpi, const MACROBLOCKD *xd,
+                          const TileInfo *const tile,
+                          MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                          int_mv *mv_ref_list,
+                          int mi_row, int mi_col);
+
+void vp9_svc_append_sub8x8_mvs_for_idx(struct VP9_COMP *const cpi,
+                                       MACROBLOCKD *xd,
+                                       const TileInfo *const tile,
+                                       int block, int ref,
+                                       int mi_row, int mi_col,
+                                       int_mv *nearest, int_mv *near);
 
 #ifdef __cplusplus
 }  // extern "C"

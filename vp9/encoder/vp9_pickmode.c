@@ -453,13 +453,14 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col,
                            sf, sf);
 
-      if (cm->coding_use_prev_mi)
-        vp9_find_mv_refs(cm, xd, tile, xd->mi[0], ref_frame,
-                         candidates, mi_row, mi_col);
-      else
+      if (cm->coding_use_prev_mi) {
+          vp9_find_mv_refs(cm, xd, tile, xd->mi[0], ref_frame,
+                           candidates, mi_row, mi_col);
+      } else {
         const_motion[ref_frame] = mv_refs_rt(cm, xd, tile, xd->mi[0],
                                              ref_frame, candidates,
                                              mi_row, mi_col);
+      }
 
       vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
                             &frame_mv[NEARESTMV][ref_frame],
