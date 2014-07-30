@@ -1893,6 +1893,8 @@ struct VP8_COMP* vp8_create_compressor(VP8_CONFIG *oxcf)
     }
 #endif
 
+    cpi->mse_source_denoised = 0;
+
     /* Should we use the cyclic refresh method.
      * Currently this is tied to error resilliant mode
      */
@@ -3296,6 +3298,52 @@ static void update_reference_frames(VP8_COMP *cpi)
 
 }
 
+static int measure_square_diff_partial(YV12_BUFFER_CONFIG *source,
+                                       YV12_BUFFER_CONFIG *dest,
+                                       VP8_COMP *cpi)
+    {
+        int i, j;
+        int Total = 0;
+        int num_blocks = 0;
+        int skip = 2;
+        int min_consec_zero_last = 10;
+        int tot_num_blocks = (source->y_height * source->y_width) >> 8;
+        unsigned char *src = source->y_buffer;
+        unsigned char *dst = dest->y_buffer;
+
+        /* Loop through the Y plane, every |skip| blocks along rows and colmumns,
+         * summing the square differences, and only for blocks that have been
+         * zero_last mode at least |x| frames in a row.
+         */
+        for (i = 0; i < source->y_height; i += 16 * skip)
+        {
+            int block_index_row = (i >> 4) * cpi->common.mb_cols;
+            for (j = 0; j < source->y_width; j += 16 * skip)
+            {
+                int index = block_index_row + (j >> 4);
+                if (cpi->consec_zero_last[index] >= min_consec_zero_last) {
+                  unsigned int sse;
+                  Total += vp8_mse16x16(src + j,
+                                        source->y_stride,
+                                        dst + j, dest->y_stride,
+                                        &sse);
+                  num_blocks++;
+                }
+            }
+            src += 16 * skip * source->y_stride;
+            dst += 16 * skip * dest->y_stride;
+        }
+        // Only return non-zero if we have at least ~1/16 samples for estimate.
+        if (num_blocks > (tot_num_blocks >> 4)) {
+        return (Total / num_blocks);
+        } else {
+          return 0;
+        }
+    }
+
+
+
+
 void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
 {
     const FRAME_TYPE frame_type = cm->frame_type;
@@ -4452,6 +4500,24 @@ static void encode_frame_to_data_rate
         cm->copy_buffer_to_arf  = 0;
 
     cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
+
+
+#if CONFIG_TEMPORAL_DENOISING
+    // Get some measure of the amount of noise, by measuring the (partial) mse
+    // between current source and previous source, for y channel.
+    // Partial refers to computing the sse for a sub-sample of the frame
+    // (i.e., skip x blocks along row/column), and only for blocks in that set
+    // that have used ZEROMV LAST. Do this every ~8 frames, to further reduce
+    // complexity.
+    if (cpi->oxcf.noise_sensitivity == 4 &&
+        cpi->frames_since_key%8 == 0 &&
+        cm->frame_type != KEY_FRAME) {
+      cpi->mse_source_denoised = measure_square_diff_partial(
+          &cpi->denoiser.yv12_running_avg[INTRA_FRAME], cpi->Source, cpi);
+    }
+#endif
+
+
 
 #if CONFIG_MULTITHREAD
     if (cpi->b_multi_threaded)
