@@ -894,7 +894,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   ++cm->current_video_frame;
   if (cpi->use_svc)
-    vp9_inc_frame_in_layer(&cpi->svc);
+    vp9_inc_frame_store_frame_type_in_layer(cpi);
 }
 
 static double calc_correction_factor(double err_per_mb,

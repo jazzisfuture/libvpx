@@ -426,6 +426,8 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   } else {
     switch (partition) {
       case PARTITION_NONE:
+        if (cm->current_video_frame == 2 && mi_row == 0 && mi_col == 0)
+          mi_row = 0;
         decode_block(cm, xd, tile, mi_row, mi_col, r, subsize);
         break;
       case PARTITION_HORZ:

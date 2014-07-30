@@ -2169,11 +2169,10 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
       cm->reset_frame_context = 2;
     }
   } else {
-   /* cm->coding_use_prev_mi = 1;
-    cm->frame_parallel_decoding_mode = 1;
-    cm->reset_frame_context = 0;
-    cm->refresh_frame_context = 0;
-    */
+    cm->frame_parallel_decoding_mode =
+        cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+        cpi->svc.spatial_layer_id == 0 &&
+        cpi->svc.layer_context[0].last_frame_type == KEY_FRAME;
   }
 
   // Configure experimental use of segmentation for enhanced coding of
@@ -2364,7 +2363,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     // update not a real frame
     ++cm->current_video_frame;
     if (cpi->use_svc)
-      vp9_inc_frame_in_layer(&cpi->svc);
+      vp9_inc_frame_store_frame_type_in_layer(cpi);
   }
 }
 

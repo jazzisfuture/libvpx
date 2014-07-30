@@ -1271,8 +1271,16 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   ENTROPY_CONTEXT t_above[2], t_left[2];
   int subpelmv = 1, have_ref = 0;
-  const int has_second_rf = has_second_ref(mbmi);
+  int has_second_rf = has_second_ref(mbmi);
   const int inter_mode_mask = cpi->sf.inter_mode_mask[bsize];
+
+#if CONFIG_SPATIAL_SVC
+  LAYER_CONTEXT *lc = (cpi->use_svc && cpi->svc.number_temporal_layers == 1) ?
+                      &cpi->svc.layer_context[cpi->svc.spatial_layer_id] : NULL;
+  if (lc != NULL)
+    vpx_memset(&lc->refmv_from_prev_mi[0][0], 0,
+               2 * MAX_REF_FRAMES * sizeof(int));
+#endif
 
   vp9_zero(*bsi);
 
@@ -1309,9 +1317,18 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
         frame_mv[ZEROMV][frame].as_int = 0;
-        vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
-                                      &frame_mv[NEARESTMV][frame],
-                                      &frame_mv[NEARMV][frame]);
+#if CONFIG_SPATIAL_SVC
+        if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+            cpi->svc.spatial_layer_id == 0)
+          vp9_svc_append_sub8x8_mvs_for_idx(cpi, xd, tile, i, ref,
+                                            mi_row, mi_col,
+                                            &frame_mv[NEARESTMV][frame],
+                                            &frame_mv[NEARMV][frame]);
+        else
+#endif
+          vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
+                                        &frame_mv[NEARESTMV][frame],
+                                        &frame_mv[NEARMV][frame]);
       }
 
       // search for the best motion vector on this segment
@@ -1323,6 +1340,23 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
         bsi->rdstat[i][mode_idx].brdcost = INT64_MAX;
         if (!(inter_mode_mask & (1 << this_mode)))
           continue;
+
+#if CONFIG_SPATIAL_SVC
+        if (lc != NULL) {
+          if (((this_mode == NEARESTMV || this_mode == NEWMV) &&
+               lc->refmv_from_prev_mi[mbmi->ref_frame[0]][0]) ||
+              (this_mode == NEARMV &&
+               lc->refmv_from_prev_mi[mbmi->ref_frame[0]][1]))
+            continue;
+          if (has_second_rf) {
+            if (((this_mode == NEARESTMV || this_mode == NEWMV) &&
+                 lc->refmv_from_prev_mi[mbmi->ref_frame[1]][0]) ||
+                (this_mode == NEARMV &&
+                 lc->refmv_from_prev_mi[mbmi->ref_frame[1]][1]))
+              has_second_rf = 0;
+          }
+        }
+#endif
 
         if (!check_best_zero_mv(cpi, mbmi->mode_context, frame_mv,
                                 inter_mode_mask,
@@ -1717,7 +1751,14 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col, sf, sf);
 
   // Gets an initial list of candidate vectors from neighbours and orders them
-  vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
+#if CONFIG_SPATIAL_SVC
+  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
+      cpi->svc.spatial_layer_id == 0)
+    vp9_svc_find_mv_refs(cpi, xd, tile, mi, ref_frame, candidates,
+                         mi_row, mi_col);
+  else
+#endif
+    vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
 
   // Candidate refinement carried out at encoder and decoder
   vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
@@ -2506,6 +2547,29 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   const int intra_y_mode_mask =
       cpi->sf.intra_y_mode_mask[max_txsize_lookup[bsize]];
   int inter_mode_mask = cpi->sf.inter_mode_mask[bsize];
+
+  // All modes from vp9_mode_order that use this frame as any ref
+  static const int ref_frame_mask_all[] = {
+      0x0, 0x123291, 0x25c444, 0x39b722
+  };
+  // Fixed mv modes (NEARESTMV, NEARMV, ZEROMV) from vp9_mode_order that use
+  // this frame as their primary ref
+  static const int ref_frame_mask_fixedmv[] = {
+      0x0, 0x121281, 0x24c404, 0x080102
+  };
+
+#if CONFIG_SPATIAL_SVC
+  LAYER_CONTEXT *lc = (cpi->use_svc && cpi->svc.number_temporal_layers == 1) ?
+                      &cpi->svc.layer_context[cpi->svc.spatial_layer_id] : NULL;
+  if (lc != NULL)
+    vpx_memset(&lc->refmv_from_prev_mi[0][0], 0,
+               2 * MAX_REF_FRAMES * sizeof(int));
+#endif
+
+  if (cm->current_video_frame == 2 && mi_row == 0 && mi_col == 0 &&
+        bsize == BLOCK_16X16)
+      cm->current_video_frame = 2;
+
   vp9_zero(best_mbmode);
   x->skip_encode = cpi->sf.skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
 
@@ -2526,26 +2590,29 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   *returnrate = INT_MAX;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+    static const int nearest_newmv_mask = 0x12677;
+    static const int nearmv_mask = 0x0d180;
     x->pred_mv_sad[ref_frame] = INT_MAX;
     if (cpi->ref_frame_flags & flag_list[ref_frame]) {
+      if (cpi->common.current_video_frame == 4)
+        cpi->common.current_video_frame = 4;
       setup_buffer_inter(cpi, x, tile,
                              ref_frame, bsize, mi_row, mi_col,
                              frame_mv[NEARESTMV], frame_mv[NEARMV], yv12_mb);
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
+#if CONFIG_SPATIAL_SVC
+    if (lc != NULL ) {
+      if (lc->refmv_from_prev_mi[ref_frame][0])
+        mode_skip_mask |= (ref_frame_mask_all[ref_frame] & nearest_newmv_mask);
+      if (lc->refmv_from_prev_mi[ref_frame][1])
+        mode_skip_mask |= (ref_frame_mask_all[ref_frame] & nearmv_mask);
+    }
   }
+#endif
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-    // All modes from vp9_mode_order that use this frame as any ref
-    static const int ref_frame_mask_all[] = {
-        0x0, 0x123291, 0x25c444, 0x39b722
-    };
-    // Fixed mv modes (NEARESTMV, NEARMV, ZEROMV) from vp9_mode_order that use
-    // this frame as their primary ref
-    static const int ref_frame_mask_fixedmv[] = {
-        0x0, 0x121281, 0x24c404, 0x080102
-    };
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) {
       // Skip modes for missing references
       mode_skip_mask |= ref_frame_mask_all[ref_frame];
