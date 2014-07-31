@@ -45,8 +45,15 @@ typedef struct VP9Decoder {
 
   int frame_parallel_decode;  // frame-based threading.
 
+  // TODO(hkuang): Combine this with cur_buf in macroblockd as they are
+  // the same.
+  RefCntBuffer *cur_buf;   //  Current decoding frame buffer.
+  RefCntBuffer *prev_buf;  //  Previous decoding frame buffer.
+
+  VP9Worker *owner_frame_worker;   // frame_worker that owns this pbi.
   VP9Worker lf_worker;
   VP9Worker *tile_workers;
+
   int num_tile_workers;
 
   TileData *tile_data;
