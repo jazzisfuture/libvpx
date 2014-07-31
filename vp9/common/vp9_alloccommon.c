@@ -49,13 +49,24 @@ static void setup_mi(VP9_COMMON *cm) {
   vpx_memset(cm->mi_grid_base, 0, cm->mi_stride * (cm->mi_rows + 1) *
                                       sizeof(*cm->mi_grid_base));
 
-  clear_mi_border(cm, cm->prev_mip);
+  // Only clear mi border in non frame-parallel decode. In frame-parallel
+  // decode, prev_mip is managed by previous decoding thread. While in
+  // non frame-parallel decode, prev_mip and mip are both managed by
+  // current decoding thread.
+  if (!cm->frame_parallel_decode)
+    clear_mi_border(cm, cm->prev_mip);
 }
 
 static int alloc_mi(VP9_COMMON *cm, int mi_size) {
   int i;
 
   for (i = 0; i < NUM_PING_PONG_BUFFERS; ++i) {
+    // Delay reallocation as another thread is accessing prev_mi.
+    if (cm->frame_parallel_decode && i == cm->prev_mi_idx) {
+      cm->update_prev_mi = 1;
+      continue;
+    }
+
     cm->mip_array[i] =
         (MODE_INFO *)vpx_calloc(mi_size, sizeof(*cm->mip));
     if (cm->mip_array[i] == NULL)
@@ -67,22 +78,26 @@ static int alloc_mi(VP9_COMMON *cm, int mi_size) {
       return 1;
   }
 
-  // Init the index.
-  cm->mi_idx = 0;
-  cm->prev_mi_idx = 1;
-
   cm->mip = cm->mip_array[cm->mi_idx];
-  cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
   cm->mi_grid_base = cm->mi_grid_base_array[cm->mi_idx];
-  cm->prev_mi_grid_base = cm->mi_grid_base_array[cm->prev_mi_idx];
+
+
+  // In frame-parallel decode, prev_mip comes from another thread,
+  // so current decoding thread should not touch it.
+  if (!cm->frame_parallel_decode) {
+    cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
+    cm->prev_mi_grid_base = cm->mi_grid_base_array[cm->prev_mi_idx];
+  }
 
   return 0;
 }
 
-static void free_mi(VP9_COMMON *cm) {
+static void free_mi(VP9_COMMON *cm, int decode_done) {
   int i;
 
   for (i = 0; i < NUM_PING_PONG_BUFFERS; ++i) {
+    if (cm->frame_parallel_decode && i == cm->prev_mi_idx && !decode_done)
+      continue;
     vpx_free(cm->mip_array[i]);
     cm->mip_array[i] = NULL;
     vpx_free(cm->mi_grid_base_array[i]);
@@ -90,9 +105,12 @@ static void free_mi(VP9_COMMON *cm) {
   }
 
   cm->mip = NULL;
-  cm->prev_mip = NULL;
   cm->mi_grid_base = NULL;
-  cm->prev_mi_grid_base = NULL;
+
+  if (!cm->frame_parallel_decode) {
+    cm->prev_mip = NULL;
+    cm->prev_mi_grid_base = NULL;
+  }
 }
 
 static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
@@ -109,7 +127,10 @@ static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
   cm->prev_seg_map_idx = 1;
 
   cm->current_frame_seg_map = cm->seg_map_array[cm->seg_map_idx];
-  cm->last_frame_seg_map = cm->seg_map_array[cm->prev_seg_map_idx];
+
+  if (!cm->frame_parallel_decode) {
+    cm->last_frame_seg_map = cm->seg_map_array[cm->prev_seg_map_idx];
+  }
 
   return 0;
 }
@@ -123,7 +144,10 @@ static void free_seg_map(VP9_COMMON *cm) {
   }
 
   cm->current_frame_seg_map = NULL;
-  cm->last_frame_seg_map = NULL;
+
+  if (!cm->frame_parallel_decode) {
+    cm->last_frame_seg_map = NULL;
+  }
 }
 
 void vp9_free_frame_buffers(VP9_COMMON *cm) {
@@ -144,8 +168,7 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
 }
 
 void vp9_free_context_buffers(VP9_COMMON *cm) {
-  free_mi(cm);
-
+  free_mi(cm, 1);
   free_seg_map(cm);
 
   vpx_free(cm->above_context);
@@ -170,7 +193,7 @@ int vp9_resize_frame_buffers(VP9_COMMON *cm, int width, int height) {
 
   set_mb_mi(cm, aligned_width, aligned_height);
 
-  free_mi(cm);
+  free_mi(cm, 0);
   if (alloc_mi(cm, cm->mi_stride * (cm->mi_rows + MI_BLOCK_SIZE)))
     goto fail;
 
@@ -288,7 +311,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
 void vp9_remove_common(VP9_COMMON *cm) {
   vp9_free_frame_buffers(cm);
   vp9_free_context_buffers(cm);
-  vp9_free_internal_frame_buffers(&cm->buffer_pool->int_frame_buffers);
 }
 
 void vp9_update_frame_size(VP9_COMMON *cm) {
@@ -306,6 +328,26 @@ void vp9_update_frame_size(VP9_COMMON *cm) {
 void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
   // Swap indices.
   const int tmp = cm->mi_idx;
+
+  // Update the prev_mi buffer now if needed. The worker that accessing it
+  // must already finish decoding. So could resize it safely now.
+  if (cm->frame_parallel_decode && cm->update_prev_mi) {
+    int mi_size = cm->mi_stride * (cm->mi_rows + MI_BLOCK_SIZE);
+    vpx_free(cm->mip_array[cm->prev_mi_idx]);
+    cm->mip_array[cm->prev_mi_idx] = NULL;
+    vpx_free(cm->mi_grid_base_array[cm->prev_mi_idx]);
+    cm->mi_grid_base_array[cm->prev_mi_idx] = NULL;
+
+    cm->mip_array[cm->prev_mi_idx] =
+        (MODE_INFO *)vpx_calloc(mi_size, sizeof(*cm->mip));
+
+    cm->mi_grid_base_array[cm->prev_mi_idx] =
+        (MODE_INFO **)vpx_calloc(mi_size, sizeof(*cm->mi_grid_base));
+
+    cm->update_prev_mi = 0;
+  }
+
+
   cm->mi_idx = cm->prev_mi_idx;
   cm->prev_mi_idx = tmp;
 
