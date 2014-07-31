@@ -48,9 +48,6 @@ int arm_cpu_caps(void) {
     return flags;
   }
   mask = arm_cpu_env_mask();
-#if HAVE_EDSP
-  flags |= HAS_EDSP;
-#endif /* HAVE_EDSP */
 #if HAVE_MEDIA
   flags |= HAS_MEDIA;
 #endif /* HAVE_MEDIA */
@@ -77,16 +74,6 @@ int arm_cpu_caps(void) {
    *  instructions via their assembled hex code.
    * All of these instructions should be essentially nops.
    */
-#if HAVE_EDSP
-  if (mask & HAS_EDSP) {
-    __try {
-      /*PLD [r13]*/
-      __emit(0xF5DDF000);
-      flags |= HAS_EDSP;
-    } __except (GetExceptionCode() == EXCEPTION_ILLEGAL_INSTRUCTION) {
-      /*Ignore exception.*/
-    }
-  }
 #if HAVE_MEDIA
   if (mask & HAS_MEDIA)
     __try {
@@ -109,7 +96,6 @@ if (mask &HAS_NEON) {
 }
 #endif /* HAVE_NEON */
 #endif /* HAVE_MEDIA */
-#endif /* HAVE_EDSP */
 return flags & mask;
 }
 
@@ -126,9 +112,6 @@ int arm_cpu_caps(void) {
   mask = arm_cpu_env_mask();
   features = android_getCpuFeatures();
 
-#if HAVE_EDSP
-  flags |= HAS_EDSP;
-#endif /* HAVE_EDSP */
 #if HAVE_MEDIA
   flags |= HAS_MEDIA;
 #endif /* HAVE_MEDIA */
@@ -162,23 +145,15 @@ int arm_cpu_caps(void) {
      */
     char buf[512];
     while (fgets(buf, 511, fin) != NULL) {
-#if HAVE_EDSP || HAVE_NEON
+#if HAVE_NEON
       if (memcmp(buf, "Features", 8) == 0) {
         char *p;
-#if HAVE_EDSP
-        p = strstr(buf, " edsp");
-        if (p != NULL && (p[5] == ' ' || p[5] == '\n')) {
-          flags |= HAS_EDSP;
-        }
-#if HAVE_NEON
         p = strstr(buf, " neon");
         if (p != NULL && (p[5] == ' ' || p[5] == '\n')) {
           flags |= HAS_NEON;
         }
-#endif /* HAVE_NEON */
-#endif /* HAVE_EDSP */
       }
-#endif /* HAVE_EDSP || HAVE_NEON */
+#endif /* HAVE_NEON */
 #if HAVE_MEDIA
       if (memcmp(buf, "CPU architecture:", 17) == 0) {
         int version;

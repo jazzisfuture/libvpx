@@ -243,7 +243,6 @@ ARCH_LIST="
     ppc64
 "
 ARCH_EXT_LIST="
-    edsp
     media
     neon
     neon_asm
