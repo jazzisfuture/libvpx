@@ -12,6 +12,8 @@
 #ifndef VP9_DECODER_VP9_DECODEFRAME_H_
 #define VP9_DECODER_VP9_DECODEFRAME_H_
 
+#include "vp9/decoder/vp9_decoder.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,7 +27,8 @@ void vp9_decode_frame(struct VP9Decoder *pbi,
                       const uint8_t *data, const uint8_t *data_end,
                       const uint8_t **p_data_end);
 
-void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
+void vp9_dec_build_inter_predictors_sb(VP9Decoder *const pbi, MACROBLOCKD *xd,
+                                       int mi_row, int mi_col,
                                        BLOCK_SIZE bsize);
 #ifdef __cplusplus
 }  // extern "C"
