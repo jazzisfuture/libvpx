@@ -20,14 +20,10 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
-void inter_predictor(const uint8_t *src, int src_stride,
-                            uint8_t *dst, int dst_stride,
-                            const int subpel_x,
-                            const int subpel_y,
-                            const struct scale_factors *sf,
-                            int w, int h, int ref,
-                            const InterpKernel *kernel,
-                            int xs, int ys) {
+void inter_predictor(const uint8_t *src, int src_stride, uint8_t *dst,
+                     int dst_stride, const int subpel_x, const int subpel_y,
+                     const struct scale_factors *sf, int w, int h, int ref,
+                     const InterpKernel *kernel, int xs, int ys) {
   sf->predict[subpel_x != 0][subpel_y != 0][ref](
       src, src_stride, dst, dst_stride,
       kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
@@ -109,7 +105,7 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
 }
 
 MV average_split_mvs(const struct macroblockd_plane *pd, int plane,
-                            const MODE_INFO *mi, int ref, int block) {
+                     const MODE_INFO *mi, int ref, int block) {
   const int ss_idx = ((pd->subsampling_x > 0) << 1) | (pd->subsampling_y > 0);
   MV res = {0, 0};
   switch (ss_idx) {
