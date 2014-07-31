@@ -18,32 +18,6 @@ else
 endif
 
 #
-# Calculate platform- and compiler-specific offsets for hand coded assembly
-#
-ifeq ($(filter icc gcc,$(TGT_CC)), $(TGT_CC))
-OFFSET_PATTERN:='^[a-zA-Z0-9_]* EQU'
-define asm_offsets_template
-$$(BUILD_PFX)$(1): $$(BUILD_PFX)$(2).S
-	@echo "    [CREATE] $$@"
-	$$(qexec)LC_ALL=C grep $$(OFFSET_PATTERN) $$< | tr -d '$$$$\#' $$(ADS2GAS) > $$@
-$$(BUILD_PFX)$(2).S: $(2)
-CLEAN-OBJS += $$(BUILD_PFX)$(1) $(2).S
-endef
-else
-  ifeq ($(filter rvct,$(TGT_CC)), $(TGT_CC))
-define asm_offsets_template
-$$(BUILD_PFX)$(1): obj_int_extract
-$$(BUILD_PFX)$(1): $$(BUILD_PFX)$(2).o
-	@echo "    [CREATE] $$@"
-	$$(qexec)./obj_int_extract rvds $$< $$(ADS2GAS) > $$@
-OBJS-yes += $$(BUILD_PFX)$(2).o
-CLEAN-OBJS += $$(BUILD_PFX)$(1)
-$$(filter %$$(ASM).o,$$(OBJS-yes)): $$(BUILD_PFX)$(1)
-endef
-endif # rvct
-endif # !gcc
-
-#
 # Rule to generate runtime cpu detection files
 #
 define rtcd_h_template
@@ -375,7 +349,7 @@ CLEAN-OBJS += $(BUILD_PFX)vpx_config.asm
 endif
 
 #
-# Add assembler dependencies for configuration and offsets
+# Add assembler dependencies for configuration.
 #
 $(filter %.s.o,$(OBJS-yes)):     $(BUILD_PFX)vpx_config.asm
 $(filter %$(ASM).o,$(OBJS-yes)): $(BUILD_PFX)vpx_config.asm
