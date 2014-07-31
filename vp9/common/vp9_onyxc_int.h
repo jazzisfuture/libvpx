@@ -36,10 +36,11 @@ extern "C" {
 #define REF_FRAMES_LOG2 3
 #define REF_FRAMES (1 << REF_FRAMES_LOG2)
 
-// 1 scratch frame for the new frame, 3 for scaled references on the encoder
+// 4 scratch frames for the new frames to support maximum 4 cores decoding
+// in parallel, 3 for scaled references on the encoder.
 // TODO(jkoleszar): These 3 extra references could probably come from the
 // normal reference pool.
-#define FRAME_BUFFERS (REF_FRAMES + 4)
+#define FRAME_BUFFERS (REF_FRAMES + 7)
 
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
@@ -64,6 +65,18 @@ typedef struct {
   int ref_count;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
+
+  // The Following variables will only be used in frame parallel decode.
+
+  // owner_frame_worker indicates which FrameWorker owns this buffer. NULL means
+  // that no FrameWorker owns, or is decoding, this buffer.
+  VP9Worker *owner_frame_worker;
+
+  // row and col indicate which position frame has been decoded to in real
+  // pixel unit. They are reset to -1 when decoding begins and set to INT_MAX
+  // when the frame is fully decoded.
+  int row;
+  int col;
 } RefCntBuffer;
 
 typedef struct {
@@ -113,6 +126,10 @@ typedef struct VP9Common {
   YV12_BUFFER_CONFIG *frame_to_show;
 
   int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
+
+  // Prepare ref_frame_map for the next frame.
+  // Only used in frame parallel decode.
+  int next_ref_frame_map[REF_FRAMES];
 
   // TODO(jkoleszar): could expand active_ref_idx to 4, with 0 as intra, and
   // roll new_fb_idx into it.
@@ -178,6 +195,8 @@ typedef struct VP9Common {
   MODE_INFO **prev_mi_grid_base;
   MODE_INFO **prev_mi_grid_visible;
 
+  int update_prev_mi;
+
   // Persistent mb segment id map used in prediction.
   int seg_map_idx;
   int prev_seg_map_idx;
@@ -196,6 +215,10 @@ typedef struct VP9Common {
 
   struct loopfilter lf;
   struct segmentation seg;
+
+  // TODO(hkuang): Remove this as it is the same as frame_parallel_decode
+  // in pbi.
+  int frame_parallel_decode;  // frame-based threading.
 
   // Context probabilities for reference frame prediction
   int allow_comp_inter_inter;
@@ -242,12 +265,19 @@ static INLINE YV12_BUFFER_CONFIG *get_frame_new_buffer(VP9_COMMON *cm) {
 static INLINE int get_free_fb(VP9_COMMON *cm) {
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
+
+#if CONFIG_MULTITHREAD
+  pthread_mutex_lock(&cm->buffer_pool->pool_mutex);
+#endif
   for (i = 0; i < FRAME_BUFFERS; ++i)
     if (frame_bufs[i].ref_count == 0)
       break;
 
   assert(i < FRAME_BUFFERS);
   frame_bufs[i].ref_count = 1;
+#if CONFIG_MULTITHREAD
+  pthread_mutex_unlock(&cm->buffer_pool->pool_mutex);
+#endif
   return i;
 }
 
