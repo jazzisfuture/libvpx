@@ -26,6 +26,7 @@
 #endif
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_systemdependent.h"
+#include "vp9/common/vp9_thread.h"
 
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_decoder.h"
@@ -63,6 +64,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
 
   // Initialize the references to not point to any frame buffers.
   vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
+  vpx_memset(&cm->next_ref_frame_map, -1, sizeof(cm->next_ref_frame_map));
 
   cm->current_video_frame = 0;
   pbi->ready_for_new_data = 1;
@@ -202,22 +204,32 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
   BufferPool * const pool = cm->buffer_pool;
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
+  lock_buffer_pool(cm->buffer_pool);
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
     if (mask & 1) {
       const int old_idx = cm->ref_frame_map[ref_index];
-      ref_cnt_fb(frame_bufs, &cm->ref_frame_map[ref_index],
-                 cm->new_fb_idx);
-      if (old_idx >= 0 && frame_bufs[old_idx].ref_count == 0)
-        pool->release_fb_cb(pool->cb_priv,
-                            &frame_bufs[old_idx].raw_frame_buffer);
+      // No need to increase current frame's reference count as it is
+      // already increased in generating next_ref_frame_map.
+      if (!pbi->frame_parallel_decode) ++pool->frame_bufs[cm->new_fb_idx].ref_count;
+      cm->ref_frame_map[ref_index] = cm->new_fb_idx;
+      if (old_idx >= 0) {
+        --pool->frame_bufs[old_idx].ref_count;
+        if (frame_bufs[old_idx].ref_count == 0) {
+          pool->release_fb_cb(pool->cb_priv,
+                              &frame_bufs[old_idx].raw_frame_buffer);
+        }
+      }
     }
     ++ref_index;
   }
+  unlock_buffer_pool(cm->buffer_pool);
 
   cm->frame_to_show = get_frame_new_buffer(cm);
 
   if (!pbi->frame_parallel_decode || !cm->show_frame) {
+    lock_buffer_pool(cm->buffer_pool);
     --frame_bufs[cm->new_fb_idx].ref_count;
+    unlock_buffer_pool(cm->buffer_pool);
   }
 
   // Invalidate these references until the next frame starts.
@@ -256,6 +268,20 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
+
+  if (pbi->frame_parallel_decode) {
+    VP9Worker *const worker = pbi->owner_frame_worker;
+    vp9_frameworker_lock_stats(worker);
+    pool->frame_bufs[cm->new_fb_idx].owner_frame_worker = worker;
+    // Reset decoding progress.
+    pbi->cur_buf = &pool->frame_bufs[cm->new_fb_idx];
+    pbi->cur_buf->row = -1;
+    pbi->cur_buf->col = -1;
+    vp9_frameworker_unlock_stats(worker);
+  } else {
+    pbi->cur_buf = &pool->frame_bufs[cm->new_fb_idx];
+  }
+
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
 
@@ -283,19 +309,38 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   vp9_clear_system_state();
 
-  cm->last_width = cm->width;
-  cm->last_height = cm->height;
-
   if (!cm->show_existing_frame)
     cm->last_show_frame = cm->show_frame;
-  if (cm->show_frame) {
-    if (!cm->show_existing_frame)
-      vp9_swap_mi_and_prev_mi(cm);
 
-    cm->current_video_frame++;
+  // Update progress in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    // Need to lock the mutex here as another thread may
+    // be accessing this buffer.
+    VP9Worker *worker = pbi->owner_frame_worker;
+    FrameWorkerData *const worker_data = worker->data1;
+    vp9_frameworker_lock_stats(worker);
+
+    if (cm->show_frame) {
+      if (!cm->show_existing_frame)
+        vp9_swap_mi_and_prev_mi(cm);
+      cm->current_video_frame++;
+    }
+    vp9_swap_current_and_last_seg_map(cm);
+    worker_data->decoding_done = 1;
+    worker_data->frame_context_ready = 1;
+    vp9_frameworker_signal_stats(worker);
+    vp9_frameworker_unlock_stats(worker);
+  } else {
+    cm->last_width = cm->width;
+    cm->last_height = cm->height;
+    if (cm->show_frame) {
+      if (!cm->show_existing_frame)
+        vp9_swap_mi_and_prev_mi(cm);
+      cm->current_video_frame++;
+    }
+
+    vp9_swap_current_and_last_seg_map(cm);
   }
-
-  vp9_swap_current_and_last_seg_map(cm);
 
   pbi->ready_for_new_data = 0;
 
