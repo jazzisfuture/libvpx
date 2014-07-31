@@ -49,7 +49,12 @@ static void setup_mi(VP9_COMMON *cm) {
   vpx_memset(cm->mi_grid_base, 0, cm->mi_stride * (cm->mi_rows + 1) *
                                       sizeof(*cm->mi_grid_base));
 
-  clear_mi_border(cm, cm->prev_mip);
+  // Only clear mi boarder in non frame-parallel decode. In frame-parallel
+  // decode, prev_mip is managed by previous decoding thread. While in
+  // non frame-parallel decode, prev_mip and mip are both managed by
+  // current decoding thread.
+  if (!cm->frame_parallel_decode)
+    clear_mi_border(cm, cm->prev_mip);
 }
 
 static int alloc_mi(VP9_COMMON *cm, int mi_size) {
@@ -72,9 +77,15 @@ static int alloc_mi(VP9_COMMON *cm, int mi_size) {
   cm->prev_mi_idx = 1;
 
   cm->mip = cm->mip_array[cm->mi_idx];
-  cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
   cm->mi_grid_base = cm->mi_grid_base_array[cm->mi_idx];
-  cm->prev_mi_grid_base = cm->mi_grid_base_array[cm->prev_mi_idx];
+
+
+  // In frame-parallel decode, prev_mip is got from another thread.
+  // So current decoding thread should not touch it.
+  if (!cm->frame_parallel_decode) {
+    cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
+    cm->prev_mi_grid_base = cm->mi_grid_base_array[cm->prev_mi_idx];
+  }
 
   return 0;
 }
@@ -90,9 +101,12 @@ static void free_mi(VP9_COMMON *cm) {
   }
 
   cm->mip = NULL;
-  cm->prev_mip = NULL;
   cm->mi_grid_base = NULL;
-  cm->prev_mi_grid_base = NULL;
+
+  if (!cm->frame_parallel_decode) {
+    cm->prev_mip = NULL;
+    cm->prev_mi_grid_base = NULL;
+  }
 }
 
 static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
@@ -109,7 +123,10 @@ static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
   cm->prev_seg_map_idx = 1;
 
   cm->current_frame_seg_map = cm->seg_map_array[cm->seg_map_idx];
-  cm->last_frame_seg_map = cm->seg_map_array[cm->prev_seg_map_idx];
+
+  if (!cm->frame_parallel_decode) {
+    cm->last_frame_seg_map = cm->seg_map_array[cm->prev_seg_map_idx];
+  }
 
   return 0;
 }
@@ -123,7 +140,10 @@ static void free_seg_map(VP9_COMMON *cm) {
   }
 
   cm->current_frame_seg_map = NULL;
-  cm->last_frame_seg_map = NULL;
+
+  if (!cm->frame_parallel_decode) {
+    cm->last_frame_seg_map = NULL;
+  }
 }
 
 void vp9_free_frame_buffers(VP9_COMMON *cm) {
@@ -145,7 +165,6 @@ void vp9_free_frame_buffers(VP9_COMMON *cm) {
 
 void vp9_free_context_buffers(VP9_COMMON *cm) {
   free_mi(cm);
-
   free_seg_map(cm);
 
   vpx_free(cm->above_context);
@@ -288,7 +307,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
 void vp9_remove_common(VP9_COMMON *cm) {
   vp9_free_frame_buffers(cm);
   vp9_free_context_buffers(cm);
-  vp9_free_internal_frame_buffers(&cm->buffer_pool->int_frame_buffers);
 }
 
 void vp9_update_frame_size(VP9_COMMON *cm) {
