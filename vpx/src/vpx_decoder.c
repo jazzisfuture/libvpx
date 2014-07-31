@@ -143,7 +143,6 @@ vpx_image_t *vpx_codec_get_frame(vpx_codec_ctx_t  *ctx,
   return img;
 }
 
-
 vpx_codec_err_t vpx_codec_register_put_frame_cb(vpx_codec_ctx_t             *ctx,
                                                 vpx_codec_put_frame_cb_fn_t  cb,
                                                 void                      *user_priv) {
