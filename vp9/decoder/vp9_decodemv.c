@@ -420,11 +420,126 @@ static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   }
 }
 
-static void read_inter_block_mode_info(VP9_COMMON *const cm,
+static void find_mv_refs_idx(VP9Decoder *const pbi, const MACROBLOCKD *xd,
+                             const TileInfo *const tile,
+                             MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                             int_mv *mv_ref_list,
+                             int block, int mi_row, int mi_col) {
+  VP9_COMMON *const cm = &pbi->common;
+  const int *ref_sign_bias = cm->ref_frame_sign_bias;
+  int i, refmv_count = 0;
+  const MODE_INFO *prev_mi = NULL;
+  const MB_MODE_INFO *prev_mbmi = NULL;
+  int row;
+
+  const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
+
+  int different_ref_found = 0;
+  int context_counter = 0;
+
+  // Blank the reference vector list
+  vpx_memset(mv_ref_list, 0, sizeof(*mv_ref_list) * MAX_MV_REF_CANDIDATES);
+
+  // The nearest 2 blocks are treated differently
+  // if the size < 8x8 we get the mv from the bmi substructure,
+  // and we also need to keep a mode count.
+  for (i = 0; i < 2; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi = xd->mi[mv_ref->col + mv_ref->row *
+                                                   xd->mi_stride];
+      const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+      // Keep counts for entropy encoding.
+      context_counter += mode_2_counter[candidate->mode];
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, 0, mv_ref->col, block));
+      else if (candidate->ref_frame[1] == ref_frame)
+        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, 1, mv_ref->col, block));
+    }
+  }
+
+  // Check the rest of the neighbors in much the same way
+  // as before except we don't need to keep track of sub blocks or
+  // mode counts.
+  for (; i < MVREF_NEIGHBOURS; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row *
+                                                    xd->mi_stride]->mbmi;
+      different_ref_found = 1;
+
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_LIST(candidate->mv[0]);
+      else if (candidate->ref_frame[1] == ref_frame)
+        ADD_MV_REF_LIST(candidate->mv[1]);
+    }
+  }
+
+  // Wait until previous mbmi avaiable.
+  // TODO(hkuang): Fix this after addressing loopfilter issue.
+  row = mi_row << 3;
+  vp9_frameworker_wait(pbi->owner_frame_worker, pbi->prev_buf, row);
+  prev_mi = cm->coding_use_prev_mi && cm->prev_mi
+         ? cm->prev_mi_grid_visible[mi_row * xd->mi_stride + mi_col]
+         : NULL;
+  prev_mbmi = prev_mi ? &prev_mi->mbmi : NULL;
+
+  // Check the last frame's mode and mv info.
+  if (prev_mbmi) {
+    if (prev_mbmi->ref_frame[0] == ref_frame)
+      ADD_MV_REF_LIST(prev_mbmi->mv[0]);
+    else if (prev_mbmi->ref_frame[1] == ref_frame)
+      ADD_MV_REF_LIST(prev_mbmi->mv[1]);
+  }
+
+  // Since we couldn't find 2 mvs from the same reference frame
+  // go back through the neighbors and find motion vectors from
+  // different reference frames.
+  if (different_ref_found) {
+    for (i = 0; i < MVREF_NEIGHBOURS; ++i) {
+      const POSITION *mv_ref = &mv_ref_search[i];
+      if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+        const MB_MODE_INFO *const candidate = &xd->mi[mv_ref->col + mv_ref->row
+                                              * xd->mi_stride]->mbmi;
+
+        // If the candidate is INTRA we don't want to consider its mv.
+        IF_DIFF_REF_FRAME_ADD_MV(candidate);
+      }
+    }
+  }
+
+  // Since we still don't have a candidate we'll try the last frame.
+  if (prev_mbmi)
+    IF_DIFF_REF_FRAME_ADD_MV(prev_mbmi);
+
+ Done:
+
+  mi->mbmi.mode_context[ref_frame] = counter_to_context[context_counter];
+
+  // Clamp vectors
+  for (i = 0; i < MAX_MV_REF_CANDIDATES; ++i)
+    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+}
+
+// This function is nearly the same as vp9_find_mv_refs, except it will wait
+// until previous frame's mode info become available when needed.
+static void vp9_fpm_find_mv_refs(VP9Decoder *const pbi, const MACROBLOCKD *xd,
+                                    const TileInfo *const tile,
+                                    MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                                    int_mv *mv_ref_list,
+                                    int mi_row, int mi_col) {
+  find_mv_refs_idx(pbi, xd, tile, mi, ref_frame, mv_ref_list, -1,
+                   mi_row, mi_col);
+}
+
+static void read_inter_block_mode_info(VP9Decoder *const pbi,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        MODE_INFO *const mi,
                                        int mi_row, int mi_col, vp9_reader *r) {
+  VP9_COMMON *const cm = &pbi->common;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   const int allow_hp = cm->allow_high_precision_mv;
@@ -437,7 +552,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 
   for (ref = 0; ref < 1 + is_compound; ++ref) {
     const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
-    vp9_find_mv_refs(cm, xd, tile, mi, frame, mbmi->ref_mvs[frame],
+    vp9_fpm_find_mv_refs(pbi, xd, tile, mi, frame, mbmi->ref_mvs[frame],
                      mi_row, mi_col);
   }
 
@@ -512,10 +627,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   }
 }
 
-static void read_inter_frame_mode_info(VP9_COMMON *const cm,
+static void read_inter_frame_mode_info(VP9Decoder *const pbi,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        int mi_row, int mi_col, vp9_reader *r) {
+  VP9_COMMON *const cm = &pbi->common;
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
@@ -529,16 +645,17 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                !mbmi->skip || !inter_block, r);
 
   if (inter_block)
-    read_inter_block_mode_info(cm, xd, tile, mi, mi_row, mi_col, r);
+    read_inter_block_mode_info(pbi, xd, tile, mi, mi_row, mi_col, r);
   else
     read_intra_block_mode_info(cm, mi, r);
 }
 
-void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
+void vp9_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
                         const TileInfo *const tile,
                         int mi_row, int mi_col, vp9_reader *r) {
+  VP9_COMMON *const cm = &pbi->common;
   if (frame_is_intra_only(cm))
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   else
-    read_inter_frame_mode_info(cm, xd, tile, mi_row, mi_col, r);
+    read_inter_frame_mode_info(pbi, xd, tile, mi_row, mi_col, r);
 }
