@@ -67,24 +67,34 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
                           const vpx_codec_dec_cfg_t &dec_cfg) {
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
   ASSERT_TRUE(decoder != NULL);
+  int end_of_file = 0;
 
   // Decode frames.
-  for (video->Begin(); !::testing::Test::HasFailure() && video->cxdata();
+  for (video->Begin(); !::testing::Test::HasFailure() && !end_of_file;
        video->Next()) {
     PreDecodeFrameHook(*video, decoder);
 
     vpx_codec_stream_info_t stream_info;
     stream_info.sz = sizeof(stream_info);
-    const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
-                                                         video->frame_size(),
-                                                         &stream_info);
-    HandlePeekResult(decoder, video, res_peek);
-    ASSERT_FALSE(::testing::Test::HasFailure());
 
-    vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
-                                                   video->frame_size());
-    if (!HandleDecodeResult(res_dec, *video, decoder))
-      break;
+    if (video->cxdata()) {
+      const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
+                                                           video->frame_size(),
+                                                           &stream_info);
+      HandlePeekResult(decoder, video, res_peek);
+      ASSERT_FALSE(::testing::Test::HasFailure());
+
+      vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
+                                                     video->frame_size());
+      if (!HandleDecodeResult(res_dec, *video, decoder))
+        break;
+    } else {
+      // Signal end of the file to the decoder.
+      vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
+      if (!HandleDecodeResult(res_dec, *video, decoder))
+        break;
+      end_of_file = 1;
+    }
 
     DxDataIterator dec_iter = decoder->GetDxData();
     const vpx_image_t *img = NULL;
