@@ -199,9 +199,9 @@ void vp9_write_nmv_probs(VP9_COMMON *cm, int usehp, vp9_writer *w) {
   }
 }
 
-void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
-                   const MV* mv, const MV* ref,
-                   const nmv_context* mvctx, int usehp) {
+void vp9_encode_mv(const VP9_COMP *cpi, vp9_writer *w, const MV *mv,
+                   const MV *ref, const nmv_context *mvctx, int usehp,
+                   unsigned int *max_mv_magnitude) {
   const MV diff = {mv->row - ref->row,
                    mv->col - ref->col};
   const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
@@ -217,8 +217,8 @@ void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
   // If auto_mv_step_size is enabled then keep track of the largest
   // motion vector component used.
   if (!cpi->dummy_packing && cpi->sf.mv.auto_mv_step_size) {
-    unsigned int maxv = MAX(abs(mv->row), abs(mv->col)) >> 3;
-    cpi->max_mv_magnitude = MAX(maxv, cpi->max_mv_magnitude);
+    const unsigned int maxv = MAX(abs(mv->row), abs(mv->col)) >> 3;
+    *max_mv_magnitude = MAX(maxv, *max_mv_magnitude);
   }
 }
 

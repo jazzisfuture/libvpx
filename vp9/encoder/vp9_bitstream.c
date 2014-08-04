@@ -223,8 +223,10 @@ static void write_ref_frames(const VP9_COMP *cpi, const MACROBLOCKD *const xd,
   }
 }
 
-static void pack_inter_mode_mvs(VP9_COMP *cpi, const MACROBLOCKD *const xd,
-                                vp9_writer *w) {
+static void pack_inter_mode_mvs(
+    VP9_COMP *cpi, const MACROBLOCKD *const xd, vp9_writer *w,
+    unsigned int inter_mode_ct[INTER_MODE_CONTEXTS][INTER_MODES],
+    unsigned int *const max_mv_magnitude) {
   VP9_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc.nmvc;
   const struct segmentation *const seg = &cm->seg;
@@ -285,7 +287,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MACROBLOCKD *const xd,
     if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)) {
       if (bsize >= BLOCK_8X8) {
         write_inter_mode(w, mode, inter_probs);
-        ++cm->counts.inter_mode[mode_ctx][INTER_OFFSET(mode)];
+        ++inter_mode_ct[mode_ctx][INTER_OFFSET(mode)];
       }
     }
 
@@ -307,12 +309,12 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MACROBLOCKD *const xd,
           const int j = idy * 2 + idx;
           const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
           write_inter_mode(w, b_mode, inter_probs);
-          ++cm->counts.inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+          ++inter_mode_ct[mode_ctx][INTER_OFFSET(b_mode)];
           if (b_mode == NEWMV) {
             for (ref = 0; ref < 1 + is_compound; ++ref)
               vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
                             &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
-                            nmvc, allow_hp);
+                            nmvc, allow_hp, max_mv_magnitude);
           }
         }
       }
@@ -321,7 +323,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MACROBLOCKD *const xd,
         for (ref = 0; ref < 1 + is_compound; ++ref)
           vp9_encode_mv(cpi, w, &mbmi->mv[ref].as_mv,
                         &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv, nmvc,
-                        allow_hp);
+                        allow_hp, max_mv_magnitude);
       }
     }
   }
@@ -364,10 +366,12 @@ static void write_mb_modes_kf(const VP9_COMP *cpi, const MACROBLOCKD *const xd,
   write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
 }
 
-static void write_modes_b(VP9_COMP *cpi, MACROBLOCKD *const xd,
-                          const TileInfo *const tile, vp9_writer *w,
-                          TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
-                          int mi_row, int mi_col) {
+static void write_modes_b(
+    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
+    vp9_writer *w, TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
+    int mi_row, int mi_col,
+    unsigned int inter_mode_ct[INTER_MODE_CONTEXTS][INTER_MODES],
+    unsigned int *max_mv_magnitude) {
   const VP9_COMMON *const cm = &cpi->common;
   MODE_INFO *m;
 
@@ -381,7 +385,7 @@ static void write_modes_b(VP9_COMP *cpi, MACROBLOCKD *const xd,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cpi, xd, w);
   } else {
-    pack_inter_mode_mvs(cpi, xd, w);
+    pack_inter_mode_mvs(cpi, xd, w, inter_mode_ct, max_mv_magnitude);
   }
 
   assert(*tok < tok_end);
@@ -410,10 +414,12 @@ static void write_partition(const VP9_COMMON *const cm,
   }
 }
 
-static void write_modes_sb(VP9_COMP *cpi, MACROBLOCKD *const xd,
-                           const TileInfo *const tile, vp9_writer *w,
-                           TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
-                           int mi_row, int mi_col, BLOCK_SIZE bsize) {
+static void write_modes_sb(
+    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
+    vp9_writer *w, TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
+    int mi_row, int mi_col, BLOCK_SIZE bsize,
+    unsigned int inter_mode_ct[INTER_MODE_CONTEXTS][INTER_MODES],
+    unsigned int *const max_mv_magnitude) {
   const VP9_COMMON *const cm = &cpi->common;
   const int bsl = b_width_log2(bsize);
   const int bs = (1 << bsl) / 4;
@@ -428,30 +434,37 @@ static void write_modes_sb(VP9_COMP *cpi, MACROBLOCKD *const xd,
   write_partition(cm, xd, bs, mi_row, mi_col, partition, bsize, w);
   subsize = get_subsize(bsize, partition);
   if (subsize < BLOCK_8X8) {
-    write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col);
+    write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col, inter_mode_ct,
+                  max_mv_magnitude);
   } else {
     switch (partition) {
       case PARTITION_NONE:
-        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col);
+        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col,
+                      inter_mode_ct, max_mv_magnitude);
         break;
       case PARTITION_HORZ:
-        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col);
+        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col,
+                      inter_mode_ct, max_mv_magnitude);
         if (mi_row + bs < cm->mi_rows)
-          write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row + bs, mi_col);
+          write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row + bs, mi_col,
+                        inter_mode_ct, max_mv_magnitude);
         break;
       case PARTITION_VERT:
-        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col);
+        write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col,
+                      inter_mode_ct, max_mv_magnitude);
         if (mi_col + bs < cm->mi_cols)
-          write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col + bs);
+          write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col + bs,
+                        inter_mode_ct, max_mv_magnitude);
         break;
       case PARTITION_SPLIT:
-        write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col, subsize);
+        write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col, subsize,
+                       inter_mode_ct, max_mv_magnitude);
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col + bs,
-                       subsize);
+                       subsize, inter_mode_ct, max_mv_magnitude);
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row + bs, mi_col,
-                       subsize);
+                       subsize, inter_mode_ct, max_mv_magnitude);
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row + bs, mi_col + bs,
-                       subsize);
+                       subsize, inter_mode_ct, max_mv_magnitude);
         break;
       default:
         assert(0);
@@ -464,9 +477,11 @@ static void write_modes_sb(VP9_COMP *cpi, MACROBLOCKD *const xd,
     update_partition_context(xd, mi_row, mi_col, subsize, bsize);
 }
 
-static void write_modes(VP9_COMP *cpi, MACROBLOCKD *const xd,
-                        const TileInfo *const tile, vp9_writer *w,
-                        TOKENEXTRA **tok, const TOKENEXTRA *const tok_end) {
+static void write_modes(
+    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
+    vp9_writer *w, TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
+    unsigned int inter_mode_ct[INTER_MODE_CONTEXTS][INTER_MODES],
+    unsigned int *const max_mv_magnitude) {
   int mi_row, mi_col;
 
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
@@ -475,7 +490,7 @@ static void write_modes(VP9_COMP *cpi, MACROBLOCKD *const xd,
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE)
       write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col,
-                     BLOCK_64X64);
+                     BLOCK_64X64, inter_mode_ct, max_mv_magnitude);
   }
 }
 
@@ -948,7 +963,7 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
         vp9_start_encode(&residual_bc, data_ptr + total_size);
 
       write_modes(cpi, xd, &tile, &residual_bc, &tok[tile_row][tile_col],
-                  tok_end);
+                  tok_end, cm->counts.inter_mode, &cpi->max_mv_magnitude);
       assert(tok[tile_row][tile_col] == tok_end);
       vp9_stop_encode(&residual_bc);
       if (tile_col < tile_cols - 1 || tile_row < tile_rows - 1) {
