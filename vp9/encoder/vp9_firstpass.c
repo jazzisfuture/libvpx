@@ -258,7 +258,7 @@ void vp9_init_first_pass(VP9_COMP *cpi) {
 }
 
 void vp9_end_first_pass(VP9_COMP *cpi) {
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+  if (spatial_layers_only(cpi)) {
     int i;
     for (i = 0; i < cpi->svc.number_spatial_layers; ++i) {
       output_stats(&cpi->svc.layer_context[i].twopass.total_stats,
@@ -446,7 +446,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
   set_first_pass_params(cpi);
   vp9_set_quantizer(cm, find_fp_qindex());
 
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+  if (spatial_layers_only(cpi)) {
     MV_REFERENCE_FRAME ref_frame = LAST_FRAME;
     const YV12_BUFFER_CONFIG *scaled_ref_buf = NULL;
     twopass = &cpi->svc.layer_context[cpi->svc.spatial_layer_id].twopass;
@@ -615,8 +615,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
                                                 &unscaled_last_source_buf_2d);
 
         // TODO(pengchong): Replace the hard-coded threshold
-        if (raw_motion_error > 25 ||
-            (cpi->use_svc && cpi->svc.number_temporal_layers == 1)) {
+        if (raw_motion_error > 25 || spatial_layers_only(cpi)) {
           // Test last reference frame using the previous best mv as the
           // starting point (best reference) for the search.
           first_pass_motion_search(cpi, x, &best_ref_mv.as_mv, &mv.as_mv,
@@ -898,7 +897,7 @@ void vp9_first_pass(VP9_COMP *cpi) {
 
   vp9_extend_frame_borders(new_yv12);
 
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+  if (spatial_layers_only(cpi)) {
     vp9_update_reference_frames(cpi);
   } else {
     // Swap frame pointers so last frame refers to the frame we just compressed.
@@ -967,8 +966,7 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                             BPER_MB_NORMBITS) / num_mbs;
     int q;
     int is_svc_upper_layer = 0;
-    if (cpi->use_svc && cpi->svc.number_temporal_layers == 1 &&
-        cpi->svc.spatial_layer_id > 0) {
+    if (spatial_layers_only(cpi) && cpi->svc.spatial_layer_id > 0) {
       is_svc_upper_layer = 1;
     }
 
@@ -2102,7 +2100,7 @@ void configure_buffer_updates(VP9_COMP *cpi) {
       assert(0);
       break;
   }
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+  if (spatial_layers_only(cpi)) {
     if (cpi->svc.layer_context[cpi->svc.spatial_layer_id].gold_ref_idx < 0)
       cpi->refresh_golden_frame = 0;
     if (cpi->alt_ref_source == NULL)

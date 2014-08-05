@@ -131,7 +131,7 @@ static void setup_frame(VP9_COMP *cpi) {
   }
 
   if (cm->frame_type == KEY_FRAME) {
-    if (!(cpi->use_svc && cpi->svc.number_temporal_layers == 1))
+    if (!spatial_layers_only(cpi))
       cpi->refresh_golden_frame = 1;
     cpi->refresh_alt_ref_frame = 1;
   } else {
@@ -477,7 +477,7 @@ static void update_frame_size(VP9_COMP *cpi) {
   vp9_init_context_buffers(cm);
   init_macroblockd(cm, xd);
 
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+  if (spatial_layers_only(cpi)) {
     if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
                                  cm->width, cm->height,
                                  cm->subsampling_x, cm->subsampling_y,
@@ -1582,7 +1582,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     cpi->alt_fb_idx = cpi->gld_fb_idx;
     cpi->gld_fb_idx = tmp;
 
-    if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
+    if (spatial_layers_only(cpi)) {
       cpi->svc.layer_context[0].gold_ref_idx = cpi->gld_fb_idx;
       cpi->svc.layer_context[0].alt_ref_idx = cpi->alt_fb_idx;
     }
@@ -2005,8 +2005,7 @@ static void get_ref_frame_flags(VP9_COMP *cpi) {
   if (cpi->gold_is_last)
     cpi->ref_frame_flags &= ~VP9_GOLD_FLAG;
 
-  if (cpi->rc.frames_till_gf_update_due == INT_MAX &&
-      !(cpi->use_svc && cpi->svc.number_temporal_layers == 1))
+  if (cpi->rc.frames_till_gf_update_due == INT_MAX && !spatial_layers_only(cpi))
     cpi->ref_frame_flags &= ~VP9_GOLD_FLAG;
 
   if (cpi->alt_is_last)
@@ -2434,7 +2433,7 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   vpx_usec_timer_start(&timer);
 
 #if CONFIG_SPATIAL_SVC
-  if (cpi->use_svc && cpi->svc.number_temporal_layers == 1)
+  if (spatial_layers_only(cpi))
     res = vp9_svc_lookahead_push(cpi, cpi->lookahead, sd, time_stamp, end_time,
                                  frame_flags);
   else
