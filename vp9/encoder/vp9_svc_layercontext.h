@@ -102,6 +102,8 @@ struct lookahead_entry *vp9_svc_lookahead_peek(struct VP9_COMP *const cpi,
                                                struct lookahead_ctx *ctx,
                                                int index, int copy_params);
 
+int vp9_is_spatial_svc(const struct VP9_COMP *const cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

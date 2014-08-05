@@ -222,8 +222,7 @@ void vp9_inc_frame_in_layer(SVC *svc) {
 }
 
 int vp9_is_upper_layer_key_frame(const VP9_COMP *const cpi) {
-  return cpi->use_svc &&
-         cpi->svc.number_temporal_layers == 1 &&
+  return vp9_is_spatial_svc(cpi) &&
          cpi->svc.spatial_layer_id > 0 &&
          cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame;
 }
@@ -363,3 +362,9 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
   return buf;
 }
 #endif
+
+int vp9_is_spatial_svc(const VP9_COMP *const cpi) {
+  return cpi->use_svc &&
+         cpi->svc.number_temporal_layers == 1 &&
+         cpi->svc.number_spatial_layers > 1;
+}
