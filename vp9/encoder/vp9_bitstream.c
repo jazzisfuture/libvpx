@@ -891,7 +891,7 @@ static int get_refresh_mask(VP9_COMP *cpi) {
   if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
       cpi->rc.is_src_frame_alt_ref &&
       (!cpi->use_svc ||      // Add spatial svc base layer case here
-       (cpi->svc.number_temporal_layers == 1 &&
+       (is_spatial_svc(cpi) &&
         cpi->svc.spatial_layer_id == 0 &&
         cpi->svc.layer_context[0].gold_ref_idx >=0 &&
         cpi->oxcf.ss_play_alternate[0]))) {
