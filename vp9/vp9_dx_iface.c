@@ -123,6 +123,9 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
     struct vp9_read_bit_buffer rb = { data, data + data_sz, 0, NULL, NULL };
     const int frame_marker = vp9_rb_read_literal(&rb, 2);
     const BITSTREAM_PROFILE profile = vp9_read_profile(&rb);
+    const int sRGB = 7;
+    int colorspace;
+
 
     if (frame_marker != VP9_FRAME_MARKER)
       return VPX_CODEC_UNSUP_BITSTREAM;
@@ -142,9 +145,6 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
     error_resilient = vp9_rb_read_bit(&rb);
 
     if (si->is_kf) {
-      const int sRGB = 7;
-      int colorspace;
-
       if (!vp9_read_sync_code(&rb))
         return VPX_CODEC_UNSUP_BITSTREAM;
 
@@ -168,6 +168,27 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
       vp9_read_frame_size(&rb, (int *)&si->w, (int *)&si->h);
     } else {
       intra_only_flag = show_frame ? 0 : vp9_rb_read_bit(&rb);
+
+      if (profile > PROFILE_0) {
+        if (profile > PROFILE_1)
+          rb.bit_offset += 1;  // Bit-depth 10 or 12
+        colorspace = vp9_rb_read_literal(&rb, 3);
+        if (colorspace != sRGB) {
+          rb.bit_offset += 1;  // [16,235] (including xvycc) vs [0,255] range
+          if (profile == PROFILE_1 || profile == PROFILE_3) {
+            rb.bit_offset += 2;  // subsampling x/y
+            rb.bit_offset += 1;  // unused
+          }
+        } else {
+          if (profile == PROFILE_1 || profile == PROFILE_3) {
+            rb.bit_offset += 1;  // unused
+          } else {
+            // RGB is only available in version 1
+            return VPX_CODEC_UNSUP_BITSTREAM;
+          }
+        }
+      }
+
       rb.bit_offset += error_resilient ? 0 : 2;  // reset_frame_context
 
       if (intra_only_flag) {
