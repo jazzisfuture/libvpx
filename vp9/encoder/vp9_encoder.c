@@ -524,6 +524,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->profile = oxcf->profile;
   cm->bit_depth = oxcf->bit_depth;
+  cm->color_space = UNKNOWN;
 
   cm->width = oxcf->width;
   cm->height = oxcf->height;
