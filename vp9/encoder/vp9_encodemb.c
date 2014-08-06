@@ -377,8 +377,8 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
     case TX_16X16:
       vp9_fdct16x16_1(src_diff, coeff, diff_stride);
       vp9_quantize_dc(coeff, x->skip_block, p->round,
-                     p->quant_fp[0], qcoeff, dqcoeff,
-                     pd->dequant[0], eob);
+                      p->quant_fp[0], qcoeff, dqcoeff,
+                      pd->dequant[0], eob);
       break;
     case TX_8X8:
       vp9_fdct8x8_1(src_diff, coeff, diff_stride);
@@ -472,23 +472,41 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
-  if (x->skip_txfm[plane] == 0) {
-    // full forward transform and quantization
-    if (!x->skip_recode) {
+  if (!x->skip_recode) {
+    if (x->skip_txfm[plane] == 0) {
+      // full forward transform and quantization
       if (x->quant_fp)
         vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
       else
         vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+    } else if (x->skip_txfm[plane] == 2) {
+      // fast path forward transform and quantization
+      vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+    } else {
+      // skip forward transform
+      p->eobs[block] = 0;
+      *a = *l = 0;
+      return;
     }
-  } else if (x->skip_txfm[plane] == 2) {
-    // fast path forward transform and quantization
-    vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
-  } else {
-    // skip forward transform
-    p->eobs[block] = 0;
-    *a = *l = 0;
-    return;
   }
+
+//  if (x->skip_txfm[plane] == 0) {
+//    // full forward transform and quantization
+//    if (!x->skip_recode) {
+//      if (x->quant_fp)
+//        vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
+//      else
+//        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+//    }
+//  } else if (x->skip_txfm[plane] == 2) {
+//    // fast path forward transform and quantization
+//    vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+//  } else {
+//    // skip forward transform
+//    p->eobs[block] = 0;
+//    *a = *l = 0;
+//    return;
+//  }
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     const int ctx = combine_entropy_contexts(*a, *l);
