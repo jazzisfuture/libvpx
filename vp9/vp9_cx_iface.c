@@ -82,12 +82,14 @@ struct vpx_codec_alg_priv {
   VP9EncoderConfig        oxcf;
   VP9_COMP               *cpi;
   unsigned char          *cx_data;
+  unsigned char          *cx_data_curr;
   size_t                  cx_data_sz;
-  unsigned char          *pending_cx_data;
-  size_t                  pending_cx_data_sz;
+  size_t                  cx_accum_size;
+
   int                     pending_frame_count;
   size_t                  pending_frame_sizes[8];
   size_t                  pending_frame_magnitude;
+
   vpx_image_t             preview_img;
   vp8_postproc_cfg_t      preview_ppcfg;
   vpx_codec_pkt_list_decl(256) pkt_list;
@@ -745,12 +747,12 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t  *ctx,
 
 // Turn on to test if supplemental superframe data breaks decoding
 // #define TEST_SUPPLEMENTAL_SUPERFRAME_DATA
-static int write_superframe_index(vpx_codec_alg_priv_t *ctx) {
+static int write_superframe_index(vpx_codec_alg_priv_t *ctx, uint8_t *x) {
   uint8_t marker = 0xc0;
   unsigned int mask;
   int mag, index_sz;
 
-  assert(ctx->pending_frame_count);
+  assert(ctx->pending_frame_count > 0);
   assert(ctx->pending_frame_count <= 8);
 
   // Add the number of frames to the marker byte
@@ -767,8 +769,7 @@ static int write_superframe_index(vpx_codec_alg_priv_t *ctx) {
 
   // Write the index
   index_sz = 2 + (mag + 1) * ctx->pending_frame_count;
-  if (ctx->pending_cx_data_sz + index_sz < ctx->cx_data_sz) {
-    uint8_t *x = ctx->pending_cx_data + ctx->pending_cx_data_sz;
+
     int i, j;
 #ifdef TEST_SUPPLEMENTAL_SUPERFRAME_DATA
     uint8_t marker_test = 0xc0;
@@ -795,11 +796,10 @@ static int write_superframe_index(vpx_codec_alg_priv_t *ctx) {
       }
     }
     *x++ = marker;
-    ctx->pending_cx_data_sz += index_sz;
 #ifdef TEST_SUPPLEMENTAL_SUPERFRAME_DATA
     index_sz += index_sz_test;
 #endif
-  }
+
   return index_sz;
 }
 
@@ -815,7 +815,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
     res = validate_img(ctx, img);
     // TODO(jzern) the checks related to cpi's validity should be treated as a
     // failure condition, encoder setup is done fully in init() currently.
-    if (res == VPX_CODEC_OK && ctx->cpi != NULL && ctx->cx_data == NULL) {
+    if (ctx->cpi != NULL && ctx->cx_data == NULL) {
       // There's no codec control for multiple alt-refs so check the encoder
       // instance for its status to determine the compressed data size.
       ctx->cx_data_sz = ctx->cfg.g_w * ctx->cfg.g_h *
@@ -827,6 +827,12 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
       if (ctx->cx_data == NULL) {
         return VPX_CODEC_MEM_ERROR;
       }
+
+      ctx->cx_accum_size = 0;
+      ctx->pending_frame_count = 0;
+      ctx->pending_frame_magnitude = 0;
+
+      ctx->cx_data_curr = ctx->cx_data;
     }
   }
 
@@ -856,8 +862,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
     unsigned int lib_flags = 0;
     YV12_BUFFER_CONFIG sd;
     int64_t dst_time_stamp, dst_end_time_stamp;
-    size_t size, cx_data_sz;
-    unsigned char *cx_data;
+    size_t size;
 
     // Set up internal flags
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR)
@@ -881,29 +886,10 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
       }
     }
 
-    cx_data = ctx->cx_data;
-    cx_data_sz = ctx->cx_data_sz;
-
-    /* Any pending invisible frames? */
-    if (ctx->pending_cx_data) {
-      memmove(cx_data, ctx->pending_cx_data, ctx->pending_cx_data_sz);
-      ctx->pending_cx_data = cx_data;
-      cx_data += ctx->pending_cx_data_sz;
-      cx_data_sz -= ctx->pending_cx_data_sz;
-
-      /* TODO: this is a minimal check, the underlying codec doesn't respect
-       * the buffer size anyway.
-       */
-      if (cx_data_sz < ctx->cx_data_sz / 2) {
-        ctx->base.err_detail = "Compressed data buffer too small";
-        return VPX_CODEC_ERROR;
-      }
-    }
-
-    while (cx_data_sz >= ctx->cx_data_sz / 2 &&
-           -1 != vp9_get_compressed_data(ctx->cpi, &lib_flags, &size,
-                                         cx_data, &dst_time_stamp,
-                                         &dst_end_time_stamp, !img)) {
+    while (vp9_get_compressed_data(ctx->cpi, &lib_flags, &size,
+                                   &ctx->cx_data_curr[ctx->cx_accum_size],
+                                   &dst_time_stamp, &dst_end_time_stamp,
+                                   !img) != -1) {
       if (size) {
         vpx_codec_pts_t round, delta;
         vpx_codec_cx_pkt_t pkt;
@@ -921,13 +907,10 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
                 cpi->svc.spatial_layer_id < cpi->svc.number_spatial_layers - 1)
 #endif
             ) {
-          if (ctx->pending_cx_data == 0)
-            ctx->pending_cx_data = cx_data;
-          ctx->pending_cx_data_sz += size;
+          // Add invisible frame
+          ctx->cx_accum_size += size;
           ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;
           ctx->pending_frame_magnitude |= size;
-          cx_data += size;
-          cx_data_sz -= size;
           continue;
         }
 
@@ -967,25 +950,25 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
         if (cpi->droppable)
           pkt.data.frame.flags |= VPX_FRAME_IS_DROPPABLE;
 
-        if (ctx->pending_cx_data) {
-          ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;
-          ctx->pending_frame_magnitude |= size;
-          ctx->pending_cx_data_sz += size;
-          size += write_superframe_index(ctx);
-          pkt.data.frame.buf = ctx->pending_cx_data;
-          pkt.data.frame.sz  = ctx->pending_cx_data_sz;
-          ctx->pending_cx_data = NULL;
-          ctx->pending_cx_data_sz = 0;
-          ctx->pending_frame_count = 0;
-          ctx->pending_frame_magnitude = 0;
-        } else {
-          pkt.data.frame.buf = cx_data;
-          pkt.data.frame.sz  = size;
-        }
+
+        // Add visible frame
+        ctx->cx_accum_size += size;
+        ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;
+        ctx->pending_frame_magnitude |= size;
+
+        if (ctx->pending_frame_count > 1)
+          ctx->cx_accum_size += write_superframe_index(ctx, &ctx->cx_data_curr[ctx->cx_accum_size]);
+
+        pkt.data.frame.buf = ctx->cx_data_curr;
+        pkt.data.frame.sz  = ctx->cx_accum_size;
+
+        ctx->pending_frame_magnitude = 0;
+        ctx->pending_frame_count = 0;
+        ctx->cx_accum_size = 0;
+        ctx->cx_data_curr += ctx->cx_accum_size;
+
         pkt.data.frame.partition_id = -1;
         vpx_codec_pkt_list_add(&ctx->pkt_list.head, &pkt);
-        cx_data += size;
-        cx_data_sz -= size;
 #if CONFIG_SPATIAL_SVC
         if (cpi->use_svc && cpi->svc.number_temporal_layers == 1) {
           vpx_codec_cx_pkt_t pkt = {0};
@@ -1001,6 +984,9 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
       }
     }
   }
+
+  if (ctx->pending_frame_count == 0)
+    ctx->cx_data_curr = ctx->cx_data;
 
   return res;
 }
