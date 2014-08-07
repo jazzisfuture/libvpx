@@ -454,7 +454,7 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                        "Failed to allocate scaled last source buffer");
 }
 
-void vp9_alloc_compressor_data(VP9_COMP *cpi) {
+static void alloc_compressor_data(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
 
   vp9_alloc_context_buffers(cm, cm->width, cm->height);
@@ -466,7 +466,7 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
     CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
   }
 
-  vp9_setup_pc_tree(&cpi->common, cpi);
+  vp9_setup_pc_tree(cm, cpi);
 }
 
 static void update_frame_size(VP9_COMP *cpi) {
@@ -517,24 +517,17 @@ static void init_buffer_indices(VP9_COMP *cpi) {
   cpi->alt_fb_idx = 2;
 }
 
-static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
+static void init_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   VP9_COMMON *const cm = &cpi->common;
 
-  cpi->oxcf = *oxcf;
-
-  cm->profile = oxcf->profile;
-  cm->bit_depth = oxcf->bit_depth;
   cm->color_space = UNKNOWN;
-
   cm->width = oxcf->width;
   cm->height = oxcf->height;
-  vp9_alloc_compressor_data(cpi);
 
-  // Spatial scalability.
+  alloc_compressor_data(cpi);
+
   cpi->svc.number_spatial_layers = oxcf->ss_number_layers;
-  // Temporal scalability.
   cpi->svc.number_temporal_layers = oxcf->ts_number_layers;
-
   if ((cpi->svc.number_temporal_layers > 1 &&
       cpi->oxcf.rc_mode == VPX_CBR) ||
       (cpi->svc.number_spatial_layers > 1 &&
@@ -542,15 +535,12 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
     vp9_init_layer_context(cpi);
   }
 
-  // change includes all joint functionality
-  vp9_change_config(cpi, oxcf);
-
   cpi->static_mb_pct = 0;
   cpi->ref_frame_flags = 0;
 
   init_buffer_indices(cpi);
 
-  set_tile_limits(cpi);
+  vp9_change_config(cpi, oxcf);
 }
 
 static int get_pass(MODE mode) {
@@ -574,16 +564,16 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
 
-  if (cm->profile != oxcf->profile)
-    cm->profile = oxcf->profile;
-  cm->bit_depth = oxcf->bit_depth;
+  cpi->oxcf = *oxcf;
+
+  cm->profile = cpi->oxcf.profile;
+  cm->bit_depth = cpi->oxcf.bit_depth;
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == BITS_8);
   else
     assert(cm->bit_depth > BITS_8);
 
-  cpi->oxcf = *oxcf;
   cpi->pass = get_pass(cpi->oxcf.mode);
 
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
@@ -650,6 +640,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     assert(cm->width <= cpi->initial_width);
     assert(cm->height <= cpi->initial_height);
   }
+
   update_frame_size(cpi);
 
   if ((cpi->svc.number_temporal_layers > 1 &&
