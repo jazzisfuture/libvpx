@@ -76,6 +76,16 @@ const short vp9_rv[] = {
   0, 9, 5, 5, 11, 10, 13, 9, 10, 13,
 };
 
+const uint8_t vp9_round_pattern[64] = {
+  0, 48, 12, 60, 3, 51, 15, 63, 32, 16,
+  44, 28, 35, 19, 47, 31, 8, 56, 4, 52,
+  11, 59, 7, 55, 40, 24, 36, 20, 43, 27,
+  39, 23, 2, 50, 14, 62, 1, 49, 13, 61,
+  34, 18, 46, 30, 33, 17, 45, 29, 10, 58,
+  6, 54, 9, 57, 5, 53, 42, 26, 38, 22,
+  41, 25, 37, 21};
+
+
 void vp9_post_proc_down_and_across_c(const uint8_t *src_ptr,
                                      uint8_t *dst_ptr,
                                      int src_pixels_per_line,
@@ -428,6 +438,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
                         ppbuf->y_width, ppbuf->y_height, ppbuf->y_stride);
   }
 
+  // if (flags & VP9D_DEBAND) {
+  if (1) {
+    vp9_deband(cm->frame_to_show, ppbuf, q);
+  }
+
   *dest = *ppbuf;
 
   /* handle problem with extending borders */
@@ -438,4 +453,262 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   return 0;
 }
+
+void vp9_deband(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
+                 int q) {
+  const int thresh = 1;  // TODO(anrussell): make thresh a function of q
+  int i;
+
+  const uint8_t *const srcs[4] = {src->y_buffer, src->u_buffer, src->v_buffer,
+                                  src->alpha_buffer};
+  const int src_strides[4] = {src->y_stride, src->uv_stride, src->uv_stride,
+                              src->alpha_stride};
+  const int src_widths[4] = {src->y_width, src->uv_width, src->uv_width,
+                             src->alpha_width};
+  const int src_heights[4] = {src->y_height, src->uv_height, src->uv_height,
+                              src->alpha_height};
+
+  uint8_t *const dsts[4] = {dst->y_buffer, dst->u_buffer, dst->v_buffer,
+                            dst->alpha_buffer};
+  const int dst_strides[4] = {dst->y_stride, dst->uv_stride, dst->uv_stride,
+                              dst->alpha_stride};
+
+  for (i = 0; i < MAX_MB_PLANE; ++i)
+    vp9_unround_then_pattern_round(srcs[i], dsts[i],
+                                   src_strides[i], dst_strides[i],
+                                   src_heights[i], src_widths[i], thresh);
+}
+
+void vp9_unround_then_pattern_round(const uint8_t *src_ptr,
+                                    uint8_t *dst_ptr,
+                                    int src_stride,
+                                    int dst_stride,
+                                    int height,
+                                    int width,
+                                    int thresh) {
+  uint16_t *high = NULL;
+  int high_stride = width;
+
+  high = (uint16_t *)malloc(sizeof(uint16_t) * high_stride * height);
+
+  vp9_unround(src_ptr, high, src_stride, high_stride, height, width, thresh);
+  vp9_pattern_round(high, dst_ptr, high_stride, dst_stride, height, width);
+
+  free(high);
+}
+
+void vp9_reround(const uint8_t *src_ptr,
+                 uint8_t *dst_ptr,
+                 int src_stride,
+                 int dst_stride,
+                 int height,
+                 int width,
+                 int thresh) {
+  uint16_t *high = NULL;
+  int high_stride = width;
+
+  high = (uint16_t *)malloc(sizeof(uint16_t) * high_stride * height);
+
+  vp9_unround(src_ptr, high, src_stride, high_stride, height, width, thresh);
+  vp9_normal_round(high, dst_ptr, high_stride, dst_stride, height, width);
+
+  free(high);
+}
+
+void vp9_unround(const uint8_t* src_in, uint16_t* dst_out,
+                 int src_stride, int dst_stride,
+                 int height, int width,
+                 int thresh) {
+  int i, j, index1, index2, bitGenDownSize;
+  uint8_t *downMax = NULL;
+  uint8_t *downMin = NULL;
+  uint16_t *downMean = NULL;
+
+
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      index1 = i * dst_stride + j;
+      index2 = i * src_stride + j;
+      dst_out[index1] = ((uint16_t) src_in[index2]) << 6;
+    }
+  }
+
+  bitGenDownSize = vp9_find_BitGen_down_size(width, height, 1);
+
+  downMax = (uint8_t *)malloc(sizeof(uint8_t) * bitGenDownSize);
+  downMin = (uint8_t *)malloc(sizeof(uint8_t) * bitGenDownSize);
+  downMean = (uint16_t *)malloc(sizeof(uint16_t) * bitGenDownSize);
+
+  vp9_BitGen_recur(src_in, src_in, dst_out,
+                   downMax, downMin, downMean,
+                   src_stride, src_stride, dst_stride,
+                   1, height, width, thresh, 0);
+
+  free(downMax);
+  free(downMin);
+  free(downMean);
+}
+
+int vp9_find_BitGen_down_size(int width, int height, int depth) {
+  int downWidth, downHeight, thisSize, totalSize;
+
+  if ((width <= 2) && (height <= 2)) {
+    return 0;
+  }
+
+  downWidth = (width >> 1) + 1;
+  downHeight = (height >> 1) + 1;
+
+
+  thisSize = downWidth * downHeight * depth * 2;
+
+  totalSize = thisSize +
+    vp9_find_BitGen_down_size(downWidth, downHeight, depth * 2);
+
+  return totalSize;
+}
+
+
+void vp9_pattern_round(const uint16_t* src_in, uint8_t* dst_out,
+                      int src_stride, int dst_stride,
+                      int height, int width) {
+  int i, j, index1, index2, index3;
+
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      index1 = i * dst_stride + j;
+      index2 = i * src_stride + j;
+      index3 = (i & 7) * 8 + (j & 7);
+      dst_out[index1] = ((uint8_t) (
+          (src_in[index2] + vp9_round_pattern[index3]) >> 6));
+    }
+  }
+}
+
+void vp9_normal_round(const uint16_t* src_in, uint8_t* dst_out,
+                      int src_stride, int dst_stride,
+                      int height, int width) {
+  int i, j, index1, index2;
+
+  for (i = 0; i < height; ++i) {
+    for (j = 0; j < width; ++j) {
+      index1 = i * dst_stride + j;
+      index2 = i * src_stride + j;
+      dst_out[index1] = ((uint8_t) (
+          (src_in[index2] + 32) >> 6));
+    }
+  }
+}
+
+
+void vp9_BitGen_recur(const uint8_t* src_max,
+                      const uint8_t* src_min,
+                      uint16_t* src_dst_mean,
+                      uint8_t* downMax,
+                      uint8_t* downMin,
+                      uint16_t* downMean,
+                      int max_stride,
+                      int min_stride,
+                      int mean_stride,
+                      int depth, int height, int width,
+                      int thresh, int hshift) {
+  int i, j, k, l, i1, j1, index1, index2, index3, index4, index5;
+  int downWidth, downHeight, thisSize;
+  uint16_t originalValue, value1, value2;
+
+
+  if ((width <= 2) && (height <= 2))
+  {
+    return;
+  }
+
+  downWidth = (width >> 1) + 1;
+  downHeight = (height >> 1) + 1;
+
+
+  for (l = 0; l < 2; ++l) {
+    for (k = 0; k < depth; ++k) {
+      for (i = 0; i < downHeight; ++i) {
+        for (j = 0; j < downWidth; ++j) {
+          index5 = ((l * depth + k) * downHeight + i) * downWidth + j;
+          i1 = (i << 1) - l;
+          j1 = (j << 1) - ((l == 0)?hshift:(1 - hshift));
+          if ((i1 >= 0) && ((i1 + 1) < height) &&
+              (j1 >= 0) && ((j1 + 1) < width)){
+
+            index1 = (k * height + i1) * mean_stride + j1;
+            index2 = index1 + 1;
+            index3 = index1 + mean_stride;
+            index4 = index3 + 1;
+            downMean[index5] = (src_dst_mean[index1] +
+                                src_dst_mean[index2] +
+                                src_dst_mean[index3] +
+                                src_dst_mean[index4] + 2) >> 2;
+
+            index1 = (k * height + i1) * max_stride + j1;
+            index2 = index1 + 1;
+            index3 = index1 + max_stride;
+            index4 = index3 + 1;
+            downMax[index5] = MAX(MAX(src_max[index1],
+                                      src_max[index2]),
+                                  MAX(src_max[index3],
+                                      src_max[index4]));
+
+            index1 = (k * height + i1) * min_stride + j1;
+            index2 = index1 + 1;
+            index3 = index1 + min_stride;
+            index4 = index3 + 1;
+            downMin[index5] = MIN(MIN(src_min[index1],
+                                      src_min[index2]),
+                                  MIN(src_min[index3],
+                                      src_min[index4]));
+          }else{
+            downMean[index5] = 0;
+            downMax[index5] = 255;
+            downMin[index5] = 0;
+          }
+        }
+      }
+    }
+  }
+
+  thisSize = downWidth * downHeight * depth * 2;
+
+  vp9_BitGen_recur(downMax, downMin, downMean,
+                   downMax + thisSize, 
+                   downMin + thisSize, 
+                   downMean + thisSize,
+                   downWidth, downWidth, downWidth, 
+                   depth * 2, downHeight, downWidth, 
+                   thresh, 1 - hshift);
+
+
+  for (k = 0; k < depth; ++k) {
+    for (i = 0; i < height; ++i) {
+      for (j = 0; j < width; ++j) {
+        index1 = (k * height + i) * mean_stride + j;
+        originalValue = src_dst_mean[index1];
+
+        index2 = (k * downHeight + (i >> 1)) * downWidth +
+            ((j + hshift) >> 1);
+        if ((downMax[index2] - downMin[index2]) <= thresh){
+          value1 = downMean[index2];
+        }else{
+          value1 = originalValue;
+        }
+
+        index2 = ((k + depth) * downHeight + ((i + 1) >> 1)) * downWidth +
+            ((j + (1 - hshift)) >> 1);
+        if ((downMax[index2] - downMin[index2]) <= thresh){
+          value2 = downMean[index2];
+        }else{
+          value2 = originalValue;
+        }
+
+        src_dst_mean[index1] = (value1 + value2) >> 1;
+      }
+    }
+  }
+}
+
 #endif

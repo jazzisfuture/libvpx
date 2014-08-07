@@ -38,6 +38,53 @@ void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q);
 
 void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q);
 
+void vp9_deband(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q);
+
+void vp9_unround_then_pattern_round(const uint8_t *src_ptr,
+				    uint8_t *dst_ptr,
+				    int src_stride,
+				    int dst_stride,
+				    int height,
+				    int width,
+				    int thresh);
+
+void vp9_reround(const uint8_t *src_ptr,
+		 uint8_t *dst_ptr,
+		 int src_stride,
+		 int dst_stride,
+		 int height,
+		 int width,
+		 int thresh);
+
+void vp9_unround(const uint8_t* src_in, uint16_t* dst_out,
+		 int src_stride, int dst_stride,
+		 int height, int width,
+		 int thresh);
+
+int vp9_find_BitGen_down_size(int width, int height, int depth);
+
+void vp9_pattern_round(const uint16_t* src_in, uint8_t* dst_out,
+		      int src_stride, int dst_stride,
+		       int height, int width);
+
+void vp9_normal_round(const uint16_t* src_in, uint8_t* dst_out,
+		      int src_stride, int dst_stride,
+		      int height, int width);
+
+
+void vp9_BitGen_recur(const uint8_t* src_max,
+		      const uint8_t* src_min,
+		      uint16_t* src_dst_mean, 
+		      uint8_t* downMax,
+		      uint8_t* downMin,
+		      uint16_t* downMean,
+		      int max_stride,
+		      int min_stride,
+		      int mean_stride,
+		      int depth, int height, int width,
+		      int thresh, int hshift);
+
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
