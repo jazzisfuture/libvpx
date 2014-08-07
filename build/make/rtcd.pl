@@ -377,6 +377,18 @@ if ($opts{arch} eq 'x86') {
   }
   close CONFIG_FILE;
   mips;
+} elsif ($opts{arch} eq 'mips64') {
+  @ALL_ARCHS = filter(qw/mips64/);
+  open CONFIG_FILE, $opts{config} or
+    die "Error opening config file '$opts{config}': $!\n";
+  while (<CONFIG_FILE>) {
+    if (/HAVE_DSPR2=yes/) {
+      @ALL_ARCHS = filter(qw/mips64 dspr2/);
+      last;
+    }
+  }
+  close CONFIG_FILE;
+  mips;
 } elsif ($opts{arch} eq 'armv5te') {
   @ALL_ARCHS = filter(qw/edsp/);
   arm;
