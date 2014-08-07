@@ -65,9 +65,13 @@ typedef struct vp8_denoiser
 {
     YV12_BUFFER_CONFIG yv12_running_avg[MAX_REF_FRAMES];
     YV12_BUFFER_CONFIG yv12_mc_running_avg;
+    YV12_BUFFER_CONFIG yv12_last_source;
     unsigned char* denoise_state;
     int num_mb_cols;
     int aggressive_mode;
+    int threshold_aggressive_mode;
+    int mse_source_diff;
+    int mse_source_diff_count;
     denoise_params denoise_pars;
 } VP8_DENOISER;
 
@@ -75,6 +79,8 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
                           int num_mb_rows, int num_mb_cols, int mode);
 
 void vp8_denoiser_free(VP8_DENOISER *denoiser);
+
+void vp8_denoiser_set_parameters(VP8_DENOISER *denoiser);
 
 void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
                              MACROBLOCK *x,
