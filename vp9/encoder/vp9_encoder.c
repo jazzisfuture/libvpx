@@ -155,9 +155,68 @@ void vp9_initialize_enc() {
   }
 }
 
+static void create_tile_workers(VP9_COMP *const cpi) {
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
+  VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int num_workers = MIN(cpi->oxcf.max_threads & ~1, tile_cols);
+  int i;
+
+  assert(num_workers > 1);
+  CHECK_MEM_ERROR(cm, cpi->tile_workers,
+                  vpx_calloc(num_workers, sizeof(*cpi->tile_workers)));
+  for (i = 0; i < num_workers; ++i) {
+    VP9Worker *const worker = &cpi->tile_workers[i];
+    ++cpi->num_tile_workers;
+
+    winterface->init(worker);
+    CHECK_MEM_ERROR(cm, worker->data2,
+                    vpx_memalign(32, sizeof(BitstreamWorkerData)));
+    if (i < num_workers - 1 && !winterface->reset(worker)) {
+      vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                         "Tile encoder thread creation failed");
+    }
+
+    // worker #0 will reuse the main allocations.
+    if (i > 0) {
+      BitstreamWorkerData *const tile_data =
+          (BitstreamWorkerData *)worker->data2;
+      CHECK_MEM_ERROR(cm, tile_data->dest,
+                      vpx_malloc(cpi->oxcf.width * cpi->oxcf.height));
+      assert(sizeof(*cm->above_seg_context) ==
+             sizeof(*tile_data->above_seg_context));
+      CHECK_MEM_ERROR(cm, tile_data->above_seg_context,
+                      vpx_calloc(mi_cols_aligned_to_sb(cm->mi_cols),
+                                 sizeof(*tile_data->above_seg_context)));
+    }
+  }
+}
+
+static void destroy_tile_workers(VP9_COMP *const cpi) {
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
+  int i;
+  for (i = 0; i < cpi->num_tile_workers; ++i) {
+    VP9Worker *const worker = &cpi->tile_workers[i];
+    BitstreamWorkerData *const tile_data = (BitstreamWorkerData *)worker->data2;
+
+    winterface->end(worker);
+    if (i > 0) {
+      vpx_free(tile_data->dest);
+      vpx_free(tile_data->above_seg_context);
+    }
+    vpx_free(worker->data2);
+  }
+
+  vpx_free(cpi->tile_workers);
+  cpi->tile_workers = NULL;
+  cpi->num_tile_workers = 0;
+}
+
 static void dealloc_compressor_data(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int i;
+
+  destroy_tile_workers(cpi);
 
   // Delete sementation map
   vpx_free(cpi->segmentation_map);
@@ -680,6 +739,18 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                        VP9_ENC_BORDER_IN_PIXELS);
   }
 #endif
+
+  if (cpi->oxcf.max_threads > 1 && cm->log2_tile_rows == 0 &&
+      cm->log2_tile_cols > 0) {
+    const int tile_cols = 1 << cm->log2_tile_cols;
+    const int num_workers = MIN(cpi->oxcf.max_threads & ~1, tile_cols);
+    if (num_workers > cpi->num_tile_workers) {
+      destroy_tile_workers(cpi);
+      create_tile_workers(cpi);
+    }
+  } else {
+    destroy_tile_workers(cpi);
+  }
 }
 
 #ifndef M_LOG2_E

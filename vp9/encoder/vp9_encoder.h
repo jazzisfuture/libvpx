@@ -22,6 +22,7 @@
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_onyxc_int.h"
+#include "vp9/common/vp9_thread.h"
 
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_context_tree.h"
@@ -244,6 +245,17 @@ static INLINE int is_best_mode(MODE mode) {
   return mode == ONE_PASS_BEST || mode == TWO_PASS_SECOND_BEST;
 }
 
+typedef struct BitstreamWorkerData {
+  uint8_t *dest;
+  TOKENEXTRA *tok, *tok_end;
+  PARTITION_CONTEXT *above_seg_context;
+  unsigned int inter_mode_ct[INTER_MODE_CONTEXTS][INTER_MODES];
+  unsigned int max_mv_magnitude;
+  vp9_writer bit_writer;
+  TileInfo tile;
+  DECLARE_ALIGNED(16, MACROBLOCKD, xd);
+} BitstreamWorkerData;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   MACROBLOCK mb;
@@ -435,6 +447,8 @@ typedef struct VP9_COMP {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
+  VP9Worker *tile_workers;
+  int num_tile_workers;
 } VP9_COMP;
 
 void vp9_initialize_enc();

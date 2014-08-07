@@ -925,6 +925,100 @@ static int get_refresh_mask(VP9_COMP *cpi) {
   }
 }
 
+static int tile_hook(VP9_COMP *cpi, BitstreamWorkerData *data) {
+  const VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &data->xd;
+
+  vp9_start_encode(&data->bit_writer, data->dest);
+  vpx_memset(xd->above_seg_context, 0, sizeof(*xd->above_seg_context) *
+             mi_cols_aligned_to_sb(cm->mi_cols));
+  write_modes(cpi, xd, &data->tile, &data->bit_writer,
+              &data->tok, data->tok_end,
+              data->inter_mode_ct, &data->max_mv_magnitude);
+  assert(data->tok == data->tok_end);
+  vp9_stop_encode(&data->bit_writer);
+  return 1;
+}
+
+static size_t encode_tiles_mt(VP9_COMP *cpi, TOKENEXTRA *tok[4][1 << 6],
+                              uint8_t *data_ptr) {
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
+  VP9_COMMON *const cm = &cpi->common;
+  const int tile_cols = 1 << cm->log2_tile_cols;
+  const int num_workers = cpi->num_tile_workers;
+  size_t total_size = 0;
+  int n;
+
+  assert(cm->log2_tile_rows == 0);
+
+  n = 0;
+  while (n < tile_cols) {
+    int i, j;
+    for (i = 0; i < num_workers && n < tile_cols; ++i) {
+      VP9Worker *const worker = &cpi->tile_workers[i];
+      BitstreamWorkerData *const data = (BitstreamWorkerData *)worker->data2;
+
+      vp9_tile_init(&data->tile, cm, 0, n);
+      data->xd = cpi->mb.e_mbd;
+      data->tok = tok[0][n];
+      data->tok_end = tok[0][n] + cpi->tok_count[0][n];
+      data->max_mv_magnitude = cpi->max_mv_magnitude;
+      worker->data1 = cpi;
+      worker->hook = (VP9WorkerHook)tile_hook;
+      worker->had_error = 0;
+      // reuse the main allocations in the first worker which avoids
+      // additional memory allocation overhead / memcpy.
+      if (i == 0) {
+        data->dest = data_ptr + total_size + 4;
+        data->xd.above_seg_context = cm->above_seg_context;
+      } else {
+        data->xd.above_seg_context = data->above_seg_context;
+      }
+
+      if (i < num_workers - 1) {
+        winterface->launch(worker);
+      } else {
+        winterface->execute(worker);
+      }
+      ++n;
+    }
+
+    for (j = 0; j < i; ++j) {
+      VP9Worker *const worker = &cpi->tile_workers[j];
+      BitstreamWorkerData *const data = (BitstreamWorkerData *)worker->data2;
+      unsigned int size;
+      int k, l;
+
+      if (!winterface->sync(worker)) return 0;
+
+      // aggregate the bitstream stats.
+      cpi->max_mv_magnitude = MAX(cpi->max_mv_magnitude,
+                                  data->max_mv_magnitude);
+      for (k = 0; k < (int)(sizeof(data->inter_mode_ct) /
+                            sizeof(data->inter_mode_ct[0])); ++k) {
+        for (l = 0; l < (int)(sizeof(data->inter_mode_ct[0]) /
+                              sizeof(data->inter_mode_ct[0][0])); ++l) {
+          cm->counts.inter_mode[k][l] += data->inter_mode_ct[k][l];
+        }
+      }
+
+      size = data->bit_writer.pos;
+      // prefix the size of the tile on all but the last.
+      if (n != tile_cols || j < i - 1) {
+        mem_put_be32(data_ptr + total_size, size);
+        total_size += 4;
+      }
+      if (j > 0) {
+        memcpy(data_ptr + total_size, data->dest, size);
+      }
+
+      total_size += size;
+    }
+  }
+
+  return total_size;
+}
+
 static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
@@ -935,20 +1029,30 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   size_t total_size = 0;
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
+  unsigned int tok_count = 0;
+  const int min_mt_token_count = tile_cols * 7500;
+
+  tok[0][0] = cpi->tok;
+  for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+    if (tile_row != 0) {
+      tok[tile_row][0] = tok[tile_row - 1][tile_cols - 1] +
+                         cpi->tok_count[tile_row - 1][tile_cols - 1];
+    }
+
+    tok_count += cpi->tok_count[tile_row][0];
+    for (tile_col = 1; tile_col < tile_cols; ++tile_col) {
+      tok[tile_row][tile_col] = tok[tile_row][tile_col - 1] +
+                                cpi->tok_count[tile_row][tile_col - 1];
+      tok_count += cpi->tok_count[tile_row][tile_col];
+    }
+  }
+
+  if (cpi->num_tile_workers > 0 && tok_count >= min_mt_token_count) {
+    return encode_tiles_mt(cpi, tok, data_ptr);
+  }
 
   vpx_memset(cm->above_seg_context, 0, sizeof(*cm->above_seg_context) *
              mi_cols_aligned_to_sb(cm->mi_cols));
-
-  tok[0][0] = cpi->tok;
-  for (tile_row = 0; tile_row < tile_rows; tile_row++) {
-    if (tile_row)
-      tok[tile_row][0] = tok[tile_row - 1][tile_cols - 1] +
-                         cpi->tok_count[tile_row - 1][tile_cols - 1];
-
-    for (tile_col = 1; tile_col < tile_cols; tile_col++)
-      tok[tile_row][tile_col] = tok[tile_row][tile_col - 1] +
-                                cpi->tok_count[tile_row][tile_col - 1];
-  }
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {
     for (tile_col = 0; tile_col < tile_cols; tile_col++) {
