@@ -335,8 +335,9 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg_uv,
     return FILTER_BLOCK;
 }
 
-void vp8_denoiser_set_parameters(VP8_DENOISER *denoiser) {
-  if (!denoiser->aggressive_mode) {
+void vp8_denoiser_set_parameters(VP8_DENOISER *denoiser, int mode) {
+  denoiser->aggressive_mode = mode;
+  if (!mode) {
     denoiser->denoise_pars.scale_sse_thresh = 1;
     denoiser->denoise_pars.scale_motion_thresh = 8;
     denoiser->denoise_pars.scale_increase_filter = 0;
@@ -361,7 +362,6 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
     int i;
     assert(denoiser);
     denoiser->num_mb_cols = num_mb_cols;
-    denoiser->aggressive_mode = mode;
 
     for (i = 0; i < MAX_REF_FRAMES; i++)
     {
@@ -390,9 +390,23 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
     vpx_memset(denoiser->yv12_mc_running_avg.buffer_alloc, 0,
                denoiser->yv12_mc_running_avg.frame_size);
 
+    if (vp8_yv12_alloc_frame_buffer(&(denoiser->yv12_last_source), width,
+                                    height, VP8BORDERINPIXELS) < 0) {
+      vp8_denoiser_free(denoiser);
+      return 1;
+    }
+    vpx_memset(denoiser->yv12_last_source.buffer_alloc, 0,
+               denoiser->yv12_last_source.frame_size);
+
     denoiser->denoise_state = vpx_calloc((num_mb_rows * num_mb_cols), 1);
     vpx_memset(denoiser->denoise_state, 0, (num_mb_rows * num_mb_cols));
-    vp8_denoiser_set_parameters(denoiser);
+    vp8_denoiser_set_parameters(denoiser, mode);
+    denoiser->nmse_source_diff = 0;
+    denoiser->nmse_source_diff_count = 0;
+    // TODO(marpan): Adjust thresholds, including effect on resolution.
+    denoiser->threshold_aggressive_mode = 50;
+    if (width * height > 640 * 480)
+      denoiser->threshold_aggressive_mode = 200;
     return 0;
 }
 
