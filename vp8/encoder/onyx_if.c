@@ -3303,10 +3303,104 @@ static void update_reference_frames(VP8_COMP *cpi)
                         &cpi->denoiser.yv12_running_avg[LAST_FRAME]);
             }
         }
+        if (cpi->oxcf.noise_sensitivity == 4)
+          vp8_yv12_copy_frame(cpi->Source, &cpi->denoiser.yv12_last_source);
 
     }
 #endif
 
+}
+
+static void process_denoiser_mode_change(YV12_BUFFER_CONFIG *source,
+                                         VP8_COMP *cpi,
+                                         int sample) {
+  int i, j;
+  int Total = 0;
+  int num_blocks = 0;
+  int skip = 1;
+  int min_consec_zero_last = 10;
+  int check_for_mode_change = 20 * 100;
+  int frame_source_diff = 0;
+  int tot_num_blocks = (source->y_height * source->y_width) >> 8;
+  unsigned char *src = source->y_buffer;
+  unsigned char *dst = cpi->denoiser.yv12_last_source.y_buffer;
+  static const unsigned char const_source[16] = {
+      128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128};
+
+  // Loop through the Y plane, every |skip| blocks along rows and columns,
+  // summing the normalized mean square differences, only for blocks that have
+  // been encoded as ZEROMV LAST at least |x| frames in a row and have small
+  // sum difference between current and previous frame.
+  for (i = 0; i < source->y_height; i += 16 * skip) {
+    int block_index_row = (i >> 4) * cpi->common.mb_cols;
+    for (j = 0; j < source->y_width; j += 16 * skip) {
+      int index = block_index_row + (j >> 4);
+      if (cpi->consec_zero_last[index] >= min_consec_zero_last) {
+        unsigned int sse;
+        unsigned int mse = vp8_mse16x16(src + j,
+                                        source->y_stride,
+                                        dst + j,
+                                        source->y_stride,
+                                        &sse);
+        unsigned int var = vp8_variance16x16(src + j,
+                                             source->y_stride,
+                                             dst + j,
+                                             source->y_stride,
+                                             &sse);
+        // Only consider this block as valid for noise measurement
+        // if the sum_diff average of the current and previous frame
+        // is small (avoid effects from lighting change).
+        if ((mse - var) < 256) {
+          // TODO(marpan): Check if effect of spatial activity as normalization,
+          // is usefule or maybe just threshold for low activity.
+          unsigned int act = vp8_variance16x16(src + j,
+                                               source->y_stride,
+                                               const_source,
+                                               0,
+                                               &sse);
+          if (act > 0)
+            Total += mse / act;
+          num_blocks++;
+        }
+      }
+    }
+    src += 16 * skip * source->y_stride;
+    dst += 16 * skip * source->y_stride;
+  }
+  // Only consider this frame as valid sample if we have measured over at
+  // least ~1/16 blocks, and Total > 0 (avoid measuring over duplicate frames).
+  if (Total > 0 &&
+      (num_blocks > (tot_num_blocks >> 4))) {
+    frame_source_diff = Total;
+    // Update the recursive mean square source_diff.
+    if (cpi->denoiser.mse_source_diff_count == 0)
+      cpi->denoiser.mse_source_diff = frame_source_diff;
+    else
+      cpi->denoiser.mse_source_diff = (int)((frame_source_diff >> 2) +
+          3 * (cpi->denoiser.mse_source_diff >> 2));
+    cpi->denoiser.mse_source_diff_count++;
+  }
+  // Check for changing the denoiser mode, when we have obtained #samples =
+  // check_for_mode_change.
+  if (cpi->denoiser.mse_source_diff_count == check_for_mode_change) {
+    // Check for going up: from normal to aggressive mode.
+    if (cpi->denoiser.aggressive_mode == 0 &&
+        cpi->denoiser.mse_source_diff >
+        cpi->denoiser.threshold_aggressive_mode) {
+      cpi->denoiser.aggressive_mode = 1;
+      vp8_denoiser_set_parameters(&cpi->denoiser);
+    } else {
+      // Check for going down: from aggressive to normal mode.
+      if (cpi->denoiser.aggressive_mode == 1 &&
+          cpi->denoiser.mse_source_diff <
+          cpi->denoiser.threshold_aggressive_mode) {
+        cpi->denoiser.aggressive_mode = 0;
+        vp8_denoiser_set_parameters(&cpi->denoiser);
+      }
+    }
+    cpi->denoiser.mse_source_diff = 0;
+    cpi->denoiser.mse_source_diff_count = 0;
+  }
 }
 
 void vp8_loopfilter_frame(VP8_COMP *cpi, VP8_COMMON *cm)
@@ -4465,6 +4559,20 @@ static void encode_frame_to_data_rate
         cm->copy_buffer_to_arf  = 0;
 
     cm->frame_to_show = &cm->yv12_fb[cm->new_fb_idx];
+
+#if CONFIG_TEMPORAL_DENOISING
+    // For the adaptive denoising mode, sample the source diff/mse between
+    // current and previous frame, and determine if we should switch the
+    // denoiser mode. Sampling refers to computing the mse for a sub-sample of
+    // the frame (i.e., skip x blocks along row/column), and only for blocks in
+    // that set that have used ZEROMV LAST. Do this every ~8 frames, to further
+    // reduce complexity.
+    if (cpi->oxcf.noise_sensitivity == 4 &&
+        cpi->frames_since_key%8 == 0 &&
+        cm->frame_type != KEY_FRAME) {
+      process_denoiser_mode_change(cpi->Source, cpi, 8);
+    }
+#endif
 
 #if CONFIG_MULTITHREAD
     if (cpi->b_multi_threaded)
