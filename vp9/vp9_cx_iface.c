@@ -346,6 +346,7 @@ static vpx_codec_err_t set_encoder_config(
       break;
   }
 
+  oxcf->max_threads = cfg->g_threads;
   oxcf->lag_in_frames = cfg->g_pass == VPX_RC_FIRST_PASS ? 0
                                                          : cfg->g_lag_in_frames;
   oxcf->rc_mode = cfg->rc_end_usage;

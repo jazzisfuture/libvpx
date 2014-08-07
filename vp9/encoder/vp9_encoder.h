@@ -136,6 +136,7 @@ typedef struct VP9EncoderConfig {
   int height;  // height of data passed to the compressor
   double framerate;  // set to passed in framerate
   int64_t target_bandwidth;  // bandwidth to be used in kilobits per second
+  int max_threads;
 
   int noise_sensitivity;  // pre processing blur: recommendation 0
   int sharpness;  // sharpening output: recommendation 0:
