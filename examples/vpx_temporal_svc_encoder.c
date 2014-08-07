@@ -37,7 +37,8 @@ enum denoiserState {
   kDenoiserOff,
   kDenoiserOnYOnly,
   kDenoiserOnYUV,
-  kDenoiserOnYUVAggressive  // Aggressive mode not implemented currently.
+  kDenoiserOnYUVAggressive,
+  kDenoiserOnAdaptive
 };
 
 static int mode_to_num_layers[12] = {1, 2, 2, 3, 3, 3, 3, 5, 2, 3, 3, 3};
@@ -579,7 +580,7 @@ int main(int argc, char **argv) {
 
   if (strncmp(encoder->name, "vp8", 3) == 0) {
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, -speed);
-    vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kDenoiserOnYOnly);
+    vpx_codec_control(&codec, VP8E_SET_NOISE_SENSITIVITY, kDenoiserOnYUV);
   } else if (strncmp(encoder->name, "vp9", 3) == 0) {
       vpx_codec_control(&codec, VP8E_SET_CPUUSED, speed);
       vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
