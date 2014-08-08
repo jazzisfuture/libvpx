@@ -123,7 +123,7 @@ static const arg_def_t *vp8_pp_args[] = {
 };
 #endif
 
-static int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
+static INLINE int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                            FilterModeEnum mode) {
   assert(src->fmt == VPX_IMG_FMT_I420);
   assert(dst->fmt == VPX_IMG_FMT_I420);

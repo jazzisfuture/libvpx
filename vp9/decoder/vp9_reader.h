@@ -52,7 +52,7 @@ int vp9_reader_has_error(vp9_reader *r);
 
 const uint8_t *vp9_reader_find_end(vp9_reader *r);
 
-static int vp9_read(vp9_reader *r, int prob) {
+static INLINE int vp9_read(vp9_reader *r, int prob) {
   unsigned int bit = 0;
   BD_VALUE value;
   BD_VALUE bigsplit;
@@ -89,11 +89,11 @@ static int vp9_read(vp9_reader *r, int prob) {
   return bit;
 }
 
-static int vp9_read_bit(vp9_reader *r) {
+static INLINE int vp9_read_bit(vp9_reader *r) {
   return vp9_read(r, 128);  // vp9_prob_half
 }
 
-static int vp9_read_literal(vp9_reader *r, int bits) {
+static INLINE int vp9_read_literal(vp9_reader *r, int bits) {
   int literal = 0, bit;
 
   for (bit = bits - 1; bit >= 0; bit--)
@@ -102,7 +102,7 @@ static int vp9_read_literal(vp9_reader *r, int bits) {
   return literal;
 }
 
-static int vp9_read_tree(vp9_reader *r, const vp9_tree_index *tree,
+static INLINE int vp9_read_tree(vp9_reader *r, const vp9_tree_index *tree,
                          const vp9_prob *probs) {
   vp9_tree_index i = 0;
 
