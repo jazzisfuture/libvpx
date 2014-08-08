@@ -74,8 +74,7 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
                                       VP9_REFFRAME ref_frame_flag,
                                       YV12_BUFFER_CONFIG *sd);
 
-int vp9_get_reference_dec(struct VP9Decoder *pbi,
-                          int index, YV12_BUFFER_CONFIG **fb);
+YV12_BUFFER_CONFIG *vp9_get_ref_frame(VP9_COMMON *cm, int index);
 
 struct VP9Decoder *vp9_decoder_create();
 
