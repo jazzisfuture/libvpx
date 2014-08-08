@@ -533,7 +533,7 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
 
 void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
-static INLINE int is_spatial_svc(const struct VP9_COMP *const cpi) {
+static INLINE int is_spatial_svc(const VP9_COMP *cpi) {
   return cpi->use_svc &&
          cpi->svc.number_temporal_layers == 1 &&
          cpi->svc.number_spatial_layers > 1;

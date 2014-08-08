@@ -894,8 +894,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
     const size_t packet_sz = sizeof(FIRSTPASS_STATS);
     const int packets = (int)(oxcf->two_pass_stats_in.sz / packet_sz);
 
-    if (cpi->svc.number_spatial_layers > 1
-        && cpi->svc.number_temporal_layers == 1) {
+    if (is_spatial_svc(cpi)) {
       FIRSTPASS_STATS *const stats = oxcf->two_pass_stats_in.buf;
       FIRSTPASS_STATS *stats_copy[VPX_SS_MAX_LAYERS] = {0};
       int i;
