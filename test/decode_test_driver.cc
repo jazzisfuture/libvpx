@@ -39,9 +39,10 @@ vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
   return res_dec;
 }
 
-void DecoderTest::RunLoop(CompressedVideoSource *video) {
-  vpx_codec_dec_cfg_t dec_cfg = {0};
-  Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
+void DecoderTest::RunLoop(CompressedVideoSource *video,
+                          const vpx_codec_dec_cfg_t &dec_cfg,
+                          const vpx_codec_flags_t flags) {
+  Decoder* const decoder = codec_->CreateDecoder(dec_cfg, flags);
   ASSERT_TRUE(decoder != NULL);
   const char *codec_name = decoder->GetDecoderName();
   const bool is_vp8 = strncmp(kVP8Name, codec_name, sizeof(kVP8Name) - 1) == 0;
@@ -93,5 +94,16 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
   }
 
   delete decoder;
+}
+
+void DecoderTest::RunLoop(CompressedVideoSource *video,
+                          const vpx_codec_dec_cfg_t &dec_cfg) {
+  vpx_codec_flags_t flags = 0;
+  RunLoop(video, dec_cfg, flags);
+}
+
+void DecoderTest::RunLoop(CompressedVideoSource *video) {
+  vpx_codec_dec_cfg_t dec_cfg = {0};
+  RunLoop(video, dec_cfg);
 }
 }  // namespace libvpx_test
