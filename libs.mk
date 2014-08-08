@@ -17,6 +17,9 @@ else
   ASM:=.asm
 endif
 
+# Shared library suffix
+SHARED_LIB_SUF=$(if $(filter os2%,$(TGT_OS)),_dll.a,.so)
+
 #
 # Rule to generate runtime cpu detection files
 #
@@ -231,6 +234,11 @@ LIBVPX_SO               := libvpx.$(SO_VERSION_MAJOR).dylib
 EXPORT_FILE             := libvpx.syms
 LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, \
                              libvpx.dylib  )
+else ifeq ($(filter os2%,$(TGT_OS)),$(TGT_OS))
+LIBVPX_SO               := libvpx$(SO_VERSION_MAJOR).dll
+EXPORT_FILE             := libvpx.def
+LIBVPX_SO_SYMLINKS      :=
+LIBVPX_SO_IMPLIB        := libvpx_dll.a
 else
 LIBVPX_SO               := libvpx.so.$(SO_VERSION_MAJOR).$(SO_VERSION_MINOR).$(SO_VERSION_PATCH)
 EXPORT_FILE             := libvpx.ver
@@ -240,7 +248,8 @@ LIBVPX_SO_SYMLINKS      := $(addprefix $(LIBSUBDIR)/, \
 endif
 
 LIBS-$(CONFIG_SHARED) += $(BUILD_PFX)$(LIBVPX_SO)\
-                           $(notdir $(LIBVPX_SO_SYMLINKS))
+                           $(notdir $(LIBVPX_SO_SYMLINKS)) \
+                           $(if $(LIBVPX_SO_IMPLIB), $(BUILD_PFX)$(LIBVPX_SO_IMPLIB))
 $(BUILD_PFX)$(LIBVPX_SO): $(LIBVPX_OBJS) $(EXPORT_FILE)
 $(BUILD_PFX)$(LIBVPX_SO): extralibs += -lm
 $(BUILD_PFX)$(LIBVPX_SO): SONAME = libvpx.so.$(SO_VERSION_MAJOR)
@@ -257,6 +266,19 @@ libvpx.syms: $(call enabled,CODEC_EXPORTS)
 	@echo "    [CREATE] $@"
 	$(qexec)awk '{print "_"$$2}' $^ >$@
 CLEAN-OBJS += libvpx.syms
+
+libvpx.def: $(call enabled,CODEC_EXPORTS)
+	@echo "    [CREATE] $@"
+	$(qexec)echo LIBRARY $(LIBVPX_SO:.dll=) INITINSTANCE TERMINSTANCE > $@
+	$(qexec)echo "DATA MULTIPLE NONSHARED" >> $@
+	$(qexec)echo "EXPORTS" >> $@
+	$(qexec)awk '!/vpx_svc_*/ {print "_"$$2}' $^ >>$@
+CLEAN-OBJS += libvpx.def
+
+libvpx_dll.a: $(LIBVPX_SO)
+	@echo "    [IMPLIB] $@"
+	$(qexec)emximp -o $@ $<
+CLEAN-OBJS += libvpx_dll.a
 
 define libvpx_symlink_template
 $(1): $(2)
@@ -275,6 +297,7 @@ $(eval $(call libvpx_symlink_template,\
 
 INSTALL-LIBS-$(CONFIG_SHARED) += $(LIBVPX_SO_SYMLINKS)
 INSTALL-LIBS-$(CONFIG_SHARED) += $(LIBSUBDIR)/$(LIBVPX_SO)
+INSTALL-LIBS-$(CONFIG_SHARED) += $(if $(LIBVPX_SO_IMPLIB),$(LIBSUBDIR)/$(LIBVPX_SO_IMPLIB))
 
 
 LIBS-yes += vpx.pc
@@ -454,7 +477,7 @@ OBJS-yes += $(LIBVPX_TEST_OBJS)
 BINS-yes += $(LIBVPX_TEST_BIN)
 
 CODEC_LIB=$(if $(CONFIG_DEBUG_LIBS),vpx_g,vpx)
-CODEC_LIB_SUF=$(if $(CONFIG_SHARED),.so,.a)
+CODEC_LIB_SUF=$(if $(CONFIG_SHARED),$(SHARED_LIB_SUF),.a)
 TEST_LIBS := lib$(CODEC_LIB)$(CODEC_LIB_SUF) libgtest.a
 $(LIBVPX_TEST_BIN): $(TEST_LIBS)
 $(eval $(call linkerxx_template,$(LIBVPX_TEST_BIN), \
