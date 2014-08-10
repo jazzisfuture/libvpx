@@ -20,14 +20,15 @@ LIBYUV_SRCS +=  third_party/libyuv/include/libyuv/basic_types.h  \
                 third_party/libyuv/source/row_common.cc \
                 third_party/libyuv/source/row_mips.cc \
                 third_party/libyuv/source/row_neon.cc \
+                third_party/libyuv/source/row_neon64.cc \
                 third_party/libyuv/source/row_posix.cc \
                 third_party/libyuv/source/row_win.cc \
-                third_party/libyuv/source/scale.cc  \
+                third_party/libyuv/source/scale.cc \
                 third_party/libyuv/source/scale_common.cc \
                 third_party/libyuv/source/scale_mips.cc \
                 third_party/libyuv/source/scale_neon.cc \
                 third_party/libyuv/source/scale_posix.cc \
-                third_party/libyuv/source/scale_win.cc
+                third_party/libyuv/source/scale_win.cc \
 
 LIBWEBM_MUXER_SRCS += third_party/libwebm/mkvmuxer.cpp \
                       third_party/libwebm/mkvmuxerutil.cpp \
@@ -218,6 +219,7 @@ else
     INC_PATH-$(CONFIG_VP8_ENCODER)   += $(SRC_PATH_BARE)/vp8
     INC_PATH-$(CONFIG_VP9_DECODER)   += $(SRC_PATH_BARE)/vp9
     INC_PATH-$(CONFIG_VP9_ENCODER)   += $(SRC_PATH_BARE)/vp9
+    INC_PATH-$(CONFIG_LIBYUV)        += $(SRC_PATH_BARE)/third_party/libyuv/include
     LIB_PATH := $(call enabled,LIB_PATH)
     INC_PATH := $(call enabled,INC_PATH)
 endif
