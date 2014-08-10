@@ -746,8 +746,8 @@ static vpx_codec_err_t vp8_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
 
     if (corrupted && pbi)
     {
-        *corrupted = pbi->common.frame_to_show->corrupted;
-
+        const YV12_BUFFER_CONFIG *const frame = pbi->common.frame_to_show;
+        *corrupted = (frame == NULL) ? 1 : frame->corrupted;
         return VPX_CODEC_OK;
     }
     else
