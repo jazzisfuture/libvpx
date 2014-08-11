@@ -144,7 +144,11 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   return segment_id;
 }
 
+#if !CONFIG_SUPERTX
 static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
+#else
+int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
+#endif
                      int segment_id, vp9_reader *r) {
   if (vp9_segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
     return 1;
@@ -700,6 +704,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
+#if CONFIG_SUPERTX
+                                       int supertx_enabled,
+#endif
                                        int mi_row, int mi_col, vp9_reader *r) {
   MODE_INFO *const mi = xd->mi[0];
   MB_MODE_INFO *const mbmi = &mi->mbmi;
@@ -707,11 +714,23 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
+#if CONFIG_SUPERTX
+  if (!supertx_enabled) {
+#endif
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                !mbmi->skip || !inter_block, r);
+#if CONFIG_SUPERTX
+  } else {
+    const int ctx = vp9_get_intra_inter_context(xd);
+    mbmi->segment_id = 0;
+    inter_block = 1;
+    if (!cm->frame_parallel_decoding_mode)
+      ++cm->counts.intra_inter[ctx][1];
+  }
+#endif
 
   if (inter_block)
     read_inter_block_mode_info(cm, xd, tile, mi, mi_row, mi_col, r);
@@ -721,9 +740,16 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
                         const TileInfo *const tile,
+#if CONFIG_SUPERTX
+                        int supertx_enabled,
+#endif
                         int mi_row, int mi_col, vp9_reader *r) {
   if (frame_is_intra_only(cm))
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   else
-    read_inter_frame_mode_info(cm, xd, tile, mi_row, mi_col, r);
+    read_inter_frame_mode_info(cm, xd, tile,
+#if CONFIG_SUPERTX
+                               supertx_enabled,
+#endif
+                               mi_row, mi_col, r);
 }
