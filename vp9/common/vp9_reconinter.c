@@ -164,7 +164,7 @@ static int get_masked_weight(int m) {
 }
 
 static int get_hard_mask(int m) {
-  return m > 0;
+  return 1 << MASK_WEIGHT_BITS * (m > 0);
 }
 
 // Equation of line: f(x, y) = a[0]*(x - a[2]*w/4) + a[1]*(y - a[3]*h/4) = 0
@@ -426,10 +426,10 @@ static void build_masked_compound(uint8_t *dst, int dst_stride,
   for (i = 0; i < h; ++i)
     for (j = 0; j < w; ++j) {
       int m = mask[i * 64 + j];
-      dst[i * dst_stride + j] =  (dst[i * dst_stride + j] * m +
-                                  dst2[i * dst2_stride + j] *
-                                  ((1 << MASK_WEIGHT_BITS) - m) +
-                                  (1 << (MASK_WEIGHT_BITS - 1))) >>
+      dst[i * dst_stride + j] = (dst[i * dst_stride + j] * m +
+                                 dst2[i * dst2_stride + j] *
+                                 ((1 << MASK_WEIGHT_BITS) - m) +
+                                 (1 << (MASK_WEIGHT_BITS - 1))) >>
                                  MASK_WEIGHT_BITS;
     }
 }
@@ -572,6 +572,206 @@ void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     xd->plane[2].dst.stride, bsize);
 #endif
 }
+
+#if CONFIG_SUPERTX
+static int get_masked_weight(int m) {
+  #define SMOOTHER_LEN  32
+  static const uint8_t smoothfn[2 * SMOOTHER_LEN + 1] = {
+      0,  0,  0,  0,  0,  0,  0,  0,
+      0,  0,  0,  0,  0,  1,  1,  1,
+      1,  1,  2,  2,  3,  4,  5,  6,
+      8,  9, 12, 14, 17, 21, 24, 28,
+      32,
+      36, 40, 43, 47, 50, 52, 55, 56,
+      58, 59, 60, 61, 62, 62, 63, 63,
+      63, 63, 63, 64, 64, 64, 64, 64,
+      64, 64, 64, 64, 64, 64, 64, 64,
+  };
+  if (m < -SMOOTHER_LEN)
+    return 0;
+  else if (m > SMOOTHER_LEN)
+    return 64;
+  else
+    return smoothfn[m + SMOOTHER_LEN];
+}
+
+static const uint8_t mask_8[8] = {
+  64, 64, 62, 52, 12,  2,  0,  0
+};
+
+static const uint8_t mask_16[16] = {
+  63, 62, 60, 58, 55, 50, 43, 36, 28, 21, 14, 9, 6, 4, 2, 1
+};
+
+static const uint8_t mask_32[32] = {
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 63, 61, 57, 52, 45, 36,
+  28, 19, 12,  7,  3,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+};
+
+static void generate_1dmask(int length, uint8_t *mask) {
+  int i;
+  switch (length) {
+    case 8:
+      vpx_memcpy(mask, mask_8, length);
+      break;
+    case 16:
+      vpx_memcpy(mask, mask_16, length);
+      break;
+    case 32:
+      vpx_memcpy(mask, mask_32, length);
+      break;
+    default:
+      assert(0);
+  }
+  if (length > 16) {
+    for (i = 0; i < length; ++i)
+      mask[i] = get_masked_weight(-1 * (2 * i - length + 1));
+  }
+}
+
+void vp9_build_masked_inter_predictor_complex(uint8_t *dst, int dst_stride,
+                                              uint8_t *dst2, int dst2_stride,
+                                              int plane,
+                                              int mi_row, int mi_col,
+                                              int mi_row_ori, int mi_col_ori,
+                                              BLOCK_SIZE bsize,
+                                              BLOCK_SIZE top_bsize,
+                                              PARTITION_TYPE partition) {
+  int i, j;
+  uint8_t mask[32];
+  int top_w = 4 << b_width_log2(top_bsize),
+      top_h = 4 << b_height_log2(top_bsize);
+  int w = 4 << b_width_log2(bsize), h = 4 << b_height_log2(bsize);
+  int w_offset = (mi_col - mi_col_ori) << 3,
+      h_offset = (mi_row - mi_row_ori) << 3;
+  int m;
+
+  if (plane > 0) {
+    top_w = top_w >> 1; top_h = top_h >> 1;
+    w = w >> 1; h = h >> 1;
+    w_offset = w_offset >> 1; h_offset = h_offset >> 1;
+  }
+  switch (partition) {
+    case PARTITION_HORZ:
+      generate_1dmask(h, mask + h_offset);
+      vpx_memset(mask, 64, h_offset);
+      vpx_memset(mask + h_offset + h, 0, top_h - h_offset - h);
+      break;
+    case PARTITION_VERT:
+      generate_1dmask(w, mask + w_offset);
+      vpx_memset(mask, 64, w_offset);
+      vpx_memset(mask + w_offset + w, 0, top_w - w_offset - w);
+      break;
+    default:
+      assert(0);
+  }
+  for (i = 0; i < top_h; ++i)
+    for (j = 0; j < top_w; ++j) {
+      m = partition == PARTITION_HORZ ? mask[i] : mask[j];
+      if (m == 64)
+        continue;
+      if (m == 0)
+        dst[i * dst_stride + j] = dst2[i * dst2_stride + j];
+      else
+        dst[i * dst_stride + j] = (dst[i * dst_stride + j] * m +
+                                  dst2[i * dst2_stride + j] *
+                                  (64 - m) + 32) >> 6;
+    }
+}
+
+void vp9_build_inter_predictors_sby_sub8x8_extend(MACROBLOCKD *xd,
+                                                  int mi_row, int mi_col,
+                                                  int mi_row_ori, int mi_col_ori,
+                                                  BLOCK_SIZE top_bsize,
+                                                  PARTITION_TYPE partition) {
+  const int mi_x = mi_col_ori * MI_SIZE;
+  const int mi_y = mi_row_ori * MI_SIZE;
+  uint8_t *orig_dst;
+  int orig_dst_stride;
+  int bw = 4 << b_width_log2(top_bsize);
+  int bh = 4 << b_height_log2(top_bsize);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, 32 * 32);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf1, 32 * 32);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf2, 32 * 32);
+
+  orig_dst = xd->plane[0].dst.buf;
+  orig_dst_stride = xd->plane[0].dst.stride;
+  build_inter_predictors(xd, 0, 0, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+
+  xd->plane[0].dst.buf = tmp_buf;
+  xd->plane[0].dst.stride = 32;
+  switch (partition) {
+    case PARTITION_HORZ:
+      build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    case PARTITION_VERT:
+      build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    case PARTITION_SPLIT:
+      build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      xd->plane[0].dst.buf = tmp_buf1;
+      xd->plane[0].dst.stride = 32;
+      build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      xd->plane[0].dst.buf = tmp_buf2;
+      xd->plane[0].dst.stride = 32;
+      build_inter_predictors(xd, 0, 3, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    default:
+      assert(0);
+  }
+
+  if (partition != PARTITION_SPLIT) {
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             partition);
+    xd->plane[0].dst.buf = orig_dst;
+    xd->plane[0].dst.stride = orig_dst_stride;
+  } else {
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_VERT);
+    vp9_build_masked_inter_predictor_complex(tmp_buf1, 32,
+                                             tmp_buf2, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_VERT);
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf1, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_HORZ);
+    xd->plane[0].dst.buf = orig_dst;
+    xd->plane[0].dst.stride = orig_dst_stride;
+  }
+}
+
+void vp9_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
+                                                   int mi_row_ori,
+                                                   int mi_col_ori,
+                                                   BLOCK_SIZE top_bsize) {
+  int plane;
+  const int mi_x = mi_col_ori * MI_SIZE;
+  const int mi_y = mi_row_ori * MI_SIZE;
+  for (plane = 1; plane < MAX_MB_PLANE; ++plane) {
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(top_bsize,
+                                                        &xd->plane[plane]);
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+    const int bw = 4 * num_4x4_w;
+    const int bh = 4 * num_4x4_h;
+
+    build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+  }
+}
+#endif
 
 // TODO(jingning): This function serves as a placeholder for decoder prediction
 // using on demand border extension. It should be moved to /decoder/ directory.
@@ -762,6 +962,101 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     xd->plane[2].dst.stride, bsize);
 #endif
 }
+
+#if CONFIG_SUPERTX
+void vp9_dec_build_inter_predictors_sby_sub8x8_extend(MACROBLOCKD *xd,
+                                                  int mi_row, int mi_col,
+                                                  int mi_row_ori, int mi_col_ori,
+                                                  BLOCK_SIZE top_bsize,
+                                                  PARTITION_TYPE partition) {
+  const int mi_x = mi_col_ori * MI_SIZE;
+  const int mi_y = mi_row_ori * MI_SIZE;
+  uint8_t *orig_dst;
+  int orig_dst_stride;
+  int bw = 4 << b_width_log2(top_bsize);
+  int bh = 4 << b_height_log2(top_bsize);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, 32 * 32);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf1, 32 * 32);
+  DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf2, 32 * 32);
+
+  orig_dst = xd->plane[0].dst.buf;
+  orig_dst_stride = xd->plane[0].dst.stride;
+  dec_build_inter_predictors(xd, 0, 0, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+
+  xd->plane[0].dst.buf = tmp_buf;
+  xd->plane[0].dst.stride = 32;
+  switch (partition) {
+    case PARTITION_HORZ:
+      dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    case PARTITION_VERT:
+      dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    case PARTITION_SPLIT:
+      dec_build_inter_predictors(xd, 0, 1, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      xd->plane[0].dst.buf = tmp_buf1;
+      xd->plane[0].dst.stride = 32;
+      dec_build_inter_predictors(xd, 0, 2, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      xd->plane[0].dst.buf = tmp_buf2;
+      xd->plane[0].dst.stride = 32;
+      dec_build_inter_predictors(xd, 0, 3, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+      break;
+    default:
+      assert(0);
+  }
+
+  if (partition != PARTITION_SPLIT) {
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             partition);
+    xd->plane[0].dst.buf = orig_dst;
+    xd->plane[0].dst.stride = orig_dst_stride;
+  } else {
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_VERT);
+    vp9_build_masked_inter_predictor_complex(tmp_buf1, 32,
+                                             tmp_buf2, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_VERT);
+    vp9_build_masked_inter_predictor_complex(orig_dst, orig_dst_stride,
+                                             tmp_buf1, 32,
+                                             0, mi_row, mi_col,
+                                             mi_row_ori, mi_col_ori,
+                                             BLOCK_8X8, top_bsize,
+                                             PARTITION_HORZ);
+    xd->plane[0].dst.buf = orig_dst;
+    xd->plane[0].dst.stride = orig_dst_stride;
+  }
+}
+
+void vp9_dec_build_inter_predictors_sbuv_sub8x8_extend(MACROBLOCKD *xd,
+                                                   int mi_row_ori,
+                                                   int mi_col_ori,
+                                                   BLOCK_SIZE top_bsize) {
+  int plane;
+  const int mi_x = mi_col_ori * MI_SIZE;
+  const int mi_y = mi_row_ori * MI_SIZE;
+  for (plane = 1; plane < MAX_MB_PLANE; ++plane) {
+    const BLOCK_SIZE plane_bsize = get_plane_block_size(top_bsize,
+                                                        &xd->plane[plane]);
+    const int num_4x4_w = num_4x4_blocks_wide_lookup[plane_bsize];
+    const int num_4x4_h = num_4x4_blocks_high_lookup[plane_bsize];
+    const int bw = 4 * num_4x4_w;
+    const int bh = 4 * num_4x4_h;
+
+    dec_build_inter_predictors(xd, plane, 0, bw, bh, 0, 0, bw, bh, mi_x, mi_y);
+  }
+}
+#endif
 
 void vp9_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
                           const YV12_BUFFER_CONFIG *src,
