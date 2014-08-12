@@ -34,7 +34,7 @@ void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
 
   cm->mi_cols = aligned_width >> MI_SIZE_LOG2;
   cm->mi_rows = aligned_height >> MI_SIZE_LOG2;
-  cm->mi_stride = cm->mi_cols + MI_BLOCK_SIZE;
+  cm->mi_stride = calc_mi_size(cm->mi_cols);
 
   cm->mb_cols = (cm->mi_cols + 1) >> 1;
   cm->mb_rows = (cm->mi_rows + 1) >> 1;
@@ -131,7 +131,8 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
   vp9_free_context_buffers(cm);
 
   vp9_set_mb_mi(cm, width, height);
-  if (alloc_mi(cm, cm->mi_stride * (cm->mi_rows + MI_BLOCK_SIZE))) goto fail;
+  if (alloc_mi(cm, cm->mi_stride * calc_mi_size(cm->mi_rows)))
+    goto fail;
 
   cm->last_frame_seg_map = (uint8_t *)vpx_calloc(cm->mi_rows * cm->mi_cols, 1);
   if (!cm->last_frame_seg_map) goto fail;
