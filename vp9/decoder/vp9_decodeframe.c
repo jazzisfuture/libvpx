@@ -620,6 +620,25 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
     vp9_read_frame_size(rb, &cm->display_width, &cm->display_height);
 }
 
+static INLINE int mi_resize_required(int width, int height,
+                                     int new_width, int new_height) {
+  // All parameters are in pixel units.
+  const int cols = ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2) >> MI_SIZE_LOG2;
+  const int rows = ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2) >> MI_SIZE_LOG2;
+  const int new_cols = ALIGN_POWER_OF_TWO(new_width,
+                                          MI_SIZE_LOG2) >> MI_SIZE_LOG2;
+  const int new_rows = ALIGN_POWER_OF_TWO(new_height,
+                                          MI_SIZE_LOG2) >> MI_SIZE_LOG2;
+
+  // Compare the amount of memory required for mi at new and old frame sizes.
+  // Assumption: color format does not change.
+  if ((width == 0 || height == 0)
+      || (calc_mi_size(new_rows) * calc_mi_size(new_cols)
+          > calc_mi_size(rows) * calc_mi_size(cols)))
+    return 1;
+  return 0;
+}
+
 static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
 #if CONFIG_SIZE_LIMIT
   if (width > DECODE_WIDTH_LIMIT || height > DECODE_HEIGHT_LIMIT)
@@ -627,13 +646,7 @@ static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
                        "Width and height beyond allowed size.");
 #endif
   if (cm->width != width || cm->height != height) {
-    const int aligned_width = ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2);
-    const int aligned_height = ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2);
-
-    // Change in frame size (assumption: color format does not change).
-    if (cm->width == 0 || cm->height == 0 ||
-        aligned_width > cm->width ||
-        aligned_width * aligned_height > cm->width * cm->height) {
+    if (mi_resize_required(cm->width, cm->height, width, height) != 0) {
       if (vp9_alloc_context_buffers(cm, width, height))
         vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate frame buffers");
