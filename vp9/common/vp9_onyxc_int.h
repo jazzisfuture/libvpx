@@ -272,6 +272,19 @@ static INLINE void set_skip_context(MACROBLOCKD *xd, int mi_row, int mi_col) {
   }
 }
 
+static INLINE int calc_mi_size(int x) {
+  // Note: x is in mi units.
+  // The sub-block that results from partitioning a partial 64x64 block requires
+  // at most 3 8x8 padding blocks so we only need allocate this much additional
+  // space. We also need one further 8x8 padding block at the start.
+  return (1 + (x) + ((MI_BLOCK_SIZE >> 1) - 1));
+/*
+  // More accurate:
+  return (1 + (x) +
+      ((((x) + (MI_BLOCK_SIZE >> 1) - 1)) & (~((MI_BLOCK_SIZE >> 1) - 1))))
+*/
+}
+
 static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
                                   int mi_row, int bh,
                                   int mi_col, int bw,
