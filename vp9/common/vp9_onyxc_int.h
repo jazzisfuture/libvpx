@@ -272,6 +272,11 @@ static INLINE void set_skip_context(MACROBLOCKD *xd, int mi_row, int mi_col) {
   }
 }
 
+static INLINE int calc_mi_size(int len) {
+  // len is in mi units.
+  return len + MI_BLOCK_SIZE;
+}
+
 static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
                                   int mi_row, int bh,
                                   int mi_col, int bw,
