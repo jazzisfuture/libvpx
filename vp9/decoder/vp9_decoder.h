@@ -78,6 +78,23 @@ struct VP9Decoder *vp9_decoder_create();
 
 void vp9_decoder_remove(struct VP9Decoder *pbi);
 
+static INLINE uint8_t read_marker(vpx_decrypt_cb decrypt_cb,
+                                  void *decrypt_state,
+                                  const uint8_t *data) {
+  if (decrypt_cb) {
+    uint8_t marker;
+    decrypt_cb(decrypt_state, data, &marker, 1);
+    return marker;
+  }
+  return *data;
+}
+
+vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data,
+                                           size_t data_sz,
+                                           uint32_t sizes[8], int *count,
+                                           vpx_decrypt_cb decrypt_cb,
+                                           void *decrypt_state);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
