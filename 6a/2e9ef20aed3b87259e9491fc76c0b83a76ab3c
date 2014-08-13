@@ -1,0 +1,10 @@
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Commit-Queue+1: Hangyu Kuang <hkuang@google.com>
+Code-Review+2: Hangyu Kuang <hkuang@google.com>
+Verified+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: James Zern <jzern@google.com>
+Submitted-at: Tue, 12 Aug 2014 21:11:11 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71153
+Project: webm/libvpx
+Branch: refs/heads/master
