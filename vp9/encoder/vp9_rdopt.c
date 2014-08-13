@@ -2311,7 +2311,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *rate2 += vp9_get_switchable_rate(cpi);
 
   if (!is_comp_pred) {
-    if (cpi->allow_encode_breakout)
+    if (cpi->allow_encode_breakout && (x->encode_breakout > 0 || xd->lossless))
       rd_encode_breakout_test(cpi, x, bsize, rate2, distortion, distortion_uv,
                               disable_skip);
   }
