@@ -598,7 +598,7 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
       // Skipping checking: test to see if this block can be reconstructed by
       // prediction only.
-      if (cpi->allow_encode_breakout) {
+      if (cpi->allow_encode_breakout && x->encode_breakout > 0) {
         encode_breakout_test(cpi, x, bsize, mi_row, mi_col, ref_frame,
                              this_mode, var_y, sse_y, yv12_mb, &rate, &dist);
         if (x->skip) {
