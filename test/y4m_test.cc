@@ -142,10 +142,11 @@ class Y4mVideoWriteTest
 
   virtual ~Y4mVideoWriteTest() {
     CloseSource();
+    tmpfile_->Nullify();
     delete tmpfile_;
   }
 
-  virtual void ReplaceInputFile(FILE *input_file) {
+  void ReplaceInputFile(FILE *input_file) {
     CloseSource();
     frame_ = 0;
     input_file_ = input_file;
