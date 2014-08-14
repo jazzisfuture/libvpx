@@ -1724,7 +1724,8 @@ static const BLOCK_SIZE max_partition_size[BLOCK_SIZES] = {
 // function so repeat calls can accumulate a min and max of more than one sb64.
 static void get_sb_partition_size_range(MACROBLOCKD *xd, MODE_INFO **mi_8x8,
                                         BLOCK_SIZE *min_block_size,
-                                        BLOCK_SIZE *max_block_size ) {
+                                        BLOCK_SIZE *max_block_size,
+                                        int bs_hist[BLOCK_SIZES]) {
   int sb_width_in_blocks = MI_BLOCK_SIZE;
   int sb_height_in_blocks  = MI_BLOCK_SIZE;
   int i, j;
@@ -1735,6 +1736,7 @@ static void get_sb_partition_size_range(MACROBLOCKD *xd, MODE_INFO **mi_8x8,
     for (j = 0; j < sb_width_in_blocks; ++j) {
       MODE_INFO * mi = mi_8x8[index+j];
       BLOCK_SIZE sb_type = mi ? mi->mbmi.sb_type : 0;
+      bs_hist[sb_type]++;
       *min_block_size = MIN(*min_block_size, sb_type);
       *max_block_size = MAX(*max_block_size, sb_type);
     }
@@ -1748,6 +1750,24 @@ static const BLOCK_SIZE next_square_size[BLOCK_SIZES] = {
   BLOCK_8X8, BLOCK_8X8, BLOCK_8X8,
   BLOCK_16X16, BLOCK_16X16, BLOCK_16X16,
   BLOCK_32X32, BLOCK_32X32, BLOCK_32X32,
+  BLOCK_64X64
+};
+
+// Next square block size less or equal than current block size.
+static const BLOCK_SIZE next_smaller_square_size[BLOCK_SIZES] = {
+  BLOCK_4X4, BLOCK_4X4, BLOCK_4X4,
+  BLOCK_8X8, BLOCK_8X8, BLOCK_8X8,
+  BLOCK_16X16, BLOCK_16X16, BLOCK_16X16,
+  BLOCK_32X32, BLOCK_32X32, BLOCK_32X32,
+  BLOCK_64X64
+};
+
+// Next square block size less or equal than current block size.
+static const BLOCK_SIZE next_larger_square_size[BLOCK_SIZES] = {
+  BLOCK_8X8, BLOCK_8X8, BLOCK_8X8,
+  BLOCK_16X16, BLOCK_16X16, BLOCK_16X16,
+  BLOCK_32X32, BLOCK_32X32, BLOCK_32X32,
+  BLOCK_64X64, BLOCK_64X64, BLOCK_64X64,
   BLOCK_64X64
 };
 
@@ -1767,6 +1787,9 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
   int bh, bw;
   BLOCK_SIZE min_size = BLOCK_4X4;
   BLOCK_SIZE max_size = BLOCK_64X64;
+  int i = 0;
+  int bs_hist[BLOCK_SIZES] = {0};
+
   // Trap case where we do not have a prediction.
   if (left_in_image || above_in_image || cm->frame_type != KEY_FRAME) {
     // Default "min to max" and "max to min"
@@ -1779,22 +1802,48 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
     if (cm->frame_type != KEY_FRAME) {
       MODE_INFO **const prev_mi =
           &cm->prev_mi_grid_visible[mi_row * xd->mi_stride + mi_col];
-      get_sb_partition_size_range(xd, prev_mi, &min_size, &max_size);
+      get_sb_partition_size_range(xd, prev_mi, &min_size, &max_size, bs_hist);
     }
     // Find the min and max partition sizes used in the left SB64
     if (left_in_image) {
       MODE_INFO **left_sb64_mi = &mi[-MI_BLOCK_SIZE];
-      get_sb_partition_size_range(xd, left_sb64_mi, &min_size, &max_size);
+      get_sb_partition_size_range(xd, left_sb64_mi, &min_size, &max_size, bs_hist);
     }
     // Find the min and max partition sizes used in the above SB64.
     if (above_in_image) {
       MODE_INFO **above_sb64_mi = &mi[-xd->mi_stride * MI_BLOCK_SIZE];
-      get_sb_partition_size_range(xd, above_sb64_mi, &min_size, &max_size);
+      get_sb_partition_size_range(xd, above_sb64_mi, &min_size, &max_size, bs_hist);
     }
+
     // adjust observed min and max
     if (cpi->sf.auto_min_max_partition_size == RELAXED_NEIGHBORING_MIN_MAX) {
       min_size = min_partition_size[min_size];
       max_size = max_partition_size[max_size];
+    } else if
+      (cpi->sf.auto_min_max_partition_size == CONSTRAIN_NEIGHBORING_MIN_MAX) {
+      int sum = 0;
+      double mean = 0;
+      double var = 0;
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        sum += bs_hist[i];
+      }
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        mean += (double)bs_hist[i] * i;
+      }
+      mean /= (double)sum;
+      for (i = 0; i < BLOCK_SIZES; i++) {
+        var += (double)bs_hist[i] * ((double)i - mean) * ((double)i - mean);
+      }
+      var /= (double)sum;
+      if (var <= 4) {
+        int lower = (int)mean;
+        int upper = mean < 12.0 ? (int)mean + 1 : 12;
+        min_size = min_partition_size[lower];
+        max_size = max_partition_size[upper];
+      } else {
+        min_size = min_partition_size[min_size];
+        max_size = max_partition_size[max_size];
+      }
     }
   }
 
@@ -1811,6 +1860,7 @@ static void rd_auto_partition_range(VP9_COMP *cpi, const TileInfo *const tile,
       next_square_size[max_size] < min_size) {
      min_size = next_square_size[max_size];
   }
+
   *min_block_size = min_size;
   *max_block_size = max_size;
 }
