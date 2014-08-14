@@ -1554,8 +1554,6 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   vp9_clear_system_state();
   vp9_zero(next_frame);
 
-  gf_group_bits = 0;
-
   // Load stats for the current frame.
   mod_frame_err = calculate_modified_err(twopass, oxcf, this_frame);
 
@@ -2124,10 +2122,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   FIRSTPASS_STATS this_frame_copy;
 
   int target_rate;
-  LAYER_CONTEXT *lc = NULL;
+  LAYER_CONTEXT *lc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id];
 
   if (is_spatial_svc(cpi)) {
-    lc = &cpi->svc.layer_context[cpi->svc.spatial_layer_id];
     frames_left = (int)(twopass->total_stats.count -
                   lc->current_video_frame_in_layer);
   } else {
