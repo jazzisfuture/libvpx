@@ -113,14 +113,14 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     if (MIN(cm->width, cm->height) >= 720) {
       sf->disable_split_mask = DISABLE_ALL_SPLIT;
       sf->cb_partition_search = frame_is_boosted(cpi) ? 0 : 1;
+      sf->lf_motion_threshold = SLOW_MOTION_THRESHOLD;
     } else {
       sf->disable_split_mask = DISABLE_ALL_INTER_SPLIT;
+      sf->lf_motion_threshold = LOW_MOTION_THRESHOLD;
     }
 
     sf->adaptive_pred_interp_filter = 0;
     sf->cb_pred_filter_search = 1;
-
-    sf->lf_motion_threshold = LOW_MOTION_THRESHOLD;
     sf->last_partitioning_redo_frequency = 3;
     sf->recode_loop = ALLOW_RECODE_KFMAXBW;
     sf->adaptive_rd_thresh = 3;

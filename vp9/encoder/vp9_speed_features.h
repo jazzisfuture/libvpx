@@ -45,7 +45,8 @@ typedef enum {
 
 typedef enum {
   NO_MOTION_THRESHOLD = 0,
-  LOW_MOTION_THRESHOLD = 7
+  LOW_MOTION_THRESHOLD = 7,
+  SLOW_MOTION_THRESHOLD = 15,
 } MOTION_THRESHOLD;
 
 typedef enum {
