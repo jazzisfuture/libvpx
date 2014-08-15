@@ -80,6 +80,12 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->intra_uv_mode_mask[TX_32X32] = INTRA_DC_H_V;
     sf->intra_y_mode_mask[TX_16X16] = INTRA_DC_H_V;
     sf->intra_uv_mode_mask[TX_16X16] = INTRA_DC_H_V;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->partition_search_breakout_dist_thr = (1 << 23);
+    else
+      sf->partition_search_breakout_dist_thr = (1 << 21);
+    sf->partition_search_breakout_rate_thr = 500;
   }
 
   if (speed >= 2) {
@@ -105,6 +111,12 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->auto_min_max_partition_size = RELAXED_NEIGHBORING_MIN_MAX;
     sf->use_lastframe_partitioning = LAST_FRAME_PARTITION_LOW_MOTION;
     sf->adjust_partitioning_from_last_frame = 1;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->partition_search_breakout_dist_thr = (1 << 24);
+    else
+      sf->partition_search_breakout_dist_thr = (1 << 22);
+    sf->partition_search_breakout_rate_thr = 700;
   }
 
   if (speed >= 3) {
@@ -127,6 +139,12 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->mode_skip_start = 6;
     sf->use_fast_coef_updates = ONE_LOOP_REDUCED;
     sf->use_fast_coef_costing = 1;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->partition_search_breakout_dist_thr = (1 << 25);
+    else
+      sf->partition_search_breakout_dist_thr = (1 << 23);
+    sf->partition_search_breakout_rate_thr = 1000;
   }
 
   if (speed >= 4) {
@@ -139,6 +157,12 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->disable_filter_search_var_thresh = 200;
     sf->use_lastframe_partitioning = LAST_FRAME_PARTITION_ALL;
     sf->use_lp32x32fdct = 1;
+
+    if (MIN(cm->width, cm->height) >= 720)
+      sf->partition_search_breakout_dist_thr = (1 << 26);
+    else
+      sf->partition_search_breakout_dist_thr = (1 << 24);
+    sf->partition_search_breakout_rate_thr = 1500;
   }
 
   if (speed >= 5) {
@@ -387,6 +411,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   // Recode loop tolerence %.
   sf->recode_tolerance = 25;
   sf->default_interp_filter = SWITCHABLE;
+  sf->partition_search_breakout_dist_thr = 0;
+  sf->partition_search_breakout_rate_thr = 0;
 
   switch (oxcf->mode) {
     case ONE_PASS_BEST:

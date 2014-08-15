@@ -1662,12 +1662,14 @@ static void store_coding_context(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
                          int mode_index,
                          int64_t comp_pred_diff[REFERENCE_MODES],
                          const int64_t tx_size_diff[TX_MODES],
-                         int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS]) {
+                         int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS],
+                         int skippable) {
   MACROBLOCKD *const xd = &x->e_mbd;
 
   // Take a snapshot of the coding context so it can be
   // restored if we decide to encode this way
   ctx->skip = x->skip;
+  ctx->skippable = skippable;
   ctx->best_mode_index = mode_index;
   ctx->mic = *xd->mi[0];
   ctx->single_pred_diff = (int)comp_pred_diff[SINGLE_REFERENCE];
@@ -2473,6 +2475,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int64_t best_filter_rd[SWITCHABLE_FILTER_CONTEXTS];
   int64_t best_filter_diff[SWITCHABLE_FILTER_CONTEXTS];
   MB_MODE_INFO best_mbmode;
+  int best_mode_skippable = 0;
   int mode_index, best_mode_index = -1;
   unsigned int ref_costs_single[MAX_REF_FRAMES], ref_costs_comp[MAX_REF_FRAMES];
   vp9_prob comp_mode_p;
@@ -2845,6 +2848,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         best_rd = this_rd;
         best_mbmode = *mbmi;
         best_skip2 = this_skip2;
+        best_mode_skippable = skippable;
+
         if (!x->select_tx_size)
           swap_block_ptr(x, ctx, 1, 0, 0, max_plane);
         vpx_memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
@@ -3001,8 +3006,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
-  store_coding_context(x, ctx, best_mode_index,
-                       best_pred_diff, best_tx_diff, best_filter_diff);
+  store_coding_context(x, ctx, best_mode_index, best_pred_diff,
+                       best_tx_diff, best_filter_diff, best_mode_skippable);
 
   return best_rd;
 }
@@ -3107,7 +3112,7 @@ int64_t vp9_rd_pick_inter_mode_sb_seg_skip(VP9_COMP *cpi, MACROBLOCK *x,
   if (!x->select_tx_size)
     swap_block_ptr(x, ctx, 1, 0, 0, MAX_MB_PLANE);
   store_coding_context(x, ctx, THR_ZEROMV,
-                       best_pred_diff, best_tx_diff, best_filter_diff);
+                       best_pred_diff, best_tx_diff, best_filter_diff, 0);
 
   return this_rd;
 }
@@ -3712,7 +3717,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 
   set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
   store_coding_context(x, ctx, best_ref_index,
-                       best_pred_diff, best_tx_diff, best_filter_diff);
+                       best_pred_diff, best_tx_diff, best_filter_diff, 0);
 
   return best_rd;
 }
