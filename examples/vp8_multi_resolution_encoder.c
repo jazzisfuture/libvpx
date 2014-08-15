@@ -19,7 +19,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
-#define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "vpx_ports/mem_ops.h"
