@@ -2613,18 +2613,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  // TODO(JBB): This is to make up for the fact that we don't have sad
-  // functions that work when the block size reads outside the umv.  We
-  // should fix this either by making the motion search just work on
-  // a representative block in the boundary ( first ) and then implement a
-  // function that does sads when inside the border..
-  if ((mi_row + bhs) > cm->mi_rows || (mi_col + bws) > cm->mi_cols) {
-    const int new_modes_mask =
-        (1 << THR_NEWMV) | (1 << THR_NEWG) | (1 << THR_NEWA) |
-        (1 << THR_COMP_NEWLA) | (1 << THR_COMP_NEWGA);
-    mode_skip_mask |= new_modes_mask;
-  }
-
   if (bsize > cpi->sf.max_intra_bsize) {
     const int all_intra_modes = (1 << THR_DC) | (1 << THR_TM) |
         (1 << THR_H_PRED) | (1 << THR_V_PRED) | (1 << THR_D135_PRED) |
