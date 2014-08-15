@@ -304,7 +304,6 @@ typedef struct VP9_COMP {
   int64_t first_time_stamp_ever;
 
   RATE_CONTROL rc;
-  double framerate;
 
   vp9_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
 

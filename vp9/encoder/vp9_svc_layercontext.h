@@ -22,7 +22,6 @@ extern "C" {
 typedef struct {
   RATE_CONTROL rc;
   int target_bandwidth;
-  double framerate;
   int avg_frame_size;
   TWO_PASS twopass;
   struct vpx_fixed_buf rc_twopass_stats_in;

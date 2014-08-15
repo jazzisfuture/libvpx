@@ -47,6 +47,7 @@ typedef struct {
   int kf_boost;
 
   double rate_correction_factors[RATE_FACTOR_LEVELS];
+  double framerate;
 
   int frames_since_golden;
   int frames_till_gf_update_due;
