@@ -62,7 +62,8 @@ vpxenc() {
   local readonly encoder="${LIBVPX_BIN_PATH}/vpxenc${VPX_TEST_EXE_SUFFIX}"
   local readonly input="${1}"
   shift
-  eval "${VPX_TEST_PREFIX}" "${encoder}" "$input" "$@" ${devnull}
+  eval "${VPX_TEST_PREFIX}" "${encoder}" "$input" \
+    --test-decode=fatal "$@" ${devnull}
 }
 
 vpxenc_vp8_ivf() {
@@ -166,7 +167,6 @@ vpxenc_vp9_ivf_lossless() {
       --ivf \
       --output="${output}" \
       --lossless=1 \
-      --test-decode=fatal \
       "${YUV_RAW_INPUT}"
 
     if [ ! -e "${output}" ]; then
@@ -187,7 +187,6 @@ vpxenc_vp9_ivf_minq0_maxq0() {
       --output="${output}" \
       --min-q=0 \
       --max-q=0 \
-      --test-decode=fatal \
       "${YUV_RAW_INPUT}"
 
     if [ ! -e "${output}" ]; then
