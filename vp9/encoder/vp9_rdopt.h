@@ -35,7 +35,7 @@ int64_t vp9_rd_pick_inter_mode_sb(struct VP9_COMP *cpi, struct macroblock *x,
                                   int64_t *returndistortion,
                                   BLOCK_SIZE bsize,
                                   PICK_MODE_CONTEXT *ctx,
-                                  int64_t best_rd_so_far);
+                                  int64_t best_rd_so_far, int *skippable);
 
 int64_t vp9_rd_pick_inter_mode_sb_seg_skip(struct VP9_COMP *cpi,
                                            struct macroblock *x,

@@ -374,6 +374,10 @@ typedef struct SPEED_FEATURES {
 
   // default interp filter choice
   INTERP_FILTER default_interp_filter;
+
+  // Partition search early breakout thresholds.
+  int64_t partition_search_breakout_dist_thr;
+  int partition_search_breakout_rate_thr;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

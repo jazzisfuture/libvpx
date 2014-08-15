@@ -2449,7 +2449,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   int64_t *returndistortion,
                                   BLOCK_SIZE bsize,
                                   PICK_MODE_CONTEXT *ctx,
-                                  int64_t best_rd_so_far) {
+                                  int64_t best_rd_so_far,
+                                  int *return_skippable) {
   VP9_COMMON *const cm = &cpi->common;
   RD_OPT *const rd_opt = &cpi->rd;
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -2515,6 +2516,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     x->pred_sse[i] = INT_MAX;
 
   *returnrate = INT_MAX;
+  *return_skippable = 0;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
     x->pred_mv_sad[ref_frame] = INT_MAX;
@@ -2730,6 +2732,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       rate_uv = rate_uv_tokenonly[uv_tx];
       distortion_uv = dist_uv[uv_tx];
       skippable = skippable && skip_uv[uv_tx];
+
       mbmi->uv_mode = mode_uv[uv_tx];
 
       rate2 = rate_y + cpi->mbmode_cost[mbmi->mode] + rate_uv_intra[uv_tx];
@@ -2845,6 +2848,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         best_rd = this_rd;
         best_mbmode = *mbmi;
         best_skip2 = this_skip2;
+        *return_skippable = skippable;
+
         if (!x->select_tx_size)
           swap_block_ptr(x, ctx, 1, 0, 0, max_plane);
         vpx_memcpy(ctx->zcoeff_blk, x->zcoeff_blk[mbmi->tx_size],
