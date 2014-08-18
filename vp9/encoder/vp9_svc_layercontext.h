@@ -33,7 +33,6 @@ typedef struct {
   int alt_ref_idx;
   int gold_ref_idx;
   int has_alt_frame;
-  size_t layer_size;
 } LAYER_CONTEXT;
 
 typedef struct {
