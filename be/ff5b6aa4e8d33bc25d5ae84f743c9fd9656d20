@@ -1,0 +1,9 @@
+Commit-Queue+1: Yaowu Xu <yaowu@google.com>
+Code-Review+2: Yaowu Xu <yaowu@google.com>
+Verified+1: Yaowu Xu <yaowu@google.com>
+Code-Review+1: WebmJenkinsRoleAccount
+Submitted-by: Yaowu Xu <yaowu@google.com>
+Submitted-at: Mon, 18 Aug 2014 09:40:16 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71235
+Project: webm/libvpx
+Branch: refs/heads/master
