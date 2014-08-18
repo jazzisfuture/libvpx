@@ -1081,7 +1081,8 @@ static void write_uncompressed_header(VP9_COMP *cpi,
     write_bitdepth_colorspace_sampling(cm, wb);
     write_frame_size(cm, wb);
   } else {
-    if (!cm->show_frame)
+    if (!cm->show_frame ||
+        (is_spatial_svc(cpi) && cm->error_resilient_mode == 0))
       vp9_wb_write_bit(wb, cm->intra_only);
 
     if (!cm->error_resilient_mode)
