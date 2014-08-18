@@ -2541,6 +2541,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       }
 
       cm->show_frame = 0;
+      cm->next_alt_frame = cm->current_video_frame + arf_src_index;
       cpi->refresh_alt_ref_frame = 1;
       cpi->refresh_golden_frame = 0;
       cpi->refresh_last_frame = 0;

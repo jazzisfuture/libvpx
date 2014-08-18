@@ -2653,6 +2653,16 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           break;
       }
     }
+
+    if (cpi->sf.alt_ref_search_fp) {
+      if (cm->current_video_frame == cm->next_alt_frame) {
+        mode_skip_mask = 0;
+        if (!(vp9_mode_order[mode_index].ref_frame[0] == ALTREF_FRAME &&
+              vp9_mode_order[mode_index].ref_frame[1] == NONE))
+          continue;
+      }
+    }
+
     if (mode_skip_mask & (1 << mode_index))
       continue;
 

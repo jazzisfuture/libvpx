@@ -177,6 +177,7 @@ typedef struct VP9Common {
   FRAME_COUNTS counts;
 
   unsigned int current_video_frame;
+  unsigned int next_alt_frame;
   BITSTREAM_PROFILE profile;
 
   // BITS_8 in versions 0 and 1, BITS_10 or BITS_12 in version 2
