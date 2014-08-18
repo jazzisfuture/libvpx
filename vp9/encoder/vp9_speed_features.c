@@ -50,8 +50,20 @@ enum {
                               (1 << THR_GOLD)
 };
 
+// Intra only frames, golden frames (except alt ref overlays) and
+// alt ref frames tend to be coded at a higher than ambient quality
+static int frame_is_boosted(const VP9_COMP *cpi) {
+  return frame_is_intra_only(&cpi->common) ||
+         cpi->refresh_alt_ref_frame ||
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref) ||
+         vp9_is_upper_layer_key_frame(cpi);
+}
+
+
 static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
                                    SPEED_FEATURES *sf, int speed) {
+  const int boosted = frame_is_boosted(cpi);
+
   sf->adaptive_rd_thresh = 1;
   sf->recode_loop = (speed < 1) ? ALLOW_RECODE : ALLOW_RECODE_KFMAXBW;
   sf->allow_skip_recode = 1;
@@ -59,8 +71,7 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
   if (speed >= 1) {
     sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->less_rectangular_check  = 1;
-    sf->tx_size_search_method = frame_is_boosted(cpi) ? USE_FULL_RD
-                                                      : USE_LARGESTALL;
+    sf->tx_size_search_method = boosted ? USE_FULL_RD : USE_LARGESTALL;
 
     if (MIN(cm->width, cm->height) >= 720)
       sf->disable_split_mask = cm->show_frame ? DISABLE_ALL_SPLIT
@@ -117,9 +128,9 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
       sf->disable_split_mask = DISABLE_ALL_INTER_SPLIT;
     }
     sf->adaptive_pred_interp_filter = 0;
-    sf->cb_partition_search = frame_is_boosted(cpi) ? 0 : 1;
+    sf->cb_partition_search = !boosted;
     sf->cb_pred_filter_search = 1;
-    sf->motion_field_mode_search = frame_is_boosted(cpi) ? 0 : 1;
+    sf->motion_field_mode_search = !boosted;
     sf->lf_motion_threshold = LOW_MOTION_THRESHOLD;
     sf->last_partitioning_redo_frequency = 3;
     sf->recode_loop = ALLOW_RECODE_KFMAXBW;
