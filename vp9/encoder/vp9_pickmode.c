@@ -691,18 +691,16 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
-      uint8_t *const src_buf_base = p->src.buf;
-      uint8_t *const dst_buf_base = pd->dst.buf;
       for (j = 0; j < height; j += step) {
         for (i = 0; i < width; i += step) {
-          p->src.buf = &src_buf_base[4 * (j * src_stride + i)];
-          pd->dst.buf = &dst_buf_base[4 * (j * dst_stride + i)];
+          uint8_t *const src_buf = &p->src.buf[4 * (j * src_stride + i)];
+          uint8_t *const dst_buf = &pd->dst.buf[4 * (j * dst_stride + i)];
           // Use source buffer as an approximation for the fully reconstructed
           // buffer
           vp9_predict_intra_block(xd, block_idx, b_width_log2(bsize),
                                   tmp_tx_size, this_mode,
-                                  p->src.buf, src_stride,
-                                  pd->dst.buf, dst_stride,
+                                  src_buf, src_stride,
+                                  dst_buf, dst_stride,
                                   i, j, 0);
           model_rd_for_sb_y(cpi, bsize_tx, x, xd, &rate, &dist, &var_y, &sse_y);
           rate2 += rate;
@@ -710,8 +708,6 @@ int64_t vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           ++block_idx;
         }
       }
-      p->src.buf = src_buf_base;
-      pd->dst.buf = dst_buf_base;
 
       rate = rate2;
       dist = dist2;
