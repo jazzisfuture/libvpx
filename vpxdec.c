@@ -131,6 +131,7 @@ static const arg_def_t *vp8_pp_args[] = {
 };
 #endif
 
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
 static int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                            FilterModeEnum mode) {
 #if CONFIG_VP9_HIGH
@@ -153,6 +154,10 @@ static int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                         mode);
   }
 #endif
+=======
+static INLINE int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
+                                  FilterModeEnum mode) {
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
   assert(src->fmt == VPX_IMG_FMT_I420);
   assert(dst->fmt == VPX_IMG_FMT_I420);
   return I420Scale(src->planes[VPX_PLANE_Y], src->stride[VPX_PLANE_Y],
@@ -458,6 +463,7 @@ void generate_filename(const char *pattern, char *out, size_t q_len,
           break;
         default:
           die("Unrecognized pattern %%%c\n", p[1]);
+          break;
       }
 
       pat_len = strlen(q);
@@ -716,10 +722,14 @@ int main_loop(int argc, const char **argv_) {
   int                     use_y4m = 1;
   int                     opt_yv12 = 0;
   int                     opt_i420 = 0;
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
   vpx_codec_dec_cfg_t     cfg = {0};
 #if CONFIG_VP9_HIGH
   int                     out_bit_depth = 0;
 #endif
+=======
+  vpx_codec_dec_cfg_t     cfg = {0, 0, 0};
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
 #if CONFIG_VP8_DECODER
   vp8_postproc_cfg_t      vp8_pp_cfg = {0};
   int                     vp8_dbg_color_ref_frame = 0;
@@ -736,7 +746,7 @@ int main_loop(int argc, const char **argv_) {
 #endif
   int                     frame_avail, got_data;
   int                     num_external_frame_buffers = 0;
-  struct ExternalFrameBufferList ext_fb_list = {0};
+  struct ExternalFrameBufferList ext_fb_list = {0, NULL};
 
   const char *outfile_pattern = NULL;
   char outfile_name[PATH_MAX] = {0};
@@ -745,8 +755,8 @@ int main_loop(int argc, const char **argv_) {
   MD5Context md5_ctx;
   unsigned char md5_digest[16];
 
-  struct VpxDecInputContext input = {0};
-  struct VpxInputContext vpx_input_ctx = {0};
+  struct VpxDecInputContext input = {NULL, NULL};
+  struct VpxInputContext vpx_input_ctx;
 #if CONFIG_WEBM_IO
   struct WebmInputContext webm_ctx = {0};
   input.webm_ctx = &webm_ctx;

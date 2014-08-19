@@ -206,6 +206,10 @@ enum vp8e_enc_control_id {
    *                     temporal layer.
    */
   VP9E_SET_SVC_LAYER_ID,
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
+=======
+  VP9E_SET_TUNE_CONTENT
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -277,6 +281,12 @@ typedef enum {
   VP8_EIGHT_TOKENPARTITION = 3
 } vp8e_token_partitions;
 
+/*!brief VP9 encoder content type */
+typedef enum {
+  VP9E_CONTENT_DEFAULT,
+  VP9E_CONTENT_SCREEN,
+  VP9E_CONTENT_INVALID
+} vp9e_tune_content;
 
 /*!\brief VP8 model tuning parameters
  *
@@ -370,6 +380,7 @@ VPX_CTRL_USE_TYPE(VP9E_SET_AQ_MODE, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PERIODIC_BOOST, unsigned int)
 
+VPX_CTRL_USE_TYPE(VP9E_SET_TUNE_CONTENT, int) /* vp9e_tune_content */
 /*! @} - end defgroup vp8_encoder */
 #ifdef __cplusplus
 }  // extern "C"
