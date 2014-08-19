@@ -344,6 +344,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
   return cost;
 }
+
 static void dist_block(int plane, int block, TX_SIZE tx_size,
                        struct rdcost_block_args* args) {
   const int ss_txfrm_size = tx_size << 1;
@@ -355,7 +356,13 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
   int shift = tx_size == TX_32X32 ? 0 : 2;
   int16_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
-  args->dist = vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
+  int coeffs_length = 16 << ss_txfrm_size;
+
+//  if (x->use_lp32x32fdct == 2 && tx_size == TX_32X32 &&
+//      xd->mi[0]->mbmi.ref_frame[0] > INTRA_FRAME)
+//    coeffs_length = 1024;
+
+  args->dist = vp9_block_error(coeff, dqcoeff, coeffs_length,
                                &this_sse) >> shift;
   args->sse  = this_sse >> shift;
 
@@ -2336,8 +2343,6 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           best_filter = mbmi->interp_filter;
           if (cm->interp_filter == SWITCHABLE && i && !intpel_mv)
             best_needs_copy = !best_needs_copy;
-          vpx_memcpy(skip_txfm, x->skip_txfm, sizeof(skip_txfm));
-          vpx_memcpy(bsse, x->bsse, sizeof(bsse));
         }
 
         if ((cm->interp_filter == SWITCHABLE && newbest) ||
@@ -2345,6 +2350,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
              cm->interp_filter == mbmi->interp_filter)) {
           pred_exists = 1;
           tmp_rd = best_rd;
+          vpx_memcpy(skip_txfm, x->skip_txfm, sizeof(skip_txfm));
+          vpx_memcpy(bsse, x->bsse, sizeof(bsse));
         }
       }
       restore_dst_buf(xd, orig_dst, orig_dst_stride);
@@ -2373,6 +2380,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
     model_rd_for_sb(cpi, bsize, x, xd, &tmp_rate, &tmp_dist);
     rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate, tmp_dist);
+    vpx_memcpy(skip_txfm, x->skip_txfm, sizeof(skip_txfm));
+    vpx_memcpy(bsse, x->bsse, sizeof(bsse));
   }
 
   if (cpi->sf.use_rd_breakout && ref_best_rd < INT64_MAX) {
