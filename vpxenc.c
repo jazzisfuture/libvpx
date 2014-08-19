@@ -24,7 +24,10 @@
 #include "vpx/vpx_decoder.h"
 #endif
 
+#if CONFIG_LIBYUV
 #include "third_party/libyuv/include/libyuv/scale.h"
+#endif
+
 #include "./args.h"
 #include "./ivfenc.h"
 #include "./tools_common.h"
