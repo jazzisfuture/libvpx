@@ -42,6 +42,7 @@ static void add_warning(const char *warning_string,
   struct WarningListNode *new_node = malloc(sizeof(*new_node));
   if (new_node == NULL) {
     fatal("Unable to allocate warning node.");
+    return;
   }
 
   new_node->warning_string = warning_string;
