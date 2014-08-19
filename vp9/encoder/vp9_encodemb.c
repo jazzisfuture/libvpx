@@ -24,6 +24,9 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+#include <stdio.h>
+#include <vpx_ports/x86.h>
+
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
   ENTROPY_CONTEXT tl[MAX_MB_PLANE][16];
@@ -293,12 +296,34 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   return final_eob;
 }
 
-static INLINE void fdct32x32(int rd_transform,
-                             const int16_t *src, int16_t *dst, int src_stride) {
-  if (rd_transform)
+static void fdct32x32(int rd_transform,
+                             const int16_t *src, int16_t *dst,
+                             int src_stride, int64_t psse) {
+  static unsigned int cycles = 0;
+  static int count = 0;
+  unsigned int a, b;
+
+  vp9_clear_system_state();
+
+  a = x86_readtsc();
+
+  if (rd_transform == 2 && psse < INT64_MAX) {
+    vp9_sfdct32x32(src, dst, src_stride, psse);
+  } else if (rd_transform) {
     vp9_fdct32x32_rd(src, dst, src_stride);
-  else
+  } else {
     vp9_fdct32x32(src, dst, src_stride);
+  }
+
+  b = x86_readtsc();
+
+  cycles += (b - a);
+  ++count;
+  if (count == 10000) {
+    fprintf(stderr, "cycles %d\n", cycles);
+    cycles = 0;
+    count = 0;
+  }
 }
 
 void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
@@ -319,7 +344,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
 
   switch (tx_size) {
     case TX_32X32:
-      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, INT64_MAX);
       vp9_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
                             p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                             pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -417,7 +442,8 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
 
   switch (tx_size) {
     case TX_32X32:
-      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
+                x->bsse[plane]);
       vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -613,7 +639,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vp9_subtract_block(32, 32, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, INT64_MAX);
         vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,

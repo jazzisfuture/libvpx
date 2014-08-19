@@ -777,6 +777,9 @@ specialize qw/vp9_fdct32x32 sse2 avx2/;
 add_proto qw/void vp9_fdct32x32_rd/, "const int16_t *input, int16_t *output, int stride";
 specialize qw/vp9_fdct32x32_rd sse2 avx2/;
 
+add_proto qw/void vp9_sfdct32x32/, "const int16_t *input, int16_t *output, int stride, int64_t psse";
+specialize qw/vp9_sfdct32x32 sse2/;
+
 #
 # Motion search
 #
