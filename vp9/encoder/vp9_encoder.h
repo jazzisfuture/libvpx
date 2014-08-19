@@ -37,7 +37,7 @@
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_tokenize.h"
 #include "vp9/encoder/vp9_variance.h"
-#if CONFIG_DENOISING
+#if CONFIG_VP9_TEMPORAL_DENOISING
 #include "vp9/encoder/vp9_denoiser.h"
 #endif
 
@@ -134,8 +134,12 @@ typedef struct VP9EncoderConfig {
   vpx_bit_depth_t bit_depth;
   int width;  // width of data passed to the compressor
   int height;  // height of data passed to the compressor
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
   unsigned int in_bit_depth;  // input bit depth
   double framerate;  // set to passed in framerate
+=======
+  double init_framerate;  // set to passed in framerate
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
   int64_t target_bandwidth;  // bandwidth to be used in kilobits per second
 
   int noise_sensitivity;  // pre processing blur: recommendation 0
@@ -144,6 +148,7 @@ typedef struct VP9EncoderConfig {
   unsigned int rc_max_intra_bitrate_pct;
 
   MODE mode;
+  int pass;
 
   // Key Framing Operations
   int auto_key;  // autodetect cut scenes and set the keyframes
@@ -233,8 +238,12 @@ typedef struct VP9EncoderConfig {
 #endif
 
   vp8e_tuning tuning;
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
   /* Flag to say whether we are using 16bit frame buffers */
   int use_high;
+=======
+  vp9e_tune_content content;
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
 } VP9EncoderConfig;
 
 static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
@@ -307,6 +316,7 @@ typedef struct VP9_COMP {
   int64_t first_time_stamp_ever;
 
   RATE_CONTROL rc;
+  double framerate;
 
   vp9_coeff_count coef_counts[TX_SIZES][PLANE_TYPES];
 
@@ -315,9 +325,6 @@ typedef struct VP9_COMP {
   MBGRAPH_FRAME_STATS mbgraph_stats[MAX_LAG_BUFFERS];
   int mbgraph_n_frames;             // number of frames filled in the above
   int static_mb_pct;                // % forced skip mbs by segmentation
-
-  int pass;
-
   int ref_frame_flags;
 
   SPEED_FEATURES sf;
@@ -433,7 +440,7 @@ typedef struct VP9_COMP {
   int multi_arf_enabled;
   int multi_arf_last_grp_enabled;
 
-#if CONFIG_DENOISING
+#if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
 } VP9_COMP;
@@ -464,9 +471,6 @@ void vp9_update_reference(VP9_COMP *cpi, int ref_frame_flags);
 
 int vp9_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
                            YV12_BUFFER_CONFIG *sd);
-
-int vp9_get_reference_enc(VP9_COMP *cpi, int index,
-                          YV12_BUFFER_CONFIG **fb);
 
 int vp9_set_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
                           YV12_BUFFER_CONFIG *sd);
@@ -512,9 +516,8 @@ static INLINE int frame_is_boosted(const VP9_COMP *cpi) {
 }
 
 static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
-  // TODO(JBB): make this work for alpha channel and double check we can't
-  // exceed this token count if we have a 32x32 transform crossing a boundary
-  // at a multiple of 16.
+  // TODO(JBB): double check we can't exceed this token count if we have a
+  // 32x32 transform crossing a boundary at a multiple of 16.
   // mb_rows, cols are in units of 16 pixels. We assume 3 planes all at full
   // resolution. We assume up to 1 token per pixel, and then allow
   // a head room of 4.
@@ -544,10 +547,16 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
 
 void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
+static INLINE int is_spatial_svc(const struct VP9_COMP *const cpi) {
+  return cpi->use_svc &&
+         cpi->svc.number_temporal_layers == 1 &&
+         cpi->svc.number_spatial_layers > 1;
+}
+
 static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
   return cpi->oxcf.mode != REALTIME && cpi->oxcf.lag_in_frames > 0 &&
          (cpi->oxcf.play_alternate &&
-          (!(cpi->use_svc && cpi->svc.number_temporal_layers == 1) ||
+          (!is_spatial_svc(cpi) ||
            cpi->oxcf.ss_play_alternate[cpi->svc.spatial_layer_id]));
 }
 
@@ -560,8 +569,8 @@ static INLINE void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
                                                          : 0];
 }
 
-static INLINE int get_chessboard_index(const VP9_COMMON *cm) {
-  return cm->current_video_frame % 2;
+static INLINE int get_chessboard_index(const int frame_index) {
+  return frame_index & 0x1;
 }
 
 #ifdef __cplusplus

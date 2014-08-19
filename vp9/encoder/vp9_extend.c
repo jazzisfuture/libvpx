@@ -121,6 +121,7 @@ void vp9_copy_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   const int eb_uv = eb_y >> uv_height_subsampling;
   const int er_uv = er_y >> uv_width_subsampling;
 
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
 #if CONFIG_ALPHA
   const int et_a = dst->border >> (dst->alpha_height != dst->y_height);
   const int el_a = dst->border >> (dst->alpha_width != dst->y_width);
@@ -152,6 +153,8 @@ void vp9_copy_and_extend_frame(const YV12_BUFFER_CONFIG *src,
     return;
   }
 #endif
+=======
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
   copy_and_extend_plane(src->y_buffer, src->y_stride,
                         dst->y_buffer, dst->y_stride,
                         src->y_width, src->y_height,

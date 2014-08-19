@@ -84,6 +84,8 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     ybf->y_height = aligned_height;
     ybf->y_stride = y_stride;
 
+    ybf->uv_crop_width = (width + 1) / 2;
+    ybf->uv_crop_height = (height + 1) / 2;
     ybf->uv_width = uv_width;
     ybf->uv_height = uv_height;
     ybf->uv_stride = uv_stride;
@@ -216,7 +218,7 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       if (!ybf->buffer_alloc)
         return -1;
 
-      ybf->buffer_alloc_sz = frame_size;
+      ybf->buffer_alloc_sz = (int)frame_size;
 
       // This memset is needed for fixing valgrind error from C loop filter
       // due to access uninitialized memory in frame border. It could be
@@ -245,6 +247,7 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
     ybf->uv_stride = uv_stride;
 
     ybf->border = border;
+<<<<<<< HEAD   (959563 Merge "Hdr change for profiles > 1 for intra-only frames" in)
     ybf->frame_size = frame_size;
 #if CONFIG_VP9_HIGH
     if (use_high) {
@@ -265,6 +268,10 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       ybf->flags = 0;
     }
 #else
+=======
+    ybf->frame_size = (int)frame_size;
+
+>>>>>>> BRANCH (2bfbe9 Merge "vpxenc.sh: use --test-decode=fatal for vp9")
     ybf->y_buffer = ybf->buffer_alloc + (border * y_stride) + border;
     ybf->u_buffer = ybf->buffer_alloc + yplane_size +
                     (uv_border_h * uv_stride) + uv_border_w;
