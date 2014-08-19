@@ -24,6 +24,9 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_tokenize.h"
 
+#include <stdio.h>
+#include <vpx_ports/x86.h>
+
 struct optimize_ctx {
   ENTROPY_CONTEXT ta[MAX_MB_PLANE][16];
   ENTROPY_CONTEXT tl[MAX_MB_PLANE][16];
@@ -293,12 +296,60 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   return final_eob;
 }
 
-static INLINE void fdct32x32(int rd_transform,
-                             const int16_t *src, int16_t *dst, int src_stride) {
-  if (rd_transform)
+static void fdct32x32(int rd_transform,
+                             const int16_t *src, int16_t *dst,
+                             int src_stride, int64_t *psse) {
+  static unsigned int cycles = 0;
+  static int count = 0;
+  unsigned int a, b;
+
+  vp9_clear_system_state();
+
+  a = x86_readtsc();
+
+  if (rd_transform == 2 && psse) {
+    int i, j;
+    int16_t buf[1024];
+
+    int64_t tmp_sse = (*psse) << 4;
+    int64_t coeff_sse = 0;
+
+    vp9_sfdct32x32(src, dst, src_stride, &tmp_sse);
+
+    vpx_memcpy(buf, dst, sizeof(int16_t) * 1024);
+
     vp9_fdct32x32_rd(src, dst, src_stride);
-  else
+
+    for (j = 0; j < 32; ++j)
+      for (i = 0; i < 32; ++i)
+        coeff_sse += dst[j * 32 + i] * dst[j * 32 + i];
+
+    if (*psse)
+      fprintf(stderr, "overall pix sse %d, coeff sse %d, return sse %d\n",
+              (*psse) << 4, coeff_sse, tmp_sse);
+
+    for (j = 0; j < 8; ++j) {
+      for (i = 0; i < 8; ++i) {
+        if (dst[j * 32 + i] != buf[j * 32 + i])
+          exit(0);
+      }
+    }
+
+  } else if (rd_transform) {
+    vp9_fdct32x32_rd(src, dst, src_stride);
+  } else {
     vp9_fdct32x32(src, dst, src_stride);
+  }
+
+  b = x86_readtsc();
+
+  cycles += (b - a);
+  ++count;
+  if (count == 10000) {
+    fprintf(stderr, "cycles %d\n", cycles);
+    cycles = 0;
+    count = 0;
+  }
 }
 
 void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
@@ -319,7 +370,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
 
   switch (tx_size) {
     case TX_32X32:
-      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, NULL);
       vp9_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
                             p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                             pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -417,7 +468,8 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
 
   switch (tx_size) {
     case TX_32X32:
-      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+      fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride,
+                &x->bsse[(plane << 2) + (block >> (tx_size << 1))]);
       vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                            p->quant, p->quant_shift, qcoeff, dqcoeff,
                            pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -613,7 +665,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       if (!x->skip_recode) {
         vp9_subtract_block(32, 32, src_diff, diff_stride,
                            src, src_stride, dst, dst_stride);
-        fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride, NULL);
         vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,
