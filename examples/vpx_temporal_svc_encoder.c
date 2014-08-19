@@ -462,6 +462,7 @@ int main(int argc, char **argv) {
   struct RateControlMetrics rc;
   int64_t cx_time = 0;
 
+  memset(outfile, 0, sizeof(outfile));
   exec_name = argv[0];
   // Check usage and arguments.
   if (argc < 11) {
@@ -569,6 +570,7 @@ int main(int argc, char **argv) {
     outfile[i] = vpx_video_writer_open(file_name, kContainerIVF, &info);
     if (!outfile[i])
       die("Failed to open %s for writing", file_name);
+      exit(-1);
   }
   // No spatial layers in this encoder.
   cfg.ss_number_layers = 1;
