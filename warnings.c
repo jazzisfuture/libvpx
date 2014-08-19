@@ -43,7 +43,7 @@ static void add_warning(const char *warning_string,
   if (new_node == NULL) {
     fatal("Unable to allocate warning node.");
   }
-
+  assert(new_node != NULL);
   new_node->warning_string = warning_string;
   new_node->next_warning = NULL;
 
