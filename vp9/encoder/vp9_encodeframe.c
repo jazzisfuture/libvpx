@@ -701,7 +701,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   rdmult_ratio = 1.0;  // avoid uninitialized warnings
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
-  x->use_lp32x32fdct = 1;
+  x->use_lp32x32fdct = cm->base_qindex > 30 ? 2 : 1;
 
   // TODO(JBB): Most other places in the code instead of calling the function
   // and then checking if its not the first 8x8 we put the check in the
