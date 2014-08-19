@@ -2600,7 +2600,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // unless ARNR filtering is enabled in which case we want
     // an unfiltered alternative. We allow near/nearest as well
     // because they may result in zero-zero MVs but be cheaper.
-    if (cpi->rc.is_src_frame_alt_ref && (cpi->oxcf.arnr_max_frames == 0)) {
+    if (cpi->rc.is_src_frame_alt_ref &&
+        (cpi->oxcf.arnr_max_frames == 0 || cpi->sf.alt_ref_search_fp)) {
       mode_skip_mask =
           ~((1 << THR_NEARESTA) | (1 << THR_NEARA) | (1 << THR_ZEROA));
       if (frame_mv[NEARMV][ALTREF_FRAME].as_int != 0)
@@ -2658,12 +2659,6 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           assert(0 && "Invalid Reference frame");
           break;
       }
-    }
-
-    if (cpi->sf.alt_ref_search_fp && cpi->rc.is_src_frame_alt_ref) {
-      mode_skip_mask = 0;
-      if (!(ref_frame == ALTREF_FRAME && second_ref_frame == NONE))
-        continue;
     }
 
     if (mode_skip_mask & (1 << mode_index))
