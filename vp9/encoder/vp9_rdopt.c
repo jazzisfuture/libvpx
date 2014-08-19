@@ -334,6 +334,7 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
   int shift = tx_size == TX_32X32 ? 0 : 2;
   int16_t *const coeff = BLOCK_OFFSET(p->coeff, block);
   int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+
   args->dist = vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
                                &this_sse) >> shift;
   args->sse  = this_sse >> shift;
@@ -376,6 +377,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     if (x->skip_txfm[plane] == 0) {
       // full forward transform and quantization
       vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+
       dist_block(plane, block, tx_size, args);
     } else if (x->skip_txfm[plane] == 2) {
       // compute DC coefficient
