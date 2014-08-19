@@ -177,8 +177,10 @@ int main(int argc, char **argv) {
   memset(&info, 0, sizeof(info));
 
   encoder = get_vpx_encoder_by_name(argv[1]);
-  if (!encoder)
+  if (!encoder) {
     die("Unsupported codec.");
+    exit(-1);
+  }
 
   info.codec_fourcc = encoder->fourcc;
   info.frame_width = strtol(argv[2], NULL, 0);
