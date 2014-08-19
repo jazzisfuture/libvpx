@@ -945,6 +945,20 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t  *ctx,
           continue;
         }
 
+        {
+          if (ctx->pending_cx_data == 0)
+            ctx->pending_cx_data = cx_data;
+          ctx->pending_cx_data_sz += size;
+          ctx->pending_frame_sizes[ctx->pending_frame_count++] = size;
+          ctx->pending_frame_magnitude |= size;
+          cx_data += size;
+          cx_data_sz -= size;
+
+          size = 1;
+          *cx_data++ = 0x88;
+          cx_data_sz -= 1;
+        }
+
         // Add the frame packet to the list of returned packets.
         pkt.kind = VPX_CODEC_CX_FRAME_PKT;
         pkt.data.frame.pts = ticks_to_timebase_units(timebase, dst_time_stamp);

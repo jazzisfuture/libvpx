@@ -1075,7 +1075,7 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
   vp9_wb_write_bit(wb, 0);  // show_existing_frame
   vp9_wb_write_bit(wb, cm->frame_type);
-  vp9_wb_write_bit(wb, cm->show_frame);
+  vp9_wb_write_bit(wb, 0);
   vp9_wb_write_bit(wb, cm->error_resilient_mode);
 
   if (cm->frame_type == KEY_FRAME) {
@@ -1083,7 +1083,6 @@ static void write_uncompressed_header(VP9_COMP *cpi,
     write_bitdepth_colorspace_sampling(cm, wb);
     write_frame_size(cm, wb);
   } else {
-    if (!cm->show_frame)
       vp9_wb_write_bit(wb, cm->intra_only);
 
     if (!cm->error_resilient_mode)

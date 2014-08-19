@@ -2266,6 +2266,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // reset to normal state now that we are done.
   if (!cm->show_existing_frame)
     cm->last_show_frame = cm->show_frame;
+  cm->last_show_frame = 0;
 
   if (cm->show_frame) {
     vp9_swap_mi_and_prev_mi(cm);
