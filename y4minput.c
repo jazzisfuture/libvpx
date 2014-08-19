@@ -703,6 +703,7 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
   char buffer[80];
   int  ret;
   int  i;
+  memset(buffer, 0, sizeof(buffer));
   /*Read until newline, or 80 cols, whichever happens first.*/
   for (i = 0; i < 79; i++) {
     if (_nskip > 0) {
