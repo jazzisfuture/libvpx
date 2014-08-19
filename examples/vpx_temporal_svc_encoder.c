@@ -595,8 +595,8 @@ int main(int argc, char **argv) {
   // This controls the maximum target size of the key frame.
   // For generating smaller key frames, use a smaller max_intra_size_pct
   // value, like 100 or 200.
-  max_intra_size_pct = (int) (((double)cfg.rc_buf_optimal_sz * 0.5)
-      * ((double) cfg.g_timebase.den / cfg.g_timebase.num) / 10.0);
+  // max_intra_size_pct = (int) (((double)cfg.rc_buf_optimal_sz * 0.5)
+  //    * ((double) cfg.g_timebase.den / cfg.g_timebase.num) / 10.0);
   // For low-quality key frame.
   max_intra_size_pct = 200;
   vpx_codec_control(&codec, VP8E_SET_MAX_INTRA_BITRATE_PCT, max_intra_size_pct);
