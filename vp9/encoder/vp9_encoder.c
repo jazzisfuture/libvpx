@@ -131,8 +131,12 @@ static void setup_frame(VP9_COMP *cpi) {
     if (!is_spatial_svc(cpi))
       cpi->refresh_golden_frame = 1;
     cpi->refresh_alt_ref_frame = 1;
+    vpx_memset(cpi->interp_filter_selected,
+               0, sizeof(cpi->interp_filter_selected));
   } else {
     cm->fc = cm->frame_contexts[cm->frame_context_idx];
+    vpx_memset(cpi->interp_filter_selected[0],
+               0, sizeof(cpi->interp_filter_selected[0]));
   }
 }
 
@@ -1556,17 +1560,32 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
 
       ref_cnt_fb(cm->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
+      vpx_memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
+                 cpi->interp_filter_selected[0],
+                 sizeof(cpi->interp_filter_selected[0]));
     }
 
     if (cpi->refresh_golden_frame) {
       ref_cnt_fb(cm->frame_bufs,
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
+      if (!cpi->rc.is_src_frame_alt_ref)
+        vpx_memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
+                   cpi->interp_filter_selected[0],
+                   sizeof(cpi->interp_filter_selected[0]));
+      else
+        vpx_memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
+                   cpi->interp_filter_selected[ALTREF_FRAME],
+                   sizeof(cpi->interp_filter_selected[ALTREF_FRAME]));
     }
   }
 
   if (cpi->refresh_last_frame) {
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
+    if (!cpi->rc.is_src_frame_alt_ref)
+      vpx_memcpy(cpi->interp_filter_selected[LAST_FRAME],
+                 cpi->interp_filter_selected[0],
+                 sizeof(cpi->interp_filter_selected[0]));
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
@@ -2057,6 +2076,34 @@ static void set_mv_search_params(VP9_COMP *cpi) {
   }
 }
 
+
+void setup_interp_filter_search_mask(VP9_COMP *cpi) {
+  INTERP_FILTER ifilter;
+  int ref_total[MAX_REF_FRAMES] = {0};
+  MV_REFERENCE_FRAME ref;
+  cpi->sf.interp_filter_search_mask = 0;
+  if (cpi->common.last_frame_type == KEY_FRAME ||
+      cpi->refresh_alt_ref_frame)
+    return;
+  for (ref = LAST_FRAME; ref <= ALTREF_FRAME; ++ref)
+    for (ifilter = EIGHTTAP; ifilter <= EIGHTTAP_SHARP; ++ifilter)
+      ref_total[ref] += cpi->interp_filter_selected[ref][ifilter];
+
+  for (ifilter = EIGHTTAP; ifilter <= EIGHTTAP_SHARP; ++ifilter) {
+    if ((ref_total[LAST_FRAME] &&
+        cpi->interp_filter_selected[LAST_FRAME][ifilter] == 0) &&
+        (ref_total[GOLDEN_FRAME] == 0 ||
+         cpi->interp_filter_selected[GOLDEN_FRAME][ifilter] * 100
+           < ref_total[GOLDEN_FRAME]) &&
+        (ref_total[ALTREF_FRAME] == 0 ||
+         cpi->interp_filter_selected[ALTREF_FRAME][ifilter] * 100
+           < ref_total[ALTREF_FRAME]))
+      cpi->sf.interp_filter_search_mask |= 1 << ifilter;
+  }
+  /* printf("\ncpi->sf.interp_filter_search_mask=%d\n",
+         cpi->sf.interp_filter_search_mask); */
+}
+
 static void encode_frame_to_data_rate(VP9_COMP *cpi,
                                       size_t *size,
                                       uint8_t *dest,
@@ -2094,6 +2141,11 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->lf.mode_ref_delta_update = 0;
 
   set_mv_search_params(cpi);
+
+  if(cpi->oxcf.pass == 2 &&
+     cpi->sf.adaptive_interp_filter_search)
+    setup_interp_filter_search_mask(cpi);
+
 
   // Set various flags etc to special state if it is a key frame.
   if (frame_is_intra_only(cm)) {
@@ -2755,6 +2807,18 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (oxcf->pass != 1) {
     cpi->bytes += (int)(*size);
 
+#if 0
+      {
+        FILE *f = fopen("interp_used.stt", "a");
+        int ref, flt;
+        fprintf(f, "\n %4d:", cpi->common.current_video_frame);
+        for (ref = INTRA_FRAME; ref <= ALTREF_FRAME; ref ++)
+          for (flt = EIGHTTAP; flt <= EIGHTTAP_SHARP; flt ++)
+            fprintf(f, "%4d ", cpi->interp_filter_selected[ref][flt]);
+        fclose(f);
+      }
+#endif
+
     if (cm->show_frame) {
       cpi->count++;
 
@@ -2812,6 +2876,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #endif
         }
       }
+
 
       if (cpi->b_calculate_ssimg) {
         double y, u, v, frame_all;
