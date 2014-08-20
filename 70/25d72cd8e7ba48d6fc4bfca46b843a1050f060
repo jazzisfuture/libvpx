@@ -1,0 +1,7 @@
+Code-Review+2: Tom Finegan <tomfinegan@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Dmitry Kovalev <dkovalev@google.com>
+Submitted-at: Wed, 20 Aug 2014 12:31:32 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71284
+Project: webm/libvpx
+Branch: refs/heads/master
