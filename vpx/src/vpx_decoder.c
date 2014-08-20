@@ -18,6 +18,10 @@
 
 #define SAVE_STATUS(ctx,var) (ctx?(ctx->err = var):var)
 
+static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
+  return (vpx_codec_alg_priv_t *)ctx->priv;
+}
+
 vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t      *ctx,
                                        vpx_codec_iface_t    *iface,
                                        vpx_codec_dec_cfg_t  *cfg,
@@ -97,7 +101,7 @@ vpx_codec_err_t vpx_codec_get_stream_info(vpx_codec_ctx_t         *ctx,
     si->w = 0;
     si->h = 0;
 
-    res = ctx->iface->dec.get_si(ctx->priv->alg_priv, si);
+    res = ctx->iface->dec.get_si(get_alg_priv(ctx), si);
   }
 
   return SAVE_STATUS(ctx, res);
@@ -118,8 +122,8 @@ vpx_codec_err_t vpx_codec_decode(vpx_codec_ctx_t    *ctx,
   else if (!ctx->iface || !ctx->priv)
     res = VPX_CODEC_ERROR;
   else {
-    res = ctx->iface->dec.decode(ctx->priv->alg_priv, data, data_sz,
-                                 user_priv, deadline);
+    res = ctx->iface->dec.decode(get_alg_priv(ctx), data, data_sz, user_priv,
+                                 deadline);
   }
 
   return SAVE_STATUS(ctx, res);
@@ -132,15 +136,15 @@ vpx_image_t *vpx_codec_get_frame(vpx_codec_ctx_t  *ctx,
   if (!ctx || !iter || !ctx->iface || !ctx->priv)
     img = NULL;
   else
-    img = ctx->iface->dec.get_frame(ctx->priv->alg_priv, iter);
+    img = ctx->iface->dec.get_frame(get_alg_priv(ctx), iter);
 
   return img;
 }
 
 
-vpx_codec_err_t vpx_codec_register_put_frame_cb(vpx_codec_ctx_t             *ctx,
-                                                vpx_codec_put_frame_cb_fn_t  cb,
-                                                void                      *user_priv) {
+vpx_codec_err_t vpx_codec_register_put_frame_cb(vpx_codec_ctx_t *ctx,
+                                                vpx_codec_put_frame_cb_fn_t cb,
+                                                void *user_priv) {
   vpx_codec_err_t res;
 
   if (!ctx || !cb)
@@ -158,9 +162,9 @@ vpx_codec_err_t vpx_codec_register_put_frame_cb(vpx_codec_ctx_t             *ctx
 }
 
 
-vpx_codec_err_t vpx_codec_register_put_slice_cb(vpx_codec_ctx_t             *ctx,
-                                                vpx_codec_put_slice_cb_fn_t  cb,
-                                                void                      *user_priv) {
+vpx_codec_err_t vpx_codec_register_put_slice_cb(vpx_codec_ctx_t *ctx,
+                                                vpx_codec_put_slice_cb_fn_t cb,
+                                                void *user_priv) {
   vpx_codec_err_t res;
 
   if (!ctx || !cb)
@@ -188,7 +192,7 @@ vpx_codec_err_t vpx_codec_set_frame_buffer_functions(
              !(ctx->iface->caps & VPX_CODEC_CAP_EXTERNAL_FRAME_BUFFER)) {
     res = VPX_CODEC_ERROR;
   } else {
-    res = ctx->iface->dec.set_fb_fn(ctx->priv->alg_priv, cb_get, cb_release,
+    res = ctx->iface->dec.set_fb_fn(get_alg_priv(ctx), cb_get, cb_release,
                                     cb_priv);
   }
 

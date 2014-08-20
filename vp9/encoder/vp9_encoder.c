@@ -561,7 +561,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
   if (cm->profile != oxcf->profile)
     cm->profile = oxcf->profile;
+
   cm->bit_depth = oxcf->bit_depth;
+
 
   if (cm->profile <= PROFILE_1)
     assert(cm->bit_depth == BITS_8);
