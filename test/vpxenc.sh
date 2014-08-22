@@ -59,9 +59,9 @@ vpxenc_pipe() {
 # shifted away. All remaining parameters are passed through to vpxenc.
 vpxenc() {
   local readonly encoder="$(vpx_tool_path vpxenc)"
-  local readonly input="${1}"
+  local readonly input="$1"
   shift
-  eval "${VPX_TEST_PREFIX}" "${encoder}" "$input" \
+  eval "${VPX_TEST_PREFIX}" "${encoder}" "${input}" \
     --test-decode=fatal \
     "$@" ${devnull}
 }
@@ -94,6 +94,25 @@ vpxenc_vp8_webm() {
       --limit="${TEST_FRAMES}" \
       --output="${output}" \
       "${YUV_RAW_INPUT}"
+
+    if [ ! -e "${output}" ]; then
+      elog "Output file does not exist."
+      return 1
+    fi
+  fi
+}
+
+vpxenc_vp8_webm_rt() {
+  if [ "$(vpxenc_can_encode_vp8)" = "yes" ] && \
+     [ "$(webm_io_available)" = "yes" ]; then
+    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp8_rt.webm"
+    vpxenc "${YUV_RAW_INPUT}" \
+      --codec=vp8 \
+      --width="${YUV_RAW_INPUT_WIDTH}" \
+      --height="${YUV_RAW_INPUT_HEIGHT}" \
+      --limit="${TEST_FRAMES}" \
+      --output="${output}" \
+      --rt
 
     if [ ! -e "${output}" ]; then
       elog "Output file does not exist."
@@ -199,6 +218,32 @@ vpxenc_vp9_webm() {
   fi
 }
 
+vpxenc_vp9_webm_rt() {
+  if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
+     [ "$(webm_io_available)" = "yes" ]; then
+    local readonly output="${VPX_TEST_OUTPUT_DIR}/vp9_rt.webm"
+    vpxenc "${YUV_RAW_INPUT}" \
+      --codec=vp9 \
+      --width="${YUV_RAW_INPUT_WIDTH}" \
+      --height="${YUV_RAW_INPUT_HEIGHT}" \
+      --limit="${TEST_FRAMES}" \
+      --output="${output}" \
+      --rt \
+      --min-q=2 \
+      --max-q=56 \
+      --cpu-used=6 \
+      --error-resilient=1 \
+      --end-usage=cbr \
+      --passes=1 \
+      --lag-in-frames=0
+
+    if [ ! -e "${output}" ]; then
+      elog "Output file does not exist."
+      return 1
+    fi
+  fi
+}
+
 vpxenc_vp9_webm_2pass() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ] && \
      [ "$(webm_io_available)" = "yes" ]; then
@@ -207,7 +252,6 @@ vpxenc_vp9_webm_2pass() {
       --width="${YUV_RAW_INPUT_WIDTH}" \
       --height="${YUV_RAW_INPUT_HEIGHT}" \
       --limit="${TEST_FRAMES}" \
-      --test-decode=fatal \
       --output="${output}" \
       --passes=2 \
       "${YUV_RAW_INPUT}"
@@ -270,7 +314,6 @@ vpxenc_vp9_webm_lag10_frames20() {
       --limit="${lag_total_frames}" \
       --lag-in-frames="${lag_frames}" \
       --output="${output}" \
-      --test-decode=fatal \
       --passes=2 \
       --auto-alt-ref=1 \
       "${YUV_RAW_INPUT}"
@@ -284,11 +327,13 @@ vpxenc_vp9_webm_lag10_frames20() {
 
 vpxenc_tests="vpxenc_vp8_ivf
               vpxenc_vp8_webm
+              vpxenc_vp8_webm_rt
               vpxenc_vp8_webm_2pass
               vpxenc_vp8_webm_lag10_frames20
               vpxenc_vp8_ivf_piped_input
               vpxenc_vp9_ivf
               vpxenc_vp9_webm
+              vpxenc_vp9_webm_rt
               vpxenc_vp9_webm_2pass
               vpxenc_vp9_ivf_lossless
               vpxenc_vp9_ivf_minq0_maxq0
