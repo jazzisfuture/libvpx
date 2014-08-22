@@ -124,6 +124,8 @@ else
 STACKREALIGN=
 endif
 
+VP9_PREFIX=vp9/
+$(BUILD_PFX)$(VP9_PREFIX)%.c.o: CFLAGS += -Wextra -Werror
 $(BUILD_PFX)%_mmx.c.d: CFLAGS += -mmmx
 $(BUILD_PFX)%_mmx.c.o: CFLAGS += -mmmx
 $(BUILD_PFX)%_sse2.c.d: CFLAGS += -msse2 $(STACKREALIGN)
