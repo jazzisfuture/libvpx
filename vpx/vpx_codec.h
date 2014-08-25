@@ -204,7 +204,7 @@ extern "C" {
     vpx_codec_flags_t        init_flags;  /**< Flags passed at init time */
     union {
       struct vpx_codec_dec_cfg  *dec;   /**< Decoder Configuration Pointer */
-      struct vpx_codec_enc_cfg  *enc;   /**< Encoder Configuration Pointer */
+      const struct vpx_codec_enc_cfg  *enc;   /**< Encoder Configuration Pointer */
       void                      *raw;
     }                        config;      /**< Configuration pointer aliasing union */
     vpx_codec_priv_t        *priv;        /**< Algorithm private storage */
