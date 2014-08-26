@@ -1819,8 +1819,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
     for (i = LAST_FRAME; i <= ALTREF_FRAME && cm->show_frame; ++i) {
       if ((x->pred_mv_sad[ref] >> 3) > x->pred_mv_sad[i]) {
-        x->pred_mv[ref].row = 0;
-        x->pred_mv[ref].col = 0;
+        zero_mv(&x->pred_mv[ref]);
         tmp_mv->as_int = INVALID_MV;
 
         if (scaled_ref_frame) {

@@ -430,7 +430,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int sum_in_vectors = 0;
   MV lastmv = {0, 0};
   TWO_PASS *twopass = &cpi->twopass;
-  const MV zero_mv = {0, 0};
+  const MV zero = {0, 0};
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
   LAYER_CONTEXT *const lc = is_spatial_svc(cpi) ?
         &cpi->svc.layer_context[cpi->svc.spatial_layer_id] : 0;
@@ -624,7 +624,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
           // 0,0 based search as well.
           if (!is_zero_mv(&best_ref_mv)) {
             tmp_err = INT_MAX;
-            first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv, &tmp_err);
+            first_pass_motion_search(cpi, x, &zero, &tmp_mv, &tmp_err);
             if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
               vp9_clear_system_state();
               tmp_err = (int)(tmp_err * error_weight);
@@ -645,7 +645,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
             gf_motion_error = get_prediction_error(bsize, &x->plane[0].src,
                                                    &xd->plane[0].pre[0]);
 
-            first_pass_motion_search(cpi, x, &zero_mv, &tmp_mv,
+            first_pass_motion_search(cpi, x, &zero, &tmp_mv,
                                      &gf_motion_error);
             if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
               vp9_clear_system_state();
@@ -676,8 +676,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
         }
 
         // Start by assuming that intra mode is best.
-        best_ref_mv.row = 0;
-        best_ref_mv.col = 0;
+        zero_mv(&best_ref_mv);
 
 #if CONFIG_FP_MB_STATS
         if (cpi->use_fp_mb_stats) {

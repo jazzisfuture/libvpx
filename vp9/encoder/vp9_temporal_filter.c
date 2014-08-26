@@ -250,8 +250,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
         if (cpi->frames[frame] == NULL)
           continue;
 
-        mbd->mi[0]->bmi[0].as_mv[0].as_mv.row = 0;
-        mbd->mi[0]->bmi[0].as_mv[0].as_mv.col = 0;
+        zero_mv(&mbd->mi[0]->bmi[0].as_mv[0].as_mv);
 
         if (frame == alt_ref_index) {
           filter_weight = 2;

@@ -102,8 +102,8 @@ static int mvsad_err_cost(const MACROBLOCK *x, const MV *mv, const MV *ref,
 void vp9_init_dsmotion_compensation(search_site_config *cfg, int stride) {
   int len, ss_count = 1;
 
-  cfg->ss[0].mv.col = cfg->ss[0].mv.row = 0;
   cfg->ss[0].offset = 0;
+  zero_mv(&cfg->ss[0].mv);
 
   for (len = MAX_FIRST_STEP; len > 0; len /= 2) {
     // Generate offsets for 4 search sites per step.
@@ -123,8 +123,8 @@ void vp9_init_dsmotion_compensation(search_site_config *cfg, int stride) {
 void vp9_init3smotion_compensation(search_site_config *cfg, int stride) {
   int len, ss_count = 1;
 
-  cfg->ss[0].mv.col = cfg->ss[0].mv.row = 0;
   cfg->ss[0].offset = 0;
+  zero_mv(&cfg->ss[0].mv);
 
   for (len = MAX_FIRST_STEP; len > 0; len /= 2) {
     // Generate offsets for 8 search sites per step.

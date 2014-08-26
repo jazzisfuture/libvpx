@@ -48,6 +48,10 @@ static INLINE void clamp_mv(MV *mv, int min_col, int max_col,
   mv->row = clamp(mv->row, min_row, max_row);
 }
 
+static INLINE void zero_mv(MV *mv) {
+  *((uint32_t *)mv) = 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
