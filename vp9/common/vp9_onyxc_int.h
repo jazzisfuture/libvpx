@@ -84,6 +84,10 @@ typedef struct VP9Common {
   int subsampling_x;
   int subsampling_y;
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  int use_high;  // Marks if we need to use 16bit frame buffers
+#endif
+
   YV12_BUFFER_CONFIG *frame_to_show;
 
   RefCntBuffer frame_bufs[FRAME_BUFFERS];
@@ -180,7 +184,7 @@ typedef struct VP9Common {
   BITSTREAM_PROFILE profile;
 
   // BITS_8 in versions 0 and 1, BITS_10 or BITS_12 in version 2
-  BIT_DEPTH bit_depth;
+  vpx_bit_depth_t bit_depth;
 
 #if CONFIG_VP9_POSTPROC
   struct postproc_state  postproc_state;
