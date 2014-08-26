@@ -171,14 +171,48 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
   int64_t dist_sum = 0;
   const int ref = xd->mi[0]->mbmi.ref_frame[0];
   unsigned int sse;
+  unsigned int var = 0;
   const int shift = 8;
+  struct macroblock_plane *p = &x->plane[0];
+  struct macroblockd_plane *pd = &xd->plane[0];
+  BLOCK_SIZE bs = (bsize == BLOCK_64X64) ? BLOCK_32X32 : bsize;
+  int rate;
+  int64_t dist;
 
-  for (i = 0; i < MAX_MB_PLANE; ++i) {
-    struct macroblock_plane *const p = &x->plane[i];
-    struct macroblockd_plane *const pd = &xd->plane[i];
-    const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+  x->bsse[0] = 0;
+  x->pred_sse[ref] = 0;
 
-    const unsigned int var = cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
+  for (i = 0; i < ((bsize == BLOCK_64X64) ? 4 : 1); ++i) {
+    int idy = (i >> 1) & 0x01;
+    int idx = i & 0x01;
+    var += cpi->fn_ptr[bs].vf(p->src.buf + (idy * p->src.stride << 5) + (idx << 5),
+                              p->src.stride,
+                              pd->dst.buf + (idy * pd->dst.stride << 5) + (idx << 5),
+                              pd->dst.stride, &sse);
+
+    x->bsse[0] += sse;
+    x->pred_sse[ref] += sse;
+
+    vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
+                                 pd->dequant[1] >> 3, &rate, &dist);
+    rate_sum += rate;
+    dist_sum += dist;
+  }
+
+  if (!x->select_tx_size) {
+    if (x->bsse[0] < p->quant_thred[0] >> shift)
+      x->skip_txfm[0] = 1;
+    else if (var < p->quant_thred[1] >> shift)
+      x->skip_txfm[0] = 2;
+    else
+      x->skip_txfm[0] = 0;
+  }
+
+  for (i = 1; i < MAX_MB_PLANE; ++i) {
+    p = &x->plane[i];
+    pd = &xd->plane[i];
+    bs = get_plane_block_size(bsize, pd);
+    var = cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
                                                 pd->dst.buf, pd->dst.stride,
                                                 &sse);
 
@@ -210,8 +244,6 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
       rate_sum += rate;
       dist_sum += dist;
     } else {
-      int rate;
-      int64_t dist;
       vp9_model_rd_from_var_lapndz(sse, 1 << num_pels_log2_lookup[bs],
                                    pd->dequant[1] >> 3, &rate, &dist);
       rate_sum += rate;
