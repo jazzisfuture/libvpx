@@ -64,6 +64,16 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
   return num_values > 0 ? get_msb(num_values) + 1 : 0;
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+#if ARCH_X86
+#define CONVERT_TO_SHORTPTR(x) ((uint16_t*)(((uint32_t)x) << 1))
+#define CONVERT_TO_BYTEPTR(x) ((uint8_t*)(((uint32_t)x) >> 1 ))
+#else
+#define CONVERT_TO_SHORTPTR(x) ((uint16_t*)(((uint64_t)x) << 1))
+#define CONVERT_TO_BYTEPTR(x) ((uint8_t*)(((uint64_t)x) >> 1 ))
+#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 #if CONFIG_DEBUG
 #define CHECK_MEM_ERROR(cm, lval, expr) do { \
   lval = (expr); \
