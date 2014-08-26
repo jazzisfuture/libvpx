@@ -441,6 +441,9 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
 
   cpi->lookahead = vp9_lookahead_init(oxcf->width, oxcf->height,
                                       cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                      cm->use_highbitdepth,
+#endif
                                       oxcf->lag_in_frames);
   if (!cpi->lookahead)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
@@ -449,6 +452,9 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
   if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
                                oxcf->width, oxcf->height,
                                cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate altref buffer");
@@ -466,6 +472,9 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
   if (vp9_realloc_frame_buffer(&cpi->last_frame_uf,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate last frame buffer");
@@ -473,6 +482,9 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
   if (vp9_realloc_frame_buffer(&cpi->scaled_source,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled source buffer");
@@ -480,6 +492,9 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
   if (vp9_realloc_frame_buffer(&cpi->scaled_last_source,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
@@ -512,6 +527,9 @@ static void update_frame_size(VP9_COMP *cpi) {
     if (vp9_realloc_frame_buffer(&cpi->alt_ref_buffer,
                                  cm->width, cm->height,
                                  cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                 cm->use_highbitdepth,
+#endif
                                  VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to reallocate alt_ref_buffer");
@@ -598,9 +616,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cm->bit_depth = oxcf->bit_depth;
 
   if (cm->profile <= PROFILE_1)
-    assert(cm->bit_depth == BITS_8);
+    assert(cm->bit_depth == VPX_BITS_8);
   else
-    assert(cm->bit_depth > BITS_8);
+    assert(cm->bit_depth > VPX_BITS_8);
 
   cpi->oxcf = *oxcf;
 
@@ -675,6 +693,9 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   if (cpi->oxcf.noise_sensitivity > 0) {
     vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
                        cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                       cm->use_highbitdepth,
+#endif
                        VP9_ENC_BORDER_IN_PIXELS);
   }
 #endif
@@ -1621,6 +1642,9 @@ void vp9_scale_references(VP9_COMP *cpi) {
       vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
                                cm->width, cm->height,
                                cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
       scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
       cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
@@ -2703,6 +2727,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   vp9_realloc_frame_buffer(get_frame_new_buffer(cm),
                            cm->width, cm->height,
                            cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                           cm->use_highbitdepth,
+#endif
                            VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
 
   alloc_util_frame_buffers(cpi);
