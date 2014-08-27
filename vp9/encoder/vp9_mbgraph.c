@@ -45,8 +45,8 @@ static unsigned int do_16x16_motion_iteration(VP9_COMP *cpi,
   ref_full.row = ref_mv->row >> 3;
 
   /*cpi->sf.search_method == HEX*/
-  vp9_hex_search(x, &ref_full, step_param, x->errorperbit, 0, &v_fn_ptr, 0,
-                 ref_mv, dst_mv);
+  vp9_hex_search(x, &ref_full, step_param, x->errorperbit, 0, NULL,
+                 &v_fn_ptr, 0, ref_mv, dst_mv);
 
   // Try sub-pixel MC
   // if (bestsme > error_thresh && bestsme < INT_MAX)
@@ -55,8 +55,8 @@ static unsigned int do_16x16_motion_iteration(VP9_COMP *cpi,
     unsigned int sse;
     cpi->find_fractional_mv_step(
         x, dst_mv, ref_mv, cpi->common.allow_high_precision_mv, x->errorperbit,
-        &v_fn_ptr, 0, mv_sf->subpel_iters_per_step, NULL, NULL, &distortion,
-        &sse, NULL, 0, 0);
+        &v_fn_ptr, 0, mv_sf->subpel_iters_per_step, NULL, NULL, NULL,
+        &distortion, &sse, NULL, 0, 0);
   }
 
   xd->mi[0]->mbmi.mode = NEWMV;

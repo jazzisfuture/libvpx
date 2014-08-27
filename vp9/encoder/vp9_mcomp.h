@@ -79,6 +79,7 @@ typedef int (integer_mv_pattern_search_fn) (
     int search_param,
     int error_per_bit,
     int do_init_search,
+    int *sad_list,
     const vp9_variance_fn_ptr_t *vf,
     int use_mvcost,
     const MV *center_mv,
@@ -98,6 +99,7 @@ typedef int (fractional_mv_step_fp) (
     const vp9_variance_fn_ptr_t *vfp,
     int forced_stop,  // 0 - full, 1 - qtr only, 2 - half only
     int iters_per_step,
+    int *sad_list,
     int *mvjcost, int *mvcost[2],
     int *distortion, unsigned int *sse1,
     const uint8_t *second_pred,
@@ -136,6 +138,7 @@ struct VP9_COMP;
 int vp9_full_pixel_search(struct VP9_COMP *cpi, MACROBLOCK *x,
                           BLOCK_SIZE bsize, MV *mvp_full,
                           int step_param, int error_per_bit,
+                          int *sad_list,
                           const MV *ref_mv, MV *tmp_mv,
                           int var_max, int rd);
 #ifdef __cplusplus

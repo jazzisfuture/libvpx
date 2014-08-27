@@ -1404,7 +1404,8 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
           vp9_set_mv_search_range(x, &bsi->ref_mv[0]->as_mv);
 
           bestsme = vp9_full_pixel_search(cpi, x, bsize, &mvp_full, step_param,
-                                          sadpb, &bsi->ref_mv[0]->as_mv, new_mv,
+                                          sadpb, NULL,
+                                          &bsi->ref_mv[0]->as_mv, new_mv,
                                           INT_MAX, 1);
 
           // Should we do a full search (best quality only)
@@ -1436,6 +1437,7 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                          x->errorperbit, &cpi->fn_ptr[bsize],
                                          cpi->sf.mv.subpel_force_stop,
                                          cpi->sf.mv.subpel_iters_per_step,
+                                         NULL,
                                          x->nmvjointcost, x->mvcost,
                                          &distortion,
                                          &x->pred_sse[mbmi->ref_frame[0]],
@@ -1839,7 +1841,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   mvp_full.row >>= 3;
 
   bestsme = vp9_full_pixel_search(cpi, x, bsize, &mvp_full, step_param, sadpb,
-                                  &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
+                                  NULL, &ref_mv, &tmp_mv->as_mv, INT_MAX, 1);
 
   x->mv_col_min = tmp_col_min;
   x->mv_col_max = tmp_col_max;
@@ -1854,6 +1856,7 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  &cpi->fn_ptr[bsize],
                                  cpi->sf.mv.subpel_force_stop,
                                  cpi->sf.mv.subpel_iters_per_step,
+                                 NULL,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref], NULL, 0, 0);
   }
@@ -1978,6 +1981,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
           x->errorperbit,
           &cpi->fn_ptr[bsize],
           0, cpi->sf.mv.subpel_iters_per_step,
+          NULL,
           x->nmvjointcost, x->mvcost,
           &dis, &sse, second_pred,
           pw, ph);

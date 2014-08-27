@@ -167,7 +167,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
   step_param = MIN(step_param, MAX_MVSEARCH_STEPS - 2);
 
   // Ignore mv costing by sending NULL pointer instead of cost arrays
-  vp9_hex_search(x, &best_ref_mv1_full, step_param, sadpb, 1,
+  vp9_hex_search(x, &best_ref_mv1_full, step_param, sadpb, 1, NULL,
                  &cpi->fn_ptr[BLOCK_16X16], 0, &best_ref_mv1, ref_mv);
 
   // Ignore mv costing by sending NULL pointer instead of cost array
@@ -177,7 +177,7 @@ static int temporal_filter_find_matching_mb_c(VP9_COMP *cpi,
                                          x->errorperbit,
                                          &cpi->fn_ptr[BLOCK_16X16],
                                          0, mv_sf->subpel_iters_per_step,
-                                         NULL, NULL,
+                                         NULL, NULL, NULL,
                                          &distortion, &sse, NULL, 0, 0);
 
   // Restore input state
