@@ -398,14 +398,17 @@ static INLINE int is_mv_in(const MACROBLOCK *x, const MV *mv) {
 // Each scale can have a different number of candidates and shape of
 // candidates as indicated in the num_candidates and candidates arrays
 // passed into this function
+//
 static int vp9_pattern_search(const MACROBLOCK *x,
                               MV *ref_mv,
                               int search_param,
                               int sad_per_bit,
-                              int do_init_search, int do_refine,
+                              int do_init_search,
+                              int *sad_list,
                               const vp9_variance_fn_ptr_t *vfp,
                               int use_mvcost,
-                              const MV *center_mv, MV *best_mv,
+                              const MV *center_mv,
+                              MV *best_mv,
                               const int num_candidates[MAX_PATTERN_SCALES],
                               const MV candidates[MAX_PATTERN_SCALES]
                                                  [MAX_PATTERN_CANDIDATES]) {
@@ -413,7 +416,7 @@ static int vp9_pattern_search(const MACROBLOCK *x,
   static const int search_param_to_steps[MAX_MVSEARCH_STEPS] = {
     10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
   };
-  int i, j, s, t;
+  int i, s, t;
   const struct buf_2d *const what = &x->plane[0].src;
   const struct buf_2d *const in_what = &xd->plane[0].pre[0];
   int br, bc;
@@ -552,47 +555,37 @@ static int vp9_pattern_search(const MACROBLOCK *x,
     } while (s--);
   }
 
-  // Check 4 1-away neighbors if do_refine is true.
-  // For most well-designed schemes do_refine will not be necessary.
-  if (do_refine) {
-    static const MV neighbors[4] = {{0, -1}, { -1, 0}, {1, 0}, {0, 1}};
-
-    for (j = 0; j < 16; j++) {
-      int best_site = -1;
-      if (check_bounds(x, br, bc, 1)) {
-        for (i = 0; i < 4; i++) {
-          const MV this_mv = {br + neighbors[i].row,
-                              bc + neighbors[i].col};
-          thissad = vfp->sdf(what->buf, what->stride,
-                             get_buf_from_mv(in_what, &this_mv),
-                             in_what->stride);
-          CHECK_BETTER
-        }
-      } else {
-        for (i = 0; i < 4; i++) {
-          const MV this_mv = {br + neighbors[i].row,
-                              bc + neighbors[i].col};
-          if (!is_mv_in(x, &this_mv))
-            continue;
-          thissad = vfp->sdf(what->buf, what->stride,
-                             get_buf_from_mv(in_what, &this_mv),
-                             in_what->stride);
-          CHECK_BETTER
-        }
+  // Returns the one-away integer pel sad values around the best as follows:
+  // sad_list[0]: sad at delta {0, -1} (left)   from the best integer pel
+  // sad_list[1]: sad at delta {-1, 0} (top)    from the best integer pel
+  // sad_list[2]: sad at delta { 0, 1} (right)  from the best integer pel
+  // sad_list[3]: sad at delta { 1, 0} (bottom) from the best integer pel
+  if (sad_list) {
+    static const MV neighbors[4] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+    sad_list[0] = bestsad;
+    if (check_bounds(x, br, bc, 1)) {
+      for (i = 0; i < 4; i++) {
+        const MV this_mv = {br + neighbors[i].row,
+                            bc + neighbors[i].col};
+        sad_list[i] = vfp->sdf(what->buf, what->stride,
+                               get_buf_from_mv(in_what, &this_mv),
+                               in_what->stride);
       }
-
-      if (best_site == -1) {
-        break;
-      } else {
-        br += neighbors[best_site].row;
-        bc += neighbors[best_site].col;
+    } else {
+      for (i = 0; i < 4; i++) {
+        const MV this_mv = {br + neighbors[i].row,
+                            bc + neighbors[i].col};
+        if (!is_mv_in(x, &this_mv))
+          sad_list[i] = INT_MAX;
+        else
+          sad_list[i] = vfp->sdf(what->buf, what->stride,
+                                 get_buf_from_mv(in_what, &this_mv),
+                                 in_what->stride);
       }
     }
   }
-
   best_mv->row = br;
   best_mv->col = bc;
-
   return bestsad;
 }
 
