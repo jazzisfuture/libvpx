@@ -415,7 +415,7 @@ static vpx_codec_err_t set_encoder_config(
 
   oxcf->ss_number_layers = cfg->ss_number_layers;
 
-  if (oxcf->ss_number_layers > 1) {
+  if (oxcf->ss_number_layers >= 1) {
     int i;
     for (i = 0; i < VPX_SS_MAX_LAYERS; ++i) {
       oxcf->ss_target_bitrate[i] =  1000 * cfg->ss_target_bitrate[i];
