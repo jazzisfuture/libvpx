@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <emmintrin.h>  // SSE2
+
 #include "./vpx_config.h"
 
 #include "vp9/encoder/vp9_variance.h"
@@ -17,10 +19,57 @@ typedef unsigned int (*variance_fn_t) (const unsigned char *src, int src_stride,
                                        const unsigned char *ref, int ref_stride,
                                        unsigned int *sse, int *sum);
 
-unsigned int vp9_get4x4var_mmx(const unsigned char *src, int src_stride,
-                               const unsigned char *ref, int ref_stride,
-                               unsigned int *sse, int *sum);
+#define READ64(p, stride, i) \
+  (((uint64_t)*((const uint32_t *)(p + (i + 1) * stride))) << 32) | \
+              *((const uint32_t *)(p + i * stride))
 
+unsigned int vp9_get4x4var_sse2(const uint8_t *src, int src_stride,
+                                const uint8_t *ref, int ref_stride,
+                                unsigned int *sse, int *sum) {
+  const __m128i zero = _mm_setzero_si128();
+
+  const uint64_t tmp0 = READ64(src, src_stride, 0);
+  const uint64_t tmp1 = READ64(src, src_stride, 2);
+  const uint64_t tmp2 = READ64(ref, ref_stride, 0);
+  const uint64_t tmp3 = READ64(ref, ref_stride, 2);
+
+  __m128i src0 = _mm_loadl_epi64((__m128i *)&tmp0);
+  __m128i src1 = _mm_loadl_epi64((__m128i *)&tmp1);
+  __m128i ref0 = _mm_loadl_epi64((__m128i *)&tmp2);
+  __m128i ref1 = _mm_loadl_epi64((__m128i *)&tmp3);
+
+  __m128i diff0, diff1, vsum;
+
+  src0 = _mm_unpacklo_epi8(src0, zero);
+  src1 = _mm_unpacklo_epi8(src1, zero);
+  ref0 = _mm_unpacklo_epi8(ref0, zero);
+  ref1 = _mm_unpacklo_epi8(ref1, zero);
+
+  diff0 = _mm_sub_epi16(src0, ref0);
+  diff1 = _mm_sub_epi16(src1, ref1);
+
+  // sum
+  vsum = _mm_add_epi16(diff0, diff1);
+  vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 8));
+  vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 4));
+  vsum = _mm_add_epi16(vsum, _mm_srli_si128(vsum, 2));
+  *sum = (int16_t)_mm_extract_epi16(vsum, 0);
+
+  // sse
+  diff0 = _mm_mullo_epi16(diff0, diff0);
+  diff1 = _mm_mullo_epi16(diff1, diff1);
+
+  vsum = _mm_unpacklo_epi16(diff0, zero);
+  vsum = _mm_add_epi32(vsum, _mm_unpackhi_epi16(diff0, zero));
+  vsum = _mm_add_epi32(vsum, _mm_unpacklo_epi16(diff1, zero));
+  vsum = _mm_add_epi32(vsum, _mm_unpackhi_epi16(diff1, zero));
+
+  vsum = _mm_add_epi32(vsum, _mm_srli_si128(vsum, 8));
+  vsum = _mm_add_epi32(vsum, _mm_srli_si128(vsum, 4));
+  *sse = _mm_cvtsi128_si32(vsum);
+
+  return 0;
+}
 
 unsigned int vp9_get8x8var_sse2(const unsigned char *src, int src_stride,
                                 const unsigned char *ref, int ref_stride,
@@ -55,8 +104,7 @@ unsigned int vp9_variance4x4_sse2(const unsigned char *src, int src_stride,
                                   const unsigned char *ref, int ref_stride,
                                   unsigned int *sse) {
   int sum;
-  variance_sse2(src, src_stride, ref, ref_stride, 4, 4,
-                sse, &sum, vp9_get4x4var_mmx, 4);
+  vp9_get4x4var_sse2(src, src_stride, ref, ref_stride, sse, &sum);
   return *sse - (((unsigned int)sum * sum) >> 4);
 }
 
@@ -65,7 +113,7 @@ unsigned int vp9_variance8x4_sse2(const uint8_t *src, int src_stride,
                                   unsigned int *sse) {
   int sum;
   variance_sse2(src, src_stride, ref, ref_stride, 8, 4,
-                sse, &sum, vp9_get4x4var_mmx, 4);
+                sse, &sum, vp9_get4x4var_sse2, 4);
   return *sse - (((unsigned int)sum * sum) >> 5);
 }
 
@@ -74,7 +122,7 @@ unsigned int vp9_variance4x8_sse2(const uint8_t *src, int src_stride,
                                   unsigned int *sse) {
   int sum;
   variance_sse2(src, src_stride, ref, ref_stride, 4, 8,
-                sse, &sum, vp9_get4x4var_mmx, 4);
+                sse, &sum, vp9_get4x4var_sse2, 4);
   return *sse - (((unsigned int)sum * sum) >> 5);
 }
 
