@@ -33,7 +33,7 @@ typedef struct {
   int is_coded;
   int num_4x4_blk;
   int skip;
-  int skip_txfm[MAX_MB_PLANE];
+  int skip_txfm[MAX_MB_PLANE << 8];
   int best_mode_index;
   int hybrid_pred_diff;
   int comp_pred_diff;
