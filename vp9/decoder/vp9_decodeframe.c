@@ -1563,7 +1563,7 @@ void vp9_decode_frame(VP9Decoder *pbi,
     if (!xd->corrupted) {
       // If multiple threads are used to decode tiles, then we use those threads
       // to do parallel loopfiltering.
-      vp9_loop_filter_frame_mt(&pbi->lf_row_sync, new_fb, pbi, cm,
+      vp9_loop_filter_frame_mt(&pbi->lf_row_sync, new_fb, pbi->mb.plane, pbi, cm,
                                cm->lf.filter_level, 0);
     }
   } else {
