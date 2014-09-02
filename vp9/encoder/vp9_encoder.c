@@ -327,7 +327,8 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
       seg->update_map = 1;
       seg->update_data = 1;
 
-      qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 0.875);
+      qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 0.875,
+                                    cm->bit_depth);
       vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta - 2);
       vp9_set_segdata(seg, 1, SEG_LVL_ALT_LF, -2);
 
@@ -348,7 +349,8 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
         seg->update_data = 1;
         seg->abs_delta = SEGMENT_DELTADATA;
 
-        qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 1.125);
+        qi_delta = vp9_compute_qdelta(rc, rc->avg_q, rc->avg_q * 1.125,
+                                      cm->bit_depth);
         vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qi_delta + 2);
         vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
 
@@ -568,6 +570,9 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
 
   cm->profile = oxcf->profile;
   cm->bit_depth = oxcf->bit_depth;
+#if CONFIG_VP9_HIGHBITDEPTH
+  cm->use_highbitdepth = oxcf->use_highbitdepth;
+#endif
   cm->color_space = UNKNOWN;
 
   cm->width = oxcf->width;
@@ -623,6 +628,11 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     assert(cm->bit_depth > VPX_BITS_8);
 
   cpi->oxcf = *oxcf;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cpi->oxcf.use_highbitdepth) {
+    cpi->mb.e_mbd.bps = (int)cm->bit_depth;
+  }
+#endif
 
   rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
 
@@ -2752,7 +2762,16 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (oxcf->pass == 1 &&
       (!cpi->use_svc || is_spatial_svc(cpi))) {
     const int lossless = is_lossless_requested(oxcf);
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (cpi->oxcf.use_highbitdepth)
+      cpi->mb.fwd_txm4x4 = lossless ? vp9_high_fwht4x4 : vp9_high_fdct4x4;
+    else
+      cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
+    cpi->mb.high_itxm_add = lossless ? vp9_high_iwht4x4_add :
+                                       vp9_high_idct4x4_add;
+#else
     cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
+#endif
     cpi->mb.itxm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
     vp9_first_pass(cpi, source);
   } else if (oxcf->pass == 2 &&
