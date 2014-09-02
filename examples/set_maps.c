@@ -100,13 +100,30 @@ static void set_active_map(const vpx_codec_enc_cfg_t *cfg,
                            vpx_codec_ctx_t *codec) {
   unsigned int i;
   vpx_active_map_t map = {0, 0, 0};
+  uint8_t active_map[9 * 13] = {
+    1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
+    0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1,
+    0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1,
+    1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+  };
 
   map.rows = (cfg->g_h + 15) / 16;
   map.cols = (cfg->g_w + 15) / 16;
 
   map.active_map = (uint8_t *)malloc(map.rows * map.cols);
-  for (i = 0; i < map.rows * map.cols; ++i)
-    map.active_map[i] = i % 2;
+  assert(map.cols >= 13);
+  for (i = 0; i < map.rows; ++i) {
+    memset(&map.active_map[i * map.cols], 1, map.cols);
+    if (i < 9) {
+      memcpy(&map.active_map[i * map.cols], &active_map[i * 13], 13);
+    }
+  }
+
 
   if (vpx_codec_control(codec, VP8E_SET_ACTIVEMAP, &map))
     die_codec(codec, "Failed to set active map");
@@ -168,7 +185,7 @@ int main(int argc, char **argv) {
   VpxVideoInfo info;
   VpxVideoWriter *writer = NULL;
   const VpxInterface *encoder = NULL;
-  const int fps = 2;        // TODO(dkovalev) add command line argument
+  const int fps = 30;        // TODO(dkovalev) add command line argument
   const double bits_per_pixel_per_frame = 0.067;
 
   exec_name = argv[0];
@@ -228,12 +245,10 @@ int main(int argc, char **argv) {
   while (vpx_img_read(&raw, infile)) {
     ++frame_count;
 
-    if (frame_count == 22 && encoder->fourcc == VP8_FOURCC) {
-      set_roi_map(&cfg, &codec);
-    } else if (frame_count == 33) {
+    if (frame_count == 2) {
       set_active_map(&cfg, &codec);
-    } else if (frame_count == 44) {
-      unset_active_map(&cfg, &codec);
+    } else if (frame_count > 60) {
+      break;
     }
 
     encode_frame(&codec, &raw, frame_count, writer);
