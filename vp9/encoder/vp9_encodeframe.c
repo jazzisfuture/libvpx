@@ -2606,10 +2606,17 @@ static MV_REFERENCE_FRAME get_frame_type(const VP9_COMP *cpi) {
 static TX_MODE select_tx_mode(const VP9_COMP *cpi) {
   if (cpi->mb.e_mbd.lossless)
     return ONLY_4X4;
-  if (cpi->sf.tx_size_search_method == USE_LARGESTALL)
-    return ALLOW_32X32;
-  else if (cpi->sf.tx_size_search_method == USE_FULL_RD||
-           cpi->sf.tx_size_search_method == USE_TX_8X8)
+  if (cpi->sf.tx_size_search_method == USE_LARGESTALL) {
+    if (cpi->sf.max_allowed_tx == TX_32X32)
+      return ALLOW_32X32;
+    else if (cpi->sf.max_allowed_tx == TX_16X16)
+      return ALLOW_16X16;
+    else if (cpi->sf.max_allowed_tx == TX_8X8)
+      return ALLOW_8X8;
+    else
+      return ONLY_4X4;
+  } else if (cpi->sf.tx_size_search_method == USE_FULL_RD||
+             cpi->sf.tx_size_search_method == USE_TX_8X8)
     return TX_MODE_SELECT;
   else
     return cpi->common.tx_mode;

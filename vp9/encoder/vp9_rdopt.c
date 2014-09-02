@@ -482,7 +482,8 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
                                    int *skip, int64_t *sse,
                                    int64_t ref_best_rd,
                                    BLOCK_SIZE bs) {
-  const TX_SIZE max_tx_size = max_txsize_lookup[bs];
+  const TX_SIZE max_tx_size = MIN(max_txsize_lookup[bs],
+                                  cpi->sf.max_allowed_tx);
   VP9_COMMON *const cm = &cpi->common;
   const TX_SIZE largest_tx_size = tx_mode_to_biggest_tx_size[cm->tx_mode];
   MACROBLOCKD *const xd = &x->e_mbd;
@@ -503,7 +504,9 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
                                    int64_t tx_cache[TX_MODES],
                                    int64_t ref_best_rd,
                                    BLOCK_SIZE bs) {
-  const TX_SIZE max_tx_size = max_txsize_lookup[bs];
+  const TX_SIZE max_tx_size = MIN(max_txsize_lookup[bs],
+                                  cpi->sf.max_allowed_tx);
+  const TX_SIZE min_tx_size = cpi->sf.min_allowed_tx;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
@@ -525,7 +528,7 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   s0 = vp9_cost_bit(skip_prob, 0);
   s1 = vp9_cost_bit(skip_prob, 1);
 
-  for (n = max_tx_size; n >= 0;  n--) {
+  for (n = max_tx_size; n >= (int)min_tx_size;  n--) {
     txfm_rd_in_plane(x, &r[n][0], &d[n], &s[n],
                      &sse[n], ref_best_rd, 0, bs, n,
                      cpi->sf.use_fast_coef_costing);
@@ -568,8 +571,8 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
   *skip       = s[mbmi->tx_size];
   *psse       = sse[mbmi->tx_size];
 
-  tx_cache[ONLY_4X4] = rd[TX_4X4][0];
-  tx_cache[ALLOW_8X8] = rd[TX_8X8][0];
+  tx_cache[ONLY_4X4] = rd[MAX(TX_4X4, min_tx_size)][0];
+  tx_cache[ALLOW_8X8] = rd[MAX(TX_8X8, min_tx_size)][0];
   tx_cache[ALLOW_16X16] = rd[MIN(max_tx_size, TX_16X16)][0];
   tx_cache[ALLOW_32X32] = rd[MIN(max_tx_size, TX_32X32)][0];
 
