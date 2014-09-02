@@ -132,9 +132,11 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
                                                         : USE_LARGESTALL;
     if (MIN(cm->width, cm->height) >= 720) {
       sf->disable_split_mask = DISABLE_ALL_SPLIT;
+      sf->max_allowed_tx = TX_32X32;
     } else {
       sf->max_intra_bsize = BLOCK_32X32;
       sf->disable_split_mask = DISABLE_ALL_INTER_SPLIT;
+      sf->max_allowed_tx = TX_16X16;
     }
     sf->adaptive_pred_interp_filter = 0;
     sf->adaptive_mode_search = 1;
@@ -374,6 +376,8 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->adaptive_rd_thresh = 0;
   sf->use_lastframe_partitioning = LAST_FRAME_PARTITION_OFF;
   sf->tx_size_search_method = USE_FULL_RD;
+  sf->max_allowed_tx = TX_32X32;
+  sf->min_allowed_tx = TX_4X4;
   sf->use_lp32x32fdct = 0;
   sf->adaptive_motion_search = 0;
   sf->adaptive_pred_interp_filter = 0;
