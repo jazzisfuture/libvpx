@@ -195,7 +195,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   struct macroblockd_plane *const pd = &xd->plane[plane];
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
-    int16_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
+    tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
     if (xd->lossless) {
       tx_type = DCT_DCT;
       vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
@@ -1328,11 +1328,11 @@ void vp9_init_dequantizer(VP9_COMMON *cm) {
   int q;
 
   for (q = 0; q < QINDEX_RANGE; q++) {
-    cm->y_dequant[q][0] = vp9_dc_quant(q, cm->y_dc_delta_q);
-    cm->y_dequant[q][1] = vp9_ac_quant(q, 0);
+    cm->y_dequant[q][0] = vp9_dc_quant(q, cm->y_dc_delta_q, cm->bit_depth);
+    cm->y_dequant[q][1] = vp9_ac_quant(q, 0, cm->bit_depth);
 
-    cm->uv_dequant[q][0] = vp9_dc_quant(q, cm->uv_dc_delta_q);
-    cm->uv_dequant[q][1] = vp9_ac_quant(q, cm->uv_ac_delta_q);
+    cm->uv_dequant[q][0] = vp9_dc_quant(q, cm->uv_dc_delta_q, cm->bit_depth);
+    cm->uv_dequant[q][1] = vp9_ac_quant(q, cm->uv_ac_delta_q, cm->bit_depth);
   }
 }
 
