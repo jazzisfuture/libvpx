@@ -175,6 +175,7 @@ VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/dequantizeb_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/iwalsh_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfilter_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimplehorizontaledge_neon.c
+VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/loopfiltersimpleverticaledge_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/mbloopfilter_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/sad_neon.c
 VP8_COMMON_SRCS-$(HAVE_NEON)  += common/arm/neon/shortidct4x4llm_neon.c
