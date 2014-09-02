@@ -19,9 +19,9 @@
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_rd.h"
 
-void vp9_quantize_dc(const int16_t *coeff_ptr, int skip_block,
+void vp9_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
                      const int16_t *round_ptr, const int16_t quant,
-                     int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                     tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                      const int16_t dequant_ptr, uint16_t *eob_ptr) {
   const int rc = 0;
   const int coeff = coeff_ptr[rc];
@@ -40,9 +40,9 @@ void vp9_quantize_dc(const int16_t *coeff_ptr, int skip_block,
   *eob_ptr = eob + 1;
 }
 
-void vp9_quantize_dc_32x32(const int16_t *coeff_ptr, int skip_block,
+void vp9_quantize_dc_32x32(const tran_low_t *coeff_ptr, int skip_block,
                            const int16_t *round_ptr, const int16_t quant,
-                           int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                           tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                            const int16_t dequant_ptr, uint16_t *eob_ptr) {
   const int rc = 0;
   const int coeff = coeff_ptr[rc];
@@ -62,11 +62,11 @@ void vp9_quantize_dc_32x32(const int16_t *coeff_ptr, int skip_block,
   *eob_ptr = eob + 1;
 }
 
-void vp9_quantize_fp_c(const int16_t *coeff_ptr, intptr_t count,
+void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t count,
                        int skip_block,
                        const int16_t *zbin_ptr, const int16_t *round_ptr,
                        const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
-                       int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                       tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                        const int16_t *dequant_ptr,
                        int zbin_oq_value, uint16_t *eob_ptr,
                        const int16_t *scan, const int16_t *iscan) {
@@ -105,12 +105,12 @@ void vp9_quantize_fp_c(const int16_t *coeff_ptr, intptr_t count,
 
 // TODO(jingning) Refactor this file and combine functions with similar
 // operations.
-void vp9_quantize_fp_32x32_c(const int16_t *coeff_ptr, intptr_t n_coeffs,
+void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                              int skip_block,
                              const int16_t *zbin_ptr, const int16_t *round_ptr,
                              const int16_t *quant_ptr,
                              const int16_t *quant_shift_ptr,
-                             int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                             tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                              const int16_t *dequant_ptr,
                              int zbin_oq_value, uint16_t *eob_ptr,
                              const int16_t *scan, const int16_t *iscan) {
@@ -146,11 +146,11 @@ void vp9_quantize_fp_32x32_c(const int16_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob + 1;
 }
 
-void vp9_quantize_b_c(const int16_t *coeff_ptr, intptr_t count,
+void vp9_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t count,
                       int skip_block,
                       const int16_t *zbin_ptr, const int16_t *round_ptr,
                       const int16_t *quant_ptr, const int16_t *quant_shift_ptr,
-                      int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                       const int16_t *dequant_ptr,
                       int zbin_oq_value, uint16_t *eob_ptr,
                       const int16_t *scan, const int16_t *iscan) {
@@ -199,12 +199,12 @@ void vp9_quantize_b_c(const int16_t *coeff_ptr, intptr_t count,
   *eob_ptr = eob + 1;
 }
 
-void vp9_quantize_b_32x32_c(const int16_t *coeff_ptr, intptr_t n_coeffs,
+void vp9_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                             int skip_block,
                             const int16_t *zbin_ptr, const int16_t *round_ptr,
                             const int16_t *quant_ptr,
                             const int16_t *quant_shift_ptr,
-                            int16_t *qcoeff_ptr, int16_t *dqcoeff_ptr,
+                            tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                             const int16_t *dequant_ptr,
                             int zbin_oq_value, uint16_t *eob_ptr,
                             const int16_t *scan, const int16_t *iscan) {
