@@ -3322,6 +3322,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   init_encode_frame_mb_context(cpi);
   set_prev_mi(cm);
 
+//  fprintf(stderr, "frame since golden %d, frame to next golden %d, ARF %d\n",
+//          cpi->rc.frames_since_golden,
+//          cpi->rc.frames_till_gf_update_due,
+//          !cm->show_frame);
+
   x->quant_fp = cpi->sf.use_quant_fp;
   vp9_zero(x->skip_txfm);
   if (sf->use_nonrd_pick_mode) {
