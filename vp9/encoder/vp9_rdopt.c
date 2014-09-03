@@ -2150,6 +2150,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  int_mv (*mode_mv)[MAX_REF_FRAMES],
                                  int mi_row, int mi_col,
                                  int_mv single_newmv[MAX_REF_FRAMES],
+                                 INTERP_FILTER (*single_filter)[MAX_REF_FRAMES],
+                                 int (*single_skippable)[MAX_REF_FRAMES],
                                  int64_t *psse,
                                  const int64_t ref_best_rd) {
   VP9_COMMON *cm = &cpi->common;
@@ -2551,10 +2553,12 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   PREDICTION_MODE this_mode;
   MV_REFERENCE_FRAME ref_frame, second_ref_frame;
   unsigned char segment_id = mbmi->segment_id;
-  int comp_pred, i;
+  int comp_pred, i, k;
   int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES];
   struct buf_2d yv12_mb[4][MAX_MB_PLANE];
   int_mv single_newmv[MAX_REF_FRAMES] = { { 0 } };
+  INTERP_FILTER single_inter_filter[MB_MODE_COUNT][MAX_REF_FRAMES];
+  int single_skippable[MB_MODE_COUNT][MAX_REF_FRAMES];
   static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
                                     VP9_ALT_FLAG };
   int64_t best_rd = best_rd_so_far;
@@ -2603,6 +2607,12 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     rate_uv_intra[i] = INT_MAX;
   for (i = 0; i < MAX_REF_FRAMES; ++i)
     x->pred_sse[i] = INT_MAX;
+  for (i = 0; i < MB_MODE_COUNT; ++i) {
+    for (k = 0; k < MAX_REF_FRAMES; ++k) {
+      single_inter_filter[i][k] = SWITCHABLE;
+      single_skippable[i][k] = 0;
+    }
+  }
 
   *returnrate = INT_MAX;
 
@@ -2886,7 +2896,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                                   &rate_uv, &distortion_uv,
                                   &disable_skip, frame_mv,
                                   mi_row, mi_col,
-                                  single_newmv, &total_sse, best_rd);
+                                  single_newmv, single_inter_filter,
+                                  single_skippable, &total_sse, best_rd);
       if (this_rd == INT64_MAX)
         continue;
 
