@@ -146,10 +146,10 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
       }
       if (diff > 0) {
         avg[c] = MAX(0, avg[c] - adj);
-        total_adj += adj;
+        total_adj -= adj;
       } else {
         avg[c] = MIN(UINT8_MAX, avg[c] + adj);
-        total_adj -= adj;
+        total_adj += adj;
       }
     }
     sig += sig_stride;
