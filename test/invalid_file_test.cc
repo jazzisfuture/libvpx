@@ -116,6 +116,7 @@ const DecodeParam kVP9InvalidFileTests[] = {
   {1, "invalid-vp90-03-v2.webm"},
   {1, "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf"},
   {1, "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf"},
+  {1, "invalid-vp91-2-mixedrefcsp-444to420.ivf"},
 };
 
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
