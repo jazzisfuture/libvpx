@@ -35,6 +35,14 @@ using ::std::tr1::make_tuple;
 using ::std::tr1::tuple;
 using libvpx_test::ACMRandom;
 
+static unsigned int mb_ss_ref(const int16_t *src) {
+  unsigned int res = 0;
+  for (int i = 0; i < 256; ++i) {
+    res += src[i] * src[i];
+  }
+  return res;
+}
+
 static unsigned int variance_ref(const uint8_t *ref, const uint8_t *src,
                                  int l2w, int l2h, unsigned int *sse_ptr) {
   int se = 0;
@@ -74,6 +82,55 @@ static unsigned int subpel_variance_ref(const uint8_t *ref, const uint8_t *src,
   }
   *sse_ptr = sse;
   return sse - (((int64_t) se * se) >> (l2w + l2h));
+}
+
+typedef unsigned int (*ss_fn)(const int16_t *);
+
+class SSTest : public ::testing::TestWithParam<ss_fn> {
+  virtual void SetUp() {
+    func_ = this->GetParam();
+    rnd_(ACMRandom::DeterministicSeed());
+  }
+
+  virtual void TearDown() {
+    libvpx_test::ClearSystemState();
+  }
+
+ protected:
+  void ZeroTest();
+  void RefTest();
+
+  ACMRandom rnd_;
+  int16_t mem_[256];
+  ss_fn func_;
+};
+
+void SSTest::ZeroTest() {
+  unsigned int res;
+  for (int i = 0; i < 256; ++i) {
+    mem_[i] = 0;
+  }
+  ASM_REGISTER_STATE_CHECK(res = func_(mem_));
+  EXPECT_EQ(0u, res);
+
+  for (int i = 0; i < 256; ++i) {
+    mem_[i] = 255;
+  }
+  ASM_REGISTER_STATE_CHECK(res = func_(mem_));
+  EXPECT_EQ(256 * (255 * 255), res);
+}
+
+void SSTest::RefTest() {
+  for (int i = 0; i < 100; ++i) {
+    for (int j = 0; j < 256; ++j) {
+      mem_[j] = rnd_.Rand8() - rnd_.Rand8();
+    }
+
+    const unsigned int expected = mb_ss_ref(mem_);
+    unsigned int res;
+    ASM_REGISTER_STATE_CHECK(res = func_(mem_));
+    EXPECT_EQ(expected, res);
+  }
 }
 
 template<typename VarianceFunctionType>
@@ -362,6 +419,12 @@ INSTANTIATE_TEST_CASE_P(
 namespace vp9 {
 
 #if CONFIG_VP9_ENCODER
+
+TEST_P(SSTest, Zero) { ZeroTest(); }
+TEST_P(SSTest, Ref) { RefTest(); }
+
+INSTANTIATE_TEST_CASE_P(C, SSTest, ::testing::Values(vp9_get_mb_ss_c));
+
 typedef VarianceTest<vp9_variance_fn_t> VP9VarianceTest;
 typedef SubpelVarianceTest<vp9_subpixvariance_fn_t> VP9SubpelVarianceTest;
 typedef SubpelVarianceTest<vp9_subp_avg_variance_fn_t> VP9SubpelAvgVarianceTest;
@@ -487,6 +550,9 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_SSE2
 #if CONFIG_USE_X86INC
+
+INSTANTIATE_TEST_CASE_P(SSE2, SSTest, ::testing::Values(vp9_get_mb_ss_sse2));
+
 const vp9_variance_fn_t variance4x4_sse2 = vp9_variance4x4_sse2;
 const vp9_variance_fn_t variance4x8_sse2 = vp9_variance4x8_sse2;
 const vp9_variance_fn_t variance8x4_sse2 = vp9_variance8x4_sse2;
