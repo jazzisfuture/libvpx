@@ -2825,6 +2825,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     // them for this frame.
     mbmi->interp_filter = cm->interp_filter == SWITCHABLE ? EIGHTTAP
                                                           : cm->interp_filter;
+    mbmi->mv[0].as_int = mbmi->mv[1].as_int = 0;
+
     x->skip = 0;
     set_ref_ptrs(cm, xd, ref_frame, second_ref_frame);
 
@@ -3065,6 +3067,32 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (x->skip && !comp_pred)
       break;
+  }
+
+  // The inter modes' rate costs are not calculated precisely in some cases.
+  // Therefore, sometimes, NEWMV is chosen instead of NEARESTMV, NEARMV, and
+  // ZEROMV. Here, checks are added for those cases, and the mode decisions
+  // are corrected.
+  if (best_mbmode.mode == NEWMV) {
+    int refs[2] = {best_mbmode.ref_frame[0], best_mbmode.ref_frame[1]};
+
+    if (refs[1] <= 0) {
+      if (frame_mv[NEARESTMV][refs[0]].as_int == best_mbmode.mv[0].as_int)
+        best_mbmode.mode = NEARESTMV;
+      else if (frame_mv[NEARMV][refs[0]].as_int == best_mbmode.mv[0].as_int)
+        best_mbmode.mode = NEARMV;
+      else if (best_mbmode.mv[0].as_int == 0)
+        best_mbmode.mode = ZEROMV;
+    } else {
+      if (frame_mv[NEARESTMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
+          frame_mv[NEARESTMV][refs[1]].as_int == best_mbmode.mv[1].as_int)
+        best_mbmode.mode = NEARESTMV;
+      else if (frame_mv[NEARMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
+               frame_mv[NEARMV][refs[1]].as_int == best_mbmode.mv[1].as_int)
+        best_mbmode.mode = NEARMV;
+      else if (best_mbmode.mv[0].as_int == 0 && best_mbmode.mv[1].as_int == 0)
+        best_mbmode.mode = ZEROMV;
+    }
   }
 
   if (best_mode_index < 0 || best_rd >= best_rd_so_far)
