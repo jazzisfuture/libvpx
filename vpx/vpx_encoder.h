@@ -342,7 +342,7 @@ extern "C" {
      * Note that the frames passed as input to the encoder must have
      * this bit-depth.
      */
-    unsigned int           g_input_bit_depth;
+    vpx_bit_depth_t        g_input_bit_depth;
 
     /*!\brief Stream timebase units
      *

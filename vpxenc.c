@@ -1202,9 +1202,9 @@ static void validate_stream_config(const struct stream_state *stream,
 
   // Check that the codec bit depth is greater than the input bit depth.
   if (stream->config.cfg.g_input_bit_depth >
-      (int)stream->config.cfg.g_bit_depth) {
+      stream->config.cfg.g_bit_depth) {
     fatal("Stream %d: codec bit depth (%d) less than input bit depth (%d)",
-          stream->index, (int)stream->config.cfg.g_bit_depth,
+          stream->index, stream->config.cfg.g_bit_depth,
           stream->config.cfg.g_input_bit_depth);
   }
 
@@ -2065,7 +2065,7 @@ int main(int argc, const char **argv_) {
           input.bit_depth = stream->config.cfg.g_input_bit_depth;
         else
           input.bit_depth = stream->config.cfg.g_input_bit_depth =
-              (int)stream->config.cfg.g_bit_depth;
+              stream->config.cfg.g_bit_depth;
       });
       if (input.bit_depth > 8) input.fmt |= VPX_IMG_FMT_HIGHBITDEPTH;
     } else {
@@ -2139,7 +2139,7 @@ int main(int argc, const char **argv_) {
         if (stream->config.cfg.g_profile == 0) {
           input_shift = 0;
         } else {
-          input_shift = (int)stream->config.cfg.g_bit_depth -
+          input_shift = stream->config.cfg.g_bit_depth -
               stream->config.cfg.g_input_bit_depth;
         }
       });
