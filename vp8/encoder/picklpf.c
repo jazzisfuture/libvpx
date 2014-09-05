@@ -23,7 +23,7 @@
 
 extern int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest);
 
-void vp8_yv12_copy_partial_frame_c(YV12_BUFFER_CONFIG *src_ybc,
+static void vp8_yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc,
                                    YV12_BUFFER_CONFIG *dst_ybc)
 {
     unsigned char *src_y, *dst_y;
