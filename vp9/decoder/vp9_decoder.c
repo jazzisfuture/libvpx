@@ -239,7 +239,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
-    vp9_clear_system_state();
+    vpx_clear_system_state();
 
     // We do not know if the missing frame(s) was supposed to update
     // any of the reference buffers, but we act conservative and
@@ -263,7 +263,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   swap_frame_buffers(pbi);
 
-  vp9_clear_system_state();
+  vpx_clear_system_state();
 
   cm->last_width = cm->width;
   cm->last_height = cm->height;
@@ -311,7 +311,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   *sd = *cm->frame_to_show;
   ret = 0;
 #endif /*!CONFIG_POSTPROC*/
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   return ret;
 }
 

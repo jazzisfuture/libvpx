@@ -43,12 +43,22 @@
  */
 #ifndef VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #define VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
+
+#include "../../vpx_config.h"
 #include "../vpx_decoder.h"
 #include "../vpx_encoder.h"
+
 #include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if ARCH_X86 || ARCH_X86_64
+void vpx_reset_mmx_state(void);
+#define vpx_clear_system_state() vpx_reset_mmx_state()
+#else
+#define vpx_clear_system_state()
 #endif
 
 /*!\brief Current ABI version number
