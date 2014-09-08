@@ -45,6 +45,7 @@ extern "C" {
 
 #include "./vpx_integer.h"
 #include "./vpx_image.h"
+#include "./vpx_config.h"
 
   /*!\brief Decorator indicating a function is deprecated */
 #ifndef DEPRECATED
@@ -468,7 +469,7 @@ extern "C" {
 
 #endif
 
-static inline unsigned int vpx_bit_depth_to_bps(vpx_bit_depth_t bit_depth) {
+static INLINE unsigned int vpx_bit_depth_to_bps(vpx_bit_depth_t bit_depth) {
   int bps = 8;
   switch (bit_depth) {
     case VPX_BITS_8:
