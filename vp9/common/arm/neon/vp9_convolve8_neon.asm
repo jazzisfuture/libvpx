@@ -17,8 +17,8 @@
     ; VP9_FILTER_WEIGHT == 128
     ; VP9_FILTER_SHIFT == 7
 
-    EXPORT  |vp9_convolve8_horiz_neon|
-    EXPORT  |vp9_convolve8_vert_neon|
+    EXPORT  |vp9_convolve8_horiz_neon_asm|
+    EXPORT  |vp9_convolve8_vert_neon_asm|
     IMPORT  |vp9_convolve8_horiz_c|
     IMPORT  |vp9_convolve8_vert_c|
     ARM
@@ -51,7 +51,7 @@
 ; sp[]int w
 ; sp[]int h
 
-|vp9_convolve8_horiz_neon| PROC
+|vp9_convolve8_horiz_neon_asm| PROC
     ldr             r12, [sp, #4]           ; x_step_q4
     cmp             r12, #16
     bne             vp9_convolve8_horiz_c
@@ -172,7 +172,7 @@ vp9_convolve8_loop_horiz
 
     ENDP
 
-|vp9_convolve8_vert_neon| PROC
+|vp9_convolve8_vert_neon_asm| PROC
     ldr             r12, [sp, #12]
     cmp             r12, #16
     bne             vp9_convolve8_vert_c
