@@ -464,6 +464,9 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::Values(
         make_tuple(&vp9_fdct4x4_c,
                    &vp9_idct4x4_16_add_neon, 0, VPX_BITS_8)));
+#endif
+
+#if HAVE_NEON && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
 INSTANTIATE_TEST_CASE_P(
     DISABLED_NEON, Trans4x4HT,
     ::testing::Values(
