@@ -367,12 +367,12 @@ specialize qw/vp9_idct32x32_1_add sse2 neon_asm dspr2/;
 $vp9_idct32x32_1_add_neon_asm=vp9_idct32x32_1_add_neon;
 
 add_proto qw/void vp9_iht4x4_16_add/, "const int16_t *input, uint8_t *dest, int dest_stride, int tx_type";
-specialize qw/vp9_iht4x4_16_add sse2 neon_asm dspr2/;
-$vp9_iht4x4_16_add_neon_asm=vp9_iht4x4_16_add_neon;
+specialize qw/vp9_iht4x4_16_add sse2 neon dspr2/;
+$vp9_iht4x4_16_add_neon=vp9_iht4x4_16_add_neon;
 
 add_proto qw/void vp9_iht8x8_64_add/, "const int16_t *input, uint8_t *dest, int dest_stride, int tx_type";
-specialize qw/vp9_iht8x8_64_add sse2 neon_asm dspr2/;
-$vp9_iht8x8_64_add_neon_asm=vp9_iht8x8_64_add_neon;
+specialize qw/vp9_iht8x8_64_add sse2 neon dspr2/;
+$vp9_iht8x8_64_add_neon=vp9_iht8x8_64_add_neon;
 
 add_proto qw/void vp9_iht16x16_256_add/, "const int16_t *input, uint8_t *output, int pitch, int tx_type";
 specialize qw/vp9_iht16x16_256_add sse2 dspr2/;
