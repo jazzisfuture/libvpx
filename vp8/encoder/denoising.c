@@ -68,6 +68,10 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
     int adj_val[3] = {3, 4, 6};
     int shift_inc1 = 0;
     int shift_inc2 = 1;
+    int col_sum[16] = {0, 0, 0, 0,
+                       0, 0, 0, 0,
+                       0, 0, 0, 0,
+                       0, 0, 0, 0};
     /* If motion_magnitude is small, making the denoiser more aggressive by
      * increasing the adjustment for each level. Add another increment for
      * blocks that are labeled for increase denoising. */
@@ -98,11 +102,11 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
             if (absdiff <= 3 + shift_inc1)
             {
                 running_avg_y[c] = mc_running_avg_y[c];
-                sum_diff += diff;
+                col_sum[c] += diff;
             }
             else
             {
-                if (absdiff >= 4 && absdiff <= 7)
+                if (absdiff >= 4 + shift_inc1 && absdiff <= 7)
                     adjustment = adj_val[0];
                 else if (absdiff >= 8 && absdiff <= 15)
                     adjustment = adj_val[1];
@@ -116,7 +120,7 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
                     else
                         running_avg_y[c] = sig[c] + adjustment;
 
-                    sum_diff += adjustment;
+                    col_sum[c] += adjustment;
                 }
                 else
                 {
@@ -125,7 +129,7 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
                     else
                         running_avg_y[c] = sig[c] - adjustment;
 
-                    sum_diff -= adjustment;
+                    col_sum[c] -= adjustment;
                 }
             }
         }
@@ -134,6 +138,14 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
         sig += sig_stride;
         mc_running_avg_y += mc_avg_y_stride;
         running_avg_y += avg_y_stride;
+    }
+
+    for (c = 0; c < 16; ++c) {
+      // to clip the value in the same way which SSE code use
+      if (col_sum[c] == 128) {
+        col_sum[c] = 127;
+      }
+      sum_diff += col_sum[c];
     }
 
     sum_diff_thresh= SUM_DIFF_THRESHOLD;
