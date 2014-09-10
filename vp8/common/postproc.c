@@ -385,6 +385,38 @@ void vp8_deblock(VP8_COMMON                 *cm,
 }
 #endif
 
+// Special case code, where spatial blur may be applied to Y channel under
+// temporal denoising. For now the vp8_de_noise function below (cond-compiled
+// under no temporal denoising) is reused, with UV components removed.
+#if CONFIG_TEMPORAL_DENOISING
+void vp8_de_noise_yonly_for_temporaldenoise(VP8_COMMON *cm,
+                                            YV12_BUFFER_CONFIG *source,
+                                            YV12_BUFFER_CONFIG *post,
+                                            int q,
+                                            int low_var_thresh,
+                                            int flag) {
+    int mbr;
+    double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
+    int ppl = (int)(level + .5);
+    int mb_rows = cm->mb_rows;
+    int mb_cols = cm->mb_cols;
+    unsigned char *limits = cm->pp_limits_buffer;
+    (void) post;
+    (void) low_var_thresh;
+    (void) flag;
+
+    vpx_memset(limits, (unsigned char)ppl, 16 * mb_cols);
+
+    /* TODO: The original code don't filter the 2 outer rows and columns. */
+    for (mbr = 0; mbr < mb_rows; mbr++) {
+        vp8_post_proc_down_and_across_mb_row(
+            source->y_buffer + 16 * mbr * source->y_stride,
+            source->y_buffer + 16 * mbr * source->y_stride,
+            source->y_stride, source->y_stride, source->y_width, limits, 16);
+    }
+}
+#endif
+
 #if !(CONFIG_TEMPORAL_DENOISING)
 void vp8_de_noise(VP8_COMMON                 *cm,
                   YV12_BUFFER_CONFIG         *source,

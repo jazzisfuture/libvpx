@@ -4023,6 +4023,17 @@ static void encode_frame_to_data_rate
 
     scale_and_extend_source(cpi->un_scaled_source, cpi);
 
+#if CONFIG_TEMPORAL_DENOISING && CONFIG_POSTPROC
+    // Option to apply spatial blur under the aggressive or adaptive
+    // (temporal denoising) mode.
+    if (cpi->oxcf.noise_sensitivity >= 3) {
+      if (cpi->denoiser.denoise_pars.spatial_blur) {
+        vp8_de_noise_yonly_for_temporaldenoise(cm, cpi->Source, cpi->Source,
+            cpi->denoiser.denoise_pars.spatial_blur, 1, 0);
+      }
+    }
+#endif
+
 #if !(CONFIG_REALTIME_ONLY) && CONFIG_POSTPROC && !(CONFIG_TEMPORAL_DENOISING)
 
     if (cpi->oxcf.noise_sensitivity > 0)
