@@ -10,10 +10,7 @@
 
 #include <stddef.h>
 #include <arm_neon.h>
-
-#ifdef _MSC_VER
-#define __builtin_prefetch(x)
-#endif
+#include "vpx_ports/mem.h"
 
 void vp9_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
