@@ -49,7 +49,7 @@ open CONFIG_FILE, $opts{config} or
 
 my %config = ();
 while (<CONFIG_FILE>) {
-  next if !/^CONFIG_/;
+  !/^[CONFIG_|HAVE_]/ ? next : 1;
   chomp;
   my @pair = split /=/;
   $config{$pair[0]} = $pair[1];
