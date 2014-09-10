@@ -362,6 +362,7 @@ void vp8_denoiser_set_parameters(VP8_DENOISER *denoiser, int mode) {
     denoiser->denoise_pars.pickmode_mv_bias = 60;
     denoiser->denoise_pars.qp_thresh = 100;
     denoiser->denoise_pars.consec_zerolast = 10;
+    denoiser->denoise_pars.spatial_blur = 20;
   }
 }
 
