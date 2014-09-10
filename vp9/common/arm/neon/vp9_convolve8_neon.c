@@ -10,10 +10,7 @@
 
 #include <stddef.h>
 #include <arm_neon.h>
-
-#ifdef _MSC_VER
-#define __builtin_prefetch(x)
-#endif
+#include "vpx_ports/mem.h"
 
 void vp9_convolve8_horiz_c(const uint8_t *src, ptrdiff_t src_stride,
                            uint8_t *dst, ptrdiff_t dst_stride,
@@ -59,7 +56,8 @@ void vp9_convolve8_horiz_neon(const uint8_t *src, ptrdiff_t src_stride,
                               const int16_t *filter_y, int y_step_q4,
                               int w, int h) {
     int width;
-    uint8_t *s, *d, *psrc, *pdst;
+    const uint8_t *s, *psrc;
+    uint8_t *d, *pdst;
     uint8x8_t d2u8, d3u8, d24u8, d25u8, d26u8, d27u8, d28u8, d29u8;
     uint32x2_t d2u32, d3u32, d28u32, d29u32, d30u32, d31u32;
     uint8x16_t q12u8, q13u8, q14u8, q15u8;
@@ -232,7 +230,8 @@ void vp9_convolve8_vert_neon(const uint8_t *src, ptrdiff_t src_stride,
                              const int16_t *filter_y, int y_step_q4,
                              int w, int h) {
     int height;
-    uint8_t *s, *d;
+    const uint8_t *s;
+    uint8_t *d;
     uint32x2_t d2u32, d3u32;
     uint32x2_t d16u32, d18u32, d20u32, d22u32, d24u32, d26u32;
     int16x4_t d16s16, d17s16, d18s16, d19s16, d20s16, d21s16, d22s16;
