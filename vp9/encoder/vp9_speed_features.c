@@ -136,6 +136,8 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
       sf->max_intra_bsize = BLOCK_32X32;
       sf->disable_split_mask = DISABLE_ALL_INTER_SPLIT;
     }
+    sf->mv.search_method = BIGDIA;
+    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
     sf->adaptive_pred_interp_filter = 0;
     sf->adaptive_mode_search = 1;
     sf->cb_partition_search = !boosted;
@@ -160,6 +162,8 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->use_square_partition_only = 1;
     sf->tx_size_search_method = USE_LARGESTALL;
     sf->disable_split_mask = DISABLE_ALL_SPLIT;
+    sf->mv.search_method = BIGDIA;
+    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
     sf->adaptive_rd_thresh = 4;
     sf->mode_search_skip_flags |= FLAG_SKIP_COMP_REFMISMATCH |
                                   FLAG_EARLY_TERMINATE;
