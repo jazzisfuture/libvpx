@@ -2585,6 +2585,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int intra_cost_penalty = 20 * vp9_dc_quant(cm->base_qindex, cm->y_dc_delta_q);
   int best_skip2 = 0;
   int mode_skip_mask = 0;
+  uint8_t ref_frame_skip_mask = 0;
+  uint16_t mode_skip_mask2[MAX_REF_FRAMES] = { 0 };
   int mode_skip_start = cpi->sf.mode_skip_start + 1;
   const int *const rd_threshes = rd_opt->threshes[segment_id][bsize];
   const int *const rd_thresh_freq_fact = rd_opt->thresh_freq_fact[bsize];
@@ -2632,19 +2634,16 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     static const int ref_frame_mask_all[] = {
         0x0, 0x123291, 0x25c444, 0x39b722
     };
-    // Fixed mv modes (NEARESTMV, NEARMV, ZEROMV) from vp9_mode_order that use
-    // this frame as their primary ref
-    static const int ref_frame_mask_fixedmv[] = {
-        0x0, 0x121281, 0x24c404, 0x080102
-    };
     if (!(cpi->ref_frame_flags & flag_list[ref_frame])) {
-      // Skip modes for missing references
-      mode_skip_mask |= ref_frame_mask_all[ref_frame];
+      // Skip checking missing references
+      ref_frame_skip_mask |= (1 << ref_frame);
+//      mode_skip_mask |= ref_frame_mask_all[ref_frame];
     } else if (cpi->sf.reference_masking) {
       for (i = LAST_FRAME; i <= ALTREF_FRAME; ++i) {
         // Skip fixed mv modes for poor references
         if ((x->pred_mv_sad[ref_frame] >> 2) > x->pred_mv_sad[i]) {
-          mode_skip_mask |= ref_frame_mask_fixedmv[ref_frame];
+          mode_skip_mask2[ref_frame] |= INTER_NEAREST_NEAR_ZERO;
+//          mode_skip_mask |= ref_frame_mask_fixedmv[ref_frame];
           break;
         }
       }
@@ -2717,10 +2716,23 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
 
-    if (cpi->sf.alt_ref_search_fp && cpi->rc.is_src_frame_alt_ref) {
-      mode_skip_mask = 0;
-      if (!(ref_frame == ALTREF_FRAME && second_ref_frame == NONE))
-        continue;
+    if (ref_frame_skip_mask & (1 << ref_frame) ||
+        ref_frame_skip_mask & (1 << second_ref_frame))
+      continue;
+    if (mode_skip_mask2[ref_frame] & (1 << this_mode))
+      continue;
+
+    if (cpi->rc.is_src_frame_alt_ref) {
+      // TODO(jingning) Handle segmentation level coding features outside the
+      // search loop later.
+      // Disable this drop out case if the ref frame
+      // segment level feature is enabled for this segment. This is to
+      // prevent the possibility that we end up unable to pick any mode.
+      if (cpi->sf.alt_ref_search_fp) {
+        mode_skip_mask = 0;
+        if (!(ref_frame == ALTREF_FRAME && second_ref_frame == NONE))
+          continue;
+      }
     }
 
     if (bsize > cpi->sf.max_intra_bsize)
