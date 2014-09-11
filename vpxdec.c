@@ -388,6 +388,7 @@ int get_vp9_frame_buffer(void *cb_priv, size_t min_size,
     if (!ext_fb_list->ext_fb[i].data)
       return -1;
 
+    memset(ext_fb_list->ext_fb[i].data, 0, min_size);
     ext_fb_list->ext_fb[i].size = min_size;
   }
 
