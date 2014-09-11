@@ -19,15 +19,15 @@ struct VP9_COMP;
 typedef struct {
   MODE_INFO mic;
   uint8_t *zcoeff_blk;
-  int16_t *coeff[MAX_MB_PLANE][3];
-  int16_t *qcoeff[MAX_MB_PLANE][3];
-  int16_t *dqcoeff[MAX_MB_PLANE][3];
+  tran_low_t *coeff[MAX_MB_PLANE][3];
+  tran_low_t *qcoeff[MAX_MB_PLANE][3];
+  tran_low_t *dqcoeff[MAX_MB_PLANE][3];
   uint16_t *eobs[MAX_MB_PLANE][3];
 
   // dual buffer pointers, 0: in use, 1: best in store
-  int16_t *coeff_pbuf[MAX_MB_PLANE][3];
-  int16_t *qcoeff_pbuf[MAX_MB_PLANE][3];
-  int16_t *dqcoeff_pbuf[MAX_MB_PLANE][3];
+  tran_low_t *coeff_pbuf[MAX_MB_PLANE][3];
+  tran_low_t *qcoeff_pbuf[MAX_MB_PLANE][3];
+  tran_low_t *dqcoeff_pbuf[MAX_MB_PLANE][3];
   uint16_t *eobs_pbuf[MAX_MB_PLANE][3];
 
   int is_coded;
@@ -36,7 +36,7 @@ typedef struct {
   // For current partition, only if all Y, U, and V transform blocks'
   // coefficients are quantized to 0, skippable is set to 0.
   int skippable;
-  uint8_t skip_txfm[MAX_MB_PLANE << 2];
+  int skip_txfm[MAX_MB_PLANE << 2];
   int best_mode_index;
   int hybrid_pred_diff;
   int comp_pred_diff;
