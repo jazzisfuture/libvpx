@@ -306,11 +306,20 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   int x, y;
 
   xd->mi = cm->mi_grid_visible + offset;
+
   xd->mi[0] = &cm->mi[offset];
+  xd->mi_test = cm->mi + offset;
+  xd->mi_test[0].target = &xd->mi_test[0]; // point to self.
+
   xd->mi[0]->mbmi.sb_type = bsize;
+  // Point back to self.
+  xd->mi[0]->target = xd->mi[0];
+
   for (y = 0; y < y_mis; ++y)
-    for (x = !y; x < x_mis; ++x)
+    for (x = !y; x < x_mis; ++x) {
       xd->mi[y * cm->mi_stride + x] = xd->mi[0];
+      xd->mi_test[y * cm->mi_stride + x].target = &xd->mi_test[0];
+    }
 
   set_skip_context(xd, mi_row, mi_col);
 
