@@ -150,11 +150,6 @@ typedef struct VP9Common {
   MODE_INFO *prev_mip; /* MODE_INFO array 'mip' from last decoded frame */
   MODE_INFO *prev_mi;  /* 'mi' from last frame (points into prev_mip) */
 
-  MODE_INFO **mi_grid_base;
-  MODE_INFO **mi_grid_visible;
-  MODE_INFO **prev_mi_grid_base;
-  MODE_INFO **prev_mi_grid_visible;
-
   // Persistent mb segment id map used in prediction.
   unsigned char *last_frame_seg_map;
 
@@ -306,8 +301,7 @@ static INLINE void set_prev_mi(VP9_COMMON *cm) {
                                        cm->last_show_frame;
   // Special case: set prev_mi to NULL when the previous mode info
   // context cannot be used.
-  cm->prev_mi = use_prev_in_find_mv_refs ?
-                  cm->prev_mip + cm->mi_stride + 1 : NULL;
+  cm->prev_mi = use_prev_in_find_mv_refs ? cm->prev_mi : NULL;
 }
 
 static INLINE void update_partition_context(MACROBLOCKD *xd,
