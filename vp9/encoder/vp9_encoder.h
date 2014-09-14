@@ -164,6 +164,8 @@ typedef struct VP9EncoderConfig {
   int allow_spatial_resampling;
   int scaled_frame_width;
   int scaled_frame_height;
+  int resize_threshold_upper;
+  int resize_threshold_lower;
 
   // Enable feature to reduce the frame quantization every x frames.
   int frame_periodic_boost;
@@ -376,6 +378,7 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+  int initial_mbs;
 
   int use_svc;
 

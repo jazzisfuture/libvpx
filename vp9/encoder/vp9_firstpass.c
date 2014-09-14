@@ -138,12 +138,12 @@ static void output_stats(FIRSTPASS_STATS *stats,
 }
 
 #if CONFIG_FP_MB_STATS
-static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
-                         struct vpx_codec_pkt_list *pktlist) {
+static void output_fpmb_stats(const VP9_COMP *cpi, uint8_t *this_frame_mb_stats,
+                              struct vpx_codec_pkt_list *pktlist) {
   struct vpx_codec_cx_pkt pkt;
   pkt.kind = VPX_CODEC_FPMB_STATS_PKT;
   pkt.data.firstpass_mb_stats.buf = this_frame_mb_stats;
-  pkt.data.firstpass_mb_stats.sz = cm->MBs * sizeof(uint8_t);
+  pkt.data.firstpass_mb_stats.sz = cpi->initial_mbs * sizeof(uint8_t);
   vpx_codec_pkt_list_add(pktlist, &pkt);
 }
 #endif
@@ -283,9 +283,9 @@ static unsigned int get_prediction_error(BLOCK_SIZE bsize,
 
 // Refine the motion search range according to the frame dimension
 // for first pass test.
-static int get_search_range(const VP9_COMMON *cm) {
+static int get_search_range(const VP9_COMP *cpi) {
   int sr = 0;
-  const int dim = MIN(cm->width, cm->height);
+  const int dim = MIN(cpi->initial_width, cpi->initial_height);
 
   while ((dim << sr) < MAX_FULL_PEL_VAL)
     ++sr;
@@ -305,7 +305,7 @@ static void first_pass_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   int step_param = 3;
   int further_steps = (MAX_MVSEARCH_STEPS - 1) - step_param;
-  const int sr = get_search_range(&cpi->common);
+  const int sr = get_search_range(cpi);
   step_param += sr;
   further_steps -= sr;
 
@@ -429,7 +429,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
-    vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->MBs);
+    vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cpi->initial_mbs);
   }
 #endif
 
@@ -837,7 +837,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     // where the typical "real" energy per MB also falls.
     // Initial estimate here uses sqrt(mbs) to define the min_err, where the
     // number of mbs is propotional to image area.
-    const double min_err = 200 * sqrt(cm->MBs);
+    const double min_err = 200 * sqrt(cpi->initial_mbs);
 
     fps.frame = cm->current_video_frame;
     fps.spatial_layer_id = cpi->svc.spatial_layer_id;
@@ -845,9 +845,9 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     fps.sr_coded_error = (double)(sr_coded_error >> 8) + min_err;
     fps.intra_error = (double)(intra_error >> 8) + min_err;
     fps.count = 1.0;
-    fps.pcnt_inter = (double)intercount / cm->MBs;
-    fps.pcnt_second_ref = (double)second_ref_count / cm->MBs;
-    fps.pcnt_neutral = (double)neutral_count / cm->MBs;
+    fps.pcnt_inter = (double)intercount / cpi->initial_mbs;
+    fps.pcnt_second_ref = (double)second_ref_count / cpi->initial_mbs;
+    fps.pcnt_neutral = (double)neutral_count / cpi->initial_mbs;
 
     if (mvcount > 0) {
       fps.MVr = (double)sum_mvr / mvcount;
@@ -858,7 +858,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       fps.MVcv = ((double)sum_mvcs - (fps.MVc * fps.MVc / mvcount)) / mvcount;
       fps.mv_in_out_count = (double)sum_in_vectors / (mvcount * 2);
       fps.new_mv_count = new_mv_count;
-      fps.pcnt_motion = (double)mvcount / cm->MBs;
+      fps.pcnt_motion = (double)mvcount / cpi->initial_mbs;
     } else {
       fps.MVr = 0.0;
       fps.mvr_abs = 0.0;
@@ -883,7 +883,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
     if (cpi->use_fp_mb_stats) {
-      output_fpmb_stats(twopass->frame_mb_stats_buf, cm, cpi->output_pkt_list);
+      output_fpmb_stats(cpi, twopass->frame_mb_stats_buf, cm,
+                        cpi->output_pkt_list);
     }
 #endif
   }
@@ -963,11 +964,10 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                      int section_target_bandwidth) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
-
   if (section_target_bandwidth <= 0) {
     return rc->worst_quality;  // Highest value allowed
   } else {
-    const int num_mbs = cpi->common.MBs;
+    const int num_mbs = cpi->initial_mbs;
     const double section_err = stats->coded_error / stats->count;
     const double err_per_mb = section_err / num_mbs;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
@@ -1000,6 +1000,43 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
   }
 }
 
+// Estimate the MAX Q required to encode a given group of frames
+// using less than a target bandwidth.
+static int get_section_worst_quality(const VP9_COMP *cpi,
+                                     double section_err,
+                                     int section_bits,
+                                     int frame_count) {
+  const RATE_CONTROL *const rc = &cpi->rc;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  const VP9_COMMON *const cm = &cpi->common;
+
+
+  if ((section_bits <= 0) || (frame_count <= 0) || (cpi->initial_mbs == 0)) {
+    return rc->worst_quality;  // Highest value allowed for illegal input
+  } else {
+    const int num_mbs = cpi->initial_mbs * frame_count;
+    const double err_per_mb = section_err / num_mbs;
+    const double speed_term = 1.0 + 0.04 * oxcf->speed;
+    const int target_norm_bits_per_mb =
+      ((uint64_t)section_bits << BPER_MB_NORMBITS) / num_mbs;
+    int q;
+
+    // Try and pick a max Q that will be high enough to encode the
+    // content at the given rate.
+    for (q = rc->best_quality; q < MAXQ; ++q) {
+      const double factor =
+          calc_correction_factor(err_per_mb, ERR_DIVISOR,
+                                 FACTOR_PT_LOW, FACTOR_PT_HIGH, q,
+                                 cm->bit_depth);
+      const int bits_per_mb = vp9_rc_bits_per_mb(INTER_FRAME, q,
+                                                 factor * speed_term,
+                                                 cm->bit_depth);
+      if (bits_per_mb <= target_norm_bits_per_mb)
+        break;
+    }
+    return q;
+  }
+}
 extern void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 void vp9_init_second_pass(VP9_COMP *cpi) {
@@ -1077,9 +1114,10 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
 #define LOW_SR_DIFF_TRHESH 0.1
 #define SR_DIFF_MAX 128.0
 
-static double get_sr_decay_rate(const VP9_COMMON *cm,
+static double get_sr_decay_rate(const VP9_COMP *cpi,
                                 const FIRSTPASS_STATS *frame) {
-  double sr_diff = (frame->sr_coded_error - frame->coded_error) / cm->MBs;
+  double sr_diff =
+    (frame->sr_coded_error - frame->coded_error) / cpi->initial_mbs;
   double sr_decay = 1.0;
   const double motion_amplitude_factor =
     frame->pcnt_motion * ((frame->mvc_abs + frame->mvr_abs) / 2);
@@ -1096,19 +1134,19 @@ static double get_sr_decay_rate(const VP9_COMMON *cm,
 
 // This function gives an estimate of how badly we believe the prediction
 // quality is decaying from frame to frame.
-static double get_zero_motion_factor(const VP9_COMMON *cm,
+static double get_zero_motion_factor(const VP9_COMP *cpi,
                                      const FIRSTPASS_STATS *frame) {
   const double zero_motion_pct = frame->pcnt_inter -
                                  frame->pcnt_motion;
-  double sr_decay = get_sr_decay_rate(cm, frame);
+  double sr_decay = get_sr_decay_rate(cpi, frame);
   return MIN(sr_decay, zero_motion_pct);
 }
 
 #define ZM_POWER_FACTOR 0.75
 
-static double get_prediction_decay_rate(const VP9_COMMON *cm,
+static double get_prediction_decay_rate(const VP9_COMP *cpi,
                                         const FIRSTPASS_STATS *next_frame) {
-  const double sr_decay_rate = get_sr_decay_rate(cm, next_frame);
+  const double sr_decay_rate = get_sr_decay_rate(cpi, next_frame);
   const double zero_motion_factor =
     (0.95 * pow((next_frame->pcnt_inter - next_frame->pcnt_motion),
                 ZM_POWER_FACTOR));
@@ -1201,7 +1239,7 @@ static double calc_frame_boost(VP9_COMP *cpi,
   double frame_boost;
 
   // Underlying boost factor is based on inter error ratio.
-  frame_boost = (BASELINE_ERR_PER_MB * cpi->common.MBs) /
+  frame_boost = (BASELINE_ERR_PER_MB * cpi->initial_mbs) /
                 DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
   frame_boost = frame_boost * BOOST_FACTOR;
 
@@ -1250,7 +1288,7 @@ static int calc_arf_boost(VP9_COMP *cpi, int offset,
 
     // Accumulate the effect of prediction quality decay.
     if (!flash_detected) {
-      decay_accumulator *= get_prediction_decay_rate(&cpi->common, this_frame);
+      decay_accumulator *= get_prediction_decay_rate(cpi, this_frame);
       decay_accumulator = decay_accumulator < MIN_DECAY_FACTOR
                           ? MIN_DECAY_FACTOR : decay_accumulator;
     }
@@ -1289,7 +1327,7 @@ static int calc_arf_boost(VP9_COMP *cpi, int offset,
 
     // Cumulative effect of prediction quality decay.
     if (!flash_detected) {
-      decay_accumulator *= get_prediction_decay_rate(&cpi->common, this_frame);
+      decay_accumulator *= get_prediction_decay_rate(cpi, this_frame);
       decay_accumulator = decay_accumulator < MIN_DECAY_FACTOR
                               ? MIN_DECAY_FACTOR : decay_accumulator;
     }
@@ -1414,8 +1452,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   if (has_temporal_layers)
     alt_frame_index = cpi->svc.number_temporal_layers;
 
-  key_frame = cpi->common.frame_type == KEY_FRAME ||
-              vp9_is_upper_layer_key_frame(cpi);
+  key_frame = frame_is_intra_only(&cpi->common);
 
   get_arf_buffer_indices(arf_buffer_indices);
 
@@ -1550,6 +1587,7 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
 
 // Analyse and define a gf/arf group.
 static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
+  VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
@@ -1583,10 +1621,11 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int64_t gf_group_bits;
   double gf_group_error_left;
   int gf_arf_bits;
+  int key_frame = frame_is_intra_only(cm);
 
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
-  if (cpi->common.frame_type != KEY_FRAME) {
+  if (!key_frame) {
     vp9_zero(twopass->gf_group);
   }
 
@@ -1602,11 +1641,13 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // If this is a key frame or the overlay from a previous arf then
   // the error score / cost of this frame has already been accounted for.
-  if (cpi->common.frame_type == KEY_FRAME || rc->source_alt_ref_active)
+  if (key_frame || rc->source_alt_ref_active)
     gf_group_err -= gf_first_frame_err;
 
-  // Motion breakout threshold for loop below depends on image size.
-  mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 4.0;
+  // Motion breakout threshold for loop below depends on original
+  // unscaled image size.
+  mv_ratio_accumulator_thresh =
+    (cpi->initial_height + cpi->initial_width) / 4.0;
 
   // Work out a maximum interval for the GF group.
   // If the image appears almost completely static we can extend beyond this.
@@ -1619,7 +1660,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
    // interval to spread the cost of the GF.
    active_max_gf_interval =
      12 + ((int)vp9_convert_qindex_to_q(rc->last_q[INTER_FRAME],
-                                        cpi->common.bit_depth) >> 5);
+                                        cm->bit_depth) >> 5);
 
    if (active_max_gf_interval > rc->max_gf_interval)
      active_max_gf_interval = rc->max_gf_interval;
@@ -1649,14 +1690,13 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Accumulate the effect of prediction quality decay.
     if (!flash_detected) {
       last_loop_decay_rate = loop_decay_rate;
-      loop_decay_rate = get_prediction_decay_rate(&cpi->common, &next_frame);
+      loop_decay_rate = get_prediction_decay_rate(cpi, &next_frame);
 
       decay_accumulator = decay_accumulator * loop_decay_rate;
 
       // Monitor for static sections.
       zero_motion_accumulator =
-        MIN(zero_motion_accumulator,
-            get_zero_motion_factor(&cpi->common, &next_frame));
+        MIN(zero_motion_accumulator, get_zero_motion_factor(cpi, &next_frame));
 
       // Break clause to detect very still sections after motion. For example,
       // a static image after a fade or other transition.
@@ -1695,7 +1735,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->gf_zeromotion_pct = (int)(zero_motion_accumulator * 1000.0);
 
   // Set the interval until the next gf.
-  if (cpi->common.frame_type == KEY_FRAME || rc->source_alt_ref_active)
+  if (key_frame || rc->source_alt_ref_active)
     rc->baseline_gf_interval = i - 1;
   else
     rc->baseline_gf_interval = i;
@@ -1741,11 +1781,45 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // Calculate the bits to be allocated to the gf/arf group as a whole
   gf_group_bits = calculate_total_gf_group_bits(cpi, gf_group_err);
 
+  // Temp code to set scaling factor
+  if (cpi->oxcf.allow_spatial_resampling) {
+    GF_GROUP *const gf_group = &twopass->gf_group;
+    int maxq;
+    int av_bits = rc->avg_frame_bandwidth * rc->baseline_gf_interval;
+    int max_bit_target;
+    int new_frame_size;
+
+    // The bit target used to estimate maxq required depends on whether we
+    // scaled down last time or not. This acts to damp changes. I.e. there
+    // is a higher bar to initiate downscaling than to continue with it.
+    if (rc->frame_size_selector) {
+      max_bit_target = (MAX(av_bits, (int)gf_group_bits) *
+                        cpi->oxcf.resize_threshold_lower) / 100;
+    } else {
+      max_bit_target = (MAX(av_bits, (int)gf_group_bits) *
+                        cpi->oxcf.resize_threshold_upper) / 100;
+    }
+
+    // Estimate the MAXQ required to encode the group of frames at a target
+    // rate of greater than an allowed maximum number of bits.
+    maxq = get_section_worst_quality(cpi, gf_group_err,
+                                     max_bit_target,
+                                     rc->baseline_gf_interval);
+
+    new_frame_size = (maxq >= twopass->baseline_active_worst_quality) ? 1 : 0;
+    gf_group->frame_size_selector[0] =
+      (key_frame) ? new_frame_size : rc->frame_size_selector;
+    rc->frame_size_selector = new_frame_size;
+    for (i = 1; i < (MAX_LAG_BUFFERS * 2) + 1; ++i) {
+      gf_group->frame_size_selector[i] = new_frame_size;
+    }
+  }
+
   // Calculate the extra bits to be used for boosted frame(s)
   {
     int q = rc->last_q[INTER_FRAME];
     int boost =
-        (rc->gfu_boost * gfboost_qadjust(q, cpi->common.bit_depth)) / 100;
+        (rc->gfu_boost * gfboost_qadjust(q, cm->bit_depth)) / 100;
 
     // Set max and minimum boost and hence minimum allocation.
     boost = clamp(boost, 125, (rc->baseline_gf_interval + 1) * 200);
@@ -1766,7 +1840,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // also a key frame in which case it has already been accounted for.
   if (rc->source_alt_ref_pending) {
     gf_group_error_left = gf_group_err - mod_frame_err;
-  } else if (cpi->common.frame_type != KEY_FRAME) {
+  } else if (!key_frame) {
     gf_group_error_left = gf_group_err - gf_first_frame_err;
   } else {
     gf_group_error_left = gf_group_err;
@@ -1779,7 +1853,7 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   reset_fpf_position(twopass, start_pos);
 
   // Calculate a section intra ratio used in setting max loop filter.
-  if (cpi->common.frame_type != KEY_FRAME) {
+  if (!key_frame) {
     twopass->section_intra_rating =
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
@@ -1932,8 +2006,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         break;
 
       // How fast is the prediction quality decaying?
-      loop_decay_rate = get_prediction_decay_rate(&cpi->common,
-                                                  twopass->stats_in);
+      loop_decay_rate = get_prediction_decay_rate(cpi, twopass->stats_in);
 
       // We want to know something about the recent past... rather than
       // as used elsewhere where we are concerned with decay in prediction
@@ -2043,8 +2116,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
     // Monitor for static sections.
     zero_motion_accumulator =
-      MIN(zero_motion_accumulator,
-          get_zero_motion_factor(&cpi->common, &next_frame));
+      MIN(zero_motion_accumulator, get_zero_motion_factor(cpi, &next_frame));
 
     // Not all frames in the group are necessarily used in calculating boost.
     if ((i <= rc->max_gf_interval) ||
@@ -2055,7 +2127,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       // How fast is prediction quality decaying.
       if (!detect_flash(twopass, 0)) {
         const double loop_decay_rate =
-          get_prediction_decay_rate(&cpi->common, &next_frame);
+          get_prediction_decay_rate(cpi, &next_frame);
         decay_accumulator *= loop_decay_rate;
         decay_accumulator = MAX(decay_accumulator, MIN_DECAY_FACTOR);
         av_decay_accumulator += decay_accumulator;
@@ -2068,6 +2140,30 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   reset_fpf_position(twopass, start_position);
 
+  // Set default scaling factor for kf to to unscaled.
+  // This may be overwritten if in the definition of the next gf group.
+  if (cpi->oxcf.allow_spatial_resampling) {
+    rc->frame_size_selector = 0;
+    gf_group->frame_size_selector[0] = rc->frame_size_selector;
+  }
+
+  // TODO(PGW): perhaps define a scaling bias based on whole kf group.
+  /* if (cpi->oxcf.allow_spatial_resampling){
+    GF_GROUP *const gf_group = &twopass->gf_group;
+    int maxq;
+    const int av_bits = rc->avg_frame_bandwidth * rc->frames_to_key;
+    const int max_bit_target = MAX(av_bits, twopass->kf_group_bits) * 5 / 2;
+
+    // Estimate the MAXQ required to encode the group of frames at a target
+    // rate of greater than an allowed maximum number of bits.
+    maxq = get_section_worst_quality(cpi, kf_group_err,
+                                     max_bit_target,
+                                     rc->frames_to_key);
+    rc->frame_size_selector =
+      (maxq >= twopass->baseline_active_worst_quality) ? 1 : 0;
+    gf_group->frame_size_selector[0] = rc->frame_size_selector;
+  } */
+
   // Store the zero motion percentage
   twopass->kf_zeromotion_pct = (int)(zero_motion_accumulator * 100.0);
 
@@ -2078,7 +2174,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Apply various clamps for min and max boost
   rc->kf_boost = (int)(av_decay_accumulator * boost_score);
-  rc->kf_boost = MAX(rc->kf_boost, (rc->frames_to_key * 3));
+  // rc->kf_boost = MAX(rc->kf_boost, (rc->frames_to_key * 3));
   rc->kf_boost = MAX(rc->kf_boost, MIN_KF_BOOST);
 
   // Work out how many bits to allocate for the key frame itself.
@@ -2228,7 +2324,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
                                                frames_left);
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
                                                 section_target_bandwidth);
+
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q, cm->bit_depth);
   }
@@ -2332,8 +2430,7 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
 
   twopass->bits_left = MAX(twopass->bits_left - bits_used, 0);
 
-  if (cpi->common.frame_type != KEY_FRAME &&
-      !vp9_is_upper_layer_key_frame(cpi)) {
+  if (!frame_is_intra_only(&cpi->common)) {
     twopass->kf_group_bits -= bits_used;
     twopass->last_kfgroup_zeromotion_pct = twopass->kf_zeromotion_pct;
   }
