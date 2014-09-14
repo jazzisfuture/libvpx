@@ -112,6 +112,7 @@ typedef struct {
   int gf_zeromotion_pct;
 
   int active_worst_quality;
+  int baseline_active_worst_quality;
 
   GF_GROUP gf_group;
 } TWO_PASS;
