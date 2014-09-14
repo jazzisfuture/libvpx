@@ -956,7 +956,6 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
                                      int section_target_bandwidth) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
-
   if (section_target_bandwidth <= 0) {
     return rc->worst_quality;  // Highest value allowed
   } else {
@@ -993,6 +992,43 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
   }
 }
 
+// Estimate the MAX Q required to encode a given group of frames
+// using less than a target bandwidth.
+static int get_section_worst_quality(const VP9_COMP *cpi,
+                                     double section_err,
+                                     int section_bits,
+                                     int frame_count) {
+  const RATE_CONTROL *const rc = &cpi->rc;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  const VP9_COMMON *const cm = &cpi->common;
+
+
+  if ((section_bits <= 0) || (frame_count <= 0) || (cpi->common.MBs == 0)) {
+    return rc->worst_quality;  // Highest value allowed for illegal input
+  } else {
+    const int num_mbs = cpi->common.MBs * frame_count;
+    const double err_per_mb = section_err / num_mbs;
+    const double speed_term = 1.0 + 0.04 * oxcf->speed;
+    const int target_norm_bits_per_mb =
+      ((uint64_t)section_bits << BPER_MB_NORMBITS) / num_mbs;
+    int q;
+
+    // Try and pick a max Q that will be high enough to encode the
+    // content at the given rate.
+    for (q = rc->best_quality; q < MAXQ; ++q) {
+      const double factor =
+          calc_correction_factor(err_per_mb, ERR_DIVISOR,
+                                 FACTOR_PT_LOW, FACTOR_PT_HIGH, q,
+                                 cm->bit_depth);
+      const int bits_per_mb = vp9_rc_bits_per_mb(INTER_FRAME, q,
+                                                 factor * speed_term,
+                                                 cm->bit_depth);
+      if (bits_per_mb <= target_norm_bits_per_mb)
+        break;
+    }
+    return q;
+  }
+}
 extern void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 void vp9_init_second_pass(VP9_COMP *cpi) {
@@ -1599,7 +1635,12 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     gf_group_err -= gf_first_frame_err;
 
   // Motion breakout threshold for loop below depends on image size.
-  mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 4.0;
+  {
+    const int w = cpi->rc.frame_width[0];
+    const int h = cpi->rc.frame_height[0];
+    mv_ratio_accumulator_thresh = (w + h) / 4.0;
+    // mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 4.0;
+  }
 
   // Work out a maximum interval for the GF group.
   // If the image appears almost completely static we can extend beyond this.
@@ -1733,6 +1774,29 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Calculate the bits to be allocated to the gf/arf group as a whole
   gf_group_bits = calculate_total_gf_group_bits(cpi, gf_group_err);
+
+  // Temp code to set scaling factor
+  if (cpi->oxcf.allow_spatial_resampling){
+    GF_GROUP *const gf_group = &twopass->gf_group;
+    int maxq;
+    int av_bits = rc->avg_frame_bandwidth * rc->baseline_gf_interval;
+    int max_bit_target =
+      (5 * rc->avg_frame_bandwidth * rc->baseline_gf_interval) / 2;
+
+    max_bit_target = MAX(max_bit_target, (int)(2 * gf_group_bits));
+
+    // Estimate the MAXQ required to encode the group of frames at a target
+    // rate of greater than an allowed maximum number of bits.
+    maxq = get_section_worst_quality(cpi, gf_group_err,
+                                     max_bit_target,
+                                     rc->baseline_gf_interval);
+    gf_group->frame_size_selector[0] = rc->frame_size_selector;
+    rc->frame_size_selector =
+      (maxq >= twopass->baseline_active_worst_quality) ? 1 : 0;
+    for (i = 1; i < (MAX_LAG_BUFFERS * 2) + 1; ++i) {
+      gf_group->frame_size_selector[i] = rc->frame_size_selector;
+    }
+  }
 
   // Calculate the extra bits to be used for boosted frame(s)
   {
@@ -2092,6 +2156,14 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // The count of bits left is adjusted elsewhere based on real coded frame
   // sizes.
   twopass->modified_error_left -= kf_group_err;
+
+  // Decide on scaling factor for key frame.
+  // TODO(PGW): Add decision based on estimated bits at active maxq
+  // For now this is hard wired for experimentation
+  if (cpi->oxcf.allow_spatial_resampling){
+    rc->frame_size_selector = 0;
+    gf_group->frame_size_selector[0] = rc->frame_size_selector;
+  }
 }
 
 // For VBR...adjustment to the frame target based on error from previous frames
@@ -2222,6 +2294,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
                                                 section_target_bandwidth);
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q, cm->bit_depth);
   }

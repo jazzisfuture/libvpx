@@ -63,6 +63,11 @@ typedef struct {
   int source_alt_ref_active;
   int is_src_frame_alt_ref;
 
+  int frames_since_last_resize;
+  int frame_size_selector;
+  int frame_width[2];
+  int frame_height[2];
+
   int avg_frame_bandwidth;  // Average frame size target for clip
   int min_frame_bandwidth;  // Minimum allocation used for any frame
   int max_frame_bandwidth;  // Maximum burst rate allowed for a frame.
@@ -98,6 +103,7 @@ typedef struct {
   int64_t optimal_buffer_level;
   int64_t maximum_buffer_size;
   // int active_best_quality;
+  int switch_point_idx;
 } RATE_CONTROL;
 
 struct VP9_COMP;
