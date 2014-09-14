@@ -299,6 +299,11 @@ void vp9_rc_init(const VP9EncoderConfig *oxcf, int pass, RATE_CONTROL *rc) {
 
   rc->frames_till_gf_update_due = 0;
 
+  rc->frames_since_last_resize = 0;
+  rc->frame_size_selector = 0;
+  vp9_zero(rc->frame_width);
+  vp9_zero(rc->frame_height);
+
   rc->ni_av_qi = oxcf->worst_allowed_q;
   rc->ni_tot_qi = 0;
   rc->ni_frames = 0;
@@ -1092,12 +1097,16 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi,
                                   cpi->rc.max_frame_bandwidth);
   }
 }
-
+#define SCALE_RATE_FACTOR 2
 void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
   const VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
 
   rc->this_frame_target = target;
+
+  // Correction applied if we scale down
+  if (cpi->oxcf.allow_spatial_resampling && rc->frame_size_selector)
+    rc->this_frame_target = (int)(rc->this_frame_target * SCALE_RATE_FACTOR);
 
   // Target rate per SB64 (including partial SB64s.
   rc->sb64_target_rate = ((int64_t)rc->this_frame_target * 64 * 64) /
@@ -1229,6 +1238,9 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
     rc->frames_since_key++;
     rc->frames_to_key--;
   }
+
+  if (!cpi->refresh_alt_ref_frame)
+    ++rc->frames_since_last_resize;
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
