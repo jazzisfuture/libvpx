@@ -1569,7 +1569,12 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     gf_group_err -= gf_first_frame_err;
 
   // Motion breakout threshold for loop below depends on image size.
-  mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 10.0;
+  {
+    const int w = cpi->rc.frame_width[0];
+    const int h = cpi->rc.frame_height[0];
+    mv_ratio_accumulator_thresh = (w + h) / 10.0;
+    //mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 10.0;
+  }
 
   // Work out a maximum interval for the GF group.
   // If the image appears almost completely static we can extend beyond this.
@@ -2213,6 +2218,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
                                                 section_target_bandwidth);
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q);
   }
