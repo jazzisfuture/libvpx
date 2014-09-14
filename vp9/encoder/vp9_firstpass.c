@@ -1596,7 +1596,12 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     gf_group_err -= gf_first_frame_err;
 
   // Motion breakout threshold for loop below depends on image size.
-  mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 4.0;
+  {
+    const int w = cpi->rc.frame_width[0];
+    const int h = cpi->rc.frame_height[0];
+    mv_ratio_accumulator_thresh = (w + h) / 4.0;
+    // mv_ratio_accumulator_thresh = (cpi->common.width + cpi->common.height) / 4.0;
+  }
 
   // Work out a maximum interval for the GF group.
   // If the image appears almost completely static we can extend beyond this.
@@ -1771,6 +1776,16 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     twopass->section_intra_rating =
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
+  }
+
+  // Temp code to set scaling factor
+  {
+    GF_GROUP *const gf_group = &twopass->gf_group;
+    gf_group->frame_size_selector[0] = rc->frame_size_selector;
+    rc->frame_size_selector = (rc->frame_size_selector) ? 0 : 1;
+    for (i = 1; i < (MAX_LAG_BUFFERS * 2) + 1; ++i) {
+      gf_group->frame_size_selector[i] = rc->frame_size_selector;
+    }
   }
 }
 
@@ -2087,6 +2102,12 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   // The count of bits left is adjusted elsewhere based on real coded frame
   // sizes.
   twopass->modified_error_left -= kf_group_err;
+
+  // Decide on scaling factor for key frame.
+  // TODO(PGW): Add decision based on estimated bits at active maxq
+  // For now this is hard wired for experimentation
+  rc->frame_size_selector = 0;
+  gf_group->frame_size_selector[0] = rc->frame_size_selector;
 }
 
 // For VBR...adjustment to the frame target based on error from previous frames
@@ -2217,6 +2238,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
                                                 section_target_bandwidth);
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q);
   }
