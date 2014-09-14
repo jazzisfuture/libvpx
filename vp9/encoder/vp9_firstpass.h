@@ -77,6 +77,7 @@ typedef struct {
   unsigned char arf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_update_idx[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_ref_idx[(MAX_LAG_BUFFERS * 2) + 1];
+  int frame_size_selector[(MAX_LAG_BUFFERS * 2) + 1];
   int bit_allocation[(MAX_LAG_BUFFERS * 2) + 1];
 } GF_GROUP;
 
@@ -112,6 +113,7 @@ typedef struct {
   int gf_zeromotion_pct;
 
   int active_worst_quality;
+  int baseline_active_worst_quality;
 
   GF_GROUP gf_group;
 } TWO_PASS;

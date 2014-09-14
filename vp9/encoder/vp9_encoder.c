@@ -1671,7 +1671,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -1682,6 +1682,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
+/*
     fprintf(f, "%10u %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
@@ -1709,6 +1710,35 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
             (1 + cpi->twopass.total_left_stats.coded_error),
         cpi->tot_recode_hits, recon_err, cpi->rc.kf_boost,
         cpi->twopass.kf_zeromotion_pct);
+*/
+  fprintf(f, "%10u %10d %10d %4dx%4d %10d %10d"
+      "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
+      "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
+      "%6d %6d %5d %5d %5d "
+      "%10"PRId64" %10.3lf"
+      "%10lf %8u %10d %10d %10d\n",
+      cpi->common.current_video_frame, cpi->rc.this_frame_target,
+      cpi->rc.projected_frame_size,
+      cpi->common.width, cpi->common.height,
+      cpi->rc.projected_frame_size / cpi->common.MBs,
+      (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
+      cpi->rc.vbr_bits_off_target,
+      cpi->rc.total_target_vs_actual,
+      (cpi->rc.starting_buffer_level - cpi->rc.bits_off_target),
+      cpi->rc.total_actual_bits, cm->base_qindex,
+      vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth),
+      (double)vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth) / 4.0,
+      vp9_convert_qindex_to_q(cpi->twopass.active_worst_quality, cm->bit_depth),
+      cpi->rc.avg_q,
+      vp9_convert_qindex_to_q(cpi->oxcf.cq_level, cm->bit_depth),
+      cpi->refresh_last_frame, cpi->refresh_golden_frame,
+      cpi->refresh_alt_ref_frame, cm->frame_type, cpi->rc.gfu_boost,
+      cpi->twopass.bits_left,
+      cpi->twopass.total_left_stats.coded_error,
+      cpi->twopass.bits_left /
+          (1 + cpi->twopass.total_left_stats.coded_error),
+      cpi->tot_recode_hits, recon_err, cpi->rc.kf_boost,
+      cpi->twopass.kf_zeromotion_pct);
 
   fclose(f);
 
@@ -2336,7 +2366,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->last_frame_type = cm->frame_type;
   vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
@@ -2429,6 +2459,7 @@ static void check_initial_width(VP9_COMP *cpi, int subsampling_x,
 
     cpi->initial_width = cm->width;
     cpi->initial_height = cm->height;
+    cpi->initial_mbs = cm->MBs;
   }
 }
 
@@ -2569,6 +2600,65 @@ static void check_src_altref(VP9_COMP *cpi,
   }
 }
 
+static const int kResizeFrameGroupSize = 30;
+static const double kScalingRateDelta = 1.25;
+
+void init_subsampling(const VP9_COMMON *cm, RATE_CONTROL *rc) {
+  const int w = cm->width;
+  const int h = cm->height;
+
+  // Frame sizes for alternating frame groups.
+  rc->frame_width[0] = w;
+  rc->frame_height[0] = h;
+
+  // Only limited frame sizes supported right now:
+  // Replace with function that using scaling factors
+  // and optimizes for 1/16th pixel resolution scaling filters.
+  if (w == 352 && h == 288) {
+    rc->frame_width[1] = 176;
+    rc->frame_height[1] = 144;
+  } else if (w == 1920 && h == 1080) {
+    rc->frame_width[1] = 1280;
+    rc->frame_height[1] = 720;
+  } else if (w == 1280 && h == 720) {
+    rc->frame_width[1] = 854;
+    rc->frame_height[1] = 480;
+  } else {
+    assert(0);
+  }
+
+  // Force smaller frame size to start with.
+  // rc->frame_size_selector = 1;
+}
+
+// List of frames that scaling will be switched.
+// static unsigned int switch_scale[7] = {0, 88, 115, 181, 205, 368, UINT_MAX};
+
+static void calculate_coded_size(VP9_COMP *cpi,
+                                 int *scaled_frame_width,
+                                 int *scaled_frame_height) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  TWO_PASS *const twopass = &cpi->twopass;
+  const VP9_COMMON *const cm = &cpi->common;
+
+  *scaled_frame_width = rc->frame_width[rc->frame_size_selector];
+  *scaled_frame_height = rc->frame_height[rc->frame_size_selector];
+
+  if (rc->frame_size_selector == 0) {
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality;
+  } else {
+    int qdelta = vp9_compute_qdelta_by_rate(
+        rc, cm->frame_type, twopass->baseline_active_worst_quality,
+        kScalingRateDelta, cm->bit_depth);
+    // TODO(agrange) Check for < 0.
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality
+        + qdelta;
+  }
+
+  // rc->frame_size_selector = 1 - rc->frame_size_selector;
+  // ++rc->switch_point_idx;
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest,
                             int64_t *time_stamp, int64_t *time_end, int flush) {
@@ -2582,6 +2672,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct lookahead_entry *source = NULL;
   MV_REFERENCE_FRAME ref_frame;
   int arf_src_index;
+  const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
 
   if (is_two_pass_svc(cpi) && oxcf->pass == 2) {
 #if CONFIG_SPATIAL_SVC
@@ -2723,27 +2814,40 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   cm->frame_bufs[cm->new_fb_idx].ref_count--;
   cm->new_fb_idx = get_free_fb(cm);
 
+  if (cm->current_video_frame == 0)
+    init_subsampling(&cpi->common, &cpi->rc);
+
   // For two pass encodes analyse the first pass stats and determine
   // the bit allocation and other parameters for this frame / group of frames.
   if ((oxcf->pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
     vp9_rc_get_second_pass_params(cpi);
+    rc->frame_size_selector = gf_group->frame_size_selector[gf_group->index];
   }
 
   if (!cpi->use_svc && cpi->multi_arf_allowed) {
     if (cm->frame_type == KEY_FRAME) {
       init_buffer_indices(cpi);
     } else if (oxcf->pass == 2) {
-      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
       cpi->alt_fb_idx = gf_group->arf_ref_idx[gf_group->index];
     }
   }
 
   cpi->frame_flags = *frame_flags;
 
-  if (oxcf->pass == 2 &&
-      cm->current_video_frame == 0 &&
+/*  if (oxcf->pass == 2 &&
       oxcf->allow_spatial_resampling &&
+      gf_group->rf_level[gf_group->index] == GF_ARF_STD &&
+      (gf_group->update_type[gf_group->index] == ARF_UPDATE ||
+       gf_group->update_type[gf_group->index] == GF_UPDATE) &&
+      oxcf->rc_mode == VPX_VBR) {*/
+  if (oxcf->pass == 2 &&
+      oxcf->allow_spatial_resampling &&
+      // cm->current_video_frame == switch_scale[rc->switch_point_idx] &&
       oxcf->rc_mode == VPX_VBR) {
+    // Decide if frame scale is to be swicthed on this frame.
+    calculate_coded_size(cpi, &cpi->oxcf.scaled_frame_width,
+                         &cpi->oxcf.scaled_frame_height);
+
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
                          oxcf->scaled_frame_height);
