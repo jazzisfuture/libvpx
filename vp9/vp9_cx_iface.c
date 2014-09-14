@@ -373,8 +373,9 @@ static vpx_codec_err_t set_encoder_config(
   oxcf->over_shoot_pct          = cfg->rc_overshoot_pct;
 
   oxcf->allow_spatial_resampling = cfg->rc_resize_allowed;
-  oxcf->scaled_frame_width       = cfg->rc_scaled_width;
-  oxcf->scaled_frame_height      = cfg->rc_scaled_height;
+  // Calculate scaled width internally for now.
+//  oxcf->scaled_frame_width       = cfg->rc_scaled_width;
+//  oxcf->scaled_frame_height      = cfg->rc_scaled_height;
 
   oxcf->maximum_buffer_size_ms   = is_vbr ? 240000 : cfg->rc_buf_sz;
   oxcf->starting_buffer_level_ms = is_vbr ? 60000 : cfg->rc_buf_initial_sz;
