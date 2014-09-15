@@ -828,9 +828,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
       cpi->multi_arf_allowed = 0;
       cpi->multi_arf_enabled = 0;
     } else {
-      // Disable by default for now.
-      cpi->multi_arf_allowed = 0;
-      cpi->multi_arf_enabled = 0;
+      cpi->multi_arf_allowed = CONFIG_VP9_MULTI_ARF;
+      cpi->multi_arf_enabled = cpi->multi_arf_allowed;
     }
   } else {
     cpi->multi_arf_allowed = 0;

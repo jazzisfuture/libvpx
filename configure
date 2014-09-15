@@ -335,6 +335,7 @@ CONFIG_LIST="
     temporal_denoising
     coefficient_range_checking
     vp9_highbitdepth
+    vp9_multi_arf
     experimental
     size_limit
     ${EXPERIMENT_LIST}
@@ -394,6 +395,7 @@ CMDLINE_SELECT="
     temporal_denoising
     coefficient_range_checking
     vp9_highbitdepth
+    vp9_multi_arf
     experimental
 "
 
