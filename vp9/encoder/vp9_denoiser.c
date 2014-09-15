@@ -185,6 +185,17 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
   return COPY_BLOCK;
 }
 
+int vp9_denoiser_16x16_c(unsigned char *mc_running_avg_y,
+                             int mc_avg_y_stride,
+                             unsigned char *running_avg_y, int avg_y_stride,
+                             unsigned char *sig, int sig_stride,
+                             unsigned int motion_magnitude,
+                             int increase_denoising) {
+  return denoiser_filter(sig, sig_stride, mc_running_avg_y, mc_avg_y_stride,
+                         running_avg_y, avg_y_stride, increase_denoising,
+                         BLOCK_16X16, motion_magnitude);
+}
+
 static uint8_t *block_start(uint8_t *framebuf, int stride,
                             int mi_row, int mi_col) {
   return framebuf + (stride * mi_row * 8) + (mi_col * 8);
@@ -336,10 +347,19 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                                          &motion_magnitude);
 
   if (decision == FILTER_BLOCK) {
-    decision = denoiser_filter(src.buf, src.stride,
-                               mc_avg_start, mc_avg.y_stride,
-                               avg_start, avg.y_stride,
-                               0, bs, motion_magnitude);
+    // When the block size is 16x16, use sse to accelerate the code.
+    // This 16x16 sse code is directly inherited from VP8 denoiser.
+    if (bs == BLOCK_16X16) {
+      vp9_denoiser_16x16(mc_avg_start, mc_avg.y_stride,
+                            avg_start, avg.y_stride,
+                            src.buf, src.stride,
+                            motion_magnitude, 0);
+    } else {
+      decision = denoiser_filter(src.buf, src.stride,
+                                 mc_avg_start, mc_avg.y_stride,
+                                 avg_start, avg.y_stride,
+                                 0, bs, motion_magnitude);
+    }
   }
 
   if (decision == FILTER_BLOCK) {
