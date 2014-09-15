@@ -634,91 +634,91 @@ static void mb_lpf_horizontal_edge_w_sse2_16(unsigned char *s,
       const __m128i q6_hi = _mm_unpackhi_epi8(q6, zero);
       const __m128i q7_hi = _mm_unpackhi_epi8(q7, zero);
 
-      __m128i c;
+      __m128i f_lo;
       __m128i f_hi;
 
-      c = _mm_sub_epi16(_mm_slli_epi16(p7_lo, 3), p7_lo);  // p7 * 7
-      c = _mm_add_epi16(_mm_slli_epi16(p6_lo, 1), _mm_add_epi16(p4_lo, c));
-
-      c = _mm_add_epi16(_mm_add_epi16(p3_lo, c), _mm_add_epi16(p2_lo, p1_lo));
-      c = _mm_add_epi16(_mm_add_epi16(p0_lo, q0_lo), c);
-      c = _mm_add_epi16(_mm_add_epi16(p5_lo, eight), c);
+      f_lo = _mm_sub_epi16(_mm_slli_epi16(p7_lo, 3), p7_lo);  // p7 * 7
+      f_lo = _mm_add_epi16(_mm_slli_epi16(p6_lo, 1),
+                           _mm_add_epi16(p4_lo, f_lo));
+      f_lo = _mm_add_epi16(_mm_add_epi16(p3_lo, f_lo),
+                           _mm_add_epi16(p2_lo, p1_lo));
+      f_lo = _mm_add_epi16(_mm_add_epi16(p0_lo, q0_lo), f_lo);
+      f_lo = _mm_add_epi16(_mm_add_epi16(p5_lo, eight), f_lo);
 
       f_hi = _mm_sub_epi16(_mm_slli_epi16(p7_hi, 3), p7_hi);  // p7 * 7
       f_hi = _mm_add_epi16(_mm_slli_epi16(p6_hi, 1),
                            _mm_add_epi16(p4_hi, f_hi));
-
       f_hi = _mm_add_epi16(_mm_add_epi16(p3_hi, f_hi),
                            _mm_add_epi16(p2_hi, p1_hi));
       f_hi = _mm_add_epi16(_mm_add_epi16(p0_hi, q0_hi), f_hi);
       f_hi = _mm_add_epi16(_mm_add_epi16(p5_hi, eight), f_hi);
 
-      p6 = filter16_mask(flat2, p6, c, f_hi);
+      p6 = filter16_mask(flat2, p6, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 7 * p), p6);
 
-      c = filter_add2_sub2(c, q1_lo, p5_lo, p6_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q1_lo, p5_lo, p6_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q1_hi, p5_hi, p6_hi, p7_hi);
-      p5 = filter16_mask(flat2, p5, c, f_hi);
+      p5 = filter16_mask(flat2, p5, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 6 * p), p5);
 
-      c = filter_add2_sub2(c, q2_lo, p4_lo, p5_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q2_lo, p4_lo, p5_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q2_hi, p4_hi, p5_hi, p7_hi);
-      p4 = filter16_mask(flat2, p4, c, f_hi);
+      p4 = filter16_mask(flat2, p4, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 5 * p), p4);
 
-      c = filter_add2_sub2(c, q3_lo, p3_lo, p4_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q3_lo, p3_lo, p4_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q3_hi, p3_hi, p4_hi, p7_hi);
-      p3 = filter16_mask(flat2, p3, c, f_hi);
+      p3 = filter16_mask(flat2, p3, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 4 * p), p3);
 
-      c = filter_add2_sub2(c, q4_lo, p2_lo, p3_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q4_lo, p2_lo, p3_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q4_hi, p2_hi, p3_hi, p7_hi);
-      op2 = filter16_mask(flat2, op2, c, f_hi);
+      op2 = filter16_mask(flat2, op2, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 3 * p), op2);
 
-      c = filter_add2_sub2(c, q5_lo, p1_lo, p2_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q5_lo, p1_lo, p2_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q5_hi, p1_hi, p2_hi, p7_hi);
-      op1 = filter16_mask(flat2, op1, c, f_hi);
+      op1 = filter16_mask(flat2, op1, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 2 * p), op1);
 
-      c = filter_add2_sub2(c, q6_lo, p0_lo, p1_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q6_lo, p0_lo, p1_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q6_hi, p0_hi, p1_hi, p7_hi);
-      op0 = filter16_mask(flat2, op0, c, f_hi);
+      op0 = filter16_mask(flat2, op0, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 1 * p), op0);
 
-      c = filter_add2_sub2(c, q7_lo, q0_lo, p0_lo, p7_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q0_lo, p0_lo, p7_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q0_hi, p0_hi, p7_hi);
-      oq0 = filter16_mask(flat2, oq0, c, f_hi);
+      oq0 = filter16_mask(flat2, oq0, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s - 0 * p), oq0);
 
-      c = filter_add2_sub2(c, q7_lo, q1_lo, p6_lo, q0_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q1_lo, p6_lo, q0_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q1_hi, p6_hi, q0_hi);
-      oq1 = filter16_mask(flat2, oq1, c, f_hi);
+      oq1 = filter16_mask(flat2, oq1, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 1 * p), oq1);
 
-      c = filter_add2_sub2(c, q7_lo, q2_lo, p5_lo, q1_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q2_lo, p5_lo, q1_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q2_hi, p5_hi, q1_hi);
-      oq2 = filter16_mask(flat2, oq2, c, f_hi);
+      oq2 = filter16_mask(flat2, oq2, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 2 * p), oq2);
 
-      c = filter_add2_sub2(c, q7_lo, q3_lo, p4_lo, q2_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q3_lo, p4_lo, q2_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q3_hi, p4_hi, q2_hi);
-      q3 = filter16_mask(flat2, q3, c, f_hi);
+      q3 = filter16_mask(flat2, q3, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 3 * p), q3);
 
-      c = filter_add2_sub2(c, q7_lo, q4_lo, p3_lo, q3_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q4_lo, p3_lo, q3_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q4_hi, p3_hi, q3_hi);
-      q4 = filter16_mask(flat2, q4, c, f_hi);
+      q4 = filter16_mask(flat2, q4, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 4 * p), q4);
 
-      c = filter_add2_sub2(c, q7_lo, q5_lo, p2_lo, q4_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q5_lo, p2_lo, q4_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q5_hi, p2_hi, q4_hi);
-      q5 = filter16_mask(flat2, q5, c, f_hi);
+      q5 = filter16_mask(flat2, q5, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 5 * p), q5);
 
-      c = filter_add2_sub2(c, q7_lo, q6_lo, p1_lo, q5_lo);
+      f_lo = filter_add2_sub2(f_lo, q7_lo, q6_lo, p1_lo, q5_lo);
       f_hi = filter_add2_sub2(f_hi, q7_hi, q6_hi, p1_hi, q5_hi);
-      q6 = filter16_mask(flat2, q6, c, f_hi);
+      q6 = filter16_mask(flat2, q6, f_lo, f_hi);
       _mm_storeu_si128((__m128i *)(s + 6 * p), q6);
     }
     // wide flat
