@@ -336,10 +336,19 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                                          &motion_magnitude);
 
   if (decision == FILTER_BLOCK) {
-    decision = denoiser_filter(src.buf, src.stride,
-                               mc_avg_start, mc_avg.y_stride,
-                               avg_start, avg.y_stride,
-                               0, bs, motion_magnitude);
+    // When the block size is 16x16, use sse to accelerate the code.
+    // This 16x16 sse code is directly inherited from VP8 denoiser.
+    if(bs == 6) {
+    vp9_denoiser_16x16_sse2(mc_avg_start, mc_avg.y_stride,
+                            avg_start, avg.y_stride,
+                            src.buf, src.stride,
+                            motion_magnitude, 0);
+    } else {
+      decision = denoiser_filter(src.buf, src.stride,
+                                 mc_avg_start, mc_avg.y_stride,
+                                 avg_start, avg.y_stride,
+                                 0, bs, motion_magnitude);
+    }
   }
 
   if (decision == FILTER_BLOCK) {
