@@ -19,6 +19,9 @@ extern "C" {
 #endif
 
 #define MOTION_MAGNITUDE_THRESHOLD (8 * 3)
+#define SUM_DIFF_THRESHOLD (16 * 16 * 2)
+#define SUM_DIFF_THRESHOLD_HIGH (600)
+
 
 typedef enum vp9_denoiser_decision {
   COPY_BLOCK,
@@ -56,6 +59,15 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int border);
 
 void vp9_denoiser_free(VP9_DENOISER *denoiser);
+
+// SSE version of vp9 denoiser for block 16x16
+int vp9_denoiser_16x16_sse2(unsigned char *mc_running_avg_y,
+                             int mc_avg_y_stride,
+                             unsigned char *running_avg_y, int avg_y_stride,
+                             unsigned char *sig, int sig_stride,
+                             unsigned int motion_magnitude,
+                             int increase_denoising);
+
 
 #ifdef __cplusplus
 }  // extern "C"
