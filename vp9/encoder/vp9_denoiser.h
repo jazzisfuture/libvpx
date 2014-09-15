@@ -19,6 +19,9 @@ extern "C" {
 #endif
 
 #define MOTION_MAGNITUDE_THRESHOLD (8 * 3)
+#define SUM_DIFF_THRESHOLD (16 * 16 * 2)
+#define SUM_DIFF_THRESHOLD_HIGH (600)
+
 
 typedef enum vp9_denoiser_decision {
   COPY_BLOCK,
