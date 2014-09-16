@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+1: Alexander Voronov <avoronov@graphics.cs.msu.ru>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Tue, 16 Sep 2014 09:39:36 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71552
+Project: webm/libvpx
+Branch: refs/heads/highbitdepth
