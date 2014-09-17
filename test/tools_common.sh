@@ -255,6 +255,13 @@ run_tests() {
 
   local tests_to_run="${env_tests} ${tests_to_filter}"
 
+  if [ "${VPX_TEST_DUMP_TEST_NAMES}" = "yes" ]; then
+    for test_name in $tests_to_run; do
+      echo ${test_name}
+    done
+    return
+  fi
+
   check_git_hashes
 
   # Run tests.
@@ -283,6 +290,8 @@ cat << EOF
     --prefix: Allows for a user specified prefix to be inserted before all test
               programs. Grants the ability, for example, to run test programs
               within valgrind.
+    --dump-test-names: Dump all test names and exit without actually running
+                       tests.
     --verbose: Verbose output.
 
     When the --bin-path option is not specified the script attempts to use
@@ -342,6 +351,9 @@ while [ -n "$1" ]; do
     --show-program-output)
       devnull=
       ;;
+    --dump-test-names)
+      VPX_TEST_DUMP_TEST_NAMES=yes
+      ;;
     *)
       vpx_test_usage
       exit 1
@@ -399,6 +411,7 @@ vlog "$(basename "${0%.*}") test configuration:
   VP8_IVF_FILE=${VP8_IVF_FILE}
   VP9_IVF_FILE=${VP9_IVF_FILE}
   VP9_WEBM_FILE=${VP9_WEBM_FILE}
+  VPX_TEST_DUMP_TEST_NAMES=${VPX_TEST_DUMP_TEST_NAMES}
   VPX_TEST_EXE_SUFFIX=${VPX_TEST_EXE_SUFFIX}
   VPX_TEST_FILTER=${VPX_TEST_FILTER}
   VPX_TEST_OUTPUT_DIR=${VPX_TEST_OUTPUT_DIR}
