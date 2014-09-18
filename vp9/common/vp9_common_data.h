@@ -26,6 +26,8 @@ extern const int num_4x4_blocks_high_lookup[BLOCK_SIZES];
 extern const int num_4x4_blocks_wide_lookup[BLOCK_SIZES];
 extern const int size_group_lookup[BLOCK_SIZES];
 extern const int num_pels_log2_lookup[BLOCK_SIZES];
+extern const int widths[BLOCK_SIZES];
+extern const int heights[BLOCK_SIZES];
 extern const PARTITION_TYPE partition_lookup[][BLOCK_SIZES];
 extern const BLOCK_SIZE subsize_lookup[PARTITION_TYPES][BLOCK_SIZES];
 extern const TX_SIZE max_txsize_lookup[BLOCK_SIZES];

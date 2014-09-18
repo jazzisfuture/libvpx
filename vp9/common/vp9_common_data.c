@@ -36,6 +36,10 @@ const int size_group_lookup[BLOCK_SIZES] =
 const int num_pels_log2_lookup[BLOCK_SIZES] =
   {4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12};
 
+const int widths[BLOCK_SIZES] =
+  {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
+const int heights[BLOCK_SIZES] =
+  {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
 
 const PARTITION_TYPE partition_lookup[][BLOCK_SIZES] = {
   {  // 4X4
