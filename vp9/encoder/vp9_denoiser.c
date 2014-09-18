@@ -65,7 +65,7 @@ static int sse_diff_thresh(BLOCK_SIZE bs, int increase_denoising,
   }
 }
 
-static int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising) {
+int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising) {
   return widths[bs] * heights[bs] * (increase_denoising ? 3 : 2);
 }
 
@@ -183,6 +183,18 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
     return FILTER_BLOCK;
   }
   return COPY_BLOCK;
+}
+
+int vp9_denoiser_Mx16_c(unsigned char *mc_running_avg_y,
+                             int mc_avg_y_stride,
+                             unsigned char *running_avg_y, int avg_y_stride,
+                             unsigned char *sig, int sig_stride,
+                             unsigned int motion_magnitude,
+                             int increase_denoising,
+                             BLOCK_SIZE bs) {
+  return denoiser_filter(sig, sig_stride, mc_running_avg_y, mc_avg_y_stride,
+                         running_avg_y, avg_y_stride, increase_denoising,
+                         bs, motion_magnitude);
 }
 
 static uint8_t *block_start(uint8_t *framebuf, int stride,
@@ -336,10 +348,19 @@ void vp9_denoiser_denoise(VP9_DENOISER *denoiser, MACROBLOCK *mb,
                                          &motion_magnitude);
 
   if (decision == FILTER_BLOCK) {
-    decision = denoiser_filter(src.buf, src.stride,
-                               mc_avg_start, mc_avg.y_stride,
-                               avg_start, avg.y_stride,
-                               0, bs, motion_magnitude);
+    // When the block size is 8x16, 16x16 or 32x16
+    // use sse2 to accelerate the code.
+    if (bs == BLOCK_8X16 || bs == BLOCK_16X16 || bs == BLOCK_32X16) {
+      decision = vp9_denoiser_Mx16(mc_avg_start, mc_avg.y_stride,
+                            avg_start, avg.y_stride,
+                            src.buf, src.stride,
+                            motion_magnitude, 0, bs);
+    } else {
+      decision = denoiser_filter(src.buf, src.stride,
+                                 mc_avg_start, mc_avg.y_stride,
+                                 avg_start, avg.y_stride,
+                                 0, bs, motion_magnitude);
+    }
   }
 
   if (decision == FILTER_BLOCK) {

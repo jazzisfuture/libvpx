@@ -1004,6 +1004,14 @@ specialize qw/vp9_get_mb_ss/, "$sse2_x86inc";
 add_proto qw/void vp9_subtract_block/, "int rows, int cols, int16_t *diff_ptr, ptrdiff_t diff_stride, const uint8_t *src_ptr, ptrdiff_t src_stride, const uint8_t *pred_ptr, ptrdiff_t pred_stride";
 specialize qw/vp9_subtract_block neon/, "$sse2_x86inc";
 
+#
+# Denoiser
+#
+if (vpx_config("CONFIG_VP9_TEMPORAL_DENOISING") eq "yes") {
+  add_proto qw/int vp9_denoiser_Mx16/, "unsigned char *mc_running_avg_y, int mc_avg_y_stride, unsigned char *running_avg_y, int avg_y_stride, unsigned char *sig, int sig_stride, unsigned int motion_magnitude, int increase_denoising, BLOCK_SIZE bs";
+  specialize qw/vp9_denoiser_Mx16/, "$sse2_x86inc";
+}
+
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
 # the transform coefficients are held in 32-bit
 # values, so the assembler code for  vp9_block_error can no longer be used.
