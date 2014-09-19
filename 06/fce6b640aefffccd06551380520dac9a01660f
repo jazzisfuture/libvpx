@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Marco Paniconi <marpan@google.com>
+Verified+1: Marco Paniconi <marpan@google.com>
+Submitted-by: Marco Paniconi <marpan@google.com>
+Submitted-at: Fri, 19 Sep 2014 10:16:04 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71520
+Project: webm/libvpx
+Branch: refs/heads/master
