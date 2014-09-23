@@ -42,6 +42,41 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include <immintrin.h>  // AVX2
+
+int avg_8x8(unsigned char *s, int p) {
+  int i, j;
+  int sum = 0;
+  for (i = 0; i < 8; i++, s+=p)
+    for (j = 0; j < 8; sum += s[j], j++) {}
+
+  return (sum + 32) >> 6;
+}
+
+int fast_avg(const unsigned char *s, int p) {
+  __m128i s0, s1, s2, s3, s4, s5, s6, s7, u0;
+  long long avg = 0;
+  u0  = _mm_setzero_si128();
+  s0 = _mm_loadl_epi64((const __m128i *)(s));
+  s1 = _mm_loadl_epi64((const __m128i *)(s + p));
+  s2 = _mm_loadl_epi64((const __m128i *)(s + 2 * p));
+  s3 = _mm_loadl_epi64((const __m128i *)(s + 3 * p));
+  s4 = _mm_loadl_epi64((const __m128i *)(s + 4 * p));
+  s5 = _mm_loadl_epi64((const __m128i *)(s + 5 * p));
+  s6 = _mm_loadl_epi64((const __m128i *)(s + 6 * p));
+  s7 = _mm_loadl_epi64((const __m128i *)(s + 7 * p));
+  s0 = _mm_avg_epu8(s0, s1);
+  s2 = _mm_avg_epu8(s2, s3);
+  s4 = _mm_avg_epu8(s4, s5);
+  s6 = _mm_avg_epu8(s6, s7);
+  s0 = _mm_avg_epu8(s0, s2);
+  s4 = _mm_avg_epu8(s4, s6);
+  s0 = _mm_avg_epu8(s0, s4);
+  s0 = _mm_sad_epu8(s0, u0);
+
+  _mm_storel_epi64((__m128i*)(&avg), s0);
+  return (int)(avg>>3);
+}
 
 #define GF_ZEROMV_ZBIN_BOOST 0
 #define LF_ZEROMV_ZBIN_BOOST 0
@@ -335,7 +370,7 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
   const int block_height = num_8x8_blocks_high_lookup[bsize];
   // TODO(debargha): Choose this more intelligently.
-  const int64_t threshold_multiplier = 25;
+  const int64_t threshold_multiplier = 3;
   int64_t threshold = threshold_multiplier * cpi->common.base_qindex;
   assert(block_height == block_width);
 
@@ -434,9 +469,14 @@ static void choose_partitioning(VP9_COMP *cpi,
         int y_idx = y16_idx + ((k >> 1) << 3);
         unsigned int sse = 0;
         int sum = 0;
-        if (x_idx < pixels_wide && y_idx < pixels_high)
-          vp9_get8x8var(s + y_idx * sp + x_idx, sp,
-                        d + y_idx * dp + x_idx, dp, &sse, &sum);
+
+        if (x_idx < pixels_wide && y_idx < pixels_high) {
+          int s_avg = fast_avg(s + y_idx * sp + x_idx, sp);
+          int d_avg = fast_avg(d + y_idx * dp + x_idx, dp);
+          sum = s_avg - d_avg;
+          sse = sum * sum;
+        }
+
         fill_variance(sse, sum, 64, &vst->split[k].part_variances.none);
       }
     }
