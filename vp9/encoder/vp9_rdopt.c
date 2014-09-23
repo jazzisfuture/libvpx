@@ -2752,7 +2752,8 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
     // Test best rd so far against threshold for trying this mode.
     if (best_mode_skippable && cpi->sf.schedule_mode_search)
-      mode_threshold[mode_index] <<= 1;
+      mode_threshold[mode_index] = mode_threshold[mode_index] < INT_MAX / 2 ?
+          mode_threshold[mode_index] << 1 : INT_MAX;
 
     if (best_rd < mode_threshold[mode_index])
       continue;
