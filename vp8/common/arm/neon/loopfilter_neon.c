@@ -301,21 +301,21 @@ static INLINE void write_4x8(unsigned char *dst, int pitch,
     const uint32x2_t x_1_5 = vreinterpret_u32_u8(r01_u8.val[1]);
     const uint32x2_t x_2_6 = vreinterpret_u32_u8(r23_u8.val[0]);
     const uint32x2_t x_3_7 = vreinterpret_u32_u8(r23_u8.val[1]);
-    vst1_lane_u32((uint32_t *)dst, x_0_4, 0);
+    *(uint32_t *)dst = vget_lane_u32(x_0_4, 0);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_1_5, 0);
+    *(uint32_t *)dst = vget_lane_u32(x_1_5, 0);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_2_6, 0);
+    *(uint32_t *)dst = vget_lane_u32(x_2_6, 0);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_3_7, 0);
+    *(uint32_t *)dst = vget_lane_u32(x_3_7, 0);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_0_4, 1);
+    *(uint32_t *)dst = vget_lane_u32(x_0_4, 1);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_1_5, 1);
+    *(uint32_t *)dst = vget_lane_u32(x_1_5, 1);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_2_6, 1);
+    *(uint32_t *)dst = vget_lane_u32(x_2_6, 1);
     dst += pitch;
-    vst1_lane_u32((uint32_t *)dst, x_3_7, 1);
+    *(uint32_t *)dst = vget_lane_u32(x_3_7, 1);
 #endif
 }
 
