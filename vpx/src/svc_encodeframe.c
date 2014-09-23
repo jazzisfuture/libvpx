@@ -555,12 +555,15 @@ const char *vpx_svc_dump_statistics(SvcContext *svc_ctx) {
   svc_log(svc_ctx, SVC_LOG_INFO, "\n");
   for (i = 0; i < svc_ctx->spatial_layers; ++i) {
 
+    if (i == svc_ctx->spatial_layers - 1) {
     svc_log(svc_ctx, SVC_LOG_INFO,
             "Layer %d Average PSNR=[%2.3f, %2.3f, %2.3f, %2.3f], Bytes=[%u]\n",
             i, (double)si->psnr_sum[i][0] / number_of_frames,
             (double)si->psnr_sum[i][1] / number_of_frames,
             (double)si->psnr_sum[i][2] / number_of_frames,
-            (double)si->psnr_sum[i][3] / number_of_frames, si->bytes_sum[i]);
+            (double)si->psnr_sum[i][3] / number_of_frames,
+            bytes_total + si->bytes_sum[i]);
+    }
     // the following psnr calculation is deduced from ffmpeg.c#print_report
     y_scale = si->width * si->height * 255.0 * 255.0 * number_of_frames;
     scale[1] = y_scale;
@@ -571,12 +574,14 @@ const char *vpx_svc_dump_statistics(SvcContext *svc_ctx) {
       psnr[j] = calc_psnr(si->sse_sum[i][j] / scale[j]);
       mse[j] = si->sse_sum[i][j] * 255.0 * 255.0 / scale[j];
     }
+    if (i == svc_ctx->spatial_layers - 1) {
     svc_log(svc_ctx, SVC_LOG_INFO,
             "Layer %d Overall PSNR=[%2.3f, %2.3f, %2.3f, %2.3f]\n", i, psnr[0],
             psnr[1], psnr[2], psnr[3]);
     svc_log(svc_ctx, SVC_LOG_INFO,
             "Layer %d Overall MSE=[%2.3f, %2.3f, %2.3f, %2.3f]\n", i, mse[0],
             mse[1], mse[2], mse[3]);
+    }
 
     bytes_total += si->bytes_sum[i];
     // clear sums for next time
