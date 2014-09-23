@@ -2585,7 +2585,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
   int mode_skip_start = cpi->sf.mode_skip_start + 1;
   const int *const rd_threshes = rd_opt->threshes[segment_id][bsize];
   const int *const rd_thresh_freq_fact = rd_opt->thresh_freq_fact[bsize];
-  int mode_threshold[MAX_MODES];
+  int64_t mode_threshold[MAX_MODES];
   int *mode_map = rd_opt->mode_map[bsize];
   const int mode_search_skip_flags = cpi->sf.mode_search_skip_flags;
   vp9_zero(best_mbmode);
@@ -2743,11 +2743,9 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       }
     }
 
-    if (ref_frame_skip_mask[0] & (1 << ref_frame) &&
-        ref_frame_skip_mask[1] & (1 << MAX(0, second_ref_frame)))
-      continue;
-
-    if (mode_skip_mask[ref_frame] & (1 << this_mode))
+    if ((ref_frame_skip_mask[0] & (1 << ref_frame) &&
+        ref_frame_skip_mask[1] & (1 << MAX(0, second_ref_frame))) ||
+        (mode_skip_mask[ref_frame] & (1 << this_mode)))
       continue;
 
     // Test best rd so far against threshold for trying this mode.
