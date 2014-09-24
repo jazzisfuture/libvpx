@@ -34,6 +34,10 @@ void vp9_idct4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   input0 = _mm_load_si128((const __m128i *)input);
   input2 = _mm_load_si128((const __m128i *)(input + 8));
 
+  // Reset input to be 0
+  _mm_store_si128((__m128i *)input, zero);
+  _mm_store_si128((__m128i *)(input+8), zero);
+
   // Construct i3, i1, i3, i1, i2, i0, i2, i0
   input0 = _mm_shufflelo_epi16(input0, 0xd8);
   input0 = _mm_shufflehi_epi16(input0, 0xd8);
@@ -159,6 +163,8 @@ void vp9_idct4x4_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   a = dct_const_round_shift(a * cospi_16_64);
   a = ROUND_POWER_OF_TWO(a, 4);
 
+  _mm_store_si128((__m128i *)input, zero);
+
   dc_value = _mm_set1_epi16(a);
 
   RECON_AND_STORE4X4(dest, dc_value);
@@ -268,6 +274,9 @@ void vp9_iht4x4_16_add_sse2(const int16_t *input, uint8_t *dest, int stride,
 
   in[0]= _mm_loadu_si128((const __m128i *)(input));
   in[1]= _mm_loadu_si128((const __m128i *)(input + 8));
+
+  _mm_store_si128((__m128i *)(input), zero);
+  _mm_store_si128((__m128i *)(input+8), zero);
 
   switch (tx_type) {
     case 0:  // DCT_DCT
@@ -591,6 +600,8 @@ void vp9_idct8x8_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   a = dct_const_round_shift(a * cospi_16_64);
   a = ROUND_POWER_OF_TWO(a, 5);
 
+  _mm_store_si128((__m128i *)(input), zero);
+
   dc_value = _mm_set1_epi16(a);
 
   RECON_AND_STORE(dest, dc_value);
@@ -865,13 +876,22 @@ void vp9_iht8x8_64_add_sse2(const int16_t *input, uint8_t *dest, int stride,
 
   // load input data
   in[0] = _mm_load_si128((const __m128i *)input);
+  _mm_store_si128((__m128i *)(input), zero);
   in[1] = _mm_load_si128((const __m128i *)(input + 8 * 1));
+  _mm_store_si128((__m128i *)(input + 8 * 1), zero);
   in[2] = _mm_load_si128((const __m128i *)(input + 8 * 2));
+  _mm_store_si128((__m128i *)(input + 8 * 2), zero);
   in[3] = _mm_load_si128((const __m128i *)(input + 8 * 3));
+  _mm_store_si128((__m128i *)(input + 8 * 3), zero);
   in[4] = _mm_load_si128((const __m128i *)(input + 8 * 4));
+  _mm_store_si128((__m128i *)(input + 8 * 4), zero);
   in[5] = _mm_load_si128((const __m128i *)(input + 8 * 5));
+  _mm_store_si128((__m128i *)(input + 8 * 5), zero);
   in[6] = _mm_load_si128((const __m128i *)(input + 8 * 6));
+  _mm_store_si128((__m128i *)(input + 8 * 6), zero);
   in[7] = _mm_load_si128((const __m128i *)(input + 8 * 7));
+  _mm_store_si128((__m128i *)(input + 8 * 7), zero);
+
 
   switch (tx_type) {
     case 0:  // DCT_DCT
@@ -945,9 +965,13 @@ void vp9_idct8x8_12_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
 
   // Rows. Load 4-row input data.
   in0 = _mm_load_si128((const __m128i *)input);
+  _mm_store_si128((__m128i *)(input), zero);
   in1 = _mm_load_si128((const __m128i *)(input + 8 * 1));
+  _mm_store_si128((__m128i *)(input + 8 * 1), zero);
   in2 = _mm_load_si128((const __m128i *)(input + 8 * 2));
+  _mm_store_si128((__m128i *)(input + 8 * 2), zero);
   in3 = _mm_load_si128((const __m128i *)(input + 8 * 3));
+  _mm_store_si128((__m128i *)(input + 8 * 3), zero);
 
   // 8x4 Transpose
   TRANSPOSE_8X8_10(in0, in1, in2, in3, in0, in1);
@@ -1470,7 +1494,7 @@ void vp9_idct16x16_256_add_sse2(const int16_t *input, uint8_t *dest,
   }
 }
 
-void vp9_idct16x16_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
+void vp9_idct16x16_1_add_sse2(int16_t *input, uint8_t *dest, int stride) {
   __m128i dc_value;
   const __m128i zero = _mm_setzero_si128();
   int a, i;
@@ -1478,7 +1502,7 @@ void vp9_idct16x16_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
   a = dct_const_round_shift(input[0] * cospi_16_64);
   a = dct_const_round_shift(a * cospi_16_64);
   a = ROUND_POWER_OF_TWO(a, 6);
-
+  input[0] = 0;
   dc_value = _mm_set1_epi16(a);
 
   for (i = 0; i < 2; ++i) {

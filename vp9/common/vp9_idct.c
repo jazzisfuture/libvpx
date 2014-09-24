@@ -1361,24 +1361,30 @@ void vp9_idct32x32_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
 }
 
 // idct
-void vp9_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp9_idct4x4_add(tran_low_t *input, uint8_t *dest, int stride,
                      int eob) {
-  if (eob > 1)
+  if (eob > 1) {
     vp9_idct4x4_16_add(input, dest, stride);
-  else
+    vpx_memset(input, 0, 4 * 4 * sizeof(tran_low_t));
+  } else {
     vp9_idct4x4_1_add(input, dest, stride);
+    input[0] = 0;
+  }
 }
 
 
-void vp9_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp9_iwht4x4_add(tran_low_t *input, uint8_t *dest, int stride,
                      int eob) {
-  if (eob > 1)
+  if (eob > 1) {
     vp9_iwht4x4_16_add(input, dest, stride);
-  else
+    vpx_memset(input, 0, 4 * 4 * sizeof(tran_low_t));
+  }  else {
     vp9_iwht4x4_1_add(input, dest, stride);
+    input[0] = 0;
+  }
 }
 
-void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp9_idct8x8_add(tran_low_t *input, uint8_t *dest, int stride,
                      int eob) {
   // If dc is 1, then input[0] is the reconstructed value, do not need
   // dequantization. Also, when dc is 1, dc is counted in eobs, namely eobs >=1.
@@ -1387,63 +1393,79 @@ void vp9_idct8x8_add(const tran_low_t *input, uint8_t *dest, int stride,
   // coefficients. Use eobs to decide what to do.
   // TODO(yunqingwang): "eobs = 1" case is also handled in vp9_short_idct8x8_c.
   // Combine that with code here.
-  if (eob == 1)
+  if (eob == 1) {
     // DC only DCT coefficient
     vp9_idct8x8_1_add(input, dest, stride);
-  else if (eob <= 12)
+    input[0] = 0;
+  } else if (eob <= 12) {
     vp9_idct8x8_12_add(input, dest, stride);
-  else
+    vpx_memset(input, 0, 4 * 8 * sizeof(tran_low_t));
+  } else {
     vp9_idct8x8_64_add(input, dest, stride);
+    vpx_memset(input, 0, 8 * 8 * sizeof(tran_low_t));
+  }
 }
 
-void vp9_idct16x16_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp9_idct16x16_add(tran_low_t *input, uint8_t *dest, int stride,
                        int eob) {
   /* The calculation can be simplified if there are not many non-zero dct
    * coefficients. Use eobs to separate different cases. */
-  if (eob == 1)
+  if (eob == 1) {
     /* DC only DCT coefficient. */
     vp9_idct16x16_1_add(input, dest, stride);
-  else if (eob <= 10)
+    input[0] = 0;
+  } else if (eob <= 10) {
     vp9_idct16x16_10_add(input, dest, stride);
-  else
+    vpx_memset(input, 0, 4 * 16 * sizeof(tran_low_t));
+  }  else {
     vp9_idct16x16_256_add(input, dest, stride);
+    vpx_memset(input, 0, 16 * 16 * sizeof(tran_low_t));
+  }
 }
 
-void vp9_idct32x32_add(const tran_low_t *input, uint8_t *dest, int stride,
+void vp9_idct32x32_add(tran_low_t *input, uint8_t *dest, int stride,
                        int eob) {
-  if (eob == 1)
+  if (eob == 1) {
     vp9_idct32x32_1_add(input, dest, stride);
-  else if (eob <= 34)
+    input[0] = 0;
+  } else if (eob <= 34) {
     // non-zero coeff only in upper-left 8x8
     vp9_idct32x32_34_add(input, dest, stride);
-  else
+    vpx_memset(input, 0, 8 * 32 * sizeof(tran_low_t));
+  } else {
     vp9_idct32x32_1024_add(input, dest, stride);
+    vpx_memset(input, 0, 32 * 32 * sizeof(tran_low_t));
+  }
 }
 
 // iht
-void vp9_iht4x4_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp9_iht4x4_add(TX_TYPE tx_type, tran_low_t *input, uint8_t *dest,
                     int stride, int eob) {
-  if (tx_type == DCT_DCT)
+  if (tx_type == DCT_DCT) {
     vp9_idct4x4_add(input, dest, stride, eob);
-  else
+  } else {
     vp9_iht4x4_16_add(input, dest, stride, tx_type);
+    vpx_memset(input, 0, 4 * 4 * sizeof(tran_low_t));
+  }
 }
 
-void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp9_iht8x8_add(TX_TYPE tx_type, tran_low_t *input, uint8_t *dest,
                     int stride, int eob) {
   if (tx_type == DCT_DCT) {
     vp9_idct8x8_add(input, dest, stride, eob);
   } else {
     vp9_iht8x8_64_add(input, dest, stride, tx_type);
+    vpx_memset(input, 0, 8 * 8 * sizeof(tran_low_t));
   }
 }
 
-void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+void vp9_iht16x16_add(TX_TYPE tx_type, tran_low_t *input, uint8_t *dest,
                       int stride, int eob) {
   if (tx_type == DCT_DCT) {
     vp9_idct16x16_add(input, dest, stride, eob);
   } else {
     vp9_iht16x16_256_add(input, dest, stride, tx_type);
+    vpx_memset(input, 0, 16 * 16 * sizeof(tran_low_t));
   }
 }
 
