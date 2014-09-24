@@ -2203,7 +2203,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
   // Check if the current frame is skippable for the partition search in the
   // second pass according to the first pass stats
-  if (oxcf->pass == 2 &&
+  if (cpi->sf.allow_partition_search_skip && oxcf->pass == 2 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
     cpi->skippable_frame = is_skippable_frame(cpi);
   }
