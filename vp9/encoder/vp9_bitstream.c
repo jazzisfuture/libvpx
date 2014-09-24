@@ -126,10 +126,17 @@ static void pack_mb_tokens(vp9_writer *w,
   while (p < stop && p->token != EOSB_TOKEN) {
     const int t = p->token;
     const struct vp9_token *const a = &vp9_coef_encodings[t];
-    const vp9_extra_bit *const b = &vp9_extra_bits[t];
     int i = 0;
     int v = a->value;
     int n = a->len;
+#if CONFIG_VP9_HIGH && CONFIG_HIGH_QUANT
+    const vp9_extra_bit *const b =
+        bit_depth == VPX_BITS_12 ? &vp9_extra_bits_high12[t] :
+        bit_depth == VPX_BITS_10 ? &vp9_extra_bits_high10[t] :
+        &vp9_extra_bits[t];
+#else
+    const vp9_extra_bit *const b = &vp9_extra_bits[t];
+#endif
 
     /* skip one or two nodes */
     if (p->skip_eob_node) {
