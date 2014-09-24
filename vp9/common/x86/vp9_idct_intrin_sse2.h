@@ -89,23 +89,40 @@ static INLINE void array_transpose_16x16(__m128i *res0, __m128i *res1) {
 }
 
 static INLINE void load_buffer_8x16(const int16_t *input, __m128i *in) {
+  const __m128i zero = _mm_setzero_si128();
   in[0]  = _mm_load_si128((const __m128i *)(input + 0 * 16));
+  _mm_store_si128((__m128i *)(input), zero);
   in[1]  = _mm_load_si128((const __m128i *)(input + 1 * 16));
+  _mm_store_si128((__m128i *)(input + 1 * 16), zero);
   in[2]  = _mm_load_si128((const __m128i *)(input + 2 * 16));
+  _mm_store_si128((__m128i *)(input + 2 * 16), zero);
   in[3]  = _mm_load_si128((const __m128i *)(input + 3 * 16));
+  _mm_store_si128((__m128i *)(input + 3 * 16), zero);
   in[4]  = _mm_load_si128((const __m128i *)(input + 4 * 16));
+  _mm_store_si128((__m128i *)(input + 4 * 16), zero);
   in[5]  = _mm_load_si128((const __m128i *)(input + 5 * 16));
+  _mm_store_si128((__m128i *)(input + 5 * 16), zero);
   in[6]  = _mm_load_si128((const __m128i *)(input + 6 * 16));
+  _mm_store_si128((__m128i *)(input + 6 * 16), zero);
   in[7]  = _mm_load_si128((const __m128i *)(input + 7 * 16));
+  _mm_store_si128((__m128i *)(input + 7 * 16), zero);
 
   in[8]  = _mm_load_si128((const __m128i *)(input + 8 * 16));
+  _mm_store_si128((__m128i *)(input + 8 * 16), zero);
   in[9]  = _mm_load_si128((const __m128i *)(input + 9 * 16));
+  _mm_store_si128((__m128i *)(input + 9 * 16), zero);
   in[10]  = _mm_load_si128((const __m128i *)(input + 10 * 16));
+  _mm_store_si128((__m128i *)(input + 10 * 16), zero);
   in[11]  = _mm_load_si128((const __m128i *)(input + 11 * 16));
+  _mm_store_si128((__m128i *)(input + 11 * 16), zero);
   in[12]  = _mm_load_si128((const __m128i *)(input + 12 * 16));
+  _mm_store_si128((__m128i *)(input + 12 * 16), zero);
   in[13]  = _mm_load_si128((const __m128i *)(input + 13 * 16));
+  _mm_store_si128((__m128i *)(input + 13 * 16), zero);
   in[14]  = _mm_load_si128((const __m128i *)(input + 14 * 16));
+  _mm_store_si128((__m128i *)(input + 14 * 16), zero);
   in[15]  = _mm_load_si128((const __m128i *)(input + 15 * 16));
+  _mm_store_si128((__m128i *)(input + 15 * 16), zero);
 }
 
 #define RECON_AND_STORE(dest, in_x) \

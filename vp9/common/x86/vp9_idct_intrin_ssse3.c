@@ -371,7 +371,6 @@ static void idct16_sse2(__m128i *in0, __m128i *in1, int round) {
 void vp9_idct16x16_256_add_ssse3(const int16_t *input, uint8_t *dest,
                                 int stride) {
   __m128i in0[16], in1[16];
-
   load_buffer_8x16(input, in0);
   input += 8;
   load_buffer_8x16(input, in1);
@@ -691,9 +690,13 @@ void vp9_idct16x16_10_add_ssse3(const int16_t *input, uint8_t *dest,
   // First 1-D inverse DCT
   // Load input data.
   in[0] = _mm_load_si128((const __m128i *)input);
+  _mm_store_si128((__m128i *)input, zero);
   in[1] = _mm_load_si128((const __m128i *)(input + 8 * 2));
+  _mm_store_si128((__m128i *)(input + 8 * 2), zero);
   in[2] = _mm_load_si128((const __m128i *)(input + 8 * 4));
+  _mm_store_si128((__m128i *)(input + 8 * 4), zero);
   in[3] = _mm_load_si128((const __m128i *)(input + 8 * 6));
+  _mm_store_si128((__m128i *)(input + 8 * 6), zero);
 
   TRANSPOSE_8X4(in[0], in[1], in[2], in[3], in[0], in[1]);
 

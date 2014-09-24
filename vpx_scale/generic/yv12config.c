@@ -202,7 +202,6 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       // This memset is needed for fixing valgrind error from C loop filter
       // due to access uninitialized memory in frame border. It could be
       // removed if border is totally removed.
-      vpx_memset(fb->data, 0, fb->size);
 
       ybf->buffer_alloc = (uint8_t *)yv12_align_addr(fb->data, 32);
     } else if (frame_size > (size_t)ybf->buffer_alloc_sz) {
@@ -222,7 +221,6 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       // This memset is needed for fixing valgrind error from C loop filter
       // due to access uninitialized memory in frame border. It could be
       // removed if border is totally removed.
-      vpx_memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
     }
 
     /* Only support allocating buffers that have a border that's a multiple
