@@ -255,11 +255,11 @@ void reference_16x16_dct_2d(int16_t input[256], double output[256]) {
   }
 }
 
-typedef void (*FdctFunc)(const int16_t *in, tran_low_t *out, int stride);
-typedef void (*IdctFunc)(const tran_low_t *in, uint8_t *out, int stride);
-typedef void (*FhtFunc)(const int16_t *in, tran_low_t *out, int stride,
+typedef void (*FdctFunc)(int16_t *in, tran_low_t *out, int stride);
+typedef void (*IdctFunc)(tran_low_t *in, uint8_t *out, int stride);
+typedef void (*FhtFunc)(int16_t *in, tran_low_t *out, int stride,
                         int tx_type);
-typedef void (*IhtFunc)(const tran_low_t *in, uint8_t *out, int stride,
+typedef void (*IhtFunc)(tran_low_t *in, uint8_t *out, int stride,
                         int tx_type);
 
 typedef std::tr1::tuple<FdctFunc, IdctFunc, int, vpx_bit_depth_t> Dct16x16Param;
@@ -270,7 +270,7 @@ void fdct16x16_ref(const int16_t *in, tran_low_t *out, int stride,
   vp9_fdct16x16_c(in, out, stride);
 }
 
-void idct16x16_ref(const tran_low_t *in, uint8_t *dest, int stride,
+void idct16x16_ref(tran_low_t *in, uint8_t *dest, int stride,
                    int /*tx_type*/) {
   vp9_idct16x16_256_add_c(in, dest, stride);
 }
@@ -280,35 +280,35 @@ void fht16x16_ref(const int16_t *in, tran_low_t *out, int stride,
   vp9_fht16x16_c(in, out, stride, tx_type);
 }
 
-void iht16x16_ref(const tran_low_t *in, uint8_t *dest, int stride,
+void iht16x16_ref(tran_low_t *in, uint8_t *dest, int stride,
                   int tx_type) {
   vp9_iht16x16_256_add_c(in, dest, stride, tx_type);
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void idct16x16_10(const tran_low_t *in, uint8_t *out, int stride) {
+void idct16x16_10(tran_low_t *in, uint8_t *out, int stride) {
   vp9_high_idct16x16_256_add_c(in, out, stride, 10);
 }
 
-void idct16x16_12(const tran_low_t *in, uint8_t *out, int stride) {
+void idct16x16_12(tran_low_t *in, uint8_t *out, int stride) {
   vp9_high_idct16x16_256_add_c(in, out, stride, 12);
 }
 
-void idct16x16_10_ref(const tran_low_t *in, uint8_t *out, int stride,
+void idct16x16_10_ref(tran_low_t *in, uint8_t *out, int stride,
                       int tx_type) {
   idct16x16_10(in, out, stride);
 }
 
-void idct16x16_12_ref(const tran_low_t *in, uint8_t *out, int stride,
+void idct16x16_12_ref(tran_low_t *in, uint8_t *out, int stride,
                       int tx_type) {
   idct16x16_12(in, out, stride);
 }
 
-void iht16x16_10(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
+void iht16x16_10(tran_low_t *in, uint8_t *out, int stride, int tx_type) {
   vp9_high_iht16x16_256_add_c(in, out, stride, tx_type, 10);
 }
 
-void iht16x16_12(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
+void iht16x16_12(tran_low_t *in, uint8_t *out, int stride, int tx_type) {
   vp9_high_iht16x16_256_add_c(in, out, stride, tx_type, 12);
 }
 #endif

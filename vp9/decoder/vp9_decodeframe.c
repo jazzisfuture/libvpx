@@ -222,17 +222,6 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           assert(0 && "Invalid transform size");
       }
     }
-
-    if (eob == 1) {
-      vpx_memset(dqcoeff, 0, 2 * sizeof(dqcoeff[0]));
-    } else {
-      if (tx_type == DCT_DCT && tx_size <= TX_16X16 && eob <= 10)
-        vpx_memset(dqcoeff, 0, 4 * (4 << tx_size) * sizeof(dqcoeff[0]));
-      else if (tx_size == TX_32X32 && eob <= 34)
-        vpx_memset(dqcoeff, 0, 256 * sizeof(dqcoeff[0]));
-      else
-        vpx_memset(dqcoeff, 0, (16 << (tx_size << 1)) * sizeof(dqcoeff[0]));
-    }
   }
 }
 
