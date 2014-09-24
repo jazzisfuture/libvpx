@@ -557,8 +557,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         continue;
 
       if (this_mode == NEWMV) {
-        if (this_rd < (int64_t)(1 << num_pels_log2_lookup[bsize]))
-          continue;
+//        if (this_rd < (int64_t)(1 << num_pels_log2_lookup[bsize]))
+//          continue;
         if (!combined_motion_search(cpi, x, bsize, mi_row, mi_col,
                                     &frame_mv[NEWMV][ref_frame],
                                     &rate_mv, best_rd))
