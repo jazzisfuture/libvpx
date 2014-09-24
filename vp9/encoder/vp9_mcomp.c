@@ -295,6 +295,140 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
   *distortion = besterr;                                                   \
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
 
+static INLINE int divide_and_round(const int n, const int d) {
+  return ((n < 0) ^ (d < 0)) ? ((n - d / 2) / d) : ((n + d / 2) / d);
+}
+
+// Returns surface minima estimate at given precision in 1/2^n bits.
+// Assume a model for the cost surface: S = A(x - x0)^2 + B(y - y0)^2
+// For a given set of costs S0, S1, S2, S3, S4 at points
+// (y, x) = (0, 0), (0, -1), (1, 0), (0, 1) and (-1, 0) respectively,
+// the solution for the location of the minima (x0, y0) is given by:
+// x0 = 1/2 (S1 - S3)/(S1 + S3 - 2*S0),
+// y0 = 1/2 (S4 - S2)/(S4 + S2 - 2*S0).
+// The code below is an integerized version of that.
+static void get_cost_surf_min(int *sad_list, int *ir, int *ic,
+                              int bits) {
+  *ic = divide_and_round((sad_list[1] - sad_list[3]) * (1 << (bits - 1)),
+                         (sad_list[1] - 2 * sad_list[0] + sad_list[3]));
+  *ir = divide_and_round((sad_list[4] - sad_list[2]) * (1 << (bits - 1)),
+                         (sad_list[4] - 2 * sad_list[0] + sad_list[2]));
+}
+
+int vp9_find_best_sub_pixel_surface_fit(const MACROBLOCK *x,
+                                        MV *bestmv, const MV *ref_mv,
+                                        int allow_hp,
+                                        int error_per_bit,
+                                        const vp9_variance_fn_ptr_t *vfp,
+                                        int forced_stop,
+                                        int iters_per_step,
+                                        int *sad_list,
+                                        int *mvjcost, int *mvcost[2],
+                                        int *distortion,
+                                        unsigned int *sse1,
+                                        const uint8_t *second_pred,
+                                        int w, int h) {
+  SETUP_SUBPEL_SEARCH;
+  (void) halfiters;
+  (void) quarteriters;
+  (void) eighthiters;
+  (void) whichdir;
+  (void) allow_hp;
+  (void) forced_stop;
+  (void) hstep;
+
+  if (sad_list &&
+      sad_list[0] != INT_MAX && sad_list[1] != INT_MAX &&
+      sad_list[2] != INT_MAX && sad_list[3] != INT_MAX &&
+      sad_list[4] != INT_MAX) {
+    int ir, ic;
+    unsigned int minpt;
+    get_cost_surf_min(sad_list, &ir, &ic, 3);
+    CHECK_BETTER(minpt, tr + ir, tc + ic);
+  }
+
+  bestmv->row = br;
+  bestmv->col = bc;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return INT_MAX;
+
+  return besterr;
+}
+
+int vp9_find_best_sub_pixel_tree_pruned_more(const MACROBLOCK *x,
+                                             MV *bestmv, const MV *ref_mv,
+                                             int allow_hp,
+                                             int error_per_bit,
+                                             const vp9_variance_fn_ptr_t *vfp,
+                                             int forced_stop,
+                                             int iters_per_step,
+                                             int *sad_list,
+                                             int *mvjcost, int *mvcost[2],
+                                             int *distortion,
+                                             unsigned int *sse1,
+                                             const uint8_t *second_pred,
+                                             int w, int h) {
+  SETUP_SUBPEL_SEARCH;
+  if (sad_list &&
+      sad_list[0] != INT_MAX && sad_list[1] != INT_MAX &&
+      sad_list[2] != INT_MAX && sad_list[3] != INT_MAX &&
+      sad_list[4] != INT_MAX) {
+    unsigned int minpt;
+    int ir, ic;
+    get_cost_surf_min(sad_list, &ir, &ic, 1);
+    if (ir != 0 || ic != 0) {
+      CHECK_BETTER(minpt, tr + ir * hstep, tc + ic * hstep);
+    }
+  } else {
+    FIRST_LEVEL_CHECKS;
+    if (halfiters > 1) {
+      SECOND_LEVEL_CHECKS;
+    }
+  }
+
+  tr = br;
+  tc = bc;
+
+  // Each subsequent iteration checks at least one point in common with
+  // the last iteration could be 2 ( if diag selected) 1/4 pel
+
+  // Note forced_stop: 0 - full, 1 - qtr only, 2 - half only
+  if (forced_stop != 2) {
+    hstep >>= 1;
+    FIRST_LEVEL_CHECKS;
+    if (quarteriters > 1) {
+      SECOND_LEVEL_CHECKS;
+    }
+    tr = br;
+    tc = bc;
+  }
+
+  if (allow_hp && vp9_use_mv_hp(ref_mv) && forced_stop == 0) {
+    hstep >>= 1;
+    FIRST_LEVEL_CHECKS;
+    if (eighthiters > 1) {
+      SECOND_LEVEL_CHECKS;
+    }
+    tr = br;
+    tc = bc;
+  }
+  // These lines insure static analysis doesn't warn that
+  // tr and tc aren't used after the above point.
+  (void) tr;
+  (void) tc;
+
+  bestmv->row = br;
+  bestmv->col = bc;
+
+  if ((abs(bestmv->col - ref_mv->col) > (MAX_FULL_PEL_VAL << 3)) ||
+      (abs(bestmv->row - ref_mv->row) > (MAX_FULL_PEL_VAL << 3)))
+    return INT_MAX;
+
+  return besterr;
+}
+
 int vp9_find_best_sub_pixel_tree_pruned(const MACROBLOCK *x,
                                         MV *bestmv, const MV *ref_mv,
                                         int allow_hp,
