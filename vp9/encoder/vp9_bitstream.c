@@ -1093,8 +1093,7 @@ static void write_uncompressed_header(VP9_COMP *cpi,
     // will change to show_frame flag to 0, then add an one byte frame with
     // show_existing_frame flag which tells the decoder which frame we want to
     // show.
-    if (!cm->show_frame ||
-        (is_two_pass_svc(cpi) && cm->error_resilient_mode == 0))
+    if (!cm->show_frame)
       vp9_wb_write_bit(wb, cm->intra_only);
 
     if (!cm->error_resilient_mode)
