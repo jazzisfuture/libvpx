@@ -988,6 +988,15 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     }
   }
 
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    // Adjust min Q and max q if rate control is drifting.
+    // For ~static sections leave things alone. Undershoot is
+    // likely to be a reasonable outcome.
+    if (cpi->twopass.gf_zeromotion_pct < VLOW_MOTION_THRESHOLD)
+      active_best_quality -= cpi->twopass.extend_minq;
+    active_worst_quality += cpi->twopass.extend_maxq;
+  }
+
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
   vp9_clear_system_state();
   // Static forced key frames Q restrictions dealt with elsewhere.

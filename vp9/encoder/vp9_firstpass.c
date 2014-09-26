@@ -1172,6 +1172,7 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
 
   // Reset the vbr bits off target counter
   cpi->rc.vbr_bits_off_target = 0;
+  cpi->rc.last_vbr_bits_off_target = 0;
 
   // Static sequence monitor variables.
   twopass->kf_zeromotion_pct = 100;
@@ -2220,7 +2221,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 // For VBR...adjustment to the frame target based on error from previous frames
 void vbr_rate_correction(int * this_frame_target,
                          const int64_t vbr_bits_off_target) {
-  int max_delta = (*this_frame_target * 15) / 100;
+  const int max_delta = (*this_frame_target * 25) / 100;
 
   // vbr_bits_off_target > 0 means we have extra bits to spend
   if (vbr_bits_off_target > 0) {
@@ -2462,4 +2463,26 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
 
   // Increment the gf group index ready for the next frame.
   ++twopass->gf_group.index;
+
+  // If the rate control is drifting consider adjustment ot min or maxq.
+  // Only make adjustments on gf/arf
+  if ((cpi->oxcf.rc_mode == VPX_VBR) &&
+      (cpi->twopass.gf_zeromotion_pct < VLOW_MOTION_THRESHOLD) &&
+      (cpi->refresh_alt_ref_frame ||
+        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
+    const int adjustment_limit = 10;
+
+    // Undershoot.
+    if (rc->vbr_bits_off_target > rc->avg_frame_bandwidth) {
+       twopass->extend_maxq = 0;
+       if (rc->vbr_bits_off_target > rc->last_vbr_bits_off_target)
+         twopass->extend_minq = MIN(twopass->extend_minq + 1, adjustment_limit);
+    // Overshoot.
+    } else if (rc->vbr_bits_off_target < -rc->avg_frame_bandwidth) {
+       twopass->extend_minq = 0;
+       if (rc->vbr_bits_off_target < rc->last_vbr_bits_off_target)
+         twopass->extend_maxq = MIN(twopass->extend_maxq + 1, adjustment_limit);
+    }
+    rc->last_vbr_bits_off_target = rc->vbr_bits_off_target;
+  }
 }
