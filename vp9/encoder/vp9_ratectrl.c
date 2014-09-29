@@ -130,7 +130,7 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m,
     kf_high_m[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
     arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
     arfgf_high[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.55, bit_depth);
-    inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.90, bit_depth);
+    inter[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.75, bit_depth);
     rtc[i] = get_minq_index(maxq, 0.00000271, -0.00113, 0.70, bit_depth);
   }
 }
@@ -175,7 +175,7 @@ int vp9_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
                        double correction_factor,
                        vpx_bit_depth_t bit_depth) {
   const double q = vp9_convert_qindex_to_q(qindex, bit_depth);
-  int enumerator = frame_type == KEY_FRAME ? 2250000 : 1500000;
+  int enumerator = frame_type == KEY_FRAME ? 2000000 : 1350000;
 
   assert(correction_factor <= MAX_BPB_FACTOR &&
          correction_factor >= MIN_BPB_FACTOR);
@@ -990,6 +990,18 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
         active_best_quality = cq_level;
       }
     }
+  }
+
+  if (cpi->oxcf.rc_mode == VPX_VBR) {
+    // Adjust min Q and max q if rate control is drifting.
+    // For ~static sections leave things alone. Undershoot is
+    // likely to be a reasonable outcome.
+    if (cpi->twopass.gf_zeromotion_pct < VLOW_MOTION_THRESHOLD) {
+      active_best_quality -= ((cpi->twopass.extend_minq > 0) +
+        ((cpi->twopass.extend_minq * active_best_quality) / 100));
+    }
+    active_worst_quality += ((cpi->twopass.extend_maxq > 0) +
+      ((cpi->twopass.extend_maxq * active_worst_quality) / 100));
   }
 
 #if LIMIT_QRANGE_FOR_ALTREF_AND_KEY
