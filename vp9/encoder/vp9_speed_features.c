@@ -247,11 +247,11 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     }
     sf->intra_y_mode_mask[TX_32X32] = INTRA_DC;
     sf->frame_parameter_update = 0;
-    sf->mv.search_method = FAST_HEX;
-    sf->inter_mode_mask[BLOCK_32X32] = INTER_NEAREST_NEAR_NEW;
-    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST;
+    //sf->mv.search_method = FAST_HEX;
+    sf->inter_mode_mask[BLOCK_32X32] = INTER_NEAREST_NEAR_ZERO;
+    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST_NEAR_ZERO;
+    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST_NEAR_ZERO;
+    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_NEAR_ZERO;
     sf->max_intra_bsize = BLOCK_32X32;
     sf->allow_skip_recode = 1;
   }
@@ -281,7 +281,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     }
 
     // Adaptively switch between SOURCE_VAR_BASED_PARTITION and FIXED_PARTITION.
-    sf->partition_search_type = SOURCE_VAR_BASED_PARTITION;
+    sf->partition_search_type = VAR_BASED_PARTITION;
     sf->search_type_check_frequency = 50;
 
     sf->tx_size_search_method = is_keyframe ? USE_LARGESTALL : USE_TX_8X8;
@@ -290,7 +290,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->reuse_inter_pred_sby = 1;
 
     // Increase mode checking threshold for NEWMV.
-    sf->elevate_newmv_thresh = 2000;
+//    sf->elevate_newmv_thresh = 2000;
 
     sf->mv.reduce_first_step_size = 1;
   }
