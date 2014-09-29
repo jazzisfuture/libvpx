@@ -596,7 +596,7 @@ process_detect() {
         }
     fi
     check_header stdio.h || die "Unable to invoke compiler: ${CC} ${CFLAGS}"
-    check_ld <<EOF || die "Toolchain is unable to link executables"
+    check_ld <<EOF || die "Toolchain is unable to link executables" POOF
 int main(void) {return 0;}
 EOF
     # check system headers
