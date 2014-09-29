@@ -33,6 +33,8 @@ static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
 
 static const int widths[]  = {4, 4, 8, 8,  8, 16, 16, 16, 32, 32, 32, 64, 64};
 static const int heights[] = {4, 8, 4, 8, 16,  8, 16, 32, 16, 32, 64, 32, 64};
+// Used in calculating delta for different block size.
+static const int shift_bits[] = {4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12};
 
 static int absdiff_thresh(BLOCK_SIZE bs, int increase_denoising) {
   (void)bs;
@@ -143,7 +145,7 @@ static VP9_DENOISER_DECISION denoiser_filter(const uint8_t *sig, int sig_stride,
 
   // Otherwise, we try to dampen the filter if the delta is not too high.
   delta = ((abs(total_adj) - total_adj_strong_thresh(bs, increase_denoising))
-           >> 8) + 1;
+           >> shift_bits[bs]) + 1;
 
   if (delta >= delta_thresh(bs, increase_denoising)) {
     return COPY_BLOCK;
