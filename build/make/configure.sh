@@ -989,7 +989,7 @@ EOF
 
             alt_libc="$(xcrun --sdk iphoneos --show-sdk-path)"
             add_cflags -arch ${tgt_isa} -isysroot ${alt_libc}
-            add_ldflags -arch ${tgt_isa} -ios_version_min 7.0
+            add_ldflags -arch ${tgt_isa} -ios_version_min=7.0
 
             for d in lib usr/lib usr/lib/system; do
                 try_dir="${alt_libc}/${d}"
