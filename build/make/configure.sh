@@ -309,6 +309,17 @@ check_cpp() {
 
 check_ld() {
     log check_ld "$@"
+    log check_ld "LD=${LD}"
+    log check_ld "LDFLAGS=${LDFLAGS}"
+
+    case $toolchain in
+      arm*-darwin*)
+        LDFLAGS=$(echo $LDFLAGS | sed -e s/ios_version_min\=/ios_version_min\ /)
+        log check_ld FIXED LDFLAGS HO HO HO
+        log check_ld "NEW LDFLAGS=${LDFLAGS}"
+        ;;
+    esac
+
     check_cc $@ \
         && check_cmd ${LD} ${LDFLAGS} "$@" -o ${TMP_X} ${TMP_O} ${extralibs}
 }
@@ -989,7 +1000,7 @@ EOF
 
             alt_libc="$(xcrun --sdk iphoneos --show-sdk-path)"
             add_cflags -arch ${tgt_isa} -isysroot ${alt_libc}
-            add_ldflags -arch ${tgt_isa} -ios_version_min 7.0
+            add_ldflags -arch ${tgt_isa} -ios_version_min=7.0
 
             for d in lib usr/lib usr/lib/system; do
                 try_dir="${alt_libc}/${d}"
@@ -1226,7 +1237,7 @@ EOF
     fi
 
     if enabled debug; then
-        check_add_cflags -g && check_add_ldflags -g
+        check_add_cflags -g #&& check_add_ldflags -g
     else
         check_add_cflags -DNDEBUG
     fi
