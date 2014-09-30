@@ -16,6 +16,7 @@
 
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
+#include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_filter.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
