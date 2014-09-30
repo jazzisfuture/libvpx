@@ -110,6 +110,7 @@ static vpx_image_t *img_alloc_helper(vpx_image_t   *img,
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_VPXI420:
     case VPX_IMG_FMT_VPXYV12:
+    case VPX_IMG_FMT_I42016:
       ycs = 1;
       break;
     default:
