@@ -970,12 +970,11 @@ EOF
           ;;
 
         darwin*)
-
             XCRUN_FIND="xcrun --sdk iphoneos -find"
             CXX="$(${XCRUN_FIND} clang++)"
             CC="$(${XCRUN_FIND} clang)"
             AR="$(${XCRUN_FIND} ar)"
-            LD="$(${XCRUN_FIND} ld)"
+            LD="${CXX:-$(${XCRUN_FIND} ld)}"
             AS="$(${XCRUN_FIND} as)"
             STRIP="$(${XCRUN_FIND} strip)"
             NM="$(${XCRUN_FIND} nm)"
@@ -989,7 +988,13 @@ EOF
 
             alt_libc="$(xcrun --sdk iphoneos --show-sdk-path)"
             add_cflags -arch ${tgt_isa} -isysroot ${alt_libc}
-            add_ldflags -arch ${tgt_isa} -ios_version_min 7.0
+            add_ldflags -arch ${tgt_isa}
+
+            if [ "${LD}" = "${CXX}" ]; then
+                add_ldflags -ios_version_min=6.0
+            else
+                add_ldflags -ios_version_min 6.0
+            fi
 
             for d in lib usr/lib usr/lib/system; do
                 try_dir="${alt_libc}/${d}"
