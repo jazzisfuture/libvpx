@@ -15,6 +15,8 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_idct.h"
 
+#include <stdio.h>
+
 #if CONFIG_EMULATE_HARDWARE_HIGHBITDEPTH
 // When CONFIG_EMULATE_HW_HIGHBITDEPTH is 1 the transform performs strict
 // overflow wrapping to match expected hardware implementations.
@@ -671,22 +673,22 @@ static void iadst16(const tran_low_t *input, tran_low_t *output) {
   tran_high_t s0, s1, s2, s3, s4, s5, s6, s7, s8;
   tran_high_t s9, s10, s11, s12, s13, s14, s15;
 
-  tran_high_t x0 = input[15];
-  tran_high_t x1 = input[0];
-  tran_high_t x2 = input[13];
-  tran_high_t x3 = input[2];
-  tran_high_t x4 = input[11];
-  tran_high_t x5 = input[4];
-  tran_high_t x6 = input[9];
-  tran_high_t x7 = input[6];
-  tran_high_t x8 = input[7];
-  tran_high_t x9 = input[8];
-  tran_high_t x10 = input[5];
-  tran_high_t x11 = input[10];
-  tran_high_t x12 = input[3];
-  tran_high_t x13 = input[12];
-  tran_high_t x14 = input[1];
-  tran_high_t x15 = input[14];
+  tran_low_t x0 = input[15];
+  tran_low_t x1 = input[0];
+  tran_low_t x2 = input[13];
+  tran_low_t x3 = input[2];
+  tran_low_t x4 = input[11];
+  tran_low_t x5 = input[4];
+  tran_low_t x6 = input[9];
+  tran_low_t x7 = input[6];
+  tran_low_t x8 = input[7];
+  tran_low_t x9 = input[8];
+  tran_low_t x10 = input[5];
+  tran_low_t x11 = input[10];
+  tran_low_t x12 = input[3];
+  tran_low_t x13 = input[12];
+  tran_low_t x14 = input[1];
+  tran_low_t x15 = input[14];
 
   if (!(x0 | x1 | x2 | x3 | x4 | x5 | x6 | x7 | x8
            | x9 | x10 | x11 | x12 | x13 | x14 | x15)) {
@@ -803,14 +805,14 @@ static void iadst16(const tran_low_t *input, tran_low_t *output) {
   x15 = dct_const_round_shift(s13 - s15);
 
   // stage 4
-  s2 = (- cospi_16_64) * (x2 + x3);
-  s3 = cospi_16_64 * (x2 - x3);
-  s6 = cospi_16_64 * (x6 + x7);
-  s7 = cospi_16_64 * (- x6 + x7);
-  s10 = cospi_16_64 * (x10 + x11);
-  s11 = cospi_16_64 * (- x10 + x11);
-  s14 = (- cospi_16_64) * (x14 + x15);
-  s15 = cospi_16_64 * (x14 - x15);
+  s2 = - x2 * cospi_16_64 - x3 * cospi_16_64; // (- cospi_16_64) * (x2 + x3);
+  s3 = x2 * cospi_16_64 - x3 * cospi_16_64; // cospi_16_64 * (x2 - x3);
+  s6 = x6 * cospi_16_64 + x7 * cospi_16_64; // cospi_16_64 * (x6 + x7);
+  s7 = - x6 * cospi_16_64 + x7 * cospi_16_64; // cospi_16_64 * (- x6 + x7);
+  s10 = x10 * cospi_16_64 + x11 * cospi_16_64; // cospi_16_64 * (x10 + x11);
+  s11 = - x10 * cospi_16_64 + x11 * cospi_16_64; // cospi_16_64 * (- x10 + x11);
+  s14 = - x14 * cospi_16_64 - x15 * cospi_16_64; // (- cospi_16_64) * (x14 + x15);
+  s15 = x14 * cospi_16_64 - x15 * cospi_16_64; // cospi_16_64 * (x14 - x15);
 
   x2 = dct_const_round_shift(s2);
   x3 = dct_const_round_shift(s3);
@@ -1440,7 +1442,32 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
   if (tx_type == DCT_DCT) {
     vp9_idct16x16_add(input, dest, stride, eob);
   } else {
+    uint8_t dst_buf[64 * 64];
+    int i, j;
+
     vp9_iht16x16_256_add(input, dest, stride, tx_type);
+    for (j = 0; j < 16; ++j)
+      for (i = 0; i < 16; ++i)
+        dst_buf[j * 16 + i] = dest[j * stride + i];
+
+    vp9_iht16x16_256_add_c(input, dest, stride, tx_type);
+
+    for (j = 0; j < 16; ++j) {
+      int match = 1;
+      for (i = 0; i < 16; ++i) {
+        if (dst_buf[j * 16 + i] != dest[j * stride + i])
+          match = 0;
+      }
+      if (!match) {
+        int k;
+        for (k = 0; k < 16; ++k)
+          fprintf(stderr, "%d  ", dst_buf[j * 16 + k]);
+        fprintf(stderr, "\n _c ");
+        for (k = 0; k < 16; ++k)
+          fprintf(stderr, "%d  ", dest[j * stride + k]);
+        fprintf(stderr, "\n");
+      }
+    }
   }
 }
 
