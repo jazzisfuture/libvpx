@@ -541,6 +541,7 @@ static void high_img_upshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I42016:
     case VPX_IMG_FMT_I42216:
     case VPX_IMG_FMT_I44416:
+    case VPX_IMG_FMT_I44016:
       break;
     default:
       fatal("Unsupported image conversion");
@@ -580,6 +581,7 @@ static void low_img_upshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I420:
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
+    case VPX_IMG_FMT_I440:
       break;
     default:
       fatal("Unsupported image conversion");
@@ -626,6 +628,7 @@ static void high_img_downshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I42016:
     case VPX_IMG_FMT_I42216:
     case VPX_IMG_FMT_I44416:
+    case VPX_IMG_FMT_I44016:
       break;
     default:
       fatal("Unsupported image conversion");
@@ -664,6 +667,7 @@ static void low_img_downshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I420:
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
+    case VPX_IMG_FMT_I440:
       break;
     default:
       fatal("Unsupported image conversion");
