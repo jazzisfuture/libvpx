@@ -180,7 +180,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
   unsigned int sse;
   unsigned int var = 0;
   unsigned int sum_sse = 0;
-  const int shift = 8;
+  const int shift = 6;
   int rate;
   int64_t dist;
 
@@ -212,11 +212,14 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
         sum_sse += sse;
 
         if (!x->select_tx_size) {
-          if (x->bsse[(i << 2) + block_idx] < p->quant_thred[0] >> shift)
-            x->skip_txfm[(i << 2) + block_idx] = 1;
-          else if (var < p->quant_thred[1] >> shift)
+          // Check if all ac coefficients can be quantized to zero.
+          if (var < p->quant_thred[1] >> shift) {
             x->skip_txfm[(i << 2) + block_idx] = 2;
-          else
+
+            // Check if dc coefficient can be quantized to zero.
+            if (sse - var < p->quant_thred[0] >> shift)
+              x->skip_txfm[(i << 2) + block_idx] = 1;
+          } else
             x->skip_txfm[(i << 2) + block_idx] = 0;
         }
 
