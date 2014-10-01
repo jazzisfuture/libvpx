@@ -106,6 +106,7 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
     yv12->y_stride >>= 1;
     yv12->uv_stride >>= 1;
     yv12->flags = YV12_FLAG_HIGHBITDEPTH;
+    printf("yv12 strides = %d, %d\n", yv12->y_stride, yv12->uv_stride);
   } else {
     yv12->flags = 0;
   }
@@ -113,8 +114,6 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
 #else
   yv12->border  = (img->stride[VPX_PLANE_Y] - img->w) / 2;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-
-  yv12->border  = (img->stride[VPX_PLANE_Y] - img->w) / 2;
   return VPX_CODEC_OK;
 }
 
