@@ -123,7 +123,8 @@ static vpx_image_t *img_alloc_helper(vpx_image_t   *img,
   w = (d_w + align) & ~align;
   align = (1 << ycs) - 1;
   h = (d_h + align) & ~align;
-  s = (fmt & VPX_IMG_FMT_PLANAR) ? w : bps * w / 8;
+  s = (fmt & VPX_IMG_FMT_PLANAR) ?
+      w * ((fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1) : bps * w / 8;
   s = (s + stride_align - 1) & ~(stride_align - 1);
 
   /* Allocate the new image */
