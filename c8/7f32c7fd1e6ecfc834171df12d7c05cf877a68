@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+2: Jingning Han <jingning@google.com>
+Submitted-by: James Zern <jzern@google.com>
+Submitted-at: Tue, 30 Sep 2014 17:26:07 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71697
+Project: webm/libvpx
+Branch: refs/heads/master
