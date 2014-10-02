@@ -330,7 +330,10 @@ $vp9_convolve8_avg_vert_neon_asm=vp9_convolve8_avg_vert_neon;
 #
 # dct
 #
-if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
+if ((vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") || (vpx_config("CONFIG_EMULATE_HARDWARE") eq "yes")) {
+  # Note as optimzed versions of these functions are added, we will need to change this check.
+  # Also, we will need to change the names of these functions to separate the high bit-depth
+  # versions with the non-high bitdepth ones.
   add_proto qw/void vp9_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride";
   specialize qw/vp9_idct4x4_1_add/;
 
@@ -689,6 +692,8 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   #
   # dct
   #
+  # Note as optimized versions of these functions are added we need to add a check to ensure
+  # that when CONFIG_EMULATE_HARDWARE is on, it defaults to the C versions only.
   add_proto qw/void vp9_high_idct4x4_1_add/, "const tran_low_t *input, uint8_t *dest, int dest_stride, int bd";
   specialize qw/vp9_high_idct4x4_1_add/;
 
