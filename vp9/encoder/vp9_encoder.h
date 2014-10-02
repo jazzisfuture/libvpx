@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #define DEFAULT_GF_INTERVAL         10
+#define INVALID_REF_BUFFER_IDX      -1
 
 typedef struct {
   int nmvjointcost[MV_JOINTS];
@@ -377,6 +378,7 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+  int initial_mbs;
 
   int use_svc;
 
