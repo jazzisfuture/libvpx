@@ -377,6 +377,7 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+  int initial_mbs;
 
   int use_svc;
 
