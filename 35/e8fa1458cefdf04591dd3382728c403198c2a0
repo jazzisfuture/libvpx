@@ -1,0 +1,8 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+1: Peter de Rivaz <peter.derivaz@gmail.com>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Thu, 02 Oct 2014 09:22:22 -0700
+Reviewed-on: https://gerrit.chromium.org/gerrit/71719
+Project: webm/libvpx
+Branch: refs/heads/master
