@@ -69,6 +69,7 @@ typedef enum {
   // encode_breakout is disabled.
   ENCODE_BREAKOUT_DISABLED = 0,
   // encode_breakout is enabled.
+
   ENCODE_BREAKOUT_ENABLED = 1,
   // encode_breakout is enabled with small max_thresh limit.
   ENCODE_BREAKOUT_LIMITED = 2
@@ -377,6 +378,7 @@ typedef struct VP9_COMP {
 
   int initial_width;
   int initial_height;
+  int initial_mbs;
 
   int use_svc;
 
