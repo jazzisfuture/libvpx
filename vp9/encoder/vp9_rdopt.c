@@ -169,7 +169,8 @@ static void swap_block_ptr(MACROBLOCK *x, PICK_MODE_CONTEXT *ctx,
 
 static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
                             MACROBLOCK *x, MACROBLOCKD *xd,
-                            int *out_rate_sum, int64_t *out_dist_sum) {
+                            int *out_rate_sum, int64_t *out_dist_sum,
+                            int *skip_txfm_sb, int64_t *skip_sse_sb) {
   // Note our transform coeffs are 8 times an orthogonal transform.
   // Hence quantizer step is also 8 times. To get effective quantizer
   // we need to divide by 8 before sending to modeling function.
@@ -185,6 +186,8 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
   int64_t dist;
 
   x->pred_sse[ref] = 0;
+  *skip_txfm_sb = 1;
+  *skip_sse_sb = 0;
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     struct macroblock_plane *const p = &x->plane[i];
@@ -197,6 +200,12 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     int idx, idy;
     int lw = b_width_log2_lookup[unit_size] + 2;
     int lh = b_height_log2_lookup[unit_size] + 2;
+    int64_t dc_thr = p->quant_thred[0] >> shift;
+    int64_t ac_thr = p->quant_thred[1] >> shift;
+    // The low thresholds are used to measure if the prediction errors are
+    // low enough so that we can skip the mode search.
+    int64_t low_dc_thr = MIN(100, dc_thr >> 2);
+    int64_t low_ac_thr = MIN(200, ac_thr >> 2);
 
     sum_sse = 0;
 
@@ -205,6 +214,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
         uint8_t *src = p->src.buf + (idy * p->src.stride << lh) + (idx << lw);
         uint8_t *dst = pd->dst.buf + (idy * pd->dst.stride << lh) + (idx << lh);
         int block_idx = (idy << 1) + idx;
+        int low_err_skip = 0;
 
         var = cpi->fn_ptr[unit_size].vf(src, p->src.stride,
                                         dst, pd->dst.stride, &sse);
@@ -214,19 +224,28 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
         x->skip_txfm[(i << 2) + block_idx] = 0;
         if (!x->select_tx_size) {
           // Check if all ac coefficients can be quantized to zero.
-          if (var < p->quant_thred[1] >> shift) {
+          if (var < ac_thr) {
             x->skip_txfm[(i << 2) + block_idx] = 2;
 
             // Check if dc coefficient can be quantized to zero.
-            if (sse - var < p->quant_thred[0] >> shift)
+            if (sse - var < dc_thr) {
               x->skip_txfm[(i << 2) + block_idx] = 1;
+
+              if (var < low_ac_thr && sse - var < low_dc_thr)
+                low_err_skip = 1;
+            }
           }
         }
+
+        if (*skip_txfm_sb && !low_err_skip)
+          *skip_txfm_sb = 0;
 
         if (i == 0)
           x->pred_sse[ref] += sse;
       }
     }
+
+    *skip_sse_sb += sum_sse;
 
     // Fast approximate the modelling function.
     if (cpi->oxcf.speed > 4) {
@@ -265,6 +284,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     }
   }
 
+  *skip_sse_sb <<= 4;
   *out_rate_sum = (int)rate_sum;
   *out_dist_sum = dist_sum << 4;
 }
@@ -2436,8 +2456,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  int64_t txfm_cache[],
                                  int *rate2, int64_t *distortion,
                                  int *skippable,
-                                 int *rate_y, int64_t *distortion_y,
-                                 int *rate_uv, int64_t *distortion_uv,
+                                 int *rate_y, int *rate_uv,
                                  int *disable_skip,
                                  int_mv (*mode_mv)[MAX_REF_FRAMES],
                                  int mi_row, int mi_col,
@@ -2479,6 +2498,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int pred_filter_search = cpi->sf.cb_pred_filter_search ?
       (((mi_row + mi_col) >> bsl) +
        get_chessboard_index(cm->current_video_frame)) & 0x1 : 0;
+
+  int skip_txfm_sb = 0;
+  int64_t skip_sse_sb = INT64_MAX;
+  int64_t distortion_y = 0, distortion_uv = 0;
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -2597,6 +2620,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       for (i = 0; i < SWITCHABLE_FILTERS; ++i) {
         int j;
         int64_t rs_rd;
+        int tmp_skip_sb = 0;
+        int64_t tmp_skip_sse = INT64_MAX;
+
         mbmi->interp_filter = i;
         rs = vp9_get_switchable_rate(cpi);
         rs_rd = RDCOST(x->rdmult, x->rddiv, rs, 0);
@@ -2632,7 +2658,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
             }
           }
           vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum);
+          model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum,
+                          &tmp_skip_sb, &tmp_skip_sse);
 
           rd = RDCOST(x->rdmult, x->rddiv, rate_sum, dist_sum);
           rd_opt->filter_cache[i] = rd;
@@ -2668,7 +2695,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
              cm->interp_filter == mbmi->interp_filter)) {
           pred_exists = 1;
           tmp_rd = best_rd;
-
+          skip_txfm_sb = tmp_skip_sb;
+          skip_sse_sb = tmp_skip_sse;
           vpx_memcpy(skip_txfm, x->skip_txfm, sizeof(skip_txfm));
           vpx_memcpy(bsse, x->bsse, sizeof(bsse));
         }
@@ -2697,7 +2725,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // switchable list (ex. bilinear) is indicated at the frame level, or
     // skip condition holds.
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
-    model_rd_for_sb(cpi, bsize, x, xd, &tmp_rate, &tmp_dist);
+    model_rd_for_sb(cpi, bsize, x, xd, &tmp_rate, &tmp_dist,
+                    &skip_txfm_sb, &skip_sse_sb);
     rd = RDCOST(x->rdmult, x->rddiv, rs + tmp_rate, tmp_dist);
     vpx_memcpy(skip_txfm, x->skip_txfm, sizeof(skip_txfm));
     vpx_memcpy(bsse, x->bsse, sizeof(bsse));
@@ -2733,14 +2762,14 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   vpx_memcpy(x->skip_txfm, skip_txfm, sizeof(skip_txfm));
   vpx_memcpy(x->bsse, bsse, sizeof(bsse));
 
-  if (!x->skip) {
+  if (!skip_txfm_sb) {
     int skippable_y, skippable_uv;
     int64_t sseuv = INT64_MAX;
     int64_t rdcosty = INT64_MAX;
 
     // Y cost and distortion
     vp9_subtract_plane(x, bsize, 0);
-    super_block_yrd(cpi, x, rate_y, distortion_y, &skippable_y, psse,
+    super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
                     bsize, txfm_cache, ref_best_rd);
 
     if (*rate_y == INT_MAX) {
@@ -2751,12 +2780,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     *rate2 += *rate_y;
-    *distortion += *distortion_y;
+    *distortion += distortion_y;
 
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = MIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-    super_block_uvrd(cpi, x, rate_uv, distortion_uv, &skippable_uv, &sseuv,
+    super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv, &sseuv,
                      bsize, ref_best_rd - rdcosty);
     if (*rate_uv == INT_MAX) {
       *rate2 = INT_MAX;
@@ -2767,8 +2796,16 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     *psse += sseuv;
     *rate2 += *rate_uv;
-    *distortion += *distortion_uv;
+    *distortion += distortion_uv;
     *skippable = skippable_y && skippable_uv;
+  } else {
+    x->skip = 1;
+    *disable_skip = 1;
+
+    // The cost of skip bit needs to be added.
+    *rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
+
+    *distortion = skip_sse_sb;
   }
 
   if (!is_comp_pred)
@@ -3254,8 +3291,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   tx_cache,
                                   &rate2, &distortion2, &skippable,
-                                  &rate_y, &distortion_y,
-                                  &rate_uv, &distortion_uv,
+                                  &rate_y, &rate_uv,
                                   &disable_skip, frame_mv,
                                   mi_row, mi_col,
                                   single_newmv, single_inter_filter,
