@@ -10,6 +10,8 @@ print <<EOF
 
 struct macroblockd;
 
+struct postproc_deband;
+
 /* Encoder forward decls */
 struct macroblock;
 struct vp9_variance_vtable;
@@ -290,6 +292,9 @@ $vp9_post_proc_down_and_across_sse2=vp9_post_proc_down_and_across_xmm;
 add_proto qw/void vp9_plane_add_noise/, "uint8_t *Start, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int Width, unsigned int Height, int Pitch";
 specialize qw/vp9_plane_add_noise sse2/;
 $vp9_plane_add_noise_sse2=vp9_plane_add_noise_wmt;
+
+add_proto qw/void vp9_unround_then_pattern_round/, "const struct postproc_deband *deband, const uint8_t *src_ptr, uint8_t *dst_ptr, int src_stride, int dst_stride, int height, int width, int thresh, int rlimit";
+specialize qw/vp9_unround_then_pattern_round ssse3/;
 }
 
 #
