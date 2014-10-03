@@ -42,6 +42,7 @@
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include <immintrin.h>  // AVX2
 
 #define GF_ZEROMV_ZBIN_BOOST 0
 #define LF_ZEROMV_ZBIN_BOOST 0
@@ -335,10 +336,10 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
   const int block_height = num_8x8_blocks_high_lookup[bsize];
   // TODO(debargha): Choose this more intelligently.
-  const int64_t threshold_multiplier = 25;
-  int64_t threshold = threshold_multiplier * cpi->common.base_qindex;
+  const int64_t threshold_multiplier = cm->frame_type == KEY_FRAME ? 64 : 1;
+  int64_t threshold = threshold_multiplier *
+      vp9_convert_qindex_to_q(cpi->common.base_qindex) / 16;
   assert(block_height == block_width);
-
   tree_to_node(data, bsize, &vt);
 
   // Split none is available only if we have more than half a block size
@@ -390,6 +391,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   int_mv nearest_mv, near_mv;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
   const struct scale_factors *const sf = &cm->frame_refs[LAST_FRAME - 1].sf;
+  int bytes_per_mb = 8 * cpi->rc.avg_frame_bandwidth / cm->MBs;
 
   vp9_zero(vt);
   set_offsets(cpi, tile, mi_row, mi_col, BLOCK_64X64);
@@ -434,9 +436,14 @@ static void choose_partitioning(VP9_COMP *cpi,
         int y_idx = y16_idx + ((k >> 1) << 3);
         unsigned int sse = 0;
         int sum = 0;
-        if (x_idx < pixels_wide && y_idx < pixels_high)
-          vp9_get8x8var(s + y_idx * sp + x_idx, sp,
-                        d + y_idx * dp + x_idx, dp, &sse, &sum);
+
+        if (x_idx < pixels_wide && y_idx < pixels_high) {
+          int s_avg = vp9_avg_8x8(s + y_idx * sp + x_idx, sp);
+          int d_avg = vp9_avg_8x8(d + y_idx * dp + x_idx, dp);
+          sum = s_avg - d_avg;
+          sse = sum * sum;
+        }
+
         fill_variance(sse, sum, 64, &vst->split[k].part_variances.none);
       }
     }
@@ -453,13 +460,15 @@ static void choose_partitioning(VP9_COMP *cpi,
   // Now go through the entire structure,  splitting every block size until
   // we get to one that's got a variance lower than our threshold,  or we
   // hit 8x8.
-  if (!set_vt_partitioning(cpi, &vt, BLOCK_64X64,
-                           mi_row, mi_col)) {
+  if ( mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
+      //bytes_per_mb > 70 ||
+      !set_vt_partitioning(cpi, &vt, BLOCK_64X64, mi_row, mi_col)) {
     for (i = 0; i < 4; ++i) {
       const int x32_idx = ((i & 1) << 2);
       const int y32_idx = ((i >> 1) << 2);
       if (!set_vt_partitioning(cpi, &vt.split[i], BLOCK_32X32,
-                               (mi_row + y32_idx), (mi_col + x32_idx))) {
+                               (mi_row + y32_idx), (mi_col + x32_idx))
+          /*|| bytes_per_mb > 120*/) {
         for (j = 0; j < 4; ++j) {
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
@@ -484,10 +493,10 @@ static void choose_partitioning(VP9_COMP *cpi,
             }
           }
 #else
-          if (!set_vt_partitioning(cpi, &vt.split[i].split[j], tile,
+          if (!set_vt_partitioning(cpi, &vt.split[i].split[j],
                                    BLOCK_16X16,
-                                   (mi_row + y32_idx + y16_idx),
-                                   (mi_col + x32_idx + x16_idx), 2)) {
+                                   mi_row + y32_idx + y16_idx,
+                                   mi_col + x32_idx + x16_idx)) {
             for (k = 0; k < 4; ++k) {
               const int x8_idx = (k & 1);
               const int y8_idx = (k >> 1);
@@ -2492,7 +2501,8 @@ static void encode_rd_sb_row(VP9_COMP *cpi, const TileInfo *const tile,
         set_fixed_partitioning(cpi, tile, mi, mi_row, mi_col, bsize);
         rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1, cpi->pc_root);
-      } else if (sf->partition_search_type == VAR_BASED_PARTITION) {
+      } else if (sf->partition_search_type == VAR_BASED_PARTITION &&
+                 cm->frame_type != KEY_FRAME ) {
         choose_partitioning(cpi, tile, mi_row, mi_col);
         rd_use_partition(cpi, tile, mi, tp, mi_row, mi_col, BLOCK_64X64,
                          &dummy_rate, &dummy_dist, 1, cpi->pc_root);
