@@ -29,6 +29,18 @@ struct postproc_state {
   DECLARE_ALIGNED(16, char, bothclamp[16]);
 };
 
+struct postproc_deband {
+  int rlimit;
+  int thresh;
+  int width;
+  int height;
+  int frame_size;
+  uint8_t *downMax;
+  uint8_t *downMin;
+  uint16_t *downMean;
+  uint16_t *high;
+};
+
 struct VP9Common;
 
 int vp9_post_proc_frame(struct VP9Common *cm,

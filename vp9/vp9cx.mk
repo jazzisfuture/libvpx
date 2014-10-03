@@ -87,6 +87,7 @@ VP9_CX_SRCS-yes += encoder/vp9_aq_complexity.h
 ifeq ($(CONFIG_VP9_POSTPROC),yes)
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += common/vp9_postproc.h
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += common/vp9_postproc.c
+VP9_CX_SRCS-$(HAVE_SSSE3) += common/x86/vp9_postproc_ssse3.c
 endif
 VP9_CX_SRCS-yes += encoder/vp9_temporal_filter.c
 VP9_CX_SRCS-yes += encoder/vp9_temporal_filter.h

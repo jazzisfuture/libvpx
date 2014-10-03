@@ -97,6 +97,13 @@ void vp9_free_ref_frame_buffers(VP9_COMMON *cm) {
   }
 
   vp9_free_frame_buffer(&cm->post_proc_buffer);
+
+#if CONFIG_VP9_POSTPROC
+  vpx_free(cm->postproc_deband.high);
+  vpx_free(cm->postproc_deband.downMax);
+  vpx_free(cm->postproc_deband.downMin);
+  vpx_free(cm->postproc_deband.downMean);
+#endif
 }
 
 void vp9_free_context_buffers(VP9_COMMON *cm) {

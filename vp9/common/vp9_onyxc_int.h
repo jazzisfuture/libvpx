@@ -184,6 +184,7 @@ typedef struct VP9Common {
 
 #if CONFIG_VP9_POSTPROC
   struct postproc_state  postproc_state;
+  struct postproc_deband postproc_deband;
 #endif
 
   int error_resilient_mode;
