@@ -102,6 +102,7 @@ long long mkvparser::GetUIntLength(IMkvReader* pReader, long long pos,
   int status = pReader->Length(&total, &available);
   assert(status >= 0);
   assert((total < 0) || (available <= total));
+  (void) status;
 
   len = 1;
 
@@ -402,6 +403,7 @@ bool mkvparser::Match(IMkvReader* pReader, long long& pos, unsigned long id_,
 
   status = pReader->Read(pos, buflen_, buf);
   assert(status == 0);  // TODO
+  (void) status;
 
   buflen = buflen_;
 
@@ -3005,6 +3007,7 @@ const Cluster* Segment::GetNext(const Cluster* pCurr) {
     result = GetUIntLength(m_pReader, pos, len);
     assert(result == 0);  // TODO
     assert((pos + len) <= stop);  // TODO
+    (void) result;
 
     const long long size = ReadUInt(m_pReader, pos, len);
     assert(size > 0);  // TODO
@@ -3040,6 +3043,7 @@ const Cluster* Segment::GetNext(const Cluster* pCurr) {
     result = GetUIntLength(m_pReader, pos, len);
     assert(result == 0);  // TODO
     assert((pos + len) <= stop);  // TODO
+    (void) result;
 
     const long long size = ReadUInt(m_pReader, pos, len);
     assert(size >= 0);  // TODO

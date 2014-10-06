@@ -232,7 +232,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
     // Fast approximate the modelling function.
     if (cpi->oxcf.speed > 4) {
       int64_t rate;
-      int64_t square_error = sse;
+      int64_t square_error = sum_sse;
       int quantizer = (pd->dequant[1] >> 3);
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -2448,7 +2448,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED_ARRAY(16, uint16_t, tmp_buf16, MAX_MB_PLANE * 64 * 64);
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf8, MAX_MB_PLANE * 64 * 64);
-  uint8_t *tmp_buf = tmp_buf8;
+  uint8_t *tmp_buf;
 #else
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
