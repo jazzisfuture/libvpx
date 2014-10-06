@@ -98,6 +98,20 @@ static INLINE tran_low_t dct_const_round_shift(tran_high_t input) {
   return (tran_low_t)rv;
 }
 
+static INLINE tran_low_t check_range(tran_high_t input) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  // For valid highbitdepth VP9 streams, intermediate stage coefficients will
+  // stay within the ranges:
+  // - 8 bit: signed 16 bit integer
+  // - 10 bit: signed 18 bit integer
+  // - 12 bit: signed 20 bit integer
+#elif CONFIG_COEFFICIENT_RANGE_CHECKING
+  assert(INT16_MIN <= input);
+  assert(input <= INT16_MAX);
+#endif
+  return (tran_low_t)input;
+}
+
 typedef void (*transform_1d)(const tran_low_t*, tran_low_t*);
 
 typedef struct {
