@@ -190,6 +190,9 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
       }
     }
     v = (val * dqv) >> dq_shift;
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
+    assert(v >= 0 && v < INT16_MAX);
+#endif
     dqcoeff[scan[c]] = vp9_read_bit(r) ? -v : v;
     token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++c;
