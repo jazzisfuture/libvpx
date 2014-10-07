@@ -2481,7 +2481,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2636,12 +2636,6 @@ void set_frame_size(VP9_COMP *cpi) {
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
 
-  // For two pass encodes analyse the first pass stats and determine
-  // the bit allocation and other parameters for this frame / group of frames.
-  if ((oxcf->pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
-    vp9_rc_get_second_pass_params(cpi);
-  }
-
   if (!cpi->use_svc && cpi->multi_arf_allowed) {
     if (cm->frame_type == KEY_FRAME) {
       init_buffer_indices(cpi);
@@ -2696,12 +2690,47 @@ void set_frame_size(VP9_COMP *cpi) {
   set_ref_ptrs(cm, xd, LAST_FRAME, LAST_FRAME);
 }
 
+// For VBR...adjustment to the frame target based on error from previous frames
+void vbr_rate_correction(int * this_frame_target,
+                         const int64_t vbr_bits_off_target) {
+  int max_delta = (*this_frame_target * 15) / 100;
+
+  // vbr_bits_off_target > 0 means we have extra bits to spend
+  if (vbr_bits_off_target > 0) {
+    *this_frame_target +=
+      (vbr_bits_off_target > max_delta) ? max_delta
+                                        : (int)vbr_bits_off_target;
+  } else {
+    *this_frame_target -=
+      (vbr_bits_off_target < -max_delta) ? max_delta
+                                         : (int)-vbr_bits_off_target;
+  }
+}
+
+static void set_target_rate(VP9_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  int target_rate = rc->base_frame_target;
+
+  // Correction to rate target based on prior over or under shoot.
+  if (cpi->oxcf.rc_mode == VPX_VBR)
+    vbr_rate_correction(&target_rate, rc->vbr_bits_off_target);
+
+  vp9_rc_set_frame_target(cpi, target_rate);
+}
+
 static void encode_without_recode_loop(VP9_COMP *cpi) {
   int q;
   int bottom_index, top_index;  // Dummy.
   VP9_COMMON *const cm = &cpi->common;
 
   vp9_clear_system_state();
+
+  // For two pass encodes analyse the first pass stats and determine
+  // the bit allocation and other parameters for this frame / group of frames.
+  if ((cpi->oxcf.pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
+    vp9_rc_get_second_pass_params(cpi);
+    set_target_rate(cpi);
+  }
 
   set_frame_size(cpi);
 
@@ -2751,33 +2780,40 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
 
+  // For two pass encodes analyse the first pass stats and determine
+  // the bit allocation and other parameters for this frame / group of frames.
+  if ((cpi->oxcf.pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
+    vp9_rc_get_second_pass_params(cpi);
+  }
+
   do {
     vp9_clear_system_state();
 
-    if (loop_count == 0) {
-      set_frame_size(cpi);
-
-      // Decide frame size bounds
-      vp9_rc_compute_frame_size_bounds(cpi, rc->this_frame_target,
-                                       &frame_under_shoot_limit,
-                                       &frame_over_shoot_limit);
-
-      cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
-                                        &cpi->scaled_source);
-
-      if (cpi->unscaled_last_source != NULL)
-        cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
-                                                 &cpi->scaled_last_source);
-
-      vp9_scale_references(cpi);
-
-      set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
-
-      q_low = bottom_index;
-      q_high = top_index;
+    if ((cpi->oxcf.pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
+      set_target_rate(cpi);
     }
 
+    // Decide frame size bounds
+    vp9_rc_compute_frame_size_bounds(cpi, rc->this_frame_target,
+                                     &frame_under_shoot_limit,
+                                     &frame_over_shoot_limit);
+    set_frame_size(cpi);
+
+    cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
+                                      &cpi->scaled_source);
+
+    if (cpi->unscaled_last_source != NULL)
+      cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
+                                               &cpi->scaled_last_source);
+
+    // TODO(agrange) Free the existing scaled ref frames.
+    vp9_scale_references(cpi);
+
+    set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
+
     vp9_set_quantizer(cm, q);
+    q_low = bottom_index;
+    q_high = top_index;
 
     if (loop_count == 0)
       setup_frame(cpi);
@@ -3274,7 +3310,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   cm->last_frame_type = cm->frame_type;
   vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
