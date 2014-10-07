@@ -91,6 +91,10 @@ ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_VP8_DECODER),yesyes)
 LIBVPX_TEST_SRCS-yes                   += vp8_boolcoder_test.cc
 endif
 
+ifeq ($(CONFIG_TEMPORAL_DENOISING),yes)
+LIBVPX_TEST_SRCS-$(CONFIG_TEMPORAL_DENOISING) += vp8_denoiser_sse2_test.cc
+endif
+
 LIBVPX_TEST_SRCS-$(CONFIG_POSTPROC)    += pp_filter_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_DECODER) += vp8_decrypt_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += set_roi.cc
