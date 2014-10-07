@@ -124,7 +124,7 @@ static void set_good_speed_feature(VP9_COMP *cpi, VP9_COMMON *cm,
     sf->tx_size_search_method = USE_LARGESTALL;
     sf->disable_split_mask = DISABLE_ALL_SPLIT;
     sf->mv.search_method = BIGDIA;
-    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED;
+    sf->mv.subpel_search_method = SUBPEL_TREE_PRUNED_MORE;
     sf->adaptive_rd_thresh = 4;
     sf->mode_search_skip_flags |= FLAG_EARLY_TERMINATE;
     sf->disable_filter_search_var_thresh = 200;
