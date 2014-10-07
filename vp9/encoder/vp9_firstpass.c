@@ -2209,23 +2209,6 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->modified_error_left -= kf_group_err;
 }
 
-// For VBR...adjustment to the frame target based on error from previous frames
-void vbr_rate_correction(int * this_frame_target,
-                         const int64_t vbr_bits_off_target) {
-  int max_delta = (*this_frame_target * 15) / 100;
-
-  // vbr_bits_off_target > 0 means we have extra bits to spend
-  if (vbr_bits_off_target > 0) {
-    *this_frame_target +=
-      (vbr_bits_off_target > max_delta) ? max_delta
-                                        : (int)vbr_bits_off_target;
-  } else {
-    *this_frame_target -=
-      (vbr_bits_off_target < -max_delta) ? max_delta
-                                         : (int)-vbr_bits_off_target;
-  }
-}
-
 // Define the reference buffers that will be updated post encode.
 void configure_buffer_updates(VP9_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
@@ -2307,12 +2290,13 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     target_rate = gf_group->bit_allocation[gf_group->index];
     target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
     rc->base_frame_target = target_rate;
-
+/*
     // Correction to rate target based on prior over or under shoot.
     if (cpi->oxcf.rc_mode == VPX_VBR)
       vbr_rate_correction(&target_rate, rc->vbr_bits_off_target);
 
     vp9_rc_set_frame_target(cpi, target_rate);
+*/
     cm->frame_type = INTER_FRAME;
 
     if (lc != NULL) {
@@ -2420,13 +2404,13 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     target_rate = vp9_rc_clamp_pframe_target_size(cpi, target_rate);
 
   rc->base_frame_target = target_rate;
-
+/*
   // Correction to rate target based on prior over or under shoot.
   if (cpi->oxcf.rc_mode == VPX_VBR)
     vbr_rate_correction(&target_rate, rc->vbr_bits_off_target);
 
   vp9_rc_set_frame_target(cpi, target_rate);
-
+*/
   // Update the total stats remaining structure.
   subtract_stats(&twopass->total_left_stats, &this_frame);
 }
