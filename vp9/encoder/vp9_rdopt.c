@@ -795,25 +795,25 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                   x->skip_encode ? src : dst,
                                   x->skip_encode ? src_stride : dst_stride,
                                   dst, dst_stride, idx, idy, 0);
-          vp9_high_subtract_block(4, 4, src_diff, 8, src, src_stride,
-                                  dst, dst_stride, xd->bd);
+          vp9_highbd_subtract_block(4, 4, src_diff, 8, src, src_stride,
+                                    dst, dst_stride, xd->bd);
           if (xd->lossless) {
             const scan_order *so = &vp9_default_scan_orders[TX_4X4];
-            vp9_high_fwht4x4(src_diff, coeff, 8);
+            vp9_highbd_fwht4x4(src_diff, coeff, 8);
             vp9_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
             ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
                                  so->scan, so->neighbors,
                                  cpi->sf.use_fast_coef_costing);
             if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
               goto next_highbd;
-            vp9_high_iwht4x4_add(BLOCK_OFFSET(pd->dqcoeff, block),
-                                 dst, dst_stride,
-                                 p->eobs[block], xd->bd);
+            vp9_highbd_iwht4x4_add(BLOCK_OFFSET(pd->dqcoeff, block),
+                                   dst, dst_stride,
+                                   p->eobs[block], xd->bd);
           } else {
             int64_t unused;
             const TX_TYPE tx_type = get_tx_type_4x4(PLANE_TYPE_Y, xd, block);
             const scan_order *so = &vp9_scan_orders[TX_4X4][tx_type];
-            vp9_high_fht4x4(src_diff, coeff, 8, tx_type);
+            vp9_highbd_fht4x4(src_diff, coeff, 8, tx_type);
             vp9_regular_quantize_b_4x4(x, 0, block, so->scan, so->iscan);
             ratey += cost_coeffs(x, 0, block, tempa + idx, templ + idy, TX_4X4,
                                  so->scan, so->neighbors,
@@ -823,8 +823,8 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
                                                16, &unused, xd->bd) >> 2;
             if (RDCOST(x->rdmult, x->rddiv, ratey, distortion) >= best_rd)
               goto next_highbd;
-            vp9_high_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block),
-                                dst, dst_stride, p->eobs[block], xd->bd);
+            vp9_highbd_iht4x4_add(tx_type, BLOCK_OFFSET(pd->dqcoeff, block),
+                                  dst, dst_stride, p->eobs[block], xd->bd);
           }
         }
       }
@@ -1348,7 +1348,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-    vp9_high_subtract_block(
+    vp9_highbd_subtract_block(
         height, width, raster_block_offset_int16(BLOCK_8X8, i, p->src_diff), 8,
         src, p->src.stride, dst, pd->dst.stride, xd->bd);
   } else {
