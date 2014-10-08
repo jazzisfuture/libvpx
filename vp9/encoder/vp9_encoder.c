@@ -2243,10 +2243,10 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
 
 #if CONFIG_VP9_HIGHBITDEPTH
         if (src->flags & YV12_FLAG_HIGHBITDEPTH) {
-          vp9_high_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
-                             kernel[x_q4 & 0xf], 16 * src_w / dst_w,
-                             kernel[y_q4 & 0xf], 16 * src_h / dst_h,
-                             16 / factor, 16 / factor, bd);
+          vp9_highbd_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
+                               kernel[x_q4 & 0xf], 16 * src_w / dst_w,
+                               kernel[y_q4 & 0xf], 16 * src_h / dst_h,
+                               16 / factor, 16 / factor, bd);
         } else {
           vp9_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
                         kernel[x_q4 & 0xf], 16 * src_w / dst_w,
@@ -3612,11 +3612,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     const int lossless = is_lossless_requested(oxcf);
 #if CONFIG_VP9_HIGHBITDEPTH
     if (cpi->oxcf.use_highbitdepth)
-      cpi->mb.fwd_txm4x4 = lossless ? vp9_high_fwht4x4 : vp9_high_fdct4x4;
+      cpi->mb.fwd_txm4x4 = lossless ? vp9_highbd_fwht4x4 : vp9_highbd_fdct4x4;
     else
       cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
-    cpi->mb.high_itxm_add = lossless ? vp9_high_iwht4x4_add :
-                                       vp9_high_idct4x4_add;
+    cpi->mb.highbd_itxm_add = lossless ? vp9_highbd_iwht4x4_add :
+                                         vp9_highbd_idct4x4_add;
 #else
     cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
