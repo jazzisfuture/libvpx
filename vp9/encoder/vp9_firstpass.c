@@ -40,7 +40,7 @@
 
 #define BOOST_BREAKOUT      12.5
 #define BOOST_FACTOR        12.5
-#define ERR_DIVISOR         125.0
+#define ERR_DIVISOR         128.0
 #define FACTOR_PT_LOW       0.70
 #define FACTOR_PT_HIGH      0.90
 #define FIRST_PASS_Q        10.0
@@ -1180,7 +1180,6 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
 
   // Reset the vbr bits off target counter
   cpi->rc.vbr_bits_off_target = 0;
-  cpi->rc.last_vbr_bits_off_target = 0;
 
   cpi->rc.rate_error_estimate = 0;
 
@@ -2470,15 +2469,16 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   subtract_stats(&twopass->total_left_stats, &this_frame);
 }
 
-#define MINQ_ADJ_LIMIT 25
-#define MAXQ_ADJ_LIMIT 50
-#define Q_LIMIT_STEP 5
+#define MINQ_ADJ_LIMIT 15
+#define Q_LIMIT_STEP 1
 void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
   RATE_CONTROL *const rc = &cpi->rc;
   const int bits_used = rc->base_frame_target;
   const int64_t total_bits =
     (int64_t)(twopass->total_stats.count * rc->avg_frame_bandwidth);
+  const int rate_trend =
+    (rc->rolling_target_bits >= rc->rolling_actual_bits) ? 1 : -1;
 
   // VBR correction is done through rc->vbr_bits_off_target. Based on the
   // sign of this value, a limited % adjustment is made to the target rate
@@ -2489,9 +2489,9 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   twopass->bits_left = MAX(twopass->bits_left - bits_used, 0);
 
   // Calculate the pct rc error.
-  if (total_bits) {
+  if (rc->total_actual_bits) {
     rc->rate_error_estimate =
-      (int)((rc->vbr_bits_off_target * 100) / total_bits);
+      (int)((rc->vbr_bits_off_target * 100) / rc->total_actual_bits);
   } else {
     rc->rate_error_estimate = 0;
   }
@@ -2510,28 +2510,27 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   // Only make adjustments on gf/arf
   if ((cpi->oxcf.rc_mode == VPX_VBR) &&
       (cpi->twopass.gf_zeromotion_pct < VLOW_MOTION_THRESHOLD) &&
-      (cpi->refresh_alt_ref_frame ||
-        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
-    const int us_trigger_pct = cpi->oxcf.under_shoot_pct;
-    const int os_trigger_pct = cpi->oxcf.over_shoot_pct;
+      !cpi->rc.is_src_frame_alt_ref) {
+      //(cpi->refresh_alt_ref_frame ||
+      //  (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
+    const int maxq_adj_limit =
+      rc->worst_quality - twopass->active_worst_quality;
 
     // Undershoot.
-    if (rc->rate_error_estimate > us_trigger_pct) {
-      int step_size = MIN(Q_LIMIT_STEP,
-        MAX(1, (rc->rate_error_estimate - us_trigger_pct) / 2));
-      twopass->extend_maxq = 0;
-      if (rc->vbr_bits_off_target > rc->last_vbr_bits_off_target)
-        twopass->extend_minq =
-          MIN(twopass->extend_minq + step_size, MINQ_ADJ_LIMIT);
+    if (rc->rate_error_estimate > cpi->oxcf.under_shoot_pct) {
+      --twopass->extend_maxq;
+      if (rc->rolling_target_bits >= rc->rolling_actual_bits)
+        twopass->extend_minq += Q_LIMIT_STEP;
     // Overshoot.
-    } else if (rc->rate_error_estimate < -os_trigger_pct) {
-      int step_size = MIN(Q_LIMIT_STEP,
-        MAX(1, (abs(rc->rate_error_estimate) - os_trigger_pct) / 2));
-      twopass->extend_minq = 0;
-      if (rc->vbr_bits_off_target < rc->last_vbr_bits_off_target)
-        twopass->extend_maxq =
-          MIN(twopass->extend_maxq + step_size, MAXQ_ADJ_LIMIT);
+    } else if (rc->rate_error_estimate < -cpi->oxcf.over_shoot_pct) {
+      --twopass->extend_minq;
+      if (rc->rolling_target_bits < rc->rolling_actual_bits)
+        twopass->extend_maxq += Q_LIMIT_STEP;
+    } else {
+      --twopass->extend_minq;
+      --twopass->extend_maxq;
     }
-    rc->last_vbr_bits_off_target = rc->vbr_bits_off_target;
+    twopass->extend_minq = clamp(twopass->extend_minq, 0, MINQ_ADJ_LIMIT);
+    twopass->extend_maxq = clamp(twopass->extend_maxq, 0, maxq_adj_limit);
   }
 }

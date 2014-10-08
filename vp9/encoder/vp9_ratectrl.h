@@ -77,7 +77,6 @@ typedef struct {
   int64_t buffer_level;
   int64_t bits_off_target;
   int64_t vbr_bits_off_target;
-  int64_t last_vbr_bits_off_target;
 
   int decimation_factor;
   int decimation_count;

@@ -993,24 +993,16 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
 
   // Extenstion to max or min Q for undershoot or overshoot that is outside
   // the permitted range.
-  if (cpi->oxcf.rc_mode == VPX_VBR) {
+  if ((cpi->oxcf.rc_mode == VPX_VBR) &&
+      (cpi->twopass.gf_zeromotion_pct < VLOW_MOTION_THRESHOLD)) {
     if (frame_is_intra_only(cm) ||
         (!rc->is_src_frame_alt_ref &&
          (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame))) {
-      active_best_quality -= ((cpi->twopass.extend_minq > 0) +
-        ((cpi->twopass.extend_minq * active_best_quality) / 100));
-      active_worst_quality += ((cpi->twopass.extend_maxq > 0) +
-        (((cpi->twopass.extend_maxq / 4) * active_worst_quality) / 100));
-      // active_best_quality -= cpi->twopass.extend_minq;
-      // active_worst_quality += (cpi->twopass.extend_maxq / 2);
+      active_best_quality -= cpi->twopass.extend_minq;
+      active_worst_quality += (cpi->twopass.extend_maxq / 2);
     } else {
-      active_best_quality -= ((cpi->twopass.extend_minq > 0) +
-        (((cpi->twopass.extend_minq / 2) * active_best_quality) / 100));
-      active_worst_quality += ((cpi->twopass.extend_maxq > 0) +
-        ((cpi->twopass.extend_maxq * active_worst_quality) / 100));
-      active_best_quality -= cpi->twopass.extend_minq / 4;
-      // active_best_quality -= cpi->twopass.extend_minq / 2;
-      // active_worst_quality += cpi->twopass.extend_maxq;
+      active_best_quality -= cpi->twopass.extend_minq / 2;
+      active_worst_quality += cpi->twopass.extend_maxq;
     }
   }
 
