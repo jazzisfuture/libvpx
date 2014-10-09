@@ -486,8 +486,12 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   // var_y and sse_y are saved to be used in skipping checking
   unsigned int var_y = UINT_MAX;
   unsigned int sse_y = UINT_MAX;
+  // Reduce the intra cost penalty for small blocks (<=16x16).
+  const int reduction_fac =
+      (cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
+       bsize <= BLOCK_16X16) ? 4 : 1;
   const int intra_cost_penalty = vp9_get_intra_cost_penalty(
-      cm->base_qindex, cm->y_dc_delta_q, cm->bit_depth);
+      cm->base_qindex, cm->y_dc_delta_q, cm->bit_depth) / reduction_fac;
   const int64_t inter_mode_thresh = RDCOST(x->rdmult, x->rddiv,
                                            intra_cost_penalty, 0);
   const int intra_mode_cost = 50;
@@ -708,6 +712,11 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       rate += cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                   [INTER_OFFSET(this_mode)];
       this_rd = RDCOST(x->rdmult, x->rddiv, rate, dist);
+
+      // Allow for bias to ZEROMV for large block sizes.
+      // if (cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
+      //     bsize >= BLOCK_16X16 && mbmi->mv[0].as_int == 0)
+      //   this_rd = 90 * (this_rd / 100);
 
       // Skipping checking: test to see if this block can be reconstructed by
       // prediction only.
