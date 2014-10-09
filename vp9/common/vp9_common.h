@@ -75,10 +75,36 @@ static INLINE int get_unsigned_bits(unsigned int num_values) {
   return num_values > 0 ? get_msb(num_values) + 1 : 0;
 }
 
-#if CONFIG_VP9_HIGH
+#if CONFIG_VP9_HIGHBITDEPTH
+static INLINE uint16_t clip_pixel_highbd(int val, int bd) {
+  switch (bd) {
+    case 8:
+    default:
+      return (uint16_t)clamp(val, 0, 255);
+    case 10:
+      return (uint16_t)clamp(val, 0, 1023);
+    case 12:
+      return (uint16_t)clamp(val, 0, 4095);
+  }
+}
+
+// Note:
+// tran_low_t  is the datatype used for final transform coefficients.
+// tran_high_t is the datatype used for intermediate transform stages.
+typedef int64_t tran_high_t;
+typedef int32_t tran_low_t;
+
 #define CONVERT_TO_SHORTPTR(x) ((uint16_t*)(((uintptr_t)x) << 1))
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t*)(((uintptr_t)x) >> 1 ))
-#endif
+
+#else
+
+// Note:
+// tran_low_t  is the datatype used for final transform coefficients.
+// tran_high_t is the datatype used for intermediate transform stages.
+typedef int32_t tran_high_t;
+typedef int16_t tran_low_t;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_DEBUG
 #define CHECK_MEM_ERROR(cm, lval, expr) do { \
