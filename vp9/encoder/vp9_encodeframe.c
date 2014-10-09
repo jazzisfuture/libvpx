@@ -403,6 +403,10 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
 
+  // Bias somewhat against 64x64 block size.
+  if (bsize == BLOCK_64X64)
+    threshold = threshold >> 1;
+
   // Split none is available only if we have more than half a block size
   // in width and height inside the visible image.
   if (mi_col + block_width / 2 < cm->mi_cols &&
@@ -412,29 +416,48 @@ static int set_vt_partitioning(VP9_COMP *cpi,
     return 1;
   }
 
-  // Vertical split is available on all but the bottom border.
-  if (mi_row + block_height / 2 < cm->mi_rows &&
-      vt.part_variances->vert[0].variance < threshold &&
-      vt.part_variances->vert[1].variance < threshold) {
-    BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
-    set_block_size(cpi, mi_row, mi_col, subsize);
-    set_block_size(cpi, mi_row, mi_col + block_width / 2, subsize);
-    return 1;
+  // Only allow split for blocks above 16x16, since the variance is
+  // is computed for 8x8 and too few (2) samples for 8x16/16x8.
+  if (bsize > BLOCK_16X16) {
+    // Vertical split is available on all but the bottom border.
+    if (mi_row + block_height / 2 < cm->mi_rows &&
+        vt.part_variances->vert[0].variance < threshold &&
+        vt.part_variances->vert[1].variance < threshold) {
+      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
+      set_block_size(cpi, mi_row, mi_col, subsize);
+      set_block_size(cpi, mi_row, mi_col + block_width / 2, subsize);
+      return 1;
+    }
+
+    // Horizontal split is available on all but the right border.
+    if (mi_col + block_width / 2 < cm->mi_cols &&
+        vt.part_variances->horz[0].variance < threshold &&
+        vt.part_variances->horz[1].variance < threshold) {
+      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
+      set_block_size(cpi, mi_row, mi_col, subsize);
+      set_block_size(cpi, mi_row + block_height / 2, mi_col, subsize);
+      return 1;
+    }
   }
 
-  // Horizontal split is available on all but the right border.
-  if (mi_col + block_width / 2 < cm->mi_cols &&
-      vt.part_variances->horz[0].variance < threshold &&
-      vt.part_variances->horz[1].variance < threshold) {
-    BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
-    set_block_size(cpi, mi_row, mi_col, subsize);
-    set_block_size(cpi, mi_row + block_height / 2, mi_col, subsize);
-    return 1;
+  // This will only allow 8x8 if the 16x16 variance is very large.
+  if (bsize == BLOCK_16X16) {
+    if (mi_col + block_width / 2 < cm->mi_cols &&
+        mi_row + block_height / 2 < cm->mi_rows &&
+        vt.part_variances->none.variance < (threshold << 6)) {
+      set_block_size(cpi, mi_row, mi_col, bsize);
+      return 1;
+    }
   }
   return 0;
 }
 
-// TODO(debargha): Fix this function and make it work as expected.
+// This function chooses partitioning based on the variance
+// between source and reconstructed last, where variance is
+// computed for 8x8 downsampled inputs.
+// Some thing to check: using the last source rather than
+// reconstructed last, and allowing for 4x4 (or 2x2) downsampling
+// for selection of smaller block sizes (i.e., < 16x16).
 static void choose_partitioning(VP9_COMP *cpi,
                                 const TileInfo *const tile,
                                 int mi_row, int mi_col) {
@@ -548,9 +571,12 @@ static void choose_partitioning(VP9_COMP *cpi,
         for (j = 0; j < 4; ++j) {
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
-          // NOTE: This is a temporary hack to disable 8x8 partitions,
-          // since it works really bad - possibly due to a bug
-#define DISABLE_8X8_VAR_BASED_PARTITION
+          // NOTE: Since this uses 8x8 downsampling for variance calculation
+          // we cannot really select block size 8x8 (or even 8x16/16x8),
+          // since we do not sufficient samples for variance.
+          // For now, 8x8 partition is only set if the variance of the
+          // 16x16 block is very high.
+// #define DISABLE_8X8_VAR_BASED_PARTITION
 #ifdef DISABLE_8X8_VAR_BASED_PARTITION
           if (mi_row + y32_idx + y16_idx + 1 < cm->mi_rows &&
               mi_row + x32_idx + x16_idx + 1 < cm->mi_cols) {
