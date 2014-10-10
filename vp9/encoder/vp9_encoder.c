@@ -2267,13 +2267,19 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp9_extend_frame_borders(dst);
 }
 
+static INLINE int frame_is_kf_gf_arf(const VP9_COMP *const cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  return (cm->frame_type == KEY_FRAME) ||
+         cpi->refresh_alt_ref_frame ||
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
+}
+
 // Function to test for conditions that indicate we should loop
 // back and recode a frame.
-static int recode_loop_test(const VP9_COMP *cpi,
+static int recode_loop_test(VP9_COMP *cpi,
                             int high_limit, int low_limit,
                             int q, int maxq, int minq) {
-  const VP9_COMMON *const cm = &cpi->common;
-  const RATE_CONTROL *const rc = &cpi->rc;
+  RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   int force_recode = 0;
 
@@ -2286,12 +2292,20 @@ static int recode_loop_test(const VP9_COMP *cpi,
   // and the frame is a key frame, golden frame or alt_ref_frame
   } else if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
-              (cm->frame_type == KEY_FRAME ||
-               cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame))) {
+             frame_is_kf_gf_arf(cpi))) {
     // General over and under shoot tests
-    if ((rc->projected_frame_size > high_limit && q < maxq) ||
-        (rc->projected_frame_size < low_limit && q > minq)) {
-      force_recode = 1;
+    if (rc->projected_frame_size > high_limit) {
+      if (q < maxq) {
+        force_recode = 1;
+      } else if (cpi->oxcf.allow_spatial_resampling &&
+          frame_is_kf_gf_arf(cpi) && rc->frame_size_selector == 0) {
+        // At max Q so downscale KF/GF/ARF.
+        rc->frame_size_selector = 1;
+        rc->last_frame_size_selector = 0;
+        force_recode = 1;
+      }
+    } else if (rc->projected_frame_size < low_limit && q > minq) {
+       force_recode = 1;
     } else if (cpi->oxcf.rc_mode == VPX_CQ) {
       // Deal with frame undershoot and whether or not we are
       // below the automatically set cq level.
@@ -2495,13 +2509,15 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
-    fprintf(f, "%10u %10d %10d %10d %10d"
+    fprintf(f, "%10u %dx%d %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
         "%6d %6d %5d %5d %5d "
         "%10"PRId64" %10.3lf"
         "%10lf %8u %10d %10d %10d\n",
-        cpi->common.current_video_frame, cpi->rc.this_frame_target,
+        cpi->common.current_video_frame,
+        cm->width, cm->height,
+        cpi->rc.this_frame_target,
         cpi->rc.projected_frame_size,
         cpi->rc.projected_frame_size / cpi->common.MBs,
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
@@ -2656,13 +2672,10 @@ void set_frame_size(VP9_COMP *cpi) {
     }
   }
 
-  if (oxcf->pass == 2 &&
-      cm->current_video_frame == 0 &&
-      oxcf->allow_spatial_resampling &&
-      oxcf->rc_mode == VPX_VBR) {
-    // Internal scaling is triggered on the first frame.
+  if (cpi->rc.rescale_pending == 1) {
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
                          oxcf->scaled_frame_height);
+    cpi->rc.rescale_pending = 0;
   }
 
   // Reset the frame pointers to the current frame size
@@ -2776,11 +2789,76 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
   vp9_clear_system_state();
 }
 
+static const double kScalingRateDelta = 1.1;
+
+void init_subsampling(const VP9_COMMON *cm, RATE_CONTROL *rc) {
+  const int w = cm->width;
+  const int h = cm->height;
+
+  // Frame sizes for alternating frame groups.
+  rc->frame_width[0] = w;
+  rc->frame_height[0] = h;
+
+  // Only limited frame sizes supported right now:
+  // Replace with function that using scaling factors
+  // and optimizes for 1/16th pixel resolution scaling filters.
+  if ((w * h) > (1920 * 1080)) {
+    rc->frame_width[1] = 1920;      // > 1080P -> 1080P
+    rc->frame_height[1] = 1080;
+  } else if ((w * h) > (1280 * 720)) {
+    rc->frame_width[1] = 1280;      // > 720P -> 720P
+    rc->frame_height[1] = 720;
+  } else if ((w * h) > (854 * 480)) {
+    rc->frame_width[1] = 854;       // > 480P -> 480P
+    rc->frame_height[1] = 480;
+  } else if ((w * h) > (640 * 360)) {
+    rc->frame_width[1] = 640;       // > 360P -> 360P
+    rc->frame_height[1] = 360;
+  } else if ((w * h) > (426 * 240)) {
+    rc->frame_width[1] = 426;       // > 240P -> 240P
+    rc->frame_height[1] = 240;
+  // Scaling on smaller formats may not be advisable
+  } else if ((w * h) > (352 * 288)) {
+    rc->frame_width[1] = 352;       // > CIF -> CIF
+    rc->frame_height[1] = 288;
+  } else if ((w * h) > (240 * 192)) {
+    rc->frame_width[1] = 240;       // Smallest supported scale
+    rc->frame_height[1] = 192;
+  /* if ((w * h) > (240 * 192)) {
+    rc->frame_width[1] = (w * 2) / 4;
+    rc->frame_height[1] = (h * 2) / 4; */
+  } else {
+    assert(0);
+  }
+}
+
+static void calculate_coded_size(VP9_COMP *cpi,
+                                 int *scaled_frame_width,
+                                 int *scaled_frame_height) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  TWO_PASS *const twopass = &cpi->twopass;
+  const VP9_COMMON *const cm = &cpi->common;
+
+  *scaled_frame_width = rc->frame_width[rc->frame_size_selector];
+  *scaled_frame_height = rc->frame_height[rc->frame_size_selector];
+
+  if (rc->frame_size_selector == 0) {
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality;
+  } else {
+    int qdelta = vp9_compute_qdelta_by_rate(
+        rc, cm->frame_type, twopass->baseline_active_worst_quality,
+        kScalingRateDelta, cm->bit_depth);
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality
+        + qdelta;
+  }
+}
+
 static void encode_with_recode_loop(VP9_COMP *cpi,
                                     size_t *size,
                                     uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
+  VP9EncoderConfig *const oxcf = &cpi->oxcf;
   int q;
   int q_low, q_high;
   int bottom_index, top_index;
@@ -2791,9 +2869,19 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
 
+  // Reset frame size back to native size on KF/GF/ARF frames.
+  if (oxcf->pass == 2 && oxcf->allow_spatial_resampling &&
+      frame_is_kf_gf_arf(cpi) && rc->frame_size_selector != 0 &&
+      oxcf->rc_mode == VPX_VBR) {
+    rc->rescale_pending = 1;
+    rc->frame_size_selector = 0;
+    oxcf->scaled_frame_width = cpi->initial_width;
+    oxcf->scaled_frame_height = cpi->initial_height;
+  }
+
   // For two pass encodes analyse the first pass stats and determine
   // the bit allocation and other parameters for this frame / group of frames.
-  if ((cpi->oxcf.pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
+  if ((oxcf->pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
     vp9_rc_get_second_pass_params(cpi);
   }
 
@@ -2802,7 +2890,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     set_frame_size(cpi);
 
-    if ((cpi->oxcf.pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
+    if ((oxcf->pass == 2) && (!cpi->use_svc || is_two_pass_svc(cpi))) {
       set_target_rate(cpi);
     }
 
@@ -2841,9 +2929,9 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     // Variance adaptive and in frame q adjustment experiments are mutually
     // exclusive.
-    if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+    if (oxcf->aq_mode == VARIANCE_AQ) {
       vp9_vaq_frame_setup(cpi);
-    } else if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+    } else if (oxcf->aq_mode == COMPLEXITY_AQ) {
       vp9_setup_in_frame_q_adj(cpi);
     }
 
@@ -2867,7 +2955,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         frame_over_shoot_limit = 1;
     }
 
-    if (cpi->oxcf.rc_mode == VPX_Q) {
+    if (oxcf->rc_mode == VPX_Q) {
       loop = 0;
     } else {
       if ((cm->frame_type == KEY_FRAME) &&
@@ -2933,33 +3021,40 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
         // Frame is too large
         if (rc->projected_frame_size > rc->this_frame_target) {
-          // Special case if the projected size is > the max allowed.
-          if (rc->projected_frame_size >= rc->max_frame_bandwidth)
-            q_high = rc->worst_quality;
-
-          // Raise Qlow as to at least the current value
-          q_low = q < q_high ? q + 1 : q_high;
-
-          if (undershoot_seen || loop_count > 1) {
-            // Update rate_correction_factor unless
-            vp9_rc_update_rate_correction_factors(cpi, 1);
-
-            q = (q_high + q_low + 1) / 2;
+          if (rc->frame_size_selector != rc->last_frame_size_selector) {
+            // Downscale frame size.
+            rc->rescale_pending = 1;
+            calculate_coded_size(cpi, &oxcf->scaled_frame_width,
+                                 &oxcf->scaled_frame_height);
+            q = q_high = cpi->twopass.active_worst_quality;
           } else {
-            // Update rate_correction_factor unless
-            vp9_rc_update_rate_correction_factors(cpi, 0);
+            // Special case if the projected size is > the max allowed.
+            if (rc->projected_frame_size >= rc->max_frame_bandwidth)
+              q_high = rc->worst_quality;
 
-            q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
-                                   bottom_index, MAX(q_high, top_index));
+            // Raise Qlow as to at least the current value
+            q_low = q < q_high ? q + 1 : q_high;
 
-            while (q < q_low && retries < 10) {
+            if (undershoot_seen || loop_count > 1) {
+              // Update rate_correction_factor unless
+              vp9_rc_update_rate_correction_factors(cpi, 1);
+
+              q = (q_high + q_low + 1) / 2;
+            } else {
+              // Update rate_correction_factor unless
               vp9_rc_update_rate_correction_factors(cpi, 0);
+
               q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
                                      bottom_index, MAX(q_high, top_index));
-              retries++;
+
+              while (q < q_low && retries < 10) {
+                vp9_rc_update_rate_correction_factors(cpi, 0);
+                q = vp9_rc_regulate_q(cpi, rc->this_frame_target,
+                                       bottom_index, MAX(q_high, top_index));
+                retries++;
+              }
             }
           }
-
           overshoot_seen = 1;
         } else {
           // Frame is too small
@@ -2976,8 +3071,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
             // This should only trigger where there is very substantial
             // undershoot on a frame and the auto cq level is above
             // the user passsed in value.
-            if (cpi->oxcf.rc_mode == VPX_CQ &&
-                q < q_low) {
+            if (oxcf->rc_mode == VPX_CQ && q < q_low) {
               q_low = q;
             }
 
@@ -3000,6 +3094,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         loop = 0;
       }
     }
+
+    rc->last_frame_size_selector = rc->frame_size_selector;
 
     // Special case for overlay frame.
     if (rc->is_src_frame_alt_ref &&
@@ -3373,12 +3469,14 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
 static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                       unsigned int *frame_flags) {
+  set_frame_size(cpi);
   vp9_rc_get_svc_params(cpi);
   encode_frame_to_data_rate(cpi, size, dest, frame_flags);
 }
 
 static void Pass0Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags) {
+  set_frame_size(cpi);
   if (cpi->oxcf.rc_mode == VPX_CBR) {
     vp9_rc_get_one_pass_cbr_params(cpi);
   } else {
@@ -3691,6 +3789,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
    */
   cm->frame_bufs[cm->new_fb_idx].ref_count--;
   cm->new_fb_idx = get_free_fb(cm);
+
+  if (cm->current_video_frame == 0)
+    init_subsampling(&cpi->common, &cpi->rc);
 
   // start with a 0 size frame
   *size = 0;

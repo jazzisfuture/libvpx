@@ -494,6 +494,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
   vp9_clear_system_state();
 
+  set_frame_size(cpi);
+
   set_first_pass_params(cpi);
   vp9_set_quantizer(cm, find_fp_qindex(cm->bit_depth));
 
