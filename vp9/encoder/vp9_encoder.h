@@ -458,6 +458,8 @@ void vp9_set_svc(VP9_COMP *cpi, int use_svc);
 
 int vp9_get_quantizer(struct VP9_COMP *cpi);
 
+void set_frame_size(VP9_COMP *cpi);
+
 static INLINE int get_ref_frame_idx(const VP9_COMP *cpi,
                                     MV_REFERENCE_FRAME ref_frame) {
   if (ref_frame == LAST_FRAME) {
