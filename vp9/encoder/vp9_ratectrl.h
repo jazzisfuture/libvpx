@@ -98,6 +98,12 @@ typedef struct {
   int64_t optimal_buffer_level;
   int64_t maximum_buffer_size;
   // int active_best_quality;
+
+  int frame_size_selector;
+  int last_frame_size_selector;
+  int frame_width[2];
+  int frame_height[2];
+  int rescale_pending;
 } RATE_CONTROL;
 
 struct VP9_COMP;
