@@ -14,37 +14,19 @@
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_blockd.h"
 
-MB_PREDICTION_MODE vp9_find_dominant_direction(uint8_t *ptr,
-                                               int stride, int n,
-                                               int tx, int ty);
-
-MB_PREDICTION_MODE vp9_find_bpred_context(MACROBLOCKD *xd, int block,
-                                          uint8_t *ptr, int stride);
-
-void vp9_predict_intra_block(MACROBLOCKD *xd,
-                            int block_idx,
-                            int bwl_in,
-                            TX_SIZE tx_size,
-                            int mode,
-#if CONFIG_FILTERINTRA
-                            int filterbit,
-#endif
-                            uint8_t *ref, int ref_stride,
-                            uint8_t *predictor, int pre_stride);
-#if CONFIG_INTERINTRA
-void vp9_build_interintra_predictors(MACROBLOCKD *xd,
-                                     uint8_t *ypred,
-                                     uint8_t *upred,
-                                     uint8_t *vpred,
-                                     int ystride,
-                                     int uvstride,
-                                     BLOCK_SIZE_TYPE bsize);
-#if CONFIG_MASKED_INTERINTRA
-void vp9_generate_masked_weight_interintra(int mask_index,
-                                           BLOCK_SIZE_TYPE sb_type,
-                                           int h, int w,
-                                           uint8_t *mask, int stride);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+void vp9_init_intra_predictors();
+
+void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
+                             TX_SIZE tx_size, PREDICTION_MODE mode,
+                             const uint8_t *ref, int ref_stride,
+                             uint8_t *dst, int dst_stride,
+                             int aoff, int loff, int plane);
+#ifdef __cplusplus
+}  // extern "C"
 #endif
+
 #endif  // VP9_COMMON_VP9_RECONINTRA_H_

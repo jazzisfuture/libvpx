@@ -23,8 +23,8 @@
 
 extern int vp8_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest);
 
-void vp8_yv12_copy_partial_frame_c(YV12_BUFFER_CONFIG *src_ybc,
-                                   YV12_BUFFER_CONFIG *dst_ybc)
+static void yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc,
+                                    YV12_BUFFER_CONFIG *dst_ybc)
 {
     unsigned char *src_y, *dst_y;
     int yheight;
@@ -173,7 +173,7 @@ void vp8cx_pick_filter_level_fast(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
     /* Get the err using the previous frame's filter value. */
 
     /* Copy the unfiltered / processed recon buffer to the new buffer */
-    vp8_yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
+    yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
     vp8_loop_filter_partial_frame(cm, &cpi->mb.e_mbd, filt_val);
 
     best_err = calc_partial_ssl_err(sd, cm->frame_to_show);
@@ -184,7 +184,7 @@ void vp8cx_pick_filter_level_fast(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
     while (filt_val >= min_filter_level)
     {
         /* Apply the loop filter */
-        vp8_yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
+        yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
         vp8_loop_filter_partial_frame(cm, &cpi->mb.e_mbd, filt_val);
 
         /* Get the err for filtered frame */
@@ -214,7 +214,7 @@ void vp8cx_pick_filter_level_fast(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
         while (filt_val < max_filter_level)
         {
             /* Apply the loop filter */
-            vp8_yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
+            yv12_copy_partial_frame(saved_frame, cm->frame_to_show);
 
             vp8_loop_filter_partial_frame(cm, &cpi->mb.e_mbd, filt_val);
 
@@ -313,7 +313,7 @@ void vp8cx_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
     /* Get baseline error score */
 
     /* Copy the unfiltered / processed recon buffer to the new buffer */
-    vp8_yv12_copy_y(saved_frame, cm->frame_to_show);
+    vpx_yv12_copy_y(saved_frame, cm->frame_to_show);
 
     vp8cx_set_alt_lf_level(cpi, filt_mid);
     vp8_loop_filter_frame_yonly(cm, &cpi->mb.e_mbd, filt_mid);
@@ -339,7 +339,7 @@ void vp8cx_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
             if(ss_err[filt_low] == 0)
             {
                 /* Get Low filter error score */
-                vp8_yv12_copy_y(saved_frame, cm->frame_to_show);
+                vpx_yv12_copy_y(saved_frame, cm->frame_to_show);
                 vp8cx_set_alt_lf_level(cpi, filt_low);
                 vp8_loop_filter_frame_yonly(cm, &cpi->mb.e_mbd, filt_low);
 
@@ -367,7 +367,7 @@ void vp8cx_pick_filter_level(YV12_BUFFER_CONFIG *sd, VP8_COMP *cpi)
         {
             if(ss_err[filt_high] == 0)
             {
-                vp8_yv12_copy_y(saved_frame, cm->frame_to_show);
+                vpx_yv12_copy_y(saved_frame, cm->frame_to_show);
                 vp8cx_set_alt_lf_level(cpi, filt_high);
                 vp8_loop_filter_frame_yonly(cm, &cpi->mb.e_mbd, filt_high);
 
