@@ -1161,7 +1161,6 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
             if (j == config->arg_ctrl_cnt)
               config->arg_ctrl_cnt++;
           }
-
         }
       }
       if (!match)
@@ -1918,7 +1917,7 @@ int main(int argc, const char **argv_) {
      * the data from the first stream's configuration.
      */
     if (!input.width || !input.height)
-      FOREACH_STREAM( {
+      FOREACH_STREAM({
       if (stream->config.cfg.g_w && stream->config.cfg.g_h) {
         input.width = stream->config.cfg.g_w;
         input.height = stream->config.cfg.g_h;
