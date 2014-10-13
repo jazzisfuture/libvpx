@@ -80,8 +80,13 @@ extern "C" {
    */
 #define VPX_CODEC_CAP_OUTPUT_PARTITION  0x20000
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   /*! Can support input images at greater than 8 bitdepth.
    */
+=======
+/*! Can support input images at greater than 8 bitdepth.
+ */
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #define VPX_CODEC_CAP_HIGHBITDEPTH  0x40000
 
   /*! \brief Initialization-time Feature Enabling
@@ -94,7 +99,12 @@ extern "C" {
 #define VPX_CODEC_USE_PSNR  0x10000 /**< Calculate PSNR on each frame */
 #define VPX_CODEC_USE_OUTPUT_PARTITION  0x20000 /**< Make the encoder output one
   partition at a time. */
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #define VPX_CODEC_USE_HIGH 0x40000 /**< Use high bitdepth */
+=======
+#define VPX_CODEC_USE_HIGHBITDEPTH 0x40000 /**< Use high bitdepth */
+
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
   /*!\brief Generic fixed size buffer structure
    *
@@ -162,6 +172,7 @@ extern "C" {
     VPX_CODEC_PSNR_PKT,        /**< PSNR statistics for this frame */
 #if CONFIG_SPATIAL_SVC
     VPX_CODEC_SPATIAL_SVC_LAYER_SIZES, /**< Sizes for each layer in this frame*/
+    VPX_CODEC_SPATIAL_SVC_LAYER_PSNR, /**< PSNR for each layer in this frame*/
 #endif
     VPX_CODEC_CUSTOM_PKT = 256 /**< Algorithm extensions  */
   };
@@ -191,16 +202,17 @@ extern "C" {
                                               has id 0.*/
 
       } frame;  /**< data for compressed frame packet */
-      struct vpx_fixed_buf twopass_stats;  /**< data for two-pass packet */
-      struct vpx_fixed_buf firstpass_mb_stats; /**< first pass mb packet */
+      vpx_fixed_buf_t twopass_stats;  /**< data for two-pass packet */
+      vpx_fixed_buf_t firstpass_mb_stats; /**< first pass mb packet */
       struct vpx_psnr_pkt {
         unsigned int samples[4];  /**< Number of samples, total/y/u/v */
         uint64_t     sse[4];      /**< sum squared error, total/y/u/v */
         double       psnr[4];     /**< PSNR, total/y/u/v */
       } psnr;                       /**< data for PSNR packet */
-      struct vpx_fixed_buf raw;     /**< data for arbitrary packets */
+      vpx_fixed_buf_t raw;     /**< data for arbitrary packets */
 #if CONFIG_SPATIAL_SVC
       size_t layer_sizes[VPX_SS_MAX_LAYERS];
+      struct vpx_psnr_pkt layer_psnr[VPX_SS_MAX_LAYERS];
 #endif
 
       /* This packet size is fixed to allow codecs to extend this
@@ -326,6 +338,21 @@ extern "C" {
      */
     unsigned int           g_h;
 
+    /*!\brief Bit-depth of the codec
+     *
+     * This value identifies the bit_depth of the codec,
+     * Only certain bit-depths are supported as identified in the
+     * vpx_bit_depth_t enum.
+     */
+    vpx_bit_depth_t        g_bit_depth;
+
+    /*!\brief Bit-depth of the input frames
+     *
+     * This value identifies the bit_depth of the input frames in bits.
+     * Note that the frames passed as input to the encoder must have
+     * this bit-depth.
+     */
+    unsigned int           g_input_bit_depth;
 
     /*!\brief Bit-depth of the codec
      *
@@ -471,14 +498,14 @@ extern "C" {
      * A buffer containing all of the stats packets produced in the first
      * pass, concatenated.
      */
-    struct vpx_fixed_buf   rc_twopass_stats_in;
+    vpx_fixed_buf_t   rc_twopass_stats_in;
 
     /*!\brief first pass mb stats buffer.
      *
      * A buffer containing all of the first pass mb stats packets produced
      * in the first pass, concatenated.
      */
-    struct vpx_fixed_buf   rc_firstpass_mb_stats_in;
+    vpx_fixed_buf_t   rc_firstpass_mb_stats_in;
 
     /*!\brief Target data rate
      *
@@ -709,6 +736,18 @@ extern "C" {
     unsigned int           ts_layer_id[VPX_TS_MAX_PERIODICITY];
   } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
+  /*!\brief  vp9 svc extra configure parameters
+   *
+   * This defines max/min quantizers and scale factors for each layer
+   *
+   */
+  typedef struct vpx_svc_parameters {
+    int max_quantizers[VPX_SS_MAX_LAYERS];
+    int min_quantizers[VPX_SS_MAX_LAYERS];
+    int scaling_factor_num[VPX_SS_MAX_LAYERS];
+    int scaling_factor_den[VPX_SS_MAX_LAYERS];
+  } vpx_svc_extra_cfg_t;
+
 
   /*!\brief Initialize an encoder instance
    *
@@ -734,7 +773,7 @@ extern "C" {
    */
   vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t      *ctx,
                                          vpx_codec_iface_t    *iface,
-                                         vpx_codec_enc_cfg_t  *cfg,
+                                         const vpx_codec_enc_cfg_t *cfg,
                                          vpx_codec_flags_t     flags,
                                          int                   ver);
 

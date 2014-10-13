@@ -47,7 +47,11 @@ static const int16_t dc_qlookup[QINDEX_RANGE] = {
   1022, 1058, 1098, 1139, 1184, 1232, 1282, 1336,
 };
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_QUANT
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 static const int16_t dc_qlookup_10[QINDEX_RANGE] = {
   4,     9,    10,    13,    15,    17,    20,    22,
   25,    28,    31,    34,    37,    40,    43,    47,
@@ -154,6 +158,7 @@ static const int16_t ac_qlookup[QINDEX_RANGE] = {
   1597, 1628, 1660, 1692, 1725, 1759, 1793, 1828,
 };
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_QUANT
 static const int16_t ac_qlookup_10[QINDEX_RANGE] = {
   4,     9,    11,    13,    16,    18,    21,    24,
@@ -247,6 +252,89 @@ int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
       return dc_qlookup[clamp(qindex + delta, 0, MAXQ)] << 2;
     case VPX_BITS_12:
       return dc_qlookup[clamp(qindex + delta, 0, MAXQ)] << 4;
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+static const int16_t ac_qlookup_10[QINDEX_RANGE] = {
+  4,     9,    11,    13,    16,    18,    21,    24,
+  27,    30,    33,    37,    40,    44,    48,    51,
+  55,    59,    63,    67,    71,    75,    79,    83,
+  88,    92,    96,   100,   105,   109,   114,   118,
+  122,   127,   131,   136,   140,   145,   149,   154,
+  158,   163,   168,   172,   177,   181,   186,   190,
+  195,   199,   204,   208,   213,   217,   222,   226,
+  231,   235,   240,   244,   249,   253,   258,   262,
+  267,   271,   275,   280,   284,   289,   293,   297,
+  302,   306,   311,   315,   319,   324,   328,   332,
+  337,   341,   345,   349,   354,   358,   362,   367,
+  371,   375,   379,   384,   388,   392,   396,   401,
+  409,   417,   425,   433,   441,   449,   458,   466,
+  474,   482,   490,   498,   506,   514,   523,   531,
+  539,   547,   555,   563,   571,   579,   588,   596,
+  604,   616,   628,   640,   652,   664,   676,   688,
+  700,   713,   725,   737,   749,   761,   773,   785,
+  797,   809,   825,   841,   857,   873,   889,   905,
+  922,   938,   954,   970,   986,  1002,  1018,  1038,
+  1058,  1078,  1098,  1118,  1138,  1158,  1178,  1198,
+  1218,  1242,  1266,  1290,  1314,  1338,  1362,  1386,
+  1411,  1435,  1463,  1491,  1519,  1547,  1575,  1603,
+  1631,  1663,  1695,  1727,  1759,  1791,  1823,  1859,
+  1895,  1931,  1967,  2003,  2039,  2079,  2119,  2159,
+  2199,  2239,  2283,  2327,  2371,  2415,  2459,  2507,
+  2555,  2603,  2651,  2703,  2755,  2807,  2859,  2915,
+  2971,  3027,  3083,  3143,  3203,  3263,  3327,  3391,
+  3455,  3523,  3591,  3659,  3731,  3803,  3876,  3952,
+  4028,  4104,  4184,  4264,  4348,  4432,  4516,  4604,
+  4692,  4784,  4876,  4972,  5068,  5168,  5268,  5372,
+  5476,  5584,  5692,  5804,  5916,  6032,  6148,  6268,
+  6388,  6512,  6640,  6768,  6900,  7036,  7172,  7312,
+};
+
+static const int16_t ac_qlookup_12[QINDEX_RANGE] = {
+  4,    13,    19,    27,    35,    44,    54,    64,
+  75,    87,    99,   112,   126,   139,   154,   168,
+  183,   199,   214,   230,   247,   263,   280,   297,
+  314,   331,   349,   366,   384,   402,   420,   438,
+  456,   475,   493,   511,   530,   548,   567,   586,
+  604,   623,   642,   660,   679,   698,   716,   735,
+  753,   772,   791,   809,   828,   846,   865,   884,
+  902,   920,   939,   957,   976,   994,  1012,  1030,
+  1049,  1067,  1085,  1103,  1121,  1139,  1157,  1175,
+  1193,  1211,  1229,  1246,  1264,  1282,  1299,  1317,
+  1335,  1352,  1370,  1387,  1405,  1422,  1440,  1457,
+  1474,  1491,  1509,  1526,  1543,  1560,  1577,  1595,
+  1627,  1660,  1693,  1725,  1758,  1791,  1824,  1856,
+  1889,  1922,  1954,  1987,  2020,  2052,  2085,  2118,
+  2150,  2183,  2216,  2248,  2281,  2313,  2346,  2378,
+  2411,  2459,  2508,  2556,  2605,  2653,  2701,  2750,
+  2798,  2847,  2895,  2943,  2992,  3040,  3088,  3137,
+  3185,  3234,  3298,  3362,  3426,  3491,  3555,  3619,
+  3684,  3748,  3812,  3876,  3941,  4005,  4069,  4149,
+  4230,  4310,  4390,  4470,  4550,  4631,  4711,  4791,
+  4871,  4967,  5064,  5160,  5256,  5352,  5448,  5544,
+  5641,  5737,  5849,  5961,  6073,  6185,  6297,  6410,
+  6522,  6650,  6778,  6906,  7034,  7162,  7290,  7435,
+  7579,  7723,  7867,  8011,  8155,  8315,  8475,  8635,
+  8795,  8956,  9132,  9308,  9484,  9660,  9836, 10028,
+  10220, 10412, 10604, 10812, 11020, 11228, 11437, 11661,
+  11885, 12109, 12333, 12573, 12813, 13053, 13309, 13565,
+  13821, 14093, 14365, 14637, 14925, 15213, 15502, 15806,
+  16110, 16414, 16734, 17054, 17390, 17726, 18062, 18414,
+  18766, 19134, 19502, 19886, 20270, 20670, 21070, 21486,
+  21902, 22334, 22766, 23214, 23662, 24126, 24590, 25070,
+  25551, 26047, 26559, 27071, 27599, 28143, 28687, 29247,
+};
+#endif
+
+int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
+#if CONFIG_VP9_HIGHBITDEPTH
+  switch (bit_depth) {
+    case VPX_BITS_8:
+      return dc_qlookup[clamp(qindex + delta, 0, MAXQ)];
+    case VPX_BITS_10:
+      return dc_qlookup_10[clamp(qindex + delta, 0, MAXQ)];
+    case VPX_BITS_12:
+      return dc_qlookup_12[clamp(qindex + delta, 0, MAXQ)];
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
     default:
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
@@ -258,6 +346,7 @@ int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 }
 
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_QUANT
   switch (bit_depth) {
     case VPX_BITS_8:
@@ -278,6 +367,16 @@ int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
       return ac_qlookup[clamp(qindex + delta, 0, MAXQ)] << 2;
     case VPX_BITS_12:
       return ac_qlookup[clamp(qindex + delta, 0, MAXQ)] << 4;
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+  switch (bit_depth) {
+    case VPX_BITS_8:
+      return ac_qlookup[clamp(qindex + delta, 0, MAXQ)];
+    case VPX_BITS_10:
+      return ac_qlookup_10[clamp(qindex + delta, 0, MAXQ)];
+    case VPX_BITS_12:
+      return ac_qlookup_12[clamp(qindex + delta, 0, MAXQ)];
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
     default:
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
