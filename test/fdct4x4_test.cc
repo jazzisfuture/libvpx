@@ -20,12 +20,16 @@
 
 #include "./vp9_rtcd.h"
 #include "vp9/common/vp9_entropy.h"
+#include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 extern "C" {
 void vp9_idct4x4_16_add_c(const tran_low_t *input, uint8_t *output, int pitch);
 }
 
+=======
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 using libvpx_test::ACMRandom;
 
 namespace {
@@ -37,10 +41,20 @@ typedef void (*FhtFunc)(const int16_t *in, tran_low_t *out, int stride,
 typedef void (*IhtFunc)(const tran_low_t *in, uint8_t *out, int stride,
                         int tx_type);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 typedef std::tr1::tuple<FdctFunc, IdctFunc, int, int> Dct4x4Param;
 typedef std::tr1::tuple<FhtFunc, IhtFunc, int, int> Ht4x4Param;
+=======
+typedef std::tr1::tuple<FdctFunc, IdctFunc, int, vpx_bit_depth_t> Dct4x4Param;
+typedef std::tr1::tuple<FhtFunc, IhtFunc, int, vpx_bit_depth_t> Ht4x4Param;
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 void fdct4x4_ref(const int16_t *in, tran_low_t *out, int stride, int tx_type) {
+=======
+void fdct4x4_ref(const int16_t *in, tran_low_t *out, int stride,
+                 int tx_type) {
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   vp9_fdct4x4_c(in, out, stride);
 }
 
@@ -48,10 +62,16 @@ void fht4x4_ref(const int16_t *in, tran_low_t *out, int stride, int tx_type) {
   vp9_fht4x4_c(in, out, stride, tx_type);
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 void fwht4x4_ref(const int16_t *in, tran_low_t *out, int stride, int tx_type) {
+=======
+void fwht4x4_ref(const int16_t *in, tran_low_t *out, int stride,
+                 int tx_type) {
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   vp9_fwht4x4_c(in, out, stride);
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 void idct4x4_10(const tran_low_t *in, uint8_t *out, int stride) {
   vp9_high_idct4x4_16_add_c(in, out, stride, 10);
@@ -75,6 +95,31 @@ void iwht4x4_10(const tran_low_t *in, uint8_t *out, int stride) {
 
 void iwht4x4_12(const tran_low_t *in, uint8_t *out, int stride) {
   vp9_high_iwht4x4_16_add_c(in, out, stride, 12);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+void idct4x4_10(const tran_low_t *in, uint8_t *out, int stride) {
+  vp9_highbd_idct4x4_16_add_c(in, out, stride, 10);
+}
+
+void idct4x4_12(const tran_low_t *in, uint8_t *out, int stride) {
+  vp9_highbd_idct4x4_16_add_c(in, out, stride, 12);
+}
+
+void iht4x4_10(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
+  vp9_highbd_iht4x4_16_add_c(in, out, stride, tx_type, 10);
+}
+
+void iht4x4_12(const tran_low_t *in, uint8_t *out, int stride, int tx_type) {
+  vp9_highbd_iht4x4_16_add_c(in, out, stride, tx_type, 12);
+}
+
+void iwht4x4_10(const tran_low_t *in, uint8_t *out, int stride) {
+  vp9_highbd_iwht4x4_16_add_c(in, out, stride, 10);
+}
+
+void iwht4x4_12(const tran_low_t *in, uint8_t *out, int stride) {
+  vp9_highbd_iwht4x4_16_add_c(in, out, stride, 12);
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 }
 #endif
 
@@ -98,10 +143,18 @@ class Trans4x4TestBase {
       DECLARE_ALIGNED_ARRAY(16, uint8_t, dst, kNumCoeffs);
       DECLARE_ALIGNED_ARRAY(16, uint16_t, dst16, kNumCoeffs);
       DECLARE_ALIGNED_ARRAY(16, uint8_t, src, kNumCoeffs);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
       DECLARE_ALIGNED_ARRAY(16, uint16_t, src16, kNumCoeffs);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+      DECLARE_ALIGNED_ARRAY(16, uint16_t, dst16, kNumCoeffs);
+      DECLARE_ALIGNED_ARRAY(16, uint16_t, src16, kNumCoeffs);
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
       // Initialize a test block with input range [-255, 255].
       for (int j = 0; j < kNumCoeffs; ++j) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         if (bit_depth_ == 8) {
           src[j] = rnd.Rand8();
           dst[j] = rnd.Rand8();
@@ -110,11 +163,24 @@ class Trans4x4TestBase {
           src16[j] = rnd.Rand16() & mask_;
           dst16[j] = rnd.Rand16() & mask_;
           test_input_block[j] = src16[j] - dst16[j];
+=======
+        if (bit_depth_ == VPX_BITS_8) {
+          src[j] = rnd.Rand8();
+          dst[j] = rnd.Rand8();
+          test_input_block[j] = src[j] - dst[j];
+#if CONFIG_VP9_HIGHBITDEPTH
+        } else {
+          src16[j] = rnd.Rand16() & mask_;
+          dst16[j] = rnd.Rand16() & mask_;
+          test_input_block[j] = src16[j] - dst16[j];
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
         }
       }
 
       ASM_REGISTER_STATE_CHECK(RunFwdTxfm(test_input_block,
                                           test_temp_block, pitch_));
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
       if (bit_depth_ == 8)
         ASM_REGISTER_STATE_CHECK(RunInvTxfm(test_temp_block, dst, pitch_));
 #if CONFIG_VP9_HIGH
@@ -122,10 +188,29 @@ class Trans4x4TestBase {
         ASM_REGISTER_STATE_CHECK(RunInvTxfm(test_temp_block,
                                             CONVERT_TO_BYTEPTR(dst16), pitch_));
 #endif
+=======
+      if (bit_depth_ == VPX_BITS_8) {
+        ASM_REGISTER_STATE_CHECK(RunInvTxfm(test_temp_block, dst, pitch_));
+#if CONFIG_VP9_HIGHBITDEPTH
+      } else {
+        ASM_REGISTER_STATE_CHECK(RunInvTxfm(test_temp_block,
+                                            CONVERT_TO_BYTEPTR(dst16), pitch_));
+#endif
+      }
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
       for (int j = 0; j < kNumCoeffs; ++j) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         const uint32_t diff = bit_depth_ == 8 ? dst[j] - src[j] :
                                                 dst16[j] - src16[j];
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+        const uint32_t diff =
+            bit_depth_ == VPX_BITS_8 ? dst[j] - src[j] : dst16[j] - src16[j];
+#else
+        const uint32_t diff = dst[j] - src[j];
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
         const uint32_t error = diff * diff;
         if (max_error < error)
           max_error = error;
@@ -150,7 +235,7 @@ class Trans4x4TestBase {
     DECLARE_ALIGNED_ARRAY(16, tran_low_t, output_block, kNumCoeffs);
 
     for (int i = 0; i < count_test_block; ++i) {
-      // Initialize a test block with input range [-255, 255].
+      // Initialize a test block with input range [-mask_, mask_].
       for (int j = 0; j < kNumCoeffs; ++j)
         input_block[j] = (rnd.Rand16() & mask_) - (rnd.Rand16() & mask_);
 
@@ -206,11 +291,19 @@ class Trans4x4TestBase {
     DECLARE_ALIGNED_ARRAY(16, uint8_t, dst, kNumCoeffs);
     DECLARE_ALIGNED_ARRAY(16, uint16_t, dst16, kNumCoeffs);
     DECLARE_ALIGNED_ARRAY(16, uint8_t, src, kNumCoeffs);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
     DECLARE_ALIGNED_ARRAY(16, uint16_t, src16, kNumCoeffs);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+    DECLARE_ALIGNED_ARRAY(16, uint16_t, dst16, kNumCoeffs);
+    DECLARE_ALIGNED_ARRAY(16, uint16_t, src16, kNumCoeffs);
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
     for (int i = 0; i < count_test_block; ++i) {
       // Initialize a test block with input range [-mask_, mask_].
       for (int j = 0; j < kNumCoeffs; ++j) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         if (bit_depth_ == 8) {
           src[j] = rnd.Rand8();
           dst[j] = rnd.Rand8();
@@ -219,11 +312,24 @@ class Trans4x4TestBase {
           src16[j] = rnd.Rand16() & mask_;
           dst16[j] = rnd.Rand16() & mask_;
           in[j] = src16[j] - dst16[j];
+=======
+        if (bit_depth_ == VPX_BITS_8) {
+          src[j] = rnd.Rand8();
+          dst[j] = rnd.Rand8();
+          in[j] = src[j] - dst[j];
+#if CONFIG_VP9_HIGHBITDEPTH
+        } else {
+          src16[j] = rnd.Rand16() & mask_;
+          dst16[j] = rnd.Rand16() & mask_;
+          in[j] = src16[j] - dst16[j];
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
         }
       }
 
       fwd_txfm_ref(in, coeff, pitch_, tx_type_);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
       if (bit_depth_ == 8)
         ASM_REGISTER_STATE_CHECK(RunInvTxfm(coeff, dst, pitch_));
 #if CONFIG_VP9_HIGH
@@ -231,10 +337,29 @@ class Trans4x4TestBase {
         ASM_REGISTER_STATE_CHECK(RunInvTxfm(coeff, CONVERT_TO_BYTEPTR(dst16),
                                             pitch_));
 #endif
+=======
+      if (bit_depth_ == VPX_BITS_8) {
+        ASM_REGISTER_STATE_CHECK(RunInvTxfm(coeff, dst, pitch_));
+#if CONFIG_VP9_HIGHBITDEPTH
+      } else {
+        ASM_REGISTER_STATE_CHECK(RunInvTxfm(coeff, CONVERT_TO_BYTEPTR(dst16),
+                                            pitch_));
+#endif
+      }
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
       for (int j = 0; j < kNumCoeffs; ++j) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         const uint32_t diff = bit_depth_ == 8 ? dst[j] - src[j] :
                                                 dst16[j] - src16[j];
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+        const uint32_t diff =
+            bit_depth_ == VPX_BITS_8 ? dst[j] - src[j] : dst16[j] - src16[j];
+#else
+        const uint32_t diff = dst[j] - src[j];
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
         const uint32_t error = diff * diff;
         EXPECT_GE(static_cast<uint32_t>(limit), error)
             << "Error: 4x4 IDCT has error " << error
@@ -248,6 +373,8 @@ class Trans4x4TestBase {
   int bit_depth_;
   int mask_;
   FhtFunc fwd_txfm_ref;
+  vpx_bit_depth_t bit_depth_;
+  int mask_;
 };
 
 class Trans4x4DCT
@@ -263,6 +390,10 @@ class Trans4x4DCT
     bit_depth_ = GET_PARAM(3);
     pitch_     = 4;
     fwd_txfm_ref = fdct4x4_ref;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
+=======
+    bit_depth_ = GET_PARAM(3);
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
     mask_ = (1 << bit_depth_) - 1;
   }
   virtual void TearDown() { libvpx_test::ClearSystemState(); }
@@ -308,6 +439,10 @@ class Trans4x4HT
     bit_depth_ = GET_PARAM(3);
     pitch_    = 4;
     fwd_txfm_ref = fht4x4_ref;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
+=======
+    bit_depth_ = GET_PARAM(3);
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
     mask_ = (1 << bit_depth_) - 1;
   }
   virtual void TearDown() { libvpx_test::ClearSystemState(); }
@@ -354,6 +489,10 @@ class Trans4x4WHT
     bit_depth_ = GET_PARAM(3);
     pitch_     = 4;
     fwd_txfm_ref = fwht4x4_ref;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
+=======
+    bit_depth_ = GET_PARAM(3);
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
     mask_ = (1 << bit_depth_) - 1;
   }
   virtual void TearDown() { libvpx_test::ClearSystemState(); }
@@ -387,11 +526,16 @@ TEST_P(Trans4x4WHT, InvAccuracyCheck) {
 }
 using std::tr1::make_tuple;
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     C, Trans4x4DCT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fdct4x4_c, &vp9_idct4x4_16_add_c, 0, 8),
         make_tuple(&vp9_high_fdct4x4_c, &idct4x4_10, 0, 10),
         make_tuple(&vp9_high_fdct4x4_c, &idct4x4_12, 0, 12)));
@@ -402,9 +546,23 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fdct4x4_c, &vp9_idct4x4_16_add_c, 0, 8)));
 #endif
 #if CONFIG_VP9_HIGH
+=======
+        make_tuple(&vp9_highbd_fdct4x4_c, &idct4x4_10, 0, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fdct4x4_c, &idct4x4_12, 0, VPX_BITS_12),
+        make_tuple(&vp9_fdct4x4_c, &vp9_idct4x4_16_add_c, 0, VPX_BITS_8)));
+#else
+INSTANTIATE_TEST_CASE_P(
+    C, Trans4x4DCT,
+    ::testing::Values(
+        make_tuple(&vp9_fdct4x4_c, &vp9_idct4x4_16_add_c, 0, VPX_BITS_8)));
+#endif
+
+#if CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     C, Trans4x4HT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 0, 8),
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 1, 8),
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 2, 8),
@@ -427,9 +585,35 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 3, 8)));
 #endif
 #if CONFIG_VP9_HIGH
+=======
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_10, 0, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_10, 1, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_10, 2, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_10, 3, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_12, 0, VPX_BITS_12),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_12, 1, VPX_BITS_12),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_12, 2, VPX_BITS_12),
+        make_tuple(&vp9_highbd_fht4x4_c, &iht4x4_12, 3, VPX_BITS_12),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 0, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 1, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 2, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 3, VPX_BITS_8)));
+#else
+INSTANTIATE_TEST_CASE_P(
+    C, Trans4x4HT,
+    ::testing::Values(
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 0, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 1, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 2, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_c, 3, VPX_BITS_8)));
+#endif
+
+#if CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     C, Trans4x4WHT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fwht4x4_c, &vp9_iwht4x4_16_add_c, 0, 8),
         make_tuple(&vp9_high_fwht4x4_c, &iwht4x4_10, 0, 10),
         make_tuple(&vp9_high_fwht4x4_c, &iwht4x4_12, 0, 12)));
@@ -438,43 +622,92 @@ INSTANTIATE_TEST_CASE_P(
     C, Trans4x4WHT,
     ::testing::Values(
         make_tuple(&vp9_fwht4x4_c, &vp9_iwht4x4_16_add_c, 0, 8)));
+=======
+        make_tuple(&vp9_highbd_fwht4x4_c, &iwht4x4_10, 0, VPX_BITS_10),
+        make_tuple(&vp9_highbd_fwht4x4_c, &iwht4x4_12, 0, VPX_BITS_12),
+        make_tuple(&vp9_fwht4x4_c, &vp9_iwht4x4_16_add_c, 0, VPX_BITS_8)));
+#else
+INSTANTIATE_TEST_CASE_P(
+    C, Trans4x4WHT,
+    ::testing::Values(
+        make_tuple(&vp9_fwht4x4_c, &vp9_iwht4x4_16_add_c, 0, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if HAVE_NEON_ASM && !CONFIG_VP9_HIGH
+=======
+#if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     NEON, Trans4x4DCT,
     ::testing::Values(
         make_tuple(&vp9_fdct4x4_c,
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
                    &vp9_idct4x4_16_add_neon, 0, 8)));
+=======
+                   &vp9_idct4x4_16_add_neon, 0, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     DISABLED_NEON, Trans4x4HT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 0, 8),
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 1, 8),
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 2, 8),
         make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 3, 8)));
+=======
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 0, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 1, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 2, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_c, &vp9_iht4x4_16_add_neon, 3, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_USE_X86INC && HAVE_MMX && !CONFIG_VP9_HIGH
+=======
+#if CONFIG_USE_X86INC && HAVE_MMX && !CONFIG_VP9_HIGHBITDEPTH && \
+    !CONFIG_EMULATE_HARDWARE
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     MMX, Trans4x4WHT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fwht4x4_mmx, &vp9_iwht4x4_16_add_c, 0, 8)));
+=======
+        make_tuple(&vp9_fwht4x4_mmx, &vp9_iwht4x4_16_add_c, 0, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if HAVE_SSE2 && !CONFIG_VP9_HIGH
+=======
+#if HAVE_SSE2 && !CONFIG_VP9_HIGHBITDEPTH && !CONFIG_EMULATE_HARDWARE
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     SSE2, Trans4x4DCT,
     ::testing::Values(
         make_tuple(&vp9_fdct4x4_sse2,
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
                    &vp9_idct4x4_16_add_sse2, 0, 8)));
+=======
+                   &vp9_idct4x4_16_add_sse2, 0, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 INSTANTIATE_TEST_CASE_P(
     SSE2, Trans4x4HT,
     ::testing::Values(
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 0, 8),
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 1, 8),
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 2, 8),
         make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 3, 8)));
+=======
+        make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 0, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 1, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 2, VPX_BITS_8),
+        make_tuple(&vp9_fht4x4_sse2, &vp9_iht4x4_16_add_sse2, 3, VPX_BITS_8)));
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
 }  // namespace

@@ -39,6 +39,7 @@ void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                enum mv_precision precision,
                                int x, int y);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 void vp9_high_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
@@ -48,6 +49,17 @@ void vp9_high_build_inter_predictor(const uint8_t *src, int src_stride,
                                const InterpKernel *kernel,
                                enum mv_precision precision,
                                int x, int y, int bps);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
+                                      uint8_t *dst, int dst_stride,
+                                      const MV *mv_q3,
+                                      const struct scale_factors *sf,
+                                      int w, int h, int do_avg,
+                                      const InterpKernel *kernel,
+                                      enum mv_precision precision,
+                                      int x, int y, int bd);
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
 static INLINE int scaled_buffer_offset(int x_offset, int y_offset, int stride,
