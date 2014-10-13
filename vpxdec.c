@@ -15,13 +15,15 @@
 #include <string.h>
 #include <limits.h>
 
+#include "./vpx_config.h"
+
+#if CONFIG_LIBYUV
 #include "third_party/libyuv/include/libyuv/scale.h"
+#endif
 
 #include "./args.h"
 #include "./ivfdec.h"
 
-#define VPX_CODEC_DISABLE_COMPAT 1
-#include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx_ports/mem_ops.h"
 #include "vpx_ports/vpx_timer.h"
@@ -85,9 +87,15 @@ static const arg_def_t continuearg =
 static const arg_def_t fb_arg =
     ARG_DEF(NULL, "frame-buffers", 1, "Number of frame buffers to use");
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 static const arg_def_t md5arg = ARG_DEF(
     NULL, "md5", 0, "Compute the MD5 sum of the decoded frame");
 #if CONFIG_VP9_HIGH
+=======
+static const arg_def_t md5arg = ARG_DEF(NULL, "md5", 0,
+                                        "Compute the MD5 sum of the decoded frame");
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 static const arg_def_t outbitdeptharg = ARG_DEF(
     NULL, "output-bit-depth", 1,
     "Output bit-depth for decoded frames");
@@ -98,7 +106,11 @@ static const arg_def_t *all_args[] = {
   &progressarg, &limitarg, &skiparg, &postprocarg, &summaryarg, &outputfile,
   &threadsarg, &verbosearg, &scalearg, &fb_arg,
   &md5arg, &error_concealment, &continuearg,
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   &outbitdeptharg,
 #endif
   NULL
@@ -131,9 +143,14 @@ static const arg_def_t *vp8_pp_args[] = {
 };
 #endif
 
+#if CONFIG_LIBYUV
 static INLINE int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                                   FilterModeEnum mode) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   if (src->fmt == VPX_IMG_FMT_I42016) {
     assert(dst->fmt == VPX_IMG_FMT_I42016);
     return I420Scale_16((uint16_t*)src->planes[VPX_PLANE_Y],
@@ -165,6 +182,7 @@ static INLINE int vpx_image_scale(vpx_image_t *src, vpx_image_t *dst,
                    dst->d_w, dst->d_h,
                    mode);
 }
+#endif
 
 void usage_exit() {
   int i;
@@ -288,10 +306,17 @@ static void update_image_md5(const vpx_image_t *img, const int planes[3],
 static void write_image_file(const vpx_image_t *img, const int planes[3],
                              FILE *file) {
   int i, y;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   int bytes_per_sample = 1;
 #if CONFIG_VP9_HIGH
   if (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH)
     bytes_per_sample = 2;
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+  const int bytes_per_sample = ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+#else
+  const int bytes_per_sample = 1;
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 
   for (i = 0; i < 3; ++i) {
@@ -380,7 +405,7 @@ int get_vp9_frame_buffer(void *cb_priv, size_t min_size,
 
   if (ext_fb_list->ext_fb[i].size < min_size) {
     free(ext_fb_list->ext_fb[i].data);
-    ext_fb_list->ext_fb[i].data = (uint8_t *)malloc(min_size);
+    ext_fb_list->ext_fb[i].data = (uint8_t *)calloc(min_size, sizeof(uint8_t));
     if (!ext_fb_list->ext_fb[i].data)
       return -1;
 
@@ -522,6 +547,7 @@ static FILE *open_outfile(const char *name) {
   }
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 static void high_img_upshift(vpx_image_t *dst, vpx_image_t *src,
                              int input_shift) {
@@ -693,6 +719,9 @@ static void img_downshift(vpx_image_t *dst, vpx_image_t *src,
   }
 }
 
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 static int img_shifted_realloc_required(const vpx_image_t *img,
                                         const vpx_image_t *shifted,
                                         vpx_img_fmt_t required_fmt) {
@@ -726,8 +755,13 @@ int main_loop(int argc, const char **argv_) {
   int                     opt_yv12 = 0;
   int                     opt_i420 = 0;
   vpx_codec_dec_cfg_t     cfg = {0, 0, 0};
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   int                     out_bit_depth = 0;
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+  int                     output_bit_depth = 0;
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
 #if CONFIG_VP8_DECODER
   vp8_postproc_cfg_t      vp8_pp_cfg = {0};
@@ -740,7 +774,11 @@ int main_loop(int argc, const char **argv_) {
   int                     dec_flags = 0;
   int                     do_scale = 0;
   vpx_image_t             *scaled_img = NULL;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   vpx_image_t             *img_shifted = NULL;
 #endif
   int                     frame_avail, got_data;
@@ -757,7 +795,8 @@ int main_loop(int argc, const char **argv_) {
   struct VpxDecInputContext input = {NULL, NULL};
   struct VpxInputContext vpx_input_ctx;
 #if CONFIG_WEBM_IO
-  struct WebmInputContext webm_ctx = {0};
+  struct WebmInputContext webm_ctx;
+  memset(&(webm_ctx), 0, sizeof(webm_ctx));
   input.webm_ctx = &webm_ctx;
 #endif
   input.vpx_input_ctx = &vpx_input_ctx;
@@ -782,8 +821,13 @@ int main_loop(int argc, const char **argv_) {
       use_y4m = 0;
       flipuv = 1;
       opt_yv12 = 1;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
       out_bit_depth = 8;  // For yv12 8-bit depth output is assumed
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+      output_bit_depth = 8;  // For yv12 8-bit depth output is assumed
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #endif
     } else if (arg_match(&arg, &use_i420, argi)) {
       use_y4m = 0;
@@ -816,6 +860,7 @@ int main_loop(int argc, const char **argv_) {
       do_scale = 1;
     else if (arg_match(&arg, &fb_arg, argi))
       num_external_frame_buffers = arg_parse_uint(&arg);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 
 #if CONFIG_VP9_HIGH
     else if (arg_match(&arg, &outbitdeptharg, argi)) {
@@ -823,6 +868,15 @@ int main_loop(int argc, const char **argv_) {
     }
 #endif
 
+=======
+    else if (arg_match(&arg, &continuearg, argi))
+      keep_going = 1;
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+    else if (arg_match(&arg, &outbitdeptharg, argi)) {
+      output_bit_depth = arg_parse_uint(&arg);
+    }
+#endif
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 #if CONFIG_VP8_DECODER
     else if (arg_match(&arg, &addnoise_level, argi)) {
       postproc = 1;
@@ -872,11 +926,8 @@ int main_loop(int argc, const char **argv_) {
       }
     } else if (arg_match(&arg, &error_concealment, argi)) {
       ec_enabled = 1;
-    } else if (arg_match(&arg, &continuearg, argi)) {
-      keep_going = 1;
     }
-
-#endif
+#endif  // CONFIG_VP8_DECODER
     else
       argj++;
   }
@@ -940,7 +991,7 @@ int main_loop(int argc, const char **argv_) {
   if (use_y4m && !noblit) {
     if (!single_file) {
       fprintf(stderr, "YUV4MPEG2 not supported with output patterns,"
-              " try --i420 or --yv12.\n");
+              " try --i420 or --yv12 or --rawvideo.\n");
       return EXIT_FAILURE;
     }
 
@@ -1129,6 +1180,7 @@ int main_loop(int argc, const char **argv_) {
 #endif
         }
       }
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
       // Default to codec bit depth if output bit depth not set
       if (!out_bit_depth)
@@ -1156,10 +1208,47 @@ int main_loop(int argc, const char **argv_) {
         img = img_shifted;
       }
 #endif
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+      // Default to codec bit depth if output bit depth not set
+      if (!output_bit_depth) {
+        output_bit_depth = img->bit_depth;
+      }
+      // Shift up or down if necessary
+      if (output_bit_depth != img->bit_depth) {
+        const vpx_img_fmt_t shifted_fmt = output_bit_depth == 8 ?
+            img->fmt ^ (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) :
+            img->fmt | VPX_IMG_FMT_HIGHBITDEPTH;
+        if (img_shifted &&
+            img_shifted_realloc_required(img, img_shifted, shifted_fmt)) {
+          vpx_img_free(img_shifted);
+          img_shifted = NULL;
+        }
+        if (!img_shifted) {
+          img_shifted = vpx_img_alloc(NULL, shifted_fmt,
+                                      img->d_w, img->d_h, 16);
+          img_shifted->bit_depth = output_bit_depth;
+        }
+        if (output_bit_depth > img->bit_depth) {
+          vpx_img_upshift(img_shifted, img,
+                          output_bit_depth - img->bit_depth);
+        } else {
+          vpx_img_downshift(img_shifted, img,
+                            img->bit_depth - output_bit_depth);
+        }
+        img = img_shifted;
+      }
+#endif
+
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
       if (single_file) {
         if (use_y4m) {
           char buf[Y4M_BUFFER_SIZE] = {0};
           size_t len = 0;
+          if (img->fmt == VPX_IMG_FMT_I440 || img->fmt == VPX_IMG_FMT_I44016) {
+            fprintf(stderr, "Cannot produce y4m output for 440 sampling.\n");
+            goto fail;
+          }
           if (frame_out == 1) {
             // Y4M file header
             len = y4m_write_file_header(buf, sizeof(buf),
@@ -1261,7 +1350,11 @@ fail:
     free(buf);
 
   if (scaled_img) vpx_img_free(scaled_img);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
   if (img_shifted) vpx_img_free(img_shifted);
 #endif
 
