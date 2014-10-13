@@ -138,6 +138,7 @@ VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_loopfilter_8_neon_asm$(A
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_mb_lpf_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_save_reg_neon$(ASM)
 
+VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_dc_reconintra_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_iht4x4_add_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_iht8x8_add_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON) += common/arm/neon/vp9_loopfilter_neon.c
