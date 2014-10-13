@@ -11,6 +11,7 @@
 #define TEST_I420_VIDEO_SOURCE_H_
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 #include "test/video_source.h"
 
@@ -34,7 +35,6 @@ class I420VideoSource : public VideoSource {
         height_(0),
         framerate_numerator_(rate_numerator),
         framerate_denominator_(rate_denominator) {
-
     // This initializes raw_sz_, width_, height_ and allocates an img.
     SetSize(width, height);
   }
@@ -52,7 +52,7 @@ class I420VideoSource : public VideoSource {
     ASSERT_TRUE(input_file_ != NULL) << "Input file open failed. Filename: "
         << file_name_;
     if (start_) {
-      fseek(input_file_, raw_sz_ * start_, SEEK_SET);
+      fseek(input_file_, static_cast<unsigned>(raw_sz_) * start_, SEEK_SET);
     }
 
     frame_ = start_;

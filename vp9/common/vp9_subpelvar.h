@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -180,3 +181,5 @@ static void var_filter_block2d_bil_second_pass(const uint16_t *src_ptr,
 }
 
 #endif  // VP9_COMMON_VP9_SUBPELVAR_H_
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

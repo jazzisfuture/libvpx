@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -1401,3 +1402,5 @@ unsigned int vp9_masked_sub_pixel_variance4x4_c(const uint8_t *src_ptr,
                                   msk_ptr, msk_stride, sse);
 }
 #endif
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

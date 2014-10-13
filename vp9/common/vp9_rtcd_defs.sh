@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 vp9_common_forward_decls() {
 cat <<EOF
 /*
@@ -886,3 +887,5 @@ specialize vp9_yv12_copy_partial_frame
 
 fi
 # end encoder functions
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

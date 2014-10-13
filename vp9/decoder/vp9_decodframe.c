@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -1060,3 +1061,5 @@ int vp9_decode_frame(VP9D_COMP *pbi, const uint8_t **p_data_end) {
 
   return 0;
 }
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

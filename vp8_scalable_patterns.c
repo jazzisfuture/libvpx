@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2012 The WebM project authors. All Rights Reserved.
  *
@@ -700,3 +701,5 @@ int main(int argc, char **argv) {
 
     return EXIT_SUCCESS;
 }
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

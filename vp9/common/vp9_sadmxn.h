@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -63,3 +64,5 @@ static INLINE unsigned int masked_sad_mx_n_c(const uint8_t *src_ptr,
 }
 #endif
 #endif  // VP9_COMMON_VP9_SADMXN_H_
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")

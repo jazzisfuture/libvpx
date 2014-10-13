@@ -1,3 +1,4 @@
+<<<<<<< HEAD   (a5a742 Redesigned recursive filters adapted to block-sizes)
 /*
  *  Copyright (c) 2010 The WebM project authors. All Rights Reserved.
  *
@@ -4276,3 +4277,5 @@ int vp9_calc_ss_err(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest) {
 int vp9_get_quantizer(VP9_PTR c) {
   return ((VP9_COMP *)c)->common.base_qindex;
 }
+=======
+>>>>>>> BRANCH (297717 Merge "Add adaptation option for VBR.")
