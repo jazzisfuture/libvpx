@@ -19,10 +19,14 @@
 #include "vp9/encoder/vp9_cost.h"
 #include "vp9/encoder/vp9_segmentation.h"
 
+static int i_am_a_race;
 void vp9_enable_segmentation(struct segmentation *seg) {
   seg->enabled = 1;
-  seg->update_map = 1;
-  seg->update_data = 1;
+  if (!i_am_a_race) {
+    seg->update_map = 1;
+    seg->update_data = 1;
+    i_am_a_race = 1;
+  }
 }
 
 void vp9_disable_segmentation(struct segmentation *seg) {

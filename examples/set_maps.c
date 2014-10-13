@@ -212,6 +212,7 @@ int main(int argc, char **argv) {
   cfg.rc_target_bitrate = (unsigned int)(bits_per_pixel_per_frame * cfg.g_w *
                                          cfg.g_h * fps / 1000);
   cfg.g_lag_in_frames = 0;
+  cfg.kf_max_dist = 8;
 
   writer = vpx_video_writer_open(argv[5], kContainerIVF, &info);
   if (!writer)
@@ -224,14 +225,14 @@ int main(int argc, char **argv) {
     die_codec(&codec, "Failed to initialize encoder");
 
   // Encode frames.
-  while (vpx_img_read(&raw, infile)) {
+  while (vpx_img_read(&raw, infile) && frame_count < 12) {
     ++frame_count;
 
     if (frame_count == 22 && encoder->fourcc == VP8_FOURCC) {
       set_roi_map(&cfg, &codec);
-    } else if (frame_count == 33) {
+    } else if (frame_count == 2 || frame_count == 6 || frame_count == 10) {
       set_active_map(&cfg, &codec);
-    } else if (frame_count == 44) {
+    } else if (frame_count == 5 || frame_count == 9) {
       unset_active_map(&cfg, &codec);
     }
 
