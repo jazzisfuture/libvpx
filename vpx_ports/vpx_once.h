@@ -76,25 +76,27 @@ static void once(void (*func)(void))
 #elif CONFIG_MULTITHREAD && defined(__OS2__)
 #define INCL_DOS
 #include <os2.h>
-static void once(void (*func)(void)) {
-  static int done;
+static void once(void (*func)(void))
+{
+    static int done;
 
-  /* If the initialization is complete, return early. */
-  if (done)
-    return;
+    /* If the initialization is complete, return early. */
+    if(done)
+        return;
 
-  /* Causes all other threads in the process to block themselves
-   * and give up their time slice.
-   */
-  DosEnterCritSec();
+    /* Causes all other threads in the process to block themselves
+     * and give up their time slice.
+     */
+    DosEnterCritSec();
 
-  if (!done) {
-    func();
-    done = 1;
-  }
+    if (!done)
+    {
+        func();
+        done = 1;
+    }
 
-  /* Restores normal thread dispatching for the current process. */
-  DosExitCritSec();
+    /* Restores normal thread dispatching for the current process. */
+    DosExitCritSec();
 }
 
 
