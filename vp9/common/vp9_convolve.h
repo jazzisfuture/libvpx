@@ -23,12 +23,21 @@ typedef void (*convolve_fn_t)(const uint8_t *src, ptrdiff_t src_stride,
                               const int16_t *filter_y, int y_step_q4,
                               int w, int h);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 typedef void (*high_convolve_fn_t)(const uint8_t *src, ptrdiff_t src_stride,
                                    uint8_t *dst, ptrdiff_t dst_stride,
                                    const int16_t *filter_x, int x_step_q4,
                                    const int16_t *filter_y, int y_step_q4,
                                    int w, int h, int bps);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+typedef void (*highbd_convolve_fn_t)(const uint8_t *src, ptrdiff_t src_stride,
+                                     uint8_t *dst, ptrdiff_t dst_stride,
+                                     const int16_t *filter_x, int x_step_q4,
+                                     const int16_t *filter_y, int y_step_q4,
+                                     int w, int h, int bd);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #endif
 
 #ifdef __cplusplus
