@@ -22,6 +22,7 @@ void variance(const uint8_t *a, int a_stride,
               int  w, int  h,
               unsigned int *sse, int *sum);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 void high_variance(const uint8_t *a8, int a_stride,
                    const uint8_t *b8, int b_stride,
@@ -39,6 +40,24 @@ void high_12_variance(const uint8_t *a8, int a_stride,
                       unsigned int *sse, int *sum);
 #endif
 
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+void highbd_variance(const uint8_t *a8, int a_stride,
+                     const uint8_t *b8, int b_stride,
+                     int w, int h,
+                     unsigned int *sse, int *sum);
+
+void highbd_10_variance(const uint8_t *a8, int a_stride,
+                        const uint8_t *b8, int b_stride,
+                        int w, int h,
+                        unsigned int *sse, int *sum);
+
+void highbd_12_variance(const uint8_t *a8, int a_stride,
+                        const uint8_t *b8, int b_stride,
+                        int w, int h,
+                        unsigned int *sse, int *sum);
+#endif
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
 typedef unsigned int(*vp9_sad_fn_t)(const uint8_t *src_ptr,
                                     int source_stride,
@@ -99,9 +118,16 @@ typedef struct vp9_variance_vtable {
 void vp9_comp_avg_pred(uint8_t *comp_pred, const uint8_t *pred, int width,
                        int height, const uint8_t *ref, int ref_stride);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 void vp9_high_comp_avg_pred(uint16_t *comp_pred, const uint8_t *pred, int width,
                             int height, const uint8_t *ref, int ref_stride);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_highbd_comp_avg_pred(uint16_t *comp_pred, const uint8_t *pred,
+                              int width, int height,
+                              const uint8_t *ref, int ref_stride);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #endif
 
 #ifdef __cplusplus

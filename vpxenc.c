@@ -19,12 +19,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if CONFIG_LIBYUV
+#include "third_party/libyuv/include/libyuv/scale.h"
+#endif
+
 #include "vpx/vpx_encoder.h"
 #if CONFIG_DECODERS
 #include "vpx/vpx_decoder.h"
 #endif
 
-#include "third_party/libyuv/include/libyuv/scale.h"
 #include "./args.h"
 #include "./ivfenc.h"
 #include "./tools_common.h"
@@ -125,48 +128,50 @@ int fourcc_is_ivf(const char detect[4]) {
   return 0;
 }
 
-static const arg_def_t debugmode = ARG_DEF("D", "debug", 0,
-                                           "Debug mode (makes output deterministic)");
-static const arg_def_t outputfile = ARG_DEF("o", "output", 1,
-                                            "Output filename");
-static const arg_def_t use_yv12 = ARG_DEF(NULL, "yv12", 0,
-                                          "Input file is YV12 ");
-static const arg_def_t use_i420 = ARG_DEF(NULL, "i420", 0,
-                                          "Input file is I420 (default)");
-static const arg_def_t use_i422 = ARG_DEF(NULL, "i422", 0,
-                                          "Input file is I422");
-static const arg_def_t use_i444 = ARG_DEF(NULL, "i444", 0,
-                                          "Input file is I444");
-static const arg_def_t codecarg = ARG_DEF(NULL, "codec", 1,
-                                          "Codec to use");
-static const arg_def_t passes           = ARG_DEF("p", "passes", 1,
-                                                  "Number of passes (1/2)");
-static const arg_def_t pass_arg         = ARG_DEF(NULL, "pass", 1,
-                                                  "Pass to execute (1/2)");
-static const arg_def_t fpf_name         = ARG_DEF(NULL, "fpf", 1,
-                                                  "First pass statistics file name");
+static const arg_def_t debugmode = ARG_DEF(
+    "D", "debug", 0, "Debug mode (makes output deterministic)");
+static const arg_def_t outputfile = ARG_DEF(
+    "o", "output", 1, "Output filename");
+static const arg_def_t use_yv12 = ARG_DEF(
+    NULL, "yv12", 0, "Input file is YV12 ");
+static const arg_def_t use_i420 = ARG_DEF(
+    NULL, "i420", 0, "Input file is I420 (default)");
+static const arg_def_t use_i422 = ARG_DEF(
+    NULL, "i422", 0, "Input file is I422");
+static const arg_def_t use_i444 = ARG_DEF(
+    NULL, "i444", 0, "Input file is I444");
+static const arg_def_t use_i440 = ARG_DEF(
+    NULL, "i440", 0, "Input file is I440");
+static const arg_def_t codecarg = ARG_DEF(
+    NULL, "codec", 1, "Codec to use");
+static const arg_def_t passes = ARG_DEF(
+    "p", "passes", 1, "Number of passes (1/2)");
+static const arg_def_t pass_arg = ARG_DEF(
+    NULL, "pass", 1, "Pass to execute (1/2)");
+static const arg_def_t fpf_name = ARG_DEF(
+    NULL, "fpf", 1, "First pass statistics file name");
 #if CONFIG_FP_MB_STATS
-static const arg_def_t fpmbf_name         = ARG_DEF(NULL, "fpmbf", 1,
-                                      "First pass block statistics file name");
+static const arg_def_t fpmbf_name = ARG_DEF(
+    NULL, "fpmbf", 1, "First pass block statistics file name");
 #endif
-static const arg_def_t limit = ARG_DEF(NULL, "limit", 1,
-                                       "Stop encoding after n input frames");
-static const arg_def_t skip = ARG_DEF(NULL, "skip", 1,
-                                      "Skip the first n input frames");
-static const arg_def_t deadline         = ARG_DEF("d", "deadline", 1,
-                                                  "Deadline per frame (usec)");
-static const arg_def_t best_dl          = ARG_DEF(NULL, "best", 0,
-                                                  "Use Best Quality Deadline");
-static const arg_def_t good_dl          = ARG_DEF(NULL, "good", 0,
-                                                  "Use Good Quality Deadline");
-static const arg_def_t rt_dl            = ARG_DEF(NULL, "rt", 0,
-                                                  "Use Realtime Quality Deadline");
-static const arg_def_t quietarg         = ARG_DEF("q", "quiet", 0,
-                                                  "Do not print encode progress");
-static const arg_def_t verbosearg       = ARG_DEF("v", "verbose", 0,
-                                                  "Show encoder parameters");
-static const arg_def_t psnrarg          = ARG_DEF(NULL, "psnr", 0,
-                                                  "Show PSNR in status line");
+static const arg_def_t limit = ARG_DEF(
+    NULL, "limit", 1, "Stop encoding after n input frames");
+static const arg_def_t skip = ARG_DEF(
+    NULL, "skip", 1, "Skip the first n input frames");
+static const arg_def_t deadline = ARG_DEF(
+    "d", "deadline", 1, "Deadline per frame (usec)");
+static const arg_def_t best_dl = ARG_DEF(
+    NULL, "best", 0, "Use Best Quality Deadline");
+static const arg_def_t good_dl = ARG_DEF(
+    NULL, "good", 0, "Use Good Quality Deadline");
+static const arg_def_t rt_dl = ARG_DEF(
+    NULL, "rt", 0, "Use Realtime Quality Deadline");
+static const arg_def_t quietarg = ARG_DEF(
+    "q", "quiet", 0, "Do not print encode progress");
+static const arg_def_t verbosearg = ARG_DEF(
+    "v", "verbose", 0, "Show encoder parameters");
+static const arg_def_t psnrarg = ARG_DEF(
+    NULL, "psnr", 0, "Show PSNR in status line");
 
 static const struct arg_enum_list test_decode_enum[] = {
   {"off",   TEST_DECODE_OFF},
@@ -174,30 +179,31 @@ static const struct arg_enum_list test_decode_enum[] = {
   {"warn",  TEST_DECODE_WARN},
   {NULL, 0}
 };
-static const arg_def_t recontest = ARG_DEF_ENUM(NULL, "test-decode", 1,
-                                                "Test encode/decode mismatch",
-                                                test_decode_enum);
-static const arg_def_t framerate        = ARG_DEF(NULL, "fps", 1,
-                                                  "Stream frame rate (rate/scale)");
-static const arg_def_t use_ivf          = ARG_DEF(NULL, "ivf", 0,
-                                                  "Output IVF (default is WebM if WebM IO is enabled)");
-static const arg_def_t out_part = ARG_DEF("P", "output-partitions", 0,
-                                          "Makes encoder output partitions. Requires IVF output!");
-static const arg_def_t q_hist_n         = ARG_DEF(NULL, "q-hist", 1,
-                                                  "Show quantizer histogram (n-buckets)");
-static const arg_def_t rate_hist_n         = ARG_DEF(NULL, "rate-hist", 1,
-                                                     "Show rate histogram (n-buckets)");
-static const arg_def_t disable_warnings =
-    ARG_DEF(NULL, "disable-warnings", 0,
-            "Disable warnings about potentially incorrect encode settings.");
-static const arg_def_t disable_warning_prompt =
-    ARG_DEF("y", "disable-warning-prompt", 0,
-            "Display warnings, but do not prompt user to continue.");
-static const arg_def_t experimental_bitstream =
-    ARG_DEF(NULL, "experimental-bitstream", 0,
-            "Allow experimental bitstream features.");
+static const arg_def_t recontest = ARG_DEF_ENUM(
+    NULL, "test-decode", 1, "Test encode/decode mismatch", test_decode_enum);
+static const arg_def_t framerate = ARG_DEF(
+    NULL, "fps", 1, "Stream frame rate (rate/scale)");
+static const arg_def_t use_ivf = ARG_DEF(
+    NULL, "ivf", 0, "Output IVF (default is WebM if WebM IO is enabled)");
+static const arg_def_t out_part = ARG_DEF(
+    "P", "output-partitions", 0,
+    "Makes encoder output partitions. Requires IVF output!");
+static const arg_def_t q_hist_n = ARG_DEF(
+    NULL, "q-hist", 1, "Show quantizer histogram (n-buckets)");
+static const arg_def_t rate_hist_n = ARG_DEF(
+    NULL, "rate-hist", 1, "Show rate histogram (n-buckets)");
+static const arg_def_t disable_warnings = ARG_DEF(
+    NULL, "disable-warnings", 0,
+    "Disable warnings about potentially incorrect encode settings.");
+static const arg_def_t disable_warning_prompt = ARG_DEF(
+    "y", "disable-warning-prompt", 0,
+    "Display warnings, but do not prompt user to continue.");
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 static const arg_def_t test16bitinternalarg = ARG_DEF(
     NULL, "test-16bit-internal", 0, "Force use of 16 bit internal buffer");
 #endif
@@ -211,6 +217,7 @@ static const arg_def_t *main_args[] = {
   NULL
 };
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 static const arg_def_t usage            = ARG_DEF("u", "usage", 1,
                                                   "Usage profile number to use");
 static const arg_def_t threads          = ARG_DEF("t", "threads", 1,
@@ -222,6 +229,16 @@ static const arg_def_t width            = ARG_DEF("w", "width", 1,
 static const arg_def_t height           = ARG_DEF("h", "height", 1,
                                                   "Frame height");
 
+=======
+static const arg_def_t usage = ARG_DEF(
+    "u", "usage", 1, "Usage profile number to use");
+static const arg_def_t threads = ARG_DEF(
+    "t", "threads", 1, "Max number of threads to use");
+static const arg_def_t profile = ARG_DEF(
+    NULL, "profile", 1, "Bitstream profile number to use");
+static const arg_def_t width = ARG_DEF("w", "width", 1, "Frame width");
+static const arg_def_t height = ARG_DEF("h", "height", 1, "Frame height");
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #if CONFIG_WEBM_IO
 static const struct arg_enum_list stereo_mode_enum[] = {
   {"mono", STEREO_FORMAT_MONO},
@@ -231,18 +248,18 @@ static const struct arg_enum_list stereo_mode_enum[] = {
   {"right-left", STEREO_FORMAT_RIGHT_LEFT},
   {NULL, 0}
 };
-static const arg_def_t stereo_mode      = ARG_DEF_ENUM(NULL, "stereo-mode", 1,
-                                                       "Stereo 3D video format", stereo_mode_enum);
+static const arg_def_t stereo_mode = ARG_DEF_ENUM(
+    NULL, "stereo-mode", 1, "Stereo 3D video format", stereo_mode_enum);
 #endif
-static const arg_def_t timebase         = ARG_DEF(NULL, "timebase", 1,
-                                                  "Output timestamp precision (fractional seconds)");
-static const arg_def_t error_resilient  = ARG_DEF(NULL, "error-resilient", 1,
-                                                  "Enable error resiliency features");
-static const arg_def_t lag_in_frames    = ARG_DEF(NULL, "lag-in-frames", 1,
-                                                  "Max number of frames to lag");
+static const arg_def_t timebase = ARG_DEF(
+    NULL, "timebase", 1, "Output timestamp precision (fractional seconds)");
+static const arg_def_t error_resilient = ARG_DEF(
+    NULL, "error-resilient", 1, "Enable error resiliency features");
+static const arg_def_t lag_in_frames = ARG_DEF(
+    NULL, "lag-in-frames", 1, "Max number of frames to lag");
 
 static const arg_def_t *global_args[] = {
-  &use_yv12, &use_i420, &use_i422, &use_i444,
+  &use_yv12, &use_i420, &use_i422, &use_i444, &use_i440,
   &usage, &threads, &profile,
   &width, &height,
 #if CONFIG_WEBM_IO
@@ -250,24 +267,28 @@ static const arg_def_t *global_args[] = {
 #endif
   &timebase, &framerate,
   &error_resilient,
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   &test16bitinternalarg,
 #endif
   &lag_in_frames, NULL
 };
 
-static const arg_def_t dropframe_thresh   = ARG_DEF(NULL, "drop-frame", 1,
-                                                    "Temporal resampling threshold (buf %)");
-static const arg_def_t resize_allowed     = ARG_DEF(NULL, "resize-allowed", 1,
-                                                    "Spatial resampling enabled (bool)");
-static const arg_def_t resize_width       = ARG_DEF(NULL, "resize-width", 1,
-                                                    "Width of encoded frame");
-static const arg_def_t resize_height      = ARG_DEF(NULL, "resize-height", 1,
-                                                    "Height of encoded frame");
-static const arg_def_t resize_up_thresh   = ARG_DEF(NULL, "resize-up", 1,
-                                                    "Upscale threshold (buf %)");
-static const arg_def_t resize_down_thresh = ARG_DEF(NULL, "resize-down", 1,
-                                                    "Downscale threshold (buf %)");
+static const arg_def_t dropframe_thresh = ARG_DEF(
+    NULL, "drop-frame", 1, "Temporal resampling threshold (buf %)");
+static const arg_def_t resize_allowed = ARG_DEF(
+    NULL, "resize-allowed", 1, "Spatial resampling enabled (bool)");
+static const arg_def_t resize_width = ARG_DEF(
+    NULL, "resize-width", 1, "Width of encoded frame");
+static const arg_def_t resize_height = ARG_DEF(
+    NULL, "resize-height", 1, "Height of encoded frame");
+static const arg_def_t resize_up_thresh = ARG_DEF(
+    NULL, "resize-up", 1, "Upscale threshold (buf %)");
+static const arg_def_t resize_down_thresh = ARG_DEF(
+    NULL, "resize-down", 1, "Downscale threshold (buf %)");
 static const struct arg_enum_list end_usage_enum[] = {
   {"vbr", VPX_VBR},
   {"cbr", VPX_CBR},
@@ -275,24 +296,24 @@ static const struct arg_enum_list end_usage_enum[] = {
   {"q",   VPX_Q},
   {NULL, 0}
 };
-static const arg_def_t end_usage          = ARG_DEF_ENUM(NULL, "end-usage", 1,
-                                                         "Rate control mode", end_usage_enum);
-static const arg_def_t target_bitrate     = ARG_DEF(NULL, "target-bitrate", 1,
-                                                    "Bitrate (kbps)");
-static const arg_def_t min_quantizer      = ARG_DEF(NULL, "min-q", 1,
-                                                    "Minimum (best) quantizer");
-static const arg_def_t max_quantizer      = ARG_DEF(NULL, "max-q", 1,
-                                                    "Maximum (worst) quantizer");
-static const arg_def_t undershoot_pct     = ARG_DEF(NULL, "undershoot-pct", 1,
-                                                    "Datarate undershoot (min) target (%)");
-static const arg_def_t overshoot_pct      = ARG_DEF(NULL, "overshoot-pct", 1,
-                                                    "Datarate overshoot (max) target (%)");
-static const arg_def_t buf_sz             = ARG_DEF(NULL, "buf-sz", 1,
-                                                    "Client buffer size (ms)");
-static const arg_def_t buf_initial_sz     = ARG_DEF(NULL, "buf-initial-sz", 1,
-                                                    "Client initial buffer size (ms)");
-static const arg_def_t buf_optimal_sz     = ARG_DEF(NULL, "buf-optimal-sz", 1,
-                                                    "Client optimal buffer size (ms)");
+static const arg_def_t end_usage = ARG_DEF_ENUM(
+    NULL, "end-usage", 1, "Rate control mode", end_usage_enum);
+static const arg_def_t target_bitrate = ARG_DEF(
+    NULL, "target-bitrate", 1, "Bitrate (kbps)");
+static const arg_def_t min_quantizer = ARG_DEF(
+    NULL, "min-q", 1, "Minimum (best) quantizer");
+static const arg_def_t max_quantizer = ARG_DEF(
+    NULL, "max-q", 1, "Maximum (worst) quantizer");
+static const arg_def_t undershoot_pct = ARG_DEF(
+    NULL, "undershoot-pct", 1, "Datarate undershoot (min) target (%)");
+static const arg_def_t overshoot_pct = ARG_DEF(
+    NULL, "overshoot-pct", 1, "Datarate overshoot (max) target (%)");
+static const arg_def_t buf_sz = ARG_DEF(
+    NULL, "buf-sz", 1, "Client buffer size (ms)");
+static const arg_def_t buf_initial_sz = ARG_DEF(
+    NULL, "buf-initial-sz", 1, "Client initial buffer size (ms)");
+static const arg_def_t buf_optimal_sz = ARG_DEF(
+    NULL, "buf-optimal-sz", 1, "Client optimal buffer size (ms)");
 static const arg_def_t *rc_args[] = {
   &dropframe_thresh, &resize_allowed, &resize_width, &resize_height,
   &resize_up_thresh, &resize_down_thresh, &end_usage, &target_bitrate,
@@ -301,59 +322,59 @@ static const arg_def_t *rc_args[] = {
 };
 
 
-static const arg_def_t bias_pct = ARG_DEF(NULL, "bias-pct", 1,
-                                          "CBR/VBR bias (0=CBR, 100=VBR)");
-static const arg_def_t minsection_pct = ARG_DEF(NULL, "minsection-pct", 1,
-                                                "GOP min bitrate (% of target)");
-static const arg_def_t maxsection_pct = ARG_DEF(NULL, "maxsection-pct", 1,
-                                                "GOP max bitrate (% of target)");
+static const arg_def_t bias_pct = ARG_DEF(
+    NULL, "bias-pct", 1, "CBR/VBR bias (0=CBR, 100=VBR)");
+static const arg_def_t minsection_pct = ARG_DEF(
+    NULL, "minsection-pct", 1, "GOP min bitrate (% of target)");
+static const arg_def_t maxsection_pct = ARG_DEF(
+    NULL, "maxsection-pct", 1, "GOP max bitrate (% of target)");
 static const arg_def_t *rc_twopass_args[] = {
   &bias_pct, &minsection_pct, &maxsection_pct, NULL
 };
 
 
-static const arg_def_t kf_min_dist = ARG_DEF(NULL, "kf-min-dist", 1,
-                                             "Minimum keyframe interval (frames)");
-static const arg_def_t kf_max_dist = ARG_DEF(NULL, "kf-max-dist", 1,
-                                             "Maximum keyframe interval (frames)");
-static const arg_def_t kf_disabled = ARG_DEF(NULL, "disable-kf", 0,
-                                             "Disable keyframe placement");
+static const arg_def_t kf_min_dist = ARG_DEF(
+    NULL, "kf-min-dist", 1, "Minimum keyframe interval (frames)");
+static const arg_def_t kf_max_dist = ARG_DEF(
+    NULL, "kf-max-dist", 1, "Maximum keyframe interval (frames)");
+static const arg_def_t kf_disabled = ARG_DEF(
+    NULL, "disable-kf", 0, "Disable keyframe placement");
 static const arg_def_t *kf_args[] = {
   &kf_min_dist, &kf_max_dist, &kf_disabled, NULL
 };
 
 
-static const arg_def_t noise_sens = ARG_DEF(NULL, "noise-sensitivity", 1,
-                                            "Noise sensitivity (frames to blur)");
-static const arg_def_t sharpness = ARG_DEF(NULL, "sharpness", 1,
-                                           "Filter sharpness (0-7)");
-static const arg_def_t static_thresh = ARG_DEF(NULL, "static-thresh", 1,
-                                               "Motion detection threshold");
-static const arg_def_t cpu_used = ARG_DEF(NULL, "cpu-used", 1,
-                                          "CPU Used (-16..16)");
-static const arg_def_t auto_altref = ARG_DEF(NULL, "auto-alt-ref", 1,
-                                             "Enable automatic alt reference frames");
-static const arg_def_t arnr_maxframes = ARG_DEF(NULL, "arnr-maxframes", 1,
-                                                "AltRef Max Frames");
-static const arg_def_t arnr_strength = ARG_DEF(NULL, "arnr-strength", 1,
-                                               "AltRef Strength");
-static const arg_def_t arnr_type = ARG_DEF(NULL, "arnr-type", 1,
-                                           "AltRef Type");
+static const arg_def_t noise_sens = ARG_DEF(
+    NULL, "noise-sensitivity", 1, "Noise sensitivity (frames to blur)");
+static const arg_def_t sharpness = ARG_DEF(
+    NULL, "sharpness", 1, "Loop filter sharpness (0..7)");
+static const arg_def_t static_thresh = ARG_DEF(
+    NULL, "static-thresh", 1, "Motion detection threshold");
+static const arg_def_t cpu_used = ARG_DEF(
+    NULL, "cpu-used", 1, "CPU Used (-16..16)");
+static const arg_def_t auto_altref = ARG_DEF(
+    NULL, "auto-alt-ref", 1, "Enable automatic alt reference frames");
+static const arg_def_t arnr_maxframes = ARG_DEF(
+    NULL, "arnr-maxframes", 1, "AltRef max frames (0..15)");
+static const arg_def_t arnr_strength = ARG_DEF(
+    NULL, "arnr-strength", 1, "AltRef filter strength (0..6)");
+static const arg_def_t arnr_type = ARG_DEF(
+    NULL, "arnr-type", 1, "AltRef type");
 static const struct arg_enum_list tuning_enum[] = {
   {"psnr", VP8_TUNE_PSNR},
   {"ssim", VP8_TUNE_SSIM},
   {NULL, 0}
 };
-static const arg_def_t tune_ssim = ARG_DEF_ENUM(NULL, "tune", 1,
-                                                "Material to favor", tuning_enum);
-static const arg_def_t cq_level = ARG_DEF(NULL, "cq-level", 1,
-                                          "Constant/Constrained Quality level");
-static const arg_def_t max_intra_rate_pct = ARG_DEF(NULL, "max-intra-rate", 1,
-                                                    "Max I-frame bitrate (pct)");
+static const arg_def_t tune_ssim = ARG_DEF_ENUM(
+    NULL, "tune", 1, "Material to favor", tuning_enum);
+static const arg_def_t cq_level = ARG_DEF(
+    NULL, "cq-level", 1, "Constant/Constrained Quality level");
+static const arg_def_t max_intra_rate_pct = ARG_DEF(
+    NULL, "max-intra-rate", 1, "Max I-frame bitrate (pct)");
 
 #if CONFIG_VP8_ENCODER
-static const arg_def_t token_parts =
-    ARG_DEF(NULL, "token-parts", 1, "Number of token partitions to use, log2");
+static const arg_def_t token_parts = ARG_DEF(
+    NULL, "token-parts", 1, "Number of token partitions to use, log2");
 static const arg_def_t *vp8_args[] = {
   &cpu_used, &auto_altref, &noise_sens, &sharpness, &static_thresh,
   &token_parts, &arnr_maxframes, &arnr_strength, &arnr_type,
@@ -371,6 +392,7 @@ static const int vp8_arg_ctrl_map[] = {
 #endif
 
 #if CONFIG_VP9_ENCODER
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 static const struct arg_enum_list aq_mode_enum[] = {
   {"off", 0},
   {"variance", 1},
@@ -383,14 +405,23 @@ static const arg_def_t tile_cols =
 static const arg_def_t tile_rows =
     ARG_DEF(NULL, "tile-rows", 1, "Number of tile rows to use, log2");
 static const arg_def_t lossless = ARG_DEF(NULL, "lossless", 1, "Lossless mode");
+=======
+static const arg_def_t tile_cols = ARG_DEF(
+    NULL, "tile-columns", 1, "Number of tile columns to use, log2");
+static const arg_def_t tile_rows = ARG_DEF(
+    NULL, "tile-rows", 1, "Number of tile rows to use, log2");
+static const arg_def_t lossless = ARG_DEF(
+    NULL, "lossless", 1, "Lossless mode");
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 static const arg_def_t frame_parallel_decoding = ARG_DEF(
     NULL, "frame-parallel", 1, "Enable frame parallel decodability features");
 static const arg_def_t aq_mode = ARG_DEF_ENUM(
     NULL, "aq-mode", 1, "Adaptive quantization mode", aq_mode_enum);
 static const arg_def_t frame_periodic_boost = ARG_DEF(
-    NULL, "frame_boost", 1,
+    NULL, "frame-boost", 1,
     "Enable frame periodic boost (0: off (default), 1: on)");
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 static const struct arg_enum_list bitdepth_enum[] = {
   {"8",  VPX_BITS_8},
@@ -406,6 +437,22 @@ static const arg_def_t bitdeptharg   = ARG_DEF_ENUM("b", "bit-depth", 1,
                                                     bitdepth_enum);
 static const arg_def_t inbitdeptharg = ARG_DEF(NULL, "input-bit-depth", 1,
                                                "Bit depth of input");
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+static const struct arg_enum_list bitdepth_enum[] = {
+  {"8",  VPX_BITS_8},
+  {"10", VPX_BITS_10},
+  {"12", VPX_BITS_12},
+  {NULL, 0}
+};
+
+static const arg_def_t bitdeptharg = ARG_DEF_ENUM(
+    "b", "bit-depth", 1,
+    "Bit depth for codec (8 for version <=1, 10 or 12 for version 2)",
+    bitdepth_enum);
+static const arg_def_t inbitdeptharg = ARG_DEF(
+    NULL, "input-bit-depth", 1, "Bit depth of input");
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #endif
 
 static const struct arg_enum_list tune_content_enum[] = {
@@ -418,23 +465,30 @@ static const arg_def_t tune_content = ARG_DEF_ENUM(
     NULL, "tune-content", 1, "Tune content type", tune_content_enum);
 
 static const arg_def_t *vp9_args[] = {
-  &cpu_used, &auto_altref, &noise_sens, &sharpness, &static_thresh,
+  &cpu_used, &auto_altref, &sharpness, &static_thresh,
   &tile_cols, &tile_rows, &arnr_maxframes, &arnr_strength, &arnr_type,
   &tune_ssim, &cq_level, &max_intra_rate_pct, &lossless,
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   &frame_parallel_decoding, &aq_mode, &frame_periodic_boost, &tune_content,
 #if CONFIG_VP9_HIGH
+=======
+  &frame_parallel_decoding, &aq_mode, &frame_periodic_boost,
+  &noise_sens, &tune_content,
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   &bitdeptharg, &inbitdeptharg,
 #endif
   NULL
 };
 static const int vp9_arg_ctrl_map[] = {
   VP8E_SET_CPUUSED, VP8E_SET_ENABLEAUTOALTREF,
-  VP8E_SET_NOISE_SENSITIVITY, VP8E_SET_SHARPNESS, VP8E_SET_STATIC_THRESHOLD,
+  VP8E_SET_SHARPNESS, VP8E_SET_STATIC_THRESHOLD,
   VP9E_SET_TILE_COLUMNS, VP9E_SET_TILE_ROWS,
   VP8E_SET_ARNR_MAXFRAMES, VP8E_SET_ARNR_STRENGTH, VP8E_SET_ARNR_TYPE,
   VP8E_SET_TUNING, VP8E_SET_CQ_LEVEL, VP8E_SET_MAX_INTRA_BITRATE_PCT,
   VP9E_SET_LOSSLESS, VP9E_SET_FRAME_PARALLEL_DECODING, VP9E_SET_AQ_MODE,
-  VP9E_SET_FRAME_PERIODIC_BOOST, VP9E_SET_TUNE_CONTENT,
+  VP9E_SET_FRAME_PERIODIC_BOOST, VP9E_SET_NOISE_SENSITIVITY,
+  VP9E_SET_TUNE_CONTENT,
   0
 };
 #endif
@@ -481,7 +535,11 @@ void usage_exit() {
 
 #define mmin(a, b)  ((a) < (b) ? (a) : (b))
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 static void find_mismatch_high(const vpx_image_t *const img1,
                                const vpx_image_t *const img2,
                                int yloc[4], int uloc[4], int vloc[4]) {
@@ -669,7 +727,10 @@ static void find_mismatch(const vpx_image_t *const img1,
 static int compare_img(const vpx_image_t *const img1,
                        const vpx_image_t *const img2) {
   uint32_t l_w = img1->d_w;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   const uint32_t l_h = img1->d_h;
+=======
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   uint32_t c_w =
       (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
   const uint32_t c_h =
@@ -680,7 +741,11 @@ static int compare_img(const vpx_image_t *const img1,
   match &= (img1->fmt == img2->fmt);
   match &= (img1->d_w == img2->d_w);
   match &= (img1->d_h == img2->d_h);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   if (img1->fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
     l_w *= 2;
     c_w *= 2;
@@ -735,7 +800,11 @@ struct stream_config {
   int                       arg_ctrl_cnt;
   int                       write_webm;
   int                       have_kf_max_dist;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   // whether to use 16bit internal buffers
   int                       use_16bit_internal;
 #endif
@@ -829,6 +898,8 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->color_type = I422;
     else if (arg_match(&arg, &use_i444, argi))
       global->color_type = I444;
+    else if (arg_match(&arg, &use_i440, argi))
+      global->color_type = I440;
     else if (arg_match(&arg, &quietarg, argi))
       global->quiet = 1;
     else if (arg_match(&arg, &verbosearg, argi))
@@ -857,8 +928,6 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->disable_warnings = 1;
     else if (arg_match(&arg, &disable_warning_prompt, argi))
       global->disable_warning_prompt = 1;
-    else if (arg_match(&arg, &experimental_bitstream, argi))
-      global->experimental_bitstream = 1;
     else
       argj++;
   }
@@ -876,8 +945,9 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
 #if CONFIG_VP9_ENCODER
     // Make default VP9 passes = 2 until there is a better quality 1-pass
     // encoder
-    global->passes = (strcmp(global->codec->name, "vp9") == 0 &&
-                      global->deadline != VPX_DL_REALTIME) ? 2 : 1;
+    if (global->codec != NULL && global->codec->name != NULL)
+      global->passes = (strcmp(global->codec->name, "vp9") == 0 &&
+                        global->deadline != VPX_DL_REALTIME) ? 2 : 1;
 #else
     global->passes = 1;
 #endif
@@ -945,8 +1015,10 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
   struct stream_state *stream;
 
   stream = calloc(1, sizeof(*stream));
-  if (!stream)
+  if (stream == NULL) {
     fatal("Failed to allocate new stream.");
+  }
+
   if (prev) {
     memcpy(stream, prev, sizeof(*stream));
     stream->index++;
@@ -1007,7 +1079,11 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
   static const int        *ctrl_args_map = NULL;
   struct stream_config    *config = &stream->config;
   int                      eos_mark_found = 0;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   int                      test_16bit_internal = 0;
 #endif
 
@@ -1058,11 +1134,19 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->cfg.g_w = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &height, argi)) {
       config->cfg.g_h = arg_parse_uint(&arg);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
     } else if (arg_match(&arg, &bitdeptharg, argi)) {
       config->cfg.g_bit_depth = arg_parse_enum(&arg);
     } else if (arg_match(&arg, &inbitdeptharg, argi)) {
       config->cfg.g_in_bit_depth = arg_parse_uint(&arg);
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+    } else if (arg_match(&arg, &bitdeptharg, argi)) {
+      config->cfg.g_bit_depth = arg_parse_enum_or_int(&arg);
+    } else if (arg_match(&arg, &inbitdeptharg, argi)) {
+      config->cfg.g_input_bit_depth = arg_parse_uint(&arg);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #endif
 #if CONFIG_WEBM_IO
     } else if (arg_match(&arg, &stereo_mode, argi)) {
@@ -1131,7 +1215,11 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->have_kf_max_dist = 1;
     } else if (arg_match(&arg, &kf_disabled, argi)) {
       config->cfg.kf_mode = VPX_KF_DISABLED;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     } else if (arg_match(&arg, &test16bitinternalarg, argi)) {
       if (strcmp(global->codec->name, "vp9") == 0) {
         test_16bit_internal = 1;
@@ -1148,12 +1236,13 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
           * instance of this control.
           */
           for (j = 0; j < config->arg_ctrl_cnt; j++)
-            if (config->arg_ctrls[j][0] == ctrl_args_map[i])
+            if (ctrl_args_map != NULL &&
+                config->arg_ctrls[j][0] == ctrl_args_map[i])
               break;
 
           /* Update/insert */
           assert(j < (int)ARG_CTRL_CNT_MAX);
-          if (j < (int)ARG_CTRL_CNT_MAX) {
+          if (ctrl_args_map != NULL && j < (int)ARG_CTRL_CNT_MAX) {
             config->arg_ctrls[j][0] = ctrl_args_map[i];
             config->arg_ctrls[j][1] = arg_parse_enum_or_int(&arg);
             if (j == config->arg_ctrl_cnt)
@@ -1165,7 +1254,11 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
         argj++;
     }
   }
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   if (strcmp(global->codec->name, "vp9") == 0) {
     config->use_16bit_internal = test_16bit_internal |
                                  (config->cfg.g_profile > 1);
@@ -1192,6 +1285,7 @@ static void validate_stream_config(const struct stream_state *stream,
     fatal("Stream %d: Specify stream dimensions with --width (-w) "
           " and --height (-h)", stream->index);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   if (stream->config.cfg.g_profile != 0 && !global->experimental_bitstream) {
     fatal("Stream %d: profile %d is experimental and requires the --%s flag",
           stream->index, stream->config.cfg.g_profile,
@@ -1204,6 +1298,14 @@ static void validate_stream_config(const struct stream_state *stream,
     fatal("Stream %d: codec bit depth (%d) less than input bit depth (%d)",
           stream->index, (unsigned int)stream->config.cfg.g_bit_depth,
           stream->config.cfg.g_in_bit_depth);
+=======
+  // Check that the codec bit depth is greater than the input bit depth.
+  if (stream->config.cfg.g_input_bit_depth >
+      (unsigned int)stream->config.cfg.g_bit_depth) {
+    fatal("Stream %d: codec bit depth (%d) less than input bit depth (%d)",
+          stream->index, (int)stream->config.cfg.g_bit_depth,
+          stream->config.cfg.g_input_bit_depth);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   }
 
   for (streami = stream; streami; streami = streami->next) {
@@ -1283,7 +1385,12 @@ static const char* image_format_to_string(vpx_img_fmt_t f) {
     case VPX_IMG_FMT_I420: return "I420";
     case VPX_IMG_FMT_I422: return "I422";
     case VPX_IMG_FMT_I444: return "I444";
+    case VPX_IMG_FMT_I440: return "I440";
     case VPX_IMG_FMT_YV12: return "YV12";
+    case VPX_IMG_FMT_I42016: return "I42016";
+    case VPX_IMG_FMT_I42216: return "I42216";
+    case VPX_IMG_FMT_I44416: return "I44416";
+    case VPX_IMG_FMT_I44016: return "I44016";
     default: return "Other";
   }
 }
@@ -1314,7 +1421,11 @@ static void show_stream_config(struct stream_state *stream,
   SHOW(g_w);
   SHOW(g_h);
   SHOW(g_bit_depth);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
   SHOW(g_in_bit_depth);
+=======
+  SHOW(g_input_bit_depth);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   SHOW(g_timebase.num);
   SHOW(g_timebase.den);
   SHOW(g_error_resilient);
@@ -1447,8 +1558,13 @@ static void initialize_encoder(struct stream_state *stream,
 
   flags |= global->show_psnr ? VPX_CODEC_USE_PSNR : 0;
   flags |= global->out_part ? VPX_CODEC_USE_OUTPUT_PARTITION : 0;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   flags |= stream->config.use_16bit_internal ? VPX_CODEC_USE_HIGH : 0;
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+  flags |= stream->config.use_16bit_internal ? VPX_CODEC_USE_HIGHBITDEPTH : 0;
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 #endif
 
   /* Construct Encoder Context */
@@ -1495,6 +1611,7 @@ static void encode_frame(struct stream_state *stream,
                      cfg->g_timebase.num / global->framerate.num;
 
   /* Scale if necessary */
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   if (img) {
     if ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) &&
@@ -1507,6 +1624,21 @@ static void encode_frame(struct stream_state *stream,
       if (!stream->img)
         stream->img = vpx_img_alloc(NULL, VPX_IMG_FMT_I42016,
                                     cfg->g_w, cfg->g_h, 16);
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+  if (img) {
+    if ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) &&
+        (img->d_w != cfg->g_w || img->d_h != cfg->g_h)) {
+      if (img->fmt != VPX_IMG_FMT_I42016) {
+        fprintf(stderr, "%s can only scale 4:2:0 inputs\n", exec_name);
+        exit(EXIT_FAILURE);
+      }
+#if CONFIG_LIBYUV
+      if (!stream->img) {
+        stream->img = vpx_img_alloc(NULL, VPX_IMG_FMT_I42016,
+                                    cfg->g_w, cfg->g_h, 16);
+      }
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
       I420Scale_16((uint16*)img->planes[VPX_PLANE_Y],
                    img->stride[VPX_PLANE_Y]/2,
                    (uint16*)img->planes[VPX_PLANE_U],
@@ -1689,7 +1821,11 @@ static void get_cx_data(struct stream_state *stream,
 }
 
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 static void show_psnr(struct stream_state *stream, double peak) {
+=======
+static void show_psnr(struct stream_state  *stream, double peak) {
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   int i;
   double ovpsnr;
 
@@ -1711,6 +1847,7 @@ static void show_psnr(struct stream_state *stream, double peak) {
 static float usec_to_fps(uint64_t usec, unsigned int frames) {
   return (float)(usec > 0 ? frames * 1000000.0 / (float)usec : 0);
 }
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 
 #if CONFIG_VP9_HIGH
 static void high_img_upshift(vpx_image_t *dst, vpx_image_t *src,
@@ -1837,6 +1974,8 @@ static void img_cast_16_to_8(vpx_image_t *dst, vpx_image_t *src) {
   }
 }
 #endif
+=======
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
 static void test_decode(struct stream_state  *stream,
                         enum TestDecodeFatality fatal,
@@ -1871,6 +2010,7 @@ static void test_decode(struct stream_state  *stream,
     enc_img = ref_enc.img;
     vpx_codec_control(&stream->decoder, VP9_GET_REFERENCE, &ref_dec);
     dec_img = ref_dec.img;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
     if ((enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) != (dec_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH)) {
       if (enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
@@ -1882,6 +2022,20 @@ static void test_decode(struct stream_state  *stream,
         vpx_img_alloc(&dec_img, dec_img.fmt - VPX_IMG_FMT_HIGHBITDEPTH, dec_img.d_w,
                       dec_img.d_h, 16);
         img_cast_16_to_8(&dec_img, &ref_dec.img);
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+    if ((enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) !=
+        (dec_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH)) {
+      if (enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
+        vpx_img_alloc(&enc_img, enc_img.fmt - VPX_IMG_FMT_HIGHBITDEPTH,
+                      enc_img.d_w, enc_img.d_h, 16);
+        vpx_img_truncate_16_to_8(&enc_img, &ref_enc.img);
+      }
+      if (dec_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
+        vpx_img_alloc(&dec_img, dec_img.fmt - VPX_IMG_FMT_HIGHBITDEPTH,
+                      dec_img.d_w, dec_img.d_h, 16);
+        vpx_img_truncate_16_to_8(&dec_img, &ref_dec.img);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
       }
     }
 #endif
@@ -1891,7 +2045,11 @@ static void test_decode(struct stream_state  *stream,
 
   if (!compare_img(&enc_img, &dec_img)) {
     int y[4], u[4], v[4];
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     if (enc_img.fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
       find_mismatch_high(&enc_img, &dec_img, y, u, v);
     } else {
@@ -1940,7 +2098,11 @@ static void print_time(const char *label, int64_t etl) {
 int main(int argc, const char **argv_) {
   int pass;
   vpx_image_t raw;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   vpx_image_t raw_shift;
   int allocated_raw_shift = 0;
   int use_16bit_internal = 0;
@@ -1984,6 +2146,9 @@ int main(int argc, const char **argv_) {
       break;
     case I444:
       input.fmt = VPX_IMG_FMT_I444;
+      break;
+    case I440:
+      input.fmt = VPX_IMG_FMT_I440;
       break;
     case YV12:
       input.fmt = VPX_IMG_FMT_YV12;
@@ -2034,6 +2199,7 @@ int main(int argc, const char **argv_) {
     /* If the input file doesn't specify its w/h (raw files), try to get
      * the data from the first stream's configuration.
      */
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
     if (!input.width || !input.height)
       FOREACH_STREAM({
       if (stream->config.cfg.g_w && stream->config.cfg.g_h) {
@@ -2042,6 +2208,17 @@ int main(int argc, const char **argv_) {
         break;
       }
     });
+=======
+    if (!input.width || !input.height) {
+      FOREACH_STREAM({
+        if (stream->config.cfg.g_w && stream->config.cfg.g_h) {
+          input.width = stream->config.cfg.g_w;
+          input.height = stream->config.cfg.g_h;
+          break;
+        }
+      });
+    }
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
     /* Update stream configurations from the input file's parameters */
     if (!input.width || !input.height)
@@ -2055,6 +2232,7 @@ int main(int argc, const char **argv_) {
      */
     if (!input.bit_depth) {
       FOREACH_STREAM({
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         if (stream->config.cfg.g_in_bit_depth)
           input.bit_depth = stream->config.cfg.g_in_bit_depth;
         else
@@ -2065,6 +2243,18 @@ int main(int argc, const char **argv_) {
     } else {
       FOREACH_STREAM({
         stream->config.cfg.g_in_bit_depth = input.bit_depth;
+=======
+        if (stream->config.cfg.g_input_bit_depth)
+          input.bit_depth = stream->config.cfg.g_input_bit_depth;
+        else
+          input.bit_depth = stream->config.cfg.g_input_bit_depth =
+              (int)stream->config.cfg.g_bit_depth;
+      });
+      if (input.bit_depth > 8) input.fmt |= VPX_IMG_FMT_HIGHBITDEPTH;
+    } else {
+      FOREACH_STREAM({
+        stream->config.cfg.g_input_bit_depth = input.bit_depth;
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
       });
     }
 
@@ -2140,6 +2330,25 @@ int main(int argc, const char **argv_) {
     }
 #endif
 
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+    if (strcmp(global.codec->name, "vp9") == 0) {
+      // Check to see if at least one stream uses 16 bit internal.
+      // Currently assume that the bit_depths for all streams using
+      // highbitdepth are the same.
+      FOREACH_STREAM({
+        if (stream->config.use_16bit_internal) {
+          use_16bit_internal = 1;
+        }
+        if (stream->config.cfg.g_profile == 0) {
+          input_shift = 0;
+        } else {
+          input_shift = (int)stream->config.cfg.g_bit_depth -
+              stream->config.cfg.g_input_bit_depth;
+        }
+      });
+    }
+#endif
+
     frame_avail = 1;
     got_data = 0;
 
@@ -2177,6 +2386,7 @@ int main(int argc, const char **argv_) {
         frame_avail = 0;
 
       if (frames_in > global.skip_frames) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
         vpx_image_t *frame_to_encode;
         if (input_shift || (use_16bit_internal && input.bit_depth == 8)) {
@@ -2189,6 +2399,20 @@ int main(int argc, const char **argv_) {
             allocated_raw_shift = 1;
           }
           img_upshift(&raw_shift, &raw, input_shift);
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+        vpx_image_t *frame_to_encode;
+        if (input_shift || (use_16bit_internal && input.bit_depth == 8)) {
+          assert(use_16bit_internal);
+          // Input bit depth and stream bit depth do not match, so up
+          // shift frame to stream bit depth
+          if (!allocated_raw_shift) {
+            vpx_img_alloc(&raw_shift, raw.fmt | VPX_IMG_FMT_HIGHBITDEPTH,
+                          input.width, input.height, 32);
+            allocated_raw_shift = 1;
+          }
+          vpx_img_upshift(&raw_shift, &raw, input_shift);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
           frame_to_encode = &raw_shift;
         } else {
           frame_to_encode = &raw;
@@ -2224,7 +2448,8 @@ int main(int argc, const char **argv_) {
         got_data = 0;
         FOREACH_STREAM(get_cx_data(stream, &global, &got_data));
 
-        if (!got_data && input.length && !streams->frames_out) {
+        if (!got_data && input.length && streams != NULL &&
+            !streams->frames_out) {
           lagged_count = global.limit ? seen_frames : ftello(input.file);
         } else if (input.length) {
           int64_t remaining;
@@ -2259,28 +2484,32 @@ int main(int argc, const char **argv_) {
     if (stream_cnt > 1)
       fprintf(stderr, "\n");
 
-    if (!global.quiet)
-      FOREACH_STREAM(fprintf(
-                       stderr,
-                       "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7lub/f %7"PRId64"b/s"
-                       " %7"PRId64" %s (%.2f fps)\033[K\n", pass + 1,
-                       global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
-                       seen_frames ? (unsigned long)(stream->nbytes * 8 / seen_frames) : 0,
-                       seen_frames ? (int64_t)stream->nbytes * 8
-                       * (int64_t)global.framerate.num / global.framerate.den
-                       / seen_frames
-                       : 0,
-                       stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
-                       stream->cx_time > 9999999 ? "ms" : "us",
-                       usec_to_fps(stream->cx_time, seen_frames));
-                    );
+    if (!global.quiet) {
+      FOREACH_STREAM(fprintf(stderr,
+          "\rPass %d/%d frame %4d/%-4d %7"PRId64"B %7"PRId64"b/f %7"PRId64"b/s"
+          " %7"PRId64" %s (%.2f fps)\033[K\n",
+          pass + 1,
+          global.passes, frames_in, stream->frames_out, (int64_t)stream->nbytes,
+          seen_frames ? (int64_t)(stream->nbytes * 8 / seen_frames) : 0,
+          seen_frames ? (int64_t)stream->nbytes * 8 *
+              (int64_t)global.framerate.num / global.framerate.den /
+              seen_frames : 0,
+          stream->cx_time > 9999999 ? stream->cx_time / 1000 : stream->cx_time,
+          stream->cx_time > 9999999 ? "ms" : "us",
+          usec_to_fps(stream->cx_time, seen_frames)));
+    }
 
     if (global.show_psnr) {
       if (global.codec->fourcc == VP9_FOURCC) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
         FOREACH_STREAM({
           const unsigned int bit_depth = stream->config.cfg.g_in_bit_depth;
           show_psnr(stream, (1 << bit_depth) - 1);
         });
+=======
+        FOREACH_STREAM(
+            show_psnr(stream, (1 << stream->config.cfg.g_input_bit_depth) - 1));
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
       } else {
         FOREACH_STREAM(show_psnr(stream, 255.0));
       }
@@ -2336,7 +2565,11 @@ int main(int argc, const char **argv_) {
     });
 #endif
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
+=======
+#if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   if (allocated_raw_shift)
     vpx_img_free(&raw_shift);
 #endif
