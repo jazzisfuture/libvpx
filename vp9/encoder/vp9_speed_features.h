@@ -384,6 +384,10 @@ typedef struct SPEED_FEATURES {
   // This feature controls how the loop filter level is determined.
   LPF_PICK_METHOD lpf_pick;
 
+  // This feature allows adjustment of loop filter level based on speed
+  // when lpf_pick is LPF_PICK_FROM_Q.
+  int lpf_rtc_adjustment;
+
   // This feature limits the number of coefficients updates we actually do
   // by only looking at counts from 1/2 the bands.
   FAST_COEFF_UPDATE use_fast_coef_updates;
