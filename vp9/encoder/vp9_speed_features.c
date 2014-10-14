@@ -229,6 +229,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->optimize_coefficients = 0;
     sf->disable_split_mask = DISABLE_ALL_SPLIT;
     sf->lpf_pick = LPF_PICK_FROM_Q;
+    sf->lpf_rtc_adjustment = 0;
   }
 
   if (speed >= 4) {
@@ -255,6 +256,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST;
     sf->max_intra_bsize = BLOCK_32X32;
     sf->allow_skip_recode = 1;
+    sf->lpf_rtc_adjustment = 1;
   }
 
   if (speed >= 5) {
@@ -271,6 +273,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->partition_search_type = REFERENCE_PARTITION;
     sf->use_nonrd_pick_mode = 1;
     sf->allow_skip_recode = 0;
+    sf->lpf_rtc_adjustment = 2;
   }
 
   if (speed >= 6) {
@@ -299,6 +302,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->elevate_newmv_thresh = 1000;
 
     sf->mv.reduce_first_step_size = 1;
+    sf->lpf_rtc_adjustment = 3;
   }
 
   if (speed >= 7) {
@@ -308,11 +312,13 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->encode_breakout_thresh = (MIN(cm->width, cm->height) >= 720) ?
         800 : 300;
     sf->elevate_newmv_thresh = 2500;
+    sf->lpf_rtc_adjustment = 4;
   }
 
   if (speed >= 12) {
     sf->elevate_newmv_thresh = 4000;
     sf->mv.subpel_force_stop = 2;
+    sf->lpf_rtc_adjustment = 6;
   }
 
   if (speed >= 13) {
@@ -380,6 +386,7 @@ void vp9_set_speed_features(VP9_COMP *cpi) {
   sf->use_uv_intra_rd_estimate = 0;
   sf->allow_skip_recode = 0;
   sf->lpf_pick = LPF_PICK_FROM_FULL_IMAGE;
+  sf->lpf_rtc_adjustment = 0;
   sf->use_fast_coef_updates = TWO_LOOP;
   sf->use_fast_coef_costing = 0;
   sf->mode_skip_start = MAX_MODES;  // Mode index at which mode skip mask set

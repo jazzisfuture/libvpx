@@ -175,6 +175,7 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     if (cm->frame_type == KEY_FRAME)
       filt_guess -= 4;
+    filt_guess += cpi->sf.lpf_rtc_adjustment;
     lf->filter_level = clamp(filt_guess, min_filter_level, max_filter_level);
   } else {
     lf->filter_level = search_filter_level(sd, cpi,
