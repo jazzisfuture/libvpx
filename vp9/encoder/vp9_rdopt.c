@@ -1112,10 +1112,12 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
   return best_rd;
 }
 
-static void super_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
-                             int *rate, int64_t *distortion, int *skippable,
-                             int64_t *sse, BLOCK_SIZE bsize,
-                             int64_t ref_best_rd) {
+// Return value 0: early termination triggered, no valid rd cost available;
+//              1: rd cost values are valid.
+static int super_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
+                            int *rate, int64_t *distortion, int *skippable,
+                            int64_t *sse, BLOCK_SIZE bsize,
+                            int64_t ref_best_rd) {
   MACROBLOCKD *const xd = &x->e_mbd;
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   const TX_SIZE uv_tx_size = get_uv_tx_size(mbmi, &xd->plane[1]);
@@ -1124,7 +1126,7 @@ static void super_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
   int64_t pndist = 0, pnsse = 0;
 
   if (ref_best_rd < 0)
-    goto term;
+    return 0;
 
   if (is_inter_block(mbmi)) {
     int plane;
@@ -1142,20 +1144,13 @@ static void super_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
                      ref_best_rd, plane, bsize, uv_tx_size,
                      cpi->sf.use_fast_coef_costing);
     if (pnrate == INT_MAX)
-      goto term;
+      return 0;
     *rate += pnrate;
     *distortion += pndist;
     *sse += pnsse;
     *skippable &= pnskip;
   }
-  return;
-
-  term:
-  *rate = INT_MAX;
-  *distortion = INT64_MAX;
-  *sse = INT64_MAX;
-  *skippable = 0;
-  return;
+  return 1;
 }
 
 static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
@@ -1177,9 +1172,8 @@ static int64_t rd_pick_intra_sbuv_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
     xd->mi[0].src_mi->mbmi.uv_mode = mode;
 
-    super_block_uvrd(cpi, x, &this_rate_tokenonly,
-                     &this_distortion, &s, &this_sse, bsize, best_rd);
-    if (this_rate_tokenonly == INT_MAX)
+    if (!super_block_uvrd(cpi, x, &this_rate_tokenonly,
+                          &this_distortion, &s, &this_sse, bsize, best_rd))
       continue;
     this_rate = this_rate_tokenonly +
                 cpi->intra_uv_mode_cost[cpi->common.frame_type][mode];
@@ -1210,8 +1204,12 @@ static int64_t rd_sbuv_dcpred(const VP9_COMP *cpi, MACROBLOCK *x,
 
   x->e_mbd.mi[0].src_mi->mbmi.uv_mode = DC_PRED;
   vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
-  super_block_uvrd(cpi, x, rate_tokenonly, distortion,
-                   skippable, &unused, bsize, INT64_MAX);
+  if (!super_block_uvrd(cpi, x, rate_tokenonly, distortion,
+                        skippable, &unused, bsize, INT64_MAX)) {
+    *rate_tokenonly = INT_MAX;
+    *distortion = INT64_MAX;
+    *skippable = 0;
+  }
   *rate = *rate_tokenonly + cpi->intra_uv_mode_cost[cm->frame_type][DC_PRED];
   return RDCOST(x->rdmult, x->rddiv, *rate, *distortion);
 }
@@ -2671,9 +2669,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
     rdcosty = MIN(rdcosty, RDCOST(x->rdmult, x->rddiv, 0, *psse));
 
-    super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv, &sseuv,
-                     bsize, ref_best_rd - rdcosty);
-    if (*rate_uv == INT_MAX) {
+    if (!super_block_uvrd(cpi, x, rate_uv, &distortion_uv, &skippable_uv, &sseuv,
+                          bsize, ref_best_rd - rdcosty)) {
       *rate2 = INT_MAX;
       *distortion = INT64_MAX;
       restore_dst_buf(xd, orig_dst, orig_dst_stride);
@@ -3945,10 +3942,10 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
         vp9_build_inter_predictors_sbuv(&x->e_mbd, mi_row, mi_col,
                                         BLOCK_8X8);
         vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
-        super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &uv_skippable,
-                         &uv_sse, BLOCK_8X8, tmp_best_rdu);
-        if (rate_uv == INT_MAX)
+        if (!super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &uv_skippable,
+                              &uv_sse, BLOCK_8X8, tmp_best_rdu))
           continue;
+
         rate2 += rate_uv;
         distortion2 += distortion_uv;
         skippable = skippable && uv_skippable;
