@@ -3594,7 +3594,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     for (i = 0; i < EXT_TX_TYPES; i++) {
       mbmi->ext_txfrm = i;
       inter_super_block_yrd(cpi, x, &rate_y_tx, &distortion_y_tx, &dummy, psse,
-                      bsize, txfm_cache, INT64_MAX);
+                            bsize, txfm_cache, INT64_MAX);
       assert(rate_y_tx != INT_MAX);
       if (mbmi->tx_size < TX_32X32)
         rate_y_tx += vp9_cost_bit(cm->fc.ext_tx_prob, i);
@@ -4557,50 +4557,50 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     for (i = 0; i < TX_MODES; ++i)
       tx_cache[i] = INT64_MAX;
 #if CONFIG_EXT_TX
-    for (tx_type = 0; tx_type < 2; tx_type++) {
+    for (tx_type = 0; tx_type < EXT_TX_TYPES; tx_type++) {
       mbmi->ext_txfrm = tx_type;
 #endif
-    inter_super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable_y, &ssey,
-                          bsize, tx_cache, INT64_MAX);
-    super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &skippable_uv, &sseuv,
-                     bsize, INT64_MAX);
+      inter_super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable_y, &ssey,
+                            bsize, tx_cache, INT64_MAX);
+      super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &skippable_uv, &sseuv,
+                       bsize, INT64_MAX);
 
-    rate2 = rate_y + rate_uv;
-    distortion2 = distortion_y + distortion_uv;
-    skippable = skippable_y && skippable_uv;
-    total_sse = ssey + sseuv;
+      rate2 = rate_y + rate_uv;
+      distortion2 = distortion_y + distortion_uv;
+      skippable = skippable_y && skippable_uv;
+      total_sse = ssey + sseuv;
 
-    if (skippable) {
-      vp9_prob skip_prob = vp9_get_skip_prob(cm, xd);
+      if (skippable) {
+        vp9_prob skip_prob = vp9_get_skip_prob(cm, xd);
 
-      rate2 -= (rate_y + rate_uv);
-      rate_y = 0;
-      rate_uv = 0;
-      if (skip_prob) {
-        int prob_skip_cost = vp9_cost_bit(skip_prob, 1);
-        rate2 += prob_skip_cost;
-      }
-    } else if (!xd->lossless) {
-      if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
-          RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
-        rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
-      } else {
-        rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
-        distortion2 = total_sse;
-        assert(total_sse >= 0);
         rate2 -= (rate_y + rate_uv);
         rate_y = 0;
         rate_uv = 0;
-        this_skip2 = 1;
+        if (skip_prob) {
+          int prob_skip_cost = vp9_cost_bit(skip_prob, 1);
+          rate2 += prob_skip_cost;
+        }
+      } else if (!xd->lossless) {
+        if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
+            RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
+          rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
+        } else {
+          rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
+          distortion2 = total_sse;
+          assert(total_sse >= 0);
+          rate2 -= (rate_y + rate_uv);
+          rate_y = 0;
+          rate_uv = 0;
+          this_skip2 = 1;
+        }
+      } else {
+        rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
       }
-    } else {
-      rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
-    }
 #if CONFIG_EXT_TX
-      if (mbmi->tx_size <= TX_16X16 && !this_skip2)
+      if (mbmi->tx_size < TX_32X32 && !this_skip2)
         rate2 += vp9_cost_bit(cm->fc.ext_tx_prob, tx_type);
       this_rd = RDCOST(x->rdmult, x->rddiv, rate2, distortion2);
-      if (tx_type == 0 || this_rd < (bestrd_tx * 0.97)) {
+      if (tx_type == NORM || this_rd < (bestrd_tx * 0.97)) {
         bestrd_tx = this_rd;
         best_tx_type = tx_type;
         best_tx_size = mbmi->tx_size;
@@ -4609,10 +4609,10 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         this_skip2_tx = this_skip2;
       }
     }
-    if (best_tx_size <= TX_16X16)
+    if (best_tx_size < TX_32X32)
       mbmi->ext_txfrm = best_tx_type;
     else
-      mbmi->ext_txfrm = 0;
+      mbmi->ext_txfrm = NORM;
 
     inter_super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable_y, &ssey,
                           bsize, tx_cache, INT64_MAX);
@@ -5038,7 +5038,7 @@ int64_t vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
     if (ref_frame == INTRA_FRAME) {
       int rate;
 #if CONFIG_EXT_TX
-      mbmi->ext_txfrm = 0;
+      mbmi->ext_txfrm = NORM;
 #endif
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y,
                                        &distortion_y, best_rd) >= best_rd)
