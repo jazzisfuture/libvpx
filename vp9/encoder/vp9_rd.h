@@ -123,6 +123,9 @@ typedef struct RD_COST {
   int64_t rdcost;
 } RD_COST;
 
+void reset_rd_cost(RD_COST *rd_cost);
+void init_rd_cost(RD_COST *rd_cost);
+
 struct TileInfo;
 struct VP9_COMP;
 struct macroblock;
