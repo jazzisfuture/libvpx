@@ -51,6 +51,7 @@ void vp9_subtract_block_c(int rows, int cols,
   }
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 void vp9_high_subtract_block_c(int rows, int cols,
                                int16_t *diff, ptrdiff_t diff_stride,
@@ -82,6 +83,30 @@ void vp9_high_subtract_block_c(int rows, int cols,
   }
 }
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+void vp9_highbd_subtract_block_c(int rows, int cols,
+                                 int16_t *diff, ptrdiff_t diff_stride,
+                                 const uint8_t *src8, ptrdiff_t src_stride,
+                                 const uint8_t *pred8, ptrdiff_t pred_stride,
+                                 int bd) {
+  int r, c;
+  uint16_t *src = CONVERT_TO_SHORTPTR(src8);
+  uint16_t *pred = CONVERT_TO_SHORTPTR(pred8);
+  (void) bd;
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++) {
+      diff[c] = src[c] - pred[c];
+    }
+
+    diff += diff_stride;
+    pred += pred_stride;
+    src  += src_stride;
+  }
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
 void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   struct macroblock_plane *const p = &x->plane[plane];
@@ -90,6 +115,7 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   const int bw = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   const int bh = 4 * num_4x4_blocks_high_lookup[plane_bsize];
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   if (x->e_mbd.cur_buf->flags&YV12_FLAG_HIGHBITDEPTH) {
     vp9_high_subtract_block(bh, bw, p->src_diff, bw, p->src.buf, p->src.stride,
@@ -97,6 +123,16 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
     return;
   }
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (x->e_mbd.cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    vp9_highbd_subtract_block(bh, bw, p->src_diff, bw, p->src.buf,
+                              p->src.stride, pd->dst.buf, pd->dst.stride,
+                              x->e_mbd.bd);
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   vp9_subtract_block(bh, bw, p->src_diff, bw, p->src.buf, p->src.stride,
                      pd->dst.buf, pd->dst.stride);
 }
@@ -142,7 +178,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   MACROBLOCKD *const xd = &mb->e_mbd;
   struct macroblock_plane *const p = &mb->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  const int ref = is_inter_block(&xd->mi[0]->mbmi);
+  const int ref = is_inter_block(&xd->mi[0].src_mi->mbmi);
   vp9_token_state tokens[1025][2];
   unsigned best_index[1025][2];
   uint8_t token_cache[1024];
@@ -181,6 +217,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   tokens[eob][0].qc = 0;
   tokens[eob][1] = tokens[eob][0];
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH && CONFIG_HIGH_QUANT
   if (xd->bps == 12) {
     dct_value_tokens = vp9_dct_value_tokens_high12_ptr;
@@ -197,6 +234,23 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   dct_value_cost = vp9_dct_value_cost_ptr;
 #endif
 
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->bd == 12) {
+    dct_value_tokens = vp9_dct_value_tokens_high12_ptr;
+    dct_value_cost = vp9_dct_value_cost_high12_ptr;
+  } else if (xd->bd == 10) {
+    dct_value_tokens = vp9_dct_value_tokens_high10_ptr;
+    dct_value_cost = vp9_dct_value_cost_high10_ptr;
+  } else {
+    dct_value_tokens = vp9_dct_value_tokens_ptr;
+    dct_value_cost = vp9_dct_value_cost_ptr;
+  }
+#else
+  dct_value_tokens = vp9_dct_value_tokens_ptr;
+  dct_value_cost = vp9_dct_value_cost_ptr;
+#endif
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   for (i = 0; i < eob; i++)
     token_cache[scan[i]] =
         vp9_pt_energy_class[dct_value_tokens[qcoeff[scan[i]]].token];
@@ -228,11 +282,19 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       best = rd_cost1 < rd_cost0;
       base_bits = dct_value_cost[x];
       dx = mul * (dqcoeff[rc] - coeff[rc]);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
         dx >>= xd->bps - 8;
       }
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        dx >>= xd->bd - 8;
+      }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
       d2 = dx * dx;
       tokens[i][0].rate = base_bits + (best ? rate1 : rate0);
       tokens[i][0].error = d2 + (best ? error1 : error0);
@@ -287,15 +349,25 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       base_bits = dct_value_cost[x];
 
       if (shortcut) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
         if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
           dx -= ((dequant_ptr[rc != 0] >> (xd->bps - 8)) + sz) ^ sz;
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+        if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+          dx -= ((dequant_ptr[rc != 0] >> (xd->bd - 8)) + sz) ^ sz;
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
         } else {
           dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
         }
 #else
         dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #endif
+=======
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
         d2 = dx * dx;
       }
       tokens[i][1].rate = base_bits + (best ? rate1 : rate0);
@@ -363,14 +435,21 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   return final_eob;
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 static INLINE void fdct32x32(int rd_transform, const int16_t *src,
                              tran_low_t *dst, int src_stride) {
+=======
+static INLINE void fdct32x32(int rd_transform,
+                             const int16_t *src, tran_low_t *dst,
+                             int src_stride) {
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   if (rd_transform)
     vp9_fdct32x32_rd(src, dst, src_stride);
   else
     vp9_fdct32x32(src, dst, src_stride);
 }
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 static INLINE void high_fdct32x32(int rd_transform, const int16_t *src,
                                   tran_low_t *dst, int src_stride) {
@@ -380,6 +459,17 @@ static INLINE void high_fdct32x32(int rd_transform, const int16_t *src,
     vp9_high_fdct32x32(src, dst, src_stride);
 }
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+static INLINE void highbd_fdct32x32(int rd_transform, const int16_t *src,
+                                    tran_low_t *dst, int src_stride) {
+  if (rd_transform)
+    vp9_highbd_fdct32x32_rd(src, dst, src_stride);
+  else
+    vp9_highbd_fdct32x32(src, dst, src_stride);
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
 void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size) {
@@ -396,6 +486,45 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
   const int16_t *src_diff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin,
+                                     p->round_fp, p->quant_fp, p->quant_shift,
+                                     qcoeff, dqcoeff, pd->dequant,
+                                     p->zbin_extra, eob, scan_order->scan,
+                                     scan_order->iscan);
+        break;
+      case TX_16X16:
+        vp9_highbd_fdct16x16(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, p->zbin_extra, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      case TX_8X8:
+        vp9_highbd_fdct8x8(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, p->zbin_extra, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      case TX_4X4:
+        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
+                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                               pd->dequant, p->zbin_extra, eob,
+                               scan_order->scan, scan_order->iscan);
+        break;
+      default:
+        assert(0);
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_HIGH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -484,6 +613,7 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
 
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
@@ -517,6 +647,43 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
     return;
   }
 #endif
+=======
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        vp9_highbd_fdct32x32_1(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_dc_32x32(coeff, x->skip_block, p->round,
+                                     p->quant_fp[0], qcoeff, dqcoeff,
+                                     pd->dequant[0], eob);
+        break;
+      case TX_16X16:
+        vp9_highbd_fdct16x16_1(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_dc(coeff, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      case TX_8X8:
+        vp9_highbd_fdct8x8_1(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_dc(coeff, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      case TX_4X4:
+        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_dc(coeff, x->skip_block, p->round,
+                               p->quant_fp[0], qcoeff, dqcoeff,
+                               pd->dequant[0], eob);
+        break;
+      default:
+        assert(0);
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
   switch (tx_size) {
     case TX_32X32:
       vp9_fdct32x32_1(src_diff, coeff, diff_stride);
@@ -563,6 +730,44 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   const int16_t *src_diff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+     switch (tx_size) {
+      case TX_32X32:
+        highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
+                                    p->round, p->quant, p->quant_shift, qcoeff,
+                                    dqcoeff, pd->dequant, p->zbin_extra, eob,
+                                    scan_order->scan, scan_order->iscan);
+        break;
+      case TX_16X16:
+        vp9_highbd_fdct16x16(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                              p->quant, p->quant_shift, qcoeff, dqcoeff,
+                              pd->dequant, p->zbin_extra, eob,
+                              scan_order->scan, scan_order->iscan);
+        break;
+      case TX_8X8:
+        vp9_highbd_fdct8x8(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                              p->quant, p->quant_shift, qcoeff, dqcoeff,
+                              pd->dequant, p->zbin_extra, eob,
+                              scan_order->scan, scan_order->iscan);
+        break;
+      case TX_4X4:
+        x->fwd_txm4x4(src_diff, coeff, diff_stride);
+        vp9_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                              p->quant, p->quant_shift, qcoeff, dqcoeff,
+                              pd->dequant, p->zbin_extra, eob,
+                              scan_order->scan, scan_order->iscan);
+        break;
+      default:
+        assert(0);
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_HIGH
   if (xd->cur_buf->flags&YV12_FLAG_HIGHBITDEPTH) {
@@ -662,20 +867,24 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   }
 
   if (!x->skip_recode) {
-    if (x->skip_txfm[plane] == 0) {
-      // full forward transform and quantization
-      if (x->quant_fp)
-        vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
-      else
-        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
-    } else if (x->skip_txfm[plane] == 2) {
-      // fast path forward transform and quantization
-      vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+    if (max_txsize_lookup[plane_bsize] == tx_size) {
+      if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 0) {
+        // full forward transform and quantization
+        if (x->quant_fp)
+          vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
+        else
+          vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+      } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 2) {
+        // fast path forward transform and quantization
+        vp9_xform_quant_dc(x, plane, block, plane_bsize, tx_size);
+      } else {
+        // skip forward transform
+        p->eobs[block] = 0;
+        *a = *l = 0;
+        return;
+      }
     } else {
-      // skip forward transform
-      p->eobs[block] = 0;
-      *a = *l = 0;
-      return;
+      vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
     }
   }
 
@@ -691,6 +900,34 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   if (x->skip_encode || p->eobs[block] == 0)
     return;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        vp9_highbd_idct32x32_add(dqcoeff, dst, pd->dst.stride,
+                                 p->eobs[block], xd->bd);
+        break;
+      case TX_16X16:
+        vp9_highbd_idct16x16_add(dqcoeff, dst, pd->dst.stride,
+                                 p->eobs[block], xd->bd);
+        break;
+      case TX_8X8:
+        vp9_highbd_idct8x8_add(dqcoeff, dst, pd->dst.stride,
+                               p->eobs[block], xd->bd);
+        break;
+      case TX_4X4:
+        // this is like vp9_short_idct4x4 but has a special case around eob<=1
+        // which is significant (not just an optimization) for the lossless
+        // case.
+        x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride,
+                           p->eobs[block], xd->bd);
+        break;
+      default:
+        assert(0 && "Invalid transform size");
+    }
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_HIGH
   if (xd->cur_buf->flags&YV12_FLAG_HIGHBITDEPTH) {
@@ -757,12 +994,21 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
 
   if (p->eobs[block] > 0) {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
        x->high_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bps);
        return;
     }
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+       x->highbd_itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block], xd->bd);
+       return;
+    }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
   }
 }
@@ -776,9 +1022,14 @@ void vp9_encode_sby_pass1(MACROBLOCK *x, BLOCK_SIZE bsize) {
 void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize) {
   MACROBLOCKD *const xd = &x->e_mbd;
   struct optimize_ctx ctx;
-  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   struct encode_b_args arg = {x, &ctx, &mbmi->skip};
   int plane;
+
+  mbmi->skip = 1;
+
+  if (x->skip)
+    return;
 
   for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
     if (!x->skip_recode)
@@ -801,7 +1052,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   struct encode_b_args* const args = arg;
   MACROBLOCK *const x = args->x;
   MACROBLOCKD *const xd = &x->e_mbd;
-  MB_MODE_INFO *mbmi = &xd->mi[0]->mbmi;
+  MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
   struct macroblock_plane *const p = &x->plane[plane];
   struct macroblockd_plane *const pd = &xd->plane[plane];
   tran_low_t *coeff = BLOCK_OFFSET(p->coeff, block);
@@ -810,7 +1061,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   const scan_order *scan_order;
   TX_TYPE tx_type;
   PREDICTION_MODE mode;
-  const int bwl = b_width_log2(plane_bsize);
+  const int bwl = b_width_log2_lookup[plane_bsize];
   const int diff_stride = 4 * (1 << bwl);
   uint8_t *src, *dst;
   int16_t *src_diff;
@@ -822,6 +1073,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   dst = &pd->dst.buf[4 * (j * dst_stride + i)];
   src = &p->src.buf[4 * (j * src_stride + i)];
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     switch (tx_size) {
@@ -897,6 +1149,119 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                 x->skip_encode ? src : dst,
                                 x->skip_encode ? src_stride : dst_stride,
                                 dst, dst_stride, i, j, plane);
+=======
+
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+    switch (tx_size) {
+      case TX_32X32:
+        scan_order = &vp9_default_scan_orders[TX_32X32];
+        mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
+        vp9_predict_intra_block(xd, block >> 6, bwl, TX_32X32, mode,
+                                x->skip_encode ? src : dst,
+                                x->skip_encode ? src_stride : dst_stride,
+                                dst, dst_stride, i, j, plane);
+        if (!x->skip_recode) {
+          vp9_highbd_subtract_block(32, 32, src_diff, diff_stride,
+                                    src, src_stride, dst, dst_stride, xd->bd);
+          highbd_fdct32x32(x->use_lp32x32fdct, src_diff, coeff, diff_stride);
+          vp9_highbd_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
+                                      p->round, p->quant, p->quant_shift,
+                                      qcoeff, dqcoeff, pd->dequant,
+                                      p->zbin_extra, eob,
+                                      scan_order->scan, scan_order->iscan);
+        }
+        if (!x->skip_encode && *eob) {
+          vp9_highbd_idct32x32_add(dqcoeff, dst, dst_stride, *eob, xd->bd);
+        }
+        break;
+      case TX_16X16:
+        tx_type = get_tx_type(pd->plane_type, xd);
+        scan_order = &vp9_scan_orders[TX_16X16][tx_type];
+        mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
+        vp9_predict_intra_block(xd, block >> 4, bwl, TX_16X16, mode,
+                                x->skip_encode ? src : dst,
+                                x->skip_encode ? src_stride : dst_stride,
+                                dst, dst_stride, i, j, plane);
+        if (!x->skip_recode) {
+          vp9_highbd_subtract_block(16, 16, src_diff, diff_stride,
+                                    src, src_stride, dst, dst_stride, xd->bd);
+          vp9_highbd_fht16x16(src_diff, coeff, diff_stride, tx_type);
+          vp9_highbd_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
+                                p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                pd->dequant, p->zbin_extra, eob,
+                                scan_order->scan, scan_order->iscan);
+        }
+        if (!x->skip_encode && *eob) {
+          vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, dst_stride,
+                                  *eob, xd->bd);
+        }
+        break;
+      case TX_8X8:
+        tx_type = get_tx_type(pd->plane_type, xd);
+        scan_order = &vp9_scan_orders[TX_8X8][tx_type];
+        mode = plane == 0 ? mbmi->mode : mbmi->uv_mode;
+        vp9_predict_intra_block(xd, block >> 2, bwl, TX_8X8, mode,
+                                x->skip_encode ? src : dst,
+                                x->skip_encode ? src_stride : dst_stride,
+                                dst, dst_stride, i, j, plane);
+        if (!x->skip_recode) {
+          vp9_highbd_subtract_block(8, 8, src_diff, diff_stride,
+                                    src, src_stride, dst, dst_stride, xd->bd);
+          vp9_highbd_fht8x8(src_diff, coeff, diff_stride, tx_type);
+          vp9_highbd_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                                p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                pd->dequant, p->zbin_extra, eob,
+                                scan_order->scan, scan_order->iscan);
+        }
+        if (!x->skip_encode && *eob) {
+          vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, dst_stride, *eob,
+                                xd->bd);
+        }
+        break;
+      case TX_4X4:
+        tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
+        scan_order = &vp9_scan_orders[TX_4X4][tx_type];
+        mode = plane == 0 ? get_y_mode(xd->mi[0].src_mi, block) : mbmi->uv_mode;
+        vp9_predict_intra_block(xd, block, bwl, TX_4X4, mode,
+                                x->skip_encode ? src : dst,
+                                x->skip_encode ? src_stride : dst_stride,
+                                dst, dst_stride, i, j, plane);
+
+        if (!x->skip_recode) {
+          vp9_highbd_subtract_block(4, 4, src_diff, diff_stride,
+                                    src, src_stride, dst, dst_stride, xd->bd);
+          if (tx_type != DCT_DCT)
+            vp9_highbd_fht4x4(src_diff, coeff, diff_stride, tx_type);
+          else
+            x->fwd_txm4x4(src_diff, coeff, diff_stride);
+          vp9_highbd_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
+                                p->quant, p->quant_shift, qcoeff, dqcoeff,
+                                pd->dequant, p->zbin_extra, eob,
+                                scan_order->scan, scan_order->iscan);
+        }
+
+        if (!x->skip_encode && *eob) {
+          if (tx_type == DCT_DCT) {
+            // this is like vp9_short_idct4x4 but has a special case around
+            // eob<=1 which is significant (not just an optimization) for the
+            // lossless case.
+            x->highbd_itxm_add(dqcoeff, dst, dst_stride, *eob, xd->bd);
+          } else {
+            vp9_highbd_iht4x4_16_add(dqcoeff, dst, dst_stride, tx_type, xd->bd);
+          }
+        }
+        break;
+      default:
+        assert(0);
+        return;
+    }
+    if (*eob)
+      *(args->skip) = 0;
+    return;
+  }
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
         if (!x->skip_recode) {
           vp9_high_subtract_block(4, 4, src_diff, diff_stride,
@@ -995,7 +1360,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
     case TX_4X4:
       tx_type = get_tx_type_4x4(pd->plane_type, xd, block);
       scan_order = &vp9_scan_orders[TX_4X4][tx_type];
-      mode = plane == 0 ? get_y_mode(xd->mi[0], block) : mbmi->uv_mode;
+      mode = plane == 0 ? get_y_mode(xd->mi[0].src_mi, block) : mbmi->uv_mode;
       vp9_predict_intra_block(xd, block, bwl, TX_4X4, mode,
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
@@ -1042,7 +1407,7 @@ void vp9_encode_block_intra(MACROBLOCK *x, int plane, int block,
 
 void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane) {
   const MACROBLOCKD *const xd = &x->e_mbd;
-  struct encode_b_args arg = {x, NULL, &xd->mi[0]->mbmi.skip};
+  struct encode_b_args arg = {x, NULL, &xd->mi[0].src_mi->mbmi.skip};
 
   vp9_foreach_transformed_block_in_plane(xd, bsize, plane, encode_block_intra,
                                          &arg);

@@ -12,7 +12,11 @@
 #define VP9_COMMON_VP9_QUANT_COMMON_H_
 
 #include "vpx/vpx_codec.h"
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #include "vp9/common/vp9_blockd.h"
+=======
+#include "vp9/common/vp9_seg_common.h"
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
 
 #ifdef __cplusplus
 extern "C" {

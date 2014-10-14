@@ -34,6 +34,9 @@ static int segment_id[MAX_SEGMENTS] = { 5, 3, 1, 0, 2, 4, 6, 7 };
 #define SEGMENT_ID(i) segment_id[(i) - ENERGY_MIN]
 
 DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = {0};
+#if CONFIG_VP9_HIGHBITDEPTH
+DECLARE_ALIGNED(16, static const uint16_t, vp9_highbd_64_zeros[64]) = {0};
+#endif
 
 #if CONFIG_VP9_HIGH
 DECLARE_ALIGNED(16, static const uint16_t, vp9_high_64_zeros[64]) = {0};
@@ -130,6 +133,7 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
     const int bw = 8 * num_8x8_blocks_wide_lookup[bs] - right_overflow;
     const int bh = 8 * num_8x8_blocks_high_lookup[bs] - bottom_overflow;
     int avg;
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       high_variance(x->plane[0].src.buf, x->plane[0].src.stride,
@@ -137,6 +141,15 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
                     &avg);
       sse >>= 2 * (xd->bps - 8);
       avg >>= (xd->bps - 8);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      highbd_variance(x->plane[0].src.buf, x->plane[0].src.stride,
+                      CONVERT_TO_BYTEPTR(vp9_highbd_64_zeros), 0, bw, bh,
+                      &sse, &avg);
+      sse >>= 2 * (xd->bd - 8);
+      avg >>= (xd->bd - 8);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     } else {
       variance(x->plane[0].src.buf, x->plane[0].src.stride,
                vp9_64_zeros, 0, bw, bh, &sse, &avg);
@@ -144,15 +157,28 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
 #else
     variance(x->plane[0].src.buf, x->plane[0].src.stride,
              vp9_64_zeros, 0, bw, bh, &sse, &avg);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #endif
+=======
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     var = sse - (((int64_t)avg * avg) / (bw * bh));
     return (256 * var) / (bw * bh);
   } else {
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
     if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
       var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                                x->plane[0].src.stride,
                                CONVERT_TO_BYTEPTR(vp9_high_64_zeros), 0, &sse);
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
+                               x->plane[0].src.stride,
+                               CONVERT_TO_BYTEPTR(vp9_highbd_64_zeros),
+                               0, &sse);
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     } else {
       var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                                x->plane[0].src.stride,
@@ -162,7 +188,11 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
     var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                              x->plane[0].src.stride,
                              vp9_64_zeros, 0, &sse);
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #endif
+=======
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (e59c05 Merge "Resolves some lint errors")
     return (256 * var) >> num_pels_log2_lookup[bs];
   }
 }
