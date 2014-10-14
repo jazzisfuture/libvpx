@@ -20,11 +20,12 @@ extern "C" {
 #include "vpx_scale/yv12config.h"
 
 double vp9_calc_ssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
-                     int lumamask, double *weight);
+                     double *weight);
 
 double vp9_calc_ssimg(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                       double *ssim_y, double *ssim_u, double *ssim_v);
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #if CONFIG_VP9_HIGH
 double vp9_high_calc_ssim(YV12_BUFFER_CONFIG *source, YV12_BUFFER_CONFIG *dest,
                           int lumamask, double *weight,
@@ -35,6 +36,21 @@ double vp9_high_calc_ssimg(YV12_BUFFER_CONFIG *source,
                            double *ssim_u, double *ssim_v,
                            unsigned int bps, unsigned int shift);
 #endif
+=======
+#if CONFIG_VP9_HIGHBITDEPTH
+double vp9_highbd_calc_ssim(YV12_BUFFER_CONFIG *source,
+                            YV12_BUFFER_CONFIG *dest,
+                            double *weight,
+                            unsigned int bd);
+
+double vp9_highbd_calc_ssimg(YV12_BUFFER_CONFIG *source,
+                             YV12_BUFFER_CONFIG *dest,
+                             double *ssim_y,
+                             double *ssim_u,
+                             double *ssim_v,
+                             unsigned int bd);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
 #ifdef __cplusplus
 }  // extern "C"

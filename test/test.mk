@@ -30,6 +30,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += cq_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP8_ENCODER) += keyframe_test.cc
 
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += external_frame_buffer_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += invalid_file_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_DECODER) += user_priv_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += active_map_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += borders_test.cc
@@ -60,7 +61,6 @@ LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += webm_video_source.h
 endif
 
 LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += decode_api_test.cc
-LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += invalid_file_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += test_vector_test.cc
 
 # Currently we only support decoder perf tests for vp9. Also they read from WebM
@@ -103,6 +103,10 @@ LIBVPX_TEST_SRCS-yes                   += intrapred_test.cc
 LIBVPX_TEST_SRCS-yes                   += sixtap_predict_test.cc
 LIBVPX_TEST_SRCS-yes                   += vpx_scale_test.cc
 
+ifeq ($(CONFIG_VP8_ENCODER)$(CONFIG_TEMPORAL_DENOISING),yesyes)
+LIBVPX_TEST_SRCS-$(HAVE_SSE2) += vp8_denoiser_sse2_test.cc
+endif
+
 endif # VP8
 
 ## VP9
@@ -129,10 +133,18 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += fdct8x8_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += variance_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_subtract_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += lpf_8_test.cc
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
+=======
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_avg_test.cc
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 LIBVPX_TEST_SRCS-$(CONFIG_VP9)         += vp9_intrapred_test.cc
 
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 LIBVPX_TEST_SRCS-$(CONFIG_SPATIAL_SVC) += svc_test.cc
+endif
+
+ifeq ($(CONFIG_VP9_ENCODER)$(CONFIG_VP9_TEMPORAL_DENOISING),yesyes)
+LIBVPX_TEST_SRCS-$(HAVE_SSE2) += vp9_denoiser_sse2_test.cc
 endif
 
 endif # VP9
@@ -140,7 +152,6 @@ endif # VP9
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += sad_test.cc
 
 endif # CONFIG_SHARED
-
 
 ##
 ## TEST DATA
@@ -787,6 +798,10 @@ LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-17-show-existing-frame.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-17-show-existing-frame.webm.md5
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-18-resize.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-18-resize.ivf.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-19-skip.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-19-skip.webm.md5
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-19-skip-01.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp90-2-19-skip-01.webm.md5
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp91-2-04-yuv444.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += vp91-2-04-yuv444.webm.md5
 
@@ -795,16 +810,32 @@ LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-01-v2.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-01-v2.webm.res
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-02-v2.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-02-v2.webm.res
-LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-03-v2.webm
-LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-03-v2.webm.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-03-v3.webm
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-03-v3.webm.res
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf.res
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf.res
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-05-resize.ivf.s59293_r01-05_b6-.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-05-resize.ivf.s59293_r01-05_b6-.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-08-tile_1x2_frame_parallel.webm.ivf.s47039_r01-05_b6-.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-08-tile_1x2_frame_parallel.webm.ivf.s47039_r01-05_b6-.ivf.res
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm
 LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-aq2.webm.ivf.s3984_r01-05_b6-.v2.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-aq2.webm.ivf.s3984_r01-05_b6-.v2.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-subpixel-00.ivf.s20492_r01-05_b6-.v2.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-09-subpixel-00.ivf.s20492_r01-05_b6-.v2.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-12-droppable_1.ivf.s3676_r01-05_b6-.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-12-droppable_1.ivf.s3676_r01-05_b6-.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf.res
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp91-2-mixedrefcsp-444to420.ivf
+LIBVPX_TEST_DATA-$(CONFIG_VP9_DECODER) += invalid-vp91-2-mixedrefcsp-444to420.ivf.res
 
 ifeq ($(CONFIG_DECODE_PERF_TESTS),yes)
 # BBB VP9 streams

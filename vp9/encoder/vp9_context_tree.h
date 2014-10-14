@@ -11,10 +11,15 @@
 #ifndef VP9_ENCODER_VP9_CONTEXT_TREE_H_
 #define VP9_ENCODER_VP9_CONTEXT_TREE_H_
 
+<<<<<<< HEAD   (93657e Merge "Add bit_depth to internal image structure" into highb)
 #include "vp9/common/vp9_idct.h"
 #include "vp9/common/vp9_onyxc_int.h"
+=======
+#include "vp9/common/vp9_blockd.h"
+>>>>>>> BRANCH (9a29fd Merge "Rename highbitdepth functions to use highbd prefix")
 
 struct VP9_COMP;
+struct VP9Common;
 
 // Structure to hold snapshot of coding context during the mode picking process
 typedef struct {
@@ -34,7 +39,10 @@ typedef struct {
   int is_coded;
   int num_4x4_blk;
   int skip;
-  int skip_txfm[MAX_MB_PLANE];
+  // For current partition, only if all Y, U, and V transform blocks'
+  // coefficients are quantized to 0, skippable is set to 0.
+  int skippable;
+  uint8_t skip_txfm[MAX_MB_PLANE << 2];
   int best_mode_index;
   int hybrid_pred_diff;
   int comp_pred_diff;
