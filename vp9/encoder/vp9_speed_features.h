@@ -154,10 +154,6 @@ typedef enum {
   // Always use a fixed size partition
   FIXED_PARTITION = 1,
 
-  // Use a fixed size partition in every 64X64 SB, where the size is
-  // determined based on source variance
-  VAR_BASED_FIXED_PARTITION = 2,
-
   REFERENCE_PARTITION = 3,
 
   // Use an arbitrary partitioning scheme based on source variance within
