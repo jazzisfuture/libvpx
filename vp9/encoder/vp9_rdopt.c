@@ -1144,8 +1144,10 @@ static int super_block_uvrd(const VP9_COMP *cpi, MACROBLOCK *x,
     txfm_rd_in_plane(x, &pnrate, &pndist, &pnskip, &pnsse,
                      ref_best_rd, plane, bsize, uv_tx_size,
                      cpi->sf.use_fast_coef_costing);
-    if (pnrate == INT_MAX)
+    if (pnrate == INT_MAX) {
       is_cost_valid = 0;
+      break;
+    }
     *rate += pnrate;
     *distortion += pndist;
     *sse += pnsse;
