@@ -935,20 +935,17 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   size_t total_size = 0;
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
+  const int num_tiles = tile_cols * tile_rows;
+  const int alloc_tokens_frame = get_token_alloc(cm->mb_rows, cm->mb_cols);
+  const int alloc_tokens_tile = alloc_tokens_frame / num_tiles;
 
   vpx_memset(cm->above_seg_context, 0, sizeof(*cm->above_seg_context) *
              mi_cols_aligned_to_sb(cm->mi_cols));
 
-  tok[0][0] = cpi->tok;
-  for (tile_row = 0; tile_row < tile_rows; tile_row++) {
-    if (tile_row)
-      tok[tile_row][0] = tok[tile_row - 1][tile_cols - 1] +
-                         cpi->tok_count[tile_row - 1][tile_cols - 1];
-
-    for (tile_col = 1; tile_col < tile_cols; tile_col++)
-      tok[tile_row][tile_col] = tok[tile_row][tile_col - 1] +
-                                cpi->tok_count[tile_row][tile_col - 1];
-  }
+  for (tile_row = 0; tile_row < tile_rows; tile_row++)
+    for (tile_col = 0; tile_col < tile_cols; tile_col++)
+      tok[tile_row][tile_col] = cpi->tok + alloc_tokens_tile *
+          (tile_row * tile_cols + tile_col);
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {
     for (tile_col = 0; tile_col < tile_cols; tile_col++) {
