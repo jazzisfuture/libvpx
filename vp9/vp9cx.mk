@@ -24,6 +24,7 @@ VP9_CX_SRCS-yes += encoder/vp9_context_tree.h
 VP9_CX_SRCS-yes += encoder/vp9_cost.h
 VP9_CX_SRCS-yes += encoder/vp9_cost.c
 VP9_CX_SRCS-yes += encoder/vp9_dct.c
+VP9_CX_SRCS-yes += encoder/vp9_dct.h
 VP9_CX_SRCS-$(CONFIG_VP9_TEMPORAL_DENOISING) += encoder/vp9_denoiser.c
 VP9_CX_SRCS-$(CONFIG_VP9_TEMPORAL_DENOISING) += encoder/vp9_denoiser.h
 VP9_CX_SRCS-yes += encoder/vp9_encodeframe.c
@@ -120,7 +121,9 @@ VP9_CX_SRCS-$(HAVE_SSE4_1) += encoder/x86/vp9_sad_sse4.asm
 VP9_CX_SRCS-$(ARCH_X86_64) += encoder/x86/vp9_ssim_opt_x86_64.asm
 
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_sse2.c
+VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_sse2.h
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct32x32_sse2.c
+VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_impl_sse2.c
 
 ifeq ($(CONFIG_VP9_TEMPORAL_DENOISING),yes)
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_denoiser_sse2.c
