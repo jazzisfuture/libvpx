@@ -237,7 +237,7 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
       xd->mi[0].src_mi->mbmi.tx_size = TX_8X8;
 
     if (cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
-        xd->mi[0].src_mi->mbmi.tx_size > TX_16X16)
+         xd->mi[0].src_mi->mbmi.tx_size > TX_16X16)
       xd->mi[0].src_mi->mbmi.tx_size = TX_16X16;
   } else {
     xd->mi[0].src_mi->mbmi.tx_size =
