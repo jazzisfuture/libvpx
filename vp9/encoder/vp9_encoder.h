@@ -354,6 +354,8 @@ typedef struct VP9_COMP {
   uint64_t totalp_sq_error;
   uint64_t totalp_samples;
 
+  double total_blockiness;
+
   int    bytes;
   double summed_quality;
   double summed_weights;
@@ -368,6 +370,7 @@ typedef struct VP9_COMP {
   double total_ssimg_all;
 
   int b_calculate_ssimg;
+  int b_calculate_blockiness;
 #endif
   int b_calculate_psnr;
 
