@@ -4583,6 +4583,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
           int prob_skip_cost = vp9_cost_bit(skip_prob, 1);
           rate2 += prob_skip_cost;
         }
+        this_skip2 = 1;
       } else if (!xd->lossless) {
         if (RDCOST(x->rdmult, x->rddiv, rate_y + rate_uv, distortion2) <
             RDCOST(x->rdmult, x->rddiv, 0, total_sse)) {
@@ -4598,6 +4599,7 @@ int64_t vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         }
       } else {
         rate2 += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 0);
+        this_skip2 = 0;
       }
 #if CONFIG_EXT_TX
       if (mbmi->tx_size < TX_32X32 && !this_skip2)
