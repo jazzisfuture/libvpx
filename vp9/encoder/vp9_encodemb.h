@@ -29,9 +29,8 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
 
 void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 
-void vp9_encode_block_intra(MACROBLOCK *x, int plane, int block,
-                            BLOCK_SIZE plane_bsize, TX_SIZE tx_size,
-                            int8_t *skip);
+void vp9_encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
+                            TX_SIZE tx_size, void *arg);
 
 void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 
