@@ -15,41 +15,6 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_idct.h"
 
-#if CONFIG_EMULATE_HARDWARE
-// When CONFIG_EMULATE_HARDWARE is 1 the transform performs a
-// non-normative method to handle overflows. A stream that causes
-// overflows  in the inverse transform is considered invalid in VP9,
-// and a hardware implementer is free to choose any reasonable
-// method to handle overflows. However to aid in hardware
-// verification they can use a specific implementation of the
-// WRAPLOW() macro below that is identical to their intended
-// hardware implementation (and also use configure options to trigger
-// the C-implementation of the transform).
-//
-// The particular WRAPLOW implementation below performs strict
-// overflow wrapping to match common hardware implementations.
-// bd of 8 uses trans_low with 16bits, need to remove 16bits
-// bd of 10 uses trans_low with 18bits, need to remove 14bits
-// bd of 12 uses trans_low with 20bits, need to remove 12bits
-// bd of x uses trans_low with 8+x bits, need to remove 24-x bits
-#define WRAPLOW(x, bd) ((((int32_t)(x)) << (24 - bd)) >> (24 - bd))
-#else
-#define WRAPLOW(x, bd) (x)
-#endif  // CONFIG_EMULATE_HARDWARE
-
-#if CONFIG_VP9_HIGHBITDEPTH
-static INLINE uint16_t highbd_clip_pixel_add(uint16_t dest, tran_high_t trans,
-                                             int bd) {
-  trans = WRAPLOW(trans, bd);
-  return clip_pixel_highbd(WRAPLOW(dest + trans, bd), bd);
-}
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
-  trans = WRAPLOW(trans, 8);
-  return clip_pixel(WRAPLOW(dest + trans, 8));
-}
-
 void vp9_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
 /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
    0.5 shifts per pixel. */
@@ -1545,7 +1510,7 @@ void vp9_highbd_iwht4x4_1_add_c(const tran_low_t *in, uint8_t *dest8,
   }
 }
 
-static void highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd) {
+void highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step[4];
   tran_high_t temp1, temp2;
   (void) bd;
@@ -1612,7 +1577,7 @@ void vp9_highbd_idct4x4_1_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-static void highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd) {
+void highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[8], step2[8];
   tran_high_t temp1, temp2;
   // stage 1
@@ -1915,7 +1880,7 @@ void vp9_highbd_idct8x8_10_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-static void highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd) {
+void highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[16], step2[16];
   tran_high_t temp1, temp2;
   (void) bd;
