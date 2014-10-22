@@ -17,3 +17,12 @@ unsigned int vp9_avg_8x8_c(const uint8_t *s, int p) {
 
   return (sum + 32) >> 6;
 }
+
+unsigned int vp9_avg_4x4_c(const uint8_t *s, int p) {
+  int i, j;
+  int sum = 0;
+  for (i = 0; i < 4; ++i, s+=p)
+    for (j = 0; j < 4; sum += s[j], ++j) {}
+
+  return (sum + 8) >> 4;
+}
