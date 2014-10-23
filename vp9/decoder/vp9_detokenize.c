@@ -69,9 +69,9 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
       counts->coef[tx_size][type][ref];
   unsigned int (*eob_branch_count)[COEFF_CONTEXTS] =
       counts->eob_branch[tx_size][type][ref];
-  uint8_t token_cache[32 * 32];
+  uint8_t token_cache[MAX_NUM_COEFS];
   const uint8_t *band_translate = get_band_translate(tx_size);
-  const int dq_shift = (tx_size == TX_32X32);
+  const int dq_shift = (tx_size > TX_16X16) ? tx_size - TX_16X16 : 0;
   int v, token;
   int16_t dqv = dq[0];
   const uint8_t *cat1_prob;
