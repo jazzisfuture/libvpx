@@ -155,19 +155,11 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                     int stride, int eob);
 void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                       int stride, int eob);
-#if CONFIG_VP9_HIGHBITDEPTH
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
-  trans = WRAPLOW(trans, 8);
-  return clip_pixel(WRAPLOW(dest + trans, 8));
-}
-
 
 #if CONFIG_VP9_HIGHBITDEPTH
-void highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd);
-void highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd);
-void highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd);
+void vp9_highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd);
+void vp9_highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd);
+void vp9_highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd);
 void vp9_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                             int eob, int bd);
 void vp9_highbd_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,

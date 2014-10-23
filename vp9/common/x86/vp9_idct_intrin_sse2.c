@@ -4064,7 +4064,7 @@ void vp9_highbd_idct4x4_16_add_sse2(const tran_low_t *input, uint8_t *dest8,
   } else {
     // Run the un-optimised row transform
     for (i = 0; i < 4; ++i) {
-      highbd_idct4(input, outptr, bd);
+      vp9_highbd_idct4(input, outptr, bd);
       input += 4;
       outptr += 4;
     }
@@ -4108,7 +4108,7 @@ void vp9_highbd_idct4x4_16_add_sse2(const tran_low_t *input, uint8_t *dest8,
     for (i = 0; i < 4; ++i) {
       for (j = 0; j < 4; ++j)
         temp_in[j] = out[j * 4 + i];
-      highbd_idct4(temp_in, temp_out, bd);
+      vp9_highbd_idct4(temp_in, temp_out, bd);
       for (j = 0; j < 4; ++j)
         dest[j * stride + i] = highbd_clip_pixel_add(dest[j * stride + i],
                                           ROUND_POWER_OF_TWO(temp_out[j], 4),
@@ -4182,7 +4182,7 @@ void vp9_highbd_idct8x8_64_add_sse2(const tran_low_t *input, uint8_t *dest8,
   } else {
     // Run the un-optimised row transform
     for (i = 0; i < 8; ++i) {
-      highbd_idct8(input, outptr, bd);
+      vp9_highbd_idct8(input, outptr, bd);
       input += 8;
       outptr += 8;
     }
@@ -4209,7 +4209,7 @@ void vp9_highbd_idct8x8_64_add_sse2(const tran_low_t *input, uint8_t *dest8,
     for (i = 0; i < 8; ++i) {
       for (j = 0; j < 8; ++j)
         temp_in[j] = out[j * 8 + i];
-      highbd_idct8(temp_in, temp_out, bd);
+      vp9_highbd_idct8(temp_in, temp_out, bd);
       for (j = 0; j < 8; ++j)
         dest[j * stride + i] = highbd_clip_pixel_add(dest[j * stride + i],
                                           ROUND_POWER_OF_TWO(temp_out[j], 5),
@@ -4286,7 +4286,7 @@ void vp9_highbd_idct8x8_10_add_sse2(const tran_low_t *input, uint8_t *dest8,
   } else {
     // Run the un-optimised row transform
     for (i = 0; i < 4; ++i) {
-      highbd_idct8(input, outptr, bd);
+      vp9_highbd_idct8(input, outptr, bd);
       input += 8;
       outptr += 8;
     }
@@ -4313,7 +4313,7 @@ void vp9_highbd_idct8x8_10_add_sse2(const tran_low_t *input, uint8_t *dest8,
     for (i = 0; i < 8; ++i) {
       for (j = 0; j < 8; ++j)
         temp_in[j] = out[j * 8 + i];
-      highbd_idct8(temp_in, temp_out, bd);
+      vp9_highbd_idct8(temp_in, temp_out, bd);
       for (j = 0; j < 8; ++j)
         dest[j * stride + i] = highbd_clip_pixel_add(dest[j * stride + i],
                                           ROUND_POWER_OF_TWO(temp_out[j], 5),
@@ -4395,7 +4395,7 @@ void vp9_highbd_idct16x16_256_add_sse2(const tran_low_t *input, uint8_t *dest8,
   } else {
     // Run the un-optimised row transform
     for (i = 0; i < 16; ++i) {
-      highbd_idct16(input, outptr, bd);
+      vp9_highbd_idct16(input, outptr, bd);
       input += 16;
       outptr += 16;
     }
@@ -4427,7 +4427,7 @@ void vp9_highbd_idct16x16_256_add_sse2(const tran_low_t *input, uint8_t *dest8,
     for (i = 0; i < 16; ++i) {
       for (j = 0; j < 16; ++j)
         temp_in[j] = out[j * 16 + i];
-      highbd_idct16(temp_in, temp_out, bd);
+      vp9_highbd_idct16(temp_in, temp_out, bd);
       for (j = 0; j < 16; ++j)
         dest[j * stride + i] = highbd_clip_pixel_add(dest[j * stride + i],
                                           ROUND_POWER_OF_TWO(temp_out[j], 6),
@@ -4514,7 +4514,7 @@ void vp9_highbd_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest8,
   } else {
     // Run the un-optimised row transform
     for (i = 0; i < 4; ++i) {
-      highbd_idct16(input, outptr, bd);
+      vp9_highbd_idct16(input, outptr, bd);
       input += 16;
       outptr += 16;
     }
@@ -4546,7 +4546,7 @@ void vp9_highbd_idct16x16_10_add_sse2(const tran_low_t *input, uint8_t *dest8,
     for (i = 0; i < 16; ++i) {
       for (j = 0; j < 16; ++j)
         temp_in[j] = out[j * 16 + i];
-      highbd_idct16(temp_in, temp_out, bd);
+      vp9_highbd_idct16(temp_in, temp_out, bd);
       for (j = 0; j < 16; ++j)
         dest[j * stride + i] = highbd_clip_pixel_add(dest[j * stride + i],
                                           ROUND_POWER_OF_TWO(temp_out[j], 6),

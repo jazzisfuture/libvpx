@@ -15,6 +15,11 @@
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_idct.h"
 
+static INLINE uint8_t clip_pixel_add(uint8_t dest, tran_high_t trans) {
+  trans = WRAPLOW(trans, 8);
+  return clip_pixel(WRAPLOW(dest + trans, 8));
+}
+
 void vp9_iwht4x4_16_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
 /* 4-point reversible, orthonormal inverse Walsh-Hadamard in 3.5 adds,
    0.5 shifts per pixel. */
@@ -1510,7 +1515,7 @@ void vp9_highbd_iwht4x4_1_add_c(const tran_low_t *in, uint8_t *dest8,
   }
 }
 
-void highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd) {
+void vp9_highbd_idct4(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step[4];
   tran_high_t temp1, temp2;
   (void) bd;
@@ -1541,7 +1546,7 @@ void vp9_highbd_idct4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
 
   // Rows
   for (i = 0; i < 4; ++i) {
-    highbd_idct4(input, outptr, bd);
+    vp9_highbd_idct4(input, outptr, bd);
     input += 4;
     outptr += 4;
   }
@@ -1550,7 +1555,7 @@ void vp9_highbd_idct4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
   for (i = 0; i < 4; ++i) {
     for (j = 0; j < 4; ++j)
       temp_in[j] = out[j * 4 + i];
-    highbd_idct4(temp_in, temp_out, bd);
+    vp9_highbd_idct4(temp_in, temp_out, bd);
     for (j = 0; j < 4; ++j) {
       dest[j * stride + i] = highbd_clip_pixel_add(
           dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 4), bd);
@@ -1577,7 +1582,7 @@ void vp9_highbd_idct4x4_1_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-void highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd) {
+void vp9_highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[8], step2[8];
   tran_high_t temp1, temp2;
   // stage 1
@@ -1595,7 +1600,7 @@ void highbd_idct8(const tran_low_t *input, tran_low_t *output, int bd) {
   step1[6] = WRAPLOW(dct_const_round_shift(temp2), bd);
 
   // stage 2 & stage 3 - even half
-  highbd_idct4(step1, step1, bd);
+  vp9_highbd_idct4(step1, step1, bd);
 
   // stage 2 - odd half
   step2[4] = WRAPLOW(step1[4] + step1[5], bd);
@@ -1632,7 +1637,7 @@ void vp9_highbd_idct8x8_64_add_c(const tran_low_t *input, uint8_t *dest8,
 
   // First transform rows.
   for (i = 0; i < 8; ++i) {
-    highbd_idct8(input, outptr, bd);
+    vp9_highbd_idct8(input, outptr, bd);
     input += 8;
     outptr += 8;
   }
@@ -1641,7 +1646,7 @@ void vp9_highbd_idct8x8_64_add_c(const tran_low_t *input, uint8_t *dest8,
   for (i = 0; i < 8; ++i) {
     for (j = 0; j < 8; ++j)
       temp_in[j] = out[j * 8 + i];
-    highbd_idct8(temp_in, temp_out, bd);
+    vp9_highbd_idct8(temp_in, temp_out, bd);
     for (j = 0; j < 8; ++j) {
       dest[j * stride + i] = highbd_clip_pixel_add(
           dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 5), bd);
@@ -1710,9 +1715,9 @@ static void highbd_iadst4(const tran_low_t *input, tran_low_t *output, int bd) {
 void vp9_highbd_iht4x4_16_add_c(const tran_low_t *input, uint8_t *dest8,
                                 int stride, int tx_type, int bd) {
   const highbd_transform_2d IHT_4[] = {
-    { highbd_idct4, highbd_idct4  },    // DCT_DCT  = 0
-    { highbd_iadst4, highbd_idct4 },    // ADST_DCT = 1
-    { highbd_idct4, highbd_iadst4 },    // DCT_ADST = 2
+    { vp9_highbd_idct4, vp9_highbd_idct4  },    // DCT_DCT  = 0
+    { highbd_iadst4, vp9_highbd_idct4 },    // ADST_DCT = 1
+    { vp9_highbd_idct4, highbd_iadst4 },    // DCT_ADST = 2
     { highbd_iadst4, highbd_iadst4 }    // ADST_ADST = 3
   };
   uint16_t *dest = CONVERT_TO_SHORTPTR(dest8);
@@ -1819,9 +1824,9 @@ static void highbd_iadst8(const tran_low_t *input, tran_low_t *output, int bd) {
 }
 
 static const highbd_transform_2d HIGH_IHT_8[] = {
-  { highbd_idct8,  highbd_idct8  },  // DCT_DCT  = 0
-  { highbd_iadst8, highbd_idct8  },  // ADST_DCT = 1
-  { highbd_idct8,  highbd_iadst8 },  // DCT_ADST = 2
+  { vp9_highbd_idct8,  vp9_highbd_idct8  },  // DCT_DCT  = 0
+  { highbd_iadst8, vp9_highbd_idct8  },  // ADST_DCT = 1
+  { vp9_highbd_idct8,  highbd_iadst8 },  // DCT_ADST = 2
   { highbd_iadst8, highbd_iadst8 }   // ADST_ADST = 3
 };
 
@@ -1864,7 +1869,7 @@ void vp9_highbd_idct8x8_10_add_c(const tran_low_t *input, uint8_t *dest8,
   // First transform rows.
   // Only first 4 row has non-zero coefs.
   for (i = 0; i < 4; ++i) {
-    highbd_idct8(input, outptr, bd);
+    vp9_highbd_idct8(input, outptr, bd);
     input += 8;
     outptr += 8;
   }
@@ -1872,7 +1877,7 @@ void vp9_highbd_idct8x8_10_add_c(const tran_low_t *input, uint8_t *dest8,
   for (i = 0; i < 8; ++i) {
     for (j = 0; j < 8; ++j)
       temp_in[j] = out[j * 8 + i];
-    highbd_idct8(temp_in, temp_out, bd);
+    vp9_highbd_idct8(temp_in, temp_out, bd);
     for (j = 0; j < 8; ++j) {
       dest[j * stride + i] = highbd_clip_pixel_add(
           dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 5), bd);
@@ -1880,7 +1885,7 @@ void vp9_highbd_idct8x8_10_add_c(const tran_low_t *input, uint8_t *dest8,
   }
 }
 
-void highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd) {
+void vp9_highbd_idct16(const tran_low_t *input, tran_low_t *output, int bd) {
   tran_low_t step1[16], step2[16];
   tran_high_t temp1, temp2;
   (void) bd;
@@ -2056,7 +2061,7 @@ void vp9_highbd_idct16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
 
   // First transform rows.
   for (i = 0; i < 16; ++i) {
-    highbd_idct16(input, outptr, bd);
+    vp9_highbd_idct16(input, outptr, bd);
     input += 16;
     outptr += 16;
   }
@@ -2065,7 +2070,7 @@ void vp9_highbd_idct16x16_256_add_c(const tran_low_t *input, uint8_t *dest8,
   for (i = 0; i < 16; ++i) {
     for (j = 0; j < 16; ++j)
       temp_in[j] = out[j * 16 + i];
-    highbd_idct16(temp_in, temp_out, bd);
+    vp9_highbd_idct16(temp_in, temp_out, bd);
     for (j = 0; j < 16; ++j) {
       dest[j * stride + i] = highbd_clip_pixel_add(
           dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 6), bd);
@@ -2245,9 +2250,9 @@ static void highbd_iadst16(const tran_low_t *input, tran_low_t *output,
 }
 
 static const highbd_transform_2d HIGH_IHT_16[] = {
-  { highbd_idct16,  highbd_idct16  },  // DCT_DCT  = 0
-  { highbd_iadst16, highbd_idct16  },  // ADST_DCT = 1
-  { highbd_idct16,  highbd_iadst16 },  // DCT_ADST = 2
+  { vp9_highbd_idct16,  vp9_highbd_idct16  },  // DCT_DCT  = 0
+  { highbd_iadst16, vp9_highbd_idct16  },  // ADST_DCT = 1
+  { vp9_highbd_idct16,  highbd_iadst16 },  // DCT_ADST = 2
   { highbd_iadst16, highbd_iadst16 }   // ADST_ADST = 3
 };
 
@@ -2290,7 +2295,7 @@ void vp9_highbd_idct16x16_10_add_c(const tran_low_t *input, uint8_t *dest8,
   // First transform rows. Since all non-zero dct coefficients are in
   // upper-left 4x4 area, we only need to calculate first 4 rows here.
   for (i = 0; i < 4; ++i) {
-    highbd_idct16(input, outptr, bd);
+    vp9_highbd_idct16(input, outptr, bd);
     input += 16;
     outptr += 16;
   }
@@ -2299,7 +2304,7 @@ void vp9_highbd_idct16x16_10_add_c(const tran_low_t *input, uint8_t *dest8,
   for (i = 0; i < 16; ++i) {
     for (j = 0; j < 16; ++j)
       temp_in[j] = out[j*16 + i];
-    highbd_idct16(temp_in, temp_out, bd);
+    vp9_highbd_idct16(temp_in, temp_out, bd);
     for (j = 0; j < 16; ++j) {
       dest[j * stride + i] = highbd_clip_pixel_add(
           dest[j * stride + i], ROUND_POWER_OF_TWO(temp_out[j], 6), bd);
