@@ -43,10 +43,12 @@ void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
 
 static void setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mi_stride + 1;
-  cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
-
   vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
-  clear_mi_border(cm, cm->prev_mip);
+
+  if (cm->width == cm->last_width && cm->height == cm->last_height) {
+    cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
+    clear_mi_border(cm, cm->prev_mip);
+  }
 }
 
 static int alloc_mi(VP9_COMMON *cm, int mi_size) {

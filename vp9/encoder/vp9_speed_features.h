@@ -421,6 +421,7 @@ typedef struct SPEED_FEATURES {
 struct VP9_COMP;
 
 void vp9_set_speed_features(struct VP9_COMP *cpi);
+void vp9_set_speed_features_framesize_dependent(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
