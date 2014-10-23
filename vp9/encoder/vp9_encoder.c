@@ -2260,12 +2260,18 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp9_extend_frame_borders(dst);
 }
 
+static INLINE int frame_is_kf_gf_arf(const VP9_COMP *cpi) {
+  const VP9_COMMON *const cm = &cpi->common;
+  return (cm->frame_type == KEY_FRAME) ||
+         cpi->refresh_alt_ref_frame ||
+         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
+}
+
 // Function to test for conditions that indicate we should loop
 // back and recode a frame.
 static int recode_loop_test(const VP9_COMP *cpi,
                             int high_limit, int low_limit,
                             int q, int maxq, int minq) {
-  const VP9_COMMON *const cm = &cpi->common;
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   int force_recode = 0;
@@ -2279,8 +2285,7 @@ static int recode_loop_test(const VP9_COMP *cpi,
   // and the frame is a key frame, golden frame or alt_ref_frame
   } else if ((cpi->sf.recode_loop == ALLOW_RECODE) ||
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
-              (cm->frame_type == KEY_FRAME ||
-               cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame))) {
+                 frame_is_kf_gf_arf(cpi))) {
     // General over and under shoot tests
     if ((rc->projected_frame_size > high_limit && q < maxq) ||
         (rc->projected_frame_size < low_limit && q > minq)) {
@@ -2451,8 +2456,10 @@ static void release_scaled_references(VP9_COMP *cpi) {
     const int idx = cpi->scaled_ref_idx[i];
     RefCntBuffer *const buf =
         idx != INVALID_REF_BUFFER_IDX ? &cm->frame_bufs[idx] : NULL;
-    if (buf != NULL)
+    if (buf != NULL) {
       --buf->ref_count;
+      cpi->scaled_ref_idx[i] = INVALID_REF_BUFFER_IDX;
+    }
   }
 }
 
@@ -2563,12 +2570,33 @@ static void set_mv_search_params(VP9_COMP *cpi) {
   }
 }
 
+static void set_size_independent_vars(VP9_COMP *cpi, int *q,
+                                      int *bottom_index, int *top_index) {
+  VP9_COMMON *const cm = &cpi->common;
+
+  // Also called in set_size_dependent_vars since it depends on frame size.
+  vp9_set_speed_features(cpi);
+
+  vp9_set_rd_speed_thresholds(cpi);
+  vp9_set_rd_speed_thresholds_sub8x8(cpi);
+
+  // Decide q and q bounds.
+  *q = vp9_rc_pick_q_and_bounds(cpi, bottom_index, top_index);
+
+  if (!frame_is_intra_only(cm)) {
+    cm->interp_filter = cpi->sf.default_interp_filter;
+    vp9_set_high_precision_mv(cpi, (*q) < HIGH_PRECISION_MV_QTHRESH);
+  }
+}
+
 static void set_size_dependent_vars(VP9_COMP *cpi, int *q,
                                     int *bottom_index, int *top_index) {
   VP9_COMMON *const cm = &cpi->common;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
 
   // Setup variables that depend on the dimensions of the frame.
+  vp9_set_speed_features(cpi);
+
   set_mv_search_params(cpi);
 
   // Configure experimental use of segmentation for enhanced coding of
@@ -2602,19 +2630,6 @@ static void set_size_dependent_vars(VP9_COMP *cpi, int *q,
     vp9_denoise(cpi->Source, cpi->Source, l);
   }
 #endif  // CONFIG_VP9_POSTPROC
-
-  vp9_set_speed_features(cpi);
-
-  vp9_set_rd_speed_thresholds(cpi);
-  vp9_set_rd_speed_thresholds_sub8x8(cpi);
-
-  // Decide q and q bounds.
-  *q = vp9_rc_pick_q_and_bounds(cpi, bottom_index, top_index);
-
-  if (!frame_is_intra_only(cm)) {
-    cm->interp_filter = cpi->sf.default_interp_filter;
-    vp9_set_high_precision_mv(cpi, (*q) < HIGH_PRECISION_MV_QTHRESH);
-  }
 }
 
 static void init_motion_estimation(VP9_COMP *cpi) {
@@ -2627,14 +2642,9 @@ static void init_motion_estimation(VP9_COMP *cpi) {
   }
 }
 
-extern void vbr_rate_correction(VP9_COMP *cpi,
-                                int * this_frame_target,
-                                const int64_t vbr_bits_off_target);
-
 void set_frame_size(VP9_COMP *cpi) {
   int ref_frame;
   VP9_COMMON *const cm = &cpi->common;
-  const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
 
@@ -2642,15 +2652,12 @@ void set_frame_size(VP9_COMP *cpi) {
       (!cpi->use_svc ||
           (is_two_pass_svc(cpi) &&
               cpi->svc.encode_empty_frame_state != ENCODING))) {
-    int target_rate = rc->base_frame_target;
-    if (oxcf->rc_mode == VPX_VBR)
-      vbr_rate_correction(cpi, &target_rate, rc->vbr_bits_off_target);
-    vp9_rc_set_frame_target(cpi, target_rate);
+    set_target_rate(cpi);
   }
 
   if (oxcf->pass == 2 &&
       cm->current_video_frame == 0 &&
-      oxcf->allow_spatial_resampling &&
+      oxcf->resize_mode == RESIZE_FIXED &&
       oxcf->rc_mode == VPX_VBR) {
     // Internal scaling is triggered on the first frame.
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
@@ -2694,9 +2701,8 @@ void set_frame_size(VP9_COMP *cpi) {
 }
 
 static void encode_without_recode_loop(VP9_COMP *cpi) {
-  int q;
-  int bottom_index, top_index;  // Dummy.
   VP9_COMMON *const cm = &cpi->common;
+  int q, bottom_index, top_index;  // Dummy variables.
 
   vp9_clear_system_state();
 
@@ -2709,8 +2715,11 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
     cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
                                              &cpi->scaled_last_source);
 
-  vp9_scale_references(cpi);
+  if (frame_is_intra_only(cm) == 0) {
+    vp9_scale_references(cpi);
+  }
 
+  set_size_independent_vars(cpi, &q, &bottom_index, &top_index);
   set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
 
   vp9_set_quantizer(cm, q);
@@ -2738,8 +2747,6 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
                                     uint8_t *dest) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
-  int q;
-  int q_low, q_high;
   int bottom_index, top_index;
   int loop_count = 0;
   int loop = 0;
@@ -2747,32 +2754,41 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int undershoot_seen = 0;
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
+  int q = 0, q_low = 0, q_high = 0;
 
   do {
     vp9_clear_system_state();
 
+    set_frame_size(cpi);
+
     if (loop_count == 0) {
-      set_frame_size(cpi);
-
-      // Decide frame size bounds
-      vp9_rc_compute_frame_size_bounds(cpi, rc->this_frame_target,
-                                       &frame_under_shoot_limit,
-                                       &frame_over_shoot_limit);
-
-      cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
-                                        &cpi->scaled_source);
-
-      if (cpi->unscaled_last_source != NULL)
-        cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
-                                                 &cpi->scaled_last_source);
-
-      vp9_scale_references(cpi);
-
-      set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
-
+      // Note: This cannot be moved outside of the loop because it needs
+      // rc->this_frame_target to setup. This is done in set_target_rate.
+      set_size_independent_vars(cpi, &q, &bottom_index, &top_index);
       q_low = bottom_index;
       q_high = top_index;
     }
+
+    // Decide frame size bounds
+    vp9_rc_compute_frame_size_bounds(cpi, rc->this_frame_target,
+                                     &frame_under_shoot_limit,
+                                     &frame_over_shoot_limit);
+
+    cpi->Source = vp9_scale_if_required(cm, cpi->un_scaled_source,
+                                      &cpi->scaled_source);
+
+    if (cpi->unscaled_last_source != NULL)
+      cpi->Last_Source = vp9_scale_if_required(cm, cpi->unscaled_last_source,
+                                               &cpi->scaled_last_source);
+
+    if (frame_is_intra_only(cm) == 0) {
+      if (loop_count > 0) {
+        release_scaled_references(cpi);
+      }
+      vp9_scale_references(cpi);
+    }
+
+    set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
 
     vp9_set_quantizer(cm, q);
 
