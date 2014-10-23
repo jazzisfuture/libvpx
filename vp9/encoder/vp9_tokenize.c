@@ -296,7 +296,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   VP9_COMP *cpi = args->cpi;
   MACROBLOCKD *xd = args->xd;
   TOKENEXTRA **tp = args->tp;
-  uint8_t token_cache[32 * 32];
+  uint8_t token_cache[MAX_NUM_COEFS];
   struct macroblock_plane *p = &cpi->mb.plane[plane];
   struct macroblockd_plane *pd = &xd->plane[plane];
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
