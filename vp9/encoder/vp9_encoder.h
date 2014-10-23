@@ -110,6 +110,11 @@ typedef enum {
   AQ_MODE_COUNT  // This should always be the last member of the enum
 } AQ_MODE;
 
+typedef enum {
+  RESIZE_NONE = 0,    // No frame resizing allowed (except for SVC).
+  RESIZE_FIXED = 1,   // All frames are coded at the specified dimension.
+  RESIZE_DYNAMIC = 2  // Coded size of each frame is determined by the codec.
+} RESIZE_TYPE;
 
 typedef struct VP9EncoderConfig {
   BITSTREAM_PROFILE profile;
@@ -160,7 +165,7 @@ typedef struct VP9EncoderConfig {
   AQ_MODE aq_mode;  // Adaptive Quantization mode
 
   // Internal frame size scaling.
-  int allow_spatial_resampling;
+  RESIZE_TYPE resize_mode;
   int scaled_frame_width;
   int scaled_frame_height;
 
