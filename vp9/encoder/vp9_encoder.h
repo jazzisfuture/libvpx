@@ -123,6 +123,7 @@ typedef struct VP9EncoderConfig {
   int sharpness;  // sharpening output: recommendation 0:
   int speed;
   unsigned int rc_max_intra_bitrate_pct;
+  unsigned int rc_max_inter_bitrate_pct;
 
   MODE mode;
   int pass;
