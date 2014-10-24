@@ -459,6 +459,91 @@ static const THR_MODES mode_idx[MAX_REF_FRAMES][4] = {
   {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA},
 };
 
+#define hadd(aa, bb) \
+    do { int a = aa; int b = bb; aa = a + b; bb = a - b; } while (0)
+
+void fwht_8x8_analyze(const uint8_t* src, int src_stride, int *horizontal,
+                      int *vertical, int *diagonal) {
+  const int buf_stride = 8;
+  int16_t buf[8 * 8];
+  int i, j;
+  int sum;
+  for (i = 0; i < 8; ++i) {
+    for (j = 0; j < 8; ++j) {
+      buf[i * buf_stride + j] = src[i * src_stride + j];
+    }
+  }
+  // FWHT rows
+  for (i = 0; i < 8; ++i) {
+    hadd(buf[i * buf_stride + 0], buf[i * buf_stride + 4]);
+    hadd(buf[i * buf_stride + 1], buf[i * buf_stride + 5]);
+    hadd(buf[i * buf_stride + 2], buf[i * buf_stride + 6]);
+    hadd(buf[i * buf_stride + 3], buf[i * buf_stride + 7]);
+
+    hadd(buf[i * buf_stride + 0], buf[i * buf_stride + 2]);
+    hadd(buf[i * buf_stride + 1], buf[i * buf_stride + 3]);
+    hadd(buf[i * buf_stride + 4], buf[i * buf_stride + 6]);
+    hadd(buf[i * buf_stride + 5], buf[i * buf_stride + 7]);
+
+    hadd(buf[i * buf_stride + 0], buf[i * buf_stride + 1]);
+    hadd(buf[i * buf_stride + 2], buf[i * buf_stride + 3]);
+    hadd(buf[i * buf_stride + 4], buf[i * buf_stride + 5]);
+    hadd(buf[i * buf_stride + 6], buf[i * buf_stride + 7]);
+  }
+  // FWHT cols
+  for (i = 0; i < 8; ++i) {
+    hadd(buf[i + buf_stride * 0], buf[i + buf_stride * 4]);
+    hadd(buf[i + buf_stride * 1], buf[i + buf_stride * 5]);
+    hadd(buf[i + buf_stride * 2], buf[i + buf_stride * 6]);
+    hadd(buf[i + buf_stride * 3], buf[i + buf_stride * 7]);
+
+    hadd(buf[i + buf_stride * 0], buf[i + buf_stride * 2]);
+    hadd(buf[i + buf_stride * 1], buf[i + buf_stride * 3]);
+    hadd(buf[i + buf_stride * 4], buf[i + buf_stride * 6]);
+    hadd(buf[i + buf_stride * 5], buf[i + buf_stride * 7]);
+
+    hadd(buf[i + buf_stride * 0], buf[i + buf_stride * 1]);
+    hadd(buf[i + buf_stride * 2], buf[i + buf_stride * 3]);
+    hadd(buf[i + buf_stride * 4], buf[i + buf_stride * 5]);
+    hadd(buf[i + buf_stride * 6], buf[i + buf_stride * 7]);
+  }
+
+  sum = 0;
+  for (i = 1; i < 8; ++i) {
+    sum += abs(buf[i*buf_stride]);
+  }
+  *horizontal = sum;
+  sum = 0;
+  for (i = 1; i < 8; ++i) {
+    sum += abs(buf[i]);
+  }
+  *vertical = sum;
+  sum = 0;
+  for (i = 1; i < 8; ++i) {
+    for (j = 1; j < 8; ++j) {
+      sum += abs(buf[i * buf_stride + j]);
+    }
+  }
+  *diagonal = sum;
+}
+
+PREDICTION_MODE pick_intra_mode(const MACROBLOCK *x) {
+  int horizontal;
+  int vertical;
+  int diagonal;
+  const struct macroblock_plane *const p = &x->plane[0];
+  const uint8_t *const src = p->src.buf;
+  const int src_stride = p->src.stride;
+  fwht_8x8_analyze(src, src_stride, &horizontal, &vertical, &diagonal);
+  if (horizontal > 2 * vertical + diagonal)
+    return H_PRED;
+  if (vertical > 2 * horizontal + diagonal)
+    return V_PRED;
+  if (horizontal + vertical > diagonal)
+    return TM_PRED;
+  return DC_PRED;
+}
+
 // TODO(jingning) placeholder for inter-frame non-RD mode decision.
 // this needs various further optimizations. to be continued..
 void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
@@ -811,26 +896,36 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   // threshold.
   if (!x->skip && best_rdc.rdcost > inter_mode_thresh &&
       bsize <= cpi->sf.max_intra_bsize) {
-    PREDICTION_MODE this_mode;
     struct estimate_block_intra_args args = { cpi, x, DC_PRED, 0, 0 };
     const TX_SIZE intra_tx_size =
         MIN(max_txsize_lookup[bsize],
             tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
+    PREDICTION_MODE intra_mode_list[2] = { DC_PRED, DC_PRED };
+    int i;
 
     if (reuse_inter_pred) {
       pd->dst.buf = tmp[0].data;
       pd->dst.stride = bw;
     }
 
-    for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
+#if 1
+    if (bsize == BLOCK_8X8) {
+      intra_mode_list[1] = pick_intra_mode(x);
+    }
+#endif
+
+    for (i = 0; i < 2; ++i) {
       const TX_SIZE saved_tx_size = mbmi->tx_size;
+      PREDICTION_MODE this_mode = intra_mode_list[i];
+      if (this_mode == DC_PRED && i > 0)
+        break;
+      skip_txfm = x->skip_txfm[0];
       args.mode = this_mode;
       args.rate = 0;
       args.dist = 0;
       mbmi->tx_size = intra_tx_size;
       vp9_foreach_transformed_block_in_plane(xd, bsize, 0,
                                              estimate_block_intra, &args);
-      mbmi->tx_size = saved_tx_size;
       this_rdc.rate = args.rate;
       this_rdc.dist = args.dist;
       this_rdc.rate += cpi->mbmode_cost[this_mode];
@@ -847,6 +942,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->mv[0].as_int = INVALID_MV;
       } else {
         x->skip_txfm[0] = skip_txfm;
+        mbmi->tx_size = saved_tx_size;
       }
     }
     if (reuse_inter_pred)
