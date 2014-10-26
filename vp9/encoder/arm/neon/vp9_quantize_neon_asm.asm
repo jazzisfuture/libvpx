@@ -102,7 +102,7 @@
     vmull.s16       q8,  d11, d0
     vmull.s16       q9,  d12, d0
     vmull.s16       q12, d13, d0
-  IF $quant_type = 1
+  IF $quant_type = quantize_b
     ; right shift by 16, and narrow down to 16 bits
     vshrn.s32       d14, q7,  #16
     vshrn.s32       d16, q8,  #16
@@ -231,7 +231,7 @@ skip_block_$width$quant_type
 not_skip_block_$width$quant_type
     ; load quantization parmameters
     vld1.16         d0,    [r4]
-  IF $quant_type = 1
+  IF $quant_type = quantize_b
     ; load zbin values
     vld1.32         d30,   [r3]
     vdup.16         d31,   d30[1]
@@ -373,13 +373,13 @@ end_func_$width$quant_type
     QUANTIZE 0      fp
     ENDP
 |vp9_quantize_fp_32x32_neon| PROC
-    QUANTIZE 32     0  ; quant_type of fp_32x32 = 0
+    QUANTIZE 32     fp_32x32
     ENDP
 |vp9_quantize_b_32x32_neon| PROC
-    QUANTIZE 32     1  ; quant_type of quantize_b = 1
+    QUANTIZE 32     quantize_b
     ENDP
 |vp9_quantize_b_neon| PROC
-    QUANTIZE 0      1
+    QUANTIZE 0      quantize_b
     ENDP
 
     END
