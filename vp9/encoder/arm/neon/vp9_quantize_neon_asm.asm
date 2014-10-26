@@ -268,7 +268,7 @@ not_skip_block_$width$quant_type
     vdup.16         q7,    r10
     vadd.s16        q3,    q3,   q7
     vadd.s16        q4,    q4,   q7
-  IF $quant_type = 2                     ; $quant_type = fp
+  IF $quant_type = 2                      ; $quant_type = fp
     vshr.s16        q10, q5,  #15
     vshr.s16        q11, q6,  #15
     vabs.s16        q5,  q5
@@ -325,7 +325,7 @@ process_4x4_$width$quant_type
     ; add 1 to iscan values
     vadd.s16        q3,    q3,   q7
     vadd.s16        q4,    q4,   q7
-  IF $quant_type = 2              ; $quant_type = fp
+  IF $quant_type = 2             ; $quant_type = fp
     vshr.s16        q10, q5,  #15
     vshr.s16        q11, q6,  #15
     vabs.s16        q5,  q5
@@ -373,13 +373,13 @@ end_func_$width$quant_type
     QUANTIZE 0      2  ; quant_type of fp = 2
     ENDP
 |vp9_quantize_fp_32x32_neon| PROC
-    QUANTIZE 32     0  ; quant_type of fp_32x32 = 0
+    QUANTIZE 32     fp_32x32
     ENDP
 |vp9_quantize_b_32x32_neon| PROC
-    QUANTIZE 32     1  ; quant_type of quantize_b = 1
+    QUANTIZE 32     quantize_b
     ENDP
 |vp9_quantize_b_neon| PROC
-    QUANTIZE 0      1
+    QUANTIZE 0      quantize_b
     ENDP
 
     END
