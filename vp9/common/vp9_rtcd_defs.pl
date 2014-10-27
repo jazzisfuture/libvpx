@@ -1251,8 +1251,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   specialize qw/vp9_fdct32x32 sse2 avx2/;
 
   add_proto qw/void vp9_fdct32x32_rd/, "const int16_t *input, tran_low_t *output, int stride";
-  specialize qw/vp9_fdct32x32_rd sse2 avx2 neon_asm/;
-  $vp9_fdct32x32_rd_neon_asm=vp9_fdct32x32_rd_neon;
+  specialize qw/vp9_fdct32x32_rd sse2 avx2 neon/;
 }
 
 #
