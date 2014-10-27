@@ -184,7 +184,6 @@ static INLINE int_mv scale_mv(const MB_MODE_INFO *mbmi, int ref,
     } \
   } while (0)
 
-
 // Checks that the given mi_row, mi_col and search point
 // are inside the borders of the tile.
 static INLINE int is_inside(const TileInfo *const tile,
