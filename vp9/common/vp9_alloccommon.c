@@ -166,6 +166,15 @@ int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm, int width, int height) {
 #endif
                                VP9_ENC_BORDER_IN_PIXELS) < 0)
       goto fail;
+    if (cm->frame_bufs[i].mvs == NULL) {
+      cm->frame_bufs[i].mvs =
+          (MVPair_t *)vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(MVPair_t));
+      if (cm->frame_bufs[i].mvs == NULL)
+        goto fail;
+
+      cm->frame_bufs[i].mi_rows = cm->mi_rows;
+      cm->frame_bufs[i].mi_cols = cm->mi_cols;
+    }
   }
 
   init_frame_bufs(cm);
