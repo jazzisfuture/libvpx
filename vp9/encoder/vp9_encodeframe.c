@@ -604,6 +604,13 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   MODE_INFO *mi_addr = &xd->mi[0];
   const struct segmentation *const seg = &cm->seg;
+  const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
+  const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
+  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
+  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+  MVPair_t *const frame_mvs =
+      cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
+  int w, h;
 
   const int mis = cm->mi_stride;
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
@@ -720,6 +727,17 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
     for (i = 0; i < SWITCHABLE_FILTER_CONTEXTS; ++i)
       rd_opt->filter_diff[i] += ctx->best_filter_diff[i];
+  }
+
+  for (h = 0; h < y_mis; ++h) {
+    MVPair_t *const frame_mv = frame_mvs + h * cm->mi_cols;
+    for (w = 0; w < x_mis; ++w) {
+      MVPair_t *const mv = frame_mv + w;
+      mv->ref_frame[0] = mi->src_mi->mbmi.ref_frame[0];
+      mv->ref_frame[1] = mi->src_mi->mbmi.ref_frame[1];
+      mv->mv[0].as_int = mi->src_mi->mbmi.mv[0].as_int;
+      mv->mv[1].as_int = mi->src_mi->mbmi.mv[1].as_int;
+    }
   }
 }
 
@@ -1378,8 +1396,16 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
   MACROBLOCKD *const xd = &x->e_mbd;
+  MODE_INFO *const mi = xd->mi[0].src_mi;
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
   const struct segmentation *const seg = &cm->seg;
+  const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
+  const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
+  const int x_mis = MIN(bw, cm->mi_cols - mi_col);
+  const int y_mis = MIN(bh, cm->mi_rows - mi_row);
+  MVPair_t *const frame_mvs =
+      cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
+  int w, h;
 
   *(xd->mi[0].src_mi) = ctx->mic;
   xd->mi[0].src_mi = &xd->mi[0];
@@ -1405,6 +1431,17 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     if (cm->interp_filter == SWITCHABLE) {
       const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
       ++cm->counts.switchable_interp[pred_ctx][mbmi->interp_filter];
+    }
+  }
+
+  for (h = 0; h < y_mis; ++h) {
+    MVPair_t *const frame_mv = frame_mvs + h * cm->mi_cols;
+    for (w = 0; w < x_mis; ++w) {
+      MVPair_t *const mv = frame_mv + w;
+      mv->ref_frame[0] = mi->src_mi->mbmi.ref_frame[0];
+      mv->ref_frame[1] = mi->src_mi->mbmi.ref_frame[1];
+      mv->mv[0].as_int = mi->src_mi->mbmi.mv[0].as_int;
+      mv->mv[1].as_int = mi->src_mi->mbmi.mv[1].as_int;
     }
   }
 
