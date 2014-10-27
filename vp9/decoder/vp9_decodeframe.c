@@ -667,6 +667,17 @@ static void setup_display_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
     vp9_read_frame_size(rb, &cm->display_width, &cm->display_height);
 }
 
+static void resize_mv_buffer(VP9_COMMON *cm) {
+  if (cm->cur_frame->mvs)
+    vpx_free(cm->cur_frame->mvs);
+
+  cm->cur_frame->mi_rows = cm->mi_rows;
+  cm->cur_frame->mi_cols = cm->mi_cols;
+
+  cm->cur_frame->mvs =
+      (MVPair_t *)vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(MVPair_t));
+}
+
 static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
 #if CONFIG_SIZE_LIMIT
   if (width > DECODE_WIDTH_LIMIT || height > DECODE_HEIGHT_LIMIT)
@@ -691,6 +702,10 @@ static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
     vp9_init_context_buffers(cm);
     cm->width = width;
     cm->height = height;
+  }
+  if (cm->cur_frame->mvs == NULL || cm->mi_rows > cm->cur_frame->mi_rows ||
+      cm->mi_cols > cm->cur_frame->mi_cols) {
+    resize_mv_buffer(cm);
   }
 }
 
@@ -1532,10 +1547,11 @@ void vp9_decode_frame(VP9Decoder *pbi,
 
   init_macroblockd(cm, &pbi->mb);
 
-  if (!cm->error_resilient_mode)
-    set_prev_mi(cm);
-  else
-    cm->prev_mi = NULL;
+  cm->use_prev_frame_mvs = !cm->error_resilient_mode &&
+                           cm->width == cm->last_width &&
+                           cm->height == cm->last_height &&
+                           !cm->intra_only &&
+                           cm->last_show_frame;
 
   setup_plane_dequants(cm, xd, cm->base_qindex);
   vp9_setup_block_planes(xd, cm->subsampling_x, cm->subsampling_y);

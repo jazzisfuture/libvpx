@@ -238,6 +238,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                       &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
+  // Assign a MV array to the frame buffer.
+  cm->cur_frame = &cm->frame_bufs[cm->new_fb_idx];
+
   if (setjmp(cm->error.jmp)) {
     pbi->need_resync = 1;
     cm->error.setjmp = 0;
@@ -270,12 +273,12 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   cm->last_width = cm->width;
   cm->last_height = cm->height;
 
-  if (!cm->show_existing_frame)
+  if (!cm->show_existing_frame) {
     cm->last_show_frame = cm->show_frame;
-  if (cm->show_frame) {
-    if (!cm->show_existing_frame)
-      vp9_swap_mi_and_prev_mi(cm);
+    cm->prev_frame = cm->cur_frame;
+  }
 
+  if (cm->show_frame) {
     cm->current_video_frame++;
   }
 
