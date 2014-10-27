@@ -208,6 +208,18 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_MAX_INTER_BITRATE_PCT,
 
+  /*!\brief Boost percentage for Golden Frame in CBR mode
+   *
+   * This value controls the amount of boost given to Golden Frame in
+   * CBR mode. It is expressed as a percentage of the average
+   * per-frame bitrate, with the special (and default) value 0 meaning
+   * the feature is off, i.e., no golden frame buffer is updated or used.
+   *
+   * For example, to allow no more than 4.5 frames worth of bitrate
+   * to an inter frame, set this to 450.
+   *
+   */
+  VP8E_SET_GF_CBR_BOOST_PCT,
 
   /* TODO(jkoleszar): Move to vp9cx.h */
   VP9E_SET_LOSSLESS,
@@ -376,6 +388,7 @@ VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64,  int *)
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
 
+VPX_CTRL_USE_TYPE(VP8E_SET_GF_CBR_BOOST_PCT, unsigned int)
 VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PARALLEL_DECODING, unsigned int)
