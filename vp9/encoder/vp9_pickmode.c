@@ -450,7 +450,8 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   args->dist += dist;
 }
 
-static const THR_MODES mode_idx[MAX_REF_FRAMES - 1][INTER_MODES] = {
+static const THR_MODES mode_idx[MAX_REF_FRAMES][INTER_MODES] = {
+  {THR_DC, THR_H_PRED, THR_V_PRED},
   {THR_NEARESTMV, THR_NEARMV, THR_ZEROMV, THR_NEWMV},
   {THR_NEARESTG, THR_NEARG, THR_ZEROG, THR_NEWG},
   {THR_NEARESTA, THR_NEARA, THR_ZEROA, THR_NEWA},
@@ -610,8 +611,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         continue;
 
       mode_rd_thresh =
-          rd_threshes[mode_idx[ref_frame -
-                               LAST_FRAME][INTER_OFFSET(this_mode)]];
+          rd_threshes[mode_idx[ref_frame][INTER_OFFSET(this_mode)]];
       if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
                               rd_thresh_freq_fact[this_mode]))
         continue;
@@ -835,6 +835,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (cpi->sf.reuse_inter_pred_sby)
       pd->dst = orig_dst;
   }
+
+  if (is_inter_block(mbmi))
+    vp9_update_rd_thresh_fact(cpi, tile_data, bsize,
+                              mode_idx[ref_frame][INTER_OFFSET(mbmi->mode)]);
+  else
+    vp9_update_rd_thresh_fact(cpi, tile_data, bsize,
+                              mode_idx[ref_frame][mbmi->mode]);
 
   *rd_cost = best_rdc;
 }

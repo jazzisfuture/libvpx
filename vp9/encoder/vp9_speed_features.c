@@ -270,6 +270,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST_NEW_ZERO;
     sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_NEW_ZERO;
 
+    sf->adaptive_rd_thresh = 2;
     // This feature is only enabled when partition search is disabled.
     sf->reuse_inter_pred_sby = 1;
 
@@ -296,8 +297,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->tx_size_search_method = is_keyframe ? USE_LARGESTALL : USE_TX_8X8;
 
     // Increase mode checking threshold for NEWMV.
-    sf->elevate_newmv_thresh = 1000;
-
+    sf->adaptive_rd_thresh = 2;
     sf->mv.reduce_first_step_size = 1;
   }
 
