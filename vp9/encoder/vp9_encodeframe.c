@@ -375,7 +375,7 @@ void sum_2_variances(const var *a, const var *b, var *r) {
                 a->sum_error + b->sum_error, a->count + b->count, r);
 }
 
-static void fill_variance_tree(void *data, BLOCK_SIZE bsize) {
+static void fill_variance_tree(void *data, BLOCK_SIZE bsize, PC_TREE *pc_tree) {
   variance_node node;
   tree_to_node(data, bsize, &node);
   sum_2_variances(node.split[0], node.split[1], &node.part_variances->horz[0]);
@@ -384,6 +384,17 @@ static void fill_variance_tree(void *data, BLOCK_SIZE bsize) {
   sum_2_variances(node.split[1], node.split[3], &node.part_variances->vert[1]);
   sum_2_variances(&node.part_variances->vert[0], &node.part_variances->vert[1],
                   &node.part_variances->none);
+
+  // fill the prediction residual sse into pc_tree
+  pc_tree->none.pred_diff_sse = node.part_variances->none.sum_square_error;
+  pc_tree->horizontal[0].pred_diff_sse =
+      node.part_variances->horz[0].sum_square_error;
+  pc_tree->horizontal[1].pred_diff_sse =
+      node.part_variances->horz[1].sum_square_error;
+  pc_tree->vertical[0].pred_diff_sse =
+      node.part_variances->vert[0].sum_square_error;
+  pc_tree->vertical[1].pred_diff_sse =
+      node.part_variances->vert[1].sum_square_error;
 }
 
 static int set_vt_partitioning(VP9_COMP *cpi,
@@ -517,13 +528,16 @@ static void choose_partitioning(VP9_COMP *cpi,
   for (i = 0; i < 4; i++) {
     const int x32_idx = ((i & 1) << 5);
     const int y32_idx = ((i >> 1) << 5);
+    PC_TREE *pc_tree = cpi->pc_root->split[i];
     for (j = 0; j < 4; j++) {
       const int x16_idx = x32_idx + ((j & 1) << 4);
       const int y16_idx = y32_idx + ((j >> 1) << 4);
       v16x16 *vst = &vt.split[i].split[j];
+      PC_TREE *pc_tree16 = pc_tree->split[j];
       for (k = 0; k < 4; k++) {
         int x_idx = x16_idx + ((k & 1) << 3);
         int y_idx = y16_idx + ((k >> 1) << 3);
+        PC_TREE *pc_tree8 = pc_tree16->split[k];
         unsigned int sse = 0;
         int sum = 0;
 
@@ -548,17 +562,21 @@ static void choose_partitioning(VP9_COMP *cpi,
         // pixels,  so use 1.   This means of course that there is no variance
         // in an 8x8 block.
         fill_variance(sse, sum, 1, &vst->split[k].part_variances.none);
+        pc_tree8->none.pred_diff_sse =
+            vst->split[k].part_variances.none.sum_square_error;
       }
     }
   }
   // Fill the rest of the variance tree by summing split partition values.
   for (i = 0; i < 4; i++) {
+    PC_TREE *pc_tree32 = cpi->pc_root->split[i];
     for (j = 0; j < 4; j++) {
-      fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
+      PC_TREE *pc_tree16 = pc_tree32->split[j];
+      fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16, pc_tree16);
     }
-    fill_variance_tree(&vt.split[i], BLOCK_32X32);
+    fill_variance_tree(&vt.split[i], BLOCK_32X32, pc_tree32);
   }
-  fill_variance_tree(&vt, BLOCK_64X64);
+  fill_variance_tree(&vt, BLOCK_64X64, cpi->pc_root);
 
   // Now go through the entire structure,  splitting every block size until
   // we get to one that's got a variance lower than our threshold,  or we
@@ -3229,6 +3247,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
       case REFERENCE_PARTITION:
         set_offsets(cpi, tile_info, mi_row, mi_col, BLOCK_64X64);
         x->in_static_area = is_background(cpi, tile_info, mi_row, mi_col);
+        choose_partitioning(cpi, tile_info, mi_row, mi_col);
 
         if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
             xd->mi[0].src_mi->mbmi.segment_id && x->in_static_area) {
@@ -3239,7 +3258,7 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
                                BLOCK_64X64, &dummy_rdc, 1,
                                INT64_MAX, cpi->pc_root);
         } else {
-          choose_partitioning(cpi, tile_info, mi_row, mi_col);
+//          choose_partitioning(cpi, tile_info, mi_row, mi_col);
           nonrd_select_partition(cpi, tile_data, mi, tp, mi_row, mi_col,
                                  BLOCK_64X64, 1, &dummy_rdc, cpi->pc_root);
         }
@@ -3386,6 +3405,7 @@ static void tile_data_init(TileDataEnc *tile_data) {
       tile_data->thresh_freq_fact[i][j] = 32;
       tile_data->mode_map[i][j] = j;
     }
+    tile_data->max_static_sse[i] = INT_MAX;
   }
 }
 
@@ -3426,6 +3446,12 @@ static void encode_tiles(VP9_COMP *cpi) {
       TOKENEXTRA * const old_tok = tok[tile_row][tile_col];
       int mi_row;
       TileDataEnc *this_tile = &cpi->tile_data[tile_row * tile_cols + tile_col];
+
+      if ((cm->current_video_frame & 0x07) == 0) {
+        int i;
+        for (i = 0; i < BLOCK_SIZES; ++i)
+          this_tile->max_static_sse[i] = INT_MAX;
+      }
 
       for (mi_row = tile_info->mi_row_start; mi_row < tile_info->mi_row_end;
            mi_row += MI_BLOCK_SIZE) {

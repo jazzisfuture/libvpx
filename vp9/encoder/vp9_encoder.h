@@ -232,6 +232,7 @@ typedef struct TileDataEnc {
   TileInfo tile_info;
   int thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
   int mode_map[BLOCK_SIZES][MAX_MODES];
+  int64_t max_static_sse[BLOCK_SIZES];
 } TileDataEnc;
 
 typedef struct VP9_COMP {

@@ -616,6 +616,16 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                               rd_thresh_freq_fact[this_mode]))
         continue;
 
+      // ===========================================================
+      if ((cm->current_video_frame & 0x07) > 1)
+        if (ctx->pred_diff_sse <= tile_data->max_static_sse[bsize] &&
+            bsize > BLOCK_8X8)
+          if ((this_mode == NEWMV) ||
+              ((this_mode == NEARESTMV) && frame_mv[NEARESTMV][ref_frame].as_int != 0) ||
+              ((this_mode == NEARMV) && frame_mv[NEARMV][ref_frame].as_int != 0))
+            continue;
+      // ===========================================================
+
       if (this_mode == NEWMV) {
         if (cpi->sf.partition_search_type != VAR_BASED_PARTITION &&
             this_rdc.rdcost < (int64_t)(1 << num_pels_log2_lookup[bsize]))
@@ -787,6 +797,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->mv[0].as_int  = frame_mv[best_mode][best_ref_frame].as_int;
   xd->mi[0].src_mi->bmi[0].as_mv[0].as_int = mbmi->mv[0].as_int;
   x->skip_txfm[0] = skip_txfm;
+
+  // ===================================================================
+  if ((cm->current_video_frame & 0x07) <= 1)
+    if (mbmi->mv[0].as_int != 0)
+      tile_data->max_static_sse[bsize] = MIN(tile_data->max_static_sse[bsize],
+                                             2 * ctx->pred_diff_sse);
+  // ===================================================================
 
   // Perform intra prediction search, if the best SAD is above a certain
   // threshold.
