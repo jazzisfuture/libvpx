@@ -126,6 +126,10 @@ typedef struct {
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
+#if CONFIG_TX_SKIP
+  int tx_skip;
+  int tx_skip_uv;
+#endif
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
@@ -248,6 +252,10 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
 static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
                                       const MACROBLOCKD *xd, int ib) {
   const MODE_INFO *const mi = xd->mi[0].src_mi;
+#if CONFIG_TX_SKIP
+  //if ((mi->mbmi.tx_skip && !plane_type)||(mi->mbmi.tx_skip_uv && plane_type))
+    //return intra_mode_to_tx_type_lookup[get_y_mode(mi, ib)];
+#endif
 
   if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(&mi->mbmi))
     return DCT_DCT;

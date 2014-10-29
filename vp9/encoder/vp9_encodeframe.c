@@ -832,7 +832,6 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
-
   if (aq_mode == VARIANCE_AQ) {
     const int energy = bsize <= BLOCK_16X16 ? x->mb_energy
                                             : vp9_block_energy(cpi, x, bsize);
@@ -3432,6 +3431,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi);
+#if CONFIG_TX_SKIP
+  //sf->partition_search_type = FIXED_PARTITION;
+  //sf->always_this_block_size = BLOCK_8X8;
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
@@ -3730,9 +3733,16 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                                              cpi->zbin_mode_boost_enabled);
   vp9_update_zbin_extra(cpi, x);
 
+#if CONFIG_TX_SKIP
+  if (!frame_is_intra_only(cm)) {
+    assert(xd->mi[0].src_mi->mbmi.tx_skip==0);
+    assert(xd->mi[0].src_mi->mbmi.tx_skip_uv==0);
+  }
+#endif
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
+
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
     if (output_enabled)
@@ -3751,7 +3761,6 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
 
     vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
-
     vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
   }
