@@ -832,7 +832,6 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
 
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
-
   if (aq_mode == VARIANCE_AQ) {
     const int energy = bsize <= BLOCK_16X16 ? x->mb_energy
                                             : vp9_block_energy(cpi, x, bsize);
@@ -3432,6 +3431,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi);
+#if CONFIG_TX_SKIP
+   //sf->partition_search_type = FIXED_PARTITION;
+   //sf->always_this_block_size = BLOCK_32X32;
+   //sf->min_partition_size = BLOCK_8X8;
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
@@ -3690,6 +3694,35 @@ static int get_zbin_mode_boost(const MB_MODE_INFO *mbmi, int enabled) {
   }
 }
 
+#if CONFIG_TX_SKIP
+// for debugging
+/*
+struct debug_arg {
+  int output;
+  MB_MODE_INFO *mbmi;
+  int mi_row;
+  int mi_col;
+  BLOCK_SIZE bsize;
+  int frame;
+};
+static void write_mode_to_file_enc(int plane, int block,
+                                   BLOCK_SIZE plane_bsize,
+                                   TX_SIZE tx_size,
+                                   void *arg) {
+  struct debug_arg *args = arg;
+  FILE *pF;
+  if (plane == 0 && args->output) {
+    pF = fopen ("./debug/enc.txt","a");
+    fprintf (pF, "Frame%3d, MB%2d_%2d, BLOCK%2d, BSIZEZ%2d, MODE%2d, "
+        "TX_SIZE%2d, SKIP%2d%2d\n", args->frame, args->mi_row, args->mi_col,
+        block, args->bsize, args->mbmi->mode, tx_size, args->mbmi->tx_skip,
+        args->mbmi->tx_skip_uv);
+    fclose (pF);
+  }
+}
+*/
+#endif
+
 static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                               int mi_row, int mi_col, BLOCK_SIZE bsize,
                               PICK_MODE_CONTEXT *ctx) {
@@ -3730,11 +3763,43 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
                                              cpi->zbin_mode_boost_enabled);
   vp9_update_zbin_extra(cpi, x);
 
+#if CONFIG_TX_SKIP
+  // for debugging
+  /*
+  if (0)
+  {
+    int plane;
+    FILE *pF;
+    pF = fopen ("./debug/enc.txt","a");
+    //fprintf (pF, "TX_MODE is %4d\n", mbmi->segment_id);
+    fclose (pF);
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane) {
+      //break;
+      struct debug_arg arg = {output_enabled, &(xd->mi[0].src_mi->mbmi),
+          mi_row, mi_col, bsize, cm->current_video_frame};
+      vp9_foreach_transformed_block_in_plane(xd, bsize, plane,
+                                             write_mode_to_file_enc, &arg);
+    }
+  }
+ */
+#endif
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
+
+#if CONFIG_TX_SKIP
+    // for debugging
+    for (plane = 0; plane < MAX_MB_PLANE; ++plane)
+      if (output_enabled)
+        vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+      else
+        vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+
+#else
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
+#endif
+
     if (output_enabled)
       sum_intra_stats(&cm->counts, mi);
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
@@ -3751,8 +3816,15 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       vp9_build_inter_predictors_sby(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
 
     vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, MAX(bsize, BLOCK_8X8));
-
+#if CONFIG_TX_SKIP
+    // for debugging
+    if (output_enabled)
+      vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
+    else
+      vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
+#else
     vp9_encode_sb(x, MAX(bsize, BLOCK_8X8));
+#endif
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
   }
 
