@@ -3733,6 +3733,23 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   if (!is_inter_block(mbmi)) {
     int plane;
     mbmi->skip = 1;
+#if CONFIG_TX_SKIP
+    // for debugging
+    // randomly set tx_skip and tx_skip_uv
+    if (output_enabled) {
+      if (!(rand() % 5)) {
+        mbmi->tx_skip = 1;
+      } else {
+        mbmi->tx_skip = 0;
+      }
+
+      if (!(rand() % 5)) {
+        mbmi->tx_skip_uv = 1;
+      } else {
+        mbmi->tx_skip_uv = 0;
+      }
+    }
+#endif
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
     if (output_enabled)
@@ -3741,6 +3758,23 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);
+#if CONFIG_TX_SKIP
+    // for debugging
+    // randomly set tx_skip and tx_skip_uv
+    if (output_enabled) {
+      if (!(rand() % 10)) {
+        mbmi->tx_skip = 1;
+      } else {
+        mbmi->tx_skip = 0;
+      }
+
+      if (!(rand() % 10)) {
+        mbmi->tx_skip_uv = 1;
+      } else {
+        mbmi->tx_skip_uv = 0;
+      }
+    }
+#endif
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       YV12_BUFFER_CONFIG *cfg = get_ref_frame_buffer(cpi,
                                                      mbmi->ref_frame[ref]);
