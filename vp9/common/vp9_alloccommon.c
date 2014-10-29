@@ -112,6 +112,13 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
   cm->above_seg_context = NULL;
 }
 
+static void vp9_free_frame_context_buffers(VP9_COMMON *cm) {
+  vpx_free(cm->fc);
+  cm->fc = NULL;
+  vpx_free(cm->frame_contexts);
+  cm->frame_contexts = NULL;
+}
+
 int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
   vp9_free_context_buffers(cm);
 
@@ -131,10 +138,25 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
       mi_cols_aligned_to_sb(cm->mi_cols), sizeof(*cm->above_seg_context));
   if (!cm->above_seg_context) goto fail;
 
+  // cm->fc and cm->frame_contexts are always set to NULL in the beginning.
+  if (cm->fc == NULL) {
+    cm->fc = (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc));
+    if (!cm->fc) goto fail1;
+  }
+  if (cm->frame_contexts == NULL) {
+    cm->frame_contexts = (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS,
+        sizeof(*cm->frame_contexts));
+    if (!cm->frame_contexts) goto fail1;
+  }
+
   return 0;
 
  fail:
   vp9_free_context_buffers(cm);
+  return 1;
+
+fail1:
+  vp9_free_frame_context_buffers(cm);
   return 1;
 }
 
@@ -189,6 +211,7 @@ int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm, int width, int height) {
 void vp9_remove_common(VP9_COMMON *cm) {
   vp9_free_ref_frame_buffers(cm);
   vp9_free_context_buffers(cm);
+  vp9_free_frame_context_buffers(cm);
   vp9_free_internal_frame_buffers(&cm->int_frame_buffers);
 }
 

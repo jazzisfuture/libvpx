@@ -160,10 +160,6 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int i;
 
-  vpx_free(cm->fc);
-  cm->fc = NULL;
-  vpx_free(cm->frame_contexts);
-  cm->frame_contexts = NULL;
   vpx_free(cpi->tile_data);
   cpi->tile_data = NULL;
 
@@ -200,9 +196,6 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 
   vp9_cyclic_refresh_free(cpi->cyclic_refresh);
   cpi->cyclic_refresh = NULL;
-
-  vp9_free_ref_frame_buffers(cm);
-  vp9_free_context_buffers(cm);
 
   vp9_free_frame_buffer(&cpi->last_frame_uf);
   vp9_free_frame_buffer(&cpi->scaled_source);
@@ -1381,12 +1374,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   cm->error.setjmp = 1;
 
-  CHECK_MEM_ERROR(cm, cm->fc,
-                  (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));
-  CHECK_MEM_ERROR(cm, cm->frame_contexts,
-                  (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS,
-                  sizeof(*cm->frame_contexts)));
-
+  cm->fc = NULL;
+  cm->frame_contexts = NULL;
   cpi->use_svc = 0;
 
   init_config(cpi, oxcf);
