@@ -22,6 +22,21 @@
 #include "vp9/decoder/vp9_decodemv.h"
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_reader.h"
+#if CONFIG_TX_SKIP
+// for debugging
+/*
+void write_block_to_file_u8(FILE *fp, uint8_t *src, int stride, int rows, int cols) {
+  int r, c;
+  for (r=0;r<rows;r++) {
+    for (c=0;c<cols;c++) {
+      fprintf(fp, "%3d  ", src[r*stride+c]);
+    }
+    fprintf(fp, "\n");
+  }
+  fprintf(fp, "\n");
+}
+*/
+#endif
 
 static PREDICTION_MODE read_intra_mode(vp9_reader *r, const vp9_prob *p) {
   return (PREDICTION_MODE)vp9_read_tree(r, vp9_intra_mode_tree, p);
@@ -63,6 +78,13 @@ static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
   const int ctx = vp9_get_tx_size_context(xd);
   const vp9_prob *tx_probs = get_tx_probs(max_tx_size, ctx, &cm->fc.tx_probs);
   int tx_size = vp9_read(r, tx_probs[0]);
+  if (0) {
+    FILE *fp;
+    fp = fopen("./debug/dec_tx_probs.txt", "a");
+    fprintf(fp, "ctx is %d\n", ctx);
+    write_block_to_file_u8(fp, tx_probs, 1, 1, 3);
+    fclose(fp);
+  }
   if (tx_size != TX_4X4 && max_tx_size >= TX_16X16) {
     tx_size += vp9_read(r, tx_probs[1]);
     if (tx_size != TX_8X8 && max_tx_size >= TX_32X32)
@@ -77,8 +99,15 @@ static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
 static TX_SIZE read_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd, TX_MODE tx_mode,
                             BLOCK_SIZE bsize, int allow_select, vp9_reader *r) {
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
-  if (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8)
+#if CONFIG_TX_SKIP
+  if (frame_is_intra_only(cm) && xd->mi[0].src_mi->mbmi.tx_skip)
+  // if (!(is_inter_block(&(xd->mi[0].src_mi->mbmi))) &&
+    // xd->mi[0].src_mi->mbmi.tx_skip)
+    return MIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
+#endif
+  if (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8) {
     return read_selected_tx_size(cm, xd, max_tx_size, r);
+  }
   else
     return MIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
 }
@@ -169,6 +198,10 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
+#if CONFIG_TX_SKIP
+  mbmi->tx_skip = vp9_read_bit(r);
+  mbmi->tx_skip_uv = vp9_read_bit(r);
+#endif
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
@@ -532,6 +565,15 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
+#if CONFIG_TX_SKIP
+  if (!inter_block && 0) {
+    mbmi->tx_skip = vp9_read_bit(r);
+    mbmi->tx_skip_uv = vp9_read_bit(r);
+  } else {
+    mbmi->tx_skip = 0;
+    mbmi->tx_skip_uv = 0;
+  }
+#endif
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                !mbmi->skip || !inter_block, r);
 
