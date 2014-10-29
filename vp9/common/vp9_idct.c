@@ -2900,3 +2900,25 @@ void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
   }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+#if CONFIG_TX_SKIP
+void tx_identity(int16_t *input, tran_low_t *out, int stride, int bs, int scl) {
+  int r, c;
+  for (r = 0; r < bs; r++)
+    for (c = 0; c < bs; c++)
+      out[bs * r + c] = input[stride * r + c] * scl;
+}
+
+void tx_identity_add( const tran_low_t *input, uint8_t *dest,
+                 int stride, int bs, int scl) {
+  int r, c, temp;
+  for (r = 0; r < bs; r++)
+    for (c = 0; c < bs; c++) {
+      temp = dest[r * stride + c] + input[r * bs + c] / scl;
+      dest[r * stride + c] =
+          (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+    }
+}
+#endif
+
+
