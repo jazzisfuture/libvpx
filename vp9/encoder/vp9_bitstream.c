@@ -272,6 +272,11 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         (skip || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
   }
+#if CONFIG_TX_SKIP
+  else if (frame_is_intra_only(cm)) {
+    write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
+  }
+#endif
 
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
@@ -288,6 +293,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       }
     }
     write_intra_mode(w, mbmi->uv_mode, cm->fc.uv_mode_prob[mode]);
+#if CONFIG_TX_SKIP
+    // vp9_write_bit(w, mbmi->tx_skip);
+    // vp9_write_bit(w, mbmi->tx_skip_uv);
+#endif
   } else {
     const int mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
     const vp9_prob *const inter_probs = cm->fc.inter_mode_probs[mode_ctx];
@@ -355,7 +364,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
   write_skip(cm, xd, mbmi->segment_id, mi, w);
 
+#if CONFIG_TX_SKIP
+  if (1)
+#else
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
+#endif
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
 
   if (bsize >= BLOCK_8X8) {
@@ -375,6 +388,10 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
+#if CONFIG_TX_SKIP
+  vp9_write(w, mbmi->tx_skip, 128);
+  vp9_write(w, mbmi->tx_skip_uv, 128);
+#endif
 }
 
 static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,

@@ -193,6 +193,11 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
                                     TX_SIZE tx_size, uint8_t *dst, int stride,
                                     int eob) {
   struct macroblockd_plane *const pd = &xd->plane[plane];
+#if CONFIG_TX_SKIP
+  int r, c, temp;
+  MB_MODE_INFO *mbmi = &(xd->mi[0].src_mi->mbmi);
+  int adj_coeff = 120;
+#endif
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
     tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -254,27 +259,105 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
       }
     }
 #else
+#if CONFIG_TX_SKIP
+    if (xd->lossless && (is_inter_block(mbmi) ||
+        (plane ? !(mbmi->tx_skip_uv) : !(mbmi->tx_skip)))) {
+#else
     if (xd->lossless) {
+#endif
       tx_type = DCT_DCT;
       vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
     } else {
       const PLANE_TYPE plane_type = pd->plane_type;
       switch (tx_size) {
         case TX_4X4:
+#if CONFIG_TX_SKIP
+          if (!is_inter_block(mbmi) &&
+              ((!plane && mbmi->tx_skip) || (plane && mbmi->tx_skip_uv))) {
+            tx_type = get_tx_type_4x4(plane_type, xd, block);
+            for (r = 0; r < 4; r++) {
+              for (c = 0; c < 4; c++) {
+                temp = dst[r * stride + c] + (dqcoeff[r * 4 + c] / adj_coeff);
+                dst[r * stride + c] =
+                    (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+              }
+            }
+          } else {
+            tx_type = get_tx_type_4x4(plane_type, xd, block);
+            vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
+          }
+#else
           tx_type = get_tx_type_4x4(plane_type, xd, block);
           vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
+#endif
           break;
         case TX_8X8:
+#if CONFIG_TX_SKIP
+          if (!is_inter_block(mbmi) &&
+              ((!plane && mbmi->tx_skip) || (plane && mbmi->tx_skip_uv))) {
+            tx_type = get_tx_type(plane_type, xd);
+            for (r = 0; r < 8; r++) {
+              for (c = 0; c < 8; c++) {
+                temp = dst[r * stride + c] + (dqcoeff[r * 8 + c] / adj_coeff);
+                dst[r * stride + c] =
+                    (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+              }
+            }
+          } else {
+            tx_type = get_tx_type(plane_type, xd);
+            vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+          }
+#else
           tx_type = get_tx_type(plane_type, xd);
           vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
+#endif
           break;
         case TX_16X16:
+#if CONFIG_TX_SKIP
+          if (!is_inter_block(mbmi) &&
+              ((!plane && mbmi->tx_skip) || (plane && mbmi->tx_skip_uv))) {
+            tx_type = get_tx_type(plane_type, xd);
+            for (r = 0; r < 16; r++) {
+              for (c = 0; c < 16; c++) {
+                temp = dst[r * stride + c] + (dqcoeff[r * 16 + c] / adj_coeff);
+                dst[r * stride + c] =
+                    (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+              }
+            }
+          } else {
+            tx_type = get_tx_type(plane_type, xd);
+            vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+          }
+#else
           tx_type = get_tx_type(plane_type, xd);
           vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
+#endif
           break;
         case TX_32X32:
+#if CONFIG_TX_SKIP
+          if (!is_inter_block(mbmi) &&
+              ((!plane && mbmi->tx_skip) || (plane && mbmi->tx_skip_uv))) {
+            tx_type = DCT_DCT;
+            if (xd->lossless) {
+              for (r = 0; r < 32; r++)
+                for (c = 0; c < 32; c++)
+                  dqcoeff[r * 32 + c] = -dqcoeff[r * 32 + c];
+            }
+            for (r = 0; r < 32; r++) {
+              for (c = 0; c < 32; c++) {
+                temp = dst[r * stride + c] + (dqcoeff[r * 32 + c] / adj_coeff);
+                dst[r * stride + c] =
+                    (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+              }
+            }
+          } else {
+            tx_type = DCT_DCT;
+            vp9_idct32x32_add(dqcoeff, dst, stride, eob);;
+          }
+#else
           tx_type = DCT_DCT;
           vp9_idct32x32_add(dqcoeff, dst, stride, eob);
+#endif
           break;
         default:
           assert(0 && "Invalid transform size");
@@ -403,6 +486,12 @@ static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                                   cm->base_qindex));
   }
 
+#if CONFIG_TX_SKIP
+  if (!frame_is_intra_only(cm)) {
+    assert(xd->mi[0].src_mi->mbmi.tx_skip == 0);
+    assert(xd->mi[0].src_mi->mbmi.tx_skip_uv == 0);
+  }
+#endif
   if (!is_inter_block(mbmi)) {
     struct intra_args arg = { cm, xd, r };
     vp9_foreach_transformed_block(xd, bsize,

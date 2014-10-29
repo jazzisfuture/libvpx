@@ -77,7 +77,12 @@ static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
 static TX_SIZE read_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd, TX_MODE tx_mode,
                             BLOCK_SIZE bsize, int allow_select, vp9_reader *r) {
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
+#if CONFIG_TX_SKIP
+  if (frame_is_intra_only(cm) ||
+      (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8))
+#else
   if (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8)
+#endif
     return read_selected_tx_size(cm, xd, max_tx_size, r);
   else
     return MIN(max_tx_size, tx_mode_to_biggest_tx_size[tx_mode]);
@@ -198,6 +203,10 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
   }
 
   mbmi->uv_mode = read_intra_mode(r, vp9_kf_uv_mode_prob[mbmi->mode]);
+#if CONFIG_TX_SKIP
+  mbmi->tx_skip = vp9_read_bit(r);
+  mbmi->tx_skip_uv = vp9_read_bit(r);
+#endif
 }
 
 static int read_mv_component(vp9_reader *r,
@@ -353,6 +362,10 @@ static void read_intra_block_mode_info(VP9_COMMON *const cm, MODE_INFO *mi,
   }
 
   mbmi->uv_mode = read_intra_mode_uv(cm, r, mbmi->mode);
+#if CONFIG_TX_SKIP
+  // mbmi->tx_skip = vp9_read_bit(r);
+  // mbmi->tx_skip_uv = vp9_read_bit(r);
+#endif
 }
 
 static INLINE int is_mv_valid(const MV *mv) {
