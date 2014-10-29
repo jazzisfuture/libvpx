@@ -76,6 +76,10 @@ static const tran_high_t sinpi_1_9 = 5283;
 static const tran_high_t sinpi_2_9 = 9929;
 static const tran_high_t sinpi_3_9 = 13377;
 static const tran_high_t sinpi_4_9 = 15212;
+#if CONFIG_TX_SKIP
+
+static int adj_coeff = 120;
+#endif
 
 static INLINE tran_low_t check_range(tran_high_t input) {
 #if CONFIG_VP9_HIGHBITDEPTH
