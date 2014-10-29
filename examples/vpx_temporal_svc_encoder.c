@@ -644,7 +644,7 @@ int main(int argc, char **argv) {
       vpx_codec_control(&codec, VP9E_SET_NOISE_SENSITIVITY, 0);
       if (vpx_codec_control(&codec, VP9E_SET_SVC, 1)) {
         die_codec(&codec, "Failed to set SVC");
-    }
+     }
   }
   vpx_codec_control(&codec, VP8E_SET_STATIC_THRESHOLD, 1);
   vpx_codec_control(&codec, VP8E_SET_TOKEN_PARTITIONS, 1);
