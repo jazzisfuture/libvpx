@@ -85,6 +85,13 @@ static void write_selected_tx_size(const VP9_COMMON *cm,
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   const vp9_prob *const tx_probs = get_tx_probs2(max_tx_size, xd,
                                                  &cm->fc.tx_probs);
+  if (0) {
+    FILE *fp;
+    fp = fopen("./debug/enc_tx_probs.txt", "a");
+    fprintf(fp, "ctx is %d\n", vp9_get_tx_size_context(xd));
+    write_block_to_file_u8(fp, tx_probs, 1, 1, 3);
+    fclose(fp);
+  }
   vp9_write(w, tx_size != TX_4X4, tx_probs[0]);
   if (tx_size != TX_4X4 && max_tx_size >= TX_16X16) {
     vp9_write(w, tx_size != TX_8X8, tx_probs[1]);
@@ -266,12 +273,24 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 
   if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
     vp9_write(w, is_inter, vp9_get_intra_inter_prob(cm, xd));
+#if CONFIG_TX_SKIP
+  vp9_write_bit(w, mbmi->tx_skip);
+  vp9_write_bit(w, mbmi->tx_skip_uv);
+#endif
 
+#if CONFIG_TX_SKIP
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter &&
         (skip || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
   }
+#else
+  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
+      !(is_inter &&
+        (skip || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
+    write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
+  }
+#endif
 
   if (!is_inter) {
     if (bsize >= BLOCK_8X8) {
@@ -354,8 +373,16 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     write_segment_id(w, seg, mbmi->segment_id);
 
   write_skip(cm, xd, mbmi->segment_id, mi, w);
+#if CONFIG_TX_SKIP
+  vp9_write(w, mbmi->tx_skip, 128);
+  vp9_write(w, mbmi->tx_skip_uv, 128);
+#endif
 
+#if CONFIG_TX_SKIP1
+  if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT && !mbmi->tx_skip)
+#else
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
+#endif
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
 
   if (bsize >= BLOCK_8X8) {
