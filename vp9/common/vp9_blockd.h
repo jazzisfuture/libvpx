@@ -126,6 +126,10 @@ typedef struct {
   int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
+#if CONFIG_TX_SKIP
+  int tx_skip;
+  int tx_skip_uv;
+#endif
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {

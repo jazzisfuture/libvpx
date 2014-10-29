@@ -266,6 +266,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 
   if (!vp9_segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME))
     vp9_write(w, is_inter, vp9_get_intra_inter_prob(cm, xd));
+#if CONFIG_TX_SKIP
+  vp9_write_bit(w, mbmi->tx_skip);
+  vp9_write_bit(w, mbmi->tx_skip_uv);
+#endif
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT &&
       !(is_inter &&
@@ -354,6 +358,10 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     write_segment_id(w, seg, mbmi->segment_id);
 
   write_skip(cm, xd, mbmi->segment_id, mi, w);
+#if CONFIG_TX_SKIP
+  vp9_write_bit(w, mbmi->tx_skip);
+  vp9_write_bit(w, mbmi->tx_skip_uv);
+#endif
 
   if (bsize >= BLOCK_8X8 && cm->tx_mode == TX_MODE_SELECT)
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
