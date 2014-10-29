@@ -110,6 +110,11 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
 
   vpx_free(cm->above_seg_context);
   cm->above_seg_context = NULL;
+
+  vpx_free(cm->fc);
+  cm->fc = NULL;
+  vpx_free(cm->frame_contexts);
+  cm->frame_contexts = NULL;
 }
 
 int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
@@ -130,6 +135,13 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
   cm->above_seg_context = (PARTITION_CONTEXT *)vpx_calloc(
       mi_cols_aligned_to_sb(cm->mi_cols), sizeof(*cm->above_seg_context));
   if (!cm->above_seg_context) goto fail;
+
+  cm->fc = (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc));
+  if (!cm->fc) goto fail;
+
+  cm->frame_contexts = (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS,
+      sizeof(*cm->frame_contexts));
+  if (!cm->frame_contexts) goto fail;
 
   return 0;
 
