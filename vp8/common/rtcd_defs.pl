@@ -454,8 +454,7 @@ add_proto qw/void vp8_regular_quantize_b/, "struct block *, struct blockd *";
 specialize qw/vp8_regular_quantize_b sse2 sse4_1/;
 
 add_proto qw/void vp8_fast_quantize_b/, "struct block *, struct blockd *";
-specialize qw/vp8_fast_quantize_b sse2 ssse3 media neon_asm/;
-$vp8_fast_quantize_b_media=vp8_fast_quantize_b_armv6;
+specialize qw/vp8_fast_quantize_b sse2 ssse3 neon_asm/;
 $vp8_fast_quantize_b_neon_asm=vp8_fast_quantize_b_neon;
 
 add_proto qw/void vp8_regular_quantize_b_pair/, "struct block *b1, struct block *b2, struct blockd *d1, struct blockd *d2";

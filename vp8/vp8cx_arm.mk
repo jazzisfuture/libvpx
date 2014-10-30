@@ -29,7 +29,6 @@ VP8_CX_SRCS-$(HAVE_EDSP)  += encoder/arm/armv5te/vp8_packtokens_partitions_armv5
 # encoder
 VP8_CX_SRCS-$(HAVE_MEDIA)  += encoder/arm/armv6/vp8_subtract_armv6$(ASM)
 VP8_CX_SRCS-$(HAVE_MEDIA)  += encoder/arm/armv6/vp8_short_fdct4x4_armv6$(ASM)
-VP8_CX_SRCS-$(HAVE_MEDIA)  += encoder/arm/armv6/vp8_fast_quantize_b_armv6$(ASM)
 VP8_CX_SRCS-$(HAVE_MEDIA)  += encoder/arm/armv6/vp8_mse16x16_armv6$(ASM)
 VP8_CX_SRCS-$(HAVE_MEDIA)  += encoder/arm/armv6/walsh_v6$(ASM)
 
