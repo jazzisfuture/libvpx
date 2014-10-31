@@ -29,6 +29,18 @@ void vp9_idct16x16_10_add_neon_pass2(const int16_t *src,
                                      int16_t skip_adding,
                                      uint8_t *dest,
                                      int dest_stride);
+// Performs ADST for a 8x16 buffer
+// This function should be called twice for full 16x16 transform
+// The output pointer *dest points to
+//    int16_t* when processed for row transform
+//    uint8_t* when processed for column transform
+// When boolean flag 'do_adding' is 1, the output is added to the 'dest' buffer
+void vp9_iadst16x16_256_add_neon_single_pass(const int16_t *src,
+                                             int16_t *temp_buffer,
+                                             int  do_adding,
+                                             void *dest,
+                                             int dest_stride);
+
 
 #if HAVE_NEON_ASM
 // Performs ADST for a 8x16 buffer
@@ -197,7 +209,6 @@ void vp9_idct16x16_10_add_neon(const int16_t *input,
   return;
 }
 
-#if HAVE_NEON_ASM
 void vp9_iht16x16_256_add_neon(const int16_t *input, uint8_t *dest,
                                int dest_stride, int type) {
   int64_t store_reg[8];
@@ -305,4 +316,3 @@ void vp9_iht16x16_256_add_neon(const int16_t *input, uint8_t *dest,
 
   return;
 }
-#endif  // HAVE_NEON_ASM
