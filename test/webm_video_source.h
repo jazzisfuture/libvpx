@@ -31,6 +31,8 @@ class WebMVideoSource : public CompressedVideoSource {
         buf_(NULL),
         buf_sz_(0),
         frame_(0),
+        skip_frame_(0),
+        is_key_frame_(false),
         end_of_file_(false) {
   }
 
@@ -64,8 +66,24 @@ class WebMVideoSource : public CompressedVideoSource {
     ASSERT_TRUE(vpx_ctx_->file != NULL);
     const int status = webm_read_frame(webm_ctx_, &buf_, &buf_sz_, &buf_sz_);
     ASSERT_GE(status, 0) << "webm_read_frame failed";
+    is_key_frame_ = webm_ctx_->is_key_frame;
     if (status == 1) {
       end_of_file_ = true;
+    }
+  }
+
+  void SeekToNextKeyFrame() {
+    ASSERT_TRUE(vpx_ctx_->file != NULL);
+    is_key_frame_ = false;
+    while(!is_key_frame_ && !end_of_file_) {
+      const int status = webm_read_frame(webm_ctx_, &buf_, &buf_sz_, &buf_sz_);
+      ASSERT_GE(status, 0) << "webm_read_frame failed";
+      is_key_frame_ = webm_ctx_->is_key_frame;
+      ++frame_;
+      ++skip_frame_;
+      if (status == 1) {
+        end_of_file_ = true;
+      }
     }
   }
 
@@ -82,6 +100,8 @@ class WebMVideoSource : public CompressedVideoSource {
   uint8_t *buf_;
   size_t buf_sz_;
   unsigned int frame_;
+  unsigned int skip_frame_;
+  bool is_key_frame_;
   bool end_of_file_;
 };
 
