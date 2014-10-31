@@ -450,7 +450,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
     specialize qw/vp9_iht8x8_64_add sse2 neon dspr2/;
 
     add_proto qw/void vp9_iht16x16_256_add/, "const tran_low_t *input, uint8_t *output, int pitch, int tx_type";
-    specialize qw/vp9_iht16x16_256_add sse2 dspr2/;
+    specialize qw/vp9_iht16x16_256_add sse2 dspr2 neon/;
 
     # dct and add
 
