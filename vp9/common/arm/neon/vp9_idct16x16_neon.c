@@ -29,8 +29,6 @@ void vp9_idct16x16_10_add_neon_pass2(const int16_t *src,
                                      int16_t skip_adding,
                                      uint8_t *dest,
                                      int dest_stride);
-
-#if HAVE_NEON_ASM
 // Performs ADST for a 8x16 buffer
 // This function should be called twice for full 16x16 transform
 // The output pointer *dest points to
@@ -43,6 +41,8 @@ void vp9_iadst16x16_256_add_neon_single_pass(const int16_t *src,
                                              void *dest,
                                              int dest_stride);
 
+
+#if HAVE_NEON_ASM
 /* For ARM NEON, d8-d15 are callee-saved registers, and need to be saved. */
 extern void vp9_push_neon(int64_t *store);
 extern void vp9_pop_neon(int64_t *store);
@@ -197,15 +197,16 @@ void vp9_idct16x16_10_add_neon(const int16_t *input,
   return;
 }
 
-#if HAVE_NEON_ASM
 void vp9_iht16x16_256_add_neon(const int16_t *input, uint8_t *dest,
                                int dest_stride, int type) {
-  int64_t store_reg[8];
   int16_t temp_buffer[16 * 16] = {0};
   int16_t row_iht_output[16 * 16] = {0};
+#if HAVE_NEON_ASM
+  int64_t store_reg[8];
 
   // save d8-d15 register values.
   vp9_push_neon  (store_reg);
+#endif
 
   // Row transformation
   if (type == DCT_ADST || type == ADST_ADST) {
@@ -300,9 +301,11 @@ void vp9_iht16x16_256_add_neon(const int16_t *input, uint8_t *dest,
                                      dest + 8,
                                      dest_stride);
   }
+
+#if HAVE_NEON_ASM
   // restore d8-d15 register values.
   vp9_pop_neon(store_reg);
+#endif
 
   return;
 }
-#endif  // HAVE_NEON_ASM
