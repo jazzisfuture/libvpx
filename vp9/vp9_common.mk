@@ -133,7 +133,6 @@ ifeq ($(ARCH_X86_64), yes)
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_idct_ssse3_x86_64.asm
 endif
 
-VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_iht16x16_add_neon$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_loopfilter_16_neon_asm$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_loopfilter_8_neon_asm$(ASM)
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_mb_lpf_neon$(ASM)
@@ -160,6 +159,7 @@ VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_1_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_1_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_add_neon_asm$(ASM)
+VP9_COMMON_SRCS-yes += common/arm/neon/vp9_iht16x16_add_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_loopfilter_4_neon_asm$(ASM)
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_reconintra_neon_asm$(ASM)
 else
@@ -178,6 +178,7 @@ VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_1_add_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct4x4_add_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_1_add_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_idct8x8_add_neon.c
+VP9_COMMON_SRCS-yes += common/arm/neon/vp9_iht16x16_add_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_loopfilter_16_neon.c
 VP9_COMMON_SRCS-yes += common/arm/neon/vp9_loopfilter_4_neon.c
 # TODO(johannkoenig): re-enable when chromium build is fixed
