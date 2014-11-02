@@ -271,6 +271,8 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     // This feature is only enabled when partition search is disabled.
     sf->reuse_inter_pred_sby = 1;
 
+    sf->mv.subpel_force_stop = 1;
+
     if (MIN(cm->width, cm->height) >= 720)
       sf->partition_search_breakout_dist_thr = (1 << 25);
     else
