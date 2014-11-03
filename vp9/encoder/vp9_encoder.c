@@ -566,6 +566,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cpi->framerate = oxcf->init_framerate;
 
   cm->profile = oxcf->profile;
+  cm->cm_type = VP9_ENCODER;
   cm->bit_depth = oxcf->bit_depth;
 #if CONFIG_VP9_HIGHBITDEPTH
   cm->use_highbitdepth = oxcf->use_highbitdepth;

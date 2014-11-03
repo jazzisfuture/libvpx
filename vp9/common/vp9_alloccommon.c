@@ -43,42 +43,33 @@ void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
 
 static void setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mi_stride + 1;
-  cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
-
   vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
-  clear_mi_border(cm, cm->prev_mip);
+
+  // Only VP9 encoder has prev_mi.
+  if (cm->cm_type == VP9_ENCODER) {
+    cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
+    clear_mi_border(cm, cm->prev_mip);
+  }
 }
 
 static int alloc_mi(VP9_COMMON *cm, int mi_size) {
-  int i;
+  cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
+  if (!cm->mip)
+    return 1;
 
-  for (i = 0; i < 2; ++i) {
-    cm->mip_array[i] =
-        (MODE_INFO *)vpx_calloc(mi_size, sizeof(MODE_INFO));
-    if (cm->mip_array[i] == NULL)
+  // Only allocate prev_mip for encoder.
+  if (cm->cm_type == VP9_ENCODER) {
+    cm->prev_mip = vpx_calloc(mi_size, sizeof(*cm->prev_mip));
+    if (!cm->prev_mip)
       return 1;
   }
-
   cm->mi_alloc_size = mi_size;
-
-  // Init the index.
-  cm->mi_idx = 0;
-  cm->prev_mi_idx = 1;
-
-  cm->mip = cm->mip_array[cm->mi_idx];
-  cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
-
   return 0;
 }
 
 static void free_mi(VP9_COMMON *cm) {
-  int i;
-
-  for (i = 0; i < 2; ++i) {
-    vpx_free(cm->mip_array[i]);
-    cm->mip_array[i] = NULL;
-  }
-
+  vpx_free(cm->mip);
+  vpx_free(cm->prev_mip);
   cm->mip = NULL;
   cm->prev_mip = NULL;
 }
@@ -210,14 +201,10 @@ void vp9_init_context_buffers(VP9_COMMON *cm) {
 }
 
 void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
-  // Swap indices.
-  const int tmp = cm->mi_idx;
-  cm->mi_idx = cm->prev_mi_idx;
-  cm->prev_mi_idx = tmp;
-
   // Current mip will be the prev_mip for the next frame.
-  cm->mip = cm->mip_array[cm->mi_idx];
-  cm->prev_mip = cm->mip_array[cm->prev_mi_idx];
+  MODE_INFO *temp = cm->prev_mip;
+  cm->prev_mip = cm->mip;
+  cm->mip = temp;
 
   // Update the upper left visible macroblock ptrs.
   cm->mi = cm->mip + cm->mi_stride + 1;

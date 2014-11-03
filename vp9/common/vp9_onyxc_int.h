@@ -70,6 +70,11 @@ typedef struct {
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
 
+typedef enum {
+  VP9_DECODER,
+  VP9_ENCODER
+} VP9COMMON_TYPE;
+
 typedef struct VP9Common {
   struct vpx_internal_error_info  error;
 
@@ -96,7 +101,7 @@ typedef struct VP9Common {
 #endif
 
   YV12_BUFFER_CONFIG *frame_to_show;
-
+  VP9COMMON_TYPE cm_type;
   RefCntBuffer frame_bufs[FRAME_BUFFERS];
   RefCntBuffer *prev_frame;
 
@@ -149,14 +154,11 @@ typedef struct VP9Common {
 
   /* We allocate a MODE_INFO struct for each macroblock, together with
      an extra row on top and column on the left to simplify prediction. */
-
-  int mi_idx;
-  int prev_mi_idx;
   int mi_alloc_size;
-  MODE_INFO *mip_array[2];
-
   MODE_INFO *mip; /* Base of allocated array */
   MODE_INFO *mi;  /* Corresponds to upper left visible macroblock */
+
+  // prev_mip and prev_mi will only be allocated in VP9 encoder.
   MODE_INFO *prev_mip; /* MODE_INFO array 'mip' from last decoded frame */
   MODE_INFO *prev_mi;  /* 'mi' from last frame (points into prev_mip) */
 
