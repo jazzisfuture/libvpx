@@ -266,8 +266,8 @@ static const vp9_prob default_single_ref_p[REF_CONTEXTS][2] = {
 
 static const struct tx_probs default_tx_probs = {
 #if CONFIG_TX64X64
-  { { 3, 3, 136, 37 },
-    { 3, 5, 52,  13 } },
+  { { 1, 3, 136, 48 },
+    { 1, 5, 52,  24 } },
 #endif
 
   { { 3, 136, 37 },
