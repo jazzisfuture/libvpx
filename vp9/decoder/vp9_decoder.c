@@ -73,6 +73,7 @@ VP9Decoder *vp9_decoder_create() {
   vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
 
   cm->current_video_frame = 0;
+  cm->cm_type = VP9_DECODER;
   pbi->ready_for_new_data = 1;
   cm->bit_depth = VPX_BITS_8;
   cm->dequant_bit_depth = VPX_BITS_8;
