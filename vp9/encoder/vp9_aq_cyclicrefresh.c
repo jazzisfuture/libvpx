@@ -135,15 +135,9 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
-  const int refresh_this_block = cpi->mb.in_static_area ||
-                                 candidate_refresh_aq(cr, mbmi, bsize, use_rd);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
   int x = 0; int y = 0;
-
-  // Check if we should reset the segment_id for this block.
-  if (mbmi->segment_id > 0 && !refresh_this_block)
-    mbmi->segment_id = 0;
 
   // Update the cyclic refresh map, to be used for setting segmentation map
   // for the next frame. If the block  will be refreshed this frame, mark it
@@ -151,15 +145,12 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   // it for refresh again.
   if (mbmi->segment_id == 1) {
     new_map_value = -cr->time_for_refresh;
-  } else if (refresh_this_block) {
+  } else {
     // Else if it is accepted as candidate for refresh, and has not already
     // been refreshed (marked as 1) then mark it as a candidate for cleanup
     // for future time (marked as 0), otherwise don't update it.
     if (cr->map[block_index] == 1)
       new_map_value = 0;
-  } else {
-    // Leave it marked as block that is not candidate for refresh.
-    new_map_value = 1;
   }
   // Update entries in the cyclic refresh map with new_map_value, and
   // copy mbmi->segment_id into global segmentation map.

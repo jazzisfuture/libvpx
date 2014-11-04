@@ -2601,7 +2601,7 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
   mbmi->sb_type = bsize;
 
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled)
-    if (mbmi->segment_id && x->in_static_area)
+    if (mbmi->segment_id)
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
 
   if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
@@ -3226,7 +3226,6 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO *mi = cm->mi + idx_str;
     BLOCK_SIZE bsize;
-    x->in_static_area = 0;
     x->source_variance = UINT_MAX;
     vp9_zero(x->pred_mv);
     vp9_rd_cost_init(&dummy_rdc);
@@ -3253,10 +3252,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
         break;
       case REFERENCE_PARTITION:
         set_offsets(cpi, tile_info, mi_row, mi_col, BLOCK_64X64);
-        x->in_static_area = is_background(cpi, tile_info, mi_row, mi_col);
-
         if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled &&
-            xd->mi[0].src_mi->mbmi.segment_id && x->in_static_area) {
+            xd->mi[0].src_mi->mbmi.segment_id) {
           auto_partition_range(cpi, tile_info, mi_row, mi_col,
                                &sf->min_partition_size,
                                &sf->max_partition_size);
