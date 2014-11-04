@@ -103,10 +103,7 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
     // 2) mode is non-zero mv and projected distortion is above thresh_dist
     // 3) mode is an intra-mode (we may want to allow some of this under
     // another thresh_dist)
-    else if (bsize < cr->min_block_size ||
-             (mbmi->mv[0].as_int != 0 &&
-              cr->projected_dist_sb > cr->thresh_dist_sb) ||
-             !is_inter_block(mbmi))
+    else if (!is_inter_block(mbmi))
       return 0;
     else
       return 1;
@@ -135,11 +132,13 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
-  const int refresh_this_block = cpi->mb.in_static_area ||
-                                 candidate_refresh_aq(cr, mbmi, bsize, use_rd);
+  const int refresh_this_block = candidate_refresh_aq(cr, mbmi, bsize, use_rd);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
   int x = 0; int y = 0;
+
+  if (refresh_this_block == 0)
+    candidate_refresh_aq(cr, mbmi, bsize, use_rd);
 
   // Check if we should reset the segment_id for this block.
   if (mbmi->segment_id > 0 && !refresh_this_block)
@@ -161,6 +160,7 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
     // Leave it marked as block that is not candidate for refresh.
     new_map_value = 1;
   }
+
   // Update entries in the cyclic refresh map with new_map_value, and
   // copy mbmi->segment_id into global segmentation map.
   for (y = 0; y < ymis; y++)
@@ -214,8 +214,8 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     if (cpi->sf.use_nonrd_pick_mode) {
       // May want to be more conservative with thresholds in non-rd mode for now
       // as rate/distortion are derived from model based on prediction residual.
-      cr->thresh_rate_sb = (rc->sb64_target_rate * 256) >> 3;
-      cr->thresh_dist_sb = 4 * (int)(q * q);
+      cr->thresh_rate_sb = (rc->sb64_target_rate * 256);
+      cr->thresh_dist_sb = 16 * (int)(q * q);
     }
 
     cr->num_seg_blocks = 0;
