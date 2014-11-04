@@ -60,6 +60,11 @@ class QuantizeTestBase {
     VP8_CONFIG *const vp8_config =
         reinterpret_cast<VP8_CONFIG *>(vpx_calloc(sizeof(*vp8_config), 1));
 
+    // Set some basic values to avoid divide-by-zero errors in the
+    // initialization.
+    vp8_config->timebase.den = 1;
+    vp8_config->timebase.num = 30;
+
     vp8_comp_ = vp8_create_compressor(vp8_config);
 
     // Set the tables based on a quantizer of 0.
@@ -71,7 +76,7 @@ class QuantizeTestBase {
     // Copy macroblockd from the reference to get pre-set-up dequant values.
     macroblockd_dst_ =
         reinterpret_cast<MACROBLOCKD *>(
-            vpx_calloc(sizeof(*macroblockd_dst_), 1));
+            vpx_memalign(32, sizeof(*macroblockd_dst_)));
     vpx_memcpy(macroblockd_dst_, &vp8_comp_->mb.e_mbd,
                sizeof(*macroblockd_dst_));
     // Fix block pointers - currently they point to the blocks in the reference
