@@ -86,41 +86,6 @@ static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
     return 1;
 }
 
-// Check if this coding block, of size bsize, should be considered for refresh
-// (lower-qp coding). Decision can be based on various factors, such as
-// size of the coding block (i.e., below min_block size rejected), coding
-// mode, and rate/distortion.
-static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
-                                const MB_MODE_INFO *mbmi,
-                                BLOCK_SIZE bsize, int use_rd) {
-  if (use_rd) {
-    // If projected rate is below the thresh_rate (well below target,
-    // so undershoot expected), accept it for lower-qp coding.
-    if (cr->projected_rate_sb < cr->thresh_rate_sb)
-      return 1;
-    // Otherwise, reject the block for lower-qp coding if any of the following:
-    // 1) prediction block size is below min_block_size
-    // 2) mode is non-zero mv and projected distortion is above thresh_dist
-    // 3) mode is an intra-mode (we may want to allow some of this under
-    // another thresh_dist)
-    else if (bsize < cr->min_block_size ||
-             (mbmi->mv[0].as_int != 0 &&
-              cr->projected_dist_sb > cr->thresh_dist_sb) ||
-             !is_inter_block(mbmi))
-      return 0;
-    else
-      return 1;
-  } else {
-    // Rate/distortion not used for update.
-    if (bsize < cr->min_block_size ||
-        mbmi->mv[0].as_int != 0 ||
-        !is_inter_block(mbmi))
-      return 0;
-    else
-      return 1;
-  }
-}
-
 // Prior to coding a given prediction block, of size bsize at (mi_row, mi_col),
 // check if we should reset the segment_id, and update the cyclic_refresh map
 // and segmentation map.
