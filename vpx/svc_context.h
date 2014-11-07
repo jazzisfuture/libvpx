@@ -29,7 +29,7 @@ typedef enum SVC_LOG_LEVEL {
   SVC_LOG_DEBUG
 } SVC_LOG_LEVEL;
 
-typedef struct {
+typedef struct SvcContext{
   // public interface to svc_command options
   int spatial_layers;               // number of spatial layers
   int temporal_layers;               // number of temporal layers
@@ -39,7 +39,37 @@ typedef struct {
 
   // private storage for vpx_svc_encode
   void *internal;
-} SvcContext;
+} SvcContext_t;
+
+#define OPTION_BUFFER_SIZE 1024
+#define COMPONENTS 4  // psnr & sse statistics maintained for total, y, u, v
+
+typedef struct SvcInternal {
+  char options[OPTION_BUFFER_SIZE];        // set by vpx_svc_set_options
+
+  // values extracted from option, quantizers
+  vpx_svc_extra_cfg_t svc_params;
+  int enable_auto_alt_ref[VPX_SS_MAX_LAYERS];
+  int bitrates[VPX_SS_MAX_LAYERS];
+
+  // accumulated statistics
+  double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];   // total/Y/U/V
+  uint64_t sse_sum[VPX_SS_MAX_LAYERS][COMPONENTS];
+  uint32_t bytes_sum[VPX_SS_MAX_LAYERS];
+
+  // codec encoding values
+  int width;    // width of highest layer
+  int height;   // height of highest layer
+  int kf_dist;  // distance between keyframes
+
+  // state variables
+  int psnr_pkt_received;
+  int layer;
+  int use_multiple_frame_contexts;
+
+  char message_buffer[2048];
+  vpx_codec_ctx_t *codec_ctx;
+} SvcInternal_t;
 
 /**
  * Set SVC options

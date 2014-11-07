@@ -44,8 +44,6 @@ _CRTIMP char *__cdecl strtok_s(char *str, const char *delim, char **context);
 #define SVC_REFERENCE_FRAMES 8
 #define SUPERFRAME_SLOTS (8)
 #define SUPERFRAME_BUFFER_SIZE (SUPERFRAME_SLOTS * sizeof(uint32_t) + 2)
-#define OPTION_BUFFER_SIZE 1024
-#define COMPONENTS 4  // psnr & sse statistics maintained for total, y, u, v
 
 #define MAX_QUANTIZER 63
 
@@ -80,33 +78,6 @@ typedef struct FrameData {
   vpx_codec_frame_flags_t   flags;    /**< flags for this frame */
   struct FrameData         *next;
 } FrameData;
-
-typedef struct SvcInternal {
-  char options[OPTION_BUFFER_SIZE];        // set by vpx_svc_set_options
-
-  // values extracted from option, quantizers
-  vpx_svc_extra_cfg_t svc_params;
-  int enable_auto_alt_ref[VPX_SS_MAX_LAYERS];
-  int bitrates[VPX_SS_MAX_LAYERS];
-
-  // accumulated statistics
-  double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];   // total/Y/U/V
-  uint64_t sse_sum[VPX_SS_MAX_LAYERS][COMPONENTS];
-  uint32_t bytes_sum[VPX_SS_MAX_LAYERS];
-
-  // codec encoding values
-  int width;    // width of highest layer
-  int height;   // height of highest layer
-  int kf_dist;  // distance between keyframes
-
-  // state variables
-  int psnr_pkt_received;
-  int layer;
-  int use_multiple_frame_contexts;
-
-  char message_buffer[2048];
-  vpx_codec_ctx_t *codec_ctx;
-} SvcInternal;
 
 static SvcInternal *get_svc_internal(SvcContext *svc_ctx) {
   if (svc_ctx == NULL) return NULL;
