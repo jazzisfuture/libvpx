@@ -441,7 +441,8 @@ static void estimate_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
   vp9_predict_intra_block(xd, block >> (2 * tx_size),
                           b_width_log2_lookup[plane_bsize],
                           tx_size, args->mode,
-                          p->src.buf, src_stride,
+                          (x->skip_encode ? p->src.buf : pd->dst.buf),
+                          (x->skip_encode ? src_stride : dst_stride),
                           pd->dst.buf, dst_stride,
                           i, j, 0);
   // This procedure assumes zero offset from p->src.buf and pd->dst.buf.
@@ -822,14 +823,18 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       pd->dst.stride = bw;
     }
 
-    for (this_mode = DC_PRED; this_mode <= DC_PRED; ++this_mode) {
+    for (this_mode = DC_PRED; this_mode <= H_PRED; ++this_mode) {
       const TX_SIZE saved_tx_size = mbmi->tx_size;
       args.mode = this_mode;
       args.rate = 0;
       args.dist = 0;
       mbmi->tx_size = intra_tx_size;
+      mbmi->mode = this_mode;
+      mbmi->ref_frame[0] = INTRA_FRAME;
+
       vp9_foreach_transformed_block_in_plane(xd, bsize, 0,
                                              estimate_block_intra, &args);
+
       mbmi->tx_size = saved_tx_size;
       this_rdc.rate = args.rate;
       this_rdc.dist = args.dist;
@@ -845,6 +850,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->ref_frame[0] = INTRA_FRAME;
         mbmi->uv_mode = this_mode;
         mbmi->mv[0].as_int = INVALID_MV;
+        best_mode = this_mode;
+        best_ref_frame = INTRA_FRAME;
       } else {
         x->skip_txfm[0] = skip_txfm;
       }
@@ -852,6 +859,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     if (reuse_inter_pred)
       pd->dst = orig_dst;
   }
+
+  mbmi->mode = best_mode;
+  mbmi->ref_frame[0] = best_ref_frame;
 
   if (is_inter_block(mbmi))
     vp9_update_rd_thresh_fact(tile_data->thresh_freq_fact,

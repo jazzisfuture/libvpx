@@ -646,11 +646,11 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
 
   // TODO(jingning): per transformed block zero forcing only enabled for
   // luma component. will integrate chroma components as well.
-  if (x->zcoeff_blk[tx_size][block] && plane == 0) {
-    p->eobs[block] = 0;
-    *a = *l = 0;
-    return;
-  }
+//  if (x->zcoeff_blk[tx_size][block] && plane == 0) {
+//    p->eobs[block] = 0;
+//    *a = *l = 0;
+//    return;
+//  }
 
   if (!x->skip_recode) {
     if (max_txsize_lookup[plane_bsize] == tx_size) {
