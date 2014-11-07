@@ -1488,7 +1488,7 @@ const ConvolveFunctions convolve8_sse2(
     wrap_convolve8_horiz_sse2_8, wrap_convolve8_avg_horiz_sse2_8,
     wrap_convolve8_vert_sse2_8, wrap_convolve8_avg_vert_sse2_8,
     wrap_convolve8_sse2_8, wrap_convolve8_avg_sse2_8, 8);
-INSTANTIATE_TEST_CASE_P(SSE2_8, ConvolveTest, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(SSE2, ConvolveTest, ::testing::Values(
     make_tuple(4, 4, &convolve8_sse2),
     make_tuple(8, 4, &convolve8_sse2),
     make_tuple(4, 8, &convolve8_sse2),
@@ -1506,7 +1506,7 @@ const ConvolveFunctions convolve10_sse2(
     wrap_convolve8_horiz_sse2_10, wrap_convolve8_avg_horiz_sse2_10,
     wrap_convolve8_vert_sse2_10, wrap_convolve8_avg_vert_sse2_10,
     wrap_convolve8_sse2_10, wrap_convolve8_avg_sse2_10, 10);
-INSTANTIATE_TEST_CASE_P(SSE2_10, ConvolveTest, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(SSE2, ConvolveTest, ::testing::Values(
     make_tuple(4, 4, &convolve10_sse2),
     make_tuple(8, 4, &convolve10_sse2),
     make_tuple(4, 8, &convolve10_sse2),
@@ -1524,7 +1524,7 @@ const ConvolveFunctions convolve12_sse2(
     wrap_convolve8_horiz_sse2_12, wrap_convolve8_avg_horiz_sse2_12,
     wrap_convolve8_vert_sse2_12, wrap_convolve8_avg_vert_sse2_12,
     wrap_convolve8_sse2_12, wrap_convolve8_avg_sse2_12, 12);
-INSTANTIATE_TEST_CASE_P(SSE2_12, ConvolveTest, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(SSE2, ConvolveTest, ::testing::Values(
     make_tuple(4, 4, &convolve12_sse2),
     make_tuple(8, 4, &convolve12_sse2),
     make_tuple(4, 8, &convolve12_sse2),
