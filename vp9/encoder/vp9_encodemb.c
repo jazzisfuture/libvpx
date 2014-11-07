@@ -592,6 +592,9 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
   const int diff_stride = 4 * num_4x4_blocks_wide_lookup[plane_bsize];
   int i, j;
   const int16_t *src_diff;
+#if CONFIG_EXT_TX
+  MB_MODE_INFO *mbmi = &xd->mi[0].mbmi;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   src_diff = &p->src_diff[4 * (j * diff_stride + i)];
 
@@ -660,21 +663,45 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
                            scan_order->iscan);
       break;
     case TX_16X16:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       vp9_fdct16x16(src_diff, coeff, diff_stride);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_fht16x16(src_diff, coeff, diff_stride, ADST_ADST);
+      }
+#endif
       vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       vp9_fdct8x8(src_diff, coeff, diff_stride);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_fht8x8(src_diff, coeff, diff_stride, ADST_ADST);
+      }
+#endif
       vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
                      scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_fht4x4(src_diff, coeff, diff_stride, ADST_ADST);
+      }
+#endif
       vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                      p->quant, p->quant_shift, qcoeff, dqcoeff,
                      pd->dequant, p->zbin_extra, eob,
@@ -698,6 +725,9 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
   int i, j;
   uint8_t *dst;
   ENTROPY_CONTEXT *a, *l;
+#if CONFIG_EXT_TX
+  MB_MODE_INFO *mbmi = &xd->mi[0].mbmi;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
   a = &ctx->ta[plane][i];
@@ -793,16 +823,43 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
       vp9_idct32x32_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
       break;
     case TX_16X16:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       vp9_idct16x16_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_iht16x16_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
+                         p->eobs[block]);
+      }
+#endif
       break;
     case TX_8X8:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       vp9_idct8x8_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_iht8x8_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
+                       p->eobs[block]);
+      }
+#endif
       break;
     case TX_4X4:
+#if CONFIG_EXT_TX
+      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+#endif
       // this is like vp9_short_idct4x4 but has a special case around eob<=1
       // which is significant (not just an optimization) for the lossless
       // case.
       x->itxm_add(dqcoeff, dst, pd->dst.stride, p->eobs[block]);
+#if CONFIG_EXT_TX
+      } else {
+        vp9_iht4x4_add(ADST_ADST, dqcoeff, dst, pd->dst.stride,
+                       p->eobs[block]);
+      }
+#endif
       break;
     default:
       assert(0 && "Invalid transform size");
@@ -819,6 +876,10 @@ static void encode_block_pass1(int plane, int block, BLOCK_SIZE plane_bsize,
   tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
   int i, j;
   uint8_t *dst;
+#if CONFIG_EXT_TX
+  MB_MODE_INFO *mbmi = &xd->mi[0].mbmi;
+  mbmi->ext_txfrm = NORM;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &i, &j);
   dst = &pd->dst.buf[4 * j * pd->dst.stride + 4 * i];
 

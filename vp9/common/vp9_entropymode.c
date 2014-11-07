@@ -13,6 +13,10 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_EXT_TX
+static const vp9_prob default_ext_tx_prob = 178;
+#endif
+
 const vp9_prob vp9_kf_y_mode_prob[INTRA_MODES][INTRA_MODES][INTRA_MODES - 1] = {
   {  // above = dc
     { 137,  30,  42, 148, 151, 207,  70,  52,  91 },  // left = dc
@@ -351,6 +355,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_EXT_TX
+  fc->ext_tx_prob = default_ext_tx_prob;
+#endif
 }
 
 const vp9_tree_index vp9_switchable_interp_tree
@@ -450,6 +457,10 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
 
   for (i = 0; i < SKIP_CONTEXTS; ++i)
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
+
+#if CONFIG_EXT_TX
+  fc->ext_tx_prob = adapt_prob(pre_fc->ext_tx_prob, counts->ext_tx);
+#endif
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
