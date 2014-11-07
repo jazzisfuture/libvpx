@@ -1458,7 +1458,8 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 #if CONFIG_INTERNAL_STATS
   cpi->b_calculate_ssimg = 0;
   cpi->b_calculate_blockiness = 1;
-
+  cpi->b_calculate_consistency = 1;
+  cpi->total_inconsistency = 0;
 
   cpi->count = 0;
   cpi->bytes = 0;
@@ -1494,6 +1495,10 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   if (cpi->b_calculate_blockiness) {
     cpi->total_blockiness = 0;
+  }
+
+  if (cpi->b_calculate_consistency) {
+    cpi->ssim_vars = vpx_malloc(sizeof(*cpi->ssim_vars)*720*480);
   }
 
 #endif
@@ -1726,18 +1731,25 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
             vpx_sse_to_psnr((double)cpi->totalp_samples, peak,
                             (double)cpi->totalp_sq_error);
         const double total_ssim = 100 * pow(cpi->summed_quality /
-                                                cpi->summed_weights, 8.0);
+                                            cpi->summed_weights, 8.0);
         const double totalp_ssim = 100 * pow(cpi->summedp_quality /
-                                                cpi->summedp_weights, 8.0);
+                                             cpi->summedp_weights, 8.0);
 
         if (cpi->b_calculate_blockiness) {
+          double consistency = 0.0;
+          if (cpi->b_calculate_consistency) {
+            consistency =
+                vpx_sse_to_psnr((double)cpi->totalp_samples, peak,
+                                (double)cpi->total_inconsistency);
+          }
           fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
-                  "VPXSSIM\tVPSSIMP\tBlockiness  Time(ms)\n");
+                  "VPXSSIM\tVPSSIMP\tBlockiness\tConsistency Time(ms)\n");
           fprintf(f, "%7.2f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t%7.3f\t"
-                  "%7.3f\t%7.3f%8.0f\n",
+                  "%7.3f\t%7.3f%7.3f\t%8.0f\n",
                   dr, cpi->total / cpi->count, total_psnr,
                   cpi->totalp / cpi->count, totalp_psnr, total_ssim,
                   totalp_ssim, cpi->total_blockiness / cpi->count,
+                  consistency,
                   total_encode_time);
         } else {
           fprintf(f, "Bitrate\tAVGPsnr\tGLBPsnr\tAVPsnrP\tGLPsnrP\t"
@@ -3776,6 +3788,16 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                cm->frame_to_show->y_buffer,
                                cm->frame_to_show->y_stride,
                                cpi->Source->y_width, cpi->Source->y_height);
+
+      if (cpi->b_calculate_consistency)
+        cpi->total_inconsistency += vp9_get_ssim_metrics(cpi->Source->y_buffer,
+                                                   cpi->Source->y_stride,
+                                                   cm->frame_to_show->y_buffer,
+                                                   cm->frame_to_show->y_stride,
+                                                   cpi->Source->y_width,
+                                                   cpi->Source->y_height,
+                                                   cpi->ssim_vars,
+                                                   &cpi->metrics, 1);
 
       if (cpi->b_calculate_ssimg) {
         double y, u, v, frame_all;
