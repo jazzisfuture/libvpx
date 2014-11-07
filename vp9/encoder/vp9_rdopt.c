@@ -2808,6 +2808,37 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t sseuv = INT64_MAX;
     int64_t rdcosty = INT64_MAX;
 
+#if CONFIG_EXT_TX
+    int64_t rdcost_tx;
+    int rate_y_tx;
+    int64_t distortion_y_tx;
+    int dummy;
+    int64_t best_rdcost_tx = INT64_MAX;
+    int best_ext_tx = NORM;
+    double th = 0.97;
+
+    for (i = 0; i < EXT_TX_TYPES; i++) {
+      mbmi->ext_txfrm = i;
+      super_block_yrd(cpi, x, &rate_y_tx, &distortion_y_tx, &dummy, psse,
+                            bsize, txfm_cache, INT64_MAX);
+      assert(rate_y_tx != INT_MAX);
+      if (mbmi->tx_size < TX_32X32)
+        rate_y_tx += vp9_cost_bit(cm->fc.ext_tx_prob, i);
+      assert(rate_y_tx >= 0);
+      rdcost_tx = RDCOST(x->rdmult, x->rddiv, rate_y_tx, distortion_y_tx);
+      rdcost_tx = MIN(rdcost_tx, RDCOST(x->rdmult, x->rddiv, 0, *psse));
+      assert(rdcost_tx >= 0);
+      if (rdcost_tx < best_rdcost_tx * th) {
+        best_ext_tx = i;
+        best_rdcost_tx = rdcost_tx;
+      }
+    }
+    if (mbmi->tx_size >= TX_32X32)
+      mbmi->ext_txfrm = NORM;
+    else
+      mbmi->ext_txfrm = best_ext_tx;
+#endif
+
     // Y cost and distortion
     vp9_subtract_plane(x, bsize, 0);
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
@@ -2821,6 +2852,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     *rate2 += *rate_y;
+#if CONFIG_EXT_TX
+    if (mbmi->tx_size < TX_32X32)
+      *rate2 += vp9_cost_bit(cm->fc.ext_tx_prob, mbmi->ext_txfrm);
+#endif
     *distortion += distortion_y;
 
     rdcosty = RDCOST(x->rdmult, x->rddiv, *rate2, *distortion);
@@ -3307,6 +3342,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_FILTERINTRA
       mbmi->filterbit = 0;
 #endif
+#if CONFIG_EXT_TX
+      mbmi->ext_txfrm = NORM;
+#endif
       struct macroblockd_plane *const pd = &xd->plane[1];
       vpx_memset(x->skip_txfm, 0, sizeof(x->skip_txfm));
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable,
@@ -3378,6 +3416,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         rate2 += intra_cost_penalty;
       distortion2 = distortion_y + distortion_uv;
     } else {
+#if CONFIG_EXT_TX
+      mbmi->ext_txfrm = NORM;
+#endif
       this_rd = handle_inter_mode(cpi, x, bsize,
                                   tx_cache,
                                   &rate2, &distortion2, &skippable,
@@ -3831,6 +3872,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
   b_mode_info best_bmodes[4];
   int best_skip2 = 0;
   int ref_frame_skip_mask[2] = { 0 };
+#if CONFIG_EXT_TX
+  mbmi->ext_txfrm = NORM;
+#endif
 
   x->skip_encode = sf->skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
   vpx_memset(x->zcoeff_blk[TX_4X4], 0, 4);
@@ -3987,6 +4031,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
 
     if (ref_frame == INTRA_FRAME) {
       int rate;
+#if CONFIG_EXT_TX
+      mbmi->ext_txfrm = NORM;
+#endif
       if (rd_pick_intra_sub_8x8_y_mode(cpi, x, &rate, &rate_y,
                                        &distortion_y, best_rd) >= best_rd)
         continue;
