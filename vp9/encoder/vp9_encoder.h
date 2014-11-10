@@ -354,10 +354,13 @@ typedef struct VP9_COMP {
   double totalp_u;
   double totalp_v;
   double totalp;
+  double worst_psnr;
+
   uint64_t totalp_sq_error;
   uint64_t totalp_samples;
 
   double total_blockiness;
+  double worst_blockiness;
 
   int    bytes;
   double summed_quality;
@@ -376,6 +379,7 @@ typedef struct VP9_COMP {
   int b_calculate_blockiness;
   int b_calculate_consistency;
   double total_inconsistency;
+  double worst_consistency;
   Ssimv *ssim_vars;
   Metrics metrics;
 #endif
