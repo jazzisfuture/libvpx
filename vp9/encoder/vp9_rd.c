@@ -591,7 +591,6 @@ void vp9_set_rd_speed_thresholds(VP9_COMP *cpi) {
 }
 
 void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
-  const SPEED_FEATURES *const sf = &cpi->sf;
   RD_OPT *const rd = &cpi->rd;
   int i;
 
@@ -604,11 +603,6 @@ void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
   rd->thresh_mult_sub8x8[THR_INTRA] += 2500;
   rd->thresh_mult_sub8x8[THR_COMP_LA] += 4500;
   rd->thresh_mult_sub8x8[THR_COMP_GA] += 4500;
-
-  // Check for masked out split cases.
-  for (i = 0; i < MAX_REFS; ++i)
-    if (sf->disable_split_mask & (1 << i))
-      rd->thresh_mult_sub8x8[i] = INT_MAX;
 }
 
 int vp9_get_intra_cost_penalty(int qindex, int qdelta,
