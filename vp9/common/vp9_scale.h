@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define REF_SCALE_SHIFT 14
 #define REF_NO_SCALE (1 << REF_SCALE_SHIFT)
@@ -34,7 +34,7 @@ struct scale_factors {
   convolve_fn_t predict[2][2][2];  // horiz, vert, avg
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_convolve_fn_t highbd_predict[2][2][2];  // horiz, vert, avg
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 
 MV32 vp9_scale_mv(const MV *mv, int x, int y, const struct scale_factors *sf);
@@ -44,11 +44,11 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h,
                                        int use_high);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static INLINE int vp9_is_valid_scale(const struct scale_factors *sf) {
   return sf->x_scale_fp != REF_INVALID_SCALE &&
@@ -70,6 +70,6 @@ static INLINE int valid_ref_frame_size(int ref_width, int ref_height,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_SCALE_H_

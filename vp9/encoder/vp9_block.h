@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct {
   unsigned int sse;
@@ -120,11 +120,11 @@ struct macroblock {
 #if CONFIG_VP9_HIGHBITDEPTH
   void (*highbd_itxm_add)(const tran_low_t *input, uint8_t *dest, int stride,
                           int eob, int bd);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_BLOCK_H_

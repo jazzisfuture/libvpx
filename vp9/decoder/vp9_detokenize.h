@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                             int plane, int block, BLOCK_SIZE plane_bsize,
@@ -25,6 +25,6 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_DETOKENIZE_H_

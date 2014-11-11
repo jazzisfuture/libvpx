@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 extern const int b_width_log2_lookup[BLOCK_SIZES];
 extern const int b_height_log2_lookup[BLOCK_SIZES];
@@ -35,6 +35,6 @@ extern const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES][2][2];
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_COMMON_DATA_H_

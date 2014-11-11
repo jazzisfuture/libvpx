@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MINQ 0
 #define MAXQ 255
@@ -31,6 +31,6 @@ int vp9_get_qindex(const struct segmentation *seg, int segment_id,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_QUANT_COMMON_H_

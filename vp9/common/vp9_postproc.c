@@ -21,7 +21,7 @@
 
 #if CONFIG_VP9_HIGHBITDEPTH
 #include "vp9/common/vp9_common.h"
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_postproc.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -435,7 +435,7 @@ static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG   *source,
                                   source->uv_stride, post->uv_stride,
                                   source->uv_height, source->uv_width, ppl);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   vp9_post_proc_down_and_across(source->y_buffer, post->y_buffer,
                                 source->y_stride, post->y_stride,
                                 source->y_height, source->y_width, ppl);
@@ -483,7 +483,7 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
                                     src_strides[i], dst_strides[i],
                                     src_heights[i], src_widths[i], ppl);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_post_proc_down_and_across(srcs[i], dsts[i],
                                   src_strides[i], dst_strides[i],
                                   src_heights[i], src_widths[i], ppl);
@@ -527,12 +527,12 @@ void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
       vp9_post_proc_down_and_across(src, dst, src_stride, dst_stride,
                                     src_height, src_width, ppl);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     const uint8_t *const src = srcs[i] + 2 * src_stride + 2;
     uint8_t *const dst = dsts[i] + 2 * dst_stride + 2;
     vp9_post_proc_down_and_across(src, dst, src_stride, dst_stride,
                                   src_height, src_width, ppl);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 }
 
@@ -638,11 +638,11 @@ int vp9_post_proc_frame(struct VP9Common *cm,
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_DEC_BORDER_IN_PIXELS, NULL, NULL, NULL) < 0)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate post-processing buffer");
-#endif
+#endif  // CONFIG_VP9_POSTPROC || CONFIG_INTERNAL_STATS
 
   if (flags & VP9D_DEMACROBLOCK) {
     deblock_and_de_macro_block(cm->frame_to_show, ppbuf,
@@ -675,4 +675,4 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   return 0;
 }
-#endif
+#endif  // CONFIG_VP9_POSTPROC

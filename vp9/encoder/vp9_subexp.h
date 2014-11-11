@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_write_prob_diff_update(vp9_writer *w,
                                 vp9_prob newp, vp9_prob oldp);
@@ -34,6 +34,6 @@ int vp9_prob_diff_update_savings_search_model(const unsigned int *ct,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_SUBEXP_H_

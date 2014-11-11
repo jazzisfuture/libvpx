@@ -22,7 +22,7 @@
 #include "vp9/common/vp9_idct.h"
 #if CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_postproc.h"
-#endif
+#endif  // CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -45,7 +45,7 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #if CONFIG_INTERNAL_STATS
 #include "vp9/encoder/vp9_ssim.h"
-#endif
+#endif  // CONFIG_INTERNAL_STATS
 #include "vp9/encoder/vp9_temporal_filter.h"
 #include "vp9/encoder/vp9_resize.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
@@ -65,16 +65,16 @@ void vp9_coef_tree_initialize();
 
 #ifdef OUTPUT_YUV_DENOISED
 FILE *yuv_denoised_file = NULL;
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
 #ifdef OUTPUT_YUV_REC
 FILE *yuv_rec_file;
-#endif
+#endif  // def OUTPUT_YUV_REC
 
 #if 0
 FILE *framepsnr;
 FILE *kf_list;
 FILE *keyfile;
-#endif
+#endif  // 0
 
 static INLINE void Scale2Ratio(VPX_SCALING mode, int *hr, int *hs) {
   switch (mode) {
@@ -481,7 +481,7 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                                       cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                       cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                       oxcf->lag_in_frames);
   if (!cpi->lookahead)
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
@@ -492,7 +492,7 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate altref buffer");
@@ -512,7 +512,7 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate last frame buffer");
@@ -522,7 +522,7 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled source buffer");
@@ -532,7 +532,7 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
@@ -567,7 +567,7 @@ static void update_frame_size(VP9_COMP *cpi) {
                                  cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                  cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                  VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to reallocate alt_ref_buffer");
@@ -606,7 +606,7 @@ static void init_config(struct VP9_COMP *cpi, VP9EncoderConfig *oxcf) {
   cm->bit_depth = oxcf->bit_depth;
 #if CONFIG_VP9_HIGHBITDEPTH
   cm->use_highbitdepth = oxcf->use_highbitdepth;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   cm->color_space = UNKNOWN;
 
   cm->width = oxcf->width;
@@ -1334,7 +1334,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   // Experimental RD Code
   cpi->frame_distortion = 0;
   cpi->last_frame_distortion = 0;
-#endif
+#endif  // 0
 
   set_tile_limits(cpi);
 
@@ -1343,7 +1343,7 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
@@ -1351,15 +1351,15 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
                        cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                        cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                        VP9_ENC_BORDER_IN_PIXELS);
   }
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 }
 
 #ifndef M_LOG2_E
 #define M_LOG2_E 0.693147180559945309417
-#endif
+#endif  // NOT def M_LOG2_E
 #define log2f(x) (log (x) / (float) M_LOG2_E)
 
 static void cal_nmvjointsadcost(int *mvjointsadcost) {
@@ -1486,7 +1486,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   } else {
     cpi->twopass.frame_mb_stats_buf = NULL;
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   cpi->refresh_alt_ref_frame = 0;
   cpi->multi_arf_last_grp_enabled = 0;
@@ -1527,7 +1527,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
     cpi->total_ssimg_all = 0;
   }
 
-#endif
+#endif  // CONFIG_INTERNAL_STATS
 
   cpi->first_time_stamp_ever = INT64_MAX;
 
@@ -1547,16 +1547,16 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #ifdef OUTPUT_YUV_DENOISED
   yuv_denoised_file = fopen("denoised.yuv", "ab");
-#endif
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 #ifdef OUTPUT_YUV_REC
   yuv_rec_file = fopen("rec.yuv", "wb");
-#endif
+#endif  // def OUTPUT_YUV_REC
 
 #if 0
   framepsnr = fopen("framepsnr.stt", "a");
   kf_list = fopen("kf_list.stt", "w");
-#endif
+#endif  // 0
 
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
 
@@ -1615,7 +1615,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
             cpi->twopass.firstpass_mb_stats.mb_stats_start +
             (ps - 1) * cpi->common.MBs * sizeof(uint8_t);
       }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
       cpi->twopass.stats_in_start = oxcf->two_pass_stats_in.buf;
       cpi->twopass.stats_in = cpi->twopass.stats_in_start;
@@ -1712,7 +1712,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   /* vp9_init_quantizer() is first called here. Add check in
    * vp9_frame_init_quantizer() so that vp9_init_quantizer is only
@@ -1783,7 +1783,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
       fclose(f);
     }
 
-#endif
+#endif  // CONFIG_INTERNAL_STATS
 
 #if 0
     {
@@ -1794,14 +1794,14 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
              cpi->time_compress_data / 1000,
              (cpi->time_receive_data + cpi->time_compress_data) / 1000);
     }
-#endif
+#endif  // 0
   }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
     vp9_denoiser_free(&(cpi->denoiser));
   }
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
   dealloc_compressor_data(cpi);
   vpx_free(cpi->tok);
@@ -1816,7 +1816,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
     vpx_free(cpi->twopass.frame_mb_stats_buf);
     cpi->twopass.frame_mb_stats_buf = NULL;
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   vp9_remove_common(cm);
   vpx_free(cpi);
@@ -1824,11 +1824,11 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #ifdef OUTPUT_YUV_DENOISED
   fclose(yuv_denoised_file);
-#endif
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 #ifdef OUTPUT_YUV_REC
   fclose(yuv_rec_file);
-#endif
+#endif  // def OUTPUT_YUV_REC
 
 #if 0
 
@@ -1841,7 +1841,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
   if (kf_list)
     fclose(kf_list);
 
-#endif
+#endif  // 0
 }
 
 static int64_t get_sse(const uint8_t *a, int a_stride,
@@ -2041,9 +2041,9 @@ static void generate_psnr_packet(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
   calc_highbd_psnr(cpi->Source, cpi->common.frame_to_show, &psnr,
                    cpi->mb.e_mbd.bd, cpi->oxcf.input_bit_depth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   calc_psnr(cpi->Source, cpi->common.frame_to_show, &psnr);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   for (i = 0; i < 4; ++i) {
     pkt.data.psnr.samples[i] = psnr.samples[i];
@@ -2144,8 +2144,8 @@ void vp9_write_yuv_frame_420(YV12_BUFFER_CONFIG *s, FILE *f) {
     src += s->uv_stride + s->uv_width / 2;
   } while (--h);
 }
-#endif
-#endif
+#endif  // defined(OUTPUT_YUV_DENOISED)
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
 #ifdef OUTPUT_YUV_REC
 void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
@@ -2206,13 +2206,13 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
 
   fflush(yuv_rec_file);
 }
-#endif
+#endif  // def OUTPUT_YUV_REC
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
                                                 YV12_BUFFER_CONFIG *dst,
                                                 int bd) {
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
                                                 YV12_BUFFER_CONFIG *dst) {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -2241,7 +2241,7 @@ static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
       vp9_resize_plane(srcs[i], src_heights[i], src_widths[i], src_strides[i],
                        dsts[i], dst_heights[i], dst_widths[i], dst_strides[i]);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_resize_plane(srcs[i], src_heights[i], src_widths[i], src_strides[i],
                      dsts[i], dst_heights[i], dst_widths[i], dst_strides[i]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -2252,7 +2252,7 @@ static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
 #if CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                                    YV12_BUFFER_CONFIG *dst, int bd) {
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                                    YV12_BUFFER_CONFIG *dst) {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -2291,7 +2291,7 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
                         kernel[y_q4 & 0xf], 16 * src_h / dst_h,
                         16 / factor, 16 / factor);
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         vp9_convolve8(src_ptr, src_stride, dst_ptr, dst_stride,
                       kernel[x_q4 & 0xf], 16 * src_w / dst_w,
                       kernel[y_q4 & 0xf], 16 * src_h / dst_h,
@@ -2419,7 +2419,7 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
                                    cpi->refresh_golden_frame,
                                    cpi->refresh_last_frame);
   }
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 }
 
 static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
@@ -2469,7 +2469,7 @@ void vp9_scale_references(VP9_COMP *cpi) {
                                  VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
         scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf,
                                (int)cm->bit_depth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       if (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height) {
         const int new_fb = get_free_fb(cm);
         vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
@@ -2590,7 +2590,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
     fclose(fmodes);
   }
 }
-#endif
+#endif  // 0 && CONFIG_INTERNAL_STATS
 
 static void set_mv_search_params(VP9_COMP *cpi) {
   const VP9_COMMON *const cm = &cpi->common;
@@ -2717,7 +2717,7 @@ void set_frame_size(VP9_COMP *cpi) {
                            cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                            cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                            VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
 
   alloc_util_frame_buffers(cpi);
@@ -2735,7 +2735,7 @@ void set_frame_size(VP9_COMP *cpi) {
                                       cm->width, cm->height,
                                       (buf->flags & YV12_FLAG_HIGHBITDEPTH) ?
                                           1 : 0);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_setup_scale_factors_for_frame(&ref_buf->sf,
                                       buf->y_crop_width, buf->y_crop_height,
                                       cm->width, cm->height);
@@ -2884,7 +2884,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         } else {
           kf_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         kf_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3009,7 +3009,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
 #if CONFIG_INTERNAL_STATS
       cpi->tot_recode_hits++;
-#endif
+#endif  // CONFIG_INTERNAL_STATS
     }
   } while (loop);
 }
@@ -3062,7 +3062,7 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(VP9_COMMON *cm,
       cm->mi_rows * MI_SIZE != unscaled->y_height) {
 #if CONFIG_VP9_HIGHBITDEPTH
     scale_and_extend_frame_nonnormative(unscaled, scaled, (int)cm->bit_depth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     scale_and_extend_frame_nonnormative(unscaled, scaled);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return scaled;
@@ -3222,7 +3222,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     for (i = 0; i < MAX_MODES; ++i)
       cpi->mode_chosen_counts[i] = 0;
   }
-#endif
+#endif  // CONFIG_INTERNAL_STATS
 
   if (cpi->sf.recode_loop == DISALLOW_RECODE) {
     encode_without_recode_loop(cpi);
@@ -3236,8 +3236,8 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     vp9_write_yuv_frame_420(&cpi->denoiser.running_avg_y[INTRA_FRAME],
                             yuv_denoised_file);
   }
-#endif
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
 
   // Special case code to reduce pulsing when key frames are forced at a
@@ -3252,7 +3252,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
     } else {
       cpi->ambient_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     cpi->ambient_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
@@ -3307,7 +3307,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
 
 #if 0
   output_frame_level_debug_stats(cpi);
-#endif
+#endif  // 0
 
   if (cm->frame_type == KEY_FRAME) {
     // Tell the caller that the frame was coded as a key frame
@@ -3373,7 +3373,7 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size,
 static void check_initial_width(VP9_COMP *cpi,
 #if CONFIG_VP9_HIGHBITDEPTH
                                 int use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                 int subsampling_x, int subsampling_y) {
   VP9_COMMON *const cm = &cpi->common;
 
@@ -3382,7 +3382,7 @@ static void check_initial_width(VP9_COMP *cpi,
     cm->subsampling_y = subsampling_y;
 #if CONFIG_VP9_HIGHBITDEPTH
     cm->use_highbitdepth = use_highbitdepth;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
     alloc_raw_frame_buffers(cpi);
     alloc_ref_frame_buffers(cpi);
@@ -3408,7 +3408,7 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
 #if CONFIG_VP9_HIGHBITDEPTH
   const int use_highbitdepth = sd->flags & YV12_FLAG_HIGHBITDEPTH;
   check_initial_width(cpi, use_highbitdepth, subsampling_x, subsampling_y);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   check_initial_width(cpi, subsampling_x, subsampling_y);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3548,7 +3548,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     // Use a small empty frame instead of a real frame
     if (cpi->svc.encode_empty_frame_state == ENCODING)
       source = &cpi->svc.empty_frame;
-#endif
+#endif  // CONFIG_SPATIAL_SVC
     if (oxcf->pass == 2)
       vp9_restore_layer_context(cpi);
   }
@@ -3598,7 +3598,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         }
       }
       cpi->svc.layer_context[cpi->svc.spatial_layer_id].has_alt_frame = 1;
-#endif
+#endif  // CONFIG_SPATIAL_SVC
 
       if (oxcf->arnr_max_frames > 0) {
         // Produce the filtered ARF frame.
@@ -3630,7 +3630,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     if (is_two_pass_svc(cpi))
       source = vp9_svc_lookahead_pop(cpi, cpi->lookahead, flush);
     else
-#endif
+#endif  // CONFIG_SPATIAL_SVC
       source = vp9_lookahead_pop(cpi->lookahead, flush);
     if (source != NULL) {
       cm->show_frame = 1;
@@ -3725,7 +3725,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
       cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
     cpi->mb.highbd_itxm_add = lossless ? vp9_highbd_iwht4x4_add :
                                          vp9_highbd_idct4x4_add;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     cpi->mb.itxm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
@@ -3783,7 +3783,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #if CONFIG_VP9_HIGHBITDEPTH
         calc_highbd_psnr(orig, recon, &psnr, cpi->mb.e_mbd.bd,
                          cpi->oxcf.input_bit_depth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         calc_psnr(orig, recon, &psnr);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3802,13 +3802,13 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           // encoder is changed to use on-demand buffer allocation.
           vp9_deblock(cm->frame_to_show, &cm->post_proc_buffer,
                       cm->lf.filter_level * 10 / 6);
-#endif
+#endif  // CONFIG_VP9_POSTPROC
           vp9_clear_system_state();
 
 #if CONFIG_VP9_HIGHBITDEPTH
           calc_highbd_psnr(orig, pp, &psnr, cpi->mb.e_mbd.bd,
                            cpi->oxcf.input_bit_depth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           calc_psnr(orig, pp, &psnr2);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3825,7 +3825,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           } else {
             frame_ssim2 = vp9_calc_ssim(orig, recon, &weight);
           }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           frame_ssim2 = vp9_calc_ssim(orig, recon, &weight);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3839,7 +3839,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           } else {
             frame_ssim2 = vp9_calc_ssim(orig, &cm->post_proc_buffer, &weight);
           }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           frame_ssim2 = vp9_calc_ssim(orig, &cm->post_proc_buffer, &weight);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -3853,7 +3853,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                     frame_psnr2, frame_ssim2);
             fclose(f);
           }
-#endif
+#endif  // 0
         }
       }
 
@@ -3868,7 +3868,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
           frame_all = vp9_calc_ssimg(cpi->Source, cm->frame_to_show, &y, &u,
                                      &v);
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         frame_all = vp9_calc_ssimg(cpi->Source, cm->frame_to_show, &y, &u, &v);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         cpi->total_ssimg_y += y;
@@ -3879,7 +3879,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     }
   }
 
-#endif
+#endif  // CONFIG_INTERNAL_STATS
 
   if (is_two_pass_svc(cpi)) {
     if (cpi->svc.encode_empty_frame_state == ENCODING)
@@ -3902,7 +3902,7 @@ int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
   VP9_COMMON *cm = &cpi->common;
 #if !CONFIG_VP9_POSTPROC
   (void)flags;
-#endif
+#endif  // !CONFIG_VP9_POSTPROC
 
   if (!cm->show_frame) {
     return -1;
@@ -3910,7 +3910,7 @@ int vp9_get_preview_raw_frame(VP9_COMP *cpi, YV12_BUFFER_CONFIG *dest,
     int ret;
 #if CONFIG_VP9_POSTPROC
     ret = vp9_post_proc_frame(cm, dest, flags);
-#else
+#else  // NOT CONFIG_VP9_POSTPROC
     if (cm->frame_to_show) {
       *dest = *cm->frame_to_show;
       dest->y_width = cm->width;
@@ -3977,7 +3977,7 @@ int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
   VP9_COMMON *cm = &cpi->common;
 #if CONFIG_VP9_HIGHBITDEPTH
   check_initial_width(cpi, 1, 1, cm->use_highbitdepth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   check_initial_width(cpi, 1, 1);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 

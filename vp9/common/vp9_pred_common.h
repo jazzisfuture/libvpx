@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 static INLINE const MODE_INFO *get_above_mi(const MACROBLOCKD *const xd) {
   return xd->up_available ? xd->mi[-xd->mi_stride].src_mi : NULL;
@@ -136,6 +136,6 @@ static INLINE unsigned int *get_tx_counts(TX_SIZE max_tx_size, int ctx,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_PRED_COMMON_H_

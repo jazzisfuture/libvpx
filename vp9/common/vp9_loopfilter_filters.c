@@ -29,7 +29,7 @@ static INLINE int16_t signed_char_clamp_high(int t, int bd) {
       return (int16_t)clamp(t, -128, 128-1);
   }
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // should we apply any filter at all: 11111111 yes, 00000000 no
 static INLINE int8_t filter_mask(uint8_t limit, uint8_t blimit,

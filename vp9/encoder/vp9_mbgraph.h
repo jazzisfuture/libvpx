@@ -13,7 +13,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct {
   struct {
@@ -35,6 +35,6 @@ void vp9_update_mbgraph_stats(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_MBGRAPH_H_

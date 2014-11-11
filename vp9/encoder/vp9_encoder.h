@@ -37,11 +37,11 @@
 #include "vp9/encoder/vp9_variance.h"
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #include "vp9/encoder/vp9_denoiser.h"
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define DEFAULT_GF_INTERVAL         10
 #define INVALID_REF_BUFFER_IDX      -1  // Marks an invalid reference buffer id.
@@ -216,13 +216,13 @@ typedef struct VP9EncoderConfig {
 
 #if CONFIG_FP_MB_STATS
   vpx_fixed_buf_t firstpass_mb_stats_in;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   vp8e_tuning tuning;
   vp9e_tune_content content;
 #if CONFIG_VP9_HIGHBITDEPTH
   int use_highbitdepth;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 } VP9EncoderConfig;
 
 static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
@@ -343,7 +343,7 @@ typedef struct VP9_COMP {
 
 #if CONFIG_FP_MB_STATS
   int use_fp_mb_stats;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   TWO_PASS twopass;
 
@@ -382,7 +382,7 @@ typedef struct VP9_COMP {
   double total_ssimg_all;
 
   int b_calculate_ssimg;
-#endif
+#endif  // CONFIG_INTERNAL_STATS
   int b_calculate_psnr;
 
   int droppable;
@@ -425,7 +425,7 @@ typedef struct VP9_COMP {
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 } VP9_COMP;
 
 void vp9_initialize_enc();
@@ -561,6 +561,6 @@ static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_ENCODER_H_

@@ -18,7 +18,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct TileInfo;
 struct VP9_COMP;
@@ -54,6 +54,6 @@ void vp9_rd_pick_inter_mode_sub8x8(struct VP9_COMP *cpi,
                                    int64_t best_rd_so_far);
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_RDOPT_H_

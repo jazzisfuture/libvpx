@@ -289,9 +289,9 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   DECLARE_ALIGNED_ARRAY(16, uint16_t,  predictor16, 16 * 16 * 3);
   DECLARE_ALIGNED_ARRAY(16, uint8_t,  predictor8, 16 * 16 * 3);
   uint8_t *predictor;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED_ARRAY(16, uint8_t,  predictor, 16 * 16 * 3);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   const int mb_uv_height = 16 >> mbd->plane[1].subsampling_y;
   const int mb_uv_width  = 16 >> mbd->plane[1].subsampling_x;
 
@@ -304,7 +304,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
   } else {
     predictor = predictor8;
   }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   for (i = 0; i < MAX_MB_PLANE; i++)
     input_buffer[i] = mbd->plane[i].pre[0].buf;
@@ -412,7 +412,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
                                       filter_weight, accumulator + 512,
                                       count + 512);
           }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           // Apply the filter (YUV)
           vp9_temporal_filter_apply(f->y_buffer + mb_y_offset, f->y_stride,
                                     predictor, 16, 16,
@@ -529,7 +529,7 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi,
           byte += stride - mb_uv_width;
         }
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       // Normalize filter output to produce AltRef frame
       dst1 = cpi->alt_ref_buffer.y_buffer;
       stride = cpi->alt_ref_buffer.y_stride;
@@ -691,7 +691,7 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
           get_frame_new_buffer(cm)->y_crop_width,
           get_frame_new_buffer(cm)->y_crop_height,
           cm->use_highbitdepth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       vp9_setup_scale_factors_for_frame(
           &sf,
           get_frame_new_buffer(cm)->y_crop_width,
@@ -708,7 +708,7 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
                                        cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                        cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                        VP9_ENC_BORDER_IN_PIXELS, NULL, NULL,
                                        NULL)) {
             vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
@@ -731,7 +731,7 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
                                         frames[0]->y_crop_width,
                                         frames[0]->y_crop_height,
                                         cm->use_highbitdepth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       vp9_setup_scale_factors_for_frame(&sf,
                                         frames[0]->y_crop_width,
                                         frames[0]->y_crop_height,

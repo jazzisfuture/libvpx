@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MOTION_MAGNITUDE_THRESHOLD (8 * 3)
 
@@ -52,17 +52,17 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int ssx, int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                        int border);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
 int total_adj_strong_thresh(BLOCK_SIZE bs, int increase_denoising);
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
 void vp9_denoiser_free(VP9_DENOISER *denoiser);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_DENOISER_H_

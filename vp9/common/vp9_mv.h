@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct mv {
   int16_t row;
@@ -50,6 +50,6 @@ static INLINE void clamp_mv(MV *mv, int min_col, int max_col,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_MV_H_

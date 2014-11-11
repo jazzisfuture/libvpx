@@ -24,11 +24,11 @@
 
 #if CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_postproc.h"
-#endif
+#endif  // CONFIG_VP9_POSTPROC
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define REFS_PER_FRAME 3
 
@@ -93,7 +93,7 @@ typedef struct VP9Common {
 
 #if CONFIG_VP9_HIGHBITDEPTH
   int use_highbitdepth;  // Marks if we need to use 16bit frame buffers.
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   YV12_BUFFER_CONFIG *frame_to_show;
   RefCntBuffer frame_bufs[FRAME_BUFFERS];
@@ -200,7 +200,7 @@ typedef struct VP9Common {
 
 #if CONFIG_VP9_POSTPROC
   struct postproc_state  postproc_state;
-#endif
+#endif  // CONFIG_VP9_POSTPROC
 
   int error_resilient_mode;
   int frame_parallel_decoding_mode;
@@ -364,6 +364,6 @@ static INLINE int partition_plane_context(const MACROBLOCKD *xd,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_ONYXC_INT_H_

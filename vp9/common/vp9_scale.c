@@ -48,11 +48,11 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h,
                                        int use_highbd) {
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
                                        int other_w, int other_h,
                                        int this_w, int this_h) {
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   if (!valid_ref_frame_size(other_w, other_h, this_w, this_h)) {
     sf->x_scale_fp = REF_INVALID_SCALE;
     sf->y_scale_fp = REF_INVALID_SCALE;
@@ -161,5 +161,5 @@ void vp9_setup_scale_factors_for_frame(struct scale_factors *sf,
     sf->highbd_predict[1][1][0] = vp9_highbd_convolve8;
     sf->highbd_predict[1][1][1] = vp9_highbd_convolve8_avg;
   }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }

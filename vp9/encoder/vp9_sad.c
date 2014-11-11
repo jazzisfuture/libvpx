@@ -16,7 +16,7 @@
 #include "vpx/vpx_integer.h"
 #if CONFIG_VP9_HIGHBITDEPTH
 #include "vp9/common/vp9_common.h"
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #include "vp9/encoder/vp9_variance.h"
 
 static INLINE unsigned int sad(const uint8_t *a, int a_stride,

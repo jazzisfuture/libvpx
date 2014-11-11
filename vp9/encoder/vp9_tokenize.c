@@ -38,7 +38,7 @@ static TOKENVALUE dct_value_tokens_high12[DCT_MAX_VALUE_HIGH12 * 2];
 const TOKENVALUE *vp9_dct_value_tokens_high12_ptr;
 static int16_t dct_value_cost_high12[DCT_MAX_VALUE_HIGH12 * 2];
 const int16_t *vp9_dct_value_cost_high12_ptr;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // Array indices are identical to previously-existing CONTEXT_NODE indices
 const vp9_tree_index vp9_coef_tree[TREE_SIZE(ENTROPY_TOKENS)] = {
@@ -82,7 +82,7 @@ static vp9_tree_index cat3_high12[6];
 static vp9_tree_index cat4_high12[8];
 static vp9_tree_index cat5_high12[10];
 static vp9_tree_index cat6_high12[36];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static void init_bit_tree(vp9_tree_index *p, int n) {
   int i = 0;
@@ -115,7 +115,7 @@ static void init_bit_trees() {
   init_bit_tree(cat4_high12, 4);
   init_bit_tree(cat5_high12, 5);
   init_bit_tree(cat6_high12, 18);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 const vp9_extra_bit vp9_extra_bits[ENTROPY_TOKENS] = {
@@ -162,7 +162,7 @@ const vp9_extra_bit vp9_extra_bits_high12[ENTROPY_TOKENS] = {
   {cat6_high12, vp9_cat6_prob_high12, 18, CAT6_MIN_VAL},   // CATEGORY6_TOKEN
   {0, 0, 0, 0}                                             // EOB_TOKEN
 };
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 struct vp9_token vp9_coef_encodings[ENTROPY_TOKENS];
 
@@ -239,7 +239,7 @@ void vp9_tokenize_initialize() {
                     vp9_extra_bits_high12,
                     dct_value_cost_high12 + DCT_MAX_VALUE_HIGH12,
                     DCT_MAX_VALUE_HIGH12);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 struct tokenize_b_args {
@@ -337,9 +337,9 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   } else {
     dct_value_tokens = vp9_dct_value_tokens_ptr;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   dct_value_tokens = vp9_dct_value_tokens_ptr;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   while (c < eob) {
     int v = 0;

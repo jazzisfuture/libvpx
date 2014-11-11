@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 unsigned int vp9_vaq_segment_id(int energy);
 double vp9_vaq_rdmult_ratio(int energy);
@@ -28,6 +28,6 @@ int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_AQ_VARIANCE_H_

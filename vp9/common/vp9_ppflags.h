@@ -13,7 +13,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 enum {
   VP9D_NOFILTERING            = 0,
@@ -37,6 +37,6 @@ typedef struct {
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_PPFLAGS_H_

@@ -315,7 +315,7 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                       subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     inter_predictor(pre, pre_buf->stride, dst, dst_buf->stride,
                     subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -513,7 +513,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
           buf_stride = x1 - x0 + 1;
           buf_ptr = xd->mc_buf + y_pad * 3 * buf_stride + x_pad * 3;
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         build_mc_border(buf_ptr1,
                         pre_buf->stride,
                         xd->mc_buf,
@@ -538,7 +538,7 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
       inter_predictor(buf_ptr, buf_stride, dst, dst_buf->stride, subpel_x,
                     subpel_y, sf, w, h, ref, kernel, xs, ys);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     inter_predictor(buf_ptr, buf_stride, dst, dst_buf->stride, subpel_x,
                     subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH

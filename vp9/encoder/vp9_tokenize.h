@@ -18,7 +18,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_tokenize_initialize();
 
@@ -28,18 +28,18 @@ typedef struct {
   int16_t token;
 #if CONFIG_VP9_HIGHBITDEPTH
   int32_t extra;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   int16_t extra;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 } TOKENVALUE;
 
 typedef struct {
   const vp9_prob *context_tree;
 #if CONFIG_VP9_HIGHBITDEPTH
   int32_t extra;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   int16_t         extra;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   uint8_t         token;
   uint8_t         skip_eob_node;
 } TOKENEXTRA;
@@ -71,6 +71,6 @@ extern const TOKENVALUE *vp9_dct_value_tokens_high12_ptr;
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_TOKENIZE_H_

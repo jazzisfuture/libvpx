@@ -272,7 +272,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
         vp9_model_rd_from_var_lapndz(sum_sse, 1 << num_pels_log2_lookup[bs],
                                      pd->dequant[1] >> 3, &rate, &dist);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       vp9_model_rd_from_var_lapndz(sum_sse, 1 << num_pels_log2_lookup[bs],
                                    pd->dequant[1] >> 3, &rate, &dist);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -416,7 +416,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
 static void dist_block(int plane, int block, TX_SIZE tx_size,
                        struct rdcost_block_args* args, int bd) {
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 static void dist_block(int plane, int block, TX_SIZE tx_size,
                        struct rdcost_block_args* args) {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -432,7 +432,7 @@ static void dist_block(int plane, int block, TX_SIZE tx_size,
 #if CONFIG_VP9_HIGHBITDEPTH
   args->dist = vp9_highbd_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
                                       &this_sse, bd) >> shift;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   args->dist = vp9_block_error(coeff, dqcoeff, 16 << ss_txfrm_size,
                                &this_sse) >> shift;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -483,7 +483,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     } else {
       dist_block(plane, block, tx_size, args, 8);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     dist_block(plane, block, tx_size, args);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   } else if (max_txsize_lookup[plane_bsize] == tx_size) {
@@ -496,7 +496,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
       } else {
         dist_block(plane, block, tx_size, args, 8);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       dist_block(plane, block, tx_size, args);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     } else if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 2) {
@@ -511,7 +511,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
             (coeff[0] - dqcoeff[0]) * (coeff[0] - dqcoeff[0]);
 #if CONFIG_VP9_HIGHBITDEPTH
         dc_correct >>= ((xd->bd - 8) * 2);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         if (tx_size != TX_32X32)
           dc_correct >>= 2;
 
@@ -532,7 +532,7 @@ static void block_rd_txfm(int plane, int block, BLOCK_SIZE plane_bsize,
     } else {
       dist_block(plane, block, tx_size, args, 8);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     dist_block(plane, block, tx_size, args);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
@@ -771,7 +771,7 @@ static int64_t rd_pick_intra4x4block(VP9_COMP *cpi, MACROBLOCK *x, int ib,
   uint8_t best_dst[8 * 8];
 #if CONFIG_VP9_HIGHBITDEPTH
   uint16_t best_dst16[8 * 8];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   assert(ib < 4);
 
@@ -1360,7 +1360,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
                               mi_col * MI_SIZE + 4 * (i % 2),
                               mi_row * MI_SIZE + 4 * (i / 2));
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_build_inter_predictor(pre, pd->pre[ref].stride,
                               dst, pd->dst.stride,
                               &mi->bmi[i].as_mv[ref].as_mv,
@@ -1381,7 +1381,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
         height, width, raster_block_offset_int16(BLOCK_8X8, i, p->src_diff), 8,
         src, p->src.stride, dst, pd->dst.stride);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   vp9_subtract_block(height, width,
                      raster_block_offset_int16(BLOCK_8X8, i, p->src_diff), 8,
                      src, p->src.stride, dst, pd->dst.stride);
@@ -1407,7 +1407,7 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
         thisdistortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k),
                                           16, &ssz);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       thisdistortion += vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k),
                                         16, &ssz);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -2170,7 +2170,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_VP9_HIGHBITDEPTH
   uint8_t *second_pred;
   uint8_t *second_pred_alloc;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   uint8_t *second_pred = vpx_memalign(16, pw * ph * sizeof(uint8_t));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   const InterpKernel *kernel = vp9_get_interp_kernel(mbmi->interp_filter);
@@ -2251,7 +2251,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                 kernel, MV_PRECISION_Q3,
                                 mi_col * MI_SIZE, mi_row * MI_SIZE);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_build_inter_predictor(ref_yv12[!id].buf,
                               ref_yv12[!id].stride,
                               second_pred, pw,
@@ -2331,7 +2331,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
 #if CONFIG_VP9_HIGHBITDEPTH
   vpx_free(second_pred_alloc);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   vpx_free(second_pred);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
@@ -2375,7 +2375,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   DECLARE_ALIGNED_ARRAY(16, uint16_t, tmp_buf16, MAX_MB_PLANE * 64 * 64);
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf8, MAX_MB_PLANE * 64 * 64);
   uint8_t *tmp_buf;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED_ARRAY(16, uint8_t, tmp_buf, MAX_MB_PLANE * 64 * 64);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   int pred_exists = 0;

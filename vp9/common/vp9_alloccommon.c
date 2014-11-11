@@ -108,7 +108,7 @@ int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm, int width, int height) {
                                ss_x, ss_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                VP9_ENC_BORDER_IN_PIXELS) < 0)
       goto fail;
     if (cm->frame_bufs[i].mvs == NULL) {
@@ -129,10 +129,10 @@ int vp9_alloc_ref_frame_buffers(VP9_COMMON *cm, int width, int height) {
   if (vp9_alloc_frame_buffer(&cm->post_proc_buffer, width, height, ss_x, ss_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                              cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                              VP9_ENC_BORDER_IN_PIXELS) < 0)
     goto fail;
-#endif
+#endif  // CONFIG_INTERNAL_STATS || CONFIG_VP9_POSTPROC
 
   return 0;
 

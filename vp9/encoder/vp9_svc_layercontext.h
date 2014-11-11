@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct {
   RATE_CONTROL rc;
@@ -113,6 +113,6 @@ int vp9_svc_start_frame(struct VP9_COMP *const cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_SVC_LAYERCONTEXT_

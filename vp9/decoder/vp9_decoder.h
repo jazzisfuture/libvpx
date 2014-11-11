@@ -24,7 +24,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 // TODO(hkuang): combine this with TileWorkerData.
 typedef struct TileData {
@@ -102,6 +102,6 @@ vpx_codec_err_t vp9_parse_superframe_index(const uint8_t *data,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_DECODER_H_

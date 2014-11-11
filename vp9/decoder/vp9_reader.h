@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef size_t BD_VALUE;
 
@@ -114,6 +114,6 @@ static INLINE int vp9_read_tree(vp9_reader *r, const vp9_tree_index *tree,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_READER_H_

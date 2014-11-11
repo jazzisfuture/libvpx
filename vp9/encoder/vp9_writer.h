@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct {
   unsigned int lowvalue;
@@ -93,6 +93,6 @@ static INLINE void vp9_write_literal(vp9_writer *w, int data, int bits) {
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_WRITER_H_

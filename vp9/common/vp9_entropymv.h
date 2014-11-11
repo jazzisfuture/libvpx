@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct VP9Common;
 
@@ -129,6 +129,6 @@ void vp9_inc_mv(const MV *mv, nmv_context_counts *mvctx);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_ENTROPYMV_H_

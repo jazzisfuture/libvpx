@@ -13,13 +13,13 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_temporal_filter_init();
 void vp9_temporal_filter(VP9_COMP *cpi, int distance);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_TEMPORAL_FILTER_H_

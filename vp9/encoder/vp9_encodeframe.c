@@ -537,10 +537,10 @@ static void choose_partitioning(VP9_COMP *cpi,
             s_avg = vp9_avg_8x8(s + y_idx * sp + x_idx, sp);
             d_avg = vp9_avg_8x8(d + y_idx * dp + x_idx, dp);
           }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           s_avg = vp9_avg_8x8(s + y_idx * sp + x_idx, sp);
           d_avg = vp9_avg_8x8(d + y_idx * dp + x_idx, dp);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           sum = s_avg - d_avg;
           sse = sum * sum;
         }
@@ -720,7 +720,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     // Note how often each mode chosen as best
     ++cpi->mode_chosen_counts[ctx->best_mode_index];
   }
-#endif
+#endif  // CONFIG_INTERNAL_STATS
   if (!frame_is_intra_only(cm)) {
     if (is_inter_block(mbmi)) {
       vp9_update_mv_count(cm, xd);
@@ -844,7 +844,7 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     x->source_variance =
         get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   x->source_variance = get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -1354,7 +1354,7 @@ static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
     vp9_denoiser_denoise(&cpi->denoiser, &cpi->mb, mi_row, mi_col,
                          MAX(BLOCK_8X8, bsize), ctx);
   }
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize, ctx);
   update_stats(&cpi->common, &cpi->mb);
@@ -2031,7 +2031,7 @@ static INLINE int get_motion_inconsistency(MOTION_DIRECTION this_mv,
     return abs(this_mv - that_mv) == 2 ? 2 : 1;
   }
 }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
 // TODO(jingning,jimbankoski,rbultje): properly skip partition types that are
 // unlikely to be selected depending on previous rate-distortion optimization
@@ -2068,7 +2068,7 @@ static void rd_pick_partition(VP9_COMP *cpi,
 #if CONFIG_FP_MB_STATS
   unsigned int src_diff_var = UINT_MAX;
   int none_complexity = 0;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   int partition_none_allowed = !force_horz_split && !force_vert_split;
   int partition_horz_allowed = !force_vert_split && yss <= xss &&
@@ -2121,7 +2121,7 @@ static void rd_pick_partition(VP9_COMP *cpi,
     src_diff_var = get_sby_perpixel_diff_variance(cpi, &cpi->mb.plane[0].src,
                                                   mi_row, mi_col, bsize);
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
 #if CONFIG_FP_MB_STATS
   // Decide whether we shall split directly and skip searching NONE by using
@@ -2172,7 +2172,7 @@ static void rd_pick_partition(VP9_COMP *cpi,
       partition_none_allowed = 0;
     }
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   // PARTITION_NONE
   if (partition_none_allowed) {
@@ -2256,7 +2256,7 @@ static void rd_pick_partition(VP9_COMP *cpi,
             }
           }
         }
-#endif
+#endif  // CONFIG_FP_MB_STATS
       }
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -3319,7 +3319,7 @@ static int set_var_thresh_from_histogram(VP9_COMP *cpi) {
         vp9_get16x16var(src, src_stride, last_src, last_stride,
                         &var16->sse, &var16->sum);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       vp9_get16x16var(src, src_stride, last_src, last_stride,
                       &var16->sse, &var16->sum);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -3473,7 +3473,7 @@ static int input_fpmb_stats(FIRSTPASS_MB_STATS *firstpass_mb_stats,
 
   return 1;
 }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
 static void encode_frame_internal(VP9_COMP *cpi) {
   SPEED_FEATURES *const sf = &cpi->sf;
@@ -3506,7 +3506,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     x->fwd_txm4x4 = xd->lossless ? vp9_highbd_fwht4x4 : vp9_highbd_fdct4x4;
   x->highbd_itxm_add = xd->lossless ? vp9_highbd_iwht4x4_add :
                                       vp9_highbd_idct4x4_add;
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   x->fwd_txm4x4 = xd->lossless ? vp9_fwht4x4 : vp9_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   x->itxm_add = xd->lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
@@ -3560,7 +3560,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     input_fpmb_stats(&cpi->twopass.firstpass_mb_stats, cm,
                      &cpi->twopass.this_frame_mb_stats);
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
     encode_tiles(cpi);
 
@@ -3573,7 +3573,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
 #if 0
   // Keep record of the total distortion this time around for future use
   cpi->last_frame_distortion = cpi->frame_distortion;
-#endif
+#endif  // 0
 }
 
 static INTERP_FILTER get_interp_filter(

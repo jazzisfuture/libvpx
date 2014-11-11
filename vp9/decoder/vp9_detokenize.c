@@ -106,14 +106,14 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     cat5_prob = vp9_cat5_prob;
     cat6_prob = vp9_cat6_prob;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   cat1_prob = vp9_cat1_prob;
   cat2_prob = vp9_cat2_prob;
   cat3_prob = vp9_cat3_prob;
   cat4_prob = vp9_cat4_prob;
   cat5_prob = vp9_cat5_prob;
   cat6_prob = vp9_cat6_prob;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   while (c < max_eob) {
     int val = -1;
@@ -183,18 +183,18 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
               assert(0);
               return -1;
           }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
           val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           break;
       }
     }
     v = (val * dqv) >> dq_shift;
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
     dqcoeff[scan[c]] = check_range(vp9_read_bit(r) ? -v : v);
-#else
+#else  // NOT CONFIG_COEFFICIENT_RANGE_CHECKING
     dqcoeff[scan[c]] = vp9_read_bit(r) ? -v : v;
-#endif
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
     token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++c;
     ctx = get_coef_context(nb, token_cache, c);

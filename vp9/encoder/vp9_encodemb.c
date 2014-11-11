@@ -178,10 +178,10 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
     dct_value_tokens = vp9_dct_value_tokens_ptr;
     dct_value_cost = vp9_dct_value_cost_ptr;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   dct_value_tokens = vp9_dct_value_tokens_ptr;
   dct_value_cost = vp9_dct_value_cost_ptr;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   for (i = 0; i < eob; i++)
     token_cache[scan[i]] =
         vp9_pt_energy_class[dct_value_tokens[qcoeff[scan[i]]].token];
@@ -278,7 +278,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
         } else {
           dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         dx -= (dequant_ptr[rc != 0] + sz) ^ sz;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         d2 = dx * dx;

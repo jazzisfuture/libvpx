@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 // The maximum number of steps in a step search given the largest
 // allowed initial step
@@ -148,6 +148,6 @@ int vp9_full_pixel_search(struct VP9_COMP *cpi, MACROBLOCK *x,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_MCOMP_H_

@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct InternalFrameBuffer {
   uint8_t *data;
@@ -48,6 +48,6 @@ int vp9_release_frame_buffer(void *cb_priv, vpx_codec_frame_buffer_t *fb);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_FRAME_BUFFERS_H_

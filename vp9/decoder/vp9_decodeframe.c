@@ -253,7 +253,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
         }
       }
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     if (xd->lossless) {
       tx_type = DCT_DCT;
       vp9_iwht4x4_add(dqcoeff, dst, stride, eob);
@@ -642,7 +642,7 @@ static void setup_quantization(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                  cm->uv_ac_delta_q == 0;
 #if CONFIG_VP9_HIGHBITDEPTH
   xd->bd = (int)cm->bit_depth;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 static INTERP_FILTER read_interp_filter(struct vp9_read_bit_buffer *rb) {
@@ -680,7 +680,7 @@ static void resize_context_buffers(VP9_COMMON *cm, int width, int height) {
   if (width > DECODE_WIDTH_LIMIT || height > DECODE_HEIGHT_LIMIT)
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Width and height beyond allowed size.");
-#endif
+#endif  // CONFIG_SIZE_LIMIT
   if (cm->width != width || cm->height != height) {
     const int new_mi_rows =
         ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2) >> MI_SIZE_LOG2;
@@ -717,7 +717,7 @@ static void setup_frame_size(VP9_COMMON *cm, struct vp9_read_bit_buffer *rb) {
           cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
           cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           VP9_DEC_BORDER_IN_PIXELS,
           &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer, cm->get_fb_cb,
           cm->cb_priv)) {
@@ -795,7 +795,7 @@ static void setup_frame_size_with_refs(VP9_COMMON *cm,
           cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
           cm->use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
           VP9_DEC_BORDER_IN_PIXELS,
           &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer, cm->get_fb_cb,
           cm->cb_priv)) {
@@ -1206,12 +1206,12 @@ static void read_bitdepth_colorspace_sampling(
     cm->bit_depth = vp9_rb_read_bit(rb) ? VPX_BITS_12 : VPX_BITS_10;
 #if CONFIG_VP9_HIGHBITDEPTH
     cm->use_highbitdepth = 1;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   } else {
     cm->bit_depth = VPX_BITS_8;
 #if CONFIG_VP9_HIGHBITDEPTH
     cm->use_highbitdepth = 0;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   }
   cm->color_space = (COLOR_SPACE)vp9_rb_read_literal(rb, 3);
   if (cm->color_space != SRGB) {
@@ -1319,7 +1319,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
         cm->bit_depth = VPX_BITS_8;
 #if CONFIG_VP9_HIGHBITDEPTH
         cm->use_highbitdepth = 0;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
       }
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
@@ -1349,12 +1349,12 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
                                           ref_buf->buf->y_crop_height,
                                           cm->width, cm->height,
                                           cm->use_highbitdepth);
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         vp9_setup_scale_factors_for_frame(&ref_buf->sf,
                                           ref_buf->buf->y_crop_width,
                                           ref_buf->buf->y_crop_height,
                                           cm->width, cm->height);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
         if (vp9_is_scaled(&ref_buf->sf))
           vp9_extend_frame_borders(ref_buf->buf);
       }
@@ -1362,7 +1362,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   }
 #if CONFIG_VP9_HIGHBITDEPTH
   get_frame_new_buffer(cm)->bit_depth = cm->bit_depth;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   if (pbi->need_resync) {
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,

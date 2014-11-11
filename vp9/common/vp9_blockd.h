@@ -24,7 +24,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define BLOCK_SIZE_GROUPS 4
 #define SKIP_CONTEXTS 3
@@ -214,7 +214,7 @@ typedef struct macroblockd {
   /* Bit depth: 8, 10, 12 */
   int bd;
   DECLARE_ALIGNED(16, uint16_t, mc_buf_high[80 * 2 * 80 * 2]);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   int lossless;
 
@@ -309,6 +309,6 @@ void vp9_set_contexts(const MACROBLOCKD *xd, struct macroblockd_plane *pd,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_BLOCKD_H_

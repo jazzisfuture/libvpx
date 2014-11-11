@@ -52,7 +52,7 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
                                          unsigned int subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                          int use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                          unsigned int depth) {
   struct lookahead_ctx *ctx = NULL;
 
@@ -75,7 +75,7 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
                                  width, height, subsampling_x, subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                  use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                  VP9_ENC_BORDER_IN_PIXELS))
         goto bail;
   }
@@ -94,7 +94,7 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
   int row, col, active_end;
   int mb_rows = (src->y_height + 15) >> 4;
   int mb_cols = (src->y_width + 15) >> 4;
-#endif
+#endif  // USE_PARTIAL_COPY
 
   if (ctx->sz + 1  + MAX_PRE_FRAMES > ctx->max_sz)
     return 1;
@@ -147,10 +147,10 @@ int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG   *src,
   } else {
     vp9_copy_and_extend_frame(src, &buf->img);
   }
-#else
+#else  // NOT USE_PARTIAL_COPY
   // Partial copy not implemented yet
   vp9_copy_and_extend_frame(src, &buf->img);
-#endif
+#endif  // USE_PARTIAL_COPY
 
   buf->ts_start = ts_start;
   buf->ts_end = ts_end;

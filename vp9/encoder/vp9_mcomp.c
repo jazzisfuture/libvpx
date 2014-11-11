@@ -306,7 +306,7 @@ static INLINE const uint8_t *pre(const uint8_t *buf, int stride, int r, int c) {
   *distortion = besterr;                                                     \
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
 
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 
 #define SETUP_CENTER_ERROR                                                   \
   if (second_pred != NULL) {                                                 \
@@ -1694,7 +1694,7 @@ int vp9_diamond_search_sad_c(const MACROBLOCK *x,
         }
         break;
       };
-#endif
+#endif  // defined(NEW_DIAMOND_SEARCH)
     } else if (best_address == in_what) {
       (*num00)++;
     }

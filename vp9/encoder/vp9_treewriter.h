@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_tree_probs_from_distribution(vp9_tree tree,
                                       unsigned int branch_ct[ /* n - 1 */ ][2],
@@ -46,6 +46,6 @@ static INLINE void vp9_write_token(vp9_writer *w, const vp9_tree_index *tree,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_TREEWRITER_H_

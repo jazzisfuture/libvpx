@@ -61,13 +61,13 @@
         name = NULL; \
     } \
   } while (0)
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 #define ASSIGN_MINQ_TABLE(bit_depth, name) \
   do { \
     (void) bit_depth; \
     name = name##_8; \
   } while (0)
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // Tables relating active max Q to active min Q
 static int kf_low_motion_minq_8[QINDEX_RANGE];
@@ -90,7 +90,7 @@ static int arfgf_low_motion_minq_12[QINDEX_RANGE];
 static int arfgf_high_motion_minq_12[QINDEX_RANGE];
 static int inter_minq_12[QINDEX_RANGE];
 static int rtc_minq_12[QINDEX_RANGE];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static int gf_high = 2000;
 static int gf_low = 400;
@@ -146,7 +146,7 @@ void vp9_rc_init_minq_luts() {
   init_minq_luts(kf_low_motion_minq_12, kf_high_motion_minq_12,
                  arfgf_low_motion_minq_12, arfgf_high_motion_minq_12,
                  inter_minq_12, rtc_minq_12, VPX_BITS_12);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 // These functions use formulaic calculations to make playing with the
@@ -166,9 +166,9 @@ double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1.0;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   return vp9_ac_quant(qindex, 0, bit_depth) / 4.0;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 int vp9_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
@@ -700,7 +700,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
-#endif
+#endif  // LIMIT_QRANGE_FOR_ALTREF_AND_KEY
 
   // Special case code to try and match quality with forced key frames
   if (cm->frame_type == KEY_FRAME && rc->this_key_frame_forced) {
@@ -862,7 +862,7 @@ static int rc_pick_q_and_bounds_one_pass_vbr(const VP9_COMP *cpi,
     *top_index = active_worst_quality + qdelta;
     *top_index = (*top_index > *bottom_index) ? *top_index : *bottom_index;
   }
-#endif
+#endif  // LIMIT_QRANGE_FOR_ALTREF_AND_KEY
 
   if (oxcf->rc_mode == VPX_Q) {
     q = active_best_quality;
@@ -1040,7 +1040,7 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     active_worst_quality = active_worst_quality + qdelta;
     active_worst_quality = MAX(active_worst_quality, active_best_quality);
   }
-#endif
+#endif  // LIMIT_QRANGE_FOR_ALTREF_AND_KEY
 
   // Clip the active best and worst quality values to limits.
   active_best_quality = clamp(active_best_quality,
@@ -1283,9 +1283,9 @@ static int calc_pframe_target_size_one_pass_vbr(const VP9_COMP *const cpi) {
       (rc->baseline_gf_interval + af_ratio - 1) :
       (rc->avg_frame_bandwidth * rc->baseline_gf_interval) /
       (rc->baseline_gf_interval + af_ratio - 1);
-#else
+#else  // NOT USE_ALTREF_FOR_ONE_PASS
   target = rc->avg_frame_bandwidth;
-#endif
+#endif  // USE_ALTREF_FOR_ONE_PASS
   return vp9_rc_clamp_pframe_target_size(cpi, target);
 }
 

@@ -20,7 +20,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #if CONFIG_MULTITHREAD
 
@@ -147,7 +147,7 @@ static INLINE int pthread_cond_wait(pthread_cond_t *const condition,
 #include <pthread.h> // NOLINT
 # define THREADFN void*
 # define THREAD_RETURN(val) val
-#endif
+#endif  // defined(_WIN32)
 
 #endif  // CONFIG_MULTITHREAD
 
@@ -214,6 +214,6 @@ const VP9WorkerInterface *vp9_get_worker_interface(void);
 
 #ifdef __cplusplus
 }    // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_THREAD_H_

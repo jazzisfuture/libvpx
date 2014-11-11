@@ -13,7 +13,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #include "vpx_scale/yv12config.h"
 
@@ -39,6 +39,6 @@ double vp9_highbd_calc_ssimg(YV12_BUFFER_CONFIG *source,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_SSIM_H_

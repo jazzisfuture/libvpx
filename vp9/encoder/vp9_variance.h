@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void variance(const uint8_t *a, int a_stride,
               const uint8_t *b, int b_stride,
@@ -37,7 +37,7 @@ void highbd_12_variance(const uint8_t *a8, int a_stride,
                         const uint8_t *b8, int b_stride,
                         int w, int h,
                         unsigned int *sse, int *sum);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 typedef unsigned int(*vp9_sad_fn_t)(const uint8_t *src_ptr,
                                     int source_stride,
@@ -102,10 +102,10 @@ void vp9_comp_avg_pred(uint8_t *comp_pred, const uint8_t *pred, int width,
 void vp9_highbd_comp_avg_pred(uint16_t *comp_pred, const uint8_t *pred,
                               int width, int height,
                               const uint8_t *ref, int ref_stride);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_VARIANCE_H_

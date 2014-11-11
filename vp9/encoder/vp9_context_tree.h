@@ -58,7 +58,7 @@ typedef struct {
   int_mv best_sse_mv;
   MV_REFERENCE_FRAME best_reference_frame;
   MV_REFERENCE_FRAME best_zeromv_reference_frame;
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
   // motion vector cache for adaptive motion search control in partition
   // search loop

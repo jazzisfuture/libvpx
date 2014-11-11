@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 extern const unsigned int vp9_prob_cost[256];
 
@@ -50,6 +50,6 @@ void vp9_cost_tokens_skip(int *costs, const vp9_prob *probs, vp9_tree tree);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_COST_H_

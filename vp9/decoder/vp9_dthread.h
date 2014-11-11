@@ -29,7 +29,7 @@ typedef struct VP9LfSyncData {
 #if CONFIG_MULTITHREAD
   pthread_mutex_t *mutex_;
   pthread_cond_t *cond_;
-#endif
+#endif  // CONFIG_MULTITHREAD
   // Allocate memory to store the loop-filtered superblock index in each row.
   int *cur_sb_col;
   // The optimal sync_range for different resolution and platform should be

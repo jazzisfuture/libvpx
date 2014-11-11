@@ -13,7 +13,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_blit_text(const char *msg, unsigned char *address, int pitch);
 
@@ -22,6 +22,6 @@ void vp9_blit_line(int x0, int x1, int y0, int y1, unsigned char *image,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_TEXTBLIT_H_

@@ -113,7 +113,7 @@ static int sad_per_bit16lut_10[QINDEX_RANGE];
 static int sad_per_bit4lut_10[QINDEX_RANGE];
 static int sad_per_bit16lut_12[QINDEX_RANGE];
 static int sad_per_bit4lut_12[QINDEX_RANGE];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static void init_me_luts_bd(int *bit16lut, int *bit4lut, int range,
                             vpx_bit_depth_t bit_depth) {
@@ -136,7 +136,7 @@ void vp9_init_me_luts() {
                   VPX_BITS_10);
   init_me_luts_bd(sad_per_bit16lut_12, sad_per_bit4lut_12, QINDEX_RANGE,
                   VPX_BITS_12);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 static const int rd_boost_factor[16] = {
@@ -165,7 +165,7 @@ int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   int64_t rdmult = 88 * q * q / 24;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   if (cpi->oxcf.pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
@@ -196,7 +196,7 @@ static int compute_rd_thresh_factor(int qindex, vpx_bit_depth_t bit_depth) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   (void) bit_depth;
   q = vp9_dc_quant(qindex, 0, VPX_BITS_8) / 4.0;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -222,7 +222,7 @@ void vp9_initialize_me_consts(VP9_COMP *cpi, int qindex) {
     default:
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   cpi->mb.sadperbit16 = sad_per_bit16lut_8[qindex];
   cpi->mb.sadperbit4 = sad_per_bit4lut_8[qindex];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -642,7 +642,7 @@ int vp9_get_intra_cost_penalty(int qindex, int qdelta,
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   return 20 * q;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }

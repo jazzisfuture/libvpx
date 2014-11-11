@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_enable_segmentation(struct segmentation *seg);
 void vp9_disable_segmentation(struct segmentation *seg);
@@ -48,6 +48,6 @@ void vp9_reset_segment_features(struct segmentation *seg);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_SEGMENTATION_H_

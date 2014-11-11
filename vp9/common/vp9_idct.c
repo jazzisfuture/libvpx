@@ -33,7 +33,7 @@
 // bd of 12 uses trans_low with 20bits, need to remove 12bits
 // bd of x uses trans_low with 8+x bits, need to remove 24-x bits
 #define WRAPLOW(x, bd) ((((int32_t)(x)) << (24 - bd)) >> (24 - bd))
-#else
+#else  // NOT CONFIG_EMULATE_HARDWARE
 #define WRAPLOW(x, bd) ((int32_t)(x))
 #endif  // CONFIG_EMULATE_HARDWARE
 

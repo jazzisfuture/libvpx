@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct VP9Common;
 
@@ -34,6 +34,6 @@ void vp9_set_mb_mi(struct VP9Common *cm, int width, int height);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_ALLOCCOMMON_H_

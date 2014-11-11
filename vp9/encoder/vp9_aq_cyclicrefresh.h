@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct VP9_COMP;
 
@@ -45,6 +45,6 @@ int vp9_cyclic_refresh_get_rdmult(const CYCLIC_REFRESH *cr);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_AQ_CYCLICREFRESH_H_

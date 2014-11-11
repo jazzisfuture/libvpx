@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 
 void vp9_copy_and_extend_frame(const YV12_BUFFER_CONFIG *src,
@@ -28,6 +28,6 @@ void vp9_copy_and_extend_frame_with_rect(const YV12_BUFFER_CONFIG *src,
                                          int srch, int srcw);
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_EXTEND_H_

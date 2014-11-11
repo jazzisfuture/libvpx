@@ -38,7 +38,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
                                    cpi->common.subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                  cpi->common.use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                  VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
         vpx_internal_error(&cpi->common.error, VPX_CODEC_MEM_ERROR,
                            "Failed to allocate empty frame for multiple frame "
@@ -403,4 +403,4 @@ struct lookahead_entry *vp9_svc_lookahead_pop(VP9_COMP *const cpi,
 
   return buf;
 }
-#endif
+#endif  // CONFIG_SPATIAL_SVC

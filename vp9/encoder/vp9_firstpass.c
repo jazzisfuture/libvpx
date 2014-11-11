@@ -59,7 +59,7 @@
 
 #if ARF_STATS_OUTPUT
 unsigned int arf_count = 0;
-#endif
+#endif  // ARF_STATS_OUTPUT
 
 static void swap_yv12(YV12_BUFFER_CONFIG *a, YV12_BUFFER_CONFIG *b) {
   YV12_BUFFER_CONFIG temp = *a;
@@ -131,7 +131,7 @@ static void output_stats(FIRSTPASS_STATS *stats,
             stats->duration);
     fclose(fpfile);
   }
-#endif
+#endif  // OUTPUT_FPF
 }
 
 #if CONFIG_FP_MB_STATS
@@ -143,7 +143,7 @@ static void output_fpmb_stats(uint8_t *this_frame_mb_stats, VP9_COMMON *cm,
   pkt.data.firstpass_mb_stats.sz = cm->initial_mbs * sizeof(uint8_t);
   vpx_codec_pkt_list_add(pktlist, &pkt);
 }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
 static void zero_stats(FIRSTPASS_STATS *section) {
   section->frame = 0.0;
@@ -493,7 +493,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   if (cpi->use_fp_mb_stats) {
     vp9_zero_array(cpi->twopass.frame_mb_stats_buf, cm->initial_mbs);
   }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   vp9_clear_system_state();
 
@@ -599,7 +599,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
 
 #if CONFIG_FP_MB_STATS
       const int mb_index = mb_row * cm->mb_cols + mb_col;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
       vp9_clear_system_state();
 
@@ -651,9 +651,9 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
         level_sample = CONVERT_TO_SHORTPTR(x->plane[0].src.buf)[0];
       else
         level_sample = x->plane[0].src.buf[0];
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       level_sample = x->plane[0].src.buf[0];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
       if ((level_sample < DARK_THRESH) && (log_intra < 9.0))
         brightness_factor += 1.0 + (0.01 * (DARK_THRESH - level_sample));
       else
@@ -676,7 +676,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
         // initialization
         cpi->twopass.frame_mb_stats_buf[mb_index] = 0;
       }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
       // Set up limit values for motion vectors to prevent them extending
       // outside the UMV borders.
@@ -700,7 +700,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
           motion_error = get_prediction_error(
               bsize, &x->plane[0].src, &xd->plane[0].pre[0]);
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         motion_error = get_prediction_error(
             bsize, &x->plane[0].src, &xd->plane[0].pre[0]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -720,7 +720,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
           raw_motion_error = get_prediction_error(
               bsize, &x->plane[0].src, &unscaled_last_source_buf_2d);
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         raw_motion_error = get_prediction_error(
             bsize, &x->plane[0].src, &unscaled_last_source_buf_2d);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -759,7 +759,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
               gf_motion_error = get_prediction_error(
                   bsize, &x->plane[0].src, &xd->plane[0].pre[0]);
             }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
             gf_motion_error = get_prediction_error(
                 bsize, &x->plane[0].src, &xd->plane[0].pre[0]);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -806,7 +806,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
             cpi->twopass.frame_mb_stats_buf[mb_index] |= FPMB_ERROR_SMALL_MASK;
           }
         }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
         if (motion_error <= this_error) {
           // Keep a count of cases where the inter and intra were very close
@@ -850,7 +850,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
                   FPMB_ERROR_SMALL_MASK;
             }
           }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
           if (!is_zero_mv(&mv)) {
             ++mvcount;
@@ -880,7 +880,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
                     FPMB_MOTION_DOWN_MASK;
               }
             }
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
             // Non-zero vector, was it different from the last non zero vector?
             if (!is_equal_mv(&mv, &lastmv))
@@ -1000,7 +1000,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     if (cpi->use_fp_mb_stats) {
       output_fpmb_stats(twopass->frame_mb_stats_buf, cm, cpi->output_pkt_list);
     }
-#endif
+#endif  // CONFIG_FP_MB_STATS
   }
 
   // Copy the previous Last Frame back into gf and and arf buffers if
@@ -2465,7 +2465,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
       fclose(fpfile);
     }
-#endif
+#endif  // ARF_STATS_OUTPUT
   }
 
   configure_buffer_updates(cpi);

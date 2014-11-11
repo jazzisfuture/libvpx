@@ -17,11 +17,11 @@
 #if CONFIG_SPATIAL_SVC
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
-#endif
+#endif  // CONFIG_SPATIAL_SVC
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MAX_LAG_BUFFERS 25
 
@@ -54,7 +54,7 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
                                          unsigned int subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                          int use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                          unsigned int depth);
 
 
@@ -115,6 +115,6 @@ unsigned int vp9_lookahead_depth(struct lookahead_ctx *ctx);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_LOOKAHEAD_H_

@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct VP9Common;
 struct VP9Decoder;
@@ -33,6 +33,6 @@ BITSTREAM_PROFILE vp9_read_profile(struct vp9_read_bit_buffer *rb);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_DECODEFRAME_H_

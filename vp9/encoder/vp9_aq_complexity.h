@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct VP9_COMP;
 
@@ -29,6 +29,6 @@ void vp9_setup_in_frame_q_adj(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_AQ_COMPLEXITY_H_

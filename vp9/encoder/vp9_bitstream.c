@@ -138,7 +138,7 @@ static void pack_mb_tokens(vp9_writer *w,
       b = &vp9_extra_bits_high10[t];
     else
       b = &vp9_extra_bits[t];
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     const vp9_extra_bit *const b = &vp9_extra_bits[t];
     (void) bit_depth;
 #endif  // CONFIG_VP9_HIGHBITDEPTH

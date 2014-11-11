@@ -29,7 +29,7 @@
 
 #ifdef OUTPUT_YUV_DENOISED
 static void make_grayscale(YV12_BUFFER_CONFIG *yuv);
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
 
 static int absdiff_thresh(BLOCK_SIZE bs, int increase_denoising) {
   (void)bs;
@@ -422,7 +422,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                        int ssx, int ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                        int use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                        int border) {
   int i, fail;
   assert(denoiser != NULL);
@@ -432,7 +432,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
                                   ssx, ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                                   use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                   border);
     if (fail) {
       vp9_denoiser_free(denoiser);
@@ -440,14 +440,14 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
     }
 #ifdef OUTPUT_YUV_DENOISED
     make_grayscale(&denoiser->running_avg_y[i]);
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
   }
 
   fail = vp9_alloc_frame_buffer(&denoiser->mc_running_avg_y, width, height,
                                 ssx, ssy,
 #if CONFIG_VP9_HIGHBITDEPTH
                                 use_highbitdepth,
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
                                 border);
   if (fail) {
     vp9_denoiser_free(denoiser);
@@ -455,7 +455,7 @@ int vp9_denoiser_alloc(VP9_DENOISER *denoiser, int width, int height,
   }
 #ifdef OUTPUT_YUV_DENOISED
   make_grayscale(&denoiser->running_avg_y[i]);
-#endif
+#endif  // def OUTPUT_YUV_DENOISED
   denoiser->increase_denoising = 0;
 
   return 0;
@@ -493,4 +493,4 @@ static void make_grayscale(YV12_BUFFER_CONFIG *yuv) {
     v += yuv->uv_stride + yuv->uv_width / 2;
   }
 }
-#endif
+#endif  // def OUTPUT_YUV_DENOISED

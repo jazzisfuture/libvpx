@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 // Bits Per MB at different Q (Multiplied by 512)
 #define BPER_MB_NORMBITS    9
@@ -200,6 +200,6 @@ void vp9_rc_set_gf_max_interval(const struct VP9_COMP *const cpi,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_RATECTRL_H_

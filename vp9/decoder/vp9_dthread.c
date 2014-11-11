@@ -48,7 +48,7 @@ static INLINE void sync_read(VP9LfSync *const lf_sync, int r, int c) {
     }
     pthread_mutex_unlock(mutex);
   }
-#else
+#else  // NOT CONFIG_MULTITHREAD
   (void)lf_sync;
   (void)r;
   (void)c;
@@ -79,7 +79,7 @@ static INLINE void sync_write(VP9LfSync *const lf_sync, int r, int c,
     pthread_cond_signal(&lf_sync->cond_[r]);
     pthread_mutex_unlock(&lf_sync->mutex_[r]);
   }
-#else
+#else  // NOT CONFIG_MULTITHREAD
   (void)lf_sync;
   (void)r;
   (void)c;

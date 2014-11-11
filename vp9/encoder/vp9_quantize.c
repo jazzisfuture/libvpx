@@ -63,7 +63,7 @@ void vp9_highbd_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_quantize_dc_32x32(const tran_low_t *coeff_ptr, int skip_block,
                            const int16_t *round_ptr, const int16_t quant,
@@ -114,7 +114,7 @@ void vp9_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                        int skip_block,
@@ -206,7 +206,7 @@ void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // TODO(jingning) Refactor this file and combine functions with similar
 // operations.
@@ -294,7 +294,7 @@ void vp9_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                       int skip_block,
@@ -403,7 +403,7 @@ void vp9_highbd_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_quantize_b_32x32_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                             int skip_block,
@@ -519,7 +519,7 @@ void vp9_highbd_quantize_b_32x32_c(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
                                 const int16_t *scan, const int16_t *iscan) {
@@ -538,7 +538,7 @@ void vp9_regular_quantize_b_4x4(MACROBLOCK *x, int plane, int block,
                         scan, iscan);
     return;
   }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   vp9_quantize_b(BLOCK_OFFSET(p->coeff, block),
            16, x->skip_block,
            p->zbin, p->round, p->quant, p->quant_shift,
@@ -572,10 +572,10 @@ static int get_qzbin_factor(int q, vpx_bit_depth_t bit_depth) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   (void) bit_depth;
   return q == 0 ? 64 : (quant < 148 ? 84 : 80);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 void vp9_init_quantizer(VP9_COMP *cpi) {

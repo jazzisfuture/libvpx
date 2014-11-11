@@ -20,7 +20,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define RDDIV_BITS          7
 
@@ -186,6 +186,6 @@ int vp9_get_intra_cost_penalty(int qindex, int qdelta,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_RD_H_

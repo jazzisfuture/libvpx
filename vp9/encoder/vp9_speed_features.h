@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 enum {
   INTRA_ALL       = (1 << DC_PRED) |
@@ -420,7 +420,7 @@ void vp9_set_speed_features(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_SPEED_FEATURES_H_
 

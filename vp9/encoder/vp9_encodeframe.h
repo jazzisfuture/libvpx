@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct macroblock;
 struct yv12_buffer_config;
@@ -35,6 +35,6 @@ void vp9_encode_frame(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_ENCODEFRAME_H_

@@ -117,7 +117,7 @@ static const int16_t dc_qlookup_12[QINDEX_RANGE] = {
   12750, 13118, 13501, 13913, 14343, 14807, 15290, 15812,
   16356, 16943, 17575, 18237, 18949, 19718, 20521, 21387,
 };
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static const int16_t ac_qlookup[QINDEX_RANGE] = {
   4,       8,    9,   10,   11,   12,   13,   14,
@@ -224,7 +224,7 @@ static const int16_t ac_qlookup_12[QINDEX_RANGE] = {
   21902, 22334, 22766, 23214, 23662, 24126, 24590, 25070,
   25551, 26047, 26559, 27071, 27599, 28143, 28687, 29247,
 };
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -239,10 +239,10 @@ int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   (void) bit_depth;
   return dc_qlookup[clamp(qindex + delta, 0, MAXQ)];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
@@ -258,10 +258,10 @@ int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth) {
       assert(0 && "bit_depth should be VPX_BITS_8, VPX_BITS_10 or VPX_BITS_12");
       return -1;
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   (void) bit_depth;
   return ac_qlookup[clamp(qindex + delta, 0, MAXQ)];
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
 int vp9_get_qindex(const struct segmentation *seg, int segment_id,

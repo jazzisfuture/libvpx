@@ -15,7 +15,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 struct TileInfo;
 
@@ -25,6 +25,6 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_DECODEMV_H_

@@ -58,7 +58,7 @@ const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES] = {
   intra_pred_highbd_sized(type, 16) \
   intra_pred_highbd_sized(type, 32)
 
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 
 #define intra_pred_allsizes(type) \
   intra_pred_sized(type, 4) \
@@ -902,7 +902,7 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
                                 x, y, plane, xd->bd);
     return;
   }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   build_intra_predictors(xd, ref, ref_stride, dst, dst_stride, mode, tx_size,
                          have_top, have_left, have_right, x, y, plane);
 }

@@ -23,7 +23,7 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #if CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_postproc.h"
-#endif
+#endif  // CONFIG_VP9_POSTPROC
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_systemdependent.h"
@@ -322,7 +322,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   int ret = -1;
 #if !CONFIG_VP9_POSTPROC
   (void)*flags;
-#endif
+#endif  // !CONFIG_VP9_POSTPROC
 
   if (pbi->ready_for_new_data == 1)
     return ret;
@@ -340,7 +340,7 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
     *sd = *cm->frame_to_show;
     ret = 0;
   }
-#else
+#else  // NOT CONFIG_VP9_POSTPROC
   *sd = *cm->frame_to_show;
   ret = 0;
 #endif /*!CONFIG_POSTPROC*/

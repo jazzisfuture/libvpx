@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define TX_SIZE_CONTEXTS 2
 
@@ -106,6 +106,6 @@ static INLINE const vp9_prob *get_y_mode_probs(const MODE_INFO *mi,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_ENTROPYMODE_H_

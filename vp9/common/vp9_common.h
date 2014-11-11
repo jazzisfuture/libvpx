@@ -22,7 +22,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -86,7 +86,7 @@ typedef int32_t tran_low_t;
 #define CONVERT_TO_SHORTPTR(x) ((uint16_t*)(((uintptr_t)x) << 1))
 #define CONVERT_TO_BYTEPTR(x) ((uint8_t*)(((uintptr_t)x) >> 1 ))
 
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
 
 // Note:
 // tran_low_t  is the datatype used for final transform coefficients.
@@ -103,14 +103,14 @@ typedef int16_t tran_low_t;
                        "Failed to allocate "#lval" at %s:%d", \
                        __FILE__, __LINE__); \
   } while (0)
-#else
+#else  // NOT CONFIG_DEBUG
 #define CHECK_MEM_ERROR(cm, lval, expr) do { \
   lval = (expr); \
   if (!lval) \
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR, \
                        "Failed to allocate "#lval); \
   } while (0)
-#endif
+#endif  // CONFIG_DEBUG
 
 #define VP9_SYNC_CODE_0 0x49
 #define VP9_SYNC_CODE_1 0x83
@@ -121,6 +121,6 @@ typedef int16_t tran_low_t;
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_COMMON_H_

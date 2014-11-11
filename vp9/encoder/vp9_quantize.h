@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef struct {
   DECLARE_ALIGNED(16, int16_t, y_quant[QINDEX_RANGE][8]);
@@ -61,7 +61,7 @@ void vp9_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
                                   tran_low_t *dqcoeff_ptr,
                                   const int16_t dequant_ptr,
                                   uint16_t *eob_ptr);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 struct VP9_COMP;
 struct VP9Common;
@@ -82,6 +82,6 @@ int vp9_qindex_to_quantizer(int qindex);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_QUANTIZE_H_

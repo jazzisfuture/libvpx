@@ -554,4 +554,4 @@ void vp9_highbd_convolve_avg_c(const uint8_t *src8, ptrdiff_t src_stride,
     dst += dst_stride;
   }
 }
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH

@@ -255,7 +255,7 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
     vp9_model_rd_from_var_lapndz(sse - var, 1 << num_pels_log2_lookup[bsize],
                                  dc_quant >> 3, &rate, &dist);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   vp9_model_rd_from_var_lapndz(sse - var, 1 << num_pels_log2_lookup[bsize],
                                dc_quant >> 3, &rate, &dist);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -277,7 +277,7 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                  &rate,
                                  &dist);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   vp9_model_rd_from_var_lapndz(var,
                                1 << num_pels_log2_lookup[bsize],
                                ac_quant >> 3,
@@ -332,7 +332,7 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x,
         MIN(((unsigned int)x->encode_breakout << 4), max_thresh);
 #if CONFIG_VP9_HIGHBITDEPTH
     const int shift = 2 * xd->bd - 16;
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
     // Calculate threshold according to dequant value.
     thresh_ac = (xd->plane[0].dequant[1] * xd->plane[0].dequant[1]) / 9;
@@ -512,7 +512,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   DECLARE_ALIGNED_ARRAY(16, uint8_t, pred_buf, 3 * 64 * 64);
 #if CONFIG_VP9_HIGHBITDEPTH
   DECLARE_ALIGNED_ARRAY(16, uint16_t, pred_buf_16, 3 * 64 * 64);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
   struct buf_2d orig_dst = pd->dst;
   PRED_BUFFER *best_pred = NULL;
   PRED_BUFFER *this_mode_pred = NULL;
@@ -528,7 +528,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         tmp[i].data = CONVERT_TO_BYTEPTR(&pred_buf_16[pixels_in_block * i]);
       else
         tmp[i].data = &pred_buf[pixels_in_block * i];
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       tmp[i].data = &pred_buf[pixels_in_block * i];
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       tmp[i].stride = bw;
@@ -751,9 +751,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       if (cpi->oxcf.noise_sensitivity > 0) {
         vp9_denoiser_update_frame_stats(mbmi, sse_y, this_mode, ctx);
       }
-#else
+#else  // NOT CONFIG_VP9_TEMPORAL_DENOISING
       (void)ctx;
-#endif
+#endif  // CONFIG_VP9_TEMPORAL_DENOISING
 
       if (this_rdc.rdcost < best_rdc.rdcost || x->skip) {
         best_rdc = this_rdc;
@@ -796,7 +796,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_convolve_copy(best_pred->data, bw, pd->dst.buf, pd->dst.stride,
                         NULL, 0, NULL, 0, bw, bh);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     vp9_convolve_copy(best_pred->data, bw, pd->dst.buf, pd->dst.stride, NULL, 0,
                       NULL, 0, bw, bh);
 #endif  // CONFIG_VP9_HIGHBITDEPTH

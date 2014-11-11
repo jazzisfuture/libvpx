@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize);
@@ -48,7 +48,7 @@ void vp9_highbd_build_inter_predictor(const uint8_t *src, int src_stride,
                                       const InterpKernel *kernel,
                                       enum mv_precision precision,
                                       int x, int y, int bd);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static INLINE int scaled_buffer_offset(int x_offset, int y_offset, int stride,
                                        const struct scale_factors *sf) {
@@ -78,6 +78,6 @@ void vp9_setup_pre_planes(MACROBLOCKD *xd, int idx,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_RECONINTER_H_

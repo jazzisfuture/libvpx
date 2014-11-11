@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 void vp9_entropy_mv_init();
 
@@ -32,6 +32,6 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_ENCODEMV_H_

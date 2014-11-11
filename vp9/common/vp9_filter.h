@@ -18,7 +18,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define FILTER_BITS 7
 
@@ -53,6 +53,6 @@ DECLARE_ALIGNED(256, extern const InterpKernel,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_FILTER_H_

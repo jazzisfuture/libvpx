@@ -1265,7 +1265,7 @@ static void filter_block_plane_non420(VP9_COMMON *cm,
                               mask_4x4_int[r],
                               &cm->lf_info, &lfl[r << 3]);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     filter_selectively_vert(dst->buf, dst->stride,
                             mask_16x16_c & border_mask,
                             mask_8x8_c & border_mask,
@@ -1314,7 +1314,7 @@ static void filter_block_plane_non420(VP9_COMMON *cm,
                                mask_4x4_int_r,
                                &cm->lf_info, &lfl[r << 3]);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     filter_selectively_horiz(dst->buf, dst->stride,
                              mask_16x16_r,
                              mask_8x8_r,
@@ -1369,7 +1369,7 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                                      &cm->lf_info,
                                      &lfm->lfl_y[r << 3]);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       filter_selectively_vert_row2(plane->plane_type,
                                    dst->buf, dst->stride,
                                    mask_16x16_l,
@@ -1427,7 +1427,7 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                                  &cm->lf_info,
                                  &lfm->lfl_y[r << 3]);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       filter_selectively_horiz(dst->buf, dst->stride,
                                mask_16x16_r,
                                mask_8x8_r,
@@ -1488,7 +1488,7 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                                        &cm->lf_info,
                                        &lfm->lfl_uv[r << 1]);
         }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
         filter_selectively_vert_row2(plane->plane_type,
                                      dst->buf, dst->stride,
                                      mask_16x16_l,
@@ -1552,7 +1552,7 @@ void vp9_filter_block_plane(VP9_COMMON *const cm,
                                  &cm->lf_info,
                                  &lfm->lfl_uv[r << 1]);
       }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
       filter_selectively_horiz(dst->buf, dst->stride,
                                mask_16x16_r,
                                mask_8x8_r,

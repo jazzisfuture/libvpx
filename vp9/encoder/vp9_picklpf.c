@@ -46,7 +46,7 @@ static int try_filter_frame(const YV12_BUFFER_CONFIG *sd, VP9_COMP *const cpi,
   } else {
     filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
   }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
   filt_err = vp9_get_y_sse(sd, cm->frame_to_show);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -170,7 +170,7 @@ void vp9_pick_filter_level(const YV12_BUFFER_CONFIG *sd, VP9_COMP *cpi,
                     "or VPX_BITS_12");
         return;
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHDEPTH
     int filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     if (cm->frame_type == KEY_FRAME)

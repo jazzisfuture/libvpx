@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef void (*vp9_rb_error_handler)(void *data);
 
@@ -40,6 +40,6 @@ int vp9_rb_read_signed_literal(struct vp9_read_bit_buffer *rb, int bits);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_DECODER_VP9_READ_BIT_BUFFER_H_

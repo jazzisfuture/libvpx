@@ -36,7 +36,7 @@ static int segment_id[MAX_SEGMENTS] = { 5, 3, 1, 0, 2, 4, 6, 7 };
 DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = {0};
 #if CONFIG_VP9_HIGHBITDEPTH
 DECLARE_ALIGNED(16, static const uint16_t, vp9_highbd_64_zeros[64]) = {0};
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 unsigned int vp9_vaq_segment_id(int energy) {
   ENERGY_IN_BOUNDS(energy);
@@ -132,7 +132,7 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
       variance(x->plane[0].src.buf, x->plane[0].src.stride,
                vp9_64_zeros, 0, bw, bh, &sse, &avg);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     variance(x->plane[0].src.buf, x->plane[0].src.stride,
              vp9_64_zeros, 0, bw, bh, &sse, &avg);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
@@ -150,7 +150,7 @@ static unsigned int block_variance(VP9_COMP *cpi, MACROBLOCK *x,
                                x->plane[0].src.stride,
                                vp9_64_zeros, 0, &sse);
     }
-#else
+#else  // NOT CONFIG_VP9_HIGHBITDEPTH
     var = cpi->fn_ptr[bs].vf(x->plane[0].src.buf,
                              x->plane[0].src.stride,
                              vp9_64_zeros, 0, &sse);

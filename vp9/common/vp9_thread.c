@@ -86,7 +86,7 @@ static void init(VP9Worker *const worker) {
 static int sync(VP9Worker *const worker) {
 #if CONFIG_MULTITHREAD
   change_state(worker, OK);
-#endif
+#endif  // CONFIG_MULTITHREAD
   assert(worker->status_ <= OK);
   return !worker->had_error;
 }
@@ -119,9 +119,9 @@ static int reset(VP9Worker *const worker) {
       worker->impl_ = NULL;
       return 0;
     }
-#else
+#else  // NOT CONFIG_MULTITHREAD
     worker->status_ = OK;
-#endif
+#endif  // CONFIG_MULTITHREAD
   } else if (worker->status_ > OK) {
     ok = sync(worker);
   }
@@ -138,9 +138,9 @@ static void execute(VP9Worker *const worker) {
 static void launch(VP9Worker *const worker) {
 #if CONFIG_MULTITHREAD
   change_state(worker, WORK);
-#else
+#else  // NOT CONFIG_MULTITHREAD
   execute(worker);
-#endif
+#endif  // CONFIG_MULTITHREAD
 }
 
 static void end(VP9Worker *const worker) {
@@ -153,10 +153,10 @@ static void end(VP9Worker *const worker) {
     vpx_free(worker->impl_);
     worker->impl_ = NULL;
   }
-#else
+#else  // NOT CONFIG_MULTITHREAD
   worker->status_ = NOT_OK;
   assert(worker->impl_ == NULL);
-#endif
+#endif  // CONFIG_MULTITHREAD
   assert(worker->status_ == NOT_OK);
 }
 

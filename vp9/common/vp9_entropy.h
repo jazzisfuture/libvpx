@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define DIFF_UPDATE_PROB 252
 
@@ -226,6 +226,6 @@ static INLINE const scan_order *get_scan(const MACROBLOCKD *xd, TX_SIZE tx_size,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_ENTROPY_H_

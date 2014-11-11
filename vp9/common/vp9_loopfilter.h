@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MAX_LOOP_FILTER 63
 #define MAX_SHARPNESS 7
@@ -134,6 +134,6 @@ void vp9_loop_filter_data_reset(
 int vp9_loop_filter_worker(LFWorkerData *const lf_data, void *unused);
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_LOOPFILTER_H_

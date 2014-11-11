@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #define MAX_NEIGHBORS 2
 
@@ -40,6 +40,6 @@ static INLINE int get_coef_context(const int16_t *neighbors,
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_SCAN_H_

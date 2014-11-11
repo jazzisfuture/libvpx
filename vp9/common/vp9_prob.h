@@ -19,7 +19,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 typedef uint8_t vp9_prob;
 
@@ -78,6 +78,6 @@ DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_COMMON_VP9_PROB_H_

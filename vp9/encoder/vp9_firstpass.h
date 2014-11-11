@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #if CONFIG_FP_MB_STATS
 
@@ -37,7 +37,7 @@ typedef struct {
   uint8_t *mb_stats_start;
   uint8_t *mb_stats_end;
 } FIRSTPASS_MB_STATS;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
 #define VLOW_MOTION_THRESHOLD 950
 
@@ -101,7 +101,7 @@ typedef struct {
   uint8_t *frame_mb_stats_buf;
   uint8_t *this_frame_mb_stats;
   FIRSTPASS_MB_STATS firstpass_mb_stats;
-#endif
+#endif  // CONFIG_FP_MB_STATS
 
   // Projected total bits available for a key frame group of frames
   int64_t kf_group_bits;
@@ -134,6 +134,6 @@ void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);
 void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_FIRSTPASS_H_

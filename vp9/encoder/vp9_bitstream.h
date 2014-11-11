@@ -14,7 +14,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif  // def __cplusplus
 
 #include "vp9/encoder/vp9_encoder.h"
 
@@ -34,6 +34,6 @@ static INLINE int vp9_preserve_existing_gf(VP9_COMP *cpi) {
 
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif  // def __cplusplus
 
 #endif  // VP9_ENCODER_VP9_BITSTREAM_H_
