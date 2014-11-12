@@ -197,6 +197,11 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
   int r, c;
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
 #endif
+# if CONFIG_DPCM_LOSSLESS
+  PREDICTION_MODE mode = (plane == 0) ? get_y_mode(xd->mi[0].src_mi, block)
+      : mbmi->uv_mode;
+  int temp;
+#endif
   if (eob > 0) {
     TX_TYPE tx_type = DCT_DCT;
     tran_low_t *const dqcoeff = BLOCK_OFFSET(pd->dqcoeff, block);
@@ -272,7 +277,115 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #if CONFIG_TX_SKIP
           tx_type = get_tx_type_4x4(plane_type, xd, block);
           if ((!plane && mbmi->tx_skip) || (plane && mbmi->tx_skip_uv)) {
+#if CONFIG_DPCM_LOSSLESS
+            if (xd->lossless
+                && ((mbmi->tx_skip && !plane) || (mbmi->tx_skip_uv && plane))
+                && (mode == H_PRED || mode == V_PRED || mode == TM_PRED
+                    || mode == D135_PRED || mode == D45_PRED)) {
+              switch (mode) {
+                case H_PRED:
+                  for (r = 0; r < 4; r++) {
+                    temp = dst[r * stride] + (dqcoeff[r * 4] / adj_coeff);
+                    dst[r * stride] =
+                        (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 0; r < 4; r++)
+                    for (c = 1; c < 4; c++) {
+                      temp = dst[r * stride + c - 1] +
+                          (dqcoeff[r * 4 + c] / adj_coeff);
+                      dst[r * stride + c] =
+                          (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                    }
+                  break;
+                case V_PRED:
+                  for (c = 0; c < 4; c++) {
+                    temp = dst[c] + (dqcoeff[c] / adj_coeff);
+                    dst[c] = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++)
+                    for (c = 0; c < 4; c++) {
+                      temp = dst[(r - 1) * stride + c] +
+                          (dqcoeff[r * 4 + c] / adj_coeff);
+                      dst[r * stride + c] =
+                          (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                    }
+                  break;
+                case TM_PRED:
+                  for (c = 0; c < 4; c++) {
+                    temp = dst[c] + (dqcoeff[c] / adj_coeff);
+                    dst[c] = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++) {
+                    temp = dst[r * stride] + (dqcoeff[r * 4] / adj_coeff);
+                    dst[r * stride] = (temp > 255) ?
+                        255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++)
+                    for (c = 1; c < 4; c++) {
+                      temp = dst[stride * r + c - 1] +
+                          dst[stride * (r - 1) + c] -
+                          dst[stride * (r - 1) + c - 1];
+                      temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                      temp = temp + (dqcoeff[r * 4 + c] / adj_coeff);
+                      dst[stride * r + c] = (temp > 255) ?
+                          255 : (temp < 0) ? 0 : temp;
+                    }
+                  break;
+                case D135_PRED:
+                  for (c = 0; c < 4; c++) {
+                    temp = dst[c] + (dqcoeff[c] / adj_coeff);
+                    dst[c] = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++) {
+                    temp = dst[r * stride] + (dqcoeff[r * 4] / adj_coeff);
+                    dst[r * stride] = (temp > 255) ?
+                        255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++)
+                    for (c = 1; c < 4; c++) {
+                      temp = ROUND_POWER_OF_TWO(dst[stride * r + c - 1] +
+                                                dst[stride * (r - 1) + c] +
+                                                dst[stride * (r - 1) + c - 1] *
+                                                2, 2);/**/
+                      temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                      temp = temp + (dqcoeff[r * 4 + c] / adj_coeff);
+                      dst[stride * r + c] = (temp > 255) ?
+                          255 : (temp < 0) ? 0 : temp;
+                    }
+                  break;
+                case D45_PRED:
+                  for (c = 0; c < 4; c++) {
+                    temp = dst[c] + (dqcoeff[c] / adj_coeff);
+                    dst[c] = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++) {
+                    temp = dst[r * stride + 3] +
+                        (dqcoeff[r * 4 + 3] / adj_coeff);
+                    dst[r * stride + 3] = (temp > 255) ?
+                        255 : (temp < 0) ? 0 : temp;
+                  }
+                  for (r = 1; r < 4; r++)
+                    for (c = 2; c >= 0; c--) {
+                      temp = ROUND_POWER_OF_TWO(dst[stride * r + c + 1] +
+                                                dst[stride * (r - 1) + c] +
+                                                dst[stride * (r - 1) + c + 1] *
+                                                2, 2);/**/
+                      temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+                      temp = temp + (dqcoeff[r * 4 + c] / adj_coeff);
+                      dst[stride * r + c] = (temp > 255) ?
+                          255 : (temp < 0) ? 0 : temp;
+                    }
+                  break;
+                default:
+                  assert(0);
+                  break;
+              }
+            } else {
+              tx_identity_add(dqcoeff, dst, stride, 4, adj_coeff);
+            }
+#else
             tx_identity_add(dqcoeff, dst, stride, 4, adj_coeff);
+#endif
           } else {
             vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
           }
@@ -363,6 +476,9 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
                                             : mi->mbmi.uv_mode;
   int x, y;
   uint8_t *dst;
+#if CONFIG_DPCM_LOSSLESS
+  int no_coeff;
+#endif
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &x, &y);
   dst = &pd->dst.buf[4 * y * pd->dst.stride + 4 * x];
 
@@ -377,7 +493,54 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
                                             args->r);
     inverse_transform_block(xd, plane, block, tx_size, dst, pd->dst.stride,
                             eob);
+#if CONFIG_DPCM_LOSSLESS
+    no_coeff = !eob;
+#endif
   }
+#if CONFIG_DPCM_LOSSLESS
+  if ((mi->mbmi.skip || no_coeff) && xd->lossless
+      && ((mi->mbmi.tx_skip && !plane) || (mi->mbmi.tx_skip_uv && plane))
+      && (mode == TM_PRED || mode == D135_PRED || mode == D45_PRED)) {
+    int r, c, temp;
+    int stride = pd->dst.stride;
+    switch (mode) {
+      case TM_PRED:
+        for (r = 1; r < 4; r++)
+          for (c = 1; c < 4; c++) {
+            temp = dst[stride * r + c - 1] +
+                dst[stride * (r - 1) + c] -
+                dst[stride * (r - 1) + c - 1];
+            temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+            dst[stride * r + c] = temp;
+          }
+        break;
+      case D135_PRED:
+        for (r = 1; r < 4; r++)
+          for (c = 1; c < 4; c++) {
+            temp = ROUND_POWER_OF_TWO(dst[stride * r + c - 1] +
+                                      dst[stride * (r - 1) + c] +
+                                      dst[stride * (r - 1) + c - 1] *
+                                      2, 2);
+            temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+            dst[stride * r + c] = temp;
+          }
+        break;
+      case D45_PRED:
+        for (r = 1; r < 4; r++)
+          for (c = 2; c >= 0; c--) {
+            temp = ROUND_POWER_OF_TWO(dst[stride * r + c + 1] +
+                                      dst[stride * (r - 1) + c] +
+                                      dst[stride * (r - 1) + c + 1] *
+                                      2, 2);
+            temp = (temp > 255) ? 255 : (temp < 0) ? 0 : temp;
+            dst[stride * r + c] = temp;
+          }
+        break;
+      default:
+        break;
+    }
+  }
+#endif
 }
 
 struct inter_args {

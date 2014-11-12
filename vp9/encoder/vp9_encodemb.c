@@ -1090,6 +1090,9 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
 #if CONFIG_TX_SKIP
   if ((mbmi->tx_skip && !plane) || (mbmi->tx_skip_uv && plane)) {
+#if CONFIG_DPCM_LOSSLESS
+    int r, c, temp;
+#endif
     switch (tx_size) {
       case TX_32X32:
         scan_order = &vp9_default_scan_orders[TX_32X32];
@@ -1164,6 +1167,58 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     x->skip_encode ? src_stride : dst_stride,
                                         dst, dst_stride, i, j, plane);
 
+#if CONFIG_DPCM_LOSSLESS
+        if (xd->lossless
+            && ((mbmi->tx_skip && !plane) || (mbmi->tx_skip_uv && plane))
+            && (mode == H_PRED || mode == V_PRED || mode == TM_PRED
+                || mode == D135_PRED || mode == D45_PRED)) {
+          switch (mode) {
+            case H_PRED:
+              for (r = 0; r < 4; r++)
+                for (c = 1; c < 4; c++)
+                  dst[dst_stride * r + c] = src[src_stride * r + c - 1];
+              break;
+            case V_PRED:
+              for (r = 1; r < 4; r++)
+                vpx_memcpy(dst + r * dst_stride, src + (r - 1) * src_stride, 4);
+              break;
+            case TM_PRED:
+              for (r = 1; r < 4; r++)
+                for (c = 1; c < 4; c++) {
+                  temp = src[src_stride * r + c - 1] +
+                      src[src_stride * (r - 1) + c] -
+                      src[src_stride * (r - 1) + c - 1];
+                  dst[dst_stride * r + c] = (temp > 255) ?
+                      255 : (temp < 0) ? 0 : temp;
+                }
+              break;
+            case D135_PRED:
+              for (r = 1; r < 4; r++)
+                for (c = 1; c < 4; c++) {
+                  temp = ROUND_POWER_OF_TWO(src[src_stride * r + c - 1] +
+                                            src[src_stride * (r - 1) + c] +
+                                            src[src_stride * (r - 1) + c - 1] *
+                                            2, 2);
+                  dst[dst_stride * r + c] = (temp > 255) ?
+                      255 : (temp < 0) ? 0 : temp;
+                }
+              break;
+            case D45_PRED:
+              for (r = 1; r < 4; r++)
+                for (c = 2; c >= 0; c--) {
+                  temp = ROUND_POWER_OF_TWO(src[src_stride * r + c + 1] +
+                                            src[src_stride * (r - 1) + c] +
+                                            src[src_stride * (r - 1) + c + 1] *
+                                            2, 2);
+                  dst[dst_stride * r + c] = (temp > 255) ?
+                      255 : (temp < 0) ? 0 : temp;
+                }
+              break;
+            default:
+              break;
+          }
+        }
+#endif
         if (!x->skip_recode) {
           vp9_subtract_block(4, 4, src_diff, diff_stride,
                              src, src_stride, dst, dst_stride);

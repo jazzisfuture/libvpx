@@ -3736,7 +3736,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 #if CONFIG_TX_SKIP
     // for debugging
     // randomly set tx_skip and tx_skip_uv
-    if (output_enabled) {
+    if (output_enabled && 0) {
       if (!(rand() % 5)) {
         mbmi->tx_skip = 1;
       } else {
@@ -3761,7 +3761,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 #if CONFIG_TX_SKIP
     // for debugging
     // randomly set tx_skip and tx_skip_uv
-    if (output_enabled) {
+    if (output_enabled && 0) {
       if (!(rand() % 10)) {
         mbmi->tx_skip = 1;
       } else {
