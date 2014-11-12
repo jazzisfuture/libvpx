@@ -395,54 +395,136 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   variance_node vt;
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
   const int block_height = num_8x8_blocks_high_lookup[bsize];
-  // TODO(debargha): Choose this more intelligently.
+  // TODO(marpan): Adjust/tune these thresholds.
   const int threshold_multiplier = cm->frame_type == KEY_FRAME ? 64 : 4;
   int64_t threshold =
       (int64_t)(threshold_multiplier *
                 vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth));
+
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
 
-  // Split none is available only if we have more than half a block size
-  // in width and height inside the visible image.
-  if (mi_col + block_width / 2 < cm->mi_cols &&
-      mi_row + block_height / 2 < cm->mi_rows &&
-      vt.part_variances->none.variance < threshold) {
-    set_block_size(cpi, mi_row, mi_col, bsize);
-    return 1;
-  }
-
-  // Only allow split for blocks above 16x16.
-  if (bsize > BLOCK_16X16) {
-    // Vertical split is available on all but the bottom border.
-    if (mi_row + block_height / 2 < cm->mi_rows &&
-        vt.part_variances->vert[0].variance < threshold &&
-        vt.part_variances->vert[1].variance < threshold) {
-      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
-      set_block_size(cpi, mi_row, mi_col, subsize);
-      set_block_size(cpi, mi_row, mi_col + block_width / 2, subsize);
-      return 1;
+  if (cm->frame_type == KEY_FRAME) {
+    // For 16x16 block, select it unless variance is very high,
+    // otherwise 8x8 will be selected.
+    // No check against 8x16/16x8 cases as too few samples for variance.
+    if (bsize == BLOCK_16X16) {
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows &&
+          vt.part_variances->none.variance < (threshold << 2)) {
+        set_block_size(cpi, mi_row, mi_col, bsize);
+        return 1;
+      }
+      return 0;
+    } else if (bsize > BLOCK_16X16) {
+      // If variance is very low, take the bsize (no split).
+      // Use lower threshold_high for bsize 64x64 (i.e., suppress/make it more
+      // difficult to select).
+      const int threshold_high = (bsize == BLOCK_64X64) ? threshold >> 2:
+          threshold >> 1;
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows &&
+          vt.part_variances->none.variance < threshold_high) {
+        set_block_size(cpi, mi_row, mi_col, bsize);
+        return 1;
+      } else {
+        // Otherwise to compare against V/H/2x2 split, select case
+        // with smallest average variance.
+        int avg_var[3];
+        int min_var = vt.part_variances->none.variance;
+        int min_split = 0;
+        int i = 0;
+        avg_var[0] = (vt.part_variances->vert[0].variance +
+            vt.part_variances->vert[1].variance) >> 1;
+        avg_var[1] = (vt.part_variances->horz[0].variance +
+            vt.part_variances->horz[1].variance) >> 1;
+        avg_var[2] = (vt.split[0]->variance + vt.split[1]->variance +
+            vt.split[2]->variance + vt.split[3]->variance) >> 2;
+        for (i = 0; i < 3; i++) {
+          if (avg_var[i] < min_var) {
+            min_var = avg_var[i];
+            min_split = i + 1;
+          }
+        }
+        switch (min_split) {
+          case 0:
+            // Take bsize.
+            if (mi_col + block_width / 2 < cm->mi_cols &&
+                mi_row + block_height / 2 < cm->mi_rows) {
+              set_block_size(cpi, mi_row, mi_col, bsize);
+              return 1;
+            }
+            break;
+          case 1:
+            // Take V split.
+            if (mi_row + block_height / 2 < cm->mi_rows) {
+              BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
+              set_block_size(cpi, mi_row, mi_col, subsize);
+              set_block_size(cpi, mi_row, mi_col + block_width / 2, subsize);
+              return 1;
+            }
+            break;
+          case 2:
+            // Take H split.
+            if (mi_col + block_width / 2 < cm->mi_cols) {
+              BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
+              set_block_size(cpi, mi_row, mi_col, subsize);
+              set_block_size(cpi, mi_row + block_height / 2, mi_col, subsize);
+              return 1;
+            }
+            break;
+          case 3:
+            // Take 2x2 split.
+            return 0;
+            break;
+        }
+        return 0;
+      }
     }
-
-    // Horizontal split is available on all but the right border.
-    if (mi_col + block_width / 2 < cm->mi_cols &&
-        vt.part_variances->horz[0].variance < threshold &&
-        vt.part_variances->horz[1].variance < threshold) {
-      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
-      set_block_size(cpi, mi_row, mi_col, subsize);
-      set_block_size(cpi, mi_row + block_height / 2, mi_col, subsize);
-      return 1;
-    }
-  }
-
-  // This will only allow 8x8 if the 16x16 variance is very large.
-  if (bsize == BLOCK_16X16) {
+  } else {
+    // For non-KEY frame.
+    // Split none is available only if we have more than half a block size
+    // in width and height inside the visible image.
     if (mi_col + block_width / 2 < cm->mi_cols &&
         mi_row + block_height / 2 < cm->mi_rows &&
-        vt.part_variances->none.variance < (threshold << 6)) {
+        vt.part_variances->none.variance < threshold) {
       set_block_size(cpi, mi_row, mi_col, bsize);
       return 1;
     }
+
+    // Only allow split for blocks above 16x16.
+    if (bsize > BLOCK_16X16) {
+      // Vertical split is available on all but the bottom border.
+      if (mi_row + block_height / 2 < cm->mi_rows &&
+          vt.part_variances->vert[0].variance < threshold &&
+          vt.part_variances->vert[1].variance < threshold) {
+        BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
+        set_block_size(cpi, mi_row, mi_col, subsize);
+        set_block_size(cpi, mi_row, mi_col + block_width / 2, subsize);
+        return 1;
+      }
+
+      // Horizontal split is available on all but the right border.
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          vt.part_variances->horz[0].variance < threshold &&
+          vt.part_variances->horz[1].variance < threshold) {
+        BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
+        set_block_size(cpi, mi_row, mi_col, subsize);
+        set_block_size(cpi, mi_row + block_height / 2, mi_col, subsize);
+        return 1;
+      }
+    }
+
+    // This will only allow 8x8 if the 16x16 variance is very large.
+    if (bsize == BLOCK_16X16) {
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          mi_row + block_height / 2 < cm->mi_rows &&
+          vt.part_variances->none.variance < (threshold << 6)) {
+        set_block_size(cpi, mi_row, mi_col, bsize);
+        return 1;
+      }
+    }
+    return 0;
   }
   return 0;
 }
@@ -2504,8 +2586,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
       set_fixed_partitioning(cpi, tile_info, mi, mi_row, mi_col, bsize);
       rd_use_partition(cpi, tile_data, mi, tp, mi_row, mi_col,
                        BLOCK_64X64, &dummy_rate, &dummy_dist, 1, cpi->pc_root);
-    } else if (sf->partition_search_type == VAR_BASED_PARTITION &&
-               cm->frame_type != KEY_FRAME ) {
+    } else if (sf->partition_search_type == VAR_BASED_PARTITION) {
       choose_partitioning(cpi, tile_info, mi_row, mi_col);
       rd_use_partition(cpi, tile_data, mi, tp, mi_row, mi_col,
                        BLOCK_64X64, &dummy_rate, &dummy_dist, 1, cpi->pc_root);
