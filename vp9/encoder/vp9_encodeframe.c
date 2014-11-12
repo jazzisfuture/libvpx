@@ -400,6 +400,15 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   int64_t threshold =
       (int64_t)(threshold_multiplier *
                 vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth));
+
+  //TODO: Adjust thresholds for intra-frames.
+  if (cm->frame_type == KEY_FRAME) {
+    if (bsize == BLOCK_32X32)
+      threshold = threshold >> 1;
+    else if (bsize == BLOCK_16X16)
+      threshold = threshold >> 2;
+  }
+
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
 
@@ -2508,8 +2517,7 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
       set_fixed_partitioning(cpi, tile_info, mi, mi_row, mi_col, bsize);
       rd_use_partition(cpi, tile_data, mi, tp, mi_row, mi_col,
                        BLOCK_64X64, &dummy_rate, &dummy_dist, 1, cpi->pc_root);
-    } else if (sf->partition_search_type == VAR_BASED_PARTITION &&
-               cm->frame_type != KEY_FRAME ) {
+    } else if (sf->partition_search_type == VAR_BASED_PARTITION) {
       choose_partitioning(cpi, tile_info, mi_row, mi_col);
       rd_use_partition(cpi, tile_data, mi, tp, mi_row, mi_col,
                        BLOCK_64X64, &dummy_rate, &dummy_dist, 1, cpi->pc_root);
