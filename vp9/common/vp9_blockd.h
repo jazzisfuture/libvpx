@@ -133,6 +133,10 @@ typedef struct {
 #if CONFIG_EXT_TX
   EXT_TX_TYPE ext_txfrm;
 #endif
+#if CONFIG_TX_SKIP
+  int tx_skip;
+  int tx_skip_uv;
+#endif
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
