@@ -1,0 +1,11 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Code-Review+1: Minghai Shang <minghai@google.com>
+Commit-Queue+1: Wonkap Jang <wonkapjang@gmail.com>
+Code-Review+1: Wonkap Jang <wonkapjang@gmail.com>
+Verified+1: Wonkap Jang <wonkapjang@gmail.com>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Thu, 13 Nov 2014 03:27:11 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/72138
+Project: webm/libvpx
+Branch: refs/heads/master
