@@ -493,7 +493,8 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
 #endif
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate altref buffer");
 }
@@ -513,7 +514,8 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
 #endif
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate last frame buffer");
 
@@ -523,7 +525,8 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
 #endif
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled source buffer");
 
@@ -533,7 +536,8 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
 #endif
-                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
 }
@@ -569,7 +573,8 @@ static void update_frame_size(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                                  cm->use_highbitdepth,
 #endif
-                                 VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL))
+                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                 NULL, NULL, NULL))
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to reallocate alt_ref_buffer");
   }
@@ -2460,7 +2465,8 @@ void vp9_scale_references(VP9_COMP *cpi) {
                                  cm->width, cm->height,
                                  cm->subsampling_x, cm->subsampling_y,
                                  cm->use_highbitdepth,
-                                 VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                 NULL, NULL, NULL);
         scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf,
                                (int)cm->bit_depth);
 #else
@@ -2469,7 +2475,8 @@ void vp9_scale_references(VP9_COMP *cpi) {
         vp9_realloc_frame_buffer(&cm->frame_bufs[new_fb].buf,
                                  cm->width, cm->height,
                                  cm->subsampling_x, cm->subsampling_y,
-                                 VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+                                 VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                                 NULL, NULL, NULL);
         scale_and_extend_frame(ref, &cm->frame_bufs[new_fb].buf);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
@@ -2707,7 +2714,8 @@ void set_frame_size(VP9_COMP *cpi) {
 #if CONFIG_VP9_HIGHBITDEPTH
                            cm->use_highbitdepth,
 #endif
-                           VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+                           VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                           NULL, NULL, NULL);
 
   alloc_util_frame_buffers(cpi);
   init_motion_estimation(cpi);
