@@ -845,7 +845,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         break;
       case TX_4X4:
 #if CONFIG_EXT_TX
-        if (plane != 0 || mbmi->ext_txfrm == NORM) {
+        if (plane != 0 || mbmi->ext_txfrm == NORM || xd->lossless) {
           // this is like vp9_short_idct4x4 but has a special case around eob<=1
           // which is significant (not just an optimization) for the lossless
           // case.
@@ -905,7 +905,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
       break;
     case TX_4X4:
 #if CONFIG_EXT_TX
-      if (plane != 0 || mbmi->ext_txfrm == NORM) {
+      if (plane != 0 || mbmi->ext_txfrm == NORM || xd->lossless) {
         // this is like vp9_short_idct4x4 but has a special case around eob<=1
         // which is significant (not just an optimization) for the lossless
         // case.
