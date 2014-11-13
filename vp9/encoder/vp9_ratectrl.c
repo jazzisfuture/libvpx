@@ -1003,6 +1003,15 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi,
     }
   }
 
+  // Worst allowed quality may need adjusting if using AQ.
+  /* if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+    vp9_clear_system_state();
+    if (cpi->vaq_avg_rate_ratio > 1.0) {
+      active_worst_quality =
+        (int)(active_worst_quality * cpi->vaq_avg_rate_ratio);
+    }
+  } */
+
   // Extenstion to max or min Q if undershoot or overshoot is outside
   // the permitted range.
   if ((cpi->oxcf.rc_mode == VPX_VBR) &&

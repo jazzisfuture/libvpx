@@ -466,11 +466,18 @@ static void update_reference_segmentation_map(VP9_COMP *cpi) {
   for (row = 0; row < cm->mi_rows; row++) {
     MODE_INFO *mi_8x8 = mi_8x8_ptr;
     uint8_t *cache = cache_ptr;
-    for (col = 0; col < cm->mi_cols; col++, mi_8x8++, cache++)
+    for (col = 0; col < cm->mi_cols; col++, mi_8x8++, cache++) {
       cache[0] = mi_8x8[0].src_mi->mbmi.segment_id;
+      if (cpi->oxcf.aq_mode == VARIANCE_AQ)
+        vp9_vaq_build_profile(cpi, mi_8x8[0].src_mi->mbmi.segment_id);
+    }
     mi_8x8_ptr += cm->mi_stride;
     cache_ptr += cm->mi_cols;
   }
+
+  // Post encode frame stats updates for variance AQ.
+  if (cpi->oxcf.aq_mode == VARIANCE_AQ)
+    vp9_vaq_post_frame(cpi);
 }
 
 static void alloc_raw_frame_buffers(VP9_COMP *cpi) {

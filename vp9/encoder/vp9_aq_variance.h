@@ -18,11 +18,16 @@
 extern "C" {
 #endif
 
-unsigned int vp9_vaq_segment_id(int energy);
+unsigned int vp9_vaq_segment_id(VP9_COMP *cpi, int energy);
 void vp9_vaq_frame_setup(VP9_COMP *cpi);
+void vp9_vaq_build_profile(VP9_COMP *cpi, int8_t segment);
+void vp9_vaq_post_frame(VP9_COMP *cpi);
 
 int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs);
 double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs);
+void vp9_complexity_override(VP9_COMP *cpi, BLOCK_SIZE bs,
+                             int mi_row, int mi_col,
+                             int output_enabled, int projected_rate);
 
 #ifdef __cplusplus
 }  // extern "C"

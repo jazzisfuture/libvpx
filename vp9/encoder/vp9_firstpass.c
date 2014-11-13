@@ -2488,6 +2488,13 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
 
   rc->base_frame_target = target_rate;
 
+  {
+    const int num_mbs =
+      cpi->oxcf.allow_spatial_resampling ? cpi->initial_mbs : cpi->common.MBs;
+    twopass->mb_av_energy =
+      log(((this_frame.intra_error * 256.0) / num_mbs) + 1.0);
+  }
+
   // Update the total stats remaining structure.
   subtract_stats(&twopass->total_left_stats, &this_frame);
 }

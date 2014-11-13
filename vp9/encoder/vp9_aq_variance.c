@@ -19,16 +19,16 @@
 #include "vp9/encoder/vp9_segmentation.h"
 #include "vp9/common/vp9_systemdependent.h"
 
-#define ENERGY_MIN (-1)
+#define ENERGY_MIN (-5)
 #define ENERGY_MAX (1)
 #define ENERGY_SPAN (ENERGY_MAX - ENERGY_MIN +  1)
 #define ENERGY_IN_BOUNDS(energy)\
   assert((energy) >= ENERGY_MIN && (energy) <= ENERGY_MAX)
 
-static double q_ratio[MAX_SEGMENTS] =
-  {1.0, 0.875, 1.143, 1.0, 1.0, 1.0, 1.0, 1.0};
-
-static int segment_id[ENERGY_SPAN] = {1, 0, 2};
+#define NEUTRAL_SEG 3
+static double rate_ratio[MAX_SEGMENTS] =
+  {2.5, 2.0, 1.5, 1.0, 0.75, 1.0, 1.0, 1.0};
+static int segment_id[ENERGY_SPAN] = {0, 1, 1, 1, 2, 3, 4};
 
 #define SEGMENT_ID(i) segment_id[(i) - ENERGY_MIN]
 
@@ -37,9 +37,32 @@ DECLARE_ALIGNED(16, static const uint8_t, vp9_64_zeros[64]) = {0};
 DECLARE_ALIGNED(16, static const uint16_t, vp9_highbd_64_zeros[64]) = {0};
 #endif
 
-unsigned int vp9_vaq_segment_id(int energy) {
+unsigned int vp9_vaq_segment_id(VP9_COMP *cpi, int energy) {
   ENERGY_IN_BOUNDS(energy);
-  return SEGMENT_ID(energy);
+  return SEGMENT_ID(energy);;
+}
+
+void vp9_vaq_build_profile(VP9_COMP *cpi, int8_t segment) {
+  vp9_clear_system_state();
+  cpi->vaq_sum_rate_ratio += rate_ratio[segment];
+  ++cpi->vaq_block_count;
+}
+
+void vp9_vaq_post_frame(VP9_COMP *cpi) {
+  VP9_COMMON *cm = &cpi->common;
+
+  // Currently we only have any post frame adjustment for kf/gf/arf
+  if (cm->frame_type == KEY_FRAME ||
+      cpi->refresh_alt_ref_frame ||
+      (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
+    vp9_clear_system_state();
+
+    if (cpi->vaq_block_count > 0)
+      cpi->vaq_avg_rate_ratio =
+        cpi->vaq_sum_rate_ratio / (double)cpi->vaq_block_count;
+    else
+      cpi->vaq_avg_rate_ratio = 1.0;
+  }
 }
 
 void vp9_vaq_frame_setup(VP9_COMP *cpi) {
@@ -59,17 +82,28 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
     seg->abs_delta = SEGMENT_DELTADATA;
 
     vp9_clear_system_state();
+    cpi->vaq_sum_rate_ratio = 0.0;
+    cpi->vaq_avg_rate_ratio = 1.0;
+    cpi->vaq_block_count = 0;
 
     for (i = 0; i < MAX_SEGMENTS; i++) {
-      int qindex_delta;
+      // int qindex_delta;
+      int qindex_delta =
+          vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
+                                     rate_ratio[i], cm->bit_depth);
 
-      // No need to enable SEG_LVL_ALT_Q for this segment
-      if (q_ratio[i] == 1.0) {
-        continue;
+      // We don't allow Q0 in a segment if the base Q is not 0.
+      // Q0 (lossless) implies 4x4 only and in AQ mode a segment
+      // Q delta is sometimes applied without going back around the rd loop.
+      // This could lead to an illegal combination of partition size and q.
+      if ((cm->base_qindex != 0) && ((cm->base_qindex + qindex_delta) == 0)) {
+        qindex_delta = -cm->base_qindex + 1;
       }
 
-      qindex_delta = vp9_compute_qdelta(&cpi->rc, base_q, base_q * q_ratio[i],
-                                        cm->bit_depth);
+      // No need to enable SEG_LVL_ALT_Q for this segment
+      if (rate_ratio[i] == 1.0) {
+        continue;
+      }
       vp9_set_segdata(seg, i, SEG_LVL_ALT_Q, qindex_delta);
       vp9_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
     }
@@ -136,6 +170,44 @@ double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
 
 int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   double energy;
-  energy = 0.9 * (vp9_log_block_var(cpi, x, bs) - 10.0);
+  energy = vp9_log_block_var(cpi, x, bs) - cpi->twopass.mb_av_energy;
   return clamp((int)round(energy), ENERGY_MIN, ENERGY_MAX);
+}
+
+// Check the bit expenditure and if necessary adjust the segmentation
+void vp9_complexity_override(VP9_COMP *cpi, BLOCK_SIZE bs,
+                             int mi_row, int mi_col,
+                             int output_enabled, int projected_rate) {
+  VP9_COMMON *const cm = &cpi->common;
+  MODE_INFO *mi_8x8_ptr = cm->mi;
+
+  const int mi_offset = mi_row * cm->mi_cols + mi_col;
+  const int bw = num_8x8_blocks_wide_lookup[bs];
+  const int bh = num_8x8_blocks_high_lookup[bs];
+  const int xmis = MIN(cm->mi_cols - mi_col, bw);
+  const int ymis = MIN(cm->mi_rows - mi_row, bh);
+  int x, y;
+
+  unsigned char segment_cap = 0;
+
+  if (output_enabled) {
+    //const int target_rate = (cpi->rc.sb64_target_rate * xmis * ymis * 256) /
+    //                        (bw * bh);
+    const int target_rate =
+      (cpi->rc.sb64_target_rate * xmis * ymis * 256) / 64;
+
+    // Higher segment number = higher Q in this case
+    if (projected_rate > target_rate)
+      segment_cap = NEUTRAL_SEG - 1;
+
+    // Force any segment below the cap to the cap.
+    for (y = 0; y < ymis; y++) {
+      for (x = 0; x < xmis; x++) {
+        if (cpi->segmentation_map[mi_offset + y * cm->mi_cols + x]
+            < segment_cap) {
+          cpi->segmentation_map[mi_offset + y * cm->mi_cols + x] = segment_cap;
+        }
+      }
+    }
+  }
 }

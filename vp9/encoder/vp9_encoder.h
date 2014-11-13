@@ -328,6 +328,9 @@ typedef struct VP9_COMP {
   int  segment_encode_breakout[MAX_SEGMENTS];
 
   unsigned char *complexity_map;
+  double vaq_avg_rate_ratio;
+  double vaq_sum_rate_ratio;
+  int vaq_block_count;
 
   CYCLIC_REFRESH *cyclic_refresh;
 

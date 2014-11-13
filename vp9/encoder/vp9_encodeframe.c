@@ -632,7 +632,9 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   // If segmentation in use
   if (seg->enabled && output_enabled) {
     // For in frame complexity AQ copy the segment id from the segment map.
-    if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+    // if (cpi->oxcf.aq_mode == COMPLEXITY_AQ) {
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) ||
+        (cpi->oxcf.aq_mode == VARIANCE_AQ)) {
       const uint8_t *const map = seg->update_map ? cpi->segmentation_map
                                                  : cm->last_frame_seg_map;
       mi_addr->mbmi.segment_id =
@@ -810,10 +812,8 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
   struct macroblockd_plane *const pd = xd->plane;
   const AQ_MODE aq_mode = cpi->oxcf.aq_mode;
   int i, orig_rdmult;
-  double rdmult_ratio;
 
   vp9_clear_system_state();
-  rdmult_ratio = 1.0;  // avoid uninitialized warnings
 
   // Use the lower precision, but faster, 32x32 fdct for mode selection.
   x->use_lp32x32fdct = 1;
@@ -855,29 +855,40 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     const int energy = bsize <= BLOCK_16X16 ? x->mb_energy
                                             : vp9_block_energy(cpi, x, bsize);
     int segment_qindex;
+    uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
+                                            : cm->last_frame_seg_map;
     if (cm->frame_type == KEY_FRAME ||
         cpi->refresh_alt_ref_frame ||
         (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref)) {
-      mbmi->segment_id = vp9_vaq_segment_id(energy);
+      mbmi->segment_id = vp9_vaq_segment_id(cpi, energy);
+      vp9_set_segment_id(cm, map, bsize, mi_row, mi_col, mbmi->segment_id);
     } else {
-      const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
-                                                    : cm->last_frame_seg_map;
       mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
     vp9_init_plane_quantizers(cpi, x);
-    vp9_clear_system_state();
     segment_qindex = vp9_get_qindex(&cm->seg, mbmi->segment_id,
                                     cm->base_qindex);
     x->rdmult = vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
-    vp9_clear_system_state();
-    rdmult_ratio = (double)x->rdmult / orig_rdmult;
   } else if (aq_mode == COMPLEXITY_AQ) {
     const int mi_offset = mi_row * cm->mi_cols + mi_col;
     unsigned char complexity = cpi->complexity_map[mi_offset];
     const int is_edge = (mi_row <= 1) || (mi_row >= (cm->mi_rows - 2)) ||
                         (mi_col <= 1) || (mi_col >= (cm->mi_cols - 2));
-    if (!is_edge && (complexity > 128))
+
+    if (!is_edge && (complexity > 128)) {
       x->rdmult += ((x->rdmult * (complexity - 128)) / 256);
+    } else {
+      int segment_qindex;
+      uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
+                                              : cm->last_frame_seg_map;
+
+      mbmi->segment_id = vp9_get_segment_id(cm, map, bsize, mi_row, mi_col);
+      vp9_init_plane_quantizers(cpi, x);
+      vp9_clear_system_state();
+      segment_qindex = vp9_get_qindex(&cm->seg, mbmi->segment_id,
+                                      cm->base_qindex);
+      x->rdmult = vp9_compute_rd_mult(cpi, segment_qindex + cm->y_dc_delta_q);
+    }
   } else if (aq_mode == CYCLIC_REFRESH_AQ) {
     const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map
                                                   : cm->last_frame_seg_map;
@@ -904,13 +915,17 @@ static void rd_pick_sb_modes(VP9_COMP *cpi,
     }
   }
 
-  if (aq_mode == VARIANCE_AQ && rd_cost->rate != INT_MAX) {
-    vp9_clear_system_state();
-    rd_cost->rate = (int)round(rd_cost->rate * rdmult_ratio);
-    rd_cost->rdcost = RDCOST(x->rdmult, x->rddiv, rd_cost->rate, rd_cost->dist);
-  }
-
   x->rdmult = orig_rdmult;
+
+  // Check to see if aq segmentation turned an easy blcok into one overspending
+  // the target determined for the frame.
+  if ((aq_mode == VARIANCE_AQ) && (bsize >= BLOCK_16X16) &&
+      (cm->frame_type == KEY_FRAME ||
+        cpi->refresh_alt_ref_frame ||
+        (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref))) {
+    vp9_complexity_override(cpi, bsize, mi_row, mi_col,
+                            1, rd_cost->rate);
+  }
 
   // TODO(jingning) The rate-distortion optimization flow needs to be
   // refactored to provide proper exit/return handle.
@@ -1705,7 +1720,10 @@ static void rd_use_partition(VP9_COMP *cpi,
     if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
       vp9_select_in_frame_q_segment(cpi, bsize, mi_row, mi_col,
                                     output_enabled, chosen_rdc.rate);
-    }
+    }/* else if ((cpi->oxcf.aq_mode == VARIANCE_AQ) && cm->seg.update_map) {
+      vp9_complexity_override(cpi, bsize, mi_row, mi_col,
+                              output_enabled, chosen_rdc.rate);
+    }*/
     encode_sb(cpi, tile_info, tp, mi_row, mi_col, output_enabled, bsize,
               pc_tree);
   }
@@ -2441,9 +2459,13 @@ static void rd_pick_partition(VP9_COMP *cpi,
     // Check the projected output rate for this SB against it's target
     // and and if necessary apply a Q delta using segmentation to get
     // closer to the target.
-    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map)
+    if ((cpi->oxcf.aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
       vp9_select_in_frame_q_segment(cpi, bsize, mi_row, mi_col, output_enabled,
                                     best_rdc.rate);
+    }/* else if ((cpi->oxcf.aq_mode == VARIANCE_AQ) && cm->seg.update_map) {
+      vp9_complexity_override(cpi, bsize, mi_row, mi_col, output_enabled,
+                              best_rdc.rate);
+    }*/
     encode_sb(cpi, tile_info, tp, mi_row, mi_col, output_enabled,
               bsize, pc_tree);
   }
@@ -2948,7 +2970,10 @@ static void nonrd_pick_partition(VP9_COMP *cpi,
     if ((oxcf->aq_mode == COMPLEXITY_AQ) && cm->seg.update_map) {
       vp9_select_in_frame_q_segment(cpi, bsize, mi_row, mi_col, output_enabled,
                                     best_rdc.rate);
-    }
+    }/* else if ((cpi->oxcf.aq_mode == VARIANCE_AQ) && cm->seg.update_map) {
+      vp9_complexity_override(cpi, bsize, mi_row, mi_col, output_enabled,
+                              best_rdc.rate);
+    }*/
     encode_sb_rt(cpi, tile_info, tp, mi_row, mi_col, output_enabled,
                  bsize, pc_tree);
   }
@@ -3780,8 +3805,10 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
 
   x->skip_recode = !x->select_tx_size && mbmi->sb_type >= BLOCK_8X8 &&
-                   cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
-                   cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ &&
+                   (cpi->oxcf.aq_mode == NO_AQ) &&
+                   //cpi->oxcf.aq_mode != VARIANCE_AQ &&
+                   //cpi->oxcf.aq_mode != COMPLEXITY_AQ &&
+                   //cpi->oxcf.aq_mode != CYCLIC_REFRESH_AQ &&
                    cpi->sf.allow_skip_recode;
 
   if (!x->skip_recode && !cpi->sf.use_nonrd_pick_mode)
