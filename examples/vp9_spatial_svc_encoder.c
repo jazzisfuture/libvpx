@@ -27,6 +27,7 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
 #include "./vpxstats.h"
+#include "y4minput.h"
 
 static const arg_def_t skip_frames_arg =
     ARG_DEF("s", "skip-frames", 1, "input frames to skip");
@@ -104,7 +105,6 @@ static const uint32_t default_temporal_layers = 1;
 static const uint32_t default_kf_dist = 100;
 
 typedef struct {
-  const char *input_filename;
   const char *output_filename;
   uint32_t frames_to_code;
   uint32_t frames_to_skip;
@@ -295,8 +295,8 @@ static void parse_command_line(int argc, const char **argv_,
   if (argv[0] == NULL || argv[1] == 0) {
     usage_exit();
   }
-  app_input->input_filename = argv[0];
-  app_input->output_filename = argv[1];
+  app_input->input_ctx.filename = argv[0];
+  app_input->output_filename    = argv[1];
   free(argv);
 
   if (enc_cfg->g_w < 16 || enc_cfg->g_w % 2 || enc_cfg->g_h < 16 ||
@@ -316,6 +316,80 @@ static void parse_command_line(int argc, const char **argv_,
       enc_cfg->rc_target_bitrate, enc_cfg->kf_max_dist);
 }
 
+int file_is_y4m(const char detect[4]) {
+  if (memcmp(detect, "YUV4", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int fourcc_is_ivf(const char detect[4]) {
+  if (memcmp(detect, "DKIF", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+void open_input_file(struct VpxInputContext *input) {
+  /* Parse certain options from the input file, if possible */
+  input->file = strcmp(input->filename, "-")
+      ? fopen(input->filename, "rb") : set_binary_mode(stdin);
+
+  if (!input->file)
+    fatal("Failed to open input file");
+
+  if (!fseeko(input->file, 0, SEEK_END)) {
+    /* Input file is seekable. Figure out how long it is, so we can get
+     * progress info.
+     */
+    input->length = ftello(input->file);
+    rewind(input->file);
+  }
+
+  /* For RAW input sources, these bytes will applied on the first frame
+   *  in read_frame().
+   */
+  input->detect.buf_read = fread(input->detect.buf, 1, 4, input->file);
+  input->detect.position = 0;
+
+  if (input->detect.buf_read == 4
+      && file_is_y4m(input->detect.buf)) {
+    if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4,
+                       input->only_i420) >= 0) {
+      input->file_type = FILE_TYPE_Y4M;
+      input->width = input->y4m.pic_w;
+      input->height = input->y4m.pic_h;
+      input->framerate.numerator = input->y4m.fps_n;
+      input->framerate.denominator = input->y4m.fps_d;
+      input->fmt = input->y4m.vpx_fmt;
+      input->bit_depth = input->y4m.bit_depth;
+    } else
+      fatal("Unsupported Y4M stream.");
+  } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
+    fatal("IVF is not supported as input.");
+  } else {
+    input->file_type = FILE_TYPE_RAW;
+  }
+}
+
+int read_frame(struct VpxInputContext *input_ctx, vpx_image_t *img) {
+  FILE *f = input_ctx->file;
+  y4m_input *y4m = &input_ctx->y4m;
+
+  if (input_ctx->file_type == FILE_TYPE_Y4M) {
+    if (y4m_input_fetch_frame(y4m, f, img) < 1)
+      return 0;
+  } else
+      return (!read_yuv_frame(input_ctx, img));
+  return 1;
+}
+
+static void close_input_file(struct VpxInputContext *input) {
+  fclose(input->file);
+  if (input->file_type == FILE_TYPE_Y4M)
+    y4m_input_close(&input->y4m);
+}
+
 int main(int argc, const char **argv) {
   AppInput app_input = {0};
   VpxVideoWriter *writer = NULL;
@@ -329,7 +403,6 @@ int main(int argc, const char **argv) {
   vpx_codec_err_t res;
   int pts = 0;            /* PTS starts at 0 */
   int frame_duration = 1; /* 1 timebase tick per frame */
-  FILE *infile = NULL;
   int end_of_stream = 0;
   int frames_received = 0;
 
@@ -351,8 +424,7 @@ int main(int argc, const char **argv) {
   }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-  if (!(infile = fopen(app_input.input_filename, "rb")))
-    die("Failed to open %s for reading\n", app_input.input_filename);
+  open_input_file(&app_input.input_ctx);
 
   // Initialize codec
   if (vpx_svc_init(&svc_ctx, &codec, vpx_codec_vp9_cx(), &enc_cfg) !=
@@ -373,13 +445,14 @@ int main(int argc, const char **argv) {
 
   // skip initial frames
   for (i = 0; i < app_input.frames_to_skip; ++i)
-    vpx_img_read(&raw, infile);
+    read_frame(&app_input.input_ctx, &raw);
 
   // Encode frames
   while (!end_of_stream) {
     vpx_codec_iter_t iter = NULL;
     const vpx_codec_cx_pkt_t *cx_pkt;
-    if (frame_cnt >= app_input.frames_to_code || !vpx_img_read(&raw, infile)) {
+    if (frame_cnt >= app_input.frames_to_code ||
+        !read_frame(&app_input.input_ctx, &raw)) {
       // We need one extra vpx_svc_encode call at end of stream to flush
       // encoder and get remaining data
       end_of_stream = 1;
@@ -427,7 +500,7 @@ int main(int argc, const char **argv) {
 
   printf("Processed %d frames\n", frame_cnt);
 
-  fclose(infile);
+  close_input_file(&app_input.input_ctx);
   if (vpx_codec_destroy(&codec)) die_codec(&codec, "Failed to destroy codec");
 
   if (app_input.passes == 2)
@@ -446,3 +519,4 @@ int main(int argc, const char **argv) {
 
   return EXIT_SUCCESS;
 }
+

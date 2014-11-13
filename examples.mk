@@ -93,7 +93,7 @@ vpxenc.GUID                  = 548DEC74-7A15-4B2B-AFC3-AA102E7C25C1
 vpxenc.DESCRIPTION           = Full featured encoder
 ifeq ($(CONFIG_SPATIAL_SVC),yes)
   EXAMPLES-$(CONFIG_VP9_ENCODER)      += vp9_spatial_svc_encoder.c
-  vp9_spatial_svc_encoder.SRCS        += args.c args.h
+  vp9_spatial_svc_encoder.SRCS        += args.c args.h y4minput.c y4minput.h
   vp9_spatial_svc_encoder.SRCS        += ivfenc.c ivfenc.h
   vp9_spatial_svc_encoder.SRCS        += tools_common.c tools_common.h
   vp9_spatial_svc_encoder.SRCS        += video_common.h
