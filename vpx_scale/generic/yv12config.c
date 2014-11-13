@@ -143,22 +143,26 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
                              int use_highbitdepth,
 #endif
                              int border,
+                             int byte_alignment,
                              vpx_codec_frame_buffer_t *fb,
                              vpx_get_frame_buffer_cb_fn_t cb,
                              void *cb_priv) {
   if (ybf) {
+    const int byte_alignment_minus_one =
+        (byte_alignment == 0) ? 0 : byte_alignment - 1;
     const int aligned_width = (width + 7) & ~7;
     const int aligned_height = (height + 7) & ~7;
     const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
-    const uint64_t yplane_size = (aligned_height + 2 * border) *
-                                 (uint64_t)y_stride;
+    const uint64_t yplane_size = ((aligned_height + 2 * border) *
+                                 (uint64_t)y_stride) + byte_alignment;
     const int uv_width = aligned_width >> ss_x;
     const int uv_height = aligned_height >> ss_y;
     const int uv_stride = y_stride >> ss_x;
     const int uv_border_w = border >> ss_x;
     const int uv_border_h = border >> ss_y;
-    const uint64_t uvplane_size = (uv_height + 2 * uv_border_h) *
-                                  (uint64_t)uv_stride;
+    const uint64_t uvplane_size = ((uv_height + 2 * uv_border_h) *
+                                  (uint64_t)uv_stride) + byte_alignment;
+
 #if CONFIG_ALPHA
     const int alpha_width = aligned_width;
     const int alpha_height = aligned_height;
@@ -263,11 +267,15 @@ int vp9_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
       ybf->flags = 0;
     }
 #else
-    ybf->y_buffer = ybf->buffer_alloc + (border * y_stride) + border;
-    ybf->u_buffer = ybf->buffer_alloc + yplane_size +
-                    (uv_border_h * uv_stride) + uv_border_w;
-    ybf->v_buffer = ybf->buffer_alloc + yplane_size + uvplane_size +
-                    (uv_border_h * uv_stride) + uv_border_w;
+    ybf->y_buffer = (uint8_t *)(((size_t)(ybf->buffer_alloc +
+                    (border * y_stride) + border) +
+                    byte_alignment_minus_one) & ~byte_alignment_minus_one);
+    ybf->u_buffer = (uint8_t *)(((size_t)(ybf->buffer_alloc + yplane_size +
+                    (uv_border_h * uv_stride) + uv_border_w) +
+                    byte_alignment_minus_one) & ~byte_alignment_minus_one);
+    ybf->v_buffer = (uint8_t *)(((size_t)(ybf->buffer_alloc + yplane_size +
+        uvplane_size + (uv_border_h * uv_stride) + uv_border_w) +
+        byte_alignment_minus_one) & ~byte_alignment_minus_one);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if CONFIG_ALPHA
@@ -289,14 +297,15 @@ int vp9_alloc_frame_buffer(YV12_BUFFER_CONFIG *ybf,
 #if CONFIG_VP9_HIGHBITDEPTH
                            int use_highbitdepth,
 #endif
-                           int border) {
+                           int border,
+                           int byte_alignment) {
   if (ybf) {
     vp9_free_frame_buffer(ybf);
     return vp9_realloc_frame_buffer(ybf, width, height, ss_x, ss_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                     use_highbitdepth,
 #endif
-                                    border, NULL, NULL, NULL);
+                                    border, byte_alignment, NULL, NULL, NULL);
   }
   return -2;
 }
