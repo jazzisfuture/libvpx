@@ -266,7 +266,7 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
       return DCT_DCT;
 
   if (is_inter_block(mbmi)) {
-    if (mbmi->ext_txfrm == NORM || mbmi->tx_size >= TX_32X32)
+    if (mbmi->ext_txfrm == NORM || mbmi->tx_size >= TX_32X32 || xd->lossless)
       return DCT_DCT;
     else
       return ADST_ADST;
