@@ -960,7 +960,10 @@ static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int mi_height = num_8x8_blocks_high_lookup[bsize];
+  assert(xd);
+  assert(xd->above_context);
   for (p = 0; p < MAX_MB_PLANE; p++) {
+    assert(xd->above_context[p]);
     vpx_memcpy(
         xd->above_context[p] + ((mi_col * 2) >> xd->plane[p].subsampling_x),
         a + num_4x4_blocks_wide * p,
