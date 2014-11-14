@@ -128,6 +128,15 @@ static void read_inter_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
       vp9_diff_update_prob(r, &fc->inter_mode_probs[i][j]);
 }
 
+#if CONFIG_COMPOUND_MODES
+static void read_inter_compound_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i, j;
+  for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
+    for (j = 0; j < INTER_MODES - 1; ++j)
+      vp9_diff_update_prob(r, &fc->inter_compound_mode_probs[i][j]);
+}
+#endif
+
 static REFERENCE_MODE read_frame_reference_mode(const VP9_COMMON *cm,
                                                 vp9_reader *r) {
   if (is_compound_reference_allowed(cm)) {
@@ -1450,7 +1459,11 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
     nmv_context *const nmvc = &fc->nmvc;
     int i, j;
 
+#if CONFIG_COMPOUND_MODES
+    read_inter_compound_mode_probs(fc, &r);
+#endif
     read_inter_mode_probs(fc, &r);
+
 
     if (cm->interp_filter == SWITCHABLE)
       read_switchable_interp_probs(fc, &r);
@@ -1529,6 +1542,11 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
 #if CONFIG_EXT_TX
   assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
                  sizeof(cm->counts.ext_tx)));
+#endif
+#if CONFIG_COMPOUND_MODES
+  assert(!memcmp(cm->counts.inter_compound_mode,
+                 zero_counts.inter_compound_mode,
+                 sizeof(cm->counts.inter_compound_mode)));
 #endif
 }
 #endif  // NDEBUG
