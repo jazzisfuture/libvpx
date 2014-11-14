@@ -209,8 +209,8 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   cpi->segmentation_map = NULL;
   vpx_free(cm->last_frame_seg_map);
   cm->last_frame_seg_map = NULL;
-  vpx_free(cpi->coding_context.last_frame_seg_map_copy);
-  cpi->coding_context.last_frame_seg_map_copy = NULL;
+  vpx_free(cpi->coding_context->last_frame_seg_map_copy);
+  cpi->coding_context->last_frame_seg_map_copy = NULL;
 
   vpx_free(cpi->complexity_map);
   cpi->complexity_map = NULL;
@@ -250,6 +250,9 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vpx_free(cpi->tok);
   cpi->tok = 0;
 
+  vpx_free(cpi->coding_context);
+  cpi->coding_context = NULL;
+
   vp9_free_pc_tree(cpi);
 
   for (i = 0; i < cpi->svc.number_spatial_layers; ++i) {
@@ -275,7 +278,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 }
 
 static void save_coding_context(VP9_COMP *cpi) {
-  CODING_CONTEXT *const cc = &cpi->coding_context;
+  CODING_CONTEXT *const cc = cpi->coding_context;
   VP9_COMMON *cm = &cpi->common;
 
   // Stores a snapshot of key state variables which can subsequently be
@@ -295,7 +298,7 @@ static void save_coding_context(VP9_COMP *cpi) {
 
   vp9_copy(cc->segment_pred_probs, cm->seg.pred_probs);
 
-  vpx_memcpy(cpi->coding_context.last_frame_seg_map_copy,
+  vpx_memcpy(cpi->coding_context->last_frame_seg_map_copy,
              cm->last_frame_seg_map, (cm->mi_rows * cm->mi_cols));
 
   vp9_copy(cc->last_ref_lf_deltas, cm->lf.last_ref_deltas);
@@ -305,7 +308,7 @@ static void save_coding_context(VP9_COMP *cpi) {
 }
 
 static void restore_coding_context(VP9_COMP *cpi) {
-  CODING_CONTEXT *const cc = &cpi->coding_context;
+  CODING_CONTEXT *const cc = cpi->coding_context;
   VP9_COMMON *cm = &cpi->common;
 
   // Restore key state variables to the snapshot state stored in the
@@ -324,7 +327,7 @@ static void restore_coding_context(VP9_COMP *cpi) {
   vp9_copy(cm->seg.pred_probs, cc->segment_pred_probs);
 
   vpx_memcpy(cm->last_frame_seg_map,
-             cpi->coding_context.last_frame_seg_map_copy,
+             cpi->coding_context->last_frame_seg_map_copy,
              (cm->mi_rows * cm->mi_cols));
 
   vp9_copy(cm->lf.last_ref_deltas, cc->last_ref_lf_deltas);
@@ -550,7 +553,11 @@ void vp9_alloc_compressor_data(VP9_COMP *cpi) {
     CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
   }
 
-  vp9_setup_pc_tree(&cpi->common, cpi);
+  vpx_free(cpi->coding_context);
+  CHECK_MEM_ERROR(cm, cpi->coding_context, vpx_calloc(1,
+                  sizeof(*cpi->coding_context)));
+
+  vp9_setup_pc_tree(cm, cpi);
 }
 
 static void update_frame_size(VP9_COMP *cpi) {
@@ -1450,7 +1457,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
 
   // And a place holder structure is the coding context
   // for use if we want to save and restore it
-  CHECK_MEM_ERROR(cm, cpi->coding_context.last_frame_seg_map_copy,
+  CHECK_MEM_ERROR(cm, cpi->coding_context->last_frame_seg_map_copy,
                   vpx_calloc(cm->mi_rows * cm->mi_cols, 1));
 
   CHECK_MEM_ERROR(cm, cpi->nmvcosts[0],

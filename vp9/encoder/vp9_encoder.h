@@ -283,7 +283,7 @@ typedef struct VP9_COMP {
 
   RD_OPT rd;
 
-  CODING_CONTEXT coding_context;
+  CODING_CONTEXT *coding_context;
 
   int *nmvcosts[2];
   int *nmvcosts_hp[2];
