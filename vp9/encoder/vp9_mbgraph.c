@@ -62,8 +62,15 @@ static unsigned int do_16x16_motion_iteration(VP9_COMP *cpi,
         NULL, NULL,
         &distortion, &sse, NULL, 0, 0);
   }
-
+#if CONFIG_COMPOUND_MODES
+  if (has_second_ref(&xd->mi[0].src_mi->mbmi)) {
+    xd->mi[0].src_mi->mbmi.mode = NEW_NEWMV;
+  } else {
+#endif
   xd->mi[0].src_mi->mbmi.mode = NEWMV;
+#if CONFIG_COMPOUND_MODES
+  }
+#endif
   xd->mi[0].src_mi->mbmi.mv[0].as_mv = *dst_mv;
 
   vp9_build_inter_predictors_sby(xd, mb_row, mb_col, BLOCK_16X16);
