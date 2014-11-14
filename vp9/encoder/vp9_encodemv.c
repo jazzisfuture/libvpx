@@ -253,12 +253,20 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         const int i = idy * 2 + idx;
+#if CONFIG_COMPOUND_MODES
+        if (mi->bmi[i].as_mode == NEWMV || mi->bmi[i].as_mode == NEW_NEWMV)
+#else
         if (mi->bmi[i].as_mode == NEWMV)
+#endif
           inc_mvs(mbmi, mi->bmi[i].as_mv, &cm->counts.mv);
       }
     }
   } else {
+#if CONFIG_COMPOUND_MODES
+    if (mbmi->mode == NEWMV || mbmi->mode == NEW_NEWMV)
+#else
     if (mbmi->mode == NEWMV)
+#endif
       inc_mvs(mbmi, mbmi->mv, &cm->counts.mv);
   }
 }

@@ -229,6 +229,19 @@ static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
   {25,      29,    30},  // 6 = two intra neighbours
 };
 
+#if CONFIG_COMPOUND_MODES
+static const vp9_prob default_inter_compound_mode_probs[INTER_MODE_CONTEXTS]
+                                              [INTER_COMPOUND_MODES - 1] = {
+  {2,   173,   120,  34},  // 0 = both zero mv
+  {7,   145,   120,  85},  // 1 = one zero mv + one a predicted mv
+  {7,   166,   120,  63},  // 2 = two predicted mvs
+  {7,   94,    120,  66},  // 3 = one predicted/zero and one new mv
+  {8,   64,    120,  46},  // 4 = two new mvs
+  {17,  81,    120,  31},  // 5 = one intra neighbour + x
+  {25,  29,    120,  30},  // 6 = two intra neighbours
+};
+#endif
+
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
 const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -DC_PRED, 2,                      /* 0 = DC_NODE */
@@ -247,6 +260,16 @@ const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(NEARESTMV), 4,
   -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
 };
+
+#if CONFIG_COMPOUND_MODES
+const vp9_tree_index vp9_inter_compound_mode_tree
+    [TREE_SIZE(INTER_COMPOUND_MODES)] = {
+  -INTER_COMPOUND_OFFSET(ZERO_ZEROMV), 2,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARESTMV), 4,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARMV), 6,
+  -INTER_COMPOUND_OFFSET(NEAR_NEARESTMV), -INTER_COMPOUND_OFFSET(NEW_NEWMV)
+};
+#endif
 
 const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
   -PARTITION_NONE, 2,
@@ -380,6 +403,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_COMPOUND_MODES
+  vp9_copy(fc->inter_compound_mode_probs, default_inter_compound_mode_probs);
+#endif
 #if CONFIG_FILTERINTRA
   vp9_copy(fc->filterintra_prob, default_filterintra_prob);
 #endif
@@ -431,6 +457,14 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)
     adapt_probs(vp9_inter_mode_tree, pre_fc->inter_mode_probs[i],
                 counts->inter_mode[i], fc->inter_mode_probs[i]);
+
+#if CONFIG_COMPOUND_MODES
+  for (i = 0; i < INTER_MODE_CONTEXTS; i++)
+    adapt_probs(vp9_inter_compound_mode_tree,
+                pre_fc->inter_compound_mode_probs[i],
+                counts->inter_compound_mode[i],
+                fc->inter_compound_mode_probs[i]);
+#endif
 
   for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
     adapt_probs(vp9_intra_mode_tree, pre_fc->y_mode_prob[i],
