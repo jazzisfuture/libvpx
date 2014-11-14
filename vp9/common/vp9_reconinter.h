@@ -81,6 +81,10 @@ void vp9_generate_masked_weight(int wedge_index, BLOCK_SIZE sb_type,
                                 int h, int w, uint8_t *mask, int stride);
 void vp9_generate_hard_mask(int wedge_index, BLOCK_SIZE sb_type,
                             int h, int w, uint8_t *mask, int stride);
+static void build_masked_compound(uint8_t *dst, int dst_stride,
+                                  uint8_t *dst2, int dst2_stride,
+                                  int wedge_index, BLOCK_SIZE sb_type,
+                                  int h, int w);
 #endif  // CONFIG_WEDGE_PARTITION
 
 #if CONFIG_SUPERTX
