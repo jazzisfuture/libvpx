@@ -431,6 +431,8 @@ typedef struct VP9_COMP {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
+
+  int resize_pending;
 } VP9_COMP;
 
 void vp9_initialize_enc();
