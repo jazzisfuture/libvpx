@@ -73,6 +73,17 @@ typedef enum {
   NEARMV,
   ZEROMV,
   NEWMV,
+#if CONFIG_COMPOUND_MODES
+  NEAREST_NEARESTMV,
+  NEAREST_NEARMV,
+  NEAR_NEARESTMV,
+  NEAREST_NEWMV,
+  NEW_NEARESTMV,
+  NEAR_NEWMV,
+  NEW_NEARMV,
+  ZERO_ZEROMV,
+  NEW_NEWMV,
+#endif
   MB_MODE_COUNT
 } PREDICTION_MODE;
 
@@ -80,11 +91,31 @@ static INLINE int is_inter_mode(PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
 
+#if CONFIG_COMPOUND_MODES
+static INLINE int is_inter_compound_mode(PREDICTION_MODE mode) {
+  return mode >= NEAREST_NEARESTMV && mode <= NEW_NEWMV;
+}
+#endif
+
 #define INTRA_MODES (TM_PRED + 1)
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 
 #define INTER_OFFSET(mode) ((mode) - NEARESTMV)
+
+#if CONFIG_COMPOUND_MODES
+
+#define INTER_COMPOUND_MODES (1 + NEW_NEWMV - NEAREST_NEARESTMV)
+
+#define INTER_COMPOUND_OFFSET(mode) ((mode) - NEAREST_NEARESTMV)
+
+#endif
+
+#if CONFIG_TX64X64
+#define MAXTXLEN 64
+#else
+#define MAXTXLEN 32
+#endif
 
 /* For keyframes, intra block modes are predicted by the (already decoded)
    modes for the Y blocks to the left and above us; for interframes, there
@@ -260,6 +291,35 @@ static INLINE BLOCK_SIZE get_subsize(BLOCK_SIZE bsize,
 
 extern const TX_TYPE intra_mode_to_tx_type_lookup[INTRA_MODES];
 
+#if CONFIG_SUPERTX
+#if CONFIG_TX64X64
+#define MAX_SUPERTX_BLOCK_SIZE BLOCK_64X64
+#else
+#define MAX_SUPERTX_BLOCK_SIZE BLOCK_32X32
+#endif
+
+static INLINE TX_SIZE bsize_to_tx_size(BLOCK_SIZE bsize) {
+  const TX_SIZE bsize_to_tx_size_lookup[BLOCK_SIZES] = {
+    TX_4X4, TX_4X4, TX_4X4,
+    TX_8X8, TX_8X8, TX_8X8,
+    TX_16X16, TX_16X16, TX_16X16,
+    TX_32X32, TX_32X32, TX_32X32,
+#if CONFIG_TX64X64
+    TX_64X64
+#else
+    TX_32X32
+#endif
+  };
+  return bsize_to_tx_size_lookup[bsize];
+}
+
+static INLINE int supertx_enabled(const MB_MODE_INFO *mbmi) {
+  return (int)mbmi->tx_size >
+         MIN(b_width_log2_lookup[mbmi->sb_type],
+             b_height_log2_lookup[mbmi->sb_type]);
+}
+#endif  // CONFIG_SUPERTX
+
 #if CONFIG_EXT_TX
 static TX_TYPE ext_tx_to_txtype[EXT_TX_TYPES] = {
   DCT_DCT,
@@ -325,8 +385,18 @@ static INLINE TX_SIZE get_uv_tx_size_impl(TX_SIZE y_tx_size, BLOCK_SIZE bsize,
 
 static INLINE TX_SIZE get_uv_tx_size(const MB_MODE_INFO *mbmi,
                                      const struct macroblockd_plane *pd) {
+#if CONFIG_SUPERTX
+  if (!supertx_enabled(mbmi)) {
+    return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type, pd->subsampling_x,
+                               pd->subsampling_y);
+  } else {
+    return uvsupertx_size_lookup[mbmi->tx_size][pd->subsampling_x]
+                                               [pd->subsampling_y];
+  }
+#else
   return get_uv_tx_size_impl(mbmi->tx_size, mbmi->sb_type, pd->subsampling_x,
                              pd->subsampling_y);
+#endif  // CONFIG_SUPERTX
 }
 
 static INLINE BLOCK_SIZE get_plane_block_size(BLOCK_SIZE bsize,
