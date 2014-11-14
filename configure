@@ -288,6 +288,7 @@ EXPERIMENT_LIST="
     tx_skip
     supertx
     copy_mode
+    compound_modes
 "
 CONFIG_LIST="
     external_build
