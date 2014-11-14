@@ -1199,6 +1199,10 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   // Static sequence monitor variables.
   twopass->kf_zeromotion_pct = 100;
   twopass->last_kfgroup_zeromotion_pct = 100;
+
+  if (oxcf->resize_mode != RESIZE_NONE) {
+    vp9_init_subsampling(&cpi->common, &cpi->rc);
+  }
 }
 
 #define SR_DIFF_PART 0.0015
@@ -1691,10 +1695,75 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
   cpi->multi_arf_last_grp_enabled = cpi->multi_arf_enabled;
 }
 
+void vp9_init_subsampling(const VP9_COMMON *cm, RATE_CONTROL *rc) {
+  const int w = cm->width;
+  const int h = cm->height;
+
+  // Frame sizes for alternating frame groups.
+  rc->frame_width[0] = w;
+  rc->frame_height[0] = h;
+
+  // Only limited frame sizes supported right now:
+  // Replace with function that using scaling factors
+  // and optimizes for 1/16th pixel resolution scaling filters.
+  if ((w * h) > (1920 * 1080)) {
+    rc->frame_width[1] = 1920;      // > 1080P -> 1080P
+    rc->frame_height[1] = 1080;
+  } else if ((w * h) > (1280 * 720)) {
+    rc->frame_width[1] = 1280;      // > 720P -> 720P
+    rc->frame_height[1] = 720;
+  } else if ((w * h) > (854 * 480)) {
+    rc->frame_width[1] = 854;       // > 480P -> 480P
+    rc->frame_height[1] = 480;
+  } else if ((w * h) > (640 * 360)) {
+    rc->frame_width[1] = 640;       // > 360P -> 360P
+    rc->frame_height[1] = 360;
+  } else if ((w * h) > (426 * 240)) {
+    rc->frame_width[1] = 426;       // > 240P -> 240P0
+    rc->frame_height[1] = 240;
+  // Scaling on smaller formats may not be advisable
+  } else if ((w * h) > (352 * 288)) {
+    rc->frame_width[1] = 352;       // > CIF -> CIF
+    rc->frame_height[1] = 288;
+  } else if ((w * h) > (240 * 192)) {
+    rc->frame_width[1] = 240;       // Smallest supported scale
+    rc->frame_height[1] = 192;
+  /* if ((w * h) > (240 * 192)) {
+    rc->frame_width[1] = (w * 2) / 4;
+    rc->frame_height[1] = (h * 2) / 4; */
+  } else {
+    assert(0);
+  }
+}
+
+#define kScalingRateDelta 1.5
+
+static void calculate_coded_size(VP9_COMP *cpi,
+                                 int *scaled_frame_width,
+                                 int *scaled_frame_height) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  TWO_PASS *const twopass = &cpi->twopass;
+  const VP9_COMMON *const cm = &cpi->common;
+
+  *scaled_frame_width = rc->frame_width[rc->frame_size_selector];
+  *scaled_frame_height = rc->frame_height[rc->frame_size_selector];
+
+  if (rc->frame_size_selector == 0) {
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality;
+  } else {
+    int qdelta = vp9_compute_qdelta_by_rate(
+        rc, cm->frame_type, twopass->baseline_active_worst_quality,
+        kScalingRateDelta, cm->bit_depth);
+    // TODO(agrange) Check for < 0.
+    twopass->active_worst_quality = twopass->baseline_active_worst_quality
+        + qdelta;
+  }
+}
+
 // Analyse and define a gf/arf group.
 static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   RATE_CONTROL *const rc = &cpi->rc;
-  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  VP9EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
   FIRSTPASS_STATS next_frame;
   const FIRSTPASS_STATS *const start_pos = twopass->stats_in;
@@ -1927,6 +1996,12 @@ static void define_gf_group(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         calculate_section_intra_ratio(start_pos, twopass->stats_in_end,
                                       rc->baseline_gf_interval);
   }
+
+  // AWG - Debug
+  cpi->resize_pending = 1 - cpi->resize_pending;
+  cpi->rc.frame_size_selector = 1 - cpi->rc.frame_size_selector;
+  calculate_coded_size(
+      cpi, &oxcf->scaled_frame_width, &oxcf->scaled_frame_height);
 }
 
 // TODO(PGW) Re-examine the use of II ration in this code in the light of#
@@ -2378,6 +2453,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
                                                 section_target_bandwidth);
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_active_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->last_q[INTER_FRAME] = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q, cm->bit_depth);
