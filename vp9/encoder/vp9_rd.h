@@ -33,7 +33,16 @@ extern "C" {
 
 #define INVALID_MV 0x80008000
 
+#if CONFIG_COMPOUND_MODES
+
 #define MAX_MODES 30
+
+#else
+
+#define MAX_MODES 30
+
+#endif
+
 #define MAX_REFS  6
 
 // This enumerator type needs to be kept aligned with the mode order in
