@@ -304,6 +304,13 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
       for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
         vp9_cost_tokens((int *)cpi->inter_mode_cost[i],
                         cm->fc.inter_mode_probs[i], vp9_inter_mode_tree);
+
+#if CONFIG_COMPOUND_MODES
+      for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
+        vp9_cost_tokens((int *)cpi->inter_compound_mode_cost[i],
+                        cm->fc.inter_compound_mode_probs[i],
+                        vp9_inter_compound_mode_tree);
+#endif
     }
   }
 }
