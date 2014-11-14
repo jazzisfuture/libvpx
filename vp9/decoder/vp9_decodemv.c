@@ -45,11 +45,37 @@ static PREDICTION_MODE read_intra_mode_uv(VP9_COMMON *cm, vp9_reader *r,
   return uv_mode;
 }
 
-static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r, int ctx) {
+static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
+#if CONFIG_COMPOUND_MODES
+                                       int is_compound,
+#endif
+                                       int ctx) {
+#if CONFIG_COMPOUND_MODES
+  int mode = 0;
+  if (is_compound) {
+    mode = vp9_read_tree(r, vp9_inter_compound_mode_tree,
+                                   cm->fc.inter_compound_mode_probs[ctx]);
+
+  } else {
+    mode = vp9_read_tree(r, vp9_inter_mode_tree,
+                                   cm->fc.inter_mode_probs[ctx]);
+  }
+#else
   const int mode = vp9_read_tree(r, vp9_inter_mode_tree,
                                  cm->fc.inter_mode_probs[ctx]);
+#endif
+#if CONFIG_COMPOUND_MODES
+  if (!cm->frame_parallel_decoding_mode) {
+    if (is_compound) {
+      ++cm->counts.inter_compound_mode[ctx][mode];
+    } else {
+      ++cm->counts.inter_mode[ctx][mode];
+    }
+  }
+#else
   if (!cm->frame_parallel_decoding_mode)
     ++cm->counts.inter_mode[ctx][mode];
+#endif
 
   return NEARESTMV + mode;
 }
@@ -596,7 +622,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     }
   } else {
     if (bsize >= BLOCK_8X8)
-      mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
+      mbmi->mode = read_inter_mode(cm, r,
+#if CONFIG_COMPOUND_MODES
+                                   is_compound,
+#endif
+                                   inter_mode_ctx);
   }
 
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
@@ -620,7 +650,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
         const int j = idy * 2 + idx;
-        b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+        b_mode = read_inter_mode(cm, r,
+#if CONFIG_COMPOUND_MODES
+                                 is_compound,
+#endif
+                                 inter_mode_ctx);
 
         if (b_mode == NEARESTMV || b_mode == NEARMV)
           for (ref = 0; ref < 1 + is_compound; ++ref)

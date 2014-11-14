@@ -1393,9 +1393,20 @@ static void choose_intra_uv_mode(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 }
 
 static int cost_mv_ref(const VP9_COMP *cpi, PREDICTION_MODE mode,
+#if CONFIG_COMPOUND_MODES
+                       int is_compound,
+#endif
                        int mode_context) {
+#if CONFIG_COMPOUND_MODES
+  if (is_compound) {
+    return cpi->inter_compound_mode_cost[mode_context][INTER_OFFSET(mode)];
+  } else {
+#endif
   assert(is_inter_mode(mode));
   return cpi->inter_mode_cost[mode_context][INTER_OFFSET(mode)];
+#if CONFIG_COMPOUND_MODES
+  }
+#endif
 }
 
 static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
@@ -1456,8 +1467,11 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
       vpx_memcpy(&mic->bmi[i + idy * 2 + idx],
                  &mic->bmi[i], sizeof(mic->bmi[i]));
 
-  return cost_mv_ref(cpi, mode, mbmi->mode_context[mbmi->ref_frame[0]]) +
-            thismvcost;
+  return cost_mv_ref(cpi, mode,
+#if CONFIG_COMPOUND_MODES
+                     is_compound,
+#endif
+                     mbmi->mode_context[mbmi->ref_frame[0]]) + thismvcost;
 }
 
 static int64_t encode_inter_mb_segment(VP9_COMP *cpi,
@@ -1651,9 +1665,21 @@ static int check_best_zero_mv(
       (ref_frames[1] == NONE ||
        frame_mv[this_mode][ref_frames[1]].as_int == 0)) {
     int rfc = mode_context[ref_frames[0]];
-    int c1 = cost_mv_ref(cpi, NEARMV, rfc);
-    int c2 = cost_mv_ref(cpi, NEARESTMV, rfc);
-    int c3 = cost_mv_ref(cpi, ZEROMV, rfc);
+    int c1 = cost_mv_ref(cpi, NEARMV,
+#if CONFIG_COMPOUND_MODES
+                         0,
+#endif
+                         rfc);
+    int c2 = cost_mv_ref(cpi, NEARESTMV,
+#if CONFIG_COMPOUND_MODES
+                         0,
+#endif
+                         rfc);
+    int c3 = cost_mv_ref(cpi, ZEROMV,
+#if CONFIG_COMPOUND_MODES
+                         0,
+#endif
+                         rfc);
 
     if (this_mode == NEARMV) {
       if (c1 > c3) return 0;
@@ -2637,7 +2663,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
    * are only three options: Last/Golden, ARF/Last or Golden/ARF, or in other
    * words if you present them in that order, the second one is always known
    * if the first is known */
-  *rate2 += cost_mv_ref(cpi, this_mode, mbmi->mode_context[refs[0]]);
+  *rate2 += cost_mv_ref(cpi, this_mode,
+#if CONFIG_COMPOUND_MODES
+                        is_comp_pred,
+#endif
+                        mbmi->mode_context[refs[0]]);
 
   if (RDCOST(x->rdmult, x->rddiv, *rate2, 0) > ref_best_rd &&
       mbmi->mode != NEARESTMV)

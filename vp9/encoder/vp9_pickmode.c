@@ -174,9 +174,17 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
   *rate_mv = vp9_mv_bit_cost(&mvp_full, &ref_mv,
                              x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
-
+#if CONFIG_COMPOUND_MODES
+  if (has_second_ref(mbmi)) {
+    rate_mode = cpi->inter_compound_mode_cost[mbmi->mode_context[ref]]
+                                             [INTER_OFFSET(NEWMV)];
+  } else {
+#endif
   rate_mode = cpi->inter_mode_cost[mbmi->mode_context[ref]]
                                   [INTER_OFFSET(NEWMV)];
+#if CONFIG_COMPOUND_MODES
+  }
+#endif
   rv = !(RDCOST(x->rdmult, x->rddiv, (*rate_mv + rate_mode), 0) >
          best_rd_sofar);
 
@@ -386,9 +394,18 @@ static void encode_breakout_test(VP9_COMP *cpi, MACROBLOCK *x,
         x->skip = 1;
 
         // The cost of skip bit needs to be added.
+#if CONFIG_COMPOUND_MODES
+        if (has_second_ref(mbmi)) {
+          *rate = cpi->inter_compound_mode_cost[mbmi->mode_context[ref_frame]]
+                                               [INTER_OFFSET(this_mode)];
+
+        } else {
+#endif
         *rate = cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                     [INTER_OFFSET(this_mode)];
-
+#if CONFIG_COMPOUND_MODES
+        }
+#endif
         // More on this part of rate
         // rate += vp9_cost_bit(vp9_get_skip_prob(cm, xd), 1);
 
@@ -708,8 +725,18 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       }
 
       this_rdc.rate += rate_mv;
+#if CONFIG_COMPOUND_MODES
+      if (has_second_ref(mbmi)) {
+        this_rdc.rate += cpi->inter_compound_mode_cost
+                                  [mbmi->mode_context[ref_frame]]
+                                  [INTER_OFFSET(this_mode)];
+      } else {
+#endif
       this_rdc.rate += cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                   [INTER_OFFSET(this_mode)];
+#if CONFIG_COMPOUND_MODES
+      }
+#endif
       this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                                this_rdc.rate, this_rdc.dist);
 
