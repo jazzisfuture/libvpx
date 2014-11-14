@@ -229,6 +229,19 @@ static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
   {25,      29,    30},  // 6 = two intra neighbours
 };
 
+#if CONFIG_COMPOUND_MODES
+static const vp9_prob default_inter_compound_mode_probs[INTER_MODE_CONTEXTS]
+                                              [INTER_COMPOUND_MODES - 1] = {
+  {11,  103,  55,   87,   88,   56,   55,   32},   // 0 = both zero mv
+  {14,  107,  76,   63,   18,   16,   11,   129},  // 1 = 1 zero + 1 predicted
+  {8,   126,  64,   35,   15,   8,    12,   129},  // 2 = two predicted mvs
+  {17,  91,   72,   25,   16,   4,    17,   129},  // 3 = 1 pred/zero, 1 new
+  {19,  54,   61,   31,   14,   14,   3,    65},   // 4 = two new mvs
+  {20,  81,   79,   52,   46,   45,   44,   57},   // 5 = one intra neighbour
+  {25,  29,   120,  120,  120,  120,  120,  30},   // 6 = two intra neighbours
+};
+#endif
+
 /* Array indices are identical to previously-existing INTRAMODECONTEXTNODES. */
 const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -DC_PRED, 2,                      /* 0 = DC_NODE */
@@ -247,6 +260,20 @@ const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(NEARESTMV), 4,
   -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
 };
+
+#if CONFIG_COMPOUND_MODES
+const vp9_tree_index vp9_inter_compound_mode_tree
+    [TREE_SIZE(INTER_COMPOUND_MODES)] = {
+  -INTER_COMPOUND_OFFSET(ZERO_ZEROMV), 2,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARESTMV), 4,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEARMV), 6,
+  -INTER_COMPOUND_OFFSET(NEAREST_NEWMV), 8,
+  -INTER_COMPOUND_OFFSET(NEW_NEARESTMV), 10,
+  -INTER_COMPOUND_OFFSET(NEAR_NEWMV), 12,
+  -INTER_COMPOUND_OFFSET(NEW_NEARMV), 14,
+  -INTER_COMPOUND_OFFSET(NEAR_NEARESTMV), -INTER_COMPOUND_OFFSET(NEW_NEWMV)
+};
+#endif
 
 const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)] = {
   -PARTITION_NONE, 2,
@@ -308,6 +335,22 @@ static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
   { 176, 128, 128, 128, 128, 128, 128, 128 },
 };
 #endif  // CONFIG_EXT_TX
+
+#if CONFIG_SUPERTX
+static const vp9_prob default_supertx_prob[TX_SIZES] = {
+  255, 160, 160, 160,
+#if CONFIG_TX64X64
+  160
+#endif
+};
+
+static const vp9_prob default_supertxsplit_prob[TX_SIZES] = {
+  255, 200, 200, 200,
+#if CONFIG_TX64X64
+  200
+#endif
+};
+#endif
 
 #if CONFIG_TX64X64
 void tx_counts_to_branch_counts_64x64(const unsigned int *tx_count_64x64p,
@@ -380,11 +423,18 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_COMPOUND_MODES
+  vp9_copy(fc->inter_compound_mode_probs, default_inter_compound_mode_probs);
+#endif
 #if CONFIG_FILTERINTRA
   vp9_copy(fc->filterintra_prob, default_filterintra_prob);
 #endif
 #if CONFIG_EXT_TX
   vp9_copy(fc->ext_tx_prob, default_ext_tx_prob);
+#endif
+#if CONFIG_SUPERTX
+  vp9_copy(fc->supertx_prob, default_supertx_prob);
+  vp9_copy(fc->supertxsplit_prob, default_supertxsplit_prob);
 #endif
 }
 
@@ -431,6 +481,14 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)
     adapt_probs(vp9_inter_mode_tree, pre_fc->inter_mode_probs[i],
                 counts->inter_mode[i], fc->inter_mode_probs[i]);
+
+#if CONFIG_COMPOUND_MODES
+  for (i = 0; i < INTER_MODE_CONTEXTS; i++)
+    adapt_probs(vp9_inter_compound_mode_tree,
+                pre_fc->inter_compound_mode_probs[i],
+                counts->inter_compound_mode[i],
+                fc->inter_compound_mode_probs[i]);
+#endif
 
   for (i = 0; i < BLOCK_SIZE_GROUPS; i++)
     adapt_probs(vp9_intra_mode_tree, pre_fc->y_mode_prob[i],
@@ -488,7 +546,7 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     for (j = 0; j < INTRA_MODES; ++j)
       fc->filterintra_prob[i][j] = adapt_prob(pre_fc->filterintra_prob[i][j],
                                               counts->filterintra[i][j]);
-#endif
+#endif  // CONFIG_FILTERINTRA
 
   for (i = 0; i < SKIP_CONTEXTS; ++i)
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
@@ -498,7 +556,18 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     adapt_probs(vp9_ext_tx_tree, pre_fc->ext_tx_prob[i], counts->ext_tx[i],
                 fc->ext_tx_prob[i]);
   }
-#endif
+#endif  // CONFIG_EXT_TX
+
+#if CONFIG_SUPERTX
+  for (i = 1; i < TX_SIZES; ++i) {
+    fc->supertx_prob[i] = adapt_prob(pre_fc->supertx_prob[i],
+                                     counts->supertx[i]);
+  }
+  for (i = 1; i < TX_SIZES; ++i) {
+    fc->supertxsplit_prob[i] = adapt_prob(pre_fc->supertxsplit_prob[i],
+                                          counts->supertxsplit[i]);
+  }
+#endif  // CONFIG_SUPERTX
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
