@@ -2539,7 +2539,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2550,13 +2550,15 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
-    fprintf(f, "%10u %10d %10d %10d %10d"
+    fprintf(f, "%10u %dx%d %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
         "%6d %6d %5d %5d %5d "
         "%10"PRId64" %10.3lf"
         "%10lf %8u %10d %10d %10d\n",
-        cpi->common.current_video_frame, cpi->rc.this_frame_target,
+        cpi->common.current_video_frame,
+        cm->width, cm->height,
+        cpi->rc.this_frame_target,
         cpi->rc.projected_frame_size,
         cpi->rc.projected_frame_size / cpi->common.MBs,
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
@@ -2696,10 +2698,10 @@ void set_frame_size(VP9_COMP *cpi) {
   MACROBLOCKD *const xd = &cpi->mb->e_mbd;
 
   if (oxcf->pass == 2 &&
-      cm->current_video_frame == 0 &&
-      oxcf->resize_mode == RESIZE_FIXED &&
-      oxcf->rc_mode == VPX_VBR) {
-    // Internal scaling is triggered on the first frame.
+      oxcf->rc_mode == VPX_VBR &&
+      ((oxcf->resize_mode == RESIZE_FIXED && cm->current_video_frame == 0) ||
+        (oxcf->resize_mode == RESIZE_DYNAMIC && cpi->resize_pending))) {
+    // There has been a change in frame size.
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
                          oxcf->scaled_frame_height);
   }
@@ -2802,7 +2804,6 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
   int q = 0, q_low = 0, q_high = 0;
-  int frame_size_changed = 0;
 
   set_size_independent_vars(cpi);
 
@@ -2811,13 +2812,16 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     set_frame_size(cpi);
 
-    if (loop_count == 0 || frame_size_changed != 0) {
+    if (loop_count == 0 || cpi->resize_pending != 0) {
       set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
       q_low = bottom_index;
       q_high = top_index;
 
       // TODO(agrange) Scale cpi->max_mv_magnitude if frame-size has changed.
       set_mv_search_params(cpi);
+
+      // Reconfiguration for change in frame size has concluded.
+      cpi->resize_pending = 0;
     }
 
     // Decide frame size bounds
@@ -3318,7 +3322,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (!(is_two_pass_svc(cpi) && cpi->svc.encode_empty_frame_state == ENCODING))
     vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
