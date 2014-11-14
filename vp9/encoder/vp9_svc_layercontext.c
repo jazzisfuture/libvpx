@@ -75,6 +75,9 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
       lrc->rate_correction_factors[i] = 1.0;
     }
 
+    lrc->rcf_mult[0] = 1.0;
+    lrc->rcf_mult[1] = 2.0;
+
     if (svc->number_temporal_layers > 1 && cpi->oxcf.rc_mode == VPX_CBR) {
       lc->target_bandwidth = oxcf->ts_target_bitrate[layer];
       lrc->last_q[INTER_FRAME] = oxcf->worst_allowed_q;
