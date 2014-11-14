@@ -45,12 +45,26 @@ static PREDICTION_MODE read_intra_mode_uv(VP9_COMMON *cm, vp9_reader *r,
   return uv_mode;
 }
 
-static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r, int ctx) {
+#if CONFIG_COMPOUND_MODES
+static PREDICTION_MODE read_inter_compound_mode(VP9_COMMON *cm, vp9_reader *r,
+                                                int ctx) {
+  int mode = 0;
+  mode = vp9_read_tree(r, vp9_inter_compound_mode_tree,
+                       cm->fc.inter_compound_mode_probs[ctx]);
+  if (!cm->frame_parallel_decoding_mode) {
+    ++cm->counts.inter_compound_mode[ctx][mode];
+  }
+  assert(is_inter_compound_mode(NEAREST_NEARESTMV + mode));
+  return NEAREST_NEARESTMV + mode;
+}
+#endif
+
+static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
+                                       int ctx) {
   const int mode = vp9_read_tree(r, vp9_inter_mode_tree,
                                  cm->fc.inter_mode_probs[ctx]);
   if (!cm->frame_parallel_decoding_mode)
     ++cm->counts.inter_mode[ctx][mode];
-
   return NEARESTMV + mode;
 }
 
@@ -150,7 +164,11 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   return segment_id;
 }
 
+#if CONFIG_SUPERTX
+int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
+#else
 static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
+#endif
                      int segment_id, vp9_reader *r) {
   if (vp9_segfeature_active(&cm->seg, segment_id, SEG_LVL_SKIP)) {
     return 1;
@@ -507,7 +525,11 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
                             int is_compound, int allow_hp, vp9_reader *r) {
   int i;
   int ret = 1;
-
+#if CONFIG_COMPOUND_MODES
+  assert(is_inter_mode(mode) || is_inter_compound_mode(mode));
+#else
+  assert(is_inter_mode(mode));
+#endif
   switch (mode) {
     case NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
@@ -516,6 +538,7 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
         read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc.nmvc, mv_counts,
                 allow_hp);
         ret = ret && is_mv_valid(&mv[i].as_mv);
+        assert(ret);
       }
       break;
     }
@@ -537,10 +560,88 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
         mv[1].as_int = 0;
       break;
     }
+#if CONFIG_COMPOUND_MODES
+    case NEW_NEWMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                                            NULL : &cm->counts.mv;
+      assert(is_compound);
+      for (i = 0; i < 2; ++i) {
+        read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc.nmvc, mv_counts,
+                allow_hp);
+        ret = ret && is_mv_valid(&mv[i].as_mv);
+      }
+      break;
+    }
+    case NEAREST_NEARESTMV: {
+      assert(is_compound);
+      mv[0].as_int = nearest_mv[0].as_int;
+      mv[1].as_int = nearest_mv[1].as_int;
+      break;
+    }
+    case NEAREST_NEARMV: {
+      assert(is_compound);
+      mv[0].as_int = nearest_mv[0].as_int;
+      mv[1].as_int = near_mv[1].as_int;
+      break;
+    }
+    case NEAR_NEARESTMV: {
+      assert(is_compound);
+      mv[0].as_int = near_mv[0].as_int;
+      mv[1].as_int = nearest_mv[1].as_int;
+      break;
+    }
+    case NEW_NEARESTMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                                            NULL : &cm->counts.mv;
+      assert(is_compound);
+      read_mv(r, &mv[0].as_mv, &ref_mv[0].as_mv, &cm->fc.nmvc, mv_counts,
+              allow_hp);
+      ret = ret && is_mv_valid(&mv[0].as_mv);
+      mv[1].as_int = nearest_mv[1].as_int;
+      break;
+    }
+    case NEAREST_NEWMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                                            NULL : &cm->counts.mv;
+      assert(is_compound);
+      mv[0].as_int = nearest_mv[0].as_int;
+      read_mv(r, &mv[1].as_mv, &ref_mv[1].as_mv, &cm->fc.nmvc, mv_counts,
+              allow_hp);
+      ret = ret && is_mv_valid(&mv[1].as_mv);
+      break;
+    }
+    case NEAR_NEWMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                        NULL : &cm->counts.mv;
+      assert(is_compound);
+      mv[0].as_int = near_mv[0].as_int;
+      read_mv(r, &mv[1].as_mv, &ref_mv[1].as_mv, &cm->fc.nmvc, mv_counts,
+          allow_hp);
+      ret = ret && is_mv_valid(&mv[1].as_mv);
+      break;
+    }
+    case NEW_NEARMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                        NULL : &cm->counts.mv;
+      assert(is_compound);
+      read_mv(r, &mv[0].as_mv, &ref_mv[0].as_mv, &cm->fc.nmvc, mv_counts,
+          allow_hp);
+      ret = ret && is_mv_valid(&mv[0].as_mv);
+      mv[1].as_int = near_mv[1].as_int;
+      break;
+    }
+    case ZERO_ZEROMV: {
+      assert(is_compound);
+      mv[0].as_int = 0;
+      mv[1].as_int = 0;
+      break;
+    }
+#endif
     default: {
       return 0;
     }
   }
+
   return ret;
 }
 
@@ -562,6 +663,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        MODE_INFO *const mi,
+#if CONFIG_SUPERTX && CONFIG_EXT_TX
+                                       int supertx_enabled,
+#endif
                                        int mi_row, int mi_col, vp9_reader *r) {
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
@@ -590,7 +694,6 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   }
 
   inter_mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
-
   if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
     mbmi->mode = ZEROMV;
     if (bsize < BLOCK_8X8) {
@@ -599,11 +702,25 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
         return;
     }
   } else {
-    if (bsize >= BLOCK_8X8)
+    if (bsize >= BLOCK_8X8) {
+#if CONFIG_COMPOUND_MODES
+      if (is_compound) {
+        mbmi->mode = read_inter_compound_mode(cm, r, inter_mode_ctx);
+      } else {
+        mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
+      }
+#else
       mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
+#endif
+    }
   }
 
+#if CONFIG_COMPOUND_MODES
+  if (bsize < BLOCK_8X8 ||
+      (mbmi->mode != ZEROMV && mbmi->mode != ZERO_ZEROMV)) {
+#else
   if (bsize < BLOCK_8X8 || mbmi->mode != ZEROMV) {
+#endif
     for (ref = 0; ref < 1 + is_compound; ++ref) {
       vp9_find_best_ref_mvs(xd, allow_hp, mbmi->ref_mvs[mbmi->ref_frame[ref]],
                             &nearestmv[ref], &nearmv[ref]);
@@ -624,9 +741,24 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         int_mv block[2];
         const int j = idy * 2 + idx;
+#if CONFIG_COMPOUND_MODES
+        if (is_compound) {
+          b_mode = read_inter_compound_mode(cm, r, inter_mode_ctx);
+        } else {
+          b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+        }
+#else
         b_mode = read_inter_mode(cm, r, inter_mode_ctx);
-
+#endif
+#if CONFIG_COMPOUND_MODES
+        if (b_mode == NEARESTMV || b_mode == NEARMV ||
+            b_mode == NEAREST_NEARESTMV || b_mode == NEAREST_NEARMV ||
+            b_mode == NEAR_NEARESTMV || b_mode == NEAREST_NEWMV ||
+            b_mode == NEW_NEARESTMV || b_mode == NEAR_NEWMV ||
+      b_mode == NEW_NEARMV)
+#else
         if (b_mode == NEARESTMV || b_mode == NEARMV)
+#endif
           for (ref = 0; ref < 1 + is_compound; ++ref)
             vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, j, ref, mi_row, mi_col,
                                           &nearest_sub8x8[ref],
@@ -637,7 +769,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                        is_compound, allow_hp, r)) {
           xd->corrupted |= 1;
           break;
-        };
+        }
 
         mi->bmi[j].as_mv[0].as_int = block[0].as_int;
         if (is_compound)
@@ -651,7 +783,6 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     }
 
     mi->mbmi.mode = b_mode;
-
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
@@ -663,54 +794,93 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
+#if CONFIG_SUPERTX
+                                       int supertx_enabled,
+#endif
                                        int mi_row, int mi_col, vp9_reader *r) {
   MODE_INFO *const mi = xd->mi[0].src_mi;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
-
   mbmi->mv[0].as_int = 0;
   mbmi->mv[1].as_int = 0;
 
-  mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
-  mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
-#if CONFIG_TX_SKIP
-  mbmi->tx_skip[0] = vp9_read_bit(r);
-  mbmi->tx_skip[1] = vp9_read_bit(r);
+#if CONFIG_SUPERTX
+  if (!supertx_enabled) {
 #endif
-  inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
-  mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
-                               !mbmi->skip || !inter_block, r);
+    mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
+    mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
+#if CONFIG_TX_SKIP
+    mbmi->tx_skip[0] = vp9_read_bit(r);
+    mbmi->tx_skip[1] = vp9_read_bit(r);
+#endif
+    inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
+    mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
+                                 !mbmi->skip || !inter_block, r);
 #if CONFIG_EXT_TX
-  if (inter_block &&
-      mbmi->tx_size <= TX_16X16 &&
-      cm->base_qindex > 0 &&
-      mbmi->sb_type >= BLOCK_8X8 &&
+    if (inter_block &&
+        mbmi->tx_size <= TX_16X16 &&
+        cm->base_qindex > 0 &&
+        mbmi->sb_type >= BLOCK_8X8 &&
+#if CONFIG_SUPERTX
+      !supertx_enabled &&
+#endif
       !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP) &&
       !mbmi->skip) {
-    mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
-                                    cm->fc.ext_tx_prob[mbmi->tx_size]);
-    if (!cm->frame_parallel_decoding_mode)
-      ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
+      mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
+                                      cm->fc.ext_tx_prob[mbmi->tx_size]);
+      if (!cm->frame_parallel_decoding_mode)
+        ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
+    } else {
+      mbmi->ext_txfrm = NORM;
+    }
+#endif  // CONFIG_EXT_TX
+#if CONFIG_SUPERTX
   } else {
-    mbmi->ext_txfrm = NORM;
+    const int ctx = vp9_get_intra_inter_context(xd);
+    mbmi->segment_id = 0;
+    inter_block = 1;
+    if (!cm->frame_parallel_decoding_mode)
+      ++cm->counts.intra_inter[ctx][1];
   }
-#endif
+#endif  // CONFIG_SUPERTX
 
-  if (inter_block)
-    read_inter_block_mode_info(cm, xd, tile, mi, mi_row, mi_col, r);
-  else
+  if (inter_block) {
+    read_inter_block_mode_info(cm, xd, tile, mi,
+#if CONFIG_SUPERTX && CONFIG_EXT_TX
+                               supertx_enabled,
+#endif
+                               mi_row, mi_col, r);
+  } else {
     read_intra_block_mode_info(cm, mi,
 #if CONFIG_FILTERINTRA
-  xd,
+                               xd,
 #endif
-  r);
+                               r);
+  }
 }
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
                         const TileInfo *const tile,
+#if CONFIG_SUPERTX
+                        int supertx_enabled,
+#endif
                         int mi_row, int mi_col, vp9_reader *r) {
   if (frame_is_intra_only(cm))
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   else
-    read_inter_frame_mode_info(cm, xd, tile, mi_row, mi_col, r);
+    read_inter_frame_mode_info(cm, xd, tile,
+#if CONFIG_SUPERTX
+                               supertx_enabled,
+#endif
+                               mi_row, mi_col, r);
+#if CONFIG_COMPOUND_MODES
+//  int i = 0, j = 0;
+//  printf("-----\n");
+//  for (i = 0; i < INTER_MODE_CONTEXTS; ++i) {
+//    for (j = 0; j < INTER_COMPOUND_MODES - 1; ++j) {
+//      printf("%d ", cm->fc.inter_compound_mode_probs[i][j]);
+//    }
+//    printf("\n");
+//  }
+#endif
 }
