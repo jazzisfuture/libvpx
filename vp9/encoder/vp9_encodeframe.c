@@ -1386,7 +1386,10 @@ static void restore_context(VP9_COMP *cpi, int mi_row, int mi_col,
   const int num_4x4_blocks_high = num_4x4_blocks_high_lookup[bsize];
   int mi_width = num_8x8_blocks_wide_lookup[bsize];
   int mi_height = num_8x8_blocks_high_lookup[bsize];
+  assert(xd);
+  assert(xd->above_context);
   for (p = 0; p < MAX_MB_PLANE; p++) {
+    assert(xd->above_context[p]);
     vpx_memcpy(
         xd->above_context[p] + ((mi_col * 2) >> xd->plane[p].subsampling_x),
         a + num_4x4_blocks_wide * p,
@@ -4655,7 +4658,11 @@ static void sum_intra_stats(FRAME_COUNTS *counts,
 static int get_zbin_mode_boost(const MB_MODE_INFO *mbmi, int enabled) {
   if (enabled) {
     if (is_inter_block(mbmi)) {
+#if CONFIG_COMPOUND_MODES
+      if (mbmi->mode == ZEROMV || mbmi->mode == ZERO_ZEROMV) {
+#else
       if (mbmi->mode == ZEROMV) {
+#endif
         return mbmi->ref_frame[0] != LAST_FRAME ? GF_ZEROMV_ZBIN_BOOST
                                                 : LF_ZEROMV_ZBIN_BOOST;
       } else {
