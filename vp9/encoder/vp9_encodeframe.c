@@ -1335,17 +1335,18 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
   const MACROBLOCKD *const xd = &x->e_mbd;
   const MODE_INFO *const mi = xd->mi[0].src_mi;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
+  const BLOCK_SIZE bsize = mbmi->sb_type;
 
 #if CONFIG_COPY_MODE
   if (!frame_is_intra_only(cm) && mbmi->copy_mode == NOREF) {
 #else
   if (!frame_is_intra_only(cm)) {
 #endif
+    FRAME_COUNTS *const counts = &cm->counts;
+    const int inter_block = is_inter_block(mbmi);
     const int seg_ref_active = vp9_segfeature_active(&cm->seg, mbmi->segment_id,
                                                      SEG_LVL_REF_FRAME);
     if (!seg_ref_active) {
-      FRAME_COUNTS *const counts = &cm->counts;
-      const int inter_block = is_inter_block(mbmi);
 
       counts->intra_inter[vp9_get_intra_inter_context(xd)][inter_block]++;
 
@@ -1368,6 +1369,41 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
           if (ref0 != LAST_FRAME)
             counts->single_ref[vp9_get_pred_context_single_ref_p2(xd)][1]
                               [ref0 != GOLDEN_FRAME]++;
+        }
+      }
+    }
+    if (inter_block &&
+            !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+      const int mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
+      if (bsize >= BLOCK_8X8) {
+        const PREDICTION_MODE mode = mbmi->mode;
+#if CONFIG_COMPOUND_MODES
+        if (is_inter_compound_mode(mode)) {
+          ++counts->inter_compound_mode[mode_ctx][INTER_COMPOUND_OFFSET(mode)];
+        } else {
+          ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
+        }
+#else
+        ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
+#endif
+      } else {
+        const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+        const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+        int idx, idy;
+        for (idy = 0; idy < 2; idy += num_4x4_h) {
+          for (idx = 0; idx < 2; idx += num_4x4_w) {
+            const int j = idy * 2 + idx;
+            const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
+#if CONFIG_COMPOUND_MODES
+            if (is_inter_compound_mode(b_mode)) {
+              ++counts->inter_compound_mode[mode_ctx][INTER_COMPOUND_OFFSET(b_mode)];
+            } else {
+              ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+            }
+#else
+            ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+#endif
+          }
         }
       }
     }
@@ -4655,7 +4691,11 @@ static void sum_intra_stats(FRAME_COUNTS *counts,
 static int get_zbin_mode_boost(const MB_MODE_INFO *mbmi, int enabled) {
   if (enabled) {
     if (is_inter_block(mbmi)) {
+#if CONFIG_COMPOUND_MODES
+      if (mbmi->mode == ZEROMV || mbmi->mode == ZERO_ZEROMV) {
+#else
       if (mbmi->mode == ZEROMV) {
+#endif  // CONFIG_COMPOUND_MODES
         return mbmi->ref_frame[0] != LAST_FRAME ? GF_ZEROMV_ZBIN_BOOST
                                                 : LF_ZEROMV_ZBIN_BOOST;
       } else {
