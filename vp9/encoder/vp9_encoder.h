@@ -431,6 +431,8 @@ typedef struct VP9_COMP {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
+
+  int resize_pending;
 } VP9_COMP;
 
 void vp9_initialize_enc();
@@ -569,6 +571,8 @@ static INLINE int get_chessboard_index(const int frame_index) {
 static INLINE int *cond_cost_list(const struct VP9_COMP *cpi, int *cost_list) {
   return cpi->sf.mv.subpel_search_method != SUBPEL_TREE ? cost_list : NULL;
 }
+
+void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 #ifdef __cplusplus
 }  // extern "C"
