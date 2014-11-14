@@ -2306,9 +2306,36 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
   vp9_extend_frame_borders(dst);
 }
 
+static int scale_down(VP9_COMP *cpi, int q) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+  int scale = 0;
+  assert(frame_is_kf_gf_arf(cpi));
+
+  if (rc->frame_size_selector == 0 &&
+      (q >= rc->rf_level_maxq[gf_group->rf_level[gf_group->index]])) {
+    scale = rc->projected_frame_size >
+        2 * MAX(rc->this_frame_target, rc->avg_frame_bandwidth);
+
+//    scale |= rc->gf_group_actual_bits >
+//        2 * MAX(rc->gf_group_target_bits,
+//                rc->last_gf_group_frames * rc->avg_frame_bandwidth);
+  }
+  return scale;
+}
+
+static int scale_up(VP9_COMP *cpi, int q) {
+  int scale = 0;
+  (void)cpi;
+  (void)q;
+  assert(frame_is_kf_gf_arf(cpi));
+  // TODO(agrange) Add the logic for scaling back up.
+  return scale;
+}
+
 // Function to test for conditions that indicate we should loop
 // back and recode a frame.
-static int recode_loop_test(const VP9_COMP *cpi,
+static int recode_loop_test(VP9_COMP *cpi,
                             int high_limit, int low_limit,
                             int q, int maxq, int minq) {
   const RATE_CONTROL *const rc = &cpi->rc;
@@ -2326,8 +2353,18 @@ static int recode_loop_test(const VP9_COMP *cpi,
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
                  frame_is_kf_gf_arf(cpi))) {
     // General over and under shoot tests
-    if ((rc->projected_frame_size > high_limit && q < maxq) ||
-        (rc->projected_frame_size < low_limit && q > minq)) {
+    if (oxcf->resize_mode == RESIZE_DYNAMIC &&
+        frame_is_kf_gf_arf(cpi)) {
+      RATE_CONTROL *const rc = &cpi->rc;
+      if (scale_down(cpi, q) || scale_up(cpi, q)) {
+        cpi->resize_pending = 1;
+        force_recode = 1;
+      }
+      rc->last_gf_group_frames = 0;
+      rc->gf_group_target_bits = 0;
+      rc->gf_group_actual_bits = 0;
+    } else if ((rc->projected_frame_size > high_limit && q < maxq) ||
+               (rc->projected_frame_size < low_limit && q > minq)) {
       force_recode = 1;
     } else if (cpi->oxcf.rc_mode == VPX_CQ) {
       // Deal with frame undershoot and whether or not we are
@@ -2554,13 +2591,15 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
-    fprintf(f, "%10u %10d %10d %10d %10d"
+    fprintf(f, "%10u %dx%d %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
         "%6d %6d %5d %5d %5d "
         "%10"PRId64" %10.3lf"
         "%10lf %8u %10"PRId64" %10d %10d\n",
-        cpi->common.current_video_frame, cpi->rc.this_frame_target,
+        cpi->common.current_video_frame,
+        cm->width, cm->height,
+        cpi->rc.this_frame_target,
         cpi->rc.projected_frame_size,
         cpi->rc.projected_frame_size / cpi->common.MBs,
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
@@ -2696,14 +2735,17 @@ static void init_motion_estimation(VP9_COMP *cpi) {
 void set_frame_size(VP9_COMP *cpi) {
   int ref_frame;
   VP9_COMMON *const cm = &cpi->common;
-  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  VP9EncoderConfig *const oxcf = &cpi->oxcf;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
 
   if (oxcf->pass == 2 &&
-      cm->current_video_frame == 0 &&
-      oxcf->resize_mode == RESIZE_FIXED &&
-      oxcf->rc_mode == VPX_VBR) {
-    // Internal scaling is triggered on the first frame.
+      oxcf->rc_mode == VPX_VBR &&
+      ((oxcf->resize_mode == RESIZE_FIXED && cm->current_video_frame == 0) ||
+        (oxcf->resize_mode == RESIZE_DYNAMIC && cpi->resize_pending))) {
+    calculate_coded_size(
+        cpi, &oxcf->scaled_frame_width, &oxcf->scaled_frame_height);
+
+    // There has been a change in frame size.
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
                          oxcf->scaled_frame_height);
   }
@@ -2754,7 +2796,7 @@ void set_frame_size(VP9_COMP *cpi) {
 
 static void encode_without_recode_loop(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
-  int q, bottom_index, top_index;  // Dummy variables.
+  int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
 
   vp9_clear_system_state();
 
@@ -2807,7 +2849,6 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
   int q = 0, q_low = 0, q_high = 0;
-  int frame_size_changed = 0;
 
   set_size_independent_vars(cpi);
 
@@ -2816,13 +2857,21 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     set_frame_size(cpi);
 
-    if (loop_count == 0 || frame_size_changed != 0) {
+    if (loop_count == 0 || cpi->resize_pending != 0) {
       set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
-      q_low = bottom_index;
-      q_high = top_index;
 
       // TODO(agrange) Scale cpi->max_mv_magnitude if frame-size has changed.
       set_mv_search_params(cpi);
+
+      // Reset the loop state for new frame size.
+      overshoot_seen = 0;
+      undershoot_seen = 0;
+
+      // Reconfiguration for change in frame size has concluded.
+      cpi->resize_pending = 0;
+
+      q_low = bottom_index;
+      q_high = top_index;
     }
 
     // Decide frame size bounds
@@ -2941,6 +2990,19 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         int last_q = q;
         int retries = 0;
 
+        if (cpi->resize_pending == 1) {
+          // Change in frame size so go back around the recode loop.
+          cpi->rc.frame_size_selector = 1 - cpi->rc.frame_size_selector;
+          cpi->rc.next_frame_size_selector = cpi->rc.frame_size_selector;
+
+#if CONFIG_INTERNAL_STATS
+          cpi->tot_recode_hits++;
+#endif
+          loop_count++;
+          loop = 1;
+          continue;
+        }
+
         // Frame size out of permitted range:
         // Update correction factor & compute new Q to try...
 
@@ -3008,7 +3070,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         // Clamp Q to upper and lower limits:
         q = clamp(q, q_low, q_high);
 
-        loop = q != last_q;
+        loop = (q != last_q);
       } else {
         loop = 0;
       }
