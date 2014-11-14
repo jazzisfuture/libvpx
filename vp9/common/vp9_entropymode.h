@@ -62,6 +62,10 @@ typedef struct frame_contexts {
 #if CONFIG_EXT_TX
   vp9_prob ext_tx_prob;
 #endif
+#if CONFIG_COMPOUND_MODES
+  vp9_prob inter_compound_mode_probs[INTER_MODE_CONTEXTS]
+                                    [INTER_COMPOUND_MODES - 1];
+#endif
 } FRAME_CONTEXT;
 
 typedef struct {
@@ -87,6 +91,9 @@ typedef struct {
 #if CONFIG_EXT_TX
   unsigned int ext_tx[2];
 #endif
+#if CONFIG_COMPOUND_MODES
+  unsigned int inter_compound_mode[INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES];
+#endif
 } FRAME_COUNTS;
 
 extern const vp9_prob vp9_kf_uv_mode_prob[INTRA_MODES][INTRA_MODES - 1];
@@ -99,6 +106,11 @@ extern const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)];
 extern const vp9_tree_index vp9_partition_tree[TREE_SIZE(PARTITION_TYPES)];
 extern const vp9_tree_index vp9_switchable_interp_tree
                                 [TREE_SIZE(SWITCHABLE_FILTERS)];
+
+#if CONFIG_COMPOUND_MODES
+extern const vp9_tree_index vp9_inter_compound_mode_tree
+                                [TREE_SIZE(INTER_COMPOUND_MODES)];
+#endif
 
 void vp9_setup_past_independence(struct VP9Common *cm);
 
