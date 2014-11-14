@@ -99,6 +99,7 @@ typedef struct {
   int64_t starting_buffer_level;
   int64_t optimal_buffer_level;
   int64_t maximum_buffer_size;
+
   // rate control history for last frame(1) and the frame before(2).
   // -1: undershot
   //  1: overshoot
@@ -107,6 +108,14 @@ typedef struct {
   int rc_2_frame;
   int q_1_frame;
   int q_2_frame;
+
+  int frame_width[2];
+  int frame_height[2];
+  int frame_size_selector;
+  int next_frame_size_selector;
+
+  int rf_level_maxq[RATE_FACTOR_LEVELS];
+  double rcf_mult[2];
 } RATE_CONTROL;
 
 struct VP9_COMP;
@@ -203,6 +212,8 @@ int vp9_compute_qdelta(const RATE_CONTROL *rc, double qstart, double qtarget,
 int vp9_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
                                int qindex, double rate_target_ratio,
                                vpx_bit_depth_t bit_depth);
+
+int vp9_frame_type_qdelta(const struct VP9_COMP *cpi, int rf_level, int q);
 
 void vp9_rc_update_framerate(struct VP9_COMP *cpi);
 

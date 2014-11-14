@@ -2303,7 +2303,7 @@ static void scale_and_extend_frame(const YV12_BUFFER_CONFIG *src,
 
 // Function to test for conditions that indicate we should loop
 // back and recode a frame.
-static int recode_loop_test(const VP9_COMP *cpi,
+static int recode_loop_test(VP9_COMP *cpi,
                             int high_limit, int low_limit,
                             int q, int maxq, int minq) {
   const RATE_CONTROL *const rc = &cpi->rc;
@@ -2321,8 +2321,20 @@ static int recode_loop_test(const VP9_COMP *cpi,
              ((cpi->sf.recode_loop == ALLOW_RECODE_KFARFGF) &&
                  frame_is_kf_gf_arf(cpi))) {
     // General over and under shoot tests
-    if ((rc->projected_frame_size > high_limit && q < maxq) ||
-        (rc->projected_frame_size < low_limit && q > minq)) {
+    if (rc->projected_frame_size > 2 * rc->this_frame_target &&
+        oxcf->resize_mode == RESIZE_DYNAMIC &&
+        cpi->rc.frame_size_selector == 0) {
+      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+      if (q < maxq)
+        force_recode = 1;
+      if (frame_is_kf_gf_arf(cpi) &&
+          q >= rc->rf_level_maxq[gf_group->rf_level[gf_group->index]]) {
+        // Trigger frame-size reduction if frame is too big at max q.
+        cpi->resize_pending = 1;
+        force_recode = 1;
+      }
+    } else if ((rc->projected_frame_size > high_limit && q < maxq) ||
+               (rc->projected_frame_size < low_limit && q > minq)) {
       force_recode = 1;
     } else if (cpi->oxcf.rc_mode == VPX_CQ) {
       // Deal with frame undershoot and whether or not we are
@@ -2543,13 +2555,15 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   recon_err = vp9_get_y_sse(cpi->Source, get_frame_new_buffer(cm));
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
-    fprintf(f, "%10u %10d %10d %10d %10d"
+    fprintf(f, "%10u %dx%d %10d %10d %10d %10d"
         "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
         "%6d %6d %5d %5d %5d "
         "%10"PRId64" %10.3lf"
         "%10lf %8u %10"PRId64" %10d %10d\n",
-        cpi->common.current_video_frame, cpi->rc.this_frame_target,
+        cpi->common.current_video_frame,
+        cm->width, cm->height,
+        cpi->rc.this_frame_target,
         cpi->rc.projected_frame_size,
         cpi->rc.projected_frame_size / cpi->common.MBs,
         (cpi->rc.projected_frame_size - cpi->rc.this_frame_target),
@@ -2632,8 +2646,10 @@ static void set_size_dependent_vars(VP9_COMP *cpi, int *q,
   // Setup variables that depend on the dimensions of the frame.
   vp9_set_speed_features_framesize_dependent(cpi);
 
-  // Decide q and q bounds.
-  *q = vp9_rc_pick_q_and_bounds(cpi, bottom_index, top_index);
+  if (cpi->resize_pending == 0) {
+    // Decide q and q bounds.
+    *q = vp9_rc_pick_q_and_bounds(cpi, bottom_index, top_index);
+  }
 
   if (!frame_is_intra_only(cm)) {
     vp9_set_high_precision_mv(cpi, (*q) < HIGH_PRECISION_MV_QTHRESH);
@@ -2685,14 +2701,17 @@ static void init_motion_estimation(VP9_COMP *cpi) {
 void set_frame_size(VP9_COMP *cpi) {
   int ref_frame;
   VP9_COMMON *const cm = &cpi->common;
-  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+  VP9EncoderConfig *const oxcf = &cpi->oxcf;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
 
   if (oxcf->pass == 2 &&
-      cm->current_video_frame == 0 &&
-      oxcf->resize_mode == RESIZE_FIXED &&
-      oxcf->rc_mode == VPX_VBR) {
-    // Internal scaling is triggered on the first frame.
+      oxcf->rc_mode == VPX_VBR &&
+      ((oxcf->resize_mode == RESIZE_FIXED && cm->current_video_frame == 0) ||
+        (oxcf->resize_mode == RESIZE_DYNAMIC && cpi->resize_pending))) {
+    calculate_coded_size(
+        cpi, &oxcf->scaled_frame_width, &oxcf->scaled_frame_height);
+
+    // There has been a change in frame size.
     vp9_set_size_literal(cpi, oxcf->scaled_frame_width,
                          oxcf->scaled_frame_height);
   }
@@ -2743,7 +2762,7 @@ void set_frame_size(VP9_COMP *cpi) {
 
 static void encode_without_recode_loop(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
-  int q, bottom_index, top_index;  // Dummy variables.
+  int q = 0, bottom_index = 0, top_index = 0;  // Dummy variables.
 
   vp9_clear_system_state();
 
@@ -2796,7 +2815,6 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
   int frame_over_shoot_limit;
   int frame_under_shoot_limit;
   int q = 0, q_low = 0, q_high = 0;
-  int frame_size_changed = 0;
 
   set_size_independent_vars(cpi);
 
@@ -2805,13 +2823,39 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
 
     set_frame_size(cpi);
 
-    if (loop_count == 0 || frame_size_changed != 0) {
+    if (loop_count == 0 || cpi->resize_pending != 0) {
       set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
-      q_low = bottom_index;
-      q_high = top_index;
 
       // TODO(agrange) Scale cpi->max_mv_magnitude if frame-size has changed.
       set_mv_search_params(cpi);
+
+      if (cpi->resize_pending != 0 || rc->frame_size_selector != 0) {
+        const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+
+        // Remap top_index & bottom_index for the downsized frame.
+        top_index = rc->rf_level_maxq[gf_group->rf_level[gf_group->index]];
+
+        // Remap bottom_index assuming estimated 50% data rate reduction.
+        // We want to work out the qdelta that would generate twice as many
+        // bits at the current frame size, which maps to the same number of
+        // bits at the new frame size assuming an expected 50% reduction
+        // in data rate due to the down-sizing.
+        bottom_index += vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type,
+                                            bottom_index, 2.0, cm->bit_depth);
+        bottom_index = MAX(bottom_index, rc->best_quality);
+
+        // Reset the loop state for new frame size.
+        overshoot_seen = 0;
+        undershoot_seen = 0;
+
+        // TODO(agrange) Check actions dependent on loop_count.
+
+        // Reconfiguration for change in frame size has concluded.
+        cpi->resize_pending = 0;
+      }
+
+      q_low = bottom_index;
+      q_high = top_index;
     }
 
     // Decide frame size bounds
@@ -2939,6 +2983,21 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
           if (rc->projected_frame_size >= rc->max_frame_bandwidth)
             q_high = rc->worst_quality;
 
+          if (cpi->resize_pending == 1) {
+            assert(cpi->rc.frame_size_selector == 0);
+
+            // Change in frame size so go back around the recode loop.
+            cpi->rc.frame_size_selector = 1;
+            cpi->rc.next_frame_size_selector = 1;
+
+#if CONFIG_INTERNAL_STATS
+            cpi->tot_recode_hits++;
+#endif
+            loop_count++;
+            loop = 1;
+            continue;
+          }
+
           // Raise Qlow as to at least the current value
           q_low = q < q_high ? q + 1 : q_high;
 
@@ -2997,7 +3056,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi,
         // Clamp Q to upper and lower limits:
         q = clamp(q, q_low, q_high);
 
-        loop = q != last_q;
+        loop = (q != last_q);
       } else {
         loop = 0;
       }
