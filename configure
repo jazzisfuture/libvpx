@@ -285,6 +285,7 @@ EXPERIMENT_LIST="
     tx64x64
     filterintra
     ext_tx
+    compound_modes
 "
 CONFIG_LIST="
     external_build
