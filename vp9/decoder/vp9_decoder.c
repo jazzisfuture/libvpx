@@ -84,6 +84,9 @@ VP9Decoder *vp9_decoder_create() {
                   (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS,
                   sizeof(*cm->frame_contexts)));
 
+  CHECK_MEM_ERROR(cm, cm->counts,
+                  (FRAME_COUNTS *)vpx_calloc(1, sizeof(*cm->counts)));
+
   pbi->need_resync = 1;
   initialize_dec();
 
