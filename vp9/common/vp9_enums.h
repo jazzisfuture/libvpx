@@ -101,14 +101,21 @@ typedef enum {
   ADST_DCT  = 1,                      // ADST in vertical, DCT in horizontal
   DCT_ADST  = 2,                      // DCT  in vertical, ADST in horizontal
   ADST_ADST = 3,                      // ADST in both directions
-  TX_TYPES = 4
+  TX_TYPES,
+#if CONFIG_EXT_TX
+  FLIPADST_DCT = 4,
+  DCT_FLIPADST = 5,
+  FLIPADST_FLIPADST = 6,
+  TOTAL_TX_TYPES
+#endif
 } TX_TYPE;
 
 #if CONFIG_EXT_TX
 typedef enum {
   NORM = 0,
-  ALT = 1,
-  EXT_TX_TYPES = 2
+  ALT1 = 1,
+  ALT2 = 2,
+  EXT_TX_TYPES
 } EXT_TX_TYPE;
 #endif
 
