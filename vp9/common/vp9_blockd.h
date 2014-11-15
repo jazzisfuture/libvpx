@@ -263,8 +263,10 @@ static TX_TYPE ext_tx_to_txtype(EXT_TX_TYPE ext_tx) {
     case NORM:
     default:
       return DCT_DCT;
-    case ALT:
+    case ALT1:
       return ADST_ADST;
+    case ALT2:
+      return FLIPADST_FLIPADST;
   }
 }
 #endif
