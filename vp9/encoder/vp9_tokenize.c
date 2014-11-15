@@ -315,7 +315,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   vp9_prob (*const coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       cpi->common.fc->coef_probs[tx_size][type][ref];
   unsigned int (*const eob_branch)[COEFF_CONTEXTS] =
-      cpi->common.counts.eob_branch[tx_size][type][ref];
+      cpi->common.counts->eob_branch[tx_size][type][ref];
   const uint8_t *const band = get_band_translate(tx_size);
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
   const TOKENVALUE *dct_value_tokens;
@@ -433,7 +433,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
   struct tokenize_b_args arg = {cpi, xd, t};
   if (mbmi->skip) {
     if (!dry_run)
-      cm->counts.skip[ctx][1] += skip_inc;
+      cm->counts->skip[ctx][1] += skip_inc;
     reset_skip_context(xd, bsize);
     if (dry_run)
       *t = t_backup;
@@ -441,7 +441,7 @@ void vp9_tokenize_sb(VP9_COMP *cpi, TOKENEXTRA **t, int dry_run,
   }
 
   if (!dry_run) {
-    cm->counts.skip[ctx][0] += skip_inc;
+    cm->counts->skip[ctx][0] += skip_inc;
     vp9_foreach_transformed_block(xd, bsize, tokenize_b, &arg);
   } else {
     vp9_foreach_transformed_block(xd, bsize, set_entropy_context_b, &arg);

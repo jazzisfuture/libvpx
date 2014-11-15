@@ -724,7 +724,7 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
       if (cm->interp_filter == SWITCHABLE) {
         const int ctx = vp9_get_pred_context_switchable_interp(xd);
-        ++cm->counts.switchable_interp[ctx][mbmi->interp_filter];
+        ++cm->counts->switchable_interp[ctx][mbmi->interp_filter];
       }
     }
 
@@ -924,7 +924,7 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
     const int seg_ref_active = vp9_segfeature_active(&cm->seg, mbmi->segment_id,
                                                      SEG_LVL_REF_FRAME);
     if (!seg_ref_active) {
-      FRAME_COUNTS *const counts = &cm->counts;
+      FRAME_COUNTS *const counts = cm->counts;
       const int inter_block = is_inter_block(mbmi);
 
       counts->intra_inter[vp9_get_intra_inter_context(xd)][inter_block]++;
@@ -1060,7 +1060,7 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
 
   partition = partition_lookup[bsl][subsize];
   if (output_enabled && bsize != BLOCK_4X4)
-    cm->counts.partition[ctx][partition]++;
+    cm->counts->partition[ctx][partition]++;
 
   switch (partition) {
     case PARTITION_NONE:
@@ -1319,7 +1319,7 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 
     if (cm->interp_filter == SWITCHABLE) {
       const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
-      ++cm->counts.switchable_interp[pred_ctx][mbmi->interp_filter];
+      ++cm->counts->switchable_interp[pred_ctx][mbmi->interp_filter];
     }
   }
 
@@ -1387,7 +1387,7 @@ static void encode_sb_rt(VP9_COMP *cpi, const TileInfo *const tile,
 
   partition = partition_lookup[bsl][subsize];
   if (output_enabled && bsize != BLOCK_4X4)
-    cm->counts.partition[ctx][partition]++;
+    cm->counts->partition[ctx][partition]++;
 
   switch (partition) {
     case PARTITION_NONE:
@@ -3109,7 +3109,7 @@ static void nonrd_use_partition(VP9_COMP *cpi,
 
   if (output_enabled && bsize != BLOCK_4X4) {
     int ctx = partition_plane_context(xd, mi_row, mi_col, bsize);
-    cm->counts.partition[ctx][partition]++;
+    cm->counts->partition[ctx][partition]++;
   }
 
   switch (partition) {
@@ -3403,8 +3403,8 @@ static int get_skip_encode_frame(const VP9_COMMON *cm) {
   int j;
 
   for (j = 0; j < INTRA_INTER_CONTEXTS; ++j) {
-    intra_count += cm->counts.intra_inter[j][0];
-    inter_count += cm->counts.intra_inter[j][1];
+    intra_count += cm->counts->intra_inter[j][0];
+    inter_count += cm->counts->intra_inter[j][1];
   }
 
   return (intra_count << 2) < inter_count &&
@@ -3500,7 +3500,7 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
 
-  vp9_zero(cm->counts);
+  vp9_zero(*cm->counts);
   vp9_zero(counts->coef_counts);
   vp9_zero(counts->comp_pred_diff);
   vp9_zero(counts->filter_diff);
@@ -3686,16 +3686,16 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       int comp_count_zero = 0;
 
       for (i = 0; i < COMP_INTER_CONTEXTS; i++) {
-        single_count_zero += cm->counts.comp_inter[i][0];
-        comp_count_zero += cm->counts.comp_inter[i][1];
+        single_count_zero += cm->counts->comp_inter[i][0];
+        comp_count_zero += cm->counts->comp_inter[i][1];
       }
 
       if (comp_count_zero == 0) {
         cm->reference_mode = SINGLE_REFERENCE;
-        vp9_zero(cm->counts.comp_inter);
+        vp9_zero(cm->counts->comp_inter);
       } else if (single_count_zero == 0) {
         cm->reference_mode = COMPOUND_REFERENCE;
-        vp9_zero(cm->counts.comp_inter);
+        vp9_zero(cm->counts->comp_inter);
       }
     }
 
@@ -3706,17 +3706,17 @@ void vp9_encode_frame(VP9_COMP *cpi) {
       int count32x32 = 0;
 
       for (i = 0; i < TX_SIZE_CONTEXTS; ++i) {
-        count4x4 += cm->counts.tx.p32x32[i][TX_4X4];
-        count4x4 += cm->counts.tx.p16x16[i][TX_4X4];
-        count4x4 += cm->counts.tx.p8x8[i][TX_4X4];
+        count4x4 += cm->counts->tx.p32x32[i][TX_4X4];
+        count4x4 += cm->counts->tx.p16x16[i][TX_4X4];
+        count4x4 += cm->counts->tx.p8x8[i][TX_4X4];
 
-        count8x8_lp += cm->counts.tx.p32x32[i][TX_8X8];
-        count8x8_lp += cm->counts.tx.p16x16[i][TX_8X8];
-        count8x8_8x8p += cm->counts.tx.p8x8[i][TX_8X8];
+        count8x8_lp += cm->counts->tx.p32x32[i][TX_8X8];
+        count8x8_lp += cm->counts->tx.p16x16[i][TX_8X8];
+        count8x8_8x8p += cm->counts->tx.p8x8[i][TX_8X8];
 
-        count16x16_16x16p += cm->counts.tx.p16x16[i][TX_16X16];
-        count16x16_lp += cm->counts.tx.p32x32[i][TX_16X16];
-        count32x32 += cm->counts.tx.p32x32[i][TX_32X32];
+        count16x16_16x16p += cm->counts->tx.p16x16[i][TX_16X16];
+        count16x16_lp += cm->counts->tx.p32x32[i][TX_16X16];
+        count32x32 += cm->counts->tx.p32x32[i][TX_32X32];
       }
 
       if (count4x4 == 0 && count16x16_lp == 0 && count16x16_16x16p == 0 &&
@@ -3823,7 +3823,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
       vp9_encode_intra_block_plane(x, MAX(bsize, BLOCK_8X8), plane);
     if (output_enabled)
-      sum_intra_stats(&cm->counts, mi);
+      sum_intra_stats(cm->counts, mi);
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
   } else {
     int ref;
@@ -3848,7 +3848,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         mbmi->sb_type >= BLOCK_8X8  &&
         !(is_inter_block(mbmi) && (mbmi->skip || seg_skip))) {
       ++get_tx_counts(max_txsize_lookup[bsize], vp9_get_tx_size_context(xd),
-                      &cm->counts.tx)[mbmi->tx_size];
+                      &cm->counts->tx)[mbmi->tx_size];
     } else {
       int x, y;
       TX_SIZE tx_size;
