@@ -2827,7 +2827,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                         bsize, txfm_cache, INT64_MAX);
         assert(rate_y_tx != INT_MAX);
         if (mbmi->tx_size < TX_32X32)
-          rate_y_tx += vp9_cost_bit(cm->fc.ext_tx_prob, i);
+          rate_y_tx += cpi->ext_tx_costs[i];
         assert(rate_y_tx >= 0);
         rdcost_tx = RDCOST(x->rdmult, x->rddiv, rate_y_tx, distortion_y_tx);
         rdcost_tx = MIN(rdcost_tx, RDCOST(x->rdmult, x->rddiv, 0, *psse));
@@ -2858,7 +2858,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *rate2 += *rate_y;
 #if CONFIG_EXT_TX
     if (mbmi->tx_size < TX_32X32 && !xd->lossless)
-      *rate2 += vp9_cost_bit(cm->fc.ext_tx_prob, mbmi->ext_txfrm);
+      *rate2 += cpi->ext_tx_costs[mbmi->ext_txfrm];
 #endif
     *distortion += distortion_y;
 
