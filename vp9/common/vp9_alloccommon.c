@@ -150,6 +150,8 @@ void vp9_remove_common(VP9_COMMON *cm) {
   cm->fc = NULL;
   vpx_free(cm->frame_contexts);
   cm->frame_contexts = NULL;
+  vpx_free(cm->counts);
+  cm->counts = NULL;
 }
 
 void vp9_init_context_buffers(VP9_COMMON *cm) {

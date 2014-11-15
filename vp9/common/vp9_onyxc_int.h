@@ -189,7 +189,7 @@ typedef struct VP9Common {
   FRAME_CONTEXT *fc;  /* this frame entropy */
   FRAME_CONTEXT *frame_contexts;   // FRAME_CONTEXTS
   unsigned int  frame_context_idx; /* Context to use/update */
-  FRAME_COUNTS counts;
+  FRAME_COUNTS *counts;
 
   unsigned int current_video_frame;
   BITSTREAM_PROFILE profile;

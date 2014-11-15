@@ -352,7 +352,7 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   int i, j;
   FRAME_CONTEXT *fc = cm->fc;
   const FRAME_CONTEXT *pre_fc = &cm->frame_contexts[cm->frame_context_idx];
-  const FRAME_COUNTS *counts = &cm->counts;
+  const FRAME_COUNTS *counts = cm->counts;
 
   for (i = 0; i < INTRA_INTER_CONTEXTS; i++)
     fc->intra_inter_prob[i] = adapt_prob(pre_fc->intra_inter_prob[i],
