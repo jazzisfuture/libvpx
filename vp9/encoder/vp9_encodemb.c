@@ -652,6 +652,10 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     return;
   }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (!x->skip_recode)
+    vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+#else
   if (!x->skip_recode) {
     if (max_txsize_lookup[plane_bsize] == tx_size) {
       if (x->skip_txfm[(plane << 2) + (block >> (tx_size << 1))] == 0) {
@@ -676,6 +680,7 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
     }
   }
+#endif
 
   if (x->optimize && (!x->skip_recode || !x->skip_optimize)) {
     const int ctx = combine_entropy_contexts(*a, *l);
