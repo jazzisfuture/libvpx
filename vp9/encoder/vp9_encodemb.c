@@ -438,11 +438,11 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
                       scan_order->scan, scan_order->iscan);
       break;
     case TX_8X8:
-      vp9_fdct8x8(src_diff, coeff, diff_stride);
-      vp9_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
-                      p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
-                      pd->dequant, p->zbin_extra, eob,
-                      scan_order->scan, scan_order->iscan);
+      vp9_fdct8x8_quant_sse2(src_diff, diff_stride, coeff, 64,
+                        x->skip_block, p->zbin, p->round_fp,
+                        p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
+                        pd->dequant, p->zbin_extra, eob,
+                        scan_order->scan, scan_order->iscan);
       break;
     case TX_4X4:
       x->fwd_txm4x4(src_diff, coeff, diff_stride);
@@ -670,7 +670,10 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
         return;
       }
     } else {
-      vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
+      if (x->quant_fp)
+        vp9_xform_quant_fp(x, plane, block, plane_bsize, tx_size);
+      else
+        vp9_xform_quant(x, plane, block, plane_bsize, tx_size);
     }
   }
 
