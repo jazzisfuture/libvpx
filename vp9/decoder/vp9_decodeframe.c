@@ -1087,6 +1087,25 @@ static BITSTREAM_PROFILE read_profile(struct vp9_read_bit_buffer *rb) {
   return (BITSTREAM_PROFILE) profile;
 }
 
+static INLINE void reset_frame_bufs_ref_count(int new_fb_idx,
+                                              RefCntBuffer *const frame_bufs,
+                                              BufferPool *const pool) {
+  int index = 0;
+  // Reset all frame buffers' ref_count to be 0 except current frame
+  // buffer's ref_count which will be set to 1.
+  lock_buffer_pool(pool);
+  for (index = 0; index < FRAME_BUFFERS; ++index) {
+    if (index != new_fb_idx && frame_bufs[index].ref_count > 0) {
+      frame_bufs[index].ref_count = 0;
+      // Release the memory associated with this frame buffer.
+      pool->release_fb_cb(pool->cb_priv, &frame_bufs[index].raw_frame_buffer);
+    } else if (index == new_fb_idx) {
+      frame_bufs[index].ref_count = 1;
+    }
+  }
+  unlock_buffer_pool(pool);
+}
+
 static size_t read_uncompressed_header(VP9Decoder *pbi,
                                        struct vp9_read_bit_buffer *rb) {
   VP9_COMMON *const cm = &pbi->common;
@@ -1165,6 +1184,11 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
     }
 
     setup_frame_size(cm, rb);
+    if (pbi->need_resync) {
+      vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
+      reset_frame_bufs_ref_count(cm->new_fb_idx, frame_bufs, pool);
+      pbi->need_resync = 0;
+    }
   } else {
     cm->intra_only = cm->show_frame ? 0 : vp9_rb_read_bit(rb);
 
@@ -1176,6 +1200,11 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       setup_frame_size(cm, rb);
+      if (pbi->need_resync) {
+        vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
+        reset_frame_bufs_ref_count(cm->new_fb_idx, frame_bufs, pool);
+        pbi->need_resync = 0;
+      }
     } else {
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       for (i = 0; i < REFS_PER_FRAME; ++i) {
@@ -1201,6 +1230,12 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
           vp9_extend_frame_borders(ref_buf->buf);
       }
     }
+  }
+
+  if (pbi->need_resync) {
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Keyframe / intra-only frame required to reset decoder"
+                       " state");
   }
 
   if (!cm->error_resilient_mode) {
@@ -1457,9 +1492,7 @@ void vp9_decode_frame(VP9Decoder *pbi,
     *p_data_end = decode_tiles(pbi, data + first_partition_size, data_end);
   }
 
-  new_fb->corrupted |= xd->corrupted;
-
-  if (!new_fb->corrupted) {
+  if (!xd->corrupted) {
     if (!cm->error_resilient_mode && !cm->frame_parallel_decoding_mode) {
       vp9_adapt_coef_probs(cm);
 
@@ -1470,6 +1503,9 @@ void vp9_decode_frame(VP9Decoder *pbi,
     } else {
       debug_check_frame_counts(cm);
     }
+  } else {
+    vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
+                       "Decode failed. Frame data is corrupted.");
   }
 
   // Non frame parallel update frame context here.
