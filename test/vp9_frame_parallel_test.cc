@@ -118,5 +118,91 @@ TEST(VP9MultiThreadedFrameParallel, PauseSeekResume) {
   DecodeFiles(files);
 }
 
+struct InvalidFileList {
+  const char *name;
+  // md5 sum for decoded frames which does not include corrupted frames.
+  const char *expected_md5;
+  // Expected number of decoded frames which does not include corrupted frames.
+  const int expected_frame_nums;
+};
+
+// Decodes |filename| with |num_threads|. Return the md5 of the decoded
+// frames which does not include corrupted frames.
+string DecodeInvalidFile(const string &filename, int num_threads,
+                         int expected_frame_nums) {
+  libvpx_test::WebMVideoSource video(filename);
+  video.Init();
+  int out_frames = 0;
+
+  vpx_codec_dec_cfg_t cfg = {0};
+  cfg.threads = num_threads;
+  vpx_codec_flags_t flags = 0;
+  flags |= VPX_CODEC_USE_FRAME_THREADING;
+  libvpx_test::VP9Decoder decoder(cfg, flags, 0);
+
+  libvpx_test::MD5 md5;
+  video.Begin();
+
+  do {
+    const vpx_codec_err_t res =
+        decoder.DecodeFrame(video.cxdata(), video.frame_size());
+    if (res != VPX_CODEC_OK) {
+      EXPECT_EQ(VPX_CODEC_OK, res) << decoder.DecodeError();
+      break;
+    }
+
+    video.Next();
+
+    // Flush the decoder at the end of the video.
+    if (!video.cxdata())
+      decoder.DecodeFrame(NULL, 0);
+
+    libvpx_test::DxDataIterator dec_iter = decoder.GetDxData();
+    const vpx_image_t *img;
+
+    // Get decompressed data
+    while ((img = dec_iter.Next())) {
+      ++out_frames;
+      md5.Add(img);
+    }
+  } while (video.cxdata() != NULL);
+
+  EXPECT_EQ(out_frames, expected_frame_nums) <<
+      "Iuput frame count does not match expected output frame count";
+
+  return string(md5.Get());
+}
+
+void DecodeInvalidFiles(const InvalidFileList files[]) {
+  for (const InvalidFileList *iter = files; iter->name != NULL; ++iter) {
+    SCOPED_TRACE(iter->name);
+    for (int t = 4; t <= 8; ++t) {
+      EXPECT_EQ(iter->expected_md5,
+                DecodeInvalidFile(iter->name, t, iter->expected_frame_nums))
+          << "threads = " << t;
+    }
+  }
+}
+
+TEST(VP9MultiThreadedFrameParallel, invalidFileTest) {
+  static const InvalidFileList files[] = {
+    // invalid-vp90-2-07-frame_parallel-1.webm is a 40 frame video file with
+    // one key frame for every ten frames. The 11th frame has corrupted data.
+    { "invalid-vp90-2-07-frame_parallel-1.webm",
+      "0549d0f45f60deaef8eb708e6c0eb6cb", 30},
+    // invalid-vp90-2-07-frame_parallel-2.webm is a 40 frame video file with
+    // one key frame for every ten frames. The 1st and 21st frames have
+    // corrupted data.
+    { "invalid-vp90-2-07-frame_parallel-2.webm",
+      "6a1f3cf6f9e7a364212fadb9580d525e", 20},
+    // invalid-vp90-2-07-frame_parallel-3.webm is a 40 frame video file with
+    // one key frame for every ten frames. The 13rd frame has corrupted data.
+    { "invalid-vp90-2-07-frame_parallel-3.webm",
+      "a567c8259d27ad32b1b7f58db5ac89dd", 32},
+    { NULL, NULL, 0},
+  };
+  DecodeInvalidFiles(files);
+}
+
 #endif  // CONFIG_WEBM_IO
 }  // namespace
