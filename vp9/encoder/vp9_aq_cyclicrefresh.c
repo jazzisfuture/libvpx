@@ -183,8 +183,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   const int apply_cyclic_refresh  = apply_cyclic_refresh_bitrate(cm, rc);
   // Don't apply refresh on key frame or enhancement layer frames.
   if (!apply_cyclic_refresh ||
-      (cm->frame_type == KEY_FRAME) ||
-      (cpi->svc.temporal_layer_id > 0)) {
+      cm->frame_type == KEY_FRAME ||
+      cpi->svc.temporal_layer_id > 0 ||
+      cpi->svc.spatial_layer_id > 0) {
     // Set segmentation map to 0 and disable.
     vpx_memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
     vp9_disable_segmentation(&cm->seg);
