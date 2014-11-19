@@ -58,6 +58,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   }
 
   cm->error.setjmp = 1;
+  pbi->need_resync = 1;
   initialize_dec();
 
   vp9_rtcd();
@@ -197,9 +198,9 @@ int vp9_get_reference_dec(VP9Decoder *pbi, int index, YV12_BUFFER_CONFIG **fb) {
   return 0;
 }
 
-static INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
-                                      BufferPool *const pool) {
-  if (idx >= 0) {
+INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
+                               BufferPool *const pool) {
+  if (idx >= 0 && frame_bufs[idx].ref_count > 0) {
     --frame_bufs[idx].ref_count;
     if (frame_bufs[idx].ref_count == 0) {
       pool->release_fb_cb(pool->cb_priv, &frame_bufs[idx].raw_frame_buffer);
@@ -240,7 +241,8 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
 
   if (!pbi->frame_parallel_decode || !cm->show_frame) {
     lock_buffer_pool(pool);
-    --frame_bufs[cm->new_fb_idx].ref_count;
+    //--frame_bufs[cm->new_fb_idx].ref_count;
+    decrease_ref_count(cm->new_fb_idx, frame_bufs, pool);
     unlock_buffer_pool(pool);
   }
 
@@ -256,7 +258,6 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   const uint8_t *source = *psource;
   int retcode = 0;
-
   cm->error.error_code = VPX_CODEC_OK;
 
   if (size == 0) {
@@ -282,7 +283,6 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
                         &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
-
   if (pbi->frame_parallel_decode) {
     VP9Worker *const worker = pbi->frame_worker_owner;
     vp9_frameworker_lock_stats(worker);
@@ -297,22 +297,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   }
 
   if (setjmp(cm->error.jmp)) {
-    cm->error.setjmp = 0;
+    pbi->need_resync = 1;
     pbi->ready_for_new_data = 1;
-
-    // We do not know if the missing frame(s) was supposed to update
-    // any of the reference buffers, but we act conservative and
-    // mark only the last buffer as corrupted.
-    //
-    // TODO(jkoleszar): Error concealment is undefined and non-normative
-    // at this point, but if it becomes so, [0] may not always be the correct
-    // thing to do here.
-    if (cm->frame_refs[0].idx != INT_MAX && cm->frame_refs[0].buf != NULL)
-      cm->frame_refs[0].buf->corrupted = 1;
-
-    if (frame_bufs[cm->new_fb_idx].ref_count > 0)
-      --frame_bufs[cm->new_fb_idx].ref_count;
-
+    cm->error.setjmp = 0;
     return -1;
   }
 

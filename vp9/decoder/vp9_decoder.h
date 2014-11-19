@@ -65,6 +65,7 @@ typedef struct VP9Decoder {
 
   int max_threads;
   int inv_tile_order;
+  int need_resync;  // wait for key/intra-only frame
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi,
@@ -88,6 +89,8 @@ struct VP9Decoder *vp9_decoder_create(BufferPool *const pool);
 
 void vp9_decoder_remove(struct VP9Decoder *pbi);
 
+INLINE void decrease_ref_count(int idx, RefCntBuffer *const frame_bufs,
+                               BufferPool *const pool);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

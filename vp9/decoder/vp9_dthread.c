@@ -320,7 +320,7 @@ void vp9_frameworker_wait(VP9Worker *const worker, RefCntBuffer *const ref_buf,
 
   // Enabling the following line of code will get harmless tsan error but
   // will get best performance.
-  // if (ref_buf->row >= row) return;
+  // if (ref_buf->row >= row && ref_buf->buf.corrupted != 1) return;
 
   {
     // Find the worker thread that owns the reference frame. If the reference
@@ -339,10 +339,21 @@ void vp9_frameworker_wait(VP9Worker *const worker, RefCntBuffer *const ref_buf,
     }
 #endif
 
+
     vp9_frameworker_lock_stats(ref_worker);
-    while (ref_buf->row < row && pbi->cur_buf == ref_buf) {
+    while (ref_buf->row < row && pbi->cur_buf == ref_buf &&
+           ref_buf->buf.corrupted != 1) {
       pthread_cond_wait(&ref_worker_data->stats_cond,
                         &ref_worker_data->stats_mutex);
+    }
+
+    if (ref_buf->buf.corrupted == 1) {
+      FrameWorkerData *const worker_data = (FrameWorkerData *)worker->data1;
+      pbi->cur_buf->buf.corrupted = 1;
+      vp9_frameworker_unlock_stats(ref_worker);
+      vpx_internal_error(&worker_data->pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
+                         "Worker %p fail to decode frame",
+                         worker);
     }
     vp9_frameworker_unlock_stats(ref_worker);
   }
@@ -382,8 +393,9 @@ void vp9_frameworker_copy_context(VP9Worker *const dst_worker,
   int i;
 
   // Wait until source frame's context is ready.
+  // Skip the wait if source frame is corrupted.
   vp9_frameworker_lock_stats(src_worker);
-  while (!src_worker_data->frame_context_ready) {
+  while (!src_worker_data->frame_context_ready && src_worker->had_error != 1) {
     pthread_cond_wait(&src_worker_data->stats_cond,
         &src_worker_data->stats_mutex);
   }
@@ -409,6 +421,7 @@ void vp9_frameworker_copy_context(VP9Worker *const dst_worker,
   dst_worker_data->pbi->prev_buf =
       src_worker_data->pbi->common.show_existing_frame ?
           NULL : src_worker_data->pbi->cur_buf;
+  dst_worker_data->pbi->need_resync = src_worker_data->pbi->need_resync;
 
   dst_cm->last_width = !src_cm->show_existing_frame ?
                        src_cm->width : src_cm->last_width;
