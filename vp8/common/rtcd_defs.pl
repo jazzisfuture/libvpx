@@ -454,7 +454,18 @@ add_proto qw/void vp8_regular_quantize_b/, "struct block *, struct blockd *";
 specialize qw/vp8_regular_quantize_b sse2 sse4_1/;
 
 add_proto qw/void vp8_fast_quantize_b/, "struct block *, struct blockd *";
-specialize qw/vp8_fast_quantize_b sse2 ssse3 neon/;
+specialize qw/vp8_fast_quantize_b sse2 ssse3 media neon_asm/;
+$vp8_fast_quantize_b_media=vp8_fast_quantize_b_armv6;
+$vp8_fast_quantize_b_neon_asm=vp8_fast_quantize_b_neon;
+
+add_proto qw/void vp8_quantize_mb/, "struct macroblock *";
+specialize qw/vp8_quantize_mb neon/;
+
+add_proto qw/void vp8_quantize_mby/, "struct macroblock *";
+specialize qw/vp8_quantize_mby neon/;
+
+add_proto qw/void vp8_quantize_mbuv/, "struct macroblock *";
+specialize qw/vp8_quantize_mbuv neon/;
 
 #
 # Block subtraction
