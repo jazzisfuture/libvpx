@@ -454,7 +454,7 @@ add_proto qw/void vp8_regular_quantize_b/, "struct block *, struct blockd *";
 specialize qw/vp8_regular_quantize_b sse2 sse4_1/;
 
 add_proto qw/void vp8_fast_quantize_b/, "struct block *, struct blockd *";
-specialize qw/vp8_fast_quantize_b sse2 ssse3 neon/;
+specialize qw/vp8_fast_quantize_b sse2 ssse3/;
 
 #
 # Block subtraction
