@@ -2608,11 +2608,15 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
     if (mbmi->segment_id)
       x->rdmult = vp9_cyclic_refresh_get_rdmult(cpi->cyclic_refresh);
 
-  if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
-    set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
-  else
-    vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
-                        rd_cost, bsize, ctx);
+  if (cm->frame_type == KEY_FRAME) {
+    vp9_pick_intra_mode(cpi, x, rd_cost, bsize, ctx);
+  } else {
+    if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
+      set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
+    else
+      vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
+                          rd_cost, bsize, ctx);
+  }
 
   duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, bsize);
 
@@ -3463,7 +3467,7 @@ static void encode_tiles(VP9_COMP *cpi) {
 
       for (mi_row = tile_info->mi_row_start; mi_row < tile_info->mi_row_end;
            mi_row += MI_BLOCK_SIZE) {
-        if (cpi->sf.use_nonrd_pick_mode && !frame_is_intra_only(cm))
+        if (cpi->sf.use_nonrd_pick_mode)
           encode_nonrd_sb_row(cpi, this_tile, mi_row, &tok[tile_row][tile_col]);
         else
           encode_rd_sb_row(cpi, this_tile, mi_row, &tok[tile_row][tile_col]);
