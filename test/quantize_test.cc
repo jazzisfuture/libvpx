@@ -147,6 +147,11 @@ TEST_P(QuantizeTest, TestZeroInput) {
   RunComparison();
 }
 
+TEST_P(QuantizeTest, TestLargeNegativeInput) {
+  FillCoeffConstant(0);
+  vp8_comp_->mb.coeff[0] = -8191;
+  RunComparison();
+}
 TEST_P(QuantizeTest, TestRandomInput) {
   FillCoeffRandom();
   RunComparison();
