@@ -56,7 +56,7 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
 
     vp9_clear_system_state();
 
-    for (i = 0; i < MAX_SEGMENTS; i++) {
+    for (i = 0; i < MAX_SEGMENTS; ++i) {
       int qindex_delta =
           vp9_compute_qdelta_by_rate(&cpi->rc, cm->frame_type, cm->base_qindex,
                                      rate_ratio[i], cm->bit_depth);
@@ -69,7 +69,7 @@ void vp9_vaq_frame_setup(VP9_COMP *cpi) {
         qindex_delta = -cm->base_qindex + 1;
       }
 
-      // No need to enable SEG_LVL_ALT_Q for this segment
+      // No need to enable SEG_LVL_ALT_Q for this segment.
       if (rate_ratio[i] == 1.0) {
         continue;
       }
@@ -138,7 +138,7 @@ double vp9_log_block_var(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   return log(var + 1.0);
 }
 
-#define DEFAULT_E_MIDPOINT 10.0;
+#define DEFAULT_E_MIDPOINT 10.0
 int vp9_block_energy(VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bs) {
   double energy;
   double energy_midpoint;
