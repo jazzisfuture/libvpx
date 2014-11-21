@@ -318,18 +318,9 @@ check_cxxflags() {
   log check_cxxflags "$@"
 
   # Catch CFLAGS that trigger CXX warnings
-  case "$CXX" in
-    *c++-analyzer|*clang++|*g++*)
-      check_cxx -Werror "$@" <<EOF
+  check_cxx -Werror "$@" <<EOF
 int x;
 EOF
-      ;;
-    *)
-      check_cxx -Werror "$@" <<EOF
-int x;
-EOF
-      ;;
-    esac
 }
 
 check_add_cflags() {
@@ -396,9 +387,7 @@ write_common_config_targets() {
         fwrite config.mk "ALL_TARGETS += ${t}"
       fi
     fi
-    true;
   done
-  true
 }
 
 write_common_target_config_mk() {
@@ -576,15 +565,11 @@ process_common_cmdline() {
 process_cmdline() {
   for opt do
     optval="${opt#*=}"
-    case "$opt" in
-    *)
-      process_common_cmdline $opt
-      ;;
-    esac
+    process_common_cmdline $opt
   done
 }
 
-post_process_common_cmdline() {
+post_process_cmdline() {
   prefix="${prefix:-/usr/local}"
   prefix="${prefix%/}"
   libdir="${libdir:-${prefix}/lib}"
@@ -592,10 +577,6 @@ post_process_common_cmdline() {
   if [ "${libdir#${prefix}}" = "${libdir}" ]; then
     die "Libdir ${libdir} must be a subdirectory of ${prefix}"
   fi
-}
-
-post_process_cmdline() {
-  true;
 }
 
 setup_gnu_toolchain() {
@@ -610,7 +591,7 @@ setup_gnu_toolchain() {
   EXE_SFX=
 }
 
-process_common_toolchain() {
+process_toolchain() {
   if [ -z "$toolchain" ]; then
     gcctarget="${CHOST:-$(gcc -dumpmachine 2> /dev/null)}"
 
@@ -842,7 +823,7 @@ EOF
           check_add_asflags -march=armv7-a -mfloat-abi=${float_abi}
 
           if enabled neon || enabled neon_asm; then
-              check_add_cflags -mfpu=neon #-ftree-vectorize
+              check_add_cflags -mfpu=neon
               check_add_asflags -mfpu=neon
           fi
 
@@ -1318,10 +1299,6 @@ EOF
   fi
 }
 
-process_toolchain() {
-  process_common_toolchain
-}
-
 print_config_mk() {
   saved_prefix="${prefix}"
   prefix=$1
@@ -1380,14 +1357,6 @@ EOF
   prefix="${saved_prefix}"
 }
 
-process_targets() {
-  true;
-}
-
-process_detect() {
-  true;
-}
-
 enable_feature logging
 logfile="config.log"
 self=$0
@@ -1399,11 +1368,8 @@ process() {
   else
     echo "# ${self} $@" > ${logfile}
   fi
-  post_process_common_cmdline
   post_process_cmdline
   process_toolchain
-  process_detect
-  process_targets
 
   OOT_INSTALLS="${OOT_INSTALLS}"
   if enabled source_path_used; then
@@ -1415,5 +1381,4 @@ process() {
   cp "${source_path}/build/make/Makefile" .
 
   clean_temp_files
-  true
 }
