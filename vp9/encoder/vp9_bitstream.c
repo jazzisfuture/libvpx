@@ -238,7 +238,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
                                 vp9_writer *w) {
   VP9_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc->nmvc;
-  const MACROBLOCK *const x = &cpi->mb;
+  const MACROBLOCK *const x = &cpi->td.mb;
   const MACROBLOCKD *const xd = &x->e_mbd;
   const struct segmentation *const seg = &cm->seg;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
@@ -382,7 +382,7 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
                           const TOKENEXTRA *const tok_end,
                           int mi_row, int mi_col) {
   const VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   MODE_INFO *m;
 
   xd->mi = cm->mi + (mi_row * cm->mi_stride + mi_col);
@@ -429,7 +429,7 @@ static void write_modes_sb(VP9_COMP *cpi,
                            TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
                            int mi_row, int mi_col, BLOCK_SIZE bsize) {
   const VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
 
   const int bsl = b_width_log2_lookup[bsize];
   const int bs = (1 << bsl) / 4;
@@ -485,11 +485,12 @@ static void write_modes_sb(VP9_COMP *cpi,
 static void write_modes(VP9_COMP *cpi,
                         const TileInfo *const tile, vp9_writer *w,
                         TOKENEXTRA **tok, const TOKENEXTRA *const tok_end) {
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   int mi_row, mi_col;
 
   for (mi_row = tile->mi_row_start; mi_row < tile->mi_row_end;
        mi_row += MI_BLOCK_SIZE) {
-    vp9_zero(cpi->mb.e_mbd.left_seg_context);
+    vp9_zero(xd->left_seg_context);
     for (mi_col = tile->mi_col_start; mi_col < tile->mi_col_end;
          mi_col += MI_BLOCK_SIZE)
       write_modes_sb(cpi, tile, w, tok, tok_end, mi_row, mi_col,
@@ -500,7 +501,7 @@ static void write_modes(VP9_COMP *cpi,
 static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
                                     vp9_coeff_stats *coef_branch_ct,
                                     vp9_coeff_probs_model *coef_probs) {
-  vp9_coeff_count *coef_counts = cpi->frame_counts->coef_counts[tx_size];
+  vp9_coeff_count *coef_counts = cpi->td.rd_counts.coef_counts[tx_size];
   unsigned int (*eob_branch_ct)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
       cpi->common.counts.eob_branch[tx_size];
   int i, j, k, l, m;
@@ -1084,6 +1085,7 @@ static void write_bitdepth_colorspace_sampling(
 static void write_uncompressed_header(VP9_COMP *cpi,
                                       struct vp9_write_bit_buffer *wb) {
   VP9_COMMON *const cm = &cpi->common;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
 
   vp9_wb_write_literal(wb, VP9_FRAME_MARKER, 2);
 
@@ -1150,14 +1152,14 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
   encode_loopfilter(&cm->lf, wb);
   encode_quantization(cm, wb);
-  encode_segmentation(cm, &cpi->mb.e_mbd, wb);
+  encode_segmentation(cm, xd, wb);
 
   write_tile_info(cm, wb);
 }
 
 static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   VP9_COMMON *const cm = &cpi->common;
-  MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   FRAME_CONTEXT *const fc = cm->fc;
   vp9_writer header_bc;
 
