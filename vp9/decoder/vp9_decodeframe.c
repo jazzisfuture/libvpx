@@ -416,7 +416,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #else
           vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
 #endif
-  break;
+          break;
         case TX_32X32:
           tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
@@ -1612,6 +1612,12 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
     for (j = TX_4X4; j <= TX_16X16; ++j)
       for (i = 0; i < EXT_TX_TYPES - 1; ++i)
         vp9_diff_update_prob(&r, &fc->ext_tx_prob[j][i]);
+#endif
+#if CONFIG_TX_SKIP
+  for (i = 0; i < 2; i++)
+    vp9_diff_update_prob(&r, &fc->y_tx_skip_prob[i]);
+  for (i = 0; i < 2; i++)
+    vp9_diff_update_prob(&r, &fc->uv_tx_skip_prob[i]);
 #endif
   }
 

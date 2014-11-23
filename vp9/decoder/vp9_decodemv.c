@@ -175,11 +175,18 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 
   mbmi->segment_id = read_intra_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
-#if CONFIG_TX_SKIP
-  mbmi->tx_skip[0] = vp9_read_bit(r);
-  mbmi->tx_skip[1] = vp9_read_bit(r);
-#endif
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, bsize, 1, r);
+#if CONFIG_TX_SKIP
+  if (bsize >= BLOCK_8X8 &&
+      vp9_get_qindex(&cm->seg, xd->mi[0].src_mi->mbmi.segment_id,
+                     cm->base_qindex) <= TX_SKIP_Q_THRESH) {
+    mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[0]);
+    mbmi->tx_skip[1] = vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+  } else {
+    mbmi->tx_skip[0] = 0;
+    mbmi->tx_skip[1] = 0;
+  }
+#endif
   mbmi->ref_frame[0] = INTRA_FRAME;
   mbmi->ref_frame[1] = NONE;
 
@@ -673,13 +680,24 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
   mbmi->segment_id = read_inter_segment_id(cm, xd, mi_row, mi_col, r);
   mbmi->skip = read_skip(cm, xd, mbmi->segment_id, r);
-#if CONFIG_TX_SKIP
-  mbmi->tx_skip[0] = vp9_read_bit(r);
-  mbmi->tx_skip[1] = vp9_read_bit(r);
-#endif
   inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
   mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                !mbmi->skip || !inter_block, r);
+#if CONFIG_TX_SKIP
+  if (mbmi->sb_type >= BLOCK_8X8 &&
+      vp9_get_qindex(&cm->seg, xd->mi[0].src_mi->mbmi.segment_id,
+                     cm->base_qindex) <= TX_SKIP_Q_THRESH) {
+    mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[inter_block]);
+    mbmi->tx_skip[1] = vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+    if (!cm->frame_parallel_decoding_mode) {
+      ++cm->counts.y_tx_skip[inter_block][mbmi->tx_skip[0]];
+      ++cm->counts.uv_tx_skip[mbmi->tx_skip[0]][mbmi->tx_skip[1]];
+    }
+  } else {
+    mbmi->tx_skip[0] = 0;
+    mbmi->tx_skip[1] = 0;
+  }
+#endif
 #if CONFIG_EXT_TX
   if (inter_block &&
       mbmi->tx_size <= TX_16X16 &&
