@@ -416,7 +416,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
 #else
           vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
 #endif
-  break;
+          break;
         case TX_32X32:
           tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
@@ -1613,6 +1613,12 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
       for (i = 0; i < EXT_TX_TYPES - 1; ++i)
         vp9_diff_update_prob(&r, &fc->ext_tx_prob[j][i]);
 #endif
+#if CONFIG_TX_SKIP
+  for (i = 0; i < 2; i++)
+    vp9_diff_update_prob(&r, &fc->y_tx_skip_prob[i]);
+  for (i = 0; i < 2; i++)
+    vp9_diff_update_prob(&r, &fc->uv_tx_skip_prob[i]);
+#endif
   }
 
   return vp9_reader_has_error(&r);
@@ -1667,6 +1673,12 @@ static void debug_check_frame_counts(const VP9_COMMON *const cm) {
 #if CONFIG_EXT_TX
   assert(!memcmp(cm->counts.ext_tx, zero_counts.ext_tx,
                  sizeof(cm->counts.ext_tx)));
+#endif
+#if CONFIG_TX_SKIP
+  assert(!memcmp(cm->counts.y_tx_skip, zero_counts.y_tx_skip,
+                 sizeof(cm->counts.y_tx_skip)));
+  assert(!memcmp(cm->counts.uv_tx_skip, zero_counts.uv_tx_skip,
+                 sizeof(cm->counts.uv_tx_skip)));
 #endif
 }
 #endif  // NDEBUG

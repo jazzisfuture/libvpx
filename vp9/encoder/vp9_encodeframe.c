@@ -3838,5 +3838,13 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
     }
 #endif
+#if CONFIG_TX_SKIP
+    if (bsize >= BLOCK_8X8 && !frame_is_intra_only(cm) &&
+        vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex)
+        <= TX_SKIP_Q_THRESH) {
+      ++cm->counts.y_tx_skip[is_inter_block(mbmi)][mbmi->tx_skip[0]];
+      ++cm->counts.uv_tx_skip[mbmi->tx_skip[0]][mbmi->tx_skip[1]];
+    }
+#endif
   }
 }

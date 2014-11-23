@@ -22,6 +22,9 @@ extern "C" {
 #define MAXQ 255
 #define QINDEX_RANGE (MAXQ - MINQ + 1)
 #define QINDEX_BITS 8
+#if CONFIG_TX_SKIP
+#define TX_SKIP_Q_THRESH 30
+#endif
 
 int16_t vp9_dc_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
 int16_t vp9_ac_quant(int qindex, int delta, vpx_bit_depth_t bit_depth);
