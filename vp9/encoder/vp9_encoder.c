@@ -575,6 +575,12 @@ static void update_frame_size(VP9_COMP *cpi) {
       vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                          "Failed to reallocate alt_ref_buffer");
   }
+
+  {
+    unsigned int tokens = get_token_alloc(cm->mb_rows, cm->mb_cols);
+    vpx_free(cpi->tok);
+    CHECK_MEM_ERROR(cm, cpi->tok, vpx_calloc(tokens, sizeof(*cpi->tok)));
+  }
 }
 
 void vp9_new_framerate(VP9_COMP *cpi, double framerate) {
