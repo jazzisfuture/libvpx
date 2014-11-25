@@ -230,7 +230,7 @@ INSTANTIATE_TEST_CASE_P(
                    &vp9_idct4x4_1_add_c,
                    TX_4X4, 1)));
 
-#if HAVE_NEON_ASM
+#if HAVE_NEON
 INSTANTIATE_TEST_CASE_P(
     NEON, PartialIDctTest,
     ::testing::Values(
