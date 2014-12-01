@@ -82,6 +82,9 @@ typedef enum {
   D207_PRED,       // Directional 207 deg = 180 + 27
   D63_PRED,        // Directional 63  deg = round(arctan(2/1) * 180/pi)
   TM_PRED,         // True-motion
+#if CONFIG_INTRABC
+  NEWDV,
+#endif  // CONFIG_INTRABC
   NEARESTMV,
   NEARMV,
   ZEROMV,
@@ -133,7 +136,14 @@ static INLINE int have_newmv_in_inter_mode(PREDICTION_MODE mode) {
 #endif  // CONFIG_COMPOUND_MODES
 }
 
-#define INTRA_MODES (TM_PRED + 1)
+#if CONFIG_INTRABC
+static INLINE int is_intrabc_mode(PREDICTION_MODE mode) {
+  return mode == NEWDV;
+}
+#define INTRA_MODES (NEWDV + 1)  // XXX
+#else
+#define INTRA_MODES (TM_PRED + 1)  // XXX
+#endif  // CONFIG_INTRABC
 
 #define INTER_MODES (1 + NEWMV - NEARESTMV)
 
@@ -257,8 +267,12 @@ static INLINE PREDICTION_MODE get_y_mode(const MODE_INFO *mi, int block) {
 
 #if CONFIG_FILTERINTRA
 static INLINE int is_filter_allowed(PREDICTION_MODE mode) {
+#if CONFIG_INTRABC
+  return !is_intrabc_mode(mode);
+#else
   (void)mode;
   return 1;
+#endif  // CONFIG_INTRABC
 }
 
 static INLINE int is_filter_enabled(TX_SIZE txsize) {
