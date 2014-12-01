@@ -551,6 +551,9 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         }
       }
     }
+#if CONFIG_INTRABC
+    if (!is_intrabc_mode(mode))
+#endif
     write_intra_mode(w, mbmi->uv_mode, cm->fc.uv_mode_prob[mode]);
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->uv_mode) &&
@@ -718,6 +721,9 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 }
 
 static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+#if CONFIG_INTRABC
+                              int mi_row, int mi_col,
+#endif  // CONFIG_INTRABC
                               MODE_INFO *mi_8x8, vp9_writer *w) {
   const struct segmentation *const seg = &cm->seg;
   const MODE_INFO *const mi = mi_8x8;
@@ -726,6 +732,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
       xd->left_available ? mi_8x8[-1].src_mi : NULL;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
+#if CONFIG_INTRABC
+  const nmv_context *ndvc = &cm->fc.ndvc;
+  int_mv dv_ref;
+  vp9_find_ref_dv(&dv_ref, mi_row, mi_col);
+#endif  // CONFIG_INTRABC
 
   if (seg->update_map)
     write_segment_id(w, seg, mbmi->segment_id);
@@ -876,6 +887,11 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
       vp9_write(w, mbmi->filterbit,
                 cm->fc.filterintra_prob[mbmi->tx_size][mbmi->mode]);
 #endif  // CONFIG_FILTERINTRA
+#if CONFIG_INTRABC
+    if (mbmi->mode == NEWDV) {
+      vp9_encode_dv(w, &mbmi->mv[0].as_mv, &dv_ref.as_mv, ndvc);
+    }
+#endif  // CONFIG_INTRABC
   } else {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -897,16 +913,21 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
 #if CONFIG_PALETTE
   if (!mbmi->palette_enabled[1])
-    write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
-#else
-  write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
 #endif  // CONFIG_PALETTE
+#if CONFIG_INTRABC
+  if (!is_intrabc_mode(mbmi->mode))
+#endif  // CONFIG_INTRABC
+  write_intra_mode(w, mbmi->uv_mode, vp9_kf_uv_mode_prob[mbmi->mode]);
+
 #if CONFIG_FILTERINTRA
   if (is_filter_allowed(mbmi->uv_mode) &&
       is_filter_enabled(get_uv_tx_size(mbmi, &xd->plane[1]))
 #if CONFIG_PALETTE
       && !mbmi->palette_enabled[1]
 #endif  // CONFIG_PALETTE
+#if CONFIG_INTRABC
+      && !is_intrabc_mode(mbmi->mode)
+#endif  // CONFIG_INTRABC
   )
     vp9_write(w, mbmi->uv_filterbit,
               cm->fc.filterintra_prob[get_uv_tx_size(mbmi, &xd->plane[1])][mbmi->uv_mode]);
@@ -932,7 +953,11 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
                  mi_col, num_8x8_blocks_wide_lookup[m->mbmi.sb_type],
                  cm->mi_rows, cm->mi_cols);
   if (frame_is_intra_only(cm)) {
-    write_mb_modes_kf(cm, xd, xd->mi, w);
+    write_mb_modes_kf(cm, xd,
+#if CONFIG_INTRABC
+                      mi_row, mi_col,
+#endif  // CONFIG_INTRABC
+                      xd->mi, w);
   } else {
     pack_inter_mode_mvs(cpi, m,
 #if CONFIG_SUPERTX
