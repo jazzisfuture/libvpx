@@ -653,7 +653,6 @@ TEST_P(DatarateTestVP9Large, DenoiserLevels) {
 
 VP8_INSTANTIATE_TEST_CASE(DatarateTestLarge, ALL_TEST_MODES);
 VP9_INSTANTIATE_TEST_CASE(DatarateTestVP9Large,
-                          ::testing::Values(::libvpx_test::kOnePassGood,
-                          ::libvpx_test::kRealTime),
+                          ::testing::Values(::libvpx_test::kOnePassGood),
                           ::testing::Range(2, 7));
 }  // namespace
