@@ -30,7 +30,11 @@ void vp9_entropy_mv_init() {
 }
 
 static void encode_mv_component(vp9_writer* w, int comp,
-                                const nmv_component* mvcomp, int usehp) {
+                                const nmv_component* mvcomp,
+#if CONFIG_INTRABC
+                                int usesubpel,
+#endif
+                                int usehp) {
   int offset;
   const int sign = comp < 0;
   const int mag = sign ? -comp : comp;
@@ -59,6 +63,9 @@ static void encode_mv_component(vp9_writer* w, int comp,
       vp9_write(w, (d >> i) & 1, mvcomp->bits[i]);
   }
 
+#if CONFIG_INTRABC
+  if (usesubpel) {
+#endif
   // Fractional bits
   vp9_write_token(w, vp9_mv_fp_tree,
                   mv_class == MV_CLASS_0 ?  mvcomp->class0_fp[d] : mvcomp->fp,
@@ -68,12 +75,15 @@ static void encode_mv_component(vp9_writer* w, int comp,
   if (usehp)
     vp9_write(w, hp,
               mv_class == MV_CLASS_0 ? mvcomp->class0_hp : mvcomp->hp);
+#if CONFIG_INTRABC
+  }
+#endif
 }
 
 
 static void build_nmv_component_cost_table(int *mvcost,
                                            const nmv_component* const mvcomp,
-                                           int usehp) {
+                                           int usesubpel, int usehp) {
   int i, v;
   int sign_cost[2], class_cost[MV_CLASSES], class0_cost[CLASS0_SIZE];
   int bits_cost[MV_OFFSET_BITS][2];
@@ -91,13 +101,14 @@ static void build_nmv_component_cost_table(int *mvcost,
 
   for (i = 0; i < CLASS0_SIZE; ++i)
     vp9_cost_tokens(class0_fp_cost[i], mvcomp->class0_fp[i], vp9_mv_fp_tree);
-  vp9_cost_tokens(fp_cost, mvcomp->fp, vp9_mv_fp_tree);
-
-  if (usehp) {
-    class0_hp_cost[0] = vp9_cost_zero(mvcomp->class0_hp);
-    class0_hp_cost[1] = vp9_cost_one(mvcomp->class0_hp);
-    hp_cost[0] = vp9_cost_zero(mvcomp->hp);
-    hp_cost[1] = vp9_cost_one(mvcomp->hp);
+  if (usesubpel) {
+    vp9_cost_tokens(fp_cost, mvcomp->fp, vp9_mv_fp_tree);
+    if (usehp) {
+      class0_hp_cost[0] = vp9_cost_zero(mvcomp->class0_hp);
+      class0_hp_cost[1] = vp9_cost_one(mvcomp->class0_hp);
+      hp_cost[0] = vp9_cost_zero(mvcomp->hp);
+      hp_cost[1] = vp9_cost_one(mvcomp->hp);
+    }
   }
   mvcost[0] = 0;
   for (v = 1; v <= MV_MAX; ++v) {
@@ -116,16 +127,18 @@ static void build_nmv_component_cost_table(int *mvcost,
       for (i = 0; i < b; ++i)
         cost += bits_cost[i][((d >> i) & 1)];
     }
-    if (c == MV_CLASS_0) {
-      cost += class0_fp_cost[d][f];
-    } else {
-      cost += fp_cost[f];
-    }
-    if (usehp) {
+    if (usesubpel) {
       if (c == MV_CLASS_0) {
-        cost += class0_hp_cost[e];
+        cost += class0_fp_cost[d][f];
       } else {
-        cost += hp_cost[e];
+        cost += fp_cost[f];
+      }
+      if (usehp) {
+        if (c == MV_CLASS_0) {
+          cost += class0_hp_cost[e];
+        } else {
+          cost += hp_cost[e];
+        }
       }
     }
     mvcost[v] = cost + sign_cost[0];
@@ -209,10 +222,18 @@ void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
 
   vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
   if (mv_joint_vertical(j))
-    encode_mv_component(w, diff.row, &mvctx->comps[0], usehp);
+    encode_mv_component(w, diff.row, &mvctx->comps[0],
+#if CONFIG_INTRABC
+                        1,
+#endif
+                        usehp);
 
   if (mv_joint_horizontal(j))
-    encode_mv_component(w, diff.col, &mvctx->comps[1], usehp);
+    encode_mv_component(w, diff.col, &mvctx->comps[1],
+#if CONFIG_INTRABC
+                        1,
+#endif
+                        usehp);
 
   // If auto_mv_step_size is enabled then keep track of the largest
   // motion vector component used.
@@ -222,11 +243,29 @@ void vp9_encode_mv(VP9_COMP* cpi, vp9_writer* w,
   }
 }
 
+#if CONFIG_INTRABC
+void vp9_encode_dv(vp9_writer* w,
+                   const MV* mv, const MV* ref,
+                   const nmv_context* mvctx) {
+  const MV diff = {mv->row - ref->row,
+                   mv->col - ref->col};
+  const MV_JOINT_TYPE j = vp9_get_mv_joint(&diff);
+
+  vp9_write_token(w, vp9_mv_joint_tree, mvctx->joints, &mv_joint_encodings[j]);
+  if (mv_joint_vertical(j))
+    encode_mv_component(w, diff.row, &mvctx->comps[0], 0, 0);
+
+  if (mv_joint_horizontal(j))
+    encode_mv_component(w, diff.col, &mvctx->comps[1], 0, 0);
+}
+#endif
+
 void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
-                              const nmv_context* ctx, int usehp) {
+                              const nmv_context* ctx,
+                              int usesubpel, int usehp) {
   vp9_cost_tokens(mvjoint, ctx->joints, vp9_mv_joint_tree);
-  build_nmv_component_cost_table(mvcost[0], &ctx->comps[0], usehp);
-  build_nmv_component_cost_table(mvcost[1], &ctx->comps[1], usehp);
+  build_nmv_component_cost_table(mvcost[0], &ctx->comps[0], usesubpel, usehp);
+  build_nmv_component_cost_table(mvcost[1], &ctx->comps[1], usesubpel, usehp);
 }
 
 static void inc_mvs(const MB_MODE_INFO *mbmi, const int_mv mv[2],
