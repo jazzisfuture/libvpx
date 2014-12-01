@@ -295,11 +295,21 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
       cm->frame_type == KEY_FRAME) {
     fill_mode_costs(cpi);
 
-    if (!frame_is_intra_only(cm)) {
+    if (frame_is_intra_only(cm)) {
+#if CONFIG_INTRABC
+      vp9_build_nmv_cost_table(x->nmvjointcost,
+                               x->ndvcost,
+                               &cm->fc.ndvc, 0, 0);
+#endif
+    } else {
       vp9_build_nmv_cost_table(x->nmvjointcost,
                                cm->allow_high_precision_mv ? x->nmvcost_hp
                                                            : x->nmvcost,
-                               &cm->fc.nmvc, cm->allow_high_precision_mv);
+                               &cm->fc.nmvc,
+#if CONFIG_INTRABC
+                               1,
+#endif
+                               cm->allow_high_precision_mv);
 
       for (i = 0; i < INTER_MODE_CONTEXTS; ++i)
         vp9_cost_tokens((int *)cpi->inter_mode_cost[i],
