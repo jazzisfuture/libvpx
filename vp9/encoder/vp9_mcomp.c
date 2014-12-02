@@ -645,15 +645,35 @@ int vp9_find_best_sub_pixel_tree(const MACROBLOCK *x,
   bestmv->row *= 8;
   bestmv->col *= 8;
 
+#if CONFIG_VP9_HIGHBITDEPTH
   if (second_pred != NULL) {
-    DECLARE_ALIGNED_ARRAY(16, uint8_t, comp_pred, 64 * 64);
-    vp9_comp_avg_pred(comp_pred, second_pred, w, h, y + offset, y_stride);
-    besterr = vfp->vf(comp_pred, w, src_address, src_stride, sse1);
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      DECLARE_ALIGNED_ARRAY(16, uint16_t, comp_pred16, 64 * 64);
+      vp9_highbd_comp_avg_pred(comp_pred16, second_pred, w, h, y + offset,
+                               y_stride);
+      besterr = vfp->vf(CONVERT_TO_BYTEPTR(comp_pred16), w, z, src_stride,
+                        sse1);
+    } else {
+      DECLARE_ALIGNED_ARRAY(16, uint8_t, comp_pred, 64 * 64);
+      vp9_comp_avg_pred(comp_pred, second_pred, w, h, y + offset, y_stride);
+      besterr = vfp->vf(comp_pred, w, z, src_stride, sse1);
+    }
   } else {
-    besterr = vfp->vf(y + offset, y_stride, src_address, src_stride, sse1);
+    besterr = vfp->vf(y + offset, y_stride, z, src_stride, sse1);
   }
   *distortion = besterr;
   besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
+#else
+  if (second_pred != NULL) {
+    DECLARE_ALIGNED_ARRAY(16, uint8_t, comp_pred, 64 * 64);
+    vp9_comp_avg_pred(comp_pred, second_pred, w, h, y + offset, y_stride);
+    besterr = vfp->vf(comp_pred, w, z, src_stride, sse1);
+  } else {
+    besterr = vfp->vf(y + offset, y_stride, z, src_stride, sse1);
+  }
+  *distortion = besterr;
+  besterr += mv_err_cost(bestmv, ref_mv, mvjcost, mvcost, error_per_bit);
+#endif
 
   (void) cost_list;  // to silence compiler warning
 
