@@ -45,6 +45,11 @@ void vp9_free_ref_frame_buffers(VP9_COMMON *cm) {
   }
 
   vp9_free_frame_buffer(&cm->post_proc_buffer);
+#if CONFIG_VP9_MFQE
+  if (cm->post_proc_buffer_int_used) {
+    vp9_free_frame_buffer(&cm->post_proc_buffer_int);
+  }
+#endif  // CONFIG_VP9_MFQE
 }
 
 void vp9_free_context_buffers(VP9_COMMON *cm) {
