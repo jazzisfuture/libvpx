@@ -278,6 +278,7 @@ HAVE_LIST="
 "
 EXPERIMENT_LIST="
     spatial_svc
+    vp9_mfqe
     fp_mb_stats
     emulate_hardware
 "
