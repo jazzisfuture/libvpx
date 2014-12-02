@@ -15,6 +15,8 @@
 #include "vpx_ports/mem.h"
 #include "vpx_scale/yv12config.h"
 #include "vp9/common/vp9_ppflags.h"
+#include "vp9/common/vp9_blockd.h"
+#include "vp9/common/vp9_mfqe.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +26,10 @@ struct postproc_state {
   int last_q;
   int last_noise;
   char noise[3072];
+  int  last_base_qindex;
+  int  last_frame_valid;
+  MODE_INFO *prev_mip;
+  MODE_INFO *prev_mi;
   DECLARE_ALIGNED(16, char, blackclamp[16]);
   DECLARE_ALIGNED(16, char, whiteclamp[16]);
   DECLARE_ALIGNED(16, char, bothclamp[16]);
@@ -37,6 +43,8 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q);
 
 void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q);
+
+#define MFQE_PRECISION 4
 
 #ifdef __cplusplus
 }  // extern "C"
