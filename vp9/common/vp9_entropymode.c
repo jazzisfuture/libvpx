@@ -309,6 +309,22 @@ static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
 };
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_SUPERTX
+static const vp9_prob default_supertx_prob[TX_SIZES] = {
+  255, 160, 160, 160,
+#if CONFIG_TX64X64
+  160
+#endif
+};
+
+static const vp9_prob default_supertxsplit_prob[TX_SIZES] = {
+  255, 200, 200, 200,
+#if CONFIG_TX64X64
+  200
+#endif
+};
+#endif
+
 #if CONFIG_TX64X64
 void tx_counts_to_branch_counts_64x64(const unsigned int *tx_count_64x64p,
                                       unsigned int (*ct_64x64p)[2]) {
@@ -385,6 +401,10 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #endif
 #if CONFIG_EXT_TX
   vp9_copy(fc->ext_tx_prob, default_ext_tx_prob);
+#endif
+#if CONFIG_SUPERTX
+  vp9_copy(fc->supertx_prob, default_supertx_prob);
+  vp9_copy(fc->supertxsplit_prob, default_supertxsplit_prob);
 #endif
 }
 
@@ -499,6 +519,18 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
                 fc->ext_tx_prob[i]);
   }
 #endif
+
+#if CONFIG_SUPERTX
+  for (i = 1; i < TX_SIZES; ++i) {
+    fc->supertx_prob[i] = adapt_prob(pre_fc->supertx_prob[i],
+                                     counts->supertx[i]);
+  }
+  for (i = 1; i < TX_SIZES; ++i) {
+    fc->supertxsplit_prob[i] = adapt_prob(pre_fc->supertxsplit_prob[i],
+                                          counts->supertxsplit[i]);
+  }
+#endif
+
 }
 
 static void set_default_lf_deltas(struct loopfilter *lf) {
