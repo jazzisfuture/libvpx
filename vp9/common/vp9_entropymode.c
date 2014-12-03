@@ -464,12 +464,13 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
     cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
   }
 
-  // prev_mip will only be allocated in encoder.
-  if (frame_is_intra_only(cm) && cm->prev_mip)
+  // prev_mip and mip will only be allocated in encoder.
+  if (frame_is_intra_only(cm) && cm->prev_mip) {
     vpx_memset(cm->prev_mip, 0, cm->mi_stride * (cm->mi_rows + 1) *
                                     sizeof(*cm->prev_mip));
-
-  vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
+    vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) *
+                                     sizeof(*cm->mip));
+  }
 
   vp9_zero(cm->ref_frame_sign_bias);
 
