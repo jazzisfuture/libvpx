@@ -60,7 +60,8 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   const int max_eob = 16 << (tx_size << 1);
   const FRAME_CONTEXT *const fc = cm->fc;
   FRAME_COUNTS *const counts = &cm->counts;
-  const int ref = is_inter_block(&xd->mi[0].src_mi->mbmi);
+  MODE_INFO *const mi = cm->get_cur_mi(cm, xd->mi_row, xd->mi_col);
+  const int ref = is_inter_block(&mi->mbmi);
   int band, c = 0;
   const vp9_prob (*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];

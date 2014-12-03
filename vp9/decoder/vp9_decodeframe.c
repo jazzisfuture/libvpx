@@ -309,7 +309,7 @@ static void predict_and_reconstruct_intra_block(int plane, int block,
   VP9_COMMON *const cm = args->cm;
   MACROBLOCKD *const xd = args->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = xd->mi;
   const PREDICTION_MODE mode = (plane == 0) ? get_y_mode(mi, block)
                                             : mi->mbmi.uv_mode;
   int x, y;
@@ -355,6 +355,35 @@ static void reconstruct_inter_block(int plane, int block,
   *args->eobtotal += eob;
 }
 
+static MODE_INFO *get_free_mi(VP9_COMMON *const cm) {
+  MODE_INFO_LIST_ITEM *mi_node;
+
+#if CONFIG_MULTITHREAD
+  pthread_mutex_lock(&cm->mi_list_mutex);
+#endif
+
+  // Try the fetch from free list first.
+  if (cm->free_mi_list_head) {
+    mi_node = cm->free_mi_list_head;
+    cm->free_mi_list_head = mi_node->next;
+  } else {
+    // Allocate a new mi if could not find any from free mi list.
+    mi_node =  vpx_calloc(1, sizeof(*mi_node));
+    mi_node->src_mi = vpx_calloc(1, sizeof(*mi_node->src_mi));
+  }
+  // Add it to used mi list.
+  mi_node->next = cm->used_mi_list_head;
+  if (cm->used_mi_list_tail == NULL)
+    cm->used_mi_list_tail = mi_node;
+  cm->used_mi_list_head = mi_node;
+
+#if CONFIG_MULTITHREAD
+  pthread_mutex_unlock(&cm->mi_list_mutex);
+#endif
+
+  return mi_node->src_mi;
+}
+
 static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  const TileInfo *const tile,
                                  BLOCK_SIZE bsize, int mi_row, int mi_col) {
@@ -362,27 +391,31 @@ static MB_MODE_INFO *set_offsets(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   const int bh = num_8x8_blocks_high_lookup[bsize];
   const int x_mis = MIN(bw, cm->mi_cols - mi_col);
   const int y_mis = MIN(bh, cm->mi_rows - mi_row);
-  const int offset = mi_row * cm->mi_stride + mi_col;
+  const int offset = (mi_row + 1)* cm->mi_stride + mi_col + 1;
   int x, y;
 
-  xd->mi = cm->mi + offset;
-  xd->mi[0].src_mi = &xd->mi[0];  // Point to self.
-  xd->mi[0].mbmi.sb_type = bsize;
+  MODE_INFO **mode_node = cm->mi_grid + offset;
+  *mode_node = get_free_mi(cm);
+  xd->mi = *mode_node;
+  xd->mi->mbmi.sb_type = bsize;
 
   for (y = 0; y < y_mis; ++y)
     for (x = !y; x < x_mis; ++x) {
-      xd->mi[y * cm->mi_stride + x].src_mi = &xd->mi[0];
+      const int offset = (mi_row + 1 + y)* cm->mi_stride + mi_col + x + 1;
+      MODE_INFO **mode_node = cm->mi_grid + offset;
+      *mode_node = xd->mi;
     }
 
   set_skip_context(xd, mi_row, mi_col);
 
   // Distance of Mb to the various image edges. These are specified to 8th pel
   // as they are always compared to values that are in 1/8th pel units
-  set_mi_row_col(xd, tile, mi_row, bh, mi_col, bw, cm->mi_rows, cm->mi_cols);
-
+  set_mi_row_col(cm, xd, tile, mi_row, bh, mi_col, bw, cm->mi_rows, cm->mi_cols);
   vp9_setup_dst_planes(xd->plane, get_frame_new_buffer(cm), mi_row, mi_col);
+
   return &xd->mi[0].mbmi;
 }
+
 
 static void decode_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                          const TileInfo *const tile,
@@ -1382,8 +1415,9 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
   // below, forcing the use of context 0 for those frame types.
   cm->frame_context_idx = vp9_rb_read_literal(rb, FRAME_CONTEXTS_LOG2);
 
-  if (frame_is_intra_only(cm) || cm->error_resilient_mode)
-    vp9_setup_past_independence(cm);
+  if (frame_is_intra_only(cm) || cm->error_resilient_mode) {
+      vp9_setup_past_independence(cm);
+  }
 
   setup_loopfilter(&cm->lf, rb);
   setup_quantization(cm, &pbi->mb, rb);
@@ -1598,6 +1632,12 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Decode failed. Frame data is corrupted.");
   }
+
+  // Free all the used mi by attaching the used mi list to free mi list.
+  cm->used_mi_list_tail->next = cm->free_mi_list_head;
+  cm->free_mi_list_head = cm->used_mi_list_head;
+  cm->used_mi_list_head = NULL;
+  cm->used_mi_list_tail = NULL;
 
   if (cm->refresh_frame_context)
     cm->frame_contexts[cm->frame_context_idx] = *cm->fc;
