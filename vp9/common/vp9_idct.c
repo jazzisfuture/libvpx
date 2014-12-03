@@ -1602,6 +1602,17 @@ void vp9_tx_identity_add(const tran_low_t *input, uint8_t *dest,
       dest[r * stride + c] = clip_pixel(temp);
     }
 }
+
+void vp9_tx_identity_add_slice(const tran_low_t *input, uint8_t *dest,
+                               int row, int col,
+                               int stride_in, int stride_out, int shift) {
+  int r, c, temp;
+  for (r = 0; r < row; r++)
+    for (c = 0; c < col; c++) {
+      temp = dest[r * stride_out + c] + (input[r * stride_in + c] >> shift);
+      dest[r * stride_out + c] = clip_pixel(temp);
+    }
+}
 #endif
 
 #if CONFIG_TX64X64

@@ -172,4 +172,7 @@ void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
 #if CONFIG_TX_SKIP
 void vp9_tx_identity_add(const tran_low_t *input, uint8_t *dest,
                          int stride, int bs, int shift);
+void vp9_tx_identity_add_slice(const tran_low_t *input, uint8_t *dest,
+                               int row, int col,
+                               int stride_in, int stride_out, int shift);
 #endif
