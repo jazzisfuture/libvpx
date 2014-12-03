@@ -1448,6 +1448,16 @@ void vp9_tx_identity(const int16_t *input, tran_low_t *out, int stride,
       out[bs * r + c] = input[stride * r + c] << shift;
     }
 }
+
+void vp9_tx_identity_slice(const int16_t *input, tran_low_t *out,
+                           int row, int col,
+                           int stride_in, int stride_out, int shift) {
+  int r, c;
+  for (r = 0; r < row; r++)
+    for (c = 0; c < col; c++) {
+      out[stride_out * r + c] = input[stride_in * r + c] << shift;
+    }
+}
 #endif
 
 #if CONFIG_TX64X64
