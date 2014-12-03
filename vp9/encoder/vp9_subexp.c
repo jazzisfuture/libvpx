@@ -175,6 +175,66 @@ int vp9_prob_diff_update_savings_search_model(const unsigned int *ct,
   return bestsavings;
 }
 
+// Approximate the true probability model. This is used by real-time
+// coding mode.
+int vp9_prob_diff_search_appx(const unsigned int *ct,
+                              const vp9_prob *oldp,
+                              vp9_prob *bestp,
+                              vp9_prob upd) {
+  int i, old_b, new_b, update_b, savings, bestsavings, step;
+  int newp;
+  vp9_prob bestnewp, newplist[ENTROPY_NODES], oldplist[ENTROPY_NODES];
+  vp9_model_to_full_probs(oldp, oldplist);
+  vpx_memcpy(newplist, oldp, sizeof(vp9_prob) * UNCONSTRAINED_NODES);
+  for (i = UNCONSTRAINED_NODES, old_b = 0; i < ENTROPY_NODES; ++i)
+    old_b += cost_branch256(ct + 2 * i, oldplist[i]);
+  old_b += cost_branch256(ct + 2 * PIVOT_NODE, oldplist[PIVOT_NODE]);
+
+  bestsavings = 0;
+  bestnewp = oldp[PIVOT_NODE];
+
+  if (*bestp > oldp[PIVOT_NODE]) {
+    step = -4;
+    for (newp = *bestp; newp > oldp[PIVOT_NODE]; newp += step) {
+      if (newp < 1 || newp > 255)
+        continue;
+      newplist[PIVOT_NODE] = newp;
+      vp9_model_to_full_probs(newplist, newplist);
+      for (i = UNCONSTRAINED_NODES, new_b = 0; i < ENTROPY_NODES; ++i)
+        new_b += cost_branch256(ct + 2 * i, newplist[i]);
+      new_b += cost_branch256(ct + 2 * PIVOT_NODE, newplist[PIVOT_NODE]);
+      update_b = prob_diff_update_cost(newp, oldp[PIVOT_NODE]) +
+          vp9_cost_upd256;
+      savings = old_b - new_b - update_b;
+      if (savings > bestsavings) {
+        bestsavings = savings;
+        bestnewp = newp;
+      }
+    }
+  } else {
+    step = 4;
+    for (newp = *bestp; newp <= oldp[PIVOT_NODE]; newp += step) {
+      if (newp < 1 || newp > 255)
+        continue;
+      newplist[PIVOT_NODE] = newp;
+      vp9_model_to_full_probs(newplist, newplist);
+      for (i = UNCONSTRAINED_NODES, new_b = 0; i < ENTROPY_NODES; ++i)
+        new_b += cost_branch256(ct + 2 * i, newplist[i]);
+      new_b += cost_branch256(ct + 2 * PIVOT_NODE, newplist[PIVOT_NODE]);
+      update_b = prob_diff_update_cost(newp, oldp[PIVOT_NODE]) +
+          vp9_cost_upd256;
+      savings = old_b - new_b - update_b;
+      if (savings > bestsavings) {
+        bestsavings = savings;
+        bestnewp = newp;
+      }
+    }
+  }
+
+  *bestp = bestnewp;
+  return bestsavings;
+}
+
 void vp9_cond_prob_diff_update(vp9_writer *w, vp9_prob *oldp,
                                const unsigned int ct[2]) {
   const vp9_prob upd = DIFF_UPDATE_PROB;
