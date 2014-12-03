@@ -88,12 +88,41 @@ sub require {
       my $best = eval "\$${fn}_default";
       if ($best) {
         my $best_ofn = eval "\$${best}";
-        if ($best_ofn && "$best_ofn" ne "$ofn") {
+        my $ofn_link = eval "\$${ofn}_link";
+        if ($best_ofn && "$best_ofn" ne "$ofn" &&
+            !$ofn_link || $ofn_link && "$ofn_link" ne "false") {
           eval "\$${best}_link = 'false'";
+        } else {
+          next;
         }
       }
+
       eval "\$${fn}_default=${fn}_${opt}";
       eval "\$${fn}_${opt}_link='true'";
+    }
+  }
+}
+
+#
+# Define the highest level of opt that should be used.
+# Pass in two levels of optimization. If both exist, unlink the second.
+#
+sub prefer {
+  foreach my $fn (keys %ALL_FUNCS) {
+    my $found = "false";
+    foreach my $opt (@_) {
+      # if no function exists for the first opt, do not disable the second
+      my $ofn = eval "\$${fn}_${opt}";
+      last if !$ofn;
+
+      # when the funtion exists, skip to the next iteration
+      if ("$found" eq "false") {
+        $found = "true";
+        next;
+      }
+
+      # disable this opt level because we found an earlier one to prefer
+      eval "\$${ofn}_link='false'";
     }
   }
 }
@@ -182,7 +211,7 @@ sub set_function_pointers {
         my $link = eval "\$${fn}_${opt}_link";
         next if $link && $link eq "false";
         my $cond = eval "\$have_${opt}";
-        print "    if (${cond}) $fn = $ofn;\n"
+        print "    if (${cond}) $fn = $ofn;\n";
       }
     }
   }
@@ -358,13 +387,14 @@ EOF
 # Main Driver
 #
 
-&require("c");
 if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2/);
+  @REQUIRES = filter(keys %required ? keys %required : qw/c/);
+  &require(@REQUIRES);
   x86;
 } elsif ($opts{arch} eq 'x86_64') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2/);
-  @REQUIRES = filter(keys %required ? keys %required : qw/mmx sse sse2/);
+  @REQUIRES = filter(keys %required ? keys %required : qw/c mmx sse sse2/);
   &require(@REQUIRES);
   x86;
 } elsif ($opts{arch} eq 'mips32' || $opts{arch} eq 'mips64') {
@@ -378,19 +408,29 @@ if ($opts{arch} eq 'x86') {
     }
   }
   close CONFIG_FILE;
+  @REQUIRES = filter(keys %required ? keys %required : qw/c/);
+  &require(@REQUIRES);
   mips;
 } elsif ($opts{arch} eq 'armv6') {
   @ALL_ARCHS = filter(qw/media/);
+  @REQUIRES = filter(keys %required ? keys %required : qw/c/);
+  &require(@REQUIRES);
   arm;
 } elsif ($opts{arch} eq 'armv7') {
   @ALL_ARCHS = filter(qw/media neon_asm neon/);
-  @REQUIRES = filter(keys %required ? keys %required : qw/media/);
+  @PREFERS = filter(keys %prefer ? keys %prefer : qw/neon_asm neon/);
+  @REQUIRES = filter(keys %required ? keys %required : qw/c media/);
+  &prefer(@PREFERS);
   &require(@REQUIRES);
   arm;
 } elsif ($opts{arch} eq 'armv8' || $opts{arch} eq 'arm64' ) {
   @ALL_ARCHS = filter(qw/neon/);
+  @REQUIRES = filter(keys %required ? keys %required : qw/c/);
+  &require(@REQUIRES);
   arm;
 } else {
+  @REQUIRES = filter(keys %required ? keys %required : qw/c/);
+  &require(@REQUIRES);
   unoptimized;
 }
 

@@ -1603,13 +1603,22 @@ INSTANTIATE_TEST_CASE_P(AVX2, ConvolveTest, ::testing::Values(
     make_tuple(64, 64, &convolve8_avx2)));
 #endif  // HAVE_AVX2 && HAVE_SSSE3
 
-#if HAVE_NEON_ASM
+#if HAVE_NEON || HAVE_NEON_ASM
+#if HAVE_NEON
 const ConvolveFunctions convolve8_neon(
     vp9_convolve8_horiz_neon, vp9_convolve8_avg_horiz_neon,
     vp9_convolve8_vert_neon, vp9_convolve8_avg_vert_neon,
     vp9_convolve8_neon, vp9_convolve8_avg_neon, 0);
+#endif  // HAVE_NEON
+#if HAVE_NEON_ASM
+const ConvolveFunctions convolve8_neon_asm(
+    vp9_convolve8_horiz_neon_asm, vp9_convolve8_avg_horiz_neon_asm,
+    vp9_convolve8_vert_neon_asm, vp9_convolve8_avg_vert_neon_asm,
+    vp9_convolve8_neon_asm, vp9_convolve8_avg_neon_asm, 0);
+#endif  // HAVE_NEON_ASM
 
 INSTANTIATE_TEST_CASE_P(NEON, ConvolveTest, ::testing::Values(
+#if HAVE_NEON
     make_tuple(4, 4, &convolve8_neon),
     make_tuple(8, 4, &convolve8_neon),
     make_tuple(4, 8, &convolve8_neon),
@@ -1622,8 +1631,28 @@ INSTANTIATE_TEST_CASE_P(NEON, ConvolveTest, ::testing::Values(
     make_tuple(32, 32, &convolve8_neon),
     make_tuple(64, 32, &convolve8_neon),
     make_tuple(32, 64, &convolve8_neon),
-    make_tuple(64, 64, &convolve8_neon)));
-#endif
+    make_tuple(64, 64, &convolve8_neon)
+#endif  // HAVE_NEON
+#if HAVE_NEON && HAVE_NEON_ASM
+    ,
+#endif  // HAVE_NEON && HAVE_NEON_ASM
+#if HAVE_NEON_ASM
+    make_tuple(4, 4, &convolve8_neon_asm),
+    make_tuple(8, 4, &convolve8_neon_asm),
+    make_tuple(4, 8, &convolve8_neon_asm),
+    make_tuple(8, 8, &convolve8_neon_asm),
+    make_tuple(16, 8, &convolve8_neon_asm),
+    make_tuple(8, 16, &convolve8_neon_asm),
+    make_tuple(16, 16, &convolve8_neon_asm),
+    make_tuple(32, 16, &convolve8_neon_asm),
+    make_tuple(16, 32, &convolve8_neon_asm),
+    make_tuple(32, 32, &convolve8_neon_asm),
+    make_tuple(64, 32, &convolve8_neon_asm),
+    make_tuple(32, 64, &convolve8_neon_asm),
+    make_tuple(64, 64, &convolve8_neon_asm)
+#endif  // HAVE_NEON_ASM
+  ));
+#endif  // HAVE_NEON || HAVE_NEON_ASM
 
 #if HAVE_DSPR2
 const ConvolveFunctions convolve8_dspr2(
