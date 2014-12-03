@@ -1214,6 +1214,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   RATE_CONTROL *const rc = &cpi->rc;
   const int qindex = cm->base_qindex;
 
+
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
     vp9_cyclic_refresh_update_actual_count(cpi);
   }
@@ -1515,6 +1516,11 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cpi->refresh_golden_frame = 1;
     rc->gfu_boost = DEFAULT_GF_BOOST;
   }
+
+  // Any update/change of global cyclic refresh parameters (amount/delta-qp)
+  // should be done here, before the frame qp is selected.
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+    vp9_cyclic_refresh_update_parameters(cpi);
 
   if (cm->frame_type == KEY_FRAME)
     target = calc_iframe_target_size_one_pass_cbr(cpi);
