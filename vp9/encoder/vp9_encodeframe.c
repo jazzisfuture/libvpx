@@ -193,6 +193,8 @@ static INLINE void set_modeinfo_offsets(VP9_COMMON *const cm,
   const int idx_str = xd->mi_stride * mi_row + mi_col;
   xd->mi = cm->mi + idx_str;
   xd->mi[0].src_mi = &xd->mi[0];
+  xd->left_mi = xd->mi[-1].src_mi;
+  xd->above_mi = xd->mi[-xd->mi_stride].src_mi;
 }
 
 static void set_offsets(VP9_COMP *cpi, const TileInfo *const tile,
@@ -2478,6 +2480,8 @@ static void encode_rd_sb_row(VP9_COMP *cpi,
 
     const int idx_str = cm->mi_stride * mi_row + mi_col;
     MODE_INFO *mi = cm->mi + idx_str;
+    xd->left_mi = cm->mi + idx_str - 1;
+    xd->above_mi = cm->mi + idx_str - cm->mi_stride;
 
     if (sf->adaptive_pred_interp_filter) {
       for (i = 0; i < 64; ++i)
@@ -3388,6 +3392,7 @@ static int get_skip_encode_frame(const VP9_COMMON *cm) {
   unsigned int intra_count = 0, inter_count = 0;
   int j;
 
+  printf("------------Encode a frame -------");
   for (j = 0; j < INTRA_INTER_CONTEXTS; ++j) {
     intra_count += cm->counts.intra_inter[j][0];
     inter_count += cm->counts.intra_inter[j][1];

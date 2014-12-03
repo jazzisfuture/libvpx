@@ -37,28 +37,47 @@ static void initialize_dec() {
   static int init_done = 0;
 
   if (!init_done) {
-    vp9_rtcd();
     vp9_init_intra_predictors();
     init_done = 1;
   }
 }
-
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
-  cm->mi = cm->mip + cm->mi_stride + 1;
-  vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
+  int i;
+  if (cm->dummy_mi == NULL) {
+    cm->dummy_mi = vpx_calloc(1, sizeof(MODE_INFO));
+  }
+
+  // Clear top border row.
+  for (i = 0; i < cm->mi_stride; ++i) {
+    MODE_INFO **mode_node = cm->mi_grid + i;
+    *mode_node = cm->dummy_mi;
+  }
+  // Clear left border column.
+  for (i = 0; i < cm->mi_rows; ++i) {
+    MODE_INFO **mode_node = cm->mi_grid + i * cm->mi_stride;
+    *mode_node = cm->dummy_mi;
+  }
 }
 
 static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
-  cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
-  if (!cm->mip)
+  cm->mi_grid = vpx_calloc(mi_size, sizeof(*cm->mi_grid));
+  if (!cm->mi_grid)
     return 1;
   cm->mi_alloc_size = mi_size;
   return 0;
 }
 
 static void vp9_dec_free_mi(VP9_COMMON *cm) {
-  vpx_free(cm->mip);
-  cm->mip = NULL;
+  vpx_free(cm->mi_grid);
+  cm->mi_grid = NULL;
+
+}
+
+static MODE_INFO* vp9_dec_get_cur_mi(const VP9_COMMON *const cm,
+                                     int mi_row, int mi_col) {
+  const int offset = (1 + mi_row) * cm->mi_stride + (1 + mi_col);
+  MODE_INFO **const mode_node = cm->mi_grid + offset;
+  return *mode_node;
 }
 
 VP9Decoder *vp9_decoder_create() {
@@ -98,6 +117,7 @@ VP9Decoder *vp9_decoder_create() {
   cm->alloc_mi = vp9_dec_alloc_mi;
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
+  cm->get_cur_mi = vp9_dec_get_cur_mi;
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of

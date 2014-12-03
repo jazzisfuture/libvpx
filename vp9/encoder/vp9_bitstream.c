@@ -387,6 +387,8 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 
   xd->mi = cm->mi + (mi_row * cm->mi_stride + mi_col);
   m = xd->mi;
+  xd->left_mi = xd->mi[-1].src_mi;
+  xd->above_mi = xd->mi[-xd->mi_stride].src_mi;
 
   set_mi_row_col(xd, tile,
                  mi_row, num_8x8_blocks_high_lookup[m->mbmi.sb_type],
