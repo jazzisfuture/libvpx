@@ -1603,7 +1603,7 @@ INSTANTIATE_TEST_CASE_P(AVX2, ConvolveTest, ::testing::Values(
     make_tuple(64, 64, &convolve8_avx2)));
 #endif  // HAVE_AVX2 && HAVE_SSSE3
 
-#if HAVE_NEON_ASM
+#if HAVE_NEON || HAVE_NEON_ASM
 const ConvolveFunctions convolve8_neon(
     vp9_convolve8_horiz_neon, vp9_convolve8_avg_horiz_neon,
     vp9_convolve8_vert_neon, vp9_convolve8_avg_vert_neon,
@@ -1623,7 +1623,7 @@ INSTANTIATE_TEST_CASE_P(NEON, ConvolveTest, ::testing::Values(
     make_tuple(64, 32, &convolve8_neon),
     make_tuple(32, 64, &convolve8_neon),
     make_tuple(64, 64, &convolve8_neon)));
-#endif
+#endif  // HAVE_NEON || HAVE_NEON_ASM
 
 #if HAVE_DSPR2
 const ConvolveFunctions convolve8_dspr2(
