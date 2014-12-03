@@ -345,7 +345,10 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     vp9_clear_system_state();
     // Some of these parameters may be set via codec-control function later.
     cr->percent_refresh = 10;
-    cr->rate_ratio_qdelta = 2.0;
+    if (rc->frames_since_key <  4 * 100 / cr->percent_refresh)
+      cr->rate_ratio_qdelta = 3.0;
+    else
+      cr->rate_ratio_qdelta = 2.0;
     cr->max_qdelta_perc = 50;
     cr->min_block_size = BLOCK_8X8;
     cr->time_for_refresh = 0;
