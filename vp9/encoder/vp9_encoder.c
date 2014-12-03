@@ -169,6 +169,13 @@ static void vp9_enc_free_mi(VP9_COMMON *cm) {
   cm->prev_mip = NULL;
 }
 
+static MODE_INFO* vp9_enc_get_cur_mi(const VP9_COMMON *const cm, int mi_row,
+                                     int mi_col) {
+  const int offset = (1 + mi_row) * cm->mi_stride + (1 + mi_col);
+  const MODE_INFO *const mode_node = cm->mip + offset;
+  return mode_node->src_mi;
+}
+
 static void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
   // Current mip will be the prev_mip for the next frame.
   MODE_INFO *temp = cm->prev_mip;
@@ -1399,7 +1406,6 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
   } while (++i <= MV_MAX);
 }
 
-
 VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   unsigned int i, j;
   VP9_COMP *const cpi = vpx_memalign(32, sizeof(VP9_COMP));
@@ -1420,6 +1426,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   cm->alloc_mi = vp9_enc_alloc_mi;
   cm->free_mi = vp9_enc_free_mi;
   cm->setup_mi = vp9_enc_setup_mi;
+  cm->get_cur_mi = vp9_enc_get_cur_mi;
 
   CHECK_MEM_ERROR(cm, cm->fc,
                   (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));

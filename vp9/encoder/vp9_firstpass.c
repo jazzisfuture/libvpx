@@ -609,7 +609,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
       xd->left_available = (mb_col != 0);
       xd->mi[0].src_mi->mbmi.sb_type = bsize;
       xd->mi[0].src_mi->mbmi.ref_frame[0] = INTRA_FRAME;
-      set_mi_row_col(xd, &tile,
+      set_mi_row_col(cm, xd, &tile,
                      mb_row << 1, num_8x8_blocks_high_lookup[bsize],
                      mb_col << 1, num_8x8_blocks_wide_lookup[bsize],
                      cm->mi_rows, cm->mi_cols);

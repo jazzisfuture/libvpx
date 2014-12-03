@@ -42,23 +42,42 @@ static void initialize_dec() {
     init_done = 1;
   }
 }
-
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
-  cm->mi = cm->mip + cm->mi_stride + 1;
-  vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
+  int i;
+  if (!cm->dummy_mi) {
+    cm->dummy_mi = vpx_calloc(1, sizeof(MODE_INFO));
+  }
+
+  // Clear top border row.
+  for (i = 0; i < cm->mi_stride; ++i) {
+    MODE_INFO **mode_node = cm->mi_grid + i;
+    *mode_node = cm->dummy_mi;
+  }
+  // Clear left border column.
+  for (i = 0; i < cm->mi_rows; ++i) {
+    MODE_INFO **mode_node = cm->mi_grid + i * cm->mi_stride;
+    *mode_node = cm->dummy_mi;
+  }
 }
 
 static int vp9_dec_alloc_mi(VP9_COMMON *cm, int mi_size) {
-  cm->mip = vpx_calloc(mi_size, sizeof(*cm->mip));
-  if (!cm->mip)
+  cm->mi_grid = vpx_calloc(mi_size, sizeof(*cm->mi_grid));
+  if (!cm->mi_grid)
     return 1;
   cm->mi_alloc_size = mi_size;
   return 0;
 }
 
 static void vp9_dec_free_mi(VP9_COMMON *cm) {
-  vpx_free(cm->mip);
-  cm->mip = NULL;
+  vpx_free(cm->mi_grid);
+  cm->mi_grid = NULL;
+}
+
+static MODE_INFO* vp9_dec_get_cur_mi(const VP9_COMMON *const cm,
+                                     int mi_row, int mi_col) {
+  const int offset = (1 + mi_row) * cm->mi_stride + (1 + mi_col);
+  MODE_INFO **const mode_node = cm->mi_grid + offset;
+  return *mode_node;
 }
 
 VP9Decoder *vp9_decoder_create() {
@@ -98,6 +117,12 @@ VP9Decoder *vp9_decoder_create() {
   cm->alloc_mi = vp9_dec_alloc_mi;
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
+  cm->get_cur_mi = vp9_dec_get_cur_mi;
+
+#if CONFIG_MULTITHREAD
+  if (pthread_mutex_init(&cm->mi_list_mutex, NULL))
+    return NULL;
+#endif
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of
@@ -132,6 +157,28 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
     vp9_loop_filter_dealloc(&pbi->lf_row_sync);
   }
 
+  // Free all the allocated mi.
+  while (cm->used_mi_list_head) {
+    MODE_INFO_LIST_ITEM *node = cm->used_mi_list_head;
+    MODE_INFO_LIST_ITEM *next = node->next;
+    vpx_free(node->src_mi);
+    vpx_free(node);
+    cm->used_mi_list_head = next;
+  }
+  while (cm->free_mi_list_head) {
+    MODE_INFO_LIST_ITEM *node = cm->free_mi_list_head;
+    MODE_INFO_LIST_ITEM *next = node->next;
+    vpx_free(node->src_mi);
+    vpx_free(node);
+    cm->free_mi_list_head = next;
+  }
+  if (cm->dummy_mi) {
+    vpx_free(cm->dummy_mi);
+    cm->dummy_mi = NULL;
+  }
+#if CONFIG_MULTITHREAD
+    pthread_mutex_destroy(&cm->mi_list_mutex);
+#endif
   vp9_remove_common(cm);
   vpx_free(pbi);
 }

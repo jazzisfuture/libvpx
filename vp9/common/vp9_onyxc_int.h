@@ -146,22 +146,43 @@ typedef struct VP9Common {
   int uv_dc_delta_q;
   int uv_ac_delta_q;
 
-  /* We allocate a MODE_INFO struct for each macroblock, together with
-     an extra row on top and column on the left to simplify prediction. */
+  // TODO(agrange): Move following encoder mi data structures into encoder.
+  // mi data structures for encoder. We allocate a MODE_INFO struct for each
+  // macroblock, together with an extra row on top and column on the left to
+  // simplify prediction.
   int mi_alloc_size;
   MODE_INFO *mip; /* Base of allocated array */
   MODE_INFO *mi;  /* Corresponds to upper left visible macroblock */
-
-  // TODO(agrange): Move prev_mi into encoder structure.
-  // prev_mip and prev_mi will only be allocated in VP9 encoder.
   MODE_INFO *prev_mip; /* MODE_INFO array 'mip' from last decoded frame */
   MODE_INFO *prev_mi;  /* 'mi' from last frame (points into prev_mip) */
+
+  // TODO(hkuang): Move following decoder mi data structures into decoder.
+  // mi data structures for decoder. The decoder uses on-demand mi allocation
+  // instead of allocating a large MODE_INFO array which will waste memory.
+  // mi_grid only holds the pointer to the real allocated MODE_INFO. When the
+  // decoder tries to allocate a free MODE_INFO, it first tries to fetch from
+  // free_mi_list_head. If free_mi_list_head does not have anything available,
+  // the decoder will allocate a new MODE_INFO and attach the new MODE_INFO to
+  // used_mi_list. When the decoder finishes decoding the frame, it will append
+  // all the MODE_INFO in used_mi_list to the free_mi_list. So next frame's
+  // decoding could reuse the allocated MODE_INFO.
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t mi_list_mutex;
+#endif
+  MODE_INFO **mi_grid;
+  MODE_INFO *dummy_mi;
+  struct MODE_INFO_LIST_ITEM *used_mi_list_head;
+  struct MODE_INFO_LIST_ITEM *used_mi_list_tail;
+  struct MODE_INFO_LIST_ITEM *free_mi_list_head;
 
   // Separate mi functions between encoder and decoder.
   int (*alloc_mi)(struct VP9Common *cm, int mi_size);
   void (*free_mi)(struct VP9Common *cm);
   void (*setup_mi)(struct VP9Common *cm);
-
+  MODE_INFO* (*get_cur_mi)(const struct VP9Common *const cm,
+                           int mi_row, int mi_col);
+  MODE_INFO* (*get_prev_mi)(const struct VP9Common *const cm,
+                            int mi_row, int mi_col);
 
   // Whether to use previous frame's motion vectors for prediction.
   int use_prev_frame_mvs;
@@ -297,7 +318,9 @@ static INLINE int calc_mi_size(int len) {
   return len + MI_BLOCK_SIZE;
 }
 
-static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
+static INLINE void set_mi_row_col(const VP9_COMMON *const cm,
+                                  MACROBLOCKD *xd,
+                                  const TileInfo *const tile,
                                   int mi_row, int bh,
                                   int mi_col, int bw,
                                   int mi_rows, int mi_cols) {
@@ -306,9 +329,16 @@ static INLINE void set_mi_row_col(MACROBLOCKD *xd, const TileInfo *const tile,
   xd->mb_to_left_edge   = -((mi_col * MI_SIZE) * 8);
   xd->mb_to_right_edge  = ((mi_cols - bw - mi_col) * MI_SIZE) * 8;
 
+  xd->mi_row = mi_row;
+  xd->mi_col = mi_col;
   // Are edges available for intra prediction?
   xd->up_available    = (mi_row != 0);
   xd->left_available  = (mi_col > tile->mi_col_start);
+
+  xd->above_mi = xd->up_available ?
+                 cm->get_cur_mi(cm, mi_row - 1, mi_col) : NULL;
+  xd->left_mi = xd->left_available ?
+                 cm->get_cur_mi(cm, mi_row, mi_col -1) : NULL;
 }
 
 static INLINE void set_prev_mi(VP9_COMMON *cm) {

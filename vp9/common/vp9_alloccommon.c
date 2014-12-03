@@ -16,6 +16,7 @@
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_systemdependent.h"
+#include "vp9/common/vp9_thread.h"
 
 void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
   const int aligned_width = ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2);
