@@ -77,7 +77,8 @@ static TX_SIZE read_selected_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
 static TX_SIZE read_tx_size(VP9_COMMON *cm, MACROBLOCKD *xd,
                             int allow_select, vp9_reader *r) {
   TX_MODE tx_mode = cm->tx_mode;
-  BLOCK_SIZE bsize = xd->mi[0].src_mi->mbmi.sb_type;
+  MODE_INFO *cur_mi = cm->get_cur_mi(cm, xd->mi_row, xd->mi_col);
+  BLOCK_SIZE bsize = cur_mi->mbmi.sb_type;
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   if (allow_select && tx_mode == TX_MODE_SELECT && bsize >= BLOCK_8X8)
     return read_selected_tx_size(cm, xd, max_tx_size, r);
@@ -105,7 +106,8 @@ static int read_intra_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  int mi_row, int mi_col,
                                  vp9_reader *r) {
   struct segmentation *const seg = &cm->seg;
-  const BLOCK_SIZE bsize = xd->mi[0].src_mi->mbmi.sb_type;
+  MODE_INFO *mi = xd->mi;
+  const BLOCK_SIZE bsize = mi->mbmi.sb_type;
   int segment_id;
 
   if (!seg->enabled)
@@ -122,7 +124,8 @@ static int read_intra_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
                                  int mi_row, int mi_col, vp9_reader *r) {
   struct segmentation *const seg = &cm->seg;
-  MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
+  MODE_INFO *const mi = cm->get_cur_mi(cm, mi_row, mi_col);
+  MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   int predicted_segment_id, segment_id;
 
@@ -162,10 +165,11 @@ static int read_skip(VP9_COMMON *cm, const MACROBLOCKD *xd,
 static void read_intra_frame_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        int mi_row, int mi_col, vp9_reader *r) {
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = cm->get_cur_mi(cm, xd->mi_row, xd->mi_col);
   MB_MODE_INFO *const mbmi = &mi->mbmi;
-  const MODE_INFO *above_mi = xd->mi[-cm->mi_stride].src_mi;
-  const MODE_INFO *left_mi  = xd->left_available ? xd->mi[-1].src_mi : NULL;
+  const MODE_INFO *above_mi = cm->get_cur_mi(cm, xd->mi_row - 1, xd->mi_col);
+  const MODE_INFO *left_mi  =
+      xd->left_available ? cm->get_cur_mi(cm, xd->mi_row, xd->mi_col - 1)  : NULL;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   int i;
 
@@ -524,7 +528,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        int mi_row, int mi_col, vp9_reader *r) {
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = cm->get_cur_mi(cm, mi_row, mi_col);
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
 
@@ -544,7 +548,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
                         const TileInfo *const tile,
                         int mi_row, int mi_col, vp9_reader *r) {
-  MODE_INFO *const mi = xd->mi[0].src_mi;
+  MODE_INFO *const mi = cm->get_cur_mi(cm, mi_row, mi_col);
   const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
   const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
   const int x_mis = MIN(bw, cm->mi_cols - mi_col);
@@ -561,10 +565,10 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
     MV_REF *const frame_mv = frame_mvs + h * cm->mi_cols;
     for (w = 0; w < x_mis; ++w) {
       MV_REF *const mv = frame_mv + w;
-      mv->ref_frame[0] = mi->src_mi->mbmi.ref_frame[0];
-      mv->ref_frame[1] = mi->src_mi->mbmi.ref_frame[1];
-      mv->mv[0].as_int = mi->src_mi->mbmi.mv[0].as_int;
-      mv->mv[1].as_int = mi->src_mi->mbmi.mv[1].as_int;
+      mv->ref_frame[0] = mi->mbmi.ref_frame[0];
+      mv->ref_frame[1] = mi->mbmi.ref_frame[1];
+      mv->mv[0].as_int = mi->mbmi.mv[0].as_int;
+      mv->mv[1].as_int = mi->mbmi.mv[1].as_int;
     }
   }
 }

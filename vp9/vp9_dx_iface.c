@@ -82,6 +82,30 @@ static vpx_codec_err_t decoder_init(vpx_codec_ctx_t *ctx,
 
 static vpx_codec_err_t decoder_destroy(vpx_codec_alg_priv_t *ctx) {
   if (ctx->pbi) {
+    VP9_COMMON *cm = &ctx->pbi->common;
+
+    // Free all the allocated mi.
+    while (cm->used_mi_list_head) {
+      MODE_INFO_LIST_ITEM *node = cm->used_mi_list_head;
+      MODE_INFO_LIST_ITEM *next = node->next;
+      vpx_free(node->src_mi);
+      vpx_free(node);
+      cm->used_mi_list_head = next;
+    }
+    while (cm->free_mi_list_head) {
+      MODE_INFO_LIST_ITEM *node = cm->free_mi_list_head;
+      MODE_INFO_LIST_ITEM *next = node->next;
+      vpx_free(node->src_mi);
+      vpx_free(node);
+      cm->free_mi_list_head = next;
+    }
+    if (cm->dummy_mi)
+      vpx_free(cm->dummy_mi);
+
+#if CONFIG_MULTITHREAD
+    pthread_mutex_destroy(&cm->mi_list_mutex);
+#endif
+
     vp9_decoder_remove(ctx->pbi);
     ctx->pbi = NULL;
   }
