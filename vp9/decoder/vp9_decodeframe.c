@@ -267,7 +267,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type_4x4(plane_type, xd, block);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 4, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 4, 4, 4, stride, shift);
             } else {
               vp9_highbd_iht4x4_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -279,7 +279,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 8, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 8, 8, 8, stride, shift);
             } else {
               vp9_highbd_iht8x8_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -291,7 +291,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 16, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 16, 16, 16, stride, shift);
             } else {
               vp9_highbd_iht16x16_add(tx_type, dqcoeff, dst, stride, eob,
                                       xd->bd);
@@ -304,7 +304,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 32, 32, 32, stride, shift);
             } else {
             vp9_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -317,7 +317,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 64, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 64, 64, 64, stride, shift);
             } else {
               vp9_highbd_idct64x64_add(dqcoeff, dst, stride, eob, xd->bd);
             }
@@ -345,7 +345,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type_4x4(plane_type, xd, block);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 4, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 4, 4, 4, stride, shift);
             } else {
               vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
             }
@@ -357,7 +357,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 8, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 8, 8, 8, stride, shift);
             } else {
               vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
             }
@@ -369,7 +369,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = get_tx_type(plane_type, xd);
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 16, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 16, 16, 16, stride, shift);
             } else {
               vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
             }
@@ -381,7 +381,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 32, 32, 32, stride, shift);
             } else {
               vp9_idct32x32_add(dqcoeff, dst, stride, eob);
             }
@@ -394,7 +394,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
             if (mbmi->tx_skip[plane != 0]) {
-              vp9_tx_identity_add(dqcoeff, dst, stride, 64, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 64, 64, 64, stride, shift);
             } else {
               vp9_idct64x64_add(dqcoeff, dst, stride, eob);
             }
@@ -426,12 +426,8 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           if (mbmi->tx_skip[plane != 0]) {
             if ((mode == V_PRED || mode == H_PRED) && 1)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 4, shift);
-            //else if (xd->lossless && (mode == V_PRED || mode == H_PRED))
-              //vp9_intra_dpcm_add_old(dst, stride, dqcoeff, mode, 4, shift);
             else
-              vp9_tx_identity_add(dqcoeff, dst, stride, 4, shift);
-
-            //vp9_tx_identity_add(dqcoeff, dst, stride, 4, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 4, 4, 4, stride, shift);
           } else {
             vp9_iht4x4_add(tx_type, dqcoeff, dst, stride, eob);
           }
@@ -446,9 +442,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             if (mode == V_PRED || mode == H_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 8, shift);
             else
-              vp9_tx_identity_add(dqcoeff, dst, stride, 8, shift);
-
-            //vp9_tx_identity_add(dqcoeff, dst, stride, 8, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 8, 8, 8, stride, shift);
           } else {
             vp9_iht8x8_add(tx_type, dqcoeff, dst, stride, eob);
           }
@@ -463,9 +457,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             if (mode == V_PRED || mode == H_PRED)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 16, shift);
             else
-              vp9_tx_identity_add(dqcoeff, dst, stride, 16, shift);
-
-            //vp9_tx_identity_add(dqcoeff, dst, stride, 16, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 16, 16, 16, stride, shift);
           } else {
             vp9_iht16x16_add(tx_type, dqcoeff, dst, stride, eob);
           }
@@ -480,9 +472,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             if ((mode == V_PRED || mode == H_PRED) && 1)
               vp9_intra_dpcm_add(dqcoeff, dst, stride, mode, 32, shift);
             else
-              vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
-
-            //vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 32, 32, 32, stride, shift);
           } else {
             vp9_idct32x32_add(dqcoeff, dst, stride, eob);;
           }
@@ -495,7 +485,7 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           tx_type = DCT_DCT;
 #if CONFIG_TX_SKIP
           if (mbmi->tx_skip[plane != 0]) {
-            vp9_tx_identity_add(dqcoeff, dst, stride, 64, shift);
+            vp9_tx_identity_add(dqcoeff, dst, 64, 64, 64, stride, shift);
           } else {
             vp9_idct64x64_add(dqcoeff, dst, stride, eob);;
           }

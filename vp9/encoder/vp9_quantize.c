@@ -556,6 +556,7 @@ void quantize_slice_bigtx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
       int tmp;
       int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
       int idx = (i == 0 && is_dc) ? 0 : 1;
+      //idx = 0;
       qcoeff_ptr[i * stride] = dqcoeff_ptr[i * stride] = 0;
 
       if (abs_coeff >= zbins[idx]) {
@@ -572,6 +573,41 @@ void quantize_slice_bigtx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                                   (1 << (logsizeby32 + 1));
       }
     }
+  }
+}
+
+void quantize_pixel(const tran_low_t *coeff_ptr,
+                    int skip_block, const int16_t *zbin_ptr,
+                    int16_t round, int16_t quant,
+                    int16_t quant_shift,
+                    tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                    int16_t dequant, int zbin_oq_value,
+                    int logsizeby32) {
+  int i;
+  int zbin = ROUND_POWER_OF_TWO(zbin_ptr[0] + zbin_oq_value,
+                                      1 + logsizeby32);
+  if (logsizeby32 < 0)
+    zbin = zbin + zbin_oq_value;
+
+  if (!skip_block) {
+      const int coeff = coeff_ptr[0];
+      const int coeff_sign = (coeff >> 31);
+      int tmp;
+      int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+      qcoeff_ptr[0] = dqcoeff_ptr[0] = 0;
+
+      if (abs_coeff >= zbin) {
+        if (logsizeby32 < 0)
+          abs_coeff += round;
+        else
+          abs_coeff += ROUND_POWER_OF_TWO(round, (1 + logsizeby32));
+        abs_coeff = clamp(abs_coeff, INT16_MIN, INT16_MAX);
+        tmp = ((((abs_coeff * quant) >> 16) + abs_coeff) *
+              quant_shift) >> (15 - logsizeby32);
+
+        qcoeff_ptr[0] = (tmp ^ coeff_sign) - coeff_sign;
+        dqcoeff_ptr[0] = qcoeff_ptr[0] * dequant / (1 << (logsizeby32 + 1));
+      }
   }
 }
 

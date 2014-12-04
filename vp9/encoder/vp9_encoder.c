@@ -1713,7 +1713,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                 dr, cpi->total / cpi->count, total_psnr,
                 cpi->totalp / cpi->count, totalp_psnr, total_ssim, totalp_ssim,
                 total_encode_time);
-        if (1) {
+        if (0) {
           FILE *fp;
           fp =  fopen("./debug/results.txt", "a");
           fprintf(fp, "%d  %.3f\n", cpi->bytes*8/10,

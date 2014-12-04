@@ -1256,6 +1256,7 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     int64_t local_tx_cache[TX_MODES];
     mic->mbmi.mode = mode;
 #endif
+
     mic->mbmi.tx_skip[0] = 1;
 
     super_block_yrd(cpi, x, &this_rate_tokenonly, &this_distortion,

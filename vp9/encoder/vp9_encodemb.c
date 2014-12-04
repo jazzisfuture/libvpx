@@ -631,7 +631,7 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 64, shift);
+        vp9_tx_identity(src_diff, coeff, 64, 64, diff_stride, 64, shift);
         vp9_quantize_fp_64x64(coeff, 4096, x->skip_block, p->zbin, p->round_fp,
                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                               pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -1217,20 +1217,20 @@ static void encode_block(int plane, int block, BLOCK_SIZE plane_bsize,
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
-        vp9_tx_identity_add(dqcoeff, dst, pd->dst.stride, 64, shift);
+        vp9_tx_identity_add(dqcoeff, dst, 64, 64, 64, pd->dst.stride, shift);
         break;
 #endif  // CONFIG_TX64X64
       case TX_32X32:
-        vp9_tx_identity_add(dqcoeff, dst, pd->dst.stride, 32, shift);
+        vp9_tx_identity_add(dqcoeff, dst, 32, 32, 32, pd->dst.stride, shift);
         break;
       case TX_16X16:
-        vp9_tx_identity_add(dqcoeff, dst, pd->dst.stride, 16, shift);
+        vp9_tx_identity_add(dqcoeff, dst, 16, 16, 16, pd->dst.stride, shift);
         break;
       case TX_8X8:
-        vp9_tx_identity_add(dqcoeff, dst, pd->dst.stride, 8, shift);
+        vp9_tx_identity_add(dqcoeff, dst, 8, 8, 8, pd->dst.stride, shift);
         break;
       case TX_4X4:
-        vp9_tx_identity_add(dqcoeff, dst, pd->dst.stride, 4, shift);
+        vp9_tx_identity_add(dqcoeff, dst, 4, 4, 4, pd->dst.stride, shift);
         break;
       default:
         assert(0 && "Invalid transform size");
@@ -1471,9 +1471,9 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                            p->quant_shift, qcoeff + i,
                            dqcoeff + i, pd->dequant, p->zbin_extra,
                            bs, i == 0);*/
-        vp9_tx_identity(dqcoeff + i,
-                        dst + i, bs, 1,
-                        bs, dst_stride, shift);
+        vp9_tx_identity_add(dqcoeff + i,
+                            dst + i, bs, 1,
+                            bs, dst_stride, shift);
         if ( i < bs - 1 && 1)
           for (j = 0 ; j < bs; j++)
             *(dst + j * dst_stride + i + 1) =
@@ -1501,9 +1501,9 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                            p->quant_shift, qcoeff + bs * i,
                            dqcoeff + bs * i, pd->dequant, p->zbin_extra,
                            1, i == 0);*/
-        vp9_tx_identity_add_slice(dqcoeff + bs * i,
-                                  dst + dst_stride * i, 1, bs,
-                                  bs, dst_stride, shift);
+        vp9_tx_identity_add(dqcoeff + bs * i,
+                            dst + dst_stride * i, 1, bs,
+                            bs, dst_stride, shift);
         if ( i < bs - 1 && 1)
           vpx_memcpy(dst + (i + 1) * dst_stride,
                      dst + i * dst_stride, bs * sizeof(dst[0]));
@@ -1580,7 +1580,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                    scan_order->scan, scan_order->iscan);
             }
             if (!x->skip_encode && *eob)
-              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 64, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 64, 64, 64, dst_stride, shift);
             break;
 #endif  // CONFIG_TX64X64
           case TX_32X32:
@@ -1612,7 +1612,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                    scan_order->scan, scan_order->iscan);
             }
             if (!x->skip_encode && *eob) {
-              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 32, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 32, 32, 32, dst_stride, shift);
             }
             break;
           case TX_16X16:
@@ -1644,7 +1644,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                              scan_order->iscan);
             }
             if (!x->skip_encode && *eob) {
-              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 16, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 16, 16, 16, dst_stride, shift);
             }
             break;
           case TX_8X8:
@@ -1676,7 +1676,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                              scan_order->iscan);
             }
             if (!x->skip_encode && *eob) {
-              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 8, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 8, 8, 8, dst_stride, shift);
             }
             break;
           case TX_4X4:
@@ -1711,7 +1711,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
             }
 
             if (!x->skip_encode && *eob) {
-              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 4, shift);
+              vp9_tx_identity_add(dqcoeff, dst, 4, 4, 4, dst_stride, shift);
             }
             break;
           default:
