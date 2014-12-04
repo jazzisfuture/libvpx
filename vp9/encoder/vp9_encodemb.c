@@ -639,28 +639,28 @@ void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block,
         break;
 #endif  // CONFIG_TX64X64
       case TX_32X32:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 32, shift);
+        vp9_tx_identity(src_diff, coeff, 32, 32, diff_stride, 32, shift);
         vp9_quantize_fp_32x32(coeff, 1024, x->skip_block, p->zbin, p->round_fp,
                               p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                               pd->dequant, p->zbin_extra, eob, scan_order->scan,
                               scan_order->iscan);
         break;
       case TX_16X16:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 16, shift);
+        vp9_tx_identity(src_diff, coeff, 16, 16, diff_stride, 16, shift);
         vp9_quantize_fp(coeff, 256, x->skip_block, p->zbin, p->round_fp,
                         p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                         pd->dequant, p->zbin_extra, eob,
                         scan_order->scan, scan_order->iscan);
         break;
       case TX_8X8:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
+        vp9_tx_identity(src_diff, coeff, 8, 8, diff_stride, 8, shift);
         vp9_quantize_fp(coeff, 64, x->skip_block, p->zbin, p->round_fp,
                         p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                         pd->dequant, p->zbin_extra, eob,
                         scan_order->scan, scan_order->iscan);
         break;
       case TX_4X4:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 4, shift);
+        vp9_tx_identity(src_diff, coeff, 4, 4, diff_stride, 4, shift);
         vp9_quantize_fp(coeff, 16, x->skip_block, p->zbin, p->round_fp,
                       p->quant_fp, p->quant_shift, qcoeff, dqcoeff,
                       pd->dequant, p->zbin_extra, eob,
@@ -816,32 +816,32 @@ void vp9_xform_quant_dc(MACROBLOCK *x, int plane, int block,
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 64, shift);
+        vp9_tx_identity(src_diff, coeff, 64, 64, diff_stride, 64, shift);
         vp9_quantize_dc_64x64(coeff, x->skip_block, p->round,
                               p->quant_fp[0], qcoeff, dqcoeff,
                               pd->dequant[0], eob);
         break;
 #endif  // CONFIG_TX64X64
       case TX_32X32:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 32, shift);
+        vp9_tx_identity(src_diff, coeff, 32, 32, diff_stride, 32, shift);
         vp9_quantize_dc_32x32(coeff, x->skip_block, p->round,
                               p->quant_fp[0], qcoeff, dqcoeff,
                               pd->dequant[0], eob);
         break;
       case TX_16X16:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 16, shift);
+        vp9_tx_identity(src_diff, coeff, 16, 16, diff_stride, 16, shift);
         vp9_quantize_dc(coeff, x->skip_block, p->round,
                         p->quant_fp[0], qcoeff, dqcoeff,
                         pd->dequant[0], eob);
         break;
       case TX_8X8:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
+        vp9_tx_identity(src_diff, coeff, 8, 8, diff_stride, 8, shift);
         vp9_quantize_dc(coeff, x->skip_block, p->round,
                         p->quant_fp[0], qcoeff, dqcoeff,
                         pd->dequant[0], eob);
         break;
       case TX_4X4:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 4, shift);
+        vp9_tx_identity(src_diff, coeff, 4, 4, diff_stride, 4, shift);
         vp9_quantize_dc(coeff, x->skip_block, p->round,
                         p->quant_fp[0], qcoeff, dqcoeff,
                         pd->dequant[0], eob);
@@ -984,7 +984,7 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
     switch (tx_size) {
 #if CONFIG_TX64X64
       case TX_64X64:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 64, shift);
+        vp9_tx_identity(src_diff, coeff, 64, 64, diff_stride, 64, shift);
         vp9_quantize_b_64x64(coeff, 4096, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -992,28 +992,28 @@ void vp9_xform_quant(MACROBLOCK *x, int plane, int block,
         break;
 #endif  // CONFIG_TX64X64
       case TX_32X32:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 32, shift);
+        vp9_tx_identity(src_diff, coeff, 32, 32, diff_stride, 32, shift);
         vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,
                              scan_order->iscan);
         break;
       case TX_16X16:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 16, shift);
+        vp9_tx_identity(src_diff, coeff, 16, 16, diff_stride, 16, shift);
         vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob,
                        scan_order->scan, scan_order->iscan);
         break;
       case TX_8X8:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
+        vp9_tx_identity(src_diff, coeff, 8, 8, diff_stride, 8, shift);
         vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob,
                        scan_order->scan, scan_order->iscan);
         break;
       case TX_4X4:
-        vp9_tx_identity(src_diff, coeff, diff_stride, 4, shift);
+        vp9_tx_identity(src_diff, coeff, 4, 4, diff_stride, 4, shift);
         vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                        p->quant, p->quant_shift, qcoeff, dqcoeff,
                        pd->dequant, p->zbin_extra, eob,
@@ -1449,7 +1449,7 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                           const scan_order *scan_order,
                           PREDICTION_MODE mode, int bs,
                           int shift, int logsizeby32) {
-  int i, j, temp, eob;
+  int i, j, eob;
 
   switch (mode) {
     case H_PRED:
@@ -1458,9 +1458,9 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                              diff_stride,
                              src + i, src_stride,
                              dst + i, dst_stride);
-        vp9_tx_identity_slice(src_diff + i,
-                              coeff + i, bs, 1,
-                              diff_stride, bs, shift);
+        vp9_tx_identity(src_diff + i,
+                        coeff + i, bs, 1,
+                        diff_stride, bs, shift);
         quantize_slice_bigtx(coeff + i, bs, skip_block,
                            p->zbin, p->round, p->quant,
                            p->quant_shift, qcoeff + i,
@@ -1471,9 +1471,9 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                            p->quant_shift, qcoeff + i,
                            dqcoeff + i, pd->dequant, p->zbin_extra,
                            bs, i == 0);*/
-        vp9_tx_identity_add_slice(dqcoeff + i,
-                                  dst + i, bs, 1,
-                                  bs, dst_stride, shift);
+        vp9_tx_identity(dqcoeff + i,
+                        dst + i, bs, 1,
+                        bs, dst_stride, shift);
         if ( i < bs - 1 && 1)
           for (j = 0 ; j < bs; j++)
             *(dst + j * dst_stride + i + 1) =
@@ -1487,10 +1487,10 @@ static int vp9_dpcm_intra(uint8_t *src, int src_stride,
                              diff_stride,
                              src + src_stride * i, src_stride,
                              dst + dst_stride * i, dst_stride);
-        vp9_tx_identity_slice(src_diff + diff_stride * i,
-                              coeff + bs * i,
-                              1, bs,
-                              diff_stride, bs, shift);
+        vp9_tx_identity(src_diff + diff_stride * i,
+                        coeff + bs * i,
+                        1, bs,
+                        diff_stride, bs, shift);
         quantize_slice_bigtx(coeff + bs * i, bs, skip_block,
                            p->zbin, p->round, p->quant,
                            p->quant_shift, qcoeff + bs * i,
@@ -1573,7 +1573,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
             if (!x->skip_recode) {
               vp9_subtract_block(64, 64, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
-              vp9_tx_identity(src_diff, coeff, diff_stride, 64, shift);
+              vp9_tx_identity(src_diff, coeff, 64, 64, diff_stride, 64, shift);
               vp9_quantize_b_64x64(coeff, 4096, x->skip_block, p->zbin,
                                    p->round, p->quant, p->quant_shift, qcoeff,
                                    dqcoeff, pd->dequant, p->zbin_extra, eob,
@@ -1603,44 +1603,16 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                 break;
               }
 
-              //vp9_subtract_block(32, 32, src_diff, diff_stride,
-                //                 src, src_stride, dst, dst_stride);
-              for (i = 0; i < 32; i++)
-                vp9_subtract_block_c(1, 32, src_diff + diff_stride * i,
-                                     diff_stride,
-                                     src + src_stride * i, src_stride,
-                                     dst + dst_stride * i, dst_stride);
-
-              //vp9_tx_identity(src_diff, coeff, diff_stride, 32, shift);
-              for (i = 0; i < 32; i++)
-                vp9_tx_identity_slice(src_diff + diff_stride * i,
-                                      coeff + 32 * i,
-                                      1, 32,
-                                      diff_stride, 32, shift);
-
-              if (0) {
+              vp9_subtract_block(32, 32, src_diff, diff_stride,
+                                 src, src_stride, dst, dst_stride);
+              vp9_tx_identity(src_diff, coeff, 32, 32, diff_stride, 32, shift);
               vp9_quantize_b_32x32(coeff, 1024, x->skip_block, p->zbin,
                                    p->round, p->quant, p->quant_shift, qcoeff,
                                    dqcoeff, pd->dequant, p->zbin_extra, eob,
-                                   scan_order->scan, scan_order->iscan);/**/
-              //*eob = get_eob(x->skip_block, qcoeff, 1024, scan_order->scan);
-              }
-              else
-              for (i = 0; i < 32; i++) {
-                quantize_slice_bigtx(coeff + 32 * i, 32, x->skip_block, p->zbin,
-                                     p->round,
-                                     p->quant, p->quant_shift, qcoeff + 32 * i,
-                                     dqcoeff + 32 * i,
-                                     pd->dequant, p->zbin_extra, 0, 1, i == 0);
-              *eob = get_eob(x->skip_block, qcoeff, 1024, scan_order->scan);
-              }
+                                   scan_order->scan, scan_order->iscan);
             }
             if (!x->skip_encode && *eob) {
-              //vp9_tx_identity_add(dqcoeff, dst, dst_stride, 32, shift);
-              for (i = 0; i < 32; i++)
-                vp9_tx_identity_add_slice(dqcoeff + 32 * i,
-                                          dst + dst_stride * i, 1, 32,
-                                          32, dst_stride, shift);
+              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 32, shift);
             }
             break;
           case TX_16X16:
@@ -1665,7 +1637,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
               vp9_subtract_block(16, 16, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
-              vp9_tx_identity(src_diff, coeff, diff_stride, 16, shift);
+              vp9_tx_identity(src_diff, coeff, 16, 16, diff_stride, 16, shift);
               vp9_quantize_b(coeff, 256, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,
@@ -1695,64 +1667,16 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                 break;
               }
 
-              //vp9_subtract_block(8, 8, src_diff, diff_stride,
-                //                 src, src_stride, dst, dst_stride);
-              if (0) {
-                for (i = 0; i < 8; i++)
-                  vp9_subtract_block_c(1, 8, src_diff + diff_stride * i,
-                                     diff_stride,
-                                     src + src_stride * i, src_stride,
-                                     dst + dst_stride * i, dst_stride);
-              } else {
-                vp9_subtract_block(8, 8, src_diff, diff_stride,
-                                   src, src_stride, dst, dst_stride);
-              }
-
-              //vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
-              if (0) {
-                for (i = 0; i < 8; i++)
-                  vp9_tx_identity_slice(src_diff + diff_stride * i,
-                                        coeff + 8 * i,
-                                        1, 8,
-                                        diff_stride, 8, shift);
-              } else {
-                vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
-              }
-
-              //vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
-                //             p->quant, p->quant_shift, qcoeff, dqcoeff,
-                  //           pd->dequant, p->zbin_extra, eob, scan_order->scan,
-                    //         scan_order->iscan);
-              if (0) {
-                for (i = 0; i < 8; i++)
-                  vp9_quantize_slice(coeff + 8 * i, 8, x->skip_block, p->zbin,
-                                    p->round,
-                                    p->quant, p->quant_shift, qcoeff + 8 * i,
-                                    dqcoeff + 8 * i,
-                                    pd->dequant, p->zbin_extra, 1, i == 0);
-                *eob = get_eob(x->skip_block, qcoeff, 64, scan_order->scan);
-              } else {
-                vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
-                               p->quant, p->quant_shift, qcoeff, dqcoeff,
-                               pd->dequant, p->zbin_extra, eob, scan_order->scan,
-                               scan_order->iscan);
-                //j = *eob;
-                //*eob = get_eob(x->skip_block, qcoeff, 64, scan_order->scan);
-                //if (*eob != j)
-                  //printf("\n%3d %3d\n", j, *eob);
-              }
-
+              vp9_subtract_block(8, 8, src_diff, diff_stride,
+                                 src, src_stride, dst, dst_stride);
+              vp9_tx_identity(src_diff, coeff, 8, 8, diff_stride, 8, shift);
+              vp9_quantize_b(coeff, 64, x->skip_block, p->zbin, p->round,
+                             p->quant, p->quant_shift, qcoeff, dqcoeff,
+                             pd->dequant, p->zbin_extra, eob, scan_order->scan,
+                             scan_order->iscan);
             }
             if (!x->skip_encode && *eob) {
-              //vp9_tx_identity_add(dqcoeff, dst, dst_stride, 8, shift);
-              if (0) {
-                for (i = 0; i < 8; i++)
-                  vp9_tx_identity_add_slice(dqcoeff + 8 * i,
-                                            dst + dst_stride * i, 1, 8,
-                                            8, dst_stride, shift);
-              } else {
-                vp9_tx_identity_add(dqcoeff, dst, dst_stride, 8, shift);
-              }
+              vp9_tx_identity_add(dqcoeff, dst, dst_stride, 8, shift);
             }
             break;
           case TX_4X4:
@@ -1779,7 +1703,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
 
               vp9_subtract_block(4, 4, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
-              vp9_tx_identity(src_diff, coeff, diff_stride, 4, shift);
+              vp9_tx_identity(src_diff, coeff, 4, 4, diff_stride, 4, shift);
               vp9_quantize_b(coeff, 16, x->skip_block, p->zbin, p->round,
                              p->quant, p->quant_shift, qcoeff, dqcoeff,
                              pd->dequant, p->zbin_extra, eob, scan_order->scan,
