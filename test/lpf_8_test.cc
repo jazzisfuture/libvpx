@@ -33,6 +33,8 @@ const int kNumCoeffs = 1024;
 
 const int number_of_iterations = 10000;
 
+const int kMaxLoopFilter = 63;
+
 #if CONFIG_VP9_HIGHBITDEPTH
 typedef void (*loop_op_t)(uint16_t *s, int p, const uint8_t *blimit,
                           const uint8_t *limit, const uint8_t *thresh,
@@ -53,6 +55,14 @@ typedef void (*dual_loop_op_t)(uint8_t *s, int p, const uint8_t *blimit0,
 
 typedef std::tr1::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
 typedef std::tr1::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
+
+static uint8_t get_rnd_limited(ACMRandom &rnd, uint8_t limit) {
+  uint8_t val;
+  do {
+    val = rnd.Rand8();
+  } while (val > limit);
+  return val;
+}
 
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -159,12 +169,12 @@ TEST_P(Loop8Test6Param, OperationCheck) {
   int first_failure = -1;
   for (int i = 0; i < count_test_block; ++i) {
     int err_count = 0;
-    uint8_t tmp = rnd.Rand8();
+    uint8_t tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
@@ -245,12 +255,12 @@ TEST_P(Loop8Test6Param, ValueCheck) {
   int first_failure = -1;
   for (int i = 0; i < count_test_block; ++i) {
     int err_count = 0;
-    uint8_t tmp = rnd.Rand8();
+    uint8_t tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
@@ -304,12 +314,12 @@ TEST_P(Loop8Test9Param, OperationCheck) {
   int first_failure = -1;
   for (int i = 0; i < count_test_block; ++i) {
     int err_count = 0;
-    uint8_t tmp = rnd.Rand8();
+    uint8_t tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit0[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit0[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
@@ -319,12 +329,12 @@ TEST_P(Loop8Test9Param, OperationCheck) {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit1[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit1[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
@@ -406,12 +416,12 @@ TEST_P(Loop8Test9Param, ValueCheck) {
   int first_failure = -1;
   for (int i = 0; i < count_test_block; ++i) {
     int err_count = 0;
-    uint8_t tmp = rnd.Rand8();
+    uint8_t tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit0[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit0[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
@@ -421,12 +431,12 @@ TEST_P(Loop8Test9Param, ValueCheck) {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, 3 * kMaxLoopFilter + 4);
     DECLARE_ALIGNED(16, const uint8_t, blimit1[16]) = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
     };
-    tmp = rnd.Rand8();
+    tmp = get_rnd_limited(rnd, kMaxLoopFilter);
     DECLARE_ALIGNED(16, const uint8_t, limit1[16])  = {
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp,
         tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp
