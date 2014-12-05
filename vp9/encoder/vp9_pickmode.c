@@ -241,6 +241,17 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
     if (cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
         xd->mi[0].src_mi->mbmi.tx_size > TX_16X16)
       xd->mi[0].src_mi->mbmi.tx_size = TX_16X16;
+
+    // For key, limit transform size.
+    if (cpi->common.frame_type == KEY_FRAME &&
+        cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
+    if (bsize <= BLOCK_8X8)
+      xd->mi[0].src_mi->mbmi.tx_size = TX_4X4;
+    else if (bsize <= BLOCK_16X16)
+      xd->mi[0].src_mi->mbmi.tx_size = TX_8X8;
+    else
+      xd->mi[0].src_mi->mbmi.tx_size = TX_16X16;
+    }
   } else {
     xd->mi[0].src_mi->mbmi.tx_size =
         MIN(max_txsize_lookup[bsize],
@@ -465,7 +476,7 @@ void vp9_pick_intra_mode(VP9_COMP *cpi, MACROBLOCK *x, RD_COST *rd_cost,
   RD_COST this_rdc, best_rdc;
   PREDICTION_MODE this_mode;
   struct estimate_block_intra_args args = { cpi, x, DC_PRED, 0, 0 };
-  const TX_SIZE intra_tx_size =
+  TX_SIZE intra_tx_size =
       MIN(max_txsize_lookup[bsize],
           tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
   MODE_INFO *const mic = xd->mi[0].src_mi;
