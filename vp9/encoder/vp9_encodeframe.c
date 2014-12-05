@@ -455,23 +455,24 @@ static int set_vt_partitioning(VP9_COMP *cpi,
       set_block_size(cpi, xd, mi_row, mi_col, bsize);
       return 1;
     }
-    // Check vertical split.
-    if (mi_row + block_height / 2 < cm->mi_rows &&
-        vt.part_variances->vert[0].variance < threshold_low &&
-        vt.part_variances->vert[1].variance < threshold_low) {
-      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
-      set_block_size(cpi, xd, mi_row, mi_col, subsize);
-      set_block_size(cpi, xd, mi_row, mi_col + block_width / 2, subsize);
-      return 1;
-    }
-    // Check horizontal split.
-    if (mi_col + block_width / 2 < cm->mi_cols &&
-        vt.part_variances->horz[0].variance < threshold_low &&
-        vt.part_variances->horz[1].variance < threshold_low) {
-      BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
-      set_block_size(cpi, xd, mi_row, mi_col, subsize);
-      set_block_size(cpi, xd, mi_row + block_height / 2, mi_col, subsize);
-      return 1;
+    if (cm->frame_type != KEY_FRAME) {
+      // Check vert and horiz split for non-key frames.
+      if (mi_row + block_height / 2 < cm->mi_rows &&
+          vt.part_variances->vert[0].variance < threshold_low &&
+          vt.part_variances->vert[1].variance < threshold_low) {
+        BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_VERT);
+        set_block_size(cpi, xd, mi_row, mi_col, subsize);
+        set_block_size(cpi, xd, mi_row, mi_col + block_width / 2, subsize);
+        return 1;
+      }
+      if (mi_col + block_width / 2 < cm->mi_cols &&
+          vt.part_variances->horz[0].variance < threshold_low &&
+          vt.part_variances->horz[1].variance < threshold_low) {
+        BLOCK_SIZE subsize = get_subsize(bsize, PARTITION_HORZ);
+        set_block_size(cpi, xd, mi_row, mi_col, subsize);
+        set_block_size(cpi, xd, mi_row + block_height / 2, mi_col, subsize);
+        return 1;
+      }
     }
     return 0;
   }
@@ -3611,12 +3612,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi, xd);
-  if (cm->frame_type == KEY_FRAME &&
-      cpi->sf.use_nonrd_pick_mode &&
-      cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
-    cm->tx_mode = ALLOW_16X16;
-  }
-
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
