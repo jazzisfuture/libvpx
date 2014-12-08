@@ -53,6 +53,15 @@ if ((vpx_config("HAVE_AVX2") eq "yes") && (vpx_config("HAVE_SSSE3") eq "yes")) {
   $avx2_ssse3 = '';
 }
 
+# Some functions have both neon assembly and neon intrinsics versions. Enable
+# those functions when either is available.
+if ((vpx_config("HAVE_NEON") eq "yes") ||
+    (vpx_config("HAVE_NEON_ASM") eq "yes")) {
+  $neon = 'neon';
+} else {
+  $neon = '';
+}
+
 #
 # RECON
 #
