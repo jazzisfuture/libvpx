@@ -19,229 +19,230 @@ static int16_t cospi_8_64 = 0x3b21;
 static int16_t cospi_16_64 = 0x2d41;
 static int16_t cospi_24_64 = 0x187e;
 
-static inline void TRANSPOSE4X4(
-        int16x8_t *q8s16,
-        int16x8_t *q9s16) {
-    int32x4_t q8s32, q9s32;
-    int16x4x2_t d0x2s16, d1x2s16;
-    int32x4x2_t q0x2s32;
+static inline void transpose4x4(int16x8_t *ouput0,
+                                int16x8_t *output1) {
+  int32x4_t v_s32x4_0, v_s32x4_1;
+  int16x4x2_t m_s16x4x2_0, m_s16x4x2_1;
+  int32x4x2_t m_s32x4x2;
 
-    d0x2s16 = vtrn_s16(vget_low_s16(*q8s16), vget_high_s16(*q8s16));
-    d1x2s16 = vtrn_s16(vget_low_s16(*q9s16), vget_high_s16(*q9s16));
+  m_s16x4x2_0 = vtrn_s16(vget_low_s16(*ouput0), vget_high_s16(*ouput0));
+  m_s16x4x2_1 = vtrn_s16(vget_low_s16(*output1), vget_high_s16(*output1));
 
-    q8s32 = vreinterpretq_s32_s16(vcombine_s16(d0x2s16.val[0], d0x2s16.val[1]));
-    q9s32 = vreinterpretq_s32_s16(vcombine_s16(d1x2s16.val[0], d1x2s16.val[1]));
-    q0x2s32 = vtrnq_s32(q8s32, q9s32);
+  v_s32x4_0 = vreinterpretq_s32_s16(vcombine_s16(m_s16x4x2_0.val[0],
+                                                 m_s16x4x2_0.val[1]));
+  v_s32x4_1 = vreinterpretq_s32_s16(vcombine_s16(m_s16x4x2_1.val[0],
+                                                 m_s16x4x2_1.val[1]));
+  m_s32x4x2 = vtrnq_s32(v_s32x4_0, v_s32x4_1);
 
-    *q8s16 = vreinterpretq_s16_s32(q0x2s32.val[0]);
-    *q9s16 = vreinterpretq_s16_s32(q0x2s32.val[1]);
-    return;
+  *ouput0 = vreinterpretq_s16_s32(m_s32x4x2.val[0]);
+  *output1 = vreinterpretq_s16_s32(m_s32x4x2.val[1]);
 }
 
-static inline void GENERATE_COSINE_CONSTANTS(
-        int16x4_t *d0s16,
-        int16x4_t *d1s16,
-        int16x4_t *d2s16) {
-    *d0s16 = vdup_n_s16(cospi_8_64);
-    *d1s16 = vdup_n_s16(cospi_16_64);
-    *d2s16 = vdup_n_s16(cospi_24_64);
-    return;
+static inline void generate_cosine_constants(int16x4_t *const0,
+                                             int16x4_t *const1,
+                                             int16x4_t *const2) {
+  *const0 = vdup_n_s16(cospi_8_64);
+  *const1 = vdup_n_s16(cospi_16_64);
+  *const2 = vdup_n_s16(cospi_24_64);
 }
 
-static inline void GENERATE_SINE_CONSTANTS(
-        int16x4_t *d3s16,
-        int16x4_t *d4s16,
-        int16x4_t *d5s16,
-        int16x8_t *q3s16) {
-    *d3s16 = vdup_n_s16(sinpi_1_9);
-    *d4s16 = vdup_n_s16(sinpi_2_9);
-    *q3s16 = vdupq_n_s16(sinpi_3_9);
-    *d5s16 = vdup_n_s16(sinpi_4_9);
-    return;
+static inline void generate_sine_constants(int16x4_t *const0,
+                                           int16x4_t *const1,
+                                           int16x4_t *const2,
+                                           int16x8_t *const3) {
+  *const0 = vdup_n_s16(sinpi_1_9);
+  *const1 = vdup_n_s16(sinpi_2_9);
+  *const3 = vdupq_n_s16(sinpi_3_9);
+  *const2 = vdup_n_s16(sinpi_4_9);
 }
 
-static inline void IDCT4x4_1D(
-        int16x4_t *d0s16,
-        int16x4_t *d1s16,
-        int16x4_t *d2s16,
-        int16x8_t *q8s16,
-        int16x8_t *q9s16) {
-    int16x4_t d16s16, d17s16, d18s16, d19s16, d23s16, d24s16;
-    int16x4_t d26s16, d27s16, d28s16, d29s16;
-    int32x4_t q10s32, q13s32, q14s32, q15s32;
-    int16x8_t q13s16, q14s16;
+static inline void idct4x4_1d(int16x4_t *const0,
+                              int16x4_t *const1,
+                              int16x4_t *const2,
+                              int16x8_t *output0,
+                              int16x8_t *output1) {
+  int16x4_t v_s16x4_0, v_s16x4_1, v_s16x4_2, v_s16x4_3, v_s16x4_4,
+    v_s16x4_5, v_s16x4_6, v_s16x4_7, v_s16x4_8, v_s16x4_9;
+  int32x4_t v_s32x4_0, v_s32x4_1, v_s32x4_2, v_s32x4_3;
+  int16x8_t v_s16x8_0, v_s16x8_1;
 
-    d16s16 = vget_low_s16(*q8s16);
-    d17s16 = vget_high_s16(*q8s16);
-    d18s16 = vget_low_s16(*q9s16);
-    d19s16 = vget_high_s16(*q9s16);
+  v_s16x4_0 = vget_low_s16(*output0);
+  v_s16x4_1 = vget_high_s16(*output0);
+  v_s16x4_2 = vget_low_s16(*output1);
+  v_s16x4_3 = vget_high_s16(*output1);
 
-    d23s16 = vadd_s16(d16s16, d18s16);
-    d24s16 = vsub_s16(d16s16, d18s16);
+  v_s16x4_4 = vadd_s16(v_s16x4_0, v_s16x4_2);
+  v_s16x4_5 = vsub_s16(v_s16x4_0, v_s16x4_2);
 
-    q15s32 = vmull_s16(d17s16, *d2s16);
-    q10s32 = vmull_s16(d17s16, *d0s16);
-    q13s32 = vmull_s16(d23s16, *d1s16);
-    q14s32 = vmull_s16(d24s16, *d1s16);
-    q15s32 = vmlsl_s16(q15s32, d19s16, *d0s16);
-    q10s32 = vmlal_s16(q10s32, d19s16, *d2s16);
+  v_s32x4_3 = vmull_s16(v_s16x4_1, *const2);
+  v_s32x4_0 = vmull_s16(v_s16x4_1, *const0);
+  v_s32x4_1 = vmull_s16(v_s16x4_4, *const1);
+  v_s32x4_2 = vmull_s16(v_s16x4_5, *const1);
+  v_s32x4_3 = vmlsl_s16(v_s32x4_3, v_s16x4_3, *const0);
+  v_s32x4_0 = vmlal_s16(v_s32x4_0, v_s16x4_3, *const2);
 
-    d26s16 = vqrshrn_n_s32(q13s32, 14);
-    d27s16 = vqrshrn_n_s32(q14s32, 14);
-    d29s16 = vqrshrn_n_s32(q15s32, 14);
-    d28s16 = vqrshrn_n_s32(q10s32, 14);
+  v_s16x4_6 = vqrshrn_n_s32(v_s32x4_1, 14);
+  v_s16x4_7 = vqrshrn_n_s32(v_s32x4_2, 14);
+  v_s16x4_9 = vqrshrn_n_s32(v_s32x4_3, 14);
+  v_s16x4_8 = vqrshrn_n_s32(v_s32x4_0, 14);
 
-    q13s16 = vcombine_s16(d26s16, d27s16);
-    q14s16 = vcombine_s16(d28s16, d29s16);
-    *q8s16 = vaddq_s16(q13s16, q14s16);
-    *q9s16 = vsubq_s16(q13s16, q14s16);
-    *q9s16 = vcombine_s16(vget_high_s16(*q9s16),
-                          vget_low_s16(*q9s16));  // vswp
-    return;
+  v_s16x8_0 = vcombine_s16(v_s16x4_6, v_s16x4_7);
+  v_s16x8_1 = vcombine_s16(v_s16x4_8, v_s16x4_9);
+  *output0 = vaddq_s16(v_s16x8_0, v_s16x8_1);
+  *output1 = vsubq_s16(v_s16x8_0, v_s16x8_1);
+  *output1 = vcombine_s16(vget_high_s16(*output1), vget_low_s16(*output1));
 }
 
-static inline void IADST4x4_1D(
-        int16x4_t *d3s16,
-        int16x4_t *d4s16,
-        int16x4_t *d5s16,
-        int16x8_t *q3s16,
-        int16x8_t *q8s16,
-        int16x8_t *q9s16) {
-    int16x4_t d6s16, d16s16, d17s16, d18s16, d19s16;
-    int32x4_t q8s32, q9s32, q10s32, q11s32, q12s32, q13s32, q14s32, q15s32;
+static inline void iadst4x4_1d(int16x4_t *const0,
+                               int16x4_t *const1,
+                               int16x4_t *const2,
+                               int16x4_t *const3,
+                               int16x8_t *output0,
+                               int16x8_t *output1) {
+  int16x4_t v_d_0, v_d_1, v_d_2, v_d_3;
+  int32x4_t v_q_0, v_q_1, v_q_2, v_q_3, v_q_4, v_q_5, v_q_6, v_q_7;
 
-    d6s16 = vget_low_s16(*q3s16);
+  v_d_0 = vget_low_s16(*output0);
+  v_d_1 = vget_high_s16(*output0);
+  v_d_2 = vget_low_s16(*output1);
+  v_d_3 = vget_high_s16(*output1);
 
-    d16s16 = vget_low_s16(*q8s16);
-    d17s16 = vget_high_s16(*q8s16);
-    d18s16 = vget_low_s16(*q9s16);
-    d19s16 = vget_high_s16(*q9s16);
+  v_q_2 = vmull_s16(*const0, v_d_0);
+  v_q_3 = vmull_s16(*const1, v_d_0);
+  v_q_4 = vmull_s16(*const3, v_d_1);
+  v_q_5 = vmull_s16(*const2, v_d_2);
+  v_q_6 = vmull_s16(*const0, v_d_2);
+  v_q_7 = vmovl_s16(v_d_0);
+  v_q_7 = vaddw_s16(v_q_7, v_d_3);
+  v_q_0  = vmull_s16(*const1, v_d_3);
+  v_q_7 = vsubw_s16(v_q_7, v_d_2);
+  v_q_1  = vmull_s16(*const2, v_d_3);
 
-    q10s32 = vmull_s16(*d3s16, d16s16);
-    q11s32 = vmull_s16(*d4s16, d16s16);
-    q12s32 = vmull_s16(d6s16, d17s16);
-    q13s32 = vmull_s16(*d5s16, d18s16);
-    q14s32 = vmull_s16(*d3s16, d18s16);
-    q15s32 = vmovl_s16(d16s16);
-    q15s32 = vaddw_s16(q15s32, d19s16);
-    q8s32  = vmull_s16(*d4s16, d19s16);
-    q15s32 = vsubw_s16(q15s32, d18s16);
-    q9s32  = vmull_s16(*d5s16, d19s16);
+  v_q_2 = vaddq_s32(v_q_2, v_q_5);
+  v_q_2 = vaddq_s32(v_q_2, v_q_0);
+  v_q_3 = vsubq_s32(v_q_3, v_q_6);
+  v_q_0  = vdupq_n_s32(sinpi_3_9);
+  v_q_3 = vsubq_s32(v_q_3, v_q_1);
+  v_q_7 = vmulq_s32(v_q_7, v_q_0);
 
-    q10s32 = vaddq_s32(q10s32, q13s32);
-    q10s32 = vaddq_s32(q10s32, q8s32);
-    q11s32 = vsubq_s32(q11s32, q14s32);
-    q8s32  = vdupq_n_s32(sinpi_3_9);
-    q11s32 = vsubq_s32(q11s32, q9s32);
-    q15s32 = vmulq_s32(q15s32, q8s32);
+  v_q_5 = vaddq_s32(v_q_2, v_q_4);
+  v_q_2 = vaddq_s32(v_q_2, v_q_3);
+  v_q_6 = vaddq_s32(v_q_3, v_q_4);
+  v_q_2 = vsubq_s32(v_q_2, v_q_4);
 
-    q13s32 = vaddq_s32(q10s32, q12s32);
-    q10s32 = vaddq_s32(q10s32, q11s32);
-    q14s32 = vaddq_s32(q11s32, q12s32);
-    q10s32 = vsubq_s32(q10s32, q12s32);
+  v_d_0 = vqrshrn_n_s32(v_q_5, 14);
+  v_d_1 = vqrshrn_n_s32(v_q_6, 14);
+  v_d_2 = vqrshrn_n_s32(v_q_7, 14);
+  v_d_3 = vqrshrn_n_s32(v_q_2, 14);
 
-    d16s16 = vqrshrn_n_s32(q13s32, 14);
-    d17s16 = vqrshrn_n_s32(q14s32, 14);
-    d18s16 = vqrshrn_n_s32(q15s32, 14);
-    d19s16 = vqrshrn_n_s32(q10s32, 14);
-
-    *q8s16 = vcombine_s16(d16s16, d17s16);
-    *q9s16 = vcombine_s16(d18s16, d19s16);
-    return;
+  *output0 = vcombine_s16(v_d_0, v_d_1);
+  *output1 = vcombine_s16(v_d_2, v_d_3);
 }
 
-void vp9_iht4x4_16_add_neon(
-        int16_t *input,
-        uint8_t *dest,
-        int dest_stride,
-        int tx_type) {
-    uint8x8_t d26u8, d27u8;
-    int16x4_t d0s16, d1s16, d2s16, d3s16, d4s16, d5s16;
-    uint32x2_t d26u32, d27u32;
-    int16x8_t q3s16, q8s16, q9s16;
-    uint16x8_t q8u16, q9u16;
+/*
+ * This function will only handle tx_type of 1, 2, 3.
+ */
+void vp9_iht4x4_16_add_neon(int16_t *src,
+                            uint8_t *dst,
+                            int dst_stride,
+                            int tx_type) {
+  uint8x8_t v_u8x8_0, v_u8x8_1;
+  int16x4_t v_s16x4_0, v_s16x4_1, v_s16x4_2, v_s16x4_3,
+    v_s16x4_4, v_s16x4_5, v_s16x4_6;
+  uint32x2_t v_u32x2_0, v_u32x2_1;
+  int16x8_t v_s16x8_0, v_s16x8_1, v_s16x8_2;
+  uint16x8_t v_u16x8_0, v_u16x8_1;
 
-    d26u32 = d27u32 = vdup_n_u32(0);
+  v_u32x2_0 = v_u32x2_1 = vdup_n_u32(0);
 
-    q8s16 = vld1q_s16(input);
-    q9s16 = vld1q_s16(input + 8);
+  v_s16x8_1 = vld1q_s16(src);
+  v_s16x8_2 = vld1q_s16(src + 8);
 
-    TRANSPOSE4X4(&q8s16, &q9s16);
+  transpose4x4(&v_s16x8_1, &v_s16x8_2);
 
-    switch (tx_type) {
-      case 0:  // idct_idct is not supported. Fall back to C
-        vp9_iht4x4_16_add_c(input, dest, dest_stride, tx_type);
-        return;
-        break;
-      case 1:  // iadst_idct
-        // generate constants
-        GENERATE_COSINE_CONSTANTS(&d0s16, &d1s16, &d2s16);
-        GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
+  switch (tx_type) {
+    case 0:  // idct_idct is not supported. Fall back to C
+      vp9_iht4x4_16_add_c(src, dst, dst_stride, tx_type);
+      return;
+      break;
+    case 1:  // iadst_idct
+      // generate constants
+      generate_cosine_constants(&v_s16x4_0, &v_s16x4_1, &v_s16x4_2);
+      generate_sine_constants(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x8_0);
 
-        // first transform rows
-        IDCT4x4_1D(&d0s16, &d1s16, &d2s16, &q8s16, &q9s16);
+      // first transform rows
+      idct4x4_1d(&v_s16x4_0, &v_s16x4_1, &v_s16x4_2, &v_s16x8_1, &v_s16x8_2);
 
-        // transpose the matrix
-        TRANSPOSE4X4(&q8s16, &q9s16);
+      // transpose the matrix
+      transpose4x4(&v_s16x8_1, &v_s16x8_2);
 
-        // then transform columns
-        IADST4x4_1D(&d3s16, &d4s16, &d5s16, &q3s16, &q8s16, &q9s16);
-        break;
-      case 2:  // idct_iadst
-        // generate constantsyy
-        GENERATE_COSINE_CONSTANTS(&d0s16, &d1s16, &d2s16);
-        GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
+      // then transform columns
+      v_s16x4_6 = vget_low_s16(v_s16x8_0);
+      iadst4x4_1d(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x4_6,
+                  &v_s16x8_1, &v_s16x8_2);
+      break;
+    case 2:  // idct_iadst
+      // generate constantsyy
+      generate_cosine_constants(&v_s16x4_0, &v_s16x4_1, &v_s16x4_2);
+      generate_sine_constants(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x8_0);
 
-        // first transform rows
-        IADST4x4_1D(&d3s16, &d4s16, &d5s16, &q3s16, &q8s16, &q9s16);
+      // first transform rows
+      v_s16x4_6 = vget_low_s16(v_s16x8_0);
+      iadst4x4_1d(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x4_6,
+                  &v_s16x8_1, &v_s16x8_2);
 
-        // transpose the matrix
-        TRANSPOSE4X4(&q8s16, &q9s16);
+      // transpose the matrix
+      transpose4x4(&v_s16x8_1, &v_s16x8_2);
 
-        // then transform columns
-        IDCT4x4_1D(&d0s16, &d1s16, &d2s16, &q8s16, &q9s16);
-        break;
-      case 3:  // iadst_iadst
-        // generate constants
-        GENERATE_SINE_CONSTANTS(&d3s16, &d4s16, &d5s16, &q3s16);
+      // then transform columns
+      idct4x4_1d(&v_s16x4_0, &v_s16x4_1, &v_s16x4_2, &v_s16x8_1, &v_s16x8_2);
+      break;
+    case 3:  // iadst_iadst
+      // generate constants
+      generate_sine_constants(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x8_0);
 
-        // first transform rows
-        IADST4x4_1D(&d3s16, &d4s16, &d5s16, &q3s16, &q8s16, &q9s16);
+      // first transform rows
+      v_s16x4_6 = vget_low_s16(v_s16x8_0);
+      iadst4x4_1d(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x4_6,
+                  &v_s16x8_1, &v_s16x8_2);
 
-        // transpose the matrix
-        TRANSPOSE4X4(&q8s16, &q9s16);
+      // transpose the matrix
+      transpose4x4(&v_s16x8_1, &v_s16x8_2);
 
-        // then transform columns
-        IADST4x4_1D(&d3s16, &d4s16, &d5s16, &q3s16, &q8s16, &q9s16);
-        break;
-      default:  // iadst_idct
-        assert(0);
-        break;
-    }
+      // then transform columns
+      v_s16x4_6 = vget_low_s16(v_s16x8_0);
+      iadst4x4_1d(&v_s16x4_3, &v_s16x4_4, &v_s16x4_5, &v_s16x4_6,
+                  &v_s16x8_1, &v_s16x8_2);
+      break;
+    default:
+      assert(0);
+      break;
+  }
 
-    q8s16 = vrshrq_n_s16(q8s16, 4);
-    q9s16 = vrshrq_n_s16(q9s16, 4);
+  v_s16x8_1 = vrshrq_n_s16(v_s16x8_1, 4);
+  v_s16x8_2 = vrshrq_n_s16(v_s16x8_2, 4);
 
-    d26u32 = vld1_lane_u32((const uint32_t *)dest, d26u32, 0);
-    dest += dest_stride;
-    d26u32 = vld1_lane_u32((const uint32_t *)dest, d26u32, 1);
-    dest += dest_stride;
-    d27u32 = vld1_lane_u32((const uint32_t *)dest, d27u32, 0);
-    dest += dest_stride;
-    d27u32 = vld1_lane_u32((const uint32_t *)dest, d27u32, 1);
+  v_u32x2_0 = vld1_lane_u32((const uint32_t *)dst, v_u32x2_0, 0);
+  dst += dst_stride;
+  v_u32x2_0 = vld1_lane_u32((const uint32_t *)dst, v_u32x2_0, 1);
+  dst += dst_stride;
+  v_u32x2_1 = vld1_lane_u32((const uint32_t *)dst, v_u32x2_1, 0);
+  dst += dst_stride;
+  v_u32x2_1 = vld1_lane_u32((const uint32_t *)dst, v_u32x2_1, 1);
 
-    q8u16 = vaddw_u8(vreinterpretq_u16_s16(q8s16), vreinterpret_u8_u32(d26u32));
-    q9u16 = vaddw_u8(vreinterpretq_u16_s16(q9s16), vreinterpret_u8_u32(d27u32));
+  v_u16x8_0 = vaddw_u8(vreinterpretq_u16_s16(v_s16x8_1),
+                       vreinterpret_u8_u32(v_u32x2_0));
+  v_u16x8_1 = vaddw_u8(vreinterpretq_u16_s16(v_s16x8_2),
+                       vreinterpret_u8_u32(v_u32x2_1));
 
-    d26u8 = vqmovun_s16(vreinterpretq_s16_u16(q8u16));
-    d27u8 = vqmovun_s16(vreinterpretq_s16_u16(q9u16));
+  v_u8x8_0 = vqmovun_s16(vreinterpretq_s16_u16(v_u16x8_0));
+  v_u8x8_1 = vqmovun_s16(vreinterpretq_s16_u16(v_u16x8_1));
 
-    vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d27u8), 1);
-    dest -= dest_stride;
-    vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d27u8), 0);
-    dest -= dest_stride;
-    vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d26u8), 1);
-    dest -= dest_stride;
-    vst1_lane_u32((uint32_t *)dest, vreinterpret_u32_u8(d26u8), 0);
-    return;
+  vst1_lane_u32((uint32_t *)dst, vreinterpret_u32_u8(v_u8x8_1), 1);
+  dst -= dst_stride;
+  vst1_lane_u32((uint32_t *)dst, vreinterpret_u32_u8(v_u8x8_1), 0);
+  dst -= dst_stride;
+  vst1_lane_u32((uint32_t *)dst, vreinterpret_u32_u8(v_u8x8_0), 1);
+  dst -= dst_stride;
+  vst1_lane_u32((uint32_t *)dst, vreinterpret_u32_u8(v_u8x8_0), 0);
 }
