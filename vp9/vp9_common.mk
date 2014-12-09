@@ -131,6 +131,7 @@ ifeq ($(ARCH_X86_64), yes)
 VP9_COMMON_SRCS-$(HAVE_SSSE3) += common/x86/vp9_idct_ssse3_x86_64.asm
 endif
 
+# common (neon assembly)
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_convolve_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_idct16x16_neon.c
 VP9_COMMON_SRCS-$(HAVE_NEON_ASM) += common/arm/neon/vp9_convolve8_neon$(ASM)
