@@ -152,8 +152,6 @@ void vp9_loop_filter_frame_mt(VP9LfSync *lf_sync,
     vp9_loop_filter_alloc(lf_sync, cm, sb_rows, cm->width, num_workers);
   }
 
-  vp9_loop_filter_frame_init(cm, frame_filter_level);
-
   // Initialize cur_sb_col to -1 for all SB rows.
   vpx_memset(lf_sync->cur_sb_col, -1, sizeof(*lf_sync->cur_sb_col) * sb_rows);
 

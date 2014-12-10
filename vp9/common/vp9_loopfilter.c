@@ -1619,7 +1619,6 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
     mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
   }
   end_mi_row = start_mi_row + mi_rows_to_filter;
-  vp9_loop_filter_frame_init(cm, frame_filter_level);
   vp9_loop_filter_rows(frame, cm, xd->plane,
                        start_mi_row, end_mi_row,
                        y_only);
