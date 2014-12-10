@@ -1,0 +1,7 @@
+Code-Review+2: Frank Galligan <fgalligan@google.com>
+Verified+1: WebmJenkinsRoleAccount
+Submitted-by: Jim Bankoski <jimbankoski@google.com>
+Submitted-at: Tue, 09 Dec 2014 14:32:31 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/73191
+Project: webm/libvpx
+Branch: refs/heads/master
