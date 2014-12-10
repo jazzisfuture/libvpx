@@ -39,6 +39,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += borders_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += cpu_speed_test.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += frame_size_tests.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_lossless_test.cc
+LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_encoder_parms_get_to_decoder.cc
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_end_to_end_test.cc
 
 LIBVPX_TEST_SRCS-yes                   += decode_test_driver.cc
