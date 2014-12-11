@@ -951,7 +951,6 @@ static const uint8_t *decode_tiles(VP9Decoder *pbi,
       setup_token_decoder(buf->data, data_end, buf->size, &cm->error,
                           &tile_data->bit_reader, pbi->decrypt_cb,
                           pbi->decrypt_state);
-      init_macroblockd(cm, &tile_data->xd);
     }
   }
 
