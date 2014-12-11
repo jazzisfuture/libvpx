@@ -37,6 +37,7 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vp9/encoder/vp9_rdopt.h"
 #include "vp9/encoder/vp9_variance.h"
+#include "vp9/encoder/vp9_aq_variance.h"
 
 #define LAST_FRAME_MODE_MASK    ((1 << GOLDEN_FRAME) | (1 << ALTREF_FRAME) | \
                                  (1 << INTRA_FRAME))
@@ -48,6 +49,7 @@
 #define SECOND_REF_FRAME_MASK   ((1 << ALTREF_FRAME) | 0x01)
 
 #define MIN_EARLY_TERM_INDEX    3
+#define NEW_MV_DISCOUNT_FACTOR  8
 
 typedef struct {
   PREDICTION_MODE mode;
@@ -75,6 +77,7 @@ struct rdcost_block_args {
   const scan_order *so;
 };
 
+#define LAST_NEW_MV_INDEX 6
 static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {NEARESTMV, {LAST_FRAME,   NONE}},
   {NEARESTMV, {ALTREF_FRAME, NONE}},
@@ -2464,7 +2467,16 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                            &tmp_mv, &rate_mv);
       if (tmp_mv.as_int == INVALID_MV)
         return INT64_MAX;
-      *rate2 += rate_mv;
+
+      // Estimate the rate implications of a new mv but discount this
+      // if neither the nearest or near gives us a non zero option.
+      if ((mode_mv[NEARESTMV][refs[0]].as_int != 0) ||
+          (mode_mv[NEARMV][refs[0]].as_int != 0)) {
+        *rate2 += rate_mv;
+      } else {
+        *rate2 += rate_mv / NEW_MV_DISCOUNT_FACTOR;
+      }
+
       frame_mv[refs[0]].as_int =
           xd->mi[0].src_mi->bmi[0].as_mv[0].as_int = tmp_mv.as_int;
       single_newmv[refs[0]].as_int = tmp_mv.as_int;
@@ -2941,7 +2953,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   mode_skip_mask[INTRA_FRAME] |=
       ~(sf->intra_y_mode_mask[max_txsize_lookup[bsize]]);
 
-  for (i = 0; i < MAX_MODES; ++i)
+  for (i = 0; i <= LAST_NEW_MV_INDEX; ++i)
+    mode_threshold[i] = 0;
+  for (i = LAST_NEW_MV_INDEX + 1; i < MAX_MODES; ++i)
     mode_threshold[i] = ((int64_t)rd_threshes[i] * rd_thresh_freq_fact[i]) >> 5;
 
   midx =  sf->schedule_mode_search ? mode_skip_start : 0;
@@ -3193,7 +3207,16 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     if (comp_pred) {
       rate2 += ref_costs_comp[ref_frame];
     } else {
-      rate2 += ref_costs_single[ref_frame];
+      // There is a special case to discount the cost of new mv mode if there
+      // is no non zero nearest or near option. This is designed to help detect
+      // a subtle motion field early even in low complexity backgrounds.
+      if ((this_mode != NEWMV) ||
+          (frame_mv[NEARESTMV][ref_frame].as_int != 0) ||
+          (frame_mv[NEARMV][ref_frame].as_int != 0)) {
+        rate2 += ref_costs_single[ref_frame];
+      } else {
+        rate2 += ref_costs_single[ref_frame] / NEW_MV_DISCOUNT_FACTOR;
+      }
     }
 
     if (!disable_skip) {
