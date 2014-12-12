@@ -606,6 +606,11 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
   MB_MODE_INFO *const mbmi = &xd->mi[0].src_mi->mbmi;
 
   mbmi->tx_size = MIN(max_tx_size, largest_tx_size);
+  // Use 4x4 transform size on key frame for 8x8 blocks.
+  if (cm->frame_type == KEY_FRAME &&
+      cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
+      bs <= BLOCK_8X8)
+    mbmi->tx_size = TX_4X4;
 
   txfm_rd_in_plane(x, rate, distortion, skip,
                    sse, ref_best_rd, 0, bs,
@@ -712,7 +717,9 @@ static void super_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
 
   assert(bs == xd->mi[0].src_mi->mbmi.sb_type);
 
-  if (cpi->sf.tx_size_search_method == USE_LARGESTALL || xd->lossless) {
+  if (cpi->sf.tx_size_search_method == USE_LARGESTALL ||
+      cpi->sf.tx_size_search_method == USE_TX_8X8 ||
+      xd->lossless) {
     vpx_memset(txfm_cache, 0, TX_MODES * sizeof(int64_t));
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
