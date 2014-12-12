@@ -96,6 +96,24 @@ static void prob_diff_update(const vp9_tree_index *tree,
     vp9_cond_prob_diff_update(w, &probs[i], branch_ct[i]);
 }
 
+static int prob_diff_update_decide(const vp9_tree_index *tree,
+                                   vp9_prob probs[/*n - 1*/],
+                                   const unsigned int counts[/*n - 1*/],
+                                   int n) {
+  int i;
+  unsigned int branch_ct[32][2];
+
+  // Assuming max number of probabilities <= 32
+  assert(n <= 32);
+
+  vp9_tree_probs_from_distribution(tree, branch_ct, counts);
+  for (i = 0; i < n - 1; ++i) {
+    if (vp9_cond_prob_diff_update_decide(&probs[i], branch_ct[i]))
+      return 1;
+  }
+  return 0;
+}
+
 static void write_selected_tx_size(const VP9_COMMON *cm,
                                    const MACROBLOCKD *xd,
                                    TX_SIZE tx_size, BLOCK_SIZE bsize,
@@ -129,7 +147,6 @@ static int write_skip(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 
 static void update_skip_probs(VP9_COMMON *cm, vp9_writer *w) {
   int k;
-
   for (k = 0; k < SKIP_CONTEXTS; ++k)
     vp9_cond_prob_diff_update(w, &cm->fc.skip_probs[k], cm->counts.skip[k]);
 }
@@ -141,6 +158,47 @@ static void update_switchable_interp_probs(VP9_COMMON *cm, vp9_writer *w) {
                      cm->fc.switchable_interp_prob[j],
                      cm->counts.switchable_interp[j], SWITCHABLE_FILTERS, w);
 }
+
+#if CONFIG_EXT_TX
+static void update_ext_tx_probs(VP9_COMMON *cm, vp9_writer *w) {
+  int i;
+  int do_update = 0;
+  for (i = TX_4X4; i <= TX_16X16 && !do_update; ++i) {
+    do_update = prob_diff_update_decide(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
+                                        cm->counts.ext_tx[i], EXT_TX_TYPES);
+  }
+  vp9_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
+  if (do_update) {
+    for (i = TX_4X4; i <= TX_16X16; ++i) {
+      prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
+                       cm->counts.ext_tx[i], EXT_TX_TYPES, w);
+    }
+  }
+}
+#endif  // CONFIG_EXT_TX
+
+#if CONFIG_SUPERTX
+static void update_supertx_probs(VP9_COMMON *cm, vp9_writer *w) {
+  int i, j;
+  int do_update = 0;
+  for (i = 0; i < PARTITION_SUPERTX_CONTEXTS && !do_update; ++i) {
+    for (j = 1; j < TX_SIZES && !do_update; ++j) {
+      do_update =
+          (vp9_cond_prob_diff_update_decide(&cm->fc.supertx_prob[i][j],
+                                            cm->counts.supertx[i][j]) > 0);
+    }
+  }
+  vp9_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
+  if (do_update) {
+    for (i = 0; i < PARTITION_SUPERTX_CONTEXTS; ++i) {
+      for (j = 1; j < TX_SIZES; ++j) {
+        vp9_cond_prob_diff_update(w, &cm->fc.supertx_prob[i][j],
+                                  cm->counts.supertx[i][j]);
+      }
+    }
+  }
+}
+#endif  // CONFIG_SUPERTX
 
 static void pack_mb_tokens(vp9_writer *w,
                            TOKENEXTRA **tp, const TOKENEXTRA *const stop,
@@ -570,9 +628,9 @@ static void write_modes_sb(VP9_COMP *cpi,
   if (!supertx_enabled && cm->frame_type != KEY_FRAME &&
       partition != PARTITION_NONE && bsize <= MAX_SUPERTX_BLOCK_SIZE) {
     TX_SIZE supertx_size = bsize_to_tx_size(bsize);
-    vp9_prob prob = partition == PARTITION_SPLIT ?
-                    cm->fc.supertxsplit_prob[supertx_size] :
-                    cm->fc.supertx_prob[supertx_size];
+    vp9_prob prob =
+        cm->fc.supertx_prob[partition_supertx_context_lookup[partition]]
+                           [supertx_size];
     supertx_enabled = (xd->mi[0].mbmi.tx_size == supertx_size);
     vp9_write(w, supertx_enabled, prob);
     if (supertx_enabled) {
@@ -1438,10 +1496,10 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
     vp9_write_nmv_probs(cm, cm->allow_high_precision_mv, &header_bc);
 
 #if CONFIG_EXT_TX
-    for (i = TX_4X4; i <= TX_16X16; ++i) {
-      prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
-                       cm->counts.ext_tx[i], EXT_TX_TYPES, &header_bc);
-    }
+    update_ext_tx_probs(cm, &header_bc);
+#endif
+#if CONFIG_SUPERTX
+    update_supertx_probs(cm, &header_bc);
 #endif
   }
 
