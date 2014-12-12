@@ -101,6 +101,8 @@ class Decoder {
     return &decoder_;
   }
 
+  virtual void DecryptInit() = 0;
+
  protected:
   virtual vpx_codec_iface_t* CodecInterface() const = 0;
 

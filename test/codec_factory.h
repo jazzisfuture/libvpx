@@ -72,6 +72,13 @@ class VP8Decoder : public Decoder {
   VP8Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
       : Decoder(cfg, deadline) {}
 
+  void DecryptInit() {
+#if CONFIG_VP8_DECODER
+     vpx_decrypt_init di = {NULL, NULL};
+     Control(VPXD_SET_DECRYPTOR, &di);
+#endif
+  }
+
  protected:
   virtual vpx_codec_iface_t* CodecInterface() const {
 #if CONFIG_VP8_DECODER
@@ -153,6 +160,13 @@ class VP9Decoder : public Decoder {
  public:
   VP9Decoder(vpx_codec_dec_cfg_t cfg, unsigned long deadline)
       : Decoder(cfg, deadline) {}
+
+  void DecryptInit() {
+#if CONFIG_VP9_DECODER
+     vpx_decrypt_init di = {NULL, NULL};
+     Control(VPXD_SET_DECRYPTOR, &di);
+#endif
+  }
 
  protected:
   virtual vpx_codec_iface_t* CodecInterface() const {
