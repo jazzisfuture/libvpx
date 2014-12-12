@@ -273,7 +273,7 @@ static void model_rd_for_sb(VP9_COMP *cpi, BLOCK_SIZE bsize,
                                      pd->dequant[1] >> 3, &rate, &dist);
       }
 #else
-      vp9_model_rd_from_var_lapndz(sum_sse, 1 << num_pels_log2_lookup[bs],
+      vp9_model_rd_from_var_lapndz(sum_sse, num_pels_log2_lookup[bs],
                                    pd->dequant[1] >> 3, &rate, &dist);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
       rate_sum += rate;
