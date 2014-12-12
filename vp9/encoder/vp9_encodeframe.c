@@ -1483,10 +1483,8 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
                   xd->mi[0].mbmi.skip;
             }
           }
-        if (partition != PARTITION_SPLIT)
-          cm->counts.supertx[supertx_size][1]++;
-        else
-          cm->counts.supertxsplit[supertx_size][1]++;
+        cm->counts.supertx
+            [partition_supertx_context_lookup[partition]][supertx_size][1]++;
         cm->counts.supertx_size[supertx_size]++;
 #if CONFIG_EXT_TX
         if (supertx_size < TX_32X32 && !xd->mi[0].mbmi.skip)
@@ -1500,10 +1498,8 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
       return;
     } else {
       if (output_enabled) {
-        if (partition != PARTITION_SPLIT)
-          cm->counts.supertx[supertx_size][0]++;
-        else
-          cm->counts.supertxsplit[supertx_size][0]++;
+        cm->counts.supertx
+            [partition_supertx_context_lookup[partition]][supertx_size][0]++;
       }
     }
   }
@@ -2862,7 +2858,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         best_partition = pc_tree->partitioning;
         pc_tree->partitioning = PARTITION_SPLIT;
 
-        sum_rdc.rate += vp9_cost_bit(cm->fc.supertxsplit_prob[supertx_size], 0);
+        sum_rdc.rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+            0);
         sum_rdc.rdcost =
             RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
@@ -2880,7 +2879,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
                         pc_tree);
 
-          tmp_rate += vp9_cost_bit(cm->fc.supertxsplit_prob[supertx_size], 1);
+          tmp_rate += vp9_cost_bit(
+              cm->fc.supertx_prob
+              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+              1);
           tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
           if (tmp_rd < sum_rdc.rdcost) {
             sum_rdc.rdcost = tmp_rd;
@@ -2944,7 +2946,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         best_partition = pc_tree->partitioning;
         pc_tree->partitioning = PARTITION_SPLIT;
 
-        sum_rdc.rate += vp9_cost_bit(cm->fc.supertxsplit_prob[supertx_size], 0);
+        sum_rdc.rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+            0);
         sum_rdc.rdcost =
             RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
@@ -2962,7 +2967,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
                         pc_tree);
 
-          tmp_rate += vp9_cost_bit(cm->fc.supertxsplit_prob[supertx_size], 1);
+          tmp_rate += vp9_cost_bit(
+              cm->fc.supertx_prob
+              [partition_supertx_context_lookup[PARTITION_SPLIT]][supertx_size],
+              1);
           tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
           if (tmp_rd < sum_rdc.rdcost) {
             sum_rdc.rdcost = tmp_rd;
@@ -3068,7 +3076,9 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
       best_partition = pc_tree->partitioning;
       pc_tree->partitioning = PARTITION_HORZ;
 
-      sum_rdc.rate += vp9_cost_bit(cm->fc.supertx_prob[supertx_size], 0);
+      sum_rdc.rate += vp9_cost_bit(
+          cm->fc.supertx_prob[partition_supertx_context_lookup[PARTITION_HORZ]]
+                             [supertx_size], 0);
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
       if (!check_intra_sb(cpi, tile, mi_row, mi_col, bsize, pc_tree)) {
@@ -3085,7 +3095,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
                       pc_tree);
 
-        tmp_rate += vp9_cost_bit(cm->fc.supertx_prob[supertx_size], 1);
+        tmp_rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_HORZ]][supertx_size],
+            1);
         tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
         if (tmp_rd < sum_rdc.rdcost) {
           sum_rdc.rdcost = tmp_rd;
@@ -3179,8 +3192,9 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
       TX_SIZE supertx_size = bsize_to_tx_size(bsize);
       best_partition = pc_tree->partitioning;
       pc_tree->partitioning = PARTITION_VERT;
-
-      sum_rdc.rate += vp9_cost_bit(cm->fc.supertx_prob[supertx_size], 0);
+      sum_rdc.rate += vp9_cost_bit(
+          cm->fc.supertx_prob[partition_supertx_context_lookup[PARTITION_VERT]]
+                             [supertx_size], 0);
       sum_rdc.rdcost = RDCOST(x->rdmult, x->rddiv, sum_rdc.rate, sum_rdc.dist);
 
       if (!check_intra_sb(cpi, tile, mi_row, mi_col, bsize, pc_tree)) {
@@ -3197,7 +3211,10 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
                       pc_tree);
 
-        tmp_rate += vp9_cost_bit(cm->fc.supertx_prob[supertx_size], 1);
+        tmp_rate += vp9_cost_bit(
+            cm->fc.supertx_prob
+            [partition_supertx_context_lookup[PARTITION_VERT]][supertx_size],
+            1);
         tmp_rd = RDCOST(x->rdmult, x->rddiv, tmp_rate, tmp_dist);
         if (tmp_rd < sum_rdc.rdcost) {
           sum_rdc.rdcost = tmp_rd;
