@@ -42,6 +42,8 @@ class CodecFactory {
 
   virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
                                                int usage) const = 0;
+
+  virtual void DecoderDecryptInit(Decoder* const dec) const = 0;
 };
 
 /* Provide CodecTestWith<n>Params classes for a variable number of parameters
@@ -130,6 +132,13 @@ class VP8CodecFactory : public CodecFactory {
     return VPX_CODEC_INCAPABLE;
 #endif
   }
+
+  virtual void DecoderDecryptInit(Decoder* const dec) const {
+#if CONFIG_VP8_DECODER
+    vpx_decrypt_init di = {NULL, NULL};
+    dec->Control(VPXD_SET_DECRYPTOR, &di);
+#endif
+  }
 };
 
 const libvpx_test::VP8CodecFactory kVP8;
@@ -210,6 +219,13 @@ class VP9CodecFactory : public CodecFactory {
     return vpx_codec_enc_config_default(&vpx_codec_vp9_cx_algo, cfg, usage);
 #else
     return VPX_CODEC_INCAPABLE;
+#endif
+  }
+
+  virtual void DecoderDecryptInit(Decoder* const dec) const {
+#if CONFIG_VP9_DECODER
+    vpx_decrypt_init di = {NULL, NULL};
+    dec->Control(VPXD_SET_DECRYPTOR, &di);
 #endif
   }
 };
