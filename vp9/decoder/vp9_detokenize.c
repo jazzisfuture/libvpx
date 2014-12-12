@@ -135,50 +135,64 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd,
       token = ONE_TOKEN;
       val = 1;
     } else {
+      const vp9_prob *probs = vp9_pareto8_full[prob[PIVOT_NODE] - 1];
       INCREMENT_COUNT(TWO_TOKEN);
-      token = vp9_read_tree(r, vp9_coef_con_tree,
-                            vp9_pareto8_full[prob[PIVOT_NODE] - 1]);
-      switch (token) {
-        case TWO_TOKEN:
-        case THREE_TOKEN:
-        case FOUR_TOKEN:
-          val = token;
-          break;
-        case CATEGORY1_TOKEN:
-          val = CAT1_MIN_VAL + read_coeff(cat1_prob, 1, r);
-          break;
-        case CATEGORY2_TOKEN:
-          val = CAT2_MIN_VAL + read_coeff(cat2_prob, 2, r);
-          break;
-        case CATEGORY3_TOKEN:
-          val = CAT3_MIN_VAL + read_coeff(cat3_prob, 3, r);
-          break;
-        case CATEGORY4_TOKEN:
-          val = CAT4_MIN_VAL + read_coeff(cat4_prob, 4, r);
-          break;
-        case CATEGORY5_TOKEN:
-          val = CAT5_MIN_VAL + read_coeff(cat5_prob, 5, r);
-          break;
-        case CATEGORY6_TOKEN:
-#if CONFIG_VP9_HIGHBITDEPTH
-          switch (cm->bit_depth) {
-            case VPX_BITS_8:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
-              break;
-            case VPX_BITS_10:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 16, r);
-              break;
-            case VPX_BITS_12:
-              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 18, r);
-              break;
-            default:
-              assert(0);
-              return -1;
+      if (vp9_read(r, probs[0]) == 0) {
+        if (vp9_read(r, probs[1]) == 0) {
+          token = TWO_TOKEN;
+        } else {
+          if (vp9_read(r, probs[2]) == 0) {
+            token = THREE_TOKEN;
+          } else {
+            token = FOUR_TOKEN;
           }
+        }
+        val = token;
+      } else {
+        if (vp9_read(r, probs[3]) == 0) {
+          if (vp9_read(r, probs[4]) == 0) {
+            token = CATEGORY1_TOKEN;
+            val = CAT1_MIN_VAL + read_coeff(cat1_prob, 1, r);
+          } else {
+            token = CATEGORY2_TOKEN;
+            val = CAT2_MIN_VAL + read_coeff(cat2_prob, 2, r);
+          }
+        } else {
+          if (vp9_read(r, probs[5]) == 0) {
+            if (vp9_read(r, probs[6]) == 0) {
+              token = CATEGORY3_TOKEN;
+              val = CAT3_MIN_VAL + read_coeff(cat3_prob, 3, r);
+            } else {
+              token = CATEGORY4_TOKEN;
+              val = CAT4_MIN_VAL + read_coeff(cat4_prob, 4, r);
+            }
+          } else {
+            if (vp9_read(r, probs[7]) == 0) {
+              token = CATEGORY5_TOKEN;
+              val = CAT5_MIN_VAL + read_coeff(cat5_prob, 5, r);
+            } else {
+              token = CATEGORY6_TOKEN;
+#if CONFIG_VP9_HIGHBITDEPTH
+              switch (cm->bit_depth) {
+                case VPX_BITS_8:
+                  val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
+                  break;
+                case VPX_BITS_10:
+                  val = CAT6_MIN_VAL + read_coeff(cat6_prob, 16, r);
+                  break;
+                case VPX_BITS_12:
+                  val = CAT6_MIN_VAL + read_coeff(cat6_prob, 18, r);
+                  break;
+                default:
+                  assert(0);
+                  return -1;
+              }
 #else
-          val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
+              val = CAT6_MIN_VAL + read_coeff(cat6_prob, 14, r);
 #endif
-          break;
+            }
+          }
+        }
       }
     }
     v = (val * dqv) >> dq_shift;
