@@ -715,6 +715,7 @@ int main(int argc, char **argv) {
     }
     vpx_usec_timer_mark(&timer);
     cx_time += vpx_usec_timer_elapsed(&timer);
+    if (frame_cnt < 4) printf("%f \n", 1.0*vpx_usec_timer_elapsed(&timer));
     // Reset KF flag.
     if (layering_mode != 7) {
       layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;

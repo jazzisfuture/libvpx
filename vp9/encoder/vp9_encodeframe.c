@@ -3588,12 +3588,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi, xd);
-  if (cm->frame_type == KEY_FRAME &&
-      cpi->sf.use_nonrd_pick_mode &&
-      cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
-    cm->tx_mode = ALLOW_16X16;
-  }
-
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)

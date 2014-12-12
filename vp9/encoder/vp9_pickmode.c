@@ -231,7 +231,7 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
     x->skip_txfm[0] = 0;
 
   if (cpi->common.tx_mode == TX_MODE_SELECT) {
-    if (sse > (var << 2))
+    if (sse > (var << 2) || cpi->common.frame_type == KEY_FRAME)
       xd->mi[0].src_mi->mbmi.tx_size =
           MIN(max_txsize_lookup[bsize],
               tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
@@ -241,6 +241,12 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
     if (cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
         xd->mi[0].src_mi->mbmi.tx_size > TX_16X16)
       xd->mi[0].src_mi->mbmi.tx_size = TX_16X16;
+
+    // Use 4x4 transform size on key frame for 8x8 blocks.
+    if (cpi->common.frame_type == KEY_FRAME &&
+        cpi->sf.partition_search_type == VAR_BASED_PARTITION &&
+        bsize <= BLOCK_8X8)
+        xd->mi[0].src_mi->mbmi.tx_size = TX_4X4;
   } else {
     xd->mi[0].src_mi->mbmi.tx_size =
         MIN(max_txsize_lookup[bsize],

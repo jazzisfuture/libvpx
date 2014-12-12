@@ -1221,6 +1221,8 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  if (cm->current_video_frame < 5) printf("%d %d \n", cm->base_qindex, rc->projected_frame_size);
+
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(
       cpi, (cpi->sf.recode_loop >= ALLOW_RECODE_KFARFGF) ? 2 :
