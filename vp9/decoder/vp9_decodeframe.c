@@ -444,8 +444,24 @@ static PARTITION_TYPE read_partition(VP9_COMMON *cm, MACROBLOCKD *xd,
   const int has_cols = (mi_col + hbs) < cm->mi_cols;
   PARTITION_TYPE p;
 
-  if (has_rows && has_cols)
-    p = (PARTITION_TYPE)vp9_read_tree(r, vp9_partition_tree, probs);
+  if (has_rows && has_cols) {
+    int val = vp9_read(r, probs[0]);
+    if (!val) {
+      p = PARTITION_NONE;
+    } else {
+      val = vp9_read(r, probs[1]);
+      if (!val) {
+        p = PARTITION_HORZ;
+      } else {
+        val = vp9_read(r, probs[2]);
+        if (!val) {
+          p = PARTITION_VERT;
+        } else {
+          p = PARTITION_SPLIT;
+        }
+      }
+    }
+  }
   else if (!has_rows && has_cols)
     p = vp9_read(r, probs[1]) ? PARTITION_SPLIT : PARTITION_HORZ;
   else if (has_rows && !has_cols)
