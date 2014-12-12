@@ -63,8 +63,7 @@ typedef struct frame_contexts {
   vp9_prob ext_tx_prob[3][EXT_TX_TYPES - 1];
 #endif
 #if CONFIG_SUPERTX
-  vp9_prob supertx_prob[TX_SIZES];
-  vp9_prob supertxsplit_prob[TX_SIZES];
+  vp9_prob supertx_prob[PARTITION_SUPERTX_CONTEXTS][TX_SIZES];
 #endif
 } FRAME_CONTEXT;
 
@@ -92,8 +91,7 @@ typedef struct {
   unsigned int ext_tx[3][EXT_TX_TYPES];
 #endif
 #if CONFIG_SUPERTX
-  unsigned int supertx[TX_SIZES][2];
-  unsigned int supertxsplit[TX_SIZES][2];
+  unsigned int supertx[PARTITION_SUPERTX_CONTEXTS][TX_SIZES][2];
   unsigned int supertx_size[BLOCK_SIZES];
 #endif
 } FRAME_COUNTS;

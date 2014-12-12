@@ -566,9 +566,6 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        MODE_INFO *const mi,
-#if CONFIG_SUPERTX && CONFIG_EXT_TX
-                                       int supertx_enabled,
-#endif
                                        int mi_row, int mi_col, vp9_reader *r) {
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
@@ -698,9 +695,6 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
         mbmi->tx_size <= TX_16X16 &&
         cm->base_qindex > 0 &&
         mbmi->sb_type >= BLOCK_8X8 &&
-#if CONFIG_SUPERTX
-      !supertx_enabled &&
-#endif
       !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP) &&
       !mbmi->skip) {
       mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
@@ -723,9 +717,6 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
   if (inter_block) {
     read_inter_block_mode_info(cm, xd, tile, mi,
-#if CONFIG_SUPERTX && CONFIG_EXT_TX
-                               supertx_enabled,
-#endif
                                mi_row, mi_col, r);
   } else {
     read_intra_block_mode_info(cm, mi,
