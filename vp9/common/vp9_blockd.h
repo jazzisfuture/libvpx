@@ -225,7 +225,7 @@ typedef struct macroblockd {
 
   int corrupted;
 
-  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[MAX_MB_PLANE][64 * 64]);
+  DECLARE_ALIGNED(16, tran_low_t, dqcoeff[64 * 64]);
 
   ENTROPY_CONTEXT *above_context[MAX_MB_PLANE];
   ENTROPY_CONTEXT left_context[MAX_MB_PLANE][16];
