@@ -166,9 +166,6 @@ void EncoderTest::RunLoop(VideoSource *video) {
     encoder->InitEncoder(video);
 
     Decoder* const decoder = codec_->CreateDecoder(dec_cfg_, 0);
-    if (decoder)
-      codec_->DecoderDecryptInit(decoder);
-
     bool again;
     for (again = true, video->Begin(); again; video->Next()) {
       again = (video->img() != NULL);
