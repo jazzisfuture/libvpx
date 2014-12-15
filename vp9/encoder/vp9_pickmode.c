@@ -893,10 +893,13 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         mbmi->ref_frame[0] = INTRA_FRAME;
         mbmi->uv_mode = this_mode;
         mbmi->mv[0].as_int = INVALID_MV;
-      } else {
-        x->skip_txfm[0] = best_mode_skip_txfm;
-        mbmi->tx_size = best_tx_size;
       }
+    }
+
+    // Reset mb_mode_info to the best inter mode.
+    if (mbmi->ref_frame[0] != INTRA_FRAME) {
+      x->skip_txfm[0] = best_mode_skip_txfm;
+      mbmi->tx_size = best_tx_size;
     }
   }
 
