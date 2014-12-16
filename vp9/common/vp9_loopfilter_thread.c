@@ -10,8 +10,8 @@
 
 #include "./vpx_config.h"
 #include "vpx_mem/vpx_mem.h"
-#include "vp9/common/vp9_loopfilter_thread.h"
 #include "vp9/common/vp9_reconinter.h"
+#include "vp9/common/vp9_loopfilter_thread.h"
 
 #if CONFIG_MULTITHREAD
 static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
