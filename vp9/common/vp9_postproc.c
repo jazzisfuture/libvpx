@@ -636,12 +636,7 @@ int vp9_post_proc_frame(struct VP9Common *cm,
   const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
   struct postproc_state *const ppstate = &cm->postproc_state;
-
-#if CONFIG_VP9_HIGHBITDEPTH
-  const int flag_highbit = 1;
-#else
-  const int flag_highbit = 0;
-#endif
+  const int flag_highbit = (cm->bit_depth > 8);
 
   if (!cm->frame_to_show)
     return -1;
