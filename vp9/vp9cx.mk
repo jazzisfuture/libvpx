@@ -156,6 +156,15 @@ VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_variance_neon.c
 VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_quantize_neon.c
 VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_subtract_neon.c
 VP9_CX_SRCS-$(HAVE_NEON_ASM) += encoder/arm/neon/vp9_dct_ht_4x4_neon$(ASM)
-VP9_CX_SRCS-$(HAVE_NEON_ASM) += encoder/arm/neon/vp9_dct_32x32_neon$(ASM)
+
+# neon with assembly and intrinsics implementations. If both are available
+# prefer assembly.
+ifeq ($(HAVE_NEON_ASM), yes)
+VP9_CX_SRCS-$(HAVE_NEON_ASM) += encoder/arm/neon/vp9_dct_32x32_neon_asm$(ASM)
+else
+ifeq ($(HAVE_NEON), yes)
+VP9_CX_SRCS-$(HAVE_NEON_ASM) += encoder/arm/neon/vp9_dct_32x32_neon.c
+endif  # HAVE_NEON
+endif  # HAVE_NEON_ASM
 
 VP9_CX_SRCS-yes := $(filter-out $(VP9_CX_SRCS_REMOVE-yes),$(VP9_CX_SRCS-yes))
