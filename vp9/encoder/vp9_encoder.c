@@ -1402,8 +1402,14 @@ static void cal_nmvsadcosts_hp(int *mvsadcost[2]) {
 }
 
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
 VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
   unsigned int i;
+=======
+VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf,
+                                BufferPool *const pool) {
+  unsigned int i, j;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   VP9_COMP *const cpi = vpx_memalign(32, sizeof(VP9_COMP));
   VP9_COMMON *const cm = cpi != NULL ? &cpi->common : NULL;
 
@@ -1430,6 +1436,7 @@ VP9_COMP *vp9_create_compressor(VP9EncoderConfig *oxcf) {
                   sizeof(*cm->frame_contexts)));
 
   cpi->use_svc = 0;
+  cpi->common.buffer_pool = pool;
 
   init_config(cpi, oxcf);
   vp9_rc_init(&cpi->oxcf, oxcf->pass, &cpi->rc);
@@ -2105,6 +2112,19 @@ int vp9_copy_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
   }
 }
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
+=======
+int vp9_get_reference_enc(VP9_COMP *cpi, int index, YV12_BUFFER_CONFIG **fb) {
+  VP9_COMMON *cm = &cpi->common;
+
+  if (index < 0 || index >= REF_FRAMES)
+    return -1;
+
+  *fb = &cm->buffer_pool->frame_bufs[cm->ref_frame_map[index]].buf;
+  return 0;
+}
+
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 int vp9_set_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
                           YV12_BUFFER_CONFIG *sd) {
   YV12_BUFFER_CONFIG *cfg = get_vp9_ref_frame_buffer(cpi, ref_frame_flag);
@@ -2350,10 +2370,12 @@ static int recode_loop_test(const VP9_COMP *cpi,
 
 void vp9_update_reference_frames(VP9_COMP *cpi) {
   VP9_COMMON * const cm = &cpi->common;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
   // At this point the new frame has been encoded.
   // If any buffer copy / swapping is signaled it should be done here.
   if (cm->frame_type == KEY_FRAME) {
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
     ref_cnt_fb(cm->frame_bufs,
@@ -2367,10 +2389,24 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
     // We now have to update the ARF with the current frame and swap gld_fb_idx
     // and alt_fb_idx so that, overall, we've stored the old GF in the new ARF
     // slot and, if we're updating the GF, the current frame becomes the new GF.
+=======
+    ref_cnt_fb(frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
+    ref_cnt_fb(frame_bufs, &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
+  } else if (!cpi->multi_arf_allowed && cpi->refresh_golden_frame &&
+             cpi->rc.is_src_frame_alt_ref && !cpi->use_svc) {
+    /* Preserve the previously existing golden frame and update the frame in
+     * the alt ref slot instead. This is highly specific to the current use of
+     * alt-ref as a forward reference, and this needs to be generalized as
+     * other uses are implemented (like RTC/temporal scaling)
+     *
+     * The update to the buffer in the alt ref slot was signaled in
+     * vp9_pack_bitstream(), now swap the buffer pointers so that it's treated
+     * as the golden frame next time.
+     */
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     int tmp;
 
-    ref_cnt_fb(cm->frame_bufs,
-               &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
+    ref_cnt_fb(frame_bufs, &cm->ref_frame_map[cpi->alt_fb_idx], cm->new_fb_idx);
 
     tmp = cpi->alt_fb_idx;
     cpi->alt_fb_idx = cpi->gld_fb_idx;
@@ -2388,15 +2424,19 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
         arf_idx = gf_group->arf_update_idx[gf_group->index];
       }
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
       ref_cnt_fb(cm->frame_bufs,
                  &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
       vpx_memcpy(cpi->interp_filter_selected[ALTREF_FRAME],
                  cpi->interp_filter_selected[0],
                  sizeof(cpi->interp_filter_selected[0]));
+=======
+      ref_cnt_fb(frame_bufs, &cm->ref_frame_map[arf_idx], cm->new_fb_idx);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     }
 
     if (cpi->refresh_golden_frame) {
-      ref_cnt_fb(cm->frame_bufs,
+      ref_cnt_fb(frame_bufs,
                  &cm->ref_frame_map[cpi->gld_fb_idx], cm->new_fb_idx);
       if (!cpi->rc.is_src_frame_alt_ref)
         vpx_memcpy(cpi->interp_filter_selected[GOLDEN_FRAME],
@@ -2410,12 +2450,16 @@ void vp9_update_reference_frames(VP9_COMP *cpi) {
   }
 
   if (cpi->refresh_last_frame) {
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
     ref_cnt_fb(cm->frame_bufs,
                &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
     if (!cpi->rc.is_src_frame_alt_ref)
       vpx_memcpy(cpi->interp_filter_selected[LAST_FRAME],
                  cpi->interp_filter_selected[0],
                  sizeof(cpi->interp_filter_selected[0]));
+=======
+    ref_cnt_fb(frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx], cm->new_fb_idx);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   }
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0) {
@@ -2458,9 +2502,17 @@ void vp9_scale_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   MV_REFERENCE_FRAME ref_frame;
   const VP9_REFFRAME ref_mask[3] = {VP9_LAST_FLAG, VP9_GOLD_FLAG, VP9_ALT_FLAG};
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
+=======
+    const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
+    const YV12_BUFFER_CONFIG *const ref = &frame_bufs[idx].buf;
+
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     // Need to convert from VP9_REFFRAME to index into ref_mask (subtract 1).
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
     if (cpi->ref_frame_flags & ref_mask[ref_frame - 1]) {
       const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
       const YV12_BUFFER_CONFIG *const ref = &cm->frame_bufs[idx].buf;
@@ -2500,15 +2552,33 @@ void vp9_scale_references(VP9_COMP *cpi) {
         cpi->scaled_ref_idx[ref_frame - 1] = idx;
         ++cm->frame_bufs[idx].ref_count;
       }
+=======
+    if ((cpi->ref_frame_flags & ref_mask[ref_frame - 1]) &&
+        (ref->y_crop_width != cm->width || ref->y_crop_height != cm->height)) {
+      const int new_fb = get_free_fb(cm);
+      vp9_realloc_frame_buffer(&frame_bufs[new_fb].buf,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+                               VP9_ENC_BORDER_IN_PIXELS, NULL, NULL, NULL);
+      scale_and_extend_frame(ref, &frame_bufs[new_fb].buf);
+      cpi->scaled_ref_idx[ref_frame - 1] = new_fb;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     } else {
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
       cpi->scaled_ref_idx[ref_frame - 1] = INVALID_REF_BUFFER_IDX;
+=======
+      cpi->scaled_ref_idx[ref_frame - 1] = idx;
+      ++frame_bufs[idx].ref_count;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     }
   }
 }
 
 static void release_scaled_references(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
   int i;
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   for (i = 0; i < MAX_REF_FRAMES; ++i) {
     const int idx = cpi->scaled_ref_idx[i];
     RefCntBuffer *const buf =
@@ -2518,6 +2588,11 @@ static void release_scaled_references(VP9_COMP *cpi) {
       cpi->scaled_ref_idx[i] = INVALID_REF_BUFFER_IDX;
     }
   }
+=======
+
+  for (i = 0; i < 3; ++i)
+    --frame_bufs[cpi->scaled_ref_idx[i]].ref_count;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 }
 
 static void full_to_model_count(unsigned int *model_count,
@@ -3554,7 +3629,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   struct lookahead_entry *last_source = NULL;
   struct lookahead_entry *source = NULL;
   int arf_src_index;
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   int i;
+=======
+  const int is_spatial_svc = cpi->use_svc &&
+                             (cpi->svc.number_temporal_layers == 1) &&
+                             (cpi->svc.number_spatial_layers > 1);
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   if (is_two_pass_svc(cpi)) {
 #if CONFIG_SPATIAL_SVC
@@ -3657,8 +3739,14 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         source->flags &= ~(unsigned int)(VPX_EFLAG_FORCE_KF);
       }
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
       // Check to see if the frame should be encoded as an arf overlay.
       check_src_altref(cpi, source);
+=======
+      // Check to see if the frame to be encoded is an overlay for a previous
+      // arf frame and if so configure it as such.
+      check_src_altref(cpi);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     }
   }
 
@@ -3689,6 +3777,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Clear down mmx registers
   vp9_clear_system_state();
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   // adjust frame rates based on timestamps given
   if (cm->show_frame) {
     adjust_frame_rate(cpi, source);
@@ -3703,6 +3792,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   // Find a free buffer for the new frame, releasing the reference previously
   // held.
   cm->frame_bufs[cm->new_fb_idx].ref_count--;
+=======
+  /* find a free buffer for the new frame, releasing the reference previously
+   * held.
+   */
+  --frame_bufs[cm->new_fb_idx].ref_count;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   cm->new_fb_idx = get_free_fb(cm);
   cm->cur_frame = &cm->frame_bufs[cm->new_fb_idx];
 
@@ -3732,6 +3827,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   for (i = 0; i < MAX_REF_FRAMES; ++i)
     cpi->scaled_ref_idx[i] = INVALID_REF_BUFFER_IDX;
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   if (oxcf->pass == 1 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
     const int lossless = is_lossless_requested(oxcf);
@@ -3750,6 +3846,39 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     vp9_first_pass(cpi, source);
   } else if (oxcf->pass == 2 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
+=======
+  alloc_util_frame_buffers(cpi);
+  init_motion_estimation(cpi);
+
+  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
+    const int idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
+    YV12_BUFFER_CONFIG *const buf = &frame_bufs[idx].buf;
+    RefBuffer *const ref_buf = &cm->frame_refs[ref_frame - 1];
+    ref_buf->buf = buf;
+    ref_buf->idx = idx;
+    vp9_setup_scale_factors_for_frame(&ref_buf->sf,
+                                      buf->y_crop_width, buf->y_crop_height,
+                                      cm->width, cm->height);
+
+    if (vp9_is_scaled(&ref_buf->sf))
+      vp9_extend_frame_borders(buf);
+  }
+
+  set_ref_ptrs(cm, xd, LAST_FRAME, LAST_FRAME);
+
+  if (cpi->oxcf.aq_mode == VARIANCE_AQ) {
+    vp9_vaq_init();
+  }
+
+  if (cpi->pass == 1 &&
+      (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
+    const int lossless = is_lossless_requested(&cpi->oxcf);
+    cpi->mb.fwd_txm4x4 = lossless ? vp9_fwht4x4 : vp9_fdct4x4;
+    cpi->mb.itxm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
+    vp9_first_pass(cpi);
+  } else if (cpi->pass == 2 &&
+      (!cpi->use_svc || cpi->svc.number_temporal_layers == 1)) {
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     Pass2Encode(cpi, size, dest, frame_flags);
   } else if (cpi->use_svc) {
     SvcEncode(cpi, size, dest, frame_flags);
