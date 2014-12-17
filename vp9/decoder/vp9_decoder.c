@@ -72,11 +72,13 @@ VP9Decoder *vp9_decoder_create() {
 
   if (setjmp(cm->error.jmp)) {
     cm->error.setjmp = 0;
+    vpx_internal_error_debug_check_context(&cm->error);
     vp9_decoder_remove(pbi);
     return NULL;
   }
 
   cm->error.setjmp = 1;
+  vpx_internal_error_debug_set_context(&cm->error);
 
   CHECK_MEM_ERROR(cm, cm->fc,
                   (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));
@@ -278,6 +280,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
     pbi->need_resync = 1;
     cm->error.setjmp = 0;
+    vpx_internal_error_debug_check_context(&cm->error);
 
     // Synchronize all threads immediately as a subsequent decode call may
     // cause a resize invalidating some allocations.
@@ -295,6 +298,7 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   }
 
   cm->error.setjmp = 1;
+  vpx_internal_error_debug_set_context(&cm->error);
 
   vp9_decode_frame(pbi, source, source + size, psource);
 

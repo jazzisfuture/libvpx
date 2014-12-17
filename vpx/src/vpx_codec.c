@@ -134,6 +134,21 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t  *ctx,
   return SAVE_STATUS(ctx, res);
 }
 
+#ifdef VPX_ERROR_CHECK_CONTEXT
+#include <assert.h>
+void vpx_internal_error_debug_set_context(
+    struct vpx_internal_error_info *info) {
+  info->orig_context = pthread_self();
+}
+
+void vpx_internal_error_debug_check_context(
+    const struct vpx_internal_error_info *info) {
+  const pthread_t cur_context = pthread_self();
+  // Make sure the current thread is the same one that set the jump target.
+  assert(info->orig_context == cur_context);
+}
+#endif  // VPX_ERROR_CHECK_CONTEXT
+
 void vpx_internal_error(struct vpx_internal_error_info *info,
                         vpx_codec_err_t                 error,
                         const char                     *fmt,

@@ -45,6 +45,7 @@
 #define VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #include "../vpx_decoder.h"
 #include "../vpx_encoder.h"
+#include "./vpx_config.h"
 #include <stdarg.h>
 
 #ifdef __cplusplus
@@ -417,13 +418,32 @@ vpx_codec_pkt_list_get(struct vpx_codec_pkt_list *list,
 #include <stdio.h>
 #include <setjmp.h>
 
+#if CONFIG_MULTITHREAD && CONFIG_DEBUG && HAVE_PTHREAD_H
+#include <pthread.h>
+// Store the thread context of the caller of setjmp() to ensure any longjmp's
+// are from the same thread.
+#define VPX_ERROR_CHECK_CONTEXT
+#endif
+
 struct vpx_internal_error_info {
   vpx_codec_err_t  error_code;
   int              has_detail;
   char             detail[80];
   int              setjmp;
   jmp_buf          jmp;
+#ifdef VPX_ERROR_CHECK_CONTEXT
+  pthread_t        orig_context;
+#endif
 };
+
+#ifdef VPX_ERROR_CHECK_CONTEXT
+void vpx_internal_error_debug_set_context(struct vpx_internal_error_info *info);
+void vpx_internal_error_debug_check_context(
+    const struct vpx_internal_error_info *info);
+#else
+# define vpx_internal_error_debug_set_context(info)
+# define vpx_internal_error_debug_check_context(info)
+#endif  // VPX_ERROR_CHECK_CONTEXT
 
 void vpx_internal_error(struct vpx_internal_error_info *info,
                         vpx_codec_err_t                 error,
