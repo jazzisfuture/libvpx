@@ -24,20 +24,25 @@
 #include "vp9/encoder/vp9_tokenize.h"
 
 static TOKENVALUE dct_value_tokens[DCT_MAX_VALUE * 2];
-const TOKENVALUE *vp9_dct_value_tokens_ptr;
+const TOKENVALUE *vp9_dct_value_tokens_ptr = dct_value_tokens + DCT_MAX_VALUE;
 static int16_t dct_value_cost[DCT_MAX_VALUE * 2];
-const int16_t *vp9_dct_value_cost_ptr;
+const int16_t *vp9_dct_value_cost_ptr = dct_value_cost + DCT_MAX_VALUE;
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static TOKENVALUE dct_value_tokens_high10[DCT_MAX_VALUE_HIGH10 * 2];
-const TOKENVALUE *vp9_dct_value_tokens_high10_ptr;
+const TOKENVALUE *vp9_dct_value_tokens_high10_ptr = dct_value_tokens_high10 +
+    DCT_MAX_VALUE_HIGH10;
 static int16_t dct_value_cost_high10[DCT_MAX_VALUE_HIGH10 * 2];
-const int16_t *vp9_dct_value_cost_high10_ptr;
+const int16_t *vp9_dct_value_cost_high10_ptr = dct_value_cost_high10 +
+    DCT_MAX_VALUE_HIGH10;
 
 static TOKENVALUE dct_value_tokens_high12[DCT_MAX_VALUE_HIGH12 * 2];
-const TOKENVALUE *vp9_dct_value_tokens_high12_ptr;
+const TOKENVALUE *vp9_dct_value_tokens_high12_ptr = dct_value_tokens_high12 +
+    DCT_MAX_VALUE_HIGH12;
+
 static int16_t dct_value_cost_high12[DCT_MAX_VALUE_HIGH12 * 2];
-const int16_t *vp9_dct_value_cost_high12_ptr;
+const int16_t *vp9_dct_value_cost_high12_ptr = dct_value_cost_high12 +
+    DCT_MAX_VALUE_HIGH12;
 #endif
 
 // Array indices are identical to previously-existing CONTEXT_NODE indices
@@ -203,24 +208,13 @@ static void tokenize_init_one(TOKENVALUE *t, const vp9_extra_bit *const e,
 }
 
 void vp9_tokenize_initialize() {
-  vp9_dct_value_tokens_ptr = dct_value_tokens + DCT_MAX_VALUE;
-  vp9_dct_value_cost_ptr = dct_value_cost + DCT_MAX_VALUE;
-
   tokenize_init_one(dct_value_tokens + DCT_MAX_VALUE, vp9_extra_bits,
                     dct_value_cost + DCT_MAX_VALUE, DCT_MAX_VALUE);
 #if CONFIG_VP9_HIGHBITDEPTH
-  vp9_dct_value_tokens_high10_ptr = dct_value_tokens_high10 +
-      DCT_MAX_VALUE_HIGH10;
-  vp9_dct_value_cost_high10_ptr = dct_value_cost_high10 + DCT_MAX_VALUE_HIGH10;
-
   tokenize_init_one(dct_value_tokens_high10 + DCT_MAX_VALUE_HIGH10,
                     vp9_extra_bits_high10,
                     dct_value_cost_high10 + DCT_MAX_VALUE_HIGH10,
                     DCT_MAX_VALUE_HIGH10);
-  vp9_dct_value_tokens_high12_ptr = dct_value_tokens_high12 +
-      DCT_MAX_VALUE_HIGH12;
-  vp9_dct_value_cost_high12_ptr = dct_value_cost_high12 + DCT_MAX_VALUE_HIGH12;
-
   tokenize_init_one(dct_value_tokens_high12 + DCT_MAX_VALUE_HIGH12,
                     vp9_extra_bits_high12,
                     dct_value_cost_high12 + DCT_MAX_VALUE_HIGH12,
