@@ -1461,6 +1461,85 @@ void vp9_encode_sb_supertx(MACROBLOCK *x, BLOCK_SIZE bsize) {
 }
 #endif
 
+#if CONFIG_TX_SKIP
+static int vp9_dpcm_intra(uint8_t *src, int src_stride,
+                          uint8_t *dst, int dst_stride,
+                          int16_t *src_diff, int diff_stride,
+                          tran_low_t *coeff, tran_low_t *qcoeff,
+                          tran_low_t *dqcoeff, int skip_block,
+                          struct macroblock_plane *p,
+                          struct macroblockd_plane *pd,
+                          const scan_order *scan_order,
+                          PREDICTION_MODE mode, int bs,
+                          int shift, int logsizeby32) {
+  int i, j, eob;
+
+  switch (mode) {
+    case H_PRED:
+      for (i = 0 ; i < bs; i++) {
+        vp9_subtract_block_c(bs, 1, src_diff + i,
+                             diff_stride,
+                             src + i, src_stride,
+                             dst + i, dst_stride);
+        vp9_tx_identity_slice(src_diff + i,
+                              coeff + i, bs, 1,
+                              diff_stride, bs, shift);
+        quantize_slice_bigtx(coeff + i, bs, skip_block,
+                           p->zbin, p->round, p->quant,
+                           p->quant_shift, qcoeff + i,
+                           dqcoeff + i, pd->dequant, p->zbin_extra,
+                           logsizeby32, bs, i == 0);
+        /*vp9_quantize_slice(coeff + i, bs, skip_block,
+                           p->zbin, p->round, p->quant,
+                           p->quant_shift, qcoeff + i,
+                           dqcoeff + i, pd->dequant, p->zbin_extra,
+                           bs, i == 0);*/
+        vp9_tx_identity_add_slice(dqcoeff + i,
+                                  dst + i, bs, 1,
+                                  bs, dst_stride, shift);
+        if ( i < bs - 1 && 1)
+          for (j = 0 ; j < bs; j++)
+            *(dst + j * dst_stride + i + 1) =
+                *(dst + j * dst_stride + i);
+      }
+      break;
+    case V_PRED:
+      for (i = 0 ; i < bs; i++) {
+        vp9_subtract_block_c(1, bs, src_diff + diff_stride * i,
+                             diff_stride,
+                             src + src_stride * i, src_stride,
+                             dst + dst_stride * i, dst_stride);
+        vp9_tx_identity_slice(src_diff + diff_stride * i,
+                              coeff + bs * i,
+                              1, bs,
+                              diff_stride, bs, shift);
+        quantize_slice_bigtx(coeff + bs * i, bs, skip_block,
+                           p->zbin, p->round, p->quant,
+                           p->quant_shift, qcoeff + bs * i,
+                           dqcoeff + bs * i, pd->dequant, p->zbin_extra,
+                           logsizeby32, 1, i == 0);
+        /*vp9_quantize_slice(coeff + bs * i, bs, skip_block,
+                           p->zbin, p->round, p->quant,
+                           p->quant_shift, qcoeff + bs * i,
+                           dqcoeff + bs * i, pd->dequant, p->zbin_extra,
+                           1, i == 0);*/
+        vp9_tx_identity_add_slice(dqcoeff + bs * i,
+                                  dst + dst_stride * i, 1, bs,
+                                  bs, dst_stride, shift);
+        if ( i < bs - 1 && 1)
+          vpx_memcpy(dst + (i + 1) * dst_stride,
+                     dst + i * dst_stride, bs * sizeof(dst[0]));
+      }
+      break;
+    default:
+      break;
+  }
+
+  eob = get_eob(skip_block, qcoeff, bs * bs, scan_order->scan);
+  return eob;
+}
+#endif
+
 static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                TX_SIZE tx_size, void *arg) {
   struct encode_b_args* const args = arg;
@@ -1538,6 +1617,14 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     dst, dst_stride, i, j, plane);
 
             if (!x->skip_recode) {
+              if (mode == V_PRED || mode == H_PRED) {
+                *eob = vp9_dpcm_intra(src, src_stride, dst, dst_stride,
+                                      src_diff, diff_stride,
+                                      coeff, qcoeff, dqcoeff, x->skip_block,
+                                      p, pd, scan_order, mode, 32, shift, 0);
+                break;
+              }
+
               vp9_subtract_block(32, 32, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
               vp9_tx_identity(src_diff, coeff, diff_stride, 32, shift);
@@ -1563,6 +1650,14 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     x->skip_encode ? src_stride : dst_stride,
                                     dst, dst_stride, i, j, plane);
             if (!x->skip_recode) {
+              if (mode == V_PRED || mode == H_PRED) {
+                *eob = vp9_dpcm_intra(src, src_stride, dst, dst_stride,
+                                      src_diff, diff_stride,
+                                      coeff, qcoeff, dqcoeff, x->skip_block,
+                                      p, pd, scan_order, mode, 16, shift, -1);
+                break;
+              }
+
               vp9_subtract_block(16, 16, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
               vp9_tx_identity(src_diff, coeff, diff_stride, 16, shift);
@@ -1587,6 +1682,14 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     x->skip_encode ? src_stride : dst_stride,
                                     dst, dst_stride, i, j, plane);
             if (!x->skip_recode) {
+              if (mode == V_PRED || mode == H_PRED) {
+                *eob = vp9_dpcm_intra(src, src_stride, dst, dst_stride,
+                                      src_diff, diff_stride,
+                                      coeff, qcoeff, dqcoeff, x->skip_block,
+                                      p, pd, scan_order, mode, 8, shift, -1);
+                break;
+              }
+
               vp9_subtract_block(8, 8, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
               vp9_tx_identity(src_diff, coeff, diff_stride, 8, shift);
@@ -1613,6 +1716,14 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
                                     dst, dst_stride, i, j, plane);
 
             if (!x->skip_recode) {
+              if (mode == V_PRED || mode == H_PRED) {
+                *eob = vp9_dpcm_intra(src, src_stride, dst, dst_stride,
+                                      src_diff, diff_stride,
+                                      coeff, qcoeff, dqcoeff, x->skip_block,
+                                      p, pd, scan_order, mode, 4, shift, -1);
+                break;
+              }
+
               vp9_subtract_block(4, 4, src_diff, diff_stride,
                                  src, src_stride, dst, dst_stride);
               vp9_tx_identity(src_diff, coeff, diff_stride, 4, shift);
