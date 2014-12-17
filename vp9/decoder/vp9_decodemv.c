@@ -675,6 +675,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
+#if CONFIG_TX_SKIP
+    mbmi->uv_mode = mbmi->mode;
+#endif
 }
 
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,

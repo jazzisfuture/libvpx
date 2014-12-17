@@ -495,6 +495,101 @@ void vp9_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob + 1;
 }
 
+#if CONFIG_TX_SKIP
+void vp9_quantize_slice(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                        int skip_block,
+                        const int16_t *zbin_ptr, const int16_t *round_ptr,
+                        const int16_t *quant_ptr,
+                        const int16_t *quant_shift_ptr,
+                        tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                        const int16_t *dequant_ptr,
+                        int zbin_oq_value, int stride, int is_dc) {
+  int i;
+  const int zbins[2] = { zbin_ptr[0] + zbin_oq_value,
+                         zbin_ptr[1] + zbin_oq_value };
+
+  if (!skip_block) {
+    for (i = 0; i < n_coeffs; i++) {
+      const int coeff = coeff_ptr[i * stride];
+      const int coeff_sign = (coeff >> 31);
+      const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+      int idx = (i == 0 && is_dc) ? 0 : 1;
+      qcoeff_ptr[i * stride] = dqcoeff_ptr[i * stride] = 0;
+
+      if (abs_coeff >= zbins[idx]) {
+        int tmp = clamp(abs_coeff + round_ptr[idx], INT16_MIN, INT16_MAX);
+        tmp = ((((tmp * quant_ptr[idx]) >> 16) + tmp) *
+            quant_shift_ptr[idx]) >> 16;
+        qcoeff_ptr[i * stride]  = (tmp ^ coeff_sign) - coeff_sign;
+        dqcoeff_ptr[i * stride] = qcoeff_ptr[i * stride] * dequant_ptr[idx];
+      }
+    }
+  }
+}
+
+void quantize_slice_bigtx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                          int skip_block, const int16_t *zbin_ptr,
+                          const int16_t *round_ptr, const int16_t *quant_ptr,
+                          const int16_t *quant_shift_ptr,
+                          tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                          const int16_t *dequant_ptr, int zbin_oq_value,
+                          int logsizeby32, int stride, int is_dc) {
+  int i;
+  int zbins[2] = { ROUND_POWER_OF_TWO(zbin_ptr[0] + zbin_oq_value,
+                                      1 + logsizeby32),
+                   ROUND_POWER_OF_TWO(zbin_ptr[1] + zbin_oq_value,
+                                      1 + logsizeby32) };
+  if (logsizeby32 < 0) {
+    zbins[0] = zbin_ptr[0] + zbin_oq_value;
+    zbins[1] = zbin_ptr[1] + zbin_oq_value;
+  }
+
+  if (!skip_block) {
+    for (i = 0; i < n_coeffs; i++) {
+      const int coeff = coeff_ptr[i * stride];
+      const int coeff_sign = (coeff >> 31);
+      int tmp;
+      int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+      int idx = (i == 0 && is_dc) ? 0 : 1;
+      qcoeff_ptr[i * stride] = dqcoeff_ptr[i * stride] = 0;
+
+      if (abs_coeff >= zbins[idx]) {
+        if (logsizeby32 < 0)
+          abs_coeff += round_ptr[idx];
+        else
+          abs_coeff += ROUND_POWER_OF_TWO(round_ptr[idx], (1 + logsizeby32));
+        abs_coeff = clamp(abs_coeff, INT16_MIN, INT16_MAX);
+        tmp = ((((abs_coeff * quant_ptr[idx]) >> 16) + abs_coeff) *
+              quant_shift_ptr[idx]) >> (15 - logsizeby32);
+
+        qcoeff_ptr[i * stride] = (tmp ^ coeff_sign) - coeff_sign;
+        dqcoeff_ptr[i * stride] = qcoeff_ptr[i * stride] * dequant_ptr[idx] /
+                                  (1 << (logsizeby32 + 1));
+      }
+    }
+  }
+}
+
+int get_eob(int skip_block, tran_low_t *qcoeff_ptr,
+            intptr_t n_coeffs, const int16_t *scan) {
+  int i, rc, eob = -1;
+
+  if (skip_block)
+    return 0;
+
+  for (i = (int)n_coeffs - 1; i >= 0; i--) {
+    rc = scan[i];
+    if (qcoeff_ptr[rc]) {
+      eob = i;
+      break;
+    }
+  }
+
+  eob += 1;
+  return eob;
+}
+#endif
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_b_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                              int skip_block, const int16_t *zbin_ptr,
