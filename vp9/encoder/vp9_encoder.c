@@ -187,7 +187,6 @@ void vp9_initialize_enc() {
   if (!init_done) {
     vp9_rtcd();
     vp9_init_intra_predictors();
-    vp9_coef_tree_initialize();
     vp9_tokenize_initialize();
     vp9_init_me_luts();
     vp9_rc_init_minq_luts();
