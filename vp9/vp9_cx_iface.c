@@ -13,12 +13,14 @@
 
 #include "./vpx_config.h"
 #include "vpx/vpx_codec.h"
+#include "vpx_ports/vpx_once.h"
 #include "vpx/internal/vpx_codec_internal.h"
 #include "./vpx_version.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vpx/vp8cx.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/vp9_iface_common.h"
+
 
 struct vp9_extracfg {
   int                         cpu_used;  // available cpu percentage in 1/16
@@ -729,7 +731,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     }
 
     priv->extra_cfg = default_extra_cfg;
-    vp9_initialize_enc();
+    once(vp9_initialize_enc);
 
     res = validate_config(priv, &priv->cfg, &priv->extra_cfg);
 
