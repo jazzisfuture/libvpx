@@ -40,6 +40,33 @@ static int16_t dct_value_cost_high12[DCT_MAX_VALUE_HIGH12 * 2];
 const int16_t *vp9_dct_value_cost_high12_ptr;
 #endif
 
+static const TOKENVALUE dct_cat_lt_10_value_tokens[] = {
+  {9, 63}, {9, 61}, {9, 59}, {9, 57}, {9, 55}, {9, 53}, {9, 51}, {9, 49},
+  {9, 47}, {9, 45}, {9, 43}, {9, 41}, {9, 39}, {9, 37}, {9, 35}, {9, 33},
+  {9, 31}, {9, 29}, {9, 27}, {9, 25}, {9, 23}, {9, 21}, {9, 19}, {9, 17},
+  {9, 15}, {9, 13}, {9, 11}, {9, 9}, {9, 7}, {9, 5}, {9, 3}, {9, 1},
+  {8, 31}, {8, 29}, {8, 27}, {8, 25}, {8, 23}, {8, 21},
+  {8, 19}, {8, 17}, {8, 15}, {8, 13}, {8, 11}, {8, 9},
+  {8, 7}, {8, 5}, {8, 3}, {8, 1},
+  {7, 15}, {7, 13}, {7, 11}, {7, 9}, {7, 7}, {7, 5}, {7, 3}, {7, 1},
+  {6, 7}, {6, 5}, {6, 3}, {6, 1}, {5, 3}, {5, 1},
+  {4, 1}, {3, 1}, {2, 1}, {1, 1}, {0, 0},
+  {1, 0},  {2, 0}, {3, 0}, {4, 0},
+  {5, 0}, {5, 2}, {6, 0}, {6, 2}, {6, 4}, {6, 6},
+  {7, 0}, {7, 2}, {7, 4}, {7, 6}, {7, 8}, {7, 10}, {7, 12}, {7, 14},
+  {8, 0}, {8, 2}, {8, 4}, {8, 6}, {8, 8}, {8, 10}, {8, 12},
+  {8, 14}, {8, 16}, {8, 18}, {8, 20}, {8, 22}, {8, 24},
+  {8, 26}, {8, 28}, {8, 30}, {9, 0}, {9, 2},
+  {9, 4}, {9, 6}, {9, 8}, {9, 10}, {9, 12}, {9, 14}, {9, 16},
+  {9, 18}, {9, 20}, {9, 22}, {9, 24}, {9, 26}, {9, 28},
+  {9, 30}, {9, 32}, {9, 34}, {9, 36}, {9, 38}, {9, 40},
+  {9, 42}, {9, 44}, {9, 46}, {9, 48}, {9, 50}, {9, 52},
+  {9, 54}, {9, 56}, {9, 58}, {9, 60}, {9, 62}
+};
+const TOKENVALUE *vp9_dct_cat_lt_10_value_tokens = dct_cat_lt_10_value_tokens +
+    (sizeof(dct_cat_lt_10_value_tokens) / sizeof(*dct_cat_lt_10_value_tokens))
+    / 2;
+
 // Array indices are identical to previously-existing CONTEXT_NODE indices
 const vp9_tree_index vp9_coef_tree[TREE_SIZE(ENTROPY_TOKENS)] = {
   -EOB_TOKEN, 2,                       // 0  = EOB
@@ -323,7 +350,8 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
   const uint8_t *const band = get_band_translate(tx_size);
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
   const TOKENVALUE *dct_value_tokens;
-
+  int16_t token;
+  int16_t extra;
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);
 
@@ -362,14 +390,13 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
       v = qcoeff[scan[c]];
     }
 
-    add_token(&t, coef_probs[band[c]][pt],
-              dct_value_tokens[v].extra,
-              (uint8_t)dct_value_tokens[v].token,
-              (uint8_t)skip_eob,
-              counts[band[c]][pt]);
+    vp9_get_token_extra(v, &token, &extra);
+
+    add_token(&t, coef_probs[band[c]][pt], extra, (uint8_t)token,
+              (uint8_t)skip_eob, counts[band[c]][pt]);
     eob_branch[band[c]][pt] += !skip_eob;
 
-    token_cache[scan[c]] = vp9_pt_energy_class[dct_value_tokens[v].token];
+    token_cache[scan[c]] = vp9_pt_energy_class[token];
     ++c;
     pt = get_coef_context(nb, token_cache, c);
   }
