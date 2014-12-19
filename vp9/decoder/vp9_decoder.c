@@ -33,7 +33,7 @@
 #include "vp9/decoder/vp9_detokenize.h"
 #include "vp9/decoder/vp9_dthread.h"
 
-static void initialize_dec() {
+static void initialize_dec(void) {
   static int init_done = 0;
 
   if (!init_done) {
