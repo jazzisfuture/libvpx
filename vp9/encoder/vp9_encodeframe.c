@@ -409,7 +409,6 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   variance_node vt;
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
   const int block_height = num_8x8_blocks_high_lookup[bsize];
-  // TODO(marpan): Adjust/tune these thresholds.
   const int threshold_multiplier = cm->frame_type == KEY_FRAME ? 80 : 4;
   int64_t threshold =
       (int64_t)(threshold_multiplier *
@@ -417,16 +416,21 @@ static int set_vt_partitioning(VP9_COMP *cpi,
   int64_t threshold_bsize_ref = threshold << 6;
   int64_t threshold_low = threshold;
   BLOCK_SIZE bsize_ref = BLOCK_16X16;
-
+  int low_res = ((cm->width * cm->height) < (640 * 360)) ? 1 : 0;
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
 
+  // Adjust thresholds for key frame and/or low resolutions.
   if (cm->frame_type == KEY_FRAME) {
     bsize_ref = BLOCK_8X8;
     // Choose lower thresholds for key frame variance to favor split, but keep
     // threshold for splitting to 4x4 block still fairly high for now.
     threshold_bsize_ref = threshold << 2;
     threshold_low = threshold >> 2;
+  } else if (low_res) {
+    // Use lower threshold for bsize_ref, to favor split to smallest block size,
+    // for low resolutions.
+    threshold_bsize_ref = threshold << 3;
   }
 
   // For bsize=bsize_ref (16x16/8x8 for 8x8/4x4 downsampling), select if
@@ -443,8 +447,9 @@ static int set_vt_partitioning(VP9_COMP *cpi,
     return 0;
   } else if (bsize > bsize_ref) {
     get_variance(&vt.part_variances->none);
-    // For key frame, for bsize above 32X32, or very high variance, take split.
-    if (cm->frame_type == KEY_FRAME &&
+    // For key frame or low spatial resolution, for bsize above 32X32 or very
+    // high variance, take split.
+    if ((cm->frame_type == KEY_FRAME || low_res) &&
         (bsize > BLOCK_32X32 ||
         vt.part_variances->none.variance > (threshold << 2))) {
       return 0;
