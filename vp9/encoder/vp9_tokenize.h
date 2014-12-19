@@ -63,12 +63,30 @@ extern const int16_t *vp9_dct_value_cost_ptr;
  *  fields are not.
  */
 extern const TOKENVALUE *vp9_dct_value_tokens_ptr;
+extern const TOKENVALUE *vp9_dct_cat_lt_10_value_tokens;
 #if CONFIG_VP9_HIGHBITDEPTH
 extern const int16_t *vp9_dct_value_cost_high10_ptr;
 extern const TOKENVALUE *vp9_dct_value_tokens_high10_ptr;
 extern const int16_t *vp9_dct_value_cost_high12_ptr;
 extern const TOKENVALUE *vp9_dct_value_tokens_high12_ptr;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+static INLINE void vp9_get_token_extra(int v, int16_t *token, int16_t *extra) {
+  *token = vp9_dct_cat_lt_10_value_tokens[v].token;
+  *extra = vp9_dct_cat_lt_10_value_tokens[v].extra;
+  if (abs(v) >= 67) {
+    *extra = 2 * abs(v) - 133 - (v > 0);
+    *token = 10;
+  }
+}
+static INLINE int16_t vp9_get_token(int v) {
+  int16_t token = vp9_dct_cat_lt_10_value_tokens[v].token;
+  if (abs(v) >= 67) {
+    token = 10;
+  }
+  return token;
+}
+
 
 #ifdef __cplusplus
 }  // extern "C"
