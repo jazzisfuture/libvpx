@@ -2549,7 +2549,7 @@ static void full_to_model_counts(vp9_coeff_count_model *model_count,
           full_to_model_count(model_count[i][j][k][l], full_count[i][j][k][l]);
 }
 
-#if 0 && CONFIG_INTERNAL_STATS
+#if 1 && CONFIG_INTERNAL_STATS
 static void output_frame_level_debug_stats(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   FILE *const f = fopen("tmp.stt", cm->current_video_frame ? "a" : "w");
@@ -2561,7 +2561,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
 
   if (cpi->twopass.total_left_stats.coded_error != 0.0)
     fprintf(f, "%10u %10d %10d %10d %10d"
-        "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d "
+        "%10"PRId64" %10"PRId64" %10"PRId64" %10"PRId64" %10d %10d"
         "%7.2lf %7.2lf %7.2lf %7.2lf %7.2lf"
         "%6d %6d %5d %5d %5d "
         "%10"PRId64" %10.3lf"
@@ -2573,7 +2573,7 @@ static void output_frame_level_debug_stats(VP9_COMP *cpi) {
         cpi->rc.vbr_bits_off_target,
         cpi->rc.total_target_vs_actual,
         (cpi->rc.starting_buffer_level - cpi->rc.bits_off_target),
-        cpi->rc.total_actual_bits, cm->base_qindex,
+        cpi->rc.total_actual_bits, cm->lf.filter_level, cm->base_qindex,
         vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth),
         (double)vp9_dc_quant(cm->base_qindex, 0, cm->bit_depth) / 4.0,
         vp9_convert_qindex_to_q(cpi->twopass.active_worst_quality,
@@ -3321,7 +3321,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   if (!(is_two_pass_svc(cpi) && cpi->svc.encode_empty_frame_state == ENCODING))
     vp9_rc_postencode_update(cpi, *size);
 
-#if 0
+#if 1
   output_frame_level_debug_stats(cpi);
 #endif
 
