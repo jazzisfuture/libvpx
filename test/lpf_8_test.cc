@@ -107,6 +107,32 @@ void wrapper_vertical_16_dual_c(uint8_t *s, int p, const uint8_t *blimit,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SSE2
 
+#if HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH
+void wrapper_vertical_16_neon(uint8_t *s, int p, const uint8_t *blimit,
+                              const uint8_t *limit, const uint8_t *thresh,
+                              int count) {
+  vp9_lpf_vertical_16_neon(s, p, blimit, limit, thresh);
+}
+
+void wrapper_vertical_16_c(uint8_t *s, int p, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh,
+                           int count) {
+  vp9_lpf_vertical_16_c(s, p, blimit, limit, thresh);
+}
+
+void wrapper_vertical_16_dual_neon(uint8_t *s, int p, const uint8_t *blimit,
+                                   const uint8_t *limit, const uint8_t *thresh,
+                                   int count) {
+  vp9_lpf_vertical_16_dual_neon(s, p, blimit, limit, thresh);
+}
+
+void wrapper_vertical_16_dual_c(uint8_t *s, int p, const uint8_t *blimit,
+                                const uint8_t *limit, const uint8_t *thresh,
+                                int count) {
+  vp9_lpf_vertical_16_dual_c(s, p, blimit, limit, thresh);
+}
+#endif  // HAVE_NEON_ASM && !CONFIG_VP9_HIGHBITDEPTH
+
 class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
  public:
   virtual ~Loop8Test6Param() {}
@@ -601,6 +627,10 @@ INSTANTIATE_TEST_CASE_P(
 #if HAVE_NEON_ASM
         make_tuple(&vp9_lpf_horizontal_16_neon,
                    &vp9_lpf_horizontal_16_c, 8),
+        make_tuple(&wrapper_vertical_16_neon,
+                   &wrapper_vertical_16_c, 8),
+        make_tuple(&wrapper_vertical_16_dual_neon,
+                   &wrapper_vertical_16_dual_c, 8),
 #endif  // HAVE_NEON_ASM
         make_tuple(&vp9_lpf_horizontal_4_neon,
                    &vp9_lpf_horizontal_4_c, 8),
