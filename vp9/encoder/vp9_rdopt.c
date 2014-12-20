@@ -599,6 +599,25 @@ static void txfm_rd_in_plane(MACROBLOCK *x,
   args.best_rd = ref_best_rd;
   args.use_fast_coef_costing = use_fast_coef_casting;
 
+#if CONFIG_TX_SKIP
+  if (xd->lossless && tx_size != TX_4X4 &&
+      !xd->mi[0].src_mi->mbmi.tx_skip[plane != 0]) {
+    *rate       = INT_MAX;
+    *distortion = INT64_MAX;
+    *sse        = INT64_MAX;
+    *skippable  = 0;
+    return;
+  }
+
+  if (xd->lossless && tx_size == TX_32X32 && 0) {
+    *rate       = INT_MAX;
+    *distortion = INT64_MAX;
+    *sse        = INT64_MAX;
+    *skippable  = 0;
+    return;
+  }
+#endif
+
   if (plane == 0)
     xd->mi[0].src_mi->mbmi.tx_size = tx_size;
 
@@ -808,7 +827,11 @@ static void super_block_yrd(VP9_COMP *cpi, MACROBLOCK *x, int *rate,
 
   assert(bs == xd->mi[0].src_mi->mbmi.sb_type);
 
+#if CONFIG_TX_SKIP
+  if (cpi->sf.tx_size_search_method == USE_LARGESTALL) {
+#else
   if (cpi->sf.tx_size_search_method == USE_LARGESTALL || xd->lossless) {
+#endif
     vpx_memset(txfm_cache, 0, TX_MODES * sizeof(int64_t));
     choose_largest_tx_size(cpi, x, rate, distortion, skip, ret_sse, ref_best_rd,
                            bs);
