@@ -1713,6 +1713,12 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
                 dr, cpi->total / cpi->count, total_psnr,
                 cpi->totalp / cpi->count, totalp_psnr, total_ssim, totalp_ssim,
                 total_encode_time);
+        if (0) {
+                	FILE *fp;
+                	fp = fopen("./test.txt", "a");
+                	fprintf(fp, "%7.2f\n", dr);
+                	fclose(fp);
+                }
       }
 
       if (cpi->b_calculate_ssimg) {
