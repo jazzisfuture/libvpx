@@ -733,9 +733,22 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif
     int try_tx_skip = inter_block ? q_idx <= TX_SKIP_Q_THRESH_INTER :
                                     q_idx <= TX_SKIP_Q_THRESH_INTRA;
-    if (try_tx_skip) {
-      mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[inter_block]);
-      mbmi->tx_skip[1] = vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+    if (try_tx_skip && !mbmi->skip) {
+      if (xd->lossless) {
+        if (mbmi->tx_size == TX_4X4)
+          mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[inter_block]);
+        else
+          mbmi->tx_skip[0] = 1;
+        if (get_uv_tx_size(mbmi, &xd->plane[1]) == TX_4X4)
+          mbmi->tx_skip[1] =
+            vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+        else
+          mbmi->tx_skip[1] = 1;
+      } else {
+        mbmi->tx_skip[0] = vp9_read(r, cm->fc.y_tx_skip_prob[inter_block]);
+        mbmi->tx_skip[1] =
+          vp9_read(r, cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+      }
 #if CONFIG_SUPERTX
       if (!cm->frame_parallel_decoding_mode && !supertx_enabled) {
 #else

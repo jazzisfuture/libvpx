@@ -404,9 +404,18 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif
     int try_tx_skip = is_inter ? q_idx <= TX_SKIP_Q_THRESH_INTER :
                                  q_idx <= TX_SKIP_Q_THRESH_INTRA;
-    if (try_tx_skip) {
-      vp9_write(w, mbmi->tx_skip[0], cm->fc.y_tx_skip_prob[is_inter]);
-      vp9_write(w, mbmi->tx_skip[1], cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+    if (try_tx_skip && !skip) {
+      if (xd->lossless) {
+        if (mbmi->tx_size == TX_4X4)
+          vp9_write(w, mbmi->tx_skip[0], cm->fc.y_tx_skip_prob[is_inter]);
+        if (get_uv_tx_size(mbmi, &xd->plane[1]) == TX_4X4)
+          vp9_write(w, mbmi->tx_skip[1],
+                    cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+      } else {
+        vp9_write(w, mbmi->tx_skip[0], cm->fc.y_tx_skip_prob[is_inter]);
+        vp9_write(w, mbmi->tx_skip[1],
+                  cm->fc.uv_tx_skip_prob[mbmi->tx_skip[0]]);
+      }
     }
   }
 #endif
@@ -1453,16 +1462,22 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
 static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
   VP9_COMMON *const cm = &cpi->common;
+#if !CONFIG_TX_SKIP
   MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+#endif
   FRAME_CONTEXT *const fc = &cm->fc;
   vp9_writer header_bc;
 
   vp9_start_encode(&header_bc, data);
 
+#if CONFIG_TX_SKIP
+  encode_txfm_probs(cm, &header_bc);
+#else
   if (xd->lossless)
     cm->tx_mode = ONLY_4X4;
   else
     encode_txfm_probs(cm, &header_bc);
+#endif
 
   update_coef_probs(cpi, &header_bc);
   update_skip_probs(cm, &header_bc);
