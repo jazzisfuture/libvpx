@@ -63,6 +63,14 @@ extern const int16_t *vp9_dct_value_cost_ptr;
  *  fields are not.
  */
 extern const TOKENVALUE *vp9_dct_value_tokens_ptr;
+extern const int16_t vp9_cat6_low_cost[256];
+extern const int16_t vp9_cat6_high_cost[128];
+static INLINE int16_t vp9_get_cost(uint8_t token, int16_t extrabits) {
+  if (token != CATEGORY6_TOKEN)
+    return vp9_extra_bits[token].cost[extrabits];
+  return vp9_cat6_low_cost[extrabits & 0xff]
+      + vp9_cat6_high_cost[extrabits >> 8];
+}
 #if CONFIG_VP9_HIGHBITDEPTH
 extern const int16_t *vp9_dct_value_cost_high10_ptr;
 extern const TOKENVALUE *vp9_dct_value_tokens_high10_ptr;
