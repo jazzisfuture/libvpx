@@ -1410,6 +1410,11 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
       const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
       ++td->counts->switchable_interp[pred_ctx][mbmi->interp_filter];
     }
+
+    if (mbmi->sb_type < BLOCK_8X8) {
+      mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
+      mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
+    }
   }
 
   if (cm->use_prev_frame_mvs) {
@@ -2705,9 +2710,15 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
     hybrid_intra_mode_search(cpi, x, rd_cost, bsize, ctx);
   else if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
     set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
-  else
+  else if (bsize >= BLOCK_8X8)
     vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
                         rd_cost, bsize, ctx);
+  else
+//         vp9_rd_pick_inter_mode_sub8x8(cpi, tile_data, x, mi_row, mi_col,
+//                                    rd_cost, bsize, ctx, INT64_MAX);
+  
+    vp9_pick_inter_mode_sub8x8(cpi, x, tile_data, mi_row, mi_col,
+                               rd_cost, bsize, ctx);
 
   duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, bsize);
 
@@ -3315,7 +3326,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
         // TODO(jingning) Only key frame coding supports sub8x8 block at this
         // point. To be continued to enable sub8x8 block mode decision for
         // P frames.
-        choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
+//        choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
+        set_fixed_partitioning(cpi, tile_info, mi, mi_row, mi_col, BLOCK_4X4);
         nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                             BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
         break;
