@@ -568,7 +568,7 @@ static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
            cpi->oxcf.ss_enable_auto_arf[cpi->svc.spatial_layer_id]));
 }
 
-static INLINE void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
+static void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
                                 MV_REFERENCE_FRAME ref0,
                                 MV_REFERENCE_FRAME ref1) {
   xd->block_refs[0] = &cm->frame_refs[ref0 >= LAST_FRAME ? ref0 - LAST_FRAME
