@@ -2705,9 +2705,12 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
     hybrid_intra_mode_search(cpi, x, rd_cost, bsize, ctx);
   else if (vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP))
     set_mode_info_seg_skip(x, cm->tx_mode, rd_cost, bsize);
-  else
+  else if (bsize >= BLOCK_8X8)
     vp9_pick_inter_mode(cpi, x, tile_data, mi_row, mi_col,
                         rd_cost, bsize, ctx);
+  else
+    vp9_pick_inter_mode_sub8x8(cpi, x, tile_data, mi_row, mi_col,
+                               rd_cost, bsize, ctx);
 
   duplicate_mode_info_in_sb(cm, xd, mi_row, mi_col, bsize);
 
