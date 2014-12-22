@@ -1,5 +1,6 @@
 d5dfb0151c9051f8c85999255645d7a23916d3c0  hantro_collage_w352h288.yuv
 b87815bf86020c592ccc7a846ba2e28ec8043902  hantro_odd.yuv
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
 76024eb753cdac6a5e5703aaea189d35c3c30ac7  invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf
 7448d8798a4380162d4b56f9b452e2f6f9e24e7a  invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf.res
 83f50908c8dc0ef8760595447a2ff7727489542e  invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf
@@ -14,6 +15,14 @@ df1a1453feb3c00d7d89746c7003b4163523bff3  invalid-vp90-03-v3.webm
 4935c62becc68c13642a03db1e6d3e2331c1c612  invalid-vp90-03-v3.webm.res
 d637297561dd904eb2c97a9015deeb31c4a1e8d2  invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm
 3a204bdbeaa3c6458b77bcebb8366d107267f55d  invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm.res
+=======
+fe346136b9b8c1e6f6084cc106485706915795e4  invalid-vp90-01.webm
+25751f5d3b05ff03f0719ad42cd625348eb8961e  invalid-vp90-01.webm.res
+d78e2fceba5ac942246503ec8366f879c4775ca5  invalid-vp90-02.webm
+2dadee5306245fa5eeb0f99652d0e17afbcba96d  invalid-vp90-02.webm.res
+df1a1453feb3c00d7d89746c7003b4163523bff3  invalid-vp90-03-v3.webm
+4935c62becc68c13642a03db1e6d3e2331c1c612  invalid-vp90-03-v3.webm.res
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 a432f96ff0a787268e2f94a8092ab161a18d1b06  park_joy_90p_10_420.y4m
 0b194cc312c3a2e84d156a221b0a5eb615dfddc5  park_joy_90p_10_422.y4m
 ff0e0a21dc2adc95b8c1b37902713700655ced17  park_joy_90p_10_444.y4m
@@ -676,6 +685,7 @@ cc75f351818b9a619818f5cc77b9bc013d0c1e11  vp90-2-17-show-existing-frame.webm.md5
 81b3870b27a7f695ef6a43e87ab04bbdb5aee2f5  vp91-2-04-yuv440.webm.md5
 0321d507ce62dedc8a51b4e9011f7a19aed9c3dc  vp91-2-04-yuv444.webm
 367e423dd41fdb49aa028574a2cfec5c2f325c5c  vp91-2-04-yuv444.webm.md5
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
 f77673b566f686853adefe0c578ad251b7241281  vp92-2-20-10bit-yuv420.webm
 abdedfaddacbbe1a15ac7a54e86360f03629fb7a  vp92-2-20-10bit-yuv420.webm.md5
 0c2c355a1b17b28537c5a3b19997c8783b69f1af  vp92-2-20-12bit-yuv420.webm
@@ -728,3 +738,20 @@ b03c408cf23158638da18dbc3323b99a1635c68a  invalid-vp90-2-12-droppable_1.ivf.s367
 a61774cf03fc584bd9f0904fc145253bb8ea6c4c  invalid-vp91-2-mixedrefcsp-444to420.ivf.res
 812d05a64a0d83c1b504d0519927ddc5a2cdb273  invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf
 1e472baaf5f6113459f0399a38a5a5e68d17799d  invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf.res
+=======
+76024eb753cdac6a5e5703aaea189d35c3c30ac7  invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf
+d3964f9dad9f60363c81b688324d95b4ec7c8038  invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf.res
+83f50908c8dc0ef8760595447a2ff7727489542e  invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf
+456d1493e52d32a5c30edf44a27debc1fa6b253a  invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf.res
+c123d1f9f02fb4143abb5e271916e3a3080de8f6  invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf
+456d1493e52d32a5c30edf44a27debc1fa6b253a  invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf.res
+f97088c7359fc8d3d5aa5eafe57bc7308b3ee124  vp90-2-20-big_superframe-01.webm
+47d7d409785afa33b123376de0c907336e6c7bd7  vp90-2-20-big_superframe-01.webm.md5
+65ade6d2786209582c50d34cfe22b3cdb033abaf  vp90-2-20-big_superframe-02.webm
+7c0ed8d04c4d06c5411dd2e5de2411d37f092db5  vp90-2-20-big_superframe-02.webm.md5
+667ec8718c982aef6be07eb94f083c2efb9d2d16  vp90-2-07-frame_parallel-1.webm
+bfc82bf848e9c05020d61e3ffc1e62f25df81d19  vp90-2-07-frame_parallel-1.webm.md5
+efd5a51d175cfdacd169ed23477729dc558030dc  invalid-vp90-2-07-frame_parallel-1.webm
+9f912712ec418be69adb910e2ca886a63c4cec08  invalid-vp90-2-07-frame_parallel-2.webm
+445f5a53ca9555341852997ccdd480a51540bd14  invalid-vp90-2-07-frame_parallel-3.webm
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)

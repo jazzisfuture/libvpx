@@ -132,8 +132,11 @@ class DecoderTest {
  public:
   // Main decoding loop
   virtual void RunLoop(CompressedVideoSource *video);
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   virtual void RunLoop(CompressedVideoSource *video,
                        const vpx_codec_dec_cfg_t &dec_cfg);
+=======
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   virtual void set_cfg(const vpx_codec_dec_cfg_t &dec_cfg);
   virtual void set_flags(const vpx_codec_flags_t flags);
@@ -160,10 +163,16 @@ class DecoderTest {
                                 const vpx_codec_err_t res_peek);
 
  protected:
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   explicit DecoderTest(const CodecFactory *codec)
       : codec_(codec),
         cfg_(),
         flags_(0) {}
+=======
+  explicit DecoderTest(const CodecFactory *codec) : codec_(codec), flags_(0) {
+    memset(&cfg_, 0, sizeof(cfg_));
+  }
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   virtual ~DecoderTest() {}
 
