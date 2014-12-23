@@ -374,7 +374,10 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
     // dc token
     int v = qcoeff[0];
     int prev_t = vp9_dct_value_tokens_ptr[v].token;
-    cost = (*token_costs)[0][pt][prev_t] + vp9_dct_value_cost_ptr[v];
+    cost = (*token_costs)[0][pt][prev_t] + vp9_get_cost(prev_t, vp9_dct_value_tokens_ptr[v].extra);
+    if(vp9_get_cost(prev_t, vp9_dct_value_tokens_ptr[v].extra) != vp9_dct_value_cost_ptr[v])
+      printf("oops\n\n");
+
     token_cache[0] = vp9_pt_energy_class[prev_t];
     ++token_costs;
 
@@ -386,10 +389,14 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
       v = qcoeff[rc];
       t = vp9_dct_value_tokens_ptr[v].token;
       if (use_fast_coef_costing) {
-        cost += (*token_costs)[!prev_t][!prev_t][t] + vp9_dct_value_cost_ptr[v];
+        cost += (*token_costs)[!prev_t][!prev_t][t] + vp9_get_cost(t, vp9_dct_value_tokens_ptr[v].extra);//vp9_dct_value_cost_ptr[v];
+        if(vp9_get_cost(t, vp9_dct_value_tokens_ptr[v].extra) != vp9_dct_value_cost_ptr[v])
+          printf("oops\n\n");
       } else {
         pt = get_coef_context(nb, token_cache, c);
-        cost += (*token_costs)[!prev_t][pt][t] + vp9_dct_value_cost_ptr[v];
+        cost += (*token_costs)[!prev_t][pt][t] + vp9_get_cost(t, vp9_dct_value_tokens_ptr[v].extra);//vp9_dct_value_cost_ptr[v];
+        if(vp9_get_cost(t, vp9_dct_value_tokens_ptr[v].extra) != vp9_dct_value_cost_ptr[v])
+          printf("oops\n\n");
         token_cache[rc] = vp9_pt_energy_class[t];
       }
       prev_t = t;
