@@ -37,8 +37,12 @@ class CodecFactory {
 
   virtual Decoder* CreateDecoder(vpx_codec_dec_cfg_t cfg,
                                  const vpx_codec_flags_t flags,
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
                                  unsigned long deadline)  // NOLINT(runtime/int)
                                  const = 0;
+=======
+                                 unsigned long deadline) const = 0;  // NOLINT
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   virtual Encoder* CreateEncoder(vpx_codec_enc_cfg_t cfg,
                                  unsigned long deadline,
