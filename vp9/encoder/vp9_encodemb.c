@@ -147,9 +147,10 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   int next = eob, sz = 0;
   int64_t rdmult = mb->rdmult * plane_rd_mult[type], rddiv = mb->rddiv;
   int64_t rd_cost0, rd_cost1;
-  int rate0, rate1, error0, error1, t0, t1;
+  int rate0, rate1, error0, error1;
+  int16_t t0, t1;
+  EXTRABIT e0;
   int best, band, pt, i, final_eob;
-  const int16_t *dct_value_cost;
 
   assert((!type && !plane) || (type && plane));
   assert(eob <= default_eob);
@@ -166,17 +167,6 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   tokens[eob][0].qc = 0;
   tokens[eob][1] = tokens[eob][0];
 
-#if CONFIG_VP9_HIGHBITDEPTH
-  if (xd->bd == 12) {
-    dct_value_cost = vp9_dct_value_cost_high12_ptr;
-  } else if (xd->bd == 10) {
-    dct_value_cost = vp9_dct_value_cost_high10_ptr;
-  } else {
-    dct_value_cost = vp9_dct_value_cost_ptr;
-  }
-#else
-  dct_value_cost = vp9_dct_value_cost_ptr;
-#endif
   for (i = 0; i < eob; i++)
     token_cache[scan[i]] =
         vp9_pt_energy_class[vp9_get_token(qcoeff[scan[i]])];
@@ -193,7 +183,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       /* Evaluate the first possibility for this state. */
       rate0 = tokens[next][0].rate;
       rate1 = tokens[next][1].rate;
-      t0 = vp9_get_token(x);
+      vp9_get_token_extra(x, &t0, &e0);
       /* Consider both possible successor states. */
       if (next < default_eob) {
         band = band_translate[i + 1];
@@ -206,7 +196,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       UPDATE_RD_COST();
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
-      base_bits = dct_value_cost[x];
+      base_bits = vp9_get_cost(t0, e0);
       dx = mul * (dqcoeff[rc] - coeff[rc]);
 #if CONFIG_VP9_HIGHBITDEPTH
       if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
@@ -245,7 +235,8 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
         t0 = tokens[next][0].token == EOB_TOKEN ? EOB_TOKEN : ZERO_TOKEN;
         t1 = tokens[next][1].token == EOB_TOKEN ? EOB_TOKEN : ZERO_TOKEN;
       } else {
-        t0 = t1 = vp9_get_token(x);
+        vp9_get_token_extra(x, &t0, &e0);
+        t1 = t0;
       }
       if (next < default_eob) {
         band = band_translate[i + 1];
@@ -264,7 +255,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
       UPDATE_RD_COST();
       /* And pick the best. */
       best = rd_cost1 < rd_cost0;
-      base_bits = dct_value_cost[x];
+      base_bits = vp9_get_cost(t0, e0);
 
       if (shortcut) {
 #if CONFIG_VP9_HIGHBITDEPTH
