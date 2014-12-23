@@ -1324,7 +1324,7 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       setup_frame_size(cm, rb);
       pbi->need_resync = 0;
-    } else {
+    } else if (pbi->need_resync != 1) {  /* Skip if need resync */
       pbi->refresh_frame_flags = vp9_rb_read_literal(rb, REF_FRAMES);
       for (i = 0; i < REFS_PER_FRAME; ++i) {
         const int ref = vp9_rb_read_literal(rb, REF_FRAMES_LOG2);
