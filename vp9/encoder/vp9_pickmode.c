@@ -622,9 +622,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col,
                            sf, sf);
 
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
       if (cm->use_prev_frame_mvs)
         vp9_find_mv_refs(cm, xd, tile_info, xd->mi[0].src_mi, ref_frame,
                          candidates, mi_row, mi_col);
+=======
+      if (cm->coding_use_prev_mi)
+        vp9_find_mv_refs(cm, xd, tile, xd->mi[0], ref_frame,
+                         candidates, mi_row, mi_col, NULL, NULL);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
       else
         const_motion[ref_frame] = mv_refs_rt(cm, xd, tile_info,
                                              xd->mi[0].src_mi,

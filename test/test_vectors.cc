@@ -154,7 +154,8 @@ const char *const kVP9TestVectors[] = {
   "vp90-2-03-size-226x210.webm", "vp90-2-03-size-226x224.webm",
   "vp90-2-03-size-226x226.webm", "vp90-2-03-deltaq.webm",
   "vp90-2-05-resize.ivf", "vp90-2-06-bilinear.webm",
-  "vp90-2-07-frame_parallel.webm", "vp90-2-08-tile_1x2_frame_parallel.webm",
+  "vp90-2-07-frame_parallel.webm", "vp90-2-07-frame_parallel-1.webm",
+  "vp90-2-08-tile_1x2_frame_parallel.webm",
   "vp90-2-08-tile_1x2.webm", "vp90-2-08-tile_1x4_frame_parallel.webm",
   "vp90-2-08-tile_1x4.webm", "vp90-2-08-tile_1x8_frame_parallel.webm",
   "vp90-2-08-tile_1x8.webm", "vp90-2-08-tile-4x4.webm",
@@ -184,6 +185,7 @@ const char *const kVP9TestVectors[] = {
   "vp90-2-18-resize.ivf", "vp90-2-19-skip.webm",
   "vp90-2-19-skip-01.webm", "vp90-2-19-skip-02.webm",
   "vp91-2-04-yuv444.webm",
+<<<<<<< HEAD   (91471d Revert "Add support for setting byte alignment.")
   "vp91-2-04-yuv422.webm", "vp91-2-04-yuv440.webm",
 #if CONFIG_VP9_HIGHBITDEPTH
   "vp92-2-20-10bit-yuv420.webm", "vp92-2-20-12bit-yuv420.webm",
@@ -191,6 +193,9 @@ const char *const kVP9TestVectors[] = {
   "vp93-2-20-10bit-yuv440.webm", "vp93-2-20-12bit-yuv440.webm",
   "vp93-2-20-10bit-yuv444.webm", "vp93-2-20-12bit-yuv444.webm",
 #endif  // CONFIG_VP9_HIGHBITDEPTH`
+=======
+  "vp90-2-20-big_superframe-01.webm", "vp90-2-20-big_superframe-02.webm",
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 };
 const int kNumVP9TestVectors = NELEMENTS(kVP9TestVectors);
 #endif  // CONFIG_VP9_DECODER
