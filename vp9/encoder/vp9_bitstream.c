@@ -692,7 +692,8 @@ static void write_modes_sb(VP9_COMP *cpi,
                  mi_col, num_8x8_blocks_wide_lookup[bsize],
                  cm->mi_rows, cm->mi_cols);
   if (!supertx_enabled && cm->frame_type != KEY_FRAME &&
-      partition != PARTITION_NONE && bsize <= MAX_SUPERTX_BLOCK_SIZE) {
+      partition != PARTITION_NONE && bsize <= MAX_SUPERTX_BLOCK_SIZE &&
+      !xd->lossless) {
     TX_SIZE supertx_size = bsize_to_tx_size(bsize);
     vp9_prob prob =
         cm->fc.supertx_prob[partition_supertx_context_lookup[partition]]
@@ -1565,7 +1566,8 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
     update_ext_tx_probs(cm, &header_bc);
 #endif
 #if CONFIG_SUPERTX
-    update_supertx_probs(cm, &header_bc);
+    if (!xd->lossless)
+      update_supertx_probs(cm, &header_bc);
 #endif
 #if CONFIG_TX_SKIP
     for (i = 0; i < 2; i++)
