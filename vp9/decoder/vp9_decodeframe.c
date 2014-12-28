@@ -998,7 +998,7 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   if (cm->frame_type != KEY_FRAME &&
       partition != PARTITION_NONE &&
       bsize <= MAX_SUPERTX_BLOCK_SIZE &&
-      !supertx_enabled) {
+      !supertx_enabled && !xd->lossless) {
     const int supertx_context =
         partition_supertx_context_lookup[partition];
     supertx_enabled = vp9_read(
@@ -2093,7 +2093,8 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
     read_ext_tx_probs(fc, &r);
 #endif
 #if CONFIG_SUPERTX
-    read_supertx_probs(fc, &r);
+    if (!xd->lossless)
+      read_supertx_probs(fc, &r);
 #endif
 #if CONFIG_TX_SKIP
   for (i = 0; i < 2; i++)
