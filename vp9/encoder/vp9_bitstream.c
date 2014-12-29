@@ -433,11 +433,7 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 
 #if CONFIG_TX_SKIP
   if (bsize >= BLOCK_8X8) {
-#if CONFIG_SUPERTX
-    int q_idx = cm->base_qindex;
-#else
     int q_idx = vp9_get_qindex(seg, segment_id, cm->base_qindex);
-#endif  // CONFIG_SUPERTX
     int try_tx_skip = is_inter ? q_idx <= TX_SKIP_Q_THRESH_INTER :
                                  q_idx <= TX_SKIP_Q_THRESH_INTRA;
 #if CONFIG_SUPERTX
