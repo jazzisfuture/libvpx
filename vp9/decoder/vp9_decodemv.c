@@ -821,7 +821,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #if CONFIG_SUPERTX
   } else {
     const int ctx = vp9_get_intra_inter_context(xd);
-    mbmi->segment_id = 0;
+    // mbmi->segment_id = 0;
     inter_block = 1;
     if (!cm->frame_parallel_decoding_mode)
 #if CONFIG_COPY_MODE
@@ -833,11 +833,7 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 
 #if CONFIG_TX_SKIP
   if (mbmi->sb_type >= BLOCK_8X8) {
-#if CONFIG_SUPERTX
-    int q_idx = cm->base_qindex;
-#else
     int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
-#endif  // CONFIG_SUPERTX
     int try_tx_skip = inter_block ? q_idx <= TX_SKIP_Q_THRESH_INTER :
                                     q_idx <= TX_SKIP_Q_THRESH_INTRA;
 #if CONFIG_SUPERTX
