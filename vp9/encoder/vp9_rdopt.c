@@ -4108,10 +4108,12 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     EXT_TX_TYPE tx_type, best_tx_type;
     TX_SIZE best_tx_size;
     int rate2_tx, this_skip2_tx;
-    int64_t distortion2_tx, bestrd_tx = INT64_MAX;
+    int64_t distortion2_tx, bestrd_tx;
     uint8_t tmp_zcoeff_blk[256];
-#endif
+#endif  // CONFIG_EXT_TX
 
+    rate_y = INT_MAX;
+    rate_uv = INT_MAX;
     *mbmi = *inter_ref_list[copy_mode - REF0];
     mbmi->sb_type = bsize;
     mbmi->inter_ref_count = inter_ref_count;
@@ -4132,11 +4134,14 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
     for (tx_type = NORM; tx_type < EXT_TX_TYPES; tx_type++) {
       mbmi->ext_txfrm = tx_type;
-#endif
+#endif  // CONFIG_EXT_TX
       super_block_yrd(cpi, x, &rate_y, &distortion_y, &skippable_y, &ssey,
-                      bsize, tx_cache, INT64_MAX);
+                      bsize, tx_cache, best_rd);
       super_block_uvrd(cpi, x, &rate_uv, &distortion_uv, &skippable_uv, &sseuv,
-                       bsize, INT64_MAX);
+                       bsize, best_rd);
+
+      if (rate_y == INT_MAX || rate_uv == INT_MAX)
+        continue;
 
       rate2 = rate_y + rate_uv;
       distortion2 = distortion_y + distortion_uv;
@@ -4182,6 +4187,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
                    sizeof(uint8_t) * ctx->num_4x4_blk);
       }
     }
+#if CONFIG_EXT_TX
+    if (rate_y == INT_MAX || rate_uv == INT_MAX)
+      continue;
+#endif  // CONFIG_ETX_TX
     if (best_tx_size < TX_32X32)
       mbmi->ext_txfrm = best_tx_type;
     else
@@ -4246,6 +4255,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
 
   *mbmi = best_mbmode;
   if (mbmi->copy_mode != NOREF) {
+	  //printf("rate %d, dist %lld\n", rd_cost->rate, rd_cost->dist);
     x->skip = best_skip2;
     ctx->skip = x->skip;
     ctx->skippable = best_mode_skippable;
