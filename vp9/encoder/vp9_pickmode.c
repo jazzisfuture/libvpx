@@ -909,14 +909,15 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   if (reuse_inter_pred && best_pred != NULL) {
     if (best_pred->data != orig_dst.buf && is_inter_mode(mbmi->mode)) {
 #if CONFIG_VP9_HIGHBITDEPTH
-      if (cm->use_highbitdepth)
+      if (cm->use_highbitdepth) {
         vp9_highbd_convolve_copy(best_pred->data, best_pred->stride,
                                  pd->dst.buf, pd->dst.stride, NULL, 0,
                                  NULL, 0, bw, bh, xd->bd);
-      else
+      } else {
         vp9_convolve_copy(best_pred->data, best_pred->stride,
                           pd->dst.buf, pd->dst.stride, NULL, 0,
                           NULL, 0, bw, bh);
+      }
 #else
       vp9_convolve_copy(best_pred->data, best_pred->stride,
                         pd->dst.buf, pd->dst.stride, NULL, 0,
