@@ -1347,17 +1347,6 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
 #if CONFIG_VP9_HIGHBITDEPTH
   highbd_set_var_fns(cpi);
 #endif
-
-#if CONFIG_VP9_TEMPORAL_DENOISING
-  if (cpi->oxcf.noise_sensitivity > 0) {
-    vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
-                       cm->subsampling_x, cm->subsampling_y,
-#if CONFIG_VP9_HIGHBITDEPTH
-                       cm->use_highbitdepth,
-#endif
-                       VP9_ENC_BORDER_IN_PIXELS);
-  }
-#endif
 }
 
 #ifndef M_LOG2_E
@@ -3399,6 +3388,17 @@ static void check_initial_width(VP9_COMP *cpi,
     alloc_raw_frame_buffers(cpi);
     alloc_ref_frame_buffers(cpi);
     alloc_util_frame_buffers(cpi);
+
+#if CONFIG_VP9_TEMPORAL_DENOISING
+    if (cpi->oxcf.noise_sensitivity > 0) {
+      vp9_denoiser_alloc(&(cpi->denoiser), cm->width, cm->height,
+                         cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                         cm->use_highbitdepth,
+#endif
+                         VP9_ENC_BORDER_IN_PIXELS);
+    }
+#endif
 
     init_motion_estimation(cpi);  // TODO(agrange) This can be removed.
 
