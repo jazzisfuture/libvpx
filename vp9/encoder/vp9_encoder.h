@@ -251,6 +251,16 @@ typedef struct RD_COUNTS {
   int64_t filter_diff[SWITCHABLE_FILTER_CONTEXTS];
 } RD_COUNTS;
 
+typedef struct MV_INFO {
+  MV mv;
+  int count;
+  int64_t total_variance;
+} MV_INFO;
+typedef struct NEW_MVS {
+  MV_INFO mv[1000];
+  int counter;
+} NEW_MVS;
+
 typedef struct ThreadData {
   MACROBLOCK mb;
   RD_COUNTS rd_counts;
@@ -323,6 +333,9 @@ typedef struct VP9_COMP {
   double framerate;
 
   int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
+
+  NEW_MVS new_mvs[MAX_REF_FRAMES];
+  MV mfu_mv[MAX_REF_FRAMES];
 
   struct vpx_codec_pkt_list  *output_pkt_list;
 
@@ -442,6 +455,7 @@ typedef struct VP9_COMP {
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
+
 
   // Multi-threading
   int num_workers;

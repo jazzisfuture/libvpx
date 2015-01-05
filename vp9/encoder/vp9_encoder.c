@@ -3717,6 +3717,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   *size = 0;
 
   cpi->frame_flags = *frame_flags;
+  vp9_zero(cpi->new_mvs);
 
   if ((oxcf->pass == 2) &&
       (!cpi->use_svc ||
@@ -3897,7 +3898,22 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   }
 
 #endif
-
+  if (oxcf->pass == 2) {
+    int i, j;
+    // This code calculates the most frequently seen mv for each reference
+    // frame...
+    for (j = LAST_FRAME; j < MAX_REF_FRAMES; ++j) {
+      int high_count = 0;
+      MV high_mv = {0, 0};
+      for (i = 0; i < cpi->new_mvs[j].counter; i++) {
+        if (cpi->new_mvs[j].mv[i].count > high_count) {
+          high_count = cpi->new_mvs[j].mv[i].count;
+          high_mv = cpi->new_mvs[j].mv[i].mv;
+        }
+      }
+      cpi->mfu_mv[j] = high_mv;
+    }
+  }
   if (is_two_pass_svc(cpi)) {
     if (cpi->svc.encode_empty_frame_state == ENCODING)
       cpi->svc.encode_empty_frame_state = ENCODED;
