@@ -2406,7 +2406,8 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                  int64_t *psse,
                                  const int64_t ref_best_rd,
                                  int64_t *mask_filter,
-                                 int64_t filter_cache[]) {
+                                 int64_t filter_cache[],
+                                 int given_motion_vector) {
   VP9_COMMON *cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
@@ -2476,7 +2477,7 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   if (this_mode == NEWMV) {
-    int rate_mv;
+    int rate_mv = 0;
     if (is_comp_pred) {
       // Initialize mv using single prediction mode result.
       frame_mv[refs[0]].as_int = single_newmv[refs[0]].as_int;
@@ -2496,8 +2497,15 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       *rate2 += rate_mv;
     } else {
       int_mv tmp_mv;
-      single_motion_search(cpi, x, bsize, mi_row, mi_col,
-                           &tmp_mv, &rate_mv);
+
+      // If we are given a motion vector to test we don't need to search
+      // for the motion vector.
+      if (!given_motion_vector)
+        single_motion_search(cpi, x, bsize, mi_row, mi_col,
+                             &tmp_mv, &rate_mv);
+      else
+        tmp_mv.as_mv = frame_mv[refs[0]].as_mv;
+
       if (tmp_mv.as_int == INVALID_MV)
         return INT64_MAX;
 
@@ -2550,7 +2558,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     *rate2 += MIN(cost_mv_ref(cpi, this_mode, mbmi->mode_context[refs[0]]),
                   cost_mv_ref(cpi, NEARESTMV, mbmi->mode_context[refs[0]]));
   } else {
-    *rate2 += cost_mv_ref(cpi, this_mode, mbmi->mode_context[refs[0]]);
+    // If we are given a motion vector make the cost equivalent to nearestmv.
+    if (given_motion_vector)
+      *rate2 += cost_mv_ref(cpi, NEARESTMV, mbmi->mode_context[refs[0]]);
+    else
+      *rate2 += cost_mv_ref(cpi, this_mode, mbmi->mode_context[refs[0]]);
   }
 
   if (RDCOST(x->rdmult, x->rddiv, *rate2, 0) > ref_best_rd &&
@@ -2885,7 +2897,6 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   const int mode_search_skip_flags = sf->mode_search_skip_flags;
   int64_t mask_filter = 0;
   int64_t filter_cache[SWITCHABLE_FILTER_CONTEXTS];
-
   vp9_zero(best_mbmode);
 
   x->skip_encode = sf->skip_encode_frame && x->q_index < QIDX_SKIP_THRESH;
@@ -3015,9 +3026,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     }
     midx = end_pos;
   }
-
-  for (midx = 0; midx < MAX_MODES; ++midx) {
-    int mode_index = mode_map[midx];
+  // midx = -1 is a special signal to try the most frequently used mv from
+  // the last frame;
+  for (midx = -1; midx < MAX_MODES; ++midx) {
+    int mode_index;
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;
     int disable_skip = 0;
@@ -3030,9 +3042,27 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     int64_t total_sse = INT64_MAX;
     int early_term = 0;
 
-    this_mode = vp9_mode_order[mode_index].mode;
-    ref_frame = vp9_mode_order[mode_index].ref_frame[0];
-    second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
+    // If we are trying the special new mfu mv from the last frame it has to be
+    // different from the nearest_mv - or we don't bother.
+    if (midx == -1) {
+      if (cpi->mfu_mv[LAST_FRAME].row
+          != frame_mv[NEARESTMV][LAST_FRAME].as_mv.row
+          || cpi->mfu_mv[LAST_FRAME].col
+              != frame_mv[NEARESTMV][LAST_FRAME].as_mv.col) {
+
+        mode_index = mode_map[0];
+        this_mode = NEWMV;
+        ref_frame = LAST_FRAME;
+        second_ref_frame = INTRA_FRAME;
+      } else {
+        continue;
+      }
+    } else {
+      mode_index = mode_map[midx];
+      this_mode = vp9_mode_order[mode_index].mode;
+      ref_frame = vp9_mode_order[mode_index].ref_frame[0];
+      second_ref_frame = vp9_mode_order[mode_index].ref_frame[1];
+    }
 
     // Look at the reference frame of the best mode so far and set the
     // skip mask to look at a subset of the remaining modes.
@@ -3236,7 +3266,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
                                   mi_row, mi_col,
                                   single_newmv, single_inter_filter,
                                   single_skippable, &total_sse, best_rd,
-                                  &mask_filter, filter_cache);
+                                  &mask_filter, filter_cache, midx == -1);
       if (this_rd == INT64_MAX)
         continue;
 
@@ -3432,6 +3462,25 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
         best_mbmode.ref_frame[1]};
     int comp_pred_mode = refs[1] > INTRA_FRAME;
 
+    {
+      // This code keeps track of the first 500 mv used in the frame and keeps
+      // a count of how many times each one is used. We generate the mfu mv
+      // from each reference frame from this table.
+      int found = 0;
+      int i;
+      for (i = 0; i < cpi->new_mvs[refs[0]].counter && !found; ++i)
+        if(cpi->new_mvs[refs[0]].mv[i].mv.row == best_mbmode.mv[0].as_mv.row &&
+          cpi->new_mvs[refs[0]].mv[i].mv.col == best_mbmode.mv[0].as_mv.col) {
+          found = 1;
+          cpi->new_mvs[refs[0]].mv[i].count++;
+        }
+      if (!found) {
+        ++cpi->new_mvs[refs[0]].counter;
+        cpi->new_mvs[refs[0]].counter = cpi->new_mvs[refs[0]].counter % 500;
+        cpi->new_mvs[refs[0]].mv[cpi->new_mvs[refs[0]].counter].mv =
+            best_mbmode.mv[0].as_mv;
+      }
+    }
     if (frame_mv[NEARESTMV][refs[0]].as_int == best_mbmode.mv[0].as_int &&
         ((comp_pred_mode && frame_mv[NEARESTMV][refs[1]].as_int ==
             best_mbmode.mv[1].as_int) || !comp_pred_mode))
@@ -3443,6 +3492,18 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
     else if (best_mbmode.mv[0].as_int == 0 &&
         ((comp_pred_mode && best_mbmode.mv[1].as_int == 0) || !comp_pred_mode))
       best_mbmode.mode = ZEROMV;
+  } else {
+    int found = 0;
+    // This code searches for the mv in the list and ups it count if its found.
+    for (i = 0; i < cpi->new_mvs[best_mbmode.ref_frame[0]].counter && !found;
+        ++i)
+      if (cpi->new_mvs[best_mbmode.ref_frame[0]].mv[i].mv.row
+          == best_mbmode.mv[0].as_mv.row
+          && cpi->new_mvs[best_mbmode.ref_frame[0]].mv[i].mv.col
+              == best_mbmode.mv[0].as_mv.col) {
+        found = 1;
+        cpi->new_mvs[best_mbmode.ref_frame[0]].mv[i].count++;
+      }
   }
 
   if (best_mode_index < 0 || best_rd >= best_rd_so_far) {
