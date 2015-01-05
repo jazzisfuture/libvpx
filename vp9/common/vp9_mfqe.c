@@ -167,8 +167,8 @@ static void mfqe_block(BLOCK_SIZE bs, const uint8_t *y, const uint8_t *u,
   // it might be a lighting change in smooth area. When there is a
   // lighting change in smooth area, it is dangerous to do MFQE.
   if (sad > 1 && sad < sad_thr && vdiff > sad * 3 && vdiff < 150) {
-    int weight = ((float)sad / (sad_thr - 1)) * ((float)vdiff / (150 - 1)) *
-                 (1 << MFQE_PRECISION);
+    int weight = (int)((float)sad * vdiff / (sad_thr - 1) / (150 - 1) *
+                 (1 << MFQE_PRECISION));
     apply_ifactor(y, y_stride, yd, yd_stride, u, v, uv_stride,
                   ud, vd, uvd_stride, bs, weight);
   } else {
