@@ -528,7 +528,7 @@ static void tokenize_b(int plane, int block, BLOCK_SIZE plane_bsize,
       td->counts->eob_branch[tx_size][type][ref];
   const uint8_t *const band = get_band_translate(tx_size);
   const int seg_eob = get_tx_eob(&cpi->common.seg, segment_id, tx_size);
-  int16_t token;
+  uint8_t token;
   EXTRABIT extra;
   int aoff, loff;
   txfrm_block_to_raster_xy(plane_bsize, tx_size, block, &aoff, &loff);

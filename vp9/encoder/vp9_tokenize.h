@@ -30,7 +30,7 @@ extern "C" {
 
 
 typedef struct {
-  int16_t token;
+  uint8_t token;
   EXTRABIT extra;
 } TOKENVALUE;
 
@@ -86,7 +86,7 @@ static INLINE const int16_t* vp9_get_high_cost_table(int bit_depth) {
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static INLINE void vp9_get_token_extra(int v, int16_t *token, EXTRABIT *extra) {
+static INLINE void vp9_get_token_extra(int v, uint8_t *token, EXTRABIT *extra) {
   if (v >= CAT6_MIN_VAL || v <= -CAT6_MIN_VAL) {
     *token = CATEGORY6_TOKEN;
     if (v >= CAT6_MIN_VAL)

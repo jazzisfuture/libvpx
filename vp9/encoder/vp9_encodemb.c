@@ -148,7 +148,7 @@ static int optimize_b(MACROBLOCK *mb, int plane, int block,
   int64_t rdmult = mb->rdmult * plane_rd_mult[type], rddiv = mb->rddiv;
   int64_t rd_cost0, rd_cost1;
   int rate0, rate1, error0, error1;
-  int16_t t0, t1;
+  uint8_t t0, t1;
   EXTRABIT e0;
   int best, band, pt, i, final_eob;
 #if CONFIG_VP9_HIGHBITDEPTH

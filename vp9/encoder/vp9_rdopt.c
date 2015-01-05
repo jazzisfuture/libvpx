@@ -366,7 +366,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
 
     // dc token
     int v = qcoeff[0];
-    int16_t prev_t;
+    uint8_t prev_t;
     EXTRABIT e;
     vp9_get_token_extra(v, &prev_t, &e);
     cost = (*token_costs)[0][pt][prev_t] +
@@ -378,7 +378,7 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
     // ac tokens
     for (c = 1; c < eob; c++) {
       const int rc = scan[c];
-      int16_t t;
+      uint8_t t;
 
       v = qcoeff[rc];
       vp9_get_token_extra(v, &t, &e);
