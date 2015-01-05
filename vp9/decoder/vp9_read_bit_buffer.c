@@ -22,7 +22,8 @@ int vp9_rb_read_bit(struct vp9_read_bit_buffer *rb) {
     rb->bit_offset = off + 1;
     return bit;
   } else {
-    rb->error_handler(rb->error_handler_data);
+    if (rb->error_handler)
+      rb->error_handler(rb->error_handler_data);
     return 0;
   }
 }
