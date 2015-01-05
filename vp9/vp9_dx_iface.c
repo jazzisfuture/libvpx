@@ -138,7 +138,9 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
     data = clear_buffer;
   }
 
-  {
+  if (data_sz <= 8) {
+    return VPX_CODEC_UNSUP_BITSTREAM;
+  } else {
     int show_frame;
     int error_resilient;
     struct vp9_read_bit_buffer rb = { data, data + data_sz, 0, NULL, NULL };
@@ -154,9 +156,6 @@ static vpx_codec_err_t decoder_peek_si_internal(const uint8_t *data,
       vp9_rb_read_literal(&rb, 3);  // Frame buffer to show.
       return VPX_CODEC_OK;
     }
-
-    if (data_sz <= 8)
-      return VPX_CODEC_UNSUP_BITSTREAM;
 
     si->is_kf = !vp9_rb_read_bit(&rb);
     show_frame = vp9_rb_read_bit(&rb);
