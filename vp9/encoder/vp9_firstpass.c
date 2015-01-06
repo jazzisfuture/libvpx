@@ -1082,7 +1082,7 @@ static double calc_correction_factor(double err_per_mb,
 #define EDIV_SIZE_FACTOR 800
 
 static int get_twopass_worst_quality(const VP9_COMP *cpi,
-                                     const FIRSTPASS_STATS *stats,
+                                     const double section_err,
                                      int section_target_bandwidth) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
@@ -1092,7 +1092,6 @@ static int get_twopass_worst_quality(const VP9_COMP *cpi,
   } else {
     const int num_mbs = (cpi->oxcf.resize_mode != RESIZE_NONE)
                         ? cpi->initial_mbs : cpi->common.MBs;
-    const double section_err = stats->coded_error / stats->count;
     const double err_per_mb = section_err / num_mbs;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
     const double ediv_size_correction = num_mbs / EDIV_SIZE_FACTOR;
@@ -2023,6 +2022,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   double boost_score = 0.0;
   double kf_mod_err = 0.0;
   double kf_group_err = 0.0;
+  double kf_group_raw_error = 0.0;
   double recent_loop_decay[8] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
   vp9_zero(next_frame);
@@ -2056,6 +2056,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
          rc->frames_to_key < cpi->oxcf.key_freq) {
     // Accumulate kf group error.
     kf_group_err += calculate_modified_err(twopass, oxcf, this_frame);
+    kf_group_raw_error += this_frame->coded_error;
 
     // Load the next frame's stats.
     last_frame = *this_frame;
@@ -2113,11 +2114,13 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     // Reset to the start of the group.
     reset_fpf_position(twopass, start_position);
 
-    kf_group_err = 0;
+    kf_group_err = 0.0;
+    kf_group_raw_error = 0.0;
 
     // Rescan to get the correct error data for the forced kf group.
     for (i = 0; i < rc->frames_to_key; ++i) {
       kf_group_err += calculate_modified_err(twopass, oxcf, &tmp_frame);
+      kf_group_raw_error += this_frame->coded_error;
       input_stats(twopass, &tmp_frame);
     }
     rc->next_key_frame_forced = 1;
@@ -2136,6 +2139,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       if (EOF == input_stats(twopass, this_frame))
         break;
       kf_group_err += calculate_modified_err(twopass, oxcf, this_frame);
+      kf_group_raw_error += this_frame->coded_error;
     }
     rc->frames_to_key = new_frame_to_key;
   }
@@ -2144,6 +2148,7 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   if (twopass->stats_in >= twopass->stats_in_end) {
     // Accumulate kf group error.
     kf_group_err += calculate_modified_err(twopass, oxcf, this_frame);
+    kf_group_raw_error += this_frame->coded_error;
   }
 
   // Calculate the number of bits that should be assigned to the kf group.
@@ -2170,6 +2175,27 @@ static void find_next_key_frame(VP9_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   // Reset the first pass file position.
   reset_fpf_position(twopass, start_position);
+
+  // Calculate an estimate of the maxq needed for the group.
+  // The bit allocation used depedns on the vbr bias value.
+  // We are more agressive about correcting for sections
+  // where there could be significant overshoot than for easier
+  // sections where we do not wish to risk creating an overshoot
+  // of the allocatedbit budget.
+  if ((cpi->oxcf.rc_mode == VPX_VBR) && rc->frames_to_key) {
+    const int vbr_group_bits_per_frame =
+      (int)(twopass->kf_group_bits / rc->frames_to_key);
+    const double group_av_err = kf_group_raw_error / rc->frames_to_key;
+    const int tmp_q =
+      get_twopass_worst_quality(cpi, group_av_err, vbr_group_bits_per_frame);
+
+    if (tmp_q < twopass->baseline_worst_quality) {
+      twopass->active_worst_quality =
+        (tmp_q + twopass->baseline_worst_quality + 1) / 2;
+    } else {
+      twopass->active_worst_quality = tmp_q;
+    }
+  }
 
   // Scan through the kf group collating various stats used to determine
   // how many bits to spend on it.
@@ -2371,9 +2397,13 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     // Special case code for first frame.
     const int section_target_bandwidth = (int)(twopass->bits_left /
                                                frames_left);
-    const int tmp_q = get_twopass_worst_quality(cpi, &twopass->total_left_stats,
-                                                section_target_bandwidth);
+    const double section_error =
+      twopass->total_left_stats.coded_error / twopass->total_left_stats.count;
+    const int tmp_q =
+      get_twopass_worst_quality(cpi, section_error, section_target_bandwidth);
+
     twopass->active_worst_quality = tmp_q;
+    twopass->baseline_worst_quality = tmp_q;
     rc->ni_av_qi = tmp_q;
     rc->last_q[INTER_FRAME] = tmp_q;
     rc->avg_q = vp9_convert_qindex_to_q(tmp_q, cm->bit_depth);

@@ -114,6 +114,7 @@ typedef struct {
   int kf_zeromotion_pct;
   int last_kfgroup_zeromotion_pct;
   int gf_zeromotion_pct;
+  int baseline_worst_quality;
   int active_worst_quality;
   int extend_minq;
   int extend_maxq;
