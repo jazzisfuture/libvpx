@@ -189,8 +189,8 @@ TEST_P(VP9EncodePerfTest, PerfTest) {
         printf("\t\"totalFrames\" : %u,\n", frames);
         printf("\t\"framesPerSecond\" : %f,\n", fps);
         printf("\t\"minPsnr\" : %f,\n", minimum_psnr);
-        printf("\t\"speed\" : %d\n", kEncodePerfTestSpeeds[j]);
-        printf("\t\"threads\" : %d\n", kEncodePerfTestThreads[k]);
+        printf("\t\"speed\" : %d,\n", kEncodePerfTestSpeeds[j]);
+        printf("\t\"threads\" : %d,\n", kEncodePerfTestThreads[k]);
         printf("}\n");
       }
     }
