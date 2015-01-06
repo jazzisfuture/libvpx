@@ -1022,6 +1022,24 @@ static void update_stats(VP9_COMMON *cm, ThreadData *td) {
       // the reference frame counts used to work out probabilities.
       if (inter_block) {
         const MV_REFERENCE_FRAME ref0 = mbmi->ref_frame[0];
+        const int mode_ctx = mbmi->mode_context[ref0];
+        const BLOCK_SIZE bsize = mbmi->sb_type;
+
+        if (bsize >= BLOCK_8X8) {
+          const PREDICTION_MODE mode = mbmi->mode;
+          ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
+        } else {
+          const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
+          const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
+          int idx, idy;
+          for (idy = 0; idy < 2; idy += num_4x4_h) {
+            for (idx = 0; idx < 2; idx += num_4x4_w) {
+              const int j = idy * 2 + idx;
+              const PREDICTION_MODE b_mode = mi->bmi[j].as_mode;
+              ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+            }
+          }
+        }
 
         if (cm->reference_mode == REFERENCE_MODE_SELECT)
           counts->comp_inter[vp9_get_reference_mode_context(cm, xd)]
