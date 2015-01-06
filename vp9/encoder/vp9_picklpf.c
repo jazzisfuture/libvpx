@@ -32,14 +32,19 @@ static int get_max_filter_level(const VP9_COMP *cpi) {
   }
 }
 
-
 static int try_filter_frame(const YV12_BUFFER_CONFIG *sd, VP9_COMP *const cpi,
                             int filt_level, int partial_frame) {
   VP9_COMMON *const cm = &cpi->common;
   int filt_err;
 
-  vp9_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level, 1,
-                        partial_frame);
+  if (cpi->num_workers > 1)
+    vp9_loop_filter_frame_mt(cm->frame_to_show, cm, cpi->td.mb.e_mbd.plane,
+                             filt_level, 1, partial_frame,
+                             cpi->workers, cpi->num_workers, &cpi->lf_row_sync);
+  else
+    vp9_loop_filter_frame(cm->frame_to_show, cm, &cpi->td.mb.e_mbd, filt_level,
+                          1, partial_frame);
+
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth) {
     filt_err = vp9_highbd_get_y_sse(sd, cm->frame_to_show, cm->bit_depth);
