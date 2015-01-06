@@ -79,14 +79,19 @@ static const tran_high_t sinpi_2_9 = 9929;
 static const tran_high_t sinpi_3_9 = 13377;
 static const tran_high_t sinpi_4_9 = 15212;
 
-static INLINE tran_low_t check_range(tran_high_t input) {
+static INLINE tran_low_t check_range(tran_high_t input, vpx_bit_depth_t bd) {
+#if CONFIG_COEFFICIENT_RANGE_CHECKING
 #if CONFIG_VP9_HIGHBITDEPTH
   // For valid highbitdepth VP9 streams, intermediate stage coefficients will
   // stay within the ranges:
   // - 8 bit: signed 16 bit integer
   // - 10 bit: signed 18 bit integer
   // - 12 bit: signed 20 bit integer
-#elif CONFIG_COEFFICIENT_RANGE_CHECKING
+  const int32 int_max = (1 << (7 + bd)) - 1;
+  const int32 int_min = -int_max - 1;
+  assert(int_min <= input);
+  assert(input <= int_max);
+#else
   // For valid VP9 input streams, intermediate stage coefficients should always
   // stay within the range of a signed 16 bit integer. Coefficients can go out
   // of this range for invalid/corrupt VP9 streams. However, strictly checking
@@ -95,7 +100,8 @@ static INLINE tran_low_t check_range(tran_high_t input) {
   // --enable-coefficient-range-checking.
   assert(INT16_MIN <= input);
   assert(input <= INT16_MAX);
-#endif
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+#endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
   return (tran_low_t)input;
 }
 
