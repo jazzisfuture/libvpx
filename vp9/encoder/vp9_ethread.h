@@ -22,4 +22,11 @@ typedef struct EncWorkerData {
 
 void vp9_encode_tiles_mt(struct VP9_COMP *cpi);
 
+void vp9e_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
+                            VP9_COMMON *cm, MACROBLOCKD *xd,
+                            int frame_filter_level,
+                            int y_only, int partial_frame,
+                            VP9Worker *workers, int num_workers,
+                            VP9LfSync *lf_sync);
+
 #endif  // VP9_ENCODER_VP9_ETHREAD_H_

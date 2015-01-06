@@ -9,83 +9,9 @@
  */
 
 #include "./vpx_config.h"
-
 #include "vpx_mem/vpx_mem.h"
-
+#include "vp9/common/vp9_loopfilter_thread.h"
 #include "vp9/common/vp9_reconinter.h"
-
-#include "vp9/decoder/vp9_dthread.h"
-#include "vp9/decoder/vp9_decoder.h"
-
-#if CONFIG_MULTITHREAD
-static INLINE void mutex_lock(pthread_mutex_t *const mutex) {
-  const int kMaxTryLocks = 4000;
-  int locked = 0;
-  int i;
-
-  for (i = 0; i < kMaxTryLocks; ++i) {
-    if (!pthread_mutex_trylock(mutex)) {
-      locked = 1;
-      break;
-    }
-  }
-
-  if (!locked)
-    pthread_mutex_lock(mutex);
-}
-#endif  // CONFIG_MULTITHREAD
-
-static INLINE void sync_read(VP9LfSync *const lf_sync, int r, int c) {
-#if CONFIG_MULTITHREAD
-  const int nsync = lf_sync->sync_range;
-
-  if (r && !(c & (nsync - 1))) {
-    pthread_mutex_t *const mutex = &lf_sync->mutex_[r - 1];
-    mutex_lock(mutex);
-
-    while (c > lf_sync->cur_sb_col[r - 1] - nsync) {
-      pthread_cond_wait(&lf_sync->cond_[r - 1], mutex);
-    }
-    pthread_mutex_unlock(mutex);
-  }
-#else
-  (void)lf_sync;
-  (void)r;
-  (void)c;
-#endif  // CONFIG_MULTITHREAD
-}
-
-static INLINE void sync_write(VP9LfSync *const lf_sync, int r, int c,
-                              const int sb_cols) {
-#if CONFIG_MULTITHREAD
-  const int nsync = lf_sync->sync_range;
-  int cur;
-  // Only signal when there are enough filtered SB for next row to run.
-  int sig = 1;
-
-  if (c < sb_cols - 1) {
-    cur = c;
-    if (c % nsync)
-      sig = 0;
-  } else {
-    cur = sb_cols + nsync;
-  }
-
-  if (sig) {
-    mutex_lock(&lf_sync->mutex_[r]);
-
-    lf_sync->cur_sb_col[r] = cur;
-
-    pthread_cond_signal(&lf_sync->cond_[r]);
-    pthread_mutex_unlock(&lf_sync->mutex_[r]);
-  }
-#else
-  (void)lf_sync;
-  (void)r;
-  (void)c;
-  (void)sb_cols;
-#endif  // CONFIG_MULTITHREAD
-}
 
 // Implement row loopfiltering for each thread.
 static void loop_filter_rows_mt(const YV12_BUFFER_CONFIG *const frame_buffer,

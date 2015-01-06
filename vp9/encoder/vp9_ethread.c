@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "vp9/common/vp9_reconinter.h"
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_ethread.h"
@@ -167,16 +168,15 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
     CHECK_MEM_ERROR(cm, cpi->workers,
                     vpx_malloc(num_workers * sizeof(*cpi->workers)));
 
+    CHECK_MEM_ERROR(cm, cpi->tile_thr_data,
+                    vpx_calloc(num_workers, sizeof(*cpi->tile_thr_data)));
+
     for (i = 0; i < num_workers; i++) {
       VP9Worker *const worker = &cpi->workers[i];
-      EncWorkerData *thread_data;
+      EncWorkerData *thread_data = &cpi->tile_thr_data[i];
 
       ++cpi->num_workers;
-
       winterface->init(worker);
-      CHECK_MEM_ERROR(cm, worker->data1,
-                      (EncWorkerData*)vpx_calloc(1, sizeof(EncWorkerData)));
-      thread_data = (EncWorkerData*)worker->data1;
 
       if (i < num_workers - 1) {
       thread_data->cpi = cpi;
@@ -203,17 +203,18 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
         thread_data->td = &cpi->td;
       }
 
-      // data2 is unused.
-      worker->data2 = NULL;
-
       winterface->sync(worker);
-      worker->hook = (VP9WorkerHook)enc_worker_hook;
     }
   }
 
   for (i = 0; i < num_workers; i++) {
     VP9Worker *const worker = &cpi->workers[i];
-    EncWorkerData *const thread_data = (EncWorkerData*)worker->data1;
+    EncWorkerData *thread_data;
+
+    worker->hook = (VP9WorkerHook)enc_worker_hook;
+    worker->data1 = &cpi->tile_thr_data[i];
+    worker->data2 = NULL;
+    thread_data = (EncWorkerData*)worker->data1;
 
     // Before encoding a frame, copy the thread data from cpi.
     thread_data->td->mb = cpi->td.mb;
@@ -269,4 +270,149 @@ void vp9_encode_tiles_mt(VP9_COMP *cpi) {
       accumulate_rd_opt(&cpi->td, thread_data->td);
     }
   }
+}
+
+// Row-based parallel loopfiltering
+static INLINE
+void vp9_loop_filter_sb_mt(const YV12_BUFFER_CONFIG *const frame_buffer,
+                           VP9_COMMON *const cm,
+                           struct macroblockd_plane planes[MAX_MB_PLANE],
+                           MODE_INFO *mi,
+                           int mi_row, int mi_col,
+                           const int num_planes, const int use_420,
+                           const int sb_cols, VP9LfSync *const lf_sync) {
+  const int r = mi_row >> MI_BLOCK_SIZE_LOG2;
+  const int c = mi_col >> MI_BLOCK_SIZE_LOG2;
+  LOOP_FILTER_MASK lfm;
+  int plane;
+
+  sync_read(lf_sync, r, c);
+
+  vp9_setup_dst_planes(planes, frame_buffer, mi_row, mi_col);
+
+  // TODO(JBB): Make setup_mask work for non 420.
+  if (use_420)
+    vp9_setup_mask(cm, mi_row, mi_col, mi + mi_col, cm->mi_stride,
+                   &lfm);
+
+  for (plane = 0; plane < num_planes; ++plane) {
+    if (use_420)
+      vp9_filter_block_plane(cm, &planes[plane], mi_row, &lfm);
+    else
+      vp9_filter_block_plane_non420(cm, &planes[plane], mi + mi_col,
+                                    mi_row, mi_col);
+  }
+
+  sync_write(lf_sync, r, c, sb_cols);
+}
+
+// Loopfilter rows
+static INLINE
+void loop_filter_rows_mt(const YV12_BUFFER_CONFIG *const frame_buffer,
+                         VP9_COMMON *const cm,
+                         struct macroblockd_plane planes[MAX_MB_PLANE],
+                         int start, int stop, int y_only,
+                         VP9LfSync *const lf_sync) {
+  const int num_planes = y_only ? 1 : MAX_MB_PLANE;
+  const int use_420 = y_only || (planes[1].subsampling_y == 1 &&
+                                 planes[1].subsampling_x == 1);
+  const int sb_cols = mi_cols_aligned_to_sb(cm->mi_cols) >> MI_BLOCK_SIZE_LOG2;
+  int mi_row, mi_col;
+
+  for (mi_row = start; mi_row < stop;
+       mi_row += lf_sync->num_workers * MI_BLOCK_SIZE) {
+    MODE_INFO *const mi = cm->mi + mi_row * cm->mi_stride;
+
+    for (mi_col = 0; mi_col < cm->mi_cols; mi_col += MI_BLOCK_SIZE) {
+      vp9_loop_filter_sb_mt(frame_buffer, cm, planes, mi, mi_row, mi_col,
+                            num_planes, use_420, sb_cols, lf_sync);
+    }
+  }
+}
+
+// Loopfilter hook function
+static int loop_filter_worker(VP9LfSync *const lf_sync,
+                              LFWorkerData *const lf_data) {
+  loop_filter_rows_mt(lf_data->frame_buffer, lf_data->cm, lf_data->planes,
+                      lf_data->start, lf_data->stop, lf_data->y_only, lf_sync);
+  return 1;
+}
+
+void vp9e_loop_filter_rows_mt(YV12_BUFFER_CONFIG *frame_buffer,
+                              VP9_COMMON *cm,
+                              struct macroblockd_plane planes[MAX_MB_PLANE],
+                              int start, int stop, int y_only,
+                              VP9Worker *workers, int num_workers,
+                              VP9LfSync *lf_sync) {
+  const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
+  // Number of superblock rows and cols
+  const int sb_rows = mi_cols_aligned_to_sb(cm->mi_rows) >> MI_BLOCK_SIZE_LOG2;
+  int i;
+
+  if (!lf_sync->sync_range || cm->last_height != cm->height ||
+      num_workers > lf_sync->num_workers) {
+    vp9_loop_filter_dealloc(lf_sync);
+    vp9_loop_filter_alloc(lf_sync, cm, sb_rows, cm->width, num_workers);
+  }
+
+  // Initialize cur_sb_col to -1 for all SB rows.
+  vpx_memset(lf_sync->cur_sb_col, -1, sizeof(*lf_sync->cur_sb_col) * sb_rows);
+
+  for (i = 0; i < num_workers; ++i) {
+    VP9Worker *const worker = &workers[i];
+    LFWorkerData *const lf_data = &lf_sync->lfdata[i];
+
+    worker->hook = (VP9WorkerHook)loop_filter_worker;
+    worker->data1 = lf_sync;
+    worker->data2 = lf_data;
+
+    // Loopfilter data
+    lf_data->frame_buffer = frame_buffer;
+    lf_data->cm = cm;
+    vpx_memcpy(lf_data->planes, planes, sizeof(lf_data->planes));
+
+    lf_data->start = start + i * MI_BLOCK_SIZE;
+    lf_data->stop = stop;
+    lf_data->y_only = y_only;
+
+    // Start loopfiltering
+    if (i == num_workers - 1) {
+      winterface->execute(worker);
+    } else {
+      winterface->launch(worker);
+    }
+  }
+
+  // Wait till all rows are finished
+  for (i = 0; i < num_workers; ++i) {
+    winterface->sync(&workers[i]);
+  }
+}
+
+void vp9e_loop_filter_frame(YV12_BUFFER_CONFIG *frame,
+                            VP9_COMMON *cm, MACROBLOCKD *xd,
+                            int frame_filter_level,
+                            int y_only, int partial_frame,
+                            VP9Worker *workers, int num_workers,
+                            VP9LfSync *lf_sync) {
+  int start_mi_row, end_mi_row, mi_rows_to_filter;
+
+  if (!frame_filter_level) return;
+
+  start_mi_row = 0;
+  mi_rows_to_filter = cm->mi_rows;
+  if (partial_frame && cm->mi_rows > 8) {
+    start_mi_row = cm->mi_rows >> 1;
+    start_mi_row &= 0xfffffff8;
+    mi_rows_to_filter = MAX(cm->mi_rows / 8, 8);
+  }
+  end_mi_row = start_mi_row + mi_rows_to_filter;
+  vp9_loop_filter_frame_init(cm, frame_filter_level);
+
+  if (num_workers > 1)
+    vp9e_loop_filter_rows_mt(frame, cm, xd->plane, start_mi_row, end_mi_row,
+                             y_only, workers, num_workers, lf_sync);
+  else
+    vp9_loop_filter_rows(frame, cm, xd->plane, start_mi_row, end_mi_row,
+                         y_only);
 }
