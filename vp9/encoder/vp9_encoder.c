@@ -35,7 +35,6 @@
 #include "vp9/encoder/vp9_context_tree.h"
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemv.h"
-#include "vp9/encoder/vp9_ethread.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mbgraph.h"
 #include "vp9/encoder/vp9_encoder.h"
@@ -1798,7 +1797,7 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
 
   for (t = 0; t < cpi->num_workers; ++t) {
     VP9Worker *const worker = &cpi->workers[t];
-    EncWorkerData *const thread_data = (EncWorkerData*)worker->data1;
+    EncWorkerData *const thread_data = &cpi->tile_thr_data[t];
 
     // Deallocate allocated threads.
     vp9_get_worker_interface()->end(worker);
@@ -1809,10 +1808,12 @@ void vp9_remove_compressor(VP9_COMP *cpi) {
       vp9_free_pc_tree(thread_data->td);
       vpx_free(thread_data->td);
     }
-
-    vpx_free(worker->data1);
   }
+  vpx_free(cpi->tile_thr_data);
   vpx_free(cpi->workers);
+
+  if (cpi->num_workers > 1)
+    vp9_loop_filter_dealloc(&cpi->lf_row_sync);
 
   dealloc_compressor_data(cpi);
 
@@ -2449,7 +2450,13 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
   }
 
   if (lf->filter_level > 0) {
-    vp9_loop_filter_frame(cm->frame_to_show, cm, xd, lf->filter_level, 0, 0);
+    if (cpi->num_workers > 1)
+      vp9_loop_filter_frame_mt(cm->frame_to_show, cm, xd->plane,
+                               lf->filter_level, 0, 0,
+                               cpi->workers, cpi->num_workers,
+                               &cpi->lf_row_sync);
+    else
+      vp9_loop_filter_frame(cm->frame_to_show, cm, xd, lf->filter_level, 0, 0);
   }
 
   vp9_extend_frame_inner_borders(cm->frame_to_show);
