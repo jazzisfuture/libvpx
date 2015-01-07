@@ -2503,8 +2503,15 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       if (!given_motion_vector)
         single_motion_search(cpi, x, bsize, mi_row, mi_col,
                              &tmp_mv, &rate_mv);
-      else
+      else {
         tmp_mv.as_mv = cpi->mfu_mv[LAST_FRAME];
+        if ((!cm->allow_high_precision_mv ||
+             !vp9_use_mv_hp(&mbmi->ref_mvs[refs[0]][0].as_mv)) &&
+            (tmp_mv.as_mv.row & 1 || tmp_mv.as_mv.col & 1)) {
+          tmp_mv.as_mv.row = tmp_mv.as_mv.row / 2 * 2;
+          tmp_mv.as_mv.col = tmp_mv.as_mv.col / 2 * 2;
+        }
+      }
 
       if (tmp_mv.as_int == INVALID_MV)
         return INT64_MAX;
