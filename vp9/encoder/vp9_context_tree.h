@@ -52,7 +52,7 @@ typedef struct {
   int rate;
   int64_t dist;
 
-#if CONFIG_VP9_TEMPORAL_DENOISING
+#if CONFIG_VP9_TEMPORAL_DENOISING || 1
   unsigned int newmv_sse;
   unsigned int zeromv_sse;
   PREDICTION_MODE best_sse_inter_mode;
