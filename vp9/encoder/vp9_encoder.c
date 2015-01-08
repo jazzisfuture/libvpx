@@ -3912,6 +3912,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
         }
       }
       cpi->mfu_mv[j] = high_mv;
+      cpi->mfu_mv_count = high_count;
     }
   }
   if (is_two_pass_svc(cpi)) {

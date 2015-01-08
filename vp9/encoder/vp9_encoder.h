@@ -336,6 +336,7 @@ typedef struct VP9_COMP {
 
   NEW_MVS new_mvs[MAX_REF_FRAMES];
   MV mfu_mv[MAX_REF_FRAMES];
+  int mfu_mv_count;
 
   struct vpx_codec_pkt_list  *output_pkt_list;
 

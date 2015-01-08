@@ -2500,18 +2500,26 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
       // If we are given a motion vector to test we don't need to search
       // for the motion vector.
-      if (!given_motion_vector)
+      if (!given_motion_vector) {
         single_motion_search(cpi, x, bsize, mi_row, mi_col,
                              &tmp_mv, &rate_mv);
-      else
-        tmp_mv.as_mv = cpi->mfu_mv[LAST_FRAME];
+        if (tmp_mv.as_int == INVALID_MV)
+          return INT64_MAX;
 
-      if (tmp_mv.as_int == INVALID_MV)
-        return INT64_MAX;
+        single_newmv[refs[0]].as_int = tmp_mv.as_int;
+      } else {
+        tmp_mv.as_mv = cpi->mfu_mv[LAST_FRAME];
+        if ((!cm->allow_high_precision_mv ||
+             !vp9_use_mv_hp(&mbmi->ref_mvs[refs[0]][0].as_mv)) &&
+            (tmp_mv.as_mv.row & 1 || tmp_mv.as_mv.col & 1)) {
+          tmp_mv.as_mv.row = tmp_mv.as_mv.row / 2 * 2;
+          tmp_mv.as_mv.col = tmp_mv.as_mv.col / 2 * 2;
+        }
+      }
+
 
       frame_mv[refs[0]].as_int =
           xd->mi[0].src_mi->bmi[0].as_mv[0].as_int = tmp_mv.as_int;
-      single_newmv[refs[0]].as_int = tmp_mv.as_int;
 
       // Estimate the rate implications of a new mv but discount this
       // under certain circumstances where we want to help initiate a weak
@@ -3025,7 +3033,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   }
   // midx = -1 is a special signal to try the most frequently used mv from
   // the last frame;
-  for (midx = -1; midx < MAX_MODES; ++midx) {
+  for (midx = (cpi->mfu_mv_count > 10?-1:0); midx < MAX_MODES; ++midx) {
     int mode_index;
     int mode_excluded = 0;
     int64_t this_rd = INT64_MAX;
