@@ -1,0 +1,9 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Debargha Mukherjee <debargha@google.com>
+Commit-Queue+1: Hui Su <huisu@google.com>
+Code-Review+1: Hui Su <huisu@google.com>
+Submitted-by: Debargha Mukherjee <debargha@google.com>
+Submitted-at: Thu, 08 Jan 2015 13:37:11 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/73403
+Project: webm/libvpx
+Branch: refs/heads/nextgen
