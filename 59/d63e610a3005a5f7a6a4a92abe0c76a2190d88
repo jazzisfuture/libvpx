@@ -1,0 +1,9 @@
+Verified+1: WebmJenkinsRoleAccount
+Code-Review+2: Jim Bankoski <jimbankoski@google.com>
+Code-Review+1: Hangyu Kuang <hkuang@google.com>
+Verified+1: Hangyu Kuang <hkuang@google.com>
+Submitted-by: James Zern <jzern@google.com>
+Submitted-at: Thu, 08 Jan 2015 15:53:02 -0800
+Reviewed-on: https://gerrit.chromium.org/gerrit/73347
+Project: webm/libvpx
+Branch: refs/heads/master
