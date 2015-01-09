@@ -42,6 +42,7 @@ struct vp9_extracfg {
   unsigned int                frame_periodic_boost;
   vpx_bit_depth_t             bit_depth;
   vp9e_tune_content           content;
+  vpx_color_space_t           color_space;
 };
 
 static struct vp9_extracfg default_extra_cfg = {
@@ -64,7 +65,8 @@ static struct vp9_extracfg default_extra_cfg = {
   NO_AQ,                      // aq_mode
   0,                          // frame_periodic_delta_q
   VPX_BITS_8,                 // Bit depth
-  VP9E_CONTENT_DEFAULT        // content
+  VP9E_CONTENT_DEFAULT,       // content
+  VPX_CS_UNKNOWN,             // color space
 };
 
 struct vpx_codec_alg_priv {
@@ -1322,6 +1324,13 @@ static vpx_codec_err_t ctrl_set_tune_content(vpx_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_set_color_space(vpx_codec_alg_priv_t *ctx,
+                                            va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.color_space = CAST(VP9E_SET_COLOR_SPACE, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8_COPY_REFERENCE,                ctrl_copy_reference},
   {VP8E_UPD_ENTROPY,                  ctrl_update_entropy},
@@ -1357,6 +1366,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP9E_REGISTER_CX_CALLBACK,         ctrl_register_cx_callback},
   {VP9E_SET_SVC_LAYER_ID,             ctrl_set_svc_layer_id},
   {VP9E_SET_TUNE_CONTENT,             ctrl_set_tune_content},
+  {VP9E_SET_COLOR_SPACE,              ctrl_set_color_space},
   {VP9E_SET_NOISE_SENSITIVITY,        ctrl_set_noise_sensitivity},
 
   // Getters
