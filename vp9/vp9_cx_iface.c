@@ -1325,6 +1325,13 @@ static vpx_codec_err_t ctrl_set_tune_content(vpx_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_set_color_space(vpx_codec_alg_priv_t *ctx,
+                                            va_list args) {
+  struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.color_space = CAST(VP9E_SET_COLOR_SPACE, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP8_COPY_REFERENCE,                ctrl_copy_reference},
   {VP8E_UPD_ENTROPY,                  ctrl_update_entropy},
@@ -1360,6 +1367,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   {VP9E_REGISTER_CX_CALLBACK,         ctrl_register_cx_callback},
   {VP9E_SET_SVC_LAYER_ID,             ctrl_set_svc_layer_id},
   {VP9E_SET_TUNE_CONTENT,             ctrl_set_tune_content},
+  {VP9E_SET_COLOR_SPACE,              ctrl_set_color_space},
   {VP9E_SET_NOISE_SENSITIVITY,        ctrl_set_noise_sensitivity},
 
   // Getters
