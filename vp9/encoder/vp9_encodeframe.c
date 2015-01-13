@@ -62,7 +62,11 @@ static int check_intra_b(PICK_MODE_CONTEXT *ctx);
 static int check_intra_sb(VP9_COMP *cpi, const TileInfo *const tile,
                           int mi_row, int mi_col, BLOCK_SIZE bsize,
                           PC_TREE *pc_tree);
-static void predict_superblock(VP9_COMP *cpi, int mi_row_ori, int mi_col_ori,
+static void predict_superblock(VP9_COMP *cpi,
+#if CONFIG_WEDGE_PARTITION
+                               int mi_row, int mi_col,
+#endif  // CONFIG_WEDGE_PARTITION
+                               int mi_row_ori, int mi_col_ori,
                                BLOCK_SIZE bsize);
 static int check_supertx_sb(BLOCK_SIZE bsize, TX_SIZE supertx_size,
                             PC_TREE *pc_tree);
@@ -871,7 +875,13 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
           ++cm->counts.interintra[bsize][0];
         }
       }
-#endif
+#endif  // CONFIG_INTERINTRA
+#if CONFIG_WEDGE_PARTITION
+      if (cm->reference_mode != SINGLE_REFERENCE &&
+          get_wedge_bits(bsize) &&
+          mbmi->ref_frame[1] > INTRA_FRAME)
+        ++cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter];
+#endif  // CONFIG_WEDGE_PARTITION
     }
 
     rd_opt->comp_pred_diff[SINGLE_REFERENCE] += ctx->single_pred_diff;
@@ -984,6 +994,12 @@ static void update_state_supertx(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
         }
       }
 #endif  // CONFIG_INTERINTRA
+#if CONFIG_WEDGE_PARTITION
+      if (cm->reference_mode != SINGLE_REFERENCE &&
+          get_wedge_bits(bsize) &&
+          mbmi->ref_frame[1] > INTRA_FRAME)
+        ++cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter];
+#endif  // CONFIG_WEDGE_PARTITION
     }
 
     rd_opt->comp_pred_diff[SINGLE_REFERENCE] += ctx->single_pred_diff;
@@ -4927,6 +4943,9 @@ static int check_supertx_sb(BLOCK_SIZE bsize, TX_SIZE supertx_size,
 }
 
 static void predict_superblock(VP9_COMP *cpi,
+#if CONFIG_WEDGE_PARTITION
+                               int mi_row, int mi_col,
+#endif  // CONFIG_WEDGE_PARTITION
                                int mi_row_ori, int mi_col_ori,
                                BLOCK_SIZE bsize) {
   VP9_COMMON *const cm = &cpi->common;
@@ -4950,7 +4969,12 @@ static void predict_superblock(VP9_COMP *cpi,
     vp9_setup_pre_planes(xd, ref, cfg, mi_row_ori, mi_col_ori,
                          &xd->block_refs[ref]->sf);
   }
+#if CONFIG_WEDGE_PARTITION
+  vp9_build_inter_predictors_sb_extend(xd, mi_row, mi_col,
+                                       mi_row_ori, mi_col_ori, bsize);
+#else
   vp9_build_inter_predictors_sb(xd, mi_row_ori, mi_col_ori, bsize);
+#endif  // CONFIG_WEDGE_PARTITION
 }
 
 static void predict_superblock_sub8x8_extend(VP9_COMP *cpi,
@@ -4983,6 +5007,9 @@ static void predict_superblock_sub8x8_extend(VP9_COMP *cpi,
                                                mi_row_ori, mi_col_ori,
                                                top_bsize, partition);
   vp9_build_inter_predictors_sbuv_sub8x8_extend(xd,
+#if CONFIG_WEDGE_PARTITION
+                                                mi_row, mi_col,
+#endif
                                                 mi_row_ori, mi_col_ori,
                                                 top_bsize);
 }
@@ -5009,7 +5036,11 @@ static void predict_b_extend(VP9_COMP *cpi, const TileInfo *const tile,
                              BLOCK_SIZE bsize, BLOCK_SIZE top_bsize) {
   set_offsets_extend(cpi, tile, mi_row, mi_col, mi_row_ori, mi_col_ori,
                      bsize, top_bsize);
-  predict_superblock(cpi, mi_row_ori, mi_col_ori, top_bsize);
+  predict_superblock(cpi,
+#if CONFIG_WEDGE_PARTITION
+                     mi_row, mi_col,
+#endif
+                     mi_row_ori, mi_col_ori, top_bsize);
 
   if (output_enabled)
     update_stats(&cpi->common, &cpi->mb);
