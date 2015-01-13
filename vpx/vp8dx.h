@@ -85,7 +85,11 @@ enum vp8_dec_control_id {
    */
   VP9_SET_BYTE_ALIGNMENT,
 
-  /** For testing. */
+  /** control function to invert the decoding order to from right to left. The
+   * function is used in a test to confirm the decoding independence of tile
+   * columns. The function may be used in application where this order
+   * of decoding is desired.
+   */
   VP9_INVERT_TILE_DECODE_ORDER,
 
   VP8_DECODER_CTRL_ID_MAX
