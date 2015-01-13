@@ -746,6 +746,20 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     xd->corrupted |= !assign_mv(cm, mbmi->mode, mbmi->mv, nearestmv,
                                 nearestmv, nearmv, is_compound, allow_hp, r);
   }
+#if CONFIG_WEDGE_PARTITION
+  mbmi->use_wedge_interinter = 0;
+  if (cm->reference_mode != SINGLE_REFERENCE &&
+      is_inter_mode(mbmi->mode) &&
+      get_wedge_bits(bsize) &&
+      mbmi->ref_frame[1] > INTRA_FRAME) {
+    mbmi->use_wedge_interinter =
+        vp9_read(r, cm->fc.wedge_interinter_prob[bsize]);
+    cm->counts.wedge_interinter[bsize][mbmi->use_wedge_interinter]++;
+    if (mbmi->use_wedge_interinter) {
+      mbmi->wedge_index = vp9_read_literal(r, get_wedge_bits(bsize));
+    }
+  }
+#endif  // CONFIG_WEDGE_PARTITION
 }
 
 static void read_inter_frame_mode_info(VP9_COMMON *const cm,
@@ -789,23 +803,26 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
     COPY_MODE copy_mode_backup = mbmi->copy_mode;
 #if CONFIG_SUPERTX
     TX_SIZE tx_size_backup = mbmi->tx_size;
-#endif
+#endif  // CONFIG_SUPERTX
 #if CONFIG_EXT_TX
     EXT_TX_TYPE ext_txfrm_backup = mbmi->ext_txfrm;
-#endif
+#endif  // CONFIG_EXT_TX
 
     inter_block = 1;
     *mbmi = *inter_ref_list[mbmi->copy_mode - REF0];
+#if CONFIG_SUPERTX
+    mbmi->tx_size = tx_size_backup;
+#endif  // CONFIG_SUPERTX
+#if CONFIG_EXT_TX
+    mbmi->ext_txfrm = ext_txfrm_backup;
+#endif  // CONFIG_EXT_TX
 #if CONFIG_INTERINTRA
     if (mbmi->ref_frame[1] == INTRA_FRAME)
       mbmi->ref_frame[1] = NONE;
 #endif  // CONFIG_INTERINTRA
-#if CONFIG_SUPERTX
-    mbmi->tx_size = tx_size_backup;
-#endif
-#if CONFIG_EXT_TX
-    mbmi->ext_txfrm = ext_txfrm_backup;
-#endif
+#if CONFIG_WEDGE_PARTITION
+    mbmi->use_wedge_interinter = 0;
+#endif  // CONFIG_WEDGE_PARTITION
     mbmi->sb_type = bsize_backup;
     mbmi->mode = NEARESTMV;
     mbmi->skip = skip_backup;
