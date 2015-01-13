@@ -41,7 +41,7 @@ struct vp9_extracfg {
   AQ_MODE                     aq_mode;
   unsigned int                frame_periodic_boost;
   vpx_bit_depth_t             bit_depth;
-  COLOR_SPACE                 color_space;
+  vpx_color_space_t           color_space;
   vp9e_tune_content           content;
 };
 
@@ -65,7 +65,7 @@ static struct vp9_extracfg default_extra_cfg = {
   NO_AQ,                      // aq_mode
   0,                          // frame_periodic_delta_q
   VPX_BITS_8,                 // Bit depth
-  UNKNOWN,                    // Color Space
+  VPX_CS_UNKNOWN,             // Color Space
   VP9E_CONTENT_DEFAULT        // content
 };
 
@@ -296,7 +296,8 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
       cfg->g_bit_depth == VPX_BITS_8) {
     ERROR("Codec bit-depth 8 not supported in profile > 1");
   }
-  RANGE_CHECK(extra_cfg, color_space, UNKNOWN, SRGB);
+  RANGE_CHECK(extra_cfg, color_space,
+              VPX_CS_UNKNOWN, VPX_CS_SRGB);
   return VPX_CODEC_OK;
 }
 
