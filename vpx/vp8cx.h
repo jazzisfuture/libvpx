@@ -234,11 +234,65 @@ enum vp8e_enc_control_id {
 
   VP8E_SET_SCREEN_CONTENT_MODE,  /**<control function to set encoder screen content mode */
 
-  /* TODO(jkoleszar): Move to vp9cx.h */
+  /*!\brief Codec control function to set lossless encoding mode
+   *
+   *  VP9 can operate in lossless encoding mode, where the bitstream produced
+   *  will be able to decode and reconstruct the perfect copy of input source.
+   *  This control switches encoder into lossless coding mode (1) or switches
+   *  back to normal coding mode (0) that may be lossy.
+   *                          0 = lossy coding mode
+   *                          1 = lossless coding mode
+   *
+   *  By default, encoder always operates in normal coding mode (maybe lossy)
+   */
   VP9E_SET_LOSSLESS,
+
+  /*!\brief Codec control function to set number of tile columns
+   *
+   * In encoding and decoding, VP9 allows an input image frame be partitioned
+   * into vertically separated tile columns, which can be encoded or decoded
+   * independently to each other tile column. This enables easiy implementation
+   * of parallel encoding and decodnig. This control requests the encoder to
+   * use column tiles in encoding the input frame, with number of tile columns
+   * (in Log2 unit) as the parameter.
+   *
+   * By default, the value is 0, i.e. one single column tile for entire image.
+   */
   VP9E_SET_TILE_COLUMNS,
+
+  /*!\brief Codec control function to set number of tile rows
+   *
+   * In encoding and decoding, VP9 allows an input image frame be partitioned
+   * into horizontally separated tile rows, which can be encoded or decoded
+   * sequentially. The original intent is to allow low latency output for
+   * large input image frame. The parameter for this control is the number of
+   * tile rows (in Log2 unit) as the parameter.
+   *
+   * By default, the value is 0, i.e. one single row tile for entire image.
+   */
   VP9E_SET_TILE_ROWS,
+
+  /*!\brief Codec control function to enable frame parallel decoding feature
+   *
+   * VP9 has a bitstream feature to remove decoding dependency and allow easy
+   * implementation of parallel decoding of bitstreams supporting such
+   * feature. This control function is used to request encoder to produce
+   * bitstream with suppport of this feature.
+   *
+   * By default, this feature is off.
+   */
   VP9E_SET_FRAME_PARALLEL_DECODING,
+
+  /*!\brief Codec control function to set adaptive quantization mode
+   *
+   * VP9 has segment based feature that allow encoder to adaptively change
+   * quantization parameters for each segment to improve subjective quality
+   * of compressed video. This control make encoder operate in on of the
+   * several AQ_modes supported.
+   *
+   * By default, encoder operates with AQ_Mode 0, i.e. disalbed adaptive
+   * quantization.
+   */
   VP9E_SET_AQ_MODE,
   VP9E_SET_FRAME_PERIODIC_BOOST,
   /*!\brief control function to set noise sensitivity
