@@ -217,6 +217,7 @@ typedef struct VP9EncoderConfig {
 #if CONFIG_VP9_HIGHBITDEPTH
   int use_highbitdepth;
 #endif
+  vpx_color_space_t color_space;
 } VP9EncoderConfig;
 
 static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
