@@ -82,6 +82,10 @@ static const tran_high_t sinpi_2_9 = 9929;
 static const tran_high_t sinpi_3_9 = 13377;
 static const tran_high_t sinpi_4_9 = 15212;
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+static double dst_32x32_coeffs[32 * 32];
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
 static INLINE tran_low_t check_range(tran_high_t input) {
 #if CONFIG_VP9_HIGHBITDEPTH
   // For valid highbitdepth VP9 streams, intermediate stage coefficients will
@@ -141,6 +145,10 @@ void vp9_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                     int stride, int eob);
 void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
                       int stride, int eob);
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+void vp9_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+                      int stride, int eob);
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_iwht4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
@@ -163,6 +171,11 @@ void vp9_highbd_iht8x8_add(TX_TYPE tx_type, const tran_low_t *input,
                            uint8_t *dest, int stride, int eob, int bd);
 void vp9_highbd_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input,
                              uint8_t *dest, int stride, int eob, int bd);
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+// TODO(zoeliu): Following routine has not been fully implemented yet.
+void vp9_highbd_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input,
+                             uint8_t *dest, int stride, int eob, int bd);
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #ifdef __cplusplus
 }  // extern "C"

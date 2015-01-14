@@ -189,14 +189,22 @@ static void update_ext_tx_probs(VP9_COMMON *cm, vp9_writer *w) {
   int i;
   int savings = 0;
   int do_update = 0;
+#if CONFIG_DST_32X32
+  for (i = TX_4X4; i <= TX_32X32; ++i) {
+#else
   for (i = TX_4X4; i <= TX_16X16; ++i) {
+#endif  // CONFIG_DST_32X32
     savings += prob_diff_update_savings(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
                                         cm->counts.ext_tx[i], EXT_TX_TYPES);
   }
   do_update = savings > savings_thresh;
   vp9_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
   if (do_update) {
+#if CONFIG_DST_32X32
+    for (i = TX_4X4; i <= TX_32X32; ++i) {
+#else
     for (i = TX_4X4; i <= TX_16X16; ++i) {
+#endif  // CONFIG_DST_32X32
       prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
                        cm->counts.ext_tx[i], EXT_TX_TYPES, w);
     }
@@ -418,12 +426,16 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
   }
 #if CONFIG_EXT_TX
   if (is_inter &&
+#if CONFIG_DST_32X32
+      mbmi->tx_size <= TX_32X32 &&
+#else
       mbmi->tx_size < TX_32X32 &&
+#endif  // CONFIG_DST_32X32
       cm->base_qindex > 0 &&
       bsize >= BLOCK_8X8 &&
 #if CONFIG_SUPERTX
       !supertx_enabled &&
-#endif
+#endif  // CONFIG_SUPERTX
       !mbmi->skip &&
       !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
     vp9_write_token(w, vp9_ext_tx_tree, cm->fc.ext_tx_prob[mbmi->tx_size],
@@ -748,10 +760,14 @@ static void write_modes_sb(VP9_COMP *cpi,
     if (supertx_enabled) {
       vp9_write(w, xd->mi[0].mbmi.skip, vp9_get_skip_prob(cm, xd));
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+      if (supertx_size <= TX_32X32 && !xd->mi[0].mbmi.skip)
+#else
       if (supertx_size <= TX_16X16 && !xd->mi[0].mbmi.skip)
+#endif  // CONFIG_DST_32X32
         vp9_write_token(w, vp9_ext_tx_tree, cm->fc.ext_tx_prob[supertx_size],
                         &ext_tx_encodings[xd->mi[0].mbmi.ext_txfrm]);
-#endif
+#endif  // CONFIG_EXT_TX
     }
   }
 #endif  // CONFIG_SUPERTX
