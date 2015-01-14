@@ -33,6 +33,10 @@ void vp9_free_state_buffers(struct VP9Common *cm);
 void vp9_set_mb_mi(struct VP9Common *cm, int width, int height);
 void vp9_swap_mi_and_prev_mi(struct VP9Common *cm);
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+void vp9_generate_dst_32x32_coeffs(double *coeffs);
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
