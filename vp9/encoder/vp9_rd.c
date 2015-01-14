@@ -83,9 +83,13 @@ static void fill_mode_costs(VP9_COMP *cpi) {
     vp9_cost_tokens(cpi->switchable_interp_costs[i],
                     fc->switchable_interp_prob[i], vp9_switchable_interp_tree);
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+  for (i = TX_4X4; i <= TX_32X32; ++i)
+#else
   for (i = TX_4X4; i <= TX_16X16; ++i)
+#endif  // CONFIG_DST_32X32
     vp9_cost_tokens(cpi->ext_tx_costs[i], fc->ext_tx_prob[i], vp9_ext_tx_tree);
-#endif
+#endif  // CONFIG_EXT_TX
 }
 
 static void fill_token_costs(vp9_coeff_cost *c,

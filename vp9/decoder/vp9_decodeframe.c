@@ -268,11 +268,18 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             if (mbmi->tx_skip[plane != 0]) {
               vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
             } else {
-            vp9_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
-            }
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+            // TODO(zoeliu): Following routine has not been implemented yet. No
+            // enabling on CONFIG_VP9_HIGHBITDEPTH currently when
+            // CONFIG_DST_32X32 is enabled.
+            vp9_highbd_iht32x32_add(tx_type, dqcoeff, dst, stride, eob, xd->bd);
 #else
             vp9_highbd_idct32x32_add(dqcoeff, dst, stride, eob, xd->bd);
-#endif
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+#if CONFIG_TX_SKIP
+            }
+#endif  // CONFIG_TX_SKIP
             break;
 #if CONFIG_TX64X64
           case TX_64X64:
@@ -345,11 +352,15 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
             if (mbmi->tx_skip[plane != 0]) {
               vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
             } else {
-              vp9_idct32x32_add(dqcoeff, dst, stride, eob);
-            }
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+            vp9_iht32x32_add(tx_type, dqcoeff, dst, stride, eob);
 #else
             vp9_idct32x32_add(dqcoeff, dst, stride, eob);
-#endif
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+#if CONFIG_TX_SKIP
+            }
+#endif  // CONFIG_TX_SKIP
             break;
 #if CONFIG_TX64X64
           case TX_64X64:
@@ -424,11 +435,15 @@ static void inverse_transform_block(MACROBLOCKD* xd, int plane, int block,
           if (mbmi->tx_skip[plane != 0]) {
             vp9_tx_identity_add(dqcoeff, dst, stride, 32, shift);
           } else {
-            vp9_idct32x32_add(dqcoeff, dst, stride, eob);;
-          }
+#endif  // CONFIG_TX_SKIP
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+          vp9_iht32x32_add(tx_type, dqcoeff, dst, stride, eob);;
 #else
           vp9_idct32x32_add(dqcoeff, dst, stride, eob);
-#endif
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+#if CONFIG_TX_SKIP
+          }
+#endif  // CONFIG_TX_SKIP
           break;
 #if CONFIG_TX64X64
         case TX_64X64:
@@ -1030,13 +1045,17 @@ static void decode_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
     if (skip)
       reset_skip_context(xd, bsize);
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+    if (bsize <= BLOCK_32X32 && !skip) {
+#else
     if (bsize <= BLOCK_16X16 && !skip) {
+#endif  // CONFIG_DST_32X32
       txfm = vp9_read_tree(r, vp9_ext_tx_tree,
                            cm->fc.ext_tx_prob[supertx_size]);
       if (!cm->frame_parallel_decoding_mode)
         ++cm->counts.ext_tx[supertx_size][txfm];
     }
-#endif
+#endif  // CONFIG_EXT_TX
   }
 #endif  // CONFIG_SUPERTX
   if (subsize < BLOCK_8X8) {
@@ -2034,7 +2053,11 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
   if (vp9_read(r, GROUP_DIFF_UPDATE_PROB)) {
+#if CONFIG_DST_32X32
+    for (j = TX_4X4; j <= TX_32X32; ++j)
+#else
     for (j = TX_4X4; j <= TX_16X16; ++j)
+#endif  // CONFIG_DST_32X32
       for (i = 0; i < EXT_TX_TYPES - 1; ++i)
         vp9_diff_update_prob(r, &fc->ext_tx_prob[j][i]);
   }

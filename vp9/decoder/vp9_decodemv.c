@@ -826,7 +826,11 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
                                  !mbmi->skip || !inter_block, r);
 #if CONFIG_EXT_TX
     if (inter_block &&
+#if CONFIG_DST_32X32
+        mbmi->tx_size <= TX_32X32 &&
+#else
         mbmi->tx_size <= TX_16X16 &&
+#endif  // CONFIG_DST_32X32
         cm->base_qindex > 0 &&
         mbmi->sb_type >= BLOCK_8X8 &&
       !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP) &&

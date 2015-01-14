@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+#include <math.h>
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
 #include "./vpx_config.h"
 #include "vpx_mem/vpx_mem.h"
 
@@ -212,3 +216,15 @@ void vp9_swap_mi_and_prev_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mi_stride + 1;
   cm->prev_mi = cm->prev_mip + cm->mi_stride + 1;
 }
+
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+#define PI 3.141592653589793
+void vp9_generate_dst_32x32_coeffs(double *coeffs) {
+  int i, j;
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j) {
+      coeffs[j * 32 + i] = sin(PI * (i + 0.5) * (j + 0.5) / 32.0);
+    }
+  }
+}
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
