@@ -1550,9 +1550,13 @@ static void encode_sb(VP9_COMP *cpi, const TileInfo *const tile,
             [partition_supertx_context_lookup[partition]][supertx_size][1]++;
         cm->counts.supertx_size[supertx_size]++;
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+        if (supertx_size <= TX_32X32 && !xd->mi[0].mbmi.skip)
+#else
         if (supertx_size < TX_32X32 && !xd->mi[0].mbmi.skip)
+#endif  // CONFIG_DST_32X32
           ++cm->counts.ext_tx[xd->mi[0].mbmi.tx_size][xd->mi[0].mbmi.ext_txfrm];
-#endif
+#endif  // CONFIG_EXT_TX
         (*tp)->token = EOSB_TOKEN;
         (*tp)++;
       }
@@ -4783,7 +4787,12 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
             mi_8x8[mis * y + x].src_mi->mbmi.tx_size = tx_size;
     }
 #if CONFIG_EXT_TX
-    if (mbmi->tx_size < TX_32X32 &&
+    if (
+#if CONFIG_DST_32X32
+        mbmi->tx_size <= TX_32X32 &&
+#else
+        mbmi->tx_size < TX_32X32 &&
+#endif  // CONFIG_DST_32X32
         is_inter_block(mbmi) &&
         cm->base_qindex > 0 &&
         bsize >= BLOCK_8X8 &&
@@ -4791,7 +4800,7 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
         !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
       ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
     }
-#endif
+#endif  // CONFIG_EXT_TX
 #if CONFIG_TX_SKIP
     if (bsize >= BLOCK_8X8) {
       int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
@@ -5272,7 +5281,11 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
   vp9_subtract_plane(x, bsize, 0);
 #if CONFIG_EXT_TX
   for (txfm = NORM; txfm < EXT_TX_TYPES; txfm++) {
+#if CONFIG_DST_32X32
+    if (tx_size > TX_32X32 && txfm != NORM)
+#else
     if (tx_size > TX_16X16 && txfm != NORM)
+#endif  // CONFIG_DST_32X32
       continue;
 
     xd->mi[0].mbmi.ext_txfrm = txfm;
@@ -5289,7 +5302,11 @@ static void rd_supertx_sb(VP9_COMP *cpi, const TileInfo *const tile,
       x->skip = 1;
     } else {
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+      if (tx_size <= TX_32X32)
+#else
       if (tx_size < TX_32X32)
+#endif  // CONFIG_DST_32X32
         *tmp_rate += cpi->ext_tx_costs[tx_size][txfm];
 #endif  // CONFIG_EXT_TX
       if (RDCOST(x->rdmult, x->rddiv, *tmp_rate, *tmp_dist)

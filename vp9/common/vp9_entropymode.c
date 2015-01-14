@@ -317,10 +317,11 @@ const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
   -ALT7, -ALT8,
 };
 
-static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
+static const vp9_prob default_ext_tx_prob[4][EXT_TX_TYPES - 1] = {
   { 240, 128, 128, 128, 128, 128, 128, 128 },
   { 208, 128, 128, 128, 128, 128, 128, 128 },
   { 176, 128, 128, 128, 128, 128, 128, 128 },
+  { 144, 128, 128, 128, 128, 128, 128, 128 },
 };
 #endif  // CONFIG_EXT_TX
 
@@ -574,7 +575,11 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
 
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+  for (i = TX_4X4; i <= TX_32X32; ++i) {
+#else
   for (i = TX_4X4; i <= TX_16X16; ++i) {
+#endif  // CONFIG_DST_32X32
     adapt_probs(vp9_ext_tx_tree, pre_fc->ext_tx_prob[i], counts->ext_tx[i],
                 fc->ext_tx_prob[i]);
   }
