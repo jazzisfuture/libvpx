@@ -1438,6 +1438,57 @@ void vp9_idct32x32_1_add_c(const tran_low_t *input, uint8_t *dest, int stride) {
   }
 }
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+// TODO(zoeliu): Using a floating point implementation for now.
+// Should re-use the 16x16 integer IDST that we already have once
+// we are confirmed the benefit of the 32x32 DST experiment.
+static void idst32(const tran_low_t *input, tran_low_t *output) {
+    int i, j;
+    for (i = 0; i < 32; ++i) {
+        double out = 0.0;
+        for (j = 0; j < 32; ++j) {
+            out += input[j] * dst_32x32_coeffs[i * 32 + j];
+        }
+        output[i] = (tran_low_t)round(out);
+    }
+}
+
+
+static const transform_2d IHT_32[] = {
+  { idct32, idct32 },  // DCT_DCT  = 0
+  { idst32, idct32 },  // ADST_DCT = 1
+  { idct32, idst32 },  // DCT_ADST = 2
+  { idst32, idst32 }   // ADST_ADST = 3
+};
+
+void vp9_iht32x32_1024_add_c(const tran_low_t *input, uint8_t *dest, int stride,
+                             int tx_type) {
+  int i, j;
+  tran_low_t out[32 * 32];
+  tran_low_t *outptr = out;
+  tran_low_t temp_in[32], temp_out[32];
+  const transform_2d ht = IHT_32[tx_type];
+
+  // Rows
+  for (i = 0; i < 32; ++i) {
+    ht.rows(input, outptr);
+    input += 32;
+    outptr += 32;
+  }
+
+  // Columns
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j)
+      temp_in[j] = out[j * 32 + i];
+    ht.cols(temp_in, temp_out);
+    for (j = 0; j < 32; ++j) {
+      dest[j * stride + i] = clip_pixel_add(dest[j * stride + i],
+                                            ROUND_POWER_OF_TWO(temp_out[j], 6));
+    }
+  }
+}
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
 // idct
 void vp9_idct4x4_add(const tran_low_t *input, uint8_t *dest, int stride,
                      int eob) {
@@ -1591,6 +1642,37 @@ void vp9_iht16x16_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
     vp9_iht16x16_256_add(input, dest, stride, tx_type);
   }
 }
+
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+void vp9_iht32x32_add(TX_TYPE tx_type, const tran_low_t *input, uint8_t *dest,
+                      int stride, int eob) {
+  if (tx_type == DCT_DCT) {
+    vp9_idct32x32_add(input, dest, stride, eob);
+  } else if (tx_type == FLIPADST_DCT) {
+    flipud(dest, stride, 32);
+    vp9_iht32x32_1024_add(input, dest, stride, ADST_DCT);
+    flipud(dest, stride, 32);
+  } else if (tx_type == DCT_FLIPADST) {
+    fliplr(dest, stride, 32);
+    vp9_iht32x32_1024_add(input, dest, stride, DCT_ADST);
+    fliplr(dest, stride, 32);
+  } else if (tx_type == FLIPADST_FLIPADST) {
+    fliplrud(dest, stride, 32);
+    vp9_iht32x32_1024_add(input, dest, stride, ADST_ADST);
+    fliplrud(dest, stride, 32);
+  } else if (tx_type == ADST_FLIPADST) {
+    fliplr(dest, stride, 32);
+    vp9_iht32x32_1024_add(input, dest, stride, ADST_ADST);
+    fliplr(dest, stride, 32);
+  } else if (tx_type == FLIPADST_ADST) {
+    flipud(dest, stride, 32);
+    vp9_iht32x32_1024_add(input, dest, stride, ADST_ADST);
+    flipud(dest, stride, 32);
+  } else {
+    vp9_iht32x32_1024_add(input, dest, stride, tx_type);
+  }
+}
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
 
 #if CONFIG_TX_SKIP
 void vp9_tx_identity_add(const tran_low_t *input, uint8_t *dest,
