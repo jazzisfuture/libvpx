@@ -708,10 +708,16 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
                    sse, ref_best_rd, 0, bs,
                    mbmi->tx_size, cpi->sf.use_fast_coef_costing);
 #if CONFIG_EXT_TX
-  if (is_inter_block(mbmi) && mbmi->tx_size < TX_32X32 && bs >= BLOCK_8X8 &&
+  if (is_inter_block(mbmi) &&
+#if CONFIG_DST_32X32
+      mbmi->tx_size <= TX_32X32 &&
+#else
+      mbmi->tx_size < TX_32X32 &&
+#endif  // CONFIG_DST_32X32
+      bs >= BLOCK_8X8 &&
       !xd->lossless && *rate != INT_MAX)
     *rate += cpi->ext_tx_costs[mbmi->tx_size][mbmi->ext_txfrm];
-#endif
+#endif  // CONFIG_EXT_TX
 }
 
 static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
@@ -754,10 +760,16 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
                      &sse[n], ref_best_rd, 0, bs, n,
                      cpi->sf.use_fast_coef_costing);
 #if CONFIG_EXT_TX
-    if (is_inter_block(mbmi) && n < TX_32X32 && bs >= BLOCK_8X8 &&
+    if (is_inter_block(mbmi) &&
+#if CONFIG_DST_32X32
+        n <= TX_32X32 &&
+#else
+        n < TX_32X32 &&
+#endif  // CONFIG_DST_32X32
+        bs >= BLOCK_8X8 &&
         !xd->lossless && r[n][0] != INT_MAX)
       r[n][0] += cpi->ext_tx_costs[n][mbmi->ext_txfrm];
-#endif
+#endif  // CONFIG_EXT_TX
     r[n][1] = r[n][0];
     if (r[n][0] < INT_MAX) {
       for (m = 0; m <= n - (n == (int) max_tx_size); m++) {
@@ -3183,12 +3195,16 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
           best_rdcost_tx = rdcost_tx;
         }
       }
+#if CONFIG_DST_32X32
+      if (mbmi->tx_size > TX_32X32)
+#else
       if (mbmi->tx_size >= TX_32X32)
+#endif  // CONFIG_DST_32X32
         mbmi->ext_txfrm = NORM;
       else
         mbmi->ext_txfrm = best_ext_tx;
     }
-#endif
+#endif  // CONFIG_EXT_TX
 
     // Y cost and distortion
     super_block_yrd(cpi, x, rate_y, &distortion_y, &skippable_y, psse,
@@ -4301,7 +4317,11 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
         this_skip2 = 1;
       } else if (!xd->lossless) {
 #if CONFIG_EXT_TX
+#if CONFIG_DST_32X32
+        if (mbmi->tx_size <= TX_32X32)
+#else
         if (mbmi->tx_size < TX_32X32)
+#endif  // CONFIG_DST_32X32
           rate2 += cpi->ext_tx_costs[mbmi->tx_size][mbmi->ext_txfrm];
 #endif  // CONFIG_EXT_TX
         if (RDCOST(x->rdmult, x->rddiv, rate2, distortion2) <
@@ -4336,7 +4356,11 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     if (bestrd_tx == INT64_MAX)
       continue;
 
+#if CONFIG_DST_32X32
+    if (best_tx_size <= TX_32X32)
+#else
     if (best_tx_size < TX_32X32)
+#endif  // CONFIG_DST_32X32
       mbmi->ext_txfrm = best_tx_type;
     else
       mbmi->ext_txfrm = NORM;

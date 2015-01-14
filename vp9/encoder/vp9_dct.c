@@ -1450,6 +1450,68 @@ void vp9_tx_identity(const int16_t *input, tran_low_t *out, int stride,
 }
 #endif
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+// TODO(zoeliu): Using a floating point implementation for now.
+// Should re-use the 16x16 integer DST that we already have once
+// we are confirmed the benefit of the 32x32 DST experiment.
+static void fdst32(const tran_high_t *input, tran_high_t *output, int round) {
+  int i, j;
+  (void)round;
+
+  for (i = 0; i < 32; ++i) {
+    double out = 0.0;
+    for (j = 0; j < 32; ++j) {
+      out += input[j] * dst_32x32_coeffs[i * 32 + j];
+    }
+    output[i] = (tran_high_t)rint(out);
+  }
+}
+
+static const transform_2d_1 FHT_32[] = {
+  { fdct32, fdct32 },  // DCT_DCT   = 0
+  { fdst32, fdct32 },  // ADST_DCT  = 1
+  { fdct32, fdst32 },  // DCT_ADST  = 2
+  { fdst32, fdst32 }   // ADST_ADST = 3
+};
+
+void vp9_fht32x32_c(const int16_t *input, tran_low_t *output,
+                    int stride, int tx_type) {
+  if (tx_type == DCT_DCT) {
+    vp9_fdct32x32_c(input, output, stride);
+  } else {
+    int i, j;
+    const transform_2d_1 ht = FHT_32[tx_type];
+    tran_high_t temp_in[32], temp_out[32];
+    tran_high_t out[32 * 32];
+
+    // Scale up the input source by 2^2(bits)=4, to get aligned with the
+    // internal 16-bit precision constraint:
+    // The input source is in 9-bit precision. Adding up the dynamic range
+    // increment by sqrt(32x32)=32 times as a result of the 32x32 transform, an
+    // increment of log_2{32}=5 in bit precision is needed. Hence, we have
+    // (16-9-5)=2 bits left to use for the bit precision increment.
+
+    // Columns
+    for (i = 0; i < 32; ++i) {
+      for (j = 0; j < 32; ++j)
+        temp_in[j] = input[j * stride + i] * 4;
+      ht.cols(temp_in, temp_out, 0);
+      for (j = 0; j < 32; ++j)
+        out[j * 32 + i] = (temp_out[j] + 1 + (temp_out[j] > 0)) >> 2;
+    }
+
+    // Rows
+    for (i = 0; i < 32; ++i) {
+      for (j = 0; j < 32; ++j)
+        temp_in[j] = out[j + i * 32];
+      ht.rows(temp_in, temp_out, 0);
+      for (j = 0; j < 32; ++j)
+        output[j + i * 32] = (temp_out[j] + 1 + (temp_out[j] < 0)) >> 2;
+    }
+  }
+}
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
 #if CONFIG_TX64X64
 // TODO(debargha): Using a floating point implementation for now.
 // Should re-use the 32x32 integer dct we already have.
@@ -1900,7 +1962,7 @@ void vp9_fdct64x64_1_c(const int16_t *input, tran_low_t *output, int stride) {
   output[0] = sum >> 5;
   output[1] = 0;
 }
-#endif
+#endif  // CONFIG_TX64X64
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_fdct4x4_c(const int16_t *input, tran_low_t *output,
@@ -1961,6 +2023,13 @@ void vp9_highbd_fdct32x32_rd_c(const int16_t *input, tran_low_t *out,
                                int stride) {
   vp9_fdct32x32_rd_c(input, out, stride);
 }
+
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+void vp9_highbd_fht32x32_c(const int16_t *input, tran_low_t *output,
+                           int stride, int tx_type) {
+  vp9_fht32x32_c(input, output, stride, tx_type);
+}
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
 
 #if CONFIG_TX64X64
 void vp9_highbd_fdct64x64_1_c(const int16_t *input, tran_low_t *out,
