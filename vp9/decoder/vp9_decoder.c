@@ -18,6 +18,9 @@
 #include "vpx_ports/vpx_timer.h"
 #include "vpx_scale/vpx_scale.h"
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+#include "vp9/common/vp9_idct.h"
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
 #include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_loopfilter.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -81,6 +84,9 @@ VP9Decoder *vp9_decoder_create() {
 
   vp9_get_worker_interface()->init(&pbi->lf_worker);
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+  vp9_generate_dst_32x32_coeffs(&dst_32x32_coeffs[0]);
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
   return pbi;
 }
 
