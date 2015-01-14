@@ -3266,6 +3266,11 @@ int vp9_receive_raw_frame(VP9_COMP *cpi, unsigned int frame_flags,
   check_initial_width(cpi, subsampling_x, subsampling_y);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_EXT_TX && CONFIG_DST_32X32
+  // Generate the 32x32 DST transform matrix coefficients
+  vp9_generate_dst_32x32_coeffs(&dst_32x32_coeffs[0]);
+#endif  // CONFIG_EXT_TX && CONFIG_DST_32X32
+
   vpx_usec_timer_start(&timer);
 
   if (vp9_lookahead_push(cpi->lookahead, sd, time_stamp, end_time, frame_flags))

@@ -349,7 +349,9 @@ static INLINE TX_TYPE get_tx_type(PLANE_TYPE plane_type,
   if (plane_type != PLANE_TYPE_Y || xd->lossless || is_inter_block(mbmi))
     return DCT_DCT;
 #endif
-  return intra_mode_to_tx_type_lookup[mbmi->mode];
+  return (mbmi->tx_size <= TX_16X16 ?
+          intra_mode_to_tx_type_lookup[mbmi->mode] :
+          DCT_DCT);
 }
 
 static INLINE TX_TYPE get_tx_type_4x4(PLANE_TYPE plane_type,
