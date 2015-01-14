@@ -60,7 +60,7 @@ typedef struct frame_contexts {
   vp9_prob filterintra_prob[TX_SIZES][INTRA_MODES];
 #endif  // CONFIG_FILTERINTRA
 #if CONFIG_EXT_TX
-  vp9_prob ext_tx_prob[3][EXT_TX_TYPES - 1];
+  vp9_prob ext_tx_prob[4][EXT_TX_TYPES - 1];
 #endif  // CONFIG_EXT_TX
 #if CONFIG_SUPERTX
   vp9_prob supertx_prob[PARTITION_SUPERTX_CONTEXTS][TX_SIZES];
@@ -100,7 +100,7 @@ typedef struct {
   unsigned int filterintra[TX_SIZES][INTRA_MODES][2];
 #endif
 #if CONFIG_EXT_TX
-  unsigned int ext_tx[3][EXT_TX_TYPES];
+  unsigned int ext_tx[4][EXT_TX_TYPES];
 #endif
 #if CONFIG_SUPERTX
   unsigned int supertx[PARTITION_SUPERTX_CONTEXTS][TX_SIZES][2];
