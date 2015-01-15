@@ -9,7 +9,7 @@
  */
 
 
-/*!\defgroup vp8_decoder WebM VP8 Decoder
+/*!\defgroup vp8_decoder WebM VP8/VP9 Decoder
  * \ingroup vp8
  *
  * @{
@@ -36,8 +36,14 @@ extern "C" {
  */
 extern vpx_codec_iface_t  vpx_codec_vp8_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp8_dx(void);
+/*!@} - end algorithm interface member group*/
 
-/* TODO(jkoleszar): These move to VP9 in a later patch set. */
+/*!\name Algorithm interface for VP9
+ *
+ * This interface provides the capability to decode raw VP8 streams, as would
+ * be found in AVI files and other non-Flash uses.
+ * @{
+ */
 extern vpx_codec_iface_t  vpx_codec_vp9_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
 /*!@} - end algorithm interface member group*/
