@@ -471,8 +471,9 @@ static void alloc_raw_frame_buffers(VP9_COMP *cpi) {
   VP9_COMMON *cm = &cpi->common;
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
 
-  cpi->lookahead = vp9_lookahead_init(oxcf->width, oxcf->height,
-                                      cm->subsampling_x, cm->subsampling_y,
+  if (!cpi->lookahead)
+    cpi->lookahead = vp9_lookahead_init(oxcf->width, oxcf->height,
+                                        cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                       cm->use_highbitdepth,
 #endif
@@ -1316,11 +1317,11 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   cm->height = cpi->oxcf.height;
 
   if (cpi->initial_width) {
-    // Increasing the size of the frame beyond the first seen frame, or some
-    // otherwise signaled maximum size, is not supported.
-    // TODO(jkoleszar): exit gracefully.
-    assert(cm->width <= cpi->initial_width);
-    assert(cm->height <= cpi->initial_height);
+    if (cm->width > cpi->initial_width || cm->height > cpi->initial_height) {
+      vp9_free_context_buffers(cm);
+      vp9_alloc_context_buffers(cm, cm->width, cm->height);
+      cpi->initial_width = cpi->initial_height = 0;
+    }
   }
   update_frame_size(cpi);
 
