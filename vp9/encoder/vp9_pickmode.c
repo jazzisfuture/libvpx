@@ -873,9 +873,19 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     pd->dst = orig_dst;
 
     for (i = 0; i < 4; ++i) {
+      int mode_rd_thresh;
       const PREDICTION_MODE this_mode = intra_mode_list[i];
-      if (!((1 << this_mode) & cpi->sf.intra_y_mode_mask[intra_tx_size]))
+      if (!((1 << this_mode) & cpi->sf.intra_y_mode_bsize_mask[bsize]))
         continue;
+
+        // Skip modes other than DC, if rd_cost is below threshold.
+        mode_rd_thresh = best_mode_skip_txfm ? rd_threshes[this_mode] << 1 :
+                                               rd_threshes[this_mode];
+        if (i > 0 && rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
+                                         rd_thresh_freq_fact[this_mode]))
+          continue;
+
+
       args.mode = this_mode;
       args.rate = 0;
       args.dist = 0;
