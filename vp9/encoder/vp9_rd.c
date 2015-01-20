@@ -311,6 +311,12 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
                         cm->fc.inter_compound_mode_probs[i],
                         vp9_inter_compound_mode_tree);
 #endif
+
+#if CONFIG_FADE_MODE
+      vp9_cost_tokens((int *)cpi->fade_mode_cost,
+                      cm->fc.fade_mode_probs,
+                      vp9_fade_mode_tree);
+#endif  // CONFIG_FADE_MODE
     }
   }
 

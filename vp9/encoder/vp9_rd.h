@@ -47,8 +47,10 @@ extern "C" {
 #if CONFIG_INTERINTRA
 #define MAX_MODES 42
 #define INTERINTRA_START_MODE 30
+
 #else
 #define MAX_MODES 30
+
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_COMPOUND_MODES

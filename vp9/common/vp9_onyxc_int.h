@@ -88,6 +88,10 @@ typedef struct VP9Common {
   int use_highbitdepth;  // Marks if we need to use 16bit frame buffers.
 #endif
 
+#if CONFIG_FADE_MODE
+  int use_fade_mode;
+#endif
+
   YV12_BUFFER_CONFIG *frame_to_show;
 
   RefCntBuffer frame_bufs[FRAME_BUFFERS];

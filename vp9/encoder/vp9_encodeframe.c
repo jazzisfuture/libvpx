@@ -1372,6 +1372,7 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
 
+
 #if CONFIG_COPY_MODE
   if (!frame_is_intra_only(cm) && mbmi->copy_mode == NOREF) {
 #else
@@ -1408,7 +1409,7 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
       }
     }
     if (inter_block &&
-            !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+        !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
       const int mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
       if (bsize >= BLOCK_8X8) {
         const PREDICTION_MODE mode = mbmi->mode;
@@ -1421,6 +1422,11 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
 #else
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
 #endif
+#if CONFIG_FADE_MODE
+        if (mode == ZEROMV && !has_second_ref(mbmi)) {
+          ++counts->fade_mode[mbmi->fade_mode];
+        }
+#endif  // CONFIG_FADE_MODE
       } else {
         const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
         const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -4377,7 +4383,9 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi);
-
+#if CONFIG_FADE_MODE
+  cm->use_fade_mode = 1;
+#endif
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
     x->fwd_txm4x4 = xd->lossless ? vp9_highbd_fwht4x4 : vp9_highbd_fdct4x4;
@@ -4555,6 +4563,15 @@ void vp9_encode_frame(VP9_COMP *cpi) {
         vp9_zero(cm->counts.comp_inter);
       }
     }
+
+#if CONFIG_FADE_MODE
+    cm->use_fade_mode = 0;
+    for (i = 0; i < FADE_MODE_COUNT; i++) {
+      if (i != ZERO_FADE && cm->counts.fade_mode[i] > 0) {
+        cm->use_fade_mode = 1;
+      }
+    }
+#endif  // CONFIG_FADE_MODE
 
 #if CONFIG_TX64X64
     if (cm->tx_mode == TX_MODE_SELECT) {

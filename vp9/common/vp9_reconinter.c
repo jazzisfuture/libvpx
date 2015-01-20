@@ -20,6 +20,16 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+#if CONFIG_FADE_MODE
+static const int fade_amount[FADE_MODE_COUNT] = {
+  0,    // ZERO_FADE
+  -8,  // MINUS_TWO
+  -4,   // MINUS_ONE
+  4,    // PLUS_ONE
+  8    // PLUS_TWO
+};
+#endif  // CONFIG_FADE_MODE
+
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
                             int x, int y, int b_w, int b_h, int w, int h) {
@@ -122,6 +132,20 @@ static void inter_predictor(const uint8_t *src, int src_stride,
       src, src_stride, dst, dst_stride,
       kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
 }
+
+
+#if CONFIG_FADE_MODE
+static void fade_predictor(uint8_t *dst, int dst_stride,
+                           int fade_amount,
+                           int w, int h) {
+  int i, j;
+  for (i = 0; i < h; ++i)
+    for (j = 0; j < w; ++j) {
+      dst[i * dst_stride + j] = clip_pixel(
+          dst[i * dst_stride + j] + fade_amount);
+    }
+}
+#endif  // CONFIG_FADE_MODE
 
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
@@ -693,6 +717,15 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                     subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
+
+#if CONFIG_FADE_MODE
+    if (mi->mbmi.mode == ZEROMV && plane == 0 &&
+        mi->mbmi.sb_type >= BLOCK_8X8) {
+      FADE_MODE fade = mi->mbmi.fade_mode;
+      fade_predictor(dst, dst_buf->stride,
+          fade_amount[fade], w, h);
+    }
+#endif  // CONFIG_FADE_MODE
   }
 }
 
@@ -1257,6 +1290,13 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                     subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_FADE_MODE
+    if (mi->mbmi.mode == ZEROMV && plane == 0) {
+      FADE_MODE fade = mi->mbmi.fade_mode;
+      fade_predictor(dst, dst_buf->stride,
+          fade_amount[fade], w, h);
+    }
+#endif  // CONFIG_FADE_MODE
   }
 }
 
