@@ -123,6 +123,20 @@ static void inter_predictor(const uint8_t *src, int src_stride,
       kernel[subpel_x], xs, kernel[subpel_y], ys, w, h);
 }
 
+
+#if CONFIG_FADE_MODE
+static void fade_predictor(uint8_t *dst, int dst_stride,
+                            int fade_amount,
+                            int h, int w) {
+  int i, j;
+  for (i = 0; i < h; ++i)
+    for (j = 0; j < w; ++j) {
+      dst[i * dst_stride + j] = clip_pixel(
+          dst[i * dst_stride + j] + fade_amount);
+    }
+}
+#endif
+
 void vp9_build_inter_predictor(const uint8_t *src, int src_stride,
                                uint8_t *dst, int dst_stride,
                                const MV *src_mv,
@@ -693,6 +707,14 @@ static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                     subpel_x, subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
+
+#if CONFIG_FADE_MODE
+    if (mi->mbmi.mode == ZEROMV && plane == 0) {
+      FADE_MODE fade = mi->mbmi.fade_mode;
+      fade_predictor(dst, dst_buf->stride,
+          fade_amount[fade], h, w);
+    }
+#endif  // CONFIG_FADE_MODE
   }
 }
 
@@ -1257,6 +1279,13 @@ static void dec_build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                     subpel_y, sf, w, h, ref, kernel, xs, ys);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_FADE_MODE
+    if (mi->mbmi.mode == ZEROMV && plane == 0) {
+      FADE_MODE fade = mi->mbmi.fade_mode;
+      fade_predictor(dst, dst_buf->stride,
+          fade_amount[fade], h, w);
+    }
+#endif  // CONFIG_FADE_MODE
   }
 }
 

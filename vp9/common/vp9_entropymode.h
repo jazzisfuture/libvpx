@@ -49,6 +49,9 @@ typedef struct frame_contexts {
   vp9_prob switchable_interp_prob[SWITCHABLE_FILTER_CONTEXTS]
                                  [SWITCHABLE_FILTERS - 1];
   vp9_prob inter_mode_probs[INTER_MODE_CONTEXTS][INTER_MODES - 1];
+#if CONFIG_FADE_MODE
+  vp9_prob fade_mode_probs[FADE_MODE_COUNT - 1];
+#endif
 #if CONFIG_COMPOUND_MODES
   vp9_prob inter_compound_mode_probs[INTER_MODE_CONTEXTS]
                                     [INTER_COMPOUND_MODES - 1];
@@ -99,6 +102,9 @@ typedef struct {
   unsigned int switchable_interp[SWITCHABLE_FILTER_CONTEXTS]
                                 [SWITCHABLE_FILTERS];
   unsigned int inter_mode[INTER_MODE_CONTEXTS][INTER_MODES];
+#if CONFIG_FADE_MODE
+  unsigned int fade_mode[FADE_MODE_COUNT];
+#endif
 #if CONFIG_COMPOUND_MODES
   unsigned int inter_compound_mode[INTER_MODE_CONTEXTS][INTER_COMPOUND_MODES];
 #endif  // CONFIG_COMPOUND_MODES
@@ -160,6 +166,10 @@ extern const vp9_tree_index vp9_copy_mode_tree[TREE_SIZE(COPY_MODE_COUNT - 1)];
 #if CONFIG_COMPOUND_MODES
 extern const vp9_tree_index vp9_inter_compound_mode_tree
                                 [TREE_SIZE(INTER_COMPOUND_MODES)];
+#endif
+#if CONFIG_FADE_MODE
+extern const vp9_tree_index vp9_fade_mode_tree
+                                [TREE_SIZE(FADE_MODE_COUNT)];
 #endif
 
 void vp9_setup_past_independence(struct VP9Common *cm);

@@ -1421,6 +1421,11 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
 #else
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
 #endif
+#if CONFIG_FADE_MODE
+        if (mode == ZEROMV) {
+          ++counts->fade_mode[mbmi->fade_mode];
+        }
+#endif
       } else {
         const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
         const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
@@ -1438,6 +1443,11 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
             }
 #else
             ++counts->inter_mode[mode_ctx][INTER_OFFSET(b_mode)];
+#endif
+#if CONFIG_FADE_MODE
+            if (b_mode == ZEROMV) {
+              ++counts->fade_mode[mbmi->fade_mode];
+            }
 #endif
           }
         }
