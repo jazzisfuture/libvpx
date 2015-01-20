@@ -101,6 +101,12 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {ZEROMV,    {GOLDEN_FRAME, NONE}},
   {ZEROMV,    {ALTREF_FRAME, NONE}},
 
+#if CONFIG_FADE_MODE
+  {FADEMV,    {LAST_FRAME,   NONE}},
+  {FADEMV,    {GOLDEN_FRAME, NONE}},
+  {FADEMV,    {ALTREF_FRAME, NONE}},
+#endif
+
 #if CONFIG_COMPOUND_MODES
   {NEAREST_NEARESTMV, {LAST_FRAME,   ALTREF_FRAME}},
   {NEAREST_NEARESTMV, {GOLDEN_FRAME, ALTREF_FRAME}},
@@ -1731,6 +1737,10 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
         this_mv[1].as_int = frame_mv[mbmi->ref_frame[1]].as_int;
 #endif
       break;
+#if CONFIG_FADE_MODE
+    case FADEMV:
+      this_mv[0].as_int = 0;
+#endif
     case ZEROMV:
       this_mv[0].as_int = 0;
 #if !CONFIG_COMPOUND_MODES
@@ -2136,6 +2146,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
         frame_mv[ZEROMV][frame].as_int = 0;
+#if CONFIG_FADE_MODE
+        frame_mv[FADEMV][frame].as_int = 0;
+#endif
         vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame]);
@@ -2178,6 +2191,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
       for (ref = 0; ref < 1 + has_second_rf; ++ref) {
         const MV_REFERENCE_FRAME frame = mbmi->ref_frame[ref];
         frame_mv[ZEROMV][frame].as_int = 0;
+#if CONFIG_FADE_MODE
+        frame_mv[FADEMV][frame].as_int = 0;
+#endif
         vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame]);
@@ -2202,6 +2218,11 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
         }
 #else
         mode_idx = INTER_OFFSET(this_mode);
+#endif
+
+#if CONFIG_FADE_MODE
+        if (this_mode == FADEMV)
+          continue;
 #endif
 
         bsi->rdstat[i][mode_idx].brdcost = INT64_MAX;
@@ -3332,6 +3353,28 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_COMPOUND_MODES
     }
   }
+#if CONFIG_FADE_MODE
+  if (this_mode == FADEMV) {
+    int rate_sum;
+    int64_t dist_sum;
+    FADE_MODE best_fade = MINUS_TWO
+    FADE_MODE fade;
+    int64_t best_rd_fade = INT64_MAX;
+    for (fade = MINUS_TWO; fade <= PLUS_TWO; fade++) {
+      mbmi->fade_mode = fade;
+      vp9_build_inter_predictors_sb(xd, mi_row, mi_col, bsize);
+      model_rd_for_sb(cpi, bsize, x, xd, &rate_sum, &dist_sum, NULL, NULL);
+      rd = RDCOST(x->rdmult, x->rddiv, rate_sum, dist_sum);
+      rd += cpi->fade_mode_cost[fade];
+      if (rd < best_rd_fade) {
+        best_fade = fade;
+        best_rd_fade = rd;
+      }
+    }
+    mbmi->fade_mode = best_fade;
+    *rate2 += cpi->fade_mode_cost[best_fade];
+  }
+#endif
 
 #if CONFIG_COMPOUND_MODES
   if (this_mode == NEWMV || this_mode == NEW_NEWMV ||
@@ -3583,6 +3626,9 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   mbmi->interp_filter = cm->interp_filter != SWITCHABLE ?
       cm->interp_filter : best_filter;
   rs = cm->interp_filter == SWITCHABLE ? vp9_get_switchable_rate(cpi) : 0;
+
+
+
 
 #if CONFIG_WEDGE_PARTITION
   if (is_comp_pred && get_wedge_bits(bsize)) {
@@ -4207,6 +4253,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
+#if CONFIG_FADE_MODE
+    frame_mv[FADEMV][ref_frame].as_int = 0;
+#endif
 #if CONFIG_COMPOUND_MODES
     frame_mv[NEW_NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZERO_ZEROMV][ref_frame].as_int = 0;
@@ -5458,6 +5507,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
     }
     frame_mv[NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZEROMV][ref_frame].as_int = 0;
+#if CONFIG_FADE_MODE
+    frame_mv[FADEMV][ref_frame].as_int = 0;
+#endif
 #if CONFIG_COMPOUND_MODES
     frame_mv[NEW_NEWMV][ref_frame].as_int = INVALID_MV;
     frame_mv[ZERO_ZEROMV][ref_frame].as_int = 0;
