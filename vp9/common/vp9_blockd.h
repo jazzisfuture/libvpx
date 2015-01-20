@@ -76,6 +76,9 @@ typedef enum {
   NEARESTMV,
   NEARMV,
   ZEROMV,
+#if CONFIG_FADE_MODE
+  FADEMV,
+#endif
   NEWMV,
 #if CONFIG_COMPOUND_MODES
   NEAREST_NEARESTMV,
@@ -90,6 +93,16 @@ typedef enum {
 #endif
   MB_MODE_COUNT
 } PREDICTION_MODE;
+
+#if CONFIG_FADE_MODE
+typedef enum {
+  MINUS_TWO,
+  MINUS_ONE,
+  PLUS_ONE,
+  PLUS_TWO,
+  FADE_MODE_COUNT
+} FADE_MODE;
+#endif  // CONFIG_FADE_MODE
 
 #if CONFIG_COPY_MODE
 typedef enum {
@@ -175,6 +188,9 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
 
+#if CONFIG_FADE_MODE
+  FADE_MODE fade_mode;
+#endif
 #if CONFIG_EXT_TX
   EXT_TX_TYPE ext_txfrm;
 #endif

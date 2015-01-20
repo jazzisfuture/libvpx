@@ -68,6 +68,15 @@ static PREDICTION_MODE read_inter_mode(VP9_COMMON *cm, vp9_reader *r,
   return NEARESTMV + mode;
 }
 
+#if CONFIG_FADE_MODE
+static FADE_MODE read_fade_mode(VP9_COMMON *cm, vp9_reader *r) {
+  FADE_MODE fade = vp9_read_tree(r, vp9_fade_mode_tree,
+                                 cm->fc.fade_mode_probs);
+  ++cm->counts.fade_mode[fade];
+  return fade;
+}
+#endif
+
 #if CONFIG_COPY_MODE
 static COPY_MODE read_copy_mode(VP9_COMMON *cm, vp9_reader *r,
                                 int num_candidate, int ctx) {
@@ -613,6 +622,14 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
         mv[1].as_int = 0;
       break;
     }
+#if CONFIG_FADE_MODE
+    case FADEMV: {
+      mv[0].as_int = 0;
+      if (is_compound)
+        mv[1].as_int = 0;
+      break;
+    }
+#endif
 #if CONFIG_COMPOUND_MODES
     case NEW_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
@@ -775,6 +792,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
 #else
       mbmi->mode = read_inter_mode(cm, r, inter_mode_ctx);
 #endif
+#if CONFIG_FADE_MODE
+      if (mbmi->mode == FADEMV) {
+        mbmi->fade_mode = read_fade_mode(cm, r);
+      }
+#endif
     }
   }
 
@@ -817,6 +839,9 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];  // 1 or 2
     int idx, idy;
     PREDICTION_MODE b_mode;
+#if CONFIG_FADE_MODE
+    FADE_MODE fade_mode;
+#endif
     int_mv nearest_sub8x8[2], near_sub8x8[2];
     for (idy = 0; idy < 2; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
@@ -830,6 +855,11 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
         }
 #else
         b_mode = read_inter_mode(cm, r, inter_mode_ctx);
+#endif
+#if CONFIG_FADE_MODE
+        if (b_mode == FADEMV) {
+          fade_mode = read_fade_mode(cm, r);
+        }
 #endif
 #if CONFIG_COMPOUND_MODES
         if (b_mode == NEARESTMV || b_mode == NEARMV ||
@@ -864,6 +894,10 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     }
 
     mi->mbmi.mode = b_mode;
+#if CONFIG_FADE_MODE
+    if (b_mode == FADEMV)
+      mi->mbmi.fade_mode = fade_mode;
+#endif
     mbmi->mv[0].as_int = mi->bmi[3].as_mv[0].as_int;
     mbmi->mv[1].as_int = mi->bmi[3].as_mv[1].as_int;
   } else {
