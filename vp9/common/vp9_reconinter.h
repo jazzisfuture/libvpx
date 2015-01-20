@@ -18,6 +18,16 @@
 extern "C" {
 #endif
 
+#if CONFIG_FADE_MODE
+static const int fade_amount[FADE_MODE_COUNT] = {
+    -2, // MINUS_TWO
+    -1, // MINUS_ONE
+    0,  // ZERO_FADE
+    1,  // PLUS_ONE
+    2   // PLUS_TWO
+};
+#endif
+
 void vp9_build_inter_predictors_sby(MACROBLOCKD *xd, int mi_row, int mi_col,
                                     BLOCK_SIZE bsize);
 
