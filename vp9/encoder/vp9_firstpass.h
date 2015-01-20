@@ -106,14 +106,19 @@ typedef struct {
 
   // Projected total bits available for a key frame group of frames
   int64_t kf_group_bits;
-
+  
   // Error score of frames still to be coded in kf group
   int64_t kf_group_error_left;
+
+  // The fraction for a kf groups total bits allocated to the inter frames
+  double kfgroup_inter_fraction;
+
   int sr_update_lag;
 
   int kf_zeromotion_pct;
   int last_kfgroup_zeromotion_pct;
   int gf_zeromotion_pct;
+  int baseline_worst_quality;
   int active_worst_quality;
   int extend_minq;
   int extend_maxq;
