@@ -48,6 +48,10 @@ static struct vp9_token copy_mode_encodings[COPY_MODE_COUNT - 1];
 #if CONFIG_COMPOUND_MODES
 static struct vp9_token inter_compound_mode_encodings[INTER_COMPOUND_MODES];
 #endif  // CONFIG_COMPOUND_MODES
+#if CONFIG_FADE_MODE
+static struct vp9_token fade_mode_encodings[FADE_MODE_COUNT];
+#endif
+
 
 #if CONFIG_SUPERTX
 static int vp9_check_supertx(VP9_COMMON *cm, int mi_row, int mi_col,
@@ -77,6 +81,9 @@ void vp9_entropy_mode_init() {
   vp9_tokens_from_tree(copy_mode_encodings_l2, vp9_copy_mode_tree_l2);
   vp9_tokens_from_tree(copy_mode_encodings, vp9_copy_mode_tree);
 #endif  // CONFIG_COPY_MODE
+#if CONFIG_FADE_MODE
+  vp9_tokens_from_tree(fade_mode_encodings, vp9_fade_mode_tree);
+#endif
 }
 
 static void write_intra_mode(vp9_writer *w, PREDICTION_MODE mode,
@@ -565,6 +572,16 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #else
         write_inter_mode(w, mode, inter_probs);
 #endif  // CONFIG_COMPOUND_MODES
+#if CONFIG_FADE_MODE
+        if (mode == ZEROMV && is_compound) {
+          assert(mbmi->fade_mode == ZERO_FADE);
+        }
+        if (mode == ZEROMV) {
+          if (!is_compound && cm->use_fade_mode)
+            vp9_write_token(w, vp9_fade_mode_tree,
+                cm->fc.fade_mode_probs, &fade_mode_encodings[mbmi->fade_mode]);
+        }
+#endif
       }
     }
 
@@ -779,6 +796,8 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
   if (frame_is_intra_only(cm)) {
     write_mb_modes_kf(cm, xd, xd->mi, w);
   } else {
+    if(!cm->use_fade_mode)
+      m->mbmi.fade_mode = ZERO_FADE;
     pack_inter_mode_mvs(cpi, m,
 #if CONFIG_SUPERTX
                         supertx_enabled,
@@ -1683,6 +1702,14 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
 
 #if CONFIG_COMPOUND_MODES
     update_inter_compound_mode_probs(cm, &header_bc);
+#endif
+
+#if CONFIG_FADE_MODE
+    vp9_write(&header_bc, cm->use_fade_mode, GROUP_DIFF_UPDATE_PROB);
+
+    if (cm->use_fade_mode)
+      prob_diff_update(vp9_fade_mode_tree, cm->fc.fade_mode_probs,
+          cm->counts.fade_mode, FADE_MODE_COUNT, &header_bc);
 #endif
 
     if (cm->interp_filter == SWITCHABLE)

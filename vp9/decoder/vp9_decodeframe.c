@@ -2195,6 +2195,14 @@ static void read_inter_compound_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
 }
 #endif  // CONFIG_COMPOUND_MODES
 
+#if CONFIG_FADE_MODE
+static void read_fade_mode_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
+  int i;
+  for (i = 0; i < FADE_MODE_COUNT - 1; ++i)
+    vp9_diff_update_prob(r, &fc->fade_mode_probs[i]);
+}
+#endif
+
 static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
                                   size_t partition_size) {
   VP9_COMMON *const cm = &pbi->common;
@@ -2229,6 +2237,13 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
     read_inter_mode_probs(fc, &r);
 #if CONFIG_COMPOUND_MODES
     read_inter_compound_mode_probs(fc, &r);
+#endif
+
+#if CONFIG_FADE_MODE
+    cm->use_fade_mode = vp9_read(&r, GROUP_DIFF_UPDATE_PROB);
+
+    if (cm->use_fade_mode)
+      read_fade_mode_probs(fc, &r);
 #endif
 
     if (cm->interp_filter == SWITCHABLE)

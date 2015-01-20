@@ -91,6 +91,17 @@ typedef enum {
   MB_MODE_COUNT
 } PREDICTION_MODE;
 
+#if CONFIG_FADE_MODE
+typedef enum {
+  ZERO_FADE,
+  MINUS_TWO,
+  MINUS_ONE,
+  PLUS_ONE,
+  PLUS_TWO,
+  FADE_MODE_COUNT
+} FADE_MODE;
+#endif  // CONFIG_FADE_MODE
+
 #if CONFIG_COPY_MODE
 typedef enum {
   NOREF,
@@ -175,6 +186,9 @@ typedef struct {
   uint8_t mode_context[MAX_REF_FRAMES];
   INTERP_FILTER interp_filter;
 
+#if CONFIG_FADE_MODE
+  FADE_MODE fade_mode;
+#endif
 #if CONFIG_EXT_TX
   EXT_TX_TYPE ext_txfrm;
 #endif

@@ -1372,6 +1372,7 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
 
+
 #if CONFIG_COPY_MODE
   if (!frame_is_intra_only(cm) && mbmi->copy_mode == NOREF) {
 #else
@@ -1420,6 +1421,11 @@ static void update_stats(VP9_COMMON *cm, const MACROBLOCK *x) {
         }
 #else
         ++counts->inter_mode[mode_ctx][INTER_OFFSET(mode)];
+#endif
+#if CONFIG_FADE_MODE
+        if (mode == ZEROMV && !has_second_ref(mbmi)) {
+          ++counts->fade_mode[mbmi->fade_mode];
+        }
 #endif
       } else {
         const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
@@ -4555,6 +4561,15 @@ void vp9_encode_frame(VP9_COMP *cpi) {
         vp9_zero(cm->counts.comp_inter);
       }
     }
+
+#if CONFIG_FADE_MODE
+    cm->use_fade_mode = 0;
+    for (i = 0; i < FADE_MODE_COUNT; i++) {
+      if (i != ZERO_FADE && cm->counts.fade_mode[i] > 0) {
+        cm->use_fade_mode = 1;
+      }
+    }
+#endif
 
 #if CONFIG_TX64X64
     if (cm->tx_mode == TX_MODE_SELECT) {
