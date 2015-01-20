@@ -36,19 +36,44 @@ extern "C" {
 #if CONFIG_COMPOUND_MODES
 
 #if CONFIG_INTERINTRA
+
+#if CONFIG_FADE_MODE
+#define MAX_MODES 55
+#define INTERINTRA_START_MODE 43
+#else
 #define MAX_MODES 52
 #define INTERINTRA_START_MODE 40
+#endif  // CONFIG_FADE_MODE
+#else
+
+#if CONFIG_FADE_MODE
+#define MAX_MODES 43
 #else
 #define MAX_MODES 40
+#endif  // CONFIG_FADE_MODE
+
 #endif  // CONFIG_INTERINTRA
 
 #else   // CONFIG_COMPOUND_MODES
 
 #if CONFIG_INTERINTRA
+
+#if CONFIG_FADE_MODE
+#define MAX_MODES 45
+#define INTERINTRA_START_MODE 33
+#else
 #define MAX_MODES 42
 #define INTERINTRA_START_MODE 30
+#endif  // CONFIG_FADE_MODE
+
+#else
+
+#if CONFIG_FADE_MODE
+#define MAX_MODES 33
 #else
 #define MAX_MODES 30
+#endif  // CONFIG_FADE_MODE
+
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_COMPOUND_MODES
