@@ -215,7 +215,11 @@ static const uint16_t above_border_uv = 0x000f;
 
 static const int mode_lf_lut[MB_MODE_COUNT] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // INTRA_MODES
+#if CONFIG_FADE_MODE
+  1, 1, 0, 0, 1,                    // INTER_MODES (ZEROMV & FADEMV == 0)
+#else
   1, 1, 0, 1,                    // INTER_MODES (ZEROMV == 0)
+#endif
 #if CONFIG_COMPOUND_MODES
   1, 1, 1, 1, 1, 1, 1, 0, 1          // INTER_COMPOUND_MODES (ZERO_ZEROMV == 0)
 #endif
