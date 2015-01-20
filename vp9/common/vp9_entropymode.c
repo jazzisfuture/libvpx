@@ -272,6 +272,20 @@ const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -D153_PRED, -D207_PRED            /* 8 = D153_NODE */
 };
 
+
+#if CONFIG_FADE_MODE
+static const vp9_prob default_fade_mode_probs[FADE_MODE_COUNT - 1] = {
+    190, 128, 128, 128
+};
+
+const vp9_tree_index vp9_fade_mode_tree[TREE_SIZE(FADE_MODE_COUNT)] = {
+    -ZERO_FADE, 2,
+    -MINUS_ONE, 4,
+    -PLUS_ONE, 6,
+    -MINUS_TWO, -PLUS_TWO
+};
+#endif
+
 const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(ZEROMV), 2,
   -INTER_OFFSET(NEARESTMV), 4,
@@ -479,6 +493,9 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
   fc->tx_probs = default_tx_probs;
   vp9_copy(fc->skip_probs, default_skip_probs);
   vp9_copy(fc->inter_mode_probs, default_inter_mode_probs);
+#if CONFIG_FADE_MODE
+  vp9_copy(fc->fade_mode_probs, default_fade_mode_probs);
+#endif
 #if CONFIG_COMPOUND_MODES
   vp9_copy(fc->inter_compound_mode_probs, default_inter_compound_mode_probs);
 #endif  // CONFIG_COMPOUND_MODES
@@ -551,6 +568,11 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)
     adapt_probs(vp9_inter_mode_tree, pre_fc->inter_mode_probs[i],
                 counts->inter_mode[i], fc->inter_mode_probs[i]);
+
+#if CONFIG_FADE_MODE
+  adapt_probs(vp9_fade_mode_tree, pre_fc->fade_mode_probs,
+              counts->fade_mode, fc->fade_mode_probs);
+#endif
 
 #if CONFIG_COMPOUND_MODES
   for (i = 0; i < INTER_MODE_CONTEXTS; i++)

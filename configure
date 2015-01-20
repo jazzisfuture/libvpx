@@ -291,6 +291,7 @@ EXPERIMENT_LIST="
     interintra
     wedge_partition
     compound_modes
+    fade_mode
 "
 CONFIG_LIST="
     external_build
