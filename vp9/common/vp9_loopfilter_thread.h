@@ -12,9 +12,11 @@
 #define VP9_COMMON_VP9_LOOPFILTER_THREAD_H_
 #include "./vpx_config.h"
 #include "vp9/common/vp9_loopfilter.h"
+#include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_thread.h"
 
 struct VP9Common;
+struct VP9Decoder;
 
 // Loopfilter row synchronization
 typedef struct VP9LfSyncData {
