@@ -3338,7 +3338,9 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi,
         // support both intra and inter sub8x8 block coding for RTC mode.
         // Tune the thresholds accordingly to use sub8x8 block coding for
         // coding performance improvement.
-        choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
+        set_fixed_partitioning(cpi, tile_info, mi, mi_row, mi_col, BLOCK_8X8);
+
+//        choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
         nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                             BLOCK_64X64, 1, &dummy_rdc, td->pc_root);
         break;
@@ -3625,7 +3627,6 @@ static void encode_frame_internal(VP9_COMP *cpi) {
       cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
     cm->tx_mode = ALLOW_16X16;
   }
-
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)
