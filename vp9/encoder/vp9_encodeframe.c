@@ -22,6 +22,9 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_idct.h"
 #include "vp9/common/vp9_mvref_common.h"
+#if CONFIG_PALETTE
+#include "vp9/common/vp9_palette.h"
+#endif
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconintra.h"
@@ -353,6 +356,16 @@ static void set_offsets_extend(VP9_COMP *cpi, const TileInfo *const tile,
   }
 }
 #endif  // CONFIG_SUPERTX
+
+#if CONFIG_PALETTE
+void copy_palette_info(PICK_MODE_CONTEXT *c, PICK_MODE_CONTEXT *p) {
+  c->palette_buf_size = p->palette_buf_size;
+  memcpy(c->palette_colors_buf, p->palette_colors_buf,
+         c->palette_buf_size * sizeof(c->palette_colors_buf[0]));
+  memcpy(c->palette_count_buf, p->palette_count_buf,
+         c->palette_buf_size * sizeof(c->palette_count_buf[0]));
+}
+#endif
 
 static void duplicate_mode_info_in_sb(VP9_COMMON *cm, MACROBLOCKD *xd,
                                       int mi_row, int mi_col,
@@ -768,6 +781,10 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][2];
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
+
+#if CONFIG_PALETTE
+  pd[0].color_index_map = ctx->color_index_map;
+#endif
 
   // Restore the coding context of the MB to that that was in place
   // when the mode was picked for it
@@ -1263,6 +1280,9 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
     p[i].eobs = ctx->eobs_pbuf[i][0];
   }
+#if CONFIG_PALETTE
+  pd[0].color_index_map = ctx->color_index_map;
+#endif
   ctx->is_coded = 0;
   ctx->skippable = 0;
   ctx->pred_pixel_ready = 0;
@@ -1321,7 +1341,25 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
   // Find best coding mode & reconstruct the MB so it is available
   // as a predictor for MBs that follow in the SB
   if (frame_is_intra_only(cm)) {
+#if CONFIG_PALETTE
+    int n = cpi->common.current_palette_size;
+    uint8_t palette[PALETTE_BUF_SIZE];
+    int count[PALETTE_BUF_SIZE];
+
+    memcpy(palette, cpi->common.current_palette_colors, n * sizeof(palette[0]));
+    memcpy(count, cpi->common.current_palette_count, n * sizeof(count[0]));
+    cpi->common.current_palette_size = ctx->palette_buf_size;
+    memcpy(cpi->common.current_palette_colors, ctx->palette_colors_buf,
+           ctx->palette_buf_size * sizeof(ctx->palette_colors_buf[0]));
+    memcpy(cpi->common.current_palette_count, ctx->palette_count_buf,
+           ctx->palette_buf_size * sizeof(ctx->palette_count_buf[0]));
+#endif
     vp9_rd_pick_intra_mode_sb(cpi, x, rd_cost, bsize, ctx, best_rd);
+#if CONFIG_PALETTE
+    cpi->common.current_palette_size = n;
+    memcpy(cpi->common.current_palette_colors, palette, n * sizeof(palette[0]));
+    memcpy(cpi->common.current_palette_count, count, n * sizeof(count[0]));
+#endif
 #if CONFIG_SUPERTX
     *totalrate_nocoef = 0;
 #endif
@@ -2748,6 +2786,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
                                bsize >= BLOCK_8X8;
   int partition_vert_allowed = !force_horz_split && xss <= yss &&
                                bsize >= BLOCK_8X8;
+#if CONFIG_PALETTE
+  PICK_MODE_CONTEXT *c, *p;
+  int previous_size, previous_count[PALETTE_BUF_SIZE];
+  uint8_t previous_colors[PALETTE_BUF_SIZE];
+#endif
   (void) *tp_orig;
 
   assert(num_8x8_blocks_wide_lookup[bsize] ==
@@ -2759,6 +2802,28 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   best_rdc.rdcost = best_rd;
 
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
+
+#if CONFIG_PALETTE
+  if (bsize == BLOCK_64X64) {
+    c = &pc_tree->current;
+    c->palette_buf_size = cm->current_palette_size;
+    memcpy(c->palette_colors_buf, cm->current_palette_colors,
+           c->palette_buf_size * sizeof(cm->current_palette_colors[0]));
+    memcpy(c->palette_count_buf, cm->current_palette_count,
+           c->palette_buf_size * sizeof(cm->current_palette_count[0]));
+  }
+
+  c = &pc_tree->current;
+  previous_size = c->palette_buf_size;
+  memcpy(previous_colors, c->palette_colors_buf,
+         previous_size * sizeof(previous_colors[0]));
+  memcpy(previous_count, c->palette_count_buf,
+         previous_size * sizeof(previous_count[0]));
+
+  c = &pc_tree->none;
+  p = &pc_tree->current;
+  copy_palette_info(c, p);
+#endif
 
   if (bsize == BLOCK_16X16 && cpi->oxcf.aq_mode)
     x->mb_energy = vp9_block_energy(cpi, x, bsize);
@@ -2940,6 +3005,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
           }
         }
 #endif
+#if CONFIG_PALETTE
+        c = &pc_tree->current;
+        p = &pc_tree->none;
+        copy_palette_info(c, p);
+#endif
       }
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -2953,6 +3023,9 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
   // TODO(jingning): use the motion vectors given by the above search as
   // the starting point of motion search in the following partition type check.
   if (do_split) {
+#if CONFIG_PALETTE
+    int last = -1;
+#endif
     subsize = get_subsize(bsize, PARTITION_SPLIT);
     if (bsize == BLOCK_8X8) {
       i = 4;
@@ -3039,6 +3112,22 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
           load_pred_mv(x, ctx);
 
         pc_tree->split[i]->index = i;
+
+#if CONFIG_PALETTE
+        c = &pc_tree->split[i]->current;
+        if (last < 0) {
+          c->palette_buf_size = previous_size;
+          memcpy(c->palette_colors_buf, previous_colors,
+                 previous_size * sizeof(previous_colors[0]));
+          memcpy(c->palette_count_buf, previous_count,
+                 previous_size * sizeof(previous_count[0]));
+        } else {
+          p = &pc_tree->split[last]->current;
+          copy_palette_info(c, p);
+        }
+        last = i;
+#endif
+
 #if CONFIG_SUPERTX
         rd_pick_partition(cpi, tile, tp, mi_row + y_idx, mi_col + x_idx,
                           subsize, &this_rdc, &this_rate_nocoef,
@@ -3129,6 +3218,20 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         assert(best_rate_nocoef >= 0);
 #endif
         pc_tree->partitioning = PARTITION_SPLIT;
+#if CONFIG_PALETTE
+        if (bsize > BLOCK_8X8 && last >= 0) {
+          c = &pc_tree->current;
+          p = &(pc_tree->split[last]->current);
+          copy_palette_info(c, p);
+        } else {
+          c = &pc_tree->current;
+          c->palette_buf_size = previous_size;
+          memcpy(c->palette_colors_buf, previous_colors,
+                 previous_size * sizeof(previous_colors[0]));
+          memcpy(c->palette_count_buf, previous_count,
+                 previous_size * sizeof(previous_count[0]));
+        }
+#endif
       }
     } else {
       // skip rectangular partition test when larger block size
@@ -3141,6 +3244,9 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 
   // PARTITION_HORZ
   if (partition_horz_allowed && do_rect) {
+#if CONFIG_PALETTE
+    int last;
+#endif
     subsize = get_subsize(bsize, PARTITION_HORZ);
     if (cpi->sf.adaptive_motion_search)
       load_pred_mv(x, ctx);
@@ -3148,6 +3254,17 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         partition_none_allowed)
       pc_tree->horizontal[0].pred_interp_filter =
           ctx->mic.mbmi.interp_filter;
+
+#if CONFIG_PALETTE
+    c = &pc_tree->horizontal[0];
+    c->palette_buf_size = previous_size;
+    memcpy(c->palette_colors_buf, previous_colors,
+           previous_size * sizeof(previous_colors[0]));
+    memcpy(c->palette_count_buf, previous_count,
+           previous_size * sizeof(previous_count[0]));
+    last = 0;
+#endif
+
     rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc,
 #if CONFIG_SUPERTX
                      &sum_rate_nocoef,
@@ -3170,6 +3287,12 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
           partition_none_allowed)
         pc_tree->horizontal[1].pred_interp_filter =
             ctx->mic.mbmi.interp_filter;
+
+#if CONFIG_PALETTE
+      copy_palette_info(&pc_tree->horizontal[1], &pc_tree->horizontal[0]);
+      last = 1;
+#endif
+
 #if CONFIG_SUPERTX
       rd_pick_sb_modes(cpi, tile, mi_row + mi_step, mi_col, &this_rdc,
                        &this_rate_nocoef,
@@ -3255,12 +3378,29 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         assert(best_rate_nocoef >= 0);
 #endif
         pc_tree->partitioning = PARTITION_HORZ;
+#if CONFIG_PALETTE
+        if (bsize > BLOCK_8X8) {
+          c = &pc_tree->current;
+          p = &pc_tree->horizontal[last];
+          copy_palette_info(c, p);
+        } else {
+          c = &pc_tree->current;
+          c->palette_buf_size = previous_size;
+          memcpy(c->palette_colors_buf, previous_colors,
+                 previous_size * sizeof(previous_colors[0]));
+          memcpy(c->palette_count_buf, previous_count,
+                 previous_size * sizeof(previous_count[0]));
+        }
+#endif
       }
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
   }
   // PARTITION_VERT
   if (partition_vert_allowed && do_rect) {
+#if CONFIG_PALETTE
+    int last;
+#endif
     subsize = get_subsize(bsize, PARTITION_VERT);
 
     if (cpi->sf.adaptive_motion_search)
@@ -3269,6 +3409,17 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         partition_none_allowed)
       pc_tree->vertical[0].pred_interp_filter =
           ctx->mic.mbmi.interp_filter;
+
+#if CONFIG_PALETTE
+    c = &pc_tree->vertical[0];
+    c->palette_buf_size = previous_size;
+    memcpy(c->palette_colors_buf, previous_colors,
+           previous_size * sizeof(previous_colors[0]));
+    memcpy(c->palette_count_buf, previous_count,
+           previous_size * sizeof(previous_count[0]));
+    last = 0;
+#endif
+
     rd_pick_sb_modes(cpi, tile, mi_row, mi_col, &sum_rdc,
 #if CONFIG_SUPERTX
                      &sum_rate_nocoef,
@@ -3290,6 +3441,12 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
           partition_none_allowed)
         pc_tree->vertical[1].pred_interp_filter =
             ctx->mic.mbmi.interp_filter;
+
+#if CONFIG_PALETTE
+      copy_palette_info(&pc_tree->vertical[1], &pc_tree->vertical[0]);
+      last = 1;
+#endif
+
 #if CONFIG_SUPERTX
       rd_pick_sb_modes(cpi, tile, mi_row, mi_col + mi_step, &this_rdc,
                        &this_rate_nocoef, subsize, &pc_tree->vertical[1],
@@ -3373,6 +3530,20 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
         assert(best_rate_nocoef >= 0);
 #endif
         pc_tree->partitioning = PARTITION_VERT;
+#if CONFIG_PALETTE
+        if (bsize > BLOCK_8X8) {
+          c = &pc_tree->current;
+          p = &pc_tree->vertical[last];
+          copy_palette_info(c, p);
+        } else {
+          c = &pc_tree->current;
+          c->palette_buf_size = previous_size;
+          memcpy(c->palette_colors_buf, previous_colors,
+                 previous_size * sizeof(previous_colors[0]));
+          memcpy(c->palette_count_buf, previous_count,
+                 previous_size * sizeof(previous_count[0]));
+        }
+#endif
       }
     }
     restore_context(cpi, mi_row, mi_col, a, l, sa, sl, bsize);
@@ -4435,6 +4606,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   }
 #endif
 
+#if CONFIG_PALETTE
+  cm->current_palette_size = 0;
+  memset(cm->current_palette_count, 0,
+         PALETTE_BUF_SIZE * sizeof(cm->current_palette_count[0]));
+#endif
+
     encode_tiles(cpi);
 
     vpx_usec_timer_mark(&emr_timer);
@@ -4778,6 +4955,13 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
 #endif
     mi);
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
+#if CONFIG_PALETTE
+    if (mbmi->palette_enabled && output_enabled) {
+      palette_color_insertion(cm->current_palette_colors,
+                              &cm ->current_palette_size,
+                              cm->current_palette_count, mbmi);
+    }
+#endif
   } else {
     int ref;
     const int is_compound = has_second_ref(mbmi);
