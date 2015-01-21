@@ -315,8 +315,39 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 #endif
       break;
     default:
+#if CONFIG_PALETTE
+      mbmi->palette_enabled = 0;
+
+      if (bsize >= BLOCK_8X8)
+        mbmi->palette_enabled = vp9_read_bit(r);
+
+      if (mbmi->palette_enabled) {
+        int i;
+        int d = b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize] + 4;
+
+        mbmi->mode = DC_PRED;
+        mbmi->palette_size  = vp9_read_literal(r, 3);
+        mbmi->palette_size += 1;
+        mbmi->palette_run_length = vp9_read_literal(r, 5);
+        mbmi->palette_run_length = mbmi->palette_run_length << 1;
+
+        for (i = 0; i < mbmi->palette_size; i++)
+          mbmi->palette_colors[i] = vp9_read_literal(r, 8);
+
+        for (i = 0; i < mbmi->palette_run_length; i += 2) {
+          mbmi->palette_runs[i] = vp9_read_literal(r, 3);
+          mbmi->palette_runs[i + 1] = vp9_read_literal(r, d);
+        }
+
+        run_lengh_decoding(mbmi->palette_runs, mbmi->palette_run_length,
+                           xd->plane[0].color_index_map);
+      } else
+        mbmi->mode = read_intra_mode(r,
+                       get_y_mode_probs(mi, above_mi, left_mi, 0));
+#else
       mbmi->mode = read_intra_mode(r,
                                    get_y_mode_probs(mi, above_mi, left_mi, 0));
+#endif
 #if CONFIG_FILTERINTRA
       if (is_filter_enabled(mbmi->tx_size) && is_filter_allowed(mbmi->mode))
         mbmi->filterbit = vp9_read(r,

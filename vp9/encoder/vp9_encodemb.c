@@ -1935,7 +1935,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       vp9_predict_intra_block(xd, block >> 6, bwl, TX_32X32, mode,
 #if CONFIG_FILTERINTRA
                               fbit,
-#endif
+#endif  // CONFIG_FILTERINTRA
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
@@ -1958,7 +1958,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       vp9_predict_intra_block(xd, block >> 4, bwl, TX_16X16, mode,
 #if CONFIG_FILTERINTRA
                               fbit,
-#endif
+#endif  // CONFIG_FILTERINTRA
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
@@ -1981,7 +1981,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       vp9_predict_intra_block(xd, block >> 2, bwl, TX_8X8, mode,
 #if CONFIG_FILTERINTRA
                               fbit,
-#endif
+#endif  // CONFIG_FILTERINTRA
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);
@@ -2004,7 +2004,7 @@ static void encode_block_intra(int plane, int block, BLOCK_SIZE plane_bsize,
       vp9_predict_intra_block(xd, block, bwl, TX_4X4, mode,
 #if CONFIG_FILTERINTRA
                               fbit,
-#endif
+#endif  // CONFIG_FILTERINTRA
                               x->skip_encode ? src : dst,
                               x->skip_encode ? src_stride : dst_stride,
                               dst, dst_stride, i, j, plane);

@@ -1149,13 +1149,139 @@ static void build_filter_intra_predictors(const MACROBLOCKD *xd,
 }
 #endif
 
+#if CONFIG_PALETTE
+int generate_palette(const uint8_t *src, int stride, int rows, int cols,
+                     uint8_t *palette, int *count, uint8_t *map) {
+  int i, r, c, n = 0;
+  uint8_t val;
+  int hash[256], val_count[256];
+  memset(hash, 0, sizeof(hash));
+  memset(val_count, 0, sizeof(val_count));
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++) {
+      val = src[r * stride + c];
+      val_count[val]++;
+    }
+  }
+
+  n = 0;
+  for (i = 0; i < 256; i++) {
+    if (val_count[i]) {
+      if (n + 1 > 8)
+        return 0;
+      palette[n] = i;
+      hash[i] = n;
+      count[n] = val_count[i];
+      n++;
+    }
+  }
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++) {
+      val = src[r * stride + c];
+      map[r * cols + c] = hash[val];
+    }
+  }
+
+  return n;
+}
+
+int nearest_number(int num, int denom, int l_bound, int r_bound) {
+  int i, this_diff, x = 0, best_diff = abs(denom * l_bound - num);
+
+  for (i = l_bound + 1; i <= r_bound; i++) {
+    this_diff = abs(denom * i - num);
+    if (this_diff < best_diff) {
+      best_diff = this_diff;
+      x = i;
+    }
+  }
+
+  return x;
+}
+
+void reduce_palette(uint8_t *palette, int *count, int n, uint8_t *map,
+                    int rows, int cols) {
+  int i, r, c, best_idx;
+  int best_num, best_denom, this_num, this_denom;
+
+  best_idx = 0;
+  best_num = 1;
+  best_denom = 0;
+
+  for (i = 0; i < n - 1; i++) {
+    this_num = count[i] * count[i + 1] * (palette[i + 1] - palette[i]);
+    this_denom = count[i] + count[i + 1];
+    if (this_num * best_denom < this_denom * best_num) {
+      best_idx = i;
+      best_num = this_num;
+      best_denom = this_denom;
+    }
+  }
+
+  i = best_idx;
+  palette[i] = nearest_number(count[i] * palette[i] +
+                              count[i + 1] * palette[i + 1],
+                              count[i] + count[i + 1],
+                              palette[i], palette[i + 1]);
+  count[i] = count[i] + count[i + 1];
+
+  if (best_idx < n - 2) {
+    for (i = best_idx + 1; i < n - 1; i++) {
+      palette[i] = palette[i + 1];
+      count[i] = count[i + 1];
+    }
+  }
+
+  for (r = 0; r < rows; r++) {
+    for (c = 0; c < cols; c++) {
+      if (map[r * cols + c] > best_idx)
+        map[r * cols + c]--;
+    }
+  }
+}
+
+int run_lengh_encoding(uint8_t *seq, int n, uint16_t *runs) {
+  int this_run, i, l = 0;
+  uint8_t symbol;
+
+  for (i = 0; i < n; ) {
+    if (l + 2 > 63)
+      return 0;
+
+    symbol = seq[i];
+    runs[l++] = symbol;
+    this_run = 1;
+    i++;
+    while (seq[i] == symbol && i < n) {
+      i++;
+      this_run++;
+    }
+    runs[l++] = this_run;
+  }
+
+  return l;
+}
+
+int run_lengh_decoding(int16_t *runs, int l, uint8_t *seq) {
+  int i, j = 0;
+
+  for (i = 0; i < l; i += 2) {
+    memset(seq + j, runs[i], runs[i + 1]);
+    j += runs[i + 1];
+  }
+
+  return j;
+}
+#endif
 
 void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
                              TX_SIZE tx_size, PREDICTION_MODE mode,
 #if CONFIG_FILTERINTRA
                              int filterbit,
 #endif
-                            const uint8_t *ref, int ref_stride,
+                             const uint8_t *ref, int ref_stride,
                              uint8_t *dst, int dst_stride,
                              int aoff, int loff, int plane) {
   const int bwl = bwl_in - tx_size;
@@ -1168,7 +1294,10 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
 #if CONFIG_FILTERINTRA
   const int filterflag = is_filter_allowed(mode) && is_filter_enabled(tx_size)
                          && filterbit;
-#endif
+#if CONFIG_PALETTE
+  filterflag = 0;
+#endif  // CONFIG_PALETTE
+#endif  // CONFIG_FILTERINTRA
 
   assert(bwl >= 0);
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1181,7 +1310,23 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int block_idx, int bwl_in,
 #endif
 #if CONFIG_FILTERINTRA
   if (!filterflag) {
-#endif
+#endif  // CONFIG_FILTERINTRA
+#if CONFIG_PALETTE
+  if (xd->mi[0].src_mi->mbmi.palette_enabled && !plane) {
+    uint8_t *palette = xd->mi[0].src_mi->mbmi.palette_colors;
+    int bs = 4 * (1 << tx_size);
+    uint8_t *map = xd->plane[0].color_index_map;
+    int r, c, stride = 4 * (1 << bwl_in);
+
+    for (r = 0; r < bs; r++) {
+      for (c = 0; c < bs; c++) {
+        dst[r * dst_stride + c] = palette[map[(r + y) * stride + c + x]];
+      }
+    }
+
+    return;
+  }
+#endif  // CONFIG_PALETTE
   build_intra_predictors(xd, ref, ref_stride, dst, dst_stride, mode, tx_size,
                          have_top, have_left, have_right, x, y, plane);
 #if CONFIG_FILTERINTRA

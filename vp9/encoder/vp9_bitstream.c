@@ -711,7 +711,31 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 #endif
 
   if (bsize >= BLOCK_8X8) {
+#if CONFIG_PALETTE
+    int n, l, i;
+    int d = b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize] + 4;
+
+    vp9_write_bit(w, mbmi->palette_enabled);
+
+    if (mbmi->palette_enabled) {
+      n = mbmi->palette_size;
+      l = mbmi->palette_run_length;
+      vp9_write_literal(w, n - 1, 3);
+      vp9_write_literal(w, l >> 1, 5);
+
+      for (i = 0; i < n; i++)
+        vp9_write_literal(w, mbmi->palette_colors[i], 8);
+
+      for (i = 0; i < l; i += 2) {
+        vp9_write_literal(w, mbmi->palette_runs[i], 3);
+        vp9_write_literal(w, mbmi->palette_runs[i + 1], d);
+      }
+    } else
+      write_intra_mode(w, mbmi->mode,
+                       get_y_mode_probs(mi, above_mi, left_mi, 0));
+#else
     write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
+#endif
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->mode) && is_filter_enabled(mbmi->tx_size))
       vp9_write(w, mbmi->filterbit,
