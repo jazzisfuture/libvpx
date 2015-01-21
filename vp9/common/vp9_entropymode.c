@@ -744,4 +744,11 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vp9_zero(cm->ref_frame_sign_bias);
 
   cm->frame_context_idx = 0;
+
+#if CONFIG_PALETTE
+  cm->current_palette_size = 0;
+  cm->dummy = 0;
+  memset(cm->current_palette_count, 0,
+         256 * sizeof(*cm->current_palette_count));
+#endif
 }

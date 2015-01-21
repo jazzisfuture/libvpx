@@ -263,6 +263,13 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   cm->error.setjmp = 1;
 
+#if CONFIG_PALETTE1
+  cm->current_palette_size = 0;
+  cm->dummy = 0;
+  memset(cm->current_palette_count, 0,
+         256 * sizeof(*cm->current_palette_count));
+#endif
+
   vp9_decode_frame(pbi, source, source + size, psource);
 
   swap_frame_buffers(pbi);

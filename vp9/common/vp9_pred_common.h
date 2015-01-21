@@ -146,6 +146,10 @@ static INLINE unsigned int *get_tx_counts(TX_SIZE max_tx_size, int ctx,
 int vp9_get_copy_mode_context(const MACROBLOCKD *xd);
 #endif  // CONFIG_COPY_MODE
 
+#if CONFIG_PALETTE
+#define PALETTE_BUF_SIZE 16
+#endif  // CONFIG_PALETTE
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
