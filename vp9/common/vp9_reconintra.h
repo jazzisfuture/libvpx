@@ -58,4 +58,15 @@ void vp9_generate_masked_weight_interintra(int wedge_index,
 }  // extern "C"
 #endif
 
+#if CONFIG_PALETTE
+int generate_palette(const uint8_t *src, int stride, int rows, int cols,
+                     uint8_t *palette, int *count, uint8_t *map);
+int nearest_number(int num, int denom, int l_bound, int r_bound);
+void reduce_palette(uint8_t *palette, int *count, int n, uint8_t *map,
+                    int rows, int cols);
+int run_lengh_encoding(uint8_t *seq, int n, uint16_t *runs);
+int run_lengh_decoding(int16_t *runs, int l, uint8_t *seq);
+void transpose_block(uint8_t *seq_in, uint8_t *seq_out, int rows, int cols);
+#endif
+
 #endif  // VP9_COMMON_VP9_RECONINTRA_H_

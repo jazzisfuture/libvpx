@@ -101,6 +101,14 @@ typedef enum {
 } COPY_MODE;
 #endif  // CONFIG_COPY_MODE
 
+#if CONFIG_PALETTE
+typedef enum {
+  H_SCAN,
+  V_SCAN,
+  PALETTE_SCAN_ORDERS
+} PALETTE_SCAN_ORDER;
+#endif
+
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
@@ -181,7 +189,7 @@ typedef struct {
 #if CONFIG_TX_SKIP
   int tx_skip[PLANE_TYPES];
   int tx_skip_shift;
-#endif
+#endif  // CONFIG_TX_SKIP
 #if CONFIG_COPY_MODE
   COPY_MODE copy_mode;
   int inter_ref_count;
@@ -199,6 +207,14 @@ typedef struct {
   int use_wedge_interinter;
   int interinter_wedge_index;
 #endif  // CONFIG_WEDGE_PARTITION
+#if CONFIG_PALETTE
+  int palette_enabled;
+  int palette_size;
+  int palette_run_length;
+  uint8_t palette_colors[8];
+  uint16_t palette_runs[64];
+  PALETTE_SCAN_ORDER palette_scan_order;
+#endif  // CONFIG_PALETTE
 } MB_MODE_INFO;
 
 typedef struct MODE_INFO {
@@ -260,6 +276,9 @@ struct macroblockd_plane {
   const int16_t *dequant;
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
+#if CONFIG_PALETTE
+  uint8_t *color_index_map;
+#endif
 };
 
 #define BLOCK_OFFSET(x, i) ((x) + (i) * 16)
@@ -308,6 +327,9 @@ typedef struct macroblockd {
   int corrupted;
 
   DECLARE_ALIGNED(16, tran_low_t, dqcoeff[MAX_MB_PLANE][64 * 64]);
+#if CONFIG_PALETTE
+  DECLARE_ALIGNED(16, uint8_t, color_index_map[64 * 64]);
+#endif
 
   ENTROPY_CONTEXT *above_context[MAX_MB_PLANE];
   ENTROPY_CONTEXT left_context[MAX_MB_PLANE][16];

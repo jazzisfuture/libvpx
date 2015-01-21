@@ -769,6 +769,10 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
     p[i].eobs = ctx->eobs_pbuf[i][2];
   }
 
+#if CONFIG_PALETTE
+  pd[0].color_index_map = ctx->color_index_map;
+#endif
+
   // Restore the coding context of the MB to that that was in place
   // when the mode was picked for it
   for (y = 0; y < mi_height; y++)
@@ -1263,6 +1267,9 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, const TileInfo *const tile,
     pd[i].dqcoeff = ctx->dqcoeff_pbuf[i][0];
     p[i].eobs = ctx->eobs_pbuf[i][0];
   }
+#if CONFIG_PALETTE
+  pd[0].color_index_map = ctx->color_index_map;
+#endif
   ctx->is_coded = 0;
   ctx->skippable = 0;
   ctx->pred_pixel_ready = 0;

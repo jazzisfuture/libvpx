@@ -724,12 +724,44 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 #endif
 
   if (bsize >= BLOCK_8X8) {
+#if CONFIG_PALETTE
+    int n, l, i;
+    int d1 = b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize] + 4;
+    int d2 = 3;
+
+    vp9_write_bit(w, mbmi->palette_enabled);
+
+    if (mbmi->palette_enabled) {
+      n = mbmi->palette_size;
+      l = mbmi->palette_run_length;
+      vp9_write_literal(w, n - 1, 3);
+      vp9_write_literal(w, l >> 1, 5);
+      vp9_write_literal(w, mbmi->palette_scan_order, 1);
+
+      if (n <= 2)
+        d2 = 1;
+      else if (n <= 4)
+        d2 = 2;
+
+      for (i = 0; i < n; i++)
+        vp9_write_literal(w, mbmi->palette_colors[i], 8);
+
+      for (i = 0; i < l; i += 2) {
+        vp9_write_literal(w, mbmi->palette_runs[i], d2);
+        vp9_write_literal(w, mbmi->palette_runs[i + 1], d1);
+      }
+    } else {
+      write_intra_mode(w, mbmi->mode,
+                       get_y_mode_probs(mi, above_mi, left_mi, 0));
+    }
+#else
     write_intra_mode(w, mbmi->mode, get_y_mode_probs(mi, above_mi, left_mi, 0));
+#endif  // CONFIG_PALETTE
 #if CONFIG_FILTERINTRA
     if (is_filter_allowed(mbmi->mode) && is_filter_enabled(mbmi->tx_size))
       vp9_write(w, mbmi->filterbit,
                 cm->fc.filterintra_prob[mbmi->tx_size][mbmi->mode]);
-#endif
+#endif  // CONFIG_FILTERINTRA
   } else {
     const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
     const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
