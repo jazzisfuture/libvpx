@@ -363,6 +363,69 @@ static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
 };
 #endif  // CONFIG_EXT_TX
 
+#if CONFIG_PALETTE
+const vp9_tree_index vp9_palette_size_tree[TREE_SIZE(PALETTE_SIZES)] = {
+  -ZERO_COLORS, 2,
+  -ONE_COLORS, 4,
+  -TWO_COLORS, 6,
+  -THREE_COLORS, 8,
+  -FOUR_COLORS, 10,
+  -FIVE_COLORS, 12,
+  -SIX_COLORS, -SEVEN_COLORS
+};
+
+const vp9_tree_index vp9_palette_run_length_tree[TREE_SIZE(PALETTE_RUN_LENGTHS)]
+                                                 = {
+  -ONE_BITS, 2,
+  -TWO_BITS, 4,
+  -THREE_BITS, 6,
+  -FOUR_BITS, 8,
+  -FIVE_BITS, 10,
+  -SIX_BITS, -MAX_BITS
+};
+
+static const vp9_prob default_palette_indexed_size_prob[10][PALETTE_SIZES - 1]
+                                                            = {
+    {  16,  92, 160, 155, 183, 192, 206},
+    {   6,  63, 161, 176, 159, 173, 186},
+    {  15,  91, 176, 174, 200, 188, 190},
+    {  13,  80, 220, 198, 181, 191, 219},
+    {   1,  51, 168, 239, 165, 119, 143},
+    {  10,  45, 225, 127, 111,  99, 134},
+    {   3,  57, 196, 165, 245, 174, 170},
+    {   1,  55, 228, 209, 154, 136, 254},
+    {   5,  84, 168, 191, 204,  30, 227},
+    {   2, 119, 182, 149, 217,  38, 254},
+};
+
+static const vp9_prob default_palette_literal_size_prob[10][PALETTE_SIZES - 1]
+                                                            = {
+    {  65,  70, 110, 149, 149, 177, 198},
+    {  80, 110, 129, 154, 152, 193, 221},
+    {  80,  92, 122, 165, 144, 154, 212},
+    { 115, 118, 182, 162, 174, 180, 226},
+    { 135,  68, 113,  99,  49, 241, 219},
+    { 165,  93, 107, 136, 169, 157, 203},
+    { 147, 142, 194, 196, 176, 136, 236},
+    { 158,  98, 144, 117, 129,  41, 253},
+    {  90,  97, 125, 129, 149, 139, 204},
+    {  61, 144, 152, 191,  90, 201, 216},
+};
+
+static const vp9_prob default_palette_run_length_prob[10][PALETTE_RUN_LENGTHS - 1] = {
+    {  10,  91, 148,  95, 121, 254},
+    { 170,  70, 110, 125, 120, 130},
+    { 170,  70, 110, 125, 120, 130},
+    { 153,  33,  43, 147,  60,  67},
+    {  90,  18,  21,  75,  85,  65},
+    {  90,  18,  21,  75,  85,  65},
+    {  44,  38,  17,  30, 125,  18},
+    {  30,  12,  14,  18,  75,  75},
+    {  30,  12,  14,  18,  75,  75},
+    {  72,  34,  32,  42,  42, 108},
+};
+#endif  // CONFIG_PALETTE
+
 #if CONFIG_SUPERTX
 static const vp9_prob default_supertx_prob[PARTITION_SUPERTX_CONTEXTS]
                                           [TX_SIZES] = {
@@ -493,6 +556,11 @@ void vp9_init_mode_probs(FRAME_CONTEXT *fc) {
 #if CONFIG_EXT_TX
   vp9_copy(fc->ext_tx_prob, default_ext_tx_prob);
 #endif  // CONFIG_EXT_TX
+#if CONFIG_PALETTE
+  vp9_copy(fc->palette_indexed_size_prob, default_palette_indexed_size_prob);
+  vp9_copy(fc->palette_literal_size_prob, default_palette_literal_size_prob);
+  vp9_copy(fc->palette_run_length_prob, default_palette_run_length_prob);
+#endif  // CONFIG_PALETTE
 #if CONFIG_SUPERTX
   vp9_copy(fc->supertx_prob, default_supertx_prob);
 #endif  // CONFIG_SUPERTX
@@ -744,4 +812,10 @@ void vp9_setup_past_independence(VP9_COMMON *cm) {
   vp9_zero(cm->ref_frame_sign_bias);
 
   cm->frame_context_idx = 0;
+
+#if CONFIG_PALETTE
+  cm->current_palette_size = 0;
+  memset(cm->current_palette_count, 0,
+         PALETTE_BUF_SIZE * sizeof(cm->current_palette_count[0]));
+#endif
 }
