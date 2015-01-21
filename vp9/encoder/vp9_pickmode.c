@@ -203,7 +203,6 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
   return rv;
 }
 
-
 static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
                               MACROBLOCK *x, MACROBLOCKD *xd,
                               int *out_rate_sum, int64_t *out_dist_sum,
@@ -281,6 +280,66 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
 
   if (*out_rate_sum == 0)
     x->skip_txfm[0] = 1;
+}
+
+static void model_rd_for_sb_uv(VP9_COMP *cpi, BLOCK_SIZE bsize,
+                               MACROBLOCK *x, MACROBLOCKD *xd,
+                               int *out_rate_sum, int64_t *out_dist_sum,
+                               unsigned int *var_y, unsigned int *sse_y) {
+  // Note our transform coeffs are 8 times an orthogonal transform.
+  // Hence quantizer step is also 8 times. To get effective quantizer
+  // we need to divide by 8 before sending to modeling function.
+  unsigned int sse;
+  int rate;
+  int64_t dist;
+  int i;
+
+  *out_rate_sum = 0;
+  *out_dist_sum = 0;
+
+  for (i = 1; i <= 2; ++i) {
+    struct macroblock_plane *const p = &x->plane[i];
+    struct macroblockd_plane *const pd = &xd->plane[i];
+    const uint32_t dc_quant = pd->dequant[0];
+    const uint32_t ac_quant = pd->dequant[1];
+    const BLOCK_SIZE bs = get_plane_block_size(bsize, pd);
+    unsigned int var = cpi->fn_ptr[bs].vf(p->src.buf, p->src.stride,
+                                             pd->dst.buf, pd->dst.stride, &sse);
+    *var_y = var;
+    *sse_y = sse;
+
+  #if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
+                                   dc_quant >> (xd->bd - 5), &rate, &dist);
+    } else {
+      vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
+                                   dc_quant >> 3, &rate, &dist);
+    }
+  #else
+    vp9_model_rd_from_var_lapndz(sse - var, num_pels_log2_lookup[bs],
+                                 dc_quant >> 3, &rate, &dist);
+  #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+    *out_rate_sum += rate >> 1;
+    *out_dist_sum += dist << 3;
+
+  #if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bs],
+                                   ac_quant >> (xd->bd - 5), &rate, &dist);
+    } else {
+      vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bs],
+                                   ac_quant >> 3, &rate, &dist);
+    }
+  #else
+    vp9_model_rd_from_var_lapndz(var, num_pels_log2_lookup[bs],
+                                 ac_quant >> 3, &rate, &dist);
+  #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+    *out_rate_sum += rate;
+    *out_dist_sum += dist << 4;
+  }
 }
 
 static int get_pred_buffer(PRED_BUFFER *p, int len) {
@@ -660,6 +719,9 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     // Select prediction reference frames.
     xd->plane[0].pre[0] = yv12_mb[ref_frame][0];
 
+    vp9_setup_pre_planes(xd, 0, get_ref_frame_buffer(cpi, ref_frame),
+                         mi_row, mi_col, &cm->frame_refs[ref_frame - 1].sf);
+
     clamp_mv2(&frame_mv[NEARESTMV][ref_frame].as_mv, xd);
     clamp_mv2(&frame_mv[NEARMV][ref_frame].as_mv, xd);
 
@@ -676,7 +738,6 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
       if (!(cpi->sf.inter_mode_mask[bsize] & (1 << this_mode)))
         continue;
-
       mode_rd_thresh = best_mode_skip_txfm ? rd_threshes[mode_index] << 1 :
                                              rd_threshes[mode_index];
       if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
@@ -732,6 +793,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         for (filter = EIGHTTAP; filter <= EIGHTTAP_SHARP; ++filter) {
           int64_t cost;
           mbmi->interp_filter = filter;
+
           vp9_build_inter_predictors_sby(xd, mi_row, mi_col, bsize);
           model_rd_for_sb_y(cpi, bsize, x, xd, &pf_rate[filter],
                             &pf_dist[filter], &pf_var[filter], &pf_sse[filter]);
@@ -776,9 +838,21 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                           &var_y, &sse_y);
       }
 
+      // chroma component rate-distortion cost modeling
+      {
+        int uv_rate = 0;
+        int64_t uv_dist = 0;
+        vp9_build_inter_predictors_sbuv(xd, mi_row, mi_col, bsize);
+        model_rd_for_sb_uv(cpi, bsize, x, xd, &uv_rate, &uv_dist,
+                           &var_y, &sse_y);
+        this_rdc.rate += uv_rate;
+        this_rdc.dist += uv_dist;
+      }
+
       this_rdc.rate += rate_mv;
       this_rdc.rate += cpi->inter_mode_cost[mbmi->mode_context[ref_frame]]
                                   [INTER_OFFSET(this_mode)];
+
       this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                                this_rdc.rate, this_rdc.dist);
 
