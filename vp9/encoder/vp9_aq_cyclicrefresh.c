@@ -93,32 +93,24 @@ static int apply_cyclic_refresh_bitrate(const VP9_COMMON *cm,
 // mode, and rate/distortion.
 static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
                                 const MB_MODE_INFO *mbmi,
-                                BLOCK_SIZE bsize, int use_rd,
-                                int64_t rate_sb) {
-  if (use_rd) {
-    MV mv = mbmi->mv[0].as_mv;
-    // If projected rate is below the thresh_rate (well below target,
-    // so undershoot expected), accept it for lower-qp coding.
-    if (rate_sb < cr->thresh_rate_sb)
-      return 1;
-    // Otherwise, reject the block for lower-qp coding if any of the following:
-    // 1) mode uses large mv
-    // 2) mode is an intra-mode (we may want to allow some of this under
-    // another thresh_dist)
-    else if (mv.row > 32 || mv.row < -32 ||
-             mv.col > 32 || mv.col < -32 || !is_inter_block(mbmi))
-      return 0;
-    else
-      return 1;
-  } else {
-    // Rate/distortion not used for update.
-    if (bsize < cr->min_block_size ||
-        mbmi->mv[0].as_int != 0 ||
-        !is_inter_block(mbmi))
-      return 0;
-    else
-      return 1;
+                                int64_t rate,
+                                int64_t dist) {
+  MV mv = mbmi->mv[0].as_mv;
+  // If projected rate is below the thresh_rate (well below target,
+  // so undershoot expected), accept it for lower-qp coding.
+  if (rate < cr->thresh_rate_sb) {
+    return 1;
   }
+  // Otherwise, reject the block for lower-qp coding if projected distortion
+  // is above the threshold, and any of the following is true:
+  // 1) mode uses large mv
+  // 2) mode is an intra-mode
+  else if (dist > cr->thresh_dist_sb &&
+           (mv.row > 32 || mv.row < -32 ||
+            mv.col > 32 || mv.col < -32 || !is_inter_block(mbmi)))
+    return 0;
+  else
+    return 1;
 }
 
 // Compute delta-q for the segment.
@@ -194,8 +186,9 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
 void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
                                        MB_MODE_INFO *const mbmi,
                                        int mi_row, int mi_col,
-                                       BLOCK_SIZE bsize, int use_rd,
-                                       int64_t rate_sb) {
+                                       BLOCK_SIZE bsize,
+                                       int64_t rate,
+                                       int64_t dist) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
@@ -203,8 +196,7 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
-  const int refresh_this_block = candidate_refresh_aq(cr, mbmi, bsize, use_rd,
-                                                      rate_sb);
+  const int refresh_this_block = candidate_refresh_aq(cr, mbmi, rate, dist);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
   int x = 0; int y = 0;
@@ -361,15 +353,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     cr->min_block_size = BLOCK_8X8;
     cr->time_for_refresh = 0;
     // Set rate threshold to some fraction of target (and scaled by 256).
-    cr->thresh_rate_sb = (rc->sb64_target_rate * 256) >> 2;
+    cr->thresh_rate_sb = rc->sb64_target_rate << 7;
     // Distortion threshold, quadratic in Q, scale factor to be adjusted.
-    cr->thresh_dist_sb = 8 * (int)(q * q);
-    if (cpi->sf.use_nonrd_pick_mode) {
-      // May want to be more conservative with thresholds in non-rd mode for now
-      // as rate/distortion are derived from model based on prediction residual.
-      cr->thresh_rate_sb = (rc->sb64_target_rate * 256);
-      cr->thresh_dist_sb = 16 * (int)(q * q);
-    }
+    cr->thresh_dist_sb = (int)(q * q) << 4;
 
     // Set up segmentation.
     // Clear down the segment map.
