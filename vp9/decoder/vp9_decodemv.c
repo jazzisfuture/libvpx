@@ -98,7 +98,7 @@ static void set_segment_id(VP9_COMMON *cm, BLOCK_SIZE bsize,
 
   for (y = 0; y < ymis; y++)
     for (x = 0; x < xmis; x++)
-      cm->last_frame_seg_map[mi_offset + y * cm->mi_cols + x] = segment_id;
+      cm->current_frame_seg_map[mi_offset + y * cm->mi_cols + x] = segment_id;
 }
 
 static int read_intra_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
@@ -131,8 +131,10 @@ static int read_inter_segment_id(VP9_COMMON *const cm, MACROBLOCKD *const xd,
 
   predicted_segment_id = vp9_get_segment_id(cm, cm->last_frame_seg_map,
                                             bsize, mi_row, mi_col);
-  if (!seg->update_map)
+  if (!seg->update_map) {
+    set_segment_id(cm, bsize, mi_row, mi_col, predicted_segment_id);
     return predicted_segment_id;
+  }
 
   if (seg->temporal_update) {
     const vp9_prob pred_prob = vp9_get_pred_prob_seg_id(seg, xd);
@@ -419,11 +421,18 @@ static int read_is_inter_block(VP9_COMMON *const cm, MACROBLOCKD *const xd,
   }
 }
 
-static void read_inter_block_mode_info(VP9_COMMON *const cm,
+static void fpm_sync(void *const data, int mi_row) {
+  VP9Decoder *const pbi = (VP9Decoder *)data;
+  vp9_frameworker_wait(pbi->frame_worker_owner, pbi->prev_buf,
+                       mi_row << MI_BLOCK_SIZE_LOG2);
+}
+
+static void read_inter_block_mode_info(VP9Decoder *const pbi,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        MODE_INFO *const mi,
                                        int mi_row, int mi_col, vp9_reader *r) {
+  VP9_COMMON *const cm = &pbi->common;
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   const BLOCK_SIZE bsize = mbmi->sb_type;
   const int allow_hp = cm->allow_high_precision_mv;
@@ -443,7 +452,7 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
     vp9_setup_pre_planes(xd, ref, ref_buf->buf, mi_row, mi_col,
                          &ref_buf->sf);
     vp9_find_mv_refs(cm, xd, tile, mi, frame, mbmi->ref_mvs[frame],
-                     mi_row, mi_col);
+                     mi_row, mi_col, fpm_sync, (void *)pbi);
   }
 
   inter_mode_ctx = mbmi->mode_context[mbmi->ref_frame[0]];
@@ -517,11 +526,18 @@ static void read_inter_block_mode_info(VP9_COMMON *const cm,
   }
 }
 
-static void read_inter_frame_mode_info(VP9_COMMON *const cm,
+// TODO(hkuang): Pass cm instead of pbi. This requires change in
+// vp9_frameworker_wait.
+static void read_inter_frame_mode_info(VP9Decoder *const pbi,
                                        MACROBLOCKD *const xd,
                                        const TileInfo *const tile,
                                        int mi_row, int mi_col, vp9_reader *r) {
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   MODE_INFO *const mi = xd->mi[0].src_mi;
+=======
+  VP9_COMMON *const cm = &pbi->common;
+  MODE_INFO *const mi = xd->mi[0];
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   MB_MODE_INFO *const mbmi = &mi->mbmi;
   int inter_block;
 
@@ -533,14 +549,15 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
   mbmi->tx_size = read_tx_size(cm, xd, !mbmi->skip || !inter_block, r);
 
   if (inter_block)
-    read_inter_block_mode_info(cm, xd, tile, mi, mi_row, mi_col, r);
+    read_inter_block_mode_info(pbi, xd, tile, mi, mi_row, mi_col, r);
   else
     read_intra_block_mode_info(cm, mi, r);
 }
 
-void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
+void vp9_read_mode_info(VP9Decoder *const pbi, MACROBLOCKD *xd,
                         const TileInfo *const tile,
                         int mi_row, int mi_col, vp9_reader *r) {
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   MODE_INFO *const mi = xd->mi[0].src_mi;
   const int bw = num_8x8_blocks_wide_lookup[mi->mbmi.sb_type];
   const int bh = num_8x8_blocks_high_lookup[mi->mbmi.sb_type];
@@ -549,9 +566,13 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
   MV_REF* frame_mvs = cm->cur_frame->mvs + mi_row * cm->mi_cols + mi_col;
   int w, h;
 
+=======
+  VP9_COMMON *const cm = &pbi->common;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   if (frame_is_intra_only(cm))
     read_intra_frame_mode_info(cm, xd, mi_row, mi_col, r);
   else
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
     read_inter_frame_mode_info(cm, xd, tile, mi_row, mi_col, r);
 
   for (h = 0; h < y_mis; ++h) {
@@ -564,4 +585,7 @@ void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
       mv->mv[1].as_int = mi->src_mi->mbmi.mv[1].as_int;
     }
   }
+=======
+    read_inter_frame_mode_info(pbi, xd, tile, mi_row, mi_col, r);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 }

@@ -2026,7 +2026,8 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
   vp9_setup_pred_block(xd, yv12_mb[ref_frame], yv12, mi_row, mi_col, sf, sf);
 
   // Gets an initial list of candidate vectors from neighbours and orders them
-  vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col);
+  vp9_find_mv_refs(cm, xd, tile, mi, ref_frame, candidates, mi_row, mi_col,
+                   NULL, NULL);
 
   // Candidate refinement carried out at encoder and decoder
   vp9_find_best_ref_mvs(xd, cm->allow_high_precision_mv, candidates,
@@ -2041,6 +2042,26 @@ static void setup_buffer_inter(VP9_COMP *cpi, MACROBLOCK *x,
                 ref_frame, block_size);
 }
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
+=======
+const YV12_BUFFER_CONFIG *vp9_get_scaled_ref_frame(const VP9_COMP *cpi,
+                                                   int ref_frame) {
+  const VP9_COMMON *const cm = &cpi->common;
+  const RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+  const int ref_idx = cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)];
+  const int scaled_idx = cpi->scaled_ref_idx[ref_frame - 1];
+  return (scaled_idx != ref_idx) ? &frame_bufs[scaled_idx].buf : NULL;
+}
+
+int vp9_get_switchable_rate(const VP9_COMP *cpi) {
+  const MACROBLOCKD *const xd = &cpi->mb.e_mbd;
+  const MB_MODE_INFO *const mbmi = &xd->mi[0]->mbmi;
+  const int ctx = vp9_get_pred_context_switchable_interp(xd);
+  return SWITCHABLE_INTERP_RATE_FACTOR *
+             cpi->switchable_interp_costs[ctx][mbmi->interp_filter];
+}
+
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  BLOCK_SIZE bsize,
                                  int mi_row, int mi_col,

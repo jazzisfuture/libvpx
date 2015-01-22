@@ -28,6 +28,7 @@
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconintra.h"
 #include "vp9/common/vp9_systemdependent.h"
+#include "vp9/common/vp9_thread.h"
 
 #include "vp9/decoder/vp9_decodeframe.h"
 #include "vp9/decoder/vp9_decoder.h"
@@ -43,6 +44,7 @@ static void initialize_dec(void) {
   }
 }
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
 static void vp9_dec_setup_mi(VP9_COMMON *cm) {
   cm->mi = cm->mip + cm->mi_stride + 1;
   vpx_memset(cm->mip, 0, cm->mi_stride * (cm->mi_rows + 1) * sizeof(*cm->mip));
@@ -64,6 +66,11 @@ static void vp9_dec_free_mi(VP9_COMMON *cm) {
 VP9Decoder *vp9_decoder_create() {
   VP9Decoder *volatile const pbi = vpx_memalign(32, sizeof(*pbi));
   VP9_COMMON *volatile const cm = pbi ? &pbi->common : NULL;
+=======
+VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
+  VP9Decoder *const pbi = vpx_memalign(32, sizeof(*pbi));
+  VP9_COMMON *const cm = pbi ? &pbi->common : NULL;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   if (!cm)
     return NULL;
@@ -77,6 +84,11 @@ VP9Decoder *vp9_decoder_create() {
   }
 
   cm->error.setjmp = 1;
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
+=======
+  pbi->need_resync = 1;
+  initialize_dec();
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   CHECK_MEM_ERROR(cm, cm->fc,
                   (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));
@@ -89,15 +101,20 @@ VP9Decoder *vp9_decoder_create() {
 
   // Initialize the references to not point to any frame buffers.
   vpx_memset(&cm->ref_frame_map, -1, sizeof(cm->ref_frame_map));
+  vpx_memset(&cm->next_ref_frame_map, -1, sizeof(cm->next_ref_frame_map));
 
   cm->current_video_frame = 0;
   pbi->ready_for_new_data = 1;
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   cm->bit_depth = VPX_BITS_8;
   cm->dequant_bit_depth = VPX_BITS_8;
 
   cm->alloc_mi = vp9_dec_alloc_mi;
   cm->free_mi = vp9_dec_free_mi;
   cm->setup_mi = vp9_dec_setup_mi;
+=======
+  pbi->common.buffer_pool = pool;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   // vp9_init_dequantizer() is first called here. Add check in
   // frame_init_dequantizer() to avoid unnecessary calling of
@@ -153,12 +170,17 @@ vpx_codec_err_t vp9_copy_reference_dec(VP9Decoder *pbi,
    * later commit that adds VP9-specific controls for this functionality.
    */
   if (ref_frame_flag == VP9_LAST_FLAG) {
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
     const YV12_BUFFER_CONFIG *const cfg = get_ref_frame(cm, 0);
     if (cfg == NULL) {
       vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                          "No 'last' reference frame");
       return VPX_CODEC_ERROR;
     }
+=======
+    const YV12_BUFFER_CONFIG *const cfg =
+        &cm->buffer_pool->frame_bufs[cm->ref_frame_map[0]].buf;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     if (!equal_dimensions(cfg, sd))
       vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
                          "Incorrect buffer dimensions");
@@ -177,6 +199,7 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
                                       VP9_REFFRAME ref_frame_flag,
                                       YV12_BUFFER_CONFIG *sd) {
   RefBuffer *ref_buf = NULL;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
   // TODO(jkoleszar): The decoder doesn't have any real knowledge of what the
   // encoder is using the frame buffers for. This is just a stub to keep the
@@ -204,36 +227,68 @@ vpx_codec_err_t vp9_set_reference_dec(VP9_COMMON *cm,
     const int free_fb = get_free_fb(cm);
     // Decrease ref_count since it will be increased again in
     // ref_cnt_fb() below.
-    cm->frame_bufs[free_fb].ref_count--;
+    --frame_bufs[free_fb].ref_count;
 
     // Manage the reference counters and copy image.
-    ref_cnt_fb(cm->frame_bufs, ref_fb_ptr, free_fb);
-    ref_buf->buf = &cm->frame_bufs[*ref_fb_ptr].buf;
+    ref_cnt_fb(frame_bufs, ref_fb_ptr, free_fb);
+    ref_buf->buf = &frame_bufs[*ref_fb_ptr].buf;
     vp8_yv12_copy_frame(sd, ref_buf->buf);
   }
 
   return cm->error.error_code;
 }
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
+=======
+
+int vp9_get_reference_dec(VP9Decoder *pbi, int index, YV12_BUFFER_CONFIG **fb) {
+  VP9_COMMON *cm = &pbi->common;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+
+  if (index < 0 || index >= REF_FRAMES)
+    return -1;
+
+  *fb = &frame_bufs[cm->ref_frame_map[index]].buf;
+  return 0;
+}
+
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 /* If any buffer updating is signaled it should be done here. */
 static void swap_frame_buffers(VP9Decoder *pbi) {
   int ref_index = 0, mask;
   VP9_COMMON *const cm = &pbi->common;
+  BufferPool *const pool = cm->buffer_pool;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
 
+  lock_buffer_pool(pool);
   for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
-    if (mask & 1) {
-      const int old_idx = cm->ref_frame_map[ref_index];
-      ref_cnt_fb(cm->frame_bufs, &cm->ref_frame_map[ref_index],
-                 cm->new_fb_idx);
-      if (old_idx >= 0 && cm->frame_bufs[old_idx].ref_count == 0)
-        cm->release_fb_cb(cm->cb_priv,
-                          &cm->frame_bufs[old_idx].raw_frame_buffer);
+    const int old_idx = cm->ref_frame_map[ref_index];
+    // Current thread releases the holding of reference frame.
+    decrease_ref_count(old_idx, frame_bufs, pool);
+
+    // Release the reference frame in reference map.
+    if ((mask & 1) && old_idx >= 0) {
+      decrease_ref_count(old_idx, frame_bufs, pool);
     }
+    cm->ref_frame_map[ref_index] = cm->next_ref_frame_map[ref_index];
     ++ref_index;
   }
 
+  // Current thread releases the holding of reference frame.
+  for (; ref_index < REF_FRAMES && !cm->show_existing_frame; ++ref_index) {
+    const int old_idx = cm->ref_frame_map[ref_index];
+    decrease_ref_count(old_idx, frame_bufs, pool);
+    cm->ref_frame_map[ref_index] = cm->next_ref_frame_map[ref_index];
+  }
+  unlock_buffer_pool(pool);
+  pbi->hold_ref_buf = 0;
   cm->frame_to_show = get_frame_new_buffer(cm);
-  cm->frame_bufs[cm->new_fb_idx].ref_count--;
+
+  if (!pbi->frame_parallel_decode || !cm->show_frame) {
+    lock_buffer_pool(pool);
+    --frame_bufs[cm->new_fb_idx].ref_count;
+    unlock_buffer_pool(pool);
+  }
 
   // Invalidate these references until the next frame starts.
   for (ref_index = 0; ref_index < 3; ref_index++)
@@ -242,10 +297,15 @@ static void swap_frame_buffers(VP9Decoder *pbi) {
 
 int vp9_receive_compressed_data(VP9Decoder *pbi,
                                 size_t size, const uint8_t **psource) {
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   VP9_COMMON *volatile const cm = &pbi->common;
+=======
+  VP9_COMMON *const cm = &pbi->common;
+  BufferPool *const pool = cm->buffer_pool;
+  RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   const uint8_t *source = *psource;
   int retcode = 0;
-
   cm->error.error_code = VPX_CODEC_OK;
 
   if (size == 0) {
@@ -264,13 +324,31 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
   pbi->ready_for_new_data = 0;
 
   // Check if the previous frame was a frame without any references to it.
-  if (cm->new_fb_idx >= 0 && cm->frame_bufs[cm->new_fb_idx].ref_count == 0)
-    cm->release_fb_cb(cm->cb_priv,
-                      &cm->frame_bufs[cm->new_fb_idx].raw_frame_buffer);
+  // Release frame buffer if not decoding in frame parallel mode.
+  if (!pbi->frame_parallel_decode && cm->new_fb_idx >= 0
+      && frame_bufs[cm->new_fb_idx].ref_count == 0)
+    pool->release_fb_cb(pool->cb_priv,
+                        &frame_bufs[cm->new_fb_idx].raw_frame_buffer);
   cm->new_fb_idx = get_free_fb(cm);
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   // Assign a MV array to the frame buffer.
   cm->cur_frame = &cm->frame_bufs[cm->new_fb_idx];
+=======
+  pbi->hold_ref_buf = 0;
+  if (pbi->frame_parallel_decode) {
+    VP9Worker *const worker = pbi->frame_worker_owner;
+    vp9_frameworker_lock_stats(worker);
+    frame_bufs[cm->new_fb_idx].frame_worker_owner = worker;
+    // Reset decoding progress.
+    pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
+    pbi->cur_buf->row = -1;
+    pbi->cur_buf->col = -1;
+    vp9_frameworker_unlock_stats(worker);
+  } else {
+    pbi->cur_buf = &frame_bufs[cm->new_fb_idx];
+  }
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
   if (setjmp(cm->error.jmp)) {
     const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
@@ -278,7 +356,9 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
     pbi->need_resync = 1;
     cm->error.setjmp = 0;
+    pbi->ready_for_new_data = 1;
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
     // Synchronize all threads immediately as a subsequent decode call may
     // cause a resize invalidating some allocations.
     winterface->sync(&pbi->lf_worker);
@@ -287,9 +367,37 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
     }
 
     vp9_clear_system_state();
+=======
+    lock_buffer_pool(pool);
+    // Release all the reference buffers if worker thread is holding them.
+    if (pbi->hold_ref_buf == 1) {
+      int ref_index = 0, mask;
+      VP9_COMMON *const cm = &pbi->common;
+      BufferPool *const pool = cm->buffer_pool;
+      RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
+      for (mask = pbi->refresh_frame_flags; mask; mask >>= 1) {
+        const int old_idx = cm->ref_frame_map[ref_index];
+        // Current thread releases the holding of reference frame.
+        decrease_ref_count(old_idx, frame_bufs, pool);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
-    if (cm->new_fb_idx > 0 && cm->frame_bufs[cm->new_fb_idx].ref_count > 0)
-      cm->frame_bufs[cm->new_fb_idx].ref_count--;
+        // Release the reference frame in reference map.
+        if ((mask & 1) && old_idx >= 0) {
+          decrease_ref_count(old_idx, frame_bufs, pool);
+        }
+        ++ref_index;
+      }
+
+      // Current thread releases the holding of reference frame.
+      for (; ref_index < REF_FRAMES && !cm->show_existing_frame; ++ref_index) {
+        const int old_idx = cm->ref_frame_map[ref_index];
+        decrease_ref_count(old_idx, frame_bufs, pool);
+      }
+      pbi->hold_ref_buf = 0;
+    }
+    // Release current frame.
+    decrease_ref_count(cm->new_fb_idx, frame_bufs, pool);
+    unlock_buffer_pool(pool);
 
     return -1;
   }
@@ -302,17 +410,56 @@ int vp9_receive_compressed_data(VP9Decoder *pbi,
 
   vp9_clear_system_state();
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   cm->last_width = cm->width;
   cm->last_height = cm->height;
 
   if (!cm->show_existing_frame) {
+=======
+  if (!cm->show_existing_frame)
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     cm->last_show_frame = cm->show_frame;
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
     cm->prev_frame = cm->cur_frame;
+=======
+
+  // Update progress in frame parallel decode.
+  if (pbi->frame_parallel_decode) {
+    // Need to lock the mutex here as another thread may
+    // be accessing this buffer.
+    VP9Worker *const worker = pbi->frame_worker_owner;
+    FrameWorkerData *const frame_worker_data = worker->data1;
+    vp9_frameworker_lock_stats(worker);
+
+    if (cm->show_frame) {
+      if (!cm->show_existing_frame)
+        vp9_swap_mi_and_prev_mi(cm);
+      cm->current_video_frame++;
+    }
+    vp9_swap_current_and_last_seg_map(cm);
+    frame_worker_data->frame_decoded = 1;
+    frame_worker_data->frame_context_ready = 1;
+    vp9_frameworker_signal_stats(worker);
+    vp9_frameworker_unlock_stats(worker);
+  } else {
+    cm->last_width = cm->width;
+    cm->last_height = cm->height;
+    if (cm->show_frame) {
+      if (!cm->show_existing_frame)
+        vp9_swap_mi_and_prev_mi(cm);
+      cm->current_video_frame++;
+    }
+
+    vp9_swap_current_and_last_seg_map(cm);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   }
 
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   if (cm->show_frame)
     cm->current_video_frame++;
 
+=======
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   cm->error.setjmp = 0;
   return retcode;
 }
@@ -331,7 +478,11 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   pbi->ready_for_new_data = 1;
 
   /* no raw frame to show!!! */
+<<<<<<< HEAD   (cf3202 Merge "Bug when last group before forced key frame is short.)
   if (!cm->show_frame)
+=======
+  if (pbi->common.show_frame == 0)
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
     return ret;
 
 #if CONFIG_VP9_POSTPROC
