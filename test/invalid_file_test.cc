@@ -110,6 +110,7 @@ TEST_P(InvalidFileTest, ReturnCode) {
   RunTest();
 }
 
+<<<<<<< HEAD   (aaa31a Merge "Allow external resize via vpx_codec_enc_config_set")
 const DecodeParam kVP9InvalidFileTests[] = {
   {1, "invalid-vp90-02-v2.webm"},
   {1, "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.v2.ivf"},
@@ -121,6 +122,15 @@ const DecodeParam kVP9InvalidFileTests[] = {
   {1, "invalid-vp90-2-09-subpixel-00.ivf.s20492_r01-05_b6-.v2.ivf"},
   {1, "invalid-vp91-2-mixedrefcsp-444to420.ivf"},
   {1, "invalid-vp90-2-12-droppable_1.ivf.s73804_r01-05_b6-.ivf"},
+=======
+const char *const kVP9InvalidFileTests[] = {
+  "invalid-vp90-01.webm",
+  "invalid-vp90-02.webm",
+  "invalid-vp90-2-00-quantizer-00.webm.ivf.s5861_r01-05_b6-.ivf",
+  "invalid-vp90-03-v3.webm",
+  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-.ivf",
+  "invalid-vp90-2-00-quantizer-11.webm.ivf.s52984_r01-05_b6-z.ivf",
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 };
 
 VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
