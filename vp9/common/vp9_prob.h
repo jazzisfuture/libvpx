@@ -33,6 +33,9 @@ typedef int8_t vp9_tree_index;
 
 #define vp9_complement(x) (255 - x)
 
+#define MODE_MV_COUNT_SAT 20
+#define MODE_MV_MAX_UPDATE_FACTOR 128
+
 /* We build coding trees compactly in arrays.
    Each node of the tree is a pair of vp9_tree_indices.
    Array index often references a corresponding probability table.
@@ -59,6 +62,8 @@ static INLINE vp9_prob weighted_prob(int prob1, int prob2, int factor) {
   return ROUND_POWER_OF_TWO(prob1 * (256 - factor) + prob2 * factor, 8);
 }
 
+
+
 static INLINE vp9_prob merge_probs(vp9_prob pre_prob,
                                    const unsigned int ct[2],
                                    unsigned int count_sat,
@@ -69,9 +74,22 @@ static INLINE vp9_prob merge_probs(vp9_prob pre_prob,
   return weighted_prob(pre_prob, prob, factor);
 }
 
+// MODE_MV_MAX_UPDATE_FACTOR * count / MODE_MV_COUNT_SAT;
+static const int count_to_update_factor[MODE_MV_MAX_UPDATE_FACTOR + 1] = {
+  0, 6, 12, 19, 25, 32, 38, 44, 51, 57, 64,
+  60, 76, 83, 89, 96, 102, 108, 115, 121, 128
+};
+
+static INLINE vp9_prob mode_mv_merge_probs(vp9_prob pre_prob,
+                                           const unsigned int ct[2]) {
+  const vp9_prob prob = get_binary_prob(ct[0], ct[1]);
+  const unsigned int count = MIN(ct[0] + ct[1], MODE_MV_COUNT_SAT);
+  const unsigned int factor = count_to_update_factor[count];
+  return weighted_prob(pre_prob, prob, factor);
+}
+
 void vp9_tree_merge_probs(const vp9_tree_index *tree, const vp9_prob *pre_probs,
-                          const unsigned int *counts, unsigned int count_sat,
-                          unsigned int max_update_factor, vp9_prob *probs);
+                          const unsigned int *counts, vp9_prob *probs);
 
 
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_norm[256]);
