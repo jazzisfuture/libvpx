@@ -334,18 +334,15 @@ const vp9_tree_index vp9_switchable_interp_tree
   -EIGHTTAP_SMOOTH, -EIGHTTAP_SHARP
 };
 
-#define COUNT_SAT 20
-#define MAX_UPDATE_FACTOR 128
 
 static int adapt_prob(vp9_prob pre_prob, const unsigned int ct[2]) {
-  return merge_probs(pre_prob, ct, COUNT_SAT, MAX_UPDATE_FACTOR);
+  return mode_mv_merge_probs(pre_prob, ct);
 }
 
 static void adapt_probs(const vp9_tree_index *tree,
                         const vp9_prob *pre_probs, const unsigned int *counts,
                         vp9_prob *probs) {
-  vp9_tree_merge_probs(tree, pre_probs, counts, COUNT_SAT, MAX_UPDATE_FACTOR,
-                   probs);
+  vp9_tree_merge_probs(tree, pre_probs, counts, probs);
 }
 
 void vp9_adapt_mode_probs(VP9_COMMON *cm) {

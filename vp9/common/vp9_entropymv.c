@@ -11,9 +11,6 @@
 #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/common/vp9_entropymv.h"
 
-#define MV_COUNT_SAT 20
-#define MV_MAX_UPDATE_FACTOR 128
-
 // Integer pel reference mv threshold for use of high-precision 1/8 mv
 #define COMPANDED_MVREF_THRESH 8
 
@@ -184,13 +181,12 @@ void vp9_inc_mv(const MV *mv, nmv_context_counts *counts) {
 }
 
 static vp9_prob adapt_prob(vp9_prob prep, const unsigned int ct[2]) {
-  return merge_probs(prep, ct, MV_COUNT_SAT, MV_MAX_UPDATE_FACTOR);
+  return mode_mv_merge_probs(prep, ct);
 }
 
 static void adapt_probs(const vp9_tree_index *tree, const vp9_prob *pre_probs,
                         const unsigned int *counts, vp9_prob *probs) {
-  vp9_tree_merge_probs(tree, pre_probs, counts, MV_COUNT_SAT,
-                       MV_MAX_UPDATE_FACTOR, probs);
+  vp9_tree_merge_probs(tree, pre_probs, counts, probs);
 }
 
 void vp9_adapt_mv_probs(VP9_COMMON *cm, int allow_hp) {
