@@ -45,6 +45,9 @@ struct CYCLIC_REFRESH {
   int64_t thresh_dist_sb;
   // Rate target ratio to set q delta.
   double rate_ratio_qdelta;
+  // Allow for a second segment map for more aggressive delta-qp.
+  // The second segmen may be set depending on coding statistics of block.
+  int aggress_segement_deltaq;
 };
 
 CYCLIC_REFRESH *vp9_cyclic_refresh_alloc(int mi_rows, int mi_cols) {
@@ -98,9 +101,11 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
   if (use_rd) {
     MV mv = mbmi->mv[0].as_mv;
     // If projected rate is below the thresh_rate (well below target,
-    // so undershoot expected), accept it for lower-qp coding.
-    if (rate_sb < cr->thresh_rate_sb)
-      return 1;
+    // so undershoot expected), accept it for lower-qp coding. Furthermore, set
+    // it to more aggressive delta-qp (seg# 2).
+    if (rate_sb < cr->thresh_rate_sb) {
+       return 2;
+    }
     // Otherwise, reject the block for lower-qp coding if any of the following:
     // 1) mode uses large mv
     // 2) mode is an intra-mode (we may want to allow some of this under
@@ -122,11 +127,13 @@ static int candidate_refresh_aq(const CYCLIC_REFRESH *cr,
 }
 
 // Compute delta-q for the segment.
-static int compute_deltaq(const VP9_COMP *cpi, int q) {
+static int compute_deltaq(const VP9_COMP *cpi, int q, float rate_factor) {
   const CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const RATE_CONTROL *const rc = &cpi->rc;
-  int deltaq = vp9_compute_qdelta_by_rate(rc, cpi->common.frame_type,
-                                          q, cr->rate_ratio_qdelta,
+  int deltaq = vp9_compute_qdelta_by_rate(rc,
+                                          cpi->common.frame_type,
+                                          q,
+                                          rate_factor,
                                           cpi->common.bit_depth);
   if ((-deltaq) > cr->max_qdelta_perc * q / 100) {
     deltaq = -cr->max_qdelta_perc * q / 100;
@@ -148,7 +155,7 @@ int vp9_cyclic_refresh_estimate_bits_at_q(const VP9_COMP *cpi,
   // previous/just encoded frame. Note number of blocks here is in 8x8 units.
   double weight_segment = (double)cr->actual_num_seg_blocks / num8x8bl;
   // Compute delta-q that was used in the just encoded frame.
-  int deltaq = compute_deltaq(cpi, cm->base_qindex);
+  int deltaq = compute_deltaq(cpi, cm->base_qindex, cr->rate_ratio_qdelta);
   // Take segment weighted average for estimated bits.
   estimated_bits = (int)((1.0 - weight_segment) *
       vp9_estimate_bits_at_q(cm->frame_type, cm->base_qindex, mbs,
@@ -178,7 +185,7 @@ int vp9_cyclic_refresh_rc_bits_per_mb(const VP9_COMP *cpi, int i,
   // does not occur/is very small.
   double weight_segment = (double)cr->target_num_seg_blocks / num8x8bl;
   // Compute delta-q corresponding to qindex i.
-  int deltaq = compute_deltaq(cpi, i);
+  int deltaq = compute_deltaq(cpi, i, cr->rate_ratio_qdelta);
   // Take segment weighted average for bits per mb.
   bits_per_mb = (int)((1.0 - weight_segment) *
       vp9_rc_bits_per_mb(cm->frame_type, i, correction_factor, cm->bit_depth) +
@@ -203,21 +210,26 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int xmis = MIN(cm->mi_cols - mi_col, bw);
   const int ymis = MIN(cm->mi_rows - mi_row, bh);
   const int block_index = mi_row * cm->mi_cols + mi_col;
+
   const int refresh_this_block = candidate_refresh_aq(cr, mbmi, bsize, use_rd,
                                                       rate_sb);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
   int x = 0; int y = 0;
 
-  // Check if we should reset the segment_id for this block.
-  if (mbmi->segment_id > 0 && !refresh_this_block)
+  // If this block is labelled for resfresh, check if we should use more
+  // aggressive delta-qp for this block.
+  if (mbmi->segment_id > 0 && refresh_this_block == 2)
+    mbmi->segment_id = 2;
+  // Else, check if we should reset the segment_id for this block (no refresh).
+  else if (mbmi->segment_id > 0 && refresh_this_block == 0)
     mbmi->segment_id = 0;
 
   // Update the cyclic refresh map, to be used for setting segmentation map
   // for the next frame. If the block  will be refreshed this frame, mark it
   // as clean. The magnitude of the -ve influences how long before we consider
   // it for refresh again.
-  if (mbmi->segment_id == 1) {
+  if (mbmi->segment_id >= 1) {
     new_map_value = -cr->time_for_refresh;
   } else if (refresh_this_block) {
     // Else if it is accepted as candidate for refresh, and has not already
@@ -256,6 +268,10 @@ void vp9_cyclic_refresh_update_actual_count(struct VP9_COMP *const cpi) {
 
 // Update the segmentation map, and related quantities: cyclic refresh map,
 // refresh sb_index, and target number of blocks to be refreshed.
+// The map is set to either 0 (no refresh) or 1 (refresh) for each superblock.
+// Blocks labeled as segment#1 may later get set to segment#2 (during the
+// encoding of the superblock) if the expecting coding bits for the block is
+// well below target.
 void vp9_cyclic_refresh_update_map(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
@@ -370,6 +386,7 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
       cr->thresh_rate_sb = (rc->sb64_target_rate * 256);
       cr->thresh_dist_sb = 16 * (int)(q * q);
     }
+    cr->aggress_segement_deltaq  = 1;
 
     // Set up segmentation.
     // Clear down the segment map.
@@ -389,15 +406,24 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     vp9_disable_segfeature(seg, 0, SEG_LVL_ALT_Q);
     // Use segment 1 for in-frame Q adjustment.
     vp9_enable_segfeature(seg, 1, SEG_LVL_ALT_Q);
+    // Use segment 2 for more aggressive in-frame Q adjustment.
+    vp9_enable_segfeature(seg, 2, SEG_LVL_ALT_Q);
 
     // Set the q delta for segment 1.
-    qindex_delta = compute_deltaq(cpi, cm->base_qindex);
+    qindex_delta = compute_deltaq(cpi, cm->base_qindex, cr->rate_ratio_qdelta);
 
     // Compute rd-mult for segment 1.
     qindex2 = clamp(cm->base_qindex + cm->y_dc_delta_q + qindex_delta, 0, MAXQ);
     cr->rdmult = vp9_compute_rd_mult(cpi, qindex2);
 
     vp9_set_segdata(seg, 1, SEG_LVL_ALT_Q, qindex_delta);
+
+    if (cr->aggress_segement_deltaq == 1) {
+      // Set more aggressive (higher) q delta for segment 2.
+      qindex_delta = compute_deltaq(cpi, cm->base_qindex,
+                                    1.5 * cr->rate_ratio_qdelta);
+      vp9_set_segdata(seg, 2, SEG_LVL_ALT_Q, qindex_delta);
+    }
 
     // Update the segmentation and refresh map.
     vp9_cyclic_refresh_update_map(cpi);
