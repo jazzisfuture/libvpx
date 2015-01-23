@@ -3569,6 +3569,8 @@ void vp9_idct32x32_34_add_sse2(const int16_t *input, uint8_t *dest,
     }
   }
 
+#include "vpx_ports/mem.h"
+
 void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
                                  int stride) {
   const __m128i rounding = _mm_set1_epi32(DCT_CONST_ROUNDING);
@@ -3623,7 +3625,12 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
 
   const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
 
-  __m128i in[32], col[128], zero_idx[16];
+//  DECLARE_ALIGNED(16, __m128i, in[32]);
+//  DECLARE_ALIGNED(16, __m128i, zero_idx[16]);
+//  DECLARE_ALIGNED(16, __m128i, col[128]);
+
+  __m128i in[32]; // , col[128];
+//  __m128i zero_idx[16];
   __m128i stp1_0, stp1_1, stp1_2, stp1_3, stp1_4, stp1_5, stp1_6, stp1_7,
           stp1_8, stp1_9, stp1_10, stp1_11, stp1_12, stp1_13, stp1_14, stp1_15,
           stp1_16, stp1_17, stp1_18, stp1_19, stp1_20, stp1_21, stp1_22,
@@ -3636,9 +3643,12 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
           stp2_30, stp2_31;
   __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   int i, j, i32;
+  DECLARE_ALIGNED(16, int16_t, intermediate[32 * 32]);
+  int16_t *tmp_ptr;
 
   for (i = 0; i < 4; i++) {
     i32 = (i << 5);
+    tmp_ptr = &intermediate[i32 << 3];
       // First 1-D idct
       // Load input data.
       LOAD_DQCOEFF(in[0], input);
@@ -3675,76 +3685,76 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
       LOAD_DQCOEFF(in[23], input);
       LOAD_DQCOEFF(in[31], input);
 
-      // checking if all entries are zero
-      zero_idx[0] = _mm_or_si128(in[0], in[1]);
-      zero_idx[1] = _mm_or_si128(in[2], in[3]);
-      zero_idx[2] = _mm_or_si128(in[4], in[5]);
-      zero_idx[3] = _mm_or_si128(in[6], in[7]);
-      zero_idx[4] = _mm_or_si128(in[8], in[9]);
-      zero_idx[5] = _mm_or_si128(in[10], in[11]);
-      zero_idx[6] = _mm_or_si128(in[12], in[13]);
-      zero_idx[7] = _mm_or_si128(in[14], in[15]);
-      zero_idx[8] = _mm_or_si128(in[16], in[17]);
-      zero_idx[9] = _mm_or_si128(in[18], in[19]);
-      zero_idx[10] = _mm_or_si128(in[20], in[21]);
-      zero_idx[11] = _mm_or_si128(in[22], in[23]);
-      zero_idx[12] = _mm_or_si128(in[24], in[25]);
-      zero_idx[13] = _mm_or_si128(in[26], in[27]);
-      zero_idx[14] = _mm_or_si128(in[28], in[29]);
-      zero_idx[15] = _mm_or_si128(in[30], in[31]);
+//      // checking if all entries are zero
+//      zero_idx[0] = _mm_or_si128(in[0], in[1]);
+//      zero_idx[1] = _mm_or_si128(in[2], in[3]);
+//      zero_idx[2] = _mm_or_si128(in[4], in[5]);
+//      zero_idx[3] = _mm_or_si128(in[6], in[7]);
+//      zero_idx[4] = _mm_or_si128(in[8], in[9]);
+//      zero_idx[5] = _mm_or_si128(in[10], in[11]);
+//      zero_idx[6] = _mm_or_si128(in[12], in[13]);
+//      zero_idx[7] = _mm_or_si128(in[14], in[15]);
+//      zero_idx[8] = _mm_or_si128(in[16], in[17]);
+//      zero_idx[9] = _mm_or_si128(in[18], in[19]);
+//      zero_idx[10] = _mm_or_si128(in[20], in[21]);
+//      zero_idx[11] = _mm_or_si128(in[22], in[23]);
+//      zero_idx[12] = _mm_or_si128(in[24], in[25]);
+//      zero_idx[13] = _mm_or_si128(in[26], in[27]);
+//      zero_idx[14] = _mm_or_si128(in[28], in[29]);
+//      zero_idx[15] = _mm_or_si128(in[30], in[31]);
+//
+//      zero_idx[0] = _mm_or_si128(zero_idx[0], zero_idx[1]);
+//      zero_idx[1] = _mm_or_si128(zero_idx[2], zero_idx[3]);
+//      zero_idx[2] = _mm_or_si128(zero_idx[4], zero_idx[5]);
+//      zero_idx[3] = _mm_or_si128(zero_idx[6], zero_idx[7]);
+//      zero_idx[4] = _mm_or_si128(zero_idx[8], zero_idx[9]);
+//      zero_idx[5] = _mm_or_si128(zero_idx[10], zero_idx[11]);
+//      zero_idx[6] = _mm_or_si128(zero_idx[12], zero_idx[13]);
+//      zero_idx[7] = _mm_or_si128(zero_idx[14], zero_idx[15]);
+//
+//      zero_idx[8] = _mm_or_si128(zero_idx[0], zero_idx[1]);
+//      zero_idx[9] = _mm_or_si128(zero_idx[2], zero_idx[3]);
+//      zero_idx[10] = _mm_or_si128(zero_idx[4], zero_idx[5]);
+//      zero_idx[11] = _mm_or_si128(zero_idx[6], zero_idx[7]);
+//      zero_idx[12] = _mm_or_si128(zero_idx[8], zero_idx[9]);
+//      zero_idx[13] = _mm_or_si128(zero_idx[10], zero_idx[11]);
+//      zero_idx[14] = _mm_or_si128(zero_idx[12], zero_idx[13]);
 
-      zero_idx[0] = _mm_or_si128(zero_idx[0], zero_idx[1]);
-      zero_idx[1] = _mm_or_si128(zero_idx[2], zero_idx[3]);
-      zero_idx[2] = _mm_or_si128(zero_idx[4], zero_idx[5]);
-      zero_idx[3] = _mm_or_si128(zero_idx[6], zero_idx[7]);
-      zero_idx[4] = _mm_or_si128(zero_idx[8], zero_idx[9]);
-      zero_idx[5] = _mm_or_si128(zero_idx[10], zero_idx[11]);
-      zero_idx[6] = _mm_or_si128(zero_idx[12], zero_idx[13]);
-      zero_idx[7] = _mm_or_si128(zero_idx[14], zero_idx[15]);
-
-      zero_idx[8] = _mm_or_si128(zero_idx[0], zero_idx[1]);
-      zero_idx[9] = _mm_or_si128(zero_idx[2], zero_idx[3]);
-      zero_idx[10] = _mm_or_si128(zero_idx[4], zero_idx[5]);
-      zero_idx[11] = _mm_or_si128(zero_idx[6], zero_idx[7]);
-      zero_idx[12] = _mm_or_si128(zero_idx[8], zero_idx[9]);
-      zero_idx[13] = _mm_or_si128(zero_idx[10], zero_idx[11]);
-      zero_idx[14] = _mm_or_si128(zero_idx[12], zero_idx[13]);
-
-      if (_mm_movemask_epi8(_mm_cmpeq_epi32(zero_idx[14], zero)) == 0xFFFF) {
-        col[i32 + 0] = _mm_setzero_si128();
-        col[i32 + 1] = _mm_setzero_si128();
-        col[i32 + 2] = _mm_setzero_si128();
-        col[i32 + 3] = _mm_setzero_si128();
-        col[i32 + 4] = _mm_setzero_si128();
-        col[i32 + 5] = _mm_setzero_si128();
-        col[i32 + 6] = _mm_setzero_si128();
-        col[i32 + 7] = _mm_setzero_si128();
-        col[i32 + 8] = _mm_setzero_si128();
-        col[i32 + 9] = _mm_setzero_si128();
-        col[i32 + 10] = _mm_setzero_si128();
-        col[i32 + 11] = _mm_setzero_si128();
-        col[i32 + 12] = _mm_setzero_si128();
-        col[i32 + 13] = _mm_setzero_si128();
-        col[i32 + 14] = _mm_setzero_si128();
-        col[i32 + 15] = _mm_setzero_si128();
-        col[i32 + 16] = _mm_setzero_si128();
-        col[i32 + 17] = _mm_setzero_si128();
-        col[i32 + 18] = _mm_setzero_si128();
-        col[i32 + 19] = _mm_setzero_si128();
-        col[i32 + 20] = _mm_setzero_si128();
-        col[i32 + 21] = _mm_setzero_si128();
-        col[i32 + 22] = _mm_setzero_si128();
-        col[i32 + 23] = _mm_setzero_si128();
-        col[i32 + 24] = _mm_setzero_si128();
-        col[i32 + 25] = _mm_setzero_si128();
-        col[i32 + 26] = _mm_setzero_si128();
-        col[i32 + 27] = _mm_setzero_si128();
-        col[i32 + 28] = _mm_setzero_si128();
-        col[i32 + 29] = _mm_setzero_si128();
-        col[i32 + 30] = _mm_setzero_si128();
-        col[i32 + 31] = _mm_setzero_si128();
-        continue;
-      }
+//      if (_mm_movemask_epi8(_mm_cmpeq_epi32(zero_idx[14], zero)) == 0xFFFF) {
+//        col[i32 + 0] = _mm_setzero_si128();
+//        col[i32 + 1] = _mm_setzero_si128();
+//        col[i32 + 2] = _mm_setzero_si128();
+//        col[i32 + 3] = _mm_setzero_si128();
+//        col[i32 + 4] = _mm_setzero_si128();
+//        col[i32 + 5] = _mm_setzero_si128();
+//        col[i32 + 6] = _mm_setzero_si128();
+//        col[i32 + 7] = _mm_setzero_si128();
+//        col[i32 + 8] = _mm_setzero_si128();
+//        col[i32 + 9] = _mm_setzero_si128();
+//        col[i32 + 10] = _mm_setzero_si128();
+//        col[i32 + 11] = _mm_setzero_si128();
+//        col[i32 + 12] = _mm_setzero_si128();
+//        col[i32 + 13] = _mm_setzero_si128();
+//        col[i32 + 14] = _mm_setzero_si128();
+//        col[i32 + 15] = _mm_setzero_si128();
+//        col[i32 + 16] = _mm_setzero_si128();
+//        col[i32 + 17] = _mm_setzero_si128();
+//        col[i32 + 18] = _mm_setzero_si128();
+//        col[i32 + 19] = _mm_setzero_si128();
+//        col[i32 + 20] = _mm_setzero_si128();
+//        col[i32 + 21] = _mm_setzero_si128();
+//        col[i32 + 22] = _mm_setzero_si128();
+//        col[i32 + 23] = _mm_setzero_si128();
+//        col[i32 + 24] = _mm_setzero_si128();
+//        col[i32 + 25] = _mm_setzero_si128();
+//        col[i32 + 26] = _mm_setzero_si128();
+//        col[i32 + 27] = _mm_setzero_si128();
+//        col[i32 + 28] = _mm_setzero_si128();
+//        col[i32 + 29] = _mm_setzero_si128();
+//        col[i32 + 30] = _mm_setzero_si128();
+//        col[i32 + 31] = _mm_setzero_si128();
+//        continue;
+//      }
 
       // Transpose 32x8 block to 8x32 block
       array_transpose_8x8(in, in);
@@ -3755,48 +3765,104 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
       IDCT32
 
       // 1_D: Store 32 intermediate results for each 8x32 block.
-      col[i32 + 0] = _mm_add_epi16(stp1_0, stp1_31);
-      col[i32 + 1] = _mm_add_epi16(stp1_1, stp1_30);
-      col[i32 + 2] = _mm_add_epi16(stp1_2, stp1_29);
-      col[i32 + 3] = _mm_add_epi16(stp1_3, stp1_28);
-      col[i32 + 4] = _mm_add_epi16(stp1_4, stp1_27);
-      col[i32 + 5] = _mm_add_epi16(stp1_5, stp1_26);
-      col[i32 + 6] = _mm_add_epi16(stp1_6, stp1_25);
-      col[i32 + 7] = _mm_add_epi16(stp1_7, stp1_24);
-      col[i32 + 8] = _mm_add_epi16(stp1_8, stp1_23);
-      col[i32 + 9] = _mm_add_epi16(stp1_9, stp1_22);
-      col[i32 + 10] = _mm_add_epi16(stp1_10, stp1_21);
-      col[i32 + 11] = _mm_add_epi16(stp1_11, stp1_20);
-      col[i32 + 12] = _mm_add_epi16(stp1_12, stp1_19);
-      col[i32 + 13] = _mm_add_epi16(stp1_13, stp1_18);
-      col[i32 + 14] = _mm_add_epi16(stp1_14, stp1_17);
-      col[i32 + 15] = _mm_add_epi16(stp1_15, stp1_16);
-      col[i32 + 16] = _mm_sub_epi16(stp1_15, stp1_16);
-      col[i32 + 17] = _mm_sub_epi16(stp1_14, stp1_17);
-      col[i32 + 18] = _mm_sub_epi16(stp1_13, stp1_18);
-      col[i32 + 19] = _mm_sub_epi16(stp1_12, stp1_19);
-      col[i32 + 20] = _mm_sub_epi16(stp1_11, stp1_20);
-      col[i32 + 21] = _mm_sub_epi16(stp1_10, stp1_21);
-      col[i32 + 22] = _mm_sub_epi16(stp1_9, stp1_22);
-      col[i32 + 23] = _mm_sub_epi16(stp1_8, stp1_23);
-      col[i32 + 24] = _mm_sub_epi16(stp1_7, stp1_24);
-      col[i32 + 25] = _mm_sub_epi16(stp1_6, stp1_25);
-      col[i32 + 26] = _mm_sub_epi16(stp1_5, stp1_26);
-      col[i32 + 27] = _mm_sub_epi16(stp1_4, stp1_27);
-      col[i32 + 28] = _mm_sub_epi16(stp1_3, stp1_28);
-      col[i32 + 29] = _mm_sub_epi16(stp1_2, stp1_29);
-      col[i32 + 30] = _mm_sub_epi16(stp1_1, stp1_30);
-      col[i32 + 31] = _mm_sub_epi16(stp1_0, stp1_31);
+      _mm_store_si128((__m128i *)tmp_ptr, _mm_add_epi16(stp1_0, stp1_31));
+      _mm_store_si128((__m128i *)(tmp_ptr + (1 << 3)), _mm_add_epi16(stp1_1, stp1_30));
+      _mm_store_si128((__m128i *)(tmp_ptr + (2 << 3)), _mm_add_epi16(stp1_2, stp1_29));
+      _mm_store_si128((__m128i *)(tmp_ptr + (3 << 3)), _mm_add_epi16(stp1_3, stp1_28));
+      _mm_store_si128((__m128i *)(tmp_ptr + (4 << 3)), _mm_add_epi16(stp1_4, stp1_27));
+      _mm_store_si128((__m128i *)(tmp_ptr + (5 << 3)), _mm_add_epi16(stp1_5, stp1_26));
+      _mm_store_si128((__m128i *)(tmp_ptr + (6 << 3)), _mm_add_epi16(stp1_6, stp1_25));
+      _mm_store_si128((__m128i *)(tmp_ptr + (7 << 3)), _mm_add_epi16(stp1_7, stp1_24));
+      _mm_store_si128((__m128i *)(tmp_ptr + (8 << 3)), _mm_add_epi16(stp1_8, stp1_23));
+      _mm_store_si128((__m128i *)(tmp_ptr + (9 << 3)), _mm_add_epi16(stp1_9, stp1_22));
+      _mm_store_si128((__m128i *)(tmp_ptr + (10 << 3)), _mm_add_epi16(stp1_10, stp1_21));
+      _mm_store_si128((__m128i *)(tmp_ptr + (11 << 3)), _mm_add_epi16(stp1_11, stp1_20));
+      _mm_store_si128((__m128i *)(tmp_ptr + (12 << 3)), _mm_add_epi16(stp1_12, stp1_19));
+      _mm_store_si128((__m128i *)(tmp_ptr + (13 << 3)), _mm_add_epi16(stp1_13, stp1_18));
+      _mm_store_si128((__m128i *)(tmp_ptr + (14 << 3)), _mm_add_epi16(stp1_14, stp1_17));
+      _mm_store_si128((__m128i *)(tmp_ptr + (15 << 3)), _mm_add_epi16(stp1_15, stp1_16));
+      _mm_store_si128((__m128i *)(tmp_ptr + (16 << 3)), _mm_sub_epi16(stp1_15, stp1_16));
+      _mm_store_si128((__m128i *)(tmp_ptr + (17 << 3)), _mm_sub_epi16(stp1_14, stp1_17));
+      _mm_store_si128((__m128i *)(tmp_ptr + (18 << 3)), _mm_sub_epi16(stp1_13, stp1_18));
+      _mm_store_si128((__m128i *)(tmp_ptr + (19 << 3)), _mm_sub_epi16(stp1_12, stp1_19));
+      _mm_store_si128((__m128i *)(tmp_ptr + (20 << 3)), _mm_sub_epi16(stp1_11, stp1_20));
+      _mm_store_si128((__m128i *)(tmp_ptr + (21 << 3)), _mm_sub_epi16(stp1_10, stp1_21));
+      _mm_store_si128((__m128i *)(tmp_ptr + (22 << 3)), _mm_sub_epi16(stp1_9, stp1_22));
+      _mm_store_si128((__m128i *)(tmp_ptr + (23 << 3)), _mm_sub_epi16(stp1_8, stp1_23));
+      _mm_store_si128((__m128i *)(tmp_ptr + (24 << 3)), _mm_sub_epi16(stp1_7, stp1_24));
+      _mm_store_si128((__m128i *)(tmp_ptr + (25 << 3)), _mm_sub_epi16(stp1_6, stp1_25));
+      _mm_store_si128((__m128i *)(tmp_ptr + (26 << 3)), _mm_sub_epi16(stp1_5, stp1_26));
+      _mm_store_si128((__m128i *)(tmp_ptr + (27 << 3)), _mm_sub_epi16(stp1_4, stp1_27));
+      _mm_store_si128((__m128i *)(tmp_ptr + (28 << 3)), _mm_sub_epi16(stp1_3, stp1_28));
+      _mm_store_si128((__m128i *)(tmp_ptr + (29 << 3)), _mm_sub_epi16(stp1_2, stp1_29));
+      _mm_store_si128((__m128i *)(tmp_ptr + (30 << 3)), _mm_sub_epi16(stp1_1, stp1_30));
+      _mm_store_si128((__m128i *)(tmp_ptr + (31 << 3)), _mm_sub_epi16(stp1_0, stp1_31));
+
+//      col[i32 + 0] = _mm_add_epi16(stp1_0, stp1_31);
+//      col[i32 + 1] = _mm_add_epi16(stp1_1, stp1_30);
+//      col[i32 + 2] = _mm_add_epi16(stp1_2, stp1_29);
+//      col[i32 + 3] = _mm_add_epi16(stp1_3, stp1_28);
+//      col[i32 + 4] = _mm_add_epi16(stp1_4, stp1_27);
+//      col[i32 + 5] = _mm_add_epi16(stp1_5, stp1_26);
+//      col[i32 + 6] = _mm_add_epi16(stp1_6, stp1_25);
+//      col[i32 + 7] = _mm_add_epi16(stp1_7, stp1_24);
+//      col[i32 + 8] = _mm_add_epi16(stp1_8, stp1_23);
+//      col[i32 + 9] = _mm_add_epi16(stp1_9, stp1_22);
+//      col[i32 + 10] = _mm_add_epi16(stp1_10, stp1_21);
+//      col[i32 + 11] = _mm_add_epi16(stp1_11, stp1_20);
+//      col[i32 + 12] = _mm_add_epi16(stp1_12, stp1_19);
+//      col[i32 + 13] = _mm_add_epi16(stp1_13, stp1_18);
+//      col[i32 + 14] = _mm_add_epi16(stp1_14, stp1_17);
+//      col[i32 + 15] = _mm_add_epi16(stp1_15, stp1_16);
+//      col[i32 + 16] = _mm_sub_epi16(stp1_15, stp1_16);
+//      col[i32 + 17] = _mm_sub_epi16(stp1_14, stp1_17);
+//      col[i32 + 18] = _mm_sub_epi16(stp1_13, stp1_18);
+//      col[i32 + 19] = _mm_sub_epi16(stp1_12, stp1_19);
+//      col[i32 + 20] = _mm_sub_epi16(stp1_11, stp1_20);
+//      col[i32 + 21] = _mm_sub_epi16(stp1_10, stp1_21);
+//      col[i32 + 22] = _mm_sub_epi16(stp1_9, stp1_22);
+//      col[i32 + 23] = _mm_sub_epi16(stp1_8, stp1_23);
+//      col[i32 + 24] = _mm_sub_epi16(stp1_7, stp1_24);
+//      col[i32 + 25] = _mm_sub_epi16(stp1_6, stp1_25);
+//      col[i32 + 26] = _mm_sub_epi16(stp1_5, stp1_26);
+//      col[i32 + 27] = _mm_sub_epi16(stp1_4, stp1_27);
+//      col[i32 + 28] = _mm_sub_epi16(stp1_3, stp1_28);
+//      col[i32 + 29] = _mm_sub_epi16(stp1_2, stp1_29);
+//      col[i32 + 30] = _mm_sub_epi16(stp1_1, stp1_30);
+//      col[i32 + 31] = _mm_sub_epi16(stp1_0, stp1_31);
     }
   for (i = 0; i < 4; i++) {
+      __m128i swap_buffer[8];
+      int k;
+
       // Second 1-D idct
       j = i << 3;
-
       // Transpose 32x8 block to 8x32 block
-      array_transpose_8x8(col+j, in);
-      array_transpose_8x8(col+j+32, in+8);
-      array_transpose_8x8(col+j+64, in+16);
-      array_transpose_8x8(col+j+96, in+24);
+      tmp_ptr = &intermediate[(j << 3)];
+      for (k = 0; k < 8; ++k)
+        swap_buffer[k] = _mm_load_si128((__m128i *)(tmp_ptr + (k << 3)));
+      array_transpose_8x8(swap_buffer, in);
+
+      tmp_ptr += (32 << 3);
+      for (k = 0; k < 8; ++k)
+        swap_buffer[k] = _mm_load_si128((__m128i *)(tmp_ptr + (k << 3)));
+      array_transpose_8x8(swap_buffer, in + 8);
+
+      tmp_ptr += (32 << 3);
+      for (k = 0; k < 8; ++k)
+        swap_buffer[k] = _mm_load_si128((__m128i *)(tmp_ptr + (k << 3)));
+      array_transpose_8x8(swap_buffer, in + 16);
+
+      tmp_ptr += (32 << 3);
+      for (k = 0; k < 8; ++k)
+        swap_buffer[k] = _mm_load_si128((__m128i *)(tmp_ptr + (k << 3)));
+      array_transpose_8x8(swap_buffer, in + 24);
+
+
+//      array_transpose_8x8(col+j, in);
+//      array_transpose_8x8(col+j+32, in+8);
+//      array_transpose_8x8(col+j+64, in+16);
+//      array_transpose_8x8(col+j+96, in+24);
 
       IDCT32
 
