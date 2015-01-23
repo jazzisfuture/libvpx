@@ -10,6 +10,7 @@
 
 #include "vp9/common/x86/vp9_idct_intrin_sse2.h"
 #include "vp9/common/vp9_idct.h"
+#include "vpx_ports/mem.h"
 
 #define RECON_AND_STORE4X4(dest, in_x) \
 {                                                     \
@@ -3624,7 +3625,7 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
 
   const __m128i stg6_0 = pair_set_epi16(-cospi_16_64, cospi_16_64);
 
-  __m128i in[32], col[128], zero_idx[16];
+  __m128i in[32];
   __m128i stp1_0, stp1_1, stp1_2, stp1_3, stp1_4, stp1_5, stp1_6, stp1_7,
           stp1_8, stp1_9, stp1_10, stp1_11, stp1_12, stp1_13, stp1_14, stp1_15,
           stp1_16, stp1_17, stp1_18, stp1_19, stp1_20, stp1_21, stp1_22,
@@ -3637,46 +3638,52 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
           stp2_30, stp2_31;
   __m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   int i, j, i32;
+  DECLARE_ALIGNED(16, int16_t, intermediate[32 * 32]);
+  int16_t *tmp_ptr;
 
   for (i = 0; i < 4; i++) {
     i32 = (i << 5);
-      // First 1-D idct
-      // Load input data.
-      LOAD_DQCOEFF(in[0], input);
-      LOAD_DQCOEFF(in[8], input);
-      LOAD_DQCOEFF(in[16], input);
-      LOAD_DQCOEFF(in[24], input);
-      LOAD_DQCOEFF(in[1], input);
-      LOAD_DQCOEFF(in[9], input);
-      LOAD_DQCOEFF(in[17], input);
-      LOAD_DQCOEFF(in[25], input);
-      LOAD_DQCOEFF(in[2], input);
-      LOAD_DQCOEFF(in[10], input);
-      LOAD_DQCOEFF(in[18], input);
-      LOAD_DQCOEFF(in[26], input);
-      LOAD_DQCOEFF(in[3], input);
-      LOAD_DQCOEFF(in[11], input);
-      LOAD_DQCOEFF(in[19], input);
-      LOAD_DQCOEFF(in[27], input);
+    tmp_ptr = &intermediate[i32 << 3];
+    // First 1-D idct
+    // Load input data.
+    LOAD_DQCOEFF(in[0], input);
+    LOAD_DQCOEFF(in[8], input);
+    LOAD_DQCOEFF(in[16], input);
+    LOAD_DQCOEFF(in[24], input);
+    LOAD_DQCOEFF(in[1], input);
+    LOAD_DQCOEFF(in[9], input);
+    LOAD_DQCOEFF(in[17], input);
+    LOAD_DQCOEFF(in[25], input);
+    LOAD_DQCOEFF(in[2], input);
+    LOAD_DQCOEFF(in[10], input);
+    LOAD_DQCOEFF(in[18], input);
+    LOAD_DQCOEFF(in[26], input);
+    LOAD_DQCOEFF(in[3], input);
+    LOAD_DQCOEFF(in[11], input);
+    LOAD_DQCOEFF(in[19], input);
+    LOAD_DQCOEFF(in[27], input);
 
-      LOAD_DQCOEFF(in[4], input);
-      LOAD_DQCOEFF(in[12], input);
-      LOAD_DQCOEFF(in[20], input);
-      LOAD_DQCOEFF(in[28], input);
-      LOAD_DQCOEFF(in[5], input);
-      LOAD_DQCOEFF(in[13], input);
-      LOAD_DQCOEFF(in[21], input);
-      LOAD_DQCOEFF(in[29], input);
-      LOAD_DQCOEFF(in[6], input);
-      LOAD_DQCOEFF(in[14], input);
-      LOAD_DQCOEFF(in[22], input);
-      LOAD_DQCOEFF(in[30], input);
-      LOAD_DQCOEFF(in[7], input);
-      LOAD_DQCOEFF(in[15], input);
-      LOAD_DQCOEFF(in[23], input);
-      LOAD_DQCOEFF(in[31], input);
+    LOAD_DQCOEFF(in[4], input);
+    LOAD_DQCOEFF(in[12], input);
+    LOAD_DQCOEFF(in[20], input);
+    LOAD_DQCOEFF(in[28], input);
+    LOAD_DQCOEFF(in[5], input);
+    LOAD_DQCOEFF(in[13], input);
+    LOAD_DQCOEFF(in[21], input);
+    LOAD_DQCOEFF(in[29], input);
+    LOAD_DQCOEFF(in[6], input);
+    LOAD_DQCOEFF(in[14], input);
+    LOAD_DQCOEFF(in[22], input);
+    LOAD_DQCOEFF(in[30], input);
+    LOAD_DQCOEFF(in[7], input);
+    LOAD_DQCOEFF(in[15], input);
+    LOAD_DQCOEFF(in[23], input);
+    LOAD_DQCOEFF(in[31], input);
 
-      // checking if all entries are zero
+    // checking if all entries are zero
+    {
+      __m128i zero_idx[16];
+
       zero_idx[0] = _mm_or_si128(in[0], in[1]);
       zero_idx[1] = _mm_or_si128(in[2], in[3]);
       zero_idx[2] = _mm_or_si128(in[4], in[5]);
@@ -3712,231 +3719,207 @@ void vp9_idct32x32_1024_add_sse2(const int16_t *input, uint8_t *dest,
       zero_idx[14] = _mm_or_si128(zero_idx[12], zero_idx[13]);
 
       if (_mm_movemask_epi8(_mm_cmpeq_epi32(zero_idx[14], zero)) == 0xFFFF) {
-        col[i32 + 0] = _mm_setzero_si128();
-        col[i32 + 1] = _mm_setzero_si128();
-        col[i32 + 2] = _mm_setzero_si128();
-        col[i32 + 3] = _mm_setzero_si128();
-        col[i32 + 4] = _mm_setzero_si128();
-        col[i32 + 5] = _mm_setzero_si128();
-        col[i32 + 6] = _mm_setzero_si128();
-        col[i32 + 7] = _mm_setzero_si128();
-        col[i32 + 8] = _mm_setzero_si128();
-        col[i32 + 9] = _mm_setzero_si128();
-        col[i32 + 10] = _mm_setzero_si128();
-        col[i32 + 11] = _mm_setzero_si128();
-        col[i32 + 12] = _mm_setzero_si128();
-        col[i32 + 13] = _mm_setzero_si128();
-        col[i32 + 14] = _mm_setzero_si128();
-        col[i32 + 15] = _mm_setzero_si128();
-        col[i32 + 16] = _mm_setzero_si128();
-        col[i32 + 17] = _mm_setzero_si128();
-        col[i32 + 18] = _mm_setzero_si128();
-        col[i32 + 19] = _mm_setzero_si128();
-        col[i32 + 20] = _mm_setzero_si128();
-        col[i32 + 21] = _mm_setzero_si128();
-        col[i32 + 22] = _mm_setzero_si128();
-        col[i32 + 23] = _mm_setzero_si128();
-        col[i32 + 24] = _mm_setzero_si128();
-        col[i32 + 25] = _mm_setzero_si128();
-        col[i32 + 26] = _mm_setzero_si128();
-        col[i32 + 27] = _mm_setzero_si128();
-        col[i32 + 28] = _mm_setzero_si128();
-        col[i32 + 29] = _mm_setzero_si128();
-        col[i32 + 30] = _mm_setzero_si128();
-        col[i32 + 31] = _mm_setzero_si128();
+        vpx_memset(tmp_ptr, 0, 32 * 8 * sizeof(int16_t));
         continue;
       }
-
-      // Transpose 32x8 block to 8x32 block
-      array_transpose_8x8(in, in);
-      array_transpose_8x8(in+8, in+8);
-      array_transpose_8x8(in+16, in+16);
-      array_transpose_8x8(in+24, in+24);
-
-      IDCT32
-
-      // 1_D: Store 32 intermediate results for each 8x32 block.
-      col[i32 + 0] = _mm_add_epi16(stp1_0, stp1_31);
-      col[i32 + 1] = _mm_add_epi16(stp1_1, stp1_30);
-      col[i32 + 2] = _mm_add_epi16(stp1_2, stp1_29);
-      col[i32 + 3] = _mm_add_epi16(stp1_3, stp1_28);
-      col[i32 + 4] = _mm_add_epi16(stp1_4, stp1_27);
-      col[i32 + 5] = _mm_add_epi16(stp1_5, stp1_26);
-      col[i32 + 6] = _mm_add_epi16(stp1_6, stp1_25);
-      col[i32 + 7] = _mm_add_epi16(stp1_7, stp1_24);
-      col[i32 + 8] = _mm_add_epi16(stp1_8, stp1_23);
-      col[i32 + 9] = _mm_add_epi16(stp1_9, stp1_22);
-      col[i32 + 10] = _mm_add_epi16(stp1_10, stp1_21);
-      col[i32 + 11] = _mm_add_epi16(stp1_11, stp1_20);
-      col[i32 + 12] = _mm_add_epi16(stp1_12, stp1_19);
-      col[i32 + 13] = _mm_add_epi16(stp1_13, stp1_18);
-      col[i32 + 14] = _mm_add_epi16(stp1_14, stp1_17);
-      col[i32 + 15] = _mm_add_epi16(stp1_15, stp1_16);
-      col[i32 + 16] = _mm_sub_epi16(stp1_15, stp1_16);
-      col[i32 + 17] = _mm_sub_epi16(stp1_14, stp1_17);
-      col[i32 + 18] = _mm_sub_epi16(stp1_13, stp1_18);
-      col[i32 + 19] = _mm_sub_epi16(stp1_12, stp1_19);
-      col[i32 + 20] = _mm_sub_epi16(stp1_11, stp1_20);
-      col[i32 + 21] = _mm_sub_epi16(stp1_10, stp1_21);
-      col[i32 + 22] = _mm_sub_epi16(stp1_9, stp1_22);
-      col[i32 + 23] = _mm_sub_epi16(stp1_8, stp1_23);
-      col[i32 + 24] = _mm_sub_epi16(stp1_7, stp1_24);
-      col[i32 + 25] = _mm_sub_epi16(stp1_6, stp1_25);
-      col[i32 + 26] = _mm_sub_epi16(stp1_5, stp1_26);
-      col[i32 + 27] = _mm_sub_epi16(stp1_4, stp1_27);
-      col[i32 + 28] = _mm_sub_epi16(stp1_3, stp1_28);
-      col[i32 + 29] = _mm_sub_epi16(stp1_2, stp1_29);
-      col[i32 + 30] = _mm_sub_epi16(stp1_1, stp1_30);
-      col[i32 + 31] = _mm_sub_epi16(stp1_0, stp1_31);
     }
+
+    // Transpose 32x8 block to 8x32 block
+    array_transpose_8x8(in, in);
+    array_transpose_8x8(in+8, in+8);
+    array_transpose_8x8(in+16, in+16);
+    array_transpose_8x8(in+24, in+24);
+
+    IDCT32
+
+    // 1_D: Store 32 intermediate results for each 8x32 block.
+    _mm_store_si128((__m128i *)tmp_ptr, _mm_add_epi16(stp1_0, stp1_31));
+    _mm_store_si128((__m128i *)(tmp_ptr + (1 << 3)), _mm_add_epi16(stp1_1, stp1_30));
+    _mm_store_si128((__m128i *)(tmp_ptr + (2 << 3)), _mm_add_epi16(stp1_2, stp1_29));
+    _mm_store_si128((__m128i *)(tmp_ptr + (3 << 3)), _mm_add_epi16(stp1_3, stp1_28));
+    _mm_store_si128((__m128i *)(tmp_ptr + (4 << 3)), _mm_add_epi16(stp1_4, stp1_27));
+    _mm_store_si128((__m128i *)(tmp_ptr + (5 << 3)), _mm_add_epi16(stp1_5, stp1_26));
+    _mm_store_si128((__m128i *)(tmp_ptr + (6 << 3)), _mm_add_epi16(stp1_6, stp1_25));
+    _mm_store_si128((__m128i *)(tmp_ptr + (7 << 3)), _mm_add_epi16(stp1_7, stp1_24));
+    _mm_store_si128((__m128i *)(tmp_ptr + (8 << 3)), _mm_add_epi16(stp1_8, stp1_23));
+    _mm_store_si128((__m128i *)(tmp_ptr + (9 << 3)), _mm_add_epi16(stp1_9, stp1_22));
+    _mm_store_si128((__m128i *)(tmp_ptr + (10 << 3)), _mm_add_epi16(stp1_10, stp1_21));
+    _mm_store_si128((__m128i *)(tmp_ptr + (11 << 3)), _mm_add_epi16(stp1_11, stp1_20));
+    _mm_store_si128((__m128i *)(tmp_ptr + (12 << 3)), _mm_add_epi16(stp1_12, stp1_19));
+    _mm_store_si128((__m128i *)(tmp_ptr + (13 << 3)), _mm_add_epi16(stp1_13, stp1_18));
+    _mm_store_si128((__m128i *)(tmp_ptr + (14 << 3)), _mm_add_epi16(stp1_14, stp1_17));
+    _mm_store_si128((__m128i *)(tmp_ptr + (15 << 3)), _mm_add_epi16(stp1_15, stp1_16));
+    _mm_store_si128((__m128i *)(tmp_ptr + (16 << 3)), _mm_sub_epi16(stp1_15, stp1_16));
+    _mm_store_si128((__m128i *)(tmp_ptr + (17 << 3)), _mm_sub_epi16(stp1_14, stp1_17));
+    _mm_store_si128((__m128i *)(tmp_ptr + (18 << 3)), _mm_sub_epi16(stp1_13, stp1_18));
+    _mm_store_si128((__m128i *)(tmp_ptr + (19 << 3)), _mm_sub_epi16(stp1_12, stp1_19));
+    _mm_store_si128((__m128i *)(tmp_ptr + (20 << 3)), _mm_sub_epi16(stp1_11, stp1_20));
+    _mm_store_si128((__m128i *)(tmp_ptr + (21 << 3)), _mm_sub_epi16(stp1_10, stp1_21));
+    _mm_store_si128((__m128i *)(tmp_ptr + (22 << 3)), _mm_sub_epi16(stp1_9, stp1_22));
+    _mm_store_si128((__m128i *)(tmp_ptr + (23 << 3)), _mm_sub_epi16(stp1_8, stp1_23));
+    _mm_store_si128((__m128i *)(tmp_ptr + (24 << 3)), _mm_sub_epi16(stp1_7, stp1_24));
+    _mm_store_si128((__m128i *)(tmp_ptr + (25 << 3)), _mm_sub_epi16(stp1_6, stp1_25));
+    _mm_store_si128((__m128i *)(tmp_ptr + (26 << 3)), _mm_sub_epi16(stp1_5, stp1_26));
+    _mm_store_si128((__m128i *)(tmp_ptr + (27 << 3)), _mm_sub_epi16(stp1_4, stp1_27));
+    _mm_store_si128((__m128i *)(tmp_ptr + (28 << 3)), _mm_sub_epi16(stp1_3, stp1_28));
+    _mm_store_si128((__m128i *)(tmp_ptr + (29 << 3)), _mm_sub_epi16(stp1_2, stp1_29));
+    _mm_store_si128((__m128i *)(tmp_ptr + (30 << 3)), _mm_sub_epi16(stp1_1, stp1_30));
+    _mm_store_si128((__m128i *)(tmp_ptr + (31 << 3)), _mm_sub_epi16(stp1_0, stp1_31));
+  }
+
   for (i = 0; i < 4; i++) {
-      // Second 1-D idct
-      j = i << 3;
+    __m128i swap_buffer[8];
+    int k, itr;
 
-      // Transpose 32x8 block to 8x32 block
-      array_transpose_8x8(col+j, in);
-      array_transpose_8x8(col+j+32, in+8);
-      array_transpose_8x8(col+j+64, in+16);
-      array_transpose_8x8(col+j+96, in+24);
-
-      IDCT32
-
-      // 2_D: Calculate the results and store them to destination.
-      in[0] = _mm_add_epi16(stp1_0, stp1_31);
-      in[1] = _mm_add_epi16(stp1_1, stp1_30);
-      in[2] = _mm_add_epi16(stp1_2, stp1_29);
-      in[3] = _mm_add_epi16(stp1_3, stp1_28);
-      in[4] = _mm_add_epi16(stp1_4, stp1_27);
-      in[5] = _mm_add_epi16(stp1_5, stp1_26);
-      in[6] = _mm_add_epi16(stp1_6, stp1_25);
-      in[7] = _mm_add_epi16(stp1_7, stp1_24);
-      in[8] = _mm_add_epi16(stp1_8, stp1_23);
-      in[9] = _mm_add_epi16(stp1_9, stp1_22);
-      in[10] = _mm_add_epi16(stp1_10, stp1_21);
-      in[11] = _mm_add_epi16(stp1_11, stp1_20);
-      in[12] = _mm_add_epi16(stp1_12, stp1_19);
-      in[13] = _mm_add_epi16(stp1_13, stp1_18);
-      in[14] = _mm_add_epi16(stp1_14, stp1_17);
-      in[15] = _mm_add_epi16(stp1_15, stp1_16);
-      in[16] = _mm_sub_epi16(stp1_15, stp1_16);
-      in[17] = _mm_sub_epi16(stp1_14, stp1_17);
-      in[18] = _mm_sub_epi16(stp1_13, stp1_18);
-      in[19] = _mm_sub_epi16(stp1_12, stp1_19);
-      in[20] = _mm_sub_epi16(stp1_11, stp1_20);
-      in[21] = _mm_sub_epi16(stp1_10, stp1_21);
-      in[22] = _mm_sub_epi16(stp1_9, stp1_22);
-      in[23] = _mm_sub_epi16(stp1_8, stp1_23);
-      in[24] = _mm_sub_epi16(stp1_7, stp1_24);
-      in[25] = _mm_sub_epi16(stp1_6, stp1_25);
-      in[26] = _mm_sub_epi16(stp1_5, stp1_26);
-      in[27] = _mm_sub_epi16(stp1_4, stp1_27);
-      in[28] = _mm_sub_epi16(stp1_3, stp1_28);
-      in[29] = _mm_sub_epi16(stp1_2, stp1_29);
-      in[30] = _mm_sub_epi16(stp1_1, stp1_30);
-      in[31] = _mm_sub_epi16(stp1_0, stp1_31);
-
-      // Final rounding and shift
-      in[0] = _mm_adds_epi16(in[0], final_rounding);
-      in[1] = _mm_adds_epi16(in[1], final_rounding);
-      in[2] = _mm_adds_epi16(in[2], final_rounding);
-      in[3] = _mm_adds_epi16(in[3], final_rounding);
-      in[4] = _mm_adds_epi16(in[4], final_rounding);
-      in[5] = _mm_adds_epi16(in[5], final_rounding);
-      in[6] = _mm_adds_epi16(in[6], final_rounding);
-      in[7] = _mm_adds_epi16(in[7], final_rounding);
-      in[8] = _mm_adds_epi16(in[8], final_rounding);
-      in[9] = _mm_adds_epi16(in[9], final_rounding);
-      in[10] = _mm_adds_epi16(in[10], final_rounding);
-      in[11] = _mm_adds_epi16(in[11], final_rounding);
-      in[12] = _mm_adds_epi16(in[12], final_rounding);
-      in[13] = _mm_adds_epi16(in[13], final_rounding);
-      in[14] = _mm_adds_epi16(in[14], final_rounding);
-      in[15] = _mm_adds_epi16(in[15], final_rounding);
-      in[16] = _mm_adds_epi16(in[16], final_rounding);
-      in[17] = _mm_adds_epi16(in[17], final_rounding);
-      in[18] = _mm_adds_epi16(in[18], final_rounding);
-      in[19] = _mm_adds_epi16(in[19], final_rounding);
-      in[20] = _mm_adds_epi16(in[20], final_rounding);
-      in[21] = _mm_adds_epi16(in[21], final_rounding);
-      in[22] = _mm_adds_epi16(in[22], final_rounding);
-      in[23] = _mm_adds_epi16(in[23], final_rounding);
-      in[24] = _mm_adds_epi16(in[24], final_rounding);
-      in[25] = _mm_adds_epi16(in[25], final_rounding);
-      in[26] = _mm_adds_epi16(in[26], final_rounding);
-      in[27] = _mm_adds_epi16(in[27], final_rounding);
-      in[28] = _mm_adds_epi16(in[28], final_rounding);
-      in[29] = _mm_adds_epi16(in[29], final_rounding);
-      in[30] = _mm_adds_epi16(in[30], final_rounding);
-      in[31] = _mm_adds_epi16(in[31], final_rounding);
-
-      in[0] = _mm_srai_epi16(in[0], 6);
-      in[1] = _mm_srai_epi16(in[1], 6);
-      in[2] = _mm_srai_epi16(in[2], 6);
-      in[3] = _mm_srai_epi16(in[3], 6);
-      in[4] = _mm_srai_epi16(in[4], 6);
-      in[5] = _mm_srai_epi16(in[5], 6);
-      in[6] = _mm_srai_epi16(in[6], 6);
-      in[7] = _mm_srai_epi16(in[7], 6);
-      in[8] = _mm_srai_epi16(in[8], 6);
-      in[9] = _mm_srai_epi16(in[9], 6);
-      in[10] = _mm_srai_epi16(in[10], 6);
-      in[11] = _mm_srai_epi16(in[11], 6);
-      in[12] = _mm_srai_epi16(in[12], 6);
-      in[13] = _mm_srai_epi16(in[13], 6);
-      in[14] = _mm_srai_epi16(in[14], 6);
-      in[15] = _mm_srai_epi16(in[15], 6);
-      in[16] = _mm_srai_epi16(in[16], 6);
-      in[17] = _mm_srai_epi16(in[17], 6);
-      in[18] = _mm_srai_epi16(in[18], 6);
-      in[19] = _mm_srai_epi16(in[19], 6);
-      in[20] = _mm_srai_epi16(in[20], 6);
-      in[21] = _mm_srai_epi16(in[21], 6);
-      in[22] = _mm_srai_epi16(in[22], 6);
-      in[23] = _mm_srai_epi16(in[23], 6);
-      in[24] = _mm_srai_epi16(in[24], 6);
-      in[25] = _mm_srai_epi16(in[25], 6);
-      in[26] = _mm_srai_epi16(in[26], 6);
-      in[27] = _mm_srai_epi16(in[27], 6);
-      in[28] = _mm_srai_epi16(in[28], 6);
-      in[29] = _mm_srai_epi16(in[29], 6);
-      in[30] = _mm_srai_epi16(in[30], 6);
-      in[31] = _mm_srai_epi16(in[31], 6);
-
-      RECON_AND_STORE(dest, in[0]);
-      RECON_AND_STORE(dest, in[1]);
-      RECON_AND_STORE(dest, in[2]);
-      RECON_AND_STORE(dest, in[3]);
-      RECON_AND_STORE(dest, in[4]);
-      RECON_AND_STORE(dest, in[5]);
-      RECON_AND_STORE(dest, in[6]);
-      RECON_AND_STORE(dest, in[7]);
-      RECON_AND_STORE(dest, in[8]);
-      RECON_AND_STORE(dest, in[9]);
-      RECON_AND_STORE(dest, in[10]);
-      RECON_AND_STORE(dest, in[11]);
-      RECON_AND_STORE(dest, in[12]);
-      RECON_AND_STORE(dest, in[13]);
-      RECON_AND_STORE(dest, in[14]);
-      RECON_AND_STORE(dest, in[15]);
-      RECON_AND_STORE(dest, in[16]);
-      RECON_AND_STORE(dest, in[17]);
-      RECON_AND_STORE(dest, in[18]);
-      RECON_AND_STORE(dest, in[19]);
-      RECON_AND_STORE(dest, in[20]);
-      RECON_AND_STORE(dest, in[21]);
-      RECON_AND_STORE(dest, in[22]);
-      RECON_AND_STORE(dest, in[23]);
-      RECON_AND_STORE(dest, in[24]);
-      RECON_AND_STORE(dest, in[25]);
-      RECON_AND_STORE(dest, in[26]);
-      RECON_AND_STORE(dest, in[27]);
-      RECON_AND_STORE(dest, in[28]);
-      RECON_AND_STORE(dest, in[29]);
-      RECON_AND_STORE(dest, in[30]);
-      RECON_AND_STORE(dest, in[31]);
-
-      dest += 8 - (stride * 32);
+    // Second 1-D idct
+    j = i << 3;
+    // Transpose 32x8 block to 8x32 block
+    tmp_ptr = &intermediate[(j << 3)];
+    for (itr = 0; itr < 4; ++itr) {
+      for (k = 0; k < 8; ++k)
+        swap_buffer[k] = _mm_load_si128((__m128i *)(tmp_ptr + (k << 3)));
+      array_transpose_8x8(swap_buffer, in + (itr << 3));
+      tmp_ptr += (32 << 3);
     }
+
+    IDCT32
+
+    // 2_D: Calculate the results and store them to destination.
+    in[0] = _mm_add_epi16(stp1_0, stp1_31);
+    in[1] = _mm_add_epi16(stp1_1, stp1_30);
+    in[2] = _mm_add_epi16(stp1_2, stp1_29);
+    in[3] = _mm_add_epi16(stp1_3, stp1_28);
+    in[4] = _mm_add_epi16(stp1_4, stp1_27);
+    in[5] = _mm_add_epi16(stp1_5, stp1_26);
+    in[6] = _mm_add_epi16(stp1_6, stp1_25);
+    in[7] = _mm_add_epi16(stp1_7, stp1_24);
+    in[8] = _mm_add_epi16(stp1_8, stp1_23);
+    in[9] = _mm_add_epi16(stp1_9, stp1_22);
+    in[10] = _mm_add_epi16(stp1_10, stp1_21);
+    in[11] = _mm_add_epi16(stp1_11, stp1_20);
+    in[12] = _mm_add_epi16(stp1_12, stp1_19);
+    in[13] = _mm_add_epi16(stp1_13, stp1_18);
+    in[14] = _mm_add_epi16(stp1_14, stp1_17);
+    in[15] = _mm_add_epi16(stp1_15, stp1_16);
+    in[16] = _mm_sub_epi16(stp1_15, stp1_16);
+    in[17] = _mm_sub_epi16(stp1_14, stp1_17);
+    in[18] = _mm_sub_epi16(stp1_13, stp1_18);
+    in[19] = _mm_sub_epi16(stp1_12, stp1_19);
+    in[20] = _mm_sub_epi16(stp1_11, stp1_20);
+    in[21] = _mm_sub_epi16(stp1_10, stp1_21);
+    in[22] = _mm_sub_epi16(stp1_9, stp1_22);
+    in[23] = _mm_sub_epi16(stp1_8, stp1_23);
+    in[24] = _mm_sub_epi16(stp1_7, stp1_24);
+    in[25] = _mm_sub_epi16(stp1_6, stp1_25);
+    in[26] = _mm_sub_epi16(stp1_5, stp1_26);
+    in[27] = _mm_sub_epi16(stp1_4, stp1_27);
+    in[28] = _mm_sub_epi16(stp1_3, stp1_28);
+    in[29] = _mm_sub_epi16(stp1_2, stp1_29);
+    in[30] = _mm_sub_epi16(stp1_1, stp1_30);
+    in[31] = _mm_sub_epi16(stp1_0, stp1_31);
+
+    // Final rounding and shift
+    in[0] = _mm_adds_epi16(in[0], final_rounding);
+    in[1] = _mm_adds_epi16(in[1], final_rounding);
+    in[2] = _mm_adds_epi16(in[2], final_rounding);
+    in[3] = _mm_adds_epi16(in[3], final_rounding);
+    in[4] = _mm_adds_epi16(in[4], final_rounding);
+    in[5] = _mm_adds_epi16(in[5], final_rounding);
+    in[6] = _mm_adds_epi16(in[6], final_rounding);
+    in[7] = _mm_adds_epi16(in[7], final_rounding);
+    in[8] = _mm_adds_epi16(in[8], final_rounding);
+    in[9] = _mm_adds_epi16(in[9], final_rounding);
+    in[10] = _mm_adds_epi16(in[10], final_rounding);
+    in[11] = _mm_adds_epi16(in[11], final_rounding);
+    in[12] = _mm_adds_epi16(in[12], final_rounding);
+    in[13] = _mm_adds_epi16(in[13], final_rounding);
+    in[14] = _mm_adds_epi16(in[14], final_rounding);
+    in[15] = _mm_adds_epi16(in[15], final_rounding);
+    in[16] = _mm_adds_epi16(in[16], final_rounding);
+    in[17] = _mm_adds_epi16(in[17], final_rounding);
+    in[18] = _mm_adds_epi16(in[18], final_rounding);
+    in[19] = _mm_adds_epi16(in[19], final_rounding);
+    in[20] = _mm_adds_epi16(in[20], final_rounding);
+    in[21] = _mm_adds_epi16(in[21], final_rounding);
+    in[22] = _mm_adds_epi16(in[22], final_rounding);
+    in[23] = _mm_adds_epi16(in[23], final_rounding);
+    in[24] = _mm_adds_epi16(in[24], final_rounding);
+    in[25] = _mm_adds_epi16(in[25], final_rounding);
+    in[26] = _mm_adds_epi16(in[26], final_rounding);
+    in[27] = _mm_adds_epi16(in[27], final_rounding);
+    in[28] = _mm_adds_epi16(in[28], final_rounding);
+    in[29] = _mm_adds_epi16(in[29], final_rounding);
+    in[30] = _mm_adds_epi16(in[30], final_rounding);
+    in[31] = _mm_adds_epi16(in[31], final_rounding);
+
+    in[0] = _mm_srai_epi16(in[0], 6);
+    in[1] = _mm_srai_epi16(in[1], 6);
+    in[2] = _mm_srai_epi16(in[2], 6);
+    in[3] = _mm_srai_epi16(in[3], 6);
+    in[4] = _mm_srai_epi16(in[4], 6);
+    in[5] = _mm_srai_epi16(in[5], 6);
+    in[6] = _mm_srai_epi16(in[6], 6);
+    in[7] = _mm_srai_epi16(in[7], 6);
+    in[8] = _mm_srai_epi16(in[8], 6);
+    in[9] = _mm_srai_epi16(in[9], 6);
+    in[10] = _mm_srai_epi16(in[10], 6);
+    in[11] = _mm_srai_epi16(in[11], 6);
+    in[12] = _mm_srai_epi16(in[12], 6);
+    in[13] = _mm_srai_epi16(in[13], 6);
+    in[14] = _mm_srai_epi16(in[14], 6);
+    in[15] = _mm_srai_epi16(in[15], 6);
+    in[16] = _mm_srai_epi16(in[16], 6);
+    in[17] = _mm_srai_epi16(in[17], 6);
+    in[18] = _mm_srai_epi16(in[18], 6);
+    in[19] = _mm_srai_epi16(in[19], 6);
+    in[20] = _mm_srai_epi16(in[20], 6);
+    in[21] = _mm_srai_epi16(in[21], 6);
+    in[22] = _mm_srai_epi16(in[22], 6);
+    in[23] = _mm_srai_epi16(in[23], 6);
+    in[24] = _mm_srai_epi16(in[24], 6);
+    in[25] = _mm_srai_epi16(in[25], 6);
+    in[26] = _mm_srai_epi16(in[26], 6);
+    in[27] = _mm_srai_epi16(in[27], 6);
+    in[28] = _mm_srai_epi16(in[28], 6);
+    in[29] = _mm_srai_epi16(in[29], 6);
+    in[30] = _mm_srai_epi16(in[30], 6);
+    in[31] = _mm_srai_epi16(in[31], 6);
+
+    RECON_AND_STORE(dest, in[0]);
+    RECON_AND_STORE(dest, in[1]);
+    RECON_AND_STORE(dest, in[2]);
+    RECON_AND_STORE(dest, in[3]);
+    RECON_AND_STORE(dest, in[4]);
+    RECON_AND_STORE(dest, in[5]);
+    RECON_AND_STORE(dest, in[6]);
+    RECON_AND_STORE(dest, in[7]);
+    RECON_AND_STORE(dest, in[8]);
+    RECON_AND_STORE(dest, in[9]);
+    RECON_AND_STORE(dest, in[10]);
+    RECON_AND_STORE(dest, in[11]);
+    RECON_AND_STORE(dest, in[12]);
+    RECON_AND_STORE(dest, in[13]);
+    RECON_AND_STORE(dest, in[14]);
+    RECON_AND_STORE(dest, in[15]);
+    RECON_AND_STORE(dest, in[16]);
+    RECON_AND_STORE(dest, in[17]);
+    RECON_AND_STORE(dest, in[18]);
+    RECON_AND_STORE(dest, in[19]);
+    RECON_AND_STORE(dest, in[20]);
+    RECON_AND_STORE(dest, in[21]);
+    RECON_AND_STORE(dest, in[22]);
+    RECON_AND_STORE(dest, in[23]);
+    RECON_AND_STORE(dest, in[24]);
+    RECON_AND_STORE(dest, in[25]);
+    RECON_AND_STORE(dest, in[26]);
+    RECON_AND_STORE(dest, in[27]);
+    RECON_AND_STORE(dest, in[28]);
+    RECON_AND_STORE(dest, in[29]);
+    RECON_AND_STORE(dest, in[30]);
+    RECON_AND_STORE(dest, in[31]);
+
+    dest += 8 - (stride * 32);
+  }
 }  //NOLINT
 
 void vp9_idct32x32_1_add_sse2(const int16_t *input, uint8_t *dest, int stride) {
