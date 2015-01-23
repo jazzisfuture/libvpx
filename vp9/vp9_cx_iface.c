@@ -87,7 +87,12 @@ struct vpx_codec_alg_priv {
   vp8_postproc_cfg_t      preview_ppcfg;
   vpx_codec_pkt_list_decl(256) pkt_list;
   unsigned int                 fixed_kf_cntr;
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
   vpx_codec_priv_output_cx_pkt_cb_pair_t output_cx_pkt_cb;
+=======
+  // BufferPool that holds all reference frames.
+  BufferPool              *buffer_pool;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 };
 
 static VP9_REFFRAME ref_frame_to_vp9_reframe(vpx_ref_frame_type_t frame) {
@@ -737,6 +742,10 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     ctx->priv = (vpx_codec_priv_t *)priv;
     ctx->priv->init_flags = ctx->init_flags;
     ctx->priv->enc.total_encoders = 1;
+    ctx->priv->alg_priv->buffer_pool =
+        (BufferPool *)vpx_calloc(1, sizeof(BufferPool));
+    if (ctx->priv->alg_priv->buffer_pool == NULL)
+      return VPX_CODEC_MEM_ERROR;
 
     if (ctx->config.enc) {
       // Update the reference to the config structure to an internal copy.
@@ -750,6 +759,7 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     res = validate_config(priv, &priv->cfg, &priv->extra_cfg);
 
     if (res == VPX_CODEC_OK) {
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
       set_encoder_config(&priv->oxcf, &priv->cfg, &priv->extra_cfg);
 #if CONFIG_VP9_HIGHBITDEPTH
       priv->oxcf.use_highbitdepth =
@@ -757,6 +767,15 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 #endif
       priv->cpi = vp9_create_compressor(&priv->oxcf);
       if (priv->cpi == NULL)
+=======
+      VP9_COMP *cpi;
+      set_encoder_config(&ctx->priv->alg_priv->oxcf,
+                         &ctx->priv->alg_priv->cfg,
+                         &ctx->priv->alg_priv->extra_cfg);
+      cpi = vp9_create_compressor(&ctx->priv->alg_priv->oxcf,
+                                  ctx->priv->alg_priv->buffer_pool);
+      if (cpi == NULL)
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
         res = VPX_CODEC_MEM_ERROR;
       else
         priv->cpi->output_pkt_list = &priv->pkt_list.head;
@@ -769,7 +788,12 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 static vpx_codec_err_t encoder_destroy(vpx_codec_alg_priv_t *ctx) {
   free(ctx->cx_data);
   vp9_remove_compressor(ctx->cpi);
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
   vpx_free(ctx);
+=======
+  vpx_free(ctx->buffer_pool);
+  free(ctx);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   return VPX_CODEC_OK;
 }
 

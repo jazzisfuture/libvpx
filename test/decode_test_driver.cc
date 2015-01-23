@@ -39,6 +39,7 @@ vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
   return res_dec;
 }
 
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
 bool Decoder::IsVP8() const {
   const char *codec_name = GetDecoderName();
   return strncmp(kVP8Name, codec_name, sizeof(kVP8Name) - 1) == 0;
@@ -66,7 +67,16 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
 void DecoderTest::RunLoop(CompressedVideoSource *video,
                           const vpx_codec_dec_cfg_t &dec_cfg) {
   Decoder* const decoder = codec_->CreateDecoder(dec_cfg, 0);
+=======
+void DecoderTest::RunLoop(CompressedVideoSource *video) {
+  Decoder* const decoder = codec_->CreateDecoder(cfg_, flags_, 0);
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   ASSERT_TRUE(decoder != NULL);
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
+=======
+  const char *codec_name = decoder->GetDecoderName();
+  const bool is_vp8 = strncmp(kVP8Name, codec_name, sizeof(kVP8Name) - 1) == 0;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
   bool end_of_file = false;
 
   // Decode frames.
@@ -76,7 +86,29 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
 
     vpx_codec_stream_info_t stream_info;
     stream_info.sz = sizeof(stream_info);
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
+=======
 
+    if (video->cxdata() != NULL) {
+      const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
+                                                           video->frame_size(),
+                                                           &stream_info);
+      if (is_vp8) {
+        /* Vp8's implementation of PeekStream returns an error if the frame you
+         * pass it is not a keyframe, so we only expect VPX_CODEC_OK on the
+         * first frame, which must be a keyframe. */
+        if (video->frame_number() == 0)
+          ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
+              << vpx_codec_err_to_string(res_peek);
+      } else {
+        /* The Vp9 implementation of PeekStream returns an error only if the
+         * data passed to it isn't a valid Vp9 chunk. */
+        ASSERT_EQ(VPX_CODEC_OK, res_peek) << "Peek return failed: "
+            << vpx_codec_err_to_string(res_peek);
+      }
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
+
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
     if (video->cxdata() != NULL) {
       const vpx_codec_err_t res_peek = decoder->PeekStream(video->cxdata(),
                                                            video->frame_size(),
@@ -84,6 +116,8 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
       HandlePeekResult(decoder, video, res_peek);
       ASSERT_FALSE(::testing::Test::HasFailure());
 
+=======
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
       vpx_codec_err_t res_dec = decoder->DecodeFrame(video->cxdata(),
                                                      video->frame_size());
       if (!HandleDecodeResult(res_dec, *video, decoder))
@@ -105,6 +139,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
   delete decoder;
 }
 
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
 void DecoderTest::RunLoop(CompressedVideoSource *video) {
   vpx_codec_dec_cfg_t dec_cfg = vpx_codec_dec_cfg_t();
   RunLoop(video, dec_cfg);
@@ -118,4 +153,13 @@ void DecoderTest::set_flags(const vpx_codec_flags_t flags) {
   flags_ = flags;
 }
 
+=======
+void DecoderTest::set_cfg(const vpx_codec_dec_cfg_t &dec_cfg) {
+  memcpy(&cfg_, &dec_cfg, sizeof(cfg_));
+}
+
+void DecoderTest::set_flags(const vpx_codec_flags_t flags) {
+  flags_ = flags;
+}
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 }  // namespace libvpx_test

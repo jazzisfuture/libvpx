@@ -60,6 +60,7 @@ struct vpx_codec_alg_priv
     vpx_decrypt_cb          decrypt_cb;
     void                    *decrypt_state;
     vpx_image_t             img;
+    int                     flushed;
     int                     img_setup;
     struct frame_buffers    yv12_frame_buffers;
     void                    *user_priv;
@@ -85,6 +86,7 @@ static void vp8_init_ctx(vpx_codec_ctx_t *ctx)
 
     ctx->priv = (vpx_codec_priv_t *)priv;
     ctx->priv->init_flags = ctx->init_flags;
+    ctx->priv->alg_priv->flushed = 0;
 
     priv->si.sz = sizeof(priv->si);
     priv->decrypt_cb = NULL;
@@ -331,10 +333,20 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t  *ctx,
     unsigned int resolution_change = 0;
     unsigned int w, h;
 
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
     if (!ctx->fragments.enabled && (data == NULL && data_sz == 0))
     {
         return 0;
     }
+=======
+    if (data == NULL && data_sz == 0) {
+      ctx->flushed = 1;
+      return VPX_CODEC_OK;
+    }
+
+    /* Reset flushed when receiving a valid frame */
+    ctx->flushed = 0;
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 
     /* Update the input fragment data */
     if(update_fragments(ctx, data, data_sz, &res) <= 0)
