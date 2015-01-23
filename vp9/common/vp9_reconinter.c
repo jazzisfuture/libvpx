@@ -20,6 +20,7 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
 static void build_mc_border(const uint8_t *src, int src_stride,
                             uint8_t *dst, int dst_stride,
                             int x, int y, int b_w, int b_h, int w, int h) {
@@ -111,6 +112,9 @@ static void high_build_mc_border(const uint8_t *src8, int src_stride,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static void inter_predictor(const uint8_t *src, int src_stride,
+=======
+void inter_predictor(const uint8_t *src, int src_stride,
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
                             uint8_t *dst, int dst_stride,
                             const int subpel_x,
                             const int subpel_y,
@@ -234,7 +238,11 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv,
   return clamped_mv;
 }
 
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
 static MV average_split_mvs(const struct macroblockd_plane *pd,
+=======
+MV average_split_mvs(const struct macroblockd_plane *pd, int plane,
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
                             const MODE_INFO *mi, int ref, int block) {
   const int ss_idx = ((pd->subsampling_x > 0) << 1) | (pd->subsampling_y > 0);
   MV res = {0, 0};
@@ -257,7 +265,7 @@ static MV average_split_mvs(const struct macroblockd_plane *pd,
   return res;
 }
 
-static void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
+void build_inter_predictors(MACROBLOCKD *xd, int plane, int block,
                                    int bw, int bh,
                                    int x, int y, int w, int h,
                                    int mi_x, int mi_y) {
@@ -363,6 +371,7 @@ void vp9_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize) {
   build_inter_predictors_for_planes(xd, bsize, mi_row, mi_col, 0,
                                     MAX_MB_PLANE - 1);
+<<<<<<< HEAD   (0dccb6 Modify variance partition selection for low resolutions.)
 }
 
 // TODO(jingning): This function serves as a placeholder for decoder prediction
@@ -570,6 +579,8 @@ void vp9_dec_build_inter_predictors_sb(MACROBLOCKD *xd, int mi_row, int mi_col,
                                  0, 0, bw, bh, mi_x, mi_y);
     }
   }
+=======
+>>>>>>> BRANCH (d05cf1 Add error handling for frame parallel decode and unit test f)
 }
 
 void vp9_setup_dst_planes(struct macroblockd_plane planes[MAX_MB_PLANE],
