@@ -77,7 +77,6 @@ struct rdcost_block_args {
   const scan_order *so;
 };
 
-#define LAST_NEW_MV_INDEX 6
 static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {NEARESTMV, {LAST_FRAME,   NONE}},
   {NEARESTMV, {ALTREF_FRAME, NONE}},
@@ -2986,9 +2985,7 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
   mode_skip_mask[INTRA_FRAME] |=
       ~(sf->intra_y_mode_mask[max_txsize_lookup[bsize]]);
 
-  for (i = 0; i <= LAST_NEW_MV_INDEX; ++i)
-    mode_threshold[i] = 0;
-  for (i = LAST_NEW_MV_INDEX + 1; i < MAX_MODES; ++i)
+  for (i = 0; i < MAX_MODES; ++i)
     mode_threshold[i] = ((int64_t)rd_threshes[i] * rd_thresh_freq_fact[i]) >> 5;
 
   midx =  sf->schedule_mode_search ? mode_skip_start : 0;
@@ -3053,6 +3050,13 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi,
 
     if (mode_skip_mask[ref_frame] & (1 << this_mode))
       continue;
+
+    // If both reference motion vectors give zero mv, enforce motion
+    // search over this reference frame.
+    if (this_mode == NEWMV)
+      if (frame_mv[NEARESTMV][ref_frame].as_int == 0 &&
+          frame_mv[NEARMV][ref_frame].as_int == 0)
+        mode_threshold[mode_index] = 0;
 
     // Test best rd so far against threshold for trying this mode.
     if (best_mode_skippable && sf->schedule_mode_search)

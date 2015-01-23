@@ -566,9 +566,9 @@ void vp9_set_rd_speed_thresholds(VP9_COMP *cpi) {
 
   rd->thresh_mult[THR_DC] += 1000;
 
-  rd->thresh_mult[THR_NEWMV] += 1000;
-  rd->thresh_mult[THR_NEWA] += 1000;
-  rd->thresh_mult[THR_NEWG] += 1000;
+  rd->thresh_mult[THR_NEWMV] += 500;
+  rd->thresh_mult[THR_NEWA] += 500;
+  rd->thresh_mult[THR_NEWG] += 500;
 
   // Adjust threshold only in real time mode, which only uses last
   // reference frame.
