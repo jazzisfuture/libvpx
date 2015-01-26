@@ -168,7 +168,7 @@ double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth) {
       return -1.0;
   }
 #else
-  return vp9_ac_quant(qindex, 0, bit_depth) / 4.0;
+  return vp9_ac_quant(qindex, 0, bit_depth) / 4;
 #endif
 }
 
