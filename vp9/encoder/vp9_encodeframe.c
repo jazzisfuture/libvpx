@@ -403,7 +403,8 @@ static int set_vt_partitioning(VP9_COMP *cpi,
                                int mi_row,
                                int mi_col,
                                int64_t threshold,
-                               BLOCK_SIZE bsize_min) {
+                               BLOCK_SIZE bsize_min,
+                               int force_split) {
   VP9_COMMON * const cm = &cpi->common;
   variance_node vt;
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
@@ -411,6 +412,9 @@ static int set_vt_partitioning(VP9_COMP *cpi,
 
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
+
+  if (force_split)
+    return 0;
 
   // For bsize=bsize_min (16x16/8x8 for 8x8/4x4 downsampling), select if
   // variance is below threshold, otherwise split will be selected.
@@ -483,6 +487,7 @@ static void choose_partitioning(VP9_COMP *cpi,
   int i, j, k, m;
   v64x64 vt;
   v16x16 vt2[16];
+  int force_split[85];
   uint8_t *s;
   const uint8_t *d;
   int sp;
@@ -558,16 +563,21 @@ static void choose_partitioning(VP9_COMP *cpi,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   }
 
+  force_split[0] = 0;
   // Fill in the entire tree of 8x8 (or 4x4 under some conditions) variances
   // for splits.
   for (i = 0; i < 4; i++) {
     const int x32_idx = ((i & 1) << 5);
     const int y32_idx = ((i >> 1) << 5);
     const int i2 = i << 2;
+    const int i3 = 21 + (i << 4);
+    force_split[i + 1] = 0;
     for (j = 0; j < 4; j++) {
       const int x16_idx = x32_idx + ((j & 1) << 4);
       const int y16_idx = y32_idx + ((j >> 1) << 4);
+      const int j2 = i3 + (j << 2);
       v16x16 *vst = &vt.split[i].split[j];
+      force_split[5 + i2  + j] = 0;
       variance4x4downsample[i2 + j] = 0;
       if (cm->frame_type != KEY_FRAME) {
         for (k = 0; k < 4; k++) {
@@ -575,6 +585,7 @@ static void choose_partitioning(VP9_COMP *cpi,
           int y8_idx = y16_idx + ((k >> 1) << 3);
             unsigned int sse = 0;
             int sum = 0;
+            force_split[j2 + k] = 0;
             if (x8_idx < pixels_wide && y8_idx < pixels_high) {
               int s_avg, d_avg;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -605,8 +616,7 @@ static void choose_partitioning(VP9_COMP *cpi,
           get_variance(&vt.split[i].split[j].part_variances.none);
       }
       if (cm->frame_type == KEY_FRAME || (low_res &&
-          vt.split[i].split[j].part_variances.none.variance >
-          (threshold << 1))) {
+          vt.split[i].split[j].part_variances.none.variance > threshold)) {
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
         for (k = 0; k < 4; k++) {
@@ -614,11 +624,15 @@ static void choose_partitioning(VP9_COMP *cpi,
           int y8_idx = y16_idx + ((k >> 1) << 3);
           v8x8 *vst2 = (cm->frame_type == KEY_FRAME) ? &vst->split[k] :
               &vt2[i2 + j].split[k];
+          v8x8 vspatial;
+          force_split[j2 + k] = 0;
           for (m = 0; m < 4; m++) {
             int x4_idx = x8_idx + ((m & 1) << 2);
             int y4_idx = y8_idx + ((m >> 1) << 2);
             unsigned int sse = 0;
             int sum = 0;
+            unsigned int sse2 = 0;
+            int sum2 = 0;
             if (x4_idx < pixels_wide && y4_idx < pixels_high) {
               int d_avg = 128;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -639,11 +653,33 @@ static void choose_partitioning(VP9_COMP *cpi,
 #endif
               sum = s_avg - d_avg;
               sse = sum * sum;
+              sum2 = s_avg - 128;
+              sse2 = sum2 * sum2;
             }
             // If variance is based on 4x4 down-sampling, we stop here and have
             // one sample for 4x4 block (so use 1 for count in fill_variance),
             // which of course means variance = 0 for 4x4 block.
             fill_variance(sse, sum, 0, &vst2->split[m].part_variances.none);
+            fill_variance(sse2, sum2, 0,
+                          &vspatial.split[m].part_variances.none);
+          }
+          // For inter-frames: Check if there is a high spatial variance for
+          // this 8x8 block, and if so then force 4x4 partition. This only can
+          // happen under the additional condition above that:
+          // (vt.split[i].split[j].part_variances.none.variance > threshold),
+          // which means there is some temporal variance as well for the
+          // 16x16 block.
+          if (cm->frame_type != KEY_FRAME) {
+            fill_variance_tree(&vspatial, BLOCK_8X8);
+            get_variance(&vspatial.part_variances.none);
+            if (vspatial.part_variances.none.variance > (threshold  << 9)) {
+              // If we impose 4x4 here, then this imposes splits at the parent
+              // upper levels.
+              force_split[j2 + k] = 1;
+              force_split[5 + i2  + j] = 1;
+              force_split[i + 1] = 1;
+              force_split[0] = 1;
+            }
           }
         }
       }
@@ -667,24 +703,24 @@ static void choose_partitioning(VP9_COMP *cpi,
   }
   fill_variance_tree(&vt, BLOCK_64X64);
 
-
   // Now go through the entire structure,  splitting every block size until
   // we get to one that's got a variance lower than our threshold.
   if ( mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
       !set_vt_partitioning(cpi, xd, &vt, BLOCK_64X64, mi_row, mi_col,
-                           threshold_bsize_max, BLOCK_16X16)) {
+                           threshold_bsize_max, BLOCK_16X16, force_split[0])) {
     for (i = 0; i < 4; ++i) {
       const int x32_idx = ((i & 1) << 2);
       const int y32_idx = ((i >> 1) << 2);
       const int i2 = i << 2;
+      const int i3 = 21 + (i << 4);
       if (!set_vt_partitioning(cpi, xd, &vt.split[i], BLOCK_32X32,
                                (mi_row + y32_idx), (mi_col + x32_idx),
-                               threshold, BLOCK_16X16)) {
+                               threshold, BLOCK_16X16,
+                               force_split[i + 1])) {
         for (j = 0; j < 4; ++j) {
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
-          // TODO(marpan): Allow 4x4 partitions for inter-frames.
-          // use_4x4_partition = (variance4x4downsample[i2 + j] == 1);
+          const int j2 = i3 + (j << 2);
           // If 4x4 partition is not used, then 8x8 partition will be selected
           // if variance of 16x16 block is very high, so use larger threshold
           // for 16x16 (threshold_bsize_min) in that case.
@@ -700,16 +736,18 @@ static void choose_partitioning(VP9_COMP *cpi,
           if (!set_vt_partitioning(cpi, xd, vtemp, BLOCK_16X16,
                                    mi_row + y32_idx + y16_idx,
                                    mi_col + x32_idx + x16_idx,
-                                   threshold_16x16, bsize_min)) {
+                                   threshold_16x16, bsize_min,
+                                   force_split[5 + i2 + j])) {
             for (k = 0; k < 4; ++k) {
               const int x8_idx = (k & 1);
               const int y8_idx = (k >> 1);
-              if (use_4x4_partition) {
+              if (use_4x4_partition || force_split[j2 + k]) {
                 if (!set_vt_partitioning(cpi, xd, &vtemp->split[k],
                                          BLOCK_8X8,
                                          mi_row + y32_idx + y16_idx + y8_idx,
                                          mi_col + x32_idx + x16_idx + x8_idx,
-                                         threshold_bsize_min, BLOCK_8X8)) {
+                                         threshold_bsize_min, BLOCK_8X8,
+                                         force_split[j2 + k])) {
                   set_block_size(cpi, xd,
                                  (mi_row + y32_idx + y16_idx + y8_idx),
                                  (mi_col + x32_idx + x16_idx + x8_idx),
