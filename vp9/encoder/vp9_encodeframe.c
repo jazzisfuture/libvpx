@@ -403,7 +403,8 @@ static int set_vt_partitioning(VP9_COMP *cpi,
                                int mi_row,
                                int mi_col,
                                int64_t threshold,
-                               BLOCK_SIZE bsize_min) {
+                               BLOCK_SIZE bsize_min,
+                               int segment_id) {
   VP9_COMMON * const cm = &cpi->common;
   variance_node vt;
   const int block_width = num_8x8_blocks_wide_lookup[bsize];
@@ -411,6 +412,10 @@ static int set_vt_partitioning(VP9_COMP *cpi,
 
   assert(block_height == block_width);
   tree_to_node(data, bsize, &vt);
+
+  // No 64x64 blocks on segments other than base (un-boosted) segment.
+  if (segment_id != CR_SEGMENT_ID_BASE && bsize == BLOCK_64X64)
+    return 0;
 
   // For bsize=bsize_min (16x16/8x8 for 8x8/4x4 downsampling), select if
   // variance is below threshold, otherwise split will be selected.
@@ -507,7 +512,6 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
   }
 }
 
-
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for downs-sampled inputs.
 static void choose_partitioning(VP9_COMP *cpi,
@@ -531,6 +535,13 @@ static void choose_partitioning(VP9_COMP *cpi,
   const int use_4x4_partition = is_key_frame;
   const int low_res = (cm->width <= 352 && cm->height <= 288);
   int variance4x4downsample[16];
+
+  int segment_id = 0;
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled) {
+    const uint8_t *const map = cm->seg.update_map ? cpi->segmentation_map :
+                                                    cm->last_frame_seg_map;
+    segment_id = vp9_get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
+  }
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
 
@@ -699,7 +710,8 @@ static void choose_partitioning(VP9_COMP *cpi,
   // we get to one that's got a variance lower than our threshold.
   if ( mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
       !set_vt_partitioning(cpi, xd, &vt, BLOCK_64X64, mi_row, mi_col,
-                           cpi->vbp_threshold_bsize_max, BLOCK_16X16)) {
+                           cpi->vbp_threshold_bsize_max, BLOCK_16X16,
+                           segment_id)) {
     for (i = 0; i < 4; ++i) {
       const int x32_idx = ((i & 1) << 2);
       const int y32_idx = ((i >> 1) << 2);
@@ -707,7 +719,7 @@ static void choose_partitioning(VP9_COMP *cpi,
       if (!set_vt_partitioning(cpi, xd, &vt.split[i], BLOCK_32X32,
                                (mi_row + y32_idx), (mi_col + x32_idx),
                                cpi->vbp_threshold,
-                               BLOCK_16X16)) {
+                               BLOCK_16X16, segment_id)) {
         for (j = 0; j < 4; ++j) {
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
@@ -721,7 +733,7 @@ static void choose_partitioning(VP9_COMP *cpi,
                                    mi_row + y32_idx + y16_idx,
                                    mi_col + x32_idx + x16_idx,
                                    cpi->vbp_threshold_16x16,
-                                   cpi->vbp_bsize_min)) {
+                                   cpi->vbp_bsize_min, segment_id)) {
             for (k = 0; k < 4; ++k) {
               const int x8_idx = (k & 1);
               const int y8_idx = (k >> 1);
@@ -731,7 +743,7 @@ static void choose_partitioning(VP9_COMP *cpi,
                                          mi_row + y32_idx + y16_idx + y8_idx,
                                          mi_col + x32_idx + x16_idx + x8_idx,
                                          cpi->vbp_threshold_bsize_min,
-                                         BLOCK_8X8)) {
+                                         BLOCK_8X8, segment_id)) {
                   set_block_size(cpi, xd,
                                  (mi_row + y32_idx + y16_idx + y8_idx),
                                  (mi_col + x32_idx + x16_idx + x8_idx),
