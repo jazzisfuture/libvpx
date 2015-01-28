@@ -18,6 +18,12 @@
 extern "C" {
 #endif
 
+// The segment ids used in cyclic refresh: from base (no boost) to increasing
+// boost (higher delta-qp).
+#define CR_SEGMENT_ID_BASE    0
+#define CR_SEGMENT_ID_BOOST1  1
+#define CR_SEGMENT_ID_BOOST2  2
+
 struct VP9_COMP;
 
 struct CYCLIC_REFRESH;
