@@ -336,6 +336,7 @@ $(foreach proj,$(call enabled,PROJECTS),\
 #
 # Documentation Rules
 #
+ifneq ($(TOOLCHAIN),x86-android-gcc)
 %.dox: %.c
 	@echo "    [DOXY] $@"
 	@echo "/*!\page example_$(@F:.dox=) $(@F:.dox=)" > $@
@@ -365,3 +366,5 @@ CLEAN-OBJS += examples.doxy samples.dox $(ALL_EXAMPLES:.c=.dox)
 DOCS-yes += examples.doxy samples.dox
 examples.doxy: samples.dox $(ALL_EXAMPLES:.c=.dox)
 	@echo "INPUT += $^" > $@
+
+endif

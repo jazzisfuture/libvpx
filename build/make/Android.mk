@@ -50,7 +50,11 @@
 #
 
 CONFIG_DIR := $(LOCAL_PATH)/
+ifeq ($(TARGET_ARCH_ABI),x86)
+LIBVPX_PATH := $(LOCAL_PATH)
+else
 LIBVPX_PATH := $(LOCAL_PATH)/libvpx
+endif
 ASM_CNV_PATH_LOCAL := $(TARGET_ARCH_ABI)/ads2gas
 ASM_CNV_PATH := $(LOCAL_PATH)/$(ASM_CNV_PATH_LOCAL)
 
@@ -113,7 +117,11 @@ CODEC_SRCS_C = $(filter %.c, $(CODEC_SRCS_UNIQUE))
 LOCAL_NEON_SRCS_C = $(filter %_neon.c, $(CODEC_SRCS_C))
 LOCAL_CODEC_SRCS_C = $(filter-out vpx_config.c %_neon.c, $(CODEC_SRCS_C))
 
+ifeq ($(TARGET_ARCH_ABI),x86)
+LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_C), $(file))
+else
 LOCAL_SRC_FILES += $(foreach file, $(LOCAL_CODEC_SRCS_C), libvpx/$(file))
+endif
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
   LOCAL_SRC_FILES += $(foreach file, $(LOCAL_NEON_SRCS_C), libvpx/$(file).neon)
 else # If there are neon sources then we are building for arm64 and do not need to specify .neon
@@ -127,7 +135,7 @@ endif
 # x86:
 
 CODEC_SRCS_ASM_X86 = $(filter %.asm, $(CODEC_SRCS_UNIQUE))
-LOCAL_SRC_FILES += $(foreach file, $(CODEC_SRCS_ASM_X86), libvpx/$(file))
+LOCAL_SRC_FILES += $(foreach file, $(CODEC_SRCS_ASM_X86), $(file))
 
 # arm:
 CODEC_SRCS_ASM_ARM_ALL = $(filter %.asm.s, $(CODEC_SRCS_UNIQUE))
