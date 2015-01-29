@@ -1639,6 +1639,8 @@ static void vbr_rate_correction(VP9_COMP *cpi,
                                 int64_t vbr_bits_off_target) {
   int max_delta;
   double position_factor = 1.0;
+  RATE_CONTROL *const rc = &cpi->rc;
+  const VP9EncoderConfig *const oxcf = &cpi->oxcf;
 
   // How far through the clip are we.
   // This number is used to damp the per frame rate correction.
@@ -1655,10 +1657,18 @@ static void vbr_rate_correction(VP9_COMP *cpi,
     *this_frame_target +=
       (vbr_bits_off_target > max_delta) ? max_delta
                                         : (int)vbr_bits_off_target;
-  } else {
+    if (!frame_is_kf_gf_arf(cpi)) {
+      const int vbr_max_bits = (int)(((int64_t)rc->avg_frame_bandwidth *
+                                     oxcf->two_pass_vbrmax_section) / 100);
+      *this_frame_target = MIN(*this_frame_target, vbr_max_bits);
+    }
+  } else if (vbr_bits_off_target < 0) {
+    const int vbr_min_bits = (int)(((int64_t)rc->avg_frame_bandwidth *
+                                   oxcf->two_pass_vbrmin_section) / 100);
     *this_frame_target -=
       (vbr_bits_off_target < -max_delta) ? max_delta
                                          : (int)-vbr_bits_off_target;
+    *this_frame_target = MAX(*this_frame_target, vbr_min_bits);
   }
 }
 
