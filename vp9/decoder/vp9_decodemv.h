@@ -19,7 +19,7 @@ extern "C" {
 
 struct TileInfo;
 
-void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
+void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd, FRAME_COUNTS *counts,
                         const struct TileInfo *const tile,
                         int mi_row, int mi_col, vp9_reader *r);
 
