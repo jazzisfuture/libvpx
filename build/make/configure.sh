@@ -1159,6 +1159,13 @@ EOF
         auto|"")
           which nasm >/dev/null 2>&1 && AS=nasm
           which yasm >/dev/null 2>&1 && AS=yasm
+          if [ "${AS}" = nasm ] ; then
+            # Apple ships version 0.98 of nasm through at least XCode 6. Revisit
+            # this check if they start shipping a compatible version.
+            apple=`nasm -v | grep "Apple"`
+            [ "${apple}" ] \
+              && die "Unsupported version of nasm: ${apple}"
+          fi
           [ "${AS}" = auto ] || [ -z "${AS}" ] \
             && die "Neither yasm nor nasm have been found"
           ;;
