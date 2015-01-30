@@ -4833,6 +4833,11 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
       int q_idx = vp9_get_qindex(&cm->seg, mbmi->segment_id, cm->base_qindex);
       int try_tx_skip = is_inter_block(mbmi) ? q_idx <= TX_SKIP_Q_THRESH_INTER :
                                                q_idx <= TX_SKIP_Q_THRESH_INTRA;
+#if CONFIG_COPY_MODE
+      if (mbmi->copy_mode != NOREF)
+        try_tx_skip = 0;
+#endif  // CONFIG_COPY_MODE
+
 #if CONFIG_SUPERTX
       if (try_tx_skip) {
 #else
