@@ -35,6 +35,7 @@ typedef struct TileData {
 typedef struct TileWorkerData {
   VP9_COMMON *cm;
   vp9_reader bit_reader;
+  FRAME_COUNTS counts;
   DECLARE_ALIGNED(16, MACROBLOCKD, xd);
   struct vpx_internal_error_info error_info;
 } TileWorkerData;
