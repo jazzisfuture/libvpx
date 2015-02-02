@@ -632,7 +632,12 @@ static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
 
 int vp9_post_proc_frame(struct VP9Common *cm,
                         YV12_BUFFER_CONFIG *dest, vp9_ppflags_t *ppflags) {
-  const int q = MIN(63, cm->lf.filter_level * 10 / 6);
+
+  const q_63 = vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth);
+
+  const int q = q_63 > 40 && cm->lf.filter_level == 0 ? q_63 * 10 / 6 :
+      MIN(63, cm->lf.filter_level * 10 / 6);
+
   const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
   struct postproc_state *const ppstate = &cm->postproc_state;
