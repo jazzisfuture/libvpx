@@ -632,7 +632,11 @@ static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
 
 int vp9_post_proc_frame(struct VP9Common *cm,
                         YV12_BUFFER_CONFIG *dest, vp9_ppflags_t *ppflags) {
-  const int q = MIN(63, cm->lf.filter_level * 10 / 6);
+  const int qs = vp9_ac_quant(cm->base_qindex, 0, cm->bit_depth);
+  const int filt_guess = ROUND_POWER_OF_TWO(qs * 20723 + 1015158, 18);
+  const int deblock_level = cm->lf.filter_level == 0 ?
+      clamp(filt_guess * 2, 0, 120) : clamp(cm->lf.filter_level * 2, 0, 120);
+
   const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
   struct postproc_state *const ppstate = &cm->postproc_state;
@@ -706,19 +710,21 @@ int vp9_post_proc_frame(struct VP9Common *cm,
       vp8_yv12_copy_frame(ppbuf, &cm->post_proc_buffer_int);
     }
     if ((flags & VP9D_DEMACROBLOCK) && cm->post_proc_buffer_int.buffer_alloc) {
-      deblock_and_de_macro_block(&cm->post_proc_buffer_int, ppbuf,
-                                 q + (ppflags->deblocking_level - 5) * 10,
+      deblock_and_de_macro_block(
+          &cm->post_proc_buffer_int, ppbuf,
+          deblock_level + (ppflags->deblocking_level - 5) * 10,
                                  1, 0);
     } else if (flags & VP9D_DEBLOCK) {
-      vp9_deblock(&cm->post_proc_buffer_int, ppbuf, q);
+      vp9_deblock(&cm->post_proc_buffer_int, ppbuf, deblock_level);
     } else {
       vp8_yv12_copy_frame(&cm->post_proc_buffer_int, ppbuf);
     }
   } else if (flags & VP9D_DEMACROBLOCK) {
-    deblock_and_de_macro_block(cm->frame_to_show, ppbuf,
-                               q + (ppflags->deblocking_level - 5) * 10, 1, 0);
+    deblock_and_de_macro_block(
+        cm->frame_to_show, ppbuf,
+        deblock_level + (ppflags->deblocking_level - 5) * 10, 1, 0);
   } else if (flags & VP9D_DEBLOCK) {
-    vp9_deblock(cm->frame_to_show, ppbuf, q);
+    vp9_deblock(cm->frame_to_show, ppbuf, deblock_level);
   } else {
     vp8_yv12_copy_frame(cm->frame_to_show, ppbuf);
   }
@@ -728,9 +734,9 @@ int vp9_post_proc_frame(struct VP9Common *cm,
 
   if (flags & VP9D_ADDNOISE) {
     const int noise_level = ppflags->noise_level;
-    if (ppstate->last_q != q ||
+    if (ppstate->last_q != deblock_level ||
         ppstate->last_noise != noise_level) {
-      fillrd(ppstate, 63 - q, noise_level);
+      fillrd(ppstate, 63 - deblock_level, noise_level);
     }
 
     vp9_plane_add_noise(ppbuf->y_buffer, ppstate->noise, ppstate->blackclamp,
