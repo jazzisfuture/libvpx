@@ -49,6 +49,8 @@ extern "C" {
 #define DEFAULT_GF_INTERVAL         10
 #define INVALID_REF_BUFFER_IDX      -1  // Marks an invalid reference buffer id.
 
+// #define OUTPUT_YUV_SKINMAP
+
 typedef struct {
   int nmvjointcost[MV_JOINTS];
   int nmvcosts[2][MV_VALS];
@@ -446,6 +448,9 @@ typedef struct VP9_COMP {
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
+#endif
+#ifdef OUTPUT_YUV_SKINMAP
+  YV12_BUFFER_CONFIG skinmap;
 #endif
 
   // Multi-threading
