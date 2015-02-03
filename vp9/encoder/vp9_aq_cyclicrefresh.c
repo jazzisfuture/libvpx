@@ -17,6 +17,7 @@
 
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_segmentation.h"
+#include "vp9/encoder/vp9_skin_detection.h"
 
 struct CYCLIC_REFRESH {
   // Percentage of blocks per frame that are targeted as candidates
@@ -189,7 +190,8 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
                                        int mi_row, int mi_col,
                                        BLOCK_SIZE bsize,
                                        int64_t rate,
-                                       int64_t dist) {
+                                       int64_t dist,
+                                       MACROBLOCK *x) {
   const VP9_COMMON *const cm = &cpi->common;
   CYCLIC_REFRESH *const cr = cpi->cyclic_refresh;
   const int bw = num_8x8_blocks_wide_lookup[bsize];
@@ -200,11 +202,25 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
   const int refresh_this_block = candidate_refresh_aq(cr, mbmi, rate, dist);
   // Default is to not update the refresh map.
   int new_map_value = cr->map[block_index];
-  int x = 0; int y = 0;
+  int i = 0; int j = 0;
 
   // Check if we should reset the segment_id for this block.
   if (mbmi->segment_id > 0 && !refresh_this_block)
     mbmi->segment_id = 0;
+
+  // Force refresh for skin blocks. Take center pixel of block for skin
+  // detection, so only check for small block sizes.
+  if (bsize <= BLOCK_16X16) {
+     const int stride = x->plane[0].src.stride;
+     const int uvstride = x->plane[1].src.stride;
+     const int shift = bsize >> 1;
+     const int shiftuv = bsize >> 2;
+     const int ysource = x->plane[0].src.buf[shift * stride + shift];
+     const int usource = x->plane[1].src.buf[shiftuv * uvstride + shiftuv];
+     const int vsource = x->plane[2].src.buf[shiftuv * uvstride + shiftuv];
+     if (vp9_skin_pixel(ysource, usource, vsource))
+       mbmi->segment_id = 1;
+  }
 
   // Update the cyclic refresh map, to be used for setting segmentation map
   // for the next frame. If the block  will be refreshed this frame, mark it
@@ -225,10 +241,10 @@ void vp9_cyclic_refresh_update_segment(VP9_COMP *const cpi,
 
   // Update entries in the cyclic refresh map with new_map_value, and
   // copy mbmi->segment_id into global segmentation map.
-  for (y = 0; y < ymis; y++)
-    for (x = 0; x < xmis; x++) {
-      cr->map[block_index + y * cm->mi_cols + x] = new_map_value;
-      cpi->segmentation_map[block_index + y * cm->mi_cols + x] =
+  for (j = 0; j < ymis; j++)
+    for (i = 0; i < xmis; i++) {
+      cr->map[block_index + j * cm->mi_cols + i] = new_map_value;
+      cpi->segmentation_map[block_index + j * cm->mi_cols + i] =
           mbmi->segment_id;
     }
 }
