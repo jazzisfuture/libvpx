@@ -15,6 +15,14 @@
 #include "vp9/common/vp9_thread.h"
 #include "vpx/internal/vpx_codec_internal.h"
 
+// This macro prevents thread_sanitizer from reporting known concurrent writes.
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#undef WEBM_TSAN_IGNORE_FUNCTION
+#define WEBM_TSAN_IGNORE_FUNCTION __attribute__((no_sanitize_thread))
+#endif
+#endif
+
 struct VP9Common;
 struct VP9Decoder;
 

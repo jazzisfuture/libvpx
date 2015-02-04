@@ -52,9 +52,9 @@ void vp9_frameworker_wait(VP9Worker *const worker, RefCntBuffer *const ref_buf,
   if (!ref_buf)
     return;
 
-  // Enabling the following line of code will get harmless tsan error but
-  // will get best performance.
-  // if (ref_buf->row >= row && ref_buf->buf.corrupted != 1) return;
+#ifndef WEBM_TSAN_IGNORE_FUNCTION
+  if (ref_buf->row >= row && ref_buf->buf.corrupted != 1) return;
+#endif
 
   {
     // Find the worker thread that owns the reference frame. If the reference
