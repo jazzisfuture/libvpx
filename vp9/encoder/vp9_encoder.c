@@ -116,6 +116,7 @@ void vp9_set_high_precision_mv(VP9_COMP *cpi, int allow_high_precision_mv) {
 
 static void setup_frame(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
+
   // Set up entropy context depending on frame type. The decoder mandates
   // the use of the default context, index 0, for keyframes and inter
   // frames where the error_resilient_mode or intra_only flag is set. For
@@ -296,6 +297,7 @@ static void configure_static_seg_features(VP9_COMP *cpi) {
 
   int high_q = (int)(rc->avg_q > 48.0);
   int qi_delta;
+
 
   // Disable and clear down for KF
   if (cm->frame_type == KEY_FRAME) {
@@ -3028,6 +3030,7 @@ static void encode_frame_to_data_rate(VP9_COMP *cpi,
   // and if the relevant speed feature flag is set.
   if (oxcf->pass == 2 && cpi->sf.static_segmentation)
     configure_static_seg_features(cpi);
+
 
   // Check if the current frame is skippable for the partition search in the
   // second pass according to the first pass stats
