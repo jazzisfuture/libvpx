@@ -8,33 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_ENCODER_VP9_MOTIONMODEL_H_
-#define VP9_ENCODER_VP9_MOTIONMODEL_H_
+#ifndef VP9_ENCODER_VP9_MBGRAPH_H_
+#define VP9_ENCODER_VP9_MBGRAPH_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct {
-  struct {
-    int err;
-    union {
-      int_mv mv;
-      PREDICTION_MODE mode;
-    } m;
-  } ref[MAX_REF_FRAMES];
-} MBGRAPH_MB_STATS;
-
-typedef struct {
-  MBGRAPH_MB_STATS *mb_stats;
-} MBGRAPH_FRAME_STATS;
-
 struct VP9_COMP;
 
-void vp9_update_mbgraph_stats(struct VP9_COMP *cpi);
+void vp9_update_motionfield_stats(struct VP9_COMP *cpi, int ref, int blocksize, MV *motionfield, double *confidence);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VP9_ENCODER_VP9_MOTIONMODEL_H_
+#endif  // VP9_ENCODER_VP9_MBGRAPH_H_
