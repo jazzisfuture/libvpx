@@ -15,13 +15,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "./vp9/encoder/vp9_resize.h"
+#include "../vp9/encoder/vp9_resize.h"
 
-static void usage(char *progname) {
+static const char *exec_name = NULL;
+
+static void usage() {
   printf("Usage:\n");
   printf("%s <input_yuv> <width>x<height> <target_width>x<target_height> ",
-         progname);
+         exec_name);
   printf("<output_yuv> [<frames>]\n");
+}
+
+void usage_exit() {
+  usage();
+  exit(EXIT_FAILURE);
 }
 
 static int parse_dim(char *v, int *width, int *height) {
@@ -47,9 +54,11 @@ int main(int argc, char *argv[]) {
   int f, frames;
   int width, height, target_width, target_height;
 
+  exec_name = argv[0];
+
   if (argc < 5) {
     printf("Incorrect parameters:\n");
-    usage(argv[0]);
+    usage();
     return 1;
   }
 
