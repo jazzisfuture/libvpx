@@ -36,6 +36,9 @@
 #if CONFIG_SUPERTX
 #include "vp9/encoder/vp9_cost.h"
 #endif
+#if CONFIG_GLOBAL_MOTION
+#include "vp9/encoder/vp9_motionmodel.h"
+#endif
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_encodemv.h"
@@ -4365,6 +4368,11 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
 
+#if CONFIG_GLOBAL_MOTION
+  MV motionfield[4096];
+  double confidence[4096];
+#endif
+
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
 
@@ -4398,6 +4406,10 @@ static void encode_frame_internal(VP9_COMP *cpi) {
     x->optimize = 0;
     cm->lf.filter_level = 0;
   }
+
+#if CONFIG_GLOBAL_MOTION
+  vp9_update_motionfield_stats(cpi, LAST_FRAME, 8, motionfield, confidence);
+#endif
 
   vp9_frame_init_quantizer(cpi);
 

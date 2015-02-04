@@ -102,6 +102,11 @@ VP9_CX_SRCS-yes += encoder/vp9_temporal_filter.h
 VP9_CX_SRCS-yes += encoder/vp9_mbgraph.c
 VP9_CX_SRCS-yes += encoder/vp9_mbgraph.h
 
+ifeq ($(CONFIG_GLOBAL_MOTION),yes)
+VP9_CX_SRCS-yes += encoder/vp9_motionmodel.c
+VP9_CX_SRCS-yes += encoder/vp9_motionmodel.h
+endif
+
 VP9_CX_SRCS-$(HAVE_AVX2) += encoder/x86/vp9_variance_impl_intrin_avx2.c
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_sad4d_sse2.asm
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_avg_intrin_sse2.c
