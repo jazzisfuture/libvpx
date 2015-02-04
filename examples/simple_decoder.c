@@ -82,8 +82,9 @@
 
 #include "vpx/vpx_decoder.h"
 
-#include "./tools_common.h"
-#include "./video_reader.h"
+
+#include "../tools_common.h"
+#include "../video_reader.h"
 #include "./vpx_config.h"
 
 static const char *exec_name;
