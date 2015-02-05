@@ -28,6 +28,8 @@
 #include "vp9/encoder/vp9_ratectrl.h"
 #include "vp9/encoder/vp9_rd.h"
 
+#include "vpx_ports/x86.h"
+
 typedef struct {
   uint8_t *data;
   int stride;
@@ -183,6 +185,11 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
          best_rd_sofar);
 
   if (rv) {
+    static int count = 0;
+    static int cycles = 0;
+    int a, b;
+
+    a = x86_readtsc();
     cpi->find_fractional_mv_step(x, &tmp_mv->as_mv, &ref_mv,
                                  cpi->common.allow_high_precision_mv,
                                  x->errorperbit,
@@ -193,6 +200,15 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref], NULL, 0, 0);
     x->pred_mv[ref] = tmp_mv->as_mv;
+
+    b = x86_readtsc();
+    cycles += (b - a);
+    ++count;
+    if (count == 100000) {
+      fprintf(stderr, "cycles %d\n", cycles);
+      cycles = 0;
+      count = 0;
+    }
   }
 
   if (scaled_ref_frame) {
