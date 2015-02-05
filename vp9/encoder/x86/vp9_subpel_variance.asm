@@ -298,9 +298,11 @@ SECTION .text
   jne .x_zero_y_nonhalf
 
   ; x_offset == 0 && y_offset == 0.5
-.x_zero_y_half_loop:
 %if %1 == 16
   movu                 m0, [srcq]
+%endif
+.x_zero_y_half_loop:
+%if %1 == 16
   movu                 m4, [srcq+src_strideq]
   mova                 m1, [dstq]
   pavgb                m0, m4
@@ -315,6 +317,7 @@ SECTION .text
 
   add                srcq, src_strideq
   add                dstq, dst_strideq
+  mova                 m0, m4
 %else ; %1 < 16
   movh                 m0, [srcq]
   movh                 m2, [srcq+src_strideq]
@@ -366,6 +369,157 @@ SECTION .text
   STORE_AND_RET
 
 .x_zero_y_nonhalf:
+  cmp           y_offsetd, 4
+  jne .x_zero_y_nonquarter
+
+  ; x_offset == 0 && y_offset == 0.25
+.x_zero_y_quarter_loop:
+%if %1 == 16
+  movu                 m0, [srcq]
+  movu                 m4, [srcq+src_strideq]
+  mova                 m1, [dstq]
+  pavgb                m4, m0
+  pavgb                m0, m4
+  punpckhbw            m3, m1, m5
+%if %2 == 1 ; avg
+  pavgb                m0, [secq]
+%endif
+  punpcklbw            m1, m5
+  punpckhbw            m2, m0, m5
+  punpcklbw            m0, m5
+  SUM_SSE              m0, m1, m2, m3, m6, m7
+
+  add                srcq, src_strideq
+  add                dstq, dst_strideq
+%else ; %1 < 16
+  movh                 m0, [srcq]
+  movh                 m2, [srcq+src_strideq]
+%if %2 == 1 ; avg
+%if mmsize == 16
+  movhps               m2, [srcq+src_strideq*2]
+%else ; mmsize == 8
+%if %1 == 4
+  movh                 m1, [srcq+src_strideq*2]
+  punpckldq            m2, m1
+%else
+  punpckldq            m2, [srcq+src_strideq*2]
+%endif
+%endif
+  movh                 m1, [dstq]
+%if mmsize == 16
+  movlhps              m0, m2
+%else ; mmsize == 8
+  punpckldq            m0, m2
+%endif
+  movh                 m3, [dstq+dst_strideq]
+  pavgb                m2, m0
+  pavgb                m0, m2
+  punpcklbw            m1, m5
+  pavgb                m0, [secq]
+  punpcklbw            m3, m5
+  punpckhbw            m2, m0, m5
+  punpcklbw            m0, m5
+%else ; !avg
+  movh                 m4, [srcq+src_strideq*2]
+  pavgb                m1, m0, m2
+  pavgb                m0, m1
+  movh                 m1, [dstq]
+  movh                 m3, [dstq+dst_strideq]
+  pavgb                m4, m2
+  pavgb                m2, m4
+  punpcklbw            m0, m5
+  punpcklbw            m2, m5
+  punpcklbw            m3, m5
+  punpcklbw            m1, m5
+%endif
+  SUM_SSE              m0, m1, m2, m3, m6, m7
+
+  lea                srcq, [srcq+src_strideq*2]
+  lea                dstq, [dstq+dst_strideq*2]
+%endif
+%if %2 == 1 ; avg
+  add                secq, sec_str
+%endif
+  dec                   h
+  jg .x_zero_y_quarter_loop
+  STORE_AND_RET
+
+.x_zero_y_nonquarter:
+  cmp           y_offsetd, 12
+  jne .x_zero_y_1eighth
+  ; x_offset == 0 && y_offset == 0.75
+.x_zero_y_3quarter_loop:
+%if %1 == 16
+  movu                 m0, [srcq]
+  movu                 m4, [srcq+src_strideq]
+  mova                 m1, [dstq]
+  pavgb                m0, m4
+  pavgb                m0, m4
+  punpckhbw            m3, m1, m5
+%if %2 == 1 ; avg
+  pavgb                m0, [secq]
+%endif
+  punpcklbw            m1, m5
+  punpckhbw            m2, m0, m5
+  punpcklbw            m0, m5
+  SUM_SSE              m0, m1, m2, m3, m6, m7
+
+  add                srcq, src_strideq
+  add                dstq, dst_strideq
+%else ; %1 < 16
+  movh                 m0, [srcq]
+  movh                 m2, [srcq+src_strideq]
+%if %2 == 1 ; avg
+%if mmsize == 16
+  movhps               m2, [srcq+src_strideq*2]
+%else ; mmsize == 8
+%if %1 == 4
+  movh                 m1, [srcq+src_strideq*2]
+  punpckldq            m2, m1
+%else
+  punpckldq            m2, [srcq+src_strideq*2]
+%endif
+%endif
+  movh                 m1, [dstq]
+%if mmsize == 16
+  movlhps              m0, m2
+%else ; mmsize == 8
+  punpckldq            m0, m2
+%endif
+  movh                 m3, [dstq+dst_strideq]
+  pavgb                m0, m2
+  pavgb                m0, m2
+  punpcklbw            m1, m5
+  pavgb                m0, [secq]
+  punpcklbw            m3, m5
+  punpckhbw            m2, m0, m5
+  punpcklbw            m0, m5
+%else ; !avg
+  movh                 m4, [srcq+src_strideq*2]
+  pavgb                m0, m2
+  pavgb                m0, m2
+  movh                 m1, [dstq]
+  movh                 m3, [dstq+dst_strideq]
+  pavgb                m2, m4
+  pavgb                m2, m4
+  punpcklbw            m0, m5
+  punpcklbw            m2, m5
+  punpcklbw            m3, m5
+  punpcklbw            m1, m5
+%endif
+  SUM_SSE              m0, m1, m2, m3, m6, m7
+
+  lea                srcq, [srcq+src_strideq*2]
+  lea                dstq, [dstq+dst_strideq*2]
+%endif
+%if %2 == 1 ; avg
+  add                secq, sec_str
+%endif
+  dec                   h
+  jg .x_zero_y_3quarter_loop
+  STORE_AND_RET
+
+.x_zero_y_1eighth
   ; x_offset == 0 && y_offset == bilin interpolation
 %ifdef PIC
   lea        bilin_filter, [bilin_filter_m]
