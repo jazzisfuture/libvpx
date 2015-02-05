@@ -279,9 +279,9 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->mv.search_method = FAST_HEX;
 
     sf->inter_mode_mask[BLOCK_32X32] = INTER_NEAREST_NEAR_NEW;
-    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST;
-    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST;
+    sf->inter_mode_mask[BLOCK_32X64] = INTER_NEAREST_ZERO;
+    sf->inter_mode_mask[BLOCK_64X32] = INTER_NEAREST_ZERO;
+    sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_ZERO;
     sf->max_intra_bsize = BLOCK_32X32;
     sf->allow_skip_recode = 1;
   }

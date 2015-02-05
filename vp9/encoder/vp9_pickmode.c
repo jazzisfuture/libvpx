@@ -862,6 +862,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       this_rdc.rdcost = RDCOST(x->rdmult, x->rddiv,
                                this_rdc.rate, this_rdc.dist);
 
+      if (frame_mv[this_mode][ref_frame].as_int == 0) {
+        this_rdc.rdcost = this_rdc.rdcost * 7 / 8;
+      }
+
       // Skipping checking: test to see if this block can be reconstructed by
       // prediction only.
       if (cpi->allow_encode_breakout) {
