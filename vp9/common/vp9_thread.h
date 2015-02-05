@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#define MAX_DECODE_THREADS 8
+
 #if CONFIG_MULTITHREAD
 
 #if defined(_WIN32)
@@ -103,8 +105,8 @@ static INLINE int pthread_cond_destroy(pthread_cond_t *const condition) {
 static INLINE int pthread_cond_init(pthread_cond_t *const condition,
                                     void* cond_attr) {
   (void)cond_attr;
-  condition->waiting_sem_ = CreateSemaphore(NULL, 0, 1, NULL);
-  condition->received_sem_ = CreateSemaphore(NULL, 0, 1, NULL);
+  condition->waiting_sem_ = CreateSemaphore(NULL, 0, MAX_DECODE_THREADS, NULL);
+  condition->received_sem_ = CreateSemaphore(NULL, 0, MAX_DECODE_THREADS, NULL);
   condition->signal_event_ = CreateEvent(NULL, FALSE, FALSE, NULL);
   if (condition->waiting_sem_ == NULL ||
       condition->received_sem_ == NULL ||
