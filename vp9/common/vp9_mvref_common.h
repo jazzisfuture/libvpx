@@ -236,6 +236,10 @@ int vp9_construct_ref_inter_list(VP9_COMMON *cm,  MACROBLOCKD *xd,
                                  BLOCK_SIZE bsize, int mi_row, int mi_col,
                                  MB_MODE_INFO *ref_list[18]);
 #endif  // CONFIG_COPY_MODE
+#if CONFIG_EXT_TX && CONFIG_EXT_TX2
+void analyze_mv_variation(VP9_COMMON *cm,  MACROBLOCKD *xd, MB_MODE_INFO *mbmi,
+                          BLOCK_SIZE bsize, int mi_row, int mi_col);
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

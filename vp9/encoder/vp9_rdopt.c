@@ -736,7 +736,11 @@ static void choose_largest_tx_size(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
   if (is_inter_block(mbmi) && mbmi->tx_size < TX_32X32 && bs >= BLOCK_8X8 &&
       !xd->lossless && *rate != INT_MAX)
+#if CONFIG_EXT_TX2
+    *rate += cpi->ext_tx_costs[mbmi->mv_ctx][mbmi->tx_size][mbmi->ext_txfrm];
+#else
     *rate += cpi->ext_tx_costs[mbmi->tx_size][mbmi->ext_txfrm];
+#endif
 #endif
 }
 
@@ -782,7 +786,11 @@ static void choose_tx_size_from_rd(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_EXT_TX
     if (is_inter_block(mbmi) && n < TX_32X32 && bs >= BLOCK_8X8 &&
         !xd->lossless && r[n][0] != INT_MAX)
+#if CONFIG_EXT_TX2
+      r[n][0] += cpi->ext_tx_costs[mbmi->mv_ctx][n][mbmi->ext_txfrm];
+#else
       r[n][0] += cpi->ext_tx_costs[n][mbmi->ext_txfrm];
+#endif
 #endif
     r[n][1] = r[n][0];
     if (r[n][0] < INT_MAX) {
@@ -3991,6 +3999,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       int dummy;
       int64_t best_rdcost_tx = INT64_MAX;
       int best_ext_tx = NORM;
+      TX_SIZE best_txsize = TX_4X4;
+#if CONFIG_EXT_TX2
+      analyze_mv_variation(cm, xd, mbmi, bsize, mi_row, mi_col);
+#endif
 
       for (i = 0; i < EXT_TX_TYPES; i++) {
         mbmi->ext_txfrm = i;
@@ -4004,8 +4016,10 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
         if (rdcost_tx < best_rdcost_tx * ext_tx_th) {
           best_ext_tx = i;
           best_rdcost_tx = rdcost_tx;
+          best_txsize = mbmi->tx_size;
         }
       }
+      mbmi->tx_size = best_txsize;
       if (mbmi->tx_size >= TX_32X32)
         mbmi->ext_txfrm = NORM;
       else
@@ -5185,6 +5199,10 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     int rate2_tx, this_skip2_tx = 0;
     int64_t distortion2_tx, bestrd_tx = INT64_MAX;
     uint8_t tmp_zcoeff_blk[256];
+#if CONFIG_EXT_TX2
+    int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+    int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+#endif
 #endif  // CONFIG_EXT_TX
 
     *mbmi = *inter_ref_list[copy_mode - REF0];
@@ -5204,6 +5222,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
     mbmi->tx_skip[1] = 0;
 #endif
     x->skip = 0;
+#if CONFIG_EXT_TX && CONFIG_EXT_TX2
+    analyze_mv_variation(cm, xd, mbmi, bsize, mi_row, mi_col);
+#endif
     set_ref_ptrs(cm, xd, mbmi->ref_frame[0], mbmi->ref_frame[1]);
     for (i = 0; i < MAX_MB_PLANE; i++) {
       xd->plane[i].pre[0] = yv12_mb[mbmi->ref_frame[0]][i];

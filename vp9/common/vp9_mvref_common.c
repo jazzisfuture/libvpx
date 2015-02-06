@@ -185,7 +185,7 @@ void vp9_append_sub8x8_mvs_for_idx(VP9_COMMON *cm, MACROBLOCKD *xd,
   }
 }
 
-#if CONFIG_COPY_MODE
+#if CONFIG_COPY_MODE || (CONFIG_EXT_TX && CONFIG_EXT_TX2)
 static int compare_interinfo(MB_MODE_INFO *mbmi, MB_MODE_INFO *ref_mbmi) {
   if (mbmi == ref_mbmi) {
     return 1;
@@ -358,3 +358,61 @@ int vp9_construct_ref_inter_list(VP9_COMMON *cm,  MACROBLOCKD *xd,
   return ref_num;
 }
 #endif  // CONFIG_COPY_MODE
+
+#if CONFIG_EXT_TX && CONFIG_EXT_TX2
+void analyze_mv_variation(VP9_COMMON *cm,  MACROBLOCKD *xd, MB_MODE_INFO *mbmi,
+                          BLOCK_SIZE bsize, int mi_row, int mi_col) {
+  int row_offset, col_offset;
+  int mi_offset;
+  MB_MODE_INFO *ref_mbmi;
+  int i;
+  int bw = 4 * num_4x4_blocks_wide_lookup[bsize];
+  int bh = 4 * num_4x4_blocks_high_lookup[bsize];
+  int copy_up = 0, copy_left = 0, copy_right = 0;
+
+  // up
+  for (i = 0; i < (bw / 8) && copy_up == 0; i++) {
+    row_offset = -1;
+    col_offset = i;
+    if (check_inside(cm, mi_row + row_offset, mi_col + col_offset)) {
+      mi_offset = row_offset * cm->mi_stride + col_offset;
+      ref_mbmi = &xd->mi[mi_offset].src_mi->mbmi;
+      if (is_inter_block(ref_mbmi) && compare_interinfo(ref_mbmi, mbmi))
+        copy_up = 1;
+    }
+  }
+  // left
+  for (i = 0; i < (bh / 8) && copy_left == 0; i++) {
+    row_offset = i;
+    col_offset = -1;
+    if (check_inside(cm, mi_row + row_offset, mi_col + col_offset)) {
+      mi_offset = row_offset * cm->mi_stride + col_offset;
+      ref_mbmi = &xd->mi[mi_offset].src_mi->mbmi;
+      if (is_inter_block(ref_mbmi) && compare_interinfo(ref_mbmi, mbmi))
+        copy_left = 1;
+    }
+  }
+  // right
+  if (is_right_available(bsize, mi_row, mi_col)) {
+    row_offset = -1;
+    col_offset = bw / 8;
+    if (check_inside(cm, mi_row + row_offset, mi_col + col_offset)) {
+      mi_offset = row_offset * cm->mi_stride + col_offset;
+      ref_mbmi = &xd->mi[mi_offset].src_mi->mbmi;
+      if (is_inter_block(ref_mbmi) && compare_interinfo(ref_mbmi, mbmi))
+        copy_right = 1;
+    }
+  }
+
+  if (copy_left && copy_up)
+    mbmi->mv_ctx = UP_LEFT;
+  else if (copy_up)
+    mbmi->mv_ctx = UP;
+  else if (copy_left)
+    mbmi->mv_ctx = LEFT;
+  else if (copy_right)
+    mbmi->mv_ctx = RIGHT;
+  else
+    mbmi->mv_ctx = OTHER;
+}
+#endif

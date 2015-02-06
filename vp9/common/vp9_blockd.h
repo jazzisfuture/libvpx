@@ -177,6 +177,9 @@ typedef struct {
 
 #if CONFIG_EXT_TX
   EXT_TX_TYPE ext_txfrm;
+#if CONFIG_EXT_TX2
+  MV_CONTEXT mv_ctx;
+#endif
 #endif
 #if CONFIG_TX_SKIP
   int tx_skip[PLANE_TYPES];

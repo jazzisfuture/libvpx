@@ -356,11 +356,36 @@ const vp9_tree_index vp9_ext_tx_tree[TREE_SIZE(EXT_TX_TYPES)] = {
   -ALT7, -ALT8,
 };
 
+#if CONFIG_EXT_TX2
+static const vp9_prob default_ext_tx_prob[MV_CONTEXTS][3][EXT_TX_TYPES - 1] = {
+    {{  23, 168, 155, 186, 126, 160, 118, 172,},
+    {  38, 134, 133, 164, 117, 149, 133, 149,},
+    {  33, 131, 134, 122, 108, 129, 158, 170,},
+    },
+    {{  20, 165, 129, 131, 188, 124, 169,  90,},
+    {  38, 131, 128, 136, 159, 134, 152, 113,},
+    {  37, 130, 128, 110, 158, 117, 164, 125,},
+    },
+    {{  23, 159, 131, 141,  92, 136, 113, 162,},
+    {  36, 130, 124, 135,  84, 136, 111, 165,},
+    {  38, 127, 135, 112,  96, 102, 122, 185,},
+    },
+    {{  16, 163, 138,  97, 144, 114, 130, 117,},
+    {  39, 131, 146, 100, 158, 120, 143, 113,},
+    {  46, 128, 143, 121, 140, 110, 144, 108,},
+    },
+    {{  20, 168, 135, 118, 140, 128, 133, 124,},
+    {  42, 128, 132, 121, 125, 124, 129, 137,},
+    {  38, 121, 128, 104, 131, 117, 149, 154,},
+    },
+};
+#else
 static const vp9_prob default_ext_tx_prob[3][EXT_TX_TYPES - 1] = {
   { 240, 128, 128, 128, 128, 128, 128, 128 },
   { 208, 128, 128, 128, 128, 128, 128, 128 },
   { 176, 128, 128, 128, 128, 128, 128, 128 },
 };
+#endif
 #endif  // CONFIG_EXT_TX
 
 #if CONFIG_SUPERTX
@@ -630,9 +655,17 @@ void vp9_adapt_mode_probs(VP9_COMMON *cm) {
     fc->skip_probs[i] = adapt_prob(pre_fc->skip_probs[i], counts->skip[i]);
 
 #if CONFIG_EXT_TX
+#if CONFIG_EXT_TX2
+  for (j = 0; j < MV_CONTEXTS; ++j)
+#endif
   for (i = TX_4X4; i <= TX_16X16; ++i) {
+#if CONFIG_EXT_TX2
+    adapt_probs(vp9_ext_tx_tree, pre_fc->ext_tx_prob[j][i],
+                counts->ext_tx[j][i], fc->ext_tx_prob[j][i]);
+#else
     adapt_probs(vp9_ext_tx_tree, pre_fc->ext_tx_prob[i], counts->ext_tx[i],
                 fc->ext_tx_prob[i]);
+#endif
   }
 #endif  // CONFIG_EXT_TX
 

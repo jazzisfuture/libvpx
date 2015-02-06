@@ -285,6 +285,7 @@ EXPERIMENT_LIST="
     tx64x64
     filterintra
     ext_tx
+    ext_tx2
     tx_skip
     supertx
     copy_mode
