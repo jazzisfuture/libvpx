@@ -337,6 +337,7 @@ $(foreach proj,$(call enabled,PROJECTS),\
 # Documentation Rules
 #
 %.dox: %.c
+	$(qexec)mkdir -p $(dir $@)
 	@echo "    [DOXY] $@"
 	@echo "/*!\page example_$(@F:.dox=) $(@F:.dox=)" > $@
 	@echo "   \includelineno $(<F)" >> $@
