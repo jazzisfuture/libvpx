@@ -326,13 +326,11 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
 
       if (mbmi->palette_enabled) {
         int i, j, k;
-        int m1, m2, l, n;
+        int m1, m2, n;
         int d = b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize] + 4;
         int rows = 4 * num_4x4_blocks_high_lookup[bsize];
         int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
-        uint8_t c1, c2;
-
-        //int use_buf = 0;
+        int c1, c2;
 
         mbmi->mode = DC_PRED;
 
@@ -341,6 +339,7 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
                                           get_bit_depth(PALETTE_MAX_SIZE + 1));
           mbmi->palette_literal_size  = vp9_read_literal(r,
                                           get_bit_depth(PALETTE_MAX_SIZE + 1));
+          mbmi->palette_delta_bitdepth = vp9_read_literal(r, 2);
           mbmi->palette_size = mbmi->palette_indexed_size +
               mbmi->palette_literal_size;
         } else {
@@ -350,36 +349,55 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
           n = mbmi->palette_size;
         }
 
+        //if (mbmi->palette_delta_bitdepth)
+          //printf("%d\n", mbmi->palette_delta_bitdepth);
+
         mbmi->palette_run_length =
             vp9_read_literal(r, get_bit_depth(palette_max_run(bsize)));
         mbmi->palette_run_length = (mbmi->palette_run_length) << 1;
         mbmi->palette_scan_order = vp9_read_literal(r, 1);
-
         m1 = mbmi->palette_indexed_size;
         m2 = mbmi->palette_literal_size;
-        l = mbmi->palette_run_length;
-
 
         if (USE_BUF) {
-          for (i = 0; i < m1; i++)
-            mbmi->palette_indexed_colors[i] =
-                vp9_read_literal(r, get_bit_depth(cm->current_palette_size));
+          if (m1 > 0) {
+            for (i = 0; i < m1; i++)
+              mbmi->palette_indexed_colors[i] =
+                  vp9_read_literal(r, get_bit_depth(cm->current_palette_size));
+            if (mbmi->palette_delta_bitdepth > 0) {
+              int s;
+              for (i = 0; i < m1; i++) {
+                s = vp9_read_bit(r);
+                s = 1 - 2 * s;
+                mbmi->palette_color_delta[i] =
+                    s * vp9_read_literal(r, mbmi->palette_delta_bitdepth);
+              }
+            } else {
+              memset(mbmi->palette_color_delta, 0,
+                     m1 * sizeof(mbmi->palette_color_delta[0]));
+            }
+          }
 
-          for (i = 0; i < m2; i++)
-            mbmi->palette_literal_colors[i] = vp9_read_literal(r, 8);
+          if (m2 > 0) {
+            for (i = 0; i < m2; i++)
+              mbmi->palette_literal_colors[i] = vp9_read_literal(r, 8);
+          }
 
           j = 0;
           k = 0;
           for (i = 0; i < mbmi->palette_size; i++) {
-            if (j < m1)
+            if (j < m1) {
               c1 = cm->current_palette_colors[mbmi->palette_indexed_colors[j]];
+              if (mbmi->palette_color_delta[j])
+                 c1 += mbmi->palette_color_delta[j];
+            }
             else
-              c1 = 255;
+              c1 = 256;
 
             if (k < m2)
               c2  = mbmi->palette_literal_colors[k];
             else
-              c2 = 255;
+              c2 = 256;
 
             if (c1 < c2) {
               mbmi->palette_colors[i] = c1;
@@ -400,16 +418,86 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
             mbmi->palette_colors[i] =
                 vp9_read_literal(r, 8);
 
-          for (i = 0; i < l; i += 2) {
+          for (i = 0; i < mbmi->palette_run_length; i += 2) {
             mbmi->palette_runs[i] = vp9_read_literal(r, get_bit_depth(n));
             mbmi->palette_runs[i + 1] = vp9_read_literal(r, d);
           }
         }
 
+        if (0) {
+          FILE *fp = fopen("./debug/temp2.txt", "a");
+          int i, j;
+
+          fprintf(fp, "total palette %4d\n", m1 + m2);
+          for (i = 0; i < m1 + m2; i++) {
+            fprintf(fp, "%4d", mbmi->palette_colors[i]);
+          }
+          fprintf(fp, "\n");
+
+          fprintf(fp, "total literal %d\n", mbmi->palette_literal_size);
+          for (i = 0; i < mbmi->palette_literal_size; i++) {
+            fprintf(fp, "%4d", mbmi->palette_literal_colors[i]);
+          }
+          fprintf(fp, "\n");
+
+          fprintf(fp, "total indexed %d\n", mbmi->palette_indexed_size);
+          for (i = 0; i < mbmi->palette_indexed_size; i++) {
+            fprintf(fp, "%4d", mbmi->palette_indexed_colors[i]);
+          }
+          fprintf(fp, "\n");
+
+          fprintf(fp, "delta depth %d\n", mbmi->palette_delta_bitdepth);
+          if (mbmi->palette_delta_bitdepth > 0) {
+            for (i = 0; i < mbmi->palette_indexed_size; i++) {
+              fprintf(fp, "%4d", mbmi->palette_color_delta[i]);
+            }
+            fprintf(fp, "\n");
+          }
+
+          fprintf(fp, "palette buf before insertion\n");
+          for (i = 0; i < cm->current_palette_size; i++) {
+            fprintf(fp, "%4d", cm->current_palette_colors[i]);
+          }
+          fprintf(fp, "\n");
+          for (i = 0; i < cm->current_palette_size; i++) {
+            fprintf(fp, "%4d", cm->current_palette_count[i]);
+          }
+          fprintf(fp, "\n");
+          /**/
+
+          fprintf(fp, "\n");
+
+          fclose(fp);
+        }
+
+        /*
         palette_color_insersion(cm->current_palette_colors,
                                 &cm->current_palette_size,
                                 mbmi->palette_colors, mbmi->palette_size,
-                                cm->current_palette_count);
+                                cm->current_palette_count);*/
+        palette_color_insersion1(cm->current_palette_colors,
+                                 &cm ->current_palette_size,
+                                 cm->current_palette_count, mbmi);
+
+        if (0) {
+          FILE *fp = fopen("./debug/temp2.txt", "a");
+          int i, j;
+
+          fprintf(fp, "palette buf after insertion\n");
+          for (i = 0; i < cm->current_palette_size; i++) {
+            fprintf(fp, "%4d", cm->current_palette_colors[i]);
+          }
+          fprintf(fp, "\n");
+          for (i = 0; i < cm->current_palette_size; i++) {
+            fprintf(fp, "%4d", cm->current_palette_count[i]);
+          }
+          fprintf(fp, "\n");
+          /**/
+
+          fprintf(fp, "\n");
+
+          fclose(fp);
+        }
 
         run_lengh_decoding(mbmi->palette_runs, mbmi->palette_run_length,
                            xd->plane[0].color_index_map);

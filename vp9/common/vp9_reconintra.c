@@ -1393,9 +1393,104 @@ void palette_color_insersion(uint8_t *old_colors, int *m, uint8_t *new_colors,
   *m = k;
 }
 
-int palette_color_lookup(uint8_t *dic, int n, uint8_t val) {
-  int i = 0;
+void palette_color_insersion1(uint8_t *old_colors, int *m, int *count,
+                              MB_MODE_INFO *mbmi) {
+  int k = *m, n = mbmi->palette_literal_size;
+  int i, j, l, idx, min_idx = -1;
+  uint8_t *new_colors = mbmi->palette_literal_colors;
+  uint8_t val;
 
+  if (mbmi->palette_indexed_size > 0) {
+    for (i = 0; i < mbmi->palette_indexed_size; i++)
+      count[mbmi->palette_indexed_colors[i]] +=
+          (8 - abs(mbmi->palette_color_delta[i]));
+  }
+
+  i = 0;
+  while (i < k) {
+    count[i] -= 1;
+    i++;
+  }
+
+  if (n <= 0)
+    return;
+
+  for (i = 0; i < n; i++) {
+    val = new_colors[i];
+    j = 0;
+    while (val > old_colors[j] && j < k)
+      j++;
+
+    if (j < k && val == old_colors[j]) {
+      count[j] += 8;
+      continue;
+    }
+
+    idx = j;
+    k++;
+    if (k > PALETTE_BUF_SIZE) {
+      k--;
+      min_idx = 0;
+      for (l = 1; l < k; l++)
+        if (count[l] < count[min_idx])
+          min_idx = l;
+
+      l = min_idx;
+      while (l < k - 1) {
+        old_colors[l] = old_colors[l + 1];
+        count[l] = count[l + 1];
+        l++;
+      }
+    }
+
+    if (min_idx < 0 || idx <= min_idx)
+      j = idx;
+    else
+      j = idx - 1;
+
+    if (j == k) {
+      old_colors[k] = val;
+      count[k] = 8;
+    } else {
+      for (l = k; l > j; l--) {
+        old_colors[l] = old_colors[l - 1];
+        count[l] = count[l - 1];
+      }
+
+      old_colors[j] = val;
+      count[j] = 8;
+    }
+  }
+
+  *m = k;
+}
+
+int palette_color_lookup(uint8_t *dic, int n, uint8_t val, int bits) {
+  int j, min, arg_min = 0, i = 1;
+
+
+  if (n < 1)
+    return -1;
+
+  min = abs(val - dic[0]);
+  arg_min = 0;
+  while (i < n) {
+    j = abs(val - dic[i]);
+    if ( j < min) {
+      min = j;
+      arg_min = i;
+    }
+    i++;
+  }
+
+  if (min < (1 << bits))
+    return arg_min;
+  else
+    return -1;
+   /* */
+
+/*
+  i = 0;
   while (i < n) {
     if (dic[i] == val)
       return i;
@@ -1403,6 +1498,7 @@ int palette_color_lookup(uint8_t *dic, int n, uint8_t val) {
   }
 
   return -1;
+  */
 }
 
 int get_bit_depth(int n) {

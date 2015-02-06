@@ -730,7 +730,6 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
 #if CONFIG_PALETTE
     int n, l, m1, m2, i;
     int d = b_width_log2_lookup[bsize] + b_height_log2_lookup[bsize] + 4;
-    //int use_buf = 0;
 
     vp9_write_bit(w, mbmi->palette_enabled);
 
@@ -743,22 +742,33 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
       if (USE_BUF) {
         vp9_write_literal(w, m1, get_bit_depth(PALETTE_MAX_SIZE + 1));
         vp9_write_literal(w, m2, get_bit_depth(PALETTE_MAX_SIZE + 1));
+        vp9_write_literal(w, mbmi->palette_delta_bitdepth, 2);
       } else {
         vp9_write_literal(w, n - 1, get_bit_depth(PALETTE_MAX_SIZE));
       }
-
-
       vp9_write_literal(w, (l >> 1),
                         get_bit_depth(palette_max_run(bsize)));
       vp9_write_literal(w, mbmi->palette_scan_order, 1);
 
       if (USE_BUF) {
-        for (i = 0; i < m1; i++)
-          vp9_write_literal(w, mbmi->palette_indexed_colors[i],
-                            get_bit_depth(mbmi->current_palette_size));
+        if (m1 > 0) {
+          for (i = 0; i < m1; i++)
+            vp9_write_literal(w, mbmi->palette_indexed_colors[i],
+                              get_bit_depth(mbmi->current_palette_size));
 
-        for (i = 0; i < m2; i++)
-          vp9_write_literal(w, mbmi->palette_literal_colors[i], 8);
+          if (mbmi->palette_delta_bitdepth > 0) {
+            for (i = 0; i < m1; i++) {
+              vp9_write_bit(w, mbmi->palette_color_delta[i] < 0);
+              vp9_write_literal(w, abs(mbmi->palette_color_delta[i]),
+                                mbmi->palette_delta_bitdepth);
+            }
+          }
+        }
+
+        if (m2 > 0) {
+          for (i = 0; i < m2; i++)
+            vp9_write_literal(w, mbmi->palette_literal_colors[i], 8);
+        }
 
         for (i = 0; i < l; i += 2) {
           vp9_write_literal(w, mbmi->palette_runs[i],
