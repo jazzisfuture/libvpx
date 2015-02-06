@@ -5269,6 +5269,9 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, MACROBLOCK *x,
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;
           }
+#if CONFIG_NEW_QUANT
+          qstep += xd->plane[0].dequant_off[1];
+#endif
           if (ref_frame > INTRA_FRAME &&
               distortion2 * scale < qstep * qstep) {
             early_term = 1;
@@ -6340,6 +6343,9 @@ void vp9_rd_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
             const int var_adjust = (x->source_variance < 16);
             scale -= var_adjust;
           }
+#if CONFIG_NEW_QUANT
+          qstep += xd->plane[0].dequant_off[1];
+#endif
           if (ref_frame > INTRA_FRAME &&
               distortion2 * scale < qstep * qstep) {
             early_term = 1;
