@@ -332,9 +332,11 @@ endif
 skip_deps := $(filter %clean,$(MAKECMDGOALS))
 skip_deps += $(findstring testdata,$(MAKECMDGOALS))
 ifeq ($(strip $(skip_deps)),)
-  # Older versions of make don't like -include directives with no arguments
-  ifneq ($(filter %.d,$(OBJS-yes:.o=.d)),)
-    -include $(filter %.d,$(OBJS-yes:.o=.d))
+  ifeq ($(CONFIG_DEPENDENCY_TRACKING),yes)
+    # Older versions of make don't like -include directives with no arguments
+    ifneq ($(filter %.d,$(OBJS-yes:.o=.d)),)
+      -include $(filter %.d,$(OBJS-yes:.o=.d))
+    endif
   endif
 endif
 
