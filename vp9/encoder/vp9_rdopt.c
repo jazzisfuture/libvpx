@@ -1389,6 +1389,8 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
     PALETTE_SCAN_ORDER ps;
     uint8_t map[4096];
 
+    //int use_buf = 0;
+
     mic->mbmi.current_palette_size = cpi->common.current_palette_size;
     for (n = i; n >= 2; n--) {
       mic->mbmi.palette_indexed_size = 0;
@@ -1438,13 +1440,22 @@ static int64_t rd_pick_intra_sby_mode(VP9_COMP *cpi, MACROBLOCK *x,
 
         m1 = mic->mbmi.palette_indexed_size;
         m2 = mic->mbmi.palette_literal_size;
-        this_rate = this_rate_tokenonly +
-            (1 + get_bit_depth(PALETTE_MAX_SIZE + 1) +
-                get_bit_depth(PALETTE_MAX_SIZE + 1) +
-                get_bit_depth(palette_max_run(bsize)) + 1 +
-                get_bit_depth(mic->mbmi.current_palette_size) * m1 +
-                8 * m2 + (d + get_bit_depth(n)) * (l >> 1)) *
-                vp9_cost_bit(128, 0);
+
+        if (USE_BUF) {
+          this_rate = this_rate_tokenonly +
+              (1 + get_bit_depth(PALETTE_MAX_SIZE + 1) +
+                  get_bit_depth(PALETTE_MAX_SIZE + 1) +
+                  get_bit_depth(palette_max_run(bsize)) + 1 +
+                  get_bit_depth(mic->mbmi.current_palette_size) * m1 +
+                  8 * m2 + (d + get_bit_depth(n)) * (l >> 1)) *
+                  vp9_cost_bit(128, 0);
+        } else {
+          this_rate = this_rate_tokenonly +
+              (1 + get_bit_depth(PALETTE_MAX_SIZE) +
+                  get_bit_depth(palette_max_run(bsize)) + 1 +
+                  8 * n + (d + get_bit_depth(n)) * (l >> 1)) *
+                  vp9_cost_bit(128, 0);
+        }
 
         this_rd = RDCOST(x->rdmult, x->rddiv, this_rate, this_distortion);
         if (this_rd < best_rd) {

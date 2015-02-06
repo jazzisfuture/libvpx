@@ -36,7 +36,8 @@ extern "C" {
 
 #if CONFIG_PALETTE
 #define PALETTE_BUF_SIZE 16
-#define PALETTE_MAX_SIZE 7
+#define PALETTE_MAX_SIZE 16
+#define USE_BUF 0
 #endif  // CONFIG_PALETTE
 
 /* Segment Feature Masks */
@@ -219,6 +220,7 @@ typedef struct {
   int palette_literal_size;
   int palette_run_length;
   int current_palette_size;
+  int palette_residue_bitdepth;
   uint8_t palette_colors[PALETTE_MAX_SIZE];
   uint8_t palette_indexed_colors[PALETTE_MAX_SIZE];
   uint8_t palette_literal_colors[PALETTE_MAX_SIZE];
