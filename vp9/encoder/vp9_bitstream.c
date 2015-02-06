@@ -205,16 +205,34 @@ static void update_ext_tx_probs(VP9_COMMON *cm, vp9_writer *w) {
   int i;
   int savings = 0;
   int do_update = 0;
+#if CONFIG_EXT_TX2
+  int j;
+
+  for (j = 0; j < MV_CONTEXTS; ++j)
+#endif
   for (i = TX_4X4; i <= TX_16X16; ++i) {
+#if CONFIG_EXT_TX2
+    savings += prob_diff_update_savings(vp9_ext_tx_tree,
+               cm->fc.ext_tx_prob[j][i], cm->counts.ext_tx[j][i], EXT_TX_TYPES);
+#else
     savings += prob_diff_update_savings(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
                                         cm->counts.ext_tx[i], EXT_TX_TYPES);
+#endif
   }
   do_update = savings > savings_thresh;
   vp9_write(w, do_update, GROUP_DIFF_UPDATE_PROB);
   if (do_update) {
+#if CONFIG_EXT_TX2
+    for (j = 0; j < MV_CONTEXTS; ++j)
+#endif
     for (i = TX_4X4; i <= TX_16X16; ++i) {
+#if CONFIG_EXT_TX2
+      prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob[j][i],
+                       cm->counts.ext_tx[j][i], EXT_TX_TYPES, w);
+#else
       prob_diff_update(vp9_ext_tx_tree, cm->fc.ext_tx_prob[i],
                        cm->counts.ext_tx[i], EXT_TX_TYPES, w);
+#endif
     }
   }
 }
@@ -458,20 +476,6 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
         (skip || vp9_segfeature_active(seg, segment_id, SEG_LVL_SKIP)))) {
     write_selected_tx_size(cm, xd, mbmi->tx_size, bsize, w);
   }
-#if CONFIG_EXT_TX
-  if (is_inter &&
-      mbmi->tx_size < TX_32X32 &&
-      cm->base_qindex > 0 &&
-      bsize >= BLOCK_8X8 &&
-#if CONFIG_SUPERTX
-      !supertx_enabled &&
-#endif
-      !mbmi->skip &&
-      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
-    vp9_write_token(w, vp9_ext_tx_tree, cm->fc.ext_tx_prob[mbmi->tx_size],
-                    &ext_tx_encodings[mbmi->ext_txfrm]);
-  }
-#endif  // CONFIG_EXT_TX
 
 #if CONFIG_TX_SKIP
   if (bsize >= BLOCK_8X8) {
@@ -683,6 +687,27 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
     }
 #endif  // CONFIG_WEDGE_PARTITION
   }
+
+#if CONFIG_EXT_TX
+  if (is_inter &&
+      mbmi->tx_size < TX_32X32 &&
+      cm->base_qindex > 0 &&
+      bsize >= BLOCK_8X8 &&
+#if CONFIG_SUPERTX
+      !supertx_enabled &&
+#endif
+      !mbmi->skip &&
+      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP)) {
+#if CONFIG_EXT_TX2
+    vp9_write_token(w, vp9_ext_tx_tree,
+                    cm->fc.ext_tx_prob[mbmi->mv_ctx][mbmi->tx_size],
+                    &ext_tx_encodings[mbmi->ext_txfrm]);
+#else
+    vp9_write_token(w, vp9_ext_tx_tree, cm->fc.ext_tx_prob[mbmi->tx_size],
+                    &ext_tx_encodings[mbmi->ext_txfrm]);
+#endif
+  }
+#endif  // CONFIG_EXT_TX
 }
 
 static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,

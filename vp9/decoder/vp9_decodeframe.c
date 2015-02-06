@@ -2163,10 +2163,20 @@ static size_t read_uncompressed_header(VP9Decoder *pbi,
 #if CONFIG_EXT_TX
 static void read_ext_tx_probs(FRAME_CONTEXT *fc, vp9_reader *r) {
   int i, j;
+#if CONFIG_EXT_TX2
+  int mv_ctx;
+#endif
   if (vp9_read(r, GROUP_DIFF_UPDATE_PROB)) {
+#if CONFIG_EXT_TX2
+    for (mv_ctx = 0; mv_ctx < MV_CONTEXTS; ++mv_ctx)
+#endif
     for (j = TX_4X4; j <= TX_16X16; ++j)
       for (i = 0; i < EXT_TX_TYPES - 1; ++i)
+#if CONFIG_EXT_TX2
+        vp9_diff_update_prob(r, &fc->ext_tx_prob[mv_ctx][j][i]);
+#else
         vp9_diff_update_prob(r, &fc->ext_tx_prob[j][i]);
+#endif
   }
 }
 #endif  // CONFIG_EXT_TX

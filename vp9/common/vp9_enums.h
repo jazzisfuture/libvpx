@@ -125,6 +125,17 @@ typedef enum {
   ALT8 = 8,
   EXT_TX_TYPES
 } EXT_TX_TYPE;
+
+#if CONFIG_EXT_TX2
+typedef enum {
+  UP_LEFT = 0,
+  UP = 1,
+  LEFT = 2,
+  RIGHT = 3,
+  OTHER = 4,
+  MV_CONTEXTS
+} MV_CONTEXT;
+#endif
 #endif
 
 typedef enum {

@@ -985,24 +985,6 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
       inter_block = read_is_inter_block(cm, xd, mbmi->segment_id, r);
     mbmi->tx_size = read_tx_size(cm, xd, cm->tx_mode, mbmi->sb_type,
                                  !mbmi->skip || !inter_block, r);
-#if CONFIG_EXT_TX
-    if (inter_block &&
-        mbmi->tx_size <= TX_16X16 &&
-        cm->base_qindex > 0 &&
-        mbmi->sb_type >= BLOCK_8X8 &&
-#if CONFIG_SUPERTX
-      !supertx_enabled &&
-#endif
-      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP) &&
-      !mbmi->skip) {
-      mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
-                                      cm->fc.ext_tx_prob[mbmi->tx_size]);
-      if (!cm->frame_parallel_decoding_mode)
-        ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
-    } else {
-      mbmi->ext_txfrm = NORM;
-    }
-#endif  // CONFIG_EXT_TX
 #if CONFIG_SUPERTX
   } else {
     const int ctx = vp9_get_intra_inter_context(xd);
@@ -1080,6 +1062,41 @@ static void read_inter_frame_mode_info(VP9_COMMON *const cm,
 #endif
                                r);
   }
+
+#if CONFIG_SUPERTX
+  if (!supertx_enabled) {
+#endif
+#if CONFIG_EXT_TX
+    if (inter_block &&
+        mbmi->tx_size <= TX_16X16 &&
+        cm->base_qindex > 0 &&
+        mbmi->sb_type >= BLOCK_8X8 &&
+#if CONFIG_SUPERTX
+      !supertx_enabled &&
+#endif
+      !vp9_segfeature_active(&cm->seg, mbmi->segment_id, SEG_LVL_SKIP) &&
+      !mbmi->skip) {
+#if CONFIG_EXT_TX2
+      analyze_mv_variation(cm, xd, mbmi, mbmi->sb_type, mi_row, mi_col);
+      mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
+                               cm->fc.ext_tx_prob[mbmi->mv_ctx][mbmi->tx_size]);
+#else
+      mbmi->ext_txfrm = vp9_read_tree(r, vp9_ext_tx_tree,
+                                      cm->fc.ext_tx_prob[mbmi->tx_size]);
+#endif
+      if (!cm->frame_parallel_decoding_mode)
+#if CONFIG_EXT_TX2
+        ++cm->counts.ext_tx[mbmi->mv_ctx][mbmi->tx_size][mbmi->ext_txfrm];
+#else
+        ++cm->counts.ext_tx[mbmi->tx_size][mbmi->ext_txfrm];
+#endif
+    } else {
+      mbmi->ext_txfrm = NORM;
+    }
+#endif  // CONFIG_EXT_TX
+#if CONFIG_SUPERTX
+  }
+#endif
 }
 
 void vp9_read_mode_info(VP9_COMMON *cm, MACROBLOCKD *xd,
