@@ -275,4 +275,3 @@ int vp9_get_qindex(const struct segmentation *seg, int segment_id,
     return base_qindex;
   }
 }
-

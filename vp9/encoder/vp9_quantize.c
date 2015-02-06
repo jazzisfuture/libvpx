@@ -19,6 +19,16 @@
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_rd.h"
 
+#if CONFIG_NEW_QUANT
+static INLINE void add_dequant_off(tran_low_t *v, int16_t dq_off,
+                                   int shift) {
+  if (*v != 0) {
+    *v += (*v < 0 ? -(dq_off >> shift) : (dq_off >> shift));
+  }
+  return;
+}
+#endif  // CONFIG_NEW_QUANT
+
 void vp9_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
                      const int16_t *round_ptr, const int16_t quant,
                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
@@ -39,6 +49,21 @@ void vp9_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
   }
   *eob_ptr = eob + 1;
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_dc_nq(const tran_low_t *coeff_ptr, int skip_block,
+                        const int16_t *round_ptr, const int16_t quant,
+                        tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                        const int16_t dequant_ptr, const int16_t dequant_off,
+                        uint16_t *eob_ptr) {
+  const int rc = 0;
+  vp9_quantize_dc(coeff_ptr, skip_block, round_ptr, quant, qcoeff_ptr,
+                  dqcoeff_ptr, dequant_ptr, eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_off, 0);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
@@ -63,7 +88,23 @@ void vp9_highbd_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_nq(const tran_low_t *coeff_ptr, int skip_block,
+                               const int16_t *round_ptr, const int16_t quant,
+                               tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                               const int16_t dequant_ptr,
+                               const int16_t dequant_off,
+                               uint16_t *eob_ptr) {
+  vp9_highbd_quantize_dc(coeff_ptr, skip_block, round_ptr, quant,
+                         qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    const int rc = 0;
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_off, 0);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static INLINE void quantize_dc_bigtx(const tran_low_t *coeff_ptr,
                                      int skip_block,
@@ -100,6 +141,22 @@ void vp9_quantize_dc_32x32(const tran_low_t *coeff_ptr, int skip_block,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_quantize_dc_32x32_nq(const tran_low_t *coeff_ptr, int skip_block,
+                              const int16_t *round_ptr, const int16_t quant,
+                              tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                              const int16_t dequant_ptr,
+                              const int16_t dequant_off, uint16_t *eob_ptr) {
+  const int rc = 0;
+  vp9_quantize_dc_32x32(coeff_ptr, skip_block, round_ptr, quant,
+                        qcoeff_ptr, dqcoeff_ptr, dequant_ptr ,eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    const int logsizeby32 = 0;
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_off, 1 + logsizeby32);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_quantize_dc_64x64(const tran_low_t *coeff_ptr, int skip_block,
                            const int16_t *round_ptr, const int16_t quant,
@@ -108,6 +165,22 @@ void vp9_quantize_dc_64x64(const tran_low_t *coeff_ptr, int skip_block,
   quantize_dc_bigtx(coeff_ptr, skip_block, round_ptr, quant,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_dc_64x64_nq(const tran_low_t *coeff_ptr, int skip_block,
+                              const int16_t *round_ptr, const int16_t quant,
+                              tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                              const int16_t dequant_ptr,
+                              const int16_t dequant_off, uint16_t *eob_ptr) {
+  const int rc = 0;
+  vp9_quantize_dc_64x64(coeff_ptr, skip_block, round_ptr, quant,
+                        qcoeff_ptr, dqcoeff_ptr, dequant_ptr ,eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    const int logsizeby32 = 1;
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_off, 1 + logsizeby32);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -121,7 +194,6 @@ static INLINE void highbd_quantize_dc_bigtx(const tran_low_t *coeff_ptr,
                                             uint16_t *eob_ptr,
                                             int logsizeby32) {
   int eob = -1;
-
   if (!skip_block) {
     const int rc = 0;
     const int coeff = coeff_ptr[rc];
@@ -151,6 +223,26 @@ void vp9_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_32x32_nq(const tran_low_t *coeff_ptr,
+                                     int skip_block,
+                                     const int16_t *round_ptr,
+                                     const int16_t quant,
+                                     tran_low_t *qcoeff_ptr,
+                                     tran_low_t *dqcoeff_ptr,
+                                     const int16_t dequant_ptr,
+                                     const int16_t dequant_off,
+                                     uint16_t *eob_ptr) {
+  vp9_highbd_quantize_dc_32x32(coeff_ptr, skip_block, round_ptr, quant,
+                               qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    const int rc = 0;
+    const int logsizeby32 = 0;
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_ptr, 1 + logsizeby32);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_highbd_quantize_dc_64x64(const tran_low_t *coeff_ptr,
                                   int skip_block,
@@ -163,6 +255,27 @@ void vp9_highbd_quantize_dc_64x64(const tran_low_t *coeff_ptr,
   highbd_quantize_dc_bigtx(coeff_ptr, skip_block, round_ptr, quant,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_64x64_nq(const tran_low_t *coeff_ptr,
+                                     int skip_block,
+                                     const int16_t *round_ptr,
+                                     const int16_t quant,
+                                     tran_low_t *qcoeff_ptr,
+                                     tran_low_t *dqcoeff_ptr,
+                                     const int16_t dequant_ptr,
+                                     const int16_t dequant_off,
+                                     uint16_t *eob_ptr) {
+  vp9_highbd_quantize_dc_64x64(coeff_ptr, skip_block, round_ptr, quant,
+                               qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr);
+  if (!skip_block && *eob_ptr) {
+    const int rc = 0;
+    const int logsizeby32 = 1;
+    add_dequant_off(&dqcoeff_ptr[rc], dequant_off,
+                    1 + logsizeby32);
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -205,6 +318,33 @@ void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   }
   *eob_ptr = eob + 1;
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_nq_c(const tran_low_t *coeff_ptr,
+                       intptr_t n_coeffs,
+                       int skip_block,
+                       const int16_t *round_ptr,
+                       const int16_t *quant_ptr,
+                       const int16_t *dequant_off,
+                       tran_low_t *qcoeff_ptr,
+                       tran_low_t *dqcoeff_ptr,
+                       const int16_t *dequant_ptr,
+                       uint16_t *eob_ptr,
+                       const int16_t *scan,
+                       const int16_t *iscan) {
+  vp9_quantize_fp(coeff_ptr, n_coeffs, skip_block,
+                  NULL, round_ptr, quant_ptr,
+                  NULL, qcoeff_ptr, dqcoeff_ptr,
+                  dequant_ptr, eob_ptr, scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0], 0);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
@@ -253,7 +393,34 @@ void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_nq_c(const tran_low_t *coeff_ptr,
+                              intptr_t count,
+                              int skip_block,
+                              const int16_t *round_ptr,
+                              const int16_t *quant_ptr,
+                              const int16_t *dequant_off,
+                              tran_low_t *qcoeff_ptr,
+                              tran_low_t *dqcoeff_ptr,
+                              const int16_t *dequant_ptr,
+                              uint16_t *eob_ptr,
+                              const int16_t *scan,
+                              const int16_t *iscan) {
+  vp9_highbd_quantize_fp(coeff_ptr, count, skip_block,
+                         NULL, round_ptr, quant_ptr, NULL,
+                         qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
+                         scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0], 0);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // TODO(jingning) Refactor this file and combine functions with similar
 // operations.
@@ -322,6 +489,34 @@ void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
                     eob_ptr, scan, iscan, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_quantize_nq_32x32_c(const tran_low_t *coeff_ptr,
+                             intptr_t n_coeffs,
+                             int skip_block,
+                             const int16_t *round_ptr,
+                             const int16_t *quant_ptr,
+                             const int16_t *dequant_off,
+                             tran_low_t *qcoeff_ptr,
+                             tran_low_t *dqcoeff_ptr,
+                             const int16_t *dequant_ptr,
+                             uint16_t *eob_ptr,
+                             const int16_t *scan,
+                             const int16_t *iscan) {
+  vp9_quantize_fp_32x32(coeff_ptr, n_coeffs, skip_block,
+                        NULL, round_ptr, quant_ptr, NULL,
+                        qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
+                        eob_ptr, scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    const int logsizeby32 = 0;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0], 1 + logsizeby32);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                              intptr_t n_coeffs,
@@ -341,6 +536,34 @@ void vp9_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
                     eob_ptr, scan, iscan, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_nq_64x64_c(const tran_low_t *coeff_ptr,
+                             intptr_t n_coeffs,
+                             int skip_block,
+                             const int16_t *round_ptr,
+                             const int16_t *quant_ptr,
+                             const int16_t *dequant_off,
+                             tran_low_t *qcoeff_ptr,
+                             tran_low_t *dqcoeff_ptr,
+                             const int16_t *dequant_ptr,
+                             uint16_t *eob_ptr,
+                             const int16_t *scan,
+                             const int16_t *iscan) {
+  vp9_quantize_fp_64x64(coeff_ptr, n_coeffs, skip_block,
+                        NULL, round_ptr, quant_ptr, NULL,
+                        qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
+                        eob_ptr, scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    const int logsizeby32 = 1;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0], 1 + logsizeby32);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -382,7 +605,6 @@ static INLINE void highbd_quantize_fp_bigtx(const tran_low_t *coeff_ptr,
         dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] /
                           (2 << logsizeby32);
       }
-
       if (tmp)
         eob = i;
     }
@@ -409,6 +631,35 @@ void vp9_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
                            eob_ptr, scan, iscan, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_nq_32x32_c(const tran_low_t *coeff_ptr,
+                                    intptr_t n_coeffs,
+                                    int skip_block,
+                                    const int16_t *round_ptr,
+                                    const int16_t *quant_ptr,
+                                    const int16_t *dequant_off,
+                                    tran_low_t *qcoeff_ptr,
+                                    tran_low_t *dqcoeff_ptr,
+                                    const int16_t *dequant_ptr,
+                                    uint16_t *eob_ptr,
+                                    const int16_t *scan,
+                                    const int16_t *iscan) {
+  vp9_highbd_quantize_fp_32x32(coeff_ptr, n_coeffs, skip_block,
+                               NULL, round_ptr, quant_ptr, NULL,
+                               qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
+                               scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    const int logsizeby32 = 0;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0],
+                      1 + logsizeby32);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_highbd_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                                     intptr_t n_coeffs,
@@ -428,6 +679,35 @@ void vp9_highbd_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
                            eob_ptr, scan, iscan, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_nq_64x64_c(const tran_low_t *coeff_ptr,
+                                    intptr_t n_coeffs,
+                                    int skip_block,
+                                    const int16_t *round_ptr,
+                                    const int16_t *quant_ptr,
+                                    const int16_t *dequant_off,
+                                    tran_low_t *qcoeff_ptr,
+                                    tran_low_t *dqcoeff_ptr,
+                                    const int16_t *dequant_ptr,
+                                    uint16_t *eob_ptr,
+                                    const int16_t *scan,
+                                    const int16_t *iscan) {
+  vp9_highbd_quantize_fp_64x64(coeff_ptr, n_coeffs, skip_block,
+                               NULL, round_ptr, quant_ptr, NULL,
+                               qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr,
+                               scan, iscan);
+  if (!skip_block && *eob_ptr) {
+    int i;
+    const int logsizeby32 = 1;
+    for (i = 0; i < *eob_ptr; i++) {
+      const int rc = scan[i];
+      add_dequant_off(&dqcoeff_ptr[rc], dequant_off[rc != 0],
+                      round_ptr[rc != 0], 1 + logsizeby32);
+    }
+  }
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -870,6 +1150,9 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
     const int qrounding_factor = q == 0 ? 64 : 48;
 
     for (i = 0; i < 2; ++i) {
+#if CONFIG_NEW_QUANT
+      int qrounding_factor_nq = vp9_get_rounding_factor(i, q);
+#endif
       int qrounding_factor_fp = i == 0 ? 48 : 42;
       if (q == 0)
         qrounding_factor_fp = 64;
@@ -879,9 +1162,16 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
                      : vp9_ac_quant(q, 0, cm->bit_depth);
       invert_quant(&quants->y_quant[q][i], &quants->y_quant_shift[q][i], quant);
       quants->y_quant_fp[q][i] = (1 << 16) / quant;
-      quants->y_round_fp[q][i] = (qrounding_factor_fp * quant) >> 7;
+      quants->y_round_fp[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_fp);
+#if CONFIG_NEW_QUANT
+      quants->y_quant_nq[q][i] = (1 << 16) / quant;
+      quants->y_round_nq[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_nq);
+#endif
       quants->y_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
-      quants->y_round[q][i] = (qrounding_factor * quant) >> 7;
+      quants->y_round[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor);
       cm->y_dequant[q][i] = quant;
 
       // uv
@@ -890,10 +1180,21 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       invert_quant(&quants->uv_quant[q][i],
                    &quants->uv_quant_shift[q][i], quant);
       quants->uv_quant_fp[q][i] = (1 << 16) / quant;
-      quants->uv_round_fp[q][i] = (qrounding_factor_fp * quant) >> 7;
+      quants->uv_round_fp[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_fp);
+#if CONFIG_NEW_QUANT
+      quants->uv_quant_nq[q][i] = (1 << 16) / quant;
+      quants->uv_round_nq[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_fp);
+#endif
       quants->uv_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
-      quants->uv_round[q][i] = (qrounding_factor * quant) >> 7;
+      quants->uv_round[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor);
       cm->uv_dequant[q][i] = quant;
+#if CONFIG_NEW_QUANT
+      cm->y_dequant_off[q][i] = vp9_get_dequant_off(quant, i, q);
+      cm->uv_dequant_off[q][i] = vp9_get_dequant_off(quant, i, q);
+#endif  // CONFIG_NEW_QUANT
     }
 
     for (i = 2; i < 8; i++) {
@@ -912,6 +1213,14 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       quants->uv_zbin[q][i] = quants->uv_zbin[q][1];
       quants->uv_round[q][i] = quants->uv_round[q][1];
       cm->uv_dequant[q][i] = cm->uv_dequant[q][1];
+#if CONFIG_NEW_QUANT
+      quants->y_quant_nq[q][i] = quants->y_quant_nq[q][1];
+      quants->y_round_nq[q][i] = quants->y_round_nq[q][1];
+      quants->uv_quant_nq[q][i] = quants->uv_quant_nq[q][1];
+      quants->uv_round_nq[q][i] = quants->uv_round_nq[q][1];
+      cm->y_dequant_off[q][i] = cm->y_dequant_off[q][1];
+      cm->uv_dequant_off[q][i] = cm->uv_dequant_off[q][1];
+#endif  // CONFIG_NEW_QUANT
     }
   }
 }
@@ -933,6 +1242,11 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   x->plane[0].zbin = quants->y_zbin[qindex];
   x->plane[0].round = quants->y_round[qindex];
   xd->plane[0].dequant = cm->y_dequant[qindex];
+#if CONFIG_NEW_QUANT
+  x->plane[0].quant_nq = quants->y_quant_nq[qindex];
+  x->plane[0].round_nq = quants->y_round_nq[qindex];
+  xd->plane[0].dequant_off = cm->y_dequant_off[qindex];
+#endif
 
   x->plane[0].quant_thred[0] = x->plane[0].zbin[0] * x->plane[0].zbin[0];
   x->plane[0].quant_thred[1] = x->plane[0].zbin[1] * x->plane[0].zbin[1];
@@ -946,6 +1260,11 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
     x->plane[i].zbin = quants->uv_zbin[qindex];
     x->plane[i].round = quants->uv_round[qindex];
     xd->plane[i].dequant = cm->uv_dequant[qindex];
+#if CONFIG_NEW_QUANT
+    x->plane[i].quant_nq = quants->uv_quant_nq[qindex];
+    x->plane[i].round_nq = quants->uv_round_nq[qindex];
+    xd->plane[i].dequant_off = cm->uv_dequant_off[qindex];
+#endif
 
     x->plane[i].quant_thred[0] = x->plane[i].zbin[0] * x->plane[i].zbin[0];
     x->plane[i].quant_thred[1] = x->plane[i].zbin[1] * x->plane[i].zbin[1];

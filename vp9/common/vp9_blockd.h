@@ -290,6 +290,9 @@ struct macroblockd_plane {
   struct buf_2d dst;
   struct buf_2d pre[2];
   const int16_t *dequant;
+#if CONFIG_NEW_QUANT
+  const int16_t *dequant_off;
+#endif
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
 #if CONFIG_PALETTE
