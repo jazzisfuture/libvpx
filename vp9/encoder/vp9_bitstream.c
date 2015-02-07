@@ -438,7 +438,6 @@ static void write_modes_sb(VP9_COMP *cpi,
     return;
 
   m = cm->mi[mi_row * cm->mi_stride + mi_col].src_mi;
-
   partition = partition_lookup[bsl][m->mbmi.sb_type];
   write_partition(cm, xd, bs, mi_row, mi_col, partition, bsize, w);
   subsize = get_subsize(bsize, partition);

@@ -394,6 +394,7 @@ static void decode_block(VP9Decoder *const pbi, MACROBLOCKD *const xd,
   VP9_COMMON *const cm = &pbi->common;
   const int less8x8 = bsize < BLOCK_8X8;
   MB_MODE_INFO *mbmi = set_offsets(cm, xd, tile, bsize, mi_row, mi_col);
+
   vp9_read_mode_info(pbi, xd, counts, tile, mi_row, mi_col, r);
 
   if (less8x8)
