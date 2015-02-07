@@ -112,7 +112,8 @@ void vp8_yv12_extend_frame_borders_c(YV12_BUFFER_CONFIG *ybf) {
   assert(ybf->y_width - ybf->y_crop_width >= 0);
 
 #if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
-  if (ybf->flags & YV12_FLAG_HIGHBITDEPTH) {
+  if (ybf->flags & YV12_FLAG_HIGHBITDEPTH &&
+      ybf->bit_depth > 8) {
     extend_plane_high(
         ybf->y_buffer, ybf->y_stride,
         ybf->y_crop_width, ybf->y_crop_height,
@@ -235,7 +236,8 @@ void vp8_yv12_copy_frame_c(const YV12_BUFFER_CONFIG *src_ybc,
 #endif
 
 #if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
-  if (src_ybc->flags & YV12_FLAG_HIGHBITDEPTH) {
+  if (src_ybc->flags & YV12_FLAG_HIGHBITDEPTH &&
+      src_ybc->bit_depth > 8) {
     assert(dst_ybc->flags & YV12_FLAG_HIGHBITDEPTH);
     for (row = 0; row < src_ybc->y_height; ++row) {
       memcpy_short_addr(dst, src, src_ybc->y_width);
@@ -302,7 +304,8 @@ void vpx_yv12_copy_y_c(const YV12_BUFFER_CONFIG *src_ybc,
   uint8_t *dst = dst_ybc->y_buffer;
 
 #if CONFIG_VP9 && CONFIG_VP9_HIGHBITDEPTH
-  if (src_ybc->flags & YV12_FLAG_HIGHBITDEPTH) {
+  if (src_ybc->flags & YV12_FLAG_HIGHBITDEPTH &&
+      src_ybc->bit_depth > 0) {
     const uint16_t *src16 = CONVERT_TO_SHORTPTR(src);
     uint16_t *dst16 = CONVERT_TO_SHORTPTR(dst);
     for (row = 0; row < src_ybc->y_height; ++row) {
