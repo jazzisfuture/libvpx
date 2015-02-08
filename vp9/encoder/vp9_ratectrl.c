@@ -1506,13 +1506,14 @@ void vp9_rc_get_one_pass_cbr_params(VP9_COMP *cpi) {
     cm->frame_type = INTER_FRAME;
   }
   if (rc->frames_till_gf_update_due == 0) {
-    rc->baseline_gf_interval = DEFAULT_GF_INTERVAL;
+	  printf("refreshing gf update frame Number:%d\n", cm->current_video_frame);
+    rc->baseline_gf_interval = 60;//DEFAULT_GF_INTERVAL;
     rc->frames_till_gf_update_due = rc->baseline_gf_interval;
     // NOTE: frames_till_gf_update_due must be <= frames_to_key.
     if (rc->frames_till_gf_update_due > rc->frames_to_key)
       rc->frames_till_gf_update_due = rc->frames_to_key;
     cpi->refresh_golden_frame = 1;
-    rc->gfu_boost = DEFAULT_GF_BOOST;
+    rc->gfu_boost = 42000;//DEFAULT_GF_BOOST;
   }
 
   // Any update/change of global cyclic refresh parameters (amount/delta-qp)
