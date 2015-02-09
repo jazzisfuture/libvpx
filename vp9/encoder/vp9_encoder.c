@@ -56,8 +56,9 @@ void vp9_coef_tree_initialize();
 
 #define ALTREF_HIGH_PRECISION_MV 1      // Whether to use high precision mv
                                          //  for altref computation.
-#define HIGH_PRECISION_MV_QTHRESH 200   // Q threshold for high precision
                                          // mv. Choose a very high value for
+// #define HIGH_PRECISION_MV_QTHRESH 200   // Q threshold for high precision
+#define HIGH_PRECISION_MV_QTHRESH 0     // Q threshold for high precision
                                          // now so that HIGH_PRECISION is always
                                          // chosen.
 
