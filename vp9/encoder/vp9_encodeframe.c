@@ -724,6 +724,9 @@ static void choose_partitioning(VP9_COMP *cpi,
 }
 
 static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                         const TileInfo *const tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                          int mi_row, int mi_col, BLOCK_SIZE bsize,
                          int output_enabled) {
   int i, x_idx, y;
@@ -875,7 +878,11 @@ static void update_state(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
 #else
     if (is_inter_block(mbmi)) {
 #endif  // CONFIG_COPY_MODE
+#if CONFIG_NEWMVREF_SUB8X8
+      vp9_update_mv_count(cm, xd, tile, mi_row, mi_col);
+#else
       vp9_update_mv_count(cm, xd);
+#endif  // CONFIG_NEWMVREF_SUB8X8
 
       if (cm->interp_filter == SWITCHABLE) {
         const int ctx = vp9_get_pred_context_switchable_interp(xd);
@@ -1557,7 +1564,11 @@ static void encode_b(VP9_COMP *cpi, const TileInfo *const tile,
                      int output_enabled, BLOCK_SIZE bsize,
                      PICK_MODE_CONTEXT *ctx) {
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state(cpi, ctx, mi_row, mi_col, bsize, output_enabled);
+  update_state(cpi, ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+               tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+               mi_row, mi_col, bsize, output_enabled);
   encode_superblock(cpi, tp, output_enabled, mi_row, mi_col, bsize, ctx);
 
   if (output_enabled) {
@@ -1915,6 +1926,9 @@ static int is_background(const VP9_COMP *cpi, const TileInfo *const tile,
 }
 
 static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                            const TileInfo *const tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                             int mi_row, int mi_col, int bsize) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCK *const x = &cpi->mb;
@@ -1941,7 +1955,11 @@ static void update_state_rt(VP9_COMP *cpi, PICK_MODE_CONTEXT *ctx,
   }
 
   if (is_inter_block(mbmi)) {
+#if CONFIG_NEWMVREF_SUB8X8
+    vp9_update_mv_count(cm, xd, tile, mi_row, mi_col);
+#else
     vp9_update_mv_count(cm, xd);
+#endif  // CONFIG_NEWMVREF_SUB8X8
 
     if (cm->interp_filter == SWITCHABLE) {
       const int pred_ctx = vp9_get_pred_context_switchable_interp(xd);
@@ -1958,7 +1976,11 @@ static void encode_b_rt(VP9_COMP *cpi, const TileInfo *const tile,
                      int output_enabled, BLOCK_SIZE bsize,
                      PICK_MODE_CONTEXT *ctx) {
   set_offsets(cpi, tile, mi_row, mi_col, bsize);
-  update_state_rt(cpi, ctx, mi_row, mi_col, bsize);
+  update_state_rt(cpi, ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                  tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                  mi_row, mi_col, bsize);
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   if (cpi->oxcf.noise_sensitivity > 0 && output_enabled) {
@@ -2167,7 +2189,11 @@ static void rd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
         PICK_MODE_CONTEXT *ctx = &pc_tree->horizontal[0];
         vp9_rd_cost_init(&tmp_rdc);
-        update_state(cpi, ctx, mi_row, mi_col, subsize, 0);
+        update_state(cpi, ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                     tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                     mi_row, mi_col, subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize, ctx);
         rd_pick_sb_modes(cpi, tile, mi_row + (mi_step >> 1), mi_col, &tmp_rdc,
 #if CONFIG_SUPERTX
@@ -2203,7 +2229,11 @@ static void rd_use_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
         PICK_MODE_CONTEXT *ctx = &pc_tree->vertical[0];
         vp9_rd_cost_init(&tmp_rdc);
-        update_state(cpi, ctx, mi_row, mi_col, subsize, 0);
+        update_state(cpi, ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                     tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                     mi_row, mi_col, subsize, 0);
         encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize, ctx);
         rd_pick_sb_modes(cpi, tile, mi_row, mi_col + (mi_step >> 1), &tmp_rdc,
 #if CONFIG_SUPERTX
@@ -3282,7 +3312,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
     if (sum_rdc.rdcost < best_rdc.rdcost && mi_row + mi_step < cm->mi_rows &&
         bsize > BLOCK_8X8) {
       PICK_MODE_CONTEXT *ctx = &pc_tree->horizontal[0];
-      update_state(cpi, ctx, mi_row, mi_col, subsize, 0);
+      update_state(cpi, ctx,
+#if CONFIG_NEWMVREF_SUB8X8
+                   tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                   mi_row, mi_col, subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize, ctx);
 
       if (cpi->sf.adaptive_motion_search)
@@ -3435,7 +3469,11 @@ static void rd_pick_partition(VP9_COMP *cpi, const TileInfo *const tile,
 #endif
     if (sum_rdc.rdcost < best_rdc.rdcost && mi_col + mi_step < cm->mi_cols &&
         bsize > BLOCK_8X8) {
-      update_state(cpi, &pc_tree->vertical[0], mi_row, mi_col, subsize, 0);
+      update_state(cpi, &pc_tree->vertical[0],
+#if CONFIG_NEWMVREF_SUB8X8
+                   tile,
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                   mi_row, mi_col, subsize, 0);
       encode_superblock(cpi, tp, 0, mi_row, mi_col, subsize,
                         &pc_tree->vertical[0]);
 
