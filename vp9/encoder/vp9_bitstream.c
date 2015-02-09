@@ -392,6 +392,10 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #if CONFIG_SUPERTX
                                 int supertx_enabled,
 #endif
+#if CONFIG_NEWMVREF_SUB8X8
+                                const TileInfo *const tile,
+                                int mi_row, int mi_col,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                 vp9_writer *w) {
   VP9_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc.nmvc;
@@ -615,6 +619,9 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
       const int num_4x4_w = num_4x4_blocks_wide_lookup[bsize];
       const int num_4x4_h = num_4x4_blocks_high_lookup[bsize];
       int idx, idy;
+#if CONFIG_NEWMVREF_SUB8X8
+      int_mv nearest_sub8x8[2], near_sub8x8[2];
+#endif  // CONFIG_NEWMVREF_SUB8X8
       for (idy = 0; idy < 2; idy += num_4x4_h) {
         for (idx = 0; idx < 2; idx += num_4x4_w) {
           const int j = idy * 2 + idx;
@@ -629,6 +636,14 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
           write_inter_mode(w, b_mode, inter_probs);
 #endif  // CONFIG_COMPOUND_MODES
 
+#if CONFIG_NEWMVREF_SUB8X8
+          for (ref = 0; ref < 1 + is_compound; ++ref) {
+            vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, j, ref, mi_row, mi_col,
+                                          &nearest_sub8x8[ref],
+                                          &near_sub8x8[ref]);
+          }
+#endif  // CONFIG_NEWMVREF_SUB8X8
+
 #if CONFIG_COMPOUND_MODES
           if (b_mode == NEWMV || b_mode == NEW_NEWMV) {
 #else
@@ -636,17 +651,29 @@ static void pack_inter_mode_mvs(VP9_COMP *cpi, const MODE_INFO *mi,
 #endif
             for (ref = 0; ref < 1 + is_compound; ++ref)
               vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[ref].as_mv,
+#if CONFIG_NEWMVREF_SUB8X8
+                            &nearest_sub8x8[ref].as_mv,
+#else
                             &mbmi->ref_mvs[mbmi->ref_frame[ref]][0].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                             nmvc, allow_hp);
           }
 #if CONFIG_COMPOUND_MODES
           else if (b_mode == NEAREST_NEWMV || b_mode == NEAR_NEWMV) {
             vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[1].as_mv,
+#if CONFIG_NEWMVREF_SUB8X8
+                          &nearest_sub8x8[mbmi->ref_frame[1]].as_mv,
+#else
                           &mbmi->ref_mvs[mbmi->ref_frame[1]][0].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                           nmvc, allow_hp);
           } else if (b_mode == NEW_NEARESTMV || b_mode == NEW_NEARMV) {
             vp9_encode_mv(cpi, w, &mi->bmi[j].as_mv[0].as_mv,
+#if CONFIG_NEWMVREF_SUB8X8
+                          &nearest_sub8x8[mbmi->ref_frame[0]].as_mv,
+#else
                           &mbmi->ref_mvs[mbmi->ref_frame[0]][0].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                           nmvc, allow_hp);
           }
 #endif
@@ -790,6 +817,10 @@ static void write_modes_b(VP9_COMP *cpi, const TileInfo *const tile,
 #if CONFIG_SUPERTX
                         supertx_enabled,
 #endif
+#if CONFIG_NEWMVREF_SUB8X8
+                        tile,
+                        mi_row, mi_col,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                         w);
   }
 

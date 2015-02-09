@@ -1685,7 +1685,12 @@ static int cost_mv_ref(const VP9_COMP *cpi, PREDICTION_MODE mode,
 
 static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                 BLOCK_SIZE bsize,
+#if CONFIG_NEWMVREF_SUB8X8
+                                int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES],
+                                PREDICTION_MODE this_mode,
+#else
                                 int_mv *frame_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                 int mi_row, int mi_col,
                                 int_mv single_newmv[MAX_REF_FRAMES],
                                 int *rate_mv);
@@ -2138,6 +2143,10 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
         vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref, mi_row, mi_col,
                                       &frame_mv[NEARESTMV][frame],
                                       &frame_mv[NEARMV][frame]);
+#if CONFIG_NEWMVREF_SUB8X8
+        // Update the 8x8 block ref mv with the nearest mv.
+        bsi->ref_mv[ref] = &frame_mv[NEARESTMV][frame];
+#endif  // CONFIG_NEWMVREF_SUB8X8
 #if CONFIG_COMPOUND_MODES
         frame_mv[ZERO_ZEROMV][frame].as_int = 0;
         frame_mv[NEAREST_NEARESTMV][frame].as_int =
@@ -2333,7 +2342,12 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
           mi_buf_shift(x, i);
           if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
             int rate_mv;
-            joint_motion_search(cpi, x, bsize, frame_mv[this_mode],
+            joint_motion_search(cpi, x, bsize,
+#if CONFIG_NEWMVREF_SUB8X8
+                                frame_mv, this_mode,
+#else
+                                frame_mv[this_mode],
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                 mi_row, mi_col, seg_mvs[i],
                                 &rate_mv);
 #if CONFIG_COMPOUND_MODES
@@ -2343,9 +2357,9 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
                 frame_mv[this_mode][mbmi->ref_frame[1]].as_int;
 #else
             seg_mvs[i][mbmi->ref_frame[0]].as_int =
-              frame_mv[this_mode][mbmi->ref_frame[0]].as_int;
+                frame_mv[this_mode][mbmi->ref_frame[0]].as_int;
             seg_mvs[i][mbmi->ref_frame[1]].as_int =
-              frame_mv[this_mode][mbmi->ref_frame[1]].as_int;
+                frame_mv[this_mode][mbmi->ref_frame[1]].as_int;
 #endif
           }
           // restore src pointers
@@ -2477,14 +2491,13 @@ static int64_t rd_pick_best_sub8x8_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMPOUND_MODES
       if (mode_selected == NEW_NEWMV) {
         set_and_cost_bmi_mvs(cpi, xd, i, mode_selected, mode_mv[mode_selected],
-                                   frame_mv[mode_selected], newnew_seg_mvs[i],
-                                   bsi->ref_mv,
-                                   x->nmvjointcost, x->mvcost);
+                             frame_mv[mode_selected], newnew_seg_mvs[i],
+                             bsi->ref_mv, x->nmvjointcost, x->mvcost);
       } else {
 #endif
       set_and_cost_bmi_mvs(cpi, xd, i, mode_selected, mode_mv[mode_selected],
-                                 frame_mv[mode_selected], seg_mvs[i],
-                                 bsi->ref_mv, x->nmvjointcost, x->mvcost);
+                           frame_mv[mode_selected], seg_mvs[i],
+                           bsi->ref_mv, x->nmvjointcost, x->mvcost);
 #if CONFIG_COMPOUND_MODES
       }
 #endif
@@ -2808,7 +2821,12 @@ static void single_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 
 static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                 BLOCK_SIZE bsize,
+#if CONFIG_NEWMVREF_SUB8X8
+                                int_mv frame_mv[MB_MODE_COUNT][MAX_REF_FRAMES],
+                                PREDICTION_MODE this_mode,
+#else
                                 int_mv *frame_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                 int mi_row, int mi_col,
                                 int_mv single_newmv[MAX_REF_FRAMES],
                                 int *rate_mv) {
@@ -2848,7 +2866,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
   for (ref = 0; ref < 2; ++ref) {
+#if CONFIG_NEWMVREF_SUB8X8
+    ref_mv[ref] = frame_mv[NEARESTMV][refs[ref]];
+#else
     ref_mv[ref] = mbmi->ref_mvs[refs[ref]][0];
+#endif  // CONFIG_NEWMVREF_SUB8X8
 
     if (scaled_ref_frame[ref]) {
       int i;
@@ -2860,8 +2882,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_setup_pre_planes(xd, ref, scaled_ref_frame[ref], mi_row, mi_col,
                            NULL);
     }
-
+#if CONFIG_NEWMVREF_SUB8X8
+    frame_mv[this_mode][refs[ref]].as_int = single_newmv[refs[ref]].as_int;
+#else
     frame_mv[refs[ref]].as_int = single_newmv[refs[ref]].as_int;
+#endif  // CONFIG_NEWMVREF_SUB8X8
   }
 
   // Allow joint search multiple times iteratively for each ref frame
@@ -2889,7 +2914,12 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_highbd_build_inter_predictor(ref_yv12[!id].buf,
                                        ref_yv12[!id].stride,
                                        second_pred, pw,
+#if CONFIG_NEWMVREF_SUB8X8
+                                       &frame_mv[this_mode][refs[!id]].as_mv,
+
+#else
                                        &frame_mv[refs[!id]].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                        &xd->block_refs[!id]->sf,
                                        pw, ph, 0,
                                        kernel, MV_PRECISION_Q3,
@@ -2899,7 +2929,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       vp9_build_inter_predictor(ref_yv12[!id].buf,
                                 ref_yv12[!id].stride,
                                 second_pred, pw,
+#if CONFIG_NEWMVREF_SUB8X8
+                                &frame_mv[this_mode][refs[!id]].as_mv,
+#else
                                 &frame_mv[refs[!id]].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                                 &xd->block_refs[!id]->sf,
                                 pw, ph, 0,
                                 kernel, MV_PRECISION_Q3,
@@ -2909,7 +2943,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_build_inter_predictor(ref_yv12[!id].buf,
                               ref_yv12[!id].stride,
                               second_pred, pw,
+#if CONFIG_NEWMVREF_SUB8X8
+                              &frame_mv[this_mode][refs[!id]].as_mv,
+#else
                               &frame_mv[refs[!id]].as_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                               &xd->block_refs[!id]->sf,
                               pw, ph, 0,
                               kernel, MV_PRECISION_Q3,
@@ -2922,7 +2960,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     vp9_set_mv_search_range(x, &ref_mv[id].as_mv);
 
     // Use mv result from single mode as mvp.
+#if CONFIG_NEWMVREF_SUB8X8
+    tmp_mv = frame_mv[this_mode][refs[id]].as_mv;
+#else
     tmp_mv = frame_mv[refs[id]].as_mv;
+#endif  // CONFIG_NEWMVREF_SUB8X8
 
     tmp_mv.col >>= 3;
     tmp_mv.row >>= 3;
@@ -2961,7 +3003,11 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
       xd->plane[0].pre[0] = scaled_first_yv12;
 
     if (bestsme < last_besterr[id]) {
+#if CONFIG_NEWMVREF_SUB8X8
+      frame_mv[this_mode][refs[id]].as_mv = tmp_mv;
+#else
       frame_mv[refs[id]].as_mv = tmp_mv;
+#endif  // CONFIG_NEWMVREF_SUB8X8
       last_besterr[id] = bestsme;
     } else {
       break;
@@ -2978,9 +3024,15 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
         xd->plane[i].pre[ref] = backup_yv12[ref][i];
     }
 
+#if CONFIG_NEWMVREF_SUB8X8
+    *rate_mv += vp9_mv_bit_cost(&frame_mv[this_mode][refs[ref]].as_mv,
+                                &ref_mv[ref].as_mv,
+                                x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+#else
     *rate_mv += vp9_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
                                 &mbmi->ref_mvs[refs[ref]][0].as_mv,
                                 x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
+#endif  // CONFIG_NEWMVREF_SUB8X8
   }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -3342,7 +3394,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_COMPOUND_MODES
       if (this_mode == NEW_NEWMV) {
         if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
-          joint_motion_search(cpi, x, bsize, frame_mv,
+          joint_motion_search(cpi, x, bsize,
+#if CONFIG_NEWMVREF_SUB8X8
+                              mode_mv, this_mode,
+#else
+                              frame_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                               mi_row, mi_col, single_newmv, &rate_mv);
         } else {
           // Initialize mv using single prediction mode result.
@@ -3367,7 +3424,12 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
 #else
       // Initialize mv using single prediction mode result.
       if (cpi->sf.comp_inter_joint_search_thresh <= bsize) {
-        joint_motion_search(cpi, x, bsize, frame_mv,
+        joint_motion_search(cpi, x, bsize,
+#if CONFIG_NEWMVREF_SUB8X8
+                            mode_mv, this_mode,
+#else
+                            frame_mv,
+#endif  // CONFIG_NEWMVREF_SUB8X8
                             mi_row, mi_col, single_newmv, &rate_mv);
       } else {
         rate_mv  = vp9_mv_bit_cost(&frame_mv[refs[0]].as_mv,
