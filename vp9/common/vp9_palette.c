@@ -3,6 +3,15 @@
 #include "vp9/common/vp9_palette.h"
 
 #if CONFIG_PALETTE
+static int compare_double(const double *a, const double *b)
+{
+  return ( *a - *b );
+}
+
+int sort_array_double(double *data, int n) {
+  qsort (data, n, sizeof(data[0]), compare_double);
+}
+
 int generate_palette(const uint8_t *src, int stride, int rows, int cols,
                      uint8_t *palette, int *count, uint8_t *map) {
   int i, r, c, n = 0;
@@ -21,8 +30,8 @@ int generate_palette(const uint8_t *src, int stride, int rows, int cols,
   n = 0;
   for (i = 0; i < 256; i++) {
     if (val_count[i]) {
-      if (n + 1 > PALETTE_MAX_SIZE)
-        return 0;
+      //if (n + 1 > PALETTE_MAX_SIZE)
+        //return 0;
       palette[n] = i;
       hash[i] = n;
       count[n] = val_count[i];
@@ -162,7 +171,8 @@ void transpose_block(uint8_t *seq_in, uint8_t *seq_out, int rows, int cols) {
   }
 }
 
-void palette_color_insersion(uint8_t *old_colors, int *m, uint8_t *new_colors,
+/*
+void palette_color_insertion1(uint8_t *old_colors, int *m, uint8_t *new_colors,
                              int n, int *count) {
   int k = *m;
   int i, j, l, idx, min_idx = -1;
@@ -222,32 +232,13 @@ void palette_color_insersion(uint8_t *old_colors, int *m, uint8_t *new_colors,
       old_colors[j] = val;
       count[j] = 3;
     }
-
-    /*
-    k++;
-    if (k > PALETTE_BUF_SIZE) {
-      min_idx = 0;
-      for (j = 1; j < k; j++)
-        if (count[j] < count[min_idx])
-          min_idx = j;
-
-      j = min_idx;
-      while (j < k - 1) {
-        old_colors[j] = old_colors[j + 1];
-        count[j] = count[j + 1];
-        j++;
-      }
-
-      k--;
-    }
-    */
   }
 
   *m = k;
-}
+}*/
 
-void palette_color_insersion1(uint8_t *old_colors, int *m, int *count,
-                              MB_MODE_INFO *mbmi) {
+void palette_color_insertion(uint8_t *old_colors, int *m, int *count,
+                             MB_MODE_INFO *mbmi) {
   int k = *m, n = mbmi->palette_literal_size;
   int i, j, l, idx, min_idx = -1;
   uint8_t *new_colors = mbmi->palette_literal_colors;
@@ -373,5 +364,128 @@ int palette_max_run(BLOCK_SIZE bsize) {
   };
 
   return table[bsize];
+}
+
+void show_data_double(double *data, int dim) {
+  int i;
+  for (i = 0 ; i < dim; i++)
+    printf("%6.2f", data[i]);
+  printf("\n");
+}
+
+void show_data_int(int *data, int dim) {
+  int i;
+  for (i = 0 ; i < dim; i++)
+    printf("%6.2d", data[i]);
+  printf("\n");
+}
+
+double calc_dist(double *p1, double *p2, int dim) {
+  double dist = 0;
+  int i = 0;
+
+  for (i = 0; i < dim; i++) {
+    dist = dist + (p1[i] - p2[i]) * (p1[i] - p2[i]);
+  }
+  return dist;
+}
+
+void calc_indices(double *data, double *centroids, int *indices,
+                  int n, int k, int dim) {
+  int i, j;
+  double min_dist, this_dist;
+
+  for (i = 0; i < n; i++) {
+    min_dist = calc_dist(data + i * dim, centroids, dim);
+    indices[i] = 0;
+    for (j = 0; j < k; j++) {
+      this_dist = calc_dist(data + i * dim, centroids + j * dim, dim);
+      if (this_dist < min_dist) {
+        min_dist = this_dist;
+        indices[i] = j;
+      }
+    }
+  }
+}
+
+void calc_centroids(double *data, double *centroids, int *indices,
+                   int n, int k, int dim) {
+  int i, j, index, *count;
+
+  count = (int *) malloc(sizeof(int) * k);
+  memset(count, 0, sizeof(int) * k);
+  memset(centroids, 0, sizeof(double) * k * dim);
+  for (i = 0; i < n; i++) {
+    index = indices[i];
+    count[index]++;
+    for (j = 0; j < dim; j++) {
+      centroids[index * dim + j] += data[i * dim + j];
+    }
+  }
+
+  for (i = 0; i < k; i++) {
+    if (!count[i]) {
+      memcpy(centroids + i * dim, data + (n >> 1) * dim, sizeof(double) * dim);
+      continue;
+    }
+    for (j = 0; j < dim; j++) {
+      centroids[i * dim + j] /= count[i];
+    }
+  }
+
+  free(count);
+}
+
+
+double calc_total_dist(double *data, double *centroids, int *indices,
+                       int n, int k, int dim) {
+  double dist = 0;
+  int i;
+  (void) k;
+
+  for (i = 0; i < n; i++) {
+    dist += calc_dist(data + i * dim, centroids + indices[i] * dim, dim);
+  }
+
+  return dist;
+}
+
+
+int k_means(double *data, double *centroids, int *indices,
+             int n, int k, int dim, int max_itr) {
+  int i = 0;
+  double pre_total_dist, cur_total_dist;
+  double *pre_centroids = (double *) malloc(sizeof(double) * k * dim);
+  int *pre_indices = (int *) malloc(sizeof(int) * n);
+
+  calc_indices(data, centroids, indices, n, k, dim);
+
+  pre_total_dist = calc_total_dist(data, centroids, indices, n, k, dim);
+  memcpy(pre_centroids, centroids, sizeof(double) * k * dim);
+  memcpy(pre_indices, indices, sizeof(int) * n);
+  while (i < max_itr) {
+    calc_centroids(data, centroids, indices, n, k, dim);
+    calc_indices(data, centroids, indices, n, k, dim);
+    cur_total_dist = calc_total_dist(data, centroids, indices, n, k, dim);
+
+    if (cur_total_dist > pre_total_dist && 0) {
+      memcpy(centroids, pre_centroids, sizeof(double) * k * dim);
+      memcpy(indices, pre_indices, sizeof(int) * n);
+      break;
+    }
+
+    if (!memcmp(centroids, pre_centroids, sizeof(double) * k * dim))
+      break;
+
+    memcpy(pre_centroids, centroids, sizeof(double) * k * dim);
+    memcpy(pre_indices, indices, sizeof(int) * n);
+    pre_total_dist = cur_total_dist;
+    i++;
+  }
+
+  free(pre_indices);
+  free(pre_centroids);
+
+  return i;
 }
 #endif

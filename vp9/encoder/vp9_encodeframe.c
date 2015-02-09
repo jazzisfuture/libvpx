@@ -4957,74 +4957,9 @@ static void encode_superblock(VP9_COMP *cpi, TOKENEXTRA **t, int output_enabled,
     vp9_tokenize_sb(cpi, t, !output_enabled, MAX(bsize, BLOCK_8X8));
 #if CONFIG_PALETTE
     if (mbmi->palette_enabled && output_enabled) {
-      /*
-      palette_color_insersion(cm->current_palette_colors,
+      palette_color_insertion(cm->current_palette_colors,
                               &cm ->current_palette_size,
-                              mbmi->palette_colors, mbmi->palette_size,
-                              cm->current_palette_count);*/
-      palette_color_insersion1(cm->current_palette_colors,
-                               &cm ->current_palette_size,
-                               cm->current_palette_count, mbmi);
-
-      if (0) {
-        FILE *fp = fopen("./debug/temp1.txt", "a");
-        int i, j;
-        uint8_t *src = x->plane[0].src.buf;
-        int16_t *src_diff = x->plane[0].src_diff;
-        int rows = 4 * num_4x4_blocks_high_lookup[bsize];
-        int cols = 4 * num_4x4_blocks_wide_lookup[bsize];
-        int src_stride = x->plane[0].src.stride;
-        const int bwl = b_width_log2_lookup[bsize];
-        const int diff_stride = 4 * (1 << bwl);
-
-        fprintf(fp, "src data %3d_%3d\n", rows, cols);
-        for (i = 0; i < rows; i++) {
-          for (j = 0; j < cols + 1; j++)
-            fprintf(fp, "%4d", src[i * src_stride + j - 1]);
-          fprintf(fp, "\n");
-        }
-        fprintf(fp, "\n \n");
-
-        fprintf(fp, "diff data %3d_%3d\n", rows, cols);
-        for (i = 0; i < rows; i++) {
-          for (j = 0; j < cols; j++)
-            fprintf(fp, "%4d", src_diff[i * diff_stride + j]);
-          fprintf(fp, "\n");
-        }
-        fprintf(fp, "\n \n");
-
-        fprintf(fp, "total palette %4d\n", mbmi->palette_size);
-        for (i = 0; i < mbmi->palette_size; i++) {
-          fprintf(fp, "%4d", mbmi->palette_colors[i]);
-        }
-        fprintf(fp, "\n");
-
-        fprintf(fp, "total literal %d\n", mbmi->palette_literal_size);
-        for (i = 0; i < mbmi->palette_literal_size; i++) {
-          fprintf(fp, "%4d", mbmi->palette_literal_colors[i]);
-        }
-        fprintf(fp, "\n");
-
-        fprintf(fp, "total indexed %d\n", mbmi->palette_indexed_size);
-        for (i = 0; i < mbmi->palette_indexed_size; i++) {
-          fprintf(fp, "%4d", mbmi->palette_indexed_colors[i]);
-        }
-        fprintf(fp, "\n");
-
-        fprintf(fp, "delta depth %d\n", mbmi->palette_delta_bitdepth);
-        if (mbmi->palette_delta_bitdepth > 0) {
-          for (i = 0; i < mbmi->palette_indexed_size; i++) {
-            fprintf(fp, "%4d", mbmi->palette_color_delta[i]);
-          }
-          fprintf(fp, "\n");
-        }
-
-        /**/
-
-        fprintf(fp, "\n");
-
-        fclose(fp);
-      }
+                              cm->current_palette_count, mbmi);
     }
 #endif
   } else {

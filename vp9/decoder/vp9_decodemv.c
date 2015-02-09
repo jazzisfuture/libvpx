@@ -349,9 +349,6 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
           n = mbmi->palette_size;
         }
 
-        //if (mbmi->palette_delta_bitdepth)
-          //printf("%d\n", mbmi->palette_delta_bitdepth);
-
         mbmi->palette_run_length =
             vp9_read_literal(r, get_bit_depth(palette_max_run(bsize)));
         mbmi->palette_run_length = (mbmi->palette_run_length) << 1;
@@ -424,81 +421,9 @@ static void read_intra_frame_mode_info(VP9_COMMON *const cm,
           }
         }
 
-        if (0) {
-          FILE *fp = fopen("./debug/temp2.txt", "a");
-          int i, j;
-
-          fprintf(fp, "total palette %4d\n", m1 + m2);
-          for (i = 0; i < m1 + m2; i++) {
-            fprintf(fp, "%4d", mbmi->palette_colors[i]);
-          }
-          fprintf(fp, "\n");
-
-          fprintf(fp, "total literal %d\n", mbmi->palette_literal_size);
-          for (i = 0; i < mbmi->palette_literal_size; i++) {
-            fprintf(fp, "%4d", mbmi->palette_literal_colors[i]);
-          }
-          fprintf(fp, "\n");
-
-          fprintf(fp, "total indexed %d\n", mbmi->palette_indexed_size);
-          for (i = 0; i < mbmi->palette_indexed_size; i++) {
-            fprintf(fp, "%4d", mbmi->palette_indexed_colors[i]);
-          }
-          fprintf(fp, "\n");
-
-          fprintf(fp, "delta depth %d\n", mbmi->palette_delta_bitdepth);
-          if (mbmi->palette_delta_bitdepth > 0) {
-            for (i = 0; i < mbmi->palette_indexed_size; i++) {
-              fprintf(fp, "%4d", mbmi->palette_color_delta[i]);
-            }
-            fprintf(fp, "\n");
-          }
-
-          fprintf(fp, "palette buf before insertion\n");
-          for (i = 0; i < cm->current_palette_size; i++) {
-            fprintf(fp, "%4d", cm->current_palette_colors[i]);
-          }
-          fprintf(fp, "\n");
-          for (i = 0; i < cm->current_palette_size; i++) {
-            fprintf(fp, "%4d", cm->current_palette_count[i]);
-          }
-          fprintf(fp, "\n");
-          /**/
-
-          fprintf(fp, "\n");
-
-          fclose(fp);
-        }
-
-        /*
-        palette_color_insersion(cm->current_palette_colors,
-                                &cm->current_palette_size,
-                                mbmi->palette_colors, mbmi->palette_size,
-                                cm->current_palette_count);*/
-        palette_color_insersion1(cm->current_palette_colors,
-                                 &cm ->current_palette_size,
-                                 cm->current_palette_count, mbmi);
-
-        if (0) {
-          FILE *fp = fopen("./debug/temp2.txt", "a");
-          int i, j;
-
-          fprintf(fp, "palette buf after insertion\n");
-          for (i = 0; i < cm->current_palette_size; i++) {
-            fprintf(fp, "%4d", cm->current_palette_colors[i]);
-          }
-          fprintf(fp, "\n");
-          for (i = 0; i < cm->current_palette_size; i++) {
-            fprintf(fp, "%4d", cm->current_palette_count[i]);
-          }
-          fprintf(fp, "\n");
-          /**/
-
-          fprintf(fp, "\n");
-
-          fclose(fp);
-        }
-
+        palette_color_insertion(cm->current_palette_colors,
+                                &cm ->current_palette_size,
+                                cm->current_palette_count, mbmi);
         run_lengh_decoding(mbmi->palette_runs, mbmi->palette_run_length,
                            xd->plane[0].color_index_map);
         if (mbmi->palette_scan_order == V_SCAN)
