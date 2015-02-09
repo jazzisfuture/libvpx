@@ -291,6 +291,7 @@ EXPERIMENT_LIST="
     interintra
     wedge_partition
     compound_modes
+    newmvref_sub8x8
 "
 CONFIG_LIST="
     external_build
