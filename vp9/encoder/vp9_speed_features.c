@@ -492,3 +492,4 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
     sf->max_delta_qindex = 0;
   }
 }
+
