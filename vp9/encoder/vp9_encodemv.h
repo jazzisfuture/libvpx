@@ -28,7 +28,13 @@ void vp9_encode_mv(VP9_COMP *cpi, vp9_writer* w, const MV* mv, const MV* ref,
 void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
                               const nmv_context* mvctx, int usehp);
 
+#if CONFIG_NEWMVREF_SUB8X8
+void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd
+                         , const TileInfo *const tile,
+                         int mi_row, int mi_col);
+#else
 void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd);
+#endif  // CONFIG_NEWMVREF_SUB8X8
 
 #ifdef __cplusplus
 }  // extern "C"
