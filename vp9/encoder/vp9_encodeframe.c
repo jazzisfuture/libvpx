@@ -479,7 +479,7 @@ static void choose_partitioning(VP9_COMP *cpi,
                                 int mi_row, int mi_col) {
   VP9_COMMON * const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
-
+  SPEED_FEATURES *const sf = &cpi->sf;
   int i, j, k, m;
   v64x64 vt;
   v16x16 vt2[16];
@@ -489,34 +489,12 @@ static void choose_partitioning(VP9_COMP *cpi,
   int dp;
   int pixels_wide = 64, pixels_high = 64;
   const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
-  const struct scale_factors *const sf = &cm->frame_refs[LAST_FRAME - 1].sf;
+
   // Always use 4x4 partition for key frame.
   const int is_key_frame = (cm->frame_type == KEY_FRAME);
   const int use_4x4_partition = is_key_frame;
   int variance4x4downsample[16];
   int low_res = (cm->width <= 352 && cm->height <= 288) ? 1 : 0;
-  const int threshold_multiplier = is_key_frame ? 80 : 4;
-  int64_t threshold_base;
-  int64_t threshold;
-  int64_t threshold_bsize_min;
-  int64_t threshold_bsize_max;
-
-  vp9_clear_system_state();
-  threshold_base = (int64_t)(threshold_multiplier *
-      vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth));
-  threshold = threshold_base;
-  threshold_bsize_min = threshold_base << cpi->oxcf.speed;
-  threshold_bsize_max = threshold_base;
-
-  // Modify thresholds for key frame and for low-resolutions (set lower
-  // thresholds to favor split).
-  if (is_key_frame) {
-    threshold = threshold_base >> 2;
-    threshold_bsize_min = threshold_base << 2;
-  } else if (low_res) {
-    threshold_bsize_min = threshold_base << 3;
-    threshold_bsize_max = threshold_base >> 2;
-  }
 
   set_offsets(cpi, tile, x, mi_row, mi_col, BLOCK_64X64);
 
@@ -531,7 +509,8 @@ static void choose_partitioning(VP9_COMP *cpi,
   if (!is_key_frame) {
     MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
     unsigned int var = 0, sse;
-    vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col, sf);
+    vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+        &cm->frame_refs[LAST_FRAME - 1].sf);
     mbmi->ref_frame[0] = LAST_FRAME;
     mbmi->ref_frame[1] = NONE;
     mbmi->sb_type = BLOCK_64X64;
@@ -619,7 +598,7 @@ static void choose_partitioning(VP9_COMP *cpi,
       }
       if (is_key_frame || (low_res &&
           vt.split[i].split[j].part_variances.none.variance >
-          (threshold << 1))) {
+          (sf->VBP_threshold << 1))) {
         // Go down to 4x4 down-sampling for variance.
         variance4x4downsample[i2 + j] = 1;
         for (k = 0; k < 4; k++) {
@@ -685,35 +664,29 @@ static void choose_partitioning(VP9_COMP *cpi,
   // we get to one that's got a variance lower than our threshold.
   if ( mi_col + 8 > cm->mi_cols || mi_row + 8 > cm->mi_rows ||
       !set_vt_partitioning(cpi, xd, &vt, BLOCK_64X64, mi_row, mi_col,
-                           threshold_bsize_max, BLOCK_16X16)) {
+                           sf->VBP_threshold_bsize_max, BLOCK_16X16)) {
+    // For inter frames: if variance4x4downsample[] == 1 for this 16x16
+    // block, then the variance is based on 4x4 down-sampling, so use vt2
+    // in set_vt_partioning(), otherwise use vt.
     for (i = 0; i < 4; ++i) {
       const int x32_idx = ((i & 1) << 2);
       const int y32_idx = ((i >> 1) << 2);
       const int i2 = i << 2;
       if (!set_vt_partitioning(cpi, xd, &vt.split[i], BLOCK_32X32,
                                (mi_row + y32_idx), (mi_col + x32_idx),
-                               threshold, BLOCK_16X16)) {
+                               sf->VBP_threshold,
+                               BLOCK_16X16)) {
         for (j = 0; j < 4; ++j) {
           const int x16_idx = ((j & 1) << 1);
           const int y16_idx = ((j >> 1) << 1);
-          // TODO(marpan): Allow 4x4 partitions for inter-frames.
-          // use_4x4_partition = (variance4x4downsample[i2 + j] == 1);
-          // If 4x4 partition is not used, then 8x8 partition will be selected
-          // if variance of 16x16 block is very high, so use larger threshold
-          // for 16x16 (threshold_bsize_min) in that case.
-          uint64_t threshold_16x16 = (use_4x4_partition) ? threshold :
-                                      threshold_bsize_min;
-          BLOCK_SIZE bsize_min = (use_4x4_partition) ? BLOCK_8X8 : BLOCK_16X16;
-          // For inter frames: if variance4x4downsample[] == 1 for this 16x16
-          // block, then the variance is based on 4x4 down-sampling, so use vt2
-          // in set_vt_partioning(), otherwise use vt.
           v16x16 *vtemp = (!is_key_frame &&
                            variance4x4downsample[i2 + j] == 1) ?
                            &vt2[i2 + j] : &vt.split[i].split[j];
           if (!set_vt_partitioning(cpi, xd, vtemp, BLOCK_16X16,
                                    mi_row + y32_idx + y16_idx,
                                    mi_col + x32_idx + x16_idx,
-                                   threshold_16x16, bsize_min)) {
+                                   sf->VBP_threshold_16x16,
+                                   sf->VBP_bsize_min)) {
             for (k = 0; k < 4; ++k) {
               const int x8_idx = (k & 1);
               const int y8_idx = (k >> 1);
@@ -722,7 +695,8 @@ static void choose_partitioning(VP9_COMP *cpi,
                                          BLOCK_8X8,
                                          mi_row + y32_idx + y16_idx + y8_idx,
                                          mi_col + x32_idx + x16_idx + x8_idx,
-                                         threshold_bsize_min, BLOCK_8X8)) {
+                                         sf->VBP_threshold_bsize_min,
+                                         BLOCK_8X8)) {
                   set_block_size(cpi, xd,
                                  (mi_row + y32_idx + y16_idx + y8_idx),
                                  (mi_col + x32_idx + x16_idx + x8_idx),

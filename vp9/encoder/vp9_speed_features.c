@@ -492,3 +492,38 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi) {
     sf->max_delta_qindex = 0;
   }
 }
+
+void vp9_set_VBP_thresholds(VP9_COMP *cpi){
+  SPEED_FEATURES *const sf = &cpi->sf;
+  if (sf->partition_search_type != VAR_BASED_PARTITION)
+    return;
+  else {
+    VP9_COMMON *const cm = &cpi->common;
+    const VP9EncoderConfig *const oxcf = &cpi->oxcf;
+    const int is_key_frame = (cm->frame_type == KEY_FRAME);
+    const int use_4x4_partition = is_key_frame;
+    const int low_res = (cm->width <= 352 && cm->height <= 288) ? 1 : 0;
+    const int threshold_multiplier = is_key_frame ? 80 : 4;
+    const int64_t threshold_base = (int64_t)(threshold_multiplier *
+      vp9_convert_qindex_to_q(cm->base_qindex, cm->bit_depth));
+    sf->VBP_threshold = threshold_base;
+    sf->VBP_threshold_bsize_min = threshold_base << oxcf->speed;
+    sf->VBP_threshold_bsize_max = threshold_base;
+
+    if (is_key_frame) {
+      sf->VBP_threshold = threshold_base >> 2;
+      sf->VBP_threshold_bsize_min = threshold_base << 2;
+    } else if (low_res) {
+      sf->VBP_threshold_bsize_min = threshold_base << 3;
+      sf->VBP_threshold_bsize_max = threshold_base >> 2;
+    }
+    // TODO(marpan): Allow 4x4 partitions for inter-frames.
+    // use_4x4_partition = (variance4x4downsample[i2 + j] == 1);
+    // If 4x4 partition is not used, then 8x8 partition will be selected
+    // if variance of 16x16 block is very high, so use larger threshold
+    // for 16x16 (threshold_bsize_min) in that case.
+    sf->VBP_threshold_16x16 = (use_4x4_partition) ?
+      sf->VBP_threshold : sf->VBP_threshold_bsize_min;
+    sf->VBP_bsize_min = (use_4x4_partition) ? BLOCK_8X8 : BLOCK_16X16;
+  }
+}
