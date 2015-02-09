@@ -409,12 +409,21 @@ typedef struct SPEED_FEATURES {
 
   // Allow skipping partition search for still image frame
   int allow_partition_search_skip;
+
+  // VAR_BASED_PARTITION thresholds
+  int64_t VBP_threshold;
+  int64_t VBP_threshold_bsize_min;
+  int64_t VBP_threshold_bsize_max;
+  int64_t VBP_threshold_16x16;
+  BLOCK_SIZE VBP_bsize_min;
+
 } SPEED_FEATURES;
 
 struct VP9_COMP;
 
 void vp9_set_speed_features_framesize_independent(struct VP9_COMP *cpi);
 void vp9_set_speed_features_framesize_dependent(struct VP9_COMP *cpi);
+void vp9_set_VBP_thresholds(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  // extern "C"
