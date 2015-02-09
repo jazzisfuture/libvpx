@@ -281,6 +281,8 @@ typedef struct VP9_COMP {
   YV12_BUFFER_CONFIG *unscaled_last_source;
   YV12_BUFFER_CONFIG scaled_last_source;
 
+  YV12_BUFFER_CONFIG blurred_static_source;
+
   TileDataEnc *tile_data;
 
   // For a still frame, this flag is set to 1 to skip partition search.

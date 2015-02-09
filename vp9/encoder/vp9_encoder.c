@@ -236,6 +236,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
   vp9_free_frame_buffer(&cpi->last_frame_uf);
   vp9_free_frame_buffer(&cpi->scaled_source);
   vp9_free_frame_buffer(&cpi->scaled_last_source);
+  vp9_free_frame_buffer(&cpi->blurred_static_source);
   vp9_free_frame_buffer(&cpi->alt_ref_buffer);
   vp9_lookahead_destroy(cpi->lookahead);
 
@@ -533,6 +534,17 @@ static void alloc_util_frame_buffers(VP9_COMP *cpi) {
                                NULL, NULL, NULL))
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate scaled last source buffer");
+
+  if (vp9_realloc_frame_buffer(&cpi->blurred_static_source,
+                               cm->width, cm->height,
+                               cm->subsampling_x, cm->subsampling_y,
+#if CONFIG_VP9_HIGHBITDEPTH
+                               cm->use_highbitdepth,
+#endif
+                               VP9_ENC_BORDER_IN_PIXELS, cm->byte_alignment,
+                               NULL, NULL, NULL))
+    vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                       "Failed to allocate blurred_static_source buffer");
 }
 
 void vp9_alloc_compressor_data(VP9_COMP *cpi) {
@@ -2774,6 +2786,12 @@ static void encode_without_recode_loop(VP9_COMP *cpi) {
     vp9_scale_references(cpi);
   }
 
+  if (cpi->refresh_golden_frame) {
+    cpi->Source = &cpi->blurred_static_source;
+    cm->show_frame = 0;
+    cpi->refresh_last_frame = 0;
+  }
+
   set_size_independent_vars(cpi);
   set_size_dependent_vars(cpi, &q, &bottom_index, &top_index);
 
@@ -3750,6 +3768,46 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   for (i = 0; i < MAX_REF_FRAMES; ++i)
     cpi->scaled_ref_idx[i] = INVALID_REF_BUFFER_IDX;
+
+  if (source->ts_start == cpi->first_time_stamp_ever) {
+    vp8_yv12_copy_frame(cpi->Source, &cpi->blurred_static_source);
+  } else {
+    int row, col;
+    const YV12_BUFFER_CONFIG *src_ybc = cpi->Source;
+    YV12_BUFFER_CONFIG *dst_ybc = &cpi->blurred_static_source;
+    const uint8_t *src = src_ybc->y_buffer;
+    uint8_t *dst = dst_ybc->y_buffer;
+
+    for (row = 0; row < src_ybc->y_height; ++row) {
+      for (col = 0; col < src_ybc->y_width; ++col) {
+      dst[col] = (4 + dst[col] * 7 + src[col]) / 8;
+      }
+      src += src_ybc->y_stride;
+      dst += dst_ybc->y_stride;
+    }
+
+    src = src_ybc->u_buffer;
+    dst = dst_ybc->u_buffer;
+
+    for (row = 0; row < src_ybc->uv_height; ++row) {
+      for (col = 0; col < src_ybc->uv_width; ++col) {
+      dst[col] = (2 + dst[col] * 3 + src[col]) / 4;
+      }
+      src += src_ybc->uv_stride;
+      dst += dst_ybc->uv_stride;
+    }
+
+    src = src_ybc->v_buffer;
+    dst = dst_ybc->v_buffer;
+
+    for (row = 0; row < src_ybc->uv_height; ++row) {
+      for (col = 0; col < src_ybc->uv_width; ++col) {
+      dst[col] = (2 + dst[col] * 3 + src[col]) / 4;
+      }
+      src += src_ybc->uv_stride;
+      dst += dst_ybc->uv_stride;
+    }
+  }
 
   if (oxcf->pass == 1 &&
       (!cpi->use_svc || is_two_pass_svc(cpi))) {
