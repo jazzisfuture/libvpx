@@ -12,6 +12,7 @@
 
 #include "vp9/common/vp9_common.h"
 #include "vp9/common/vp9_entropymode.h"
+#include "vp9/common/vp9_mvref_common.h"
 #include "vp9/common/vp9_systemdependent.h"
 
 #include "vp9/encoder/vp9_cost.h"
@@ -230,11 +231,18 @@ void vp9_build_nmv_cost_table(int *mvjoint, int *mvcost[2],
 }
 
 static void inc_mvs(const MB_MODE_INFO *mbmi, const int_mv mvs[2],
+#if CONFIG_NEWMVREF_SUB8X8
+                    const int_mv ref_mv[2],
+#endif  // CONFIG_NEWMVREF_SUB8X8
                     nmv_context_counts *counts) {
   int i;
 
   for (i = 0; i < 1 + has_second_ref(mbmi); ++i) {
+#if CONFIG_NEWMVREF_SUB8X8
+    const MV *ref = &ref_mv[i].as_mv;
+#else
     const MV *ref = &mbmi->ref_mvs[mbmi->ref_frame[i]][0].as_mv;
+#endif  // CONFIG_NEWMVREF_SUB8X8
     const MV diff = {mvs[i].as_mv.row - ref->row,
                      mvs[i].as_mv.col - ref->col};
     vp9_inc_mv(&diff, counts);
@@ -253,7 +261,12 @@ static void inc_compound_single_mv(const MB_MODE_INFO *mbmi,
 }
 #endif
 
-void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
+void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd
+#if CONFIG_NEWMVREF_SUB8X8
+                         , const TileInfo *const tile,
+                         int mi_row, int mi_col
+#endif  // CONFIG_NEWMVREF_SUB8X8
+                         ) {
   const MODE_INFO *mi = xd->mi[0].src_mi;
   const MB_MODE_INFO *const mbmi = &mi->mbmi;
 
@@ -270,7 +283,31 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
 #else
         if (mi->bmi[i].as_mode == NEWMV)
 #endif
+#if CONFIG_NEWMVREF_SUB8X8
+        {
+          int_mv ref_mv[2], ref_second_mv[2];
+          int_mv nearest_sub8x8[2], near_sub8x8[2];
+          int ref;
+          const int is_compound = has_second_ref(mbmi);
+          const int allow_hp = cm->allow_high_precision_mv;
+          for (ref = 0; ref < 1 + is_compound; ++ref) {
+            int_mv mv_ref_list[MAX_MV_REF_CANDIDATES];
+            vp9_update_mv_context(cm, xd, tile, mi, mbmi->ref_frame[ref],
+                                  mv_ref_list, i, mi_row, mi_col);
+            vp9_append_sub8x8_mvs_for_idx(cm, xd, tile, i, ref,
+                                          mi_row, mi_col, mv_ref_list,
+                                          &nearest_sub8x8[ref],
+                                          &near_sub8x8[ref]);
+            mv_ref_list[0].as_int = nearest_sub8x8[ref].as_int;
+            mv_ref_list[1].as_int = near_sub8x8[ref].as_int;
+            vp9_find_best_ref_mvs(xd, allow_hp, mv_ref_list,
+                                  &ref_mv[ref], &ref_second_mv[ref]);
+          }
+          inc_mvs(mbmi, mi->bmi[i].as_mv, ref_mv, &cm->counts.mv);
+        }
+#else
           inc_mvs(mbmi, mi->bmi[i].as_mv, &cm->counts.mv);
+#endif  // CONFIG_NEWMVREF_SUB8X8
 #if CONFIG_COMPOUND_MODES
         else if (mi->bmi[i].as_mode == NEAREST_NEWMV ||
                  mi->bmi[i].as_mode == NEAR_NEWMV)
@@ -287,7 +324,16 @@ void vp9_update_mv_count(VP9_COMMON *cm, const MACROBLOCKD *xd) {
 #else
     if (mbmi->mode == NEWMV)
 #endif
+#if CONFIG_NEWMVREF_SUB8X8
+    {
+      int_mv ref_mv[2];
+      ref_mv[0].as_int = mbmi->ref_mvs[mbmi->ref_frame[0]][0].as_int;
+      ref_mv[1].as_int = mbmi->ref_mvs[mbmi->ref_frame[1]][0].as_int;
+      inc_mvs(mbmi, mbmi->mv, ref_mv, &cm->counts.mv);
+    }
+#else
       inc_mvs(mbmi, mbmi->mv, &cm->counts.mv);
+#endif  // CONFIG_NEWMVREF_SUB8X8
 #if CONFIG_COMPOUND_MODES
     else if (mbmi->mode == NEAREST_NEWMV || mbmi->mode == NEAR_NEWMV)
       inc_compound_single_mv(mbmi, 1, mbmi->mv, &cm->counts.mv);
