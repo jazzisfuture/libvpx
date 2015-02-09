@@ -8,7 +8,7 @@
 #include "vp9/common/vp9_blockd.h"
 
 #if CONFIG_PALETTE
-int sort_array_double(double *data, int n);
+void sort_array_double(double *data, int n);
 int generate_palette(const uint8_t *src, int stride, int rows, int cols,
                      uint8_t *palette, int *count, uint8_t *map);
 int nearest_number(int num, int denom, int l_bound, int r_bound);

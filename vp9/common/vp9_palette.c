@@ -1,14 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "vp9/common/vp9_palette.h"
 
 #if CONFIG_PALETTE
-static int compare_double(const double *a, const double *b)
+int compare_double(void *a, void *b)
 {
-  return ( *a - *b );
+  return ( *((double*) a) - *((double*) b) );
 }
 
-int sort_array_double(double *data, int n) {
+void sort_array_double(double *data, int n) {
   qsort (data, n, sizeof(data[0]), compare_double);
 }
 
@@ -68,14 +69,6 @@ void reduce_palette(uint8_t *palette, int *count, int n, uint8_t *map,
   int i, r, c, best_idx;
   int best_num, best_denom, this_num, this_denom;
 
-  if (0) {
-    printf("input: \n");
-    for (i = 0; i < n - 1; i++) {
-      printf("%4d", palette[i]);
-    }
-    printf("\n");
-  }
-
   best_idx = 0;
   best_num = 1;
   best_denom = 0;
@@ -97,10 +90,6 @@ void reduce_palette(uint8_t *palette, int *count, int n, uint8_t *map,
                               palette[i], palette[i + 1]);
   count[i] = count[i] + count[i + 1];
 
-  if (0) {
-    printf("best idx is %4d, palette is %4d \n", i, palette[i]);
-  }
-
   if (best_idx < n - 2) {
     for (i = best_idx + 1; i < n - 1; i++) {
       palette[i] = palette[i + 1];
@@ -113,16 +102,6 @@ void reduce_palette(uint8_t *palette, int *count, int n, uint8_t *map,
       if (map[r * cols + c] > best_idx)
         map[r * cols + c]--;
     }
-  }
-
-  if (0) {
-    printf("output: \n");
-    for (i = 0; i < n - 1; i++) {
-      printf("%4d", palette[i]);
-    }
-    printf("\n");
-
-    scanf("%d", &i);
   }
 }
 
@@ -170,72 +149,6 @@ void transpose_block(uint8_t *seq_in, uint8_t *seq_out, int rows, int cols) {
     }
   }
 }
-
-/*
-void palette_color_insertion1(uint8_t *old_colors, int *m, uint8_t *new_colors,
-                             int n, int *count) {
-  int k = *m;
-  int i, j, l, idx, min_idx = -1;
-  uint8_t val;
-
-  if (n <= 0)
-    return;
-
-  i = 0;
-  while (i < k) {
-    count[i]--;
-    i++;
-  }
-
-  for (i = 0; i < n; i++) {
-    val = new_colors[i];
-    j = 0;
-    while (val > old_colors[j] && j < k)
-      j++;
-
-    if (j < k && val == old_colors[j]) {
-      count[j] += 3;
-      continue;
-    }
-
-    idx = j;
-    k++;
-    if (k > PALETTE_BUF_SIZE) {
-      k--;
-      min_idx = 0;
-      for (l = 1; l < k; l++)
-        if (count[l] < count[min_idx])
-          min_idx = l;
-
-      l = min_idx;
-      while (l < k - 1) {
-        old_colors[l] = old_colors[l + 1];
-        count[l] = count[l + 1];
-        l++;
-      }
-    }
-
-    if (min_idx < 0 || idx <= min_idx)
-      j = idx;
-    else
-      j = idx - 1;
-
-    if (j == k) {
-      old_colors[k] = val;
-      count[k] = 3;
-    } else {
-      for (l = k; l > j; l--) {
-        old_colors[l] = old_colors[l - 1];
-        count[l] = count[l - 1];
-      }
-
-      old_colors[j] = val;
-      count[j] = 3;
-    }
-  }
-
-  *m = k;
-}*/
 
 void palette_color_insertion(uint8_t *old_colors, int *m, int *count,
                              MB_MODE_INFO *mbmi) {
@@ -312,7 +225,6 @@ void palette_color_insertion(uint8_t *old_colors, int *m, int *count,
 int palette_color_lookup(uint8_t *dic, int n, uint8_t val, int bits) {
   int j, min, arg_min = 0, i = 1;
 
-
   if (n < 1)
     return -1;
 
@@ -331,18 +243,6 @@ int palette_color_lookup(uint8_t *dic, int n, uint8_t val, int bits) {
     return arg_min;
   else
     return -1;
-   /* */
-
-/*
-  i = 0;
-  while (i < n) {
-    if (dic[i] == val)
-      return i;
-    i++;
-  }
-
-  return -1;
-  */
 }
 
 int get_bit_depth(int n) {
@@ -364,20 +264,6 @@ int palette_max_run(BLOCK_SIZE bsize) {
   };
 
   return table[bsize];
-}
-
-void show_data_double(double *data, int dim) {
-  int i;
-  for (i = 0 ; i < dim; i++)
-    printf("%6.2f", data[i]);
-  printf("\n");
-}
-
-void show_data_int(int *data, int dim) {
-  int i;
-  for (i = 0 ; i < dim; i++)
-    printf("%6.2d", data[i]);
-  printf("\n");
 }
 
 double calc_dist(double *p1, double *p2, int dim) {
@@ -436,7 +322,6 @@ void calc_centroids(double *data, double *centroids, int *indices,
   free(count);
 }
 
-
 double calc_total_dist(double *data, double *centroids, int *indices,
                        int n, int k, int dim) {
   double dist = 0;
@@ -449,7 +334,6 @@ double calc_total_dist(double *data, double *centroids, int *indices,
 
   return dist;
 }
-
 
 int k_means(double *data, double *centroids, int *indices,
              int n, int k, int dim, int max_itr) {

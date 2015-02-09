@@ -36,8 +36,8 @@ extern "C" {
 
 #if CONFIG_PALETTE
 #define PALETTE_BUF_SIZE 15
-#define PALETTE_MAX_SIZE 7
-#define USE_BUF 1
+#define PALETTE_MAX_SIZE 8
+#define USE_BUF 0
 #endif  // CONFIG_PALETTE
 
 /* Segment Feature Masks */
