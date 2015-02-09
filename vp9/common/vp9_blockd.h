@@ -35,8 +35,8 @@ extern "C" {
 #endif  // CONFIG_COPY_MODE
 
 #if CONFIG_PALETTE
-#define PALETTE_BUF_SIZE 8
-#define PALETTE_MAX_SIZE 15
+#define PALETTE_BUF_SIZE 15
+#define PALETTE_MAX_SIZE 7
 #define USE_BUF 1
 #endif  // CONFIG_PALETTE
 

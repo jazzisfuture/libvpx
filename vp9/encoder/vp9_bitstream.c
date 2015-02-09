@@ -20,13 +20,13 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_mvref_common.h"
+#if CONFIG_PALETTE
+#include "vp9/common/vp9_palette.h"
+#endif
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_seg_common.h"
 #include "vp9/common/vp9_systemdependent.h"
 #include "vp9/common/vp9_tile_common.h"
-#if CONFIG_PALETTE
-#include "vp9/common/vp9_reconintra.h"
-#endif
 
 #include "vp9/encoder/vp9_cost.h"
 #include "vp9/encoder/vp9_bitstream.h"

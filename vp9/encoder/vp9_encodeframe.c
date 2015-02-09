@@ -22,6 +22,9 @@
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_idct.h"
 #include "vp9/common/vp9_mvref_common.h"
+#if CONFIG_PALETTE
+#include "vp9/common/vp9_palette.h"
+#endif
 #include "vp9/common/vp9_pred_common.h"
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_reconintra.h"
