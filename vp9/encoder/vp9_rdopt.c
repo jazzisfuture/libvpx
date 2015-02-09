@@ -2339,7 +2339,7 @@ static void joint_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
     }
 
     *rate_mv += vp9_mv_bit_cost(&frame_mv[refs[ref]].as_mv,
-                                &mbmi->ref_mvs[refs[ref]][0].as_mv,
+                                &ref_mv[ref].as_mv,
                                 x->nmvjointcost, x->mvcost, MV_COST_WEIGHT);
   }
 
