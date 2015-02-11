@@ -1180,11 +1180,13 @@ EOF
         win32)
           add_asflags -f win32
           enabled debug && add_asflags -g cv8
+          enabled static && add_ldflags -static
           EXE_SFX=.exe
           ;;
         win64)
           add_asflags -f x64
           enabled debug && add_asflags -g cv8
+          enabled static && add_ldflags -static
           EXE_SFX=.exe
           ;;
         linux*|solaris*|android*)
