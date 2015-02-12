@@ -1386,6 +1386,7 @@ CODEC_INTERFACE(vpx_codec_vp8_cx) =
         NULL,    /* vpx_codec_get_si_fn_t     get_si; */
         NULL,    /* vpx_codec_decode_fn_t     decode; */
         NULL,    /* vpx_codec_frame_get_fn_t  frame_get; */
+        NULL,    /* vpx_codec_set_fb_fn_t     set_fb_fn; */
     },
     {
         1,                  /* 1 cfg map */
