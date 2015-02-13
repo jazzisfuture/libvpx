@@ -82,6 +82,9 @@ enum vp8_dec_control_id {
   /** control function to get the bit depth of the stream. */
   VP9D_GET_BIT_DEPTH,
 
+  /** control function to get the dimension of the current frame. */
+  VP9D_GET_FRAME_SIZE,
+
   /** control function to set the byte alignment of the planes in the reference
    * buffers. Valid values are power of 2, from 32 to 1024. A value of 0 sets
    * legacy alignment. I.e. Y plane is aligned to 32 bytes, U plane directly
@@ -140,6 +143,7 @@ VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR,           vpx_decrypt_init *)
 VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,           vpx_decrypt_init *)
 VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,        int *)
 VPX_CTRL_USE_TYPE(VP9D_GET_BIT_DEPTH,           unsigned int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE,          int *)
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 
 /*! @} - end defgroup vp8_decoder */
