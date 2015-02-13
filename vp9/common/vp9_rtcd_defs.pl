@@ -1109,6 +1109,15 @@ specialize qw/vp9_avg_8x8 sse2 neon/;
 add_proto qw/unsigned int vp9_avg_4x4/, "const uint8_t *, int p";
 specialize qw/vp9_avg_4x4 sse2/;
 
+add_proto qw/void vp9_int_pro_row/, "int16_t *hbuf, uint8_t *ref, int ref_stride, int height";
+specialize qw/vp9_int_pro_row sse2/;
+
+add_proto qw/int16_t vp9_int_pro_col/, "uint8_t *ref, int width";
+specialize qw/vp9_int_pro_col sse2/;
+
+add_proto qw/int vp9_vector_sad/, "int16_t *ref, int16_t *src, int width";
+specialize qw/vp9_vector_sad sse2/;
+
 if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   add_proto qw/unsigned int vp9_highbd_avg_8x8/, "const uint8_t *, int p";
   specialize qw/vp9_highbd_avg_8x8/;
