@@ -1668,10 +1668,6 @@ void vp9_decode_frame(VP9Decoder *pbi,
     vpx_internal_error(&cm->error, VPX_CODEC_CORRUPT_FRAME,
                        "Decode failed. Frame data header is corrupted.");
 
-  if (cm->lf.filter_level) {
-    vp9_loop_filter_frame_init(cm, cm->lf.filter_level);
-  }
-
   // If encoded in frame parallel mode, frame context is ready after decoding
   // the frame header.
   if (pbi->frame_parallel_decode && cm->frame_parallel_decoding_mode) {
