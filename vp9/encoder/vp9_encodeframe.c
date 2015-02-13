@@ -507,6 +507,98 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
   }
 }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+#define GLOBAL_MOTION 0
+#else
+#define GLOBAL_MOTION 1
+#endif
+
+#if GLOBAL_MOTION
+static int const search_pos[9][2] = {
+    {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0}, {0, 1},
+    {1, -1}, {1, 0}, {1, 1},
+};
+
+static void motion_estimation(MACROBLOCK *x) {
+  MACROBLOCKD *xd = &x->e_mbd;
+  DECLARE_ALIGNED(16, int16_t, hbuf[128]);
+  DECLARE_ALIGNED(16, int16_t, vbuf[128]);
+  DECLARE_ALIGNED(16, int16_t, src_hbuf[64]);
+  DECLARE_ALIGNED(16, int16_t, src_vbuf[64]);
+  int idx;
+  const int stride = 64;
+  const int search_width = 128;
+  const int search_height = 128;
+  const int src_stride = x->plane[0].src.stride;
+  const int ref_stride = xd->plane[0].pre[0].stride;
+  int best_sad = INT_MAX;
+  int d;
+  int offset[2] = {0, 0};
+  MV *tmp_mv = &xd->mi[0].src_mi->mbmi.mv[0].as_mv;
+  // Set up prediction 1-D reference set
+  for (idx = 0; idx < search_width; ++idx) {
+    uint8_t *ref_buf = xd->plane[0].pre[0].buf + (idx - 32);
+    int i;
+    hbuf[idx] = 0;
+    for (i = 0; i < stride; ++i)
+      hbuf[idx] += ref_buf[i * ref_stride];
+  }
+  for (idx = 0; idx < search_height; ++idx) {
+    uint8_t *ref_buf = xd->plane[0].pre[0].buf + (idx - 32) * ref_stride;
+    int i;
+    vbuf[idx] = 0;
+    for (i = 0; i < stride; ++i)
+      vbuf[idx] += ref_buf[i];
+  }
+
+  // Set up src 1-D reference set
+  for (idx = 0; idx < 64; ++idx) {
+    uint8_t *src_buf = x->plane[0].src.buf + idx;
+    int i;
+    src_hbuf[idx] = 0;
+    for (i = 0; i < 64; ++i)
+      src_hbuf[idx] += src_buf[i * ref_stride];
+  }
+  for (idx = 0; idx < 64; ++idx) {
+    uint8_t *src_buf = x->plane[0].src.buf + idx * src_stride;
+    int i;
+    src_vbuf[idx] = 0;
+    for (i = 0; i < 64; ++i)
+      src_vbuf[idx] += src_buf[i];
+  }
+
+  // Find the best match per 1-D search
+  for (d = 0; d < 64; ++d) {
+    int i;
+    int this_sad = 0;
+    for (i = 0; i < 64; ++i)
+      this_sad += abs(hbuf[d + i] - src_hbuf[i]);
+    if (this_sad < best_sad) {
+      best_sad = this_sad;
+      offset[1] = d - 32;
+    }
+  }
+  tmp_mv->col = offset[1];
+
+  best_sad = INT_MAX;
+  for (d = 0; d < 64; ++d) {
+    int i;
+    int this_sad = 0;
+    for (i = 0; i < 64; ++i)
+      this_sad += abs(vbuf[d + i] - src_vbuf[i]);
+    if (this_sad < best_sad) {
+      best_sad = this_sad;
+      offset[0] = d - 32;
+    }
+  }
+  tmp_mv->row = offset[0];
+
+  tmp_mv->row *= 8;
+  tmp_mv->col *= 8;
+
+  x->pred_mv[LAST_FRAME] = *tmp_mv;
+}
+#endif
 
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for downs-sampled inputs.
@@ -551,6 +643,11 @@ static void choose_partitioning(VP9_COMP *cpi,
     mbmi->ref_frame[1] = NONE;
     mbmi->sb_type = BLOCK_64X64;
     mbmi->mv[0].as_int = 0;
+
+#if GLOBAL_MOTION
+    motion_estimation(x);
+#endif
+
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     for (i = 1; i <= 2; ++i) {
