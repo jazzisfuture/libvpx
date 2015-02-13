@@ -67,6 +67,7 @@ static INLINE int vp9_read(vp9_reader *r, int prob) {
   value = r->value;
   count = r->count;
 
+
   bigsplit = (BD_VALUE)split << (BD_VALUE_SIZE - CHAR_BIT);
 
   range = split;
