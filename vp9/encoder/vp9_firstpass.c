@@ -463,12 +463,6 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   int i;
 
   int recon_yoffset, recon_uvoffset;
-  YV12_BUFFER_CONFIG *const lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
-  YV12_BUFFER_CONFIG *gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
-  YV12_BUFFER_CONFIG *const new_yv12 = get_frame_new_buffer(cm);
-  int recon_y_stride = lst_yv12->y_stride;
-  int recon_uv_stride = lst_yv12->uv_stride;
-  int uv_mb_height = 16 >> (lst_yv12->y_height > lst_yv12->uv_height);
   int64_t intra_error = 0;
   int64_t coded_error = 0;
   int64_t sr_coded_error = 0;
@@ -486,11 +480,27 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   MV lastmv = {0, 0};
   TWO_PASS *twopass = &cpi->twopass;
   const MV zero_mv = {0, 0};
+
+  YV12_BUFFER_CONFIG *const lst_yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
+  YV12_BUFFER_CONFIG *gld_yv12 = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+  YV12_BUFFER_CONFIG *const new_yv12 = get_frame_new_buffer(cm);
+
+  YV12_BUFFER_CONFIG *const ref_frame =
+      cm->frame_type == KEY_FRAME || lst_yv12 == NULL ? new_yv12 : lst_yv12;
+  int recon_y_stride = ref_frame->y_stride;
+  int recon_uv_stride = ref_frame->uv_stride;
+  int uv_mb_height = 16 >> (ref_frame->y_height > ref_frame->uv_height);
+
   const YV12_BUFFER_CONFIG *first_ref_buf = lst_yv12;
   LAYER_CONTEXT *const lc = is_two_pass_svc(cpi) ?
         &cpi->svc.layer_context[cpi->svc.spatial_layer_id] : NULL;
   double intra_factor;
   double brightness_factor;
+  BufferPool *const pool = cm->buffer_pool;
+
+  // First pass code requires valid last and new frame buffers.
+  assert(lst_yv12 != NULL && new_yv12 != NULL);
+  if (lst_yv12 == NULL || new_yv12 == NULL) return;
 
 #if CONFIG_FP_MB_STATS
   if (cpi->use_fp_mb_stats) {
@@ -535,13 +545,16 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     }
 
     if (cpi->ref_frame_flags & VP9_GOLD_FLAG) {
-      BufferPool *const pool = cm->buffer_pool;
-      const int ref_idx =
-          cm->ref_frame_map[get_ref_frame_idx(cpi, GOLDEN_FRAME)];
       const int scaled_idx = cpi->scaled_ref_idx[GOLDEN_FRAME - 1];
+      const int map_idx = get_ref_frame_idx(cpi, GOLDEN_FRAME);
+      const int ref_idx =
+          map_idx != INVALID_REF_BUFFER_IDX ?
+              cm->ref_frame_map[map_idx] : INVALID_REF_BUFFER_IDX;
 
-      gld_yv12 = (scaled_idx != ref_idx) ? &pool->frame_bufs[scaled_idx].buf :
-                 get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+      gld_yv12 =
+          (scaled_idx != ref_idx && scaled_idx != INVALID_REF_BUFFER_IDX) ?
+              &pool->frame_bufs[scaled_idx].buf :
+              get_ref_frame_buffer(cpi, GOLDEN_FRAME);
     } else {
       gld_yv12 = NULL;
     }
@@ -1017,8 +1030,9 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
        (twopass->this_frame_stats.pcnt_inter > 0.20) &&
        ((twopass->this_frame_stats.intra_error /
          DOUBLE_DIVIDE_CHECK(twopass->this_frame_stats.coded_error)) > 2.0))) {
-    if (gld_yv12 != NULL) {
-      vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    if (cpi->gld_fb_idx != INVALID_REF_BUFFER_IDX) {
+      ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+                 cm->ref_frame_map[cpi->lst_fb_idx]);
     }
     twopass->sr_update_lag = 1;
   } else {
@@ -1031,13 +1045,15 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     vp9_update_reference_frames(cpi);
   } else {
     // Swap frame pointers so last frame refers to the frame we just compressed.
-    swap_yv12(lst_yv12, new_yv12);
+    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->lst_fb_idx],
+               cm->new_fb_idx);
   }
 
   // Special case for the first frame. Copy into the GF buffer as a second
   // reference.
   if (cm->current_video_frame == 0 && gld_yv12 != NULL && lc == NULL) {
-    vp8_yv12_copy_frame(lst_yv12, gld_yv12);
+    ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[cpi->gld_fb_idx],
+               cm->ref_frame_map[cpi->lst_fb_idx]);
   }
 
   // Use this to see what the first pass reconstruction looks like.
