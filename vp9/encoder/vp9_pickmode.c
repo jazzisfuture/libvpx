@@ -1224,6 +1224,31 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                                           [INTER_OFFSET(this_mode)];
           }
 
+#if CONFIG_VP9_HIGHBITDEPTH
+          if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+            vp9_highbd_build_inter_predictor(pd->pre[0].buf, pd->pre[0].stride,
+                                    pd->dst.buf, pd->dst.stride,
+                                    &xd->mi[0].bmi[i].as_mv[0].as_mv,
+                                    &xd->block_refs[0]->sf,
+                                    4 * num_4x4_blocks_wide,
+                                    4 * num_4x4_blocks_high, 0,
+                                    vp9_get_interp_kernel(mbmi->interp_filter),
+                                    MV_PRECISION_Q3,
+                                    mi_col * MI_SIZE + 4 * (i & 0x01),
+                                    mi_row * MI_SIZE + 4 * (i >> 1), xd->bd);
+          } else {
+            vp9_build_inter_predictor(pd->pre[0].buf, pd->pre[0].stride,
+                                     pd->dst.buf, pd->dst.stride,
+                                     &xd->mi[0].bmi[i].as_mv[0].as_mv,
+                                     &xd->block_refs[0]->sf,
+                                     4 * num_4x4_blocks_wide,
+                                     4 * num_4x4_blocks_high, 0,
+                                     vp9_get_interp_kernel(mbmi->interp_filter),
+                                     MV_PRECISION_Q3,
+                                     mi_col * MI_SIZE + 4 * (i & 0x01),
+                                     mi_row * MI_SIZE + 4 * (i >> 1));
+          }
+#else
           vp9_build_inter_predictor(pd->pre[0].buf, pd->pre[0].stride,
                                     pd->dst.buf, pd->dst.stride,
                                     &xd->mi[0].bmi[i].as_mv[0].as_mv,
@@ -1234,6 +1259,7 @@ void vp9_pick_inter_mode_sub8x8(VP9_COMP *cpi, MACROBLOCK *x,
                                     MV_PRECISION_Q3,
                                     mi_col * MI_SIZE + 4 * (i & 0x01),
                                     mi_row * MI_SIZE + 4 * (i >> 1));
+#endif
           model_rd_for_sb_y(cpi, bsize, x, xd, &this_rdc.rate, &this_rdc.dist,
                             &var_y, &sse_y);
 
