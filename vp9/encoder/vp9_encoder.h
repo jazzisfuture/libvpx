@@ -17,6 +17,7 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx/vp8cx.h"
 
+#include "vp9/common/vp9_alloccommon.h"
 #include "vp9/common/vp9_ppflags.h"
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_thread_common.h"
@@ -47,7 +48,6 @@ extern "C" {
 #endif
 
 #define DEFAULT_GF_INTERVAL         10
-#define INVALID_REF_BUFFER_IDX      -1  // Marks an invalid reference buffer id.
 
 typedef struct {
   int nmvjointcost[MV_JOINTS];
@@ -530,8 +530,11 @@ static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
     VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
   VP9_COMMON *const cm = &cpi->common;
   BufferPool *const pool = cm->buffer_pool;
-  return &pool->frame_bufs[cm->ref_frame_map[get_ref_frame_idx(cpi, ref_frame)]]
-      .buf;
+  const int map_idx = get_ref_frame_idx(cpi, ref_frame);
+  const int buf_idx =
+      map_idx != INVALID_IDX ? cm->ref_frame_map[map_idx] : INVALID_IDX;
+  return
+      buf_idx != INVALID_IDX ? &pool->frame_bufs[buf_idx].buf : NULL;
 }
 
 static INLINE int get_token_alloc(int mb_rows, int mb_cols) {
