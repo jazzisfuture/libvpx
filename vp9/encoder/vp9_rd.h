@@ -36,19 +36,36 @@ extern "C" {
 #if CONFIG_COMPOUND_MODES
 
 #if CONFIG_INTERINTRA
+#if CONFIG_GLOBAL_MOTION
+#define MAX_MODES 55
+#else
 #define MAX_MODES 52
+#endif
+
 #define INTERINTRA_START_MODE 40
 #else
+#if CONFIG_GLOBAL_MOTION
+#define MAX_MODES 43
+#else
 #define MAX_MODES 40
+#endif
 #endif  // CONFIG_INTERINTRA
 
 #else   // CONFIG_COMPOUND_MODES
 
 #if CONFIG_INTERINTRA
+#if CONFIG_GLOBAL_MOTION
+#define MAX_MODES 45
+#else
 #define MAX_MODES 42
+#endif
 #define INTERINTRA_START_MODE 30
 #else
+#if CONFIG_GLOBAL_MOTION
+#define MAX_MODES 33
+#else
 #define MAX_MODES 30
+#endif
 #endif  // CONFIG_INTERINTRA
 
 #endif  // CONFIG_COMPOUND_MODES

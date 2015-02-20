@@ -97,6 +97,12 @@ static const MODE_DEFINITION vp9_mode_order[MAX_MODES] = {
   {NEARMV,    {ALTREF_FRAME, NONE}},
   {NEARMV,    {GOLDEN_FRAME, NONE}},
 
+#if CONFIG_GLOBAL_MOTION
+  {GLOBAL_NEWMV,    {LAST_FRAME,   NONE}},
+  {GLOBAL_NEWMV,    {ALTREF_FRAME, NONE}},
+  {GLOBAL_NEWMV,    {GOLDEN_FRAME, NONE}},
+#endif
+
   {ZEROMV,    {LAST_FRAME,   NONE}},
   {ZEROMV,    {GOLDEN_FRAME, NONE}},
   {ZEROMV,    {ALTREF_FRAME, NONE}},
@@ -3225,6 +3231,11 @@ static int64_t handle_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   int skip_txfm_sb = 0;
   int64_t skip_sse_sb = INT64_MAX;
   int64_t distortion_y = 0, distortion_uv = 0;
+
+#if CONFIG_GLOBAL_MOTION
+  if (this_mode == GLOBAL_NEWMV)
+    return INT64_MAX;
+#endif
 
 #if CONFIG_INTERINTRA
   const int is_comp_interintra_pred = (mbmi->ref_frame[1] == INTRA_FRAME);

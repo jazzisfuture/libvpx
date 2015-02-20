@@ -240,6 +240,18 @@ static const vp9_prob default_partition_probs[PARTITION_CONTEXTS]
   {  10,   7,   6 },  // a/l both split
 };
 
+#if CONFIG_GLOBAL_MOTION
+static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
+                                              [INTER_MODES - 1] = {
+  {2,       173,   128,  34},  // 0 = both zero mv
+  {7,       145,   128,  85},  // 1 = one zero mv + one a predicted mv
+  {7,       166,   128,  63},  // 2 = two predicted mvs
+  {7,       94,    128,  66},  // 3 = one predicted/zero and one new mv
+  {8,       64,    128,  46},  // 4 = two new mvs
+  {17,      81,    128,  31},  // 5 = one intra neighbour + x
+  {25,      29,    128,  30},  // 6 = two intra neighbours
+};
+#else
 static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
                                               [INTER_MODES - 1] = {
   {2,       173,   34},  // 0 = both zero mv
@@ -250,6 +262,7 @@ static const vp9_prob default_inter_mode_probs[INTER_MODE_CONTEXTS]
   {17,      81,    31},  // 5 = one intra neighbour + x
   {25,      29,    30},  // 6 = two intra neighbours
 };
+#endif
 
 #if CONFIG_COMPOUND_MODES
 static const vp9_prob default_inter_compound_mode_probs
@@ -277,11 +290,20 @@ const vp9_tree_index vp9_intra_mode_tree[TREE_SIZE(INTRA_MODES)] = {
   -D153_PRED, -D207_PRED            /* 8 = D153_NODE */
 };
 
+#if CONFIG_GLOBAL_MOTION
+const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
+  -INTER_OFFSET(ZEROMV), 2,
+  -INTER_OFFSET(NEARESTMV), 4,
+  -INTER_OFFSET(GLOBAL_NEWMV), 6,
+  -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
+};
+#else
 const vp9_tree_index vp9_inter_mode_tree[TREE_SIZE(INTER_MODES)] = {
   -INTER_OFFSET(ZEROMV), 2,
   -INTER_OFFSET(NEARESTMV), 4,
   -INTER_OFFSET(NEARMV), -INTER_OFFSET(NEWMV)
 };
+#endif
 
 #if CONFIG_COMPOUND_MODES
 const vp9_tree_index vp9_inter_compound_mode_tree

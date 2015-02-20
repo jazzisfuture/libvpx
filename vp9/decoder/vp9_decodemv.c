@@ -613,6 +613,19 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
         mv[1].as_int = 0;
       break;
     }
+#if CONFIG_GLOBAL_MOTION
+    case GLOBAL_NEWMV: {
+      nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
+                                            NULL : &cm->counts.mv;
+      for (i = 0; i < 1 + is_compound; ++i) {
+        read_mv(r, &mv[i].as_mv, &ref_mv[i].as_mv, &cm->fc.nmvc, mv_counts,
+                allow_hp);
+        ret = ret && is_mv_valid(&mv[i].as_mv);
+        assert(ret);
+      }
+      break;
+    }
+#endif
 #if CONFIG_COMPOUND_MODES
     case NEW_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?
