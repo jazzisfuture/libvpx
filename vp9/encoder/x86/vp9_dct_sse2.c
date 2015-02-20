@@ -712,9 +712,7 @@ static INLINE void load_buffer_8x8(const int16_t *input, __m128i *in,
 }
 
 // right shift and rounding
-static INLINE void right_shift_8x8(__m128i *res, int const bit) {
-  const __m128i kOne = _mm_set1_epi16(1);
-  const int bit_m02 = bit - 2;
+static INLINE void right_shift_8x8_by_1(__m128i *res) {
   __m128i sign0 = _mm_srai_epi16(res[0], 15);
   __m128i sign1 = _mm_srai_epi16(res[1], 15);
   __m128i sign2 = _mm_srai_epi16(res[2], 15);
@@ -723,18 +721,6 @@ static INLINE void right_shift_8x8(__m128i *res, int const bit) {
   __m128i sign5 = _mm_srai_epi16(res[5], 15);
   __m128i sign6 = _mm_srai_epi16(res[6], 15);
   __m128i sign7 = _mm_srai_epi16(res[7], 15);
-
-  if (bit_m02 >= 0) {
-    __m128i k_const_rounding = _mm_slli_epi16(kOne, bit_m02);
-    res[0] = _mm_add_epi16(res[0], k_const_rounding);
-    res[1] = _mm_add_epi16(res[1], k_const_rounding);
-    res[2] = _mm_add_epi16(res[2], k_const_rounding);
-    res[3] = _mm_add_epi16(res[3], k_const_rounding);
-    res[4] = _mm_add_epi16(res[4], k_const_rounding);
-    res[5] = _mm_add_epi16(res[5], k_const_rounding);
-    res[6] = _mm_add_epi16(res[6], k_const_rounding);
-    res[7] = _mm_add_epi16(res[7], k_const_rounding);
-  }
 
   res[0] = _mm_sub_epi16(res[0], sign0);
   res[1] = _mm_sub_epi16(res[1], sign1);
@@ -745,14 +731,53 @@ static INLINE void right_shift_8x8(__m128i *res, int const bit) {
   res[6] = _mm_sub_epi16(res[6], sign6);
   res[7] = _mm_sub_epi16(res[7], sign7);
 
-  res[0] = _mm_srai_epi16(res[0], bit);
-  res[1] = _mm_srai_epi16(res[1], bit);
-  res[2] = _mm_srai_epi16(res[2], bit);
-  res[3] = _mm_srai_epi16(res[3], bit);
-  res[4] = _mm_srai_epi16(res[4], bit);
-  res[5] = _mm_srai_epi16(res[5], bit);
-  res[6] = _mm_srai_epi16(res[6], bit);
-  res[7] = _mm_srai_epi16(res[7], bit);
+  res[0] = _mm_srai_epi16(res[0], 1);
+  res[1] = _mm_srai_epi16(res[1], 1);
+  res[2] = _mm_srai_epi16(res[2], 1);
+  res[3] = _mm_srai_epi16(res[3], 1);
+  res[4] = _mm_srai_epi16(res[4], 1);
+  res[5] = _mm_srai_epi16(res[5], 1);
+  res[6] = _mm_srai_epi16(res[6], 1);
+  res[7] = _mm_srai_epi16(res[7], 1);
+}
+
+static INLINE void right_shift_8x8_by_2(__m128i *res) {
+  const __m128i kOne = _mm_set1_epi16(1);
+  __m128i sign0 = _mm_srai_epi16(res[0], 15);
+  __m128i sign1 = _mm_srai_epi16(res[1], 15);
+  __m128i sign2 = _mm_srai_epi16(res[2], 15);
+  __m128i sign3 = _mm_srai_epi16(res[3], 15);
+  __m128i sign4 = _mm_srai_epi16(res[4], 15);
+  __m128i sign5 = _mm_srai_epi16(res[5], 15);
+  __m128i sign6 = _mm_srai_epi16(res[6], 15);
+  __m128i sign7 = _mm_srai_epi16(res[7], 15);
+
+  res[0] = _mm_add_epi16(res[0], kOne);
+  res[1] = _mm_add_epi16(res[1], kOne);
+  res[2] = _mm_add_epi16(res[2], kOne);
+  res[3] = _mm_add_epi16(res[3], kOne);
+  res[4] = _mm_add_epi16(res[4], kOne);
+  res[5] = _mm_add_epi16(res[5], kOne);
+  res[6] = _mm_add_epi16(res[6], kOne);
+  res[7] = _mm_add_epi16(res[7], kOne);
+
+  res[0] = _mm_sub_epi16(res[0], sign0);
+  res[1] = _mm_sub_epi16(res[1], sign1);
+  res[2] = _mm_sub_epi16(res[2], sign2);
+  res[3] = _mm_sub_epi16(res[3], sign3);
+  res[4] = _mm_sub_epi16(res[4], sign4);
+  res[5] = _mm_sub_epi16(res[5], sign5);
+  res[6] = _mm_sub_epi16(res[6], sign6);
+  res[7] = _mm_sub_epi16(res[7], sign7);
+
+  res[0] = _mm_srai_epi16(res[0], 2);
+  res[1] = _mm_srai_epi16(res[1], 2);
+  res[2] = _mm_srai_epi16(res[2], 2);
+  res[3] = _mm_srai_epi16(res[3], 2);
+  res[4] = _mm_srai_epi16(res[4], 2);
+  res[5] = _mm_srai_epi16(res[5], 2);
+  res[6] = _mm_srai_epi16(res[6], 2);
+  res[7] = _mm_srai_epi16(res[7], 2);
 }
 
 // write 8x8 array
@@ -1202,21 +1227,21 @@ void vp9_fht8x8_sse2(const int16_t *input, tran_low_t *output,
       load_buffer_8x8(input, in, stride);
       fadst8_sse2(in);
       fdct8_sse2(in);
-      right_shift_8x8(in, 1);
+      right_shift_8x8_by_1(in);
       write_buffer_8x8(output, in, 8);
       break;
     case DCT_ADST:
       load_buffer_8x8(input, in, stride);
       fdct8_sse2(in);
       fadst8_sse2(in);
-      right_shift_8x8(in, 1);
+      right_shift_8x8_by_1(in);
       write_buffer_8x8(output, in, 8);
       break;
     case ADST_ADST:
       load_buffer_8x8(input, in, stride);
       fadst8_sse2(in);
       fadst8_sse2(in);
-      right_shift_8x8(in, 1);
+      right_shift_8x8_by_1(in);
       write_buffer_8x8(output, in, 8);
       break;
     default:
@@ -1336,10 +1361,10 @@ static INLINE void array_transpose_16x16(__m128i *res0, __m128i *res1) {
 
 static INLINE void right_shift_16x16(__m128i *res0, __m128i *res1) {
   // perform rounding operations
-  right_shift_8x8(res0, 2);
-  right_shift_8x8(res0 + 8, 2);
-  right_shift_8x8(res1, 2);
-  right_shift_8x8(res1 + 8, 2);
+  right_shift_8x8_by_2(res0);
+  right_shift_8x8_by_2(res0 + 8);
+  right_shift_8x8_by_2(res1);
+  right_shift_8x8_by_2(res1 + 8);
 }
 
 void fdct16_8col(__m128i *in) {
