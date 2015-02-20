@@ -613,6 +613,14 @@ static INLINE int assign_mv(VP9_COMMON *cm, PREDICTION_MODE mode,
         mv[1].as_int = 0;
       break;
     }
+#if CONFIG_GLOBAL_MOTION
+    case GLOBAL_NEWMV: {
+          mv[0].as_int = 0;
+          if (is_compound)
+            mv[1].as_int = 0;
+          break;
+        }
+#endif
 #if CONFIG_COMPOUND_MODES
     case NEW_NEWMV: {
       nmv_context_counts *const mv_counts = cm->frame_parallel_decoding_mode ?

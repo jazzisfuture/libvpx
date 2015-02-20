@@ -36,6 +36,9 @@
 #if CONFIG_SUPERTX
 #include "vp9/encoder/vp9_cost.h"
 #endif
+#if CONFIG_GLOBAL_MOTION
+#include "vp9/encoder/vp9_global_motion.h"
+#endif
 #include "vp9/encoder/vp9_encodeframe.h"
 #include "vp9/encoder/vp9_encodemb.h"
 #include "vp9/encoder/vp9_encodemv.h"
@@ -4364,6 +4367,12 @@ static void encode_frame_internal(VP9_COMP *cpi) {
   MACROBLOCK *const x = &cpi->mb;
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &x->e_mbd;
+#if CONFIG_GLOBAL_MOTION
+  double *transform;
+  int frame;
+  YV12_BUFFER_CONFIG *ref_buf;
+  struct lookahead_entry *q_cur = vp9_lookahead_peek(cpi->lookahead, 0);
+#endif
 
   xd->mi = cm->mi;
   xd->mi[0].src_mi = &xd->mi[0];
@@ -4381,6 +4390,33 @@ static void encode_frame_internal(VP9_COMP *cpi) {
                  cm->uv_ac_delta_q == 0;
 
   cm->tx_mode = select_tx_mode(cpi);
+
+#if CONFIG_GLOBAL_MOTION
+  for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame) {
+    ref_buf = get_ref_frame_buffer(cpi, frame);
+    if (q_cur && ref_buf && cpi->common.current_video_frame > 0) {
+      switch (frame) {
+      case LAST_FRAME:
+        transform = cpi->global_transform_last;
+        break;
+      case GOLDEN_FRAME:
+        transform = cpi->global_transform_golden;
+        break;
+      case ALTREF_FRAME:
+        transform = cpi->global_transform_arf;
+        break;
+      }
+      vp9_compute_global_motion_multiple_block_based(cpi,
+                                                     ROTZOOM,
+                                                     &q_cur->img,
+                                                     ref_buf,
+                                                     16,
+                                                     2,
+                                                     .75,
+                                                     transform);
+    }
+  }
+#endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
   if (cm->use_highbitdepth)

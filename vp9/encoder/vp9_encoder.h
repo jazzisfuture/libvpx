@@ -412,6 +412,12 @@ typedef struct VP9_COMP {
   int multi_arf_enabled;
   int multi_arf_last_grp_enabled;
 
+#if CONFIG_GLOBAL_MOTION
+  double global_transform_last[36];
+  double global_transform_arf[36];
+  double global_transform_golden[36];
+#endif
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
 #endif
