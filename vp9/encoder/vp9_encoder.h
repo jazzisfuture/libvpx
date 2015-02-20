@@ -274,6 +274,9 @@ typedef struct VP9_COMP {
   struct lookahead_ctx    *lookahead;
   struct lookahead_entry  *alt_ref_source;
 
+  DECLARE_ALIGNED(16, int16_t, y_dequant[QINDEX_RANGE][8]);
+  DECLARE_ALIGNED(16, int16_t, uv_dequant[QINDEX_RANGE][8]);
+
   YV12_BUFFER_CONFIG *Source;
   YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames
   YV12_BUFFER_CONFIG *un_scaled_source;
