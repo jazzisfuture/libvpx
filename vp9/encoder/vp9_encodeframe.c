@@ -518,7 +518,7 @@ static int vector_match(int16_t *ref, int16_t *src) {
   int best_sad = INT_MAX;
   int this_sad;
   int d;
-  int center, offset = 0;
+  int center, offset = 0, frac = 0;
   for (d = 0; d <= 64; d += 16) {
     this_sad = vp9_vector_sad(&ref[d], src, 64);
     if (this_sad < best_sad) {
@@ -566,8 +566,39 @@ static int vector_match(int16_t *ref, int16_t *src) {
     }
   }
 
+  offset = center;
+
+//  if (offset - 1 >= 0) {
+//    int i;
+//    this_sad = 0;
+//    for (i = 0; i < 64; ++i) {
+//      this_sad += abs((ref[offset - 1 + i] + ref[offset + i]) / 2 - src[i]);
+//    }
+//    if (this_sad < best_sad) {
+//      best_sad = this_sad;
+//      frac = -4;
+//    }
+//  }
+//
+//  if (offset + 1 <= 64) {
+//    int i;
+//    this_sad = 0;
+//    for (i = 0; i < 64; ++i) {
+//      this_sad += abs((ref[offset + 1 + i] + ref[offset + i]) / 2 - src[i]);
+//    }
+//    if (this_sad < best_sad) {
+//      best_sad = this_sad;
+//      frac = 4;
+//    }
+//  }
+
   return (center - 32);
 }
+
+static int const search_pos[9][2] = {
+  {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0}, {0, 1},
+  {1, -1}, {1, 0}, {1, 1},
+};
 
 static void motion_estimation(MACROBLOCK *x) {
   MACROBLOCKD *xd = &x->e_mbd;
@@ -583,29 +614,31 @@ static void motion_estimation(MACROBLOCK *x) {
   const int ref_stride = xd->plane[0].pre[0].stride;
   uint8_t const *ref_buf, *src_buf;
   MV *tmp_mv = &xd->mi[0].src_mi->mbmi.mv[0].as_mv;
+  int best_sad;
+  MV this_mv;
 
   // Set up prediction 1-D reference set
   ref_buf = xd->plane[0].pre[0].buf + (-32);
   for (idx = 0; idx < search_width; idx += 16) {
-    vp9_int_pro_row(&hbuf[idx], ref_buf, ref_stride, 64);
+    vp9_int_pro_row_c(&hbuf[idx], ref_buf, ref_stride, 64);
     ref_buf += 16;
   }
 
   ref_buf = xd->plane[0].pre[0].buf + (-32) * ref_stride;
   for (idx = 0; idx < search_height; ++idx) {
-    vbuf[idx] = vp9_int_pro_col(ref_buf, 64);
+    vbuf[idx] = vp9_int_pro_col_c(ref_buf, 64);
     ref_buf += ref_stride;
   }
 
   // Set up src 1-D reference set
   for (idx = 0; idx < stride; idx += 16) {
     src_buf = x->plane[0].src.buf + idx;
-    vp9_int_pro_row(&src_hbuf[idx], src_buf, src_stride, 64);
+    vp9_int_pro_row_c(&src_hbuf[idx], src_buf, src_stride, 64);
   }
 
   src_buf = x->plane[0].src.buf;
   for (idx = 0; idx < stride; ++idx) {
-    src_vbuf[idx] = vp9_int_pro_col(src_buf, 64);
+    src_vbuf[idx] = vp9_int_pro_col_c(src_buf, 64);
     src_buf += src_stride;
   }
 
@@ -613,6 +646,27 @@ static void motion_estimation(MACROBLOCK *x) {
 
   tmp_mv->col = vector_match(hbuf, src_hbuf);
   tmp_mv->row = vector_match(vbuf, src_vbuf);
+
+
+//  best_sad = INT_MAX;
+//  this_mv = *tmp_mv;
+//  for (idx = 0; idx < 9; ++idx) {
+//    const int what_stride = x->plane[0].src.stride;
+//    uint8_t *what = x->plane[0].src.buf;
+//    const int in_what_stride = xd->plane[0].pre[0].stride;
+//    const uint8_t *in_what = xd->plane[0].pre[0].buf +
+//        (search_pos[idx][0] + this_mv.row) * in_what_stride +
+//        (search_pos[idx][1] + this_mv.col);
+//
+//    int this_sad =  cpi->fn_ptr[BLOCK_64X64].sdf(what, what_stride,
+//                                                 in_what, in_what_stride);
+//    if (this_sad < best_sad) {
+//      best_sad = this_sad;
+//      tmp_mv->row = search_pos[idx][0] + this_mv.row;
+//      tmp_mv->col = search_pos[idx][1] + this_mv.col;
+//    }
+//  }
+
 
   tmp_mv->row *= 8;
   tmp_mv->col *= 8;
@@ -664,12 +718,37 @@ static void choose_partitioning(VP9_COMP *cpi,
     mbmi->ref_frame[1] = NONE;
     mbmi->sb_type = BLOCK_64X64;
     mbmi->mv[0].as_int = 0;
+    mbmi->interp_filter = BILINEAR;
 
 #if GLOBAL_MOTION
+//    xd->plane[0].pre[0].buf = cpi->Last_Source->y_buffer +
+//        mi_row * 8 * cpi->Last_Source->y_stride + mi_col * 8;
+//    xd->plane[0].pre[0].stride = cpi->Last_Source->y_stride;
     motion_estimation(x);
 #endif
 
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
+
+//    if (0) {
+//      static int64_t total_sad = 0;
+//      unsigned int this_sad =
+//          cpi->fn_ptr[BLOCK_64X64].sdf(x->plane[0].src.buf,
+//                                       x->plane[0].src.stride,
+//                                       xd->plane[0].dst.buf,
+//                                       xd->plane[0].dst.stride);
+//      total_sad += (int64_t)this_sad;
+//
+//      fprintf(stderr, "pos (%d, %d), mv (%d, %d), SAD %d\n",
+//              mi_row, mi_col, mbmi->mv[0].as_mv.row,
+//              mbmi->mv[0].as_mv.col, this_sad);
+//      if (cm->current_video_frame == 2)
+//        exit(0);
+//
+//      if (mi_row == 0 && mi_col == 0) {
+//        fprintf(stderr, "total_sad %d\n", total_sad);
+//        total_sad = 0;
+//      }
+//    }
 
     for (i = 1; i <= 2; ++i) {
       struct macroblock_plane  *p = &x->plane[i];
