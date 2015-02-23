@@ -61,7 +61,7 @@ void vp9_int_pro_row_sse2(int16_t *hbuf, uint8_t const*ref,
                           const int ref_stride, const int height) {
   int idx;
   __m128i zero = _mm_setzero_si128();
-  __m128i src_line = _mm_load_si128((const __m128i *)ref);
+  __m128i src_line = _mm_loadu_si128((const __m128i *)ref);
   __m128i s0 = _mm_unpacklo_epi8(src_line, zero);
   __m128i s1 = _mm_unpackhi_epi8(src_line, zero);
   __m128i t0, t1;
@@ -69,14 +69,14 @@ void vp9_int_pro_row_sse2(int16_t *hbuf, uint8_t const*ref,
   ref += ref_stride;
 
   for (idx = 1; idx < height_1; idx += 2) {
-    src_line = _mm_load_si128((const __m128i *)ref);
+    src_line = _mm_loadu_si128((const __m128i *)ref);
     t0 = _mm_unpacklo_epi8(src_line, zero);
     t1 = _mm_unpackhi_epi8(src_line, zero);
     s0 = _mm_adds_epu16(s0, t0);
     s1 = _mm_adds_epu16(s1, t1);
     ref += ref_stride;
 
-    src_line = _mm_load_si128((const __m128i *)ref);
+    src_line = _mm_loadu_si128((const __m128i *)ref);
     t0 = _mm_unpacklo_epi8(src_line, zero);
     t1 = _mm_unpackhi_epi8(src_line, zero);
     s0 = _mm_adds_epu16(s0, t0);
@@ -84,7 +84,7 @@ void vp9_int_pro_row_sse2(int16_t *hbuf, uint8_t const*ref,
     ref += ref_stride;
   }
 
-  src_line = _mm_load_si128((const __m128i *)ref);
+  src_line = _mm_loadu_si128((const __m128i *)ref);
   t0 = _mm_unpacklo_epi8(src_line, zero);
   t1 = _mm_unpackhi_epi8(src_line, zero);
   s0 = _mm_adds_epu16(s0, t0);
@@ -128,8 +128,6 @@ int vp9_vector_sad_sse2(int16_t const *ref, int16_t const *src,
   diff = _mm_xor_si128(diff, sign);
   sum = _mm_sub_epi16(diff, sign);
 
-  (void) width;  // width = 64;
-
   ref += 8;
   src += 8;
 
@@ -137,7 +135,7 @@ int vp9_vector_sad_sse2(int16_t const *ref, int16_t const *src,
   v1 = _mm_unpackhi_epi16(sum, zero);
   sum = _mm_add_epi32(v0, v1);
 
-  for (idx = 1; idx < 8; ++idx) {
+  for (idx = 8; idx < width; idx += 8) {
     v0 = _mm_loadu_si128((const __m128i *)ref);
     v1 = _mm_load_si128((const __m128i *)src);
     diff = _mm_subs_epi16(v0, v1);
