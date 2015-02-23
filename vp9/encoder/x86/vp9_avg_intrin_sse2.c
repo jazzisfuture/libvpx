@@ -100,22 +100,14 @@ int16_t vp9_int_pro_col_sse2(uint8_t const *ref, const int width) {
   __m128i src_line = _mm_load_si128((const __m128i *)ref);
   __m128i s0 = _mm_sad_epu8(src_line, zero);
   __m128i s1;
-  (void) width;  // width = 64
+  int i;
 
-  ref += 16;
-  src_line = _mm_load_si128((const __m128i *)ref);
-  s1 = _mm_sad_epu8(src_line, zero);
-  s0 = _mm_adds_epu16(s0, s1);
-
-  ref += 16;
-  src_line = _mm_load_si128((const __m128i *)ref);
-  s1 = _mm_sad_epu8(src_line, zero);
-  s0 = _mm_adds_epu16(s0, s1);
-
-  ref += 16;
-  src_line = _mm_load_si128((const __m128i *)ref);
-  s1 = _mm_sad_epu8(src_line, zero);
-  s0 = _mm_adds_epu16(s0, s1);
+  for (i = 16; i < width; i += 16) {
+    ref += 16;
+    src_line = _mm_load_si128((const __m128i *)ref);
+    s1 = _mm_sad_epu8(src_line, zero);
+    s0 = _mm_adds_epu16(s0, s1);
+  }
 
   s1 = _mm_srli_si128(s0, 8);
   s0 = _mm_adds_epu16(s0, s1);
