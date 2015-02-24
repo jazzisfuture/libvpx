@@ -56,6 +56,7 @@ const uint8_t *vp9_reader_find_end(vp9_reader *r);
 static INLINE int vp9_read(vp9_reader *r, int prob) {
   unsigned int bit = 0;
   BD_VALUE value;
+
   BD_VALUE bigsplit;
   int count;
   unsigned int range;
