@@ -482,7 +482,7 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
     const int is_key_frame = (cm->frame_type == KEY_FRAME);
     const int use_4x4_partition = is_key_frame;
     const int low_res = (cm->width <= 352 && cm->height <= 288);
-    const int threshold_multiplier = is_key_frame ? 80 : 4;
+    const int threshold_multiplier = is_key_frame ? 80 : 80;
     const int64_t threshold_base = (int64_t)(threshold_multiplier *
         vp9_convert_qindex_to_q(q, cm->bit_depth));
     cpi->vbp_threshold = threshold_base;
@@ -506,7 +506,19 @@ void vp9_set_vbp_thresholds(VP9_COMP *cpi, int q) {
     cpi->vbp_bsize_min = (use_4x4_partition) ? BLOCK_8X8 : BLOCK_16X16;
   }
 }
-
+void vp9_8x8_min_max_c(const uint8_t *s, int p, uint8_t *d, int dp,
+                       int *min, int *max) {
+  int i, j;
+  *min = 255;
+  *max = 0;
+  for (i = 0; i < 8; ++i, s += p, d += p) {
+    for (j = 0; j < 8; ++j) {
+      int diff = abs(s[j]-d[j]);
+      *min = diff < *min ? diff : *min;
+      *max = diff > *max ? diff : *max;
+    }
+  }
+}
 
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for downs-sampled inputs.
@@ -601,29 +613,37 @@ static void choose_partitioning(VP9_COMP *cpi,
         for (k = 0; k < 4; k++) {
           int x8_idx = x16_idx + ((k & 1) << 3);
           int y8_idx = y16_idx + ((k >> 1) << 3);
-            unsigned int sse = 0;
-            int sum = 0;
-            if (x8_idx < pixels_wide && y8_idx < pixels_high) {
-              int s_avg, d_avg;
+          unsigned int sse = 0;
+          int sum = 0;
+          if (x8_idx < pixels_wide && y8_idx < pixels_high) {
+            int s_avg, d_avg, min, max;
 #if CONFIG_VP9_HIGHBITDEPTH
-              if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
-                s_avg = vp9_highbd_avg_8x8(s + y8_idx * sp + x8_idx, sp);
-                d_avg = vp9_highbd_avg_8x8(d + y8_idx * dp + x8_idx, dp);
-              } else {
-                s_avg = vp9_avg_8x8(s + y8_idx * sp + x8_idx, sp);
-                d_avg = vp9_avg_8x8(d + y8_idx * dp + x8_idx, dp);
-             }
-#else
+            if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+              s_avg = vp9_highbd_avg_8x8(s + y8_idx * sp + x8_idx, sp);
+              d_avg = vp9_highbd_avg_8x8(d + y8_idx * dp + x8_idx, dp);
+            } else {
               s_avg = vp9_avg_8x8(s + y8_idx * sp + x8_idx, sp);
               d_avg = vp9_avg_8x8(d + y8_idx * dp + x8_idx, dp);
+           }
+#else
+            s_avg = vp9_avg_8x8(s + y8_idx * sp + x8_idx, sp);
+            d_avg = vp9_avg_8x8(d + y8_idx * dp + x8_idx, dp);
+            vp9_8x8_min_max_c(s + y8_idx * sp + x8_idx, sp,
+                              d + y8_idx * dp + x8_idx, dp,
+                              &min, &max);
 #endif
+           if (abs(min - max) > 10) {
+              sum = (min + max) / 2;
+              sse =  (min * min + max * max) / 2;
+            } else {
               sum = s_avg - d_avg;
               sse = sum * sum;
             }
-            // If variance is based on 8x8 downsampling, we stop here and have
-            // one sample for 8x8 block (so use 1 for count in fill_variance),
-            // which of course means variance = 0 for 8x8 block.
-            fill_variance(sse, sum, 0, &vst->split[k].part_variances.none);
+          }
+          // If variance is based on 8x8 downsampling, we stop here and have
+          // one sample for 8x8 block (so use 1 for count in fill_variance),
+          // which of course means variance = 0 for 8x8 block.
+          fill_variance(sse, sum, 1, &vst->split[k].part_variances.none);
         }
         fill_variance_tree(&vt.split[i].split[j], BLOCK_16X16);
         // For low-resolution, compute the variance based on 8x8 down-sampling,
