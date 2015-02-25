@@ -243,7 +243,8 @@ void calc_centroids(double *data, double *centroids, int *indices,
 
   for (i = 0; i < k; i++) {
     if (!count[i])
-      memcpy(centroids + i * dim, data + (rand_r(&seed) % n) * dim,
+      // memcpy(centroids + i * dim, data + (rand_r(&seed) % n) * dim,
+      memcpy(centroids + i * dim, data + (rand() % n) * dim,
              sizeof(centroids[0]) * dim);
     else
       for (j = 0; j < dim; j++)
