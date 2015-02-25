@@ -2301,6 +2301,8 @@ static int read_compressed_header(VP9Decoder *pbi, const uint8_t *data,
 #if CONFIG_PALETTE
   if (frame_is_intra_only(cm))
     cm->allow_palette_mode = vp9_read_bit(&r);
+
+  //cm->allow_palette_mode = 1;
 #endif
 
   return vp9_reader_has_error(&r);
