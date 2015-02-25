@@ -220,6 +220,7 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
   const int64_t ac_thr = p->quant_thred[1] >> 6;
   const uint32_t dc_quant = pd->dequant[0];
   const uint32_t ac_quant = pd->dequant[1];
+  const uint32_t var_thr = (pd->dequant[1] * pd->dequant[1]) >> 1;
   unsigned int var = cpi->fn_ptr[bsize].vf(p->src.buf, p->src.stride,
                                            pd->dst.buf, pd->dst.stride, &sse);
   *var_y = var;
@@ -239,12 +240,19 @@ static void model_rd_for_sb_y(VP9_COMP *cpi, BLOCK_SIZE bsize,
       xd->mi[0].src_mi->mbmi.tx_size =
           MIN(max_txsize_lookup[bsize],
               tx_mode_to_biggest_tx_size[cpi->common.tx_mode]);
-    else
-      xd->mi[0].src_mi->mbmi.tx_size = TX_8X8;
-
+    else {
+      // Set 4x4 tx size for smaller blocks if variance is large.
+      if (var > var_thr &&
+          bsize <= BLOCK_16X16 &&
+          cpi->sf.partition_search_type == VAR_BASED_PARTITION)
+        xd->mi[0].src_mi->mbmi.tx_size = TX_4X4;
+      else
+        xd->mi[0].src_mi->mbmi.tx_size = TX_8X8;
+    }
     if (cpi->sf.partition_search_type == VAR_BASED_PARTITION) {
       if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
-          xd->mi[0].src_mi->mbmi.segment_id != CR_SEGMENT_ID_BASE)
+          xd->mi[0].src_mi->mbmi.segment_id != CR_SEGMENT_ID_BASE &&
+          xd->mi[0].src_mi->mbmi.tx_size > TX_8X8)
         xd->mi[0].src_mi->mbmi.tx_size = TX_8X8;
       else if (xd->mi[0].src_mi->mbmi.tx_size > TX_16X16)
         xd->mi[0].src_mi->mbmi.tx_size = TX_16X16;
