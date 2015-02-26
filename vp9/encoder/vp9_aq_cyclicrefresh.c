@@ -368,9 +368,9 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     cr->time_for_refresh = 0;
     // Set rate threshold to some multiple (set to 2 for now) of the target
     // rate (target is given by sb64_target_rate and scaled by 256).
-    cr->thresh_rate_sb = (rc->sb64_target_rate << 8) << 1;
+    cr->thresh_rate_sb = ((int64_t)(rc->sb64_target_rate) << 8) << 1;
     // Distortion threshold, quadratic in Q, scale factor to be adjusted.
-    cr->thresh_dist_sb = (int)(q * q) << 2;
+    cr->thresh_dist_sb = ((int64_t)(q * q)) << 2;
     cr->motion_thresh = 32;
     // Set up segmentation.
     // Clear down the segment map.
