@@ -57,7 +57,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
                         tran_low_t *dqcoeff, TX_SIZE tx_size,
                         const int16_t *dq,
 #if CONFIG_NEW_QUANT
-                        const int16_t *dq_off,
+                        const tran_low_t (*dq_val)[NUQ_KNOTES + 1],
 #endif  // CONFIG_NEW_QUANT
                         int ctx, const int16_t *scan, const int16_t *nb,
                         vp9_reader *r) {
@@ -79,7 +79,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
   int v, token;
   int16_t dqv = dq[0];
 #if CONFIG_NEW_QUANT
-  int16_t dqv_off = dq_off[0];
+  tran_low_t *dqv_val = dq_val[0];
 #endif  // CONFIG_NEW_QUANT
   const uint8_t *cat1_prob;
   const uint8_t *cat2_prob;
@@ -137,7 +137,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
       INCREMENT_COUNT(ZERO_TOKEN);
       dqv = dq[1];
 #if CONFIG_NEW_QUANT
-      dqv_off = dq_off[1];
+      dqv_val = dq_val[1];
 #endif  // CONFIG_NEW_QUANT
       token_cache[scan[c]] = 0;
       ++c;
@@ -201,10 +201,12 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
           break;
       }
     }
-    v = (val * dqv) >> dq_shift;
 #if CONFIG_NEW_QUANT
-    v += (dqv_off >> dq_shift);
+    v = vp9_dequant_abscoeff_nuq(v, dqv, dq_val) >> dq_shift;
+#else
+    v = (val * dqv) >> dq_shift;
 #endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_COEFFICIENT_RANGE_CHECKING
     dqcoeff[scan[c]] = check_range(vp9_read_bit(r) ? -v : v);
 #else
@@ -215,7 +217,7 @@ static int decode_coefs(VP9_COMMON *cm, const MACROBLOCKD *xd, PLANE_TYPE type,
     ctx = get_coef_context(nb, token_cache, c);
     dqv = dq[1];
 #if CONFIG_NEW_QUANT
-    dqv_off = dq_off[1];
+    dqv_val = dq_val[1];
 #endif  // CONFIG_NEW_QUANT
   }
 
@@ -233,7 +235,7 @@ int vp9_decode_block_tokens(VP9_COMMON *cm, MACROBLOCKD *xd,
                                BLOCK_OFFSET(pd->dqcoeff, block), tx_size,
                                pd->dequant,
 #if CONFIG_NEW_QUANT
-                               pd->dequant_off,
+                               pd->dequant_val_nuq,
 #endif
                                ctx, so->scan,
                                so->neighbors, r);
