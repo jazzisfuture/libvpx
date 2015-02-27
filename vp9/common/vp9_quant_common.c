@@ -12,6 +12,54 @@
 #include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_seg_common.h"
 
+#if CONFIG_NEW_QUANT
+static const uint8_t vp9_nuq_knotes[2][NUQ_KNOTES] = {
+  {83, 98, 110, 119, 125},
+  {68, 88, 104, 116, 124},
+};
+
+void vp9_get_cumbins_nuq(int q, int isac, tran_low_t *cumbins) {
+  const uint8_t *knotes = isac ? vp9_nuq_knotes[1] : vp9_nuq_knotes[0];
+  int16_t cumknotes[NUQ_KNOTES];
+  int i;
+  cumknotes[0] = knotes[0];
+  for (i = 1; i < NUQ_KNOTES; ++i)
+    cumknotes[i] = cumknotes[i - 1] + knotes[i];
+  for (i = 0; i < NUQ_KNOTES; ++i)
+    cumbins[i] = (cumknotes[i] * q + 64) >> 7;
+}
+
+void vp9_get_dequant_val_nuq(int q, int isac, tran_low_t *dq) {
+  const uint8_t *knotes = isac ? vp9_nuq_knotes[1] : vp9_nuq_knotes[0];
+  tran_low_t cumbins[NUQ_KNOTES];
+  tran_low_t doff;
+  int i;
+  vp9_get_cumbins_nuq(q, isac, cumbins);
+  dq[0] = 0;
+  for (i = 1; i < NUQ_KNOTES; ++i) {
+    const int16_t qstep = (knotes[i] * q + 64) >> 7;
+    doff = z_to_doff_int(quant_to_z(qstep, isac));
+    doff = (2 * doff * qstep + q) / (2 * q);
+    dq[i] = cumbins[i] + (((knotes[i] - doff * 2) * q + 128) >> 8);
+  }
+  doff = z_to_doff_int(quant_to_z(q, isac));
+  dq[NUQ_KNOTES] =
+      cumbins[NUQ_KNOTES - 1] + (((64 - doff) * q + 64) >> 7);
+}
+
+tran_low_t vp9_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq) {
+  if (v <= NUQ_KNOTES)
+    return dq[v];
+  else
+    return dq[NUQ_KNOTES] + (v - NUQ_KNOTES) * q;
+}
+
+tran_low_t vp9_dequant_coeff_nuq(int v, int q, const tran_low_t *dq) {
+  tran_low_t dqmag = vp9_dequant_abscoeff_nuq(abs(v), q, dq);
+  return (v < 0 ? -dqmag : dqmag);
+}
+#endif  // CONFIG_NEW_QUANT
+
 static const int16_t dc_qlookup[QINDEX_RANGE] = {
   4,       8,    8,    9,   10,   11,   12,   12,
   13,     14,   15,   16,   17,   18,   19,   19,

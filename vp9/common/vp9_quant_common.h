@@ -49,8 +49,8 @@ static INLINE int16_t vp9_round_factor_to_round(int16_t quant,
 // twice that of the other bins
 
 #define Q_ROUNDING_FACTOR_Q0 64
-#define Q_ROUNDING_FACTOR_DC 50
-#define Q_ROUNDING_FACTOR_AC 46
+#define Q_ROUNDING_FACTOR_DC 53
+#define Q_ROUNDING_FACTOR_AC 47
 
 // The functions below determine the adjustmemt factor for the dequantized
 // coefficient lower than the mid-point ofthe quantization bin.
@@ -83,15 +83,14 @@ static INLINE int16_t z_to_doff_int(double z) {
   int16_t doff_int = (int16_t)(doff * 128 + 0.5);
   if (doff_int > 64) doff_int = 64;
   else if (doff_int < 0) doff_int = 0;
-  // printf("z = %f, doff_int = %d\n", z, doff_int);
   return doff_int;
 }
 
 static INLINE int16_t dequant_off_adj_factor(int16_t quant, int isac) {
   static const int16_t qmax = 1024;
   static const int16_t qmin = 24;
-  static const int16_t dmax_dc = 26;
-  static const int16_t dmin_dc = 12;
+  static const int16_t dmax_dc = 22;
+  static const int16_t dmin_dc = 10;
   static const int16_t dmax_ac = 32;
   static const int16_t dmin_ac = 15;
   static const int16_t qdiff = qmax - qmin;
@@ -107,8 +106,7 @@ static INLINE int16_t dequant_off_adj_factor(int16_t quant, int isac) {
     else d = dmin_dc +
       ((dmax_dc - dmin_dc) * (quant - qmin) + qdiff / 2) / qdiff;
   }
-  if (d > 64) d = 64;
-  else if (d < 0) d = 0;
+  if (d < 0) d = 0;
   return d;
 }
 
@@ -148,6 +146,11 @@ static INLINE int16_t vp9_get_dequant_off(int16_t quant,
   return (((64 - dequant_off_adj) * quant - 128 * round) >> 7);
 }
 
+#define NUQ_KNOTES 5
+void vp9_get_cumbins_nuq(int q, int isac, tran_low_t *cumbins);
+void vp9_get_dequant_val_nuq(int q, int isac, tran_low_t *dq);
+tran_low_t vp9_dequant_abscoeff_nuq(int v, int q, const tran_low_t *dq);
+tran_low_t vp9_dequant_coeff_nuq(int v, int q, const tran_low_t *dq);
 #endif  // CONFIG_NEW_QUANT
 
 #ifdef __cplusplus
