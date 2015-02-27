@@ -192,7 +192,7 @@ static int combined_motion_search(VP9_COMP *cpi, MACROBLOCK *x,
                                  cond_cost_list(cpi, cost_list),
                                  x->nmvjointcost, x->mvcost,
                                  &dis, &x->pred_sse[ref], NULL, 0, 0);
-    x->pred_mv[ref] = tmp_mv->as_mv;
+//    x->pred_mv[ref] = tmp_mv->as_mv;
   }
 
   if (scaled_ref_frame) {
@@ -1009,6 +1009,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   pd->dst = orig_dst;
+
+//  mbmi->mode = NEWMV;
+//  mbmi->ref_frame[0] = LAST_FRAME;
+//  mbmi->mv[0].as_mv = x->pred_mv[LAST_FRAME];
 
   if (reuse_inter_pred && best_pred != NULL) {
     if (best_pred->data != orig_dst.buf && is_inter_mode(mbmi->mode)) {

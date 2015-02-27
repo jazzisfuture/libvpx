@@ -309,7 +309,7 @@ static void set_rt_speed_feature(VP9_COMP *cpi, SPEED_FEATURES *sf,
     sf->inter_mode_mask[BLOCK_64X64] = INTER_NEAREST_NEW_ZERO;
     sf->adaptive_rd_thresh = 2;
     // This feature is only enabled when partition search is disabled.
-    sf->reuse_inter_pred_sby = 1;
+    sf->reuse_inter_pred_sby = 0; // 1;
     sf->partition_search_breakout_rate_thr = 200;
     sf->coeff_prob_appx_step = 4;
     sf->use_fast_coef_updates = is_keyframe ? TWO_LOOP : ONE_LOOP_REDUCED;
