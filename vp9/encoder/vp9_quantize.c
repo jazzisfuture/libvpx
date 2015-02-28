@@ -40,6 +40,154 @@ void vp9_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
   *eob_ptr = eob + 1;
 }
 
+#if CONFIG_NEW_QUANT
+static INLINE int quantize_coeff_nuq(const tran_low_t coeffv,
+                                     const int16_t quant,
+                                     const int16_t dequant,
+                                     const tran_low_t *cumbins_ptr,
+                                     const tran_low_t *dequant_val,
+                                     tran_low_t *qcoeff_ptr,
+                                     tran_low_t *dqcoeff_ptr) {
+  const int coeff = coeffv;
+  const int coeff_sign = (coeff >> 31);
+  const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+  int i, q;
+  int tmp = clamp(abs_coeff, INT16_MIN, INT16_MAX);
+  for (i = 0; i < NUQ_KNOTES; i++) {
+    if (tmp < cumbins_ptr[i]) {
+      q = i;
+      break;
+    }
+  }
+  if (i == NUQ_KNOTES) {
+    q = NUQ_KNOTES +
+        ((((int64_t)tmp - cumbins_ptr[NUQ_KNOTES - 1]) * quant) >> 16);
+  }
+  *dqcoeff_ptr =
+      vp9_dequant_abscoeff_nuq(q, dequant, dequant_val);
+  *qcoeff_ptr  = (q ^ coeff_sign) - coeff_sign;
+  *dqcoeff_ptr = (*qcoeff_ptr < 0 ? -*dqcoeff_ptr : *dqcoeff_ptr;
+  return (q != 0);
+}
+
+static INLINE int quantize_coeff_bigtx_nuq(const tran_low_t coeffv,
+                                           const int16_t quant,
+                                           const int16_t dequant,
+                                           const tran_low_t *cumbins_ptr,
+                                           const tran_low_t *dequant_val,
+                                           tran_low_t *qcoeff_ptr,
+                                           tran_low_t *dqcoeff_ptr,
+                                           int logsizeby32) {
+  const int coeff = coeffv;
+  const int coeff_sign = (coeff >> 31);
+  const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+  int i, q;
+  int tmp = clamp(abs_coeff, INT16_MIN, INT16_MAX);
+  for (i = 0; i < NUQ_KNOTES; i++) {
+    if (tmp < (cumbins_ptr[i] >> (1 + logsizeby32))) {
+      q = i;
+      break;
+    }
+  }
+  if (i == NUQ_KNOTES) {
+    q = NUQ_KNOTES +
+        ((((int64_t)tmp - (cumbins_ptr[NUQ_KNOTES - 1] >>
+                           (1 + logsizeby32))) * quant) >> 16);
+  }
+  *dqcoeff_ptr =
+      vp9_dequant_abscoeff_nuq(q, dequant, dequant_val) >> (1 + logsizeby32);
+  *qcoeff_ptr  = (q ^ coeff_sign) - coeff_sign;
+  *dqcoeff_ptr = (*qcoeff_ptr < 0 ? -*dqcoeff_ptr : *dqcoeff_ptr;
+  return (q != 0);
+}
+
+#if CONFIG_VP9_HIGHBITDEPTH
+static INLINE int highbd_quantize_coeff_nuq(const tran_low_t coeffv,
+                                            const int16_t quant,
+                                            const int16_t dequant,
+                                            const tran_low_t *cumbins_ptr,
+                                            const tran_low_t *dequant_val,
+                                            tran_low_t *qcoeff_ptr,
+                                            tran_low_t *dqcoeff_ptr) {
+  const int coeff = coeffv;
+  const int coeff_sign = (coeff >> 31);
+  const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+  int i, q;
+  int64_t tmp = clamp(abs_coeff, INT32_MIN, INT32_MAX);
+  for (i = 0; i < NUQ_KNOTES; i++) {
+    if (tmp < cumbins_ptr[i]) {
+      q = i;
+      break;
+    }
+  }
+  if (i == NUQ_KNOTES) {
+    q = NUQ_KNOTES +
+        (((tmp - cumbins_ptr[NUQ_KNOTES - 1]) * quant) >> 16);
+  }
+  *dqcoeff_ptr =
+      vp9_dequant_abscoeff_nuq(q, dequant, dequant_val);
+  *qcoeff_ptr  = (q ^ coeff_sign) - coeff_sign;
+  *dqcoeff_ptr = (*qcoeff_ptr < 0 ? -*dqcoeff_ptr : *dqcoeff_ptr;
+  return (q != 0);
+}
+
+static INLINE int highbd_quantize_coeff_bigtx_nuq(const tran_low_t coeffv,
+                                                  const int16_t quant,
+                                                  const int16_t dequant,
+                                                  const tran_low_t *cumbins_ptr,
+                                                  const tran_low_t *dequant_val,
+                                                  tran_low_t *qcoeff_ptr,
+                                                  tran_low_t *dqcoeff_ptr,
+                                                  int logsizeby32) {
+  const int coeff = coeffv;
+  const int coeff_sign = (coeff >> 31);
+  const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
+  int i, q;
+  int64_t tmp = clamp(abs_coeff, INT32_MIN, INT32_MAX);
+  for (i = 0; i < NUQ_KNOTES; i++) {
+    if (tmp < (cumbins_ptr[i] >> (1 + logsizeby32))) {
+      q = i;
+      break;
+    }
+  }
+  if (i == NUQ_KNOTES) {
+    q = NUQ_KNOTES +
+        (((tmp - (cumbins_ptr[NUQ_KNOTES - 1] >>
+                  (1 + logsizeby32))) * quant) >> 16);
+  }
+  *dqcoeff_ptr =
+      vp9_dequant_abscoeff_nuq(q, dequant, dequant_val) >> (1 + logsizeby32);
+  *qcoeff_ptr  = (q ^ coeff_sign) - coeff_sign;
+  *dqcoeff_ptr = (*qcoeff_ptr < 0 ? -*dqcoeff_ptr : *dqcoeff_ptr;
+  return (q != 0);
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+void vp9_quantize_dc_nuq(const tran_low_t *coeff_ptr,
+                         int skip_block,
+                         const int16_t quant,
+                         const int16_t dequant,
+                         const tran_low_t *cumbins_ptr,
+                         const tran_low_t *dequant_val,
+                         tran_low_t *qcoeff_ptr,
+                         tran_low_t *dqcoeff_ptr,
+                         uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (quantize_coeff_nuq(coeff_ptr[rc],
+                           quant,
+                           dequant,
+                           cumbins_ptr,
+                           dequant_val,
+                           qcoeff_ptr,
+                           dqcoeff_ptr))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
                             const int16_t *round_ptr, const int16_t quant,
@@ -63,7 +211,33 @@ void vp9_highbd_quantize_dc(const tran_low_t *coeff_ptr, int skip_block,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_nuq(const tran_low_t *coeff_ptr,
+                                int skip_block,
+                                const int16_t quant,
+                                const int16_t dequant,
+                                const tran_low_t *cumbins_ptr,
+                                const tran_low_t *dequant_val,
+                                tran_low_t *qcoeff_ptr,
+                                tran_low_t *dqcoeff_ptr,
+                                uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (highbd_quantize_coeff_nuq(coeff_ptr[rc],
+                                  quant,
+                                  dequant,
+                                  cumbins_ptr,
+                                  dequant_val,
+                                  qcoeff_ptr,
+                                  dqcoeff_ptr))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 static INLINE void quantize_dc_bigtx(const tran_low_t *coeff_ptr,
                                      int skip_block,
@@ -81,7 +255,6 @@ static INLINE void quantize_dc_bigtx(const tran_low_t *coeff_ptr,
   int tmp, eob = -1;
 
   if (!skip_block) {
-
     tmp = clamp(abs_coeff + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
     tmp = (tmp * quant) >> (15 - logsizeby32);
     qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
@@ -100,6 +273,33 @@ void vp9_quantize_dc_32x32(const tran_low_t *coeff_ptr, int skip_block,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_quantize_dc_32x32_nuq(const tran_low_t *coeff_ptr,
+                               int skip_block,
+                               const int16_t quant,
+                               const int16_t dequant,
+                               const tran_low_t *cumbins_ptr,
+                               const tran_low_t *dequant_val,
+                               tran_low_t *qcoeff_ptr,
+                               tran_low_t *dqcoeff_ptr,
+                               uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                 quant,
+                                 dequant,
+                                 cumbins_ptr,
+                                 dequant_val,
+                                 qcoeff_ptr,
+                                 dqcoeff_ptr,
+                                 0))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_quantize_dc_64x64(const tran_low_t *coeff_ptr, int skip_block,
                            const int16_t *round_ptr, const int16_t quant,
@@ -108,6 +308,33 @@ void vp9_quantize_dc_64x64(const tran_low_t *coeff_ptr, int skip_block,
   quantize_dc_bigtx(coeff_ptr, skip_block, round_ptr, quant,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_dc_64x64_nuq(const tran_low_t *coeff_ptr,
+                               int skip_block,
+                               const int16_t quant,
+                               const int16_t dequant,
+                               const tran_low_t *cumbins_ptr,
+                               const tran_low_t *dequant_val,
+                               tran_low_t *qcoeff_ptr,
+                               tran_low_t *dqcoeff_ptr,
+                               uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                 quant,
+                                 dequant,
+                                 cumbins_ptr,
+                                 dequant_val,
+                                 qcoeff_ptr,
+                                 dqcoeff_ptr,
+                                 1))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -121,7 +348,6 @@ static INLINE void highbd_quantize_dc_bigtx(const tran_low_t *coeff_ptr,
                                             uint16_t *eob_ptr,
                                             int logsizeby32) {
   int eob = -1;
-
   if (!skip_block) {
     const int rc = 0;
     const int coeff = coeff_ptr[rc];
@@ -151,6 +377,33 @@ void vp9_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_32x32_nuq(const tran_low_t *coeff_ptr,
+                                      int skip_block,
+                                      const int16_t quant,
+                                      const int16_t dequant,
+                                      const tran_low_t *cumbins_ptr,
+                                      const tran_low_t *dequant_val,
+                                      tran_low_t *qcoeff_ptr,
+                                      tran_low_t *dqcoeff_ptr,
+                                      uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (highbd_quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                        quant,
+                                        dequant,
+                                        cumbins_ptr,
+                                        dequant_val,
+                                        qcoeff_ptr,
+                                        dqcoeff_ptr,
+                                        0))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_highbd_quantize_dc_64x64(const tran_low_t *coeff_ptr,
                                   int skip_block,
@@ -163,6 +416,33 @@ void vp9_highbd_quantize_dc_64x64(const tran_low_t *coeff_ptr,
   highbd_quantize_dc_bigtx(coeff_ptr, skip_block, round_ptr, quant,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr, eob_ptr, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_dc_64x64_nuq(const tran_low_t *coeff_ptr,
+                                      int skip_block,
+                                      const int16_t quant,
+                                      const int16_t dequant,
+                                      const tran_low_t *cumbins_ptr,
+                                      const tran_low_t *dequant_val,
+                                      tran_low_t *qcoeff_ptr,
+                                      tran_low_t *dqcoeff_ptr,
+                                      uint16_t *eob_ptr) {
+  int eob = -1;
+  if (!skip_block) {
+    const int rc = 0;
+    if (highbd_quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                        quant,
+                                        dequant,
+                                        cumbins_ptr,
+                                        dequant_val,
+                                        qcoeff_ptr,
+                                        dqcoeff_ptr,
+                                        1))
+      eob = 0;
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -205,6 +485,40 @@ void vp9_quantize_fp_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   }
   *eob_ptr = eob + 1;
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_nuq_c(const tran_low_t *coeff_ptr,
+                        intptr_t n_coeffs,
+                        int skip_block,
+                        const int16_t *quant_ptr,
+                        const int16_t *dequant_ptr,
+                        const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                        const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                        tran_low_t *qcoeff_ptr,
+                        tran_low_t *dqcoeff_ptr,
+                        uint16_t *eob_ptr,
+                        const int16_t *scan,
+                        const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (quantize_coeff_nuq(coeff_ptr[rc],
+                             quant_ptr[rc != 0],
+                             dequant_ptr[rc != 0],
+                             cumbins_ptr[rc != 0],
+                             dequant_val[rc != 0],
+                             &qcoeff_ptr[rc],
+                             &dqcoeff_ptr[rc]))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
@@ -253,7 +567,41 @@ void vp9_highbd_quantize_fp_c(const tran_low_t *coeff_ptr,
   }
   *eob_ptr = eob + 1;
 }
-#endif
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_nuq_c(const tran_low_t *coeff_ptr,
+                               intptr_t n_coeffs,
+                               int skip_block,
+                               const int16_t *quant_ptr,
+                               const int16_t *dequant_ptr,
+                               const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                               const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                               tran_low_t *qcoeff_ptr,
+                               tran_low_t *dqcoeff_ptr,
+                               uint16_t *eob_ptr,
+                               const int16_t *scan,
+                               const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (highbd_quantize_coeff_nuq(coeff_ptr[rc],
+                                    quant_ptr[rc != 0],
+                                    dequant_ptr[rc != 0],
+                                    cumbins_ptr[rc != 0],
+                                    dequant_val[rc != 0],
+                                    &qcoeff_ptr[rc],
+                                    &dqcoeff_ptr[rc]))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 // TODO(jingning) Refactor this file and combine functions with similar
 // operations.
@@ -322,6 +670,41 @@ void vp9_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
                     eob_ptr, scan, iscan, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_quantize_32x32_nuq_c(const tran_low_t *coeff_ptr,
+                              intptr_t n_coeffs,
+                              int skip_block,
+                              const int16_t *quant_ptr,
+                              const int16_t *dequant_ptr,
+                              const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                              const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                              tran_low_t *qcoeff_ptr,
+                              tran_low_t *dqcoeff_ptr,
+                              uint16_t *eob_ptr,
+                              const int16_t *scan,
+                              const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                   quant_ptr[rc != 0],
+                                   dequant_ptr[rc != 0],
+                                   cumbins_ptr[rc != 0],
+                                   dequant_val[rc != 0],
+                                   &qcoeff_ptr[rc],
+                                   &dqcoeff_ptr[rc],
+                                   0))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                              intptr_t n_coeffs,
@@ -341,6 +724,41 @@ void vp9_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                     qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
                     eob_ptr, scan, iscan, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_quantize_64x64_nuq_c(const tran_low_t *coeff_ptr,
+                              intptr_t n_coeffs,
+                              int skip_block,
+                              const int16_t *quant_ptr,
+                              const int16_t *dequant_ptr,
+                              const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                              const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                              tran_low_t *qcoeff_ptr,
+                              tran_low_t *dqcoeff_ptr,
+                              uint16_t *eob_ptr,
+                              const int16_t *scan,
+                              const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                   quant_ptr[rc != 0],
+                                   dequant_ptr[rc != 0],
+                                   cumbins_ptr[rc != 0],
+                                   dequant_val[rc != 0],
+                                   &qcoeff_ptr[rc],
+                                   &dqcoeff_ptr[rc],
+                                   1))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -382,7 +800,6 @@ static INLINE void highbd_quantize_fp_bigtx(const tran_low_t *coeff_ptr,
         dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] /
                           (2 << logsizeby32);
       }
-
       if (tmp)
         eob = i;
     }
@@ -409,6 +826,41 @@ void vp9_highbd_quantize_fp_32x32_c(const tran_low_t *coeff_ptr,
                            eob_ptr, scan, iscan, 0);
 }
 
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_32x32_nuq_c(const tran_low_t *coeff_ptr,
+                                     intptr_t n_coeffs,
+                                     int skip_block,
+                                     const int16_t *quant_ptr,
+                                     const int16_t *dequant_ptr,
+                                     const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                                     const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                                     tran_low_t *qcoeff_ptr,
+                                     tran_low_t *dqcoeff_ptr,
+                                     uint16_t *eob_ptr,
+                                     const int16_t *scan,
+                                     const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (highbd_quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                          quant_ptr[rc != 0],
+                                          dequant_ptr[rc != 0],
+                                          cumbins_ptr[rc != 0],
+                                          dequant_val[rc != 0],
+                                          &qcoeff_ptr[rc],
+                                          &dqcoeff_ptr[rc],
+                                          0))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
+
 #if CONFIG_TX64X64
 void vp9_highbd_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                                     intptr_t n_coeffs,
@@ -428,6 +880,41 @@ void vp9_highbd_quantize_fp_64x64_c(const tran_low_t *coeff_ptr,
                            qcoeff_ptr, dqcoeff_ptr, dequant_ptr,
                            eob_ptr, scan, iscan, 1);
 }
+
+#if CONFIG_NEW_QUANT
+void vp9_highbd_quantize_64x64_nuq_c(const tran_low_t *coeff_ptr,
+                                     intptr_t n_coeffs,
+                                     int skip_block,
+                                     const int16_t *quant_ptr,
+                                     const int16_t *dequant_ptr,
+                                     const tran_low_t (*cumbins_ptr)[NUQ_KNOTES],
+                                     const tran_low_t (*dequant_val)[NUQ_KNOTES + 1],
+                                     tran_low_t *qcoeff_ptr,
+                                     tran_low_t *dqcoeff_ptr,
+                                     uint16_t *eob_ptr,
+                                     const int16_t *scan,
+                                     const int16_t *iscan) {
+  int eob = -1;
+  vpx_memset(qcoeff_ptr, 0, n_coeffs * sizeof(*qcoeff_ptr));
+  vpx_memset(dqcoeff_ptr, 0, n_coeffs * sizeof(*dqcoeff_ptr));
+  if (!skip_block) {
+    int i;
+    for (i = 0; i < n_coeffs; i++) {
+      const int rc = scan[i];
+      if (highbd_quantize_coeff_bigtx_nuq(coeff_ptr[rc],
+                                          quant_ptr[rc != 0],
+                                          dequant_ptr[rc != 0],
+                                          cumbins_ptr[rc != 0],
+                                          dequant_val[rc != 0],
+                                          &qcoeff_ptr[rc],
+                                          &dqcoeff_ptr[rc],
+                                          1))
+        eob = 0;
+    }
+  }
+  *eob_ptr = eob + 1;
+}
+#endif  // CONFIG_NEW_QUANT
 #endif  // CONFIG_TX64X64
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
@@ -879,9 +1366,14 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
                      : vp9_ac_quant(q, 0, cm->bit_depth);
       invert_quant(&quants->y_quant[q][i], &quants->y_quant_shift[q][i], quant);
       quants->y_quant_fp[q][i] = (1 << 16) / quant;
-      quants->y_round_fp[q][i] = (qrounding_factor_fp * quant) >> 7;
+      quants->y_round_fp[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_fp);
+#if CONFIG_NEW_QUANT
+      quants->y_quant_nuq[q][i] = (1 << 16) / quant;
+#endif
       quants->y_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
-      quants->y_round[q][i] = (qrounding_factor * quant) >> 7;
+      quants->y_round[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor);
       cm->y_dequant[q][i] = quant;
 
       // uv
@@ -890,10 +1382,21 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       invert_quant(&quants->uv_quant[q][i],
                    &quants->uv_quant_shift[q][i], quant);
       quants->uv_quant_fp[q][i] = (1 << 16) / quant;
-      quants->uv_round_fp[q][i] = (qrounding_factor_fp * quant) >> 7;
+      quants->uv_round_fp[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor_fp);
+#if CONFIG_NEW_QUANT
+      quants->uv_quant_nuq[q][i] = (1 << 16) / quant;
+#endif
       quants->uv_zbin[q][i] = ROUND_POWER_OF_TWO(qzbin_factor * quant, 7);
-      quants->uv_round[q][i] = (qrounding_factor * quant) >> 7;
+      quants->uv_round[q][i] =
+          vp9_round_factor_to_round(quant, qrounding_factor);
       cm->uv_dequant[q][i] = quant;
+#if CONFIG_NEW_QUANT
+      vp9_get_dequant_val_nuq(quant, i, cm->y_dequant_val_nuq[q][i]);
+      vp9_get_dequant_val_nuq(quant, i, cm->uv_dequant_val_nuq[q][i]);
+      vp9_get_cumbins_nuq(quant, i, quants->y_cumbins_nuq[q][i]);
+      vp9_get_cumbins_nuq(quant, i, quants->uv_cumbins_nuq[q][i]);
+#endif  // CONFIG_NEW_QUANT
     }
 
     for (i = 2; i < 8; i++) {
@@ -912,6 +1415,18 @@ void vp9_init_quantizer(VP9_COMP *cpi) {
       quants->uv_zbin[q][i] = quants->uv_zbin[q][1];
       quants->uv_round[q][i] = quants->uv_round[q][1];
       cm->uv_dequant[q][i] = cm->uv_dequant[q][1];
+#if CONFIG_NEW_QUANT
+      quants->y_quant_nuq[q][i] = quants->y_quant_nuq[q][1];
+      quants->uv_quant_nuq[q][i] = quants->uv_quant_nuq[q][1];
+      memcpy(cm->y_dequant_val_nuq[q][i], cm->y_dequant_val_nuq[q][1],
+             (NUQ_KNOTES + 1) * sizeof(*cm->y_dequant_val_nuq[q][i]));
+      memcpy(cm->uv_dequant_val_nuq[q][i], cm->uv_dequant_val_nuq[q][1],
+             (NUQ_KNOTES + 1) * sizeof(*cm->uv_dequant_val_nuq[q][i]));
+      memcpy(quants->y_cumbins_nuq[q][i], quants->y_cumbins_nuq[q][1],
+             NUQ_KNOTES * sizeof(*quants->y_cumbins_nuq[q][i]));
+      memcpy(quants->uv_cumbins_nuq[q][i], quants->uv_cumbins_nuq[q][1],
+             NUQ_KNOTES * sizeof(*quants->uv_cumbins_nuq[q][i]));
+#endif  // CONFIG_NEW_QUANT
     }
   }
 }
@@ -933,6 +1448,11 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
   x->plane[0].zbin = quants->y_zbin[qindex];
   x->plane[0].round = quants->y_round[qindex];
   xd->plane[0].dequant = cm->y_dequant[qindex];
+#if CONFIG_NEW_QUANT
+  x->plane[0].quant_nuq = quants->y_quant_nuq[qindex];
+  x->plane[0].cumbins_nuq = quants->y_cumbins_nuq[qindex];
+  xd->plane[0].dequant_val_nuq = cm->y_dequant_val_nuq[qindex];
+#endif
 
   x->plane[0].quant_thred[0] = x->plane[0].zbin[0] * x->plane[0].zbin[0];
   x->plane[0].quant_thred[1] = x->plane[0].zbin[1] * x->plane[0].zbin[1];
@@ -946,6 +1466,11 @@ void vp9_init_plane_quantizers(VP9_COMP *cpi, MACROBLOCK *x) {
     x->plane[i].zbin = quants->uv_zbin[qindex];
     x->plane[i].round = quants->uv_round[qindex];
     xd->plane[i].dequant = cm->uv_dequant[qindex];
+#if CONFIG_NEW_QUANT
+    x->plane[i].quant_nuq = quants->uv_quant_nuq[qindex];
+    x->plane[i].cumbins_nuq = quants->uv_cumbins_nuq[qindex];
+    xd->plane[i].dequant_val_nuq = cm->uv_dequant_val_nuq[qindex];
+#endif
 
     x->plane[i].quant_thred[0] = x->plane[i].zbin[0] * x->plane[i].zbin[0];
     x->plane[i].quant_thred[1] = x->plane[i].zbin[1] * x->plane[i].zbin[1];

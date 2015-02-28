@@ -65,9 +65,17 @@ typedef struct {
 
 typedef struct VP9Common {
   struct vpx_internal_error_info  error;
-
   DECLARE_ALIGNED(16, int16_t, y_dequant[QINDEX_RANGE][8]);
   DECLARE_ALIGNED(16, int16_t, uv_dequant[QINDEX_RANGE][8]);
+#if CONFIG_NEW_QUANT
+  DECLARE_ALIGNED(16, int16_t, y_dequant_off[QINDEX_RANGE][8]);
+  DECLARE_ALIGNED(16, int16_t, uv_dequant_off[QINDEX_RANGE][8]);
+
+  DECLARE_ALIGNED(16, tran_low_t,
+                  y_dequant_val_nuq[QINDEX_RANGE][8][NUQ_KNOTES + 1]);
+  DECLARE_ALIGNED(16, tran_low_t,
+                  uv_dequant_val_nuq[QINDEX_RANGE][8][NUQ_KNOTES + 1]);
+#endif  // CONFIG_NEW_QUANT
 
   COLOR_SPACE color_space;
 
