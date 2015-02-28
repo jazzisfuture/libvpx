@@ -20,6 +20,7 @@
 #include "vp9/common/vp9_common_data.h"
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_mv.h"
+#include "vp9/common/vp9_quant_common.h"
 #include "vp9/common/vp9_scale.h"
 
 #ifdef __cplusplus
@@ -290,6 +291,9 @@ struct macroblockd_plane {
   struct buf_2d dst;
   struct buf_2d pre[2];
   const int16_t *dequant;
+#if CONFIG_NEW_QUANT
+  const int16_t (*dequant_val_nuq)[NUQ_KNOTES + 1];
+#endif
   ENTROPY_CONTEXT *above_context;
   ENTROPY_CONTEXT *left_context;
 #if CONFIG_PALETTE
