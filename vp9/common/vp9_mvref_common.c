@@ -70,7 +70,7 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   }
 
   // Synchronize here for frame parallel decode if sync function is provided.
-  if (sync != NULL) {
+  if (cm->use_prev_frame_mvs && sync != NULL) {
     sync(data, mi_row);
   }
 
