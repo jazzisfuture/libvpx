@@ -38,8 +38,7 @@ void vp9_frameworker_unlock_stats(VP9Worker *const worker) {
 void vp9_frameworker_signal_stats(VP9Worker *const worker) {
 #if CONFIG_MULTITHREAD
   FrameWorkerData *const worker_data = worker->data1;
-  // TODO(hkuang): Investigate using broadcast or signal.
-  pthread_cond_signal(&worker_data->stats_cond);
+  pthread_cond_broadcast(&worker_data->stats_cond);
 #else
   (void)worker;
 #endif
