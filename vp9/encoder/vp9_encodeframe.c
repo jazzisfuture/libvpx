@@ -666,6 +666,13 @@ static void motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
 }
 #endif
 
+extern int mv_refs_rt(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+  const TileInfo *const tile,
+  MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+  int_mv *mv_ref_list,
+  int mi_row, int mi_col);
+
+
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for downs-sampled inputs.
 static void choose_partitioning(VP9_COMP *cpi,
@@ -718,10 +725,15 @@ static void choose_partitioning(VP9_COMP *cpi,
     mbmi->mv[0].as_int = 0;
     mbmi->interp_filter = BILINEAR;
 
+    if (mv_refs_rt(cm, xd, tile, xd->mi[0].src_mi, LAST_FRAME,
+                   mbmi->ref_mvs[LAST_FRAME], mi_row, mi_col)) {
+      mbmi->mv[0] = mbmi->ref_mvs[LAST_FRAME][0];
+      x->pred_mv[LAST_FRAME] = mbmi->mv[0].as_mv;
+    } else {
 #if GLOBAL_MOTION
-    motion_estimation(cpi, x, BLOCK_64X64);
+      motion_estimation(cpi, x, BLOCK_64X64);
 #endif
-
+    }
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     for (i = 1; i <= 2; ++i) {

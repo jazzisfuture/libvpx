@@ -34,7 +34,7 @@ typedef struct {
   int in_use;
 } PRED_BUFFER;
 
-static int mv_refs_rt(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+int mv_refs_rt(const VP9_COMMON *cm, const MACROBLOCKD *xd,
                       const TileInfo *const tile,
                       MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
                       int_mv *mv_ref_list,
