@@ -69,13 +69,13 @@ static void find_mv_refs_idx(const VP9_COMMON *cm, const MACROBLOCKD *xd,
     }
   }
 
-  // Synchronize here for frame parallel decode if sync function is provided.
-  if (sync != NULL) {
-    sync(data, mi_row);
-  }
-
   // Check the last frame's mode and mv info.
   if (cm->use_prev_frame_mvs) {
+    // Synchronize here for frame parallel decode if sync function is provided.
+    if (cm->frame_parallel_decode && sync != NULL) {
+      sync(data, mi_row);
+    }
+
     if (prev_frame_mvs->ref_frame[0] == ref_frame) {
       ADD_MV_REF_LIST(prev_frame_mvs->mv[0], refmv_count, mv_ref_list, Done);
     } else if (prev_frame_mvs->ref_frame[1] == ref_frame) {
