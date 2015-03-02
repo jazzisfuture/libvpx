@@ -688,7 +688,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   vp9_denoiser_reset_frame_stats(ctx);
 #endif
 
-  for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
+  for (ref_frame = LAST_FRAME + x->skip_last; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
 
     x->pred_mv_sad[ref_frame] = INT_MAX;
@@ -723,7 +723,7 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
     }
   }
 
-  for (ref_frame = LAST_FRAME; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
+  for (ref_frame = LAST_FRAME + x->skip_last; ref_frame <= GOLDEN_FRAME; ++ref_frame) {
     PREDICTION_MODE this_mode;
     int i = (ref_frame == LAST_FRAME) ? GOLDEN_FRAME : LAST_FRAME;
 

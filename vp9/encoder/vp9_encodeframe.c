@@ -596,7 +596,8 @@ static const MV search_pos[9] = {
 };
 
 static unsigned int motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
-                                      BLOCK_SIZE bsize) {
+                                      BLOCK_SIZE bsize, int extra_mv_count,
+                                      int_mv *extra_mvs) {
   MACROBLOCKD *xd = &x->e_mbd;
   DECLARE_ALIGNED(16, int16_t, hbuf[128]);
   DECLARE_ALIGNED(16, int16_t, vbuf[128]);
@@ -662,11 +663,58 @@ static unsigned int motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
   }
   tmp_mv->row *= 8;
   tmp_mv->col *= 8;
-  x->pred_mv[LAST_FRAME] = *tmp_mv;
 
+  /*
+  for (idx = 0; idx < extra_mv_count; ++idx) {
+    int this_sad;
+    this_mv = extra_mvs[idx].as_mv;
+    if (abs(this_mv.row) < 256 && abs(this_mv.col) < 256)
+      continue;
+    this_mv.row = (this_mv.row >= 0) ? (this_mv.row + 4) / 8 : (this_mv.row - 4) / 8;
+    this_mv.col = (this_mv.col >= 0) ? (this_mv.col + 4) / 8 : (this_mv.col - 4) / 8;
+    src_buf = x->plane[0].src.buf;
+    ref_buf = xd->plane[0].pre[0].buf + this_mv.row * ref_stride +
+        this_mv.col;
+
+    this_sad = cpi->fn_ptr[bsize].sdf(src_buf, src_stride,
+      ref_buf, ref_stride);
+    if (this_sad < best_sad) {
+      best_sad = this_sad;
+      *tmp_mv = extra_mvs[idx].as_mv;
+    }
+  }
+  */
+  x->pred_mv[LAST_FRAME] = *tmp_mv;
   return best_sad;
 }
 #endif
+
+static int find_2_mv_refs(const VP9_COMMON *cm, const MACROBLOCKD *xd,
+                          const TileInfo *const tile,
+                          MODE_INFO *mi, MV_REFERENCE_FRAME ref_frame,
+                          int_mv *mv_ref_list, int mi_row, int mi_col){
+  const POSITION *const mv_ref_search = mv_ref_blocks[mi->mbmi.sb_type];
+  int i, refmv_count = 0;
+  // The nearest 2 blocks are treated differently
+  // if the size < 8x8 we get the mv from the bmi substructure,
+  // and we also need to keep a mode count.
+  for (i = 0; i < 2; ++i) {
+    const POSITION *const mv_ref = &mv_ref_search[i];
+    if (is_inside(tile, mi_col, mi_row, cm->mi_rows, mv_ref)) {
+      const MODE_INFO *const candidate_mi =
+          xd->mi[mv_ref->col + mv_ref->row * xd->mi_stride].src_mi;
+      const MB_MODE_INFO *const candidate = &candidate_mi->mbmi;
+      if (candidate->ref_frame[0] == ref_frame)
+        ADD_MV_REF_LIST(get_sub_block_mv(candidate_mi, 0, mv_ref->col, -1),
+                        refmv_count, mv_ref_list, Found);
+    }
+  }
+
+Found:
+  for (i = 0; i < refmv_count; ++i)
+    clamp_mv_ref(&mv_ref_list[i].as_mv, xd);
+  return refmv_count;
+}
 
 // This function chooses partitioning based on the variance between source and
 // reconstructed last, where variance is computed for down-sampled inputs.
@@ -714,7 +762,9 @@ static void choose_partitioning(VP9_COMP *cpi,
 #if GLOBAL_MOTION
     unsigned int y_sad;
     BLOCK_SIZE bsize;
+    int extra_mvs;
 #endif
+
     const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, LAST_FRAME);
     assert(yv12 != NULL);
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
@@ -734,10 +784,41 @@ static void choose_partitioning(VP9_COMP *cpi,
       bsize = BLOCK_64X32;
     else
       bsize = BLOCK_32X32;
+    /*
+    extra_mvs = find_2_mv_refs(cm, xd, tile, xd->mi[0].src_mi, LAST_FRAME,
+        mbmi->ref_mvs[LAST_FRAME], mi_row, mi_col);
+        */
+    y_sad = motion_estimation(cpi, x, bsize, extra_mvs,
+      mbmi->ref_mvs[LAST_FRAME]);
 
-    y_sad = motion_estimation(cpi, x, bsize);
+    x->skip_last = 0;
+    // try golden (0,0) to see if it works better.
+    if (1) {
+      const YV12_BUFFER_CONFIG *yv12_g = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
+      unsigned int y_sad_g;
+      if (yv12_g) {
+        vp9_setup_pre_planes(xd, 0, yv12_g, mi_row, mi_col,
+          &cm->frame_refs[GOLDEN_FRAME - 1].sf);
+        y_sad_g = cpi->fn_ptr[bsize].sdf(x->plane[0].src.buf,
+          x->plane[0].src.stride, xd->plane[0].pre[0].buf,
+          xd->plane[0].pre[0].stride);
+        if (y_sad_g * 2 < y_sad) {
+          mbmi->ref_frame[0] = GOLDEN_FRAME;
+          mbmi->ref_frame[1] = NONE;
+          mbmi->sb_type = BLOCK_64X64;
+          mbmi->mv[0].as_int = 0;
+          x->pred_mv[GOLDEN_FRAME] = mbmi->mv[0].as_mv;
+          y_sad = y_sad_g;
+          if (y_sad_g < 2048)
+            x->skip_last = 1;
+        } else {
+          vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
+            &cm->frame_refs[LAST_FRAME - 1].sf);
+        }
+      }
+    }
 #endif
-
+    
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
 
     for (i = 1; i <= 2; ++i) {
