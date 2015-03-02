@@ -710,6 +710,9 @@ static void choose_partitioning(VP9_COMP *cpi,
   if (!is_key_frame) {
     MB_MODE_INFO *mbmi = &xd->mi[0].src_mi->mbmi;
     unsigned int var = 0, sse;
+#if GLOBAL_MOTION
+    BLOCK_SIZE bsize;
+#endif
     vp9_setup_pre_planes(xd, 0, yv12, mi_row, mi_col,
         &cm->frame_refs[LAST_FRAME - 1].sf);
     mbmi->ref_frame[0] = LAST_FRAME;
@@ -719,7 +722,16 @@ static void choose_partitioning(VP9_COMP *cpi,
     mbmi->interp_filter = BILINEAR;
 
 #if GLOBAL_MOTION
-    motion_estimation(cpi, x, BLOCK_64X64);
+    if (mi_row + 4 < cm->mi_rows && mi_col + 4 < cm->mi_cols)
+      bsize = BLOCK_64X64;
+    else if (mi_row + 4 < cm->mi_rows && mi_col + 4 >= cm->mi_cols)
+      bsize = BLOCK_32X64;
+    else if (mi_row + 4 >= cm->mi_rows && mi_col + 4 < cm->mi_cols)
+      bsize = BLOCK_64X32;
+    else
+      bsize = BLOCK_32X32;
+
+    motion_estimation(cpi, x, bsize);
 #endif
 
     vp9_build_inter_predictors_sb(xd, mi_row, mi_col, BLOCK_64X64);
