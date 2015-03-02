@@ -472,7 +472,8 @@ static INLINE int cost_coeffs(MACROBLOCK *x,
   return cost;
 }
 
-#define right_shift_signed(x, s) ((s) < 0 ? (x) << (-(s)) : (x) >> (s))
+#define right_shift_signed(x, s) \
+    ((s) < 0 ? ((x) << (-(s))) + (1 << (-(s) - 1)) : (x) >> (s))
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static void dist_block(int plane, int block, TX_SIZE tx_size,
