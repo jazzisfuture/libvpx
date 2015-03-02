@@ -491,9 +491,12 @@ void vp9_denoiser_free(VP9_DENOISER *denoiser) {
       vp9_free_frame_buffer(&denoiser->running_avg_y[i]);
     }
   }
+  /*
   if (&denoiser->mc_running_avg_y != NULL) {
     vp9_free_frame_buffer(&denoiser->mc_running_avg_y);
   }
+  */
+  vp9_free_frame_buffer(&denoiser->mc_running_avg_y);
 }
 
 #ifdef OUTPUT_YUV_DENOISED
