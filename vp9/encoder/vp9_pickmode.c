@@ -762,8 +762,23 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
       mode_rd_thresh = best_mode_skip_txfm ? rd_threshes[mode_index] << 1 :
                                              rd_threshes[mode_index];
       if (rd_less_than_thresh(best_rdc.rdcost, mode_rd_thresh,
-                              rd_thresh_freq_fact[mode_index]))
-        continue;
+                              rd_thresh_freq_fact[mode_index])) {
+        if (this_mode == NEWMV && ref_frame == LAST_FRAME && 0) {
+          MV tmp_mv;
+          if (bsize >= BLOCK_8X8 && cm->frame_type == INTER_FRAME) {
+            motion_estimation(cpi, x, bsize);
+            frame_mv[NEWMV][ref_frame].as_mv = x->pred_mv[LAST_FRAME];
+            tmp_mv.row = frame_mv[NEWMV][ref_frame].as_mv.row;
+            tmp_mv.col = frame_mv[NEWMV][ref_frame].as_mv.col;
+            rate_mv = vp9_mv_bit_cost(&tmp_mv,
+                                      &mbmi->ref_mvs[ref_frame][0].as_mv,
+                                      x->nmvjointcost, x->mvcost,
+                                      MV_COST_WEIGHT);
+          }
+        } else {
+          continue;
+        }
+      } else {
 
       if (this_mode == NEWMV) {
         if (ref_frame > LAST_FRAME)
@@ -775,6 +790,8 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
                                     &frame_mv[NEWMV][ref_frame],
                                     &rate_mv, best_rdc.rdcost))
           continue;
+      }
+
       }
 
       if (this_mode != NEARESTMV &&
@@ -1008,6 +1025,10 @@ void vp9_pick_inter_mode(VP9_COMP *cpi, MACROBLOCK *x,
   }
 
   pd->dst = orig_dst;
+
+//  mbmi->mode = NEWMV;
+//  mbmi->ref_frame[0] = LAST_FRAME;
+//  mbmi->mv[0].as_mv = x->pred_mv[LAST_FRAME];
 
   if (reuse_inter_pred && best_pred != NULL) {
     if (best_pred->data != orig_dst.buf && is_inter_mode(mbmi->mode)) {

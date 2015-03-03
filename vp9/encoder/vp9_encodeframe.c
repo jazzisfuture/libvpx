@@ -593,7 +593,7 @@ static const MV search_pos[9] = {
   {1, -1}, {1, 0}, {1, 1},
 };
 
-static void motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
+void motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
                               BLOCK_SIZE bsize) {
   MACROBLOCKD *xd = &x->e_mbd;
   DECLARE_ALIGNED(16, int16_t, hbuf[128]);
@@ -636,6 +636,30 @@ static void motion_estimation(VP9_COMP *cpi, MACROBLOCK *x,
     src_vbuf[idx] = vp9_int_pro_col(src_buf, bw);
     src_buf += src_stride;
   }
+
+//  {
+//    int i, j;
+//    for (j = 0; j < 16; ++j) {
+//      src_buf = x->plane[0].src.buf + j * src_stride;
+//      for (i = 0; i < 16; ++i) {
+//        fprintf(stderr, "%d  ", src_buf[i]);
+//      }
+//      fprintf(stderr, "\n");
+//    }
+//    fprintf(stderr, "\n\n");
+//  }
+
+//  {
+//    int i, j;
+//    for (j = 0; j < 16; ++j) {
+//      ref_buf = xd->plane[0].pre[0].buf + j * ref_stride;
+//      for (i = -8; i < 24; ++i) {
+//        fprintf(stderr, "%d  ", ref_buf[i]);
+//      }
+//      fprintf(stderr, "\n");
+//    }
+//    fprintf(stderr, "\n\n");
+//  }
 
   // Find the best match per 1-D search
   tmp_mv->col = vector_match(hbuf, src_hbuf, b_width_log2_lookup[bsize]);
@@ -2974,6 +2998,20 @@ static void nonrd_pick_sb_modes(VP9_COMP *cpi,
   set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
   mbmi = &xd->mi[0].src_mi->mbmi;
   mbmi->sb_type = bsize;
+
+//  if (bsize >= BLOCK_8X8 && cm->frame_type == INTER_FRAME) {
+//    set_offsets(cpi, tile_info, x, mi_row, mi_col, bsize);
+//
+//    vp9_setup_pre_planes(xd, 0, get_ref_frame_buffer(cpi, LAST_FRAME),
+//                         mi_row, mi_col, &cm->frame_refs[LAST_FRAME - 1].sf);
+//    mbmi->ref_frame[0] = LAST_FRAME;
+//    mbmi->ref_frame[1] = NONE;
+//    mbmi->sb_type = bsize;
+//    mbmi->mv[0].as_int = 0;
+//    mbmi->interp_filter = BILINEAR;
+//
+//    motion_estimation(cpi, x, bsize);
+//  }
 
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cm->seg.enabled)
     if (mbmi->segment_id)
