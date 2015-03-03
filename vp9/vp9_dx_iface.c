@@ -326,9 +326,9 @@ static int frame_worker_hook(void *arg1, void *arg2) {
 
   if (frame_worker_data->pbi->frame_parallel_decode) {
     // In frame parallel decoding, a worker thread must successfully decode all
-    // the compressed data.
-    if (frame_worker_data->result != 0 ||
-        frame_worker_data->data + frame_worker_data->data_size - 1 > data) {
+    // the compressed data if the frame is inside a superframe.
+    if (frame_worker_data->result != 0 || (frame_worker_data->is_superframe &&
+        frame_worker_data->data + frame_worker_data->data_size - 1 > data)) {
       VP9Worker *const worker = frame_worker_data->pbi->frame_worker_owner;
       BufferPool *const pool = frame_worker_data->pbi->common.buffer_pool;
       // Signal all the other threads that are waiting for this frame.
@@ -456,7 +456,7 @@ static INLINE void check_resync(vpx_codec_alg_priv_t *const ctx,
 
 static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
                                   const uint8_t **data, unsigned int data_sz,
-                                  void *user_priv, int64_t deadline) {
+                                  void *user_priv, int64_t deadline, int is_superframe) {
   vp9_ppflags_t flags = {0, 0, 0};
   const VP9WorkerInterface *const winterface = vp9_get_worker_interface();
   (void)deadline;
@@ -483,6 +483,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
     frame_worker_data->data_size = data_sz;
     frame_worker_data->user_priv = user_priv;
     frame_worker_data->received_frame = 1;
+    frame_worker_data->is_superframe = is_superframe;
 
     // Set these even if already initialized.  The caller may have changed the
     // decrypt config between frames.
@@ -529,6 +530,7 @@ static vpx_codec_err_t decode_one(vpx_codec_alg_priv_t *ctx,
     frame_worker_data->frame_decoded = 0;
     frame_worker_data->frame_context_ready = 0;
     frame_worker_data->received_frame = 1;
+    frame_worker_data->is_superframe = is_superframe;
     frame_worker_data->data = frame_worker_data->scratch_buffer;
     frame_worker_data->user_priv = user_priv;
 
@@ -637,7 +639,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
         }
 
         res = decode_one(ctx, &data_start_copy, frame_size, user_priv,
-                         deadline);
+                         deadline, 1);
         if (res != VPX_CODEC_OK)
           return res;
         data_start += frame_size;
@@ -655,7 +657,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
         }
       }
 
-      res = decode_one(ctx, &data, data_sz, user_priv, deadline);
+      res = decode_one(ctx, &data, data_sz, user_priv, deadline, 0);
       if (res != VPX_CODEC_OK)
         return res;
     }
@@ -675,7 +677,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
         }
 
         res = decode_one(ctx, &data_start_copy, frame_size, user_priv,
-                         deadline);
+                         deadline, 1);
         if (res != VPX_CODEC_OK)
           return res;
 
@@ -685,7 +687,7 @@ static vpx_codec_err_t decoder_decode(vpx_codec_alg_priv_t *ctx,
       while (data_start < data_end) {
         const uint32_t frame_size = (uint32_t) (data_end - data_start);
         const vpx_codec_err_t res = decode_one(ctx, &data_start, frame_size,
-                                               user_priv, deadline);
+                                               user_priv, deadline, 0);
         if (res != VPX_CODEC_OK)
           return res;
 
