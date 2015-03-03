@@ -29,6 +29,7 @@ typedef struct FrameWorkerData {
   int result;
   int worker_id;
   int received_frame;
+  int is_superframe;
 
   // scratch_buffer is used in frame parallel mode only.
   // It is used to make a copy of the compressed data.
