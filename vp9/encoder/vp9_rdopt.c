@@ -1314,10 +1314,12 @@ static int set_and_cost_bmi_mvs(VP9_COMP *cpi, MACROBLOCKD *xd, int i,
 
   mic->bmi[i].as_mode = mode;
 
-  for (idy = 0; idy < num_4x4_blocks_high; ++idy)
-    for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
-      vpx_memcpy(&mic->bmi[i + idy * 2 + idx],
-                 &mic->bmi[i], sizeof(mic->bmi[i]));
+  {
+    b_mode_info bmi_ref = mic->bmi[i];
+    for (idy = 0; idy < num_4x4_blocks_high; ++idy)
+      for (idx = 0; idx < num_4x4_blocks_wide; ++idx)
+        mic->bmi[i + idy * 2 + idx] = bmi_ref;
+  }
 
   return cost_mv_ref(cpi, mode, mbmi->mode_context[mbmi->ref_frame[0]]) +
             thismvcost;
