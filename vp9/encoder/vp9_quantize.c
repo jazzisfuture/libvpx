@@ -77,7 +77,8 @@ void vp9_quantize_dc_32x32(const tran_low_t *coeff_ptr, int skip_block,
 
   if (!skip_block) {
 
-    tmp = clamp(abs_coeff + round_ptr[rc != 0], INT16_MIN, INT16_MAX);
+    tmp = clamp(abs_coeff + ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1),
+                INT16_MIN, INT16_MAX);
     tmp = (tmp * quant) >> 15;
     qcoeff_ptr[rc]  = (tmp ^ coeff_sign) - coeff_sign;
     dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr / 2;
@@ -105,8 +106,8 @@ void vp9_highbd_quantize_dc_32x32(const tran_low_t *coeff_ptr,
     const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
 
     const int64_t tmp =
-        (clamp(abs_coeff + round_ptr[rc != 0], INT32_MIN, INT32_MAX) *
-         quant) >> 15;
+        (clamp(abs_coeff + ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1),
+               INT32_MIN, INT32_MAX) * quant) >> 15;
     qcoeff_ptr[rc] = (tran_low_t)((tmp ^ coeff_sign) - coeff_sign);
     dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr / 2;
     if (tmp)
