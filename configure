@@ -293,6 +293,7 @@ EXPERIMENT_LIST="
     compound_modes
     global_motion
     palette
+    new_quant
 "
 CONFIG_LIST="
     external_build
