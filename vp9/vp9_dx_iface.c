@@ -325,10 +325,18 @@ static int frame_worker_hook(void *arg1, void *arg2) {
   frame_worker_data->data_end = data;
 
   if (frame_worker_data->pbi->frame_parallel_decode) {
+    int decode_fail = 0, i = 0;
     // In frame parallel decoding, a worker thread must successfully decode all
-    // the compressed data.
-    if (frame_worker_data->result != 0 ||
-        frame_worker_data->data + frame_worker_data->data_size - 1 > data) {
+    // the none zeno compressed data at the beginning of the frame.
+    while (data + i < frame_worker_data->data + frame_worker_data->data_size - 1) {
+      if (*(data + i) != 0) {
+        decode_fail = 1;
+        break;
+      }
+      i++;
+    }
+
+    if (frame_worker_data->result != 0 || decode_fail) {
       VP9Worker *const worker = frame_worker_data->pbi->frame_worker_owner;
       BufferPool *const pool = frame_worker_data->pbi->common.buffer_pool;
       // Signal all the other threads that are waiting for this frame.
