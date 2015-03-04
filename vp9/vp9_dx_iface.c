@@ -325,10 +325,29 @@ static int frame_worker_hook(void *arg1, void *arg2) {
   frame_worker_data->data_end = data;
 
   if (frame_worker_data->pbi->frame_parallel_decode) {
-    // In frame parallel decoding, a worker thread must successfully decode all
-    // the compressed data.
-    if (frame_worker_data->result != 0 ||
+    int decode_fail = 0;
+
+    // Detect suboptimal termation. Some encoders may encode VP9 frames
+    // sub-optimally by adding one or more bytes of 0 at the end of the
+    // encoded frame data. In frame parallel decoding, a worker thread
+    // muse successfully decode all of the encoded frame's data, including
+    // the sub-optimally encoded data at the end of the frame.
+    if (frame_worker_data->result == 0 &&
         frame_worker_data->data + frame_worker_data->data_size - 1 > data) {
+      int suboptimal_data_to_decode = (frame_worker_data->data +
+          frame_worker_data->data_size - 1) - data;
+      while (suboptimal_data_to_decode-- > 0) {
+        const uint8_t marker = read_marker(frame_worker_data->pbi->decrypt_cb,
+            frame_worker_data->pbi->decrypt_state, data);
+        if (marker) {
+          decode_fail = 1;
+          break;
+        }
+        data++;
+      }
+    }
+
+    if (frame_worker_data->result != 0 || decode_fail) {
       VP9Worker *const worker = frame_worker_data->pbi->frame_worker_owner;
       BufferPool *const pool = frame_worker_data->pbi->common.buffer_pool;
       // Signal all the other threads that are waiting for this frame.
